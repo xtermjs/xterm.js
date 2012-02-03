@@ -1,0 +1,14 @@
+{
+  "name": "term.js",
+  "description": "A terminal written in javascript",
+  "author": "Christopher Jeffrey",
+  "version": "0.0.1",
+  "main": "./index.js",
+  "preferGlobal": false,
+  "repository": "git://github.com/chjj/term.js.git",
+  "homepage": "https://github.com/chjj/term.js",
+  "bugs": { "url": "https://github.com/chjj/term.js/issues" },
+  "keywords": ["tty", "terminal", "term"],
+  "tags": ["tty", "terminal", "term"],
+  "engines": { "node": ">= 0.8.0" }
+}
