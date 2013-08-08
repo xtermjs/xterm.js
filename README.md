@@ -1,6 +1,6 @@
 # term.js
 
-A terminal written in javascript. Used by
+A full xterm clone written in javascript. Used by
 [tty.js](https://github.com/chjj/tty.js).
 
 ## Example

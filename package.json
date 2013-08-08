@@ -8,8 +8,8 @@
   "repository": "git://github.com/chjj/term.js.git",
   "homepage": "https://github.com/chjj/term.js",
   "bugs": { "url": "https://github.com/chjj/term.js/issues" },
-  "keywords": ["tty", "terminal", "term"],
-  "tags": ["tty", "terminal", "term"],
+  "keywords": ["tty", "terminal", "term", "xterm"],
+  "tags": ["tty", "terminal", "term", "xterm"],
   "engines": { "node": ">= 0.8.0" },
   "devDependencies": {
     "express": "3.1.0",
