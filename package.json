@@ -2,7 +2,7 @@
   "name": "term.js",
   "description": "A terminal written in javascript",
   "author": "Christopher Jeffrey",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "./index.js",
   "preferGlobal": false,
   "repository": "git://github.com/chjj/term.js.git",
