@@ -1,1 +1,1 @@
-module.exports = require('./lib/term.js');
+module.exports = require('./lib/index.js');
