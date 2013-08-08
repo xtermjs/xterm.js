@@ -20,6 +20,6 @@ app.use(function(req, res, next) {
 
 app.use(express.static(__dirname));
 
-app.use(express.static(__dirname + '/../static'));
+app.use(express.static(__dirname + '/../lib'));
 
 app.listen(8080);

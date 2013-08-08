@@ -10,6 +10,7 @@ Server:
 ``` js
 var term = require('term.js');
 express.use(term.middleware());
+...
 ```
 
 Client:
@@ -27,6 +28,10 @@ window.addEventListener('load', function() {
     console.log(data);
   });
 
+  term.on('title', function(title) {
+    console.log('New title: ' + title);
+  });
+
   term.write('\x1b[41hello world\x1b[m');
 }, false);
 ```
@@ -34,5 +39,3 @@ window.addEventListener('load', function() {
 ## License
 
 Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)
-
-[1]: http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#Mouse%20Tracking
