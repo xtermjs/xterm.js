@@ -1,0 +1,53 @@
+<!doctype html>
+<title>tty.js</title>
+<!--
+  tty.js
+  Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)
+-->
+<style>
+  h1 {
+    margin-bottom: 20px;
+    font: 20px/1.5 sans-serif;
+  }
+
+  .terminal {
+    float: left;
+    border: #000 solid 5px;
+    font-family: "DejaVu Sans Mono", "Liberation Mono", monospace;
+    font-size: 11px;
+    color: #f0f0f0;
+    background: #000;
+  }
+
+  .reverse-video {
+    color: #000;
+    background: #f0f0f0;
+  }
+</style>
+<h1>tty.js</h1>
+<script src="/socket.io/socket.io.js"></script>
+<script src="term.js"></script>
+<script>
+;(function() {
+  return setTimeout(function() {
+    var term = new Terminal(80, 24)
+      , socket = io.connect();
+
+    socket.on('connect', function() {
+      term.on('data', function(data) {
+        socket.emit('data', data);
+      });
+
+      term.on('title', function(title) {
+        document.title = title;
+      });
+
+      term.open();
+
+      socket.on('data', function(data) {
+        term.write(data);
+      });
+    });
+  }, 1000);
+}).call(this);
+</script>

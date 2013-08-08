@@ -1,0 +1,11 @@
+.git*
+build/
+.lock-wscript
+out/
+Makefile.gyp
+*.Makefile
+*.target.gyp.mk
+node_modules/
+img/
+test/
+*.node
