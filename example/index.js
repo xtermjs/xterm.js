@@ -1,18 +1,19 @@
 /**
- * tty.js
+ * term.js
  * Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)
  */
 
 var http = require('http')
   , express = require('express')
   , io = require('socket.io')
-  , pty = require('pty.js');
+  , pty = require('pty.js')
+  , terminal = require('../');
 
 /**
- * tty.js
+ * term.js
  */
 
-process.title = 'tty.js';
+process.title = 'term.js';
 
 /**
  * Open Terminal
@@ -22,8 +23,10 @@ var buff = []
   , socket
   , term;
 
-var term = pty.fork(process.env.SHELL || 'sh', [], {
-  name: 'xterm',
+term = pty.fork(process.env.SHELL || 'sh', [], {
+  name: require('fs').existsSync('/usr/share/terminfo/x/xterm-256color')
+    ? 'xterm-256color'
+    : 'xterm',
   cols: 80,
   rows: 24,
   cwd: process.env.HOME
@@ -61,8 +64,15 @@ app.use(function(req, res, next) {
   next();
 });
 
+app.use(express.basicAuth(function(user, pass, next) {
+  if (user !== 'foo' || pass !== 'bar') {
+    return next(true);
+  }
+  return next(null, user);
+}));
+
 app.use(express.static(__dirname));
-app.use(express.static(__dirname + '/../lib'));
+app.use(terminal.middleware());
 
 server.listen(8080);
 
@@ -74,6 +84,7 @@ server.on('connection', function(socket) {
     } catch (e) {
       ;
     }
+    console.log('Attempted connection from %s. Refused.', address);
   }
 });
 
@@ -81,10 +92,8 @@ server.on('connection', function(socket) {
  * Sockets
  */
 
-io = io.listen(server);
-
-io.configure(function() {
-  io.disable('log');
+io = io.listen(server, {
+  log: false
 });
 
 io.sockets.on('connection', function(sock) {

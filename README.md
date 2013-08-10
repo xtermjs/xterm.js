@@ -9,7 +9,7 @@ Server:
 
 ``` js
 var term = require('term.js');
-express.use(term.middleware());
+app.use(term.middleware());
 ...
 ```
 
@@ -17,22 +17,33 @@ Client:
 
 ``` js
 window.addEventListener('load', function() {
-  var term = new Terminal({
-    cols: 80,
-    rows: 24
+  var socket = io.connect();
+  socket.on('connect', function() {
+    var term = new Terminal({
+      cols: 80,
+      rows: 24
+    });
+
+    term.on('data', function(data) {
+      socket.emit('data', data);
+    });
+
+    term.on('title', function(title) {
+      document.title = title;
+    });
+
+    term.open(document.body);
+
+    term.write('\x1b[31mWelcome to term.js!\x1b[m\r\n');
+
+    socket.on('data', function(data) {
+      term.write(data);
+    });
+
+    socket.on('disconnect', function() {
+      term.destroy();
+    });
   });
-
-  term.open(document.body);
-
-  term.on('data', function(data) {
-    console.log(data);
-  });
-
-  term.on('title', function(title) {
-    console.log('New title: ' + title);
-  });
-
-  term.write('\x1b[41hello world\x1b[m');
 }, false);
 ```
 
