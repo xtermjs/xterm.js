@@ -66,6 +66,17 @@ app.use(express.static(__dirname + '/../lib'));
 
 server.listen(8080);
 
+server.on('connection', function(socket) {
+  var address = socket.remoteAddress;
+  if (address !== '127.0.0.1' && address !== '::1') {
+    try {
+      socket.destroy();
+    } catch (e) {
+      ;
+    }
+  }
+});
+
 /**
  * Sockets
  */
