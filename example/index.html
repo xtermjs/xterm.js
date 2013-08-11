@@ -10,6 +10,7 @@
     font: 20px/1.5 sans-serif;
   }
 
+/*
   .terminal {
     float: left;
     border: #000 solid 5px;
@@ -23,6 +24,7 @@
     color: #000;
     background: #f0f0f0;
   }
+*/
 </style>
 <h1>term.js</h1>
 <script src="/socket.io/socket.io.js"></script>
@@ -34,7 +36,8 @@
     socket.on('connect', function() {
       var term = new Terminal({
         cols: 80,
-        rows: 24
+        rows: 24,
+        style: true
       });
 
       term.on('data', function(data) {

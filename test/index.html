@@ -5,20 +5,6 @@
     margin-bottom: 20px;
     font: 20px/1.5 sans-serif;
   }
-
-  .terminal {
-    float: left;
-    border: #000 solid 5px;
-    font-family: "DejaVu Sans Mono", "Liberation Mono", monospace;
-    font-size: 11px;
-    color: #f0f0f0;
-    background: #000;
-  }
-
-  .terminal-cursor {
-    color: #000;
-    background: #f0f0f0;
-  }
 </style>
 <h1>term.js test</h1>
 <script src="term.js"></script>
@@ -33,7 +19,8 @@
 
   var term = new Terminal({
     cols: 80,
-    rows: 30
+    rows: 30,
+    style: true
   });
 
   window.onload = function() {
