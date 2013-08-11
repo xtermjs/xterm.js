@@ -1,8 +1,17 @@
-var path = require('path')
+/**
+ * term.js
+ * Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)
+ */
+
+var http = require('http')
+  , path = require('path')
   , fs = require('fs');
 
 var express = require('express')
-  , app = express.createServer();
+  , term = require('../');
+
+var app = express()
+  , server = http.createServer(app);
 
 app.use(function(req, res, next) {
   var setHeader = res.setHeader;
@@ -19,7 +28,6 @@ app.use(function(req, res, next) {
 });
 
 app.use(express.static(__dirname));
+app.use(term.middleware());
 
-app.use(express.static(__dirname + '/../lib'));
-
-app.listen(8080);
+server.listen(8080);

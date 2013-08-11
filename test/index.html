@@ -1,11 +1,26 @@
 <!doctype html>
-<title>tty.js test</title>
-<link rel="stylesheet" href="style.css">
+<title>term.js test</title>
 <style>
-  body > div { float: left; }
-  h1 { margin-bottom: 20px; }
+  h1 {
+    margin-bottom: 20px;
+    font: 20px/1.5 sans-serif;
+  }
+
+  .terminal {
+    float: left;
+    border: #000 solid 5px;
+    font-family: "DejaVu Sans Mono", "Liberation Mono", monospace;
+    font-size: 11px;
+    color: #f0f0f0;
+    background: #000;
+  }
+
+  .terminal-cursor {
+    color: #000;
+    background: #f0f0f0;
+  }
 </style>
-<h1>tty.js test</h1>
+<h1>term.js test</h1>
 <script src="term.js"></script>
 <script src="data.js"></script>
 <script>
@@ -16,11 +31,14 @@
 
   Terminal.cursorBlink = false;
 
-  var term = new Terminal(80, 30);
+  var term = new Terminal({
+    cols: 80,
+    rows: 30
+  });
 
-  setTimeout(function() {
+  window.onload = function() {
     // Add terminal.
-    term.open();
+    term.open(document.body);
 
     // Run benchmark.
     (function write() {
@@ -39,6 +57,6 @@
       term.writeln('Writes: ' + l + '.');
       term.writeln('Average (?): 28.5k (for ~2.5k writes).');
     }
-  }, 500);
+  };
 }).call(this);
 </script>

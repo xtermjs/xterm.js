@@ -1,9 +1,15 @@
+/**
+ * term.js
+ * Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)
+ */
+
 var element = {
   createElement: function() { return element; },
   appendChild: function() {},
   removeChild: function() {},
   addEventListener: function() {},
   removeEventListener: function() {},
+  setAttribute: function() {},
   style: {}
 };
 
@@ -12,13 +18,20 @@ window.navigator = { userAgent: '' };
 window.document = element;
 window.document.body = element;
 
-var Terminal = require('../static/term');
+element.ownerDocument = window.document;
+window.document.defaultView = window;
+
+var Terminal = require('../lib/term');
 Terminal.cursorBlink = false;
 
 var data = require('./data').data;
 
-var term = new Terminal(250, 100);
-term.open();
+var term = new Terminal({
+  cols: 250,
+  rows: 100
+});
+
+term.open(element);
 
 var time = new Date;
 var t = 10;
