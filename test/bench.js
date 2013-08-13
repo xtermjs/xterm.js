@@ -21,7 +21,7 @@ window.document.body = element;
 element.ownerDocument = window.document;
 window.document.defaultView = window;
 
-var Terminal = require('../lib/term');
+var Terminal = require('../src/term');
 Terminal.cursorBlink = false;
 
 var data = require('./data').data;

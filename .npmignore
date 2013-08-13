@@ -9,3 +9,4 @@ node_modules/
 img/
 test/
 *.node
+example/*.log

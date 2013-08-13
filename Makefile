@@ -1,5 +1,5 @@
 all:
-	@cp lib/term.js term.js
+	@cp src/term.js term.js
 	@uglifyjs -o term.min.js term.js
 
 clean:
