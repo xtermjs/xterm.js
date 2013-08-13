@@ -132,6 +132,8 @@ var normal = 0
  */
 
 function Terminal(options) {
+  var self = this;
+
   if (!(this instanceof Terminal)) {
     return new Terminal(arguments[0], arguments[1], arguments[2]);
   }
@@ -146,15 +148,42 @@ function Terminal(options) {
     };
   }
 
-  this.options = options || {};
+  options = options || {};
+
+  each(keys(Terminal.defaults), function(key) {
+    if (options[key] == null) {
+      // Legacy
+      if (Terminal[key] !== Terminal.defaults[key]) {
+        options[key] = Terminal[key];
+        return;
+      }
+      options[key] = Terminal.options[key];
+    }
+    self[key] = options[key];
+  });
+
+  if (options.colors.length === 8) {
+    options.colors = options.colors.concat(Terminal._colors.slice(8));
+  } else if (options.colors.length === 16) {
+    options.colors = options.colors.concat(Terminal._colors.slice(16));
+  } else if (options.colors.length === 10) {
+    options.colors = options.colors.slice(0, -2).concat(
+      Terminal._colors.slice(8, -2), options.colors.slice(-2));
+  } else if (options.colors.length === 18) {
+    options.colors = options.colors.concat(
+      Terminal._colors.slice(16, -2), options.colors.slice(-2));
+  }
+  this.colors = options.colors;
+
+  this.options = options;
 
   // this.context = options.context || window;
   // this.document = options.document || document;
   this.parent = options.body || options.parent
     || (document ? document.body : null);
 
-  this.cols = options.cols || Terminal.geometry[0];
-  this.rows = options.rows || Terminal.geometry[1];
+  this.cols = options.cols || options.geometry[0];
+  this.rows = options.rows || options.geometry[1];
 
   if (options.handler) {
     this.on('data', options.handler);
@@ -166,7 +195,7 @@ function Terminal(options) {
   this.y = 0;
   this.cursorState = 0;
   this.cursorHidden = false;
-  this.convertEol = false;
+  this.convertEol;
   this.state = 0;
   this.queue = '';
   this.scrollTop = 0;
@@ -243,7 +272,7 @@ Terminal.prototype.eraseAttr = function() {
  */
 
 // Colors 0-15
-Terminal.colors = [
+Terminal.tangoColors = [
   // dark:
   '#2e3436',
   '#cc0000',
@@ -265,6 +294,7 @@ Terminal.colors = [
 ];
 
 Terminal.xtermColors = [
+  // dark:
   '#000000', // black
   '#cd0000', // red3
   '#00cd00', // green3
@@ -273,6 +303,7 @@ Terminal.xtermColors = [
   '#cd00cd', // magenta3
   '#00cdcd', // cyan3
   '#e5e5e5', // gray90
+  // bright:
   '#7f7f7f', // gray50
   '#ff0000', // red
   '#00ff00', // green
@@ -283,10 +314,10 @@ Terminal.xtermColors = [
   '#ffffff'  // white
 ];
 
-// Colors 16-255
+// Colors 0-15 + 16-255
 // Much thanks to TooTallNate for writing this.
 Terminal.colors = (function() {
-  var colors = Terminal.colors
+  var colors = Terminal.tangoColors.slice()
     , r = [0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff]
     , i;
 
@@ -315,13 +346,19 @@ Terminal.colors = (function() {
   return colors;
 })();
 
+// Default BG/FG
+Terminal.colors[256] = '#000000';
+Terminal.colors[257] = '#f0f0f0';
+
+Terminal._colors = Terminal.colors.slice();
+
 Terminal.vcolors = (function() {
   var out = []
     , colors = Terminal.colors
     , i = 0
     , color;
 
-  for (; i < colors.length; i++) {
+  for (; i < 256; i++) {
     color = parseInt(colors[i].substring(1), 16);
     out.push([
       (color >> 16) & 0xff,
@@ -333,29 +370,32 @@ Terminal.vcolors = (function() {
   return out;
 })();
 
-// Default BG/FG
-Terminal.defaultColors = {
-  bg: '#000000',
-  fg: '#f0f0f0'
-};
-
-Terminal.colors[256] = Terminal.defaultColors.bg;
-Terminal.colors[257] = Terminal.defaultColors.fg;
-
 /**
  * Options
  */
 
-Terminal.termName = 'xterm';
-Terminal.geometry = [80, 24];
-Terminal.cursorBlink = true;
-Terminal.visualBell = false;
-Terminal.popOnBell = false;
-Terminal.scrollback = 1000;
-Terminal.screenKeys = false;
-Terminal.programFeatures = false;
-Terminal.escapeKey = null;
-Terminal.debug = false;
+Terminal.defaults = {
+  colors: Terminal.colors,
+  convertEol: false,
+  termName: 'xterm',
+  geometry: [80, 24],
+  cursorBlink: true,
+  visualBell: false,
+  popOnBell: false,
+  scrollback: 1000,
+  // screenKeys: false,
+  // programFeatures: false,
+  // escapeKey: null,
+  debug: false,
+  useStyle: false
+};
+
+Terminal.options = {};
+
+each(keys(Terminal.defaults), function(key) {
+  Terminal[key] = Terminal.defaults[key];
+  Terminal.options[key] = Terminal.defaults[key];
+});
 
 /**
  * Focused Terminal
@@ -417,8 +457,8 @@ Terminal.prototype.initGlobal = function() {
 
   Terminal.bindKeys(document);
 
-  if (this.options.style) {
-    Terminal.insertStyle(document);
+  if (this.useStyle) {
+    Terminal.insertStyle(document, term);
   }
 };
 
@@ -477,7 +517,7 @@ Terminal.bindKeys = function(document) {
  * Insert a default style
  */
 
-Terminal.insertStyle = function(document) {
+Terminal.insertStyle = function(document, term) {
   var style = document.getElementById('termjs-style');
   if (style) return;
 
@@ -491,16 +531,16 @@ Terminal.insertStyle = function(document) {
   style.innerHTML = ''
     + '.terminal {\n'
     + '  float: left;\n'
-    + '  border: ' + Terminal.defaultColors.bg + ' solid 5px;\n'
+    + '  border: ' + term.colors[256] + ' solid 5px;\n'
     + '  font-family: "DejaVu Sans Mono", "Liberation Mono", monospace;\n'
     + '  font-size: 11px;\n'
-    + '  color: ' + Terminal.defaultColors.fg + ';\n'
-    + '  background: ' + Terminal.defaultColors.bg + ';\n'
+    + '  color: ' + term.colors[257] + ';\n'
+    + '  background: ' + term.colors[256] + ';\n'
     + '}\n'
     + '\n'
     + '.terminal-cursor {\n'
-    + '  color: ' + Terminal.defaultColors.bg + ';\n'
-    + '  background: ' + Terminal.defaultColors.fg + ';\n'
+    + '  color: ' + term.colors[256] + ';\n'
+    + '  background: ' + term.colors[257] + ';\n'
     + '}\n';
 
   head.insertBefore(style, head.firstChild);
@@ -602,8 +642,8 @@ Terminal.prototype.open = function(parent) {
   }
 
   // sync default bg/fg colors
-  this.element.style.backgroundColor = Terminal.defaultColors.bg;
-  this.element.style.color = Terminal.defaultColors.fg;
+  this.element.style.backgroundColor = this.colors[256];
+  this.element.style.color = this.colors[257];
 
   if (this.context.navigator && this.context.navigator.userAgent) {
     this.isMac = !!~this.context.navigator.userAgent.indexOf('Mac');
@@ -1089,14 +1129,14 @@ Terminal.prototype.refresh = function(start, end) {
             // if (bgColor !== 0x1ff) {
             if (bgColor !== 256) {
               out += 'background-color:'
-                + Terminal.colors[bgColor]
+                + this.colors[bgColor]
                 + ';';
             }
 
             // if (fgColor !== 0x1ff) {
             if (fgColor !== 257) {
               out += 'color:'
-                + Terminal.colors[fgColor]
+                + this.colors[fgColor]
                 + ';';
             }
 
@@ -1138,7 +1178,7 @@ Terminal.prototype.refresh = function(start, end) {
   if (parent) parent.appendChild(this.element);
 };
 
-Terminal.prototype.cursorBlink = function() {
+Terminal.prototype._cursorBlink = function() {
   if (Terminal.focus !== this) return;
   this.cursorState ^= 1;
   this.refresh(this.y, this.y);
@@ -1155,16 +1195,16 @@ Terminal.prototype.showCursor = function() {
 };
 
 Terminal.prototype.startBlink = function() {
-  if (!Terminal.cursorBlink) return;
+  if (!this.cursorBlink) return;
   var self = this;
   this._blinker = function() {
-    self.cursorBlink();
+    self._cursorBlink();
   };
   this._blink = setInterval(this._blinker, 500);
 };
 
 Terminal.prototype.refreshBlink = function() {
-  if (!Terminal.cursorBlink) return;
+  if (!this.cursorBlink) return;
   clearInterval(this._blink);
   this._blink = setInterval(this._blinker, 500);
 };
@@ -1172,7 +1212,7 @@ Terminal.prototype.refreshBlink = function() {
 Terminal.prototype.scroll = function() {
   var row;
 
-  if (++this.ybase === Terminal.scrollback) {
+  if (++this.ybase === this.scrollback) {
     this.ybase = this.ybase / 2 | 0;
     this.lines = this.lines.slice(-(this.ybase + this.rows) + 1);
   }
@@ -2478,24 +2518,24 @@ Terminal.prototype.send = function(data) {
 };
 
 Terminal.prototype.bell = function() {
-  if (!Terminal.visualBell) return;
+  if (!this.visualBell) return;
   var self = this;
   this.element.style.borderColor = 'white';
   setTimeout(function() {
     self.element.style.borderColor = '';
   }, 10);
-  if (Terminal.popOnBell) this.focus();
+  if (this.popOnBell) this.focus();
 };
 
 Terminal.prototype.log = function() {
-  if (!Terminal.debug) return;
+  if (!this.debug) return;
   if (!this.context.console || !this.context.console.log) return;
   var args = Array.prototype.slice.call(arguments);
   this.context.console.log.apply(this.context.console, args);
 };
 
 Terminal.prototype.error = function() {
-  if (!Terminal.debug) return;
+  if (!this.debug) return;
   if (!this.context.console || !this.context.console.error) return;
   var args = Array.prototype.slice.call(arguments);
   this.context.console.error.apply(this.context.console, args);
@@ -2672,7 +2712,7 @@ Terminal.prototype.ch = function(cur) {
 };
 
 Terminal.prototype.is = function(term) {
-  var name = this.termName || Terminal.termName;
+  var name = this.termName;
   return (name + '').indexOf(term) === 0;
 };
 
@@ -4549,6 +4589,24 @@ matchColor.distance = function(r1, g1, b1, r2, g2, b2) {
     + Math.pow(59 * (g1 - g2), 2)
     + Math.pow(11 * (b1 - b2), 2);
 };
+
+function each(obj, iter, con) {
+  if (obj.forEach) return obj.forEach(iter, con);
+  for (var i = 0; i < obj.length; i++) {
+    iter.call(con, obj[i], i, obj);
+  }
+}
+
+function keys(obj) {
+  if (Object.keys) return Object.keys(obj);
+  var key, keys = [];
+  for (key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      keys.push(key);
+    }
+  }
+  return keys;
+}
 
 /**
  * Expose
