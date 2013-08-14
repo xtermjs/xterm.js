@@ -2526,12 +2526,19 @@ Terminal.prototype.keyDown = function(ev) {
             return;
           }
           // Ctrl-A
-          //if (this.screenKeys && ev.keyCode === 65) {
-          if (ev.keyCode === 65) {
-            if (!this.prefixMode) {
-              this.prefixMode = true;
-              return cancel(ev);
-            }
+          //if (this.screenKeys)
+          if (!this.prefixMode && !this.selectMode && ev.keyCode === 65) {
+            this.prefixMode = true;
+            return cancel(ev);
+          }
+          // Ctrl-V
+          if (this.prefixMode && ev.keyCode === 86) {
+            this.prefixMode = false;
+            return;
+          }
+          // Ctrl-C
+          if (this.selectMode && ev.keyCode === 67) {
+            return;
           }
           key = String.fromCharCode(ev.keyCode - 64);
         } else if (ev.keyCode === 32) {
@@ -2562,13 +2569,12 @@ Terminal.prototype.keyDown = function(ev) {
       break;
   }
 
-  //this.prefixMode = false;
+  if (key && this.prefixMode) {
+    this.prefixMode = false;
+    return cancel(ev);
+  }
 
   if (key && this.selectMode) {
-    // Ctrl-C - copy
-    if (key === '\x03') {
-      return;
-    }
     this.keySelect(ev, key);
     return cancel(ev);
   }
@@ -2600,9 +2606,10 @@ Terminal.prototype.enterSelect = function(ev, key) {
     write: this.write
   };
   this.write = function() {};
-  this.cursorHidden = false;
   this.selectMode = true;
   this.visualMode = false;
+  this.cursorHidden = false;
+  this.refresh(this.y, this.y);
 };
 
 Terminal.prototype.leaveSelect = function(ev, key) {
@@ -3503,12 +3510,27 @@ Terminal.prototype.keyPress = function(ev) {
 
   key = String.fromCharCode(key);
 
-  if (this.prefixMode && key === '[') {
-    this.enterSelect();
+  if (this.prefixMode) {
+    if (key === 'k' || key === '&') {
+      this.destroy();
+    } else if (key === 'p' || key === ']') {
+      this.emit('request paste');
+    } else if (key === 'c') {
+      this.emit('request create');
+    } else if (key >= '0' && key <= '9') {
+      this.emit('request tab', +key);
+    } else if (key === 'n') {
+      this.emit('request tab next');
+    } else if (key === 'P') {
+      this.emit('request tab previous');
+    } else if (key === ':') {
+      // this.enterCommand();
+    } else if (key === '[') {
+      this.enterSelect();
+    }
     this.prefixMode = false;
     return false;
   }
-  //this.prefixMode = false;
 
   if (this.selectMode) {
     this.keySelect(ev, key);
