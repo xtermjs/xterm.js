@@ -1211,7 +1211,7 @@ Terminal.prototype.refresh = function(start, end) {
           if (ch <= ' ') {
             out += '&nbsp;';
           } else {
-            // if (ch > '\uff00' && wideChars.test(ch)) i++;
+            if (ch > '\uff00' && wideChars.test(ch)) i++;
             out += ch;
           }
           break;
@@ -1316,6 +1316,7 @@ Terminal.prototype.scrollDisp = function(disp) {
 Terminal.prototype.write = function(data) {
   var l = data.length
     , i = 0
+    , j
     , cs
     , ch;
 
@@ -1414,17 +1415,17 @@ Terminal.prototype.write = function(data) {
               this.x++;
               this.updateRange(this.y);
 
-              // if (ch > '\uff00' && wideChars.test(ch)) {
-              //   if (this.cols < 2) {
-              //     this.lines[this.y + this.ybase][this.x - 1][1] = ' ';
-              //     break;
-              //   }
-              //   this.x++;
-              //   if (this.x >= this.cols) {
-              //     this.lines[this.y + this.ybase][this.x - 2][1] = ' ';
-              //     // Do something like: this.write(ch);
-              //   }
-              // }
+              if (ch > '\uff00' && wideChars.test(ch)) {
+                j = this.y + this.ybase;
+                if (this.cols < 2) {
+                  this.lines[j][this.x - 1] = [this.curAttr, ' '];
+                  break;
+                }
+                this.x++;
+                if (this.x >= this.cols) {
+                  this.lines[j][this.x - 2] = [this.curAttr, ' '];
+                }
+              }
             }
             break;
         }
