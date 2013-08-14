@@ -180,7 +180,7 @@ function Terminal(options) {
   // this.context = options.context || window;
   // this.document = options.document || document;
   this.parent = options.body || options.parent
-    || (document ? document.body : null);
+    || (document ? document.getElementsByTagName('body')[0] : null);
 
   this.cols = options.cols || options.geometry[0];
   this.rows = options.rows || options.geometry[1];
@@ -458,8 +458,12 @@ Terminal.prototype.initGlobal = function() {
 
   Terminal.bindKeys(document);
 
+  if (this.isIpad) {
+    Terminal.fixIpad(document);
+  }
+
   if (this.useStyle) {
-    Terminal.insertStyle(document, this);
+    Terminal.insertStyle(document, this.colors[256], this.colors[257]);
   }
 };
 
@@ -468,17 +472,17 @@ Terminal.prototype.initGlobal = function() {
  */
 
 Terminal.bindKeys = function(document) {
-  // We could put an "if (Terminal.focus)" check
-  // here, but it shouldn't be necessary.
+  // We should only need to check `target === body` below,
+  // but we can check everything for good measure.
   on(document, 'keydown', function(ev) {
     if (!Terminal.focus) return;
     var target = ev.target || ev.srcElement;
-    // Should just be body, but we can
-    // check everything for good measure.
+    if (!target) return;
     if (target === Terminal.focus.element
         || target === Terminal.focus.context
         || target === Terminal.focus.document
-        || target === Terminal.focus.document.body
+        || target === Terminal.focus.body
+        || target === Terminal._textarea
         || target === Terminal.focus.parent) {
       return Terminal.focus.keyDown(ev);
     }
@@ -487,12 +491,12 @@ Terminal.bindKeys = function(document) {
   on(document, 'keypress', function(ev) {
     if (!Terminal.focus) return;
     var target = ev.target || ev.srcElement;
-    // Should just be body, but we can
-    // check everything for good measure.
+    if (!target) return;
     if (target === Terminal.focus.element
         || target === Terminal.focus.context
         || target === Terminal.focus.document
-        || target === Terminal.focus.document.body
+        || target === Terminal.focus.body
+        || target === Terminal._textarea
         || target === Terminal.focus.parent) {
       return Terminal.focus.keyPress(ev);
     }
@@ -515,11 +519,34 @@ Terminal.bindKeys = function(document) {
 };
 
 /**
+ * Fix iPad - no idea if this works
+ */
+
+Terminal.fixIpad = function(document) {
+  var textarea = document.createElement('textarea');
+  textarea.style.position = 'absolute';
+  textarea.style.left = '-32000px';
+  textarea.style.top = '-32000px';
+  textarea.style.opacity = '0';
+  textarea.style.backgroundColor = 'transparent';
+  textarea.style.borderStyle = 'none';
+  textarea.style.outlineStyle = 'none';
+
+  document.getElementsByTagName('body')[0].appendChild(textarea);
+
+  Terminal._textarea = textarea;
+
+  setTimeout(function() {
+    textarea.focus();
+  }, 1000);
+};
+
+/**
  * Insert a default style
  */
 
-Terminal.insertStyle = function(document, term) {
-  var style = document.getElementById('termjs-style');
+Terminal.insertStyle = function(document, bg, fg) {
+  var style = document.getElementById('term-style');
   if (style) return;
 
   var head = document.getElementsByTagName('head')[0];
@@ -532,16 +559,16 @@ Terminal.insertStyle = function(document, term) {
   style.innerHTML = ''
     + '.terminal {\n'
     + '  float: left;\n'
-    + '  border: ' + term.colors[256] + ' solid 5px;\n'
+    + '  border: ' + bg + ' solid 5px;\n'
     + '  font-family: "DejaVu Sans Mono", "Liberation Mono", monospace;\n'
     + '  font-size: 11px;\n'
-    + '  color: ' + term.colors[257] + ';\n'
-    + '  background: ' + term.colors[256] + ';\n'
+    + '  color: ' + fg + ';\n'
+    + '  background: ' + bg + ';\n'
     + '}\n'
     + '\n'
     + '.terminal-cursor {\n'
-    + '  color: ' + term.colors[256] + ';\n'
-    + '  background: ' + term.colors[257] + ';\n'
+    + '  color: ' + bg + ';\n'
+    + '  background: ' + fg + ';\n'
     + '}\n';
 
   head.insertBefore(style, head.firstChild);
@@ -562,36 +589,58 @@ Terminal.prototype.open = function(parent) {
     throw new Error('Terminal requires a parent element.');
   }
 
+  // Grab global elements.
   this.context = this.parent.ownerDocument.defaultView;
   this.document = this.parent.ownerDocument;
+  this.body = this.document.getElementsByTagName('body')[0];
 
+  // Parse user-agent strings.
+  if (this.context.navigator && this.context.navigator.userAgent) {
+    this.isMac = !!~this.context.navigator.userAgent.indexOf('Mac');
+    this.isIpad = !!~this.context.navigator.userAgent.indexOf('iPad');
+    this.isMSIE = !!~this.context.navigator.userAgent.indexOf('MSIE');
+  }
+
+  // Create our main terminal element.
   this.element = this.document.createElement('div');
   this.element.className = 'terminal';
   this.element.style.outline = 'none';
   this.element.setAttribute('tabindex', 0);
+  this.element.style.backgroundColor = this.colors[256];
+  this.element.style.color = this.colors[257];
 
+  // Create the lines for our terminal.
   this.children = [];
-
   for (; i < this.rows; i++) {
     div = this.document.createElement('div');
     this.element.appendChild(div);
     this.children.push(div);
   }
-
   this.parent.appendChild(this.element);
 
+  // Draw the screen.
   this.refresh(0, this.rows - 1);
 
+  // Initialize global actions that
+  // need to be taken on the document.
   this.initGlobal();
 
+  // Ensure there is a Terminal.focus.
   this.focus();
 
+  // Start blinking the cursor.
   this.startBlink();
 
+  // Bind to DOM events related
+  // to focus and paste behavior.
   on(this.element, 'focus', function() {
     self.focus();
+    if (Terminal._textarea) {
+      Terminal._textarea.focus();
+    }
   });
 
+  // This causes slightly funky behavior.
   // on(this.element, 'blur', function() {
   //   self.blur();
   // });
@@ -600,6 +649,7 @@ Terminal.prototype.open = function(parent) {
     self.focus();
   });
 
+  // Clickable paste workaround, using contentEditable.
   // This probably shouldn't work,
   // ... but it does. Firefox's paste
   // event seems to only work for textareas?
@@ -623,6 +673,8 @@ Terminal.prototype.open = function(parent) {
     }, 1);
   }, true);
 
+  // This seems to work well for ctrl-V and middle-click,
+  // even without the contentEditable workaround.
   on(this.element, 'paste', function(ev) {
     if (ev.clipboardData) {
       self.send(ev.clipboardData.getData('text/plain'));
@@ -634,6 +686,8 @@ Terminal.prototype.open = function(parent) {
     return cancel(ev);
   });
 
+  // Listen for mouse events and translate
+  // them into terminal mouse protocols.
   this.bindMouse();
 
   // Figure out whether boldness affects
@@ -642,16 +696,13 @@ Terminal.prototype.open = function(parent) {
     Terminal.brokenBold = isBoldBroken(this.document);
   }
 
-  // sync default bg/fg colors
-  this.element.style.backgroundColor = this.colors[256];
-  this.element.style.color = this.colors[257];
-
-  if (this.context.navigator && this.context.navigator.userAgent) {
-    this.isMac = !!~this.context.navigator.userAgent.indexOf('Mac');
-    this.isMSIE = !!~this.context.navigator.userAgent.indexOf('MSIE');
-  }
-
   // this.emit('open');
+
+  // This can be useful for pasting,
+  // as well as the iPad fix.
+  setTimeout(function() {
+    self.element.focus();
+  }, 100);
 };
 
 // XTerm mouse events
@@ -4515,13 +4566,14 @@ function inherits(child, parent) {
 // if bold is broken, we can't
 // use it in the terminal.
 function isBoldBroken(document) {
+  var body = document.getElementsByTagName('body')[0];
   var el = document.createElement('span');
   el.innerHTML = 'hello world';
-  document.body.appendChild(el);
+  body.appendChild(el);
   var w1 = el.scrollWidth;
   el.style.fontWeight = 'bold';
   var w2 = el.scrollWidth;
-  document.body.removeChild(el);
+  body.removeChild(el);
   return w1 !== w2;
 }
 
