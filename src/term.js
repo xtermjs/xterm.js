@@ -2812,7 +2812,7 @@ Terminal.prototype.reverseIndex = function() {
 
 // ESC c Full Reset (RIS).
 Terminal.prototype.reset = function() {
-  Terminal.call(this, this.cols, this.rows);
+  Terminal.call(this, this.options);
   this.refresh(0, this.rows - 1);
 };
 
