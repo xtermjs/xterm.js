@@ -2801,7 +2801,7 @@ Terminal.prototype.keySelect = function(ev, key) {
         x++;
       }
       if (x >= this.cols) x = this.cols - 1;
-      if (x == this.cols - 1 && line[x][1] <= ' ') {
+      if (x === this.cols - 1 && line[x][1] <= ' ') {
         x = 0;
         if (++y >= this.rows) {
           y--;
@@ -2849,7 +2849,7 @@ Terminal.prototype.keySelect = function(ev, key) {
         x--;
       }
       if (x < 0) x = 0;
-      if (x == 0 && (l[x][1] <= ' ' || !saw_space)) {
+      if (x === 0 && (l[x][1] <= ' ' || !saw_space)) {
         x = this.cols - 1;
         if (--y < 0) {
           y++;
@@ -2898,7 +2898,7 @@ Terminal.prototype.keySelect = function(ev, key) {
         x++;
       }
       if (x >= this.cols) x = this.cols - 1;
-      if (x == this.cols - 1 && l[x][1] <= ' ') {
+      if (x === this.cols - 1 && l[x][1] <= ' ') {
         x = 0;
         if (++y >= this.rows) {
           y--;
@@ -3036,17 +3036,17 @@ Terminal.prototype.keySelect = function(ev, key) {
 
       for (i = 0; i < this.cols; i++) {
         if (line[i][1] > ' ') {
-          if (first_is_space == -1) {
+          if (first_is_space === -1) {
             first_is_space = 0;
           }
           saw_full = true;
           break;
-        } else if (i == this.cols - 1) {
-          if (first_is_space == -1) {
+        } else if (i === this.cols - 1) {
+          if (first_is_space === -1) {
             first_is_space = 1;
-          } else if (first_is_space == 0) {
+          } else if (first_is_space === 0) {
             found = true;
-          } else if (first_is_space == 1) {
+          } else if (first_is_space === 1) {
             if (saw_full) found = true;
           }
           break;
@@ -3219,9 +3219,9 @@ Terminal.prototype.keySearch = function(ev, key) {
         while (x < this.cols) {
           for (i = 0; i < entry.length; i++) {
             if (x + i >= this.cols) break;
-            if (line[x + i][1] != entry[i]) {
+            if (line[x + i][1] !== entry[i]) {
               break;
-            } else if (line[x + i][1] == entry[i] && i == entry.length - 1) {
+            } else if (line[x + i][1] === entry[i] && i === entry.length - 1) {
               found = true;
               break;
             }
@@ -3283,7 +3283,7 @@ Terminal.prototype.keySearch = function(ev, key) {
     }
 
     if (key === '\b' || key === '\x7f') {
-      if (this.entry.length == 0) return;
+      if (this.entry.length === 0) return;
       var bottom = this.ydisp + this.rows - 1;
       this.entry = this.entry.slice(0, -1);
       var i = this.entryPrefix.length + this.entry.length;
