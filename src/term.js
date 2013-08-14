@@ -458,7 +458,7 @@ Terminal.prototype.initGlobal = function() {
   Terminal.bindKeys(document);
 
   if (this.useStyle) {
-    Terminal.insertStyle(document, term);
+    Terminal.insertStyle(document, this);
   }
 };
 
