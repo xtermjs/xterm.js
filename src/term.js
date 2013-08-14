@@ -2835,11 +2835,11 @@ Terminal.prototype.keySelect = function(ev, key) {
     var yb = this.ydisp;
 
     for (;;) {
-      var l = this.lines[yb + y];
-      var saw_space = x > 0 && l[x][1] > ' ' && l[x - 1][1] > ' ';
+      var line = this.lines[yb + y];
+      var saw_space = x > 0 && line[x][1] > ' ' && line[x - 1][1] > ' ';
       while (x >= 0) {
-        if (l[x][1] <= ' ') {
-          if (saw_space && (x + 1 < this.cols && l[x + 1][1] > ' ')) {
+        if (line[x][1] <= ' ') {
+          if (saw_space && (x + 1 < this.cols && line[x + 1][1] > ' ')) {
             x++;
             break;
           } else {
@@ -2849,7 +2849,7 @@ Terminal.prototype.keySelect = function(ev, key) {
         x--;
       }
       if (x < 0) x = 0;
-      if (x === 0 && (l[x][1] <= ' ' || !saw_space)) {
+      if (x === 0 && (line[x][1] <= ' ' || !saw_space)) {
         x = this.cols - 1;
         if (--y < 0) {
           y++;
@@ -2880,17 +2880,17 @@ Terminal.prototype.keySelect = function(ev, key) {
     if (x >= this.cols) x--;
 
     for (;;) {
-      var l = this.lines[yb + y];
+      var line = this.lines[yb + y];
       while (x < this.cols) {
-        if (l[x][1] <= ' ') {
+        if (line[x][1] <= ' ') {
           x++;
         } else {
           break;
         }
       }
       while (x < this.cols) {
-        if (l[x][1] <= ' ') {
-          if (x - 1 >= 0 && l[x - 1][1] > ' ') {
+        if (line[x][1] <= ' ') {
+          if (x - 1 >= 0 && line[x - 1][1] > ' ') {
             x--;
             break;
           }
@@ -2898,7 +2898,7 @@ Terminal.prototype.keySelect = function(ev, key) {
         x++;
       }
       if (x >= this.cols) x = this.cols - 1;
-      if (x === this.cols - 1 && l[x][1] <= ' ') {
+      if (x === this.cols - 1 && line[x][1] <= ' ') {
         x = 0;
         if (++y >= this.rows) {
           y--;
@@ -2927,10 +2927,10 @@ Terminal.prototype.keySelect = function(ev, key) {
     if (key === '0') {
       this.x = 0;
     } else if (key === '^') {
-      var l = this.lines[this.ydisp + this.y];
+      var line = this.lines[this.ydisp + this.y];
       var x = 0;
       while (x < this.cols) {
-        if (l[x][1] > ' ') {
+        if (line[x][1] > ' ') {
           break;
         }
         x++;
@@ -2949,10 +2949,10 @@ Terminal.prototype.keySelect = function(ev, key) {
 
   if (key === '$') {
     var ox = this.x;
-    var l = this.lines[this.ydisp + this.y];
+    var line = this.lines[this.ydisp + this.y];
     var x = this.cols - 1;
     while (x >= 0) {
-      if (l[x][1] > ' ') {
+      if (line[x][1] > ' ') {
         break;
       }
       x--;
@@ -3298,7 +3298,7 @@ Terminal.prototype.keySearch = function(ev, key) {
       return;
     }
 
-    if (key) {
+    if (key.length === 1 && key >= ' ' && key <= '~') {
       var bottom = this.ydisp + this.rows - 1;
       this.entry += key;
       var i = this.entryPrefix.length + this.entry.length - 1;
@@ -3491,6 +3491,15 @@ Terminal.prototype.grabText = function(x1, x2, y1, y2) {
     out += '\n';
   }
 
+  // If we're not at the end of the
+  // line, don't add a newline.
+  for (x = x2 + 1, y = y2; x < this.cols; x++) {
+    if (this.lines[y][x][1] !== ' ') {
+      out = out.slice(0, -1);
+      break;
+    }
+  }
+
   return out;
 };
 
@@ -3526,6 +3535,7 @@ Terminal.prototype.keyPress = function(ev) {
   key = String.fromCharCode(key);
 
   if (this.prefixMode) {
+    this.prefixMode = false;
     if (key === 'k' || key === '&') {
       this.destroy();
     } else if (key === 'p' || key === ']') {
@@ -3543,7 +3553,6 @@ Terminal.prototype.keyPress = function(ev) {
     } else if (key === '[') {
       this.enterSelect();
     }
-    this.prefixMode = false;
     return false;
   }
 
