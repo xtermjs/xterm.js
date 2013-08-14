@@ -1211,7 +1211,7 @@ Terminal.prototype.refresh = function(start, end) {
           if (ch <= ' ') {
             out += '&nbsp;';
           } else {
-            if (ch > '\uff00' && wideChars.test(ch)) i++;
+            if (isWide(ch)) i++;
             out += ch;
           }
           break;
@@ -1320,9 +1320,6 @@ Terminal.prototype.write = function(data) {
     , cs
     , ch;
 
-  // If we want to remove double-width chars entirely.
-  // data = data.replace(wideChars, '?');
-
   this.refreshStart = this.y;
   this.refreshEnd = this.y;
 
@@ -1403,6 +1400,7 @@ Terminal.prototype.write = function(data) {
               if (this.charset && this.charset[ch]) {
                 ch = this.charset[ch];
               }
+
               if (this.x >= this.cols) {
                 this.x = 0;
                 this.y++;
@@ -1411,20 +1409,19 @@ Terminal.prototype.write = function(data) {
                   this.scroll();
                 }
               }
+
               this.lines[this.y + this.ybase][this.x] = [this.curAttr, ch];
               this.x++;
               this.updateRange(this.y);
 
-              if (ch > '\uff00' && wideChars.test(ch)) {
+              if (isWide(ch)) {
                 j = this.y + this.ybase;
-                if (this.cols < 2) {
+                if (this.cols < 2 || this.x >= this.cols) {
                   this.lines[j][this.x - 1] = [this.curAttr, ' '];
                   break;
                 }
+                this.lines[j][this.x] = [this.curAttr, ' '];
                 this.x++;
-                if (this.x >= this.cols) {
-                  this.lines[j][this.x - 2] = [this.curAttr, ' '];
-                }
               }
             }
             break;
@@ -4590,15 +4587,16 @@ function indexOf(obj, el) {
   return -1;
 }
 
-var wideChars = new RegExp('(['
-  + '\\uff01-\\uffbe'
-  + '\\uffc2-\\uffc7'
-  + '\\uffca-\\uffcf'
-  + '\\uffd2-\\uffd7'
-  + '\\uffda-\\uffdc'
-  + '\\uffe0-\\uffe6'
-  + '\\uffe8-\\uffee'
-  + '])', 'g');
+function isWide(ch) {
+  if (ch <= '\uff00') return false;
+  return (ch >= '\uff01' && ch <= '\uffbe')
+      || (ch >= '\uffc2' && ch <= '\uffc7')
+      || (ch >= '\uffca' && ch <= '\uffcf')
+      || (ch >= '\uffd2' && ch <= '\uffd7')
+      || (ch >= '\uffda' && ch <= '\uffdc')
+      || (ch >= '\uffe0' && ch <= '\uffe6')
+      || (ch >= '\uffe8' && ch <= '\uffee');
+}
 
 function matchColor(r1, g1, b1) {
   var hash = (r1 << 16) | (g1 << 8) | b1;
