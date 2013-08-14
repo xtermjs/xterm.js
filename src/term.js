@@ -458,6 +458,9 @@ Terminal.prototype.initGlobal = function() {
 
   Terminal.bindKeys(document);
 
+  //if (this.screenKeys)
+  Terminal.bindCopy(document);
+
   if (this.isIpad) {
     Terminal.fixIpad(document);
   }
@@ -537,6 +540,51 @@ Terminal.bindKeys = function(document) {
     } while (el = el.parentNode);
 
     Terminal.focus.blur();
+  });
+};
+
+/**
+ * Copy Selection w/ Ctrl-C (Select Mode)
+ */
+
+Terminal.bindCopy = function(document) {
+  var window = document.defaultView;
+
+  // if (!('onbeforecopy' in document)) {
+  //   // Copies to *only* the clipboard.
+  //   on(window, 'copy', function fn(ev) {
+  //     var term = Terminal.focus;
+  //     if (!term) return;
+  //     if (!term._selected) return;
+  //     var text = term.grabText(
+  //       term._selected.x1, term._selected.x2,
+  //       term._selected.y1, term._selected.y2);
+  //     term.emit('copy', text);
+  //     ev.clipboardData.setData('text/plain', text);
+  //   });
+  //   return;
+  // }
+
+  // Copies to primary selection *and* clipboard.
+  // NOTE: This may work better on capture phase,
+  // or using the `beforecopy` event.
+  on(window, 'copy', function(ev) {
+    var term = Terminal.focus;
+    if (!term) return;
+    if (!term._selected) return;
+    var textarea = term._copyTextarea();
+    var text = term.grabText(
+      term._selected.x1, term._selected.x2,
+      term._selected.y1, term._selected.y2);
+    term.emit('copy', text);
+    textarea.focus();
+    textarea.textContent = text;
+    textarea.value = text;
+    textarea.setSelectionRange(0, text.length);
+    setTimeout(function() {
+      term.element.focus();
+      term.focus();
+    }, 1);
   });
 };
 
@@ -2517,6 +2565,10 @@ Terminal.prototype.keyDown = function(ev) {
   //this.prefixMode = false;
 
   if (key && this.selectMode) {
+    // Ctrl-C - copy
+    if (key === '\x03') {
+      return;
+    }
     this.keySelect(ev, key);
     return cancel(ev);
   }
@@ -2699,7 +2751,7 @@ Terminal.prototype.keySelect = function(ev, key) {
     var text = this.grabText(
       this._selected.x1, this._selected.x2,
       this._selected.y1, this._selected.y2);
-    this.emit('copy', text);
+    this.copyText(text);
     this.lines = this._savedSelect.preVisual;
     delete this._savedSelect.preVisual;
     delete this._selected;
@@ -3041,6 +3093,47 @@ Terminal.prototype.keySelect = function(ev, key) {
     this.refresh(this.rows - 1, this.rows - 1);
     return;
   }
+};
+
+Terminal.prototype._copyTextarea = function(text) {
+  var textarea = this._textarea
+    , document = this.document;
+
+  if (!textarea) {
+    textarea = document.createElement('textarea');
+    textarea.style.position = 'absolute';
+    textarea.style.left = '-32000px';
+    textarea.style.top = '-32000px';
+    textarea.style.opacity = '0';
+    textarea.style.backgroundColor = 'transparent';
+    textarea.style.borderStyle = 'none';
+    textarea.style.outlineStyle = 'none';
+
+    document.getElementsByTagName('body')[0].appendChild(textarea);
+
+    this._textarea = textarea;
+  }
+
+  return textarea;
+};
+
+// NOTE: Only works for primary selection on X11.
+// Non-X11 users should use Ctrl-C instead.
+Terminal.prototype.copyText = function(text) {
+  var self = this
+    , textarea = this._copyTextarea();
+
+  this.emit('copy', text);
+
+  textarea.focus();
+  textarea.textContent = text;
+  textarea.value = text;
+  textarea.setSelectionRange(0, text.length);
+
+  setTimeout(function() {
+    self.element.focus();
+    self.focus();
+  }, 1);
 };
 
 Terminal.prototype.keySearch = function(ev, key) {
