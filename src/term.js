@@ -387,7 +387,8 @@ Terminal.defaults = {
   // programFeatures: false,
   // escapeKey: null,
   debug: false,
-  useStyle: false
+  useStyle: false,
+  allowKeyPaste: false
 };
 
 Terminal.options = {};
@@ -2417,6 +2418,9 @@ Terminal.prototype.keyDown = function(ev) {
       // a-z and space
       if (ev.ctrlKey) {
         if (ev.keyCode >= 65 && ev.keyCode <= 90) {
+          if (this.allowKeyPaste && ev.keyCode === 86) {
+            return;
+          }
           key = String.fromCharCode(ev.keyCode - 64);
         } else if (ev.keyCode === 32) {
           // NUL
