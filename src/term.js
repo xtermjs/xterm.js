@@ -675,7 +675,9 @@ Terminal.prototype.open = function(parent) {
 
   // This seems to work well for ctrl-V and middle-click,
   // even without the contentEditable workaround.
-  on(this.element, 'paste', function(ev) {
+  // TODO Move this to initGlobal.
+  on(this.context, 'paste', function(ev) {
+    if (Terminal.focus !== self) return;
     if (ev.clipboardData) {
       self.send(ev.clipboardData.getData('text/plain'));
     } else if (self.context.clipboardData) {
