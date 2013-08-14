@@ -2987,6 +2987,25 @@ Terminal.prototype.keySelect = function(ev, key) {
     return;
   }
 
+  if (key === 'H' || key === 'M' || key === 'L') {
+    var ox = this.x;
+    var oy = this.y;
+    if (key === 'H') {
+      this.x = 0, this.y = 0;
+    } else if (key === 'M') {
+      this.x = 0, this.y = this.rows / 2 | 0;
+    } else if (key === 'L') {
+      this.x = 0, this.y = this.rows - 1;
+    }
+    if (this.visualMode) {
+      this.selectText(ox, this.x, this.ydisp + oy, this.ydisp + this.y);
+    } else {
+      this.refresh(oy, oy);
+      this.refresh(this.y, this.y);
+    }
+    return;
+  }
+
   if (key === '{' || key === '}') {
     var ox = this.x;
     var oy = this.y;
@@ -3252,11 +3271,7 @@ Terminal.prototype.keySearch = function(ev, key) {
         // if (!wrapped) UPDATE_SCROLL;
 
         if (this.visualMode) {
-          if (this.y < oy || this.ydisp < oyd) {
-            this.selectText(this.x, ox, this.ydisp + this.y, oy + oyd);
-          } else {
-            this.selectText(ox, this.x, oy + oyd, this.ydisp + this.y);
-          }
+          this.selectText(ox, this.x, oy + oyd, this.ydisp + this.y);
         }
         return;
       } else {
