@@ -37,7 +37,8 @@
       var term = new Terminal({
         cols: 80,
         rows: 24,
-        useStyle: true
+        useStyle: true,
+        screenKeys: true
       });
 
       term.on('data', function(data) {

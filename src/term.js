@@ -216,6 +216,8 @@ function Terminal(options) {
   this.entry = '';
   this.entryPrefix = '';
   this._real;
+  this._selected;
+  this._textarea;
 
   // charset
   this.charset = null;
@@ -390,7 +392,7 @@ Terminal.defaults = {
   visualBell: false,
   popOnBell: false,
   scrollback: 1000,
-  // screenKeys: false,
+  screenKeys: false,
   // programFeatures: false,
   // escapeKey: null,
   debug: false,
@@ -467,7 +469,6 @@ Terminal.prototype.initGlobal = function() {
 
   Terminal.bindKeys(document);
 
-  //if (this.screenKeys)
   Terminal.bindCopy(document);
 
   if (this.isIpad) {
@@ -2536,10 +2537,11 @@ Terminal.prototype.keyDown = function(ev) {
             return;
           }
           // Ctrl-A
-          //if (this.screenKeys)
-          if (!this.prefixMode && !this.selectMode && ev.keyCode === 65) {
-            this.enterPrefix();
-            return cancel(ev);
+          if (this.screenKeys) {
+            if (!this.prefixMode && !this.selectMode && ev.keyCode === 65) {
+              this.enterPrefix();
+              return cancel(ev);
+            }
           }
           // Ctrl-V
           if (this.prefixMode && ev.keyCode === 86) {
@@ -2583,8 +2585,6 @@ Terminal.prototype.keyDown = function(ev) {
       }
       break;
   }
-
-  // this.emit('keydown', ev);
 
   if (!key) return true;
 
@@ -4905,13 +4905,15 @@ Terminal.prototype.keyPrefix = function(ev, key) {
   } else if (key === 'c') {
     this.emit('request create');
   } else if (key >= '0' && key <= '9') {
-    this.emit('request tab', +key);
+    key = +key - 1;
+    if (!~key) key = 9;
+    this.emit('request term', key);
   } else if (key === 'n') {
-    this.emit('request tab next');
+    this.emit('request term next');
   } else if (key === 'P') {
-    this.emit('request tab previous');
+    this.emit('request term previous');
   } else if (key === ':') {
-    // this.enterCommand();
+    this.emit('request command mode');
   } else if (key === '[') {
     this.enterSelect();
   }
@@ -5030,7 +5032,7 @@ Terminal.prototype.keySelect = function(ev, key) {
     return;
   }
 
-  if (key === 'v') {
+  if (key === 'v' || key === ' ') {
     if (!this.visualMode) {
       this.enterVisual();
     } else {
@@ -5388,21 +5390,6 @@ Terminal.prototype.keySelect = function(ev, key) {
   return false;
 };
 
-Terminal.prototype.keyVisual = function(ev, key) {
-  var ox = this.x
-    , oy = this.y
-    , oyd = this.ydisp
-    , ret;
-
-  ret = this.keySelect(ev, key);
-
-  if (ret !== false && this.visualMode) {
-    this.selectText(this.x, ox, this.ydisp + this.y, oy + oyd);
-  }
-
-  return ret;
-};
-
 Terminal.prototype.keySearch = function(ev, key) {
   if (key === '\x1b') {
     this.leaveSearch();
@@ -5457,7 +5444,7 @@ Terminal.prototype.keySearch = function(ev, key) {
         y++;
         if (y > this.ybase + this.rows - 1) {
           if (wrapped) break;
-          // set_message("Search wrapped. Continuing at TOP.");
+          // this.setMessage('Search wrapped. Continuing at TOP.');
           wrapped = true;
           y = 0;
         }
@@ -5465,7 +5452,7 @@ Terminal.prototype.keySearch = function(ev, key) {
         y--;
         if (y < 0) {
           if (wrapped) break;
-          // set_message("Search wrapped. Continuing at BOTTOM.");
+          // this.setMessage('Search wrapped. Continuing at BOTTOM.');
           wrapped = true;
           y = this.ybase + this.rows - 1;
         }
@@ -5488,17 +5475,15 @@ Terminal.prototype.keySearch = function(ev, key) {
       this.x = x, this.y = y;
       this.scrollDisp(-this.ydisp + yb);
 
-      // if (!wrapped) UPDATE_SCROLL;
-
       if (this.visualMode) {
         this.selectText(ox, this.x, oy + oyd, this.ydisp + this.y);
       }
       return;
-    } else {
-      // set_message("No matches found.");
     }
 
+    // this.setMessage("No matches found.");
     this.refresh(0, this.rows - 1);
+
     return;
   }
 
