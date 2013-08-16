@@ -456,6 +456,8 @@ Terminal.prototype.initGlobal = function() {
   }
   Terminal._boundDocs.push(document);
 
+  Terminal.bindPaste(document);
+
   Terminal.bindKeys(document);
 
   if (this.isIpad) {
@@ -465,6 +467,28 @@ Terminal.prototype.initGlobal = function() {
   if (this.useStyle) {
     Terminal.insertStyle(document, this.colors[256], this.colors[257]);
   }
+};
+
+/**
+ * Bind to paste event
+ */
+
+Terminal.bindPaste = function(document) {
+  // This seems to work well for ctrl-V and middle-click,
+  // even without the contentEditable workaround.
+  var window = document.defaultView;
+  on(window, 'paste', function(ev) {
+    var term = Terminal.focus;
+    if (!term) return;
+    if (ev.clipboardData) {
+      term.send(ev.clipboardData.getData('text/plain'));
+    } else if (term.context.clipboardData) {
+      term.send(term.context.clipboardData.getData('Text'));
+    }
+    // Not necessary. Do it anyway for good measure.
+    term.element.contentEditable = 'inherit';
+    return cancel(ev);
+  });
 };
 
 /**
@@ -553,7 +577,7 @@ Terminal.insertStyle = function(document, bg, fg) {
   if (!head) return;
 
   var style = document.createElement('style');
-  style.id = 'termjs-style';
+  style.id = 'term-style';
 
   // textContent doesn't work well with IE for <style> elements.
   style.innerHTML = ''
@@ -635,7 +659,7 @@ Terminal.prototype.open = function(parent) {
   // to focus and paste behavior.
   on(this.element, 'focus', function() {
     self.focus();
-    if (Terminal._textarea) {
+    if (self.isIpad) {
       Terminal._textarea.focus();
     }
   });
@@ -672,21 +696,6 @@ Terminal.prototype.open = function(parent) {
       self.element.contentEditable = 'inherit'; // 'false';
     }, 1);
   }, true);
-
-  // This seems to work well for ctrl-V and middle-click,
-  // even without the contentEditable workaround.
-  // TODO Move this to initGlobal.
-  on(this.context, 'paste', function(ev) {
-    if (Terminal.focus !== self) return;
-    if (ev.clipboardData) {
-      self.send(ev.clipboardData.getData('text/plain'));
-    } else if (self.context.clipboardData) {
-      self.send(self.context.clipboardData.getData('Text'));
-    }
-    // Not necessary. Do it anyway for good measure.
-    self.element.contentEditable = 'inherit';
-    return cancel(ev);
-  });
 
   // Listen for mouse events and translate
   // them into terminal mouse protocols.
