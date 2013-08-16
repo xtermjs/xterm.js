@@ -207,6 +207,16 @@ function Terminal(options) {
   this.wraparoundMode = false;
   this.normal = null;
 
+  // select modes
+  this.prefixMode = false;
+  this.selectMode = false;
+  this.visualMode = false;
+  this.searchMode = false;
+  this.searchDown;
+  this.entry = '';
+  this.entryPrefix = '';
+  this._real;
+
   // charset
   this.charset = null;
   this.gcharset = null;
@@ -2357,7 +2367,8 @@ Terminal.prototype.writeln = function(data) {
 // Key Resources:
 // https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
 Terminal.prototype.keyDown = function(ev) {
-  var key;
+  var self = this
+    , key;
 
   switch (ev.keyCode) {
     // backspace
@@ -2537,7 +2548,11 @@ Terminal.prototype.keyDown = function(ev) {
           }
           // Ctrl-C
           if ((this.prefixMode || this.selectMode) && ev.keyCode === 67) {
-            if (this.visualMode) this.leaveVisual();
+            if (this.visualMode) {
+              setTimeout(function() {
+                self.leaveVisual();
+              }, 1);
+            }
             return;
           }
           key = String.fromCharCode(ev.keyCode - 64);
@@ -4787,14 +4802,14 @@ Terminal.prototype.selectText = function(x1, x2, y1, y2) {
 
   for (y = y1; y <= y2; y++) {
     x = 0;
-    xl = this.cols;
+    xl = this.cols - 1;
     if (y === y1) {
       x = x1;
     }
     if (y === y2) {
       xl = x2;
     }
-    for (; x < xl; x++) {
+    for (; x <= xl; x++) {
       //this.lines[y][x].old = this.lines[y][x][0];
       //this.lines[y][x][0] &= ~0x1ff;
       //this.lines[y][x][0] |= (0x1ff << 9) | 4;
@@ -4846,14 +4861,14 @@ Terminal.prototype.grabText = function(x1, x2, y1, y2) {
 
   for (y = y1; y <= y2; y++) {
     x = 0;
-    xl = this.cols;
+    xl = this.cols - 1;
     if (y === y1) {
       x = x1;
     }
     if (y === y2) {
       xl = x2;
     }
-    for (; x < xl; x++) {
+    for (; x <= xl; x++) {
       ch = this.lines[y][x][1];
       if (ch === ' ') {
         buf += ch;
@@ -4872,7 +4887,7 @@ Terminal.prototype.grabText = function(x1, x2, y1, y2) {
 
   // If we're not at the end of the
   // line, don't add a newline.
-  for (x = x2 + 1, y = y2; x < this.cols; x++) {
+  for (x = x2, y = y2; x < this.cols; x++) {
     if (this.lines[y][x][1] !== ' ') {
       out = out.slice(0, -1);
       break;
@@ -5218,6 +5233,7 @@ Terminal.prototype.keySelect = function(ev, key) {
     var x = this.cols - 1;
     while (x >= 0) {
       if (line[x][1] > ' ') {
+        if (this.visualMode && x < this.cols - 1) x++;
         break;
       }
       x--;
