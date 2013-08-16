@@ -152,12 +152,11 @@ function Terminal(options) {
 
   each(keys(Terminal.defaults), function(key) {
     if (options[key] == null) {
-      // Legacy
+      options[key] = Terminal.options[key];
+      // Legacy:
       if (Terminal[key] !== Terminal.defaults[key]) {
         options[key] = Terminal[key];
-        return;
       }
-      options[key] = Terminal.options[key];
     }
     self[key] = options[key];
   });
