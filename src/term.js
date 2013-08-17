@@ -240,7 +240,6 @@ function Terminal(options) {
   this.writable = true;
 
   this.defAttr = (0 << 18) | (257 << 9) | (256 << 0);
-  // this.defAttr = (0 << 18) | (0x1ff << 9) | (0x1ff << 0);
   this.curAttr = this.defAttr;
 
   this.params = [];
@@ -1081,7 +1080,7 @@ Terminal.prototype.destroy = function() {
 // Next 9 bits: background color (0-511).
 // Next 9 bits: foreground color (0-511).
 // Next 14 bits: a mask for misc. flags:
-//   1=bold, 2=underline, 4=inverse
+//   1=bold, 2=underline, 4=blink, 8=inverse, 16=invisible
 
 Terminal.prototype.refresh = function(start, end) {
   var x
@@ -1188,14 +1187,12 @@ Terminal.prototype.refresh = function(start, end) {
               out += 'visibility:hidden;';
             }
 
-            // if (bgColor !== 0x1ff) {
             if (bgColor !== 256) {
               out += 'background-color:'
                 + this.colors[bgColor]
                 + ';';
             }
 
-            // if (fgColor !== 0x1ff) {
             if (fgColor !== 257) {
               out += 'color:'
                 + this.colors[fgColor]
