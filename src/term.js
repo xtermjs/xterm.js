@@ -607,6 +607,8 @@ Terminal.fixIpad = function(document) {
   textarea.style.position = 'absolute';
   textarea.style.left = '-32000px';
   textarea.style.top = '-32000px';
+  textarea.style.width = '0px';
+  textarea.style.height = '0px';
   textarea.style.opacity = '0';
   textarea.style.backgroundColor = 'transparent';
   textarea.style.borderStyle = 'none';
@@ -4689,6 +4691,8 @@ Terminal.prototype.getCopyTextarea = function(text) {
     textarea.style.position = 'absolute';
     textarea.style.left = '-32000px';
     textarea.style.top = '-32000px';
+    textarea.style.width = '0px';
+    textarea.style.height = '0px';
     textarea.style.opacity = '0';
     textarea.style.backgroundColor = 'transparent';
     textarea.style.borderStyle = 'none';
@@ -4755,14 +4759,14 @@ Terminal.prototype.selectText = function(x1, x2, y1, y2) {
 
     for (y = oy1; y <= oy2; y++) {
       x = 0;
-      xl = this.cols;
+      xl = this.cols - 1;
       if (y === oy1) {
         x = ox1;
       }
       if (y === oy2) {
         xl = ox2;
       }
-      for (; x < this.cols; x++) {
+      for (; x <= xl; x++) {
         if (this.lines[y][x].old != null) {
           //this.lines[y][x][0] = this.lines[y][x].old;
           //delete this.lines[y][x].old;
@@ -4936,7 +4940,7 @@ Terminal.prototype.keySelect = function(ev, key) {
       this.scrollDisp((this.rows - 1) / 2 | 0);
     }
     if (this.visualMode) {
-      this.selectText(this.x, this.x, this.ydisp + this.y, y);
+      this.selectText(this.x, this.x, y, this.ydisp + this.y);
     }
     return;
   }
@@ -4960,7 +4964,7 @@ Terminal.prototype.keySelect = function(ev, key) {
     var y = this.ydisp + this.y;
     this.scrollDisp(this.rows - 1);
     if (this.visualMode) {
-      this.selectText(this.x, this.x, this.ydisp + this.y, y);
+      this.selectText(this.x, this.x, y, this.ydisp + this.y);
     }
     return;
   }
@@ -4982,7 +4986,7 @@ Terminal.prototype.keySelect = function(ev, key) {
       this.scrollDisp(-1);
     }
     if (this.visualMode) {
-      this.selectText(this.x, this.x, this.ydisp + this.y, y);
+      this.selectText(this.x, this.x, y, this.ydisp + this.y);
     } else {
       this.refresh(this.y, this.y + 1);
     }
@@ -5257,15 +5261,12 @@ Terminal.prototype.keySelect = function(ev, key) {
     if (key === 'g') {
       this.x = 0, this.y = 0;
       this.scrollDisp(-this.ydisp);
-      if (this.visualMode) {
-        this.selectText(this.x, ox, this.ydisp + this.y, oy + oyd);
-      }
     } else if (key === 'G') {
       this.x = 0, this.y = this.rows - 1;
       this.scrollDisp(this.ybase);
-      if (this.visualMode) {
-        this.selectText(ox, this.x, oy + oyd, this.ydisp + this.y);
-      }
+    }
+    if (this.visualMode) {
+      this.selectText(ox, this.x, oy + oyd, this.ydisp + this.y);
     }
     return;
   }
@@ -5368,14 +5369,8 @@ Terminal.prototype.keySelect = function(ev, key) {
     this.x = 0, this.y = y;
     this.scrollDisp(-this.ydisp + yb);
 
-    if (key === '{') {
-      if (this.visualMode) {
-        this.selectText(this.x, ox, this.ydisp + this.y, oy + oyd);
-      }
-    } else if (key === '}') {
-      if (this.visualMode) {
-        this.selectText(ox, this.x, oy + oyd, this.ydisp + this.y);
-      }
+    if (this.visualMode) {
+      this.selectText(ox, this.x, oy + oyd, this.ydisp + this.y);
     }
     return;
   }
