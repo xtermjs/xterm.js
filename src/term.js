@@ -393,11 +393,10 @@ Terminal.defaults = {
   popOnBell: false,
   scrollback: 1000,
   screenKeys: false,
-  // programFeatures: false,
-  // escapeKey: null,
   debug: false,
-  useStyle: false,
-  allowKeyPaste: false
+  useStyle: false
+  // programFeatures: false,
+  // focusKeys: false,
 };
 
 Terminal.options = {};
@@ -2535,9 +2534,6 @@ Terminal.prototype.keyDown = function(ev) {
       // a-z and space
       if (ev.ctrlKey) {
         if (ev.keyCode >= 65 && ev.keyCode <= 90) {
-          if (this.allowKeyPaste && ev.keyCode === 86) {
-            return;
-          }
           // Ctrl-A
           if (this.screenKeys) {
             if (!this.prefixMode && !this.selectMode && ev.keyCode === 65) {
