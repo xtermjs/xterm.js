@@ -1151,8 +1151,8 @@ Terminal.prototype.refresh = function(start, end) {
     , width
     , data
     , attr
-    , fgColor
-    , bgColor
+    , bg
+    , fg
     , flags
     , row
     , parent;
@@ -1204,8 +1204,8 @@ Terminal.prototype.refresh = function(start, end) {
           } else {
             out += '<span style="';
 
-            bgColor = data & 0x1ff;
-            fgColor = (data >> 9) & 0x1ff;
+            bg = data & 0x1ff;
+            fg = (data >> 9) & 0x1ff;
             flags = data >> 18;
 
             // bold
@@ -1214,7 +1214,7 @@ Terminal.prototype.refresh = function(start, end) {
                 out += 'font-weight:bold;';
               }
               // See: XTerm*boldColors
-              if (fgColor < 8) fgColor += 8;
+              if (fg < 8) fg += 8;
             }
 
             // underline
@@ -1234,11 +1234,11 @@ Terminal.prototype.refresh = function(start, end) {
 
             // inverse
             if (flags & 8) {
-              bgColor = (data >> 9) & 0x1ff;
-              fgColor = data & 0x1ff;
+              bg = (data >> 9) & 0x1ff;
+              fg = data & 0x1ff;
               // Should inverse just be before the
               // above boldColors effect instead?
-              if ((flags & 1) && fgColor < 8) fgColor += 8;
+              if ((flags & 1) && fg < 8) fg += 8;
             }
 
             // invisible
@@ -1246,22 +1246,22 @@ Terminal.prototype.refresh = function(start, end) {
               out += 'visibility:hidden;';
             }
 
-            if (bgColor !== 256) {
+            if (bg !== 256) {
               out += 'background-color:'
-                + this.colors[bgColor]
+                + this.colors[bg]
                 + ';';
             }
 
-            if (fgColor !== 257) {
+            if (fg !== 257) {
               out += 'color:'
-                + this.colors[fgColor]
+                + this.colors[fg]
                 + ';';
             }
 
             // out += '" class="'
-            //   + 'term-bg-color-' + (bgColor === 256 ? 'default' : bgColor)
+            //   + 'term-bg-color-' + (bg === 256 ? 'default' : bg)
             //   + ' '
-            //   + 'term-fg-color-' + (fgColor === 257 ? 'default' : fgColor)
+            //   + 'term-fg-color-' + (fg === 257 ? 'default' : fg)
             //   + '">';
 
             out += '">';
