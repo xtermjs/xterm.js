@@ -652,6 +652,23 @@ Terminal.insertStyle = function(document, bg, fg) {
     + '  background: ' + fg + ';\n'
     + '}\n';
 
+  // var out = '';
+  // each(Terminal.colors, function(color, i) {
+  //   if (i === 256) {
+  //     i = 'default';
+  //     out += '\n.term-bg-color-' + i + ' { background-color: ' + color + '; }';
+  //     return;
+  //   }
+  //   if (i === 257) {
+  //     i = 'default';
+  //     out += '\n.term-fg-color-' + i + ' { color: ' + color + '; }';
+  //     return;
+  //   }
+  //   out += '\n.term-bg-color-' + i + ' { background-color: ' + color + '; }';
+  //   out += '\n.term-fg-color-' + i + ' { color: ' + color + '; }';
+  // });
+  // style.innerHTML += out + '\n';
+
   head.insertBefore(style, head.firstChild);
 };
 
@@ -1246,6 +1263,12 @@ Terminal.prototype.refresh = function(start, end) {
               out += 'visibility:hidden;';
             }
 
+            // out += '" class="'
+            //   + 'term-bg-color-' + (bg === 256 ? 'default' : bg)
+            //   + ' '
+            //   + 'term-fg-color-' + (fg === 257 ? 'default' : fg)
+            //   + '">';
+
             if (bg !== 256) {
               out += 'background-color:'
                 + this.colors[bg]
@@ -1257,12 +1280,6 @@ Terminal.prototype.refresh = function(start, end) {
                 + this.colors[fg]
                 + ';';
             }
-
-            // out += '" class="'
-            //   + 'term-bg-color-' + (bg === 256 ? 'default' : bg)
-            //   + ' '
-            //   + 'term-fg-color-' + (fg === 257 ? 'default' : fg)
-            //   + '">';
 
             out += '">';
           }
