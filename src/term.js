@@ -1258,6 +1258,12 @@ Terminal.prototype.refresh = function(start, end) {
                 + ';';
             }
 
+            // out += '" class="'
+            //   + 'term-bg-color-' + (bgColor === 256 ? 'default' : bgColor)
+            //   + ' '
+            //   + 'term-fg-color-' + (fgColor === 257 ? 'default' : fgColor)
+            //   + '">';
+
             out += '">';
           }
         }
