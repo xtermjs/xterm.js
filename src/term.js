@@ -655,14 +655,10 @@ Terminal.insertStyle = function(document, bg, fg) {
   // var out = '';
   // each(Terminal.colors, function(color, i) {
   //   if (i === 256) {
-  //     i = 'default';
-  //     out += '\n.term-bg-color-' + i + ' { background-color: ' + color + '; }';
-  //     return;
+  //     out += '\n.term-bg-color-default { background-color: ' + color + '; }';
   //   }
   //   if (i === 257) {
-  //     i = 'default';
-  //     out += '\n.term-fg-color-' + i + ' { color: ' + color + '; }';
-  //     return;
+  //     out += '\n.term-fg-color-default { color: ' + color + '; }';
   //   }
   //   out += '\n.term-bg-color-' + i + ' { background-color: ' + color + '; }';
   //   out += '\n.term-fg-color-' + i + ' { color: ' + color + '; }';
@@ -1264,9 +1260,9 @@ Terminal.prototype.refresh = function(start, end) {
             }
 
             // out += '" class="'
-            //   + 'term-bg-color-' + (bg === 256 ? 'default' : bg)
+            //   + 'term-bg-color-' + bg
             //   + ' '
-            //   + 'term-fg-color-' + (fg === 257 ? 'default' : fg)
+            //   + 'term-fg-color-' + fg
             //   + '">';
 
             if (bg !== 256) {
