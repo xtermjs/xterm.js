@@ -5074,7 +5074,7 @@ Terminal.prototype.keySelect = function(ev, key) {
     return;
   }
 
-  if (key === 'q') {
+  if (key === 'q' || key === '\x1b') {
     if (this.visualMode) {
       this.leaveVisual();
     } else {
