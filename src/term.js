@@ -214,7 +214,7 @@ function Terminal(options) {
   this.searchMode = false;
   this.searchDown;
   this.entry = '';
-  this.entryPrefix = '';
+  this.entryPrefix = 'Search: ';
   this._real;
   this._selected;
   this._textarea;
@@ -4653,7 +4653,7 @@ Terminal.prototype.enterSearch = function(down) {
   this._real.preSearch = this.copyBuffer(this.lines);
   this._real.preSearchX = this.x;
   this._real.preSearchY = this.y;
-  this.entryPrefix = 'Search: ';
+
   var bottom = this.ydisp + this.rows - 1;
   for (var i = 0; i < this.entryPrefix.length; i++) {
     //this.lines[bottom][i][0] = (this.defAttr & ~0x1ff) | 4;
@@ -4663,8 +4663,10 @@ Terminal.prototype.enterSearch = function(down) {
       this.entryPrefix[i]
     ];
   }
+
   this.y = this.rows - 1;
   this.x = this.entryPrefix.length;
+
   this.refresh(this.rows - 1, this.rows - 1);
 };
 
@@ -5030,7 +5032,7 @@ Terminal.prototype.keySelect = function(ev, key) {
       this.x = 0;
     }
     if (this.visualMode) {
-      this.selectText(this.x, x, this.ydisp + this.y, this.ydisp + this.y);
+      this.selectText(x, this.x, this.ydisp + this.y, this.ydisp + this.y);
     } else {
       this.refresh(this.y, this.y);
     }
@@ -5169,7 +5171,7 @@ Terminal.prototype.keySelect = function(ev, key) {
     this.scrollDisp(-this.ydisp + yb);
 
     if (this.visualMode) {
-      this.selectText(this.x, ox, this.ydisp + this.y, oy + oyd);
+      this.selectText(ox, this.x, oy + oyd, this.ydisp + this.y);
     }
     return;
   }
@@ -5241,7 +5243,7 @@ Terminal.prototype.keySelect = function(ev, key) {
     }
 
     if (this.visualMode) {
-      this.selectText(this.x, ox, this.ydisp + this.y, this.ydisp + this.y);
+      this.selectText(ox, this.x, this.ydisp + this.y, this.ydisp + this.y);
     } else {
       this.refresh(this.y, this.y);
     }
