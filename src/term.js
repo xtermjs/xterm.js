@@ -4997,7 +4997,7 @@ Terminal.prototype.keySelect = function(ev, key) {
     return;
   }
 
-  if (key === 'k') {
+  if (key === 'k' || key === '\x1b[A') {
     var y = this.ydisp + this.y;
     this.y--;
     if (this.y < 0) {
@@ -5012,7 +5012,7 @@ Terminal.prototype.keySelect = function(ev, key) {
     return;
   }
 
-  if (key === 'j') {
+  if (key === 'j' || key === '\x1b[B') {
     var y = this.ydisp + this.y;
     this.y++;
     if (this.y >= this.rows) {
@@ -5027,7 +5027,7 @@ Terminal.prototype.keySelect = function(ev, key) {
     return;
   }
 
-  if (key === 'h') {
+  if (key === 'h' || key === '\x1b[D') {
     var x = this.x;
     this.x--;
     if (this.x < 0) {
@@ -5041,7 +5041,7 @@ Terminal.prototype.keySelect = function(ev, key) {
     return;
   }
 
-  if (key === 'l') {
+  if (key === 'l' || key === '\x1b[C') {
     var x = this.x;
     this.x++;
     if (this.x >= this.cols) {
