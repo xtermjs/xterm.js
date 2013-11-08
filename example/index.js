@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 /**
  * term.js
  * Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)
@@ -84,19 +86,21 @@ app.use(express.basicAuth(function(user, pass, next) {
 app.use(express.static(__dirname));
 app.use(terminal.middleware());
 
-server.listen(8080);
-
-server.on('connection', function(socket) {
-  var address = socket.remoteAddress;
-  if (address !== '127.0.0.1' && address !== '::1') {
-    try {
-      socket.destroy();
-    } catch (e) {
-      ;
+if (!~process.argv.indexOf('-n')) {
+  server.on('connection', function(socket) {
+    var address = socket.remoteAddress;
+    if (address !== '127.0.0.1' && address !== '::1') {
+      try {
+        socket.destroy();
+      } catch (e) {
+        ;
+      }
+      console.log('Attempted connection from %s. Refused.', address);
     }
-    console.log('Attempted connection from %s. Refused.', address);
-  }
-});
+  });
+}
+
+server.listen(8080);
 
 /**
  * Sockets
