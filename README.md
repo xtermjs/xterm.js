@@ -70,6 +70,12 @@ clipboard, simply select the text and type `Ctrl-A + Ctrl-C`, and
 
 For mac users: consider `Ctrl` to be `Command/Apple` above.
 
+### Contribution and License Agreement
+
+If you contribute code to marked, you are implicitly allowing your code to be
+distributed under the MIT license. You are also implicitly verifying that all
+code is your original work. `</legalese>`
+
 ## License
 
 Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)
