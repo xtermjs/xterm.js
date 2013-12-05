@@ -1902,12 +1902,16 @@ Terminal.prototype.write = function(data) {
 
           // CSI Pm m  Character Attributes (SGR).
           case 'm':
-            this.charAttributes(this.params);
+            if (!this.prefix) {
+              this.charAttributes(this.params);
+            }
             break;
 
           // CSI Ps n  Device Status Report (DSR).
           case 'n':
-            this.deviceStatus(this.params);
+            if (!this.prefix) {
+              this.deviceStatus(this.params);
+            }
             break;
 
           /**
