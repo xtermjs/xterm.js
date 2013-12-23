@@ -470,7 +470,7 @@ Terminal.prototype.initGlobal = function() {
 
   Terminal.bindCopy(document);
 
-  if (this.isIpad) {
+  if (this.isIpad || this.isIphone) {
     Terminal.fixIpad(document);
   }
 
@@ -692,6 +692,7 @@ Terminal.prototype.open = function(parent) {
   if (this.context.navigator && this.context.navigator.userAgent) {
     this.isMac = !!~this.context.navigator.userAgent.indexOf('Mac');
     this.isIpad = !!~this.context.navigator.userAgent.indexOf('iPad');
+    this.isIphone = !!~this.context.navigator.userAgent.indexOf('iPhone');
     this.isMSIE = !!~this.context.navigator.userAgent.indexOf('MSIE');
   }
 
@@ -729,7 +730,7 @@ Terminal.prototype.open = function(parent) {
   // to focus and paste behavior.
   on(this.element, 'focus', function() {
     self.focus();
-    if (self.isIpad) {
+    if (self.isIpad || self.isIphone) {
       Terminal._textarea.focus();
     }
   });
