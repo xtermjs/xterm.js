@@ -2937,6 +2937,8 @@ Terminal.prototype.reverseIndex = function() {
 
 // ESC c Full Reset (RIS).
 Terminal.prototype.reset = function() {
+  this.options.rows = this.rows;
+  this.options.cols = this.cols;
   Terminal.call(this, this.options);
   this.refresh(0, this.rows - 1);
 };
