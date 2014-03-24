@@ -363,6 +363,7 @@ Terminal.vcolors = (function() {
 
 Terminal.defaults = {
   colors: Terminal.colors,
+  theme: 'default',
   convertEol: false,
   termName: 'xterm',
   geometry: [80, 24],
@@ -372,7 +373,6 @@ Terminal.defaults = {
   scrollback: 1000,
   screenKeys: false,
   debug: false,
-  useStyle: false,
   cancelEvents: false
   // programFeatures: false,
   // focusKeys: false,
@@ -451,10 +451,6 @@ Terminal.prototype.initGlobal = function() {
 
   if (this.isIpad || this.isIphone) {
     Terminal.fixIpad(document);
-  }
-
-  if (this.useStyle) {
-    Terminal.insertStyle(document, this.colors[256], this.colors[257]);
   }
 };
 
@@ -604,52 +600,6 @@ Terminal.fixIpad = function(document) {
 };
 
 /**
- * Insert a default style
- */
-
-Terminal.insertStyle = function(document, bg, fg) {
-  var style = document.getElementById('term-style');
-  if (style) return;
-
-  var head = document.getElementsByTagName('head')[0];
-  if (!head) return;
-
-  var style = document.createElement('style');
-  style.id = 'term-style';
-
-  // textContent doesn't work well with IE for <style> elements.
-  style.innerHTML = ''
-    + '.terminal {\n'
-    + '  float: left;\n'
-    + '  border: ' + bg + ' solid 5px;\n'
-    + '  font-family: "DejaVu Sans Mono", "Liberation Mono", monospace;\n'
-    + '  font-size: 11px;\n'
-    + '  color: ' + fg + ';\n'
-    + '  background: ' + bg + ';\n'
-    + '}\n'
-    + '\n'
-    + '.terminal-cursor {\n'
-    + '  color: ' + bg + ';\n'
-    + '  background: ' + fg + ';\n'
-    + '}\n';
-
-  // var out = '';
-  // each(Terminal.colors, function(color, i) {
-  //   if (i === 256) {
-  //     out += '\n.term-bg-color-default { background-color: ' + color + '; }';
-  //   }
-  //   if (i === 257) {
-  //     out += '\n.term-fg-color-default { color: ' + color + '; }';
-  //   }
-  //   out += '\n.term-bg-color-' + i + ' { background-color: ' + color + '; }';
-  //   out += '\n.term-fg-color-' + i + ' { color: ' + color + '; }';
-  // });
-  // style.innerHTML += out + '\n';
-
-  head.insertBefore(style, head.firstChild);
-};
-
-/**
  * Open Terminal
  */
 
@@ -680,6 +630,7 @@ Terminal.prototype.open = function(parent) {
   // Create our main terminal element.
   this.element = this.document.createElement('div');
   this.element.className = 'terminal';
+  this.element.classList.add('xterm-theme-' + this.theme);
   this.element.setAttribute('tabindex', 0);
 
   // Create the lines for our terminal.
@@ -1194,7 +1145,7 @@ Terminal.prototype.refresh = function(start, end) {
           if (data === -1) {
             out += '<span class="reverse-video terminal-cursor">';
           } else {
-            out += '<span style="';
+            out += '<span class="';
 
             bg = data & 0x1ff;
             fg = (data >> 9) & 0x1ff;
@@ -1203,7 +1154,7 @@ Terminal.prototype.refresh = function(start, end) {
             // bold
             if (flags & 1) {
               if (!Terminal.brokenBold) {
-                out += 'font-weight:bold;';
+                out += ' xterm-bold ';
               }
               // See: XTerm*boldColors
               if (fg < 8) fg += 8;
@@ -1211,17 +1162,12 @@ Terminal.prototype.refresh = function(start, end) {
 
             // underline
             if (flags & 2) {
-              out += 'text-decoration:underline;';
+              out += ' xterm-underline ';
             }
 
             // blink
             if (flags & 4) {
-              if (flags & 2) {
-                out = out.slice(0, -1);
-                out += ' blink;';
-              } else {
-                out += 'text-decoration:blink;';
-              }
+                out += ' xterm-blink ';
             }
 
             // inverse
@@ -1235,7 +1181,7 @@ Terminal.prototype.refresh = function(start, end) {
 
             // invisible
             if (flags & 16) {
-              out += 'visibility:hidden;';
+              out += ' xterm-hidden ';
             }
 
             // out += '" class="'
@@ -1245,15 +1191,11 @@ Terminal.prototype.refresh = function(start, end) {
             //   + '">';
 
             if (bg !== 256) {
-              out += 'background-color:'
-                + this.colors[bg]
-                + ';';
+              out += ' xterm-bg-color-' + bg + ' ';
             }
 
             if (fg !== 257) {
-              out += 'color:'
-                + this.colors[fg]
-                + ';';
+              out += ' xterm-color-' + fg + ' ';
             }
 
             out += '">';
@@ -1287,7 +1229,7 @@ Terminal.prototype.refresh = function(start, end) {
     if (attr !== this.defAttr) {
       out += '</span>';
     }
-
+    
     this.children[y].innerHTML = out;
   }
 

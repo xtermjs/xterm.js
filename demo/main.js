@@ -1,5 +1,8 @@
 var terminalContainer = document.getElementById('terminal-container'),
-    term = new Terminal({geometry: [95, 37]});
+    term = new Terminal({
+      geometry: [95, 37],
+      theme: 'crazy'
+    });
 
 term.prompt = function () {
     term.write('>  ');
@@ -12,7 +15,6 @@ term.writeln('');
 term.prompt();
 
 term.on('key', function (key, ev) {
-    console.log(this, key, ev);
     if (ev.keyIdentifier == 'Enter') {
         term.writeln('');
         term.prompt();
