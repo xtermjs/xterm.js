@@ -9,9 +9,12 @@ h1 {
 }
 
 #terminal-container {
-    background-color: #111;
-    color: #fafafa;
     width: 960px;
     height: 600px;
     margin: 0 auto;
+}
+
+#terminal-container .terminal {
+    background-color: #111;
+    color: #fafafa;
 }

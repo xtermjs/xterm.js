@@ -702,10 +702,7 @@ Terminal.prototype.open = function(parent) {
   // Create our main terminal element.
   this.element = this.document.createElement('div');
   this.element.className = 'terminal';
-  this.element.style.outline = 'none';
   this.element.setAttribute('tabindex', 0);
-  this.element.style.backgroundColor = this.colors[256];
-  this.element.style.color = this.colors[257];
 
   // Create the lines for our terminal.
   this.children = [];
