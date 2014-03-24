@@ -1,0 +1,17 @@
+body {
+    font-family: helvetica, sans-serif, arial;
+    font-size: 1em;
+    color: #111;
+}
+
+h1 {
+    text-align: center;
+}
+
+#terminal-container {
+    background-color: #111;
+    color: #fafafa;
+    width: 960px;
+    height: 600px;
+    margin: 0 auto;
+}
