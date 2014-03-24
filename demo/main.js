@@ -1,11 +1,12 @@
 var terminalContainer = document.getElementById('terminal-container'),
     term = new Terminal({
-      geometry: [95, 37],
-      theme: 'crazy'
+      geometry: [95, 37]
     });
 
 term.prompt = function () {
-    term.write('>  ');
+  console.log('before promtp');
+  term.writeln('>  ');
+  console.log('after promtp');
 }
 
 term.open(terminalContainer);
@@ -15,12 +16,15 @@ term.writeln('');
 term.prompt();
 
 term.on('key', function (key, ev) {
-    if (ev.keyIdentifier == 'Enter') {
-        term.writeln('');
-        term.prompt();
-    } if (ev.keyCode == 8) {
-        term.write('\b \b');
-    }else {
-        term.write(key);
-    }
+  var printable = (!ev.altKey && !ev.altGraphKey && !ev.ctrlKey && !ev.metaKey);
+
+  if (ev.keyIdentifier == 'Enter') {
+    ev.preventDefault();
+    term.writeln('');
+    term.prompt();
+  } else if (ev.keyCode == 8) {
+    term.write('\b \b');
+  } else if (printable) {
+    term.write(key);
+  }
 });
