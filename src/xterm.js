@@ -1,5 +1,6 @@
 /**
- * term.js - an xterm emulator
+ * xterm.js: xterm, in the browser
+ * Copyright (c) 2014, sourceLair Limited (www.sourcelair.com (MIT License)
  * Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)
  * https://github.com/chjj/term.js
  *
