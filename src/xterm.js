@@ -137,6 +137,8 @@ function Terminal(options) {
   if (!(this instanceof Terminal)) {
     return new Terminal(arguments[0], arguments[1], arguments[2]);
   }
+  
+  self.cancel = Terminal.cancel;
 
   EventEmitter.call(this);
 
@@ -395,7 +397,8 @@ Terminal.defaults = {
   scrollback: 1000,
   screenKeys: false,
   debug: false,
-  useStyle: false
+  useStyle: false,
+  cancelEvents: false
   // programFeatures: false,
   // focusKeys: false,
 };
@@ -498,7 +501,7 @@ Terminal.bindPaste = function(document) {
     }
     // Not necessary. Do it anyway for good measure.
     term.element.contentEditable = 'inherit';
-    return cancel(ev);
+    return term.cancel(ev);
   });
 };
 
@@ -1079,7 +1082,7 @@ Terminal.prototype.bindMouse = function() {
     //if (self.vt200Mouse && !self.normalMouse) {
     if (self.vt200Mouse) {
       sendButton({ __proto__: ev, type: 'mouseup' });
-      return cancel(ev);
+      return self.cancel(ev);
     }
 
     // bind events
@@ -1091,11 +1094,11 @@ Terminal.prototype.bindMouse = function() {
         sendButton(ev);
         if (self.normalMouse) off(self.document, 'mousemove', sendMove);
         off(self.document, 'mouseup', up);
-        return cancel(ev);
+        return self.cancel(ev);
       });
     }
 
-    return cancel(ev);
+    return self.cancel(ev);
   });
 
   //if (self.normalMouse) {
@@ -1108,7 +1111,7 @@ Terminal.prototype.bindMouse = function() {
         || self.vt300Mouse
         || self.decLocator) return;
     sendButton(ev);
-    return cancel(ev);
+    return self.cancel(ev);
   });
 
   // allow mousewheel scrolling in
@@ -1121,7 +1124,7 @@ Terminal.prototype.bindMouse = function() {
     } else {
       self.scrollDisp(ev.wheelDeltaY > 0 ? -5 : 5);
     }
-    return cancel(ev);
+    return self.cancel(ev);
   });
 };
 
@@ -2446,7 +2449,7 @@ Terminal.prototype.keyDown = function(ev) {
       }
       if (ev.ctrlKey) {
         this.scrollDisp(-1);
-        return cancel(ev);
+        return this.cancel(ev);
       } else {
         key = '\x1b[A';
       }
@@ -2459,7 +2462,7 @@ Terminal.prototype.keyDown = function(ev) {
       }
       if (ev.ctrlKey) {
         this.scrollDisp(1);
-        return cancel(ev);
+        return this.cancel(ev);
       } else {
         key = '\x1b[B';
       }
@@ -2492,7 +2495,7 @@ Terminal.prototype.keyDown = function(ev) {
     case 33:
       if (ev.shiftKey) {
         this.scrollDisp(-(this.rows - 1));
-        return cancel(ev);
+        return this.cancel(ev);
       } else {
         key = '\x1b[5~';
       }
@@ -2501,7 +2504,7 @@ Terminal.prototype.keyDown = function(ev) {
     case 34:
       if (ev.shiftKey) {
         this.scrollDisp(this.rows - 1);
-        return cancel(ev);
+        return this.cancel(ev);
       } else {
         key = '\x1b[6~';
       }
@@ -2562,7 +2565,7 @@ Terminal.prototype.keyDown = function(ev) {
           if (this.screenKeys) {
             if (!this.prefixMode && !this.selectMode && ev.keyCode === 65) {
               this.enterPrefix();
-              return cancel(ev);
+              return this.cancel(ev);
             }
           }
           // Ctrl-V
@@ -2612,12 +2615,12 @@ Terminal.prototype.keyDown = function(ev) {
 
   if (this.prefixMode) {
     this.leavePrefix();
-    return cancel(ev);
+    return this.cancel(ev);
   }
 
   if (this.selectMode) {
     this.keySelect(ev, key);
-    return cancel(ev);
+    return this.cancel(ev);
   }
 
   this.emit('keydown', ev);
@@ -2626,7 +2629,7 @@ Terminal.prototype.keyDown = function(ev) {
   this.showCursor();
   this.handler(key);
 
-  return cancel(ev);
+  return this.cancel(ev);
 };
 
 Terminal.prototype.setgLevel = function(g) {
@@ -2644,7 +2647,7 @@ Terminal.prototype.setgCharset = function(g, charset) {
 Terminal.prototype.keyPress = function(ev) {
   var key;
 
-  cancel(ev);
+  this.cancel(ev);
 
   if (ev.charCode) {
     key = ev.charCode;
@@ -5616,9 +5619,15 @@ function off(el, type, handler, capture) {
 }
 
 function cancel(ev) {
-  if (ev.preventDefault) ev.preventDefault();
-  ev.returnValue = false;
-  if (ev.stopPropagation) ev.stopPropagation();
+  if (!this.cancelEvents) {
+    return;
+  }
+  if (ev.preventDefault) {
+      ev.preventDefault();
+  }
+  if (ev.stopPropagation) {
+      ev.stopPropagation();
+  }
   ev.cancelBubble = true;
   return false;
 }
