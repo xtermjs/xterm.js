@@ -12,9 +12,15 @@ h1 {
     width: 960px;
     height: 600px;
     margin: 0 auto;
+    padding: 2px;
 }
 
 #terminal-container .terminal {
     background-color: #111;
     color: #fafafa;
+    padding: 2px;
+}
+
+#terminal-container .terminal .terminal-cursor {
+    background-color: #fafafa;
 }

@@ -389,7 +389,7 @@ Terminal.defaults = {
   convertEol: false,
   termName: 'xterm',
   geometry: [80, 24],
-  cursorBlink: true,
+  cursorBlink: false,
   visualBell: false,
   popOnBell: false,
   scrollback: 1000,
