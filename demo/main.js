@@ -4,9 +4,7 @@ var terminalContainer = document.getElementById('terminal-container'),
     });
 
 term.prompt = function () {
-  console.log('before promtp');
-  term.writeln('>  ');
-  console.log('after promtp');
+  term.write('\r\n> ');
 }
 
 term.open(terminalContainer);
@@ -20,7 +18,6 @@ term.on('key', function (key, ev) {
 
   if (ev.keyIdentifier == 'Enter') {
     ev.preventDefault();
-    term.writeln('');
     term.prompt();
   } else if (ev.keyCode == 8) {
     term.write('\b \b');
