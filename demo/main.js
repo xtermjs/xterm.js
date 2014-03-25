@@ -1,13 +1,13 @@
 var terminalContainer = document.getElementById('terminal-container'),
-    term = new Terminal({
-      geometry: [95, 37]
-    });
+    term = new Terminal();
+
+term.open(terminalContainer);
+term.fit();
 
 term.prompt = function () {
   term.write('\r\n> ');
 }
 
-term.open(terminalContainer);
 term.writeln('Welcome to xterm.js');
 term.writeln('Just type some keys in the prompt below.');
 term.writeln('');
