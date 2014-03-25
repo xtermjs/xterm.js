@@ -1184,12 +1184,6 @@ Terminal.prototype.refresh = function(start, end) {
               out += ' xterm-hidden ';
             }
 
-            // out += '" class="'
-            //   + 'term-bg-color-' + bg
-            //   + ' '
-            //   + 'term-fg-color-' + fg
-            //   + '">';
-
             if (bg !== 256) {
               out += ' xterm-bg-color-' + bg + ' ';
             }
@@ -1233,7 +1227,11 @@ Terminal.prototype.refresh = function(start, end) {
     this.children[y].innerHTML = out;
   }
 
-  if (parent) parent.appendChild(this.element);
+  if (parent) {
+    parent.appendChild(this.element);
+  }
+  
+  this.emit('refresh', {element: this.element, start: start, end: end});
 };
 
 Terminal.prototype._cursorBlink = function() {
@@ -2710,6 +2708,7 @@ Terminal.prototype.resize = function(x, y) {
   // screen buffer. just set it
   // to null for now.
   this.normal = null;
+  
 };
 
 Terminal.prototype.updateRange = function(y) {
