@@ -2694,21 +2694,25 @@ Terminal.prototype.resize = function(x, y) {
   }
   this.rows = y;
 
-  // make sure the cursor stays on screen
-  if (this.y >= y) this.y = y - 1;
-  if (this.x >= x) this.x = x - 1;
+  /*
+  *  Make sure that the cursor stays on screen
+  */
+  if (this.y >= y) {
+    this.y = y - 1;
+  }
+  
+  if (this.x >= x) {
+    this.x = x - 1;
+  }
 
   this.scrollTop = 0;
   this.scrollBottom = y - 1;
 
   this.refresh(0, this.rows - 1);
 
-  // it's a real nightmare trying
-  // to resize the original
-  // screen buffer. just set it
-  // to null for now.
   this.normal = null;
   
+  this.emit('resize', {terminal: this, columns: x, rows: y});
 };
 
 Terminal.prototype.updateRange = function(y) {
