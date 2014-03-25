@@ -2731,7 +2731,7 @@ Terminal.prototype.resize = function(x, y) {
 Terminal.prototype.fit = function () {
   var container = this.element.parentElement,
       subjectRow = this.element.firstElementChild,
-      rows = parseInt(container.offsetHeight / subjectRow.offsetHeight),
+      rows = parseInt(container.scrollHeight / subjectRow.offsetHeight),
       characterWidth,
       cols;
   
@@ -2739,7 +2739,7 @@ Terminal.prototype.fit = function () {
   characterWidth = parseInt(subjectRow.offsetWidth / this.cols);
   subjectRow.style.display = '';
   
-  cols = parseInt(container.offsetWidth / characterWidth);
+  cols = parseInt(container.scrollWidth / characterWidth);
       
   this.resize(cols, rows);
 }
