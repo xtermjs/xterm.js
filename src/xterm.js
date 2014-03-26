@@ -392,6 +392,7 @@ each(keys(Terminal.defaults), function(key) {
 Terminal.focus = null;
 
 Terminal.prototype.focus = function() {
+  console.log(document.activeElement);
   if (Terminal.focus === this) return;
 
   if (Terminal.focus) {
@@ -401,15 +402,8 @@ Terminal.prototype.focus = function() {
   if (this.sendFocus) this.send('\x1b[I');
   this.showCursor();
 
-  // try {
-  //   this.element.focus();
-  // } catch (e) {
-  //   ;
-  // }
-
-  // this.emit('focus');
-
   Terminal.focus = this;
+  console.log(document.activeElement);
 };
 
 Terminal.prototype.blur = function() {
@@ -599,14 +593,27 @@ Terminal.fixIpad = function(document) {
   }, 1000);
 };
 
-/**
- * Open Terminal
+/*
+ * Insert the given row to the terminal or produce a new one
+ * if no row argument is passed. Return the inserted row.
  */
-
+Terminal.prototype.insertRow = function (row) {
+  if (typeof row != 'object') {
+    row = document.createElement('div');
+  }
+  
+  this.rowContainer.appendChild(row);
+  this.children.push(row);
+  
+  return row;
+}
+  
+  
+/*
+ * Open Terminal in the DOM
+ */
 Terminal.prototype.open = function(parent) {
-  var self = this
-    , i = 0
-    , div;
+  var self=this, i=0, div;
 
   this.parent = parent || this.parent;
 
@@ -614,12 +621,16 @@ Terminal.prototype.open = function(parent) {
     throw new Error('Terminal requires a parent element.');
   }
 
-  // Grab global elements.
+  /*
+  * Grab global elements
+  */
   this.context = this.parent.ownerDocument.defaultView;
   this.document = this.parent.ownerDocument;
   this.body = this.document.getElementsByTagName('body')[0];
 
-  // Parse user-agent strings.
+  /*
+  * Parse User-Agent
+  */
   if (this.context.navigator && this.context.navigator.userAgent) {
     this.isMac = !!~this.context.navigator.userAgent.indexOf('Mac');
     this.isIpad = !!~this.context.navigator.userAgent.indexOf('iPad');
@@ -627,18 +638,24 @@ Terminal.prototype.open = function(parent) {
     this.isMSIE = !!~this.context.navigator.userAgent.indexOf('MSIE');
   }
 
-  // Create our main terminal element.
+  /*
+  * Create main element container
+  */
   this.element = this.document.createElement('div');
-  this.element.className = 'terminal';
-  this.element.classList.add('xterm-theme-' + this.theme);
+  this.element.classList.add('terminal', 'xterm-theme-' + this.theme);
   this.element.setAttribute('tabindex', 0);
 
-  // Create the lines for our terminal.
+  /*
+  * Create the container that will hold the lines of the terminal and then
+  * produce the lines the lines.
+  */
+  this.rowContainer = document.createElement('div');
+  this.rowContainer.classList.add('xterm-rows');
+  this.element.appendChild(this.rowContainer);
   this.children = [];
+  
   for (; i < this.rows; i++) {
-    div = this.document.createElement('div');
-    this.element.appendChild(div);
-    this.children.push(div);
+    this.insertRow();
   }
   this.parent.appendChild(this.element);
 
@@ -1070,35 +1087,22 @@ Terminal.prototype.destroy = function() {
   //this.emit('close');
 };
 
-/**
+  
+/*
  * Rendering Engine
- */
-
-// In the screen buffer, each character
-// is stored as a an array with a character
-// and a 32-bit integer.
-// First value: a utf-16 character.
-// Second value:
-// Next 9 bits: background color (0-511).
-// Next 9 bits: foreground color (0-511).
-// Next 14 bits: a mask for misc. flags:
-//   1=bold, 2=underline, 4=blink, 8=inverse, 16=invisible
-
+ *
+ * In the screen buffer, each character
+ * is stored as a an array with a character
+ * and a 32-bit integer.
+ * First value: a utf-16 character.
+ * Second value:
+ * Next 9 bits: background color (0-511).
+ * Next 9 bits: foreground color (0-511).
+ * Next 14 bits: a mask for misc. flags:
+ *   1=bold, 2=underline, 4=blink, 8=inverse, 16=invisible
+*/
 Terminal.prototype.refresh = function(start, end) {
-  var x
-    , y
-    , i
-    , line
-    , out
-    , ch
-    , width
-    , data
-    , attr
-    , bg
-    , fg
-    , flags
-    , row
-    , parent;
+  var x, y, i, line, out, ch, width, data, attr, bg, fg, flags, row, parent;
 
   if (end - start >= this.rows / 2) {
     parent = this.element.parentNode;
@@ -2675,9 +2679,7 @@ Terminal.prototype.resize = function(x, y) {
         this.lines.push(this.blankLine());
       }
       if (this.children.length < y) {
-        line = this.document.createElement('div');
-        el.appendChild(line);
-        this.children.push(line);
+        this.insertRow();
       }
     }
   } else if (j > y) {
@@ -2730,7 +2732,7 @@ Terminal.prototype.resize = function(x, y) {
 */
 Terminal.prototype.fit = function () {
   var container = this.element.parentElement,
-      subjectRow = this.element.firstElementChild,
+      subjectRow = this.rowContainer.firstElementChild,
       rows = parseInt(container.scrollHeight / subjectRow.offsetHeight),
       characterWidth,
       cols;
@@ -4225,151 +4227,6 @@ Terminal.prototype.setAttrInRectangle = function(params) {
   this.updateRange(params[2]);
 };
 
-// CSI ? Pm s
-//   Save DEC Private Mode Values.  Ps values are the same as for
-//   DECSET.
-Terminal.prototype.savePrivateValues = function(params) {
-  ;
-};
-
-// CSI Ps ; Ps ; Ps t
-//   Window manipulation (from dtterm, as well as extensions).
-//   These controls may be disabled using the allowWindowOps
-//   resource.  Valid values for the first (and any additional
-//   parameters) are:
-//     Ps = 1  -> De-iconify window.
-//     Ps = 2  -> Iconify window.
-//     Ps = 3  ;  x ;  y -> Move window to [x, y].
-//     Ps = 4  ;  height ;  width -> Resize the xterm window to
-//     height and width in pixels.
-//     Ps = 5  -> Raise the xterm window to the front of the stack-
-//     ing order.
-//     Ps = 6  -> Lower the xterm window to the bottom of the
-//     stacking order.
-//     Ps = 7  -> Refresh the xterm window.
-//     Ps = 8  ;  height ;  width -> Resize the text area to
-//     [height;width] in characters.
-//     Ps = 9  ;  0  -> Restore maximized window.
-//     Ps = 9  ;  1  -> Maximize window (i.e., resize to screen
-//     size).
-//     Ps = 1 0  ;  0  -> Undo full-screen mode.
-//     Ps = 1 0  ;  1  -> Change to full-screen.
-//     Ps = 1 1  -> Report xterm window state.  If the xterm window
-//     is open (non-iconified), it returns CSI 1 t .  If the xterm
-//     window is iconified, it returns CSI 2 t .
-//     Ps = 1 3  -> Report xterm window position.  Result is CSI 3
-//     ; x ; y t
-//     Ps = 1 4  -> Report xterm window in pixels.  Result is CSI
-//     4  ;  height ;  width t
-//     Ps = 1 8  -> Report the size of the text area in characters.
-//     Result is CSI  8  ;  height ;  width t
-//     Ps = 1 9  -> Report the size of the screen in characters.
-//     Result is CSI  9  ;  height ;  width t
-//     Ps = 2 0  -> Report xterm window's icon label.  Result is
-//     OSC  L  label ST
-//     Ps = 2 1  -> Report xterm window's title.  Result is OSC  l
-//     label ST
-//     Ps = 2 2  ;  0  -> Save xterm icon and window title on
-//     stack.
-//     Ps = 2 2  ;  1  -> Save xterm icon title on stack.
-//     Ps = 2 2  ;  2  -> Save xterm window title on stack.
-//     Ps = 2 3  ;  0  -> Restore xterm icon and window title from
-//     stack.
-//     Ps = 2 3  ;  1  -> Restore xterm icon title from stack.
-//     Ps = 2 3  ;  2  -> Restore xterm window title from stack.
-//     Ps >= 2 4  -> Resize to Ps lines (DECSLPP).
-Terminal.prototype.manipulateWindow = function(params) {
-  ;
-};
-
-// CSI Pt; Pl; Pb; Pr; Ps$ t
-//   Reverse Attributes in Rectangular Area (DECRARA), VT400 and
-//   up.
-//     Pt; Pl; Pb; Pr denotes the rectangle.
-//     Ps denotes the attributes to reverse, i.e.,  1, 4, 5, 7.
-// NOTE: xterm doesn't enable this code by default.
-Terminal.prototype.reverseAttrInRectangle = function(params) {
-  ;
-};
-
-// CSI > Ps; Ps t
-//   Set one or more features of the title modes.  Each parameter
-//   enables a single feature.
-//     Ps = 0  -> Set window/icon labels using hexadecimal.
-//     Ps = 1  -> Query window/icon labels using hexadecimal.
-//     Ps = 2  -> Set window/icon labels using UTF-8.
-//     Ps = 3  -> Query window/icon labels using UTF-8.  (See dis-
-//     cussion of "Title Modes")
-Terminal.prototype.setTitleModeFeature = function(params) {
-  ;
-};
-
-// CSI Ps SP t
-//   Set warning-bell volume (DECSWBV, VT520).
-//     Ps = 0  or 1  -> off.
-//     Ps = 2 , 3  or 4  -> low.
-//     Ps = 5 , 6 , 7 , or 8  -> high.
-Terminal.prototype.setWarningBellVolume = function(params) {
-  ;
-};
-
-// CSI Ps SP u
-//   Set margin-bell volume (DECSMBV, VT520).
-//     Ps = 1  -> off.
-//     Ps = 2 , 3  or 4  -> low.
-//     Ps = 0 , 5 , 6 , 7 , or 8  -> high.
-Terminal.prototype.setMarginBellVolume = function(params) {
-  ;
-};
-
-// CSI Pt; Pl; Pb; Pr; Pp; Pt; Pl; Pp$ v
-//   Copy Rectangular Area (DECCRA, VT400 and up).
-//     Pt; Pl; Pb; Pr denotes the rectangle.
-//     Pp denotes the source page.
-//     Pt; Pl denotes the target location.
-//     Pp denotes the target page.
-// NOTE: xterm doesn't enable this code by default.
-Terminal.prototype.copyRectangle = function(params) {
-  ;
-};
-
-// CSI Pt ; Pl ; Pb ; Pr ' w
-//   Enable Filter Rectangle (DECEFR), VT420 and up.
-//   Parameters are [top;left;bottom;right].
-//   Defines the coordinates of a filter rectangle and activates
-//   it.  Anytime the locator is detected outside of the filter
-//   rectangle, an outside rectangle event is generated and the
-//   rectangle is disabled.  Filter rectangles are always treated
-//   as "one-shot" events.  Any parameters that are omitted default
-//   to the current locator position.  If all parameters are omit-
-//   ted, any locator motion will be reported.  DECELR always can-
-//   cels any prevous rectangle definition.
-Terminal.prototype.enableFilterRectangle = function(params) {
-  ;
-};
-
-// CSI Ps x  Request Terminal Parameters (DECREQTPARM).
-//   if Ps is a "0" (default) or "1", and xterm is emulating VT100,
-//   the control sequence elicits a response of the same form whose
-//   parameters describe the terminal:
-//     Ps -> the given Ps incremented by 2.
-//     Pn = 1  <- no parity.
-//     Pn = 1  <- eight bits.
-//     Pn = 1  <- 2  8  transmit 38.4k baud.
-//     Pn = 1  <- 2  8  receive 38.4k baud.
-//     Pn = 1  <- clock multiplier.
-//     Pn = 0  <- STP flags.
-Terminal.prototype.requestParameters = function(params) {
-  ;
-};
-
-// CSI Ps x  Select Attribute Change Extent (DECSACE).
-//     Ps = 0  -> from start to end position, wrapped.
-//     Ps = 1  -> from start to end position, wrapped.
-//     Ps = 2  -> rectangle (exact).
-Terminal.prototype.selectChangeExtent = function(params) {
-  ;
-};
 
 // CSI Pc; Pt; Pl; Pb; Pr$ x
 //   Fill Rectangular Area (DECFRA), VT420 and up.
@@ -4444,71 +4301,6 @@ Terminal.prototype.eraseRectangle = function(params) {
   this.updateRange(params[2]);
 };
 
-// CSI Pm ' {
-//   Select Locator Events (DECSLE).
-//   Valid values for the first (and any additional parameters)
-//   are:
-//     Ps = 0  -> only respond to explicit host requests (DECRQLP).
-//                (This is default).  It also cancels any filter
-//   rectangle.
-//     Ps = 1  -> report button down transitions.
-//     Ps = 2  -> do not report button down transitions.
-//     Ps = 3  -> report button up transitions.
-//     Ps = 4  -> do not report button up transitions.
-Terminal.prototype.setLocatorEvents = function(params) {
-  ;
-};
-
-// CSI Pt; Pl; Pb; Pr$ {
-//   Selective Erase Rectangular Area (DECSERA), VT400 and up.
-//     Pt; Pl; Pb; Pr denotes the rectangle.
-Terminal.prototype.selectiveEraseRectangle = function(params) {
-  ;
-};
-
-// CSI Ps ' |
-//   Request Locator Position (DECRQLP).
-//   Valid values for the parameter are:
-//     Ps = 0 , 1 or omitted -> transmit a single DECLRP locator
-//     report.
-
-//   If Locator Reporting has been enabled by a DECELR, xterm will
-//   respond with a DECLRP Locator Report.  This report is also
-//   generated on button up and down events if they have been
-//   enabled with a DECSLE, or when the locator is detected outside
-//   of a filter rectangle, if filter rectangles have been enabled
-//   with a DECEFR.
-
-//     -> CSI Pe ; Pb ; Pr ; Pc ; Pp &  w
-
-//   Parameters are [event;button;row;column;page].
-//   Valid values for the event:
-//     Pe = 0  -> locator unavailable - no other parameters sent.
-//     Pe = 1  -> request - xterm received a DECRQLP.
-//     Pe = 2  -> left button down.
-//     Pe = 3  -> left button up.
-//     Pe = 4  -> middle button down.
-//     Pe = 5  -> middle button up.
-//     Pe = 6  -> right button down.
-//     Pe = 7  -> right button up.
-//     Pe = 8  -> M4 button down.
-//     Pe = 9  -> M4 button up.
-//     Pe = 1 0  -> locator outside filter rectangle.
-//   ``button'' parameter is a bitmask indicating which buttons are
-//     pressed:
-//     Pb = 0  <- no buttons down.
-//     Pb & 1  <- right button down.
-//     Pb & 2  <- middle button down.
-//     Pb & 4  <- left button down.
-//     Pb & 8  <- M4 button down.
-//   ``row'' and ``column'' parameters are the coordinates of the
-//     locator position in the xterm window, encoded as ASCII deci-
-//     mal.
-//   The ``page'' parameter is not used by xterm, and will be omit-
-//   ted.
-Terminal.prototype.requestLocatorPosition = function(params) {
-  ;
-};
 
 // CSI P m SP }
 // Insert P s Column(s) (default = 1) (DECIC), VT420 and up.
