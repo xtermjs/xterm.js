@@ -115,17 +115,11 @@ EventEmitter.prototype.listeners = function(type) {
   return this._events[type] = this._events[type] || [];
 };
 
+
 /**
  * States
  */
-
-var normal = 0
-  , escaped = 1
-  , csi = 2
-  , osc = 3
-  , charset = 4
-  , dcs = 5
-  , ignore = 6;
+var normal = 0, escaped = 1, csi = 2, osc = 3, charset = 4, dcs = 5, ignore = 6;
 
 /**
  * Terminal
@@ -151,11 +145,12 @@ function Terminal(options) {
   }
 
   options = options || {};
-
-  each(keys(Terminal.defaults), function(key) {
+  
+  
+  Object.keys(Terminal.defaults).forEach(function(key) {
     if (options[key] == null) {
       options[key] = Terminal.options[key];
-      // Legacy:
+
       if (Terminal[key] !== Terminal.defaults[key]) {
         options[key] = Terminal[key];
       }
@@ -388,40 +383,37 @@ each(keys(Terminal.defaults), function(key) {
 /**
  * Focused Terminal
  */
-
-Terminal.focus = null;
-
 Terminal.prototype.focus = function() {
-  console.log(document.activeElement);
-  if (Terminal.focus === this) return;
+  if (Terminal.focus === this) {
+    return;
+  }
 
   if (Terminal.focus) {
     Terminal.focus.blur();
   }
 
-  if (this.sendFocus) this.send('\x1b[I');
+  if (this.sendFocus) {
+    this.send('\x1b[I');
+  }
   this.showCursor();
 
   Terminal.focus = this;
-  console.log(document.activeElement);
+  this.emit('focus', {terminal: this});
 };
 
 Terminal.prototype.blur = function() {
-  if (Terminal.focus !== this) return;
+  if (Terminal.focus !== this) {
+    return;
+  }
 
   this.cursorState = 0;
   this.refresh(this.y, this.y);
-  if (this.sendFocus) this.send('\x1b[O');
+  
+  if (this.sendFocus) {
+    this.send('\x1b[O');
+  }
 
-  // try {
-  //   this.element.blur();
-  // } catch (e) {
-  //   ;
-  // }
-
-  // this.emit('blur');
-
-  Terminal.focus = null;
+  this.emit('blur', {terminal: this});
 };
 
 /**
@@ -451,7 +443,6 @@ Terminal.prototype.initGlobal = function() {
 /**
  * Bind to paste event
  */
-
 Terminal.bindPaste = function(document) {
   // This seems to work well for ctrl-V and middle-click,
   // even without the contentEditable workaround.
@@ -470,10 +461,10 @@ Terminal.bindPaste = function(document) {
   });
 };
 
+  
 /**
  * Global Events for key handling
  */
-
 Terminal.bindKeys = function(document) {
   // We should only need to check `target === body` below,
   // but we can check everything for good measure.
@@ -521,10 +512,10 @@ Terminal.bindKeys = function(document) {
   });
 };
 
+
 /**
  * Copy Selection w/ Ctrl-C (Select Mode)
  */
-
 Terminal.bindCopy = function(document) {
   var window = document.defaultView;
 
@@ -566,32 +557,6 @@ Terminal.bindCopy = function(document) {
   });
 };
 
-/**
- * Fix iPad - no idea if this works
- */
-
-Terminal.fixIpad = function(document) {
-  var textarea = document.createElement('textarea');
-  textarea.style.position = 'absolute';
-  textarea.style.left = '-32000px';
-  textarea.style.top = '-32000px';
-  textarea.style.width = '0px';
-  textarea.style.height = '0px';
-  textarea.style.opacity = '0';
-  textarea.style.backgroundColor = 'transparent';
-  textarea.style.borderStyle = 'none';
-  textarea.style.outlineStyle = 'none';
-  textarea.autocapitalize='none';
-  textarea.autocorrect='off';
-
-  document.getElementsByTagName('body')[0].appendChild(textarea);
-
-  Terminal._textarea = textarea;
-
-  setTimeout(function() {
-    textarea.focus();
-  }, 1000);
-};
 
 /*
  * Insert the given row to the terminal or produce a new one
@@ -653,6 +618,17 @@ Terminal.prototype.open = function(parent) {
   this.rowContainer.classList.add('xterm-rows');
   this.element.appendChild(this.rowContainer);
   this.children = [];
+  
+  /*
+  * Create the container that will hold helpers like the textarea for
+  * capturing DOM Events. Then produce the helpers.
+  */
+  this.helperContainer = document.createElement('div');
+  this.helperContainer.classList.add('xterm-helpers');
+  this.element.appendChild(this.helperContainer);
+  this.textarea = document.createElement('div');
+  this.textarea.classList.add('xterm-helper-textarea');
+  this.helperContainer.appendChild(this.textarea);
   
   for (; i < this.rows; i++) {
     this.insertRow();
