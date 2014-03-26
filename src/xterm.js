@@ -384,20 +384,17 @@ each(keys(Terminal.defaults), function(key) {
  * Focused Terminal
  */
 Terminal.prototype.focus = function() {
-  if (Terminal.focus === this) {
+  if (document.activeElement === this.textarea) {
     return;
-  }
-
-  if (Terminal.focus) {
-    Terminal.focus.blur();
   }
 
   if (this.sendFocus) {
     this.send('\x1b[I');
   }
+  
   this.showCursor();
+  this.textarea.focus();
 
-  Terminal.focus = this;
   this.emit('focus', {terminal: this});
 };
 
@@ -417,130 +414,63 @@ Terminal.prototype.blur = function() {
 };
 
 /**
- * Initialize global behavior
+ * Initialize default behavior
  */
 
 Terminal.prototype.initGlobal = function() {
-  var document = this.document;
-
-  Terminal._boundDocs = Terminal._boundDocs || [];
-  if (~indexOf(Terminal._boundDocs, document)) {
-    return;
-  }
-  Terminal._boundDocs.push(document);
-
-  Terminal.bindPaste(document);
-
-  Terminal.bindKeys(document);
-
-  Terminal.bindCopy(document);
-
-  if (this.isIpad || this.isIphone) {
-    Terminal.fixIpad(document);
-  }
+  Terminal.bindPaste(this);
+  Terminal.bindKeys(this);
+  Terminal.bindCopy(this);
 };
 
 /**
  * Bind to paste event
  */
-Terminal.bindPaste = function(document) {
-  // This seems to work well for ctrl-V and middle-click,
-  // even without the contentEditable workaround.
-  var window = document.defaultView;
-  on(window, 'paste', function(ev) {
-    var term = Terminal.focus;
-    if (!term) return;
+Terminal.bindPaste = function(term) {
+  on([term.textarea, term.element], 'paste', function(ev) {
     if (ev.clipboardData) {
       term.send(ev.clipboardData.getData('text/plain'));
     } else if (term.context.clipboardData) {
       term.send(term.context.clipboardData.getData('Text'));
     }
-    // Not necessary. Do it anyway for good measure.
-    term.element.contentEditable = 'inherit';
+    term.textarea.value = '';
     return term.cancel(ev);
   });
 };
 
   
-/**
- * Global Events for key handling
+/*
+ * Apply key handling to the terminal's textarea
  */
-Terminal.bindKeys = function(document) {
-  // We should only need to check `target === body` below,
-  // but we can check everything for good measure.
-  on(document, 'keydown', function(ev) {
-    if (!Terminal.focus) return;
-    var target = ev.target || ev.srcElement;
-    if (!target) return;
-    if (target === Terminal.focus.element
-        || target === Terminal.focus.context
-        || target === Terminal.focus.document
-        || target === Terminal.focus.body
-        || target === Terminal._textarea
-        || target === Terminal.focus.parent) {
-      return Terminal.focus.keyDown(ev);
-    }
+Terminal.bindKeys = function(term) {
+  on(term.textarea, 'keydown', function(ev) {
+    term.keyDown(ev);
   }, true);
 
-  on(document, 'keypress', function(ev) {
-    if (!Terminal.focus) return;
-    var target = ev.target || ev.srcElement;
-    if (!target) return;
-    if (target === Terminal.focus.element
-        || target === Terminal.focus.context
-        || target === Terminal.focus.document
-        || target === Terminal.focus.body
-        || target === Terminal._textarea
-        || target === Terminal.focus.parent) {
-      return Terminal.focus.keyPress(ev);
-    }
+  on(term.textarea, 'keypress', function(ev) {
+    term.keyPress(ev);
+    
+    /*
+    *  Truncate the textarea's value, since it is not needed
+    */
+    this.value = '';
   }, true);
 
-  // If we click somewhere other than a
-  // terminal, unfocus the terminal.
-  on(document, 'mousedown', function(ev) {
-    if (!Terminal.focus) return;
-
-    var el = ev.target || ev.srcElement;
-    if (!el) return;
-
-    do {
-      if (el === Terminal.focus.element) return;
-    } while (el = el.parentNode);
-
-    Terminal.focus.blur();
+  /*
+  *  When mousedown happens on the terminal element,
+  *  focus on its textarea
+  */
+  on(term.element, 'mouseup', function(ev) {
+    term.focus();
   });
 };
 
 
-/**
- * Copy Selection w/ Ctrl-C (Select Mode)
+/*
+ * Bind copy event
  */
-Terminal.bindCopy = function(document) {
-  var window = document.defaultView;
-
-  // if (!('onbeforecopy' in document)) {
-  //   // Copies to *only* the clipboard.
-  //   on(window, 'copy', function fn(ev) {
-  //     var term = Terminal.focus;
-  //     if (!term) return;
-  //     if (!term._selected) return;
-  //     var text = term.grabText(
-  //       term._selected.x1, term._selected.x2,
-  //       term._selected.y1, term._selected.y2);
-  //     term.emit('copy', text);
-  //     ev.clipboardData.setData('text/plain', text);
-  //   });
-  //   return;
-  // }
-
-  // Copies to primary selection *and* clipboard.
-  // NOTE: This may work better on capture phase,
-  // or using the `beforecopy` event.
-  on(window, 'copy', function(ev) {
-    var term = Terminal.focus;
-    if (!term) return;
-    if (!term._selected) return;
+Terminal.bindCopy = function(term) {
+  on(term.element, 'copy', function(ev) {
     var textarea = term.getCopyTextarea();
     var text = term.grabText(
       term._selected.x1, term._selected.x2,
@@ -551,7 +481,6 @@ Terminal.bindCopy = function(document) {
     textarea.value = text;
     textarea.setSelectionRange(0, text.length);
     setTimeout(function() {
-      term.element.focus();
       term.focus();
     }, 1);
   });
@@ -607,7 +536,7 @@ Terminal.prototype.open = function(parent) {
   * Create main element container
   */
   this.element = this.document.createElement('div');
-  this.element.classList.add('terminal', 'xterm-theme-' + this.theme);
+  this.element.classList.add('terminal', 'xterm', 'xterm-theme-' + this.theme);
   this.element.setAttribute('tabindex', 0);
 
   /*
@@ -626,7 +555,7 @@ Terminal.prototype.open = function(parent) {
   this.helperContainer = document.createElement('div');
   this.helperContainer.classList.add('xterm-helpers');
   this.element.appendChild(this.helperContainer);
-  this.textarea = document.createElement('div');
+  this.textarea = document.createElement('textarea');
   this.textarea.classList.add('xterm-helper-textarea');
   this.helperContainer.appendChild(this.textarea);
   
@@ -5328,7 +5257,12 @@ Terminal.charsets.ISOLatin = null; // /A
  */
 
 function on(el, type, handler, capture) {
-  el.addEventListener(type, handler, capture || false);
+  if (!Array.isArray(el)) {
+    el = [el];
+  }
+  el.forEach(function (element) {
+    element.addEventListener(type, handler, capture || false);
+  });
 }
 
 function off(el, type, handler, capture) {

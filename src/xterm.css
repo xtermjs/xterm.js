@@ -35,15 +35,22 @@
 *  Default style for xterm.js
 */
 
-.terminal {
+.xterm {
     background-color: #000;
     color: #fff;
     outline: none;
     font-family: courier-new, courier, monospace;
 }
 
-.terminal .terminal-cursor {
+.xterm .terminal-cursor {
     background-color: #fff;
+}
+
+.xterm .xterm-helper-textarea {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    z-index: -10;
 }
 
 /*
