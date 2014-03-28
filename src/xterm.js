@@ -206,8 +206,6 @@ function Terminal(options) {
   this.normal = null;
 
   // select modes
-  this.prefixMode = false;
-  this.selectMode = false;
   this.visualMode = false;
   this.searchMode = false;
   this.searchDown;
@@ -471,6 +469,7 @@ Terminal.bindKeys = function(term) {
  */
 Terminal.bindCopy = function(term) {
   on(term.element, 'copy', function(ev) {
+    return; //temporary
     var textarea = term.getCopyTextarea();
     var text = term.grabText(
       term._selected.x1, term._selected.x2,
@@ -1030,7 +1029,7 @@ Terminal.prototype.refresh = function(start, end) {
 
     if (y === this.y
         && this.cursorState
-        && (this.ydisp === this.ybase || this.selectMode)
+        && (this.ydisp === this.ybase)
         && !this.cursorHidden) {
       x = this.x;
     } else {
@@ -1227,11 +1226,7 @@ Terminal.prototype.scrollDisp = function(disp) {
 };
 
 Terminal.prototype.write = function(data) {
-  var l = data.length
-    , i = 0
-    , j
-    , cs
-    , ch;
+  var l = data.length, i = 0, j, cs, ch;
 
   this.refreshStart = this.y;
   this.refreshEnd = this.y;
@@ -1241,19 +1236,11 @@ Terminal.prototype.write = function(data) {
     this.maxRange();
   }
 
-  // this.log(JSON.stringify(data.replace(/\x1b/g, '^[')));
-
   for (; i < l; i++) {
     ch = data[i];
     switch (this.state) {
       case normal:
         switch (ch) {
-          // '\0'
-          // case '\0':
-          // case '\200':
-          //   break;
-
-          // '\a'
           case '\x07':
             this.bell();
             break;
@@ -1265,9 +1252,6 @@ Terminal.prototype.write = function(data) {
             if (this.convertEol) {
               this.x = 0;
             }
-            // TODO: Implement eat_newline_glitch.
-            // if (this.realX >= this.cols) break;
-            // this.realX = 0;
             this.y++;
             if (this.y > this.scrollBottom) {
               this.y--;
@@ -2220,8 +2204,7 @@ Terminal.prototype.writeln = function(data) {
 // Key Resources:
 // https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
 Terminal.prototype.keyDown = function(ev) {
-  var self = this
-    , key;
+  var self = this, key;
 
   switch (ev.keyCode) {
     // backspace
@@ -2385,27 +2368,6 @@ Terminal.prototype.keyDown = function(ev) {
       // a-z and space
       if (ev.ctrlKey) {
         if (ev.keyCode >= 65 && ev.keyCode <= 90) {
-          // Ctrl-A
-          if (this.screenKeys) {
-            if (!this.prefixMode && !this.selectMode && ev.keyCode === 65) {
-              this.enterPrefix();
-              return this.cancel(ev);
-            }
-          }
-          // Ctrl-V
-          if (this.prefixMode && ev.keyCode === 86) {
-            this.leavePrefix();
-            return;
-          }
-          // Ctrl-C
-          if ((this.prefixMode || this.selectMode) && ev.keyCode === 67) {
-            if (this.visualMode) {
-              setTimeout(function() {
-                self.leaveVisual();
-              }, 1);
-            }
-            return;
-          }
           key = String.fromCharCode(ev.keyCode - 64);
         } else if (ev.keyCode === 32) {
           // NUL
@@ -2437,20 +2399,11 @@ Terminal.prototype.keyDown = function(ev) {
 
   if (!key) return true;
 
-  if (this.prefixMode) {
-    this.leavePrefix();
-    return this.cancel(ev);
-  }
-
-  if (this.selectMode) {
-    this.keySelect(ev, key);
-    return this.cancel(ev);
-  }
-
   this.emit('keydown', ev);
   this.emit('key', key, ev);
 
-  this.showCursor();
+  this.showCursor();  
+  console.log('keydown:beforehandler', key, ev);
   this.handler(key);
 
   return this.cancel(ev);
@@ -2484,19 +2437,10 @@ Terminal.prototype.keyPress = function(ev) {
   }
 
   if (!key || ev.ctrlKey || ev.altKey || ev.metaKey) return false;
+  
+  console.log('keypress', key, ev);
 
   key = String.fromCharCode(key);
-
-  if (this.prefixMode) {
-    this.leavePrefix();
-    this.keyPrefix(ev, key);
-    return false;
-  }
-
-  if (this.selectMode) {
-    this.keySelect(ev, key);
-    return false;
-  }
 
   this.emit('keypress', key, ev);
   this.emit('key', key, ev);
@@ -4246,47 +4190,8 @@ Terminal.prototype.deleteColumns = function() {
 };
 
 /**
- * Prefix/Select/Visual/Search Modes
+ * Visual/Search Modes
  */
-
-Terminal.prototype.enterPrefix = function() {
-  this.prefixMode = true;
-};
-
-Terminal.prototype.leavePrefix = function() {
-  this.prefixMode = false;
-};
-
-Terminal.prototype.enterSelect = function() {
-  this._real = {
-    x: this.x,
-    y: this.y,
-    ydisp: this.ydisp,
-    ybase: this.ybase,
-    cursorHidden: this.cursorHidden,
-    lines: this.copyBuffer(this.lines),
-    write: this.write
-  };
-  this.write = function() {};
-  this.selectMode = true;
-  this.visualMode = false;
-  this.cursorHidden = false;
-  this.refresh(this.y, this.y);
-};
-
-Terminal.prototype.leaveSelect = function() {
-  this.x = this._real.x;
-  this.y = this._real.y;
-  this.ydisp = this._real.ydisp;
-  this.ybase = this._real.ybase;
-  this.cursorHidden = this._real.cursorHidden;
-  this.lines = this._real.lines;
-  this.write = this._real.write;
-  delete this._real;
-  this.selectMode = false;
-  this.visualMode = false;
-  this.refresh(0, this.rows - 1);
-};
 
 Terminal.prototype.enterVisual = function() {
   this._real.preVisual = this.copyBuffer(this.lines);
