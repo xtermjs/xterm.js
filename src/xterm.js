@@ -205,16 +205,6 @@ function Terminal(options) {
   this.wraparoundMode = false;
   this.normal = null;
 
-  // select modes
-  this.visualMode = false;
-  this.searchMode = false;
-  this.searchDown;
-  this.entry = '';
-  this.entryPrefix = 'Search: ';
-  this._real;
-  this._selected;
-  this._textarea;
-
   // charset
   this.charset = null;
   this.gcharset = null;
@@ -438,9 +428,25 @@ Terminal.bindPaste = function(term) {
 
   
 /*
- * Apply key handling to the terminal's textarea
+ * Apply key handling to the terminal
  */
 Terminal.bindKeys = function(term) {
+  on(term.element, 'keydown', function(ev) {
+    if (document.activeElement != this) {
+      return;
+    }
+    term.keyDown(ev);
+  }, true);
+
+  on(term.element, 'keypress', function(ev) {
+    if (document.activeElement != this) {
+      return;
+    }
+    term.keyPress(ev);
+  }, true);
+  
+  on(term.element, 'keyup', term.focus.bind(term));
+
   on(term.textarea, 'keydown', function(ev) {
     term.keyDown(ev);
   }, true);
@@ -449,18 +455,10 @@ Terminal.bindKeys = function(term) {
     term.keyPress(ev);
     
     /*
-    *  Truncate the textarea's value, since it is not needed
+    * Truncate the textarea's value, since it is not needed
     */
     this.value = '';
   }, true);
-
-  /*
-  *  When mousedown happens on the terminal element,
-  *  focus on its textarea
-  */
-  on(term.element, 'mouseup', function(ev) {
-    term.focus();
-  });
 };
 
 
@@ -470,18 +468,6 @@ Terminal.bindKeys = function(term) {
 Terminal.bindCopy = function(term) {
   on(term.element, 'copy', function(ev) {
     return; //temporary
-    var textarea = term.getCopyTextarea();
-    var text = term.grabText(
-      term._selected.x1, term._selected.x2,
-      term._selected.y1, term._selected.y2);
-    term.emit('copy', text);
-    textarea.focus();
-    textarea.textContent = text;
-    textarea.value = text;
-    textarea.setSelectionRange(0, text.length);
-    setTimeout(function() {
-      term.focus();
-    }, 1);
   });
 };
 
@@ -576,47 +562,14 @@ Terminal.prototype.open = function(parent) {
   // Start blinking the cursor.
   this.startBlink();
 
-  // Bind to DOM events related
-  // to focus and paste behavior.
-  on(this.element, 'focus', function() {
-    self.focus();
-    if (self.isIpad || self.isIphone) {
-      Terminal._textarea.focus();
+  on(this.element, 'mouseup', function() {
+    var selection = document.getSelection();
+    if (selection.type == 'Range') {
+      console.log(selection);
+    } else {
+      self.focus();
     }
   });
-
-  // This causes slightly funky behavior.
-  // on(this.element, 'blur', function() {
-  //   self.blur();
-  // });
-
-  on(this.element, 'mousedown', function() {
-    self.focus();
-  });
-
-  // Clickable paste workaround, using contentEditable.
-  // This probably shouldn't work,
-  // ... but it does. Firefox's paste
-  // event seems to only work for textareas?
-  on(this.element, 'mousedown', function(ev) {
-    var button = ev.button != null
-      ? +ev.button
-      : ev.which != null
-        ? ev.which - 1
-        : null;
-
-    // Does IE9 do this?
-    if (self.isMSIE) {
-      button = button === 1 ? 0 : button === 4 ? 1 : button;
-    }
-
-    if (button !== 2) return;
-
-    self.element.contentEditable = 'true';
-    setTimeout(function() {
-      self.element.contentEditable = 'inherit'; // 'false';
-    }, 1);
-  }, true);
 
   // Listen for mouse events and translate
   // them into terminal mouse protocols.
@@ -628,13 +581,7 @@ Terminal.prototype.open = function(parent) {
     Terminal.brokenBold = isBoldBroken(this.document);
   }
 
-  // this.emit('open');
-
-  // This can be useful for pasting,
-  // as well as the iPad fix.
-  setTimeout(function() {
-    self.element.focus();
-  }, 100);
+  this.emit('open');
 };
 
 // XTerm mouse events
@@ -4189,62 +4136,6 @@ Terminal.prototype.deleteColumns = function() {
   this.maxRange();
 };
 
-/**
- * Visual/Search Modes
- */
-
-Terminal.prototype.enterVisual = function() {
-  this._real.preVisual = this.copyBuffer(this.lines);
-  this.selectText(this.x, this.x, this.ydisp + this.y, this.ydisp + this.y);
-  this.visualMode = true;
-};
-
-Terminal.prototype.leaveVisual = function() {
-  this.lines = this._real.preVisual;
-  delete this._real.preVisual;
-  delete this._selected;
-  this.visualMode = false;
-  this.refresh(0, this.rows - 1);
-};
-
-Terminal.prototype.enterSearch = function(down) {
-  this.entry = '';
-  this.searchMode = true;
-  this.searchDown = down;
-  this._real.preSearch = this.copyBuffer(this.lines);
-  this._real.preSearchX = this.x;
-  this._real.preSearchY = this.y;
-
-  var bottom = this.ydisp + this.rows - 1;
-  for (var i = 0; i < this.entryPrefix.length; i++) {
-    //this.lines[bottom][i][0] = (this.defAttr & ~0x1ff) | 4;
-    //this.lines[bottom][i][1] = this.entryPrefix[i];
-    this.lines[bottom][i] = [
-      (this.defAttr & ~0x1ff) | 4,
-      this.entryPrefix[i]
-    ];
-  }
-
-  this.y = this.rows - 1;
-  this.x = this.entryPrefix.length;
-
-  this.refresh(this.rows - 1, this.rows - 1);
-};
-
-Terminal.prototype.leaveSearch = function() {
-  this.searchMode = false;
-
-  if (this._real.preSearch) {
-    this.lines = this._real.preSearch;
-    this.x = this._real.preSearchX;
-    this.y = this._real.preSearchY;
-    delete this._real.preSearch;
-    delete this._real.preSearchX;
-    delete this._real.preSearchY;
-  }
-
-  this.refresh(this.rows - 1, this.rows - 1);
-};
 
 Terminal.prototype.copyBuffer = function(lines) {
   var lines = lines || this.lines
@@ -4303,182 +4194,6 @@ Terminal.prototype.copyText = function(text) {
   }, 1);
 };
 
-Terminal.prototype.selectText = function(x1, x2, y1, y2) {
-  var ox1
-    , ox2
-    , oy1
-    , oy2
-    , tmp
-    , x
-    , y
-    , xl
-    , attr;
-
-  if (this._selected) {
-    ox1 = this._selected.x1;
-    ox2 = this._selected.x2;
-    oy1 = this._selected.y1;
-    oy2 = this._selected.y2;
-
-    if (oy2 < oy1) {
-      tmp = ox2;
-      ox2 = ox1;
-      ox1 = tmp;
-      tmp = oy2;
-      oy2 = oy1;
-      oy1 = tmp;
-    }
-
-    if (ox2 < ox1 && oy1 === oy2) {
-      tmp = ox2;
-      ox2 = ox1;
-      ox1 = tmp;
-    }
-
-    for (y = oy1; y <= oy2; y++) {
-      x = 0;
-      xl = this.cols - 1;
-      if (y === oy1) {
-        x = ox1;
-      }
-      if (y === oy2) {
-        xl = ox2;
-      }
-      for (; x <= xl; x++) {
-        if (this.lines[y][x].old != null) {
-          //this.lines[y][x][0] = this.lines[y][x].old;
-          //delete this.lines[y][x].old;
-          attr = this.lines[y][x].old;
-          delete this.lines[y][x].old;
-          this.lines[y][x] = [attr, this.lines[y][x][1]];
-        }
-      }
-    }
-
-    y1 = this._selected.y1;
-    x1 = this._selected.x1;
-  }
-
-  y1 = Math.max(y1, 0);
-  y1 = Math.min(y1, this.ydisp + this.rows - 1);
-
-  y2 = Math.max(y2, 0);
-  y2 = Math.min(y2, this.ydisp + this.rows - 1);
-
-  this._selected = { x1: x1, x2: x2, y1: y1, y2: y2 };
-
-  if (y2 < y1) {
-    tmp = x2;
-    x2 = x1;
-    x1 = tmp;
-    tmp = y2;
-    y2 = y1;
-    y1 = tmp;
-  }
-
-  if (x2 < x1 && y1 === y2) {
-    tmp = x2;
-    x2 = x1;
-    x1 = tmp;
-  }
-
-  for (y = y1; y <= y2; y++) {
-    x = 0;
-    xl = this.cols - 1;
-    if (y === y1) {
-      x = x1;
-    }
-    if (y === y2) {
-      xl = x2;
-    }
-    for (; x <= xl; x++) {
-      //this.lines[y][x].old = this.lines[y][x][0];
-      //this.lines[y][x][0] &= ~0x1ff;
-      //this.lines[y][x][0] |= (0x1ff << 9) | 4;
-      attr = this.lines[y][x][0];
-      this.lines[y][x] = [
-        (attr & ~0x1ff) | ((0x1ff << 9) | 4),
-        this.lines[y][x][1]
-      ];
-      this.lines[y][x].old = attr;
-    }
-  }
-
-  y1 = y1 - this.ydisp;
-  y2 = y2 - this.ydisp;
-
-  y1 = Math.max(y1, 0);
-  y1 = Math.min(y1, this.rows - 1);
-
-  y2 = Math.max(y2, 0);
-  y2 = Math.min(y2, this.rows - 1);
-
-  //this.refresh(y1, y2);
-  this.refresh(0, this.rows - 1);
-};
-
-Terminal.prototype.grabText = function(x1, x2, y1, y2) {
-  var out = ''
-    , buf = ''
-    , ch
-    , x
-    , y
-    , xl
-    , tmp;
-
-  if (y2 < y1) {
-    tmp = x2;
-    x2 = x1;
-    x1 = tmp;
-    tmp = y2;
-    y2 = y1;
-    y1 = tmp;
-  }
-
-  if (x2 < x1 && y1 === y2) {
-    tmp = x2;
-    x2 = x1;
-    x1 = tmp;
-  }
-
-  for (y = y1; y <= y2; y++) {
-    x = 0;
-    xl = this.cols - 1;
-    if (y === y1) {
-      x = x1;
-    }
-    if (y === y2) {
-      xl = x2;
-    }
-    for (; x <= xl; x++) {
-      ch = this.lines[y][x][1];
-      if (ch === ' ') {
-        buf += ch;
-        continue;
-      }
-      if (buf) {
-        out += buf;
-        buf = '';
-      }
-      out += ch;
-      if (isWide(ch)) x++;
-    }
-    buf = '';
-    out += '\n';
-  }
-
-  // If we're not at the end of the
-  // line, don't add a newline.
-  for (x = x2, y = y2; x < this.cols; x++) {
-    if (this.lines[y][x][1] !== ' ') {
-      out = out.slice(0, -1);
-      break;
-    }
-  }
-
-  return out;
-};
-
 Terminal.prototype.keyPrefix = function(ev, key) {
   if (key === 'k' || key === '&') {
     this.destroy();
@@ -4496,17 +4211,11 @@ Terminal.prototype.keyPrefix = function(ev, key) {
     this.emit('request term previous');
   } else if (key === ':') {
     this.emit('request command mode');
-  } else if (key === '[') {
-    this.enterSelect();
   }
 };
 
 Terminal.prototype.keySelect = function(ev, key) {
   this.showCursor();
-
-  if (this.searchMode || key === 'n' || key === 'N') {
-    return this.keySearch(ev, key);
-  }
 
   if (key === '\x04') { // ctrl-d
     var y = this.ydisp + this.y;
@@ -4516,9 +4225,6 @@ Terminal.prototype.keySelect = function(ev, key) {
       this.refresh(0, this.rows - 1);
     } else {
       this.scrollDisp((this.rows - 1) / 2 | 0);
-    }
-    if (this.visualMode) {
-      this.selectText(this.x, this.x, y, this.ydisp + this.y);
     }
     return;
   }
@@ -4532,27 +4238,18 @@ Terminal.prototype.keySelect = function(ev, key) {
     } else {
       this.scrollDisp(-(this.rows - 1) / 2 | 0);
     }
-    if (this.visualMode) {
-      this.selectText(this.x, this.x, y, this.ydisp + this.y);
-    }
     return;
   }
 
   if (key === '\x06') { // ctrl-f
     var y = this.ydisp + this.y;
     this.scrollDisp(this.rows - 1);
-    if (this.visualMode) {
-      this.selectText(this.x, this.x, y, this.ydisp + this.y);
-    }
     return;
   }
 
   if (key === '\x02') { // ctrl-b
     var y = this.ydisp + this.y;
     this.scrollDisp(-(this.rows - 1));
-    if (this.visualMode) {
-      this.selectText(this.x, this.x, y, this.ydisp + this.y);
-    }
     return;
   }
 
@@ -4563,11 +4260,7 @@ Terminal.prototype.keySelect = function(ev, key) {
       this.y = 0;
       this.scrollDisp(-1);
     }
-    if (this.visualMode) {
-      this.selectText(this.x, this.x, y, this.ydisp + this.y);
-    } else {
-      this.refresh(this.y, this.y + 1);
-    }
+    this.refresh(this.y, this.y + 1);
     return;
   }
 
@@ -4578,11 +4271,7 @@ Terminal.prototype.keySelect = function(ev, key) {
       this.y = this.rows - 1;
       this.scrollDisp(1);
     }
-    if (this.visualMode) {
-      this.selectText(this.x, this.x, y, this.ydisp + this.y);
-    } else {
-      this.refresh(this.y - 1, this.y);
-    }
+    this.refresh(this.y - 1, this.y);
     return;
   }
 
@@ -4592,11 +4281,7 @@ Terminal.prototype.keySelect = function(ev, key) {
     if (this.x < 0) {
       this.x = 0;
     }
-    if (this.visualMode) {
-      this.selectText(x, this.x, this.ydisp + this.y, this.ydisp + this.y);
-    } else {
-      this.refresh(this.y, this.y);
-    }
+    this.refresh(this.y, this.y);
     return;
   }
 
@@ -4606,41 +4291,7 @@ Terminal.prototype.keySelect = function(ev, key) {
     if (this.x >= this.cols) {
       this.x = this.cols - 1;
     }
-    if (this.visualMode) {
-      this.selectText(x, this.x, this.ydisp + this.y, this.ydisp + this.y);
-    } else {
-      this.refresh(this.y, this.y);
-    }
-    return;
-  }
-
-  if (key === 'v' || key === ' ') {
-    if (!this.visualMode) {
-      this.enterVisual();
-    } else {
-      this.leaveVisual();
-    }
-    return;
-  }
-
-  if (key === 'y') {
-    if (this.visualMode) {
-      var text = this.grabText(
-        this._selected.x1, this._selected.x2,
-        this._selected.y1, this._selected.y2);
-      this.copyText(text);
-      this.leaveVisual();
-      // this.leaveSelect();
-    }
-    return;
-  }
-
-  if (key === 'q' || key === '\x1b') {
-    if (this.visualMode) {
-      this.leaveVisual();
-    } else {
-      this.leaveSelect();
-    }
+    this.refresh(this.y, this.y);
     return;
   }
 
@@ -4683,9 +4334,6 @@ Terminal.prototype.keySelect = function(ev, key) {
     this.x = x, this.y = y;
     this.scrollDisp(-this.ydisp + yb);
 
-    if (this.visualMode) {
-      this.selectText(ox, this.x, oy + oyd, this.ydisp + this.y);
-    }
     return;
   }
 
@@ -4731,9 +4379,6 @@ Terminal.prototype.keySelect = function(ev, key) {
     this.x = x, this.y = y;
     this.scrollDisp(-this.ydisp + yb);
 
-    if (this.visualMode) {
-      this.selectText(ox, this.x, oy + oyd, this.ydisp + this.y);
-    }
     return;
   }
 
@@ -4779,9 +4424,6 @@ Terminal.prototype.keySelect = function(ev, key) {
     this.x = x, this.y = y;
     this.scrollDisp(-this.ydisp + yb);
 
-    if (this.visualMode) {
-      this.selectText(ox, this.x, oy + oyd, this.ydisp + this.y);
-    }
     return;
   }
 
@@ -4803,11 +4445,7 @@ Terminal.prototype.keySelect = function(ev, key) {
       this.x = x;
     }
 
-    if (this.visualMode) {
-      this.selectText(ox, this.x, this.ydisp + this.y, this.ydisp + this.y);
-    } else {
-      this.refresh(this.y, this.y);
-    }
+    this.refresh(this.y, this.y);
     return;
   }
 
@@ -4816,19 +4454,11 @@ Terminal.prototype.keySelect = function(ev, key) {
     var line = this.lines[this.ydisp + this.y];
     var x = this.cols - 1;
     while (x >= 0) {
-      if (line[x][1] > ' ') {
-        if (this.visualMode && x < this.cols - 1) x++;
-        break;
-      }
       x--;
     }
     if (x < 0) x = 0;
     this.x = x;
-    if (this.visualMode) {
-      this.selectText(ox, this.x, this.ydisp + this.y, this.ydisp + this.y);
-    } else {
-      this.refresh(this.y, this.y);
-    }
+    this.refresh(this.y, this.y);
     return;
   }
 
@@ -4843,9 +4473,6 @@ Terminal.prototype.keySelect = function(ev, key) {
       this.x = 0, this.y = this.rows - 1;
       this.scrollDisp(this.ybase);
     }
-    if (this.visualMode) {
-      this.selectText(ox, this.x, oy + oyd, this.ydisp + this.y);
-    }
     return;
   }
 
@@ -4859,12 +4486,8 @@ Terminal.prototype.keySelect = function(ev, key) {
     } else if (key === 'L') {
       this.x = 0, this.y = this.rows - 1;
     }
-    if (this.visualMode) {
-      this.selectText(ox, this.x, this.ydisp + oy, this.ydisp + this.y);
-    } else {
-      this.refresh(oy, oy);
-      this.refresh(this.y, this.y);
-    }
+    this.refresh(oy, oy);
+    this.refresh(this.y, this.y);
     return;
   }
 
@@ -4947,148 +4570,6 @@ Terminal.prototype.keySelect = function(ev, key) {
     this.x = 0, this.y = y;
     this.scrollDisp(-this.ydisp + yb);
 
-    if (this.visualMode) {
-      this.selectText(ox, this.x, oy + oyd, this.ydisp + this.y);
-    }
-    return;
-  }
-
-  if (key === '/' || key === '?') {
-    if (!this.visualMode) {
-      this.enterSearch(key === '/');
-    }
-    return;
-  }
-
-  return false;
-};
-
-Terminal.prototype.keySearch = function(ev, key) {
-  if (key === '\x1b') {
-    this.leaveSearch();
-    return;
-  }
-
-  if (key === '\r' || (!this.searchMode && (key === 'n' || key === 'N'))) {
-    this.leaveSearch();
-
-    var entry = this.entry;
-
-    if (!entry) {
-      this.refresh(0, this.rows - 1);
-      return;
-    }
-
-    var ox = this.x;
-    var oy = this.y;
-    var oyd = this.ydisp;
-
-    var line;
-    var found = false;
-    var wrapped = false;
-    var x = this.x + 1;
-    var y = this.ydisp + this.y;
-    var yb, i;
-    var up = key === 'N'
-      ? this.searchDown
-      : !this.searchDown;
-
-    for (;;) {
-      line = this.lines[y];
-
-      while (x < this.cols) {
-        for (i = 0; i < entry.length; i++) {
-          if (x + i >= this.cols) break;
-          if (line[x + i][1] !== entry[i]) {
-            break;
-          } else if (line[x + i][1] === entry[i] && i === entry.length - 1) {
-            found = true;
-            break;
-          }
-        }
-        if (found) break;
-        x += i + 1;
-      }
-      if (found) break;
-
-      x = 0;
-
-      if (!up) {
-        y++;
-        if (y > this.ybase + this.rows - 1) {
-          if (wrapped) break;
-          // this.setMessage('Search wrapped. Continuing at TOP.');
-          wrapped = true;
-          y = 0;
-        }
-      } else {
-        y--;
-        if (y < 0) {
-          if (wrapped) break;
-          // this.setMessage('Search wrapped. Continuing at BOTTOM.');
-          wrapped = true;
-          y = this.ybase + this.rows - 1;
-        }
-      }
-    }
-
-    if (found) {
-      if (y - this.ybase < 0) {
-        yb = y;
-        y = 0;
-        if (yb > this.ybase) {
-          y = yb - this.ybase;
-          yb = this.ybase;
-        }
-      } else {
-        yb = this.ybase;
-        y -= this.ybase;
-      }
-
-      this.x = x, this.y = y;
-      this.scrollDisp(-this.ydisp + yb);
-
-      if (this.visualMode) {
-        this.selectText(ox, this.x, oy + oyd, this.ydisp + this.y);
-      }
-      return;
-    }
-
-    // this.setMessage("No matches found.");
-    this.refresh(0, this.rows - 1);
-
-    return;
-  }
-
-  if (key === '\b' || key === '\x7f') {
-    if (this.entry.length === 0) return;
-    var bottom = this.ydisp + this.rows - 1;
-    this.entry = this.entry.slice(0, -1);
-    var i = this.entryPrefix.length + this.entry.length;
-    //this.lines[bottom][i][1] = ' ';
-    this.lines[bottom][i] = [
-      this.lines[bottom][i][0],
-      ' '
-    ];
-    this.x--;
-    this.refresh(this.rows - 1, this.rows - 1);
-    this.refresh(this.y, this.y);
-    return;
-  }
-
-  if (key.length === 1 && key >= ' ' && key <= '~') {
-    var bottom = this.ydisp + this.rows - 1;
-    this.entry += key;
-    var i = this.entryPrefix.length + this.entry.length - 1;
-    //this.lines[bottom][i][0] = (this.defAttr & ~0x1ff) | 4;
-    //this.lines[bottom][i][1] = key;
-    this.lines[bottom][i] = [
-      (this.defAttr & ~0x1ff) | 4,
-      key
-    ];
-    this.x++;
-    this.refresh(this.rows - 1, this.rows - 1);
-    this.refresh(this.y, this.y);
     return;
   }
 
