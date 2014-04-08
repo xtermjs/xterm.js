@@ -2344,13 +2344,14 @@ Terminal.prototype.keyDown = function(ev) {
       break;
   }
 
-  if (!key) return true;
+  if (!key || (this.isMac && ev.metaKey)) {
+    return true;
+  }
 
   this.emit('keydown', ev);
   this.emit('key', key, ev);
 
   this.showCursor();  
-  console.log('keydown:beforehandler', key, ev);
   this.handler(key);
 
   return this.cancel(ev);
@@ -2383,9 +2384,9 @@ Terminal.prototype.keyPress = function(ev) {
     return false;
   }
 
-  if (!key || ev.ctrlKey || ev.altKey || ev.metaKey) return false;
-  
-  console.log('keypress', key, ev);
+  if (!key || ev.ctrlKey || ev.altKey || ev.metaKey) {
+    return false;
+  }
 
   key = String.fromCharCode(key);
 
