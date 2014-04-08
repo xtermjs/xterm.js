@@ -416,10 +416,12 @@ Terminal.prototype.initGlobal = function() {
  */
 Terminal.bindPaste = function(term) {
   on([term.textarea, term.element], 'paste', function(ev) {
+    ev.stopPropagation();
     if (ev.clipboardData) {
-      term.send(ev.clipboardData.getData('text/plain'));
-    } else if (term.context.clipboardData) {
-      term.send(term.context.clipboardData.getData('Text'));
+      var text = ev.clipboardData.getData('text/plain');
+      for (var i=0; i<text.length; i++) {
+        term.write(text[i]); 
+      }
     }
     term.textarea.value = '';
     return term.cancel(ev);
