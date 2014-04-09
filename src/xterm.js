@@ -419,9 +419,8 @@ Terminal.bindPaste = function(term) {
     ev.stopPropagation();
     if (ev.clipboardData) {
       var text = ev.clipboardData.getData('text/plain');
-      for (var i=0; i<text.length; i++) {
-        term.write(text[i]); 
-      }
+      term.write(text);
+      term.handler(text);
     }
     term.textarea.value = '';
     return term.cancel(ev);
