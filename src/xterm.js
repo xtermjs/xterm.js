@@ -416,7 +416,7 @@ Terminal.prototype.initGlobal = function() {
  */
 Terminal.bindPaste = function(term) {
   on([term.textarea, term.element], 'paste', function(ev) {
-    ev.stopPropagation[();
+    ev.stopPropagation();
     if (ev.clipboardData) {
       var text = ev.clipboardData.getData('text/plain');
       term.handler(text);
