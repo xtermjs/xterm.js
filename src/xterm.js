@@ -953,7 +953,7 @@ Terminal.prototype.destroy = function() {
  *   1=bold, 2=underline, 4=blink, 8=inverse, 16=invisible
 */
 Terminal.prototype.refresh = function(start, end) {
-  var x, y, i, line, out, ch, width, data, attr, bg, fg, flags, row, parent;
+  var x, y, i, line, out, ch, width, data, attr, bg, fg, flags, row, parent, focused = document.activeElement;
 
   if (end - start >= this.rows / 2) {
     parent = this.element.parentNode;
@@ -1086,6 +1086,10 @@ Terminal.prototype.refresh = function(start, end) {
     parent.appendChild(this.element);
   }
   
+  /*
+  *  Return focus to previously focused element
+  */
+  focused.focus();
   this.emit('refresh', {element: this.element, start: start, end: end});
 };
 
