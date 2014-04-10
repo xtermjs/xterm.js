@@ -49,6 +49,7 @@
 
 .xterm .xterm-helpers {
   position: absolute;
+  top: 0;
 }
 
 .xterm .xterm-helper-textarea {
