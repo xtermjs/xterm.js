@@ -568,9 +568,7 @@ Terminal.prototype.open = function(parent) {
 
   on(this.element, 'mouseup', function() {
     var selection = document.getSelection();
-    if (selection.type == 'Range') {
-      console.log(selection);
-    } else {
+    if (selection.type != 'Range') {
       self.focus();
     }
   });
@@ -2361,7 +2359,6 @@ Terminal.prototype.keyDown = function(ev) {
 
   this.emit('keydown', ev);
   this.emit('key', key, ev);
-  console.log('keydown');
   this.showCursor();  
   this.handler(key);
 
@@ -2403,7 +2400,6 @@ Terminal.prototype.keyPress = function(ev) {
 
   this.emit('keypress', key, ev);
   this.emit('key', key, ev);
-  console.log('keypress');
   this.showCursor();
   this.handler(key);
 
