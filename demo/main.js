@@ -17,7 +17,6 @@ term.on('key', function (key, ev) {
   var printable = (!ev.altKey && !ev.altGraphKey && !ev.ctrlKey && !ev.metaKey);
 
   if (ev.keyIdentifier == 'Enter') {
-    ev.preventDefault();
     term.prompt();
   } else if (ev.keyCode == 8) {
     term.write('\b \b');

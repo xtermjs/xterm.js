@@ -2173,14 +2173,17 @@ Terminal.prototype.keyDown = function(ev) {
         break;
       }
       key = '\t';
+      this.cancel(ev, true);
       break;
     // return/enter
     case 13:
       key = '\r';
+      this.cancel(ev, true);
       break;
     // escape
     case 27:
       key = '\x1b';
+      this.cancel(ev, true);
       break;
     // left-arrow
     case 37:
@@ -2354,7 +2357,7 @@ Terminal.prototype.keyDown = function(ev) {
 
   this.emit('keydown', ev);
   this.emit('key', key, ev);
-
+  console.log('keydown');
   this.showCursor();  
   this.handler(key);
 
@@ -2396,7 +2399,7 @@ Terminal.prototype.keyPress = function(ev) {
 
   this.emit('keypress', key, ev);
   this.emit('key', key, ev);
-
+  console.log('keypress');
   this.showCursor();
   this.handler(key);
 
@@ -4660,17 +4663,12 @@ function off(el, type, handler, capture) {
   el.removeEventListener(type, handler, capture || false);
 }
 
-function cancel(ev) {
-  if (!this.cancelEvents) {
+function cancel(ev, force) {
+  if (!this.cancelEvents && !force) {
     return;
   }
-  if (ev.preventDefault) {
-      ev.preventDefault();
-  }
-  if (ev.stopPropagation) {
-      ev.stopPropagation();
-  }
-  ev.cancelBubble = true;
+  ev.preventDefault();
+  ev.stopPropagation();
   return false;
 }
 
