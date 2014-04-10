@@ -40,10 +40,15 @@
     color: #fff;
     outline: none;
     font-family: courier-new, courier, monospace;
+    position: relative;
 }
 
 .xterm .terminal-cursor {
     background-color: #fff;
+}
+
+.xterm .xterm-helpers {
+  position: absolute;
 }
 
 .xterm .xterm-helper-textarea {
