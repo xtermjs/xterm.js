@@ -542,6 +542,10 @@ Terminal.prototype.open = function(parent) {
   this.element.appendChild(this.helperContainer);
   this.textarea = document.createElement('textarea');
   this.textarea.classList.add('xterm-helper-textarea');
+  this.textarea.setAttribute('autocorrect', 'off');
+  this.textarea.setAttribute('autocapitalize', 'off');
+  this.textarea.setAttribute('spellcheck', 'false');
+  this.textarea.tabIndex = 0;
   this.helperContainer.appendChild(this.textarea);
   
   for (; i < this.rows; i++) {
