@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+  <head>
+    <link rel="stylesheet" href="../../src/xterm.css" />
+    <link rel="stylesheet" href="../../demo/style.css" />
+    <script src="../../src/xterm.js"></script>
+    <script src="attach.js"></script>
+  </head>
+  <body>
+    <form id="socket-form">
+      <input id="socket-url"
+             type="text"
+             placeholder="Enter socket url (e.g. ws://mysock)"
+             autofocus />
+      <button>
+        Attach
+      </button>
+    </form>
+    <div id="terminal-container"></div>
+    <script>
+      var term = new Terminal(),
+          container = document.getElementById('terminal-container'),
+          socketUrl = document.getElementById('socket-url'),
+          socketForm = document.getElementById('socket-form');
+      
+      socketForm.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var url = socketUrl.value,
+            sock = new WebSocket(url);
+        sock.addEventListener('open', function () {
+          term.attach(sock);
+        });
+      });
+      
+      term.open(container);
+    </script>
+  </body>
+</html>
