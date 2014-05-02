@@ -13,11 +13,29 @@ the experience of running a fully-feature terminal inside the browser.
 
 Xterm.js serves as the foundation for the terminal found at www.sourcelair.com.
 
-Contents:
+Getting started
+^^^^^^^^^^^^^^^
+
+.. code-block:: javascript
+    
+   var term = new Terminal(),
+       socket = new WebSocket('ws://docker/containers/mycontainer/attach/ws');
+  
+   term.open(document.body);
+   term.on('data', function (data) {
+       socket.send(data);
+   });
+   socket.onmessage = function (e) {
+       term.write(e.data);
+   }
+    
+
+Contents
 
 .. toctree::
    :maxdepth: 1
    
+   methods
    events
 
 
