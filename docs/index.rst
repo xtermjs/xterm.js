@@ -19,7 +19,8 @@ Getting started
 .. code-block:: javascript
     
    var term = new Terminal(),
-       socket = new WebSocket('ws://docker/containers/mycontainer/attach/ws');
+       url = 'ws://docker/containers/mycontainer/attach/ws/?stdin=1&stdout=1&stderr=1&logs=1',
+       socket = new WebSocket(url);
   
    term.open(document.body);
    term.on('data', function (data) {

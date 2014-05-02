@@ -5,8 +5,61 @@
     <link rel="stylesheet" href="../../demo/style.css" />
     <script src="../../src/xterm.js"></script>
     <script src="attach.js"></script>
+    <style>
+        body {
+            color: #111;
+        }
+        
+        h1, h2 {
+            color: #444;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+        
+        form {
+            margin-bottom: 32px;
+        }
+        
+        input, button {
+            line-height: 22px;
+            font-size: 16px;
+            display: inline-block;
+            border-radius: 2px;
+            border: 1px solid #ccc;
+        }
+        
+        input {
+            height: 22px;
+            padding-left: 4px;
+            padding-right: 4px;
+        }
+        
+        button {
+            height: 28px;
+            background-color: #ccc;
+            cursor: pointer;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+    </style>
   </head>
   <body>
+      <div class="container">
+          
+    <h1>
+        xterm.js: socket attach
+    </h1>
+          <p>
+              Attach the terminal to a WebSocket terminal stream with ease. Perfect for attaching to your
+              Docker containers.
+          </p>
+          <h2>
+              Socket information
+          </h2>
     <form id="socket-form">
       <input id="socket-url"
              type="text"
@@ -17,6 +70,8 @@
       </button>
     </form>
     <div id="terminal-container"></div>
+          
+      </div>
     <script>
       var term = new Terminal(),
           container = document.getElementById('terminal-container'),
