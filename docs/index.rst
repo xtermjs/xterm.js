@@ -31,19 +31,12 @@ Getting started
     
 
 Contents
+^^^^^^^^
+The standard way to create a terminal-based application with xterm.js is to work with its events and
+methods, that let you manipulate input, output, state and size of the terminal.
 
 .. toctree::
    :maxdepth: 1
    
    methods
    events
-
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
