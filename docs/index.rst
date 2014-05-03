@@ -8,10 +8,12 @@ Welcome to xterm.js's documentation!
 
 This is the documentation for xterm.js. Xterm.js is a full xterm clone, written completely in JavaScript.
 
-Xterm.js supplye a modular, event-based interface that lets developers build addons and themes that augment 
+Xterm.js supplies a modular, event-based interface that lets developers build addons and themes that augment 
 the experience of running a fully-feature terminal inside the browser.
 
 Xterm.js serves as the foundation for the terminal found at www.sourcelair.com.
+
+.. image:: screenshot.png
 
 Getting started
 ^^^^^^^^^^^^^^^
