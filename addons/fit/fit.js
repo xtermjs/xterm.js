@@ -12,7 +12,7 @@
  *               of columns)
  */
 Terminal.prototype.fit = function () {
-  var container = this.element.parentElement,
+  var container = this.rowContainer,
       subjectRow = this.rowContainer.firstElementChild,
       rows = parseInt(container.offsetHeight / subjectRow.offsetHeight),
       characterWidth,
@@ -22,7 +22,8 @@ Terminal.prototype.fit = function () {
   characterWidth = parseInt(subjectRow.offsetWidth / this.cols);
   subjectRow.style.display = '';
   
-  cols = parseInt(container.offsetWidth / characterWidth);
+  cols = container.offsetWidth / characterWidth;
+  cols = parseInt(cols);
       
   this.resize(cols, rows);
-}
+};
