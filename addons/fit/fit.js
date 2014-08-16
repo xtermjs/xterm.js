@@ -15,11 +15,17 @@ Terminal.prototype.fit = function () {
   var container = this.rowContainer,
       subjectRow = this.rowContainer.firstElementChild,
       rows = parseInt(container.offsetHeight / subjectRow.offsetHeight),
+      contentBuffer,
       characterWidth,
       cols;
   
   subjectRow.style.display = 'inline';
-  characterWidth = parseInt(subjectRow.offsetWidth / this.cols);
+  
+  contentBuffer = subjectRow.textContent;
+
+  subjectRow.textContent = ' ';
+  characterWidth = parseInt(subjectRow.offsetWidth);
+
   subjectRow.style.display = '';
   
   cols = container.offsetWidth / characterWidth;
