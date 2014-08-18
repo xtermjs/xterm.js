@@ -17,5 +17,5 @@ all code is your original work.
 
 ## License
 
-Copyright (c) 2014, sourceLair, Limited (www.sourcelair.com) (MIT License)
+Copyright (c) 2014, SourceLair, Limited (www.sourcelair.com) (MIT License)
 Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)
