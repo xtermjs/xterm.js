@@ -916,9 +916,9 @@ Terminal.prototype.bindMouse = function() {
     if (self.mouseEvents) return;
     if (self.applicationKeypad) return;
     if (ev.type === 'DOMMouseScroll') {
-      self.scrollDisp(ev.detail < 0 ? -5 : 5);
+      self.scrollDisp(ev.detail < 0 ? -1 : 1);
     } else {
-      self.scrollDisp(ev.wheelDeltaY > 0 ? -5 : 5);
+      self.scrollDisp(ev.wheelDeltaY > 0 ? -1 : 1);
     }
     return self.cancel(ev);
   });
