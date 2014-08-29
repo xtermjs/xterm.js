@@ -17,7 +17,6 @@ Terminal.prototype.fit = function () {
       rows,
       contentBuffer,
       characterWidth,
-      characterHeight,
       cols;
 
   subjectRow.style.display = 'inline';
@@ -37,9 +36,10 @@ Terminal.prototype.fit = function () {
       parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height')),
       elementStyle = window.getComputedStyle(this.element),
       elementPadding = parseInt(elementStyle.getPropertyValue('padding-top')) + parseInt(elementStyle.getPropertyValue('padding-bottom')),
-      availableHeight = parentElementHeight - elementPadding;
+      availableHeight = parentElementHeight - elementPadding,
+      rowHeight = this.rowContainer.firstElementChild.offsetHeight;
   
-    rows = parseInt(availableHeight / characterHeight);
+  rows = parseInt(availableHeight / rowHeight);
       
   this.resize(cols, rows);
 };
