@@ -10,16 +10,30 @@
  * If the `fullscreen` argument has not been supplied, the
  * fullscreen mode is being toggled.
  */
-Terminal.prototype.toggleFullscreen = function (fullscreen) {
-  var fn;
-  
-  if (typeof fullscreen == 'undefined') {
-    fn = (this.element.classList.contains('fullscreen')) ? 'remove' : 'add';
-  } else if (!fullscreen) {
-    fn = 'remove';
-  } else {
-    fn = 'add';
-  }
-  
-  this.element.classList[fn]('fullscreen');
-}
+(function (fullscreen) {
+    if (typeof define == 'function') {
+        /*
+         * Require.js is available
+         */
+        define(['../../src/xterm'], fullscreen);
+    } else {
+        /*
+         * Plain browser environment
+         */ 
+        fullscreen(this.Xterm);
+    }
+})(function (Xterm) {
+    Xterm.prototype.toggleFullscreen = function (fullscreen) {
+      var fn;
+
+      if (typeof fullscreen == 'undefined') {
+        fn = (this.element.classList.contains('fullscreen')) ? 'remove' : 'add';
+      } else if (!fullscreen) {
+        fn = 'remove';
+      } else {
+        fn = 'add';
+      }
+
+      this.element.classList[fn]('fullscreen');
+    };
+});
