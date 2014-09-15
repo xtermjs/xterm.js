@@ -45,6 +45,7 @@
 
 .xterm .terminal-cursor {
     background-color: #fff;
+    color: #000;
 }
 
 .xterm .xterm-helpers {
