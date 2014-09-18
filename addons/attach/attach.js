@@ -47,7 +47,12 @@
       var term = this;
 
       term.off('data', term._sendData);
-      socket.removeEventListener('message', term._getMessage);
+
+      socket = (typeof socket == 'undefined') ? term.socket : socket;
+
+      if (socket) {
+        socket.removeEventListener('message', term._getMessage);
+      }
 
       delete term.socket;
     };
