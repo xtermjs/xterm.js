@@ -1,5 +1,5 @@
 {
   "name": "xterm.js",
-  "version": "0.19",
+  "version": "0.20",
   "ignore": ["demo", "docs", "test", ".gitignore"]
 }
