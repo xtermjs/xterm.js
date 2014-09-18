@@ -25,14 +25,26 @@
       bidirectional = (typeof bidirectional == 'undefined') ? true : bidirectional;
       this.socket = socket;
 
-      socket.addEventListener('message', function (ev) {
+      function _getMessage (ev) {
         term.write(ev.data);
-      });
+      }
+        
+      function _sendData (data) {
+        socket.send(data);
+      }
+        
+      function _detach () {
+        term.off('data', _sendData);
+        socket.removeEventListener('message', _getMessage);
+      }
+
+      socket.addEventListener('message', _getMessage);
 
       if (bidirectional) {
-        this.on('data', function (data) {
-          socket.send(data);
-        });
+        this.on('data', _sendData);
       }
+      
+      socket.addEventListener('close', _detach);
+      socket.addEventListener('error', _detach);
     };
 });
