@@ -25,18 +25,13 @@
       bidirectional = (typeof bidirectional == 'undefined') ? true : bidirectional;
       this.socket = socket;
 
-      function _getMessage (ev) {
+      term._getMessage = function (ev) {
         term.write(ev.data);
-      }
+      };
         
-      function _sendData (data) {
+      term._sendData = function (data) {
         socket.send(data);
-      }
-        
-      function _detach () {
-        term.off('data', _sendData);
-        socket.removeEventListener('message', _getMessage);
-      }
+      };
 
       socket.addEventListener('message', _getMessage);
 
@@ -44,7 +39,16 @@
         this.on('data', _sendData);
       }
       
-      socket.addEventListener('close', _detach);
-      socket.addEventListener('error', _detach);
+      socket.addEventListener('close', term.detach.bind(term, socket));
+      socket.addEventListener('error', term.detach.bind(term, socket));
+    };
+    
+    Xterm.prototype.detach = function (socket) {
+      var term = this;
+
+      term.off('data', term._sendData);
+      socket.removeEventListener('message', term._getMessage);
+
+      delete term.socket;
     };
 });
