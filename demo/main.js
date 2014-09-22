@@ -1,12 +1,13 @@
 var terminalContainer = document.getElementById('terminal-container'),
-    term = new Terminal();
+    term = new Terminal(),
+    prompt = '> ';
 
 term.open(terminalContainer);
 term.fit();
 
 term.prompt = function () {
-  term.write('\r\n> ');
-}
+  term.write('\r\n' + prompt);
+};
 
 term.writeln('Welcome to xterm.js');
 term.writeln('Just type some keys in the prompt below.');
@@ -19,7 +20,12 @@ term.on('key', function (key, ev) {
   if (ev.keyIdentifier == 'Enter') {
     term.prompt();
   } else if (ev.keyCode == 8) {
-    term.write('\b \b');
+    /*
+     * Do not delete the prompt
+     */
+    if (term.x > 2) {
+      term.write('\b \b');
+    }
   } else if (printable) {
     term.write(key);
   }
