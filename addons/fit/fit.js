@@ -27,23 +27,25 @@
     Xterm.prototype.proposeGeometry = function () {
         var container = this.rowContainer,
             subjectRow = this.rowContainer.firstElementChild,
+            cursor = this.element.querySelector('.terminal-cursor'),
             rows,
-            contentBuffer,
             characterWidth,
             cols;
 
-        subjectRow.style.display = 'inline';
+        characterWidth = Math.ceil(cursor.offsetWidth);
+        
+        /*
+         * The following hack takes place in order to get "fit" work properly
+         * in Mozilla Firefox.
+         * Most probably, because of a dimension calculation bug, Firefox
+         * calculates the width to be 1px less than it is actually drawn on
+         * screen.
+         */
+        if (navigator.userAgent.match(/Gecko/)) {
+            characterWidth++;
+        }
 
-        contentBuffer = subjectRow.innerHTML;
-
-        subjectRow.innerHTML = '&nbsp;'; /* Arbitrary character to calculate its dimensions */
-        characterWidth = parseInt(subjectRow.offsetWidth);
-        characterHeight = parseInt(subjectRow.offsetHeight);
-
-        subjectRow.style.display = '';
-
-        cols = container.offsetWidth / characterWidth;
-        cols = parseInt(cols);
+        cols = parseInt(container.offsetWidth / characterWidth);
 
         var parentElementStyle = window.getComputedStyle(this.element.parentElement),
             parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height')),
@@ -53,8 +55,6 @@
             rowHeight = this.rowContainer.firstElementChild.offsetHeight;
 
         rows = parseInt(availableHeight / rowHeight);
-        
-        subjectRow.innerHTML = contentBuffer; /* Replace original content */
         
         var geometry = {
                 'cols': cols,
