@@ -56,7 +56,7 @@
         
         var geometry = {
                 'cols': cols,
-                'rows': rowss
+                'rows': rows
             };
 
         return geometry;

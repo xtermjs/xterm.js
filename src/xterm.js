@@ -36,7 +36,7 @@
         /*
          * Require.js is available
          */
-        define([], xterm);
+        define([], xterm.bind(window));
     } else {
         /*
          * Plain browser environment
