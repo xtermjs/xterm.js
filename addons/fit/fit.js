@@ -34,7 +34,7 @@
 
         subjectRow.style.display = 'inline';
 
-        contentBuffer = subjectRow.textContent;
+        contentBuffer = subjectRow.innerHTML;
 
         subjectRow.innerHTML = '&nbsp;'; /* Arbitrary character to calculate its dimensions */
         characterWidth = parseInt(subjectRow.offsetWidth);
@@ -53,6 +53,8 @@
             rowHeight = this.rowContainer.firstElementChild.offsetHeight;
 
         rows = parseInt(availableHeight / rowHeight);
+        
+        subjectRow.innerHTML = contentBuffer; /* Replace original content */
         
         var geometry = {
                 'cols': cols,
