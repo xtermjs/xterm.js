@@ -24,36 +24,47 @@
         fit(this.Xterm);
     }
 })(function (Xterm) {
+    Xterm.prototype.proposeGeometry = function () {
+        var container = this.rowContainer,
+            subjectRow = this.rowContainer.firstElementChild,
+            rows,
+            contentBuffer,
+            characterWidth,
+            cols;
+
+        subjectRow.style.display = 'inline';
+
+        contentBuffer = subjectRow.textContent;
+
+        subjectRow.innerHTML = '&nbsp;'; /* Arbitrary character to calculate its dimensions */
+        characterWidth = parseInt(subjectRow.offsetWidth);
+        characterHeight = parseInt(subjectRow.offsetHeight);
+
+        subjectRow.style.display = '';
+
+        cols = container.offsetWidth / characterWidth;
+        cols = parseInt(cols);
+
+        var parentElementStyle = window.getComputedStyle(this.element.parentElement),
+            parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height')),
+            elementStyle = window.getComputedStyle(this.element),
+            elementPadding = parseInt(elementStyle.getPropertyValue('padding-top')) + parseInt(elementStyle.getPropertyValue('padding-bottom')),
+            availableHeight = parentElementHeight - elementPadding,
+            rowHeight = this.rowContainer.firstElementChild.offsetHeight;
+
+        rows = parseInt(availableHeight / rowHeight);
+        
+        var geometry = {
+                'cols': cols,
+                'rows': rowss
+            };
+
+        return geometry;
+    };
+
     Xterm.prototype.fit = function () {
-      var container = this.rowContainer,
-          subjectRow = this.rowContainer.firstElementChild,
-          rows,
-          contentBuffer,
-          characterWidth,
-          cols;
+        var geometry = this.proposeGeometry();
 
-      subjectRow.style.display = 'inline';
-
-      contentBuffer = subjectRow.textContent;
-
-      subjectRow.innerHTML = '&nbsp;'; /* Arbitrary character to calculate its dimensions */
-      characterWidth = parseInt(subjectRow.offsetWidth);
-      characterHeight = parseInt(subjectRow.offsetHeight);
-
-      subjectRow.style.display = '';
-
-      cols = container.offsetWidth / characterWidth;
-      cols = parseInt(cols);
-
-      var parentElementStyle = window.getComputedStyle(this.element.parentElement),
-          parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height')),
-          elementStyle = window.getComputedStyle(this.element),
-          elementPadding = parseInt(elementStyle.getPropertyValue('padding-top')) + parseInt(elementStyle.getPropertyValue('padding-bottom')),
-          availableHeight = parentElementHeight - elementPadding,
-          rowHeight = this.rowContainer.firstElementChild.offsetHeight;
-
-      rows = parseInt(availableHeight / rowHeight);
-
-      this.resize(cols, rows);
+        this.resize(geometry.cols, geometry.rows);
     };
 });
