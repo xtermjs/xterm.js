@@ -25,15 +25,31 @@
     }
 })(function (Xterm) {
     Xterm.prototype.proposeGeometry = function () {
-        var container = this.rowContainer,
+        var parentElementStyle = window.getComputedStyle(this.element.parentElement),
+            parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height')),
+            parentElementWidth = parseInt(parentElementStyle.getPropertyValue('width')),
+            elementStyle = window.getComputedStyle(this.element),
+            elementPaddingVer = parseInt(elementStyle.getPropertyValue('padding-top')) + parseInt(elementStyle.getPropertyValue('padding-bottom')),
+            elementPaddingHor = parseInt(elementStyle.getPropertyValue('padding-right')) + parseInt(elementStyle.getPropertyValue('padding-left')),
+            availableHeight = parentElementHeight - elementPaddingVer,
+            availableWidth = parentElementWidth - elementPaddingHor,
+            container = this.rowContainer,
             subjectRow = this.rowContainer.firstElementChild,
-            cursor = this.element.querySelector('.terminal-cursor'),
+            contentBuffer = subjectRow.innerHTML,
+            characterHeight,
             rows,
             characterWidth,
-            cols;
+            cols,
+            geometry;
 
-        characterWidth = Math.ceil(cursor.offsetWidth);
-        
+        subjectRow.style.display = 'inline';
+        subjectRow.innerHTML = 'W'; // Common character for measuring width, although on monospace
+        characterWidth = parseInt(subjectRow.offsetWidth);
+        subjectRow.style.display = ''; // Revert style before calculating height, since they differ.
+        characterHeight = parseInt(subjectRow.offsetHeight);
+        subjectRow.innerHTML = contentBuffer;
+
+        rows = parseInt(availableHeight / characterHeight);
         /*
          * The following hack takes place in order to get "fit" work properly
          * in Mozilla Firefox.
@@ -41,26 +57,12 @@
          * calculates the width to be 1px less than it is actually drawn on
          * screen.
          */
-        if (navigator.userAgent.match(/Gecko/)) {
+        if (navigator.userAgent.match(/Firefox/)) {
             characterWidth++;
         }
+        cols = parseInt(availableWidth / characterWidth);
 
-        cols = parseInt(container.offsetWidth / characterWidth);
-
-        var parentElementStyle = window.getComputedStyle(this.element.parentElement),
-            parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height')),
-            elementStyle = window.getComputedStyle(this.element),
-            elementPadding = parseInt(elementStyle.getPropertyValue('padding-top')) + parseInt(elementStyle.getPropertyValue('padding-bottom')),
-            availableHeight = parentElementHeight - elementPadding,
-            rowHeight = this.rowContainer.firstElementChild.offsetHeight;
-
-        rows = parseInt(availableHeight / rowHeight);
-        
-        var geometry = {
-                'cols': cols,
-                'rows': rows
-            };
-
+        geometry = {cols: cols, rows: rows};
         return geometry;
     };
 
