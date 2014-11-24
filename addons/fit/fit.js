@@ -25,42 +25,44 @@
     }
 })(function (Xterm) {
     Xterm.prototype.proposeGeometry = function () {
-        var container = this.rowContainer,
-            subjectRow = this.rowContainer.firstElementChild,
-            rows,
-            contentBuffer,
-            characterWidth,
-            cols;
-
-        subjectRow.style.display = 'inline';
-
-        contentBuffer = subjectRow.innerHTML;
-
-        subjectRow.innerHTML = '&nbsp;'; /* Arbitrary character to calculate its dimensions */
-        characterWidth = parseInt(subjectRow.offsetWidth);
-        characterHeight = parseInt(subjectRow.offsetHeight);
-
-        subjectRow.style.display = '';
-
-        cols = container.offsetWidth / characterWidth;
-        cols = parseInt(cols);
-
         var parentElementStyle = window.getComputedStyle(this.element.parentElement),
             parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height')),
+            parentElementWidth = parseInt(parentElementStyle.getPropertyValue('width')),
             elementStyle = window.getComputedStyle(this.element),
-            elementPadding = parseInt(elementStyle.getPropertyValue('padding-top')) + parseInt(elementStyle.getPropertyValue('padding-bottom')),
-            availableHeight = parentElementHeight - elementPadding,
-            rowHeight = this.rowContainer.firstElementChild.offsetHeight;
+            elementPaddingVer = parseInt(elementStyle.getPropertyValue('padding-top')) + parseInt(elementStyle.getPropertyValue('padding-bottom')),
+            elementPaddingHor = parseInt(elementStyle.getPropertyValue('padding-right')) + parseInt(elementStyle.getPropertyValue('padding-left')),
+            availableHeight = parentElementHeight - elementPaddingVer,
+            availableWidth = parentElementWidth - elementPaddingHor,
+            container = this.rowContainer,
+            subjectRow = this.rowContainer.firstElementChild,
+            contentBuffer = subjectRow.innerHTML,
+            characterHeight,
+            rows,
+            characterWidth,
+            cols,
+            geometry;
 
-        rows = parseInt(availableHeight / rowHeight);
-        
-        subjectRow.innerHTML = contentBuffer; /* Replace original content */
-        
-        var geometry = {
-                'cols': cols,
-                'rows': rows
-            };
+        subjectRow.style.display = 'inline';
+        subjectRow.innerHTML = 'W'; // Common character for measuring width, although on monospace
+        characterWidth = parseInt(subjectRow.offsetWidth);
+        subjectRow.style.display = ''; // Revert style before calculating height, since they differ.
+        characterHeight = parseInt(subjectRow.offsetHeight);
+        subjectRow.innerHTML = contentBuffer;
 
+        rows = parseInt(availableHeight / characterHeight);
+        /*
+         * The following hack takes place in order to get "fit" work properly
+         * in Mozilla Firefox.
+         * Most probably, because of a dimension calculation bug, Firefox
+         * calculates the width to be 1px less than it is actually drawn on
+         * screen.
+         */
+        if (navigator.userAgent.match(/Firefox/)) {
+            characterWidth++;
+        }
+        cols = parseInt(availableWidth / characterWidth);
+
+        geometry = {cols: cols, rows: rows};
         return geometry;
     };
 
