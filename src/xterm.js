@@ -2200,16 +2200,21 @@
           break;
         // left-arrow
         case 37:
-          if (this.applicationCursor) {
+          if (ev.altKey) {
+            key = '\x1bb' // Jump a word back
+            break;
+          } else if (this.applicationCursor) {
             key = '\x1bOD'; // SS3 as ^[O for 7-bit
-            //key = '\x8fD'; // SS3 as 0x8f for 8-bit
             break;
           }
           key = '\x1b[D';
           break;
         // right-arrow
         case 39:
-          if (this.applicationCursor) {
+          if (ev.altKey) {
+            key = '\x1bf' // Jump a word forward
+            break;
+          } else if (this.applicationCursor) {
             key = '\x1bOC';
             break;
           }
