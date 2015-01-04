@@ -12,14 +12,24 @@
     }
 })(function (Xterm) {
 	'use strict';
+
     /**
      * This module provides methods for convertings valid URL substrings 
      * into HTML anchor elements (links), inside a terminal view.
      *
      * @module xterm/addons/linkify/linkify
      */
-    var exports = {};
-
+    var exports = {},
+        protocolClause = '(https?:\\/\\/)',
+        domainBodyClause = '([\\da-z\\.-]+)',
+        tldClause = '([a-z\\.]{2,6})',
+        hostClause = domainBodyClause + '\\.' + tldClause,
+        pathClause = '([\\/\\w\\.-]*)*\\/?',
+        bodyClause = hostClause + pathClause,
+        start = '(?:^|\\s+)(',
+        end = ')($|\\s+)',
+        urlClause = start + protocolClause + '?' + bodyClause + end,
+        urlRegex = new RegExp(urlClause);
 
     /**
      * Converts all valid URLs found in the given terminal line into
@@ -46,22 +56,45 @@
         var buffer = document.createElement('span'),
             nodes = line.childNodes;
 
+        console.log(nodes.length, 'number of nodes');
         for (var j=0; j<nodes.length; j++) {
             var node = nodes[j];
 
-            if (node.nodeType == 3) {
-                var urlRegex = /(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?/,
-                    match = node.data.match(urlRegex);
+            /*
+             * Since we cannot access the TextNode's HTML representation
+             * from the instance itself, we assign its data as textContent
+             * to a dummy buffer span, in order to retrieve the TextNode's
+             * HTML representation from the buffer's innerHTML.
+             */
+            buffer.textContent = node.data;
 
-                if (match) {
-                    var url = match[0],
-                        link = '<a href="http://' +  url + '" >' + url + '</a>',
-                        newData = node.data.replace(url, link);
+            var nodeHTML = buffer.innerHTML;
 
-                    buffer.textContent = node.data;
-                    line.innerHTML = line.innerHTML.replace(buffer.innerHTML, newData);
-                }
+            /*
+             * Apply function only on TextNodes
+             */
+            if (node.nodeType != node.TEXT_NODE) {
+                continue;
             }
+
+            
+            var match = node.data.match(urlRegex);
+
+            /*
+             * If no URL was found in the current text, return.
+             */
+            if (!match) {
+                continue;
+            }
+
+            var url = match[1],
+                startsWithProtocol = new RegExp('^' + protocolClause),
+                urlHasProtocol = url.match(startsWithProtocol),
+                href = (urlHasProtocol) ? url : 'http://' + url,
+                link = '<a href="' +  href + '" >' + url + '</a>',
+                newHTML = nodeHTML.replace(url, link);
+
+            line.innerHTML = line.innerHTML.replace(nodeHTML, newHTML);
         }
 
         /**
