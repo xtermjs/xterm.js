@@ -1,4 +1,15 @@
 (function (linkify) {
+    if (typeof define == 'function') {
+        /*
+         * Require.js is available
+         */
+        define(['../../src/xterm'], linkify);
+    } else {
+        /*
+         * Plain browser environment
+         */ 
+        linkify(this.Xterm);
+    }
 })(function (Xterm) {
     Xterm.prototype.linkify = function () {
       var rows = this.rowContainer.children,
