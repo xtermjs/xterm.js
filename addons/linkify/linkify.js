@@ -26,8 +26,8 @@
         hostClause = domainBodyClause + '\\.' + tldClause,
         pathClause = '([\\/\\w\\.-]*)*\\/?',
         bodyClause = hostClause + pathClause,
-        start = '(?:^|\\s+)(',
-        end = ')($|\\s+)',
+        start = '(?:^|\\s+|\\(+|\\[+)(',
+        end = ')($|\\s+|\\)+|\\]+)',
         urlClause = start + protocolClause + '?' + bodyClause + end,
         urlRegex = new RegExp(urlClause);
 
