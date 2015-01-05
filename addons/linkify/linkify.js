@@ -56,7 +56,6 @@
         var buffer = document.createElement('span'),
             nodes = line.childNodes;
 
-        console.log(nodes.length, 'number of nodes');
         for (var j=0; j<nodes.length; j++) {
             var node = nodes[j];
 
