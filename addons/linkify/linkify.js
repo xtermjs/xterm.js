@@ -21,13 +21,16 @@
      */
     var exports = {},
         protocolClause = '(https?:\\/\\/)',
-        domainBodyClause = '([\\da-z\\.-]+)',
+        domainCharacterSet = '[\\da-z\\.-]+',
+        negatedDomainCharacterSet = '[^\\da-z\\.-]+',
+        domainBodyClause = '(' + domainCharacterSet + ')',
         tldClause = '([a-z\\.]{2,6})',
         hostClause = domainBodyClause + '\\.' + tldClause,
         pathClause = '([\\/\\w\\.-]*)*\\/?',
+        negatedPathCharacterSet = '[^\\/\\w\\.-]+',
         bodyClause = hostClause + pathClause,
-        start = '(?:^|\\s+|\\(+|\\[+)(',
-        end = ')($|\\s+|\\)+|\\]+)',
+        start = '(?:^|' + negatedDomainCharacterSet + ')(',
+        end = ')($|' + negatedPathCharacterSet + ')',
         urlClause = start + protocolClause + '?' + bodyClause + end,
         urlRegex = new RegExp(urlClause);
 
