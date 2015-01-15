@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+    <head>
+        <link rel="stylesheet" href="../../src/xterm.css" />
+        <link rel="stylesheet" href="../../demo/style.css" />
+        <script src="../../src/xterm.js"></script>
+        <script src="linkify.js"></script>
+        <style>
+            body {
+                color: #111;
+            }
+
+            #terminal-container {
+                max-width: 900px;
+                margin: 0 auto;
+            }
+
+            #terminal-container a {
+				color: #fff;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="terminal-container"></div>
+        <script>
+            var term = new Terminal(),
+                container = document.getElementById('terminal-container');
+
+            term.open(container);
+            term.writeln('Hello, welcome to xterm.js');
+            term.writeln('');
+            term.writeln('Check it out at github.com/sourcelair/xterm.js');
+            term.linkify();
+        </script>
+    </body>
+</html>
