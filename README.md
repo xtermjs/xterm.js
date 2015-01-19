@@ -14,6 +14,6 @@ If you contribute code to this project, you are implicitly allowing your code to
 
 ## License
 
-Copyright (c) 2014, SourceLair, Ltd (www.sourcelair.com) (MIT License)
+Copyright (c) 2014-2015, SourceLair, Ltd (www.sourcelair.com) (MIT License)
 
 Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)
