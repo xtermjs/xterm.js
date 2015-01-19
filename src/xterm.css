@@ -32,28 +32,31 @@
  */
 
 /*
-*  Default style for xterm.js
-*/
+ *  Default style for xterm.js
+ */
 
-.xterm {
+.terminal {
     background-color: #000;
     color: #fff;
-    outline: none;
     font-family: courier-new, courier, monospace;
     position: relative;
 }
 
-.xterm .terminal-cursor {
+.terminal:focus {
+    outline: none;
+}
+
+.terminal .terminal-cursor {
     background-color: #fff;
     color: #000;
 }
 
-.xterm .xterm-helpers {
+.terminal .xterm-helpers {
   position: absolute;
   top: 0;
 }
 
-.xterm .xterm-helper-textarea {
+.terminal .xterm-helper-textarea {
     opacity: 0;
     width: 0;
     height: 0;
@@ -61,8 +64,8 @@
 }
 
 /*
-*  Determine default colors for xterm.js
-*/
+ *  Determine default colors for xterm.js
+ */
 .terminal .xterm-bold {
     font-weight: bold;
 }

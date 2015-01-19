@@ -17,7 +17,7 @@ term.prompt();
 term.on('key', function (key, ev) {
   var printable = (!ev.altKey && !ev.altGraphKey && !ev.ctrlKey && !ev.metaKey);
 
-  if (ev.keyIdentifier == 'Enter') {
+  if (ev.keyCode == 13) {
     term.prompt();
   } else if (ev.keyCode == 8) {
     /*
