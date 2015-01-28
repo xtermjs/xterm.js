@@ -2201,6 +2201,7 @@
         // left-arrow
         case 37:
           if (ev.altKey) {
+            ev.preventDefault();
             key = '\x1bb' // Jump a word back
             break;
           } else if (this.applicationCursor) {
@@ -2212,6 +2213,7 @@
         // right-arrow
         case 39:
           if (ev.altKey) {
+            ev.preventDefault();
             key = '\x1bf' // Jump a word forward
             break;
           } else if (this.applicationCursor) {
