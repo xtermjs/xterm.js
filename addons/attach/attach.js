@@ -19,6 +19,16 @@
         attach(this.Xterm);
     }
 })(function (Xterm) {
+    /**
+     * Attaches the current terminal to the given socket
+     *
+     * @param {WebSocket} socket - The socket to attach the current terminal
+     * @param {boolean} bidirectional - Whether the terminal should send data
+     *                                  to the socket as well
+     * @param {boolean} buffered - Whether the rendering of incoming data
+     *                             should happen instantly or at a maximum
+     *                             frequency of 1 rendering per 10ms
+     */
     Xterm.prototype.attach = function (socket, bidirectional, buffered) {
         var term = this;
 
@@ -63,6 +73,12 @@
         socket.addEventListener('error', term.detach.bind(term, socket));
     };
 
+    /**
+     * Detaches the current terminal from the given socket
+     *
+     * @param {WebSocket} socket - The socket from which to detach the current
+     *                             terminal
+     */
     Xterm.prototype.detach = function (socket) {
         var term = this;
 
