@@ -6,7 +6,7 @@ Xterm.js supplies a modular, event-based interface that lets developers build ad
 
 Xterm.js serves as foundation for the terminal found at www.sourcelair.com.
 
-![xterm.js screenshot](docs/screenshot.png)
+![xterm.js screenshot](xtermjs.png)
 
 ### Contribution and License Agreement
 
@@ -14,6 +14,6 @@ If you contribute code to this project, you are implicitly allowing your code to
 
 ## License
 
-Copyright (c) 2014-2015, SourceLair, Ltd (www.sourcelair.com) (MIT License)
+Copyright (c) 2014-2015, SourceLair, Private Company (www.sourcelair.com) (MIT License)
 
 Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)
