@@ -2413,6 +2413,10 @@
       if (!key || ev.ctrlKey || ev.altKey || ev.metaKey) {
         return false;
       }
+      
+      if (key === 8) {
+          return false;
+      }
 
       key = String.fromCharCode(key);
 
