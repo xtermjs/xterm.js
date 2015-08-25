@@ -532,7 +532,9 @@
       * Create main element container
       */
       this.element = this.document.createElement('div');
-      this.element.classList.add('terminal', 'xterm', 'xterm-theme-' + this.theme);
+      this.element.classList.add('terminal');
+      this.element.classList.add('xterm');
+      this.element.classList.add('xterm-theme-' + this.theme);
       this.element.setAttribute('tabindex', 0);
 
       /*
