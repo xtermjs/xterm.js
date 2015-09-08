@@ -1,12 +1,12 @@
 var terminalContainer = document.getElementById('terminal-container'),
     term = new Terminal(),
-    prompt = '> ';
+    shellprompt = '> ';
 
 term.open(terminalContainer);
 term.fit();
 
 term.prompt = function () {
-  term.write('\r\n' + prompt);
+  term.write('\r\n' + shellprompt);
 };
 
 term.writeln('Welcome to xterm.js');
