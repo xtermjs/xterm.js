@@ -46,6 +46,8 @@
      * @param {Xterm} terminal - The terminal that owns the given line.
      * @param {number|HTMLDivElement} line - The terminal line that should get
      *								  		 "linkified".
+     * @param {boolean} lenient - The regex type that will be used to identify links. If lenient is
+     *                            false, the regex requires a protocol clause. Defaults to true.
      * @emits linkify
      * @emits linkify:line
      */
@@ -122,6 +124,8 @@
      * Converts all valid URLs found in the terminal view into hyperlinks.
      *
      * @param {Xterm} terminal - The terminal that should get "linkified".
+     * @param {boolean} lenient - The regex type that will be used to identify links. If lenient is
+     *                            false, the regex requires a protocol clause. Defaults to true.
      * @emits linkify
      * @emits linkify:line
      */
@@ -156,6 +160,8 @@
      * @memberof Xterm
      * @param {number|HTMLDivElement} line - The terminal line that should get
      *								  		 "linkified".
+     * @param {boolean} lenient - The regex type that will be used to identify links. If lenient is
+     *                            false, the regex requires a protocol clause. Defaults to true.
      */
     Xterm.prototype.linkifyTerminalLine = function (line, lenient) {
         return exports.linkifyTerminalLine(this, line, lenient);
@@ -165,6 +171,8 @@
      * Converts all valid URLs found in the current terminal into hyperlinks.
      *
      * @memberof Xterm
+     * @param {boolean} lenient - The regex type that will be used to identify links. If lenient is
+     *                            false, the regex requires a protocol clause. Defaults to true.
      */
     Xterm.prototype.linkify = function (lenient) {
         return exports.linkify(this, lenient);
