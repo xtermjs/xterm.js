@@ -40,7 +40,7 @@
      *                             should happen instantly or at a maximum
      *                             frequency of 1 rendering per 10ms.
      */
-    exports.attach = function (term, socket, biderectional, buffered) {
+    exports.attach = function (term, socket, bidirectional, buffered) {
         bidirectional = (typeof bidirectional == 'undefined') ? true : bidirectional;
         term.socket = socket;
 
@@ -75,7 +75,7 @@
         socket.addEventListener('message', term._getMessage);
 
         if (bidirectional) {
-            this.on('data', term._sendData);
+            term.on('data', term._sendData);
         }
 
         socket.addEventListener('close', term.detach.bind(term, socket));
