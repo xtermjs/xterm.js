@@ -7,14 +7,14 @@
     } else {
         /*
          * Plain browser environment
-         */ 
+         */
         linkify(this.Xterm);
     }
 })(function (Xterm) {
 	'use strict';
 
     /**
-     * This module provides methods for convertings valid URL substrings 
+     * This module provides methods for convertings valid URL substrings
      * into HTML anchor elements (links), inside a terminal view.
      *
      * @module xterm/addons/linkify/linkify
@@ -31,8 +31,11 @@
         bodyClause = hostClause + pathClause,
         start = '(?:^|' + negatedDomainCharacterSet + ')(',
         end = ')($|' + negatedPathCharacterSet + ')',
-        urlClause = start + protocolClause + '?' + bodyClause + end,
-        urlRegex = new RegExp(urlClause);
+        lenientUrlClause = start + protocolClause + '?' + bodyClause + end,
+        strictUrlClause = start + protocolClause + bodyClause + end,
+        lenientUrlRegex = new RegExp(lenientUrlClause),
+        strictUrlRegex = new RegExp(strictUrlClause);
+
 
     /**
      * Converts all valid URLs found in the given terminal line into
@@ -43,10 +46,12 @@
      * @param {Xterm} terminal - The terminal that owns the given line.
      * @param {number|HTMLDivElement} line - The terminal line that should get
      *								  		 "linkified".
+     * @param {boolean} lenient - The regex type that will be used to identify links. If lenient is
+     *                            false, the regex requires a protocol clause. Defaults to true.
      * @emits linkify
      * @emits linkify:line
      */
-    exports.linkifyTerminalLine = function (terminal, line) {
+    exports.linkifyTerminalLine = function (terminal, line, lenient) {
         if (typeof line == 'number') {
             line = terminal.rowContainer.children[line];
         } else if (! (line instanceof HTMLDivElement)) {
@@ -60,7 +65,8 @@
             nodes = line.childNodes;
 
         for (var j=0; j<nodes.length; j++) {
-            var node = nodes[j];
+            var node = nodes[j],
+                match;
 
             /*
              * Since we cannot access the TextNode's HTML representation
@@ -79,8 +85,12 @@
                 continue;
             }
 
-            
-            var match = node.data.match(urlRegex);
+
+            if (lenient) {
+                match = node.data.match(lenientUrlRegex);
+            } else {
+                match = node.data.match(strictUrlRegex);
+            }
 
             /*
              * If no URL was found in the current text, return.
@@ -114,18 +124,21 @@
      * Converts all valid URLs found in the terminal view into hyperlinks.
      *
      * @param {Xterm} terminal - The terminal that should get "linkified".
+     * @param {boolean} lenient - The regex type that will be used to identify links. If lenient is
+     *                            false, the regex requires a protocol clause. Defaults to true.
      * @emits linkify
      * @emits linkify:line
      */
-    exports.linkify = function (terminal) {
+    exports.linkify = function (terminal, lenient) {
         var rows = terminal.rowContainer.children;
 
+        lenient = (typeof lenient == "boolean") ? lenient : true;
         for (var i=0; i<rows.length; i++) {
             var line = rows[i];
 
-			exports.linkifyTerminalLine(terminal, line);
+			exports.linkifyTerminalLine(terminal, line, lenient);
         }
-        
+
         /**
          * This event gets emitted when conversion of  all URL substrings to
          * HTML anchor elements (links) has finished for the current Xterm
@@ -147,18 +160,22 @@
      * @memberof Xterm
      * @param {number|HTMLDivElement} line - The terminal line that should get
      *								  		 "linkified".
-     */   
-    Xterm.prototype.linkifyTerminalLine = function (line) {
-        return exports.linkifyTerminalLine(this, line);
+     * @param {boolean} lenient - The regex type that will be used to identify links. If lenient is
+     *                            false, the regex requires a protocol clause. Defaults to true.
+     */
+    Xterm.prototype.linkifyTerminalLine = function (line, lenient) {
+        return exports.linkifyTerminalLine(this, line, lenient);
     };
 
    /**
      * Converts all valid URLs found in the current terminal into hyperlinks.
      *
      * @memberof Xterm
-     */   
-    Xterm.prototype.linkify = function () {
-        return exports.linkify(this);
+     * @param {boolean} lenient - The regex type that will be used to identify links. If lenient is
+     *                            false, the regex requires a protocol clause. Defaults to true.
+     */
+    Xterm.prototype.linkify = function (lenient) {
+        return exports.linkify(this, lenient);
     };
 
     return exports;
