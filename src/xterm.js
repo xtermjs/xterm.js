@@ -403,6 +403,7 @@
 
       this.cursorState = 0;
       this.refresh(this.y, this.y);
+      this.textarea.blur();
 
       if (this.sendFocus) {
         this.send('\x1b[O');
