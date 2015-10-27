@@ -40,7 +40,7 @@
     } else {
         /*
          * Plain browser environment
-         */ 
+         */
         this.Xterm = xterm.call(this);
         this.Terminal = this.Xterm; /* Backwards compatibility with term.js */
     }
@@ -394,7 +394,6 @@
       this.showCursor();
       this.textarea.focus();
 
-      this.emit('focus', {terminal: this});
     };
 
     Terminal.prototype.blur = function() {
@@ -404,12 +403,11 @@
 
       this.cursorState = 0;
       this.refresh(this.y, this.y);
+      this.textarea.blur();
 
       if (this.sendFocus) {
         this.send('\x1b[O');
       }
-
-      this.emit('blur', {terminal: this});
     };
 
     /**
@@ -559,6 +557,12 @@
       this.textarea.setAttribute('autocapitalize', 'off');
       this.textarea.setAttribute('spellcheck', 'false');
       this.textarea.tabIndex = 0;
+      this.textarea.onfocus = function() {
+        self.emit('focus', {terminal: self});
+      }
+      this.textarea.onblur = function() {
+        self.emit('blur', {terminal: self});
+      }
       this.helperContainer.appendChild(this.textarea);
 
       for (; i < this.rows; i++) {
@@ -2379,7 +2383,7 @@
 
       this.emit('keydown', ev);
       this.emit('key', key, ev);
-      this.showCursor();  
+      this.showCursor();
       this.handler(key);
 
       return this.cancel(ev);
