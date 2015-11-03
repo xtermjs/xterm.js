@@ -585,7 +585,7 @@
 
       on(this.element, 'mouseup', function() {
         var selection = document.getSelection();
-        if (selection.type != 'Range') {
+        if (selection.isCollapsed) {
           self.focus();
         }
       });
