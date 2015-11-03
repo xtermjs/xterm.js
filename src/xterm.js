@@ -584,8 +584,10 @@
       this.startBlink();
 
       on(this.element, 'mouseup', function() {
-        var selection = document.getSelection();
-        if (selection.isCollapsed) {
+        var selection = document.getSelection(),
+            collapsed = selection.isCollapsed,
+            isRange = typeof collapsed == 'boolean' ? !collapsed : selection.type == 'Range';
+        if (!isRange) {
           self.focus();
         }
       });
