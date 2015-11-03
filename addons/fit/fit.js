@@ -20,7 +20,7 @@
     } else {
         /*
          * Plain browser environment
-         */ 
+         */
         fit(this.Xterm);
     }
 })(function (Xterm) {
@@ -44,22 +44,12 @@
 
         subjectRow.style.display = 'inline';
         subjectRow.innerHTML = 'W'; // Common character for measuring width, although on monospace
-        characterWidth = parseInt(subjectRow.offsetWidth);
+        characterWidth = subjectRow.getBoundingClientRect().width;
         subjectRow.style.display = ''; // Revert style before calculating height, since they differ.
         characterHeight = parseInt(subjectRow.offsetHeight);
         subjectRow.innerHTML = contentBuffer;
 
         rows = parseInt(availableHeight / characterHeight);
-        /*
-         * The following hack takes place in order to get "fit" work properly
-         * in Mozilla Firefox.
-         * Most probably, because of a dimension calculation bug, Firefox
-         * calculates the width to be 1px less than it is actually drawn on
-         * screen.
-         */
-        if (navigator.userAgent.match(/Firefox/)) {
-            characterWidth++;
-        }
         cols = parseInt(availableWidth / characterWidth);
 
         geometry = {cols: cols, rows: rows};
