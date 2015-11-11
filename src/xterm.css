@@ -57,6 +57,7 @@
 }
 
 .terminal .xterm-helper-textarea {
+    text-indent: -9999em;
     opacity: 0;
     width: 0;
     height: 0;
