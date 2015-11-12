@@ -9,5 +9,8 @@ trim_trailing_whitespace = true
 [*.js]
 max_line_length = 100
 
+[*.css]
+indent_size = 4
+
 [*.md]
 trim_trailing_whitespace = false
