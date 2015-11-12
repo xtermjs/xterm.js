@@ -50,7 +50,7 @@
         subjectRow.innerHTML = contentBuffer;
 
         rows = parseInt(availableHeight / characterHeight);
-        cols = parseInt(availableWidth / characterWidth);
+        cols = parseInt(availableWidth / characterWidth) - 1;
 
         geometry = {cols: cols, rows: rows};
         return geometry;
