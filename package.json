@@ -1,0 +1,8 @@
+{
+  "name": "xterm",
+  "version": "0.31.0",
+  "ignore": ["demo", "test", ".gitignore"],
+  "main": "src/xterm.js",
+  "repository": "https://github.com/sourcelair/xterm.js",
+  "license": "MIT"
+}
