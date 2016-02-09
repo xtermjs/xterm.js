@@ -1,10 +1,10 @@
-# xterm.js — xterm, in the browser
+# xterm.js
 
-Xterm.js is a full xterm clone, written completely in JavaScript.
+Xterm.js is a full xterm clone, written in JavaScript.
 
-Xterm.js supplies a modular, event-based interface that lets developers build addons and themes that augment  the experience of running a fully-featured terminal inside the browser.
+It is used at [SourceLair](https://www.sourcelair.com/home) to help people develop their applications in their browsers.
 
-Xterm.js serves as foundation for the terminal found at www.sourcelair.com.
+Xterm.js supplies a modular, event-based interface that lets developers build addons and themes on top of it.
 
 ![xterm.js screenshot](xtermjs.png)
 
@@ -14,6 +14,6 @@ If you contribute code to this project, you are implicitly allowing your code to
 
 ## License
 
-Copyright (c) 2014-2015, SourceLair, Private Company (www.sourcelair.com) (MIT License)
+Copyright (c) 2014-2016, SourceLair, Private Company ([www.sourcelair.com](https://www.sourcelair.com/home)) (MIT License)
 
 Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)
