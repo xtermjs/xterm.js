@@ -383,7 +383,7 @@
      * Focused Terminal
      */
     Terminal.prototype.focus = function() {
-      if (document.activeElement === this.textarea) {
+      if (document.activeElement === this.element) {
         return;
       }
 
@@ -392,7 +392,7 @@
       }
 
       this.showCursor();
-      this.textarea.focus();
+      this.element.focus();
 
     };
 
@@ -403,7 +403,7 @@
 
       this.cursorState = 0;
       this.refresh(this.y, this.y);
-      this.textarea.blur();
+      this.element.blur();
 
       if (this.sendFocus) {
         this.send('\x1b[O');
@@ -424,14 +424,12 @@
      * Bind to paste event
      */
     Terminal.bindPaste = function(term) {
-      on([term.textarea, term.element], 'paste', function(ev) {
-        ev.stopPropagation();
+      on(term.element, 'paste', function(ev) {
         if (ev.clipboardData) {
           var text = ev.clipboardData.getData('text/plain');
           term.handler(text);
         }
-        term.textarea.value = '';
-        return term.cancel(ev);
+        return term.cancel(ev, true);
       });
     };
 
@@ -441,32 +439,11 @@
      */
     Terminal.bindKeys = function(term) {
       on(term.element, 'keydown', function(ev) {
-        if (document.activeElement != this) {
-          return;
-        }
         term.keyDown(ev);
       }, true);
 
       on(term.element, 'keypress', function(ev) {
-        if (document.activeElement != this) {
-          return;
-        }
         term.keyPress(ev);
-      }, true);
-
-      on(term.element, 'keyup', term.focus.bind(term));
-
-      on(term.textarea, 'keydown', function(ev) {
-        term.keyDown(ev);
-      }, true);
-
-      on(term.textarea, 'keypress', function(ev) {
-        term.keyPress(ev);
-
-        /*
-        * Truncate the textarea's value, since it is not needed
-        */
-        this.value = '';
       }, true);
     };
 
@@ -534,6 +511,7 @@
       this.element.classList.add('xterm');
       this.element.classList.add('xterm-theme-' + this.theme);
       this.element.setAttribute('tabindex', 0);
+      this.element.contentEditable = 'true';
 
       /*
       * Create the container that will hold the lines of the terminal and then
@@ -543,27 +521,6 @@
       this.rowContainer.classList.add('xterm-rows');
       this.element.appendChild(this.rowContainer);
       this.children = [];
-
-      /*
-      * Create the container that will hold helpers like the textarea for
-      * capturing DOM Events. Then produce the helpers.
-      */
-      this.helperContainer = document.createElement('div');
-      this.helperContainer.classList.add('xterm-helpers');
-      this.element.appendChild(this.helperContainer);
-      this.textarea = document.createElement('textarea');
-      this.textarea.classList.add('xterm-helper-textarea');
-      this.textarea.setAttribute('autocorrect', 'off');
-      this.textarea.setAttribute('autocapitalize', 'off');
-      this.textarea.setAttribute('spellcheck', 'false');
-      this.textarea.tabIndex = 0;
-      this.textarea.onfocus = function() {
-        self.emit('focus', {terminal: self});
-      }
-      this.textarea.onblur = function() {
-        self.emit('blur', {terminal: self});
-      }
-      this.helperContainer.appendChild(this.textarea);
 
       for (; i < this.rows; i++) {
         this.insertRow();
@@ -2388,7 +2345,7 @@
       this.showCursor();
       this.handler(key);
 
-      return this.cancel(ev);
+      return this.cancel(ev, true);
     };
 
     Terminal.prototype.setgLevel = function(g) {
@@ -2405,8 +2362,6 @@
 
     Terminal.prototype.keyPress = function(ev) {
       var key;
-
-      this.cancel(ev);
 
       if (ev.charCode) {
         key = ev.charCode;
@@ -2428,6 +2383,8 @@
       this.emit('key', key, ev);
       this.showCursor();
       this.handler(key);
+
+      this.cancel(ev, true);
 
       return false;
     };
