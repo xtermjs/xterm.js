@@ -418,6 +418,7 @@
       Terminal.bindPaste(this);
       Terminal.bindKeys(this);
       Terminal.bindCopy(this);
+      Terminal.bindDrop(this);
     };
 
     /**
@@ -454,6 +455,17 @@
     Terminal.bindCopy = function(term) {
       on(term.element, 'copy', function(ev) {
         return; //temporary
+      });
+    };
+
+
+    Terminal.bindDrop = function (term) {
+      /*
+       * Do not perform the "drop" event. Altering the contents of the
+       * terminal with drag n drop is unwanted behavior.
+       */
+      on(term.element, 'drop', function (ev) {
+        term.cancel(ev, true);
       });
     };
 
@@ -512,6 +524,7 @@
       this.element.classList.add('xterm-theme-' + this.theme);
       this.element.setAttribute('tabindex', 0);
       this.element.contentEditable = 'true';
+      this.element.spellcheck = 'false';
 
       /*
       * Create the container that will hold the lines of the terminal and then
