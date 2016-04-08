@@ -100,10 +100,11 @@
     };
 
     EventEmitter.prototype.once = function(type, listener) {
+      var self = this;
       function on() {
         var args = Array.prototype.slice.call(arguments);
-        this.removeListener(type, on);
-        return listener.apply(this, args);
+        self.removeListener(type, on);
+        return listener.apply(self, args);
       }
       on.listener = listener;
       return this.on(type, on);
@@ -430,7 +431,6 @@
           var text = ev.clipboardData.getData('text/plain');
           term.handler(text);
         }
-        return term.cancel(ev, true);
       });
     };
 
@@ -440,6 +440,16 @@
      */
     Terminal.bindKeys = function(term) {
       on(term.element, 'keydown', function(ev) {
+        /*
+         * Clear all selections if the key pressed was not among
+         * Shift, Alt, Cmd, Ctrl.
+         */
+        var selection = window.getSelection();
+        if (selection.toString() != '') {
+          if ([16, 17, 18, 91].indexOf(ev.keyCode) == -1)  {
+            selection.removeAllRanges();
+          }
+        }
         term.keyDown(ev);
       }, true);
 
@@ -465,6 +475,17 @@
        * terminal with drag n drop is unwanted behavior.
        */
       on(term.element, 'drop', function (ev) {
+        term.cancel(ev, true);
+      });
+    };
+
+
+    Terminal.click = function (term) {
+      /*
+       * Do not perform the "drop" event. Altering the contents of the
+       * terminal with drag n drop is unwanted behavior.
+       */
+      on(term.element, 'click', function (ev) {
         term.cancel(ev, true);
       });
     };
@@ -523,7 +544,6 @@
       this.element.classList.add('xterm');
       this.element.classList.add('xterm-theme-' + this.theme);
       this.element.setAttribute('tabindex', 0);
-      this.element.contentEditable = 'true';
       this.element.spellcheck = 'false';
 
       /*

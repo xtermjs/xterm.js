@@ -15,7 +15,9 @@ term.writeln('');
 term.prompt();
 
 term.on('key', function (key, ev) {
-  var printable = (!ev.altKey && !ev.altGraphKey && !ev.ctrlKey && !ev.metaKey);
+  var printable = (
+    !ev.altKey && !ev.altGraphKey && !ev.ctrlKey && !ev.metaKey
+  );
 
   if (ev.keyCode == 13) {
     term.prompt();
