@@ -32,7 +32,12 @@
  */
 
 (function (xterm) {
-    if (typeof define == 'function') {
+    if (typeof exports === 'object' && typeof module === 'object') {
+        /*
+         * npm/nodejs project
+         */
+        module.exports = xterm.call(this);
+    } else if (typeof define == 'function') {
         /*
          * Require.js is available
          */
