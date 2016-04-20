@@ -398,7 +398,7 @@
 
       this.showCursor();
       this.textarea.focus();
-
+      Terminal.focus = this;
     };
 
     Terminal.prototype.blur = function() {
