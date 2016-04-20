@@ -2520,10 +2520,10 @@
       } else if (j > y) {
         while (j-- > y) {
           if (this.lines.length > y + this.ybase) {
-            this.lines.pop();
+            this.lines.shift();
           }
           if (this.children.length > y) {
-            el = this.children.pop();
+            el = this.children.shift();
             if (!el) continue;
             el.parentNode.removeChild(el);
           }
