@@ -379,6 +379,8 @@
 
     Terminal.options = {};
 
+    Terminal.focus = null;
+
     each(keys(Terminal.defaults), function(key) {
       Terminal[key] = Terminal.defaults[key];
       Terminal.options[key] = Terminal.defaults[key];
@@ -398,7 +400,7 @@
 
       this.showCursor();
       this.textarea.focus();
-
+      Terminal.focus = this;
     };
 
     Terminal.prototype.blur = function() {
@@ -413,6 +415,7 @@
       if (this.sendFocus) {
         this.send('\x1b[O');
       }
+      Terminal.focus = null;
     };
 
     /**
