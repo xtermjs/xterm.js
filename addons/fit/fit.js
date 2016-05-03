@@ -12,7 +12,12 @@
  *               of columns)
  */
 (function (fit) {
-    if (typeof define == 'function') {
+    if (typeof exports === 'object' && typeof module === 'object') {
+        /*
+         * CommonJS environment
+         */
+        module.exports = fit.call(this);
+    } else if (typeof define == 'function') {
         /*
          * Require.js is available
          */

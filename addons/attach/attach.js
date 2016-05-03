@@ -7,7 +7,12 @@
  */
 
 (function (attach) {
-    if (typeof define == 'function') {
+    if (typeof exports === 'object' && typeof module === 'object') {
+        /*
+         * CommonJS environment
+         */
+        module.exports = attach.call(this);
+    } else if (typeof define == 'function') {
         /*
          * Require.js is available
          */

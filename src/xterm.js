@@ -34,7 +34,7 @@
 (function (xterm) {
     if (typeof exports === 'object' && typeof module === 'object') {
         /*
-         * npm/nodejs project
+         * CommonJS environment
          */
         module.exports = xterm.call(this);
     } else if (typeof define == 'function') {

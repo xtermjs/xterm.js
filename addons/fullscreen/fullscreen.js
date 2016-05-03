@@ -11,7 +11,12 @@
  * fullscreen mode is being toggled.
  */
 (function (fullscreen) {
-    if (typeof define == 'function') {
+    if (typeof exports === 'object' && typeof module === 'object') {
+        /*
+         * CommonJS environment
+         */
+        module.exports = fullscreen.call(this);
+    } else if (typeof define == 'function') {
         /*
          * Require.js is available
          */
@@ -19,7 +24,7 @@
     } else {
         /*
          * Plain browser environment
-         */ 
+         */
         fullscreen(this.Xterm);
     }
 })(function (Xterm) {
