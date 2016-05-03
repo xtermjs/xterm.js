@@ -11,34 +11,57 @@
  * fullscreen mode is being toggled.
  */
 (function (fullscreen) {
-    if (typeof exports === 'object' && typeof module === 'object') {
-        /*
-         * CommonJS environment
-         */
-        module.exports = fullscreen.call(this);
-    } else if (typeof define == 'function') {
-        /*
-         * Require.js is available
-         */
-        define(['../../src/xterm'], fullscreen);
-    } else {
-        /*
-         * Plain browser environment
-         */
-        fullscreen(this.Xterm);
-    }
+  if (typeof exports === 'object' && typeof module === 'object') {
+    /*
+     * CommonJS environment
+     */
+    module.exports = fullscreen.call(this);
+  } else if (typeof define == 'function') {
+    /*
+     * Require.js is available
+     */
+    define(['../../src/xterm'], fullscreen);
+  } else {
+    /*
+     * Plain browser environment
+     */
+    fullscreen(this.Xterm);
+  }
 })(function (Xterm) {
+  var exports = {};
+
+  exports.toggleFullScreen = function (term, fullscreen) {
+    var fn;
+
+    if (typeof fullscreen == 'undefined') {
+      fn = (term.element.classList.contains('fullscreen')) ? 'remove' : 'add';
+    } else if (!fullscreen) {
+      fn = 'remove';
+    } else {
+      fn = 'add';
+    }
+
+    term.element.classList[fn]('fullscreen');
+  };
+
+  /**
+   * Extends the given terminal prototype with the public methods of this add-on.
+   *
+   * @param {function} Xterm - The prototype to be extended.
+   */
+  exports.extendXtermPrototype = function (Xterm) {
     Xterm.prototype.toggleFullscreen = function (fullscreen) {
-      var fn;
-
-      if (typeof fullscreen == 'undefined') {
-        fn = (this.element.classList.contains('fullscreen')) ? 'remove' : 'add';
-      } else if (!fullscreen) {
-        fn = 'remove';
-      } else {
-        fn = 'add';
-      }
-
-      this.element.classList[fn]('fullscreen');
+      exports.toggleFullScreen(this, fullscreen);
     };
+  };
+
+  /**
+   * If the Xterm parameter is a function, then extend it with the methods declared in this
+   * add-on.
+   */
+  if (typeof Xterm == 'function') {
+    exports.extendXtermPrototype(Xterm);
+  }
+
+  return exports;
 });
