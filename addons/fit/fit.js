@@ -16,7 +16,7 @@
     /*
      * CommonJS environment
      */
-    module.exports = fit.call(this);
+    module.exports = fit(require('../../src/xterm'));
   } else if (typeof define == 'function') {
     /*
      * Require.js is available
@@ -74,28 +74,13 @@
     term.resize(geometry.cols, geometry.rows);
   };
 
-  /**
-   * Extends the given terminal prototype with the public methods of this add-on.
-   *
-   * @param {function} Xterm - The prototype to be extended.
-   */
-  exports.extendXtermPrototype = function (Xterm) {
-    Xterm.prototype.proposeGeometry = function () {
-      return exports.proposeGeometry(this);
-    };
-
-    Xterm.prototype.fit = function () {
-      return exports.fit(this);
-    };
+  Xterm.prototype.proposeGeometry = function () {
+    return exports.proposeGeometry(this);
   };
 
-  /**
-   * If the Xterm parameter is a function, then extend it with the methods declared in this
-   * add-on.
-   */
-  if (typeof Xterm == 'function') {
-    exports.extendXtermPrototype(Xterm);
-  }
+  Xterm.prototype.fit = function () {
+    return exports.fit(this);
+  };
 
   return exports;
 });

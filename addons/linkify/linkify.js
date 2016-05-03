@@ -3,7 +3,7 @@
     /*
      * CommonJS environment
      */
-    module.exports = linkify.call(this);
+    module.exports = linkify(require('../../src/xterm'));
   } else if (typeof define == 'function') {
     /*
      * Require.js is available
@@ -11,8 +11,8 @@
     define(['../../src/xterm'], linkify);
   } else {
     /*
-         * Plain browser environment
-         */
+     * Plain browser environment
+     */
     linkify(this.Xterm);
   }
 })(function (Xterm) {
@@ -159,44 +159,29 @@
    */
 
   /**
-   * Extends the given terminal prototype with the public methods of this add-on.
+   * Converts all valid URLs found in the current terminal linte into
+   * hyperlinks.
    *
-   * @param {function} Xterm - The prototype to be extended.
+   * @memberof Xterm
+   * @param {number|HTMLDivElement} line - The terminal line that should get
+   *								  		 "linkified".
+   * @param {boolean} lenient - The regex type that will be used to identify links. If lenient is
+   *                            false, the regex requires a protocol clause. Defaults to true.
    */
-  exports.extendXtermPrototype = function (Xterm) {
-    /**
-     * Converts all valid URLs found in the current terminal linte into
-     * hyperlinks.
-     *
-     * @memberof Xterm
-     * @param {number|HTMLDivElement} line - The terminal line that should get
-     *								  		 "linkified".
-     * @param {boolean} lenient - The regex type that will be used to identify links. If lenient is
-     *                            false, the regex requires a protocol clause. Defaults to true.
-     */
-    Xterm.prototype.linkifyTerminalLine = function (line, lenient) {
-      return exports.linkifyTerminalLine(this, line, lenient);
-    };
-
-    /**
-     * Converts all valid URLs found in the current terminal into hyperlinks.
-     *
-     * @memberof Xterm
-     * @param {boolean} lenient - The regex type that will be used to identify links. If lenient is
-     *                            false, the regex requires a protocol clause. Defaults to true.
-     */
-    Xterm.prototype.linkify = function (lenient) {
-      return exports.linkify(this, lenient);
-    };
+  Xterm.prototype.linkifyTerminalLine = function (line, lenient) {
+    return exports.linkifyTerminalLine(this, line, lenient);
   };
 
   /**
-   * If the Xterm parameter is a function, then extend it with the methods declared in this
-   * add-on.
+   * Converts all valid URLs found in the current terminal into hyperlinks.
+   *
+   * @memberof Xterm
+   * @param {boolean} lenient - The regex type that will be used to identify links. If lenient is
+   *                            false, the regex requires a protocol clause. Defaults to true.
    */
-  if (typeof Xterm == 'function') {
-    exports.extendXtermPrototype(Xterm);
-  }
+  Xterm.prototype.linkify = function (lenient) {
+    return exports.linkify(this, lenient);
+  };
 
   return exports;
 });

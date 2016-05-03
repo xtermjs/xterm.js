@@ -11,7 +11,7 @@
     /*
      * CommonJS environment
      */
-    module.exports = attach.call(this);
+    module.exports = attach(require('../../src/xterm'));
   } else if (typeof define == 'function') {
     /*
      * Require.js is available
@@ -107,43 +107,28 @@
   };
 
   /**
-   * Extends the given terminal prototype with the public methods of this add-on.
+   * Attaches the current terminal to the given socket
    *
-   * @param {function} Xterm - The prototype to be extended.
+   * @param {WebSocket} socket - The socket to attach the current terminal.
+   * @param {boolean} bidirectional - Whether the terminal should send data
+   *                                  to the socket as well.
+   * @param {boolean} buffered - Whether the rendering of incoming data
+   *                             should happen instantly or at a maximum
+   *                             frequency of 1 rendering per 10ms.
    */
-  exports.extendXtermPrototype = function (Xterm) {
-    /**
-     * Attaches the current terminal to the given socket
-     *
-     * @param {WebSocket} socket - The socket to attach the current terminal.
-     * @param {boolean} bidirectional - Whether the terminal should send data
-     *                                  to the socket as well.
-     * @param {boolean} buffered - Whether the rendering of incoming data
-     *                             should happen instantly or at a maximum
-     *                             frequency of 1 rendering per 10ms.
-     */
-    Xterm.prototype.attach = function (socket, bidirectional, buffered) {
-      return exports.attach(this, socket, bidirectional, buffered);
-    };
-
-    /**
-     * Detaches the current terminal from the given socket.
-     *
-     * @param {WebSocket} socket - The socket from which to detach the current
-     *                             terminal.
-     */
-    Xterm.prototype.detach = function (socket) {
-      return exports.detach(this, socket);
-    };
+  Xterm.prototype.attach = function (socket, bidirectional, buffered) {
+    return exports.attach(this, socket, bidirectional, buffered);
   };
 
   /**
-   * If the Xterm parameter is a function, then extend it with the methods declared in this
-   * add-on.
+   * Detaches the current terminal from the given socket.
+   *
+   * @param {WebSocket} socket - The socket from which to detach the current
+   *                             terminal.
    */
-  if (typeof Xterm == 'function') {
-    exports.extendXtermPrototype(Xterm);
-  }
+  Xterm.prototype.detach = function (socket) {
+    return exports.detach(this, socket);
+  };
 
   return exports;
 });

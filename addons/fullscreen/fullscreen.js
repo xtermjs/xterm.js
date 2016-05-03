@@ -15,7 +15,7 @@
     /*
      * CommonJS environment
      */
-    module.exports = fullscreen.call(this);
+    module.exports = fullscreen(require('../../src/xterm'));
   } else if (typeof define == 'function') {
     /*
      * Require.js is available
@@ -44,24 +44,9 @@
     term.element.classList[fn]('fullscreen');
   };
 
-  /**
-   * Extends the given terminal prototype with the public methods of this add-on.
-   *
-   * @param {function} Xterm - The prototype to be extended.
-   */
-  exports.extendXtermPrototype = function (Xterm) {
-    Xterm.prototype.toggleFullscreen = function (fullscreen) {
-      exports.toggleFullScreen(this, fullscreen);
-    };
+  Xterm.prototype.toggleFullscreen = function (fullscreen) {
+    exports.toggleFullScreen(this, fullscreen);
   };
-
-  /**
-   * If the Xterm parameter is a function, then extend it with the methods declared in this
-   * add-on.
-   */
-  if (typeof Xterm == 'function') {
-    exports.extendXtermPrototype(Xterm);
-  }
 
   return exports;
 });
