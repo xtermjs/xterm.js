@@ -11,29 +11,42 @@
  * fullscreen mode is being toggled.
  */
 (function (fullscreen) {
-    if (typeof define == 'function') {
-        /*
-         * Require.js is available
-         */
-        define(['../../src/xterm'], fullscreen);
-    } else {
-        /*
-         * Plain browser environment
-         */ 
-        fullscreen(this.Xterm);
-    }
+  if (typeof exports === 'object' && typeof module === 'object') {
+    /*
+     * CommonJS environment
+     */
+    module.exports = fullscreen(require('../../src/xterm'));
+  } else if (typeof define == 'function') {
+    /*
+     * Require.js is available
+     */
+    define(['../../src/xterm'], fullscreen);
+  } else {
+    /*
+     * Plain browser environment
+     */
+    fullscreen(this.Xterm);
+  }
 })(function (Xterm) {
-    Xterm.prototype.toggleFullscreen = function (fullscreen) {
-      var fn;
+  var exports = {};
 
-      if (typeof fullscreen == 'undefined') {
-        fn = (this.element.classList.contains('fullscreen')) ? 'remove' : 'add';
-      } else if (!fullscreen) {
-        fn = 'remove';
-      } else {
-        fn = 'add';
-      }
+  exports.toggleFullScreen = function (term, fullscreen) {
+    var fn;
 
-      this.element.classList[fn]('fullscreen');
-    };
+    if (typeof fullscreen == 'undefined') {
+      fn = (term.element.classList.contains('fullscreen')) ? 'remove' : 'add';
+    } else if (!fullscreen) {
+      fn = 'remove';
+    } else {
+      fn = 'add';
+    }
+
+    term.element.classList[fn]('fullscreen');
+  };
+
+  Xterm.prototype.toggleFullscreen = function (fullscreen) {
+    exports.toggleFullScreen(this, fullscreen);
+  };
+
+  return exports;
 });
