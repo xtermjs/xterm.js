@@ -32,7 +32,12 @@
  */
 
 (function (xterm) {
-    if (typeof define == 'function') {
+    if (typeof exports === 'object' && typeof module === 'object') {
+        /*
+         * CommonJS environment
+         */
+        module.exports = xterm.call(this);
+    } else if (typeof define == 'function') {
         /*
          * Require.js is available
          */
@@ -375,6 +380,8 @@
 
     Terminal.options = {};
 
+    Terminal.focus = null;
+
     each(keys(Terminal.defaults), function(key) {
       Terminal[key] = Terminal.defaults[key];
       Terminal.options[key] = Terminal.defaults[key];
@@ -394,7 +401,6 @@
 
       this.showCursor();
       this.element.focus();
-
     };
 
     Terminal.prototype.blur = function() {
@@ -409,6 +415,7 @@
       if (this.sendFocus) {
         this.send('\x1b[O');
       }
+      Terminal.focus = null;
     };
 
     /**
@@ -950,6 +957,17 @@
     };
 
 
+    /**
+     * Flags used to render terminal text properly
+     */
+    Terminal.flags = {
+      BOLD: 0b00001,
+      UNDERLINE: 0b00010,
+      BLINK: 0b00100,
+      INVERSE: 0b01000,
+      INVISIBLE: 0b10000
+    }
+
     /*
      * Rendering Engine
      *
@@ -1017,8 +1035,7 @@
                 fg = (data >> 9) & 0x1ff;
                 flags = data >> 18;
 
-                // bold
-                if (flags & 1) {
+                if (flags & Terminal.flags.BOLD) {
                   if (!Terminal.brokenBold) {
                     out += ' xterm-bold ';
                   }
@@ -1026,35 +1043,50 @@
                   if (fg < 8) fg += 8;
                 }
 
-                // underline
-                if (flags & 2) {
+                if (flags & Terminal.flags.UNDERLINE) {
                   out += ' xterm-underline ';
                 }
 
-                // blink
-                if (flags & 4) {
+                if (flags & Terminal.flags.BLINK) {
                     out += ' xterm-blink ';
                 }
 
-                // inverse
-                if (flags & 8) {
-                  bg = (data >> 9) & 0x1ff;
-                  fg = data & 0x1ff;
-                  // Should inverse just be before the
-                  // above boldColors effect instead?
-                  if ((flags & 1) && fg < 8) fg += 8;
+                /**
+                 * If inverse flag is on, then swap the foreground and background variables.
+                 */
+                if (flags & Terminal.flags.INVERSE) {
+                    /* One-line variable swap in JavaScript: http://stackoverflow.com/a/16201730 */
+                    bg = [fg, fg = bg][0];
+                    // Should inverse just be before the
+                    // above boldColors effect instead?
+                    if ((flags & 1) && fg < 8) fg += 8;
                 }
 
-                // invisible
-                if (flags & 16) {
+                if (flags & Terminal.flags.INVISIBLE) {
                   out += ' xterm-hidden ';
                 }
 
-                if (bg !== 256) {
+                /**
+                 * Weird situation: Invert flag used black foreground and white background results
+                 * in invalid background color, positioned at the 256 index of the 256 terminal
+                 * color map. Pin the colors manually in such a case.
+                 *
+                 * Source: https://github.com/sourcelair/xterm.js/issues/57
+                 */
+                if (flags & Terminal.flags.INVERSE) {
+                  if (bg == 257) {
+                    bg = 15;
+                  }
+                  if (fg == 256) {
+                    fg = 0;
+                  }
+                }
+
+                if (bg < 256) {
                   out += ' xterm-bg-color-' + bg + ' ';
                 }
 
-                if (fg !== 257) {
+                if (fg < 256) {
                   out += ' xterm-color-' + fg + ' ';
                 }
 
@@ -2505,10 +2537,10 @@
       } else if (j > y) {
         while (j-- > y) {
           if (this.lines.length > y + this.ybase) {
-            this.lines.pop();
+            this.lines.shift();
           }
           if (this.children.length > y) {
-            el = this.children.pop();
+            el = this.children.shift();
             if (!el) continue;
             el.parentNode.removeChild(el);
           }
