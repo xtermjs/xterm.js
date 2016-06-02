@@ -421,7 +421,6 @@
     /**
      * Initialize default behavior
      */
-
     Terminal.prototype.initGlobal = function() {
       Terminal.bindPaste(this);
       Terminal.bindKeys(this);
@@ -442,10 +441,11 @@
       });
 
       /**
-       * Contenteditable hack in order to allow right-click paste
+       * Contenteditable hack in order to allow right-click paste.
+       * Set contentEditable to true when right clicking and then set it back to false on mouse up
+       * in order to hide the contentEditable cursor.
        */
       on(term.element, 'contextmenu', function (ev) {
-        console.log('hey');
         term.element.contentEditable = true;
       });
 
@@ -514,7 +514,7 @@
       this.children.push(row);
 
       return row;
-    }
+    };
 
 
     /*
@@ -2446,6 +2446,18 @@
       }
 
       key = String.fromCharCode(key);
+
+      /**
+       * When a key is pressed and a character is sent to the terminal, then clear any text
+       * selected in the terminal.
+       */
+      if (key) {
+        var selectionBaseNode = window.getSelection().baseNode;
+
+        if (selectionBaseNode && (this.element.contains(selectionBaseNode.parentElement))) {
+        		window.getSelection().removeAllRanges();
+        }
+      }
 
       this.emit('keypress', key, ev);
       this.emit('key', key, ev);
