@@ -4144,6 +4144,7 @@
       this.maxRange();
     };
 
+
     // CSI P m SP ~
     // Delete P s Column(s) (default = 1) (DECDC), VT420 and up
     // NOTE: xterm doesn't enable this code by default.
@@ -4161,64 +4162,6 @@
       }
 
       this.maxRange();
-    };
-
-
-    Terminal.prototype.copyBuffer = function(lines) {
-      var lines = lines || this.lines
-        , out = [];
-
-      for (var y = 0; y < lines.length; y++) {
-        out[y] = [];
-        for (var x = 0; x < lines[y].length; x++) {
-          out[y][x] = [lines[y][x][0], lines[y][x][1]];
-        }
-      }
-
-      return out;
-    };
-
-    Terminal.prototype.getCopyTextarea = function(text) {
-      var textarea = this._copyTextarea
-        , document = this.document;
-
-      if (!textarea) {
-        textarea = document.createElement('textarea');
-        textarea.style.position = 'absolute';
-        textarea.style.left = '-32000px';
-        textarea.style.top = '-32000px';
-        textarea.style.width = '0px';
-        textarea.style.height = '0px';
-        textarea.style.opacity = '0';
-        textarea.style.backgroundColor = 'transparent';
-        textarea.style.borderStyle = 'none';
-        textarea.style.outlineStyle = 'none';
-
-        document.getElementsByTagName('body')[0].appendChild(textarea);
-
-        this._copyTextarea = textarea;
-      }
-
-      return textarea;
-    };
-
-    // NOTE: Only works for primary selection on X11.
-    // Non-X11 users should use Ctrl-C instead.
-    Terminal.prototype.copyText = function(text) {
-      var self = this
-        , textarea = this.getCopyTextarea();
-
-      this.emit('copy', text);
-
-      textarea.focus();
-      textarea.textContent = text;
-      textarea.value = text;
-      textarea.setSelectionRange(0, text.length);
-
-      setTimeout(function() {
-        self.element.focus();
-        self.focus();
-      }, 1);
     };
 
     Terminal.prototype.keyPrefix = function(ev, key) {
