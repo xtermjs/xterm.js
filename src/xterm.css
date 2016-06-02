@@ -51,23 +51,6 @@
     color: #000;
 }
 
-.terminal .xterm-helpers {
-    position: absolute;
-    top: 0;
-}
-
-.terminal .xterm-helper-textarea {
-    /*
-     * HACK: to fix IE's blinking cursor
-     * Move textarea out of the screen to the far left, so that the cursor is not visible.
-     */
-    text-indent: -9999em;
-    opacity: 0;
-    width: 0;
-    height: 0;
-    z-index: -10;
-}
-
 /*
  *  Determine default colors for xterm.js
  */
