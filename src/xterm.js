@@ -430,14 +430,27 @@
     };
 
     /**
-     * Bind to paste event
+     * Bind to paste event and allow right-click pasting.
      */
     Terminal.bindPaste = function(term) {
       on(term.element, 'paste', function(ev) {
         if (ev.clipboardData) {
           var text = ev.clipboardData.getData('text/plain');
+          term.emit('paste', text, ev);
           term.handler(text);
         }
+      });
+
+      /**
+       * Contenteditable hack in order to allow right-click paste
+       */
+      on(term.element, 'contextmenu', function (ev) {
+        console.log('hey');
+        term.element.contentEditable = true;
+      });
+
+      on(term.element, 'mouseup', function (ev) {
+        term.element.contentEditable = false;
       });
     };
 
@@ -447,16 +460,6 @@
      */
     Terminal.bindKeys = function(term) {
       on(term.element, 'keydown', function(ev) {
-        /*
-         * Clear all selections if the key pressed was not among
-         * Shift, Alt, Cmd, Ctrl.
-         */
-        var selection = window.getSelection();
-        if (selection.toString() != '') {
-          if ([16, 17, 18, 91].indexOf(ev.keyCode) == -1)  {
-            selection.removeAllRanges();
-          }
-        }
         term.keyDown(ev);
       }, true);
 
@@ -471,7 +474,7 @@
      */
     Terminal.bindCopy = function(term) {
       on(term.element, 'copy', function(ev) {
-        return; //temporary
+        return;
       });
     };
 

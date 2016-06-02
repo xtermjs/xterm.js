@@ -1,6 +1,6 @@
 var terminalContainer = document.getElementById('terminal-container'),
     term = new Terminal(),
-    shellprompt = '> ';
+    shellprompt = '$ ';
 
 term.open(terminalContainer);
 term.fit();
@@ -31,4 +31,8 @@ term.on('key', function (key, ev) {
   } else if (printable) {
     term.write(key);
   }
+});
+
+term.on('paste', function (data, ev) {
+	term.write(data);
 });
