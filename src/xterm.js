@@ -1040,7 +1040,7 @@
               if (data === -1) {
                 out += '<span class="reverse-video terminal-cursor">';
               } else {
-                out += '<span class="';
+                var classNames = [];
 
                 bg = data & 0x1ff;
                 fg = (data >> 9) & 0x1ff;
@@ -1048,18 +1048,18 @@
 
                 if (flags & Terminal.flags.BOLD) {
                   if (!Terminal.brokenBold) {
-                    out += ' xterm-bold ';
+                    classNames.push('xterm-bold');
                   }
                   // See: XTerm*boldColors
                   if (fg < 8) fg += 8;
                 }
 
                 if (flags & Terminal.flags.UNDERLINE) {
-                  out += ' xterm-underline ';
+                  classNames.push('xterm-underline');
                 }
 
                 if (flags & Terminal.flags.BLINK) {
-                    out += ' xterm-blink ';
+                  classNames.push('xterm-blink');
                 }
 
                 /**
@@ -1074,7 +1074,7 @@
                 }
 
                 if (flags & Terminal.flags.INVISIBLE) {
-                  out += ' xterm-hidden ';
+                  classNames.push('xterm-hidden');
                 }
 
                 /**
@@ -1094,14 +1094,18 @@
                 }
 
                 if (bg < 256) {
-                  out += ' xterm-bg-color-' + bg + ' ';
+                  classNames.push('xterm-bg-color-' + bg);
                 }
 
                 if (fg < 256) {
-                  out += ' xterm-color-' + fg + ' ';
+                  classNames.push('xterm-color-' + fg);
                 }
 
-                out += '">';
+                out += '<span';
+                if (classNames.length) {
+                  out += ' class="' + classNames.join(' ') + '"';
+                }
+                out += '>';
               }
             }
           }
