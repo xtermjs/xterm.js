@@ -428,8 +428,36 @@
       Terminal.bindDrop(this);
     };
 
+  	/**
+  	 * Clears all selected text, inside the terminal.
+  	 */
+		Terminal.prototype.clearSelection = function() {
+      var selectionBaseNode = window.getSelection().baseNode;
+
+      if (selectionBaseNode && (this.element.contains(selectionBaseNode.parentElement))) {
+        window.getSelection().removeAllRanges();
+      }
+    };
+
+  	/**
+  	 * This function temporarily enables (leases) the contentEditable value of the terminal, which
+  	 * should be set back to false within 5 seconds at most.
+  	 */
+  	Terminal.prototype.leaseContentEditable = function (ms, callback) {
+      var term = this;
+
+      term.element.contentEditable = true;
+      setTimeout(function () {
+        term.element.contentEditable = false;
+        if (typeof callback == 'function') {
+          callback.call(term);
+        }
+      }, ms || 5000);
+    };
+
     /**
-     * Bind to paste event and allow right-click pasting.
+     * Bind to paste event and allow both keyboard and right-click pasting, without having the
+     * contentEditable value set to true.
      */
     Terminal.bindPaste = function(term) {
       on(term.element, 'paste', function(ev) {
@@ -437,20 +465,47 @@
           var text = ev.clipboardData.getData('text/plain');
           term.emit('paste', text, ev);
           term.handler(text);
+          /**
+           * Cancel the paste event, or else things will be pasted twice:
+           *   1. by the terminal handler
+           *   2. by the browser, because of the contentEditable value being true
+           */
+          term.cancel(ev, true);
+
+          /**
+           * After the paste event is completed, always set the contentEditable value to false.
+           */
+          term.element.contentEditable = false;
         }
       });
 
       /**
-       * Contenteditable hack in order to allow right-click paste.
-       * Set contentEditable to true when right clicking and then set it back to false on mouse up
-       * in order to hide the contentEditable cursor.
+       * Hack pasting with keyboard, in order to make it work without contentEditable.
+       * When a user types Ctrl + Shift + V or Cmd + V on a Mac, lease the contentEditable value
+       * as true.
        */
-      on(term.element, 'contextmenu', function (ev) {
-        term.element.contentEditable = true;
+      on(term.element, 'keydown', function (ev) {
+        /**
+         * If on a Mac, lease the contentEditable value temporarily, when the user presses
+         * the Cmd button, in order to cope with some sync issues on Safari.
+         */
+        if (term.isMac && ev.keyCode == 91) {
+          term.leaseContentEditable(1000);
+        }
+
+        if (ev.keyCode == 86) { // keyCode 96 corresponds to "v"
+          if (term.isMac && ev.metaKey) {
+            term.leaseContentEditable();
+          }
+        }
       });
 
-      on(term.element, 'mouseup', function (ev) {
-        term.element.contentEditable = false;
+      /**
+       * Hack pasting with right-click in order to allow right-click paste, by leasing the
+       * contentEditable value as true.
+       */
+      on(term.element, 'contextmenu', function (ev) {
+        term.leaseContentEditable();
       });
     };
 
@@ -2452,11 +2507,7 @@
        * selected in the terminal.
        */
       if (key) {
-        var selectionBaseNode = window.getSelection().baseNode;
-
-        if (selectionBaseNode && (this.element.contains(selectionBaseNode.parentElement))) {
-        		window.getSelection().removeAllRanges();
-        }
+        this.clearSelection();
       }
 
       this.emit('keypress', key, ev);
