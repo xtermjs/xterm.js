@@ -401,6 +401,7 @@
 
       this.showCursor();
       this.element.focus();
+      this.emit('focus', {terminal: this});
     };
 
     Terminal.prototype.blur = function() {
@@ -416,6 +417,7 @@
         this.send('\x1b[O');
       }
       Terminal.focus = null;
+      this.emit('blur', {terminal: this});
     };
 
     /**
