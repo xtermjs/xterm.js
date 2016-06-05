@@ -422,9 +422,10 @@
      * Initialize default behavior
      */
     Terminal.prototype.initGlobal = function() {
-      Terminal.bindPaste(this);
       Terminal.bindKeys(this);
+      Terminal.bindPaste(this);
       Terminal.bindCopy(this);
+      Terminal.bindCut(this);
       Terminal.bindDrop(this);
     };
 
@@ -524,12 +525,26 @@
     };
 
 
-    /*
-     * Bind copy event
+    /**
+     * Bind copy event. Stript trailing whitespaces from selection.
      */
     Terminal.bindCopy = function(term) {
       on(term.element, 'copy', function(ev) {
-        return;
+        var selectedText = window.getSelection().toString(),
+						copiedText = selectedText.split('\n').map(function (element) {
+              return element.replace(/\s+$/g, '');
+            }).join('\n');
+        ev.clipboardData.setData('text/plain', copiedText);
+        ev.preventDefault();
+      });
+    };
+
+  	/**
+  	 * Cancel the cut event completely
+  	 */
+  	Terminal.bindCut = function(term) {
+      on(term.element, 'cut', function (ev) {
+        ev.preventDefault();
       });
     };
 
