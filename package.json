@@ -4,5 +4,13 @@
   "ignore": ["demo", "test", ".gitignore"],
   "main": "src/xterm.js",
   "repository": "https://github.com/sourcelair/xterm.js",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "express": "4.13.4",
+    "express-ws": "2.0.0-rc.1",
+    "pty.js": "0.3.0"
+  },
+  "scripts": {
+    "start": "bash bin/server"
+  }
 }
