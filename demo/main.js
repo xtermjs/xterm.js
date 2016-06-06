@@ -34,5 +34,5 @@ term.on('key', function (key, ev) {
 });
 
 term.on('paste', function (data, ev) {
-	term.write(data);
+  term.write(data);
 });
