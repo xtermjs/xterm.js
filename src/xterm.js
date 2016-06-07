@@ -401,7 +401,6 @@
 
       this.showCursor();
       this.element.focus();
-      this.emit('focus', {terminal: this});
     };
 
     Terminal.prototype.blur = function() {
@@ -417,7 +416,6 @@
         this.send('\x1b[O');
       }
       Terminal.focus = null;
-      this.emit('blur', {terminal: this});
     };
 
     /**
@@ -627,6 +625,12 @@
       this.element.classList.add('xterm-theme-' + this.theme);
       this.element.setAttribute('tabindex', 0);
       this.element.spellcheck = 'false';
+      this.element.onfocus = function() {
+        self.emit('focus', {terminal: this});
+      };
+      this.element.onblur = function() {
+        self.emit('blur', {terminal: this});
+      };
 
       /*
       * Create the container that will hold the lines of the terminal and then
