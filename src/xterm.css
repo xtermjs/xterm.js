@@ -51,6 +51,12 @@
     color: #000;
 }
 
+.terminal:not(:focus) .terminal-cursor {
+    outline: 1px solid #fff;
+    outline-offset: -1px;
+    background-color: transparent;
+}
+
 /*
  *  Determine default colors for xterm.js
  */
