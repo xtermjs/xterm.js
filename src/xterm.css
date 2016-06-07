@@ -2123,7 +2123,7 @@
  * in order to allow child elements to adjust.
  */
 .terminal .xterm-rows > div {
-    line-height: 1.3;
+    line-height: normal;
 }
 
 /**
