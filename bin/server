@@ -1,4 +1,4 @@
 #! /usr/bin/env sh
 
 # Development server for xterm.js
-browser-sync start --server --port 8000 --files="**" --no-ui --index index.html --directory
+node demo/app.js
