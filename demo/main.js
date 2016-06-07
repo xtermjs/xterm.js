@@ -1,6 +1,6 @@
 var terminalContainer = document.getElementById('terminal-container'),
     term = new Terminal(),
-    shellprompt = '> ';
+    shellprompt = '$ ';
 
 term.open(terminalContainer);
 term.fit();
@@ -15,7 +15,9 @@ term.writeln('');
 term.prompt();
 
 term.on('key', function (key, ev) {
-  var printable = (!ev.altKey && !ev.altGraphKey && !ev.ctrlKey && !ev.metaKey);
+  var printable = (
+    !ev.altKey && !ev.altGraphKey && !ev.ctrlKey && !ev.metaKey
+  );
 
   if (ev.keyCode == 13) {
     term.prompt();
@@ -29,4 +31,8 @@ term.on('key', function (key, ev) {
   } else if (printable) {
     term.write(key);
   }
+});
+
+term.on('paste', function (data, ev) {
+  term.write(data);
 });

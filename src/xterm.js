@@ -105,10 +105,11 @@
     };
 
     EventEmitter.prototype.once = function(type, listener) {
+      var self = this;
       function on() {
         var args = Array.prototype.slice.call(arguments);
-        this.removeListener(type, on);
-        return listener.apply(this, args);
+        self.removeListener(type, on);
+        return listener.apply(self, args);
       }
       on.listener = listener;
       return this.on(type, on);
@@ -390,7 +391,7 @@
      * Focused Terminal
      */
     Terminal.prototype.focus = function() {
-      if (document.activeElement === this.textarea) {
+      if (document.activeElement === this.element) {
         return;
       }
 
@@ -399,8 +400,8 @@
       }
 
       this.showCursor();
-      this.textarea.focus();
-      Terminal.focus = this;
+      this.element.focus();
+      this.emit('focus', {terminal: this});
     };
 
     Terminal.prototype.blur = function() {
@@ -410,36 +411,104 @@
 
       this.cursorState = 0;
       this.refresh(this.y, this.y);
-      this.textarea.blur();
+      this.element.blur();
 
       if (this.sendFocus) {
         this.send('\x1b[O');
       }
       Terminal.focus = null;
+      this.emit('blur', {terminal: this});
     };
 
     /**
      * Initialize default behavior
      */
-
     Terminal.prototype.initGlobal = function() {
-      Terminal.bindPaste(this);
       Terminal.bindKeys(this);
+      Terminal.bindPaste(this);
       Terminal.bindCopy(this);
+      Terminal.bindCut(this);
+      Terminal.bindDrop(this);
+    };
+
+  	/**
+  	 * Clears all selected text, inside the terminal.
+  	 */
+		Terminal.prototype.clearSelection = function() {
+      var selectionBaseNode = window.getSelection().baseNode;
+
+      if (selectionBaseNode && (this.element.contains(selectionBaseNode.parentElement))) {
+        window.getSelection().removeAllRanges();
+      }
+    };
+
+  	/**
+  	 * This function temporarily enables (leases) the contentEditable value of the terminal, which
+  	 * should be set back to false within 5 seconds at most.
+  	 */
+  	Terminal.prototype.leaseContentEditable = function (ms, callback) {
+      var term = this;
+
+      term.element.contentEditable = true;
+      setTimeout(function () {
+        term.element.contentEditable = false;
+        if (typeof callback == 'function') {
+          callback.call(term);
+        }
+      }, ms || 5000);
     };
 
     /**
-     * Bind to paste event
+     * Bind to paste event and allow both keyboard and right-click pasting, without having the
+     * contentEditable value set to true.
      */
     Terminal.bindPaste = function(term) {
-      on([term.textarea, term.element], 'paste', function(ev) {
-        ev.stopPropagation();
+      on(term.element, 'paste', function(ev) {
         if (ev.clipboardData) {
           var text = ev.clipboardData.getData('text/plain');
+          term.emit('paste', text, ev);
           term.handler(text);
+          /**
+           * Cancel the paste event, or else things will be pasted twice:
+           *   1. by the terminal handler
+           *   2. by the browser, because of the contentEditable value being true
+           */
+          term.cancel(ev, true);
+
+          /**
+           * After the paste event is completed, always set the contentEditable value to false.
+           */
+          term.element.contentEditable = false;
         }
-        term.textarea.value = '';
-        return term.cancel(ev);
+      });
+
+      /**
+       * Hack pasting with keyboard, in order to make it work without contentEditable.
+       * When a user types Ctrl + Shift + V or Cmd + V on a Mac, lease the contentEditable value
+       * as true.
+       */
+      on(term.element, 'keydown', function (ev) {
+        /**
+         * If on a Mac, lease the contentEditable value temporarily, when the user presses
+         * the Cmd button, in order to cope with some sync issues on Safari.
+         */
+        if (term.isMac && ev.keyCode == 91) {
+          term.leaseContentEditable(1000);
+        }
+
+        if (ev.keyCode == 86) { // keyCode 96 corresponds to "v"
+          if (term.isMac && ev.metaKey) {
+            term.leaseContentEditable();
+          }
+        }
+      });
+
+      /**
+       * Hack pasting with right-click in order to allow right-click paste, by leasing the
+       * contentEditable value as true.
+       */
+      on(term.element, 'contextmenu', function (ev) {
+        term.leaseContentEditable();
       });
     };
 
@@ -449,42 +518,57 @@
      */
     Terminal.bindKeys = function(term) {
       on(term.element, 'keydown', function(ev) {
-        if (document.activeElement != this) {
-          return;
-        }
         term.keyDown(ev);
       }, true);
 
       on(term.element, 'keypress', function(ev) {
-        if (document.activeElement != this) {
-          return;
-        }
         term.keyPress(ev);
-      }, true);
-
-      on(term.element, 'keyup', term.focus.bind(term));
-
-      on(term.textarea, 'keydown', function(ev) {
-        term.keyDown(ev);
-      }, true);
-
-      on(term.textarea, 'keypress', function(ev) {
-        term.keyPress(ev);
-
-        /*
-        * Truncate the textarea's value, since it is not needed
-        */
-        this.value = '';
       }, true);
     };
 
 
-    /*
-     * Bind copy event
+    /**
+     * Bind copy event. Stript trailing whitespaces from selection.
      */
     Terminal.bindCopy = function(term) {
       on(term.element, 'copy', function(ev) {
-        return; //temporary
+        var selectedText = window.getSelection().toString(),
+						copiedText = selectedText.split('\n').map(function (element) {
+              return element.replace(/\s+$/g, '');
+            }).join('\n');
+        ev.clipboardData.setData('text/plain', copiedText);
+        ev.preventDefault();
+      });
+    };
+
+  	/**
+  	 * Cancel the cut event completely
+  	 */
+  	Terminal.bindCut = function(term) {
+      on(term.element, 'cut', function (ev) {
+        ev.preventDefault();
+      });
+    };
+
+
+    Terminal.bindDrop = function (term) {
+      /*
+       * Do not perform the "drop" event. Altering the contents of the
+       * terminal with drag n drop is unwanted behavior.
+       */
+      on(term.element, 'drop', function (ev) {
+        term.cancel(ev, true);
+      });
+    };
+
+
+    Terminal.click = function (term) {
+      /*
+       * Do not perform the "drop" event. Altering the contents of the
+       * terminal with drag n drop is unwanted behavior.
+       */
+      on(term.element, 'click', function (ev) {
+        term.cancel(ev, true);
       });
     };
 
@@ -502,7 +586,7 @@
       this.children.push(row);
 
       return row;
-    }
+    };
 
 
     /*
@@ -542,6 +626,7 @@
       this.element.classList.add('xterm');
       this.element.classList.add('xterm-theme-' + this.theme);
       this.element.setAttribute('tabindex', 0);
+      this.element.spellcheck = 'false';
 
       /*
       * Create the container that will hold the lines of the terminal and then
@@ -551,27 +636,6 @@
       this.rowContainer.classList.add('xterm-rows');
       this.element.appendChild(this.rowContainer);
       this.children = [];
-
-      /*
-      * Create the container that will hold helpers like the textarea for
-      * capturing DOM Events. Then produce the helpers.
-      */
-      this.helperContainer = document.createElement('div');
-      this.helperContainer.classList.add('xterm-helpers');
-      this.element.appendChild(this.helperContainer);
-      this.textarea = document.createElement('textarea');
-      this.textarea.classList.add('xterm-helper-textarea');
-      this.textarea.setAttribute('autocorrect', 'off');
-      this.textarea.setAttribute('autocapitalize', 'off');
-      this.textarea.setAttribute('spellcheck', 'false');
-      this.textarea.tabIndex = 0;
-      this.textarea.onfocus = function() {
-        self.emit('focus', {terminal: self});
-      }
-      this.textarea.onblur = function() {
-        self.emit('blur', {terminal: self});
-      }
-      this.helperContainer.appendChild(this.textarea);
 
       for (; i < this.rows; i++) {
         this.insertRow();
@@ -2425,7 +2489,7 @@
       this.showCursor();
       this.handler(key);
 
-      return this.cancel(ev);
+      return this.cancel(ev, true);
     };
 
     Terminal.prototype.setgLevel = function(g) {
@@ -2443,8 +2507,6 @@
     Terminal.prototype.keyPress = function(ev) {
       var key;
 
-      this.cancel(ev);
-
       if (ev.charCode) {
         key = ev.charCode;
       } else if (ev.which == null) {
@@ -2461,10 +2523,20 @@
 
       key = String.fromCharCode(key);
 
+      /**
+       * When a key is pressed and a character is sent to the terminal, then clear any text
+       * selected in the terminal.
+       */
+      if (key) {
+        this.clearSelection();
+      }
+
       this.emit('keypress', key, ev);
       this.emit('key', key, ev);
       this.showCursor();
       this.handler(key);
+
+      this.cancel(ev, true);
 
       return false;
     };
@@ -4159,6 +4231,7 @@
       this.maxRange();
     };
 
+
     // CSI P m SP ~
     // Delete P s Column(s) (default = 1) (DECDC), VT420 and up
     // NOTE: xterm doesn't enable this code by default.
@@ -4176,446 +4249,6 @@
       }
 
       this.maxRange();
-    };
-
-
-    Terminal.prototype.copyBuffer = function(lines) {
-      var lines = lines || this.lines
-        , out = [];
-
-      for (var y = 0; y < lines.length; y++) {
-        out[y] = [];
-        for (var x = 0; x < lines[y].length; x++) {
-          out[y][x] = [lines[y][x][0], lines[y][x][1]];
-        }
-      }
-
-      return out;
-    };
-
-    Terminal.prototype.getCopyTextarea = function(text) {
-      var textarea = this._copyTextarea
-        , document = this.document;
-
-      if (!textarea) {
-        textarea = document.createElement('textarea');
-        textarea.style.position = 'absolute';
-        textarea.style.left = '-32000px';
-        textarea.style.top = '-32000px';
-        textarea.style.width = '0px';
-        textarea.style.height = '0px';
-        textarea.style.opacity = '0';
-        textarea.style.backgroundColor = 'transparent';
-        textarea.style.borderStyle = 'none';
-        textarea.style.outlineStyle = 'none';
-
-        document.getElementsByTagName('body')[0].appendChild(textarea);
-
-        this._copyTextarea = textarea;
-      }
-
-      return textarea;
-    };
-
-    // NOTE: Only works for primary selection on X11.
-    // Non-X11 users should use Ctrl-C instead.
-    Terminal.prototype.copyText = function(text) {
-      var self = this
-        , textarea = this.getCopyTextarea();
-
-      this.emit('copy', text);
-
-      textarea.focus();
-      textarea.textContent = text;
-      textarea.value = text;
-      textarea.setSelectionRange(0, text.length);
-
-      setTimeout(function() {
-        self.element.focus();
-        self.focus();
-      }, 1);
-    };
-
-    Terminal.prototype.keyPrefix = function(ev, key) {
-      if (key === 'k' || key === '&') {
-        this.destroy();
-      } else if (key === 'p' || key === ']') {
-        this.emit('request paste');
-      } else if (key === 'c') {
-        this.emit('request create');
-      } else if (key >= '0' && key <= '9') {
-        key = +key - 1;
-        if (!~key) key = 9;
-        this.emit('request term', key);
-      } else if (key === 'n') {
-        this.emit('request term next');
-      } else if (key === 'P') {
-        this.emit('request term previous');
-      } else if (key === ':') {
-        this.emit('request command mode');
-      }
-    };
-
-    Terminal.prototype.keySelect = function(ev, key) {
-      this.showCursor();
-
-      if (key === '\x04') { // ctrl-d
-        var y = this.ydisp + this.y;
-        if (this.ydisp === this.ybase) {
-          // Mimic vim behavior
-          this.y = Math.min(this.y + (this.rows - 1) / 2 | 0, this.rows - 1);
-          this.refresh(0, this.rows - 1);
-        } else {
-          this.scrollDisp((this.rows - 1) / 2 | 0);
-        }
-        return;
-      }
-
-      if (key === '\x15') { // ctrl-u
-        var y = this.ydisp + this.y;
-        if (this.ydisp === 0) {
-          // Mimic vim behavior
-          this.y = Math.max(this.y - (this.rows - 1) / 2 | 0, 0);
-          this.refresh(0, this.rows - 1);
-        } else {
-          this.scrollDisp(-(this.rows - 1) / 2 | 0);
-        }
-        return;
-      }
-
-      if (key === '\x06') { // ctrl-f
-        var y = this.ydisp + this.y;
-        this.scrollDisp(this.rows - 1);
-        return;
-      }
-
-      if (key === '\x02') { // ctrl-b
-        var y = this.ydisp + this.y;
-        this.scrollDisp(-(this.rows - 1));
-        return;
-      }
-
-      if (key === 'k' || key === '\x1b[A') {
-        var y = this.ydisp + this.y;
-        this.y--;
-        if (this.y < 0) {
-          this.y = 0;
-          this.scrollDisp(-1);
-        }
-        this.refresh(this.y, this.y + 1);
-        return;
-      }
-
-      if (key === 'j' || key === '\x1b[B') {
-        var y = this.ydisp + this.y;
-        this.y++;
-        if (this.y >= this.rows) {
-          this.y = this.rows - 1;
-          this.scrollDisp(1);
-        }
-        this.refresh(this.y - 1, this.y);
-        return;
-      }
-
-      if (key === 'h' || key === '\x1b[D') {
-        var x = this.x;
-        this.x--;
-        if (this.x < 0) {
-          this.x = 0;
-        }
-        this.refresh(this.y, this.y);
-        return;
-      }
-
-      if (key === 'l' || key === '\x1b[C') {
-        var x = this.x;
-        this.x++;
-        if (this.x >= this.cols) {
-          this.x = this.cols - 1;
-        }
-        this.refresh(this.y, this.y);
-        return;
-      }
-
-      if (key === 'w' || key === 'W') {
-        var ox = this.x;
-        var oy = this.y;
-        var oyd = this.ydisp;
-
-        var x = this.x;
-        var y = this.y;
-        var yb = this.ydisp;
-        var saw_space = false;
-
-        for (;;) {
-          var line = this.lines[yb + y];
-          while (x < this.cols) {
-            if (line[x][1] <= ' ') {
-              saw_space = true;
-            } else if (saw_space) {
-              break;
-            }
-            x++;
-          }
-          if (x >= this.cols) x = this.cols - 1;
-          if (x === this.cols - 1 && line[x][1] <= ' ') {
-            x = 0;
-            if (++y >= this.rows) {
-              y--;
-              if (++yb > this.ybase) {
-                yb = this.ybase;
-                x = this.x;
-                break;
-              }
-            }
-            continue;
-          }
-          break;
-        }
-
-        this.x = x, this.y = y;
-        this.scrollDisp(-this.ydisp + yb);
-
-        return;
-      }
-
-      if (key === 'b' || key === 'B') {
-        var ox = this.x;
-        var oy = this.y;
-        var oyd = this.ydisp;
-
-        var x = this.x;
-        var y = this.y;
-        var yb = this.ydisp;
-
-        for (;;) {
-          var line = this.lines[yb + y];
-          var saw_space = x > 0 && line[x][1] > ' ' && line[x - 1][1] > ' ';
-          while (x >= 0) {
-            if (line[x][1] <= ' ') {
-              if (saw_space && (x + 1 < this.cols && line[x + 1][1] > ' ')) {
-                x++;
-                break;
-              } else {
-                saw_space = true;
-              }
-            }
-            x--;
-          }
-          if (x < 0) x = 0;
-          if (x === 0 && (line[x][1] <= ' ' || !saw_space)) {
-            x = this.cols - 1;
-            if (--y < 0) {
-              y++;
-              if (--yb < 0) {
-                yb++;
-                x = 0;
-                break;
-              }
-            }
-            continue;
-          }
-          break;
-        }
-
-        this.x = x, this.y = y;
-        this.scrollDisp(-this.ydisp + yb);
-
-        return;
-      }
-
-      if (key === 'e' || key === 'E') {
-        var x = this.x + 1;
-        var y = this.y;
-        var yb = this.ydisp;
-        if (x >= this.cols) x--;
-
-        for (;;) {
-          var line = this.lines[yb + y];
-          while (x < this.cols) {
-            if (line[x][1] <= ' ') {
-              x++;
-            } else {
-              break;
-            }
-          }
-          while (x < this.cols) {
-            if (line[x][1] <= ' ') {
-              if (x - 1 >= 0 && line[x - 1][1] > ' ') {
-                x--;
-                break;
-              }
-            }
-            x++;
-          }
-          if (x >= this.cols) x = this.cols - 1;
-          if (x === this.cols - 1 && line[x][1] <= ' ') {
-            x = 0;
-            if (++y >= this.rows) {
-              y--;
-              if (++yb > this.ybase) {
-                yb = this.ybase;
-                break;
-              }
-            }
-            continue;
-          }
-          break;
-        }
-
-        this.x = x, this.y = y;
-        this.scrollDisp(-this.ydisp + yb);
-
-        return;
-      }
-
-      if (key === '^' || key === '0') {
-        var ox = this.x;
-
-        if (key === '0') {
-          this.x = 0;
-        } else if (key === '^') {
-          var line = this.lines[this.ydisp + this.y];
-          var x = 0;
-          while (x < this.cols) {
-            if (line[x][1] > ' ') {
-              break;
-            }
-            x++;
-          }
-          if (x >= this.cols) x = this.cols - 1;
-          this.x = x;
-        }
-
-        this.refresh(this.y, this.y);
-        return;
-      }
-
-      if (key === '$') {
-        var ox = this.x;
-        var line = this.lines[this.ydisp + this.y];
-        var x = this.cols - 1;
-        while (x >= 0) {
-          x--;
-        }
-        if (x < 0) x = 0;
-        this.x = x;
-        this.refresh(this.y, this.y);
-        return;
-      }
-
-      if (key === 'g' || key === 'G') {
-        var ox = this.x;
-        var oy = this.y;
-        var oyd = this.ydisp;
-        if (key === 'g') {
-          this.x = 0, this.y = 0;
-          this.scrollDisp(-this.ydisp);
-        } else if (key === 'G') {
-          this.x = 0, this.y = this.rows - 1;
-          this.scrollDisp(this.ybase);
-        }
-        return;
-      }
-
-      if (key === 'H' || key === 'M' || key === 'L') {
-        var ox = this.x;
-        var oy = this.y;
-        if (key === 'H') {
-          this.x = 0, this.y = 0;
-        } else if (key === 'M') {
-          this.x = 0, this.y = this.rows / 2 | 0;
-        } else if (key === 'L') {
-          this.x = 0, this.y = this.rows - 1;
-        }
-        this.refresh(oy, oy);
-        this.refresh(this.y, this.y);
-        return;
-      }
-
-      if (key === '{' || key === '}') {
-        var ox = this.x;
-        var oy = this.y;
-        var oyd = this.ydisp;
-
-        var line;
-        var saw_full = false;
-        var found = false;
-        var first_is_space = -1;
-        var y = this.y + (key === '{' ? -1 : 1);
-        var yb = this.ydisp;
-        var i;
-
-        if (key === '{') {
-          if (y < 0) {
-            y++;
-            if (yb > 0) yb--;
-          }
-        } else if (key === '}') {
-          if (y >= this.rows) {
-            y--;
-            if (yb < this.ybase) yb++;
-          }
-        }
-
-        for (;;) {
-          line = this.lines[yb + y];
-
-          for (i = 0; i < this.cols; i++) {
-            if (line[i][1] > ' ') {
-              if (first_is_space === -1) {
-                first_is_space = 0;
-              }
-              saw_full = true;
-              break;
-            } else if (i === this.cols - 1) {
-              if (first_is_space === -1) {
-                first_is_space = 1;
-              } else if (first_is_space === 0) {
-                found = true;
-              } else if (first_is_space === 1) {
-                if (saw_full) found = true;
-              }
-              break;
-            }
-          }
-
-          if (found) break;
-
-          if (key === '{') {
-            y--;
-            if (y < 0) {
-              y++;
-              if (yb > 0) yb--;
-              else break;
-            }
-          } else if (key === '}') {
-            y++;
-            if (y >= this.rows) {
-              y--;
-              if (yb < this.ybase) yb++;
-              else break;
-            }
-          }
-        }
-
-        if (!found) {
-          if (key === '{') {
-            y = 0;
-            yb = 0;
-          } else if (key === '}') {
-            y = this.rows - 1;
-            yb = this.ybase;
-          }
-        }
-
-        this.x = 0, this.y = y;
-        this.scrollDisp(-this.ydisp + yb);
-
-        return;
-      }
-
-      return false;
     };
 
     /**
