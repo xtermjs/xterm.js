@@ -2131,11 +2131,3 @@
 .terminal .xterm-rows > div {
     line-height: normal;
 }
-
-/**
- * All styled spans inside terminal lines should be inline-blocks,
- * in orde to achieve better height adjustment.
- */
-.terminal .xterm-rows span {
-    display: inline-block;
-}
