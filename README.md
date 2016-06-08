@@ -8,7 +8,18 @@ Xterm.js supplies a modular, event-based interface that lets developers build ad
 
 ![xterm.js screenshot](xtermjs.png)
 
-### Contribution and License Agreement
+## Demo
+
+To launch the demo simply run:
+
+```
+npm install
+npm start
+```
+
+Then open http://0.0.0.0:3000 in a web browser.
+
+## Contribution and License Agreement
 
 If you contribute code to this project, you are implicitly allowing your code to be distributed under the MIT license. You are also implicitly verifying that all code is your original work.
 
