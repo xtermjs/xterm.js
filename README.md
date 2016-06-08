@@ -8,6 +8,23 @@ Xterm.js supplies a modular, event-based interface that lets developers build ad
 
 ![xterm.js screenshot](xtermjs.png)
 
+## Addons
+
+Addons are JavaScript modules that attach functions to the `Terminal` prototype to extend its functionality. There are a handful available in the main repository in the `addons` directory, you can even write your own (though they may break when the internals of xterm.js change across versions).
+
+To use an addon, just include the JavaScript file after xterm.js and before the `Terminal` object has been instantiated. The function should then be exposed on the `Terminal` object:
+
+```html
+<script src="node_modules/src/xterm.js"></script>
+<script src="node_modules/addons/linkify/linkify.js"></script>
+```
+
+```js
+var xterm = new Terminal();
+// init code...
+xterm.linkify();
+```
+
 ### Contribution and License Agreement
 
 If you contribute code to this project, you are implicitly allowing your code to be distributed under the MIT license. You are also implicitly verifying that all code is your original work.
