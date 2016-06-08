@@ -30,8 +30,10 @@
       negatedDomainCharacterSet = '[^\\da-z\\.-]+',
       domainBodyClause = '(' + domainCharacterSet + ')',
       tldClause = '([a-z\\.]{2,6})',
-      hostClause = domainBodyClause + '\\.' + tldClause,
-      pathClause = '([\\/\\w\\.-]*)*\\/?',
+      ipClause = '((\\d{1,3}\\.){3}\\d{1,3})',
+      portClause = '(:\\d{1,5})',
+      hostClause = '((' + domainBodyClause + '\\.' + tldClause + ')|(' + ipClause + portClause + '?))',
+      pathClause = '(\\/[\\/\\w\\.-]*)*',
       negatedPathCharacterSet = '[^\\/\\w\\.-]+',
       bodyClause = hostClause + pathClause,
       start = '(?:^|' + negatedDomainCharacterSet + ')(',
@@ -40,7 +42,6 @@
       strictUrlClause = start + protocolClause + bodyClause + end,
       lenientUrlRegex = new RegExp(lenientUrlClause),
       strictUrlRegex = new RegExp(strictUrlClause);
-
 
   /**
    * Converts all valid URLs found in the given terminal line into
