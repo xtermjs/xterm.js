@@ -1,16 +1,27 @@
 {
   "name": "xterm",
   "version": "0.33.0",
-  "ignore": ["demo", "test", ".gitignore"],
+  "ignore": [
+    "demo",
+    "test",
+    ".gitignore"
+  ],
   "main": "src/xterm.js",
   "repository": "https://github.com/sourcelair/xterm.js",
   "license": "MIT",
   "devDependencies": {
+    "ava": "^0.15.2",
     "express": "4.13.4",
     "express-ws": "2.0.0-rc.1",
     "pty.js": "0.3.0"
   },
   "scripts": {
-    "start": "bash bin/server"
+    "start": "bash bin/server",
+    "test": "ava"
+  },
+  "ava": {
+    "files": [
+      "test/**/*-test.js"
+    ]
   }
 }
