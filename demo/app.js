@@ -29,9 +29,12 @@ app.ws('/bash', function(ws, req) {
     cwd: process.env.PWD,
     env: process.env
   });
-
   term.on('data', function(data) {
-    ws.send(data);
+    try {
+      ws.send(data);
+    } catch (ex) {
+      // The WebSocket is not open, ignore
+    }
   });
   ws.on('message', function(msg) {
     term.write(msg);
