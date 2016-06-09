@@ -1,6 +1,8 @@
 language: node_js
 node_js:
-    - 4
+  - 4
+env:
+  - CXX=g++-4.8
 addons:
   apt:
     sources:
@@ -8,4 +10,4 @@ addons:
     packages:
       - g++-4.8
 notifications:
-    email: false
+  email: false
