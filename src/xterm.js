@@ -202,10 +202,26 @@
         this.on('data', options.handler);
       }
 
+      /**
+       * The scroll position of the y cursor, ie. ybase + y = the y position within the entire
+       */
       this.ybase = 0;
+
+      /**
+       * The scroll position of the viewport
+       */
       this.ydisp = 0;
+
+      /**
+       * The cursor's x position after ybase
+       */
       this.x = 0;
+
+      /**
+       * The cursor's y position after ybase
+       */
       this.y = 0;
+
       this.cursorState = 0;
       this.cursorHidden = false;
       this.convertEol;
@@ -261,6 +277,10 @@
       this.prefix = '';
       this.postfix = '';
 
+      /**
+       * An array of all lines in the entire buffer, including the prompt. The lines are array of
+       * characters which are 2-length arrays where [0] is an attribute and [1] is the character.
+       */
       this.lines = [];
       var i = this.rows;
       while (i--) {
@@ -2628,7 +2648,14 @@
       } else if (j > y) {
         while (j-- > y) {
           if (this.lines.length > y + this.ybase) {
-            this.lines.shift();
+            if (this.y + this.ybase < j) {
+              // The line is after the cursor, remove it
+              this.lines.pop();
+            } else {
+              // The line is the cursor, push the viewport down
+              this.ybase++;
+              this.ydisp++;
+            }
           }
           if (this.children.length > y) {
             el = this.children.shift();
