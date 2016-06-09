@@ -2609,6 +2609,10 @@
         , j
         , ch;
 
+      if (x === this.cols && y === this.rows) {
+        return;
+      }
+
       if (x < 1) x = 1;
       if (y < 1) y = 1;
 
@@ -2622,7 +2626,7 @@
             this.lines[i].push(ch);
           }
         }
-      } else if (j > x) {
+      } else { // (j > x)
         i = this.lines.length;
         while (i--) {
           while (this.lines[i].length > x) {
@@ -2645,7 +2649,7 @@
             this.insertRow();
           }
         }
-      } else if (j > y) {
+      } else { // (j > y)
         while (j-- > y) {
           if (this.lines.length > y + this.ybase) {
             if (this.y + this.ybase < j) {
