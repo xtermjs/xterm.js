@@ -549,26 +549,40 @@
       }, true);
     };
 
+    /**
+     * Prepares text copied from terminal selection, to be saved in the clipboard by:
+     *   1. stripping all trailing white spaces
+     *   2. converting all non-breaking spaces to regular spaces
+     * @param {string} text The copied text that needs processing for storing in clipboard
+     * @static
+     */
+  	Terminal.prepareCopiedTextForClipboard = function (text) {
+      var space = String.fromCharCode(32),
+          nonBreakingSpace = String.fromCharCode(160),
+          allNonBreakingSpaces = new RegExp(nonBreakingSpace, 'g'),
+          processedText = text.split('\n').map(function (line) {
+            /**
+             * Strip all trailing white spaces and convert all non-breaking spaces to regular
+             * spaces.
+             */
+            var processedLine = line.replace(/\s+$/g, '').replace(allNonBreakingSpaces, space);
+
+            return processedLine;
+          }).join('\n');
+
+      return processedText;
+    };
 
     /**
-     * Bind copy event.
+     * Binds copy functionality to the given terminal.
+     * @static
      */
     Terminal.bindCopy = function(term) {
       on(term.element, 'copy', function(ev) {
-        var space = String.fromCharCode(32),
-            nonBreakingSpace = String.fromCharCode(160),
-            allNonBreakingSpaces = new RegExp(nonBreakingSpace, 'g'),
-            selectedText = window.getSelection().toString(),
-						copiedText = selectedText.split('\n').map(function (element) {
-              /**
-               * Strip all trailing white spaces and convert all non-breaking spaces to regular
-               * spaces.
-               */
-              var line = element.replace(/\s+$/g, '').replace(allNonBreakingSpaces, space);
+        var copiedText = window.getSelection().toString(),
+        		text = Terminal.prepareCopiedTextForClipboard(copiedText);
 
-              return line;
-            }).join('\n');
-        ev.clipboardData.setData('text/plain', copiedText);
+        ev.clipboardData.setData('text/plain', text);
         ev.preventDefault();
       });
     };
