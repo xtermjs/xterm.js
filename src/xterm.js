@@ -2326,6 +2326,12 @@
       return this.cancel(ev, true);
     };
 
+    /**
+     * Returns an object that determines how a KeyboardEvent should be handled. The key of the
+     * returned value is the new key code to pass to the PTY.
+     *
+     * Reference: http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+     */
     Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
       var result = {
         // Whether to cancel event propogation (NOTE: this may not be needed since the event is
@@ -2422,14 +2428,10 @@
             result.key = '\x1b[B';
           }
           break;
-        // delete
-        case 46:
-          result.key = '\x1b[3~';
-          break;
         // insert
-        case 45:
-          result.key = '\x1b[2~';
-          break;
+        case 45: result.key = '\x1b[2~'; break;
+        // delete
+        case 46: result.key = '\x1b[3~'; break;
         // home
         case 36:
           if (this.applicationKeypad) {
