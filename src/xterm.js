@@ -551,13 +551,22 @@
 
 
     /**
-     * Bind copy event. Stript trailing whitespaces from selection.
+     * Bind copy event.
      */
     Terminal.bindCopy = function(term) {
       on(term.element, 'copy', function(ev) {
-        var selectedText = window.getSelection().toString(),
+        var space = String.fromCharCode(32),
+            nonBreakingSpace = String.fromCharCode(160),
+            allNonBreakingSpaces = new RegExp(nonBreakingSpace, 'g'),
+            selectedText = window.getSelection().toString(),
 						copiedText = selectedText.split('\n').map(function (element) {
-              return element.replace(/\s+$/g, '');
+              /**
+               * Strip all trailing white spaces and convert all non-breaking spaces to regular
+               * spaces.
+               */
+              var line = element.replace(/\s+$/g, '').replace(allNonBreakingSpaces, space);
+
+              return line;
             }).join('\n');
         ev.clipboardData.setData('text/plain', copiedText);
         ev.preventDefault();
