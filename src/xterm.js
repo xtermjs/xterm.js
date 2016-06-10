@@ -554,6 +554,7 @@
      *   1. stripping all trailing white spaces
      *   2. converting all non-breaking spaces to regular spaces
      * @param {string} text The copied text that needs processing for storing in clipboard
+     * @returns {string}
      * @static
      */
   	Terminal.prepareCopiedTextForClipboard = function (text) {
