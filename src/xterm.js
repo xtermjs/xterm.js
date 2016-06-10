@@ -519,6 +519,11 @@
             term.leaseContentEditable();
           }
         }
+
+        if (!term.isMac && ev.keyCode == 45 && ev.shiftKey && !ev.ctrlKey) {
+          // Shift + Insert pastes on windows and many linuxes
+          term.leaseContentEditable();
+        }
       });
 
       /**
@@ -1102,9 +1107,8 @@
         line = this.lines[row];
         out = '';
 
-        if (y === this.y
+        if (this.y === y - (this.ybase - this.ydisp)
             && this.cursorState
-            && (this.ydisp === this.ybase)
             && !this.cursorHidden) {
           x = this.x;
         } else {
@@ -2429,7 +2433,13 @@
           }
           break;
         // insert
-        case 45: result.key = '\x1b[2~'; break;
+        case 45:
+          if (!ev.shiftKey && !ev.ctrlKey) {
+            // <Ctrl> or <Shift> + <Insert> are used to
+            // copy-paste on some systems.
+            result.key = '\x1b[2~';
+          }
+          break;
         // delete
         case 46: result.key = '\x1b[3~'; break;
         // home
@@ -2603,7 +2613,8 @@
         , el
         , i
         , j
-        , ch;
+        , ch
+        , addToY;
 
       if (x === this.cols && y === this.rows) {
         return;
@@ -2635,11 +2646,23 @@
 
       // resize rows
       j = this.rows;
+      addToY = 0;
       if (j < y) {
         el = this.element;
         while (j++ < y) {
+          // y is rows, not this.y
           if (this.lines.length < y + this.ybase) {
-            this.lines.push(this.blankLine());
+            if (this.ybase > 0 && this.lines.length <= this.ybase + this.y + addToY + 1) {
+              // There is room above the buffer and there are no empty elements below the line,
+              // scroll up
+              this.ybase--;
+              this.ydisp--;
+              addToY++
+            } else {
+              // Add a blank line if there is no buffer left at the top to scroll to, or if there
+              // are blank lines after the cursor
+              this.lines.push(this.blankLine());
+            }
           }
           if (this.children.length < y) {
             this.insertRow();
@@ -2648,11 +2671,11 @@
       } else { // (j > y)
         while (j-- > y) {
           if (this.lines.length > y + this.ybase) {
-            if (this.y + this.ybase < j) {
-              // The line is after the cursor, remove it
+            if (this.lines.length > this.ybase + this.y + 1) {
+              // The line is a blank line below the cursor, remove it
               this.lines.pop();
             } else {
-              // The line is the cursor, push the viewport down
+              // The line is the cursor, scroll down
               this.ybase++;
               this.ydisp++;
             }
@@ -2671,6 +2694,9 @@
       */
       if (this.y >= y) {
         this.y = y - 1;
+      }
+      if (addToY) {
+        this.y += addToY;
       }
 
       if (this.x >= x) {
