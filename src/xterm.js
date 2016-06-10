@@ -2337,7 +2337,12 @@
             this.cancel(ev, true);
             key = '\x1bb' // Jump a word back
             break;
-          } else if (this.applicationCursor) {
+          }
+          if (ev.ctrlKey) {
+            key = '\x1b[5D'; // Jump a word back
+            break;
+          }
+          if (this.applicationCursor) {
             key = '\x1bOD'; // SS3 as ^[O for 7-bit
             break;
           }
@@ -2349,7 +2354,12 @@
             this.cancel(ev, true);
             key = '\x1bf' // Jump a word forward
             break;
-          } else if (this.applicationCursor) {
+          }
+          if (ev.ctrlKey) {
+            key = '\x1b[5C'; // Jump a word forward
+            break;
+          }
+          if (this.applicationCursor) {
             key = '\x1bOC';
             break;
           }
