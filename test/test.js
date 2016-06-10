@@ -68,4 +68,126 @@ describe('xterm.js', function() {
       assert.equal(processedText.indexOf(nonBreakingSpace), -1);
     });
   });
+
+  describe('Third level shift', function() {
+    var ev = {
+      preventDefault: function() {},
+      stopPropagation: function() {}
+    };
+
+    beforeEach(function() {
+      xterm.handler = function() {};
+      xterm.showCursor = function() {};
+      xterm.clearSelection = function() {};
+    })
+
+    describe('On Mac OS', function() {
+      beforeEach(function() {
+        xterm.isMac = true;
+      });
+
+      it('should not interfere with the alt key on keyDown', function() {
+        assert.equal(
+          xterm.keyDown(Object.assign({}, ev, { altKey: true, keyCode: 81 })),
+          true
+        );
+        assert.equal(
+          xterm.keyDown(Object.assign({}, ev, { altKey: true, keyCode: 192 })),
+          true
+        );
+      });
+
+      it('should interefere with the alt + arrow keys', function() {
+        assert.equal(
+          xterm.keyDown(Object.assign({}, ev, { altKey: true, keyCode: 37 })),
+          false
+        );
+        assert.equal(
+          xterm.keyDown(Object.assign({}, ev, { altKey: true, keyCode: 39 })),
+          false
+        );
+      });
+
+      it('should emit key with alt + key on keyPress', function(done) {
+        var keys = ['@', '@', '\\', '\\', '|', '|'];
+
+        xterm.on('keypress', function(key) {
+          if (key) {
+            var index = keys.indexOf(key);
+            assert(index !== -1, "Emitted wrong key: " + key);
+            keys.splice(index, 1);
+          }
+          if (keys.length === 0) done();
+        });
+
+        xterm.keyPress(Object.assign({}, ev, { altKey: true, keyCode: 64 })); // @
+        // Firefox
+        xterm.keyPress(Object.assign({}, ev, { altKey: true, charCode: 64, keyCode: 0 }));
+        xterm.keyPress(Object.assign({}, ev, { altKey: true, keyCode: 92 })); // \
+        xterm.keyPress(Object.assign({}, ev, { altKey: true, charCode: 92, keyCode: 0 }));
+        xterm.keyPress(Object.assign({}, ev, { altKey: true, keyCode: 124 })); // |
+        xterm.keyPress(Object.assign({}, ev, { altKey: true, charCode: 124, keyCode: 0 }));
+      });
+    });
+
+    describe('On MS Windows', function() {
+      beforeEach(function() {
+        xterm.isMSWindows = true;
+      });
+
+      it('should not interfere with the alt + ctrl key on keyDown', function() {
+        assert.equal(
+          xterm.keyDown(Object.assign({}, ev, { altKey: true, ctrlKey: true, keyCode: 81 })),
+          true
+        );
+        assert.equal(
+          xterm.keyDown(Object.assign({}, ev, { altKey: true, ctrlKey: true, keyCode: 192 })),
+          true
+        );
+      });
+
+      it('should interefere with the alt + ctrl + arrow keys', function() {
+        assert.equal(
+          xterm.keyDown(Object.assign({}, ev, { altKey: true, ctrlKey: true, keyCode: 37 })),
+          false
+        );
+        assert.equal(
+          xterm.keyDown(Object.assign({}, ev, { altKey: true, ctrlKey: true, keyCode: 39 })),
+          false
+        );
+      });
+
+      it('should emit key with alt + ctrl + key on keyPress', function(done) {
+        var keys = ['@', '@', '\\', '\\', '|', '|'];
+
+        xterm.on('keypress', function(key) {
+          if (key) {
+            var index = keys.indexOf(key);
+            assert(index !== -1, "Emitted wrong key: " + key);
+            keys.splice(index, 1);
+          }
+          if (keys.length === 0) done();
+        });
+
+        xterm.keyPress(
+          Object.assign({}, ev, { altKey: true, ctrlKey: true, keyCode: 64 })
+        ); // @
+        xterm.keyPress(
+          Object.assign({}, ev, { altKey: true, ctrlKey: true, charCode: 64, keyCode: 0 })
+        );
+        xterm.keyPress(
+          Object.assign({}, ev, { altKey: true, ctrlKey: true, keyCode: 92 })
+        ); // \
+        xterm.keyPress(
+          Object.assign({}, ev, { altKey: true, ctrlKey: true, charCode: 92, keyCode: 0 })
+        );
+        xterm.keyPress(
+          Object.assign({}, ev, { altKey: true, ctrlKey: true, keyCode: 124 })
+        ); // |
+        xterm.keyPress(
+          Object.assign({}, ev, { altKey: true, ctrlKey: true, charCode: 124, keyCode: 0 })
+        );
+      });
+    });
+  });
 });
