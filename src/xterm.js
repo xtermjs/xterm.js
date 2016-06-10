@@ -519,6 +519,11 @@
             term.leaseContentEditable();
           }
         }
+
+        if (!term.isMac && ev.keyCode == 45 && ev.shiftKey && !ev.ctrlKey) {
+          // Shift + Insert pastes on windows and many linuxes
+          term.leaseContentEditable();
+        }
       });
 
       /**
@@ -2387,7 +2392,11 @@
           break;
         // insert
         case 45:
-          key = '\x1b[2~';
+          if (!ev.shiftKey && !ev.ctrlKey) {
+            // <Ctrl> or <Shift> + <Insert> are used to
+            // copy-paste on some systems.
+            key = '\x1b[2~';
+          }
           break;
         // home
         case 36:
