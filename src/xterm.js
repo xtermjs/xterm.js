@@ -1107,9 +1107,8 @@
         line = this.lines[row];
         out = '';
 
-        if (y === this.y
+        if (this.y === y - (this.ybase - this.ydisp)
             && this.cursorState
-            && (this.ydisp === this.ybase)
             && !this.cursorHidden) {
           x = this.x;
         } else {
