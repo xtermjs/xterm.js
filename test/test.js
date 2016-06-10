@@ -54,4 +54,18 @@ describe('xterm.js', function() {
       assert.equal(xterm.evaluateKeyEscapeSequence({ ctrlKey: true, keyCode: 39 }).key, '\x1b[5C'); // CSI 5 C
     });
   });
+
+  describe('evaluateCopiedTextProcessing', function () {
+    it('should strip trailing whitespaces and replace nbsps with spaces', function () {
+			var nonBreakingSpace = String.fromCharCode(160),
+          copiedText = 'echo' + nonBreakingSpace + 'hello' + nonBreakingSpace,
+          processedText = Terminal.prepareCopiedTextForClipboard(copiedText);
+
+      // No trailing spaces
+      assert.equal(processedText.match(/\s+$/), null);
+
+      // No non-breaking space
+      assert.equal(processedText.indexOf(nonBreakingSpace), -1);
+    });
+  });
 });
