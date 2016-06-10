@@ -32,7 +32,7 @@
       tldClause = '([a-z\\.]{2,6})',
       ipClause = '((\\d{1,3}\\.){3}\\d{1,3})',
       portClause = '(:\\d{1,5})',
-      hostClause = '((' + domainBodyClause + '\\.' + tldClause + ')|(' + ipClause + portClause + '?))',
+      hostClause = '((' + domainBodyClause + '\\.' + tldClause + ')|' + ipClause + ')' + portClause + '?',
       pathClause = '(\\/[\\/\\w\\.-]*)*',
       negatedPathCharacterSet = '[^\\/\\w\\.-]+',
       bodyClause = hostClause + pathClause,
