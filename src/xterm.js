@@ -1089,11 +1089,11 @@
      * Flags used to render terminal text properly
      */
     Terminal.flags = {
-      BOLD: 0b00001,
-      UNDERLINE: 0b00010,
-      BLINK: 0b00100,
-      INVERSE: 0b01000,
-      INVISIBLE: 0b10000
+      BOLD: 1,
+      UNDERLINE: 2,
+      BLINK: 4,
+      INVERSE: 8,
+      INVISIBLE: 16
     }
 
     /*
