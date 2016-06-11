@@ -1299,17 +1299,13 @@
 
     Terminal.prototype.startBlink = function() {
       if (!this.cursorBlink) return;
-      var self = this;
-      this._blinker = function() {
-        self._cursorBlink();
-      };
-      this._blink = setInterval(this._blinker, 500);
+      this._blink = setInterval(this._cursorBlink.bind(this), 500);
     };
 
     Terminal.prototype.refreshBlink = function() {
       if (!this.cursorBlink) return;
       clearInterval(this._blink);
-      this._blink = setInterval(this._blinker, 500);
+      this._blink = setInterval(this._cursorBlink.bind(this), 500);
     };
 
     Terminal.prototype.scroll = function() {
