@@ -202,10 +202,26 @@
         this.on('data', options.handler);
       }
 
+      /**
+       * The scroll position of the y cursor, ie. ybase + y = the y position within the entire
+       */
       this.ybase = 0;
+
+      /**
+       * The scroll position of the viewport
+       */
       this.ydisp = 0;
+
+      /**
+       * The cursor's x position after ybase
+       */
       this.x = 0;
+
+      /**
+       * The cursor's y position after ybase
+       */
       this.y = 0;
+
       this.cursorState = 0;
       this.cursorHidden = false;
       this.convertEol;
@@ -261,6 +277,10 @@
       this.prefix = '';
       this.postfix = '';
 
+      /**
+       * An array of all lines in the entire buffer, including the prompt. The lines are array of
+       * characters which are 2-length arrays where [0] is an attribute and [1] is the character.
+       */
       this.lines = [];
       var i = this.rows;
       while (i--) {
@@ -401,7 +421,6 @@
 
       this.showCursor();
       this.element.focus();
-      this.emit('focus', {terminal: this});
     };
 
     Terminal.prototype.blur = function() {
@@ -417,7 +436,6 @@
         this.send('\x1b[O');
       }
       Terminal.focus = null;
-      this.emit('blur', {terminal: this});
     };
 
     /**
@@ -501,6 +519,11 @@
             term.leaseContentEditable();
           }
         }
+
+        if (!term.isMac && ev.keyCode == 45 && ev.shiftKey && !ev.ctrlKey) {
+          // Shift + Insert pastes on windows and many linuxes
+          term.leaseContentEditable();
+        }
       });
 
       /**
@@ -526,17 +549,41 @@
       }, true);
     };
 
+    /**
+     * Prepares text copied from terminal selection, to be saved in the clipboard by:
+     *   1. stripping all trailing white spaces
+     *   2. converting all non-breaking spaces to regular spaces
+     * @param {string} text The copied text that needs processing for storing in clipboard
+     * @returns {string}
+     * @static
+     */
+  	Terminal.prepareCopiedTextForClipboard = function (text) {
+      var space = String.fromCharCode(32),
+          nonBreakingSpace = String.fromCharCode(160),
+          allNonBreakingSpaces = new RegExp(nonBreakingSpace, 'g'),
+          processedText = text.split('\n').map(function (line) {
+            /**
+             * Strip all trailing white spaces and convert all non-breaking spaces to regular
+             * spaces.
+             */
+            var processedLine = line.replace(/\s+$/g, '').replace(allNonBreakingSpaces, space);
+
+            return processedLine;
+          }).join('\n');
+
+      return processedText;
+    };
 
     /**
-     * Bind copy event. Stript trailing whitespaces from selection.
+     * Binds copy functionality to the given terminal.
+     * @static
      */
     Terminal.bindCopy = function(term) {
       on(term.element, 'copy', function(ev) {
-        var selectedText = window.getSelection().toString(),
-						copiedText = selectedText.split('\n').map(function (element) {
-              return element.replace(/\s+$/g, '');
-            }).join('\n');
-        ev.clipboardData.setData('text/plain', copiedText);
+        var copiedText = window.getSelection().toString(),
+        		text = Terminal.prepareCopiedTextForClipboard(copiedText);
+
+        ev.clipboardData.setData('text/plain', text);
         ev.preventDefault();
       });
     };
@@ -612,10 +659,25 @@
       * Parse User-Agent
       */
       if (this.context.navigator && this.context.navigator.userAgent) {
-        this.isMac = !!~this.context.navigator.userAgent.indexOf('Mac');
-        this.isIpad = !!~this.context.navigator.userAgent.indexOf('iPad');
-        this.isIphone = !!~this.context.navigator.userAgent.indexOf('iPhone');
         this.isMSIE = !!~this.context.navigator.userAgent.indexOf('MSIE');
+      }
+
+      /*
+      * Find the users platform. We use this to interpret the meta key
+      * and ISO third level shifts.
+      * http://stackoverflow.com/questions/19877924/what-is-the-list-of-possible-values-for-navigator-platform-as-of-today
+      */
+      if (this.context.navigator && this.context.navigator.platform) {
+        this.isMac = contains(
+          this.context.navigator.platform,
+          ['Macintosh', 'MacIntel', 'MacPPC', 'Mac68K']
+        );
+        this.isIpad = this.context.navigator.platform === 'iPad';
+        this.isIphone = this.context.navigator.platform === 'iPhone';
+        this.isMSWindows = contains(
+          this.context.navigator.platform,
+          ['Windows', 'Win16', 'Win32', 'WinCE']
+        );
       }
 
       /*
@@ -627,6 +689,12 @@
       this.element.classList.add('xterm-theme-' + this.theme);
       this.element.setAttribute('tabindex', 0);
       this.element.spellcheck = 'false';
+      this.element.onfocus = function() {
+        self.emit('focus', {terminal: this});
+      };
+      this.element.onblur = function() {
+        self.emit('blur', {terminal: this});
+      };
 
       /*
       * Create the container that will hold the lines of the terminal and then
@@ -1036,11 +1104,11 @@
      * Flags used to render terminal text properly
      */
     Terminal.flags = {
-      BOLD: 0b00001,
-      UNDERLINE: 0b00010,
-      BLINK: 0b00100,
-      INVERSE: 0b01000,
-      INVISIBLE: 0b10000
+      BOLD: 1,
+      UNDERLINE: 2,
+      BLINK: 4,
+      INVERSE: 8,
+      INVISIBLE: 16
     }
 
     /*
@@ -1078,9 +1146,8 @@
         line = this.lines[row];
         out = '';
 
-        if (y === this.y
+        if (this.y === y - (this.ybase - this.ydisp)
             && this.cursorState
-            && (this.ydisp === this.ybase)
             && !this.cursorHidden) {
           x = this.x;
         } else {
@@ -2277,219 +2344,226 @@
     // Key Resources:
     // https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
     Terminal.prototype.keyDown = function(ev) {
-      var self = this, key;
+      var self = this;
+      var result = this.evaluateKeyEscapeSequence(ev);
 
+      if (result.scrollDisp) {
+        this.scrollDisp(result.scrollDisp);
+        return this.cancel(ev);
+      }
+
+      if (isThirdLevelShift(this, ev)) {
+        return true;
+      }
+
+      if (result.cancel ) {
+        // The event is canceled at the end already, is this necessary?
+        this.cancel(ev, true);
+      }
+
+      if (!result.key) {
+        return true;
+      }
+
+      this.emit('keydown', ev);
+      this.emit('key', result.key, ev);
+      this.showCursor();
+      this.handler(result.key);
+
+      return this.cancel(ev, true);
+    };
+
+    /**
+     * Returns an object that determines how a KeyboardEvent should be handled. The key of the
+     * returned value is the new key code to pass to the PTY.
+     *
+     * Reference: http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+     */
+    Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
+      var result = {
+        // Whether to cancel event propogation (NOTE: this may not be needed since the event is
+        // canceled at the end of keyDown
+        cancel: false,
+        // The new key even to emit
+        key: undefined,
+        // The number of characters to scroll, if this is defined it will cancel the event
+        scrollDisp: undefined
+      };
       switch (ev.keyCode) {
         // backspace
         case 8:
           if (ev.shiftKey) {
-            key = '\x08'; // ^H
+            result.key = '\x08'; // ^H
             break;
           }
-          key = '\x7f'; // ^?
+          result.key = '\x7f'; // ^?
           break;
         // tab
         case 9:
           if (ev.shiftKey) {
-            key = '\x1b[Z';
+            result.key = '\x1b[Z';
             break;
           }
-          key = '\t';
-          this.cancel(ev, true);
+          result.key = '\t';
+          result.cancel = true;
           break;
         // return/enter
         case 13:
-          key = '\r';
-          this.cancel(ev, true);
+          result.key = '\r';
+          result.cancel = true;
           break;
         // escape
         case 27:
-          key = '\x1b';
-          this.cancel(ev, true);
+          result.key = '\x1b';
+          result.cancel = true;
           break;
         // left-arrow
         case 37:
           if (ev.altKey) {
-            this.cancel(ev, true);
-            key = '\x1bb' // Jump a word back
-            break;
-          } else if (this.applicationCursor) {
-            key = '\x1bOD'; // SS3 as ^[O for 7-bit
+            result.key = '\x1bb' // Jump a word back
+            result.cancel = true;
             break;
           }
-          key = '\x1b[D';
+          if (ev.ctrlKey) {
+            result.key = '\x1b[5D'; // Jump a word back
+            break;
+          }
+          if (this.applicationCursor) {
+            result.key = '\x1bOD'; // SS3 as ^[O for 7-bit
+            break;
+          }
+          result.key = '\x1b[D';
           break;
         // right-arrow
         case 39:
           if (ev.altKey) {
-            this.cancel(ev, true);
-            key = '\x1bf' // Jump a word forward
-            break;
-          } else if (this.applicationCursor) {
-            key = '\x1bOC';
+            result.key = '\x1bf' // Jump a word forward
+            result.cancel = true;
             break;
           }
-          key = '\x1b[C';
+          if (ev.ctrlKey) {
+            result.key = '\x1b[5C'; // Jump a word forward
+            break;
+          }
+          if (this.applicationCursor) {
+            result.key = '\x1bOC';
+            break;
+          }
+          result.key = '\x1b[C';
           break;
         // up-arrow
         case 38:
           if (this.applicationCursor) {
-            key = '\x1bOA';
+            result.key = '\x1bOA';
             break;
           }
           if (ev.ctrlKey) {
-            this.scrollDisp(-1);
-            return this.cancel(ev);
+            result.scrollDisp = -1;
           } else {
-            key = '\x1b[A';
+            result.key = '\x1b[A';
           }
           break;
         // down-arrow
         case 40:
           if (this.applicationCursor) {
-            key = '\x1bOB';
+            result.key = '\x1bOB';
             break;
           }
           if (ev.ctrlKey) {
-            this.scrollDisp(1);
-            return this.cancel(ev);
+            result.scrollDisp = 1;
           } else {
-            key = '\x1b[B';
+            result.key = '\x1b[B';
           }
-          break;
-        // delete
-        case 46:
-          key = '\x1b[3~';
           break;
         // insert
         case 45:
-          key = '\x1b[2~';
+          if (!ev.shiftKey && !ev.ctrlKey) {
+            // <Ctrl> or <Shift> + <Insert> are used to
+            // copy-paste on some systems.
+            result.key = '\x1b[2~';
+          }
           break;
+        // delete
+        case 46: result.key = '\x1b[3~'; break;
         // home
         case 36:
           if (this.applicationKeypad) {
-            key = '\x1bOH';
+            result.key = '\x1bOH';
             break;
           }
-          key = '\x1bOH';
+          result.key = '\x1bOH';
           break;
         // end
         case 35:
           if (this.applicationKeypad) {
-            key = '\x1bOF';
+            result.key = '\x1bOF';
             break;
           }
-          key = '\x1bOF';
+          result.key = '\x1bOF';
           break;
         // page up
         case 33:
           if (ev.shiftKey) {
-            this.scrollDisp(-(this.rows - 1));
-            return this.cancel(ev);
+            result.scrollDisp = -(this.rows - 1);
           } else {
-            key = '\x1b[5~';
+            result.key = '\x1b[5~';
           }
           break;
         // page down
         case 34:
           if (ev.shiftKey) {
-            this.scrollDisp(this.rows - 1);
-            return this.cancel(ev);
+            result.scrollDisp = this.rows - 1;
           } else {
-            key = '\x1b[6~';
+            result.key = '\x1b[6~';
           }
           break;
-        // F1
-        case 112:
-          key = '\x1bOP';
-          break;
-        // F2
-        case 113:
-          key = '\x1bOQ';
-          break;
-        // F3
-        case 114:
-          key = '\x1bOR';
-          break;
-        // F4
-        case 115:
-          key = '\x1bOS';
-          break;
-        // F5
-        case 116:
-          key = '\x1b[15~';
-          break;
-        // F6
-        case 117:
-          key = '\x1b[17~';
-          break;
-        // F7
-        case 118:
-          key = '\x1b[18~';
-          break;
-        // F8
-        case 119:
-          key = '\x1b[19~';
-          break;
-        // F9
-        case 120:
-          key = '\x1b[20~';
-          break;
-        // F10
-        case 121:
-          key = '\x1b[21~';
-          break;
-        // F11
-        case 122:
-          key = '\x1b[23~';
-          break;
-        // F12
-        case 123:
-          key = '\x1b[24~';
-          break;
+        // F1-F12
+        case 112: result.key = '\x1bOP'; break;
+        case 113: result.key = '\x1bOQ'; break;
+        case 114: result.key = '\x1bOR'; break;
+        case 115: result.key = '\x1bOS'; break;
+        case 116: result.key = '\x1b[15~'; break;
+        case 117: result.key = '\x1b[17~'; break;
+        case 118: result.key = '\x1b[18~'; break;
+        case 119: result.key = '\x1b[19~'; break;
+        case 120: result.key = '\x1b[20~'; break;
+        case 121: result.key = '\x1b[21~'; break;
+        case 122: result.key = '\x1b[23~'; break;
+        case 123: result.key = '\x1b[24~'; break;
         default:
           // a-z and space
           if (ev.ctrlKey && !ev.shiftKey && !ev.altKey && !ev.metaKey) {
             if (ev.keyCode >= 65 && ev.keyCode <= 90) {
-              key = String.fromCharCode(ev.keyCode - 64);
+              result.key = String.fromCharCode(ev.keyCode - 64);
             } else if (ev.keyCode === 32) {
               // NUL
-              key = String.fromCharCode(0);
+              result.key = String.fromCharCode(0);
             } else if (ev.keyCode >= 51 && ev.keyCode <= 55) {
               // escape, file sep, group sep, record sep, unit sep
-              key = String.fromCharCode(ev.keyCode - 51 + 27);
+              result.key = String.fromCharCode(ev.keyCode - 51 + 27);
             } else if (ev.keyCode === 56) {
               // delete
-              key = String.fromCharCode(127);
+              result.key = String.fromCharCode(127);
             } else if (ev.keyCode === 219) {
               // ^[ - escape
-              key = String.fromCharCode(27);
+              result.key = String.fromCharCode(27);
             } else if (ev.keyCode === 221) {
               // ^] - group sep
-              key = String.fromCharCode(29);
+              result.key = String.fromCharCode(29);
             }
-          } else if ((!this.isMac && ev.altKey) || (this.isMac && ev.metaKey)) {
+          } else if (!this.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) {
+            // On Mac this is a third level shift. Use <Esc> instead.
             if (ev.keyCode >= 65 && ev.keyCode <= 90) {
-              key = '\x1b' + String.fromCharCode(ev.keyCode + 32);
+              result.key = '\x1b' + String.fromCharCode(ev.keyCode + 32);
             } else if (ev.keyCode === 192) {
-              key = '\x1b`';
+              result.key = '\x1b`';
             } else if (ev.keyCode >= 48 && ev.keyCode <= 57) {
-              key = '\x1b' + (ev.keyCode - 48);
+              result.key = '\x1b' + (ev.keyCode - 48);
             }
           }
           break;
       }
-
-      if (!key || (this.isMac && ev.metaKey)) {
-        return true;
-      }
-
-      this.emit('keydown', ev);
-      this.emit('key', key, ev);
-      this.showCursor();
-      this.handler(key);
-
-      return this.cancel(ev, true);
+      return result;
     };
 
     Terminal.prototype.setgLevel = function(g) {
@@ -2517,7 +2591,9 @@
         return false;
       }
 
-      if (!key || ev.ctrlKey || ev.altKey || ev.metaKey) {
+      if (!key || (
+        (ev.altKey || ev.ctrlKey || ev.metaKey) && !isThirdLevelShift(this, ev)
+      )) {
         return false;
       }
 
@@ -2583,7 +2659,12 @@
         , el
         , i
         , j
-        , ch;
+        , ch
+        , addToY;
+
+      if (x === this.cols && y === this.rows) {
+        return;
+      }
 
       if (x < 1) x = 1;
       if (y < 1) y = 1;
@@ -2598,7 +2679,7 @@
             this.lines[i].push(ch);
           }
         }
-      } else if (j > x) {
+      } else { // (j > x)
         i = this.lines.length;
         while (i--) {
           while (this.lines[i].length > x) {
@@ -2611,20 +2692,39 @@
 
       // resize rows
       j = this.rows;
+      addToY = 0;
       if (j < y) {
         el = this.element;
         while (j++ < y) {
+          // y is rows, not this.y
           if (this.lines.length < y + this.ybase) {
-            this.lines.push(this.blankLine());
+            if (this.ybase > 0 && this.lines.length <= this.ybase + this.y + addToY + 1) {
+              // There is room above the buffer and there are no empty elements below the line,
+              // scroll up
+              this.ybase--;
+              this.ydisp--;
+              addToY++
+            } else {
+              // Add a blank line if there is no buffer left at the top to scroll to, or if there
+              // are blank lines after the cursor
+              this.lines.push(this.blankLine());
+            }
           }
           if (this.children.length < y) {
             this.insertRow();
           }
         }
-      } else if (j > y) {
+      } else { // (j > y)
         while (j-- > y) {
           if (this.lines.length > y + this.ybase) {
-            this.lines.shift();
+            if (this.lines.length > this.ybase + this.y + 1) {
+              // The line is a blank line below the cursor, remove it
+              this.lines.pop();
+            } else {
+              // The line is the cursor, scroll down
+              this.ybase++;
+              this.ydisp++;
+            }
           }
           if (this.children.length > y) {
             el = this.children.shift();
@@ -2640,6 +2740,9 @@
       */
       if (this.y >= y) {
         this.y = y - 1;
+      }
+      if (addToY) {
+        this.y += addToY;
       }
 
       if (this.x >= x) {
@@ -4317,6 +4420,15 @@
      * Helpers
      */
 
+    function contains(el, arr) {
+      for (var i = 0; i < arr.length; i += 1) {
+        if (el === arr[i]) {
+          return true;
+        }
+      }
+      return false;
+    }
+
     function on(el, type, handler, capture) {
       if (!Array.isArray(el)) {
         el = [el];
@@ -4371,6 +4483,15 @@
         if (obj[i] === el) return i;
       }
       return -1;
+    }
+
+  function isThirdLevelShift(term, ev) {
+      var thirdLevelKey =
+          (term.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
+          (term.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
+
+      // Don't invoke for arrows, pageDown, home, backspace, etc.
+      return thirdLevelKey && (!ev.keyCode || ev.keyCode > 47);
     }
 
     function isWide(ch) {

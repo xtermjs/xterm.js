@@ -21,6 +21,6 @@ h1 {
     padding: 2px;
 }
 
-#terminal-container .terminal .terminal-cursor {
+#terminal-container .terminal:focus .terminal-cursor {
     background-color: #fafafa;
 }

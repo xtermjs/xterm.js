@@ -51,6 +51,12 @@
     color: #000;
 }
 
+.terminal:not(:focus) .terminal-cursor {
+    outline: 1px solid #fff;
+    outline-offset: -1px;
+    background-color: transparent;
+}
+
 /*
  *  Determine default colors for xterm.js
  */
@@ -2123,13 +2129,5 @@
  * in order to allow child elements to adjust.
  */
 .terminal .xterm-rows > div {
-    line-height: 1.3;
-}
-
-/**
- * All styled spans inside terminal lines should be inline-blocks,
- * in orde to achieve better height adjustment.
- */
-.terminal .xterm-rows span {
-    display: inline-block;
+    line-height: normal;
 }

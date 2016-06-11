@@ -29,9 +29,12 @@ app.ws('/bash', function(ws, req) {
     cwd: process.env.PWD,
     env: process.env
   });
-
   term.on('data', function(data) {
-    ws.send(data);
+    try {
+      ws.send(data);
+    } catch (ex) {
+      // The WebSocket is not open, ignore
+    }
   });
   ws.on('message', function(msg) {
     term.write(msg);
@@ -45,5 +48,5 @@ app.ws('/bash', function(ws, req) {
 var port = process.env.PORT || 3000,
     host = '0.0.0.0';
 
-console.log('App listening to ' + host + ':' + port);
+console.log('App listening to http://' + host + ':' + port);
 app.listen(port, host);
