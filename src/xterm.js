@@ -1283,7 +1283,7 @@
     };
 
     Terminal.prototype._cursorBlink = function() {
-      if (Terminal.focus !== this) return;
+      if (document.activeElement !== this.element) return;
       this.cursorState ^= 1;
       this.refresh(this.y, this.y);
     };
@@ -1293,8 +1293,7 @@
         this.cursorState = 1;
         this.refresh(this.y, this.y);
       } else {
-        // Temporarily disabled:
-        // this.refreshBlink();
+        this.refreshBlink();
       }
     };
 
