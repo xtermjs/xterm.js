@@ -142,6 +142,14 @@
      * Terminal
      */
 
+    /**
+     * Creates a new `Terminal` object.
+     *
+     * @param {object} options An object containing a set of options, the available options are:
+     *   - cursorBlink (boolean): Whether the terminal cursor blinks
+     *
+     * @public
+     */
     function Terminal(options) {
       var self = this;
 
@@ -408,7 +416,9 @@
     });
 
     /**
-     * Focused Terminal
+     * Focus the terminal.
+     *
+     * @public
      */
     Terminal.prototype.focus = function() {
       if (document.activeElement === this.element) {
@@ -636,8 +646,12 @@
     };
 
 
-    /*
-     * Open Terminal in the DOM
+    /**
+     * Opens the terminal within an element.
+     *
+     * @param {HTMLElement} parent The element to create the terminal within.
+     *
+     * @public
      */
     Terminal.prototype.open = function(parent) {
       var self=this, i=0, div;
@@ -1084,9 +1098,10 @@
     };
 
     /**
-     * Destroy Terminal
+     * Destroys the terminal.
+     *
+     * @public
      */
-
     Terminal.prototype.destroy = function() {
       this.readable = false;
       this.writable = false;
@@ -1124,6 +1139,15 @@
      * Next 14 bits: a mask for misc. flags:
      *   1=bold, 2=underline, 4=blink, 8=inverse, 16=invisible
     */
+
+    /**
+     * Refreshes terminal content within two rows (inclusive).
+     *
+     * @param {number} start The row to start from (between 0 and terminal's height terminal - 1)
+     * @param {number} end The row to end at (between fromRow and terminal's height terminal - 1)
+     *
+     * @public
+     */
     Terminal.prototype.refresh = function(start, end) {
       var x, y, i, line, out, ch, width, data, attr, bg, fg, flags, row, parent, focused = document.activeElement;
 
@@ -1365,6 +1389,13 @@
       this.refresh(0, this.rows - 1);
     };
 
+    /**
+     * Writes text to the terminal.
+     *
+     * @param {string} text The text to write to the terminal.
+     *
+     * @public
+     */
     Terminal.prototype.write = function(data) {
       var l = data.length, i = 0, j, cs, ch;
 
@@ -2654,6 +2685,14 @@
       this.context.console.error.apply(this.context.console, args);
     };
 
+    /**
+     * Resizes the terminal.
+     *
+     * @param {number} x The number of columns to resize to.
+     * @param {number} y The number of rows to resize to.
+     *
+     * @public
+     */
     Terminal.prototype.resize = function(x, y) {
       var line
         , el
@@ -4576,6 +4615,15 @@
 
     Terminal.EventEmitter = EventEmitter;
     Terminal.inherits = inherits;
+
+    /**
+     * Adds an event listener to the terminal.
+     *
+     * @param {string} event The name of the event. TODO: Document all event types
+     * @param {function} callback The function to call when the event is triggered.
+     *
+     * @public
+     */
     Terminal.on = on;
     Terminal.off = off;
     Terminal.cancel = cancel;
