@@ -79,7 +79,7 @@ describe('xterm.js', function() {
       xterm.handler = function() {};
       xterm.showCursor = function() {};
       xterm.clearSelection = function() {};
-    })
+    });
 
     describe('On Mac OS', function() {
       beforeEach(function() {
