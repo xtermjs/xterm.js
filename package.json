@@ -13,7 +13,7 @@
     "chai": "3.5.0"
   },
   "scripts": {
-    "start": "bash bin/server",
-    "test": "bash bin/test --recursive"
+    "start": "node demo/app.js",
+    "test": "node_modules/.bin/mocha --recursive"
   }
 }
