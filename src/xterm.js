@@ -759,6 +759,26 @@
       this.emit('open');
     };
 
+
+    /**
+     * Attempts to load an add-on using CommonJS or RequireJS (whichever is available).
+     * @param {string} addon The name of the addon to load
+     * @static
+     */
+    Terminal.loadAddon = function(addon, callback) {
+      if (typeof exports === 'object' && typeof module === 'object') {
+        // CommonJS
+        return require(__dirname + '/../addons/' + addon);
+      } else if (typeof define == 'function') {
+        // RequireJS
+        return require(['../addons/' + addon + '/' + addon], callback);
+      } else {
+        console.error('Cannot load a module without a CommonJS or RequireJS environment.');
+        return false;
+      }
+    };
+
+
     // XTerm mouse events
     // http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#Mouse%20Tracking
     // To better understand these
