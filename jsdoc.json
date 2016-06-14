@@ -1,0 +1,23 @@
+{
+  "source": {
+    "include": [
+      "src/xterm.js",
+      "addons/attach/attach.js",
+      "addons/fit/fit.js",
+      "addons/fullscreen/fullscreen.js",
+      "addons/linkify/linkify.js"
+    ]
+  },
+  "opts": {
+    "readme": "README.md",
+    "template": "node_modules/docdash",
+    "encoding": "utf8",
+    "destination": "docs/",
+    "recurse": true,
+    "verbose": true
+  },
+  "templates": {
+    "cleverLinks": false,
+    "monospaceLinks": false
+  }
+}

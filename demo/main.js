@@ -1,11 +1,36 @@
-var terminalContainer = document.getElementById('terminal-container'),
-    term = new Terminal(),
-    protocol = (location.protocol === 'https:') ? 'wss://' : 'ws://',
-    socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/bash',
-    socket = new WebSocket(socketURL);
+var term,
+    protocol,
+    socketURL,
+    socket;
 
-term.open(terminalContainer);
-term.fit();
+var terminalContainer = document.getElementById('terminal-container');
+var optionElements = {
+  cursorBlink: document.querySelector('#option-cursor-blink')
+};
+
+optionElements.cursorBlink.addEventListener('change', createTerminal);
+
+createTerminal();
+
+function createTerminal() {
+  while (terminalContainer.children.length) {
+    terminalContainer.removeChild(terminalContainer.children[0]);
+  }
+  term = new Terminal({
+    cursorBlink: optionElements.cursorBlink.checked
+  });
+  protocol = (location.protocol === 'https:') ? 'wss://' : 'ws://';
+  socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/bash';
+  socket = new WebSocket(socketURL);
+
+  term.open(terminalContainer);
+  term.fit();
+
+  socket.onopen = runRealTerminal;
+  socket.onclose = runFakeTerminal;
+  socket.onerror = runFakeTerminal;
+}
+
 
 function runRealTerminal() {
   term.attach(socket);
@@ -54,7 +79,3 @@ function runFakeTerminal() {
     term.write(data);
   });
 }
-
-socket.onopen = runRealTerminal;
-socket.onclose = runFakeTerminal;
-socket.onerror = runFakeTerminal;

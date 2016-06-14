@@ -30,8 +30,10 @@
       negatedDomainCharacterSet = '[^\\da-z\\.-]+',
       domainBodyClause = '(' + domainCharacterSet + ')',
       tldClause = '([a-z\\.]{2,6})',
-      hostClause = domainBodyClause + '\\.' + tldClause,
-      pathClause = '([\\/\\w\\.-]*)*\\/?',
+      ipClause = '((\\d{1,3}\\.){3}\\d{1,3})',
+      portClause = '(:\\d{1,5})',
+      hostClause = '((' + domainBodyClause + '\\.' + tldClause + ')|' + ipClause + ')' + portClause + '?',
+      pathClause = '(\\/[\\/\\w\\.-]*)*',
       negatedPathCharacterSet = '[^\\/\\w\\.-]+',
       bodyClause = hostClause + pathClause,
       start = '(?:^|' + negatedDomainCharacterSet + ')(',
@@ -40,7 +42,6 @@
       strictUrlClause = start + protocolClause + bodyClause + end,
       lenientUrlRegex = new RegExp(lenientUrlClause),
       strictUrlRegex = new RegExp(strictUrlClause);
-
 
   /**
    * Converts all valid URLs found in the given terminal line into
@@ -90,22 +91,13 @@
         continue;
       }
 
+      var url = exports.findLinkMatch(node.data, lenient);
 
-      if (lenient) {
-        match = node.data.match(lenientUrlRegex);
-      } else {
-        match = node.data.match(strictUrlRegex);
-      }
-
-      /**
-       * If no URL was found in the current text, return.
-       */
-      if (!match) {
+      if (!url) {
         continue;
       }
 
-      var url = match[1],
-          startsWithProtocol = new RegExp('^' + protocolClause),
+      var startsWithProtocol = new RegExp('^' + protocolClause),
           urlHasProtocol = url.match(startsWithProtocol),
           href = (urlHasProtocol) ? url : 'http://' + url,
           link = '<a href="' +  href + '" >' + url + '</a>',
@@ -124,6 +116,20 @@
     terminal.emit('linkify:line', line);
   };
 
+  /**
+   * Finds a link within a block of text.
+   *
+   * @param {string} text - The text to search .
+   * @param {boolean} lenient - Whether to use the lenient search.
+   * @return {string} A URL.
+   */
+  exports.findLinkMatch = function (text, lenient) {
+    var match = text.match(lenient ? lenientUrlRegex : strictUrlRegex);
+    if (!match || match.length === 0) {
+      return null;
+    }
+    return match[1];
+  }
 
   /**
    * Converts all valid URLs found in the terminal view into hyperlinks.

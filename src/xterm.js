@@ -142,6 +142,14 @@
      * Terminal
      */
 
+    /**
+     * Creates a new `Terminal` object.
+     *
+     * @param {object} options An object containing a set of options, the available options are:
+     *   - cursorBlink (boolean): Whether the terminal cursor blinks
+     *
+     * @public
+     */
     function Terminal(options) {
       var self = this;
 
@@ -222,6 +230,16 @@
        */
       this.y = 0;
 
+      /**
+       * Used to debounce the refresh function
+       */
+      this.isRefreshing = false;
+
+      /**
+       * Whether there is a full terminal refresh queued
+       */
+      this.queuedRefresh = false;
+
       this.cursorState = 0;
       this.cursorHidden = false;
       this.convertEol;
@@ -289,6 +307,7 @@
 
       this.tabs;
       this.setupStops();
+      this.debounceRefresh();
     }
 
     inherits(Terminal, EventEmitter);
@@ -297,6 +316,26 @@
     Terminal.prototype.eraseAttr = function() {
       // if (this.is('screen')) return this.defAttr;
       return (this.defAttr & ~0x1ff) | (this.curAttr & 0x1ff);
+    };
+
+    /**
+     * Allow refresh to execute only approximately 30 times a second. For commands that pass a
+     * significant amount of output to the write function, this prevents the terminal from maxing
+     * out the CPU and making the UI unresponsive. While commands can still run beyond what they do
+     * on the terminal, it is far better with a debounce in place as every single terminal
+     * manipulation does not need to be constructed in the DOM.
+     *
+     * A side-effect of this is that it makes ^C to interrupt a process seem more responsive.
+     */
+    Terminal.prototype.debounceRefresh = function () {
+      var self = this;
+      window.setInterval(function () {
+        self.isRefreshing = false;
+        if (self.queuedRefresh) {
+          // Do a full refresh in case multiple refreshes were requested.
+          self.refresh(0, self.rows - 1);
+        }
+      }, 34);
     };
 
     /**
@@ -408,7 +447,9 @@
     });
 
     /**
-     * Focused Terminal
+     * Focus the terminal.
+     *
+     * @public
      */
     Terminal.prototype.focus = function() {
       if (document.activeElement === this.element) {
@@ -636,8 +677,12 @@
     };
 
 
-    /*
-     * Open Terminal in the DOM
+    /**
+     * Opens the terminal within an element.
+     *
+     * @param {HTMLElement} parent The element to create the terminal within.
+     *
+     * @public
      */
     Terminal.prototype.open = function(parent) {
       var self=this, i=0, div;
@@ -744,6 +789,26 @@
 
       this.emit('open');
     };
+
+
+    /**
+     * Attempts to load an add-on using CommonJS or RequireJS (whichever is available).
+     * @param {string} addon The name of the addon to load
+     * @static
+     */
+    Terminal.loadAddon = function(addon, callback) {
+      if (typeof exports === 'object' && typeof module === 'object') {
+        // CommonJS
+        return require(__dirname + '/../addons/' + addon);
+      } else if (typeof define == 'function') {
+        // RequireJS
+        return require(['../addons/' + addon + '/' + addon], callback);
+      } else {
+        console.error('Cannot load a module without a CommonJS or RequireJS environment.');
+        return false;
+      }
+    };
+
 
     // XTerm mouse events
     // http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#Mouse%20Tracking
@@ -1084,9 +1149,10 @@
     };
 
     /**
-     * Destroy Terminal
+     * Destroys the terminal.
+     *
+     * @public
      */
-
     Terminal.prototype.destroy = function() {
       this.readable = false;
       this.writable = false;
@@ -1124,8 +1190,23 @@
      * Next 14 bits: a mask for misc. flags:
      *   1=bold, 2=underline, 4=blink, 8=inverse, 16=invisible
     */
+
+    /**
+     * Refreshes terminal content within two rows (inclusive).
+     *
+     * @param {number} start The row to start from (between 0 and terminal's height terminal - 1)
+     * @param {number} end The row to end at (between fromRow and terminal's height terminal - 1)
+     *
+     * @public
+     */
     Terminal.prototype.refresh = function(start, end) {
       var x, y, i, line, out, ch, width, data, attr, bg, fg, flags, row, parent, focused = document.activeElement;
+
+      if (this.isRefreshing) {
+        this.queuedRefresh = true;
+        return;
+      }
+      this.isRefreshing = true;
 
       if (end - start >= this.rows / 2) {
         parent = this.element.parentNode;
@@ -1135,9 +1216,9 @@
       width = this.cols;
       y = start;
 
-      if (end >= this.lines.length) {
+      if (end >= this.rows.length) {
         this.log('`end` is too large. Most likely a bad CSR.');
-        end = this.lines.length - 1;
+        end = this.rows.length - 1;
       }
 
       for (; y <= end; y++) {
@@ -1360,6 +1441,13 @@
       this.refresh(0, this.rows - 1);
     };
 
+    /**
+     * Writes text to the terminal.
+     *
+     * @param {string} text The text to write to the terminal.
+     *
+     * @public
+     */
     Terminal.prototype.write = function(data) {
       var l = data.length, i = 0, j, cs, ch;
 
@@ -2649,6 +2737,14 @@
       this.context.console.error.apply(this.context.console, args);
     };
 
+    /**
+     * Resizes the terminal.
+     *
+     * @param {number} x The number of columns to resize to.
+     * @param {number} y The number of rows to resize to.
+     *
+     * @public
+     */
     Terminal.prototype.resize = function(x, y) {
       var line
         , el
@@ -4571,6 +4667,15 @@
 
     Terminal.EventEmitter = EventEmitter;
     Terminal.inherits = inherits;
+
+    /**
+     * Adds an event listener to the terminal.
+     *
+     * @param {string} event The name of the event. TODO: Document all event types
+     * @param {function} callback The function to call when the event is triggered.
+     *
+     * @public
+     */
     Terminal.on = on;
     Terminal.off = off;
     Terminal.cancel = cancel;

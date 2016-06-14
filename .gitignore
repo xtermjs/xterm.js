@@ -8,5 +8,5 @@ Makefile.gyp
 *.target.gyp.mk
 *.node
 example/*.log
-docs/_build
+docs/
 npm-debug.log
