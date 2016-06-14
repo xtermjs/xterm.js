@@ -230,6 +230,16 @@
        */
       this.y = 0;
 
+      /**
+       * Used to debounce the refresh function
+       */
+      this.isRefreshing = false;
+
+      /**
+       * Whether there is a full terminal refresh queued
+       */
+      this.queuedRefresh = false;
+
       this.cursorState = 0;
       this.cursorHidden = false;
       this.convertEol;
@@ -297,6 +307,7 @@
 
       this.tabs;
       this.setupStops();
+      this.debounceRefresh();
     }
 
     inherits(Terminal, EventEmitter);
@@ -305,6 +316,26 @@
     Terminal.prototype.eraseAttr = function() {
       // if (this.is('screen')) return this.defAttr;
       return (this.defAttr & ~0x1ff) | (this.curAttr & 0x1ff);
+    };
+
+    /**
+     * Allow refresh to execute only approximately 30 times a second. For commands that pass a
+     * significant amount of output to the write function, this prevents the terminal from maxing
+     * out the CPU and making the UI unresponsive. While commands can still run beyond what they do
+     * on the terminal, it is far better with a debounce in place as every single terminal
+     * manipulation does not need to be constructed in the DOM.
+     *
+     * A side-effect of this is that it makes ^C to interrupt a process seem more responsive.
+     */
+    Terminal.prototype.debounceRefresh = function () {
+      var self = this;
+      window.setInterval(function () {
+        self.isRefreshing = false;
+        if (self.queuedRefresh) {
+          // Do a full refresh in case multiple refreshes were requested.
+          self.refresh(0, self.rows - 1);
+        }
+      }, 34);
     };
 
     /**
@@ -1170,6 +1201,12 @@
      */
     Terminal.prototype.refresh = function(start, end) {
       var x, y, i, line, out, ch, width, data, attr, bg, fg, flags, row, parent, focused = document.activeElement;
+
+      if (this.isRefreshing) {
+        this.queuedRefresh = true;
+        return;
+      }
+      this.isRefreshing = true;
 
       if (end - start >= this.rows / 2) {
         parent = this.element.parentNode;
