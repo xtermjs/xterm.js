@@ -1216,9 +1216,9 @@
       width = this.cols;
       y = start;
 
-      if (end >= this.lines.length) {
+      if (end >= this.rows.length) {
         this.log('`end` is too large. Most likely a bad CSR.');
-        end = this.lines.length - 1;
+        end = this.rows.length - 1;
       }
 
       for (; y <= end; y++) {
