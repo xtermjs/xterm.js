@@ -332,6 +332,7 @@
       window.setInterval(function () {
         self.isRefreshing = false;
         if (self.queuedRefresh) {
+          self.queuedRefresh = false;
           // Do a full refresh in case multiple refreshes were requested.
           self.refresh(0, self.rows - 1);
         }
