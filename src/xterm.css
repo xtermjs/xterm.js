@@ -57,6 +57,21 @@
     background-color: transparent;
 }
 
+.terminal .terminal-cursor.blinking {
+    animation: blink-cursor 1.2s infinite step-end;
+}
+
+@keyframes blink-cursor {
+    0% {
+        background-color: #fff;
+        color: #000;
+    }
+    50% {
+        background-color: transparent;
+        color: #FFF;
+    }
+}
+
 /*
  *  Determine default colors for xterm.js
  */
