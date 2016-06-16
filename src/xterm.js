@@ -230,6 +230,15 @@
        */
       this.y = 0;
 
+      /**
+       * Used to debounce the refresh function
+       */
+      this.isRefreshing = false;
+
+      /**
+       * Whether there is a full terminal refresh queued
+       */
+
       this.cursorState = 0;
       this.cursorHidden = false;
       this.convertEol;
@@ -416,36 +425,53 @@
     });
 
     /**
-     * Focus the terminal.
+     * Focus the terminal. Delegates focus handling to the terminal's DOM element.
      *
      * @public
      */
     Terminal.prototype.focus = function() {
-      if (document.activeElement === this.element) {
-        return;
-      }
-
-      if (this.sendFocus) {
-        this.send('\x1b[I');
-      }
-
-      this.showCursor();
-      this.element.focus();
+      return this.element.focus();
     };
 
+    /**
+     * Binds the desired focus behavior on a given terminal object.
+     *
+     * @static
+     */
+    Terminal.bindFocus = function (term) {
+      on(term.element, 'focus', function (ev) {
+        if (term.sendFocus) {
+          term.send('\x1b[I');
+        }
+
+        term.showCursor();
+        Terminal.focus = term;
+        term.emit('focus', {terminal: term});
+      });
+    };
+
+    /**
+     * Blur the terminal. Delegates blur handling to the terminal's DOM element.
+     *
+     * @public
+     */
     Terminal.prototype.blur = function() {
-      if (Terminal.focus !== this) {
-        return;
-      }
+      return terminal.element.blur();
+    };
 
-      this.cursorState = 0;
-      this.refresh(this.y, this.y);
-      this.element.blur();
-
-      if (this.sendFocus) {
-        this.send('\x1b[O');
-      }
-      Terminal.focus = null;
+    /**
+     * Binds the desired blur behavior on a given terminal object.
+     *
+     * @static
+     */
+    Terminal.bindBlur = function (term) {
+      on(term.element, 'blur', function (ev) {
+        if (term.sendFocus) {
+          term.send('\x1b[O');
+        }
+        Terminal.focus = null;
+        term.emit('blur', {terminal: term});
+      });
     };
 
     /**
@@ -457,6 +483,8 @@
       Terminal.bindCopy(this);
       Terminal.bindCut(this);
       Terminal.bindDrop(this);
+      Terminal.bindFocus(this);
+      Terminal.bindBlur(this);
     };
 
   	/**
@@ -703,12 +731,6 @@
       this.element.classList.add('xterm-theme-' + this.theme);
       this.element.setAttribute('tabindex', 0);
       this.element.spellcheck = 'false';
-      this.element.onfocus = function() {
-        self.emit('focus', {terminal: this});
-      };
-      this.element.onblur = function() {
-        self.emit('blur', {terminal: this});
-      };
 
       /*
       * Create the container that will hold the lines of the terminal and then
@@ -734,9 +756,6 @@
       // Ensure there is a Terminal.focus.
       this.focus();
 
-      // Start blinking the cursor.
-      this.startBlink();
-
       on(this.element, 'mouseup', function() {
         var selection = document.getSelection(),
             collapsed = selection.isCollapsed,
@@ -758,6 +777,26 @@
 
       this.emit('open');
     };
+
+
+    /**
+     * Attempts to load an add-on using CommonJS or RequireJS (whichever is available).
+     * @param {string} addon The name of the addon to load
+     * @static
+     */
+    Terminal.loadAddon = function(addon, callback) {
+      if (typeof exports === 'object' && typeof module === 'object') {
+        // CommonJS
+        return require(__dirname + '/../addons/' + addon);
+      } else if (typeof define == 'function') {
+        // RequireJS
+        return require(['../addons/' + addon + '/' + addon], callback);
+      } else {
+        console.error('Cannot load a module without a CommonJS or RequireJS environment.');
+        return false;
+      }
+    };
+
 
     // XTerm mouse events
     // http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#Mouse%20Tracking
@@ -1145,23 +1184,65 @@
      *
      * @param {number} start The row to start from (between 0 and terminal's height terminal - 1)
      * @param {number} end The row to end at (between fromRow and terminal's height terminal - 1)
+     * @param {boolean} queue Whether the refresh should ran right now or be queued
      *
      * @public
      */
-    Terminal.prototype.refresh = function(start, end) {
+    Terminal.prototype.refresh = function(start, end, queue) {
+      var self = this;
+
+      // queue defaults to true
+      queue = (typeof queue == 'undefined') ? true : queue;
+
+      /**
+       * The refresh queue allows refresh to execute only approximately 30 times a second. For
+       * commands that pass a significant amount of output to the write function, this prevents the
+       * terminal from maxing out the CPU and making the UI unresponsive. While commands can still
+       * run beyond what they do on the terminal, it is far better with a debounce in place as
+       * every single terminal manipulation does not need to be constructed in the DOM.
+       *
+       * A side-effect of this is that it makes ^C to interrupt a process seem more responsive.
+       */
+      if (queue) {
+        // If refresh should be queued, order the refresh and return.
+        if (this._refreshIsQueued) {
+          // If a refresh has already been queued, just order a full refresh next
+          this._fullRefreshNext = true;
+        } else {
+          setTimeout(function () {
+            self.refresh(start, end, false);
+          }, 34)
+          this._refreshIsQueued = true;
+        }
+        return;
+      }
+
+      // If refresh should be run right now (not be queued), release the lock
+      this._refreshIsQueued = false;
+
+      // If multiple refreshes were requested, make a full refresh.
+      if (this._fullRefreshNext) {
+        start = 0;
+        end = this.rows - 1;
+        this._fullRefreshNext = false // reset lock
+      }
+
       var x, y, i, line, out, ch, width, data, attr, bg, fg, flags, row, parent, focused = document.activeElement;
 
+      // If this is a big refresh, remove the terminal rows from the DOM for faster calculations
       if (end - start >= this.rows / 2) {
         parent = this.element.parentNode;
-        if (parent) parent.removeChild(this.element);
+        if (parent) {
+          this.element.removeChild(this.rowContainer);
+        }
       }
 
       width = this.cols;
       y = start;
 
-      if (end >= this.lines.length) {
+      if (end >= this.rows.length) {
         this.log('`end` is too large. Most likely a bad CSR.');
-        end = this.lines.length - 1;
+        end = this.rows.length - 1;
       }
 
       for (; y <= end; y++) {
@@ -1193,7 +1274,11 @@
             }
             if (data !== this.defAttr) {
               if (data === -1) {
-                out += '<span class="reverse-video terminal-cursor">';
+                out += '<span class="reverse-video terminal-cursor';
+                if (this.cursorBlink) {
+                  out += ' blinking';
+                }
+                out += '">';
               } else {
                 var classNames = [];
 
@@ -1296,45 +1381,17 @@
       }
 
       if (parent) {
-        parent.appendChild(this.element);
+        this.element.appendChild(this.rowContainer);
       }
 
-      /*
-      *  Return focus to previously focused element
-      */
-      focused.focus();
       this.emit('refresh', {element: this.element, start: start, end: end});
-    };
-
-    Terminal.prototype._cursorBlink = function() {
-      if (Terminal.focus !== this) return;
-      this.cursorState ^= 1;
-      this.refresh(this.y, this.y);
     };
 
     Terminal.prototype.showCursor = function() {
       if (!this.cursorState) {
         this.cursorState = 1;
         this.refresh(this.y, this.y);
-      } else {
-        // Temporarily disabled:
-        // this.refreshBlink();
       }
-    };
-
-    Terminal.prototype.startBlink = function() {
-      if (!this.cursorBlink) return;
-      var self = this;
-      this._blinker = function() {
-        self._cursorBlink();
-      };
-      this._blink = setInterval(this._blinker, 500);
-    };
-
-    Terminal.prototype.refreshBlink = function() {
-      if (!this.cursorBlink) return;
-      clearInterval(this._blink);
-      this._blink = setInterval(this._blinker, 500);
     };
 
     Terminal.prototype.scroll = function() {
