@@ -238,7 +238,6 @@
       /**
        * Whether there is a full terminal refresh queued
        */
-      this.queuedRefresh = false;
 
       this.cursorState = 0;
       this.cursorHidden = false;
@@ -307,7 +306,6 @@
 
       this.tabs;
       this.setupStops();
-      this.debounceRefresh();
     }
 
     inherits(Terminal, EventEmitter);
@@ -316,27 +314,6 @@
     Terminal.prototype.eraseAttr = function() {
       // if (this.is('screen')) return this.defAttr;
       return (this.defAttr & ~0x1ff) | (this.curAttr & 0x1ff);
-    };
-
-    /**
-     * Allow refresh to execute only approximately 30 times a second. For commands that pass a
-     * significant amount of output to the write function, this prevents the terminal from maxing
-     * out the CPU and making the UI unresponsive. While commands can still run beyond what they do
-     * on the terminal, it is far better with a debounce in place as every single terminal
-     * manipulation does not need to be constructed in the DOM.
-     *
-     * A side-effect of this is that it makes ^C to interrupt a process seem more responsive.
-     */
-    Terminal.prototype.debounceRefresh = function () {
-      var self = this;
-      window.setInterval(function () {
-        self.isRefreshing = false;
-        if (self.queuedRefresh) {
-          self.queuedRefresh = false;
-          // Do a full refresh in case multiple refreshes were requested.
-          self.refresh(0, self.rows - 1);
-        }
-      }, 34);
     };
 
     /**
@@ -448,36 +425,53 @@
     });
 
     /**
-     * Focus the terminal.
+     * Focus the terminal. Delegates focus handling to the terminal's DOM element.
      *
      * @public
      */
     Terminal.prototype.focus = function() {
-      if (document.activeElement === this.element) {
-        return;
-      }
-
-      if (this.sendFocus) {
-        this.send('\x1b[I');
-      }
-
-      this.showCursor();
-      this.element.focus();
+      return this.element.focus();
     };
 
+    /**
+     * Binds the desired focus behavior on a given terminal object.
+     *
+     * @static
+     */
+    Terminal.bindFocus = function (term) {
+      on(term.element, 'focus', function (ev) {
+        if (term.sendFocus) {
+          term.send('\x1b[I');
+        }
+
+        term.showCursor();
+        Terminal.focus = term;
+        term.emit('focus', {terminal: term});
+      });
+    };
+
+    /**
+     * Blur the terminal. Delegates blur handling to the terminal's DOM element.
+     *
+     * @public
+     */
     Terminal.prototype.blur = function() {
-      if (Terminal.focus !== this) {
-        return;
-      }
+      return terminal.element.blur();
+    };
 
-      this.cursorState = 0;
-      this.refresh(this.y, this.y);
-      this.element.blur();
-
-      if (this.sendFocus) {
-        this.send('\x1b[O');
-      }
-      Terminal.focus = null;
+    /**
+     * Binds the desired blur behavior on a given terminal object.
+     *
+     * @static
+     */
+    Terminal.bindBlur = function (term) {
+      on(term.element, 'blur', function (ev) {
+        if (term.sendFocus) {
+          term.send('\x1b[O');
+        }
+        Terminal.focus = null;
+        term.emit('blur', {terminal: term});
+      });
     };
 
     /**
@@ -489,6 +483,8 @@
       Terminal.bindCopy(this);
       Terminal.bindCut(this);
       Terminal.bindDrop(this);
+      Terminal.bindFocus(this);
+      Terminal.bindBlur(this);
     };
 
   	/**
@@ -735,12 +731,6 @@
       this.element.classList.add('xterm-theme-' + this.theme);
       this.element.setAttribute('tabindex', 0);
       this.element.spellcheck = 'false';
-      this.element.onfocus = function() {
-        self.emit('focus', {terminal: this});
-      };
-      this.element.onblur = function() {
-        self.emit('blur', {terminal: this});
-      };
 
       /*
       * Create the container that will hold the lines of the terminal and then
@@ -1194,17 +1184,50 @@
      *
      * @param {number} start The row to start from (between 0 and terminal's height terminal - 1)
      * @param {number} end The row to end at (between fromRow and terminal's height terminal - 1)
+     * @param {boolean} queue Whether the refresh should ran right now or be queued
      *
      * @public
      */
-    Terminal.prototype.refresh = function(start, end) {
-      var x, y, i, line, out, ch, width, data, attr, bg, fg, flags, row, parent, focused = document.activeElement;
+    Terminal.prototype.refresh = function(start, end, queue) {
+      var self = this;
 
-      if (this.isRefreshing) {
-        this.queuedRefresh = true;
+      // queue defaults to true
+      queue = (typeof queue == 'undefined') ? true : queue;
+
+      /**
+       * The refresh queue allows refresh to execute only approximately 30 times a second. For
+       * commands that pass a significant amount of output to the write function, this prevents the
+       * terminal from maxing out the CPU and making the UI unresponsive. While commands can still
+       * run beyond what they do on the terminal, it is far better with a debounce in place as
+       * every single terminal manipulation does not need to be constructed in the DOM.
+       *
+       * A side-effect of this is that it makes ^C to interrupt a process seem more responsive.
+       */
+      if (queue) {
+        // If refresh should be queued, order the refresh and return.
+        if (this._refreshIsQueued) {
+          // If a refresh has already been queued, just order a full refresh next
+          this._fullRefreshNext = true;
+        } else {
+          setTimeout(function () {
+            self.refresh(start, end, false);
+          }, 34)
+          this._refreshIsQueued = true;
+        }
         return;
       }
-      this.isRefreshing = true;
+
+      // If refresh should be run right now (not be queued), release the lock
+      this._refreshIsQueued = false;
+
+      // If multiple refreshes were requested, make a full refresh.
+      if (this._fullRefreshNext) {
+        start = 0;
+        end = this.rows - 1;
+        this._fullRefreshNext = false // reset lock
+      }
+
+      var x, y, i, line, out, ch, width, data, attr, bg, fg, flags, row, parent, focused = document.activeElement;
 
       if (end - start >= this.rows / 2) {
         parent = this.element.parentNode;
