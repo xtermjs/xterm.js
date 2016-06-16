@@ -1229,9 +1229,12 @@
 
       var x, y, i, line, out, ch, width, data, attr, bg, fg, flags, row, parent, focused = document.activeElement;
 
+      // If this is a big refresh, remove the terminal rows from the DOM for faster calculations
       if (end - start >= this.rows / 2) {
         parent = this.element.parentNode;
-        if (parent) parent.removeChild(this.element);
+        if (parent) {
+          this.element.removeChild(this.rowContainer);
+        }
       }
 
       width = this.cols;
@@ -1378,13 +1381,9 @@
       }
 
       if (parent) {
-        parent.appendChild(this.element);
+        this.element.appendChild(this.rowContainer);
       }
 
-      /*
-      *  Return focus to previously focused element
-      */
-      focused.focus();
       this.emit('refresh', {element: this.element, start: start, end: end});
     };
 
