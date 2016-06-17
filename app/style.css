@@ -1,7 +1,10 @@
+html, body { height: 100%; }
+
 body {
     font-family: helvetica, sans-serif, arial;
     font-size: 1em;
     color: #111;
+    margin: 0;
 }
 
 h1 {
@@ -9,10 +12,8 @@ h1 {
 }
 
 #terminal-container {
-    width: 960px;
-    height: 600px;
-    margin: 0 auto;
-    padding: 2px;
+    width: 100%;
+    height: 100%;
 }
 
 #terminal-container .terminal {
