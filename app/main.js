@@ -19,7 +19,7 @@ function createTerminal(opts) {
   }
   term = new Terminal(opts);
   protocol = (location.protocol === 'https:') ? 'wss://' : 'ws://';
-  socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/bash';
+  socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/login';
   socket = new WebSocket(socketURL);
 
   term.open(terminalContainer);
