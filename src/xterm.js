@@ -456,7 +456,7 @@
      * @public
      */
     Terminal.prototype.blur = function() {
-      return terminal.element.blur();
+      return this.element.blur();
     };
 
     /**
@@ -506,6 +506,14 @@
       var term = this;
 
       term.element.contentEditable = true;
+
+      /**
+       * Blur and re-focus instantly. This is due to a weird focus state on Chrome, when setting
+       * contentEditable to true on a focused element.
+       */
+      term.blur();
+      term.focus();
+
       setTimeout(function () {
         term.element.contentEditable = false;
         if (typeof callback == 'function') {
@@ -544,21 +552,17 @@
        * as true.
        */
       on(term.element, 'keydown', function (ev) {
+        var isEditable = term.element.contentEditable === "true";
+
         /**
          * If on a Mac, lease the contentEditable value temporarily, when the user presses
-         * the Cmd button, in order to cope with some sync issues on Safari.
+         * the Cmd button, in a keydown event order to paste frictionlessly.
          */
-        if (term.isMac && ev.keyCode == 91) {
-          term.leaseContentEditable(1000);
+        if (term.isMac && ev.metaKey && !isEditable) {
+          term.leaseContentEditable(5000);
         }
 
-        if (ev.keyCode == 86) { // keyCode 96 corresponds to "v"
-          if (term.isMac && ev.metaKey) {
-            term.leaseContentEditable();
-          }
-        }
-
-        if (!term.isMac && ev.keyCode == 45 && ev.shiftKey && !ev.ctrlKey) {
+        if (!term.isMac && ev.keyCode == 45 && ev.shiftKey && !ev.ctrlKey && !isEditable) {
           // Shift + Insert pastes on windows and many linuxes
           term.leaseContentEditable();
         }
@@ -730,7 +734,7 @@
       this.element.classList.add('xterm');
       this.element.classList.add('xterm-theme-' + this.theme);
       this.element.setAttribute('tabindex', 0);
-      this.element.spellcheck = 'false';
+      this.element.spellcheck = false;
 
       /*
       * Create the container that will hold the lines of the terminal and then
