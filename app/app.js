@@ -18,11 +18,11 @@ app.get('/main.js', function(req, res){
   res.sendFile(__dirname + '/main.js');
 });
 
-app.ws('/bash', function(ws, req) {
+app.ws('/login', function(ws, req) {
   /**
-   * Open bash terminal and attach it
+   * Open terminal and attach it
    */
-  var term = pty.spawn('bash', [], {
+  var term = pty.spawn('login', [], {
     name: 'xterm-color',
     cols: 80,
     rows: 24,

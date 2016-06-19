@@ -1,4 +1,4 @@
 #! /usr/bin/env sh
 
 # Development server for xterm.js
-node demo/app.js
+node app/app.js

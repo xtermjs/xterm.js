@@ -2,24 +2,24 @@
 <html>
   <head>
     <link rel="stylesheet" href="../../src/xterm.css" />
-    <link rel="stylesheet" href="../../demo/style.css" />
+    <link rel="stylesheet" href="../../app/style.css" />
     <script src="../../src/xterm.js"></script>
     <script src="attach.js"></script>
     <style>
         body {
             color: #111;
         }
-        
+
         h1, h2 {
             color: #444;
             border-bottom: 1px solid #ddd;
             text-align: left;
         }
-        
+
         form {
             margin-bottom: 32px;
         }
-        
+
         input, button {
             line-height: 22px;
             font-size: 16px;
@@ -27,20 +27,20 @@
             border-radius: 2px;
             border: 1px solid #ccc;
         }
-        
+
         input {
             height: 22px;
             padding-left: 4px;
             padding-right: 4px;
         }
-        
+
         button {
             height: 28px;
             background-color: #ccc;
             cursor: pointer;
             color: #333;
         }
-        
+
         .container {
             max-width: 900px;
             margin: 0 auto;
@@ -49,7 +49,7 @@
   </head>
   <body>
       <div class="container">
-          
+
     <h1>
         xterm.js: socket attach
     </h1>
@@ -70,14 +70,14 @@
       </button>
     </form>
     <div id="terminal-container"></div>
-          
+
       </div>
     <script>
       var term = new Terminal(),
           container = document.getElementById('terminal-container'),
           socketUrl = document.getElementById('socket-url'),
           socketForm = document.getElementById('socket-form');
-      
+
       socketForm.addEventListener('submit', function (ev) {
         ev.preventDefault();
         var url = socketUrl.value,
@@ -86,7 +86,7 @@
           term.attach(sock);
         });
       });
-      
+
       term.open(container);
     </script>
   </body>

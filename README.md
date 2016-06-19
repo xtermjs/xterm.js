@@ -10,9 +10,9 @@ Xterm.js supplies a modular, event-based interface that lets developers build ad
 
 ![xterm.js screenshot](xtermjs.png)
 
-## Demo
+## Standalone mode
 
-To launch the demo simply run:
+To launch a barebones xterm.js instance in your browser, simply run:
 
 ```
 npm install

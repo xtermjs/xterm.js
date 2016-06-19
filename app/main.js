@@ -4,23 +4,22 @@ var term,
     socket;
 
 var terminalContainer = document.getElementById('terminal-container');
-var optionElements = {
-  cursorBlink: document.querySelector('#option-cursor-blink')
-};
 
-optionElements.cursorBlink.addEventListener('change', createTerminal);
+var opts = {cursorBlink: false};
+try {
+  opts = JSON.parse(localStorage.opts);
+} catch (e) {
+  localStorage.opts = JSON.stringify(opts);
+}
+createTerminal(opts);
 
-createTerminal();
-
-function createTerminal() {
+function createTerminal(opts) {
   while (terminalContainer.children.length) {
     terminalContainer.removeChild(terminalContainer.children[0]);
   }
-  term = new Terminal({
-    cursorBlink: optionElements.cursorBlink.checked
-  });
+  term = new Terminal(opts);
   protocol = (location.protocol === 'https:') ? 'wss://' : 'ws://';
-  socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/bash';
+  socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/login';
   socket = new WebSocket(socketURL);
 
   term.open(terminalContainer);
