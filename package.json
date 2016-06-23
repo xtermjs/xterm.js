@@ -15,8 +15,8 @@
     "docdash": "0.4.0"
   },
   "scripts": {
-    "start": "bash bin/server",
-    "test": "bash bin/test --recursive",
+    "start": "node demo/app",
+    "test": "mocha --recursive",
     "build:docs": "node_modules/.bin/jsdoc -c jsdoc.json"
   }
 }

@@ -1,5 +1,0 @@
-#! /bin/bash
-#
-# Testing script for xterm.js
-
-node_modules/.bin/mocha $@
