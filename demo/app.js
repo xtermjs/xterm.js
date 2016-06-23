@@ -1,6 +1,7 @@
 var express = require('express');
 var app = express();
 var expressWs = require('express-ws')(app);
+var os = require('os');
 var pty = require('pty.js');
 
 app.use('/src', express.static(__dirname + '/../src'));
@@ -46,7 +47,7 @@ app.ws('/bash', function(ws, req) {
 });
 
 var port = process.env.PORT || 3000,
-    host = '127.0.0.1';
+    host = os.platform() === 'win32' ? '127.0.0.1' : '0.0.0.0';
 
 console.log('App listening to http://' + host + ':' + port);
 app.listen(port, host);
