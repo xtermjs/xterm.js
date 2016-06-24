@@ -1188,22 +1188,23 @@
       INVISIBLE: 16
     }
 
-    /*
-     * Rendering Engine
-     *
-     * In the screen buffer, each character
-     * is stored as a an array with a character
-     * and a 32-bit integer.
-     * First value: a utf-16 character.
-     * Second value:
-     * Next 9 bits: background color (0-511).
-     * Next 9 bits: foreground color (0-511).
-     * Next 14 bits: a mask for misc. flags:
-     *   1=bold, 2=underline, 4=blink, 8=inverse, 16=invisible
-    */
-
     /**
-     * Refreshes terminal content within two rows (inclusive).
+     * Refreshes (re-renders) terminal content within two rows (inclusive)
+     *
+     * Rendering Engine:
+     *
+     * In the screen buffer, each character is stored as a an array with a character
+     * and a 32-bit integer:
+     *   - First value: a utf-16 character.
+     *   - Second value:
+     *   - Next 9 bits: background color (0-511).
+     *   - Next 9 bits: foreground color (0-511).
+     *   - Next 14 bits: a mask for misc. flags:
+     *     - 1=bold
+     *     - 2=underline
+     *     - 4=blink
+     *     - 8=inverse
+     *     - 16=invisible
      *
      * @param {number} start The row to start from (between 0 and terminal's height terminal - 1)
      * @param {number} end The row to end at (between fromRow and terminal's height terminal - 1)
@@ -2999,6 +3000,10 @@
       this.emit('resize', {terminal: this, cols: x, rows: y});
     };
 
+  	/**
+  	 * Updates the range of rows to refresh
+  	 * @param {number} y The number of rows to refresh next.
+  	 */
     Terminal.prototype.updateRange = function(y) {
       if (y < this.refreshStart) this.refreshStart = y;
       if (y > this.refreshEnd) this.refreshEnd = y;
@@ -3010,6 +3015,9 @@
       // }
     };
 
+    /**
+     * Set the range of refreshing to the maximyum value
+     */
     Terminal.prototype.maxRange = function() {
       this.refreshStart = 0;
       this.refreshEnd = this.rows - 1;
