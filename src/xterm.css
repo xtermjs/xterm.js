@@ -58,7 +58,7 @@
     background-color: transparent;
 }
 
-.terminal .terminal-cursor.blinking {
+.terminal:focus .terminal-cursor.blinking {
     animation: blink-cursor 1.2s infinite step-end;
 }
 
