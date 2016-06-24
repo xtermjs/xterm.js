@@ -1388,7 +1388,7 @@
         for (; i < width; i++) {
           data = line[i][0];
           ch = line[i][1];
-          ch_width = line[i][2] || 1;
+          ch_width = line[i][2];
           if (!ch_width)
             continue;
 
@@ -1490,7 +1490,6 @@
               if (ch <= ' ') {
                 out += '&nbsp;';
               } else {
-                if (ch_width==2) i++;
                 out += ch;
               }
               break;
@@ -1614,9 +1613,6 @@
         if (0xDC00 <= code && code <= 0xDFFF)
             continue;
 
-        ch_width = wcswidth(code);
-
-
         switch (this.state) {
           case normal:
             switch (ch) {
@@ -1672,6 +1668,8 @@
 
               default:
                 // ' '
+                ch_width = wcswidth(code);  // expensive, therefore we save the result in line buffer
+
                 if (ch >= ' ') {
                   if (this.charset && this.charset[ch]) {
                     ch = this.charset[ch];
@@ -4741,17 +4739,6 @@
 
       // Don't invoke for arrows, pageDown, home, backspace, etc.
       return thirdLevelKey && (!ev.keyCode || ev.keyCode > 47);
-    }
-
-    function isWide(ch) {
-      if (ch <= '\uff00') return false;
-      return (ch >= '\uff01' && ch <= '\uffbe')
-          || (ch >= '\uffc2' && ch <= '\uffc7')
-          || (ch >= '\uffca' && ch <= '\uffcf')
-          || (ch >= '\uffd2' && ch <= '\uffd7')
-          || (ch >= '\uffda' && ch <= '\uffdc')
-          || (ch >= '\uffe0' && ch <= '\uffe6')
-          || (ch >= '\uffe8' && ch <= '\uffee');
     }
 
     function matchColor(r1, g1, b1) {
