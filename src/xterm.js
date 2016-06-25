@@ -1462,7 +1462,7 @@
      */
     Terminal.prototype.write = function(data) {
       // XON - about to process data, thus we can get more
-      // dont send XON if user pressed XOFF
+      // dont lift XOFF if user pressed it
       if (!this.user_xoff)
         this.send('\x11');
 
