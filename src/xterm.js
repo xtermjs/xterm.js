@@ -294,6 +294,9 @@
       this.prefix = '';
       this.postfix = '';
 
+      // user input states
+      this.user_xoff = false;  // user pressed XOFF
+
       /**
        * An array of all lines in the entire buffer, including the prompt. The lines are array of
        * characters which are 2-length arrays where [0] is an attribute and [1] is the character.
@@ -1458,6 +1461,11 @@
      * @public
      */
     Terminal.prototype.write = function(data) {
+      // XON - about to process data, thus we can get more
+      // dont lift XOFF if user pressed it
+      if (!this.user_xoff)
+        this.send('\x11');
+
       var l = data.length, i = 0, j, cs, ch;
 
       this.refreshStart = this.y;
@@ -2655,6 +2663,10 @@
           }
           break;
       }
+      if (result.key === '\x13')
+        this.user_xoff = true;
+      else if (result.key === '\x11')
+        this.user_xoff = false;
       return result;
     };
 
