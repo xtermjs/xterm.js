@@ -1566,9 +1566,22 @@
                   }
 
                   // insert combining char in last cell
+                  // FIXME: needs handling after cursor jumps
                   if (!ch_width && this.x) {
-                    this.lines[this.y + this.ybase][this.x-1][1] += ch;
-                    this.updateRange(this.y);
+                    
+                    // dont overflow left
+                    if (this.lines[this.y + this.ybase][this.x-1]) {
+                      if (!this.lines[this.y + this.ybase][this.x-1][2]) {
+
+                        // found empty cell after fullwidth, need to go 2 cells back
+                        if (this.lines[this.y + this.ybase][this.x-2])
+                          this.lines[this.y + this.ybase][this.x-2][1] += ch;
+
+                      } else {
+                        this.lines[this.y + this.ybase][this.x-1][1] += ch;
+                      }
+                      this.updateRange(this.y);
+                    }
                     break;
                   }
 
