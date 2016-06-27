@@ -1,4 +1,5 @@
 var assert = require('chai').assert;
+var chai = require('chai');
 var Terminal = require('../src/xterm');
 
 describe('xterm.js', function() {
@@ -190,4 +191,261 @@ describe('xterm.js', function() {
       });
     });
   });
+
+describe('unicode - surrogates', function() {
+    it('2 characters per cell', function () {
+        var high = '\uD800';
+        for (var i=0xDC00; i<=0xDCFF; ++i) {
+            xterm.write(high + String.fromCharCode(i));
+            var tchar = xterm.lines[0][0];
+            chai.expect(tchar[1]).eql(high + String.fromCharCode(i));
+            chai.expect(tchar[1].length).eql(2);
+            chai.expect(tchar[2]).eql(1);
+            chai.expect(xterm.lines[0][1][1]).eql(' ');
+            xterm.reset();
+        }
+    });
+    it('2 characters at last cell', function () {
+        var high = '\uD800';
+        for (var i=0xDC00; i<=0xDCFF; ++i) {
+            xterm.x = xterm.cols - 1;
+            xterm.write(high + String.fromCharCode(i));
+            chai.expect(xterm.lines[0][xterm.x-1][1]).eql(high + String.fromCharCode(i));
+            chai.expect(xterm.lines[0][xterm.x-1][1].length).eql(2);
+            chai.expect(xterm.lines[1][0][1]).eql(' ');
+            xterm.reset();
+        }
+    });
+    it('2 characters per cell over line end with autowrap', function () {
+        var high = '\uD800';
+        for (var i=0xDC00; i<=0xDCFF; ++i) {
+            xterm.x = xterm.cols - 1;
+            xterm.wraparoundMode = true;
+            xterm.write('a' + high + String.fromCharCode(i));
+            chai.expect(xterm.lines[0][xterm.cols-1][1]).eql('a');
+            chai.expect(xterm.lines[1][0][1]).eql(high + String.fromCharCode(i));
+            chai.expect(xterm.lines[1][0][1].length).eql(2);
+            chai.expect(xterm.lines[1][1][1]).eql(' ');
+            xterm.reset();
+        }
+    });
+    /** FIXME - wrap is not respected in default state */
+    /*
+    it('2 characters per cell over line end without autowrap', function () {
+        var high = '\uD800';
+        for (var i=0xDC00; i<=0xDCFF; ++i) {
+            xterm.x = xterm.cols - 1;
+            xterm.wraparoundMode = false;
+            xterm.write('a' + high + String.fromCharCode(i));
+            chai.expect(xterm.lines[0][xterm.cols-1][1]).eql(high + String.fromCharCode(i));
+            chai.expect(xterm.lines[0][xterm.cols-1][1].length).eql(2);
+            chai.expect(xterm.lines[1][1][1]).eql(' ');
+            xterm.reset();
+        }
+    });
+    */
+    it('splitted surrogates', function () {
+        var high = '\uD800';
+        for (var i=0xDC00; i<=0xDCFF; ++i) {
+            xterm.write(high);
+            xterm.write(String.fromCharCode(i));
+            var tchar = xterm.lines[0][0];
+            chai.expect(tchar[1]).eql(high + String.fromCharCode(i));
+            chai.expect(tchar[1].length).eql(2);
+            chai.expect(tchar[2]).eql(1);
+            chai.expect(xterm.lines[0][1][1]).eql(' ');
+            xterm.reset();
+        }
+    });
+});
+describe('unicode - combining characters', function() {
+    it('café', function () {
+        xterm.write('cafe\u0301');
+        chai.expect(xterm.lines[0][3][1]).eql('e\u0301');
+        chai.expect(xterm.lines[0][3][1].length).eql(2);
+        chai.expect(xterm.lines[0][3][2]).eql(1);
+    });
+    it('café - end of line', function () {
+        xterm.x = xterm.cols - 1 - 3;
+        xterm.write('cafe\u0301');
+        chai.expect(xterm.lines[0][xterm.cols-1][1]).eql('e\u0301');
+        chai.expect(xterm.lines[0][xterm.cols-1][1].length).eql(2);
+        chai.expect(xterm.lines[0][xterm.cols-1][2]).eql(1);
+        chai.expect(xterm.lines[0][1][1]).eql(' ');
+        chai.expect(xterm.lines[0][1][1].length).eql(1);
+        chai.expect(xterm.lines[0][1][2]).eql(1);
+    });
+    it('multiple combined é', function () {
+        xterm.write(Array(100).join('e\u0301'));
+        for (var i=0; i<xterm.cols; ++i) {
+            var tchar = xterm.lines[0][i];
+            chai.expect(tchar[1]).eql('e\u0301');
+            chai.expect(tchar[1].length).eql(2);
+            chai.expect(tchar[2]).eql(1);
+        }
+        tchar = xterm.lines[1][0];
+        chai.expect(tchar[1]).eql('e\u0301');
+        chai.expect(tchar[1].length).eql(2);
+        chai.expect(tchar[2]).eql(1);
+    });
+    it('multiple surrogate with combined', function () {
+        xterm.write(Array(100).join('\uD800\uDC00\u0301'));
+        for (var i=0; i<xterm.cols; ++i) {
+            var tchar = xterm.lines[0][i];
+            chai.expect(tchar[1]).eql('\uD800\uDC00\u0301');
+            chai.expect(tchar[1].length).eql(3);
+            chai.expect(tchar[2]).eql(1);
+        }
+        tchar = xterm.lines[1][0];
+        chai.expect(tchar[1]).eql('\uD800\uDC00\u0301');
+        chai.expect(tchar[1].length).eql(3);
+        chai.expect(tchar[2]).eql(1);
+    });
+});
+
+describe('unicode - fullwidth characters', function() {
+    it('cursor movement even', function () {
+        chai.expect(xterm.x).eql(0);
+        xterm.write('￥');
+        chai.expect(xterm.x).eql(2);
+    });
+    it('cursor movement odd', function () {
+        xterm.x = 1;
+        chai.expect(xterm.x).eql(1);
+        xterm.write('￥');
+        chai.expect(xterm.x).eql(3);
+    });
+    it('line of ￥ even', function () {
+        xterm.write(Array(50).join('￥'));
+        for (var i=0; i<xterm.cols; ++i) {
+            var tchar = xterm.lines[0][i];
+            if (i % 2) {
+                chai.expect(tchar[1]).eql('');
+                chai.expect(tchar[1].length).eql(0);
+                chai.expect(tchar[2]).eql(0);
+            } else {
+                chai.expect(tchar[1]).eql('￥');
+                chai.expect(tchar[1].length).eql(1);
+                chai.expect(tchar[2]).eql(2);
+            }
+        }
+        tchar = xterm.lines[1][0];
+        chai.expect(tchar[1]).eql('￥');
+        chai.expect(tchar[1].length).eql(1);
+        chai.expect(tchar[2]).eql(2);
+    });
+    it('line of ￥ odd', function () {
+        xterm.x = 1;
+        xterm.write(Array(50).join('￥'));
+        for (var i=1; i<xterm.cols-1; ++i) {
+            var tchar = xterm.lines[0][i];
+            if (!(i % 2)) {
+                chai.expect(tchar[1]).eql('');
+                chai.expect(tchar[1].length).eql(0);
+                chai.expect(tchar[2]).eql(0);
+            } else {
+                chai.expect(tchar[1]).eql('￥');
+                chai.expect(tchar[1].length).eql(1);
+                chai.expect(tchar[2]).eql(2);
+            }
+        }
+        tchar = xterm.lines[0][xterm.cols-1];
+        chai.expect(tchar[1]).eql(' ');
+        chai.expect(tchar[1].length).eql(1);
+        chai.expect(tchar[2]).eql(1);
+        tchar = xterm.lines[1][0];
+        chai.expect(tchar[1]).eql('￥');
+        chai.expect(tchar[1].length).eql(1);
+        chai.expect(tchar[2]).eql(2);
+    });
+    it('line of ￥ with combining odd', function () {
+        xterm.x = 1;
+        xterm.write(Array(50).join('￥\u0301'));
+        for (var i=1; i<xterm.cols-1; ++i) {
+            var tchar = xterm.lines[0][i];
+            if (!(i % 2)) {
+                chai.expect(tchar[1]).eql('');
+                chai.expect(tchar[1].length).eql(0);
+                chai.expect(tchar[2]).eql(0);
+            } else {
+                chai.expect(tchar[1]).eql('￥\u0301');
+                chai.expect(tchar[1].length).eql(2);
+                chai.expect(tchar[2]).eql(2);
+            }
+        }
+        tchar = xterm.lines[0][xterm.cols-1];
+        chai.expect(tchar[1]).eql(' ');
+        chai.expect(tchar[1].length).eql(1);
+        chai.expect(tchar[2]).eql(1);
+        tchar = xterm.lines[1][0];
+        chai.expect(tchar[1]).eql('￥\u0301');
+        chai.expect(tchar[1].length).eql(2);
+        chai.expect(tchar[2]).eql(2);
+    });
+    it('line of ￥ with combining even', function () {
+        xterm.write(Array(50).join('￥\u0301'));
+        for (var i=0; i<xterm.cols; ++i) {
+            var tchar = xterm.lines[0][i];
+            if (i % 2) {
+                chai.expect(tchar[1]).eql('');
+                chai.expect(tchar[1].length).eql(0);
+                chai.expect(tchar[2]).eql(0);
+            } else {
+                chai.expect(tchar[1]).eql('￥\u0301');
+                chai.expect(tchar[1].length).eql(2);
+                chai.expect(tchar[2]).eql(2);
+            }
+        }
+        tchar = xterm.lines[1][0];
+        chai.expect(tchar[1]).eql('￥\u0301');
+        chai.expect(tchar[1].length).eql(2);
+        chai.expect(tchar[2]).eql(2);
+    });
+    it('line of surrogate fullwidth with combining odd', function () {
+        xterm.x = 1;
+        xterm.write(Array(50).join('\ud843\ude6d\u0301'));
+        for (var i=1; i<xterm.cols-1; ++i) {
+            var tchar = xterm.lines[0][i];
+            if (!(i % 2)) {
+                chai.expect(tchar[1]).eql('');
+                chai.expect(tchar[1].length).eql(0);
+                chai.expect(tchar[2]).eql(0);
+            } else {
+                chai.expect(tchar[1]).eql('\ud843\ude6d\u0301');
+                chai.expect(tchar[1].length).eql(3);
+                chai.expect(tchar[2]).eql(2);
+            }
+        }
+        tchar = xterm.lines[0][xterm.cols-1];
+        chai.expect(tchar[1]).eql(' ');
+        chai.expect(tchar[1].length).eql(1);
+        chai.expect(tchar[2]).eql(1);
+        tchar = xterm.lines[1][0];
+        chai.expect(tchar[1]).eql('\ud843\ude6d\u0301');
+        chai.expect(tchar[1].length).eql(3);
+        chai.expect(tchar[2]).eql(2);
+    });
+    it('line of surrogate fullwidth with combining even', function () {
+        xterm.write(Array(50).join('\ud843\ude6d\u0301'));
+        for (var i=0; i<xterm.cols; ++i) {
+            var tchar = xterm.lines[0][i];
+            if (i % 2) {
+                chai.expect(tchar[1]).eql('');
+                chai.expect(tchar[1].length).eql(0);
+                chai.expect(tchar[2]).eql(0);
+            } else {
+                chai.expect(tchar[1]).eql('\ud843\ude6d\u0301');
+                chai.expect(tchar[1].length).eql(3);
+                chai.expect(tchar[2]).eql(2);
+            }
+        }
+        tchar = xterm.lines[1][0];
+        chai.expect(tchar[1]).eql('\ud843\ude6d\u0301');
+        chai.expect(tchar[1].length).eql(3);
+        chai.expect(tchar[2]).eql(2);
+    });
+});
+
+
+
 });
