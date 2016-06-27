@@ -838,7 +838,7 @@
 
         sendEvent(button, pos);
 
-        switch (ev.type) {
+        switch (ev.overrideType || ev.type) {
           case 'mousedown':
             pressed = button;
             break;
@@ -988,7 +988,7 @@
         // 3 = release
         // wheel up/down:
         // 1, and 2 - with 64 added
-        switch (ev.type) {
+        switch (ev.overrideType || ev.type) {
           case 'mousedown':
             button = ev.button != null
               ? +ev.button
@@ -1078,9 +1078,9 @@
         return {
           x: x,
           y: y,
-          type: ev.type === wheelEvent
+          type: (ev.overrideType || ev.type) === wheelEvent
             ? 'mousewheel'
-            : ev.type
+            : (ev.overrideType || ev.type)
         };
       }
 
@@ -1096,7 +1096,8 @@
         // fix for odd bug
         //if (self.vt200Mouse && !self.normalMouse) {
         if (self.vt200Mouse) {
-          sendButton({ __proto__: ev, type: 'mouseup' });
+          ev.overrideType = 'mouseup';
+          sendButton(ev);
           return self.cancel(ev);
         }
 
