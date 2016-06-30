@@ -212,6 +212,7 @@
 
       /**
        * The scroll position of the y cursor, ie. ybase + y = the y position within the entire
+       * buffer
        */
       this.ybase = 0;
 
@@ -1569,7 +1570,7 @@
                   // insert combining char in last cell
                   // FIXME: needs handling after cursor jumps
                   if (!ch_width && this.x) {
-                    
+
                     // dont overflow left
                     if (this.lines[this.y + this.ybase][this.x-1]) {
                       if (!this.lines[this.y + this.ybase][this.x-1][2]) {
@@ -2856,8 +2857,11 @@
               // There is room above the buffer and there are no empty elements below the line,
               // scroll up
               this.ybase--;
-              this.ydisp--;
               addToY++
+              if (this.ydisp === 0) {
+                // Viewport is at the top of the buffer, much increase downwards
+                this.ydisp--;
+              }
             } else {
               // Add a blank line if there is no buffer left at the top to scroll to, or if there
               // are blank lines after the cursor
