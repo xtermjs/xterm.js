@@ -551,8 +551,8 @@
 
       /**
        * Hack pasting with keyboard, in order to make it work without contentEditable.
-       * When a user types Ctrl + Shift + V or Cmd + V on a Mac, lease the contentEditable value
-       * as true.
+       * When a user types Ctrl + Shift + V or Shift + Insert on a non Mac or Cmd + V on a Mac,
+       * lease the contentEditable value as true.
        */
       on(term.element, 'keydown', function (ev) {
         var isEditable = term.element.contentEditable === "true";
@@ -565,9 +565,11 @@
           term.leaseContentEditable(5000);
         }
 
-        if (!term.isMac && ev.keyCode == 45 && ev.shiftKey && !ev.ctrlKey && !isEditable) {
-          // Shift + Insert pastes on windows and many linuxes
-          term.leaseContentEditable();
+        if (!term.isMac && !isEditable) {
+          if ((ev.keyCode == 45 && ev.shiftKey && !ev.ctrlKey) ||  // Shift + Insert
+              (ev.keyCode == 86 && ev.shiftKey && ev.ctrlKey)) {  // Ctrl + Shict + V
+            term.leaseContentEditable();
+          }
         }
       });
 
@@ -1569,7 +1571,7 @@
                   // insert combining char in last cell
                   // FIXME: needs handling after cursor jumps
                   if (!ch_width && this.x) {
-                    
+
                     // dont overflow left
                     if (this.lines[this.y + this.ybase][this.x-1]) {
                       if (!this.lines[this.y + this.ybase][this.x-1][2]) {
