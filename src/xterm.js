@@ -2828,7 +2828,7 @@
       // resize cols
       j = this.cols;
       if (j < x) {
-        ch = [this.defAttr, ' ']; // does xterm use the default attr?
+        ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
         i = this.lines.length;
         while (i--) {
           while (this.lines[i].length < x) {
