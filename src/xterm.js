@@ -2858,8 +2858,8 @@
               // scroll up
               this.ybase--;
               addToY++
-              if (this.ydisp === 0) {
-                // Viewport is at the top of the buffer, much increase downwards
+              if (this.ydisp > 0) {
+                // Viewport is at the top of the buffer, must increase downwards
                 this.ydisp--;
               }
             } else {
