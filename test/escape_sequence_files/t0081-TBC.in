@@ -1,0 +1,19 @@
+default:
+>	1	2	3	4	5	6	7	8	9	0
+
+clear non-existant:    [gx                    [gx
+>	1	2	3	4	5	6	7	8	9	0
+
+clear 2 and 4:  [gx               [gx
+>	1	3	5	6	7	8	9	0
+
+clear 0:							[gx
+>	1	3	5	6	7	8	9	0
+
+clear after 0:							.[gx
+>	1	3	5	6	7	8	9	0
+
+clear all:[3g
+>	0done
+
+TBC at end with clipping:             ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890abcde[gMD!
