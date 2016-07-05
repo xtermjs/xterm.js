@@ -212,6 +212,7 @@
 
       /**
        * The scroll position of the y cursor, ie. ybase + y = the y position within the entire
+       * buffer
        */
       this.ybase = 0;
 
@@ -2858,8 +2859,11 @@
               // There is room above the buffer and there are no empty elements below the line,
               // scroll up
               this.ybase--;
-              this.ydisp--;
               addToY++
+              if (this.ydisp > 0) {
+                // Viewport is at the top of the buffer, must increase downwards
+                this.ydisp--;
+              }
             } else {
               // Add a blank line if there is no buffer left at the top to scroll to, or if there
               // are blank lines after the cursor
