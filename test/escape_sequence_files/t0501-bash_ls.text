@@ -1,0 +1,25 @@
+Script started on Sun 17 May 2009 06:20:41 PM EDT
+dircolors: /etc/DIR_COLORS: No such file or directory
+mark@mark-desktop:~/vt100-to-html/scripts$ ls
+bash.script
+mark@mark-desktop:~/vt100-to-html/scripts$ ls /
+bin    dev     initrd.img      lib64       opt   selinux  usr
+boot   etc     initrd.img.old  lost+found  proc  srv      var
+boot2  home    lib             media       root  sys      vmlinuz
+cdrom  initrd  lib32           mnt         sbin  tmp      vmlinuz.old
+mark@mark-desktop:~/vt100-to-html/scripts$ exit
+
+Script done on Sun 17 May 2009 06:20:52 PM EDT
+
+
+
+
+
+
+
+
+
+
+
+
+
