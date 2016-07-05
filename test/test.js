@@ -7,6 +7,7 @@ describe('xterm.js', function() {
 
   beforeEach(function () {
     xterm = new Terminal();
+    xterm.refresh = function(){};
   });
 
   describe('evaluateKeyEscapeSequence', function() {
