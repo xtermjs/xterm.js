@@ -1456,7 +1456,7 @@
 
   	/**
   	 * Scroll the display of the terminal
-  	 * @param {number} disp
+  	 * @param {number} disp The number of lines to scroll down (negatives scroll up).
   	 */
     Terminal.prototype.scrollDisp = function(disp) {
       this.ydisp += disp;
