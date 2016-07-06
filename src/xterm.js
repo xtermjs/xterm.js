@@ -319,8 +319,6 @@
 		/**
 		 *
 		 * back_color_erase feature for xterm.
-		 *
-		 * @public
 		 */
     Terminal.prototype.eraseAttr = function() {
       // if (this.is('screen')) return this.defAttr;
@@ -437,8 +435,6 @@
 
     /**
      * Focus the terminal. Delegates focus handling to the terminal's DOM element.
-     *
-     * @public
      */
     Terminal.prototype.focus = function() {
       return this.element.focus();
@@ -463,8 +459,6 @@
 
     /**
      * Blur the terminal. Delegates blur handling to the terminal's DOM element.
-     *
-     * @public
      */
     Terminal.prototype.blur = function() {
       return this.element.blur();
@@ -487,8 +481,6 @@
 
     /**
      * Initialize default behavior
-     *
-     * @public
      */
     Terminal.prototype.initGlobal = function() {
       Terminal.bindKeys(this);
@@ -705,7 +697,6 @@
      * Opens the terminal within an element.
      *
      * @param {HTMLElement} parent The element to create the terminal within.
-     * @public
      */
     Terminal.prototype.open = function(parent) {
       var self=this, i=0, div;
@@ -1162,7 +1153,6 @@
 
     /**
      * Destroys the terminal.
-     * @public
      */
     Terminal.prototype.destroy = function() {
       this.readable = false;
@@ -4922,8 +4912,6 @@
      *
      * @param {string} event The name of the event. TODO: Document all event types
      * @param {function} callback The function to call when the event is triggered.
-     *
-     * @public
      */
     Terminal.on = on;
     Terminal.off = off;
