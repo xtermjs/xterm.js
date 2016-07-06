@@ -253,7 +253,7 @@
       this.applicationCursor = false;
       this.originMode = false;
       this.insertMode = false;
-      this.wraparoundMode = false;
+      this.wraparoundMode = true; // defaults: xterm - true, vt100 - false
       this.normal = null;
 
       // charset
@@ -1467,7 +1467,7 @@
      * @public
      */
     Terminal.prototype.write = function(data) {
-      var l = data.length, i = 0, j, cs, ch, code, low, ch_width;
+      var l = data.length, i = 0, j, cs, ch, code, low, ch_width, row;
 
       this.refreshStart = this.y;
       this.refreshEnd = this.y;
@@ -1569,20 +1569,22 @@
                     ch = this.charset[ch];
                   }
 
+                  row = this.y + this.ybase;
+
                   // insert combining char in last cell
                   // FIXME: needs handling after cursor jumps
                   if (!ch_width && this.x) {
 
                     // dont overflow left
-                    if (this.lines[this.y + this.ybase][this.x-1]) {
-                      if (!this.lines[this.y + this.ybase][this.x-1][2]) {
+                    if (this.lines[row][this.x-1]) {
+                      if (!this.lines[row][this.x-1][2]) {
 
                         // found empty cell after fullwidth, need to go 2 cells back
-                        if (this.lines[this.y + this.ybase][this.x-2])
-                          this.lines[this.y + this.ybase][this.x-2][1] += ch;
+                        if (this.lines[row][this.x-2])
+                          this.lines[row][this.x-2][1] += ch;
 
                       } else {
-                        this.lines[this.y + this.ybase][this.x-1][1] += ch;
+                        this.lines[row][this.x-1][1] += ch;
                       }
                       this.updateRange(this.y);
                     }
@@ -1592,21 +1594,46 @@
                   // goto next line if ch would overflow
                   // TODO: needs a global min terminal width of 2
                   if (this.x+ch_width-1 >= this.cols) {
-                    this.x = 0;
-                    this.y++;
-                    if (this.y > this.scrollBottom) {
-                      this.y--;
-                      this.scroll();
+                    // autowrap - DECAWM
+                    if (this.wraparoundMode) {
+                      this.x = 0;
+                      this.y++;
+                      if (this.y > this.scrollBottom) {
+                        this.y--;
+                        this.scroll();
+                      }
+                    } else {
+                      this.x = this.cols-1;
+                      if(ch_width===2)  // FIXME: check for xterm behavior
+                        continue;
+                    }
+                  }
+                  row = this.y + this.ybase;
+
+                  // insert mode: move characters to right
+                  if (this.insertMode) {
+                    // do this twice for a fullwidth char
+                    for (var moves=0; moves<ch_width; ++moves) {
+                      // remove last cell, if it's width is 0
+                      // we have to adjust the second last cell as well
+                      var removed = this.lines[this.y + this.ybase].pop();
+                      if (removed[2]===0
+                          && this.lines[row][this.cols-2]
+                          && this.lines[row][this.cols-2][2]===2)
+                        this.lines[row][this.cols-2] = [this.curAttr, ' ', 1];
+
+                      // insert empty cell at cursor
+                      this.lines[row].splice(this.x, 0, [this.curAttr, ' ', 1]);
                     }
                   }
 
-                  this.lines[this.y + this.ybase][this.x] = [this.curAttr, ch, ch_width];
+                  this.lines[row][this.x] = [this.curAttr, ch, ch_width];
                   this.x++;
                   this.updateRange(this.y);
 
                   // fullwidth char - set next cell width to zero and advance cursor
-                  if (ch_width==2) {
-                    this.lines[this.y + this.ybase][this.x] = [this.curAttr, '', 0];
+                  if (ch_width===2) {
+                    this.lines[row][this.x] = [this.curAttr, '', 0];
                     this.x++;
                   }
                 }
@@ -3469,7 +3496,7 @@
 
       row = this.y + this.ybase;
       j = this.x;
-      ch = [this.eraseAttr(), ' ']; // xterm
+      ch = [this.eraseAttr(), ' ', 1]; // xterm
 
       while (param-- && j < this.cols) {
         this.lines[row].splice(j++, 0, ch);
@@ -3566,7 +3593,7 @@
       if (param < 1) param = 1;
 
       row = this.y + this.ybase;
-      ch = [this.eraseAttr(), ' ']; // xterm
+      ch = [this.eraseAttr(), ' ', 1]; // xterm
 
       while (param--) {
         this.lines[row].splice(this.x, 1);
@@ -3584,7 +3611,7 @@
 
       row = this.y + this.ybase;
       j = this.x;
-      ch = [this.eraseAttr(), ' ']; // xterm
+      ch = [this.eraseAttr(), ' ', 1]; // xterm
 
       while (param-- && j < this.cols) {
         this.lines[row][j++] = ch;
@@ -4198,7 +4225,7 @@
     Terminal.prototype.repeatPrecedingCharacter = function(params) {
       var param = params[0] || 1
         , line = this.lines[this.ybase + this.y]
-        , ch = line[this.x - 1] || [this.defAttr, ' '];
+        , ch = line[this.x - 1] || [this.defAttr, ' ', 1];
 
       while (param--) line[this.x++] = ch;
     };
@@ -4460,7 +4487,7 @@
         , i
         , ch;
 
-      ch = [this.eraseAttr(), ' ']; // xterm?
+      ch = [this.eraseAttr(), ' ', 1]; // xterm?
 
       for (; t < b + 1; t++) {
         line = this.lines[this.ybase + t];
@@ -4481,7 +4508,7 @@
     Terminal.prototype.insertColumns = function() {
       var param = params[0]
         , l = this.ybase + this.rows
-        , ch = [this.eraseAttr(), ' '] // xterm?
+        , ch = [this.eraseAttr(), ' ', 1] // xterm?
         , i;
 
       while (param--) {
@@ -4501,7 +4528,7 @@
     Terminal.prototype.deleteColumns = function() {
       var param = params[0]
         , l = this.ybase + this.rows
-        , ch = [this.eraseAttr(), ' '] // xterm?
+        , ch = [this.eraseAttr(), ' ', 1] // xterm?
         , i;
 
       while (param--) {
