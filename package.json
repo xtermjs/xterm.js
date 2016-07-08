@@ -8,7 +8,7 @@
   "devDependencies": {
     "express": "4.13.4",
     "express-ws": "2.0.0-rc.1",
-    "pty.js": "0.3.0",
+    "pty.js": "0.3.1",
     "mocha": "2.5.3",
     "chai": "3.5.0",
     "jsdoc": "3.4.0",
