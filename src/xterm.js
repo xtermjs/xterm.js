@@ -149,6 +149,8 @@
      *   - cursorBlink (boolean): Whether the terminal cursor blinks
      *
      * @public
+     * @class Xterm Xterm
+     * @alias module:xterm/src/xterm
      */
     function Terminal(options) {
       var self = this;
@@ -314,7 +316,10 @@
 
     inherits(Terminal, EventEmitter);
 
-    // back_color_erase feature for xterm.
+		/**
+		 *
+		 * back_color_erase feature for xterm.
+		 */
     Terminal.prototype.eraseAttr = function() {
       // if (this.is('screen')) return this.defAttr;
       return (this.defAttr & ~0x1ff) | (this.curAttr & 0x1ff);
@@ -430,8 +435,6 @@
 
     /**
      * Focus the terminal. Delegates focus handling to the terminal's DOM element.
-     *
-     * @public
      */
     Terminal.prototype.focus = function() {
       return this.element.focus();
@@ -456,8 +459,6 @@
 
     /**
      * Blur the terminal. Delegates blur handling to the terminal's DOM element.
-     *
-     * @public
      */
     Terminal.prototype.blur = function() {
       return this.element.blur();
@@ -584,8 +585,11 @@
     };
 
 
-    /*
+    /**
      * Apply key handling to the terminal
+     *
+     * @param {Xterm} term The terminal on which to bind key handling
+     * @static
      */
     Terminal.bindKeys = function(term) {
       on(term.element, 'keydown', function(ev) {
@@ -637,7 +641,9 @@
     };
 
   	/**
-  	 * Cancel the cut event completely
+  	 * Cancel the cut event completely.
+  	 * @param {Xterm} term The terminal on which to bind the cut event handling functionality.
+  	 * @static
   	 */
   	Terminal.bindCut = function(term) {
       on(term.element, 'cut', function (ev) {
@@ -646,31 +652,34 @@
     };
 
 
+    /**
+     * Do not perform the "drop" event. Altering the contents of the
+     * terminal with drag n drop is unwanted behavior.
+  	 * @param {Xterm} term The terminal on which to bind the drop event handling functionality.
+  	 * @static
+  	 */
     Terminal.bindDrop = function (term) {
-      /*
-       * Do not perform the "drop" event. Altering the contents of the
-       * terminal with drag n drop is unwanted behavior.
-       */
       on(term.element, 'drop', function (ev) {
         term.cancel(ev, true);
       });
     };
 
-
+    /**
+     * Cancel click handling on the given terminal
+  	 * @param {Xterm} term The terminal on which to bind the click event handling functionality.
+  	 * @static
+  	 */
     Terminal.click = function (term) {
-      /*
-       * Do not perform the "drop" event. Altering the contents of the
-       * terminal with drag n drop is unwanted behavior.
-       */
       on(term.element, 'click', function (ev) {
         term.cancel(ev, true);
       });
     };
 
 
-    /*
+    /**
      * Insert the given row to the terminal or produce a new one
      * if no row argument is passed. Return the inserted row.
+     * @param {HTMLElement} row (optional) The row to append to the terminal.
      */
     Terminal.prototype.insertRow = function (row) {
       if (typeof row != 'object') {
@@ -688,8 +697,6 @@
      * Opens the terminal within an element.
      *
      * @param {HTMLElement} parent The element to create the terminal within.
-     *
-     * @public
      */
     Terminal.prototype.open = function(parent) {
       var self=this, i=0, div;
@@ -808,22 +815,19 @@
     };
 
 
-    // XTerm mouse events
-    // http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#Mouse%20Tracking
-    // To better understand these
-    // the xterm code is very helpful:
-    // Relevant files:
-    //   button.c, charproc.c, misc.c
-    // Relevant functions in xterm/button.c:
-    //   BtnCode, EmitButtonCode, EditorButton, SendMousePosition
+  	/**
+     * XTerm mouse events
+     * http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#Mouse%20Tracking
+     * To better understand these
+     * the xterm code is very helpful:
+     * Relevant files:
+     *   button.c, charproc.c, misc.c
+     * Relevant functions in xterm/button.c:
+     *   BtnCode, EmitButtonCode, EditorButton, SendMousePosition
+     */
     Terminal.prototype.bindMouse = function() {
-      var el = this.element
-        , self = this
-        , pressed = 32;
-
-      var wheelEvent = 'onmousewheel' in this.context
-        ? 'mousewheel'
-        : 'DOMMouseScroll';
+      var el = this.element, self = this, pressed = 32;
+      var wheelEvent = ('onmousewheel' in this.context) ? 'mousewheel' : 'DOMMouseScroll';
 
       // mouseup, mousedown, mousewheel
       // left click: ^[[M 3<^[[M#3<
@@ -1149,8 +1153,6 @@
 
     /**
      * Destroys the terminal.
-     *
-     * @public
      */
     Terminal.prototype.destroy = function() {
       this.readable = false;
@@ -1176,28 +1178,27 @@
       INVISIBLE: 16
     }
 
-    /*
-     * Rendering Engine
-     *
-     * In the screen buffer, each character
-     * is stored as a an array with a character
-     * and a 32-bit integer.
-     * First value: a utf-16 character.
-     * Second value:
-     * Next 9 bits: background color (0-511).
-     * Next 9 bits: foreground color (0-511).
-     * Next 14 bits: a mask for misc. flags:
-     *   1=bold, 2=underline, 4=blink, 8=inverse, 16=invisible
-    */
-
     /**
-     * Refreshes terminal content within two rows (inclusive).
+     * Refreshes (re-renders) terminal content within two rows (inclusive)
+     *
+     * Rendering Engine:
+     *
+     * In the screen buffer, each character is stored as a an array with a character
+     * and a 32-bit integer:
+     *   - First value: a utf-16 character.
+     *   - Second value:
+     *   - Next 9 bits: background color (0-511).
+     *   - Next 9 bits: foreground color (0-511).
+     *   - Next 14 bits: a mask for misc. flags:
+     *     - 1=bold
+     *     - 2=underline
+     *     - 4=blink
+     *     - 8=inverse
+     *     - 16=invisible
      *
      * @param {number} start The row to start from (between 0 and terminal's height terminal - 1)
      * @param {number} end The row to end at (between fromRow and terminal's height terminal - 1)
      * @param {boolean} queue Whether the refresh should ran right now or be queued
-     *
-     * @public
      */
     Terminal.prototype.refresh = function(start, end, queue) {
       var self = this;
@@ -1400,6 +1401,9 @@
       this.emit('refresh', {element: this.element, start: start, end: end});
     };
 
+  	/**
+  	 * Display the cursor element
+  	 */
     Terminal.prototype.showCursor = function() {
       if (!this.cursorState) {
         this.cursorState = 1;
@@ -1407,6 +1411,9 @@
       }
     };
 
+  	/**
+  	 * Scroll the terminal
+  	 */
     Terminal.prototype.scroll = function() {
       var row;
 
@@ -1447,6 +1454,10 @@
       this.updateRange(this.scrollBottom);
     };
 
+  	/**
+  	 * Scroll the display of the terminal
+  	 * @param {number} disp The number of lines to scroll down (negatives scroll up).
+  	 */
     Terminal.prototype.scrollDisp = function(disp) {
       this.ydisp += disp;
 
@@ -1461,10 +1472,7 @@
 
     /**
      * Writes text to the terminal.
-     *
      * @param {string} text The text to write to the terminal.
-     *
-     * @public
      */
     Terminal.prototype.write = function(data) {
       var l = data.length, i = 0, j, cs, ch, code, low, ch_width, row;
@@ -2513,12 +2521,20 @@
       this.refresh(this.refreshStart, this.refreshEnd);
     };
 
+    /**
+     * Writes text to the terminal, followed by a break line character (\n).
+     * @param {string} text The text to write to the terminal.
+     */
     Terminal.prototype.writeln = function(data) {
       this.write(data + '\r\n');
     };
 
-    // Key Resources:
-    // https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
+  	/**
+  	 * Handle a keydown event
+     * Key Resources:
+     *   - https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
+     * @param {KeyboardEvent} ev The keydown event to be handled.
+     */
     Terminal.prototype.keyDown = function(ev) {
       var self = this;
       var result = this.evaluateKeyEscapeSequence(ev);
@@ -2554,6 +2570,7 @@
      * returned value is the new key code to pass to the PTY.
      *
      * Reference: http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+     * @param {KeyboardEvent} ev The keyboard event to be translated to key escape sequence.
      */
     Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
       var result = {
@@ -2742,11 +2759,20 @@
       return result;
     };
 
+  	/**
+  	 * Set the G level of the terminal
+  	 * @param g
+  	 */
     Terminal.prototype.setgLevel = function(g) {
       this.glevel = g;
       this.charset = this.charsets[g];
     };
 
+    /**
+  	 * Set the charset for the given G level of the terminal
+  	 * @param g
+  	 * @param charset
+  	 */
     Terminal.prototype.setgCharset = function(g, charset) {
       this.charsets[g] = charset;
       if (this.glevel === g) {
@@ -2754,6 +2780,12 @@
       }
     };
 
+    /**
+  	 * Handle a keypress event.
+     * Key Resources:
+     *   - https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
+     * @param {KeyboardEvent} ev The keypress event to be handled.
+     */
     Terminal.prototype.keyPress = function(ev) {
       var key;
 
@@ -2793,6 +2825,10 @@
       return false;
     };
 
+  	/**
+  	 * Send data for handling to the terminal
+  	 * @param {string} data
+  	 */
     Terminal.prototype.send = function(data) {
       var self = this;
 
@@ -2806,6 +2842,10 @@
       this.queue += data;
     };
 
+  	/**
+  	 * Ring the bell.
+  	 * Note: We could do sweet things with webaudio here
+  	 */
     Terminal.prototype.bell = function() {
       if (!this.visualBell) return;
       var self = this;
@@ -2816,6 +2856,9 @@
       if (this.popOnBell) this.focus();
     };
 
+  	/**
+  	 * Log the current state to the console.
+  	 */
     Terminal.prototype.log = function() {
       if (!this.debug) return;
       if (!this.context.console || !this.context.console.log) return;
@@ -2823,6 +2866,9 @@
       this.context.console.log.apply(this.context.console, args);
     };
 
+  	/**
+  	 * Log the current state as error to the console.
+  	 */
     Terminal.prototype.error = function() {
       if (!this.debug) return;
       if (!this.context.console || !this.context.console.error) return;
@@ -2835,8 +2881,6 @@
      *
      * @param {number} x The number of columns to resize to.
      * @param {number} y The number of rows to resize to.
-     *
-     * @public
      */
     Terminal.prototype.resize = function(x, y) {
       var line
@@ -2946,6 +2990,10 @@
       this.emit('resize', {terminal: this, cols: x, rows: y});
     };
 
+  	/**
+  	 * Updates the range of rows to refresh
+  	 * @param {number} y The number of rows to refresh next.
+  	 */
     Terminal.prototype.updateRange = function(y) {
       if (y < this.refreshStart) this.refreshStart = y;
       if (y > this.refreshEnd) this.refreshEnd = y;
@@ -2957,6 +3005,9 @@
       // }
     };
 
+    /**
+     * Set the range of refreshing to the maximyum value
+     */
     Terminal.prototype.maxRange = function() {
       this.refreshStart = 0;
       this.refreshEnd = this.rows - 1;
@@ -4861,12 +4912,11 @@
      *
      * @param {string} event The name of the event. TODO: Document all event types
      * @param {function} callback The function to call when the event is triggered.
-     *
-     * @public
      */
     Terminal.on = on;
     Terminal.off = off;
     Terminal.cancel = cancel;
+
 
     return Terminal;
 });
