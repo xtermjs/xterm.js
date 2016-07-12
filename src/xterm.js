@@ -108,8 +108,8 @@
       var self = this;
       function on() {
         var args = Array.prototype.slice.call(arguments);
-        self.removeListener(type, on);
-        return listener.apply(self, args);
+        this.removeListener(type, on);
+        return listener.apply(this, args);
       }
       on.listener = listener;
       return this.on(type, on);
@@ -434,7 +434,17 @@
      * @public
      */
     Terminal.prototype.focus = function() {
-      return this.element.focus();
+      if (document.activeElement === this.textarea) {
+        return;
+      }
+
+      if (this.sendFocus) {
+        this.send('\x1b[I');
+      }
+
+      this.showCursor();
+      this.textarea.focus();
+      Terminal.focus = this;
     };
 
     /**
@@ -460,7 +470,17 @@
      * @public
      */
     Terminal.prototype.blur = function() {
-      return this.element.blur();
+      if (Terminal.focus !== this) {
+        return;
+      }
+
+      this.cursorState = 0;
+      this.refresh(this.y, this.y);
+      this.textarea.blur();
+      if (this.sendFocus) {
+        this.send('\x1b[0]');
+      }
+      Terminal.focus = null;
     };
 
     /**
@@ -482,48 +502,9 @@
      * Initialize default behavior
      */
     Terminal.prototype.initGlobal = function() {
-      Terminal.bindKeys(this);
       Terminal.bindPaste(this);
+      Terminal.bindKeys(this);
       Terminal.bindCopy(this);
-      Terminal.bindCut(this);
-      Terminal.bindDrop(this);
-      Terminal.bindFocus(this);
-      Terminal.bindBlur(this);
-    };
-
-  	/**
-  	 * Clears all selected text, inside the terminal.
-  	 */
-		Terminal.prototype.clearSelection = function() {
-      var selectionBaseNode = window.getSelection().baseNode;
-
-      if (selectionBaseNode && (this.element.contains(selectionBaseNode.parentElement))) {
-        window.getSelection().removeAllRanges();
-      }
-    };
-
-  	/**
-  	 * This function temporarily enables (leases) the contentEditable value of the terminal, which
-  	 * should be set back to false within 5 seconds at most.
-  	 */
-  	Terminal.prototype.leaseContentEditable = function (ms, callback) {
-      var term = this;
-
-      term.element.contentEditable = true;
-
-      /**
-       * Blur and re-focus instantly. This is due to a weird focus state on Chrome, when setting
-       * contentEditable to true on a focused element.
-       */
-      term.blur();
-      term.focus();
-
-      setTimeout(function () {
-        term.element.contentEditable = false;
-        if (typeof callback == 'function') {
-          callback.call(term);
-        }
-      }, ms || 5000);
     };
 
     /**
@@ -531,70 +512,15 @@
      * contentEditable value set to true.
      */
     Terminal.bindPaste = function(term) {
-      on(term.element, 'paste', function(ev) {
+      on([term.textarea, term.element], 'paste', function(ev) {
+        ev.stopPropagation();
         if (ev.clipboardData) {
           var text = ev.clipboardData.getData('text/plain');
-          term.emit('paste', text, ev);
           term.handler(text);
-          /**
-           * Cancel the paste event, or else things will be pasted twice:
-           *   1. by the terminal handler
-           *   2. by the browser, because of the contentEditable value being true
-           */
-          term.cancel(ev, true);
-
-          /**
-           * After the paste event is completed, always set the contentEditable value to false.
-           */
-          term.element.contentEditable = false;
+          term.textarea.value = '';
+          return term.cancel(ev);
         }
       });
-
-      /**
-       * Hack pasting with keyboard, in order to make it work without contentEditable.
-       * When a user types Ctrl + Shift + V or Shift + Insert on a non Mac or Cmd + V on a Mac,
-       * lease the contentEditable value as true.
-       */
-      on(term.element, 'keydown', function (ev) {
-        var isEditable = term.element.contentEditable === "true";
-
-        /**
-         * If on a Mac, lease the contentEditable value temporarily, when the user presses
-         * the Cmd button, in a keydown event order to paste frictionlessly.
-         */
-        if (term.isMac && ev.metaKey && !isEditable) {
-          term.leaseContentEditable(5000);
-        }
-
-        if (!term.isMac && !isEditable) {
-          if ((ev.keyCode == 45 && ev.shiftKey && !ev.ctrlKey) ||  // Shift + Insert
-              (ev.keyCode == 86 && ev.shiftKey && ev.ctrlKey)) {  // Ctrl + Shict + V
-            term.leaseContentEditable();
-          }
-        }
-      });
-
-      /**
-       * Hack pasting with right-click in order to allow right-click paste, by leasing the
-       * contentEditable value as true.
-       */
-      on(term.element, 'contextmenu', function (ev) {
-        term.leaseContentEditable();
-      });
-    };
-
-
-    /*
-     * Apply key handling to the terminal
-     */
-    Terminal.bindKeys = function(term) {
-      on(term.element, 'keydown', function(ev) {
-        term.keyDown(ev);
-      }, true);
-
-      on(term.element, 'keypress', function(ev) {
-        term.keyPress(ev);
-      }, true);
     };
 
     /**
@@ -623,47 +549,43 @@
     };
 
     /**
+     * Apply key handling to the terminal
+     */
+    Terminal.bindKeys = function(term) {
+      on(term.element, 'keydown', function(ev) {
+        if (document.activeElement != this) {
+          return;
+         }
+         term.keyDown(ev);
+      }, true);
+
+      on(term.element, 'keypress', function(ev) {
+        if (document.activeElement != this) {
+          return;
+        }
+        term.keyPress(ev);
+      }, true);
+
+      on(term.element, 'keyup', term.focus.bind(term));
+
+      on(term.textarea, 'keydown', function(ev) {
+        term.keyDown(ev);
+      }, true);
+
+      on(term.textarea, 'keypress', function(ev) {
+        term.keyPress(ev);
+        // Truncate the textarea's value, since it is not needed
+        this.value = '';
+      }, true);
+    };
+
+    /**
      * Binds copy functionality to the given terminal.
      * @static
      */
     Terminal.bindCopy = function(term) {
       on(term.element, 'copy', function(ev) {
-        var copiedText = window.getSelection().toString(),
-        		text = Terminal.prepareCopiedTextForClipboard(copiedText);
-
-        ev.clipboardData.setData('text/plain', text);
-        ev.preventDefault();
-      });
-    };
-
-  	/**
-  	 * Cancel the cut event completely
-  	 */
-  	Terminal.bindCut = function(term) {
-      on(term.element, 'cut', function (ev) {
-        ev.preventDefault();
-      });
-    };
-
-
-    Terminal.bindDrop = function (term) {
-      /*
-       * Do not perform the "drop" event. Altering the contents of the
-       * terminal with drag n drop is unwanted behavior.
-       */
-      on(term.element, 'drop', function (ev) {
-        term.cancel(ev, true);
-      });
-    };
-
-
-    Terminal.click = function (term) {
-      /*
-       * Do not perform the "drop" event. Altering the contents of the
-       * terminal with drag n drop is unwanted behavior.
-       */
-      on(term.element, 'click', function (ev) {
-        term.cancel(ev, true);
+        return; // temporary
       });
     };
 
@@ -740,7 +662,6 @@
       this.element.classList.add('xterm');
       this.element.classList.add('xterm-theme-' + this.theme);
       this.element.setAttribute('tabindex', 0);
-      this.element.spellcheck = false;
 
       /*
       * Create the container that will hold the lines of the terminal and then
@@ -750,6 +671,27 @@
       this.rowContainer.classList.add('xterm-rows');
       this.element.appendChild(this.rowContainer);
       this.children = [];
+
+      /*
+      * Create the container that will hold helpers like the textarea for
+      * capturing DOM Events. Then produce the helpers.
+      */
+      this.helperContainer = document.createElement('div');
+      this.helperContainer.classList.add('xterm-helpers');
+      this.element.appendChild(this.helperContainer);
+      this.textarea = document.createElement('textarea');
+      this.textarea.classList.add('xterm-helper-textarea');
+      this.textarea.setAttribute('autocorrect', 'off');
+      this.textarea.setAttribute('autocapitalize', 'off');
+      this.textarea.setAttribute('spellcheck', 'false');
+      this.textarea.tabIndex = 0;
+      this.textarea.onfocus = function() {
+        self.emit('focus', {terminal: self});
+      }
+      this.textarea.onblur = function() {
+        self.emit('blur', {terminal: self});
+      }
+      this.helperContainer.appendChild(this.textarea);
 
       for (; i < this.rows; i++) {
         this.insertRow();
@@ -2757,6 +2699,8 @@
     Terminal.prototype.keyPress = function(ev) {
       var key;
 
+      this.cancel(ev);
+
       if (ev.charCode) {
         key = ev.charCode;
       } else if (ev.which == null) {
@@ -2775,20 +2719,10 @@
 
       key = String.fromCharCode(key);
 
-      /**
-       * When a key is pressed and a character is sent to the terminal, then clear any text
-       * selected in the terminal.
-       */
-      if (key) {
-        this.clearSelection();
-      }
-
       this.emit('keypress', key, ev);
       this.emit('key', key, ev);
       this.showCursor();
       this.handler(key);
-
-      this.cancel(ev, true);
 
       return false;
     };
