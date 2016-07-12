@@ -1,0 +1,6 @@
+Xterm behaves oddly with CSI 3 J.  This function is supposed to clear the
+saved lines in history.  Xterm does this, but a small number of lines of
+history are not cleared.  The number seems to vary with how high the window is
+and how much output has recently been saved.  There is no reason to simulate
+this behavior, so the expected outputs are as if the entire history was
+erased.

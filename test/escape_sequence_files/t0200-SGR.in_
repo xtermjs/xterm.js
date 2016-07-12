@@ -1,0 +1,33 @@
+Implemented non-color attributes:
+
+ 1: This is [1mbold[m.
+
+ 3: This is [3mitalic[m.
+
+ 4: This is [4munderlined[m.
+
+ 5: This is [5mslowly blinking[m.
+
+ 6: This is [6mrapidly blinking[m.
+
+ 7: This is [7minverse[m.
+
+ 8: This is [8mhidden[m.
+
+ 9: This is [9mstruck out[m.
+
+21: This is [21mdouble underlined[m.
+
+53: This is [53moverlined[m.
+
+
+
+Unimplemented non-color attributes:
+
+ 2: weight:feint
+
+20: style:fraktur
+
+51: frame:box
+
+52: frame:circle
