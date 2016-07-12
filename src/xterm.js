@@ -442,6 +442,7 @@
         this.send('\x1b[I');
       }
 
+      this.element.classList.add('focus');
       this.showCursor();
       this.textarea.focus();
       Terminal.focus = this;
@@ -474,6 +475,7 @@
         return;
       }
 
+      this.element.classList.remove('focus');
       this.cursorState = 0;
       this.refresh(this.y, this.y);
       this.textarea.blur();

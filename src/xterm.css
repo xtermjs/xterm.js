@@ -43,7 +43,7 @@
     position: relative;
 }
 
-.terminal:focus {
+.terminal.focus {
     outline: none;
 }
 
@@ -57,11 +57,11 @@
      * HACK: to fix IE's blinking cursor
      * Move textarea out of the screen to the far left, so that the cursor is not visible.
      */
-    text-indent: -9999em;
+    /*text-indent: -9999em;
     opacity: 0;
     width: 0;
     height: 0;
-    z-index: -10;
+    z-index: -10;*/
 }
 
 .terminal .terminal-cursor {
@@ -69,13 +69,13 @@
     color: #000;
 }
 
-.terminal:not(:focus) .terminal-cursor {
+.terminal:not(.focus) .terminal-cursor {
     outline: 1px solid #fff;
     outline-offset: -1px;
     background-color: transparent;
 }
 
-.terminal:focus .terminal-cursor.blinking {
+.terminal.focus .terminal-cursor.blinking {
     animation: blink-cursor 1.2s infinite step-end;
 }
 
