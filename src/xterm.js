@@ -579,6 +579,20 @@
         // Truncate the textarea's value, since it is not needed
         this.value = '';
       }, true);
+
+      on(term.textarea, 'compositionstart', function(ev) {
+        console.log('compositionstart', ev);
+        // TODO: Set a composing flag
+      });
+      on(term.textarea, 'compositionupdate', function(ev) {
+        console.log('compositionupdate', ev);
+        // TODO: Display text being composed in the UI (needs to be handled in keydown)
+      });
+      on(term.textarea, 'compositionend', function(ev) {
+        console.log('compositionend', ev);
+        // TODO: Send composed text to the pty
+        // TODO: Remove composing flag
+      });
     };
 
     /**
@@ -2464,6 +2478,8 @@
     // Key Resources:
     // https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
     Terminal.prototype.keyDown = function(ev) {
+      // TODO: Ignore event if currently composing text
+
       var self = this;
       var result = this.evaluateKeyEscapeSequence(ev);
 
