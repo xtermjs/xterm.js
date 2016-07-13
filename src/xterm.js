@@ -491,7 +491,7 @@
       Terminal.bindBlur(this);
     };
 
-  	/**
+    /**
   	 * Clears all selected text, inside the terminal.
   	 */
 		Terminal.prototype.clearSelection = function() {
@@ -502,7 +502,7 @@
       }
     };
 
-  	/**
+    /**
   	 * This function temporarily enables (leases) the contentEditable value of the terminal, which
   	 * should be set back to false within 5 seconds at most.
   	 */
@@ -639,7 +639,7 @@
       });
     };
 
-  	/**
+    /**
   	 * Cancel the cut event completely.
   	 * @param {Xterm} term The terminal on which to bind the cut event handling functionality.
   	 * @static
@@ -814,7 +814,7 @@
     };
 
 
-  	/**
+    /**
      * XTerm mouse events
      * http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#Mouse%20Tracking
      * To better understand these
@@ -1400,7 +1400,7 @@
       this.emit('refresh', {element: this.element, start: start, end: end});
     };
 
-  	/**
+    /**
   	 * Display the cursor element
   	 */
     Terminal.prototype.showCursor = function() {
@@ -1410,7 +1410,7 @@
       }
     };
 
-  	/**
+    /**
   	 * Scroll the terminal
   	 */
     Terminal.prototype.scroll = function() {
@@ -1453,7 +1453,7 @@
       this.updateRange(this.scrollBottom);
     };
 
-  	/**
+    /**
   	 * Scroll the display of the terminal
   	 * @param {number} disp The number of lines to scroll down (negatives scroll up).
   	 */
@@ -2528,7 +2528,7 @@
       this.write(data + '\r\n');
     };
 
-  	/**
+    /**
   	 * Handle a keydown event
      * Key Resources:
      *   - https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
@@ -2758,7 +2758,7 @@
       return result;
     };
 
-  	/**
+    /**
   	 * Set the G level of the terminal
   	 * @param g
   	 */
@@ -2824,7 +2824,7 @@
       return false;
     };
 
-  	/**
+    /**
   	 * Send data for handling to the terminal
   	 * @param {string} data
   	 */
@@ -2841,7 +2841,7 @@
       this.queue += data;
     };
 
-  	/**
+    /**
   	 * Ring the bell.
   	 * Note: We could do sweet things with webaudio here
   	 */
@@ -2855,7 +2855,7 @@
       if (this.popOnBell) this.focus();
     };
 
-  	/**
+    /**
   	 * Log the current state to the console.
   	 */
     Terminal.prototype.log = function() {
@@ -2865,7 +2865,7 @@
       this.context.console.log.apply(this.context.console, args);
     };
 
-  	/**
+    /**
   	 * Log the current state as error to the console.
   	 */
     Terminal.prototype.error = function() {
@@ -2989,7 +2989,7 @@
       this.emit('resize', {terminal: this, cols: x, rows: y});
     };
 
-  	/**
+    /**
   	 * Updates the range of rows to refresh
   	 * @param {number} y The number of rows to refresh next.
   	 */
@@ -3014,7 +3014,7 @@
 
 
 
-  	/**
+    /**
   	 * Setup the tab stops.
   	 * @param {number} i
   	 */
@@ -3047,7 +3047,7 @@
     };
 
 
-  	/**
+    /**
   	 * Move the cursor one tab stop forward from the given position (default is current).
   	 * @param {number} x The position to move the cursor one tab stop forward.
   	 */
@@ -3060,7 +3060,7 @@
     };
 
 
-  	/**
+    /**
   	 * Erase in the identified line everything from "x" to the end of the line (right).
   	 * @param {number} x The column from which to start erasing to the end of the line.
   	 * @param {number} y The line in which to operate.
@@ -3079,7 +3079,7 @@
 
 
 
-  	/**
+    /**
   	 * Erase in the identified line everything from "x" to the start of the line (left).
   	 * @param {number} x The column from which to start erasing to the start of the line.
   	 * @param {number} y The line in which to operate.
@@ -3095,7 +3095,7 @@
     };
 
 
-  	/**
+    /**
   	 * Erase all content in the given line
   	 * @param {number} y The line to erase all of its contents.
   	 */
@@ -3104,7 +3104,7 @@
     };
 
 
-  	/**
+    /**
   	 * Return the data array of a blank line/
   	 * @param {number} cur First bunch of data for each "blank" character.
   	 */
@@ -3125,7 +3125,7 @@
     };
 
 
-  	/**
+    /**
   	 * If cur return the back color xterm feature attribute. Else return defAttr.
   	 * @param {object} cur
   	 */
@@ -3136,7 +3136,7 @@
     };
 
 
-  	/**
+    /**
   	 * Evaluate if the current erminal is the given argument.
   	 * @param {object} term The terminal to evaluate
   	 */
@@ -3146,7 +3146,7 @@
     };
 
 
-  	/**
+    /**
   	 * Emit the 'data' event and populate the given data.
   	 * @param {string} data The data to populate in the event.
   	 */
@@ -3155,7 +3155,7 @@
     };
 
 
-  	/**
+    /**
   	 * Emit the 'title' event and populate the given title.
   	 * @param {string} title The title to populate in the event.
   	 */
@@ -3168,7 +3168,7 @@
      * ESC
      */
 
-  	/**
+    /**
      * ESC D Index (IND is 0x84).
      */
     Terminal.prototype.index = function() {
@@ -3181,7 +3181,7 @@
     };
 
 
-  	/**
+    /**
      * ESC M Reverse Index (RI is 0x8d).
      */
     Terminal.prototype.reverseIndex = function() {
@@ -3203,7 +3203,7 @@
     };
 
 
-  	/**
+    /**
      * ESC c Full Reset (RIS).
      */
     Terminal.prototype.reset = function() {
@@ -3214,7 +3214,7 @@
     };
 
 
-  	/**
+    /**
      * ESC H Tab Set (HTS is 0x88).
      */
     Terminal.prototype.tabSet = function() {
@@ -3227,7 +3227,7 @@
      * CSI
      */
 
-  	/**
+    /**
      * CSI Ps A
      * Cursor Up Ps Times (default = 1) (CUU).
      */
@@ -3239,7 +3239,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Ps B
      * Cursor Down Ps Times (default = 1) (CUD).
      */
@@ -3267,7 +3267,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Ps D
      * Cursor Backward Ps Times (default = 1) (CUB).
      */
@@ -3279,7 +3279,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Ps ; Ps H
      * Cursor Position [row;column] (default = [1,1]) (CUP).
      */
@@ -3311,7 +3311,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Ps J  Erase in Display (ED).
      *     Ps = 0  -> Erase Below (default).
      *     Ps = 1  -> Erase Above.
@@ -3351,7 +3351,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Ps K  Erase in Line (EL).
      *     Ps = 0  -> Erase to Right (default).
      *     Ps = 1  -> Erase to Left.
@@ -3377,7 +3377,7 @@
     };
 
 
-  	/**
+   	/**
      * CSI Pm m  Character Attributes (SGR).
      *     Ps = 0  -> Normal (default).
      *     Ps = 1  -> Bold.
@@ -3559,7 +3559,7 @@
     };
 
 
-  	/**
+   	/**
      * CSI Ps n  Device Status Report (DSR).
      *     Ps = 5  -> Status Report.  Result (``OK'') is
      *   CSI 0 n
@@ -3635,7 +3635,7 @@
      * Additions
      */
 
-  	/**
+   	/**
      * CSI Ps @
      * Insert Ps (Blank) Character(s) (default = 1) (ICH).
      */
@@ -3655,7 +3655,7 @@
       }
     };
 
-  	/**
+   	/**
      * CSI Ps E
      * Cursor Next Line Ps Times (default = 1) (CNL).
      * same as CSI Ps B ?
@@ -3671,7 +3671,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Ps F
      * Cursor Preceding Line Ps Times (default = 1) (CNL).
      * reuse CSI Ps A ?
@@ -3685,7 +3685,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Ps G
      * Cursor Character Absolute  [column] (default = [row,1]) (CHA).
      */
@@ -3696,7 +3696,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Ps L
      * Insert Ps Line(s) (default = 1) (IL).
      */
@@ -3723,7 +3723,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Ps M
      * Delete Ps Line(s) (default = 1) (DL).
      */
@@ -3750,7 +3750,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Ps P
      * Delete Ps Character(s) (default = 1) (DCH).
      */
@@ -3769,7 +3769,7 @@
       }
     };
 
-  	/**
+    /**
      * CSI Ps X
      * Erase Ps Character(s) (default = 1) (ECH).
      */
@@ -3788,7 +3788,7 @@
       }
     };
 
-  	/**
+    /**
      * CSI Pm `  Character Position Absolute
      *   [column] (default = [row,1]) (HPA).
      */
@@ -3802,7 +3802,7 @@
     };
 
 
-  	/**
+    /**
      * 141 61 a * HPR -
      * Horizontal Position Relative
      * reuse CSI Ps C ?
@@ -3817,7 +3817,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Ps c  Send Device Attributes (Primary DA).
      *     Ps = 0  or omitted -> request attributes from terminal.  The
      *     response depends on the decTerminalID resource setting.
@@ -3884,7 +3884,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Pm d
      * Line Position Absolute  [row] (default = [1,column]) (VPA).
      */
@@ -3898,7 +3898,7 @@
     };
 
 
-  	/**
+    /**
      * 145 65 e * VPR - Vertical Position Relative
      * reuse CSI Ps B ?
      */
@@ -3912,7 +3912,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Ps ; Ps f
      *   Horizontal and Vertical Position [row;column] (default =
      *   [1,1]) (HVP).
@@ -3933,7 +3933,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Pm h  Set Mode (SM).
      *     Ps = 2  -> Keyboard Action Mode (AM).
      *     Ps = 4  -> Insert Mode (IRM).
@@ -4141,7 +4141,7 @@
       }
     };
 
-  	/**
+    /**
      * CSI Pm l  Reset Mode (RM).
      *     Ps = 2  -> Keyboard Action Mode (AM).
      *     Ps = 4  -> Replace Mode (IRM).
@@ -4320,7 +4320,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Ps ; Ps r
      *   Set Scrolling Region [top;bottom] (default = full size of win-
      *   dow) (DECSTBM).
@@ -4335,7 +4335,7 @@
     };
 
 
-  	/**
+    /**
      * CSI s
      *   Save cursor (ANSI.SYS).
      */
@@ -4345,7 +4345,7 @@
     };
 
 
-  	/**
+    /**
      * CSI u
      *   Restore cursor (ANSI.SYS).
      */
@@ -4359,7 +4359,7 @@
      * Lesser Used
      */
 
-  	/**
+    /**
      * CSI Ps I
      *   Cursor Forward Tabulation Ps tab stops (default = 1) (CHT).
      */
@@ -4386,7 +4386,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Ps T  Scroll down Ps lines (default = 1) (SD).
      */
     Terminal.prototype.scrollDown = function(params) {
@@ -4401,7 +4401,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Ps ; Ps ; Ps ; Ps ; Ps T
      *   Initiate highlight mouse tracking.  Parameters are
      *   [func;startx;starty;firstrow;lastrow].  See the section Mouse
@@ -4412,7 +4412,7 @@
     };
 
 
-  	/**
+    /**
      * CSI > Ps; Ps T
      *   Reset one or more features of the title modes to the default
      *   value.  Normally, "reset" disables the feature.  It is possi-
@@ -4430,7 +4430,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Ps Z  Cursor Backward Tabulation Ps tab stops (default = 1) (CBT).
      */
     Terminal.prototype.cursorBackwardTab = function(params) {
@@ -4441,7 +4441,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Ps b  Repeat the preceding graphic character Ps times (REP).
      */
     Terminal.prototype.repeatPrecedingCharacter = function(params) {
@@ -4453,7 +4453,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Ps g  Tab Clear (TBC).
      *     Ps = 0  -> Clear Current Column (default).
      *     Ps = 3  -> Clear All.
@@ -4471,7 +4471,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Pm i  Media Copy (MC).
      *     Ps = 0  -> Print screen (default).
      *     Ps = 4  -> Turn off printer controller mode.
@@ -4489,7 +4489,7 @@
     };
 
 
-  	/**
+    /**
      * CSI > Ps; Ps m
      *   Set or reset resource-values used by xterm to decide whether
      *   to construct escape sequences holding information about the
@@ -4508,7 +4508,7 @@
     };
 
 
-  	/**
+    /**
      * CSI > Ps n
      *   Disable modifiers which may be enabled via the CSI > Ps; Ps m
      *   sequence.  This corresponds to a resource value of "-1", which
@@ -4528,7 +4528,7 @@
     };
 
 
-  	/**
+    /**
      * CSI > Ps p
      *   Set resource value pointerMode.  This is used by xterm to
      *   decide whether to hide the pointer cursor as the user types.
@@ -4564,7 +4564,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Ps$ p
      *   Request ANSI mode (DECRQM).  For VT300 and up, reply is
      *     CSI Ps; Pm$ y
@@ -4581,7 +4581,7 @@
     };
 
 
-  	/**
+    /**
      * CSI ? Ps$ p
      *   Request DEC private mode (DECRQM).  For VT300 and up, reply is
      *     CSI ? Ps; Pm$ p
@@ -4593,7 +4593,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Ps ; Ps " p
      *   Set conformance level (DECSCL).  Valid values for the first
      *   parameter:
@@ -4610,7 +4610,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Ps q  Load LEDs (DECLL).
      *     Ps = 0  -> Clear all LEDS (default).
      *     Ps = 1  -> Light Num Lock.
@@ -4625,7 +4625,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Ps SP q
      *   Set cursor style (DECSCUSR, VT520).
      *     Ps = 0  -> blinking block.
@@ -4639,7 +4639,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Ps " q
      *   Select character protection attribute (DECSCA).  Valid values
      *   for the parameter:
@@ -4652,7 +4652,7 @@
     };
 
 
-  	/**
+    /**
      * CSI ? Pm r
      *   Restore DEC Private Mode Values.  The value of Ps previously
      *   saved is restored.  Ps values are the same as for DECSET.
@@ -4662,7 +4662,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Pt; Pl; Pb; Pr; Ps$ r
      *   Change Attributes in Rectangular Area (DECCARA), VT400 and up.
      *     Pt; Pl; Pb; Pr denotes the rectangle.
@@ -4692,7 +4692,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Pc; Pt; Pl; Pb; Pr$ x
      *   Fill Rectangular Area (DECFRA), VT420 and up.
      *     Pc is the character to use.
@@ -4722,7 +4722,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Ps ; Pu ' z
      *   Enable Locator Reporting (DECELR).
      *   Valid values for the first parameter:
@@ -4743,7 +4743,7 @@
     };
 
 
-  	/**
+    /**
      * CSI Pt; Pl; Pb; Pr$ z
      *   Erase Rectangular Area (DECERA), VT400 and up.
      *     Pt; Pl; Pb; Pr denotes the rectangle.
@@ -4774,7 +4774,7 @@
     };
 
 
-  	/**
+    /**
      * CSI P m SP }
      * Insert P s Column(s) (default = 1) (DECIC), VT420 and up.
      * NOTE: xterm doesn't enable this code by default.
@@ -4796,7 +4796,7 @@
     };
 
 
-  	/**
+    /**
      * CSI P m SP ~
      * Delete P s Column(s) (default = 1) (DECDC), VT420 and up
      * NOTE: xterm doesn't enable this code by default.
