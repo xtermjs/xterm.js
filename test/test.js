@@ -81,6 +81,9 @@ describe('xterm.js', function() {
       xterm.handler = function() {};
       xterm.showCursor = function() {};
       xterm.clearSelection = function() {};
+      xterm.compositionHelper = {
+        isComposing: false
+      };
     });
 
     describe('On Mac OS', function() {
