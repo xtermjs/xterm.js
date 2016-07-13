@@ -317,7 +317,6 @@
     inherits(Terminal, EventEmitter);
 
 		/**
-		 *
 		 * back_color_erase feature for xterm.
 		 */
     Terminal.prototype.eraseAttr = function() {
@@ -3014,6 +3013,11 @@
     };
 
 
+
+  	/**
+  	 * Setup the tab stops.
+  	 * @param {number} i
+  	 */
     Terminal.prototype.setupStops = function(i) {
       if (i != null) {
         if (!this.tabs[i]) {
@@ -3030,6 +3034,10 @@
     };
 
 
+    /**
+  	 * Move the cursor to the previous tab stop from the given position (default is current).
+  	 * @param {number} x The position to move the cursor to the previous tab stop.
+  	 */
     Terminal.prototype.prevStop = function(x) {
       if (x == null) x = this.x;
       while (!this.tabs[--x] && x > 0);
@@ -3039,6 +3047,10 @@
     };
 
 
+  	/**
+  	 * Move the cursor one tab stop forward from the given position (default is current).
+  	 * @param {number} x The position to move the cursor one tab stop forward.
+  	 */
     Terminal.prototype.nextStop = function(x) {
       if (x == null) x = this.x;
       while (!this.tabs[++x] && x < this.cols);
@@ -3112,12 +3124,22 @@
       return line;
     };
 
+
+  	/**
+  	 * If cur return the back color xterm feature attribute. Else return defAttr.
+  	 * @param {object} cur
+  	 */
     Terminal.prototype.ch = function(cur) {
       return cur
         ? [this.eraseAttr(), ' ', 1]
         : [this.defAttr, ' ', 1];
     };
 
+
+  	/**
+  	 * Evaluate if the current erminal is the given argument.
+  	 * @param {object} term The terminal to evaluate
+  	 */
     Terminal.prototype.is = function(term) {
       var name = this.termName;
       return (name + '').indexOf(term) === 0;
