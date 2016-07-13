@@ -4954,7 +4954,7 @@
           (term.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
 
       // Don't invoke for arrows, pageDown, home, backspace, etc. (on non-keypress events)
-      return thirdLevelKey && (ev.type != 'keypress' || (!ev.keyCode || ev.keyCode > 47));
+      return thirdLevelKey && ((ev.type != 'keypress') ? (!ev.keyCode || ev.keyCode > 47) : true);
     }
 
     function matchColor(r1, g1, b1) {
