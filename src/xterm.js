@@ -147,42 +147,80 @@
 
       // The position within the input textarea's value of the current composition.
       this.compositionPosition = { start: null, end: null };
+
+      this.isSendingComposition = false;
     }
 
-    CompositionHelper.prototype.compositionstart = function(ev) {
+    CompositionHelper.prototype.compositionstart = function() {
       this.isComposing = true;
       this.compositionPosition.start = this.textarea.value.length;
+      console.log('In compositionstart: compositionPosition=', this.compositionPosition);
       this.compositionView.textContent = '';
       this.compositionView.classList.add('active');
     };
 
     CompositionHelper.prototype.compositionupdate = function(ev) {
-      this.compositionPosition.end = this.textarea.value.length - 1;
+
       this.compositionView.textContent = ev.data;
       this.updateCursorPosition();
-    };
-
-    CompositionHelper.prototype.compositionend = function(ev) {
-      this.compositionView.classList.remove('active');
-      this.isComposing = false;
-      // Record composition position here as a new compositionstart event may fire before the
-      // setTimeout executes
-      var currentCompositionPosition = this.compositionPosition;
-
-      // Since composition* events happen before the changes take place in the textarea on most
-      // browsers, use a setTimeout with 0ms time to allow the native compositionend event to
-      // complete. This ensures the correct character is retrieved, this solution was used
-      // because:
-      // - The compositionend event's data property is unreliable, at least on Chromium
-      // - The last compositionupdate event's data property does not always accurately describe
-      //   the character, a counter example being Korean where an ending consonsant can move to
-      //   the following character if the following input is a vowel.
       var self = this;
-      setTimeout(function () {
-        var input = self.textarea.value.substring(currentCompositionPosition.start, currentCompositionPosition.end);
-        self.terminal.write(input);
+      setTimeout(function() {
+        self.compositionPosition.end = self.textarea.value.length;
+
+        console.log('In compositionupdate: compositionPosition=', self.compositionPosition);
       }, 0);
     };
+
+    CompositionHelper.prototype.compositionend = function() {
+      this.finalizeComposition(true);
+    };
+
+    /**
+     * Finalizes the composition, resuming regular input actions. This is called when a composition
+     * is ending.
+     * @param {boolean} waitForPropogation Whether to wait for events to propogate before sending
+     *   the input. This should be false if a non-composition keystroke is entered before the
+     *   compositionend event is triggered, such as enter, so that the composition is send before
+     *   the command is executed.
+     */
+    CompositionHelper.prototype.finalizeComposition = function(waitForPropogation) {
+      this.compositionView.classList.remove('active');
+      this.isComposing = false;
+
+      if (!waitForPropogation) {
+        // Cancel any delayed composition send requests and send the input immediately.
+        this.isSendingComposition = false;
+        var input = this.textarea.value.substring(this.compositionPosition.start, this.compositionPosition.end);
+        this.terminal.handler(input);
+      } else {
+        // Make a deep copy of the composition position here as a new compositionstart event may
+        // fire before the setTimeout executes.
+        var currentCompositionPosition = {
+          start: this.compositionPosition.start,
+          end: this.compositionPosition.end,
+        }
+
+        // Since composition* events happen before the changes take place in the textarea on most
+        // browsers, use a setTimeout with 0ms time to allow the native compositionend event to
+        // complete. This ensures the correct character is retrieved, this solution was used
+        // because:
+        // - The compositionend event's data property is unreliable, at least on Chromium
+        // - The last compositionupdate event's data property does not always accurately describe
+        //   the character, a counter example being Korean where an ending consonsant can move to
+        //   the following character if the following input is a vowel.
+        var self = this;
+        this.isSendingComposition = true;
+        setTimeout(function () {
+          // Ensure that the input has not already been sent
+          if (self.isSendingComposition) {
+            console.log('send input ' + input + ' delayed');
+            self.isSendingComposition = false;
+            var input = self.textarea.value.substring(currentCompositionPosition.start, currentCompositionPosition.end);
+            self.terminal.handler(input);
+          }
+        }, 0);
+      }
+    }
 
     CompositionHelper.prototype.updateCursorPosition = function() {
       var cursor = document.querySelector('.terminal-cursor');
@@ -639,45 +677,14 @@
         this.value = '';
       }, true);
 
-      // TODO: Refactor into a CompositionHelper object
       on(term.textarea, 'compositionstart', function(ev) {
         term.compositionHelper.compositionstart.bind(term.compositionHelper, ev)();
-        /*this.isComposing = true;
-        term.compositionPosition.start = this.value.length;
-        term.compositionView.textContent = '';
-        term.compositionView.classList.add('active');*/
       });
       on(term.textarea, 'compositionupdate', function(ev) {
         term.compositionHelper.compositionupdate.bind(term.compositionHelper, ev)();
-        /*term.compositionPosition.end = this.value.length - 1;
-
-        // Update composition view contents and position
-        term.compositionView.textContent = ev.data;
-        var cursor = document.querySelector('.terminal-cursor');
-        term.compositionView.style.left = cursor.offsetLeft + 'px';
-        term.compositionView.style.top = cursor.offsetTop + 'px';*/
       });
       on(term.textarea, 'compositionend', function(ev) {
         term.compositionHelper.compositionend.bind(term.compositionHelper, ev)();
-        /*term.compositionView.classList.remove('active');
-        this.isComposing = false;
-        var textarea = this;
-        // Record composition position here as a new compositionstart event may fire before the
-        // setTimeout executes
-        var compositionPosition = term.compositionPosition;
-
-        // Since composition* events happen before the changes take place in the textarea on most
-        // browsers, use a setTimeout with 0ms time to allow the native compositionend event to
-        // complete. This ensures the correct character is retrieved, this solution was used
-        // because:
-        // - The compositionend event's data property is unreliable, at least on Chromium
-        // - The last compositionupdate event's data property does not always accurately describe
-        //   the character, a counter example being Korean where an ending consonsant can move to
-        //   the following character if the following input is a vowel.
-        setTimeout(function () {
-          var input = textarea.value.substring(compositionPosition.start, compositionPosition.end);
-          term.write(input);
-        }, 0);*/
       });
     };
 
@@ -2582,8 +2589,14 @@
      * @param {KeyboardEvent} ev The keydown event to be handled.
      */
     Terminal.prototype.keyDown = function(ev) {
-      if (this.compositionHelper.isComposing) {
-        return;
+      if (this.compositionHelper.isComposing || this.compositionHelper.isSendingComposition) {
+        if (ev.keyCode === 229) {
+          // Continue composing
+          return;
+        } else {
+          // Finish composition immediately
+          this.compositionHelper.finalizeComposition(null);
+        }
       }
 
       var self = this;
