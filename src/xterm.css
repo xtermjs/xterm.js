@@ -90,6 +90,17 @@
     }
 }
 
+.terminal .composition-view {
+    background: #000;
+    color: #FFF;
+    display: none;
+    position: absolute;
+}
+
+.terminal .composition-view.active {
+    display: block;
+}
+
 /*
  *  Determine default colors for xterm.js
  */

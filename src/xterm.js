@@ -238,6 +238,15 @@
        */
       this.isRefreshing = false;
 
+      // Whether input composition is currently happening, eg. via a mobile keyboard, speech input
+      // or IME. This variable determines whether the compositionText should be displayed on the UI.
+      this.isComposing = false;
+
+      // The input currently being composed, eg. via a mobile keyboard, speech input or IME.
+      this.compositionText = null;
+
+      this.compositionPosition = { start: null, end: null };
+
       /**
        * Whether there is a full terminal refresh queued
        */
@@ -581,18 +590,42 @@
         this.value = '';
       }, true);
 
+      // TODO: Refactor into a CompositionHelper object
       on(term.textarea, 'compositionstart', function(ev) {
-        console.log('compositionstart', ev);
-        // TODO: Set a composing flag
+        this.isComposing = true;
+        term.compositionPosition.start = this.value.length;
+        term.compositionView.textContent = '';
+        term.compositionView.classList.add('active');
       });
       on(term.textarea, 'compositionupdate', function(ev) {
-        console.log('compositionupdate', ev);
-        // TODO: Display text being composed in the UI (needs to be handled in keydown)
+        term.compositionPosition.end = this.value.length - 1;
+
+        // Update composition view contents and position
+        term.compositionView.textContent = ev.data;
+        var cursor = document.querySelector('.terminal-cursor');
+        term.compositionView.style.left = cursor.offsetLeft + 'px';
+        term.compositionView.style.top = cursor.offsetTop + 'px';
       });
       on(term.textarea, 'compositionend', function(ev) {
-        console.log('compositionend', ev);
-        // TODO: Send composed text to the pty
-        // TODO: Remove composing flag
+        term.compositionView.classList.remove('active');
+        this.isComposing = false;
+        var textarea = this;
+        // Record composition position here as a new compositionstart event may fire before the
+        // setTimeout executes
+        var compositionPosition = term.compositionPosition;
+
+        // Since composition* events happen before the changes take place in the textarea on most
+        // browsers, use a setTimeout with 0ms time to allow the native compositionend event to
+        // complete. This ensures the correct character is retrieved, this solution was used
+        // because:
+        // - The compositionend event's data property is unreliable, at least on Chromium
+        // - The last compositionupdate event's data property does not always accurately describe
+        //   the character, a counter example being Korean where an ending consonsant can move to
+        //   the following character if the following input is a vowel.
+        setTimeout(function () {
+          var input = textarea.value.substring(compositionPosition.start, compositionPosition.end);
+          term.write(input);
+        }, 0);
       });
     };
 
@@ -694,6 +727,7 @@
       */
       this.helperContainer = document.createElement('div');
       this.helperContainer.classList.add('xterm-helpers');
+      // TODO: This should probably be inserted once it's filled to prevent an additional layout
       this.element.appendChild(this.helperContainer);
       this.textarea = document.createElement('textarea');
       this.textarea.classList.add('xterm-helper-textarea');
@@ -708,11 +742,15 @@
         self.emit('blur', {terminal: self});
       }
       this.helperContainer.appendChild(this.textarea);
+      this.compositionView = document.createElement('div');
+      this.compositionView.classList.add('composition-view');
+      this.helperContainer.appendChild(this.compositionView);
 
       for (; i < this.rows; i++) {
         this.insertRow();
       }
       this.parent.appendChild(this.element);
+
 
       // Draw the screen.
       this.refresh(0, this.rows - 1);
@@ -1348,6 +1386,12 @@
       if (parent) {
         this.element.appendChild(this.rowContainer);
       }
+
+      // TODO: Put in a listener?
+      // Update composition view contents and position
+      var cursor = document.querySelector('.terminal-cursor');
+      term.compositionView.style.left = cursor.offsetLeft + 'px';
+      term.compositionView.style.top = cursor.offsetTop + 'px';
 
       this.emit('refresh', {element: this.element, start: start, end: end});
     };
@@ -2487,7 +2531,9 @@
      * @param {KeyboardEvent} ev The keydown event to be handled.
      */
     Terminal.prototype.keyDown = function(ev) {
-      // TODO: Ignore event if currently composing text
+      if (this.isComposing) {
+        return;
+      }
 
       var self = this;
       var result = this.evaluateKeyEscapeSequence(ev);
