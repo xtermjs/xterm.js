@@ -1,0 +1,18 @@
+a[Ib[Ic[Id[Ie[If[Ig[Ih[Ii[Ij[Ik[Il
+[I[I[I[Ix
+1[I2
+  [A3[B
+
+CHT before EOL:
+no tab: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890abcdefgh@
+tab:    abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890abcdefgh[I@
+tab (2):abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890abcdefg[I@
+
+CHT at EOL:
+no tab: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890abcdefghi@
+tab:    abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890abcdefghi[I@
+with clipping:							4567890abcdefghi[IMD@
+
+a[4Ie[2Ig
+[4Ie	[2Ih
+[100Ix

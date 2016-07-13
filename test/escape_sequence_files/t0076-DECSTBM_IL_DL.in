@@ -1,0 +1,33 @@
+ 1  (IL on line 2, expect nothing)
+ 2  (DL on line 22, expect nothing)
+ 3  vvvv  IL on line 5, expected:  A_BC
+ 4  A
+ 5  B
+ 6  C
+ 7  D
+ 8  ^^^^
+ 9  vvvv  DL on line 11, expected:  ACD_
+10  A
+11  B
+12  C
+13  D
+14  ^^^^
+15  vvvv  IL on line 17, expected:  A_
+16  A
+17  B
+18  ^^^^
+19  vvvv  IL on line 21, expected:  A_
+20  A
+21  B
+22  ^^^^
+23  vvvv  IL on line 24, expected:  _A
+24  A[4;7r
+[L[22d[M[5d[L[10;13r[11d[M[16;17r[17d[L[20;21r[21d[M[r[24d
+25  B
+26  ^^^^
+27  vvvv  DL on line 28, expected:  B_
+28  A
+29  B
+30  ^^^^
+31
+32[16;17r[16d[L[20;21r[20d[M[r[24d

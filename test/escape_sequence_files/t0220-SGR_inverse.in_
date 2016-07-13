@@ -1,0 +1,4 @@
+This is [7minverse text[27m with default fg and bg.
+[31mThis is [7minverse text[27m with red fg and default bg.[m
+[41mThis is [7minverse text[27m with default fg and red bg.[m
+[32;41mThis is [7minverse text[27m with green fg and red bg.[m

@@ -16,6 +16,9 @@
     "recurse": true,
     "verbose": true
   },
+  "plugins": [
+    "plugins/markdown"
+  ],
   "templates": {
     "cleverLinks": false,
     "monospaceLinks": false

@@ -1,0 +1,25 @@
+a       b       c       d       e       f       g       h       i       j      k
+a                                       f               h       i   <
+a
+
+default tab stops:
+near end:                                                               !bcdefg
+at end:                                                                 abcdefgh
+!
+at end (2):                                                             abcdefgh
+!
+at end with clipping:                                                   !bcdefgh
+at end with clipping (2):                                       !       abcdefgh
+
+set tab stop at column 80:                                                     v
+at end:                                                                 abcdefgh
+!
+at end (2):                                                             abcdefgh
+!
+at end with clipping:                                                   !bcdefgh
+at end with clipping (2):                                       !       abcdefgh
+
+
+
+
+
