@@ -4953,8 +4953,8 @@
           (term.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
           (term.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
 
-      // Don't invoke for arrows, pageDown, home, backspace, etc.
-      return thirdLevelKey && (!ev.keyCode || ev.keyCode > 47);
+      // Don't invoke for arrows, pageDown, home, backspace, etc. (on non-keypress events)
+      return thirdLevelKey && (ev.type != 'keypress' || (!ev.keyCode || ev.keyCode > 47));
     }
 
     function matchColor(r1, g1, b1) {
