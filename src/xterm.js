@@ -239,6 +239,22 @@
       }
     }
 
+    CompositionHelper.prototype.handleAnyTextareaChanges = function() {
+      var oldValue = this.textarea.value;
+
+      var self = this;
+      setTimeout(function() {
+        // Ensure no composition has started since the timeout
+        if (!self.isComposing) {
+          var newValue = self.textarea.value;
+          var diff = newValue.replace(oldValue, '');
+          if (diff.length > 0) {
+            self.terminal.handler(diff);
+          }
+        }
+      }, 0);
+    }
+
     /**
      * Updates the composition view's position.
      */
@@ -2617,6 +2633,11 @@
           // Finish composition immediately
           this.compositionHelper.finalizeComposition(null);
         }
+      }
+
+      if (ev.keyCode === 229) {
+        this.compositionHelper.handleAnyTextareaChanges();
+        return;
       }
 
       var self = this;
