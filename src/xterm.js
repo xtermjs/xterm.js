@@ -3013,6 +3013,7 @@
       this.refreshEnd = this.rows - 1;
     };
 
+
     Terminal.prototype.setupStops = function(i) {
       if (i != null) {
         if (!this.tabs[i]) {
@@ -3028,6 +3029,7 @@
       }
     };
 
+
     Terminal.prototype.prevStop = function(x) {
       if (x == null) x = this.x;
       while (!this.tabs[--x] && x > 0);
@@ -3035,6 +3037,7 @@
         ? this.cols - 1
         : x < 0 ? 0 : x;
     };
+
 
     Terminal.prototype.nextStop = function(x) {
       if (x == null) x = this.x;
@@ -3044,6 +3047,12 @@
         : x < 0 ? 0 : x;
     };
 
+
+  	/**
+  	 * Erase in the identified line everything from "x" to the end of the line (right).
+  	 * @param {number} x The column from which to start erasing to the end of the line.
+  	 * @param {number} y The line in which to operate.
+  	 */
     Terminal.prototype.eraseRight = function(x, y) {
       var line = this.lines[this.ybase + y]
         , ch = [this.eraseAttr(), ' ', 1]; // xterm
@@ -3056,6 +3065,13 @@
       this.updateRange(y);
     };
 
+
+
+  	/**
+  	 * Erase in the identified line everything from "x" to the start of the line (left).
+  	 * @param {number} x The column from which to start erasing to the start of the line.
+  	 * @param {number} y The line in which to operate.
+  	 */
     Terminal.prototype.eraseLeft = function(x, y) {
       var line = this.lines[this.ybase + y]
         , ch = [this.eraseAttr(), ' ', 1]; // xterm
@@ -3066,10 +3082,20 @@
       this.updateRange(y);
     };
 
+
+  	/**
+  	 * Erase all content in the given line
+  	 * @param {number} y The line to erase all of its contents.
+  	 */
     Terminal.prototype.eraseLine = function(y) {
       this.eraseRight(0, y);
     };
 
+
+  	/**
+  	 * Return the data array of a blank line/
+  	 * @param {number} cur First bunch of data for each "blank" character.
+  	 */
     Terminal.prototype.blankLine = function(cur) {
       var attr = cur
         ? this.eraseAttr()
@@ -3097,19 +3123,32 @@
       return (name + '').indexOf(term) === 0;
     };
 
+
+  	/**
+  	 * Emit the 'data' event and populate the given data.
+  	 * @param {string} data The data to populate in the event.
+  	 */
     Terminal.prototype.handler = function(data) {
       this.emit('data', data);
     };
 
+
+  	/**
+  	 * Emit the 'title' event and populate the given title.
+  	 * @param {string} title The title to populate in the event.
+  	 */
     Terminal.prototype.handleTitle = function(title) {
       this.emit('title', title);
     };
+
 
     /**
      * ESC
      */
 
-    // ESC D Index (IND is 0x84).
+  	/**
+     * ESC D Index (IND is 0x84).
+     */
     Terminal.prototype.index = function() {
       this.y++;
       if (this.y > this.scrollBottom) {
@@ -3119,7 +3158,10 @@
       this.state = normal;
     };
 
-    // ESC M Reverse Index (RI is 0x8d).
+
+  	/**
+     * ESC M Reverse Index (RI is 0x8d).
+     */
     Terminal.prototype.reverseIndex = function() {
       var j;
       this.y--;
@@ -3138,7 +3180,10 @@
       this.state = normal;
     };
 
-    // ESC c Full Reset (RIS).
+
+  	/**
+     * ESC c Full Reset (RIS).
+     */
     Terminal.prototype.reset = function() {
       this.options.rows = this.rows;
       this.options.cols = this.cols;
@@ -3146,18 +3191,24 @@
       this.refresh(0, this.rows - 1);
     };
 
-    // ESC H Tab Set (HTS is 0x88).
+
+  	/**
+     * ESC H Tab Set (HTS is 0x88).
+     */
     Terminal.prototype.tabSet = function() {
       this.tabs[this.x] = true;
       this.state = normal;
     };
 
+
     /**
      * CSI
      */
 
-    // CSI Ps A
-    // Cursor Up Ps Times (default = 1) (CUU).
+  	/**
+     * CSI Ps A
+     * Cursor Up Ps Times (default = 1) (CUU).
+     */
     Terminal.prototype.cursorUp = function(params) {
       var param = params[0];
       if (param < 1) param = 1;
@@ -3165,8 +3216,11 @@
       if (this.y < 0) this.y = 0;
     };
 
-    // CSI Ps B
-    // Cursor Down Ps Times (default = 1) (CUD).
+
+  	/**
+     * CSI Ps B
+     * Cursor Down Ps Times (default = 1) (CUD).
+     */
     Terminal.prototype.cursorDown = function(params) {
       var param = params[0];
       if (param < 1) param = 1;
@@ -3176,8 +3230,11 @@
       }
     };
 
-    // CSI Ps C
-    // Cursor Forward Ps Times (default = 1) (CUF).
+
+    /**
+     * CSI Ps C
+     * Cursor Forward Ps Times (default = 1) (CUF).
+     */
     Terminal.prototype.cursorForward = function(params) {
       var param = params[0];
       if (param < 1) param = 1;
@@ -3187,8 +3244,11 @@
       }
     };
 
-    // CSI Ps D
-    // Cursor Backward Ps Times (default = 1) (CUB).
+
+  	/**
+     * CSI Ps D
+     * Cursor Backward Ps Times (default = 1) (CUB).
+     */
     Terminal.prototype.cursorBackward = function(params) {
       var param = params[0];
       if (param < 1) param = 1;
@@ -3196,8 +3256,11 @@
       if (this.x < 0) this.x = 0;
     };
 
-    // CSI Ps ; Ps H
-    // Cursor Position [row;column] (default = [1,1]) (CUP).
+
+  	/**
+     * CSI Ps ; Ps H
+     * Cursor Position [row;column] (default = [1,1]) (CUP).
+     */
     Terminal.prototype.cursorPos = function(params) {
       var row, col;
 
@@ -3225,16 +3288,19 @@
       this.y = row;
     };
 
-    // CSI Ps J  Erase in Display (ED).
-    //     Ps = 0  -> Erase Below (default).
-    //     Ps = 1  -> Erase Above.
-    //     Ps = 2  -> Erase All.
-    //     Ps = 3  -> Erase Saved Lines (xterm).
-    // CSI ? Ps J
-    //   Erase in Display (DECSED).
-    //     Ps = 0  -> Selective Erase Below (default).
-    //     Ps = 1  -> Selective Erase Above.
-    //     Ps = 2  -> Selective Erase All.
+
+  	/**
+     * CSI Ps J  Erase in Display (ED).
+     *     Ps = 0  -> Erase Below (default).
+     *     Ps = 1  -> Erase Above.
+     *     Ps = 2  -> Erase All.
+     *     Ps = 3  -> Erase Saved Lines (xterm).
+     * CSI ? Ps J
+     *   Erase in Display (DECSED).
+     *     Ps = 0  -> Selective Erase Below (default).
+     *     Ps = 1  -> Selective Erase Above.
+     *     Ps = 2  -> Selective Erase All.
+     */
     Terminal.prototype.eraseInDisplay = function(params) {
       var j;
       switch (params[0]) {
@@ -3262,15 +3328,18 @@
       }
     };
 
-    // CSI Ps K  Erase in Line (EL).
-    //     Ps = 0  -> Erase to Right (default).
-    //     Ps = 1  -> Erase to Left.
-    //     Ps = 2  -> Erase All.
-    // CSI ? Ps K
-    //   Erase in Line (DECSEL).
-    //     Ps = 0  -> Selective Erase to Right (default).
-    //     Ps = 1  -> Selective Erase to Left.
-    //     Ps = 2  -> Selective Erase All.
+
+  	/**
+     * CSI Ps K  Erase in Line (EL).
+     *     Ps = 0  -> Erase to Right (default).
+     *     Ps = 1  -> Erase to Left.
+     *     Ps = 2  -> Erase All.
+     * CSI ? Ps K
+     *   Erase in Line (DECSEL).
+     *     Ps = 0  -> Selective Erase to Right (default).
+     *     Ps = 1  -> Selective Erase to Left.
+     *     Ps = 2  -> Selective Erase All.
+     */
     Terminal.prototype.eraseInLine = function(params) {
       switch (params[0]) {
         case 0:
@@ -3285,68 +3354,71 @@
       }
     };
 
-    // CSI Pm m  Character Attributes (SGR).
-    //     Ps = 0  -> Normal (default).
-    //     Ps = 1  -> Bold.
-    //     Ps = 4  -> Underlined.
-    //     Ps = 5  -> Blink (appears as Bold).
-    //     Ps = 7  -> Inverse.
-    //     Ps = 8  -> Invisible, i.e., hidden (VT300).
-    //     Ps = 2 2  -> Normal (neither bold nor faint).
-    //     Ps = 2 4  -> Not underlined.
-    //     Ps = 2 5  -> Steady (not blinking).
-    //     Ps = 2 7  -> Positive (not inverse).
-    //     Ps = 2 8  -> Visible, i.e., not hidden (VT300).
-    //     Ps = 3 0  -> Set foreground color to Black.
-    //     Ps = 3 1  -> Set foreground color to Red.
-    //     Ps = 3 2  -> Set foreground color to Green.
-    //     Ps = 3 3  -> Set foreground color to Yellow.
-    //     Ps = 3 4  -> Set foreground color to Blue.
-    //     Ps = 3 5  -> Set foreground color to Magenta.
-    //     Ps = 3 6  -> Set foreground color to Cyan.
-    //     Ps = 3 7  -> Set foreground color to White.
-    //     Ps = 3 9  -> Set foreground color to default (original).
-    //     Ps = 4 0  -> Set background color to Black.
-    //     Ps = 4 1  -> Set background color to Red.
-    //     Ps = 4 2  -> Set background color to Green.
-    //     Ps = 4 3  -> Set background color to Yellow.
-    //     Ps = 4 4  -> Set background color to Blue.
-    //     Ps = 4 5  -> Set background color to Magenta.
-    //     Ps = 4 6  -> Set background color to Cyan.
-    //     Ps = 4 7  -> Set background color to White.
-    //     Ps = 4 9  -> Set background color to default (original).
 
-    //   If 16-color support is compiled, the following apply.  Assume
-    //   that xterm's resources are set so that the ISO color codes are
-    //   the first 8 of a set of 16.  Then the aixterm colors are the
-    //   bright versions of the ISO colors:
-    //     Ps = 9 0  -> Set foreground color to Black.
-    //     Ps = 9 1  -> Set foreground color to Red.
-    //     Ps = 9 2  -> Set foreground color to Green.
-    //     Ps = 9 3  -> Set foreground color to Yellow.
-    //     Ps = 9 4  -> Set foreground color to Blue.
-    //     Ps = 9 5  -> Set foreground color to Magenta.
-    //     Ps = 9 6  -> Set foreground color to Cyan.
-    //     Ps = 9 7  -> Set foreground color to White.
-    //     Ps = 1 0 0  -> Set background color to Black.
-    //     Ps = 1 0 1  -> Set background color to Red.
-    //     Ps = 1 0 2  -> Set background color to Green.
-    //     Ps = 1 0 3  -> Set background color to Yellow.
-    //     Ps = 1 0 4  -> Set background color to Blue.
-    //     Ps = 1 0 5  -> Set background color to Magenta.
-    //     Ps = 1 0 6  -> Set background color to Cyan.
-    //     Ps = 1 0 7  -> Set background color to White.
-
-    //   If xterm is compiled with the 16-color support disabled, it
-    //   supports the following, from rxvt:
-    //     Ps = 1 0 0  -> Set foreground and background color to
-    //     default.
-
-    //   If 88- or 256-color support is compiled, the following apply.
-    //     Ps = 3 8  ; 5  ; Ps -> Set foreground color to the second
-    //     Ps.
-    //     Ps = 4 8  ; 5  ; Ps -> Set background color to the second
-    //     Ps.
+  	/**
+     * CSI Pm m  Character Attributes (SGR).
+     *     Ps = 0  -> Normal (default).
+     *     Ps = 1  -> Bold.
+     *     Ps = 4  -> Underlined.
+     *     Ps = 5  -> Blink (appears as Bold).
+     *     Ps = 7  -> Inverse.
+     *     Ps = 8  -> Invisible, i.e., hidden (VT300).
+     *     Ps = 2 2  -> Normal (neither bold nor faint).
+     *     Ps = 2 4  -> Not underlined.
+     *     Ps = 2 5  -> Steady (not blinking).
+     *     Ps = 2 7  -> Positive (not inverse).
+     *     Ps = 2 8  -> Visible, i.e., not hidden (VT300).
+     *     Ps = 3 0  -> Set foreground color to Black.
+     *     Ps = 3 1  -> Set foreground color to Red.
+     *     Ps = 3 2  -> Set foreground color to Green.
+     *     Ps = 3 3  -> Set foreground color to Yellow.
+     *     Ps = 3 4  -> Set foreground color to Blue.
+     *     Ps = 3 5  -> Set foreground color to Magenta.
+     *     Ps = 3 6  -> Set foreground color to Cyan.
+     *     Ps = 3 7  -> Set foreground color to White.
+     *     Ps = 3 9  -> Set foreground color to default (original).
+     *     Ps = 4 0  -> Set background color to Black.
+     *     Ps = 4 1  -> Set background color to Red.
+     *     Ps = 4 2  -> Set background color to Green.
+     *     Ps = 4 3  -> Set background color to Yellow.
+     *     Ps = 4 4  -> Set background color to Blue.
+     *     Ps = 4 5  -> Set background color to Magenta.
+     *     Ps = 4 6  -> Set background color to Cyan.
+     *     Ps = 4 7  -> Set background color to White.
+     *     Ps = 4 9  -> Set background color to default (original).
+		 *
+     *   If 16-color support is compiled, the following apply.  Assume
+     *   that xterm's resources are set so that the ISO color codes are
+     *   the first 8 of a set of 16.  Then the aixterm colors are the
+     *   bright versions of the ISO colors:
+     *     Ps = 9 0  -> Set foreground color to Black.
+     *     Ps = 9 1  -> Set foreground color to Red.
+     *     Ps = 9 2  -> Set foreground color to Green.
+     *     Ps = 9 3  -> Set foreground color to Yellow.
+     *     Ps = 9 4  -> Set foreground color to Blue.
+     *     Ps = 9 5  -> Set foreground color to Magenta.
+     *     Ps = 9 6  -> Set foreground color to Cyan.
+     *     Ps = 9 7  -> Set foreground color to White.
+     *     Ps = 1 0 0  -> Set background color to Black.
+     *     Ps = 1 0 1  -> Set background color to Red.
+     *     Ps = 1 0 2  -> Set background color to Green.
+     *     Ps = 1 0 3  -> Set background color to Yellow.
+     *     Ps = 1 0 4  -> Set background color to Blue.
+     *     Ps = 1 0 5  -> Set background color to Magenta.
+     *     Ps = 1 0 6  -> Set background color to Cyan.
+     *     Ps = 1 0 7  -> Set background color to White.
+		 *
+     *   If xterm is compiled with the 16-color support disabled, it
+     *   supports the following, from rxvt:
+     *     Ps = 1 0 0  -> Set foreground and background color to
+     *     default.
+		 *
+     *   If 88- or 256-color support is compiled, the following apply.
+     *     Ps = 3 8  ; 5  ; Ps -> Set foreground color to the second
+     *     Ps.
+     *     Ps = 4 8  ; 5  ; Ps -> Set background color to the second
+     *     Ps.
+     */
     Terminal.prototype.charAttributes = function(params) {
       // Optimize a single SGR0.
       if (params.length === 1 && params[0] === 0) {
@@ -3464,27 +3536,30 @@
       this.curAttr = (flags << 18) | (fg << 9) | bg;
     };
 
-    // CSI Ps n  Device Status Report (DSR).
-    //     Ps = 5  -> Status Report.  Result (``OK'') is
-    //   CSI 0 n
-    //     Ps = 6  -> Report Cursor Position (CPR) [row;column].
-    //   Result is
-    //   CSI r ; c R
-    // CSI ? Ps n
-    //   Device Status Report (DSR, DEC-specific).
-    //     Ps = 6  -> Report Cursor Position (CPR) [row;column] as CSI
-    //     ? r ; c R (assumes page is zero).
-    //     Ps = 1 5  -> Report Printer status as CSI ? 1 0  n  (ready).
-    //     or CSI ? 1 1  n  (not ready).
-    //     Ps = 2 5  -> Report UDK status as CSI ? 2 0  n  (unlocked)
-    //     or CSI ? 2 1  n  (locked).
-    //     Ps = 2 6  -> Report Keyboard status as
-    //   CSI ? 2 7  ;  1  ;  0  ;  0  n  (North American).
-    //   The last two parameters apply to VT400 & up, and denote key-
-    //   board ready and LK01 respectively.
-    //     Ps = 5 3  -> Report Locator status as
-    //   CSI ? 5 3  n  Locator available, if compiled-in, or
-    //   CSI ? 5 0  n  No Locator, if not.
+
+  	/**
+     * CSI Ps n  Device Status Report (DSR).
+     *     Ps = 5  -> Status Report.  Result (``OK'') is
+     *   CSI 0 n
+     *     Ps = 6  -> Report Cursor Position (CPR) [row;column].
+     *   Result is
+     *   CSI r ; c R
+     * CSI ? Ps n
+     *   Device Status Report (DSR, DEC-specific).
+     *     Ps = 6  -> Report Cursor Position (CPR) [row;column] as CSI
+     *     ? r ; c R (assumes page is zero).
+     *     Ps = 1 5  -> Report Printer status as CSI ? 1 0  n  (ready).
+     *     or CSI ? 1 1  n  (not ready).
+     *     Ps = 2 5  -> Report UDK status as CSI ? 2 0  n  (unlocked)
+     *     or CSI ? 2 1  n  (locked).
+     *     Ps = 2 6  -> Report Keyboard status as
+     *   CSI ? 2 7  ;  1  ;  0  ;  0  n  (North American).
+     *   The last two parameters apply to VT400 & up, and denote key-
+     *   board ready and LK01 respectively.
+     *     Ps = 5 3  -> Report Locator status as
+     *   CSI ? 5 3  n  Locator available, if compiled-in, or
+     *   CSI ? 5 0  n  No Locator, if not.
+     */
     Terminal.prototype.deviceStatus = function(params) {
       if (!this.prefix) {
         switch (params[0]) {
@@ -3533,12 +3608,15 @@
       }
     };
 
+
     /**
      * Additions
      */
 
-    // CSI Ps @
-    // Insert Ps (Blank) Character(s) (default = 1) (ICH).
+  	/**
+     * CSI Ps @
+     * Insert Ps (Blank) Character(s) (default = 1) (ICH).
+     */
     Terminal.prototype.insertChars = function(params) {
       var param, row, j, ch;
 
@@ -3555,9 +3633,11 @@
       }
     };
 
-    // CSI Ps E
-    // Cursor Next Line Ps Times (default = 1) (CNL).
-    // same as CSI Ps B ?
+  	/**
+     * CSI Ps E
+     * Cursor Next Line Ps Times (default = 1) (CNL).
+     * same as CSI Ps B ?
+     */
     Terminal.prototype.cursorNextLine = function(params) {
       var param = params[0];
       if (param < 1) param = 1;
@@ -3568,9 +3648,12 @@
       this.x = 0;
     };
 
-    // CSI Ps F
-    // Cursor Preceding Line Ps Times (default = 1) (CNL).
-    // reuse CSI Ps A ?
+
+  	/**
+     * CSI Ps F
+     * Cursor Preceding Line Ps Times (default = 1) (CNL).
+     * reuse CSI Ps A ?
+     */
     Terminal.prototype.cursorPrecedingLine = function(params) {
       var param = params[0];
       if (param < 1) param = 1;
@@ -3579,16 +3662,22 @@
       this.x = 0;
     };
 
-    // CSI Ps G
-    // Cursor Character Absolute  [column] (default = [row,1]) (CHA).
+
+  	/**
+     * CSI Ps G
+     * Cursor Character Absolute  [column] (default = [row,1]) (CHA).
+     */
     Terminal.prototype.cursorCharAbsolute = function(params) {
       var param = params[0];
       if (param < 1) param = 1;
       this.x = param - 1;
     };
 
-    // CSI Ps L
-    // Insert Ps Line(s) (default = 1) (IL).
+
+  	/**
+     * CSI Ps L
+     * Insert Ps Line(s) (default = 1) (IL).
+     */
     Terminal.prototype.insertLines = function(params) {
       var param, row, j;
 
@@ -3611,8 +3700,11 @@
       this.updateRange(this.scrollBottom);
     };
 
-    // CSI Ps M
-    // Delete Ps Line(s) (default = 1) (DL).
+
+  	/**
+     * CSI Ps M
+     * Delete Ps Line(s) (default = 1) (DL).
+     */
     Terminal.prototype.deleteLines = function(params) {
       var param, row, j;
 
@@ -3635,8 +3727,11 @@
       this.updateRange(this.scrollBottom);
     };
 
-    // CSI Ps P
-    // Delete Ps Character(s) (default = 1) (DCH).
+
+  	/**
+     * CSI Ps P
+     * Delete Ps Character(s) (default = 1) (DCH).
+     */
     Terminal.prototype.deleteChars = function(params) {
       var param, row, ch;
 
@@ -3652,8 +3747,10 @@
       }
     };
 
-    // CSI Ps X
-    // Erase Ps Character(s) (default = 1) (ECH).
+  	/**
+     * CSI Ps X
+     * Erase Ps Character(s) (default = 1) (ECH).
+     */
     Terminal.prototype.eraseChars = function(params) {
       var param, row, j, ch;
 
@@ -3669,8 +3766,10 @@
       }
     };
 
-    // CSI Pm `  Character Position Absolute
-    //   [column] (default = [row,1]) (HPA).
+  	/**
+     * CSI Pm `  Character Position Absolute
+     *   [column] (default = [row,1]) (HPA).
+     */
     Terminal.prototype.charPosAbsolute = function(params) {
       var param = params[0];
       if (param < 1) param = 1;
@@ -3680,9 +3779,12 @@
       }
     };
 
-    // 141 61 a * HPR -
-    // Horizontal Position Relative
-    // reuse CSI Ps C ?
+
+  	/**
+     * 141 61 a * HPR -
+     * Horizontal Position Relative
+     * reuse CSI Ps C ?
+     */
     Terminal.prototype.HPositionRelative = function(params) {
       var param = params[0];
       if (param < 1) param = 1;
@@ -3692,41 +3794,44 @@
       }
     };
 
-    // CSI Ps c  Send Device Attributes (Primary DA).
-    //     Ps = 0  or omitted -> request attributes from terminal.  The
-    //     response depends on the decTerminalID resource setting.
-    //     -> CSI ? 1 ; 2 c  (``VT100 with Advanced Video Option'')
-    //     -> CSI ? 1 ; 0 c  (``VT101 with No Options'')
-    //     -> CSI ? 6 c  (``VT102'')
-    //     -> CSI ? 6 0 ; 1 ; 2 ; 6 ; 8 ; 9 ; 1 5 ; c  (``VT220'')
-    //   The VT100-style response parameters do not mean anything by
-    //   themselves.  VT220 parameters do, telling the host what fea-
-    //   tures the terminal supports:
-    //     Ps = 1  -> 132-columns.
-    //     Ps = 2  -> Printer.
-    //     Ps = 6  -> Selective erase.
-    //     Ps = 8  -> User-defined keys.
-    //     Ps = 9  -> National replacement character sets.
-    //     Ps = 1 5  -> Technical characters.
-    //     Ps = 2 2  -> ANSI color, e.g., VT525.
-    //     Ps = 2 9  -> ANSI text locator (i.e., DEC Locator mode).
-    // CSI > Ps c
-    //   Send Device Attributes (Secondary DA).
-    //     Ps = 0  or omitted -> request the terminal's identification
-    //     code.  The response depends on the decTerminalID resource set-
-    //     ting.  It should apply only to VT220 and up, but xterm extends
-    //     this to VT100.
-    //     -> CSI  > Pp ; Pv ; Pc c
-    //   where Pp denotes the terminal type
-    //     Pp = 0  -> ``VT100''.
-    //     Pp = 1  -> ``VT220''.
-    //   and Pv is the firmware version (for xterm, this was originally
-    //   the XFree86 patch number, starting with 95).  In a DEC termi-
-    //   nal, Pc indicates the ROM cartridge registration number and is
-    //   always zero.
-    // More information:
-    //   xterm/charproc.c - line 2012, for more information.
-    //   vim responds with ^[[?0c or ^[[?1c after the terminal's response (?)
+
+  	/**
+     * CSI Ps c  Send Device Attributes (Primary DA).
+     *     Ps = 0  or omitted -> request attributes from terminal.  The
+     *     response depends on the decTerminalID resource setting.
+     *     -> CSI ? 1 ; 2 c  (``VT100 with Advanced Video Option'')
+     *     -> CSI ? 1 ; 0 c  (``VT101 with No Options'')
+     *     -> CSI ? 6 c  (``VT102'')
+     *     -> CSI ? 6 0 ; 1 ; 2 ; 6 ; 8 ; 9 ; 1 5 ; c  (``VT220'')
+     *   The VT100-style response parameters do not mean anything by
+     *   themselves.  VT220 parameters do, telling the host what fea-
+     *   tures the terminal supports:
+     *     Ps = 1  -> 132-columns.
+     *     Ps = 2  -> Printer.
+     *     Ps = 6  -> Selective erase.
+     *     Ps = 8  -> User-defined keys.
+     *     Ps = 9  -> National replacement character sets.
+     *     Ps = 1 5  -> Technical characters.
+     *     Ps = 2 2  -> ANSI color, e.g., VT525.
+     *     Ps = 2 9  -> ANSI text locator (i.e., DEC Locator mode).
+     * CSI > Ps c
+     *   Send Device Attributes (Secondary DA).
+     *     Ps = 0  or omitted -> request the terminal's identification
+     *     code.  The response depends on the decTerminalID resource set-
+     *     ting.  It should apply only to VT220 and up, but xterm extends
+     *     this to VT100.
+     *     -> CSI  > Pp ; Pv ; Pc c
+     *   where Pp denotes the terminal type
+     *     Pp = 0  -> ``VT100''.
+     *     Pp = 1  -> ``VT220''.
+     *   and Pv is the firmware version (for xterm, this was originally
+     *   the XFree86 patch number, starting with 95).  In a DEC termi-
+     *   nal, Pc indicates the ROM cartridge registration number and is
+     *   always zero.
+     * More information:
+     *   xterm/charproc.c - line 2012, for more information.
+     *   vim responds with ^[[?0c or ^[[?1c after the terminal's response (?)
+		 */
     Terminal.prototype.sendDeviceAttributes = function(params) {
       if (params[0] > 0) return;
 
@@ -3756,8 +3861,11 @@
       }
     };
 
-    // CSI Pm d
-    // Line Position Absolute  [row] (default = [1,column]) (VPA).
+
+  	/**
+     * CSI Pm d
+     * Line Position Absolute  [row] (default = [1,column]) (VPA).
+     */
     Terminal.prototype.linePosAbsolute = function(params) {
       var param = params[0];
       if (param < 1) param = 1;
@@ -3767,8 +3875,11 @@
       }
     };
 
-    // 145 65 e * VPR - Vertical Position Relative
-    // reuse CSI Ps B ?
+
+  	/**
+     * 145 65 e * VPR - Vertical Position Relative
+     * reuse CSI Ps B ?
+     */
     Terminal.prototype.VPositionRelative = function(params) {
       var param = params[0];
       if (param < 1) param = 1;
@@ -3778,9 +3889,12 @@
       }
     };
 
-    // CSI Ps ; Ps f
-    //   Horizontal and Vertical Position [row;column] (default =
-    //   [1,1]) (HVP).
+
+  	/**
+     * CSI Ps ; Ps f
+     *   Horizontal and Vertical Position [row;column] (default =
+     *   [1,1]) (HVP).
+     */
     Terminal.prototype.HVPosition = function(params) {
       if (params[0] < 1) params[0] = 1;
       if (params[1] < 1) params[1] = 1;
@@ -3796,90 +3910,93 @@
       }
     };
 
-    // CSI Pm h  Set Mode (SM).
-    //     Ps = 2  -> Keyboard Action Mode (AM).
-    //     Ps = 4  -> Insert Mode (IRM).
-    //     Ps = 1 2  -> Send/receive (SRM).
-    //     Ps = 2 0  -> Automatic Newline (LNM).
-    // CSI ? Pm h
-    //   DEC Private Mode Set (DECSET).
-    //     Ps = 1  -> Application Cursor Keys (DECCKM).
-    //     Ps = 2  -> Designate USASCII for character sets G0-G3
-    //     (DECANM), and set VT100 mode.
-    //     Ps = 3  -> 132 Column Mode (DECCOLM).
-    //     Ps = 4  -> Smooth (Slow) Scroll (DECSCLM).
-    //     Ps = 5  -> Reverse Video (DECSCNM).
-    //     Ps = 6  -> Origin Mode (DECOM).
-    //     Ps = 7  -> Wraparound Mode (DECAWM).
-    //     Ps = 8  -> Auto-repeat Keys (DECARM).
-    //     Ps = 9  -> Send Mouse X & Y on button press.  See the sec-
-    //     tion Mouse Tracking.
-    //     Ps = 1 0  -> Show toolbar (rxvt).
-    //     Ps = 1 2  -> Start Blinking Cursor (att610).
-    //     Ps = 1 8  -> Print form feed (DECPFF).
-    //     Ps = 1 9  -> Set print extent to full screen (DECPEX).
-    //     Ps = 2 5  -> Show Cursor (DECTCEM).
-    //     Ps = 3 0  -> Show scrollbar (rxvt).
-    //     Ps = 3 5  -> Enable font-shifting functions (rxvt).
-    //     Ps = 3 8  -> Enter Tektronix Mode (DECTEK).
-    //     Ps = 4 0  -> Allow 80 -> 132 Mode.
-    //     Ps = 4 1  -> more(1) fix (see curses resource).
-    //     Ps = 4 2  -> Enable Nation Replacement Character sets (DECN-
-    //     RCM).
-    //     Ps = 4 4  -> Turn On Margin Bell.
-    //     Ps = 4 5  -> Reverse-wraparound Mode.
-    //     Ps = 4 6  -> Start Logging.  This is normally disabled by a
-    //     compile-time option.
-    //     Ps = 4 7  -> Use Alternate Screen Buffer.  (This may be dis-
-    //     abled by the titeInhibit resource).
-    //     Ps = 6 6  -> Application keypad (DECNKM).
-    //     Ps = 6 7  -> Backarrow key sends backspace (DECBKM).
-    //     Ps = 1 0 0 0  -> Send Mouse X & Y on button press and
-    //     release.  See the section Mouse Tracking.
-    //     Ps = 1 0 0 1  -> Use Hilite Mouse Tracking.
-    //     Ps = 1 0 0 2  -> Use Cell Motion Mouse Tracking.
-    //     Ps = 1 0 0 3  -> Use All Motion Mouse Tracking.
-    //     Ps = 1 0 0 4  -> Send FocusIn/FocusOut events.
-    //     Ps = 1 0 0 5  -> Enable Extended Mouse Mode.
-    //     Ps = 1 0 1 0  -> Scroll to bottom on tty output (rxvt).
-    //     Ps = 1 0 1 1  -> Scroll to bottom on key press (rxvt).
-    //     Ps = 1 0 3 4  -> Interpret "meta" key, sets eighth bit.
-    //     (enables the eightBitInput resource).
-    //     Ps = 1 0 3 5  -> Enable special modifiers for Alt and Num-
-    //     Lock keys.  (This enables the numLock resource).
-    //     Ps = 1 0 3 6  -> Send ESC   when Meta modifies a key.  (This
-    //     enables the metaSendsEscape resource).
-    //     Ps = 1 0 3 7  -> Send DEL from the editing-keypad Delete
-    //     key.
-    //     Ps = 1 0 3 9  -> Send ESC  when Alt modifies a key.  (This
-    //     enables the altSendsEscape resource).
-    //     Ps = 1 0 4 0  -> Keep selection even if not highlighted.
-    //     (This enables the keepSelection resource).
-    //     Ps = 1 0 4 1  -> Use the CLIPBOARD selection.  (This enables
-    //     the selectToClipboard resource).
-    //     Ps = 1 0 4 2  -> Enable Urgency window manager hint when
-    //     Control-G is received.  (This enables the bellIsUrgent
-    //     resource).
-    //     Ps = 1 0 4 3  -> Enable raising of the window when Control-G
-    //     is received.  (enables the popOnBell resource).
-    //     Ps = 1 0 4 7  -> Use Alternate Screen Buffer.  (This may be
-    //     disabled by the titeInhibit resource).
-    //     Ps = 1 0 4 8  -> Save cursor as in DECSC.  (This may be dis-
-    //     abled by the titeInhibit resource).
-    //     Ps = 1 0 4 9  -> Save cursor as in DECSC and use Alternate
-    //     Screen Buffer, clearing it first.  (This may be disabled by
-    //     the titeInhibit resource).  This combines the effects of the 1
-    //     0 4 7  and 1 0 4 8  modes.  Use this with terminfo-based
-    //     applications rather than the 4 7  mode.
-    //     Ps = 1 0 5 0  -> Set terminfo/termcap function-key mode.
-    //     Ps = 1 0 5 1  -> Set Sun function-key mode.
-    //     Ps = 1 0 5 2  -> Set HP function-key mode.
-    //     Ps = 1 0 5 3  -> Set SCO function-key mode.
-    //     Ps = 1 0 6 0  -> Set legacy keyboard emulation (X11R6).
-    //     Ps = 1 0 6 1  -> Set VT220 keyboard emulation.
-    //     Ps = 2 0 0 4  -> Set bracketed paste mode.
-    // Modes:
-    //   http://vt100.net/docs/vt220-rm/chapter4.html
+
+  	/**
+     * CSI Pm h  Set Mode (SM).
+     *     Ps = 2  -> Keyboard Action Mode (AM).
+     *     Ps = 4  -> Insert Mode (IRM).
+     *     Ps = 1 2  -> Send/receive (SRM).
+     *     Ps = 2 0  -> Automatic Newline (LNM).
+     * CSI ? Pm h
+     *   DEC Private Mode Set (DECSET).
+     *     Ps = 1  -> Application Cursor Keys (DECCKM).
+     *     Ps = 2  -> Designate USASCII for character sets G0-G3
+     *     (DECANM), and set VT100 mode.
+     *     Ps = 3  -> 132 Column Mode (DECCOLM).
+     *     Ps = 4  -> Smooth (Slow) Scroll (DECSCLM).
+     *     Ps = 5  -> Reverse Video (DECSCNM).
+     *     Ps = 6  -> Origin Mode (DECOM).
+     *     Ps = 7  -> Wraparound Mode (DECAWM).
+     *     Ps = 8  -> Auto-repeat Keys (DECARM).
+     *     Ps = 9  -> Send Mouse X & Y on button press.  See the sec-
+     *     tion Mouse Tracking.
+     *     Ps = 1 0  -> Show toolbar (rxvt).
+     *     Ps = 1 2  -> Start Blinking Cursor (att610).
+     *     Ps = 1 8  -> Print form feed (DECPFF).
+     *     Ps = 1 9  -> Set print extent to full screen (DECPEX).
+     *     Ps = 2 5  -> Show Cursor (DECTCEM).
+     *     Ps = 3 0  -> Show scrollbar (rxvt).
+     *     Ps = 3 5  -> Enable font-shifting functions (rxvt).
+     *     Ps = 3 8  -> Enter Tektronix Mode (DECTEK).
+     *     Ps = 4 0  -> Allow 80 -> 132 Mode.
+     *     Ps = 4 1  -> more(1) fix (see curses resource).
+     *     Ps = 4 2  -> Enable Nation Replacement Character sets (DECN-
+     *     RCM).
+     *     Ps = 4 4  -> Turn On Margin Bell.
+     *     Ps = 4 5  -> Reverse-wraparound Mode.
+     *     Ps = 4 6  -> Start Logging.  This is normally disabled by a
+     *     compile-time option.
+     *     Ps = 4 7  -> Use Alternate Screen Buffer.  (This may be dis-
+     *     abled by the titeInhibit resource).
+     *     Ps = 6 6  -> Application keypad (DECNKM).
+     *     Ps = 6 7  -> Backarrow key sends backspace (DECBKM).
+     *     Ps = 1 0 0 0  -> Send Mouse X & Y on button press and
+     *     release.  See the section Mouse Tracking.
+     *     Ps = 1 0 0 1  -> Use Hilite Mouse Tracking.
+     *     Ps = 1 0 0 2  -> Use Cell Motion Mouse Tracking.
+     *     Ps = 1 0 0 3  -> Use All Motion Mouse Tracking.
+     *     Ps = 1 0 0 4  -> Send FocusIn/FocusOut events.
+     *     Ps = 1 0 0 5  -> Enable Extended Mouse Mode.
+     *     Ps = 1 0 1 0  -> Scroll to bottom on tty output (rxvt).
+     *     Ps = 1 0 1 1  -> Scroll to bottom on key press (rxvt).
+     *     Ps = 1 0 3 4  -> Interpret "meta" key, sets eighth bit.
+     *     (enables the eightBitInput resource).
+     *     Ps = 1 0 3 5  -> Enable special modifiers for Alt and Num-
+     *     Lock keys.  (This enables the numLock resource).
+     *     Ps = 1 0 3 6  -> Send ESC   when Meta modifies a key.  (This
+     *     enables the metaSendsEscape resource).
+     *     Ps = 1 0 3 7  -> Send DEL from the editing-keypad Delete
+     *     key.
+     *     Ps = 1 0 3 9  -> Send ESC  when Alt modifies a key.  (This
+     *     enables the altSendsEscape resource).
+     *     Ps = 1 0 4 0  -> Keep selection even if not highlighted.
+     *     (This enables the keepSelection resource).
+     *     Ps = 1 0 4 1  -> Use the CLIPBOARD selection.  (This enables
+     *     the selectToClipboard resource).
+     *     Ps = 1 0 4 2  -> Enable Urgency window manager hint when
+     *     Control-G is received.  (This enables the bellIsUrgent
+     *     resource).
+     *     Ps = 1 0 4 3  -> Enable raising of the window when Control-G
+     *     is received.  (enables the popOnBell resource).
+     *     Ps = 1 0 4 7  -> Use Alternate Screen Buffer.  (This may be
+     *     disabled by the titeInhibit resource).
+     *     Ps = 1 0 4 8  -> Save cursor as in DECSC.  (This may be dis-
+     *     abled by the titeInhibit resource).
+     *     Ps = 1 0 4 9  -> Save cursor as in DECSC and use Alternate
+     *     Screen Buffer, clearing it first.  (This may be disabled by
+     *     the titeInhibit resource).  This combines the effects of the 1
+     *     0 4 7  and 1 0 4 8  modes.  Use this with terminfo-based
+     *     applications rather than the 4 7  mode.
+     *     Ps = 1 0 5 0  -> Set terminfo/termcap function-key mode.
+     *     Ps = 1 0 5 1  -> Set Sun function-key mode.
+     *     Ps = 1 0 5 2  -> Set HP function-key mode.
+     *     Ps = 1 0 5 3  -> Set SCO function-key mode.
+     *     Ps = 1 0 6 0  -> Set legacy keyboard emulation (X11R6).
+     *     Ps = 1 0 6 1  -> Set VT220 keyboard emulation.
+     *     Ps = 2 0 0 4  -> Set bracketed paste mode.
+     * Modes:
+     *   http: *vt100.net/docs/vt220-rm/chapter4.html
+     */
     Terminal.prototype.setMode = function(params) {
       if (typeof params === 'object') {
         var l = params.length
@@ -4002,86 +4119,88 @@
       }
     };
 
-    // CSI Pm l  Reset Mode (RM).
-    //     Ps = 2  -> Keyboard Action Mode (AM).
-    //     Ps = 4  -> Replace Mode (IRM).
-    //     Ps = 1 2  -> Send/receive (SRM).
-    //     Ps = 2 0  -> Normal Linefeed (LNM).
-    // CSI ? Pm l
-    //   DEC Private Mode Reset (DECRST).
-    //     Ps = 1  -> Normal Cursor Keys (DECCKM).
-    //     Ps = 2  -> Designate VT52 mode (DECANM).
-    //     Ps = 3  -> 80 Column Mode (DECCOLM).
-    //     Ps = 4  -> Jump (Fast) Scroll (DECSCLM).
-    //     Ps = 5  -> Normal Video (DECSCNM).
-    //     Ps = 6  -> Normal Cursor Mode (DECOM).
-    //     Ps = 7  -> No Wraparound Mode (DECAWM).
-    //     Ps = 8  -> No Auto-repeat Keys (DECARM).
-    //     Ps = 9  -> Don't send Mouse X & Y on button press.
-    //     Ps = 1 0  -> Hide toolbar (rxvt).
-    //     Ps = 1 2  -> Stop Blinking Cursor (att610).
-    //     Ps = 1 8  -> Don't print form feed (DECPFF).
-    //     Ps = 1 9  -> Limit print to scrolling region (DECPEX).
-    //     Ps = 2 5  -> Hide Cursor (DECTCEM).
-    //     Ps = 3 0  -> Don't show scrollbar (rxvt).
-    //     Ps = 3 5  -> Disable font-shifting functions (rxvt).
-    //     Ps = 4 0  -> Disallow 80 -> 132 Mode.
-    //     Ps = 4 1  -> No more(1) fix (see curses resource).
-    //     Ps = 4 2  -> Disable Nation Replacement Character sets (DEC-
-    //     NRCM).
-    //     Ps = 4 4  -> Turn Off Margin Bell.
-    //     Ps = 4 5  -> No Reverse-wraparound Mode.
-    //     Ps = 4 6  -> Stop Logging.  (This is normally disabled by a
-    //     compile-time option).
-    //     Ps = 4 7  -> Use Normal Screen Buffer.
-    //     Ps = 6 6  -> Numeric keypad (DECNKM).
-    //     Ps = 6 7  -> Backarrow key sends delete (DECBKM).
-    //     Ps = 1 0 0 0  -> Don't send Mouse X & Y on button press and
-    //     release.  See the section Mouse Tracking.
-    //     Ps = 1 0 0 1  -> Don't use Hilite Mouse Tracking.
-    //     Ps = 1 0 0 2  -> Don't use Cell Motion Mouse Tracking.
-    //     Ps = 1 0 0 3  -> Don't use All Motion Mouse Tracking.
-    //     Ps = 1 0 0 4  -> Don't send FocusIn/FocusOut events.
-    //     Ps = 1 0 0 5  -> Disable Extended Mouse Mode.
-    //     Ps = 1 0 1 0  -> Don't scroll to bottom on tty output
-    //     (rxvt).
-    //     Ps = 1 0 1 1  -> Don't scroll to bottom on key press (rxvt).
-    //     Ps = 1 0 3 4  -> Don't interpret "meta" key.  (This disables
-    //     the eightBitInput resource).
-    //     Ps = 1 0 3 5  -> Disable special modifiers for Alt and Num-
-    //     Lock keys.  (This disables the numLock resource).
-    //     Ps = 1 0 3 6  -> Don't send ESC  when Meta modifies a key.
-    //     (This disables the metaSendsEscape resource).
-    //     Ps = 1 0 3 7  -> Send VT220 Remove from the editing-keypad
-    //     Delete key.
-    //     Ps = 1 0 3 9  -> Don't send ESC  when Alt modifies a key.
-    //     (This disables the altSendsEscape resource).
-    //     Ps = 1 0 4 0  -> Do not keep selection when not highlighted.
-    //     (This disables the keepSelection resource).
-    //     Ps = 1 0 4 1  -> Use the PRIMARY selection.  (This disables
-    //     the selectToClipboard resource).
-    //     Ps = 1 0 4 2  -> Disable Urgency window manager hint when
-    //     Control-G is received.  (This disables the bellIsUrgent
-    //     resource).
-    //     Ps = 1 0 4 3  -> Disable raising of the window when Control-
-    //     G is received.  (This disables the popOnBell resource).
-    //     Ps = 1 0 4 7  -> Use Normal Screen Buffer, clearing screen
-    //     first if in the Alternate Screen.  (This may be disabled by
-    //     the titeInhibit resource).
-    //     Ps = 1 0 4 8  -> Restore cursor as in DECRC.  (This may be
-    //     disabled by the titeInhibit resource).
-    //     Ps = 1 0 4 9  -> Use Normal Screen Buffer and restore cursor
-    //     as in DECRC.  (This may be disabled by the titeInhibit
-    //     resource).  This combines the effects of the 1 0 4 7  and 1 0
-    //     4 8  modes.  Use this with terminfo-based applications rather
-    //     than the 4 7  mode.
-    //     Ps = 1 0 5 0  -> Reset terminfo/termcap function-key mode.
-    //     Ps = 1 0 5 1  -> Reset Sun function-key mode.
-    //     Ps = 1 0 5 2  -> Reset HP function-key mode.
-    //     Ps = 1 0 5 3  -> Reset SCO function-key mode.
-    //     Ps = 1 0 6 0  -> Reset legacy keyboard emulation (X11R6).
-    //     Ps = 1 0 6 1  -> Reset keyboard emulation to Sun/PC style.
-    //     Ps = 2 0 0 4  -> Reset bracketed paste mode.
+  	/**
+     * CSI Pm l  Reset Mode (RM).
+     *     Ps = 2  -> Keyboard Action Mode (AM).
+     *     Ps = 4  -> Replace Mode (IRM).
+     *     Ps = 1 2  -> Send/receive (SRM).
+     *     Ps = 2 0  -> Normal Linefeed (LNM).
+     * CSI ? Pm l
+     *   DEC Private Mode Reset (DECRST).
+     *     Ps = 1  -> Normal Cursor Keys (DECCKM).
+     *     Ps = 2  -> Designate VT52 mode (DECANM).
+     *     Ps = 3  -> 80 Column Mode (DECCOLM).
+     *     Ps = 4  -> Jump (Fast) Scroll (DECSCLM).
+     *     Ps = 5  -> Normal Video (DECSCNM).
+     *     Ps = 6  -> Normal Cursor Mode (DECOM).
+     *     Ps = 7  -> No Wraparound Mode (DECAWM).
+     *     Ps = 8  -> No Auto-repeat Keys (DECARM).
+     *     Ps = 9  -> Don't send Mouse X & Y on button press.
+     *     Ps = 1 0  -> Hide toolbar (rxvt).
+     *     Ps = 1 2  -> Stop Blinking Cursor (att610).
+     *     Ps = 1 8  -> Don't print form feed (DECPFF).
+     *     Ps = 1 9  -> Limit print to scrolling region (DECPEX).
+     *     Ps = 2 5  -> Hide Cursor (DECTCEM).
+     *     Ps = 3 0  -> Don't show scrollbar (rxvt).
+     *     Ps = 3 5  -> Disable font-shifting functions (rxvt).
+     *     Ps = 4 0  -> Disallow 80 -> 132 Mode.
+     *     Ps = 4 1  -> No more(1) fix (see curses resource).
+     *     Ps = 4 2  -> Disable Nation Replacement Character sets (DEC-
+     *     NRCM).
+     *     Ps = 4 4  -> Turn Off Margin Bell.
+     *     Ps = 4 5  -> No Reverse-wraparound Mode.
+     *     Ps = 4 6  -> Stop Logging.  (This is normally disabled by a
+     *     compile-time option).
+     *     Ps = 4 7  -> Use Normal Screen Buffer.
+     *     Ps = 6 6  -> Numeric keypad (DECNKM).
+     *     Ps = 6 7  -> Backarrow key sends delete (DECBKM).
+     *     Ps = 1 0 0 0  -> Don't send Mouse X & Y on button press and
+     *     release.  See the section Mouse Tracking.
+     *     Ps = 1 0 0 1  -> Don't use Hilite Mouse Tracking.
+     *     Ps = 1 0 0 2  -> Don't use Cell Motion Mouse Tracking.
+     *     Ps = 1 0 0 3  -> Don't use All Motion Mouse Tracking.
+     *     Ps = 1 0 0 4  -> Don't send FocusIn/FocusOut events.
+     *     Ps = 1 0 0 5  -> Disable Extended Mouse Mode.
+     *     Ps = 1 0 1 0  -> Don't scroll to bottom on tty output
+     *     (rxvt).
+     *     Ps = 1 0 1 1  -> Don't scroll to bottom on key press (rxvt).
+     *     Ps = 1 0 3 4  -> Don't interpret "meta" key.  (This disables
+     *     the eightBitInput resource).
+     *     Ps = 1 0 3 5  -> Disable special modifiers for Alt and Num-
+     *     Lock keys.  (This disables the numLock resource).
+     *     Ps = 1 0 3 6  -> Don't send ESC  when Meta modifies a key.
+     *     (This disables the metaSendsEscape resource).
+     *     Ps = 1 0 3 7  -> Send VT220 Remove from the editing-keypad
+     *     Delete key.
+     *     Ps = 1 0 3 9  -> Don't send ESC  when Alt modifies a key.
+     *     (This disables the altSendsEscape resource).
+     *     Ps = 1 0 4 0  -> Do not keep selection when not highlighted.
+     *     (This disables the keepSelection resource).
+     *     Ps = 1 0 4 1  -> Use the PRIMARY selection.  (This disables
+     *     the selectToClipboard resource).
+     *     Ps = 1 0 4 2  -> Disable Urgency window manager hint when
+     *     Control-G is received.  (This disables the bellIsUrgent
+     *     resource).
+     *     Ps = 1 0 4 3  -> Disable raising of the window when Control-
+     *     G is received.  (This disables the popOnBell resource).
+     *     Ps = 1 0 4 7  -> Use Normal Screen Buffer, clearing screen
+     *     first if in the Alternate Screen.  (This may be disabled by
+     *     the titeInhibit resource).
+     *     Ps = 1 0 4 8  -> Restore cursor as in DECRC.  (This may be
+     *     disabled by the titeInhibit resource).
+     *     Ps = 1 0 4 9  -> Use Normal Screen Buffer and restore cursor
+     *     as in DECRC.  (This may be disabled by the titeInhibit
+     *     resource).  This combines the effects of the 1 0 4 7  and 1 0
+     *     4 8  modes.  Use this with terminfo-based applications rather
+     *     than the 4 7  mode.
+     *     Ps = 1 0 5 0  -> Reset terminfo/termcap function-key mode.
+     *     Ps = 1 0 5 1  -> Reset Sun function-key mode.
+     *     Ps = 1 0 5 2  -> Reset HP function-key mode.
+     *     Ps = 1 0 5 3  -> Reset SCO function-key mode.
+     *     Ps = 1 0 6 0  -> Reset legacy keyboard emulation (X11R6).
+     *     Ps = 1 0 6 1  -> Reset keyboard emulation to Sun/PC style.
+     *     Ps = 2 0 0 4  -> Reset bracketed paste mode.
+     */
     Terminal.prototype.resetMode = function(params) {
       if (typeof params === 'object') {
         var l = params.length
@@ -4178,10 +4297,13 @@
       }
     };
 
-    // CSI Ps ; Ps r
-    //   Set Scrolling Region [top;bottom] (default = full size of win-
-    //   dow) (DECSTBM).
-    // CSI ? Pm r
+
+  	/**
+     * CSI Ps ; Ps r
+     *   Set Scrolling Region [top;bottom] (default = full size of win-
+     *   dow) (DECSTBM).
+     * CSI ? Pm r
+     */
     Terminal.prototype.setScrollRegion = function(params) {
       if (this.prefix) return;
       this.scrollTop = (params[0] || 1) - 1;
@@ -4190,26 +4312,35 @@
       this.y = 0;
     };
 
-    // CSI s
-    //   Save cursor (ANSI.SYS).
+
+  	/**
+     * CSI s
+     *   Save cursor (ANSI.SYS).
+     */
     Terminal.prototype.saveCursor = function(params) {
       this.savedX = this.x;
       this.savedY = this.y;
     };
 
-    // CSI u
-    //   Restore cursor (ANSI.SYS).
+
+  	/**
+     * CSI u
+     *   Restore cursor (ANSI.SYS).
+     */
     Terminal.prototype.restoreCursor = function(params) {
       this.x = this.savedX || 0;
       this.y = this.savedY || 0;
     };
 
+
     /**
      * Lesser Used
      */
 
-    // CSI Ps I
-    //   Cursor Forward Tabulation Ps tab stops (default = 1) (CHT).
+  	/**
+     * CSI Ps I
+     *   Cursor Forward Tabulation Ps tab stops (default = 1) (CHT).
+     */
     Terminal.prototype.cursorForwardTab = function(params) {
       var param = params[0] || 1;
       while (param--) {
@@ -4217,7 +4348,10 @@
       }
     };
 
-    // CSI Ps S  Scroll up Ps lines (default = 1) (SU).
+
+    /**
+     * CSI Ps S  Scroll up Ps lines (default = 1) (SU).
+     */
     Terminal.prototype.scrollUp = function(params) {
       var param = params[0] || 1;
       while (param--) {
@@ -4229,7 +4363,10 @@
       this.updateRange(this.scrollBottom);
     };
 
-    // CSI Ps T  Scroll down Ps lines (default = 1) (SD).
+
+  	/**
+     * CSI Ps T  Scroll down Ps lines (default = 1) (SD).
+     */
     Terminal.prototype.scrollDown = function(params) {
       var param = params[0] || 1;
       while (param--) {
@@ -4241,30 +4378,39 @@
       this.updateRange(this.scrollBottom);
     };
 
-    // CSI Ps ; Ps ; Ps ; Ps ; Ps T
-    //   Initiate highlight mouse tracking.  Parameters are
-    //   [func;startx;starty;firstrow;lastrow].  See the section Mouse
-    //   Tracking.
+
+  	/**
+     * CSI Ps ; Ps ; Ps ; Ps ; Ps T
+     *   Initiate highlight mouse tracking.  Parameters are
+     *   [func;startx;starty;firstrow;lastrow].  See the section Mouse
+     *   Tracking.
+     */
     Terminal.prototype.initMouseTracking = function(params) {
       // Relevant: DECSET 1001
     };
 
-    // CSI > Ps; Ps T
-    //   Reset one or more features of the title modes to the default
-    //   value.  Normally, "reset" disables the feature.  It is possi-
-    //   ble to disable the ability to reset features by compiling a
-    //   different default for the title modes into xterm.
-    //     Ps = 0  -> Do not set window/icon labels using hexadecimal.
-    //     Ps = 1  -> Do not query window/icon labels using hexadeci-
-    //     mal.
-    //     Ps = 2  -> Do not set window/icon labels using UTF-8.
-    //     Ps = 3  -> Do not query window/icon labels using UTF-8.
-    //   (See discussion of "Title Modes").
+
+  	/**
+     * CSI > Ps; Ps T
+     *   Reset one or more features of the title modes to the default
+     *   value.  Normally, "reset" disables the feature.  It is possi-
+     *   ble to disable the ability to reset features by compiling a
+     *   different default for the title modes into xterm.
+     *     Ps = 0  -> Do not set window/icon labels using hexadecimal.
+     *     Ps = 1  -> Do not query window/icon labels using hexadeci-
+     *     mal.
+     *     Ps = 2  -> Do not set window/icon labels using UTF-8.
+     *     Ps = 3  -> Do not query window/icon labels using UTF-8.
+     *   (See discussion of "Title Modes").
+     */
     Terminal.prototype.resetTitleModes = function(params) {
       ;
     };
 
-    // CSI Ps Z  Cursor Backward Tabulation Ps tab stops (default = 1) (CBT).
+
+  	/**
+     * CSI Ps Z  Cursor Backward Tabulation Ps tab stops (default = 1) (CBT).
+     */
     Terminal.prototype.cursorBackwardTab = function(params) {
       var param = params[0] || 1;
       while (param--) {
@@ -4272,7 +4418,10 @@
       }
     };
 
-    // CSI Ps b  Repeat the preceding graphic character Ps times (REP).
+
+  	/**
+     * CSI Ps b  Repeat the preceding graphic character Ps times (REP).
+     */
     Terminal.prototype.repeatPrecedingCharacter = function(params) {
       var param = params[0] || 1
         , line = this.lines[this.ybase + this.y]
@@ -4281,12 +4430,15 @@
       while (param--) line[this.x++] = ch;
     };
 
-    // CSI Ps g  Tab Clear (TBC).
-    //     Ps = 0  -> Clear Current Column (default).
-    //     Ps = 3  -> Clear All.
-    // Potentially:
-    //   Ps = 2  -> Clear Stops on Line.
-    //   http://vt100.net/annarbor/aaa-ug/section6.html
+
+  	/**
+     * CSI Ps g  Tab Clear (TBC).
+     *     Ps = 0  -> Clear Current Column (default).
+     *     Ps = 3  -> Clear All.
+     * Potentially:
+     *   Ps = 2  -> Clear Stops on Line.
+     *   http://vt100.net/annarbor/aaa-ug/section6.html
+     */
     Terminal.prototype.tabClear = function(params) {
       var param = params[0];
       if (param <= 0) {
@@ -4296,68 +4448,83 @@
       }
     };
 
-    // CSI Pm i  Media Copy (MC).
-    //     Ps = 0  -> Print screen (default).
-    //     Ps = 4  -> Turn off printer controller mode.
-    //     Ps = 5  -> Turn on printer controller mode.
-    // CSI ? Pm i
-    //   Media Copy (MC, DEC-specific).
-    //     Ps = 1  -> Print line containing cursor.
-    //     Ps = 4  -> Turn off autoprint mode.
-    //     Ps = 5  -> Turn on autoprint mode.
-    //     Ps = 1  0  -> Print composed display, ignores DECPEX.
-    //     Ps = 1  1  -> Print all pages.
+
+  	/**
+     * CSI Pm i  Media Copy (MC).
+     *     Ps = 0  -> Print screen (default).
+     *     Ps = 4  -> Turn off printer controller mode.
+     *     Ps = 5  -> Turn on printer controller mode.
+     * CSI ? Pm i
+     *   Media Copy (MC, DEC-specific).
+     *     Ps = 1  -> Print line containing cursor.
+     *     Ps = 4  -> Turn off autoprint mode.
+     *     Ps = 5  -> Turn on autoprint mode.
+     *     Ps = 1  0  -> Print composed display, ignores DECPEX.
+     *     Ps = 1  1  -> Print all pages.
+     */
     Terminal.prototype.mediaCopy = function(params) {
       ;
     };
 
-    // CSI > Ps; Ps m
-    //   Set or reset resource-values used by xterm to decide whether
-    //   to construct escape sequences holding information about the
-    //   modifiers pressed with a given key.  The first parameter iden-
-    //   tifies the resource to set/reset.  The second parameter is the
-    //   value to assign to the resource.  If the second parameter is
-    //   omitted, the resource is reset to its initial value.
-    //     Ps = 1  -> modifyCursorKeys.
-    //     Ps = 2  -> modifyFunctionKeys.
-    //     Ps = 4  -> modifyOtherKeys.
-    //   If no parameters are given, all resources are reset to their
-    //   initial values.
+
+  	/**
+     * CSI > Ps; Ps m
+     *   Set or reset resource-values used by xterm to decide whether
+     *   to construct escape sequences holding information about the
+     *   modifiers pressed with a given key.  The first parameter iden-
+     *   tifies the resource to set/reset.  The second parameter is the
+     *   value to assign to the resource.  If the second parameter is
+     *   omitted, the resource is reset to its initial value.
+     *     Ps = 1  -> modifyCursorKeys.
+     *     Ps = 2  -> modifyFunctionKeys.
+     *     Ps = 4  -> modifyOtherKeys.
+     *   If no parameters are given, all resources are reset to their
+     *   initial values.
+     */
     Terminal.prototype.setResources = function(params) {
       ;
     };
 
-    // CSI > Ps n
-    //   Disable modifiers which may be enabled via the CSI > Ps; Ps m
-    //   sequence.  This corresponds to a resource value of "-1", which
-    //   cannot be set with the other sequence.  The parameter identi-
-    //   fies the resource to be disabled:
-    //     Ps = 1  -> modifyCursorKeys.
-    //     Ps = 2  -> modifyFunctionKeys.
-    //     Ps = 4  -> modifyOtherKeys.
-    //   If the parameter is omitted, modifyFunctionKeys is disabled.
-    //   When modifyFunctionKeys is disabled, xterm uses the modifier
-    //   keys to make an extended sequence of functions rather than
-    //   adding a parameter to each function key to denote the modi-
-    //   fiers.
+
+  	/**
+     * CSI > Ps n
+     *   Disable modifiers which may be enabled via the CSI > Ps; Ps m
+     *   sequence.  This corresponds to a resource value of "-1", which
+     *   cannot be set with the other sequence.  The parameter identi-
+     *   fies the resource to be disabled:
+     *     Ps = 1  -> modifyCursorKeys.
+     *     Ps = 2  -> modifyFunctionKeys.
+     *     Ps = 4  -> modifyOtherKeys.
+     *   If the parameter is omitted, modifyFunctionKeys is disabled.
+     *   When modifyFunctionKeys is disabled, xterm uses the modifier
+     *   keys to make an extended sequence of functions rather than
+     *   adding a parameter to each function key to denote the modi-
+     *   fiers.
+     */
     Terminal.prototype.disableModifiers = function(params) {
       ;
     };
 
-    // CSI > Ps p
-    //   Set resource value pointerMode.  This is used by xterm to
-    //   decide whether to hide the pointer cursor as the user types.
-    //   Valid values for the parameter:
-    //     Ps = 0  -> never hide the pointer.
-    //     Ps = 1  -> hide if the mouse tracking mode is not enabled.
-    //     Ps = 2  -> always hide the pointer.  If no parameter is
-    //     given, xterm uses the default, which is 1 .
+
+  	/**
+     * CSI > Ps p
+     *   Set resource value pointerMode.  This is used by xterm to
+     *   decide whether to hide the pointer cursor as the user types.
+     *   Valid values for the parameter:
+     *     Ps = 0  -> never hide the pointer.
+     *     Ps = 1  -> hide if the mouse tracking mode is not enabled.
+     *     Ps = 2  -> always hide the pointer.  If no parameter is
+     *     given, xterm uses the default, which is 1 .
+     */
     Terminal.prototype.setPointerMode = function(params) {
       ;
     };
 
-    // CSI ! p   Soft terminal reset (DECSTR).
-    // http://vt100.net/docs/vt220-rm/table4-10.html
+
+		/**
+     * CSI ! p   Soft terminal reset (DECSTR).
+     * http://vt100.net/docs/vt220-rm/table4-10.html
+     */
     Terminal.prototype.softReset = function(params) {
       this.cursorHidden = false;
       this.insertMode = false;
@@ -4374,88 +4541,112 @@
       this.charsets = [null]; // ??
     };
 
-    // CSI Ps$ p
-    //   Request ANSI mode (DECRQM).  For VT300 and up, reply is
-    //     CSI Ps; Pm$ y
-    //   where Ps is the mode number as in RM, and Pm is the mode
-    //   value:
-    //     0 - not recognized
-    //     1 - set
-    //     2 - reset
-    //     3 - permanently set
-    //     4 - permanently reset
+
+  	/**
+     * CSI Ps$ p
+     *   Request ANSI mode (DECRQM).  For VT300 and up, reply is
+     *     CSI Ps; Pm$ y
+     *   where Ps is the mode number as in RM, and Pm is the mode
+     *   value:
+     *     0 - not recognized
+     *     1 - set
+     *     2 - reset
+     *     3 - permanently set
+     *     4 - permanently reset
+     */
     Terminal.prototype.requestAnsiMode = function(params) {
       ;
     };
 
-    // CSI ? Ps$ p
-    //   Request DEC private mode (DECRQM).  For VT300 and up, reply is
-    //     CSI ? Ps; Pm$ p
-    //   where Ps is the mode number as in DECSET, Pm is the mode value
-    //   as in the ANSI DECRQM.
+
+  	/**
+     * CSI ? Ps$ p
+     *   Request DEC private mode (DECRQM).  For VT300 and up, reply is
+     *     CSI ? Ps; Pm$ p
+     *   where Ps is the mode number as in DECSET, Pm is the mode value
+     *   as in the ANSI DECRQM.
+     */
     Terminal.prototype.requestPrivateMode = function(params) {
       ;
     };
 
-    // CSI Ps ; Ps " p
-    //   Set conformance level (DECSCL).  Valid values for the first
-    //   parameter:
-    //     Ps = 6 1  -> VT100.
-    //     Ps = 6 2  -> VT200.
-    //     Ps = 6 3  -> VT300.
-    //   Valid values for the second parameter:
-    //     Ps = 0  -> 8-bit controls.
-    //     Ps = 1  -> 7-bit controls (always set for VT100).
-    //     Ps = 2  -> 8-bit controls.
+
+  	/**
+     * CSI Ps ; Ps " p
+     *   Set conformance level (DECSCL).  Valid values for the first
+     *   parameter:
+     *     Ps = 6 1  -> VT100.
+     *     Ps = 6 2  -> VT200.
+     *     Ps = 6 3  -> VT300.
+     *   Valid values for the second parameter:
+     *     Ps = 0  -> 8-bit controls.
+     *     Ps = 1  -> 7-bit controls (always set for VT100).
+     *     Ps = 2  -> 8-bit controls.
+     */
     Terminal.prototype.setConformanceLevel = function(params) {
       ;
     };
 
-    // CSI Ps q  Load LEDs (DECLL).
-    //     Ps = 0  -> Clear all LEDS (default).
-    //     Ps = 1  -> Light Num Lock.
-    //     Ps = 2  -> Light Caps Lock.
-    //     Ps = 3  -> Light Scroll Lock.
-    //     Ps = 2  1  -> Extinguish Num Lock.
-    //     Ps = 2  2  -> Extinguish Caps Lock.
-    //     Ps = 2  3  -> Extinguish Scroll Lock.
+
+  	/**
+     * CSI Ps q  Load LEDs (DECLL).
+     *     Ps = 0  -> Clear all LEDS (default).
+     *     Ps = 1  -> Light Num Lock.
+     *     Ps = 2  -> Light Caps Lock.
+     *     Ps = 3  -> Light Scroll Lock.
+     *     Ps = 2  1  -> Extinguish Num Lock.
+     *     Ps = 2  2  -> Extinguish Caps Lock.
+     *     Ps = 2  3  -> Extinguish Scroll Lock.
+     */
     Terminal.prototype.loadLEDs = function(params) {
       ;
     };
 
-    // CSI Ps SP q
-    //   Set cursor style (DECSCUSR, VT520).
-    //     Ps = 0  -> blinking block.
-    //     Ps = 1  -> blinking block (default).
-    //     Ps = 2  -> steady block.
-    //     Ps = 3  -> blinking underline.
-    //     Ps = 4  -> steady underline.
+
+  	/**
+     * CSI Ps SP q
+     *   Set cursor style (DECSCUSR, VT520).
+     *     Ps = 0  -> blinking block.
+     *     Ps = 1  -> blinking block (default).
+     *     Ps = 2  -> steady block.
+     *     Ps = 3  -> blinking underline.
+     *     Ps = 4  -> steady underline.
+     */
     Terminal.prototype.setCursorStyle = function(params) {
       ;
     };
 
-    // CSI Ps " q
-    //   Select character protection attribute (DECSCA).  Valid values
-    //   for the parameter:
-    //     Ps = 0  -> DECSED and DECSEL can erase (default).
-    //     Ps = 1  -> DECSED and DECSEL cannot erase.
-    //     Ps = 2  -> DECSED and DECSEL can erase.
+
+  	/**
+     * CSI Ps " q
+     *   Select character protection attribute (DECSCA).  Valid values
+     *   for the parameter:
+     *     Ps = 0  -> DECSED and DECSEL can erase (default).
+     *     Ps = 1  -> DECSED and DECSEL cannot erase.
+     *     Ps = 2  -> DECSED and DECSEL can erase.
+     */
     Terminal.prototype.setCharProtectionAttr = function(params) {
       ;
     };
 
-    // CSI ? Pm r
-    //   Restore DEC Private Mode Values.  The value of Ps previously
-    //   saved is restored.  Ps values are the same as for DECSET.
+
+  	/**
+     * CSI ? Pm r
+     *   Restore DEC Private Mode Values.  The value of Ps previously
+     *   saved is restored.  Ps values are the same as for DECSET.
+     */
     Terminal.prototype.restorePrivateValues = function(params) {
       ;
     };
 
-    // CSI Pt; Pl; Pb; Pr; Ps$ r
-    //   Change Attributes in Rectangular Area (DECCARA), VT400 and up.
-    //     Pt; Pl; Pb; Pr denotes the rectangle.
-    //     Ps denotes the SGR attributes to change: 0, 1, 4, 5, 7.
-    // NOTE: xterm doesn't enable this code by default.
+
+  	/**
+     * CSI Pt; Pl; Pb; Pr; Ps$ r
+     *   Change Attributes in Rectangular Area (DECCARA), VT400 and up.
+     *     Pt; Pl; Pb; Pr denotes the rectangle.
+     *     Ps denotes the SGR attributes to change: 0, 1, 4, 5, 7.
+     * NOTE: xterm doesn't enable this code by default.
+     */
     Terminal.prototype.setAttrInRectangle = function(params) {
       var t = params[0]
         , l = params[1]
@@ -4479,11 +4670,13 @@
     };
 
 
-    // CSI Pc; Pt; Pl; Pb; Pr$ x
-    //   Fill Rectangular Area (DECFRA), VT420 and up.
-    //     Pc is the character to use.
-    //     Pt; Pl; Pb; Pr denotes the rectangle.
-    // NOTE: xterm doesn't enable this code by default.
+  	/**
+     * CSI Pc; Pt; Pl; Pb; Pr$ x
+     *   Fill Rectangular Area (DECFRA), VT420 and up.
+     *     Pc is the character to use.
+     *     Pt; Pl; Pb; Pr denotes the rectangle.
+     * NOTE: xterm doesn't enable this code by default.
+     */
     Terminal.prototype.fillRectangle = function(params) {
       var ch = params[0]
         , t = params[1]
@@ -4506,28 +4699,34 @@
       this.updateRange(params[3]);
     };
 
-    // CSI Ps ; Pu ' z
-    //   Enable Locator Reporting (DECELR).
-    //   Valid values for the first parameter:
-    //     Ps = 0  -> Locator disabled (default).
-    //     Ps = 1  -> Locator enabled.
-    //     Ps = 2  -> Locator enabled for one report, then disabled.
-    //   The second parameter specifies the coordinate unit for locator
-    //   reports.
-    //   Valid values for the second parameter:
-    //     Pu = 0  <- or omitted -> default to character cells.
-    //     Pu = 1  <- device physical pixels.
-    //     Pu = 2  <- character cells.
+
+  	/**
+     * CSI Ps ; Pu ' z
+     *   Enable Locator Reporting (DECELR).
+     *   Valid values for the first parameter:
+     *     Ps = 0  -> Locator disabled (default).
+     *     Ps = 1  -> Locator enabled.
+     *     Ps = 2  -> Locator enabled for one report, then disabled.
+     *   The second parameter specifies the coordinate unit for locator
+     *   reports.
+     *   Valid values for the second parameter:
+     *     Pu = 0  <- or omitted -> default to character cells.
+     *     Pu = 1  <- device physical pixels.
+     *     Pu = 2  <- character cells.
+     */
     Terminal.prototype.enableLocatorReporting = function(params) {
       var val = params[0] > 0;
       //this.mouseEvents = val;
       //this.decLocator = val;
     };
 
-    // CSI Pt; Pl; Pb; Pr$ z
-    //   Erase Rectangular Area (DECERA), VT400 and up.
-    //     Pt; Pl; Pb; Pr denotes the rectangle.
-    // NOTE: xterm doesn't enable this code by default.
+
+  	/**
+     * CSI Pt; Pl; Pb; Pr$ z
+     *   Erase Rectangular Area (DECERA), VT400 and up.
+     *     Pt; Pl; Pb; Pr denotes the rectangle.
+     * NOTE: xterm doesn't enable this code by default.
+     */
     Terminal.prototype.eraseRectangle = function(params) {
       var t = params[0]
         , l = params[1]
@@ -4553,9 +4752,11 @@
     };
 
 
-    // CSI P m SP }
-    // Insert P s Column(s) (default = 1) (DECIC), VT420 and up.
-    // NOTE: xterm doesn't enable this code by default.
+  	/**
+     * CSI P m SP }
+     * Insert P s Column(s) (default = 1) (DECIC), VT420 and up.
+     * NOTE: xterm doesn't enable this code by default.
+     */
     Terminal.prototype.insertColumns = function() {
       var param = params[0]
         , l = this.ybase + this.rows
@@ -4573,9 +4774,11 @@
     };
 
 
-    // CSI P m SP ~
-    // Delete P s Column(s) (default = 1) (DECDC), VT420 and up
-    // NOTE: xterm doesn't enable this code by default.
+  	/**
+     * CSI P m SP ~
+     * Delete P s Column(s) (default = 1) (DECDC), VT420 and up
+     * NOTE: xterm doesn't enable this code by default.
+     */
     Terminal.prototype.deleteColumns = function() {
       var param = params[0]
         , l = this.ybase + this.rows
