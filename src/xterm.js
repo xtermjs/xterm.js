@@ -259,7 +259,7 @@
      * Updates the composition view's position.
      */
     CompositionHelper.prototype.updateCompositionViewPosition = function() {
-      var cursor = document.querySelector('.terminal-cursor');
+      var cursor = this.terminal.element.querySelector('.terminal-cursor');
       term.compositionView.style.left = cursor.offsetLeft + 'px';
       term.compositionView.style.top = cursor.offsetTop + 'px';
     };
