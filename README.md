@@ -10,6 +10,14 @@ Xterm.js supplies a modular, event-based interface that lets developers build ad
 
 ![xterm.js screenshot](xtermjs.png)
 
+## Browser Support
+
+- Chrome	48+
+- Firefox	44+
+- Safari	8+
+- Internet Explorer	11+
+- Opera	35+
+
 ## Demo
 
 To launch the demo simply run:
