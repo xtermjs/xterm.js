@@ -230,7 +230,6 @@
         setTimeout(function () {
           // Ensure that the input has not already been sent
           if (self.isSendingComposition) {
-            console.log('send input ' + input + ' delayed');
             self.isSendingComposition = false;
             var input = self.textarea.value.substring(currentCompositionPosition.start, currentCompositionPosition.end);
             self.terminal.handler(input);
@@ -260,8 +259,8 @@
      */
     CompositionHelper.prototype.updateCompositionViewPosition = function() {
       var cursor = this.terminal.element.querySelector('.terminal-cursor');
-      term.compositionView.style.left = cursor.offsetLeft + 'px';
-      term.compositionView.style.top = cursor.offsetTop + 'px';
+      this.compositionView.style.left = cursor.offsetLeft + 'px';
+      this.compositionView.style.top = cursor.offsetTop + 'px';
     };
 
 
@@ -5226,6 +5225,7 @@
      */
 
     Terminal.EventEmitter = EventEmitter;
+    Terminal.CompositionHelper = CompositionHelper;
     Terminal.inherits = inherits;
 
     /**
