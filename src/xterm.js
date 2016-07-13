@@ -133,6 +133,14 @@
     };
 
 
+    /**
+     * Encapsulates the logic for handling compositionstart, compositionupdate and compositionend
+     * events, displaying the in-progress composition to the UI and forwarding the final composition
+     * to the handler.
+     * @param {HTMLTextAreaElement} textarea The textarea that xterm uses for input.
+     * @param {HTMLElement} compositionView The element to display the in-progress composition in.
+     * @param {Terminal} terminal The Terminal to forward the finished composition to.
+     */
     function CompositionHelper(textarea, compositionView, terminal) {
       this.textarea = textarea;
       this.compositionView = compositionView;
@@ -148,29 +156,38 @@
       // The position within the input textarea's value of the current composition.
       this.compositionPosition = { start: null, end: null };
 
+      // Whether a composition is in the process of being sent, setting this to false will cancel
+      // any in-progress composition.
       this.isSendingComposition = false;
     }
 
+    /**
+     * Handles the compositionstart event, activating the composition view.
+     */
     CompositionHelper.prototype.compositionstart = function() {
       this.isComposing = true;
       this.compositionPosition.start = this.textarea.value.length;
-      console.log('In compositionstart: compositionPosition=', this.compositionPosition);
       this.compositionView.textContent = '';
       this.compositionView.classList.add('active');
     };
 
+    /**
+     * Handles the compositionupdate event, updating the composition view.
+     * @param {CompositionEvent} ev The event.
+     */
     CompositionHelper.prototype.compositionupdate = function(ev) {
-
       this.compositionView.textContent = ev.data;
-      this.updateCursorPosition();
+      this.updateCompositionViewPosition();
       var self = this;
       setTimeout(function() {
         self.compositionPosition.end = self.textarea.value.length;
-
-        console.log('In compositionupdate: compositionPosition=', self.compositionPosition);
       }, 0);
     };
 
+    /**
+     * Handles the compositionend event, hiding the composition view and sending the composition to
+     * the handler.
+     */
     CompositionHelper.prototype.compositionend = function() {
       this.finalizeComposition(true);
     };
@@ -222,7 +239,10 @@
       }
     }
 
-    CompositionHelper.prototype.updateCursorPosition = function() {
+    /**
+     * Updates the composition view's position.
+     */
+    CompositionHelper.prototype.updateCompositionViewPosition = function() {
       var cursor = document.querySelector('.terminal-cursor');
       term.compositionView.style.left = cursor.offsetLeft + 'px';
       term.compositionView.style.top = cursor.offsetTop + 'px';
@@ -1449,7 +1469,7 @@
       }
 
       // TODO: Attach to refresh event instead?
-      term.compositionHelper.updateCursorPosition();
+      term.compositionHelper.updateCompositionViewPosition();
 
       this.emit('refresh', {element: this.element, start: start, end: end});
     };
