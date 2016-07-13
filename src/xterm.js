@@ -492,8 +492,8 @@
     };
 
     /**
-  	 * Clears all selected text, inside the terminal.
-  	 */
+     * Clears all selected text, inside the terminal.
+     */
 		Terminal.prototype.clearSelection = function() {
       var selectionBaseNode = window.getSelection().baseNode;
 
@@ -503,10 +503,10 @@
     };
 
     /**
-  	 * This function temporarily enables (leases) the contentEditable value of the terminal, which
-  	 * should be set back to false within 5 seconds at most.
-  	 */
-  	Terminal.prototype.leaseContentEditable = function (ms, callback) {
+     * This function temporarily enables (leases) the contentEditable value of the terminal, which
+     * should be set back to false within 5 seconds at most.
+     */
+    Terminal.prototype.leaseContentEditable = function (ms, callback) {
       var term = this;
 
       term.element.contentEditable = true;
@@ -608,7 +608,7 @@
      * @returns {string}
      * @static
      */
-  	Terminal.prepareCopiedTextForClipboard = function (text) {
+    Terminal.prepareCopiedTextForClipboard = function (text) {
       var space = String.fromCharCode(32),
           nonBreakingSpace = String.fromCharCode(160),
           allNonBreakingSpaces = new RegExp(nonBreakingSpace, 'g'),
@@ -640,11 +640,11 @@
     };
 
     /**
-  	 * Cancel the cut event completely.
-  	 * @param {Xterm} term The terminal on which to bind the cut event handling functionality.
-  	 * @static
-  	 */
-  	Terminal.bindCut = function(term) {
+     * Cancel the cut event completely.
+     * @param {Xterm} term The terminal on which to bind the cut event handling functionality.
+     * @static
+     */
+    Terminal.bindCut = function(term) {
       on(term.element, 'cut', function (ev) {
         ev.preventDefault();
       });
@@ -654,9 +654,9 @@
     /**
      * Do not perform the "drop" event. Altering the contents of the
      * terminal with drag n drop is unwanted behavior.
-  	 * @param {Xterm} term The terminal on which to bind the drop event handling functionality.
-  	 * @static
-  	 */
+     * @param {Xterm} term The terminal on which to bind the drop event handling functionality.
+     * @static
+     */
     Terminal.bindDrop = function (term) {
       on(term.element, 'drop', function (ev) {
         term.cancel(ev, true);
@@ -665,9 +665,9 @@
 
     /**
      * Cancel click handling on the given terminal
-  	 * @param {Xterm} term The terminal on which to bind the click event handling functionality.
-  	 * @static
-  	 */
+     * @param {Xterm} term The terminal on which to bind the click event handling functionality.
+     * @static
+     */
     Terminal.click = function (term) {
       on(term.element, 'click', function (ev) {
         term.cancel(ev, true);
@@ -1401,8 +1401,8 @@
     };
 
     /**
-  	 * Display the cursor element
-  	 */
+     * Display the cursor element
+     */
     Terminal.prototype.showCursor = function() {
       if (!this.cursorState) {
         this.cursorState = 1;
@@ -1411,8 +1411,8 @@
     };
 
     /**
-  	 * Scroll the terminal
-  	 */
+     * Scroll the terminal
+     */
     Terminal.prototype.scroll = function() {
       var row;
 
@@ -1454,9 +1454,9 @@
     };
 
     /**
-  	 * Scroll the display of the terminal
-  	 * @param {number} disp The number of lines to scroll down (negatives scroll up).
-  	 */
+     * Scroll the display of the terminal
+     * @param {number} disp The number of lines to scroll down (negatives scroll up).
+     */
     Terminal.prototype.scrollDisp = function(disp) {
       this.ydisp += disp;
 
@@ -2529,7 +2529,7 @@
     };
 
     /**
-  	 * Handle a keydown event
+     * Handle a keydown event
      * Key Resources:
      *   - https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
      * @param {KeyboardEvent} ev The keydown event to be handled.
@@ -2759,19 +2759,19 @@
     };
 
     /**
-  	 * Set the G level of the terminal
-  	 * @param g
-  	 */
+     * Set the G level of the terminal
+     * @param g
+     */
     Terminal.prototype.setgLevel = function(g) {
       this.glevel = g;
       this.charset = this.charsets[g];
     };
 
     /**
-  	 * Set the charset for the given G level of the terminal
-  	 * @param g
-  	 * @param charset
-  	 */
+     * Set the charset for the given G level of the terminal
+     * @param g
+     * @param charset
+     */
     Terminal.prototype.setgCharset = function(g, charset) {
       this.charsets[g] = charset;
       if (this.glevel === g) {
@@ -2780,7 +2780,7 @@
     };
 
     /**
-  	 * Handle a keypress event.
+     * Handle a keypress event.
      * Key Resources:
      *   - https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
      * @param {KeyboardEvent} ev The keypress event to be handled.
@@ -2825,9 +2825,9 @@
     };
 
     /**
-  	 * Send data for handling to the terminal
-  	 * @param {string} data
-  	 */
+     * Send data for handling to the terminal
+     * @param {string} data
+     */
     Terminal.prototype.send = function(data) {
       var self = this;
 
@@ -2842,9 +2842,9 @@
     };
 
     /**
-  	 * Ring the bell.
-  	 * Note: We could do sweet things with webaudio here
-  	 */
+     * Ring the bell.
+     * Note: We could do sweet things with webaudio here
+     */
     Terminal.prototype.bell = function() {
       if (!this.visualBell) return;
       var self = this;
@@ -2856,8 +2856,8 @@
     };
 
     /**
-  	 * Log the current state to the console.
-  	 */
+     * Log the current state to the console.
+     */
     Terminal.prototype.log = function() {
       if (!this.debug) return;
       if (!this.context.console || !this.context.console.log) return;
@@ -2866,8 +2866,8 @@
     };
 
     /**
-  	 * Log the current state as error to the console.
-  	 */
+     * Log the current state as error to the console.
+     */
     Terminal.prototype.error = function() {
       if (!this.debug) return;
       if (!this.context.console || !this.context.console.error) return;
@@ -2990,9 +2990,9 @@
     };
 
     /**
-  	 * Updates the range of rows to refresh
-  	 * @param {number} y The number of rows to refresh next.
-  	 */
+     * Updates the range of rows to refresh
+     * @param {number} y The number of rows to refresh next.
+     */
     Terminal.prototype.updateRange = function(y) {
       if (y < this.refreshStart) this.refreshStart = y;
       if (y > this.refreshEnd) this.refreshEnd = y;
@@ -3015,9 +3015,9 @@
 
 
     /**
-  	 * Setup the tab stops.
-  	 * @param {number} i
-  	 */
+     * Setup the tab stops.
+     * @param {number} i
+     */
     Terminal.prototype.setupStops = function(i) {
       if (i != null) {
         if (!this.tabs[i]) {
@@ -3035,9 +3035,9 @@
 
 
     /**
-  	 * Move the cursor to the previous tab stop from the given position (default is current).
-  	 * @param {number} x The position to move the cursor to the previous tab stop.
-  	 */
+     * Move the cursor to the previous tab stop from the given position (default is current).
+     * @param {number} x The position to move the cursor to the previous tab stop.
+     */
     Terminal.prototype.prevStop = function(x) {
       if (x == null) x = this.x;
       while (!this.tabs[--x] && x > 0);
@@ -3048,9 +3048,9 @@
 
 
     /**
-  	 * Move the cursor one tab stop forward from the given position (default is current).
-  	 * @param {number} x The position to move the cursor one tab stop forward.
-  	 */
+     * Move the cursor one tab stop forward from the given position (default is current).
+     * @param {number} x The position to move the cursor one tab stop forward.
+     */
     Terminal.prototype.nextStop = function(x) {
       if (x == null) x = this.x;
       while (!this.tabs[++x] && x < this.cols);
@@ -3061,10 +3061,10 @@
 
 
     /**
-  	 * Erase in the identified line everything from "x" to the end of the line (right).
-  	 * @param {number} x The column from which to start erasing to the end of the line.
-  	 * @param {number} y The line in which to operate.
-  	 */
+     * Erase in the identified line everything from "x" to the end of the line (right).
+     * @param {number} x The column from which to start erasing to the end of the line.
+     * @param {number} y The line in which to operate.
+     */
     Terminal.prototype.eraseRight = function(x, y) {
       var line = this.lines[this.ybase + y]
         , ch = [this.eraseAttr(), ' ', 1]; // xterm
@@ -3080,10 +3080,10 @@
 
 
     /**
-  	 * Erase in the identified line everything from "x" to the start of the line (left).
-  	 * @param {number} x The column from which to start erasing to the start of the line.
-  	 * @param {number} y The line in which to operate.
-  	 */
+     * Erase in the identified line everything from "x" to the start of the line (left).
+     * @param {number} x The column from which to start erasing to the start of the line.
+     * @param {number} y The line in which to operate.
+     */
     Terminal.prototype.eraseLeft = function(x, y) {
       var line = this.lines[this.ybase + y]
         , ch = [this.eraseAttr(), ' ', 1]; // xterm
@@ -3096,18 +3096,18 @@
 
 
     /**
-  	 * Erase all content in the given line
-  	 * @param {number} y The line to erase all of its contents.
-  	 */
+     * Erase all content in the given line
+     * @param {number} y The line to erase all of its contents.
+     */
     Terminal.prototype.eraseLine = function(y) {
       this.eraseRight(0, y);
     };
 
 
     /**
-  	 * Return the data array of a blank line/
-  	 * @param {number} cur First bunch of data for each "blank" character.
-  	 */
+     * Return the data array of a blank line/
+     * @param {number} cur First bunch of data for each "blank" character.
+     */
     Terminal.prototype.blankLine = function(cur) {
       var attr = cur
         ? this.eraseAttr()
@@ -3126,9 +3126,9 @@
 
 
     /**
-  	 * If cur return the back color xterm feature attribute. Else return defAttr.
-  	 * @param {object} cur
-  	 */
+     * If cur return the back color xterm feature attribute. Else return defAttr.
+     * @param {object} cur
+     */
     Terminal.prototype.ch = function(cur) {
       return cur
         ? [this.eraseAttr(), ' ', 1]
@@ -3137,9 +3137,9 @@
 
 
     /**
-  	 * Evaluate if the current erminal is the given argument.
-  	 * @param {object} term The terminal to evaluate
-  	 */
+     * Evaluate if the current erminal is the given argument.
+     * @param {object} term The terminal to evaluate
+     */
     Terminal.prototype.is = function(term) {
       var name = this.termName;
       return (name + '').indexOf(term) === 0;
@@ -3147,18 +3147,18 @@
 
 
     /**
-  	 * Emit the 'data' event and populate the given data.
-  	 * @param {string} data The data to populate in the event.
-  	 */
+     * Emit the 'data' event and populate the given data.
+     * @param {string} data The data to populate in the event.
+     */
     Terminal.prototype.handler = function(data) {
       this.emit('data', data);
     };
 
 
     /**
-  	 * Emit the 'title' event and populate the given title.
-  	 * @param {string} title The title to populate in the event.
-  	 */
+     * Emit the 'title' event and populate the given title.
+     * @param {string} title The title to populate in the event.
+     */
     Terminal.prototype.handleTitle = function(title) {
       this.emit('title', title);
     };
