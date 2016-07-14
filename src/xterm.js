@@ -2627,7 +2627,10 @@
     Terminal.prototype.keyDown = function(ev) {
       if (this.compositionHelper.isComposing || this.compositionHelper.isSendingComposition) {
         if (ev.keyCode === 229) {
-          // Continue composing
+          // Continue composing if the keyCode is the "composition character"
+          return;
+        } else if (ev.keyCode === 16 || ev.keyCode === 17 || ev.keyCode === 18) {
+          // Continue composing if the keyCode is a modifier key
           return;
         } else {
           // Finish composition immediately
