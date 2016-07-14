@@ -35,7 +35,6 @@ describe('CompositionHelper', function () {
       },
       handler: function (text) {
         handledText += text;
-        console.log('handler - ' + text);
       }
     }
     handledText = '';
@@ -71,7 +70,7 @@ describe('CompositionHelper', function () {
 
   describe('Input', function () {
     it('Should insert simple characters', function (done) {
-      // First character
+      // First character 'ㅇ'
       compositionHelper.compositionstart();
       compositionHelper.compositionupdate({ data: 'ㅇ' });
       textarea.value = 'ㅇ';
@@ -79,7 +78,7 @@ describe('CompositionHelper', function () {
         compositionHelper.compositionend();
         setTimeout(function() { // wait for any textarea updates
           assert.equal(handledText, 'ㅇ');
-          // Second character
+          // Second character 'ㅇ'
           compositionHelper.compositionstart();
           compositionHelper.compositionupdate({ data: 'ㅇ' });
           textarea.value = 'ㅇㅇ';
@@ -95,7 +94,7 @@ describe('CompositionHelper', function () {
     });
 
     it('Should insert complex characters', function (done) {
-      // First character
+      // First character '앙'
       compositionHelper.compositionstart();
       compositionHelper.compositionupdate({ data: 'ㅇ' });
       textarea.value = 'ㅇ';
@@ -109,7 +108,7 @@ describe('CompositionHelper', function () {
             compositionHelper.compositionend();
             setTimeout(function() { // wait for any textarea updates
               assert.equal(handledText, '앙');
-              // Second character
+              // Second character '앙'
               compositionHelper.compositionstart();
               compositionHelper.compositionupdate({ data: 'ㅇ' });
               textarea.value = '앙ㅇ';
@@ -135,7 +134,7 @@ describe('CompositionHelper', function () {
     });
 
     it('Should insert complex characters that change with following character', function (done) {
-      // First character
+      // First character '아'
       compositionHelper.compositionstart();
       compositionHelper.compositionupdate({ data: 'ㅇ' });
       textarea.value = 'ㅇ';
@@ -143,7 +142,7 @@ describe('CompositionHelper', function () {
         compositionHelper.compositionupdate({ data: '아' });
         textarea.value = '아';
         setTimeout(function() { // wait for any textarea updates
-          // Start second character in first character
+          // Start second character '아' in first character
           compositionHelper.compositionupdate({ data: '앙' });
           textarea.value = '앙';
           setTimeout(function() { // wait for any textarea updates
@@ -163,22 +162,93 @@ describe('CompositionHelper', function () {
       }, 0);
     });
 
-    it('Should insert multi-line charcters', function () {
-      // TODO: Implement a hiragana example
+    it('Should insert multi-characters compositions', function (done) {
+      // First character 'だ'
+      compositionHelper.compositionstart();
+      compositionHelper.compositionupdate({ data: 'd' });
+      textarea.value = 'd';
+      setTimeout(function() { // wait for any textarea updates
+        compositionHelper.compositionupdate({ data: 'だ' });
+        textarea.value = 'だ';
+        setTimeout(function() { // wait for any textarea updates
+          // Second character 'あ'
+          compositionHelper.compositionupdate({ data: 'だあ' });
+          textarea.value = 'だあ';
+          setTimeout(function() { // wait for any textarea updates
+            compositionHelper.compositionend();
+            setTimeout(function() { // wait for any textarea updates
+              assert.equal(handledText, 'だあ');
+              done();
+            }, 0);
+          }, 0);
+        }, 0);
+      }, 0);
     });
 
-    it('Should insert multi-line charcters that are converted to other characters', function () {
-      // TODO: Implement a hiragana -> kanji example
+    it('Should insert multi-character compositions that are converted to other characters with the same length', function (done) {
+      // First character 'だ'
+      compositionHelper.compositionstart();
+      compositionHelper.compositionupdate({ data: 'd' });
+      textarea.value = 'd';
+      setTimeout(function() { // wait for any textarea updates
+        compositionHelper.compositionupdate({ data: 'だ' });
+        textarea.value = 'だ';
+        setTimeout(function() { // wait for any textarea updates
+          // Second character 'ー'
+          compositionHelper.compositionupdate({ data: 'だー' });
+          textarea.value = 'だー';
+          setTimeout(function() { // wait for any textarea updates
+            // Convert to katakana 'ダー'
+            compositionHelper.compositionupdate({ data: 'ダー' });
+            textarea.value = 'ダー';
+            setTimeout(function() { // wait for any textarea updates
+              compositionHelper.compositionend();
+              setTimeout(function() { // wait for any textarea updates
+                assert.equal(handledText, 'ダー');
+                done();
+              }, 0);
+            }, 0);
+          }, 0);
+        }, 0);
+      }, 0);
+    })
+
+    it('Should insert multi-character compositions that are converted to other characters with different lengths', function (done) {
+      // First character 'い'
+      compositionHelper.compositionstart();
+      compositionHelper.compositionupdate({ data: 'い' });
+      textarea.value = 'い';
+      setTimeout(function() { // wait for any textarea updates
+        // Second character 'ま'
+        compositionHelper.compositionupdate({ data: 'いm' });
+        textarea.value = 'いm';
+        setTimeout(function() { // wait for any textarea updates
+          compositionHelper.compositionupdate({ data: 'いま' });
+          textarea.value = 'いま';
+          setTimeout(function() { // wait for any textarea updates
+            // Convert to kanji '今'
+            compositionHelper.compositionupdate({ data: '今' });
+            textarea.value = '今';
+            setTimeout(function() { // wait for any textarea updates
+              compositionHelper.compositionend();
+              setTimeout(function() { // wait for any textarea updates
+                assert.equal(handledText, '今');
+                done();
+              }, 0);
+            }, 0);
+          }, 0);
+        }, 0);
+      }, 0);
     });
 
-    it('Should insert non-composition charcters input immediately after composition characters', function () {
-      // First character
+    it('Should insert non-composition characters input immediately after composition characters', function (done) {
+      // First character 'ㅇ'
       compositionHelper.compositionstart();
       compositionHelper.compositionupdate({ data: 'ㅇ' });
       textarea.value = 'ㅇ';
       setTimeout(function() { // wait for any textarea updates
         compositionHelper.compositionend();
-        // Second character is non-composition character (1)
+        // Second character '1' (a non-composition character)
         textarea.value = 'ㅇ1';
         setTimeout(function() { // wait for any textarea updates
           assert.equal(handledText, 'ㅇ1');
