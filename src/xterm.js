@@ -259,8 +259,10 @@
      */
     CompositionHelper.prototype.updateCompositionViewPosition = function() {
       var cursor = this.terminal.element.querySelector('.terminal-cursor');
-      this.compositionView.style.left = cursor.offsetLeft + 'px';
-      this.compositionView.style.top = cursor.offsetTop + 'px';
+      if (cursor) {
+        this.compositionView.style.left = cursor.offsetLeft + 'px';
+        this.compositionView.style.top = cursor.offsetTop + 'px';
+      }
     };
 
 
