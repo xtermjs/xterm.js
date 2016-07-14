@@ -177,7 +177,7 @@
      */
     CompositionHelper.prototype.compositionupdate = function(ev) {
       this.compositionView.textContent = ev.data;
-      this.updateCompositionViewPosition();
+      this.updateCompositionElements();
       var self = this;
       setTimeout(function() {
         self.compositionPosition.end = self.textarea.value.length;
@@ -203,6 +203,7 @@
     CompositionHelper.prototype.finalizeComposition = function(waitForPropogation) {
       this.compositionView.classList.remove('active');
       this.isComposing = false;
+      this.clearTextareaPosition();
 
       if (!waitForPropogation) {
         // Cancel any delayed composition send requests and send the input immediately.
@@ -255,15 +256,27 @@
     }
 
     /**
-     * Updates the composition view's position.
+     * Positions the composition view on top of the cursor and the textarea just below it (so the
+     * IME helper dialog is positioned correctly).
      */
-    CompositionHelper.prototype.updateCompositionViewPosition = function() {
+    CompositionHelper.prototype.updateCompositionElements = function() {
       var cursor = this.terminal.element.querySelector('.terminal-cursor');
       if (cursor) {
         this.compositionView.style.left = cursor.offsetLeft + 'px';
         this.compositionView.style.top = cursor.offsetTop + 'px';
       }
+      this.textarea.style.left = cursor.offsetLeft + 'px';
+      this.textarea.style.top = (cursor.offsetTop + cursor.offsetHeight) + 'px';
     };
+
+    /**
+     * Clears the textarea's position so that the cursor does not blink on IE.
+     * @private
+     */
+    CompositionHelper.prototype.clearTextareaPosition = function() {
+      this.textarea.style.left = undefined;
+      this.textarea.style.top = undefined;
+    }
 
 
     /**
@@ -1485,7 +1498,7 @@
       }
 
       // TODO: Attach to refresh event instead?
-      term.compositionHelper.updateCompositionViewPosition();
+      term.compositionHelper.updateCompositionElements();
 
       this.emit('refresh', {element: this.element, start: start, end: end});
     };

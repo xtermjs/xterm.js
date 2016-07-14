@@ -53,11 +53,12 @@
 }
 
 .terminal .xterm-helper-textarea {
+    position: absolute;
     /*
      * HACK: to fix IE's blinking cursor
      * Move textarea out of the screen to the far left, so that the cursor is not visible.
      */
-    text-indent: -9999em;
+    left: -9999em;
     opacity: 0;
     width: 0;
     height: 0;
