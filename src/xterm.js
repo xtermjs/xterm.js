@@ -193,6 +193,35 @@
     };
 
     /**
+     * Handles the keydown event, routing any necessary events to the CompositionHelper functions.
+     * @return Whether the Terminal should continue processing the keydown event.
+     */
+    CompositionHelper.prototype.keydown = function(ev) {
+      if (this.isComposing || this.isSendingComposition) {
+        if (ev.keyCode === 229) {
+          // Continue composing if the keyCode is the "composition character"
+          return false;
+        } else if (ev.keyCode === 16 || ev.keyCode === 17 || ev.keyCode === 18) {
+          // Continue composing if the keyCode is a modifier key
+          return false;
+        } else {
+          // Finish composition immediately. This is mainly here for the case where enter is
+          // pressed and the handler needs to be triggered before the command is executed.
+          this.finalizeComposition(false);
+        }
+      }
+
+      if (ev.keyCode === 229) {
+        // If the "composition character" is used but gets to this point it means a non-composition
+        // character (eg. numbers and punctuation) was pressed when the IME was active.
+        this.handleAnyTextareaChanges();
+        return false;
+      }
+
+      return true;
+    }
+
+    /**
      * Finalizes the composition, resuming regular input actions. This is called when a composition
      * is ending.
      * @param {boolean} waitForPropogation Whether to wait for events to propogate before sending
@@ -740,15 +769,10 @@
         this.value = '';
       }, true);
 
-      on(term.textarea, 'compositionstart', function(ev) {
-        term.compositionHelper.compositionstart.bind(term.compositionHelper, ev)();
-      });
-      on(term.textarea, 'compositionupdate', function(ev) {
-        term.compositionHelper.compositionupdate.bind(term.compositionHelper, ev)();
-      });
-      on(term.textarea, 'compositionend', function(ev) {
-        term.compositionHelper.compositionend.bind(term.compositionHelper, ev)();
-      });
+      on(term.textarea, 'compositionstart', term.compositionHelper.compositionstart.bind(term.compositionHelper));
+      on(term.textarea, 'compositionupdate', term.compositionHelper.compositionupdate.bind(term.compositionHelper));
+      on(term.textarea, 'compositionend', term.compositionHelper.compositionend.bind(term.compositionHelper));
+      term.on('refresh', term.compositionHelper.updateCompositionElements.bind(term.compositionHelper));
     };
 
     /**
@@ -1510,9 +1534,6 @@
       if (parent) {
         this.element.appendChild(this.rowContainer);
       }
-
-      // TODO: Attach to refresh event instead?
-      term.compositionHelper.updateCompositionElements();
 
       this.emit('refresh', {element: this.element, start: start, end: end});
     };
@@ -2652,21 +2673,7 @@
      * @param {KeyboardEvent} ev The keydown event to be handled.
      */
     Terminal.prototype.keyDown = function(ev) {
-      if (this.compositionHelper.isComposing || this.compositionHelper.isSendingComposition) {
-        if (ev.keyCode === 229) {
-          // Continue composing if the keyCode is the "composition character"
-          return;
-        } else if (ev.keyCode === 16 || ev.keyCode === 17 || ev.keyCode === 18) {
-          // Continue composing if the keyCode is a modifier key
-          return;
-        } else {
-          // Finish composition immediately
-          this.compositionHelper.finalizeComposition(null);
-        }
-      }
-
-      if (ev.keyCode === 229) {
-        this.compositionHelper.handleAnyTextareaChanges();
+      if (this.compositionHelper.keydown.bind(this.compositionHelper)(ev)) {
         return;
       }
 
