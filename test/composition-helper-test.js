@@ -21,7 +21,11 @@ describe('CompositionHelper', function () {
       textContent: ''
     }
     textarea = {
-      value: ''
+      value: '',
+      style: {
+        left: 0,
+        top: 0
+      }
     }
     terminal = {
       element: {
@@ -54,8 +58,8 @@ describe('CompositionHelper', function () {
     it('should define CompositionHelper.prototype.handleAnyTextareaChanges', function () {
       assert.isDefined(Terminal.CompositionHelper.prototype.handleAnyTextareaChanges);
     });
-    it('should define CompositionHelper.prototype.updateCompositionViewPosition', function () {
-      assert.isDefined(Terminal.CompositionHelper.prototype.updateCompositionViewPosition);
+    it('should define CompositionHelper.prototype.updateCompositionElements', function () {
+      assert.isDefined(Terminal.CompositionHelper.prototype.updateCompositionElements);
     });
     it('should define CompositionHelper.isComposing', function () {
       assert.isDefined(compositionHelper.isComposing);
@@ -165,6 +169,22 @@ describe('CompositionHelper', function () {
 
     it('Should insert multi-line charcters that are converted to other characters', function () {
       // TODO: Implement a hiragana -> kanji example
+    });
+
+    it('Should insert non-composition charcters input immediately after composition characters', function () {
+      // First character
+      compositionHelper.compositionstart();
+      compositionHelper.compositionupdate({ data: 'ㅇ' });
+      textarea.value = 'ㅇ';
+      setTimeout(function() { // wait for any textarea updates
+        compositionHelper.compositionend();
+        // Second character is non-composition character (1)
+        textarea.value = 'ㅇ1';
+        setTimeout(function() { // wait for any textarea updates
+          assert.equal(handledText, 'ㅇ1');
+          done();
+        }, 0);
+      }, 0);
     });
   });
 });

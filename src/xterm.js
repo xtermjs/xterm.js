@@ -232,7 +232,16 @@
           // Ensure that the input has not already been sent
           if (self.isSendingComposition) {
             self.isSendingComposition = false;
-            var input = self.textarea.value.substring(currentCompositionPosition.start, currentCompositionPosition.end);
+            var input;
+            if (self.isComposing) {
+              // Use the end position to get the string if a new composition has started.
+              input = self.textarea.value.substring(currentCompositionPosition.start, currentCompositionPosition.end);
+            } else {
+              // Don't use the end position here in order to pick up any characters after the
+              // composition has finished, for example when typing a non-composition character
+              // (eg. 2) after a composition character.
+              input = self.textarea.value.substring(currentCompositionPosition.start);
+            }
             self.terminal.handler(input);
           }
         }, 0);
