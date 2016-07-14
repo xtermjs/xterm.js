@@ -239,12 +239,17 @@
       }
     }
 
+    /**
+     * Apply any changes made to the textarea after the current event chain is allowed to complete.
+     * This should be called when not currently composing but a keydown event with the "composition
+     * character" (229) is triggered, in order to allow non-composition text to be entered when an
+     * IME is active.
+     */
     CompositionHelper.prototype.handleAnyTextareaChanges = function() {
       var oldValue = this.textarea.value;
-
       var self = this;
       setTimeout(function() {
-        // Ensure no composition has started since the timeout
+        // Ignore if a composition has started since the timeout
         if (!self.isComposing) {
           var newValue = self.textarea.value;
           var diff = newValue.replace(oldValue, '');
