@@ -95,6 +95,7 @@
     color: #FFF;
     display: none;
     position: absolute;
+    white-space: nowrap;
 }
 
 .terminal .composition-view.active {
