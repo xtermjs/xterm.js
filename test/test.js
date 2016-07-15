@@ -88,7 +88,12 @@ describe('xterm.js', function() {
       xterm.showCursor = function() {};
       xterm.clearSelection = function() {};
       xterm.compositionHelper = {
-        isComposing: false
+        isComposing: false,
+        keydown: {
+          bind: function() {
+            return function() { return true; };
+          }
+        }
       };
     });
 
