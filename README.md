@@ -12,11 +12,12 @@ Xterm.js supplies a modular, event-based interface that lets developers build ad
 
 ## Browser Support
 
-- Chrome	48+
-- Firefox	44+
-- Safari	8+
-- Internet Explorer	11+
-- Opera	35+
+- Chrome 48+
+- Edge 13+
+- Firefox 44+
+- Internet Explorer 11+
+- Opera 35+
+- Safari 8+
 
 ## Demo
 
