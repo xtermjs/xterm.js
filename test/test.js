@@ -72,10 +72,16 @@ describe('xterm.js', function() {
   });
 
   describe('Third level shift', function() {
-    var ev = {
-      preventDefault: function() {},
-      stopPropagation: function() {}
-    };
+    var evKeyDown = {
+          preventDefault: function() {},
+          stopPropagation: function() {},
+      		type: 'keydown'
+        },
+        evKeyPress = {
+          preventDefault: function() {},
+          stopPropagation: function() {},
+      		type: 'keypress'
+        };
 
     beforeEach(function() {
       xterm.handler = function() {};
@@ -90,22 +96,22 @@ describe('xterm.js', function() {
 
       it('should not interfere with the alt key on keyDown', function() {
         assert.equal(
-          xterm.keyDown(Object.assign({}, ev, { altKey: true, keyCode: 81 })),
+          xterm.keyDown(Object.assign({}, evKeyDown, { altKey: true, keyCode: 81 })),
           true
         );
         assert.equal(
-          xterm.keyDown(Object.assign({}, ev, { altKey: true, keyCode: 192 })),
+          xterm.keyDown(Object.assign({}, evKeyDown, { altKey: true, keyCode: 192 })),
           true
         );
       });
 
       it('should interefere with the alt + arrow keys', function() {
         assert.equal(
-          xterm.keyDown(Object.assign({}, ev, { altKey: true, keyCode: 37 })),
+          xterm.keyDown(Object.assign({}, evKeyDown, { altKey: true, keyCode: 37 })),
           false
         );
         assert.equal(
-          xterm.keyDown(Object.assign({}, ev, { altKey: true, keyCode: 39 })),
+          xterm.keyDown(Object.assign({}, evKeyDown, { altKey: true, keyCode: 39 })),
           false
         );
       });
@@ -122,13 +128,13 @@ describe('xterm.js', function() {
           if (keys.length === 0) done();
         });
 
-        xterm.keyPress(Object.assign({}, ev, { altKey: true, keyCode: 64 })); // @
+        xterm.keyPress(Object.assign({}, evKeyPress, { altKey: true, keyCode: 64 })); // @
         // Firefox
-        xterm.keyPress(Object.assign({}, ev, { altKey: true, charCode: 64, keyCode: 0 }));
-        xterm.keyPress(Object.assign({}, ev, { altKey: true, keyCode: 92 })); // \
-        xterm.keyPress(Object.assign({}, ev, { altKey: true, charCode: 92, keyCode: 0 }));
-        xterm.keyPress(Object.assign({}, ev, { altKey: true, keyCode: 124 })); // |
-        xterm.keyPress(Object.assign({}, ev, { altKey: true, charCode: 124, keyCode: 0 }));
+        xterm.keyPress(Object.assign({}, evKeyPress, { altKey: true, charCode: 64, keyCode: 0 }));
+        xterm.keyPress(Object.assign({}, evKeyPress, { altKey: true, keyCode: 92 })); // \
+        xterm.keyPress(Object.assign({}, evKeyPress, { altKey: true, charCode: 92, keyCode: 0 }));
+        xterm.keyPress(Object.assign({}, evKeyPress, { altKey: true, keyCode: 124 })); // |
+        xterm.keyPress(Object.assign({}, evKeyPress, { altKey: true, charCode: 124, keyCode: 0 }));
       });
     });
 
@@ -139,22 +145,22 @@ describe('xterm.js', function() {
 
       it('should not interfere with the alt + ctrl key on keyDown', function() {
         assert.equal(
-          xterm.keyDown(Object.assign({}, ev, { altKey: true, ctrlKey: true, keyCode: 81 })),
+          xterm.keyDown(Object.assign({}, evKeyDown, { altKey: true, ctrlKey: true, keyCode: 81 })),
           true
         );
         assert.equal(
-          xterm.keyDown(Object.assign({}, ev, { altKey: true, ctrlKey: true, keyCode: 192 })),
+          xterm.keyDown(Object.assign({}, evKeyDown, { altKey: true, ctrlKey: true, keyCode: 192 })),
           true
         );
       });
 
       it('should interefere with the alt + ctrl + arrow keys', function() {
         assert.equal(
-          xterm.keyDown(Object.assign({}, ev, { altKey: true, ctrlKey: true, keyCode: 37 })),
+          xterm.keyDown(Object.assign({}, evKeyDown, { altKey: true, ctrlKey: true, keyCode: 37 })),
           false
         );
         assert.equal(
-          xterm.keyDown(Object.assign({}, ev, { altKey: true, ctrlKey: true, keyCode: 39 })),
+          xterm.keyDown(Object.assign({}, evKeyDown, { altKey: true, ctrlKey: true, keyCode: 39 })),
           false
         );
       });
@@ -172,22 +178,22 @@ describe('xterm.js', function() {
         });
 
         xterm.keyPress(
-          Object.assign({}, ev, { altKey: true, ctrlKey: true, keyCode: 64 })
+          Object.assign({}, evKeyPress, { altKey: true, ctrlKey: true, keyCode: 64 })
         ); // @
         xterm.keyPress(
-          Object.assign({}, ev, { altKey: true, ctrlKey: true, charCode: 64, keyCode: 0 })
+          Object.assign({}, evKeyPress, { altKey: true, ctrlKey: true, charCode: 64, keyCode: 0 })
         );
         xterm.keyPress(
-          Object.assign({}, ev, { altKey: true, ctrlKey: true, keyCode: 92 })
+          Object.assign({}, evKeyPress, { altKey: true, ctrlKey: true, keyCode: 92 })
         ); // \
         xterm.keyPress(
-          Object.assign({}, ev, { altKey: true, ctrlKey: true, charCode: 92, keyCode: 0 })
+          Object.assign({}, evKeyPress, { altKey: true, ctrlKey: true, charCode: 92, keyCode: 0 })
         );
         xterm.keyPress(
-          Object.assign({}, ev, { altKey: true, ctrlKey: true, keyCode: 124 })
+          Object.assign({}, evKeyPress, { altKey: true, ctrlKey: true, keyCode: 124 })
         ); // |
         xterm.keyPress(
-          Object.assign({}, ev, { altKey: true, ctrlKey: true, charCode: 124, keyCode: 0 })
+          Object.assign({}, evKeyPress, { altKey: true, ctrlKey: true, charCode: 124, keyCode: 0 })
         );
       });
     });

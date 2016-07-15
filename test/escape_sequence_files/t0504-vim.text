@@ -1,0 +1,25 @@
+t0005-CR.in               t0024-CUD.in           t0056-ED.in
+t0005-CR.text             t0024-CUD.text         t0056-ED.text
+t0006-IND.in              t0025-CUP.in           t0057-ED3.in
+t0006-IND.text            t0025-CUP.text         t0057-ED3.note
+t0007-space_at_end.in     t0026-CNL.in           t0057-ED3.text
+t0007-space_at_end.text   t0026-CNL.text         t0060-DECSC.in
+t0008-BS.in               t0027-CPL.in           t0060-DECSC.text
+t0008-BS.text             t0027-CPL.text         t0061-CSI_s.in
+t0009-NEL.in              t0030-HPR.in           t0061-CSI_s.text
+t0009-NEL.text            t0030-HPR.text         t008x-alt_screen_ED.in
+t0010-RI.in               t0031-HPB.in           t008x-IRM.in
+t0010-RI.text             t0031-HPB.text         t008x-NLM.in
+t0011-RI_scroll.in        t0032-VPB.in           t008x-save_cursor_mode.in
+t0011-RI_scroll.text      t0032-VPB.text         t0500-bash_long_line.in
+t0012-VT.in               t0033-VPB_scroll.in    t0500-bash_long_line.text
+t0012-VT.text             t0033-VPB_scroll.text  t0501-bash_ls.in
+t0013-FF.in               t0034-VPR.in           t0501-bash_ls.text
+t0013-FF.text             t0034-VPR.text         t0502-bash_ls_color.in
+t0014-CAN.in              t0035-HVP.in           t0502-bash_ls_color.text
+t0014-CAN.text            t0035-HVP.text         t0503-zsh_ls_color.in
+t0015-SUB.in              t0040-REP.in           t0503-zsh_ls_color.text
+t0015-SUB.text            t0040-REP.text         typescript
+t0016-SU.in               t0050-ICH.in
+$ vim                                                      ~/vt100-to-html/test
+Script done on Sun 15 Aug 2010 11:54:14 PM EDT             ~/vt100-to-html/test
