@@ -2673,7 +2673,7 @@
      * @param {KeyboardEvent} ev The keydown event to be handled.
      */
     Terminal.prototype.keyDown = function(ev) {
-      if (this.compositionHelper.keydown.bind(this.compositionHelper)(ev)) {
+      if (!this.compositionHelper.keydown.bind(this.compositionHelper)(ev)) {
         return;
       }
 
