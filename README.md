@@ -29,13 +29,13 @@ To use an addon, just include the JavaScript file after xterm.js and before the 
 
 ```html
 <script src="node_modules/src/xterm.js"></script>
-<script src="node_modules/addons/linkify/linkify.js"></script>
+<script src="node_modules/addons/fit/fit.js"></script>
 ```
 
 ```js
 var xterm = new Terminal();
 // init code...
-xterm.linkify();
+xterm.fit();
 ```
 
 ## Contribution and License Agreement
