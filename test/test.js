@@ -57,6 +57,32 @@ describe('xterm.js', function() {
     });
   });
 
+  describe('attachCustomEventHandler', function () {
+    var evKeyDown = {
+      preventDefault: function() {},
+      stopPropagation: function() {},
+      type: 'keydown'
+    }
+
+    beforeEach(function() {
+      xterm.handler = function() {};
+      xterm.showCursor = function() {};
+      xterm.clearSelection = function() {};
+    });
+
+    it('should process the keydown event based on what the handler returns', function () {
+      assert.equal(xterm.keyDown(Object.assign({}, evKeyDown, { keyCode: 77 })), true);
+      xterm.attachCustomKeydownHandler(function (ev) {
+        return ev.keyCode === 77;
+      });
+      assert.equal(xterm.keyDown(Object.assign({}, evKeyDown, { keyCode: 77 })), true);
+      xterm.attachCustomKeydownHandler(function (ev) {
+        return ev.keyCode !== 77;
+      });
+      assert.equal(xterm.keyDown(Object.assign({}, evKeyDown, { keyCode: 77 })), false);
+    });
+  });
+
   describe('evaluateCopiedTextProcessing', function () {
     it('should strip trailing whitespaces and replace nbsps with spaces', function () {
 			var nonBreakingSpace = String.fromCharCode(160),

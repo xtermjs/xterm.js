@@ -2549,7 +2549,7 @@
      */
     Terminal.prototype.keyDown = function(ev) {
       if (this.customKeydownHandler && !this.customKeydownHandler(ev)) {
-        return;
+        return false;
       }
       var self = this;
       var result = this.evaluateKeyEscapeSequence(ev);
