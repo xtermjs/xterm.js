@@ -2674,7 +2674,7 @@
      */
     Terminal.prototype.keyDown = function(ev) {
       if (!this.compositionHelper.keydown.bind(this.compositionHelper)(ev)) {
-        return;
+        return false;
       }
 
       var self = this;
