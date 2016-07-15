@@ -5087,7 +5087,11 @@
           (term.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
           (term.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
 
-      // Don't invoke for arrows, pageDown, home, backspace, etc.
+    	if (ev.type == 'keypress') {
+        return thirdLevelKey;
+      }
+
+      // Don't invoke for arrows, pageDown, home, backspace, etc. (on non-keypress events)
       return thirdLevelKey && (!ev.keyCode || ev.keyCode > 47);
     }
 
