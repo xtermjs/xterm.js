@@ -51,11 +51,25 @@ var xterm = new Terminal();
 xterm.fit();
 ```
 
-## Contribution and License Agreement
+## Development and Contribution
+
+To contribute either code, documentation or issues to xterm.js please read the [Contributing document](CONTRIBUTING.md) before.
+
+The development of xterm.js does not require any special tool. All you need is an editor that supports JavaScript and a browser (if you would like to run the demo you will need Node.js to get all features).
+
+It is recommended though to use a development tool that uses xterm.js internally, to develop for xterm.js. [Eating our own dogfood](https://en.wikipedia.org/wiki/Eating_your_own_dog_food) has been proved extremely beneficial for this project. Known tools that use xterm.js internally are:
+
+#### [SourceLair](https://www.sourcelair.com)
+
+Visit https://lair.io/sourcelair/xterm and follow the instructions. All development will happen in your browser.
+
+#### [Visual Studio Code](http://code.visualstudio.com/)
+
+[Download Visual Studio Code](http://code.visualstudio.com/Download), clone xterm.js and you are all set.
+
+## License Agreement
 
 If you contribute code to this project, you are implicitly allowing your code to be distributed under the MIT license. You are also implicitly verifying that all code is your original work.
-
-## License
 
 Copyright (c) 2014-2016, SourceLair, Private Company ([www.sourcelair.com](https://www.sourcelair.com/home)) (MIT License)
 
