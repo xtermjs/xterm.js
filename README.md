@@ -21,6 +21,52 @@ npm start
 
 Then open http://0.0.0.0:3000 in a web browser (use http://127.0.0.1:3000 is running under Windows).
 
+## Example
+
+```
+npm install xterm
+```
+
+Server
+```
+var term = require('xterm');
+app.use(term.middleware());
+```
+
+Client
+```
+window.addEventListener('load', function() {
+  var socket = io.connect();
+  socket.on('connect', function() {
+    var term = new Terminal({
+      cols: 80,
+      rows: 24,
+      screenKeys: true
+    });
+
+    term.on('data', function(data) {
+      socket.emit('data', data);
+    });
+
+    term.on('title', function(title) {
+      document.title = title;
+    });
+
+    term.open(document.body);
+
+    term.write('\x1b[31mWelcome to term.js!\x1b[m\r\n');
+
+    socket.on('data', function(data) {
+      term.write(data);
+    });
+
+    socket.on('disconnect', function() {
+      term.destroy();
+    });
+  });
+}, false);
+```
+
 ## Addons
 
 Addons are JavaScript modules that attach functions to the `Terminal` prototype to extend its functionality. There are a handful available in the main repository in the `addons` directory, you can even write your own (though they may break when the internals of xterm.js change across versions).
