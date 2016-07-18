@@ -5,7 +5,7 @@
 - OS version: 
 - xterm.js version: 
 
-Steps to Reproduce:
+### Steps to reproduce
 
 1. 
 2. 
