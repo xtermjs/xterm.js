@@ -6,7 +6,7 @@
     "test",
     ".gitignore"
   ],
-  "main": "dist/bundle.js",
+  "main": "dist/xterm.js",
   "repository": "https://github.com/sourcelair/xterm.js",
   "license": "MIT",
   "devDependencies": {
