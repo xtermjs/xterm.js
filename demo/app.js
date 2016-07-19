@@ -4,8 +4,10 @@ var expressWs = require('express-ws')(app);
 var os = require('os');
 var pty = require('pty.js');
 
+app.use('/dist', express.static(__dirname + '/../dist'));
+// TODO: Expose CSS in some static dir, away from the JS
 app.use('/src', express.static(__dirname + '/../src'));
-app.use('/addons', express.static(__dirname + '/../addons'));
+//app.use('/addons', express.static(__dirname + '/../addons'));
 
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
