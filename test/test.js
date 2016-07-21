@@ -24,8 +24,8 @@ describe('xterm.js', function() {
       assert.equal(xterm.evaluateKeyEscapeSequence({ keyCode: 33 }).key, '\x1b[5~'); // CSI 5 ~
       assert.equal(xterm.evaluateKeyEscapeSequence({ keyCode: 34 }).key, '\x1b[6~'); // CSI 6 ~
       // End, Home
-      assert.equal(xterm.evaluateKeyEscapeSequence({ keyCode: 35 }).key, '\x1bOF'); // SS3 F
-      assert.equal(xterm.evaluateKeyEscapeSequence({ keyCode: 36 }).key, '\x1bOH'); // SS3 H
+      assert.equal(xterm.evaluateKeyEscapeSequence({ keyCode: 35 }).key, '\x1b[F'); // SS3 F
+      assert.equal(xterm.evaluateKeyEscapeSequence({ keyCode: 36 }).key, '\x1b[H'); // SS3 H
       // Left, up, right, down arrows
       assert.equal(xterm.evaluateKeyEscapeSequence({ keyCode: 37 }).key, '\x1b[D'); // CSI D
       assert.equal(xterm.evaluateKeyEscapeSequence({ keyCode: 38 }).key, '\x1b[A'); // CSI A
@@ -50,10 +50,10 @@ describe('xterm.js', function() {
       assert.equal(xterm.evaluateKeyEscapeSequence({ keyCode: 123 }).key, '\x1b[24~'); // CSI 2 4 ~
     });
     it('should return \\x1b[5D for ctrl+left', function() {
-      assert.equal(xterm.evaluateKeyEscapeSequence({ ctrlKey: true, keyCode: 37 }).key, '\x1b[5D'); // CSI 5 D
+      assert.equal(xterm.evaluateKeyEscapeSequence({ ctrlKey: true, keyCode: 37 }).key, '\x1b[1;5D'); // CSI 5 D
     });
     it('should return \\x1b[5C for ctrl+right', function() {
-      assert.equal(xterm.evaluateKeyEscapeSequence({ ctrlKey: true, keyCode: 39 }).key, '\x1b[5C'); // CSI 5 C
+      assert.equal(xterm.evaluateKeyEscapeSequence({ ctrlKey: true, keyCode: 39 }).key, '\x1b[1;5C'); // CSI 5 C
     });
   });
 
