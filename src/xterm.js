@@ -307,9 +307,9 @@
       if (cursor) {
         this.compositionView.style.left = cursor.offsetLeft + 'px';
         this.compositionView.style.top = cursor.offsetTop + 'px';
+        this.textarea.style.left = cursor.offsetLeft + 'px';
+        this.textarea.style.top = (cursor.offsetTop + cursor.offsetHeight) + 'px';
       }
-      this.textarea.style.left = cursor.offsetLeft + 'px';
-      this.textarea.style.top = (cursor.offsetTop + cursor.offsetHeight) + 'px';
     };
 
     /**
@@ -625,18 +625,7 @@
      * Focus the terminal. Delegates focus handling to the terminal's DOM element.
      */
     Terminal.prototype.focus = function() {
-      if (document.activeElement === this.textarea) {
-        return;
-      }
-
-      if (this.sendFocus) {
-        this.send('\x1b[I');
-      }
-
-      this.element.classList.add('focus');
-      this.showCursor();
-      this.textarea.focus();
-      Terminal.focus = this;
+      return this.element.focus();
     };
 
     /**
@@ -646,11 +635,17 @@
      */
     Terminal.bindFocus = function (term) {
       on(term.element, 'focus', function (ev) {
+        if (Terminal.focus === term) {
+          return;
+        }
+
         if (term.sendFocus) {
           term.send('\x1b[I');
         }
 
+        term.element.classList.add('focus');
         term.showCursor();
+        term.textarea.focus();
         Terminal.focus = term;
         term.emit('focus', {terminal: term});
       });
@@ -660,18 +655,7 @@
      * Blur the terminal. Delegates blur handling to the terminal's DOM element.
      */
     Terminal.prototype.blur = function() {
-      if (Terminal.focus !== this) {
-        return;
-      }
-
-      this.element.classList.remove('focus');
-      this.cursorState = 0;
-      this.refresh(this.y, this.y);
-      this.textarea.blur();
-      if (this.sendFocus) {
-        this.send('\x1b[0]');
-      }
-      Terminal.focus = null;
+      return this.element.blur();
     };
 
     /**
@@ -681,6 +665,12 @@
      */
     Terminal.bindBlur = function (term) {
       on(term.element, 'blur', function (ev) {
+        if (Terminal.focus !== term) {
+          return;
+        }
+        term.element.classList.remove('focus');
+        term.refresh(term.y, term.y);
+        term.textarea.blur();
         if (term.sendFocus) {
           term.send('\x1b[O');
         }
@@ -696,6 +686,8 @@
       Terminal.bindPaste(this);
       Terminal.bindKeys(this);
       Terminal.bindCopy(this);
+      Terminal.bindFocus(this);
+      Terminal.bindBlur(this);
     };
 
     /**
@@ -881,12 +873,12 @@
       this.textarea.setAttribute('autocapitalize', 'off');
       this.textarea.setAttribute('spellcheck', 'false');
       this.textarea.tabIndex = 0;
-      this.textarea.onfocus = function() {
+      this.textarea.addEventListener('focus', function() {
         self.emit('focus', {terminal: self});
-      }
-      this.textarea.onblur = function() {
+      });
+      this.textarea.addEventListener('blur', function() {
         self.emit('blur', {terminal: self});
-      }
+      });
       this.helperContainer.appendChild(this.textarea);
 
       this.compositionView = document.createElement('div');
