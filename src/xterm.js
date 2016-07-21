@@ -2581,6 +2581,7 @@
         // The number of characters to scroll, if this is defined it will cancel the event
         scrollDisp: undefined
       };
+      var modifiers = ev.shiftKey << 0 | ev.altKey << 1 | ev.ctrlKey << 2 | ev.metaKey << 3;
       switch (ev.keyCode) {
         // backspace
         case 8:
@@ -2611,61 +2612,39 @@
           break;
         // left-arrow
         case 37:
-          if (ev.altKey) {
-            result.key = '\x1bb' // Jump a word back
-            result.cancel = true;
-            break;
-          }
-          if (ev.ctrlKey) {
-            result.key = '\x1b[5D'; // Jump a word back
-            break;
-          }
-          if (this.applicationCursor) {
-            result.key = '\x1bOD'; // SS3 as ^[O for 7-bit
-            break;
-          }
-          result.key = '\x1b[D';
+          if (modifiers)
+            result.key = '\x1b[1;' + (modifiers + 1) + 'D';
+          else if (this.applicationCursor)
+            result.key = '\x1bOD';
+          else
+            result.key = '\x1b[D';
           break;
         // right-arrow
         case 39:
-          if (ev.altKey) {
-            result.key = '\x1bf' // Jump a word forward
-            result.cancel = true;
-            break;
-          }
-          if (ev.ctrlKey) {
-            result.key = '\x1b[5C'; // Jump a word forward
-            break;
-          }
-          if (this.applicationCursor) {
+          if (modifiers)
+            result.key = '\x1b[1;' + (modifiers + 1) + 'C';
+          else if (this.applicationCursor)
             result.key = '\x1bOC';
-            break;
-          }
-          result.key = '\x1b[C';
+          else
+            result.key = '\x1b[C';
           break;
         // up-arrow
         case 38:
-          if (this.applicationCursor) {
+          if (modifiers)
+            result.key = '\x1b[1;' + (modifiers + 1) + 'A';
+          else if (this.applicationCursor)
             result.key = '\x1bOA';
-            break;
-          }
-          if (ev.ctrlKey) {
-            result.scrollDisp = -1;
-          } else {
+          else
             result.key = '\x1b[A';
-          }
           break;
         // down-arrow
         case 40:
-          if (this.applicationCursor) {
+          if (modifiers)
+            result.key = '\x1b[1;' + (modifiers + 1) + 'B';
+          else if (this.applicationCursor)
             result.key = '\x1bOB';
-            break;
-          }
-          if (ev.ctrlKey) {
-            result.scrollDisp = 1;
-          } else {
+          else
             result.key = '\x1b[B';
-          }
           break;
         // insert
         case 45:
@@ -2679,19 +2658,21 @@
         case 46: result.key = '\x1b[3~'; break;
         // home
         case 36:
-          if (this.applicationKeypad) {
+          if (modifiers)
+            result.key = '\x1b[1;' + (modifiers + 1) + 'H';
+          else if (this.applicationCursor)
             result.key = '\x1bOH';
-            break;
-          }
-          result.key = '\x1bOH';
+          else
+            result.key = '\x1b[H';
           break;
         // end
         case 35:
-          if (this.applicationKeypad) {
+          if (modifiers)
+            result.key = '\x1b[1;' + (modifiers + 1) + 'F';
+          else if (this.applicationCursor)
             result.key = '\x1bOF';
-            break;
-          }
-          result.key = '\x1bOF';
+          else
+            result.key = '\x1b[F';
           break;
         // page up
         case 33:
