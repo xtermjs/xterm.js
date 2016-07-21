@@ -1,5 +1,6 @@
 # xterm.js
 
+
 ![xterm.js build status](https://api.travis-ci.org/sourcelair/xterm.js.svg)
 
 Xterm.js is a full xterm clone, written in JavaScript.
