@@ -6,7 +6,7 @@
     "test",
     ".gitignore"
   ],
-  "main": "src/xterm.js",
+  "main": "dist/xterm.js",
   "repository": "https://github.com/sourcelair/xterm.js",
   "license": "MIT",
   "devDependencies": {
@@ -18,11 +18,14 @@
     "jsdoc": "3.4.0",
     "mocha": "2.5.3",
     "pty.js": "0.3.0",
-    "sleep": "^3.0.1"
+    "sleep": "^3.0.1",
+    "webpack": "^1.13.1"
   },
   "scripts": {
     "start": "node demo/app",
+    "dev": "webpack --watch",
     "test": "mocha --recursive",
+    "build": "webpack",
     "build:docs": "node_modules/.bin/jsdoc -c jsdoc.json"
   }
 }

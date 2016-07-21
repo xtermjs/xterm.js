@@ -24,7 +24,8 @@ function createTerminal() {
   socket = new WebSocket(socketURL);
 
   term.open(terminalContainer);
-  term.fit();
+  // TODO: Add fit addon back
+  //term.fit();
 
   socket.onopen = runRealTerminal;
   socket.onclose = runFakeTerminal;
