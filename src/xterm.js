@@ -2548,7 +2548,7 @@
      * @param {KeyboardEvent} ev The keydown event to be handled.
      */
     Terminal.prototype.keyDown = function(ev) {
-      if (this.customKeydownHandler && !this.customKeydownHandler(ev)) {
+      if (this.customKeydownHandler && this.customKeydownHandler(ev) === false) {
         return false;
       }
       var self = this;
