@@ -43,8 +43,26 @@
     position: relative;
 }
 
-.terminal:focus {
+.terminal.focus {
     outline: none;
+}
+
+.terminal .xterm-helpers {
+    position: absolute;
+    top: 0;
+}
+
+.terminal .xterm-helper-textarea {
+    position: absolute;
+    /*
+     * HACK: to fix IE's blinking cursor
+     * Move textarea out of the screen to the far left, so that the cursor is not visible.
+     */
+    left: -9999em;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    z-index: -10;
 }
 
 .terminal .terminal-cursor {
@@ -52,13 +70,13 @@
     color: #000;
 }
 
-.terminal:not(:focus) .terminal-cursor {
+.terminal:not(.focus) .terminal-cursor {
     outline: 1px solid #fff;
     outline-offset: -1px;
     background-color: transparent;
 }
 
-.terminal:focus .terminal-cursor.blinking {
+.terminal.focus .terminal-cursor.blinking {
     animation: blink-cursor 1.2s infinite step-end;
 }
 
@@ -71,6 +89,18 @@
         background-color: transparent;
         color: #FFF;
     }
+}
+
+.terminal .composition-view {
+    background: #000;
+    color: #FFF;
+    display: none;
+    position: absolute;
+    white-space: nowrap;
+}
+
+.terminal .composition-view.active {
+    display: block;
 }
 
 /*
