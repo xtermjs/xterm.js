@@ -625,7 +625,7 @@
      * Focus the terminal. Delegates focus handling to the terminal's DOM element.
      */
     Terminal.prototype.focus = function() {
-      return this.element.focus();
+      return this.textarea.focus();
     };
 
     /**
@@ -634,18 +634,12 @@
      * @static
      */
     Terminal.bindFocus = function (term) {
-      on(term.element, 'focus', function (ev) {
-        if (Terminal.focus === term) {
-          return;
-        }
-
+      on(term.textarea, 'focus', function (ev) {
         if (term.sendFocus) {
           term.send('\x1b[I');
         }
-
         term.element.classList.add('focus');
         term.showCursor();
-        term.textarea.focus();
         Terminal.focus = term;
         term.emit('focus', {terminal: term});
       });
@@ -655,7 +649,7 @@
      * Blur the terminal. Delegates blur handling to the terminal's DOM element.
      */
     Terminal.prototype.blur = function() {
-      return this.element.blur();
+      return this.textarea.blur();
     };
 
     /**
@@ -664,16 +658,12 @@
      * @static
      */
     Terminal.bindBlur = function (term) {
-      on(term.element, 'blur', function (ev) {
-        if (Terminal.focus !== term) {
-          return;
-        }
-        term.element.classList.remove('focus');
+      on(term.textarea, 'blur', function (ev) {
         term.refresh(term.y, term.y);
-        term.textarea.blur();
         if (term.sendFocus) {
           term.send('\x1b[O');
         }
+        term.element.classList.remove('focus');
         Terminal.focus = null;
         term.emit('blur', {terminal: term});
       });
