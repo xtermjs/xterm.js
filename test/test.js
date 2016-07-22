@@ -68,6 +68,13 @@ describe('xterm.js', function() {
       xterm.handler = function() {};
       xterm.showCursor = function() {};
       xterm.clearSelection = function() {};
+      xterm.compositionHelper = {
+        keydown: {
+          bind: function() {
+            return function () { return true; }
+          }
+        }
+      }
     });
 
     it('should process the keydown event based on what the handler returns', function () {
