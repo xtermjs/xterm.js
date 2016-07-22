@@ -438,6 +438,7 @@
       this.queue = '';
       this.scrollTop = 0;
       this.scrollBottom = this.rows - 1;
+      this.customKeydownHandler = null;
 
       // modes
       this.applicationKeypad = false;
@@ -2649,12 +2650,28 @@
     };
 
     /**
+     * Attaches a custom keydown handler which is run before keys are processed, giving consumers of
+     * xterm.js ultimate control as to what keys should be processed by the terminal and what keys
+     * should not.
+     * @param {function} customKeydownHandler The custom KeyboardEvent handler to attach. This is a
+     *   function that takes a KeyboardEvent, allowing consumers to stop propogation and/or prevent
+     *   the default action. The function returns whether the event should be processed by xterm.js.
+     */
+    Terminal.prototype.attachCustomKeydownHandler = function(customKeydownHandler) {
+      this.customKeydownHandler = customKeydownHandler;
+    }
+
+    /**
      * Handle a keydown event
      * Key Resources:
      *   - https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
      * @param {KeyboardEvent} ev The keydown event to be handled.
      */
     Terminal.prototype.keyDown = function(ev) {
+      if (this.customKeydownHandler && this.customKeydownHandler(ev) === false) {
+        return false;
+      }
+
       if (!this.compositionHelper.keydown.bind(this.compositionHelper)(ev)) {
         return false;
       }
