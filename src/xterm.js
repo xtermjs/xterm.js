@@ -324,7 +324,6 @@
       this.textarea.style.top = '';
     }
 
-
     /**
      * States
      */
