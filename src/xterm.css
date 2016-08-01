@@ -2171,9 +2171,9 @@
 }
 
 /**
- * All terminal rows should have explicitly declared height,
- * in order to allow child elements to adjust.
+ * All terminal rows should have explicitly declared height, in order to allow child elements to
+ * adjust. line-height:normal does not provide a fixed height for all unicode characters.
  */
 .terminal .xterm-rows > div {
-    line-height: normal;
+    line-height: 18px;
 }
