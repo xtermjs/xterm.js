@@ -303,6 +303,9 @@
      * IME helper dialog is positioned correctly).
      */
     CompositionHelper.prototype.updateCompositionElements = function() {
+      if (!this.isComposing) {
+        return;
+      }
       var cursor = this.terminal.element.querySelector('.terminal-cursor');
       if (cursor) {
         this.compositionView.style.left = cursor.offsetLeft + 'px';
@@ -317,10 +320,9 @@
      * @private
      */
     CompositionHelper.prototype.clearTextareaPosition = function() {
-      this.textarea.style.left = undefined;
-      this.textarea.style.top = undefined;
+      this.textarea.style.left = '';
+      this.textarea.style.top = '';
     }
-
 
     /**
      * States
