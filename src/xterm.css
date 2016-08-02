@@ -103,6 +103,20 @@
     display: block;
 }
 
+.terminal .xterm-viewport {
+    overflow-y: scroll;
+}
+
+.terminal .xterm-rows {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.terminal .xterm-scroll-area {
+    visibility: hidden;
+}
+
 .terminal .xterm-char-measure-element {
     display: inline-block;
     visibility: hidden;
