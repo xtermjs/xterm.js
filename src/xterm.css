@@ -103,6 +103,13 @@
     display: block;
 }
 
+.terminal .xterm-char-measure-element {
+    display: inline-block;
+    visibility: hidden;
+    position: absolute;
+    left: -9999em;
+}
+
 /*
  *  Determine default colors for xterm.js
  */
@@ -2168,12 +2175,4 @@
 
 .terminal .xterm-bg-color-255 {
     background-color: #eeeeee;
-}
-
-/**
- * All terminal rows should have explicitly declared height,
- * in order to allow child elements to adjust.
- */
-.terminal .xterm-rows > div {
-    line-height: normal;
 }

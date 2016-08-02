@@ -324,6 +324,24 @@
       this.textarea.style.top = '';
     }
 
+    function Viewport(terminal, viewportElement, charMeasureElement) {
+      this.terminal = terminal;
+      this.viewportElement = viewportElement;
+      this.charMeasureElement = charMeasureElement;
+      this.currentHeight = 0;
+
+      this.terminal.on('refresh', this.refreshRowHeight.bind(this));
+    }
+
+    Viewport.prototype.refreshRowHeight = function() {
+      var size = this.charMeasureElement.getBoundingClientRect();
+      if (size.height > 0 && size.height !== this.currentHeight) {
+        this.currentHeight = size.height;
+        this.terminal.rowContainer.style.lineHeight = size.height + 'px';
+        this.terminal.rowContainer.style.height = size.height * this.terminal.rows;
+      }
+    }
+
     /**
      * States
      */
@@ -787,7 +805,6 @@
       return row;
     };
 
-
     /**
      * Opens the terminal within an element.
      *
@@ -841,7 +858,13 @@
       this.element.classList.add('terminal');
       this.element.classList.add('xterm');
       this.element.classList.add('xterm-theme-' + this.theme);
+
+      this.element.style.height
       this.element.setAttribute('tabindex', 0);
+
+      this.viewportElement = document.createElement('div');
+      this.viewportElement.classList.add('xterm-viewport');
+      this.element.appendChild(this.viewportElement);
 
       /*
       * Create the container that will hold the lines of the terminal and then
@@ -849,7 +872,7 @@
       */
       this.rowContainer = document.createElement('div');
       this.rowContainer.classList.add('xterm-rows');
-      this.element.appendChild(this.rowContainer);
+      this.viewportElement.appendChild(this.rowContainer);
       this.children = [];
 
       /*
@@ -878,6 +901,13 @@
       this.compositionView.classList.add('composition-view');
       this.compositionHelper = new CompositionHelper(this.textarea, this.compositionView, this);
       this.helperContainer.appendChild(this.compositionView);
+
+      this.charMeasureElement = document.createElement('div');
+      this.charMeasureElement.classList.add('xterm-char-measure-element');
+      this.charMeasureElement.innerHTML = 'W';
+      this.helperContainer.appendChild(this.charMeasureElement);
+
+      this.viewport = new Viewport(this, this.viewportElement, this.charMeasureElement);
 
       for (; i < this.rows; i++) {
         this.insertRow();
@@ -1367,7 +1397,7 @@
       if (end - start >= this.rows / 2) {
         parent = this.element.parentNode;
         if (parent) {
-          this.element.removeChild(this.rowContainer);
+          this.viewportElement.removeChild(this.rowContainer);
         }
       }
 
@@ -1517,7 +1547,7 @@
       }
 
       if (parent) {
-        this.element.appendChild(this.rowContainer);
+        this.viewportElement.appendChild(this.rowContainer);
       }
 
       this.emit('refresh', {element: this.element, start: start, end: end});
