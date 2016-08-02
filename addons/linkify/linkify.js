@@ -100,7 +100,7 @@
       var startsWithProtocol = new RegExp('^' + protocolClause),
           urlHasProtocol = url.match(startsWithProtocol),
           href = (urlHasProtocol) ? url : 'http://' + url,
-          link = '<a href="' +  href + '" >' + url + '</a>',
+          link = '<a href="' +  href + '" target="_blank">' + url + '</a>',
           newHTML = nodeHTML.replace(url, link);
 
       line.innerHTML = line.innerHTML.replace(nodeHTML, newHTML);
