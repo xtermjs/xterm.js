@@ -325,31 +325,36 @@
     }
 
     function Viewport(terminal, viewportElement, charMeasureElement) {
+      // TODO: Remove cyclic dependency on Terminal
       this.terminal = terminal;
       this.viewportElement = viewportElement;
       this.charMeasureElement = charMeasureElement;
       this.scrollArea = document.createElement('div');
       this.scrollArea.classList.add('xterm-scroll-area');
       this.viewportElement.appendChild(this.scrollArea);
-      this.currentHeight = 0;
+      this.currentRowHeight = 0;
       this.lastScrollPosition = 0;
       this.waitingForScroll = false;
-      this.lastRecordedBufferLength = this.terminal.lines.length;
+      this.lastRecordedBufferLength = 0;
+      this.lastRecordedViewportHeight = 0;
 
-      //this.terminal.on('refresh', this.refreshRowHeight.bind(this));
-      // TODO: Attach this to a more sensible event
-      this.terminal.on('refresh', this.syncScrollArea.bind(this));
-      //this.viewportElement.addEventListener('scroll', this.onScroll.bind(this));
+      this.terminal.on('scroll', this.syncScrollArea.bind(this));
+      this.terminal.on('resize', this.syncScrollArea.bind(this));
       this.viewportElement.addEventListener('scroll', this.onScroll.bind(this));
+
+      this.syncScrollArea();
     }
 
     Viewport.prototype.refreshRowHeight = function() {
       var size = this.charMeasureElement.getBoundingClientRect();
       if (size.height > 0) {
-        if (size.height !== this.currentHeight) {
-          this.currentHeight = size.height;
+        if (size.height !== this.currentRowHeight) {
+          this.currentRowHeight = size.height;
           this.viewportElement.style.lineHeight = size.height + 'px';
-          this.viewportElement.style.height = size.height * this.terminal.rows + 'px';
+        }
+        if (this.lastRecordedViewportHeight !== this.terminal.rows) {
+          this.lastRecordedViewportHeight = this.terminal.rows;
+          this.viewportElement.style.height = size.height * this.terminal.rows + 'px'; 
         }
         this.scrollArea.style.height = (size.height * this.terminal.lines.length) + 'px';
       }
@@ -359,7 +364,10 @@
       if (this.lastRecordedBufferLength !== this.terminal.lines.length) {
         this.lastRecordedBufferLength = this.terminal.lines.length;
         this.refreshRowHeight();
-        this.viewportElement.scrollTop = this.terminal.ydisp * this.currentHeight;
+      }
+      var scrollTop = this.terminal.ydisp * this.currentRowHeight;
+      if (this.viewportElement.scrollTop !== scrollTop) {
+        this.viewportElement.scrollTop = scrollTop;
       }
     };
 
@@ -368,9 +376,9 @@
      * terminal to scroll to it.
      */
     Viewport.prototype.onScroll = function(ev) {
-      var newRow = Math.round(this.viewportElement.scrollTop / this.currentHeight);
+      var newRow = Math.round(this.viewportElement.scrollTop / this.currentRowHeight);
       var diff = newRow - this.terminal.ydisp;
-      this.terminal.scrollDisp(diff);
+      this.terminal.scrollDisp(diff, true);
     };
 
     /**
@@ -383,9 +391,9 @@
       // Fallback to WheelEvent.DOM_DELTA_PIXEL 
       var multiplier = 1;
       if (ev.deltaMode === WheelEvent.DOM_DELTA_LINE) {
-        multiplier = this.currentHeight;
+        multiplier = this.currentRowHeight;
       } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
-        multiplier = this.currentHeight * this.terminal.rows;
+        multiplier = this.currentRowHeight * this.terminal.rows;
       }
       this.viewportElement.scrollTop += ev.deltaY * multiplier;
     };
@@ -955,14 +963,12 @@
       this.charMeasureElement.innerHTML = 'W';
       this.helperContainer.appendChild(this.charMeasureElement);
 
-
-      this.viewport = new Viewport(this, this.viewportElement, this.charMeasureElement);
-
       for (; i < this.rows; i++) {
         this.insertRow();
       }
       this.parent.appendChild(this.element);
 
+      this.viewport = new Viewport(this, this.viewportElement, this.charMeasureElement);
 
       // Draw the screen.
       this.refresh(0, this.rows - 1);
@@ -1650,20 +1656,27 @@
       this.updateRange(this.scrollTop);
       this.updateRange(this.scrollBottom);
 
-      this.viewport.syncScrollArea();
+      this.emit('scroll', this.ydisp);
     };
 
     /**
      * Scroll the display of the terminal
      * @param {number} disp The number of lines to scroll down (negatives scroll up).
+     * @param {boolean} suppressScrollEvent Don't emit the scroll event as scrollDisp. This is used
+     * to avoid unwanted events being handled by the veiwport when the event was triggered from the
+     * viewport originally.
      */
-    Terminal.prototype.scrollDisp = function(disp) {
+    Terminal.prototype.scrollDisp = function(disp, suppressScrollEvent) {
       this.ydisp += disp;
 
       if (this.ydisp > this.ybase) {
         this.ydisp = this.ybase;
       } else if (this.ydisp < 0) {
         this.ydisp = 0;
+      }
+
+      if (!suppressScrollEvent) {
+        this.emit('scroll', this.ydisp);
       }
 
       this.refresh(0, this.rows - 1);
@@ -1681,6 +1694,7 @@
 
       if (this.ybase !== this.ydisp) {
         this.ydisp = this.ybase;
+        this.emit('scroll', this.ydisp);
         this.maxRange();
       }
 
