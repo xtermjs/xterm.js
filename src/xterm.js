@@ -413,6 +413,8 @@
         multiplier = this.currentRowHeight * this.terminal.rows;
       }
       this.viewportElement.scrollTop += ev.deltaY * multiplier;
+      // Prevent the page from scrolling when the terminal scrolls
+      ev.preventDefault();
     };
 
     /**
