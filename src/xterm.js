@@ -340,23 +340,22 @@
       // TODO: Attach this to a more sensible event
       this.terminal.on('refresh', this.syncScrollArea.bind(this));
       //this.viewportElement.addEventListener('scroll', this.onScroll.bind(this));
-      this.viewportElement.addEventListener('scroll', this.onScroll2.bind(this));
+      this.viewportElement.addEventListener('scroll', this.onScroll.bind(this));
     }
 
     Viewport.prototype.refreshRowHeight = function() {
       var size = this.charMeasureElement.getBoundingClientRect();
-      if (size.height > 0 && size.height !== this.currentHeight) {
-        this.currentHeight = size.height;
-        this.viewportElement.style.lineHeight = size.height + 'px';
-        this.viewportElement.style.height = size.height * this.terminal.rows + 'px';
+      if (size.height > 0) {
+        if (size.height !== this.currentHeight) {
+          this.currentHeight = size.height;
+          this.viewportElement.style.lineHeight = size.height + 'px';
+          this.viewportElement.style.height = size.height * this.terminal.rows + 'px';
+        }
+        this.scrollArea.style.height = (size.height * this.terminal.lines.length) + 'px';
       }
-      // TODO: Should this be lines.length - ybase? or lines.length - rows?
-      this.scrollArea.style.height = (size.height * this.terminal.lines.length) + 'px';
     };
 
     Viewport.prototype.syncScrollArea = function() {
-      //console.log('ybase: ' + this.terminal.ybase);
-      //console.log('ydisp: ' + this.terminal.ydisp);
       if (this.lastRecordedBufferLength !== this.terminal.lines.length) {
         this.lastRecordedBufferLength = this.terminal.lines.length;
         this.refreshRowHeight();
@@ -364,91 +363,31 @@
       }
     };
 
-    Viewport.prototype.onScroll2 = function(ev) {
-      console.log('scroll, scrollTop=' + this.viewportElement.scrollTop);
+    /**
+     * Handles scroll events on the viewport, calculating the new viewport and requesting the
+     * terminal to scroll to it.
+     */
+    Viewport.prototype.onScroll = function(ev) {
       var newRow = Math.round(this.viewportElement.scrollTop / this.currentHeight);
       var diff = newRow - this.terminal.ydisp;
-      console.log('scrolling to: ' + diff);
       this.terminal.scrollDisp(diff);
     };
 
-    Viewport.prototype.onScroll = function(ev) {
-      // This helps get around the case where scrollTop changes by 1 pixel by pressing up or down on the scrollbar
-      // It gets complicated as the scrollbar sometimes locks to a multiple of the row
-      //if (this.lastScrollPosition !== this.viewportElement.scrollTop) {
-        /*console.log('onScroll', ev);
-        console.log('lastScrollPosition: ' + this.lastScrollPosition);
-        console.log('         scrollTop: ' + this.viewportElement.scrollTop);*/
-        //this.viewportElement.scrollTop = Math.round(this.viewportElement.scrollTop);
-        //this.lastScrollPosition = this.viewportElement.scrollTop;
-        console.log('scrollTop=' + this.viewportElement.scrollTop);
-        var newRow = this.viewportElement.scrollTop / this.currentHeight;
-
-        if (newRow % 1 > 0) {
-          // Only accept new scroll events once it has actually scrolled
-          if (!this.waitingForScroll) {
-            this.waitingForScroll = true;
-            var diff = newRow - this.terminal.ydisp;
-            var multiplier = diff < 0 ? -1 : 1;
-            diff = Math.max(1, Math.round(Math.abs(diff))) * multiplier;
-            console.log('newRow=' + newRow + ', diff='+diff+', scrolling to=' + ((this.terminal.ydisp + diff) * this.currentHeight));
-
-            //this.terminal.scrollDisp(diff);
-            this.viewportElement.scrollTop = (this.terminal.ydisp + diff) * this.currentHeight;
-            this.waitingForScrollTop = (this.terminal.ydisp + diff) * this.currentHeight;
-            this.terminal.scrollDisp(newRow - this.terminal.ydisp);
-          }
-          ev.preventDefault();
-          ev.stopPropagation();
-          ev.stopImmediatePropagation();
-          return;
-        }
-
-        if (newRow !== this.terminal.ydisp) {
-          if (this.waitingForScrollTop !== this.viewportElement.scrollTop) {
-            console.log('wtf? this.waitingForScrollTop='+this.waitingForScrollTop+', this.viewportElement.scrollTop='+this.viewportElement.scrollTop);
-          }
-          this.waitingForScroll = false;
-          this.terminal.scrollDisp(newRow - this.terminal.ydisp);
-          ev.preventDefault();
-          ev.stopPropagation();
-          return;
-        }
-
-
-        /*var diff = newRow - this.terminal.ydisp;
-        console.log('newRow=' + newRow + ', diff=' + diff);
-        if (diff === 0) {
-          //console.log('diff = 0');
-          ev.preventDefault();
-          ev.stopPropagation();
-          return;
-        }
-        var multiplier = diff < 0 ? -1 : 1;
-        diff = Math.max(1, Math.round(Math.abs(diff))) * multiplier;
-        this.terminal.scrollDisp(diff);*/
-      //}
-      ev.preventDefault();
-      ev.stopPropagation();
-    };
-
+    /**
+     * Handles mouse wheel events by adjusting the viewport's scrollTop and delegating the actual
+     * scrolling to `onScroll`, this event needs to be attached manually by the consumer of
+     * `Viewport`.
+     * @param {WheelEvent} ev The mouse wheel event.
+     */
     Viewport.prototype.onWheel = function(ev) {
-      //var newRow = this.viewportElement.scrollTop / this.currentHeight;
-      //console.log('ydisp: ' + this.terminal.ydisp);
-      //console.log('this.viewportElement.scrollTop: ' + this.viewportElement.scrollTop);
-      //console.log('this.currentHeight: ' + this.currentHeight);
-      //console.log(ev);
-      //this.terminal.scrollDisp(this.terminal.ydisp - newRow);
-      /*var multiplier = ev.deltaY < 0 ? -1 : 1;
-      var diff = Math.max(1, Math.round(Math.abs(ev.deltaY / this.currentHeight)));
-
-      console.log('diff * multiplier: ' + diff * multiplier);
-      this.terminal.scrollDisp(diff * multiplier);*/
-
-      // Defer scroll logic to the onScroll function
-      this.viewportElement.scrollTop += ev.deltaY;
-
-      //this.lastScrollPosition = this.viewportElement.scrollTop;
+      // Fallback to WheelEvent.DOM_DELTA_PIXEL 
+      var multiplier = 1;
+      if (ev.deltaMode === WheelEvent.DOM_DELTA_LINE) {
+        multiplier = this.currentHeight;
+      } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+        multiplier = this.currentHeight * this.terminal.rows;
+      }
+      this.viewportElement.scrollTop += ev.deltaY * multiplier;
     };
 
     /**
@@ -1405,11 +1344,6 @@
         if (self.mouseEvents) return;
         if (self.applicationKeypad) return;
         self.viewport.onWheel(ev);
-        /*if (ev.type === 'DOMMouseScroll') {
-          self.scrollDisp(ev.detail < 0 ? -1 : 1);
-        } else {
-          self.scrollDisp(ev.wheelDeltaY > 0 ? -1 : 1);
-        }*/
         return self.cancel(ev);
       });
     };
