@@ -332,12 +332,15 @@
       this.scrollArea.classList.add('xterm-scroll-area');
       this.viewportElement.appendChild(this.scrollArea);
       this.currentHeight = 0;
-      this.lastScrollPosition;
+      this.lastScrollPosition = 0;
+      this.waitingForScroll = false;
+      this.lastRecordedBufferLength = this.terminal.lines.length;
 
-      this.terminal.on('refresh', this.refreshRowHeight.bind(this));
+      //this.terminal.on('refresh', this.refreshRowHeight.bind(this));
       // TODO: Attach this to a more sensible event
       this.terminal.on('refresh', this.syncScrollArea.bind(this));
-      this.viewportElement.addEventListener('scroll', this.onScroll.bind(this));
+      //this.viewportElement.addEventListener('scroll', this.onScroll.bind(this));
+      this.viewportElement.addEventListener('scroll', this.onScroll2.bind(this));
     }
 
     Viewport.prototype.refreshRowHeight = function() {
@@ -354,34 +357,77 @@
     Viewport.prototype.syncScrollArea = function() {
       //console.log('ybase: ' + this.terminal.ybase);
       //console.log('ydisp: ' + this.terminal.ydisp);
-      this.viewportElement.scrollTop = this.terminal.ydisp * this.currentHeight;
+      if (this.lastRecordedBufferLength !== this.terminal.lines.length) {
+        this.lastRecordedBufferLength = this.terminal.lines.length;
+        this.refreshRowHeight();
+        this.viewportElement.scrollTop = this.terminal.ydisp * this.currentHeight;
+      }
+    };
+
+    Viewport.prototype.onScroll2 = function(ev) {
+      console.log('scroll, scrollTop=' + this.viewportElement.scrollTop);
+      var newRow = Math.round(this.viewportElement.scrollTop / this.currentHeight);
+      var diff = newRow - this.terminal.ydisp;
+      console.log('scrolling to: ' + diff);
+      this.terminal.scrollDisp(diff);
     };
 
     Viewport.prototype.onScroll = function(ev) {
-      console.log('onScroll', ev);
-      console.log('this.viewportElement.scrollTop: ' + this.viewportElement.scrollTop);
-      console.log('row: ' + Math.round(this.viewportElement.scrollTop / this.currentHeight));
-      console.log('lastScrollPosition: ' + this.lastScrollPosition);
-      console.log('         scrollTop: ' + this.viewportElement.scrollTop);
-
       // This helps get around the case where scrollTop changes by 1 pixel by pressing up or down on the scrollbar
       // It gets complicated as the scrollbar sometimes locks to a multiple of the row
-      if (this.lastScrollPosition !== this.viewportElement.scrollTop) {
-        console.log('in if');
-        this.lastScrollPosition = this.viewportElement.scrollTop;
+      //if (this.lastScrollPosition !== this.viewportElement.scrollTop) {
+        /*console.log('onScroll', ev);
+        console.log('lastScrollPosition: ' + this.lastScrollPosition);
+        console.log('         scrollTop: ' + this.viewportElement.scrollTop);*/
+        //this.viewportElement.scrollTop = Math.round(this.viewportElement.scrollTop);
+        //this.lastScrollPosition = this.viewportElement.scrollTop;
+        console.log('scrollTop=' + this.viewportElement.scrollTop);
         var newRow = this.viewportElement.scrollTop / this.currentHeight;
-        var diff = newRow - this.terminal.ydisp;
+
+        if (newRow % 1 > 0) {
+          // Only accept new scroll events once it has actually scrolled
+          if (!this.waitingForScroll) {
+            this.waitingForScroll = true;
+            var diff = newRow - this.terminal.ydisp;
+            var multiplier = diff < 0 ? -1 : 1;
+            diff = Math.max(1, Math.round(Math.abs(diff))) * multiplier;
+            console.log('newRow=' + newRow + ', diff='+diff+', scrolling to=' + ((this.terminal.ydisp + diff) * this.currentHeight));
+
+            //this.terminal.scrollDisp(diff);
+            this.viewportElement.scrollTop = (this.terminal.ydisp + diff) * this.currentHeight;
+            this.waitingForScrollTop = (this.terminal.ydisp + diff) * this.currentHeight;
+            this.terminal.scrollDisp(newRow - this.terminal.ydisp);
+          }
+          ev.preventDefault();
+          ev.stopPropagation();
+          ev.stopImmediatePropagation();
+          return;
+        }
+
+        if (newRow !== this.terminal.ydisp) {
+          if (this.waitingForScrollTop !== this.viewportElement.scrollTop) {
+            console.log('wtf? this.waitingForScrollTop='+this.waitingForScrollTop+', this.viewportElement.scrollTop='+this.viewportElement.scrollTop);
+          }
+          this.waitingForScroll = false;
+          this.terminal.scrollDisp(newRow - this.terminal.ydisp);
+          ev.preventDefault();
+          ev.stopPropagation();
+          return;
+        }
+
+
+        /*var diff = newRow - this.terminal.ydisp;
+        console.log('newRow=' + newRow + ', diff=' + diff);
         if (diff === 0) {
-          console.log('diff = 0');
+          //console.log('diff = 0');
           ev.preventDefault();
           ev.stopPropagation();
           return;
         }
         var multiplier = diff < 0 ? -1 : 1;
         diff = Math.max(1, Math.round(Math.abs(diff))) * multiplier;
-        console.log('onScroll diff: ' + diff);
-        this.terminal.scrollDisp(diff);
-      }
+        this.terminal.scrollDisp(diff);*/
+      //}
       ev.preventDefault();
       ev.stopPropagation();
     };
@@ -393,11 +439,15 @@
       //console.log('this.currentHeight: ' + this.currentHeight);
       //console.log(ev);
       //this.terminal.scrollDisp(this.terminal.ydisp - newRow);
-      var multiplier = ev.deltaY < 0 ? -1 : 1;
+      /*var multiplier = ev.deltaY < 0 ? -1 : 1;
       var diff = Math.max(1, Math.round(Math.abs(ev.deltaY / this.currentHeight)));
 
       console.log('diff * multiplier: ' + diff * multiplier);
-      this.terminal.scrollDisp(diff * multiplier);
+      this.terminal.scrollDisp(diff * multiplier);*/
+
+      // Defer scroll logic to the onScroll function
+      this.viewportElement.scrollTop += ev.deltaY;
+
       //this.lastScrollPosition = this.viewportElement.scrollTop;
     };
 
@@ -931,7 +981,7 @@
       */
       this.rowContainer = document.createElement('div');
       this.rowContainer.classList.add('xterm-rows');
-      this.viewportElement.appendChild(this.rowContainer);
+      this.element.appendChild(this.rowContainer);
       this.children = [];
 
       /*
@@ -1458,7 +1508,7 @@
       if (end - start >= this.rows / 2) {
         parent = this.element.parentNode;
         if (parent) {
-          this.viewportElement.removeChild(this.rowContainer);
+          this.element.removeChild(this.rowContainer);
         }
       }
 
@@ -1608,7 +1658,7 @@
       }
 
       if (parent) {
-        this.viewportElement.appendChild(this.rowContainer);
+        this.element.appendChild(this.rowContainer);
       }
 
       this.emit('refresh', {element: this.element, start: start, end: end});
