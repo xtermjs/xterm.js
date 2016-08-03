@@ -407,12 +407,23 @@
     Viewport.prototype.onWheel = function(ev) {
       // Fallback to WheelEvent.DOM_DELTA_PIXEL 
       var multiplier = 1;
-      if (ev.deltaMode === WheelEvent.DOM_DELTA_LINE) {
+      var delta = 0;
+      if (ev.type === 'DOMMouseScroll') {
+        if (ev.axis !== MouseScrollEvent.VERTICAL_AXIS) {
+          return;
+        } 
+        delta = ev.detail;
+        // Firefox treats ev.detail as lines, not pixels
         multiplier = this.currentRowHeight;
-      } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
-        multiplier = this.currentRowHeight * this.terminal.rows;
+      } else if (ev.type === 'mousewheel') {
+        delta = ev.deltaY
+        if (ev.deltaMode === WheelEvent.DOM_DELTA_LINE) {
+          multiplier = this.currentRowHeight;
+        } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+          multiplier = this.currentRowHeight * this.terminal.rows;
+        }
       }
-      this.viewportElement.scrollTop += ev.deltaY * multiplier;
+      this.viewportElement.scrollTop += delta * multiplier;
       // Prevent the page from scrolling when the terminal scrolls
       ev.preventDefault();
     };
