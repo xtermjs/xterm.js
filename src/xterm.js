@@ -324,8 +324,11 @@
       this.textarea.style.top = '';
     }
 
+    /**
+     * Represents the viewport of a terminal, the visible area within the larger buffer of output.
+     * Logic for the virtual scroll bar is included in this object.  
+     */
     function Viewport(terminal, viewportElement, charMeasureElement) {
-      // TODO: Remove cyclic dependency on Terminal
       this.terminal = terminal;
       this.viewportElement = viewportElement;
       this.charMeasureElement = charMeasureElement;
@@ -333,8 +336,6 @@
       this.scrollArea.classList.add('xterm-scroll-area');
       this.viewportElement.appendChild(this.scrollArea);
       this.currentRowHeight = 0;
-      this.lastScrollPosition = 0;
-      this.waitingForScroll = false;
       this.lastRecordedBufferLength = 0;
       this.lastRecordedViewportHeight = 0;
 
@@ -345,8 +346,14 @@
       this.syncScrollArea();
     }
 
-    Viewport.prototype.refreshRowHeight = function() {
-      var size = this.charMeasureElement.getBoundingClientRect();
+    /**
+     * Refreshes row height, setting line-height, viewport height and scroll area height if
+     * necessary. 
+     * @param {number|undefined} charSize A character size measurement bounding rect object, if it
+     *   doesn't exist it will be created.
+     */
+    Viewport.prototype.refresh = function(charSize) {
+      var size = charSize || this.charMeasureElement.getBoundingClientRect();
       if (size.height > 0) {
         if (size.height !== this.currentRowHeight) {
           this.currentRowHeight = size.height;
@@ -360,10 +367,19 @@
       }
     };
 
+    /**
+     * Updates dimensions and synchronizes the scroll area if necessary.
+     */
     Viewport.prototype.syncScrollArea = function() {
       if (this.lastRecordedBufferLength !== this.terminal.lines.length) {
         this.lastRecordedBufferLength = this.terminal.lines.length;
-        this.refreshRowHeight();
+        this.refresh();
+      } else {
+        // If size has changed, refresh viewport
+        var size = this.charMeasureElement.getBoundingClientRect();
+        if (size.height !== this.currentRowHeight) {
+          this.refresh(size);
+        }
       }
       var scrollTop = this.terminal.ydisp * this.currentRowHeight;
       if (this.viewportElement.scrollTop !== scrollTop) {
@@ -374,6 +390,7 @@
     /**
      * Handles scroll events on the viewport, calculating the new viewport and requesting the
      * terminal to scroll to it.
+     * @param {Event} ev The scroll event.
      */
     Viewport.prototype.onScroll = function(ev) {
       var newRow = Math.round(this.viewportElement.scrollTop / this.currentRowHeight);
