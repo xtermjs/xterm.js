@@ -405,25 +405,18 @@
      * @param {WheelEvent} ev The mouse wheel event.
      */
     Viewport.prototype.onWheel = function(ev) {
+      if (ev.deltaY === 0) {
+        // Do nothing if it's not a vertical scroll event
+        return;
+      }
       // Fallback to WheelEvent.DOM_DELTA_PIXEL 
       var multiplier = 1;
-      var delta = 0;
-      if (ev.type === 'DOMMouseScroll') {
-        if (ev.axis !== MouseScrollEvent.VERTICAL_AXIS) {
-          return;
-        } 
-        delta = ev.detail;
-        // Firefox treats ev.detail as lines, not pixels
+      if (ev.deltaMode === WheelEvent.DOM_DELTA_LINE) {
         multiplier = this.currentRowHeight;
-      } else if (ev.type === 'mousewheel') {
-        delta = ev.deltaY
-        if (ev.deltaMode === WheelEvent.DOM_DELTA_LINE) {
-          multiplier = this.currentRowHeight;
-        } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
-          multiplier = this.currentRowHeight * this.terminal.rows;
-        }
+      } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+        multiplier = this.currentRowHeight * this.terminal.rows;
       }
-      this.viewportElement.scrollTop += delta * multiplier;
+      this.viewportElement.scrollTop += ev.deltaY * multiplier;
       // Prevent the page from scrolling when the terminal scrolls
       ev.preventDefault();
     };
@@ -1064,11 +1057,10 @@
      */
     Terminal.prototype.bindMouse = function() {
       var el = this.element, self = this, pressed = 32;
-      var wheelEvent = ('onmousewheel' in this.context) ? 'mousewheel' : 'DOMMouseScroll';
 
-      // mouseup, mousedown, mousewheel
+      // mouseup, mousedown, wheel
       // left click: ^[[M 3<^[[M#3<
-      // mousewheel up: ^[[M`3>
+      // wheel up: ^[[M`3>
       function sendButton(ev) {
         var button
           , pos;
@@ -1091,7 +1083,7 @@
             // button, just in case.
             pressed = 32;
             break;
-          case wheelEvent:
+          case 'wheel':
             // nothing. don't
             // interfere with
             // `pressed`.
@@ -1252,7 +1244,7 @@
               ? 64
               : 65;
             break;
-          case 'mousewheel':
+          case 'wheel':
             button = ev.wheelDeltaY > 0
               ? 64
               : 65;
@@ -1322,9 +1314,7 @@
         return {
           x: x,
           y: y,
-          type: (ev.overrideType || ev.type) === wheelEvent
-            ? 'mousewheel'
-            : (ev.overrideType || ev.type)
+          type: 'wheel'
         };
       }
 
@@ -1365,7 +1355,7 @@
       //  on(self.document, 'mousemove', sendMove);
       //}
 
-      on(el, wheelEvent, function(ev) {
+      on(el, 'wheel', function(ev) {
         if (!self.mouseEvents) return;
         if (self.x10Mouse
             || self.vt300Mouse
@@ -1374,9 +1364,9 @@
         return self.cancel(ev);
       });
 
-      // allow mousewheel scrolling in
+      // allow wheel scrolling in
       // the shell for example
-      on(el, wheelEvent, function(ev) {
+      on(el, 'wheel', function(ev) {
         if (self.mouseEvents) return;
         if (self.applicationKeypad) return;
         self.viewport.onWheel(ev);
