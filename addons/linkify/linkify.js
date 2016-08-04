@@ -54,7 +54,8 @@
    *								  		 "linkified".
    * @param {boolean} lenient - The regex type that will be used to identify links. If lenient is
    *                            false, the regex requires a protocol clause. Defaults to true.
-   * @param {string} target -  Sets target="" attribute with value provided to links. Defaults to '_self'
+   * @param {string} target -  Sets target="" attribute with value provided to links.
+   *                           Default doesn't set target attribute
    * @emits linkify
    * @emits linkify:line
    */
@@ -68,7 +69,7 @@
       throw new TypeError(message);
     }
 
-    if (typeof target === 'undefined') target = '_self';
+    typeof target === 'undefined' ? target = '' : target = 'target="' + target + '"';
 
     var buffer = document.createElement('span'),
         nodes = line.childNodes;
@@ -103,7 +104,7 @@
       var startsWithProtocol = new RegExp('^' + protocolClause),
           urlHasProtocol = url.match(startsWithProtocol),
           href = (urlHasProtocol) ? url : 'http://' + url,
-          link = '<a href="' +  href + '" target="' + target + '">' + url + '</a>',
+          link = '<a href="' +  href + '" ' + target + '>' + url + '</a>',
           newHTML = nodeHTML.replace(url, link);
 
       line.innerHTML = line.innerHTML.replace(nodeHTML, newHTML);
@@ -140,7 +141,8 @@
    * @param {Xterm} terminal - The terminal that should get "linkified".
    * @param {boolean} lenient - The regex type that will be used to identify links. If lenient is
    *                            false, the regex requires a protocol clause. Defaults to true.
-   * @param {string} target -  Sets target="" attribute with value provided to links. Defaults to '_self'
+   * @param {string} target -  Sets target="" attribute with value provided to links.
+   *                           Default doesn't set target attribute
    * @emits linkify
    * @emits linkify:line
    */
@@ -177,7 +179,8 @@
    *								  		 "linkified".
    * @param {boolean} lenient - The regex type that will be used to identify links. If lenient is
    *                            false, the regex requires a protocol clause. Defaults to true.
-   * @param {string} target -  Sets target="" attribute with value provided to links. Defaults to '_self'
+   * @param {string} target -  Sets target="" attribute with value provided to links.
+   *                           Default doesn't set target attribute
    */
   Xterm.prototype.linkifyTerminalLine = function (line, lenient, target) {
     return exports.linkifyTerminalLine(this, line, lenient, target);
@@ -189,7 +192,8 @@
    * @memberof Xterm
    * @param {boolean} lenient - The regex type that will be used to identify links. If lenient is
    *                            false, the regex requires a protocol clause. Defaults to true.
-   * @param {string} target -  Sets target="" attribute with value provided to links. Defaults to '_self'
+   * @param {string} target -  Sets target="" attribute with value provided to links.
+   *                           Default doesn't set target attribute
    */
   Xterm.prototype.linkify = function (lenient, target) {
     return exports.linkify(this, lenient, target);
