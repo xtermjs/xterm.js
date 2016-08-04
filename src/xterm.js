@@ -327,6 +327,10 @@
     /**
      * Represents the viewport of a terminal, the visible area within the larger buffer of output.
      * Logic for the virtual scroll bar is included in this object.
+     * @param {Terminal} terminal The Terminal object.
+     * @param {HTMLElement} viewportElement The DOM element acting as the viewport
+     * @param {HTMLElement} charMeasureElement A DOM element used to measure the character size of
+     *   the terminal.
      */
     function Viewport(terminal, viewportElement, charMeasureElement) {
       this.terminal = terminal;
