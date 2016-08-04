@@ -362,6 +362,7 @@
         if (size.height !== this.currentRowHeight) {
           this.currentRowHeight = size.height;
           this.viewportElement.style.lineHeight = size.height + 'px';
+          this.terminal.rowContainer.style.lineHeight = size.height + 'px';
         }
         if (this.lastRecordedViewportHeight !== this.terminal.rows) {
           this.lastRecordedViewportHeight = this.terminal.rows;
