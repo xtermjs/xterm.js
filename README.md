@@ -2,17 +2,34 @@
 
 ![xterm.js build status](https://api.travis-ci.org/sourcelair/xterm.js.svg)
 
-Xterm.js is a full xterm clone, written in JavaScript.
+Xterm.js is a terminal front-end component written in JavaScript that works in the browser.
 
-It is used at [SourceLair](https://www.sourcelair.com/home) to help people develop their applications in their browsers.
+It enables applications provide fully featured terminals to their users and create great development experiences.
 
-Xterm.js supplies a modular, event-based interface that lets developers build addons and themes on top of it.
+## Features
+- **Text-based application support**: Use xterm.js to work with applications like `bash`, `git` etc.
+- **Curses-based application support**: Use xterm.js to work with applications like `vim`, `tmux` etc.
+- **Mouse events support**: Xterm.js captures mouse events like click and scroll and passes them to the terminal's back-end controlling process
+- **CJK (Chinese, Japanese, Korean) character support**: Xterm.js renders CJK characters seamlessly
+- **IME support**: Insert international (including CJK) characters using IME input with your keyboard
+- **Self-contained library**: Xterm.js works on its own. It does not require any external libraries like jQuery or React to work
+- **Modular, event-based API**: Let's you build addons and themes with easiness
 
-![xterm.js screenshot](xtermjs.png)
+## What xterm.js is not
+- Xterm.js is not a terminal application that you can download and use on your computer
+- Xterm.js is not `bash`. Xterm.js can be connected to processes like `bash` and let you interact with them (provide input, receive output)
+
+## Real-world uses
+Xterm.js is used in several world-class applications to provide great terminal experiences.
+
+- [**SourceLair**](https://www.sourcelair.com/): In-browser IDE that provides its users with fully-featured Linux terminals based on xterm.js
+- [**Microsoft Visual Studio Code**](http://code.visualstudio.com/): Modern, versatile, powerful and open source code editor that provides integrated terminal based on xterm.js
+
+Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list.
 
 ## Browser Support
 
-Since xterm.js is typically implemented as a developer tool, only modern browsers are supported officially. Here is a list of the versions we aim to support: 
+Since xterm.js is typically implemented as a developer tool, only modern browsers are supported officially. Here is a list of the versions we aim to support:
 
 - Chrome 48+
 - Edge 13+
@@ -21,7 +38,7 @@ Since xterm.js is typically implemented as a developer tool, only modern browser
 - Opera 35+
 - Safari 8+
 
-xterm.js may work on earlier versions of the browsers but these are the browsers we strive to keep working.
+Xterm.js works seamlessly in Electron apps and may even work on earlier versions of the browsers but these are the browsers we strive to keep working.
 
 ## Demo
 
@@ -51,7 +68,15 @@ var xterm = new Terminal();
 xterm.fit();
 ```
 
+## Releases
+
+Xterm.js follows a monthly release cycle roughly.
+
+The existing releases are available at this GitHub repo's [Releases](https://github.com/sourcelair/xterm.js/releases), while the roadmap is available as [Milestones](https://github.com/sourcelair/xterm.js/milestones).
+
 ## Development and Contribution
+
+Xterm.js is maintained by [SourceLair](https://www.sourcelair.com/) and a few external contributors, but we would love to receive contributions from everyone!
 
 To contribute either code, documentation or issues to xterm.js please read the [Contributing document](CONTRIBUTING.md) before.
 
