@@ -4,7 +4,7 @@
 
 Xterm.js is a terminal front-end component written in JavaScript that works in the browser.
 
-It enables applications provide fully featured terminals to their users and create great development experiences.
+It enables applications to provide fully featured terminals to their users and create great development experiences.
 
 ## Features
 - **Text-based application support**: Use xterm.js to work with applications like `bash`, `git` etc.
@@ -13,7 +13,7 @@ It enables applications provide fully featured terminals to their users and crea
 - **CJK (Chinese, Japanese, Korean) character support**: Xterm.js renders CJK characters seamlessly
 - **IME support**: Insert international (including CJK) characters using IME input with your keyboard
 - **Self-contained library**: Xterm.js works on its own. It does not require any external libraries like jQuery or React to work
-- **Modular, event-based API**: Let's you build addons and themes with easiness
+- **Modular, event-based API**: Lets you build addons and themes with ease
 
 ## What xterm.js is not
 - Xterm.js is not a terminal application that you can download and use on your computer
