@@ -69,7 +69,11 @@
       throw new TypeError(message);
     }
 
-    typeof target === 'undefined' ? target = '' : target = 'target="' + target + '"';
+    if (typeof target === 'undefined') {
+      target = '';
+    } else {
+      target = 'target="' + target + '"';
+    }
 
     var buffer = document.createElement('span'),
         nodes = line.childNodes;
