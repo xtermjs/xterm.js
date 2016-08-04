@@ -54,10 +54,11 @@
    *								  		 "linkified".
    * @param {boolean} lenient - The regex type that will be used to identify links. If lenient is
    *                            false, the regex requires a protocol clause. Defaults to true.
+   * @param {string} target -  Sets target="" attribute with value provided to links. Defaults to '_self'
    * @emits linkify
    * @emits linkify:line
    */
-  exports.linkifyTerminalLine = function (terminal, line, lenient) {
+  exports.linkifyTerminalLine = function (terminal, line, lenient, target) {
     if (typeof line == 'number') {
       line = terminal.rowContainer.children[line];
     } else if (! (line instanceof HTMLDivElement)) {
@@ -66,6 +67,8 @@
 
       throw new TypeError(message);
     }
+
+    if (typeof target === 'undefined') target = '_self';
 
     var buffer = document.createElement('span'),
         nodes = line.childNodes;
@@ -100,7 +103,7 @@
       var startsWithProtocol = new RegExp('^' + protocolClause),
           urlHasProtocol = url.match(startsWithProtocol),
           href = (urlHasProtocol) ? url : 'http://' + url,
-          link = '<a href="' +  href + '" target="_blank">' + url + '</a>',
+          link = '<a href="' +  href + '" target="' + target + '">' + url + '</a>',
           newHTML = nodeHTML.replace(url, link);
 
       line.innerHTML = line.innerHTML.replace(nodeHTML, newHTML);
@@ -137,17 +140,18 @@
    * @param {Xterm} terminal - The terminal that should get "linkified".
    * @param {boolean} lenient - The regex type that will be used to identify links. If lenient is
    *                            false, the regex requires a protocol clause. Defaults to true.
+   * @param {string} target -  Sets target="" attribute with value provided to links. Defaults to '_self'
    * @emits linkify
    * @emits linkify:line
    */
-  exports.linkify = function (terminal, lenient) {
+  exports.linkify = function (terminal, lenient, target) {
     var rows = terminal.rowContainer.children;
 
     lenient = (typeof lenient == "boolean") ? lenient : true;
     for (var i=0; i<rows.length; i++) {
       var line = rows[i];
 
-      exports.linkifyTerminalLine(terminal, line, lenient);
+      exports.linkifyTerminalLine(terminal, line, lenient, target);
     }
 
     /**
@@ -173,9 +177,10 @@
    *								  		 "linkified".
    * @param {boolean} lenient - The regex type that will be used to identify links. If lenient is
    *                            false, the regex requires a protocol clause. Defaults to true.
+   * @param {string} target -  Sets target="" attribute with value provided to links. Defaults to '_self'
    */
-  Xterm.prototype.linkifyTerminalLine = function (line, lenient) {
-    return exports.linkifyTerminalLine(this, line, lenient);
+  Xterm.prototype.linkifyTerminalLine = function (line, lenient, target) {
+    return exports.linkifyTerminalLine(this, line, lenient, target);
   };
 
   /**
@@ -184,9 +189,10 @@
    * @memberof Xterm
    * @param {boolean} lenient - The regex type that will be used to identify links. If lenient is
    *                            false, the regex requires a protocol clause. Defaults to true.
+   * @param {string} target -  Sets target="" attribute with value provided to links. Defaults to '_self'
    */
-  Xterm.prototype.linkify = function (lenient) {
-    return exports.linkify(this, lenient);
+  Xterm.prototype.linkify = function (lenient, target) {
+    return exports.linkify(this, lenient, target);
   };
 
   return exports;
