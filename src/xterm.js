@@ -326,7 +326,7 @@
 
     /**
      * Represents the viewport of a terminal, the visible area within the larger buffer of output.
-     * Logic for the virtual scroll bar is included in this object.  
+     * Logic for the virtual scroll bar is included in this object.
      */
     function Viewport(terminal, viewportElement, charMeasureElement) {
       this.terminal = terminal;
@@ -348,7 +348,7 @@
 
     /**
      * Refreshes row height, setting line-height, viewport height and scroll area height if
-     * necessary. 
+     * necessary.
      * @param {number|undefined} charSize A character size measurement bounding rect object, if it
      *   doesn't exist it will be created.
      */
@@ -361,7 +361,7 @@
         }
         if (this.lastRecordedViewportHeight !== this.terminal.rows) {
           this.lastRecordedViewportHeight = this.terminal.rows;
-          this.viewportElement.style.height = size.height * this.terminal.rows + 'px'; 
+          this.viewportElement.style.height = size.height * this.terminal.rows + 'px';
         }
         this.scrollArea.style.height = (size.height * this.terminal.lines.length) + 'px';
       }
@@ -371,6 +371,12 @@
      * Updates dimensions and synchronizes the scroll area if necessary.
      */
     Viewport.prototype.syncScrollArea = function() {
+      if (this.isApplicationMode) {
+        this.lastRecordedBufferLength = this.currentRowHeight * this.terminal.rows;
+        this.refresh();
+        return;
+      }
+
       if (this.lastRecordedBufferLength !== this.terminal.lines.length) {
         this.lastRecordedBufferLength = this.terminal.lines.length;
         this.refresh();
@@ -385,6 +391,16 @@
       if (this.viewportElement.scrollTop !== scrollTop) {
         this.viewportElement.scrollTop = scrollTop;
       }
+    };
+
+    /**
+     * Sets the application mode of the viewport.
+     * @param {boolean} isApplicationMode Sets whether the terminal is in application mode. true
+     * for application mode (DECKPAM) and false for normal mode (DECKPNM).
+     */
+    Viewport.prototype.setApplicationMode = function(isApplicationMode) {
+      this.isApplicationMode = isApplicationMode;
+      this.syncScrollArea();
     };
 
     /**
@@ -409,7 +425,7 @@
         // Do nothing if it's not a vertical scroll event
         return;
       }
-      // Fallback to WheelEvent.DOM_DELTA_PIXEL 
+      // Fallback to WheelEvent.DOM_DELTA_PIXEL
       var multiplier = 1;
       if (ev.deltaMode === WheelEvent.DOM_DELTA_LINE) {
         multiplier = this.currentRowHeight;
@@ -2041,17 +2057,19 @@
                 this.tabSet();
                 break;
 
-              // ESC = Application Keypad (DECPAM).
+              // ESC = Application Keypad (DECKPAM).
               case '=':
                 this.log('Serial port requested application keypad.');
                 this.applicationKeypad = true;
+                this.viewport.setApplicationMode(true);
                 this.state = normal;
                 break;
 
-              // ESC > Normal Keypad (DECPNM).
+              // ESC > Normal Keypad (DECKPNM).
               case '>':
                 this.log('Switching back to normal keypad.');
                 this.applicationKeypad = false;
+                this.viewport.setApplicationMode(false);
                 this.state = normal;
                 break;
 
@@ -4295,6 +4313,7 @@
           case 66:
             this.log('Serial port requested application keypad.');
             this.applicationKeypad = true;
+            this.viewport.setApplicationMode(true);
             break;
           case 9: // X10 Mouse
             // no release, no motion, no wheel, no modifiers.
@@ -4493,6 +4512,7 @@
             break;
           case 66:
             this.log('Switching back to normal keypad.');
+            this.viewport.setApplicationMode(false);
             this.applicationKeypad = false;
             break;
           case 9: // X10 Mouse
