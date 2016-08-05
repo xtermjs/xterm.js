@@ -219,7 +219,7 @@
       }
 
       return true;
-    }
+    };
 
     /**
      * Finalizes the composition, resuming regular input actions. This is called when a composition
@@ -275,7 +275,7 @@
           }
         }, 0);
       }
-    }
+    };
 
     /**
      * Apply any changes made to the textarea after the current event chain is allowed to complete.
@@ -296,7 +296,7 @@
           }
         }
       }, 0);
-    }
+    };
 
     /**
      * Positions the composition view on top of the cursor and the textarea just below it (so the
@@ -322,7 +322,7 @@
     CompositionHelper.prototype.clearTextareaPosition = function() {
       this.textarea.style.left = '';
       this.textarea.style.top = '';
-    }
+    };
 
     /**
      * Represents the viewport of a terminal, the visible area within the larger buffer of output.
@@ -332,13 +332,11 @@
      * @param {HTMLElement} charMeasureElement A DOM element used to measure the character size of
      *   the terminal.
      */
-    function Viewport(terminal, viewportElement, charMeasureElement) {
+    function Viewport(terminal, viewportElement, scrollArea, charMeasureElement) {
       this.terminal = terminal;
       this.viewportElement = viewportElement;
+      this.scrollArea = scrollArea;
       this.charMeasureElement = charMeasureElement;
-      this.scrollArea = document.createElement('div');
-      this.scrollArea.classList.add('xterm-scroll-area');
-      this.viewportElement.appendChild(this.scrollArea);
       this.currentRowHeight = 0;
       this.lastRecordedBufferLength = 0;
       this.lastRecordedViewportHeight = 0;
@@ -368,7 +366,7 @@
           this.lastRecordedViewportHeight = this.terminal.rows;
           this.viewportElement.style.height = size.height * this.terminal.rows + 'px';
         }
-        this.scrollArea.style.height = (size.height * this.terminal.lines.length) + 'px';
+        this.scrollArea.style.height = (size.height * this.lastRecordedBufferLength) + 'px';
       }
     };
 
@@ -377,7 +375,7 @@
      */
     Viewport.prototype.syncScrollArea = function() {
       if (this.isApplicationMode) {
-        this.lastRecordedBufferLength = this.currentRowHeight * this.terminal.rows;
+        this.lastRecordedBufferLength = this.terminal.rows;
         this.refresh();
         return;
       }
@@ -965,6 +963,9 @@
       this.viewportElement = document.createElement('div');
       this.viewportElement.classList.add('xterm-viewport');
       this.element.appendChild(this.viewportElement);
+      this.viewportScrollArea = document.createElement('div');
+      this.viewportScrollArea.classList.add('xterm-scroll-area');
+      this.viewportElement.appendChild(this.viewportScrollArea);
 
       /*
       * Create the container that will hold the lines of the terminal and then
@@ -1012,7 +1013,7 @@
       }
       this.parent.appendChild(this.element);
 
-      this.viewport = new Viewport(this, this.viewportElement, this.charMeasureElement);
+      this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasureElement);
 
       // Draw the screen.
       this.refresh(0, this.rows - 1);
@@ -5387,6 +5388,7 @@
 
     Terminal.EventEmitter = EventEmitter;
     Terminal.CompositionHelper = CompositionHelper;
+    Terminal.Viewport = Viewport;
     Terminal.inherits = inherits;
 
     /**

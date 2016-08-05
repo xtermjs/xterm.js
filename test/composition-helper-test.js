@@ -19,14 +19,14 @@ describe('CompositionHelper', function () {
         top: 0
       },
       textContent: ''
-    }
+    };
     textarea = {
       value: '',
       style: {
         left: 0,
         top: 0
       }
-    }
+    };
     terminal = {
       element: {
         querySelector: function () {
@@ -36,7 +36,7 @@ describe('CompositionHelper', function () {
       handler: function (text) {
         handledText += text;
       }
-    }
+    };
     handledText = '';
     compositionHelper = new Terminal.CompositionHelper(textarea, compositionView, terminal);
   });
