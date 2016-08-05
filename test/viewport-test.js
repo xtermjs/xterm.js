@@ -76,4 +76,19 @@ describe('Viewport', function () {
       assert.equal(terminal.rowContainer.style.lineHeight, '1px');
     });
   });
+
+  describe('syncScrollArea', function () {
+    it('should sync the scroll area', function () {
+      terminal.lines.push('');
+      terminal.rows = 1;
+      assert.equal(scrollAreaElement.style.height, 0 * CHARACTER_HEIGHT + 'px');
+      viewport.syncScrollArea();
+      assert.equal(viewportElement.style.height, 1 * CHARACTER_HEIGHT + 'px');
+      assert.equal(scrollAreaElement.style.height, 1 * CHARACTER_HEIGHT + 'px');
+      terminal.lines.push('');
+      viewport.syncScrollArea();
+      assert.equal(viewportElement.style.height, 1 * CHARACTER_HEIGHT + 'px');
+      assert.equal(scrollAreaElement.style.height, 2 * CHARACTER_HEIGHT + 'px');
+    });
+  });
 });
