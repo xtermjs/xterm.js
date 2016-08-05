@@ -1,7 +1,8 @@
 var term,
     protocol,
     socketURL,
-    socket;
+    socket,
+    pid;
 
 var terminalContainer = document.getElementById('terminal-container');
 var optionElements = {
@@ -13,22 +14,39 @@ optionElements.cursorBlink.addEventListener('change', createTerminal);
 createTerminal();
 
 function createTerminal() {
+  // Clean terminal
   while (terminalContainer.children.length) {
     terminalContainer.removeChild(terminalContainer.children[0]);
   }
   term = new Terminal({
     cursorBlink: optionElements.cursorBlink.checked
   });
+  term.on('resize', function (size) {
+    if (!pid) {
+      return;
+    }
+  });
   protocol = (location.protocol === 'https:') ? 'wss://' : 'ws://';
-  socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/bash';
-  socket = new WebSocket(socketURL);
+  socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
 
   term.open(terminalContainer);
-  term.fit();
 
-  socket.onopen = runRealTerminal;
-  socket.onclose = runFakeTerminal;
-  socket.onerror = runFakeTerminal;
+  var initialGeometry = term.proposeGeometry(),
+      cols = initialGeometry.cols,
+      rows = initialGeometry.rows;
+
+  fetch('/terminals?cols=' + cols + '&rows=' + rows, {method: 'POST'}).then(function (res) {
+    res.text().then(function (pid) {
+      window.pid = pid;
+      socketURL += pid;
+      socket = new WebSocket(socketURL);
+      socket.onopen = runRealTerminal;
+      socket.onclose = runFakeTerminal;
+      socket.onerror = runFakeTerminal;
+    });
+  });
+
+  term.fit();
 }
 
 
