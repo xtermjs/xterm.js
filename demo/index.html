@@ -5,20 +5,33 @@
         <link rel="stylesheet" href="../src/xterm.css" />
         <link rel="stylesheet" href="../addons/fullscreen/fullscreen.css" />
         <link rel="stylesheet" href="style.css" />
+      	<script src="https://cdnjs.cloudflare.com/ajax/libs/fetch/1.0.0/fetch.min.js"></script>
         <script src="../src/xterm.js" ></script>
         <script src="../addons/attach/attach.js" ></script>
         <script src="../addons/fit/fit.js" ></script>
         <script src="../addons/fullscreen/fullscreen.js" ></script>
     </head>
     <body>
-        <h1>
-            xterm.js: xterm, in the browser
-        </h1>
+        <h1>xterm.js: xterm, in the browser</h1>
         <div id="terminal-container"></div>
         <div>
           <h2>Options</h2>
           <label><input type="checkbox" id="option-cursor-blink"> cursorBlink</label>
+          <div>
+          	<h3>Size</h3>
+            <div>
+              <div style="display: inline-block; margin-right: 16px;">
+                <label for="cols">Columns</label>
+                <input type="number" id="cols" />
+              </div>
+              <div style="display: inline-block; margin-right: 16px;">
+                <label for="rows">Rows</label>
+                <input type="number" id="rows" />
+              </div>
+            </div>
+          </div>
         </div>
+        <p><strong>Attention:</strong> The demo should be used only for evaluation of xterm.js and not be exposed or shared to public, as this will introduce security risks for the host.</p>
         <script src="main.js" defer ></script>
     </body>
 </html>
