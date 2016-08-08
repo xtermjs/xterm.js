@@ -43,7 +43,8 @@
     position: relative;
 }
 
-.terminal.focus {
+.terminal.focus,
+.terminal:focus {
     outline: none;
 }
 
@@ -101,6 +102,29 @@
 
 .terminal .composition-view.active {
     display: block;
+}
+
+.terminal .xterm-viewport {
+    /* On OS X this is required in order for the scroll bar to appear fully opaque */
+    background-color: #000;
+    overflow-y: scroll;
+}
+
+.terminal .xterm-rows {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.terminal .xterm-scroll-area {
+    visibility: hidden;
+}
+
+.terminal .xterm-char-measure-element {
+    display: inline-block;
+    visibility: hidden;
+    position: absolute;
+    left: -9999em;
 }
 
 /*
@@ -2168,12 +2192,4 @@
 
 .terminal .xterm-bg-color-255 {
     background-color: #eeeeee;
-}
-
-/**
- * All terminal rows should have explicitly declared height,
- * in order to allow child elements to adjust.
- */
-.terminal .xterm-rows > div {
-    line-height: normal;
 }
