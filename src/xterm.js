@@ -375,13 +375,18 @@
      */
     Viewport.prototype.syncScrollArea = function() {
       if (this.isApplicationMode) {
+        // Fix scroll bar in application mode
         this.lastRecordedBufferLength = this.terminal.rows;
         this.refresh();
         return;
       }
 
       if (this.lastRecordedBufferLength !== this.terminal.lines.length) {
+        // If buffer height changed
         this.lastRecordedBufferLength = this.terminal.lines.length;
+        this.refresh();
+      } else if (this.lastRecordedViewportHeight !== this.terminal.rows) {
+        // If viewport height changed
         this.refresh();
       } else {
         // If size has changed, refresh viewport
@@ -390,6 +395,8 @@
           this.refresh(size);
         }
       }
+
+      // Sync scrollTop
       var scrollTop = this.terminal.ydisp * this.currentRowHeight;
       if (this.viewportElement.scrollTop !== scrollTop) {
         this.viewportElement.scrollTop = scrollTop;
