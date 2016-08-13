@@ -88,6 +88,15 @@ describe('xterm.js', function() {
       });
       assert.equal(xterm.keyDown(Object.assign({}, evKeyDown, { keyCode: 77 })), false);
     });
+    
+    it('should alive after reset(ESC c Full Reset (RIS))', function () {
+      xterm.attachCustomKeydownHandler(function (ev) {
+        return ev.keyCode !== 77;
+      });
+      assert.equal(xterm.keyDown(Object.assign({}, evKeyDown, { keyCode: 77 })), false);
+      xterm.reset();
+      assert.equal(xterm.keyDown(Object.assign({}, evKeyDown, { keyCode: 77 })), false);
+    });
   });
 
   describe('evaluateCopiedTextProcessing', function () {

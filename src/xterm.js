@@ -3467,7 +3467,9 @@
     Terminal.prototype.reset = function() {
       this.options.rows = this.rows;
       this.options.cols = this.cols;
+      var customKeydownHandler = this.customKeydownHandler;
       Terminal.call(this, this.options);
+      this.customKeydownHandler = customKeydownHandler;
       this.refresh(0, this.rows - 1);
     };
 
