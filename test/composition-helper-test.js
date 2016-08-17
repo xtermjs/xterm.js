@@ -14,6 +14,9 @@ describe('CompositionHelper', function () {
         add: function () {},
         remove: function () {},
       },
+      getBoundingClientRect: function () {
+        return { width: 0 }
+      },
       style: {
         left: 0,
         top: 0

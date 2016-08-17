@@ -302,7 +302,7 @@
      * Positions the composition view on top of the cursor and the textarea just below it (so the
      * IME helper dialog is positioned correctly).
      */
-    CompositionHelper.prototype.updateCompositionElements = function() {
+    CompositionHelper.prototype.updateCompositionElements = function(dontRecurse) {
       if (!this.isComposing) {
         return;
       }
@@ -310,8 +310,12 @@
       if (cursor) {
         this.compositionView.style.left = cursor.offsetLeft + 'px';
         this.compositionView.style.top = cursor.offsetTop + 'px';
-        this.textarea.style.left = cursor.offsetLeft + 'px';
+        var compositionViewBounds = this.compositionView.getBoundingClientRect();
+        this.textarea.style.left = cursor.offsetLeft + compositionViewBounds.width + 'px';
         this.textarea.style.top = (cursor.offsetTop + cursor.offsetHeight) + 'px';
+      }
+      if (!dontRecurse) {
+        setTimeout(this.updateCompositionElements.bind(this, true), 0);
       }
     };
 
