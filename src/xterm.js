@@ -1325,8 +1325,8 @@
         // convert to cols/rows
         w = self.element.clientWidth;
         h = self.element.clientHeight;
-        x = Math.round((x / w) * self.cols);
-        y = Math.round((y / h) * self.rows);
+        x = Math.ceil((x / w) * self.cols);
+        y = Math.ceil((y / h) * self.rows);
 
         // be sure to avoid sending
         // bad positions to the program
