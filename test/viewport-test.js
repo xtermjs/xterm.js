@@ -75,6 +75,18 @@ describe('Viewport', function () {
       assert.equal(viewportElement.style.lineHeight, '1px');
       assert.equal(terminal.rowContainer.style.lineHeight, '1px');
     });
+    it('should set the height of the viewport when the line-height changed', function () {
+      terminal.lines.push('');
+      terminal.lines.push('');
+      terminal.rows = 1;
+      viewport.refresh();
+      assert.equal(viewportElement.style.height, 1 * CHARACTER_HEIGHT + 'px');
+      charMeasureElement.getBoundingClientRect = function () {
+        return { width: null, height: 20 };
+      };
+      viewport.refresh();
+      assert.equal(viewportElement.style.height, 20 + 'px');
+    });
   });
 
   describe('syncScrollArea', function () {

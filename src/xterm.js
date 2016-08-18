@@ -361,12 +361,14 @@
     Viewport.prototype.refresh = function(charSize) {
       var size = charSize || this.charMeasureElement.getBoundingClientRect();
       if (size.height > 0) {
-        if (size.height !== this.currentRowHeight) {
+        var rowHeightChanged = size.height !== this.currentRowHeight;
+        if (rowHeightChanged) {
           this.currentRowHeight = size.height;
           this.viewportElement.style.lineHeight = size.height + 'px';
           this.terminal.rowContainer.style.lineHeight = size.height + 'px';
         }
-        if (this.lastRecordedViewportHeight !== this.terminal.rows) {
+        var viewportHeightChanged = this.lastRecordedViewportHeight !== this.terminal.rows;
+        if (rowHeightChanged || viewportHeightChanged) {
           this.lastRecordedViewportHeight = this.terminal.rows;
           this.viewportElement.style.height = size.height * this.terminal.rows + 'px';
         }
