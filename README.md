@@ -1,5 +1,7 @@
 # xterm.js
 
+[![Join the chat at https://gitter.im/xterm-js/Lobby](https://badges.gitter.im/xterm-js/Lobby.svg)](https://gitter.im/xterm-js/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 ![xterm.js build status](https://api.travis-ci.org/sourcelair/xterm.js.svg)
 
 Xterm.js is a terminal front-end component written in JavaScript that works in the browser.
