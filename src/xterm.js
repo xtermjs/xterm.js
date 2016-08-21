@@ -425,6 +425,10 @@
      * @param {Event} ev The scroll event.
      */
     Viewport.prototype.onScroll = function(ev) {
+      if (this.isApplicationMode) {
+        // Scrolling via the scroll bar is disabled during application mode
+        return;
+      }
       var newRow = Math.round(this.viewportElement.scrollTop / this.currentRowHeight);
       var diff = newRow - this.terminal.ydisp;
       this.terminal.scrollDisp(diff, true);
