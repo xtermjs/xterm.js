@@ -2907,39 +2907,63 @@
           break;
         // left-arrow
         case 37:
-          if (modifiers)
+          if (modifiers) {
             result.key = '\x1b[1;' + (modifiers + 1) + 'D';
-          else if (this.applicationCursor)
+            // HACK: Make Alt + left-arrow behave like Ctrl + left-arrow: move one word backwards
+            // http://unix.stackexchange.com/a/108106
+            if (result.key == '\x1b[1;3D') {
+              result.key = '\x1b[1;5D';
+            }
+          } else if (this.applicationCursor) {
             result.key = '\x1bOD';
-          else
+          } else {
             result.key = '\x1b[D';
+          }
           break;
         // right-arrow
         case 39:
-          if (modifiers)
+          if (modifiers) {
             result.key = '\x1b[1;' + (modifiers + 1) + 'C';
-          else if (this.applicationCursor)
+            // HACK: Make Alt + right-arrow behave like Ctrl + right-arrow: move one word forward
+            // http://unix.stackexchange.com/a/108106
+            if (result.key == '\x1b[1;3C') {
+              result.key = '\x1b[1;5C';
+            }
+          } else if (this.applicationCursor) {
             result.key = '\x1bOC';
-          else
+          } else {
             result.key = '\x1b[C';
+          }
           break;
         // up-arrow
         case 38:
-          if (modifiers)
+          if (modifiers) {
             result.key = '\x1b[1;' + (modifiers + 1) + 'A';
-          else if (this.applicationCursor)
+            // HACK: Make Alt + up-arrow behave like Ctrl + up-arrow
+            // http://unix.stackexchange.com/a/108106
+            if (result.key == '\x1b[1;3A') {
+              result.key = '\x1b[1;5A';
+            }
+          } else if (this.applicationCursor) {
             result.key = '\x1bOA';
-          else
+          } else {
             result.key = '\x1b[A';
+          }
           break;
         // down-arrow
         case 40:
-          if (modifiers)
+          if (modifiers) {
             result.key = '\x1b[1;' + (modifiers + 1) + 'B';
-          else if (this.applicationCursor)
+            // HACK: Make Alt + down-arrow behave like Ctrl + down-arrow
+            // http://unix.stackexchange.com/a/108106
+            if (result.key == '\x1b[1;3B') {
+              result.key = '\x1b[1;5B';
+            }
+          } else if (this.applicationCursor) {
             result.key = '\x1bOB';
-          else
+          } else {
             result.key = '\x1b[B';
+          }
           break;
         // insert
         case 45:
