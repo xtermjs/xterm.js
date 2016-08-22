@@ -3182,7 +3182,7 @@
           }
         }
       }
-      this.setupStops(j);
+      this.setupStops(x);
       this.cols = x;
 
       // resize rows
@@ -3254,6 +3254,8 @@
 
       this.normal = null;
 
+      // Update term.geometry
+      this.geometry = [x, y];
       this.emit('resize', {terminal: this, cols: x, rows: y});
     };
 
