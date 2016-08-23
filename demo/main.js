@@ -12,7 +12,7 @@ require('../addons/attach')(Terminal);
 require('../addons/linkify')(Terminal);
 
 
-var $ = document.querySelector;
+var $ = function(sel) { return  document.querySelector(sel) };
 
 createTerminal();
 
@@ -25,7 +25,7 @@ function createTerminal() {
   var terminalContainer = $('#terminal-container');
 
   $('#option-cursor-blink').addEventListener('change', function(){
-    term.cursorBlink = cursorBlink.checked;
+    term.cursorBlink = this.checked;
   });
 
 
@@ -35,17 +35,16 @@ function createTerminal() {
 
   term.open(terminalContainer);
 
-  term.on("resize", function(size){
-    colsElement.value = size.cols;
-    rowsElement.value = size.rows;
-  });
 
 
   term.fit();
   var size = term.proposeGeometry();
 
-  var charWidth  = Math.ceil(term.element.offsetWidth / cols);
-  var charHeight = Math.ceil(term.element.offsetHeight / rows);
+  colsElement.value = size.cols;
+  rowsElement.value = size.rows;
+
+  var charWidth  = Math.ceil(term.element.offsetWidth / size.cols);
+  var charHeight = Math.ceil(term.element.offsetHeight / size.rows);
 
   function setTerminalSize () {
     var cols = parseInt(colsElement.value),
@@ -66,7 +65,6 @@ function createTerminal() {
 
 
   if(true) {
-
     var protocol = (location.protocol === 'https:') ? 'wss://' : 'ws://';
     var socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/';
 
@@ -76,6 +74,13 @@ function createTerminal() {
   } else 
     runFakeTerminal(term);
 
+}
+
+  //we do not need Buffer pollyfill for now
+var fromASCII = function(str){
+  var ret = [], len = str.length;
+  while(len--) ret.unshift(str.charCodeAt(len));
+  return Uint8Array.from(ret);
 }
 
 
@@ -88,7 +93,7 @@ function runRealTerminal(term, socket) {
   term.attach(socket);
 
   term.on('resize', function (size) {
-    socket.send({meta : '$setSize', cols : size.cols, rows : size.rows })
+    socket.send(  fromASCII( JSON.stringify({cols : size.cols, rows : size.rows }  )) )
   });
 
   term._initialized = true;

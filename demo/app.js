@@ -1,27 +1,17 @@
 "use strict";
 
-
-var express   = require('express');
-
-var app       = express();
-var expressWs = require('express-ws')(app);
+var path      = require('path');
 var os        = require('os');
 var pty       = require('pty.js');
 
-
-app.get('/', function(req, res){
-  res.sendFile(__dirname + '/index.html');
-});
-
-app.get('/style.css', function(req, res){
-  res.sendFile(__dirname + '/style.css');
-});
-
-app.get('/main.js', function(req, res){
-  res.sendFile(__dirname + '/main.js');
-});
+var express   = require('express');
+var app       = express();
+var expressWs = require('express-ws')(app);
 
 
+app.use(express.static(__dirname));
+
+app.use(express.static(path.join(__dirname, '../src/')));
 
 app.ws("/", function(ws, req){
 
@@ -47,7 +37,12 @@ app.ws("/", function(ws, req){
   });
 
   ws.on('message', function(msg) {
-    if(msg.$setSize) {
+
+    if(Buffer.isBuffer(msg)) {
+      msg = JSON.parse(msg.toString('utf-8'));
+      console.log(msg);
+      
+
 
       term.resize(msg.cols, msg.rows);
 

@@ -2,11 +2,11 @@
 
 
 class EventEmitter {
-  constructor() {
-    this._events = this._events || {};
-    this.on = this.addListener
-   EventEmitter.prototype.off = EventEmitter.prototype.removeListener;
 
+  initialize() {
+    this._events = this._events || {};
+    this.on  = this.addListener
+    this.off = this.removeListener
   }
 
   addListener(type, listener) {

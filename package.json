@@ -23,7 +23,7 @@
   },
   "scripts": {
     "build:demo": "browserify demo/main.js > demo/_main.js",
-    "start": "node demo/app",
+    "start": "npm run build:demo && node demo/app",
     "test": "mocha --recursive",
     "build:docs": "jsdoc -c jsdoc.json"
   }

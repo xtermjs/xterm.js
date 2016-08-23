@@ -48,13 +48,6 @@ var Viewport          = require('./lib/viewport');
      */
 
 
-    /**
-     * Shared
-     */
-
-    var window = this, document = this.document;
-
-
 
     /**
      * States
@@ -84,7 +77,7 @@ var Viewport          = require('./lib/viewport');
 
       self.cancel = Terminal.cancel;
 
-      EventEmitter.call(this);
+      EventEmitter.prototype.initialize.call(this);
 
       if (typeof options === 'number') {
         options = {
@@ -568,12 +561,11 @@ var Viewport          = require('./lib/viewport');
       /*
       * Create main element container
       */
-      this.element = this.document.createElement('div');
+      this.element = document.createElement('div');
       this.element.classList.add('terminal');
       this.element.classList.add('xterm');
       this.element.classList.add('xterm-theme-' + this.theme);
 
-      this.element.style.height
       this.element.setAttribute('tabindex', 0);
 
       this.viewportElement = document.createElement('div');
@@ -4813,9 +4805,6 @@ var Viewport          = require('./lib/viewport');
       return w1 !== w2;
     }
 
-    var String = this.String;
-    var setTimeout = this.setTimeout;
-    var setInterval = this.setInterval;
 
     function indexOf(obj, el) {
       var i = obj.length;
