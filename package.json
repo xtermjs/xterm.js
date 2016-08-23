@@ -10,6 +10,7 @@
   "repository": "https://github.com/sourcelair/xterm.js",
   "license": "MIT",
   "devDependencies": {
+    "browserify": "^13.1.0",
     "chai": "3.5.0",
     "docdash": "0.4.0",
     "express": "4.13.4",
@@ -21,8 +22,9 @@
     "sleep": "^3.0.1"
   },
   "scripts": {
+    "build:demo": "browserify demo/main.js > demo/_main.js",
     "start": "node demo/app",
     "test": "mocha --recursive",
-    "build:docs": "node_modules/.bin/jsdoc -c jsdoc.json"
+    "build:docs": "jsdoc -c jsdoc.json"
   }
 }
