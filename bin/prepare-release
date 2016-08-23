@@ -25,3 +25,4 @@ sed -i "s/\"version\": \"$CURRENT_BOWER_JSON_VERSION\"/\"version\": \"$NEW_VERSI
 sh bin/generate-authors
 
 git commit -S -s -a -m "Bump version to $NEW_VERSION"
+git tag $NEW_VERSION
