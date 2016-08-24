@@ -22,6 +22,7 @@
     "sleep": "^3.0.1"
   },
   "scripts": {
+    "build:dist": "browserify src/xterm.js -t [ babelify --presets [ es2015 ] ] --standalone Terminal > dist/xterm.js",
     "build:demo": "browserify demo/main.js > demo/_main.js",
     "start": "npm run build:demo && node demo/app",
     "test": "mocha --recursive",
