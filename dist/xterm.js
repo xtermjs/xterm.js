@@ -3,6 +3,7 @@
  * xterm.js: xterm, in the browser
  * Copyright (c) 2016, sourceLair Limited (www.sourcelair.com (MIT License)
  */
+"use strict";
 /**
  * Encapsulates the logic for handling compositionstart, compositionupdate and compositionend
  * events, displaying the in-progress composition to the UI and forwarding the final composition
@@ -20,10 +21,8 @@ var CompositionHelper = (function () {
         this.compositionView = compositionView;
         this.terminal = terminal;
         // Whether input composition is currently happening, eg. via a mobile keyboard, speech input
-        // or IME. This variable determines whether the compositionText should be displayed on the UI.
+        // or IME. This variable determines whether the composition text should be displayed on the UI.
         this.isComposing = false;
-        // The input currently being composed, eg. via a mobile keyboard, speech input or IME.
-        this.compositionText = null;
         // The position within the input textarea's value of the current composition.
         this.compositionPosition = { start: null, end: null };
         // Whether a composition is in the process of being sent, setting this to false will cancel
@@ -43,8 +42,8 @@ var CompositionHelper = (function () {
      * Handles the compositionupdate event, updating the composition view.
      * @param {CompositionEvent} ev The event.
      */
-    CompositionHelper.prototype.compositionupdate = function (ev) {
-        this.compositionView.textContent = ev.data;
+    CompositionHelper.prototype.compositionupdate = function (event) {
+        this.compositionView.textContent = event.data;
         this.updateCompositionElements();
         var self = this;
         setTimeout(function () {
@@ -62,13 +61,13 @@ var CompositionHelper = (function () {
      * Handles the keydown event, routing any necessary events to the CompositionHelper functions.
      * @return Whether the Terminal should continue processing the keydown event.
      */
-    CompositionHelper.prototype.keydown = function (ev) {
+    CompositionHelper.prototype.keydown = function (event) {
         if (this.isComposing || this.isSendingComposition) {
-            if (ev.keyCode === 229) {
+            if (event.keyCode === 229) {
                 // Continue composing if the keyCode is the "composition character"
                 return false;
             }
-            else if (ev.keyCode === 16 || ev.keyCode === 17 || ev.keyCode === 18) {
+            else if (event.keyCode === 16 || event.keyCode === 17 || event.keyCode === 18) {
                 // Continue composing if the keyCode is a modifier key
                 return false;
             }
@@ -78,7 +77,7 @@ var CompositionHelper = (function () {
                 this.finalizeComposition(false);
             }
         }
-        if (ev.keyCode === 229) {
+        if (event.keyCode === 229) {
             // If the "composition character" is used but gets to this point it means a non-composition
             // character (eg. numbers and punctuation) was pressed when the IME was active.
             this.handleAnyTextareaChanges();
@@ -191,7 +190,7 @@ var CompositionHelper = (function () {
         this.textarea.style.top = '';
     };
     return CompositionHelper;
-})();
+}());
 exports.CompositionHelper = CompositionHelper;
 
 },{}],2:[function(require,module,exports){
@@ -5302,6 +5301,7 @@ module.exports = (function (Viewport, CompositionHelper) {
  * xterm.js: xterm, in the browser
  * Copyright (c) 2016, sourceLair Limited (www.sourcelair.com (MIT License)
  */
+"use strict";
 /**
  * Represents the viewport of a terminal, the visible area within the larger buffer of output.
  * Logic for the virtual scroll bar is included in this object.
@@ -5433,7 +5433,7 @@ var Viewport = (function () {
         ev.preventDefault();
     };
     return Viewport;
-})();
+}());
 exports.Viewport = Viewport;
 
 },{}],4:[function(require,module,exports){
@@ -5441,6 +5441,7 @@ exports.Viewport = Viewport;
  * xterm.js: xterm, in the browser
  * Copyright (c) 2016, sourceLair Limited (www.sourcelair.com (MIT License)
  */
+"use strict";
 var compositionHelper_1 = require('./input/compositionHelper');
 var viewport_1 = require('./viewport');
 var terminalFactory = require('./terminal');

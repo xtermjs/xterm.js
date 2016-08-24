@@ -9,13 +9,12 @@
  * to the handler.
  */
 export class CompositionHelper {
-  private textarea: any;
-  private compositionView: any;
-  private terminal: any;
-  private isComposing: any;
-  private compositionText: any;
-  private compositionPosition: any;
-  private isSendingComposition: any;
+  private textarea: HTMLTextAreaElement;
+  private compositionView: HTMLElement;
+  private terminal: Terminal; // TODO: Pull interface out once terminal.js is fully convertedk
+  private compositionPosition: Position;
+  private isComposing: boolean;
+  private isSendingComposition: boolean;
 
   /**
    * Creates a new CompositionHelper.
@@ -23,17 +22,14 @@ export class CompositionHelper {
    * @param {HTMLElement} compositionView The element to display the in-progress composition in.
    * @param {Terminal} terminal The Terminal to forward the finished composition to.
    */
-  public constructor(textarea, compositionView, terminal) {
+  public constructor(textarea: HTMLTextAreaElement, compositionView: HTMLElement, terminal: Terminal) {
     this.textarea = textarea;
     this.compositionView = compositionView;
     this.terminal = terminal;
 
     // Whether input composition is currently happening, eg. via a mobile keyboard, speech input
-    // or IME. This variable determines whether the compositionText should be displayed on the UI.
+    // or IME. This variable determines whether the composition text should be displayed on the UI.
     this.isComposing = false;
-
-    // The input currently being composed, eg. via a mobile keyboard, speech input or IME.
-    this.compositionText = null;
 
     // The position within the input textarea's value of the current composition.
     this.compositionPosition = { start: null, end: null };
@@ -57,8 +53,8 @@ export class CompositionHelper {
    * Handles the compositionupdate event, updating the composition view.
    * @param {CompositionEvent} ev The event.
    */
-  public compositionupdate(ev) {
-    this.compositionView.textContent = ev.data;
+  public compositionupdate(event: CompositionEvent) {
+    this.compositionView.textContent = event.data;
     this.updateCompositionElements();
     var self = this;
     setTimeout(function() {
@@ -78,12 +74,12 @@ export class CompositionHelper {
    * Handles the keydown event, routing any necessary events to the CompositionHelper functions.
    * @return Whether the Terminal should continue processing the keydown event.
    */
-  public keydown(ev) {
+  public keydown(event: KeyboardEvent) {
     if (this.isComposing || this.isSendingComposition) {
-      if (ev.keyCode === 229) {
+      if (event.keyCode === 229) {
         // Continue composing if the keyCode is the "composition character"
         return false;
-      } else if (ev.keyCode === 16 || ev.keyCode === 17 || ev.keyCode === 18) {
+      } else if (event.keyCode === 16 || event.keyCode === 17 || event.keyCode === 18) {
         // Continue composing if the keyCode is a modifier key
         return false;
       } else {
@@ -93,7 +89,7 @@ export class CompositionHelper {
       }
     }
 
-    if (ev.keyCode === 229) {
+    if (event.keyCode === 229) {
       // If the "composition character" is used but gets to this point it means a non-composition
       // character (eg. numbers and punctuation) was pressed when the IME was active.
       this.handleAnyTextareaChanges();
@@ -111,7 +107,7 @@ export class CompositionHelper {
     if (!this.isComposing) {
       return;
     }
-    var cursor = this.terminal.element.querySelector('.terminal-cursor');
+    var cursor = <HTMLElement>this.terminal.element.querySelector('.terminal-cursor');
     if (cursor) {
       this.compositionView.style.left = cursor.offsetLeft + 'px';
       this.compositionView.style.top = cursor.offsetTop + 'px';
@@ -132,7 +128,7 @@ export class CompositionHelper {
    *   compositionend event is triggered, such as enter, so that the composition is send before
    *   the command is executed.
    */
-  private finalizeComposition(waitForPropogation) {
+  private finalizeComposition(waitForPropogation: boolean) {
     this.compositionView.classList.remove('active');
     this.isComposing = false;
     this.clearTextareaPosition();
@@ -209,4 +205,15 @@ export class CompositionHelper {
     this.textarea.style.left = '';
     this.textarea.style.top = '';
   }
+}
+
+
+interface Terminal {
+  element: HTMLElement,
+  handler: (number) => void
+}
+
+interface Position {
+  start: number,
+  end: number
 }
