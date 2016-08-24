@@ -1,5 +1,6 @@
 var assert = require('chai').assert;
-var Terminal = require('../src/xterm');
+var Viewport = require('../src/lib/viewport');
+
 
 describe('Viewport', function () {
   var terminal;
@@ -38,15 +39,15 @@ describe('Viewport', function () {
         return { width: null, height: CHARACTER_HEIGHT };
       }
     };
-    viewport = new Terminal.Viewport(terminal, viewportElement, scrollAreaElement, charMeasureElement);
+    viewport = new Viewport(terminal, viewportElement, scrollAreaElement, charMeasureElement);
   });
 
   describe('Public API', function () {
     it('should define Viewport.prototype.onWheel', function () {
-      assert.isDefined(Terminal.Viewport.prototype.onWheel);
+      assert.isDefined(Viewport.prototype.onWheel);
     });
     it('should define Viewport.prototype.setApplicationMode', function () {
-      assert.isDefined(Terminal.Viewport.prototype.setApplicationMode);
+      assert.isDefined(Viewport.prototype.setApplicationMode);
     });
   });
 

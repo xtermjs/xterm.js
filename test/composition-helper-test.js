@@ -1,5 +1,5 @@
 var assert = require('chai').assert;
-var Terminal = require('../src/xterm');
+var CompositionHelper = require('../src/lib/compositionhelper');
 
 describe('CompositionHelper', function () {
   var terminal;
@@ -41,27 +41,27 @@ describe('CompositionHelper', function () {
       }
     };
     handledText = '';
-    compositionHelper = new Terminal.CompositionHelper(textarea, compositionView, terminal);
+    compositionHelper = new CompositionHelper(textarea, compositionView, terminal);
   });
 
   describe('Public API', function () {
     it('should define CompositionHelper.prototype.compositionstart', function () {
-      assert.isDefined(Terminal.CompositionHelper.prototype.compositionstart);
+      assert.isDefined(CompositionHelper.prototype.compositionstart);
     });
     it('should define CompositionHelper.prototype.compositionupdate', function () {
-      assert.isDefined(Terminal.CompositionHelper.prototype.compositionupdate);
+      assert.isDefined(CompositionHelper.prototype.compositionupdate);
     });
     it('should define CompositionHelper.prototype.compositionend', function () {
-      assert.isDefined(Terminal.CompositionHelper.prototype.compositionend);
+      assert.isDefined(CompositionHelper.prototype.compositionend);
     });
     it('should define CompositionHelper.prototype.finalizeComposition', function () {
-      assert.isDefined(Terminal.CompositionHelper.prototype.finalizeComposition);
+      assert.isDefined(CompositionHelper.prototype.finalizeComposition);
     });
     it('should define CompositionHelper.prototype.handleAnyTextareaChanges', function () {
-      assert.isDefined(Terminal.CompositionHelper.prototype.handleAnyTextareaChanges);
+      assert.isDefined(CompositionHelper.prototype.handleAnyTextareaChanges);
     });
     it('should define CompositionHelper.prototype.updateCompositionElements', function () {
-      assert.isDefined(Terminal.CompositionHelper.prototype.updateCompositionElements);
+      assert.isDefined(CompositionHelper.prototype.updateCompositionElements);
     });
     it('should define CompositionHelper.isComposing', function () {
       assert.isDefined(compositionHelper.isComposing);

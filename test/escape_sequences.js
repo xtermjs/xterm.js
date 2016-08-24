@@ -4,6 +4,12 @@ var pty = require('pty.js');
 var sleep = require('sleep');
 var Terminal = require('../src/xterm');
 
+
+
+  //support for nodejs tests
+if (typeof document === 'undefined')
+  global.document = null;
+
 var CONSOLE_LOG = console.log;
 
 // expect files need terminal at 80x25!
