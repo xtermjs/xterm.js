@@ -238,6 +238,215 @@ module.exports = CompositionHelper;
 },{}],2:[function(require,module,exports){
 "use strict";
 
+/**
+* Returns an object that determines how a KeyboardEvent should be handled. The key of the
+* returned value is the new key code to pass to the PTY.
+*
+* Reference: http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+* @param {KeyboardEvent} ev The keyboard event to be translated to key escape sequence.
+* @param {boolean} applicationCursor 
+* @param {int} rows terminal rows
+* @param {boolean} isMac 
+*/
+
+module.exports = function (ev, applicationCursor, rows, isMac) {
+  var result = {
+    // Whether to cancel event propogation (NOTE: this may not be needed since the event is
+    // canceled at the end of keyDown
+    cancel: false,
+    // The new key even to emit
+    key: undefined,
+    // The number of characters to scroll, if this is defined it will cancel the event
+    scrollDisp: undefined
+  };
+  var modifiers = ev.shiftKey << 0 | ev.altKey << 1 | ev.ctrlKey << 2 | ev.metaKey << 3;
+  switch (ev.keyCode) {
+    // backspace
+    case 8:
+      if (ev.shiftKey) {
+        result.key = '\x08'; // ^H
+        break;
+      }
+      result.key = '\x7f'; // ^?
+      break;
+    // tab
+    case 9:
+      if (ev.shiftKey) {
+        result.key = '\x1b[Z';
+        break;
+      }
+      result.key = '\t';
+      result.cancel = true;
+      break;
+    // return/enter
+    case 13:
+      result.key = '\r';
+      result.cancel = true;
+      break;
+    // escape
+    case 27:
+      result.key = '\x1b';
+      result.cancel = true;
+      break;
+    // left-arrow
+    case 37:
+      if (modifiers) {
+        result.key = '\x1b[1;' + (modifiers + 1) + 'D';
+        // HACK: Make Alt + left-arrow behave like Ctrl + left-arrow: move one word backwards
+        // http://unix.stackexchange.com/a/108106
+        if (result.key == '\x1b[1;3D') {
+          result.key = '\x1b[1;5D';
+        }
+      } else if (applicationCursor) {
+        result.key = '\x1bOD';
+      } else {
+        result.key = '\x1b[D';
+      }
+      break;
+    // right-arrow
+    case 39:
+      if (modifiers) {
+        result.key = '\x1b[1;' + (modifiers + 1) + 'C';
+        // HACK: Make Alt + right-arrow behave like Ctrl + right-arrow: move one word forward
+        // http://unix.stackexchange.com/a/108106
+        if (result.key == '\x1b[1;3C') {
+          result.key = '\x1b[1;5C';
+        }
+      } else if (applicationCursor) {
+        result.key = '\x1bOC';
+      } else {
+        result.key = '\x1b[C';
+      }
+      break;
+    // up-arrow
+    case 38:
+      if (modifiers) {
+        result.key = '\x1b[1;' + (modifiers + 1) + 'A';
+        // HACK: Make Alt + up-arrow behave like Ctrl + up-arrow
+        // http://unix.stackexchange.com/a/108106
+        if (result.key == '\x1b[1;3A') {
+          result.key = '\x1b[1;5A';
+        }
+      } else if (applicationCursor) {
+        result.key = '\x1bOA';
+      } else {
+        result.key = '\x1b[A';
+      }
+      break;
+    // down-arrow
+    case 40:
+      if (modifiers) {
+        result.key = '\x1b[1;' + (modifiers + 1) + 'B';
+        // HACK: Make Alt + down-arrow behave like Ctrl + down-arrow
+        // http://unix.stackexchange.com/a/108106
+        if (result.key == '\x1b[1;3B') {
+          result.key = '\x1b[1;5B';
+        }
+      } else if (applicationCursor) {
+        result.key = '\x1bOB';
+      } else {
+        result.key = '\x1b[B';
+      }
+      break;
+    // insert
+    case 45:
+      if (!ev.shiftKey && !ev.ctrlKey) {
+        // <Ctrl> or <Shift> + <Insert> are used to
+        // copy-paste on some systems.
+        result.key = '\x1b[2~';
+      }
+      break;
+    // delete
+    case 46:
+      result.key = '\x1b[3~';break;
+    // home
+    case 36:
+      if (modifiers) result.key = '\x1b[1;' + (modifiers + 1) + 'H';else if (applicationCursor) result.key = '\x1bOH';else result.key = '\x1b[H';
+      break;
+    // end
+    case 35:
+      if (modifiers) result.key = '\x1b[1;' + (modifiers + 1) + 'F';else if (applicationCursor) result.key = '\x1bOF';else result.key = '\x1b[F';
+      break;
+    // page up
+    case 33:
+      if (ev.shiftKey) {
+        result.scrollDisp = -(rows - 1);
+      } else {
+        result.key = '\x1b[5~';
+      }
+      break;
+    // page down
+    case 34:
+      if (ev.shiftKey) {
+        result.scrollDisp = rows - 1;
+      } else {
+        result.key = '\x1b[6~';
+      }
+      break;
+    // F1-F12
+    case 112:
+      result.key = '\x1bOP';break;
+    case 113:
+      result.key = '\x1bOQ';break;
+    case 114:
+      result.key = '\x1bOR';break;
+    case 115:
+      result.key = '\x1bOS';break;
+    case 116:
+      result.key = '\x1b[15~';break;
+    case 117:
+      result.key = '\x1b[17~';break;
+    case 118:
+      result.key = '\x1b[18~';break;
+    case 119:
+      result.key = '\x1b[19~';break;
+    case 120:
+      result.key = '\x1b[20~';break;
+    case 121:
+      result.key = '\x1b[21~';break;
+    case 122:
+      result.key = '\x1b[23~';break;
+    case 123:
+      result.key = '\x1b[24~';break;
+    default:
+      // a-z and space
+      if (ev.ctrlKey && !ev.shiftKey && !ev.altKey && !ev.metaKey) {
+        if (ev.keyCode >= 65 && ev.keyCode <= 90) {
+          result.key = String.fromCharCode(ev.keyCode - 64);
+        } else if (ev.keyCode === 32) {
+          // NUL
+          result.key = String.fromCharCode(0);
+        } else if (ev.keyCode >= 51 && ev.keyCode <= 55) {
+          // escape, file sep, group sep, record sep, unit sep
+          result.key = String.fromCharCode(ev.keyCode - 51 + 27);
+        } else if (ev.keyCode === 56) {
+          // delete
+          result.key = String.fromCharCode(127);
+        } else if (ev.keyCode === 219) {
+          // ^[ - escape
+          result.key = String.fromCharCode(27);
+        } else if (ev.keyCode === 221) {
+          // ^] - group sep
+          result.key = String.fromCharCode(29);
+        }
+      } else if (!isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) {
+        // On Mac this is a third level shift. Use <Esc> instead.
+        if (ev.keyCode >= 65 && ev.keyCode <= 90) {
+          result.key = '\x1b' + String.fromCharCode(ev.keyCode + 32);
+        } else if (ev.keyCode === 192) {
+          result.key = '\x1b`';
+        } else if (ev.keyCode >= 48 && ev.keyCode <= 57) {
+          result.key = '\x1b' + (ev.keyCode - 48);
+        }
+      }
+      break;
+  }
+  return result;
+};
+
+},{}],3:[function(require,module,exports){
+"use strict";
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -318,7 +527,7 @@ var EventEmitter = function () {
 
 module.exports = EventEmitter;
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 "use strict";
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -480,7 +689,7 @@ var Viewport = function () {
 
 module.exports = Viewport;
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 "use strict";
 
 //this should be a 3rd module
@@ -521,8 +730,7 @@ module.exports = function (opts) {
   return wcwidth;
 };
 
-},{}],5:[function(require,module,exports){
-(function (global){
+},{}],6:[function(require,module,exports){
 /**
  * xterm.js: xterm, in the browser
  * Copyright (c) 2014, sourceLair Limited (www.sourcelair.com (MIT License)
@@ -554,8 +762,7 @@ module.exports = function (opts) {
  *   The original design remains. The terminal itself
  *   has been extended to include xterm CSI codes, among
  *   other features.
- */'use strict';//support for nodejs tests
-var _typeof=typeof Symbol==="function"&&typeof Symbol.iterator==="symbol"?function(obj){return typeof obj;}:function(obj){return obj&&typeof Symbol==="function"&&obj.constructor===Symbol?"symbol":typeof obj;};if(typeof document==='undefined')global.document=null;var EventEmitter=require('./lib/eventemitter');var CompositionHelper=require('./lib/compositionhelper');var Viewport=require('./lib/viewport');/**
+ */'use strict';var _typeof=typeof Symbol==="function"&&typeof Symbol.iterator==="symbol"?function(obj){return typeof obj;}:function(obj){return obj&&typeof Symbol==="function"&&obj.constructor===Symbol?"symbol":typeof obj;};var EventEmitter=require('./lib/eventemitter');var CompositionHelper=require('./lib/compositionhelper');var Viewport=require('./lib/viewport');var escapeSequence=require('./lib/escapeSequence');/**
      * Terminal Emulation References:
      *   http://vt100.net/
      *   http://invisible-island.net/xterm/ctlseqs/ctlseqs.txt
@@ -577,9 +784,10 @@ var _typeof=typeof Symbol==="function"&&typeof Symbol.iterator==="symbol"?functi
      * @public
      * @class Xterm Xterm
      * @alias module:xterm/src/xterm
-     */function Terminal(options){var self=this;if(!(this instanceof Terminal)){return new Terminal(arguments[0],arguments[1],arguments[2]);}self.cancel=Terminal.cancel;EventEmitter.prototype.initialize.call(this);if(typeof options==='number'){options={cols:arguments[0],rows:arguments[1],handler:arguments[2]};}options=options||{};Object.keys(Terminal.defaults).forEach(function(key){if(options[key]==null){options[key]=Terminal.options[key];if(Terminal[key]!==Terminal.defaults[key]){options[key]=Terminal[key];}}self[key]=options[key];});if(options.colors.length===8){options.colors=options.colors.concat(Terminal._colors.slice(8));}else if(options.colors.length===16){options.colors=options.colors.concat(Terminal._colors.slice(16));}else if(options.colors.length===10){options.colors=options.colors.slice(0,-2).concat(Terminal._colors.slice(8,-2),options.colors.slice(-2));}else if(options.colors.length===18){options.colors=options.colors.concat(Terminal._colors.slice(16,-2),options.colors.slice(-2));}this.colors=options.colors;this.options=options;// this.context = options.context || window;
-// this.document = options.document || document;
-this.parent=options.body||options.parent||(document?document.getElementsByTagName('body')[0]:null);this.cols=options.cols||options.geometry[0];this.rows=options.rows||options.geometry[1];if(options.handler){this.on('data',options.handler);}/**
+     */function Terminal(options){var self=this;if(!(this instanceof Terminal)){return new Terminal(arguments[0],arguments[1],arguments[2]);}self.cancel=Terminal.cancel;EventEmitter.prototype.initialize.call(this);if(typeof options==='number'){options={cols:arguments[0],rows:arguments[1],handler:arguments[2]};}options=options||{};Object.keys(Terminal.defaults).forEach(function(key){if(options[key]==null){options[key]=Terminal.options[key];if(Terminal[key]!==Terminal.defaults[key]){options[key]=Terminal[key];}}self[key]=options[key];});if(options.colors.length===8){options.colors=options.colors.concat(Terminal._colors.slice(8));}else if(options.colors.length===16){options.colors=options.colors.concat(Terminal._colors.slice(16));}else if(options.colors.length===10){options.colors=options.colors.slice(0,-2).concat(Terminal._colors.slice(8,-2),options.colors.slice(-2));}else if(options.colors.length===18){options.colors=options.colors.concat(Terminal._colors.slice(16,-2),options.colors.slice(-2));}this.colors=options.colors;this.options=options;//container node xterm is bound to
+//until you call open(dom), parent might not bound
+this.parent=options.body||options.parent;//document context, beware as it might be null (e.g. in nodejs)
+this.document=this.parent?this.parent.ownerDocument:null;this.cols=options.cols||options.geometry[0];this.rows=options.rows||options.geometry[1];if(options.handler){this.on('data',options.handler);}/**
        * The scroll position of the y cursor, ie. ybase + y = the y position within the entire
        * buffer
        */this.ybase=0;/**
@@ -647,7 +855,7 @@ i=0;for(;i<24;i++){r=8+i*10;out(r,r,r);}function out(r,g,b){colors.push('#'+hex(
              * spaces.
              */var processedLine=line.replace(/\s+$/g,'').replace(allNonBreakingSpaces,space);return processedLine;}).join('\n');return processedText;};/**
      * Apply key handling to the terminal
-     */Terminal.bindKeys=function(term){on(term.element,'keydown',function(ev){if(document.activeElement!=this){return;}term.keyDown(ev);},true);on(term.element,'keypress',function(ev){if(document.activeElement!=this){return;}term.keyPress(ev);},true);on(term.element,'keyup',term.focus.bind(term));on(term.textarea,'keydown',function(ev){term.keyDown(ev);},true);on(term.textarea,'keypress',function(ev){term.keyPress(ev);// Truncate the textarea's value, since it is not needed
+     */Terminal.bindKeys=function(term){on(term.element,'keydown',function(ev){if(term.document.activeElement!=this){return;}term.keyDown(ev);},true);on(term.element,'keypress',function(ev){if(term.document.activeElement!=this){return;}term.keyPress(ev);},true);on(term.element,'keyup',term.focus.bind(term));on(term.textarea,'keydown',function(ev){term.keyDown(ev);},true);on(term.textarea,'keypress',function(ev){term.keyPress(ev);// Truncate the textarea's value, since it is not needed
 this.value='';},true);on(term.textarea,'compositionstart',term.compositionHelper.compositionstart.bind(term.compositionHelper));on(term.textarea,'compositionupdate',term.compositionHelper.compositionupdate.bind(term.compositionHelper));on(term.textarea,'compositionend',term.compositionHelper.compositionend.bind(term.compositionHelper));term.on('refresh',term.compositionHelper.updateCompositionElements.bind(term.compositionHelper));};/**
      * Binds copy functionality to the given terminal.
      * @static
@@ -656,7 +864,7 @@ this.value='';},true);on(term.textarea,'compositionstart',term.compositionHelper
      * Insert the given row to the terminal or produce a new one
      * if no row argument is passed. Return the inserted row.
      * @param {HTMLElement} row (optional) The row to append to the terminal.
-     */Terminal.prototype.insertRow=function(row){if((typeof row==='undefined'?'undefined':_typeof(row))!='object'){row=document.createElement('div');}this.rowContainer.appendChild(row);this.children.push(row);return row;};/**
+     */Terminal.prototype.insertRow=function(row){if((typeof row==='undefined'?'undefined':_typeof(row))!='object'){row=this.document.createElement('div');}this.rowContainer.appendChild(row);this.children.push(row);return row;};/**
      * Opens the terminal within an element.
      *
      * @param {HTMLElement} parent The element to create the terminal within.
@@ -670,18 +878,18 @@ this.value='';},true);on(term.textarea,'compositionstart',term.compositionHelper
       * http://stackoverflow.com/questions/19877924/what-is-the-list-of-possible-values-for-navigator-platform-as-of-today
       */if(this.context.navigator&&this.context.navigator.platform){this.isMac=contains(this.context.navigator.platform,['Macintosh','MacIntel','MacPPC','Mac68K']);this.isIpad=this.context.navigator.platform==='iPad';this.isIphone=this.context.navigator.platform==='iPhone';this.isMSWindows=contains(this.context.navigator.platform,['Windows','Win16','Win32','WinCE']);}/*
       * Create main element container
-      */this.element=document.createElement('div');this.element.classList.add('terminal');this.element.classList.add('xterm');this.element.classList.add('xterm-theme-'+this.theme);this.element.setAttribute('tabindex',0);this.viewportElement=document.createElement('div');this.viewportElement.classList.add('xterm-viewport');this.element.appendChild(this.viewportElement);this.viewportScrollArea=document.createElement('div');this.viewportScrollArea.classList.add('xterm-scroll-area');this.viewportElement.appendChild(this.viewportScrollArea);/*
+      */this.element=this.document.createElement('div');this.element.classList.add('terminal');this.element.classList.add('xterm');this.element.classList.add('xterm-theme-'+this.theme);this.element.setAttribute('tabindex',0);this.viewportElement=this.document.createElement('div');this.viewportElement.classList.add('xterm-viewport');this.element.appendChild(this.viewportElement);this.viewportScrollArea=this.document.createElement('div');this.viewportScrollArea.classList.add('xterm-scroll-area');this.viewportElement.appendChild(this.viewportScrollArea);/*
       * Create the container that will hold the lines of the terminal and then
       * produce the lines the lines.
-      */this.rowContainer=document.createElement('div');this.rowContainer.classList.add('xterm-rows');this.element.appendChild(this.rowContainer);this.children=[];/*
+      */this.rowContainer=this.document.createElement('div');this.rowContainer.classList.add('xterm-rows');this.element.appendChild(this.rowContainer);this.children=[];/*
       * Create the container that will hold helpers like the textarea for
       * capturing DOM Events. Then produce the helpers.
-      */this.helperContainer=document.createElement('div');this.helperContainer.classList.add('xterm-helpers');// TODO: This should probably be inserted once it's filled to prevent an additional layout
-this.element.appendChild(this.helperContainer);this.textarea=document.createElement('textarea');this.textarea.classList.add('xterm-helper-textarea');this.textarea.setAttribute('autocorrect','off');this.textarea.setAttribute('autocapitalize','off');this.textarea.setAttribute('spellcheck','false');this.textarea.tabIndex=0;this.textarea.addEventListener('focus',function(){self.emit('focus',{terminal:self});});this.textarea.addEventListener('blur',function(){self.emit('blur',{terminal:self});});this.helperContainer.appendChild(this.textarea);this.compositionView=document.createElement('div');this.compositionView.classList.add('composition-view');this.compositionHelper=new CompositionHelper(this.textarea,this.compositionView,this);this.helperContainer.appendChild(this.compositionView);this.charMeasureElement=document.createElement('div');this.charMeasureElement.classList.add('xterm-char-measure-element');this.charMeasureElement.innerHTML='W';this.helperContainer.appendChild(this.charMeasureElement);for(;i<this.rows;i++){this.insertRow();}this.parent.appendChild(this.element);this.viewport=new Viewport(this,this.viewportElement,this.viewportScrollArea,this.charMeasureElement);// Draw the screen.
+      */this.helperContainer=this.document.createElement('div');this.helperContainer.classList.add('xterm-helpers');// TODO: This should probably be inserted once it's filled to prevent an additional layout
+this.element.appendChild(this.helperContainer);this.textarea=this.document.createElement('textarea');this.textarea.classList.add('xterm-helper-textarea');this.textarea.setAttribute('autocorrect','off');this.textarea.setAttribute('autocapitalize','off');this.textarea.setAttribute('spellcheck','false');this.textarea.tabIndex=0;this.textarea.addEventListener('focus',function(){self.emit('focus',{terminal:self});});this.textarea.addEventListener('blur',function(){self.emit('blur',{terminal:self});});this.helperContainer.appendChild(this.textarea);this.compositionView=this.document.createElement('div');this.compositionView.classList.add('composition-view');this.compositionHelper=new CompositionHelper(this.textarea,this.compositionView,this);this.helperContainer.appendChild(this.compositionView);this.charMeasureElement=this.document.createElement('div');this.charMeasureElement.classList.add('xterm-char-measure-element');this.charMeasureElement.innerHTML='W';this.helperContainer.appendChild(this.charMeasureElement);for(;i<this.rows;i++){this.insertRow();}this.parent.appendChild(this.element);this.viewport=new Viewport(this,this.viewportElement,this.viewportScrollArea,this.charMeasureElement);// Draw the screen.
 this.refresh(0,this.rows-1);// Initialize global actions that
 // need to be taken on the document.
 this.initGlobal();// Ensure there is a Terminal.focus.
-this.focus();on(this.element,'mouseup',function(){var selection=document.getSelection(),collapsed=selection.isCollapsed,isRange=typeof collapsed=='boolean'?!collapsed:selection.type=='Range';if(!isRange){self.focus();}});// Listen for mouse events and translate
+this.focus();on(this.element,'mouseup',function(){var selection=self.document.getSelection(),collapsed=selection.isCollapsed,isRange=typeof collapsed=='boolean'?!collapsed:selection.type=='Range';if(!isRange){self.focus();}});// Listen for mouse events and translate
 // them into terminal mouse protocols.
 this.bindMouse();// Figure out whether boldness affects
 // the character width of monospace fonts.
@@ -796,7 +1004,7 @@ if(this._refreshIsQueued){// If a refresh has already been queued, just order a 
 this._fullRefreshNext=true;}else{setTimeout(function(){self.refresh(start,end,false);},34);this._refreshIsQueued=true;}return;}// If refresh should be run right now (not be queued), release the lock
 this._refreshIsQueued=false;// If multiple refreshes were requested, make a full refresh.
 if(this._fullRefreshNext){start=0;end=this.rows-1;this._fullRefreshNext=false;// reset lock
-}var x,y,i,line,out,ch,ch_width,width,data,attr,bg,fg,flags,row,parent,focused=document.activeElement;// If this is a big refresh, remove the terminal rows from the DOM for faster calculations
+}var x,y,i,line,out,ch,ch_width,width,data,attr,bg,fg,flags,row,parent,focused=this.document.activeElement;// If this is a big refresh, remove the terminal rows from the DOM for faster calculations
 if(end-start>=this.rows/2){parent=this.element.parentNode;if(parent){this.element.removeChild(this.rowContainer);}}width=this.cols;y=start;if(end>=this.rows.length){this.log('`end` is too large. Most likely a bad CSR.');end=this.rows.length-1;}for(;y<=end;y++){row=y+this.ydisp;line=this.lines[row];out='';if(this.y===y-(this.ybase-this.ydisp)&&this.cursorState&&!this.cursorHidden){x=this.x;}else{x=-1;}attr=this.defAttr;i=0;for(;i<width;i++){data=line[i][0];ch=line[i][1];ch_width=line[i][2];if(!ch_width)continue;if(i===x)data=-1;if(data!==attr){if(attr!==this.defAttr){out+='</span>';}if(data!==this.defAttr){if(data===-1){out+='<span class="reverse-video terminal-cursor';if(this.cursorBlink){out+=' blinking';}out+='">';}else{var classNames=[];bg=data&0x1ff;fg=data>>9&0x1ff;flags=data>>18;if(flags&Terminal.flags.BOLD){if(!Terminal.brokenBold){classNames.push('xterm-bold');}// See: XTerm*boldColors
 if(fg<8)fg+=8;}if(flags&Terminal.flags.UNDERLINE){classNames.push('xterm-underline');}if(flags&Terminal.flags.BLINK){classNames.push('xterm-blink');}/**
                  * If inverse flag is on, then swap the foreground and background variables.
@@ -1205,51 +1413,7 @@ if(ch==='\x1b'||ch==='\x07'){if(ch==='\x1b')i++;this.state=normal;}break;}}this.
      *   - https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
      * @param {KeyboardEvent} ev The keydown event to be handled.
      */Terminal.prototype.keyDown=function(ev){if(this.customKeydownHandler&&this.customKeydownHandler(ev)===false){return false;}if(!this.compositionHelper.keydown.bind(this.compositionHelper)(ev)){return false;}var self=this;var result=this.evaluateKeyEscapeSequence(ev);if(result.scrollDisp){this.scrollDisp(result.scrollDisp);return this.cancel(ev);}if(isThirdLevelShift(this,ev)){return true;}if(result.cancel){// The event is canceled at the end already, is this necessary?
-this.cancel(ev,true);}if(!result.key){return true;}this.emit('keydown',ev);this.emit('key',result.key,ev);this.showCursor();this.handler(result.key);return this.cancel(ev,true);};/**
-     * Returns an object that determines how a KeyboardEvent should be handled. The key of the
-     * returned value is the new key code to pass to the PTY.
-     *
-     * Reference: http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
-     * @param {KeyboardEvent} ev The keyboard event to be translated to key escape sequence.
-     */Terminal.prototype.evaluateKeyEscapeSequence=function(ev){var result={// Whether to cancel event propogation (NOTE: this may not be needed since the event is
-// canceled at the end of keyDown
-cancel:false,// The new key even to emit
-key:undefined,// The number of characters to scroll, if this is defined it will cancel the event
-scrollDisp:undefined};var modifiers=ev.shiftKey<<0|ev.altKey<<1|ev.ctrlKey<<2|ev.metaKey<<3;switch(ev.keyCode){// backspace
-case 8:if(ev.shiftKey){result.key='\x08';// ^H
-break;}result.key='\x7f';// ^?
-break;// tab
-case 9:if(ev.shiftKey){result.key='\x1b[Z';break;}result.key='\t';result.cancel=true;break;// return/enter
-case 13:result.key='\r';result.cancel=true;break;// escape
-case 27:result.key='\x1b';result.cancel=true;break;// left-arrow
-case 37:if(modifiers){result.key='\x1b[1;'+(modifiers+1)+'D';// HACK: Make Alt + left-arrow behave like Ctrl + left-arrow: move one word backwards
-// http://unix.stackexchange.com/a/108106
-if(result.key=='\x1b[1;3D'){result.key='\x1b[1;5D';}}else if(this.applicationCursor){result.key='\x1bOD';}else{result.key='\x1b[D';}break;// right-arrow
-case 39:if(modifiers){result.key='\x1b[1;'+(modifiers+1)+'C';// HACK: Make Alt + right-arrow behave like Ctrl + right-arrow: move one word forward
-// http://unix.stackexchange.com/a/108106
-if(result.key=='\x1b[1;3C'){result.key='\x1b[1;5C';}}else if(this.applicationCursor){result.key='\x1bOC';}else{result.key='\x1b[C';}break;// up-arrow
-case 38:if(modifiers){result.key='\x1b[1;'+(modifiers+1)+'A';// HACK: Make Alt + up-arrow behave like Ctrl + up-arrow
-// http://unix.stackexchange.com/a/108106
-if(result.key=='\x1b[1;3A'){result.key='\x1b[1;5A';}}else if(this.applicationCursor){result.key='\x1bOA';}else{result.key='\x1b[A';}break;// down-arrow
-case 40:if(modifiers){result.key='\x1b[1;'+(modifiers+1)+'B';// HACK: Make Alt + down-arrow behave like Ctrl + down-arrow
-// http://unix.stackexchange.com/a/108106
-if(result.key=='\x1b[1;3B'){result.key='\x1b[1;5B';}}else if(this.applicationCursor){result.key='\x1bOB';}else{result.key='\x1b[B';}break;// insert
-case 45:if(!ev.shiftKey&&!ev.ctrlKey){// <Ctrl> or <Shift> + <Insert> are used to
-// copy-paste on some systems.
-result.key='\x1b[2~';}break;// delete
-case 46:result.key='\x1b[3~';break;// home
-case 36:if(modifiers)result.key='\x1b[1;'+(modifiers+1)+'H';else if(this.applicationCursor)result.key='\x1bOH';else result.key='\x1b[H';break;// end
-case 35:if(modifiers)result.key='\x1b[1;'+(modifiers+1)+'F';else if(this.applicationCursor)result.key='\x1bOF';else result.key='\x1b[F';break;// page up
-case 33:if(ev.shiftKey){result.scrollDisp=-(this.rows-1);}else{result.key='\x1b[5~';}break;// page down
-case 34:if(ev.shiftKey){result.scrollDisp=this.rows-1;}else{result.key='\x1b[6~';}break;// F1-F12
-case 112:result.key='\x1bOP';break;case 113:result.key='\x1bOQ';break;case 114:result.key='\x1bOR';break;case 115:result.key='\x1bOS';break;case 116:result.key='\x1b[15~';break;case 117:result.key='\x1b[17~';break;case 118:result.key='\x1b[18~';break;case 119:result.key='\x1b[19~';break;case 120:result.key='\x1b[20~';break;case 121:result.key='\x1b[21~';break;case 122:result.key='\x1b[23~';break;case 123:result.key='\x1b[24~';break;default:// a-z and space
-if(ev.ctrlKey&&!ev.shiftKey&&!ev.altKey&&!ev.metaKey){if(ev.keyCode>=65&&ev.keyCode<=90){result.key=String.fromCharCode(ev.keyCode-64);}else if(ev.keyCode===32){// NUL
-result.key=String.fromCharCode(0);}else if(ev.keyCode>=51&&ev.keyCode<=55){// escape, file sep, group sep, record sep, unit sep
-result.key=String.fromCharCode(ev.keyCode-51+27);}else if(ev.keyCode===56){// delete
-result.key=String.fromCharCode(127);}else if(ev.keyCode===219){// ^[ - escape
-result.key=String.fromCharCode(27);}else if(ev.keyCode===221){// ^] - group sep
-result.key=String.fromCharCode(29);}}else if(!this.isMac&&ev.altKey&&!ev.ctrlKey&&!ev.metaKey){// On Mac this is a third level shift. Use <Esc> instead.
-if(ev.keyCode>=65&&ev.keyCode<=90){result.key='\x1b'+String.fromCharCode(ev.keyCode+32);}else if(ev.keyCode===192){result.key='\x1b`';}else if(ev.keyCode>=48&&ev.keyCode<=57){result.key='\x1b'+(ev.keyCode-48);}}break;}return result;};/**
+this.cancel(ev,true);}if(!result.key){return true;}this.emit('keydown',ev);this.emit('key',result.key,ev);this.showCursor();this.handler(result.key);return this.cancel(ev,true);};Terminal.prototype.evaluateKeyEscapeSequence=function(ev){return escapeSequence(ev,this.applicationCursor,this.rows,this.isMac);};/**
      * Set the G level of the terminal
      * @param g
      */Terminal.prototype.setgLevel=function(g){this.glevel=g;this.charset=this.charsets[g];};/**
@@ -2115,6 +2279,5 @@ matchColor.distance=function(r1,g1,b1,r2,g2,b2){return Math.pow(30*(r1-r2),2)+Ma
      * @param {function} callback The function to call when the event is triggered.
      */Terminal.on=on;Terminal.off=off;Terminal.cancel=cancel;module.exports=Terminal;
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./lib/compositionhelper":1,"./lib/eventemitter":2,"./lib/viewport":3,"./lib/wcwidth":4}]},{},[5])(5)
+},{"./lib/compositionhelper":1,"./lib/escapeSequence":2,"./lib/eventemitter":3,"./lib/viewport":4,"./lib/wcwidth":5}]},{},[6])(6)
 });
