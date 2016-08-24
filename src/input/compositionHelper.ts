@@ -56,9 +56,8 @@ export class CompositionHelper {
   public compositionupdate(event: CompositionEvent) {
     this.compositionView.textContent = event.data;
     this.updateCompositionElements();
-    var self = this;
-    setTimeout(function() {
-      self.compositionPosition.end = self.textarea.value.length;
+    setTimeout(() => {
+      this.compositionPosition.end = this.textarea.value.length;
     }, 0);
   }
 
@@ -154,23 +153,22 @@ export class CompositionHelper {
       // - The last compositionupdate event's data property does not always accurately describe
       //   the character, a counter example being Korean where an ending consonsant can move to
       //   the following character if the following input is a vowel.
-      var self = this;
       this.isSendingComposition = true;
-      setTimeout(function () {
+      setTimeout(() => {
         // Ensure that the input has not already been sent
-        if (self.isSendingComposition) {
-          self.isSendingComposition = false;
+        if (this.isSendingComposition) {
+          this.isSendingComposition = false;
           var input;
-          if (self.isComposing) {
+          if (this.isComposing) {
             // Use the end position to get the string if a new composition has started.
-            input = self.textarea.value.substring(currentCompositionPosition.start, currentCompositionPosition.end);
+            input = this.textarea.value.substring(currentCompositionPosition.start, currentCompositionPosition.end);
           } else {
             // Don't use the end position here in order to pick up any characters after the
             // composition has finished, for example when typing a non-composition character
             // (eg. 2) after a composition character.
-            input = self.textarea.value.substring(currentCompositionPosition.start);
+            input = this.textarea.value.substring(currentCompositionPosition.start);
           }
-          self.terminal.handler(input);
+          this.terminal.handler(input);
         }
       }, 0);
     }
@@ -184,14 +182,13 @@ export class CompositionHelper {
    */
   private handleAnyTextareaChanges() {
     var oldValue = this.textarea.value;
-    var self = this;
-    setTimeout(function() {
+    setTimeout(() => {
       // Ignore if a composition has started since the timeout
-      if (!self.isComposing) {
-        var newValue = self.textarea.value;
+      if (!this.isComposing) {
+        var newValue = this.textarea.value;
         var diff = newValue.replace(oldValue, '');
         if (diff.length > 0) {
-          self.terminal.handler(diff);
+          this.terminal.handler(diff);
         }
       }
     }, 0);
