@@ -80,6 +80,7 @@ const escapeSequence    = require('./lib/escapeSequence');
         return new Terminal(arguments[0], arguments[1], arguments[2]);
       }
 
+
       self.cancel = Terminal.cancel;
 
       EventEmitter.prototype.initialize.call(this);
@@ -126,9 +127,9 @@ const escapeSequence    = require('./lib/escapeSequence');
       this.parent = options.body || options.parent;
 
         //document context, beware as it might be null (e.g. in nodejs)
-      this.document = this.parent ? this.parent.ownerDocument : null;
+      this.document = this.parent ? this.parent.ownerDocument : options.document;
 
-        
+
       this.cols = options.cols || options.geometry[0];
       this.rows = options.rows || options.geometry[1];
 
@@ -2888,6 +2889,8 @@ const escapeSequence    = require('./lib/escapeSequence');
     Terminal.prototype.reset = function() {
       this.options.rows = this.rows;
       this.options.cols = this.cols;
+      this.options.document = this.document;
+
       var customKeydownHandler = this.customKeydownHandler;
       Terminal.call(this, this.options);
       this.customKeydownHandler = customKeydownHandler;
