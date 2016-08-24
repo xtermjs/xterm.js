@@ -1,10 +1,10 @@
 var assert = require('chai').assert;
-var Terminal = require('../../src/xterm');
+var Xterm = require('../../dist/xterm');
 
 describe('xterm.js addons', function() {
   it('should load addons with Terminal.loadAddon', function () {
-    Terminal.loadAddon('attach');
+    Xterm.Terminal.loadAddon('attach');
     // Test that function was loaded successfully
-    assert.equal(typeof Terminal.prototype.attach, 'function');
+    assert.equal(typeof Xterm.Terminal.prototype.attach, 'function');
   });
 });

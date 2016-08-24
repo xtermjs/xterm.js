@@ -44,7 +44,11 @@
 
 'use strict';
 
+var window = this;
+var document = this.document;
+
 module.exports = (function (Viewport, CompositionHelper) {
+
   /**
    * EventEmitter
    */

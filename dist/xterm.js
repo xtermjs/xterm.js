@@ -43,11 +43,11 @@ var CompositionHelper = (function () {
      * @param {CompositionEvent} ev The event.
      */
     CompositionHelper.prototype.compositionupdate = function (event) {
+        var _this = this;
         this.compositionView.textContent = event.data;
         this.updateCompositionElements();
-        var self = this;
         setTimeout(function () {
-            self.compositionPosition.end = self.textarea.value.length;
+            _this.compositionPosition.end = _this.textarea.value.length;
         }, 0);
     };
     /**
@@ -115,6 +115,7 @@ var CompositionHelper = (function () {
      *   the command is executed.
      */
     CompositionHelper.prototype.finalizeComposition = function (waitForPropogation) {
+        var _this = this;
         this.compositionView.classList.remove('active');
         this.isComposing = false;
         this.clearTextareaPosition();
@@ -139,24 +140,23 @@ var CompositionHelper = (function () {
             // - The last compositionupdate event's data property does not always accurately describe
             //   the character, a counter example being Korean where an ending consonsant can move to
             //   the following character if the following input is a vowel.
-            var self = this;
             this.isSendingComposition = true;
             setTimeout(function () {
                 // Ensure that the input has not already been sent
-                if (self.isSendingComposition) {
-                    self.isSendingComposition = false;
+                if (_this.isSendingComposition) {
+                    _this.isSendingComposition = false;
                     var input;
-                    if (self.isComposing) {
+                    if (_this.isComposing) {
                         // Use the end position to get the string if a new composition has started.
-                        input = self.textarea.value.substring(currentCompositionPosition.start, currentCompositionPosition.end);
+                        input = _this.textarea.value.substring(currentCompositionPosition.start, currentCompositionPosition.end);
                     }
                     else {
                         // Don't use the end position here in order to pick up any characters after the
                         // composition has finished, for example when typing a non-composition character
                         // (eg. 2) after a composition character.
-                        input = self.textarea.value.substring(currentCompositionPosition.start);
+                        input = _this.textarea.value.substring(currentCompositionPosition.start);
                     }
-                    self.terminal.handler(input);
+                    _this.terminal.handler(input);
                 }
             }, 0);
         }
@@ -168,15 +168,15 @@ var CompositionHelper = (function () {
      * IME is active.
      */
     CompositionHelper.prototype.handleAnyTextareaChanges = function () {
+        var _this = this;
         var oldValue = this.textarea.value;
-        var self = this;
         setTimeout(function () {
             // Ignore if a composition has started since the timeout
-            if (!self.isComposing) {
-                var newValue = self.textarea.value;
+            if (!_this.isComposing) {
+                var newValue = _this.textarea.value;
                 var diff = newValue.replace(oldValue, '');
                 if (diff.length > 0) {
-                    self.terminal.handler(diff);
+                    _this.terminal.handler(diff);
                 }
             }
         }, 0);
@@ -241,7 +241,11 @@ exports.CompositionHelper = CompositionHelper;
 
 'use strict';
 
+var window = this;
+var document = this.document;
+
 module.exports = (function (Viewport, CompositionHelper) {
+
   /**
    * EventEmitter
    */
@@ -5080,9 +5084,9 @@ module.exports = (function (Viewport, CompositionHelper) {
     return w1 !== w2;
   }
 
-  var String = window.String;
-  var setTimeout = window.setTimeout;
-  var setInterval = window.setInterval;
+  var String = String;
+  var setTimeout = setTimeout;
+  var setInterval = setInterval;
 
   function indexOf(obj, el) {
     var i = obj.length;

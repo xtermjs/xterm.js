@@ -2,7 +2,7 @@ var glob = require('glob');
 var fs = require('fs');
 var pty = require('pty.js');
 var sleep = require('sleep');
-var Terminal = require('../src/xterm');
+var Xterm = require('../dist/xterm');
 
 var CONSOLE_LOG = console.log;
 
@@ -27,7 +27,7 @@ function pty_write_read(s) {
   return b.toString('utf8', 0, bytes);
 }
 
-// make sure raw pty is at x=0 and has no pending data 
+// make sure raw pty is at x=0 and has no pending data
 function pty_reset() {
     pty_write_read('\r\n');
 }
@@ -74,7 +74,7 @@ describe('xterm output comparison', function() {
   var xterm;
 
   beforeEach(function () {
-    xterm = new Terminal(COLS, ROWS);
+    xterm = new Xterm.Terminal(COLS, ROWS);
     xterm.refresh = function() {};
   });
 

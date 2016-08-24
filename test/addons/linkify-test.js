@@ -1,5 +1,5 @@
 var assert = require('chai').assert;
-var Terminal = require('../../src/xterm');
+var Xterm = require('../../dist/xterm');
 var linkify = require('../../addons/linkify/linkify');
 
 describe('linkify addon', function () {
@@ -7,10 +7,10 @@ describe('linkify addon', function () {
 
   describe('API', function () {
     it('should define Terminal.prototype.linkify', function () {
-      assert.isDefined(Terminal.prototype.linkify);
+      assert.isDefined(Xterm.Terminal.prototype.linkify);
     });
     it('should define Terminal.prototype.linkifyTerminalLine', function () {
-      assert.isDefined(Terminal.prototype.linkifyTerminalLine);
+      assert.isDefined(Xterm.Terminal.prototype.linkifyTerminalLine);
     });
   });
 
