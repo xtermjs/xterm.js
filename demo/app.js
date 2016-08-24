@@ -11,7 +11,7 @@ var expressWs = require('express-ws')(app);
 
 app.use(express.static(__dirname));
 
-app.use(express.static(path.join(__dirname, '../src/')));
+app.use(express.static(path.join(__dirname, '../dist/')));
 
 app.ws("/", function(ws, req){
 

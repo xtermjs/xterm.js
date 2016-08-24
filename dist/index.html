@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+    <head>
+        <title>xterm.js demo</title>
+        <link rel="stylesheet" href="xterm.css" />
+        <link rel="stylesheet" href="style.css" />
+
+        <script src="xterm.js">;</script>
+        <script src="addons/fit.js">;</script>
+
+    </head>
+    <body>
+        <h1>xterm.js: xterm, in the browser</h1>
+        <div id="terminal-container"></div>
+        <div>
+          <h2>Options</h2>
+          <label><input type="checkbox" id="option-cursor-blink"> cursorBlink</label>
+
+          <div>
+          	<h3>Size</h3>
+            <div>
+              <div style="display: inline-block; margin-right: 16px;">
+                <label for="cols">Columns</label>
+                <input type="number" id="cols" />
+              </div>
+              <div style="display: inline-block; margin-right: 16px;">
+                <label for="rows">Rows</label>
+                <input type="number" id="rows" />
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <p><strong>Attention:</strong> The demo is a barebones implementation and is designed for xterm.js evaluation purposes only. Exposing the demo to the public as is would introduce security risks for the host.</p>
+        <script src="main.js" defer ></script>
+    </body>
+</html>

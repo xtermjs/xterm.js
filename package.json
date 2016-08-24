@@ -22,9 +22,13 @@
     "sleep": "^3.0.1"
   },
   "scripts": {
-    "build:dist": "browserify src/xterm.js -t [ babelify --presets [ es2015 ] ] --standalone Terminal > dist/xterm.js",
+    "build:dist"                 : "browserify src/xterm.js -t [ babelify --presets [ es2015 ] ] --standalone Terminal > dist/xterm.js",
+    "build:dist:addons:fit"      : "browserify addons/fit/index.js --standalone Terminal_Fit > dist/addons/fit.js",
+    "build:dist:addons:attach"   : "browserify addons/attach/index.js --standalone Terminal_Attach > dist/addons/attach.js",
+
     "build:demo": "browserify demo/main.js > demo/_main.js",
     "start": "npm run build:demo && node demo/app",
+
     "test": "mocha --recursive",
     "build:docs": "jsdoc -c jsdoc.json"
   }
