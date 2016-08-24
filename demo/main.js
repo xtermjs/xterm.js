@@ -36,7 +36,7 @@ function createTerminal() {
   while (terminalContainer.children.length) {
     terminalContainer.removeChild(terminalContainer.children[0]);
   }
-  term = new Terminal({
+  term = new Xterm.Terminal({
     cursorBlink: optionElements.cursorBlink.checked
   });
   term.on('resize', function (size) {

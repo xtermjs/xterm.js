@@ -44,7 +44,7 @@
     term.element.classList[fn]('fullscreen');
   };
 
-  Xterm.prototype.toggleFullscreen = function (fullscreen) {
+  Xterm.Terminal.prototype.toggleFullscreen = function (fullscreen) {
     exports.toggleFullScreen(this, fullscreen);
   };
 

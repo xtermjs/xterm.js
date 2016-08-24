@@ -116,7 +116,7 @@
    *                             should happen instantly or at a maximum
    *                             frequency of 1 rendering per 10ms.
    */
-  Xterm.prototype.attach = function (socket, bidirectional, buffered) {
+  Xterm.Terminal.prototype.attach = function (socket, bidirectional, buffered) {
     return exports.attach(this, socket, bidirectional, buffered);
   };
 
@@ -126,7 +126,7 @@
    * @param {WebSocket} socket - The socket from which to detach the current
    *                             terminal.
    */
-  Xterm.prototype.detach = function (socket) {
+  Xterm.Terminal.prototype.detach = function (socket) {
     return exports.detach(this, socket);
   };
 

@@ -186,7 +186,7 @@
    * @param {string} target -  Sets target="" attribute with value provided to links.
    *                           Default doesn't set target attribute
    */
-  Xterm.prototype.linkifyTerminalLine = function (line, lenient, target) {
+  Xterm.Terminal.prototype.linkifyTerminalLine = function (line, lenient, target) {
     return exports.linkifyTerminalLine(this, line, lenient, target);
   };
 
@@ -199,7 +199,7 @@
    * @param {string} target -  Sets target="" attribute with value provided to links.
    *                           Default doesn't set target attribute
    */
-  Xterm.prototype.linkify = function (lenient, target) {
+  Xterm.Terminal.prototype.linkify = function (lenient, target) {
     return exports.linkify(this, lenient, target);
   };
 
