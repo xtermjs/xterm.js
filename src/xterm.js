@@ -41,11 +41,14 @@ const Viewport          = require('./lib/viewport');
 
 const escapeSequence    = require('./lib/escapeSequence');
 
-    //those are 3rd pary generics
+    //those are 3rd party generics
 const matchColor        = require('./utils/matchColor');
 const off               = require('./utils/off');
 const contains          = require('./utils/contains');
-const  wcwidth          = require('./utils/wcwidth')({nul: 0, control: 0});  // configurable options
+const wcwidth           = require('./utils/wcwidth')({nul: 0, control: 0});  // configurable options
+const isThirdLevelShift = require('./utils/isThirdLevelShift');
+
+const isBoldBroken      = require('./utils/dom/isBoldBroken');
 
 
 
@@ -665,6 +668,8 @@ const  wcwidth          = require('./utils/wcwidth')({nul: 0, control: 0});  // 
 
       // Figure out whether boldness affects
       // the character width of monospace fonts.
+      // if bold is broken, we can't
+      // use it in the terminal.
       if (Terminal.brokenBold == null) {
         Terminal.brokenBold = isBoldBroken(this.document);
       }
@@ -2429,9 +2434,8 @@ const  wcwidth          = require('./utils/wcwidth')({nul: 0, control: 0});  // 
         return this.cancel(ev);
       }
 
-      if (isThirdLevelShift(this, ev)) {
+      if (isThirdLevelShift(ev, this.isMac, this.isMSWindows))
         return true;
-      }
 
       if (result.cancel ) {
         // The event is canceled at the end already, is this necessary?
@@ -2499,7 +2503,7 @@ const  wcwidth          = require('./utils/wcwidth')({nul: 0, control: 0});  // 
       }
 
       if (!key || (
-        (ev.altKey || ev.ctrlKey || ev.metaKey) && !isThirdLevelShift(this, ev)
+        (ev.altKey || ev.ctrlKey || ev.metaKey) && !isThirdLevelShift(ev, this.isMac, this.isMSWindows)
       )) {
         return false;
       }
@@ -4593,39 +4597,6 @@ const  wcwidth          = require('./utils/wcwidth')({nul: 0, control: 0});  // 
       f.prototype = parent.prototype;
       child.prototype = new f;
     }
-
-    // if bold is broken, we can't
-    // use it in the terminal.
-    function isBoldBroken(document) {
-      var body = document.getElementsByTagName('body')[0];
-      var el = document.createElement('span');
-      el.innerHTML = 'hello world';
-      body.appendChild(el);
-      var w1 = el.scrollWidth;
-      el.style.fontWeight = 'bold';
-      var w2 = el.scrollWidth;
-      body.removeChild(el);
-      return w1 !== w2;
-    }
-
-
-
-  function isThirdLevelShift(term, ev) {
-      var thirdLevelKey =
-          (term.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
-          (term.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
-
-    	if (ev.type == 'keypress') {
-        return thirdLevelKey;
-      }
-
-      // Don't invoke for arrows, pageDown, home, backspace, etc. (on non-keypress events)
-      return thirdLevelKey && (!ev.keyCode || ev.keyCode > 47);
-    }
-
-
-
-
 
 
 module.exports = Terminal;
