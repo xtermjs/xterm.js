@@ -6,7 +6,7 @@
     "test",
     ".gitignore"
   ],
-  "main": "src/xterm.js",
+  "main": "lib/terminal.js",
   "repository": "https://github.com/sourcelair/xterm.js",
   "license": "MIT",
   "devDependencies": {
@@ -19,17 +19,17 @@
     "jsdoc": "3.4.0",
     "mocha": "2.5.3",
     "pty.js": "0.3.1",
-    "sleep": "^3.0.1"
+    "sleep": "^3.0.1",
+    "tsify": "^1.0.4",
+    "typescript": "^1.8.10"
   },
   "scripts": {
-    "build:dist"                 : "browserify src/xterm.js -t [ babelify --presets [ es2015 ] ] --standalone Terminal > dist/xterm.js",
-    "build:dist:addons:fit"      : "browserify addons/fit/index.js --standalone Terminal_Fit > dist/addons/fit.js",
-    "build:dist:addons:attach"   : "browserify addons/attach/index.js --standalone Terminal_Attach > dist/addons/attach.js",
-
+    "build": "browserify lib/terminal.js -t [ babelify --presets [ es2015 ] ] --standalone Terminal > src/xterm.js",
+    "build:dist:addons:fit": "browserify addons/fit/index.js --standalone Terminal_Fit > src/addons/fit.js",
+    "build:dist:addons:attach": "browserify addons/attach/index.js --standalone Terminal_Attach > src/addons/attach.js",
     "build:demo": "browserify demo/main.js > demo/_main.js",
     "start": "npm run build:demo && node demo/app",
-
-    "test": "mocha --recursive",
+    "test": "mocha -b --recursive",
     "build:docs": "jsdoc -c jsdoc.json"
   }
 }

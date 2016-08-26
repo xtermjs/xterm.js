@@ -1,5 +1,5 @@
 var assert = require('chai').assert;
-var CompositionHelper = require('../src/lib/compositionhelper');
+var CompositionHelper = require('../lib/compositionhelper');
 
 describe('CompositionHelper', function () {
   var terminal;

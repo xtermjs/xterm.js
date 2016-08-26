@@ -2,7 +2,7 @@ var assert = require('chai').assert;
 var expect = require('chai').expect;
 
 
-var escapeSequence = require('../src/lib/escapeSequence');
+var escapeSequence = require('../lib/escapeSequence');
 
 
 describe('xterm.js', function() {

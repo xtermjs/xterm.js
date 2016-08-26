@@ -1,5 +1,5 @@
 var assert = require('chai').assert;
-var Viewport = require('../src/lib/viewport');
+var Viewport = require('../lib/viewport');
 
 
 describe('Viewport', function () {
