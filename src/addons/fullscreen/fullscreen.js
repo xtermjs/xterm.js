@@ -15,12 +15,12 @@
     /*
      * CommonJS environment
      */
-    module.exports = fullscreen(require('../../src/xterm'));
+    module.exports = fullscreen(require('../../xterm'));
   } else if (typeof define == 'function') {
     /*
      * Require.js is available
      */
-    define(['../../src/xterm'], fullscreen);
+    define(['../../xterm'], fullscreen);
   } else {
     /*
      * Plain browser environment
@@ -44,7 +44,7 @@
     term.element.classList[fn]('fullscreen');
   };
 
-  Xterm.prototype.toggleFullscreen = function (fullscreen) {
+  Xterm.Terminal.prototype.toggleFullscreen = function (fullscreen) {
     exports.toggleFullScreen(this, fullscreen);
   };
 

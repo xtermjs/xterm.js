@@ -1,12 +1,12 @@
 var assert = require('chai').assert;
 var expect = require('chai').expect;
-var Terminal = require('../src/xterm');
+var Xterm = require('../dist/xterm');
 
 describe('xterm.js', function() {
   var xterm;
 
   beforeEach(function () {
-    xterm = new Terminal();
+    xterm = new Xterm.Terminal();
     xterm.refresh = function(){};
   });
 
@@ -123,7 +123,7 @@ describe('xterm.js', function() {
     it('should strip trailing whitespaces and replace nbsps with spaces', function () {
 			var nonBreakingSpace = String.fromCharCode(160),
           copiedText = 'echo' + nonBreakingSpace + 'hello' + nonBreakingSpace,
-          processedText = Terminal.prepareCopiedTextForClipboard(copiedText);
+          processedText = Xterm.Terminal.prepareCopiedTextForClipboard(copiedText);
 
       // No trailing spaces
       assert.equal(processedText.match(/\s+$/), null);

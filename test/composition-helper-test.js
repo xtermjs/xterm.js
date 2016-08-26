@@ -1,5 +1,5 @@
 var assert = require('chai').assert;
-var Terminal = require('../src/xterm');
+var Xterm = require('../dist/xterm');
 
 describe('CompositionHelper', function () {
   var terminal;
@@ -41,27 +41,27 @@ describe('CompositionHelper', function () {
       }
     };
     handledText = '';
-    compositionHelper = new Terminal.CompositionHelper(textarea, compositionView, terminal);
+    compositionHelper = new Xterm.Terminal.CompositionHelper(textarea, compositionView, terminal);
   });
 
   describe('Public API', function () {
     it('should define CompositionHelper.prototype.compositionstart', function () {
-      assert.isDefined(Terminal.CompositionHelper.prototype.compositionstart);
+      assert.isDefined(Xterm.Terminal.CompositionHelper.prototype.compositionstart);
     });
     it('should define CompositionHelper.prototype.compositionupdate', function () {
-      assert.isDefined(Terminal.CompositionHelper.prototype.compositionupdate);
+      assert.isDefined(Xterm.Terminal.CompositionHelper.prototype.compositionupdate);
     });
     it('should define CompositionHelper.prototype.compositionend', function () {
-      assert.isDefined(Terminal.CompositionHelper.prototype.compositionend);
+      assert.isDefined(Xterm.Terminal.CompositionHelper.prototype.compositionend);
     });
     it('should define CompositionHelper.prototype.finalizeComposition', function () {
-      assert.isDefined(Terminal.CompositionHelper.prototype.finalizeComposition);
+      assert.isDefined(Xterm.Terminal.CompositionHelper.prototype.finalizeComposition);
     });
     it('should define CompositionHelper.prototype.handleAnyTextareaChanges', function () {
-      assert.isDefined(Terminal.CompositionHelper.prototype.handleAnyTextareaChanges);
+      assert.isDefined(Xterm.Terminal.CompositionHelper.prototype.handleAnyTextareaChanges);
     });
     it('should define CompositionHelper.prototype.updateCompositionElements', function () {
-      assert.isDefined(Terminal.CompositionHelper.prototype.updateCompositionElements);
+      assert.isDefined(Xterm.Terminal.CompositionHelper.prototype.updateCompositionElements);
     });
     it('should define CompositionHelper.isComposing', function () {
       assert.isDefined(compositionHelper.isComposing);

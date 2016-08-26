@@ -16,12 +16,12 @@
     /*
      * CommonJS environment
      */
-    module.exports = fit(require('../../src/xterm'));
+    module.exports = fit(require('../../xterm'));
   } else if (typeof define == 'function') {
     /*
      * Require.js is available
      */
-    define(['../../src/xterm'], fit);
+    define(['../../xterm'], fit);
   } else {
     /*
      * Plain browser environment
@@ -74,11 +74,11 @@
     term.resize(geometry.cols, geometry.rows);
   };
 
-  Xterm.prototype.proposeGeometry = function () {
+  Xterm.Terminal.prototype.proposeGeometry = function () {
     return exports.proposeGeometry(this);
   };
 
-  Xterm.prototype.fit = function () {
+  Xterm.Terminal.prototype.fit = function () {
     return exports.fit(this);
   };
 

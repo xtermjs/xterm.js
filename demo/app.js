@@ -7,8 +7,8 @@ var pty = require('pty.js');
 var terminals = {},
     logs = {};
 
-app.use('/src', express.static(__dirname + '/../src'));
-app.use('/addons', express.static(__dirname + '/../addons'));
+app.use('/css', express.static(__dirname + '/../css'));
+app.use('/dist', express.static(__dirname + '/../dist'));
 
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');

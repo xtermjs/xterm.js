@@ -10,6 +10,7 @@
   "repository": "https://github.com/sourcelair/xterm.js",
   "license": "MIT",
   "devDependencies": {
+    "browserify": "^13.1.0",
     "chai": "3.5.0",
     "docdash": "0.4.0",
     "express": "4.13.4",
@@ -18,11 +19,14 @@
     "jsdoc": "3.4.0",
     "mocha": "2.5.3",
     "pty.js": "0.3.1",
-    "sleep": "^3.0.1"
+    "sleep": "^3.0.1",
+    "typescript": "^1.8.10"
   },
   "scripts": {
+    "build": "rm -rf out dist && mkdir -p dist && tsc && cp src/terminal.js out/terminal.js && browserify out/xterm.js --standalone Xterm > dist/xterm.js && npm run build:addons",
+    "build:addons": "rm -rf dist/addons && cp -R src/addons dist/addons",
+    "build:docs": "node_modules/.bin/jsdoc -c jsdoc.json",
     "start": "node demo/app",
-    "test": "mocha --recursive",
-    "build:docs": "node_modules/.bin/jsdoc -c jsdoc.json"
+    "test": "npm run build && mocha --recursive"
   }
 }
