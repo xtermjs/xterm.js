@@ -23,7 +23,7 @@ It enables applications to provide fully featured terminals to their users and c
 Xterm.js is used in several world-class applications to provide great terminal experiences.
 
 - [**SourceLair**](https://www.sourcelair.com/): In-browser IDE that provides its users with fully-featured Linux terminals based on xterm.js
-- [**Microsoft Visual Studio Code**](http://code.visualstudio.com/): Modern, versatile, powerful and open source code editor that provides integrated terminal based on xterm.js
+- [**Microsoft Visual Studio Code**](http://code.visualstudio.com/): Modern, versatile and powerful open source code editor that provides an integrated terminal based on xterm.js
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list.
 
