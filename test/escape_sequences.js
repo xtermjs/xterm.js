@@ -2,7 +2,13 @@ var glob = require('glob');
 var fs = require('fs');
 var pty = require('pty.js');
 var sleep = require('sleep');
-var Terminal = require('../src/xterm');
+var Terminal = require('../');
+
+
+
+  //support for nodejs tests
+if (typeof document === 'undefined')
+  global.document = null;
 
 var CONSOLE_LOG = console.log;
 

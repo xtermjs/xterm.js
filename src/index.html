@@ -4,6 +4,10 @@
         <title>xterm.js demo</title>
         <link rel="stylesheet" href="xterm.css" />
         <link rel="stylesheet" href="style.css" />
+
+        <script src="xterm.js">;</script>
+        <script src="addons/fit.js">;</script>
+
     </head>
     <body>
         <h1>xterm.js: xterm, in the browser</h1>
@@ -11,6 +15,7 @@
         <div>
           <h2>Options</h2>
           <label><input type="checkbox" id="option-cursor-blink"> cursorBlink</label>
+
           <div>
           	<h3>Size</h3>
             <div>
@@ -24,8 +29,9 @@
               </div>
             </div>
           </div>
+
         </div>
         <p><strong>Attention:</strong> The demo is a barebones implementation and is designed for xterm.js evaluation purposes only. Exposing the demo to the public as is would introduce security risks for the host.</p>
-        <script src="_main.js" defer ></script>
+        <script src="main.js" defer ></script>
     </body>
 </html>
