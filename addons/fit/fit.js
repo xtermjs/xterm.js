@@ -26,7 +26,7 @@
     /*
      * Plain browser environment
      */
-    fit(this.Xterm);
+    fit(window.Terminal);
   }
 })(function (Xterm) {
   /**

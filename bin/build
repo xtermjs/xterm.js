@@ -1,0 +1,38 @@
+#! /usr/bin/env node
+
+var child_process = require('child_process');
+var fs = require('fs');
+
+var buildDir = process.env.BUILD_DIR || 'build';
+
+if (!fs.existsSync(buildDir)){
+    fs.mkdirSync(buildDir);
+}
+
+// Add `node_modules/.bin` to PATH
+process.env.PATH = process.cwd() + '/node_modules/.bin:' + process.env.PATH;
+
+console.log('Building xterm.js into ' + buildDir);
+
+// Build ES2015 modules into ES5 form, then concatenate them,
+// then remove unused require calls and save in output file with source map.
+console.log('  - Building ' + buildDir + '/xterm.js...');
+
+var jsBuildCmd = 'browserify src/xterm.js -s Terminal -t [ babelify --presets [ es2015 ] ] --debug | ';
+jsBuildCmd += 'derequire | exorcist ' + buildDir + '/xterm.js.map > ' + buildDir + '/xterm.js';
+
+var jsBuildProcess = child_process.execSync(jsBuildCmd);
+
+if (jsBuildProcess.status) {
+  console.log(jsBuildProcess.error);
+}
+
+console.log('    OK.');
+
+// Copy CSS into $BUILD_DIR
+console.log('  - Building ' + buildDir + '/xterm.css...');
+
+fs.createReadStream('src/xterm.css').pipe(
+  fs.createWriteStream(buildDir + '/xterm.css')
+);
+console.log('    OK.');

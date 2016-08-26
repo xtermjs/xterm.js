@@ -27,7 +27,7 @@ function pty_write_read(s) {
   return b.toString('utf8', 0, bytes);
 }
 
-// make sure raw pty is at x=0 and has no pending data 
+// make sure raw pty is at x=0 and has no pending data
 function pty_reset() {
     pty_write_read('\r\n');
 }

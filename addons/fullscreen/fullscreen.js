@@ -25,7 +25,7 @@
     /*
      * Plain browser environment
      */
-    fullscreen(this.Xterm);
+    fullscreen(window.Terminal);
   }
 })(function (Xterm) {
   var exports = {};

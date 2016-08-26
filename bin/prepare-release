@@ -17,12 +17,16 @@ CURRENT_BOWER_JSON_VERSION=$(cat bower.json \
   | sed 's/[",]//g' \
   | tr -d '[[:space:]]')
 
-# Update version in package.json and bower.json
-sed -i "s/\"version\": \"$CURRENT_PACKAGE_JSON_VERSION\"/\"version\": \"$NEW_VERSION\"/g" package.json
-sed -i "s/\"version\": \"$CURRENT_BOWER_JSON_VERSION\"/\"version\": \"$NEW_VERSION\"/g" bower.json
+# Build xterm.js into `dist`
+export BUILD_DIR=dist
+sh bin/build
 
 # Update AUTHORS file
 sh bin/generate-authors
+
+# Update version in package.json and bower.json
+sed -i "s/\"version\": \"$CURRENT_PACKAGE_JSON_VERSION\"/\"version\": \"$NEW_VERSION\"/g" package.json
+sed -i "s/\"version\": \"$CURRENT_BOWER_JSON_VERSION\"/\"version\": \"$NEW_VERSION\"/g" bower.json
 
 git commit -S -s -a -m "Bump version to $NEW_VERSION"
 git tag $NEW_VERSION
