@@ -1,6 +1,6 @@
 var assert = require('chai').assert;
 var Xterm = require('../../dist/xterm');
-var linkify = require('../../addons/linkify/linkify');
+var linkify = require('../../dist/addons/linkify/linkify');
 
 describe('linkify addon', function () {
   var xterm;

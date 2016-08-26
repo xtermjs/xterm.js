@@ -730,10 +730,10 @@ module.exports = (function (window, Viewport, CompositionHelper) {
   Terminal.loadAddon = function(addon, callback) {
     if (typeof exports === 'object' && typeof module === 'object') {
       // CommonJS
-      return require(__dirname + '/../addons/' + addon);
+      return require('./addons/' + addon + '/' + addon);
     } else if (typeof define == 'function') {
       // RequireJS
-      return require(['../addons/' + addon + '/' + addon], callback);
+      return require(['addons/' + addon + '/' + addon], callback);
     } else {
       console.error('Cannot load a module without a CommonJS or RequireJS environment.');
       return false;

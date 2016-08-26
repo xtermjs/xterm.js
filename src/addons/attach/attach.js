@@ -11,12 +11,12 @@
     /*
      * CommonJS environment
      */
-    module.exports = attach(require('../../dist/xterm'));
+    module.exports = attach(require('../../xterm'));
   } else if (typeof define == 'function') {
     /*
      * Require.js is available
      */
-    define(['../../dist/xterm'], attach);
+    define(['../../xterm'], attach);
   } else {
     /*
      * Plain browser environment

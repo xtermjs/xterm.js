@@ -23,9 +23,10 @@
     "typescript": "^1.8.10"
   },
   "scripts": {
-    "build": "rm -rf out dist && mkdir -p dist && tsc && cp src/terminal.js out/terminal.js && browserify out/xterm.js --standalone Xterm > dist/xterm.js",
+    "build": "rm -rf out dist && mkdir -p dist && tsc && cp src/terminal.js out/terminal.js && browserify out/xterm.js --standalone Xterm > dist/xterm.js && npm run build:addons",
+    "build:addons": "rm -rf dist/addons && cp -R src/addons dist/addons",
+    "build:docs": "node_modules/.bin/jsdoc -c jsdoc.json",
     "start": "node demo/app",
-    "test": "mocha --recursive",
-    "build:docs": "node_modules/.bin/jsdoc -c jsdoc.json"
+    "test": "mocha --recursive"
   }
 }
