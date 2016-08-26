@@ -10,3 +10,4 @@ Makefile.gyp
 example/*.log
 docs/
 npm-debug.log
+dist/
