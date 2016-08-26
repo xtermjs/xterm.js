@@ -9,7 +9,6 @@ var terminals = {},
 
 app.use('/css', express.static(__dirname + '/../css'));
 app.use('/dist', express.static(__dirname + '/../dist'));
-app.use('/addons', express.static(__dirname + '/../addons'));
 
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
