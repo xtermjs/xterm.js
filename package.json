@@ -27,6 +27,6 @@
     "build:addons": "rm -rf dist/addons && cp -R src/addons dist/addons",
     "build:docs": "node_modules/.bin/jsdoc -c jsdoc.json",
     "start": "node demo/app",
-    "test": "mocha --recursive"
+    "test": "npm run build && mocha --recursive"
   }
 }
