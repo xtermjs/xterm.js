@@ -7,4 +7,4 @@ import {CompositionHelper} from './input/compositionHelper';
 import {Viewport} from './viewport';
 let terminalFactory = require('./terminal');
 
-export var Terminal = terminalFactory(typeof window !== 'undefined' ? window : this, Viewport, CompositionHelper);
+export var Terminal = terminalFactory(typeof window !== 'undefined' ? window : global, Viewport, CompositionHelper);
