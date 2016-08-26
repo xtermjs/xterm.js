@@ -11,7 +11,7 @@
 export class CompositionHelper {
   private textarea: HTMLTextAreaElement;
   private compositionView: HTMLElement;
-  private terminal: Terminal; // TODO: Pull interface out once terminal.js is fully convertedk
+  private terminal: Terminal;
   private compositionPosition: Position;
   private isComposing: boolean;
   private isSendingComposition: boolean;
@@ -106,11 +106,11 @@ export class CompositionHelper {
     if (!this.isComposing) {
       return;
     }
-    var cursor = <HTMLElement>this.terminal.element.querySelector('.terminal-cursor');
+    const cursor = <HTMLElement>this.terminal.element.querySelector('.terminal-cursor');
     if (cursor) {
       this.compositionView.style.left = cursor.offsetLeft + 'px';
       this.compositionView.style.top = cursor.offsetTop + 'px';
-      var compositionViewBounds = this.compositionView.getBoundingClientRect();
+      const compositionViewBounds = this.compositionView.getBoundingClientRect();
       this.textarea.style.left = cursor.offsetLeft + compositionViewBounds.width + 'px';
       this.textarea.style.top = (cursor.offsetTop + cursor.offsetHeight) + 'px';
     }
@@ -135,12 +135,12 @@ export class CompositionHelper {
     if (!waitForPropogation) {
       // Cancel any delayed composition send requests and send the input immediately.
       this.isSendingComposition = false;
-      var input = this.textarea.value.substring(this.compositionPosition.start, this.compositionPosition.end);
+      const input = this.textarea.value.substring(this.compositionPosition.start, this.compositionPosition.end);
       this.terminal.handler(input);
     } else {
       // Make a deep copy of the composition position here as a new compositionstart event may
       // fire before the setTimeout executes.
-      var currentCompositionPosition = {
+      const currentCompositionPosition: Position = {
         start: this.compositionPosition.start,
         end: this.compositionPosition.end,
       }
@@ -158,7 +158,7 @@ export class CompositionHelper {
         // Ensure that the input has not already been sent
         if (this.isSendingComposition) {
           this.isSendingComposition = false;
-          var input;
+          let input;
           if (this.isComposing) {
             // Use the end position to get the string if a new composition has started.
             input = this.textarea.value.substring(currentCompositionPosition.start, currentCompositionPosition.end);
@@ -181,12 +181,12 @@ export class CompositionHelper {
    * IME is active.
    */
   private handleAnyTextareaChanges() {
-    var oldValue = this.textarea.value;
+    const oldValue = this.textarea.value;
     setTimeout(() => {
       // Ignore if a composition has started since the timeout
       if (!this.isComposing) {
-        var newValue = this.textarea.value;
-        var diff = newValue.replace(oldValue, '');
+        const newValue = this.textarea.value;
+        const diff = newValue.replace(oldValue, '');
         if (diff.length > 0) {
           this.terminal.handler(diff);
         }
@@ -204,7 +204,7 @@ export class CompositionHelper {
   }
 }
 
-
+// TODO: Pull interface out once terminal.js is fully convertedk
 interface Terminal {
   element: HTMLElement,
   handler: (number) => void

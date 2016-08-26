@@ -47,9 +47,6 @@
 module.exports = (function (window, Viewport, CompositionHelper) {
 
   var document = window.document;
-  var String = window.String;
-  var setTimeout = window.setTimeout;
-  var setInterval = window.setInterval;
 
   /**
    * EventEmitter
