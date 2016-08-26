@@ -3,7 +3,7 @@
 
 class EventEmitter {
 
-  initialize() {
+  constructor () {
     this._events = this._events || {};
     this.on  = this.addListener
     this.off = this.removeListener

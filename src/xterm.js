@@ -44,6 +44,7 @@ const escapeSequence    = require('./lib/escapeSequence');
     //those are 3rd party generics
 const matchColor        = require('./utils/matchColor');
 const off               = require('./utils/off');
+const on                = require('./utils/on');
 const contains          = require('./utils/contains');
 const wcwidth           = require('./utils/wcwidth')({nul: 0, control: 0});  // configurable options
 const isThirdLevelShift = require('./utils/isThirdLevelShift');
@@ -86,15 +87,16 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      * @class Xterm Xterm
      * @alias module:xterm/src/xterm
      */
-    function Terminal(options) {
-      var self = this;
 
-      if (!(this instanceof Terminal)) {
-        return new Terminal(arguments[0], arguments[1], arguments[2]);
-      }
+  class Terminal extends EventEmitter {
 
+    constructor (options) {
+      super(); //set 'this'
 
-      EventEmitter.prototype.initialize.call(this);
+      this.initialize.apply(this, arguments);
+    }
+
+    initialize(options) {
 
       if (typeof options === 'number') {
         options = {
@@ -107,7 +109,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       options = options || {};
 
 
-      Object.keys(Terminal.defaults).forEach(function(key) {
+      Object.keys(Terminal.defaults).forEach( (key) => {
         if (options[key] == null) {
           options[key] = Terminal.options[key];
 
@@ -115,7 +117,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
             options[key] = Terminal[key];
           }
         }
-        self[key] = options[key];
+        this[key] = options[key];
       });
 
       if (options.colors.length === 8) {
@@ -251,137 +253,29 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       this.setupStops();
     }
 
-    inherits(Terminal, EventEmitter);
+
 
 		/**
 		 * back_color_erase feature for xterm.
 		 */
-    Terminal.prototype.eraseAttr = function() {
+    eraseAttr() {
       // if (this.is('screen')) return this.defAttr;
       return (this.defAttr & ~0x1ff) | (this.curAttr & 0x1ff);
-    };
-
-    /**
-     * Colors
-     */
-
-    // Colors 0-15
-    Terminal.tangoColors = [
-      // dark:
-      '#2e3436',
-      '#cc0000',
-      '#4e9a06',
-      '#c4a000',
-      '#3465a4',
-      '#75507b',
-      '#06989a',
-      '#d3d7cf',
-      // bright:
-      '#555753',
-      '#ef2929',
-      '#8ae234',
-      '#fce94f',
-      '#729fcf',
-      '#ad7fa8',
-      '#34e2e2',
-      '#eeeeec'
-    ];
-
-    // Colors 0-15 + 16-255
-    // Much thanks to TooTallNate for writing this.
-    Terminal.colors = (function() {
-      var colors = Terminal.tangoColors.slice()
-        , r = [0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff]
-        , i;
-
-      // 16-231
-      i = 0;
-      for (; i < 216; i++) {
-        out(r[(i / 36) % 6 | 0], r[(i / 6) % 6 | 0], r[i % 6]);
-      }
-
-      // 232-255 (grey)
-      i = 0;
-      for (; i < 24; i++) {
-        r = 8 + i * 10;
-        out(r, r, r);
-      }
-
-      function out(r, g, b) {
-        colors.push('#' + hex(r) + hex(g) + hex(b));
-      }
-
-      function hex(c) {
-        c = c.toString(16);
-        return c.length < 2 ? '0' + c : c;
-      }
-
-      return colors;
-    })();
-
-    Terminal._colors = Terminal.colors.slice();
-
-    Terminal.vcolors = (function() {
-      var out = []
-        , colors = Terminal.colors
-        , i = 0
-        , color;
-
-      for (; i < 256; i++) {
-        color = parseInt(colors[i].substring(1), 16);
-        out.push([
-          (color >> 16) & 0xff,
-          (color >> 8) & 0xff,
-          color & 0xff
-        ]);
-      }
-
-      return out;
-    })();
-
-    /**
-     * Options
-     */
-
-    Terminal.defaults = {
-      colors: Terminal.colors,
-      theme: 'default',
-      convertEol: false,
-      termName: 'xterm',
-      geometry: [80, 24],
-      cursorBlink: false,
-      visualBell: false,
-      popOnBell: false,
-      scrollback: 1000,
-      screenKeys: false,
-      debug: false,
-      cancelEvents: false
-      // programFeatures: false,
-      // focusKeys: false,
-    };
-
-    Terminal.options = {};
-
-    Terminal.focus = null;
-
-    Object.keys(Terminal.defaults).forEach(function(key) {
-      Terminal[key] = Terminal.defaults[key];
-      Terminal.options[key] = Terminal.defaults[key];
-    });
+    }
 
     /**
      * Focus the terminal. Delegates focus handling to the terminal's DOM element.
      */
-    Terminal.prototype.focus = function() {
+    focus() {
       return this.textarea.focus();
-    };
+    }
 
     /**
      * Binds the desired focus behavior on a given terminal object.
      *
      * @static
      */
-    Terminal.bindFocus = function (term) {
+    static bindFocus(term) {
       on(term.textarea, 'focus', function (ev) {
         if (term.sendFocus) {
           term.send('\x1b[I');
@@ -391,21 +285,21 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
         Terminal.focus = term;
         term.emit('focus', {terminal: term});
       });
-    };
+    }
 
     /**
      * Blur the terminal. Delegates blur handling to the terminal's DOM element.
      */
-    Terminal.prototype.blur = function() {
+    blur() {
       return this.textarea.blur();
-    };
+    }
 
     /**
      * Binds the desired blur behavior on a given terminal object.
      *
      * @static
      */
-    Terminal.bindBlur = function (term) {
+    static bindBlur(term) {
       on(term.textarea, 'blur', function (ev) {
         term.refresh(term.y, term.y);
         if (term.sendFocus) {
@@ -415,24 +309,24 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
         Terminal.focus = null;
         term.emit('blur', {terminal: term});
       });
-    };
+    }
 
     /**
      * Initialize default behavior
      */
-    Terminal.prototype.initGlobal = function() {
+    initGlobal() {
       Terminal.bindPaste(this);
       Terminal.bindKeys(this);
       Terminal.bindCopy(this);
       Terminal.bindFocus(this);
       Terminal.bindBlur(this);
-    };
+    }
 
     /**
      * Bind to paste event and allow both keyboard and right-click pasting, without having the
      * contentEditable value set to true.
      */
-    Terminal.bindPaste = function(term) {
+    static bindPaste(term) {
       on([term.textarea, term.element], 'paste', function(ev) {
         ev.stopPropagation();
         if (ev.clipboardData) {
@@ -442,7 +336,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
           return term.cancel(ev);
         }
       });
-    };
+    }
 
     /**
      * Prepares text copied from terminal selection, to be saved in the clipboard by:
@@ -452,7 +346,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      * @returns {string}
      * @static
      */
-    Terminal.prepareCopiedTextForClipboard = function (text) {
+    static prepareCopiedTextForClipboard(text) {
       var space = String.fromCharCode(32),
           nonBreakingSpace = String.fromCharCode(160),
           allNonBreakingSpaces = new RegExp(nonBreakingSpace, 'g'),
@@ -467,12 +361,12 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
           }).join('\n');
 
       return processedText;
-    };
+    }
 
     /**
      * Apply key handling to the terminal
      */
-    Terminal.bindKeys = function(term) {
+    static bindKeys(term) {
       on(term.element, 'keydown', function(ev) {
         if (term.document.activeElement != this) {
           return;
@@ -503,17 +397,17 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       on(term.textarea, 'compositionupdate', term.compositionHelper.compositionupdate.bind(term.compositionHelper));
       on(term.textarea, 'compositionend', term.compositionHelper.compositionend.bind(term.compositionHelper));
       term.on('refresh', term.compositionHelper.updateCompositionElements.bind(term.compositionHelper));
-    };
+    }
 
     /**
      * Binds copy functionality to the given terminal.
      * @static
      */
-    Terminal.bindCopy = function(term) {
+    static bindCopy(term) {
       on(term.element, 'copy', function(ev) {
         return; // temporary
       });
-    };
+    }
 
 
     /**
@@ -521,7 +415,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      * if no row argument is passed. Return the inserted row.
      * @param {HTMLElement} row (optional) The row to append to the terminal.
      */
-    Terminal.prototype.insertRow = function (row) {
+    insertRow (row) {
       if (typeof row != 'object') {
         row = this.document.createElement('div');
       }
@@ -530,14 +424,14 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       this.children.push(row);
 
       return row;
-    };
+    }
 
     /**
      * Opens the terminal within an element.
      *
      * @param {HTMLElement} parent The element to create the terminal within.
      */
-    Terminal.prototype.open = function(parent) {
+    open(parent) {
       var self=this, i=0, div;
 
       this.parent = parent || this.parent;
@@ -675,7 +569,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       }
 
       this.emit('open');
-    };
+    }
 
 
 
@@ -689,7 +583,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      * Relevant functions in xterm/button.c:
      *   BtnCode, EmitButtonCode, EditorButton, SendMousePosition
      */
-    Terminal.prototype.bindMouse = function() {
+    bindMouse() {
       var el = this.element, self = this, pressed = 32;
 
       // mouseup, mousedown, wheel
@@ -1006,12 +900,12 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
         self.viewport.onWheel(ev);
         return self.cancel(ev);
       });
-    };
+    }
 
     /**
      * Destroys the terminal.
      */
-    Terminal.prototype.destroy = function() {
+    destroy() {
       this.readable = false;
       this.writable = false;
       this._events = {};
@@ -1021,19 +915,8 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
         this.element.parentNode.removeChild(this.element);
       }
       //this.emit('close');
-    };
-
-
-    /**
-     * Flags used to render terminal text properly
-     */
-    Terminal.flags = {
-      BOLD: 1,
-      UNDERLINE: 2,
-      BLINK: 4,
-      INVERSE: 8,
-      INVISIBLE: 16
     }
+
 
     /**
      * Refreshes (re-renders) terminal content within two rows (inclusive)
@@ -1057,7 +940,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      * @param {number} end The row to end at (between fromRow and terminal's height terminal - 1)
      * @param {boolean} queue Whether the refresh should ran right now or be queued
      */
-    Terminal.prototype.refresh = function(start, end, queue) {
+    refresh(start, end, queue) {
       var self = this;
 
       // queue defaults to true
@@ -1256,22 +1139,22 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       }
 
       this.emit('refresh', {element: this.element, start: start, end: end});
-    };
+    }
 
     /**
      * Display the cursor element
      */
-    Terminal.prototype.showCursor = function() {
+    showCursor() {
       if (!this.cursorState) {
         this.cursorState = 1;
         this.refresh(this.y, this.y);
       }
-    };
+    }
 
     /**
      * Scroll the terminal
      */
-    Terminal.prototype.scroll = function() {
+    scroll() {
       var row;
 
       if (++this.ybase === this.scrollback) {
@@ -1311,7 +1194,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       this.updateRange(this.scrollBottom);
 
       this.emit('scroll', this.ydisp);
-    };
+    }
 
     /**
      * Scroll the display of the terminal
@@ -1320,7 +1203,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      * to avoid unwanted events being handled by the veiwport when the event was triggered from the
      * viewport originally.
      */
-    Terminal.prototype.scrollDisp = function(disp, suppressScrollEvent) {
+    scrollDisp(disp, suppressScrollEvent) {
       this.ydisp += disp;
 
       if (this.ydisp > this.ybase) {
@@ -1334,13 +1217,13 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       }
 
       this.refresh(0, this.rows - 1);
-    };
+    }
 
     /**
      * Writes text to the terminal.
      * @param {string} text The text to write to the terminal.
      */
-    Terminal.prototype.write = function(data) {
+    write(data) {
       var l = data.length, i = 0, j, cs, ch, code, low, ch_width, row;
 
       this.refreshStart = this.y;
@@ -2388,15 +2271,15 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
 
       this.updateRange(this.y);
       this.refresh(this.refreshStart, this.refreshEnd);
-    };
+    }
 
     /**
      * Writes text to the terminal, followed by a break line character (\n).
      * @param {string} text The text to write to the terminal.
      */
-    Terminal.prototype.writeln = function(data) {
+    writeln(data) {
       this.write(data + '\r\n');
-    };
+    }
 
     /**
      * Attaches a custom keydown handler which is run before keys are processed, giving consumers of
@@ -2406,7 +2289,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *   function that takes a KeyboardEvent, allowing consumers to stop propogation and/or prevent
      *   the default action. The function returns whether the event should be processed by xterm.js.
      */
-    Terminal.prototype.attachCustomKeydownHandler = function(customKeydownHandler) {
+    attachCustomKeydownHandler(customKeydownHandler) {
       this.customKeydownHandler = customKeydownHandler;
     }
 
@@ -2416,7 +2299,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *   - https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
      * @param {KeyboardEvent} ev The keydown event to be handled.
      */
-    Terminal.prototype.keyDown = function(ev) {
+    keyDown(ev) {
 
       if (this.customKeydownHandler && this.customKeydownHandler(ev) === false) {
         return false;
@@ -2452,10 +2335,10 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       this.handler(result.key);
 
       return this.cancel(ev, true);
-    };
+    }
 
 
-    Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
+    evaluateKeyEscapeSequence(ev) {
       return escapeSequence(ev, this.applicationCursor, this.rows, this.isMac);
     }
 
@@ -2463,22 +2346,22 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      * Set the G level of the terminal
      * @param g
      */
-    Terminal.prototype.setgLevel = function(g) {
+    setgLevel(g) {
       this.glevel = g;
       this.charset = this.charsets[g];
-    };
+    }
 
     /**
      * Set the charset for the given G level of the terminal
      * @param g
      * @param charset
      */
-    Terminal.prototype.setgCharset = function(g, charset) {
+    setgCharset(g, charset) {
       this.charsets[g] = charset;
       if (this.glevel === g) {
         this.charset = charset;
       }
-    };
+    }
 
     /**
      * Handle a keypress event.
@@ -2486,7 +2369,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *   - https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
      * @param {KeyboardEvent} ev The keypress event to be handled.
      */
-    Terminal.prototype.keyPress = function(ev) {
+    keyPress(ev) {
       var key;
 
 
@@ -2516,13 +2399,13 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       this.handler(key);
 
       return false;
-    };
+    }
 
     /**
      * Send data for handling to the terminal
      * @param {string} data
      */
-    Terminal.prototype.send = function(data) {
+    send(data) {
       var self = this;
 
       if (!this.queue) {
@@ -2533,13 +2416,13 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       }
 
       this.queue += data;
-    };
+    }
 
     /**
      * Ring the bell.
      * Note: We could do sweet things with webaudio here
      */
-    Terminal.prototype.bell = function() {
+    bell() {
       if (!this.visualBell) return;
       var self = this;
       this.element.style.borderColor = 'white';
@@ -2547,27 +2430,27 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
         self.element.style.borderColor = '';
       }, 10);
       if (this.popOnBell) this.focus();
-    };
+    }
 
     /**
      * Log the current state to the console.
      */
-    Terminal.prototype.log = function() {
+    log() {
       if (!this.debug) return;
       if (!this.context.console || !this.context.console.log) return;
       var args = Array.prototype.slice.call(arguments);
       this.context.console.log.apply(this.context.console, args);
-    };
+    }
 
     /**
      * Log the current state as error to the console.
      */
-    Terminal.prototype.error = function() {
+    error() {
       if (!this.debug) return;
       if (!this.context.console || !this.context.console.error) return;
       var args = Array.prototype.slice.call(arguments);
       this.context.console.error.apply(this.context.console, args);
-    };
+    }
 
     /**
      * Resizes the terminal.
@@ -2575,7 +2458,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      * @param {number} x The number of columns to resize to.
      * @param {number} y The number of rows to resize to.
      */
-    Terminal.prototype.resize = function(x, y) {
+    resize(x, y) {
       var line
         , el
         , i
@@ -2681,13 +2564,13 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       this.normal = null;
 
       this.emit('resize', {terminal: this, cols: x, rows: y});
-    };
+    }
 
     /**
      * Updates the range of rows to refresh
      * @param {number} y The number of rows to refresh next.
      */
-    Terminal.prototype.updateRange = function(y) {
+    updateRange(y) {
       if (y < this.refreshStart) this.refreshStart = y;
       if (y > this.refreshEnd) this.refreshEnd = y;
       // if (y > this.refreshEnd) {
@@ -2696,15 +2579,15 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       //     this.refreshEnd = this.rows - 1;
       //   }
       // }
-    };
+    }
 
     /**
      * Set the range of refreshing to the maximyum value
      */
-    Terminal.prototype.maxRange = function() {
+    maxRange() {
       this.refreshStart = 0;
       this.refreshEnd = this.rows - 1;
-    };
+    }
 
 
 
@@ -2712,7 +2595,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      * Setup the tab stops.
      * @param {number} i
      */
-    Terminal.prototype.setupStops = function(i) {
+    setupStops(i) {
       if (i != null) {
         if (!this.tabs[i]) {
           i = this.prevStop(i);
@@ -2725,33 +2608,33 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       for (; i < this.cols; i += 8) {
         this.tabs[i] = true;
       }
-    };
+    }
 
 
     /**
      * Move the cursor to the previous tab stop from the given position (default is current).
      * @param {number} x The position to move the cursor to the previous tab stop.
      */
-    Terminal.prototype.prevStop = function(x) {
+    prevStop(x) {
       if (x == null) x = this.x;
       while (!this.tabs[--x] && x > 0);
       return x >= this.cols
         ? this.cols - 1
         : x < 0 ? 0 : x;
-    };
+    }
 
 
     /**
      * Move the cursor one tab stop forward from the given position (default is current).
      * @param {number} x The position to move the cursor one tab stop forward.
      */
-    Terminal.prototype.nextStop = function(x) {
+    nextStop(x) {
       if (x == null) x = this.x;
       while (!this.tabs[++x] && x < this.cols);
       return x >= this.cols
         ? this.cols - 1
         : x < 0 ? 0 : x;
-    };
+    }
 
 
     /**
@@ -2759,7 +2642,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      * @param {number} x The column from which to start erasing to the end of the line.
      * @param {number} y The line in which to operate.
      */
-    Terminal.prototype.eraseRight = function(x, y) {
+    eraseRight(x, y) {
       var line = this.lines[this.ybase + y]
         , ch = [this.eraseAttr(), ' ', 1]; // xterm
 
@@ -2769,7 +2652,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       }
 
       this.updateRange(y);
-    };
+    }
 
 
 
@@ -2778,7 +2661,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      * @param {number} x The column from which to start erasing to the start of the line.
      * @param {number} y The line in which to operate.
      */
-    Terminal.prototype.eraseLeft = function(x, y) {
+    eraseLeft(x, y) {
       var line = this.lines[this.ybase + y]
         , ch = [this.eraseAttr(), ' ', 1]; // xterm
 
@@ -2786,23 +2669,23 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       while (x--) line[x] = ch;
 
       this.updateRange(y);
-    };
+    }
 
 
     /**
      * Erase all content in the given line
      * @param {number} y The line to erase all of its contents.
      */
-    Terminal.prototype.eraseLine = function(y) {
+    eraseLine(y) {
       this.eraseRight(0, y);
-    };
+    }
 
 
     /**
      * Return the data array of a blank line/
      * @param {number} cur First bunch of data for each "blank" character.
      */
-    Terminal.prototype.blankLine = function(cur) {
+    blankLine(cur) {
       var attr = cur
         ? this.eraseAttr()
         : this.defAttr;
@@ -2816,46 +2699,46 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       }
 
       return line;
-    };
+    }
 
 
     /**
      * If cur return the back color xterm feature attribute. Else return defAttr.
      * @param {object} cur
      */
-    Terminal.prototype.ch = function(cur) {
+    ch(cur) {
       return cur
         ? [this.eraseAttr(), ' ', 1]
         : [this.defAttr, ' ', 1];
-    };
+    }
 
 
     /**
      * Evaluate if the current erminal is the given argument.
      * @param {object} term The terminal to evaluate
      */
-    Terminal.prototype.is = function(term) {
+    is(term) {
       var name = this.termName;
       return (name + '').indexOf(term) === 0;
-    };
+    }
 
 
     /**
      * Emit the 'data' event and populate the given data.
      * @param {string} data The data to populate in the event.
      */
-    Terminal.prototype.handler = function(data) {
+    handler(data) {
       this.emit('data', data);
-    };
+    }
 
 
     /**
      * Emit the 'title' event and populate the given title.
      * @param {string} title The title to populate in the event.
      */
-    Terminal.prototype.handleTitle = function(title) {
+    handleTitle(title) {
       this.emit('title', title);
-    };
+    }
 
 
     /**
@@ -2865,20 +2748,20 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
     /**
      * ESC D Index (IND is 0x84).
      */
-    Terminal.prototype.index = function() {
+    index() {
       this.y++;
       if (this.y > this.scrollBottom) {
         this.y--;
         this.scroll();
       }
       this.state = normal;
-    };
+    }
 
 
     /**
      * ESC M Reverse Index (RI is 0x8d).
      */
-    Terminal.prototype.reverseIndex = function() {
+    reverseIndex() {
       var j;
       this.y--;
       if (this.y < this.scrollTop) {
@@ -2894,31 +2777,31 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
         this.updateRange(this.scrollBottom);
       }
       this.state = normal;
-    };
+    }
 
 
     /**
      * ESC c Full Reset (RIS).
      */
-    Terminal.prototype.reset = function() {
+    reset() {
       this.options.rows = this.rows;
       this.options.cols = this.cols;
       this.options.document = this.document;
 
       var customKeydownHandler = this.customKeydownHandler;
-      Terminal.call(this, this.options);
+      this.initialize.call(this, this.options);
       this.customKeydownHandler = customKeydownHandler;
       this.refresh(0, this.rows - 1);
-    };
+    }
 
 
     /**
      * ESC H Tab Set (HTS is 0x88).
      */
-    Terminal.prototype.tabSet = function() {
+    tabSet() {
       this.tabs[this.x] = true;
       this.state = normal;
-    };
+    }
 
 
     /**
@@ -2929,59 +2812,59 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      * CSI Ps A
      * Cursor Up Ps Times (default = 1) (CUU).
      */
-    Terminal.prototype.cursorUp = function(params) {
+    cursorUp(params) {
       var param = params[0];
       if (param < 1) param = 1;
       this.y -= param;
       if (this.y < 0) this.y = 0;
-    };
+    }
 
 
     /**
      * CSI Ps B
      * Cursor Down Ps Times (default = 1) (CUD).
      */
-    Terminal.prototype.cursorDown = function(params) {
+    cursorDown(params) {
       var param = params[0];
       if (param < 1) param = 1;
       this.y += param;
       if (this.y >= this.rows) {
         this.y = this.rows - 1;
       }
-    };
+    }
 
 
     /**
      * CSI Ps C
      * Cursor Forward Ps Times (default = 1) (CUF).
      */
-    Terminal.prototype.cursorForward = function(params) {
+    cursorForward(params) {
       var param = params[0];
       if (param < 1) param = 1;
       this.x += param;
       if (this.x >= this.cols) {
         this.x = this.cols - 1;
       }
-    };
+    }
 
 
     /**
      * CSI Ps D
      * Cursor Backward Ps Times (default = 1) (CUB).
      */
-    Terminal.prototype.cursorBackward = function(params) {
+    cursorBackward(params) {
       var param = params[0];
       if (param < 1) param = 1;
       this.x -= param;
       if (this.x < 0) this.x = 0;
-    };
+    }
 
 
     /**
      * CSI Ps ; Ps H
      * Cursor Position [row;column] (default = [1,1]) (CUP).
      */
-    Terminal.prototype.cursorPos = function(params) {
+    cursorPos(params) {
       var row, col;
 
       row = params[0] - 1;
@@ -3006,7 +2889,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
 
       this.x = col;
       this.y = row;
-    };
+    }
 
 
     /**
@@ -3021,7 +2904,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *     Ps = 1  -> Selective Erase Above.
      *     Ps = 2  -> Selective Erase All.
      */
-    Terminal.prototype.eraseInDisplay = function(params) {
+    eraseInDisplay(params) {
       var j;
       switch (params[0]) {
         case 0:
@@ -3046,7 +2929,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
           ; // no saved lines
           break;
       }
-    };
+    }
 
 
     /**
@@ -3060,7 +2943,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *     Ps = 1  -> Selective Erase to Left.
      *     Ps = 2  -> Selective Erase All.
      */
-    Terminal.prototype.eraseInLine = function(params) {
+    eraseInLine(params) {
       switch (params[0]) {
         case 0:
           this.eraseRight(this.x, this.y);
@@ -3072,7 +2955,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
           this.eraseLine(this.y);
           break;
       }
-    };
+    }
 
 
    	/**
@@ -3139,7 +3022,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *     Ps = 4 8  ; 5  ; Ps -> Set background color to the second
      *     Ps.
      */
-    Terminal.prototype.charAttributes = function(params) {
+    charAttributes(params) {
       // Optimize a single SGR0.
       if (params.length === 1 && params[0] === 0) {
         this.curAttr = this.defAttr;
@@ -3254,7 +3137,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       }
 
       this.curAttr = (flags << 18) | (fg << 9) | bg;
-    };
+    }
 
 
    	/**
@@ -3280,7 +3163,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *   CSI ? 5 3  n  Locator available, if compiled-in, or
      *   CSI ? 5 0  n  No Locator, if not.
      */
-    Terminal.prototype.deviceStatus = function(params) {
+    deviceStatus(params) {
       if (!this.prefix) {
         switch (params[0]) {
           case 5:
@@ -3326,7 +3209,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
             break;
         }
       }
-    };
+    }
 
 
     /**
@@ -3337,7 +3220,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      * CSI Ps @
      * Insert Ps (Blank) Character(s) (default = 1) (ICH).
      */
-    Terminal.prototype.insertChars = function(params) {
+    insertChars(params) {
       var param, row, j, ch;
 
       param = params[0];
@@ -3351,14 +3234,14 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
         this.lines[row].splice(j++, 0, ch);
         this.lines[row].pop();
       }
-    };
+    }
 
    	/**
      * CSI Ps E
      * Cursor Next Line Ps Times (default = 1) (CNL).
      * same as CSI Ps B ?
      */
-    Terminal.prototype.cursorNextLine = function(params) {
+    cursorNextLine(params) {
       var param = params[0];
       if (param < 1) param = 1;
       this.y += param;
@@ -3366,7 +3249,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
         this.y = this.rows - 1;
       }
       this.x = 0;
-    };
+    }
 
 
     /**
@@ -3374,31 +3257,31 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      * Cursor Preceding Line Ps Times (default = 1) (CNL).
      * reuse CSI Ps A ?
      */
-    Terminal.prototype.cursorPrecedingLine = function(params) {
+    cursorPrecedingLine(params) {
       var param = params[0];
       if (param < 1) param = 1;
       this.y -= param;
       if (this.y < 0) this.y = 0;
       this.x = 0;
-    };
+    }
 
 
     /**
      * CSI Ps G
      * Cursor Character Absolute  [column] (default = [row,1]) (CHA).
      */
-    Terminal.prototype.cursorCharAbsolute = function(params) {
+    cursorCharAbsolute(params) {
       var param = params[0];
       if (param < 1) param = 1;
       this.x = param - 1;
-    };
+    }
 
 
     /**
      * CSI Ps L
      * Insert Ps Line(s) (default = 1) (IL).
      */
-    Terminal.prototype.insertLines = function(params) {
+    insertLines(params) {
       var param, row, j;
 
       param = params[0];
@@ -3418,14 +3301,14 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       // this.maxRange();
       this.updateRange(this.y);
       this.updateRange(this.scrollBottom);
-    };
+    }
 
 
     /**
      * CSI Ps M
      * Delete Ps Line(s) (default = 1) (DL).
      */
-    Terminal.prototype.deleteLines = function(params) {
+    deleteLines(params) {
       var param, row, j;
 
       param = params[0];
@@ -3445,14 +3328,14 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       // this.maxRange();
       this.updateRange(this.y);
       this.updateRange(this.scrollBottom);
-    };
+    }
 
 
     /**
      * CSI Ps P
      * Delete Ps Character(s) (default = 1) (DCH).
      */
-    Terminal.prototype.deleteChars = function(params) {
+    deleteChars(params) {
       var param, row, ch;
 
       param = params[0];
@@ -3465,13 +3348,13 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
         this.lines[row].splice(this.x, 1);
         this.lines[row].push(ch);
       }
-    };
+    }
 
     /**
      * CSI Ps X
      * Erase Ps Character(s) (default = 1) (ECH).
      */
-    Terminal.prototype.eraseChars = function(params) {
+    eraseChars(params) {
       var param, row, j, ch;
 
       param = params[0];
@@ -3484,20 +3367,20 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       while (param-- && j < this.cols) {
         this.lines[row][j++] = ch;
       }
-    };
+    }
 
     /**
      * CSI Pm `  Character Position Absolute
      *   [column] (default = [row,1]) (HPA).
      */
-    Terminal.prototype.charPosAbsolute = function(params) {
+    charPosAbsolute(params) {
       var param = params[0];
       if (param < 1) param = 1;
       this.x = param - 1;
       if (this.x >= this.cols) {
         this.x = this.cols - 1;
       }
-    };
+    }
 
 
     /**
@@ -3505,14 +3388,14 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      * Horizontal Position Relative
      * reuse CSI Ps C ?
      */
-    Terminal.prototype.HPositionRelative = function(params) {
+    HPositionRelative(params) {
       var param = params[0];
       if (param < 1) param = 1;
       this.x += param;
       if (this.x >= this.cols) {
         this.x = this.cols - 1;
       }
-    };
+    }
 
 
     /**
@@ -3552,7 +3435,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *   xterm/charproc.c - line 2012, for more information.
      *   vim responds with ^[[?0c or ^[[?1c after the terminal's response (?)
 		 */
-    Terminal.prototype.sendDeviceAttributes = function(params) {
+    sendDeviceAttributes(params) {
       if (params[0] > 0) return;
 
       if (!this.prefix) {
@@ -3579,35 +3462,35 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
           this.send('\x1b[>83;40003;0c');
         }
       }
-    };
+    }
 
 
     /**
      * CSI Pm d
      * Line Position Absolute  [row] (default = [1,column]) (VPA).
      */
-    Terminal.prototype.linePosAbsolute = function(params) {
+    linePosAbsolute(params) {
       var param = params[0];
       if (param < 1) param = 1;
       this.y = param - 1;
       if (this.y >= this.rows) {
         this.y = this.rows - 1;
       }
-    };
+    }
 
 
     /**
      * 145 65 e * VPR - Vertical Position Relative
      * reuse CSI Ps B ?
      */
-    Terminal.prototype.VPositionRelative = function(params) {
+    VPositionRelative(params) {
       var param = params[0];
       if (param < 1) param = 1;
       this.y += param;
       if (this.y >= this.rows) {
         this.y = this.rows - 1;
       }
-    };
+    }
 
 
     /**
@@ -3615,7 +3498,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *   Horizontal and Vertical Position [row;column] (default =
      *   [1,1]) (HVP).
      */
-    Terminal.prototype.HVPosition = function(params) {
+    HVPosition(params) {
       if (params[0] < 1) params[0] = 1;
       if (params[1] < 1) params[1] = 1;
 
@@ -3628,7 +3511,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       if (this.x >= this.cols) {
         this.x = this.cols - 1;
       }
-    };
+    }
 
 
     /**
@@ -3717,7 +3600,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      * Modes:
      *   http: *vt100.net/docs/vt220-rm/chapter4.html
      */
-    Terminal.prototype.setMode = function(params) {
+    setMode(params) {
       if (typeof params === 'object') {
         var l = params.length
           , i = 0;
@@ -3838,7 +3721,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
             break;
         }
       }
-    };
+    }
 
     /**
      * CSI Pm l  Reset Mode (RM).
@@ -3922,7 +3805,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *     Ps = 1 0 6 1  -> Reset keyboard emulation to Sun/PC style.
      *     Ps = 2 0 0 4  -> Reset bracketed paste mode.
      */
-    Terminal.prototype.resetMode = function(params) {
+    resetMode(params) {
       if (typeof params === 'object') {
         var l = params.length
           , i = 0;
@@ -4017,7 +3900,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
             break;
         }
       }
-    };
+    }
 
 
     /**
@@ -4026,33 +3909,33 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *   dow) (DECSTBM).
      * CSI ? Pm r
      */
-    Terminal.prototype.setScrollRegion = function(params) {
+    setScrollRegion(params) {
       if (this.prefix) return;
       this.scrollTop = (params[0] || 1) - 1;
       this.scrollBottom = (params[1] || this.rows) - 1;
       this.x = 0;
       this.y = 0;
-    };
+    }
 
 
     /**
      * CSI s
      *   Save cursor (ANSI.SYS).
      */
-    Terminal.prototype.saveCursor = function(params) {
+    saveCursor(params) {
       this.savedX = this.x;
       this.savedY = this.y;
-    };
+    }
 
 
     /**
      * CSI u
      *   Restore cursor (ANSI.SYS).
      */
-    Terminal.prototype.restoreCursor = function(params) {
+    restoreCursor(params) {
       this.x = this.savedX || 0;
       this.y = this.savedY || 0;
-    };
+    }
 
 
     /**
@@ -4063,18 +3946,18 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      * CSI Ps I
      *   Cursor Forward Tabulation Ps tab stops (default = 1) (CHT).
      */
-    Terminal.prototype.cursorForwardTab = function(params) {
+    cursorForwardTab(params) {
       var param = params[0] || 1;
       while (param--) {
         this.x = this.nextStop();
       }
-    };
+    }
 
 
     /**
      * CSI Ps S  Scroll up Ps lines (default = 1) (SU).
      */
-    Terminal.prototype.scrollUp = function(params) {
+    scrollUp(params) {
       var param = params[0] || 1;
       while (param--) {
         this.lines.splice(this.ybase + this.scrollTop, 1);
@@ -4083,13 +3966,13 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       // this.maxRange();
       this.updateRange(this.scrollTop);
       this.updateRange(this.scrollBottom);
-    };
+    }
 
 
     /**
      * CSI Ps T  Scroll down Ps lines (default = 1) (SD).
      */
-    Terminal.prototype.scrollDown = function(params) {
+    scrollDown(params) {
       var param = params[0] || 1;
       while (param--) {
         this.lines.splice(this.ybase + this.scrollBottom, 1);
@@ -4098,7 +3981,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       // this.maxRange();
       this.updateRange(this.scrollTop);
       this.updateRange(this.scrollBottom);
-    };
+    }
 
 
     /**
@@ -4107,9 +3990,9 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *   [func;startx;starty;firstrow;lastrow].  See the section Mouse
      *   Tracking.
      */
-    Terminal.prototype.initMouseTracking = function(params) {
+    initMouseTracking(params) {
       // Relevant: DECSET 1001
-    };
+    }
 
 
     /**
@@ -4125,32 +4008,32 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *     Ps = 3  -> Do not query window/icon labels using UTF-8.
      *   (See discussion of "Title Modes").
      */
-    Terminal.prototype.resetTitleModes = function(params) {
+    resetTitleModes(params) {
       ;
-    };
+    }
 
 
     /**
      * CSI Ps Z  Cursor Backward Tabulation Ps tab stops (default = 1) (CBT).
      */
-    Terminal.prototype.cursorBackwardTab = function(params) {
+    cursorBackwardTab(params) {
       var param = params[0] || 1;
       while (param--) {
         this.x = this.prevStop();
       }
-    };
+    }
 
 
     /**
      * CSI Ps b  Repeat the preceding graphic character Ps times (REP).
      */
-    Terminal.prototype.repeatPrecedingCharacter = function(params) {
+    repeatPrecedingCharacter(params) {
       var param = params[0] || 1
         , line = this.lines[this.ybase + this.y]
         , ch = line[this.x - 1] || [this.defAttr, ' ', 1];
 
       while (param--) line[this.x++] = ch;
-    };
+    }
 
 
     /**
@@ -4161,14 +4044,14 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *   Ps = 2  -> Clear Stops on Line.
      *   http://vt100.net/annarbor/aaa-ug/section6.html
      */
-    Terminal.prototype.tabClear = function(params) {
+    tabClear(params) {
       var param = params[0];
       if (param <= 0) {
         delete this.tabs[this.x];
       } else if (param === 3) {
         this.tabs = {};
       }
-    };
+    }
 
 
     /**
@@ -4184,9 +4067,9 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *     Ps = 1  0  -> Print composed display, ignores DECPEX.
      *     Ps = 1  1  -> Print all pages.
      */
-    Terminal.prototype.mediaCopy = function(params) {
+    mediaCopy(params) {
       ;
-    };
+    }
 
 
     /**
@@ -4203,9 +4086,9 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *   If no parameters are given, all resources are reset to their
      *   initial values.
      */
-    Terminal.prototype.setResources = function(params) {
+    setResources(params) {
       ;
-    };
+    }
 
 
     /**
@@ -4223,9 +4106,9 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *   adding a parameter to each function key to denote the modi-
      *   fiers.
      */
-    Terminal.prototype.disableModifiers = function(params) {
+    disableModifiers(params) {
       ;
-    };
+    }
 
 
     /**
@@ -4238,16 +4121,16 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *     Ps = 2  -> always hide the pointer.  If no parameter is
      *     given, xterm uses the default, which is 1 .
      */
-    Terminal.prototype.setPointerMode = function(params) {
+    setPointerMode(params) {
       ;
-    };
+    }
 
 
 		/**
      * CSI ! p   Soft terminal reset (DECSTR).
      * http://vt100.net/docs/vt220-rm/table4-10.html
      */
-    Terminal.prototype.softReset = function(params) {
+    softReset(params) {
       this.cursorHidden = false;
       this.insertMode = false;
       this.originMode = false;
@@ -4261,7 +4144,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       this.charset = null;
       this.glevel = 0; // ??
       this.charsets = [null]; // ??
-    };
+    }
 
 
     /**
@@ -4276,9 +4159,9 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *     3 - permanently set
      *     4 - permanently reset
      */
-    Terminal.prototype.requestAnsiMode = function(params) {
+    requestAnsiMode(params) {
       ;
-    };
+    }
 
 
     /**
@@ -4288,9 +4171,9 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *   where Ps is the mode number as in DECSET, Pm is the mode value
      *   as in the ANSI DECRQM.
      */
-    Terminal.prototype.requestPrivateMode = function(params) {
+    requestPrivateMode(params) {
       ;
-    };
+    }
 
 
     /**
@@ -4305,9 +4188,9 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *     Ps = 1  -> 7-bit controls (always set for VT100).
      *     Ps = 2  -> 8-bit controls.
      */
-    Terminal.prototype.setConformanceLevel = function(params) {
+    setConformanceLevel(params) {
       ;
-    };
+    }
 
 
     /**
@@ -4320,9 +4203,9 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *     Ps = 2  2  -> Extinguish Caps Lock.
      *     Ps = 2  3  -> Extinguish Scroll Lock.
      */
-    Terminal.prototype.loadLEDs = function(params) {
+    loadLEDs(params) {
       ;
-    };
+    }
 
 
     /**
@@ -4334,9 +4217,9 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *     Ps = 3  -> blinking underline.
      *     Ps = 4  -> steady underline.
      */
-    Terminal.prototype.setCursorStyle = function(params) {
+    setCursorStyle(params) {
       ;
-    };
+    }
 
 
     /**
@@ -4347,9 +4230,9 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *     Ps = 1  -> DECSED and DECSEL cannot erase.
      *     Ps = 2  -> DECSED and DECSEL can erase.
      */
-    Terminal.prototype.setCharProtectionAttr = function(params) {
+    setCharProtectionAttr(params) {
       ;
-    };
+    }
 
 
     /**
@@ -4357,9 +4240,9 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *   Restore DEC Private Mode Values.  The value of Ps previously
      *   saved is restored.  Ps values are the same as for DECSET.
      */
-    Terminal.prototype.restorePrivateValues = function(params) {
+    restorePrivateValues(params) {
       ;
-    };
+    }
 
 
     /**
@@ -4369,7 +4252,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *     Ps denotes the SGR attributes to change: 0, 1, 4, 5, 7.
      * NOTE: xterm doesn't enable this code by default.
      */
-    Terminal.prototype.setAttrInRectangle = function(params) {
+    setAttrInRectangle(params) {
       var t = params[0]
         , l = params[1]
         , b = params[2]
@@ -4389,7 +4272,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       // this.maxRange();
       this.updateRange(params[0]);
       this.updateRange(params[2]);
-    };
+    }
 
 
     /**
@@ -4399,7 +4282,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *     Pt; Pl; Pb; Pr denotes the rectangle.
      * NOTE: xterm doesn't enable this code by default.
      */
-    Terminal.prototype.fillRectangle = function(params) {
+    fillRectangle(params) {
       var ch = params[0]
         , t = params[1]
         , l = params[2]
@@ -4419,7 +4302,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       // this.maxRange();
       this.updateRange(params[1]);
       this.updateRange(params[3]);
-    };
+    }
 
 
     /**
@@ -4436,11 +4319,11 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *     Pu = 1  <- device physical pixels.
      *     Pu = 2  <- character cells.
      */
-    Terminal.prototype.enableLocatorReporting = function(params) {
+    enableLocatorReporting(params) {
       var val = params[0] > 0;
       //this.mouseEvents = val;
       //this.decLocator = val;
-    };
+    }
 
 
     /**
@@ -4449,7 +4332,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      *     Pt; Pl; Pb; Pr denotes the rectangle.
      * NOTE: xterm doesn't enable this code by default.
      */
-    Terminal.prototype.eraseRectangle = function(params) {
+    eraseRectangle(params) {
       var t = params[0]
         , l = params[1]
         , b = params[2]
@@ -4471,7 +4354,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       // this.maxRange();
       this.updateRange(params[0]);
       this.updateRange(params[2]);
-    };
+    }
 
 
     /**
@@ -4479,7 +4362,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      * Insert P s Column(s) (default = 1) (DECIC), VT420 and up.
      * NOTE: xterm doesn't enable this code by default.
      */
-    Terminal.prototype.insertColumns = function() {
+    insertColumns() {
       var param = params[0]
         , l = this.ybase + this.rows
         , ch = [this.eraseAttr(), ' ', 1] // xterm?
@@ -4493,16 +4376,16 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       }
 
       this.maxRange();
-    };
+    }
 
-    Terminal.prototype.cancel = function(ev, force) {
+    cancel(ev, force) {
       if (!this.cancelEvents && !force) {
         return;
       }
       ev.preventDefault();
       ev.stopPropagation();
       return false;
-    };
+    }
 
 
     /**
@@ -4510,7 +4393,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      * Delete P s Column(s) (default = 1) (DECDC), VT420 and up
      * NOTE: xterm doesn't enable this code by default.
      */
-    Terminal.prototype.deleteColumns = function() {
+    deleteColumns() {
       var param = params[0]
         , l = this.ybase + this.rows
         , ch = [this.eraseAttr(), ' ', 1] // xterm?
@@ -4524,7 +4407,123 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
       }
 
       this.maxRange();
+    }
+
+
+
+  }; //end of class
+
+
+
+    /**
+     * Colors
+     */
+
+    // Colors 0-15
+    Terminal.tangoColors = [
+      // dark:
+      '#2e3436',
+      '#cc0000',
+      '#4e9a06',
+      '#c4a000',
+      '#3465a4',
+      '#75507b',
+      '#06989a',
+      '#d3d7cf',
+      // bright:
+      '#555753',
+      '#ef2929',
+      '#8ae234',
+      '#fce94f',
+      '#729fcf',
+      '#ad7fa8',
+      '#34e2e2',
+      '#eeeeec'
+    ];
+
+    // Colors 0-15 + 16-255
+    // Much thanks to TooTallNate for writing this.
+    Terminal.colors = (function() {
+      var colors = Terminal.tangoColors.slice()
+        , r = [0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff]
+        , i;
+
+      // 16-231
+      i = 0;
+      for (; i < 216; i++) {
+        out(r[(i / 36) % 6 | 0], r[(i / 6) % 6 | 0], r[i % 6]);
+      }
+
+      // 232-255 (grey)
+      i = 0;
+      for (; i < 24; i++) {
+        r = 8 + i * 10;
+        out(r, r, r);
+      }
+
+      function out(r, g, b) {
+        colors.push('#' + hex(r) + hex(g) + hex(b));
+      }
+
+      function hex(c) {
+        c = c.toString(16);
+        return c.length < 2 ? '0' + c : c;
+      }
+
+      return colors;
+    })();
+
+    Terminal._colors = Terminal.colors.slice();
+
+    Terminal.vcolors = (function() {
+      var out = []
+        , colors = Terminal.colors
+        , i = 0
+        , color;
+
+      for (; i < 256; i++) {
+        color = parseInt(colors[i].substring(1), 16);
+        out.push([
+          (color >> 16) & 0xff,
+          (color >> 8) & 0xff,
+          color & 0xff
+        ]);
+      }
+
+      return out;
+    })();
+
+    /**
+     * Options
+     */
+
+    Terminal.defaults = {
+      colors: Terminal.colors,
+      theme: 'default',
+      convertEol: false,
+      termName: 'xterm',
+      geometry: [80, 24],
+      cursorBlink: false,
+      visualBell: false,
+      popOnBell: false,
+      scrollback: 1000,
+      screenKeys: false,
+      debug: false,
+      cancelEvents: false
+      // programFeatures: false,
+      // focusKeys: false,
     };
+
+    Terminal.options = {};
+
+    Terminal.focus = null;
+
+    Object.keys(Terminal.defaults).forEach(function(key) {
+      Terminal[key] = Terminal.defaults[key];
+      Terminal.options[key] = Terminal.defaults[key];
+    });
+
+
 
     /**
      * Character Sets
@@ -4590,13 +4589,15 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
 
 
 
-    function inherits(child, parent) {
-      function f() {
-        this.constructor = child;
-      }
-      f.prototype = parent.prototype;
-      child.prototype = new f;
+    /**
+     * Flags used to render terminal text properly
+     */
+    Terminal.flags = {
+      BOLD: 1,
+      UNDERLINE: 2,
+      BLINK: 4,
+      INVERSE: 8,
+      INVISIBLE: 16
     }
-
 
 module.exports = Terminal;
