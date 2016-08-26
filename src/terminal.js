@@ -44,10 +44,12 @@
 
 'use strict';
 
-var window = this;
-var document = this.document;
+module.exports = (function (window, Viewport, CompositionHelper) {
 
-module.exports = (function (Viewport, CompositionHelper) {
+  var document = window.document;
+  var String = window.String;
+  var setTimeout = window.setTimeout;
+  var setInterval = window.setInterval;
 
   /**
    * EventEmitter
@@ -4886,10 +4888,6 @@ module.exports = (function (Viewport, CompositionHelper) {
     body.removeChild(el);
     return w1 !== w2;
   }
-
-  var String = window.String;
-  var setTimeout = window.setTimeout;
-  var setInterval = window.setInterval;
 
   function indexOf(obj, el) {
     var i = obj.length;

@@ -241,10 +241,12 @@ exports.CompositionHelper = CompositionHelper;
 
 'use strict';
 
-var window = this;
-var document = this.document;
+module.exports = (function (window, Viewport, CompositionHelper) {
 
-module.exports = (function (Viewport, CompositionHelper) {
+  var document = window.document;
+  var String = window.String;
+  var setTimeout = window.setTimeout;
+  var setInterval = window.setInterval;
 
   /**
    * EventEmitter
@@ -5084,10 +5086,6 @@ module.exports = (function (Viewport, CompositionHelper) {
     return w1 !== w2;
   }
 
-  var String = String;
-  var setTimeout = setTimeout;
-  var setInterval = setInterval;
-
   function indexOf(obj, el) {
     var i = obj.length;
     while (i--) {
@@ -5449,7 +5447,7 @@ exports.Viewport = Viewport;
 var compositionHelper_1 = require('./input/compositionHelper');
 var viewport_1 = require('./viewport');
 var terminalFactory = require('./terminal');
-exports.Terminal = terminalFactory(viewport_1.Viewport, compositionHelper_1.CompositionHelper);
+exports.Terminal = terminalFactory(typeof window !== 'undefined' ? window : this, viewport_1.Viewport, compositionHelper_1.CompositionHelper);
 
 },{"./input/compositionHelper":1,"./terminal":2,"./viewport":3}]},{},[4])(4)
 });
