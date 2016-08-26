@@ -53,8 +53,6 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
 
 
 
-
-
     /**
      * Terminal Emulation References:
      *   http://vt100.net/
@@ -67,11 +65,16 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      */
 
 
+const States = {
+  normal  : 0,
+  escaped : 1,
+  csi     : 2,
+  osc     : 3,
+  charset : 4,
+  dcs     : 5,
+  ignore  : 6,
+};
 
-    /**
-     * States
-     */
-    var normal = 0, escaped = 1, csi = 2, osc = 3, charset = 4, dcs = 5, ignore = 6;
 
     /**
      * Terminal
@@ -1264,7 +1267,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
           continue;
 
         switch (this.state) {
-          case normal:
+          case States.normal:
             switch (ch) {
               case '\x07':
                 this.bell();
@@ -1313,7 +1316,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
 
               // '\e'
               case '\x1b':
-                this.state = escaped;
+                this.state = States.escaped;
                 break;
 
               default:
@@ -1398,37 +1401,37 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
                 break;
             }
             break;
-          case escaped:
+          case States.escaped:
             switch (ch) {
               // ESC [ Control Sequence Introducer ( CSI is 0x9b).
               case '[':
                 this.params = [];
                 this.currentParam = 0;
-                this.state = csi;
+                this.state = States.csi;
                 break;
 
               // ESC ] Operating System Command ( OSC is 0x9d).
               case ']':
                 this.params = [];
                 this.currentParam = 0;
-                this.state = osc;
+                this.state = States.osc;
                 break;
 
               // ESC P Device Control String ( DCS is 0x90).
               case 'P':
                 this.params = [];
                 this.currentParam = 0;
-                this.state = dcs;
+                this.state = States.dcs;
                 break;
 
               // ESC _ Application Program Command ( APC is 0x9f).
               case '_':
-                this.state = ignore;
+                this.state = States.ignore;
                 break;
 
               // ESC ^ Privacy Message ( PM is 0x9e).
               case '^':
-                this.state = ignore;
+                this.state = States.ignore;
                 break;
 
               // ESC c Full Reset (RIS).
@@ -1456,7 +1459,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
                 //this.charset = null;
                 this.setgLevel(0);
                 this.setgCharset(0, Terminal.charsets.US);
-                this.state = normal;
+                this.state = States.normal;
                 i++;
                 break;
 
@@ -1487,7 +1490,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
                     this.gcharset = 2;
                     break;
                 }
-                this.state = charset;
+                this.state = States.charset;
                 break;
 
               // Designate G3 Character Set (VT300).
@@ -1495,7 +1498,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
               // Not implemented.
               case '/':
                 this.gcharset = 3;
-                this.state = charset;
+                this.state = States.charset;
                 i--;
                 break;
 
@@ -1538,18 +1541,18 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
               // ESC 7 Save Cursor (DECSC).
               case '7':
                 this.saveCursor();
-                this.state = normal;
+                this.state = States.normal;
                 break;
 
               // ESC 8 Restore Cursor (DECRC).
               case '8':
                 this.restoreCursor();
-                this.state = normal;
+                this.state = States.normal;
                 break;
 
               // ESC # 3 DEC line height/width
               case '#':
-                this.state = normal;
+                this.state = States.normal;
                 i++;
                 break;
 
@@ -1563,7 +1566,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
                 this.log('Serial port requested application keypad.');
                 this.applicationKeypad = true;
                 this.viewport.setApplicationMode(true);
-                this.state = normal;
+                this.state = States.normal;
                 break;
 
               // ESC > Normal Keypad (DECKPNM).
@@ -1571,17 +1574,17 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
                 this.log('Switching back to normal keypad.');
                 this.applicationKeypad = false;
                 this.viewport.setApplicationMode(false);
-                this.state = normal;
+                this.state = States.normal;
                 break;
 
               default:
-                this.state = normal;
+                this.state = States.normal;
                 this.error('Unknown ESC control: %s.', ch);
                 break;
             }
             break;
 
-          case charset:
+          case States.charset:
             switch (ch) {
               case '0': // DEC Special Character and Line Drawing Set.
                 cs = Terminal.charsets.SCLD;
@@ -1635,10 +1638,10 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
             }
             this.setgCharset(this.gcharset, cs);
             this.gcharset = null;
-            this.state = normal;
+            this.state = States.normal;
             break;
 
-          case osc:
+          case States.osc:
             // OSC Ps ; Pt ST
             // OSC Ps ; Pt BEL
             //   Set Text Parameters.
@@ -1704,7 +1707,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
 
               this.params = [];
               this.currentParam = 0;
-              this.state = normal;
+              this.state = States.normal;
             } else {
               if (!this.params.length) {
                 if (ch >= '0' && ch <= '9') {
@@ -1720,7 +1723,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
             }
             break;
 
-          case csi:
+          case States.csi:
             // '?', '>', '!'
             if (ch === '?' || ch === '>' || ch === '!') {
               this.prefix = ch;
@@ -1745,7 +1748,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
             // ';'
             if (ch === ';') break;
 
-            this.state = normal;
+            this.state = States.normal;
 
             switch (ch) {
               // CSI Ps A
@@ -2174,7 +2177,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
             this.postfix = '';
             break;
 
-          case dcs:
+          case States.dcs:
             if (ch === '\x1b' || ch === '\x07') {
               if (ch === '\x1b') i++;
 
@@ -2245,7 +2248,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
 
               this.currentParam = 0;
               this.prefix = '';
-              this.state = normal;
+              this.state = States.normal;
             } else if (!this.currentParam) {
               if (!this.prefix && ch !== '$' && ch !== '+') {
                 this.currentParam = ch;
@@ -2259,11 +2262,11 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
             }
             break;
 
-          case ignore:
+          case States.ignore:
             // For PM and APC.
             if (ch === '\x1b' || ch === '\x07') {
               if (ch === '\x1b') i++;
-              this.state = normal;
+              this.state = States.normal;
             }
             break;
         }
@@ -2754,7 +2757,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
         this.y--;
         this.scroll();
       }
-      this.state = normal;
+      this.state = States.normal;
     }
 
 
@@ -2776,7 +2779,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
         this.updateRange(this.scrollTop);
         this.updateRange(this.scrollBottom);
       }
-      this.state = normal;
+      this.state = States.normal;
     }
 
 
@@ -2800,7 +2803,7 @@ const isBoldBroken      = require('./utils/dom/isBoldBroken');
      */
     tabSet() {
       this.tabs[this.x] = true;
-      this.state = normal;
+      this.state = States.normal;
     }
 
 
