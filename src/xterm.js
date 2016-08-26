@@ -41,6 +41,16 @@ const Viewport          = require('./lib/viewport');
 
 const escapeSequence    = require('./lib/escapeSequence');
 
+    //those are 3rd pary generics
+const matchColor        = require('./utils/matchColor');
+const off               = require('./utils/off');
+const contains          = require('./utils/contains');
+const  wcwidth          = require('./utils/wcwidth')({nul: 0, control: 0});  // configurable options
+
+
+
+
+
     /**
      * Terminal Emulation References:
      *   http://vt100.net/
@@ -80,8 +90,6 @@ const escapeSequence    = require('./lib/escapeSequence');
         return new Terminal(arguments[0], arguments[1], arguments[2]);
       }
 
-
-      self.cancel = Terminal.cancel;
 
       EventEmitter.prototype.initialize.call(this);
 
@@ -353,7 +361,7 @@ const escapeSequence    = require('./lib/escapeSequence');
 
     Terminal.focus = null;
 
-    each(keys(Terminal.defaults), function(key) {
+    Object.keys(Terminal.defaults).forEach(function(key) {
       Terminal[key] = Terminal.defaults[key];
       Terminal.options[key] = Terminal.defaults[key];
     });
@@ -2404,6 +2412,7 @@ const escapeSequence    = require('./lib/escapeSequence');
      * @param {KeyboardEvent} ev The keydown event to be handled.
      */
     Terminal.prototype.keyDown = function(ev) {
+
       if (this.customKeydownHandler && this.customKeydownHandler(ev) === false) {
         return false;
       }
@@ -2475,6 +2484,7 @@ const escapeSequence    = require('./lib/escapeSequence');
      */
     Terminal.prototype.keyPress = function(ev) {
       var key;
+
 
       this.cancel(ev);
 
@@ -4481,6 +4491,15 @@ const escapeSequence    = require('./lib/escapeSequence');
       this.maxRange();
     };
 
+    Terminal.prototype.cancel = function(ev, force) {
+      if (!this.cancelEvents && !force) {
+        return;
+      }
+      ev.preventDefault();
+      ev.stopPropagation();
+      return false;
+    };
+
 
     /**
      * CSI P m SP ~
@@ -4565,40 +4584,7 @@ const escapeSequence    = require('./lib/escapeSequence');
     Terminal.charsets.Swiss = null; // (=
     Terminal.charsets.ISOLatin = null; // /A
 
-    /**
-     * Helpers
-     */
 
-    function contains(el, arr) {
-      for (var i = 0; i < arr.length; i += 1) {
-        if (el === arr[i]) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    function on(el, type, handler, capture) {
-      if (!Array.isArray(el)) {
-        el = [el];
-      }
-      el.forEach(function (element) {
-        element.addEventListener(type, handler, capture || false);
-      });
-    }
-
-    function off(el, type, handler, capture) {
-      el.removeEventListener(type, handler, capture || false);
-    }
-
-    function cancel(ev, force) {
-      if (!this.cancelEvents && !force) {
-        return;
-      }
-      ev.preventDefault();
-      ev.stopPropagation();
-      return false;
-    }
 
     function inherits(child, parent) {
       function f() {
@@ -4623,13 +4609,6 @@ const escapeSequence    = require('./lib/escapeSequence');
     }
 
 
-    function indexOf(obj, el) {
-      var i = obj.length;
-      while (i--) {
-        if (obj[i] === el) return i;
-      }
-      return -1;
-    }
 
   function isThirdLevelShift(term, ev) {
       var thirdLevelKey =
@@ -4644,91 +4623,9 @@ const escapeSequence    = require('./lib/escapeSequence');
       return thirdLevelKey && (!ev.keyCode || ev.keyCode > 47);
     }
 
-    function matchColor(r1, g1, b1) {
-      var hash = (r1 << 16) | (g1 << 8) | b1;
 
-      if (matchColor._cache[hash] != null) {
-        return matchColor._cache[hash];
-      }
 
-      var ldiff = Infinity
-        , li = -1
-        , i = 0
-        , c
-        , r2
-        , g2
-        , b2
-        , diff;
 
-      for (; i < Terminal.vcolors.length; i++) {
-        c = Terminal.vcolors[i];
-        r2 = c[0];
-        g2 = c[1];
-        b2 = c[2];
-
-        diff = matchColor.distance(r1, g1, b1, r2, g2, b2);
-
-        if (diff === 0) {
-          li = i;
-          break;
-        }
-
-        if (diff < ldiff) {
-          ldiff = diff;
-          li = i;
-        }
-      }
-
-      return matchColor._cache[hash] = li;
-    }
-
-    matchColor._cache = {};
-
-    // http://stackoverflow.com/questions/1633828
-    matchColor.distance = function(r1, g1, b1, r2, g2, b2) {
-      return Math.pow(30 * (r1 - r2), 2)
-        + Math.pow(59 * (g1 - g2), 2)
-        + Math.pow(11 * (b1 - b2), 2);
-    };
-
-    function each(obj, iter, con) {
-      if (obj.forEach) return obj.forEach(iter, con);
-      for (var i = 0; i < obj.length; i++) {
-        iter.call(con, obj[i], i, obj);
-      }
-    }
-
-    function keys(obj) {
-      if (Object.keys) return Object.keys(obj);
-      var key, keys = [];
-      for (key in obj) {
-        if (Object.prototype.hasOwnProperty.call(obj, key)) {
-          keys.push(key);
-        }
-      }
-      return keys;
-    }
-
-    var wcwidth = require('./lib/wcwidth')({nul: 0, control: 0});  // configurable options
-
-    /**
-     * Expose
-     */
-
-    Terminal.EventEmitter = EventEmitter;
-    Terminal.CompositionHelper = CompositionHelper;
-    Terminal.Viewport = Viewport;
-    Terminal.inherits = inherits;
-
-    /**
-     * Adds an event listener to the terminal.
-     *
-     * @param {string} event The name of the event. TODO: Document all event types
-     * @param {function} callback The function to call when the event is triggered.
-     */
-    Terminal.on = on;
-    Terminal.off = off;
-    Terminal.cancel = cancel;
 
 
 module.exports = Terminal;
