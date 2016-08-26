@@ -49,6 +49,15 @@ describe('xterm.js', function() {
       assert.equal(xterm.evaluateKeyEscapeSequence({ keyCode: 122 }).key, '\x1b[23~'); // CSI 2 3 ~
       assert.equal(xterm.evaluateKeyEscapeSequence({ keyCode: 123 }).key, '\x1b[24~'); // CSI 2 4 ~
     });
+    it('should return \\x1b[3;5~ for ctrl+delete', function() {
+      assert.equal(xterm.evaluateKeyEscapeSequence({ ctrlKey: true, keyCode: 46 }).key, '\x1b[3;5~');
+    });
+    it('should return \\x1b[3;2~ for shift+delete', function() {
+      assert.equal(xterm.evaluateKeyEscapeSequence({ shiftKey: true, keyCode: 46 }).key, '\x1b[3;2~');
+    });
+    it('should return \\x1b[3;3~ for alt+delete', function() {
+      assert.equal(xterm.evaluateKeyEscapeSequence({ altKey: true, keyCode: 46 }).key, '\x1b[3;3~');
+    });
     it('should return \\x1b[5D for ctrl+left', function() {
       assert.equal(xterm.evaluateKeyEscapeSequence({ ctrlKey: true, keyCode: 37 }).key, '\x1b[1;5D'); // CSI 5 D
     });

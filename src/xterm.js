@@ -2974,7 +2974,13 @@
           }
           break;
         // delete
-        case 46: result.key = '\x1b[3~'; break;
+        case 46:
+          if (modifiers) {
+            result.key = '\x1b[3;' + (modifiers + 1) + '~';
+          } else {
+            result.key = '\x1b[3~';
+          }
+          break;
         // home
         case 36:
           if (modifiers)
