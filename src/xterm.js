@@ -31,25 +31,8 @@
  *   other features.
  */
 
-(function (xterm) {
-    if (typeof exports === 'object' && typeof module === 'object') {
-        /*
-         * CommonJS environment
-         */
-        module.exports = xterm.call(this);
-    } else if (typeof define == 'function') {
-        /*
-         * Require.js is available
-         */
-        define([], xterm.bind(window));
-    } else {
-        /*
-         * Plain browser environment
-         */
-        this.Xterm = xterm.call(this);
-        this.Terminal = this.Xterm; /* Backwards compatibility with term.js */
-    }
-})(function() {
+import { EventEmitter } from './EventEmitter.js';
+
     /**
      * Terminal Emulation References:
      *   http://vt100.net/
@@ -61,77 +44,8 @@
      *   http://linux.die.net/man/7/urxvt
      */
 
-    'use strict';
-
-    /**
-     * Shared
-     */
-
-    var window = this, document = this.document;
-
-    /**
-     * EventEmitter
-     */
-
-    function EventEmitter() {
-      this._events = this._events || {};
-    }
-
-    EventEmitter.prototype.addListener = function(type, listener) {
-      this._events[type] = this._events[type] || [];
-      this._events[type].push(listener);
-    };
-
-    EventEmitter.prototype.on = EventEmitter.prototype.addListener;
-
-    EventEmitter.prototype.removeListener = function(type, listener) {
-      if (!this._events[type]) return;
-
-      var obj = this._events[type]
-        , i = obj.length;
-
-      while (i--) {
-        if (obj[i] === listener || obj[i].listener === listener) {
-          obj.splice(i, 1);
-          return;
-        }
-      }
-    };
-
-    EventEmitter.prototype.off = EventEmitter.prototype.removeListener;
-
-    EventEmitter.prototype.removeAllListeners = function(type) {
-      if (this._events[type]) delete this._events[type];
-    };
-
-    EventEmitter.prototype.once = function(type, listener) {
-      var self = this;
-      function on() {
-        var args = Array.prototype.slice.call(arguments);
-        this.removeListener(type, on);
-        return listener.apply(this, args);
-      }
-      on.listener = listener;
-      return this.on(type, on);
-    };
-
-    EventEmitter.prototype.emit = function(type) {
-      if (!this._events[type]) return;
-
-      var args = Array.prototype.slice.call(arguments, 1)
-        , obj = this._events[type]
-        , l = obj.length
-        , i = 0;
-
-      for (; i < l; i++) {
-        obj[i].apply(this, args);
-      }
-    };
-
-    EventEmitter.prototype.listeners = function(type) {
-      return this._events[type] = this._events[type] || [];
-    };
-
+    // Let it work inside Node.js for automated testing purposes.
+    var document = (typeof window != 'undefined') ? window.document : null;
 
     /**
      * Encapsulates the logic for handling compositionstart, compositionupdate and compositionend
@@ -5232,10 +5146,6 @@
       return w1 !== w2;
     }
 
-    var String = this.String;
-    var setTimeout = this.setTimeout;
-    var setInterval = this.setInterval;
-
     function indexOf(obj, el) {
       var i = obj.length;
       while (i--) {
@@ -5444,6 +5354,4 @@
     Terminal.off = off;
     Terminal.cancel = cancel;
 
-
-    return Terminal;
-});
+module.exports = Terminal;

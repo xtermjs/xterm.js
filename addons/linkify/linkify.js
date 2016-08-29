@@ -13,7 +13,7 @@
     /*
      * Plain browser environment
      */
-    linkify(this.Xterm);
+    linkify(window.Terminal);
   }
 })(function (Xterm) {
   'use strict';

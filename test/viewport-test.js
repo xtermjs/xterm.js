@@ -6,6 +6,7 @@ describe('Viewport', function () {
   var viewportElement;
   var charMeasureElement;
   var viewport;
+  var scrollAreaElement;
 
   var CHARACTER_HEIGHT = 10;
 

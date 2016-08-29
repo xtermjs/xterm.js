@@ -10,19 +10,27 @@
   "repository": "https://github.com/sourcelair/xterm.js",
   "license": "MIT",
   "devDependencies": {
+    "babel-core": "6.14.0",
+    "babel-preset-es2015": "6.14.0",
+    "babelify": "^7.3.0",
+    "browserify": "^13.1.0",
     "chai": "3.5.0",
+    "derequire": "^2.0.3",
     "docdash": "0.4.0",
+    "exorcist": "^0.4.0",
     "express": "4.13.4",
     "express-ws": "2.0.0-rc.1",
     "glob": "^7.0.5",
     "jsdoc": "3.4.0",
     "mocha": "2.5.3",
+    "nodemon": "1.10.2",
     "pty.js": "0.3.1",
     "sleep": "^3.0.1"
   },
   "scripts": {
-    "start": "node demo/app",
-    "test": "mocha --recursive",
-    "build:docs": "node_modules/.bin/jsdoc -c jsdoc.json"
+    "start": "nodemon --watch src --watch addons --exec bash -c './bin/build && node demo/app'",
+    "test": "mocha --recursive --compilers js:babel-core/register",
+    "build:docs": "jsdoc -c jsdoc.json",
+    "build": "./bin/build"
   }
 }
