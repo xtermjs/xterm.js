@@ -58,7 +58,7 @@ Addons are JavaScript modules that attach functions to the `Terminal` prototype 
 To use an addon, just include the JavaScript file after xterm.js and before the `Terminal` object has been instantiated. The function should then be exposed on the `Terminal` object:
 
 ```html
-<script src="node_modules/src/xterm.js"></script>
+<script src="node_modules/dist/xterm.js"></script>
 <script src="node_modules/addons/fit/fit.js"></script>
 ```
 
