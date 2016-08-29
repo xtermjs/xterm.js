@@ -1,4 +1,9 @@
 /**
+ * xterm.js: xterm, in the browser
+ * Copyright (c) 2016, SourceLair Limited <www.sourcelair.com> (MIT License)
+ */
+
+/**
  * Encapsulates the logic for handling compositionstart, compositionupdate and compositionend
  * events, displaying the in-progress composition to the UI and forwarding the final composition
  * to the handler.
