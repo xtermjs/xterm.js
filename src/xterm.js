@@ -4153,8 +4153,8 @@ import { Viewport } from './Viewport.js';
             break;
           case 66:
             this.log('Switching back to normal keypad.');
-            this.viewport.setApplicationMode(false);
             this.applicationKeypad = false;
+            this.viewport.setApplicationMode(false);
             break;
           case 9: // X10 Mouse
           case 1000: // vt200 mouse
@@ -4441,6 +4441,7 @@ import { Viewport } from './Viewport.js';
       this.originMode = false;
       this.wraparoundMode = false; // autowrap
       this.applicationKeypad = false; // ?
+      this.viewport.setApplicationMode(false);
       this.applicationCursor = false;
       this.scrollTop = 0;
       this.scrollBottom = this.rows - 1;
