@@ -49,7 +49,7 @@ npm install
 npm start
 ```
 
-Then open http://0.0.0.0:3000 in a web browser (use http://127.0.0.1:3000 is running under Windows).
+Then open http://0.0.0.0:3000 in a web browser (use http://127.0.0.1:3000 if running under Windows).
 
 ## Addons
 
