@@ -2566,7 +2566,13 @@ import { Viewport } from './Viewport.js';
           }
           break;
         // delete
-        case 46: result.key = '\x1b[3~'; break;
+        case 46:
+          if (modifiers) {
+            result.key = '\x1b[3;' + (modifiers + 1) + '~';
+          } else {
+            result.key = '\x1b[3~';
+          }
+          break;
         // home
         case 36:
           if (modifiers)
@@ -2602,18 +2608,90 @@ import { Viewport } from './Viewport.js';
           }
           break;
         // F1-F12
-        case 112: result.key = '\x1bOP'; break;
-        case 113: result.key = '\x1bOQ'; break;
-        case 114: result.key = '\x1bOR'; break;
-        case 115: result.key = '\x1bOS'; break;
-        case 116: result.key = '\x1b[15~'; break;
-        case 117: result.key = '\x1b[17~'; break;
-        case 118: result.key = '\x1b[18~'; break;
-        case 119: result.key = '\x1b[19~'; break;
-        case 120: result.key = '\x1b[20~'; break;
-        case 121: result.key = '\x1b[21~'; break;
-        case 122: result.key = '\x1b[23~'; break;
-        case 123: result.key = '\x1b[24~'; break;
+        case 112:
+          if (modifiers) {
+            result.key = '\x1b[1;' + (modifiers + 1) + 'P';
+          } else {
+            result.key = '\x1bOP';
+          }
+          break;
+        case 113:
+          if (modifiers) {
+            result.key = '\x1b[1;' + (modifiers + 1) + 'Q';
+          } else {
+            result.key = '\x1bOQ';
+          }
+          break;
+        case 114:
+          if (modifiers) {
+            result.key = '\x1b[1;' + (modifiers + 1) + 'R';
+          } else {
+            result.key = '\x1bOR';
+          }
+          break;
+        case 115:
+          if (modifiers) {
+            result.key = '\x1b[1;' + (modifiers + 1) + 'S';
+          } else {
+            result.key = '\x1bOS';
+          }
+          break;
+        case 116:
+          if (modifiers) {
+            result.key = '\x1b[15;' + (modifiers + 1) + '~';
+          } else {
+            result.key = '\x1b[15~';
+          }
+          break;
+        case 117:
+          if (modifiers) {
+            result.key = '\x1b[17;' + (modifiers + 1) + '~';
+          } else {
+            result.key = '\x1b[17~';
+          }
+          break;
+        case 118:
+          if (modifiers) {
+            result.key = '\x1b[18;' + (modifiers + 1) + '~';
+          } else {
+            result.key = '\x1b[18~';
+          }
+          break;
+        case 119:
+          if (modifiers) {
+            result.key = '\x1b[19;' + (modifiers + 1) + '~';
+          } else {
+            result.key = '\x1b[19~';
+          }
+          break;
+        case 120:
+          if (modifiers) {
+            result.key = '\x1b[20;' + (modifiers + 1) + '~';
+          } else {
+            result.key = '\x1b[20~';
+          }
+          break;
+        case 121:
+          if (modifiers) {
+            result.key = '\x1b[21;' + (modifiers + 1) + '~';
+          } else {
+            result.key = '\x1b[21~';
+          }
+          break;
+        case 122:
+          if (modifiers) {
+            result.key = '\x1b[23;' + (modifiers + 1) + '~';
+          } else {
+            result.key = '\x1b[23~';
+          }
+          break;
+        case 123:
+          if (modifiers) {
+            result.key = '\x1b[24;' + (modifiers + 1) + '~';
+          } else {
+            result.key = '\x1b[24~';
+          }
+          break;
         default:
           // a-z and space
           if (ev.ctrlKey && !ev.shiftKey && !ev.altKey && !ev.metaKey) {
