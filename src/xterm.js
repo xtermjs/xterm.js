@@ -401,11 +401,14 @@ import { Viewport } from './Viewport.js';
      * Initialize default behavior
      */
     Terminal.prototype.initGlobal = function() {
+      var self = this;
+
       Terminal.bindPaste(this);
       Terminal.bindKeys(this);
       Terminal.bindCopy(this);
       Terminal.bindFocus(this);
       Terminal.bindBlur(this);
+      Terminal.bindSelection(this);
     };
 
     /**
@@ -497,6 +500,71 @@ import { Viewport } from './Viewport.js';
 
 
     /**
+     * Binds the virtual selection functionality to the given terminal.
+     * **Note**: Virtual selection assumes same height and width across all characters.
+     * @static
+     */
+    Terminal.bindSelection = function (term) {
+      document.addEventListener('selectionchange', function () {
+        var selection = window.getSelection();
+
+        // Do not run any code if the current selection is outside of the terminal.
+        if (!term.rowContainer.contains(selection.anchorNode)) {
+          return;
+        }
+
+        var selectedText = selection.toString();
+
+        // Selection is collapsed. This means that no text is selected
+        // TODO: Remove all "selection" elements
+        if (selection.isCollapsed) {
+          console.debug('collapse selection');
+          // Text got selected
+          // TODO: Determine the selection boundaries
+          // TODO: Determine the selected text
+          // TODO: Draw the selection boundaries
+          // TODO: Set the selected text as value to the hidden text area, focus and select it
+        } else {
+          var existingSelections = term.helperContainer.querySelectorAll('.xterm-selection'),
+              i,
+              range,
+              rects,
+              rect,
+              selectionElement,
+              j;
+
+          // Clean existing selections
+          for (i=0; i<existingSelections.length; i++) {
+            term.helperContainer.removeChild(existingSelections[i]);
+          }
+
+          // Get ranges and rects
+          for (i=0; i<selection.rangeCount; i++) {
+            range = selection.getRangeAt(i);
+            rects = range.getClientRects();
+
+            for (j=0; j<rects.length; j++) {
+              rect = rects[j];
+
+              selectionElement = document.createElement('div');
+              selectionElement.classList.add('xterm-selection');
+
+              selectionElement.style.height = rect.height + 'px';
+              selectionElement.style.width = rect.width + 'px';
+              selectionElement.style.top = rect.top + 'px';
+              selectionElement.style.bottom = rect.bottom + 'px';
+              selectionElement.style.left = rect.left + 'px';
+              selectionElement.style.right = rect.right + 'px';
+
+              term.helperContainer.appendChild(selectionElement);
+            }
+          }
+        }
+      });
+    };
+
+
+    /**
      * Insert the given row to the terminal or produce a new one
      * if no row argument is passed. Return the inserted row.
      * @param {HTMLElement} row (optional) The row to append to the terminal.
@@ -504,6 +572,7 @@ import { Viewport } from './Viewport.js';
     Terminal.prototype.insertRow = function (row) {
       if (typeof row != 'object') {
         row = document.createElement('div');
+        row.classList.add('xterm-row');
       }
 
       this.rowContainer.appendChild(row);

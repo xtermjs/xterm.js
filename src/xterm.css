@@ -2194,3 +2194,20 @@
 .terminal .xterm-bg-color-255 {
     background-color: #eeeeee;
 }
+
+.terminal::-moz-selection,
+.xterm-row::-moz-selection,
+.xterm-row span::-moz-selection {
+    background-color: transparent;
+}
+
+.terminal::selection,
+.xterm-row::selection,
+.xterm-row span::selection {
+    background-color: transparent;
+}
+
+.xterm-selection{
+    background-color: yellow;
+    position: fixed;
+}
