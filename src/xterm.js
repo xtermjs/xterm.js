@@ -623,7 +623,7 @@ Terminal.prototype.open = function(parent) {
   // Ensure there is a Terminal.focus.
   this.focus();
 
-  on(this.element, 'mouseup', function() {
+  on(this.element, 'click', function() {
     var selection = document.getSelection(),
         collapsed = selection.isCollapsed,
         isRange = typeof collapsed == 'boolean' ? !collapsed : selection.type == 'Range';
