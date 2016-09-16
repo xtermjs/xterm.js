@@ -10,6 +10,20 @@ describe('xterm.js', function() {
     xterm.refresh = function(){};
   });
 
+  describe('setOption', function() {
+    it('should set the option correctly', function() {
+      xterm.setOption('cursorBlink', true);
+      assert.equal(xterm.cursorBlink, true);
+      assert.equal(xterm.options.cursorBlink, true);
+      xterm.setOption('cursorBlink', false);
+      assert.equal(xterm.cursorBlink, false);
+      assert.equal(xterm.options.cursorBlink, false);
+    });
+    it('should throw when setting a non-existant option', function() {
+      assert.throws(xterm.setOption.bind(xterm, 'fake', true));
+    });
+  });
+
   describe('evaluateKeyEscapeSequence', function() {
     it('should return the correct escape sequence for unmodified keys', function() {
       // Backspace
@@ -109,7 +123,7 @@ describe('xterm.js', function() {
       assert.equal(xterm.evaluateKeyEscapeSequence({ altKey: true, keyCode: 121 }).key, '\x1b[21;3~');
       assert.equal(xterm.evaluateKeyEscapeSequence({ altKey: true, keyCode: 122 }).key, '\x1b[23;3~');
       assert.equal(xterm.evaluateKeyEscapeSequence({ altKey: true, keyCode: 123 }).key, '\x1b[24;3~');
-      
+
       assert.equal(xterm.evaluateKeyEscapeSequence({ ctrlKey: true, keyCode: 112 }).key, '\x1b[1;5P');
       assert.equal(xterm.evaluateKeyEscapeSequence({ ctrlKey: true, keyCode: 113 }).key, '\x1b[1;5Q');
       assert.equal(xterm.evaluateKeyEscapeSequence({ ctrlKey: true, keyCode: 114 }).key, '\x1b[1;5R');
