@@ -359,6 +359,8 @@ Terminal.prototype.focus = function() {
 
 /**
  * Sets an option on the terminal.
+ * @param {string} key The option key.
+ * @param {string} value The option value.
  */
 Terminal.prototype.setOption = function(key, value) {
   if (!(key in Terminal.defaults)) {
