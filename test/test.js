@@ -24,6 +24,51 @@ describe('xterm.js', function() {
     });
   });
 
+  describe('clear', function() {
+    it('should clear a buffer equal to rows', function() {
+      var promptLine = xterm.lines[xterm.ybase + xterm.y];
+      xterm.clear();
+      assert.equal(xterm.y, 0);
+      assert.equal(xterm.ybase, 0);
+      assert.equal(xterm.ydisp, 0);
+      assert.equal(xterm.lines.length, xterm.rows);
+      assert.deepEqual(xterm.lines[0], promptLine);
+      for (var i = 1; i < xterm.rows; i++) {
+        assert.deepEqual(xterm.lines[0], xterm.blankLine());
+      }
+    });
+    it('should clear a buffer larger than rows', function() {
+      // Fill the buffer with dummy rows
+      for (var i = 0; i < xterm.rows * 2; i++) {
+        xterm.write('test\n');
+      }
+
+      var promptLine = xterm.lines[xterm.ybase + xterm.y];
+      xterm.clear();
+      assert.equal(xterm.y, 0);
+      assert.equal(xterm.ybase, 0);
+      assert.equal(xterm.ydisp, 0);
+      assert.equal(xterm.lines.length, xterm.rows);
+      assert.deepEqual(xterm.lines[0], promptLine);
+      for (var i = 1; i < xterm.rows; i++) {
+        assert.deepEqual(xterm.lines[i], xterm.blankLine());
+      }
+    });
+    it('should not break the prompt when cleared twice', function() {
+      var promptLine = xterm.lines[xterm.ybase + xterm.y];
+      xterm.clear();
+      xterm.clear();
+      assert.equal(xterm.y, 0);
+      assert.equal(xterm.ybase, 0);
+      assert.equal(xterm.ydisp, 0);
+      assert.equal(xterm.lines.length, xterm.rows);
+      assert.deepEqual(xterm.lines[0], promptLine);
+      for (var i = 1; i < xterm.rows; i++) {
+        assert.deepEqual(xterm.lines[i], xterm.blankLine());
+      }
+    });
+  });
+
   describe('evaluateKeyEscapeSequence', function() {
     it('should return the correct escape sequence for unmodified keys', function() {
       // Backspace
