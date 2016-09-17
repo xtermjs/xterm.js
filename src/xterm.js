@@ -3054,6 +3054,20 @@ Terminal.prototype.eraseLeft = function(x, y) {
   this.updateRange(y);
 };
 
+/**
+ * Clears the entire buffer, making the prompt line the new first line.
+ */
+Terminal.prototype.clear = function() {
+  this.ydisp = 0;
+  this.ybase = 0;
+  this.y = 0;
+  this.lines = [this.lines[this.lines.length - 1]];
+  for (var i = 1; i < this.rows; i++) {
+    this.lines.push(this.blankLine());
+  }
+  this.refresh(0, this.rows - 1);
+  this.emit('scroll', this.ydisp);
+};
 
 /**
  * Erase all content in the given line
