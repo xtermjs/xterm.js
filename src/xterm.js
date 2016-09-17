@@ -3058,6 +3058,10 @@ Terminal.prototype.eraseLeft = function(x, y) {
  * Clears the entire buffer, making the prompt line the new first line.
  */
 Terminal.prototype.clear = function() {
+  if (this.ybase === 0 && this.y === 0) {
+    // Don't clear if it's already clear
+    return;
+  }
   this.ydisp = 0;
   this.ybase = 0;
   this.y = 0;
