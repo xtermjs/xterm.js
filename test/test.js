@@ -51,7 +51,20 @@ describe('xterm.js', function() {
       assert.equal(xterm.lines.length, xterm.rows);
       assert.deepEqual(xterm.lines[0], promptLine);
       for (var i = 1; i < xterm.rows; i++) {
-        assert.deepEqual(xterm.lines[0], xterm.blankLine());
+        assert.deepEqual(xterm.lines[i], xterm.blankLine());
+      }
+    });
+    it('should not break the prompt when cleared twice', function() {
+      var promptLine = xterm.lines[xterm.ybase + xterm.y];
+      xterm.clear();
+      xterm.clear();
+      assert.equal(xterm.y, 0);
+      assert.equal(xterm.ybase, 0);
+      assert.equal(xterm.ydisp, 0);
+      assert.equal(xterm.lines.length, xterm.rows);
+      assert.deepEqual(xterm.lines[0], promptLine);
+      for (var i = 1; i < xterm.rows; i++) {
+        assert.deepEqual(xterm.lines[i], xterm.blankLine());
       }
     });
   });
