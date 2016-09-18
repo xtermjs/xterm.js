@@ -2427,14 +2427,14 @@ Terminal.prototype.keyDown = function(ev) {
 
   if (result.scrollDisp) {
     this.scrollDisp(result.scrollDisp);
-    return this.cancel(ev);
+    return this.cancel(ev, true);
   }
 
   if (isThirdLevelShift(this, ev)) {
     return true;
   }
 
-  if (result.cancel ) {
+  if (result.cancel) {
     // The event is canceled at the end already, is this necessary?
     this.cancel(ev, true);
   }
