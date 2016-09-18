@@ -2470,16 +2470,16 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
   };
   var modifiers = ev.shiftKey << 0 | ev.altKey << 1 | ev.ctrlKey << 2 | ev.metaKey << 3;
   switch (ev.keyCode) {
-      // backspace
     case 8:
+      // backspace
       if (ev.shiftKey) {
         result.key = '\x08'; // ^H
         break;
       }
       result.key = '\x7f'; // ^?
       break;
-      // tab
     case 9:
+      // tab
       if (ev.shiftKey) {
         result.key = '\x1b[Z';
         break;
@@ -2487,18 +2487,18 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
       result.key = '\t';
       result.cancel = true;
       break;
-      // return/enter
     case 13:
+      // return/enter
       result.key = '\r';
       result.cancel = true;
       break;
-      // escape
     case 27:
+      // escape
       result.key = '\x1b';
       result.cancel = true;
       break;
-      // left-arrow
     case 37:
+      // left-arrow
       if (modifiers) {
         result.key = '\x1b[1;' + (modifiers + 1) + 'D';
         // HACK: Make Alt + left-arrow behave like Ctrl + left-arrow: move one word backwards
@@ -2512,8 +2512,8 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
         result.key = '\x1b[D';
       }
       break;
-      // right-arrow
     case 39:
+      // right-arrow
       if (modifiers) {
         result.key = '\x1b[1;' + (modifiers + 1) + 'C';
         // HACK: Make Alt + right-arrow behave like Ctrl + right-arrow: move one word forward
@@ -2527,8 +2527,8 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
         result.key = '\x1b[C';
       }
       break;
-      // up-arrow
     case 38:
+      // up-arrow
       if (modifiers) {
         result.key = '\x1b[1;' + (modifiers + 1) + 'A';
         // HACK: Make Alt + up-arrow behave like Ctrl + up-arrow
@@ -2542,8 +2542,8 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
         result.key = '\x1b[A';
       }
       break;
-      // down-arrow
     case 40:
+      // down-arrow
       if (modifiers) {
         result.key = '\x1b[1;' + (modifiers + 1) + 'B';
         // HACK: Make Alt + down-arrow behave like Ctrl + down-arrow
@@ -2557,24 +2557,24 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
         result.key = '\x1b[B';
       }
       break;
-      // insert
     case 45:
+      // insert
       if (!ev.shiftKey && !ev.ctrlKey) {
         // <Ctrl> or <Shift> + <Insert> are used to
         // copy-paste on some systems.
         result.key = '\x1b[2~';
       }
       break;
-      // delete
     case 46:
+      // delete
       if (modifiers) {
         result.key = '\x1b[3;' + (modifiers + 1) + '~';
       } else {
         result.key = '\x1b[3~';
       }
       break;
-      // home
     case 36:
+      // home
       if (modifiers)
         result.key = '\x1b[1;' + (modifiers + 1) + 'H';
       else if (this.applicationCursor)
@@ -2582,8 +2582,8 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
       else
         result.key = '\x1b[H';
       break;
-      // end
     case 35:
+      // end
       if (modifiers)
         result.key = '\x1b[1;' + (modifiers + 1) + 'F';
       else if (this.applicationCursor)
@@ -2591,24 +2591,24 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
       else
         result.key = '\x1b[F';
       break;
-      // page up
     case 33:
+      // page up
       if (ev.shiftKey) {
         result.scrollDisp = -(this.rows - 1);
       } else {
         result.key = '\x1b[5~';
       }
       break;
-      // page down
     case 34:
+      // page down
       if (ev.shiftKey) {
         result.scrollDisp = this.rows - 1;
       } else {
         result.key = '\x1b[6~';
       }
       break;
-      // F1-F12
     case 112:
+      // F1-F12
       if (modifiers) {
         result.key = '\x1b[1;' + (modifiers + 1) + 'P';
       } else {
