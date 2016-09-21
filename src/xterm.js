@@ -358,6 +358,22 @@ Terminal.prototype.focus = function() {
 };
 
 /**
+ * Retrieves an option's value from the terminal.
+ * @param {string} key The option key.
+ */
+Terminal.prototype.getOption = function(key, value) {
+  if (!(key in Terminal.defaults)) {
+    throw new Error('No option with key "' + key + '"');
+  }
+
+  if (typeof this.options[key] !== 'undefined') {
+    return this.options[key];
+  }
+
+  return this[key];
+};
+
+/**
  * Sets an option on the terminal.
  * @param {string} key The option key.
  * @param {string} value The option value.

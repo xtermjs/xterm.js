@@ -10,6 +10,22 @@ describe('xterm.js', function() {
     xterm.refresh = function(){};
   });
 
+  describe('getOption', function() {
+    it('should retrieve the option correctly', function() {
+      // In the `options` namespace.
+      xterm.options.cursorBlink = true;
+      assert.equal(xterm.getOption('cursorBlink'), true);
+
+      // On the Terminal instance
+      delete xterm.options.cursorBlink;
+      xterm.cursorBlink = false;
+      assert.equal(xterm.getOption('cursorBlink'), false);
+    });
+    it('should throw when retrieving a non-existant option', function() {
+      assert.throws(xterm.getOption.bind(xterm, 'fake', true));
+    });
+  });
+
   describe('setOption', function() {
     it('should set the option correctly', function() {
       xterm.setOption('cursorBlink', true);
