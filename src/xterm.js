@@ -366,7 +366,7 @@ Terminal.prototype.getOption = function(key, value) {
     throw new Error('No option with key "' + key + '"');
   }
 
-  if (typeof this.options[key] != 'undefined') {
+  if (typeof this.options[key] !== 'undefined') {
     return this.options[key];
   }
 
