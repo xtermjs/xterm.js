@@ -22,6 +22,7 @@ function Viewport(terminal, viewportElement, scrollArea, charMeasureElement) {
 
   this.terminal.on('scroll', this.syncScrollArea.bind(this));
   this.terminal.on('resize', this.syncScrollArea.bind(this));
+  this.terminal.on('application-mode', this.setApplicationMode.bind(this));
   this.viewportElement.addEventListener('scroll', this.onScroll.bind(this));
 
   this.syncScrollArea();
