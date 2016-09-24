@@ -40,7 +40,9 @@ import { default as Core } from './Core.js';
 var document = (typeof window != 'undefined') ? window.document : null;
 
 function Terminal() {
-  var options = Core.apply(this, arguments);
+  Core.apply(this, arguments);
+
+  var options = this.options;
 
   this.cancel = Terminal.cancel;
 

@@ -216,8 +216,6 @@ function Terminal(options) {
 
   this.tabs;
   this.setupStops();
-
-  return options;
 }
 
 inherits(Terminal, EventEmitter);
