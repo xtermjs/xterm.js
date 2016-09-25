@@ -8,6 +8,9 @@ describe('xterm.js', function() {
   beforeEach(function () {
     xterm = new Terminal();
     xterm.refresh = function(){};
+    xterm.viewport = {
+      syncScrollArea: function(){}
+    };
   });
 
   describe('getOption', function() {
