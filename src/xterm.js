@@ -1692,7 +1692,7 @@ Terminal.prototype.write = function(data) {
           case '=':
             this.log('Serial port requested application keypad.');
             this.applicationKeypad = true;
-            this.viewport.setApplicationMode(true);
+            this.viewport.syncScrollArea();
             this.state = normal;
             break;
 
@@ -1700,7 +1700,7 @@ Terminal.prototype.write = function(data) {
           case '>':
             this.log('Switching back to normal keypad.');
             this.applicationKeypad = false;
-            this.viewport.setApplicationMode(false);
+            this.viewport.syncScrollArea();
             this.state = normal;
             break;
 
@@ -4064,7 +4064,7 @@ Terminal.prototype.setMode = function(params) {
       case 66:
         this.log('Serial port requested application keypad.');
         this.applicationKeypad = true;
-        this.viewport.setApplicationMode(true);
+        this.viewport.syncScrollArea();
         break;
       case 9: // X10 Mouse
         // no release, no motion, no wheel, no modifiers.
@@ -4264,7 +4264,7 @@ Terminal.prototype.resetMode = function(params) {
       case 66:
         this.log('Switching back to normal keypad.');
         this.applicationKeypad = false;
-        this.viewport.setApplicationMode(false);
+        this.viewport.syncScrollArea();
         break;
       case 9: // X10 Mouse
       case 1000: // vt200 mouse
@@ -4551,7 +4551,7 @@ Terminal.prototype.softReset = function(params) {
   this.originMode = false;
   this.wraparoundMode = false; // autowrap
   this.applicationKeypad = false; // ?
-  this.viewport.setApplicationMode(false);
+  this.viewport.syncScrollArea();
   this.applicationCursor = false;
   this.scrollTop = 0;
   this.scrollBottom = this.rows - 1;
