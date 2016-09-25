@@ -55,13 +55,6 @@ Viewport.prototype.refresh = function(charSize) {
  * Updates dimensions and synchronizes the scroll area if necessary.
  */
 Viewport.prototype.syncScrollArea = function() {
-  if (this.isApplicationMode) {
-    // Fix scroll bar in application mode
-    this.lastRecordedBufferLength = this.terminal.rows;
-    this.refresh();
-    return;
-  }
-
   if (this.lastRecordedBufferLength !== this.terminal.lines.length) {
     // If buffer height changed
     this.lastRecordedBufferLength = this.terminal.lines.length;
@@ -85,25 +78,11 @@ Viewport.prototype.syncScrollArea = function() {
 };
 
 /**
- * Sets the application mode of the viewport.
- * @param {boolean} isApplicationMode Sets whether the terminal is in application mode. true
- * for application mode (DECKPAM) and false for normal mode (DECKPNM).
- */
-Viewport.prototype.setApplicationMode = function(isApplicationMode) {
-  this.isApplicationMode = isApplicationMode;
-  this.syncScrollArea();
-};
-
-/**
  * Handles scroll events on the viewport, calculating the new viewport and requesting the
  * terminal to scroll to it.
  * @param {Event} ev The scroll event.
  */
 Viewport.prototype.onScroll = function(ev) {
-  if (this.isApplicationMode) {
-    // Scrolling via the scroll bar is disabled during application mode
-    return;
-  }
   var newRow = Math.round(this.viewportElement.scrollTop / this.currentRowHeight);
   var diff = newRow - this.terminal.ydisp;
   this.terminal.scrollDisp(diff, true);

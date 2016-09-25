@@ -46,23 +46,6 @@ describe('Viewport', function () {
     it('should define Viewport.prototype.onWheel', function () {
       assert.isDefined(Terminal.Viewport.prototype.onWheel);
     });
-    it('should define Viewport.prototype.setApplicationMode', function () {
-      assert.isDefined(Terminal.Viewport.prototype.setApplicationMode);
-    });
-  });
-
-  describe('setApplicationMode', function () {
-    it('should restrict the scroll area to the viewport', function () {
-      terminal.lines.push('');
-      terminal.lines.push('');
-      terminal.rows = 1;
-      viewport.syncScrollArea();
-      assert.equal(scrollAreaElement.style.height, 2 * CHARACTER_HEIGHT + 'px');
-      viewport.setApplicationMode(true);
-      assert.equal(scrollAreaElement.style.height, CHARACTER_HEIGHT + 'px');
-      viewport.setApplicationMode(false);
-      assert.equal(scrollAreaElement.style.height, 2 * CHARACTER_HEIGHT + 'px');
-    });
   });
 
   describe('refresh', function () {
