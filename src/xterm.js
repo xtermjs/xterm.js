@@ -1017,7 +1017,6 @@ Terminal.prototype.bindMouse = function() {
   // the shell for example
   on(el, 'wheel', function(ev) {
     if (self.mouseEvents) return;
-    if (self.applicationKeypad) return;
     self.viewport.onWheel(ev);
     return self.cancel(ev);
   });
