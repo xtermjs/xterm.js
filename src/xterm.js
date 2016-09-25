@@ -3207,6 +3207,7 @@ Terminal.prototype.reset = function() {
   Terminal.call(this, this.options);
   this.customKeydownHandler = customKeydownHandler;
   this.refresh(0, this.rows - 1);
+  this.viewport.syncScrollArea();
 };
 
 
