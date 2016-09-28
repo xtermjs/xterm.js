@@ -245,20 +245,6 @@ describe('xterm.js', function() {
     });
   });
 
-  describe('evaluateCopiedTextProcessing', function () {
-    it('should strip trailing whitespaces and replace nbsps with spaces', function () {
-			var nonBreakingSpace = String.fromCharCode(160),
-          copiedText = 'echo' + nonBreakingSpace + 'hello' + nonBreakingSpace,
-          processedText = Terminal.prepareCopiedTextForClipboard(copiedText);
-
-      // No trailing spaces
-      assert.equal(processedText.match(/\s+$/), null);
-
-      // No non-breaking space
-      assert.equal(processedText.indexOf(nonBreakingSpace), -1);
-    });
-  });
-
   describe('Third level shift', function() {
     var evKeyDown = {
           preventDefault: function() {},

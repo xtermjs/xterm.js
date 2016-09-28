@@ -34,6 +34,7 @@
 import { CompositionHelper } from './CompositionHelper.js';
 import { EventEmitter } from './EventEmitter.js';
 import { Viewport } from './Viewport.js';
+import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard.js';
 
 /**
  * Terminal Emulation References:
@@ -431,52 +432,20 @@ Terminal.bindBlur = function (term) {
  * Initialize default behavior
  */
 Terminal.prototype.initGlobal = function() {
-  Terminal.bindPaste(this);
+  var term = this;
+
   Terminal.bindKeys(this);
-  Terminal.bindCopy(this);
   Terminal.bindFocus(this);
   Terminal.bindBlur(this);
-};
 
-/**
- * Bind to paste event and allow both keyboard and right-click pasting, without having the
- * contentEditable value set to true.
- */
-Terminal.bindPaste = function(term) {
-  on([term.textarea, term.element], 'paste', function(ev) {
-    ev.stopPropagation();
-    if (ev.clipboardData) {
-      var text = ev.clipboardData.getData('text/plain');
-      term.handler(text);
-      term.textarea.value = '';
-      return term.cancel(ev);
-    }
+  // Bind clipboard functionality
+  on(this.element, 'copy', copyHandler);
+  on(this.textarea, 'paste', function (ev) {
+    pasteHandler.call(this, ev, term);
   });
-};
-
-/**
- * Prepares text copied from terminal selection, to be saved in the clipboard by:
- *   1. stripping all trailing white spaces
- *   2. converting all non-breaking spaces to regular spaces
- * @param {string} text The copied text that needs processing for storing in clipboard
- * @returns {string}
- * @static
- */
-Terminal.prepareCopiedTextForClipboard = function (text) {
-  var space = String.fromCharCode(32),
-      nonBreakingSpace = String.fromCharCode(160),
-      allNonBreakingSpaces = new RegExp(nonBreakingSpace, 'g'),
-      processedText = text.split('\n').map(function (line) {
-        /**
-         * Strip all trailing white spaces and convert all non-breaking spaces to regular
-         * spaces.
-         */
-        var processedLine = line.replace(/\s+$/g, '').replace(allNonBreakingSpaces, space);
-
-        return processedLine;
-      }).join('\n');
-
-  return processedText;
+  on(this.element, 'contextmenu', function (ev) {
+    rightClickHandler.call(this, ev, term);
+  });
 };
 
 /**
@@ -513,16 +482,6 @@ Terminal.bindKeys = function(term) {
   on(term.textarea, 'compositionupdate', term.compositionHelper.compositionupdate.bind(term.compositionHelper));
   on(term.textarea, 'compositionend', term.compositionHelper.compositionend.bind(term.compositionHelper));
   term.on('refresh', term.compositionHelper.updateCompositionElements.bind(term.compositionHelper));
-};
-
-/**
- * Binds copy functionality to the given terminal.
- * @static
- */
-Terminal.bindCopy = function(term) {
-  on(term.element, 'copy', function(ev) {
-    return; // temporary
-  });
 };
 
 
@@ -966,57 +925,6 @@ Terminal.prototype.bindMouse = function() {
       type: 'wheel'
     };
   }
-
-  // Handle right-click
-  on(el, 'contextmenu', function (ev) {
-    var s = document.getSelection(),
-        sText = Terminal.prepareCopiedTextForClipboard(s.toString()),
-        r = s.getRangeAt(0);
-
-    var x = ev.clientX,
-        y = ev.clientY;
-
-    var cr = r.getClientRects(),
-        clickIsOnSelection = false,
-        i, rect;
-
-    for (i=0; i<cr.length; i++) {
-      rect = cr[i];
-      clickIsOnSelection = (
-        (x > rect.left) && (x < rect.right) &&
-        (y > rect.top) && (y < rect.bottom)
-      )
-      // If we clicked on selection and selection is not a single space,
-      // then mark the right click as copy-only. We check for the single
-      // space selection, as this can happen when clicking on an &nbsp;
-      // and there is not much pointing in copying a single space.
-      // Single space is char
-      if (clickIsOnSelection && (sText !== ' ')) {
-        break;
-      }
-    }
-
-    // Bring textarea at the cursor position
-    if (!clickIsOnSelection) {
-      term.textarea.style.position = 'fixed';
-      term.textarea.style.width = '10px';
-      term.textarea.style.height = '10px';
-      term.textarea.style.left = x + 'px';
-      term.textarea.style.top = y + 'px';
-      term.textarea.style.zIndex = 1000;
-      term.textarea.focus();
-
-      // Reset the terminal textarea's styling
-      setTimeout(function () {
-        term.textarea.style.position = null;
-        term.textarea.style.width = null;
-        term.textarea.style.height = null;
-        term.textarea.style.left = null;
-        term.textarea.style.top = null;
-        term.textarea.style.zIndex = null;
-      }, 1);
-    }
-  });
 
   on(el, 'mousedown', function(ev) {
     if (!self.mouseEvents) return;
