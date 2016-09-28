@@ -4,12 +4,17 @@
  */
 
 /**
+ * Clipboard handler module. This module contains methods for handling all
+ * clipboard-related events appropriately in the terminal.
+ * @module xterm/handlers/Clipboard
+ */
+
+/**
  * Prepares text copied from terminal selection, to be saved in the clipboard by:
  *   1. stripping all trailing white spaces
  *   2. converting all non-breaking spaces to regular spaces
  * @param {string} text The copied text that needs processing for storing in clipboard
  * @returns {string}
- * @static
  */
 function prepareTextForClipboard(text) {
   var space = String.fromCharCode(32),
@@ -28,7 +33,7 @@ function prepareTextForClipboard(text) {
 
 /**
  * Binds copy functionality to the given terminal.
- * @static
+ * @param {ClipboardEvent} ev The original copy event to be handled
  */
 function copyHandler (ev) {
   var copiedText = window.getSelection().toString(),
@@ -38,8 +43,9 @@ function copyHandler (ev) {
 }
 
 /**
- * Bind to paste event and allow both keyboard and right-click pasting, without having the
- * contentEditable value set to true.
+ * Redirect the clipboard's data to the terminal's input handler.
+ * @param {ClipboardEvent} ev The original paste event to be handled
+ * @param {Terminal} term The terminal on which to apply the handled paste event
  */
 function pasteHandler(ev, term) {
   ev.stopPropagation();
@@ -51,7 +57,20 @@ function pasteHandler(ev, term) {
   }
 }
 
-function rightClickHandler(ev) {
+/**
+ * Bind to right-click event and allow right-click copy and paste.
+ *
+ * **Logic**
+ * If text is selected and right-click happens on selected text, then
+ * do nothing to allow seamless copying.
+ * If no text is selected or right-click is outside of the selection
+ * area, then bring the terminal's input below the cursor, in order to
+ * trigger the event on the textarea and allow-right click paste, without
+ * caring about disappearing selection.
+ * @param {ClipboardEvent} ev The original paste event to be handled
+ * @param {Terminal} term The terminal on which to apply the handled paste event
+ */
+function rightClickHandler(ev, term) {
   var s = document.getSelection(),
       sText = prepareTextForClipboard(s.toString()),
       r = s.getRangeAt(0);
