@@ -39,6 +39,7 @@ function copyHandler (ev) {
   var copiedText = window.getSelection().toString(),
       text = prepareTextForClipboard(copiedText);
 
+  ev.clipboardData.setData('text/plain', text);
   ev.preventDefault(); // Prevent or the original text will be copied.
 }
 
