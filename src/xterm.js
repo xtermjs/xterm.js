@@ -34,6 +34,7 @@
 import { CompositionHelper } from './CompositionHelper.js';
 import { EventEmitter } from './EventEmitter.js';
 import { Viewport } from './Viewport.js';
+import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard.js';
 
 /**
  * Terminal Emulation References:
@@ -431,52 +432,20 @@ Terminal.bindBlur = function (term) {
  * Initialize default behavior
  */
 Terminal.prototype.initGlobal = function() {
-  Terminal.bindPaste(this);
+  var term = this;
+
   Terminal.bindKeys(this);
-  Terminal.bindCopy(this);
   Terminal.bindFocus(this);
   Terminal.bindBlur(this);
-};
 
-/**
- * Bind to paste event and allow both keyboard and right-click pasting, without having the
- * contentEditable value set to true.
- */
-Terminal.bindPaste = function(term) {
-  on([term.textarea, term.element], 'paste', function(ev) {
-    ev.stopPropagation();
-    if (ev.clipboardData) {
-      var text = ev.clipboardData.getData('text/plain');
-      term.handler(text);
-      term.textarea.value = '';
-      return term.cancel(ev);
-    }
+  // Bind clipboard functionality
+  on(this.element, 'copy', copyHandler);
+  on(this.textarea, 'paste', function (ev) {
+    pasteHandler.call(this, ev, term);
   });
-};
-
-/**
- * Prepares text copied from terminal selection, to be saved in the clipboard by:
- *   1. stripping all trailing white spaces
- *   2. converting all non-breaking spaces to regular spaces
- * @param {string} text The copied text that needs processing for storing in clipboard
- * @returns {string}
- * @static
- */
-Terminal.prepareCopiedTextForClipboard = function (text) {
-  var space = String.fromCharCode(32),
-      nonBreakingSpace = String.fromCharCode(160),
-      allNonBreakingSpaces = new RegExp(nonBreakingSpace, 'g'),
-      processedText = text.split('\n').map(function (line) {
-        /**
-         * Strip all trailing white spaces and convert all non-breaking spaces to regular
-         * spaces.
-         */
-        var processedLine = line.replace(/\s+$/g, '').replace(allNonBreakingSpaces, space);
-
-        return processedLine;
-      }).join('\n');
-
-  return processedText;
+  on(this.element, 'contextmenu', function (ev) {
+    rightClickHandler.call(this, ev, term);
+  });
 };
 
 /**
@@ -513,16 +482,6 @@ Terminal.bindKeys = function(term) {
   on(term.textarea, 'compositionupdate', term.compositionHelper.compositionupdate.bind(term.compositionHelper));
   on(term.textarea, 'compositionend', term.compositionHelper.compositionend.bind(term.compositionHelper));
   term.on('refresh', term.compositionHelper.updateCompositionElements.bind(term.compositionHelper));
-};
-
-/**
- * Binds copy functionality to the given terminal.
- * @static
- */
-Terminal.bindCopy = function(term) {
-  on(term.element, 'copy', function(ev) {
-    return; // temporary
-  });
 };
 
 
