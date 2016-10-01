@@ -1,5 +1,5 @@
 var assert = require('chai').assert;
-var Terminal = require('../../src/xterm');
+var Terminal = require('../../build/xterm');
 
 describe('xterm.js addons', function() {
   it('should load addons with Terminal.loadAddon', function () {

@@ -683,7 +683,7 @@ Terminal.prototype.open = function(parent) {
 Terminal.loadAddon = function(addon, callback) {
   if (typeof exports === 'object' && typeof module === 'object') {
     // CommonJS
-    return require(__dirname + '/../addons/' + addon);
+    return require('../addons/' + addon);
   } else if (typeof define == 'function') {
     // RequireJS
     return require(['../addons/' + addon + '/' + addon], callback);
