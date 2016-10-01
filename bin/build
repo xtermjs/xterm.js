@@ -1,5 +1,7 @@
 #! /usr/bin/env sh
 
+typings install
+
 mkdir -p build
 browserify src/xterm.js --standalone Terminal -p [ tsify ] --outfile build/xterm.js
 cp src/xterm.css build/xterm.css
