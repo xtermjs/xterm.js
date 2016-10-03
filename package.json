@@ -6,7 +6,7 @@
     "test",
     ".gitignore"
   ],
-  "main": "src/xterm.js",
+  "main": "build/xterm.js",
   "repository": "https://github.com/sourcelair/xterm.js",
   "license": "MIT",
   "devDependencies": {
