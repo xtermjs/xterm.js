@@ -61,6 +61,7 @@
     position: absolute;
     opacity: 0;
     left: -9999em;
+    top: -9999em;
     width: 0;
     height: 0;
     z-index: -10;
