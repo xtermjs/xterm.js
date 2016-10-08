@@ -28,7 +28,7 @@
   },
   "scripts": {
     "start": "nodemon --watch src --watch addons --exec bash -c './bin/build && node demo/app'",
-    "test": "./bin/build && mocha --recursive",
+    "test": "./bin/build && mocha --recursive ./test/*test.js ./test/**/*test.js",
     "build:docs": "jsdoc -c jsdoc.json",
     "build": "./bin/build"
   }
