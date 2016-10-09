@@ -1315,10 +1315,16 @@ Terminal.prototype.scrollPages = function(pageCount) {
   this.scrollDisp(pageCount * (this.rows - 1));
 }
 
+/**
+ * Scrolls the display of the terminal to the top.
+ */
 Terminal.prototype.scrollToTop = function() {
   this.scrollDisp(-this.ydisp);
 }
 
+/**
+ * Scrolls the display of the terminal to the bottom.
+ */
 Terminal.prototype.scrollToBottom = function() {
   this.scrollDisp(this.ybase - this.ydisp);
 }
