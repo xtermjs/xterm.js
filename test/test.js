@@ -88,9 +88,40 @@ describe('xterm.js', function() {
     });
   });
 
-  describe('scrollDisp', function() {
-    it('should scroll a single line', function() {
-      assert.equal(xterm.ydisp, -1);
+  describe('scroll', function() {
+    describe('scrollDisp', function() {
+      var startYDisp;
+      beforeEach(function() {
+        for (var i = 0; i < xterm.rows * 2; i++) {
+          xterm.writeln('test');
+        }
+        startYDisp = xterm.rows + 1;
+      });
+      it('should scroll a single line', function() {
+        assert.equal(xterm.ydisp, startYDisp);
+        xterm.scrollDisp(-1);
+        assert.equal(xterm.ydisp, startYDisp - 1);
+        xterm.scrollDisp(1);
+        assert.equal(xterm.ydisp, startYDisp);
+      });
+      it('should scroll multiple lines', function() {
+        assert.equal(xterm.ydisp, startYDisp);
+        xterm.scrollDisp(-5);
+        assert.equal(xterm.ydisp, startYDisp - 5);
+        xterm.scrollDisp(5);
+        assert.equal(xterm.ydisp, startYDisp);
+      });
+      it('should not scroll beyond the bounds of the buffer', function() {
+        assert.equal(xterm.ydisp, startYDisp);
+        xterm.scrollDisp(1);
+        assert.equal(xterm.ydisp, startYDisp);
+        for (var i = 0; i < startYDisp; i++) {
+          xterm.scrollDisp(-1);
+        }
+        assert.equal(xterm.ydisp, 0);
+        xterm.scrollDisp(-1);
+        assert.equal(xterm.ydisp, 0);
+      });
     });
   });
 
