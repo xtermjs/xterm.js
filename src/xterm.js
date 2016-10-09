@@ -1308,6 +1308,14 @@ Terminal.prototype.scrollDisp = function(disp, suppressScrollEvent) {
 };
 
 /**
+ * Scroll the display of the terminal by a number of pages.
+ * @param {number} pageCount The number of pages to scroll.
+ */
+Terminal.prototype.scrollPages = function(pageCount) {
+  this.scrollDisp(pageCount * (this.rows - 1));
+}
+
+/**
  * Writes text to the terminal.
  * @param {string} text The text to write to the terminal.
  */

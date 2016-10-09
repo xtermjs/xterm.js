@@ -88,6 +88,12 @@ describe('xterm.js', function() {
     });
   });
 
+  describe('scrollDisp', function() {
+    it('should scroll a single line', function() {
+      assert.equal(xterm.ydisp, -1);
+    });
+  });
+
   describe('evaluateKeyEscapeSequence', function() {
     it('should return the correct escape sequence for unmodified keys', function() {
       // Backspace
