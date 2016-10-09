@@ -147,6 +147,40 @@ describe('xterm.js', function() {
         assert.equal(xterm.ydisp, startYDisp);
       });
     });
+
+    describe('scrollToTop', function() {
+      beforeEach(function() {
+        for (var i = 0; i < xterm.rows * 3; i++) {
+          xterm.writeln('test');
+        }
+      });
+      it('should scroll to the top', function() {
+        assert.notEqual(xterm.ydisp, 0);
+        xterm.scrollToTop();
+        assert.equal(xterm.ydisp, 0);
+      });
+    });
+
+    describe('scrollToBottom', function() {
+      var startYDisp;
+      beforeEach(function() {
+        for (var i = 0; i < xterm.rows * 3; i++) {
+          xterm.writeln('test');
+        }
+        startYDisp = (xterm.rows * 2) + 1;
+      });
+      it('should scroll to the bottom', function() {
+        xterm.scrollDisp(-1);
+        xterm.scrollToBottom();
+        assert.equal(xterm.ydisp, startYDisp);
+        xterm.scrollPages(-1);
+        xterm.scrollToBottom();
+        assert.equal(xterm.ydisp, startYDisp);
+        xterm.scrollToTop();
+        xterm.scrollToBottom();
+        assert.equal(xterm.ydisp, startYDisp);
+      });
+    });
   });
 
   describe('evaluateKeyEscapeSequence', function() {

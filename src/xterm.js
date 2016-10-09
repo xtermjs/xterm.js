@@ -1315,6 +1315,14 @@ Terminal.prototype.scrollPages = function(pageCount) {
   this.scrollDisp(pageCount * (this.rows - 1));
 }
 
+Terminal.prototype.scrollToTop = function() {
+  this.scrollDisp(-this.ydisp);
+}
+
+Terminal.prototype.scrollToBottom = function() {
+  this.scrollDisp(this.ybase - this.ydisp);
+}
+
 /**
  * Writes text to the terminal.
  * @param {string} text The text to write to the terminal.
