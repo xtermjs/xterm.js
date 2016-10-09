@@ -45,7 +45,7 @@
    *                             should happen instantly or at a maximum
    *                             frequency of 1 rendering per 10ms.
    */
-  exports.attach = function (term, socket, bidirectional, buffered) {
+  exports.terminadoAttach = function (term, socket, bidirectional, buffered) {
     bidirectional = (typeof bidirectional == 'undefined') ? true : bidirectional;
     term.socket = socket;
 
@@ -91,8 +91,8 @@
     }
     term.on('resize', term._setSize);
 
-    socket.addEventListener('close', term.detach.bind(term, socket));
-    socket.addEventListener('error', term.detach.bind(term, socket));
+    socket.addEventListener('close', term.terminadoDetach.bind(term, socket));
+    socket.addEventListener('error', term.terminadoDetach.bind(term, socket));
   };
 
   /**
@@ -102,7 +102,7 @@
    * @param {WebSocket} socket - The socket from which to detach the current
    *                             terminal.
    */
-  exports.detach = function (term, socket) {
+  exports.terminadoDetach = function (term, socket) {
     term.off('data', term._sendData);
 
     socket = (typeof socket == 'undefined') ? term.socket : socket;
@@ -125,7 +125,7 @@
    *                             frequency of 1 rendering per 10ms.
    */
   Xterm.prototype.terminadoAttach = function (socket, bidirectional, buffered) {
-    return exports.attach(this, socket, bidirectional, buffered);
+    return exports.terminadoAttach(this, socket, bidirectional, buffered);
   };
 
   /**
@@ -135,7 +135,7 @@
    *                             terminal.
    */
   Xterm.prototype.terminadoDetach = function (socket) {
-    return exports.detach(this, socket);
+    return exports.terminadoDetach(this, socket);
   };
 
   return exports;
