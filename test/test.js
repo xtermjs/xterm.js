@@ -123,6 +123,30 @@ describe('xterm.js', function() {
         assert.equal(xterm.ydisp, 0);
       });
     });
+
+    describe('scrollPages', function() {
+      var startYDisp;
+      beforeEach(function() {
+        for (var i = 0; i < xterm.rows * 3; i++) {
+          xterm.writeln('test');
+        }
+        startYDisp = (xterm.rows * 2) + 1;
+      });
+      it('should scroll a single page', function() {
+        assert.equal(xterm.ydisp, startYDisp);
+        xterm.scrollPages(-1);
+        assert.equal(xterm.ydisp, startYDisp - (xterm.rows - 1));
+        xterm.scrollPages(1);
+        assert.equal(xterm.ydisp, startYDisp);
+      });
+      it('should scroll a multiple pages', function() {
+        assert.equal(xterm.ydisp, startYDisp);
+        xterm.scrollPages(-2);
+        assert.equal(xterm.ydisp, startYDisp - (xterm.rows - 1) * 2);
+        xterm.scrollPages(2);
+        assert.equal(xterm.ydisp, startYDisp);
+      });
+    });
   });
 
   describe('evaluateKeyEscapeSequence', function() {
