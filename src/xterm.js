@@ -1308,6 +1308,28 @@ Terminal.prototype.scrollDisp = function(disp, suppressScrollEvent) {
 };
 
 /**
+ * Scroll the display of the terminal by a number of pages.
+ * @param {number} pageCount The number of pages to scroll (negative scrolls up).
+ */
+Terminal.prototype.scrollPages = function(pageCount) {
+  this.scrollDisp(pageCount * (this.rows - 1));
+}
+
+/**
+ * Scrolls the display of the terminal to the top.
+ */
+Terminal.prototype.scrollToTop = function() {
+  this.scrollDisp(-this.ydisp);
+}
+
+/**
+ * Scrolls the display of the terminal to the bottom.
+ */
+Terminal.prototype.scrollToBottom = function() {
+  this.scrollDisp(this.ybase - this.ydisp);
+}
+
+/**
  * Writes text to the terminal.
  * @param {string} text The text to write to the terminal.
  */
