@@ -3099,9 +3099,9 @@ Terminal.prototype.is = function(term) {
 
 
 /**
-     * Emit the 'data' event and populate the given data.
-     * @param {string} data The data to populate in the event.
-     */
+ * Emit the 'data' event and populate the given data.
+ * @param {string} data The data to populate in the event.
+ */
 Terminal.prototype.handler = function(data) {
   this.emit('data', data);
 };
@@ -4344,8 +4344,8 @@ Terminal.prototype.scrollUp = function(params) {
 
 
 /**
-     * CSI Ps T  Scroll down Ps lines (default = 1) (SD).
-     */
+ * CSI Ps T  Scroll down Ps lines (default = 1) (SD).
+ */
 Terminal.prototype.scrollDown = function(params) {
   var param = params[0] || 1;
   while (param--) {
