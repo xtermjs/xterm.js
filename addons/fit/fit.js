@@ -16,12 +16,12 @@
     /*
      * CommonJS environment
      */
-    module.exports = fit(require('../../src/xterm'));
+    module.exports = fit(require('../../dist/xterm'));
   } else if (typeof define == 'function') {
     /*
      * Require.js is available
      */
-    define(['../../src/xterm'], fit);
+    define(['../../dist/xterm'], fit);
   } else {
     /*
      * Plain browser environment
