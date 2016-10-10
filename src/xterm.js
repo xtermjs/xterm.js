@@ -1309,7 +1309,7 @@ Terminal.prototype.scrollDisp = function(disp, suppressScrollEvent) {
 
 /**
  * Scroll the display of the terminal by a number of pages.
- * @param {number} pageCount The number of pages to scroll.
+ * @param {number} pageCount The number of pages to scroll (negative scrolls up).
  */
 Terminal.prototype.scrollPages = function(pageCount) {
   this.scrollDisp(pageCount * (this.rows - 1));
