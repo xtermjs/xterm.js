@@ -182,7 +182,8 @@ CompositionHelper.prototype.updateCompositionElements = function(dontRecurse) {
     this.compositionView.style.top = cursor.offsetTop + 'px';
     var compositionViewBounds = this.compositionView.getBoundingClientRect();
     this.textarea.style.left = cursor.offsetLeft + compositionViewBounds.width + 'px';
-    this.textarea.style.top = (cursor.offsetTop + cursor.offsetHeight) + 'px';
+    this.textarea.style.top = cursor.offsetTop + 'px';
+    this.textarea.style.bottom = (cursor.offsetTop + cursor.offsetHeight) + 'px';
   }
   if (!dontRecurse) {
     setTimeout(this.updateCompositionElements.bind(this, true), 0);
