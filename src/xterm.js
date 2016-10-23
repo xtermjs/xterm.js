@@ -66,7 +66,6 @@ var normal = 0, escaped = 1, csi = 2, osc = 3, charset = 4, dcs = 5, ignore = 6;
  *   - `cursorBlink` (boolean): Whether the terminal cursor blinks
  *   - `cols` (number): The number of columns of the terminal (horizontal size)
  *   - `rows` (number): The number of rows of the terminal (vertical size)
- *   - `geometry` (array): Shortcut for terminal size: `[cols, rows]` (lower priority)
  *
  * @public
  * @class Xterm Xterm
