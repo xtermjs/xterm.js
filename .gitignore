@@ -11,3 +11,4 @@ example/*.log
 docs/
 npm-debug.log
 /.idea/
+.env

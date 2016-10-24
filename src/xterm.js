@@ -63,7 +63,9 @@ var normal = 0, escaped = 1, csi = 2, osc = 3, charset = 4, dcs = 5, ignore = 6;
  * Creates a new `Terminal` object.
  *
  * @param {object} options An object containing a set of options, the available options are:
- *   - cursorBlink (boolean): Whether the terminal cursor blinks
+ *   - `cursorBlink` (boolean): Whether the terminal cursor blinks
+ *   - `cols` (number): The number of columns of the terminal (horizontal size)
+ *   - `rows` (number): The number of rows of the terminal (vertical size)
  *
  * @public
  * @class Xterm Xterm
@@ -125,6 +127,7 @@ function Terminal(options) {
 
   this.cols = options.cols || options.geometry[0];
   this.rows = options.rows || options.geometry[1];
+  this.geometry = [this.cols, this.rows];
 
   if (options.handler) {
     this.on('data', options.handler);
@@ -2942,6 +2945,7 @@ Terminal.prototype.resize = function(x, y) {
 
   this.normal = null;
 
+  this.geometry = [this.cols, this.rows];
   this.emit('resize', {terminal: this, cols: x, rows: y});
 };
 
