@@ -65,6 +65,10 @@
     width: 0;
     height: 0;
     z-index: -10;
+    /** Prevent wrapping so the IME appears against the textarea at the correct position */
+    white-space: nowrap;
+    overflow: hidden;
+    resize: none;
 }
 
 .terminal .terminal-cursor {
