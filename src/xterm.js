@@ -231,6 +231,9 @@ function Terminal(options) {
 
   this.tabs;
   this.setupStops();
+
+  // Store if user went browsing history in scrollback
+  this.userScrolling = false;
 }
 
 inherits(Terminal, EventEmitter);
@@ -1250,7 +1253,9 @@ Terminal.prototype.scroll = function() {
     this.lines = this.lines.slice(-(this.ybase + this.rows) + 1);
   }
 
-  this.ydisp = this.ybase;
+  if (!this.userScrolling) {
+    this.ydisp = this.ybase;
+  }
 
   // last line
   row = this.ybase + this.rows - 1;
@@ -1272,7 +1277,9 @@ Terminal.prototype.scroll = function() {
   if (this.scrollTop !== 0) {
     if (this.ybase !== 0) {
       this.ybase--;
-      this.ydisp = this.ybase;
+      if (!this.userScrolling) {
+        this.ydisp = this.ybase;
+      }
     }
     this.lines.splice(this.ybase + this.scrollTop, 1);
   }
@@ -1292,6 +1299,12 @@ Terminal.prototype.scroll = function() {
  * viewport originally.
  */
 Terminal.prototype.scrollDisp = function(disp, suppressScrollEvent) {
+  if (disp < 0) {
+    this.userScrolling = true;
+  } else if (disp + this.ydisp >= this.ybase) {
+    this.userScrolling = false;
+  }
+
   this.ydisp += disp;
 
   if (this.ydisp > this.ybase) {
@@ -1339,11 +1352,11 @@ Terminal.prototype.write = function(data) {
   this.refreshStart = this.y;
   this.refreshEnd = this.y;
 
-  if (this.ybase !== this.ydisp) {
-    this.ydisp = this.ybase;
-    this.emit('scroll', this.ydisp);
-    this.maxRange();
-  }
+  // if (this.ybase !== this.ydisp) {
+  //   this.ydisp = this.ybase;
+  //   this.emit('scroll', this.ydisp);
+  //   this.maxRange();
+  // }
 
   // apply leftover surrogate high from last write
   if (this.surrogate_high) {
