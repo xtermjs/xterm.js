@@ -122,6 +122,11 @@
     top: 0;
 }
 
+.terminal .xterm-rows > div {
+    /* Lines containing spans and text nodes ocassionally wrap despite being the same width (#327) */
+    white-space: nowrap;
+}
+
 .terminal .xterm-scroll-area {
     visibility: hidden;
 }
