@@ -74,28 +74,28 @@ function pasteHandler(ev, term) {
 function rightClickHandler(ev, term) {
   var s = document.getSelection(),
       sText = prepareTextForClipboard(s.toString()),
-      r = s.getRangeAt(0);
+      clickIsOnSelection = false;
 
-  var x = ev.clientX,
-      y = ev.clientY;
+  if (s.rangeCount) {
+    var r = s.getRangeAt(0),
+        cr = r.getClientRects(),
+        x = ev.clientX,
+        y = ev.clientY,
+        i, rect;
 
-  var cr = r.getClientRects(),
-      clickIsOnSelection = false,
-      i, rect;
-
-  for (i=0; i<cr.length; i++) {
-    rect = cr[i];
-    clickIsOnSelection = (
-      (x > rect.left) && (x < rect.right) &&
-      (y > rect.top) && (y < rect.bottom)
-    );
-    // If we clicked on selection and selection is not a single space,
-    // then mark the right click as copy-only. We check for the single
-    // space selection, as this can happen when clicking on an &nbsp;
-    // and there is not much pointing in copying a single space.
-    // Single space is char
-    if (clickIsOnSelection && (sText !== ' ')) {
-      break;
+    for (i=0; i<cr.length; i++) {
+      rect = cr[i];
+      clickIsOnSelection = (
+        (x > rect.left) && (x < rect.right) &&
+        (y > rect.top) && (y < rect.bottom)
+      );
+      // If we clicked on selection and selection is not a single space,
+      // then mark the right click as copy-only. We check for the single
+      // space selection, as this can happen when clicking on an &nbsp;
+      // and there is not much pointing in copying a single space.
+      if (clickIsOnSelection && (sText !== ' ')) {
+        break;
+      }
     }
   }
 
