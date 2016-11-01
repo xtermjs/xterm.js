@@ -23,8 +23,7 @@
     "pty.js": "0.3.1",
     "sleep": "^3.0.1",
     "tsify": "^1.0.7",
-    "typescript": "^2.0.3",
-    "typings": "^1.4.0"
+    "typescript": "^2.0.3"
   },
   "scripts": {
     "start": "nodemon --watch src --watch addons --exec bash -c './bin/build && node demo/app'",
