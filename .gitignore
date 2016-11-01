@@ -12,3 +12,4 @@ docs/
 npm-debug.log
 /.idea/
 typings/
+.env

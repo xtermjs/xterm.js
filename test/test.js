@@ -88,6 +88,101 @@ describe('xterm.js', function() {
     });
   });
 
+  describe('scroll', function() {
+    describe('scrollDisp', function() {
+      var startYDisp;
+      beforeEach(function() {
+        for (var i = 0; i < xterm.rows * 2; i++) {
+          xterm.writeln('test');
+        }
+        startYDisp = xterm.rows + 1;
+      });
+      it('should scroll a single line', function() {
+        assert.equal(xterm.ydisp, startYDisp);
+        xterm.scrollDisp(-1);
+        assert.equal(xterm.ydisp, startYDisp - 1);
+        xterm.scrollDisp(1);
+        assert.equal(xterm.ydisp, startYDisp);
+      });
+      it('should scroll multiple lines', function() {
+        assert.equal(xterm.ydisp, startYDisp);
+        xterm.scrollDisp(-5);
+        assert.equal(xterm.ydisp, startYDisp - 5);
+        xterm.scrollDisp(5);
+        assert.equal(xterm.ydisp, startYDisp);
+      });
+      it('should not scroll beyond the bounds of the buffer', function() {
+        assert.equal(xterm.ydisp, startYDisp);
+        xterm.scrollDisp(1);
+        assert.equal(xterm.ydisp, startYDisp);
+        for (var i = 0; i < startYDisp; i++) {
+          xterm.scrollDisp(-1);
+        }
+        assert.equal(xterm.ydisp, 0);
+        xterm.scrollDisp(-1);
+        assert.equal(xterm.ydisp, 0);
+      });
+    });
+
+    describe('scrollPages', function() {
+      var startYDisp;
+      beforeEach(function() {
+        for (var i = 0; i < xterm.rows * 3; i++) {
+          xterm.writeln('test');
+        }
+        startYDisp = (xterm.rows * 2) + 1;
+      });
+      it('should scroll a single page', function() {
+        assert.equal(xterm.ydisp, startYDisp);
+        xterm.scrollPages(-1);
+        assert.equal(xterm.ydisp, startYDisp - (xterm.rows - 1));
+        xterm.scrollPages(1);
+        assert.equal(xterm.ydisp, startYDisp);
+      });
+      it('should scroll a multiple pages', function() {
+        assert.equal(xterm.ydisp, startYDisp);
+        xterm.scrollPages(-2);
+        assert.equal(xterm.ydisp, startYDisp - (xterm.rows - 1) * 2);
+        xterm.scrollPages(2);
+        assert.equal(xterm.ydisp, startYDisp);
+      });
+    });
+
+    describe('scrollToTop', function() {
+      beforeEach(function() {
+        for (var i = 0; i < xterm.rows * 3; i++) {
+          xterm.writeln('test');
+        }
+      });
+      it('should scroll to the top', function() {
+        assert.notEqual(xterm.ydisp, 0);
+        xterm.scrollToTop();
+        assert.equal(xterm.ydisp, 0);
+      });
+    });
+
+    describe('scrollToBottom', function() {
+      var startYDisp;
+      beforeEach(function() {
+        for (var i = 0; i < xterm.rows * 3; i++) {
+          xterm.writeln('test');
+        }
+        startYDisp = (xterm.rows * 2) + 1;
+      });
+      it('should scroll to the bottom', function() {
+        xterm.scrollDisp(-1);
+        xterm.scrollToBottom();
+        assert.equal(xterm.ydisp, startYDisp);
+        xterm.scrollPages(-1);
+        xterm.scrollToBottom();
+        assert.equal(xterm.ydisp, startYDisp);
+        xterm.scrollToTop();
+        xterm.scrollToBottom();
+        assert.equal(xterm.ydisp, startYDisp);
+      });
+    });
+  });
+
   describe('evaluateKeyEscapeSequence', function() {
     it('should return the correct escape sequence for unmodified keys', function() {
       // Backspace
@@ -242,20 +337,6 @@ describe('xterm.js', function() {
       assert.equal(xterm.keyDown(Object.assign({}, evKeyDown, { keyCode: 77 })), false);
       xterm.reset();
       assert.equal(xterm.keyDown(Object.assign({}, evKeyDown, { keyCode: 77 })), false);
-    });
-  });
-
-  describe('evaluateCopiedTextProcessing', function () {
-    it('should strip trailing whitespaces and replace nbsps with spaces', function () {
-			var nonBreakingSpace = String.fromCharCode(160),
-          copiedText = 'echo' + nonBreakingSpace + 'hello' + nonBreakingSpace,
-          processedText = Terminal.prepareCopiedTextForClipboard(copiedText);
-
-      // No trailing spaces
-      assert.equal(processedText.match(/\s+$/), null);
-
-      // No non-breaking space
-      assert.equal(processedText.indexOf(nonBreakingSpace), -1);
     });
   });
 

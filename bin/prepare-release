@@ -3,6 +3,8 @@
 # Usage: ./bin/prepare-release x.y.z
 # x.y.z should be semver (e.g. 1.0.0)
 
+set -e
+
 NEW_VERSION=$1
 CURRENT_PACKAGE_JSON_VERSION=$(cat package.json \
   | grep version \
@@ -19,7 +21,7 @@ CURRENT_BOWER_JSON_VERSION=$(cat bower.json \
 
 # Build xterm.js into `dist`
 export BUILD_DIR=dist
-sh bin/build
+./bin/build
 
 # Update AUTHORS file
 sh bin/generate-authors

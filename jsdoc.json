@@ -2,6 +2,7 @@
   "source": {
     "include": [
       "src/xterm.js",
+      "src/handlers/Clipboard.js",
       "addons/attach/attach.js",
       "addons/fit/fit.js",
       "addons/fullscreen/fullscreen.js",

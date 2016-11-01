@@ -1,5 +1,6 @@
 /**
- * EventEmitter
+ * xterm.js: xterm, in the browser
+ * Copyright (c) 2014-2016, SourceLair Private Company (www.sourcelair.com (MIT License)
  */
 
 function EventEmitter() {

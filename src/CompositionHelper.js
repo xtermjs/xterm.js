@@ -1,6 +1,6 @@
 /**
  * xterm.js: xterm, in the browser
- * Copyright (c) 2016, SourceLair Limited <www.sourcelair.com> (MIT License)
+ * Copyright (c) 2014-2016, SourceLair Private Company (www.sourcelair.com (MIT License)
  */
 
 /**
@@ -178,11 +178,23 @@ CompositionHelper.prototype.updateCompositionElements = function(dontRecurse) {
   }
   var cursor = this.terminal.element.querySelector('.terminal-cursor');
   if (cursor) {
+    // Take .xterm-rows offsetTop into account as well in case it's positioned absolutely within
+    // the .xterm element.
+    var xtermRows = this.terminal.element.querySelector('.xterm-rows');
+    var cursorTop = xtermRows.offsetTop + cursor.offsetTop;
+
     this.compositionView.style.left = cursor.offsetLeft + 'px';
-    this.compositionView.style.top = cursor.offsetTop + 'px';
+    this.compositionView.style.top = cursorTop + 'px';
+    this.compositionView.style.height = cursor.offsetHeight + 'px';
+    this.compositionView.style.lineHeight = cursor.offsetHeight + 'px';
+    // Sync the textarea to the exact position of the composition view so the IME knows where the
+    // text is.
     var compositionViewBounds = this.compositionView.getBoundingClientRect();
-    this.textarea.style.left = cursor.offsetLeft + compositionViewBounds.width + 'px';
-    this.textarea.style.top = (cursor.offsetTop + cursor.offsetHeight) + 'px';
+    this.textarea.style.left = cursor.offsetLeft + 'px';
+    this.textarea.style.top = cursorTop + 'px';
+    this.textarea.style.width = compositionViewBounds.width + 'px';
+    this.textarea.style.height = compositionViewBounds.height + 'px';
+    this.textarea.style.lineHeight = compositionViewBounds.height + 'px';
   }
   if (!dontRecurse) {
     setTimeout(this.updateCompositionElements.bind(this, true), 0);
