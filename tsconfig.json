@@ -3,12 +3,14 @@
     "module": "commonjs",
     "target": "es5",
     "rootDir": "src",
-    "allowJs": true
+    "allowJs": true,
+    "outDir": "out"
   },
   "exclude": [
     "addons",
     "build",
     "demo",
+    "dist",
     "out",
     "test",
     "node_modules"

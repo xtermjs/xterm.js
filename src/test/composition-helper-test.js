@@ -1,5 +1,5 @@
 var assert = require('chai').assert;
-var Terminal = require('../build/xterm');
+var Terminal = require('../xterm');
 
 describe('CompositionHelper', function () {
   var terminal;
