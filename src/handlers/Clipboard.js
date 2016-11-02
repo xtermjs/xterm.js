@@ -50,11 +50,24 @@ function copyHandler (ev) {
  */
 function pasteHandler(ev, term) {
   ev.stopPropagation();
-  if (ev.clipboardData) {
-    var text = ev.clipboardData.getData('text/plain');
+
+  var dispatchPaste = function(text) {
     term.handler(text);
     term.textarea.value = '';
     return term.cancel(ev);
+  };
+
+  var userAgent = window.navigator.userAgent.toLowerCase();
+  if (userAgent.match(/msie|MSIE/) || userAgent.match(/(T|t)rident/)) {
+    if (window.clipboardData) {
+      var text = window.clipboardData.getData('Text');
+      dispatchPaste(text);
+    }
+  } else {
+    if (ev.clipboardData) {
+      var text = ev.clipboardData.getData('text/plain');
+      dispatchPaste(text);
+    }
   }
 }
 
