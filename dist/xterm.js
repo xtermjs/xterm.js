@@ -184,11 +184,18 @@ CompositionHelper.prototype.updateCompositionElements = function (dontRecurse) {
   }
   var cursor = this.terminal.element.querySelector('.terminal-cursor');
   if (cursor) {
+    // Take .xterm-rows offsetTop into account as well in case it's positioned absolutely within
+    // the .xterm element.
+    var xtermRows = this.terminal.element.querySelector('.xterm-rows');
+    var cursorTop = xtermRows.offsetTop + cursor.offsetTop;
+
     this.compositionView.style.left = cursor.offsetLeft + 'px';
-    this.compositionView.style.top = cursor.offsetTop + 'px';
+    this.compositionView.style.top = cursorTop + 'px';
+    this.compositionView.style.height = cursor.offsetHeight + 'px';
+    this.compositionView.style.lineHeight = cursor.offsetHeight + 'px';
     var compositionViewBounds = this.compositionView.getBoundingClientRect();
     this.textarea.style.left = cursor.offsetLeft + compositionViewBounds.width + 'px';
-    this.textarea.style.top = cursor.offsetTop + cursor.offsetHeight + 'px';
+    this.textarea.style.top = cursor.cursorTop + 'px';
   }
   if (!dontRecurse) {
     setTimeout(this.updateCompositionElements.bind(this, true), 0);
@@ -532,7 +539,6 @@ exports.pasteHandler = pasteHandler;
 exports.rightClickHandler = rightClickHandler;
 
 },{}],5:[function(_dereq_,module,exports){
-(function (__dirname){
 'use strict';var _typeof=typeof Symbol==="function"&&typeof Symbol.iterator==="symbol"?function(obj){return typeof obj;}:function(obj){return obj&&typeof Symbol==="function"&&obj.constructor===Symbol&&obj!==Symbol.prototype?"symbol":typeof obj;};/**
  * xterm.js: xterm, in the browser
  * Copyright (c) 2014-2014, SourceLair Private Company <www.sourcelair.com> (MIT License)
@@ -612,7 +618,8 @@ this.readable=true;this.writable=true;this.defAttr=0<<18|257<<9|256<<0;this.curA
 this.surrogate_high='';/**
    * An array of all lines in the entire buffer, including the prompt. The lines are array of
    * characters which are 2-length arrays where [0] is an attribute and [1] is the character.
-   */this.lines=[];var i=this.rows;while(i--){this.lines.push(this.blankLine());}this.tabs;this.setupStops();}inherits(Terminal,_EventEmitter.EventEmitter);/**
+   */this.lines=[];var i=this.rows;while(i--){this.lines.push(this.blankLine());}this.tabs;this.setupStops();// Store if user went browsing history in scrollback
+this.userScrolling=false;}inherits(Terminal,_EventEmitter.EventEmitter);/**
  * back_color_erase feature for xterm.
  */Terminal.prototype.eraseAttr=function(){// if (this.is('screen')) return this.defAttr;
 return this.defAttr&~0x1ff|this.curAttr&0x1ff;};/**
@@ -685,7 +692,7 @@ if(Terminal.brokenBold==null){Terminal.brokenBold=isBoldBroken(this.document);}t
  * @param {string} addon The name of the addon to load
  * @static
  */Terminal.loadAddon=function(addon,callback){if((typeof exports==='undefined'?'undefined':_typeof(exports))==='object'&&(typeof module==='undefined'?'undefined':_typeof(module))==='object'){// CommonJS
-return _dereq_(__dirname+'/../addons/'+addon);}else if(typeof define=='function'){// RequireJS
+return _dereq_('../addons/'+addon);}else if(typeof define=='function'){// RequireJS
 return _dereq_(['../addons/'+addon+'/'+addon],callback);}else{console.error('Cannot load a module without a CommonJS or RequireJS environment.');return false;}};/**
  * XTerm mouse events
  * http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#Mouse%20Tracking
@@ -812,24 +819,36 @@ if(flags&1&&fg<8)fg+=8;}if(flags&Terminal.flags.INVISIBLE){classNames.push('xter
  * Display the cursor element
  */Terminal.prototype.showCursor=function(){if(!this.cursorState){this.cursorState=1;this.refresh(this.y,this.y);}};/**
  * Scroll the terminal
- */Terminal.prototype.scroll=function(){var row;if(++this.ybase===this.scrollback){this.ybase=this.ybase/2|0;this.lines=this.lines.slice(-(this.ybase+this.rows)+1);}this.ydisp=this.ybase;// last line
+ */Terminal.prototype.scroll=function(){var row;if(++this.ybase===this.scrollback){this.ybase=this.ybase/2|0;this.lines=this.lines.slice(-(this.ybase+this.rows)+1);}if(!this.userScrolling){this.ydisp=this.ybase;}// last line
 row=this.ybase+this.rows-1;// subtract the bottom scroll region
 row-=this.rows-1-this.scrollBottom;if(row===this.lines.length){// potential optimization:
 // pushing is faster than splicing
 // when they amount to the same
 // behavior.
 this.lines.push(this.blankLine());}else{// add our new line
-this.lines.splice(row,0,this.blankLine());}if(this.scrollTop!==0){if(this.ybase!==0){this.ybase--;this.ydisp=this.ybase;}this.lines.splice(this.ybase+this.scrollTop,1);}// this.maxRange();
+this.lines.splice(row,0,this.blankLine());}if(this.scrollTop!==0){if(this.ybase!==0){this.ybase--;if(!this.userScrolling){this.ydisp=this.ybase;}}this.lines.splice(this.ybase+this.scrollTop,1);}// this.maxRange();
 this.updateRange(this.scrollTop);this.updateRange(this.scrollBottom);this.emit('scroll',this.ydisp);};/**
  * Scroll the display of the terminal
  * @param {number} disp The number of lines to scroll down (negatives scroll up).
  * @param {boolean} suppressScrollEvent Don't emit the scroll event as scrollDisp. This is used
  * to avoid unwanted events being handled by the veiwport when the event was triggered from the
  * viewport originally.
- */Terminal.prototype.scrollDisp=function(disp,suppressScrollEvent){this.ydisp+=disp;if(this.ydisp>this.ybase){this.ydisp=this.ybase;}else if(this.ydisp<0){this.ydisp=0;}if(!suppressScrollEvent){this.emit('scroll',this.ydisp);}this.refresh(0,this.rows-1);};/**
+ */Terminal.prototype.scrollDisp=function(disp,suppressScrollEvent){if(disp<0){this.userScrolling=true;}else if(disp+this.ydisp>=this.ybase){this.userScrolling=false;}this.ydisp+=disp;if(this.ydisp>this.ybase){this.ydisp=this.ybase;}else if(this.ydisp<0){this.ydisp=0;}if(!suppressScrollEvent){this.emit('scroll',this.ydisp);}this.refresh(0,this.rows-1);};/**
+ * Scroll the display of the terminal by a number of pages.
+ * @param {number} pageCount The number of pages to scroll (negative scrolls up).
+ */Terminal.prototype.scrollPages=function(pageCount){this.scrollDisp(pageCount*(this.rows-1));};/**
+ * Scrolls the display of the terminal to the top.
+ */Terminal.prototype.scrollToTop=function(){this.scrollDisp(-this.ydisp);};/**
+ * Scrolls the display of the terminal to the bottom.
+ */Terminal.prototype.scrollToBottom=function(){this.scrollDisp(this.ybase-this.ydisp);};/**
  * Writes text to the terminal.
  * @param {string} text The text to write to the terminal.
- */Terminal.prototype.write=function(data){var l=data.length,i=0,j,cs,ch,code,low,ch_width,row;this.refreshStart=this.y;this.refreshEnd=this.y;if(this.ybase!==this.ydisp){this.ydisp=this.ybase;this.emit('scroll',this.ydisp);this.maxRange();}// apply leftover surrogate high from last write
+ */Terminal.prototype.write=function(data){var l=data.length,i=0,j,cs,ch,code,low,ch_width,row;this.refreshStart=this.y;this.refreshEnd=this.y;// if (this.ybase !== this.ydisp) {
+//   this.ydisp = this.ybase;
+//   this.emit('scroll', this.ydisp);
+//   this.maxRange();
+// }
+// apply leftover surrogate high from last write
 if(this.surrogate_high){data=this.surrogate_high+data;this.surrogate_high='';}for(;i<l;i++){ch=data[i];// FIXME: higher chars than 0xa0 are not allowed in escape sequences
 //        --> maybe move to default
 code=data.charCodeAt(i);if(0xD800<=code&&code<=0xDBFF){// we got a surrogate high
@@ -1337,9 +1356,9 @@ return;}this.lines=[this.lines[this.ybase+this.y]];this.ydisp=0;this.ybase=0;thi
  * Evaluate if the current erminal is the given argument.
  * @param {object} term The terminal to evaluate
  */Terminal.prototype.is=function(term){var name=this.termName;return(name+'').indexOf(term)===0;};/**
-     * Emit the 'data' event and populate the given data.
-     * @param {string} data The data to populate in the event.
-     */Terminal.prototype.handler=function(data){this.emit('data',data);};/**
+ * Emit the 'data' event and populate the given data.
+ * @param {string} data The data to populate in the event.
+ */Terminal.prototype.handler=function(data){this.emit('data',data);};/**
  * Emit the 'title' event and populate the given title.
  * @param {string} title The title to populate in the event.
  */Terminal.prototype.handleTitle=function(title){this.emit('title',title);};/**
@@ -1857,8 +1876,8 @@ this.refresh(0,this.rows-1);this.showCursor();}break;}}};/**
  * CSI Ps S  Scroll up Ps lines (default = 1) (SU).
  */Terminal.prototype.scrollUp=function(params){var param=params[0]||1;while(param--){this.lines.splice(this.ybase+this.scrollTop,1);this.lines.splice(this.ybase+this.scrollBottom,0,this.blankLine());}// this.maxRange();
 this.updateRange(this.scrollTop);this.updateRange(this.scrollBottom);};/**
-     * CSI Ps T  Scroll down Ps lines (default = 1) (SD).
-     */Terminal.prototype.scrollDown=function(params){var param=params[0]||1;while(param--){this.lines.splice(this.ybase+this.scrollBottom,1);this.lines.splice(this.ybase+this.scrollTop,0,this.blankLine());}// this.maxRange();
+ * CSI Ps T  Scroll down Ps lines (default = 1) (SD).
+ */Terminal.prototype.scrollDown=function(params){var param=params[0]||1;while(param--){this.lines.splice(this.ybase+this.scrollBottom,1);this.lines.splice(this.ybase+this.scrollTop,0,this.blankLine());}// this.maxRange();
 this.updateRange(this.scrollTop);this.updateRange(this.scrollBottom);};/**
  * CSI Ps ; Ps ; Ps ; Ps ; Ps T
  *   Initiate highlight mouse tracking.  Parameters are
@@ -2129,8 +2148,6 @@ ucs>=0xffe0&&ucs<=0xffe6||ucs>=0x20000&&ucs<=0x2fffd||ucs>=0x30000&&ucs<=0x3fffd
  * @param {string} event The name of the event. TODO: Document all event types
  * @param {function} callback The function to call when the event is triggered.
  */Terminal.on=on;Terminal.off=off;Terminal.cancel=cancel;module.exports=Terminal;
-
-}).call(this,"/src")
 
 },{"./CompositionHelper.js":1,"./EventEmitter.js":2,"./Viewport.js":3,"./handlers/Clipboard.js":4}]},{},[5])(5)
 });
