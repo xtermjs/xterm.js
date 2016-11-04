@@ -181,6 +181,25 @@ describe('xterm.js', function() {
         assert.equal(xterm.ydisp, startYDisp);
       });
     });
+
+    describe('keyDown', function () {
+      it('should scroll down, when a key is pressed and terminal is scrolled up', function () {
+        var terminal = new Terminal();
+
+        // Do not process the keyDown event, to avoid side-effects
+        terminal.attachCustomKeydownHandler(function () {
+          return false;
+        });
+
+        terminal.ydisp = 0;
+        terminal.ybase = 40;
+
+        terminal.keyDown();
+
+        // Ensure that now the terminal is scrolled to bottom
+        assert.equal(terminal.ydisp, terminal.ybase);
+      });
+    });
   });
 
   describe('evaluateKeyEscapeSequence', function() {

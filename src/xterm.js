@@ -1352,12 +1352,6 @@ Terminal.prototype.write = function(data) {
   this.refreshStart = this.y;
   this.refreshEnd = this.y;
 
-  // if (this.ybase !== this.ydisp) {
-  //   this.ydisp = this.ybase;
-  //   this.emit('scroll', this.ydisp);
-  //   this.maxRange();
-  // }
-
   // apply leftover surrogate high from last write
   if (this.surrogate_high) {
     data = this.surrogate_high + data;
@@ -2423,6 +2417,11 @@ Terminal.prototype.attachCustomKeydownHandler = function(customKeydownHandler) {
  * @param {KeyboardEvent} ev The keydown event to be handled.
  */
 Terminal.prototype.keyDown = function(ev) {
+  // Scroll down to prompt, whenever the user presses a key.
+  if (this.ybase !== this.ydisp) {
+    this.scrollToBottom();
+  }
+
   if (this.customKeydownHandler && this.customKeydownHandler(ev) === false) {
     return false;
   }
@@ -2974,7 +2973,7 @@ Terminal.prototype.updateRange = function(y) {
 };
 
 /**
- * Set the range of refreshing to the maximyum value
+ * Set the range of refreshing to the maximum value
  */
 Terminal.prototype.maxRange = function() {
   this.refreshStart = 0;
