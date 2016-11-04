@@ -86,7 +86,7 @@ function pasteHandler(ev, term) {
  */
 function rightClickHandler(ev, term) {
   var s = document.getSelection(),
-      sText = prepareTextForClipboard(s.toString()),
+      selectedText = prepareTextForClipboard(s.toString()),
       clickIsOnSelection = false;
 
   if (s.rangeCount) {
@@ -102,23 +102,27 @@ function rightClickHandler(ev, term) {
         (x > rect.left) && (x < rect.right) &&
         (y > rect.top) && (y < rect.bottom)
       );
-      // If we clicked on selection and selection is not a single space,
-      // then mark the right click as copy-only. We check for the single
-      // space selection, as this can happen when clicking on an &nbsp;
-      // and there is not much pointing in copying a single space.
-      if (clickIsOnSelection && (sText !== ' ')) {
+
+      if (clickIsOnSelection) {
         break;
       }
+    }
+    // If we clicked on selection and selection is not a single space,
+    // then mark the right click as copy-only. We check for the single
+    // space selection, as this can happen when clicking on an &nbsp;
+    // and there is not much pointing in copying a single space.
+    if (selectedText.match(/^\s$/) || !selectedText.length) {
+      clickIsOnSelection = false;
     }
   }
 
   // Bring textarea at the cursor position
   if (!clickIsOnSelection) {
     term.textarea.style.position = 'fixed';
-    term.textarea.style.width = '10px';
-    term.textarea.style.height = '10px';
-    term.textarea.style.left = x + 'px';
-    term.textarea.style.top = y + 'px';
+    term.textarea.style.width = '20px';
+    term.textarea.style.height = '20px';
+    term.textarea.style.left = (x - 10) + 'px';
+    term.textarea.style.top = (y - 10) + 'px';
     term.textarea.style.zIndex = 1000;
     term.textarea.focus();
 
@@ -130,7 +134,7 @@ function rightClickHandler(ev, term) {
       term.textarea.style.left = null;
       term.textarea.style.top = null;
       term.textarea.style.zIndex = null;
-    }, 1);
+    }, 4);
   }
 }
 

@@ -35,6 +35,7 @@ import { CompositionHelper } from './CompositionHelper.js';
 import { EventEmitter } from './EventEmitter.js';
 import { Viewport } from './Viewport.js';
 import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard.js';
+import { isFirefox, isMSIE } from './utils/Browser';
 
 /**
  * Terminal Emulation References:
@@ -446,9 +447,21 @@ Terminal.prototype.initGlobal = function() {
   on(this.textarea, 'paste', function (ev) {
     pasteHandler.call(this, ev, term);
   });
-  on(this.element, 'contextmenu', function (ev) {
+
+
+  function rightClickHandlerWrapper (ev) {
     rightClickHandler.call(this, ev, term);
-  });
+  }
+
+  if (isFirefox || isMSIE) {
+    on(this.element, 'mousedown', function (ev) {
+      if (ev.button == 2) {
+        rightClickHandlerWrapper(ev);
+      }
+    });
+  } else {
+    on(this.element, 'contextmenu', rightClickHandlerWrapper);
+  }
 };
 
 /**
@@ -522,11 +535,6 @@ Terminal.prototype.open = function(parent) {
   this.context = this.parent.ownerDocument.defaultView;
   this.document = this.parent.ownerDocument;
   this.body = this.document.getElementsByTagName('body')[0];
-
-  // Parse User-Agent
-  if (this.context.navigator && this.context.navigator.userAgent) {
-    this.isMSIE = !!~this.context.navigator.userAgent.indexOf('MSIE');
-  }
 
   // Find the users platform. We use this to interpret the meta key
   // and ISO third level shifts.
@@ -843,7 +851,7 @@ Terminal.prototype.bindMouse = function() {
           ? ev.which - 1
         : null;
 
-        if (self.isMSIE) {
+        if (isMSIE) {
           button = button === 1 ? 0 : button === 4 ? 1 : button;
         }
         break;
