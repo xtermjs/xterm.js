@@ -35,7 +35,7 @@ import { CompositionHelper } from './CompositionHelper.js';
 import { EventEmitter } from './EventEmitter.js';
 import { Viewport } from './Viewport.js';
 import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard.js';
-import { isFirefox, isMSIE } from './utils/Browser';
+import { isFirefox, isMSIE, isMac, isIpad, isIphone, isMSWindows } from './utils/Browser';
 
 /**
  * Terminal Emulation References:
@@ -535,22 +535,6 @@ Terminal.prototype.open = function(parent) {
   this.context = this.parent.ownerDocument.defaultView;
   this.document = this.parent.ownerDocument;
   this.body = this.document.getElementsByTagName('body')[0];
-
-  // Find the users platform. We use this to interpret the meta key
-  // and ISO third level shifts.
-  // http://stackoverflow.com/q/19877924/577598
-  if (this.context.navigator && this.context.navigator.platform) {
-    this.isMac = contains(
-      this.context.navigator.platform,
-      ['Macintosh', 'MacIntel', 'MacPPC', 'Mac68K']
-    );
-    this.isIpad = this.context.navigator.platform === 'iPad';
-    this.isIphone = this.context.navigator.platform === 'iPhone';
-    this.isMSWindows = contains(
-      this.context.navigator.platform,
-      ['Windows', 'Win16', 'Win32', 'WinCE']
-    );
-  }
 
   //Create main element container
   this.element = this.document.createElement('div');
@@ -2720,7 +2704,7 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
           // ^] - group sep
           result.key = String.fromCharCode(29);
         }
-      } else if (!this.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) {
+      } else if (!isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) {
         // On Mac this is a third level shift. Use <Esc> instead.
         if (ev.keyCode >= 65 && ev.keyCode <= 90) {
           result.key = '\x1b' + String.fromCharCode(ev.keyCode + 32);
@@ -4875,15 +4859,6 @@ Terminal.charsets.ISOLatin = null; // /A
  * Helpers
  */
 
-function contains(el, arr) {
-  for (var i = 0; i < arr.length; i += 1) {
-    if (el === arr[i]) {
-      return true;
-    }
-  }
-  return false;
-}
-
 function on(el, type, handler, capture) {
   if (!Array.isArray(el)) {
     el = [el];
@@ -4938,8 +4913,8 @@ function indexOf(obj, el) {
 
 function isThirdLevelShift(term, ev) {
   var thirdLevelKey =
-      (term.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
-      (term.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
+      (isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
+      (isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
 
   if (ev.type == 'keypress') {
     return thirdLevelKey;
