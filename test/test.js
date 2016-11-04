@@ -387,7 +387,7 @@ describe('xterm.js', function() {
 
     describe('On Mac OS', function() {
       beforeEach(function() {
-        xterm.isMac = true;
+        xterm.browser.isMac = true;
       });
 
       it('should not interfere with the alt key on keyDown', function() {
@@ -436,7 +436,7 @@ describe('xterm.js', function() {
 
     describe('On MS Windows', function() {
       beforeEach(function() {
-        xterm.isMSWindows = true;
+        xterm.browser.isMSWindows = true;
       });
 
       it('should not interfere with the alt + ctrl key on keyDown', function() {

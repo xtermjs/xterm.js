@@ -35,6 +35,7 @@ import { CompositionHelper } from './CompositionHelper.js';
 import { EventEmitter } from './EventEmitter.js';
 import { Viewport } from './Viewport.js';
 import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard.js';
+import * as Browser from './utils/Browser';
 
 /**
  * Terminal Emulation References:
@@ -78,6 +79,7 @@ function Terminal(options) {
     return new Terminal(arguments[0], arguments[1], arguments[2]);
   }
 
+  self.browser = Browser;
   self.cancel = Terminal.cancel;
 
   EventEmitter.call(this);
@@ -449,9 +451,21 @@ Terminal.prototype.initGlobal = function() {
   on(this.textarea, 'paste', function (ev) {
     pasteHandler.call(this, ev, term);
   });
-  on(this.element, 'contextmenu', function (ev) {
+
+
+  function rightClickHandlerWrapper (ev) {
     rightClickHandler.call(this, ev, term);
-  });
+  }
+
+  if (term.browser.isFirefox || term.browser.isMSIE) {
+    on(this.element, 'mousedown', function (ev) {
+      if (ev.button == 2) {
+        rightClickHandlerWrapper(ev);
+      }
+    });
+  } else {
+    on(this.element, 'contextmenu', rightClickHandlerWrapper);
+  }
 };
 
 /**
@@ -525,27 +539,6 @@ Terminal.prototype.open = function(parent) {
   this.context = this.parent.ownerDocument.defaultView;
   this.document = this.parent.ownerDocument;
   this.body = this.document.getElementsByTagName('body')[0];
-
-  // Parse User-Agent
-  if (this.context.navigator && this.context.navigator.userAgent) {
-    this.isMSIE = !!~this.context.navigator.userAgent.indexOf('MSIE');
-  }
-
-  // Find the users platform. We use this to interpret the meta key
-  // and ISO third level shifts.
-  // http://stackoverflow.com/q/19877924/577598
-  if (this.context.navigator && this.context.navigator.platform) {
-    this.isMac = contains(
-      this.context.navigator.platform,
-      ['Macintosh', 'MacIntel', 'MacPPC', 'Mac68K']
-    );
-    this.isIpad = this.context.navigator.platform === 'iPad';
-    this.isIphone = this.context.navigator.platform === 'iPhone';
-    this.isMSWindows = contains(
-      this.context.navigator.platform,
-      ['Windows', 'Win16', 'Win32', 'WinCE']
-    );
-  }
 
   //Create main element container
   this.element = this.document.createElement('div');
@@ -846,7 +839,7 @@ Terminal.prototype.bindMouse = function() {
           ? ev.which - 1
         : null;
 
-        if (self.isMSIE) {
+        if (self.browser.isMSIE) {
           button = button === 1 ? 0 : button === 4 ? 1 : button;
         }
         break;
@@ -2724,7 +2717,7 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
           // ^] - group sep
           result.key = String.fromCharCode(29);
         }
-      } else if (!this.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) {
+      } else if (!this.browser.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) {
         // On Mac this is a third level shift. Use <Esc> instead.
         if (ev.keyCode >= 65 && ev.keyCode <= 90) {
           result.key = '\x1b' + String.fromCharCode(ev.keyCode + 32);
@@ -4879,15 +4872,6 @@ Terminal.charsets.ISOLatin = null; // /A
  * Helpers
  */
 
-function contains(el, arr) {
-  for (var i = 0; i < arr.length; i += 1) {
-    if (el === arr[i]) {
-      return true;
-    }
-  }
-  return false;
-}
-
 function on(el, type, handler, capture) {
   if (!Array.isArray(el)) {
     el = [el];
@@ -4942,8 +4926,8 @@ function indexOf(obj, el) {
 
 function isThirdLevelShift(term, ev) {
   var thirdLevelKey =
-      (term.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
-      (term.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
+      (term.browser.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
+      (term.browser.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
 
   if (ev.type == 'keypress') {
     return thirdLevelKey;
