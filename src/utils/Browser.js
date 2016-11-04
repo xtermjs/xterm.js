@@ -16,7 +16,7 @@ let userAgent = (isNode) ? 'node' : navigator.userAgent;
 let platform = (isNode) ? 'node' : navigator.platform;
 
 export let isFirefox = !!~userAgent.indexOf('Firefox');
-export let isMSIE = !!~userAgent.indexOf('MSIE');
+export let isMSIE = !!~userAgent.indexOf('MSIE') || !!~userAgent.indexOf('Trident');
 
 // Find the users platform. We use this to interpret the meta key
 // and ISO third level shifts.
