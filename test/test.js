@@ -417,7 +417,7 @@ describe('xterm.js', function() {
 
     describe('On MS Windows', function() {
       beforeEach(function() {
-        xterm.isMSWindows = true;
+        xterm.browser.isMSWindows = true;
       });
 
       it('should not interfere with the alt + ctrl key on keyDown', function() {
