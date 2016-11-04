@@ -368,7 +368,7 @@ describe('xterm.js', function() {
 
     describe('On Mac OS', function() {
       beforeEach(function() {
-        xterm.isMac = true;
+        xterm.browser.isMac = true;
       });
 
       it('should not interfere with the alt key on keyDown', function() {

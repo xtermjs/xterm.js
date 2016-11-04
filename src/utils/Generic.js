@@ -9,11 +9,11 @@
  * @module xterm/utils/Generic
  */
 
-export let contains = function(el, arr) {
-  for (var i = 0; i < arr.length; i += 1) {
-    if (el === arr[i]) {
-      return true;
-    }
-  }
-  return false;
+/**
+ * Return if the given array contains the given element
+ * @param {Array} array The array to search for the given element.
+ * @param {Object} el The element to look for into the array
+ */
+export let contains = function(arr, el) {
+  return arr.indexOf(el) >= 0;
 };

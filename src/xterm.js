@@ -35,7 +35,7 @@ import { CompositionHelper } from './CompositionHelper.js';
 import { EventEmitter } from './EventEmitter.js';
 import { Viewport } from './Viewport.js';
 import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard.js';
-import { isFirefox, isMSIE, isMac, isIpad, isIphone, isMSWindows } from './utils/Browser';
+import * as Browser from './utils/Browser';
 
 /**
  * Terminal Emulation References:
@@ -79,6 +79,7 @@ function Terminal(options) {
     return new Terminal(arguments[0], arguments[1], arguments[2]);
   }
 
+  self.browser = Browser;
   self.cancel = Terminal.cancel;
 
   EventEmitter.call(this);
@@ -453,7 +454,7 @@ Terminal.prototype.initGlobal = function() {
     rightClickHandler.call(this, ev, term);
   }
 
-  if (isFirefox || isMSIE) {
+  if (term.browser.isFirefox || term.browser.isMSIE) {
     on(this.element, 'mousedown', function (ev) {
       if (ev.button == 2) {
         rightClickHandlerWrapper(ev);
@@ -835,7 +836,7 @@ Terminal.prototype.bindMouse = function() {
           ? ev.which - 1
         : null;
 
-        if (isMSIE) {
+        if (self.browser.isMSIE) {
           button = button === 1 ? 0 : button === 4 ? 1 : button;
         }
         break;
@@ -2704,7 +2705,7 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
           // ^] - group sep
           result.key = String.fromCharCode(29);
         }
-      } else if (!isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) {
+      } else if (!this.browser.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) {
         // On Mac this is a third level shift. Use <Esc> instead.
         if (ev.keyCode >= 65 && ev.keyCode <= 90) {
           result.key = '\x1b' + String.fromCharCode(ev.keyCode + 32);
@@ -4913,8 +4914,8 @@ function indexOf(obj, el) {
 
 function isThirdLevelShift(term, ev) {
   var thirdLevelKey =
-      (isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
-      (isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
+      (term.browser.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
+      (term.browser.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
 
   if (ev.type == 'keypress') {
     return thirdLevelKey;
