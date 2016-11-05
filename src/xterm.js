@@ -447,11 +447,12 @@ Terminal.prototype.initGlobal = function() {
   Terminal.bindBlur(this);
 
   // Bind clipboard functionality
-  on(this.element, 'copy', copyHandler);
+  on(this.element, 'copy', function (ev) {
+    copyHandler.call(this, ev, term);
+  });
   on(this.textarea, 'paste', function (ev) {
     pasteHandler.call(this, ev, term);
   });
-
 
   function rightClickHandlerWrapper (ev) {
     rightClickHandler.call(this, ev, term);

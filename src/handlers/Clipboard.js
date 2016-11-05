@@ -35,11 +35,16 @@ function prepareTextForClipboard(text) {
  * Binds copy functionality to the given terminal.
  * @param {ClipboardEvent} ev The original copy event to be handled
  */
-function copyHandler (ev) {
+function copyHandler(ev, term) {
   var copiedText = window.getSelection().toString(),
       text = prepareTextForClipboard(copiedText);
 
-  ev.clipboardData.setData('text/plain', text);
+  if (term.browser.isMSIE) {
+    window.clipboardData.setData('Text', text);
+  } else {
+    ev.clipboardData.setData('text/plain', text);
+  }
+
   ev.preventDefault(); // Prevent or the original text will be copied.
 }
 
@@ -57,8 +62,7 @@ function pasteHandler(ev, term) {
     return term.cancel(ev);
   };
 
-  var userAgent = window.navigator.userAgent.toLowerCase();
-  if (userAgent.match(/msie|MSIE/) || userAgent.match(/(T|t)rident/)) {
+  if (term.browser.isMSIE) {
     if (window.clipboardData) {
       var text = window.clipboardData.getData('Text');
       dispatchPaste(text);
