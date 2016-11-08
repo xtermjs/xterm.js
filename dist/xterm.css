@@ -61,9 +61,14 @@
     position: absolute;
     opacity: 0;
     left: -9999em;
+    top: -9999em;
     width: 0;
     height: 0;
     z-index: -10;
+    /** Prevent wrapping so the IME appears against the textarea at the correct position */
+    white-space: nowrap;
+    overflow: hidden;
+    resize: none;
 }
 
 .terminal .terminal-cursor {
@@ -115,6 +120,11 @@
     position: absolute;
     left: 0;
     top: 0;
+}
+
+.terminal .xterm-rows > div {
+    /* Lines containing spans and text nodes ocassionally wrap despite being the same width (#327) */
+    white-space: nowrap;
 }
 
 .terminal .xterm-scroll-area {

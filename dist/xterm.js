@@ -184,11 +184,23 @@ CompositionHelper.prototype.updateCompositionElements = function (dontRecurse) {
   }
   var cursor = this.terminal.element.querySelector('.terminal-cursor');
   if (cursor) {
+    // Take .xterm-rows offsetTop into account as well in case it's positioned absolutely within
+    // the .xterm element.
+    var xtermRows = this.terminal.element.querySelector('.xterm-rows');
+    var cursorTop = xtermRows.offsetTop + cursor.offsetTop;
+
     this.compositionView.style.left = cursor.offsetLeft + 'px';
-    this.compositionView.style.top = cursor.offsetTop + 'px';
+    this.compositionView.style.top = cursorTop + 'px';
+    this.compositionView.style.height = cursor.offsetHeight + 'px';
+    this.compositionView.style.lineHeight = cursor.offsetHeight + 'px';
+    // Sync the textarea to the exact position of the composition view so the IME knows where the
+    // text is.
     var compositionViewBounds = this.compositionView.getBoundingClientRect();
-    this.textarea.style.left = cursor.offsetLeft + compositionViewBounds.width + 'px';
-    this.textarea.style.top = cursor.offsetTop + cursor.offsetHeight + 'px';
+    this.textarea.style.left = cursor.offsetLeft + 'px';
+    this.textarea.style.top = cursorTop + 'px';
+    this.textarea.style.width = compositionViewBounds.width + 'px';
+    this.textarea.style.height = compositionViewBounds.height + 'px';
+    this.textarea.style.lineHeight = compositionViewBounds.height + 'px';
   }
   if (!dontRecurse) {
     setTimeout(this.updateCompositionElements.bind(this, true), 0);
@@ -442,11 +454,16 @@ function prepareTextForClipboard(text) {
  * Binds copy functionality to the given terminal.
  * @param {ClipboardEvent} ev The original copy event to be handled
  */
-function copyHandler(ev) {
+function copyHandler(ev, term) {
   var copiedText = window.getSelection().toString(),
       text = prepareTextForClipboard(copiedText);
 
-  ev.clipboardData.setData('text/plain', text);
+  if (term.browser.isMSIE) {
+    window.clipboardData.setData('Text', text);
+  } else {
+    ev.clipboardData.setData('text/plain', text);
+  }
+
   ev.preventDefault(); // Prevent or the original text will be copied.
 }
 
@@ -457,11 +474,23 @@ function copyHandler(ev) {
  */
 function pasteHandler(ev, term) {
   ev.stopPropagation();
-  if (ev.clipboardData) {
-    var text = ev.clipboardData.getData('text/plain');
+
+  var dispatchPaste = function dispatchPaste(text) {
     term.handler(text);
     term.textarea.value = '';
     return term.cancel(ev);
+  };
+
+  if (term.browser.isMSIE) {
+    if (window.clipboardData) {
+      var text = window.clipboardData.getData('Text');
+      dispatchPaste(text);
+    }
+  } else {
+    if (ev.clipboardData) {
+      var text = ev.clipboardData.getData('text/plain');
+      dispatchPaste(text);
+    }
   }
 }
 
@@ -480,37 +509,41 @@ function pasteHandler(ev, term) {
  */
 function rightClickHandler(ev, term) {
   var s = document.getSelection(),
-      sText = prepareTextForClipboard(s.toString()),
-      r = s.getRangeAt(0);
+      selectedText = prepareTextForClipboard(s.toString()),
+      clickIsOnSelection = false;
 
-  var x = ev.clientX,
-      y = ev.clientY;
+  if (s.rangeCount) {
+    var r = s.getRangeAt(0),
+        cr = r.getClientRects(),
+        x = ev.clientX,
+        y = ev.clientY,
+        i,
+        rect;
 
-  var cr = r.getClientRects(),
-      clickIsOnSelection = false,
-      i,
-      rect;
+    for (i = 0; i < cr.length; i++) {
+      rect = cr[i];
+      clickIsOnSelection = x > rect.left && x < rect.right && y > rect.top && y < rect.bottom;
 
-  for (i = 0; i < cr.length; i++) {
-    rect = cr[i];
-    clickIsOnSelection = x > rect.left && x < rect.right && y > rect.top && y < rect.bottom;
+      if (clickIsOnSelection) {
+        break;
+      }
+    }
     // If we clicked on selection and selection is not a single space,
     // then mark the right click as copy-only. We check for the single
     // space selection, as this can happen when clicking on an &nbsp;
     // and there is not much pointing in copying a single space.
-    // Single space is char
-    if (clickIsOnSelection && sText !== ' ') {
-      break;
+    if (selectedText.match(/^\s$/) || !selectedText.length) {
+      clickIsOnSelection = false;
     }
   }
 
   // Bring textarea at the cursor position
   if (!clickIsOnSelection) {
     term.textarea.style.position = 'fixed';
-    term.textarea.style.width = '10px';
-    term.textarea.style.height = '10px';
-    term.textarea.style.left = x + 'px';
-    term.textarea.style.top = y + 'px';
+    term.textarea.style.width = '20px';
+    term.textarea.style.height = '20px';
+    term.textarea.style.left = x - 10 + 'px';
+    term.textarea.style.top = y - 10 + 'px';
     term.textarea.style.zIndex = 1000;
     term.textarea.focus();
 
@@ -522,7 +555,7 @@ function rightClickHandler(ev, term) {
       term.textarea.style.left = null;
       term.textarea.style.top = null;
       term.textarea.style.zIndex = null;
-    }, 1);
+    }, 4);
   }
 }
 
@@ -532,7 +565,67 @@ exports.pasteHandler = pasteHandler;
 exports.rightClickHandler = rightClickHandler;
 
 },{}],5:[function(_dereq_,module,exports){
-(function (__dirname){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.isMSWindows = exports.isIphone = exports.isIpad = exports.isMac = exports.isMSIE = exports.isFirefox = undefined;
+
+var _Generic = _dereq_('./Generic.js');
+
+var isNode = typeof navigator == 'undefined' ? true : false; /**
+                                                              * xterm.js: xterm, in the browser
+                                                              * Copyright (c) 2016, SourceLair Private Company <www.sourcelair.com> (MIT License)
+                                                              */
+
+/**
+ * Browser utilities module. This module contains attributes and methods to help with
+ * identifying the current browser and platform.
+ * @module xterm/utils/Browser
+ */
+
+var userAgent = isNode ? 'node' : navigator.userAgent;
+var platform = isNode ? 'node' : navigator.platform;
+
+var isFirefox = exports.isFirefox = !!~userAgent.indexOf('Firefox');
+var isMSIE = exports.isMSIE = !!~userAgent.indexOf('MSIE') || !!~userAgent.indexOf('Trident');
+
+// Find the users platform. We use this to interpret the meta key
+// and ISO third level shifts.
+// http://stackoverflow.com/q/19877924/577598
+var isMac = exports.isMac = (0, _Generic.contains)(['Macintosh', 'MacIntel', 'MacPPC', 'Mac68K'], platform);
+var isIpad = exports.isIpad = platform === 'iPad';
+var isIphone = exports.isIphone = platform === 'iPhone';
+var isMSWindows = exports.isMSWindows = (0, _Generic.contains)(['Windows', 'Win16', 'Win32', 'WinCE'], platform);
+
+},{"./Generic.js":6}],6:[function(_dereq_,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+/**
+ * xterm.js: xterm, in the browser
+ * Copyright (c) 2016, SourceLair Private Company <www.sourcelair.com> (MIT License)
+ */
+
+/**
+ * Generic utilities module. This module contains generic methods that can be helpful at
+ * different parts of the code base.
+ * @module xterm/utils/Generic
+ */
+
+/**
+ * Return if the given array contains the given element
+ * @param {Array} array The array to search for the given element.
+ * @param {Object} el The element to look for into the array
+ */
+var contains = exports.contains = function contains(arr, el) {
+  return arr.indexOf(el) >= 0;
+};
+
+},{}],7:[function(_dereq_,module,exports){
 'use strict';var _typeof=typeof Symbol==="function"&&typeof Symbol.iterator==="symbol"?function(obj){return typeof obj;}:function(obj){return obj&&typeof Symbol==="function"&&obj.constructor===Symbol&&obj!==Symbol.prototype?"symbol":typeof obj;};/**
  * xterm.js: xterm, in the browser
  * Copyright (c) 2014-2014, SourceLair Private Company <www.sourcelair.com> (MIT License)
@@ -564,7 +657,7 @@ exports.rightClickHandler = rightClickHandler;
  *   The original design remains. The terminal itself
  *   has been extended to include xterm CSI codes, among
  *   other features.
- */var _CompositionHelper=_dereq_('./CompositionHelper.js');var _EventEmitter=_dereq_('./EventEmitter.js');var _Viewport=_dereq_('./Viewport.js');var _Clipboard=_dereq_('./handlers/Clipboard.js');/**
+ */var _CompositionHelper=_dereq_('./CompositionHelper.js');var _EventEmitter=_dereq_('./EventEmitter.js');var _Viewport=_dereq_('./Viewport.js');var _Clipboard=_dereq_('./handlers/Clipboard.js');var _Browser=_dereq_('./utils/Browser');var Browser=_interopRequireWildcard(_Browser);function _interopRequireWildcard(obj){if(obj&&obj.__esModule){return obj;}else{var newObj={};if(obj!=null){for(var key in obj){if(Object.prototype.hasOwnProperty.call(obj,key))newObj[key]=obj[key];}}newObj.default=obj;return newObj;}}/**
  * Terminal Emulation References:
  *   http://vt100.net/
  *   http://invisible-island.net/xterm/ctlseqs/ctlseqs.txt
@@ -582,14 +675,16 @@ var document=typeof window!='undefined'?window.document:null;/**
  * Creates a new `Terminal` object.
  *
  * @param {object} options An object containing a set of options, the available options are:
- *   - cursorBlink (boolean): Whether the terminal cursor blinks
+ *   - `cursorBlink` (boolean): Whether the terminal cursor blinks
+ *   - `cols` (number): The number of columns of the terminal (horizontal size)
+ *   - `rows` (number): The number of rows of the terminal (vertical size)
  *
  * @public
  * @class Xterm Xterm
  * @alias module:xterm/src/xterm
- */function Terminal(options){var self=this;if(!(this instanceof Terminal)){return new Terminal(arguments[0],arguments[1],arguments[2]);}self.cancel=Terminal.cancel;_EventEmitter.EventEmitter.call(this);if(typeof options==='number'){options={cols:arguments[0],rows:arguments[1],handler:arguments[2]};}options=options||{};Object.keys(Terminal.defaults).forEach(function(key){if(options[key]==null){options[key]=Terminal.options[key];if(Terminal[key]!==Terminal.defaults[key]){options[key]=Terminal[key];}}self[key]=options[key];});if(options.colors.length===8){options.colors=options.colors.concat(Terminal._colors.slice(8));}else if(options.colors.length===16){options.colors=options.colors.concat(Terminal._colors.slice(16));}else if(options.colors.length===10){options.colors=options.colors.slice(0,-2).concat(Terminal._colors.slice(8,-2),options.colors.slice(-2));}else if(options.colors.length===18){options.colors=options.colors.concat(Terminal._colors.slice(16,-2),options.colors.slice(-2));}this.colors=options.colors;this.options=options;// this.context = options.context || window;
+ */function Terminal(options){var self=this;if(!(this instanceof Terminal)){return new Terminal(arguments[0],arguments[1],arguments[2]);}self.browser=Browser;self.cancel=Terminal.cancel;_EventEmitter.EventEmitter.call(this);if(typeof options==='number'){options={cols:arguments[0],rows:arguments[1],handler:arguments[2]};}options=options||{};Object.keys(Terminal.defaults).forEach(function(key){if(options[key]==null){options[key]=Terminal.options[key];if(Terminal[key]!==Terminal.defaults[key]){options[key]=Terminal[key];}}self[key]=options[key];});if(options.colors.length===8){options.colors=options.colors.concat(Terminal._colors.slice(8));}else if(options.colors.length===16){options.colors=options.colors.concat(Terminal._colors.slice(16));}else if(options.colors.length===10){options.colors=options.colors.slice(0,-2).concat(Terminal._colors.slice(8,-2),options.colors.slice(-2));}else if(options.colors.length===18){options.colors=options.colors.concat(Terminal._colors.slice(16,-2),options.colors.slice(-2));}this.colors=options.colors;this.options=options;// this.context = options.context || window;
 // this.document = options.document || document;
-this.parent=options.body||options.parent||(document?document.getElementsByTagName('body')[0]:null);this.cols=options.cols||options.geometry[0];this.rows=options.rows||options.geometry[1];if(options.handler){this.on('data',options.handler);}/**
+this.parent=options.body||options.parent||(document?document.getElementsByTagName('body')[0]:null);this.cols=options.cols||options.geometry[0];this.rows=options.rows||options.geometry[1];this.geometry=[this.cols,this.rows];if(options.handler){this.on('data',options.handler);}/**
    * The scroll position of the y cursor, ie. ybase + y = the y position within the entire
    * buffer
    */this.ybase=0;/**
@@ -612,7 +707,8 @@ this.readable=true;this.writable=true;this.defAttr=0<<18|257<<9|256<<0;this.curA
 this.surrogate_high='';/**
    * An array of all lines in the entire buffer, including the prompt. The lines are array of
    * characters which are 2-length arrays where [0] is an attribute and [1] is the character.
-   */this.lines=[];var i=this.rows;while(i--){this.lines.push(this.blankLine());}this.tabs;this.setupStops();}inherits(Terminal,_EventEmitter.EventEmitter);/**
+   */this.lines=[];var i=this.rows;while(i--){this.lines.push(this.blankLine());}this.tabs;this.setupStops();// Store if user went browsing history in scrollback
+this.userScrolling=false;}inherits(Terminal,_EventEmitter.EventEmitter);/**
  * back_color_erase feature for xterm.
  */Terminal.prototype.eraseAttr=function(){// if (this.is('screen')) return this.defAttr;
 return this.defAttr&~0x1ff|this.curAttr&0x1ff;};/**
@@ -650,7 +746,7 @@ i=0;for(;i<24;i++){r=8+i*10;out(r,r,r);}function out(r,g,b){colors.push('#'+hex(
  */Terminal.bindBlur=function(term){on(term.textarea,'blur',function(ev){term.refresh(term.y,term.y);if(term.sendFocus){term.send('\x1b[O');}term.element.classList.remove('focus');Terminal.focus=null;term.emit('blur',{terminal:term});});};/**
  * Initialize default behavior
  */Terminal.prototype.initGlobal=function(){var term=this;Terminal.bindKeys(this);Terminal.bindFocus(this);Terminal.bindBlur(this);// Bind clipboard functionality
-on(this.element,'copy',_Clipboard.copyHandler);on(this.textarea,'paste',function(ev){_Clipboard.pasteHandler.call(this,ev,term);});on(this.element,'contextmenu',function(ev){_Clipboard.rightClickHandler.call(this,ev,term);});};/**
+on(this.element,'copy',function(ev){_Clipboard.copyHandler.call(this,ev,term);});on(this.textarea,'paste',function(ev){_Clipboard.pasteHandler.call(this,ev,term);});function rightClickHandlerWrapper(ev){_Clipboard.rightClickHandler.call(this,ev,term);}if(term.browser.isFirefox){on(this.element,'mousedown',function(ev){if(ev.button==2){rightClickHandlerWrapper(ev);}});}else{on(this.element,'contextmenu',rightClickHandlerWrapper);}};/**
  * Apply key handling to the terminal
  */Terminal.bindKeys=function(term){on(term.element,'keydown',function(ev){if(document.activeElement!=this){return;}term.keyDown(ev);},true);on(term.element,'keypress',function(ev){if(document.activeElement!=this){return;}term.keyPress(ev);},true);on(term.element,'keyup',term.focus.bind(term));on(term.textarea,'keydown',function(ev){term.keyDown(ev);},true);on(term.textarea,'keypress',function(ev){term.keyPress(ev);// Truncate the textarea's value, since it is not needed
 this.value='';},true);on(term.textarea,'compositionstart',term.compositionHelper.compositionstart.bind(term.compositionHelper));on(term.textarea,'compositionupdate',term.compositionHelper.compositionupdate.bind(term.compositionHelper));on(term.textarea,'compositionend',term.compositionHelper.compositionend.bind(term.compositionHelper));term.on('refresh',term.compositionHelper.updateCompositionElements.bind(term.compositionHelper));};/**
@@ -662,11 +758,7 @@ this.value='';},true);on(term.textarea,'compositionstart',term.compositionHelper
  *
  * @param {HTMLElement} parent The element to create the terminal within.
  */Terminal.prototype.open=function(parent){var self=this,i=0,div;this.parent=parent||this.parent;if(!this.parent){throw new Error('Terminal requires a parent element.');}// Grab global elements
-this.context=this.parent.ownerDocument.defaultView;this.document=this.parent.ownerDocument;this.body=this.document.getElementsByTagName('body')[0];// Parse User-Agent
-if(this.context.navigator&&this.context.navigator.userAgent){this.isMSIE=!!~this.context.navigator.userAgent.indexOf('MSIE');}// Find the users platform. We use this to interpret the meta key
-// and ISO third level shifts.
-// http://stackoverflow.com/q/19877924/577598
-if(this.context.navigator&&this.context.navigator.platform){this.isMac=contains(this.context.navigator.platform,['Macintosh','MacIntel','MacPPC','Mac68K']);this.isIpad=this.context.navigator.platform==='iPad';this.isIphone=this.context.navigator.platform==='iPhone';this.isMSWindows=contains(this.context.navigator.platform,['Windows','Win16','Win32','WinCE']);}//Create main element container
+this.context=this.parent.ownerDocument.defaultView;this.document=this.parent.ownerDocument;this.body=this.document.getElementsByTagName('body')[0];//Create main element container
 this.element=this.document.createElement('div');this.element.classList.add('terminal');this.element.classList.add('xterm');this.element.classList.add('xterm-theme-'+this.theme);this.element.style.height;this.element.setAttribute('tabindex',0);this.viewportElement=document.createElement('div');this.viewportElement.classList.add('xterm-viewport');this.element.appendChild(this.viewportElement);this.viewportScrollArea=document.createElement('div');this.viewportScrollArea.classList.add('xterm-scroll-area');this.viewportElement.appendChild(this.viewportScrollArea);// Create the container that will hold the lines of the terminal and then
 // produce the lines the lines.
 this.rowContainer=document.createElement('div');this.rowContainer.classList.add('xterm-rows');this.element.appendChild(this.rowContainer);this.children=[];// Create the container that will hold helpers like the textarea for
@@ -685,7 +777,7 @@ if(Terminal.brokenBold==null){Terminal.brokenBold=isBoldBroken(this.document);}t
  * @param {string} addon The name of the addon to load
  * @static
  */Terminal.loadAddon=function(addon,callback){if((typeof exports==='undefined'?'undefined':_typeof(exports))==='object'&&(typeof module==='undefined'?'undefined':_typeof(module))==='object'){// CommonJS
-return _dereq_(__dirname+'/../addons/'+addon);}else if(typeof define=='function'){// RequireJS
+return _dereq_('../addons/'+addon);}else if(typeof define=='function'){// RequireJS
 return _dereq_(['../addons/'+addon+'/'+addon],callback);}else{console.error('Cannot load a module without a CommonJS or RequireJS environment.');return false;}};/**
  * XTerm mouse events
  * http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#Mouse%20Tracking
@@ -732,7 +824,7 @@ button&=3;pos.x-=32;pos.y-=32;if(button===0)button=2;else if(button===1)button=4
 // 3 = release
 // wheel up/down:
 // 1, and 2 - with 64 added
-switch(ev.overrideType||ev.type){case'mousedown':button=ev.button!=null?+ev.button:ev.which!=null?ev.which-1:null;if(self.isMSIE){button=button===1?0:button===4?1:button;}break;case'mouseup':button=3;break;case'DOMMouseScroll':button=ev.detail<0?64:65;break;case'wheel':button=ev.wheelDeltaY>0?64:65;break;}// next three bits are the modifiers:
+switch(ev.overrideType||ev.type){case'mousedown':button=ev.button!=null?+ev.button:ev.which!=null?ev.which-1:null;if(self.browser.isMSIE){button=button===1?0:button===4?1:button;}break;case'mouseup':button=3;break;case'DOMMouseScroll':button=ev.detail<0?64:65;break;case'wheel':button=ev.wheelDeltaY>0?64:65;break;}// next three bits are the modifiers:
 // 4 = shift, 8 = meta, 16 = control
 shift=ev.shiftKey?4:0;meta=ev.metaKey?8:0;ctrl=ev.ctrlKey?16:0;mod=shift|meta|ctrl;// no mods
 if(self.vt200Mouse){// ctrl only
@@ -812,24 +904,31 @@ if(flags&1&&fg<8)fg+=8;}if(flags&Terminal.flags.INVISIBLE){classNames.push('xter
  * Display the cursor element
  */Terminal.prototype.showCursor=function(){if(!this.cursorState){this.cursorState=1;this.refresh(this.y,this.y);}};/**
  * Scroll the terminal
- */Terminal.prototype.scroll=function(){var row;if(++this.ybase===this.scrollback){this.ybase=this.ybase/2|0;this.lines=this.lines.slice(-(this.ybase+this.rows)+1);}this.ydisp=this.ybase;// last line
+ */Terminal.prototype.scroll=function(){var row;if(++this.ybase===this.scrollback){this.ybase=this.ybase/2|0;this.lines=this.lines.slice(-(this.ybase+this.rows)+1);}if(!this.userScrolling){this.ydisp=this.ybase;}// last line
 row=this.ybase+this.rows-1;// subtract the bottom scroll region
 row-=this.rows-1-this.scrollBottom;if(row===this.lines.length){// potential optimization:
 // pushing is faster than splicing
 // when they amount to the same
 // behavior.
 this.lines.push(this.blankLine());}else{// add our new line
-this.lines.splice(row,0,this.blankLine());}if(this.scrollTop!==0){if(this.ybase!==0){this.ybase--;this.ydisp=this.ybase;}this.lines.splice(this.ybase+this.scrollTop,1);}// this.maxRange();
+this.lines.splice(row,0,this.blankLine());}if(this.scrollTop!==0){if(this.ybase!==0){this.ybase--;if(!this.userScrolling){this.ydisp=this.ybase;}}this.lines.splice(this.ybase+this.scrollTop,1);}// this.maxRange();
 this.updateRange(this.scrollTop);this.updateRange(this.scrollBottom);this.emit('scroll',this.ydisp);};/**
  * Scroll the display of the terminal
  * @param {number} disp The number of lines to scroll down (negatives scroll up).
  * @param {boolean} suppressScrollEvent Don't emit the scroll event as scrollDisp. This is used
  * to avoid unwanted events being handled by the veiwport when the event was triggered from the
  * viewport originally.
- */Terminal.prototype.scrollDisp=function(disp,suppressScrollEvent){this.ydisp+=disp;if(this.ydisp>this.ybase){this.ydisp=this.ybase;}else if(this.ydisp<0){this.ydisp=0;}if(!suppressScrollEvent){this.emit('scroll',this.ydisp);}this.refresh(0,this.rows-1);};/**
+ */Terminal.prototype.scrollDisp=function(disp,suppressScrollEvent){if(disp<0){this.userScrolling=true;}else if(disp+this.ydisp>=this.ybase){this.userScrolling=false;}this.ydisp+=disp;if(this.ydisp>this.ybase){this.ydisp=this.ybase;}else if(this.ydisp<0){this.ydisp=0;}if(!suppressScrollEvent){this.emit('scroll',this.ydisp);}this.refresh(0,this.rows-1);};/**
+ * Scroll the display of the terminal by a number of pages.
+ * @param {number} pageCount The number of pages to scroll (negative scrolls up).
+ */Terminal.prototype.scrollPages=function(pageCount){this.scrollDisp(pageCount*(this.rows-1));};/**
+ * Scrolls the display of the terminal to the top.
+ */Terminal.prototype.scrollToTop=function(){this.scrollDisp(-this.ydisp);};/**
+ * Scrolls the display of the terminal to the bottom.
+ */Terminal.prototype.scrollToBottom=function(){this.scrollDisp(this.ybase-this.ydisp);};/**
  * Writes text to the terminal.
  * @param {string} text The text to write to the terminal.
- */Terminal.prototype.write=function(data){var l=data.length,i=0,j,cs,ch,code,low,ch_width,row;this.refreshStart=this.y;this.refreshEnd=this.y;if(this.ybase!==this.ydisp){this.ydisp=this.ybase;this.emit('scroll',this.ydisp);this.maxRange();}// apply leftover surrogate high from last write
+ */Terminal.prototype.write=function(data){var l=data.length,i=0,j,cs,ch,code,low,ch_width,row;this.refreshStart=this.y;this.refreshEnd=this.y;// apply leftover surrogate high from last write
 if(this.surrogate_high){data=this.surrogate_high+data;this.surrogate_high='';}for(;i<l;i++){ch=data[i];// FIXME: higher chars than 0xa0 are not allowed in escape sequences
 //        --> maybe move to default
 code=data.charCodeAt(i);if(0xD800<=code&&code<=0xDBFF){// we got a surrogate high
@@ -1204,7 +1303,8 @@ if(ch==='\x1b'||ch==='\x07'){if(ch==='\x1b')i++;this.state=normal;}break;}}this.
  * Key Resources:
  *   - https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
  * @param {KeyboardEvent} ev The keydown event to be handled.
- */Terminal.prototype.keyDown=function(ev){if(this.customKeydownHandler&&this.customKeydownHandler(ev)===false){return false;}if(!this.compositionHelper.keydown.bind(this.compositionHelper)(ev)){return false;}var self=this;var result=this.evaluateKeyEscapeSequence(ev);if(result.scrollDisp){this.scrollDisp(result.scrollDisp);return this.cancel(ev,true);}if(isThirdLevelShift(this,ev)){return true;}if(result.cancel){// The event is canceled at the end already, is this necessary?
+ */Terminal.prototype.keyDown=function(ev){// Scroll down to prompt, whenever the user presses a key.
+if(this.ybase!==this.ydisp){this.scrollToBottom();}if(this.customKeydownHandler&&this.customKeydownHandler(ev)===false){return false;}if(!this.compositionHelper.keydown.bind(this.compositionHelper)(ev)){return false;}var self=this;var result=this.evaluateKeyEscapeSequence(ev);if(result.scrollDisp){this.scrollDisp(result.scrollDisp);return this.cancel(ev,true);}if(isThirdLevelShift(this,ev)){return true;}if(result.cancel){// The event is canceled at the end already, is this necessary?
 this.cancel(ev,true);}if(!result.key){return true;}this.emit('keydown',ev);this.emit('key',result.key,ev);this.showCursor();this.handler(result.key);return this.cancel(ev,true);};/**
  * Returns an object that determines how a KeyboardEvent should be handled. The key of the
  * returned value is the new key code to pass to the PTY.
@@ -1248,7 +1348,7 @@ result.key=String.fromCharCode(0);}else if(ev.keyCode>=51&&ev.keyCode<=55){// es
 result.key=String.fromCharCode(ev.keyCode-51+27);}else if(ev.keyCode===56){// delete
 result.key=String.fromCharCode(127);}else if(ev.keyCode===219){// ^[ - escape
 result.key=String.fromCharCode(27);}else if(ev.keyCode===221){// ^] - group sep
-result.key=String.fromCharCode(29);}}else if(!this.isMac&&ev.altKey&&!ev.ctrlKey&&!ev.metaKey){// On Mac this is a third level shift. Use <Esc> instead.
+result.key=String.fromCharCode(29);}}else if(!this.browser.isMac&&ev.altKey&&!ev.ctrlKey&&!ev.metaKey){// On Mac this is a third level shift. Use <Esc> instead.
 if(ev.keyCode>=65&&ev.keyCode<=90){result.key='\x1b'+String.fromCharCode(ev.keyCode+32);}else if(ev.keyCode===192){result.key='\x1b`';}else if(ev.keyCode>=48&&ev.keyCode<=57){result.key='\x1b'+(ev.keyCode-48);}}break;}return result;};/**
  * Set the G level of the terminal
  * @param g
@@ -1290,7 +1390,7 @@ this.lines.push(this.blankLine());}}if(this.children.length<y){this.insertRow();
 while(j-->y){if(this.lines.length>y+this.ybase){if(this.lines.length>this.ybase+this.y+1){// The line is a blank line below the cursor, remove it
 this.lines.pop();}else{// The line is the cursor, scroll down
 this.ybase++;this.ydisp++;}}if(this.children.length>y){el=this.children.shift();if(!el)continue;el.parentNode.removeChild(el);}}}this.rows=y;// Make sure that the cursor stays on screen
-if(this.y>=y){this.y=y-1;}if(addToY){this.y+=addToY;}if(this.x>=x){this.x=x-1;}this.scrollTop=0;this.scrollBottom=y-1;this.refresh(0,this.rows-1);this.normal=null;this.emit('resize',{terminal:this,cols:x,rows:y});};/**
+if(this.y>=y){this.y=y-1;}if(addToY){this.y+=addToY;}if(this.x>=x){this.x=x-1;}this.scrollTop=0;this.scrollBottom=y-1;this.refresh(0,this.rows-1);this.normal=null;this.geometry=[this.cols,this.rows];this.emit('resize',{terminal:this,cols:x,rows:y});};/**
  * Updates the range of rows to refresh
  * @param {number} y The number of rows to refresh next.
  */Terminal.prototype.updateRange=function(y){if(y<this.refreshStart)this.refreshStart=y;if(y>this.refreshEnd)this.refreshEnd=y;// if (y > this.refreshEnd) {
@@ -1300,7 +1400,7 @@ if(this.y>=y){this.y=y-1;}if(addToY){this.y+=addToY;}if(this.x>=x){this.x=x-1;}t
 //   }
 // }
 };/**
- * Set the range of refreshing to the maximyum value
+ * Set the range of refreshing to the maximum value
  */Terminal.prototype.maxRange=function(){this.refreshStart=0;this.refreshEnd=this.rows-1;};/**
  * Setup the tab stops.
  * @param {number} i
@@ -1337,9 +1437,9 @@ return;}this.lines=[this.lines[this.ybase+this.y]];this.ydisp=0;this.ybase=0;thi
  * Evaluate if the current erminal is the given argument.
  * @param {object} term The terminal to evaluate
  */Terminal.prototype.is=function(term){var name=this.termName;return(name+'').indexOf(term)===0;};/**
-     * Emit the 'data' event and populate the given data.
-     * @param {string} data The data to populate in the event.
-     */Terminal.prototype.handler=function(data){this.emit('data',data);};/**
+ * Emit the 'data' event and populate the given data.
+ * @param {string} data The data to populate in the event.
+ */Terminal.prototype.handler=function(data){this.emit('data',data);};/**
  * Emit the 'title' event and populate the given title.
  * @param {string} title The title to populate in the event.
  */Terminal.prototype.handleTitle=function(title){this.emit('title',title);};/**
@@ -1857,8 +1957,8 @@ this.refresh(0,this.rows-1);this.showCursor();}break;}}};/**
  * CSI Ps S  Scroll up Ps lines (default = 1) (SU).
  */Terminal.prototype.scrollUp=function(params){var param=params[0]||1;while(param--){this.lines.splice(this.ybase+this.scrollTop,1);this.lines.splice(this.ybase+this.scrollBottom,0,this.blankLine());}// this.maxRange();
 this.updateRange(this.scrollTop);this.updateRange(this.scrollBottom);};/**
-     * CSI Ps T  Scroll down Ps lines (default = 1) (SD).
-     */Terminal.prototype.scrollDown=function(params){var param=params[0]||1;while(param--){this.lines.splice(this.ybase+this.scrollBottom,1);this.lines.splice(this.ybase+this.scrollTop,0,this.blankLine());}// this.maxRange();
+ * CSI Ps T  Scroll down Ps lines (default = 1) (SD).
+ */Terminal.prototype.scrollDown=function(params){var param=params[0]||1;while(param--){this.lines.splice(this.ybase+this.scrollBottom,1);this.lines.splice(this.ybase+this.scrollTop,0,this.blankLine());}// this.maxRange();
 this.updateRange(this.scrollTop);this.updateRange(this.scrollBottom);};/**
  * CSI Ps ; Ps ; Ps ; Ps ; Ps T
  *   Initiate highlight mouse tracking.  Parameters are
@@ -2103,9 +2203,9 @@ Terminal.charsets.Swiss=null;// (=
 Terminal.charsets.ISOLatin=null;// /A
 /**
  * Helpers
- */function contains(el,arr){for(var i=0;i<arr.length;i+=1){if(el===arr[i]){return true;}}return false;}function on(el,type,handler,capture){if(!Array.isArray(el)){el=[el];}el.forEach(function(element){element.addEventListener(type,handler,capture||false);});}function off(el,type,handler,capture){el.removeEventListener(type,handler,capture||false);}function cancel(ev,force){if(!this.cancelEvents&&!force){return;}ev.preventDefault();ev.stopPropagation();return false;}function inherits(child,parent){function f(){this.constructor=child;}f.prototype=parent.prototype;child.prototype=new f();}// if bold is broken, we can't
+ */function on(el,type,handler,capture){if(!Array.isArray(el)){el=[el];}el.forEach(function(element){element.addEventListener(type,handler,capture||false);});}function off(el,type,handler,capture){el.removeEventListener(type,handler,capture||false);}function cancel(ev,force){if(!this.cancelEvents&&!force){return;}ev.preventDefault();ev.stopPropagation();return false;}function inherits(child,parent){function f(){this.constructor=child;}f.prototype=parent.prototype;child.prototype=new f();}// if bold is broken, we can't
 // use it in the terminal.
-function isBoldBroken(document){var body=document.getElementsByTagName('body')[0];var el=document.createElement('span');el.innerHTML='hello world';body.appendChild(el);var w1=el.scrollWidth;el.style.fontWeight='bold';var w2=el.scrollWidth;body.removeChild(el);return w1!==w2;}function indexOf(obj,el){var i=obj.length;while(i--){if(obj[i]===el)return i;}return-1;}function isThirdLevelShift(term,ev){var thirdLevelKey=term.isMac&&ev.altKey&&!ev.ctrlKey&&!ev.metaKey||term.isMSWindows&&ev.altKey&&ev.ctrlKey&&!ev.metaKey;if(ev.type=='keypress'){return thirdLevelKey;}// Don't invoke for arrows, pageDown, home, backspace, etc. (on non-keypress events)
+function isBoldBroken(document){var body=document.getElementsByTagName('body')[0];var el=document.createElement('span');el.innerHTML='hello world';body.appendChild(el);var w1=el.scrollWidth;el.style.fontWeight='bold';var w2=el.scrollWidth;body.removeChild(el);return w1!==w2;}function indexOf(obj,el){var i=obj.length;while(i--){if(obj[i]===el)return i;}return-1;}function isThirdLevelShift(term,ev){var thirdLevelKey=term.browser.isMac&&ev.altKey&&!ev.ctrlKey&&!ev.metaKey||term.browser.isMSWindows&&ev.altKey&&ev.ctrlKey&&!ev.metaKey;if(ev.type=='keypress'){return thirdLevelKey;}// Don't invoke for arrows, pageDown, home, backspace, etc. (on non-keypress events)
 return thirdLevelKey&&(!ev.keyCode||ev.keyCode>47);}function matchColor(r1,g1,b1){var hash=r1<<16|g1<<8|b1;if(matchColor._cache[hash]!=null){return matchColor._cache[hash];}var ldiff=Infinity,li=-1,i=0,c,r2,g2,b2,diff;for(;i<Terminal.vcolors.length;i++){c=Terminal.vcolors[i];r2=c[0];g2=c[1];b2=c[2];diff=matchColor.distance(r1,g1,b1,r2,g2,b2);if(diff===0){li=i;break;}if(diff<ldiff){ldiff=diff;li=i;}}return matchColor._cache[hash]=li;}matchColor._cache={};// http://stackoverflow.com/questions/1633828
 matchColor.distance=function(r1,g1,b1,r2,g2,b2){return Math.pow(30*(r1-r2),2)+Math.pow(59*(g1-g2),2)+Math.pow(11*(b1-b2),2);};function each(obj,iter,con){if(obj.forEach)return obj.forEach(iter,con);for(var i=0;i<obj.length;i++){iter.call(con,obj[i],i,obj);}}function keys(obj){if(Object.keys)return Object.keys(obj);var key,keys=[];for(key in obj){if(Object.prototype.hasOwnProperty.call(obj,key)){keys.push(key);}}return keys;}var wcwidth=function(opts){// extracted from https://www.cl.cam.ac.uk/%7Emgk25/ucs/wcwidth.c
 // combining characters
@@ -2130,8 +2230,6 @@ ucs>=0xffe0&&ucs<=0xffe6||ucs>=0x20000&&ucs<=0x2fffd||ucs>=0x30000&&ucs<=0x3fffd
  * @param {function} callback The function to call when the event is triggered.
  */Terminal.on=on;Terminal.off=off;Terminal.cancel=cancel;module.exports=Terminal;
 
-}).call(this,"/src")
-
-},{"./CompositionHelper.js":1,"./EventEmitter.js":2,"./Viewport.js":3,"./handlers/Clipboard.js":4}]},{},[5])(5)
+},{"./CompositionHelper.js":1,"./EventEmitter.js":2,"./Viewport.js":3,"./handlers/Clipboard.js":4,"./utils/Browser":5}]},{},[7])(7)
 });
 //# sourceMappingURL=xterm.js.map
