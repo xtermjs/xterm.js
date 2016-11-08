@@ -458,7 +458,7 @@ Terminal.prototype.initGlobal = function() {
     rightClickHandler.call(this, ev, term);
   }
 
-  if (term.browser.isFirefox || term.browser.isMSIE) {
+  if (term.browser.isFirefox) {
     on(this.element, 'mousedown', function (ev) {
       if (ev.button == 2) {
         rightClickHandlerWrapper(ev);
