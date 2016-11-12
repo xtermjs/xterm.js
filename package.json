@@ -26,8 +26,8 @@
     "typescript": "^2.0.3"
   },
   "scripts": {
-    "start": "nodemon --watch src --watch addons --exec bash -c './bin/build && node demo/app'",
-    "test": "./bin/build && mocha --recursive ./test/*test.js ./test/**/*test.js",
+    "start": "nodemon --watch src --watch addons --watch demo --exec bash -c './bin/build && node demo/app'",
+    "test": "./bin/build && mocha --recursive ./out",
     "build:docs": "jsdoc -c jsdoc.json",
     "build": "./bin/build"
   }

@@ -8,7 +8,6 @@ var terminals = {},
     logs = {};
 
 app.use('/build', express.static(__dirname + '/../build'));
-app.use('/addons', express.static(__dirname + '/../addons'));
 
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');

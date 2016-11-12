@@ -1,6 +1,5 @@
 node_modules/
 *.swp
-build/*
 .lock-wscript
 out/
 Makefile.gyp
@@ -12,3 +11,4 @@ docs/
 npm-debug.log
 /.idea/
 .env
+dist/*
