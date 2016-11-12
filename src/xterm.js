@@ -630,6 +630,11 @@ Terminal.prototype.open = function(parent) {
     Terminal.brokenBold = isBoldBroken(this.document);
   }
 
+  /**
+   * This event is emitted when terminal has completed opening.
+   *
+   * @event open
+   */
   this.emit('open');
 };
 
@@ -1285,6 +1290,12 @@ Terminal.prototype.scroll = function() {
   this.updateRange(this.scrollTop);
   this.updateRange(this.scrollBottom);
 
+  /**
+   * This event is emitted whenever the terminal is scrolled.
+   * The one parameter passed is the new y display position.
+   *
+   * @event scroll
+   */
   this.emit('scroll', this.ydisp);
 };
 
@@ -3144,6 +3155,12 @@ Terminal.prototype.handler = function(data) {
  * @param {string} title The title to populate in the event.
  */
 Terminal.prototype.handleTitle = function(title) {
+  /**
+   * This event is emitted when the title of the terminal is changed
+   * from inside the terminal. The parameter is the new title.
+   *
+   * @event title
+   */
   this.emit('title', title);
 };
 
