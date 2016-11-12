@@ -35,6 +35,7 @@ import { CompositionHelper } from './CompositionHelper.js';
 import { EventEmitter } from './EventEmitter.js';
 import { Viewport } from './Viewport.js';
 import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard.js';
+import * as Browser from './utils/Browser';
 
 /**
  * Terminal Emulation References:
@@ -78,6 +79,7 @@ function Terminal(options) {
     return new Terminal(arguments[0], arguments[1], arguments[2]);
   }
 
+  self.browser = Browser;
   self.cancel = Terminal.cancel;
 
   EventEmitter.call(this);
@@ -234,6 +236,9 @@ function Terminal(options) {
 
   this.tabs;
   this.setupStops();
+
+  // Store if user went browsing history in scrollback
+  this.userScrolling = false;
 }
 
 inherits(Terminal, EventEmitter);
@@ -442,13 +447,26 @@ Terminal.prototype.initGlobal = function() {
   Terminal.bindBlur(this);
 
   // Bind clipboard functionality
-  on(this.element, 'copy', copyHandler);
+  on(this.element, 'copy', function (ev) {
+    copyHandler.call(this, ev, term);
+  });
   on(this.textarea, 'paste', function (ev) {
     pasteHandler.call(this, ev, term);
   });
-  on(this.element, 'contextmenu', function (ev) {
+
+  function rightClickHandlerWrapper (ev) {
     rightClickHandler.call(this, ev, term);
-  });
+  }
+
+  if (term.browser.isFirefox) {
+    on(this.element, 'mousedown', function (ev) {
+      if (ev.button == 2) {
+        rightClickHandlerWrapper(ev);
+      }
+    });
+  } else {
+    on(this.element, 'contextmenu', rightClickHandlerWrapper);
+  }
 };
 
 /**
@@ -522,27 +540,6 @@ Terminal.prototype.open = function(parent) {
   this.context = this.parent.ownerDocument.defaultView;
   this.document = this.parent.ownerDocument;
   this.body = this.document.getElementsByTagName('body')[0];
-
-  // Parse User-Agent
-  if (this.context.navigator && this.context.navigator.userAgent) {
-    this.isMSIE = !!~this.context.navigator.userAgent.indexOf('MSIE');
-  }
-
-  // Find the users platform. We use this to interpret the meta key
-  // and ISO third level shifts.
-  // http://stackoverflow.com/q/19877924/577598
-  if (this.context.navigator && this.context.navigator.platform) {
-    this.isMac = contains(
-      this.context.navigator.platform,
-      ['Macintosh', 'MacIntel', 'MacPPC', 'Mac68K']
-    );
-    this.isIpad = this.context.navigator.platform === 'iPad';
-    this.isIphone = this.context.navigator.platform === 'iPhone';
-    this.isMSWindows = contains(
-      this.context.navigator.platform,
-      ['Windows', 'Win16', 'Win32', 'WinCE']
-    );
-  }
 
   //Create main element container
   this.element = this.document.createElement('div');
@@ -633,6 +630,11 @@ Terminal.prototype.open = function(parent) {
     Terminal.brokenBold = isBoldBroken(this.document);
   }
 
+  /**
+   * This event is emitted when terminal has completed opening.
+   *
+   * @event open
+   */
   this.emit('open');
 };
 
@@ -843,7 +845,7 @@ Terminal.prototype.bindMouse = function() {
           ? ev.which - 1
         : null;
 
-        if (self.isMSIE) {
+        if (self.browser.isMSIE) {
           button = button === 1 ? 0 : button === 4 ? 1 : button;
         }
         break;
@@ -1253,7 +1255,9 @@ Terminal.prototype.scroll = function() {
     this.lines = this.lines.slice(-(this.ybase + this.rows) + 1);
   }
 
-  this.ydisp = this.ybase;
+  if (!this.userScrolling) {
+    this.ydisp = this.ybase;
+  }
 
   // last line
   row = this.ybase + this.rows - 1;
@@ -1275,7 +1279,9 @@ Terminal.prototype.scroll = function() {
   if (this.scrollTop !== 0) {
     if (this.ybase !== 0) {
       this.ybase--;
-      this.ydisp = this.ybase;
+      if (!this.userScrolling) {
+        this.ydisp = this.ybase;
+      }
     }
     this.lines.splice(this.ybase + this.scrollTop, 1);
   }
@@ -1284,6 +1290,12 @@ Terminal.prototype.scroll = function() {
   this.updateRange(this.scrollTop);
   this.updateRange(this.scrollBottom);
 
+  /**
+   * This event is emitted whenever the terminal is scrolled.
+   * The one parameter passed is the new y display position.
+   *
+   * @event scroll
+   */
   this.emit('scroll', this.ydisp);
 };
 
@@ -1295,6 +1307,12 @@ Terminal.prototype.scroll = function() {
  * viewport originally.
  */
 Terminal.prototype.scrollDisp = function(disp, suppressScrollEvent) {
+  if (disp < 0) {
+    this.userScrolling = true;
+  } else if (disp + this.ydisp >= this.ybase) {
+    this.userScrolling = false;
+  }
+
   this.ydisp += disp;
 
   if (this.ydisp > this.ybase) {
@@ -1341,12 +1359,6 @@ Terminal.prototype.write = function(data) {
 
   this.refreshStart = this.y;
   this.refreshEnd = this.y;
-
-  if (this.ybase !== this.ydisp) {
-    this.ydisp = this.ybase;
-    this.emit('scroll', this.ydisp);
-    this.maxRange();
-  }
 
   // apply leftover surrogate high from last write
   if (this.surrogate_high) {
@@ -2413,6 +2425,11 @@ Terminal.prototype.attachCustomKeydownHandler = function(customKeydownHandler) {
  * @param {KeyboardEvent} ev The keydown event to be handled.
  */
 Terminal.prototype.keyDown = function(ev) {
+  // Scroll down to prompt, whenever the user presses a key.
+  if (this.ybase !== this.ydisp) {
+    this.scrollToBottom();
+  }
+
   if (this.customKeydownHandler && this.customKeydownHandler(ev) === false) {
     return false;
   }
@@ -2712,7 +2729,7 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
           // ^] - group sep
           result.key = String.fromCharCode(29);
         }
-      } else if (!this.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) {
+      } else if (!this.browser.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) {
         // On Mac this is a third level shift. Use <Esc> instead.
         if (ev.keyCode >= 65 && ev.keyCode <= 90) {
           result.key = '\x1b' + String.fromCharCode(ev.keyCode + 32);
@@ -2965,7 +2982,7 @@ Terminal.prototype.updateRange = function(y) {
 };
 
 /**
- * Set the range of refreshing to the maximyum value
+ * Set the range of refreshing to the maximum value
  */
 Terminal.prototype.maxRange = function() {
   this.refreshStart = 0;
@@ -3138,6 +3155,12 @@ Terminal.prototype.handler = function(data) {
  * @param {string} title The title to populate in the event.
  */
 Terminal.prototype.handleTitle = function(title) {
+  /**
+   * This event is emitted when the title of the terminal is changed
+   * from inside the terminal. The parameter is the new title.
+   *
+   * @event title
+   */
   this.emit('title', title);
 };
 
@@ -4867,15 +4890,6 @@ Terminal.charsets.ISOLatin = null; // /A
  * Helpers
  */
 
-function contains(el, arr) {
-  for (var i = 0; i < arr.length; i += 1) {
-    if (el === arr[i]) {
-      return true;
-    }
-  }
-  return false;
-}
-
 function on(el, type, handler, capture) {
   if (!Array.isArray(el)) {
     el = [el];
@@ -4930,8 +4944,8 @@ function indexOf(obj, el) {
 
 function isThirdLevelShift(term, ev) {
   var thirdLevelKey =
-      (term.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
-      (term.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
+      (term.browser.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
+      (term.browser.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
 
   if (ev.type == 'keypress') {
     return thirdLevelKey;
