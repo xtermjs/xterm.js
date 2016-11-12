@@ -2,7 +2,7 @@ var glob = require('glob');
 var fs = require('fs');
 var pty = require('pty.js');
 var sleep = require('sleep');
-var Terminal = require('../src/xterm');
+var Terminal = require('../xterm');
 
 var CONSOLE_LOG = console.log;
 
@@ -80,9 +80,10 @@ describe('xterm output comparison', function() {
 
   // omit stack trace for escape sequence files
   Error.stackTraceLimit = 0;
-  var files = glob.sync('test/escape_sequence_files/*.in');
+  var files = glob.sync('**/escape_sequence_files/*.in');
   // only successful tests for now
   var successful = [0, 2, 6, 12, 13, 18, 20, 22, 27, 28];
+  console.log(files);
   for (var a in successful) {
     var i = successful[a];
     (function(filename){

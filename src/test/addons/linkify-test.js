@@ -1,5 +1,5 @@
 var assert = require('chai').assert;
-var Terminal = require('../../dist/xterm');
+var Terminal = require('../../xterm');
 var linkify = require('../../addons/linkify/linkify');
 
 describe('linkify addon', function () {
