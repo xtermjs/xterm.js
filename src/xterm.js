@@ -630,6 +630,11 @@ Terminal.prototype.open = function(parent) {
     Terminal.brokenBold = isBoldBroken(this.document);
   }
 
+  /**
+   * This event is emitted when terminal has completed opening.
+   *
+   * @event open
+   */
   this.emit('open');
 };
 
