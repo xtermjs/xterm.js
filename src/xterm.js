@@ -1290,6 +1290,12 @@ Terminal.prototype.scroll = function() {
   this.updateRange(this.scrollTop);
   this.updateRange(this.scrollBottom);
 
+  /**
+   * This event is emitted whenever the terminal is scrolled.
+   * The one parameter passed is the new y display position.
+   *
+   * @event scroll
+   */
   this.emit('scroll', this.ydisp);
 };
 
