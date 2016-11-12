@@ -3144,6 +3144,12 @@ Terminal.prototype.handler = function(data) {
  * @param {string} title The title to populate in the event.
  */
 Terminal.prototype.handleTitle = function(title) {
+  /**
+   * This event is emitted when the title of the terminal is changed
+   * from inside the terminal. The parameter is the new title.
+   *
+   * @event title
+   */
   this.emit('title', title);
 };
 
