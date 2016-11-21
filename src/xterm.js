@@ -2425,13 +2425,13 @@ Terminal.prototype.attachCustomKeydownHandler = function(customKeydownHandler) {
  * @param {KeyboardEvent} ev The keydown event to be handled.
  */
 Terminal.prototype.keyDown = function(ev) {
+  if (this.customKeydownHandler && this.customKeydownHandler(ev) === false) {
+    return false;
+  }
+
   // Scroll down to prompt, whenever the user presses a key.
   if (this.ybase !== this.ydisp) {
     this.scrollToBottom();
-  }
-
-  if (this.customKeydownHandler && this.customKeydownHandler(ev) === false) {
-    return false;
   }
 
   if (!this.compositionHelper.keydown.bind(this.compositionHelper)(ev)) {
