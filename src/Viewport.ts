@@ -13,7 +13,6 @@ import { ITerminal } from './Interfaces';
  * @param charMeasureElement A DOM element used to measure the character size of. the terminal.
  */
 export class Viewport {
-
   private currentRowHeight: number;
   private lastRecordedBufferLength: number;
   private lastRecordedViewportHeight: number;

@@ -1,21 +1,21 @@
-var assert = require('chai').assert;
-var Terminal = require('../xterm');
+import { assert } from 'chai';
+import { Viewport } from './Viewport';
 
-describe('Viewport', function () {
+describe('Viewport', () => {
   var terminal;
   var viewportElement;
   var charMeasureElement;
   var viewport;
   var scrollAreaElement;
 
-  var CHARACTER_HEIGHT = 10;
+  const CHARACTER_HEIGHT = 10;
 
-  beforeEach(function () {
+  beforeEach(() => {
     terminal = {
       lines: [],
       rows: 0,
       ydisp: 0,
-      on: function () {},
+      on: () => {},
       rowContainer: {
         style: {
           lineHeight: 0
@@ -23,7 +23,7 @@ describe('Viewport', function () {
       }
     };
     viewportElement = {
-      addEventListener: function () {},
+      addEventListener: () => {},
       style: {
         height: 0,
         lineHeight: 0
@@ -35,37 +35,31 @@ describe('Viewport', function () {
       }
     };
     charMeasureElement = {
-      getBoundingClientRect: function () {
+      getBoundingClientRect: () => {
         return { width: null, height: CHARACTER_HEIGHT };
       }
     };
-    viewport = new Terminal.Viewport(terminal, viewportElement, scrollAreaElement, charMeasureElement);
+    viewport = new Viewport(terminal, viewportElement, scrollAreaElement, charMeasureElement);
   });
 
-  describe('Public API', function () {
-    it('should define Viewport.prototype.onWheel', function () {
-      assert.isDefined(Terminal.Viewport.prototype.onWheel);
-    });
-  });
-
-  describe('refresh', function () {
-    it('should set the line-height of the terminal', function () {
+  describe('refresh', () => {
+    it('should set the line-height of the terminal', () => {
       assert.equal(viewportElement.style.lineHeight, CHARACTER_HEIGHT + 'px');
       assert.equal(terminal.rowContainer.style.lineHeight, CHARACTER_HEIGHT + 'px');
-      charMeasureElement.getBoundingClientRect = function () {
+      charMeasureElement.getBoundingClientRect = () => {
         return { width: null, height: 1 };
       };
       viewport.refresh();
       assert.equal(viewportElement.style.lineHeight, '1px');
       assert.equal(terminal.rowContainer.style.lineHeight, '1px');
     });
-    it('should set the height of the viewport when the line-height changed', function () {
+    it('should set the height of the viewport when the line-height changed', () => {
       terminal.lines.push('');
       terminal.lines.push('');
       terminal.rows = 1;
       viewport.refresh();
       assert.equal(viewportElement.style.height, 1 * CHARACTER_HEIGHT + 'px');
-      charMeasureElement.getBoundingClientRect = function () {
+      charMeasureElement.getBoundingClientRect = () => {
         return { width: null, height: 20 };
       };
       viewport.refresh();
@@ -73,8 +67,8 @@ describe('Viewport', function () {
     });
   });
 
-  describe('syncScrollArea', function () {
-    it('should sync the scroll area', function () {
+  describe('syncScrollArea', () => {
+    it('should sync the scroll area', () => {
       terminal.lines.push('');
       terminal.rows = 1;
       assert.equal(scrollAreaElement.style.height, 0 * CHARACTER_HEIGHT + 'px');
