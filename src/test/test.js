@@ -194,7 +194,7 @@ describe('xterm.js', function() {
         terminal.ydisp = 0;
         terminal.ybase = 40;
 
-        terminal.keyDown();
+        terminal.keyDown({ keyCode: 0 });
 
         // Ensure that now the terminal is scrolled to bottom
         assert.equal(terminal.ydisp, terminal.ybase);
