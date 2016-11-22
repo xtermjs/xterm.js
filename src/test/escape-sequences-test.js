@@ -2,7 +2,7 @@ var glob = require('glob');
 var fs = require('fs');
 var pty = require('pty.js');
 var sleep = require('sleep');
-var Terminal = require('../xterm');
+var Terminal = require('../Terminal');
 
 var CONSOLE_LOG = console.log;
 

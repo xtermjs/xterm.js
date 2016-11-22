@@ -1,6 +1,6 @@
 var assert = require('chai').assert;
 var expect = require('chai').expect;
-var Terminal = require('../xterm');
+var Terminal = require('../Terminal');
 
 describe('xterm.js', function() {
   var xterm;
