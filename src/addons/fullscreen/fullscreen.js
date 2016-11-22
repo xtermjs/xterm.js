@@ -15,12 +15,12 @@
     /*
      * CommonJS environment
      */
-    module.exports = fullscreen(require('../../xterm'));
+    module.exports = fullscreen(require('../../Terminal'));
   } else if (typeof define == 'function') {
     /*
      * Require.js is available
      */
-    define(['../../xterm'], fullscreen);
+    define(['../../Terminal'], fullscreen);
   } else {
     /*
      * Plain browser environment

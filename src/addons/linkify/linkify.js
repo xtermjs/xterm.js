@@ -3,12 +3,12 @@
     /*
      * CommonJS environment
      */
-    module.exports = linkify(require('../../xterm'));
+    module.exports = linkify(require('../../Terminal'));
   } else if (typeof define == 'function') {
     /*
      * Require.js is available
      */
-    define(['../../xterm'], linkify);
+    define(['../../Terminal'], linkify);
   } else {
     /*
      * Plain browser environment

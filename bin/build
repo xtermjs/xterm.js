@@ -4,7 +4,7 @@
 tsc
 
 # Concat all xterm.js files into a single file and output as a UMD to dist/xterm.js
-browserify ./out/xterm.js --standalone Terminal --debug --outfile ./dist/xterm.js
+browserify ./out/Terminal.js --standalone Terminal --debug --outfile ./dist/xterm.js
 cat ./dist/xterm.js | exorcist ./dist/xterm.js.map -b ./dist > ./dist/xterm.temp.js
 rm ./dist/xterm.js
 mv ./dist/xterm.temp.js ./dist/xterm.js
