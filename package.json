@@ -10,6 +10,8 @@
   "repository": "https://github.com/sourcelair/xterm.js",
   "license": "MIT",
   "devDependencies": {
+    "@types/chai": "^3.4.34",
+    "@types/mocha": "^2.2.33",
     "@types/node": "^6.0.41",
     "browserify": "^13.1.0",
     "chai": "3.5.0",
