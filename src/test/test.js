@@ -11,6 +11,9 @@ describe('xterm.js', function() {
     xterm.viewport = {
       syncScrollArea: function(){}
     };
+    xterm.compositionHelper = {
+      keydown: function(){ return true; }
+    };
   });
 
   describe('getOption', function() {
@@ -184,20 +187,40 @@ describe('xterm.js', function() {
 
     describe('keyDown', function () {
       it('should scroll down, when a key is pressed and terminal is scrolled up', function () {
-        var terminal = new Terminal();
+        // Override evaluateKeyEscapeSequence to return cancel code
+        xterm.evaluateKeyEscapeSequence = function() {
+          return { cancel: true };
+        };
+        var event = {
+          type: 'keydown',
+          keyCode: 0,
+          preventDefault: function(){},
+          stopPropagation: function(){}
+        };
 
-        // Do not process the keyDown event, to avoid side-effects
-        terminal.attachCustomKeydownHandler(function () {
+        xterm.ydisp = 0;
+        xterm.ybase = 40;
+        xterm.keyDown(event);
+
+        // Ensure that now the terminal is scrolled to bottom
+        assert.equal(xterm.ydisp, xterm.ybase);
+      });
+
+      it('should not scroll down, when a custom keydown handler prevents the event', function () {
+        // Add some output to the terminal
+        for (var i = 0; i < xterm.rows * 3; i++) {
+          xterm.writeln('test');
+        }
+        var startYDisp = (xterm.rows * 2) + 1;
+        xterm.attachCustomKeydownHandler(function () {
           return false;
         });
 
-        terminal.ydisp = 0;
-        terminal.ybase = 40;
-
-        terminal.keyDown({ keyCode: 0 });
-
-        // Ensure that now the terminal is scrolled to bottom
-        assert.equal(terminal.ydisp, terminal.ybase);
+        assert.equal(xterm.ydisp, startYDisp);
+        xterm.scrollDisp(-1);
+        assert.equal(xterm.ydisp, startYDisp - 1);
+        xterm.keyDown({ keyCode: 0 });
+        assert.equal(xterm.ydisp, startYDisp - 1);
       });
     });
   });
