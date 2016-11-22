@@ -10,6 +10,11 @@ interface IPosition {
   end: number;
 }
 
+/**
+ * Encapsulates the logic for handling compositionstart, compositionupdate and compositionend
+ * events, displaying the in-progress composition to the UI and forwarding the final composition
+ * to the handler.
+ */
 export class CompositionHelper {
   /**
    * Whether input composition is currently happening, eg. via a mobile keyboard, speech input or
@@ -29,9 +34,7 @@ export class CompositionHelper {
   private isSendingComposition: boolean;
 
   /**
-   * Encapsulates the logic for handling compositionstart, compositionupdate and compositionend
-   * events, displaying the in-progress composition to the UI and forwarding the final composition
-   * to the handler.
+   * Creates a new CompositionHelper.
    * @param textarea The textarea that xterm uses for input.
    * @param compositionView The element to display the in-progress composition in.
    * @param terminal The Terminal to forward the finished composition to.
