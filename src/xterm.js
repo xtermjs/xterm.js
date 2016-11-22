@@ -36,6 +36,7 @@ import { EventEmitter } from './EventEmitter.js';
 import { Viewport } from './Viewport.js';
 import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard.js';
 import * as Browser from './utils/Browser';
+import * as Keyboard from './utils/Keyboard';
 
 /**
  * Terminal Emulation References:
@@ -2430,7 +2431,7 @@ Terminal.prototype.keyDown = function(ev) {
   }
 
   // Scroll down to prompt, whenever the user presses a key.
-  if (this.ybase !== this.ydisp) {
+  if (!Keyboard.isModifierOnlyKeyboardEvent(ev) && this.ybase !== this.ydisp) {
     this.scrollToBottom();
   }
 

@@ -193,6 +193,7 @@ describe('xterm.js', function() {
         };
         var event = {
           type: 'keydown',
+          keyCode: 0,
           preventDefault: function(){},
           stopPropagation: function(){}
         };
@@ -218,7 +219,7 @@ describe('xterm.js', function() {
         assert.equal(xterm.ydisp, startYDisp);
         xterm.scrollDisp(-1);
         assert.equal(xterm.ydisp, startYDisp - 1);
-        xterm.keyDown();
+        xterm.keyDown({ keyCode: 0 });
         assert.equal(xterm.ydisp, startYDisp - 1);
       });
     });
