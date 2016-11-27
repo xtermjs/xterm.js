@@ -78,4 +78,54 @@ describe('CircularList', () => {
       assert.equal(list.length, 2);
     });
   });
+
+  describe('splice', () => {
+    it('should delete items', () => {
+      const list = new CircularList<string>(2);
+      list.push('1');
+      list.push('2');
+      list.splice(0, 1);
+      assert.equal(list.length, 1);
+      assert.equal(list.get(0), '2');
+      list.push('3');
+      list.splice(1, 1);
+      assert.equal(list.length, 1);
+      assert.equal(list.get(0), '2');
+    });
+
+    it('should insert items', () => {
+      const list = new CircularList<string>(2);
+      list.push('1');
+      list.splice(0, 0, '2');
+      assert.equal(list.length, 2);
+      assert.equal(list.get(0), '2');
+      assert.equal(list.get(1), '1');
+      list.splice(1, 0, '3');
+      assert.equal(list.length, 2);
+      assert.equal(list.get(0), '3');
+      assert.equal(list.get(1), '1');
+    });
+
+    it('should delete items then insert items', () => {
+      const list = new CircularList<string>(3);
+      list.push('1');
+      list.push('2');
+      list.splice(0, 1, '3', '4');
+      assert.equal(list.length, 3);
+      assert.equal(list.get(0), '3');
+      assert.equal(list.get(1), '4');
+      assert.equal(list.get(2), '2');
+    });
+
+    it('should wrap the array correctly when more items are inserted than deleted', () => {
+      const list = new CircularList<string>(3);
+      list.push('1');
+      list.push('2');
+      list.splice(1, 0, '3', '4');
+      assert.equal(list.length, 3);
+      assert.equal(list.get(0), '3');
+      assert.equal(list.get(1), '4');
+      assert.equal(list.get(2), '2');
+    });
+  });
 });

@@ -89,6 +89,35 @@ export class CircularList<T> {
     }
   }
 
+  public pop(): T {
+    return this._array[this._getCyclicIndex(this._length-- - 1)];
+  }
+
+  // TODO: Warn there's no error handling and that this is a slow operation
+  public splice(start: number, deleteCount: number, ...items: T[]) {
+    if (deleteCount) {
+      for (let i = start; i < this._length - deleteCount; i++) {
+        this._array[this._getCyclicIndex(i)] = this._array[this._getCyclicIndex(i + deleteCount)];
+      }
+      this._length -= deleteCount;
+    }
+    if (items && items.length) {
+      for (let i = this._length - 1; i >= start; i--) {
+        this._array[this._getCyclicIndex(i + items.length)] = this._array[this._getCyclicIndex(i)];
+      }
+      for (let i = 0; i < items.length; i++) {
+        this._array[this._getCyclicIndex(start + i)] = items[i];
+      }
+
+      if (this._length + items.length > this.maxLength) {
+        this._startIndex += (this._length + items.length) - this.maxLength;
+        this._length = this.maxLength;
+      } else {
+        this._length += items.length;
+      }
+    }
+  }
+
   private _getCyclicIndex(index: number): number {
     return (this._startIndex + index) % this.maxLength;
   }
