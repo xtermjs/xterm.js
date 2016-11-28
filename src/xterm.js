@@ -2430,12 +2430,10 @@ Terminal.prototype.keyDown = function(ev) {
     return false;
   }
 
-  // Scroll down to prompt, whenever the user presses a key.
-  if (!Keyboard.isModifierOnlyKeyboardEvent(ev) && this.ybase !== this.ydisp) {
-    this.scrollToBottom();
-  }
-
   if (!this.compositionHelper.keydown.bind(this.compositionHelper)(ev)) {
+    if (this.ybase !== this.ydisp) {
+      this.scrollToBottom();
+    }
     return false;
   }
 
@@ -2458,6 +2456,11 @@ Terminal.prototype.keyDown = function(ev) {
 
   if (!result.key) {
     return true;
+  }
+
+  // Scroll down to prompt, whenever the user presses a key.
+  if (this.ybase !== this.ydisp) {
+    this.scrollToBottom();
   }
 
   this.emit('keydown', ev);
