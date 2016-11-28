@@ -2724,10 +2724,13 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
           // delete
           result.key = String.fromCharCode(127);
         } else if (ev.keyCode === 219) {
-          // ^[ - escape
+          // ^[ - Control Sequence Introducer (CSI)
           result.key = String.fromCharCode(27);
+        } else if (ev.keyCode === 220) {
+          // ^\ - String Terminator (ST)
+          result.key = String.fromCharCode(28);
         } else if (ev.keyCode === 221) {
-          // ^] - group sep
+          // ^] - Operating System Command (OSC)
           result.key = String.fromCharCode(29);
         }
       } else if (!this.browser.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) {
