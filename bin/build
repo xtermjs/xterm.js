@@ -1,5 +1,8 @@
 #! /usr/bin/env bash
 
+# Clean out/* to prevent confusion if files were deleted in src/
+rm -rf out/*
+
 # Build all TypeScript files (including tests) to out/
 tsc
 
