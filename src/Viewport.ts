@@ -8,15 +8,19 @@ import { ITerminal } from './Interfaces';
 /**
  * Represents the viewport of a terminal, the visible area within the larger buffer of output.
  * Logic for the virtual scroll bar is included in this object.
- * @param viewportElement The DOM element acting as the viewport.
- * @param scrollArea The DOM element acting as the scroll area.
- * @param charMeasureElement A DOM element used to measure the character size of. the terminal.
  */
 export class Viewport {
   private currentRowHeight: number;
   private lastRecordedBufferLength: number;
   private lastRecordedViewportHeight: number;
 
+  /**
+   * Creates a new Viewport.
+   * @param terminal The terminal this viewport belongs to.
+   * @param viewportElement The DOM element acting as the viewport.
+   * @param scrollArea The DOM element acting as the scroll area.
+   * @param charMeasureElement A DOM element used to measure the character size of. the terminal.
+   */
   constructor(
     private terminal: ITerminal,
     private viewportElement: HTMLElement,
