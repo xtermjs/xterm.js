@@ -5135,7 +5135,6 @@ var wcwidth = (function(opts) {
  */
 
 Terminal.EventEmitter = EventEmitter;
-Terminal.CompositionHelper = CompositionHelper;
 Terminal.inherits = inherits;
 
 /**
