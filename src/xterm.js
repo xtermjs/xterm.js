@@ -2458,11 +2458,6 @@ Terminal.prototype.keyDown = function(ev) {
     return true;
   }
 
-  // Scroll down to prompt, whenever the user presses a key.
-  if (this.ybase !== this.ydisp) {
-    this.scrollToBottom();
-  }
-
   this.emit('keydown', ev);
   this.emit('key', result.key, ev);
   this.showCursor();
@@ -3153,6 +3148,10 @@ Terminal.prototype.is = function(term) {
  * @param {string} data The data to populate in the event.
  */
 Terminal.prototype.handler = function(data) {
+  // Input is being sent to the terminal, the terminal should focus the prompt.
+  if (this.ybase !== this.ydisp) {
+    this.scrollToBottom();
+  }
   this.emit('data', data);
 };
 
