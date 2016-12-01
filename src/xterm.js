@@ -3098,7 +3098,6 @@ Terminal.prototype.clear = function() {
   for (var i = 1; i < this.rows; i++) {
     this.lines.push(this.blankLine());
   }
-  this.lineCache = [this.lineCache.pop()] // only leave last line
   this.refresh(0, this.rows - 1);
   this.emit('scroll', this.ydisp);
 };
