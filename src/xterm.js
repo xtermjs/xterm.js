@@ -235,11 +235,6 @@ function Terminal(options) {
     this.lines.push(this.blankLine());
   }
 
-  /**
-   * An array of lines, corresponding to this.lines to cache characters in case of a resize
-   */
-  this.lineCache = this.lines.map(l => this.blankLine())
-
   this.tabs;
   this.setupStops();
 
@@ -2866,7 +2861,6 @@ Terminal.prototype.error = function() {
  * @param {number} x The number of columns to resize to.
  * @param {number} y The number of rows to resize to.
  */
-
 Terminal.prototype.resize = function(x, y) {
   var line
   , el
@@ -2889,18 +2883,14 @@ Terminal.prototype.resize = function(x, y) {
     i = this.lines.length;
     while (i--) {
       while (this.lines[i].length < x) {
-        this.lineCache[i] = this.lineCache[i] || []
-        const toAdd = this.lineCache[i].pop() || ch
-        this.lines[i].push(toAdd);
+        this.lines[i].push(ch);
       }
     }
   } else { // (j > x)
     i = this.lines.length;
     while (i--) {
       while (this.lines[i].length > x) {
-        const popped = this.lines[i].pop()
-        this.lineCache[i] = this.lineCache[i] || []
-        this.lineCache[i].push(popped)
+        this.lines[i].pop();
       }
     }
   }
