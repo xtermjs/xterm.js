@@ -1,6 +1,6 @@
 # xterm.js
 
-![xterm.js build status](https://api.travis-ci.org/sourcelair/xterm.js.svg) [![Gitter](https://badges.gitter.im/sourcelair/xterm.js.svg)](https://gitter.im/sourcelair/xterm.js?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![xterm.js build status](https://api.travis-ci.org/sourcelair/xterm.js.svg)](https://travis-ci.org/sourcelair/xterm.js) [![Gitter](https://badges.gitter.im/sourcelair/xterm.js.svg)](https://gitter.im/sourcelair/xterm.js?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 Xterm.js is a terminal front-end component written in JavaScript that works in the browser.
 
