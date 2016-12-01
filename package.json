@@ -20,7 +20,7 @@
     "express": "4.13.4",
     "express-ws": "2.0.0-rc.1",
     "glob": "^7.0.5",
-    "jsdoc": "3.4.0",
+    "jsdoc": "3.4.3",
     "mocha": "2.5.3",
     "nodemon": "1.10.2",
     "pty.js": "0.3.1",

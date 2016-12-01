@@ -1,12 +1,8 @@
 /**
- * xterm.js: xterm, in the browser
- * Copyright (c) 2016, SourceLair Private Company <www.sourcelair.com> (MIT License)
- */
-
-/**
- * Clipboard handler module. This module contains methods for handling all
- * clipboard-related events appropriately in the terminal.
+ * Clipboard handler module: exports methods for handling all clipboard-related events in the
+ * terminal.
  * @module xterm/handlers/Clipboard
+ * @license MIT
  */
 
 /**

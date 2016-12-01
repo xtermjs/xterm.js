@@ -1,14 +1,7 @@
-/*
+/**
  * Fullscreen addon for xterm.js
- *
- * Implements the toggleFullscreen function.
- *
- * If the `fullscreen` argument has been supplied, then
- * if it is true, the fullscreen mode gets turned on,
- * if it is false or null, the fullscreen mode gets turned off.
- *
- * If the `fullscreen` argument has not been supplied, the
- * fullscreen mode is being toggled.
+ * @module xterm/addons/fullscreen/fullscreen
+ * @license MIT
  */
 (function (fullscreen) {
   if (typeof exports === 'object' && typeof module === 'object') {
@@ -30,6 +23,11 @@
 })(function (Xterm) {
   var exports = {};
 
+  /**
+   * Toggle the given terminal's fullscreen mode.
+   * @param {Xterm} term - The terminal to toggle full screen mode
+   * @param {boolean} fullscreen - Toggle fullscreen on (true) or off (false)
+   */
   exports.toggleFullScreen = function (term, fullscreen) {
     var fn;
 
