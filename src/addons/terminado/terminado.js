@@ -1,9 +1,8 @@
-/*
- * Implements the attach method that
- * attaches the terminal to a Terminado WebSocket stream.
+/**
+ * This module provides methods for attaching a terminal to a terminado WebSocket stream.
  *
- * The bidirectional argument indicates, whether the terminal should
- * send data to the socket as well and is true, by default.
+ * @module xterm/addons/terminado/terminado
+ * @license MIT
  */
 
 (function (attach) {
@@ -26,12 +25,6 @@
 })(function (Xterm) {
   'use strict';
 
-  /**
-   * This module provides methods for attaching a terminal to a WebSocket
-   * stream.
-   *
-   * @module xterm/addons/attach/attach
-   */
   var exports = {};
 
   /**

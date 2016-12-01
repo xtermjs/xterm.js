@@ -1,12 +1,7 @@
 /**
- * xterm.js: xterm, in the browser
- * Copyright (c) 2016, SourceLair Private Company <www.sourcelair.com> (MIT License)
- */
-
-/**
- * Generic utilities module. This module contains generic methods that can be helpful at
- * different parts of the code base.
+ * Generic utilities module with methods that can be helpful at different parts of the code base.
  * @module xterm/utils/Generic
+ * @license MIT
  */
 
 /**

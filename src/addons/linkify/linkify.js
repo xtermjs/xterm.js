@@ -1,3 +1,9 @@
+/**
+ * Methods for turning URL subscrings in the terminal's content into links (`a` DOM elements).
+ * @module xterm/addons/linkify/linkify
+ * @license MIT
+ */
+
 (function (linkify) {
   if (typeof exports === 'object' && typeof module === 'object') {
     /*
@@ -18,12 +24,6 @@
 })(function (Xterm) {
   'use strict';
 
-  /**
-   * This module provides methods for convertings valid URL substrings
-   * into HTML anchor elements (links), inside a terminal view.
-   *
-   * @module xterm/addons/linkify/linkify
-   */
   var exports = {},
       protocolClause = '(https?:\\/\\/)',
       domainCharacterSet = '[\\da-z\\.-]+',
