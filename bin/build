@@ -5,6 +5,10 @@ set -e
 # $BUILD_DIR should default to "build"
 export BUILD_DIR=${BUILD_DIR:=build}
 
+# Create the build directory
+mkdir -p $BUILD_DIR
+
+
 # Clean out/* to prevent confusion if files were deleted in src/
 rm -rf out/*
 
