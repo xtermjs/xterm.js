@@ -3,7 +3,7 @@
 set -e
 
 # $BUILD_DIR should default to "build"
-export BUILD_DIR=${BUILD_DIR:=build}
+BUILD_DIR=${BUILD_DIR:=build}
 
 # Create the build directory
 mkdir -p $BUILD_DIR
