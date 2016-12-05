@@ -11,4 +11,4 @@ docs/
 npm-debug.log
 /.idea/
 .env
-dist/*
+build/
