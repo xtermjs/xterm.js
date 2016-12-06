@@ -54,13 +54,13 @@ Then open http://0.0.0.0:3000 in a web browser (use http://127.0.0.1:3000 if run
 
 ## Addons
 
-Addons are JavaScript modules that attach functions to the `Terminal` prototype to extend its functionality. There are a handful available in the main repository in the `addons` directory, you can even write your own (though they may break when the internals of xterm.js change across versions).
+Addons are JavaScript modules that attach functions to the `Terminal` prototype to extend its functionality. There are a handful available in the main repository in the `dist/addons` directory, you can even write your own (though they may break when the internals of xterm.js change across versions).
 
 To use an addon, just include the JavaScript file after xterm.js and before the `Terminal` object has been instantiated. The function should then be exposed on the `Terminal` object:
 
 ```html
 <script src="node_modules/dist/xterm.js"></script>
-<script src="node_modules/addons/fit/fit.js"></script>
+<script src="node_modules/dist/addons/fit/fit.js"></script>
 ```
 
 ```js
