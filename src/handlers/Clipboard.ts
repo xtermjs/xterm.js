@@ -5,6 +5,15 @@
  * @license MIT
  */
 
+import { ITerminal } from '../Interfaces';
+
+// We are extending the ClipboardEvent interface, since TypeScript has not declared the
+// clientX and clientY properties that we use.
+interface IClipboardEvent extends ClipboardEvent {
+  clientX: number;
+  clientY: number;
+}
+
 /**
  * Prepares text copied from terminal selection, to be saved in the clipboard by:
  *   1. stripping all trailing white spaces
@@ -12,14 +21,14 @@
  * @param {string} text The copied text that needs processing for storing in clipboard
  * @returns {string}
  */
-function prepareTextForClipboard(text) {
-  var space = String.fromCharCode(32),
+export function prepareTextForClipboard(text: string) {
+  let space = String.fromCharCode(32),
       nonBreakingSpace = String.fromCharCode(160),
       allNonBreakingSpaces = new RegExp(nonBreakingSpace, 'g'),
       processedText = text.split('\n').map(function (line) {
         // Strip all trailing white spaces and convert all non-breaking spaces
         // to regular spaces.
-        var processedLine = line.replace(/\s+$/g, '').replace(allNonBreakingSpaces, space);
+        let processedLine = line.replace(/\s+$/g, '').replace(allNonBreakingSpaces, space);
 
         return processedLine;
       }).join('\n');
@@ -31,12 +40,15 @@ function prepareTextForClipboard(text) {
  * Binds copy functionality to the given terminal.
  * @param {ClipboardEvent} ev The original copy event to be handled
  */
-function copyHandler(ev, term) {
-  var copiedText = window.getSelection().toString(),
+export function copyHandler(ev: IClipboardEvent, term: ITerminal) {
+  // We cast `window` to `any` type, because TypeScript has not declared the `clipboardData`
+  // property that we use below for Internet Explorer.
+  let w = <any>window,
+      copiedText = w.getSelection().toString(),
       text = prepareTextForClipboard(copiedText);
 
   if (term.browser.isMSIE) {
-    window.clipboardData.setData('Text', text);
+    w.clipboardData.setData('Text', text);
   } else {
     ev.clipboardData.setData('text/plain', text);
   }
@@ -49,23 +61,26 @@ function copyHandler(ev, term) {
  * @param {ClipboardEvent} ev The original paste event to be handled
  * @param {Terminal} term The terminal on which to apply the handled paste event
  */
-function pasteHandler(ev, term) {
+export function pasteHandler(ev: IClipboardEvent, term: ITerminal) {
   ev.stopPropagation();
 
-  var dispatchPaste = function(text) {
+  let w = <any>window,
+      text: string;
+
+  let dispatchPaste = function(text) {
     term.handler(text);
     term.textarea.value = '';
     return term.cancel(ev);
   };
 
   if (term.browser.isMSIE) {
-    if (window.clipboardData) {
-      var text = window.clipboardData.getData('Text');
+    if (w.clipboardData) {
+      text = w.clipboardData.getData('Text');
       dispatchPaste(text);
     }
   } else {
     if (ev.clipboardData) {
-      var text = ev.clipboardData.getData('text/plain');
+      text = ev.clipboardData.getData('text/plain');
       dispatchPaste(text);
     }
   }
@@ -84,16 +99,16 @@ function pasteHandler(ev, term) {
  * @param {ClipboardEvent} ev The original paste event to be handled
  * @param {Terminal} term The terminal on which to apply the handled paste event
  */
-function rightClickHandler(ev, term) {
-  var s = document.getSelection(),
+export function rightClickHandler(ev: IClipboardEvent, term: ITerminal) {
+  let s = document.getSelection(),
       selectedText = prepareTextForClipboard(s.toString()),
-      clickIsOnSelection = false;
+      clickIsOnSelection = false,
+      x = ev.clientX,
+      y = ev.clientY;
 
   if (s.rangeCount) {
-    var r = s.getRangeAt(0),
+    let r = s.getRangeAt(0),
         cr = r.getClientRects(),
-        x = ev.clientX,
-        y = ev.clientY,
         i, rect;
 
     for (i=0; i<cr.length; i++) {
@@ -123,7 +138,7 @@ function rightClickHandler(ev, term) {
     term.textarea.style.height = '20px';
     term.textarea.style.left = (x - 10) + 'px';
     term.textarea.style.top = (y - 10) + 'px';
-    term.textarea.style.zIndex = 1000;
+    term.textarea.style.zIndex = '1000';
     term.textarea.focus();
 
     // Reset the terminal textarea's styling
@@ -137,7 +152,3 @@ function rightClickHandler(ev, term) {
     }, 4);
   }
 }
-
-export {
-  prepareTextForClipboard, copyHandler, pasteHandler, rightClickHandler
-};
