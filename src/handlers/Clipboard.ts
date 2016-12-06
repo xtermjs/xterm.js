@@ -14,6 +14,15 @@ interface IClipboardEvent extends ClipboardEvent {
   clientY: number;
 }
 
+interface IWindow extends Window {
+  clipboardData?: {
+    getData(format: string): string;
+    setData(format: string, data: string);
+  };
+}
+
+declare var window: IWindow;
+
 /**
  * Prepares text copied from terminal selection, to be saved in the clipboard by:
  *   1. stripping all trailing white spaces
@@ -21,7 +30,7 @@ interface IClipboardEvent extends ClipboardEvent {
  * @param {string} text The copied text that needs processing for storing in clipboard
  * @returns {string}
  */
-export function prepareTextForClipboard(text: string) {
+export function prepareTextForClipboard(text: string): string {
   let space = String.fromCharCode(32),
       nonBreakingSpace = String.fromCharCode(160),
       allNonBreakingSpaces = new RegExp(nonBreakingSpace, 'g'),
@@ -43,12 +52,11 @@ export function prepareTextForClipboard(text: string) {
 export function copyHandler(ev: IClipboardEvent, term: ITerminal) {
   // We cast `window` to `any` type, because TypeScript has not declared the `clipboardData`
   // property that we use below for Internet Explorer.
-  let w = <any>window,
-      copiedText = w.getSelection().toString(),
+  let copiedText = window.getSelection().toString(),
       text = prepareTextForClipboard(copiedText);
 
   if (term.browser.isMSIE) {
-    w.clipboardData.setData('Text', text);
+    window.clipboardData.setData('Text', text);
   } else {
     ev.clipboardData.setData('text/plain', text);
   }
@@ -64,8 +72,7 @@ export function copyHandler(ev: IClipboardEvent, term: ITerminal) {
 export function pasteHandler(ev: IClipboardEvent, term: ITerminal) {
   ev.stopPropagation();
 
-  let w = <any>window,
-      text: string;
+  let text: string;
 
   let dispatchPaste = function(text) {
     term.handler(text);
@@ -74,8 +81,8 @@ export function pasteHandler(ev: IClipboardEvent, term: ITerminal) {
   };
 
   if (term.browser.isMSIE) {
-    if (w.clipboardData) {
-      text = w.clipboardData.getData('Text');
+    if (window.clipboardData) {
+      text = window.clipboardData.getData('Text');
       dispatchPaste(text);
     }
   } else {
