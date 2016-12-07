@@ -822,4 +822,23 @@ describe('xterm.js', function() {
       expect(xterm.lines[0][79][1]).eql('');  // empty cell after fullwidth
     });
   });
+
+  describe.only('resize', function() {
+    it('reducing terminal width', function () {
+      console.log('xterm.cols', xterm.cols)
+      // TBD
+    })
+    it('increasing terminal width', function() {
+      // TBD
+    })
+    it('increasing terminal width after it was reduced', function() {
+      // TBD
+    })
+    it('reducing terminal width while scrolled up', function() {
+      // TBD
+    })
+    it('increasing terminal width while scrolled up', function() {
+      // TBD
+    })
+  })
 });
