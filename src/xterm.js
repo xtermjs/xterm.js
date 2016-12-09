@@ -785,7 +785,7 @@ Terminal.prototype.bindMouse = function() {
       pos.x -= 32;
       pos.y -= 32;
       self.send('\x1b[<'
-                + ((button & 3) === 3 ? button & ~3 : button)
+                + (((button & 3) === 3 ? button & ~3 : button) - 32)
                 + ';'
                 + pos.x
                 + ';'
