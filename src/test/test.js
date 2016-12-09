@@ -823,7 +823,7 @@ describe('xterm.js', function() {
     });
   });
 
-  describe('resize', function() {
+  describe.only('resize', function() {
     it('reducing terminal width wraps lines', function () {
       xterm.writeln(Array(80).join('1'))
       xterm.writeln(Array(80).join('2'))
@@ -854,6 +854,60 @@ describe('xterm.js', function() {
         .every(c => c === '2')
       ).eql(true)
     })
+    it('reducing terminal width wraps lines to more than one line if needed', function () {
+      xterm.writeln(Array(80).join('1'))
+      xterm.writeln(Array(80).join('2'))
+      xterm.resize(20, xterm.rows)
+      expect(xterm.lines.length).eql(30)
+      expect(
+        xterm.lines[0]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '1')
+      ).eql(true)
+      expect(
+        xterm.lines[1]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '1')
+      ).eql(true)
+      expect(
+        xterm.lines[2]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '1')
+      ).eql(true)
+      expect(
+        xterm.lines[3]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '1')
+      ).eql(true)
+      expect(
+        xterm.lines[4]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '2')
+      ).eql(true)
+      expect(
+        xterm.lines[5]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '2')
+      ).eql(true)
+      expect(
+        xterm.lines[6]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '2')
+      ).eql(true)
+      expect(
+        xterm.lines[7]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '2')
+      ).eql(true)
+    })
     it('increasing terminal width', function() {
       xterm.writeln(Array(80).join('1'))
       xterm.writeln(Array(80).join('2'))
@@ -876,6 +930,25 @@ describe('xterm.js', function() {
       xterm.writeln(Array(80).join('1'))
       xterm.writeln(Array(80).join('2'))
       xterm.resize(50, xterm.rows)
+      xterm.resize(100, xterm.rows)
+      expect(xterm.lines.length).eql(24)
+      expect(
+        xterm.lines[0]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '1')
+      ).eql(true)
+      expect(
+        xterm.lines[1]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '2')
+      ).eql(true)
+    })
+    it('increasing terminal width after it was reduced and wrapped to multiple lines', function() {
+      xterm.writeln(Array(80).join('1'))
+      xterm.writeln(Array(80).join('2'))
+      xterm.resize(20, xterm.rows)
       xterm.resize(100, xterm.rows)
       expect(xterm.lines.length).eql(24)
       expect(
