@@ -2854,6 +2854,29 @@ function formLine (l, memo, index, memoIndex) {
   }
 }
 
+function padLine (line, x, defAttr) {
+  var ch = [defAttr, ' ', 1, 'pad']; // does xterm use the default attr?
+  while (line.length <= x) {
+    line.push(ch)
+  }
+  return line
+}
+
+function wrapLines (unwrappedLine, x, defAttr) {
+  return unwrappedLine.reduce((memo, e) => {
+    if (memo.length === 0) memo.push([])
+    if (memo[memo.length - 1].length >= x) memo.push([])
+    memo[memo.length - 1].push(e)
+    return memo
+  }, [])
+  .map((wrappedLine, index) => {
+    var line = index === 0
+      ? wrappedLine
+      : wrappedLine.map(c => c[3] ? c : c.concat('wrapped'))
+    return padLine(line, x, defAttr)
+  })
+}
+
 /**
  * Resizes the terminal.
  *
@@ -2889,47 +2912,19 @@ Terminal.prototype.resize = function(x, y) {
     }
     return memo
   }, [])
-  .map(l => {
-    // pad lines with empty char as needed
-    var ch = [this.defAttr, ' ', 1, 'pad']; // does xterm use the default attr?
-    while (l.length <= x) {
-      l.push(ch)
-    }
-    return l
-  })
+  .map(l => padLine(l, x, this.defAttr))
   .reduce((memo, l) => {
     // wrap lines up to x
-    var ch = [this.defAttr, ' ', 1, 'pad']; // does xterm use the default attr?
-    var textLine = l.map(c => c[1]).join('')
-    var lengthWithoutWhiteSpace = textLine.replace(/\s*$/g, '').length
-    if (lengthWithoutWhiteSpace > x) {
-      var lines = l.reduce((memo, e) => {
-        if (memo.length === 0) memo.push([])
-        if (memo[memo.length - 1].length >= x) memo.push([])
-        memo[memo.length - 1].push(e)
-        return memo
-      }, [])
-      .map(line => {
-        while (line.length <= x) {
-          line.push(ch)
-        }
-        return line
-      })
-      var firstLine = lines.shift()
-      memo.push(firstLine)
-      if (lines.length > 0) {
-        return memo
-        .concat(lines.map(l => l.map(c => c[3] === 'wrapped' ? c : c.concat('wrapped'))))
-      } else {
-        return memo
-      }
+    var lengthWithoutPadding = l.filter(c => !c[3] || c[3] !== 'pad')
+    .map(c => c[1])
+    .length
+    if (lengthWithoutPadding > x && l.some(c => c[1] !== ' ')) {
+      var lines = wrapLines(l, x, this.defAttr)
+      return memo.concat(lines)
     } else {
-      while (l.length > x) {
-        l.pop()
-      }
-      memo.push(l)
+      memo.push(l.filter(c => !c[3] || c[3] !== 'pad'))
+      return memo
     }
-    return memo
   }, [])
   // update scroll and y position if lines were added or removed
   var currentLineCount = this.lines.length
