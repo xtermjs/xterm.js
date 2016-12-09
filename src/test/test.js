@@ -997,5 +997,18 @@ describe('xterm.js', function() {
       expect(xterm.ydisp).eql(23)
       expect(xterm.lines.length).eql(51)
     })
+    it('line wrapping does not remove whitespace', function() {
+      for (var i = 0; i < 50; i += 1) {
+        xterm.writeln(Array(40).join('1 '))
+      }
+      var origFirstLine = xterm.lines[0].slice()
+      xterm.resize(49, xterm.rows)
+      xterm.resize(80, xterm.rows)
+      expect(
+        xterm.lines[0].map(c => c[1])
+      ).eql(
+        origFirstLine.map(c => c[1])
+      )
+    })
   })
 });
