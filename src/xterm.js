@@ -2954,6 +2954,10 @@ Terminal.prototype.resize = function(x, y) {
       } else {
         this.ybase -= removedLineCount
       }
+    } else {
+      this.ybase = 0
+      this.ydisp = 0
+      this.y -= removedLineCount
     }
   }
   this.cols = x;
