@@ -6,9 +6,12 @@
     "test",
     ".gitignore"
   ],
-  "main": "dist/xterm.js",
+  "main": "lib/xterm.js",
   "repository": "https://github.com/sourcelair/xterm.js",
   "license": "MIT",
+  "files": [
+    "lib"
+  ],
   "devDependencies": {
     "@types/chai": "^3.4.34",
     "@types/mocha": "^2.2.33",
@@ -30,8 +33,9 @@
   },
   "scripts": {
     "start": "nodemon --watch src --watch addons --watch demo --exec bash -c './bin/build && node demo/app'",
-    "test": "./bin/build && mocha --recursive ./out",
+    "test": "mocha --recursive ./lib",
     "build:docs": "jsdoc -c jsdoc.json",
-    "build": "./bin/build"
+    "build": "./bin/build",
+    "prepublish": "tsc --outDir lib"
   }
 }
