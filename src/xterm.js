@@ -2877,6 +2877,12 @@ function wrapLines (unwrappedLine, x, defAttr) {
   })
 }
 
+function removeWrappingFlags (line) {
+  return line
+    .filter(c => !c[3] || c[3] !== 'pad')
+    .map(c => [c[0], c[1], c[2]])
+}
+
 /**
  * Resizes the terminal.
  *
@@ -2906,9 +2912,9 @@ Terminal.prototype.resize = function(x, y) {
     // unwrap all lines
     var unwrappedLine = formLine(l, memo, index, memo.length - 1)
     if (unwrappedLine) {
-      memo[memo.length - 1] = unwrappedLine
+      memo[memo.length - 1] = removeWrappingFlags(unwrappedLine)
     } else {
-      memo.push(l)
+      memo.push(removeWrappingFlags(l))
     }
     return memo
   }, [])
