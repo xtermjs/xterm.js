@@ -823,22 +823,106 @@ describe('xterm.js', function() {
     });
   });
 
-  describe.only('resize', function() {
-    it('reducing terminal width', function () {
-      console.log('xterm.cols', xterm.cols)
-      // TBD
+  describe('resize', function() {
+    it('reducing terminal width wraps lines', function () {
+      xterm.writeln(Array(80).join('1'))
+      xterm.writeln(Array(80).join('2'))
+      xterm.resize(50, xterm.rows)
+      expect(xterm.lines.length).eql(26)
+      expect(
+        xterm.lines[0]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '1')
+      ).eql(true)
+      expect(
+        xterm.lines[1]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '1')
+      ).eql(true)
+      expect(
+        xterm.lines[2]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '2')
+      ).eql(true)
+      expect(
+        xterm.lines[3]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '2')
+      ).eql(true)
     })
     it('increasing terminal width', function() {
-      // TBD
+      xterm.writeln(Array(80).join('1'))
+      xterm.writeln(Array(80).join('2'))
+      xterm.resize(100, xterm.rows)
+      expect(xterm.lines.length).eql(24)
+      expect(
+        xterm.lines[0]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '1')
+      ).eql(true)
+      expect(
+        xterm.lines[1]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '2')
+      ).eql(true)
     })
     it('increasing terminal width after it was reduced', function() {
-      // TBD
+      xterm.writeln(Array(80).join('1'))
+      xterm.writeln(Array(80).join('2'))
+      xterm.resize(50, xterm.rows)
+      xterm.resize(100, xterm.rows)
+      expect(xterm.lines.length).eql(24)
+      expect(
+        xterm.lines[0]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '1')
+      ).eql(true)
+      expect(
+        xterm.lines[1]
+        .map(c => c[1])
+        .filter(c => c !== ' ')
+        .every(c => c === '2')
+      ).eql(true)
+    })
+    it('reducing terminal width keeps relative y position when adding lines', function() {
+      for (var i = 0; i < 24; i += 1) {
+        xterm.writeln(Array(80).join('a'))
+      }
+      xterm.resize(50, xterm.rows)
+      expect(xterm.y).eql(23)
+      expect(xterm.ybase).eql(25)
+      expect(xterm.ydisp).eql(25)
+      expect(xterm.lines.length).eql(49)
     })
     it('reducing terminal width while scrolled up', function() {
-      // TBD
+      for (var i = 0; i < 50; i += 1) {
+        xterm.writeln(Array(80).join('a'))
+      }
+      xterm.ydisp = 23
+      xterm.resize(50, xterm.rows)
+      expect(xterm.y).eql(23)
+      expect(xterm.ybase).eql(77)
+      expect(xterm.ydisp).eql(23)
+      expect(xterm.lines.length).eql(101)
     })
     it('increasing terminal width while scrolled up', function() {
-      // TBD
+      for (var i = 0; i < 50; i += 1) {
+        xterm.writeln(Array(80).join('a'))
+      }
+      xterm.resize(50, xterm.rows)
+      xterm.ydisp = 23
+      xterm.resize(100, xterm.rows)
+      expect(xterm.y).eql(23)
+      expect(xterm.ybase).eql(27)
+      expect(xterm.ydisp).eql(23)
+      expect(xterm.lines.length).eql(51)
     })
   })
 });
