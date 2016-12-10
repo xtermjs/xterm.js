@@ -34,7 +34,7 @@
   exports.proposeGeometry = function (term) {
     var parentElementStyle = window.getComputedStyle(term.element.parentElement),
         parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height')),
-        parentElementWidth = parseInt(parentElementStyle.getPropertyValue('width')),
+        parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')) - 17),
         elementStyle = window.getComputedStyle(term.element),
         elementPaddingVer = parseInt(elementStyle.getPropertyValue('padding-top')) + parseInt(elementStyle.getPropertyValue('padding-bottom')),
         elementPaddingHor = parseInt(elementStyle.getPropertyValue('padding-right')) + parseInt(elementStyle.getPropertyValue('padding-left')),
@@ -57,7 +57,7 @@
     subjectRow.innerHTML = contentBuffer;
 
     rows = parseInt(availableHeight / characterHeight);
-    cols = parseInt(availableWidth / characterWidth) - 1;
+    cols = parseInt(availableWidth / characterWidth);
 
     geometry = {cols: cols, rows: rows};
     return geometry;
