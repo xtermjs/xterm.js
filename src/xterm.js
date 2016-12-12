@@ -2955,9 +2955,11 @@ Terminal.prototype.resize = function(x, y) {
         this.ybase -= removedLineCount
       }
     } else {
+      // in this case, counting lines might be erroneous.
+      // we'd just like the cursor on the last non-blank line
       this.ybase = 0
       this.ydisp = 0
-      this.y -= removedLineCount
+      this.y = lastNonBlankLine(this.lines)
     }
   }
   this.cols = x;
