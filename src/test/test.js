@@ -823,7 +823,7 @@ describe('xterm.js', function() {
     });
   });
 
-  describe.only('resize', function() {
+  describe('resize', function() {
     it('reducing terminal width wraps lines', function () {
       xterm.writeln(Array(80).join('1'))
       xterm.writeln(Array(80).join('2'))
