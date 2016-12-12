@@ -2908,11 +2908,13 @@ Terminal.prototype.resize = function(x, y) {
   i = this.lines.length;
   var origLineCount = this.lines.length
   this.lines = this.lines
+  .map(l => unpadLine(l))
   .reduce((memo, l, index) => {
     // unwrap all lines
-    var unwrappedLine = formLine(l, memo, index, memo.length - 1)
-    if (unwrappedLine) {
-      memo[memo.length - 1] = removeWrappingFlags(unwrappedLine)
+    if (index === 0) {
+      memo.push(removeWrappingFlags(l))
+    } else if (l.some(c => c[3] && c[3] === 'wrapped')) {
+      memo[memo.length - 1] = memo[memo.length - 1].concat(removeWrappingFlags(l))
     } else {
       memo.push(removeWrappingFlags(l))
     }
@@ -2921,14 +2923,11 @@ Terminal.prototype.resize = function(x, y) {
   .map(l => padLine(l, x, this.defAttr))
   .reduce((memo, l) => {
     // wrap lines up to x
-    var lengthWithoutPadding = l.filter(c => !c[3] || c[3] !== 'pad')
-    .map(c => c[1])
-    .length
-    if (lengthWithoutPadding > x && l.some(c => c[1] !== ' ')) {
+    if (unpadLine(l).length > x && l.some(c => c[1] !== ' ')) {
       var lines = wrapLines(l, x, this.defAttr)
       return memo.concat(lines)
     } else {
-      memo.push(l.filter(c => !c[3] || c[3] !== 'pad'))
+      memo.push(l.slice(0, x))
       return memo
     }
   }, [])
