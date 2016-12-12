@@ -16,6 +16,7 @@ import { Viewport } from './Viewport.js';
 import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard.js';
 import * as Browser from './utils/Browser';
 import * as Keyboard from './utils/Keyboard';
+import { padLine, unpadLine, wrapLines, removeWrappingFlags, lastNonBlankLine } from './utils/LineWrap'
 
 /**
  * Terminal Emulation References:
@@ -2833,55 +2834,6 @@ Terminal.prototype.error = function() {
   var args = Array.prototype.slice.call(arguments);
   this.context.console.error.apply(this.context.console, args);
 };
-
-function formLine (l, memo, index, memoIndex) {
-  if (l.every(c => c[3] && c[3] === 'wrapped' || c[3] === 'pad') && index > 0) {
-    var prevLineTextWithoutWhiteSpace = memo[memo.length - 1]
-    .filter(c => !c[3] || c[3] !== 'pad')
-    .map(c => c[1])
-    .join('')
-    var prevLine = memo[memo.length - 1]
-    .slice(0, prevLineTextWithoutWhiteSpace.length)
-    .concat(l)
-    var nextLine = memo[memoIndex + 1]
-    if (nextLine && nextLine.every(c => c[3] && c[3] === 'wrapped' || c[3] === 'pad')) {
-      return prevLine.concat(formLine(nextLine, memo, index, memoIndex + 1))
-    } else {
-      return prevLine
-    }
-  } else {
-    return null
-  }
-}
-
-function padLine (line, x, defAttr) {
-  var ch = [defAttr, ' ', 1, 'pad']; // does xterm use the default attr?
-  while (line.length <= x) {
-    line.push(ch)
-  }
-  return line
-}
-
-function wrapLines (unwrappedLine, x, defAttr) {
-  return unwrappedLine.reduce((memo, e) => {
-    if (memo.length === 0) memo.push([])
-    if (memo[memo.length - 1].length >= x) memo.push([])
-    memo[memo.length - 1].push(e)
-    return memo
-  }, [])
-  .map((wrappedLine, index) => {
-    var line = index === 0
-      ? wrappedLine
-      : wrappedLine.map(c => c[3] ? c : c.concat('wrapped'))
-    return padLine(line, x, defAttr)
-  })
-}
-
-function removeWrappingFlags (line) {
-  return line
-    .filter(c => !c[3] || c[3] !== 'pad')
-    .map(c => [c[0], c[1], c[2]])
-}
 
 /**
  * Resizes the terminal.
