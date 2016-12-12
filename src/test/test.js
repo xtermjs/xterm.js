@@ -189,7 +189,7 @@ describe('xterm.js', function() {
       it('should scroll down, when a key is pressed and terminal is scrolled up', function () {
         // Override evaluateKeyEscapeSequence to return cancel code
         xterm.evaluateKeyEscapeSequence = function() {
-          return { cancel: true };
+          return { key: 'a' };
         };
         var event = {
           type: 'keydown',
@@ -200,6 +200,7 @@ describe('xterm.js', function() {
 
         xterm.ydisp = 0;
         xterm.ybase = 40;
+        assert.notEqual(xterm.ydisp, xterm.ybase);
         xterm.keyDown(event);
 
         // Ensure that now the terminal is scrolled to bottom

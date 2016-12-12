@@ -1,6 +1,6 @@
-var assert = require('chai').assert;
-var Terminal = require('../xterm');
-var Clipboard = require('../handlers/Clipboard');
+import { assert } from 'chai';
+import * as Terminal from '../xterm';
+import * as Clipboard from './Clipboard';
 
 
 describe('evaluateCopiedTextProcessing', function () {

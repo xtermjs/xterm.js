@@ -1,16 +1,16 @@
-/*
- *  Fit terminal columns and rows to the dimensions of its
- *  DOM element.
+/**
+ * Fit terminal columns and rows to the dimensions of its DOM element.
  *
- *  Approach:
- *    - Rows: Truncate the division of the terminal parent element height
- *            by the terminal row height
+ * ## Approach
+ * - Rows: Truncate the division of the terminal parent element height by the terminal row height.
  *
- *    - Columns: Truncate the division of the terminal parent element width by
- *               the terminal character width (apply display: inline at the
- *               terminal row and truncate its width with the current number
- *               of columns)
+ * - Columns: Truncate the division of the terminal parent element width by the terminal character
+ * width (apply display: inline at the terminal row and truncate its width with the current
+ * number of columns).
+ * @module xterm/addons/fit/fit
+ * @license MIT
  */
+
 (function (fit) {
   if (typeof exports === 'object' && typeof module === 'object') {
     /*
@@ -29,17 +29,12 @@
     fit(window.Terminal);
   }
 })(function (Xterm) {
-  /**
-   * This module provides methods for fitting a terminal's size to a parent container.
-   *
-   * @module xterm/addons/fit/fit
-   */
   var exports = {};
 
   exports.proposeGeometry = function (term) {
     var parentElementStyle = window.getComputedStyle(term.element.parentElement),
         parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height')),
-        parentElementWidth = parseInt(parentElementStyle.getPropertyValue('width')),
+        parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')) - 17),
         elementStyle = window.getComputedStyle(term.element),
         elementPaddingVer = parseInt(elementStyle.getPropertyValue('padding-top')) + parseInt(elementStyle.getPropertyValue('padding-bottom')),
         elementPaddingHor = parseInt(elementStyle.getPropertyValue('padding-right')) + parseInt(elementStyle.getPropertyValue('padding-left')),
@@ -62,7 +57,7 @@
     subjectRow.innerHTML = contentBuffer;
 
     rows = parseInt(availableHeight / characterHeight);
-    cols = parseInt(availableWidth / characterWidth) - 1;
+    cols = parseInt(availableWidth / characterWidth);
 
     geometry = {cols: cols, rows: rows};
     return geometry;

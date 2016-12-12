@@ -1,23 +1,35 @@
 #! /usr/bin/env bash
 
+set -e
+
+# $BUILD_DIR should default to "build"
+BUILD_DIR=${BUILD_DIR:=build}
+
+# Create the build directory
+mkdir -p $BUILD_DIR
+
+
+# Clean out/* to prevent confusion if files were deleted in src/
+rm -rf out/*
+
 # Build all TypeScript files (including tests) to out/
 tsc
 
-# Concat all xterm.js files into a single file and output as a UMD to dist/xterm.js
-browserify ./out/xterm.js --standalone Terminal --debug --outfile ./dist/xterm.js
-cat ./dist/xterm.js | exorcist ./dist/xterm.js.map -b ./dist > ./dist/xterm.temp.js
-rm ./dist/xterm.js
-mv ./dist/xterm.temp.js ./dist/xterm.js
+# Concat all xterm.js files into a single file and output as a UMD to $BUILD_DIR/xterm.js
+browserify ./out/xterm.js --standalone Terminal --debug --outfile ./$BUILD_DIR/xterm.js
+cat ./$BUILD_DIR/xterm.js | exorcist ./$BUILD_DIR/xterm.js.map -b ./$BUILD_DIR > ./$BUILD_DIR/xterm.temp.js
+rm ./$BUILD_DIR/xterm.js
+mv ./$BUILD_DIR/xterm.temp.js ./$BUILD_DIR/xterm.js
 
-# Resolve the chain of sourcemaps so that ./dist/xterm.js.map points at ./src
-sorcery -i dist/xterm.js
+# Resolve the chain of sourcemaps so that ./$BUILD_DIR/xterm.js.map points at ./src
+sorcery -i $BUILD_DIR/xterm.js
 
-# Copy all CSS files from src/ to dist/
+# Copy all CSS files from src/ to $BUILD_DIR/
 cd src
-find . -name '*.css' | cpio -pdm ../dist
+find . -name '*.css' | cpio -pdm ../$BUILD_DIR
 cd ..
 
-# Copy addons from out/ to dist/
+# Copy addons from out/ to $BUILD_DIR/
 cd out/addons
-find . -name '*.js' | cpio -pdm ../../dist/addons
+find . -name '*.js' | cpio -pdm ../../$BUILD_DIR/addons
 cd ../..

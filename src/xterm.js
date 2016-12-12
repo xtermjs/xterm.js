@@ -1,27 +1,5 @@
 /**
  * xterm.js: xterm, in the browser
- * Copyright (c) 2014-2014, SourceLair Private Company <www.sourcelair.com> (MIT License)
- * Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)
- * https://github.com/chjj/term.js
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- *
  * Originally forked from (with the author's permission):
  *   Fabrice Bellard's javascript vt100 for jslinux:
  *   http://bellard.org/jslinux/
@@ -29,6 +7,7 @@
  *   The original design remains. The terminal itself
  *   has been extended to include xterm CSI codes, among
  *   other features.
+ * @license MIT
  */
 
 import { CompositionHelper } from './CompositionHelper.js';
@@ -807,7 +786,7 @@ Terminal.prototype.bindMouse = function() {
       pos.x -= 32;
       pos.y -= 32;
       self.send('\x1b[<'
-                + ((button & 3) === 3 ? button & ~3 : button)
+                + (((button & 3) === 3 ? button & ~3 : button) - 32)
                 + ';'
                 + pos.x
                 + ';'
@@ -2430,12 +2409,10 @@ Terminal.prototype.keyDown = function(ev) {
     return false;
   }
 
-  // Scroll down to prompt, whenever the user presses a key.
-  if (!Keyboard.isModifierOnlyKeyboardEvent(ev) && this.ybase !== this.ydisp) {
-    this.scrollToBottom();
-  }
-
   if (!this.compositionHelper.keydown.bind(this.compositionHelper)(ev)) {
+    if (this.ybase !== this.ydisp) {
+      this.scrollToBottom();
+    }
     return false;
   }
 
@@ -2724,10 +2701,13 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
           // delete
           result.key = String.fromCharCode(127);
         } else if (ev.keyCode === 219) {
-          // ^[ - escape
+          // ^[ - Control Sequence Introducer (CSI)
           result.key = String.fromCharCode(27);
+        } else if (ev.keyCode === 220) {
+          // ^\ - String Terminator (ST)
+          result.key = String.fromCharCode(28);
         } else if (ev.keyCode === 221) {
-          // ^] - group sep
+          // ^] - Operating System Command (OSC)
           result.key = String.fromCharCode(29);
         }
       } else if (!this.browser.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) {
@@ -3148,6 +3128,10 @@ Terminal.prototype.is = function(term) {
  * @param {string} data The data to populate in the event.
  */
 Terminal.prototype.handler = function(data) {
+  // Input is being sent to the terminal, the terminal should focus the prompt.
+  if (this.ybase !== this.ydisp) {
+    this.scrollToBottom();
+  }
   this.emit('data', data);
 };
 
@@ -5130,8 +5114,6 @@ var wcwidth = (function(opts) {
  */
 
 Terminal.EventEmitter = EventEmitter;
-Terminal.CompositionHelper = CompositionHelper;
-Terminal.Viewport = Viewport;
 Terminal.inherits = inherits;
 
 /**
