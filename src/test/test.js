@@ -823,7 +823,7 @@ describe('xterm.js', function() {
     });
   });
 
-  describe('resize', function() {
+  describe.only('resize', function() {
     it('reducing terminal width wraps lines', function () {
       xterm.writeln(Array(80).join('1'))
       xterm.writeln(Array(80).join('2'))
@@ -931,7 +931,7 @@ describe('xterm.js', function() {
       xterm.writeln(Array(80).join('2'))
       xterm.resize(50, xterm.rows)
       xterm.resize(100, xterm.rows)
-      expect(xterm.y).eql(2)
+      expect(xterm.y).eql(1)
       expect(xterm.lines.length).eql(24)
       expect(
         xterm.lines[0]
