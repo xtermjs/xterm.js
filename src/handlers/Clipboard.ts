@@ -7,13 +7,6 @@
 
 import { ITerminal } from '../Interfaces';
 
-// We are extending the ClipboardEvent interface, since TypeScript has not declared the
-// clientX and clientY properties that we use.
-interface IClipboardEvent extends ClipboardEvent {
-  clientX: number;
-  clientY: number;
-}
-
 interface IWindow extends Window {
   clipboardData?: {
     getData(format: string): string;
@@ -49,7 +42,7 @@ export function prepareTextForClipboard(text: string): string {
  * Binds copy functionality to the given terminal.
  * @param {ClipboardEvent} ev The original copy event to be handled
  */
-export function copyHandler(ev: IClipboardEvent, term: ITerminal) {
+export function copyHandler(ev: ClipboardEvent, term: ITerminal) {
   // We cast `window` to `any` type, because TypeScript has not declared the `clipboardData`
   // property that we use below for Internet Explorer.
   let copiedText = window.getSelection().toString(),
@@ -69,7 +62,7 @@ export function copyHandler(ev: IClipboardEvent, term: ITerminal) {
  * @param {ClipboardEvent} ev The original paste event to be handled
  * @param {Terminal} term The terminal on which to apply the handled paste event
  */
-export function pasteHandler(ev: IClipboardEvent, term: ITerminal) {
+export function pasteHandler(ev: ClipboardEvent, term: ITerminal) {
   ev.stopPropagation();
 
   let text: string;
@@ -103,10 +96,10 @@ export function pasteHandler(ev: IClipboardEvent, term: ITerminal) {
  * area, then bring the terminal's input below the cursor, in order to
  * trigger the event on the textarea and allow-right click paste, without
  * caring about disappearing selection.
- * @param {ClipboardEvent} ev The original paste event to be handled
+ * @param {MouseEvent} ev The original right click event to be handled
  * @param {Terminal} term The terminal on which to apply the handled paste event
  */
-export function rightClickHandler(ev: IClipboardEvent, term: ITerminal) {
+export function rightClickHandler(ev: MouseEvent, term: ITerminal) {
   let s = document.getSelection(),
       selectedText = prepareTextForClipboard(s.toString()),
       clickIsOnSelection = false,
