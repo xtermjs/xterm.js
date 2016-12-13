@@ -36,6 +36,6 @@
     "test": "mocha --recursive ./lib",
     "build:docs": "jsdoc -c jsdoc.json",
     "build": "./bin/build",
-    "prepublish": "tsc --outDir lib"
+    "prepublish": "tsc"
   }
 }

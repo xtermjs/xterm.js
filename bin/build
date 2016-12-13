@@ -9,14 +9,14 @@ BUILD_DIR=${BUILD_DIR:=build}
 mkdir -p $BUILD_DIR
 
 
-# Clean out/* to prevent confusion if files were deleted in src/
-rm -rf out/*
+# Clean lib/* to prevent confusion if files were deleted in src/
+rm -rf lib/*
 
-# Build all TypeScript files (including tests) to out/
+# Build all TypeScript files (including tests) to lib/
 tsc
 
 # Concat all xterm.js files into a single file and output as a UMD to $BUILD_DIR/xterm.js
-browserify ./out/xterm.js --standalone Terminal --debug --outfile ./$BUILD_DIR/xterm.js
+browserify ./lib/xterm.js --standalone Terminal --debug --outfile ./$BUILD_DIR/xterm.js
 cat ./$BUILD_DIR/xterm.js | exorcist ./$BUILD_DIR/xterm.js.map -b ./$BUILD_DIR > ./$BUILD_DIR/xterm.temp.js
 rm ./$BUILD_DIR/xterm.js
 mv ./$BUILD_DIR/xterm.temp.js ./$BUILD_DIR/xterm.js
@@ -29,7 +29,7 @@ cd src
 find . -name '*.css' | cpio -pdm ../$BUILD_DIR
 cd ..
 
-# Copy addons from out/ to $BUILD_DIR/
-cd out/addons
+# Copy addons from lib/ to $BUILD_DIR/
+cd lib/addons
 find . -name '*.js' | cpio -pdm ../../$BUILD_DIR/addons
 cd ../..
