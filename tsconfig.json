@@ -4,7 +4,7 @@
     "target": "es5",
     "rootDir": "src",
     "allowJs": true,
-    "outDir": "out",
+    "outDir": "lib",
     "sourceMap": true
   },
   "exclude": [
