@@ -3063,7 +3063,7 @@ Terminal.prototype.clear = function() {
     // Don't clear if it's already clear
     return;
   }
-  this.lines = new Lines([this.lines[this.ybase + this.y]]);
+  this.lines = new Lines([this.lines.get(this.ybase + this.y)]);
   this.ydisp = 0;
   this.ybase = 0;
   this.y = 0;
