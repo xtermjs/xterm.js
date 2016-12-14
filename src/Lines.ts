@@ -24,6 +24,10 @@ export class Lines {
     return this.data[index] = value;
   }
 
+  pop() {
+    return this.data.pop();
+  }
+
   push(line: Line) {
     return this.data.push(line);
   }
