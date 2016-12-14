@@ -433,6 +433,9 @@ Terminal.prototype.initGlobal = function() {
   on(this.textarea, 'paste', function (ev) {
     pasteHandler.call(this, ev, term);
   });
+  on(this.element, 'paste', function (ev) {
+    pasteHandler.call(this, ev, term);
+  });
 
   function rightClickHandlerWrapper (ev) {
     rightClickHandler.call(this, ev, term);
