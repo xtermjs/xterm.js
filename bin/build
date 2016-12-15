@@ -24,9 +24,10 @@ mv ./$BUILD_DIR/xterm.temp.js ./$BUILD_DIR/xterm.js
 # Resolve the chain of sourcemaps so that ./$BUILD_DIR/xterm.js.map points at ./src
 sorcery -i $BUILD_DIR/xterm.js
 
-# Copy all CSS files from src/ to $BUILD_DIR/
+# Copy all CSS files from src/ to $BUILD_DIR/ and lib/
 cd src
 find . -name '*.css' | cpio -pdm ../$BUILD_DIR
+find . -name '*.css' | cpio -pdm ../lib
 cd ..
 
 # Copy addons from lib/ to $BUILD_DIR/
