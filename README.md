@@ -51,28 +51,7 @@ npm start
 ```
 
 Then open http://0.0.0.0:3000 in a web browser (use http://127.0.0.1:3000 if running under Windows).
-
-## Getting Started
-
-To attact the xterm `Terminal` to a parent div
-
-```html
-<div id="terminal"></div>
-```
-
-```js
-var term = new Terminal();
-term.open(document.getElementById('#terminal'));
-term.write('Hello from \033[1;3;31mxterm.js\033[0m $ ')
-```
-To get the data from xterm to send to a server or for proccessing you can
-
-```js
-function onDataReceived(data) {
-   // Your logic
-}
-term.on('data', onDataReceived);
-```
+`
 
 ## Addons
 
