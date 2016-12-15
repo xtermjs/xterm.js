@@ -29,10 +29,12 @@
     "pty.js": "0.3.1",
     "sleep": "^3.0.1",
     "sorcery": "^0.10.0",
+    "tslint": "^4.0.2",
     "typescript": "^2.0.3"
   },
   "scripts": {
     "start": "nodemon --watch src --watch addons --watch demo --exec bash -c './bin/build && node demo/app'",
+    "lint": "tslint src/**/*.ts",
     "test": "mocha --recursive ./lib",
     "build:docs": "jsdoc -c jsdoc.json",
     "build": "./bin/build",
