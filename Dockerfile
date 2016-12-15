@@ -10,8 +10,8 @@ RUN apt-get update \
 WORKDIR /usr/src/app
 
 # Set an entrypoint, to automatically install node modules
-COPY entrypoint.sh /entrypoint.sh
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/bin/bash", "-c", "if [[ ! -d node_modules ]]; then npm install; fi; exec \"$@\";"]
+CMD ["npm", "run", "dev"]
 
 # First, install dependencies to improve layer caching
 COPY package.json /usr/src/app/
@@ -22,4 +22,3 @@ COPY . /usr/src/app
 
 # Run the tests and build, to make sure everything is working nicely
 RUN npm run test && npm run build
-CMD ["npm", "run", "dev"]
