@@ -70,6 +70,28 @@ var xterm = new Terminal();
 xterm.fit();
 ```
 
+To use xterm.js with electron use the addon `attach-electron` and pass the `ipcRendered` EventEmitter and the `channel` name as parameters
+the default channel is set as `xterm`. It can be used exactly like the `attach` addon.
+```html
+<script src="node_modules/dist/addons/attach-electron/attach-electron.js"></script>
+```
+```js
+// For attaching the event emitter with default channel 'xterm'
+xterm.attach(ipcRenderer)
+
+// For detaching the event emitter with default channel 'xterm'
+xterm.detach(ipcRenderer)
+
+//or
+
+// For attaching the event emitter with own channel
+xterm.attach(ipcRenderer,'myevent')
+
+// For detaching the event emitter with own channel
+xterm.detach(ipcRenderer,'myevent')
+
+```
+
 ## Releases
 
 Xterm.js follows a monthly release cycle roughly.
