@@ -1,0 +1,5 @@
+{
+  "name": "xterm.attach-electron",
+  "main": "attach-electron.js",
+  "private": true
+}
