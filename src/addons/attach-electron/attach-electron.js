@@ -59,11 +59,11 @@
       }
     };
 
-    term._getMessage = function (ev) {
+    term._getMessage = function (ev, arg) {
       if (buffered) {
-        term._pushToBuffer(ev.data);
+        term._pushToBuffer(arg);
       } else {
-        term.write(ev.data);
+        term.write(arg);
       }
     };
 
