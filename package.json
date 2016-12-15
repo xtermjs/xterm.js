@@ -1,6 +1,6 @@
 {
   "name": "xterm",
-  "version": "2.2.2",
+  "version": "2.2.3",
   "ignore": [
     "demo",
     "test",
