@@ -108,11 +108,11 @@ export function rightClickHandler(ev: MouseEvent, term: ITerminal) {
 
   if (s.rangeCount) {
     let r = s.getRangeAt(0),
-        cr = r.getClientRects(),
-        i, rect;
+        cr = r.getClientRects();
 
-    for (i=0; i<cr.length; i++) {
-      rect = cr[i];
+    for (let i = 0; i < cr.length; i++) {
+      let rect = cr[i];
+
       clickIsOnSelection = (
         (x > rect.left) && (x < rect.right) &&
         (y > rect.top) && (y < rect.bottom)

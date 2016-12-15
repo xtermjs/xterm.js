@@ -2,7 +2,11 @@ language: node_js
 node_js:
   - 6
 env:
-  - CXX=g++-4.8
+  global:
+    - CXX=g++-4.8
+  matrix:
+    - NPM_COMMAND=lint
+    - NPM_COMMAND=test
 addons:
   apt:
     sources:
@@ -11,3 +15,4 @@ addons:
       - g++-4.8
 notifications:
   email: false
+script: npm run $NPM_COMMAND

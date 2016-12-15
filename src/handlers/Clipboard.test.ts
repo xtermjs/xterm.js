@@ -5,7 +5,7 @@ import * as Clipboard from './Clipboard';
 
 describe('evaluateCopiedTextProcessing', function () {
   it('should strip trailing whitespaces and replace nbsps with spaces', function () {
-    var nonBreakingSpace = String.fromCharCode(160),
+    let nonBreakingSpace = String.fromCharCode(160),
         copiedText = 'echo' + nonBreakingSpace + 'hello' + nonBreakingSpace,
         processedText = Clipboard.prepareTextForClipboard(copiedText);
 
