@@ -57,6 +57,6 @@
     "test": "mocha --recursive ./lib",
     "build:docs": "jsdoc -c jsdoc.json",
     "build": "./bin/build",
-    "prepublish": "tsc"
+    "prepublish": "npm run build"
   }
 }
