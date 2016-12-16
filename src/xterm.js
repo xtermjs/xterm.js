@@ -2501,7 +2501,7 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
         // HACK: Make Alt + left-arrow behave like Ctrl + left-arrow: move one word backwards
         // http://unix.stackexchange.com/a/108106
         if (result.key == '\x1b[1;3D') {
-          result.key = '\x1b[1;5D';
+          result.key = '\x1bb';
         }
       } else if (this.applicationCursor) {
         result.key = '\x1bOD';
@@ -2516,7 +2516,7 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
         // HACK: Make Alt + right-arrow behave like Ctrl + right-arrow: move one word forward
         // http://unix.stackexchange.com/a/108106
         if (result.key == '\x1b[1;3C') {
-          result.key = '\x1b[1;5C';
+          result.key = '\x1bf';
         }
       } else if (this.applicationCursor) {
         result.key = '\x1bOC';
