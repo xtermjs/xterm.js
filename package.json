@@ -10,26 +10,12 @@
   "repository": "https://github.com/sourcelair/xterm.js",
   "license": "MIT",
   "files": [
-    "dist/*.css",
-    "dist/**/*.css",
-    "dist/*.js",
-    "dist/*.js.map",
-    "dist/**/*.js",
-    "dist/**/*.js.map",
     "lib/*.css",
     "lib/**/*.css",
     "lib/*.js",
     "lib/*.js.map",
     "lib/**/*.js",
-    "lib/**/*.js.map",
-    "src/*.css",
-    "src/**/*.css",
-    "src/*.js",
-    "src/*.js.map",
-    "src/*.ts",
-    "src/**/*.js",
-    "src/**/*.js.map",
-    "src/**/*.ts"
+    "lib/**/*.js.map"
   ],
   "devDependencies": {
     "@types/chai": "^3.4.34",
@@ -57,6 +43,6 @@
     "test": "mocha --recursive ./lib",
     "build:docs": "jsdoc -c jsdoc.json",
     "build": "./bin/build",
-    "prepublish": "tsc"
+    "prepublish": "npm run build"
   }
 }
