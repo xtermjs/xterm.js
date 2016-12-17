@@ -54,25 +54,25 @@ Then open http://0.0.0.0:3000 in a web browser (use http://127.0.0.1:3000 if run
 
 ## Getting Started
 
-To attact the xterm `Terminal` to a parent div
-
+To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to the head of your html page. Then create a `<div id="terminal"></div>` onto which xterm can attach itself.
 ```html
-<div id="terminal"></div>
+<!doctype html>
+  <html>
+    <head>
+      <link rel="stylesheet" href="bower_components/xterm.js/dist/xterm.css" />
+      <script src="bower_components/xterm.js/dist/xterm.js"></script>
+    </head>
+    <body>
+      <div id="terminal"></div>
+      <script>
+      	var term = new Terminal();
+        term.open(document.getElementById('#terminal'));
+        term.write('Hello from \033[1;3;31mxterm.js\033[0m $ ')
+      </script>
+    </body>
+  </html>
 ```
-
-```js
-var term = new Terminal();
-term.open(document.getElementById('#terminal'));
-term.write('Hello from \033[1;3;31mxterm.js\033[0m $ ')
-```
-To get the data from xterm to send to a server or for proccessing you can
-
-```js
-function onDataReceived(data) {
-   // Your logic
-}
-term.on('data', onDataReceived);
-```
+Finally instantiate the `Terminal` object and then call the `open` function with the DOM object of the `div`.  
 
 ## Addons
 
