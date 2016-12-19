@@ -286,14 +286,33 @@ describe('xterm.js', function() {
     it('should return \\x1b[5B for ctrl+down', function() {
       assert.equal(xterm.evaluateKeyEscapeSequence({ ctrlKey: true, keyCode: 40 }).key, '\x1b[1;5B'); // CSI 5 B
     });
-    // Evalueate alt + arrow key movement, which is a feature of terminal emulators but not VT100
-    // http://unix.stackexchange.com/a/108106
-    it('should return \\x1b[5D for alt+left', function() {
-      assert.equal(xterm.evaluateKeyEscapeSequence({ altKey: true, keyCode: 37 }).key, '\x1b[1;5D'); // CSI 5 D
+
+    describe('On non-macOS platforms', function() {
+      beforeEach(function() {
+        xterm.browser.isMac = false;
+      });
+      // Evalueate alt + arrow key movement, which is a feature of terminal emulators but not VT100
+      // http://unix.stackexchange.com/a/108106
+      it('should return \\x1b[5D for alt+left', function() {
+        assert.equal(xterm.evaluateKeyEscapeSequence({ altKey: true, keyCode: 37 }).key, '\x1b[1;5D'); // CSI 5 D
+      });
+      it('should return \\x1b[5C for alt+right', function() {
+        assert.equal(xterm.evaluateKeyEscapeSequence({ altKey: true, keyCode: 39 }).key, '\x1b[1;5C'); // CSI 5 C
+      });
     });
-    it('should return \\x1b[5C for alt+right', function() {
-      assert.equal(xterm.evaluateKeyEscapeSequence({ altKey: true, keyCode: 39 }).key, '\x1b[1;5C'); // CSI 5 C
+
+    describe('On macOS platforms', function() {
+      beforeEach(function() {
+        xterm.browser.isMac = true;
+      });
+      it('should return \\x1bb for alt+left', function() {
+        assert.equal(xterm.evaluateKeyEscapeSequence({ altKey: true, keyCode: 37 }).key, '\x1bb'); // CSI 5 D
+      });
+      it('should return \\x1bf for alt+right', function() {
+        assert.equal(xterm.evaluateKeyEscapeSequence({ altKey: true, keyCode: 39 }).key, '\x1bf'); // CSI 5 C
+      });
     });
+
     it('should return \\x1b[5A for alt+up', function() {
       assert.equal(xterm.evaluateKeyEscapeSequence({ altKey: true, keyCode: 38 }).key, '\x1b[1;5A'); // CSI 5 A
     });

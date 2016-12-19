@@ -2500,8 +2500,9 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
         result.key = '\x1b[1;' + (modifiers + 1) + 'D';
         // HACK: Make Alt + left-arrow behave like Ctrl + left-arrow: move one word backwards
         // http://unix.stackexchange.com/a/108106
+        // macOS uses different escape sequences than linux
         if (result.key == '\x1b[1;3D') {
-          result.key = '\x1b[1;5D';
+          result.key = (this.browser.isMac) ? '\x1bb' : '\x1b[1;5D';
         }
       } else if (this.applicationCursor) {
         result.key = '\x1bOD';
@@ -2515,8 +2516,9 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
         result.key = '\x1b[1;' + (modifiers + 1) + 'C';
         // HACK: Make Alt + right-arrow behave like Ctrl + right-arrow: move one word forward
         // http://unix.stackexchange.com/a/108106
+        // macOS uses different escape sequences than linux
         if (result.key == '\x1b[1;3C') {
-          result.key = '\x1b[1;5C';
+          result.key = (this.browser.isMac) ? '\x1bf' : '\x1b[1;5C';
         }
       } else if (this.applicationCursor) {
         result.key = '\x1bOC';
