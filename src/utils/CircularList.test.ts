@@ -156,4 +156,100 @@ describe('CircularList', () => {
       assert.equal(list.length, 0);
     });
   });
+
+  describe('shiftElements', () => {
+    it('should not mutate the list when count is 0', () => {
+      const list = new CircularList<number>(5);
+      list.push(1);
+      list.push(2);
+      list.shiftElements(0, 0, 1);
+      assert.equal(list.length, 2);
+      assert.equal(list.get(0), 1);
+      assert.equal(list.get(1), 2);
+    });
+
+    it('should throw for invalid args', () => {
+      const list = new CircularList<number>(5);
+      list.push(1);
+      assert.throws(() => list.shiftElements(-1, 1, 1), 'start argument out of range');
+      assert.throws(() => list.shiftElements(1, 1, 1), 'start argument out of range');
+      assert.throws(() => list.shiftElements(0, 1, -1), 'Cannot shift elements in list beyond index 0');
+    });
+
+    it('should shift an element forward', () => {
+      const list = new CircularList<number>(5);
+      list.push(1);
+      list.push(2);
+      list.shiftElements(0, 1, 1);
+      assert.equal(list.length, 2);
+      assert.equal(list.get(0), 1);
+      assert.equal(list.get(1), 1);
+    });
+
+    it('should shift elements forward', () => {
+      const list = new CircularList<number>(5);
+      list.push(1);
+      list.push(2);
+      list.push(3);
+      list.push(4);
+      list.shiftElements(0, 2, 2);
+      assert.equal(list.length, 4);
+      assert.equal(list.get(0), 1);
+      assert.equal(list.get(1), 2);
+      assert.equal(list.get(2), 1);
+      assert.equal(list.get(3), 2);
+    });
+
+    it('should shift elements forward, expanding the list if needed', () => {
+      const list = new CircularList<number>(5);
+      list.push(1);
+      list.push(2);
+      list.shiftElements(0, 2, 2);
+      assert.equal(list.length, 4);
+      assert.equal(list.get(0), 1);
+      assert.equal(list.get(1), 2);
+      assert.equal(list.get(2), 1);
+      assert.equal(list.get(3), 2);
+    });
+
+    it('should shift elements forward, wrapping the list if needed', () => {
+      const list = new CircularList<number>(5);
+      list.push(1);
+      list.push(2);
+      list.push(3);
+      list.push(4);
+      list.push(5);
+      list.shiftElements(2, 2, 3);
+      assert.equal(list.length, 5);
+      assert.equal(list.get(0), 3);
+      assert.equal(list.get(1), 4);
+      assert.equal(list.get(2), 5);
+      assert.equal(list.get(3), 3);
+      assert.equal(list.get(4), 4);
+    });
+
+    it('should shift an element backwards', () => {
+      const list = new CircularList<number>(5);
+      list.push(1);
+      list.push(2);
+      list.shiftElements(1, 1, -1);
+      assert.equal(list.length, 2);
+      assert.equal(list.get(0), 2);
+      assert.equal(list.get(1), 2);
+    });
+
+    it('should shift elements backwards', () => {
+      const list = new CircularList<number>(5);
+      list.push(1);
+      list.push(2);
+      list.push(3);
+      list.push(4);
+      list.shiftElements(2, 2, -2);
+      assert.equal(list.length, 4);
+      assert.equal(list.get(0), 3);
+      assert.equal(list.get(1), 4);
+      assert.equal(list.get(2), 3);
+      assert.equal(list.get(3), 4);
+    });
+  });
 });

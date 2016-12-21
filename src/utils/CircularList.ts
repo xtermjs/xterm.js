@@ -145,6 +145,36 @@ export class CircularList<T> {
     this._length -= count;
   }
 
+  public shiftElements(start: number, count: number, offset: number): void {
+    if (count <= 0) {
+      return;
+    }
+    if (start < 0 || start >= this._length) {
+      throw new Error('start argument out of range');
+    }
+    if (start + offset < 0) {
+      throw new Error('Cannot shift elements in list beyond index 0');
+    }
+
+    if (offset > 0) {
+      for (let i = count - 1; i >= 0; i--) {
+        this.set(start + i + offset, this.get(start + i));
+      }
+      const expandListBy = (start + count + offset) - this._length;
+      if (expandListBy > 0) {
+        this._length += expandListBy;
+        while (this._length > this.maxLength) {
+          this._length--;
+          this._startIndex++;
+        }
+      }
+    } else {
+      for (let i = 0; i < count; i++) {
+        this.set(start + i + offset, this.get(start + i));
+      }
+    }
+  }
+
   /**
    * Gets the cyclic index for the specified regular index. The cyclic index can then be used on the
    * backing array to get the element associated with the regular index.
