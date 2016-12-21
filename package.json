@@ -1,14 +1,36 @@
 {
   "name": "xterm",
-  "version": "2.2.1",
+  "version": "2.2.3",
   "ignore": [
     "demo",
     "test",
     ".gitignore"
   ],
-  "main": "dist/xterm.js",
+  "main": "lib/xterm.js",
   "repository": "https://github.com/sourcelair/xterm.js",
   "license": "MIT",
+  "files": [
+    "dist/*.css",
+    "dist/**/*.css",
+    "dist/*.js",
+    "dist/*.js.map",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "lib/*.css",
+    "lib/**/*.css",
+    "lib/*.js",
+    "lib/*.js.map",
+    "lib/**/*.js",
+    "lib/**/*.js.map",
+    "src/*.css",
+    "src/**/*.css",
+    "src/*.js",
+    "src/*.js.map",
+    "src/*.ts",
+    "src/**/*.js",
+    "src/**/*.js.map",
+    "src/**/*.ts"
+  ],
   "devDependencies": {
     "@types/chai": "^3.4.34",
     "@types/mocha": "^2.2.33",
@@ -26,12 +48,15 @@
     "pty.js": "0.3.1",
     "sleep": "^3.0.1",
     "sorcery": "^0.10.0",
+    "tslint": "^4.0.2",
     "typescript": "^2.0.3"
   },
   "scripts": {
     "start": "nodemon --watch src --watch addons --watch demo --exec bash -c './bin/build && node demo/app'",
-    "test": "./bin/build && mocha --recursive ./out",
+    "lint": "tslint src/**/*.ts",
+    "test": "mocha --recursive ./lib",
     "build:docs": "jsdoc -c jsdoc.json",
-    "build": "./bin/build"
+    "build": "./bin/build",
+    "prepublish": "npm run build"
   }
 }

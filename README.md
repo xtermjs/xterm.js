@@ -52,6 +52,28 @@ npm start
 
 Then open http://0.0.0.0:3000 in a web browser (use http://127.0.0.1:3000 if running under Windows).
 
+## Getting Started
+
+To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to the head of your html page. Then create a `<div id="terminal"></div>` onto which xterm can attach itself.
+```html
+<!doctype html>
+  <html>
+    <head>
+      <link rel="stylesheet" href="bower_components/xterm.js/dist/xterm.css" />
+      <script src="bower_components/xterm.js/dist/xterm.js"></script>
+    </head>
+    <body>
+      <div id="terminal"></div>
+      <script>
+      	var term = new Terminal();
+        term.open(document.getElementById('#terminal'));
+        term.write('Hello from \033[1;3;31mxterm.js\033[0m $ ')
+      </script>
+    </body>
+  </html>
+```
+Finally instantiate the `Terminal` object and then call the `open` function with the DOM object of the `div`.  
+
 ## Addons
 
 Addons are JavaScript modules that attach functions to the `Terminal` prototype to extend its functionality. There are a handful available in the main repository in the `dist/addons` directory, you can even write your own (though they may break when the internals of xterm.js change across versions).

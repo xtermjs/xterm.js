@@ -451,15 +451,15 @@ exports.pasteHandler = pasteHandler;
  * area, then bring the terminal's input below the cursor, in order to
  * trigger the event on the textarea and allow-right click paste, without
  * caring about disappearing selection.
- * @param {ClipboardEvent} ev The original paste event to be handled
+ * @param {MouseEvent} ev The original right click event to be handled
  * @param {Terminal} term The terminal on which to apply the handled paste event
  */
 function rightClickHandler(ev, term) {
     var s = document.getSelection(), selectedText = prepareTextForClipboard(s.toString()), clickIsOnSelection = false, x = ev.clientX, y = ev.clientY;
     if (s.rangeCount) {
-        var r = s.getRangeAt(0), cr = r.getClientRects(), i = void 0, rect = void 0;
-        for (i = 0; i < cr.length; i++) {
-            rect = cr[i];
+        var r = s.getRangeAt(0), cr = r.getClientRects();
+        for (var i = 0; i < cr.length; i++) {
+            var rect = cr[i];
             clickIsOnSelection = ((x > rect.left) && (x < rect.right) &&
                 (y > rect.top) && (y < rect.bottom));
             if (clickIsOnSelection) {
@@ -894,6 +894,9 @@ Terminal.prototype.initGlobal = function () {
     on(this.textarea, 'paste', function (ev) {
         Clipboard_js_1.pasteHandler.call(this, ev, term);
     });
+    on(this.element, 'paste', function (ev) {
+        Clipboard_js_1.pasteHandler.call(this, ev, term);
+    });
     function rightClickHandlerWrapper(ev) {
         Clipboard_js_1.rightClickHandler.call(this, ev, term);
     }
@@ -1211,7 +1214,7 @@ Terminal.prototype.bindMouse = function () {
             pos.x -= 32;
             pos.y -= 32;
             self.send('\x1b[<'
-                + ((button & 3) === 3 ? button & ~3 : button)
+                + (((button & 3) === 3 ? button & ~3 : button) - 32)
                 + ';'
                 + pos.x
                 + ';'
