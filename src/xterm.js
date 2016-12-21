@@ -3174,17 +3174,8 @@ Terminal.prototype.reverseIndex = function() {
     // possibly move the code below to term.reverseScroll();
     // test: echo -ne '\e[1;1H\e[44m\eM\e[0m'
     // blankLine(true) is xterm/linux behavior
-    if (this.lines.length === this.lines.maxLength) {
-      // Trim the start of lines to make room for the new temporary row
-      // TODO: This section could be optimized by introducing a CircularList function that inserts,
-      //       deletes and shifts elements to accomplish this task.
-      this.lines.trimStart(1);
-      this.ybase -= 1;
-      this.ydisp -= 1;
-    }
-    this.lines.splice(this.y + this.ybase, 0, this.blankLine(true));
-    j = this.rows - 1 - this.scrollBottom;
-    this.lines.splice(this.rows - 1 + this.ybase - j + 1, 1);
+    this.lines.shiftElements(this.y + this.ybase, this.rows - 1, 1);
+    this.lines.set(this.y + this.ybase, this.blankLine(true));
     this.updateRange(this.scrollTop);
     this.updateRange(this.scrollBottom);
   } else {
