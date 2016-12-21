@@ -128,4 +128,32 @@ describe('CircularList', () => {
       assert.equal(list.get(2), '2');
     });
   });
+
+  describe('trimStart', () => {
+    it('should remove items from the beginning of the list', () => {
+      const list = new CircularList<string>(5);
+      list.push('1');
+      list.push('2');
+      list.push('3');
+      list.push('4');
+      list.push('5');
+      list.trimStart(1);
+      assert.equal(list.length, 4);
+      assert.deepEqual(list.get(0), '2');
+      assert.deepEqual(list.get(1), '3');
+      assert.deepEqual(list.get(2), '4');
+      assert.deepEqual(list.get(3), '5');
+      list.trimStart(2);
+      assert.equal(list.length, 2);
+      assert.deepEqual(list.get(0), '4');
+      assert.deepEqual(list.get(1), '5');
+    });
+
+    it('should remove all items if the requested trim amount is larger than the list\'s length', () => {
+      const list = new CircularList<string>(5);
+      list.push('1');
+      list.trimStart(2);
+      assert.equal(list.length, 0);
+    });
+  });
 });

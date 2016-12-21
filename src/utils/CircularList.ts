@@ -92,12 +92,23 @@ export class CircularList<T> {
     }
   }
 
+  /**
+   * Removes and returns the last value on the list.
+   * @return The popped value.
+   */
   public pop(): T {
-    // TODO: This isn't popping from the array, only returning
     return this._array[this._getCyclicIndex(this._length-- - 1)];
   }
 
-  // TODO: Warn there's no error handling and that this is a slow operation
+  /**
+   * Deletes and/or inserts items at a particular index (in that order). Unlike
+   * Array.prototype.splice, this operation does not return the deleted items as a new array in
+   * order to save creating a new array. Note that this operation may shift all values in the list
+   * in the worst case.
+   * @param start The index to delete and/or insert.
+   * @param deleteCount The number of elements to delete.
+   * @param items The items to insert.
+   */
   public splice(start: number, deleteCount: number, ...items: T[]): void {
     if (deleteCount) {
       for (let i = start; i < this._length - deleteCount; i++) {
@@ -122,13 +133,24 @@ export class CircularList<T> {
     }
   }
 
+  /**
+   * Trims a number of items from the start of the list.
+   * @param count The number of items to remove.
+   */
   public trimStart(count: number): void {
-    // TODO: Error handling
-    // TODO: Testing (if we need this)
+    if (count > this._length) {
+      count = this._length;
+    }
     this._startIndex += count;
-    this._length--;
+    this._length -= count;
   }
 
+  /**
+   * Gets the cyclic index for the specified regular index. The cyclic index can then be used on the
+   * backing array to get the element associated with the regular index.
+   * @param index The regular index.
+   * @returns The cyclic index.
+   */
   private _getCyclicIndex(index: number): number {
     return (this._startIndex + index) % this.maxLength;
   }
