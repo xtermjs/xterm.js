@@ -98,7 +98,7 @@ export class CircularList<T> {
   }
 
   // TODO: Warn there's no error handling and that this is a slow operation
-  public splice(start: number, deleteCount: number, ...items: T[]) {
+  public splice(start: number, deleteCount: number, ...items: T[]): void {
     if (deleteCount) {
       for (let i = start; i < this._length - deleteCount; i++) {
         this._array[this._getCyclicIndex(i)] = this._array[this._getCyclicIndex(i + deleteCount)];
