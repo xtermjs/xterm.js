@@ -93,11 +93,6 @@ export class CircularList<T> {
     return this._array[this._getCyclicIndex(this._length-- - 1)];
   }
 
-  public removeItemsFromStart(amount: number): void {
-    this._startIndex += this._length -amount;
-    this._length = amount;
-  }
-
   // TODO: Warn there's no error handling and that this is a slow operation
   public splice(start: number, deleteCount: number, ...items: T[]) {
     if (deleteCount) {

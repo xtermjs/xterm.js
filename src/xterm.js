@@ -1226,15 +1226,13 @@ Terminal.prototype.showCursor = function() {
 };
 
 /**
- * Scroll the terminal
+ * Scroll the terminal down 1 row, creating a blank line.
  */
 Terminal.prototype.scroll = function() {
   var row;
 
-  if (++this.ybase === this.scrollback) {
-    this.ybase = this.ybase / 2;
-    // TODO: Rely on the circular list instead of cutting it in half
-    this.lines.removeItemsFromStart(this.ybase + this.rows - 1);
+  if (this.lines.length < this.lines.maxLength) {
+    this.ybase++;
   }
 
   if (!this.userScrolling) {
@@ -1247,16 +1245,7 @@ Terminal.prototype.scroll = function() {
   // subtract the bottom scroll region
   row -= this.rows - 1 - this.scrollBottom;
 
-  if (row === this.lines.length) {
-    // potential optimization:
-    // pushing is faster than splicing
-    // when they amount to the same
-    // behavior.
-    this.lines.push(this.blankLine());
-  } else {
-    // add our new line
-    this.lines.splice(row, 0, this.blankLine());
-  }
+  this.lines.push(this.blankLine());
 
   if (this.scrollTop !== 0) {
     if (this.ybase !== 0) {
