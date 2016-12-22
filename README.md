@@ -115,6 +115,10 @@ Visit https://lair.io/sourcelair/xterm and follow the instructions. All developm
 
 [Download Visual Studio Code](http://code.visualstudio.com/Download), clone xterm.js and you are all set.
 
+#### [Katacoda](https://www.katacoda.com/)
+
+Katacoda is an Interactive Learning Platform for software developers, covering the latest Cloud Native technologies.
+
 ## License Agreement
 
 If you contribute code to this project, you are implicitly allowing your code to be distributed under the MIT license. You are also implicitly verifying that all code is your original work.
