@@ -87,21 +87,16 @@ describe('xterm output comparison', function() {
     var i = successful[a];
     (function(filename){
       it(filename.split('/').slice(-1)[0], function () {
-        console.log(filename);
         pty_reset();
-        console.log(1);
         var in_file = fs.readFileSync(filename, 'utf8');
         var from_pty = pty_write_read(in_file);
-        console.log(2);
         // uncomment this to get log from terminal
         //console.log = function(){};
         xterm.write(from_pty);
         var from_emulator = terminalToString(xterm);
-        console.log(3);
         console.log = CONSOLE_LOG;
         var expected = fs.readFileSync(filename.split('.')[0] + '.text', 'utf8');
         if (from_emulator != expected) {
-        console.log(4);
           // uncomment to get noisy output
           //throw new Error(formatError(in_file, from_emulator, expected));
           throw new Error('mismatch');
