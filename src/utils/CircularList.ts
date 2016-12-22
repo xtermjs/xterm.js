@@ -84,12 +84,16 @@ export class CircularList<T> {
     this._array[this._getCyclicIndex(this._length)] = value;
     if (this._length === this.maxLength) {
       this._startIndex++;
+      if (this._startIndex === this.maxLength) {
+        this._startIndex = 0;
+      }
     } else {
       this._length++;
     }
   }
 
   public pop(): T {
+    // TODO: This isn't popping from the array, only returning
     return this._array[this._getCyclicIndex(this._length-- - 1)];
   }
 
@@ -116,6 +120,13 @@ export class CircularList<T> {
         this._length += items.length;
       }
     }
+  }
+
+  public trimStart(count: number): void {
+    // TODO: Error handling
+    // TODO: Testing (if we need this)
+    this._startIndex += count;
+    this._length--;
   }
 
   private _getCyclicIndex(index: number): number {

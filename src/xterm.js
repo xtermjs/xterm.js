@@ -1238,6 +1238,7 @@ Terminal.prototype.scroll = function() {
     this.ybase++;
   }
 
+  // TODO: Why is this done twice?
   if (!this.userScrolling) {
     this.ydisp = this.ybase;
   }
@@ -3164,21 +3165,30 @@ Terminal.prototype.index = function() {
 
 /**
  * ESC M Reverse Index (RI is 0x8d).
+ *
+ * Move the cursor up one row, inserting a new blank line if necessary.
  */
 Terminal.prototype.reverseIndex = function() {
   var j;
-  this.y--;
-  if (this.y < this.scrollTop) {
-    this.y++;
+  if (this.y === this.scrollTop) {
     // possibly move the code below to term.reverseScroll();
     // test: echo -ne '\e[1;1H\e[44m\eM\e[0m'
     // blankLine(true) is xterm/linux behavior
+    if (this.lines.length === this.lines.maxLength) {
+      // Trim the start of lines to make room for the new temporary row
+      // TODO: This section could be optimized by introducing a CircularList function that inserts,
+      //       deletes and shifts elements to accomplish this task.
+      this.lines.trimStart(1);
+      this.ybase -= 1;
+      this.ydisp -= 1;
+    }
     this.lines.splice(this.y + this.ybase, 0, this.blankLine(true));
     j = this.rows - 1 - this.scrollBottom;
     this.lines.splice(this.rows - 1 + this.ybase - j + 1, 1);
-    // this.maxRange();
     this.updateRange(this.scrollTop);
     this.updateRange(this.scrollBottom);
+  } else {
+    this.y--;
   }
   this.state = normal;
 };
@@ -3695,6 +3705,14 @@ Terminal.prototype.insertLines = function(params) {
   j = this.rows - 1 + this.ybase - j + 1;
 
   while (param--) {
+    if (this.lines.length === this.lines.maxLength) {
+      // Trim the start of lines to make room for the new temporary row
+      // TODO: This section could be optimized by introducing a CircularList function that inserts,
+      //       deletes and shifts elements to accomplish this task.
+      this.lines.trimStart(1);
+      this.ybase -= 1;
+      this.ydisp -= 1;
+    }
     // test: echo -e '\e[44m\e[1L\e[0m'
     // blankLine(true) - xterm/linux behavior
     this.lines.splice(row, 0, this.blankLine(true));
@@ -3722,6 +3740,14 @@ Terminal.prototype.deleteLines = function(params) {
   j = this.rows - 1 + this.ybase - j;
 
   while (param--) {
+    if (this.lines.length === this.lines.maxLength) {
+      // Trim the start of lines to make room for the new temporary row
+      // TODO: This section could be optimized by introducing a CircularList function that inserts,
+      //       deletes and shifts elements to accomplish this task.
+      this.lines.trimStart(1);
+      this.ybase -= 1;
+      this.ydisp -= 1;
+    }
     // test: echo -e '\e[44m\e[1M\e[0m'
     // blankLine(true) - xterm/linux behavior
     this.lines.splice(j + 1, 0, this.blankLine(true));
@@ -3748,8 +3774,8 @@ Terminal.prototype.deleteChars = function(params) {
   ch = [this.eraseAttr(), ' ', 1]; // xterm
 
   while (param--) {
-    this.lines[row].splice(this.x, 1);
-    this.lines[row].push(ch);
+    this.lines.get(row).splice(this.x, 1);
+    this.lines.get(row).push(ch);
   }
 };
 
@@ -4774,8 +4800,8 @@ Terminal.prototype.insertColumns = function() {
 
   while (param--) {
     for (i = this.ybase; i < l; i++) {
-      this.lines[i].splice(this.x + 1, 0, ch);
-      this.lines[i].pop();
+      this.lines.get(i).splice(this.x + 1, 0, ch);
+      this.lines.get(i).pop();
     }
   }
 
@@ -4796,8 +4822,8 @@ Terminal.prototype.deleteColumns = function() {
 
   while (param--) {
     for (i = this.ybase; i < l; i++) {
-      this.lines[i].splice(this.x, 1);
-      this.lines[i].push(ch);
+      this.lines.get(i).splice(this.x, 1);
+      this.lines.get(i).push(ch);
     }
   }
 
