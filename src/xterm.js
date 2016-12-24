@@ -2870,13 +2870,6 @@ Terminal.prototype.resize = function(x, y) {
         this.lines[i].push(ch);
       }
     }
-  } else { // (j > x)
-    i = this.lines.length;
-    while (i--) {
-      while (this.lines[i].length > x) {
-        this.lines[i].pop();
-      }
-    }
   }
   this.setupStops(j);
   this.cols = x;
