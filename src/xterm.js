@@ -1249,7 +1249,13 @@ Terminal.prototype.scroll = function() {
   // subtract the bottom scroll region
   row -= this.rows - 1 - this.scrollBottom;
 
-  this.lines.push(this.blankLine());
+  if (row === this.lines.length) {
+    // Optimization: pushing is faster than splicing when they amount to the same behavior
+    this.lines.push(this.blankLine());
+  } else {
+    // add our new line
+    this.lines.splice(row, 0, this.blankLine());
+  }
 
   if (this.scrollTop !== 0) {
     if (this.ybase !== 0) {
