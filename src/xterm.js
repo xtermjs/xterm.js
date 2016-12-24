@@ -3086,7 +3086,7 @@ Terminal.prototype.eraseLine = function(y) {
 
 
 /**
- * Return the data array of a blank line/
+ * Return the data array of a blank line
  * @param {number} cur First bunch of data for each "blank" character.
  */
 Terminal.prototype.blankLine = function(cur) {
@@ -3706,12 +3706,11 @@ Terminal.prototype.insertLines = function(params) {
 
   while (param--) {
     if (this.lines.length === this.lines.maxLength) {
-      // Trim the start of lines to make room for the new temporary row
-      // TODO: This section could be optimized by introducing a CircularList function that inserts,
-      //       deletes and shifts elements to accomplish this task.
       this.lines.trimStart(1);
-      this.ybase -= 1;
-      this.ydisp -= 1;
+      this.ybase--;
+      this.ydisp--;
+      row--;
+      j--;
     }
     // test: echo -e '\e[44m\e[1L\e[0m'
     // blankLine(true) - xterm/linux behavior
