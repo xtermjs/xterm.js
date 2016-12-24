@@ -3706,6 +3706,7 @@ Terminal.prototype.insertLines = function(params) {
 
   while (param--) {
     if (this.lines.length === this.lines.maxLength) {
+      // Trim the start of lines to make room for the new line
       this.lines.trimStart(1);
       this.ybase--;
       this.ydisp--;
@@ -3740,9 +3741,7 @@ Terminal.prototype.deleteLines = function(params) {
 
   while (param--) {
     if (this.lines.length === this.lines.maxLength) {
-      // Trim the start of lines to make room for the new temporary row
-      // TODO: This section could be optimized by introducing a CircularList function that inserts,
-      //       deletes and shifts elements to accomplish this task.
+      // Trim the start of lines to make room for the new line
       this.lines.trimStart(1);
       this.ybase -= 1;
       this.ydisp -= 1;

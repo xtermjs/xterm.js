@@ -38,7 +38,6 @@ export class CircularList<T> {
   }
 
   public set length(newLength: number) {
-    // TODO: Is this auto fill is needed or can it be
     if (newLength > this._length) {
       for (let i = this._length; i < newLength; i++) {
         this._array[i] = undefined;
