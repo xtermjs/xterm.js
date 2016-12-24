@@ -1234,9 +1234,7 @@ Terminal.prototype.showCursor = function() {
 Terminal.prototype.scroll = function() {
   var row;
 
-  if (this.lines.length < this.lines.maxLength) {
-    this.ybase++;
-  }
+  this.ybase++;
 
   // TODO: Why is this done twice?
   if (!this.userScrolling) {
@@ -1250,6 +1248,11 @@ Terminal.prototype.scroll = function() {
   row -= this.rows - 1 - this.scrollBottom;
 
   if (row === this.lines.length) {
+    // Compensate ybase and ydisp if lines has hit the maximum buffer size
+    if (this.lines.length === this.lines.maxLength) {
+      this.ybase--;
+      this.ydisp--;
+    }
     // Optimization: pushing is faster than splicing when they amount to the same behavior
     this.lines.push(this.blankLine());
   } else {
