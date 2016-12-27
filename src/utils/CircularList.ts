@@ -1,11 +1,8 @@
 /**
- * xterm.js: xterm, in the browser
- * Copyright (c) 2016, SourceLair Private Company <www.sourcelair.com> (MIT License)
- */
-
-/**
  * Represents a circular list; a list with a maximum size that wraps around when push is called,
  * overriding values at the start of the list.
+ * @module xterm/utils/CircularList
+ * @license MIT
  */
 export class CircularList<T> {
   private _array: T[];
