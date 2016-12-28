@@ -1077,6 +1077,7 @@ Terminal.prototype.refresh = function(start, end, queue) {
   }
 
   for (; y <= end; y++) {
+    console.log('this.ydisp: ' + this.ydisp);
     row = y + this.ydisp;
 
     line = this.lines.get(row);
@@ -1251,7 +1252,9 @@ Terminal.prototype.scroll = function() {
     // Compensate ybase and ydisp if lines has hit the maximum buffer size
     if (this.lines.length === this.lines.maxLength) {
       this.ybase--;
-      this.ydisp--;
+      if (this.ydisp !== 0) {
+        this.ydisp--;
+      }
     }
     // Optimization: pushing is faster than splicing when they amount to the same behavior
     this.lines.push(this.blankLine());
