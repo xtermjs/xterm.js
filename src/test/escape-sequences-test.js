@@ -59,7 +59,7 @@ function terminalToString(term) {
   for (var line=0; line<term.rows; ++line) {
     line_s = '';
     for (var cell=0; cell<term.cols; ++cell) {
-      line_s += term.lines[line][cell][1];
+      line_s += term.lines.get(line)[cell][1];
     }
     // rtrim empty cells as xterm does
     line_s = line_s.replace(/\s+$/, '');
@@ -83,7 +83,6 @@ describe('xterm output comparison', function() {
   var files = glob.sync('**/escape_sequence_files/*.in');
   // only successful tests for now
   var successful = [0, 2, 6, 12, 13, 18, 20, 22, 27, 28];
-  console.log(files);
   for (var a in successful) {
     var i = successful[a];
     (function(filename){
@@ -92,7 +91,7 @@ describe('xterm output comparison', function() {
         var in_file = fs.readFileSync(filename, 'utf8');
         var from_pty = pty_write_read(in_file);
         // uncomment this to get log from terminal
-        console.log = function(){};
+        //console.log = function(){};
         xterm.write(from_pty);
         var from_emulator = terminalToString(xterm);
         console.log = CONSOLE_LOG;

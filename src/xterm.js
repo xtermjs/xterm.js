@@ -14,6 +14,7 @@ import { CompositionHelper } from './CompositionHelper.js';
 import { EventEmitter } from './EventEmitter.js';
 import { Viewport } from './Viewport.js';
 import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard.js';
+import { CircularList } from './utils/CircularList.js';
 import * as Browser from './utils/Browser';
 import * as Keyboard from './utils/Keyboard';
 
@@ -208,7 +209,7 @@ function Terminal(options) {
    * An array of all lines in the entire buffer, including the prompt. The lines are array of
    * characters which are 2-length arrays where [0] is an attribute and [1] is the character.
    */
-  this.lines = [];
+  this.lines = new CircularList(this.scrollback);
   var i = this.rows;
   while (i--) {
     this.lines.push(this.blankLine());
@@ -1078,7 +1079,7 @@ Terminal.prototype.refresh = function(start, end, queue) {
   for (; y <= end; y++) {
     row = y + this.ydisp;
 
-    line = this.lines[row];
+    line = this.lines.get(row);
     out = '';
 
     if (this.y === y - (this.ybase - this.ydisp)
@@ -1228,16 +1229,14 @@ Terminal.prototype.showCursor = function() {
 };
 
 /**
- * Scroll the terminal
+ * Scroll the terminal down 1 row, creating a blank line.
  */
 Terminal.prototype.scroll = function() {
   var row;
 
-  if (++this.ybase === this.scrollback) {
-    this.ybase = this.ybase / 2 | 0;
-    this.lines = this.lines.slice(-(this.ybase + this.rows) + 1);
-  }
+  this.ybase++;
 
+  // TODO: Why is this done twice?
   if (!this.userScrolling) {
     this.ydisp = this.ybase;
   }
@@ -1249,10 +1248,12 @@ Terminal.prototype.scroll = function() {
   row -= this.rows - 1 - this.scrollBottom;
 
   if (row === this.lines.length) {
-    // potential optimization:
-    // pushing is faster than splicing
-    // when they amount to the same
-    // behavior.
+    // Compensate ybase and ydisp if lines has hit the maximum buffer size
+    if (this.lines.length === this.lines.maxLength) {
+      this.ybase--;
+      this.ydisp--;
+    }
+    // Optimization: pushing is faster than splicing when they amount to the same behavior
     this.lines.push(this.blankLine());
   } else {
     // add our new line
@@ -1370,7 +1371,6 @@ Terminal.prototype.write = function(data) {
     // surrogate low - already handled above
     if (0xDC00 <= code && code <= 0xDFFF)
       continue;
-
     switch (this.state) {
       case normal:
         switch (ch) {
@@ -1440,17 +1440,16 @@ Terminal.prototype.write = function(data) {
               // insert combining char in last cell
               // FIXME: needs handling after cursor jumps
               if (!ch_width && this.x) {
-
                 // dont overflow left
-                if (this.lines[row][this.x-1]) {
-                  if (!this.lines[row][this.x-1][2]) {
+                if (this.lines.get(row)[this.x-1]) {
+                  if (!this.lines.get(row)[this.x-1][2]) {
 
                     // found empty cell after fullwidth, need to go 2 cells back
-                    if (this.lines[row][this.x-2])
-                      this.lines[row][this.x-2][1] += ch;
+                    if (this.lines.get(row)[this.x-2])
+                      this.lines.get(row)[this.x-2][1] += ch;
 
                   } else {
-                    this.lines[row][this.x-1][1] += ch;
+                    this.lines.get(row)[this.x-1][1] += ch;
                   }
                   this.updateRange(this.y);
                 }
@@ -1482,24 +1481,24 @@ Terminal.prototype.write = function(data) {
                 for (var moves=0; moves<ch_width; ++moves) {
                   // remove last cell, if it's width is 0
                   // we have to adjust the second last cell as well
-                  var removed = this.lines[this.y + this.ybase].pop();
+                  var removed = this.lines.get(this.y + this.ybase).pop();
                   if (removed[2]===0
-                      && this.lines[row][this.cols-2]
-                      && this.lines[row][this.cols-2][2]===2)
-                    this.lines[row][this.cols-2] = [this.curAttr, ' ', 1];
+                      && this.lines.get(row)[this.cols-2]
+                  && this.lines.get(row)[this.cols-2][2]===2)
+                    this.lines.get(row)[this.cols-2] = [this.curAttr, ' ', 1];
 
                   // insert empty cell at cursor
-                  this.lines[row].splice(this.x, 0, [this.curAttr, ' ', 1]);
+                  this.lines.get(row).splice(this.x, 0, [this.curAttr, ' ', 1]);
                 }
               }
 
-              this.lines[row][this.x] = [this.curAttr, ch, ch_width];
+              this.lines.get(row)[this.x] = [this.curAttr, ch, ch_width];
               this.x++;
               this.updateRange(this.y);
 
               // fullwidth char - set next cell width to zero and advance cursor
               if (ch_width===2) {
-                this.lines[row][this.x] = [this.curAttr, '', 0];
+                this.lines.get(row)[this.x] = [this.curAttr, '', 0];
                 this.x++;
               }
             }
@@ -2866,15 +2865,15 @@ Terminal.prototype.resize = function(x, y) {
     ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
     i = this.lines.length;
     while (i--) {
-      while (this.lines[i].length < x) {
-        this.lines[i].push(ch);
+      while (this.lines.get(i).length < x) {
+        this.lines.get(i).push(ch);
       }
     }
   } else { // (j > x)
     i = this.lines.length;
     while (i--) {
-      while (this.lines[i].length > x) {
-        this.lines[i].pop();
+      while (this.lines.get(i).length > x) {
+        this.lines.get(i).pop();
       }
     }
   }
@@ -3029,7 +3028,7 @@ Terminal.prototype.nextStop = function(x) {
  * @param {number} y The line in which to operate.
  */
 Terminal.prototype.eraseRight = function(x, y) {
-  var line = this.lines[this.ybase + y]
+  var line = this.lines.get(this.ybase + y)
   , ch = [this.eraseAttr(), ' ', 1]; // xterm
 
 
@@ -3048,7 +3047,7 @@ Terminal.prototype.eraseRight = function(x, y) {
  * @param {number} y The line in which to operate.
  */
 Terminal.prototype.eraseLeft = function(x, y) {
-  var line = this.lines[this.ybase + y]
+  var line = this.lines.get(this.ybase + y)
   , ch = [this.eraseAttr(), ' ', 1]; // xterm
 
   x++;
@@ -3065,7 +3064,8 @@ Terminal.prototype.clear = function() {
     // Don't clear if it's already clear
     return;
   }
-  this.lines = [this.lines[this.ybase + this.y]];
+  this.lines.set(0, this.lines.get(this.ybase + this.y));
+  this.lines.length = 1;
   this.ydisp = 0;
   this.ybase = 0;
   this.y = 0;
@@ -3086,7 +3086,7 @@ Terminal.prototype.eraseLine = function(y) {
 
 
 /**
- * Return the data array of a blank line/
+ * Return the data array of a blank line
  * @param {number} cur First bunch of data for each "blank" character.
  */
 Terminal.prototype.blankLine = function(cur) {
@@ -3174,21 +3174,21 @@ Terminal.prototype.index = function() {
 
 /**
  * ESC M Reverse Index (RI is 0x8d).
+ *
+ * Move the cursor up one row, inserting a new blank line if necessary.
  */
 Terminal.prototype.reverseIndex = function() {
   var j;
-  this.y--;
-  if (this.y < this.scrollTop) {
-    this.y++;
+  if (this.y === this.scrollTop) {
     // possibly move the code below to term.reverseScroll();
     // test: echo -ne '\e[1;1H\e[44m\eM\e[0m'
     // blankLine(true) is xterm/linux behavior
-    this.lines.splice(this.y + this.ybase, 0, this.blankLine(true));
-    j = this.rows - 1 - this.scrollBottom;
-    this.lines.splice(this.rows - 1 + this.ybase - j + 1, 1);
-    // this.maxRange();
+    this.lines.shiftElements(this.y + this.ybase, this.rows - 1, 1);
+    this.lines.set(this.y + this.ybase, this.blankLine(true));
     this.updateRange(this.scrollTop);
     this.updateRange(this.scrollBottom);
+  } else {
+    this.y--;
   }
   this.state = normal;
 };
@@ -3644,8 +3644,8 @@ Terminal.prototype.insertChars = function(params) {
   ch = [this.eraseAttr(), ' ', 1]; // xterm
 
   while (param-- && j < this.cols) {
-    this.lines[row].splice(j++, 0, ch);
-    this.lines[row].pop();
+    this.lines.get(row).splice(j++, 0, ch);
+    this.lines.get(row).pop();
   }
 };
 
@@ -3705,6 +3705,14 @@ Terminal.prototype.insertLines = function(params) {
   j = this.rows - 1 + this.ybase - j + 1;
 
   while (param--) {
+    if (this.lines.length === this.lines.maxLength) {
+      // Trim the start of lines to make room for the new line
+      this.lines.trimStart(1);
+      this.ybase--;
+      this.ydisp--;
+      row--;
+      j--;
+    }
     // test: echo -e '\e[44m\e[1L\e[0m'
     // blankLine(true) - xterm/linux behavior
     this.lines.splice(row, 0, this.blankLine(true));
@@ -3732,6 +3740,12 @@ Terminal.prototype.deleteLines = function(params) {
   j = this.rows - 1 + this.ybase - j;
 
   while (param--) {
+    if (this.lines.length === this.lines.maxLength) {
+      // Trim the start of lines to make room for the new line
+      this.lines.trimStart(1);
+      this.ybase -= 1;
+      this.ydisp -= 1;
+    }
     // test: echo -e '\e[44m\e[1M\e[0m'
     // blankLine(true) - xterm/linux behavior
     this.lines.splice(j + 1, 0, this.blankLine(true));
@@ -3758,8 +3772,8 @@ Terminal.prototype.deleteChars = function(params) {
   ch = [this.eraseAttr(), ' ', 1]; // xterm
 
   while (param--) {
-    this.lines[row].splice(this.x, 1);
-    this.lines[row].push(ch);
+    this.lines.get(row).splice(this.x, 1);
+    this.lines.get(row).push(ch);
   }
 };
 
@@ -3778,7 +3792,7 @@ Terminal.prototype.eraseChars = function(params) {
   ch = [this.eraseAttr(), ' ', 1]; // xterm
 
   while (param-- && j < this.cols) {
-    this.lines[row][j++] = ch;
+    this.lines.get(row)[j++] = ch;
   }
 };
 
@@ -4442,7 +4456,7 @@ Terminal.prototype.cursorBackwardTab = function(params) {
  */
 Terminal.prototype.repeatPrecedingCharacter = function(params) {
   var param = params[0] || 1
-  , line = this.lines[this.ybase + this.y]
+  , line = this.lines.get(this.ybase + this.y)
   , ch = line[this.x - 1] || [this.defAttr, ' ', 1];
 
   while (param--) line[this.x++] = ch;
@@ -4677,7 +4691,7 @@ Terminal.prototype.setAttrInRectangle = function(params) {
   , i;
 
   for (; t < b + 1; t++) {
-    line = this.lines[this.ybase + t];
+    line = this.lines.get(this.ybase + t);
     for (i = l; i < r; i++) {
       line[i] = [attr, line[i][1]];
     }
@@ -4707,7 +4721,7 @@ Terminal.prototype.fillRectangle = function(params) {
   , i;
 
   for (; t < b + 1; t++) {
-    line = this.lines[this.ybase + t];
+    line = this.lines.get(this.ybase + t);
     for (i = l; i < r; i++) {
       line[i] = [line[i][0], String.fromCharCode(ch)];
     }
@@ -4759,7 +4773,7 @@ Terminal.prototype.eraseRectangle = function(params) {
   ch = [this.eraseAttr(), ' ', 1]; // xterm?
 
   for (; t < b + 1; t++) {
-    line = this.lines[this.ybase + t];
+    line = this.lines.get(this.ybase + t);
     for (i = l; i < r; i++) {
       line[i] = ch;
     }
@@ -4784,8 +4798,8 @@ Terminal.prototype.insertColumns = function() {
 
   while (param--) {
     for (i = this.ybase; i < l; i++) {
-      this.lines[i].splice(this.x + 1, 0, ch);
-      this.lines[i].pop();
+      this.lines.get(i).splice(this.x + 1, 0, ch);
+      this.lines.get(i).pop();
     }
   }
 
@@ -4806,8 +4820,8 @@ Terminal.prototype.deleteColumns = function() {
 
   while (param--) {
     for (i = this.ybase; i < l; i++) {
-      this.lines[i].splice(this.x, 1);
-      this.lines[i].push(ch);
+      this.lines.get(i).splice(this.x, 1);
+      this.lines.get(i).push(ch);
     }
   }
 
