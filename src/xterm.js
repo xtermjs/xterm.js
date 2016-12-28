@@ -1077,7 +1077,6 @@ Terminal.prototype.refresh = function(start, end, queue) {
   }
 
   for (; y <= end; y++) {
-    console.log('this.ydisp: ' + this.ydisp);
     row = y + this.ydisp;
 
     line = this.lines.get(row);
