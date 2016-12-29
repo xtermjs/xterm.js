@@ -4144,6 +4144,7 @@ Terminal.prototype.setMode = function(params) {
             // charsets: this.charsets
           };
           this.reset();
+          this.viewport.syncScrollArea();
           this.normal = normal;
           this.showCursor();
         }
@@ -4324,6 +4325,7 @@ Terminal.prototype.resetMode = function(params) {
           //   this.y = this.savedY;
           // }
           this.refresh(0, this.rows - 1);
+          this.viewport.syncScrollArea();
           this.showCursor();
         }
         break;
