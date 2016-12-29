@@ -10,7 +10,7 @@ RUN apt-get update \
 WORKDIR /usr/src/app
 
 # Set an entrypoint, to automatically install node modules
-ENTRYPOINT ["/bin/bash", "-c", "if [[ ! -d node_modules ]]; then npm install; fi; exec \"$@\";"]
+ENTRYPOINT ["/bin/bash", "-c", "if [[ ! -d node_modules ]]; then npm install; fi; exec \"${@:0}\";"]
 CMD ["npm", "run", "dev"]
 
 # First, install dependencies to improve layer caching
@@ -21,4 +21,4 @@ RUN npm install
 COPY . /usr/src/app
 
 # Run the tests and build, to make sure everything is working nicely
-RUN npm run test && npm run build
+RUN npm run build && npm run test
