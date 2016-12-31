@@ -574,10 +574,8 @@ Terminal.prototype.open = function(parent) {
   this.compositionHelper = new CompositionHelper(this.textarea, this.compositionView, this);
   this.helperContainer.appendChild(this.compositionView);
 
-  this.charMeasureElement = document.createElement('div');
-  this.charMeasureElement.classList.add('xterm-char-measure-element');
-  this.charMeasureElement.innerHTML = 'W';
-  this.helperContainer.appendChild(this.charMeasureElement);
+  this.charSizeStyleElement = document.createElement('style');
+  this.helperContainer.appendChild(this.charSizeStyleElement);
 
   for (; i < this.rows; i++) {
     this.insertRow();
@@ -585,9 +583,12 @@ Terminal.prototype.open = function(parent) {
   this.parent.appendChild(this.element);
 
   this.charMeasure = new CharMeasure(this.rowContainer);
+  this.charMeasure.on('charsizechanged', function () {
+    self.updateCharSizeCSS();
+  });
   this.charMeasure.measure();
 
-  this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasureElement);
+  this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
 
   // Draw the screen.
   this.refresh(0, this.rows - 1);
@@ -645,6 +646,13 @@ Terminal.loadAddon = function(addon, callback) {
   }
 };
 
+/**
+ * Updates the helper CSS class with any changes necessary after the terminal's
+ * character width has been changed.
+ */
+Terminal.prototype.updateCharSizeCSS = function() {
+  this.charSizeStyleElement.textContent = '.xterm-wide-char{width:' + (this.charMeasure.width * 2) + 'px;}';
+}
 
 /**
  * XTerm mouse events
