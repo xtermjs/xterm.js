@@ -1182,6 +1182,9 @@ Terminal.prototype.refresh = function(start, end, queue) {
         }
       }
 
+      if (ch_width === 2) {
+        out += '<span class="xterm-wide-char">';
+      }
       switch (ch) {
         case '&':
           out += '&amp;';
@@ -1199,6 +1202,9 @@ Terminal.prototype.refresh = function(start, end, queue) {
             out += ch;
           }
           break;
+      }
+      if (ch_width === 2) {
+        out += '</span>';
       }
 
       attr = data;
