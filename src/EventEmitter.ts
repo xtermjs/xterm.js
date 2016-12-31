@@ -11,7 +11,7 @@ export class EventEmitter {
   private _events: {[type: string]: ListenerType[]};
 
   constructor() {
-    this._events = this._events || {};
+    this._events = {};
   }
 
   // TODO: Merge addListener and on, no reason for an alias in a private component
