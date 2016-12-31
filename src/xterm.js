@@ -581,11 +581,7 @@ Terminal.prototype.open = function(parent) {
 
   // Setup loop that draws to screen
   this.queueRefresh(0, this.rows - 1);
-  function refreshLoop() {
-    self.refresh();
-    window.requestAnimationFrame(refreshLoop);
-  }
-  window.requestAnimationFrame(refreshLoop);
+  this.refreshLoop();
 
   // Initialize global actions that
   // need to be taken on the document.
@@ -1007,6 +1003,38 @@ Terminal.prototype.queueRefresh = function(start, end) {
 }
 
 /**
+ * Performs the refresh loop callback, calling refresh only if a refresh is
+ * necessary before queueing up the next one.
+ */
+Terminal.prototype.refreshLoop = function() {
+  // Don't refresh if there were no row changes
+  if (this.refreshRowsQueue.length > 0) {
+    var start;
+    var end;
+    if (this.refreshRowsQueue.length > 4) {
+      // Just do a full refresh when 5+ refreshes are queued
+      start = 0;
+      end = this.rows - 1;
+    } else {
+      // Get start and end rows that need refreshing
+      start = this.refreshRowsQueue[0].start;
+      end = this.refreshRowsQueue[0].end;
+      for (var i = 1; i < this.refreshRowsQueue.length; i++) {
+        if (this.refreshRowsQueue[i].start < start) {
+          start = this.refreshRowsQueue[i].start;
+        }
+        if (this.refreshRowsQueue[i].end > end) {
+          end = this.refreshRowsQueue[i].end;
+        }
+      }
+    }
+    this.refreshRowsQueue = [];
+    this.refresh(start, end);
+  }
+  window.requestAnimationFrame(this.refreshLoop.bind(this));
+}
+
+/**
  * Refreshes (re-renders) terminal content within two rows (inclusive)
  *
  * Rendering Engine:
@@ -1026,34 +1054,8 @@ Terminal.prototype.queueRefresh = function(start, end) {
  *
  * @param {number} start The row to start from (between 0 and terminal's height terminal - 1)
  * @param {number} end The row to end at (between fromRow and terminal's height terminal - 1)
- * @param {boolean} queue Whether the refresh should ran right now or be queued
  */
-Terminal.prototype.refresh = function() {
-  if (this.refreshRowsQueue.length === 0) {
-    // Don't refresh if there were no row changes
-    return;
-  }
-
-  var start;
-  var end;
-  if (this.refreshRowsQueue.length > 4) {
-    // Just do a full refresh when 5+ refreshes are queued
-    start = 0;
-    end = this.rows - 1;
-  } else {
-    // Get start and end rows that need refreshing
-    start = this.refreshRowsQueue[0].start;
-    end = this.refreshRowsQueue[0].end;
-    for (var i = 1; i < this.refreshRowsQueue.length; i++) {
-      if (this.refreshRowsQueue[i].start < start) {
-        start = this.refreshRowsQueue[i].start;
-      }
-      if (this.refreshRowsQueue[i].end > end) {
-        end = this.refreshRowsQueue[i].end;
-      }
-    }
-  }
-  this.refreshRowsQueue = [];
+Terminal.prototype.refresh = function(start, end) {
   var self = this;
 
   var x, y, i, line, out, ch, ch_width, width, data, attr, bg, fg, flags, row, parent, focused = document.activeElement;
