@@ -21,7 +21,7 @@ CURRENT_BOWER_JSON_VERSION=$(cat bower.json \
 
 # Build xterm.js into `dist`
 export BUILD_DIR=dist
-./bin/build
+npm run build
 
 # Update AUTHORS file
 sh bin/generate-authors

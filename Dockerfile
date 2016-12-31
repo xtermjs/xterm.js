@@ -1,11 +1,6 @@
 FROM node:6.9
 MAINTAINER Paris Kasidiaris <paris@sourcelair.com>
 
-# Install cpio, used for building
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends cpio \
-    && rm -rf /var/lib/apt/lists/*
-
 # Set the working directory
 WORKDIR /usr/src/app
 
