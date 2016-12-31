@@ -14,18 +14,12 @@ export class EventEmitter {
     this._events = {};
   }
 
-  // TODO: Merge addListener and on, no reason for an alias in a private component
-  public addListener(type, listener): void {
+  public on(type, listener): void {
     this._events[type] = this._events[type] || [];
     this._events[type].push(listener);
   }
 
-  public on(type, listener): void {
-    this.addListener(type, listener);
-  }
-
-  // TODO: Merge removeListener and off, no reason for an alias in a private component
-  public removeListener(type, listener): void {
+  public off(type, listener): void {
     if (!this._events[type]) {
       return;
     }
@@ -39,10 +33,6 @@ export class EventEmitter {
         return;
       }
     }
-  }
-
-  public off(type, listener): void {
-    this.removeListener(type, listener);
   }
 
   public removeAllListeners(type): void {
