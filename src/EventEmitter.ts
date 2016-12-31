@@ -44,7 +44,7 @@ export class EventEmitter {
   public once(type, listener): any {
     function on() {
       let args = Array.prototype.slice.call(arguments);
-      this.removeListener(type, on);
+      this.off(type, on);
       return listener.apply(this, args);
     }
     (<any>on).listener = listener;
