@@ -15,6 +15,7 @@ import { EventEmitter } from './EventEmitter.js';
 import { Viewport } from './Viewport.js';
 import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard.js';
 import { CircularList } from './utils/CircularList.js';
+import { CharMeasure } from './utils/CharMeasure.js';
 import * as Browser from './utils/Browser';
 import * as Keyboard from './utils/Keyboard';
 
@@ -582,6 +583,9 @@ Terminal.prototype.open = function(parent) {
     this.insertRow();
   }
   this.parent.appendChild(this.element);
+
+  this.charMeasure = new CharMeasure(this.rowContainer);
+  this.charMeasure.measure();
 
   this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasureElement);
 
@@ -2950,6 +2954,8 @@ Terminal.prototype.resize = function(x, y) {
 
   this.scrollTop = 0;
   this.scrollBottom = y - 1;
+
+  this.charMeasure.measure();
 
   this.refresh(0, this.rows - 1);
 
