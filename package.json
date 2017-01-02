@@ -45,7 +45,7 @@
     "jsdoc": "3.4.3",
     "mocha": "2.5.3",
     "nodemon": "1.10.2",
-    "pty.js": "0.3.1",
+    "pty.js": "https://github.com/Tyriar/pty.js/tarball/c75c2dcb6dcad83b0cb3ef2ae42d0448fb912642",
     "sleep": "^3.0.1",
     "sorcery": "^0.10.0",
     "tslint": "^4.0.2",
