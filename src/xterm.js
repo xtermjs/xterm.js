@@ -42,13 +42,13 @@ var normal = 0, escaped = 1, csi = 2, osc = 3, charset = 4, dcs = 5, ignore = 6;
  * pty process. This number must be small in order for ^C and similar sequences
  * to be responsive.
  */
-var WRITE_BUFFER_PAUSE_THRESHOLD = 0;
+var WRITE_BUFFER_PAUSE_THRESHOLD = 2;
 
 /**
  * The maximum number of refresh frames to skip when the write buffer is non-
  * empty.
  */
-var MAX_REFRESH_FRAME_SKIP = 6;
+var MAX_REFRESH_FRAME_SKIP = 5;
 
 /**
  * Terminal
@@ -1384,7 +1384,7 @@ Terminal.prototype.write = function(data) {
   // Send XOFF to pause the pty process if the write buffer becomes too large so
   // xterm.js can catch up before more data is sent. This is necessary in order
   // to keep signals such as ^C responsive.
-  if (!this.xoffSentToCatchUp && this.writeBuffer.length > WRITE_BUFFER_PAUSE_THRESHOLD) {
+  if (!this.xoffSentToCatchUp && this.writeBuffer.length >= WRITE_BUFFER_PAUSE_THRESHOLD) {
     // XOFF - stop pty pipe
     // XON will be triggered by emulator before processing data chunk
     this.send('\x13');
