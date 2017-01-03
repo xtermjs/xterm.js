@@ -196,6 +196,11 @@ function Terminal(options) {
   this.prefix = '';
   this.postfix = '';
 
+  // user input states
+  this.writeBuffer = [];
+  this.writeInProgress = false;
+  this.user_xoff = false;  // user pressed XOFF
+
   // leftover surrogate high from previous write invocation
   this.surrogate_high = '';
 
@@ -1341,7 +1346,26 @@ Terminal.prototype.scrollToBottom = function() {
  * @param {string} text The text to write to the terminal.
  */
 Terminal.prototype.write = function(data) {
+  this.writeBuffer.push(data);
+  if (!this.writeInProgress) {
+    // Kick off a write which will write all data in sequence recursively
+    this.writeInProgress = true;
+    // Kick off an async innerWrite so more writes can come in while processing data
+    setTimeout(() => this.innerWrite(this.writeBuffer.shift()));
+  }
+}
+
+Terminal.prototype.innerWrite = function(data) {
   var l = data.length, i = 0, j, cs, ch, code, low, ch_width, row;
+
+  // TODO: Need to have another buffer where data is held where write can grab lines from
+  // When this hits a certain threshold it should send this.write('\x13')
+
+  // XON - about to process data, thus we can get more
+  // dont lift XOFF if user pressed it
+  if (!this.user_xoff) {
+    this.send('\x11');
+  }
 
   this.refreshStart = this.y;
   this.refreshEnd = this.y;
@@ -2380,6 +2404,12 @@ Terminal.prototype.write = function(data) {
 
   this.updateRange(this.y);
   this.queueRefresh(this.refreshStart, this.refreshEnd);
+
+  if (this.writeBuffer.length > 0) {
+    this.innerWrite(this.writeBuffer.shift());
+  } else {
+    this.writeInProgress = false;
+  }
 };
 
 /**
@@ -2422,6 +2452,12 @@ Terminal.prototype.keyDown = function(ev) {
 
   var self = this;
   var result = this.evaluateKeyEscapeSequence(ev);
+
+  if (result.key === '\x13') { // XOFF
+    this.user_xoff = true;
+  } else if (result.key === '\x11') { // XON
+    this.user_xoff = false;
+  }
 
   if (result.scrollDisp) {
     this.scrollDisp(result.scrollDisp);
@@ -2728,6 +2764,7 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
       }
       break;
   }
+
   return result;
 };
 

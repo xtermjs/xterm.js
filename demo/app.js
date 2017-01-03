@@ -60,6 +60,9 @@ app.ws('/terminals/:pid', function (ws, req) {
 
   term.on('data', function(data) {
     try {
+      // XOFF - stop pty pipe
+      // XON will be triggered by emulator before processing data chunk
+      term.write('\x13');
       ws.send(data);
     } catch (ex) {
       // The WebSocket is not open, ignore
