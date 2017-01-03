@@ -1347,24 +1347,38 @@ Terminal.prototype.scrollToBottom = function() {
  */
 Terminal.prototype.write = function(data) {
   this.writeBuffer.push(data);
-  if (!this.writeInProgress) {
+
+  // Pause pty process if the write buffer becomes too large so xterm.js can catch up
+  if (this.writeBuffer.length > 1000 && !this.user_xoff) {
+    // XOFF - stop pty pipe
+    // XON will be triggered by emulator before processing data chunk
+    this.send('\x13');
+  }
+
+  if (!this.writeInProgress && this.writeBuffer.length > 0) {
     // Kick off a write which will write all data in sequence recursively
     this.writeInProgress = true;
     // Kick off an async innerWrite so more writes can come in while processing data
-    setTimeout(() => this.innerWrite(this.writeBuffer.shift()));
+    var self = this;
+    setTimeout(function () {
+      self.innerWrite(self.writeBuffer.shift());
+    });
   }
 }
 
 Terminal.prototype.innerWrite = function(data) {
   var l = data.length, i = 0, j, cs, ch, code, low, ch_width, row;
-
+console.log('writeBuffer length: ' + this.writeBuffer.length);
   // TODO: Need to have another buffer where data is held where write can grab lines from
   // When this hits a certain threshold it should send this.write('\x13')
 
   // XON - about to process data, thus we can get more
   // dont lift XOFF if user pressed it
   if (!this.user_xoff) {
-    this.send('\x11');
+    // Resume pty process to get more data
+    if (this.writeBuffer.length < 200) {
+      this.send('\x11');
+    }
   }
 
   this.refreshStart = this.y;
@@ -2406,7 +2420,11 @@ Terminal.prototype.innerWrite = function(data) {
   this.queueRefresh(this.refreshStart, this.refreshEnd);
 
   if (this.writeBuffer.length > 0) {
-    this.innerWrite(this.writeBuffer.shift());
+    var self = this;
+    // Start a new async innerWrite to prevent a stack overflow
+    setTimeout(function () {
+      self.innerWrite(self.writeBuffer.shift());
+    });
   } else {
     this.writeInProgress = false;
   }
