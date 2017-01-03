@@ -42,11 +42,18 @@ var normal = 0, escaped = 1, csi = 2, osc = 3, charset = 4, dcs = 5, ignore = 6;
  * pty process. This number must be small in order for ^C and similar sequences
  * to be responsive.
  */
-var WRITE_BUFFER_PAUSE_THRESHOLD = 2;
+var WRITE_BUFFER_PAUSE_THRESHOLD = 5;
+
+/**
+ * The number of writes to perform in a single batch before allowing the
+ * renderer to catch up with a 0ms setTimeout.
+ */
+var WRITE_BATCH_SIZE = 300;
 
 /**
  * The maximum number of refresh frames to skip when the write buffer is non-
- * empty.
+ * empty. Note that these frames may be intermingled with frames that are
+ * skipped via requestAnimationFrame's mechanism.
  */
 var MAX_REFRESH_FRAME_SKIP = 5;
 
@@ -1403,13 +1410,14 @@ Terminal.prototype.write = function(data) {
 }
 
 Terminal.prototype.innerWrite = function() {
-  while (this.writeBuffer.length > 0) {
-    var data = this.writeBuffer.shift();
+  var writeBatch = this.writeBuffer.splice(0, WRITE_BATCH_SIZE);
+  while (writeBatch.length > 0) {
+    var data = writeBatch.shift();
     var l = data.length, i = 0, j, cs, ch, code, low, ch_width, row;
 
     // If XOFF was sent in order to catch up with the pty process, resume it if
     // the writeBuffer is empty to allow more data to come in.
-    if (this.xoffSentToCatchUp && this.writeBuffer.length === 0) {
+    if (this.xoffSentToCatchUp && writeBatch.length === 0 && this.writeBuffer.length === 0) {
       this.send('\x11');
       this.xoffSentToCatchUp = false;
     }
@@ -2452,7 +2460,15 @@ Terminal.prototype.innerWrite = function() {
     this.updateRange(this.y);
     this.queueRefresh(this.refreshStart, this.refreshEnd);
   }
-  this.writeInProgress = false;
+  if (this.writeBuffer.length > 0) {
+    // Allow renderer to catch up before processing the next batch
+    var self = this;
+    setTimeout(function () {
+      self.innerWrite();
+    }, 0);
+  } else {
+    this.writeInProgress = false;
+  }
 };
 
 /**
