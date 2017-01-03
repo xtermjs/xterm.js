@@ -38,6 +38,19 @@ var document = (typeof window != 'undefined') ? window.document : null;
 var normal = 0, escaped = 1, csi = 2, osc = 3, charset = 4, dcs = 5, ignore = 6;
 
 /**
+ * The amount of write requests to queue before sending an XOFF signal to the
+ * pty process. This number must be small in order for ^C and similar sequences
+ * to be responsive.
+ */
+var WRITE_BUFFER_PAUSE_THRESHOLD = 0;
+
+/**
+ * The maximum number of refresh frames to skip when the write buffer is non-
+ * empty.
+ */
+var MAX_REFRESH_FRAME_SKIP = 6;
+
+/**
  * Terminal
  */
 
@@ -199,7 +212,18 @@ function Terminal(options) {
   // user input states
   this.writeBuffer = [];
   this.writeInProgress = false;
-  this.user_xoff = false;  // user pressed XOFF
+  this.refreshFramesSkipped = 0;
+
+  /**
+   * Whether _xterm.js_ sent XOFF in order to catch up with the pty process.
+   * This is a distinct state from writeStopped so that if the user requested
+   * XOFF via ^S that it will not automatically resume when the writeBuffer goes
+   * below threshold.
+   */
+  this.xoffSentToCatchUp = false;
+
+  /** Whether writing has been stopped as a result of XOFF */
+  this.writeStopped = false;
 
   // leftover surrogate high from previous write invocation
   this.surrogate_high = '';
@@ -1014,27 +1038,36 @@ Terminal.prototype.queueRefresh = function(start, end) {
 Terminal.prototype.refreshLoop = function() {
   // Don't refresh if there were no row changes
   if (this.refreshRowsQueue.length > 0) {
-    var start;
-    var end;
-    if (this.refreshRowsQueue.length > 4) {
-      // Just do a full refresh when 5+ refreshes are queued
-      start = 0;
-      end = this.rows - 1;
-    } else {
-      // Get start and end rows that need refreshing
-      start = this.refreshRowsQueue[0].start;
-      end = this.refreshRowsQueue[0].end;
-      for (var i = 1; i < this.refreshRowsQueue.length; i++) {
-        if (this.refreshRowsQueue[i].start < start) {
-          start = this.refreshRowsQueue[i].start;
-        }
-        if (this.refreshRowsQueue[i].end > end) {
-          end = this.refreshRowsQueue[i].end;
+    // Skip MAX_REFRESH_FRAME_SKIP frames if the writeBuffer is non-empty as it
+    // will need to be immediately refreshed anyway. This saves a lot of
+    // rendering time as the viewport DOM does not need to be refreshed, no
+    // scroll events, no layouts, etc.
+    var skipFrame = this.writeBuffer.length > 0 && this.refreshFramesSkipped++ <= MAX_REFRESH_FRAME_SKIP;
+
+    if (!skipFrame) {
+      this.refreshFramesSkipped = 0;
+      var start;
+      var end;
+      if (this.refreshRowsQueue.length > 4) {
+        // Just do a full refresh when 5+ refreshes are queued
+        start = 0;
+        end = this.rows - 1;
+      } else {
+        // Get start and end rows that need refreshing
+        start = this.refreshRowsQueue[0].start;
+        end = this.refreshRowsQueue[0].end;
+        for (var i = 1; i < this.refreshRowsQueue.length; i++) {
+          if (this.refreshRowsQueue[i].start < start) {
+            start = this.refreshRowsQueue[i].start;
+          }
+          if (this.refreshRowsQueue[i].end > end) {
+            end = this.refreshRowsQueue[i].end;
+          }
         }
       }
+      this.refreshRowsQueue = [];
+      this.refresh(start, end);
     }
-    this.refreshRowsQueue = [];
-    this.refresh(start, end);
   }
   window.requestAnimationFrame(this.refreshLoop.bind(this));
 }
@@ -1348,11 +1381,14 @@ Terminal.prototype.scrollToBottom = function() {
 Terminal.prototype.write = function(data) {
   this.writeBuffer.push(data);
 
-  // Pause pty process if the write buffer becomes too large so xterm.js can catch up
-  if (this.writeBuffer.length > 1000 && !this.user_xoff) {
+  // Send XOFF to pause the pty process if the write buffer becomes too large so
+  // xterm.js can catch up before more data is sent. This is necessary in order
+  // to keep signals such as ^C responsive.
+  if (!this.xoffSentToCatchUp && this.writeBuffer.length > WRITE_BUFFER_PAUSE_THRESHOLD) {
     // XOFF - stop pty pipe
     // XON will be triggered by emulator before processing data chunk
     this.send('\x13');
+    this.xoffSentToCatchUp = true;
   }
 
   if (!this.writeInProgress && this.writeBuffer.length > 0) {
@@ -1368,17 +1404,12 @@ Terminal.prototype.write = function(data) {
 
 Terminal.prototype.innerWrite = function(data) {
   var l = data.length, i = 0, j, cs, ch, code, low, ch_width, row;
-console.log('writeBuffer length: ' + this.writeBuffer.length);
-  // TODO: Need to have another buffer where data is held where write can grab lines from
-  // When this hits a certain threshold it should send this.write('\x13')
 
-  // XON - about to process data, thus we can get more
-  // dont lift XOFF if user pressed it
-  if (!this.user_xoff) {
-    // Resume pty process to get more data
-    if (this.writeBuffer.length < 200) {
-      this.send('\x11');
-    }
+  // If XOFF was sent in order to catch up with the pty process, resume it if
+  // the writeBuffer is empty to allow more data to come in.
+  if (this.xoffSentToCatchUp && this.writeBuffer.length === 0) {
+    this.send('\x11');
+    this.xoffSentToCatchUp = false;
   }
 
   this.refreshStart = this.y;
@@ -2421,10 +2452,13 @@ console.log('writeBuffer length: ' + this.writeBuffer.length);
 
   if (this.writeBuffer.length > 0) {
     var self = this;
+
+// TODO: async makes this too slow, need to change to iterative to prevent potential stack overflow
+
     // Start a new async innerWrite to prevent a stack overflow
-    setTimeout(function () {
+    //setTimeout(function () {
       self.innerWrite(self.writeBuffer.shift());
-    });
+    //});
   } else {
     this.writeInProgress = false;
   }
@@ -2472,9 +2506,9 @@ Terminal.prototype.keyDown = function(ev) {
   var result = this.evaluateKeyEscapeSequence(ev);
 
   if (result.key === '\x13') { // XOFF
-    this.user_xoff = true;
+    this.writeStopped = true;
   } else if (result.key === '\x11') { // XON
-    this.user_xoff = false;
+    this.writeStopped = false;
   }
 
   if (result.scrollDisp) {
