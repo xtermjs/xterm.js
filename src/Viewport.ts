@@ -40,6 +40,9 @@ export class Viewport {
     this.refreshLoop();
   }
 
+  /**
+   * Queues a refresh to be done on next animation frame.
+   */
   private refreshLoop(): void {
     if (this.isRefreshQueued) {
       this.refresh();
