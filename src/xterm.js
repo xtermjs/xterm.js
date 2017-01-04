@@ -15,6 +15,7 @@ import { EventEmitter } from './EventEmitter.js';
 import { Viewport } from './Viewport.js';
 import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard.js';
 import { CircularList } from './utils/CircularList.js';
+import { DomElementObjectPool } from './utils/DomElementObjectPool.js';
 import * as Browser from './utils/Browser';
 import * as Keyboard from './utils/Keyboard';
 
@@ -189,6 +190,7 @@ function Terminal(options) {
   this.savedX;
   this.savedY;
   this.savedCols;
+  this.spanElementObjectPool = new DomElementObjectPool('span');
 
   // stream
   this.readable = true;
@@ -1076,6 +1078,8 @@ Terminal.prototype.refresh = function(start, end, queue) {
     end = this.rows.length - 1;
   }
 
+  var currentElement;
+
   for (; y <= end; y++) {
     row = y + this.ydisp;
 
@@ -1093,6 +1097,9 @@ Terminal.prototype.refresh = function(start, end, queue) {
     attr = this.defAttr;
     i = 0;
 
+    var documentFragment = document.createDocumentFragment();
+    var innerHTML = '';
+
     for (; i < width; i++) {
       data = line[i][0];
       ch = line[i][1];
@@ -1104,17 +1111,38 @@ Terminal.prototype.refresh = function(start, end, queue) {
 
       if (data !== attr) {
         if (attr !== this.defAttr) {
-          out += '</span>';
+          if (innerHTML) {
+            currentElement.innerHTML = innerHTML;
+            innerHTML = '';
+          }
+          documentFragment.appendChild(currentElement);
+          currentElement = null;
+          //out += '</span>';
         }
         if (data !== this.defAttr) {
-          if (data === -1) {
-            out += '<span class="reverse-video terminal-cursor';
-            if (this.cursorBlink) {
-              out += ' blinking';
+          if (innerHTML && !currentElement) {
+            currentElement = this.spanElementObjectPool.acquire();
+            // For some reason the text nodes only containing &nbsp; don't get added to the DOM
+            //currentElement = document.createTextNode('');
+          }
+          if (currentElement) {
+            if (innerHTML) {
+              currentElement.innerHTML = innerHTML;
+              innerHTML = '';
             }
-            out += '">';
+            documentFragment.appendChild(currentElement);
+          }
+          currentElement = this.spanElementObjectPool.acquire();
+          if (data === -1) {
+            currentElement.classList.add('reverse-video', 'terminal-cursor');
+            //out += '<span class="reverse-video terminal-cursor';
+            if (this.cursorBlink) {
+              currentElement.classList.add('blinking');
+              //out += ' blinking';
+            }
+            //out += '">';
           } else {
-            var classNames = [];
+            //var classNames = [];
 
             bg = data & 0x1ff;
             fg = (data >> 9) & 0x1ff;
@@ -1122,18 +1150,21 @@ Terminal.prototype.refresh = function(start, end, queue) {
 
             if (flags & Terminal.flags.BOLD) {
               if (!Terminal.brokenBold) {
-                classNames.push('xterm-bold');
+                currentElement.classList.add('xterm-bold');
+                //classNames.push('xterm-bold');
               }
               // See: XTerm*boldColors
               if (fg < 8) fg += 8;
             }
 
             if (flags & Terminal.flags.UNDERLINE) {
-              classNames.push('xterm-underline');
+              currentElement.classList.add('xterm-underline');
+              //classNames.push('xterm-underline');
             }
 
             if (flags & Terminal.flags.BLINK) {
-              classNames.push('xterm-blink');
+              currentElement.classList.add('xterm-blink');
+              //classNames.push('xterm-blink');
             }
 
             // If inverse flag is on, then swap the foreground and background variables.
@@ -1146,7 +1177,8 @@ Terminal.prototype.refresh = function(start, end, queue) {
             }
 
             if (flags & Terminal.flags.INVISIBLE) {
-              classNames.push('xterm-hidden');
+              currentElement.classList.add('xterm-hidden');
+              //classNames.push('xterm-hidden');
             }
 
             /**
@@ -1166,37 +1198,44 @@ Terminal.prototype.refresh = function(start, end, queue) {
             }
 
             if (bg < 256) {
-              classNames.push('xterm-bg-color-' + bg);
+              currentElement.classList.add('xterm-bg-color-' + bg);
+              //classNames.push('xterm-bg-color-' + bg);
             }
 
             if (fg < 256) {
-              classNames.push('xterm-color-' + fg);
+              currentElement.classList.add('xterm-color-' + fg);
+              //classNames.push('xterm-color-' + fg);
             }
 
-            out += '<span';
-            if (classNames.length) {
-              out += ' class="' + classNames.join(' ') + '"';
-            }
-            out += '>';
+            // out += '<span';
+            // if (classNames.length) {
+            //   out += ' class="' + classNames.join(' ') + '"';
+            // }
+            // out += '>';
           }
         }
       }
 
       switch (ch) {
         case '&':
-          out += '&amp;';
+          innerHTML += '&amp;';
+          //out += '&amp;';
           break;
         case '<':
-          out += '&lt;';
+          innerHTML += '&lt;';
+          //out += '&lt;';
           break;
         case '>':
-          out += '&gt;';
+          innerHTML += '&gt;';
+          //out += '&gt;';
           break;
         default:
           if (ch <= ' ') {
-            out += '&nbsp;';
+            innerHTML += '&nbsp;';
+            //out += '&nbsp;';
           } else {
-            out += ch;
+            innerHTML += ch;
+            // out += ch;
           }
           break;
       }
@@ -1204,11 +1243,34 @@ Terminal.prototype.refresh = function(start, end, queue) {
       attr = data;
     }
 
-    if (attr !== this.defAttr) {
-      out += '</span>';
+    if (innerHTML && !currentElement) {
+      currentElement = this.spanElementObjectPool.acquire();
+      // For some reason the text nodes only containing &nbsp; don't get added to the DOM
+      //currentElement = document.createTextNode('');
+    }
+    if (currentElement) {
+      if (innerHTML) {
+        currentElement.innerHTML = innerHTML;
+        innerHTML = '';
+      }
+      documentFragment.appendChild(currentElement);
+      currentElement = null;
+    }
+    // if (attr !== this.defAttr) {
+    //   out += '</span>';
+    // }
+
+    //this.children[y].innerHTML = out;
+    //this.children[y].innerHTML = '';
+
+    // Return spans to the pool
+    while (this.children[y].children.length) {
+      var child = this.children[y].children[0];
+      this.children[y].removeChild(child);
+      this.spanElementObjectPool.release(child);
     }
 
-    this.children[y].innerHTML = out;
+    this.children[y].appendChild(documentFragment)
   }
 
   if (parent) {

@@ -28,7 +28,7 @@ export class DomElementObjectPool {
   public acquire(): HTMLElement {
     let element: HTMLElement;
     if (this._pool.length === 0) {
-      element = this.createNew();
+      element = this._createNew();
     } else {
       element = this._pool.pop();
     }
@@ -41,13 +41,19 @@ export class DomElementObjectPool {
       throw new Error('Could not release an element not yet acquired');
     }
     delete this._inUse[element.getAttribute(DomElementObjectPool.OBJECT_ID_ATTRIBUTE)];
+    this._cleanElement(element);
     this._pool.push(element);
   }
 
-  private createNew(): HTMLElement {
+  private _createNew(): HTMLElement {
     const element = document.createElement(this._type);
     const id = DomElementObjectPool._objectCount++;
     element.setAttribute(DomElementObjectPool.OBJECT_ID_ATTRIBUTE, id.toString(10));
     return element;
+  }
+
+  private _cleanElement(element: HTMLElement): void {
+    element.className = '';
+    element.innerHTML = '';
   }
 }
