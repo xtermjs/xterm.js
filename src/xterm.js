@@ -1078,8 +1078,6 @@ Terminal.prototype.refresh = function(start, end, queue) {
     end = this.rows.length - 1;
   }
 
-  var currentElement;
-
   for (; y <= end; y++) {
     row = y + this.ydisp;
 
@@ -1099,6 +1097,14 @@ Terminal.prototype.refresh = function(start, end, queue) {
 
     var documentFragment = document.createDocumentFragment();
     var innerHTML = '';
+    var currentElement;
+
+    // Return the row's spans to the pool
+    while (this.children[y].children.length) {
+      var child = this.children[y].children[0];
+      this.children[y].removeChild(child);
+      this.spanElementObjectPool.release(child);
+    }
 
     for (; i < width; i++) {
       data = line[i][0];
@@ -1262,13 +1268,6 @@ Terminal.prototype.refresh = function(start, end, queue) {
 
     //this.children[y].innerHTML = out;
     //this.children[y].innerHTML = '';
-
-    // Return spans to the pool
-    while (this.children[y].children.length) {
-      var child = this.children[y].children[0];
-      this.children[y].removeChild(child);
-      this.spanElementObjectPool.release(child);
-    }
 
     this.children[y].appendChild(documentFragment)
   }
