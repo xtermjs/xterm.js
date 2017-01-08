@@ -2,7 +2,7 @@ var express = require('express');
 var app = express();
 var expressWs = require('express-ws')(app);
 var os = require('os');
-var pty = require('pty.js');
+var pty = require('node-pty');
 
 var terminals = {},
     logs = {};
