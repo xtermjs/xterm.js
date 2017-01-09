@@ -1,11 +1,6 @@
 import { assert } from 'chai';
 import { Viewport } from './Viewport';
 
-class MockWindow {
-  // Disable refreshLoop in test
-  public requestAnimationFrame() { }
-}
-
 describe('Viewport', () => {
   let terminal;
   let viewportElement;
@@ -16,7 +11,6 @@ describe('Viewport', () => {
   const CHARACTER_HEIGHT = 10;
 
   beforeEach(() => {
-    (<any>global).window = new MockWindow();
     terminal = {
       lines: [],
       rows: 0,
@@ -73,14 +67,10 @@ describe('Viewport', () => {
       terminal.rows = 1;
       assert.equal(scrollAreaElement.style.height, 0 * CHARACTER_HEIGHT + 'px');
       viewport.syncScrollArea();
-      assert.ok(viewport.isRefreshQueued);
-      viewport.refresh();
       assert.equal(viewportElement.style.height, 1 * CHARACTER_HEIGHT + 'px');
       assert.equal(scrollAreaElement.style.height, 1 * CHARACTER_HEIGHT + 'px');
       terminal.lines.push('');
       viewport.syncScrollArea();
-      assert.ok(viewport.isRefreshQueued);
-      viewport.refresh();
       assert.equal(viewportElement.style.height, 1 * CHARACTER_HEIGHT + 'px');
       assert.equal(scrollAreaElement.style.height, 2 * CHARACTER_HEIGHT + 'px');
     });
