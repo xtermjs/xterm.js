@@ -26,6 +26,8 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**Microsoft Visual Studio Code**](http://code.visualstudio.com/): Modern, versatile and powerful open source code editor that provides an integrated terminal based on xterm.js
 - [**ttyd**](https://github.com/tsl0922/ttyd): A command-line tool for sharing terminal over the web, with fully-featured terminal emulation based on xterm.js
 - [**Katacoda**](https://www.katacoda.com/): Katacoda is an Interactive Learning Platform for software developers, covering the latest Cloud Native technologies.
+- [**Eclipse Che**](http://www.eclipse.org/che): Developer workspace server, cloud IDE, and Eclipse next-generation IDE.
+- [**Codenvy**](http://www.codenvy.com): Cloud workspaces for development teams.
 
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list.
@@ -116,6 +118,14 @@ Visit https://lair.io/sourcelair/xterm and follow the instructions. All developm
 #### [Visual Studio Code](http://code.visualstudio.com/)
 
 [Download Visual Studio Code](http://code.visualstudio.com/Download), clone xterm.js and you are all set.
+
+#### [Eclipse Che](http://www.eclipse.org/che)
+
+You can start Eclipse Che with `docker run eclipse/che start`.
+
+#### [Codenvy](http://www.codenvy.io)
+
+You can create a trial account or install an enterprise version with `docker run codenvy/cli start`.
 
 ## License Agreement
 
