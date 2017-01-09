@@ -13,6 +13,7 @@ export class Viewport {
   private currentRowHeight: number;
   private lastRecordedBufferLength: number;
   private lastRecordedViewportHeight: number;
+  private isRefreshQueued: boolean;
 
   /**
    * Creates a new Viewport.
@@ -30,12 +31,25 @@ export class Viewport {
     this.currentRowHeight = 0;
     this.lastRecordedBufferLength = 0;
     this.lastRecordedViewportHeight = 0;
+    this.isRefreshQueued = false;
 
     this.terminal.on('scroll', this.syncScrollArea.bind(this));
     this.terminal.on('resize', this.syncScrollArea.bind(this));
     this.viewportElement.addEventListener('scroll', this.onScroll.bind(this));
 
     this.syncScrollArea();
+    this.refreshLoop();
+  }
+
+  /**
+   * Queues a refresh to be done on next animation frame.
+   */
+  private refreshLoop(): void {
+    if (this.isRefreshQueued) {
+      this.refresh();
+      this.isRefreshQueued = false;
+    }
+    window.requestAnimationFrame(this.refreshLoop.bind(this));
   }
 
   /**
@@ -68,14 +82,14 @@ export class Viewport {
     if (this.lastRecordedBufferLength !== this.terminal.lines.length) {
       // If buffer height changed
       this.lastRecordedBufferLength = this.terminal.lines.length;
-      this.refresh();
+      this.isRefreshQueued = true;
     } else if (this.lastRecordedViewportHeight !== this.terminal.rows) {
       // If viewport height changed
-      this.refresh();
+      this.isRefreshQueued = true;
     } else {
       // If size has changed, refresh viewport
       if (this.charMeasure.height !== this.currentRowHeight) {
-        this.refresh();
+        this.isRefreshQueued = true;
       }
     }
 
