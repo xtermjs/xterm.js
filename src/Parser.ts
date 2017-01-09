@@ -1033,10 +1033,10 @@ export class Parser {
   }
 }
 
-var wcwidth = (function(opts) {
+const wcwidth = (function(opts) {
   // extracted from https://www.cl.cam.ac.uk/%7Emgk25/ucs/wcwidth.c
   // combining characters
-  var COMBINING = [
+  const COMBINING = [
     [0x0300, 0x036F], [0x0483, 0x0486], [0x0488, 0x0489],
     [0x0591, 0x05BD], [0x05BF, 0x05BF], [0x05C1, 0x05C2],
     [0x05C4, 0x05C5], [0x05C7, 0x05C7], [0x0600, 0x0603],
@@ -1088,9 +1088,9 @@ var wcwidth = (function(opts) {
   ];
   // binary search
   function bisearch(ucs) {
-    var min = 0;
-    var max = COMBINING.length - 1;
-    var mid;
+    let min = 0;
+    let max = COMBINING.length - 1;
+    let mid;
     if (ucs < COMBINING[0][0] || ucs > COMBINING[max][1])
       return false;
     while (max >= min) {
@@ -1114,14 +1114,18 @@ var wcwidth = (function(opts) {
     if (bisearch(ucs))
       return 0;
     // if we arrive here, ucs is not a combining or C0/C1 control character
-    return 1 +
-      (
-      ucs >= 0x1100 &&
-      (
+    if (isWide(ucs)) {
+      return 2;
+    }
+    return 1;
+  }
+  function isWide(ucs) {
+    return (
+      ucs >= 0x1100 && (
         ucs <= 0x115f ||                // Hangul Jamo init. consonants
-        ucs == 0x2329 ||
-        ucs == 0x232a ||
-        (ucs >= 0x2e80 && ucs <= 0xa4cf && ucs != 0x303f) ||  // CJK..Yi
+        ucs === 0x2329 ||
+        ucs === 0x232a ||
+        (ucs >= 0x2e80 && ucs <= 0xa4cf && ucs !== 0x303f) ||  // CJK..Yi
         (ucs >= 0xac00 && ucs <= 0xd7a3) ||    // Hangul Syllables
         (ucs >= 0xf900 && ucs <= 0xfaff) ||    // CJK Compat Ideographs
         (ucs >= 0xfe10 && ucs <= 0xfe19) ||    // Vertical forms
@@ -1129,9 +1133,7 @@ var wcwidth = (function(opts) {
         (ucs >= 0xff00 && ucs <= 0xff60) ||    // Fullwidth Forms
         (ucs >= 0xffe0 && ucs <= 0xffe6) ||
         (ucs >= 0x20000 && ucs <= 0x2fffd) ||
-        (ucs >= 0x30000 && ucs <= 0x3fffd)
-      )
-    );
+        (ucs >= 0x30000 && ucs <= 0x3fffd)));
   }
   return wcwidth;
 })({nul: 0, control: 0});  // configurable options
