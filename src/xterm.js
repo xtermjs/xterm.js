@@ -17,6 +17,7 @@ import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboa
 import { CircularList } from './utils/CircularList.js';
 import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
+import * as parser from './Parser';
 import * as Browser from './utils/Browser';
 import * as Keyboard from './utils/Keyboard';
 
@@ -1377,45 +1378,18 @@ Terminal.prototype.write = function(data) {
     // surrogate low - already handled above
     if (0xDC00 <= code && code <= 0xDFFF)
       continue;
+
+    if (this.state === normal) {
+      if (ch in parser.normalStateHandler) {
+        parser.normalStateHandler[ch](this.inputHandler);
+        // Skip switch statement (eventually everything will be handled this way
+        continue;
+      }
+    }
+
     switch (this.state) {
       case normal:
         switch (ch) {
-          case C0.BEL:
-            this.inputHandler.bell();
-            break;
-
-          case C0.LF:
-          case C0.VT:
-          case C0.FF:
-            this.inputHandler.lineFeed();
-            break;
-
-          // '\r'
-          case C0.CR:
-            this.inputHandler.carriageReturn();
-            break;
-
-          // '\b'
-          case C0.BS:
-            this.inputHandler.backspace();
-            break;
-
-          // '\t'
-          case C0.HT:
-            this.inputHandler.tab();
-            break;
-
-          // shift out
-          case C0.SO:
-            this.inputHandler.shiftOut();
-            break;
-
-          // shift in
-          case C0.SI:
-            this.inputHandler.shiftIn();
-            break;
-
-          // '\e'
           case C0.ESC:
             this.state = escaped;
             break;
