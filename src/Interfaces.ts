@@ -44,4 +44,9 @@ export interface IInputHandler {
   tab(): void;
   shiftOut(): void;
   shiftIn(): void;
+  // TODO: Make IInputHandler parameter names more friendly? (ie. cursorUp(amount: number))
+  cursorUp(params: number[]): void;
+  cursorDown(params: number[]);
+  cursorForward(params: number[]);
+  cursorBackward(params: number[]);
 }

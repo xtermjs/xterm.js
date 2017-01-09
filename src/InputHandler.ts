@@ -47,4 +47,48 @@ export class InputHandler implements IInputHandler {
   public shiftIn(): void {
     this._terminal.setgLevel(0);
   }
+
+  public cursorUp(params: number[]): void {
+    let param = params[0];
+    if (param < 1) {
+      param = 1;
+    }
+    this._terminal.y -= param;
+    if (this._terminal.y < 0) {
+      this._terminal.y = 0;
+    }
+  }
+
+  public cursorDown(params: number[]) {
+    let param = params[0];
+    if (param < 1) {
+      param = 1;
+    }
+    this._terminal.y += param;
+    if (this._terminal.y >= this._terminal.rows) {
+      this._terminal.y = this._terminal.rows - 1;
+    }
+  }
+
+  public cursorForward(params: number[]) {
+    let param = params[0];
+    if (param < 1) {
+      param = 1;
+    }
+    this._terminal.x += param;
+    if (this._terminal.x >= this._terminal.cols) {
+      this._terminal.x = this._terminal.cols - 1;
+    }
+  }
+
+  public cursorBackward(params: number[]) {
+    let param = params[0];
+    if (param < 1) {
+      param = 1;
+    }
+    this._terminal.x -= param;
+    if (this._terminal.x < 0) {
+      this._terminal.x = 0;
+    }
+  }
 }

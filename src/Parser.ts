@@ -14,25 +14,31 @@ normalStateHandler[C0.SO] = (handler) => handler.shiftOut();
 normalStateHandler[C0.SI] = (handler) => handler.shiftIn();
 // TODO: Add ESC and Default cases to normalStateHandler
 
-const csiStateHandler: {[key: string]: (handler: IInputHandler, parser: Parser) => void} = {};
-csiStateHandler['?'] = (_, parser) => parser.setPrefix('?');
-csiStateHandler['>'] = (_, parser) => parser.setPrefix('>');
-csiStateHandler['!'] = (_, parser) => parser.setPrefix('!');
-csiStateHandler['0'] = (_, parser) => parser.setParam(parser.getParam() * 10);
-csiStateHandler['1'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 1);
-csiStateHandler['2'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 2);
-csiStateHandler['3'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 3);
-csiStateHandler['4'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 4);
-csiStateHandler['5'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 5);
-csiStateHandler['6'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 6);
-csiStateHandler['7'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 7);
-csiStateHandler['8'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 8);
-csiStateHandler['9'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 9);
-csiStateHandler['$'] = (_, parser) => parser.setPostfix('$');
-csiStateHandler['"'] = (_, parser) => parser.setPostfix('"');
-csiStateHandler[' '] = (_, parser) => parser.setPostfix(' ');
-csiStateHandler['\''] = (_, parser) => parser.setPostfix('\'');
-// TODO: Add remaining CSI cases
+const csiParamStateHandler: {[key: string]: (handler: IInputHandler, parser: Parser) => void} = {};
+csiParamStateHandler['?'] = (_, parser) => parser.setPrefix('?');
+csiParamStateHandler['>'] = (_, parser) => parser.setPrefix('>');
+csiParamStateHandler['!'] = (_, parser) => parser.setPrefix('!');
+csiParamStateHandler['0'] = (_, parser) => parser.setParam(parser.getParam() * 10);
+csiParamStateHandler['1'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 1);
+csiParamStateHandler['2'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 2);
+csiParamStateHandler['3'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 3);
+csiParamStateHandler['4'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 4);
+csiParamStateHandler['5'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 5);
+csiParamStateHandler['6'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 6);
+csiParamStateHandler['7'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 7);
+csiParamStateHandler['8'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 8);
+csiParamStateHandler['9'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 9);
+csiParamStateHandler['$'] = (_, parser) => parser.setPostfix('$');
+csiParamStateHandler['"'] = (_, parser) => parser.setPostfix('"');
+csiParamStateHandler[' '] = (_, parser) => parser.setPostfix(' ');
+csiParamStateHandler['\''] = (_, parser) => parser.setPostfix('\'');
+// TODO: Handle ';' and default (move on to ParserState.CSI (from CSI_PARAM)
+
+const csiStateHandler: {[key: string]: (handler: IInputHandler, params: number[]) => void} = {};
+csiStateHandler['A'] = (handler, params) => handler.cursorUp(params);
+csiStateHandler['B'] = (handler, params) => handler.cursorDown(params);
+csiStateHandler['C'] = (handler, params) => handler.cursorForward(params);
+csiStateHandler['D'] = (handler, params) => handler.cursorBackward(params);
 
 enum ParserState {
   NORMAL = 0,
@@ -508,11 +514,13 @@ export class Parser {
           break;
 
         case ParserState.CSI:
-          if (ch in csiStateHandler) {
-            csiStateHandler[ch](this._inputHandler, this);
+          if (ch in csiParamStateHandler) {
+            csiParamStateHandler[ch](this._inputHandler, this);
             // Skip below switch as this has handled these codes (eventually everything will be handled here
             break;
           }
+
+          // TODO: a new state should be introduced? to differentiate checking for params and the codes
 
           this._terminal.params.push(this._terminal.currentParam);
           this._terminal.currentParam = 0;
@@ -522,31 +530,13 @@ export class Parser {
 
           this.state = ParserState.NORMAL;
 
+          if (ch in csiStateHandler) {
+            csiStateHandler[ch](this._inputHandler, this._terminal.params);
+            // Skip below switch as this has handled these codes (eventually everything will be handled here
+            break;
+          }
+
           switch (ch) {
-            // CSI Ps A
-            // Cursor Up Ps Times (default = 1) (CUU).
-            case 'A':
-              this._terminal.cursorUp(this._terminal.params);
-              break;
-
-            // CSI Ps B
-            // Cursor Down Ps Times (default = 1) (CUD).
-            case 'B':
-              this._terminal.cursorDown(this._terminal.params);
-              break;
-
-            // CSI Ps C
-            // Cursor Forward Ps Times (default = 1) (CUF).
-            case 'C':
-              this._terminal.cursorForward(this._terminal.params);
-              break;
-
-            // CSI Ps D
-            // Cursor Backward Ps Times (default = 1) (CUB).
-            case 'D':
-              this._terminal.cursorBackward(this._terminal.params);
-              break;
-
             // CSI Ps ; Ps H
             // Cursor Position [row;column] (default = [1,1]) (CUP).
             case 'H':

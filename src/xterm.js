@@ -2222,57 +2222,6 @@ Terminal.prototype.tabSet = function() {
  * CSI
  */
 
-/**
- * CSI Ps A
- * Cursor Up Ps Times (default = 1) (CUU).
- */
-Terminal.prototype.cursorUp = function(params) {
-  var param = params[0];
-  if (param < 1) param = 1;
-  this.y -= param;
-  if (this.y < 0) this.y = 0;
-};
-
-
-/**
- * CSI Ps B
- * Cursor Down Ps Times (default = 1) (CUD).
- */
-Terminal.prototype.cursorDown = function(params) {
-  var param = params[0];
-  if (param < 1) param = 1;
-  this.y += param;
-  if (this.y >= this.rows) {
-    this.y = this.rows - 1;
-  }
-};
-
-
-/**
- * CSI Ps C
- * Cursor Forward Ps Times (default = 1) (CUF).
- */
-Terminal.prototype.cursorForward = function(params) {
-  var param = params[0];
-  if (param < 1) param = 1;
-  this.x += param;
-  if (this.x >= this.cols) {
-    this.x = this.cols - 1;
-  }
-};
-
-
-/**
- * CSI Ps D
- * Cursor Backward Ps Times (default = 1) (CUB).
- */
-Terminal.prototype.cursorBackward = function(params) {
-  var param = params[0];
-  if (param < 1) param = 1;
-  this.x -= param;
-  if (this.x < 0) this.x = 0;
-};
-
 
 /**
  * CSI Ps ; Ps H
