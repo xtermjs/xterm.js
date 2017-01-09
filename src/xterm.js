@@ -148,7 +148,6 @@ function Terminal(options) {
   this.cursorState = 0;
   this.cursorHidden = false;
   this.convertEol;
-  this.state = 0;
   this.queue = '';
   this.scrollTop = 0;
   this.scrollBottom = this.rows - 1;
@@ -2173,7 +2172,6 @@ Terminal.prototype.index = function() {
     this.y--;
     this.scroll();
   }
-  this.state = normal;
 };
 
 
@@ -2195,7 +2193,6 @@ Terminal.prototype.reverseIndex = function() {
   } else {
     this.y--;
   }
-  this.state = normal;
 };
 
 
@@ -2218,7 +2215,6 @@ Terminal.prototype.reset = function() {
  */
 Terminal.prototype.tabSet = function() {
   this.tabs[this.x] = true;
-  this.state = normal;
 };
 
 

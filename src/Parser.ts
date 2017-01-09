@@ -206,11 +206,13 @@ export class Parser {
               ;
             case 'D':
               this._terminal.index();
+              this.state = ParserState.NORMAL;
               break;
 
             // ESC M Reverse Index ( RI is 0x8d).
             case 'M':
               this._terminal.reverseIndex();
+              this.state = ParserState.NORMAL;
               break;
 
             // ESC % Select default/utf-8 character set.
@@ -319,6 +321,7 @@ export class Parser {
             // ESC H Tab Set (HTS is 0x88).
             case 'H':
               this._terminal.tabSet();
+              this.state = ParserState.NORMAL;
               break;
 
             // ESC = Application Keypad (DECKPAM).
