@@ -51,14 +51,14 @@ export class Parser {
       if (0xD800 <= code && code <= 0xDBFF) {
         // we got a surrogate high
         // get surrogate low (next 2 bytes)
-        low = data.charCodeAt(i+1);
+        low = data.charCodeAt(i + 1);
         if (isNaN(low)) {
           // end of data stream, save surrogate high
           this._terminal.surrogate_high = ch;
           continue;
         }
         code = ((code - 0xD800) * 0x400) + (low - 0xDC00) + 0x10000;
-        ch += data.charAt(i+1);
+        ch += data.charAt(i + 1);
       }
       // surrogate low - already handled above
       if (0xDC00 <= code && code <= 0xDFFF)
@@ -86,75 +86,75 @@ export class Parser {
               ch_width = wcwidth(code);
 
               if (ch >= ' ') {
-                if (this.charset && this.charset[ch]) {
-                  ch = this.charset[ch];
+                if (this._terminal.charset && this._terminal.charset[ch]) {
+                  ch = this._terminal.charset[ch];
                 }
 
-                row = this.y + this.ybase;
+                row = this._terminal.y + this._terminal.ybase;
 
                 // insert combining char in last cell
                 // FIXME: needs handling after cursor jumps
-                if (!ch_width && this.x) {
+                if (!ch_width && this._terminal.x) {
                   // dont overflow left
-                  if (this.lines.get(row)[this.x-1]) {
-                    if (!this.lines.get(row)[this.x-1][2]) {
+                  if (this._terminal.lines.get(row)[this._terminal.x - 1]) {
+                    if (!this._terminal.lines.get(row)[this._terminal.x - 1][2]) {
 
                       // found empty cell after fullwidth, need to go 2 cells back
-                      if (this.lines.get(row)[this.x-2])
-                        this.lines.get(row)[this.x-2][1] += ch;
+                      if (this._terminal.lines.get(row)[this._terminal.x - 2])
+                        this._terminal.lines.get(row)[this._terminal.x - 2][1] += ch;
 
                     } else {
-                      this.lines.get(row)[this.x-1][1] += ch;
+                      this._terminal.lines.get(row)[this._terminal.x - 1][1] += ch;
                     }
-                    this.updateRange(this.y);
+                    this._terminal.updateRange(this._terminal.y);
                   }
                   break;
                 }
 
                 // goto next line if ch would overflow
                 // TODO: needs a global min terminal width of 2
-                if (this.x+ch_width-1 >= this.cols) {
+                if (this._terminal.x + ch_width - 1 >= this._terminal.cols) {
                   // autowrap - DECAWM
-                  if (this.wraparoundMode) {
-                    this.x = 0;
-                    this.y++;
-                    if (this.y > this.scrollBottom) {
-                      this.y--;
-                      this.scroll();
+                  if (this._terminal.wraparoundMode) {
+                    this._terminal.x = 0;
+                    this._terminal.y++;
+                    if (this._terminal.y > this._terminal.scrollBottom) {
+                      this._terminal.y--;
+                      this._terminal.scroll();
                     }
                   } else {
-                    this.x = this.cols-1;
-                    if(ch_width===2)  // FIXME: check for xterm behavior
+                    this._terminal.x = this._terminal.cols - 1;
+                    if (ch_width === 2)  // FIXME: check for xterm behavior
                       continue;
                   }
                 }
-                row = this.y + this.ybase;
+                row = this._terminal.y + this._terminal.ybase;
 
                 // insert mode: move characters to right
-                if (this.insertMode) {
+                if (this._terminal.insertMode) {
                   // do this twice for a fullwidth char
-                  for (var moves=0; moves<ch_width; ++moves) {
+                  for (let moves = 0; moves < ch_width; ++moves) {
                     // remove last cell, if it's width is 0
                     // we have to adjust the second last cell as well
-                    var removed = this.lines.get(this.y + this.ybase).pop();
-                    if (removed[2]===0
-                        && this.lines.get(row)[this.cols-2]
-                    && this.lines.get(row)[this.cols-2][2]===2)
-                      this.lines.get(row)[this.cols-2] = [this.curAttr, ' ', 1];
+                    const removed = this._terminal.lines.get(this._terminal.y + this._terminal.ybase).pop();
+                    if (removed[2] === 0
+                        && this._terminal.lines.get(row)[this._terminal.cols - 2]
+                    && this._terminal.lines.get(row)[this._terminal.cols - 2][2] === 2)
+                      this._terminal.lines.get(row)[this._terminal.cols - 2] = [this._terminal.curAttr, ' ', 1];
 
                     // insert empty cell at cursor
-                    this.lines.get(row).splice(this.x, 0, [this.curAttr, ' ', 1]);
+                    this._terminal.lines.get(row).splice(this._terminal.x, 0, [this._terminal.curAttr, ' ', 1]);
                   }
                 }
 
-                this.lines.get(row)[this.x] = [this.curAttr, ch, ch_width];
-                this.x++;
-                this.updateRange(this.y);
+                this._terminal.lines.get(row)[this._terminal.x] = [this._terminal.curAttr, ch, ch_width];
+                this._terminal.x++;
+                this._terminal.updateRange(this._terminal.y);
 
                 // fullwidth char - set next cell width to zero and advance cursor
-                if (ch_width===2) {
-                  this.lines.get(row)[this.x] = [this.curAttr, '', 0];
-                  this.x++;
+                if (ch_width === 2) {
+                  this._terminal.lines.get(row)[this._terminal.x] = [this._terminal.curAttr, '', 0];
+                  this._terminal.x++;
                 }
               }
               break;
@@ -164,23 +164,23 @@ export class Parser {
           switch (ch) {
             // ESC [ Control Sequence Introducer ( CSI is 0x9b).
             case '[':
-              this.params = [];
-              this.currentParam = 0;
-              this.state = csi;
+              this._terminal.params = [];
+              this._terminal.currentParam = 0;
+              this.state = ParserState.CSI;
               break;
 
             // ESC ] Operating System Command ( OSC is 0x9d).
             case ']':
-              this.params = [];
-              this.currentParam = 0;
-              this.state = osc;
+              this._terminal.params = [];
+              this._terminal.currentParam = 0;
+              this.state = ParserState.OSC;
               break;
 
             // ESC P Device Control String ( DCS is 0x90).
             case 'P':
-              this.params = [];
-              this.currentParam = 0;
-              this.state = dcs;
+              this._terminal.params = [];
+              this._terminal.currentParam = 0;
+              this.state = ParserState.DCS;
               break;
 
             // ESC _ Application Program Command ( APC is 0x9f).
@@ -195,29 +195,29 @@ export class Parser {
 
             // ESC c Full Reset (RIS).
             case 'c':
-              this.reset();
+              this._terminal.reset();
               break;
 
             // ESC E Next Line ( NEL is 0x85).
             // ESC D Index ( IND is 0x84).
             case 'E':
-              this.x = 0;
+              this._terminal.x = 0;
               ;
             case 'D':
-              this.index();
+              this._terminal.index();
               break;
 
             // ESC M Reverse Index ( RI is 0x8d).
             case 'M':
-              this.reverseIndex();
+              this._terminal.reverseIndex();
               break;
 
             // ESC % Select default/utf-8 character set.
             // @ = default, G = utf-8
             case '%':
-              //this.charset = null;
-              this.setgLevel(0);
-              this.setgCharset(0, Terminal.charsets.US);
+              // this.charset = null;
+              this._terminal.setgLevel(0);
+              this._terminal.setgCharset(0, Terminal.charsets.US);
               this.state = ParserState.NORMAL;
               i++;
               break;
@@ -231,32 +231,32 @@ export class Parser {
             case '.':
               switch (ch) {
                 case '(':
-                  this.gcharset = 0;
+                  this._terminal.gcharset = 0;
                   break;
                 case ')':
-                  this.gcharset = 1;
+                  this._terminal.gcharset = 1;
                   break;
                 case '*':
-                  this.gcharset = 2;
+                  this._terminal.gcharset = 2;
                   break;
                 case '+':
-                  this.gcharset = 3;
+                  this._terminal.gcharset = 3;
                   break;
                 case '-':
-                  this.gcharset = 1;
+                  this._terminal.gcharset = 1;
                   break;
                 case '.':
-                  this.gcharset = 2;
+                  this._terminal.gcharset = 2;
                   break;
               }
-              this.state = charset;
+              this.state = ParserState.CHARSET;
               break;
 
             // Designate G3 Character Set (VT300).
             // A = ISO Latin-1 Supplemental.
             // Not implemented.
             case '/':
-              this.gcharset = 3;
+              this._terminal.gcharset = 3;
               this.state = ParserState.CHARSET;
               i--;
               break;
@@ -274,38 +274,38 @@ export class Parser {
             // ESC n
             // Invoke the G2 Character Set as GL (LS2).
             case 'n':
-              this.setgLevel(2);
+              this._terminal.setgLevel(2);
               break;
             // ESC o
             // Invoke the G3 Character Set as GL (LS3).
             case 'o':
-              this.setgLevel(3);
+              this._terminal.setgLevel(3);
               break;
             // ESC |
             // Invoke the G3 Character Set as GR (LS3R).
             case '|':
-              this.setgLevel(3);
+              this._terminal.setgLevel(3);
               break;
             // ESC }
             // Invoke the G2 Character Set as GR (LS2R).
             case '}':
-              this.setgLevel(2);
+              this._terminal.setgLevel(2);
               break;
             // ESC ~
             // Invoke the G1 Character Set as GR (LS1R).
             case '~':
-              this.setgLevel(1);
+              this._terminal.setgLevel(1);
               break;
 
             // ESC 7 Save Cursor (DECSC).
             case '7':
-              this.saveCursor();
+              this._terminal.saveCursor();
               this.state = ParserState.NORMAL;
               break;
 
             // ESC 8 Restore Cursor (DECRC).
             case '8':
-              this.restoreCursor();
+              this._terminal.restoreCursor();
               this.state = ParserState.NORMAL;
               break;
 
@@ -317,28 +317,28 @@ export class Parser {
 
             // ESC H Tab Set (HTS is 0x88).
             case 'H':
-              this.tabSet();
+              this._terminal.tabSet();
               break;
 
             // ESC = Application Keypad (DECKPAM).
             case '=':
-              this.log('Serial port requested application keypad.');
-              this.applicationKeypad = true;
-              this.viewport.syncScrollArea();
+              this._terminal.log('Serial port requested application keypad.');
+              this._terminal.applicationKeypad = true;
+              this._terminal.viewport.syncScrollArea();
               this.state = ParserState.NORMAL;
               break;
 
             // ESC > Normal Keypad (DECKPNM).
             case '>':
-              this.log('Switching back to normal keypad.');
-              this.applicationKeypad = false;
-              this.viewport.syncScrollArea();
+              this._terminal.log('Switching back to normal keypad.');
+              this._terminal.applicationKeypad = false;
+              this._terminal.viewport.syncScrollArea();
               this.state = ParserState.NORMAL;
               break;
 
             default:
               this.state = ParserState.NORMAL;
-              this.error('Unknown ESC control: %s.', ch);
+              this._terminal.error('Unknown ESC control: %s.', ch);
               break;
           }
           break;
@@ -395,8 +395,8 @@ export class Parser {
               cs = Terminal.charsets.US;
               break;
           }
-          this.setgCharset(this.gcharset, cs);
-          this.gcharset = null;
+          this._terminal.setgCharset(this._terminal.gcharset, cs);
+          this._terminal.gcharset = null;
           this.state = ParserState.NORMAL;
           break;
 
@@ -407,15 +407,15 @@ export class Parser {
           if (ch === C0.ESC || ch === C0.BEL) {
             if (ch === C0.ESC) i++;
 
-            this.params.push(this.currentParam);
+            this._terminal.params.push(this._terminal.currentParam);
 
-            switch (this.params[0]) {
+            switch (this._terminal.params[0]) {
               case 0:
               case 1:
               case 2:
-                if (this.params[1]) {
-                  this.title = this.params[1];
-                  this.handleTitle(this.title);
+                if (this._terminal.params[1]) {
+                  this._terminal.title = this._terminal.params[1];
+                  this._terminal.handleTitle(this._terminal.title);
                 }
                 break;
               case 3:
@@ -464,45 +464,45 @@ export class Parser {
                 break;
             }
 
-            this.params = [];
-            this.currentParam = 0;
+            this._terminal.params = [];
+            this._terminal.currentParam = 0;
             this.state = ParserState.NORMAL;
           } else {
-            if (!this.params.length) {
+            if (!this._terminal.params.length) {
               if (ch >= '0' && ch <= '9') {
-                this.currentParam =
-                  this.currentParam * 10 + ch.charCodeAt(0) - 48;
+                this._terminal.currentParam =
+                  this._terminal.currentParam * 10 + ch.charCodeAt(0) - 48;
               } else if (ch === ';') {
-                this.params.push(this.currentParam);
-                this.currentParam = '';
+                this._terminal.params.push(this._terminal.currentParam);
+                this._terminal.currentParam = '';
               }
             } else {
-              this.currentParam += ch;
+              this._terminal.currentParam += ch;
             }
           }
           break;
 
-        case csi:
+        case ParserState.CSI:
           // '?', '>', '!'
           if (ch === '?' || ch === '>' || ch === '!') {
-            this.prefix = ch;
+            this._terminal.prefix = ch;
             break;
           }
 
           // 0 - 9
           if (ch >= '0' && ch <= '9') {
-            this.currentParam = this.currentParam * 10 + ch.charCodeAt(0) - 48;
+            this._terminal.currentParam = this._terminal.currentParam * 10 + ch.charCodeAt(0) - 48;
             break;
           }
 
           // '$', '"', ' ', '\''
           if (ch === '$' || ch === '"' || ch === ' ' || ch === '\'') {
-            this.postfix = ch;
+            this._terminal.postfix = ch;
             break;
           }
 
-          this.params.push(this.currentParam);
-          this.currentParam = 0;
+          this._terminal.params.push(this._terminal.currentParam);
+          this._terminal.currentParam = 0;
 
           // ';'
           if (ch === ';') break;
@@ -513,54 +513,54 @@ export class Parser {
             // CSI Ps A
             // Cursor Up Ps Times (default = 1) (CUU).
             case 'A':
-              this.cursorUp(this.params);
+              this._terminal.cursorUp(this._terminal.params);
               break;
 
             // CSI Ps B
             // Cursor Down Ps Times (default = 1) (CUD).
             case 'B':
-              this.cursorDown(this.params);
+              this._terminal.cursorDown(this._terminal.params);
               break;
 
             // CSI Ps C
             // Cursor Forward Ps Times (default = 1) (CUF).
             case 'C':
-              this.cursorForward(this.params);
+              this._terminal.cursorForward(this._terminal.params);
               break;
 
             // CSI Ps D
             // Cursor Backward Ps Times (default = 1) (CUB).
             case 'D':
-              this.cursorBackward(this.params);
+              this._terminal.cursorBackward(this._terminal.params);
               break;
 
             // CSI Ps ; Ps H
             // Cursor Position [row;column] (default = [1,1]) (CUP).
             case 'H':
-              this.cursorPos(this.params);
+              this._terminal.cursorPos(this._terminal.params);
               break;
 
             // CSI Ps J  Erase in Display (ED).
             case 'J':
-              this.eraseInDisplay(this.params);
+              this._terminal.eraseInDisplay(this._terminal.params);
               break;
 
             // CSI Ps K  Erase in Line (EL).
             case 'K':
-              this.eraseInLine(this.params);
+              this._terminal.eraseInLine(this._terminal.params);
               break;
 
             // CSI Pm m  Character Attributes (SGR).
             case 'm':
-              if (!this.prefix) {
-                this.charAttributes(this.params);
+              if (!this._terminal.prefix) {
+                this._terminal.charAttributes(this._terminal.params);
               }
               break;
 
             // CSI Ps n  Device Status Report (DSR).
             case 'n':
-              if (!this.prefix) {
-                this.deviceStatus(this.params);
+              if (!this._terminal.prefix) {
+                this._terminal.deviceStatus(this._terminal.params);
               }
               break;
 
@@ -571,61 +571,61 @@ export class Parser {
             // CSI Ps @
             // Insert Ps (Blank) Character(s) (default = 1) (ICH).
             case '@':
-              this.insertChars(this.params);
+              this._terminal.insertChars(this._terminal.params);
               break;
 
             // CSI Ps E
             // Cursor Next Line Ps Times (default = 1) (CNL).
             case 'E':
-              this.cursorNextLine(this.params);
+              this._terminal.cursorNextLine(this._terminal.params);
               break;
 
             // CSI Ps F
             // Cursor Preceding Line Ps Times (default = 1) (CNL).
             case 'F':
-              this.cursorPrecedingLine(this.params);
+              this._terminal.cursorPrecedingLine(this._terminal.params);
               break;
 
             // CSI Ps G
             // Cursor Character Absolute  [column] (default = [row,1]) (CHA).
             case 'G':
-              this.cursorCharAbsolute(this.params);
+              this._terminal.cursorCharAbsolute(this._terminal.params);
               break;
 
             // CSI Ps L
             // Insert Ps Line(s) (default = 1) (IL).
             case 'L':
-              this.insertLines(this.params);
+              this._terminal.insertLines(this._terminal.params);
               break;
 
             // CSI Ps M
             // Delete Ps Line(s) (default = 1) (DL).
             case 'M':
-              this.deleteLines(this.params);
+              this._terminal.deleteLines(this._terminal.params);
               break;
 
             // CSI Ps P
             // Delete Ps Character(s) (default = 1) (DCH).
             case 'P':
-              this.deleteChars(this.params);
+              this._terminal.deleteChars(this._terminal.params);
               break;
 
             // CSI Ps X
             // Erase Ps Character(s) (default = 1) (ECH).
             case 'X':
-              this.eraseChars(this.params);
+              this._terminal.eraseChars(this._terminal.params);
               break;
 
             // CSI Pm `  Character Position Absolute
             //   [column] (default = [row,1]) (HPA).
             case '`':
-              this.charPosAbsolute(this.params);
+              this._terminal.charPosAbsolute(this._terminal.params);
               break;
 
             // 141 61 a * HPR -
             // Horizontal Position Relative
             case 'a':
-              this.HPositionRelative(this.params);
+              this._terminal.HPositionRelative(this._terminal.params);
               break;
 
             // CSI P s c
@@ -633,37 +633,37 @@ export class Parser {
             // CSI > P s c
             // Send Device Attributes (Secondary DA)
             case 'c':
-              this.sendDeviceAttributes(this.params);
+              this._terminal.sendDeviceAttributes(this._terminal.params);
               break;
 
             // CSI Pm d
             // Line Position Absolute  [row] (default = [1,column]) (VPA).
             case 'd':
-              this.linePosAbsolute(this.params);
+              this._terminal.linePosAbsolute(this._terminal.params);
               break;
 
             // 145 65 e * VPR - Vertical Position Relative
             case 'e':
-              this.VPositionRelative(this.params);
+              this._terminal.VPositionRelative(this._terminal.params);
               break;
 
             // CSI Ps ; Ps f
             //   Horizontal and Vertical Position [row;column] (default =
             //   [1,1]) (HVP).
             case 'f':
-              this.HVPosition(this.params);
+              this._terminal.HVPosition(this._terminal.params);
               break;
 
             // CSI Pm h  Set Mode (SM).
             // CSI ? Pm h - mouse escape codes, cursor escape codes
             case 'h':
-              this.setMode(this.params);
+              this._terminal.setMode(this._terminal.params);
               break;
 
             // CSI Pm l  Reset Mode (RM).
             // CSI ? Pm l
             case 'l':
-              this.resetMode(this.params);
+              this._terminal.resetMode(this._terminal.params);
               break;
 
             // CSI Ps ; Ps r
@@ -671,19 +671,19 @@ export class Parser {
             //   dow) (DECSTBM).
             // CSI ? Pm r
             case 'r':
-              this.setScrollRegion(this.params);
+              this._terminal.setScrollRegion(this._terminal.params);
               break;
 
             // CSI s
             //   Save cursor (ANSI.SYS).
             case 's':
-              this.saveCursor(this.params);
+              this._terminal.saveCursor(this._terminal.params);
               break;
 
             // CSI u
             //   Restore cursor (ANSI.SYS).
             case 'u':
-              this.restoreCursor(this.params);
+              this._terminal.restoreCursor(this._terminal.params);
               break;
 
               /**
@@ -693,12 +693,12 @@ export class Parser {
             // CSI Ps I
             // Cursor Forward Tabulation Ps tab stops (default = 1) (CHT).
             case 'I':
-              this.cursorForwardTab(this.params);
+              this._terminal.cursorForwardTab(this._terminal.params);
               break;
 
             // CSI Ps S  Scroll up Ps lines (default = 1) (SU).
             case 'S':
-              this.scrollUp(this.params);
+              this._terminal.scrollUp(this._terminal.params);
               break;
 
             // CSI Ps T  Scroll down Ps lines (default = 1) (SD).
@@ -713,25 +713,25 @@ export class Parser {
               //   this.initMouseTracking(this.params);
               //   break;
               // }
-              if (this.params.length < 2 && !this.prefix) {
-                this.scrollDown(this.params);
+              if (this._terminal.params.length < 2 && !this._terminal.prefix) {
+                this._terminal.scrollDown(this._terminal.params);
               }
               break;
 
             // CSI Ps Z
             // Cursor Backward Tabulation Ps tab stops (default = 1) (CBT).
             case 'Z':
-              this.cursorBackwardTab(this.params);
+              this._terminal.cursorBackwardTab(this._terminal.params);
               break;
 
             // CSI Ps b  Repeat the preceding graphic character Ps times (REP).
             case 'b':
-              this.repeatPrecedingCharacter(this.params);
+              this._terminal.repeatPrecedingCharacter(this._terminal.params);
               break;
 
             // CSI Ps g  Tab Clear (TBC).
             case 'g':
-              this.tabClear(this.params);
+              this._terminal.tabClear(this._terminal.params);
               break;
 
               // CSI Pm i  Media Copy (MC).
@@ -768,12 +768,12 @@ export class Parser {
               //   Request DEC private mode (DECRQM).
               // CSI Ps ; Ps " p
             case 'p':
-              switch (this.prefix) {
+              switch (this._terminal.prefix) {
                   // case '>':
                   //   this.setPointerMode(this.params);
                   //   break;
                 case '!':
-                  this.softReset(this.params);
+                  this._terminal.softReset(this._terminal.params);
                   break;
                   // case '?':
                   //   if (this.postfix === '$') {
@@ -928,19 +928,19 @@ export class Parser {
               //   break;
 
             default:
-              this.error('Unknown CSI code: %s.', ch);
+              this._terminal.error('Unknown CSI code: %s.', ch);
               break;
           }
 
-          this.prefix = '';
-          this.postfix = '';
+          this._terminal.prefix = '';
+          this._terminal.postfix = '';
           break;
 
         case ParserState.DCS:
           if (ch === C0.ESC || ch === C0.BEL) {
             if (ch === C0.ESC) i++;
 
-            switch (this.prefix) {
+            switch (this._terminal.prefix) {
               // User-Defined Keys (DECUDK).
               case '':
                 break;
@@ -948,7 +948,7 @@ export class Parser {
               // Request Status String (DECRQSS).
               // test: echo -e '\eP$q"p\e\\'
               case '$q':
-                var pt = this.currentParam
+                let pt = this._terminal.currentParam
                 , valid = false;
 
                 switch (pt) {
@@ -965,9 +965,9 @@ export class Parser {
                   // DECSTBM
                   case 'r':
                     pt = ''
-                      + (this.scrollTop + 1)
+                      + (this._terminal.scrollTop + 1)
                       + ';'
-                      + (this.scrollBottom + 1)
+                      + (this._terminal.scrollBottom + 1)
                       + 'r';
                     break;
 
@@ -977,12 +977,12 @@ export class Parser {
                     break;
 
                   default:
-                    this.error('Unknown DCS Pt: %s.', pt);
+                    this._terminal.error('Unknown DCS Pt: %s.', pt);
                     pt = '';
                     break;
                 }
 
-                this.send(C0.ESC + 'P' + +valid + '$r' + pt + C0.ESC + '\\');
+                this._terminal.send(C0.ESC + 'P' + +valid + '$r' + pt + C0.ESC + '\\');
                 break;
 
               // Set Termcap/Terminfo Data (xterm, experimental).
@@ -994,30 +994,31 @@ export class Parser {
               // This can cause a small glitch in vim.
               // test: echo -ne '\eP+q6b64\e\\'
               case '+q':
-                var pt = this.currentParam
+                // TODO: Don't declare pt twice
+                /*let*/ pt = this._terminal.currentParam
                 , valid = false;
 
-                this.send(C0.ESC + 'P' + +valid + '+r' + pt + C0.ESC + '\\');
+                this._terminal.send(C0.ESC + 'P' + +valid + '+r' + pt + C0.ESC + '\\');
                 break;
 
               default:
-                this.error('Unknown DCS prefix: %s.', this.prefix);
+                this._terminal.error('Unknown DCS prefix: %s.', this._terminal.prefix);
                 break;
             }
 
-            this.currentParam = 0;
-            this.prefix = '';
+            this._terminal.currentParam = 0;
+            this._terminal.prefix = '';
             this.state = ParserState.NORMAL;
-          } else if (!this.currentParam) {
-            if (!this.prefix && ch !== '$' && ch !== '+') {
-              this.currentParam = ch;
-            } else if (this.prefix.length === 2) {
-              this.currentParam = ch;
+          } else if (!this._terminal.currentParam) {
+            if (!this._terminal.prefix && ch !== '$' && ch !== '+') {
+              this._terminal.currentParam = ch;
+            } else if (this._terminal.prefix.length === 2) {
+              this._terminal.currentParam = ch;
             } else {
-              this.prefix += ch;
+              this._terminal.prefix += ch;
             }
           } else {
-            this.currentParam += ch;
+            this._terminal.currentParam += ch;
           }
           break;
 
