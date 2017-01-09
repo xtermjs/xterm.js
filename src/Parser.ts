@@ -7,6 +7,7 @@ normalStateHandler[C0.LF] = (handler) => handler.lineFeed();
 normalStateHandler[C0.VT] = normalStateHandler[C0.LF];
 normalStateHandler[C0.FF] = normalStateHandler[C0.LF];
 normalStateHandler[C0.CR] = (handler) => handler.carriageReturn();
+normalStateHandler[C0.BS] = (handler) => handler.backspace();
 normalStateHandler[C0.HT] = (handler) => handler.tab();
 normalStateHandler[C0.SO] = (handler) => handler.shiftOut();
 normalStateHandler[C0.SI] = (handler) => handler.shiftIn();
