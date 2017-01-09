@@ -16,6 +16,7 @@ import { Viewport } from './Viewport.js';
 import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard.js';
 import { CircularList } from './utils/CircularList.js';
 import { DomElementObjectPool } from './utils/DomElementObjectPool.js';
+import { CharMeasure } from './utils/CharMeasure.js';
 import * as Browser from './utils/Browser';
 import * as Keyboard from './utils/Keyboard';
 
@@ -138,14 +139,8 @@ function Terminal(options) {
    */
   this.y = 0;
 
-  /**
-   * Used to debounce the refresh function
-   */
-  this.isRefreshing = false;
-
-  /**
-   * Whether there is a full terminal refresh queued
-   */
+  /** A queue of the rows to be refreshed */
+  this.refreshRowsQueue = [];
 
   this.cursorState = 0;
   this.cursorHidden = false;
@@ -409,7 +404,7 @@ Terminal.prototype.blur = function() {
  */
 Terminal.bindBlur = function (term) {
   on(term.textarea, 'blur', function (ev) {
-    term.refresh(term.y, term.y);
+    term.queueRefresh(term.y, term.y);
     if (term.sendFocus) {
       term.send('\x1b[O');
     }
@@ -575,20 +570,25 @@ Terminal.prototype.open = function(parent) {
   this.compositionHelper = new CompositionHelper(this.textarea, this.compositionView, this);
   this.helperContainer.appendChild(this.compositionView);
 
-  this.charMeasureElement = document.createElement('div');
-  this.charMeasureElement.classList.add('xterm-char-measure-element');
-  this.charMeasureElement.innerHTML = 'W';
-  this.helperContainer.appendChild(this.charMeasureElement);
+  this.charSizeStyleElement = document.createElement('style');
+  this.helperContainer.appendChild(this.charSizeStyleElement);
 
   for (; i < this.rows; i++) {
     this.insertRow();
   }
   this.parent.appendChild(this.element);
 
-  this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasureElement);
+  this.charMeasure = new CharMeasure(this.rowContainer);
+  this.charMeasure.on('charsizechanged', function () {
+    self.updateCharSizeCSS();
+  });
+  this.charMeasure.measure();
 
-  // Draw the screen.
-  this.refresh(0, this.rows - 1);
+  this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
+
+  // Setup loop that draws to screen
+  this.queueRefresh(0, this.rows - 1);
+  this.refreshLoop();
 
   // Initialize global actions that
   // need to be taken on the document.
@@ -643,6 +643,13 @@ Terminal.loadAddon = function(addon, callback) {
   }
 };
 
+/**
+ * Updates the helper CSS class with any changes necessary after the terminal's
+ * character width has been changed.
+ */
+Terminal.prototype.updateCharSizeCSS = function() {
+  this.charSizeStyleElement.textContent = '.xterm-wide-char{width:' + (this.charMeasure.width * 2) + 'px;}';
+}
 
 /**
  * XTerm mouse events
@@ -1000,6 +1007,48 @@ Terminal.flags = {
 }
 
 /**
+ * Queues a refresh between two rows (inclusive), to be done on next animation
+ * frame.
+ * @param {number} start The start row.
+ * @param {number} end The end row.
+ */
+Terminal.prototype.queueRefresh = function(start, end) {
+  this.refreshRowsQueue.push({ start: start, end: end });
+}
+
+/**
+ * Performs the refresh loop callback, calling refresh only if a refresh is
+ * necessary before queueing up the next one.
+ */
+Terminal.prototype.refreshLoop = function() {
+  // Don't refresh if there were no row changes
+  if (this.refreshRowsQueue.length > 0) {
+    var start;
+    var end;
+    if (this.refreshRowsQueue.length > 4) {
+      // Just do a full refresh when 5+ refreshes are queued
+      start = 0;
+      end = this.rows - 1;
+    } else {
+      // Get start and end rows that need refreshing
+      start = this.refreshRowsQueue[0].start;
+      end = this.refreshRowsQueue[0].end;
+      for (var i = 1; i < this.refreshRowsQueue.length; i++) {
+        if (this.refreshRowsQueue[i].start < start) {
+          start = this.refreshRowsQueue[i].start;
+        }
+        if (this.refreshRowsQueue[i].end > end) {
+          end = this.refreshRowsQueue[i].end;
+        }
+      }
+    }
+    this.refreshRowsQueue = [];
+    this.refresh(start, end);
+  }
+  window.requestAnimationFrame(this.refreshLoop.bind(this));
+}
+
+/**
  * Refreshes (re-renders) terminal content within two rows (inclusive)
  *
  * Rendering Engine:
@@ -1019,46 +1068,9 @@ Terminal.flags = {
  *
  * @param {number} start The row to start from (between 0 and terminal's height terminal - 1)
  * @param {number} end The row to end at (between fromRow and terminal's height terminal - 1)
- * @param {boolean} queue Whether the refresh should ran right now or be queued
  */
-Terminal.prototype.refresh = function(start, end, queue) {
+Terminal.prototype.refresh = function(start, end) {
   var self = this;
-
-  // queue defaults to true
-  queue = (typeof queue == 'undefined') ? true : queue;
-
-  /**
-   * The refresh queue allows refresh to execute only approximately 30 times a second. For
-   * commands that pass a significant amount of output to the write function, this prevents the
-   * terminal from maxing out the CPU and making the UI unresponsive. While commands can still
-   * run beyond what they do on the terminal, it is far better with a debounce in place as
-   * every single terminal manipulation does not need to be constructed in the DOM.
-   *
-   * A side-effect of this is that it makes ^C to interrupt a process seem more responsive.
-   */
-  if (queue) {
-    // If refresh should be queued, order the refresh and return.
-    if (this._refreshIsQueued) {
-      // If a refresh has already been queued, just order a full refresh next
-      this._fullRefreshNext = true;
-    } else {
-      setTimeout(function () {
-        self.refresh(start, end, false);
-      }, 34)
-      this._refreshIsQueued = true;
-    }
-    return;
-  }
-
-  // If refresh should be run right now (not be queued), release the lock
-  this._refreshIsQueued = false;
-
-  // If multiple refreshes were requested, make a full refresh.
-  if (this._fullRefreshNext) {
-    start = 0;
-    end = this.rows - 1;
-    this._fullRefreshNext = false // reset lock
-  }
 
   var x, y, i, line, out, ch, ch_width, width, data, attr, bg, fg, flags, row, parent, focused = document.activeElement;
 
@@ -1222,6 +1234,9 @@ Terminal.prototype.refresh = function(start, end, queue) {
         }
       }
 
+      if (ch_width === 2) {
+        out += '<span class="xterm-wide-char">';
+      }
       switch (ch) {
         case '&':
           innerHTML += '&amp;';
@@ -1244,6 +1259,9 @@ Terminal.prototype.refresh = function(start, end, queue) {
             // out += ch;
           }
           break;
+      }
+      if (ch_width === 2) {
+        out += '</span>';
       }
 
       attr = data;
@@ -1285,7 +1303,7 @@ Terminal.prototype.refresh = function(start, end, queue) {
 Terminal.prototype.showCursor = function() {
   if (!this.cursorState) {
     this.cursorState = 1;
-    this.refresh(this.y, this.y);
+    this.queueRefresh(this.y, this.y);
   }
 };
 
@@ -1294,6 +1312,15 @@ Terminal.prototype.showCursor = function() {
  */
 Terminal.prototype.scroll = function() {
   var row;
+
+  // Make room for the new row in lines
+  if (this.lines.length === this.lines.maxLength) {
+    this.lines.trimStart(1);
+    this.ybase--;
+    if (this.ydisp !== 0) {
+      this.ydisp--;
+    }
+  }
 
   this.ybase++;
 
@@ -1309,13 +1336,6 @@ Terminal.prototype.scroll = function() {
   row -= this.rows - 1 - this.scrollBottom;
 
   if (row === this.lines.length) {
-    // Compensate ybase and ydisp if lines has hit the maximum buffer size
-    if (this.lines.length === this.lines.maxLength) {
-      this.ybase--;
-      if (this.ydisp !== 0) {
-        this.ydisp--;
-      }
-    }
     // Optimization: pushing is faster than splicing when they amount to the same behavior
     this.lines.push(this.blankLine());
   } else {
@@ -1372,7 +1392,7 @@ Terminal.prototype.scrollDisp = function(disp, suppressScrollEvent) {
     this.emit('scroll', this.ydisp);
   }
 
-  this.refresh(0, this.rows - 1);
+  this.queueRefresh(0, this.rows - 1);
 };
 
 /**
@@ -2440,7 +2460,7 @@ Terminal.prototype.write = function(data) {
   }
 
   this.updateRange(this.y);
-  this.refresh(this.refreshStart, this.refreshEnd);
+  this.queueRefresh(this.refreshStart, this.refreshEnd);
 };
 
 /**
@@ -3006,7 +3026,9 @@ Terminal.prototype.resize = function(x, y) {
   this.scrollTop = 0;
   this.scrollBottom = y - 1;
 
-  this.refresh(0, this.rows - 1);
+  this.charMeasure.measure();
+
+  this.queueRefresh(0, this.rows - 1);
 
   this.normal = null;
 
@@ -3135,7 +3157,7 @@ Terminal.prototype.clear = function() {
   for (var i = 1; i < this.rows; i++) {
     this.lines.push(this.blankLine());
   }
-  this.refresh(0, this.rows - 1);
+  this.queueRefresh(0, this.rows - 1);
   this.emit('scroll', this.ydisp);
 };
 
@@ -3266,7 +3288,7 @@ Terminal.prototype.reset = function() {
   var customKeydownHandler = this.customKeydownHandler;
   Terminal.call(this, this.options);
   this.customKeydownHandler = customKeydownHandler;
-  this.refresh(0, this.rows - 1);
+  this.queueRefresh(0, this.rows - 1);
   this.viewport.syncScrollArea();
 };
 
@@ -4385,7 +4407,7 @@ Terminal.prototype.resetMode = function(params) {
           //   this.x = this.savedX;
           //   this.y = this.savedY;
           // }
-          this.refresh(0, this.rows - 1);
+          this.queueRefresh(0, this.rows - 1);
           this.viewport.syncScrollArea();
           this.showCursor();
         }
