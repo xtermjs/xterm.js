@@ -15,6 +15,7 @@ import { EventEmitter } from './EventEmitter.js';
 import { Viewport } from './Viewport.js';
 import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard.js';
 import { CircularList } from './utils/CircularList.js';
+import { CharMeasure } from './utils/CharMeasure.js';
 import * as Browser from './utils/Browser';
 import * as Keyboard from './utils/Keyboard';
 
@@ -567,17 +568,21 @@ Terminal.prototype.open = function(parent) {
   this.compositionHelper = new CompositionHelper(this.textarea, this.compositionView, this);
   this.helperContainer.appendChild(this.compositionView);
 
-  this.charMeasureElement = document.createElement('div');
-  this.charMeasureElement.classList.add('xterm-char-measure-element');
-  this.charMeasureElement.innerHTML = 'W';
-  this.helperContainer.appendChild(this.charMeasureElement);
+  this.charSizeStyleElement = document.createElement('style');
+  this.helperContainer.appendChild(this.charSizeStyleElement);
 
   for (; i < this.rows; i++) {
     this.insertRow();
   }
   this.parent.appendChild(this.element);
 
-  this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasureElement);
+  this.charMeasure = new CharMeasure(this.rowContainer);
+  this.charMeasure.on('charsizechanged', function () {
+    self.updateCharSizeCSS();
+  });
+  this.charMeasure.measure();
+
+  this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
 
   // Setup loop that draws to screen
   this.queueRefresh(0, this.rows - 1);
@@ -636,6 +641,13 @@ Terminal.loadAddon = function(addon, callback) {
   }
 };
 
+/**
+ * Updates the helper CSS class with any changes necessary after the terminal's
+ * character width has been changed.
+ */
+Terminal.prototype.updateCharSizeCSS = function() {
+  this.charSizeStyleElement.textContent = '.xterm-wide-char{width:' + (this.charMeasure.width * 2) + 'px;}';
+}
 
 /**
  * XTerm mouse events
@@ -1182,6 +1194,9 @@ Terminal.prototype.refresh = function(start, end) {
         }
       }
 
+      if (ch_width === 2) {
+        out += '<span class="xterm-wide-char">';
+      }
       switch (ch) {
         case '&':
           out += '&amp;';
@@ -1199,6 +1214,9 @@ Terminal.prototype.refresh = function(start, end) {
             out += ch;
           }
           break;
+      }
+      if (ch_width === 2) {
+        out += '</span>';
       }
 
       attr = data;
@@ -2944,6 +2962,8 @@ Terminal.prototype.resize = function(x, y) {
 
   this.scrollTop = 0;
   this.scrollBottom = y - 1;
+
+  this.charMeasure.measure();
 
   this.queueRefresh(0, this.rows - 1);
 

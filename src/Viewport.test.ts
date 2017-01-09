@@ -2,11 +2,11 @@ import { assert } from 'chai';
 import { Viewport } from './Viewport';
 
 describe('Viewport', () => {
-  var terminal;
-  var viewportElement;
-  var charMeasureElement;
-  var viewport;
-  var scrollAreaElement;
+  let terminal;
+  let viewportElement;
+  let charMeasure;
+  let viewport;
+  let scrollAreaElement;
 
   const CHARACTER_HEIGHT = 10;
 
@@ -34,21 +34,17 @@ describe('Viewport', () => {
         height: 0
       }
     };
-    charMeasureElement = {
-      getBoundingClientRect: () => {
-        return { width: null, height: CHARACTER_HEIGHT };
-      }
+    charMeasure = {
+      height: CHARACTER_HEIGHT
     };
-    viewport = new Viewport(terminal, viewportElement, scrollAreaElement, charMeasureElement);
+    viewport = new Viewport(terminal, viewportElement, scrollAreaElement, charMeasure);
   });
 
   describe('refresh', () => {
     it('should set the line-height of the terminal', () => {
       assert.equal(viewportElement.style.lineHeight, CHARACTER_HEIGHT + 'px');
       assert.equal(terminal.rowContainer.style.lineHeight, CHARACTER_HEIGHT + 'px');
-      charMeasureElement.getBoundingClientRect = () => {
-        return { width: null, height: 1 };
-      };
+      charMeasure.height = 1;
       viewport.refresh();
       assert.equal(viewportElement.style.lineHeight, '1px');
       assert.equal(terminal.rowContainer.style.lineHeight, '1px');
@@ -59,9 +55,7 @@ describe('Viewport', () => {
       terminal.rows = 1;
       viewport.refresh();
       assert.equal(viewportElement.style.height, 1 * CHARACTER_HEIGHT + 'px');
-      charMeasureElement.getBoundingClientRect = () => {
-        return { width: null, height: 20 };
-      };
+      charMeasure.height = 20;
       viewport.refresh();
       assert.equal(viewportElement.style.height, 20 + 'px');
     });
