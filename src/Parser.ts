@@ -1,5 +1,6 @@
 import { C0 } from './EscapeSequences';
 import { IInputHandler } from './Interfaces';
+import { CHARSETS } from './Charsets';
 
 const normalStateHandler: {[key: string]: (handler: IInputHandler) => void} = {};
 normalStateHandler[C0.BEL] = (handler) => handler.bell();
@@ -217,7 +218,7 @@ export class Parser {
             case '%':
               // this.charset = null;
               this._terminal.setgLevel(0);
-              this._terminal.setgCharset(0, Terminal.charsets.US);
+              this._terminal.setgCharset(0, CHARSETS.US);
               this.state = ParserState.NORMAL;
               i++;
               break;
@@ -346,53 +347,53 @@ export class Parser {
         case ParserState.CHARSET:
           switch (ch) {
             case '0': // DEC Special Character and Line Drawing Set.
-              cs = Terminal.charsets.SCLD;
+              cs = CHARSETS.SCLD;
               break;
             case 'A': // UK
-              cs = Terminal.charsets.UK;
+              cs = CHARSETS.UK;
               break;
             case 'B': // United States (USASCII).
-              cs = Terminal.charsets.US;
+              cs = CHARSETS.US;
               break;
             case '4': // Dutch
-              cs = Terminal.charsets.Dutch;
+              cs = CHARSETS.Dutch;
               break;
             case 'C': // Finnish
             case '5':
-              cs = Terminal.charsets.Finnish;
+              cs = CHARSETS.Finnish;
               break;
             case 'R': // French
-              cs = Terminal.charsets.French;
+              cs = CHARSETS.French;
               break;
             case 'Q': // FrenchCanadian
-              cs = Terminal.charsets.FrenchCanadian;
+              cs = CHARSETS.FrenchCanadian;
               break;
             case 'K': // German
-              cs = Terminal.charsets.German;
+              cs = CHARSETS.German;
               break;
             case 'Y': // Italian
-              cs = Terminal.charsets.Italian;
+              cs = CHARSETS.Italian;
               break;
             case 'E': // NorwegianDanish
             case '6':
-              cs = Terminal.charsets.NorwegianDanish;
+              cs = CHARSETS.NorwegianDanish;
               break;
             case 'Z': // Spanish
-              cs = Terminal.charsets.Spanish;
+              cs = CHARSETS.Spanish;
               break;
             case 'H': // Swedish
             case '7':
-              cs = Terminal.charsets.Swedish;
+              cs = CHARSETS.Swedish;
               break;
             case '=': // Swiss
-              cs = Terminal.charsets.Swiss;
+              cs = CHARSETS.Swiss;
               break;
             case '/': // ISOLatin (actually /A)
-              cs = Terminal.charsets.ISOLatin;
+              cs = CHARSETS.ISOLatin;
               i++;
               break;
             default: // Default
-              cs = Terminal.charsets.US;
+              cs = CHARSETS.US;
               break;
           }
           this._terminal.setgCharset(this._terminal.gcharset, cs);
