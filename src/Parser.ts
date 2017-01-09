@@ -28,6 +28,11 @@ csiStateHandler['6'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 6
 csiStateHandler['7'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 7);
 csiStateHandler['8'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 8);
 csiStateHandler['9'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 9);
+csiStateHandler['$'] = (_, parser) => parser.setPostfix('$');
+csiStateHandler['"'] = (_, parser) => parser.setPostfix('"');
+csiStateHandler[' '] = (_, parser) => parser.setPostfix(' ');
+csiStateHandler['\''] = (_, parser) => parser.setPostfix('\'');
+// TODO: Add remaining CSI cases
 
 enum ParserState {
   NORMAL = 0,
@@ -506,12 +511,6 @@ export class Parser {
           if (ch in csiStateHandler) {
             csiStateHandler[ch](this._inputHandler, this);
             // Skip below switch as this has handled these codes (eventually everything will be handled here
-            break;
-          }
-
-          // '$', '"', ' ', '\''
-          if (ch === '$' || ch === '"' || ch === ' ' || ch === '\'') {
-            this._terminal.postfix = ch;
             break;
           }
 
@@ -1047,7 +1046,7 @@ export class Parser {
     }
   }
 
-  public setPrefix(prefix: string) {
+  public setPrefix(prefix: string): void {
     this._terminal.prefix = prefix;
   }
 
@@ -1057,6 +1056,10 @@ export class Parser {
 
   public getParam(): number {
     return this._terminal.currentParam;
+  }
+
+  public setPostfix(postfix: string): void {
+    this._terminal.postfix = postfix;
   }
 }
 
