@@ -321,7 +321,8 @@ Terminal.defaults = {
   scrollback: 1000,
   screenKeys: false,
   debug: false,
-  cancelEvents: false
+  cancelEvents: false,
+  disableStdin: false
   // programFeatures: false,
   // focusKeys: false,
 };
@@ -3156,6 +3157,11 @@ Terminal.prototype.is = function(term) {
  * @param {string} data The data to populate in the event.
  */
 Terminal.prototype.handler = function(data) {
+  // Prevents all events to pty process if stdin is disabled
+  if (this.options.disableStdin) {
+    return;
+  }
+
   // Input is being sent to the terminal, the terminal should focus the prompt.
   if (this.ybase !== this.ydisp) {
     this.scrollToBottom();
