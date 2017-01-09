@@ -12,6 +12,22 @@ normalStateHandler[C0.BS] = (handler) => handler.backspace();
 normalStateHandler[C0.HT] = (handler) => handler.tab();
 normalStateHandler[C0.SO] = (handler) => handler.shiftOut();
 normalStateHandler[C0.SI] = (handler) => handler.shiftIn();
+// TODO: Add ESC and Default cases to normalStateHandler
+
+const csiStateHandler: {[key: string]: (handler: IInputHandler, parser: Parser) => void} = {};
+csiStateHandler['?'] = (_, parser) => parser.setPrefix('?');
+csiStateHandler['>'] = (_, parser) => parser.setPrefix('>');
+csiStateHandler['!'] = (_, parser) => parser.setPrefix('!');
+csiStateHandler['0'] = (_, parser) => parser.setParam(parser.getParam() * 10);
+csiStateHandler['1'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 1);
+csiStateHandler['2'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 2);
+csiStateHandler['3'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 3);
+csiStateHandler['4'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 4);
+csiStateHandler['5'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 5);
+csiStateHandler['6'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 6);
+csiStateHandler['7'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 7);
+csiStateHandler['8'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 8);
+csiStateHandler['9'] = (_, parser) => parser.setParam(parser.getParam() * 10 + 9);
 
 enum ParserState {
   NORMAL = 0,
@@ -487,15 +503,9 @@ export class Parser {
           break;
 
         case ParserState.CSI:
-          // '?', '>', '!'
-          if (ch === '?' || ch === '>' || ch === '!') {
-            this._terminal.prefix = ch;
-            break;
-          }
-
-          // 0 - 9
-          if (ch >= '0' && ch <= '9') {
-            this._terminal.currentParam = this._terminal.currentParam * 10 + ch.charCodeAt(0) - 48;
+          if (ch in csiStateHandler) {
+            csiStateHandler[ch](this._inputHandler, this);
+            // Skip below switch as this has handled these codes (eventually everything will be handled here
             break;
           }
 
@@ -1035,6 +1045,18 @@ export class Parser {
           break;
       }
     }
+  }
+
+  public setPrefix(prefix: string) {
+    this._terminal.prefix = prefix;
+  }
+
+  public setParam(param: number) {
+    this._terminal.currentParam = param;
+  }
+
+  public getParam(): number {
+    return this._terminal.currentParam;
   }
 }
 
