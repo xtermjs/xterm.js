@@ -16,6 +16,7 @@ import { Viewport } from './Viewport.js';
 import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard.js';
 import { CircularList } from './utils/CircularList.js';
 import { C0 } from './EscapeSequences';
+import { InputHandler } from './InputHandler';
 import * as Browser from './utils/Browser';
 import * as Keyboard from './utils/Keyboard';
 
@@ -202,6 +203,8 @@ function Terminal(options) {
   this.currentParam = 0;
   this.prefix = '';
   this.postfix = '';
+
+  this.inputHandler = new InputHandler(this);
 
   // leftover surrogate high from previous write invocation
   this.surrogate_high = '';
@@ -1378,47 +1381,38 @@ Terminal.prototype.write = function(data) {
       case normal:
         switch (ch) {
           case C0.BEL:
-            this.bell();
+            this.inputHandler.bell();
             break;
 
           case C0.LF:
           case C0.VT:
           case C0.FF:
-            if (this.convertEol) {
-              this.x = 0;
-            }
-            this.y++;
-            if (this.y > this.scrollBottom) {
-              this.y--;
-              this.scroll();
-            }
+            this.inputHandler.lineFeed();
             break;
 
           // '\r'
           case C0.CR:
-            this.x = 0;
+            this.inputHandler.carriageReturn();
             break;
 
           // '\b'
           case C0.BS:
-            if (this.x > 0) {
-              this.x--;
-            }
+            this.inputHandler.backspace();
             break;
 
           // '\t'
           case C0.HT:
-            this.x = this.nextStop();
+            this.inputHandler.tab();
             break;
 
           // shift out
           case C0.SO:
-            this.setgLevel(1);
+            this.inputHandler.shiftOut();
             break;
 
           // shift in
           case C0.SI:
-            this.setgLevel(0);
+            this.inputHandler.shiftIn();
             break;
 
           // '\e'
