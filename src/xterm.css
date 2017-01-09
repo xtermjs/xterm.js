@@ -116,6 +116,10 @@
     overflow-y: scroll;
 }
 
+.terminal .xterm-wide-char {
+    display: inline-block;
+}
+
 .terminal .xterm-rows {
     position: absolute;
     left: 0;
