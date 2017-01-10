@@ -2227,66 +2227,6 @@ Terminal.prototype.tabSet = function() {
  * Additions
  */
 
-/**
- * CSI Ps @
- * Insert Ps (Blank) Character(s) (default = 1) (ICH).
- */
-Terminal.prototype.insertChars = function(params) {
-  var param, row, j, ch;
-
-  param = params[0];
-  if (param < 1) param = 1;
-
-  row = this.y + this.ybase;
-  j = this.x;
-  ch = [this.eraseAttr(), ' ', 1]; // xterm
-
-  while (param-- && j < this.cols) {
-    this.lines.get(row).splice(j++, 0, ch);
-    this.lines.get(row).pop();
-  }
-};
-
-/**
- * CSI Ps E
- * Cursor Next Line Ps Times (default = 1) (CNL).
- * same as CSI Ps B ?
- */
-Terminal.prototype.cursorNextLine = function(params) {
-  var param = params[0];
-  if (param < 1) param = 1;
-  this.y += param;
-  if (this.y >= this.rows) {
-    this.y = this.rows - 1;
-  }
-  this.x = 0;
-};
-
-
-/**
- * CSI Ps F
- * Cursor Preceding Line Ps Times (default = 1) (CNL).
- * reuse CSI Ps A ?
- */
-Terminal.prototype.cursorPrecedingLine = function(params) {
-  var param = params[0];
-  if (param < 1) param = 1;
-  this.y -= param;
-  if (this.y < 0) this.y = 0;
-  this.x = 0;
-};
-
-
-/**
- * CSI Ps G
- * Cursor Character Absolute  [column] (default = [row,1]) (CHA).
- */
-Terminal.prototype.cursorCharAbsolute = function(params) {
-  var param = params[0];
-  if (param < 1) param = 1;
-  this.x = param - 1;
-};
-
 
 /**
  * CSI Ps L

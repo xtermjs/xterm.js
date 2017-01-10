@@ -80,6 +80,26 @@ export class InputHandler implements IInputHandler {
   }
 
   /**
+   * CSI Ps @
+   * Insert Ps (Blank) Character(s) (default = 1) (ICH).
+   */
+  public insertChars(params: number[]): void {
+    let param, row, j, ch;
+
+    param = params[0];
+    if (param < 1) param = 1;
+
+    row = this._terminal.y + this._terminal.ybase;
+    j = this._terminal.x;
+    ch = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+
+    while (param-- && j < this._terminal.cols) {
+      this._terminal.lines.get(row).splice(j++, 0, ch);
+      this._terminal.lines.get(row).pop();
+    }
+  }
+
+  /**
    * CSI Ps A
    * Cursor Up Ps Times (default = 1) (CUU).
    */
@@ -140,10 +160,58 @@ export class InputHandler implements IInputHandler {
   }
 
   /**
+   * CSI Ps E
+   * Cursor Next Line Ps Times (default = 1) (CNL).
+   * same as CSI Ps B ?
+   */
+  public cursorNextLine(params: number[]): void {
+    let param = params[0];
+    if (param < 1) {
+      param = 1;
+    }
+    this._terminal.y += param;
+    if (this._terminal.y >= this._terminal.rows) {
+      this._terminal.y = this._terminal.rows - 1;
+    }
+    this._terminal.x = 0;
+  };
+
+
+  /**
+   * CSI Ps F
+   * Cursor Preceding Line Ps Times (default = 1) (CNL).
+   * reuse CSI Ps A ?
+   */
+  public cursorPrecedingLine(params: number[]): void {
+    let param = params[0];
+    if (param < 1) {
+      param = 1;
+    }
+    this._terminal.y -= param;
+    if (this._terminal.y < 0) {
+      this._terminal.y = 0;
+    }
+    this._terminal.x = 0;
+  };
+
+
+  /**
+   * CSI Ps G
+   * Cursor Character Absolute  [column] (default = [row,1]) (CHA).
+   */
+  public cursorCharAbsolute(params: number[]): void {
+    let param = params[0];
+    if (param < 1) {
+      param = 1;
+    }
+    this._terminal.x = param - 1;
+  }
+
+  /**
    * CSI Ps ; Ps H
    * Cursor Position [row;column] (default = [1,1]) (CUP).
    */
-  public cursorPosition(params: number[]) {
+  public cursorPosition(params: number[]): void {
     let row, col;
 
     row = params[0] - 1;
@@ -182,7 +250,7 @@ export class InputHandler implements IInputHandler {
    *     Ps = 1  -> Selective Erase Above.
    *     Ps = 2  -> Selective Erase All.
    */
-  public eraseInDisplay(params: number[]) {
+  public eraseInDisplay(params: number[]): void {
     let j;
     switch (params[0]) {
       case 0:
@@ -220,7 +288,7 @@ export class InputHandler implements IInputHandler {
    *     Ps = 1  -> Selective Erase to Left.
    *     Ps = 2  -> Selective Erase All.
    */
-  public eraseInLine(params: number[]) {
+  public eraseInLine(params: number[]): void {
     switch (params[0]) {
       case 0:
         this._terminal.eraseRight(this._terminal.x, this._terminal.y);
@@ -298,7 +366,7 @@ export class InputHandler implements IInputHandler {
    *     Ps = 4 8  ; 5  ; Ps -> Set background color to the second
    *     Ps.
    */
-  public charAttributes(params: number[]) {
+  public charAttributes(params: number[]): void {
     // Optimize a single SGR0.
     if (params.length === 1 && params[0] === 0) {
       this._terminal.curAttr = this._terminal.defAttr;
@@ -438,7 +506,7 @@ export class InputHandler implements IInputHandler {
    *   CSI ? 5 3  n  Locator available, if compiled-in, or
    *   CSI ? 5 0  n  No Locator, if not.
    */
-  public deviceStatus(params: number[]) {
+  public deviceStatus(params: number[]): void {
     if (!this._terminal.prefix) {
       switch (params[0]) {
         case 5:

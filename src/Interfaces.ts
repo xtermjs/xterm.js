@@ -44,13 +44,17 @@ export interface IInputHandler {
   tab(): void;
   shiftOut(): void;
   shiftIn(): void;
+  insertChars(params);
   cursorUp(params: number[]): void;
-  cursorDown(params: number[]);
-  cursorForward(params: number[]);
-  cursorBackward(params: number[]);
-  cursorPosition(params: number[]);
-  eraseInDisplay(params: number[]);
-  eraseInLine(params: number[]);
-  charAttributes(params: number[]);
-  deviceStatus(params: number[]);
+  cursorDown(params: number[]): void;
+  cursorForward(params: number[]): void;
+  cursorBackward(params: number[]): void;
+  cursorNextLine(params: number[]): void;
+  cursorPrecedingLine(params: number[]): void;
+  cursorCharAbsolute(params: number[]): void;
+  cursorPosition(params: number[]): void;
+  eraseInDisplay(params: number[]): void;
+  eraseInLine(params: number[]): void;
+  charAttributes(params: number[]): void;
+  deviceStatus(params: number[]): void;
 }

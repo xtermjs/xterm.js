@@ -35,10 +35,14 @@ csiParamStateHandler['\''] = (parser) => parser.setPostfix('\'');
 csiParamStateHandler[';'] = (parser) => parser.finalizeParam();
 
 const csiStateHandler: {[key: string]: (handler: IInputHandler, params: number[]) => void} = {};
+csiStateHandler['@'] = (handler, params) => handler.insertChars(params);
 csiStateHandler['A'] = (handler, params) => handler.cursorUp(params);
 csiStateHandler['B'] = (handler, params) => handler.cursorDown(params);
 csiStateHandler['C'] = (handler, params) => handler.cursorForward(params);
 csiStateHandler['D'] = (handler, params) => handler.cursorBackward(params);
+csiStateHandler['E'] = (handler, params) => handler.cursorNextLine(params);
+csiStateHandler['F'] = (handler, params) => handler.cursorPrecedingLine(params);
+csiStateHandler['G'] = (handler, params) => handler.cursorCharAbsolute(params);
 csiStateHandler['H'] = (handler, params) => handler.cursorPosition(params);
 csiStateHandler['J'] = (handler, params) => handler.eraseInDisplay(params);
 csiStateHandler['K'] = (handler, params) => handler.eraseInLine(params);
@@ -542,12 +546,6 @@ export class Parser {
               /**
                * Additions
                */
-
-            // CSI Ps @
-            // Insert Ps (Blank) Character(s) (default = 1) (ICH).
-            case '@':
-              this._terminal.insertChars(this._terminal.params);
-              break;
 
             // CSI Ps E
             // Cursor Next Line Ps Times (default = 1) (CNL).
