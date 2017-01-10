@@ -467,8 +467,6 @@ Terminal.bindKeys = function(term) {
     term.keyPress(ev);
   }, true);
 
-  on(term.element, 'keyup', term.focus.bind(term));
-
   on(term.textarea, 'keydown', function(ev) {
     term.keyDown(ev);
   }, true);
