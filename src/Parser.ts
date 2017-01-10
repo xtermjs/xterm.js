@@ -32,7 +32,7 @@ csiParamStateHandler['$'] = (parser) => parser.setPostfix('$');
 csiParamStateHandler['"'] = (parser) => parser.setPostfix('"');
 csiParamStateHandler[' '] = (parser) => parser.setPostfix(' ');
 csiParamStateHandler['\''] = (parser) => parser.setPostfix('\'');
-// TODO: Handle ';' and default (move on to ParserState.CSI (from CSI_PARAM)
+csiParamStateHandler[';'] = (parser) => parser.finalizeParam();
 
 const csiStateHandler: {[key: string]: (handler: IInputHandler, params: number[]) => void} = {};
 csiStateHandler['A'] = (handler, params) => handler.cursorUp(params);
@@ -43,11 +43,12 @@ csiStateHandler['D'] = (handler, params) => handler.cursorBackward(params);
 enum ParserState {
   NORMAL = 0,
   ESCAPED = 1,
-  CSI = 2,
-  OSC = 3,
-  CHARSET = 4,
-  DCS = 5,
-  IGNORE = 6
+  CSI_PARAM = 2,
+  CSI = 3,
+  OSC = 4,
+  CHARSET = 5,
+  DCS = 6,
+  IGNORE = 7
 }
 
 export class Parser {
@@ -194,7 +195,7 @@ export class Parser {
             case '[':
               this._terminal.params = [];
               this._terminal.currentParam = 0;
-              this.state = ParserState.CSI;
+              this.state = ParserState.CSI_PARAM;
               break;
 
             // ESC ] Operating System Command ( OSC is 0x9d).
@@ -513,21 +514,16 @@ export class Parser {
           }
           break;
 
-        case ParserState.CSI:
+        case ParserState.CSI_PARAM:
           if (ch in csiParamStateHandler) {
             csiParamStateHandler[ch](this);
-            // Skip below switch as this has handled these codes (eventually everything will be handled here
             break;
           }
+          this.finalizeParam();
+          // Fall through the CSI as this character should be the CSI code.
+          this.state = ParserState.CSI;
 
-          // TODO: a new state should be introduced? to differentiate checking for params and the codes
-
-          this._terminal.params.push(this._terminal.currentParam);
-          this._terminal.currentParam = 0;
-
-          // ';'
-          if (ch === ';') break;
-
+        case ParserState.CSI:
           this.state = ParserState.NORMAL;
 
           if (ch in csiStateHandler) {
@@ -1046,6 +1042,11 @@ export class Parser {
 
   public getParam(): number {
     return this._terminal.currentParam;
+  }
+
+  public finalizeParam(): void {
+    this._terminal.params.push(this._terminal.currentParam);
+    this._terminal.currentParam = 0;
   }
 
   public setPostfix(postfix: string): void {
