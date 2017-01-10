@@ -39,6 +39,11 @@ csiStateHandler['A'] = (handler, params) => handler.cursorUp(params);
 csiStateHandler['B'] = (handler, params) => handler.cursorDown(params);
 csiStateHandler['C'] = (handler, params) => handler.cursorForward(params);
 csiStateHandler['D'] = (handler, params) => handler.cursorBackward(params);
+csiStateHandler['H'] = (handler, params) => handler.cursorPosition(params);
+csiStateHandler['J'] = (handler, params) => handler.eraseInDisplay(params);
+csiStateHandler['K'] = (handler, params) => handler.eraseInLine(params);
+csiStateHandler['m'] = (handler, params) => handler.charAttributes(params);
+csiStateHandler['n'] = (handler, params) => handler.deviceStatus(params);
 
 enum ParserState {
   NORMAL = 0,
@@ -533,35 +538,6 @@ export class Parser {
           }
 
           switch (ch) {
-            // CSI Ps ; Ps H
-            // Cursor Position [row;column] (default = [1,1]) (CUP).
-            case 'H':
-              this._terminal.cursorPos(this._terminal.params);
-              break;
-
-            // CSI Ps J  Erase in Display (ED).
-            case 'J':
-              this._terminal.eraseInDisplay(this._terminal.params);
-              break;
-
-            // CSI Ps K  Erase in Line (EL).
-            case 'K':
-              this._terminal.eraseInLine(this._terminal.params);
-              break;
-
-            // CSI Pm m  Character Attributes (SGR).
-            case 'm':
-              if (!this._terminal.prefix) {
-                this._terminal.charAttributes(this._terminal.params);
-              }
-              break;
-
-            // CSI Ps n  Device Status Report (DSR).
-            case 'n':
-              if (!this._terminal.prefix) {
-                this._terminal.deviceStatus(this._terminal.params);
-              }
-              break;
 
               /**
                * Additions
