@@ -321,7 +321,8 @@ Terminal.defaults = {
   scrollback: 1000,
   screenKeys: false,
   debug: false,
-  cancelEvents: false
+  cancelEvents: false,
+  disableStdin: false
   // programFeatures: false,
   // focusKeys: false,
 };
@@ -1252,6 +1253,15 @@ Terminal.prototype.showCursor = function() {
 Terminal.prototype.scroll = function() {
   var row;
 
+  // Make room for the new row in lines
+  if (this.lines.length === this.lines.maxLength) {
+    this.lines.trimStart(1);
+    this.ybase--;
+    if (this.ydisp !== 0) {
+      this.ydisp--;
+    }
+  }
+
   this.ybase++;
 
   // TODO: Why is this done twice?
@@ -1266,13 +1276,6 @@ Terminal.prototype.scroll = function() {
   row -= this.rows - 1 - this.scrollBottom;
 
   if (row === this.lines.length) {
-    // Compensate ybase and ydisp if lines has hit the maximum buffer size
-    if (this.lines.length === this.lines.maxLength) {
-      this.ybase--;
-      if (this.ydisp !== 0) {
-        this.ydisp--;
-      }
-    }
     // Optimization: pushing is faster than splicing when they amount to the same behavior
     this.lines.push(this.blankLine());
   } else {
@@ -3154,6 +3157,11 @@ Terminal.prototype.is = function(term) {
  * @param {string} data The data to populate in the event.
  */
 Terminal.prototype.handler = function(data) {
+  // Prevents all events to pty process if stdin is disabled
+  if (this.options.disableStdin) {
+    return;
+  }
+
   // Input is being sent to the terminal, the terminal should focus the prompt.
   if (this.ybase !== this.ydisp) {
     this.scrollToBottom();
