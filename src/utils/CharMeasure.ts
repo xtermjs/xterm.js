@@ -28,24 +28,29 @@ export class CharMeasure extends EventEmitter {
   }
 
   public measure(): void {
-    const oldWidth = this._width;
-    const oldHeight = this._height;
-
     if (!this._measureElement) {
       this._measureElement = document.createElement('span');
       this._measureElement.style.position = 'absolute';
       this._measureElement.style.top = '0';
       this._measureElement.style.left = '-9999em';
       this._measureElement.textContent = 'W';
+      this._parentElement.appendChild(this._measureElement);
+      // Perform _doMeasure async if the element was just attached as sometimes
+      // getBoundingClientRect does not return accurate values without this.
+      setTimeout(() => this._doMeasure(), 0);
+    } else {
+      this._doMeasure();
     }
+  }
 
-    this._parentElement.appendChild(this._measureElement);
+  private _doMeasure(): void {
+    const oldWidth = this._width;
+    const oldHeight = this._height;
     const geometry = this._measureElement.getBoundingClientRect();
-    this._width = geometry.width;
-    this._height = geometry.height;
-    this._parentElement.removeChild(this._measureElement);
 
-    if (this._width !== oldWidth || this._height !== oldHeight) {
+    if (this._width !== geometry.width || this._height !== geometry.height) {
+      this._width = geometry.width;
+      this._height = geometry.height;
       this.emit('charsizechanged');
     }
   }

@@ -46,13 +46,13 @@ export class Viewport {
    */
   private refresh(): void {
     if (this.charMeasure.height > 0) {
-      var rowHeightChanged = this.charMeasure.height !== this.currentRowHeight;
+      const rowHeightChanged = this.charMeasure.height !== this.currentRowHeight;
       if (rowHeightChanged) {
         this.currentRowHeight = this.charMeasure.height;
         this.viewportElement.style.lineHeight = this.charMeasure.height + 'px';
         this.terminal.rowContainer.style.lineHeight = this.charMeasure.height + 'px';
       }
-      var viewportHeightChanged = this.lastRecordedViewportHeight !== this.terminal.rows;
+      const viewportHeightChanged = this.lastRecordedViewportHeight !== this.terminal.rows;
       if (rowHeightChanged || viewportHeightChanged) {
         this.lastRecordedViewportHeight = this.terminal.rows;
         this.viewportElement.style.height = this.charMeasure.height * this.terminal.rows + 'px';
@@ -80,7 +80,7 @@ export class Viewport {
     }
 
     // Sync scrollTop
-    var scrollTop = this.terminal.ydisp * this.currentRowHeight;
+    const scrollTop = this.terminal.ydisp * this.currentRowHeight;
     if (this.viewportElement.scrollTop !== scrollTop) {
       this.viewportElement.scrollTop = scrollTop;
     }
@@ -92,8 +92,8 @@ export class Viewport {
    * @param ev The scroll event.
    */
   private onScroll(ev: Event) {
-    var newRow = Math.round(this.viewportElement.scrollTop / this.currentRowHeight);
-    var diff = newRow - this.terminal.ydisp;
+    const newRow = Math.round(this.viewportElement.scrollTop / this.currentRowHeight);
+    const diff = newRow - this.terminal.ydisp;
     this.terminal.scrollDisp(diff, true);
   }
 
@@ -109,7 +109,7 @@ export class Viewport {
       return;
     }
     // Fallback to WheelEvent.DOM_DELTA_PIXEL
-    var multiplier = 1;
+    let multiplier = 1;
     if (ev.deltaMode === WheelEvent.DOM_DELTA_LINE) {
       multiplier = this.currentRowHeight;
     } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
