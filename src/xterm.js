@@ -15,6 +15,7 @@ import { EventEmitter } from './EventEmitter.js';
 import { Viewport } from './Viewport.js';
 import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard.js';
 import { CircularList } from './utils/CircularList.js';
+import { C0 } from './EscapeSequences';
 import { CharMeasure } from './utils/CharMeasure.js';
 import * as Browser from './utils/Browser';
 import * as Keyboard from './utils/Keyboard';
@@ -416,7 +417,7 @@ Terminal.prototype.setOption = function(key, value) {
 Terminal.bindFocus = function (term) {
   on(term.textarea, 'focus', function (ev) {
     if (term.sendFocus) {
-      term.send('\x1b[I');
+      term.send(C0.ESC + '[I');
     }
     term.element.classList.add('focus');
     term.showCursor();
@@ -441,7 +442,7 @@ Terminal.bindBlur = function (term) {
   on(term.textarea, 'blur', function (ev) {
     term.queueRefresh(term.y, term.y);
     if (term.sendFocus) {
-      term.send('\x1b[O');
+      term.send(C0.ESC + '[O');
     }
     term.element.classList.remove('focus');
     Terminal.focus = null;
@@ -786,7 +787,7 @@ Terminal.prototype.bindMouse = function() {
       button &= 3;
       pos.x -= 32;
       pos.y -= 32;
-      var data = '\x1b[24';
+      var data = C0.ESC + '[24';
       if (button === 0) data += '1';
       else if (button === 1) data += '3';
       else if (button === 2) data += '5';
@@ -806,7 +807,7 @@ Terminal.prototype.bindMouse = function() {
       else if (button === 1) button = 4;
       else if (button === 2) button = 6;
       else if (button === 3) button = 3;
-      self.send('\x1b['
+      self.send(C0.ESC + '['
                 + button
                 + ';'
                 + (button === 3 ? 4 : 0)
@@ -825,14 +826,14 @@ Terminal.prototype.bindMouse = function() {
       pos.y -= 32;
       pos.x++;
       pos.y++;
-      self.send('\x1b[' + button + ';' + pos.x + ';' + pos.y + 'M');
+      self.send(C0.ESC + '[' + button + ';' + pos.x + ';' + pos.y + 'M');
       return;
     }
 
     if (self.sgrMouse) {
       pos.x -= 32;
       pos.y -= 32;
-      self.send('\x1b[<'
+      self.send(C0.ESC + '[<'
                 + (((button & 3) === 3 ? button & ~3 : button) - 32)
                 + ';'
                 + pos.x
@@ -848,7 +849,7 @@ Terminal.prototype.bindMouse = function() {
     encode(data, pos.x);
     encode(data, pos.y);
 
-    self.send('\x1b[M' + String.fromCharCode.apply(String, data));
+    self.send(C0.ESC + '[M' + String.fromCharCode.apply(String, data));
   }
 
   function getButton(ev) {
@@ -1415,7 +1416,7 @@ Terminal.prototype.write = function(data) {
   if (!this.xoffSentToCatchUp && this.writeBuffer.length >= WRITE_BUFFER_PAUSE_THRESHOLD) {
     // XOFF - stop pty pipe
     // XON will be triggered by emulator before processing data chunk
-    this.send('\x13');
+    this.send(C0.DC3);
     this.xoffSentToCatchUp = true;
   }
 
@@ -1439,7 +1440,7 @@ Terminal.prototype.innerWrite = function() {
     // If XOFF was sent in order to catch up with the pty process, resume it if
     // the writeBuffer is empty to allow more data to come in.
     if (this.xoffSentToCatchUp && writeBatch.length === 0 && this.writeBuffer.length === 0) {
-      this.send('\x11');
+      this.send(C0.DC1);
       this.xoffSentToCatchUp = false;
     }
 
@@ -1470,20 +1471,21 @@ Terminal.prototype.innerWrite = function() {
         code = ((code - 0xD800) * 0x400) + (low - 0xDC00) + 0x10000;
         ch += data.charAt(i+1);
       }
+
       // surrogate low - already handled above
       if (0xDC00 <= code && code <= 0xDFFF)
         continue;
       switch (this.state) {
         case normal:
           switch (ch) {
-            case '\x07':
+            case C0.BEL:
               this.bell();
               break;
 
             // '\n', '\v', '\f'
-            case '\n':
-            case '\x0b':
-            case '\x0c':
+            case C0.LF:
+            case C0.VT:
+            case C0.FF:
               if (this.convertEol) {
                 this.x = 0;
               }
@@ -1500,29 +1502,29 @@ Terminal.prototype.innerWrite = function() {
               break;
 
             // '\b'
-            case '\x08':
+            case C0.BS:
               if (this.x > 0) {
                 this.x--;
               }
               break;
 
             // '\t'
-            case '\t':
+            case C0.HT:
               this.x = this.nextStop();
               break;
 
             // shift out
-            case '\x0e':
+            case C0.SO:
               this.setgLevel(1);
               break;
 
             // shift in
-            case '\x0f':
+            case C0.SI:
               this.setgLevel(0);
               break;
 
             // '\e'
-            case '\x1b':
+            case C0.ESC:
               this.state = escaped;
               break;
 
@@ -1851,8 +1853,8 @@ Terminal.prototype.innerWrite = function() {
           // OSC Ps ; Pt ST
           // OSC Ps ; Pt BEL
           //   Set Text Parameters.
-          if (ch === '\x1b' || ch === '\x07') {
-            if (ch === '\x1b') i++;
+          if (ch === C0.ESC || ch === C0.BEL) {
+            if (ch === C0.ESC) i++;
 
             this.params.push(this.currentParam);
 
@@ -2181,39 +2183,39 @@ Terminal.prototype.innerWrite = function() {
               this.tabClear(this.params);
               break;
 
-              // CSI Pm i  Media Copy (MC).
-              // CSI ? Pm i
-              // case 'i':
-              //   this.mediaCopy(this.params);
-              //   break;
+            // CSI Pm i  Media Copy (MC).
+            // CSI ? Pm i
+            // case 'i':
+            //   this.mediaCopy(this.params);
+            //   break;
 
-              // CSI Pm m  Character Attributes (SGR).
-              // CSI > Ps; Ps m
-              // case 'm': // duplicate
-              //   if (this.prefix === '>') {
-              //     this.setResources(this.params);
-              //   } else {
-              //     this.charAttributes(this.params);
-              //   }
-              //   break;
+            // CSI Pm m  Character Attributes (SGR).
+            // CSI > Ps; Ps m
+            // case 'm': // duplicate
+            //   if (this.prefix === '>') {
+            //     this.setResources(this.params);
+            //   } else {
+            //     this.charAttributes(this.params);
+            //   }
+            //   break;
 
-              // CSI Ps n  Device Status Report (DSR).
-              // CSI > Ps n
-              // case 'n': // duplicate
-              //   if (this.prefix === '>') {
-              //     this.disableModifiers(this.params);
-              //   } else {
-              //     this.deviceStatus(this.params);
-              //   }
-              //   break;
+            // CSI Ps n  Device Status Report (DSR).
+            // CSI > Ps n
+            // case 'n': // duplicate
+            //   if (this.prefix === '>') {
+            //     this.disableModifiers(this.params);
+            //   } else {
+            //     this.deviceStatus(this.params);
+            //   }
+            //   break;
 
-              // CSI > Ps p  Set pointer mode.
-              // CSI ! p   Soft terminal reset (DECSTR).
-              // CSI Ps$ p
-              //   Request ANSI mode (DECRQM).
-              // CSI ? Ps$ p
-              //   Request DEC private mode (DECRQM).
-              // CSI Ps ; Ps " p
+            // CSI > Ps p  Set pointer mode.
+            // CSI ! p   Soft terminal reset (DECSTR).
+            // CSI Ps$ p
+            //   Request ANSI mode (DECRQM).
+            // CSI ? Ps$ p
+            //   Request DEC private mode (DECRQM).
+            // CSI Ps ; Ps " p
             case 'p':
               switch (this.prefix) {
                   // case '>':
@@ -2384,8 +2386,8 @@ Terminal.prototype.innerWrite = function() {
           break;
 
         case dcs:
-          if (ch === '\x1b' || ch === '\x07') {
-            if (ch === '\x1b') i++;
+          if (ch === C0.ESC || ch === C0.BEL) {
+            if (ch === C0.ESC) i++;
 
             switch (this.prefix) {
               // User-Defined Keys (DECUDK).
@@ -2429,7 +2431,7 @@ Terminal.prototype.innerWrite = function() {
                     break;
                 }
 
-                this.send('\x1bP' + +valid + '$r' + pt + '\x1b\\');
+                this.send(C0.ESC + 'P' + +valid + '$r' + pt + C0.ESC + '\\');
                 break;
 
               // Set Termcap/Terminfo Data (xterm, experimental).
@@ -2444,7 +2446,7 @@ Terminal.prototype.innerWrite = function() {
                 var pt = this.currentParam
                 , valid = false;
 
-                this.send('\x1bP' + +valid + '+r' + pt + '\x1b\\');
+                this.send(C0.ESC + 'P' + +valid + '+r' + pt + C0.ESC + '\\');
                 break;
 
               default:
@@ -2470,8 +2472,8 @@ Terminal.prototype.innerWrite = function() {
 
         case ignore:
           // For PM and APC.
-          if (ch === '\x1b' || ch === '\x07') {
-            if (ch === '\x1b') i++;
+          if (ch === C0.ESC || ch === C0.BEL) {
+            if (ch === C0.ESC) i++;
             this.state = normal;
           }
           break;
@@ -2533,9 +2535,9 @@ Terminal.prototype.keyDown = function(ev) {
   var self = this;
   var result = this.evaluateKeyEscapeSequence(ev);
 
-  if (result.key === '\x13') { // XOFF
+  if (result.key === C0.DC3) { // XOFF
     this.writeStopped = true;
-  } else if (result.key === '\x11') { // XON
+  } else if (result.key === C0.DC1) { // XON
     this.writeStopped = false;
   }
 
@@ -2587,90 +2589,90 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
     case 8:
       // backspace
       if (ev.shiftKey) {
-        result.key = '\x08'; // ^H
+        result.key = C0.BS; // ^H
         break;
       }
-      result.key = '\x7f'; // ^?
+      result.key = C0.DEL; // ^?
       break;
     case 9:
       // tab
       if (ev.shiftKey) {
-        result.key = '\x1b[Z';
+        result.key = C0.ESC + '[Z';
         break;
       }
-      result.key = '\t';
+      result.key = C0.HT;
       result.cancel = true;
       break;
     case 13:
       // return/enter
-      result.key = '\r';
+      result.key = C0.CR;
       result.cancel = true;
       break;
     case 27:
       // escape
-      result.key = '\x1b';
+      result.key = C0.ESC;
       result.cancel = true;
       break;
     case 37:
       // left-arrow
       if (modifiers) {
-        result.key = '\x1b[1;' + (modifiers + 1) + 'D';
+        result.key = C0.ESC + '[1;' + (modifiers + 1) + 'D';
         // HACK: Make Alt + left-arrow behave like Ctrl + left-arrow: move one word backwards
         // http://unix.stackexchange.com/a/108106
         // macOS uses different escape sequences than linux
-        if (result.key == '\x1b[1;3D') {
-          result.key = (this.browser.isMac) ? '\x1bb' : '\x1b[1;5D';
+        if (result.key == C0.ESC + '[1;3D') {
+          result.key = (this.browser.isMac) ? C0.ESC + 'b' : C0.ESC + '[1;5D';
         }
       } else if (this.applicationCursor) {
-        result.key = '\x1bOD';
+        result.key = C0.ESC + 'OD';
       } else {
-        result.key = '\x1b[D';
+        result.key = C0.ESC + '[D';
       }
       break;
     case 39:
       // right-arrow
       if (modifiers) {
-        result.key = '\x1b[1;' + (modifiers + 1) + 'C';
+        result.key = C0.ESC + '[1;' + (modifiers + 1) + 'C';
         // HACK: Make Alt + right-arrow behave like Ctrl + right-arrow: move one word forward
         // http://unix.stackexchange.com/a/108106
         // macOS uses different escape sequences than linux
-        if (result.key == '\x1b[1;3C') {
-          result.key = (this.browser.isMac) ? '\x1bf' : '\x1b[1;5C';
+        if (result.key == C0.ESC + '[1;3C') {
+          result.key = (this.browser.isMac) ? C0.ESC + 'f' : C0.ESC + '[1;5C';
         }
       } else if (this.applicationCursor) {
-        result.key = '\x1bOC';
+        result.key = C0.ESC + 'OC';
       } else {
-        result.key = '\x1b[C';
+        result.key = C0.ESC + '[C';
       }
       break;
     case 38:
       // up-arrow
       if (modifiers) {
-        result.key = '\x1b[1;' + (modifiers + 1) + 'A';
+        result.key = C0.ESC + '[1;' + (modifiers + 1) + 'A';
         // HACK: Make Alt + up-arrow behave like Ctrl + up-arrow
         // http://unix.stackexchange.com/a/108106
-        if (result.key == '\x1b[1;3A') {
-          result.key = '\x1b[1;5A';
+        if (result.key == C0.ESC + '[1;3A') {
+          result.key = C0.ESC + '[1;5A';
         }
       } else if (this.applicationCursor) {
-        result.key = '\x1bOA';
+        result.key = C0.ESC + 'OA';
       } else {
-        result.key = '\x1b[A';
+        result.key = C0.ESC + '[A';
       }
       break;
     case 40:
       // down-arrow
       if (modifiers) {
-        result.key = '\x1b[1;' + (modifiers + 1) + 'B';
+        result.key = C0.ESC + '[1;' + (modifiers + 1) + 'B';
         // HACK: Make Alt + down-arrow behave like Ctrl + down-arrow
         // http://unix.stackexchange.com/a/108106
-        if (result.key == '\x1b[1;3B') {
-          result.key = '\x1b[1;5B';
+        if (result.key == C0.ESC + '[1;3B') {
+          result.key = C0.ESC + '[1;5B';
         }
       } else if (this.applicationCursor) {
-        result.key = '\x1bOB';
+        result.key = C0.ESC + 'OB';
       } else {
-        result.key = '\x1b[B';
+        result.key = C0.ESC + '[B';
       }
       break;
     case 45:
@@ -2678,41 +2680,41 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
       if (!ev.shiftKey && !ev.ctrlKey) {
         // <Ctrl> or <Shift> + <Insert> are used to
         // copy-paste on some systems.
-        result.key = '\x1b[2~';
+        result.key = C0.ESC + '[2~';
       }
       break;
     case 46:
       // delete
       if (modifiers) {
-        result.key = '\x1b[3;' + (modifiers + 1) + '~';
+        result.key = C0.ESC + '[3;' + (modifiers + 1) + '~';
       } else {
-        result.key = '\x1b[3~';
+        result.key = C0.ESC + '[3~';
       }
       break;
     case 36:
       // home
       if (modifiers)
-        result.key = '\x1b[1;' + (modifiers + 1) + 'H';
+        result.key = C0.ESC + '[1;' + (modifiers + 1) + 'H';
       else if (this.applicationCursor)
-        result.key = '\x1bOH';
+        result.key = C0.ESC + 'OH';
       else
-        result.key = '\x1b[H';
+        result.key = C0.ESC + '[H';
       break;
     case 35:
       // end
       if (modifiers)
-        result.key = '\x1b[1;' + (modifiers + 1) + 'F';
+        result.key = C0.ESC + '[1;' + (modifiers + 1) + 'F';
       else if (this.applicationCursor)
-        result.key = '\x1bOF';
+        result.key = C0.ESC + 'OF';
       else
-        result.key = '\x1b[F';
+        result.key = C0.ESC + '[F';
       break;
     case 33:
       // page up
       if (ev.shiftKey) {
         result.scrollDisp = -(this.rows - 1);
       } else {
-        result.key = '\x1b[5~';
+        result.key = C0.ESC + '[5~';
       }
       break;
     case 34:
@@ -2720,92 +2722,92 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
       if (ev.shiftKey) {
         result.scrollDisp = this.rows - 1;
       } else {
-        result.key = '\x1b[6~';
+        result.key = C0.ESC + '[6~';
       }
       break;
     case 112:
       // F1-F12
       if (modifiers) {
-        result.key = '\x1b[1;' + (modifiers + 1) + 'P';
+        result.key = C0.ESC + '[1;' + (modifiers + 1) + 'P';
       } else {
-        result.key = '\x1bOP';
+        result.key = C0.ESC + 'OP';
       }
       break;
     case 113:
       if (modifiers) {
-        result.key = '\x1b[1;' + (modifiers + 1) + 'Q';
+        result.key = C0.ESC + '[1;' + (modifiers + 1) + 'Q';
       } else {
-        result.key = '\x1bOQ';
+        result.key = C0.ESC + 'OQ';
       }
       break;
     case 114:
       if (modifiers) {
-        result.key = '\x1b[1;' + (modifiers + 1) + 'R';
+        result.key = C0.ESC + '[1;' + (modifiers + 1) + 'R';
       } else {
-        result.key = '\x1bOR';
+        result.key = C0.ESC + 'OR';
       }
       break;
     case 115:
       if (modifiers) {
-        result.key = '\x1b[1;' + (modifiers + 1) + 'S';
+        result.key = C0.ESC + '[1;' + (modifiers + 1) + 'S';
       } else {
-        result.key = '\x1bOS';
+        result.key = C0.ESC + 'OS';
       }
       break;
     case 116:
       if (modifiers) {
-        result.key = '\x1b[15;' + (modifiers + 1) + '~';
+        result.key = C0.ESC + '[15;' + (modifiers + 1) + '~';
       } else {
-        result.key = '\x1b[15~';
+        result.key = C0.ESC + '[15~';
       }
       break;
     case 117:
       if (modifiers) {
-        result.key = '\x1b[17;' + (modifiers + 1) + '~';
+        result.key = C0.ESC + '[17;' + (modifiers + 1) + '~';
       } else {
-        result.key = '\x1b[17~';
+        result.key = C0.ESC + '[17~';
       }
       break;
     case 118:
       if (modifiers) {
-        result.key = '\x1b[18;' + (modifiers + 1) + '~';
+        result.key = C0.ESC + '[18;' + (modifiers + 1) + '~';
       } else {
-        result.key = '\x1b[18~';
+        result.key = C0.ESC + '[18~';
       }
       break;
     case 119:
       if (modifiers) {
-        result.key = '\x1b[19;' + (modifiers + 1) + '~';
+        result.key = C0.ESC + '[19;' + (modifiers + 1) + '~';
       } else {
-        result.key = '\x1b[19~';
+        result.key = C0.ESC + '[19~';
       }
       break;
     case 120:
       if (modifiers) {
-        result.key = '\x1b[20;' + (modifiers + 1) + '~';
+        result.key = C0.ESC + '[20;' + (modifiers + 1) + '~';
       } else {
-        result.key = '\x1b[20~';
+        result.key = C0.ESC + '[20~';
       }
       break;
     case 121:
       if (modifiers) {
-        result.key = '\x1b[21;' + (modifiers + 1) + '~';
+        result.key = C0.ESC + '[21;' + (modifiers + 1) + '~';
       } else {
-        result.key = '\x1b[21~';
+        result.key = C0.ESC + '[21~';
       }
       break;
     case 122:
       if (modifiers) {
-        result.key = '\x1b[23;' + (modifiers + 1) + '~';
+        result.key = C0.ESC + '[23;' + (modifiers + 1) + '~';
       } else {
-        result.key = '\x1b[23~';
+        result.key = C0.ESC + '[23~';
       }
       break;
     case 123:
       if (modifiers) {
-        result.key = '\x1b[24;' + (modifiers + 1) + '~';
+        result.key = C0.ESC + '[24;' + (modifiers + 1) + '~';
       } else {
-        result.key = '\x1b[24~';
+        result.key = C0.ESC + '[24~';
       }
       break;
     default:
@@ -2835,11 +2837,11 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
       } else if (!this.browser.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) {
         // On Mac this is a third level shift. Use <Esc> instead.
         if (ev.keyCode >= 65 && ev.keyCode <= 90) {
-          result.key = '\x1b' + String.fromCharCode(ev.keyCode + 32);
+          result.key = C0.ESC + String.fromCharCode(ev.keyCode + 32);
         } else if (ev.keyCode === 192) {
-          result.key = '\x1b`';
+          result.key = C0.ESC + '`';
         } else if (ev.keyCode >= 48 && ev.keyCode <= 57) {
-          result.key = '\x1b' + (ev.keyCode - 48);
+          result.key = C0.ESC + (ev.keyCode - 48);
         }
       }
       break;
@@ -3707,11 +3709,11 @@ Terminal.prototype.deviceStatus = function(params) {
     switch (params[0]) {
       case 5:
         // status report
-        this.send('\x1b[0n');
+        this.send(C0.ESC + '[0n');
         break;
       case 6:
         // cursor position
-        this.send('\x1b['
+        this.send(C0.ESC + '['
                   + (this.y + 1)
                   + ';'
                   + (this.x + 1)
@@ -3724,7 +3726,7 @@ Terminal.prototype.deviceStatus = function(params) {
     switch (params[0]) {
       case 6:
         // cursor position
-        this.send('\x1b[?'
+        this.send(C0.ESC + '[?'
                   + (this.y + 1)
                   + ';'
                   + (this.x + 1)
@@ -3732,19 +3734,19 @@ Terminal.prototype.deviceStatus = function(params) {
         break;
       case 15:
         // no printer
-        // this.send('\x1b[?11n');
+        // this.send(C0.ESC + '[?11n');
         break;
       case 25:
         // dont support user defined keys
-        // this.send('\x1b[?21n');
+        // this.send(C0.ESC + '[?21n');
         break;
       case 26:
         // north american keyboard
-        // this.send('\x1b[?27;1;0;0n');
+        // this.send(C0.ESC + '[?27;1;0;0n');
         break;
       case 53:
         // no dec locator/mouse
-        // this.send('\x1b[?50n');
+        // this.send(C0.ESC + '[?50n');
         break;
     }
   }
@@ -3995,24 +3997,24 @@ Terminal.prototype.sendDeviceAttributes = function(params) {
     if (this.is('xterm')
         || this.is('rxvt-unicode')
         || this.is('screen')) {
-      this.send('\x1b[?1;2c');
+      this.send(C0.ESC + '[?1;2c');
     } else if (this.is('linux')) {
-      this.send('\x1b[?6c');
+      this.send(C0.ESC + '[?6c');
     }
   } else if (this.prefix === '>') {
     // xterm and urxvt
     // seem to spit this
     // out around ~370 times (?).
     if (this.is('xterm')) {
-      this.send('\x1b[>0;276;0c');
+      this.send(C0.ESC + '[>0;276;0c');
     } else if (this.is('rxvt-unicode')) {
-      this.send('\x1b[>85;95;0c');
+      this.send(C0.ESC + '[>85;95;0c');
     } else if (this.is('linux')) {
       // not supported by linux console.
       // linux console echoes parameters.
       this.send(params[0] + 'c');
     } else if (this.is('screen')) {
-      this.send('\x1b[>83;40003;0c');
+      this.send(C0.ESC + '[>83;40003;0c');
     }
   }
 };
