@@ -40,6 +40,26 @@ var document = (typeof window != 'undefined') ? window.document : null;
 var normal = 0, escaped = 1, csi = 2, osc = 3, charset = 4, dcs = 5, ignore = 6;
 
 /**
+ * The amount of write requests to queue before sending an XOFF signal to the
+ * pty process. This number must be small in order for ^C and similar sequences
+ * to be responsive.
+ */
+var WRITE_BUFFER_PAUSE_THRESHOLD = 5;
+
+/**
+ * The number of writes to perform in a single batch before allowing the
+ * renderer to catch up with a 0ms setTimeout.
+ */
+var WRITE_BATCH_SIZE = 300;
+
+/**
+ * The maximum number of refresh frames to skip when the write buffer is non-
+ * empty. Note that these frames may be intermingled with frames that are
+ * skipped via requestAnimationFrame's mechanism.
+ */
+var MAX_REFRESH_FRAME_SKIP = 5;
+
+/**
  * Terminal
  */
 
@@ -197,6 +217,22 @@ function Terminal(options) {
   this.currentParam = 0;
   this.prefix = '';
   this.postfix = '';
+
+  // user input states
+  this.writeBuffer = [];
+  this.writeInProgress = false;
+  this.refreshFramesSkipped = 0;
+
+  /**
+   * Whether _xterm.js_ sent XOFF in order to catch up with the pty process.
+   * This is a distinct state from writeStopped so that if the user requested
+   * XOFF via ^S that it will not automatically resume when the writeBuffer goes
+   * below threshold.
+   */
+  this.xoffSentToCatchUp = false;
+
+  /** Whether writing has been stopped as a result of XOFF */
+  this.writeStopped = false;
 
   // leftover surrogate high from previous write invocation
   this.surrogate_high = '';
@@ -1023,27 +1059,36 @@ Terminal.prototype.queueRefresh = function(start, end) {
 Terminal.prototype.refreshLoop = function() {
   // Don't refresh if there were no row changes
   if (this.refreshRowsQueue.length > 0) {
-    var start;
-    var end;
-    if (this.refreshRowsQueue.length > 4) {
-      // Just do a full refresh when 5+ refreshes are queued
-      start = 0;
-      end = this.rows - 1;
-    } else {
-      // Get start and end rows that need refreshing
-      start = this.refreshRowsQueue[0].start;
-      end = this.refreshRowsQueue[0].end;
-      for (var i = 1; i < this.refreshRowsQueue.length; i++) {
-        if (this.refreshRowsQueue[i].start < start) {
-          start = this.refreshRowsQueue[i].start;
-        }
-        if (this.refreshRowsQueue[i].end > end) {
-          end = this.refreshRowsQueue[i].end;
+    // Skip MAX_REFRESH_FRAME_SKIP frames if the writeBuffer is non-empty as it
+    // will need to be immediately refreshed anyway. This saves a lot of
+    // rendering time as the viewport DOM does not need to be refreshed, no
+    // scroll events, no layouts, etc.
+    var skipFrame = this.writeBuffer.length > 0 && this.refreshFramesSkipped++ <= MAX_REFRESH_FRAME_SKIP;
+
+    if (!skipFrame) {
+      this.refreshFramesSkipped = 0;
+      var start;
+      var end;
+      if (this.refreshRowsQueue.length > 4) {
+        // Just do a full refresh when 5+ refreshes are queued
+        start = 0;
+        end = this.rows - 1;
+      } else {
+        // Get start and end rows that need refreshing
+        start = this.refreshRowsQueue[0].start;
+        end = this.refreshRowsQueue[0].end;
+        for (var i = 1; i < this.refreshRowsQueue.length; i++) {
+          if (this.refreshRowsQueue[i].start < start) {
+            start = this.refreshRowsQueue[i].start;
+          }
+          if (this.refreshRowsQueue[i].end > end) {
+            end = this.refreshRowsQueue[i].end;
+          }
         }
       }
+      this.refreshRowsQueue = [];
+      this.refresh(start, end);
     }
-    this.refreshRowsQueue = [];
-    this.refresh(start, end);
   }
   window.requestAnimationFrame(this.refreshLoop.bind(this));
 }
@@ -1363,744 +1408,780 @@ Terminal.prototype.scrollToBottom = function() {
  * @param {string} text The text to write to the terminal.
  */
 Terminal.prototype.write = function(data) {
-  var l = data.length, i = 0, j, cs, ch, code, low, ch_width, row;
+  this.writeBuffer.push(data);
 
-  this.refreshStart = this.y;
-  this.refreshEnd = this.y;
-
-  // apply leftover surrogate high from last write
-  if (this.surrogate_high) {
-    data = this.surrogate_high + data;
-    this.surrogate_high = '';
+  // Send XOFF to pause the pty process if the write buffer becomes too large so
+  // xterm.js can catch up before more data is sent. This is necessary in order
+  // to keep signals such as ^C responsive.
+  if (!this.xoffSentToCatchUp && this.writeBuffer.length >= WRITE_BUFFER_PAUSE_THRESHOLD) {
+    // XOFF - stop pty pipe
+    // XON will be triggered by emulator before processing data chunk
+    this.send(C0.DC3);
+    this.xoffSentToCatchUp = true;
   }
 
-  for (; i < l; i++) {
-    ch = data[i];
+  if (!this.writeInProgress && this.writeBuffer.length > 0) {
+    // Kick off a write which will write all data in sequence recursively
+    this.writeInProgress = true;
+    // Kick off an async innerWrite so more writes can come in while processing data
+    var self = this;
+    setTimeout(function () {
+      self.innerWrite();
+    });
+  }
+}
 
-    // FIXME: higher chars than 0xa0 are not allowed in escape sequences
-    //        --> maybe move to default
-    code = data.charCodeAt(i);
-    if (0xD800 <= code && code <= 0xDBFF) {
-      // we got a surrogate high
-      // get surrogate low (next 2 bytes)
-      low = data.charCodeAt(i+1);
-      if (isNaN(low)) {
-        // end of data stream, save surrogate high
-        this.surrogate_high = ch;
-        continue;
-      }
-      code = ((code - 0xD800) * 0x400) + (low - 0xDC00) + 0x10000;
-      ch += data.charAt(i+1);
+Terminal.prototype.innerWrite = function() {
+  var writeBatch = this.writeBuffer.splice(0, WRITE_BATCH_SIZE);
+  while (writeBatch.length > 0) {
+    var data = writeBatch.shift();
+    var l = data.length, i = 0, j, cs, ch, code, low, ch_width, row;
+
+    // If XOFF was sent in order to catch up with the pty process, resume it if
+    // the writeBuffer is empty to allow more data to come in.
+    if (this.xoffSentToCatchUp && writeBatch.length === 0 && this.writeBuffer.length === 0) {
+      this.send(C0.DC1);
+      this.xoffSentToCatchUp = false;
     }
-    // surrogate low - already handled above
-    if (0xDC00 <= code && code <= 0xDFFF)
-      continue;
-    switch (this.state) {
-      case normal:
-        switch (ch) {
-          case C0.BEL:
-            this.bell();
-            break;
 
-          case C0.LF:
-          case C0.VT:
-          case C0.FF:
-            if (this.convertEol) {
+    this.refreshStart = this.y;
+    this.refreshEnd = this.y;
+
+    // apply leftover surrogate high from last write
+    if (this.surrogate_high) {
+      data = this.surrogate_high + data;
+      this.surrogate_high = '';
+    }
+
+    for (; i < l; i++) {
+      ch = data[i];
+
+      // FIXME: higher chars than 0xa0 are not allowed in escape sequences
+      //        --> maybe move to default
+      code = data.charCodeAt(i);
+      if (0xD800 <= code && code <= 0xDBFF) {
+        // we got a surrogate high
+        // get surrogate low (next 2 bytes)
+        low = data.charCodeAt(i+1);
+        if (isNaN(low)) {
+          // end of data stream, save surrogate high
+          this.surrogate_high = ch;
+          continue;
+        }
+        code = ((code - 0xD800) * 0x400) + (low - 0xDC00) + 0x10000;
+        ch += data.charAt(i+1);
+      }
+
+      // surrogate low - already handled above
+      if (0xDC00 <= code && code <= 0xDFFF)
+        continue;
+      switch (this.state) {
+        case normal:
+          switch (ch) {
+            case C0.BEL:
+              this.bell();
+              break;
+
+            // '\n', '\v', '\f'
+            case C0.LF:
+            case C0.VT:
+            case C0.FF:
+              if (this.convertEol) {
+                this.x = 0;
+              }
+              this.y++;
+              if (this.y > this.scrollBottom) {
+                this.y--;
+                this.scroll();
+              }
+              break;
+
+            // '\r'
+            case '\r':
               this.x = 0;
-            }
-            this.y++;
-            if (this.y > this.scrollBottom) {
-              this.y--;
-              this.scroll();
-            }
-            break;
+              break;
 
-          // '\r'
-          case C0.CR:
-            this.x = 0;
-            break;
-
-          // '\b'
-          case C0.BS:
-            if (this.x > 0) {
-              this.x--;
-            }
-            break;
-
-          // '\t'
-          case C0.HT:
-            this.x = this.nextStop();
-            break;
-
-          // shift out
-          case C0.SO:
-            this.setgLevel(1);
-            break;
-
-          // shift in
-          case C0.SI:
-            this.setgLevel(0);
-            break;
-
-          // '\e'
-          case C0.ESC:
-            this.state = escaped;
-            break;
-
-          default:
-            // ' '
-            // calculate print space
-            // expensive call, therefore we save width in line buffer
-            ch_width = wcwidth(code);
-
-            if (ch >= ' ') {
-              if (this.charset && this.charset[ch]) {
-                ch = this.charset[ch];
+            // '\b'
+            case C0.BS:
+              if (this.x > 0) {
+                this.x--;
               }
+              break;
 
-              row = this.y + this.ybase;
+            // '\t'
+            case C0.HT:
+              this.x = this.nextStop();
+              break;
 
-              // insert combining char in last cell
-              // FIXME: needs handling after cursor jumps
-              if (!ch_width && this.x) {
-                // dont overflow left
-                if (this.lines.get(row)[this.x-1]) {
-                  if (!this.lines.get(row)[this.x-1][2]) {
+            // shift out
+            case C0.SO:
+              this.setgLevel(1);
+              break;
 
-                    // found empty cell after fullwidth, need to go 2 cells back
-                    if (this.lines.get(row)[this.x-2])
-                      this.lines.get(row)[this.x-2][1] += ch;
+            // shift in
+            case C0.SI:
+              this.setgLevel(0);
+              break;
 
+            // '\e'
+            case C0.ESC:
+              this.state = escaped;
+              break;
+
+            default:
+              // ' '
+              // calculate print space
+              // expensive call, therefore we save width in line buffer
+              ch_width = wcwidth(code);
+
+              if (ch >= ' ') {
+                if (this.charset && this.charset[ch]) {
+                  ch = this.charset[ch];
+                }
+
+                row = this.y + this.ybase;
+
+                // insert combining char in last cell
+                // FIXME: needs handling after cursor jumps
+                if (!ch_width && this.x) {
+                  // dont overflow left
+                  if (this.lines.get(row)[this.x-1]) {
+                    if (!this.lines.get(row)[this.x-1][2]) {
+
+                      // found empty cell after fullwidth, need to go 2 cells back
+                      if (this.lines.get(row)[this.x-2])
+                        this.lines.get(row)[this.x-2][1] += ch;
+
+                    } else {
+                      this.lines.get(row)[this.x-1][1] += ch;
+                    }
+                    this.updateRange(this.y);
+                  }
+                  break;
+                }
+
+                // goto next line if ch would overflow
+                // TODO: needs a global min terminal width of 2
+                if (this.x+ch_width-1 >= this.cols) {
+                  // autowrap - DECAWM
+                  if (this.wraparoundMode) {
+                    this.x = 0;
+                    this.y++;
+                    if (this.y > this.scrollBottom) {
+                      this.y--;
+                      this.scroll();
+                    }
                   } else {
-                    this.lines.get(row)[this.x-1][1] += ch;
+                    this.x = this.cols-1;
+                    if(ch_width===2)  // FIXME: check for xterm behavior
+                      continue;
                   }
-                  this.updateRange(this.y);
                 }
-                break;
-              }
+                row = this.y + this.ybase;
 
-              // goto next line if ch would overflow
-              // TODO: needs a global min terminal width of 2
-              if (this.x+ch_width-1 >= this.cols) {
-                // autowrap - DECAWM
-                if (this.wraparoundMode) {
-                  this.x = 0;
-                  this.y++;
-                  if (this.y > this.scrollBottom) {
-                    this.y--;
-                    this.scroll();
+                // insert mode: move characters to right
+                if (this.insertMode) {
+                  // do this twice for a fullwidth char
+                  for (var moves=0; moves<ch_width; ++moves) {
+                    // remove last cell, if it's width is 0
+                    // we have to adjust the second last cell as well
+                    var removed = this.lines.get(this.y + this.ybase).pop();
+                    if (removed[2]===0
+                        && this.lines.get(row)[this.cols-2]
+                    && this.lines.get(row)[this.cols-2][2]===2)
+                      this.lines.get(row)[this.cols-2] = [this.curAttr, ' ', 1];
+
+                    // insert empty cell at cursor
+                    this.lines.get(row).splice(this.x, 0, [this.curAttr, ' ', 1]);
                   }
-                } else {
-                  this.x = this.cols-1;
-                  if(ch_width===2)  // FIXME: check for xterm behavior
-                    continue;
                 }
-              }
-              row = this.y + this.ybase;
 
-              // insert mode: move characters to right
-              if (this.insertMode) {
-                // do this twice for a fullwidth char
-                for (var moves=0; moves<ch_width; ++moves) {
-                  // remove last cell, if it's width is 0
-                  // we have to adjust the second last cell as well
-                  var removed = this.lines.get(this.y + this.ybase).pop();
-                  if (removed[2]===0
-                      && this.lines.get(row)[this.cols-2]
-                  && this.lines.get(row)[this.cols-2][2]===2)
-                    this.lines.get(row)[this.cols-2] = [this.curAttr, ' ', 1];
-
-                  // insert empty cell at cursor
-                  this.lines.get(row).splice(this.x, 0, [this.curAttr, ' ', 1]);
-                }
-              }
-
-              this.lines.get(row)[this.x] = [this.curAttr, ch, ch_width];
-              this.x++;
-              this.updateRange(this.y);
-
-              // fullwidth char - set next cell width to zero and advance cursor
-              if (ch_width===2) {
-                this.lines.get(row)[this.x] = [this.curAttr, '', 0];
+                this.lines.get(row)[this.x] = [this.curAttr, ch, ch_width];
                 this.x++;
+                this.updateRange(this.y);
+
+                // fullwidth char - set next cell width to zero and advance cursor
+                if (ch_width===2) {
+                  this.lines.get(row)[this.x] = [this.curAttr, '', 0];
+                  this.x++;
+                }
               }
+              break;
+          }
+          break;
+        case escaped:
+          switch (ch) {
+            // ESC [ Control Sequence Introducer ( CSI is 0x9b).
+            case '[':
+              this.params = [];
+              this.currentParam = 0;
+              this.state = csi;
+              break;
+
+            // ESC ] Operating System Command ( OSC is 0x9d).
+            case ']':
+              this.params = [];
+              this.currentParam = 0;
+              this.state = osc;
+              break;
+
+            // ESC P Device Control String ( DCS is 0x90).
+            case 'P':
+              this.params = [];
+              this.currentParam = 0;
+              this.state = dcs;
+              break;
+
+            // ESC _ Application Program Command ( APC is 0x9f).
+            case '_':
+              this.state = ignore;
+              break;
+
+            // ESC ^ Privacy Message ( PM is 0x9e).
+            case '^':
+              this.state = ignore;
+              break;
+
+            // ESC c Full Reset (RIS).
+            case 'c':
+              this.reset();
+              break;
+
+            // ESC E Next Line ( NEL is 0x85).
+            // ESC D Index ( IND is 0x84).
+            case 'E':
+              this.x = 0;
+              ;
+            case 'D':
+              this.index();
+              break;
+
+            // ESC M Reverse Index ( RI is 0x8d).
+            case 'M':
+              this.reverseIndex();
+              break;
+
+            // ESC % Select default/utf-8 character set.
+            // @ = default, G = utf-8
+            case '%':
+              //this.charset = null;
+              this.setgLevel(0);
+              this.setgCharset(0, Terminal.charsets.US);
+              this.state = normal;
+              i++;
+              break;
+
+            // ESC (,),*,+,-,. Designate G0-G2 Character Set.
+            case '(': // <-- this seems to get all the attention
+            case ')':
+            case '*':
+            case '+':
+            case '-':
+            case '.':
+              switch (ch) {
+                case '(':
+                  this.gcharset = 0;
+                  break;
+                case ')':
+                  this.gcharset = 1;
+                  break;
+                case '*':
+                  this.gcharset = 2;
+                  break;
+                case '+':
+                  this.gcharset = 3;
+                  break;
+                case '-':
+                  this.gcharset = 1;
+                  break;
+                case '.':
+                  this.gcharset = 2;
+                  break;
+              }
+              this.state = charset;
+              break;
+
+            // Designate G3 Character Set (VT300).
+            // A = ISO Latin-1 Supplemental.
+            // Not implemented.
+            case '/':
+              this.gcharset = 3;
+              this.state = charset;
+              i--;
+              break;
+
+            // ESC N
+            // Single Shift Select of G2 Character Set
+            // ( SS2 is 0x8e). This affects next character only.
+            case 'N':
+              break;
+            // ESC O
+            // Single Shift Select of G3 Character Set
+            // ( SS3 is 0x8f). This affects next character only.
+            case 'O':
+              break;
+            // ESC n
+            // Invoke the G2 Character Set as GL (LS2).
+            case 'n':
+              this.setgLevel(2);
+              break;
+            // ESC o
+            // Invoke the G3 Character Set as GL (LS3).
+            case 'o':
+              this.setgLevel(3);
+              break;
+            // ESC |
+            // Invoke the G3 Character Set as GR (LS3R).
+            case '|':
+              this.setgLevel(3);
+              break;
+            // ESC }
+            // Invoke the G2 Character Set as GR (LS2R).
+            case '}':
+              this.setgLevel(2);
+              break;
+            // ESC ~
+            // Invoke the G1 Character Set as GR (LS1R).
+            case '~':
+              this.setgLevel(1);
+              break;
+
+            // ESC 7 Save Cursor (DECSC).
+            case '7':
+              this.saveCursor();
+              this.state = normal;
+              break;
+
+            // ESC 8 Restore Cursor (DECRC).
+            case '8':
+              this.restoreCursor();
+              this.state = normal;
+              break;
+
+            // ESC # 3 DEC line height/width
+            case '#':
+              this.state = normal;
+              i++;
+              break;
+
+            // ESC H Tab Set (HTS is 0x88).
+            case 'H':
+              this.tabSet();
+              break;
+
+            // ESC = Application Keypad (DECKPAM).
+            case '=':
+              this.log('Serial port requested application keypad.');
+              this.applicationKeypad = true;
+              this.viewport.syncScrollArea();
+              this.state = normal;
+              break;
+
+            // ESC > Normal Keypad (DECKPNM).
+            case '>':
+              this.log('Switching back to normal keypad.');
+              this.applicationKeypad = false;
+              this.viewport.syncScrollArea();
+              this.state = normal;
+              break;
+
+            default:
+              this.state = normal;
+              this.error('Unknown ESC control: %s.', ch);
+              break;
+          }
+          break;
+
+        case charset:
+          switch (ch) {
+            case '0': // DEC Special Character and Line Drawing Set.
+              cs = Terminal.charsets.SCLD;
+              break;
+            case 'A': // UK
+              cs = Terminal.charsets.UK;
+              break;
+            case 'B': // United States (USASCII).
+              cs = Terminal.charsets.US;
+              break;
+            case '4': // Dutch
+              cs = Terminal.charsets.Dutch;
+              break;
+            case 'C': // Finnish
+            case '5':
+              cs = Terminal.charsets.Finnish;
+              break;
+            case 'R': // French
+              cs = Terminal.charsets.French;
+              break;
+            case 'Q': // FrenchCanadian
+              cs = Terminal.charsets.FrenchCanadian;
+              break;
+            case 'K': // German
+              cs = Terminal.charsets.German;
+              break;
+            case 'Y': // Italian
+              cs = Terminal.charsets.Italian;
+              break;
+            case 'E': // NorwegianDanish
+            case '6':
+              cs = Terminal.charsets.NorwegianDanish;
+              break;
+            case 'Z': // Spanish
+              cs = Terminal.charsets.Spanish;
+              break;
+            case 'H': // Swedish
+            case '7':
+              cs = Terminal.charsets.Swedish;
+              break;
+            case '=': // Swiss
+              cs = Terminal.charsets.Swiss;
+              break;
+            case '/': // ISOLatin (actually /A)
+              cs = Terminal.charsets.ISOLatin;
+              i++;
+              break;
+            default: // Default
+              cs = Terminal.charsets.US;
+              break;
+          }
+          this.setgCharset(this.gcharset, cs);
+          this.gcharset = null;
+          this.state = normal;
+          break;
+
+        case osc:
+          // OSC Ps ; Pt ST
+          // OSC Ps ; Pt BEL
+          //   Set Text Parameters.
+          if (ch === C0.ESC || ch === C0.BEL) {
+            if (ch === C0.ESC) i++;
+
+            this.params.push(this.currentParam);
+
+            switch (this.params[0]) {
+              case 0:
+              case 1:
+              case 2:
+                if (this.params[1]) {
+                  this.title = this.params[1];
+                  this.handleTitle(this.title);
+                }
+                break;
+              case 3:
+                // set X property
+                break;
+              case 4:
+              case 5:
+                // change dynamic colors
+                break;
+              case 10:
+              case 11:
+              case 12:
+              case 13:
+              case 14:
+              case 15:
+              case 16:
+              case 17:
+              case 18:
+              case 19:
+                // change dynamic ui colors
+                break;
+              case 46:
+                // change log file
+                break;
+              case 50:
+                // dynamic font
+                break;
+              case 51:
+                // emacs shell
+                break;
+              case 52:
+                // manipulate selection data
+                break;
+              case 104:
+              case 105:
+              case 110:
+              case 111:
+              case 112:
+              case 113:
+              case 114:
+              case 115:
+              case 116:
+              case 117:
+              case 118:
+                // reset colors
+                break;
             }
-            break;
-        }
-        break;
-      case escaped:
-        switch (ch) {
-          // ESC [ Control Sequence Introducer ( CSI is 0x9b).
-          case '[':
+
             this.params = [];
             this.currentParam = 0;
-            this.state = csi;
-            break;
-
-          // ESC ] Operating System Command ( OSC is 0x9d).
-          case ']':
-            this.params = [];
-            this.currentParam = 0;
-            this.state = osc;
-            break;
-
-          // ESC P Device Control String ( DCS is 0x90).
-          case 'P':
-            this.params = [];
-            this.currentParam = 0;
-            this.state = dcs;
-            break;
-
-          // ESC _ Application Program Command ( APC is 0x9f).
-          case '_':
-            this.state = ignore;
-            break;
-
-          // ESC ^ Privacy Message ( PM is 0x9e).
-          case '^':
-            this.state = ignore;
-            break;
-
-          // ESC c Full Reset (RIS).
-          case 'c':
-            this.reset();
-            break;
-
-          // ESC E Next Line ( NEL is 0x85).
-          // ESC D Index ( IND is 0x84).
-          case 'E':
-            this.x = 0;
-            ;
-          case 'D':
-            this.index();
-            break;
-
-          // ESC M Reverse Index ( RI is 0x8d).
-          case 'M':
-            this.reverseIndex();
-            break;
-
-          // ESC % Select default/utf-8 character set.
-          // @ = default, G = utf-8
-          case '%':
-            //this.charset = null;
-            this.setgLevel(0);
-            this.setgCharset(0, Terminal.charsets.US);
             this.state = normal;
-            i++;
-            break;
-
-          // ESC (,),*,+,-,. Designate G0-G2 Character Set.
-          case '(': // <-- this seems to get all the attention
-          case ')':
-          case '*':
-          case '+':
-          case '-':
-          case '.':
-            switch (ch) {
-              case '(':
-                this.gcharset = 0;
-                break;
-              case ')':
-                this.gcharset = 1;
-                break;
-              case '*':
-                this.gcharset = 2;
-                break;
-              case '+':
-                this.gcharset = 3;
-                break;
-              case '-':
-                this.gcharset = 1;
-                break;
-              case '.':
-                this.gcharset = 2;
-                break;
+          } else {
+            if (!this.params.length) {
+              if (ch >= '0' && ch <= '9') {
+                this.currentParam =
+                  this.currentParam * 10 + ch.charCodeAt(0) - 48;
+              } else if (ch === ';') {
+                this.params.push(this.currentParam);
+                this.currentParam = '';
+              }
+            } else {
+              this.currentParam += ch;
             }
-            this.state = charset;
-            break;
+          }
+          break;
 
-          // Designate G3 Character Set (VT300).
-          // A = ISO Latin-1 Supplemental.
-          // Not implemented.
-          case '/':
-            this.gcharset = 3;
-            this.state = charset;
-            i--;
+        case csi:
+          // '?', '>', '!'
+          if (ch === '?' || ch === '>' || ch === '!') {
+            this.prefix = ch;
             break;
+          }
 
-          // ESC N
-          // Single Shift Select of G2 Character Set
-          // ( SS2 is 0x8e). This affects next character only.
-          case 'N':
+          // 0 - 9
+          if (ch >= '0' && ch <= '9') {
+            this.currentParam = this.currentParam * 10 + ch.charCodeAt(0) - 48;
             break;
-          // ESC O
-          // Single Shift Select of G3 Character Set
-          // ( SS3 is 0x8f). This affects next character only.
-          case 'O':
-            break;
-          // ESC n
-          // Invoke the G2 Character Set as GL (LS2).
-          case 'n':
-            this.setgLevel(2);
-            break;
-          // ESC o
-          // Invoke the G3 Character Set as GL (LS3).
-          case 'o':
-            this.setgLevel(3);
-            break;
-          // ESC |
-          // Invoke the G3 Character Set as GR (LS3R).
-          case '|':
-            this.setgLevel(3);
-            break;
-          // ESC }
-          // Invoke the G2 Character Set as GR (LS2R).
-          case '}':
-            this.setgLevel(2);
-            break;
-          // ESC ~
-          // Invoke the G1 Character Set as GR (LS1R).
-          case '~':
-            this.setgLevel(1);
-            break;
+          }
 
-          // ESC 7 Save Cursor (DECSC).
-          case '7':
-            this.saveCursor();
-            this.state = normal;
+          // '$', '"', ' ', '\''
+          if (ch === '$' || ch === '"' || ch === ' ' || ch === '\'') {
+            this.postfix = ch;
             break;
-
-          // ESC 8 Restore Cursor (DECRC).
-          case '8':
-            this.restoreCursor();
-            this.state = normal;
-            break;
-
-          // ESC # 3 DEC line height/width
-          case '#':
-            this.state = normal;
-            i++;
-            break;
-
-          // ESC H Tab Set (HTS is 0x88).
-          case 'H':
-            this.tabSet();
-            break;
-
-          // ESC = Application Keypad (DECKPAM).
-          case '=':
-            this.log('Serial port requested application keypad.');
-            this.applicationKeypad = true;
-            this.viewport.syncScrollArea();
-            this.state = normal;
-            break;
-
-          // ESC > Normal Keypad (DECKPNM).
-          case '>':
-            this.log('Switching back to normal keypad.');
-            this.applicationKeypad = false;
-            this.viewport.syncScrollArea();
-            this.state = normal;
-            break;
-
-          default:
-            this.state = normal;
-            this.error('Unknown ESC control: %s.', ch);
-            break;
-        }
-        break;
-
-      case charset:
-        switch (ch) {
-          case '0': // DEC Special Character and Line Drawing Set.
-            cs = Terminal.charsets.SCLD;
-            break;
-          case 'A': // UK
-            cs = Terminal.charsets.UK;
-            break;
-          case 'B': // United States (USASCII).
-            cs = Terminal.charsets.US;
-            break;
-          case '4': // Dutch
-            cs = Terminal.charsets.Dutch;
-            break;
-          case 'C': // Finnish
-          case '5':
-            cs = Terminal.charsets.Finnish;
-            break;
-          case 'R': // French
-            cs = Terminal.charsets.French;
-            break;
-          case 'Q': // FrenchCanadian
-            cs = Terminal.charsets.FrenchCanadian;
-            break;
-          case 'K': // German
-            cs = Terminal.charsets.German;
-            break;
-          case 'Y': // Italian
-            cs = Terminal.charsets.Italian;
-            break;
-          case 'E': // NorwegianDanish
-          case '6':
-            cs = Terminal.charsets.NorwegianDanish;
-            break;
-          case 'Z': // Spanish
-            cs = Terminal.charsets.Spanish;
-            break;
-          case 'H': // Swedish
-          case '7':
-            cs = Terminal.charsets.Swedish;
-            break;
-          case '=': // Swiss
-            cs = Terminal.charsets.Swiss;
-            break;
-          case '/': // ISOLatin (actually /A)
-            cs = Terminal.charsets.ISOLatin;
-            i++;
-            break;
-          default: // Default
-            cs = Terminal.charsets.US;
-            break;
-        }
-        this.setgCharset(this.gcharset, cs);
-        this.gcharset = null;
-        this.state = normal;
-        break;
-
-      case osc:
-        // OSC Ps ; Pt ST
-        // OSC Ps ; Pt BEL
-        //   Set Text Parameters.
-        if (ch === C0.ESC || ch === C0.BEL) {
-          if (ch === C0.ESC) i++;
+          }
 
           this.params.push(this.currentParam);
+          this.currentParam = 0;
 
-          switch (this.params[0]) {
-            case 0:
-            case 1:
-            case 2:
-              if (this.params[1]) {
-                this.title = this.params[1];
-                this.handleTitle(this.title);
+          // ';'
+          if (ch === ';') break;
+
+          this.state = normal;
+
+          switch (ch) {
+            // CSI Ps A
+            // Cursor Up Ps Times (default = 1) (CUU).
+            case 'A':
+              this.cursorUp(this.params);
+              break;
+
+            // CSI Ps B
+            // Cursor Down Ps Times (default = 1) (CUD).
+            case 'B':
+              this.cursorDown(this.params);
+              break;
+
+            // CSI Ps C
+            // Cursor Forward Ps Times (default = 1) (CUF).
+            case 'C':
+              this.cursorForward(this.params);
+              break;
+
+            // CSI Ps D
+            // Cursor Backward Ps Times (default = 1) (CUB).
+            case 'D':
+              this.cursorBackward(this.params);
+              break;
+
+            // CSI Ps ; Ps H
+            // Cursor Position [row;column] (default = [1,1]) (CUP).
+            case 'H':
+              this.cursorPos(this.params);
+              break;
+
+            // CSI Ps J  Erase in Display (ED).
+            case 'J':
+              this.eraseInDisplay(this.params);
+              break;
+
+            // CSI Ps K  Erase in Line (EL).
+            case 'K':
+              this.eraseInLine(this.params);
+              break;
+
+            // CSI Pm m  Character Attributes (SGR).
+            case 'm':
+              if (!this.prefix) {
+                this.charAttributes(this.params);
               }
               break;
-            case 3:
-              // set X property
+
+            // CSI Ps n  Device Status Report (DSR).
+            case 'n':
+              if (!this.prefix) {
+                this.deviceStatus(this.params);
+              }
               break;
-            case 4:
-            case 5:
-              // change dynamic colors
+
+              /**
+               * Additions
+               */
+
+            // CSI Ps @
+            // Insert Ps (Blank) Character(s) (default = 1) (ICH).
+            case '@':
+              this.insertChars(this.params);
               break;
-            case 10:
-            case 11:
-            case 12:
-            case 13:
-            case 14:
-            case 15:
-            case 16:
-            case 17:
-            case 18:
-            case 19:
-              // change dynamic ui colors
+
+            // CSI Ps E
+            // Cursor Next Line Ps Times (default = 1) (CNL).
+            case 'E':
+              this.cursorNextLine(this.params);
               break;
-            case 46:
-              // change log file
+
+            // CSI Ps F
+            // Cursor Preceding Line Ps Times (default = 1) (CNL).
+            case 'F':
+              this.cursorPrecedingLine(this.params);
               break;
-            case 50:
-              // dynamic font
+
+            // CSI Ps G
+            // Cursor Character Absolute  [column] (default = [row,1]) (CHA).
+            case 'G':
+              this.cursorCharAbsolute(this.params);
               break;
-            case 51:
-              // emacs shell
+
+            // CSI Ps L
+            // Insert Ps Line(s) (default = 1) (IL).
+            case 'L':
+              this.insertLines(this.params);
               break;
-            case 52:
-              // manipulate selection data
+
+            // CSI Ps M
+            // Delete Ps Line(s) (default = 1) (DL).
+            case 'M':
+              this.deleteLines(this.params);
               break;
-            case 104:
-            case 105:
-            case 110:
-            case 111:
-            case 112:
-            case 113:
-            case 114:
-            case 115:
-            case 116:
-            case 117:
-            case 118:
-              // reset colors
+
+            // CSI Ps P
+            // Delete Ps Character(s) (default = 1) (DCH).
+            case 'P':
+              this.deleteChars(this.params);
               break;
-          }
 
-          this.params = [];
-          this.currentParam = 0;
-          this.state = normal;
-        } else {
-          if (!this.params.length) {
-            if (ch >= '0' && ch <= '9') {
-              this.currentParam =
-                this.currentParam * 10 + ch.charCodeAt(0) - 48;
-            } else if (ch === ';') {
-              this.params.push(this.currentParam);
-              this.currentParam = '';
-            }
-          } else {
-            this.currentParam += ch;
-          }
-        }
-        break;
+            // CSI Ps X
+            // Erase Ps Character(s) (default = 1) (ECH).
+            case 'X':
+              this.eraseChars(this.params);
+              break;
 
-      case csi:
-        // '?', '>', '!'
-        if (ch === '?' || ch === '>' || ch === '!') {
-          this.prefix = ch;
-          break;
-        }
+            // CSI Pm `  Character Position Absolute
+            //   [column] (default = [row,1]) (HPA).
+            case '`':
+              this.charPosAbsolute(this.params);
+              break;
 
-        // 0 - 9
-        if (ch >= '0' && ch <= '9') {
-          this.currentParam = this.currentParam * 10 + ch.charCodeAt(0) - 48;
-          break;
-        }
+            // 141 61 a * HPR -
+            // Horizontal Position Relative
+            case 'a':
+              this.HPositionRelative(this.params);
+              break;
 
-        // '$', '"', ' ', '\''
-        if (ch === '$' || ch === '"' || ch === ' ' || ch === '\'') {
-          this.postfix = ch;
-          break;
-        }
+            // CSI P s c
+            // Send Device Attributes (Primary DA).
+            // CSI > P s c
+            // Send Device Attributes (Secondary DA)
+            case 'c':
+              this.sendDeviceAttributes(this.params);
+              break;
 
-        this.params.push(this.currentParam);
-        this.currentParam = 0;
+            // CSI Pm d
+            // Line Position Absolute  [row] (default = [1,column]) (VPA).
+            case 'd':
+              this.linePosAbsolute(this.params);
+              break;
 
-        // ';'
-        if (ch === ';') break;
+            // 145 65 e * VPR - Vertical Position Relative
+            case 'e':
+              this.VPositionRelative(this.params);
+              break;
 
-        this.state = normal;
+            // CSI Ps ; Ps f
+            //   Horizontal and Vertical Position [row;column] (default =
+            //   [1,1]) (HVP).
+            case 'f':
+              this.HVPosition(this.params);
+              break;
 
-        switch (ch) {
-          // CSI Ps A
-          // Cursor Up Ps Times (default = 1) (CUU).
-          case 'A':
-            this.cursorUp(this.params);
-            break;
+            // CSI Pm h  Set Mode (SM).
+            // CSI ? Pm h - mouse escape codes, cursor escape codes
+            case 'h':
+              this.setMode(this.params);
+              break;
 
-          // CSI Ps B
-          // Cursor Down Ps Times (default = 1) (CUD).
-          case 'B':
-            this.cursorDown(this.params);
-            break;
+            // CSI Pm l  Reset Mode (RM).
+            // CSI ? Pm l
+            case 'l':
+              this.resetMode(this.params);
+              break;
 
-          // CSI Ps C
-          // Cursor Forward Ps Times (default = 1) (CUF).
-          case 'C':
-            this.cursorForward(this.params);
-            break;
+            // CSI Ps ; Ps r
+            //   Set Scrolling Region [top;bottom] (default = full size of win-
+            //   dow) (DECSTBM).
+            // CSI ? Pm r
+            case 'r':
+              this.setScrollRegion(this.params);
+              break;
 
-          // CSI Ps D
-          // Cursor Backward Ps Times (default = 1) (CUB).
-          case 'D':
-            this.cursorBackward(this.params);
-            break;
+            // CSI s
+            //   Save cursor (ANSI.SYS).
+            case 's':
+              this.saveCursor(this.params);
+              break;
 
-          // CSI Ps ; Ps H
-          // Cursor Position [row;column] (default = [1,1]) (CUP).
-          case 'H':
-            this.cursorPos(this.params);
-            break;
+            // CSI u
+            //   Restore cursor (ANSI.SYS).
+            case 'u':
+              this.restoreCursor(this.params);
+              break;
 
-          // CSI Ps J  Erase in Display (ED).
-          case 'J':
-            this.eraseInDisplay(this.params);
-            break;
+              /**
+               * Lesser Used
+               */
 
-          // CSI Ps K  Erase in Line (EL).
-          case 'K':
-            this.eraseInLine(this.params);
-            break;
+            // CSI Ps I
+            // Cursor Forward Tabulation Ps tab stops (default = 1) (CHT).
+            case 'I':
+              this.cursorForwardTab(this.params);
+              break;
 
-          // CSI Pm m  Character Attributes (SGR).
-          case 'm':
-            if (!this.prefix) {
-              this.charAttributes(this.params);
-            }
-            break;
+            // CSI Ps S  Scroll up Ps lines (default = 1) (SU).
+            case 'S':
+              this.scrollUp(this.params);
+              break;
 
-          // CSI Ps n  Device Status Report (DSR).
-          case 'n':
-            if (!this.prefix) {
-              this.deviceStatus(this.params);
-            }
-            break;
+            // CSI Ps T  Scroll down Ps lines (default = 1) (SD).
+            // CSI Ps ; Ps ; Ps ; Ps ; Ps T
+            // CSI > Ps; Ps T
+            case 'T':
+              // if (this.prefix === '>') {
+              //   this.resetTitleModes(this.params);
+              //   break;
+              // }
+              // if (this.params.length > 2) {
+              //   this.initMouseTracking(this.params);
+              //   break;
+              // }
+              if (this.params.length < 2 && !this.prefix) {
+                this.scrollDown(this.params);
+              }
+              break;
 
-            /**
-             * Additions
-             */
+            // CSI Ps Z
+            // Cursor Backward Tabulation Ps tab stops (default = 1) (CBT).
+            case 'Z':
+              this.cursorBackwardTab(this.params);
+              break;
 
-          // CSI Ps @
-          // Insert Ps (Blank) Character(s) (default = 1) (ICH).
-          case '@':
-            this.insertChars(this.params);
-            break;
+            // CSI Ps b  Repeat the preceding graphic character Ps times (REP).
+            case 'b':
+              this.repeatPrecedingCharacter(this.params);
+              break;
 
-          // CSI Ps E
-          // Cursor Next Line Ps Times (default = 1) (CNL).
-          case 'E':
-            this.cursorNextLine(this.params);
-            break;
-
-          // CSI Ps F
-          // Cursor Preceding Line Ps Times (default = 1) (CNL).
-          case 'F':
-            this.cursorPrecedingLine(this.params);
-            break;
-
-          // CSI Ps G
-          // Cursor Character Absolute  [column] (default = [row,1]) (CHA).
-          case 'G':
-            this.cursorCharAbsolute(this.params);
-            break;
-
-          // CSI Ps L
-          // Insert Ps Line(s) (default = 1) (IL).
-          case 'L':
-            this.insertLines(this.params);
-            break;
-
-          // CSI Ps M
-          // Delete Ps Line(s) (default = 1) (DL).
-          case 'M':
-            this.deleteLines(this.params);
-            break;
-
-          // CSI Ps P
-          // Delete Ps Character(s) (default = 1) (DCH).
-          case 'P':
-            this.deleteChars(this.params);
-            break;
-
-          // CSI Ps X
-          // Erase Ps Character(s) (default = 1) (ECH).
-          case 'X':
-            this.eraseChars(this.params);
-            break;
-
-          // CSI Pm `  Character Position Absolute
-          //   [column] (default = [row,1]) (HPA).
-          case '`':
-            this.charPosAbsolute(this.params);
-            break;
-
-          // 141 61 a * HPR -
-          // Horizontal Position Relative
-          case 'a':
-            this.HPositionRelative(this.params);
-            break;
-
-          // CSI P s c
-          // Send Device Attributes (Primary DA).
-          // CSI > P s c
-          // Send Device Attributes (Secondary DA)
-          case 'c':
-            this.sendDeviceAttributes(this.params);
-            break;
-
-          // CSI Pm d
-          // Line Position Absolute  [row] (default = [1,column]) (VPA).
-          case 'd':
-            this.linePosAbsolute(this.params);
-            break;
-
-          // 145 65 e * VPR - Vertical Position Relative
-          case 'e':
-            this.VPositionRelative(this.params);
-            break;
-
-          // CSI Ps ; Ps f
-          //   Horizontal and Vertical Position [row;column] (default =
-          //   [1,1]) (HVP).
-          case 'f':
-            this.HVPosition(this.params);
-            break;
-
-          // CSI Pm h  Set Mode (SM).
-          // CSI ? Pm h - mouse escape codes, cursor escape codes
-          case 'h':
-            this.setMode(this.params);
-            break;
-
-          // CSI Pm l  Reset Mode (RM).
-          // CSI ? Pm l
-          case 'l':
-            this.resetMode(this.params);
-            break;
-
-          // CSI Ps ; Ps r
-          //   Set Scrolling Region [top;bottom] (default = full size of win-
-          //   dow) (DECSTBM).
-          // CSI ? Pm r
-          case 'r':
-            this.setScrollRegion(this.params);
-            break;
-
-          // CSI s
-          //   Save cursor (ANSI.SYS).
-          case 's':
-            this.saveCursor(this.params);
-            break;
-
-          // CSI u
-          //   Restore cursor (ANSI.SYS).
-          case 'u':
-            this.restoreCursor(this.params);
-            break;
-
-            /**
-             * Lesser Used
-             */
-
-          // CSI Ps I
-          // Cursor Forward Tabulation Ps tab stops (default = 1) (CHT).
-          case 'I':
-            this.cursorForwardTab(this.params);
-            break;
-
-          // CSI Ps S  Scroll up Ps lines (default = 1) (SU).
-          case 'S':
-            this.scrollUp(this.params);
-            break;
-
-          // CSI Ps T  Scroll down Ps lines (default = 1) (SD).
-          // CSI Ps ; Ps ; Ps ; Ps ; Ps T
-          // CSI > Ps; Ps T
-          case 'T':
-            // if (this.prefix === '>') {
-            //   this.resetTitleModes(this.params);
-            //   break;
-            // }
-            // if (this.params.length > 2) {
-            //   this.initMouseTracking(this.params);
-            //   break;
-            // }
-            if (this.params.length < 2 && !this.prefix) {
-              this.scrollDown(this.params);
-            }
-            break;
-
-          // CSI Ps Z
-          // Cursor Backward Tabulation Ps tab stops (default = 1) (CBT).
-          case 'Z':
-            this.cursorBackwardTab(this.params);
-            break;
-
-          // CSI Ps b  Repeat the preceding graphic character Ps times (REP).
-          case 'b':
-            this.repeatPrecedingCharacter(this.params);
-            break;
-
-          // CSI Ps g  Tab Clear (TBC).
-          case 'g':
-            this.tabClear(this.params);
-            break;
+            // CSI Ps g  Tab Clear (TBC).
+            case 'g':
+              this.tabClear(this.params);
+              break;
 
             // CSI Pm i  Media Copy (MC).
             // CSI ? Pm i
@@ -2135,272 +2216,282 @@ Terminal.prototype.write = function(data) {
             // CSI ? Ps$ p
             //   Request DEC private mode (DECRQM).
             // CSI Ps ; Ps " p
-          case 'p':
-            switch (this.prefix) {
-                // case '>':
-                //   this.setPointerMode(this.params);
-                //   break;
-              case '!':
-                this.softReset(this.params);
-                break;
-                // case '?':
-                //   if (this.postfix === '$') {
-                //     this.requestPrivateMode(this.params);
-                //   }
-                //   break;
-                // default:
-                //   if (this.postfix === '"') {
-                //     this.setConformanceLevel(this.params);
-                //   } else if (this.postfix === '$') {
-                //     this.requestAnsiMode(this.params);
-                //   }
-                //   break;
-            }
-            break;
-
-            // CSI Ps q  Load LEDs (DECLL).
-            // CSI Ps SP q
-            // CSI Ps " q
-            // case 'q':
-            //   if (this.postfix === ' ') {
-            //     this.setCursorStyle(this.params);
-            //     break;
-            //   }
-            //   if (this.postfix === '"') {
-            //     this.setCharProtectionAttr(this.params);
-            //     break;
-            //   }
-            //   this.loadLEDs(this.params);
-            //   break;
-
-            // CSI Ps ; Ps r
-            //   Set Scrolling Region [top;bottom] (default = full size of win-
-            //   dow) (DECSTBM).
-            // CSI ? Pm r
-            // CSI Pt; Pl; Pb; Pr; Ps$ r
-            // case 'r': // duplicate
-            //   if (this.prefix === '?') {
-            //     this.restorePrivateValues(this.params);
-            //   } else if (this.postfix === '$') {
-            //     this.setAttrInRectangle(this.params);
-            //   } else {
-            //     this.setScrollRegion(this.params);
-            //   }
-            //   break;
-
-            // CSI s     Save cursor (ANSI.SYS).
-            // CSI ? Pm s
-            // case 's': // duplicate
-            //   if (this.prefix === '?') {
-            //     this.savePrivateValues(this.params);
-            //   } else {
-            //     this.saveCursor(this.params);
-            //   }
-            //   break;
-
-            // CSI Ps ; Ps ; Ps t
-            // CSI Pt; Pl; Pb; Pr; Ps$ t
-            // CSI > Ps; Ps t
-            // CSI Ps SP t
-            // case 't':
-            //   if (this.postfix === '$') {
-            //     this.reverseAttrInRectangle(this.params);
-            //   } else if (this.postfix === ' ') {
-            //     this.setWarningBellVolume(this.params);
-            //   } else {
-            //     if (this.prefix === '>') {
-            //       this.setTitleModeFeature(this.params);
-            //     } else {
-            //       this.manipulateWindow(this.params);
-            //     }
-            //   }
-            //   break;
-
-            // CSI u     Restore cursor (ANSI.SYS).
-            // CSI Ps SP u
-            // case 'u': // duplicate
-            //   if (this.postfix === ' ') {
-            //     this.setMarginBellVolume(this.params);
-            //   } else {
-            //     this.restoreCursor(this.params);
-            //   }
-            //   break;
-
-            // CSI Pt; Pl; Pb; Pr; Pp; Pt; Pl; Pp$ v
-            // case 'v':
-            //   if (this.postfix === '$') {
-            //     this.copyRectagle(this.params);
-            //   }
-            //   break;
-
-            // CSI Pt ; Pl ; Pb ; Pr ' w
-            // case 'w':
-            //   if (this.postfix === '\'') {
-            //     this.enableFilterRectangle(this.params);
-            //   }
-            //   break;
-
-            // CSI Ps x  Request Terminal Parameters (DECREQTPARM).
-            // CSI Ps x  Select Attribute Change Extent (DECSACE).
-            // CSI Pc; Pt; Pl; Pb; Pr$ x
-            // case 'x':
-            //   if (this.postfix === '$') {
-            //     this.fillRectangle(this.params);
-            //   } else {
-            //     this.requestParameters(this.params);
-            //     //this.__(this.params);
-            //   }
-            //   break;
-
-            // CSI Ps ; Pu ' z
-            // CSI Pt; Pl; Pb; Pr$ z
-            // case 'z':
-            //   if (this.postfix === '\'') {
-            //     this.enableLocatorReporting(this.params);
-            //   } else if (this.postfix === '$') {
-            //     this.eraseRectangle(this.params);
-            //   }
-            //   break;
-
-            // CSI Pm ' {
-            // CSI Pt; Pl; Pb; Pr$ {
-            // case '{':
-            //   if (this.postfix === '\'') {
-            //     this.setLocatorEvents(this.params);
-            //   } else if (this.postfix === '$') {
-            //     this.selectiveEraseRectangle(this.params);
-            //   }
-            //   break;
-
-            // CSI Ps ' |
-            // case '|':
-            //   if (this.postfix === '\'') {
-            //     this.requestLocatorPosition(this.params);
-            //   }
-            //   break;
-
-            // CSI P m SP }
-            // Insert P s Column(s) (default = 1) (DECIC), VT420 and up.
-            // case '}':
-            //   if (this.postfix === ' ') {
-            //     this.insertColumns(this.params);
-            //   }
-            //   break;
-
-            // CSI P m SP ~
-            // Delete P s Column(s) (default = 1) (DECDC), VT420 and up
-            // case '~':
-            //   if (this.postfix === ' ') {
-            //     this.deleteColumns(this.params);
-            //   }
-            //   break;
-
-          default:
-            this.error('Unknown CSI code: %s.', ch);
-            break;
-        }
-
-        this.prefix = '';
-        this.postfix = '';
-        break;
-
-      case dcs:
-        if (ch === C0.ESC || ch === C0.BEL) {
-          if (ch === C0.ESC) i++;
-
-          switch (this.prefix) {
-            // User-Defined Keys (DECUDK).
-            case '':
-              break;
-
-            // Request Status String (DECRQSS).
-            // test: echo -e '\eP$q"p\e\\'
-            case '$q':
-              var pt = this.currentParam
-              , valid = false;
-
-              switch (pt) {
-                // DECSCA
-                case '"q':
-                  pt = '0"q';
+            case 'p':
+              switch (this.prefix) {
+                  // case '>':
+                  //   this.setPointerMode(this.params);
+                  //   break;
+                case '!':
+                  this.softReset(this.params);
                   break;
-
-                // DECSCL
-                case '"p':
-                  pt = '61"p';
-                  break;
-
-                // DECSTBM
-                case 'r':
-                  pt = ''
-                    + (this.scrollTop + 1)
-                    + ';'
-                    + (this.scrollBottom + 1)
-                    + 'r';
-                  break;
-
-                // SGR
-                case 'm':
-                  pt = '0m';
-                  break;
-
-                default:
-                  this.error('Unknown DCS Pt: %s.', pt);
-                  pt = '';
-                  break;
+                  // case '?':
+                  //   if (this.postfix === '$') {
+                  //     this.requestPrivateMode(this.params);
+                  //   }
+                  //   break;
+                  // default:
+                  //   if (this.postfix === '"') {
+                  //     this.setConformanceLevel(this.params);
+                  //   } else if (this.postfix === '$') {
+                  //     this.requestAnsiMode(this.params);
+                  //   }
+                  //   break;
               }
-
-              this.send(C0.ESC + 'P' + +valid + '$r' + pt + C0.ESC + '\\');
               break;
 
-            // Set Termcap/Terminfo Data (xterm, experimental).
-            case '+p':
-              break;
+              // CSI Ps q  Load LEDs (DECLL).
+              // CSI Ps SP q
+              // CSI Ps " q
+              // case 'q':
+              //   if (this.postfix === ' ') {
+              //     this.setCursorStyle(this.params);
+              //     break;
+              //   }
+              //   if (this.postfix === '"') {
+              //     this.setCharProtectionAttr(this.params);
+              //     break;
+              //   }
+              //   this.loadLEDs(this.params);
+              //   break;
 
-            // Request Termcap/Terminfo String (xterm, experimental)
-            // Regular xterm does not even respond to this sequence.
-            // This can cause a small glitch in vim.
-            // test: echo -ne '\eP+q6b64\e\\'
-            case '+q':
-              var pt = this.currentParam
-              , valid = false;
+              // CSI Ps ; Ps r
+              //   Set Scrolling Region [top;bottom] (default = full size of win-
+              //   dow) (DECSTBM).
+              // CSI ? Pm r
+              // CSI Pt; Pl; Pb; Pr; Ps$ r
+              // case 'r': // duplicate
+              //   if (this.prefix === '?') {
+              //     this.restorePrivateValues(this.params);
+              //   } else if (this.postfix === '$') {
+              //     this.setAttrInRectangle(this.params);
+              //   } else {
+              //     this.setScrollRegion(this.params);
+              //   }
+              //   break;
 
-              this.send(C0.ESC + 'P' + +valid + '+r' + pt + C0.ESC + '\\');
-              break;
+              // CSI s     Save cursor (ANSI.SYS).
+              // CSI ? Pm s
+              // case 's': // duplicate
+              //   if (this.prefix === '?') {
+              //     this.savePrivateValues(this.params);
+              //   } else {
+              //     this.saveCursor(this.params);
+              //   }
+              //   break;
+
+              // CSI Ps ; Ps ; Ps t
+              // CSI Pt; Pl; Pb; Pr; Ps$ t
+              // CSI > Ps; Ps t
+              // CSI Ps SP t
+              // case 't':
+              //   if (this.postfix === '$') {
+              //     this.reverseAttrInRectangle(this.params);
+              //   } else if (this.postfix === ' ') {
+              //     this.setWarningBellVolume(this.params);
+              //   } else {
+              //     if (this.prefix === '>') {
+              //       this.setTitleModeFeature(this.params);
+              //     } else {
+              //       this.manipulateWindow(this.params);
+              //     }
+              //   }
+              //   break;
+
+              // CSI u     Restore cursor (ANSI.SYS).
+              // CSI Ps SP u
+              // case 'u': // duplicate
+              //   if (this.postfix === ' ') {
+              //     this.setMarginBellVolume(this.params);
+              //   } else {
+              //     this.restoreCursor(this.params);
+              //   }
+              //   break;
+
+              // CSI Pt; Pl; Pb; Pr; Pp; Pt; Pl; Pp$ v
+              // case 'v':
+              //   if (this.postfix === '$') {
+              //     this.copyRectagle(this.params);
+              //   }
+              //   break;
+
+              // CSI Pt ; Pl ; Pb ; Pr ' w
+              // case 'w':
+              //   if (this.postfix === '\'') {
+              //     this.enableFilterRectangle(this.params);
+              //   }
+              //   break;
+
+              // CSI Ps x  Request Terminal Parameters (DECREQTPARM).
+              // CSI Ps x  Select Attribute Change Extent (DECSACE).
+              // CSI Pc; Pt; Pl; Pb; Pr$ x
+              // case 'x':
+              //   if (this.postfix === '$') {
+              //     this.fillRectangle(this.params);
+              //   } else {
+              //     this.requestParameters(this.params);
+              //     //this.__(this.params);
+              //   }
+              //   break;
+
+              // CSI Ps ; Pu ' z
+              // CSI Pt; Pl; Pb; Pr$ z
+              // case 'z':
+              //   if (this.postfix === '\'') {
+              //     this.enableLocatorReporting(this.params);
+              //   } else if (this.postfix === '$') {
+              //     this.eraseRectangle(this.params);
+              //   }
+              //   break;
+
+              // CSI Pm ' {
+              // CSI Pt; Pl; Pb; Pr$ {
+              // case '{':
+              //   if (this.postfix === '\'') {
+              //     this.setLocatorEvents(this.params);
+              //   } else if (this.postfix === '$') {
+              //     this.selectiveEraseRectangle(this.params);
+              //   }
+              //   break;
+
+              // CSI Ps ' |
+              // case '|':
+              //   if (this.postfix === '\'') {
+              //     this.requestLocatorPosition(this.params);
+              //   }
+              //   break;
+
+              // CSI P m SP }
+              // Insert P s Column(s) (default = 1) (DECIC), VT420 and up.
+              // case '}':
+              //   if (this.postfix === ' ') {
+              //     this.insertColumns(this.params);
+              //   }
+              //   break;
+
+              // CSI P m SP ~
+              // Delete P s Column(s) (default = 1) (DECDC), VT420 and up
+              // case '~':
+              //   if (this.postfix === ' ') {
+              //     this.deleteColumns(this.params);
+              //   }
+              //   break;
 
             default:
-              this.error('Unknown DCS prefix: %s.', this.prefix);
+              this.error('Unknown CSI code: %s.', ch);
               break;
           }
 
-          this.currentParam = 0;
           this.prefix = '';
-          this.state = normal;
-        } else if (!this.currentParam) {
-          if (!this.prefix && ch !== '$' && ch !== '+') {
-            this.currentParam = ch;
-          } else if (this.prefix.length === 2) {
-            this.currentParam = ch;
+          this.postfix = '';
+          break;
+
+        case dcs:
+          if (ch === C0.ESC || ch === C0.BEL) {
+            if (ch === C0.ESC) i++;
+
+            switch (this.prefix) {
+              // User-Defined Keys (DECUDK).
+              case '':
+                break;
+
+              // Request Status String (DECRQSS).
+              // test: echo -e '\eP$q"p\e\\'
+              case '$q':
+                var pt = this.currentParam
+                , valid = false;
+
+                switch (pt) {
+                  // DECSCA
+                  case '"q':
+                    pt = '0"q';
+                    break;
+
+                  // DECSCL
+                  case '"p':
+                    pt = '61"p';
+                    break;
+
+                  // DECSTBM
+                  case 'r':
+                    pt = ''
+                      + (this.scrollTop + 1)
+                      + ';'
+                      + (this.scrollBottom + 1)
+                      + 'r';
+                    break;
+
+                  // SGR
+                  case 'm':
+                    pt = '0m';
+                    break;
+
+                  default:
+                    this.error('Unknown DCS Pt: %s.', pt);
+                    pt = '';
+                    break;
+                }
+
+                this.send(C0.ESC + 'P' + +valid + '$r' + pt + C0.ESC + '\\');
+                break;
+
+              // Set Termcap/Terminfo Data (xterm, experimental).
+              case '+p':
+                break;
+
+              // Request Termcap/Terminfo String (xterm, experimental)
+              // Regular xterm does not even respond to this sequence.
+              // This can cause a small glitch in vim.
+              // test: echo -ne '\eP+q6b64\e\\'
+              case '+q':
+                var pt = this.currentParam
+                , valid = false;
+
+                this.send(C0.ESC + 'P' + +valid + '+r' + pt + C0.ESC + '\\');
+                break;
+
+              default:
+                this.error('Unknown DCS prefix: %s.', this.prefix);
+                break;
+            }
+
+            this.currentParam = 0;
+            this.prefix = '';
+            this.state = normal;
+          } else if (!this.currentParam) {
+            if (!this.prefix && ch !== '$' && ch !== '+') {
+              this.currentParam = ch;
+            } else if (this.prefix.length === 2) {
+              this.currentParam = ch;
+            } else {
+              this.prefix += ch;
+            }
           } else {
-            this.prefix += ch;
+            this.currentParam += ch;
           }
-        } else {
-          this.currentParam += ch;
-        }
-        break;
+          break;
 
-      case ignore:
-        // For PM and APC.
-        if (ch === C0.ESC || ch === C0.BEL) {
-          if (ch === C0.ESC) i++;
-          this.state = normal;
-        }
-        break;
+        case ignore:
+          // For PM and APC.
+          if (ch === C0.ESC || ch === C0.BEL) {
+            if (ch === C0.ESC) i++;
+            this.state = normal;
+          }
+          break;
+      }
     }
-  }
 
-  this.updateRange(this.y);
-  this.queueRefresh(this.refreshStart, this.refreshEnd);
+    this.updateRange(this.y);
+    this.queueRefresh(this.refreshStart, this.refreshEnd);
+  }
+  if (this.writeBuffer.length > 0) {
+    // Allow renderer to catch up before processing the next batch
+    var self = this;
+    setTimeout(function () {
+      self.innerWrite();
+    }, 0);
+  } else {
+    this.writeInProgress = false;
+  }
 };
 
 /**
@@ -2443,6 +2534,12 @@ Terminal.prototype.keyDown = function(ev) {
 
   var self = this;
   var result = this.evaluateKeyEscapeSequence(ev);
+
+  if (result.key === C0.DC3) { // XOFF
+    this.writeStopped = true;
+  } else if (result.key === C0.DC1) { // XON
+    this.writeStopped = false;
+  }
 
   if (result.scrollDisp) {
     this.scrollDisp(result.scrollDisp);
@@ -2749,6 +2846,7 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
       }
       break;
   }
+
   return result;
 };
 

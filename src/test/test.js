@@ -14,6 +14,15 @@ describe('xterm.js', function() {
     xterm.compositionHelper = {
       keydown: function(){ return true; }
     };
+    // Force synchronous refreshes
+    xterm.queueRefresh = function(start, end) {
+      xterm.refresh(start, end);
+    };
+    // Force synchronous writes
+    xterm.write = function(data) {
+      xterm.writeBuffer.push(data);
+      xterm.innerWrite();
+    };
   });
 
   describe('getOption', function() {
