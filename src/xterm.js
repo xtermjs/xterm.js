@@ -1139,6 +1139,10 @@ Terminal.prototype.refresh = function(start, end) {
     row = y + this.ydisp;
 
     line = this.lines.get(row);
+    if (!line) {
+      // Continue if the line is not available, this means a resize is currently in progress
+      continue;
+    }
     out = '';
 
     if (this.y === y - (this.ybase - this.ydisp)
@@ -1153,6 +1157,10 @@ Terminal.prototype.refresh = function(start, end) {
     i = 0;
 
     for (; i < width; i++) {
+      if (!line[i]) {
+        // Continue if the character is not available, this means a resize is currently in progress
+        continue;
+      }
       data = line[i][0];
       ch = line[i][1];
       ch_width = line[i][2];
