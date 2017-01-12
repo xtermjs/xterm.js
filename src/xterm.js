@@ -1139,7 +1139,7 @@ Terminal.prototype.refresh = function(start, end) {
     row = y + this.ydisp;
 
     line = this.lines.get(row);
-    if (!line) {
+    if (!line || !this.children[y]) {
       // Continue if the line is not available, this means a resize is currently in progress
       continue;
     }
