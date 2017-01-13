@@ -14,6 +14,63 @@ normalStateHandler[C0.SO] = (parser, handler) => handler.shiftOut();
 normalStateHandler[C0.SI] = (parser, handler) => handler.shiftIn();
 normalStateHandler[C0.ESC] = (parser, handler) => parser.setState(ParserState.ESCAPED);
 
+// TODO: Remove terminal when parser owns params and currentParam
+const escapedStateHandler: {[key: string]: (parser: Parser, terminal: any) => void} = {};
+escapedStateHandler['['] = (parser, terminal) => {
+  // ESC [ Control Sequence Introducer (CSI  is 0x9b)
+  terminal.params = [];
+  terminal.currentParam = 0;
+  parser.setState(ParserState.CSI_PARAM);
+};
+escapedStateHandler[']'] = (parser, terminal) => {
+  // ESC ] Operating System Command (OSC is 0x9d)
+  terminal.params = [];
+  terminal.currentParam = 0;
+  parser.setState(ParserState.OSC);
+};
+escapedStateHandler['P'] = (parser, terminal) => {
+  // ESC P Device Control String (DCS is 0x90)
+  terminal.params = [];
+  terminal.currentParam = 0;
+  parser.setState(ParserState.DCS);
+};
+escapedStateHandler['_'] = (parser, terminal) => {
+  // ESC _ Application Program Command ( APC is 0x9f).
+  parser.setState(ParserState.IGNORE);
+}
+escapedStateHandler['^'] = (parser, terminal) => {
+  // ESC ^ Privacy Message ( PM is 0x9e).
+  parser.setState(ParserState.IGNORE);
+}
+escapedStateHandler['c'] = (parser, terminal) => {
+  // ESC c Full Reset (RIS).
+  terminal.reset();
+}
+escapedStateHandler['E'] = (parser, terminal) => {
+  // ESC E Next Line ( NEL is 0x85).
+  terminal.x = 0;
+  terminal.index();
+  parser.setState(ParserState.NORMAL);
+}
+escapedStateHandler['D'] = (parser, terminal) => {
+  // ESC D Index ( IND is 0x84).
+  terminal.index();
+  parser.setState(ParserState.NORMAL);
+};
+escapedStateHandler['M'] = (parser, terminal) => {
+  // ESC M Reverse Index ( RI is 0x8d).
+  terminal.reverseIndex();
+  parser.setState(ParserState.NORMAL);
+};
+escapedStateHandler['%'] = (parser, terminal) => {
+  // ESC % Select default/utf-8 character set.
+  // @ = default, G = utf-8
+  terminal.setgLevel(0);
+  terminal.setgCharset(0, CHARSETS.US);
+  parser.setState(ParserState.NORMAL);
+  parser.skipNextChar();
+};
+
 const csiParamStateHandler: {[key: string]: (parser: Parser) => void} = {};
 csiParamStateHandler['?'] = (parser) => parser.setPrefix('?');
 csiParamStateHandler['>'] = (parser) => parser.setPrefix('>');
@@ -91,48 +148,50 @@ enum ParserState {
 }
 
 export class Parser {
-  private state: ParserState;
+  private _state: ParserState;
+  private _position: number;
 
   // TODO: Remove terminal when handler can do everything
   constructor(
     private _inputHandler: IInputHandler,
     private _terminal: any
   ) {
-    this.state = ParserState.NORMAL;
+    this._state = ParserState.NORMAL;
   }
 
   public parse(data: string) {
-    let l = data.length, i = 0, j, cs, ch, code, low;
+    let l = data.length, j, cs, ch, code, low;
 
+    this._position = 0;
     // apply leftover surrogate high from last write
     if (this._terminal.surrogate_high) {
       data = this._terminal.surrogate_high + data;
       this._terminal.surrogate_high = '';
     }
 
-    for (; i < l; i++) {
-      ch = data[i];
+    for (; this._position < l; this._position++) {
+      ch = data[this._position];
 
       // FIXME: higher chars than 0xa0 are not allowed in escape sequences
       //        --> maybe move to default
-      code = data.charCodeAt(i);
+      code = data.charCodeAt(this._position);
       if (0xD800 <= code && code <= 0xDBFF) {
         // we got a surrogate high
         // get surrogate low (next 2 bytes)
-        low = data.charCodeAt(i + 1);
+        low = data.charCodeAt(this._position + 1);
         if (isNaN(low)) {
           // end of data stream, save surrogate high
           this._terminal.surrogate_high = ch;
           continue;
         }
         code = ((code - 0xD800) * 0x400) + (low - 0xDC00) + 0x10000;
-        ch += data.charAt(i + 1);
+        ch += data.charAt(this._position + 1);
       }
       // surrogate low - already handled above
       if (0xDC00 <= code && code <= 0xDFFF)
         continue;
 
-      switch (this.state) {
+      switch (this._state) {
         case ParserState.NORMAL:
           if (ch in normalStateHandler) {
             normalStateHandler[ch](this, this._inputHandler);
@@ -141,68 +200,12 @@ export class Parser {
           }
           break;
         case ParserState.ESCAPED:
+          if (ch in escapedStateHandler) {
+            escapedStateHandler[ch](this, this._terminal);
+            // Skip switch as it was just handled
+            break;
+          }
           switch (ch) {
-            // ESC [ Control Sequence Introducer ( CSI is 0x9b).
-            case '[':
-              this._terminal.params = [];
-              this._terminal.currentParam = 0;
-              this.state = ParserState.CSI_PARAM;
-              break;
-
-            // ESC ] Operating System Command ( OSC is 0x9d).
-            case ']':
-              this._terminal.params = [];
-              this._terminal.currentParam = 0;
-              this.state = ParserState.OSC;
-              break;
-
-            // ESC P Device Control String ( DCS is 0x90).
-            case 'P':
-              this._terminal.params = [];
-              this._terminal.currentParam = 0;
-              this.state = ParserState.DCS;
-              break;
-
-            // ESC _ Application Program Command ( APC is 0x9f).
-            case '_':
-              this.state = ParserState.IGNORE;
-              break;
-
-            // ESC ^ Privacy Message ( PM is 0x9e).
-            case '^':
-              this.state = ParserState.IGNORE;
-              break;
-
-            // ESC c Full Reset (RIS).
-            case 'c':
-              this._terminal.reset();
-              break;
-
-            // ESC E Next Line ( NEL is 0x85).
-            // ESC D Index ( IND is 0x84).
-            case 'E':
-              this._terminal.x = 0;
-              ;
-            case 'D':
-              this._terminal.index();
-              this.state = ParserState.NORMAL;
-              break;
-
-            // ESC M Reverse Index ( RI is 0x8d).
-            case 'M':
-              this._terminal.reverseIndex();
-              this.state = ParserState.NORMAL;
-              break;
-
-            // ESC % Select default/utf-8 character set.
-            // @ = default, G = utf-8
-            case '%':
-              // this.charset = null;
-              this._terminal.setgLevel(0);
-              this._terminal.setgCharset(0, CHARSETS.US);
-              this.state = ParserState.NORMAL;
-              i++;
-              break;
 
             // ESC (,),*,+,-,. Designate G0-G2 Character Set.
             case '(': // <-- this seems to get all the attention
@@ -231,7 +234,7 @@ export class Parser {
                   this._terminal.gcharset = 2;
                   break;
               }
-              this.state = ParserState.CHARSET;
+              this._state = ParserState.CHARSET;
               break;
 
             // Designate G3 Character Set (VT300).
@@ -239,8 +242,8 @@ export class Parser {
             // Not implemented.
             case '/':
               this._terminal.gcharset = 3;
-              this.state = ParserState.CHARSET;
-              i--;
+              this._state = ParserState.CHARSET;
+              this._position--;
               break;
 
             // ESC N
@@ -282,25 +285,25 @@ export class Parser {
             // ESC 7 Save Cursor (DECSC).
             case '7':
               this._inputHandler.saveCursor();
-              this.state = ParserState.NORMAL;
+              this._state = ParserState.NORMAL;
               break;
 
             // ESC 8 Restore Cursor (DECRC).
             case '8':
               this._inputHandler.restoreCursor();
-              this.state = ParserState.NORMAL;
+              this._state = ParserState.NORMAL;
               break;
 
             // ESC # 3 DEC line height/width
             case '#':
-              this.state = ParserState.NORMAL;
-              i++;
+              this._state = ParserState.NORMAL;
+              this._position++;
               break;
 
             // ESC H Tab Set (HTS is 0x88).
             case 'H':
               this._terminal.tabSet();
-              this.state = ParserState.NORMAL;
+              this._state = ParserState.NORMAL;
               break;
 
             // ESC = Application Keypad (DECKPAM).
@@ -308,7 +311,7 @@ export class Parser {
               this._terminal.log('Serial port requested application keypad.');
               this._terminal.applicationKeypad = true;
               this._terminal.viewport.syncScrollArea();
-              this.state = ParserState.NORMAL;
+              this._state = ParserState.NORMAL;
               break;
 
             // ESC > Normal Keypad (DECKPNM).
@@ -316,11 +319,11 @@ export class Parser {
               this._terminal.log('Switching back to normal keypad.');
               this._terminal.applicationKeypad = false;
               this._terminal.viewport.syncScrollArea();
-              this.state = ParserState.NORMAL;
+              this._state = ParserState.NORMAL;
               break;
 
             default:
-              this.state = ParserState.NORMAL;
+              this._state = ParserState.NORMAL;
               this._terminal.error('Unknown ESC control: %s.', ch);
               break;
           }
@@ -372,7 +375,7 @@ export class Parser {
               break;
             case '/': // ISOLatin (actually /A)
               cs = CHARSETS.ISOLatin;
-              i++;
+              this._position++;
               break;
             default: // Default
               cs = CHARSETS.US;
@@ -380,7 +383,7 @@ export class Parser {
           }
           this._terminal.setgCharset(this._terminal.gcharset, cs);
           this._terminal.gcharset = null;
-          this.state = ParserState.NORMAL;
+          this._state = ParserState.NORMAL;
           break;
 
         case ParserState.OSC:
@@ -388,7 +391,7 @@ export class Parser {
           // OSC Ps ; Pt BEL
           //   Set Text Parameters.
           if (ch === C0.ESC || ch === C0.BEL) {
-            if (ch === C0.ESC) i++;
+            if (ch === C0.ESC) this._position++;
 
             this._terminal.params.push(this._terminal.currentParam);
 
@@ -449,7 +452,7 @@ export class Parser {
 
             this._terminal.params = [];
             this._terminal.currentParam = 0;
-            this.state = ParserState.NORMAL;
+            this._state = ParserState.NORMAL;
           } else {
             if (!this._terminal.params.length) {
               if (ch >= '0' && ch <= '9') {
@@ -472,7 +475,7 @@ export class Parser {
           }
           this.finalizeParam();
           // Fall through the CSI as this character should be the CSI code.
-          this.state = ParserState.CSI;
+          this._state = ParserState.CSI;
 
         case ParserState.CSI:
           if (ch in csiStateHandler) {
@@ -481,14 +484,14 @@ export class Parser {
             this._terminal.error('Unknown CSI code: %s.', ch);
           }
 
-          this.state = ParserState.NORMAL;
+          this._state = ParserState.NORMAL;
           this._terminal.prefix = '';
           this._terminal.postfix = '';
           break;
 
         case ParserState.DCS:
           if (ch === C0.ESC || ch === C0.BEL) {
-            if (ch === C0.ESC) i++;
+            if (ch === C0.ESC) this._position++;
 
             switch (this._terminal.prefix) {
               // User-Defined Keys (DECUDK).
@@ -558,7 +561,7 @@ export class Parser {
 
             this._terminal.currentParam = 0;
             this._terminal.prefix = '';
-            this.state = ParserState.NORMAL;
+            this._state = ParserState.NORMAL;
           } else if (!this._terminal.currentParam) {
             if (!this._terminal.prefix && ch !== '$' && ch !== '+') {
               this._terminal.currentParam = ch;
@@ -575,8 +578,8 @@ export class Parser {
         case ParserState.IGNORE:
           // For PM and APC.
           if (ch === C0.ESC || ch === C0.BEL) {
-            if (ch === C0.ESC) i++;
-            this.state = ParserState.NORMAL;
+            if (ch === C0.ESC) this._position++;
+            this._state = ParserState.NORMAL;
           }
           break;
       }
@@ -584,7 +587,7 @@ export class Parser {
   }
 
   public setState(state: ParserState): void {
-    this.state = state;
+    this._state = state;
   }
 
   public setPrefix(prefix: string): void {
@@ -607,4 +610,12 @@ export class Parser {
   public setPostfix(postfix: string): void {
     this._terminal.postfix = postfix;
   }
+
+  public skipNextChar(): void {
+    this._position++;
+  }
+
+  // public repeatChar(): void {
+  //   this._position--;
+  // }
 }
