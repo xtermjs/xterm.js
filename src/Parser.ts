@@ -53,6 +53,10 @@ csiStateHandler['X'] = (handler, params) => handler.eraseChars(params);
 csiStateHandler['`'] = (handler, params) => handler.charPosAbsolute(params);
 csiStateHandler['a'] = (handler, params) => handler.HPositionRelative(params);
 csiStateHandler['c'] = (handler, params) => handler.sendDeviceAttributes(params);
+csiStateHandler['d'] = (handler, params) => handler.linePosAbsolute(params);
+csiStateHandler['e'] = (handler, params) => handler.VPositionRelative(params);
+csiStateHandler['f'] = (handler, params) => handler.HVPosition(params);
+csiStateHandler['h'] = (handler, params) => handler.setMode(params);
 csiStateHandler['m'] = (handler, params) => handler.charAttributes(params);
 csiStateHandler['n'] = (handler, params) => handler.deviceStatus(params);
 
@@ -549,30 +553,6 @@ export class Parser {
           }
 
           switch (ch) {
-
-            // CSI Pm d
-            // Line Position Absolute  [row] (default = [1,column]) (VPA).
-            case 'd':
-              this._terminal.linePosAbsolute(this._terminal.params);
-              break;
-
-            // 145 65 e * VPR - Vertical Position Relative
-            case 'e':
-              this._terminal.VPositionRelative(this._terminal.params);
-              break;
-
-            // CSI Ps ; Ps f
-            //   Horizontal and Vertical Position [row;column] (default =
-            //   [1,1]) (HVP).
-            case 'f':
-              this._terminal.HVPosition(this._terminal.params);
-              break;
-
-            // CSI Pm h  Set Mode (SM).
-            // CSI ? Pm h - mouse escape codes, cursor escape codes
-            case 'h':
-              this._terminal.setMode(this._terminal.params);
-              break;
 
             // CSI Pm l  Reset Mode (RM).
             // CSI ? Pm l

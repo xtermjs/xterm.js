@@ -62,6 +62,10 @@ export interface IInputHandler {
   /** CSI ` */ charPosAbsolute(params: number[]): void;
   /** CSI a */ HPositionRelative(params: number[]): void;
   /** CSI c */ sendDeviceAttributes(params: number[]): void;
+  /** CSI d */ linePosAbsolute(params: number[]): void;
+  /** CSI e */ VPositionRelative(params: number[]): void;
+  /** CSI f */ HVPosition(params: number[]): void;
+  /** CSI h */ setMode(params: number[]): void;
   /** CSI m */ charAttributes(params: number[]): void;
   /** CSI n */ deviceStatus(params: number[]): void;
 }
