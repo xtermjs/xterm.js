@@ -44,6 +44,7 @@ export interface IInputHandler {
   /** C0 HT */ tab(): void;
   /** C0 SO */ shiftOut(): void;
   /** C0 SI */ shiftIn(): void;
+
   /** CSI @ */ insertChars(params);
   /** CSI A */ cursorUp(params: number[]): void;
   /** CSI B */ cursorDown(params: number[]): void;
@@ -53,6 +54,7 @@ export interface IInputHandler {
   /** CSI F */ cursorPrecedingLine(params: number[]): void;
   /** CSI G */ cursorCharAbsolute(params: number[]): void;
   /** CSI H */ cursorPosition(params: number[]): void;
+  /** CSI I */ cursorForwardTab(params: number[]): void;
   /** CSI J */ eraseInDisplay(params: number[]): void;
   /** CSI K */ eraseInLine(params: number[]): void;
   /** CSI L */ insertLines(params: number[]): void;
@@ -66,6 +68,10 @@ export interface IInputHandler {
   /** CSI e */ VPositionRelative(params: number[]): void;
   /** CSI f */ HVPosition(params: number[]): void;
   /** CSI h */ setMode(params: number[]): void;
+  /** CSI l */ resetMode(params: number[]): void;
   /** CSI m */ charAttributes(params: number[]): void;
   /** CSI n */ deviceStatus(params: number[]): void;
+  /** CSI r */ setScrollRegion(params: number[]): void;
+  /** CSI s */ saveCursor(params: number[]): void;
+  /** CSI u */ restoreCursor(params: number[]): void;
 }

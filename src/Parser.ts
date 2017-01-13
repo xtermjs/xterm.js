@@ -44,6 +44,7 @@ csiStateHandler['E'] = (handler, params) => handler.cursorNextLine(params);
 csiStateHandler['F'] = (handler, params) => handler.cursorPrecedingLine(params);
 csiStateHandler['G'] = (handler, params) => handler.cursorCharAbsolute(params);
 csiStateHandler['H'] = (handler, params) => handler.cursorPosition(params);
+csiStateHandler['I'] = (handler, params) => handler.cursorForwardTab(params);
 csiStateHandler['J'] = (handler, params) => handler.eraseInDisplay(params);
 csiStateHandler['K'] = (handler, params) => handler.eraseInLine(params);
 csiStateHandler['L'] = (handler, params) => handler.insertLines(params);
@@ -57,8 +58,12 @@ csiStateHandler['d'] = (handler, params) => handler.linePosAbsolute(params);
 csiStateHandler['e'] = (handler, params) => handler.VPositionRelative(params);
 csiStateHandler['f'] = (handler, params) => handler.HVPosition(params);
 csiStateHandler['h'] = (handler, params) => handler.setMode(params);
+csiStateHandler['l'] = (handler, params) => handler.resetMode(params);
 csiStateHandler['m'] = (handler, params) => handler.charAttributes(params);
 csiStateHandler['n'] = (handler, params) => handler.deviceStatus(params);
+csiStateHandler['r'] = (handler, params) => handler.setScrollRegion(params);
+csiStateHandler['s'] = (handler, params) => handler.saveCursor(params);
+csiStateHandler['u'] = (handler, params) => handler.restoreCursor(params);
 
 enum ParserState {
   NORMAL = 0,
@@ -554,41 +559,10 @@ export class Parser {
 
           switch (ch) {
 
-            // CSI Pm l  Reset Mode (RM).
-            // CSI ? Pm l
-            case 'l':
-              this._terminal.resetMode(this._terminal.params);
-              break;
-
-            // CSI Ps ; Ps r
-            //   Set Scrolling Region [top;bottom] (default = full size of win-
-            //   dow) (DECSTBM).
-            // CSI ? Pm r
-            case 'r':
-              this._terminal.setScrollRegion(this._terminal.params);
-              break;
-
-            // CSI s
-            //   Save cursor (ANSI.SYS).
-            case 's':
-              this._terminal.saveCursor(this._terminal.params);
-              break;
-
-            // CSI u
-            //   Restore cursor (ANSI.SYS).
-            case 'u':
-              this._terminal.restoreCursor(this._terminal.params);
-              break;
 
               /**
                * Lesser Used
                */
-
-            // CSI Ps I
-            // Cursor Forward Tabulation Ps tab stops (default = 1) (CHT).
-            case 'I':
-              this._terminal.cursorForwardTab(this._terminal.params);
-              break;
 
             // CSI Ps S  Scroll up Ps lines (default = 1) (SU).
             case 'S':

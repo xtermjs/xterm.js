@@ -240,6 +240,17 @@ export class InputHandler implements IInputHandler {
   }
 
   /**
+   * CSI Ps I
+   *   Cursor Forward Tabulation Ps tab stops (default = 1) (CHT).
+   */
+  public cursorForwardTab(params: number[]): void {
+    let param = params[0] || 1;
+    while (param--) {
+      this._terminal.x = this._terminal.nextStop();
+    }
+  }
+
+  /**
    * CSI Ps J  Erase in Display (ED).
    *     Ps = 0  -> Erase Below (default).
    *     Ps = 1  -> Erase Above.
@@ -775,6 +786,183 @@ export class InputHandler implements IInputHandler {
   }
 
   /**
+   * CSI Pm l  Reset Mode (RM).
+   *     Ps = 2  -> Keyboard Action Mode (AM).
+   *     Ps = 4  -> Replace Mode (IRM).
+   *     Ps = 1 2  -> Send/receive (SRM).
+   *     Ps = 2 0  -> Normal Linefeed (LNM).
+   * CSI ? Pm l
+   *   DEC Private Mode Reset (DECRST).
+   *     Ps = 1  -> Normal Cursor Keys (DECCKM).
+   *     Ps = 2  -> Designate VT52 mode (DECANM).
+   *     Ps = 3  -> 80 Column Mode (DECCOLM).
+   *     Ps = 4  -> Jump (Fast) Scroll (DECSCLM).
+   *     Ps = 5  -> Normal Video (DECSCNM).
+   *     Ps = 6  -> Normal Cursor Mode (DECOM).
+   *     Ps = 7  -> No Wraparound Mode (DECAWM).
+   *     Ps = 8  -> No Auto-repeat Keys (DECARM).
+   *     Ps = 9  -> Don't send Mouse X & Y on button press.
+   *     Ps = 1 0  -> Hide toolbar (rxvt).
+   *     Ps = 1 2  -> Stop Blinking Cursor (att610).
+   *     Ps = 1 8  -> Don't print form feed (DECPFF).
+   *     Ps = 1 9  -> Limit print to scrolling region (DECPEX).
+   *     Ps = 2 5  -> Hide Cursor (DECTCEM).
+   *     Ps = 3 0  -> Don't show scrollbar (rxvt).
+   *     Ps = 3 5  -> Disable font-shifting functions (rxvt).
+   *     Ps = 4 0  -> Disallow 80 -> 132 Mode.
+   *     Ps = 4 1  -> No more(1) fix (see curses resource).
+   *     Ps = 4 2  -> Disable Nation Replacement Character sets (DEC-
+   *     NRCM).
+   *     Ps = 4 4  -> Turn Off Margin Bell.
+   *     Ps = 4 5  -> No Reverse-wraparound Mode.
+   *     Ps = 4 6  -> Stop Logging.  (This is normally disabled by a
+   *     compile-time option).
+   *     Ps = 4 7  -> Use Normal Screen Buffer.
+   *     Ps = 6 6  -> Numeric keypad (DECNKM).
+   *     Ps = 6 7  -> Backarrow key sends delete (DECBKM).
+   *     Ps = 1 0 0 0  -> Don't send Mouse X & Y on button press and
+   *     release.  See the section Mouse Tracking.
+   *     Ps = 1 0 0 1  -> Don't use Hilite Mouse Tracking.
+   *     Ps = 1 0 0 2  -> Don't use Cell Motion Mouse Tracking.
+   *     Ps = 1 0 0 3  -> Don't use All Motion Mouse Tracking.
+   *     Ps = 1 0 0 4  -> Don't send FocusIn/FocusOut events.
+   *     Ps = 1 0 0 5  -> Disable Extended Mouse Mode.
+   *     Ps = 1 0 1 0  -> Don't scroll to bottom on tty output
+   *     (rxvt).
+   *     Ps = 1 0 1 1  -> Don't scroll to bottom on key press (rxvt).
+   *     Ps = 1 0 3 4  -> Don't interpret "meta" key.  (This disables
+   *     the eightBitInput resource).
+   *     Ps = 1 0 3 5  -> Disable special modifiers for Alt and Num-
+   *     Lock keys.  (This disables the numLock resource).
+   *     Ps = 1 0 3 6  -> Don't send ESC  when Meta modifies a key.
+   *     (This disables the metaSendsEscape resource).
+   *     Ps = 1 0 3 7  -> Send VT220 Remove from the editing-keypad
+   *     Delete key.
+   *     Ps = 1 0 3 9  -> Don't send ESC  when Alt modifies a key.
+   *     (This disables the altSendsEscape resource).
+   *     Ps = 1 0 4 0  -> Do not keep selection when not highlighted.
+   *     (This disables the keepSelection resource).
+   *     Ps = 1 0 4 1  -> Use the PRIMARY selection.  (This disables
+   *     the selectToClipboard resource).
+   *     Ps = 1 0 4 2  -> Disable Urgency window manager hint when
+   *     Control-G is received.  (This disables the bellIsUrgent
+   *     resource).
+   *     Ps = 1 0 4 3  -> Disable raising of the window when Control-
+   *     G is received.  (This disables the popOnBell resource).
+   *     Ps = 1 0 4 7  -> Use Normal Screen Buffer, clearing screen
+   *     first if in the Alternate Screen.  (This may be disabled by
+   *     the titeInhibit resource).
+   *     Ps = 1 0 4 8  -> Restore cursor as in DECRC.  (This may be
+   *     disabled by the titeInhibit resource).
+   *     Ps = 1 0 4 9  -> Use Normal Screen Buffer and restore cursor
+   *     as in DECRC.  (This may be disabled by the titeInhibit
+   *     resource).  This combines the effects of the 1 0 4 7  and 1 0
+   *     4 8  modes.  Use this with terminfo-based applications rather
+   *     than the 4 7  mode.
+   *     Ps = 1 0 5 0  -> Reset terminfo/termcap function-key mode.
+   *     Ps = 1 0 5 1  -> Reset Sun function-key mode.
+   *     Ps = 1 0 5 2  -> Reset HP function-key mode.
+   *     Ps = 1 0 5 3  -> Reset SCO function-key mode.
+   *     Ps = 1 0 6 0  -> Reset legacy keyboard emulation (X11R6).
+   *     Ps = 1 0 6 1  -> Reset keyboard emulation to Sun/PC style.
+   *     Ps = 2 0 0 4  -> Reset bracketed paste mode.
+   */
+  public resetMode(params: number[]): void {
+    if (params.length > 1) {
+      for (let i = 0; i < params.length; i++) {
+        this._terminal.resetMode(params[i]);
+      }
+
+      return;
+    }
+
+    if (!this._terminal.prefix) {
+      switch (params[0]) {
+        case 4:
+          this._terminal.insertMode = false;
+          break;
+        case 20:
+          // this._terminal.convertEol = false;
+          break;
+      }
+    } else if (this._terminal.prefix === '?') {
+      switch (params[0]) {
+        case 1:
+          this._terminal.applicationCursor = false;
+          break;
+        case 3:
+          if (this._terminal.cols === 132 && this._terminal.savedCols) {
+            this._terminal.resize(this._terminal.savedCols, this._terminal.rows);
+          }
+          delete this._terminal.savedCols;
+          break;
+        case 6:
+          this._terminal.originMode = false;
+          break;
+        case 7:
+          this._terminal.wraparoundMode = false;
+          break;
+        case 12:
+          // this.cursorBlink = false;
+          break;
+        case 66:
+          this._terminal.log('Switching back to normal keypad.');
+          this._terminal.applicationKeypad = false;
+          this._terminal.viewport.syncScrollArea();
+          break;
+        case 9: // X10 Mouse
+        case 1000: // vt200 mouse
+        case 1002: // button event mouse
+        case 1003: // any event mouse
+          this._terminal.x10Mouse = false;
+          this._terminal.vt200Mouse = false;
+          this._terminal.normalMouse = false;
+          this._terminal.mouseEvents = false;
+          this._terminal.element.style.cursor = '';
+          break;
+        case 1004: // send focusin/focusout events
+          this._terminal.sendFocus = false;
+          break;
+        case 1005: // utf8 ext mode mouse
+          this._terminal.utfMouse = false;
+          break;
+        case 1006: // sgr ext mode mouse
+          this._terminal.sgrMouse = false;
+          break;
+        case 1015: // urxvt ext mode mouse
+          this._terminal.urxvtMouse = false;
+          break;
+        case 25: // hide cursor
+          this._terminal.cursorHidden = true;
+          break;
+        case 1049: // alt screen buffer cursor
+          ; // FALL-THROUGH
+        case 47: // normal screen buffer
+        case 1047: // normal screen buffer - clearing it first
+          if (this._terminal.normal) {
+            this._terminal.lines = this._terminal.normal.lines;
+            this._terminal.ybase = this._terminal.normal.ybase;
+            this._terminal.ydisp = this._terminal.normal.ydisp;
+            this._terminal.x = this._terminal.normal.x;
+            this._terminal.y = this._terminal.normal.y;
+            this._terminal.scrollTop = this._terminal.normal.scrollTop;
+            this._terminal.scrollBottom = this._terminal.normal.scrollBottom;
+            this._terminal.tabs = this._terminal.normal.tabs;
+            this._terminal.normal = null;
+            // if (params === 1049) {
+            //   this.x = this.savedX;
+            //   this.y = this.savedY;
+            // }
+            this._terminal.queueRefresh(0, this._terminal.rows - 1);
+            this._terminal.viewport.syncScrollArea();
+            this._terminal.showCursor();
+          }
+          break;
+      }
+    }
+  }
+
+  /**
    * CSI Pm m  Character Attributes (SGR).
    *     Ps = 0  -> Normal (default).
    *     Ps = 1  -> Bold.
@@ -1026,4 +1214,37 @@ export class InputHandler implements IInputHandler {
     }
   }
 
+  /**
+   * CSI Ps ; Ps r
+   *   Set Scrolling Region [top;bottom] (default = full size of win-
+   *   dow) (DECSTBM).
+   * CSI ? Pm r
+   */
+  public setScrollRegion(params: number[]): void {
+    if (this._terminal.prefix) return;
+    this._terminal.scrollTop = (params[0] || 1) - 1;
+    this._terminal.scrollBottom = (params[1] || this._terminal.rows) - 1;
+    this._terminal.x = 0;
+    this._terminal.y = 0;
+  }
+
+
+  /**
+   * CSI s
+   *   Save cursor (ANSI.SYS).
+   */
+  public saveCursor(params: number[]): void {
+    this._terminal.savedX = this._terminal.x;
+    this._terminal.savedY = this._terminal.y;
+  }
+
+
+  /**
+   * CSI u
+   *   Restore cursor (ANSI.SYS).
+   */
+  public restoreCursor(params: number[]): void {
+    this._terminal.x = this._terminal.savedX || 0;
+    this._terminal.y = this._terminal.savedY || 0;
+  }
 }
