@@ -406,6 +406,34 @@ export class InputHandler implements IInputHandler {
   }
 
   /**
+   * CSI Ps S  Scroll up Ps lines (default = 1) (SU).
+   */
+  public scrollUp(params: number[]): void {
+    let param = params[0] || 1;
+    while (param--) {
+      this._terminal.lines.splice(this._terminal.ybase + this._terminal.scrollTop, 1);
+      this._terminal.lines.splice(this._terminal.ybase + this._terminal.scrollBottom, 0, this._terminal.blankLine());
+    }
+    // this.maxRange();
+    this._terminal.updateRange(this._terminal.scrollTop);
+    this._terminal.updateRange(this._terminal.scrollBottom);
+  }
+
+  /**
+   * CSI Ps T  Scroll down Ps lines (default = 1) (SD).
+   */
+  public scrollDown(params: number[]): void {
+    let param = params[0] || 1;
+    while (param--) {
+      this._terminal.lines.splice(this._terminal.ybase + this._terminal.scrollBottom, 1);
+      this._terminal.lines.splice(this._terminal.ybase + this._terminal.scrollTop, 0, this._terminal.blankLine());
+    }
+    // this.maxRange();
+    this._terminal.updateRange(this._terminal.scrollTop);
+    this._terminal.updateRange(this._terminal.scrollBottom);
+  }
+
+  /**
    * CSI Ps X
    * Erase Ps Character(s) (default = 1) (ECH).
    */
@@ -423,6 +451,16 @@ export class InputHandler implements IInputHandler {
 
     while (param-- && j < this._terminal.cols) {
       this._terminal.lines.get(row)[j++] = ch;
+    }
+  }
+
+  /**
+   * CSI Ps Z  Cursor Backward Tabulation Ps tab stops (default = 1) (CBT).
+   */
+  public cursorBackwardTab(params: number[]): void {
+    let param = params[0] || 1;
+    while (param--) {
+      this._terminal.x = this._terminal.prevStop();
     }
   }
 
@@ -454,6 +492,19 @@ export class InputHandler implements IInputHandler {
     this._terminal.x += param;
     if (this._terminal.x >= this._terminal.cols) {
       this._terminal.x = this._terminal.cols - 1;
+    }
+  }
+
+  /**
+   * CSI Ps b  Repeat the preceding graphic character Ps times (REP).
+   */
+  public repeatPrecedingCharacter(params: number[]): void {
+    let param = params[0] || 1
+      , line = this._terminal.lines.get(this._terminal.ybase + this._terminal.y)
+      , ch = line[this._terminal.x - 1] || [this._terminal.defAttr, ' ', 1];
+
+    while (param--) {
+      line[this._terminal.x++] = ch;
     }
   }
 
@@ -574,6 +625,22 @@ export class InputHandler implements IInputHandler {
     }
   }
 
+  /**
+   * CSI Ps g  Tab Clear (TBC).
+   *     Ps = 0  -> Clear Current Column (default).
+   *     Ps = 3  -> Clear All.
+   * Potentially:
+   *   Ps = 2  -> Clear Stops on Line.
+   *   http://vt100.net/annarbor/aaa-ug/section6.html
+   */
+  public tabClear(params: number[]): void {
+    let param = params[0];
+    if (param <= 0) {
+      delete this._terminal.tabs[this._terminal.x];
+    } else if (param === 3) {
+      this._terminal.tabs = {};
+    }
+  }
 
   /**
    * CSI Pm h  Set Mode (SM).
@@ -1212,6 +1279,27 @@ export class InputHandler implements IInputHandler {
           break;
       }
     }
+  }
+
+  /**
+   * CSI ! p   Soft terminal reset (DECSTR).
+   * http://vt100.net/docs/vt220-rm/table4-10.html
+   */
+  public softReset(params: number[]): void {
+    this._terminal.cursorHidden = false;
+    this._terminal.insertMode = false;
+    this._terminal.originMode = false;
+    this._terminal.wraparoundMode = false; // autowrap
+    this._terminal.applicationKeypad = false; // ?
+    this._terminal.viewport.syncScrollArea();
+    this._terminal.applicationCursor = false;
+    this._terminal.scrollTop = 0;
+    this._terminal.scrollBottom = this._terminal.rows - 1;
+    this._terminal.curAttr = this._terminal.defAttr;
+    this._terminal.x = this._terminal.y = 0; // ?
+    this._terminal.charset = null;
+    this._terminal.glevel = 0; // ??
+    this._terminal.charsets = [null]; // ??
   }
 
   /**

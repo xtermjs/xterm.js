@@ -34,33 +34,47 @@ csiParamStateHandler[' '] = (parser) => parser.setPostfix(' ');
 csiParamStateHandler['\''] = (parser) => parser.setPostfix('\'');
 csiParamStateHandler[';'] = (parser) => parser.finalizeParam();
 
-const csiStateHandler: {[key: string]: (handler: IInputHandler, params: number[]) => void} = {};
-csiStateHandler['@'] = (handler, params) => handler.insertChars(params);
-csiStateHandler['A'] = (handler, params) => handler.cursorUp(params);
-csiStateHandler['B'] = (handler, params) => handler.cursorDown(params);
-csiStateHandler['C'] = (handler, params) => handler.cursorForward(params);
-csiStateHandler['D'] = (handler, params) => handler.cursorBackward(params);
-csiStateHandler['E'] = (handler, params) => handler.cursorNextLine(params);
-csiStateHandler['F'] = (handler, params) => handler.cursorPrecedingLine(params);
-csiStateHandler['G'] = (handler, params) => handler.cursorCharAbsolute(params);
-csiStateHandler['H'] = (handler, params) => handler.cursorPosition(params);
-csiStateHandler['I'] = (handler, params) => handler.cursorForwardTab(params);
-csiStateHandler['J'] = (handler, params) => handler.eraseInDisplay(params);
-csiStateHandler['K'] = (handler, params) => handler.eraseInLine(params);
-csiStateHandler['L'] = (handler, params) => handler.insertLines(params);
-csiStateHandler['M'] = (handler, params) => handler.deleteLines(params);
-csiStateHandler['P'] = (handler, params) => handler.deleteChars(params);
-csiStateHandler['X'] = (handler, params) => handler.eraseChars(params);
-csiStateHandler['`'] = (handler, params) => handler.charPosAbsolute(params);
-csiStateHandler['a'] = (handler, params) => handler.HPositionRelative(params);
-csiStateHandler['c'] = (handler, params) => handler.sendDeviceAttributes(params);
-csiStateHandler['d'] = (handler, params) => handler.linePosAbsolute(params);
-csiStateHandler['e'] = (handler, params) => handler.VPositionRelative(params);
-csiStateHandler['f'] = (handler, params) => handler.HVPosition(params);
-csiStateHandler['h'] = (handler, params) => handler.setMode(params);
-csiStateHandler['l'] = (handler, params) => handler.resetMode(params);
-csiStateHandler['m'] = (handler, params) => handler.charAttributes(params);
-csiStateHandler['n'] = (handler, params) => handler.deviceStatus(params);
+const csiStateHandler: {[key: string]: (handler: IInputHandler, params: number[], prefix: string) => void} = {};
+csiStateHandler['@'] = (handler, params, prefix) => handler.insertChars(params);
+csiStateHandler['A'] = (handler, params, prefix) => handler.cursorUp(params);
+csiStateHandler['B'] = (handler, params, prefix) => handler.cursorDown(params);
+csiStateHandler['C'] = (handler, params, prefix) => handler.cursorForward(params);
+csiStateHandler['D'] = (handler, params, prefix) => handler.cursorBackward(params);
+csiStateHandler['E'] = (handler, params, prefix) => handler.cursorNextLine(params);
+csiStateHandler['F'] = (handler, params, prefix) => handler.cursorPrecedingLine(params);
+csiStateHandler['G'] = (handler, params, prefix) => handler.cursorCharAbsolute(params);
+csiStateHandler['H'] = (handler, params, prefix) => handler.cursorPosition(params);
+csiStateHandler['I'] = (handler, params, prefix) => handler.cursorForwardTab(params);
+csiStateHandler['J'] = (handler, params, prefix) => handler.eraseInDisplay(params);
+csiStateHandler['K'] = (handler, params, prefix) => handler.eraseInLine(params);
+csiStateHandler['L'] = (handler, params, prefix) => handler.insertLines(params);
+csiStateHandler['M'] = (handler, params, prefix) => handler.deleteLines(params);
+csiStateHandler['P'] = (handler, params, prefix) => handler.deleteChars(params);
+csiStateHandler['S'] = (handler, params, prefix) => handler.scrollUp(params);
+csiStateHandler['T'] = (handler, params, prefix) => {
+  if (params.length < 2 && !prefix) {
+    handler.scrollDown(params);
+  }
+};
+csiStateHandler['X'] = (handler, params, prefix) => handler.eraseChars(params);
+csiStateHandler['Z'] = (handler, params, prefix) => handler.cursorBackwardTab(params);
+csiStateHandler['`'] = (handler, params, prefix) => handler.charPosAbsolute(params);
+csiStateHandler['a'] = (handler, params, prefix) => handler.HPositionRelative(params);
+csiStateHandler['b'] = (handler, params, prefix) => handler.repeatPrecedingCharacter(params);
+csiStateHandler['c'] = (handler, params, prefix) => handler.sendDeviceAttributes(params);
+csiStateHandler['d'] = (handler, params, prefix) => handler.linePosAbsolute(params);
+csiStateHandler['e'] = (handler, params, prefix) => handler.VPositionRelative(params);
+csiStateHandler['f'] = (handler, params, prefix) => handler.HVPosition(params);
+csiStateHandler['g'] = (handler, params, prefix) => handler.tabClear(params);
+csiStateHandler['h'] = (handler, params, prefix) => handler.setMode(params);
+csiStateHandler['l'] = (handler, params, prefix) => handler.resetMode(params);
+csiStateHandler['m'] = (handler, params, prefix) => handler.charAttributes(params);
+csiStateHandler['n'] = (handler, params, prefix) => handler.deviceStatus(params);
+csiStateHandler['p'] = (handler, params, prefix) => {
+  switch (prefix) {
+    case '!': handler.softReset(params); break;
+  }
+};
 csiStateHandler['r'] = (handler, params) => handler.setScrollRegion(params);
 csiStateHandler['s'] = (handler, params) => handler.saveCursor(params);
 csiStateHandler['u'] = (handler, params) => handler.restoreCursor(params);
@@ -355,13 +369,13 @@ export class Parser {
 
             // ESC 7 Save Cursor (DECSC).
             case '7':
-              this._terminal.saveCursor();
+              this._inputHandler.saveCursor();
               this.state = ParserState.NORMAL;
               break;
 
             // ESC 8 Restore Cursor (DECRC).
             case '8':
-              this._terminal.restoreCursor();
+              this._inputHandler.restoreCursor();
               this.state = ParserState.NORMAL;
               break;
 
@@ -549,257 +563,13 @@ export class Parser {
           this.state = ParserState.CSI;
 
         case ParserState.CSI:
-          this.state = ParserState.NORMAL;
-
           if (ch in csiStateHandler) {
-            csiStateHandler[ch](this._inputHandler, this._terminal.params);
-            // Skip below switch as this has handled these codes (eventually everything will be handled here
-            break;
+            csiStateHandler[ch](this._inputHandler, this._terminal.params, this._terminal.prefix);
+          } else {
+            this._terminal.error('Unknown CSI code: %s.', ch);
           }
 
-          switch (ch) {
-
-
-              /**
-               * Lesser Used
-               */
-
-            // CSI Ps S  Scroll up Ps lines (default = 1) (SU).
-            case 'S':
-              this._terminal.scrollUp(this._terminal.params);
-              break;
-
-            // CSI Ps T  Scroll down Ps lines (default = 1) (SD).
-            // CSI Ps ; Ps ; Ps ; Ps ; Ps T
-            // CSI > Ps; Ps T
-            case 'T':
-              // if (this.prefix === '>') {
-              //   this.resetTitleModes(this.params);
-              //   break;
-              // }
-              // if (this.params.length > 2) {
-              //   this.initMouseTracking(this.params);
-              //   break;
-              // }
-              if (this._terminal.params.length < 2 && !this._terminal.prefix) {
-                this._terminal.scrollDown(this._terminal.params);
-              }
-              break;
-
-            // CSI Ps Z
-            // Cursor Backward Tabulation Ps tab stops (default = 1) (CBT).
-            case 'Z':
-              this._terminal.cursorBackwardTab(this._terminal.params);
-              break;
-
-            // CSI Ps b  Repeat the preceding graphic character Ps times (REP).
-            case 'b':
-              this._terminal.repeatPrecedingCharacter(this._terminal.params);
-              break;
-
-            // CSI Ps g  Tab Clear (TBC).
-            case 'g':
-              this._terminal.tabClear(this._terminal.params);
-              break;
-
-              // CSI Pm i  Media Copy (MC).
-              // CSI ? Pm i
-              // case 'i':
-              //   this.mediaCopy(this.params);
-              //   break;
-
-              // CSI Pm m  Character Attributes (SGR).
-              // CSI > Ps; Ps m
-              // case 'm': // duplicate
-              //   if (this.prefix === '>') {
-              //     this.setResources(this.params);
-              //   } else {
-              //     this.charAttributes(this.params);
-              //   }
-              //   break;
-
-              // CSI Ps n  Device Status Report (DSR).
-              // CSI > Ps n
-              // case 'n': // duplicate
-              //   if (this.prefix === '>') {
-              //     this.disableModifiers(this.params);
-              //   } else {
-              //     this.deviceStatus(this.params);
-              //   }
-              //   break;
-
-              // CSI > Ps p  Set pointer mode.
-              // CSI ! p   Soft terminal reset (DECSTR).
-              // CSI Ps$ p
-              //   Request ANSI mode (DECRQM).
-              // CSI ? Ps$ p
-              //   Request DEC private mode (DECRQM).
-              // CSI Ps ; Ps " p
-            case 'p':
-              switch (this._terminal.prefix) {
-                  // case '>':
-                  //   this.setPointerMode(this.params);
-                  //   break;
-                case '!':
-                  this._terminal.softReset(this._terminal.params);
-                  break;
-                  // case '?':
-                  //   if (this.postfix === '$') {
-                  //     this.requestPrivateMode(this.params);
-                  //   }
-                  //   break;
-                  // default:
-                  //   if (this.postfix === '"') {
-                  //     this.setConformanceLevel(this.params);
-                  //   } else if (this.postfix === '$') {
-                  //     this.requestAnsiMode(this.params);
-                  //   }
-                  //   break;
-              }
-              break;
-
-              // CSI Ps q  Load LEDs (DECLL).
-              // CSI Ps SP q
-              // CSI Ps " q
-              // case 'q':
-              //   if (this.postfix === ' ') {
-              //     this.setCursorStyle(this.params);
-              //     break;
-              //   }
-              //   if (this.postfix === '"') {
-              //     this.setCharProtectionAttr(this.params);
-              //     break;
-              //   }
-              //   this.loadLEDs(this.params);
-              //   break;
-
-              // CSI Ps ; Ps r
-              //   Set Scrolling Region [top;bottom] (default = full size of win-
-              //   dow) (DECSTBM).
-              // CSI ? Pm r
-              // CSI Pt; Pl; Pb; Pr; Ps$ r
-              // case 'r': // duplicate
-              //   if (this.prefix === '?') {
-              //     this.restorePrivateValues(this.params);
-              //   } else if (this.postfix === '$') {
-              //     this.setAttrInRectangle(this.params);
-              //   } else {
-              //     this.setScrollRegion(this.params);
-              //   }
-              //   break;
-
-              // CSI s     Save cursor (ANSI.SYS).
-              // CSI ? Pm s
-              // case 's': // duplicate
-              //   if (this.prefix === '?') {
-              //     this.savePrivateValues(this.params);
-              //   } else {
-              //     this.saveCursor(this.params);
-              //   }
-              //   break;
-
-              // CSI Ps ; Ps ; Ps t
-              // CSI Pt; Pl; Pb; Pr; Ps$ t
-              // CSI > Ps; Ps t
-              // CSI Ps SP t
-              // case 't':
-              //   if (this.postfix === '$') {
-              //     this.reverseAttrInRectangle(this.params);
-              //   } else if (this.postfix === ' ') {
-              //     this.setWarningBellVolume(this.params);
-              //   } else {
-              //     if (this.prefix === '>') {
-              //       this.setTitleModeFeature(this.params);
-              //     } else {
-              //       this.manipulateWindow(this.params);
-              //     }
-              //   }
-              //   break;
-
-              // CSI u     Restore cursor (ANSI.SYS).
-              // CSI Ps SP u
-              // case 'u': // duplicate
-              //   if (this.postfix === ' ') {
-              //     this.setMarginBellVolume(this.params);
-              //   } else {
-              //     this.restoreCursor(this.params);
-              //   }
-              //   break;
-
-              // CSI Pt; Pl; Pb; Pr; Pp; Pt; Pl; Pp$ v
-              // case 'v':
-              //   if (this.postfix === '$') {
-              //     this.copyRectagle(this.params);
-              //   }
-              //   break;
-
-              // CSI Pt ; Pl ; Pb ; Pr ' w
-              // case 'w':
-              //   if (this.postfix === '\'') {
-              //     this.enableFilterRectangle(this.params);
-              //   }
-              //   break;
-
-              // CSI Ps x  Request Terminal Parameters (DECREQTPARM).
-              // CSI Ps x  Select Attribute Change Extent (DECSACE).
-              // CSI Pc; Pt; Pl; Pb; Pr$ x
-              // case 'x':
-              //   if (this.postfix === '$') {
-              //     this.fillRectangle(this.params);
-              //   } else {
-              //     this.requestParameters(this.params);
-              //     //this.__(this.params);
-              //   }
-              //   break;
-
-              // CSI Ps ; Pu ' z
-              // CSI Pt; Pl; Pb; Pr$ z
-              // case 'z':
-              //   if (this.postfix === '\'') {
-              //     this.enableLocatorReporting(this.params);
-              //   } else if (this.postfix === '$') {
-              //     this.eraseRectangle(this.params);
-              //   }
-              //   break;
-
-              // CSI Pm ' {
-              // CSI Pt; Pl; Pb; Pr$ {
-              // case '{':
-              //   if (this.postfix === '\'') {
-              //     this.setLocatorEvents(this.params);
-              //   } else if (this.postfix === '$') {
-              //     this.selectiveEraseRectangle(this.params);
-              //   }
-              //   break;
-
-              // CSI Ps ' |
-              // case '|':
-              //   if (this.postfix === '\'') {
-              //     this.requestLocatorPosition(this.params);
-              //   }
-              //   break;
-
-              // CSI P m SP }
-              // Insert P s Column(s) (default = 1) (DECIC), VT420 and up.
-              // case '}':
-              //   if (this.postfix === ' ') {
-              //     this.insertColumns(this.params);
-              //   }
-              //   break;
-
-              // CSI P m SP ~
-              // Delete P s Column(s) (default = 1) (DECDC), VT420 and up
-              // case '~':
-              //   if (this.postfix === ' ') {
-              //     this.deleteColumns(this.params);
-              //   }
-              //   break;
-
-            default:
-              this._terminal.error('Unknown CSI code: %s.', ch);
-              break;
-          }
-
+          this.state = ParserState.NORMAL;
           this._terminal.prefix = '';
           this._terminal.postfix = '';
           break;
