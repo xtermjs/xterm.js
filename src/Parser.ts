@@ -46,6 +46,13 @@ csiStateHandler['G'] = (handler, params) => handler.cursorCharAbsolute(params);
 csiStateHandler['H'] = (handler, params) => handler.cursorPosition(params);
 csiStateHandler['J'] = (handler, params) => handler.eraseInDisplay(params);
 csiStateHandler['K'] = (handler, params) => handler.eraseInLine(params);
+csiStateHandler['L'] = (handler, params) => handler.insertLines(params);
+csiStateHandler['M'] = (handler, params) => handler.deleteLines(params);
+csiStateHandler['P'] = (handler, params) => handler.deleteChars(params);
+csiStateHandler['X'] = (handler, params) => handler.eraseChars(params);
+csiStateHandler['`'] = (handler, params) => handler.charPosAbsolute(params);
+csiStateHandler['a'] = (handler, params) => handler.HPositionRelative(params);
+csiStateHandler['c'] = (handler, params) => handler.sendDeviceAttributes(params);
 csiStateHandler['m'] = (handler, params) => handler.charAttributes(params);
 csiStateHandler['n'] = (handler, params) => handler.deviceStatus(params);
 
@@ -542,72 +549,6 @@ export class Parser {
           }
 
           switch (ch) {
-
-              /**
-               * Additions
-               */
-
-            // CSI Ps E
-            // Cursor Next Line Ps Times (default = 1) (CNL).
-            case 'E':
-              this._terminal.cursorNextLine(this._terminal.params);
-              break;
-
-            // CSI Ps F
-            // Cursor Preceding Line Ps Times (default = 1) (CNL).
-            case 'F':
-              this._terminal.cursorPrecedingLine(this._terminal.params);
-              break;
-
-            // CSI Ps G
-            // Cursor Character Absolute  [column] (default = [row,1]) (CHA).
-            case 'G':
-              this._terminal.cursorCharAbsolute(this._terminal.params);
-              break;
-
-            // CSI Ps L
-            // Insert Ps Line(s) (default = 1) (IL).
-            case 'L':
-              this._terminal.insertLines(this._terminal.params);
-              break;
-
-            // CSI Ps M
-            // Delete Ps Line(s) (default = 1) (DL).
-            case 'M':
-              this._terminal.deleteLines(this._terminal.params);
-              break;
-
-            // CSI Ps P
-            // Delete Ps Character(s) (default = 1) (DCH).
-            case 'P':
-              this._terminal.deleteChars(this._terminal.params);
-              break;
-
-            // CSI Ps X
-            // Erase Ps Character(s) (default = 1) (ECH).
-            case 'X':
-              this._terminal.eraseChars(this._terminal.params);
-              break;
-
-            // CSI Pm `  Character Position Absolute
-            //   [column] (default = [row,1]) (HPA).
-            case '`':
-              this._terminal.charPosAbsolute(this._terminal.params);
-              break;
-
-            // 141 61 a * HPR -
-            // Horizontal Position Relative
-            case 'a':
-              this._terminal.HPositionRelative(this._terminal.params);
-              break;
-
-            // CSI P s c
-            // Send Device Attributes (Primary DA).
-            // CSI > P s c
-            // Send Device Attributes (Secondary DA)
-            case 'c':
-              this._terminal.sendDeviceAttributes(this._terminal.params);
-              break;
 
             // CSI Pm d
             // Line Position Absolute  [row] (default = [1,column]) (VPA).

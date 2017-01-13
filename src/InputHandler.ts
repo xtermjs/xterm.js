@@ -303,6 +303,215 @@ export class InputHandler implements IInputHandler {
   }
 
   /**
+   * CSI Ps L
+   * Insert Ps Line(s) (default = 1) (IL).
+   */
+  public insertLines(params: number[]): void {
+    let param, row, j;
+
+    param = params[0];
+    if (param < 1) {
+      param = 1;
+    }
+    row = this._terminal.y + this._terminal.ybase;
+
+    j = this._terminal.rows - 1 - this._terminal.scrollBottom;
+    j = this._terminal.rows - 1 + this._terminal.ybase - j + 1;
+
+    while (param--) {
+      if (this._terminal.lines.length === this._terminal.lines.maxLength) {
+        // Trim the start of lines to make room for the new line
+        this._terminal.lines.trimStart(1);
+        this._terminal.ybase--;
+        this._terminal.ydisp--;
+        row--;
+        j--;
+      }
+      // test: echo -e '\e[44m\e[1L\e[0m'
+      // blankLine(true) - xterm/linux behavior
+      this._terminal.lines.splice(row, 0, this._terminal.blankLine(true));
+      this._terminal.lines.splice(j, 1);
+    }
+
+    // this.maxRange();
+    this._terminal.updateRange(this._terminal.y);
+    this._terminal.updateRange(this._terminal.scrollBottom);
+  }
+
+  /**
+   * CSI Ps M
+   * Delete Ps Line(s) (default = 1) (DL).
+   */
+  public deleteLines(params: number[]): void {
+    let param, row, j;
+
+    param = params[0];
+    if (param < 1) {
+      param = 1;
+    }
+    row = this._terminal.y + this._terminal.ybase;
+
+    j = this._terminal.rows - 1 - this._terminal.scrollBottom;
+    j = this._terminal.rows - 1 + this._terminal.ybase - j;
+
+    while (param--) {
+      if (this._terminal.lines.length === this._terminal.lines.maxLength) {
+        // Trim the start of lines to make room for the new line
+        this._terminal.lines.trimStart(1);
+        this._terminal.ybase -= 1;
+        this._terminal.ydisp -= 1;
+      }
+      // test: echo -e '\e[44m\e[1M\e[0m'
+      // blankLine(true) - xterm/linux behavior
+      this._terminal.lines.splice(j + 1, 0, this._terminal.blankLine(true));
+      this._terminal.lines.splice(row, 1);
+    }
+
+    // this.maxRange();
+    this._terminal.updateRange(this._terminal.y);
+    this._terminal.updateRange(this._terminal.scrollBottom);
+  }
+
+  /**
+   * CSI Ps P
+   * Delete Ps Character(s) (default = 1) (DCH).
+   */
+  public deleteChars(params: number[]): void {
+    let param, row, ch;
+
+    param = params[0];
+    if (param < 1) {
+      param = 1;
+    }
+
+    row = this._terminal.y + this._terminal.ybase;
+    ch = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+
+    while (param--) {
+      this._terminal.lines.get(row).splice(this._terminal.x, 1);
+      this._terminal.lines.get(row).push(ch);
+    }
+  }
+
+  /**
+   * CSI Ps X
+   * Erase Ps Character(s) (default = 1) (ECH).
+   */
+  public eraseChars(params: number[]): void {
+    let param, row, j, ch;
+
+    param = params[0];
+    if (param < 1) {
+      param = 1;
+    }
+
+    row = this._terminal.y + this._terminal.ybase;
+    j = this._terminal.x;
+    ch = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+
+    while (param-- && j < this._terminal.cols) {
+      this._terminal.lines.get(row)[j++] = ch;
+    }
+  }
+
+  /**
+   * CSI Pm `  Character Position Absolute
+   *   [column] (default = [row,1]) (HPA).
+   */
+  public charPosAbsolute(params: number[]): void {
+    let param = params[0];
+    if (param < 1) {
+      param = 1;
+    }
+    this._terminal.x = param - 1;
+    if (this._terminal.x >= this._terminal.cols) {
+      this._terminal.x = this._terminal.cols - 1;
+    }
+  }
+
+  /**
+   * CSI Pm a  Character Position Relative
+   *   [columns] (default = [row,col+1]) (HPR)
+   * reuse CSI Ps C ?
+   */
+  public HPositionRelative(params: number[]): void {
+    let param = params[0];
+    if (param < 1) {
+      param = 1;
+    }
+    this._terminal.x += param;
+    if (this._terminal.x >= this._terminal.cols) {
+      this._terminal.x = this._terminal.cols - 1;
+    }
+  }
+
+  /**
+   * CSI Ps c  Send Device Attributes (Primary DA).
+   *     Ps = 0  or omitted -> request attributes from terminal.  The
+   *     response depends on the decTerminalID resource setting.
+   *     -> CSI ? 1 ; 2 c  (``VT100 with Advanced Video Option'')
+   *     -> CSI ? 1 ; 0 c  (``VT101 with No Options'')
+   *     -> CSI ? 6 c  (``VT102'')
+   *     -> CSI ? 6 0 ; 1 ; 2 ; 6 ; 8 ; 9 ; 1 5 ; c  (``VT220'')
+   *   The VT100-style response parameters do not mean anything by
+   *   themselves.  VT220 parameters do, telling the host what fea-
+   *   tures the terminal supports:
+   *     Ps = 1  -> 132-columns.
+   *     Ps = 2  -> Printer.
+   *     Ps = 6  -> Selective erase.
+   *     Ps = 8  -> User-defined keys.
+   *     Ps = 9  -> National replacement character sets.
+   *     Ps = 1 5  -> Technical characters.
+   *     Ps = 2 2  -> ANSI color, e.g., VT525.
+   *     Ps = 2 9  -> ANSI text locator (i.e., DEC Locator mode).
+   * CSI > Ps c
+   *   Send Device Attributes (Secondary DA).
+   *     Ps = 0  or omitted -> request the terminal's identification
+   *     code.  The response depends on the decTerminalID resource set-
+   *     ting.  It should apply only to VT220 and up, but xterm extends
+   *     this to VT100.
+   *     -> CSI  > Pp ; Pv ; Pc c
+   *   where Pp denotes the terminal type
+   *     Pp = 0  -> ``VT100''.
+   *     Pp = 1  -> ``VT220''.
+   *   and Pv is the firmware version (for xterm, this was originally
+   *   the XFree86 patch number, starting with 95).  In a DEC termi-
+   *   nal, Pc indicates the ROM cartridge registration number and is
+   *   always zero.
+   * More information:
+   *   xterm/charproc.c - line 2012, for more information.
+   *   vim responds with ^[[?0c or ^[[?1c after the terminal's response (?)
+   */
+  public sendDeviceAttributes(params: number[]): void {
+    if (params[0] > 0) {
+      return;
+    }
+
+    if (!this._terminal.prefix) {
+      if (this._terminal.is('xterm') || this._terminal.is('rxvt-unicode') || this._terminal.is('screen')) {
+        this._terminal.send(C0.ESC + '[?1;2c');
+      } else if (this._terminal.is('linux')) {
+        this._terminal.send(C0.ESC + '[?6c');
+      }
+    } else if (this._terminal.prefix === '>') {
+      // xterm and urxvt
+      // seem to spit this
+      // out around ~370 times (?).
+      if (this._terminal.is('xterm')) {
+        this._terminal.send(C0.ESC + '[>0;276;0c');
+      } else if (this._terminal.is('rxvt-unicode')) {
+        this._terminal.send(C0.ESC + '[>85;95;0c');
+      } else if (this._terminal.is('linux')) {
+        // not supported by linux console.
+        // linux console echoes parameters.
+        this._terminal.send(params[0] + 'c');
+      } else if (this._terminal.is('screen')) {
+        this._terminal.send(C0.ESC + '[>83;40003;0c');
+      }
+    }
+  }
+
+  /**
    * CSI Pm m  Character Attributes (SGR).
    *     Ps = 0  -> Normal (default).
    *     Ps = 1  -> Bold.
