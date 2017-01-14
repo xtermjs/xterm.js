@@ -407,6 +407,9 @@ Terminal.prototype.setOption = function(key, value) {
   }
   this[key] = value;
   this.options[key] = value;
+  switch (key) {
+    case 'cursorBlink': this.refresh(this.y, this.y); break;
+  }
 };
 
 /**
