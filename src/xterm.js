@@ -405,6 +405,24 @@ Terminal.prototype.setOption = function(key, value) {
   if (!(key in Terminal.defaults)) {
     throw new Error('No option with key "' + key + '"');
   }
+  switch (key) {
+    case 'scrollback':
+      if (this.options[key] !== value) {
+        if (this.lines.length > value) {
+          const amountToTrim = this.lines.length - value;
+          const needsRefresh = (this.ydisp - amountToTrim < 0);
+          this.lines.trimStart(amountToTrim);
+          this.ybase = Math.max(this.ybase - amountToTrim, 0);
+          this.ydisp = Math.max(this.ydisp - amountToTrim, 0);
+          if (needsRefresh) {
+            this.refresh(0, this.rows - 1);
+          }
+        }
+        this.lines.maxLength = value;
+        this.viewport.syncScrollArea();
+      }
+      break;
+  }
   this[key] = value;
   this.options[key] = value;
 };
