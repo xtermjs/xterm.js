@@ -37,21 +37,21 @@ escapedStateHandler['P'] = (parser, terminal) => {
 escapedStateHandler['_'] = (parser, terminal) => {
   // ESC _ Application Program Command ( APC is 0x9f).
   parser.setState(ParserState.IGNORE);
-}
+};
 escapedStateHandler['^'] = (parser, terminal) => {
   // ESC ^ Privacy Message ( PM is 0x9e).
   parser.setState(ParserState.IGNORE);
-}
+};
 escapedStateHandler['c'] = (parser, terminal) => {
   // ESC c Full Reset (RIS).
   terminal.reset();
-}
+};
 escapedStateHandler['E'] = (parser, terminal) => {
   // ESC E Next Line ( NEL is 0x85).
   terminal.x = 0;
   terminal.index();
   parser.setState(ParserState.NORMAL);
-}
+};
 escapedStateHandler['D'] = (parser, terminal) => {
   // ESC D Index ( IND is 0x84).
   terminal.index();
@@ -135,6 +135,28 @@ csiStateHandler['p'] = (handler, params, prefix) => {
 csiStateHandler['r'] = (handler, params) => handler.setScrollRegion(params);
 csiStateHandler['s'] = (handler, params) => handler.saveCursor(params);
 csiStateHandler['u'] = (handler, params) => handler.restoreCursor(params);
+
+// TODO: Many codes/charsets appear to not be supported
+// See: http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+const charsetMap = {
+  '0': CHARSETS.SCLD,
+  'A': CHARSETS.UK, // United Kingdom
+  'B': CHARSETS.US, // United States (USASCII)
+  '4': CHARSETS.Dutch,
+  'C': CHARSETS.Finnish,
+  '5': CHARSETS.Finnish,
+  'f': CHARSETS.French,
+  'Q': CHARSETS.FrenchCanadian,
+  'K': CHARSETS.German,
+  'Y': CHARSETS.Italian,
+  'E': CHARSETS.NorwegianDanish,
+  '6': CHARSETS.NorwegianDanish,
+  'Z': CHARSETS.Spanish,
+  'H': CHARSETS.Swedish,
+  '7': CHARSETS.Swedish,
+  '=': CHARSETS.Swiss,
+  '/': CHARSETS.ISOLatin // ISOLatin is actually /A
+};
 
 enum ParserState {
   NORMAL = 0,
@@ -330,56 +352,13 @@ export class Parser {
           break;
 
         case ParserState.CHARSET:
-          switch (ch) {
-            case '0': // DEC Special Character and Line Drawing Set.
-              cs = CHARSETS.SCLD;
-              break;
-            case 'A': // UK
-              cs = CHARSETS.UK;
-              break;
-            case 'B': // United States (USASCII).
-              cs = CHARSETS.US;
-              break;
-            case '4': // Dutch
-              cs = CHARSETS.Dutch;
-              break;
-            case 'C': // Finnish
-            case '5':
-              cs = CHARSETS.Finnish;
-              break;
-            case 'R': // French
-              cs = CHARSETS.French;
-              break;
-            case 'Q': // FrenchCanadian
-              cs = CHARSETS.FrenchCanadian;
-              break;
-            case 'K': // German
-              cs = CHARSETS.German;
-              break;
-            case 'Y': // Italian
-              cs = CHARSETS.Italian;
-              break;
-            case 'E': // NorwegianDanish
-            case '6':
-              cs = CHARSETS.NorwegianDanish;
-              break;
-            case 'Z': // Spanish
-              cs = CHARSETS.Spanish;
-              break;
-            case 'H': // Swedish
-            case '7':
-              cs = CHARSETS.Swedish;
-              break;
-            case '=': // Swiss
-              cs = CHARSETS.Swiss;
-              break;
-            case '/': // ISOLatin (actually /A)
-              cs = CHARSETS.ISOLatin;
-              this._position++;
-              break;
-            default: // Default
-              cs = CHARSETS.US;
-              break;
+          if (ch in charsetMap) {
+            cs = charsetMap[ch];
+            if (ch === '/') { // ISOLatin is actually /A
+              this.skipNextChar();
+            }
+          } else {
+            cs = CHARSETS.US; // Default
           }
           this._terminal.setgCharset(this._terminal.gcharset, cs);
           this._terminal.gcharset = null;
