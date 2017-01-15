@@ -28,7 +28,9 @@ function setTerminalSize () {
 colsElement.addEventListener('change', setTerminalSize);
 rowsElement.addEventListener('change', setTerminalSize);
 
-optionElements.cursorBlink.addEventListener('change', createTerminal);
+optionElements.cursorBlink.addEventListener('change', function () {
+  term.setOption('cursorBlink', optionElements.cursorBlink.checked);
+});
 optionElements.scrollback.addEventListener('change', function () {
   terminal.setOption('scrollback', parseInt(optionElements.scrollback.value, 10));
 });

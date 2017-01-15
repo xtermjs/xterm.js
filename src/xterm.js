@@ -425,6 +425,9 @@ Terminal.prototype.setOption = function(key, value) {
   }
   this[key] = value;
   this.options[key] = value;
+  switch (key) {
+    case 'cursorBlink': this.element.classList.toggle('xterm-cursor-blink', value); break;
+  }
 };
 
 /**
@@ -581,6 +584,7 @@ Terminal.prototype.open = function(parent) {
   this.element.classList.add('terminal');
   this.element.classList.add('xterm');
   this.element.classList.add('xterm-theme-' + this.theme);
+  this.element.classList.toggle('xterm-cursor-blink', this.options.cursorBlink);
 
   this.element.style.height
   this.element.setAttribute('tabindex', 0);
@@ -1193,11 +1197,7 @@ Terminal.prototype.refresh = function(start, end) {
         }
         if (data !== this.defAttr) {
           if (data === -1) {
-            out += '<span class="reverse-video terminal-cursor';
-            if (this.cursorBlink) {
-              out += ' blinking';
-            }
-            out += '">';
+            out += '<span class="reverse-video terminal-cursor">';
           } else {
             var classNames = [];
 
