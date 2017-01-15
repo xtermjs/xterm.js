@@ -7,13 +7,17 @@
     "outDir": "lib",
     "sourceMap": true
   },
+  "include": [
+    "src/**/*"
+  ],
   "exclude": [
-    "addons",
+    "src/addons/**/*",
     "build",
     "demo",
     "dist",
     "out",
     "test",
-    "node_modules"
+    "node_modules",
+    "docs"
   ]
 }

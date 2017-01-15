@@ -10,13 +10,13 @@
  * @license MIT
  */
 
-import { CompositionHelper } from './CompositionHelper.js';
-import { EventEmitter } from './EventEmitter.js';
-import { Viewport } from './Viewport.js';
-import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard.js';
-import { CircularList } from './utils/CircularList.js';
+import { CompositionHelper } from './CompositionHelper';
+import { EventEmitter } from './EventEmitter';
+import { Viewport } from './Viewport';
+import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard';
+import { CircularList } from './utils/CircularList';
 import { C0 } from './EscapeSequences';
-import { CharMeasure } from './utils/CharMeasure.js';
+import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './utils/Browser';
 import * as Keyboard from './utils/Keyboard';
 
@@ -405,6 +405,24 @@ Terminal.prototype.setOption = function(key, value) {
   if (!(key in Terminal.defaults)) {
     throw new Error('No option with key "' + key + '"');
   }
+  switch (key) {
+    case 'scrollback':
+      if (this.options[key] !== value) {
+        if (this.lines.length > value) {
+          const amountToTrim = this.lines.length - value;
+          const needsRefresh = (this.ydisp - amountToTrim < 0);
+          this.lines.trimStart(amountToTrim);
+          this.ybase = Math.max(this.ybase - amountToTrim, 0);
+          this.ydisp = Math.max(this.ydisp - amountToTrim, 0);
+          if (needsRefresh) {
+            this.refresh(0, this.rows - 1);
+          }
+        }
+        this.lines.maxLength = value;
+        this.viewport.syncScrollArea();
+      }
+      break;
+  }
   this[key] = value;
   this.options[key] = value;
   switch (key) {
@@ -618,7 +636,7 @@ Terminal.prototype.open = function(parent) {
   }
   this.parent.appendChild(this.element);
 
-  this.charMeasure = new CharMeasure(this.rowContainer);
+  this.charMeasure = new CharMeasure(this.helperContainer);
   this.charMeasure.on('charsizechanged', function () {
     self.updateCharSizeCSS();
   });
@@ -1143,6 +1161,10 @@ Terminal.prototype.refresh = function(start, end) {
     row = y + this.ydisp;
 
     line = this.lines.get(row);
+    if (!line || !this.children[y]) {
+      // Continue if the line is not available, this means a resize is currently in progress
+      continue;
+    }
     out = '';
 
     if (this.y === y - (this.ybase - this.ydisp)
@@ -1157,6 +1179,10 @@ Terminal.prototype.refresh = function(start, end) {
     i = 0;
 
     for (; i < width; i++) {
+      if (!line[i]) {
+        // Continue if the character is not available, this means a resize is currently in progress
+        continue;
+      }
       data = line[i][0];
       ch = line[i][1];
       ch_width = line[i][2];
