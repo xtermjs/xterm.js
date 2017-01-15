@@ -11,7 +11,9 @@ export class EventEmitter {
   private _events: {[type: string]: ListenerType[]};
 
   constructor() {
-    this._events = {};
+    // Restore the previous events if available, this will happen if the
+    // constructor is called multiple times on the same object (terminal reset).
+    this._events = this._events || {};
   }
 
   public on(type, listener): void {

@@ -92,7 +92,11 @@ describe('xterm output comparison', function() {
         var from_pty = pty_write_read(in_file);
         // uncomment this to get log from terminal
         //console.log = function(){};
-        xterm.write(from_pty);
+
+        // Perform a synchronous .write(data)
+        xterm.writeBuffer.push(from_pty);
+        xterm.innerWrite();
+
         var from_emulator = terminalToString(xterm);
         console.log = CONSOLE_LOG;
         var expected = fs.readFileSync(filename.split('.')[0] + '.text', 'utf8');

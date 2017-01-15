@@ -3,6 +3,7 @@
  */
 
 import { ITerminal } from './Interfaces';
+import { CharMeasure } from './utils/CharMeasure';
 
 /**
  * Represents the viewport of a terminal, the visible area within the larger buffer of output.
@@ -24,7 +25,7 @@ export class Viewport {
     private terminal: ITerminal,
     private viewportElement: HTMLElement,
     private scrollArea: HTMLElement,
-    private charMeasureElement: HTMLElement
+    private charMeasure: CharMeasure
   ) {
     this.currentRowHeight = 0;
     this.lastRecordedBufferLength = 0;
@@ -43,21 +44,20 @@ export class Viewport {
    * @param charSize A character size measurement bounding rect object, if it doesn't exist it will
    *   be created.
    */
-  private refresh(charSize?: ClientRect): void {
-    var size = charSize || this.charMeasureElement.getBoundingClientRect();
-    if (size.height > 0) {
-      var rowHeightChanged = size.height !== this.currentRowHeight;
+  private refresh(): void {
+    if (this.charMeasure.height > 0) {
+      const rowHeightChanged = this.charMeasure.height !== this.currentRowHeight;
       if (rowHeightChanged) {
-        this.currentRowHeight = size.height;
-        this.viewportElement.style.lineHeight = size.height + 'px';
-        this.terminal.rowContainer.style.lineHeight = size.height + 'px';
+        this.currentRowHeight = this.charMeasure.height;
+        this.viewportElement.style.lineHeight = this.charMeasure.height + 'px';
+        this.terminal.rowContainer.style.lineHeight = this.charMeasure.height + 'px';
       }
-      var viewportHeightChanged = this.lastRecordedViewportHeight !== this.terminal.rows;
+      const viewportHeightChanged = this.lastRecordedViewportHeight !== this.terminal.rows;
       if (rowHeightChanged || viewportHeightChanged) {
         this.lastRecordedViewportHeight = this.terminal.rows;
-        this.viewportElement.style.height = size.height * this.terminal.rows + 'px';
+        this.viewportElement.style.height = this.charMeasure.height * this.terminal.rows + 'px';
       }
-      this.scrollArea.style.height = (size.height * this.lastRecordedBufferLength) + 'px';
+      this.scrollArea.style.height = (this.charMeasure.height * this.lastRecordedBufferLength) + 'px';
     }
   }
 
@@ -74,14 +74,13 @@ export class Viewport {
       this.refresh();
     } else {
       // If size has changed, refresh viewport
-      var size = this.charMeasureElement.getBoundingClientRect();
-      if (size.height !== this.currentRowHeight) {
-        this.refresh(size);
+      if (this.charMeasure.height !== this.currentRowHeight) {
+        this.refresh();
       }
     }
 
     // Sync scrollTop
-    var scrollTop = this.terminal.ydisp * this.currentRowHeight;
+    const scrollTop = this.terminal.ydisp * this.currentRowHeight;
     if (this.viewportElement.scrollTop !== scrollTop) {
       this.viewportElement.scrollTop = scrollTop;
     }
@@ -93,8 +92,8 @@ export class Viewport {
    * @param ev The scroll event.
    */
   private onScroll(ev: Event) {
-    var newRow = Math.round(this.viewportElement.scrollTop / this.currentRowHeight);
-    var diff = newRow - this.terminal.ydisp;
+    const newRow = Math.round(this.viewportElement.scrollTop / this.currentRowHeight);
+    const diff = newRow - this.terminal.ydisp;
     this.terminal.scrollDisp(diff, true);
   }
 
@@ -110,7 +109,7 @@ export class Viewport {
       return;
     }
     // Fallback to WheelEvent.DOM_DELTA_PIXEL
-    var multiplier = 1;
+    let multiplier = 1;
     if (ev.deltaMode === WheelEvent.DOM_DELTA_LINE) {
       multiplier = this.currentRowHeight;
     } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
