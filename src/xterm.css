@@ -82,11 +82,11 @@
     background-color: transparent;
 }
 
-.terminal.focus .terminal-cursor.blinking {
-    animation: blink-cursor 1.2s infinite step-end;
+.terminal.focus.xterm-cursor-blink .terminal-cursor {
+    animation: cursor-blink 1.2s infinite step-end;
 }
 
-@keyframes blink-cursor {
+@keyframes cursor-blink {
     0% {
         background-color: #fff;
         color: #000;
