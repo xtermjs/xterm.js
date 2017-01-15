@@ -10,13 +10,13 @@
  * @license MIT
  */
 
-import { CompositionHelper } from './CompositionHelper.js';
-import { EventEmitter } from './EventEmitter.js';
-import { Viewport } from './Viewport.js';
-import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard.js';
-import { CircularList } from './utils/CircularList.js';
+import { CompositionHelper } from './CompositionHelper';
+import { EventEmitter } from './EventEmitter';
+import { Viewport } from './Viewport';
+import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard';
+import { CircularList } from './utils/CircularList';
 import { C0 } from './EscapeSequences';
-import { CharMeasure } from './utils/CharMeasure.js';
+import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './utils/Browser';
 import * as Keyboard from './utils/Keyboard';
 
