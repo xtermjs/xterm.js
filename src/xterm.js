@@ -38,11 +38,6 @@ import { CHARSETS } from './Charsets';
 var document = (typeof window != 'undefined') ? window.document : null;
 
 /**
- * States
- */
-var normal = 0, escaped = 1, csi = 2, osc = 3, charset = 4, dcs = 5, ignore = 6;
-
-/**
  * The amount of write requests to queue before sending an XOFF signal to the
  * pty process. This number must be small in order for ^C and similar sequences
  * to be responsive.
