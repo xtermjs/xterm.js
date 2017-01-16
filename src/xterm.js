@@ -353,6 +353,7 @@ Terminal.defaults = {
   termName: 'xterm',
   geometry: [80, 24],
   cursorBlink: false,
+  cursorStyle: 'block',
   visualBell: false,
   popOnBell: false,
   scrollback: 1000,
@@ -427,6 +428,11 @@ Terminal.prototype.setOption = function(key, value) {
   this.options[key] = value;
   switch (key) {
     case 'cursorBlink': this.element.classList.toggle('xterm-cursor-blink', value); break;
+    case 'cursorStyle':
+      // Style 'block' applies with no class
+      this.element.classList.toggle(`xterm-cursor-style-underline`, value === 'underline');
+      this.element.classList.toggle(`xterm-cursor-style-bar`, value === 'bar');
+      break;
   }
 };
 

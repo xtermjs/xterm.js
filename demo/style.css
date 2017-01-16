@@ -20,7 +20,3 @@ h1 {
     color: #fafafa;
     padding: 2px;
 }
-
-#terminal-container .terminal:focus .terminal-cursor {
-    background-color: #fafafa;
-}
