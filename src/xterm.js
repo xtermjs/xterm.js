@@ -525,7 +525,11 @@ Terminal.bindKeys = function(term) {
     term.keyPress(ev);
   }, true);
 
-  on(term.element, 'keyup', term.focus.bind(term));
+  on(term.element, 'keyup', function(ev) {
+    if (!wasMondifierKeyOnlyEvent(ev)) {
+      term.focus(term);
+    }
+  }, true);
 
   on(term.textarea, 'keydown', function(ev) {
     term.keyDown(ev);
@@ -4983,6 +4987,12 @@ Terminal.prototype.deleteColumns = function() {
 
   this.maxRange();
 };
+
+function wasMondifierKeyOnlyEvent(ev) {
+  return ev.keyCode === 16 || // Shift
+    ev.keyCode === 17 || // Ctrl
+    ev.keyCode === 18; // Alt
+}
 
 /**
  * Character Sets
