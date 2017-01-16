@@ -8,7 +8,8 @@ var term,
 
 var terminalContainer = document.getElementById('terminal-container'),
     optionElements = {
-      cursorBlink: document.querySelector('#option-cursor-blink')
+      cursorBlink: document.querySelector('#option-cursor-blink'),
+      scrollback: document.querySelector('#option-scrollback')
     },
     colsElement = document.getElementById('cols'),
     rowsElement = document.getElementById('rows');
@@ -27,7 +28,12 @@ function setTerminalSize () {
 colsElement.addEventListener('change', setTerminalSize);
 rowsElement.addEventListener('change', setTerminalSize);
 
-optionElements.cursorBlink.addEventListener('change', createTerminal);
+optionElements.cursorBlink.addEventListener('change', function () {
+  term.setOption('cursorBlink', optionElements.cursorBlink.checked);
+});
+optionElements.scrollback.addEventListener('change', function () {
+  terminal.setOption('scrollback', parseInt(optionElements.scrollback.value, 10));
+});
 
 createTerminal();
 
@@ -37,7 +43,8 @@ function createTerminal() {
     terminalContainer.removeChild(terminalContainer.children[0]);
   }
   term = new Terminal({
-    cursorBlink: optionElements.cursorBlink.checked
+    cursorBlink: optionElements.cursorBlink.checked,
+    scrollback: parseInt(optionElements.scrollback.value, 10)
   });
   term.on('resize', function (size) {
     if (!pid) {
@@ -77,7 +84,6 @@ function createTerminal() {
     });
   });
 }
-
 
 function runRealTerminal() {
   term.attach(socket);

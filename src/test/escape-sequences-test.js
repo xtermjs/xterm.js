@@ -1,6 +1,6 @@
 var glob = require('glob');
 var fs = require('fs');
-var pty = require('pty.js');
+var pty = require('node-pty');
 var sleep = require('sleep');
 var Terminal = require('../xterm');
 

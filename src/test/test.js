@@ -23,6 +23,11 @@ describe('xterm.js', function() {
       xterm.writeBuffer.push(data);
       xterm.innerWrite();
     };
+    xterm.element = {
+      classList: {
+        toggle: function(){}
+      }
+    };
   });
 
   describe('getOption', function() {

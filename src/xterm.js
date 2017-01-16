@@ -10,15 +10,15 @@
  * @license MIT
  */
 
-import { CompositionHelper } from './CompositionHelper.js';
-import { EventEmitter } from './EventEmitter.js';
-import { Viewport } from './Viewport.js';
-import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard.js';
-import { CircularList } from './utils/CircularList.js';
+import { CompositionHelper } from './CompositionHelper';
+import { EventEmitter } from './EventEmitter';
+import { Viewport } from './Viewport';
+import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard';
+import { CircularList } from './utils/CircularList';
 import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Parser } from './Parser';
-import { CharMeasure } from './utils/CharMeasure.js';
+import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './utils/Browser';
 import * as Keyboard from './utils/Keyboard';
 import { CHARSETS } from './Charsets';
@@ -410,8 +410,29 @@ Terminal.prototype.setOption = function(key, value) {
   if (!(key in Terminal.defaults)) {
     throw new Error('No option with key "' + key + '"');
   }
+  switch (key) {
+    case 'scrollback':
+      if (this.options[key] !== value) {
+        if (this.lines.length > value) {
+          const amountToTrim = this.lines.length - value;
+          const needsRefresh = (this.ydisp - amountToTrim < 0);
+          this.lines.trimStart(amountToTrim);
+          this.ybase = Math.max(this.ybase - amountToTrim, 0);
+          this.ydisp = Math.max(this.ydisp - amountToTrim, 0);
+          if (needsRefresh) {
+            this.refresh(0, this.rows - 1);
+          }
+        }
+        this.lines.maxLength = value;
+        this.viewport.syncScrollArea();
+      }
+      break;
+  }
   this[key] = value;
   this.options[key] = value;
+  switch (key) {
+    case 'cursorBlink': this.element.classList.toggle('xterm-cursor-blink', value); break;
+  }
 };
 
 /**
@@ -509,7 +530,11 @@ Terminal.bindKeys = function(term) {
     term.keyPress(ev);
   }, true);
 
-  on(term.element, 'keyup', term.focus.bind(term));
+  on(term.element, 'keyup', function(ev) {
+    if (!wasMondifierKeyOnlyEvent(ev)) {
+      term.focus(term);
+    }
+  }, true);
 
   on(term.textarea, 'keydown', function(ev) {
     term.keyDown(ev);
@@ -568,6 +593,7 @@ Terminal.prototype.open = function(parent) {
   this.element.classList.add('terminal');
   this.element.classList.add('xterm');
   this.element.classList.add('xterm-theme-' + this.theme);
+  this.element.classList.toggle('xterm-cursor-blink', this.options.cursorBlink);
 
   this.element.style.height
   this.element.setAttribute('tabindex', 0);
@@ -619,7 +645,7 @@ Terminal.prototype.open = function(parent) {
   }
   this.parent.appendChild(this.element);
 
-  this.charMeasure = new CharMeasure(this.rowContainer);
+  this.charMeasure = new CharMeasure(this.helperContainer);
   this.charMeasure.on('charsizechanged', function () {
     self.updateCharSizeCSS();
   });
@@ -1144,6 +1170,10 @@ Terminal.prototype.refresh = function(start, end) {
     row = y + this.ydisp;
 
     line = this.lines.get(row);
+    if (!line || !this.children[y]) {
+      // Continue if the line is not available, this means a resize is currently in progress
+      continue;
+    }
     out = '';
 
     if (this.y === y - (this.ybase - this.ydisp)
@@ -1158,6 +1188,10 @@ Terminal.prototype.refresh = function(start, end) {
     i = 0;
 
     for (; i < width; i++) {
+      if (!line[i]) {
+        // Continue if the character is not available, this means a resize is currently in progress
+        continue;
+      }
       data = line[i][0];
       ch = line[i][1];
       ch_width = line[i][2];
@@ -1172,11 +1206,7 @@ Terminal.prototype.refresh = function(start, end) {
         }
         if (data !== this.defAttr) {
           if (data === -1) {
-            out += '<span class="reverse-video terminal-cursor';
-            if (this.cursorBlink) {
-              out += ' blinking';
-            }
-            out += '">';
+            out += '<span class="reverse-video terminal-cursor">';
           } else {
             var classNames = [];
 
@@ -2439,6 +2469,12 @@ function each(obj, iter, con) {
   for (var i = 0; i < obj.length; i++) {
     iter.call(con, obj[i], i, obj);
   }
+}
+
+function wasMondifierKeyOnlyEvent(ev) {
+  return ev.keyCode === 16 || // Shift
+    ev.keyCode === 17 || // Ctrl
+    ev.keyCode === 18; // Alt
 }
 
 function keys(obj) {
