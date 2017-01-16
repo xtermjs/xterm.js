@@ -5,7 +5,8 @@
     "rootDir": "src",
     "allowJs": true,
     "outDir": "lib",
-    "sourceMap": true
+    "sourceMap": true,
+    "removeComments": true
   },
   "include": [
     "src/**/*"
