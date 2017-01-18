@@ -83,10 +83,10 @@
 }
 
 .terminal.focus.xterm-cursor-blink .terminal-cursor {
-    animation: cursor-blink 1.2s infinite step-end;
+    animation: xterm-cursor-blink 1.2s infinite step-end;
 }
 
-@keyframes cursor-blink {
+@keyframes xterm-cursor-blink {
     0% {
         background-color: #fff;
         color: #000;
