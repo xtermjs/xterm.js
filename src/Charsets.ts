@@ -1,4 +1,13 @@
-// TODO: Give this a proper type
+/**
+ * @license MIT
+ */
+
+// TODO: Give CHARSETS a proper type
+/**
+ * The character sets supported by the terminal. These enable several languages
+ * to be represented within the terminal with only 8-bit encoding. See ISO 2022
+ * for a discussion on character sets.
+ */
 export const CHARSETS: any = {};
 
 // DEC Special Character and Line Drawing Set.

@@ -1,3 +1,7 @@
+/**
+ * @license MIT
+ */
+
 import { C0 } from './EscapeSequences';
 import { IInputHandler } from './Interfaces';
 import { CHARSETS } from './Charsets';
@@ -169,6 +173,11 @@ enum ParserState {
   IGNORE = 7
 }
 
+/**
+ * The terminal's parser, all input into the terminal goes through the parser
+ * which parses and defers the actual input handling the the IInputHandler
+ * specified in the constructor.
+ */
 export class Parser {
   private _state: ParserState;
   private _position: number;
@@ -181,6 +190,11 @@ export class Parser {
     this._state = ParserState.NORMAL;
   }
 
+  /**
+   * Parse and handle data.
+   *
+   * @param data The data to parse.
+   */
   public parse(data: string) {
     let l = data.length, j, cs, ch, code, low;
 
@@ -565,35 +579,71 @@ export class Parser {
     }
   }
 
+  /**
+   * Set the parser's current parsing state.
+   *
+   * @param state The new state.
+   */
   public setState(state: ParserState): void {
     this._state = state;
   }
 
+  /**
+   * Sets the parsier's current prefix. CSI codes can have prefixes of '?', '>'
+   * or '!'.
+   *
+   * @param prefix The prefix.
+   */
   public setPrefix(prefix: string): void {
     this._terminal.prefix = prefix;
   }
 
+  /**
+   * Sets the parsier's current prefix. CSI codes can have postfixes of '$',
+   * '"', ' ', '\''.
+   *
+   * @param postfix The postfix.
+   */
+  public setPostfix(postfix: string): void {
+    this._terminal.postfix = postfix;
+  }
+
+  /**
+   * Sets the parser's current parameter.
+   *
+   * @param param the parameter.
+   */
   public setParam(param: number) {
     this._terminal.currentParam = param;
   }
 
+  /**
+   * Gets the parser's current parameter.
+   */
   public getParam(): number {
     return this._terminal.currentParam;
   }
 
+  /**
+   * Finalizes the parser's current parameter, adding it to the list of
+   * parameters and setting the new current parameter to 0.
+   */
   public finalizeParam(): void {
     this._terminal.params.push(this._terminal.currentParam);
     this._terminal.currentParam = 0;
   }
 
-  public setPostfix(postfix: string): void {
-    this._terminal.postfix = postfix;
-  }
-
+  /**
+   * Tell the parser to skip the next character.
+   */
   public skipNextChar(): void {
     this._position++;
   }
 
+  /**
+   * Tell the parser to repeat parsing the current character (for example if it
+   * needs parsing using a different state.
+   */
   // public repeatChar(): void {
   //   this._position--;
   // }

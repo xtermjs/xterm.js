@@ -1,7 +1,18 @@
+/**
+ * @license MIT
+ */
+
 import { IInputHandler, ITerminal } from './Interfaces';
 import { C0 } from './EscapeSequences';
 import { CHARSETS } from './Charsets';
 
+/**
+ * The terminal's standard implementation of IInputHandler, this handles all
+ * input from the Parser.
+ *
+ * Refer to http://invisible-island.net/xterm/ctlseqs/ctlseqs.html to understand
+ * each function's header comment.
+ */
 export class InputHandler implements IInputHandler {
   // TODO: We want to type _terminal when it's pulled into TS
   constructor(private _terminal: any) { }
