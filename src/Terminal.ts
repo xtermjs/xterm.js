@@ -20,7 +20,6 @@ import { InputHandler } from './InputHandler';
 import { Parser } from './Parser';
 import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './utils/Browser';
-import * as Keyboard from './utils/Keyboard';
 import { CHARSETS } from './Charsets';
 
 /**
@@ -35,27 +34,27 @@ import { CHARSETS } from './Charsets';
  */
 
 // Let it work inside Node.js for automated testing purposes.
-var document = (typeof window != 'undefined') ? window.document : null;
+const document = (typeof window !== 'undefined') ? window.document : null;
 
 /**
  * The amount of write requests to queue before sending an XOFF signal to the
  * pty process. This number must be small in order for ^C and similar sequences
  * to be responsive.
  */
-var WRITE_BUFFER_PAUSE_THRESHOLD = 5;
+const WRITE_BUFFER_PAUSE_THRESHOLD = 5;
 
 /**
  * The number of writes to perform in a single batch before allowing the
  * renderer to catch up with a 0ms setTimeout.
  */
-var WRITE_BATCH_SIZE = 300;
+const WRITE_BATCH_SIZE = 300;
 
 /**
  * The maximum number of refresh frames to skip when the write buffer is non-
  * empty. Note that these frames may be intermingled with frames that are
  * skipped via requestAnimationFrame's mechanism.
  */
-var MAX_REFRESH_FRAME_SKIP = 5;
+const MAX_REFRESH_FRAME_SKIP = 5;
 
 /**
  * Terminal
@@ -74,14 +73,8 @@ var MAX_REFRESH_FRAME_SKIP = 5;
  * @alias module:xterm/src/xterm
  */
 function Terminal(options) {
-  var self = this;
-
-  if (!(this instanceof Terminal)) {
-    return new Terminal(arguments[0], arguments[1], arguments[2]);
-  }
-
-  self.browser = Browser;
-  self.cancel = Terminal.cancel;
+  this.browser = Browser;
+  this.cancel = cancel;
 
   EventEmitter.call(this);
 
@@ -96,27 +89,28 @@ function Terminal(options) {
   options = options || {};
 
 
-  Object.keys(Terminal.defaults).forEach(function(key) {
+  Object.keys(Terminal_defaults).forEach(key => {
     if (options[key] == null) {
-      options[key] = Terminal.options[key];
+      options[key] = Terminal_options[key];
 
-      if (Terminal[key] !== Terminal.defaults[key]) {
+      if (Terminal[key] !== Terminal_defaults[key]) {
         options[key] = Terminal[key];
       }
     }
-    self[key] = options[key];
+    // TODO: Remove all references to Terminal[key], replace with Terminal.options[key]
+    this[key] = options[key];
   });
 
   if (options.colors.length === 8) {
-    options.colors = options.colors.concat(Terminal._colors.slice(8));
+    options.colors = options.colors.concat(Terminal__colors.slice(8));
   } else if (options.colors.length === 16) {
-    options.colors = options.colors.concat(Terminal._colors.slice(16));
+    options.colors = options.colors.concat(Terminal__colors.slice(16));
   } else if (options.colors.length === 10) {
     options.colors = options.colors.slice(0, -2).concat(
-      Terminal._colors.slice(8, -2), options.colors.slice(-2));
+      Terminal__colors.slice(8, -2), options.colors.slice(-2));
   } else if (options.colors.length === 18) {
     options.colors = options.colors.concat(
-      Terminal._colors.slice(16, -2), options.colors.slice(-2));
+      Terminal__colors.slice(16, -2), options.colors.slice(-2));
   }
   this.colors = options.colors;
 
@@ -241,8 +235,8 @@ function Terminal(options) {
    * An array of all lines in the entire buffer, including the prompt. The lines are array of
    * characters which are 2-length arrays where [0] is an attribute and [1] is the character.
    */
-  this.lines = new CircularList(this.scrollback);
-  var i = this.rows;
+  this.lines = new CircularList(this.options.scrollback);
+  let i = this.rows;
   while (i--) {
     this.lines.push(this.blankLine());
   }
@@ -269,7 +263,7 @@ Terminal.prototype.eraseAttr = function() {
  */
 
 // Colors 0-15
-Terminal.tangoColors = [
+const Terminal_tangoColors = [
   // dark:
   '#2e3436',
   '#cc0000',
@@ -292,13 +286,12 @@ Terminal.tangoColors = [
 
 // Colors 0-15 + 16-255
 // Much thanks to TooTallNate for writing this.
-Terminal.colors = (function() {
-  var colors = Terminal.tangoColors.slice()
-  , r = [0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff]
-  , i;
+const Terminal_colors = (function() {
+  const colors = Terminal_tangoColors.slice();
+  let r = [0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff];
 
   // 16-231
-  i = 0;
+  let i = 0;
   for (; i < 216; i++) {
     out(r[(i / 36) % 6 | 0], r[(i / 6) % 6 | 0], r[i % 6]);
   }
@@ -306,8 +299,8 @@ Terminal.colors = (function() {
   // 232-255 (grey)
   i = 0;
   for (; i < 24; i++) {
-    r = 8 + i * 10;
-    out(r, r, r);
+    let g = 8 + i * 10;
+    out(g, g, g);
   }
 
   function out(r, g, b) {
@@ -322,13 +315,13 @@ Terminal.colors = (function() {
   return colors;
 })();
 
-Terminal._colors = Terminal.colors.slice();
+const Terminal__colors = Terminal_colors.slice();
 
-Terminal.vcolors = (function() {
-  var out = []
-  , colors = Terminal.colors
-  , i = 0
-  , color;
+const Terminal_vcolors = (function() {
+  const out = [];
+  const colors = Terminal_colors;
+  let i = 0;
+  let color;
 
   for (; i < 256; i++) {
     color = parseInt(colors[i].substring(1), 16);
@@ -346,8 +339,8 @@ Terminal.vcolors = (function() {
  * Options
  */
 
-Terminal.defaults = {
-  colors: Terminal.colors,
+const Terminal_defaults = {
+  colors: Terminal_colors,
   theme: 'default',
   convertEol: false,
   termName: 'xterm',
@@ -364,13 +357,13 @@ Terminal.defaults = {
   // focusKeys: false,
 };
 
-Terminal.options = {};
+const Terminal_options = {};
 
-Terminal.focus = null;
+let Terminal_focus = null;
 
-each(keys(Terminal.defaults), function(key) {
-  Terminal[key] = Terminal.defaults[key];
-  Terminal.options[key] = Terminal.defaults[key];
+Object.keys(Terminal_defaults).forEach(key => {
+  Terminal[key] = Terminal_defaults[key];
+  Terminal_options[key] = Terminal_defaults[key];
 });
 
 /**
@@ -385,7 +378,7 @@ Terminal.prototype.focus = function() {
  * @param {string} key The option key.
  */
 Terminal.prototype.getOption = function(key, value) {
-  if (!(key in Terminal.defaults)) {
+  if (!(key in Terminal_defaults)) {
     throw new Error('No option with key "' + key + '"');
   }
 
@@ -402,7 +395,7 @@ Terminal.prototype.getOption = function(key, value) {
  * @param {string} value The option value.
  */
 Terminal.prototype.setOption = function(key, value) {
-  if (!(key in Terminal.defaults)) {
+  if (!(key in Terminal_defaults)) {
     throw new Error('No option with key "' + key + '"');
   }
   switch (key) {
@@ -435,14 +428,14 @@ Terminal.prototype.setOption = function(key, value) {
  *
  * @static
  */
-Terminal.bindFocus = function (term) {
+const Terminal_bindFocus = function (term) {
   on(term.textarea, 'focus', function (ev) {
     if (term.sendFocus) {
       term.send(C0.ESC + '[I');
     }
     term.element.classList.add('focus');
     term.showCursor();
-    Terminal.focus = term;
+    Terminal_focus = term;
     term.emit('focus', {terminal: term});
   });
 };
@@ -459,14 +452,14 @@ Terminal.prototype.blur = function() {
  *
  * @static
  */
-Terminal.bindBlur = function (term) {
+const Terminal_bindBlur = function (term) {
   on(term.textarea, 'blur', function (ev) {
     term.queueRefresh(term.y, term.y);
     if (term.sendFocus) {
       term.send(C0.ESC + '[O');
     }
     term.element.classList.remove('focus');
-    Terminal.focus = null;
+    Terminal_focus = null;
     term.emit('blur', {terminal: term});
   });
 };
@@ -475,11 +468,11 @@ Terminal.bindBlur = function (term) {
  * Initialize default behavior
  */
 Terminal.prototype.initGlobal = function() {
-  var term = this;
+  const term = this;
 
-  Terminal.bindKeys(this);
-  Terminal.bindFocus(this);
-  Terminal.bindBlur(this);
+  Terminal_bindKeys(this);
+  Terminal_bindFocus(this);
+  Terminal_bindBlur(this);
 
   // Bind clipboard functionality
   on(this.element, 'copy', function (ev) {
@@ -498,7 +491,7 @@ Terminal.prototype.initGlobal = function() {
 
   if (term.browser.isFirefox) {
     on(this.element, 'mousedown', function (ev) {
-      if (ev.button == 2) {
+      if (ev.button === 2) {
         rightClickHandlerWrapper(ev);
       }
     });
@@ -510,16 +503,16 @@ Terminal.prototype.initGlobal = function() {
 /**
  * Apply key handling to the terminal
  */
-Terminal.bindKeys = function(term) {
+const Terminal_bindKeys = function(term) {
   on(term.element, 'keydown', function(ev) {
-    if (document.activeElement != this) {
+    if (document.activeElement !== this) {
       return;
     }
     term.keyDown(ev);
   }, true);
 
   on(term.element, 'keypress', function(ev) {
-    if (document.activeElement != this) {
+    if (document.activeElement !== this) {
       return;
     }
     term.keyPress(ev);
@@ -554,7 +547,7 @@ Terminal.bindKeys = function(term) {
  * @param {HTMLElement} row (optional) The row to append to the terminal.
  */
 Terminal.prototype.insertRow = function (row) {
-  if (typeof row != 'object') {
+  if (typeof row !== 'object') {
     row = document.createElement('div');
   }
 
@@ -564,13 +557,17 @@ Terminal.prototype.insertRow = function (row) {
   return row;
 };
 
+let Terminal_brokenBold: boolean = null;
+
 /**
  * Opens the terminal within an element.
  *
  * @param {HTMLElement} parent The element to create the terminal within.
  */
 Terminal.prototype.open = function(parent) {
-  var self=this, i=0, div;
+  const self = this;
+  let i = 0;
+  let div;
 
   this.parent = parent || this.parent;
 
@@ -583,14 +580,14 @@ Terminal.prototype.open = function(parent) {
   this.document = this.parent.ownerDocument;
   this.body = this.document.getElementsByTagName('body')[0];
 
-  //Create main element container
+  // Create main element container
   this.element = this.document.createElement('div');
   this.element.classList.add('terminal');
   this.element.classList.add('xterm');
   this.element.classList.add('xterm-theme-' + this.theme);
   this.element.classList.toggle('xterm-cursor-blink', this.options.cursorBlink);
 
-  this.element.style.height
+  // this.element.style.height
   this.element.setAttribute('tabindex', 0);
 
   this.viewportElement = document.createElement('div');
@@ -660,9 +657,9 @@ Terminal.prototype.open = function(parent) {
   this.focus();
 
   on(this.element, 'click', function() {
-    var selection = document.getSelection(),
-        collapsed = selection.isCollapsed,
-        isRange = typeof collapsed == 'boolean' ? !collapsed : selection.type == 'Range';
+    const selection = document.getSelection();
+    const collapsed = selection.isCollapsed;
+    const isRange = typeof collapsed === 'boolean' ? !collapsed : selection.type === 'Range';
     if (!isRange) {
       self.focus();
     }
@@ -674,8 +671,8 @@ Terminal.prototype.open = function(parent) {
 
   // Figure out whether boldness affects
   // the character width of monospace fonts.
-  if (Terminal.brokenBold == null) {
-    Terminal.brokenBold = isBoldBroken(this.document);
+  if (Terminal_brokenBold == null) {
+    Terminal_brokenBold = isBoldBroken(this.document);
   }
 
   /**
@@ -686,19 +683,20 @@ Terminal.prototype.open = function(parent) {
   this.emit('open');
 };
 
+declare var define;
 
 /**
  * Attempts to load an add-on using CommonJS or RequireJS (whichever is available).
  * @param {string} addon The name of the addon to load
  * @static
  */
-Terminal.loadAddon = function(addon, callback) {
+(<any>Terminal).loadAddon = function(addon, callback) {
   if (typeof exports === 'object' && typeof module === 'object') {
     // CommonJS
     return require('./addons/' + addon + '/' + addon);
-  } else if (typeof define == 'function') {
+  } else if (typeof <any>define === 'function') {
     // RequireJS
-    return require(['./addons/' + addon + '/' + addon], callback);
+    return (<any>require)(['./addons/' + addon + '/' + addon], callback);
   } else {
     console.error('Cannot load a module without a CommonJS or RequireJS environment.');
     return false;
@@ -711,7 +709,7 @@ Terminal.loadAddon = function(addon, callback) {
  */
 Terminal.prototype.updateCharSizeCSS = function() {
   this.charSizeStyleElement.textContent = '.xterm-wide-char{width:' + (this.charMeasure.width * 2) + 'px;}';
-}
+};
 
 /**
  * XTerm mouse events
@@ -724,13 +722,13 @@ Terminal.prototype.updateCharSizeCSS = function() {
  *   BtnCode, EmitButtonCode, EditorButton, SendMousePosition
  */
 Terminal.prototype.bindMouse = function() {
-  var el = this.element, self = this, pressed = 32;
+  let el = this.element, self = this, pressed = 32;
 
   // mouseup, mousedown, wheel
   // left click: ^[[M 3<^[[M#3<
   // wheel up: ^[[M`3>
   function sendButton(ev) {
-    var button
+    let button
     , pos;
 
     // get the xterm-style button
@@ -762,7 +760,7 @@ Terminal.prototype.bindMouse = function() {
   // motion example of a left click:
   // ^[[M 3<^[[M@4<^[[M@5<^[[M@6<^[[M@7<^[[M#7<
   function sendMove(ev) {
-    var button = pressed
+    let button = pressed
     , pos;
 
     pos = getCoords(ev);
@@ -813,7 +811,7 @@ Terminal.prototype.bindMouse = function() {
       button &= 3;
       pos.x -= 32;
       pos.y -= 32;
-      var data = C0.ESC + '[24';
+      let data = C0.ESC + '[24';
       if (button === 0) data += '1';
       else if (button === 1) data += '3';
       else if (button === 2) data += '5';
@@ -869,7 +867,7 @@ Terminal.prototype.bindMouse = function() {
       return;
     }
 
-    var data = [];
+    let data = [];
 
     encode(data, button);
     encode(data, pos.x);
@@ -879,7 +877,7 @@ Terminal.prototype.bindMouse = function() {
   }
 
   function getButton(ev) {
-    var button
+    let button
     , shift
     , meta
     , ctrl
@@ -942,7 +940,7 @@ Terminal.prototype.bindMouse = function() {
 
   // mouse coordinates measured in cols/rows
   function getCoords(ev) {
-    var x, y, w, h, el;
+    let x, y, w, h, el;
 
     // ignore browsers without pageX for now
     if (ev.pageX == null) return;
@@ -996,7 +994,7 @@ Terminal.prototype.bindMouse = function() {
     self.focus();
 
     // fix for odd bug
-    //if (self.vt200Mouse && !self.normalMouse) {
+    // if (self.vt200Mouse && !self.normalMouse) {
     if (self.vt200Mouse) {
       ev.overrideType = 'mouseup';
       sendButton(ev);
@@ -1019,9 +1017,9 @@ Terminal.prototype.bindMouse = function() {
     return self.cancel(ev);
   });
 
-  //if (self.normalMouse) {
+  // if (self.normalMouse) {
   //  on(self.document, 'mousemove', sendMove);
-  //}
+  // }
 
   on(el, 'wheel', function(ev) {
     if (!self.mouseEvents) return;
@@ -1053,20 +1051,20 @@ Terminal.prototype.destroy = function() {
   if (this.element.parentNode) {
     this.element.parentNode.removeChild(this.element);
   }
-  //this.emit('close');
+  // this.emit('close');
 };
 
 
 /**
  * Flags used to render terminal text properly
  */
-Terminal.flags = {
+const Terminal_flags = {
   BOLD: 1,
   UNDERLINE: 2,
   BLINK: 4,
   INVERSE: 8,
   INVISIBLE: 16
-}
+};
 
 /**
  * Queues a refresh between two rows (inclusive), to be done on next animation
@@ -1076,7 +1074,7 @@ Terminal.flags = {
  */
 Terminal.prototype.queueRefresh = function(start, end) {
   this.refreshRowsQueue.push({ start: start, end: end });
-}
+};
 
 /**
  * Performs the refresh loop callback, calling refresh only if a refresh is
@@ -1089,12 +1087,12 @@ Terminal.prototype.refreshLoop = function() {
     // will need to be immediately refreshed anyway. This saves a lot of
     // rendering time as the viewport DOM does not need to be refreshed, no
     // scroll events, no layouts, etc.
-    var skipFrame = this.writeBuffer.length > 0 && this.refreshFramesSkipped++ <= MAX_REFRESH_FRAME_SKIP;
+    let skipFrame = this.writeBuffer.length > 0 && this.refreshFramesSkipped++ <= MAX_REFRESH_FRAME_SKIP;
 
     if (!skipFrame) {
       this.refreshFramesSkipped = 0;
-      var start;
-      var end;
+      let start;
+      let end;
       if (this.refreshRowsQueue.length > 4) {
         // Just do a full refresh when 5+ refreshes are queued
         start = 0;
@@ -1103,7 +1101,7 @@ Terminal.prototype.refreshLoop = function() {
         // Get start and end rows that need refreshing
         start = this.refreshRowsQueue[0].start;
         end = this.refreshRowsQueue[0].end;
-        for (var i = 1; i < this.refreshRowsQueue.length; i++) {
+        for (let i = 1; i < this.refreshRowsQueue.length; i++) {
           if (this.refreshRowsQueue[i].start < start) {
             start = this.refreshRowsQueue[i].start;
           }
@@ -1117,7 +1115,7 @@ Terminal.prototype.refreshLoop = function() {
     }
   }
   window.requestAnimationFrame(this.refreshLoop.bind(this));
-}
+};
 
 /**
  * Refreshes (re-renders) terminal content within two rows (inclusive)
@@ -1141,9 +1139,9 @@ Terminal.prototype.refreshLoop = function() {
  * @param {number} end The row to end at (between fromRow and terminal's height terminal - 1)
  */
 Terminal.prototype.refresh = function(start, end) {
-  var self = this;
+  let self = this;
 
-  var x, y, i, line, out, ch, ch_width, width, data, attr, bg, fg, flags, row, parent, focused = document.activeElement;
+  let x, y, i, line, out, ch, ch_width, width, data, attr, bg, fg, flags, row, parent, focused = document.activeElement;
 
   // If this is a big refresh, remove the terminal rows from the DOM for faster calculations
   if (end - start >= this.rows / 2) {
@@ -1203,30 +1201,30 @@ Terminal.prototype.refresh = function(start, end) {
           if (data === -1) {
             out += '<span class="reverse-video terminal-cursor">';
           } else {
-            var classNames = [];
+            let classNames = [];
 
             bg = data & 0x1ff;
             fg = (data >> 9) & 0x1ff;
             flags = data >> 18;
 
-            if (flags & Terminal.flags.BOLD) {
-              if (!Terminal.brokenBold) {
+            if (flags & Terminal_flags.BOLD) {
+              if (!Terminal_brokenBold) {
                 classNames.push('xterm-bold');
               }
               // See: XTerm*boldColors
               if (fg < 8) fg += 8;
             }
 
-            if (flags & Terminal.flags.UNDERLINE) {
+            if (flags & Terminal_flags.UNDERLINE) {
               classNames.push('xterm-underline');
             }
 
-            if (flags & Terminal.flags.BLINK) {
+            if (flags & Terminal_flags.BLINK) {
               classNames.push('xterm-blink');
             }
 
             // If inverse flag is on, then swap the foreground and background variables.
-            if (flags & Terminal.flags.INVERSE) {
+            if (flags & Terminal_flags.INVERSE) {
               /* One-line variable swap in JavaScript: http://stackoverflow.com/a/16201730 */
               bg = [fg, fg = bg][0];
               // Should inverse just be before the
@@ -1234,7 +1232,7 @@ Terminal.prototype.refresh = function(start, end) {
               if ((flags & 1) && fg < 8) fg += 8;
             }
 
-            if (flags & Terminal.flags.INVISIBLE) {
+            if (flags & Terminal_flags.INVISIBLE) {
               classNames.push('xterm-hidden');
             }
 
@@ -1245,11 +1243,11 @@ Terminal.prototype.refresh = function(start, end) {
              *
              * Source: https://github.com/sourcelair/xterm.js/issues/57
              */
-            if (flags & Terminal.flags.INVERSE) {
-              if (bg == 257) {
+            if (flags & Terminal_flags.INVERSE) {
+              if (bg === 257) {
                 bg = 15;
               }
-              if (fg == 256) {
+              if (fg === 256) {
                 fg = 0;
               }
             }
@@ -1327,7 +1325,7 @@ Terminal.prototype.showCursor = function() {
  * Scroll the terminal down 1 row, creating a blank line.
  */
 Terminal.prototype.scroll = function() {
-  var row;
+  let row;
 
   // Make room for the new row in lines
   if (this.lines.length === this.lines.maxLength) {
@@ -1417,21 +1415,21 @@ Terminal.prototype.scrollDisp = function(disp, suppressScrollEvent) {
  */
 Terminal.prototype.scrollPages = function(pageCount) {
   this.scrollDisp(pageCount * (this.rows - 1));
-}
+};
 
 /**
  * Scrolls the display of the terminal to the top.
  */
 Terminal.prototype.scrollToTop = function() {
   this.scrollDisp(-this.ydisp);
-}
+};
 
 /**
  * Scrolls the display of the terminal to the bottom.
  */
 Terminal.prototype.scrollToBottom = function() {
   this.scrollDisp(this.ybase - this.ydisp);
-}
+};
 
 /**
  * Writes text to the terminal.
@@ -1454,18 +1452,18 @@ Terminal.prototype.write = function(data) {
     // Kick off a write which will write all data in sequence recursively
     this.writeInProgress = true;
     // Kick off an async innerWrite so more writes can come in while processing data
-    var self = this;
+    let self = this;
     setTimeout(function () {
       self.innerWrite();
     });
   }
-}
+};
 
 Terminal.prototype.innerWrite = function() {
-  var writeBatch = this.writeBuffer.splice(0, WRITE_BATCH_SIZE);
+  let writeBatch = this.writeBuffer.splice(0, WRITE_BATCH_SIZE);
   while (writeBatch.length > 0) {
-    var data = writeBatch.shift();
-    var l = data.length, i = 0, j, cs, ch, code, low, ch_width, row;
+    let data = writeBatch.shift();
+    let l = data.length, i = 0, j, cs, ch, code, low, ch_width, row;
 
     // If XOFF was sent in order to catch up with the pty process, resume it if
     // the writeBuffer is empty to allow more data to come in.
@@ -1484,10 +1482,7 @@ Terminal.prototype.innerWrite = function() {
   }
   if (this.writeBuffer.length > 0) {
     // Allow renderer to catch up before processing the next batch
-    var self = this;
-    setTimeout(function () {
-      self.innerWrite();
-    }, 0);
+    setTimeout(() => this.innerWrite(), 0);
   } else {
     this.writeInProgress = false;
   }
@@ -1511,7 +1506,7 @@ Terminal.prototype.writeln = function(data) {
  */
 Terminal.prototype.attachCustomKeydownHandler = function(customKeydownHandler) {
   this.customKeydownHandler = customKeydownHandler;
-}
+};
 
 /**
  * Handle a keydown event
@@ -1531,8 +1526,8 @@ Terminal.prototype.keyDown = function(ev) {
     return false;
   }
 
-  var self = this;
-  var result = this.evaluateKeyEscapeSequence(ev);
+  let self = this;
+  let result = this.evaluateKeyEscapeSequence(ev);
 
   if (result.key === C0.DC3) { // XOFF
     this.writeStopped = true;
@@ -1574,7 +1569,7 @@ Terminal.prototype.keyDown = function(ev) {
  * @param {KeyboardEvent} ev The keyboard event to be translated to key escape sequence.
  */
 Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
-  var result = {
+  const result = {
     // Whether to cancel event propogation (NOTE: this may not be needed since the event is
     // canceled at the end of keyDown
     cancel: false,
@@ -1583,7 +1578,7 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
     // The number of characters to scroll, if this is defined it will cancel the event
     scrollDisp: undefined
   };
-  var modifiers = ev.shiftKey << 0 | ev.altKey << 1 | ev.ctrlKey << 2 | ev.metaKey << 3;
+  const modifiers = ev.shiftKey << 0 | ev.altKey << 1 | ev.ctrlKey << 2 | ev.metaKey << 3;
   switch (ev.keyCode) {
     case 8:
       // backspace
@@ -1619,7 +1614,7 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
         // HACK: Make Alt + left-arrow behave like Ctrl + left-arrow: move one word backwards
         // http://unix.stackexchange.com/a/108106
         // macOS uses different escape sequences than linux
-        if (result.key == C0.ESC + '[1;3D') {
+        if (result.key === C0.ESC + '[1;3D') {
           result.key = (this.browser.isMac) ? C0.ESC + 'b' : C0.ESC + '[1;5D';
         }
       } else if (this.applicationCursor) {
@@ -1635,7 +1630,7 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
         // HACK: Make Alt + right-arrow behave like Ctrl + right-arrow: move one word forward
         // http://unix.stackexchange.com/a/108106
         // macOS uses different escape sequences than linux
-        if (result.key == C0.ESC + '[1;3C') {
+        if (result.key === C0.ESC + '[1;3C') {
           result.key = (this.browser.isMac) ? C0.ESC + 'f' : C0.ESC + '[1;5C';
         }
       } else if (this.applicationCursor) {
@@ -1650,7 +1645,7 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
         result.key = C0.ESC + '[1;' + (modifiers + 1) + 'A';
         // HACK: Make Alt + up-arrow behave like Ctrl + up-arrow
         // http://unix.stackexchange.com/a/108106
-        if (result.key == C0.ESC + '[1;3A') {
+        if (result.key === C0.ESC + '[1;3A') {
           result.key = C0.ESC + '[1;5A';
         }
       } else if (this.applicationCursor) {
@@ -1665,7 +1660,7 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
         result.key = C0.ESC + '[1;' + (modifiers + 1) + 'B';
         // HACK: Make Alt + down-arrow behave like Ctrl + down-arrow
         // http://unix.stackexchange.com/a/108106
-        if (result.key == C0.ESC + '[1;3B') {
+        if (result.key === C0.ESC + '[1;3B') {
           result.key = C0.ESC + '[1;5B';
         }
       } else if (this.applicationCursor) {
@@ -1877,7 +1872,7 @@ Terminal.prototype.setgCharset = function(g, charset) {
  * @param {KeyboardEvent} ev The keypress event to be handled.
  */
 Terminal.prototype.keyPress = function(ev) {
-  var key;
+  let key;
 
   this.cancel(ev);
 
@@ -1912,12 +1907,10 @@ Terminal.prototype.keyPress = function(ev) {
  * @param {string} data
  */
 Terminal.prototype.send = function(data) {
-  var self = this;
-
   if (!this.queue) {
-    setTimeout(function() {
-      self.handler(self.queue);
-      self.queue = '';
+    setTimeout(() => {
+      this.handler(this.queue);
+      this.queue = '';
     }, 1);
   }
 
@@ -1930,11 +1923,8 @@ Terminal.prototype.send = function(data) {
  */
 Terminal.prototype.bell = function() {
   if (!this.visualBell) return;
-  var self = this;
   this.element.style.borderColor = 'white';
-  setTimeout(function() {
-    self.element.style.borderColor = '';
-  }, 10);
+  setTimeout(() => this.element.style.borderColor = '', 10);
   if (this.popOnBell) this.focus();
 };
 
@@ -1944,7 +1934,7 @@ Terminal.prototype.bell = function() {
 Terminal.prototype.log = function() {
   if (!this.debug) return;
   if (!this.context.console || !this.context.console.log) return;
-  var args = Array.prototype.slice.call(arguments);
+  const args = Array.prototype.slice.call(arguments);
   this.context.console.log.apply(this.context.console, args);
 };
 
@@ -1954,7 +1944,7 @@ Terminal.prototype.log = function() {
 Terminal.prototype.error = function() {
   if (!this.debug) return;
   if (!this.context.console || !this.context.console.error) return;
-  var args = Array.prototype.slice.call(arguments);
+  const args = Array.prototype.slice.call(arguments);
   this.context.console.error.apply(this.context.console, args);
 };
 
@@ -1965,7 +1955,7 @@ Terminal.prototype.error = function() {
  * @param {number} y The number of rows to resize to.
  */
 Terminal.prototype.resize = function(x, y) {
-  var line
+  let line
   , el
   , i
   , j
@@ -2012,7 +2002,7 @@ Terminal.prototype.resize = function(x, y) {
           // There is room above the buffer and there are no empty elements below the line,
           // scroll up
           this.ybase--;
-          addToY++
+          addToY++;
           if (this.ydisp > 0) {
             // Viewport is at the top of the buffer, must increase downwards
             this.ydisp--;
@@ -2150,7 +2140,7 @@ Terminal.prototype.nextStop = function(x) {
  * @param {number} y The line in which to operate.
  */
 Terminal.prototype.eraseRight = function(x, y) {
-  var line = this.lines.get(this.ybase + y)
+  let line = this.lines.get(this.ybase + y)
   , ch = [this.eraseAttr(), ' ', 1]; // xterm
 
 
@@ -2169,7 +2159,7 @@ Terminal.prototype.eraseRight = function(x, y) {
  * @param {number} y The line in which to operate.
  */
 Terminal.prototype.eraseLeft = function(x, y) {
-  var line = this.lines.get(this.ybase + y)
+  let line = this.lines.get(this.ybase + y)
   , ch = [this.eraseAttr(), ' ', 1]; // xterm
 
   x++;
@@ -2191,7 +2181,7 @@ Terminal.prototype.clear = function() {
   this.ydisp = 0;
   this.ybase = 0;
   this.y = 0;
-  for (var i = 1; i < this.rows; i++) {
+  for (let i = 1; i < this.rows; i++) {
     this.lines.push(this.blankLine());
   }
   this.queueRefresh(0, this.rows - 1);
@@ -2212,11 +2202,11 @@ Terminal.prototype.eraseLine = function(y) {
  * @param {number} cur First bunch of data for each "blank" character.
  */
 Terminal.prototype.blankLine = function(cur) {
-  var attr = cur
+  let attr = cur
   ? this.eraseAttr()
   : this.defAttr;
 
-  var ch = [attr, ' ', 1]  // width defaults to 1 halfwidth character
+  let ch = [attr, ' ', 1]  // width defaults to 1 halfwidth character
   , line = []
   , i = 0;
 
@@ -2244,7 +2234,7 @@ Terminal.prototype.ch = function(cur) {
  * @param {object} term The terminal to evaluate
  */
 Terminal.prototype.is = function(term) {
-  var name = this.termName;
+  let name = this.termName;
   return (name + '').indexOf(term) === 0;
 };
 
@@ -2304,7 +2294,7 @@ Terminal.prototype.index = function() {
  * Move the cursor up one row, inserting a new blank line if necessary.
  */
 Terminal.prototype.reverseIndex = function() {
-  var j;
+  let j;
   if (this.y === this.scrollTop) {
     // possibly move the code below to term.reverseScroll();
     // test: echo -ne '\e[1;1H\e[44m\eM\e[0m'
@@ -2325,7 +2315,7 @@ Terminal.prototype.reverseIndex = function() {
 Terminal.prototype.reset = function() {
   this.options.rows = this.rows;
   this.options.cols = this.cols;
-  var customKeydownHandler = this.customKeydownHandler;
+  let customKeydownHandler = this.customKeydownHandler;
   Terminal.call(this, this.options);
   this.customKeydownHandler = customKeydownHandler;
   this.queueRefresh(0, this.rows - 1);
@@ -2344,7 +2334,7 @@ Terminal.prototype.tabSet = function() {
  * Helpers
  */
 
-function on(el, type, handler, capture) {
+function on(el, type, handler, capture?) {
   if (!Array.isArray(el)) {
     el = [el];
   }
@@ -2353,7 +2343,7 @@ function on(el, type, handler, capture) {
   });
 }
 
-function off(el, type, handler, capture) {
+function off(el, type, handler, capture?) {
   el.removeEventListener(type, handler, capture || false);
 }
 
@@ -2377,19 +2367,19 @@ function inherits(child, parent) {
 // if bold is broken, we can't
 // use it in the terminal.
 function isBoldBroken(document) {
-  var body = document.getElementsByTagName('body')[0];
-  var el = document.createElement('span');
+  let body = document.getElementsByTagName('body')[0];
+  let el = document.createElement('span');
   el.innerHTML = 'hello world';
   body.appendChild(el);
-  var w1 = el.scrollWidth;
+  let w1 = el.scrollWidth;
   el.style.fontWeight = 'bold';
-  var w2 = el.scrollWidth;
+  let w2 = el.scrollWidth;
   body.removeChild(el);
   return w1 !== w2;
 }
 
 function indexOf(obj, el) {
-  var i = obj.length;
+  let i = obj.length;
   while (i--) {
     if (obj[i] === el) return i;
   }
@@ -2397,11 +2387,11 @@ function indexOf(obj, el) {
 }
 
 function isThirdLevelShift(term, ev) {
-  var thirdLevelKey =
+  let thirdLevelKey =
       (term.browser.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
       (term.browser.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
 
-  if (ev.type == 'keypress') {
+  if (ev.type === 'keypress') {
     return thirdLevelKey;
   }
 
@@ -2413,13 +2403,13 @@ function isThirdLevelShift(term, ev) {
 Terminal.prototype.matchColor = matchColor;
 
 function matchColor(r1, g1, b1) {
-  var hash = (r1 << 16) | (g1 << 8) | b1;
+  let hash = (r1 << 16) | (g1 << 8) | b1;
 
-  if (matchColor._cache[hash] != null) {
-    return matchColor._cache[hash];
+  if (matchColorCache[hash] != null) {
+    return matchColorCache[hash];
   }
 
-  var ldiff = Infinity
+  let ldiff = Infinity
   , li = -1
   , i = 0
   , c
@@ -2428,13 +2418,13 @@ function matchColor(r1, g1, b1) {
   , b2
   , diff;
 
-  for (; i < Terminal.vcolors.length; i++) {
-    c = Terminal.vcolors[i];
+  for (; i < Terminal_vcolors.length; i++) {
+    c = Terminal_vcolors[i];
     r2 = c[0];
     g2 = c[1];
     b2 = c[2];
 
-    diff = matchColor.distance(r1, g1, b1, r2, g2, b2);
+    diff = matchColorDistance(r1, g1, b1, r2, g2, b2);
 
     if (diff === 0) {
       li = i;
@@ -2447,24 +2437,17 @@ function matchColor(r1, g1, b1) {
     }
   }
 
-  return matchColor._cache[hash] = li;
+  return matchColorCache[hash] = li;
 }
 
-matchColor._cache = {};
+const matchColorCache = {};
 
 // http://stackoverflow.com/questions/1633828
-matchColor.distance = function(r1, g1, b1, r2, g2, b2) {
+const matchColorDistance = function(r1, g1, b1, r2, g2, b2) {
   return Math.pow(30 * (r1 - r2), 2)
     + Math.pow(59 * (g1 - g2), 2)
     + Math.pow(11 * (b1 - b2), 2);
 };
-
-function each(obj, iter, con) {
-  if (obj.forEach) return obj.forEach(iter, con);
-  for (var i = 0; i < obj.length; i++) {
-    iter.call(con, obj[i], i, obj);
-  }
-}
 
 function wasMondifierKeyOnlyEvent(ev) {
   return ev.keyCode === 16 || // Shift
@@ -2472,23 +2455,12 @@ function wasMondifierKeyOnlyEvent(ev) {
     ev.keyCode === 18; // Alt
 }
 
-function keys(obj) {
-  if (Object.keys) return Object.keys(obj);
-  var key, keys = [];
-  for (key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      keys.push(key);
-    }
-  }
-  return keys;
-}
-
 /**
  * Expose
  */
 
-Terminal.EventEmitter = EventEmitter;
-Terminal.inherits = inherits;
+// (<any>Terminal).EventEmitter = EventEmitter;
+// (<any>Terminal).inherits = inherits;
 
 /**
  * Adds an event listener to the terminal.
@@ -2496,8 +2468,8 @@ Terminal.inherits = inherits;
  * @param {string} event The name of the event. TODO: Document all event types
  * @param {function} callback The function to call when the event is triggered.
  */
-Terminal.on = on;
-Terminal.off = off;
-Terminal.cancel = cancel;
+// (<any>Terminal).on = on;
+// (<any>Terminal).off = off;
+// (<any>Terminal).cancel = cancel;
 
 module.exports = Terminal;
