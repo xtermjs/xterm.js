@@ -2,6 +2,20 @@
  * @license MIT
  */
 
+export interface ICircularList<T> {
+  length: number;
+  maxLength: number;
+
+  forEach(value: T, index: number, array: T[]): void;
+  get(index: number): T;
+  set(index: number, value: T): void;
+  push(value: T): void;
+  pop(): T;
+  splice(start: number, deleteCount: number, ...items: T[]): void;
+  trimStart(count: number): void;
+  shiftElements(start: number, count: number, offset: number): void;
+}
+
 export interface IBrowser {
   isNode: boolean;
   userAgent: string;
@@ -19,7 +33,7 @@ export interface ITerminal {
   rowContainer: HTMLElement;
   textarea: HTMLTextAreaElement;
   ydisp: number;
-  lines: string[];
+  lines: ICircularList<any>;
   rows: number;
   browser: IBrowser;
 
