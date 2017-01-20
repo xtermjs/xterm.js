@@ -2003,8 +2003,8 @@ Terminal.prototype.resize = function(x, y) {
       }
     }
   }
-  this.setupStops(j);
   this.cols = x;
+  this.setupStops(this.cols);
 
   // resize rows
   j = this.rows;
