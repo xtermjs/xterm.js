@@ -44,10 +44,12 @@ export class CharMeasure extends EventEmitter {
   }
 
   private _doMeasure(): void {
-    const oldWidth = this._width;
-    const oldHeight = this._height;
     const geometry = this._measureElement.getBoundingClientRect();
-
+    // The element is likely currently display:none, we should retain the
+    // previous value.
+    if (geometry.width === 0 || geometry.height === 0) {
+      return;
+    }
     if (this._width !== geometry.width || this._height !== geometry.height) {
       this._width = geometry.width;
       this._height = geometry.height;
