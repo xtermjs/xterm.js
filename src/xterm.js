@@ -434,6 +434,7 @@ Terminal.prototype.setOption = function(key, value) {
       this.element.classList.toggle(`xterm-cursor-style-underline`, value === 'underline');
       this.element.classList.toggle(`xterm-cursor-style-bar`, value === 'bar');
       break;
+    case 'tabStopWidth': this.setupStops(); break;
   }
 };
 

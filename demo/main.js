@@ -37,7 +37,6 @@ optionElements.scrollback.addEventListener('change', function () {
 });
 optionElements.tabstopwidth.addEventListener('change', function () {
   term.setOption('tabStopWidth', parseInt(optionElements.tabstopwidth.value));
-  term.setupStops();
 });
 
 createTerminal();
