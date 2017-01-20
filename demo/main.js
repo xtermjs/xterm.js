@@ -9,7 +9,8 @@ var term,
 var terminalContainer = document.getElementById('terminal-container'),
     optionElements = {
       cursorBlink: document.querySelector('#option-cursor-blink'),
-      scrollback: document.querySelector('#option-scrollback')
+      scrollback: document.querySelector('#option-scrollback'),
+      tabstopwidth: document.querySelector('#option-tabstopwidth')
     },
     colsElement = document.getElementById('cols'),
     rowsElement = document.getElementById('rows');
@@ -32,7 +33,11 @@ optionElements.cursorBlink.addEventListener('change', function () {
   term.setOption('cursorBlink', optionElements.cursorBlink.checked);
 });
 optionElements.scrollback.addEventListener('change', function () {
-  terminal.setOption('scrollback', parseInt(optionElements.scrollback.value, 10));
+  term.setOption('scrollback', parseInt(optionElements.scrollback.value, 10));
+});
+optionElements.tabstopwidth.addEventListener('change', function () {
+  term.setOption('tabStopWidth', parseInt(optionElements.tabstopwidth.value));
+  term.setupStops();
 });
 
 createTerminal();
@@ -44,7 +49,8 @@ function createTerminal() {
   }
   term = new Terminal({
     cursorBlink: optionElements.cursorBlink.checked,
-    scrollback: parseInt(optionElements.scrollback.value, 10)
+    scrollback: parseInt(optionElements.scrollback.value, 10),
+    tabStopWidth: parseInt(optionElements.tabstopwidth.value)
   });
   term.on('resize', function (size) {
     if (!pid) {
