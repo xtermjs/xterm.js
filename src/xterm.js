@@ -360,7 +360,8 @@ Terminal.defaults = {
   screenKeys: false,
   debug: false,
   cancelEvents: false,
-  disableStdin: false
+  disableStdin: false,
+  tabStopWidth: 8
   // programFeatures: false,
   // focusKeys: false,
 };
@@ -433,6 +434,7 @@ Terminal.prototype.setOption = function(key, value) {
       this.element.classList.toggle(`xterm-cursor-style-underline`, value === 'underline');
       this.element.classList.toggle(`xterm-cursor-style-bar`, value === 'bar');
       break;
+    case 'tabStopWidth': this.setupStops(); break;
   }
 };
 
@@ -2118,7 +2120,7 @@ Terminal.prototype.setupStops = function(i) {
     i = 0;
   }
 
-  for (; i < this.cols; i += 8) {
+  for (; i < this.cols; i += this.getOption('tabStopWidth')) {
     this.tabs[i] = true;
   }
 };
