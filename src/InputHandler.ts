@@ -1393,6 +1393,36 @@ export class InputHandler implements IInputHandler {
   }
 
   /**
+   * CSI Ps SP q  Set cursor style (DECSCUSR, VT520).
+   *   Ps = 0  -> blinking block.
+   *   Ps = 1  -> blinking block (default).
+   *   Ps = 2  -> steady block.
+   *   Ps = 3  -> blinking underline.
+   *   Ps = 4  -> steady underline.
+   *   Ps = 5  -> blinking bar (xterm).
+   *   Ps = 6  -> steady bar (xterm).
+   */
+  public setCursorStyle(params?: number[]): void {
+    const param = params[0] < 1 ? 1 : params[0];
+    switch (param) {
+      case 1:
+      case 2:
+        this._terminal.setOption('cursorStyle', 'block');
+        break;
+      case 3:
+      case 4:
+        this._terminal.setOption('cursorStyle', 'underline');
+        break;
+      case 5:
+      case 6:
+        this._terminal.setOption('cursorStyle', 'bar');
+        break;
+    }
+    const isBlinking = param % 2 === 1;
+    this._terminal.setOption('cursorBlink', isBlinking);
+  }
+
+  /**
    * CSI Ps ; Ps r
    *   Set Scrolling Region [top;bottom] (default = full size of win-
    *   dow) (DECSTBM).

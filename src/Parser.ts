@@ -95,7 +95,7 @@ csiParamStateHandler[' '] = (parser) => parser.setPostfix(' ');
 csiParamStateHandler['\''] = (parser) => parser.setPostfix('\'');
 csiParamStateHandler[';'] = (parser) => parser.finalizeParam();
 
-const csiStateHandler: {[key: string]: (handler: IInputHandler, params: number[], prefix: string) => void} = {};
+const csiStateHandler: {[key: string]: (handler: IInputHandler, params: number[], prefix: string, postfix: string) => void} = {};
 csiStateHandler['@'] = (handler, params, prefix) => handler.insertChars(params);
 csiStateHandler['A'] = (handler, params, prefix) => handler.cursorUp(params);
 csiStateHandler['B'] = (handler, params, prefix) => handler.cursorDown(params);
@@ -134,6 +134,11 @@ csiStateHandler['n'] = (handler, params, prefix) => handler.deviceStatus(params)
 csiStateHandler['p'] = (handler, params, prefix) => {
   switch (prefix) {
     case '!': handler.softReset(params); break;
+  }
+};
+csiStateHandler['q'] = (handler, params, prefix, postfix) => {
+  if (postfix === ' ') {
+    handler.setCursorStyle(params);
   }
 };
 csiStateHandler['r'] = (handler, params) => handler.setScrollRegion(params);
@@ -472,7 +477,7 @@ export class Parser {
 
         case ParserState.CSI:
           if (ch in csiStateHandler) {
-            csiStateHandler[ch](this._inputHandler, this._terminal.params, this._terminal.prefix);
+            csiStateHandler[ch](this._inputHandler, this._terminal.params, this._terminal.prefix, this._terminal.postfix);
           } else {
             this._terminal.error('Unknown CSI code: %s.', ch);
           }

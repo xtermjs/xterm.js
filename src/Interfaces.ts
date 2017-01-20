@@ -79,6 +79,7 @@ export interface IInputHandler {
   /** CSI m */ charAttributes(params?: number[]): void;
   /** CSI n */ deviceStatus(params?: number[]): void;
   /** CSI p */ softReset(params?: number[]): void;
+  /** CSI q */ setCursorStyle(params?: number[]): void;
   /** CSI r */ setScrollRegion(params?: number[]): void;
   /** CSI s */ saveCursor(params?: number[]): void;
   /** CSI u */ restoreCursor(params?: number[]): void;
