@@ -76,6 +76,9 @@ describe('xterm output comparison', function() {
   beforeEach(function () {
     xterm = new Terminal(COLS, ROWS);
     xterm.refresh = function() {};
+    xterm.viewport = {
+      syncScrollArea: function() {}
+    };
   });
 
   // omit stack trace for escape sequence files
