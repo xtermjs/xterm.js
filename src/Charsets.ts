@@ -52,16 +52,194 @@ CHARSETS.SCLD = { // (0
   '~': '\u00b7'  // '·'
 };
 
-CHARSETS.UK = null; // (A
-CHARSETS.US = null; // (B (USASCII)
-CHARSETS.Dutch = null; // (4
-CHARSETS.Finnish = null; // (C or (5
-CHARSETS.French = null; // (R
-CHARSETS.FrenchCanadian = null; // (Q
-CHARSETS.German = null; // (K
-CHARSETS.Italian = null; // (Y
-CHARSETS.NorwegianDanish = null; // (E or (6
-CHARSETS.Spanish = null; // (Z
-CHARSETS.Swedish = null; // (H or (7
-CHARSETS.Swiss = null; // (=
+/**
+ * British character set
+ * ESC (A
+ * Reference: http://vt100.net/docs/vt220-rm/table2-5.html
+ */
+CHARSETS.UK = {
+  '#': '£'
+};
+
+/**
+ * United States character set
+ * ESC (B
+ */
+CHARSETS.US = null;
+
+/**
+ * Dutch character set
+ * ESC (4
+ * Reference: http://vt100.net/docs/vt220-rm/table2-6.html
+ */
+CHARSETS.Dutch = { // (4
+  '#': '£',
+  '@': '¾',
+  '[': 'ij',
+  '\\': '½',
+  ']': '|',
+  '{': '¨',
+  '|': 'f',
+  '}': '¼',
+  '~': '´'
+};
+
+/**
+ * Finnish character set
+ * ESC (C or ESC (5
+ * Reference: http://vt100.net/docs/vt220-rm/table2-7.html
+ */
+CHARSETS.Finnish = {
+  '[': 'Ä',
+  '\\': 'Ö',
+  ']': 'Å',
+  '^': 'Ü',
+  '`': 'é',
+  '{': 'ä',
+  '|': 'ö',
+  '}': 'å',
+  '~': 'ü'
+};
+
+/**
+ * French character set
+ * ESC (R
+ * Reference: http://vt100.net/docs/vt220-rm/table2-8.html
+ */
+CHARSETS.French = {
+  '#': '£',
+  '@': 'à',
+  '[': '°',
+  '\\': 'ç',
+  ']': '§',
+  '{': 'é',
+  '|': 'ù',
+  '}': 'è',
+  '~': '¨'
+};
+
+/**
+ * French Canadian character set
+ * ESC (Q
+ * Reference: http://vt100.net/docs/vt220-rm/table2-9.html
+ */
+CHARSETS.FrenchCanadian = {
+  '@': 'à',
+  '[': 'â',
+  '\\': 'ç',
+  ']': 'ê',
+  '^': 'î',
+  '`': 'ô',
+  '{': 'é',
+  '|': 'ù',
+  '}': 'è',
+  '~': 'û'
+};
+
+/**
+ * German character set
+ * ESC (K
+ * Reference: http://vt100.net/docs/vt220-rm/table2-10.html
+ */
+CHARSETS.German = {
+  '@': '§',
+  '[': 'Ä',
+  '\\': 'Ö',
+  ']': 'Ü',
+  '{': 'ä',
+  '|': 'ö',
+  '}': 'ü',
+  '~': 'ß'
+};
+
+/**
+ * Italian character set
+ * ESC (Y
+ * Reference: http://vt100.net/docs/vt220-rm/table2-11.html
+ */
+CHARSETS.Italian = {
+  '#': '£',
+  '@': '§',
+  '[': '°',
+  '\\': 'ç',
+  ']': 'é',
+  '`': 'ù',
+  '{': 'à',
+  '|': 'ò',
+  '}': 'è',
+  '~': 'ì'
+};
+
+/**
+ * Norwegian/Danish character set
+ * ESC (E or ESC (6
+ * Reference: http://vt100.net/docs/vt220-rm/table2-12.html
+ */
+CHARSETS.NorwegianDanish = {
+  '@': 'Ä',
+  '[': 'Æ',
+  '\\': 'Ø',
+  ']': 'Å',
+  '^': 'Ü',
+  '`': 'ä',
+  '{': 'æ',
+  '|': 'ø',
+  '}': 'å',
+  '~': 'ü'
+};
+
+/**
+ * Spanish character set
+ * ESC (Z
+ * Reference: http://vt100.net/docs/vt220-rm/table2-13.html
+ */
+CHARSETS.Spanish = {
+  '#': '£',
+  '@': '§',
+  '[': '¡',
+  '\\': 'Ñ',
+  ']': '¿',
+  '{': '°',
+  '|': 'ñ',
+  '}': 'ç'
+};
+
+/**
+ * Swedish character set
+ * ESC (H or ESC (7
+ * Reference: http://vt100.net/docs/vt220-rm/table2-14.html
+ */
+CHARSETS.Swedish = {
+  '@': 'É',
+  '[': 'Ä',
+  '\\': 'Ö',
+  ']': 'Å',
+  '^': 'Ü',
+  '`': 'é',
+  '{': 'ä',
+  '|': 'ö',
+  '}': 'å',
+  '~': 'ü'
+};
+
+/**
+ * Swiss character set
+ * ESC (=
+ * Reference: http://vt100.net/docs/vt220-rm/table2-15.html
+ */
+CHARSETS.Swiss = {
+  '#': 'ù',
+  '@': 'à',
+  '[': 'é',
+  '\\': 'ç',
+  ']': 'ê',
+  '^': 'î',
+  '_': 'è',
+  '`': 'ô',
+  '{': 'ä',
+  '|': 'ö',
+  '}': 'ü',
+  '~': 'û'
+};
+
 CHARSETS.ISOLatin = null; // /A
