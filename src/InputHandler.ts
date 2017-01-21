@@ -246,6 +246,9 @@ export class InputHandler implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
+    if (this._terminal.x >= this._terminal.cols) {
+      this._terminal.x--;
+    }
     this._terminal.x -= param;
     if (this._terminal.x < 0) {
       this._terminal.x = 0;
