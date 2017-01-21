@@ -102,7 +102,12 @@ describe('xterm output comparison', function() {
         var from_emulator = terminalToString(xterm);
         console.log = CONSOLE_LOG;
         var expected = fs.readFileSync(filename.split('.')[0] + '.text', 'utf8');
-        if (from_emulator != expected) {
+        // Some of the tests have whitespace on the right of lines, we trim all the linex
+        // from xterm.js so ignore this for now at least.
+        var expectedRightTrimmed = expected.split('\n').map(function (l) {
+          return l.replace(/\s+$/, '');
+        }).join('\n');
+        if (from_emulator != expectedRightTrimmed) {
           // uncomment to get noisy output
           throw new Error(formatError(in_file, from_emulator, expected));
         //   throw new Error('mismatch');
