@@ -85,11 +85,16 @@ describe('xterm output comparison', function() {
   Error.stackTraceLimit = 0;
   var files = glob.sync('**/escape_sequence_files/*.in');
   // only successful tests for now
-  var successful = [0, 2, 6, 12, 13, 18, 20, 22, 27, 28, 50];
+  var skip = [
+    10, 16, 17, 19, 32, 33, 34, 35, 36, 39,
+    40, 42, 43, 44, 45, 46, 47, 48, 49, 50,
+    51, 52, 54, 55, 56, 57, 58, 59, 60, 61,
+    63, 68
+  ];
   for (var i = 0; i < files.length; i++) {
-    // if (i !== 1) continue;
-  //for (var a in successful) {
-    // var i = successful[a];
+    if (skip.indexOf(i) >= 0) {
+      continue;
+    }
     (function(filename) {
       it(filename.split('/').slice(-1)[0], function () {
         pty_reset();
