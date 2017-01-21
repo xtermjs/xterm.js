@@ -60,7 +60,6 @@ export class InputHandler implements IInputHandler {
             this._terminal.scroll();
           }
         } else {
-          this._terminal.x = this._terminal.cols - 1;
           if (ch_width === 2)  // FIXME: check for xterm behavior
             return;
         }
