@@ -123,6 +123,9 @@ export class InputHandler implements IInputHandler {
       this._terminal.y--;
       this._terminal.scroll();
     }
+    if (this._terminal.x >= this._terminal.cols) {
+      this._terminal.x--;
+    }
   }
 
   /**
