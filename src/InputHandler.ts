@@ -220,6 +220,9 @@ export class InputHandler implements IInputHandler {
     if (this._terminal.y >= this._terminal.rows) {
       this._terminal.y = this._terminal.rows - 1;
     }
+    if (this._terminal.x >= this._terminal.cols) {
+      this._terminal.x--;
+    }
   }
 
   /**
