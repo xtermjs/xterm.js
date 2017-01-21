@@ -2303,6 +2303,9 @@ Terminal.prototype.index = function() {
     this.y--;
     this.scroll();
   }
+  if (this.x >= this.cols) {
+    this.x--;
+  }
 };
 
 
