@@ -56,7 +56,7 @@ function formatError(in_, out_, expected) {
 function terminalToString(term) {
   var result = '';
   var line_s = '';
-  for (var line=0; line<term.rows; ++line) {
+  for (var line = term.ybase; line < term.ybase + term.rows; line++) {
     line_s = '';
     for (var cell=0; cell<term.cols; ++cell) {
       line_s += term.lines.get(line)[cell][1];
@@ -82,10 +82,12 @@ describe('xterm output comparison', function() {
   Error.stackTraceLimit = 0;
   var files = glob.sync('**/escape_sequence_files/*.in');
   // only successful tests for now
-  var successful = [0, 2, 6, 12, 13, 18, 20, 22, 27, 28];
-  for (var a in successful) {
-    var i = successful[a];
-    (function(filename){
+  var successful = [0, 2, 6, 12, 13, 18, 20, 22, 27, 28, 50];
+  for (var i = 0; i < files.length; i++) {
+    // if (i !== 1) continue;
+  //for (var a in successful) {
+    // var i = successful[a];
+    (function(filename) {
       it(filename.split('/').slice(-1)[0], function () {
         pty_reset();
         var in_file = fs.readFileSync(filename, 'utf8');
@@ -102,8 +104,8 @@ describe('xterm output comparison', function() {
         var expected = fs.readFileSync(filename.split('.')[0] + '.text', 'utf8');
         if (from_emulator != expected) {
           // uncomment to get noisy output
-          //throw new Error(formatError(in_file, from_emulator, expected));
-          throw new Error('mismatch');
+          throw new Error(formatError(in_file, from_emulator, expected));
+        //   throw new Error('mismatch');
         }
       });
     })(files[i]);
