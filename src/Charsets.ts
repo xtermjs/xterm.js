@@ -14,14 +14,16 @@ export const CHARSETS: {[key: string]: {[key: string]: string}} = {};
  */
 export const DEFAULT_CHARSET = CHARSETS['B'];
 
-// DEC Special Character and Line Drawing Set.
-// http://vt100.net/docs/vt102-ug/table5-13.html
-// A lot of curses apps use this if they see TERM=xterm.
-// testing: echo -e '\e(0a\e(B'
-// The xterm output sometimes seems to conflict with the
-// reference above. xterm seems in line with the reference
-// when running vttest however.
-// The table below now uses xterm's output from vttest.
+/**
+ * DEC Special Character and Line Drawing Set.
+ * Reference: http://vt100.net/docs/vt102-ug/table5-13.html
+ * A lot of curses apps use this if they see TERM=xterm.
+ * testing: echo -e '\e(0a\e(B'
+ * The xterm output sometimes seems to conflict with the
+ * reference above. xterm seems in line with the reference
+ * when running vttest however.
+ * The table below now uses xterm's output from vttest.
+ */
 CHARSETS['0'] = {
   '`': '\u25c6', // '◆'
   'a': '\u2592', // '▒'
