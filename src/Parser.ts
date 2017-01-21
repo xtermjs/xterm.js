@@ -4,7 +4,7 @@
 
 import { C0 } from './EscapeSequences';
 import { IInputHandler } from './Interfaces';
-import { CHARSETS } from './Charsets';
+import { CHARSETS, DEFAULT_CHARSET } from './Charsets';
 
 const normalStateHandler: {[key: string]: (parser: Parser, handler: IInputHandler) => void} = {};
 normalStateHandler[C0.BEL] = (parser, handler) => handler.bell();
@@ -70,7 +70,7 @@ escapedStateHandler['%'] = (parser, terminal) => {
   // ESC % Select default/utf-8 character set.
   // @ = default, G = utf-8
   terminal.setgLevel(0);
-  terminal.setgCharset(0, CHARSETS.US);
+  terminal.setgCharset(0, DEFAULT_CHARSET); // US (default)
   parser.setState(ParserState.NORMAL);
   parser.skipNextChar();
 };
@@ -144,28 +144,6 @@ csiStateHandler['q'] = (handler, params, prefix, postfix) => {
 csiStateHandler['r'] = (handler, params) => handler.setScrollRegion(params);
 csiStateHandler['s'] = (handler, params) => handler.saveCursor(params);
 csiStateHandler['u'] = (handler, params) => handler.restoreCursor(params);
-
-// TODO: Many codes/charsets appear to not be supported
-// See: http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
-const charsetMap = {
-  '0': CHARSETS.SCLD,
-  'A': CHARSETS.UK, // United Kingdom
-  'B': CHARSETS.US, // United States (USASCII)
-  '4': CHARSETS.Dutch,
-  'C': CHARSETS.Finnish,
-  '5': CHARSETS.Finnish,
-  'f': CHARSETS.French,
-  'Q': CHARSETS.FrenchCanadian,
-  'K': CHARSETS.German,
-  'Y': CHARSETS.Italian,
-  'E': CHARSETS.NorwegianDanish,
-  '6': CHARSETS.NorwegianDanish,
-  'Z': CHARSETS.Spanish,
-  'H': CHARSETS.Swedish,
-  '7': CHARSETS.Swedish,
-  '=': CHARSETS.Swiss,
-  '/': CHARSETS.ISOLatin // ISOLatin is actually /A
-};
 
 enum ParserState {
   NORMAL = 0,
@@ -371,13 +349,13 @@ export class Parser {
           break;
 
         case ParserState.CHARSET:
-          if (ch in charsetMap) {
-            cs = charsetMap[ch];
+          if (ch in CHARSETS) {
+            cs = CHARSETS[ch];
             if (ch === '/') { // ISOLatin is actually /A
               this.skipNextChar();
             }
           } else {
-            cs = CHARSETS.US; // Default
+            cs = DEFAULT_CHARSET;
           }
           this._terminal.setgCharset(this._terminal.gcharset, cs);
           this._terminal.gcharset = null;
