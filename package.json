@@ -10,6 +10,7 @@
   "repository": "https://github.com/sourcelair/xterm.js",
   "license": "MIT",
   "files": [
+    "*.js",
     "dist/*.css",
     "dist/**/*.css",
     "dist/*.js",
