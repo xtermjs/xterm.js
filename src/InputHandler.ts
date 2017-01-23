@@ -821,7 +821,7 @@ export class InputHandler implements IInputHandler {
   public setMode(params: number[]): void {
     if (params.length > 1) {
       for (let i = 0; i < params.length; i++) {
-        this._terminal.setMode(params[i]);
+        this.setMode([params[i]]);
       }
 
       return;
@@ -1027,7 +1027,7 @@ export class InputHandler implements IInputHandler {
   public resetMode(params: number[]): void {
     if (params.length > 1) {
       for (let i = 0; i < params.length; i++) {
-        this._terminal.resetMode(params[i]);
+        this.resetMode([params[i]]);
       }
 
       return;
