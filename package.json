@@ -11,6 +11,7 @@
   "license": "MIT",
   "files": [
     "*.js",
+    "*.json",
     "dist/*.css",
     "dist/**/*.css",
     "dist/*.js",
