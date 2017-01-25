@@ -2,11 +2,11 @@ import { assert } from 'chai';
 import { CompositionHelper } from './CompositionHelper';
 
 describe('CompositionHelper', () => {
-  var terminal;
-  var compositionHelper;
-  var compositionView;
-  var textarea;
-  var handledText;
+  let terminal;
+  let compositionHelper;
+  let compositionView;
+  let textarea;
+  let handledText;
 
   beforeEach(() => {
     compositionView = {
@@ -125,7 +125,7 @@ describe('CompositionHelper', () => {
             compositionHelper.compositionend();
             compositionHelper.compositionstart();
             compositionHelper.compositionupdate({ data: '아' });
-            textarea.value = '아아'
+            textarea.value = '아아';
             setTimeout(() => { // wait for any textarea updates
               compositionHelper.compositionend();
               setTimeout(() => { // wait for any textarea updates
@@ -187,7 +187,7 @@ describe('CompositionHelper', () => {
           }, 0);
         }, 0);
       }, 0);
-    })
+    });
 
     it('Should insert multi-character compositions that are converted to other characters with different lengths', function (done) {
       // First character 'い'

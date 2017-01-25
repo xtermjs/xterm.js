@@ -65,7 +65,7 @@
     "prestart": "npm run build",
     "start": "node demo/app",
     "dev": "nodemon -e js,ts --watch src --watch demo --exec npm start",
-    "lint": "tslint src/**/*.ts",
+    "lint": "tslint src/*.ts src/**/*.ts",
     "test": "mocha --recursive ./lib",
     "build:docs": "jsdoc -c jsdoc.json",
     "build": "gulp build",
