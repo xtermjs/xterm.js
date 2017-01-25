@@ -123,6 +123,7 @@ export class InputHandler implements IInputHandler {
       this._terminal.y--;
       this._terminal.scroll();
     }
+    // If the end of the line is hit, prevent this action from wrapping around to the next line.
     if (this._terminal.x >= this._terminal.cols) {
       this._terminal.x--;
     }
@@ -220,6 +221,7 @@ export class InputHandler implements IInputHandler {
     if (this._terminal.y >= this._terminal.rows) {
       this._terminal.y = this._terminal.rows - 1;
     }
+    // If the end of the line is hit, prevent this action from wrapping around to the next line.
     if (this._terminal.x >= this._terminal.cols) {
       this._terminal.x--;
     }
@@ -249,6 +251,7 @@ export class InputHandler implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
+    // If the end of the line is hit, prevent this action from wrapping around to the next line.
     if (this._terminal.x >= this._terminal.cols) {
       this._terminal.x--;
     }
@@ -701,6 +704,7 @@ export class InputHandler implements IInputHandler {
     if (this._terminal.y >= this._terminal.rows) {
       this._terminal.y = this._terminal.rows - 1;
     }
+    // If the end of the line is hit, prevent this action from wrapping around to the next line.
     if (this._terminal.x >= this._terminal.cols) {
       this._terminal.x--;
     }
