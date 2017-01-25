@@ -2,23 +2,29 @@
  * @license MIT
  */
 
-// TODO: Give CHARSETS a proper type
 /**
  * The character sets supported by the terminal. These enable several languages
  * to be represented within the terminal with only 8-bit encoding. See ISO 2022
- * for a discussion on character sets.
+ * for a discussion on character sets. Only VT100 character sets are supported.
  */
-export const CHARSETS: any = {};
+export const CHARSETS: {[key: string]: {[key: string]: string}} = {};
 
-// DEC Special Character and Line Drawing Set.
-// http://vt100.net/docs/vt102-ug/table5-13.html
-// A lot of curses apps use this if they see TERM=xterm.
-// testing: echo -e '\e(0a\e(B'
-// The xterm output sometimes seems to conflict with the
-// reference above. xterm seems in line with the reference
-// when running vttest however.
-// The table below now uses xterm's output from vttest.
-CHARSETS.SCLD = { // (0
+/**
+ * The default character set, US.
+ */
+export const DEFAULT_CHARSET = CHARSETS['B'];
+
+/**
+ * DEC Special Character and Line Drawing Set.
+ * Reference: http://vt100.net/docs/vt102-ug/table5-13.html
+ * A lot of curses apps use this if they see TERM=xterm.
+ * testing: echo -e '\e(0a\e(B'
+ * The xterm output sometimes seems to conflict with the
+ * reference above. xterm seems in line with the reference
+ * when running vttest however.
+ * The table below now uses xterm's output from vttest.
+ */
+CHARSETS['0'] = {
   '`': '\u25c6', // '◆'
   'a': '\u2592', // '▒'
   'b': '\u0009', // '\t'
@@ -52,16 +58,195 @@ CHARSETS.SCLD = { // (0
   '~': '\u00b7'  // '·'
 };
 
-CHARSETS.UK = null; // (A
-CHARSETS.US = null; // (B (USASCII)
-CHARSETS.Dutch = null; // (4
-CHARSETS.Finnish = null; // (C or (5
-CHARSETS.French = null; // (R
-CHARSETS.FrenchCanadian = null; // (Q
-CHARSETS.German = null; // (K
-CHARSETS.Italian = null; // (Y
-CHARSETS.NorwegianDanish = null; // (E or (6
-CHARSETS.Spanish = null; // (Z
-CHARSETS.Swedish = null; // (H or (7
-CHARSETS.Swiss = null; // (=
-CHARSETS.ISOLatin = null; // /A
+/**
+ * British character set
+ * ESC (A
+ * Reference: http://vt100.net/docs/vt220-rm/table2-5.html
+ */
+CHARSETS['A'] = {
+  '#': '£'
+};
+
+/**
+ * United States character set
+ * ESC (B
+ */
+CHARSETS['B'] = null;
+
+/**
+ * Dutch character set
+ * ESC (4
+ * Reference: http://vt100.net/docs/vt220-rm/table2-6.html
+ */
+CHARSETS['4'] = {
+  '#': '£',
+  '@': '¾',
+  '[': 'ij',
+  '\\': '½',
+  ']': '|',
+  '{': '¨',
+  '|': 'f',
+  '}': '¼',
+  '~': '´'
+};
+
+/**
+ * Finnish character set
+ * ESC (C or ESC (5
+ * Reference: http://vt100.net/docs/vt220-rm/table2-7.html
+ */
+CHARSETS['C'] =
+CHARSETS['5'] = {
+  '[': 'Ä',
+  '\\': 'Ö',
+  ']': 'Å',
+  '^': 'Ü',
+  '`': 'é',
+  '{': 'ä',
+  '|': 'ö',
+  '}': 'å',
+  '~': 'ü'
+};
+
+/**
+ * French character set
+ * ESC (R
+ * Reference: http://vt100.net/docs/vt220-rm/table2-8.html
+ */
+CHARSETS['R'] = {
+  '#': '£',
+  '@': 'à',
+  '[': '°',
+  '\\': 'ç',
+  ']': '§',
+  '{': 'é',
+  '|': 'ù',
+  '}': 'è',
+  '~': '¨'
+};
+
+/**
+ * French Canadian character set
+ * ESC (Q
+ * Reference: http://vt100.net/docs/vt220-rm/table2-9.html
+ */
+CHARSETS['Q'] = {
+  '@': 'à',
+  '[': 'â',
+  '\\': 'ç',
+  ']': 'ê',
+  '^': 'î',
+  '`': 'ô',
+  '{': 'é',
+  '|': 'ù',
+  '}': 'è',
+  '~': 'û'
+};
+
+/**
+ * German character set
+ * ESC (K
+ * Reference: http://vt100.net/docs/vt220-rm/table2-10.html
+ */
+CHARSETS['K'] = {
+  '@': '§',
+  '[': 'Ä',
+  '\\': 'Ö',
+  ']': 'Ü',
+  '{': 'ä',
+  '|': 'ö',
+  '}': 'ü',
+  '~': 'ß'
+};
+
+/**
+ * Italian character set
+ * ESC (Y
+ * Reference: http://vt100.net/docs/vt220-rm/table2-11.html
+ */
+CHARSETS['Y'] = {
+  '#': '£',
+  '@': '§',
+  '[': '°',
+  '\\': 'ç',
+  ']': 'é',
+  '`': 'ù',
+  '{': 'à',
+  '|': 'ò',
+  '}': 'è',
+  '~': 'ì'
+};
+
+/**
+ * Norwegian/Danish character set
+ * ESC (E or ESC (6
+ * Reference: http://vt100.net/docs/vt220-rm/table2-12.html
+ */
+CHARSETS['E'] =
+CHARSETS['6'] = {
+  '@': 'Ä',
+  '[': 'Æ',
+  '\\': 'Ø',
+  ']': 'Å',
+  '^': 'Ü',
+  '`': 'ä',
+  '{': 'æ',
+  '|': 'ø',
+  '}': 'å',
+  '~': 'ü'
+};
+
+/**
+ * Spanish character set
+ * ESC (Z
+ * Reference: http://vt100.net/docs/vt220-rm/table2-13.html
+ */
+CHARSETS['Z'] = {
+  '#': '£',
+  '@': '§',
+  '[': '¡',
+  '\\': 'Ñ',
+  ']': '¿',
+  '{': '°',
+  '|': 'ñ',
+  '}': 'ç'
+};
+
+/**
+ * Swedish character set
+ * ESC (H or ESC (7
+ * Reference: http://vt100.net/docs/vt220-rm/table2-14.html
+ */
+CHARSETS['H'] =
+CHARSETS['7'] = {
+  '@': 'É',
+  '[': 'Ä',
+  '\\': 'Ö',
+  ']': 'Å',
+  '^': 'Ü',
+  '`': 'é',
+  '{': 'ä',
+  '|': 'ö',
+  '}': 'å',
+  '~': 'ü'
+};
+
+/**
+ * Swiss character set
+ * ESC (=
+ * Reference: http://vt100.net/docs/vt220-rm/table2-15.html
+ */
+CHARSETS['='] = {
+  '#': 'ù',
+  '@': 'à',
+  '[': 'é',
+  '\\': 'ç',
+  ']': 'ê',
+  '^': 'î',
+  '_': 'è',
+  '`': 'ô',
+  '{': 'ä',
+  '|': 'ö',
+  '}': 'ü',
+  '~': 'û'
+};

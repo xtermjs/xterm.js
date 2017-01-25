@@ -4,7 +4,7 @@
 
 import { IInputHandler, ITerminal } from './Interfaces';
 import { C0 } from './EscapeSequences';
-import { CHARSETS } from './Charsets';
+import { DEFAULT_CHARSET } from './Charsets';
 
 /**
  * The terminal's standard implementation of IInputHandler, this handles all
@@ -842,10 +842,10 @@ export class InputHandler implements IInputHandler {
           this._terminal.applicationCursor = true;
           break;
         case 2:
-          this._terminal.setgCharset(0, CHARSETS.US);
-          this._terminal.setgCharset(1, CHARSETS.US);
-          this._terminal.setgCharset(2, CHARSETS.US);
-          this._terminal.setgCharset(3, CHARSETS.US);
+          this._terminal.setgCharset(0, DEFAULT_CHARSET);
+          this._terminal.setgCharset(1, DEFAULT_CHARSET);
+          this._terminal.setgCharset(2, DEFAULT_CHARSET);
+          this._terminal.setgCharset(3, DEFAULT_CHARSET);
           // set VT100 mode here
           break;
         case 3: // 132 col mode
