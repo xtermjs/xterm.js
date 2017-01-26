@@ -56,7 +56,7 @@ function formatError(in_, out_, expected) {
 function terminalToString(term) {
   var result = '';
   var line_s = '';
-  for (var line=0; line<term.rows; ++line) {
+  for (var line = term.ybase; line < term.ybase + term.rows; line++) {
     line_s = '';
     for (var cell=0; cell<term.cols; ++cell) {
       line_s += term.lines.get(line)[cell][1];
@@ -76,16 +76,26 @@ describe('xterm output comparison', function() {
   beforeEach(function () {
     xterm = new Terminal(COLS, ROWS);
     xterm.refresh = function() {};
+    xterm.viewport = {
+      syncScrollArea: function() {}
+    };
   });
 
   // omit stack trace for escape sequence files
   Error.stackTraceLimit = 0;
   var files = glob.sync('**/escape_sequence_files/*.in');
   // only successful tests for now
-  var successful = [0, 2, 6, 12, 13, 18, 20, 22, 27, 28];
-  for (var a in successful) {
-    var i = successful[a];
-    (function(filename){
+  var skip = [
+    10, 16, 17, 19, 32, 33, 34, 35, 36, 39,
+    40, 42, 43, 44, 45, 46, 47, 48, 49, 50,
+    51, 52, 54, 55, 56, 57, 58, 59, 60, 61,
+    63, 68
+  ];
+  for (var i = 0; i < files.length; i++) {
+    if (skip.indexOf(i) >= 0) {
+      continue;
+    }
+    (function(filename) {
       it(filename.split('/').slice(-1)[0], function () {
         pty_reset();
         var in_file = fs.readFileSync(filename, 'utf8');
@@ -100,10 +110,15 @@ describe('xterm output comparison', function() {
         var from_emulator = terminalToString(xterm);
         console.log = CONSOLE_LOG;
         var expected = fs.readFileSync(filename.split('.')[0] + '.text', 'utf8');
-        if (from_emulator != expected) {
+        // Some of the tests have whitespace on the right of lines, we trim all the linex
+        // from xterm.js so ignore this for now at least.
+        var expectedRightTrimmed = expected.split('\n').map(function (l) {
+          return l.replace(/\s+$/, '');
+        }).join('\n');
+        if (from_emulator != expectedRightTrimmed) {
           // uncomment to get noisy output
-          //throw new Error(formatError(in_file, from_emulator, expected));
-          throw new Error('mismatch');
+          throw new Error(formatError(in_file, from_emulator, expected));
+        //   throw new Error('mismatch');
         }
       });
     })(files[i]);

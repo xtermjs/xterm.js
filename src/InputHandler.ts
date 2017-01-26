@@ -60,7 +60,6 @@ export class InputHandler implements IInputHandler {
             this._terminal.scroll();
           }
         } else {
-          this._terminal.x = this._terminal.cols - 1;
           if (ch_width === 2)  // FIXME: check for xterm behavior
             return;
         }
@@ -123,6 +122,10 @@ export class InputHandler implements IInputHandler {
     if (this._terminal.y > this._terminal.scrollBottom) {
       this._terminal.y--;
       this._terminal.scroll();
+    }
+    // If the end of the line is hit, prevent this action from wrapping around to the next line.
+    if (this._terminal.x >= this._terminal.cols) {
+      this._terminal.x--;
     }
   }
 
@@ -218,6 +221,10 @@ export class InputHandler implements IInputHandler {
     if (this._terminal.y >= this._terminal.rows) {
       this._terminal.y = this._terminal.rows - 1;
     }
+    // If the end of the line is hit, prevent this action from wrapping around to the next line.
+    if (this._terminal.x >= this._terminal.cols) {
+      this._terminal.x--;
+    }
   }
 
   /**
@@ -243,6 +250,10 @@ export class InputHandler implements IInputHandler {
     let param = params[0];
     if (param < 1) {
       param = 1;
+    }
+    // If the end of the line is hit, prevent this action from wrapping around to the next line.
+    if (this._terminal.x >= this._terminal.cols) {
+      this._terminal.x--;
     }
     this._terminal.x -= param;
     if (this._terminal.x < 0) {
@@ -692,6 +703,10 @@ export class InputHandler implements IInputHandler {
     this._terminal.y += param;
     if (this._terminal.y >= this._terminal.rows) {
       this._terminal.y = this._terminal.rows - 1;
+    }
+    // If the end of the line is hit, prevent this action from wrapping around to the next line.
+    if (this._terminal.x >= this._terminal.cols) {
+      this._terminal.x--;
     }
   }
 

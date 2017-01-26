@@ -74,6 +74,7 @@ escapedStateHandler['%'] = (parser, terminal) => {
   parser.setState(ParserState.NORMAL);
   parser.skipNextChar();
 };
+escapedStateHandler[C0.CAN] = (parser) => parser.setState(ParserState.NORMAL);
 
 const csiParamStateHandler: {[key: string]: (parser: Parser) => void} = {};
 csiParamStateHandler['?'] = (parser) => parser.setPrefix('?');
@@ -94,8 +95,9 @@ csiParamStateHandler['"'] = (parser) => parser.setPostfix('"');
 csiParamStateHandler[' '] = (parser) => parser.setPostfix(' ');
 csiParamStateHandler['\''] = (parser) => parser.setPostfix('\'');
 csiParamStateHandler[';'] = (parser) => parser.finalizeParam();
+csiParamStateHandler[C0.CAN] = (parser) => parser.setState(ParserState.NORMAL);
 
-const csiStateHandler: {[key: string]: (handler: IInputHandler, params: number[], prefix: string, postfix: string) => void} = {};
+const csiStateHandler: {[key: string]: (handler: IInputHandler, params: number[], prefix: string, postfix: string, parser: Parser) => void} = {};
 csiStateHandler['@'] = (handler, params, prefix) => handler.insertChars(params);
 csiStateHandler['A'] = (handler, params, prefix) => handler.cursorUp(params);
 csiStateHandler['B'] = (handler, params, prefix) => handler.cursorDown(params);
@@ -144,6 +146,7 @@ csiStateHandler['q'] = (handler, params, prefix, postfix) => {
 csiStateHandler['r'] = (handler, params) => handler.setScrollRegion(params);
 csiStateHandler['s'] = (handler, params) => handler.saveCursor(params);
 csiStateHandler['u'] = (handler, params) => handler.restoreCursor(params);
+csiStateHandler[C0.CAN] = (handler, params, prefix, postfix, parser) => parser.setState(ParserState.NORMAL);
 
 enum ParserState {
   NORMAL = 0,
@@ -455,7 +458,7 @@ export class Parser {
 
         case ParserState.CSI:
           if (ch in csiStateHandler) {
-            csiStateHandler[ch](this._inputHandler, this._terminal.params, this._terminal.prefix, this._terminal.postfix);
+            csiStateHandler[ch](this._inputHandler, this._terminal.params, this._terminal.prefix, this._terminal.postfix, this);
           } else {
             this._terminal.error('Unknown CSI code: %s.', ch);
           }

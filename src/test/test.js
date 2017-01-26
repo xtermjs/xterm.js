@@ -595,8 +595,9 @@ describe('xterm.js', function() {
         xterm.x = xterm.cols - 1;
         xterm.wraparoundMode = false;
         xterm.write('a' + high + String.fromCharCode(i));
-        expect(xterm.lines.get(0)[xterm.cols-1][1]).eql(high + String.fromCharCode(i));
-        expect(xterm.lines.get(0)[xterm.cols-1][1].length).eql(2);
+        // auto wraparound mode should cut off the rest of the line
+        expect(xterm.lines.get(0)[xterm.cols-1][1]).eql('a');
+        expect(xterm.lines.get(0)[xterm.cols-1][1].length).eql(1);
         expect(xterm.lines.get(1)[1][1]).eql(' ');
         xterm.reset();
       }

@@ -2303,6 +2303,10 @@ Terminal.prototype.index = function() {
     this.y--;
     this.scroll();
   }
+  // If the end of the line is hit, prevent this action from wrapping around to the next line.
+  if (this.x >= this.cols) {
+    this.x--;
+  }
 };
 
 
