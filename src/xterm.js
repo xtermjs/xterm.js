@@ -361,6 +361,7 @@ Terminal.defaults = {
   debug: false,
   cancelEvents: false,
   disableStdin: false,
+  useFlowControl: false,
   tabStopWidth: 8
   // programFeatures: false,
   // focusKeys: false,
@@ -1451,7 +1452,7 @@ Terminal.prototype.write = function(data) {
   // Send XOFF to pause the pty process if the write buffer becomes too large so
   // xterm.js can catch up before more data is sent. This is necessary in order
   // to keep signals such as ^C responsive.
-  if (!this.xoffSentToCatchUp && this.writeBuffer.length >= WRITE_BUFFER_PAUSE_THRESHOLD) {
+  if (this.options.useFlowControl && !this.xoffSentToCatchUp && this.writeBuffer.length >= WRITE_BUFFER_PAUSE_THRESHOLD) {
     // XOFF - stop pty pipe
     // XON will be triggered by emulator before processing data chunk
     this.send(C0.DC3);
