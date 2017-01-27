@@ -1446,7 +1446,7 @@ export class InputHandler implements IInputHandler {
   public setScrollRegion(params: number[]): void {
     if (this._terminal.prefix) return;
     this._terminal.scrollTop = (params[0] || 1) - 1;
-    this._terminal.scrollBottom = (params[1] || this._terminal.rows) - 1;
+    this._terminal.scrollBottom = (params[1] && params[1] <= this._terminal.rows ? params[1] : this._terminal.rows) - 1;
     this._terminal.x = 0;
     this._terminal.y = 0;
   }
