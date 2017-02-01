@@ -2159,14 +2159,14 @@ Terminal.prototype.nextStop = function(x) {
  * @param {number} y The line in which to operate.
  */
 Terminal.prototype.eraseRight = function(x, y) {
-  var line = this.lines.get(this.ybase + y)
-  , ch = [this.eraseAttr(), ' ', 1]; // xterm
-
-
+  var line = this.lines.get(this.ybase + y);
+  if (!line) {
+    return;
+  }
+  var ch = [this.eraseAttr(), ' ', 1]; // xterm
   for (; x < this.cols; x++) {
     line[x] = ch;
   }
-
   this.updateRange(y);
 };
 
@@ -2178,12 +2178,15 @@ Terminal.prototype.eraseRight = function(x, y) {
  * @param {number} y The line in which to operate.
  */
 Terminal.prototype.eraseLeft = function(x, y) {
-  var line = this.lines.get(this.ybase + y)
-  , ch = [this.eraseAttr(), ' ', 1]; // xterm
-
+  var line = this.lines.get(this.ybase + y);
+  if (!line) {
+    return;
+  }
+  var ch = [this.eraseAttr(), ' ', 1]; // xterm
   x++;
-  while (x--) line[x] = ch;
-
+  while (x--) {
+    line[x] = ch;
+  }
   this.updateRange(y);
 };
 
