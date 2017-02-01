@@ -222,6 +222,7 @@ function Terminal(options) {
   this.writeBuffer = [];
   this.writeInProgress = false;
   this.refreshFramesSkipped = 0;
+  this.refreshAnimationFrame = null;
 
   /**
    * Whether _xterm.js_ sent XOFF in order to catch up with the pty process.
@@ -659,7 +660,6 @@ Terminal.prototype.open = function(parent) {
 
   // Setup loop that draws to screen
   this.queueRefresh(0, this.rows - 1);
-  this.refreshLoop();
 
   // Initialize global actions that
   // need to be taken on the document.
@@ -1085,6 +1085,9 @@ Terminal.flags = {
  */
 Terminal.prototype.queueRefresh = function(start, end) {
   this.refreshRowsQueue.push({ start: start, end: end });
+  if (!this.refreshAnimationFrame) {
+    this.refreshAnimationFrame = window.requestAnimationFrame(this.refreshLoop.bind(this));
+  }
 }
 
 /**
@@ -1092,40 +1095,39 @@ Terminal.prototype.queueRefresh = function(start, end) {
  * necessary before queueing up the next one.
  */
 Terminal.prototype.refreshLoop = function() {
-  // Don't refresh if there were no row changes
-  if (this.refreshRowsQueue.length > 0) {
-    // Skip MAX_REFRESH_FRAME_SKIP frames if the writeBuffer is non-empty as it
-    // will need to be immediately refreshed anyway. This saves a lot of
-    // rendering time as the viewport DOM does not need to be refreshed, no
-    // scroll events, no layouts, etc.
-    var skipFrame = this.writeBuffer.length > 0 && this.refreshFramesSkipped++ <= MAX_REFRESH_FRAME_SKIP;
+  // Skip MAX_REFRESH_FRAME_SKIP frames if the writeBuffer is non-empty as it
+  // will need to be immediately refreshed anyway. This saves a lot of
+  // rendering time as the viewport DOM does not need to be refreshed, no
+  // scroll events, no layouts, etc.
+  var skipFrame = this.writeBuffer.length > 0 && this.refreshFramesSkipped++ <= MAX_REFRESH_FRAME_SKIP;
+  if (skipFrame) {
+    this.refreshAnimationFrame = window.requestAnimationFrame(this.refreshLoop.bind(this));
+    return;
+  }
 
-    if (!skipFrame) {
-      this.refreshFramesSkipped = 0;
-      var start;
-      var end;
-      if (this.refreshRowsQueue.length > 4) {
-        // Just do a full refresh when 5+ refreshes are queued
-        start = 0;
-        end = this.rows - 1;
-      } else {
-        // Get start and end rows that need refreshing
-        start = this.refreshRowsQueue[0].start;
-        end = this.refreshRowsQueue[0].end;
-        for (var i = 1; i < this.refreshRowsQueue.length; i++) {
-          if (this.refreshRowsQueue[i].start < start) {
-            start = this.refreshRowsQueue[i].start;
-          }
-          if (this.refreshRowsQueue[i].end > end) {
-            end = this.refreshRowsQueue[i].end;
-          }
-        }
+  this.refreshFramesSkipped = 0;
+  var start;
+  var end;
+  if (this.refreshRowsQueue.length > 4) {
+    // Just do a full refresh when 5+ refreshes are queued
+    start = 0;
+    end = this.rows - 1;
+  } else {
+    // Get start and end rows that need refreshing
+    start = this.refreshRowsQueue[0].start;
+    end = this.refreshRowsQueue[0].end;
+    for (var i = 1; i < this.refreshRowsQueue.length; i++) {
+      if (this.refreshRowsQueue[i].start < start) {
+        start = this.refreshRowsQueue[i].start;
       }
-      this.refreshRowsQueue = [];
-      this.refresh(start, end);
+      if (this.refreshRowsQueue[i].end > end) {
+        end = this.refreshRowsQueue[i].end;
+      }
     }
   }
-  window.requestAnimationFrame(this.refreshLoop.bind(this));
+  this.refreshRowsQueue = [];
+  this.refreshAnimationFrame = null;
+  this.refresh(start, end);
 }
 
 /**
