@@ -11,16 +11,15 @@ import { ITerminal } from './Interfaces';
  */
 const MAX_REFRESH_FRAME_SKIP = 5;
 
-// TODO: Convert flags to number enum
 /**
- * Flags used to render terminal text properly
+ * Flags used to render terminal text properly.
  */
-const FLAGS = {
-  BOLD: 1,
-  UNDERLINE: 2,
-  BLINK: 4,
-  INVERSE: 8,
-  INVISIBLE: 16
+enum FLAGS {
+  BOLD = 1,
+  UNDERLINE = 2,
+  BLINK = 4,
+  INVERSE = 8,
+  INVISIBLE = 16
 };
 
 let brokenBold: boolean = null;
@@ -118,9 +117,6 @@ export class Renderer {
    * @param {number} end The row to end at (between fromRow and terminal's height terminal - 1)
    */
   private _refresh(start: number, end: number): void {
-    // TODO: Use fat arrow functions for callbacks to avoid `self`
-    let self = this;
-
     let x, y, i, line, out, ch, ch_width, width, data, attr, bg, fg, flags, row, parent, focused = document.activeElement;
 
     // If this is a big refresh, remove the terminal rows from the DOM for faster calculations
