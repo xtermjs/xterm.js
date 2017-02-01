@@ -208,7 +208,8 @@ function Terminal(options) {
 
   this.inputHandler = new InputHandler(this);
   this.parser = new Parser(this.inputHandler, this);
-  this.renderer = null;
+  // Reuse renderer if the Terminal is being recreated via a Terminal.reset call.
+  this.renderer = this.renderer || null;
 
   // user input states
   this.writeBuffer = [];
