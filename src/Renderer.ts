@@ -36,10 +36,11 @@ export class Renderer {
     // the character width of monospace fonts.
     if (brokenBold === null) {
       brokenBold = checkBoldBroken((<any>this._terminal).document);
-      console.log('check brokenBold: ' + brokenBold);
     }
 
-    // TODO: Pull all DOM interactions into Renderer.constructor
+    // TODO: Pull more DOM interactions into Renderer.constructor, element for
+    // example should be owned by Renderer (and also exposed by Terminal due to
+    // to established public API).
   }
 
   /**
