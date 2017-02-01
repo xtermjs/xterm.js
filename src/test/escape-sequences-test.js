@@ -75,7 +75,7 @@ describe('xterm output comparison', function() {
 
   beforeEach(function () {
     xterm = new Terminal(COLS, ROWS);
-    xterm.queueRefresh = function() {};
+    xterm.refresh = function() {};
     xterm.viewport = {
       syncScrollArea: function() {}
     };

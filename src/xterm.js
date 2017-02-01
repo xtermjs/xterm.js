@@ -18,6 +18,7 @@ import { CircularList } from './utils/CircularList';
 import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Parser } from './Parser';
+import { Renderer } from './Renderer';
 import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './utils/Browser';
 import * as Keyboard from './utils/Keyboard';
@@ -49,13 +50,6 @@ var WRITE_BUFFER_PAUSE_THRESHOLD = 5;
  * renderer to catch up with a 0ms setTimeout.
  */
 var WRITE_BATCH_SIZE = 300;
-
-/**
- * The maximum number of refresh frames to skip when the write buffer is non-
- * empty. Note that these frames may be intermingled with frames that are
- * skipped via requestAnimationFrame's mechanism.
- */
-var MAX_REFRESH_FRAME_SKIP = 5;
 
 /**
  * Terminal
@@ -157,9 +151,6 @@ function Terminal(options) {
    */
   this.y = 0;
 
-  /** A queue of the rows to be refreshed */
-  this.refreshRowsQueue = [];
-
   this.cursorState = 0;
   this.cursorHidden = false;
   this.convertEol;
@@ -217,12 +208,12 @@ function Terminal(options) {
 
   this.inputHandler = new InputHandler(this);
   this.parser = new Parser(this.inputHandler, this);
+  // Reuse renderer if the Terminal is being recreated via a Terminal.reset call.
+  this.renderer = this.renderer || null;
 
   // user input states
   this.writeBuffer = [];
   this.writeInProgress = false;
-  this.refreshFramesSkipped = 0;
-  this.refreshAnimationFrame = null;
 
   /**
    * Whether _xterm.js_ sent XOFF in order to catch up with the pty process.
@@ -471,7 +462,7 @@ Terminal.prototype.blur = function() {
  */
 Terminal.bindBlur = function (term) {
   on(term.textarea, 'blur', function (ev) {
-    term.queueRefresh(term.y, term.y);
+    term.refresh(term.y, term.y);
     if (term.sendFocus) {
       term.send(C0.ESC + '[O');
     }
@@ -657,9 +648,10 @@ Terminal.prototype.open = function(parent) {
   this.charMeasure.measure();
 
   this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
+  this.renderer = new Renderer(this);
 
   // Setup loop that draws to screen
-  this.queueRefresh(0, this.rows - 1);
+  this.refresh(0, this.rows - 1);
 
   // Initialize global actions that
   // need to be taken on the document.
@@ -680,12 +672,6 @@ Terminal.prototype.open = function(parent) {
   // Listen for mouse events and translate
   // them into terminal mouse protocols.
   this.bindMouse();
-
-  // Figure out whether boldness affects
-  // the character width of monospace fonts.
-  if (Terminal.brokenBold == null) {
-    Terminal.brokenBold = isBoldBroken(this.document);
-  }
 
   /**
    * This event is emitted when terminal has completed opening.
@@ -1065,263 +1051,16 @@ Terminal.prototype.destroy = function() {
   //this.emit('close');
 };
 
-
 /**
- * Flags used to render terminal text properly
- */
-Terminal.flags = {
-  BOLD: 1,
-  UNDERLINE: 2,
-  BLINK: 4,
-  INVERSE: 8,
-  INVISIBLE: 16
-}
-
-/**
- * Queues a refresh between two rows (inclusive), to be done on next animation
- * frame.
- * @param {number} start The start row.
- * @param {number} end The end row.
- */
-Terminal.prototype.queueRefresh = function(start, end) {
-  this.refreshRowsQueue.push({ start: start, end: end });
-  if (!this.refreshAnimationFrame) {
-    this.refreshAnimationFrame = window.requestAnimationFrame(this.refreshLoop.bind(this));
-  }
-}
-
-/**
- * Performs the refresh loop callback, calling refresh only if a refresh is
- * necessary before queueing up the next one.
- */
-Terminal.prototype.refreshLoop = function() {
-  // Skip MAX_REFRESH_FRAME_SKIP frames if the writeBuffer is non-empty as it
-  // will need to be immediately refreshed anyway. This saves a lot of
-  // rendering time as the viewport DOM does not need to be refreshed, no
-  // scroll events, no layouts, etc.
-  var skipFrame = this.writeBuffer.length > 0 && this.refreshFramesSkipped++ <= MAX_REFRESH_FRAME_SKIP;
-  if (skipFrame) {
-    this.refreshAnimationFrame = window.requestAnimationFrame(this.refreshLoop.bind(this));
-    return;
-  }
-
-  this.refreshFramesSkipped = 0;
-  var start;
-  var end;
-  if (this.refreshRowsQueue.length > 4) {
-    // Just do a full refresh when 5+ refreshes are queued
-    start = 0;
-    end = this.rows - 1;
-  } else {
-    // Get start and end rows that need refreshing
-    start = this.refreshRowsQueue[0].start;
-    end = this.refreshRowsQueue[0].end;
-    for (var i = 1; i < this.refreshRowsQueue.length; i++) {
-      if (this.refreshRowsQueue[i].start < start) {
-        start = this.refreshRowsQueue[i].start;
-      }
-      if (this.refreshRowsQueue[i].end > end) {
-        end = this.refreshRowsQueue[i].end;
-      }
-    }
-  }
-  this.refreshRowsQueue = [];
-  this.refreshAnimationFrame = null;
-  this.refresh(start, end);
-}
-
-/**
- * Refreshes (re-renders) terminal content within two rows (inclusive)
- *
- * Rendering Engine:
- *
- * In the screen buffer, each character is stored as a an array with a character
- * and a 32-bit integer:
- *   - First value: a utf-16 character.
- *   - Second value:
- *   - Next 9 bits: background color (0-511).
- *   - Next 9 bits: foreground color (0-511).
- *   - Next 14 bits: a mask for misc. flags:
- *     - 1=bold
- *     - 2=underline
- *     - 4=blink
- *     - 8=inverse
- *     - 16=invisible
- *
+ * Tells the renderer to refresh terminal content between two rows (inclusive) at the next
+ * opportunity.
  * @param {number} start The row to start from (between 0 and terminal's height terminal - 1)
  * @param {number} end The row to end at (between fromRow and terminal's height terminal - 1)
  */
 Terminal.prototype.refresh = function(start, end) {
-  var self = this;
-
-  var x, y, i, line, out, ch, ch_width, width, data, attr, bg, fg, flags, row, parent, focused = document.activeElement;
-
-  // If this is a big refresh, remove the terminal rows from the DOM for faster calculations
-  if (end - start >= this.rows / 2) {
-    parent = this.element.parentNode;
-    if (parent) {
-      this.element.removeChild(this.rowContainer);
-    }
+  if (this.renderer) {
+    this.renderer.queueRefresh(start, end);
   }
-
-  width = this.cols;
-  y = start;
-
-  if (end >= this.rows.length) {
-    this.log('`end` is too large. Most likely a bad CSR.');
-    end = this.rows.length - 1;
-  }
-
-  for (; y <= end; y++) {
-    row = y + this.ydisp;
-
-    line = this.lines.get(row);
-    if (!line || !this.children[y]) {
-      // Continue if the line is not available, this means a resize is currently in progress
-      continue;
-    }
-    out = '';
-
-    if (this.y === y - (this.ybase - this.ydisp)
-        && this.cursorState
-        && !this.cursorHidden) {
-      x = this.x;
-    } else {
-      x = -1;
-    }
-
-    attr = this.defAttr;
-    i = 0;
-
-    for (; i < width; i++) {
-      if (!line[i]) {
-        // Continue if the character is not available, this means a resize is currently in progress
-        continue;
-      }
-      data = line[i][0];
-      ch = line[i][1];
-      ch_width = line[i][2];
-      if (!ch_width)
-        continue;
-
-      if (i === x) data = -1;
-
-      if (data !== attr) {
-        if (attr !== this.defAttr) {
-          out += '</span>';
-        }
-        if (data !== this.defAttr) {
-          if (data === -1) {
-            out += '<span class="reverse-video terminal-cursor">';
-          } else {
-            var classNames = [];
-
-            bg = data & 0x1ff;
-            fg = (data >> 9) & 0x1ff;
-            flags = data >> 18;
-
-            if (flags & Terminal.flags.BOLD) {
-              if (!Terminal.brokenBold) {
-                classNames.push('xterm-bold');
-              }
-              // See: XTerm*boldColors
-              if (fg < 8) fg += 8;
-            }
-
-            if (flags & Terminal.flags.UNDERLINE) {
-              classNames.push('xterm-underline');
-            }
-
-            if (flags & Terminal.flags.BLINK) {
-              classNames.push('xterm-blink');
-            }
-
-            // If inverse flag is on, then swap the foreground and background variables.
-            if (flags & Terminal.flags.INVERSE) {
-              /* One-line variable swap in JavaScript: http://stackoverflow.com/a/16201730 */
-              bg = [fg, fg = bg][0];
-              // Should inverse just be before the
-              // above boldColors effect instead?
-              if ((flags & 1) && fg < 8) fg += 8;
-            }
-
-            if (flags & Terminal.flags.INVISIBLE) {
-              classNames.push('xterm-hidden');
-            }
-
-            /**
-             * Weird situation: Invert flag used black foreground and white background results
-             * in invalid background color, positioned at the 256 index of the 256 terminal
-             * color map. Pin the colors manually in such a case.
-             *
-             * Source: https://github.com/sourcelair/xterm.js/issues/57
-             */
-            if (flags & Terminal.flags.INVERSE) {
-              if (bg == 257) {
-                bg = 15;
-              }
-              if (fg == 256) {
-                fg = 0;
-              }
-            }
-
-            if (bg < 256) {
-              classNames.push('xterm-bg-color-' + bg);
-            }
-
-            if (fg < 256) {
-              classNames.push('xterm-color-' + fg);
-            }
-
-            out += '<span';
-            if (classNames.length) {
-              out += ' class="' + classNames.join(' ') + '"';
-            }
-            out += '>';
-          }
-        }
-      }
-
-      if (ch_width === 2) {
-        out += '<span class="xterm-wide-char">';
-      }
-      switch (ch) {
-        case '&':
-          out += '&amp;';
-          break;
-        case '<':
-          out += '&lt;';
-          break;
-        case '>':
-          out += '&gt;';
-          break;
-        default:
-          if (ch <= ' ') {
-            out += '&nbsp;';
-          } else {
-            out += ch;
-          }
-          break;
-      }
-      if (ch_width === 2) {
-        out += '</span>';
-      }
-
-      attr = data;
-    }
-
-    if (attr !== this.defAttr) {
-      out += '</span>';
-    }
-
-    this.children[y].innerHTML = out;
-  }
-
-  if (parent) {
-    this.element.appendChild(this.rowContainer);
-  }
-
-  this.emit('refresh', {element: this.element, start: start, end: end});
 };
 
 /**
@@ -1330,7 +1069,7 @@ Terminal.prototype.refresh = function(start, end) {
 Terminal.prototype.showCursor = function() {
   if (!this.cursorState) {
     this.cursorState = 1;
-    this.queueRefresh(this.y, this.y);
+    this.refresh(this.y, this.y);
   }
 };
 
@@ -1419,7 +1158,7 @@ Terminal.prototype.scrollDisp = function(disp, suppressScrollEvent) {
     this.emit('scroll', this.ydisp);
   }
 
-  this.queueRefresh(0, this.rows - 1);
+  this.refresh(0, this.rows - 1);
 };
 
 /**
@@ -1491,7 +1230,7 @@ Terminal.prototype.innerWrite = function() {
     this.parser.parse(data);
 
     this.updateRange(this.y);
-    this.queueRefresh(this.refreshStart, this.refreshEnd);
+    this.refresh(this.refreshStart, this.refreshEnd);
   }
   if (this.writeBuffer.length > 0) {
     // Allow renderer to catch up before processing the next batch
@@ -2076,7 +1815,7 @@ Terminal.prototype.resize = function(x, y) {
 
   this.charMeasure.measure();
 
-  this.queueRefresh(0, this.rows - 1);
+  this.refresh(0, this.rows - 1);
 
   this.normal = null;
 
@@ -2208,7 +1947,7 @@ Terminal.prototype.clear = function() {
   for (var i = 1; i < this.rows; i++) {
     this.lines.push(this.blankLine());
   }
-  this.queueRefresh(0, this.rows - 1);
+  this.refresh(0, this.rows - 1);
   this.emit('scroll', this.ydisp);
 };
 
@@ -2346,7 +2085,7 @@ Terminal.prototype.reset = function() {
   var customKeydownHandler = this.customKeydownHandler;
   Terminal.call(this, this.options);
   this.customKeydownHandler = customKeydownHandler;
-  this.queueRefresh(0, this.rows - 1);
+  this.refresh(0, this.rows - 1);
   this.viewport.syncScrollArea();
 };
 
@@ -2390,20 +2129,6 @@ function inherits(child, parent) {
   }
   f.prototype = parent.prototype;
   child.prototype = new f;
-}
-
-// if bold is broken, we can't
-// use it in the terminal.
-function isBoldBroken(document) {
-  var body = document.getElementsByTagName('body')[0];
-  var el = document.createElement('span');
-  el.innerHTML = 'hello world';
-  body.appendChild(el);
-  var w1 = el.scrollWidth;
-  el.style.fontWeight = 'bold';
-  var w2 = el.scrollWidth;
-  body.removeChild(el);
-  return w1 !== w2;
 }
 
 function indexOf(obj, el) {
