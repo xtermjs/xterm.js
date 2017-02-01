@@ -1,3 +1,7 @@
+/**
+ * @license MIT
+ */
+
 import { ITerminal } from './Interfaces';
 
 /**
