@@ -18,10 +18,19 @@ export interface ITerminal {
   element: HTMLElement;
   rowContainer: HTMLElement;
   textarea: HTMLTextAreaElement;
+  ybase: number;
   ydisp: number;
-  lines: string[];
+  lines: ICircularList<string>;
   rows: number;
+  cols: number;
   browser: IBrowser;
+  writeBuffer: string[];
+  children: HTMLElement[];
+  cursorHidden: boolean;
+  cursorState: number;
+  x: number;
+  y: number;
+  defAttr: number;
 
   /**
    * Emit the 'data' event and populate the given data.
@@ -31,6 +40,22 @@ export interface ITerminal {
   on(event: string, callback: () => void);
   scrollDisp(disp: number, suppressScrollEvent: boolean);
   cancel(ev: Event, force?: boolean);
+  log(text: string): void;
+  emit(event: string, data: any);
+}
+
+interface ICircularList<T> {
+  length: number;
+  maxLength: number;
+
+  forEach(callbackfn: (value: T, index: number, array: T[]) => void): void;
+  get(index: number): T;
+  set(index: number, value: T): void;
+  push(value: T): void;
+  pop(): T;
+  splice(start: number, deleteCount: number, ...items: T[]): void;
+  trimStart(count: number): void;
+  shiftElements(start: number, count: number, offset: number): void;
 }
 
 /**
