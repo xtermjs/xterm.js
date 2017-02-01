@@ -1125,7 +1125,7 @@ export class InputHandler implements IInputHandler {
             //   this.x = this.savedX;
             //   this.y = this.savedY;
             // }
-            this._terminal.queueRefresh(0, this._terminal.rows - 1);
+            this._terminal.refresh(0, this._terminal.rows - 1);
             this._terminal.viewport.syncScrollArea();
             this._terminal.showCursor();
           }

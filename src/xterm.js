@@ -461,7 +461,7 @@ Terminal.prototype.blur = function() {
  */
 Terminal.bindBlur = function (term) {
   on(term.textarea, 'blur', function (ev) {
-    term.queueRefresh(term.y, term.y);
+    term.refresh(term.y, term.y);
     if (term.sendFocus) {
       term.send(C0.ESC + '[O');
     }
@@ -650,7 +650,7 @@ Terminal.prototype.open = function(parent) {
   this.renderer = new Renderer(this);
 
   // Setup loop that draws to screen
-  this.queueRefresh(0, this.rows - 1);
+  this.refresh(0, this.rows - 1);
 
   // Initialize global actions that
   // need to be taken on the document.
@@ -1057,16 +1057,6 @@ Terminal.prototype.destroy = function() {
  * @param {number} end The row to end at (between fromRow and terminal's height terminal - 1)
  */
 Terminal.prototype.refresh = function(start, end) {
-  this.queueRefresh(start, end);
-};
-
-/**
- * Tells the renderer to refresh terminal content between two rows (inclusive) at the next
- * opportunity.
- * @param {number} start The row to start from (between 0 and terminal's height terminal - 1)
- * @param {number} end The row to end at (between fromRow and terminal's height terminal - 1)
- */
-Terminal.prototype.queueRefresh = function(start, end) {
   if (this.renderer) {
     this.renderer.queueRefresh(start, end);
   }
@@ -1078,7 +1068,7 @@ Terminal.prototype.queueRefresh = function(start, end) {
 Terminal.prototype.showCursor = function() {
   if (!this.cursorState) {
     this.cursorState = 1;
-    this.queueRefresh(this.y, this.y);
+    this.refresh(this.y, this.y);
   }
 };
 
@@ -1167,7 +1157,7 @@ Terminal.prototype.scrollDisp = function(disp, suppressScrollEvent) {
     this.emit('scroll', this.ydisp);
   }
 
-  this.queueRefresh(0, this.rows - 1);
+  this.refresh(0, this.rows - 1);
 };
 
 /**
@@ -1239,7 +1229,7 @@ Terminal.prototype.innerWrite = function() {
     this.parser.parse(data);
 
     this.updateRange(this.y);
-    this.queueRefresh(this.refreshStart, this.refreshEnd);
+    this.refresh(this.refreshStart, this.refreshEnd);
   }
   if (this.writeBuffer.length > 0) {
     // Allow renderer to catch up before processing the next batch
@@ -1824,7 +1814,7 @@ Terminal.prototype.resize = function(x, y) {
 
   this.charMeasure.measure();
 
-  this.queueRefresh(0, this.rows - 1);
+  this.refresh(0, this.rows - 1);
 
   this.normal = null;
 
@@ -1956,7 +1946,7 @@ Terminal.prototype.clear = function() {
   for (var i = 1; i < this.rows; i++) {
     this.lines.push(this.blankLine());
   }
-  this.queueRefresh(0, this.rows - 1);
+  this.refresh(0, this.rows - 1);
   this.emit('scroll', this.ydisp);
 };
 
@@ -2094,7 +2084,7 @@ Terminal.prototype.reset = function() {
   var customKeydownHandler = this.customKeydownHandler;
   Terminal.call(this, this.options);
   this.customKeydownHandler = customKeydownHandler;
-  this.queueRefresh(0, this.rows - 1);
+  this.refresh(0, this.rows - 1);
   this.viewport.syncScrollArea();
 };
 
