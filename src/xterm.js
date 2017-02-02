@@ -1045,7 +1045,7 @@ Terminal.prototype.destroy = function() {
   this._events = {};
   this.handler = function() {};
   this.write = function() {};
-  if (this.element.parentNode) {
+  if (this.element && this.element.parentNode) {
     this.element.parentNode.removeChild(this.element);
   }
   //this.emit('close');
