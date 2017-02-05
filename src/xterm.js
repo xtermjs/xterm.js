@@ -1973,6 +1973,10 @@ Terminal.prototype.error = function() {
  * @param {number} y The number of rows to resize to.
  */
 Terminal.prototype.resize = function(x, y) {
+  if (Number.isNaN(x) || Number.isNaN(y)) {
+    return;
+  }
+
   var line
   , el
   , i
