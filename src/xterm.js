@@ -19,6 +19,7 @@ import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Parser } from './Parser';
 import { Renderer } from './Renderer';
+import { Linkifier } from './Linkifier';
 import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './utils/Browser';
 import * as Keyboard from './utils/Keyboard';
@@ -210,6 +211,7 @@ function Terminal(options) {
   this.parser = new Parser(this.inputHandler, this);
   // Reuse renderer if the Terminal is being recreated via a Terminal.reset call.
   this.renderer = this.renderer || null;
+  this.linkifier = this.linkifier || null;;
 
   // user input states
   this.writeBuffer = [];
@@ -607,6 +609,7 @@ Terminal.prototype.open = function(parent) {
   this.rowContainer.classList.add('xterm-rows');
   this.element.appendChild(this.rowContainer);
   this.children = [];
+  this.linkifier = new Linkifier(this.children);
 
   // Create the container that will hold helpers like the textarea for
   // capturing DOM Events. Then produce the helpers.
@@ -1060,6 +1063,14 @@ Terminal.prototype.destroy = function() {
 Terminal.prototype.refresh = function(start, end) {
   if (this.renderer) {
     this.renderer.queueRefresh(start, end);
+
+    // TODO: DO this better
+    if (!this.linkifier) {
+      return;
+    }
+    for (let i = start; i <= end; i++) {
+      this.linkifier.linkifyRow(i);
+    }
   }
 };
 
