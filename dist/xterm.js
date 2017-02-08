@@ -3525,7 +3525,7 @@ Terminal.prototype.error = function () {
     this.context.console.error.apply(this.context.console, args);
 };
 Terminal.prototype.resize = function (x, y) {
-    if (Number.isNaN(x) || Number.isNaN(y)) {
+    if (isNaN(x) || isNaN(y)) {
         return;
     }
     var line, el, i, j, ch, addToY;
