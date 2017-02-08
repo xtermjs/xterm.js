@@ -1274,6 +1274,16 @@ Terminal.prototype.attachCustomKeydownHandler = function(customKeydownHandler) {
   this.customKeydownHandler = customKeydownHandler;
 }
 
+// TODO: Doc
+Terminal.prototype.attachHypertextLinkHandler = function(handler) {
+  if (!this.linkifier) {
+    throw new Error('Cannot attach a hypertext link handler before Terminal.open is called');
+  }
+  this.linkifier.attachHypertextLinkHandler(handler);
+  // Refresh to force links to refresh
+  this.refresh(0, this.rows - 1);
+}
+
 /**
  * Handle a keydown event
  * Key Resources:

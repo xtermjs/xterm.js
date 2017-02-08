@@ -28,7 +28,7 @@ export type LinkHandler = (uri: string) => void;
 export class Linkifier {
   private _rows: HTMLElement[];
   private _rowTimeoutIds: number[];
-  private _webLinkHandler: LinkHandler;
+  private _hypertextLinkHandler: LinkHandler;
 
   constructor(rows: HTMLElement[]) {
     this._rows = rows;
@@ -48,9 +48,8 @@ export class Linkifier {
   }
 
   // TODO: Support local links
-  public attachWebLinkHandler(handler: LinkHandler): void {
-    this._webLinkHandler = handler;
-    // TODO: Refresh links if a handler is attached?
+  public attachHypertextLinkHandler(handler: LinkHandler): void {
+    this._hypertextLinkHandler = handler;
   }
 
   /**
@@ -96,10 +95,6 @@ export class Linkifier {
           this._replaceNodeSubstringWithNode(node, linkElement, uri, searchIndex);
         }
       }
-      // Continue searching in case multiple URIs exist on a single
-      // const link = '<a href="' + uri + '">' + uri + '</a>';
-      // const newHtml = rowHtml.replace(uri, link);
-      // this._rows[rowIndex].innerHTML = newHtml;
     }
   }
 
@@ -124,13 +119,12 @@ export class Linkifier {
   private _createAnchorElement(uri: string): HTMLAnchorElement {
     const element = document.createElement('a');
     element.textContent = uri;
-    // Force link on another tab so work is not lost
-    element.target = '_blank';
-    if (this._webLinkHandler) {
-      element.href = '#';
-      element.addEventListener('click', () => this._webLinkHandler(uri));
+    if (this._hypertextLinkHandler) {
+      element.addEventListener('click', () => this._hypertextLinkHandler(uri));
     } else {
       element.href = uri;
+      // Force link on another tab so work is not lost
+      element.target = '_blank';
     }
     return element;
   }
@@ -150,7 +144,8 @@ export class Linkifier {
 
   /**
    * Replace a substring within a node with a new node.
-   * @param {Node} targetNode The target node.
+   * @param {Node} targetNode The target node; either a text node or a <span>
+   * containing a single text node.
    * @param {Node} newNode The new node to insert.
    * @param {string} substring The substring to replace.
    * @param {number} substringIndex The index of the substring within the string.
@@ -160,9 +155,10 @@ export class Linkifier {
     if (node.nodeType !== Node.TEXT_NODE) {
       node = node.childNodes[0];
     }
-    // The targetNode will be either a text node or a <span>. The targetNode is
-    // assumed to have no children. In either case, the targetNode's text node
-    // must be split into 2 text nodes surrounding the newNode.
+
+    // The targetNode will be either a text node or a <span>. The text node
+    // (targetNode or its only-child) needs to be replaced with newNode plus new
+    // text nodes potentially on either side.
     if (node.childNodes.length === 0 && node.nodeType !== Node.TEXT_NODE) {
       throw new Error('targetNode must be a text node or only contain a single text node');
     }
