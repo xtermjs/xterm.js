@@ -1,8 +1,14 @@
 var glob = require('glob');
 var fs = require('fs');
+var os = require('os');
 var pty = require('node-pty');
 var sleep = require('sleep');
 var Terminal = require('../xterm');
+
+if (os.platform() === 'win32') {
+  // Skip tests on Windows since pty.open isn't supported
+  return;
+}
 
 var CONSOLE_LOG = console.log;
 
