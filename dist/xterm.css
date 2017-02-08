@@ -71,7 +71,7 @@
     resize: none;
 }
 
-.terminal .terminal-cursor {
+.terminal:not(.xterm-cursor-style-underline):not(.xterm-cursor-style-bar) .terminal-cursor {
     background-color: #fff;
     color: #000;
 }
@@ -82,11 +82,11 @@
     background-color: transparent;
 }
 
-.terminal.focus .terminal-cursor.blinking {
-    animation: blink-cursor 1.2s infinite step-end;
+.terminal:not(.xterm-cursor-style-underline):not(.xterm-cursor-style-bar).focus.xterm-cursor-blink .terminal-cursor {
+    animation: xterm-cursor-blink 1.2s infinite step-end;
 }
 
-@keyframes blink-cursor {
+@keyframes xterm-cursor-blink {
     0% {
         background-color: #fff;
         color: #000;
@@ -95,6 +95,38 @@
         background-color: transparent;
         color: #FFF;
     }
+}
+
+.terminal.xterm-cursor-style-bar .terminal-cursor,
+.terminal.xterm-cursor-style-underline .terminal-cursor {
+    position: relative;
+}
+.terminal.xterm-cursor-style-bar .terminal-cursor::before,
+.terminal.xterm-cursor-style-underline .terminal-cursor::before {
+    content: "";
+    display: block;
+    position: absolute;
+    background-color: #fff;
+}
+.terminal.xterm-cursor-style-bar .terminal-cursor::before {
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 1px;
+}
+.terminal.xterm-cursor-style-underline .terminal-cursor::before {
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+}
+.terminal.xterm-cursor-style-bar.focus.xterm-cursor-blink .terminal-cursor::before,
+.terminal.xterm-cursor-style-underline.focus.xterm-cursor-blink .terminal-cursor::before {
+    animation: xterm-cursor-non-bar-blink 1.2s infinite step-end;
+}
+@keyframes xterm-cursor-non-bar-blink {
+    0% { background-color: #fff; }
+    50% { background-color: transparent; }
 }
 
 .terminal .composition-view {
@@ -114,6 +146,10 @@
     /* On OS X this is required in order for the scroll bar to appear fully opaque */
     background-color: #000;
     overflow-y: scroll;
+}
+
+.terminal .xterm-wide-char {
+    display: inline-block;
 }
 
 .terminal .xterm-rows {
