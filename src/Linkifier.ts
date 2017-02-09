@@ -18,13 +18,13 @@ const negatedPathCharacterSet = '[^\\/\\w\\.-]+';
 const bodyClause = hostClause + pathClause;
 const start = '(?:^|' + negatedDomainCharacterSet + ')(';
 const end = ')($|' + negatedPathCharacterSet + ')';
-const lenientUrlClause = start + protocolClause + '?' + bodyClause + end;
-const strictUrlClause = start + protocolClause + bodyClause + end;
-const lenientUrlRegex = new RegExp(lenientUrlClause);
-const strictUrlRegex = new RegExp(strictUrlClause);
+const strictUrlRegex = new RegExp(start + protocolClause + bodyClause + end);
 
 export type LinkHandler = (uri: string) => void;
 
+/**
+ * The Linkifier applies links to rows shortly after they have been refreshed.
+ */
 export class Linkifier {
   private _rows: HTMLElement[];
   private _rowTimeoutIds: number[];
