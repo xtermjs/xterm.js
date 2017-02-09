@@ -73,12 +73,12 @@
 
 .terminal a {
     color: inherit;
-    /* Feature underline on links even if they have no href */
-    text-decoration: underline;
+    text-decoration: none;
 }
 
 .terminal a:hover {
     cursor: pointer;
+    text-decoration: underline;
 }
 
 .terminal:not(.xterm-cursor-style-underline):not(.xterm-cursor-style-bar) .terminal-cursor {
