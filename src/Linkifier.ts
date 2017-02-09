@@ -74,24 +74,19 @@ export class Linkifier {
           return;
         }
 
-        console.log('found uri: ' + uri);
         const linkElement = this._createAnchorElement(uri);
         // TODO: Check if childNodes check is needed
         if (node.textContent.trim().length === uri.length) {
           // Matches entire string
-          console.log('match entire string');
           if (node.nodeType === Node.TEXT_NODE) {
-            console.log('text node');
             this._replaceNode(node, linkElement);
           } else {
-            console.log('element');
             const element = (<HTMLElement>node);
             element.innerHTML = '';
             element.appendChild(linkElement);
           }
         } else {
           // Matches part of string
-          console.log('part of string');
           this._replaceNodeSubstringWithNode(node, linkElement, uri, searchIndex);
         }
       }
@@ -167,19 +162,16 @@ export class Linkifier {
 
     if (substringIndex === 0) {
       // Replace with <newNode><textnode>
-      console.log('Replace with <newNode><textnode>');
       const rightText = fullText.substring(substring.length);
       const rightTextNode = document.createTextNode(rightText);
       this._replaceNode(node, newNode, rightTextNode);
     } else if (substringIndex === targetNode.textContent.length - substring.length) {
       // Replace with <textnode><newNode>
-      console.log('Replace with <textnode><newNode>');
       const leftText = fullText.substring(0, substringIndex);
       const leftTextNode = document.createTextNode(leftText);
       this._replaceNode(node, leftTextNode, newNode);
     } else {
       // Replace with <textnode><newNode><textnode>
-      console.log('Replace with <textnode><newNode><textnode>');
       const leftText = fullText.substring(0, substringIndex);
       const leftTextNode = document.createTextNode(leftText);
       const rightText = fullText.substring(substringIndex + substring.length);
