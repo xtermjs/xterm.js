@@ -22,17 +22,25 @@ const strictUrlRegex = new RegExp(start + protocolClause + bodyClause + end);
 
 export type LinkHandler = (uri: string) => void;
 
+type LinkMatcher = {id: number, regex: RegExp, handler: LinkHandler};
+
+const HYPERTEXT_LINK_MATCHER_ID = 0;
+
 /**
  * The Linkifier applies links to rows shortly after they have been refreshed.
  */
 export class Linkifier {
+  private static _nextLinkMatcherId = HYPERTEXT_LINK_MATCHER_ID;
+
   private _rows: HTMLElement[];
   private _rowTimeoutIds: number[];
-  private _hypertextLinkHandler: LinkHandler;
+  private _linkMatchers: LinkMatcher[];
 
   constructor(rows: HTMLElement[]) {
     this._rows = rows;
     this._rowTimeoutIds = [];
+    this._linkMatchers = [];
+    this.registerLinkMatcher(strictUrlRegex, null);
   }
 
   /**
@@ -47,9 +55,46 @@ export class Linkifier {
     this._rowTimeoutIds[rowIndex] = setTimeout(this._linkifyRow.bind(this, rowIndex), TIME_BEFORE_LINKIFY);
   }
 
-  // TODO: Support local links
+  /**
+   * Attaches a handler for hypertext links, overriding default <a> behavior.
+   * @param {LinkHandler} handler The handler to use, this can be cleared with
+   * null.
+   */
   public attachHypertextLinkHandler(handler: LinkHandler): void {
-    this._hypertextLinkHandler = handler;
+    this._linkMatchers[HYPERTEXT_LINK_MATCHER_ID].handler = handler;
+  }
+
+  /**
+   * Registers a link matcher, allowing custom link patterns to be matched and
+   * handled.
+   * @param {RegExp} regex The regular expression the search for.
+   * @param {LinkHandler} handler The callback when the link is called.
+   * @return {number} The ID of the new matcher, this can be used to deregister.
+   */
+  public registerLinkMatcher(regex: RegExp, handler: LinkHandler): number {
+    if (Linkifier._nextLinkMatcherId !== HYPERTEXT_LINK_MATCHER_ID && !handler) {
+      throw new Error('handler cannot be falsy');
+    }
+    const matcher: LinkMatcher = {
+      id: Linkifier._nextLinkMatcherId++,
+      regex,
+      handler
+    };
+    this._linkMatchers.push(matcher);
+    return matcher.id;
+  }
+
+  /**
+   * Deregisters a link matcher if it has been registered.
+   * @param {number} matcherId The link matcher's ID (returned after register)
+   */
+  public deregisterLinkMatcher(matcherId: number): void {
+    // ID 0 is the hypertext link matcher which cannot be deregistered
+    for (let i = 1; i < this._linkMatchers.length; i++) {
+      if (this._linkMatchers[i].id === matcherId) {
+        this._linkMatchers.splice(i, 1);
+      }
+    }
   }
 
   /**
@@ -58,11 +103,24 @@ export class Linkifier {
    */
   private _linkifyRow(rowIndex: number): void {
     const rowHtml = this._rows[rowIndex].innerHTML;
-    const uri = this._findLinkMatch(rowHtml);
-    if (!uri) {
-      return;
+    for (let i = 0; i < this._linkMatchers.length; i++) {
+      const matcher = this._linkMatchers[i];
+      const uri = this._findLinkMatch(rowHtml, matcher.regex);
+      if (uri) {
+        this._doLinkifyRow(rowIndex, uri, matcher.handler);
+        // Only allow a single LinkMatcher to trigger on any given row.
+        return;
+      }
     }
+  }
 
+  /**
+   * Linkifies a row given a specific handler.
+   * @param {number} rowIndex The index of the row to linkify.
+   * @param {string} uri The uri that has been found.
+   * @param {handler} handler The handler to trigger when the link is triggered.
+   */
+  private _doLinkifyRow(rowIndex: number, uri: string, handler?: LinkHandler): void {
     // Iterate over nodes as we want to consider text nodes
     const nodes = this._rows[rowIndex].childNodes;
     for (let i = 0; i < nodes.length; i++) {
@@ -74,7 +132,7 @@ export class Linkifier {
           return;
         }
 
-        const linkElement = this._createAnchorElement(uri);
+        const linkElement = this._createAnchorElement(uri, handler);
         // TODO: Check if childNodes check is needed
         if (node.textContent.trim().length === uri.length) {
           // Matches entire string
@@ -98,8 +156,8 @@ export class Linkifier {
    * @param {string} html The HTML to search.
    * @return {string} The matching URI or null if not found.
    */
-  private _findLinkMatch(html: string): string {
-    const match = html.match(strictUrlRegex);
+  private _findLinkMatch(html: string, regex: RegExp): string {
+    const match = html.match(regex);
     if (!match || match.length === 0) {
       return null;
     }
@@ -111,11 +169,11 @@ export class Linkifier {
    * @param {string} uri The uri of the link.
    * @return {HTMLAnchorElement} The link.
    */
-  private _createAnchorElement(uri: string): HTMLAnchorElement {
+  private _createAnchorElement(uri: string, handler: LinkHandler): HTMLAnchorElement {
     const element = document.createElement('a');
     element.textContent = uri;
-    if (this._hypertextLinkHandler) {
-      element.addEventListener('click', () => this._hypertextLinkHandler(uri));
+    if (handler) {
+      element.addEventListener('click', () => handler(uri));
     } else {
       element.href = uri;
       // Force link on another tab so work is not lost
