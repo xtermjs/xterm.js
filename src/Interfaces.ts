@@ -44,6 +44,12 @@ export interface ITerminal {
   emit(event: string, data: any);
 }
 
+export interface ICharMeasure {
+  width: number;
+  height: number;
+  measure(): void;
+}
+
 interface ICircularList<T> {
   length: number;
   maxLength: number;

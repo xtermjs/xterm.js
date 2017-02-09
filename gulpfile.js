@@ -3,6 +3,7 @@ const buffer = require('vinyl-buffer');
 const fs = require('fs-extra');
 const gulp = require('gulp');
 const merge = require('merge-stream');
+const mochaPhantom = require('gulp-mocha-phantomjs');
 const sorcery = require('sorcery');
 const source = require('vinyl-source-stream');
 const sourcemaps = require('gulp-sourcemaps');
@@ -70,6 +71,10 @@ gulp.task('browserify', ['tsc'], function() {
   return merge(bundleStream, copyAddons, copyStylesheets);
 });
 
+gulp.task('test-phantom', function () {
+  return gulp.src('test-harness.html')
+      .pipe(mochaPhantom());
+});
 
 /**
  * Use `sorcery` to resolve the source map chain and point back to the TypeScript files.

@@ -1,0 +1,22 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <!-- encoding must be set for mocha's special characters to render properly -->
+    <link rel="stylesheet" href="node_modules/mocha/mocha.css" />
+  </head>
+  <body>
+    <div id="mocha"></div>
+    <div id="xterm"></div>
+    <script src="node_modules/mocha/mocha.js"></script>
+    <script src="node_modules/chai/chai.js"></script>
+    <script>
+      mocha.ui('bdd')
+      assert = chai.assert
+    </script>
+    <script src="build/xterm.js"></script>
+    <script src="lib/utils/CharMeasure.phantom.js"></script>
+    <script>
+      mocha.run()
+    </script>
+  </body>
+</html>
