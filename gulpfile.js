@@ -3,7 +3,8 @@ const buffer = require('vinyl-buffer');
 const fs = require('fs-extra');
 const gulp = require('gulp');
 const merge = require('merge-stream');
-const mochaPhantom = require('gulp-mocha-phantomjs');
+const mocha = require('gulp-mocha');
+const mochaPhantomJs = require('gulp-mocha-phantomjs');
 const sorcery = require('sorcery');
 const source = require('vinyl-source-stream');
 const sourcemaps = require('gulp-sourcemaps');
@@ -71,9 +72,14 @@ gulp.task('browserify', ['tsc'], function() {
   return merge(bundleStream, copyAddons, copyStylesheets);
 });
 
-gulp.task('test-phantom', function () {
+gulp.task('test-mocha', function () {
+  return gulp.src(['lib/*test.js', 'lib/**/*test.js'], {read: false})
+      .pipe(mocha())
+});
+
+gulp.task('test-mocha-phantomjs', function () {
   return gulp.src('test-harness.html')
-      .pipe(mochaPhantom());
+      .pipe(mochaPhantomJs());
 });
 
 /**
@@ -88,5 +94,5 @@ gulp.task('sorcery', ['browserify'], function () {
 });
 
 gulp.task('build', ['sorcery']);
-
+gulp.task('test', ['test-mocha', 'test-mocha-phantomjs']);
 gulp.task('default', ['build']);
