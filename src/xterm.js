@@ -548,6 +548,9 @@ Terminal.bindKeys = function(term) {
   on(term.textarea, 'compositionupdate', term.compositionHelper.compositionupdate.bind(term.compositionHelper));
   on(term.textarea, 'compositionend', term.compositionHelper.compositionend.bind(term.compositionHelper));
   term.on('refresh', term.compositionHelper.updateCompositionElements.bind(term.compositionHelper));
+  term.on('refresh', function (data) {
+    term.queueLinkification(data.start, data.end)
+  });
 };
 
 
@@ -1057,22 +1060,27 @@ Terminal.prototype.destroy = function() {
 /**
  * Tells the renderer to refresh terminal content between two rows (inclusive) at the next
  * opportunity.
- * @param {number} start The row to start from (between 0 and terminal's height terminal - 1)
- * @param {number} end The row to end at (between fromRow and terminal's height terminal - 1)
+ * @param {number} start The row to start from (between 0 and this.rows - 1).
+ * @param {number} end The row to end at (between start and this.rows - 1).
  */
 Terminal.prototype.refresh = function(start, end) {
   if (this.renderer) {
     this.renderer.queueRefresh(start, end);
+  }
+};
 
-    // TODO: DO this better
-    if (!this.linkifier) {
-      return;
-    }
+/**
+ * Queues linkification for the specified rows.
+ * @param {number} start The row to start from (between 0 and this.rows - 1).
+ * @param {number} end The row to end at (between start and this.rows - 1).
+ */
+Terminal.prototype.queueLinkification = function(start, end) {
+  if (this.linkifier) {
     for (let i = start; i <= end; i++) {
       this.linkifier.linkifyRow(i);
     }
   }
-};
+}
 
 /**
  * Display the cursor element
@@ -1274,7 +1282,12 @@ Terminal.prototype.attachCustomKeydownHandler = function(customKeydownHandler) {
   this.customKeydownHandler = customKeydownHandler;
 }
 
-// TODO: Doc
+/**
+ * Attaches a http(s) link handler, forcing web links to behave differently to
+ * regular <a> tags. This will trigger a refresh as links potentially need to be
+ * reconstructed. Calling this with null will remove the handler.
+ * @param {LinkHandler} handler The handler callback function.
+ */
 Terminal.prototype.attachHypertextLinkHandler = function(handler) {
   if (!this.linkifier) {
     throw new Error('Cannot attach a hypertext link handler before Terminal.open is called');
