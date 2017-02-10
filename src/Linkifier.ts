@@ -1,9 +1,10 @@
 /**
- * The time to wait after a row is changed before it is linkified. This prevents
- * the costly operation of searching every row multiple times, pntentially a
- * huge aount of times.
+ * @license MIT
  */
-const TIME_BEFORE_LINKIFY = 200;
+
+export type LinkHandler = (uri: string) => void;
+
+type LinkMatcher = {id: number, regex: RegExp, handler: LinkHandler};
 
 const protocolClause = '(https?:\\/\\/)';
 const domainCharacterSet = '[\\da-z\\.-]+';
@@ -20,11 +21,17 @@ const start = '(?:^|' + negatedDomainCharacterSet + ')(';
 const end = ')($|' + negatedPathCharacterSet + ')';
 const strictUrlRegex = new RegExp(start + protocolClause + bodyClause + end);
 
-export type LinkHandler = (uri: string) => void;
-
-type LinkMatcher = {id: number, regex: RegExp, handler: LinkHandler};
-
+/**
+ * The ID of the built in http(s) link matcher.
+ */
 const HYPERTEXT_LINK_MATCHER_ID = 0;
+
+/**
+ * The time to wait after a row is changed before it is linkified. This prevents
+ * the costly operation of searching every row multiple times, pntentially a
+ * huge aount of times.
+ */
+const TIME_BEFORE_LINKIFY = 200;
 
 /**
  * The Linkifier applies links to rows shortly after they have been refreshed.
