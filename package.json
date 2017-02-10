@@ -56,7 +56,6 @@
     "nodemon": "1.10.2",
     "sleep": "^3.0.1",
     "sorcery": "^0.10.0",
-    "tsify": "^3.0.0",
     "tslint": "^4.0.2",
     "typescript": "^2.0.3",
     "vinyl-buffer": "^1.0.0",

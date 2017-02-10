@@ -7,7 +7,6 @@ const sorcery = require('sorcery');
 const source = require('vinyl-source-stream');
 const sourcemaps = require('gulp-sourcemaps');
 const ts = require('gulp-typescript');
-const tsify = require('tsify');
 
 
 let buildDir = process.env.BUILD_DIR || 'build';
@@ -53,7 +52,6 @@ gulp.task('browserify', ['tsc'], function() {
     packageCache: {}
   };
   let bundleStream = browserify(browserifyOptions)
-        .plugin(tsify)
         .bundle()
         .pipe(source('xterm.js'))
         .pipe(buffer())
