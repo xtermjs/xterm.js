@@ -4,7 +4,7 @@
 
 export type LinkHandler = (uri: string) => void;
 
-type LinkMatcher = {id: number, regex: RegExp, handler: LinkHandler};
+type LinkMatcher = {id: number, regex: RegExp, matchIndex?: number, handler: LinkHandler};
 
 const protocolClause = '(https?:\\/\\/)';
 const domainCharacterSet = '[\\da-z\\.-]+';
@@ -47,7 +47,7 @@ export class Linkifier {
     this._rows = rows;
     this._rowTimeoutIds = [];
     this._linkMatchers = [];
-    this.registerLinkMatcher(strictUrlRegex, null);
+    this.registerLinkMatcher(strictUrlRegex, null, 1);
   }
 
   /**
@@ -77,16 +77,19 @@ export class Linkifier {
    * handled.
    * @param {RegExp} regex The regular expression the search for.
    * @param {LinkHandler} handler The callback when the link is called.
+   * @param {number} matchIndex The index of the link from the regex.match(html)
+   * call. This defaults to 0 (for regular expressions without capture groups).
    * @return {number} The ID of the new matcher, this can be used to deregister.
    */
-  public registerLinkMatcher(regex: RegExp, handler: LinkHandler): number {
+  public registerLinkMatcher(regex: RegExp, handler: LinkHandler, matchIndex?: number): number {
     if (Linkifier._nextLinkMatcherId !== HYPERTEXT_LINK_MATCHER_ID && !handler) {
       throw new Error('handler cannot be falsy');
     }
     const matcher: LinkMatcher = {
       id: Linkifier._nextLinkMatcherId++,
       regex,
-      handler
+      handler,
+      matchIndex
     };
     this._linkMatchers.push(matcher);
     return matcher.id;
@@ -113,7 +116,7 @@ export class Linkifier {
     const rowHtml = this._rows[rowIndex].innerHTML;
     for (let i = 0; i < this._linkMatchers.length; i++) {
       const matcher = this._linkMatchers[i];
-      const uri = this._findLinkMatch(rowHtml, matcher.regex);
+      const uri = this._findLinkMatch(rowHtml, matcher.regex, matcher.matchIndex);
       if (uri) {
         this._doLinkifyRow(rowIndex, uri, matcher.handler);
         // Only allow a single LinkMatcher to trigger on any given row.
@@ -135,11 +138,6 @@ export class Linkifier {
       const node = nodes[i];
       const searchIndex = node.textContent.indexOf(uri);
       if (searchIndex >= 0) {
-        if (node.childNodes.length > 0) {
-          // This row has already been linkified
-          return;
-        }
-
         const linkElement = this._createAnchorElement(uri, handler);
         if (node.textContent.trim().length === uri.length) {
           // Matches entire string
@@ -147,6 +145,10 @@ export class Linkifier {
             this._replaceNode(node, linkElement);
           } else {
             const element = (<HTMLElement>node);
+            if (element.nodeName === 'A') {
+              // This row has already been linkified
+              return;
+            }
             element.innerHTML = '';
             element.appendChild(linkElement);
           }
@@ -161,14 +163,15 @@ export class Linkifier {
   /**
    * Finds a link match in a piece of HTML.
    * @param {string} html The HTML to search.
+   * @param {number} matchIndex The regex match index of the link.
    * @return {string} The matching URI or null if not found.
    */
-  private _findLinkMatch(html: string, regex: RegExp): string {
+  private _findLinkMatch(html: string, regex: RegExp, matchIndex?: number): string {
     const match = html.match(regex);
     if (!match || match.length === 0) {
       return null;
     }
-    return match[1];
+    return match[typeof matchIndex !== 'number' ? 0 : matchIndex];
   }
 
   /**
