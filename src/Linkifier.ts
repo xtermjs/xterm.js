@@ -98,14 +98,17 @@ export class Linkifier {
   /**
    * Deregisters a link matcher if it has been registered.
    * @param {number} matcherId The link matcher's ID (returned after register)
+   * @return {boolean} Whether a link matcher was found and deregistered.
    */
-  public deregisterLinkMatcher(matcherId: number): void {
+  public deregisterLinkMatcher(matcherId: number): boolean {
     // ID 0 is the hypertext link matcher which cannot be deregistered
     for (let i = 1; i < this._linkMatchers.length; i++) {
       if (this._linkMatchers[i].id === matcherId) {
         this._linkMatchers.splice(i, 1);
+        return true;
       }
     }
+    return false;
   }
 
   /**

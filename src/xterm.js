@@ -1309,7 +1309,9 @@ Terminal.prototype.attachHypertextLinkHandler = function(handler) {
  */
 Terminal.prototype.registerLinkMatcher = function(regex, handler, matchIndex) {
   if (this.linkifier) {
-    return this.linkifier.registerLinkMatcher(regex, handler, matchIndex);
+    var matcherId = this.linkifier.registerLinkMatcher(regex, handler, matchIndex);
+    this.refresh(0, this.rows - 1);
+    return matcherId;
   }
 }
 
@@ -1319,7 +1321,9 @@ Terminal.prototype.registerLinkMatcher = function(regex, handler, matchIndex) {
  */
 Terminal.prototype.deregisterLinkMatcher = function(matcherId) {
   if (this.linkifier) {
-    this.linkifier.deregisterLinkMatcher(matcherId);
+    if (this.linkifier.deregisterLinkMatcher(matcherId)) {
+      this.refresh(0, this.rows - 1);
+    }
   }
 }
 
