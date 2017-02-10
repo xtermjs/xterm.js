@@ -35,7 +35,8 @@ export class Viewport {
     this.terminal.on('resize', this.syncScrollArea.bind(this));
     this.viewportElement.addEventListener('scroll', this.onScroll.bind(this));
 
-    this.syncScrollArea();
+    // Perform this async to ensure the CharMeasure is ready.
+    setTimeout(() => this.syncScrollArea(), 0);
   }
 
   /**
