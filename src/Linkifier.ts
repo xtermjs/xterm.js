@@ -37,11 +37,10 @@ const TIME_BEFORE_LINKIFY = 200;
  * The Linkifier applies links to rows shortly after they have been refreshed.
  */
 export class Linkifier {
-  private static _nextLinkMatcherId = HYPERTEXT_LINK_MATCHER_ID;
-
   private _rows: HTMLElement[];
   private _rowTimeoutIds: number[];
   private _linkMatchers: LinkMatcher[];
+  private _nextLinkMatcherId = HYPERTEXT_LINK_MATCHER_ID;
 
   constructor(rows: HTMLElement[]) {
     this._rows = rows;
@@ -84,11 +83,11 @@ export class Linkifier {
    * @return {number} The ID of the new matcher, this can be used to deregister.
    */
   public registerLinkMatcher(regex: RegExp, handler: LinkHandler, matchIndex?: number): number {
-    if (Linkifier._nextLinkMatcherId !== HYPERTEXT_LINK_MATCHER_ID && !handler) {
+    if (this._nextLinkMatcherId !== HYPERTEXT_LINK_MATCHER_ID && !handler) {
       throw new Error('handler cannot be falsy');
     }
     const matcher: LinkMatcher = {
-      id: Linkifier._nextLinkMatcherId++,
+      id: this._nextLinkMatcherId++,
       regex,
       handler,
       matchIndex
