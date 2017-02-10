@@ -56,7 +56,8 @@ export class Linkifier {
   }
 
   /**
-   * Attaches a handler for hypertext links, overriding default <a> behavior.
+   * Attaches a handler for hypertext links, overriding default <a> behavior
+   * for standard http(s) links.
    * @param {LinkHandler} handler The handler to use, this can be cleared with
    * null.
    */
@@ -133,7 +134,6 @@ export class Linkifier {
         }
 
         const linkElement = this._createAnchorElement(uri, handler);
-        // TODO: Check if childNodes check is needed
         if (node.textContent.trim().length === uri.length) {
           // Matches entire string
           if (node.nodeType === Node.TEXT_NODE) {
