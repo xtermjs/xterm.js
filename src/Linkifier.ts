@@ -75,7 +75,9 @@ export class Linkifier {
   /**
    * Registers a link matcher, allowing custom link patterns to be matched and
    * handled.
-   * @param {RegExp} regex The regular expression the search for.
+   * @param {RegExp} regex The regular expression the search for, specifically
+   * this searches the textContent of the rows. You will want to use \s to match
+   * a space ' ' character for example.
    * @param {LinkHandler} handler The callback when the link is called.
    * @param {number} matchIndex The index of the link from the regex.match(html)
    * call. This defaults to 0 (for regular expressions without capture groups).
@@ -116,10 +118,10 @@ export class Linkifier {
    * @param {number} rowIndex The index of the row to linkify.
    */
   private _linkifyRow(rowIndex: number): void {
-    const rowHtml = this._rows[rowIndex].innerHTML;
+    const text = this._rows[rowIndex].textContent;
     for (let i = 0; i < this._linkMatchers.length; i++) {
       const matcher = this._linkMatchers[i];
-      const uri = this._findLinkMatch(rowHtml, matcher.regex, matcher.matchIndex);
+      const uri = this._findLinkMatch(text, matcher.regex, matcher.matchIndex);
       if (uri) {
         this._doLinkifyRow(rowIndex, uri, matcher.handler);
         // Only allow a single LinkMatcher to trigger on any given row.
@@ -164,13 +166,13 @@ export class Linkifier {
   }
 
   /**
-   * Finds a link match in a piece of HTML.
-   * @param {string} html The HTML to search.
+   * Finds a link match in a piece of text.
+   * @param {string} text The text to search.
    * @param {number} matchIndex The regex match index of the link.
    * @return {string} The matching URI or null if not found.
    */
-  private _findLinkMatch(html: string, regex: RegExp, matchIndex?: number): string {
-    const match = html.match(regex);
+  private _findLinkMatch(text: string, regex: RegExp, matchIndex?: number): string {
+    const match = text.match(regex);
     if (!match || match.length === 0) {
       return null;
     }
