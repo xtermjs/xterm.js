@@ -15,7 +15,7 @@ export const isFirefox = !!~userAgent.indexOf('Firefox');
 export const isMSIE = !!~userAgent.indexOf('MSIE') || !!~userAgent.indexOf('Trident');
 export const isSafari = (isNode) ? false : (/constructor/i.test(g.HTMLElement)
                                             || ((p) => {
-                                                 return p.toString() === "[object SafariRemoteNotification]";
+                                                 return p.toString() === '[object SafariRemoteNotification]';
                                                })(!g['safari'] || g['safari'].pushNotification));
 
 // Find the users platform. We use this to interpret the meta key
