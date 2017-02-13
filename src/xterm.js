@@ -335,6 +335,16 @@ Terminal.vcolors = (function() {
 })();
 
 /**
+ * Browser compatibility flags.
+ */
+
+// Check if we are running on Safari
+// (ref: http://stackoverflow.com/questions/9847580)
+Terminal.isSafari =  /constructor/i.test(window.HTMLElement)
+                 || (function (p) { return p.toString() === "[object SafariRemoteNotification]"; })
+                    (!window['safari'] || safari.pushNotification);
+
+/**
  * Options
  */
 
@@ -536,10 +546,11 @@ Terminal.bindKeys = function(term) {
     term.keyDown(ev);
   }, true);
 
-  on(term.textarea, 'keypress', function(ev) {
+  var keyPressEventName = (Terminal.isSafari) ? 'textInput' : 'keypress';
+  on(term.textarea, keyPressEventName, function(ev) {
     term.keyPress(ev);
     // Truncate the textarea's value, since it is not needed
-    this.value = '';
+    term.textarea.value = '';
   }, true);
 
   on(term.textarea, 'compositionstart', term.compositionHelper.compositionstart.bind(term.compositionHelper));
@@ -1631,23 +1642,24 @@ Terminal.prototype.keyPress = function(ev) {
 
   this.cancel(ev);
 
-  if (ev.charCode) {
-    key = ev.charCode;
-  } else if (ev.which == null) {
-    key = ev.keyCode;
-  } else if (ev.which !== 0 && ev.charCode !== 0) {
-    key = ev.which;
+  if ((ev.altKey || ev.ctrlKey || ev.metaKey) && !isThirdLevelShift(this, ev)) {
+    return false;
+  }
+
+  if (Terminal.isSafari) {
+    key = ev.data;
   } else {
-    return false;
+    if (ev.charCode) {
+      key = ev.charCode;
+    } else if (ev.which == null) {
+      key = ev.keyCode;
+    } else if (ev.which !== 0 && ev.charCode !== 0) {
+      key = ev.which;
+    } else {
+      return false;
+    }
+    key = String.fromCharCode(key);
   }
-
-  if (!key || (
-    (ev.altKey || ev.ctrlKey || ev.metaKey) && !isThirdLevelShift(this, ev)
-  )) {
-    return false;
-  }
-
-  key = String.fromCharCode(key);
 
   this.emit('keypress', key, ev);
   this.emit('key', key, ev);
