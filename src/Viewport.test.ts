@@ -41,13 +41,17 @@ describe('Viewport', () => {
   });
 
   describe('refresh', () => {
-    it('should set the line-height of the terminal', () => {
-      assert.equal(viewportElement.style.lineHeight, CHARACTER_HEIGHT + 'px');
-      assert.equal(terminal.rowContainer.style.lineHeight, CHARACTER_HEIGHT + 'px');
-      charMeasure.height = 1;
-      viewport.refresh();
-      assert.equal(viewportElement.style.lineHeight, '1px');
-      assert.equal(terminal.rowContainer.style.lineHeight, '1px');
+    it('should set the line-height of the terminal', done => {
+      // Allow CharMeasure to be initialized
+      setTimeout(() => {
+        assert.equal(viewportElement.style.lineHeight, CHARACTER_HEIGHT + 'px');
+        assert.equal(terminal.rowContainer.style.lineHeight, CHARACTER_HEIGHT + 'px');
+        charMeasure.height = 1;
+        viewport.refresh();
+        assert.equal(viewportElement.style.lineHeight, '1px');
+        assert.equal(terminal.rowContainer.style.lineHeight, '1px');
+        done();
+      }, 0);
     });
     it('should set the height of the viewport when the line-height changed', () => {
       terminal.lines.push('');
@@ -62,17 +66,21 @@ describe('Viewport', () => {
   });
 
   describe('syncScrollArea', () => {
-    it('should sync the scroll area', () => {
-      terminal.lines.push('');
-      terminal.rows = 1;
-      assert.equal(scrollAreaElement.style.height, 0 * CHARACTER_HEIGHT + 'px');
-      viewport.syncScrollArea();
-      assert.equal(viewportElement.style.height, 1 * CHARACTER_HEIGHT + 'px');
-      assert.equal(scrollAreaElement.style.height, 1 * CHARACTER_HEIGHT + 'px');
-      terminal.lines.push('');
-      viewport.syncScrollArea();
-      assert.equal(viewportElement.style.height, 1 * CHARACTER_HEIGHT + 'px');
-      assert.equal(scrollAreaElement.style.height, 2 * CHARACTER_HEIGHT + 'px');
+    it('should sync the scroll area', done => {
+      // Allow CharMeasure to be initialized
+      setTimeout(() => {
+        terminal.lines.push('');
+        terminal.rows = 1;
+        assert.equal(scrollAreaElement.style.height, 0 * CHARACTER_HEIGHT + 'px');
+        viewport.syncScrollArea();
+        assert.equal(viewportElement.style.height, 1 * CHARACTER_HEIGHT + 'px');
+        assert.equal(scrollAreaElement.style.height, 1 * CHARACTER_HEIGHT + 'px');
+        terminal.lines.push('');
+        viewport.syncScrollArea();
+        assert.equal(viewportElement.style.height, 1 * CHARACTER_HEIGHT + 'px');
+        assert.equal(scrollAreaElement.style.height, 2 * CHARACTER_HEIGHT + 'px');
+        done();
+      }, 0);
     });
   });
 });
