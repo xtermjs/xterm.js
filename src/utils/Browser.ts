@@ -7,11 +7,16 @@
 import { contains } from './Generic';
 
 const isNode = (typeof navigator === 'undefined') ? true : false;
+const g = (isNode) ? global : (<any>window);
 const userAgent = (isNode) ? 'node' : navigator.userAgent;
 const platform = (isNode) ? 'node' : navigator.platform;
 
 export const isFirefox = !!~userAgent.indexOf('Firefox');
 export const isMSIE = !!~userAgent.indexOf('MSIE') || !!~userAgent.indexOf('Trident');
+export const isSafari = (isNode) ? false : (/constructor/i.test(g.HTMLElement)
+                                            || ((p) => {
+                                                 return p.toString() === "[object SafariRemoteNotification]";
+                                               })(!g['safari'] || g['safari'].pushNotification));
 
 // Find the users platform. We use this to interpret the meta key
 // and ISO third level shifts.

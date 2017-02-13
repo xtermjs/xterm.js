@@ -335,16 +335,6 @@ Terminal.vcolors = (function() {
 })();
 
 /**
- * Browser compatibility flags.
- */
-
-// Check if we are running on Safari
-// (ref: http://stackoverflow.com/questions/9847580)
-Terminal.isSafari =  /constructor/i.test(window.HTMLElement)
-                 || (function (p) { return p.toString() === "[object SafariRemoteNotification]"; })
-                    (!window['safari'] || safari.pushNotification);
-
-/**
  * Options
  */
 
@@ -546,11 +536,11 @@ Terminal.bindKeys = function(term) {
     term.keyDown(ev);
   }, true);
 
-  var keyPressEventName = (Terminal.isSafari) ? 'textInput' : 'keypress';
+  var keyPressEventName = (term.browser.isSafari) ? 'textInput' : 'keypress';
   on(term.textarea, keyPressEventName, function(ev) {
     term.keyPress(ev);
     // Truncate the textarea's value, since it is not needed
-    term.textarea.value = '';
+    this.value = '';
   }, true);
 
   on(term.textarea, 'compositionstart', term.compositionHelper.compositionstart.bind(term.compositionHelper));
@@ -1646,7 +1636,7 @@ Terminal.prototype.keyPress = function(ev) {
     return false;
   }
 
-  if (Terminal.isSafari) {
+  if (this.browser.isSafari) {
     key = ev.data;
   } else {
     if (ev.charCode) {
