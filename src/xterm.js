@@ -15,6 +15,7 @@ import { EventEmitter } from './EventEmitter';
 import { Viewport } from './Viewport';
 import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard';
 import { CircularList } from './utils/CircularList';
+import { LineWrap } from './utils/LineWrap.js'
 import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Parser } from './Parser';
@@ -234,6 +235,7 @@ function Terminal(options) {
    * characters which are 2-length arrays where [0] is an attribute and [1] is the character.
    */
   this.lines = new CircularList(this.scrollback);
+  this.lineWrap = new LineWrap(this.scrollback);
   var i = this.rows;
   while (i--) {
     this.lines.push(this.blankLine());
@@ -1738,18 +1740,15 @@ Terminal.prototype.resize = function(x, y) {
   if (j < x) {
     ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
     i = this.lines.length;
-    while (i--) {
-      while (this.lines.get(i).length < x) {
-        this.lines.get(i).push(ch);
-      }
-    }
+    this.lineWrap.changeLineLength(this.lines, x)
+//    while (i--) {
+//      while (this.lines.get(i).length < x) {
+//        this.lines.get(i).push(ch);
+//      }
+//    }
   } else { // (j > x)
     i = this.lines.length;
-    while (i--) {
-      while (this.lines.get(i).length > x) {
-        this.lines.get(i).pop();
-      }
-    }
+    this.lineWrap.changeLineLength(this.lines, x)
   }
   this.cols = x;
   this.setupStops(this.cols);

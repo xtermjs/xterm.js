@@ -53,12 +53,7 @@ export class InputHandler implements IInputHandler {
       if (this._terminal.x + ch_width - 1 >= this._terminal.cols) {
         // autowrap - DECAWM
         if (this._terminal.wraparoundMode) {
-          this._terminal.x = 0;
-          this._terminal.y++;
-          if (this._terminal.y > this._terminal.scrollBottom) {
-            this._terminal.y--;
-            this._terminal.scroll();
-          }
+          this._terminal.lineWrap.addRowToLine(this._terminal.y + this._terminal.ybase)
         } else {
           if (ch_width === 2)  // FIXME: check for xterm behavior
             return;
