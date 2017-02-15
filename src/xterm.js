@@ -2237,6 +2237,9 @@ function keys(obj) {
 Terminal.EventEmitter = EventEmitter;
 Terminal.inherits = inherits;
 
+// Expose for Phantom.JS tests
+Terminal.CharMeasure = CharMeasure;
+
 /**
  * Adds an event listener to the terminal.
  *
