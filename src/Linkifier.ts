@@ -78,7 +78,7 @@ export class Linkifier {
    * this searches the textContent of the rows. You will want to use \s to match
    * a space ' ' character for example.
    * @param {LinkHandler} handler The callback when the link is called.
-   * @param {number} matchIndex The index of the link from the regex.match(html)
+   * @param {number} matchIndex The index of the link from the regex.match(text)
    * call. This defaults to 0 (for regular expressions without capture groups).
    * @return {number} The ID of the new matcher, this can be used to deregister.
    */
@@ -118,7 +118,7 @@ export class Linkifier {
    */
   private _linkifyRow(rowIndex: number): void {
     const text = this._rows[rowIndex].textContent;
-    for (let i = 0; i < this._linkMatchers.length; i++) {
+    for (let i = this._linkMatchers.length - 1; i >= 0; i--) {
       const matcher = this._linkMatchers[i];
       const uri = this._findLinkMatch(text, matcher.regex, matcher.matchIndex);
       if (uri) {
