@@ -1781,7 +1781,7 @@ Terminal.prototype.error = function() {
  * @param {number} y The number of rows to resize to.
  */
 Terminal.prototype.resize = function(x, y) {
-  if (Number.isNaN(x) || Number.isNaN(y)) {
+  if (isNaN(x) || isNaN(y)) {
     return;
   }
 
@@ -2302,6 +2302,9 @@ function keys(obj) {
 
 Terminal.EventEmitter = EventEmitter;
 Terminal.inherits = inherits;
+
+// Expose for Phantom.JS tests
+Terminal.CharMeasure = CharMeasure;
 
 /**
  * Adds an event listener to the terminal.

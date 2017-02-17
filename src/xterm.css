@@ -97,13 +97,10 @@
 }
 
 @keyframes xterm-cursor-blink {
-    0% {
-        background-color: #fff;
-        color: #000;
-    }
+    0% { }
     50% {
         background-color: transparent;
-        color: #FFF;
+        color: inherit;
     }
 }
 
