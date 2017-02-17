@@ -123,7 +123,7 @@ export class Linkifier {
       return;
     }
     const text = row.textContent;
-    for (let i = 0; i < this._linkMatchers.length; i--) {
+    for (let i = 0; i < this._linkMatchers.length; i++) {
       const matcher = this._linkMatchers[i];
       const uri = this._findLinkMatch(text, matcher.regex, matcher.matchIndex);
       if (uri) {
