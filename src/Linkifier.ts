@@ -117,7 +117,11 @@ export class Linkifier {
    * @param {number} rowIndex The index of the row to linkify.
    */
   private _linkifyRow(rowIndex: number): void {
-    const text = this._rows[rowIndex].textContent;
+    const row = this._rows[rowIndex];
+    if (!row) {
+      return;
+    }
+    const text = row.textContent;
     for (let i = this._linkMatchers.length - 1; i >= 0; i--) {
       const matcher = this._linkMatchers[i];
       const uri = this._findLinkMatch(text, matcher.regex, matcher.matchIndex);
