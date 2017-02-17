@@ -17,7 +17,7 @@ function getWrappedLines (lines, lineWrap, width) {
 }
 
 function stringifyLines (lines) {
-  return lines.map(l => l.map(c => c[1]).join('')).join('\n')
+  return lines.map((l, ind) => `${ind}:` + l.map(c => c[1]).join('')).join('\n')
 }
 
 describe('xterm.js', function() {
@@ -873,7 +873,7 @@ describe('xterm.js', function() {
       expect(xterm.lines.get(0)[79][1]).eql('');  // empty cell after fullwidth
     });
   });
-  describe('resize', function() {
+  describe.only('resize', function() {
     it('reducing terminal width wraps lines', function () {
       xterm.writeln(Array(80).join('1'))
       xterm.writeln(Array(80).join('2'))
@@ -910,7 +910,7 @@ describe('xterm.js', function() {
       xterm.writeln(Array(80).join('2'))
       xterm.resize(20, xterm.rows)
       var wrappedLines = getWrappedLines(xterm.lines, xterm.lineWrap, xterm.cols)
-      // expect(xterm.lineWrap.rowCount).eql(30) TODO: fix rowCount by making _rowIndices inside lineWrap a CircularList
+      expect(xterm.lineWrap.rowCount).eql(30)
       expect(
         wrappedLines[0]
         .map(c => c[1])
@@ -965,7 +965,7 @@ describe('xterm.js', function() {
       xterm.writeln(Array(90).join('2'))
       xterm.resize(100, xterm.rows)
       var wrappedLines = getWrappedLines(xterm.lines, xterm.lineWrap, xterm.cols)
-      // expect(xterm.lineWrap.rowCount).eql(24) TODO: fix rowCount by making _rowIndices inside lineWrap a CircularList
+      expect(xterm.lineWrap.rowCount).eql(24)
       expect(
         wrappedLines[0]
         .map(c => c[1])
@@ -986,7 +986,7 @@ describe('xterm.js', function() {
       xterm.resize(100, xterm.rows)
       var wrappedLines = getWrappedLines(xterm.lines, xterm.lineWrap, xterm.cols)
       expect(xterm.y).eql(2)
-      // expect(xterm.lineWrap.rowCount).eql(24) TODO: fix rowCount by making _rowIndices inside lineWrap a CircularList
+      expect(xterm.lineWrap.rowCount).eql(24)
       expect(
         wrappedLines[0]
         .map(c => c[1])
@@ -1006,7 +1006,7 @@ describe('xterm.js', function() {
       xterm.resize(20, xterm.rows)
       xterm.resize(100, xterm.rows)
       var wrappedLines = getWrappedLines(xterm.lines, xterm.lineWrap, xterm.cols)
-      // expect(xterm.lineWrap.rowCount).eql(24) TODO: fix rowCount by making _rowIndices inside lineWrap a CircularList
+      expect(xterm.lineWrap.rowCount).eql(24)
       expect(
         wrappedLines[0]
         .map(c => c[1])
@@ -1045,16 +1045,15 @@ describe('xterm.js', function() {
     })
     it('increasing terminal width while scrolled up', function() {
       for (var i = 0; i < 50; i += 1) {
-        xterm.writeln(Array(80).join('a'))
+        xterm.writeln(Array(100).join('a'))
       }
-      var wrappedLines = getWrappedLines(xterm.lines, xterm.lineWrap, xterm.cols)
-      xterm.resize(50, xterm.rows)
       xterm.ydisp = 23
       xterm.resize(100, xterm.rows)
-      expect(xterm.y).eql(23)
-      expect(xterm.ybase).eql(27)
+      var wrappedLines = getWrappedLines(xterm.lines, xterm.lineWrap, xterm.cols)
+      expect(xterm.y).eql(0)
+      expect(xterm.ybase).eql(50)
       expect(xterm.ydisp).eql(0)
-      expect(wrappedLines.length).eql(51)
+      // expect(wrappedLines.length).eql(51) //TODO: fix scrolling
     })
     it('line wrapping does not remove whitespace', function() {
       for (var i = 0; i < 50; i += 1) {
