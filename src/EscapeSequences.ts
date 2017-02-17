@@ -1,4 +1,8 @@
 /**
+ * @license MIT
+ */
+
+/**
  * C0 control codes
  * See = https://en.wikipedia.org/wiki/C0_and_C1_control_codes
  */
