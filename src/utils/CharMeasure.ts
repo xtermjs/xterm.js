@@ -34,6 +34,7 @@ export class CharMeasure extends EventEmitter {
       this._measureElement.style.top = '0';
       this._measureElement.style.left = '-9999em';
       this._measureElement.textContent = 'W';
+      this._measureElement.setAttribute('aria-hidden', 'true');
       this._parentElement.appendChild(this._measureElement);
       // Perform _doMeasure async if the element was just attached as sometimes
       // getBoundingClientRect does not return accurate values without this.
