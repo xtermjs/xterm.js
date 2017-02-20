@@ -963,10 +963,8 @@ Terminal.prototype.bindMouse = function() {
     }
 
     // convert to cols/rows
-    w = self.element.clientWidth;
-    h = self.element.clientHeight;
-    x = Math.ceil((x / w) * self.cols);
-    y = Math.ceil((y / h) * self.rows);
+    x = Math.ceil(x / self.charMeasure.width);
+    y = Math.ceil(y / self.charMeasure.height);
 
     // be sure to avoid sending
     // bad positions to the program
