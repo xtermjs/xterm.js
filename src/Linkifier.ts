@@ -148,7 +148,7 @@ export class Linkifier {
       const searchIndex = node.textContent.indexOf(uri);
       if (searchIndex >= 0) {
         const linkElement = this._createAnchorElement(uri, handler);
-        if (node.textContent.trim().length === uri.length) {
+        if (node.textContent.length === uri.length) {
           // Matches entire string
           if (node.nodeType === Node.TEXT_NODE) {
             this._replaceNode(node, linkElement);
