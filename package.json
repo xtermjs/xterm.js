@@ -47,6 +47,8 @@
     "glob": "^7.0.5",
     "gulp": "^3.9.1",
     "gulp-cli": "^1.2.2",
+    "gulp-coveralls": "^0.1.4",
+    "gulp-istanbul": "^1.1.1",
     "gulp-mocha": "^3.0.1",
     "gulp-mocha-phantomjs": "^0.12.0",
     "gulp-sourcemaps": "1.9.1",
@@ -70,6 +72,7 @@
     "test": "gulp test",
     "build:docs": "jsdoc -c jsdoc.json",
     "build": "gulp build",
-    "prepublish": "npm run build"
+    "prepublish": "npm run build",
+    "coveralls": "gulp coveralls"
   }
 }
