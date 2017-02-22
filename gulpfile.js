@@ -1,7 +1,9 @@
 const browserify = require('browserify');
 const buffer = require('vinyl-buffer');
+const coveralls = require('gulp-coveralls');
 const fs = require('fs-extra');
 const gulp = require('gulp');
+const istanbul = require('gulp-istanbul');
 const merge = require('merge-stream');
 const mocha = require('gulp-mocha');
 const mochaPhantomJs = require('gulp-mocha-phantomjs');
@@ -70,9 +72,18 @@ gulp.task('browserify', ['tsc'], function() {
   return merge(bundleStream, copyAddons, copyStylesheets);
 });
 
-gulp.task('test-mocha', function () {
+gulp.task('instrument-test', function () {
+  return gulp.src(['lib/**/*.js'])
+    // Covering files
+    .pipe(istanbul())
+    // Force `require` to return covered files
+    .pipe(istanbul.hookRequire());
+});
+
+gulp.task('test-mocha', ['instrument-test'], function () {
   return gulp.src(['lib/*test.js', 'lib/**/*test.js'], {read: false})
       .pipe(mocha())
+      .pipe(istanbul.writeReports());
 });
 
 gulp.task('test-mocha-phantomjs', function () {
@@ -89,6 +100,14 @@ gulp.task('sorcery', ['browserify'], function () {
   var chain = sorcery.loadSync(`${buildDir}/xterm.js`);
   var map = chain.apply();
   chain.writeSync();
+});
+
+/**
+ * Submit coverage results to coveralls.io
+ */
+gulp.task('coveralls', function () {
+  gulp.src('coverage/**/lcov.info')
+    .pipe(coveralls());
 });
 
 gulp.task('build', ['sorcery']);
