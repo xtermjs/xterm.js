@@ -16,7 +16,7 @@ const localHostClause = '(localhost)';
 const portClause = '(:\\d{1,5})';
 const hostClause = '((' + domainBodyClause + '\\.' + tldClause + ')|' + ipClause + '|' + localHostClause + ')' + portClause + '?';
 const pathClause = '(\\/[\\/\\w\\.-]*)*';
-const queryStringClause = '(\\?[\\w\\[\\]\\(\\)\\/\\?\\!#@$&\'*+,:;]*)?';
+const queryStringClause = '(\\?[\\w\\[\\]\\(\\)\\/\\?\\!#@$&\'*+,:;\\=]*)?';
 const negatedPathCharacterSet = '[^\\/\\w\\.-]+';
 const bodyClause = hostClause + pathClause + queryStringClause;
 const start = '(?:^|' + negatedDomainCharacterSet + ')(';
