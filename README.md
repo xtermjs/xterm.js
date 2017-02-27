@@ -48,14 +48,29 @@ Xterm.js works seamlessly in Electron apps and may even work on earlier versions
 
 ## Demo
 
-To launch the demo simply run:
+### Linux or macOS
+
+Run the following commands:
 
 ```
-npm install
-npm start
+$ npm install
+$ npm start
 ```
 
-Then open http://0.0.0.0:3000 in a web browser (use http://127.0.0.1:3000 if running under Windows).
+Then open http://0.0.0.0:3000 in a web browser.
+
+### Windows
+
+First, ensure [node-gyp](https://github.com/nodejs/node-gyp) is installed and configured correctly, then run these commands.
+
+Note: Do not use ConEmu, as it seems to break the demo for some reason.
+
+```
+> npm install
+> npm start
+```
+
+Then open http://127.0.0.1:3000 in a web browser.
 
 ## Getting Started
 
@@ -77,7 +92,7 @@ To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to t
     </body>
   </html>
 ```
-Finally instantiate the `Terminal` object and then call the `open` function with the DOM object of the `div`.  
+Finally instantiate the `Terminal` object and then call the `open` function with the DOM object of the `div`.
 
 ## Addons
 
