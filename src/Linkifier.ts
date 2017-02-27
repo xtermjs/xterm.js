@@ -3,14 +3,12 @@
  */
 
 import { LinkMatcherOptions } from './Interfaces';
-import { LinkMatcherValidationCallback } from './Types';
-
-export type LinkHandler = (uri: string) => void;
+import { LinkMatcherHandler, LinkMatcherValidationCallback } from './Types';
 
 type LinkMatcher = {
   id: number,
   regex: RegExp,
-  handler: LinkHandler,
+  handler: LinkMatcherHandler,
   matchIndex?: number,
   validationCallback?: LinkMatcherValidationCallback;
 };
@@ -43,7 +41,7 @@ const HYPERTEXT_LINK_MATCHER_ID = 0;
  * the costly operation of searching every row multiple times, pntentially a
  * huge aount of times.
  */
-const TIME_BEFORE_LINKIFY = 200;
+let TIME_BEFORE_LINKIFY = 200;
 
 /**
  * The Linkifier applies links to rows shortly after they have been refreshed.
@@ -79,7 +77,7 @@ export class Linkifier {
    * @param {LinkHandler} handler The handler to use, this can be cleared with
    * null.
    */
-  public attachHypertextLinkHandler(handler: LinkHandler): void {
+  public attachHypertextLinkHandler(handler: LinkMatcherHandler): void {
     this._linkMatchers[HYPERTEXT_LINK_MATCHER_ID].handler = handler;
   }
 
@@ -93,7 +91,7 @@ export class Linkifier {
    * @param {LinkMatcherOptions} [options] Options for the link matcher.
    * @return {number} The ID of the new matcher, this can be used to deregister.
    */
-  public registerLinkMatcher(regex: RegExp, handler: LinkHandler, options: LinkMatcherOptions = {}): number {
+  public registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options: LinkMatcherOptions = {}): number {
     if (this._nextLinkMatcherId !== HYPERTEXT_LINK_MATCHER_ID && !handler) {
       throw new Error('handler cannot be falsy');
     }
@@ -161,7 +159,7 @@ export class Linkifier {
    * @param {handler} handler The handler to trigger when the link is triggered.
    * @return The link element if it was added, otherwise undefined.
    */
-  private _doLinkifyRow(rowIndex: number, uri: string, handler?: LinkHandler): HTMLElement {
+  private _doLinkifyRow(rowIndex: number, uri: string, handler?: LinkMatcherHandler): HTMLElement {
     // Iterate over nodes as we want to consider text nodes
     const nodes = this._rows[rowIndex].childNodes;
     for (let i = 0; i < nodes.length; i++) {
@@ -210,7 +208,7 @@ export class Linkifier {
    * @param {string} uri The uri of the link.
    * @return {HTMLAnchorElement} The link.
    */
-  private _createAnchorElement(uri: string, handler: LinkHandler): HTMLAnchorElement {
+  private _createAnchorElement(uri: string, handler: LinkMatcherHandler): HTMLAnchorElement {
     const element = document.createElement('a');
     element.textContent = uri;
     if (handler) {
@@ -282,5 +280,12 @@ export class Linkifier {
       const rightTextNode = document.createTextNode(rightText);
       this._replaceNode(node, leftTextNode, newNode, rightTextNode);
     }
+  }
+
+  public static setTimeBeforeLinkifyForTest(time: number) {
+    // This is necessary since it's needs to be used in PhantomJS. Ideally the
+    // time variable would be a protected static member and a TestLinkifier
+    // would expose it for the test.
+    TIME_BEFORE_LINKIFY = time;
   }
 }

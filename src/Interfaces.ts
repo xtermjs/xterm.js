@@ -2,7 +2,8 @@
  * @license MIT
  */
 
-import { LinkMatcherValidationCallback } from './Types';
+import { LinkMatcherOptions } from './Interfaces';
+import { LinkMatcherHandler, LinkMatcherValidationCallback } from './Types';
 
 export interface IBrowser {
   isNode: boolean;
@@ -50,6 +51,13 @@ export interface ICharMeasure {
   width: number;
   height: number;
   measure(): void;
+}
+
+export interface ILinkifier {
+  linkifyRow(rowIndex: number): void;
+  attachHypertextLinkHandler(handler: LinkMatcherHandler): void;
+  registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options?: LinkMatcherOptions): number;
+  deregisterLinkMatcher(matcherId: number): boolean;
 }
 
 interface ICircularList<T> {

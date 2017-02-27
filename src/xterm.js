@@ -2302,6 +2302,7 @@ Terminal.inherits = inherits;
 
 // Expose for Phantom.JS tests
 Terminal.CharMeasure = CharMeasure;
+Terminal.Linkifier = Linkifier;
 
 /**
  * Adds an event listener to the terminal.
