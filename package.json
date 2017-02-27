@@ -36,6 +36,7 @@
   ],
   "devDependencies": {
     "@types/chai": "^3.4.34",
+    "@types/jsdom": "^2.0.30",
     "@types/mocha": "^2.2.33",
     "@types/node": "^6.0.41",
     "browserify": "^13.1.0",
