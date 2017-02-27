@@ -2,9 +2,20 @@
  * @license MIT
  */
 
+import { LinkMatcherOptions } from './Interfaces';
+import { LinkMatcherValidationCallback } from './Types';
+
 export type LinkHandler = (uri: string) => void;
 
-type LinkMatcher = {id: number, regex: RegExp, matchIndex?: number, handler: LinkHandler};
+type LinkMatcher = {
+  id: number,
+  regex: RegExp,
+  handler: LinkHandler,
+  matchIndex?: number,
+  validationCallback?: LinkMatcherValidationCallback;
+};
+
+const INVALID_LINK_CLASS = 'xterm-invalid-link';
 
 const protocolClause = '(https?:\\/\\/)';
 const domainCharacterSet = '[\\da-z\\.-]+';
@@ -79,11 +90,10 @@ export class Linkifier {
    * this searches the textContent of the rows. You will want to use \s to match
    * a space ' ' character for example.
    * @param {LinkHandler} handler The callback when the link is called.
-   * @param {number} matchIndex The index of the link from the regex.match(text)
-   * call. This defaults to 0 (for regular expressions without capture groups).
+   * @param {LinkMatcherOptions} [options] Options for the link matcher.
    * @return {number} The ID of the new matcher, this can be used to deregister.
    */
-  public registerLinkMatcher(regex: RegExp, handler: LinkHandler, matchIndex?: number): number {
+  public registerLinkMatcher(regex: RegExp, handler: LinkHandler, options: LinkMatcherOptions = {}): number {
     if (this._nextLinkMatcherId !== HYPERTEXT_LINK_MATCHER_ID && !handler) {
       throw new Error('handler cannot be falsy');
     }
@@ -91,7 +101,8 @@ export class Linkifier {
       id: this._nextLinkMatcherId++,
       regex,
       handler,
-      matchIndex
+      matchIndex: options.matchIndex,
+      validationCallback: options.validationCallback
     };
     this._linkMatchers.push(matcher);
     return matcher.id;
@@ -123,11 +134,20 @@ export class Linkifier {
       return;
     }
     const text = row.textContent;
+    // TODO: Onl execute handler if isValid
     for (let i = 0; i < this._linkMatchers.length; i++) {
       const matcher = this._linkMatchers[i];
       const uri = this._findLinkMatch(text, matcher.regex, matcher.matchIndex);
       if (uri) {
-        this._doLinkifyRow(rowIndex, uri, matcher.handler);
+        const linkElement = this._doLinkifyRow(rowIndex, uri, matcher.handler);
+        // Fire validation callback
+        if (matcher.validationCallback) {
+          matcher.validationCallback(uri, isValid => {
+            if (!isValid) {
+              linkElement.classList.add(INVALID_LINK_CLASS);
+            }
+          });
+        }
         // Only allow a single LinkMatcher to trigger on any given row.
         return;
       }
@@ -139,8 +159,9 @@ export class Linkifier {
    * @param {number} rowIndex The index of the row to linkify.
    * @param {string} uri The uri that has been found.
    * @param {handler} handler The handler to trigger when the link is triggered.
+   * @return The link element if it was added, otherwise undefined.
    */
-  private _doLinkifyRow(rowIndex: number, uri: string, handler?: LinkHandler): void {
+  private _doLinkifyRow(rowIndex: number, uri: string, handler?: LinkHandler): HTMLElement {
     // Iterate over nodes as we want to consider text nodes
     const nodes = this._rows[rowIndex].childNodes;
     for (let i = 0; i < nodes.length; i++) {
@@ -165,6 +186,7 @@ export class Linkifier {
           // Matches part of string
           this._replaceNodeSubstringWithNode(node, linkElement, uri, searchIndex);
         }
+        return linkElement;
       }
     }
   }
@@ -192,7 +214,12 @@ export class Linkifier {
     const element = document.createElement('a');
     element.textContent = uri;
     if (handler) {
-      element.addEventListener('click', () => handler(uri));
+      element.addEventListener('click', () => {
+        // Only execute the handler if the link is not flagged as invalid
+        if (!element.classList.contains(INVALID_LINK_CLASS)) {
+          handler(uri);
+        }
+      });
     } else {
       element.href = uri;
       // Force link on another tab so work is not lost

@@ -1303,13 +1303,12 @@ Terminal.prototype.attachHypertextLinkHandler = function(handler) {
    * this searches the textContent of the rows. You will want to use \s to match
    * a space ' ' character for example.
    * @param {LinkHandler} handler The callback when the link is called.
-   * @param {number} matchIndex The index of the link from the regex.match(text)
-   * call. This defaults to 0 (for regular expressions without capture groups).
+   * @param {LinkMatcherOptions} [options] Options for the link matcher.
    * @return {number} The ID of the new matcher, this can be used to deregister.
  */
-Terminal.prototype.registerLinkMatcher = function(regex, handler, matchIndex) {
+Terminal.prototype.registerLinkMatcher = function(regex, handler, options) {
   if (this.linkifier) {
-    var matcherId = this.linkifier.registerLinkMatcher(regex, handler, matchIndex);
+    var matcherId = this.linkifier.registerLinkMatcher(regex, handler, options);
     this.refresh(0, this.rows - 1);
     return matcherId;
   }

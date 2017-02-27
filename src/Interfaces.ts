@@ -2,6 +2,8 @@
  * @license MIT
  */
 
+import { LinkMatcherValidationCallback } from './Types';
+
 export interface IBrowser {
   isNode: boolean;
   userAgent: string;
@@ -62,6 +64,26 @@ interface ICircularList<T> {
   splice(start: number, deleteCount: number, ...items: T[]): void;
   trimStart(count: number): void;
   shiftElements(start: number, count: number, offset: number): void;
+}
+
+export interface LinkMatcherOptions {
+  /**
+   * The index of the link from the regex.match(text) call. This defaults to 0
+   * (for regular expressions without capture groups).
+   */
+  matchIndex?: number;
+  /**
+   * A callback that validates an individual link, returning true if valid and
+   * false if invalid.
+   */
+  validationCallback?: LinkMatcherValidationCallback;
+}
+
+/**
+ *
+ * @param a
+ */
+function a(a) {
 }
 
 /**
