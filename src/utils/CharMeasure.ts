@@ -9,13 +9,15 @@ import { EventEmitter } from '../EventEmitter.js';
  * Utility class that measures the size of a character.
  */
 export class CharMeasure extends EventEmitter {
+  private _document: Document;
   private _parentElement: HTMLElement;
   private _measureElement: HTMLElement;
   private _width: number;
   private _height: number;
 
-  constructor(parentElement: HTMLElement) {
+  constructor(document: Document, parentElement: HTMLElement) {
     super();
+    this._document = document;
     this._parentElement = parentElement;
   }
 
@@ -29,7 +31,7 @@ export class CharMeasure extends EventEmitter {
 
   public measure(): void {
     if (!this._measureElement) {
-      this._measureElement = document.createElement('span');
+      this._measureElement = this._document.createElement('span');
       this._measureElement.style.position = 'absolute';
       this._measureElement.style.top = '0';
       this._measureElement.style.left = '-9999em';
