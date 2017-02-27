@@ -6,7 +6,12 @@ import { assert } from 'chai';
 import { ITerminal, ILinkifier } from './Interfaces';
 import { Linkifier } from './Linkifier';
 
-Linkifier.setTimeBeforeLinkifyForTest(0);
+class TestLinkifier extends Linkifier {
+  constructor(document: Document, rows: HTMLElement[]) {
+    Linkifier.TIME_BEFORE_LINKIFY = 0;
+    super(document, rows);
+  }
+}
 
 describe('Linkifier', () => {
   let window: Window;

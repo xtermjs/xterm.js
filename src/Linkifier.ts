@@ -37,16 +37,16 @@ const strictUrlRegex = new RegExp(start + protocolClause + bodyClause + end);
 const HYPERTEXT_LINK_MATCHER_ID = 0;
 
 /**
- * The time to wait after a row is changed before it is linkified. This prevents
- * the costly operation of searching every row multiple times, pntentially a
- * huge aount of times.
- */
-let TIME_BEFORE_LINKIFY = 200;
-
-/**
  * The Linkifier applies links to rows shortly after they have been refreshed.
  */
 export class Linkifier {
+  /**
+   * The time to wait after a row is changed before it is linkified. This prevents
+   * the costly operation of searching every row multiple times, pntentially a
+   * huge aount of times.
+   */
+  protected static TIME_BEFORE_LINKIFY = 200;
+
   private _document: Document;
   private _rows: HTMLElement[];
   private _rowTimeoutIds: number[];
@@ -70,7 +70,7 @@ export class Linkifier {
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
-    this._rowTimeoutIds[rowIndex] = setTimeout(this._linkifyRow.bind(this, rowIndex), TIME_BEFORE_LINKIFY);
+    this._rowTimeoutIds[rowIndex] = setTimeout(this._linkifyRow.bind(this, rowIndex), Linkifier.TIME_BEFORE_LINKIFY);
   }
 
   /**
@@ -283,12 +283,5 @@ export class Linkifier {
       const rightTextNode = this._document.createTextNode(rightText);
       this._replaceNode(node, leftTextNode, newNode, rightTextNode);
     }
-  }
-
-  public static setTimeBeforeLinkifyForTest(time: number) {
-    // This is necessary since it's needs to be used in PhantomJS. Ideally the
-    // time variable would be a protected static member and a TestLinkifier
-    // would expose it for the test.
-    TIME_BEFORE_LINKIFY = time;
   }
 }
