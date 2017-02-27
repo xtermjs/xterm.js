@@ -47,12 +47,14 @@ let TIME_BEFORE_LINKIFY = 200;
  * The Linkifier applies links to rows shortly after they have been refreshed.
  */
 export class Linkifier {
+  private _document: Document;
   private _rows: HTMLElement[];
   private _rowTimeoutIds: number[];
   private _linkMatchers: LinkMatcher[];
   private _nextLinkMatcherId = HYPERTEXT_LINK_MATCHER_ID;
 
-  constructor(rows: HTMLElement[]) {
+  constructor(document: Document, rows: HTMLElement[]) {
+    this._document = document;
     this._rows = rows;
     this._rowTimeoutIds = [];
     this._linkMatchers = [];
@@ -169,7 +171,8 @@ export class Linkifier {
         const linkElement = this._createAnchorElement(uri, handler);
         if (node.textContent.length === uri.length) {
           // Matches entire string
-          if (node.nodeType === Node.TEXT_NODE) {
+
+          if (node.nodeType === 3 /*Node.TEXT_NODE*/) {
             this._replaceNode(node, linkElement);
           } else {
             const element = (<HTMLElement>node);
@@ -209,7 +212,7 @@ export class Linkifier {
    * @return {HTMLAnchorElement} The link.
    */
   private _createAnchorElement(uri: string, handler: LinkMatcherHandler): HTMLAnchorElement {
-    const element = document.createElement('a');
+    const element = this._document.createElement('a');
     element.textContent = uri;
     if (handler) {
       element.addEventListener('click', () => {
@@ -249,7 +252,7 @@ export class Linkifier {
    */
   private _replaceNodeSubstringWithNode(targetNode: Node, newNode: Node, substring: string, substringIndex: number): void {
     let node = targetNode;
-    if (node.nodeType !== Node.TEXT_NODE) {
+    if (node.nodeType !== 3/*Node.TEXT_NODE*/) {
       node = node.childNodes[0];
     }
 
@@ -265,19 +268,19 @@ export class Linkifier {
     if (substringIndex === 0) {
       // Replace with <newNode><textnode>
       const rightText = fullText.substring(substring.length);
-      const rightTextNode = document.createTextNode(rightText);
+      const rightTextNode = this._document.createTextNode(rightText);
       this._replaceNode(node, newNode, rightTextNode);
     } else if (substringIndex === targetNode.textContent.length - substring.length) {
       // Replace with <textnode><newNode>
       const leftText = fullText.substring(0, substringIndex);
-      const leftTextNode = document.createTextNode(leftText);
+      const leftTextNode = this._document.createTextNode(leftText);
       this._replaceNode(node, leftTextNode, newNode);
     } else {
       // Replace with <textnode><newNode><textnode>
       const leftText = fullText.substring(0, substringIndex);
-      const leftTextNode = document.createTextNode(leftText);
+      const leftTextNode = this._document.createTextNode(leftText);
       const rightText = fullText.substring(substringIndex + substring.length);
-      const rightTextNode = document.createTextNode(rightText);
+      const rightTextNode = this._document.createTextNode(rightText);
       this._replaceNode(node, leftTextNode, newNode, rightTextNode);
     }
   }
