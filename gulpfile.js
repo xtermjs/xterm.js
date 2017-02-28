@@ -13,27 +13,28 @@ const ts = require('gulp-typescript');
 
 
 let buildDir = process.env.BUILD_DIR || 'build';
-
+let tsProject = ts.createProject('tsconfig.json');
+let srcDir = tsProject.config.compilerOptions.rootDir;
+let outDir = tsProject.config.compilerOptions.outDir;
 
 /**
  * Compile TypeScript sources to JavaScript files and create a source map file for each TypeScript
  * file compiled.
  */
 gulp.task('tsc', function () {
-  // Remove the lib/ directory to prevent confusion if files were deleted in src/
-  fs.emptyDirSync('lib');
+  // Remove the ${outDir}/ directory to prevent confusion if files were deleted in ${srcDir}/
+  fs.emptyDirSync(`${outDir}`);
 
-  // Build all TypeScript files (including tests) to lib/, based on the configuration defined in
+  // Build all TypeScript files (including tests) to ${outDir}/, based on the configuration defined in
   // `tsconfig.json`.
-  let tsProject = ts.createProject('tsconfig.json');
   let tsResult = tsProject.src().pipe(sourcemaps.init()).pipe(tsProject());
-  let tsc = tsResult.js.pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''})).pipe(gulp.dest('lib'));
+  let tsc = tsResult.js.pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''})).pipe(gulp.dest(outDir));
 
-  // Copy all addons from src/ to lib/
-  let copyAddons = gulp.src('src/addons/**/*').pipe(gulp.dest('lib/addons'));
+  // Copy all addons from ${srcDir}/ to ${outDir}/
+  let copyAddons = gulp.src(`${srcDir}/addons/**/*`).pipe(gulp.dest(`${outDir}/addons`));
 
-  // Copy stylesheets from src/ to lib/
-  let copyStylesheets = gulp.src('src/**/*.css').pipe(gulp.dest('lib'));
+  // Copy stylesheets from ${srcDir}/ to ${outDir}/
+  let copyStylesheets = gulp.src(`${srcDir}/**/*.css`).pipe(gulp.dest(outDir));
 
   return merge(tsc, copyAddons, copyStylesheets);
 });
@@ -49,7 +50,7 @@ gulp.task('browserify', ['tsc'], function() {
   let browserifyOptions = {
     basedir: buildDir,
     debug: true,
-    entries: ['../lib/xterm.js'],
+    entries: [`../${outDir}/xterm.js`],
     standalone: 'Terminal',
     cache: {},
     packageCache: {}
@@ -62,17 +63,17 @@ gulp.task('browserify', ['tsc'], function() {
         .pipe(sourcemaps.write('./'))
         .pipe(gulp.dest(buildDir));
 
-  // Copy all add-ons from lib/ to buildDir
-  let copyAddons = gulp.src('lib/addons/**/*').pipe(gulp.dest(`${buildDir}/addons`));
+  // Copy all add-ons from ${outDir}/ to buildDir
+  let copyAddons = gulp.src(`${outDir}/addons/**/*`).pipe(gulp.dest(`${buildDir}/addons`));
 
-  // Copy stylesheets from src/ to lib/
-  let copyStylesheets = gulp.src('lib/**/*.css').pipe(gulp.dest(buildDir));
+  // Copy stylesheets from ${outDir}/ to ${buildDir}/
+  let copyStylesheets = gulp.src(`${outDir}/**/*.css`).pipe(gulp.dest(buildDir));
 
   return merge(bundleStream, copyAddons, copyStylesheets);
 });
 
 gulp.task('instrument-test', function () {
-  return gulp.src(['lib/**/*.js'])
+  return gulp.src([`${outDir}/**/*.js`])
     // Covering files
     .pipe(istanbul())
     // Force `require` to return covered files
@@ -80,7 +81,7 @@ gulp.task('instrument-test', function () {
 });
 
 gulp.task('mocha', ['instrument-test'], function () {
-  return gulp.src(['lib/*test.js', 'lib/**/*test.js'], {read: false})
+  return gulp.src([`${outDir}/*test.js`, `${outDir}/**/*test.js`], {read: false})
       .pipe(mocha())
       .pipe(istanbul.writeReports());
 });
@@ -88,11 +89,11 @@ gulp.task('mocha', ['instrument-test'], function () {
 /**
  * Use `sorcery` to resolve the source map chain and point back to the TypeScript files.
  * (Without this task the source maps produced for the JavaScript bundle points into the
- * compiled JavaScript files in lib/).
+ * compiled JavaScript files in ${outDir}/).
  */
 gulp.task('sorcery', ['browserify'], function () {
   var chain = sorcery.loadSync(`${buildDir}/xterm.js`);
-  var map = chain.apply();
+  chain.apply();
   chain.writeSync();
 });
 
