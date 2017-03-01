@@ -2,9 +2,18 @@
  * @license MIT
  */
 
-export type LinkHandler = (uri: string) => void;
+import { LinkMatcherOptions } from './Interfaces';
+import { LinkMatcherHandler, LinkMatcherValidationCallback } from './Types';
 
-type LinkMatcher = {id: number, regex: RegExp, matchIndex?: number, handler: LinkHandler};
+type LinkMatcher = {
+  id: number,
+  regex: RegExp,
+  handler: LinkMatcherHandler,
+  matchIndex?: number,
+  validationCallback?: LinkMatcherValidationCallback;
+};
+
+const INVALID_LINK_CLASS = 'xterm-invalid-link';
 
 const protocolClause = '(https?:\\/\\/)';
 const domainCharacterSet = '[\\da-z\\.-]+';
@@ -28,22 +37,24 @@ const strictUrlRegex = new RegExp(start + protocolClause + bodyClause + end);
 const HYPERTEXT_LINK_MATCHER_ID = 0;
 
 /**
- * The time to wait after a row is changed before it is linkified. This prevents
- * the costly operation of searching every row multiple times, pntentially a
- * huge aount of times.
- */
-const TIME_BEFORE_LINKIFY = 200;
-
-/**
  * The Linkifier applies links to rows shortly after they have been refreshed.
  */
 export class Linkifier {
+  /**
+   * The time to wait after a row is changed before it is linkified. This prevents
+   * the costly operation of searching every row multiple times, pntentially a
+   * huge aount of times.
+   */
+  protected static TIME_BEFORE_LINKIFY = 200;
+
+  private _document: Document;
   private _rows: HTMLElement[];
   private _rowTimeoutIds: number[];
   private _linkMatchers: LinkMatcher[];
   private _nextLinkMatcherId = HYPERTEXT_LINK_MATCHER_ID;
 
-  constructor(rows: HTMLElement[]) {
+  constructor(document: Document, rows: HTMLElement[]) {
+    this._document = document;
     this._rows = rows;
     this._rowTimeoutIds = [];
     this._linkMatchers = [];
@@ -59,7 +70,7 @@ export class Linkifier {
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
-    this._rowTimeoutIds[rowIndex] = setTimeout(this._linkifyRow.bind(this, rowIndex), TIME_BEFORE_LINKIFY);
+    this._rowTimeoutIds[rowIndex] = setTimeout(this._linkifyRow.bind(this, rowIndex), Linkifier.TIME_BEFORE_LINKIFY);
   }
 
   /**
@@ -68,7 +79,7 @@ export class Linkifier {
    * @param {LinkHandler} handler The handler to use, this can be cleared with
    * null.
    */
-  public attachHypertextLinkHandler(handler: LinkHandler): void {
+  public attachHypertextLinkHandler(handler: LinkMatcherHandler): void {
     this._linkMatchers[HYPERTEXT_LINK_MATCHER_ID].handler = handler;
   }
 
@@ -79,11 +90,10 @@ export class Linkifier {
    * this searches the textContent of the rows. You will want to use \s to match
    * a space ' ' character for example.
    * @param {LinkHandler} handler The callback when the link is called.
-   * @param {number} matchIndex The index of the link from the regex.match(text)
-   * call. This defaults to 0 (for regular expressions without capture groups).
+   * @param {LinkMatcherOptions} [options] Options for the link matcher.
    * @return {number} The ID of the new matcher, this can be used to deregister.
    */
-  public registerLinkMatcher(regex: RegExp, handler: LinkHandler, matchIndex?: number): number {
+  public registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options: LinkMatcherOptions = {}): number {
     if (this._nextLinkMatcherId !== HYPERTEXT_LINK_MATCHER_ID && !handler) {
       throw new Error('handler cannot be falsy');
     }
@@ -91,7 +101,8 @@ export class Linkifier {
       id: this._nextLinkMatcherId++,
       regex,
       handler,
-      matchIndex
+      matchIndex: options.matchIndex,
+      validationCallback: options.validationCallback
     };
     this._linkMatchers.push(matcher);
     return matcher.id;
@@ -123,11 +134,20 @@ export class Linkifier {
       return;
     }
     const text = row.textContent;
+    // TODO: Onl execute handler if isValid
     for (let i = 0; i < this._linkMatchers.length; i++) {
       const matcher = this._linkMatchers[i];
       const uri = this._findLinkMatch(text, matcher.regex, matcher.matchIndex);
       if (uri) {
-        this._doLinkifyRow(rowIndex, uri, matcher.handler);
+        const linkElement = this._doLinkifyRow(rowIndex, uri, matcher.handler);
+        // Fire validation callback
+        if (matcher.validationCallback) {
+          matcher.validationCallback(uri, isValid => {
+            if (!isValid) {
+              linkElement.classList.add(INVALID_LINK_CLASS);
+            }
+          });
+        }
         // Only allow a single LinkMatcher to trigger on any given row.
         return;
       }
@@ -139,8 +159,9 @@ export class Linkifier {
    * @param {number} rowIndex The index of the row to linkify.
    * @param {string} uri The uri that has been found.
    * @param {handler} handler The handler to trigger when the link is triggered.
+   * @return The link element if it was added, otherwise undefined.
    */
-  private _doLinkifyRow(rowIndex: number, uri: string, handler?: LinkHandler): void {
+  private _doLinkifyRow(rowIndex: number, uri: string, handler?: LinkMatcherHandler): HTMLElement {
     // Iterate over nodes as we want to consider text nodes
     const nodes = this._rows[rowIndex].childNodes;
     for (let i = 0; i < nodes.length; i++) {
@@ -150,7 +171,8 @@ export class Linkifier {
         const linkElement = this._createAnchorElement(uri, handler);
         if (node.textContent.length === uri.length) {
           // Matches entire string
-          if (node.nodeType === Node.TEXT_NODE) {
+
+          if (node.nodeType === 3 /*Node.TEXT_NODE*/) {
             this._replaceNode(node, linkElement);
           } else {
             const element = (<HTMLElement>node);
@@ -165,6 +187,7 @@ export class Linkifier {
           // Matches part of string
           this._replaceNodeSubstringWithNode(node, linkElement, uri, searchIndex);
         }
+        return linkElement;
       }
     }
   }
@@ -188,11 +211,16 @@ export class Linkifier {
    * @param {string} uri The uri of the link.
    * @return {HTMLAnchorElement} The link.
    */
-  private _createAnchorElement(uri: string, handler: LinkHandler): HTMLAnchorElement {
-    const element = document.createElement('a');
+  private _createAnchorElement(uri: string, handler: LinkMatcherHandler): HTMLAnchorElement {
+    const element = this._document.createElement('a');
     element.textContent = uri;
     if (handler) {
-      element.addEventListener('click', () => handler(uri));
+      element.addEventListener('click', () => {
+        // Only execute the handler if the link is not flagged as invalid
+        if (!element.classList.contains(INVALID_LINK_CLASS)) {
+          handler(uri);
+        }
+      });
     } else {
       element.href = uri;
       // Force link on another tab so work is not lost
@@ -224,7 +252,7 @@ export class Linkifier {
    */
   private _replaceNodeSubstringWithNode(targetNode: Node, newNode: Node, substring: string, substringIndex: number): void {
     let node = targetNode;
-    if (node.nodeType !== Node.TEXT_NODE) {
+    if (node.nodeType !== 3/*Node.TEXT_NODE*/) {
       node = node.childNodes[0];
     }
 
@@ -240,19 +268,19 @@ export class Linkifier {
     if (substringIndex === 0) {
       // Replace with <newNode><textnode>
       const rightText = fullText.substring(substring.length);
-      const rightTextNode = document.createTextNode(rightText);
+      const rightTextNode = this._document.createTextNode(rightText);
       this._replaceNode(node, newNode, rightTextNode);
     } else if (substringIndex === targetNode.textContent.length - substring.length) {
       // Replace with <textnode><newNode>
       const leftText = fullText.substring(0, substringIndex);
-      const leftTextNode = document.createTextNode(leftText);
+      const leftTextNode = this._document.createTextNode(leftText);
       this._replaceNode(node, leftTextNode, newNode);
     } else {
       // Replace with <textnode><newNode><textnode>
       const leftText = fullText.substring(0, substringIndex);
-      const leftTextNode = document.createTextNode(leftText);
+      const leftTextNode = this._document.createTextNode(leftText);
       const rightText = fullText.substring(substringIndex + substring.length);
-      const rightTextNode = document.createTextNode(rightText);
+      const rightTextNode = this._document.createTextNode(rightText);
       this._replaceNode(node, leftTextNode, newNode, rightTextNode);
     }
   }

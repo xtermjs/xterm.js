@@ -6,7 +6,6 @@ const gulp = require('gulp');
 const istanbul = require('gulp-istanbul');
 const merge = require('merge-stream');
 const mocha = require('gulp-mocha');
-const mochaPhantomJs = require('gulp-mocha-phantomjs');
 const sorcery = require('sorcery');
 const source = require('vinyl-source-stream');
 const sourcemaps = require('gulp-sourcemaps');
@@ -80,15 +79,10 @@ gulp.task('instrument-test', function () {
     .pipe(istanbul.hookRequire());
 });
 
-gulp.task('test-mocha', ['instrument-test'], function () {
+gulp.task('mocha', ['instrument-test'], function () {
   return gulp.src(['lib/*test.js', 'lib/**/*test.js'], {read: false})
       .pipe(mocha())
       .pipe(istanbul.writeReports());
-});
-
-gulp.task('test-mocha-phantomjs', function () {
-  return gulp.src('test-harness.html')
-      .pipe(mochaPhantomJs());
 });
 
 /**
@@ -111,5 +105,5 @@ gulp.task('coveralls', function () {
 });
 
 gulp.task('build', ['sorcery']);
-gulp.task('test', ['test-mocha', 'test-mocha-phantomjs']);
+gulp.task('test', ['mocha']);
 gulp.task('default', ['build']);
