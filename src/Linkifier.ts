@@ -118,17 +118,13 @@ export class Linkifier {
     }
 
     for (let i = this._linkMatchers.length - 1; i >= 0; i--) {
-      if (matcher.priority === this._linkMatchers[i].priority) {
+      if (matcher.priority <= this._linkMatchers[i].priority) {
         this._linkMatchers.splice(i + 1, 0, matcher);
         return;
       }
     }
 
-    if (matcher.priority > this._linkMatchers[0].priority) {
-      this._linkMatchers.splice(0, 0, matcher);
-    } else {
-      this._linkMatchers.push(matcher);
-    }
+    this._linkMatchers.splice(0, 0, matcher);
   }
 
   /**
