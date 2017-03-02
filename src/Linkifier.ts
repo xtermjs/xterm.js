@@ -3,15 +3,7 @@
  */
 
 import { LinkMatcherOptions } from './Interfaces';
-import { LinkMatcherHandler, LinkMatcherValidationCallback } from './Types';
-
-type LinkMatcher = {
-  id: number,
-  regex: RegExp,
-  handler: LinkMatcherHandler,
-  matchIndex?: number,
-  validationCallback?: LinkMatcherValidationCallback;
-};
+import { LinkMatcher, LinkMatcherHandler, LinkMatcherValidationCallback } from './Types';
 
 const INVALID_LINK_CLASS = 'xterm-invalid-link';
 
@@ -50,10 +42,11 @@ export class Linkifier {
    */
   protected static TIME_BEFORE_LINKIFY = 200;
 
+  protected _linkMatchers: LinkMatcher[];
+
   private _document: Document;
   private _rows: HTMLElement[];
   private _rowTimeoutIds: number[];
-  private _linkMatchers: LinkMatcher[];
   private _nextLinkMatcherId = HYPERTEXT_LINK_MATCHER_ID;
 
   constructor(document: Document, rows: HTMLElement[]) {
@@ -105,10 +98,37 @@ export class Linkifier {
       regex,
       handler,
       matchIndex: options.matchIndex,
-      validationCallback: options.validationCallback
+      validationCallback: options.validationCallback,
+      priority: options.priority || 0
     };
-    this._linkMatchers.push(matcher);
+    this._addLinkMatcherToList(matcher);
     return matcher.id;
+  }
+
+  /**
+   * Inserts a link matcher to the list in the correct position based on the
+   * priority of each link matcher. New link matchers of equal priority are
+   * considered after older link matchers.
+   * @param matcher The link matcher to be added.
+   */
+  private _addLinkMatcherToList(matcher: LinkMatcher): void {
+    if (this._linkMatchers.length === 0) {
+      this._linkMatchers.push(matcher);
+      return;
+    }
+
+    for (let i = this._linkMatchers.length - 1; i >= 0; i--) {
+      if (matcher.priority === this._linkMatchers[i].priority) {
+        this._linkMatchers.splice(i + 1, 0, matcher);
+        return;
+      }
+    }
+
+    if (matcher.priority > this._linkMatchers[0].priority) {
+      this._linkMatchers.splice(0, 0, matcher);
+    } else {
+      this._linkMatchers.push(matcher);
+    }
   }
 
   /**
@@ -137,7 +157,6 @@ export class Linkifier {
       return;
     }
     const text = row.textContent;
-    // TODO: Onl execute handler if isValid
     for (let i = 0; i < this._linkMatchers.length; i++) {
       const matcher = this._linkMatchers[i];
       const uri = this._findLinkMatch(text, matcher.regex, matcher.matchIndex);

@@ -5,12 +5,15 @@ import jsdom = require('jsdom');
 import { assert } from 'chai';
 import { ITerminal, ILinkifier } from './Interfaces';
 import { Linkifier } from './Linkifier';
+import { LinkMatcher } from './Types';
 
 class TestLinkifier extends Linkifier {
   constructor(document: Document, rows: HTMLElement[]) {
     Linkifier.TIME_BEFORE_LINKIFY = 0;
     super(document, rows);
   }
+
+  public get linkMatchers(): LinkMatcher[] { return this._linkMatchers; }
 }
 
 describe('Linkifier', () => {
@@ -19,14 +22,14 @@ describe('Linkifier', () => {
 
   let container: HTMLElement;
   let rows: HTMLElement[];
-  let linkifier: ILinkifier;
+  let linkifier: TestLinkifier;
 
   beforeEach(done => {
     rows = [];
     jsdom.env('', (err, w) => {
       window = w;
       document = window.document;
-      linkifier = new Linkifier(document, rows);
+      linkifier = new TestLinkifier(document, rows);
       container = document.createElement('div');
       document.body.appendChild(container);
       done();
@@ -71,6 +74,26 @@ describe('Linkifier', () => {
       linkifier.linkifyRow(0);
       // Allow time for the click to be performed
       setTimeout(() => done(), 10);
+    });
+  });
+
+  describe('priority', () => {
+    it('should order the list from highest priority to lowest #1', () => {
+      const aId = linkifier.registerLinkMatcher(/a/, () => {}, { priority: 1 });
+      const bId = linkifier.registerLinkMatcher(/b/, () => {}, { priority: -1 });
+      assert.deepEqual(linkifier.linkMatchers.map(lm => lm.id), [aId, 0, bId]);
+    });
+
+    it('should order the list from highest priority to lowest #2', () => {
+      const aId = linkifier.registerLinkMatcher(/a/, () => {}, { priority: -1 });
+      const bId = linkifier.registerLinkMatcher(/b/, () => {}, { priority: 1 });
+      assert.deepEqual(linkifier.linkMatchers.map(lm => lm.id), [bId, 0, aId]);
+    });
+
+    it('should order items of equal priority in the order they are added', () => {
+      const aId = linkifier.registerLinkMatcher(/a/, () => {}, { priority: 0 });
+      const bId = linkifier.registerLinkMatcher(/b/, () => {}, { priority: 0 });
+      assert.deepEqual(linkifier.linkMatchers.map(lm => lm.id), [0, aId, bId]);
     });
   });
 });
