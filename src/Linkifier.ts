@@ -141,7 +141,7 @@ export class Linkifier {
       if (uri) {
         const linkElement = this._doLinkifyRow(rowIndex, uri, matcher.handler);
         // Fire validation callback
-        if (matcher.validationCallback) {
+        if (linkElement && matcher.validationCallback) {
           matcher.validationCallback(uri, isValid => {
             if (!isValid) {
               linkElement.classList.add(INVALID_LINK_CLASS);

@@ -82,7 +82,7 @@
 }
 
 .terminal a.xterm-invalid-link:hover {
-    cursor: default;
+    cursor: text;
     text-decoration: none;
 }
 
