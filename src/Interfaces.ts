@@ -85,6 +85,12 @@ export interface LinkMatcherOptions {
    * false if invalid.
    */
   validationCallback?: LinkMatcherValidationCallback;
+  /**
+   * The priority of the link matcher, this defines the order in which the link
+   * matcher is evaluated relative to others, from highest to lowest. The
+   * default value is 0.
+   */
+  priority?: number;
 }
 
 /**
