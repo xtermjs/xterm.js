@@ -2,6 +2,7 @@
  * @license MIT
  */
 
+import { isMac } from './utils/Browser';
 import { LinkMatcherOptions } from './Interfaces';
 import { LinkMatcher, LinkMatcherHandler, LinkMatcherValidationCallback } from './Types';
 
@@ -239,7 +240,7 @@ export class Linkifier {
           return;
         }
         // Require ctrl on click
-        if (event.ctrlKey) {
+        if (isMac ? event.metaKey : event.ctrlKey) {
           handler(uri);
         }
       });
@@ -249,7 +250,7 @@ export class Linkifier {
       element.target = '_blank';
       element.addEventListener('click', (event: KeyboardEvent) => {
         // Require ctrl on click
-        if (!event.ctrlKey) {
+        if (isMac ? !event.metaKey : !event.ctrlKey) {
           event.preventDefault();
           return false;
         }
