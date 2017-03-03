@@ -69,7 +69,7 @@ app.ws('/terminals/:pid', function (ws, req) {
     term.write(msg);
   });
   ws.on('close', function () {
-    process.kill(term.pid);
+    term.kill();
     console.log('Closed terminal ' + term.pid);
     // Clean things up
     delete terminals[term.pid];
