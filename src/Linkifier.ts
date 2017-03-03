@@ -54,7 +54,7 @@ export class Linkifier {
     this._rows = rows;
     this._rowTimeoutIds = [];
     this._linkMatchers = [];
-    this.registerLinkMatcher(strictUrlRegex, null, 1);
+    this.registerLinkMatcher(strictUrlRegex, null, { matchIndex: 1 });
   }
 
   /**
