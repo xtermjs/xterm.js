@@ -562,6 +562,7 @@ Terminal.bindKeys = function(term) {
 Terminal.prototype.insertRow = function (row) {
   if (typeof row != 'object') {
     row = document.createElement('div');
+    row.style.height = this.charMeasure.height + 'px';
   }
 
   this.rowContainer.appendChild(row);
@@ -642,16 +643,17 @@ Terminal.prototype.open = function(parent) {
   this.charSizeStyleElement = document.createElement('style');
   this.helperContainer.appendChild(this.charSizeStyleElement);
 
+  this.charMeasure = new CharMeasure(document, this.helperContainer);
+  this.charMeasure.on('charsizechanged', function () {
+    self.updateCharSizeCSS();
+    self.updateRowHeight();
+  });
+  this.charMeasure.measure();
+
   for (; i < this.rows; i++) {
     this.insertRow();
   }
   this.parent.appendChild(this.element);
-
-  this.charMeasure = new CharMeasure(document, this.helperContainer);
-  this.charMeasure.on('charsizechanged', function () {
-    self.updateCharSizeCSS();
-  });
-  this.charMeasure.measure();
 
   this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
   this.renderer = new Renderer(this);
@@ -712,6 +714,15 @@ Terminal.loadAddon = function(addon, callback) {
  */
 Terminal.prototype.updateCharSizeCSS = function() {
   this.charSizeStyleElement.textContent = '.xterm-wide-char{width:' + (this.charMeasure.width * 2) + 'px;}';
+}
+
+/**
+  * Updates the height for each rows
+  */
+Terminal.prototype.updateRowHeight = function() {
+  for (var i = 0; i < this.children.length; ++i) {
+    this.children[i].style.height = this.charMeasure.height + 'px';
+  }
 }
 
 /**
