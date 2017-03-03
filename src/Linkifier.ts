@@ -218,9 +218,13 @@ export class Linkifier {
     const element = this._document.createElement('a');
     element.textContent = uri;
     if (handler) {
-      element.addEventListener('click', () => {
-        // Only execute the handler if the link is not flagged as invalid
-        if (!element.classList.contains(INVALID_LINK_CLASS)) {
+      element.addEventListener('click', (event: KeyboardEvent) => {
+        // Don't execute the handler if the link is flagged as invalid
+        if (element.classList.contains(INVALID_LINK_CLASS)) {
+          return;
+        }
+        // Require ctrl on click
+        if (event.ctrlKey) {
           handler(uri);
         }
       });
@@ -228,6 +232,13 @@ export class Linkifier {
       element.href = uri;
       // Force link on another tab so work is not lost
       element.target = '_blank';
+      element.addEventListener('click', (event: KeyboardEvent) => {
+        // Require ctrl on click
+        if (!event.ctrlKey) {
+          event.preventDefault();
+          return false;
+        }
+      });
     }
     return element;
   }
