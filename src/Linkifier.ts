@@ -2,7 +2,6 @@
  * @license MIT
  */
 
-import { isMac } from './utils/Browser';
 import { LinkMatcherOptions } from './Interfaces';
 import { LinkMatcher, LinkMatcherHandler, LinkMatcherValidationCallback } from './Types';
 
