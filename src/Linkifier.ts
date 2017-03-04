@@ -229,19 +229,10 @@ export class Linkifier {
    * @param {string} uri The uri of the link.
    * @return {HTMLAnchorElement} The link.
    */
-  private _createAnchorElement(uri: string, handler: LinkMatcherHandler): HTMLAnchorElement {
+  private _createAnchorElement(uri: string, handler: LinkMatcherHandler, isHypertextLinkHandler: boolean): HTMLAnchorElement {
     const element = this._document.createElement('a');
     element.textContent = uri;
-    if (handler) {
-      element.addEventListener('click', (event: MouseEvent) => {
-        // Don't execute the handler if the link is flagged as invalid
-        if (element.classList.contains(INVALID_LINK_CLASS)) {
-          return;
-        }
-
-        return handler(event, uri);
-      });
-    } else {
+    if (isHypertextLinkHandler) {
       element.href = uri;
       // Force link on another tab so work is not lost
       element.target = '_blank';
@@ -249,6 +240,14 @@ export class Linkifier {
         if (handler) {
           return handler(event, uri);
         }
+      });
+    } else {
+      element.addEventListener('click', (event: MouseEvent) => {
+        // Don't execute the handler if the link is flagged as invalid
+        if (element.classList.contains(INVALID_LINK_CLASS)) {
+          return;
+        }
+        return handler(event, uri);
       });
     }
     return element;
