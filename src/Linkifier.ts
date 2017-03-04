@@ -92,7 +92,7 @@ export class Linkifier {
    */
   public registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options: LinkMatcherOptions = {}): number {
     if (this._nextLinkMatcherId !== HYPERTEXT_LINK_MATCHER_ID && !handler) {
-      throw new Error('handler cannot be falsy');
+      throw new Error('handler must be defined');
     }
     const matcher: LinkMatcher = {
       id: this._nextLinkMatcherId++,
@@ -234,25 +234,21 @@ export class Linkifier {
     const element = this._document.createElement('a');
     element.textContent = uri;
     if (handler) {
-      element.addEventListener('click', (event: KeyboardEvent) => {
+      element.addEventListener('click', (event: MouseEvent) => {
         // Don't execute the handler if the link is flagged as invalid
         if (element.classList.contains(INVALID_LINK_CLASS)) {
           return;
         }
-        // Require ctrl on click
-        if (isMac ? event.metaKey : event.ctrlKey) {
-          handler(uri);
-        }
+
+        return handler(event, uri);
       });
     } else {
       element.href = uri;
       // Force link on another tab so work is not lost
       element.target = '_blank';
-      element.addEventListener('click', (event: KeyboardEvent) => {
-        // Require ctrl on click
-        if (isMac ? !event.metaKey : !event.ctrlKey) {
-          event.preventDefault();
-          return false;
+      element.addEventListener('click', (event: MouseEvent) => {
+        if (handler) {
+          return handler(event, uri);
         }
       });
     }
