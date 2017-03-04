@@ -100,6 +100,7 @@ export class Linkifier {
       handler,
       matchIndex: options.matchIndex,
       validationCallback: options.validationCallback,
+      clickFailCallback: options.clickFailCallback,
       priority: options.priority || 0
     };
     this._addLinkMatcherToList(matcher);
@@ -158,7 +159,7 @@ export class Linkifier {
       const matcher = this._linkMatchers[i];
       const uri = this._findLinkMatch(text, matcher.regex, matcher.matchIndex);
       if (uri) {
-        const linkElement = this._doLinkifyRow(rowIndex, uri, matcher.handler);
+        const linkElement = this._doLinkifyRow(rowIndex, uri, matcher.handler, matcher.clickFailCallback);
         // Fire validation callback
         if (linkElement && matcher.validationCallback) {
           matcher.validationCallback(uri, isValid => {
@@ -180,14 +181,14 @@ export class Linkifier {
    * @param {handler} handler The handler to trigger when the link is triggered.
    * @return The link element if it was added, otherwise undefined.
    */
-  private _doLinkifyRow(rowIndex: number, uri: string, handler?: LinkMatcherHandler): HTMLElement {
+  private _doLinkifyRow(rowIndex: number, uri: string, handler?: LinkMatcherHandler, clickFailHandler?: (event: MouseEvent) => any): HTMLElement {
     // Iterate over nodes as we want to consider text nodes
     const nodes = this._rows[rowIndex].childNodes;
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
       const searchIndex = node.textContent.indexOf(uri);
       if (searchIndex >= 0) {
-        const linkElement = this._createAnchorElement(uri, handler);
+        const linkElement = this._createAnchorElement(uri, handler, clickFailHandler);
         if (node.textContent.length === uri.length) {
           // Matches entire string
 
@@ -230,11 +231,11 @@ export class Linkifier {
    * @param {string} uri The uri of the link.
    * @return {HTMLAnchorElement} The link.
    */
-  private _createAnchorElement(uri: string, handler: LinkMatcherHandler): HTMLAnchorElement {
+  private _createAnchorElement(uri: string, handler: LinkMatcherHandler, failHandler: (event: MouseEvent) => any): HTMLAnchorElement {
     const element = this._document.createElement('a');
     element.textContent = uri;
     if (handler) {
-      element.addEventListener('click', (event: KeyboardEvent) => {
+      element.addEventListener('click', (event: MouseEvent) => {
         // Don't execute the handler if the link is flagged as invalid
         if (element.classList.contains(INVALID_LINK_CLASS)) {
           return;
@@ -242,15 +243,22 @@ export class Linkifier {
         // Require ctrl on click
         if (isMac ? event.metaKey : event.ctrlKey) {
           handler(uri);
+        } else {
+          if (failHandler) {
+            failHandler(event);
+          }
         }
       });
     } else {
       element.href = uri;
       // Force link on another tab so work is not lost
       element.target = '_blank';
-      element.addEventListener('click', (event: KeyboardEvent) => {
+      element.addEventListener('click', (event: MouseEvent) => {
         // Require ctrl on click
         if (isMac ? !event.metaKey : !event.ctrlKey) {
+          if (failHandler) {
+            failHandler(event);
+          }
           event.preventDefault();
           return false;
         }
