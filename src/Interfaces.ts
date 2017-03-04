@@ -86,12 +86,6 @@ export interface LinkMatcherOptions {
    */
   validationCallback?: LinkMatcherValidationCallback;
   /**
-   * A callback that fires when a link click fails due to ctrl or cmd (mac) not
-   * being pressed. This allows hinting to the user after a likely  failed
-   * click.
-   */
-  clickFailCallback?: (event: MouseEvent) => any;
-  /**
    * The priority of the link matcher, this defines the order in which the link
    * matcher is evaluated relative to others, from highest to lowest. The
    * default value is 0.

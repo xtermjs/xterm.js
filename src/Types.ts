@@ -8,7 +8,6 @@ export type LinkMatcher = {
   handler: LinkMatcherHandler,
   matchIndex?: number,
   validationCallback?: LinkMatcherValidationCallback,
-  clickFailCallback?: (event: MouseEvent) => any,
   priority?: number
 };
 export type LinkMatcherHandler = (uri: string) => void;
