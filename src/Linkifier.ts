@@ -157,7 +157,7 @@ export class Linkifier {
       const matcher = this._linkMatchers[i];
       const uri = this._findLinkMatch(text, matcher.regex, matcher.matchIndex);
       if (uri) {
-        const linkElement = this._doLinkifyRow(rowIndex, uri, matcher.handler);
+        const linkElement = this._doLinkifyRow(rowIndex, uri, matcher.handler, matcher.id === HYPERTEXT_LINK_MATCHER_ID);
         // Fire validation callback
         if (linkElement && matcher.validationCallback) {
           matcher.validationCallback(uri, isValid => {
@@ -179,14 +179,14 @@ export class Linkifier {
    * @param {handler} handler The handler to trigger when the link is triggered.
    * @return The link element if it was added, otherwise undefined.
    */
-  private _doLinkifyRow(rowIndex: number, uri: string, handler?: LinkMatcherHandler): HTMLElement {
+  private _doLinkifyRow(rowIndex: number, uri: string, handler: LinkMatcherHandler, isHttpLinkMatcher: boolean): HTMLElement {
     // Iterate over nodes as we want to consider text nodes
     const nodes = this._rows[rowIndex].childNodes;
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
       const searchIndex = node.textContent.indexOf(uri);
       if (searchIndex >= 0) {
-        const linkElement = this._createAnchorElement(uri, handler);
+        const linkElement = this._createAnchorElement(uri, handler, isHttpLinkMatcher);
         if (node.textContent.length === uri.length) {
           // Matches entire string
 
