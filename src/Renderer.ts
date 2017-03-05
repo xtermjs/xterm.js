@@ -3,6 +3,7 @@
  */
 
 import { ITerminal } from './Interfaces';
+import { trimThenChunk } from './utils/LineWrap';
 
 /**
  * The maximum number of refresh frames to skip when the write buffer is non-
@@ -128,21 +129,46 @@ export class Renderer {
     }
 
     width = this._terminal.cols;
-    y = start;
 
     if (end >= this._terminal.rows) {
       this._terminal.log('`end` is too large. Most likely a bad CSR.');
       end = this._terminal.rows - 1;
     }
 
-    for (; y <= end; y++) {
-      row = y + this._terminal.ydisp;
+    y = end + 1;
 
-      line = this._terminal.lines.get(row);
+    // stores overflow from lines that are longer then the current width
+    let overflowBuffer = [];
+
+    let renderCount = 0;
+    let rowsToRender = end - start;
+
+    // Lines are rendered in reverse, from bottom to top, to help line wrapping logic
+    while (renderCount <= rowsToRender) {
+
+      // If there are overflow lines use the last one
+      if (overflowBuffer.length) {
+        line = overflowBuffer.pop();
+      } else {
+        y--;
+        row = y + this._terminal.ydisp;
+
+        line = this._terminal.lines.get(row);
+      }
+
       if (!line || !this._terminal.children[y]) {
         // Continue if the line is not available, this means a resize is currently in progress
+        renderCount++;
         continue;
       }
+
+      // If the line is longer than the current width, trim then chunk the line and store it in the
+      // overflowBuffer and continue the render with the last line in the buffer
+      if (line.length > width) {
+        overflowBuffer = trimThenChunk(line, width, this._terminal.defAttr);
+        line = overflowBuffer.pop();
+      }
+
       out = '';
 
       if (this._terminal.y === y - (this._terminal.ybase - this._terminal.ydisp)
@@ -159,11 +185,15 @@ export class Renderer {
       for (; i < width; i++) {
         if (!line[i]) {
           // Continue if the character is not available, this means a resize is currently in progress
-          continue;
+          data = this._terminal.defAttr;
+          ch = ' ';
+          ch_width = 1;
+
+        } else {
+          data = line[i][0];
+          ch = line[i][1];
+          ch_width = line[i][2];
         }
-        data = line[i][0];
-        ch = line[i][1];
-        ch_width = line[i][2];
         if (!ch_width)
           continue;
 
@@ -277,7 +307,8 @@ export class Renderer {
         out += '</span>';
       }
 
-      this._terminal.children[y].innerHTML = out;
+      renderCount++;
+      this._terminal.children[end + 1 - renderCount].innerHTML = out;
     }
 
     if (parent) {
