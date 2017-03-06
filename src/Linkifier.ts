@@ -54,7 +54,7 @@ export class Linkifier {
     this._rows = rows;
     this._rowTimeoutIds = [];
     this._linkMatchers = [];
-    this.registerLinkMatcher(strictUrlRegex, null, 1);
+    this.registerLinkMatcher(strictUrlRegex, null, { matchIndex: 1 });
   }
 
   /**
@@ -91,7 +91,7 @@ export class Linkifier {
    */
   public registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options: LinkMatcherOptions = {}): number {
     if (this._nextLinkMatcherId !== HYPERTEXT_LINK_MATCHER_ID && !handler) {
-      throw new Error('handler cannot be falsy');
+      throw new Error('handler must be defined');
     }
     const matcher: LinkMatcher = {
       id: this._nextLinkMatcherId++,
@@ -157,7 +157,7 @@ export class Linkifier {
       const matcher = this._linkMatchers[i];
       const uri = this._findLinkMatch(text, matcher.regex, matcher.matchIndex);
       if (uri) {
-        const linkElement = this._doLinkifyRow(rowIndex, uri, matcher.handler);
+        const linkElement = this._doLinkifyRow(rowIndex, uri, matcher.handler, matcher.id === HYPERTEXT_LINK_MATCHER_ID);
         // Fire validation callback
         if (linkElement && matcher.validationCallback) {
           matcher.validationCallback(uri, isValid => {
@@ -179,14 +179,14 @@ export class Linkifier {
    * @param {handler} handler The handler to trigger when the link is triggered.
    * @return The link element if it was added, otherwise undefined.
    */
-  private _doLinkifyRow(rowIndex: number, uri: string, handler?: LinkMatcherHandler): HTMLElement {
+  private _doLinkifyRow(rowIndex: number, uri: string, handler: LinkMatcherHandler, isHttpLinkMatcher: boolean): HTMLElement {
     // Iterate over nodes as we want to consider text nodes
     const nodes = this._rows[rowIndex].childNodes;
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
       const searchIndex = node.textContent.indexOf(uri);
       if (searchIndex >= 0) {
-        const linkElement = this._createAnchorElement(uri, handler);
+        const linkElement = this._createAnchorElement(uri, handler, isHttpLinkMatcher);
         if (node.textContent.length === uri.length) {
           // Matches entire string
 
@@ -229,20 +229,26 @@ export class Linkifier {
    * @param {string} uri The uri of the link.
    * @return {HTMLAnchorElement} The link.
    */
-  private _createAnchorElement(uri: string, handler: LinkMatcherHandler): HTMLAnchorElement {
+  private _createAnchorElement(uri: string, handler: LinkMatcherHandler, isHypertextLinkHandler: boolean): HTMLAnchorElement {
     const element = this._document.createElement('a');
     element.textContent = uri;
-    if (handler) {
-      element.addEventListener('click', () => {
-        // Only execute the handler if the link is not flagged as invalid
-        if (!element.classList.contains(INVALID_LINK_CLASS)) {
-          handler(uri);
-        }
-      });
-    } else {
+    if (isHypertextLinkHandler) {
       element.href = uri;
       // Force link on another tab so work is not lost
       element.target = '_blank';
+      element.addEventListener('click', (event: MouseEvent) => {
+        if (handler) {
+          return handler(event, uri);
+        }
+      });
+    } else {
+      element.addEventListener('click', (event: MouseEvent) => {
+        // Don't execute the handler if the link is flagged as invalid
+        if (element.classList.contains(INVALID_LINK_CLASS)) {
+          return;
+        }
+        return handler(event, uri);
+      });
     }
     return element;
   }

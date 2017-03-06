@@ -10,5 +10,5 @@ export type LinkMatcher = {
   validationCallback?: LinkMatcherValidationCallback,
   priority?: number
 };
-export type LinkMatcherHandler = (uri: string) => void;
+export type LinkMatcherHandler = (event: MouseEvent, uri: string) => boolean | void;
 export type LinkMatcherValidationCallback = (uri: string, callback: (isValid: boolean) => void) => void;
