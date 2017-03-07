@@ -32,6 +32,9 @@
   var exports = {};
 
   exports.proposeGeometry = function (term) {
+    if (!term.element.parentElement) {
+      return null;
+    }
     var parentElementStyle = window.getComputedStyle(term.element.parentElement),
         parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height')),
         parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')) - 17),
@@ -66,7 +69,9 @@
   exports.fit = function (term) {
     var geometry = exports.proposeGeometry(term);
 
-    term.resize(geometry.cols, geometry.rows);
+    if (geometry) {
+      term.resize(geometry.cols, geometry.rows);
+    }
   };
 
   Xterm.prototype.proposeGeometry = function () {

@@ -71,6 +71,21 @@
     resize: none;
 }
 
+.terminal a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.terminal a:hover {
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.terminal a.xterm-invalid-link:hover {
+    cursor: text;
+    text-decoration: none;
+}
+
 .terminal:not(.xterm-cursor-style-underline):not(.xterm-cursor-style-bar) .terminal-cursor {
     background-color: #fff;
     color: #000;
@@ -87,13 +102,10 @@
 }
 
 @keyframes xterm-cursor-blink {
-    0% {
-        background-color: #fff;
-        color: #000;
-    }
+    0% { }
     50% {
         background-color: transparent;
-        color: #FFF;
+        color: inherit;
     }
 }
 
