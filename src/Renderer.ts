@@ -296,9 +296,9 @@ function checkBoldBroken(terminal) {
   const el = document.createElement('span');
   el.innerHTML = 'hello world';
   terminal.appendChild(el);
-  const w1 = el.scrollWidth;
+  const w1 = el.offsetWidth;
   el.style.fontWeight = 'bold';
-  const w2 = el.scrollWidth;
+  const w2 = el.offsetWidth;
   terminal.removeChild(el);
   return w1 !== w2;
 }
