@@ -34,7 +34,7 @@ export class Renderer {
     // Figure out whether boldness affects
     // the character width of monospace fonts.
     if (brokenBold === null) {
-      brokenBold = checkBoldBroken((<any>this._terminal).document);
+      brokenBold = checkBoldBroken((<any>this._terminal).element);
     }
 
     // TODO: Pull more DOM interactions into Renderer.constructor, element for
@@ -291,14 +291,14 @@ export class Renderer {
 
 // if bold is broken, we can't
 // use it in the terminal.
-function checkBoldBroken(document) {
-  const body = document.getElementsByTagName('body')[0];
+function checkBoldBroken(terminal) {
+  const document = terminal.ownerDocument;
   const el = document.createElement('span');
   el.innerHTML = 'hello world';
-  body.appendChild(el);
+  terminal.appendChild(el);
   const w1 = el.scrollWidth;
   el.style.fontWeight = 'bold';
   const w2 = el.scrollWidth;
-  body.removeChild(el);
+  terminal.removeChild(el);
   return w1 !== w2;
 }
