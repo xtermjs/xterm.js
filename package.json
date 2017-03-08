@@ -1,7 +1,7 @@
 {
   "name": "xterm",
   "description": "Full xterm terminal, in your browser",
-  "version": "2.3.2",
+  "version": "2.4.0",
   "ignore": [
     "demo",
     "test",

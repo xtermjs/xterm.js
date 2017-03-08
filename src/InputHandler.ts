@@ -385,7 +385,13 @@ export class InputHandler implements IInputHandler {
         while (j--) this._terminal.eraseLine(j);
         break;
       case 3:
-        ; // no saved lines
+        // Clear scrollback (everything not in viewport)
+        const scrollBackSize = this._terminal.lines.length - this._terminal.rows;
+        if (scrollBackSize > 0) {
+          this._terminal.lines.trimStart(scrollBackSize);
+          this._terminal.ybase = Math.max(this._terminal.ybase - scrollBackSize, 0);
+          this._terminal.ydisp = Math.max(this._terminal.ydisp - scrollBackSize, 0);
+        }
         break;
     }
   }
