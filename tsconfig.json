@@ -12,13 +12,6 @@
     "src/**/*"
   ],
   "exclude": [
-    "src/addons/**/*",
-    "build",
-    "demo",
-    "dist",
-    "out",
-    "test",
-    "node_modules",
-    "docs"
+    "src/addons/**/*"
   ]
 }
