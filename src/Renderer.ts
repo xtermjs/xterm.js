@@ -297,8 +297,10 @@ function checkBoldBroken(terminal) {
   el.innerHTML = 'hello world';
   terminal.appendChild(el);
   const w1 = el.offsetWidth;
+  const h1 = el.offsetHeight;
   el.style.fontWeight = 'bold';
   const w2 = el.offsetWidth;
+  const h2 = el.offsetHeight;
   terminal.removeChild(el);
-  return w1 !== w2;
+  return w1 !== w2 || h1 !== h2;
 }
