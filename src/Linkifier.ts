@@ -160,7 +160,7 @@ export class Linkifier {
         const linkElement = this._doLinkifyRow(rowIndex, uri, matcher.handler, matcher.id === HYPERTEXT_LINK_MATCHER_ID);
         // Fire validation callback
         if (linkElement && matcher.validationCallback) {
-          matcher.validationCallback(uri, isValid => {
+          matcher.validationCallback(uri, linkElement, isValid => {
             if (!isValid) {
               linkElement.classList.add(INVALID_LINK_CLASS);
             }
