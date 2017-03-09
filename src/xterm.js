@@ -1286,11 +1286,26 @@ Terminal.prototype.attachCustomKeydownHandler = function(customKeydownHandler) {
  * reconstructed. Calling this with null will remove the handler.
  * @param {LinkHandler} handler The handler callback function.
  */
-Terminal.prototype.attachHypertextLinkHandler = function(handler) {
+Terminal.prototype.setHypertextLinkHandler = function(handler) {
   if (!this.linkifier) {
     throw new Error('Cannot attach a hypertext link handler before Terminal.open is called');
   }
   this.linkifier.attachHypertextLinkHandler(handler);
+  // Refresh to force links to refresh
+  this.refresh(0, this.rows - 1);
+}
+
+/**
+ * Attaches a validation callback for hypertext links. This is useful to use
+ * validation logic or to do something with the link's element and url.
+ * @param {LinkMatcherValidationCallback} callback The callback to use, this can
+ * be cleared with null.
+ */
+Terminal.prototype.setHypertextValidationCallback = function(handler) {
+  if (!this.linkifier) {
+    throw new Error('Cannot attach a hypertext validation callback before Terminal.open is called');
+  }
+  this.linkifier.setHypertextValidationCallback(handler);
   // Refresh to force links to refresh
   this.refresh(0, this.rows - 1);
 }
