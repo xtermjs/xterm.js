@@ -1290,7 +1290,7 @@ Terminal.prototype.setHypertextLinkHandler = function(handler) {
   if (!this.linkifier) {
     throw new Error('Cannot attach a hypertext link handler before Terminal.open is called');
   }
-  this.linkifier.attachHypertextLinkHandler(handler);
+  this.linkifier.setHypertextLinkHandler(handler);
   // Refresh to force links to refresh
   this.refresh(0, this.rows - 1);
 }
