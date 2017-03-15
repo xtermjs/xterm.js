@@ -56,7 +56,7 @@
     subjectRow.innerHTML = 'W'; // Common character for measuring width, although on monospace
     characterWidth = subjectRow.getBoundingClientRect().width;
     subjectRow.style.display = ''; // Revert style before calculating height, since they differ.
-    characterHeight = parseFloat(term.rowContainer.style.lineHeight);
+    characterHeight = subjectRow.getBoundingClientRect().height;
     subjectRow.innerHTML = contentBuffer;
 
     rows = parseInt(availableHeight / characterHeight);
