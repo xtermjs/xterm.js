@@ -56,7 +56,7 @@
     "jsdoc": "3.4.3",
     "jsdom": "^9.11.0",
     "merge-stream": "^1.0.1",
-    "node-pty": "^0.4.1",
+    "node-pty": "^0.6.3",
     "nodemon": "1.10.2",
     "sleep": "^3.0.1",
     "sorcery": "^0.10.0",
