@@ -232,6 +232,7 @@ export class Linkifier {
   private _createAnchorElement(uri: string, handler: LinkMatcherHandler, isHypertextLinkHandler: boolean): HTMLAnchorElement {
     const element = this._document.createElement('a');
     element.textContent = uri;
+    element.draggable = false;
     if (isHypertextLinkHandler) {
       element.href = uri;
       // Force link on another tab so work is not lost
