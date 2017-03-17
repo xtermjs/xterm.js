@@ -86,7 +86,7 @@
     text-decoration: none;
 }
 
-.terminal:not(.xterm-cursor-style-underline):not(.xterm-cursor-style-bar) .terminal-cursor {
+.terminal.focus:not(.xterm-cursor-style-underline):not(.xterm-cursor-style-bar) .terminal-cursor {
     background-color: #fff;
     color: #000;
 }
