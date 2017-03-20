@@ -1,3 +1,4 @@
+const { EventEmitter } = require('events')
 /**
  * Represents a circular list; a list with a maximum size that wraps around when push is called,
  * overriding values at the start of the list.
@@ -8,15 +9,21 @@ export class CircularList<T> {
   private _array: T[];
   private _startIndex: number;
   private _length: number;
+  private _emitter: any;
 
   constructor(maxLength: number) {
     this._array = new Array<T>(maxLength);
     this._startIndex = 0;
     this._length = 0;
+    this._emitter = new EventEmitter()
   }
 
   public get maxLength(): number {
     return this._array.length;
+  }
+
+  public on(ev, cb): any {
+    this._emitter.on(ev, cb)
   }
 
   public set maxLength(newMaxLength: number) {
@@ -28,6 +35,7 @@ export class CircularList<T> {
     }
     this._array = newArray;
     this._startIndex = 0;
+    this._emitter.emit('maxLength', {newMaxLength})
   }
 
   public get length(): number {
@@ -41,10 +49,19 @@ export class CircularList<T> {
       }
     }
     this._length = newLength;
+    this._emitter.emit('length', {newLength})
   }
 
   public get forEach(): (callbackfn: (value: T, index: number, array: T[]) => void) => void {
     return this._array.forEach;
+  }
+
+  public filter(cb): any {
+    return this._array.filter(cb)
+  }
+
+  public reduce(cb, init): any {
+    return this._array.reduce(cb, init)
   }
 
   /**
@@ -86,6 +103,7 @@ export class CircularList<T> {
     } else {
       this._length++;
     }
+    this._emitter.emit('push', {value})
   }
 
   /**
@@ -93,6 +111,7 @@ export class CircularList<T> {
    * @return The popped value.
    */
   public pop(): T {
+    this._emitter.emit('pop')
     return this._array[this._getCyclicIndex(this._length-- - 1)];
   }
 
@@ -127,6 +146,7 @@ export class CircularList<T> {
         this._length += items.length;
       }
     }
+    this._emitter.emit('splice', {start, deleteCount, items})
   }
 
   /**
@@ -139,6 +159,7 @@ export class CircularList<T> {
     }
     this._startIndex += count;
     this._length -= count;
+    this._emitter.emit('trimStart', {count})
   }
 
   public shiftElements(start: number, count: number, offset: number): void {
@@ -169,6 +190,7 @@ export class CircularList<T> {
         this.set(start + i + offset, this.get(start + i));
       }
     }
+    this._emitter.emit('shiftElements', {start, count, offset})
   }
 
   /**

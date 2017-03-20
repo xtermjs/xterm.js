@@ -15,6 +15,7 @@ import { EventEmitter } from './EventEmitter';
 import { Viewport } from './Viewport';
 import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard';
 import { CircularList } from './utils/CircularList';
+import { LineWrap } from './utils/LineWrap.js'
 import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Parser } from './Parser';
@@ -236,6 +237,9 @@ function Terminal(options) {
    * characters which are 2-length arrays where [0] is an attribute and [1] is the character.
    */
   this.lines = new CircularList(this.scrollback);
+  this.lineWrap = new LineWrap(this.scrollback);
+  this.lines.on('push', ({value}) => this.lineWrap.push(value))
+  this.lines.on('pop', () => this.lineWrap.pop())
   var i = this.rows;
   while (i--) {
     this.lines.push(this.blankLine());
@@ -1798,18 +1802,30 @@ Terminal.prototype.resize = function(x, y) {
   // resize cols
   j = this.cols;
   if (j < x) {
+    let rowCount = this.lineWrap.rowCount
     ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
     i = this.lines.length;
-    while (i--) {
-      while (this.lines.get(i).length < x) {
-        this.lines.get(i).push(ch);
+    this.lineWrap.changeLineLength(this.lines, x)
+    let newRows = this.lineWrap.rowCount - rowCount
+    while (newRows < 0 && newRows++) {
+      this.y--
+      if (this.y < 0) {
+        this.y++
+        this.ybase--
+        if (this.ydisp - 1 >= 0) this.ydisp--
       }
     }
   } else { // (j > x)
+    let rowCount = this.lineWrap.rowCount
     i = this.lines.length;
-    while (i--) {
-      while (this.lines.get(i).length > x) {
-        this.lines.get(i).pop();
+    this.lineWrap.changeLineLength(this.lines, x)
+    let newRows = this.lineWrap.rowCount - rowCount
+    while (newRows > 0 && newRows--) {
+      this.y++
+      if (this.y > this.scrollBottom) {
+        this.y--
+        this.ybase++
+        if (this.ydisp + 1 <= this.ybase) this.ydisp++
       }
     }
   }
