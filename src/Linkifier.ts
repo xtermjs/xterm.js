@@ -16,8 +16,8 @@ const ipClause = '((\\d{1,3}\\.){3}\\d{1,3})';
 const localHostClause = '(localhost)';
 const portClause = '(:\\d{1,5})';
 const hostClause = '((' + domainBodyClause + '\\.' + tldClause + ')|' + ipClause + '|' + localHostClause + ')' + portClause + '?';
-const pathClause = '(\\/[\\/\\w\\.\\-%]*)*';
-const queryStringHashFragmentCharacterSet = '[0-9\\w\\[\\]\\(\\)\\/\\?\\!#@$%&\'*+,:;\\=\\.\\-]*';
+const pathClause = '(\\/[\\/\\w\\.\\-%~]*)*';
+const queryStringHashFragmentCharacterSet = '[0-9\\w\\[\\]\\(\\)\\/\\?\\!#@$%&\'*+,:;~\\=\\.\\-]*';
 const queryStringClause = '(\\?' + queryStringHashFragmentCharacterSet + ')?';
 const hashFragmentClause = '(#' + queryStringHashFragmentCharacterSet + ')?';
 const negatedPathCharacterSet = '[^\\/\\w\\.\\-%]+';
@@ -232,6 +232,7 @@ export class Linkifier {
   private _createAnchorElement(uri: string, handler: LinkMatcherHandler, isHypertextLinkHandler: boolean): HTMLAnchorElement {
     const element = this._document.createElement('a');
     element.textContent = uri;
+    element.draggable = false;
     if (isHypertextLinkHandler) {
       element.href = uri;
       // Force link on another tab so work is not lost

@@ -68,7 +68,7 @@
   "scripts": {
     "prestart": "npm run build",
     "start": "node demo/app",
-    "dev": "nodemon -e js,ts --watch src --watch demo --exec npm start",
+    "dev": "nodemon -e js,ts,css --watch src --watch demo --exec npm start",
     "lint": "tslint src/*.ts src/**/*.ts",
     "test": "gulp test",
     "build:docs": "jsdoc -c jsdoc.json",

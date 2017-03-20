@@ -49,6 +49,20 @@ describe('Linkifier', () => {
     element.dispatchEvent(event);
   }
 
+  function assertLinkifiesEntireRow(uri: string, done: MochaDone) {
+      addRow(uri);
+      linkifier.linkifyRow(0);
+      setTimeout(() => {
+        assert.equal((<HTMLElement>rows[0].firstChild).tagName, 'A');
+        assert.equal((<HTMLElement>rows[0].firstChild).textContent, uri);
+        done();
+      }, 0);
+  }
+
+  describe('http links', () => {
+    it('should allow ~ character in URI path', done => assertLinkifiesEntireRow('http://foo.com/a~b#c~d?e~f', done));
+  });
+
   describe('validationCallback', () => {
     it('should enable link if true', done => {
       addRow('test');
