@@ -266,6 +266,74 @@ function Terminal(options) {
 inherits(Terminal, EventEmitter);
 
 /**
+ * Returns the current position and style of the terminal cursor.
+ * It returns an object in the following form: {position: [x, y], style: "cursorStyle"}
+ */
+Terminal.prototype._getCursor = function() {
+  return {
+    position: [this.x, this.y],
+    style: this.getOption('cursorStyle')
+  };
+};
+
+
+/**
+ * Returns the current mode of the terminal. Can be one of the following:
+ *   - application
+ *   - insert
+ *   - normal
+ */
+Terminal.prototype._getMode = function() {
+  if (this.applicationKeypad) {
+    return 'application';
+  } else if (this.insertMode) {
+    return 'insert';
+  }
+
+  return 'normal';
+};
+
+
+/**
+ * Serialize and return the terminal's state as a JSON object.
+ * Also iterate through all terminal properties that have a `getState` methods and embed their
+ * state as well.
+ */
+Terminal.prototype.getState = function() {
+  const properties = Object.keys(this);
+  const availableOptions = [
+    'cursorBlink', 'disableStdin', 'scrollback', 'tabStopWidth', 'useFlowControl'
+  ];
+
+  let state = {
+    cursor: this._getCursor(),
+    geometry: this.geometry,
+    mode: this._getMode(),
+    options: {}
+  };
+
+  availableOptions.forEach(function (option) {
+    state.options[option] = term.getOption(option);
+  });
+
+  // Iterate through all terminal properties to embed their state as well.
+  for (let i in properties) {
+    let key = properties[i];
+    let value = this[key];
+
+    if (!value) {
+      continue;
+    }
+
+    if (typeof value.getState == 'function') {
+      state[key] = value.getState();
+    }
+  }
+
+  return state;
+};
+
+/**
  * back_color_erase feature for xterm.
  */
 Terminal.prototype.eraseAttr = function() {
