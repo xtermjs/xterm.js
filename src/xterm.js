@@ -1805,14 +1805,8 @@ Terminal.prototype.resize = function(x, y) {
         this.lines.get(i).push(ch);
       }
     }
-  } else { // (j > x)
-    i = this.lines.length;
-    while (i--) {
-      while (this.lines.get(i).length > x) {
-        this.lines.get(i).pop();
-      }
-    }
   }
+
   this.cols = x;
   this.setupStops(this.cols);
 
