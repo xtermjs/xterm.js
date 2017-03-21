@@ -1798,18 +1798,6 @@ Terminal.prototype.resize = function(x, y) {
   // resize cols
   j = this.cols;
 
-  // We can increase the number of characters that can be stored in lines, but never reduce them.
-  // Reducing line length would discard character info, which we don't want!
-  if (j < x) {
-    ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
-    i = this.lines.length;
-    while (i--) {
-      while (this.lines.get(i).length < x) {
-        this.lines.get(i).push(ch);
-      }
-    }
-  }
-
   this.cols = x;
   this.setupStops(this.cols);
 
@@ -2028,19 +2016,7 @@ Terminal.prototype.eraseLine = function(y) {
  * @param {number} cur First bunch of data for each "blank" character.
  */
 Terminal.prototype.blankLine = function(cur) {
-  var attr = cur
-  ? this.eraseAttr()
-  : this.defAttr;
-
-  var ch = [attr, ' ', 1]  // width defaults to 1 halfwidth character
-  , line = []
-  , i = 0;
-
-  for (; i < this.cols; i++) {
-    line[i] = ch;
-  }
-
-  return line;
+  return [];
 };
 
 
