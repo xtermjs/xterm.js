@@ -145,15 +145,15 @@ export class Renderer {
 
     // Lines are rendered in reverse, from bottom to top, to help line wrapping logic
     while (renderCount <= rowsToRender) {
+      y--;
 
       // If there are overflow lines use the last one
       if (overflowBuffer.length) {
         line = overflowBuffer.pop();
       } else {
-        y--;
         row = y + this._terminal.ydisp;
 
-        line = this._terminal.lines.get(row);
+        line = this._terminal.lines.getLineAtRow(row, width);
       }
 
       if (!line || !this._terminal.children[y]) {

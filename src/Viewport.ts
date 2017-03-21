@@ -31,6 +31,7 @@ export class Viewport {
     this.lastRecordedBufferLength = 0;
     this.lastRecordedViewportHeight = 0;
 
+    this.terminal.on('refresh', this.syncScrollArea.bind(this));
     this.terminal.on('scroll', this.syncScrollArea.bind(this));
     this.terminal.on('resize', this.syncScrollArea.bind(this));
     this.viewportElement.addEventListener('scroll', this.onScroll.bind(this));
@@ -66,9 +67,10 @@ export class Viewport {
    * Updates dimensions and synchronizes the scroll area if necessary.
    */
   public syncScrollArea(): void {
-    if (this.lastRecordedBufferLength !== this.terminal.lines.length) {
+    let totalLines = this.terminal.lines.totalLinesAtWidth(this.terminal.cols);
+    if (this.lastRecordedBufferLength !== totalLines) {
       // If buffer height changed
-      this.lastRecordedBufferLength = this.terminal.lines.length;
+      this.lastRecordedBufferLength = totalLines;
       this.refresh();
     } else if (this.lastRecordedViewportHeight !== this.terminal.rows) {
       // If viewport height changed

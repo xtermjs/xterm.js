@@ -14,7 +14,7 @@ import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './EventEmitter';
 import { Viewport } from './Viewport';
 import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard';
-import { CircularList } from './utils/CircularList';
+import { Buffer } from './Buffer';
 import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Parser } from './Parser';
@@ -235,7 +235,7 @@ function Terminal(options) {
    * An array of all lines in the entire buffer, including the prompt. The lines are array of
    * characters which are 2-length arrays where [0] is an attribute and [1] is the character.
    */
-  this.lines = new CircularList(this.scrollback);
+  this.lines = new Buffer(this.scrollback);
   var i = this.rows;
   while (i--) {
     this.lines.push(this.blankLine());
@@ -1118,12 +1118,13 @@ Terminal.prototype.scroll = function() {
   // subtract the bottom scroll region
   row -= this.rows - 1 - this.scrollBottom;
 
-  if (row === this.lines.length) {
+  let naturalRow = this.lines.getRowAtLine(row);
+  if (naturalRow === this.lines.length) {
     // Optimization: pushing is faster than splicing when they amount to the same behavior
     this.lines.push(this.blankLine());
   } else {
     // add our new line
-    this.lines.splice(row, 0, this.blankLine());
+    this.lines.splice(naturalRow, 0, this.blankLine());
   }
 
   if (this.scrollTop !== 0) {
@@ -1133,7 +1134,8 @@ Terminal.prototype.scroll = function() {
         this.ydisp = this.ybase;
       }
     }
-    this.lines.splice(this.ybase + this.scrollTop, 1);
+    let calc = this.lines.getRowAtLine(this.ybase + this.scrollTop);
+    this.lines.splice(calc, 1);
   }
 
   // this.maxRange();
@@ -1257,6 +1259,7 @@ Terminal.prototype.innerWrite = function() {
     }, 0);
   } else {
     this.writeInProgress = false;
+    this.viewport.syncScrollArea();
   }
 };
 
@@ -1863,6 +1866,11 @@ Terminal.prototype.resize = function(x, y) {
 
   this.scrollTop = 0;
   this.scrollBottom = y - 1;
+
+  this.ybase = this.lines.totalLinesAtWidth(this.cols) - this.rows;
+  if (this.ybase < 0) {
+    this.ybase = 0;
+  }
 
   this.charMeasure.measure();
 

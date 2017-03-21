@@ -30,7 +30,7 @@ export class InputHandler implements IInputHandler {
       char = this._terminal.charset[char];
     }
 
-    let row = this._terminal.y + this._terminal.ybase;
+    let row = this._terminal.lines.getRowAtLine(this._terminal.y + this._terminal.ybase, this._terminal.cols);
 
     // insert combining char in last cell
     // FIXME: needs handling after cursor jumps
@@ -52,8 +52,6 @@ export class InputHandler implements IInputHandler {
       return;
     }
 
-    row = this._terminal.y + this._terminal.ybase;
-
     // insert mode: move characters to right
     if (this._terminal.insertMode) {
       // do this twice for a fullwidth char
@@ -70,7 +68,6 @@ export class InputHandler implements IInputHandler {
         this._terminal.lines.get(row).splice(this._terminal.x, 0, [this._terminal.curAttr, ' ', 1]);
       }
     }
-
     this._terminal.lines.get(row)[this._terminal.x] = [this._terminal.curAttr, char, ch_width];
     this._terminal.x++;
     this._terminal.updateRange(this._terminal.y);
