@@ -72,8 +72,10 @@ interface IBuffer<T> {
   splice(start: number, deleteCount: number, ...items: T[]): void;
   trimStart(count: number): void;
   shiftElements(start: number, count: number, offset: number): void;
-  totalLinesAtWidth(width: number): number;
+  setTotalLinesAtWidth(width: number): number;
+  getTotalLines(): number;
   getLineAtRow(row: number, width: number): T;
+  getRowAtLine(row: number, width: number): T;
 }
 
 export interface LinkMatcherOptions {

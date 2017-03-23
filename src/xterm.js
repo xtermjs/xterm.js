@@ -1248,6 +1248,7 @@ Terminal.prototype.innerWrite = function() {
 
     this.parser.parse(data);
 
+    this.lines.setTotalLinesAtWidth(this.cols);
     this.updateRange(this.y);
     this.refresh(this.refreshStart, this.refreshEnd);
   }
@@ -1867,7 +1868,9 @@ Terminal.prototype.resize = function(x, y) {
   this.scrollTop = 0;
   this.scrollBottom = y - 1;
 
-  this.ybase = this.lines.totalLinesAtWidth(this.cols) - this.rows;
+  let totalLinesAtWidth = this.lines.setTotalLinesAtWidth(this.cols);
+
+  this.ybase = totalLinesAtWidth - this.rows;
   if (this.ybase < 0) {
     this.ybase = 0;
   }

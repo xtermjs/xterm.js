@@ -67,7 +67,7 @@ export class Viewport {
    * Updates dimensions and synchronizes the scroll area if necessary.
    */
   public syncScrollArea(): void {
-    let totalLines = this.terminal.lines.totalLinesAtWidth(this.terminal.cols);
+    let totalLines = this.terminal.lines.getTotalLines();
     if (this.lastRecordedBufferLength !== totalLines) {
       // If buffer height changed
       this.lastRecordedBufferLength = totalLines;
