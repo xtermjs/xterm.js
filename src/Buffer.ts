@@ -1,6 +1,23 @@
 import { CircularList } from './utils/CircularList';
 
 export class Buffer extends CircularList<any> {
+
+  /**
+   * Faster version of Math.ceil()
+   * see https://jsperf.com/math-ceil-vs-bitwise
+   *
+   * @param {number} n - The value to round up.
+   *
+   * @return {number} - The rounded value.
+   *
+   * @example
+   *
+   * let num = buffer.fastCeil(3.4); // -->  4
+   */
+  public fastCeil(n: number): number {
+    let f = (n << 0);
+    return f === n ? f : f + 1;
+  }
   /**
    * Number of lines when they are wrapped to fit the terminal width
    */
@@ -18,12 +35,11 @@ export class Buffer extends CircularList<any> {
    * let numLines = buffer.setTotalLinesAtWidth(80); // --> 38
    */
   public setTotalLinesAtWidth(width: number): number {
-    console.log('setting lines', width);
     let total = 0;
     let len = this.length;
     let i;
     for (i = 0; i < len; i++) {
-      total += Math.ceil(this.get(i).length / width);
+      total += this.fastCeil(this.get(i).length / width);
     }
 
     this.totalLines = total;
@@ -70,7 +86,7 @@ export class Buffer extends CircularList<any> {
       if (count === line) {
         return i;
       }
-      wrappedRowNum = Math.ceil(lineData.length / width);
+      wrappedRowNum = this.fastCeil(lineData.length / width);
       if (!wrappedRowNum) {
         wrappedRowNum = 1;
       }
@@ -105,7 +121,7 @@ export class Buffer extends CircularList<any> {
       if (count === row) {
         return lineData;
       }
-      wrappedRowNum = Math.ceil(lineData.length / width);
+      wrappedRowNum = this.fastCeil(lineData.length / width);
       if (!wrappedRowNum) {
         wrappedRowNum = 1;
       }
