@@ -211,7 +211,7 @@ function Terminal(options) {
   this.parser = new Parser(this.inputHandler, this);
   // Reuse renderer if the Terminal is being recreated via a Terminal.reset call.
   this.renderer = this.renderer || null;
-  this.linkifier = this.linkifier || null;;
+  this.linkifier = this.linkifier || new Linkifier();
 
   // user input states
   this.writeBuffer = [];
@@ -612,7 +612,7 @@ Terminal.prototype.open = function(parent) {
   this.rowContainer.classList.add('xterm-rows');
   this.element.appendChild(this.rowContainer);
   this.children = [];
-  this.linkifier = new Linkifier(document, this.children);
+  this.linkifier.attachToDom(document, this.children);
 
   // Create the container that will hold helpers like the textarea for
   // capturing DOM Events. Then produce the helpers.
