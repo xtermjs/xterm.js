@@ -3,7 +3,6 @@
  */
 
 import { ITerminal } from './Interfaces';
-import { trimThenChunk } from './utils/LineWrap';
 
 /**
  * The maximum number of refresh frames to skip when the write buffer is non-
@@ -165,13 +164,13 @@ export class Renderer {
       // If the line is longer than the current width, trim then chunk the line and store it in the
       // overflowBuffer and continue the render with the last line in the buffer
       if (line.length > width) {
-        overflowBuffer = trimThenChunk(line, width, this._terminal.defAttr);
+        overflowBuffer = this._terminal.lines.trimThenChunk(line, width);
         line = overflowBuffer.pop();
       }
 
       out = '';
 
-      if (this._terminal.y === y - (this._terminal.ybase - this._terminal.ydisp)
+      if (this._terminal.y === y - (this._terminal.scrollBase - this._terminal.ydisp)
           && this._terminal.cursorState
           && !this._terminal.cursorHidden) {
         x = this._terminal.x;

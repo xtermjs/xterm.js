@@ -235,11 +235,13 @@ function Terminal(options) {
    * An array of all lines in the entire buffer, including the prompt. The lines are array of
    * characters which are 2-length arrays where [0] is an attribute and [1] is the character.
    */
-  this.lines = new Buffer(this.scrollback);
+  this.lines = new Buffer(this.scrollback, this.defAttr);
   var i = this.rows;
   while (i--) {
     this.lines.push(this.blankLine());
   }
+
+  this.setScrollBase();
 
   this.tabs;
   this.setupStops();
@@ -369,6 +371,17 @@ each(keys(Terminal.defaults), function(key) {
   Terminal[key] = Terminal.defaults[key];
   Terminal.options[key] = Terminal.defaults[key];
 });
+
+Terminal.prototype.setScrollBase = function() {
+  let totalLinesAtWidth = this.lines.setTotalLinesAtWidth(this.cols);
+
+  let scrollBase = totalLinesAtWidth - this.rows;
+  if (scrollBase < 0) {
+    scrollBase = 0;
+  }
+
+  this.scrollBase = scrollBase;
+};
 
 /**
  * Focus the terminal. Delegates focus handling to the terminal's DOM element.
@@ -1106,10 +1119,10 @@ Terminal.prototype.scroll = function() {
   }
 
   this.ybase++;
+  this.scrollBase++;
 
-  // TODO: Why is this done twice?
   if (!this.userScrolling) {
-    this.ydisp = this.ybase;
+    this.ydisp = this.scrollBase;
   }
 
   // last line
@@ -1118,24 +1131,20 @@ Terminal.prototype.scroll = function() {
   // subtract the bottom scroll region
   row -= this.rows - 1 - this.scrollBottom;
 
-  let naturalRow = this.lines.getRowAtLine(row);
-  if (naturalRow === this.lines.length) {
+  if (row === this.lines.length) {
     // Optimization: pushing is faster than splicing when they amount to the same behavior
     this.lines.push(this.blankLine());
   } else {
     // add our new line
-    this.lines.splice(naturalRow, 0, this.blankLine());
+    this.lines.splice(row, 0, this.blankLine());
   }
 
   if (this.scrollTop !== 0) {
     if (this.ybase !== 0) {
       this.ybase--;
-      if (!this.userScrolling) {
-        this.ydisp = this.ybase;
-      }
+      this.scrollBase--;
     }
-    let calc = this.lines.getRowAtLine(this.ybase + this.scrollTop);
-    this.lines.splice(calc, 1);
+    this.lines.splice(this.ybase + this.scrollTop, 1);
   }
 
   // this.maxRange();
@@ -1161,14 +1170,14 @@ Terminal.prototype.scroll = function() {
 Terminal.prototype.scrollDisp = function(disp, suppressScrollEvent) {
   if (disp < 0) {
     this.userScrolling = true;
-  } else if (disp + this.ydisp >= this.ybase) {
+  } else if (disp + this.ydisp >= this.scrollBase) {
     this.userScrolling = false;
   }
 
   this.ydisp += disp;
 
-  if (this.ydisp > this.ybase) {
-    this.ydisp = this.ybase;
+  if (this.ydisp > this.scrollBase) {
+    this.ydisp = this.scrollBase;
   } else if (this.ydisp < 0) {
     this.ydisp = 0;
   }
@@ -1199,7 +1208,7 @@ Terminal.prototype.scrollToTop = function() {
  * Scrolls the display of the terminal to the bottom.
  */
 Terminal.prototype.scrollToBottom = function() {
-  this.scrollDisp(this.ybase - this.ydisp);
+  this.scrollDisp(this.scrollBase - this.ydisp);
 }
 
 /**
@@ -1248,9 +1257,10 @@ Terminal.prototype.innerWrite = function() {
 
     this.parser.parse(data);
 
-    this.lines.setTotalLinesAtWidth(this.cols);
     this.updateRange(this.y);
     this.refresh(this.refreshStart, this.refreshEnd);
+
+    this.setScrollBase();
   }
   if (this.writeBuffer.length > 0) {
     // Allow renderer to catch up before processing the next batch
@@ -1868,11 +1878,13 @@ Terminal.prototype.resize = function(x, y) {
   this.scrollTop = 0;
   this.scrollBottom = y - 1;
 
-  let totalLinesAtWidth = this.lines.setTotalLinesAtWidth(this.cols);
+  // If we're already at the bottom, scroll down after resize
+  const stickyScroll = this.scrollBase === this.ydisp
 
-  this.ybase = totalLinesAtWidth - this.rows;
-  if (this.ybase < 0) {
-    this.ybase = 0;
+  this.setScrollBase();
+
+  if (stickyScroll) {
+    this.scrollToBottom();
   }
 
   this.charMeasure.measure();
@@ -2063,7 +2075,8 @@ Terminal.prototype.handler = function(data) {
   }
 
   // Input is being sent to the terminal, the terminal should focus the prompt.
-  if (this.ybase !== this.ydisp) {
+
+  if (this.scrollBase !== this.ydisp) {
     this.scrollToBottom();
   }
   this.emit('data', data);

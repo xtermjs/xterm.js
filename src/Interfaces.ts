@@ -23,6 +23,7 @@ export interface ITerminal {
   textarea: HTMLTextAreaElement;
   ybase: number;
   ydisp: number;
+  scrollBase: number;
   lines: IBuffer<string>;
   rows: number;
   cols: number;
@@ -76,6 +77,7 @@ interface IBuffer<T> {
   getTotalLines(): number;
   getLineAtRow(row: number, width: number): T;
   getRowAtLine(row: number, width: number): T;
+  trimThenChunk(line: T, width: number): T[];
 }
 
 export interface LinkMatcherOptions {

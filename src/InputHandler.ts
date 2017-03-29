@@ -30,7 +30,7 @@ export class InputHandler implements IInputHandler {
       char = this._terminal.charset[char];
     }
 
-    let row = this._terminal.lines.getRowAtLine(this._terminal.y + this._terminal.ybase, this._terminal.cols);
+    let row = this._terminal.y + this._terminal.ybase;
 
     // insert combining char in last cell
     // FIXME: needs handling after cursor jumps
@@ -58,7 +58,7 @@ export class InputHandler implements IInputHandler {
       for (let moves = 0; moves < ch_width; ++moves) {
         // remove last cell, if it's width is 0
         // we have to adjust the second last cell as well
-        const removed = this._terminal.lines.get(this._terminal.y + this._terminal.ybase).pop();
+        const removed = this._terminal.lines.get(row).pop();
         if (removed[2] === 0
             && this._terminal.lines.get(row)[this._terminal.cols - 2]
         && this._terminal.lines.get(row)[this._terminal.cols - 2][2] === 2)

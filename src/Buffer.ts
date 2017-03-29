@@ -1,6 +1,9 @@
 import { CircularList } from './utils/CircularList';
 
 export class Buffer extends CircularList<any> {
+  constructor(scrollback: number, private blank: string) {
+    super(scrollback);
+  }
 
   /**
    * Faster version of Math.ceil()
@@ -39,7 +42,7 @@ export class Buffer extends CircularList<any> {
     let len = this.length;
     let i;
     for (i = 0; i < len; i++) {
-      total += this.fastCeil(this.get(i).length / width);
+      total += this.fastCeil(this.trimmedLength(this.get(i), width) / width);
     }
 
     this.totalLines = total;
@@ -86,7 +89,7 @@ export class Buffer extends CircularList<any> {
       if (count === line) {
         return i;
       }
-      wrappedRowNum = this.fastCeil(lineData.length / width);
+      wrappedRowNum = this.fastCeil(this.trimmedLength(lineData, width) / width);
       if (!wrappedRowNum) {
         wrappedRowNum = 1;
       }
@@ -121,7 +124,7 @@ export class Buffer extends CircularList<any> {
       if (count === row) {
         return lineData;
       }
-      wrappedRowNum = this.fastCeil(lineData.length / width);
+      wrappedRowNum = this.fastCeil(this.trimmedLength(lineData, width) / width);
       if (!wrappedRowNum) {
         wrappedRowNum = 1;
       }
@@ -131,5 +134,88 @@ export class Buffer extends CircularList<any> {
       }
       count += wrappedRowNum;
     }
+  }
+
+  /**
+   * Gets the length of a line with trailing whitespace stripped, down to a specified minimum length
+   * Under the minimum length it will only strip default blank characters, in case they are part of
+   * a coloured bg (ie vim).
+   * Returns a the length of the line after whitespace has been stripped
+   *
+   * @param {array} line - A terminal line
+   * @param {number} min - The minimum length to trim the line to
+   *
+   * @return {number} - The length of the trimmed terminal line
+   */
+  public trimmedLength(line, min) {
+    let i = line.length - 1;
+    for (i; i >= 0; i--) {
+      if (
+        (i >= min && line[i][1] !== ' ') ||
+        i < min && (line[i][1] !== ' ' || line[i][0] !== this.blank)
+      ) {
+        break;
+      }
+    }
+
+    if (i < min) {
+      i = min;
+    } else {
+      // 2 extra blank chars allows for cursor and ensures at least one element is in array (in case
+      // of intentional blank rows)
+      i += 2;
+    }
+
+    return i;
+  };
+
+  /**
+   * Strips trailing whitespace from line, down to a minimum length
+   * Under the minimum length it will only strip default blank characters, in case they are part of
+   * a coloured bg (ie vim).
+   * Returns a shallow copy of the original array.
+   *
+   * @param {array} line - A terminal line
+   * @param {number} min - The minimum length to trim the line to
+   *
+   * @return {array} - The trimmed terminal line
+   */
+  public trimBlank(line, min) {
+    return line.slice(0, this.trimmedLength(line, min));
+  };
+
+  /**
+   * Splits an array into N sized chunks.
+   *
+   * @param {number} chunkSize - the size of each chunk
+   * @param {array} array - the array to chunk
+   *
+   * @return {array} - An array of chunks
+   *
+   * @example
+   * let array = [1, 2, 3, 4, 5, 6, 7];
+   * chunkArray(3, array); //--> [[1, 2, 3], [4, 5, 6], [7]]
+   */
+  public chunkArray(chunkSize, array) {
+    let temparray = [];
+    let i = 0;
+    let j = array.length;
+    for (i; i < j; i += chunkSize) {
+      temparray.push(array.slice(i, i + chunkSize));
+    }
+
+    return temparray;
+  };
+
+  /**
+   * Utility function for trimming and then chunking a line.
+   *
+   * @param {array} line - A terminal line
+   * @param {number} width - the size of each chunk
+   *
+   * @return {array} - An array of chunks
+   */
+  public trimThenChunk(line, width) {
+    return this.chunkArray(width, this.trimBlank(line, width));
   }
 }

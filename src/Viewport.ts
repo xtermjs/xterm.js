@@ -31,7 +31,6 @@ export class Viewport {
     this.lastRecordedBufferLength = 0;
     this.lastRecordedViewportHeight = 0;
 
-    this.terminal.on('refresh', this.syncScrollArea.bind(this));
     this.terminal.on('scroll', this.syncScrollArea.bind(this));
     this.terminal.on('resize', this.syncScrollArea.bind(this));
     this.viewportElement.addEventListener('scroll', this.onScroll.bind(this));
