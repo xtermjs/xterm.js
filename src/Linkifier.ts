@@ -312,7 +312,7 @@ export class Linkifier {
       const leftText = fullText.substring(0, substringIndex);
       const leftTextNode = this._document.createTextNode(leftText);
       this._replaceNode(node, leftTextNode, newNode);
-      return 1;
+      return 0;
     }
 
     // Replace with <textnode><newNode><textnode>

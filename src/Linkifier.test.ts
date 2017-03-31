@@ -36,9 +36,9 @@ describe('Linkifier', () => {
     });
   });
 
-  function addRow(text: string) {
+  function addRow(html: string) {
     const element = document.createElement('div');
-    element.textContent = text;
+    element.innerHTML = html;
     container.appendChild(element);
     rows.push(element);
   }
@@ -49,7 +49,8 @@ describe('Linkifier', () => {
     element.dispatchEvent(event);
   }
 
-  function assertLinkifiesEntireRow(uri: string, done: MochaDone) {
+  describe('http links', () => {
+    function assertLinkifiesEntireRow(uri: string, done: MochaDone) {
       addRow(uri);
       linkifier.linkifyRow(0);
       setTimeout(() => {
@@ -57,10 +58,42 @@ describe('Linkifier', () => {
         assert.equal((<HTMLElement>rows[0].firstChild).textContent, uri);
         done();
       }, 0);
-  }
-
-  describe('http links', () => {
+    }
     it('should allow ~ character in URI path', done => assertLinkifiesEntireRow('http://foo.com/a~b#c~d?e~f', done));
+  });
+
+  describe('link matcher', () => {
+    function assertLinkifiesRow(rowText: string, linkMatcherRegex: RegExp, expectedHtml: string, done: MochaDone) {
+      addRow(rowText);
+      linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
+      linkifier.linkifyRow(0);
+      // Allow linkify to happen
+      setTimeout(() => {
+        assert.equal(rows[0].innerHTML, expectedHtml);
+        done();
+      }, 0);
+    }
+    it('should match a single link', done => {
+      assertLinkifiesRow('foo', /foo/, '<a>foo</a>', done);
+    });
+    it('should match a single link at the start of a text node', done => {
+      assertLinkifiesRow('foo bar', /foo/, '<a>foo</a> bar', done);
+    });
+    it('should match a single link in the middle of a text node', done => {
+      assertLinkifiesRow('foo bar baz', /bar/, 'foo <a>bar</a> baz', done);
+    });
+    it('should match a single link at the end of a text node', done => {
+      assertLinkifiesRow('foo bar', /bar/, 'foo <a>bar</a>', done);
+    });
+    it('should match a link after a link at the start of a text node', done => {
+      assertLinkifiesRow('foo bar', /foo|bar/, '<a>foo</a> <a>bar</a>', done);
+    });
+    it('should match a link after a link in the middle of a text node', done => {
+      assertLinkifiesRow('foo bar baz', /bar|baz/, 'foo <a>bar</a> <a>baz</a>', done);
+    });
+    it('should match a link immediately after a link at the end of a text node', done => {
+      assertLinkifiesRow('<span>foo bar</span>baz', /bar|baz/, '<span>foo <a>bar</a></span><a>baz</a>', done);
+    });
   });
 
   describe('validationCallback', () => {
