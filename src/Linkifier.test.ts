@@ -89,6 +89,21 @@ describe('Linkifier', () => {
       // Allow time for the click to be performed
       setTimeout(() => done(), 10);
     });
+
+    it('should trigger for multiple link matches on one row', done => {
+      addRow('test test');
+      let count = 0;
+      linkifier.registerLinkMatcher(/test/, () => assert.fail(), {
+        validationCallback: (url, cb) => {
+          count += 1;
+          if (count === 2) {
+            done();
+          }
+          cb(false);
+        }
+      });
+      linkifier.linkifyRow(0);
+    });
   });
 
   describe('priority', () => {
