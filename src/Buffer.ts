@@ -150,11 +150,13 @@ export class Buffer extends CircularList<any> {
   public trimmedLength(line, min) {
     let i = line.length - 1;
     for (i; i >= 0; i--) {
-      if (
-        (i >= min && line[i][1] !== ' ') ||
-        i < min && (line[i][1] !== ' ' || line[i][0] !== this.blank)
-      ) {
-        break;
+      if (line[i]) {
+        if (
+          (i >= min && line[i][1] !== ' ') ||
+          i < min && (line[i][1] !== ' ' || line[i][0] !== this.blank)
+        ) {
+          break;
+        }
       }
     }
 
