@@ -37,8 +37,8 @@ const HYPERTEXT_LINK_MATCHER_ID = 0;
 export class Linkifier {
   /**
    * The time to wait after a row is changed before it is linkified. This prevents
-   * the costly operation of searching every row multiple times, pntentially a
-   * huge aount of times.
+   * the costly operation of searching every row multiple times, potentially a
+   * huge amount of times.
    */
   protected static TIME_BEFORE_LINKIFY = 200;
 
