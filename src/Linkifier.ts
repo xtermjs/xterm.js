@@ -207,7 +207,7 @@ export class Linkifier {
             const element = (<HTMLElement>node);
             if (element.nodeName === 'A') {
               // This row has already been linkified
-              return;
+              return result;
             }
             element.innerHTML = '';
             element.appendChild(linkElement);
@@ -216,7 +216,7 @@ export class Linkifier {
           // Matches part of string
           const nodesAdded = this._replaceNodeSubstringWithNode(node, linkElement, uri, searchIndex);
           // No need to consider the new nodes
-          i += nodesAdded - 1;
+          i += nodesAdded;
         }
         result.push(linkElement);
 
