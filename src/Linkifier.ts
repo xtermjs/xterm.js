@@ -155,16 +155,17 @@ export class Linkifier {
     const text = row.textContent;
     for (let i = 0; i < this._linkMatchers.length; i++) {
       const matcher = this._linkMatchers[i];
-      const uri = this._findLinkMatch(text, matcher.regex, matcher.matchIndex);
-      if (uri) {
-        const linkElement = this._doLinkifyRow(rowIndex, uri, matcher.handler, matcher.id === HYPERTEXT_LINK_MATCHER_ID);
+      const linkElements = this._doLinkifyRow(row, matcher);
+        if (linkElements.length > 0) {
         // Fire validation callback
-        if (linkElement && matcher.validationCallback) {
-          matcher.validationCallback(uri, isValid => {
-            if (!isValid) {
-              linkElement.classList.add(INVALID_LINK_CLASS);
-            }
-          });
+        if (matcher.validationCallback) {
+          for (let j = 0; j < linkElements.length; j++) {
+            matcher.validationCallback(linkElements[j].textContent, isValid => {
+              if (!isValid) {
+                linkElements[j].classList.add(INVALID_LINK_CLASS);
+              }
+            });
+          }
         }
         // Only allow a single LinkMatcher to trigger on any given row.
         return;
@@ -174,22 +175,32 @@ export class Linkifier {
 
   /**
    * Linkifies a row given a specific handler.
-   * @param {number} rowIndex The index of the row to linkify.
-   * @param {string} uri The uri that has been found.
-   * @param {handler} handler The handler to trigger when the link is triggered.
+   * @param {HTMLElement} row The row to linkify.
+   * @param {LinkMatcher} matcher The link matcher for this line.
    * @return The link element if it was added, otherwise undefined.
    */
-  private _doLinkifyRow(rowIndex: number, uri: string, handler: LinkMatcherHandler, isHttpLinkMatcher: boolean): HTMLElement {
+  private _doLinkifyRow(row: HTMLElement, matcher: LinkMatcher): HTMLElement[] {
     // Iterate over nodes as we want to consider text nodes
-    const nodes = this._rows[rowIndex].childNodes;
+    let result = [];
+    const isHttpLinkMatcher = matcher.id === HYPERTEXT_LINK_MATCHER_ID;
+    const nodes = row.childNodes;
+
+    // Find the first match
+    let match = row.textContent.match(matcher.regex);
+    if (!match || match.length === 0) {
+      return result;
+    }
+    let uri = match[typeof matcher.matchIndex !== 'number' ? 0 : matcher.matchIndex];
+    // Set the next searches start index
+    let rowStartIndex = match.index + uri.length;
+
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
       const searchIndex = node.textContent.indexOf(uri);
       if (searchIndex >= 0) {
-        const linkElement = this._createAnchorElement(uri, handler, isHttpLinkMatcher);
+        const linkElement = this._createAnchorElement(uri, matcher.handler, isHttpLinkMatcher);
         if (node.textContent.length === uri.length) {
           // Matches entire string
-
           if (node.nodeType === 3 /*Node.TEXT_NODE*/) {
             this._replaceNode(node, linkElement);
           } else {
@@ -203,25 +214,22 @@ export class Linkifier {
           }
         } else {
           // Matches part of string
-          this._replaceNodeSubstringWithNode(node, linkElement, uri, searchIndex);
+          const nodesAdded = this._replaceNodeSubstringWithNode(node, linkElement, uri, searchIndex);
+          // No need to consider the new nodes
+          i += nodesAdded - 1;
         }
-        return linkElement;
+        result.push(linkElement);
+
+        // Find the next match
+        match = row.textContent.substring(rowStartIndex).match(matcher.regex);
+        if (!match || match.length === 0) {
+          return result;
+        }
+        uri = match[typeof matcher.matchIndex !== 'number' ? 0 : matcher.matchIndex];
+        rowStartIndex += match.index + uri.length;
       }
     }
-  }
-
-  /**
-   * Finds a link match in a piece of text.
-   * @param {string} text The text to search.
-   * @param {number} matchIndex The regex match index of the link.
-   * @return {string} The matching URI or null if not found.
-   */
-  private _findLinkMatch(text: string, regex: RegExp, matchIndex?: number): string {
-    const match = text.match(regex);
-    if (!match || match.length === 0) {
-      return null;
-    }
-    return match[typeof matchIndex !== 'number' ? 0 : matchIndex];
+    return result;
   }
 
   /**
@@ -274,8 +282,9 @@ export class Linkifier {
    * @param {Node} newNode The new node to insert.
    * @param {string} substring The substring to replace.
    * @param {number} substringIndex The index of the substring within the string.
+   * @return The number of nodes to skip when searching for the next uri.
    */
-  private _replaceNodeSubstringWithNode(targetNode: Node, newNode: Node, substring: string, substringIndex: number): void {
+  private _replaceNodeSubstringWithNode(targetNode: Node, newNode: Node, substring: string, substringIndex: number): number {
     let node = targetNode;
     if (node.nodeType !== 3/*Node.TEXT_NODE*/) {
       node = node.childNodes[0];
@@ -284,7 +293,7 @@ export class Linkifier {
     // The targetNode will be either a text node or a <span>. The text node
     // (targetNode or its only-child) needs to be replaced with newNode plus new
     // text nodes potentially on either side.
-    if (node.childNodes.length === 0 && node.nodeType !== Node.TEXT_NODE) {
+    if (node.childNodes.length === 0 && node.nodeType !== 3/*Node.TEXT_NODE*/) {
       throw new Error('targetNode must be a text node or only contain a single text node');
     }
 
@@ -295,18 +304,23 @@ export class Linkifier {
       const rightText = fullText.substring(substring.length);
       const rightTextNode = this._document.createTextNode(rightText);
       this._replaceNode(node, newNode, rightTextNode);
-    } else if (substringIndex === targetNode.textContent.length - substring.length) {
+      return 0;
+    }
+
+    if (substringIndex === targetNode.textContent.length - substring.length) {
       // Replace with <textnode><newNode>
       const leftText = fullText.substring(0, substringIndex);
       const leftTextNode = this._document.createTextNode(leftText);
       this._replaceNode(node, leftTextNode, newNode);
-    } else {
-      // Replace with <textnode><newNode><textnode>
-      const leftText = fullText.substring(0, substringIndex);
-      const leftTextNode = this._document.createTextNode(leftText);
-      const rightText = fullText.substring(substringIndex + substring.length);
-      const rightTextNode = this._document.createTextNode(rightText);
-      this._replaceNode(node, leftTextNode, newNode, rightTextNode);
+      return 1;
     }
+
+    // Replace with <textnode><newNode><textnode>
+    const leftText = fullText.substring(0, substringIndex);
+    const leftTextNode = this._document.createTextNode(leftText);
+    const rightText = fullText.substring(substringIndex + substring.length);
+    const rightTextNode = this._document.createTextNode(rightText);
+    this._replaceNode(node, leftTextNode, newNode, rightTextNode);
+    return 1;
   }
 }
