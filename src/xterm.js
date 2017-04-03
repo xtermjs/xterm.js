@@ -53,6 +53,13 @@ var WRITE_BUFFER_PAUSE_THRESHOLD = 5;
 var WRITE_BATCH_SIZE = 300;
 
 /**
+ * The time between cursor blinks. This is driven by JS rather than a CSS
+ * animation due to a bug in Chromium that causes it to use excessive CPU time.
+ * See https://github.com/Microsoft/vscode/issues/22900
+ */
+var CURSOR_BLINK_INTERVAL = 600;
+
+/**
  * Terminal
  */
 
@@ -159,6 +166,7 @@ function Terminal(options) {
   this.scrollTop = 0;
   this.scrollBottom = this.rows - 1;
   this.customKeydownHandler = null;
+  this.cursorBlinkInterval = null;
 
   // modes
   this.applicationKeypad = false;
@@ -423,7 +431,7 @@ Terminal.prototype.setOption = function(key, value) {
   this[key] = value;
   this.options[key] = value;
   switch (key) {
-    case 'cursorBlink': this.element.classList.toggle('xterm-cursor-blink', value); break;
+    case 'cursorBlink': this.setCursorBlinking(value); break;
     case 'cursorStyle':
       // Style 'block' applies with no class
       this.element.classList.toggle(`xterm-cursor-style-underline`, value === 'underline');
@@ -432,6 +440,25 @@ Terminal.prototype.setOption = function(key, value) {
     case 'tabStopWidth': this.setupStops(); break;
   }
 };
+
+Terminal.prototype.restartCursorBlinking = function () {
+  this.setCursorBlinking(this.options.cursorBlink);
+}
+
+Terminal.prototype.setCursorBlinking = function (enabled) {
+  this.element.classList.toggle('xterm-cursor-blink', enabled);
+  this.element.classList.remove('xterm-cursor-blink-on');
+  if (this.cursorBlinkInterval) {
+    clearInterval(this.cursorBlinkInterval);
+    this.cursorBlinkInterval = null;
+  }
+  if (enabled) {
+    var self = this;
+    this.cursorBlinkInterval = setInterval(function () {
+      self.element.classList.toggle('xterm-cursor-blink-on');
+    }, CURSOR_BLINK_INTERVAL);
+  }
+}
 
 /**
  * Binds the desired focus behavior on a given terminal object.
@@ -445,6 +472,7 @@ Terminal.bindFocus = function (term) {
     }
     term.element.classList.add('focus');
     term.showCursor();
+    term.restartCursorBlinking.apply(term);
     Terminal.focus = term;
     term.emit('focus', {terminal: term});
   });
@@ -594,7 +622,7 @@ Terminal.prototype.open = function(parent) {
   this.element.classList.add('terminal');
   this.element.classList.add('xterm');
   this.element.classList.add('xterm-theme-' + this.theme);
-  this.element.classList.toggle('xterm-cursor-blink', this.options.cursorBlink);
+  this.setCursorBlinking(this.options.cursorBlink);
 
   this.element.style.height
   this.element.setAttribute('tabindex', 0);
@@ -1335,6 +1363,8 @@ Terminal.prototype.keyDown = function(ev) {
   if (this.customKeydownHandler && this.customKeydownHandler(ev) === false) {
     return false;
   }
+
+  this.restartCursorBlinking();
 
   if (!this.compositionHelper.keydown.bind(this.compositionHelper)(ev)) {
     if (this.ybase !== this.ydisp) {
