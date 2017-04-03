@@ -443,22 +443,26 @@ Terminal.prototype.setOption = function(key, value) {
 
 Terminal.prototype.restartCursorBlinking = function () {
   this.setCursorBlinking(this.options.cursorBlink);
-}
+};
 
 Terminal.prototype.setCursorBlinking = function (enabled) {
   this.element.classList.toggle('xterm-cursor-blink', enabled);
-  this.element.classList.remove('xterm-cursor-blink-on');
-  if (this.cursorBlinkInterval) {
-    clearInterval(this.cursorBlinkInterval);
-    this.cursorBlinkInterval = null;
-  }
+  this.clearCursorBlinkingInterval();
   if (enabled) {
     var self = this;
     this.cursorBlinkInterval = setInterval(function () {
       self.element.classList.toggle('xterm-cursor-blink-on');
     }, CURSOR_BLINK_INTERVAL);
   }
-}
+};
+
+Terminal.prototype.clearCursorBlinkingInterval = function () {
+  this.element.classList.remove('xterm-cursor-blink-on');
+  if (this.cursorBlinkInterval) {
+    clearInterval(this.cursorBlinkInterval);
+    this.cursorBlinkInterval = null;
+  }
+};
 
 /**
  * Binds the desired focus behavior on a given terminal object.
@@ -497,6 +501,7 @@ Terminal.bindBlur = function (term) {
       term.send(C0.ESC + '[O');
     }
     term.element.classList.remove('focus');
+    term.clearCursorBlinkingInterval.apply(term);
     Terminal.focus = null;
     term.emit('blur', {terminal: term});
   });
