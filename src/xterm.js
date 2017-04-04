@@ -53,6 +53,13 @@ var WRITE_BUFFER_PAUSE_THRESHOLD = 5;
 var WRITE_BATCH_SIZE = 300;
 
 /**
+ * The time between cursor blinks. This is driven by JS rather than a CSS
+ * animation due to a bug in Chromium that causes it to use excessive CPU time.
+ * See https://github.com/Microsoft/vscode/issues/22900
+ */
+var CURSOR_BLINK_INTERVAL = 600;
+
+/**
  * Terminal
  */
 
@@ -159,6 +166,7 @@ function Terminal(options) {
   this.scrollTop = 0;
   this.scrollBottom = this.rows - 1;
   this.customKeydownHandler = null;
+  this.cursorBlinkInterval = null;
 
   // modes
   this.applicationKeypad = false;
@@ -211,7 +219,7 @@ function Terminal(options) {
   this.parser = new Parser(this.inputHandler, this);
   // Reuse renderer if the Terminal is being recreated via a Terminal.reset call.
   this.renderer = this.renderer || null;
-  this.linkifier = this.linkifier || null;;
+  this.linkifier = this.linkifier || new Linkifier();
 
   // user input states
   this.writeBuffer = [];
@@ -423,13 +431,36 @@ Terminal.prototype.setOption = function(key, value) {
   this[key] = value;
   this.options[key] = value;
   switch (key) {
-    case 'cursorBlink': this.element.classList.toggle('xterm-cursor-blink', value); break;
+    case 'cursorBlink': this.setCursorBlinking(value); break;
     case 'cursorStyle':
       // Style 'block' applies with no class
       this.element.classList.toggle(`xterm-cursor-style-underline`, value === 'underline');
       this.element.classList.toggle(`xterm-cursor-style-bar`, value === 'bar');
       break;
     case 'tabStopWidth': this.setupStops(); break;
+  }
+};
+
+Terminal.prototype.restartCursorBlinking = function () {
+  this.setCursorBlinking(this.options.cursorBlink);
+};
+
+Terminal.prototype.setCursorBlinking = function (enabled) {
+  this.element.classList.toggle('xterm-cursor-blink', enabled);
+  this.clearCursorBlinkingInterval();
+  if (enabled) {
+    var self = this;
+    this.cursorBlinkInterval = setInterval(function () {
+      self.element.classList.toggle('xterm-cursor-blink-on');
+    }, CURSOR_BLINK_INTERVAL);
+  }
+};
+
+Terminal.prototype.clearCursorBlinkingInterval = function () {
+  this.element.classList.remove('xterm-cursor-blink-on');
+  if (this.cursorBlinkInterval) {
+    clearInterval(this.cursorBlinkInterval);
+    this.cursorBlinkInterval = null;
   }
 };
 
@@ -445,6 +476,7 @@ Terminal.bindFocus = function (term) {
     }
     term.element.classList.add('focus');
     term.showCursor();
+    term.restartCursorBlinking.apply(term);
     Terminal.focus = term;
     term.emit('focus', {terminal: term});
   });
@@ -469,6 +501,7 @@ Terminal.bindBlur = function (term) {
       term.send(C0.ESC + '[O');
     }
     term.element.classList.remove('focus');
+    term.clearCursorBlinkingInterval.apply(term);
     Terminal.focus = null;
     term.emit('blur', {terminal: term});
   });
@@ -594,7 +627,7 @@ Terminal.prototype.open = function(parent) {
   this.element.classList.add('terminal');
   this.element.classList.add('xterm');
   this.element.classList.add('xterm-theme-' + this.theme);
-  this.element.classList.toggle('xterm-cursor-blink', this.options.cursorBlink);
+  this.setCursorBlinking(this.options.cursorBlink);
 
   this.element.style.height
   this.element.setAttribute('tabindex', 0);
@@ -612,7 +645,7 @@ Terminal.prototype.open = function(parent) {
   this.rowContainer.classList.add('xterm-rows');
   this.element.appendChild(this.rowContainer);
   this.children = [];
-  this.linkifier = new Linkifier(document, this.children);
+  this.linkifier.attachToDom(document, this.children);
 
   // Create the container that will hold helpers like the textarea for
   // capturing DOM Events. Then produce the helpers.
@@ -1351,6 +1384,8 @@ Terminal.prototype.keyDown = function(ev) {
     return false;
   }
 
+  this.restartCursorBlinking();
+
   if (!this.compositionHelper.keydown.bind(this.compositionHelper)(ev)) {
     if (this.ybase !== this.ydisp) {
       this.scrollToBottom();
@@ -1820,14 +1855,8 @@ Terminal.prototype.resize = function(x, y) {
         this.lines.get(i).push(ch);
       }
     }
-  } else { // (j > x)
-    i = this.lines.length;
-    while (i--) {
-      while (this.lines.get(i).length > x) {
-        this.lines.get(i).pop();
-      }
-    }
   }
+
   this.cols = x;
   this.setupStops(this.cols);
 
