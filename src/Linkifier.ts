@@ -49,12 +49,20 @@ export class Linkifier {
   private _rowTimeoutIds: number[];
   private _nextLinkMatcherId = HYPERTEXT_LINK_MATCHER_ID;
 
-  constructor(document: Document, rows: HTMLElement[]) {
-    this._document = document;
-    this._rows = rows;
+  constructor() {
     this._rowTimeoutIds = [];
     this._linkMatchers = [];
     this.registerLinkMatcher(strictUrlRegex, null, { matchIndex: 1 });
+  }
+
+  /**
+   * Attaches the linkifier to the DOM, enabling linkification.
+   * @param document The document object.
+   * @param rows The array of rows to apply links to.
+   */
+  public attachToDom(document: Document, rows: HTMLElement[]) {
+    this._document = document;
+    this._rows = rows;
   }
 
   /**
@@ -62,6 +70,11 @@ export class Linkifier {
    * @param {number} rowIndex The index of the row to linkify.
    */
   public linkifyRow(rowIndex: number): void {
+    // Don't attempt linkify if not yet attached to DOM
+    if (!this._document) {
+      return;
+    }
+
     const timeoutId = this._rowTimeoutIds[rowIndex];
     if (timeoutId) {
       clearTimeout(timeoutId);
