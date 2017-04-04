@@ -33,6 +33,13 @@ describe('Linkifier', () => {
     });
   });
 
+  function addRow(html: string) {
+    const element = document.createElement('div');
+    element.innerHTML = html;
+    container.appendChild(element);
+    rows.push(element);
+  }
+
   describe('before attachToDom', () => {
     it('should allow link matcher registration', done => {
       assert.doesNotThrow(() => {
@@ -51,13 +58,6 @@ describe('Linkifier', () => {
       document.body.appendChild(container);
     });
 
-    function addRow(text: string) {
-      const element = document.createElement('div');
-      element.textContent = text;
-      container.appendChild(element);
-      rows.push(element);
-    }
-
     function clickElement(element: Node) {
       const event = document.createEvent('MouseEvent');
       event.initMouseEvent('click', true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
@@ -75,7 +75,50 @@ describe('Linkifier', () => {
     }
 
     describe('http links', () => {
+      function assertLinkifiesEntireRow(uri: string, done: MochaDone) {
+        addRow(uri);
+        linkifier.linkifyRow(0);
+        setTimeout(() => {
+          assert.equal((<HTMLElement>rows[0].firstChild).tagName, 'A');
+          assert.equal((<HTMLElement>rows[0].firstChild).textContent, uri);
+          done();
+        }, 0);
+      }
       it('should allow ~ character in URI path', done => assertLinkifiesEntireRow('http://foo.com/a~b#c~d?e~f', done));
+    });
+
+    describe('link matcher', () => {
+      function assertLinkifiesRow(rowText: string, linkMatcherRegex: RegExp, expectedHtml: string, done: MochaDone) {
+        addRow(rowText);
+        linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
+        linkifier.linkifyRow(0);
+        // Allow linkify to happen
+        setTimeout(() => {
+          assert.equal(rows[0].innerHTML, expectedHtml);
+          done();
+        }, 0);
+      }
+      it('should match a single link', done => {
+        assertLinkifiesRow('foo', /foo/, '<a>foo</a>', done);
+      });
+      it('should match a single link at the start of a text node', done => {
+        assertLinkifiesRow('foo bar', /foo/, '<a>foo</a> bar', done);
+      });
+      it('should match a single link in the middle of a text node', done => {
+        assertLinkifiesRow('foo bar baz', /bar/, 'foo <a>bar</a> baz', done);
+      });
+      it('should match a single link at the end of a text node', done => {
+        assertLinkifiesRow('foo bar', /bar/, 'foo <a>bar</a>', done);
+      });
+      it('should match a link after a link at the start of a text node', done => {
+        assertLinkifiesRow('foo bar', /foo|bar/, '<a>foo</a> <a>bar</a>', done);
+      });
+      it('should match a link after a link in the middle of a text node', done => {
+        assertLinkifiesRow('foo bar baz', /bar|baz/, 'foo <a>bar</a> <a>baz</a>', done);
+      });
+      it('should match a link immediately after a link at the end of a text node', done => {
+        assertLinkifiesRow('<span>foo bar</span>baz', /bar|baz/, '<span>foo <a>bar</a></span><a>baz</a>', done);
+      });
     });
 
     describe('validationCallback', () => {
@@ -103,6 +146,21 @@ describe('Linkifier', () => {
         linkifier.linkifyRow(0);
         // Allow time for the click to be performed
         setTimeout(() => done(), 10);
+      });
+
+      it('should trigger for multiple link matches on one row', done => {
+        addRow('test test');
+        let count = 0;
+        linkifier.registerLinkMatcher(/test/, () => assert.fail(), {
+          validationCallback: (url, cb) => {
+            count += 1;
+            if (count === 2) {
+              done();
+            }
+            cb(false);
+          }
+        });
+        linkifier.linkifyRow(0);
       });
     });
 
