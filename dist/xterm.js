@@ -1,5 +1,6 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.Terminal = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.CHARSETS = {};
 exports.DEFAULT_CHARSET = exports.CHARSETS['B'];
 exports.CHARSETS['0'] = {
@@ -162,6 +163,7 @@ exports.CHARSETS['='] = {
 
 },{}],2:[function(require,module,exports){
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var CompositionHelper = (function () {
     function CompositionHelper(textarea, compositionView, terminal) {
         this.textarea = textarea;
@@ -288,6 +290,7 @@ exports.CompositionHelper = CompositionHelper;
 
 },{}],3:[function(require,module,exports){
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var C0;
 (function (C0) {
     C0.NUL = '\x00';
@@ -331,6 +334,7 @@ var C0;
 
 },{}],4:[function(require,module,exports){
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 ;
 var EventEmitter = (function () {
     function EventEmitter() {
@@ -388,6 +392,7 @@ exports.EventEmitter = EventEmitter;
 
 },{}],5:[function(require,module,exports){
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var EscapeSequences_1 = require("./EscapeSequences");
 var Charsets_1 = require("./Charsets");
 var InputHandler = (function () {
@@ -632,7 +637,12 @@ var InputHandler = (function () {
                     this._terminal.eraseLine(j);
                 break;
             case 3:
-                ;
+                var scrollBackSize = this._terminal.lines.length - this._terminal.rows;
+                if (scrollBackSize > 0) {
+                    this._terminal.lines.trimStart(scrollBackSize);
+                    this._terminal.ybase = Math.max(this._terminal.ybase - scrollBackSize, 0);
+                    this._terminal.ydisp = Math.max(this._terminal.ydisp - scrollBackSize, 0);
+                }
                 break;
         }
     };
@@ -1314,6 +1324,7 @@ var wcwidth = (function (opts) {
 
 },{"./Charsets":1,"./EscapeSequences":3}],6:[function(require,module,exports){
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var INVALID_LINK_CLASS = 'xterm-invalid-link';
 var protocolClause = '(https?:\\/\\/)';
 var domainCharacterSet = '[\\da-z\\.-]+';
@@ -1324,8 +1335,8 @@ var ipClause = '((\\d{1,3}\\.){3}\\d{1,3})';
 var localHostClause = '(localhost)';
 var portClause = '(:\\d{1,5})';
 var hostClause = '((' + domainBodyClause + '\\.' + tldClause + ')|' + ipClause + '|' + localHostClause + ')' + portClause + '?';
-var pathClause = '(\\/[\\/\\w\\.\\-%]*)*';
-var queryStringHashFragmentCharacterSet = '[0-9\\w\\[\\]\\(\\)\\/\\?\\!#@$%&\'*+,:;\\=\\.\\-]*';
+var pathClause = '(\\/[\\/\\w\\.\\-%~]*)*';
+var queryStringHashFragmentCharacterSet = '[0-9\\w\\[\\]\\(\\)\\/\\?\\!#@$%&\'*+,:;~\\=\\.\\-]*';
 var queryStringClause = '(\\?' + queryStringHashFragmentCharacterSet + ')?';
 var hashFragmentClause = '(#' + queryStringHashFragmentCharacterSet + ')?';
 var negatedPathCharacterSet = '[^\\/\\w\\.\\-%]+';
@@ -1335,23 +1346,31 @@ var end = ')($|' + negatedPathCharacterSet + ')';
 var strictUrlRegex = new RegExp(start + protocolClause + bodyClause + end);
 var HYPERTEXT_LINK_MATCHER_ID = 0;
 var Linkifier = (function () {
-    function Linkifier(document, rows) {
+    function Linkifier() {
         this._nextLinkMatcherId = HYPERTEXT_LINK_MATCHER_ID;
-        this._document = document;
-        this._rows = rows;
         this._rowTimeoutIds = [];
         this._linkMatchers = [];
         this.registerLinkMatcher(strictUrlRegex, null, { matchIndex: 1 });
     }
+    Linkifier.prototype.attachToDom = function (document, rows) {
+        this._document = document;
+        this._rows = rows;
+    };
     Linkifier.prototype.linkifyRow = function (rowIndex) {
+        if (!this._document) {
+            return;
+        }
         var timeoutId = this._rowTimeoutIds[rowIndex];
         if (timeoutId) {
             clearTimeout(timeoutId);
         }
         this._rowTimeoutIds[rowIndex] = setTimeout(this._linkifyRow.bind(this, rowIndex), Linkifier.TIME_BEFORE_LINKIFY);
     };
-    Linkifier.prototype.attachHypertextLinkHandler = function (handler) {
+    Linkifier.prototype.setHypertextLinkHandler = function (handler) {
         this._linkMatchers[HYPERTEXT_LINK_MATCHER_ID].handler = handler;
+    };
+    Linkifier.prototype.setHypertextValidationCallback = function (callback) {
+        this._linkMatchers[HYPERTEXT_LINK_MATCHER_ID].validationCallback = callback;
     };
     Linkifier.prototype.registerLinkMatcher = function (regex, handler, options) {
         if (options === void 0) { options = {}; }
@@ -1397,35 +1416,42 @@ var Linkifier = (function () {
             return;
         }
         var text = row.textContent;
-        var _loop_1 = function (i) {
-            var matcher = this_1._linkMatchers[i];
-            var uri = this_1._findLinkMatch(text, matcher.regex, matcher.matchIndex);
-            if (uri) {
-                var linkElement_1 = this_1._doLinkifyRow(rowIndex, uri, matcher.handler, matcher.id === HYPERTEXT_LINK_MATCHER_ID);
-                if (linkElement_1 && matcher.validationCallback) {
-                    matcher.validationCallback(uri, function (isValid) {
-                        if (!isValid) {
-                            linkElement_1.classList.add(INVALID_LINK_CLASS);
-                        }
-                    });
-                }
-                return { value: void 0 };
-            }
-        };
-        var this_1 = this;
         for (var i = 0; i < this._linkMatchers.length; i++) {
-            var state_1 = _loop_1(i);
-            if (typeof state_1 === "object")
-                return state_1.value;
+            var matcher = this._linkMatchers[i];
+            var linkElements = this._doLinkifyRow(row, matcher);
+            if (linkElements.length > 0) {
+                if (matcher.validationCallback) {
+                    var _loop_1 = function (j) {
+                        var element = linkElements[j];
+                        matcher.validationCallback(element.textContent, element, function (isValid) {
+                            if (!isValid) {
+                                element.classList.add(INVALID_LINK_CLASS);
+                            }
+                        });
+                    };
+                    for (var j = 0; j < linkElements.length; j++) {
+                        _loop_1(j);
+                    }
+                }
+                return;
+            }
         }
     };
-    Linkifier.prototype._doLinkifyRow = function (rowIndex, uri, handler, isHttpLinkMatcher) {
-        var nodes = this._rows[rowIndex].childNodes;
+    Linkifier.prototype._doLinkifyRow = function (row, matcher) {
+        var result = [];
+        var isHttpLinkMatcher = matcher.id === HYPERTEXT_LINK_MATCHER_ID;
+        var nodes = row.childNodes;
+        var match = row.textContent.match(matcher.regex);
+        if (!match || match.length === 0) {
+            return result;
+        }
+        var uri = match[typeof matcher.matchIndex !== 'number' ? 0 : matcher.matchIndex];
+        var rowStartIndex = match.index + uri.length;
         for (var i = 0; i < nodes.length; i++) {
             var node = nodes[i];
             var searchIndex = node.textContent.indexOf(uri);
             if (searchIndex >= 0) {
-                var linkElement = this._createAnchorElement(uri, handler, isHttpLinkMatcher);
+                var linkElement = this._createAnchorElement(uri, matcher.handler, isHttpLinkMatcher);
                 if (node.textContent.length === uri.length) {
                     if (node.nodeType === 3) {
                         this._replaceNode(node, linkElement);
@@ -1433,29 +1459,31 @@ var Linkifier = (function () {
                     else {
                         var element = node;
                         if (element.nodeName === 'A') {
-                            return;
+                            return result;
                         }
                         element.innerHTML = '';
                         element.appendChild(linkElement);
                     }
                 }
                 else {
-                    this._replaceNodeSubstringWithNode(node, linkElement, uri, searchIndex);
+                    var nodesAdded = this._replaceNodeSubstringWithNode(node, linkElement, uri, searchIndex);
+                    i += nodesAdded;
                 }
-                return linkElement;
+                result.push(linkElement);
+                match = row.textContent.substring(rowStartIndex).match(matcher.regex);
+                if (!match || match.length === 0) {
+                    return result;
+                }
+                uri = match[typeof matcher.matchIndex !== 'number' ? 0 : matcher.matchIndex];
+                rowStartIndex += match.index + uri.length;
             }
         }
-    };
-    Linkifier.prototype._findLinkMatch = function (text, regex, matchIndex) {
-        var match = text.match(regex);
-        if (!match || match.length === 0) {
-            return null;
-        }
-        return match[typeof matchIndex !== 'number' ? 0 : matchIndex];
+        return result;
     };
     Linkifier.prototype._createAnchorElement = function (uri, handler, isHypertextLinkHandler) {
         var element = this._document.createElement('a');
         element.textContent = uri;
+        element.draggable = false;
         if (isHypertextLinkHandler) {
             element.href = uri;
             element.target = '_blank';
@@ -1491,27 +1519,28 @@ var Linkifier = (function () {
         if (node.nodeType !== 3) {
             node = node.childNodes[0];
         }
-        if (node.childNodes.length === 0 && node.nodeType !== Node.TEXT_NODE) {
+        if (node.childNodes.length === 0 && node.nodeType !== 3) {
             throw new Error('targetNode must be a text node or only contain a single text node');
         }
         var fullText = node.textContent;
         if (substringIndex === 0) {
-            var rightText = fullText.substring(substring.length);
-            var rightTextNode = this._document.createTextNode(rightText);
-            this._replaceNode(node, newNode, rightTextNode);
+            var rightText_1 = fullText.substring(substring.length);
+            var rightTextNode_1 = this._document.createTextNode(rightText_1);
+            this._replaceNode(node, newNode, rightTextNode_1);
+            return 0;
         }
-        else if (substringIndex === targetNode.textContent.length - substring.length) {
-            var leftText = fullText.substring(0, substringIndex);
-            var leftTextNode = this._document.createTextNode(leftText);
-            this._replaceNode(node, leftTextNode, newNode);
+        if (substringIndex === targetNode.textContent.length - substring.length) {
+            var leftText_1 = fullText.substring(0, substringIndex);
+            var leftTextNode_1 = this._document.createTextNode(leftText_1);
+            this._replaceNode(node, leftTextNode_1, newNode);
+            return 0;
         }
-        else {
-            var leftText = fullText.substring(0, substringIndex);
-            var leftTextNode = this._document.createTextNode(leftText);
-            var rightText = fullText.substring(substringIndex + substring.length);
-            var rightTextNode = this._document.createTextNode(rightText);
-            this._replaceNode(node, leftTextNode, newNode, rightTextNode);
-        }
+        var leftText = fullText.substring(0, substringIndex);
+        var leftTextNode = this._document.createTextNode(leftText);
+        var rightText = fullText.substring(substringIndex + substring.length);
+        var rightTextNode = this._document.createTextNode(rightText);
+        this._replaceNode(node, leftTextNode, newNode, rightTextNode);
+        return 1;
     };
     return Linkifier;
 }());
@@ -1522,6 +1551,7 @@ exports.Linkifier = Linkifier;
 
 },{}],7:[function(require,module,exports){
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var EscapeSequences_1 = require("./EscapeSequences");
 var Charsets_1 = require("./Charsets");
 var normalStateHandler = {};
@@ -1997,6 +2027,7 @@ exports.Parser = Parser;
 
 },{"./Charsets":1,"./EscapeSequences":3}],8:[function(require,module,exports){
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var MAX_REFRESH_FRAME_SKIP = 5;
 var FLAGS;
 (function (FLAGS) {
@@ -2015,7 +2046,7 @@ var Renderer = (function () {
         this._refreshFramesSkipped = 0;
         this._refreshAnimationFrame = null;
         if (brokenBold === null) {
-            brokenBold = checkBoldBroken(this._terminal.document);
+            brokenBold = checkBoldBroken(this._terminal.element);
         }
     }
     Renderer.prototype.queueRefresh = function (start, end) {
@@ -2192,22 +2223,25 @@ var Renderer = (function () {
     return Renderer;
 }());
 exports.Renderer = Renderer;
-function checkBoldBroken(document) {
-    var body = document.getElementsByTagName('body')[0];
+function checkBoldBroken(terminal) {
+    var document = terminal.ownerDocument;
     var el = document.createElement('span');
     el.innerHTML = 'hello world';
-    body.appendChild(el);
-    var w1 = el.scrollWidth;
+    terminal.appendChild(el);
+    var w1 = el.offsetWidth;
+    var h1 = el.offsetHeight;
     el.style.fontWeight = 'bold';
-    var w2 = el.scrollWidth;
-    body.removeChild(el);
-    return w1 !== w2;
+    var w2 = el.offsetWidth;
+    var h2 = el.offsetHeight;
+    terminal.removeChild(el);
+    return w1 !== w2 || h1 !== h2;
 }
 
 
 
 },{}],9:[function(require,module,exports){
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var Viewport = (function () {
     function Viewport(terminal, viewportElement, scrollArea, charMeasure) {
         var _this = this;
@@ -2285,6 +2319,7 @@ exports.Viewport = Viewport;
 
 },{}],10:[function(require,module,exports){
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 function prepareTextForClipboard(text) {
     var space = String.fromCharCode(32), nonBreakingSpace = String.fromCharCode(160), allNonBreakingSpaces = new RegExp(nonBreakingSpace, 'g'), processedText = text.split('\n').map(function (line) {
         var processedLine = line.replace(/\s+$/g, '').replace(allNonBreakingSpaces, space);
@@ -2366,6 +2401,7 @@ exports.rightClickHandler = rightClickHandler;
 
 },{}],11:[function(require,module,exports){
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var Generic_1 = require("./Generic");
 var isNode = (typeof navigator === 'undefined') ? true : false;
 var userAgent = (isNode) ? 'node' : navigator.userAgent;
@@ -2381,11 +2417,17 @@ exports.isMSWindows = Generic_1.contains(['Windows', 'Win16', 'Win32', 'WinCE'],
 
 },{"./Generic":14}],12:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
 var EventEmitter_js_1 = require("../EventEmitter.js");
 var CharMeasure = (function (_super) {
     __extends(CharMeasure, _super);
@@ -2444,6 +2486,7 @@ exports.CharMeasure = CharMeasure;
 
 },{"../EventEmitter.js":4}],13:[function(require,module,exports){
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var CircularList = (function () {
     function CircularList(maxLength) {
         this._array = new Array(maxLength);
@@ -2582,6 +2625,7 @@ exports.CircularList = CircularList;
 
 },{}],14:[function(require,module,exports){
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 function contains(arr, el) {
     return arr.indexOf(el) >= 0;
 }
@@ -2592,6 +2636,7 @@ exports.contains = contains;
 
 },{}],15:[function(require,module,exports){
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var CompositionHelper_1 = require("./CompositionHelper");
 var EventEmitter_1 = require("./EventEmitter");
 var Viewport_1 = require("./Viewport");
@@ -2607,6 +2652,7 @@ var Browser = require("./utils/Browser");
 var document = (typeof window != 'undefined') ? window.document : null;
 var WRITE_BUFFER_PAUSE_THRESHOLD = 5;
 var WRITE_BATCH_SIZE = 300;
+var CURSOR_BLINK_INTERVAL = 600;
 function Terminal(options) {
     var self = this;
     if (!(this instanceof Terminal)) {
@@ -2664,6 +2710,7 @@ function Terminal(options) {
     this.scrollTop = 0;
     this.scrollBottom = this.rows - 1;
     this.customKeydownHandler = null;
+    this.cursorBlinkInterval = null;
     this.applicationKeypad = false;
     this.applicationCursor = false;
     this.originMode = false;
@@ -2702,8 +2749,7 @@ function Terminal(options) {
     this.inputHandler = new InputHandler_1.InputHandler(this);
     this.parser = new Parser_1.Parser(this.inputHandler, this);
     this.renderer = this.renderer || null;
-    this.linkifier = this.linkifier || null;
-    ;
+    this.linkifier = this.linkifier || new Linkifier_1.Linkifier();
     this.writeBuffer = [];
     this.writeInProgress = false;
     this.xoffSentToCatchUp = false;
@@ -2835,7 +2881,7 @@ Terminal.prototype.setOption = function (key, value) {
     this.options[key] = value;
     switch (key) {
         case 'cursorBlink':
-            this.element.classList.toggle('xterm-cursor-blink', value);
+            this.setCursorBlinking(value);
             break;
         case 'cursorStyle':
             this.element.classList.toggle("xterm-cursor-style-underline", value === 'underline');
@@ -2846,6 +2892,26 @@ Terminal.prototype.setOption = function (key, value) {
             break;
     }
 };
+Terminal.prototype.restartCursorBlinking = function () {
+    this.setCursorBlinking(this.options.cursorBlink);
+};
+Terminal.prototype.setCursorBlinking = function (enabled) {
+    this.element.classList.toggle('xterm-cursor-blink', enabled);
+    this.clearCursorBlinkingInterval();
+    if (enabled) {
+        var self = this;
+        this.cursorBlinkInterval = setInterval(function () {
+            self.element.classList.toggle('xterm-cursor-blink-on');
+        }, CURSOR_BLINK_INTERVAL);
+    }
+};
+Terminal.prototype.clearCursorBlinkingInterval = function () {
+    this.element.classList.remove('xterm-cursor-blink-on');
+    if (this.cursorBlinkInterval) {
+        clearInterval(this.cursorBlinkInterval);
+        this.cursorBlinkInterval = null;
+    }
+};
 Terminal.bindFocus = function (term) {
     on(term.textarea, 'focus', function (ev) {
         if (term.sendFocus) {
@@ -2853,6 +2919,7 @@ Terminal.bindFocus = function (term) {
         }
         term.element.classList.add('focus');
         term.showCursor();
+        term.restartCursorBlinking.apply(term);
         Terminal.focus = term;
         term.emit('focus', { terminal: term });
     });
@@ -2867,6 +2934,7 @@ Terminal.bindBlur = function (term) {
             term.send(EscapeSequences_1.C0.ESC + '[O');
         }
         term.element.classList.remove('focus');
+        term.clearCursorBlinkingInterval.apply(term);
         Terminal.focus = null;
         term.emit('blur', { terminal: term });
     });
@@ -2953,7 +3021,7 @@ Terminal.prototype.open = function (parent) {
     this.element.classList.add('terminal');
     this.element.classList.add('xterm');
     this.element.classList.add('xterm-theme-' + this.theme);
-    this.element.classList.toggle('xterm-cursor-blink', this.options.cursorBlink);
+    this.setCursorBlinking(this.options.cursorBlink);
     this.element.style.height;
     this.element.setAttribute('tabindex', 0);
     this.viewportElement = document.createElement('div');
@@ -2966,7 +3034,7 @@ Terminal.prototype.open = function (parent) {
     this.rowContainer.classList.add('xterm-rows');
     this.element.appendChild(this.rowContainer);
     this.children = [];
-    this.linkifier = new Linkifier_1.Linkifier(document, this.children);
+    this.linkifier.attachToDom(document, this.children);
     this.helperContainer = document.createElement('div');
     this.helperContainer.classList.add('xterm-helpers');
     this.element.appendChild(this.helperContainer);
@@ -3395,11 +3463,18 @@ Terminal.prototype.writeln = function (data) {
 Terminal.prototype.attachCustomKeydownHandler = function (customKeydownHandler) {
     this.customKeydownHandler = customKeydownHandler;
 };
-Terminal.prototype.attachHypertextLinkHandler = function (handler) {
+Terminal.prototype.setHypertextLinkHandler = function (handler) {
     if (!this.linkifier) {
         throw new Error('Cannot attach a hypertext link handler before Terminal.open is called');
     }
-    this.linkifier.attachHypertextLinkHandler(handler);
+    this.linkifier.setHypertextLinkHandler(handler);
+    this.refresh(0, this.rows - 1);
+};
+Terminal.prototype.setHypertextValidationCallback = function (handler) {
+    if (!this.linkifier) {
+        throw new Error('Cannot attach a hypertext validation callback before Terminal.open is called');
+    }
+    this.linkifier.setHypertextValidationCallback(handler);
     this.refresh(0, this.rows - 1);
 };
 Terminal.prototype.registerLinkMatcher = function (regex, handler, options) {
@@ -3420,6 +3495,7 @@ Terminal.prototype.keyDown = function (ev) {
     if (this.customKeydownHandler && this.customKeydownHandler(ev) === false) {
         return false;
     }
+    this.restartCursorBlinking();
     if (!this.compositionHelper.keydown.bind(this.compositionHelper)(ev)) {
         if (this.ybase !== this.ydisp) {
             this.scrollToBottom();
@@ -3811,14 +3887,6 @@ Terminal.prototype.resize = function (x, y) {
         while (i--) {
             while (this.lines.get(i).length < x) {
                 this.lines.get(i).push(ch);
-            }
-        }
-    }
-    else {
-        i = this.lines.length;
-        while (i--) {
-            while (this.lines.get(i).length > x) {
-                this.lines.get(i).pop();
             }
         }
     }
