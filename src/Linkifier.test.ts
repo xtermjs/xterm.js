@@ -125,7 +125,7 @@ describe('Linkifier', () => {
       it('should enable link if true', done => {
         addRow('test');
         linkifier.registerLinkMatcher(/test/, () => done(), {
-          validationCallback: (url, cb) => {
+          validationCallback: (url, element, cb) => {
             cb(true);
             assert.equal((<HTMLElement>rows[0].firstChild).tagName, 'A');
             setTimeout(() => clickElement(rows[0].firstChild), 0);
@@ -137,7 +137,7 @@ describe('Linkifier', () => {
       it('should disable link if false', done => {
         addRow('test');
         linkifier.registerLinkMatcher(/test/, () => assert.fail(), {
-          validationCallback: (url, cb) => {
+          validationCallback: (url, element, cb) => {
             cb(false);
             assert.equal((<HTMLElement>rows[0].firstChild).tagName, 'A');
             setTimeout(() => clickElement(rows[0].firstChild), 0);
@@ -152,7 +152,7 @@ describe('Linkifier', () => {
         addRow('test test');
         let count = 0;
         linkifier.registerLinkMatcher(/test/, () => assert.fail(), {
-          validationCallback: (url, cb) => {
+          validationCallback: (url, element, cb) => {
             count += 1;
             if (count === 2) {
               done();

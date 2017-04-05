@@ -88,8 +88,17 @@ export class Linkifier {
    * @param {LinkHandler} handler The handler to use, this can be cleared with
    * null.
    */
-  public attachHypertextLinkHandler(handler: LinkMatcherHandler): void {
+  public setHypertextLinkHandler(handler: LinkMatcherHandler): void {
     this._linkMatchers[HYPERTEXT_LINK_MATCHER_ID].handler = handler;
+  }
+
+  /**
+   * Attaches a validation callback for hypertext links.
+   * @param {LinkMatcherValidationCallback} callback The callback to use, this
+   * can be cleared with null.
+   */
+  public setHypertextValidationCallback(callback: LinkMatcherValidationCallback): void {
+    this._linkMatchers[HYPERTEXT_LINK_MATCHER_ID].validationCallback = callback;
   }
 
   /**
@@ -173,9 +182,10 @@ export class Linkifier {
         // Fire validation callback
         if (matcher.validationCallback) {
           for (let j = 0; j < linkElements.length; j++) {
-            matcher.validationCallback(linkElements[j].textContent, isValid => {
+            const element = linkElements[j];
+            matcher.validationCallback(element.textContent, element, isValid => {
               if (!isValid) {
-                linkElements[j].classList.add(INVALID_LINK_CLASS);
+                element.classList.add(INVALID_LINK_CLASS);
               }
             });
           }
