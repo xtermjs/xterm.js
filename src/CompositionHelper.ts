@@ -9,6 +9,12 @@ interface IPosition {
   end: number;
 }
 
+const isChromev55v56 = (
+  (navigator.userAgent.indexOf('Chrome/55.') >= 0 || navigator.userAgent.indexOf('Chrome/56.') >= 0)
+  /* Edge likes to impersonate Chrome sometimes */
+  && navigator.userAgent.indexOf('Edge/') === -1
+);
+
 /**
  * Encapsulates the logic for handling compositionstart, compositionupdate and compositionend
  * events, displaying the in-progress composition to the UI and forwarding the final composition
@@ -63,6 +69,17 @@ export class CompositionHelper {
    * @param {CompositionEvent} ev The event.
    */
   public compositionupdate(ev: CompositionEvent) {
+    if (isChromev55v56) {
+      // See https://github.com/Microsoft/monaco-editor/issues/320
+      // where compositionupdate .data is broken in Chrome v55 and v56
+      // See https://bugs.chromium.org/p/chromium/issues/detail?id=677050#c9
+      setTimeout(() => {
+        this.compositionView.textContent = this.textarea.value.substring(this.compositionPosition.start);
+        this.updateCompositionElements();
+        this.compositionPosition.end = this.textarea.value.length;
+      }, 0);
+      return;
+    }
     this.compositionView.textContent = ev.data;
     this.updateCompositionElements();
     setTimeout(() => {
