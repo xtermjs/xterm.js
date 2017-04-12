@@ -10,6 +10,7 @@ interface IPosition {
 }
 
 const isChromev55v56 = (
+  typeof navigator === 'object' &&
   (navigator.userAgent.indexOf('Chrome/55.') >= 0 || navigator.userAgent.indexOf('Chrome/56.') >= 0)
   /* Edge likes to impersonate Chrome sometimes */
   && navigator.userAgent.indexOf('Edge/') === -1
