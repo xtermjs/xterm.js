@@ -92,7 +92,13 @@ export class CompositionHelper {
    * the handler.
    */
   public compositionend() {
-    this.finalizeComposition(true);
+    if (isChromev55v56) {
+      setTimeout(() => {
+        this.finalizeComposition(true);
+      }, 0);
+    } else {
+      this.finalizeComposition(true);
+    }
   }
 
   /**
