@@ -9,6 +9,11 @@ interface IPosition {
   end: number;
 }
 
+export const isEdgeOrIE = (
+  typeof navigator === 'object' &&
+  (navigator.userAgent.indexOf('Trident') >= 0 || navigator.userAgent.indexOf('Edge/') >= 0)
+)
+
 const isChromev55v56 = (
   typeof navigator === 'object' &&
   (navigator.userAgent.indexOf('Chrome/55.') >= 0 || navigator.userAgent.indexOf('Chrome/56.') >= 0)
@@ -70,7 +75,7 @@ export class CompositionHelper {
    * @param {CompositionEvent} ev The event.
    */
   public compositionupdate(ev: CompositionEvent) {
-    if (isChromev55v56) {
+    if (isChromev55v56 || isEdgeOrIE) {
       // See https://github.com/Microsoft/monaco-editor/issues/320
       // where compositionupdate .data is broken in Chrome v55 and v56
       // See https://bugs.chromium.org/p/chromium/issues/detail?id=677050#c9
@@ -93,7 +98,7 @@ export class CompositionHelper {
    * the handler.
    */
   public compositionend() {
-    if (isChromev55v56) {
+    if (isChromev55v56 || isEdgeOrIE) {
       setTimeout(() => {
         this.finalizeComposition(true);
       }, 0);
