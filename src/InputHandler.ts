@@ -1148,6 +1148,7 @@ export class InputHandler implements IInputHandler {
    *     Ps = 5  -> Blink (appears as Bold).
    *     Ps = 7  -> Inverse.
    *     Ps = 8  -> Invisible, i.e., hidden (VT300).
+   *     Ps = 2 1  -> Not bold.
    *     Ps = 2 2  -> Normal (neither bold nor faint).
    *     Ps = 2 4  -> Not underlined.
    *     Ps = 2 5  -> Steady (not blinking).
@@ -1258,7 +1259,7 @@ export class InputHandler implements IInputHandler {
       } else if (p === 8) {
         // invisible
         flags |= 16;
-      } else if (p === 22) {
+      } else if (p === 21 || p === 22) {
         // not bold
         flags &= ~1;
       } else if (p === 24) {
