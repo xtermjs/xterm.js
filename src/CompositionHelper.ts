@@ -75,7 +75,7 @@ export class CompositionHelper {
    * @param {CompositionEvent} ev The event.
    */
   public compositionupdate(ev: CompositionEvent) {
-    if (isChromev55v56 || isEdgeOrIE) {
+    if (isChromev55v56 || (isEdgeOrIE && ev.locale === 'ja')) {
       // See https://github.com/Microsoft/monaco-editor/issues/320
       // where compositionupdate .data is broken in Chrome v55 and v56
       // See https://bugs.chromium.org/p/chromium/issues/detail?id=677050#c9
