@@ -1879,7 +1879,7 @@ Terminal.prototype.resize = function(x, y) {
   this.scrollBottom = y - 1;
 
   // If we're already at the bottom, scroll down after resize
-  const stickyScroll = this.scrollBase === this.ydisp
+  const stickyScroll = this.ydisp > 0 && this.lines.length > this.rows && this.scrollBase === this.ydisp
 
   this.setScrollBase();
 

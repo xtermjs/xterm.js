@@ -716,7 +716,6 @@ export class InputHandler implements IInputHandler {
    *   [1,1]) (HVP).
    */
   public HVPosition(params: number[]): void {
-    console.log('MOVING HVPosition', params)
     if (params[0] < 1) params[0] = 1;
     if (params[1] < 1) params[1] = 1;
 
