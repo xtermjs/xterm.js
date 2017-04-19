@@ -320,6 +320,16 @@ export class InputHandler implements IInputHandler {
       col = this._terminal.cols - 1;
     }
 
+    // We trim that last character of the previous row when jumping the cursor to the beggining of
+    // a row. This trick gets around vim adding an extra character when wrapping lines.
+    // See https://github.com/vim/vim/issues/1626
+    if (col <= 1 && row > 0) {
+      let prevRow = this._terminal.lines.get(this._terminal.ybase + (row - 1));
+      if (prevRow.length > this._terminal.cols) {
+        prevRow.pop();
+      }
+    }
+
     this._terminal.x = col;
     this._terminal.y = row;
   }
@@ -706,6 +716,7 @@ export class InputHandler implements IInputHandler {
    *   [1,1]) (HVP).
    */
   public HVPosition(params: number[]): void {
+    console.log('MOVING HVPosition', params)
     if (params[0] < 1) params[0] = 1;
     if (params[1] < 1) params[1] = 1;
 

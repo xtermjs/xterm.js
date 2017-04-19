@@ -58,6 +58,7 @@
     };
 
     term._getMessage = function (ev) {
+      console.log(ev.data)
       if (buffered) {
         term._pushToBuffer(ev.data);
       } else {
