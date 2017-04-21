@@ -21,7 +21,8 @@ describe('xterm.js', function() {
     };
     xterm.element = {
       classList: {
-        toggle: function(){}
+        toggle: function(){},
+        remove: function(){}
       }
     };
   });
