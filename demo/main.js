@@ -9,6 +9,7 @@ var term,
 var terminalContainer = document.getElementById('terminal-container'),
     optionElements = {
       cursorBlink: document.querySelector('#option-cursor-blink'),
+      cursorStyle: document.querySelector('#option-cursor-style'),
       scrollback: document.querySelector('#option-scrollback'),
       tabstopwidth: document.querySelector('#option-tabstopwidth')
     },
@@ -31,6 +32,9 @@ rowsElement.addEventListener('change', setTerminalSize);
 
 optionElements.cursorBlink.addEventListener('change', function () {
   term.setOption('cursorBlink', optionElements.cursorBlink.checked);
+});
+optionElements.cursorStyle.addEventListener('change', function () {
+  term.setOption('cursorStyle', optionElements.cursorStyle.value);
 });
 optionElements.scrollback.addEventListener('change', function () {
   term.setOption('scrollback', parseInt(optionElements.scrollback.value, 10));
