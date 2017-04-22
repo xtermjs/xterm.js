@@ -2193,8 +2193,10 @@ Terminal.prototype.reset = function() {
   this.options.rows = this.rows;
   this.options.cols = this.cols;
   var customKeydownHandler = this.customKeydownHandler;
+  var cursorBlinkInterval = this.cursorBlinkInterval;
   Terminal.call(this, this.options);
   this.customKeydownHandler = customKeydownHandler;
+  this.cursorBlinkInterval = cursorBlinkInterval;
   this.refresh(0, this.rows - 1);
   this.viewport.syncScrollArea();
 };
