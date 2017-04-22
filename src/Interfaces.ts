@@ -23,7 +23,7 @@ export interface ITerminal {
   textarea: HTMLTextAreaElement;
   ybase: number;
   ydisp: number;
-  lines: ICircularList<string>;
+  lines: IWrappableList;
   rows: number;
   cols: number;
   browser: IBrowser;
@@ -72,6 +72,10 @@ interface ICircularList<T> {
   splice(start: number, deleteCount: number, ...items: T[]): void;
   trimStart(count: number): void;
   shiftElements(start: number, count: number, offset: number): void;
+}
+
+export interface IWrappableList extends ICircularList<any[]> {
+  transform(width: number): void;
 }
 
 export interface LinkMatcherOptions {

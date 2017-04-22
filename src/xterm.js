@@ -14,7 +14,7 @@ import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './EventEmitter';
 import { Viewport } from './Viewport';
 import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard';
-import { CircularList } from './utils/CircularList';
+import { WrappableList } from './utils/WrappableList';
 import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Parser } from './Parser';
@@ -243,7 +243,7 @@ function Terminal(options) {
    * An array of all lines in the entire buffer, including the prompt. The lines are array of
    * characters which are 2-length arrays where [0] is an attribute and [1] is the character.
    */
-  this.lines = new CircularList(this.scrollback);
+  this.lines = new WrappableList(this.scrollback);
   var i = this.rows;
   while (i--) {
     this.lines.push(this.blankLine());
@@ -1847,8 +1847,23 @@ Terminal.prototype.resize = function(x, y) {
 
   // resize cols
   j = this.cols;
+
+  let cachedLines = this.lines.length;
+  this.lines.transform(x);
+
+  let ymove = this.lines.length - cachedLines;
+
+  if (ymove) {
+    if (this.ydisp === 0) {
+      this.y += ymove;
+    } else {
+      this.ydisp += ymove;
+      this.ybase += ymove;
+    }
+  }
+
   if (j < x) {
-    ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
+    ch = [this.defAttr, null, 1]; // does xterm use the default attr?
     i = this.lines.length;
     while (i--) {
       while (this.lines.get(i).length < x) {
@@ -1856,6 +1871,7 @@ Terminal.prototype.resize = function(x, y) {
       }
     }
   }
+
 
   this.cols = x;
   this.setupStops(this.cols);
@@ -2014,7 +2030,7 @@ Terminal.prototype.eraseRight = function(x, y) {
   if (!line) {
     return;
   }
-  var ch = [this.eraseAttr(), ' ', 1]; // xterm
+  var ch = [this.eraseAttr(), null, 1]; // xterm
   for (; x < this.cols; x++) {
     line[x] = ch;
   }
@@ -2033,7 +2049,7 @@ Terminal.prototype.eraseLeft = function(x, y) {
   if (!line) {
     return;
   }
-  var ch = [this.eraseAttr(), ' ', 1]; // xterm
+  var ch = [this.eraseAttr(), null, 1]; // xterm
   x++;
   while (x--) {
     line[x] = ch;
@@ -2079,7 +2095,7 @@ Terminal.prototype.blankLine = function(cur) {
   ? this.eraseAttr()
   : this.defAttr;
 
-  var ch = [attr, ' ', 1]  // width defaults to 1 halfwidth character
+  var ch = [attr, null, 1]  // width defaults to 1 halfwidth character
   , line = []
   , i = 0;
 
@@ -2097,8 +2113,8 @@ Terminal.prototype.blankLine = function(cur) {
  */
 Terminal.prototype.ch = function(cur) {
   return cur
-    ? [this.eraseAttr(), ' ', 1]
-  : [this.defAttr, ' ', 1];
+    ? [this.eraseAttr(), null, 1]
+  : [this.defAttr, null, 1];
 };
 
 

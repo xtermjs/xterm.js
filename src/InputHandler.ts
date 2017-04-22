@@ -53,6 +53,8 @@ export class InputHandler implements IInputHandler {
       if (this._terminal.x + ch_width - 1 >= this._terminal.cols) {
         // autowrap - DECAWM
         if (this._terminal.wraparoundMode) {
+          // Mark this row as being wrapped.
+          this._terminal.lines.wrappedLines.push(row);
           this._terminal.x = 0;
           this._terminal.y++;
           if (this._terminal.y > this._terminal.scrollBottom) {
@@ -76,10 +78,10 @@ export class InputHandler implements IInputHandler {
           if (removed[2] === 0
               && this._terminal.lines.get(row)[this._terminal.cols - 2]
           && this._terminal.lines.get(row)[this._terminal.cols - 2][2] === 2)
-            this._terminal.lines.get(row)[this._terminal.cols - 2] = [this._terminal.curAttr, ' ', 1];
+            this._terminal.lines.get(row)[this._terminal.cols - 2] = [this._terminal.curAttr, null, 1];
 
           // insert empty cell at cursor
-          this._terminal.lines.get(row).splice(this._terminal.x, 0, [this._terminal.curAttr, ' ', 1]);
+          this._terminal.lines.get(row).splice(this._terminal.x, 0, [this._terminal.curAttr, null, 1]);
         }
       }
 
@@ -91,6 +93,11 @@ export class InputHandler implements IInputHandler {
       if (ch_width === 2) {
         this._terminal.lines.get(row)[this._terminal.x] = [this._terminal.curAttr, '', 0];
         this._terminal.x++;
+      }
+
+      let wi = this._terminal.lines.wrappedLines.indexOf(row);
+      if (wi > -1) {
+        this._terminal.lines.wrappedLines.splice(wi, 1);
       }
     }
   }
@@ -185,7 +192,7 @@ export class InputHandler implements IInputHandler {
 
     row = this._terminal.y + this._terminal.ybase;
     j = this._terminal.x;
-    ch = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    ch = [this._terminal.eraseAttr(), null, 1]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       this._terminal.lines.get(row).splice(j++, 0, ch);
@@ -504,7 +511,7 @@ export class InputHandler implements IInputHandler {
     }
 
     row = this._terminal.y + this._terminal.ybase;
-    ch = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    ch = [this._terminal.eraseAttr(), null, 1]; // xterm
 
     while (param--) {
       this._terminal.lines.get(row).splice(this._terminal.x, 1);
@@ -554,7 +561,7 @@ export class InputHandler implements IInputHandler {
 
     row = this._terminal.y + this._terminal.ybase;
     j = this._terminal.x;
-    ch = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    ch = [this._terminal.eraseAttr(), null, 1]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       this._terminal.lines.get(row)[j++] = ch;
@@ -608,7 +615,7 @@ export class InputHandler implements IInputHandler {
   public repeatPrecedingCharacter(params: number[]): void {
     let param = params[0] || 1
       , line = this._terminal.lines.get(this._terminal.ybase + this._terminal.y)
-      , ch = line[this._terminal.x - 1] || [this._terminal.defAttr, ' ', 1];
+      , ch = line[this._terminal.x - 1] || [this._terminal.defAttr, null, 1];
 
     while (param--) {
       line[this._terminal.x++] = ch;
