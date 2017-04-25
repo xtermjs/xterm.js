@@ -1138,6 +1138,10 @@ export class InputHandler implements IInputHandler {
             //   this.x = this.savedX;
             //   this.y = this.savedY;
             // }
+
+            // Run the resize handler incase the viewport has been resized since we switched buffers
+            this._terminal.resize(this._terminal.cols, this._terminal.rows, true);
+
             this._terminal.refresh(0, this._terminal.rows - 1);
             this._terminal.viewport.syncScrollArea();
             this._terminal.showCursor();

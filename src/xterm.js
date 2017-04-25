@@ -1826,7 +1826,7 @@ Terminal.prototype.error = function() {
  * @param {number} x The number of columns to resize to.
  * @param {number} y The number of rows to resize to.
  */
-Terminal.prototype.resize = function(x, y) {
+Terminal.prototype.resize = function(x, y, force) {
   if (isNaN(x) || isNaN(y)) {
     return;
   }
@@ -1838,7 +1838,7 @@ Terminal.prototype.resize = function(x, y) {
   , ch
   , addToY;
 
-  if (x === this.cols && y === this.rows) {
+  if (x === this.cols && y === this.rows && !force) {
     return;
   }
 
@@ -1849,6 +1849,7 @@ Terminal.prototype.resize = function(x, y) {
   j = this.cols;
 
   let cachedLines = this.lines.length;
+
   this.lines.transform(x);
 
   let ymove = this.lines.length - cachedLines;
@@ -1942,6 +1943,11 @@ Terminal.prototype.resize = function(x, y) {
     this.x = x - 1;
   }
 
+  // If we're in a "no scroll" situation (e.g. vim, top) trim the number of lines
+  if (this.ybase === 0 && this.ydisp === 0 && this.lines.length > this.rows) {
+    this.lines.splice(this.rows, this.lines.length - this.rows);
+  }
+
   this.scrollTop = 0;
   this.scrollBottom = y - 1;
 
@@ -1949,7 +1955,7 @@ Terminal.prototype.resize = function(x, y) {
 
   this.refresh(0, this.rows - 1);
 
-  this.normal = null;
+  // this.normal = null;
 
   this.geometry = [this.cols, this.rows];
   this.emit('resize', {terminal: this, cols: x, rows: y});
