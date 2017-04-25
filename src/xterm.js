@@ -1853,6 +1853,12 @@ Terminal.prototype.resize = function(x, y) {
 
   let ymove = this.lines.length - cachedLines;
 
+  // It's possible that the transform process has reduced the number of available lines.
+  // Make sure we have a line for each row.
+  while (this.lines.length < y) {
+    this.lines.push(this.blankLine());
+  }
+
   if (ymove) {
     if (this.ydisp === 0) {
       this.y += ymove;
