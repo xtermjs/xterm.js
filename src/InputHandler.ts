@@ -54,7 +54,7 @@ export class InputHandler implements IInputHandler {
         // autowrap - DECAWM
         if (this._terminal.wraparoundMode) {
           // Mark this row as being wrapped.
-          this._terminal.lines.wrappedLines.push(row);
+          this._terminal.lines.addWrappedLine(row);
           this._terminal.x = 0;
           this._terminal.y++;
           if (this._terminal.y > this._terminal.scrollBottom) {
@@ -93,11 +93,6 @@ export class InputHandler implements IInputHandler {
       if (ch_width === 2) {
         this._terminal.lines.get(row)[this._terminal.x] = [this._terminal.curAttr, '', 0];
         this._terminal.x++;
-      }
-
-      let wi = this._terminal.lines.wrappedLines.indexOf(row);
-      if (wi > -1) {
-        this._terminal.lines.wrappedLines.splice(wi, 1);
       }
     }
   }
@@ -1139,7 +1134,7 @@ export class InputHandler implements IInputHandler {
             //   this.y = this.savedY;
             // }
 
-            // Run the resize handler incase the viewport has been resized since we switched buffers
+            // Run the resize handler in case the viewport has been resized since we switched buffers
             this._terminal.resize(this._terminal.cols, this._terminal.rows, true);
 
             this._terminal.refresh(0, this._terminal.rows - 1);

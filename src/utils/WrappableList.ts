@@ -1,4 +1,5 @@
 import { CircularList } from './CircularList';
+import { RowData } from '../Types';
 
 // Much faster than native filter
 // https://jsperf.com/function-loops/4
@@ -12,6 +13,14 @@ function standardFilter(array, fn) {
     if (fn(item)) results.push(item);
   }
   return results;
+}
+
+function fastForeach(array, fn) {
+  let i = 0;
+  let len = array.length;
+  for (i; i < len; i++) {
+    fn(array[i]);
+  }
 }
 
 function trimmedLength(line, min) {
@@ -48,40 +57,56 @@ function notNull(value) {
   return value !== null;
 }
 
-export class WrappableList<T> extends CircularList<any[]> {
+export class WrappableList extends CircularList<RowData> {
+  private _wrappedLineIncrement: number[] = [];
   public wrappedLines: number[] = [];
 
   constructor(maxLength: number) {
     super(maxLength);
   }
 
-  // Need to make sure wrappedlines move when CircularList wraps around
-  public push(value: any[]): void {
+  public push(value: RowData): void {
+    // Need to make sure wrappedlines move when CircularList wraps around, but without increasing
+    // the time complexity of `push`. We push the number of `wrappedLines` that should be
+    // incremented so that it can be calculated later.
     if (this._length + 1 === this.maxLength) {
-      this.wrappedLines = this.wrappedLines.map(x => x - 1);
+      this._wrappedLineIncrement.push(this.wrappedLines.length);
     }
-    this._array[this._getCyclicIndex(this._length)] = value;
-    if (this._length === this.maxLength) {
-      this._startIndex++;
-      if (this._startIndex === this.maxLength) {
-        this._startIndex = 0;
-      }
-    } else {
-      this._length++;
-    }
+    super.push(value);
   }
 
-  public transform(width) {
-    let wrappedLines = this.wrappedLines;
+  public addWrappedLine(row: number): void {
+    this.wrappedLines.push(row);
+  }
 
-    let temp = [];
-    let tempWrapped = [];
-    let skip = [];
+  // Adjusts `wrappedLines` using `_wrappedLineIncrement`
+  private _adjustWrappedLines(): void {
+    fastForeach(this._wrappedLineIncrement, (end) => {
+      let i = 0;
+      for (i; i < end; i++) {
+        this.wrappedLines[i] -= 1;
+      }
+    });
+    this._wrappedLineIncrement = [];
+  }
+
+  /**
+   * Reflow lines to a new max width.
+   * A record of which lines are wrapped is stored in `wrappedLines` and is used to join and split
+   * lines correctly.
+   */
+  public reflow(width: number): void {
+    this._adjustWrappedLines();
+    const wrappedLines = this.wrappedLines;
+
+    const temp = [];
+    const tempWrapped = [];
+    const skip = [];
 
     const previouslyWrapped = (i) => wrappedLines.indexOf(i) > -1;
 
     const concatWrapped = (line, index) => {
-      line = standardFilter(line, notNull).concat(this._array[index + 1]);
+      line = standardFilter(line, notNull).concat(this.get(index + 1));
       skip.push(index + 1);
       if (previouslyWrapped(index + 1)) {
         return concatWrapped(line, index + 1);
@@ -115,9 +140,8 @@ export class WrappableList<T> extends CircularList<any[]> {
       }
     });
 
-    let cachedStartIndex = this._startIndex;
+    // Reset the list internals using the reflowed lines
     const scrollback = temp.length > this.maxLength ? temp.length : this.maxLength;
-    this.maxLength = scrollback;
     this._length = temp.length;
     this._array = temp;
     this._array.length = scrollback;

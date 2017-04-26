@@ -1850,7 +1850,7 @@ Terminal.prototype.resize = function(x, y, force) {
 
   let cachedLines = this.lines.length;
 
-  this.lines.transform(x);
+  this.lines.reflow(x);
 
   let ymove = this.lines.length - cachedLines;
 
@@ -1954,8 +1954,6 @@ Terminal.prototype.resize = function(x, y, force) {
   this.charMeasure.measure();
 
   this.refresh(0, this.rows - 1);
-
-  // this.normal = null;
 
   this.geometry = [this.cols, this.rows];
   this.emit('resize', {terminal: this, cols: x, rows: y});
