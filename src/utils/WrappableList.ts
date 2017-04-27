@@ -31,11 +31,7 @@ function trimmedLength(line, min) {
     }
   }
 
-  if (i < min) {
-   // i = min;
-  } else {
-    // 2 extra blank chars allows for cursor and ensures at least one element is in array (in case
-    // of intentional blank rows)
+  if (i >= min) {
     i++;
   }
 

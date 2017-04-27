@@ -44,11 +44,10 @@ export class CircularList<T> {
   }
 
   public forEach(callbackfn: (value: T, index?: number, array?: T[]) => void): void {
-    let get = this.get.bind(this);
     let i = 0;
-    let len = this.maxLength;
+    let len = this.length;
     for (i; i < len; i++) {
-      callbackfn(get(i), i);
+      callbackfn(this.get(i), i);
     }
   }
 
