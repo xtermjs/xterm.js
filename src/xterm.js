@@ -24,6 +24,7 @@ import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './utils/Browser';
 import * as Keyboard from './utils/Keyboard';
 import { CHARSETS } from './Charsets';
+import throttle from './utils/Throttle';
 
 /**
  * Terminal Emulation References:
@@ -1826,7 +1827,7 @@ Terminal.prototype.error = function() {
  * @param {number} x The number of columns to resize to.
  * @param {number} y The number of rows to resize to.
  */
-Terminal.prototype.resize = function(x, y, force) {
+Terminal.prototype.resize = throttle(function(x, y, force) {
   if (isNaN(x) || isNaN(y)) {
     return;
   }
@@ -1841,6 +1842,8 @@ Terminal.prototype.resize = function(x, y, force) {
   if (x === this.cols && y === this.rows && !force) {
     return;
   }
+
+  let startTime = Date.now();
 
   if (x < 1) x = 1;
   if (y < 1) y = 1;
@@ -1957,7 +1960,7 @@ Terminal.prototype.resize = function(x, y, force) {
 
   this.geometry = [this.cols, this.rows];
   this.emit('resize', {terminal: this, cols: x, rows: y});
-};
+}, 250);
 
 /**
  * Updates the range of rows to refresh

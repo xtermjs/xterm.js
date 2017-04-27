@@ -19,7 +19,7 @@ function fastForeach(array, fn) {
   let i = 0;
   let len = array.length;
   for (i; i < len; i++) {
-    fn(array[i]);
+    fn(array[i], i, array);
   }
 }
 
@@ -86,55 +86,61 @@ export class WrappableList extends CircularList<RowData> {
     this._wrappedLineIncrement = [];
   }
 
+  private _numArrayToObject(array: number[]) {
+    let i = 0;
+    let len = array.length;
+    let returnObject = {};
+    for (i; i < len; i++) {
+      returnObject[array[i]] = null;
+    }
+    return returnObject;
+  }
+
   /**
    * Reflow lines to a new max width.
    * A record of which lines are wrapped is stored in `wrappedLines` and is used to join and split
    * lines correctly.
    */
   public reflow(width: number): void {
-    this._adjustWrappedLines();
-    const wrappedLines = this.wrappedLines;
-
     const temp = [];
     const tempWrapped = [];
     const skip = [];
 
-    const previouslyWrapped = (i) => wrappedLines.indexOf(i) > -1;
+    this._adjustWrappedLines();
+    // Using in index accessor is much quicker when we need to calculate previouslyWrapped many times
+    const wrappedLinesObject = this._numArrayToObject(this.wrappedLines);
+    const previouslyWrapped = (i) => wrappedLinesObject[i] !== undefined;
 
     const concatWrapped = (line, index) => {
-      line = standardFilter(line, notNull).concat(this.get(index + 1));
-      skip.push(index + 1);
-      if (previouslyWrapped(index + 1)) {
-        return concatWrapped(line, index + 1);
-      } else {
-        return line;
+      let next = index;
+      while (previouslyWrapped(next)) {
+        next++;
+        skip.push(next);
+        line = line.concat(this.get(next));
+      }
+      return next === index ? line : standardFilter(line, notNull);
+    };
+
+    const reflowLine = (line, index) => {
+      if (line && skip.indexOf(index) === -1) {
+
+        line = concatWrapped(line, index);
+
+        const trim = trimmedLength(line, width);
+        if (trim > width) {
+          fastForeach(chunkArray(width, line.slice(0, trim)), (chunk, i, chunks) => {
+            temp.push(chunk);
+            if (i < chunks.length - 1) {
+              tempWrapped.push(temp.length - 1);
+            }
+          });
+        } else {
+          temp.push(line.slice(0, width));
+        }
       }
     };
 
-    this.forEach((line, index) => {
-      if (!line) {
-        return;
-      }
-      if (skip.indexOf(index) > -1) {
-        return;
-      }
-
-      if (previouslyWrapped(index)) {
-        line = concatWrapped(line, index);
-      }
-
-      const trim = trimmedLength(line, width);
-      if (trim > width) {
-        chunkArray(width, line.slice(0, trim)).forEach((line, i, chunks) => {
-          temp.push(line);
-          if (i < chunks.length - 1) {
-            tempWrapped.push(temp.length - 1);
-          }
-        });
-      } else {
-        temp.push(line.slice(0, width));
-      }
-    });
+    this.forEach(reflowLine);
 
     // Reset the list internals using the reflowed lines
     const scrollback = temp.length > this.maxLength ? temp.length : this.maxLength;
