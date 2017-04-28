@@ -1,20 +1,6 @@
 import { CircularList } from './CircularList';
 import { RowData } from '../Types';
 
-// Much faster than native filter
-// https://jsperf.com/function-loops/4
-function standardFilter(array, fn) {
-  let results = [];
-  let item;
-  let i;
-  let len;
-  for (i = 0, len = array.length; i < len; i++) {
-    item = array[i];
-    if (fn(item)) results.push(item);
-  }
-  return results;
-}
-
 function fastForeach(array, fn) {
   let i = 0;
   let len = array.length;
@@ -47,10 +33,6 @@ function chunkArray(chunkSize, array) {
   }
 
   return temparray;
-}
-
-function notNull(value) {
-  return value !== null;
 }
 
 export class WrappableList extends CircularList<RowData> {
@@ -105,6 +87,7 @@ export class WrappableList extends CircularList<RowData> {
     const temp = [];
     const tempWrapped = [];
     const skip = [];
+    const wrappedLines = this.wrappedLines;
 
     this._adjustWrappedLines();
     // Using in index accessor is much quicker when we need to calculate previouslyWrapped many times
@@ -118,7 +101,7 @@ export class WrappableList extends CircularList<RowData> {
         skip.push(next);
         line = line.concat(this.get(next));
       }
-      return next === index ? line : standardFilter(line, notNull);
+      return line;
     };
 
     const reflowLine = (line, index) => {
