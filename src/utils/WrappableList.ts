@@ -10,9 +10,10 @@ function fastForeach(array, fn) {
 }
 
 function trimmedLength(line, min) {
-  let i = line.length - 1;
-  for (i; i >= 0; i--) {
-    if (line[i] && line[i][1] !== null) {
+  let i = 0;
+  let len = line.length;
+  for (i; i < len; i++) {
+    if (line[i] && line[i][1] === null) {
       break;
     }
   }
