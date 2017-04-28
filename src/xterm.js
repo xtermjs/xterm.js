@@ -1842,8 +1842,6 @@ Terminal.prototype.resize = function(x, y, force) {
     return;
   }
 
-  let startTime = Date.now();
-
   if (x < 1) x = 1;
   if (y < 1) y = 1;
 

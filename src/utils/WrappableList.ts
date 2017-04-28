@@ -87,26 +87,25 @@ export class WrappableList extends CircularList<RowData> {
   public reflow(width: number): void {
     const temp = [];
     const tempWrapped = [];
-    const skip = [];
+    const skip = {};
     const wrappedLines = this.wrappedLines;
 
     this._adjustWrappedLines();
     // Using in index accessor is much quicker when we need to calculate previouslyWrapped many times
     const wrappedLinesObject = this._numArrayToObject(this.wrappedLines);
-    const previouslyWrapped = (i) => wrappedLinesObject[i] !== undefined;
 
     const concatWrapped = (line, index) => {
       let next = index;
-      while (previouslyWrapped(next)) {
+      while (wrappedLinesObject[next] !== undefined) {
         next++;
-        skip.push(next);
+        skip[next] = null;
         line = line.concat(this.get(next));
       }
       return line;
     };
 
     const reflowLine = (line, index) => {
-      if (line && skip.indexOf(index) === -1) {
+      if (line && skip[index] === undefined) {
 
         line = concatWrapped(line, index);
 
