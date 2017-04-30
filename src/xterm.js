@@ -607,8 +607,9 @@ Terminal.prototype.insertRow = function (row) {
  * Opens the terminal within an element.
  *
  * @param {HTMLElement} parent The element to create the terminal within.
+ * @param {boolean} focus Focus the terminal, after it gets instantiated in the DOM
  */
-Terminal.prototype.open = function(parent) {
+Terminal.prototype.open = function(parent, focus) {
   var self=this, i=0, div;
 
   this.parent = parent || this.parent;
@@ -629,7 +630,7 @@ Terminal.prototype.open = function(parent) {
   this.element.classList.add('xterm-theme-' + this.theme);
   this.setCursorBlinking(this.options.cursorBlink);
 
-  this.element.style.height
+  this.element.style.height;
   this.element.setAttribute('tabindex', 0);
 
   this.viewportElement = document.createElement('div');
@@ -696,8 +697,23 @@ Terminal.prototype.open = function(parent) {
   // need to be taken on the document.
   this.initGlobal();
 
-  // Ensure there is a Terminal.focus.
-  this.focus();
+  /**
+   * Automatic focus functionality.
+   * TODO: Default to `false` starting with xterm.js 3.0.
+   */
+  if (typeof focus == 'undefined') {
+    let message = 'You did not pass the `focus` argument in `Terminal.prototype.open()`.\n';
+
+    message += 'The `focus` argument now defaults to `true` but starting with xterm.js 3.0 ';
+    message += 'it will default to `false`.';
+
+    console.warn(message);
+    focus = true;
+  }
+
+  if (focus) {
+    this.focus();
+  }
 
   on(this.element, 'click', function() {
     var selection = document.getSelection(),
