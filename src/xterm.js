@@ -1831,6 +1831,8 @@ Terminal.prototype.resize = function(x, y, force) {
     return;
   }
 
+  var startTime = Date.now();
+
   var line
   , el
   , i
@@ -1957,6 +1959,8 @@ Terminal.prototype.resize = function(x, y, force) {
 
   this.geometry = [this.cols, this.rows];
   this.emit('resize', {terminal: this, cols: x, rows: y});
+
+  console.log('RESIZE IN', Date.now() - startTime);
 };
 
 /**

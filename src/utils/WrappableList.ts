@@ -9,17 +9,13 @@ function fastForeach(array, fn) {
   }
 }
 
-function trimmedLength(line, min) {
+function trimmedLength(line) {
   let i = 0;
   let len = line.length;
   for (i; i < len; i++) {
     if (line[i] && line[i][1] === null) {
       break;
     }
-  }
-
-  if (i >= min) {
-    i++;
   }
 
   return i;
@@ -109,7 +105,7 @@ export class WrappableList extends CircularList<RowData> {
 
         line = concatWrapped(line, index);
 
-        const trim = trimmedLength(line, width);
+        const trim = trimmedLength(line);
         if (trim > width) {
           fastForeach(chunkArray(width, line.slice(0, trim)), (chunk, i, chunks) => {
             temp.push(chunk);
