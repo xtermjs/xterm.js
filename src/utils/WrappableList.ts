@@ -80,46 +80,51 @@ export class WrappableList extends CircularList<RowData> {
    * A record of which lines are wrapped is stored in `wrappedLines` and is used to join and split
    * lines correctly.
    */
-  public reflow(width: number): void {
+  public reflow(width: number, oldWidth: number): void {
     const temp = [];
     const tempWrapped = [];
-    const skip = {};
     const wrappedLines = this.wrappedLines;
+    let masterIndex = 0;
+    let len = this.length;
+    let line;
+    let trim;
+    let isWidthDecreasing = width < oldWidth;
 
     this._adjustWrappedLines();
     // Using in index accessor is much quicker when we need to calculate previouslyWrapped many times
     const wrappedLinesObject = this._numArrayToObject(this.wrappedLines);
 
-    const concatWrapped = (line, index) => {
+    const concatWrapped = (data, index) => {
       let next = index;
       while (wrappedLinesObject[next] !== undefined) {
         next++;
-        skip[next] = null;
-        line = line.concat(this.get(next));
+        masterIndex++;
+        Array.prototype.push.apply(data, this.get(next));
       }
-      return line;
+      return data;
     };
 
-    const reflowLine = (line, index) => {
-      if (line && skip[index] === undefined) {
+    // A for loop is used here so that masterIndex can be advanced when concatting lines in
+    // the 'concatWrapped' method
+    for (masterIndex; masterIndex < len; masterIndex++) {
+      line = concatWrapped(this.get(masterIndex), masterIndex);
+      trim = trimmedLength(line);
 
-        line = concatWrapped(line, index);
-
-        const trim = trimmedLength(line);
-        if (trim > width) {
-          fastForeach(chunkArray(width, line.slice(0, trim)), (chunk, i, chunks) => {
-            temp.push(chunk);
-            if (i < chunks.length - 1) {
-              tempWrapped.push(temp.length - 1);
-            }
-          });
-        } else {
-          temp.push(line.slice(0, width));
+      if (trim > width) {
+        line.length = trim;
+        fastForeach(chunkArray(width, line), (chunk, i, chunks) => {
+          temp.push(chunk);
+          if (i < chunks.length - 1) {
+            tempWrapped.push(temp.length - 1);
+          }
+        });
+      } else {
+        if (isWidthDecreasing) {
+          line.length = width;
         }
+        temp.push(line);
       }
-    };
-
-    this.forEach(reflowLine);
+    }
 
     // Reset the list internals using the reflowed lines
     const scrollback = temp.length > this.maxLength ? temp.length : this.maxLength;

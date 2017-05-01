@@ -1831,8 +1831,6 @@ Terminal.prototype.resize = function(x, y, force) {
     return;
   }
 
-  var startTime = Date.now();
-
   var line
   , el
   , i
@@ -1852,7 +1850,11 @@ Terminal.prototype.resize = function(x, y, force) {
 
   let cachedLines = this.lines.length;
 
-  this.lines.reflow(x);
+  var startTime = Date.now();
+
+  this.lines.reflow(x, this.cols);
+
+  console.log('RESIZE IN', Date.now() - startTime);
 
   let ymove = this.lines.length - cachedLines;
 
@@ -1870,17 +1872,6 @@ Terminal.prototype.resize = function(x, y, force) {
       this.ybase += ymove;
     }
   }
-
-  if (j < x) {
-    ch = [this.defAttr, null, 1]; // does xterm use the default attr?
-    i = this.lines.length;
-    while (i--) {
-      while (this.lines.get(i).length < x) {
-        this.lines.get(i).push(ch);
-      }
-    }
-  }
-
 
   this.cols = x;
   this.setupStops(this.cols);
@@ -1959,8 +1950,6 @@ Terminal.prototype.resize = function(x, y, force) {
 
   this.geometry = [this.cols, this.rows];
   this.emit('resize', {terminal: this, cols: x, rows: y});
-
-  console.log('RESIZE IN', Date.now() - startTime);
 };
 
 /**
