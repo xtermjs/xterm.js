@@ -13,7 +13,7 @@ function trimmedLength(line) {
   let i = 0;
   let len = line.length;
   for (i; i < len; i++) {
-    if (line[i] && line[i][1] === null) {
+    if (!line[i] || (line[i] && line[i][1] === null)) {
       break;
     }
   }
