@@ -78,7 +78,7 @@ export class InputHandler implements IInputHandler {
           if (removed[2] === 0
               && this._terminal.lines.get(row)[this._terminal.cols - 2]
           && this._terminal.lines.get(row)[this._terminal.cols - 2][2] === 2)
-            this._terminal.lines.get(row)[this._terminal.cols - 2] = [this._terminal.curAttr, null, 1];
+            this._terminal.lines.get(row)[this._terminal.cols - 2] = [this._terminal.curAttr, ' ', 1];
 
           // insert empty cell at cursor
           this._terminal.lines.get(row).splice(this._terminal.x, 0, [this._terminal.curAttr, null, 1]);
@@ -154,7 +154,12 @@ export class InputHandler implements IInputHandler {
    * Horizontal Tab (HT) (Ctrl-I).
    */
   public tab(): void {
-    this._terminal.x = this._terminal.nextStop();
+    const stop = this._terminal.nextStop();
+    let row = this._terminal.lines.get(this._terminal.y + this._terminal.ybase);
+    while (this._terminal.x <= stop) {
+      row[this._terminal.x] = [this._terminal.defAttr, ' ', 1];
+      this._terminal.x++;
+    }
   }
 
   /**
@@ -187,7 +192,7 @@ export class InputHandler implements IInputHandler {
 
     row = this._terminal.y + this._terminal.ybase;
     j = this._terminal.x;
-    ch = [this._terminal.eraseAttr(), null, 1]; // xterm
+    ch = [this._terminal.eraseAttr(), ' ', 1]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       this._terminal.lines.get(row).splice(j++, 0, ch);
