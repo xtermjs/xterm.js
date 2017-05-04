@@ -83,6 +83,7 @@ gulp.task('instrument-test', function () {
 gulp.task('mocha', ['instrument-test'], function () {
   return gulp.src([`${outDir}/*test.js`, `${outDir}/**/*test.js`], {read: false})
       .pipe(mocha())
+      .once('error', () => process.exit(1))
       .pipe(istanbul.writeReports());
 });
 
