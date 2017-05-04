@@ -62,10 +62,12 @@ function formatError(in_, out_, expected) {
 function terminalToString(term) {
   var result = '';
   var line_s = '';
+  var ch;
   for (var line = term.ybase; line < term.ybase + term.rows; line++) {
     line_s = '';
     for (var cell=0; cell<term.cols; ++cell) {
-      line_s += term.lines.get(line)[cell][1];
+      ch = term.lines.get(line)[cell][1];
+      line_s += (ch === null ? ' ' : ch);
     }
     // rtrim empty cells as xterm does
     line_s = line_s.replace(/\s+$/, '');
