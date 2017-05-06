@@ -39,18 +39,25 @@ export class SelectionManager {
   }
 
   private _onTrim(amount: number) {
+    // TODO: Somehow map the selection coordinates with the list that is constantly being trimmed
+    //       Maybe we need an ID in the CircularList that starts from 0 for the first entry and increments
     console.log('trimmed: ' + amount);
   }
 
+  private _getMouseBufferCoords(event: MouseEvent) {
+    // TODO: Take into account the current terminal viewport when fetching coordinates
+    return Mouse.getCoords(event, this._rowContainer, this._charMeasure);
+  }
+
   private _onMouseDown(event: MouseEvent) {
-    this._selectionStart = Mouse.getCoords(event, this._rowContainer, this._charMeasure);
+    this._selectionStart = this._getMouseBufferCoords(event);
     if (this._selectionStart) {
       this._rowContainer.addEventListener('mousemove', this._mouseMoveListener);
     }
   }
 
   private _onMouseMove(event: MouseEvent) {
-    this._selectionEnd = Mouse.getCoords(event, this._rowContainer, this._charMeasure);
+    this._selectionEnd = this._getMouseBufferCoords(event);
   }
 
   private _onMouseUp(event: MouseEvent) {
