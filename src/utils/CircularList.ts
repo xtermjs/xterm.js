@@ -6,14 +6,21 @@
  */
 import { EventEmitter } from '../EventEmitter';
 
+interface ListEntry<T> {
+  id: number;
+  value: T;
+}
+
 export class CircularList<T> extends EventEmitter {
-  private _array: T[];
+  private _array: ListEntry<T>[];
   private _startIndex: number;
   private _length: number;
 
+  private _nextId = 0;
+
   constructor(maxLength: number) {
     super();
-    this._array = new Array<T>(maxLength);
+    this._array = new Array<ListEntry<T>>(maxLength);
     this._startIndex = 0;
     this._length = 0;
   }
@@ -25,9 +32,14 @@ export class CircularList<T> extends EventEmitter {
   public set maxLength(newMaxLength: number) {
     // Reconstruct array, starting at index 0. Only transfer values from the
     // indexes 0 to length.
-    let newArray = new Array<T>(newMaxLength);
+    let newArray = new Array<ListEntry<T>>(newMaxLength);
+    // Reset ids when maxLength is changed
+    this._nextId = 0;
     for (let i = 0; i < Math.min(newMaxLength, this.length); i++) {
-      newArray[i] = this._array[this._getCyclicIndex(i)];
+      newArray[i] = {
+        id: this._nextId++,
+        value: this._array[this._getCyclicIndex(i)].value
+      };
     }
     this._array = newArray;
     this._startIndex = 0;
@@ -46,8 +58,14 @@ export class CircularList<T> extends EventEmitter {
     this._length = newLength;
   }
 
-  public get forEach(): (callbackfn: (value: T, index: number, array: T[]) => void) => void {
-    return this._array.forEach;
+  public get forEach(): (callbackfn: (value: T, index: number) => void) => void {
+    return (callbackfn: (value: T, index: number) => void) => {
+      let i = 0;
+      let length = this.length;
+      for (let i = 0; i < length; i++) {
+        callbackfn(this.get(i), i);
+      }
+    };
   }
 
   /**
@@ -59,6 +77,10 @@ export class CircularList<T> extends EventEmitter {
    * @return The value corresponding to the index.
    */
   public get(index: number): T {
+    return this.getEntry(index).value;
+  }
+
+  public getEntry(index: number): ListEntry<T> {
     return this._array[this._getCyclicIndex(index)];
   }
 
@@ -71,7 +93,11 @@ export class CircularList<T> extends EventEmitter {
    * @param value The value to set.
    */
   public set(index: number, value: T): void {
-    this._array[this._getCyclicIndex(index)] = value;
+    this._array[this._getCyclicIndex(index)].value = value;
+  }
+
+  private _setEntry(index: number, entry: ListEntry<T>): void {
+    this._array[this._getCyclicIndex(index)] = entry;
   }
 
   /**
@@ -80,7 +106,10 @@ export class CircularList<T> extends EventEmitter {
    * @param value The value to push onto the list.
    */
   public push(value: T): void {
-    this._array[this._getCyclicIndex(this._length)] = value;
+    this._array[this._getCyclicIndex(this._length)] = {
+      id: this._nextId,
+      value
+    };
     if (this._length === this.maxLength) {
       this._startIndex++;
       if (this._startIndex === this.maxLength) {
@@ -97,7 +126,7 @@ export class CircularList<T> extends EventEmitter {
    * @return The popped value.
    */
   public pop(): T {
-    return this._array[this._getCyclicIndex(this._length-- - 1)];
+    return this._array[this._getCyclicIndex(this._length-- - 1)].value;
   }
 
   /**
@@ -110,20 +139,27 @@ export class CircularList<T> extends EventEmitter {
    * @param items The items to insert.
    */
   public splice(start: number, deleteCount: number, ...items: T[]): void {
+    // Delete items
     if (deleteCount) {
       for (let i = start; i < this._length - deleteCount; i++) {
         this._array[this._getCyclicIndex(i)] = this._array[this._getCyclicIndex(i + deleteCount)];
       }
       this._length -= deleteCount;
     }
+
     if (items && items.length) {
+      // Add items
       for (let i = this._length - 1; i >= start; i--) {
         this._array[this._getCyclicIndex(i + items.length)] = this._array[this._getCyclicIndex(i)];
       }
       for (let i = 0; i < items.length; i++) {
-        this._array[this._getCyclicIndex(start + i)] = items[i];
+        this._array[this._getCyclicIndex(start + i)] = {
+          id: this._nextId,
+          value: items[i]
+        };
       }
 
+      // Adjust length as needed
       if (this._length + items.length > this.maxLength) {
         const countToTrim = (this._length + items.length) - this.maxLength;
         this._startIndex += countToTrim;
@@ -161,7 +197,7 @@ export class CircularList<T> extends EventEmitter {
 
     if (offset > 0) {
       for (let i = count - 1; i >= 0; i--) {
-        this.set(start + i + offset, this.get(start + i));
+        this._setEntry(start + i + offset, this.getEntry(start + i));
       }
       const expandListBy = (start + count + offset) - this._length;
       if (expandListBy > 0) {
