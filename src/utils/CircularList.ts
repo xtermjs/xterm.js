@@ -4,12 +4,15 @@
  * @module xterm/utils/CircularList
  * @license MIT
  */
-export class CircularList<T> {
+import { EventEmitter } from '../EventEmitter';
+
+export class CircularList<T> extends EventEmitter {
   private _array: T[];
   private _startIndex: number;
   private _length: number;
 
   constructor(maxLength: number) {
+    super();
     this._array = new Array<T>(maxLength);
     this._startIndex = 0;
     this._length = 0;
@@ -83,6 +86,7 @@ export class CircularList<T> {
       if (this._startIndex === this.maxLength) {
         this._startIndex = 0;
       }
+      this.emit('trim', 1);
     } else {
       this._length++;
     }
@@ -121,8 +125,10 @@ export class CircularList<T> {
       }
 
       if (this._length + items.length > this.maxLength) {
-        this._startIndex += (this._length + items.length) - this.maxLength;
+        const countToTrim = (this._length + items.length) - this.maxLength;
+        this._startIndex += countToTrim;
         this._length = this.maxLength;
+        this.emit('trim', countToTrim);
       } else {
         this._length += items.length;
       }
@@ -139,6 +145,7 @@ export class CircularList<T> {
     }
     this._startIndex += count;
     this._length -= count;
+    this.emit('trim', count);
   }
 
   public shiftElements(start: number, count: number, offset: number): void {
@@ -162,6 +169,7 @@ export class CircularList<T> {
         while (this._length > this.maxLength) {
           this._length--;
           this._startIndex++;
+          this.emit('trim', 1);
         }
       }
     } else {

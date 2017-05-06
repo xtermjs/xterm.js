@@ -471,6 +471,8 @@ export class Parser {
         case ParserState.DCS:
           if (ch === C0.ESC || ch === C0.BEL) {
             if (ch === C0.ESC) this._position++;
+            let pt;
+            let valid;
 
             switch (this._terminal.prefix) {
               // User-Defined Keys (DECUDK).
@@ -480,8 +482,8 @@ export class Parser {
               // Request Status String (DECRQSS).
               // test: echo -e '\eP$q"p\e\\'
               case '$q':
-                let pt = this._terminal.currentParam
-                , valid = false;
+                pt = this._terminal.currentParam;
+                valid = false;
 
                 switch (pt) {
                   // DECSCA
@@ -526,9 +528,8 @@ export class Parser {
               // This can cause a small glitch in vim.
               // test: echo -ne '\eP+q6b64\e\\'
               case '+q':
-                // TODO: Don't declare pt twice
-                /*let*/ pt = this._terminal.currentParam
-                , valid = false;
+                pt = this._terminal.currentParam;
+                valid = false;
 
                 this._terminal.send(C0.ESC + 'P' + +valid + '+r' + pt + C0.ESC + '\\');
                 break;

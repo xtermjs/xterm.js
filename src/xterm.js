@@ -20,9 +20,10 @@ import { InputHandler } from './InputHandler';
 import { Parser } from './Parser';
 import { Renderer } from './Renderer';
 import { Linkifier } from './Linkifier';
+import { SelectionManager } from './SelectionManager';
 import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './utils/Browser';
-import * as Keyboard from './utils/Keyboard';
+import * as Mouse from './utils/Mouse';
 import { CHARSETS } from './Charsets';
 
 /**
@@ -219,6 +220,7 @@ function Terminal(options) {
   this.parser = new Parser(this.inputHandler, this);
   // Reuse renderer if the Terminal is being recreated via a Terminal.reset call.
   this.renderer = this.renderer || null;
+  this.selectionManager = this.selectionManager || null;
   this.linkifier = this.linkifier || new Linkifier();
 
   // user input states
@@ -689,6 +691,7 @@ Terminal.prototype.open = function(parent, focus) {
 
   this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
   this.renderer = new Renderer(this);
+  this.selectionManager = new SelectionManager(this.lines, this.rowContainer, this.charMeasure);
 
   // Setup loop that draws to screen
   this.refresh(0, this.rows - 1);
@@ -787,7 +790,7 @@ Terminal.prototype.bindMouse = function() {
     button = getButton(ev);
 
     // get mouse coordinates
-    pos = getCoords(ev);
+    pos = Mouse.getCoords(ev, this.rowContainer, this.charMeasure);
     if (!pos) return;
 
     sendEvent(button, pos);
@@ -815,7 +818,7 @@ Terminal.prototype.bindMouse = function() {
     var button = pressed
     , pos;
 
-    pos = getCoords(ev);
+    pos = Mouse.getCoords(ev, this.rowContainer, this.charMeasure);
     if (!pos) return;
 
     // buttons marked as motions
@@ -991,48 +994,48 @@ Terminal.prototype.bindMouse = function() {
   }
 
   // mouse coordinates measured in cols/rows
-  function getCoords(ev) {
-    var x, y, w, h, el;
+  // function getCoords(ev) {
+  //   var x, y, w, h, el;
 
-    // ignore browsers without pageX for now
-    if (ev.pageX == null) return;
+  //   // ignore browsers without pageX for now
+  //   if (ev.pageX == null) return;
 
-    x = ev.pageX;
-    y = ev.pageY;
-    el = self.element;
+  //   x = ev.pageX;
+  //   y = ev.pageY;
+  //   el = self.rowContainer;
 
-    // should probably check offsetParent
-    // but this is more portable
-    while (el && el !== self.document.documentElement) {
-      x -= el.offsetLeft;
-      y -= el.offsetTop;
-      el = 'offsetParent' in el
-        ? el.offsetParent
-      : el.parentNode;
-    }
+  //   // should probably check offsetParent
+  //   // but this is more portable
+  //   while (el && el !== self.document.documentElement) {
+  //     x -= el.offsetLeft;
+  //     y -= el.offsetTop;
+  //     el = 'offsetParent' in el
+  //       ? el.offsetParent
+  //     : el.parentNode;
+  //   }
 
-    // convert to cols/rows
-    x = Math.ceil(x / self.charMeasure.width);
-    y = Math.ceil(y / self.charMeasure.height);
+  //   // convert to cols/rows
+  //   x = Math.ceil(x / self.charMeasure.width);
+  //   y = Math.ceil(y / self.charMeasure.height);
 
-    // be sure to avoid sending
-    // bad positions to the program
-    if (x < 0) x = 0;
-    if (x > self.cols) x = self.cols;
-    if (y < 0) y = 0;
-    if (y > self.rows) y = self.rows;
+  //   // be sure to avoid sending
+  //   // bad positions to the program
+  //   if (x < 0) x = 0;
+  //   if (x > self.cols) x = self.cols;
+  //   if (y < 0) y = 0;
+  //   if (y > self.rows) y = self.rows;
 
-    // xterm sends raw bytes and
-    // starts at 32 (SP) for each.
-    x += 32;
-    y += 32;
+  //   // xterm sends raw bytes and
+  //   // starts at 32 (SP) for each.
+  //   x += 32;
+  //   y += 32;
 
-    return {
-      x: x,
-      y: y,
-      type: 'wheel'
-    };
-  }
+  //   return {
+  //     x: x,
+  //     y: y,
+  //     type: 'wheel'
+  //   };
+  // }
 
   on(el, 'mousedown', function(ev) {
     if (!self.mouseEvents) return;
