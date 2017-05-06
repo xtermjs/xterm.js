@@ -68,7 +68,7 @@ function createTerminal() {
   protocol = (location.protocol === 'https:') ? 'wss://' : 'ws://';
   socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
 
-  term.open(terminalContainer);
+  term.open(terminalContainer, true);
   term.fit();
 
   var initialGeometry = term.proposeGeometry(),
