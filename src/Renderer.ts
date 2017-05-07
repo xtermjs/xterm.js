@@ -283,8 +283,12 @@ export class Renderer {
           }
         }
 
+        // TODO: Consider performance implications of not pulling these from the pool
         if (ch_width === 2) {
-          out += '<span class="xterm-wide-char">';
+          innerHTML += '<span class="xterm-wide-char">';
+        } else {
+          // TODO: Only wrap unicode characters that may vary in width
+          innerHTML += '<span class="xterm-normal-char">';
         }
         switch (ch) {
           case '&':
@@ -310,7 +314,10 @@ export class Renderer {
             break;
         }
         if (ch_width === 2) {
-          out += '</span>';
+          innerHTML += '</span>';
+        } else {
+          // TODO: Only wrap unicode characters that may vary in width
+          innerHTML += '</span>';
         }
 
         attr = data;
