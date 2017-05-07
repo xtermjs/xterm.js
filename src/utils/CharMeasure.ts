@@ -9,13 +9,15 @@ import { EventEmitter } from '../EventEmitter.js';
  * Utility class that measures the size of a character.
  */
 export class CharMeasure extends EventEmitter {
+  private _document: Document;
   private _parentElement: HTMLElement;
   private _measureElement: HTMLElement;
   private _width: number;
   private _height: number;
 
-  constructor(parentElement: HTMLElement) {
+  constructor(document: Document, parentElement: HTMLElement) {
     super();
+    this._document = document;
     this._parentElement = parentElement;
   }
 
@@ -28,24 +30,32 @@ export class CharMeasure extends EventEmitter {
   }
 
   public measure(): void {
-    const oldWidth = this._width;
-    const oldHeight = this._height;
-
     if (!this._measureElement) {
-      this._measureElement = document.createElement('span');
+      this._measureElement = this._document.createElement('span');
       this._measureElement.style.position = 'absolute';
       this._measureElement.style.top = '0';
       this._measureElement.style.left = '-9999em';
       this._measureElement.textContent = 'W';
+      this._measureElement.setAttribute('aria-hidden', 'true');
+      this._parentElement.appendChild(this._measureElement);
+      // Perform _doMeasure async if the element was just attached as sometimes
+      // getBoundingClientRect does not return accurate values without this.
+      setTimeout(() => this._doMeasure(), 0);
+    } else {
+      this._doMeasure();
     }
+  }
 
-    this._parentElement.appendChild(this._measureElement);
+  private _doMeasure(): void {
     const geometry = this._measureElement.getBoundingClientRect();
-    this._width = geometry.width;
-    this._height = geometry.height;
-    this._parentElement.removeChild(this._measureElement);
-
-    if (this._width !== oldWidth || this._height !== oldHeight) {
+    // The element is likely currently display:none, we should retain the
+    // previous value.
+    if (geometry.width === 0 || geometry.height === 0) {
+      return;
+    }
+    if (this._width !== geometry.width || this._height !== geometry.height) {
+      this._width = geometry.width;
+      this._height = geometry.height;
       this.emit('charsizechanged');
     }
   }

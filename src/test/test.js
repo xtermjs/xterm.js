@@ -14,6 +14,17 @@ describe('xterm.js', function() {
     xterm.compositionHelper = {
       keydown: function(){ return true; }
     };
+    // Force synchronous writes
+    xterm.write = function(data) {
+      xterm.writeBuffer.push(data);
+      xterm.innerWrite();
+    };
+    xterm.element = {
+      classList: {
+        toggle: function(){},
+        remove: function(){}
+      }
+    };
   });
 
   describe('getOption', function() {
@@ -540,6 +551,7 @@ describe('xterm.js', function() {
 
   describe('unicode - surrogates', function() {
     it('2 characters per cell', function () {
+      this.timeout(10000);  // This is needed because istanbul patches code and slows it down
       var high = String.fromCharCode(0xD800);
       for (var i=0xDC00; i<=0xDCFF; ++i) {
         xterm.write(high + String.fromCharCode(i));
@@ -581,8 +593,9 @@ describe('xterm.js', function() {
         xterm.x = xterm.cols - 1;
         xterm.wraparoundMode = false;
         xterm.write('a' + high + String.fromCharCode(i));
-        expect(xterm.lines.get(0)[xterm.cols-1][1]).eql(high + String.fromCharCode(i));
-        expect(xterm.lines.get(0)[xterm.cols-1][1].length).eql(2);
+        // auto wraparound mode should cut off the rest of the line
+        expect(xterm.lines.get(0)[xterm.cols-1][1]).eql('a');
+        expect(xterm.lines.get(0)[xterm.cols-1][1].length).eql(1);
         expect(xterm.lines.get(1)[1][1]).eql(' ');
         xterm.reset();
       }

@@ -8,14 +8,17 @@ var term,
 
 var terminalContainer = document.getElementById('terminal-container'),
     optionElements = {
-      cursorBlink: document.querySelector('#option-cursor-blink')
+      cursorBlink: document.querySelector('#option-cursor-blink'),
+      cursorStyle: document.querySelector('#option-cursor-style'),
+      scrollback: document.querySelector('#option-scrollback'),
+      tabstopwidth: document.querySelector('#option-tabstopwidth')
     },
     colsElement = document.getElementById('cols'),
     rowsElement = document.getElementById('rows');
 
 function setTerminalSize () {
-  var cols = parseInt(colsElement.value),
-      rows = parseInt(rowsElement.value),
+  var cols = parseInt(colsElement.value, 10),
+      rows = parseInt(rowsElement.value, 10),
       width = (cols * charWidth).toString() + 'px',
       height = (rows * charHeight).toString() + 'px';
 
@@ -27,7 +30,18 @@ function setTerminalSize () {
 colsElement.addEventListener('change', setTerminalSize);
 rowsElement.addEventListener('change', setTerminalSize);
 
-optionElements.cursorBlink.addEventListener('change', createTerminal);
+optionElements.cursorBlink.addEventListener('change', function () {
+  term.setOption('cursorBlink', optionElements.cursorBlink.checked);
+});
+optionElements.cursorStyle.addEventListener('change', function () {
+  term.setOption('cursorStyle', optionElements.cursorStyle.value);
+});
+optionElements.scrollback.addEventListener('change', function () {
+  term.setOption('scrollback', parseInt(optionElements.scrollback.value, 10));
+});
+optionElements.tabstopwidth.addEventListener('change', function () {
+  term.setOption('tabStopWidth', parseInt(optionElements.tabstopwidth.value, 10));
+});
 
 createTerminal();
 
@@ -37,7 +51,9 @@ function createTerminal() {
     terminalContainer.removeChild(terminalContainer.children[0]);
   }
   term = new Terminal({
-    cursorBlink: optionElements.cursorBlink.checked
+    cursorBlink: optionElements.cursorBlink.checked,
+    scrollback: parseInt(optionElements.scrollback.value, 10),
+    tabStopWidth: parseInt(optionElements.tabstopwidth.value, 10)
   });
   term.on('resize', function (size) {
     if (!pid) {
@@ -77,7 +93,6 @@ function createTerminal() {
     });
   });
 }
-
 
 function runRealTerminal() {
   term.attach(socket);

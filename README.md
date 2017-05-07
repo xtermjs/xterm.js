@@ -1,6 +1,6 @@
-# xterm.js
+# [![xterm.js logo](logo.png)](https://xtermjs.org)
 
-[![xterm.js build status](https://api.travis-ci.org/sourcelair/xterm.js.svg)](https://travis-ci.org/sourcelair/xterm.js) [![Gitter](https://badges.gitter.im/sourcelair/xterm.js.svg)](https://gitter.im/sourcelair/xterm.js?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![xterm.js build status](https://api.travis-ci.org/sourcelair/xterm.js.svg)](https://travis-ci.org/sourcelair/xterm.js) [![Coverage Status](https://coveralls.io/repos/github/sourcelair/xterm.js/badge.svg)](https://coveralls.io/github/sourcelair/xterm.js) [![Gitter](https://badges.gitter.im/sourcelair/xterm.js.svg)](https://gitter.im/sourcelair/xterm.js?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 Xterm.js is a terminal front-end component written in JavaScript that works in the browser.
 
@@ -26,8 +26,16 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**Microsoft Visual Studio Code**](http://code.visualstudio.com/): Modern, versatile and powerful open source code editor that provides an integrated terminal based on xterm.js
 - [**ttyd**](https://github.com/tsl0922/ttyd): A command-line tool for sharing terminal over the web, with fully-featured terminal emulation based on xterm.js
 - [**Katacoda**](https://www.katacoda.com/): Katacoda is an Interactive Learning Platform for software developers, covering the latest Cloud Native technologies.
-- [**Eclipse Che**](http://www.eclipse.org/che): Developer workspace server, cloud IDE, and Eclipse next-generation IDE
-
+- [**Eclipse Che**](http://www.eclipse.org/che): Developer workspace server, cloud IDE, and Eclipse next-generation IDE.
+- [**Codenvy**](http://www.codenvy.com): Cloud workspaces for development teams.
+- [**CoderPad**](https://coderpad.io): Online interviewing platform for programmers. Run code in many programming languages, with results displayed by `xterm.js`.
+- [**WebSSH2**](https://github.com/billchurch/WebSSH2): A web based SSH2 client using `xterm.js`, socket.io, and ssh2.
+- [**Spyder Terminal**](https://github.com/spyder-ide/spyder-terminal): A full fledged system terminal embedded on Spyder IDE. 
+- [**Cloud Commander**](https://cloudcmd.io "Cloud Commander"): Orthodox web file manager with console and editor.
+- [**Codevolve**](https://www.codevolve.com "Codevolve"): Online platform for interactive coding and web development courses. Live container-backed terminal uses `xterm.js`.
+- [**RStudio**](https://www.rstudio.com/products/RStudio "RStudio"): RStudio is an integrated development environment (IDE) for R.
+- [**Terminal for Atom**](https://github.com/jsmecham/atom-terminal-tab): A simple terminal for the Atom text editor.
+- [**Eclipse Orion**](https://orionhub.org): A modern, open source software development environment that runs in the cloud. Code, deploy and run in the cloud.
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list.
 
@@ -46,14 +54,29 @@ Xterm.js works seamlessly in Electron apps and may even work on earlier versions
 
 ## Demo
 
-To launch the demo simply run:
+### Linux or macOS
+
+Run the following commands:
 
 ```
-npm install
-npm start
+$ npm install
+$ npm start
 ```
 
-Then open http://0.0.0.0:3000 in a web browser (use http://127.0.0.1:3000 if running under Windows).
+Then open http://0.0.0.0:3000 in a web browser.
+
+### Windows
+
+First, ensure [node-gyp](https://github.com/nodejs/node-gyp) is installed and configured correctly, then run these commands.
+
+Note: Do not use ConEmu, as it seems to break the demo for some reason.
+
+```
+> npm install
+> npm start
+```
+
+Then open http://127.0.0.1:3000 in a web browser.
 
 ## Getting Started
 
@@ -69,13 +92,13 @@ To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to t
       <div id="terminal"></div>
       <script>
       	var term = new Terminal();
-        term.open(document.getElementById('#terminal'));
+        term.open(document.getElementById('terminal'));
         term.write('Hello from \033[1;3;31mxterm.js\033[0m $ ')
       </script>
     </body>
   </html>
 ```
-Finally instantiate the `Terminal` object and then call the `open` function with the DOM object of the `div`.  
+Finally instantiate the `Terminal` object and then call the `open` function with the DOM object of the `div`.
 
 ## Addons
 
@@ -104,23 +127,7 @@ The existing releases are available at this GitHub repo's [Releases](https://git
 
 Xterm.js is maintained by [SourceLair](https://www.sourcelair.com/) and a few external contributors, but we would love to receive contributions from everyone!
 
-To contribute either code, documentation or issues to xterm.js please read the [Contributing document](CONTRIBUTING.md) before.
-
-The development of xterm.js does not require any special tool. All you need is an editor that supports JavaScript and a browser (if you would like to run the demo you will need Node.js to get all features).
-
-It is recommended though to use a development tool that uses xterm.js internally, to develop for xterm.js. [Eating our own dogfood](https://en.wikipedia.org/wiki/Eating_your_own_dog_food) has been proved extremely beneficial for this project. Known tools that use xterm.js internally are:
-
-#### [SourceLair](https://www.sourcelair.com)
-
-Visit https://lair.io/sourcelair/xterm and follow the instructions. All development will happen in your browser.
-
-#### [Visual Studio Code](http://code.visualstudio.com/)
-
-[Download Visual Studio Code](http://code.visualstudio.com/Download), clone xterm.js and you are all set.
-
-#### [Eclipse Che](http://www.eclipse.org/che)
-
-You can start Eclipse Che with `docker run eclipse/che start`
+To contribute either code, documentation or issues to xterm.js please read the [Contributing document](CONTRIBUTING.md) beforehand. The development of xterm.js does not require any special tool. All you need is an editor that supports JavaScript/TypeScript and a browser. You will need Node.js installed locally to get all the features working in the demo.
 
 ## License Agreement
 
