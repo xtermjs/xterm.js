@@ -14,7 +14,7 @@ import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './EventEmitter';
 import { Viewport } from './Viewport';
 import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard';
-import { CircularList } from './utils/CircularList';
+import { Buffer } from './Buffer';
 import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Parser } from './Parser';
@@ -243,11 +243,13 @@ function Terminal(options) {
    * An array of all lines in the entire buffer, including the prompt. The lines are array of
    * characters which are 2-length arrays where [0] is an attribute and [1] is the character.
    */
-  this.lines = new CircularList(this.scrollback);
+  this.lines = new Buffer(this.scrollback, this.defAttr);
   var i = this.rows;
   while (i--) {
     this.lines.push(this.blankLine());
   }
+
+  this.setScrollBase();
 
   this.tabs;
   this.setupStops();
@@ -377,6 +379,17 @@ each(keys(Terminal.defaults), function(key) {
   Terminal[key] = Terminal.defaults[key];
   Terminal.options[key] = Terminal.defaults[key];
 });
+
+Terminal.prototype.setScrollBase = function() {
+  let totalLinesAtWidth = this.lines.setTotalLinesAtWidth(this.cols);
+
+  let scrollBase = totalLinesAtWidth - this.rows;
+  if (scrollBase < 0) {
+    scrollBase = 0;
+  }
+
+  this.scrollBase = scrollBase;
+};
 
 /**
  * Focus the terminal. Delegates focus handling to the terminal's DOM element.
@@ -1155,10 +1168,10 @@ Terminal.prototype.scroll = function() {
   }
 
   this.ybase++;
+  this.scrollBase++;
 
-  // TODO: Why is this done twice?
   if (!this.userScrolling) {
-    this.ydisp = this.ybase;
+    this.ydisp = this.scrollBase;
   }
 
   // last line
@@ -1178,9 +1191,7 @@ Terminal.prototype.scroll = function() {
   if (this.scrollTop !== 0) {
     if (this.ybase !== 0) {
       this.ybase--;
-      if (!this.userScrolling) {
-        this.ydisp = this.ybase;
-      }
+      this.scrollBase--;
     }
     this.lines.splice(this.ybase + this.scrollTop, 1);
   }
@@ -1208,14 +1219,14 @@ Terminal.prototype.scroll = function() {
 Terminal.prototype.scrollDisp = function(disp, suppressScrollEvent) {
   if (disp < 0) {
     this.userScrolling = true;
-  } else if (disp + this.ydisp >= this.ybase) {
+  } else if (disp + this.ydisp >= this.scrollBase) {
     this.userScrolling = false;
   }
 
   this.ydisp += disp;
 
-  if (this.ydisp > this.ybase) {
-    this.ydisp = this.ybase;
+  if (this.ydisp > this.scrollBase) {
+    this.ydisp = this.scrollBase;
   } else if (this.ydisp < 0) {
     this.ydisp = 0;
   }
@@ -1246,7 +1257,7 @@ Terminal.prototype.scrollToTop = function() {
  * Scrolls the display of the terminal to the bottom.
  */
 Terminal.prototype.scrollToBottom = function() {
-  this.scrollDisp(this.ybase - this.ydisp);
+  this.scrollDisp(this.scrollBase - this.ydisp);
 }
 
 /**
@@ -1297,6 +1308,8 @@ Terminal.prototype.innerWrite = function() {
 
     this.updateRange(this.y);
     this.refresh(this.refreshStart, this.refreshEnd);
+
+    this.setScrollBase();
   }
   if (this.writeBuffer.length > 0) {
     // Allow renderer to catch up before processing the next batch
@@ -1306,6 +1319,7 @@ Terminal.prototype.innerWrite = function() {
     }, 0);
   } else {
     this.writeInProgress = false;
+    this.viewport.syncScrollArea();
   }
 };
 
@@ -1863,15 +1877,6 @@ Terminal.prototype.resize = function(x, y) {
 
   // resize cols
   j = this.cols;
-  if (j < x) {
-    ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
-    i = this.lines.length;
-    while (i--) {
-      while (this.lines.get(i).length < x) {
-        this.lines.get(i).push(ch);
-      }
-    }
-  }
 
   this.cols = x;
   this.setupStops(this.cols);
@@ -1938,6 +1943,15 @@ Terminal.prototype.resize = function(x, y) {
 
   this.scrollTop = 0;
   this.scrollBottom = y - 1;
+
+  // If we're already at the bottom, scroll down after resize
+  const stickyScroll = this.ydisp > 0 && this.lines.length > this.rows && this.scrollBase === this.ydisp
+
+  this.setScrollBase();
+
+  if (stickyScroll) {
+    this.scrollToBottom();
+  }
 
   this.charMeasure.measure();
 
@@ -2031,7 +2045,7 @@ Terminal.prototype.eraseRight = function(x, y) {
     return;
   }
   var ch = [this.eraseAttr(), ' ', 1]; // xterm
-  for (; x < this.cols; x++) {
+  for (; x < line.length; x++) {
     line[x] = ch;
   }
   this.updateRange(y);
@@ -2091,19 +2105,7 @@ Terminal.prototype.eraseLine = function(y) {
  * @param {number} cur First bunch of data for each "blank" character.
  */
 Terminal.prototype.blankLine = function(cur) {
-  var attr = cur
-  ? this.eraseAttr()
-  : this.defAttr;
-
-  var ch = [attr, ' ', 1]  // width defaults to 1 halfwidth character
-  , line = []
-  , i = 0;
-
-  for (; i < this.cols; i++) {
-    line[i] = ch;
-  }
-
-  return line;
+  return [];
 };
 
 
@@ -2139,7 +2141,8 @@ Terminal.prototype.handler = function(data) {
   }
 
   // Input is being sent to the terminal, the terminal should focus the prompt.
-  if (this.ybase !== this.ydisp) {
+
+  if (this.scrollBase !== this.ydisp) {
     this.scrollToBottom();
   }
   this.emit('data', data);

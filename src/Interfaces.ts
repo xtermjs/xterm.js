@@ -23,7 +23,8 @@ export interface ITerminal {
   textarea: HTMLTextAreaElement;
   ybase: number;
   ydisp: number;
-  lines: ICircularList<string>;
+  scrollBase: number;
+  lines: IBuffer<string>;
   rows: number;
   cols: number;
   browser: IBrowser;
@@ -60,7 +61,7 @@ export interface ILinkifier {
   deregisterLinkMatcher(matcherId: number): boolean;
 }
 
-interface ICircularList<T> {
+interface IBuffer<T> {
   length: number;
   maxLength: number;
 
@@ -72,6 +73,11 @@ interface ICircularList<T> {
   splice(start: number, deleteCount: number, ...items: T[]): void;
   trimStart(count: number): void;
   shiftElements(start: number, count: number, offset: number): void;
+  setTotalLinesAtWidth(width: number): number;
+  getTotalLines(): number;
+  getLineAtRow(row: number, width: number): T;
+  getRowAtLine(row: number, width: number): T;
+  trimThenChunk(line: T, width: number): T[];
 }
 
 export interface LinkMatcherOptions {

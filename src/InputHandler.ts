@@ -18,80 +18,64 @@ export class InputHandler implements IInputHandler {
   constructor(private _terminal: any) { }
 
   public addChar(char: string, code: number): void {
-    if (char >= ' ') {
-      // calculate print space
-      // expensive call, therefore we save width in line buffer
-      const ch_width = wcwidth(code);
+    if (char < ' ') {
+      return;
+    }
 
-      if (this._terminal.charset && this._terminal.charset[char]) {
-        char = this._terminal.charset[char];
-      }
+    // calculate print space
+    // expensive call, therefore we save width in line buffer
+    const ch_width = wcwidth(code);
 
-      let row = this._terminal.y + this._terminal.ybase;
+    if (this._terminal.charset && this._terminal.charset[char]) {
+      char = this._terminal.charset[char];
+    }
 
-      // insert combining char in last cell
-      // FIXME: needs handling after cursor jumps
-      if (!ch_width && this._terminal.x) {
-        // dont overflow left
-        if (this._terminal.lines.get(row)[this._terminal.x - 1]) {
-          if (!this._terminal.lines.get(row)[this._terminal.x - 1][2]) {
+    let row = this._terminal.y + this._terminal.ybase;
 
-            // found empty cell after fullwidth, need to go 2 cells back
-            if (this._terminal.lines.get(row)[this._terminal.x - 2])
-              this._terminal.lines.get(row)[this._terminal.x - 2][1] += char;
+    // insert combining char in last cell
+    // FIXME: needs handling after cursor jumps
+    if (!ch_width && this._terminal.x) {
+      // dont overflow left
+      if (this._terminal.lines.get(row)[this._terminal.x - 1]) {
+        if (!this._terminal.lines.get(row)[this._terminal.x - 1][2]) {
 
-          } else {
-            this._terminal.lines.get(row)[this._terminal.x - 1][1] += char;
+          // found empty cell after fullwidth, need to go 2 cells back
+          if (this._terminal.lines.get(row)[this._terminal.x - 2]) {
+            this._terminal.lines.get(row)[this._terminal.x - 2][1] += char;
           }
-          this._terminal.updateRange(this._terminal.y);
-        }
-        return;
-      }
 
-      // goto next line if ch would overflow
-      // TODO: needs a global min terminal width of 2
-      if (this._terminal.x + ch_width - 1 >= this._terminal.cols) {
-        // autowrap - DECAWM
-        if (this._terminal.wraparoundMode) {
-          this._terminal.x = 0;
-          this._terminal.y++;
-          if (this._terminal.y > this._terminal.scrollBottom) {
-            this._terminal.y--;
-            this._terminal.scroll();
-          }
         } else {
-          if (ch_width === 2)  // FIXME: check for xterm behavior
-            return;
+          this._terminal.lines.get(row)[this._terminal.x - 1][1] += char;
         }
+        this._terminal.updateRange(this._terminal.y);
       }
-      row = this._terminal.y + this._terminal.ybase;
+      return;
+    }
 
-      // insert mode: move characters to right
-      if (this._terminal.insertMode) {
-        // do this twice for a fullwidth char
-        for (let moves = 0; moves < ch_width; ++moves) {
-          // remove last cell, if it's width is 0
-          // we have to adjust the second last cell as well
-          const removed = this._terminal.lines.get(this._terminal.y + this._terminal.ybase).pop();
-          if (removed[2] === 0
-              && this._terminal.lines.get(row)[this._terminal.cols - 2]
-          && this._terminal.lines.get(row)[this._terminal.cols - 2][2] === 2)
-            this._terminal.lines.get(row)[this._terminal.cols - 2] = [this._terminal.curAttr, ' ', 1];
+    // insert mode: move characters to right
+    if (this._terminal.insertMode) {
+      // do this twice for a fullwidth char
+      for (let moves = 0; moves < ch_width; ++moves) {
+        // remove last cell, if it's width is 0
+        // we have to adjust the second last cell as well
+        const removed = this._terminal.lines.get(row).pop();
+        if (removed[2] === 0
+            && this._terminal.lines.get(row)[this._terminal.cols - 2]
+        && this._terminal.lines.get(row)[this._terminal.cols - 2][2] === 2)
+          this._terminal.lines.get(row)[this._terminal.cols - 2] = [this._terminal.curAttr, ' ', 1];
 
-          // insert empty cell at cursor
-          this._terminal.lines.get(row).splice(this._terminal.x, 0, [this._terminal.curAttr, ' ', 1]);
-        }
+        // insert empty cell at cursor
+        this._terminal.lines.get(row).splice(this._terminal.x, 0, [this._terminal.curAttr, ' ', 1]);
       }
+    }
+    this._terminal.lines.get(row)[this._terminal.x] = [this._terminal.curAttr, char, ch_width];
+    this._terminal.x++;
+    this._terminal.updateRange(this._terminal.y);
 
-      this._terminal.lines.get(row)[this._terminal.x] = [this._terminal.curAttr, char, ch_width];
+    // fullwidth char - set next cell width to zero and advance cursor
+    if (ch_width === 2) {
+      this._terminal.lines.get(row)[this._terminal.x] = [this._terminal.curAttr, '', 0];
       this._terminal.x++;
-      this._terminal.updateRange(this._terminal.y);
-
-      // fullwidth char - set next cell width to zero and advance cursor
-      if (ch_width === 2) {
-        this._terminal.lines.get(row)[this._terminal.x] = [this._terminal.curAttr, '', 0];
-        this._terminal.x++;
-      }
     }
   }
 
@@ -334,6 +318,16 @@ export class InputHandler implements IInputHandler {
       col = 0;
     } else if (col >= this._terminal.cols) {
       col = this._terminal.cols - 1;
+    }
+
+    // We trim that last character of the previous row when jumping the cursor to the beggining of
+    // a row. This trick gets around vim adding an extra character when wrapping lines.
+    // See https://github.com/vim/vim/issues/1626
+    if (col <= 1 && row > 0) {
+      let prevRow = this._terminal.lines.get(this._terminal.ybase + (row - 1));
+      if (prevRow.length > this._terminal.cols) {
+        prevRow.pop();
+      }
     }
 
     this._terminal.x = col;
