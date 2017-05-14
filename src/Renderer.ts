@@ -154,13 +154,13 @@ export class Renderer {
 
       let attr = this._terminal.defAttr;
 
-      var documentFragment = document.createDocumentFragment();
-      var innerHTML = '';
-      var currentElement;
+      const documentFragment = document.createDocumentFragment();
+      let innerHTML = '';
+      let currentElement;
 
       // Return the row's spans to the pool
       while (this._terminal.children[y].children.length) {
-        var child = this._terminal.children[y].children[0];
+        const child = this._terminal.children[y].children[0];
         this._terminal.children[y].removeChild(child);
         this._spanElementObjectPool.release(<HTMLElement>child);
       }
@@ -168,8 +168,8 @@ export class Renderer {
       for (let i = 0; i < width; i++) {
         // TODO: Could data be a more specific type?
         let data: any = line[i][0];
-        let ch = line[i][1];
-        let ch_width: any = line[i][2];
+        const ch = line[i][1];
+        const ch_width: any = line[i][2];
         if (!ch_width) {
           continue;
         }
