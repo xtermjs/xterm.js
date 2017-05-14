@@ -121,7 +121,7 @@ export class Renderer {
    * @param {number} end The row to end at (between fromRow and terminal's height terminal - 1)
    */
   private _refresh(start: number, end: number): void {
-    let x, y, i, line, out, ch, ch_width, width, data, attr, bg, fg, flags, row, parent, focused = document.activeElement;
+    let parent;
 
     // If this is a big refresh, remove the terminal rows from the DOM for faster calculations
     if (end - start >= this._terminal.rows / 2) {
@@ -131,8 +131,8 @@ export class Renderer {
       }
     }
 
-    width = this._terminal.cols;
-    y = start;
+    let width = this._terminal.cols;
+    let y = start;
 
     if (end >= this._terminal.rows) {
       this._terminal.log('`end` is too large. Most likely a bad CSR.');
@@ -140,11 +140,11 @@ export class Renderer {
     }
 
     for (; y <= end; y++) {
-      row = y + this._terminal.ydisp;
+      let row = y + this._terminal.ydisp;
 
-      line = this._terminal.lines.get(row);
-      out = '';
+      let line = this._terminal.lines.get(row);
 
+      let x;
       if (this._terminal.y === y - (this._terminal.ybase - this._terminal.ydisp)
           && this._terminal.cursorState
           && !this._terminal.cursorHidden) {
@@ -153,8 +153,7 @@ export class Renderer {
         x = -1;
       }
 
-      attr = this._terminal.defAttr;
-      i = 0;
+      let attr = this._terminal.defAttr;
 
       var documentFragment = document.createDocumentFragment();
       var innerHTML = '';
@@ -167,10 +166,11 @@ export class Renderer {
         this._spanElementObjectPool.release(<HTMLElement>child);
       }
 
-      for (; i < width; i++) {
-        data = line[i][0];
-        ch = line[i][1];
-        ch_width = line[i][2];
+      for (let i = 0; i < width; i++) {
+        // TODO: Could data be a more specific type?
+        let data: any = line[i][0];
+        let ch = line[i][1];
+        let ch_width: any = line[i][2];
         if (!ch_width)
           continue;
 
@@ -184,13 +184,10 @@ export class Renderer {
             }
             documentFragment.appendChild(currentElement);
             currentElement = null;
-            //out += '</span>';
           }
           if (data !== this._terminal.defAttr) {
             if (innerHTML && !currentElement) {
               currentElement = this._spanElementObjectPool.acquire();
-              // For some reason the text nodes only containing &nbsp; don't get added to the DOM
-              //currentElement = document.createTextNode('');
             }
             if (currentElement) {
               if (innerHTML) {
@@ -202,23 +199,14 @@ export class Renderer {
             currentElement = this._spanElementObjectPool.acquire();
             if (data === -1) {
               currentElement.classList.add('reverse-video', 'terminal-cursor');
-              //out += '<span class="reverse-video terminal-cursor';
-              // if (this._terminal.getOption('cursorBlink')) {
-              //   currentElement.classList.add('blinking');
-              //   //out += ' blinking';
-              // }
-              //out += '">';
             } else {
-              //var classNames = [];
-
-              bg = data & 0x1ff;
-              fg = (data >> 9) & 0x1ff;
-              flags = data >> 18;
+              let bg = data & 0x1ff;
+              let fg = (data >> 9) & 0x1ff;
+              let flags = data >> 18;
 
               if (flags & FLAGS.BOLD) {
                 if (!brokenBold) {
                   currentElement.classList.add('xterm-bold');
-                  //classNames.push('xterm-bold');
                 }
                 // See: XTerm*boldColors
                 if (fg < 8) fg += 8;
@@ -226,12 +214,10 @@ export class Renderer {
 
               if (flags & FLAGS.UNDERLINE) {
                 currentElement.classList.add('xterm-underline');
-                //classNames.push('xterm-underline');
               }
 
               if (flags & FLAGS.BLINK) {
                 currentElement.classList.add('xterm-blink');
-                //classNames.push('xterm-blink');
               }
 
               // If inverse flag is on, then swap the foreground and background variables.
@@ -245,7 +231,6 @@ export class Renderer {
 
               if (flags & FLAGS.INVISIBLE) {
                 currentElement.classList.add('xterm-hidden');
-                //classNames.push('xterm-hidden');
               }
 
               /**
@@ -266,19 +251,11 @@ export class Renderer {
 
               if (bg < 256) {
                 currentElement.classList.add('xterm-bg-color-' + bg);
-                //classNames.push('xterm-bg-color-' + bg);
               }
 
               if (fg < 256) {
                 currentElement.classList.add('xterm-color-' + fg);
-                //classNames.push('xterm-color-' + fg);
               }
-
-              // out += '<span';
-              // if (classNames.length) {
-              //   out += ' class="' + classNames.join(' ') + '"';
-              // }
-              // out += '>';
             }
           }
         }
@@ -315,8 +292,6 @@ export class Renderer {
 
       if (innerHTML && !currentElement) {
         currentElement = this._spanElementObjectPool.acquire();
-        // For some reason the text nodes only containing &nbsp; don't get added to the DOM
-        //currentElement = document.createTextNode('');
       }
       if (currentElement) {
         if (innerHTML) {
@@ -326,12 +301,6 @@ export class Renderer {
         documentFragment.appendChild(currentElement);
         currentElement = null;
       }
-      // if (attr !== this.defAttr) {
-      //   out += '</span>';
-      // }
-
-      //this.children[y].innerHTML = out;
-      //this.children[y].innerHTML = '';
 
       this._terminal.children[y].appendChild(documentFragment)
     }
