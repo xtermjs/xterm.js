@@ -121,9 +121,8 @@ export class Renderer {
    * @param {number} end The row to end at (between fromRow and terminal's height terminal - 1)
    */
   private _refresh(start: number, end: number): void {
-    let parent;
-
     // If this is a big refresh, remove the terminal rows from the DOM for faster calculations
+    let parent;
     if (end - start >= this._terminal.rows / 2) {
       parent = this._terminal.element.parentNode;
       if (parent) {
@@ -145,9 +144,9 @@ export class Renderer {
       let line = this._terminal.lines.get(row);
 
       let x;
-      if (this._terminal.y === y - (this._terminal.ybase - this._terminal.ydisp)
-          && this._terminal.cursorState
-          && !this._terminal.cursorHidden) {
+      if (this._terminal.y === y - (this._terminal.ybase - this._terminal.ydisp) &&
+          this._terminal.cursorState &&
+          !this._terminal.cursorHidden) {
         x = this._terminal.x;
       } else {
         x = -1;
@@ -171,10 +170,13 @@ export class Renderer {
         let data: any = line[i][0];
         let ch = line[i][1];
         let ch_width: any = line[i][2];
-        if (!ch_width)
+        if (!ch_width) {
           continue;
+        }
 
-        if (i === x) data = -1;
+        if (i === x) {
+          data = -1;
+        }
 
         if (data !== attr) {
           if (attr !== this._terminal.defAttr) {
@@ -209,7 +211,9 @@ export class Renderer {
                   currentElement.classList.add('xterm-bold');
                 }
                 // See: XTerm*boldColors
-                if (fg < 8) fg += 8;
+                if (fg < 8) {
+                  fg += 8;
+                }
               }
 
               if (flags & FLAGS.UNDERLINE) {
@@ -222,11 +226,13 @@ export class Renderer {
 
               // If inverse flag is on, then swap the foreground and background variables.
               if (flags & FLAGS.INVERSE) {
-                /* One-line variable swap in JavaScript: http://stackoverflow.com/a/16201730 */
-                bg = [fg, fg = bg][0];
-                // Should inverse just be before the
-                // above boldColors effect instead?
-                if ((flags & 1) && fg < 8) fg += 8;
+                let temp = bg;
+                bg = fg;
+                fg = temp;
+                // Should inverse just be before the above boldColors effect instead?
+                if ((flags & 1) && fg < 8) {
+                  fg += 8;
+                }
               }
 
               if (flags & FLAGS.INVISIBLE) {
