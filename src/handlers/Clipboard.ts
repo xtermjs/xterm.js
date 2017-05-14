@@ -39,6 +39,17 @@ export function prepareTextForClipboard(text: string): string {
 }
 
 /**
+ * Prepares text to be pasted into the terminal by normalizing the line endings
+ * @param text The pasted text that needs processing before inserting into the terminal
+ */
+export function prepareTextForTerminal(text: string, isMSWindows: boolean): string {
+  if (isMSWindows) {
+    return text.replace(/\r?\n/g, '\n');
+  }
+  return text;
+}
+
+/**
  * Binds copy functionality to the given terminal.
  * @param {ClipboardEvent} ev The original copy event to be handled
  */
@@ -68,6 +79,7 @@ export function pasteHandler(ev: ClipboardEvent, term: ITerminal) {
   let text: string;
 
   let dispatchPaste = function(text) {
+    text = prepareTextForTerminal(text, term.browser.isMSWindows);
     term.handler(text);
     term.textarea.value = '';
     return term.cancel(ev);
