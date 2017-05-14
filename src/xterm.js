@@ -1118,6 +1118,11 @@ Terminal.prototype.refresh = function(start, end) {
   }
 };
 
+/**
+ * Queues linkification for the specified rows.
+ * @param {number} start The row to start from (between 0 and this.rows - 1).
+ * @param {number} end The row to end at (between start and this.rows - 1).
+ */
 Terminal.prototype.queueLinkification = function(start, end) {
   if (this.linkifier) {
     for (let i = start; i <= end; i++) {
