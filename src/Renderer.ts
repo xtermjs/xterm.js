@@ -256,18 +256,19 @@ export class Renderer {
               }
 
               if (bg < 256) {
-                currentElement.classList.add('xterm-bg-color-' + bg);
+                currentElement.classList.add(`xterm-bg-color-${bg}`);
               }
 
               if (fg < 256) {
-                currentElement.classList.add('xterm-color-' + fg);
+                currentElement.classList.add(`xterm-color-${fg}`);
               }
             }
           }
         }
 
         if (ch_width === 2) {
-          // Wrap wide characters so they're sized correctly
+          // Wrap wide characters so they're sized correctly. It's more difficult to release these
+          // from the object pool so just create new ones via innerHTML.
           innerHTML += `<span class="xterm-wide-char">${ch}</span>`;
         } else if (ch.charCodeAt(0) > 255) {
           // Wrap any non-wide unicode character as some fonts size them badly
@@ -320,8 +321,7 @@ export class Renderer {
 }
 
 
-// if bold is broken, we can't
-// use it in the terminal.
+// If bold is broken, we can't use it in the terminal.
 function checkBoldBroken(terminal) {
   const document = terminal.ownerDocument;
   const el = document.createElement('span');
