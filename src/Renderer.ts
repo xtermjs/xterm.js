@@ -283,41 +283,31 @@ export class Renderer {
           }
         }
 
-        // TODO: Consider performance implications of not pulling these from the pool
         if (ch_width === 2) {
-          innerHTML += '<span class="xterm-wide-char">';
+          // Wrap wide characters so they're sized correctly
+          innerHTML += `<span class="xterm-wide-char">${ch}</span>`;
+        } else if (ch.charCodeAt(0) > 255) {
+          // Wrap any non-wide unicode character as some fonts size them badly
+          innerHTML += `<span class="xterm-normal-char">${ch}</span>`;
         } else {
-          // TODO: Only wrap unicode characters that may vary in width
-          innerHTML += '<span class="xterm-normal-char">';
-        }
-        switch (ch) {
-          case '&':
-            innerHTML += '&amp;';
-            //out += '&amp;';
-            break;
-          case '<':
-            innerHTML += '&lt;';
-            //out += '&lt;';
-            break;
-          case '>':
-            innerHTML += '&gt;';
-            //out += '&gt;';
-            break;
-          default:
-            if (ch <= ' ') {
-              innerHTML += '&nbsp;';
-              //out += '&nbsp;';
-            } else {
-              innerHTML += ch;
-              // out += ch;
-            }
-            break;
-        }
-        if (ch_width === 2) {
-          innerHTML += '</span>';
-        } else {
-          // TODO: Only wrap unicode characters that may vary in width
-          innerHTML += '</span>';
+          switch (ch) {
+            case '&':
+              innerHTML += '&amp;';
+              break;
+            case '<':
+              innerHTML += '&lt;';
+              break;
+            case '>':
+              innerHTML += '&gt;';
+              break;
+            default:
+              if (ch <= ' ') {
+                innerHTML += '&nbsp;';
+              } else {
+                innerHTML += ch;
+              }
+              break;
+          }
         }
 
         attr = data;
