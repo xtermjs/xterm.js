@@ -23,22 +23,6 @@ function trimmedLength(line) {
   return i;
 }
 
-function chunkArray(chunkSize, array) {
-  let temparray = [];
-  let i = 0;
-  let j = array.length;
-  for (i; i < j; i += chunkSize) {
-    temparray.push(array.slice(i, i + chunkSize));
-  }
-
-  return temparray;
-}
-
-function fastCeil(n: number): number {
-  let f = (n << 0);
-  return f === n ? f : f + 1;
-}
-
 export class WrappableList extends CircularList<RowData> {
   private _wrappedLineIncrement: number[] = [];
   private _blankline: RowData;
