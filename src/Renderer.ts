@@ -278,6 +278,12 @@ export class Renderer {
       }
 
       this._terminal.children[y].innerHTML = out;
+
+      if (this._terminal.lines.wrappedLines.indexOf(row) > -1) {
+        this._terminal.children[y].style.background = 'red';
+      } else {
+        this._terminal.children[y].style.background = 'black';
+      }
     }
 
     if (parent) {

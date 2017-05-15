@@ -5,9 +5,9 @@
  * @license MIT
  */
 export class CircularList<T> {
-  private _array: T[];
-  private _startIndex: number;
-  private _length: number;
+  protected _array: T[];
+  protected _startIndex: number;
+  protected _length: number;
 
   constructor(maxLength: number) {
     this._array = new Array<T>(maxLength);
@@ -43,8 +43,12 @@ export class CircularList<T> {
     this._length = newLength;
   }
 
-  public get forEach(): (callbackfn: (value: T, index: number, array: T[]) => void) => void {
-    return this._array.forEach;
+  public forEach(callbackfn: (value: T, index?: number, array?: T[]) => void): void {
+    let i = 0;
+    let len = this.length;
+    for (i; i < len; i++) {
+      callbackfn(this.get(i), i);
+    }
   }
 
   /**
@@ -177,7 +181,7 @@ export class CircularList<T> {
    * @param index The regular index.
    * @returns The cyclic index.
    */
-  private _getCyclicIndex(index: number): number {
+  protected _getCyclicIndex(index: number): number {
     return (this._startIndex + index) % this.maxLength;
   }
 }

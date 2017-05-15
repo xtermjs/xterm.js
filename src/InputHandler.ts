@@ -53,6 +53,8 @@ export class InputHandler implements IInputHandler {
       if (this._terminal.x + ch_width - 1 >= this._terminal.cols) {
         // autowrap - DECAWM
         if (this._terminal.wraparoundMode) {
+          // Mark this row as being wrapped.
+          this._terminal.lines.addWrappedLine(row);
           this._terminal.x = 0;
           this._terminal.y++;
           if (this._terminal.y > this._terminal.scrollBottom) {
@@ -79,7 +81,7 @@ export class InputHandler implements IInputHandler {
             this._terminal.lines.get(row)[this._terminal.cols - 2] = [this._terminal.curAttr, ' ', 1];
 
           // insert empty cell at cursor
-          this._terminal.lines.get(row).splice(this._terminal.x, 0, [this._terminal.curAttr, ' ', 1]);
+          this._terminal.lines.get(row).splice(this._terminal.x, 0, [this._terminal.curAttr, null, 1]);
         }
       }
 
@@ -152,7 +154,12 @@ export class InputHandler implements IInputHandler {
    * Horizontal Tab (HT) (Ctrl-I).
    */
   public tab(): void {
-    this._terminal.x = this._terminal.nextStop();
+    const stop = this._terminal.nextStop();
+    let row = this._terminal.lines.get(this._terminal.y + this._terminal.ybase);
+    while (this._terminal.x <= stop) {
+      row[this._terminal.x] = [this._terminal.defAttr, ' ', 1];
+      this._terminal.x++;
+    }
   }
 
   /**
@@ -504,7 +511,7 @@ export class InputHandler implements IInputHandler {
     }
 
     row = this._terminal.y + this._terminal.ybase;
-    ch = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    ch = [this._terminal.eraseAttr(), null, 1]; // xterm
 
     while (param--) {
       this._terminal.lines.get(row).splice(this._terminal.x, 1);
@@ -554,7 +561,7 @@ export class InputHandler implements IInputHandler {
 
     row = this._terminal.y + this._terminal.ybase;
     j = this._terminal.x;
-    ch = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    ch = [this._terminal.eraseAttr(), null, 1]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       this._terminal.lines.get(row)[j++] = ch;
@@ -608,7 +615,7 @@ export class InputHandler implements IInputHandler {
   public repeatPrecedingCharacter(params: number[]): void {
     let param = params[0] || 1
       , line = this._terminal.lines.get(this._terminal.ybase + this._terminal.y)
-      , ch = line[this._terminal.x - 1] || [this._terminal.defAttr, ' ', 1];
+      , ch = line[this._terminal.x - 1] || [this._terminal.defAttr, null, 1];
 
     while (param--) {
       line[this._terminal.x++] = ch;
@@ -1131,6 +1138,10 @@ export class InputHandler implements IInputHandler {
             //   this.x = this.savedX;
             //   this.y = this.savedY;
             // }
+
+            // Run the resize handler in case the viewport has been resized since we switched buffers
+            this._terminal.resize(this._terminal.cols, this._terminal.rows, true);
+
             this._terminal.refresh(0, this._terminal.rows - 1);
             this._terminal.viewport.syncScrollArea();
             this._terminal.showCursor();
