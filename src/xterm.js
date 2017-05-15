@@ -243,7 +243,7 @@ function Terminal(options) {
    * An array of all lines in the entire buffer, including the prompt. The lines are array of
    * characters which are 2-length arrays where [0] is an attribute and [1] is the character.
    */
-  this.lines = new WrappableList(this.scrollback);
+  this.lines = new WrappableList(this.scrollback, this);
   var i = this.rows;
   while (i--) {
     this.lines.push(this.blankLine());
@@ -1852,7 +1852,7 @@ Terminal.prototype.resize = function(x, y, force) {
 
   var startTime = Date.now();
 
-  this.lines.reflow(x, this.cols);
+  this.lines = this.lines.reflow(x, this.cols);
 
   console.log('RESIZE IN', Date.now() - startTime);
 

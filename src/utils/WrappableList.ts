@@ -1,6 +1,8 @@
 import { CircularList } from './CircularList';
 import { RowData } from '../Types';
 
+import { IWrappableList } from '../Interfaces';
+
 function fastForeach(array, fn) {
   let i = 0;
   let len = array.length;
@@ -32,12 +34,20 @@ function chunkArray(chunkSize, array) {
   return temparray;
 }
 
+function fastCeil(n: number): number {
+  let f = (n << 0);
+  return f === n ? f : f + 1;
+}
+
 export class WrappableList extends CircularList<RowData> {
   private _wrappedLineIncrement: number[] = [];
+  private _blankline: RowData;
   public wrappedLines: number[] = [];
 
-  constructor(maxLength: number) {
+  constructor(maxLength: number, private _terminal) {
     super(maxLength);
+
+    this._blankline = this._terminal.blankLine();
   }
 
   public push(value: RowData): void {
@@ -80,7 +90,7 @@ export class WrappableList extends CircularList<RowData> {
    * A record of which lines are wrapped is stored in `wrappedLines` and is used to join and split
    * lines correctly.
    */
-  public reflow(width: number, oldWidth: number): void {
+  public reflow(width: number, oldWidth: number) {
     const temp = [];
     const tempWrapped = [];
     const wrappedLines = this.wrappedLines;
@@ -89,6 +99,8 @@ export class WrappableList extends CircularList<RowData> {
     let line;
     let trim;
     let isWidthDecreasing = width < oldWidth;
+    let i = 0;
+    let xj;
 
     this._adjustWrappedLines();
     // Using in index accessor is much quicker when we need to calculate previouslyWrapped many times
@@ -112,12 +124,18 @@ export class WrappableList extends CircularList<RowData> {
 
       if (trim > width) {
         line.length = trim;
-        fastForeach(chunkArray(width, line), (chunk, i, chunks) => {
-          temp.push(chunk);
-          if (i < chunks.length - 1) {
+        xj = fastCeil(trim / width) - 1;
+        for (i = 0; i < trim; i += width) {
+          if (width > line.length) {
+            temp.push(line);
+          } else {
+            temp.push(line.splice(0, width));
+          }
+
+          if (xj-- > 0) {
             tempWrapped.push(temp.length - 1);
           }
-        });
+        }
       } else {
         if (isWidthDecreasing) {
           line.length = width;
@@ -126,12 +144,23 @@ export class WrappableList extends CircularList<RowData> {
       }
     }
 
-    // Reset the list internals using the reflowed lines
-    const scrollback = temp.length > this.maxLength ? temp.length : this.maxLength;
-    this._length = temp.length;
-    this._array = temp;
-    this._array.length = scrollback;
-    this.wrappedLines = tempWrapped;
-    this._startIndex = 0;
+    // Chop the reflow list to length and push it into a new CircularList, also compensate wrapped
+    // lines for new start point of list
+    const scrollback = this.maxLength;
+    let pushStart = temp.length > scrollback ?
+      temp.length - scrollback :
+      0;
+    if (pushStart > 0) {
+      for (i = 0; i < tempWrapped.length; i++) {
+        tempWrapped[i] -= pushStart;
+      }
+    }
+    let newList = new WrappableList(scrollback, this._terminal);
+    for (i = pushStart; i < temp.length; i++) {
+      newList.push(temp[i]);
+    }
+    newList.wrappedLines = tempWrapped;
+
+    return newList;
   }
 }

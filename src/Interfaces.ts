@@ -78,7 +78,8 @@ export interface IWrappableList extends ICircularList<any[]> {
   /**
    * Reflows lines in this list to a new maxwidth.
    */
-  reflow(width: number): void;
+  wrappedLines: number[];
+  reflow(width: number, oldWidth: number): IWrappableList;
 }
 
 export interface LinkMatcherOptions {
