@@ -247,10 +247,10 @@ export class Renderer {
                * Source: https://github.com/sourcelair/xterm.js/issues/57
                */
               if (flags & FLAGS.INVERSE) {
-                if (bg == 257) {
+                if (bg === 257) {
                   bg = 15;
                 }
-                if (fg == 256) {
+                if (fg === 256) {
                   fg = 0;
                 }
               }
@@ -309,7 +309,7 @@ export class Renderer {
         currentElement = null;
       }
 
-      this._terminal.children[y].appendChild(documentFragment)
+      this._terminal.children[y].appendChild(documentFragment);
     }
 
     if (parent) {
