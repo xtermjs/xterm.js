@@ -45,7 +45,7 @@ export class DomElementObjectPool {
    * removed.
    * @param element The element being released.
    */
-  public release(element: HTMLElement) {
+  public release(element: HTMLElement): void {
     if (!this._inUse[element.getAttribute(DomElementObjectPool.OBJECT_ID_ATTRIBUTE)]) {
       throw new Error('Could not release an element not yet acquired');
     }
