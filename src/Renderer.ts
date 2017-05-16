@@ -3,6 +3,7 @@
  */
 
 import { ITerminal } from './Interfaces';
+import { DomElementObjectPool } from './utils/DomElementObjectPool';
 
 /**
  * The maximum number of refresh frames to skip when the write buffer is non-
@@ -30,12 +31,15 @@ export class Renderer {
   private _refreshFramesSkipped = 0;
   private _refreshAnimationFrame = null;
 
+  private _spanElementObjectPool = new DomElementObjectPool('span');
+
   constructor(private _terminal: ITerminal) {
     // Figure out whether boldness affects
     // the character width of monospace fonts.
     if (brokenBold === null) {
       brokenBold = checkBoldBroken((<any>this._terminal).element);
     }
+    this._spanElementObjectPool = new DomElementObjectPool('span');
 
     // TODO: Pull more DOM interactions into Renderer.constructor, element for
     // example should be owned by Renderer (and also exposed by Terminal due to
@@ -117,9 +121,8 @@ export class Renderer {
    * @param {number} end The row to end at (between fromRow and terminal's height terminal - 1)
    */
   private _refresh(start: number, end: number): void {
-    let x, y, i, line, out, ch, ch_width, width, data, attr, bg, fg, flags, row, parent, focused = document.activeElement;
-
     // If this is a big refresh, remove the terminal rows from the DOM for faster calculations
+    let parent;
     if (end - start >= this._terminal.rows / 2) {
       parent = this._terminal.element.parentNode;
       if (parent) {
@@ -127,8 +130,8 @@ export class Renderer {
       }
     }
 
-    width = this._terminal.cols;
-    y = start;
+    let width = this._terminal.cols;
+    let y = start;
 
     if (end >= this._terminal.rows) {
       this._terminal.log('`end` is too large. Most likely a bad CSR.');
@@ -136,80 +139,104 @@ export class Renderer {
     }
 
     for (; y <= end; y++) {
-      row = y + this._terminal.ydisp;
+      let row = y + this._terminal.ydisp;
 
-      line = this._terminal.lines.get(row);
-      if (!line || !this._terminal.children[y]) {
-        // Continue if the line is not available, this means a resize is currently in progress
-        continue;
-      }
-      out = '';
+      let line = this._terminal.lines.get(row);
 
-      if (this._terminal.y === y - (this._terminal.ybase - this._terminal.ydisp)
-          && this._terminal.cursorState
-          && !this._terminal.cursorHidden) {
+      let x;
+      if (this._terminal.y === y - (this._terminal.ybase - this._terminal.ydisp) &&
+          this._terminal.cursorState &&
+          !this._terminal.cursorHidden) {
         x = this._terminal.x;
       } else {
         x = -1;
       }
 
-      attr = this._terminal.defAttr;
-      i = 0;
+      let attr = this._terminal.defAttr;
 
-      for (; i < width; i++) {
-        if (!line[i]) {
-          // Continue if the character is not available, this means a resize is currently in progress
+      const documentFragment = document.createDocumentFragment();
+      let innerHTML = '';
+      let currentElement;
+
+      // Return the row's spans to the pool
+      while (this._terminal.children[y].children.length) {
+        const child = this._terminal.children[y].children[0];
+        this._terminal.children[y].removeChild(child);
+        this._spanElementObjectPool.release(<HTMLElement>child);
+      }
+
+      for (let i = 0; i < width; i++) {
+        // TODO: Could data be a more specific type?
+        let data: any = line[i][0];
+        const ch = line[i][1];
+        const ch_width: any = line[i][2];
+        if (!ch_width) {
           continue;
         }
-        data = line[i][0];
-        ch = line[i][1];
-        ch_width = line[i][2];
-        if (!ch_width)
-          continue;
 
-        if (i === x) data = -1;
+        if (i === x) {
+          data = -1;
+        }
 
         if (data !== attr) {
           if (attr !== this._terminal.defAttr) {
-            out += '</span>';
+            if (innerHTML) {
+              currentElement.innerHTML = innerHTML;
+              innerHTML = '';
+            }
+            documentFragment.appendChild(currentElement);
+            currentElement = null;
           }
           if (data !== this._terminal.defAttr) {
+            if (innerHTML && !currentElement) {
+              currentElement = this._spanElementObjectPool.acquire();
+            }
+            if (currentElement) {
+              if (innerHTML) {
+                currentElement.innerHTML = innerHTML;
+                innerHTML = '';
+              }
+              documentFragment.appendChild(currentElement);
+            }
+            currentElement = this._spanElementObjectPool.acquire();
             if (data === -1) {
-              out += '<span class="reverse-video terminal-cursor">';
+              currentElement.classList.add('reverse-video', 'terminal-cursor');
             } else {
-              let classNames = [];
-
-              bg = data & 0x1ff;
-              fg = (data >> 9) & 0x1ff;
-              flags = data >> 18;
+              let bg = data & 0x1ff;
+              let fg = (data >> 9) & 0x1ff;
+              let flags = data >> 18;
 
               if (flags & FLAGS.BOLD) {
                 if (!brokenBold) {
-                  classNames.push('xterm-bold');
+                  currentElement.classList.add('xterm-bold');
                 }
                 // See: XTerm*boldColors
-                if (fg < 8) fg += 8;
+                if (fg < 8) {
+                  fg += 8;
+                }
               }
 
               if (flags & FLAGS.UNDERLINE) {
-                classNames.push('xterm-underline');
+                currentElement.classList.add('xterm-underline');
               }
 
               if (flags & FLAGS.BLINK) {
-                classNames.push('xterm-blink');
+                currentElement.classList.add('xterm-blink');
               }
 
               // If inverse flag is on, then swap the foreground and background variables.
               if (flags & FLAGS.INVERSE) {
-                /* One-line variable swap in JavaScript: http://stackoverflow.com/a/16201730 */
-                bg = [fg, fg = bg][0];
-                // Should inverse just be before the
-                // above boldColors effect instead?
-                if ((flags & 1) && fg < 8) fg += 8;
+                let temp = bg;
+                bg = fg;
+                fg = temp;
+                // Should inverse just be before the above boldColors effect instead?
+                if ((flags & 1) && fg < 8) {
+                  fg += 8;
+                }
               }
 
               if (flags & FLAGS.INVISIBLE) {
-                classNames.push('xterm-hidden');
+                currentElement.classList.add('xterm-hidden');
               }
 
               /**
@@ -229,55 +256,60 @@ export class Renderer {
               }
 
               if (bg < 256) {
-                classNames.push('xterm-bg-color-' + bg);
+                currentElement.classList.add(`xterm-bg-color-${bg}`);
               }
 
               if (fg < 256) {
-                classNames.push('xterm-color-' + fg);
+                currentElement.classList.add(`xterm-color-${fg}`);
               }
-
-              out += '<span';
-              if (classNames.length) {
-                out += ' class="' + classNames.join(' ') + '"';
-              }
-              out += '>';
             }
           }
         }
 
         if (ch_width === 2) {
-          out += '<span class="xterm-wide-char">';
-        }
-        switch (ch) {
-          case '&':
-            out += '&amp;';
-            break;
-          case '<':
-            out += '&lt;';
-            break;
-          case '>':
-            out += '&gt;';
-            break;
-          default:
-            if (ch <= ' ') {
-              out += '&nbsp;';
-            } else {
-              out += ch;
-            }
-            break;
-        }
-        if (ch_width === 2) {
-          out += '</span>';
+          // Wrap wide characters so they're sized correctly. It's more difficult to release these
+          // from the object pool so just create new ones via innerHTML.
+          innerHTML += `<span class="xterm-wide-char">${ch}</span>`;
+        } else if (ch.charCodeAt(0) > 255) {
+          // Wrap any non-wide unicode character as some fonts size them badly
+          innerHTML += `<span class="xterm-normal-char">${ch}</span>`;
+        } else {
+          switch (ch) {
+            case '&':
+              innerHTML += '&amp;';
+              break;
+            case '<':
+              innerHTML += '&lt;';
+              break;
+            case '>':
+              innerHTML += '&gt;';
+              break;
+            default:
+              if (ch <= ' ') {
+                innerHTML += '&nbsp;';
+              } else {
+                innerHTML += ch;
+              }
+              break;
+          }
         }
 
         attr = data;
       }
 
-      if (attr !== this._terminal.defAttr) {
-        out += '</span>';
+      if (innerHTML && !currentElement) {
+        currentElement = this._spanElementObjectPool.acquire();
+      }
+      if (currentElement) {
+        if (innerHTML) {
+          currentElement.innerHTML = innerHTML;
+          innerHTML = '';
+        }
+        documentFragment.appendChild(currentElement);
+        currentElement = null;
       }
 
-      this._terminal.children[y].innerHTML = out;
+      this._terminal.children[y].appendChild(documentFragment);
     }
 
     if (parent) {
@@ -289,8 +321,7 @@ export class Renderer {
 }
 
 
-// if bold is broken, we can't
-// use it in the terminal.
+// If bold is broken, we can't use it in the terminal.
 function checkBoldBroken(terminal) {
   const document = terminal.ownerDocument;
   const el = document.createElement('span');
