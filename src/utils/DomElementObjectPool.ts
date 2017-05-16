@@ -25,6 +25,9 @@ export class DomElementObjectPool {
     this._inUse = {};
   }
 
+  /**
+   * Acquire an element from the pool, creating it if the pool is empty.
+   */
   public acquire(): HTMLElement {
     let element: HTMLElement;
     if (this._pool.length === 0) {
@@ -36,6 +39,12 @@ export class DomElementObjectPool {
     return element;
   }
 
+  /**
+   * Release an element back into the pool. It's up to the caller of this
+   * function to ensure that all external references to the element have been
+   * removed.
+   * @param element The element being released.
+   */
   public release(element: HTMLElement) {
     if (!this._inUse[element.getAttribute(DomElementObjectPool.OBJECT_ID_ATTRIBUTE)]) {
       throw new Error('Could not release an element not yet acquired');
@@ -45,6 +54,9 @@ export class DomElementObjectPool {
     this._pool.push(element);
   }
 
+  /**
+   * Creates a new element for the pool.
+   */
   private _createNew(): HTMLElement {
     const element = document.createElement(this._type);
     const id = DomElementObjectPool._objectCount++;
@@ -52,6 +64,10 @@ export class DomElementObjectPool {
     return element;
   }
 
+  /**
+   * Resets an element back to a "clean state".
+   * @param element The element to be cleaned.
+   */
   private _cleanElement(element: HTMLElement): void {
     element.className = '';
     element.innerHTML = '';
