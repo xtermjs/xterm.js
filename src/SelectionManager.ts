@@ -36,17 +36,20 @@ export class SelectionManager extends EventEmitter {
 
   public get selectionText(): string {
     if (!this._selectionStart || !this._selectionEnd) {
-      return null;
+      return '';
     }
-    // TODO: Handle first row start position properly
-    const startRowEndCol = this._selectionStart[1] === this._selectionEnd[1] ? this._selectionEnd[0] : null;
+    const flipValues = this._selectionStart[1] > this._selectionEnd[1] ||
+        (this._selectionStart[1] === this._selectionEnd[1] && this._selectionStart[0] > this._selectionEnd[0]);
+    const start = flipValues ? this._selectionEnd : this._selectionStart;
+    const end = flipValues ? this._selectionStart : this._selectionEnd;
+    const startRowEndCol = start[1] === end[1] ? end[0] : null;
     let result: string[] = [];
-    result.push(this._translateBufferLineToString(this._buffer.get(this._selectionStart[1]), this._selectionStart[0], startRowEndCol));
-    for (let i = this._selectionStart[1] + 1; i <= this._selectionEnd[1] - 1; i++) {
+    result.push(this._translateBufferLineToString(this._buffer.get(start[1]), start[0], startRowEndCol));
+    for (let i = start[1] + 1; i <= end[1] - 1; i++) {
       result.push(this._translateBufferLineToString(this._buffer.get(i)));
     }
-    if (this._selectionStart[1] !== this._selectionEnd[1]) {
-      result.push(this._translateBufferLineToString(this._buffer.get(this._selectionEnd[1]), 0, this._selectionEnd[1]));
+    if (start[1] !== end[1]) {
+      result.push(this._translateBufferLineToString(this._buffer.get(end[1]), 0, end[1]));
     }
     console.log('result: ' + result);
     return result.join('\n');
