@@ -318,6 +318,10 @@ export class Renderer {
 
     this._terminal.emit('refresh', {element: this._terminal.element, start: start, end: end});
   };
+
+  public refreshSelection(start: [number, number], end: [number, number]) {
+    console.log('renderer, refresh:', start, end);
+  }
 }
 
 

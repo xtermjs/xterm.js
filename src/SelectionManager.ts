@@ -4,9 +4,11 @@
 
 import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
+import { EventEmitter } from './EventEmitter';
 import * as Mouse from './utils/Mouse';
 
-export class SelectionManager {
+export class SelectionManager extends EventEmitter {
+  // TODO: Create a SelectionModel
   private _selectionStart: [number, number];
   private _selectionEnd: [number, number];
 
@@ -18,6 +20,7 @@ export class SelectionManager {
   private _mouseMoveListener: EventListener;
 
   constructor(buffer: CircularList<any>, rowContainer: HTMLElement, selectionContainer: HTMLElement, charMeasure: CharMeasure) {
+    super();
     this._rowContainer = rowContainer;
     this._selectionContainer = selectionContainer;
     this._buffer = buffer;
@@ -44,6 +47,8 @@ export class SelectionManager {
    * Redraws the selection.
    */
   public refresh(): void {
+    // TODO: Figure out when to refresh the selection vs when to refresh the viewport
+    this.emit('refresh', { start: this._selectionStart, end: this._selectionEnd });
     console.log(`Selection: Start: (${this._selectionStart[0]}, ${this._selectionStart[1]}), End: (${this._selectionEnd[0]}, ${this._selectionEnd[1]})`);
     this._selectionContainer.innerHTML = `<div><br><br></div>`;
   }
