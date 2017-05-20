@@ -697,8 +697,12 @@ Terminal.prototype.open = function(parent, focus) {
 
   this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
   this.renderer = new Renderer(this);
-  this.selectionManager = new SelectionManager(this.lines, this.rowContainer, this.selectionContainer, this.charMeasure);
+  this.selectionManager = new SelectionManager(this, this.lines, this.rowContainer, this.selectionContainer, this.charMeasure);
   this.selectionManager.on('refresh', data => this.renderer.refreshSelection(data.start, data.end));
+  this.on('scroll', () => {
+    console.log('scroll');
+    this.selectionManager.refresh();
+  });
 
   // Setup loop that draws to screen
   this.refresh(0, this.rows - 1);

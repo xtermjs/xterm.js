@@ -20,6 +20,8 @@ export interface IBrowser {
 export interface ITerminal {
   element: HTMLElement;
   rowContainer: HTMLElement;
+  selectionContainer: HTMLElement;
+  charMeasure: ICharMeasure;
   textarea: HTMLTextAreaElement;
   ybase: number;
   ydisp: number;

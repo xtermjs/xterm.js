@@ -190,6 +190,7 @@
 }
 
 .terminal .xterm-selection div {
+    position: absolute;
     background-color: #777;
 }
 

@@ -6,25 +6,23 @@ import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
 import { EventEmitter } from './EventEmitter';
 import * as Mouse from './utils/Mouse';
+import { ITerminal } from './Interfaces';
 
 export class SelectionManager extends EventEmitter {
   // TODO: Create a SelectionModel
   private _selectionStart: [number, number];
   private _selectionEnd: [number, number];
 
-  private _buffer: CircularList<any>;
-  private _rowContainer: HTMLElement;
-  private _selectionContainer: HTMLElement;
-  private _charMeasure: CharMeasure;
-
   private _mouseMoveListener: EventListener;
 
-  constructor(buffer: CircularList<any>, rowContainer: HTMLElement, selectionContainer: HTMLElement, charMeasure: CharMeasure) {
+  constructor(
+    private _terminal: ITerminal,
+    private _buffer: CircularList<any>,
+    private _rowContainer: HTMLElement,
+    private _selectionContainer: HTMLElement,
+    private _charMeasure: CharMeasure
+  ) {
     super();
-    this._rowContainer = rowContainer;
-    this._selectionContainer = selectionContainer;
-    this._buffer = buffer;
-    this._charMeasure = charMeasure;
     this._attachListeners();
   }
 
@@ -49,8 +47,6 @@ export class SelectionManager extends EventEmitter {
   public refresh(): void {
     // TODO: Figure out when to refresh the selection vs when to refresh the viewport
     this.emit('refresh', { start: this._selectionStart, end: this._selectionEnd });
-    console.log(`Selection: Start: (${this._selectionStart[0]}, ${this._selectionStart[1]}), End: (${this._selectionEnd[0]}, ${this._selectionEnd[1]})`);
-    this._selectionContainer.innerHTML = `<div><br><br></div>`;
   }
 
   /**
@@ -85,14 +81,21 @@ export class SelectionManager extends EventEmitter {
   }
 
   private _getMouseBufferCoords(event: MouseEvent) {
-    // TODO: Take into account the current terminal viewport when fetching coordinates
-    return Mouse.getCoords(event, this._rowContainer, this._charMeasure);
+    const coords = Mouse.getCoords(event, this._rowContainer, this._charMeasure);
+    // Convert to 0-based
+    coords[0]--;
+    coords[1]--;
+    // Convert viewport coords to buffer coords
+    coords[1] += this._terminal.ydisp;
+    return coords;
   }
 
   private _onMouseDown(event: MouseEvent) {
     this._selectionStart = this._getMouseBufferCoords(event);
     if (this._selectionStart) {
+      this._selectionEnd = null;
       this._rowContainer.addEventListener('mousemove', this._mouseMoveListener);
+      this.refresh();
     }
   }
 

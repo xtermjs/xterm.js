@@ -321,6 +321,68 @@ export class Renderer {
 
   public refreshSelection(start: [number, number], end: [number, number]) {
     console.log('renderer, refresh:', start, end);
+
+    // Remove all selections
+    while (this._terminal.selectionContainer.children.length) {
+      this._terminal.selectionContainer.removeChild(this._terminal.selectionContainer.children[0]);
+    }
+
+    // Selection does not exist
+    if (!start || !end) {
+      return;
+    }
+
+    // Swap the start and end if necessary
+    if (start[1] > end[1] || (start[1] === end[1] && start[0] > end[0])) {
+      const temp = start;
+      start = end;
+      end = temp;
+    }
+
+    // Translate from buffer position to viewport position
+    const viewportStartRow = start[1] - this._terminal.ydisp;
+    const viewportEndRow = end[1] - this._terminal.ydisp;
+    const viewportCappedStartRow = Math.max(viewportStartRow, 0);
+    const viewportCappedEndRow = Math.min(viewportEndRow, this._terminal.rows - 1);
+
+    // No need to draw the selection
+    if (viewportCappedStartRow >= this._terminal.rows || viewportCappedEndRow < 0) {
+      return;
+    }
+
+    console.log('viewportStartRow', viewportCappedStartRow);
+    console.log('viewportEndRow', viewportCappedEndRow);
+
+    // TODO: Only redraw selections when necessary
+
+    // Create the selections
+    const documentFragment = document.createDocumentFragment();
+    // Draw first row
+    const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
+    const endCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : this._terminal.cols;
+    documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow, startCol, endCol));
+    // Draw middle rows
+    for (let i = viewportCappedStartRow + 1; i < viewportCappedEndRow; i++) {
+      documentFragment.appendChild(this._createSelectionElement(i, 0, this._terminal.cols));
+    }
+    // Draw final row
+    if (viewportCappedStartRow !== viewportCappedEndRow) {
+      // Only draw viewportEndRow if it's not the same as viewporttartRow
+      const endCol = viewportEndRow === viewportCappedEndRow ? end[0] : this._terminal.cols;
+      documentFragment.appendChild(this._createSelectionElement(viewportCappedEndRow, 0, endCol));
+    }
+    this._terminal.selectionContainer.appendChild(documentFragment);
+  }
+
+  private _createSelectionElement(row: number, colStart: number, colEnd: number): HTMLElement {
+    const element = document.createElement('div');
+    // TODO: Move into a generated <style> element
+    element.style.height = `${this._terminal.charMeasure.height}px`;
+
+    element.style.top = `${row * this._terminal.charMeasure.height}px`;
+    element.style.left = `${colStart * this._terminal.charMeasure.width}px`;
+    element.style.width = `${this._terminal.charMeasure.width * (colEnd - colStart)}px`;
+    return element;
   }
 }
 
