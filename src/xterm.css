@@ -154,7 +154,8 @@
     overflow-y: scroll;
 }
 
-.terminal .xterm-wide-char {
+.terminal .xterm-wide-char,
+.terminal .xterm-normal-char {
     display: inline-block;
 }
 

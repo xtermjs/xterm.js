@@ -3008,7 +3008,7 @@ Terminal.prototype.insertRow = function (row) {
     this.children.push(row);
     return row;
 };
-Terminal.prototype.open = function (parent) {
+Terminal.prototype.open = function (parent, focus) {
     var self = this, i = 0, div;
     this.parent = parent || this.parent;
     if (!this.parent) {
@@ -3070,7 +3070,16 @@ Terminal.prototype.open = function (parent) {
     this.renderer = new Renderer_1.Renderer(this);
     this.refresh(0, this.rows - 1);
     this.initGlobal();
-    this.focus();
+    if (typeof focus == 'undefined') {
+        var message = 'You did not pass the `focus` argument in `Terminal.prototype.open()`.\n';
+        message += 'The `focus` argument now defaults to `true` but starting with xterm.js 3.0 ';
+        message += 'it will default to `false`.';
+        console.warn(message);
+        focus = true;
+    }
+    if (focus) {
+        this.focus();
+    }
     on(this.element, 'click', function () {
         var selection = document.getSelection(), collapsed = selection.isCollapsed, isRange = typeof collapsed == 'boolean' ? !collapsed : selection.type == 'Range';
         if (!isRange) {
@@ -4091,8 +4100,10 @@ Terminal.prototype.reset = function () {
     this.options.rows = this.rows;
     this.options.cols = this.cols;
     var customKeydownHandler = this.customKeydownHandler;
+    var cursorBlinkInterval = this.cursorBlinkInterval;
     Terminal.call(this, this.options);
     this.customKeydownHandler = customKeydownHandler;
+    this.cursorBlinkInterval = cursorBlinkInterval;
     this.refresh(0, this.rows - 1);
     this.viewport.syncScrollArea();
 };
