@@ -64,8 +64,9 @@ export class SelectionManager extends EventEmitter {
       result += line[i][1];
     }
     // TODO: Trim line here instead of in handlers/Clipboard?
-    return result;
+    // TODO: Only trim off the whitespace at the end of a line
     // TODO: Handle the double-width character case
+    return result;
   }
 
   /**
@@ -81,10 +82,6 @@ export class SelectionManager extends EventEmitter {
    * @param amount The amount the buffer is being trimmed.
    */
   private _onTrim(amount: number) {
-    // TODO: Somehow map the selection coordinates with the list that is constantly being trimmed
-    //       Maybe we need an ID in the CircularList that starts from 0 for the first entry and increments
-    // console.log('trimmed: ' + amount);
-
     // Adjust the selection position based on the trimmed amount.
     this._selectionStart[0] -= amount;
     this._selectionEnd[0] -= amount;
@@ -115,6 +112,10 @@ export class SelectionManager extends EventEmitter {
     return coords;
   }
 
+  /**
+   * Handles te mousedown event, setting up for a new selection.
+   * @param event The mousedown event.
+   */
   private _onMouseDown(event: MouseEvent) {
     this._selectionStart = this._getMouseBufferCoords(event);
     if (this._selectionStart) {
@@ -124,16 +125,23 @@ export class SelectionManager extends EventEmitter {
     }
   }
 
+  /**
+   * Handles the mousemove event when the mouse button is down, recording the
+   * end of the selection and refreshing the selection.
+   * @param event The mousemove event.
+   */
   private _onMouseMove(event: MouseEvent) {
     this._selectionEnd = this._getMouseBufferCoords(event);
     // TODO: Only draw here if the selection changes
     this.refresh();
   }
 
+  /**
+   * Handles the mouseup event, removing the mousemove listener when
+   * appropriate.
+   * @param event The mouseup event.
+   */
   private _onMouseUp(event: MouseEvent) {
-    // console.log('mouseup');
-    // console.log('start', this._selectionStart);
-    // console.log('end', this._selectionEnd);
     if (!this._selectionStart) {
       return;
     }

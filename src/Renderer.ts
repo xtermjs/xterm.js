@@ -355,6 +355,9 @@ export class Renderer {
 
     // TODO: Only redraw selections when necessary
 
+    // TODO: Fix selection on the first row going out the left of the terminal
+    // TODO: Fix selection on the last row not going to the last column
+
     // Create the selections
     const documentFragment = document.createDocumentFragment();
     // Draw first row
