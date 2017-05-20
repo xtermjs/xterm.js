@@ -197,7 +197,10 @@ export class CircularList<T> extends EventEmitter {
 
     if (offset > 0) {
       for (let i = count - 1; i >= 0; i--) {
-        this._setEntry(start + i + offset, this.getEntry(start + i));
+        this._setEntry(start + i + offset, {
+          id: this._nextId++,
+          value: this.get(start + i)
+        });
       }
       const expandListBy = (start + count + offset) - this._length;
       if (expandListBy > 0) {
