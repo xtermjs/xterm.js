@@ -32,6 +32,7 @@ export class SelectionManager extends EventEmitter {
     this._buffer.on('trim', amount => this._onTrim(amount));
     this._rowContainer.addEventListener('mousedown', event => this._onMouseDown(event));
     this._rowContainer.addEventListener('mouseup', event => this._onMouseUp(event));
+    this._rowContainer.addEventListener('dblclick', event => this._onDblclick(event));
   }
 
   public get selectionText(): string {
@@ -51,7 +52,7 @@ export class SelectionManager extends EventEmitter {
     if (start[1] !== end[1]) {
       result.push(this._translateBufferLineToString(this._buffer.get(end[1]), 0, end[1]));
     }
-    console.log('result: ' + result);
+    console.log('selectionText result: ' + result);
     return result.join('\n');
   }
 
@@ -62,7 +63,7 @@ export class SelectionManager extends EventEmitter {
     for (let i = startCol; i < endCol; i++) {
       result += line[i][1];
     }
-    // TODO: Trim line?
+    // TODO: Trim line here instead of in handlers/Clipboard?
     return result;
     // TODO: Handle the double-width character case
   }
@@ -137,5 +138,35 @@ export class SelectionManager extends EventEmitter {
       return;
     }
     this._rowContainer.removeEventListener('mousemove', this._mouseMoveListener);
+  }
+
+  private _onDblclick(event: MouseEvent) {
+    const coords = this._getMouseBufferCoords(event);
+    if (coords) {
+      this._selectWordAt(coords);
+    }
+  }
+
+  /**
+   * Selects the word at the coordinates specified. Words are defined as all
+   * non-whitespace characters.
+   * @param coords The coordinates to get the word at.
+   */
+  private _selectWordAt(coords: [number, number]): void {
+    // TODO: Handle double click and drag in both directions!
+
+    const line = this._translateBufferLineToString(this._buffer.get(coords[1]));
+    // Expand the string in both directions until a space is hit
+    let startCol = coords[0];
+    let endCol = coords[0];
+    while (startCol > 0 && line.charAt(startCol - 1) !== ' ') {
+      startCol--;
+    }
+    while (endCol < line.length && line.charAt(endCol) !== ' ') {
+      endCol++;
+    }
+    this._selectionStart = [startCol, coords[1]];
+    this._selectionEnd = [endCol, coords[1]];
+    this.refresh();
   }
 }
