@@ -49,6 +49,10 @@ export interface ITerminal {
   emit(event: string, data: any);
 }
 
+export interface ISelectionManager {
+  selectionText: string;
+}
+
 export interface ICharMeasure {
   width: number;
   height: number;

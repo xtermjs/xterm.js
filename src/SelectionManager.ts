@@ -38,7 +38,30 @@ export class SelectionManager extends EventEmitter {
     if (!this._selectionStart || !this._selectionEnd) {
       return null;
     }
-    return '';
+    // TODO: Handle first row start position properly
+    const startRowEndCol = this._selectionStart[1] === this._selectionEnd[1] ? this._selectionEnd[0] : null;
+    let result: string[] = [];
+    result.push(this._translateBufferLineToString(this._buffer.get(this._selectionStart[1]), this._selectionStart[0], startRowEndCol));
+    for (let i = this._selectionStart[1] + 1; i <= this._selectionEnd[1] - 1; i++) {
+      result.push(this._translateBufferLineToString(this._buffer.get(i)));
+    }
+    if (this._selectionStart[1] !== this._selectionEnd[1]) {
+      result.push(this._translateBufferLineToString(this._buffer.get(this._selectionEnd[1]), 0, this._selectionEnd[1]));
+    }
+    console.log('result: ' + result);
+    return result.join('\n');
+  }
+
+  private _translateBufferLineToString(line: any, startCol: number = 0, endCol: number = null): string {
+    // TODO: This function should live in a buffer or buffer line class
+    endCol = endCol || line.length
+    let result = '';
+    for (let i = startCol; i < endCol; i++) {
+      result += line[i][1];
+    }
+    // TODO: Trim line?
+    return result;
+    // TODO: Handle the double-width character case
   }
 
   /**
@@ -56,7 +79,7 @@ export class SelectionManager extends EventEmitter {
   private _onTrim(amount: number) {
     // TODO: Somehow map the selection coordinates with the list that is constantly being trimmed
     //       Maybe we need an ID in the CircularList that starts from 0 for the first entry and increments
-    console.log('trimmed: ' + amount);
+    // console.log('trimmed: ' + amount);
 
     // Adjust the selection position based on the trimmed amount.
     this._selectionStart[0] -= amount;
@@ -74,11 +97,9 @@ export class SelectionManager extends EventEmitter {
     if (this._selectionStart[0] < 0) {
       this._selectionStart[1] = 0;
     }
-
-    // Maybe SelectionManager could maintain it's own ID concept from 0 (top of
-    // buffer) to n (size of buffer). On trim just increment the selection if
-    // necessary. This would reduce complexity and potentially not need the
   }
+
+  // TODO: Handle splice/shiftElements in the buffer (just clear the selection?)
 
   private _getMouseBufferCoords(event: MouseEvent) {
     const coords = Mouse.getCoords(event, this._rowContainer, this._charMeasure);
@@ -106,9 +127,9 @@ export class SelectionManager extends EventEmitter {
   }
 
   private _onMouseUp(event: MouseEvent) {
-    console.log('mouseup');
-    console.log('start', this._selectionStart);
-    console.log('end', this._selectionEnd);
+    // console.log('mouseup');
+    // console.log('start', this._selectionStart);
+    // console.log('end', this._selectionEnd);
     if (!this._selectionStart) {
       return;
     }

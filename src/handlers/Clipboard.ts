@@ -5,7 +5,7 @@
  * @license MIT
  */
 
-import { ITerminal } from '../Interfaces';
+import { ITerminal, ISelectionManager } from '../Interfaces';
 
 interface IWindow extends Window {
   clipboardData?: {
@@ -53,11 +53,10 @@ export function prepareTextForTerminal(text: string, isMSWindows: boolean): stri
  * Binds copy functionality to the given terminal.
  * @param {ClipboardEvent} ev The original copy event to be handled
  */
-export function copyHandler(ev: ClipboardEvent, term: ITerminal) {
+export function copyHandler(ev: ClipboardEvent, term: ITerminal, selectionManager: ISelectionManager) {
   // We cast `window` to `any` type, because TypeScript has not declared the `clipboardData`
   // property that we use below for Internet Explorer.
-  let copiedText = window.getSelection().toString(),
-      text = prepareTextForClipboard(copiedText);
+  let text = prepareTextForClipboard(selectionManager.selectionText);
 
   if (term.browser.isMSIE) {
     window.clipboardData.setData('Text', text);

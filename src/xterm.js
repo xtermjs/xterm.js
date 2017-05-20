@@ -521,7 +521,7 @@ Terminal.prototype.initGlobal = function() {
 
   // Bind clipboard functionality
   on(this.element, 'copy', function (ev) {
-    copyHandler.call(this, ev, term);
+    copyHandler.call(this, ev, term, term.selectionManager);
   });
   on(this.textarea, 'paste', function (ev) {
     pasteHandler.call(this, ev, term);
