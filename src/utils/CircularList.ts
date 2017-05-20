@@ -6,6 +6,7 @@
  */
 import { EventEmitter } from '../EventEmitter';
 
+// TODO: Do we need the ID here?
 interface ListEntry<T> {
   id: number;
   value: T;
