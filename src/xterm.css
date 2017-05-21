@@ -181,6 +181,11 @@
     left: -9999em;
 }
 
+.terminal.enable-mouse-events {
+    /* When mouse events are enabled (eg. tmux), revert to the standard pointer cursor */
+    cursor: default;
+}
+
 .terminal .xterm-selection {
     position: absolute;
     top: 0;

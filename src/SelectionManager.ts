@@ -13,7 +13,11 @@ export class SelectionManager extends EventEmitter {
   private _selectionStart: [number, number];
   private _selectionEnd: [number, number];
 
+  private _bufferTrimListener: any;
   private _mouseMoveListener: EventListener;
+  private _mouseDownListener: EventListener;
+  private _mouseUpListener: EventListener;
+  private _dblClickListener: EventListener;
 
   constructor(
     private _terminal: ITerminal,
@@ -23,16 +27,41 @@ export class SelectionManager extends EventEmitter {
     private _charMeasure: CharMeasure
   ) {
     super();
-    this._attachListeners();
+    this._initListeners();
+    this.enable();
   }
 
-  private _attachListeners() {
+  private _initListeners() {
+    this._bufferTrimListener = (amount: number) => this._onTrim(amount);
     this._mouseMoveListener = event => this._onMouseMove(<MouseEvent>event);
+    this._mouseDownListener = event => this._onMouseDown(<MouseEvent>event);
+    this._mouseUpListener = event => this._onMouseUp(<MouseEvent>event);
+    this._dblClickListener = event => this._onDblClick(<MouseEvent>event);
+  }
 
-    this._buffer.on('trim', amount => this._onTrim(amount));
-    this._rowContainer.addEventListener('mousedown', event => this._onMouseDown(event));
-    this._rowContainer.addEventListener('mouseup', event => this._onMouseUp(event));
-    this._rowContainer.addEventListener('dblclick', event => this._onDblclick(event));
+  /**
+   * Disables the selection manager. This is useful for when terminal mouse
+   * are enabled.
+   */
+  public disable() {
+    this._selectionStart = null;
+    this._selectionEnd = null;
+    this.refresh();
+    this._buffer.off('trim', this._bufferTrimListener);
+    this._rowContainer.removeEventListener('mousedown', this._mouseDownListener);
+    this._rowContainer.removeEventListener('mouseup', this._mouseUpListener);
+    this._rowContainer.removeEventListener('dblclick', this._dblClickListener);
+    this._rowContainer.removeEventListener('mousemove', this._mouseMoveListener);
+  }
+
+  /**
+   * Enable the selection manager.
+   */
+  public enable() {
+    this._buffer.on('trim', this._bufferTrimListener);
+    this._rowContainer.addEventListener('mousedown', this._mouseDownListener);
+    this._rowContainer.addEventListener('mouseup', this._mouseUpListener);
+    this._rowContainer.addEventListener('dblclick', this._dblClickListener);
   }
 
   public get selectionText(): string {
@@ -148,7 +177,7 @@ export class SelectionManager extends EventEmitter {
     this._rowContainer.removeEventListener('mousemove', this._mouseMoveListener);
   }
 
-  private _onDblclick(event: MouseEvent) {
+  private _onDblClick(event: MouseEvent) {
     const coords = this._getMouseBufferCoords(event);
     if (coords) {
       this._selectWordAt(coords);
