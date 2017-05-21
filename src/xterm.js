@@ -801,8 +801,18 @@ Terminal.prototype.bindMouse = function() {
     button = getButton(ev);
 
     // get mouse coordinates
-    pos = Mouse.getCoords(ev, this.rowContainer, this.charMeasure);
+    pos = Mouse.getCoords(ev, self.rowContainer, self.charMeasure);
     if (!pos) return;
+
+    // Temp fix until getcoords PR is pushed
+    pos.x = pos[0];
+    pos.y = pos[1];
+    if (pos.x < 0) pos.x = 0;
+    if (pos.x > self.cols) pos.x = self.cols;
+    if (pos.y < 0) pos.y = 0;
+    if (pos.y > self.rows) pos.y = self.rows;
+    pos.x += 32;
+    pos.y += 32;
 
     sendEvent(button, pos);
 
@@ -829,8 +839,18 @@ Terminal.prototype.bindMouse = function() {
     var button = pressed
     , pos;
 
-    pos = Mouse.getCoords(ev, this.rowContainer, this.charMeasure);
+    pos = Mouse.getCoords(ev, self.rowContainer, self.charMeasure);
     if (!pos) return;
+
+    // Temp fix until getcoords PR is pushed
+    pos.x = pos[0];
+    pos.y = pos[1];
+    if (pos.x < 0) pos.x = 0;
+    if (pos.x > self.cols) pos.x = self.cols;
+    if (pos.y < 0) pos.y = 0;
+    if (pos.y > self.rows) pos.y = self.rows;
+    pos.x += 32;
+    pos.y += 32;
 
     // buttons marked as motions
     // are incremented by 32
