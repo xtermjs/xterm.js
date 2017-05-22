@@ -24,6 +24,7 @@ import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './utils/Browser';
 import * as Keyboard from './utils/Keyboard';
 import { CHARSETS } from './Charsets';
+import { getRawByteCoords } from './utils/Mouse';
 
 /**
  * Terminal Emulation References:
@@ -789,7 +790,7 @@ Terminal.prototype.bindMouse = function() {
     button = getButton(ev);
 
     // get mouse coordinates
-    pos = getCoords(ev);
+    pos = getRawByteCoords(ev, self.rowContainer, self.charMeasure, self.cols, self.rows);
     if (!pos) return;
 
     sendEvent(button, pos);
@@ -817,7 +818,7 @@ Terminal.prototype.bindMouse = function() {
     var button = pressed
     , pos;
 
-    pos = getCoords(ev);
+    pos = getRawByteCoords(ev, self.rowContainer, self.charMeasure, self.cols, self.rows);
     if (!pos) return;
 
     // buttons marked as motions
@@ -990,50 +991,6 @@ Terminal.prototype.bindMouse = function() {
     button = (32 + (mod << 2)) + button;
 
     return button;
-  }
-
-  // mouse coordinates measured in cols/rows
-  function getCoords(ev) {
-    var x, y, w, h, el;
-
-    // ignore browsers without pageX for now
-    if (ev.pageX == null) return;
-
-    x = ev.pageX;
-    y = ev.pageY;
-    el = self.element;
-
-    // should probably check offsetParent
-    // but this is more portable
-    while (el && el !== self.document.documentElement) {
-      x -= el.offsetLeft;
-      y -= el.offsetTop;
-      el = 'offsetParent' in el
-        ? el.offsetParent
-      : el.parentNode;
-    }
-
-    // convert to cols/rows
-    x = Math.ceil(x / self.charMeasure.width);
-    y = Math.ceil(y / self.charMeasure.height);
-
-    // be sure to avoid sending
-    // bad positions to the program
-    if (x < 0) x = 0;
-    if (x > self.cols) x = self.cols;
-    if (y < 0) y = 0;
-    if (y > self.rows) y = self.rows;
-
-    // xterm sends raw bytes and
-    // starts at 32 (SP) for each.
-    x += 32;
-    y += 32;
-
-    return {
-      x: x,
-      y: y,
-      type: 'wheel'
-    };
   }
 
   on(el, 'mousedown', function(ev) {
