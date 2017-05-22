@@ -53,14 +53,11 @@ export class EventEmitter {
     return this.on(type, on);
   }
 
-  public emit(type): void {
+  public emit(type: string, ...args: any[]): void {
     if (!this._events[type]) {
       return;
     }
-
-    let args = Array.prototype.slice.call(arguments, 1);
     let obj = this._events[type];
-
     for (let i = 0; i < obj.length; i++) {
       obj[i].apply(this, args);
     }
