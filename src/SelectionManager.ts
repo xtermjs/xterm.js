@@ -8,16 +8,35 @@ import { EventEmitter } from './EventEmitter';
 import * as Mouse from './utils/Mouse';
 import { ITerminal } from './Interfaces';
 
+/**
+ * The number of pixels the mouse needs to be above or below the viewport in
+ * order to scroll at the maximum speed.
+ */
+const DRAG_SCROLL_MAX_THRESHOLD = 100;
+
+/**
+ * The maximum scrolling speed
+ */
+const DRAG_SCROLL_MAX_SPEED = 5;
+
+/**
+ * The number of milliseconds between drag scroll updates.
+ */
+const DRAG_SCROLL_INTERVAL = 100;
+
 export class SelectionManager extends EventEmitter {
   // TODO: Create a SelectionModel
   private _selectionStart: [number, number];
   private _selectionEnd: [number, number];
+  private _dragScrollAmount: number;
 
   private _bufferTrimListener: any;
   private _mouseMoveListener: EventListener;
   private _mouseDownListener: EventListener;
   private _mouseUpListener: EventListener;
   private _dblClickListener: EventListener;
+
+  private _dragScrollTimeout: NodeJS.Timer;
 
   constructor(
     private _terminal: ITerminal,
@@ -49,9 +68,10 @@ export class SelectionManager extends EventEmitter {
     this.refresh();
     this._buffer.off('trim', this._bufferTrimListener);
     this._rowContainer.removeEventListener('mousedown', this._mouseDownListener);
-    this._rowContainer.removeEventListener('mouseup', this._mouseUpListener);
     this._rowContainer.removeEventListener('dblclick', this._dblClickListener);
-    this._rowContainer.removeEventListener('mousemove', this._mouseMoveListener);
+    this._rowContainer.ownerDocument.removeEventListener('mousemove', this._mouseMoveListener);
+    this._rowContainer.ownerDocument.removeEventListener('mouseup', this._mouseUpListener);
+    clearInterval(this._dragScrollTimeout);
   }
 
   /**
@@ -60,7 +80,6 @@ export class SelectionManager extends EventEmitter {
   public enable() {
     this._buffer.on('trim', this._bufferTrimListener);
     this._rowContainer.addEventListener('mousedown', this._mouseDownListener);
-    this._rowContainer.addEventListener('mouseup', this._mouseUpListener);
     this._rowContainer.addEventListener('dblclick', this._dblClickListener);
   }
 
@@ -87,7 +106,7 @@ export class SelectionManager extends EventEmitter {
 
   private _translateBufferLineToString(line: any, startCol: number = 0, endCol: number = null): string {
     // TODO: This function should live in a buffer or buffer line class
-    endCol = endCol || line.length
+    endCol = endCol || line.length;
     let result = '';
     for (let i = startCol; i < endCol; i++) {
       result += line[i][1];
@@ -131,8 +150,9 @@ export class SelectionManager extends EventEmitter {
 
   // TODO: Handle splice/shiftElements in the buffer (just clear the selection?)
 
-  private _getMouseBufferCoords(event: MouseEvent) {
-    const coords = Mouse.getCoords(event, this._rowContainer, this._charMeasure);
+  private _getMouseBufferCoords(event: MouseEvent): [number, number] {
+    const coords = Mouse.getCoords(event, this._rowContainer, this._charMeasure, this._terminal.cols, this._terminal.rows);
+    console.log(coords);
     // Convert to 0-based
     coords[0]--;
     coords[1]--;
@@ -141,15 +161,40 @@ export class SelectionManager extends EventEmitter {
     return coords;
   }
 
+  private _getMouseEventScrollAmount(event: MouseEvent): number {
+    let offset = Mouse.getCoordsRelativeToElement(event, this._rowContainer)[1];
+    const terminalHeight = this._terminal.rows * this._charMeasure.height;
+    if (offset >= 0 && offset <= terminalHeight) {
+      return 0;
+    }
+    if (offset > terminalHeight) {
+      offset -= terminalHeight;
+    }
+
+    offset = Math.min(Math.max(offset, -DRAG_SCROLL_MAX_THRESHOLD), DRAG_SCROLL_MAX_THRESHOLD);
+    offset /= DRAG_SCROLL_MAX_THRESHOLD;
+    return (offset / Math.abs(offset)) + Math.round(offset * (DRAG_SCROLL_MAX_SPEED - 1));
+  }
+
   /**
    * Handles te mousedown event, setting up for a new selection.
    * @param event The mousedown event.
    */
   private _onMouseDown(event: MouseEvent) {
+    // TODO: On right click move the text into the textbox so it can be copied via the context menu
+
+    // Only action the primary button
+    if (event.button !== 0) {
+      return;
+    }
+
     this._selectionStart = this._getMouseBufferCoords(event);
     if (this._selectionStart) {
       this._selectionEnd = null;
-      this._rowContainer.addEventListener('mousemove', this._mouseMoveListener);
+      // Listen on the document so that dragging outside of viewport works
+      this._rowContainer.ownerDocument.addEventListener('mousemove', this._mouseMoveListener);
+      this._rowContainer.ownerDocument.addEventListener('mouseup', this._mouseUpListener);
+      this._dragScrollTimeout = setInterval(() => this._dragScroll(), DRAG_SCROLL_INTERVAL);
       this.refresh();
     }
   }
@@ -161,8 +206,30 @@ export class SelectionManager extends EventEmitter {
    */
   private _onMouseMove(event: MouseEvent) {
     this._selectionEnd = this._getMouseBufferCoords(event);
+    // TODO: Perhaps the actual selection setting could be merged into _dragScroll?
+    this._dragScrollAmount = this._getMouseEventScrollAmount(event);
+    // If the cursor was above or below the viewport, make sure it's at the
+    // start or end of the viewport respectively
+    if (this._dragScrollAmount > 0) {
+      this._selectionEnd[0] = this._terminal.cols - 1;
+    } else if (this._dragScrollAmount < 0) {
+      this._selectionEnd[0] = 0;
+    }
     // TODO: Only draw here if the selection changes
     this.refresh();
+  }
+
+  private _dragScroll() {
+    if (this._dragScrollAmount) {
+      this._terminal.scrollDisp(this._dragScrollAmount, false);
+      // Re-evaluate selection
+      if (this._dragScrollAmount > 0) {
+        this._selectionEnd = [this._terminal.cols - 1, this._terminal.ydisp + this._terminal.rows];
+      } else {
+        this._selectionEnd = [0, this._terminal.ydisp];
+      }
+      this.refresh();
+    }
   }
 
   /**
@@ -174,7 +241,8 @@ export class SelectionManager extends EventEmitter {
     if (!this._selectionStart) {
       return;
     }
-    this._rowContainer.removeEventListener('mousemove', this._mouseMoveListener);
+    this._rowContainer.ownerDocument.removeEventListener('mousemove', this._mouseMoveListener);
+    this._rowContainer.ownerDocument.removeEventListener('mouseup', this._mouseUpListener);
   }
 
   private _onDblClick(event: MouseEvent) {
