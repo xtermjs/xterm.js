@@ -472,7 +472,7 @@ export class Parser {
           if (ch === C0.ESC || ch === C0.BEL) {
             if (ch === C0.ESC) this._position++;
             let pt;
-            let valid;
+            let valid: boolean;
 
             switch (this._terminal.prefix) {
               // User-Defined Keys (DECUDK).
