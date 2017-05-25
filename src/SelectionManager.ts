@@ -24,18 +24,55 @@ const DRAG_SCROLL_MAX_SPEED = 5;
  */
 const DRAG_SCROLL_INTERVAL = 100;
 
+/**
+ * The amount of time before mousedown events are no stacked to create double
+ * click events.
+ */
+const CLEAR_MOUSE_DOWN_TIME = 400;
+
 export class SelectionManager extends EventEmitter {
   // TODO: Create a SelectionModel
-  private _isSelectAllEnabled: boolean;
+
+  /**
+   * Whether select all is currently active.
+   */
+  private _isSelectAllActive: boolean;
+
+  /**
+   * The [x, y] position the selection starts at.
+   */
   private _selectionStart: [number, number];
+
+  /**
+   * The minimal length of the selection from the start position. When double
+   * clicking on a word, the word will be selected which makes the selection
+   * start at the start of the word and makes this variable the length.
+   */
+  private _selectionStartLength: number;
+
+  /**
+   * The [x, y] position the selection ends at.
+   */
   private _selectionEnd: [number, number];
+
+  /**
+   * The amount to scroll every drag scroll update (depends on how far the mouse
+   * drag is above or below the terminal).
+   */
   private _dragScrollAmount: number;
+
+  /**
+   * The last time the mousedown event fired, this is used to track double and
+   * triple clicks.
+   */
+  private _lastMouseDownTime: number;
+
+  private _clickCount: number;
 
   private _bufferTrimListener: any;
   private _mouseMoveListener: EventListener;
   private _mouseDownListener: EventListener;
   private _mouseUpListener: EventListener;
-  private _dblClickListener: EventListener;
 
   private _dragScrollTimeout: NodeJS.Timer;
 
@@ -49,6 +86,8 @@ export class SelectionManager extends EventEmitter {
     super();
     this._initListeners();
     this.enable();
+
+    this._lastMouseDownTime = 0;
   }
 
   private _initListeners() {
@@ -56,7 +95,6 @@ export class SelectionManager extends EventEmitter {
     this._mouseMoveListener = event => this._onMouseMove(<MouseEvent>event);
     this._mouseDownListener = event => this._onMouseDown(<MouseEvent>event);
     this._mouseUpListener = event => this._onMouseUp(<MouseEvent>event);
-    this._dblClickListener = event => this._onDblClick(<MouseEvent>event);
   }
 
   /**
@@ -69,7 +107,6 @@ export class SelectionManager extends EventEmitter {
     this.refresh();
     this._buffer.off('trim', this._bufferTrimListener);
     this._rowContainer.removeEventListener('mousedown', this._mouseDownListener);
-    this._rowContainer.removeEventListener('dblclick', this._dblClickListener);
     this._rowContainer.ownerDocument.removeEventListener('mousemove', this._mouseMoveListener);
     this._rowContainer.ownerDocument.removeEventListener('mouseup', this._mouseUpListener);
     clearInterval(this._dragScrollTimeout);
@@ -81,12 +118,14 @@ export class SelectionManager extends EventEmitter {
   public enable() {
     this._buffer.on('trim', this._bufferTrimListener);
     this._rowContainer.addEventListener('mousedown', this._mouseDownListener);
-    this._rowContainer.addEventListener('dblclick', this._dblClickListener);
   }
 
+  /**
+   * Gets the text currently selected.
+   */
   public get selectionText(): string {
-    const originalStart = this.selectAllAwareSelectionStart;
-    const originalEnd = this.selectAllAwareSelectionEnd;
+    const originalStart = this.finalSelectionStart;
+    const originalEnd = this.finalSelectionEnd;
     if (!originalStart || !originalEnd) {
       return '';
     }
@@ -128,15 +167,23 @@ export class SelectionManager extends EventEmitter {
     return result;
   }
 
-  private get selectAllAwareSelectionStart(): [number, number] {
-    if (this._isSelectAllEnabled) {
+  /**
+   * The final selection start, taking into consideration things like select all
+   * and double click word selection.
+   */
+  private get finalSelectionStart(): [number, number] {
+    if (this._isSelectAllActive) {
       return [0, 0];
     }
     return this._selectionStart;
   }
 
-  private get selectAllAwareSelectionEnd(): [number, number] {
-    if (this._isSelectAllEnabled) {
+  /**
+   * The final selection end, taking into consideration things like select all
+   * and double click word selection.
+   */
+  private get finalSelectionEnd(): [number, number] {
+    if (this._isSelectAllActive) {
       return [this._terminal.cols - 1, this._terminal.ydisp + this._terminal.rows - 1];
     }
     return this._selectionEnd;
@@ -147,14 +194,14 @@ export class SelectionManager extends EventEmitter {
    */
   public refresh(): void {
     // TODO: Figure out when to refresh the selection vs when to refresh the viewport
-    this.emit('refresh', { start: this.selectAllAwareSelectionStart, end: this.selectAllAwareSelectionEnd });
+    this.emit('refresh', { start: this.finalSelectionStart, end: this.finalSelectionEnd });
   }
 
   /**
    * Selects all text within the terminal.
    */
   public selectAll(): void {
-    this._isSelectAllEnabled = true;
+    this._isSelectAllActive = true;
     this.refresh();
   }
 
@@ -225,7 +272,21 @@ export class SelectionManager extends EventEmitter {
       return;
     }
 
-    this._isSelectAllEnabled = false;
+    this._setMouseClickCount();
+    console.log(this._clickCount);
+
+    if (this._clickCount === 1) {
+        this._onSingleClick(event);
+    } else if (this._clickCount === 2) {
+        this._onDoubleClick(event);
+    } else if (this._clickCount === 3) {
+        this._onTripleClick(event);
+    }
+  }
+
+  private _onSingleClick(event: MouseEvent): void {
+    this._selectionStartLength = 0;
+    this._isSelectAllActive = false;
     this._selectionStart = this._getMouseBufferCoords(event);
     if (this._selectionStart) {
       this._selectionEnd = null;
@@ -235,6 +296,31 @@ export class SelectionManager extends EventEmitter {
       this._dragScrollTimeout = setInterval(() => this._dragScroll(), DRAG_SCROLL_INTERVAL);
       this.refresh();
     }
+  }
+
+  private _onDoubleClick(event: MouseEvent): void {
+    const coords = this._getMouseBufferCoords(event);
+    if (coords) {
+      this._selectWordAt(coords);
+    }
+  }
+
+  private _onTripleClick(event: MouseEvent): void {
+    const coords = this._getMouseBufferCoords(event);
+    if (coords) {
+      this._selectLineAt(coords[1]);
+    }
+  }
+
+  private _setMouseClickCount(): void {
+    let currentTime = (new Date()).getTime();
+		if (currentTime - this._lastMouseDownTime > CLEAR_MOUSE_DOWN_TIME) {
+      this._clickCount = 0;
+		}
+		this._lastMouseDownTime = currentTime;
+    this._clickCount++;
+
+    // TODO: Invalidate click count if the position is different
   }
 
   /**
@@ -284,13 +370,6 @@ export class SelectionManager extends EventEmitter {
     this._rowContainer.ownerDocument.removeEventListener('mouseup', this._mouseUpListener);
   }
 
-  private _onDblClick(event: MouseEvent) {
-    const coords = this._getMouseBufferCoords(event);
-    if (coords) {
-      this._selectWordAt(coords);
-    }
-  }
-
   /**
    * Selects the word at the coordinates specified. Words are defined as all
    * non-whitespace characters.
@@ -311,6 +390,12 @@ export class SelectionManager extends EventEmitter {
     }
     this._selectionStart = [startCol, coords[1]];
     this._selectionEnd = [endCol, coords[1]];
+    this.refresh();
+  }
+
+  private _selectLineAt(line: number): void {
+    this._selectionStart = [0, line];
+    this._selectionEnd = [this._terminal.cols - 1, line];
     this.refresh();
   }
 }
