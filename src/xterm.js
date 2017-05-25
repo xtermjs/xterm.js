@@ -1252,7 +1252,13 @@ Terminal.prototype.innerWrite = function() {
     this.refreshStart = this.y;
     this.refreshEnd = this.y;
 
-    this.parser.parse(data);
+    // HACK: Set the parser state based on it's state at the time of return.
+    // This works around the bug #662 which saw the parser state reset in the
+    // middle of parsing escape sequence in two chunks. For some reason the
+    // state of the parser resets to 0 after exiting parser.parse. This change
+    // just sets the state back based on the correct return statement.
+    var state = this.parser.parse(data);
+    this.parser.setState(state);
 
     this.updateRange(this.y);
     this.refresh(this.refreshStart, this.refreshEnd);
