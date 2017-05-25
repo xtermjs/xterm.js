@@ -131,11 +131,15 @@ export class SelectionManager extends EventEmitter {
    */
   private _onTrim(amount: number) {
     // Adjust the selection position based on the trimmed amount.
-    this._selectionStart[0] -= amount;
-    this._selectionEnd[0] -= amount;
+    if (this._selectionStart) {
+      this._selectionStart[0] -= amount;
+    }
+    if (this._selectionEnd) {
+      this._selectionEnd[0] -= amount;
+    }
 
     // The selection has moved off the buffer, clear it.
-    if (this._selectionEnd[0] < 0) {
+    if (this._selectionEnd && this._selectionEnd[0] < 0) {
       this._selectionStart = null;
       this._selectionEnd = null;
       this.refresh();
@@ -143,7 +147,7 @@ export class SelectionManager extends EventEmitter {
     }
 
     // If the selection start is trimmed, ensure the start column is 0.
-    if (this._selectionStart[0] < 0) {
+    if (this._selectionStart && this._selectionStart[0] < 0) {
       this._selectionStart[1] = 0;
     }
   }
