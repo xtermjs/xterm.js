@@ -522,6 +522,7 @@ Terminal.prototype.initGlobal = function() {
 
   // Bind clipboard functionality
   on(this.element, 'copy', function (ev) {
+    console.log('copy event');
     copyHandler.call(this, ev, term, term.selectionManager);
   });
   on(this.textarea, 'paste', function (ev) {
@@ -1700,6 +1701,10 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
           result.key = C0.ESC + '`';
         } else if (ev.keyCode >= 48 && ev.keyCode <= 57) {
           result.key = C0.ESC + (ev.keyCode - 48);
+        }
+      } else if (this.browser.isMac && !ev.altKey && !ev.ctrlKey && ev.metaKey) {
+        if (ev.keyCode === 65) { // cmd + a
+          this.selectAll();
         }
       }
       break;

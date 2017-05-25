@@ -85,19 +85,29 @@ export class SelectionManager extends EventEmitter {
   }
 
   public get selectionText(): string {
-    if (!this._selectionStart || !this._selectionEnd) {
+    const originalStart = this.selectAllAwareSelectionStart;
+    const originalEnd = this.selectAllAwareSelectionEnd;
+    if (!originalStart || !originalEnd) {
       return '';
     }
-    const flipValues = this._selectionStart[1] > this._selectionEnd[1] ||
-        (this._selectionStart[1] === this._selectionEnd[1] && this._selectionStart[0] > this._selectionEnd[0]);
-    const start = flipValues ? this._selectionEnd : this._selectionStart;
-    const end = flipValues ? this._selectionStart : this._selectionEnd;
+
+    // Flip values if start is after end
+    const flipValues = originalStart[1] > originalEnd[1] ||
+        (originalStart[1] === originalEnd[1] && originalStart[0] > originalEnd[0]);
+    const start = flipValues ? originalEnd : originalStart;
+    const end = flipValues ? originalStart : originalEnd;
+
+    // Get first row
     const startRowEndCol = start[1] === end[1] ? end[0] : null;
     let result: string[] = [];
     result.push(this._translateBufferLineToString(this._buffer.get(start[1]), start[0], startRowEndCol));
+
+    // Get middle rows
     for (let i = start[1] + 1; i <= end[1] - 1; i++) {
       result.push(this._translateBufferLineToString(this._buffer.get(i)));
     }
+
+    // Get final row
     if (start[1] !== end[1]) {
       result.push(this._translateBufferLineToString(this._buffer.get(end[1]), 0, end[1]));
     }
