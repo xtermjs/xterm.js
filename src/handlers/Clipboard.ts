@@ -99,67 +99,31 @@ export function pasteHandler(ev: ClipboardEvent, term: ITerminal) {
 
 /**
  * Bind to right-click event and allow right-click copy and paste.
- *
- * **Logic**
- * If text is selected and right-click happens on selected text, then
- * do nothing to allow seamless copying.
- * If no text is selected or right-click is outside of the selection
- * area, then bring the terminal's input below the cursor, in order to
- * trigger the event on the textarea and allow-right click paste, without
- * caring about disappearing selection.
- * @param {MouseEvent} ev The original right click event to be handled
- * @param {Terminal} term The terminal on which to apply the handled paste event
+ * @param ev The original right click event to be handled
+ * @param term The terminal on which to apply the handled paste event
+ * @param selectionManager The terminal's selection manager.
  */
-export function rightClickHandler(ev: MouseEvent, term: ITerminal) {
-  let s = document.getSelection(),
-      selectedText = prepareTextForClipboard(s.toString()),
-      clickIsOnSelection = false,
-      x = ev.clientX,
-      y = ev.clientY;
-
-  if (s.rangeCount) {
-    let r = s.getRangeAt(0),
-        cr = r.getClientRects();
-
-    for (let i = 0; i < cr.length; i++) {
-      let rect = cr[i];
-
-      clickIsOnSelection = (
-        (x > rect.left) && (x < rect.right) &&
-        (y > rect.top) && (y < rect.bottom)
-      );
-
-      if (clickIsOnSelection) {
-        break;
-      }
-    }
-    // If we clicked on selection and selection is not a single space,
-    // then mark the right click as copy-only. We check for the single
-    // space selection, as this can happen when clicking on an &nbsp;
-    // and there is not much pointing in copying a single space.
-    if (selectedText.match(/^\s$/) || !selectedText.length) {
-      clickIsOnSelection = false;
-    }
-  }
-
+export function rightClickHandler(ev: MouseEvent, textarea: HTMLTextAreaElement, selectionManager: ISelectionManager) {
   // Bring textarea at the cursor position
-  if (!clickIsOnSelection) {
-    term.textarea.style.position = 'fixed';
-    term.textarea.style.width = '20px';
-    term.textarea.style.height = '20px';
-    term.textarea.style.left = (x - 10) + 'px';
-    term.textarea.style.top = (y - 10) + 'px';
-    term.textarea.style.zIndex = '1000';
-    term.textarea.focus();
+  textarea.style.position = 'fixed';
+  textarea.style.width = '20px';
+  textarea.style.height = '20px';
+  textarea.style.left = (ev.clientX - 10) + 'px';
+  textarea.style.top = (ev.clientY - 10) + 'px';
+  textarea.style.zIndex = '1000';
 
-    // Reset the terminal textarea's styling
-    setTimeout(function () {
-      term.textarea.style.position = null;
-      term.textarea.style.width = null;
-      term.textarea.style.height = null;
-      term.textarea.style.left = null;
-      term.textarea.style.top = null;
-      term.textarea.style.zIndex = null;
-    }, 4);
-  }
+  // Get textarea ready to copy from the context menu
+  textarea.value = selectionManager.selectionText;
+  textarea.focus();
+  textarea.select();
+
+  // Reset the terminal textarea's styling
+  setTimeout(function () {
+    textarea.style.position = null;
+    textarea.style.width = null;
+    textarea.style.height = null;
+    textarea.style.left = null;
+    textarea.style.top = null;
+    textarea.style.zIndex = null;
+  }, 4);
 }

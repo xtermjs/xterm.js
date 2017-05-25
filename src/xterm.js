@@ -532,18 +532,16 @@ Terminal.prototype.initGlobal = function() {
     pasteHandler.call(this, ev, term);
   });
 
-  function rightClickHandlerWrapper (ev) {
-    rightClickHandler.call(this, ev, term);
-  }
-
   if (term.browser.isFirefox) {
-    on(this.element, 'mousedown', function (ev) {
+    on(this.element, 'mousedown', event => {
       if (ev.button == 2) {
-        rightClickHandlerWrapper(ev);
+        rightClickHandler(event, this.textarea, this.selectionManager);
       }
     });
   } else {
-    on(this.element, 'contextmenu', rightClickHandlerWrapper);
+    on(this.element, 'contextmenu', event => {
+      rightClickHandler(event, this.textarea, this.selectionManager);
+    });
   }
 };
 

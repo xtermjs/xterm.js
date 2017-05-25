@@ -52,6 +52,10 @@ export class SelectionModel {
    * word selection and triple click line selection.
    */
   public get finalSelectionEnd(): [number, number] {
+    if (!this.selectionStart) {
+      return null;
+    }
+
     if (this.isSelectAllActive) {
       return [this._terminal.cols - 1, this._terminal.ydisp + this._terminal.rows - 1];
     }
