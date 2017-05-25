@@ -7,6 +7,7 @@ import { CircularList } from './utils/CircularList';
 import { EventEmitter } from './EventEmitter';
 import * as Mouse from './utils/Mouse';
 import { ITerminal } from './Interfaces';
+import { SelectionModel } from './SelectionModel';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -31,29 +32,7 @@ const DRAG_SCROLL_INTERVAL = 100;
 const CLEAR_MOUSE_DOWN_TIME = 400;
 
 export class SelectionManager extends EventEmitter {
-  // TODO: Create a SelectionModel
-
-  /**
-   * Whether select all is currently active.
-   */
-  private _isSelectAllActive: boolean;
-
-  /**
-   * The [x, y] position the selection starts at.
-   */
-  private _selectionStart: [number, number];
-
-  /**
-   * The minimal length of the selection from the start position. When double
-   * clicking on a word, the word will be selected which makes the selection
-   * start at the start of the word and makes this variable the length.
-   */
-  private _selectionStartLength: number;
-
-  /**
-   * The [x, y] position the selection ends at.
-   */
-  private _selectionEnd: [number, number];
+  private _model: SelectionModel;
 
   /**
    * The amount to scroll every drag scroll update (depends on how far the mouse
@@ -87,6 +66,7 @@ export class SelectionManager extends EventEmitter {
     this._initListeners();
     this.enable();
 
+    this._model = new SelectionModel(_terminal);
     this._lastMouseDownTime = 0;
   }
 
@@ -102,8 +82,8 @@ export class SelectionManager extends EventEmitter {
    * are enabled.
    */
   public disable() {
-    this._selectionStart = null;
-    this._selectionEnd = null;
+    this._model.selectionStart = null;
+    this._model.selectionEnd = null;
     this.refresh();
     this._buffer.off('trim', this._bufferTrimListener);
     this._rowContainer.removeEventListener('mousedown', this._mouseDownListener);
@@ -124,8 +104,8 @@ export class SelectionManager extends EventEmitter {
    * Gets the text currently selected.
    */
   public get selectionText(): string {
-    const start = this.finalSelectionStart;
-    const end = this.finalSelectionEnd;
+    const start = this._model.finalSelectionStart;
+    const end = this._model.finalSelectionEnd;
     if (!start || !end) {
       return '';
     }
@@ -162,65 +142,18 @@ export class SelectionManager extends EventEmitter {
   }
 
   /**
-   * The final selection start, taking into consideration select all.
-   */
-  private get finalSelectionStart(): [number, number] {
-    if (this._isSelectAllActive) {
-      return [0, 0];
-    }
-
-    if (!this._selectionEnd) {
-      return this._selectionStart;
-    }
-
-    return this._areSelectionValuesReversed() ? this._selectionEnd : this._selectionStart;
-  }
-
-  /**
-   * The final selection end, taking into consideration select all, double click
-   * word selection and triple click line selection.
-   */
-  private get finalSelectionEnd(): [number, number] {
-    if (this._isSelectAllActive) {
-      return [this._terminal.cols - 1, this._terminal.ydisp + this._terminal.rows - 1];
-    }
-
-    // Ensure the the word/line is selected after a double/triple click
-    if (this._selectionStartLength) {
-      // Select just the word/line if there is no selection end yet or it's above the line
-      if (!this._selectionEnd || this._areSelectionValuesReversed()) {
-        return [this._selectionStart[0] + this._selectionStartLength, this._selectionStart[1]];
-      }
-      // Select the larger of the two when start and end are on the same line
-      if (this._selectionEnd[1] === this._selectionStart[1]) {
-        return [Math.max(this._selectionStart[0] + this._selectionStartLength, this._selectionEnd[0]), this._selectionEnd[1]];
-      }
-    }
-    return this._selectionEnd;
-  }
-
-  /**
-   * Returns whether the selection start and end are reversed.
-   */
-  private _areSelectionValuesReversed(): boolean {
-    const start = this._selectionStart;
-    const end = this._selectionEnd;
-    return start[1] > end[1] || (start[1] === end[1] && start[0] > end[0]);
-  }
-
-  /**
    * Redraws the selection.
    */
   public refresh(): void {
     // TODO: Figure out when to refresh the selection vs when to refresh the viewport
-    this.emit('refresh', { start: this.finalSelectionStart, end: this.finalSelectionEnd });
+    this.emit('refresh', { start: this._model.finalSelectionStart, end: this._model.finalSelectionEnd });
   }
 
   /**
    * Selects all text within the terminal.
    */
   public selectAll(): void {
-    this._isSelectAllActive = true;
+    this._model.isSelectAllActive = true;
     this.refresh();
   }
 
@@ -229,25 +162,9 @@ export class SelectionManager extends EventEmitter {
    * @param amount The amount the buffer is being trimmed.
    */
   private _onTrim(amount: number) {
-    // Adjust the selection position based on the trimmed amount.
-    if (this._selectionStart) {
-      this._selectionStart[0] -= amount;
-    }
-    if (this._selectionEnd) {
-      this._selectionEnd[0] -= amount;
-    }
-
-    // The selection has moved off the buffer, clear it.
-    if (this._selectionEnd && this._selectionEnd[0] < 0) {
-      this._selectionStart = null;
-      this._selectionEnd = null;
+    const needsRefresh = this._model.onTrim(amount);
+    if (needsRefresh) {
       this.refresh();
-      return;
-    }
-
-    // If the selection start is trimmed, ensure the start column is 0.
-    if (this._selectionStart && this._selectionStart[0] < 0) {
-      this._selectionStart[1] = 0;
     }
   }
 
@@ -310,11 +227,11 @@ export class SelectionManager extends EventEmitter {
   }
 
   private _onSingleClick(event: MouseEvent): void {
-    this._selectionStartLength = 0;
-    this._isSelectAllActive = false;
-    this._selectionStart = this._getMouseBufferCoords(event);
-    if (this._selectionStart) {
-      this._selectionEnd = null;
+    this._model.selectionStartLength = 0;
+    this._model.isSelectAllActive = false;
+    this._model.selectionStart = this._getMouseBufferCoords(event);
+    if (this._model.selectionStart) {
+      this._model.selectionEnd = null;
     }
   }
 
@@ -349,18 +266,22 @@ export class SelectionManager extends EventEmitter {
    * @param event The mousemove event.
    */
   private _onMouseMove(event: MouseEvent) {
-    this._selectionEnd = this._getMouseBufferCoords(event);
+    this._model.selectionEnd = this._getMouseBufferCoords(event);
     // TODO: Perhaps the actual selection setting could be merged into _dragScroll?
     this._dragScrollAmount = this._getMouseEventScrollAmount(event);
     // If the cursor was above or below the viewport, make sure it's at the
     // start or end of the viewport respectively
     if (this._dragScrollAmount > 0) {
-      this._selectionEnd[0] = this._terminal.cols - 1;
+      this._model.selectionEnd[0] = this._terminal.cols - 1;
     } else if (this._dragScrollAmount < 0) {
-      this._selectionEnd[0] = 0;
+      this._model.selectionEnd[0] = 0;
     }
     // TODO: Only draw here if the selection changes
     this.refresh();
+    console.log('start: ', this._model.selectionStart);
+    console.log('start final: ', this._model.finalSelectionStart);
+    console.log('end: ', this._model.selectionEnd);
+    console.log('end final: ', this._model.finalSelectionEnd);
   }
 
   private _dragScroll() {
@@ -368,9 +289,9 @@ export class SelectionManager extends EventEmitter {
       this._terminal.scrollDisp(this._dragScrollAmount, false);
       // Re-evaluate selection
       if (this._dragScrollAmount > 0) {
-        this._selectionEnd = [this._terminal.cols - 1, this._terminal.ydisp + this._terminal.rows];
+        this._model.selectionEnd = [this._terminal.cols - 1, this._terminal.ydisp + this._terminal.rows];
       } else {
-        this._selectionEnd = [0, this._terminal.ydisp];
+        this._model.selectionEnd = [0, this._terminal.ydisp];
       }
       this.refresh();
     }
@@ -383,7 +304,7 @@ export class SelectionManager extends EventEmitter {
    */
   private _onMouseUp(event: MouseEvent) {
     this._dragScrollAmount = 0;
-    if (!this._selectionStart) {
+    if (!this._model.selectionStart) {
       return;
     }
     this._rowContainer.ownerDocument.removeEventListener('mousemove', this._mouseMoveListener);
@@ -408,12 +329,12 @@ export class SelectionManager extends EventEmitter {
     while (endCol < line.length && line.charAt(endCol) !== ' ') {
       endCol++;
     }
-    this._selectionStart = [startCol, coords[1]];
-    this._selectionStartLength = endCol - startCol;
+    this._model.selectionStart = [startCol, coords[1]];
+    this._model.selectionStartLength = endCol - startCol;
   }
 
   private _selectLineAt(line: number): void {
-    this._selectionStart = [0, line];
-    this._selectionStartLength = this._terminal.cols;
+    this._model.selectionStart = [0, line];
+    this._model.selectionStartLength = this._terminal.cols;
   }
 }
