@@ -1178,6 +1178,9 @@ Terminal.prototype.scroll = function() {
  */
 Terminal.prototype.scrollDisp = function(disp, suppressScrollEvent) {
   if (disp < 0) {
+    if (this.ydisp === 0) {
+      return;
+    }
     this.userScrolling = true;
   } else if (disp + this.ydisp >= this.ybase) {
     this.userScrolling = false;

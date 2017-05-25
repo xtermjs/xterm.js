@@ -238,6 +238,7 @@ export class SelectionManager extends EventEmitter {
    * @param event The mouseup event.
    */
   private _onMouseUp(event: MouseEvent) {
+    this._dragScrollAmount = 0;
     if (!this._selectionStart) {
       return;
     }
