@@ -203,8 +203,9 @@ export class SelectionManager extends EventEmitter {
    * Returns whether the selection start and end are reversed.
    */
   private _areSelectionValuesReversed(): boolean {
-    return this._selectionStart[1] > this._selectionEnd[1] ||
-        (this._selectionStart[1] === this._selectionEnd[1] && this._selectionStart[0] > this._selectionEnd[0]);
+    const start = this._selectionStart;
+    const end = this._selectionEnd;
+    return start[1] > end[1] || (start[1] === end[1] && start[0] > end[0]);
   }
 
   /**
