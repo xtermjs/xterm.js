@@ -1364,6 +1364,13 @@ Terminal.prototype.deregisterLinkMatcher = function(matcherId) {
 }
 
 /**
+ * Selects all text within the terminal.
+ */
+Terminal.prototype.selectAll = function() {
+  this.selectionManager.selectAll();
+}
+
+/**
  * Handle a keydown event
  * Key Resources:
  *   - https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent

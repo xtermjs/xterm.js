@@ -26,6 +26,7 @@ const DRAG_SCROLL_INTERVAL = 100;
 
 export class SelectionManager extends EventEmitter {
   // TODO: Create a SelectionModel
+  private _isSelectAllEnabled: boolean;
   private _selectionStart: [number, number];
   private _selectionEnd: [number, number];
   private _dragScrollAmount: number;
@@ -117,12 +118,34 @@ export class SelectionManager extends EventEmitter {
     return result;
   }
 
+  private get selectAllAwareSelectionStart(): [number, number] {
+    if (this._isSelectAllEnabled) {
+      return [0, 0];
+    }
+    return this._selectionStart;
+  }
+
+  private get selectAllAwareSelectionEnd(): [number, number] {
+    if (this._isSelectAllEnabled) {
+      return [this._terminal.cols - 1, this._terminal.ydisp + this._terminal.rows - 1];
+    }
+    return this._selectionEnd;
+  }
+
   /**
    * Redraws the selection.
    */
   public refresh(): void {
     // TODO: Figure out when to refresh the selection vs when to refresh the viewport
-    this.emit('refresh', { start: this._selectionStart, end: this._selectionEnd });
+    this.emit('refresh', { start: this.selectAllAwareSelectionStart, end: this.selectAllAwareSelectionEnd });
+  }
+
+  /**
+   * Selects all text within the terminal.
+   */
+  public selectAll(): void {
+    this._isSelectAllEnabled = true;
+    this.refresh();
   }
 
   /**
@@ -192,6 +215,7 @@ export class SelectionManager extends EventEmitter {
       return;
     }
 
+    this._isSelectAllEnabled = false;
     this._selectionStart = this._getMouseBufferCoords(event);
     if (this._selectionStart) {
       this._selectionEnd = null;
