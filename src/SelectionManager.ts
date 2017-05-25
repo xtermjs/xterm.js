@@ -124,17 +124,11 @@ export class SelectionManager extends EventEmitter {
    * Gets the text currently selected.
    */
   public get selectionText(): string {
-    const originalStart = this.finalSelectionStart;
-    const originalEnd = this.finalSelectionEnd;
-    if (!originalStart || !originalEnd) {
+    const start = this.finalSelectionStart;
+    const end = this.finalSelectionEnd;
+    if (!start || !end) {
       return '';
     }
-
-    // Flip values if start is after end
-    const flipValues = originalStart[1] > originalEnd[1] ||
-        (originalStart[1] === originalEnd[1] && originalStart[0] > originalEnd[0]);
-    const start = flipValues ? originalEnd : originalStart;
-    const end = flipValues ? originalStart : originalEnd;
 
     // Get first row
     const startRowEndCol = start[1] === end[1] ? end[0] : null;
@@ -168,25 +162,49 @@ export class SelectionManager extends EventEmitter {
   }
 
   /**
-   * The final selection start, taking into consideration things like select all
-   * and double click word selection.
+   * The final selection start, taking into consideration select all.
    */
   private get finalSelectionStart(): [number, number] {
     if (this._isSelectAllActive) {
       return [0, 0];
     }
-    return this._selectionStart;
+
+    if (!this._selectionEnd) {
+      return this._selectionStart;
+    }
+
+    return this._areSelectionValuesReversed() ? this._selectionEnd : this._selectionStart;
   }
 
   /**
-   * The final selection end, taking into consideration things like select all
-   * and double click word selection.
+   * The final selection end, taking into consideration select all, double click
+   * word selection and triple click line selection.
    */
   private get finalSelectionEnd(): [number, number] {
     if (this._isSelectAllActive) {
       return [this._terminal.cols - 1, this._terminal.ydisp + this._terminal.rows - 1];
     }
+
+    // Ensure the the word/line is selected after a double/triple click
+    if (this._selectionStartLength) {
+      // Select just the word/line if there is no selection end yet or it's above the line
+      if (!this._selectionEnd || this._areSelectionValuesReversed()) {
+        return [this._selectionStart[0] + this._selectionStartLength, this._selectionStart[1]];
+      }
+      // Select the larger of the two when start and end are on the same line
+      if (this._selectionEnd[1] === this._selectionStart[1]) {
+        return [Math.max(this._selectionStart[0] + this._selectionStartLength, this._selectionEnd[0]), this._selectionEnd[1]];
+      }
+    }
     return this._selectionEnd;
+  }
+
+  /**
+   * Returns whether the selection start and end are reversed.
+   */
+  private _areSelectionValuesReversed(): boolean {
+    return this._selectionStart[1] > this._selectionEnd[1] ||
+        (this._selectionStart[1] === this._selectionEnd[1] && this._selectionStart[0] > this._selectionEnd[0]);
   }
 
   /**
@@ -282,6 +300,12 @@ export class SelectionManager extends EventEmitter {
     } else if (this._clickCount === 3) {
         this._onTripleClick(event);
     }
+
+    // Listen on the document so that dragging outside of viewport works
+    this._rowContainer.ownerDocument.addEventListener('mousemove', this._mouseMoveListener);
+    this._rowContainer.ownerDocument.addEventListener('mouseup', this._mouseUpListener);
+    this._dragScrollTimeout = setInterval(() => this._dragScroll(), DRAG_SCROLL_INTERVAL);
+    this.refresh();
   }
 
   private _onSingleClick(event: MouseEvent): void {
@@ -290,11 +314,6 @@ export class SelectionManager extends EventEmitter {
     this._selectionStart = this._getMouseBufferCoords(event);
     if (this._selectionStart) {
       this._selectionEnd = null;
-      // Listen on the document so that dragging outside of viewport works
-      this._rowContainer.ownerDocument.addEventListener('mousemove', this._mouseMoveListener);
-      this._rowContainer.ownerDocument.addEventListener('mouseup', this._mouseUpListener);
-      this._dragScrollTimeout = setInterval(() => this._dragScroll(), DRAG_SCROLL_INTERVAL);
-      this.refresh();
     }
   }
 
@@ -389,13 +408,11 @@ export class SelectionManager extends EventEmitter {
       endCol++;
     }
     this._selectionStart = [startCol, coords[1]];
-    this._selectionEnd = [endCol, coords[1]];
-    this.refresh();
+    this._selectionStartLength = endCol - startCol;
   }
 
   private _selectLineAt(line: number): void {
     this._selectionStart = [0, line];
-    this._selectionEnd = [this._terminal.cols - 1, line];
-    this.refresh();
+    this._selectionStartLength = this._terminal.cols;
   }
 }

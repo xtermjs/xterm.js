@@ -332,13 +332,6 @@ export class Renderer {
       return;
     }
 
-    // Swap the start and end if necessary
-    if (start[1] > end[1] || (start[1] === end[1] && start[0] > end[0])) {
-      const temp = start;
-      start = end;
-      end = temp;
-    }
-
     // Translate from buffer position to viewport position
     const viewportStartRow = start[1] - this._terminal.ydisp;
     const viewportEndRow = end[1] - this._terminal.ydisp;
