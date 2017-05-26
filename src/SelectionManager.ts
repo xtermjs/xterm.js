@@ -352,11 +352,10 @@ export class SelectionManager extends EventEmitter {
    * latter takes into account wide characters.
    * @param coords The coordinates to find the character index for.
    */
-  private _convertViewportColToCharacterIndex(coords: [number, number]): number {
-    const line = this._buffer.get(coords[1]);
+  private _convertViewportColToCharacterIndex(bufferLine: any, coords: [number, number]): number {
     let charIndex = coords[0];
     for (let i = 0; coords[0] >= i; i++) {
-      const char = line[i];
+      const char = bufferLine[i];
       if (char[LINE_DATA_WIDTH_INDEX] === 0) {
         charIndex--;
       }
@@ -371,51 +370,47 @@ export class SelectionManager extends EventEmitter {
    */
   private _selectWordAt(coords: [number, number]): void {
     // TODO: Only fetch buffer line once for translate and convert functions
-    const line = this._translateBufferLineToString(this._buffer.get(coords[1]), false);
-
-    console.log('coords: ', coords);
+    const bufferLine = this._buffer.get(coords[1]);
+    const line = this._translateBufferLineToString(bufferLine, false);
 
     // Get actual index, taking into consideration wide characters
-    let endIndex = this._convertViewportColToCharacterIndex(coords);
+    let endIndex = this._convertViewportColToCharacterIndex(bufferLine, coords);
     let startIndex = endIndex;
-    let leftWideCharCount = 0;
-    let rightWideCharCount = 0;
-
-    console.log('line string: ', line);
-    console.log('initial startIndex: ', startIndex);
-    console.log('initial endIndex: ', endIndex);
 
     // Record offset to be used later
     const charOffset = coords[0] - startIndex;
+    let leftWideCharCount = 0;
+    let rightWideCharCount = 0;
 
-    console.log('first char startIndex: ' + line.charAt(startIndex));
-    console.log('first char endIndex: ' + line.charAt(endIndex));
-
-    // Select the single whitespace if it's whitespace
     if (line.charAt(startIndex) === ' ') {
+      // Expand until non-whitespace is hit
       while (startIndex > 0 && line.charAt(startIndex - 1) === ' ') {
         startIndex--;
       }
       while (endIndex < line.length && line.charAt(endIndex + 1) === ' ') {
         endIndex++;
       }
-      // TODO: Expand to all whitespace in block if it's whitespace
     } else {
+      // Expand until whitespace is hit. This algorithm works by scanning left
+      // and right from the starting position, keeping both the index format
+      // (line) and the column format (bufferLine) in sync. When a wide
+      // character is hit, it is recorded and the column index is adjusted.
       let startCol = coords[0];
       let endCol = coords[0];
       // Consider the initial position, skip it and increment the wide char
       // variable
-      if (this._buffer.get(coords[1])[startCol][LINE_DATA_WIDTH_INDEX] === 0) {
+      if (bufferLine[startCol][LINE_DATA_WIDTH_INDEX] === 0) {
         leftWideCharCount++;
         startCol--;
       }
-      if (this._buffer.get(coords[1])[endCol][LINE_DATA_WIDTH_INDEX] === 2) {
+      if (bufferLine[endCol][LINE_DATA_WIDTH_INDEX] === 2) {
         rightWideCharCount++;
         endCol++;
       }
       // Expand the string in both directions until a space is hit
       while (startIndex > 0 && line.charAt(startIndex - 1) !== ' ') {
-        if (this._buffer.get(coords[1])[startCol - 1][LINE_DATA_WIDTH_INDEX] === 0) {
+        if (bufferLine[startCol - 1][LINE_DATA_WIDTH_INDEX] === 0) {
+          // If the next character is a wide char, record it and skip the column
           leftWideCharCount++;
           startCol--;
         }
@@ -423,7 +418,8 @@ export class SelectionManager extends EventEmitter {
         startCol--;
       }
       while (endIndex < line.length && line.charAt(endIndex + 1) !== ' ') {
-        if (this._buffer.get(coords[1])[endCol + 1][LINE_DATA_WIDTH_INDEX] === 2) {
+        if (bufferLine[endCol + 1][LINE_DATA_WIDTH_INDEX] === 2) {
+          // If the next character is a wide char, record it and skip the column
           rightWideCharCount++;
           endCol++;
         }
@@ -431,13 +427,9 @@ export class SelectionManager extends EventEmitter {
         endCol++;
       }
     }
-    console.log('charOffset', charOffset);
-    console.log('startIndex', startIndex);
-    console.log('endIndex', endIndex);
-    console.log('leftWideCharCount', leftWideCharCount);
-    console.log('rightWideCharCount', rightWideCharCount);
+
+    // Record the resulting selection
     this._model.selectionStart = [startIndex + charOffset - leftWideCharCount, coords[1]];
-    // this._model.selectionStartLength = endIndex - startIndex + wideCharCount + 1/*include endIndex char*/;
     this._model.selectionStartLength = endIndex - startIndex + leftWideCharCount + rightWideCharCount + 1/*include endIndex char*/;
   }
 
