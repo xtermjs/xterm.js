@@ -31,6 +31,10 @@ const DRAG_SCROLL_INTERVAL = 100;
  */
 const CLEAR_MOUSE_DOWN_TIME = 400;
 
+// TODO: Move these constants elsewhere
+const LINE_DATA_CHAR_INDEX = 1;
+const LINE_DATA_WIDTH_INDEX = 2;
+
 export class SelectionManager extends EventEmitter {
   private _model: SelectionModel;
 
@@ -124,32 +128,45 @@ export class SelectionManager extends EventEmitter {
     if (start[1] !== end[1]) {
       result.push(this._translateBufferLineToString(this._buffer.get(end[1]), true, 0, end[0]));
     }
-    console.log('selectionText result: ' + result);
+    console.log('selectionText result: "' + result + '"');
     return result.join('\n');
   }
 
   private _translateBufferLineToString(line: any, trimRight: boolean, startCol: number = 0, endCol: number = null): string {
     // TODO: This function should live in a buffer or buffer line class
-    // TODO: Handle the double-width character case
 
     // Get full line
     let lineString = '';
+    let widthAdjustedStartCol = startCol;
+    let widthAdjustedEndCol = endCol;
     for (let i = 0; i < line.length; i++) {
-      lineString += line[i][1];
+      const char = line[i];
+      lineString += char[LINE_DATA_CHAR_INDEX];
+      // Adjust start and end cols for wide characters if they affect their
+      // column indexes
+      if (char[LINE_DATA_WIDTH_INDEX] === 0) {
+        if (startCol >= i) {
+          widthAdjustedStartCol--;
+        }
+        if (endCol >= i) {
+          widthAdjustedEndCol--;
+        }
+      }
     }
 
-    let finalEndCol = endCol || line.length
-
+    // Calculate the final end col by trimming whitespace on the right of the
+    // line if needed.
+    let finalEndCol = widthAdjustedEndCol || line.length
     if (trimRight) {
       const rightWhitespaceIndex = lineString.search(/\s+$/);
       finalEndCol = Math.min(finalEndCol, rightWhitespaceIndex);
       // Return the empty string if only trimmed whitespace is selected
-      if (finalEndCol <= startCol) {
+      if (finalEndCol <= widthAdjustedStartCol) {
         return '';
       }
     }
 
-    return lineString.substring(startCol, finalEndCol);
+    return lineString.substring(widthAdjustedStartCol, finalEndCol);
   }
 
   /**
@@ -241,6 +258,12 @@ export class SelectionManager extends EventEmitter {
     this._model.selectionStart = this._getMouseBufferCoords(event);
     if (this._model.selectionStart) {
       this._model.selectionEnd = null;
+      // If the mouse is over the second half of a wide character, adjust the
+      // selection to cover the whole character
+      const char = this._buffer.get(this._model.selectionStart[1])[this._model.selectionStart[0]];
+      if (char[LINE_DATA_WIDTH_INDEX] === 0) {
+        this._model.selectionStart[0]++;
+      }
     }
   }
 
@@ -285,12 +308,16 @@ export class SelectionManager extends EventEmitter {
     } else if (this._dragScrollAmount < 0) {
       this._model.selectionEnd[0] = 0;
     }
+
+    // If the character is a wide character include the cell to the right in the
+    // selection.
+    const char = this._buffer.get(this._model.selectionEnd[1])[this._model.selectionEnd[0] - 1];
+    if (char[2] === 2) {
+      this._model.selectionEnd[0]++;
+    }
+
     // TODO: Only draw here if the selection changes
     this.refresh();
-    console.log('start: ', this._model.selectionStart);
-    console.log('start final: ', this._model.finalSelectionStart);
-    console.log('end: ', this._model.selectionEnd);
-    console.log('end final: ', this._model.finalSelectionEnd);
   }
 
   private _dragScroll() {

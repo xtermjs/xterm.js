@@ -75,8 +75,9 @@ export class InputHandler implements IInputHandler {
           const removed = this._terminal.lines.get(this._terminal.y + this._terminal.ybase).pop();
           if (removed[2] === 0
               && this._terminal.lines.get(row)[this._terminal.cols - 2]
-          && this._terminal.lines.get(row)[this._terminal.cols - 2][2] === 2)
+              && this._terminal.lines.get(row)[this._terminal.cols - 2][2] === 2) {
             this._terminal.lines.get(row)[this._terminal.cols - 2] = [this._terminal.curAttr, ' ', 1];
+          }
 
           // insert empty cell at cursor
           this._terminal.lines.get(row).splice(this._terminal.x, 0, [this._terminal.curAttr, ' ', 1]);
