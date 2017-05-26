@@ -311,8 +311,8 @@ export class SelectionManager extends EventEmitter {
 
     // If the character is a wide character include the cell to the right in the
     // selection.
-    const char = this._buffer.get(this._model.selectionEnd[1])[this._model.selectionEnd[0] - 1];
-    if (char[2] === 2) {
+    const char = this._buffer.get(this._model.selectionEnd[1])[this._model.selectionEnd[0]];
+    if (char[2] === 0) {
       this._model.selectionEnd[0]++;
     }
 
@@ -348,23 +348,78 @@ export class SelectionManager extends EventEmitter {
   }
 
   /**
+   * Converts a viewport column to the character index on the buffer line, the
+   * latter takes into account wide characters.
+   * @param coords The coordinates to find the character index for.
+   */
+  private _convertViewportColToCharacterIndex(coords: [number, number]): number {
+    const line = this._buffer.get(coords[1]);
+    let charIndex = coords[0];
+    for (let i = 0; charIndex >= i; i++) {
+      const char = line[i];
+      if (char[LINE_DATA_WIDTH_INDEX] === 0) {
+        charIndex--;
+      }
+    }
+    return charIndex;
+  }
+
+  /**
    * Selects the word at the coordinates specified. Words are defined as all
    * non-whitespace characters.
    * @param coords The coordinates to get the word at.
    */
   private _selectWordAt(coords: [number, number]): void {
+    // TODO: Only fetch buffer line once for translate and convert functions
     const line = this._translateBufferLineToString(this._buffer.get(coords[1]), false);
-    // Expand the string in both directions until a space is hit
-    let startCol = coords[0];
-    let endCol = coords[0];
-    while (startCol > 0 && line.charAt(startCol - 1) !== ' ') {
-      startCol--;
+
+    console.log('coords: ', coords);
+
+    // Get actual index, taking into consideration wide characters
+    let endIndex = this._convertViewportColToCharacterIndex(coords);
+    let startIndex = endIndex;
+    let wideCharCount = 0;
+
+    console.log('line string: ', line);
+    console.log('initial startIndex: ', startIndex);
+    console.log('initial endIndex: ', endIndex);
+
+    // Record offset to be used later
+    const charOffset = coords[0] - startIndex;
+
+    console.log('first char startIndex: ' + line.charAt(startIndex));
+    console.log('first char endIndex: ' + line.charAt(endIndex));
+
+    // Select the single whitespace if it's whitespace
+    if (line.charAt(startIndex) === ' ') {
+      while (startIndex > 0 && line.charAt(startIndex - 1) === ' ') {
+        startIndex--;
+      }
+      while (endIndex < line.length && line.charAt(endIndex + 1) === ' ') {
+        endIndex++;
+      }
+      // TODO: Expand to all whitespace in block if it's whitespace
+    } else {
+      // Expand the string in both directions until a space is hit
+      while (startIndex > 0 && line.charAt(startIndex - 1) !== ' ') {
+        if (this._buffer.get(coords[1])[startIndex][LINE_DATA_WIDTH_INDEX] === 2) {
+          wideCharCount++;
+        }
+        startIndex--;
+      }
+      while (endIndex < line.length && line.charAt(endIndex + 1) !== ' ') {
+        if (this._buffer.get(coords[1])[endIndex][LINE_DATA_WIDTH_INDEX] === 2) {
+          wideCharCount++;
+        }
+        endIndex++;
+      }
     }
-    while (endCol < line.length && line.charAt(endCol) !== ' ') {
-      endCol++;
-    }
-    this._model.selectionStart = [startCol, coords[1]];
-    this._model.selectionStartLength = endCol - startCol;
+    console.log('charOffset', charOffset);
+    console.log('startIndex', startIndex);
+    console.log('endIndex', endIndex);
+    console.log('wideCharCount', wideCharCount);
+    this._model.selectionStart = [startIndex + charOffset, coords[1]];
+    this._model.selectionStartLength = endIndex - startIndex + wideCharCount + 1/*include endIndex char*/;
   }
 
   private _selectLineAt(line: number): void {
