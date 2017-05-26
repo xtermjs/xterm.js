@@ -355,7 +355,7 @@ export class SelectionManager extends EventEmitter {
   private _convertViewportColToCharacterIndex(coords: [number, number]): number {
     const line = this._buffer.get(coords[1]);
     let charIndex = coords[0];
-    for (let i = 0; charIndex >= i; i++) {
+    for (let i = 0; coords[0] >= i; i++) {
       const char = line[i];
       if (char[LINE_DATA_WIDTH_INDEX] === 0) {
         charIndex--;
@@ -378,7 +378,8 @@ export class SelectionManager extends EventEmitter {
     // Get actual index, taking into consideration wide characters
     let endIndex = this._convertViewportColToCharacterIndex(coords);
     let startIndex = endIndex;
-    let wideCharCount = 0;
+    let leftWideCharCount = 0;
+    let rightWideCharCount = 0;
 
     console.log('line string: ', line);
     console.log('initial startIndex: ', startIndex);
@@ -400,26 +401,44 @@ export class SelectionManager extends EventEmitter {
       }
       // TODO: Expand to all whitespace in block if it's whitespace
     } else {
+      let startCol = coords[0];
+      let endCol = coords[0];
+      // Consider the initial position, skip it and increment the wide char
+      // variable
+      if (this._buffer.get(coords[1])[startCol][LINE_DATA_WIDTH_INDEX] === 0) {
+        leftWideCharCount++;
+        startCol--;
+      }
+      if (this._buffer.get(coords[1])[endCol][LINE_DATA_WIDTH_INDEX] === 2) {
+        rightWideCharCount++;
+        endCol++;
+      }
       // Expand the string in both directions until a space is hit
       while (startIndex > 0 && line.charAt(startIndex - 1) !== ' ') {
-        if (this._buffer.get(coords[1])[startIndex][LINE_DATA_WIDTH_INDEX] === 2) {
-          wideCharCount++;
+        if (this._buffer.get(coords[1])[startCol - 1][LINE_DATA_WIDTH_INDEX] === 0) {
+          leftWideCharCount++;
+          startCol--;
         }
         startIndex--;
+        startCol--;
       }
       while (endIndex < line.length && line.charAt(endIndex + 1) !== ' ') {
-        if (this._buffer.get(coords[1])[endIndex][LINE_DATA_WIDTH_INDEX] === 2) {
-          wideCharCount++;
+        if (this._buffer.get(coords[1])[endCol + 1][LINE_DATA_WIDTH_INDEX] === 2) {
+          rightWideCharCount++;
+          endCol++;
         }
         endIndex++;
+        endCol++;
       }
     }
     console.log('charOffset', charOffset);
     console.log('startIndex', startIndex);
     console.log('endIndex', endIndex);
-    console.log('wideCharCount', wideCharCount);
-    this._model.selectionStart = [startIndex + charOffset, coords[1]];
-    this._model.selectionStartLength = endIndex - startIndex + wideCharCount + 1/*include endIndex char*/;
+    console.log('leftWideCharCount', leftWideCharCount);
+    console.log('rightWideCharCount', rightWideCharCount);
+    this._model.selectionStart = [startIndex + charOffset - leftWideCharCount, coords[1]];
+    // this._model.selectionStartLength = endIndex - startIndex + wideCharCount + 1/*include endIndex char*/;
+    this._model.selectionStartLength = endIndex - startIndex + leftWideCharCount + rightWideCharCount + 1/*include endIndex char*/;
   }
 
   private _selectLineAt(line: number): void {
