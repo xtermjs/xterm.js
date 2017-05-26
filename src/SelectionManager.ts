@@ -113,32 +113,43 @@ export class SelectionManager extends EventEmitter {
     // Get first row
     const startRowEndCol = start[1] === end[1] ? end[0] : null;
     let result: string[] = [];
-    result.push(this._translateBufferLineToString(this._buffer.get(start[1]), start[0], startRowEndCol));
+    result.push(this._translateBufferLineToString(this._buffer.get(start[1]), true, start[0], startRowEndCol));
 
     // Get middle rows
     for (let i = start[1] + 1; i <= end[1] - 1; i++) {
-      result.push(this._translateBufferLineToString(this._buffer.get(i)));
+      result.push(this._translateBufferLineToString(this._buffer.get(i), true));
     }
 
     // Get final row
     if (start[1] !== end[1]) {
-      result.push(this._translateBufferLineToString(this._buffer.get(end[1]), 0, end[1]));
+      result.push(this._translateBufferLineToString(this._buffer.get(end[1]), true, 0, end[0]));
     }
     console.log('selectionText result: ' + result);
     return result.join('\n');
   }
 
-  private _translateBufferLineToString(line: any, startCol: number = 0, endCol: number = null): string {
+  private _translateBufferLineToString(line: any, trimRight: boolean, startCol: number = 0, endCol: number = null): string {
     // TODO: This function should live in a buffer or buffer line class
-    endCol = endCol || line.length;
-    let result = '';
-    for (let i = startCol; i < endCol; i++) {
-      result += line[i][1];
-    }
-    // TODO: Trim line here instead of in handlers/Clipboard?
-    // TODO: Only trim off the whitespace at the end of a line
     // TODO: Handle the double-width character case
-    return result;
+
+    // Get full line
+    let lineString = '';
+    for (let i = 0; i < line.length; i++) {
+      lineString += line[i][1];
+    }
+
+    let finalEndCol = endCol || line.length
+
+    if (trimRight) {
+      const rightWhitespaceIndex = lineString.search(/\s+$/);
+      finalEndCol = Math.min(finalEndCol, rightWhitespaceIndex);
+      // Return the empty string if only trimmed whitespace is selected
+      if (finalEndCol <= startCol) {
+        return '';
+      }
+    }
+
+    return lineString.substring(startCol, finalEndCol);
   }
 
   /**
@@ -201,8 +212,6 @@ export class SelectionManager extends EventEmitter {
    * @param event The mousedown event.
    */
   private _onMouseDown(event: MouseEvent) {
-    // TODO: On right click move the text into the textbox so it can be copied via the context menu
-
     // Only action the primary button
     if (event.button !== 0) {
       return;
@@ -317,9 +326,7 @@ export class SelectionManager extends EventEmitter {
    * @param coords The coordinates to get the word at.
    */
   private _selectWordAt(coords: [number, number]): void {
-    // TODO: Handle double click and drag in both directions!
-
-    const line = this._translateBufferLineToString(this._buffer.get(coords[1]));
+    const line = this._translateBufferLineToString(this._buffer.get(coords[1]), false);
     // Expand the string in both directions until a space is hit
     let startCol = coords[0];
     let endCol = coords[0];

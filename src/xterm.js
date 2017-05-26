@@ -521,16 +521,12 @@ Terminal.prototype.initGlobal = function() {
   Terminal.bindBlur(this);
 
   // Bind clipboard functionality
-  on(this.element, 'copy', function (ev) {
-    console.log('copy event');
-    copyHandler.call(this, ev, term, term.selectionManager);
+  on(this.element, 'copy', event => {
+    copyHandler(event, term, term.selectionManager);
   });
-  on(this.textarea, 'paste', function (ev) {
-    pasteHandler.call(this, ev, term);
-  });
-  on(this.element, 'paste', function (ev) {
-    pasteHandler.call(this, ev, term);
-  });
+  const pasteHandlerWrapper = event => pasteHandler(event, term);
+  on(this.textarea, 'paste', pasteHandlerWrapper);
+  on(this.element, 'paste', pasteHandlerWrapper);
 
   if (term.browser.isFirefox) {
     on(this.element, 'mousedown', event => {

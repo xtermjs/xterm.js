@@ -16,6 +16,10 @@ interface IWindow extends Window {
 
 declare var window: IWindow;
 
+const SPACE_CHAR = String.fromCharCode(32);
+const NON_BREAKING_SPACE_CHAR = String.fromCharCode(160);
+const ALL_NON_BREAKING_SPACE_REGEX = new RegExp(NON_BREAKING_SPACE_CHAR, 'g');
+
 /**
  * Prepares text copied from terminal selection, to be saved in the clipboard by:
  *   1. stripping all trailing white spaces
@@ -24,18 +28,10 @@ declare var window: IWindow;
  * @returns {string}
  */
 export function prepareTextForClipboard(text: string): string {
-  let space = String.fromCharCode(32),
-      nonBreakingSpace = String.fromCharCode(160),
-      allNonBreakingSpaces = new RegExp(nonBreakingSpace, 'g'),
-      processedText = text.split('\n').map(function (line) {
-        // Strip all trailing white spaces and convert all non-breaking spaces
-        // to regular spaces.
-        let processedLine = line.replace(/\s+$/g, '').replace(allNonBreakingSpaces, space);
-
-        return processedLine;
-      }).join('\n');
-
-  return processedText;
+  // TODO: Pass an unjoined string array into this function so not splitting is needed
+  return text.split('\n').map(line => {
+    return line.replace(ALL_NON_BREAKING_SPACE_REGEX, SPACE_CHAR);
+  }).join('\n');
 }
 
 /**
