@@ -113,7 +113,7 @@ export function rightClickHandler(ev: MouseEvent, textarea: HTMLTextAreaElement,
   textarea.style.zIndex = '1000';
 
   // Get textarea ready to copy from the context menu
-  textarea.value = selectionManager.selectionText;
+  textarea.value = prepareTextForClipboard(selectionManager.selectionText);
   textarea.focus();
   textarea.select();
 
