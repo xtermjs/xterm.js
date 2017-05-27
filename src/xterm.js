@@ -305,8 +305,20 @@ Terminal.prototype.getState = function() {
     'cursorBlink', 'disableStdin', 'scrollback', 'tabStopWidth', 'useFlowControl'
   ];
 
+  let normalBuffer = this.lines._array;
+  let altBuffer = null;
+
+  // This means that the alt buffer is active
+  if (this.normal) {
+    altBuffer = normalBuffer;
+    normalBuffer = this.normal.lines._array;
+  }
+
   let state = {
-    buffer: this.lines._array,
+    buffers: {
+      normal: normalBuffer,
+      alt: altBuffer
+    },
     cursor: this._getCursor(),
     geometry: this.geometry,
     mode: this._getMode(),
