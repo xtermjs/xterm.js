@@ -100,6 +100,52 @@ To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to t
 ```
 Finally instantiate the `Terminal` object and then call the `open` function with the DOM object of the `div`.
 
+## Example
+
+```
+npm install xterm
+```
+
+Server
+```
+var term = require('xterm');
+app.use(term.middleware());
+```
+
+Client
+```
+window.addEventListener('load', function() {
+  var socket = io.connect();
+  socket.on('connect', function() {
+    var term = new Terminal({
+      cols: 80,
+      rows: 24,
+      screenKeys: true
+    });
+
+    term.on('data', function(data) {
+      socket.emit('data', data);
+    });
+
+    term.on('title', function(title) {
+      document.title = title;
+    });
+
+    term.open(document.body);
+
+    term.write('\x1b[31mWelcome to term.js!\x1b[m\r\n');
+
+    socket.on('data', function(data) {
+      term.write(data);
+    });
+
+    socket.on('disconnect', function() {
+      term.destroy();
+    });
+  });
+}, false);
+```
+
 ## Addons
 
 Addons are JavaScript modules that attach functions to the `Terminal` prototype to extend its functionality. There are a handful available in the main repository in the `dist/addons` directory, you can even write your own (though they may break when the internals of xterm.js change across versions).
