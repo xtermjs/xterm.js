@@ -1654,7 +1654,10 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
       break;
     default:
       // a-z and space
-      if (ev.ctrlKey && !ev.shiftKey && !ev.altKey && !ev.metaKey) {
+      var selection = document.getSelection(),
+          collapsed = selection.isCollapsed,
+          isRange = typeof collapsed == 'boolean' ? !collapsed : selection.type == 'Range';
+      if (!isRange && (ev.ctrlKey && !ev.shiftKey && !ev.altKey && !ev.metaKey)) {
         if (ev.keyCode >= 65 && ev.keyCode <= 90) {
           result.key = String.fromCharCode(ev.keyCode - 64);
         } else if (ev.keyCode === 32) {
