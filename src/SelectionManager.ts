@@ -63,7 +63,6 @@ export class SelectionManager extends EventEmitter {
     private _terminal: ITerminal,
     private _buffer: CircularList<any>,
     private _rowContainer: HTMLElement,
-    private _selectionContainer: HTMLElement,
     private _charMeasure: CharMeasure
   ) {
     super();
@@ -159,7 +158,9 @@ export class SelectionManager extends EventEmitter {
     let finalEndCol = widthAdjustedEndCol || line.length
     if (trimRight) {
       const rightWhitespaceIndex = lineString.search(/\s+$/);
-      finalEndCol = Math.min(finalEndCol, rightWhitespaceIndex);
+      if (rightWhitespaceIndex !== -1) {
+        finalEndCol = Math.min(finalEndCol, rightWhitespaceIndex);
+      }
       // Return the empty string if only trimmed whitespace is selected
       if (finalEndCol <= widthAdjustedStartCol) {
         return '';
@@ -368,7 +369,7 @@ export class SelectionManager extends EventEmitter {
    * non-whitespace characters.
    * @param coords The coordinates to get the word at.
    */
-  private _selectWordAt(coords: [number, number]): void {
+  protected _selectWordAt(coords: [number, number]): void {
     // TODO: Only fetch buffer line once for translate and convert functions
     const bufferLine = this._buffer.get(coords[1]);
     const line = this._translateBufferLineToString(bufferLine, false);
