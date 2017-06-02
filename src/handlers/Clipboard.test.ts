@@ -4,16 +4,10 @@ import * as Clipboard from './Clipboard';
 
 
 describe('evaluateCopiedTextProcessing', function () {
-  it('should strip trailing whitespaces and replace nbsps with spaces', function () {
-    let nonBreakingSpace = String.fromCharCode(160),
-        copiedText = 'echo' + nonBreakingSpace + 'hello' + nonBreakingSpace,
-        processedText = Clipboard.prepareTextForClipboard(copiedText);
-
-    // No trailing spaces
-    assert.equal(processedText.match(/\s+$/), null);
-
-    // No non-breaking space
-    assert.equal(processedText.indexOf(nonBreakingSpace), -1);
+  it('should replace non-breaking spaces with regular spaces', () => {
+    const nbsp = String.fromCharCode(160);
+    const result = Clipboard.prepareTextForClipboard(`foo${nbsp}bar\ntest${nbsp}${nbsp}`);
+    assert.equal(result, 'foo bar\ntest  ');
   });
 });
 
