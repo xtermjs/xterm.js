@@ -155,7 +155,7 @@ export class SelectionManager extends EventEmitter {
 
     // Calculate the final end col by trimming whitespace on the right of the
     // line if needed.
-    let finalEndCol = widthAdjustedEndCol || line.length
+    let finalEndCol = widthAdjustedEndCol || line.length;
     if (trimRight) {
       const rightWhitespaceIndex = lineString.search(/\s+$/);
       if (rightWhitespaceIndex !== -1) {
@@ -284,10 +284,10 @@ export class SelectionManager extends EventEmitter {
 
   private _setMouseClickCount(): void {
     let currentTime = (new Date()).getTime();
-		if (currentTime - this._lastMouseDownTime > CLEAR_MOUSE_DOWN_TIME) {
+    if (currentTime - this._lastMouseDownTime > CLEAR_MOUSE_DOWN_TIME) {
       this._clickCount = 0;
-		}
-		this._lastMouseDownTime = currentTime;
+    }
+    this._lastMouseDownTime = currentTime;
     this._clickCount++;
 
     // TODO: Invalidate click count if the position is different
@@ -351,7 +351,7 @@ export class SelectionManager extends EventEmitter {
   /**
    * Converts a viewport column to the character index on the buffer line, the
    * latter takes into account wide characters.
-   * @param coords The coordinates to find the character index for.
+   * @param coords The coordinates to find the 2 index for.
    */
   private _convertViewportColToCharacterIndex(bufferLine: any, coords: [number, number]): number {
     let charIndex = coords[0];
@@ -418,7 +418,7 @@ export class SelectionManager extends EventEmitter {
         startIndex--;
         startCol--;
       }
-      while (endIndex < line.length && line.charAt(endIndex + 1) !== ' ') {
+      while (endIndex + 1 < line.length && line.charAt(endIndex + 1) !== ' ') {
         if (bufferLine[endCol + 1][LINE_DATA_WIDTH_INDEX] === 2) {
           // If the next character is a wide char, record it and skip the column
           rightWideCharCount++;
