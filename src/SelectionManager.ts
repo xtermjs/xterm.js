@@ -36,7 +36,7 @@ const LINE_DATA_CHAR_INDEX = 1;
 const LINE_DATA_WIDTH_INDEX = 2;
 
 export class SelectionManager extends EventEmitter {
-  private _model: SelectionModel;
+  protected _model: SelectionModel;
 
   /**
    * The amount to scroll every drag scroll update (depends on how far the mouse
@@ -462,7 +462,7 @@ export class SelectionManager extends EventEmitter {
     this._model.selectionStartLength = Math.min(endIndex - startIndex + leftWideCharCount + rightWideCharCount + 1/*include endIndex char*/, this._terminal.cols);
   }
 
-  private _selectLineAt(line: number): void {
+  protected _selectLineAt(line: number): void {
     this._model.selectionStart = [0, line];
     this._model.selectionStartLength = this._terminal.cols;
   }

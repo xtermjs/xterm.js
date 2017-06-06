@@ -7,6 +7,7 @@ import { ITerminal } from './Interfaces';
 import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
 import { SelectionManager } from './SelectionManager';
+import { SelectionModel } from "./SelectionModel";
 
 class TestSelectionManager extends SelectionManager {
   constructor(
@@ -18,6 +19,9 @@ class TestSelectionManager extends SelectionManager {
     super(terminal, buffer, rowContainer, charMeasure);
   }
 
+  public get model(): SelectionModel { return this._model; }
+
+  public selectLineAt(line: number): void { this._selectLineAt(line); }
   public selectWordAt(coords: [number, number]): void { this._selectWordAt(coords); }
 
   // Disable DOM interaction
@@ -30,6 +34,7 @@ describe('SelectionManager', () => {
   let window: Window;
   let document: Document;
 
+  let terminal: ITerminal;
   let buffer: CircularList<any>;
   let rowContainer: HTMLElement;
   let selectionManager: TestSelectionManager;
@@ -39,7 +44,8 @@ describe('SelectionManager', () => {
       window = w;
       document = window.document;
       buffer = new CircularList<any>(100);
-      selectionManager = new TestSelectionManager(null, buffer, rowContainer, null);
+      terminal = <any>{ cols: 80 };
+      selectionManager = new TestSelectionManager(terminal, buffer, rowContainer, null);
       done();
     });
   });
@@ -135,6 +141,16 @@ describe('SelectionManager', () => {
       assert.equal(selectionManager.selectionText, 'foo');
       selectionManager.selectWordAt([14, 0]);
       assert.equal(selectionManager.selectionText, 'foo');
+    });
+  });
+
+  describe('_selectLineAt', () => {
+    it('should select the entire line', () => {
+      buffer.push(stringToRow('foo bar'));
+      selectionManager.selectLineAt(0);
+      assert.equal(selectionManager.selectionText, 'foo bar', 'The selected text is correct');
+      assert.deepEqual(selectionManager.model.finalSelectionStart, [0, 0]);
+      assert.deepEqual(selectionManager.model.finalSelectionEnd, [terminal.cols, 0], 'The actual selection spans the entire column');
     });
   });
 });
