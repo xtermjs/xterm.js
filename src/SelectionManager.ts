@@ -459,7 +459,7 @@ export class SelectionManager extends EventEmitter {
 
     // Record the resulting selection
     this._model.selectionStart = [startIndex + charOffset - leftWideCharCount, coords[1]];
-    this._model.selectionStartLength = endIndex - startIndex + leftWideCharCount + rightWideCharCount + 1/*include endIndex char*/;
+    this._model.selectionStartLength = Math.min(endIndex - startIndex + leftWideCharCount + rightWideCharCount + 1/*include endIndex char*/, this._terminal.cols);
   }
 
   private _selectLineAt(line: number): void {
