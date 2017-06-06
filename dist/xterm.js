@@ -372,10 +372,13 @@ var EventEmitter = (function () {
         return this.on(type, on);
     };
     EventEmitter.prototype.emit = function (type) {
+        var args = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            args[_i - 1] = arguments[_i];
+        }
         if (!this._events[type]) {
             return;
         }
-        var args = Array.prototype.slice.call(arguments, 1);
         var obj = this._events[type];
         for (var i = 0; i < obj.length; i++) {
             obj[i].apply(this, args);
@@ -1928,11 +1931,14 @@ var Parser = (function () {
                     if (ch === EscapeSequences_1.C0.ESC || ch === EscapeSequences_1.C0.BEL) {
                         if (ch === EscapeSequences_1.C0.ESC)
                             this._position++;
+                        var pt = void 0;
+                        var valid = void 0;
                         switch (this._terminal.prefix) {
                             case '':
                                 break;
                             case '$q':
-                                var pt = this._terminal.currentParam, valid = false;
+                                pt = this._terminal.currentParam;
+                                valid = false;
                                 switch (pt) {
                                     case '"q':
                                         pt = '0"q';
@@ -1960,8 +1966,8 @@ var Parser = (function () {
                             case '+p':
                                 break;
                             case '+q':
-                                pt = this._terminal.currentParam
-                                    , valid = false;
+                                pt = this._terminal.currentParam;
+                                valid = false;
                                 this._terminal.send(EscapeSequences_1.C0.ESC + 'P' + +valid + '+r' + pt + EscapeSequences_1.C0.ESC + '\\');
                                 break;
                             default:
@@ -1996,6 +2002,7 @@ var Parser = (function () {
                     break;
             }
         }
+        return this._state;
     };
     Parser.prototype.setState = function (state) {
         this._state = state;
@@ -2028,6 +2035,7 @@ exports.Parser = Parser;
 },{"./Charsets":1,"./EscapeSequences":3}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+var DomElementObjectPool_1 = require("./utils/DomElementObjectPool");
 var MAX_REFRESH_FRAME_SKIP = 5;
 var FLAGS;
 (function (FLAGS) {
@@ -2045,9 +2053,11 @@ var Renderer = (function () {
         this._refreshRowsQueue = [];
         this._refreshFramesSkipped = 0;
         this._refreshAnimationFrame = null;
+        this._spanElementObjectPool = new DomElementObjectPool_1.DomElementObjectPool('span');
         if (brokenBold === null) {
             brokenBold = checkBoldBroken(this._terminal.element);
         }
+        this._spanElementObjectPool = new DomElementObjectPool_1.DomElementObjectPool('span');
     }
     Renderer.prototype.queueRefresh = function (start, end) {
         this._refreshRowsQueue.push({ start: start, end: end });
@@ -2085,80 +2095,102 @@ var Renderer = (function () {
         this._refresh(start, end);
     };
     Renderer.prototype._refresh = function (start, end) {
-        var x, y, i, line, out, ch, ch_width, width, data, attr, bg, fg, flags, row, parent, focused = document.activeElement;
+        var parent;
         if (end - start >= this._terminal.rows / 2) {
             parent = this._terminal.element.parentNode;
             if (parent) {
                 this._terminal.element.removeChild(this._terminal.rowContainer);
             }
         }
-        width = this._terminal.cols;
-        y = start;
+        var width = this._terminal.cols;
+        var y = start;
         if (end >= this._terminal.rows) {
             this._terminal.log('`end` is too large. Most likely a bad CSR.');
             end = this._terminal.rows - 1;
         }
         for (; y <= end; y++) {
-            row = y + this._terminal.ydisp;
-            line = this._terminal.lines.get(row);
-            if (!line || !this._terminal.children[y]) {
-                continue;
-            }
-            out = '';
-            if (this._terminal.y === y - (this._terminal.ybase - this._terminal.ydisp)
-                && this._terminal.cursorState
-                && !this._terminal.cursorHidden) {
+            var row = y + this._terminal.ydisp;
+            var line = this._terminal.lines.get(row);
+            var x = void 0;
+            if (this._terminal.y === y - (this._terminal.ybase - this._terminal.ydisp) &&
+                this._terminal.cursorState &&
+                !this._terminal.cursorHidden) {
                 x = this._terminal.x;
             }
             else {
                 x = -1;
             }
-            attr = this._terminal.defAttr;
-            i = 0;
-            for (; i < width; i++) {
-                if (!line[i]) {
+            var attr = this._terminal.defAttr;
+            var documentFragment = document.createDocumentFragment();
+            var innerHTML = '';
+            var currentElement = void 0;
+            while (this._terminal.children[y].children.length) {
+                var child = this._terminal.children[y].children[0];
+                this._terminal.children[y].removeChild(child);
+                this._spanElementObjectPool.release(child);
+            }
+            for (var i = 0; i < width; i++) {
+                var data = line[i][0];
+                var ch = line[i][1];
+                var ch_width = line[i][2];
+                if (!ch_width) {
                     continue;
                 }
-                data = line[i][0];
-                ch = line[i][1];
-                ch_width = line[i][2];
-                if (!ch_width)
-                    continue;
-                if (i === x)
+                if (i === x) {
                     data = -1;
+                }
                 if (data !== attr) {
                     if (attr !== this._terminal.defAttr) {
-                        out += '</span>';
+                        if (innerHTML) {
+                            currentElement.innerHTML = innerHTML;
+                            innerHTML = '';
+                        }
+                        documentFragment.appendChild(currentElement);
+                        currentElement = null;
                     }
                     if (data !== this._terminal.defAttr) {
+                        if (innerHTML && !currentElement) {
+                            currentElement = this._spanElementObjectPool.acquire();
+                        }
+                        if (currentElement) {
+                            if (innerHTML) {
+                                currentElement.innerHTML = innerHTML;
+                                innerHTML = '';
+                            }
+                            documentFragment.appendChild(currentElement);
+                        }
+                        currentElement = this._spanElementObjectPool.acquire();
                         if (data === -1) {
-                            out += '<span class="reverse-video terminal-cursor">';
+                            currentElement.classList.add('reverse-video', 'terminal-cursor');
                         }
                         else {
-                            var classNames = [];
-                            bg = data & 0x1ff;
-                            fg = (data >> 9) & 0x1ff;
-                            flags = data >> 18;
+                            var bg = data & 0x1ff;
+                            var fg = (data >> 9) & 0x1ff;
+                            var flags = data >> 18;
                             if (flags & FLAGS.BOLD) {
                                 if (!brokenBold) {
-                                    classNames.push('xterm-bold');
+                                    currentElement.classList.add('xterm-bold');
                                 }
-                                if (fg < 8)
+                                if (fg < 8) {
                                     fg += 8;
+                                }
                             }
                             if (flags & FLAGS.UNDERLINE) {
-                                classNames.push('xterm-underline');
+                                currentElement.classList.add('xterm-underline');
                             }
                             if (flags & FLAGS.BLINK) {
-                                classNames.push('xterm-blink');
+                                currentElement.classList.add('xterm-blink');
                             }
                             if (flags & FLAGS.INVERSE) {
-                                bg = [fg, fg = bg][0];
-                                if ((flags & 1) && fg < 8)
+                                var temp = bg;
+                                bg = fg;
+                                fg = temp;
+                                if ((flags & 1) && fg < 8) {
                                     fg += 8;
+                                }
                             }
                             if (flags & FLAGS.INVISIBLE) {
-                                classNames.push('xterm-hidden');
+                                currentElement.classList.add('xterm-hidden');
                             }
                             if (flags & FLAGS.INVERSE) {
                                 if (bg === 257) {
@@ -2169,50 +2201,55 @@ var Renderer = (function () {
                                 }
                             }
                             if (bg < 256) {
-                                classNames.push('xterm-bg-color-' + bg);
+                                currentElement.classList.add("xterm-bg-color-" + bg);
                             }
                             if (fg < 256) {
-                                classNames.push('xterm-color-' + fg);
+                                currentElement.classList.add("xterm-color-" + fg);
                             }
-                            out += '<span';
-                            if (classNames.length) {
-                                out += ' class="' + classNames.join(' ') + '"';
-                            }
-                            out += '>';
                         }
                     }
                 }
                 if (ch_width === 2) {
-                    out += '<span class="xterm-wide-char">';
+                    innerHTML += "<span class=\"xterm-wide-char\">" + ch + "</span>";
                 }
-                switch (ch) {
-                    case '&':
-                        out += '&amp;';
-                        break;
-                    case '<':
-                        out += '&lt;';
-                        break;
-                    case '>':
-                        out += '&gt;';
-                        break;
-                    default:
-                        if (ch <= ' ') {
-                            out += '&nbsp;';
-                        }
-                        else {
-                            out += ch;
-                        }
-                        break;
+                else if (ch.charCodeAt(0) > 255) {
+                    innerHTML += "<span class=\"xterm-normal-char\">" + ch + "</span>";
                 }
-                if (ch_width === 2) {
-                    out += '</span>';
+                else {
+                    switch (ch) {
+                        case '&':
+                            innerHTML += '&amp;';
+                            break;
+                        case '<':
+                            innerHTML += '&lt;';
+                            break;
+                        case '>':
+                            innerHTML += '&gt;';
+                            break;
+                        default:
+                            if (ch <= ' ') {
+                                innerHTML += '&nbsp;';
+                            }
+                            else {
+                                innerHTML += ch;
+                            }
+                            break;
+                    }
                 }
                 attr = data;
             }
-            if (attr !== this._terminal.defAttr) {
-                out += '</span>';
+            if (innerHTML && !currentElement) {
+                currentElement = this._spanElementObjectPool.acquire();
             }
-            this._terminal.children[y].innerHTML = out;
+            if (currentElement) {
+                if (innerHTML) {
+                    currentElement.innerHTML = innerHTML;
+                    innerHTML = '';
+                }
+                documentFragment.appendChild(currentElement);
+                currentElement = null;
+            }
+            this._terminal.children[y].appendChild(documentFragment);
         }
         if (parent) {
             this._terminal.element.appendChild(this._terminal.rowContainer);
@@ -2239,7 +2276,7 @@ function checkBoldBroken(terminal) {
 
 
 
-},{}],9:[function(require,module,exports){
+},{"./utils/DomElementObjectPool":14}],9:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Viewport = (function () {
@@ -2328,6 +2365,13 @@ function prepareTextForClipboard(text) {
     return processedText;
 }
 exports.prepareTextForClipboard = prepareTextForClipboard;
+function prepareTextForTerminal(text, isMSWindows) {
+    if (isMSWindows) {
+        return text.replace(/\r?\n/g, '\n');
+    }
+    return text;
+}
+exports.prepareTextForTerminal = prepareTextForTerminal;
 function copyHandler(ev, term) {
     var copiedText = window.getSelection().toString(), text = prepareTextForClipboard(copiedText);
     if (term.browser.isMSIE) {
@@ -2343,8 +2387,10 @@ function pasteHandler(ev, term) {
     ev.stopPropagation();
     var text;
     var dispatchPaste = function (text) {
+        text = prepareTextForTerminal(text, term.browser.isMSWindows);
         term.handler(text);
         term.textarea.value = '';
+        term.emit('paste', text);
         return term.cancel(ev);
     };
     if (term.browser.isMSIE) {
@@ -2415,7 +2461,7 @@ exports.isMSWindows = Generic_1.contains(['Windows', 'Win16', 'Win32', 'WinCE'],
 
 
 
-},{"./Generic":14}],12:[function(require,module,exports){
+},{"./Generic":15}],12:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -2626,6 +2672,53 @@ exports.CircularList = CircularList;
 },{}],14:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+var DomElementObjectPool = (function () {
+    function DomElementObjectPool(type) {
+        this.type = type;
+        this._type = type;
+        this._pool = [];
+        this._inUse = {};
+    }
+    DomElementObjectPool.prototype.acquire = function () {
+        var element;
+        if (this._pool.length === 0) {
+            element = this._createNew();
+        }
+        else {
+            element = this._pool.pop();
+        }
+        this._inUse[element.getAttribute(DomElementObjectPool.OBJECT_ID_ATTRIBUTE)] = element;
+        return element;
+    };
+    DomElementObjectPool.prototype.release = function (element) {
+        if (!this._inUse[element.getAttribute(DomElementObjectPool.OBJECT_ID_ATTRIBUTE)]) {
+            throw new Error('Could not release an element not yet acquired');
+        }
+        delete this._inUse[element.getAttribute(DomElementObjectPool.OBJECT_ID_ATTRIBUTE)];
+        this._cleanElement(element);
+        this._pool.push(element);
+    };
+    DomElementObjectPool.prototype._createNew = function () {
+        var element = document.createElement(this._type);
+        var id = DomElementObjectPool._objectCount++;
+        element.setAttribute(DomElementObjectPool.OBJECT_ID_ATTRIBUTE, id.toString(10));
+        return element;
+    };
+    DomElementObjectPool.prototype._cleanElement = function (element) {
+        element.className = '';
+        element.innerHTML = '';
+    };
+    return DomElementObjectPool;
+}());
+DomElementObjectPool.OBJECT_ID_ATTRIBUTE = 'data-obj-id';
+DomElementObjectPool._objectCount = 0;
+exports.DomElementObjectPool = DomElementObjectPool;
+
+
+
+},{}],15:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 function contains(arr, el) {
     return arr.indexOf(el) >= 0;
 }
@@ -2634,7 +2727,41 @@ exports.contains = contains;
 
 
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+function getCoords(event, rowContainer, charMeasure) {
+    if (event.pageX == null) {
+        return null;
+    }
+    var x = event.pageX;
+    var y = event.pageY;
+    var el = rowContainer;
+    while (el && el !== self.document.documentElement) {
+        x -= el.offsetLeft;
+        y -= el.offsetTop;
+        el = 'offsetParent' in el ? el.offsetParent : el.parentElement;
+    }
+    x = Math.ceil(x / charMeasure.width);
+    y = Math.ceil(y / charMeasure.height);
+    return [x, y];
+}
+exports.getCoords = getCoords;
+function getRawByteCoords(event, rowContainer, charMeasure, colCount, rowCount) {
+    var coords = getCoords(event, rowContainer, charMeasure);
+    var x = coords[0];
+    var y = coords[1];
+    x = Math.min(Math.max(x, 0), colCount);
+    y = Math.min(Math.max(y, 0), rowCount);
+    x += 32;
+    y += 32;
+    return { x: x, y: y };
+}
+exports.getRawByteCoords = getRawByteCoords;
+
+
+
+},{}],17:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var CompositionHelper_1 = require("./CompositionHelper");
@@ -2649,6 +2776,7 @@ var Renderer_1 = require("./Renderer");
 var Linkifier_1 = require("./Linkifier");
 var CharMeasure_1 = require("./utils/CharMeasure");
 var Browser = require("./utils/Browser");
+var Mouse_1 = require("./utils/Mouse");
 var document = (typeof window != 'undefined') ? window.document : null;
 var WRITE_BUFFER_PAUSE_THRESHOLD = 5;
 var WRITE_BATCH_SIZE = 300;
@@ -3102,14 +3230,16 @@ Terminal.loadAddon = function (addon, callback) {
     }
 };
 Terminal.prototype.updateCharSizeCSS = function () {
-    this.charSizeStyleElement.textContent = '.xterm-wide-char{width:' + (this.charMeasure.width * 2) + 'px;}';
+    this.charSizeStyleElement.textContent =
+        ".xterm-wide-char{width:" + this.charMeasure.width * 2 + "px;}" +
+            (".xterm-normal-char{width:" + this.charMeasure.width + "px;}");
 };
 Terminal.prototype.bindMouse = function () {
     var el = this.element, self = this, pressed = 32;
     function sendButton(ev) {
         var button, pos;
         button = getButton(ev);
-        pos = getCoords(ev);
+        pos = Mouse_1.getRawByteCoords(ev, self.rowContainer, self.charMeasure, self.cols, self.rows);
         if (!pos)
             return;
         sendEvent(button, pos);
@@ -3126,7 +3256,7 @@ Terminal.prototype.bindMouse = function () {
     }
     function sendMove(ev) {
         var button = pressed, pos;
-        pos = getCoords(ev);
+        pos = Mouse_1.getRawByteCoords(ev, self.rowContainer, self.charMeasure, self.cols, self.rows);
         if (!pos)
             return;
         button += 32;
@@ -3264,38 +3394,6 @@ Terminal.prototype.bindMouse = function () {
         }
         button = (32 + (mod << 2)) + button;
         return button;
-    }
-    function getCoords(ev) {
-        var x, y, w, h, el;
-        if (ev.pageX == null)
-            return;
-        x = ev.pageX;
-        y = ev.pageY;
-        el = self.element;
-        while (el && el !== self.document.documentElement) {
-            x -= el.offsetLeft;
-            y -= el.offsetTop;
-            el = 'offsetParent' in el
-                ? el.offsetParent
-                : el.parentNode;
-        }
-        x = Math.ceil(x / self.charMeasure.width);
-        y = Math.ceil(y / self.charMeasure.height);
-        if (x < 0)
-            x = 0;
-        if (x > self.cols)
-            x = self.cols;
-        if (y < 0)
-            y = 0;
-        if (y > self.rows)
-            y = self.rows;
-        x += 32;
-        y += 32;
-        return {
-            x: x,
-            y: y,
-            type: 'wheel'
-        };
     }
     on(el, 'mousedown', function (ev) {
         if (!self.mouseEvents)
@@ -3452,7 +3550,8 @@ Terminal.prototype.innerWrite = function () {
         }
         this.refreshStart = this.y;
         this.refreshEnd = this.y;
-        this.parser.parse(data);
+        var state = this.parser.parse(data);
+        this.parser.setState(state);
         this.updateRange(this.y);
         this.refresh(this.refreshStart, this.refreshEnd);
     }
@@ -4214,6 +4313,6 @@ module.exports = Terminal;
 
 
 
-},{"./CompositionHelper":2,"./EscapeSequences":3,"./EventEmitter":4,"./InputHandler":5,"./Linkifier":6,"./Parser":7,"./Renderer":8,"./Viewport":9,"./handlers/Clipboard":10,"./utils/Browser":11,"./utils/CharMeasure":12,"./utils/CircularList":13}]},{},[15])(15)
+},{"./CompositionHelper":2,"./EscapeSequences":3,"./EventEmitter":4,"./InputHandler":5,"./Linkifier":6,"./Parser":7,"./Renderer":8,"./Viewport":9,"./handlers/Clipboard":10,"./utils/Browser":11,"./utils/CharMeasure":12,"./utils/CircularList":13,"./utils/Mouse":16}]},{},[17])(17)
 });
 //# sourceMappingURL=xterm.js.map

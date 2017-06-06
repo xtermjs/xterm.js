@@ -181,7 +181,7 @@ export class Parser {
    *
    * @param data The data to parse.
    */
-  public parse(data: string) {
+  public parse(data: string): ParserState {
     let l = data.length, j, cs, ch, code, low;
 
     this._position = 0;
@@ -564,6 +564,7 @@ export class Parser {
           break;
       }
     }
+    return this._state;
   }
 
   /**
