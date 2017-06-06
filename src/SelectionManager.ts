@@ -13,17 +13,17 @@ import { SelectionModel } from './SelectionModel';
  * The number of pixels the mouse needs to be above or below the viewport in
  * order to scroll at the maximum speed.
  */
-const DRAG_SCROLL_MAX_THRESHOLD = 100;
+const DRAG_SCROLL_MAX_THRESHOLD = 50;
 
 /**
  * The maximum scrolling speed
  */
-const DRAG_SCROLL_MAX_SPEED = 5;
+const DRAG_SCROLL_MAX_SPEED = 15;
 
 /**
  * The number of milliseconds between drag scroll updates.
  */
-const DRAG_SCROLL_INTERVAL = 100;
+const DRAG_SCROLL_INTERVAL = 50;
 
 /**
  * The amount of time before mousedown events are no longer stacked to create
@@ -119,9 +119,7 @@ export class SelectionManager extends EventEmitter {
     this.refresh();
     this._buffer.off('trim', this._bufferTrimListener);
     this._rowContainer.removeEventListener('mousedown', this._mouseDownListener);
-    this._rowContainer.ownerDocument.removeEventListener('mousemove', this._mouseMoveListener);
-    this._rowContainer.ownerDocument.removeEventListener('mouseup', this._mouseUpListener);
-    clearInterval(this._dragScrollIntervalTimer);
+    this._removeMouseDownListeners();
   }
 
   /**
@@ -283,6 +281,9 @@ export class SelectionManager extends EventEmitter {
       return;
     }
 
+    // Reset drag scroll state
+    this._dragScrollAmount = 0;
+
     this._setMouseClickCount(event);
 
     if (event.shiftKey) {
@@ -297,11 +298,28 @@ export class SelectionManager extends EventEmitter {
       }
     }
 
+    this._addMouseDownListeners();
+    this.refresh();
+  }
+
+  /**
+   * Adds listeners when mousedown is triggered.
+   */
+  private _addMouseDownListeners(): void {
     // Listen on the document so that dragging outside of viewport works
     this._rowContainer.ownerDocument.addEventListener('mousemove', this._mouseMoveListener);
     this._rowContainer.ownerDocument.addEventListener('mouseup', this._mouseUpListener);
     this._dragScrollIntervalTimer = setInterval(() => this._dragScroll(), DRAG_SCROLL_INTERVAL);
-    this.refresh();
+  }
+
+  /**
+   * Removes the listeners that are registered when mousedown is triggered.
+   */
+  private _removeMouseDownListeners(): void {
+    this._rowContainer.ownerDocument.removeEventListener('mousemove', this._mouseMoveListener);
+    this._rowContainer.ownerDocument.removeEventListener('mouseup', this._mouseUpListener);
+    clearInterval(this._dragScrollIntervalTimer);
+    this._dragScrollIntervalTimer = null;
   }
 
   /**
@@ -455,17 +473,11 @@ export class SelectionManager extends EventEmitter {
   }
 
   /**
-   * Handles the mouseup event, removing the mousemove listener when
-   * appropriate.
+   * Handles the mouseup event, removing the mousedown listeners.
    * @param event The mouseup event.
    */
   private _onMouseUp(event: MouseEvent) {
-    this._dragScrollAmount = 0;
-    if (!this._model.selectionStart) {
-      return;
-    }
-    this._rowContainer.ownerDocument.removeEventListener('mousemove', this._mouseMoveListener);
-    this._rowContainer.ownerDocument.removeEventListener('mouseup', this._mouseUpListener);
+    this._removeMouseDownListeners();
   }
 
   /**
