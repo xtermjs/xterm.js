@@ -238,12 +238,16 @@ export class SelectionManager extends EventEmitter {
     this._setMouseClickCount();
     console.log(this._clickCount);
 
-    if (this._clickCount === 1) {
-        this._onSingleClick(event);
-    } else if (this._clickCount === 2) {
-        this._onDoubleClick(event);
-    } else if (this._clickCount === 3) {
-        this._onTripleClick(event);
+    if (event.shiftKey) {
+      this._onShiftClick(event);
+    } else {
+      if (this._clickCount === 1) {
+          this._onSingleClick(event);
+      } else if (this._clickCount === 2) {
+          this._onDoubleClick(event);
+      } else if (this._clickCount === 3) {
+          this._onTripleClick(event);
+      }
     }
 
     // Listen on the document so that dragging outside of viewport works
@@ -251,6 +255,12 @@ export class SelectionManager extends EventEmitter {
     this._rowContainer.ownerDocument.addEventListener('mouseup', this._mouseUpListener);
     this._dragScrollTimeout = setInterval(() => this._dragScroll(), DRAG_SCROLL_INTERVAL);
     this.refresh();
+  }
+
+  private _onShiftClick(event: MouseEvent): void {
+    if (this._model.selectionStart) {
+      this._model.selectionEnd = this._getMouseBufferCoords(event);
+    }
   }
 
   private _onSingleClick(event: MouseEvent): void {
