@@ -9,6 +9,18 @@ interface IPosition {
   end: number;
 }
 
+export const isEdgeOrIE = (
+  typeof navigator === 'object' &&
+  (navigator.userAgent.indexOf('Trident') >= 0 || navigator.userAgent.indexOf('Edge/') >= 0)
+)
+
+const isChromev55v56 = (
+  typeof navigator === 'object' &&
+  (navigator.userAgent.indexOf('Chrome/55.') >= 0 || navigator.userAgent.indexOf('Chrome/56.') >= 0)
+  /* Edge likes to impersonate Chrome sometimes */
+  && navigator.userAgent.indexOf('Edge/') === -1
+);
+
 /**
  * Encapsulates the logic for handling compositionstart, compositionupdate and compositionend
  * events, displaying the in-progress composition to the UI and forwarding the final composition
@@ -63,6 +75,17 @@ export class CompositionHelper {
    * @param {CompositionEvent} ev The event.
    */
   public compositionupdate(ev: CompositionEvent) {
+    if (isChromev55v56 || (isEdgeOrIE && ev.locale === 'ja')) {
+      // See https://github.com/Microsoft/monaco-editor/issues/320
+      // where compositionupdate .data is broken in Chrome v55 and v56
+      // See https://bugs.chromium.org/p/chromium/issues/detail?id=677050#c9
+      setTimeout(() => {
+        this.compositionView.textContent = this.textarea.value.substring(this.compositionPosition.start);
+        this.updateCompositionElements();
+        this.compositionPosition.end = this.textarea.value.length;
+      }, 0);
+      return;
+    }
     this.compositionView.textContent = ev.data;
     this.updateCompositionElements();
     setTimeout(() => {
@@ -75,7 +98,13 @@ export class CompositionHelper {
    * the handler.
    */
   public compositionend() {
-    this.finalizeComposition(true);
+    if (isChromev55v56 || isEdgeOrIE) {
+      setTimeout(() => {
+        this.finalizeComposition(true);
+      }, 0);
+    } else {
+      this.finalizeComposition(true);
+    }
   }
 
   /**
