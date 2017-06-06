@@ -77,6 +77,8 @@ export function pasteHandler(ev: ClipboardEvent, term: ITerminal) {
     text = prepareTextForTerminal(text, term.browser.isMSWindows);
     term.handler(text);
     term.textarea.value = '';
+    term.emit('paste', text);
+
     return term.cancel(ev);
   };
 
