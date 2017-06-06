@@ -79,6 +79,8 @@ export class SelectionManager extends EventEmitter {
    */
   private _dragScrollIntervalTimer: NodeJS.Timer;
 
+  private _refreshAnimationFrame: number;
+
   private _bufferTrimListener: any;
   private _mouseMoveListener: EventListener;
   private _mouseDownListener: EventListener;
@@ -212,9 +214,20 @@ export class SelectionManager extends EventEmitter {
   }
 
   /**
-   * Redraws the selection.
+   * Queues a refresh, redrawing the selection on the next opportunity.
    */
   public refresh(): void {
+    if (!this._refreshAnimationFrame) {
+      this._refreshAnimationFrame = window.requestAnimationFrame(() => this._refresh());
+    }
+  }
+
+  /**
+   * Fires the refresh event, causing consumers to pick it up and redraw the
+   * selection state.
+   */
+  private _refresh(): void {
+    this._refreshAnimationFrame = null;
     this.emit('refresh', { start: this._model.finalSelectionStart, end: this._model.finalSelectionEnd });
   }
 
