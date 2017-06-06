@@ -52,6 +52,8 @@ export class SelectionManager extends EventEmitter {
 
   private _clickCount: number;
 
+  private _isLineSelectModeActive: boolean;
+
   private _bufferTrimListener: any;
   private _mouseMoveListener: EventListener;
   private _mouseDownListener: EventListener;
@@ -71,6 +73,7 @@ export class SelectionManager extends EventEmitter {
 
     this._model = new SelectionModel(_terminal);
     this._lastMouseDownTime = 0;
+    this._isLineSelectModeActive = false;
   }
 
   private _initListeners() {
@@ -266,6 +269,7 @@ export class SelectionManager extends EventEmitter {
   private _onSingleClick(event: MouseEvent): void {
     this._model.selectionStartLength = 0;
     this._model.isSelectAllActive = false;
+    this._isLineSelectModeActive = false;
     this._model.selectionStart = this._getMouseBufferCoords(event);
     if (this._model.selectionStart) {
       this._model.selectionEnd = null;
@@ -288,6 +292,7 @@ export class SelectionManager extends EventEmitter {
   private _onTripleClick(event: MouseEvent): void {
     const coords = this._getMouseBufferCoords(event);
     if (coords) {
+      this._isLineSelectModeActive = true;
       this._selectLineAt(coords[1]);
     }
   }
@@ -309,7 +314,17 @@ export class SelectionManager extends EventEmitter {
    * @param event The mousemove event.
    */
   private _onMouseMove(event: MouseEvent) {
-    this._model.selectionEnd = this._getMouseBufferCoords(event);
+    if (this._isLineSelectModeActive) {
+      this._model.selectionEnd = this._getMouseBufferCoords(event);
+      if (this._model.selectionEnd[1] < this._model.selectionStart[1]) {
+        this._model.selectionEnd[0] = 0;
+      } else {
+        this._model.selectionEnd[0] = this._terminal.cols;
+      }
+    } else {
+      this._model.selectionEnd = this._getMouseBufferCoords(event);
+    }
+
     // TODO: Perhaps the actual selection setting could be merged into _dragScroll?
     this._dragScrollAmount = this._getMouseEventScrollAmount(event);
     // If the cursor was above or below the viewport, make sure it's at the
@@ -320,10 +335,13 @@ export class SelectionManager extends EventEmitter {
       this._model.selectionEnd[0] = 0;
     }
 
+    console.log(this._model.selectionEnd);
+
     // If the character is a wide character include the cell to the right in the
-    // selection.
+    // selection. Note that selections at the very end of the line will never
+    // have a character.
     const char = this._buffer.get(this._model.selectionEnd[1])[this._model.selectionEnd[0]];
-    if (char[2] === 0) {
+    if (char && char[2] === 0) {
       this._model.selectionEnd[0]++;
     }
 
