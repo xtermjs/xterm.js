@@ -106,6 +106,10 @@ describe('SelectionManager', () => {
       model.selectionEnd = [1, 2];
       assert.equal(model.finalSelectionEnd, null);
     });
+    it('should return null if there is no selection end or selection start length', () => {
+      model.selectionStart = [1, 2];
+      assert.equal(model.finalSelectionEnd, null);
+    });
     it('should return selection start + length if there is no selection end', () => {
       model.selectionStart = [2, 2];
       model.selectionStartLength = 2;

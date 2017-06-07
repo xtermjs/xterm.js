@@ -30,6 +30,7 @@ export class SelectionModel {
   constructor(
     private _terminal: ITerminal
   ) {
+    this.clearSelection();
   }
 
   /**
@@ -39,6 +40,7 @@ export class SelectionModel {
     this.selectionStart = null;
     this.selectionEnd = null;
     this.isSelectAllActive = false;
+    this.selectionStartLength = 0;
   }
 
   /**
@@ -49,7 +51,7 @@ export class SelectionModel {
       return [0, 0];
     }
 
-    if (!this.selectionEnd) {
+    if (!this.selectionEnd || !this.selectionStart) {
       return this.selectionStart;
     }
 
@@ -71,6 +73,9 @@ export class SelectionModel {
 
     // Use the selection start if the end doesn't exist or they're reversed
     if (!this.selectionEnd || this._areSelectionValuesReversed()) {
+      if (this.selectionStartLength === 0) {
+        return null;
+      }
       return [this.selectionStart[0] + this.selectionStartLength, this.selectionStart[1]];
     }
 
