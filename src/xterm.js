@@ -696,7 +696,7 @@ Terminal.prototype.open = function(parent, focus) {
 
   this.charMeasure = new CharMeasure(document, this.helperContainer);
   this.charMeasure.on('charsizechanged', function () {
-    self.updateCharSizeCSS();
+    self.updateCharSizeStyles();
   });
   this.charMeasure.measure();
 
@@ -776,10 +776,10 @@ Terminal.loadAddon = function(addon, callback) {
  * Updates the helper CSS class with any changes necessary after the terminal's
  * character width has been changed.
  */
-Terminal.prototype.updateCharSizeCSS = function() {
+Terminal.prototype.updateCharSizeStyles = function() {
   this.charSizeStyleElement.textContent =
       `.xterm-wide-char{width:${this.charMeasure.width * 2}px;}` +
-      `.xterm-normal-char{width:${this.charMeasure.width}px;}`
+      `.xterm-normal-char{width:${this.charMeasure.width}px;}`;
 }
 
 /**
