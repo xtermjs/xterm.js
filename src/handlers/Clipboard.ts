@@ -16,24 +16,6 @@ interface IWindow extends Window {
 
 declare var window: IWindow;
 
-const SPACE_CHAR = String.fromCharCode(32);
-const NON_BREAKING_SPACE_CHAR = String.fromCharCode(160);
-const ALL_NON_BREAKING_SPACE_REGEX = new RegExp(NON_BREAKING_SPACE_CHAR, 'g');
-
-/**
- * Prepares text copied from terminal selection, to be saved in the clipboard by:
- *   1. stripping all trailing white spaces
- *   2. converting all non-breaking spaces to regular spaces
- * @param {string} text The copied text that needs processing for storing in clipboard
- * @returns {string}
- */
-export function prepareTextForClipboard(text: string): string {
-  // TODO: Pass an unjoined string array into this function so not splitting is needed
-  return text.split('\n').map(line => {
-    return line.replace(ALL_NON_BREAKING_SPACE_REGEX, SPACE_CHAR);
-  }).join('\n');
-}
-
 /**
  * Prepares text to be pasted into the terminal by normalizing the line endings
  * @param text The pasted text that needs processing before inserting into the terminal
@@ -50,17 +32,14 @@ export function prepareTextForTerminal(text: string, isMSWindows: boolean): stri
  * @param {ClipboardEvent} ev The original copy event to be handled
  */
 export function copyHandler(ev: ClipboardEvent, term: ITerminal, selectionManager: ISelectionManager) {
-  // We cast `window` to `any` type, because TypeScript has not declared the `clipboardData`
-  // property that we use below for Internet Explorer.
-  let text = prepareTextForClipboard(selectionManager.selectionText);
-
   if (term.browser.isMSIE) {
-    window.clipboardData.setData('Text', text);
+    window.clipboardData.setData('Text', selectionManager.selectionText);
   } else {
-    ev.clipboardData.setData('text/plain', text);
+    ev.clipboardData.setData('text/plain', selectionManager.selectionText);
   }
 
-  ev.preventDefault(); // Prevent or the original text will be copied.
+  // Prevent or the original text will be copied.
+  ev.preventDefault();
 }
 
 /**
@@ -111,7 +90,7 @@ export function rightClickHandler(ev: MouseEvent, textarea: HTMLTextAreaElement,
   textarea.style.zIndex = '1000';
 
   // Get textarea ready to copy from the context menu
-  textarea.value = prepareTextForClipboard(selectionManager.selectionText);
+  textarea.value = selectionManager.selectionText;
   textarea.focus();
   textarea.select();
 

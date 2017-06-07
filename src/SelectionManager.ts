@@ -42,6 +42,9 @@ const CLEAR_MOUSE_DISTANCE = 10;
 const LINE_DATA_CHAR_INDEX = 1;
 const LINE_DATA_WIDTH_INDEX = 2;
 
+const NON_BREAKING_SPACE_CHAR = String.fromCharCode(160);
+const ALL_NON_BREAKING_SPACE_REGEX = new RegExp(NON_BREAKING_SPACE_CHAR, 'g');
+
 export class SelectionManager extends EventEmitter {
   protected _model: SelectionModel;
 
@@ -177,7 +180,13 @@ export class SelectionManager extends EventEmitter {
       result.push(this._translateBufferLineToString(this._buffer.get(end[1]), true, 0, end[0]));
     }
 
-    return result.join('\n');
+    // Format string by replacing non-breaking space chars with regular spaces
+    // and joining the array into a multi-line string.
+    const formattedResult = result.map(line => {
+      return line.replace(ALL_NON_BREAKING_SPACE_REGEX, ' ');
+    }).join('\n');
+
+    return formattedResult;
   }
 
   /**

@@ -13,7 +13,7 @@
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './EventEmitter';
 import { Viewport } from './Viewport';
-import { rightClickHandler, pasteHandler, copyHandler, prepareTextForClipboard } from './handlers/Clipboard';
+import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard';
 import { CircularList } from './utils/CircularList';
 import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
@@ -1385,8 +1385,7 @@ Terminal.prototype.hasSelection = function() {
  * behavior outside of xterm.js.
  */
 Terminal.prototype.getSelection = function() {
-  // TODO: Should prepareTextForClipboard logic be moved to SelectionManager?
-  return prepareTextForClipboard(this.selectionManager.selectionText);
+  return this.selectionManager.selectionText;
 }
 
 /**
