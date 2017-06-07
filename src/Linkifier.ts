@@ -7,24 +7,67 @@ import { LinkMatcher, LinkMatcherHandler, LinkMatcherValidationCallback } from '
 
 const INVALID_LINK_CLASS = 'xterm-invalid-link';
 
-const protocolClause = '(https?:\\/\\/)';
-const domainCharacterSet = '[\\da-z\\.-]+';
-const negatedDomainCharacterSet = '[^\\da-z\\.-]+';
-const domainBodyClause = '(' + domainCharacterSet + ')';
-const tldClause = '([a-z\\.]{2,6})';
-const ipClause = '((\\d{1,3}\\.){3}\\d{1,3})';
-const localHostClause = '(localhost)';
-const portClause = '(:\\d{1,5})';
-const hostClause = '((' + domainBodyClause + '\\.' + tldClause + ')|' + ipClause + '|' + localHostClause + ')' + portClause + '?';
-const pathClause = '(\\/[\\/\\w\\.\\-%~]*)*';
-const queryStringHashFragmentCharacterSet = '[0-9\\w\\[\\]\\(\\)\\/\\?\\!#@$%&\'*+,:;~\\=\\.\\-]*';
-const queryStringClause = '(\\?' + queryStringHashFragmentCharacterSet + ')?';
-const hashFragmentClause = '(#' + queryStringHashFragmentCharacterSet + ')?';
-const negatedPathCharacterSet = '[^\\/\\w\\.\\-%]+';
-const bodyClause = hostClause + pathClause + queryStringClause + hashFragmentClause;
-const start = '(?:^|' + negatedDomainCharacterSet + ')(';
-const end = ')($|' + negatedPathCharacterSet + ')';
-const strictUrlRegex = new RegExp(start + protocolClause + bodyClause + end);
+const cAlpha = 'a-z';
+const cDigit = '0-9';
+const cHexDig = '0-9a-f';
+
+const cGenDelims = ':\\/?#\\[\\]@';
+const cSubDelims = '~$%\'()*+,;=';
+const cUnreserved = cAlpha + cDigit + '._~\\-';
+
+const ALPHA = '[' + cAlpha + ']';
+const DIGIT = '[' + cDigit + ']';
+const HEXDIG = '[' + cHexDig + ']';
+
+const pctEncoded = '(?:%' + HEXDIG + HEXDIG + ')';
+
+const pchar = '(?:' + pctEncoded + '|[' + cUnreserved + cSubDelims + ':@])';
+
+const queryOrFragment = '(?:' + pctEncoded + '|[' + cUnreserved + cSubDelims + ':@\\/?])*';
+const queryPart = '(?:\\?' + queryOrFragment + ')?';
+const fragmentPart = '(?:#' + queryOrFragment + ')?';
+
+const segment = '(?:' + pchar + '*)';
+const segmentNz = '(?:' + pchar + '+)';
+
+const pathAbempty = '(?:\\/' + segment + ')*';
+const pathAbsolute = '(?:\\/(?:' + segmentNz + '(?:\\/' + segment + ')*)?)';
+const pathRootless = '(?:' + segmentNz + '(?:\\/' + segment + ')*)';
+const pathEmpty = '(?:)';
+
+const regName = '(?:[' + cUnreserved + cSubDelims + ']|' + pctEncoded + ')*';
+
+const decOctet = '(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])';
+const ipv4Address = '(?:' + decOctet + '\\.' + decOctet + '\\.' + decOctet + '\\.' + decOctet + ')';
+const h16 = '(?:' + HEXDIG + '{1,4})';
+const ls32 = '(?:(?:' + h16 + ':' + h16 + ')|' + ipv4Address + ')';
+
+const ipvFuture = '(?:v' + HEXDIG + '\\.[' + cUnreserved + cSubDelims + ':' + ']+)';
+const ipv6Address = '(?:'
+    +       '(?:' +                                                  '(?:' + h16 + ':){6}' + ls32 + ')'
+    + '|' + '(?:' +                                           '::' + '(?:' + h16 + ':){5}' + ls32 + ')'
+    + '|' + '(?:' +                      '(?:' + h16 + ')?' + '::' + '(?:' + h16 + ':){4}' + ls32 + ')'
+    + '|' + '(?:' + '(?:(?:' + h16 + ':)?'     + h16 + ')?' + '::' + '(?:' + h16 + ':){3}' + ls32 + ')'
+    + '|' + '(?:' + '(?:(?:' + h16 + ':){0,2}' + h16 + ')?' + '::' + '(?:' + h16 + ':){2}' + ls32 + ')'
+    + '|' + '(?:' + '(?:(?:' + h16 + ':){0,3}' + h16 + ')?' + '::' + '(?:' + h16 + ':)'    + ls32 + ')'
+    + '|' + '(?:' + '(?:(?:' + h16 + ':){0,4}' + h16 + ')?' + '::' +                         ls32 + ')'
+    + '|' + '(?:' + '(?:(?:' + h16 + ':){0,5}' + h16 + ')?' + '::' +                          h16 + ')'
+    + '|' + '(?:' + '(?:(?:' + h16 + ':){0,6}' + h16 + ')?::)'
+    + ')';
+
+const ipLiteral = '\\[(?:' + ipv6Address + '|' + ipvFuture + ')\\]';
+
+const userinfo = '(?:[' + cUnreserved + cSubDelims + ']|' + pctEncoded + ')*';
+const host = '(?:' + ipLiteral + '|' + ipv4Address + '|' + regName + ')';
+const port = '(?:' + DIGIT + '*)';
+const authority = '(?:' + userinfo + '@)?' + host + '(?::' + port + ')?';
+
+const scheme = ALPHA + '(?:[' + cAlpha + cDigit + '+\\-.])*';
+
+const hierPart = '(?:(?:\\/\\/' + authority + pathAbempty + ')|' + pathAbsolute + '|' + pathRootless + '|' + pathEmpty + ')';
+
+const URI = scheme + ':' + hierPart + queryPart + fragmentPart;
+const uriRegex = new RegExp('(' + URI + ')', 'i');
 
 /**
  * The ID of the built in http(s) link matcher.
@@ -52,7 +95,7 @@ export class Linkifier {
   constructor() {
     this._rowTimeoutIds = [];
     this._linkMatchers = [];
-    this.registerLinkMatcher(strictUrlRegex, null, { matchIndex: 1 });
+    this.registerLinkMatcher(uriRegex, null, { matchIndex: 1 });
   }
 
   /**
