@@ -365,11 +365,15 @@ export class Renderer {
     this._terminal.selectionContainer.appendChild(documentFragment);
   }
 
+  /**
+   * Creates a selection element at the specified position.
+   * @param row The row of the selection.
+   * @param colStart The start column.
+   * @param colEnd The end columns.
+   */
   private _createSelectionElement(row: number, colStart: number, colEnd: number): HTMLElement {
     const element = document.createElement('div');
-    // TODO: Move into a generated <style> element
     element.style.height = `${this._terminal.charMeasure.height}px`;
-
     element.style.top = `${row * this._terminal.charMeasure.height}px`;
     element.style.left = `${colStart * this._terminal.charMeasure.width}px`;
     element.style.width = `${this._terminal.charMeasure.width * (colEnd - colStart)}px`;

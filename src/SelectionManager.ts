@@ -245,7 +245,6 @@ export class SelectionManager extends EventEmitter {
    */
   private _getMouseBufferCoords(event: MouseEvent): [number, number] {
     const coords = Mouse.getCoords(event, this._rowContainer, this._charMeasure, this._terminal.cols, this._terminal.rows);
-    console.log(coords);
     // Convert to 0-based
     coords[0]--;
     coords[1]--;
@@ -285,7 +284,6 @@ export class SelectionManager extends EventEmitter {
     }
 
     this._setMouseClickCount(event);
-    console.log(this._clickCount);
 
     if (event.shiftKey) {
       this._onShiftClick(event);
@@ -424,9 +422,11 @@ export class SelectionManager extends EventEmitter {
     // If the character is a wide character include the cell to the right in the
     // selection. Note that selections at the very end of the line will never
     // have a character.
-    const char = this._buffer.get(this._model.selectionEnd[1])[this._model.selectionEnd[0]];
-    if (char && char[2] === 0) {
-      this._model.selectionEnd[0]++;
+    if (this._model.selectionEnd[1] < this._buffer.length) {
+      const char = this._buffer.get(this._model.selectionEnd[1])[this._model.selectionEnd[0]];
+      if (char && char[2] === 0) {
+        this._model.selectionEnd[0]++;
+      }
     }
 
     // Only draw here if the selection changes.

@@ -7,7 +7,7 @@ import { ITerminal } from './Interfaces';
 import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
 import { SelectionManager } from './SelectionManager';
-import { SelectionModel } from "./SelectionModel";
+import { SelectionModel } from './SelectionModel';
 
 class TestSelectionManager extends SelectionManager {
   constructor(
