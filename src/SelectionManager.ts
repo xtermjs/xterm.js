@@ -26,10 +26,16 @@ const DRAG_SCROLL_MAX_SPEED = 5;
 const DRAG_SCROLL_INTERVAL = 100;
 
 /**
- * The amount of time before mousedown events are no stacked to create double
- * click events.
+ * The amount of time before mousedown events are no longer stacked to create
+ * double/triple click events.
  */
 const CLEAR_MOUSE_DOWN_TIME = 400;
+
+/**
+ * The number of pixels in each direction that the mouse must move before
+ * mousedown events are no longer stacked to create double/triple click events.
+ */
+const CLEAR_MOUSE_DISTANCE = 10;
 
 // TODO: Move these constants elsewhere
 const LINE_DATA_CHAR_INDEX = 1;
@@ -49,6 +55,11 @@ export class SelectionManager extends EventEmitter {
    * triple clicks.
    */
   private _lastMouseDownTime: number;
+
+  /**
+   * The last position the mouse was clicked [x, y].
+   */
+  private _lastMousePosition: [number, number];
 
   private _clickCount: number;
 
@@ -102,6 +113,10 @@ export class SelectionManager extends EventEmitter {
    * Enable the selection manager.
    */
   public enable() {
+    // Only adjust the selection on trim, shiftElements is rarely used (only in
+    // reverseIndex) and delete in a splice is only ever used when the same
+    // number of elements was just added. Given this is could actually be
+    // beneficial to leave the selection as is for these cases.
     this._buffer.on('trim', this._bufferTrimListener);
     this._rowContainer.addEventListener('mousedown', this._mouseDownListener);
   }
@@ -200,8 +215,6 @@ export class SelectionManager extends EventEmitter {
     }
   }
 
-  // TODO: Handle splice/shiftElements in the buffer (just clear the selection?)
-
   private _getMouseBufferCoords(event: MouseEvent): [number, number] {
     const coords = Mouse.getCoords(event, this._rowContainer, this._charMeasure, this._terminal.cols, this._terminal.rows);
     console.log(coords);
@@ -238,7 +251,7 @@ export class SelectionManager extends EventEmitter {
       return;
     }
 
-    this._setMouseClickCount();
+    this._setMouseClickCount(event);
     console.log(this._clickCount);
 
     if (event.shiftKey) {
@@ -297,15 +310,21 @@ export class SelectionManager extends EventEmitter {
     }
   }
 
-  private _setMouseClickCount(): void {
+  private _setMouseClickCount(event: MouseEvent): void {
     let currentTime = (new Date()).getTime();
-    if (currentTime - this._lastMouseDownTime > CLEAR_MOUSE_DOWN_TIME) {
+    if (currentTime - this._lastMouseDownTime > CLEAR_MOUSE_DOWN_TIME || this._distanceFromLastMousePosition(event) > CLEAR_MOUSE_DISTANCE) {
       this._clickCount = 0;
     }
     this._lastMouseDownTime = currentTime;
+    this._lastMousePosition = [event.pageX, event.pageY];
     this._clickCount++;
+  }
 
-    // TODO: Invalidate click count if the position is different
+  private _distanceFromLastMousePosition(event: MouseEvent): number {
+    const result = Math.max(
+        Math.abs(this._lastMousePosition[0] - event.pageX),
+        Math.abs(this._lastMousePosition[1] - event.pageY));
+    return result;
   }
 
   /**
