@@ -99,7 +99,7 @@ describe('SelectionManager', () => {
   describe('finalSelectionEnd', () => {
     it('should return the end of the buffer if select all is active', () => {
       model.isSelectAllActive = true;
-      assert.deepEqual(model.finalSelectionEnd, [79, 1]);
+      assert.deepEqual(model.finalSelectionEnd, [80, 1]);
     });
     it('should return null if there is no selection start', () => {
       assert.equal(model.finalSelectionEnd, null);
