@@ -526,7 +526,12 @@ Terminal.prototype.initGlobal = function() {
 
   // Bind clipboard functionality
   on(this.element, 'copy', event => {
-    copyHandler(event, term, term.selectionManager);
+    // If mouse events are active it means the selection manager is disabled and
+    // copy should be handled by the host program.
+    if (this.mouseEvents) {
+      return;
+    }
+    copyHandler(event, term, this.selectionManager);
   });
   const pasteHandlerWrapper = event => pasteHandler(event, term);
   on(this.textarea, 'paste', pasteHandlerWrapper);
