@@ -1374,10 +1374,17 @@ Terminal.prototype.deregisterLinkMatcher = function(matcherId) {
 }
 
 /**
+ * Gets whether the terminal has an active selection.
+ */
+Terminal.prototype.hasSelection = function() {
+  return this.selectionManager.hasSelection;
+}
+
+/**
  * Gets the terminal's current selection, this is useful for implementing copy
  * behavior outside of xterm.js.
  */
-Terminal.prototype.getSelectionText = function() {
+Terminal.prototype.getSelection = function() {
   // TODO: Should prepareTextForClipboard logic be moved to SelectionManager?
   return prepareTextForClipboard(this.selectionManager.selectionText);
 }
