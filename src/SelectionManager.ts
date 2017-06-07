@@ -137,6 +137,15 @@ export class SelectionManager extends EventEmitter {
   }
 
   /**
+   * Sets the active buffer, this should be called when the alt buffer is
+   * switched in or out.
+   * @param buffer The active buffer.
+   */
+  public setBuffer(buffer: CircularList<any>): void {
+    this._buffer = buffer;
+  }
+
+  /**
    * Gets the text currently selected.
    */
   public get selectionText(): string {

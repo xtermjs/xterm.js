@@ -251,6 +251,10 @@ function Terminal(options) {
   while (i--) {
     this.lines.push(this.blankLine());
   }
+  // Ensure the selection manager has the correct buffer
+  if (this.selectionManager) {
+    this.selectionManager.setBuffer(this.lines);
+  }
 
   this.tabs;
   this.setupStops();

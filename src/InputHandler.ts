@@ -1130,6 +1130,8 @@ export class InputHandler implements IInputHandler {
             this._terminal.scrollBottom = this._terminal.normal.scrollBottom;
             this._terminal.tabs = this._terminal.normal.tabs;
             this._terminal.normal = null;
+            // Ensure the selection manager has the correct buffer
+            this._terminal.selectionManager.setBuffer(this._terminal.lines);
             // if (params === 1049) {
             //   this.x = this.savedX;
             //   this.y = this.savedY;
