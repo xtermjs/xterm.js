@@ -119,12 +119,9 @@ export class SelectionManager extends EventEmitter {
    * are enabled.
    */
   public disable() {
-    this._model.selectionStart = null;
-    this._model.selectionEnd = null;
-    this.refresh();
+    this.clearSelection();
     this._buffer.off('trim', this._bufferTrimListener);
     this._rowContainer.removeEventListener('mousedown', this._mouseDownListener);
-    this._removeMouseDownListeners();
   }
 
   /**
@@ -193,8 +190,7 @@ export class SelectionManager extends EventEmitter {
    * Clears the current terminal selection.
    */
   public clearSelection(): void {
-    this._model.selectionStart = null;
-    this._model.selectionEnd = null;
+    this._model.clearSelection();
     this._removeMouseDownListeners();
     this.refresh();
   }

@@ -33,6 +33,15 @@ export class SelectionModel {
   }
 
   /**
+   * Clears the current selection.
+   */
+  public clearSelection(): void {
+    this.selectionStart = null;
+    this.selectionEnd = null;
+    this.isSelectAllActive = false;
+  }
+
+  /**
    * The final selection start, taking into consideration select all.
    */
   public get finalSelectionStart(): [number, number] {
