@@ -319,9 +319,12 @@ export class Renderer {
     this._terminal.emit('refresh', {element: this._terminal.element, start: start, end: end});
   };
 
+  /**
+   * Refreshes the selection in the DOM.
+   * @param start The selection start.
+   * @param end The selection end.
+   */
   public refreshSelection(start: [number, number], end: [number, number]) {
-    console.log('renderer, refresh:', start, end);
-
     // Remove all selections
     while (this._terminal.selectionContainer.children.length) {
       this._terminal.selectionContainer.removeChild(this._terminal.selectionContainer.children[0]);
@@ -342,14 +345,6 @@ export class Renderer {
     if (viewportCappedStartRow >= this._terminal.rows || viewportCappedEndRow < 0) {
       return;
     }
-
-    console.log('viewportStartRow', viewportCappedStartRow);
-    console.log('viewportEndRow', viewportCappedEndRow);
-
-    // TODO: Only redraw selections when necessary
-
-    // TODO: Fix selection on the first row going out the left of the terminal
-    // TODO: Fix selection on the last row not going to the last column
 
     // Create the selections
     const documentFragment = document.createDocumentFragment();
