@@ -13,7 +13,7 @@
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './EventEmitter';
 import { Viewport } from './Viewport';
-import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard';
+import { rightClickHandler, pasteHandler, copyHandler, prepareTextForClipboard } from './handlers/Clipboard';
 import { CircularList } from './utils/CircularList';
 import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
@@ -1371,6 +1371,15 @@ Terminal.prototype.deregisterLinkMatcher = function(matcherId) {
       this.refresh(0, this.rows - 1);
     }
   }
+}
+
+/**
+ * Gets the terminal's current selection, this is useful for implementing copy
+ * behavior outside of xterm.js.
+ */
+Terminal.prototype.getSelectionText = function() {
+  // TODO: Should prepareTextForClipboard logic be moved to SelectionManager?
+  return prepareTextForClipboard(this.selectionManager.selectionText);
 }
 
 /**
