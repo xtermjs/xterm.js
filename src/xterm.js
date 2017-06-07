@@ -1390,6 +1390,13 @@ Terminal.prototype.getSelection = function() {
 }
 
 /**
+ * Clears the current terminal selection.
+ */
+Terminal.prototype.clearSelection = function() {
+  this.selectionManager.clearSelection();
+}
+
+/**
  * Selects all text within the terminal.
  */
 Terminal.prototype.selectAll = function() {

@@ -181,6 +181,16 @@ export class SelectionManager extends EventEmitter {
   }
 
   /**
+   * Clears the current terminal selection.
+   */
+  public clearSelection(): void {
+    this._model.selectionStart = null;
+    this._model.selectionEnd = null;
+    this._removeMouseDownListeners();
+    this.refresh();
+  }
+
+  /**
    * Translates a buffer line to a string, with optional start and end columns.
    * Wide characters will count as two columns in the resulting string. This
    * function is useful for getting the actual text underneath the raw selection
