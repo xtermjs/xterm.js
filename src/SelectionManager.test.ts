@@ -44,7 +44,7 @@ describe('SelectionManager', () => {
       window = w;
       document = window.document;
       buffer = new CircularList<any>(100);
-      terminal = <any>{ cols: 80 };
+      terminal = <any>{ cols: 80, rows: 2 };
       selectionManager = new TestSelectionManager(terminal, buffer, rowContainer, null);
       done();
     });
@@ -151,6 +151,19 @@ describe('SelectionManager', () => {
       assert.equal(selectionManager.selectionText, 'foo bar', 'The selected text is correct');
       assert.deepEqual(selectionManager.model.finalSelectionStart, [0, 0]);
       assert.deepEqual(selectionManager.model.finalSelectionEnd, [terminal.cols, 0], 'The actual selection spans the entire column');
+    });
+  });
+
+  describe('selectAll', () => {
+    it('should select the entire buffer, beyond the viewport', () => {
+      buffer.push(stringToRow('1'));
+      buffer.push(stringToRow('2'));
+      buffer.push(stringToRow('3'));
+      buffer.push(stringToRow('4'));
+      buffer.push(stringToRow('5'));
+      selectionManager.selectAll();
+      terminal.ybase = buffer.length - terminal.rows;
+      assert.equal(selectionManager.selectionText, '1\n2\n3\n4\n5');
     });
   });
 });

@@ -160,7 +160,7 @@ export class SelectionManager extends EventEmitter {
     if (start[1] !== end[1]) {
       result.push(this._translateBufferLineToString(this._buffer.get(end[1]), true, 0, end[0]));
     }
-    console.log('selectionText result: "' + result + '"');
+
     return result.join('\n');
   }
 
