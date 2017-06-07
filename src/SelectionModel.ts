@@ -87,7 +87,7 @@ export class SelectionModel {
   /**
    * Returns whether the selection start and end are reversed.
    */
-  private _areSelectionValuesReversed(): boolean {
+  protected _areSelectionValuesReversed(): boolean {
     const start = this.selectionStart;
     const end = this.selectionEnd;
     return start[1] > end[1] || (start[1] === end[1] && start[0] > end[0]);
@@ -101,21 +101,20 @@ export class SelectionModel {
   public onTrim(amount: number): boolean {
     // Adjust the selection position based on the trimmed amount.
     if (this.selectionStart) {
-      this.selectionStart[0] -= amount;
+      this.selectionStart[1] -= amount;
     }
     if (this.selectionEnd) {
-      this.selectionEnd[0] -= amount;
+      this.selectionEnd[1] -= amount;
     }
 
     // The selection has moved off the buffer, clear it.
-    if (this.selectionEnd && this.selectionEnd[0] < 0) {
-      this.selectionStart = null;
-      this.selectionEnd = null;
+    if (this.selectionEnd && this.selectionEnd[1] < 0) {
+      this.clearSelection();
       return true;
     }
 
     // If the selection start is trimmed, ensure the start column is 0.
-    if (this.selectionStart && this.selectionStart[0] < 0) {
+    if (this.selectionStart && this.selectionStart[1] < 0) {
       this.selectionStart[1] = 0;
     }
     return false;

@@ -82,6 +82,9 @@ export class SelectionManager extends EventEmitter {
    */
   private _dragScrollIntervalTimer: NodeJS.Timer;
 
+  /**
+   * The animation frame ID used for refreshing the selection.
+   */
   private _refreshAnimationFrame: number;
 
   private _bufferTrimListener: any;
