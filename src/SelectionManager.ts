@@ -73,12 +73,16 @@ export class SelectionManager extends EventEmitter {
    */
   private _isLineSelectModeActive: boolean;
 
+  /**
+   * A setInterval timer that is active while the mouse is down whose callback
+   * scrolls the viewport when necessary.
+   */
+  private _dragScrollIntervalTimer: NodeJS.Timer;
+
   private _bufferTrimListener: any;
   private _mouseMoveListener: EventListener;
   private _mouseDownListener: EventListener;
   private _mouseUpListener: EventListener;
-
-  private _dragScrollIntervalTimer: NodeJS.Timer;
 
   constructor(
     private _terminal: ITerminal,
@@ -95,6 +99,9 @@ export class SelectionManager extends EventEmitter {
     this._isLineSelectModeActive = false;
   }
 
+  /**
+   * Initializes listener variables.
+   */
   private _initListeners() {
     this._bufferTrimListener = (amount: number) => this._onTrim(amount);
     this._mouseMoveListener = event => this._onMouseMove(<MouseEvent>event);
@@ -157,6 +164,16 @@ export class SelectionManager extends EventEmitter {
     return result.join('\n');
   }
 
+  /**
+   * Translates a buffer line to a string, with optional start and end columns.
+   * Wide characters will count as two columns in the resulting string. This
+   * function is useful for getting the actual text underneath the raw selection
+   * position.
+   * @param line The line being translated.
+   * @param trimRight Whether to trim whitespace to the right.
+   * @param startCol The column to start at.
+   * @param endCol The column to end at.
+   */
   private _translateBufferLineToString(line: any, trimRight: boolean, startCol: number = 0, endCol: number = null): string {
     // TODO: This function should live in a buffer or buffer line class
 
@@ -222,6 +239,10 @@ export class SelectionManager extends EventEmitter {
     }
   }
 
+  /**
+   * Gets the 0-based [x, y] buffer coordinates of the current mouse event.
+   * @param event The mouse event.
+   */
   private _getMouseBufferCoords(event: MouseEvent): [number, number] {
     const coords = Mouse.getCoords(event, this._rowContainer, this._charMeasure, this._terminal.cols, this._terminal.rows);
     console.log(coords);
@@ -233,6 +254,11 @@ export class SelectionManager extends EventEmitter {
     return coords;
   }
 
+  /**
+   * Gets the amount the viewport should be scrolled based on how far out of the
+   * terminal the mouse is.
+   * @param event The mouse event.
+   */
   private _getMouseEventScrollAmount(event: MouseEvent): number {
     let offset = Mouse.getCoordsRelativeToElement(event, this._rowContainer)[1];
     const terminalHeight = this._terminal.rows * this._charMeasure.height;
@@ -280,12 +306,22 @@ export class SelectionManager extends EventEmitter {
     this.refresh();
   }
 
+  /**
+   * Performs a shift click, setting the selection end position to the mouse
+   * position.
+   * @param event The mouse event.
+   */
   private _onShiftClick(event: MouseEvent): void {
     if (this._model.selectionStart) {
       this._model.selectionEnd = this._getMouseBufferCoords(event);
     }
   }
 
+  /**
+   * Performs a single click, resetting relevant state and setting the selection
+   * start position.
+   * @param event The mouse event.
+   */
   private _onSingleClick(event: MouseEvent): void {
     this._model.selectionStartLength = 0;
     this._model.isSelectAllActive = false;
@@ -302,6 +338,10 @@ export class SelectionManager extends EventEmitter {
     }
   }
 
+  /**
+   * Performs a double click, selecting the current work.
+   * @param event The mouse event.
+   */
   private _onDoubleClick(event: MouseEvent): void {
     const coords = this._getMouseBufferCoords(event);
     if (coords) {
@@ -309,6 +349,11 @@ export class SelectionManager extends EventEmitter {
     }
   }
 
+  /**
+   * Performs a triple click, selecting the current line and activating line
+   * select mode.
+   * @param event The mouse event.
+   */
   private _onTripleClick(event: MouseEvent): void {
     const coords = this._getMouseBufferCoords(event);
     if (coords) {
@@ -317,6 +362,11 @@ export class SelectionManager extends EventEmitter {
     }
   }
 
+  /**
+   * Sets the number of clicks for the current mousedown event based on the time
+   * and position of the last mousedown event.
+   * @param event The mouse event.
+   */
   private _setMouseClickCount(event: MouseEvent): void {
     let currentTime = (new Date()).getTime();
     if (currentTime - this._lastMouseDownTime > CLEAR_MOUSE_DOWN_TIME || this._distanceFromLastMousePosition(event) > CLEAR_MOUSE_DISTANCE) {
@@ -327,6 +377,10 @@ export class SelectionManager extends EventEmitter {
     this._clickCount++;
   }
 
+  /**
+   * Gets the maximum number of pixels in each direction the mouse has moved.
+   * @param event The mouse event.
+   */
   private _distanceFromLastMousePosition(event: MouseEvent): number {
     const result = Math.max(
         Math.abs(this._lastMousePosition[0] - event.pageX),
@@ -383,6 +437,10 @@ export class SelectionManager extends EventEmitter {
     }
   }
 
+  /**
+   * The callback that occurs every DRAG_SCROLL_INTERVAL ms that does the
+   * scrolling of the viewport.
+   */
   private _dragScroll() {
     if (this._dragScrollAmount) {
       this._terminal.scrollDisp(this._dragScrollAmount, false);
@@ -495,6 +553,10 @@ export class SelectionManager extends EventEmitter {
     this._model.selectionStartLength = Math.min(endIndex - startIndex + leftWideCharCount + rightWideCharCount + 1/*include endIndex char*/, this._terminal.cols);
   }
 
+  /**
+   * Selects the line specified.
+   * @param line The line index.
+   */
   protected _selectLineAt(line: number): void {
     this._model.selectionStart = [0, line];
     this._model.selectionStartLength = this._terminal.cols;
