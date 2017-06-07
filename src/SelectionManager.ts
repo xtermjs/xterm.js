@@ -37,7 +37,8 @@ const CLEAR_MOUSE_DOWN_TIME = 400;
  */
 const CLEAR_MOUSE_DISTANCE = 10;
 
-// TODO: Move these constants elsewhere
+// TODO: Move these constants elsewhere, they belong in a buffer or buffer
+//       data/line class.
 const LINE_DATA_CHAR_INDEX = 1;
 const LINE_DATA_WIDTH_INDEX = 2;
 
@@ -61,8 +62,15 @@ export class SelectionManager extends EventEmitter {
    */
   private _lastMousePosition: [number, number];
 
+  /**
+   * The number of clicks of the mousedown event. This is used to keep track of
+   * double and triple clicks.
+   */
   private _clickCount: number;
 
+  /**
+   * Whether line select mode is active, this occurs after a triple click.
+   */
   private _isLineSelectModeActive: boolean;
 
   private _bufferTrimListener: any;
@@ -70,7 +78,7 @@ export class SelectionManager extends EventEmitter {
   private _mouseDownListener: EventListener;
   private _mouseUpListener: EventListener;
 
-  private _dragScrollTimeout: NodeJS.Timer;
+  private _dragScrollIntervalTimer: NodeJS.Timer;
 
   constructor(
     private _terminal: ITerminal,
@@ -106,7 +114,7 @@ export class SelectionManager extends EventEmitter {
     this._rowContainer.removeEventListener('mousedown', this._mouseDownListener);
     this._rowContainer.ownerDocument.removeEventListener('mousemove', this._mouseMoveListener);
     this._rowContainer.ownerDocument.removeEventListener('mouseup', this._mouseUpListener);
-    clearInterval(this._dragScrollTimeout);
+    clearInterval(this._dragScrollIntervalTimer);
   }
 
   /**
@@ -192,7 +200,6 @@ export class SelectionManager extends EventEmitter {
    * Redraws the selection.
    */
   public refresh(): void {
-    // TODO: Figure out when to refresh the selection vs when to refresh the viewport
     this.emit('refresh', { start: this._model.finalSelectionStart, end: this._model.finalSelectionEnd });
   }
 
@@ -269,7 +276,7 @@ export class SelectionManager extends EventEmitter {
     // Listen on the document so that dragging outside of viewport works
     this._rowContainer.ownerDocument.addEventListener('mousemove', this._mouseMoveListener);
     this._rowContainer.ownerDocument.addEventListener('mouseup', this._mouseUpListener);
-    this._dragScrollTimeout = setInterval(() => this._dragScroll(), DRAG_SCROLL_INTERVAL);
+    this._dragScrollIntervalTimer = setInterval(() => this._dragScroll(), DRAG_SCROLL_INTERVAL);
     this.refresh();
   }
 
@@ -333,28 +340,32 @@ export class SelectionManager extends EventEmitter {
    * @param event The mousemove event.
    */
   private _onMouseMove(event: MouseEvent) {
+    // Record the previous position so we know whether to redraw the selection
+    // at the end.
+    const previousSelectionEnd = this._model.selectionEnd ? [this._model.selectionEnd[0], this._model.selectionEnd[1]] : null;
+
+    // Set the initial selection end based on the mouse coordinates
+    this._model.selectionEnd = this._getMouseBufferCoords(event);
+
+    // Select the entire line if line select mode is active.
     if (this._isLineSelectModeActive) {
-      this._model.selectionEnd = this._getMouseBufferCoords(event);
       if (this._model.selectionEnd[1] < this._model.selectionStart[1]) {
         this._model.selectionEnd[0] = 0;
       } else {
         this._model.selectionEnd[0] = this._terminal.cols;
       }
-    } else {
-      this._model.selectionEnd = this._getMouseBufferCoords(event);
     }
 
-    // TODO: Perhaps the actual selection setting could be merged into _dragScroll?
+    // Determine the amount of scrolling that will happen.
     this._dragScrollAmount = this._getMouseEventScrollAmount(event);
+
     // If the cursor was above or below the viewport, make sure it's at the
-    // start or end of the viewport respectively
+    // start or end of the viewport respectively.
     if (this._dragScrollAmount > 0) {
       this._model.selectionEnd[0] = this._terminal.cols - 1;
     } else if (this._dragScrollAmount < 0) {
       this._model.selectionEnd[0] = 0;
     }
-
-    console.log(this._model.selectionEnd);
 
     // If the character is a wide character include the cell to the right in the
     // selection. Note that selections at the very end of the line will never
@@ -364,8 +375,12 @@ export class SelectionManager extends EventEmitter {
       this._model.selectionEnd[0]++;
     }
 
-    // TODO: Only draw here if the selection changes
-    this.refresh();
+    // Only draw here if the selection changes.
+    if (!previousSelectionEnd ||
+        previousSelectionEnd[0] !== this._model.selectionEnd[0] ||
+        previousSelectionEnd[1] !== this._model.selectionEnd[1]) {
+      this.refresh();
+    }
   }
 
   private _dragScroll() {
@@ -417,7 +432,6 @@ export class SelectionManager extends EventEmitter {
    * @param coords The coordinates to get the word at.
    */
   protected _selectWordAt(coords: [number, number]): void {
-    // TODO: Only fetch buffer line once for translate and convert functions
     const bufferLine = this._buffer.get(coords[1]);
     const line = this._translateBufferLineToString(bufferLine, false);
 
