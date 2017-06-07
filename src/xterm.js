@@ -1655,6 +1655,10 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
     default:
       // a-z and space
       if (ev.ctrlKey && !ev.shiftKey && !ev.altKey && !ev.metaKey) {
+        if (ev.keyCode == 86) {
+          // console.log("PASTING!!!!");
+          break;
+        }
         if (ev.keyCode >= 65 && ev.keyCode <= 90) {
           result.key = String.fromCharCode(ev.keyCode - 64);
         } else if (ev.keyCode === 32) {
