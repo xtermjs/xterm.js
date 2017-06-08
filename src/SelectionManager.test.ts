@@ -166,15 +166,4 @@ describe('SelectionManager', () => {
       assert.equal(selectionManager.selectionText, '1\n2\n3\n4\n5');
     });
   });
-
-  describe('selectionText', () => {
-    it('should return the empty string when start or end selections are not set', () => {
-      assert.equal(selectionManager.selectionText, '');
-      selectionManager.model.selectionStart = [0, 0];
-      assert.equal(selectionManager.selectionText, '');
-      selectionManager.model.selectionStart = null;
-      selectionManager.model.selectionEnd = [0, 0];
-      assert.equal(selectionManager.selectionText, '');
-    });
-  });
 });

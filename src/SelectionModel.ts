@@ -73,9 +73,6 @@ export class SelectionModel {
 
     // Use the selection start if the end doesn't exist or they're reversed
     if (!this.selectionEnd || this._areSelectionValuesReversed()) {
-      if (this.selectionStartLength === 0) {
-        return null;
-      }
       return [this.selectionStart[0] + this.selectionStartLength, this.selectionStart[1]];
     }
 
