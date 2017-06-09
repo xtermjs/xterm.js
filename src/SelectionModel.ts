@@ -4,6 +4,10 @@
 
 import { ITerminal } from './Interfaces';
 
+/**
+ * Represents a selection within the buffer. This model only cares about column
+ * and row coordinates, not wide characters.
+ */
 export class SelectionModel {
   /**
    * Whether select all is currently active.

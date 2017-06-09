@@ -45,6 +45,14 @@ const LINE_DATA_WIDTH_INDEX = 2;
 const NON_BREAKING_SPACE_CHAR = String.fromCharCode(160);
 const ALL_NON_BREAKING_SPACE_REGEX = new RegExp(NON_BREAKING_SPACE_CHAR, 'g');
 
+/**
+ * A class that manages the selection of the terminal. With help from
+ * SelectionModel, SelectionManager handles with all logic associated with
+ * dealing with the selection, including handling mouse interaction, wide
+ * characters and fetching the actual text within the selection. Rendering is
+ * not handled by the SelectionManager but a 'refresh' event is fired when the
+ * selection is ready to be redrawn.
+ */
 export class SelectionManager extends EventEmitter {
   protected _model: SelectionModel;
 
