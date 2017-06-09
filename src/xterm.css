@@ -135,8 +135,8 @@
 }
 
 .terminal .composition-view {
-    background: #000;
-    color: #FFF;
+    background: inherit;
+    color: inherit;
     display: none;
     position: absolute;
     white-space: nowrap;
@@ -149,7 +149,7 @@
 
 .terminal .xterm-viewport {
     /* On OS X this is required in order for the scroll bar to appear fully opaque */
-    background-color: #000;
+    background-color: inherit;
     overflow-y: scroll;
 }
 
