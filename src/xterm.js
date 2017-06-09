@@ -20,9 +20,10 @@ import { InputHandler } from './InputHandler';
 import { Parser } from './Parser';
 import { Renderer } from './Renderer';
 import { Linkifier } from './Linkifier';
+import { SelectionManager } from './SelectionManager';
 import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './utils/Browser';
-import * as Keyboard from './utils/Keyboard';
+import * as Mouse from './utils/Mouse';
 import { CHARSETS } from './Charsets';
 import { getRawByteCoords } from './utils/Mouse';
 
@@ -220,6 +221,7 @@ function Terminal(options) {
   this.parser = new Parser(this.inputHandler, this);
   // Reuse renderer if the Terminal is being recreated via a Terminal.reset call.
   this.renderer = this.renderer || null;
+  this.selectionManager = this.selectionManager || null;
   this.linkifier = this.linkifier || new Linkifier();
 
   // user input states
@@ -248,6 +250,10 @@ function Terminal(options) {
   var i = this.rows;
   while (i--) {
     this.lines.push(this.blankLine());
+  }
+  // Ensure the selection manager has the correct buffer
+  if (this.selectionManager) {
+    this.selectionManager.setBuffer(this.lines);
   }
 
   this.tabs;
@@ -519,28 +525,28 @@ Terminal.prototype.initGlobal = function() {
   Terminal.bindBlur(this);
 
   // Bind clipboard functionality
-  on(this.element, 'copy', function (ev) {
-    copyHandler.call(this, ev, term);
+  on(this.element, 'copy', event => {
+    // If mouse events are active it means the selection manager is disabled and
+    // copy should be handled by the host program.
+    if (this.mouseEvents) {
+      return;
+    }
+    copyHandler(event, term, this.selectionManager);
   });
-  on(this.textarea, 'paste', function (ev) {
-    pasteHandler.call(this, ev, term);
-  });
-  on(this.element, 'paste', function (ev) {
-    pasteHandler.call(this, ev, term);
-  });
-
-  function rightClickHandlerWrapper (ev) {
-    rightClickHandler.call(this, ev, term);
-  }
+  const pasteHandlerWrapper = event => pasteHandler(event, term);
+  on(this.textarea, 'paste', pasteHandlerWrapper);
+  on(this.element, 'paste', pasteHandlerWrapper);
 
   if (term.browser.isFirefox) {
-    on(this.element, 'mousedown', function (ev) {
+    on(this.element, 'mousedown', event => {
       if (ev.button == 2) {
-        rightClickHandlerWrapper(ev);
+        rightClickHandler(event, this.textarea, this.selectionManager);
       }
     });
   } else {
-    on(this.element, 'contextmenu', rightClickHandlerWrapper);
+    on(this.element, 'contextmenu', event => {
+      rightClickHandler(event, this.textarea, this.selectionManager);
+    });
   }
 };
 
@@ -641,6 +647,12 @@ Terminal.prototype.open = function(parent, focus) {
   this.viewportScrollArea.classList.add('xterm-scroll-area');
   this.viewportElement.appendChild(this.viewportScrollArea);
 
+  // Create the selection container. This needs to be added before the
+  // rowContainer as the selection must be below the text.
+  this.selectionContainer = document.createElement('div');
+  this.selectionContainer.classList.add('xterm-selection');
+  this.element.appendChild(this.selectionContainer);
+
   // Create the container that will hold the lines of the terminal and then
   // produce the lines the lines.
   this.rowContainer = document.createElement('div');
@@ -684,12 +696,16 @@ Terminal.prototype.open = function(parent, focus) {
 
   this.charMeasure = new CharMeasure(document, this.helperContainer);
   this.charMeasure.on('charsizechanged', function () {
-    self.updateCharSizeCSS();
+    self.updateCharSizeStyles();
   });
   this.charMeasure.measure();
 
   this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
   this.renderer = new Renderer(this);
+  this.selectionManager = new SelectionManager(this, this.lines, this.rowContainer, this.charMeasure);
+  this.selectionManager.on('refresh', data => this.renderer.refreshSelection(data.start, data.end));
+  this.on('scroll', () => this.selectionManager.refresh());
+  this.viewportElement.addEventListener('scroll', () => this.selectionManager.refresh());
 
   // Setup loop that draws to screen
   this.refresh(0, this.rows - 1);
@@ -760,10 +776,10 @@ Terminal.loadAddon = function(addon, callback) {
  * Updates the helper CSS class with any changes necessary after the terminal's
  * character width has been changed.
  */
-Terminal.prototype.updateCharSizeCSS = function() {
+Terminal.prototype.updateCharSizeStyles = function() {
   this.charSizeStyleElement.textContent =
       `.xterm-wide-char{width:${this.charMeasure.width * 2}px;}` +
-      `.xterm-normal-char{width:${this.charMeasure.width}px;}`
+      `.xterm-normal-char{width:${this.charMeasure.width}px;}`;
 }
 
 /**
@@ -1166,6 +1182,9 @@ Terminal.prototype.scroll = function() {
  */
 Terminal.prototype.scrollDisp = function(disp, suppressScrollEvent) {
   if (disp < 0) {
+    if (this.ydisp === 0) {
+      return;
+    }
     this.userScrolling = true;
   } else if (disp + this.ydisp >= this.ybase) {
     this.userScrolling = false;
@@ -1352,6 +1371,35 @@ Terminal.prototype.deregisterLinkMatcher = function(matcherId) {
       this.refresh(0, this.rows - 1);
     }
   }
+}
+
+/**
+ * Gets whether the terminal has an active selection.
+ */
+Terminal.prototype.hasSelection = function() {
+  return this.selectionManager.hasSelection;
+}
+
+/**
+ * Gets the terminal's current selection, this is useful for implementing copy
+ * behavior outside of xterm.js.
+ */
+Terminal.prototype.getSelection = function() {
+  return this.selectionManager.selectionText;
+}
+
+/**
+ * Clears the current terminal selection.
+ */
+Terminal.prototype.clearSelection = function() {
+  this.selectionManager.clearSelection();
+}
+
+/**
+ * Selects all text within the terminal.
+ */
+Terminal.prototype.selectAll = function() {
+  this.selectionManager.selectAll();
 }
 
 /**
@@ -1684,6 +1732,10 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
           result.key = C0.ESC + '`';
         } else if (ev.keyCode >= 48 && ev.keyCode <= 57) {
           result.key = C0.ESC + (ev.keyCode - 48);
+        }
+      } else if (this.browser.isMac && !ev.altKey && !ev.ctrlKey && ev.metaKey) {
+        if (ev.keyCode === 65) { // cmd + a
+          this.selectAll();
         }
       }
       break;

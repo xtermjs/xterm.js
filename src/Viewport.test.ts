@@ -4,6 +4,7 @@ import { Viewport } from './Viewport';
 describe('Viewport', () => {
   let terminal;
   let viewportElement;
+  let selectionContainer;
   let charMeasure;
   let viewport;
   let scrollAreaElement;
@@ -19,6 +20,11 @@ describe('Viewport', () => {
       rowContainer: {
         style: {
           lineHeight: 0
+        }
+      },
+      selectionContainer: {
+        style: {
+          height: 0
         }
       }
     };

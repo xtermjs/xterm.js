@@ -57,6 +57,7 @@ export class Viewport {
       if (rowHeightChanged || viewportHeightChanged) {
         this.lastRecordedViewportHeight = this.terminal.rows;
         this.viewportElement.style.height = this.charMeasure.height * this.terminal.rows + 'px';
+        this.terminal.selectionContainer.style.height = this.viewportElement.style.height;
       }
       this.scrollArea.style.height = (this.charMeasure.height * this.lastRecordedBufferLength) + 'px';
     }
