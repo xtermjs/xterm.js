@@ -75,8 +75,9 @@ export class InputHandler implements IInputHandler {
           const removed = this._terminal.lines.get(this._terminal.y + this._terminal.ybase).pop();
           if (removed[2] === 0
               && this._terminal.lines.get(row)[this._terminal.cols - 2]
-          && this._terminal.lines.get(row)[this._terminal.cols - 2][2] === 2)
+              && this._terminal.lines.get(row)[this._terminal.cols - 2][2] === 2) {
             this._terminal.lines.get(row)[this._terminal.cols - 2] = [this._terminal.curAttr, ' ', 1];
+          }
 
           // insert empty cell at cursor
           this._terminal.lines.get(row).splice(this._terminal.x, 0, [this._terminal.curAttr, ' ', 1]);
@@ -903,7 +904,8 @@ export class InputHandler implements IInputHandler {
           this._terminal.vt200Mouse = params[0] === 1000;
           this._terminal.normalMouse = params[0] > 1000;
           this._terminal.mouseEvents = true;
-          this._terminal.element.style.cursor = 'default';
+          this._terminal.element.classList.add('enable-mouse-events');
+          this._terminal.selectionManager.disable();
           this._terminal.log('Binding to mouse events.');
           break;
         case 1004: // send focusin/focusout events
@@ -1096,7 +1098,8 @@ export class InputHandler implements IInputHandler {
           this._terminal.vt200Mouse = false;
           this._terminal.normalMouse = false;
           this._terminal.mouseEvents = false;
-          this._terminal.element.style.cursor = '';
+          this._terminal.element.classList.remove('enable-mouse-events');
+          this._terminal.selectionManager.enable();
           break;
         case 1004: // send focusin/focusout events
           this._terminal.sendFocus = false;
@@ -1127,6 +1130,8 @@ export class InputHandler implements IInputHandler {
             this._terminal.scrollBottom = this._terminal.normal.scrollBottom;
             this._terminal.tabs = this._terminal.normal.tabs;
             this._terminal.normal = null;
+            // Ensure the selection manager has the correct buffer
+            this._terminal.selectionManager.setBuffer(this._terminal.lines);
             // if (params === 1049) {
             //   this.x = this.savedX;
             //   this.y = this.savedY;
