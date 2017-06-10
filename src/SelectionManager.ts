@@ -180,12 +180,24 @@ export class SelectionManager extends EventEmitter {
 
     // Get middle rows
     for (let i = start[1] + 1; i <= end[1] - 1; i++) {
-      result.push(this._translateBufferLineToString(this._buffer.get(i), true));
+      const bufferLine = this._buffer.get(i);
+      const lineText = this._translateBufferLineToString(bufferLine, true);
+      if (bufferLine.isWrapped) {
+        result[result.length - 1] += lineText;
+      } else {
+        result.push(lineText);
+      }
     }
 
     // Get final row
     if (start[1] !== end[1]) {
-      result.push(this._translateBufferLineToString(this._buffer.get(end[1]), true, 0, end[0]));
+      const bufferLine = this._buffer.get(end[1]);
+      const lineText = this._translateBufferLineToString(bufferLine, true, 0, end[0]);
+      if (bufferLine.isWrapped) {
+        result[result.length - 1] += lineText;
+      } else {
+        result.push(lineText);
+      }
     }
 
     // Format string by replacing non-breaking space chars with regular spaces

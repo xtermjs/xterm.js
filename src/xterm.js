@@ -1116,8 +1116,10 @@ Terminal.prototype.showCursor = function() {
 
 /**
  * Scroll the terminal down 1 row, creating a blank line.
+ * @param {boolean} isWrapped Whether the new line is wrapped from the previous
+ * line.
  */
-Terminal.prototype.scroll = function() {
+Terminal.prototype.scroll = function(isWrapped) {
   var row;
 
   // Make room for the new row in lines
@@ -1144,10 +1146,10 @@ Terminal.prototype.scroll = function() {
 
   if (row === this.lines.length) {
     // Optimization: pushing is faster than splicing when they amount to the same behavior
-    this.lines.push(this.blankLine());
+    this.lines.push(this.blankLine(undefined, isWrapped));
   } else {
     // add our new line
-    this.lines.splice(row, 0, this.blankLine());
+    this.lines.splice(row, 0, this.blankLine(undefined, isWrapped));
   }
 
   if (this.scrollTop !== 0) {
@@ -2106,8 +2108,9 @@ Terminal.prototype.eraseLine = function(y) {
 /**
  * Return the data array of a blank line
  * @param {number} cur First bunch of data for each "blank" character.
+ * @param {boolean} isWrapped Whether the new line is wrapped from the previous line.
  */
-Terminal.prototype.blankLine = function(cur) {
+Terminal.prototype.blankLine = function(cur, isWrapped) {
   var attr = cur
   ? this.eraseAttr()
   : this.defAttr;
@@ -2115,6 +2118,12 @@ Terminal.prototype.blankLine = function(cur) {
   var ch = [attr, ' ', 1]  // width defaults to 1 halfwidth character
   , line = []
   , i = 0;
+
+  // TODO: It is not ideal that this is a property on an array, a buffer line
+  // class should be added that will hold this data and other useful functions.
+  if (isWrapped) {
+    line.isWrapped = isWrapped;
+  }
 
   for (; i < this.cols; i++) {
     line[i] = ch;
