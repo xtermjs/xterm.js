@@ -20,6 +20,8 @@ export interface IBrowser {
 export interface ITerminal {
   element: HTMLElement;
   rowContainer: HTMLElement;
+  selectionContainer: HTMLElement;
+  charMeasure: ICharMeasure;
   textarea: HTMLTextAreaElement;
   ybase: number;
   ydisp: number;
@@ -45,6 +47,10 @@ export interface ITerminal {
   cancel(ev: Event, force?: boolean);
   log(text: string): void;
   emit(event: string, data: any);
+}
+
+export interface ISelectionManager {
+  selectionText: string;
 }
 
 export interface ICharMeasure {
