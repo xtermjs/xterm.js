@@ -779,7 +779,8 @@ Terminal.loadAddon = function(addon, callback) {
 Terminal.prototype.updateCharSizeStyles = function() {
   this.charSizeStyleElement.textContent =
       `.xterm-wide-char{width:${this.charMeasure.width * 2}px;}` +
-      `.xterm-normal-char{width:${this.charMeasure.width}px;}`;
+      `.xterm-normal-char{width:${this.charMeasure.width}px;}` +
+      `.xterm-rows > div{height:${this.charMeasure.height}px;}`;
 }
 
 /**
