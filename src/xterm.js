@@ -21,6 +21,7 @@ import { Parser } from './Parser';
 import { Renderer } from './Renderer';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
+import { SearchHelper } from './SearchHelper';
 import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './utils/Browser';
 import * as Mouse from './utils/Mouse';
@@ -223,6 +224,7 @@ function Terminal(options) {
   this.renderer = this.renderer || null;
   this.selectionManager = this.selectionManager || null;
   this.linkifier = this.linkifier || new Linkifier();
+  this.searchHelper = this.searchHelper || null;
 
   // user input states
   this.writeBuffer = [];
@@ -706,6 +708,7 @@ Terminal.prototype.open = function(parent, focus) {
   this.selectionManager.on('refresh', data => this.renderer.refreshSelection(data.start, data.end));
   this.on('scroll', () => this.selectionManager.refresh());
   this.viewportElement.addEventListener('scroll', () => this.selectionManager.refresh());
+  this.searchHelper = new SearchHelper(this);;
 
   // Setup loop that draws to screen
   this.refresh(0, this.rows - 1);

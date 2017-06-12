@@ -551,6 +551,15 @@ export class SelectionManager extends EventEmitter {
     return charIndex;
   }
 
+  public setSelection(col: number, row: number, length: number): void {
+    this._model.clearSelection();
+    this._removeMouseDownListeners();
+    console.log('setSelection', arguments);
+    this._model.selectionStart = [col, row];
+    this._model.selectionStartLength = length;
+    this.refresh();
+  }
+
   /**
    * Selects the word at the coordinates specified. Words are defined as all
    * non-whitespace characters.
