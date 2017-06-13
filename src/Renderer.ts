@@ -353,9 +353,8 @@ export class Renderer {
     const endCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : this._terminal.cols;
     documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow, startCol, endCol));
     // Draw middle rows
-    for (let i = viewportCappedStartRow + 1; i < viewportCappedEndRow; i++) {
-      documentFragment.appendChild(this._createSelectionElement(i, 0, this._terminal.cols));
-    }
+    const middleRowsCount = viewportCappedEndRow - viewportCappedStartRow - 1;
+    documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow + 1, 0, this._terminal.cols, middleRowsCount));
     // Draw final row
     if (viewportCappedStartRow !== viewportCappedEndRow) {
       // Only draw viewportEndRow if it's not the same as viewporttartRow
@@ -371,9 +370,9 @@ export class Renderer {
    * @param colStart The start column.
    * @param colEnd The end columns.
    */
-  private _createSelectionElement(row: number, colStart: number, colEnd: number): HTMLElement {
+  private _createSelectionElement(row: number, colStart: number, colEnd: number, rowCount: number = 1): HTMLElement {
     const element = document.createElement('div');
-    element.style.height = `${this._terminal.charMeasure.height}px`;
+    element.style.height = `${rowCount * this._terminal.charMeasure.height}px`;
     element.style.top = `${row * this._terminal.charMeasure.height}px`;
     element.style.left = `${colStart * this._terminal.charMeasure.width}px`;
     element.style.width = `${this._terminal.charMeasure.width * (colEnd - colStart)}px`;
