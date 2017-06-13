@@ -156,6 +156,9 @@ export class SelectionManager extends EventEmitter {
     this._buffer = buffer;
   }
 
+  public get selectionStart(): [number, number] { return this._model.finalSelectionStart; }
+  public get selectionEnd(): [number, number] { return this._model.finalSelectionEnd; }
+
   /**
    * Gets whether there is an active text selection.
    */

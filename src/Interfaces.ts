@@ -52,6 +52,8 @@ export interface ITerminal {
 
 export interface ISelectionManager {
   selectionText: string;
+  selectionStart: [number, number];
+  selectionEnd: [number, number];
 
   setSelection(row: number, col: number, length: number);
 }
