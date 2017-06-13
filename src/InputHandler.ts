@@ -57,7 +57,7 @@ export class InputHandler implements IInputHandler {
           this._terminal.y++;
           if (this._terminal.y > this._terminal.scrollBottom) {
             this._terminal.y--;
-            this._terminal.scroll();
+            this._terminal.scroll(true);
           }
         } else {
           if (ch_width === 2)  // FIXME: check for xterm behavior
