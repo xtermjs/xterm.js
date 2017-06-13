@@ -336,6 +336,9 @@ export class SelectionManager extends EventEmitter {
       return;
     }
 
+    // Tell the browser not to start a regular selection
+    event.preventDefault();
+
     // Reset drag scroll state
     this._dragScrollAmount = 0;
 
