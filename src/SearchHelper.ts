@@ -22,7 +22,7 @@ export class SearchHelper {
    */
   public findNext(term: string): boolean {
     if (!term || term.length === 0) {
-      return;
+      return false;
     }
 
     let result: ISearchResult;
@@ -63,7 +63,7 @@ export class SearchHelper {
    */
   public findPrevious(term: string): boolean {
     if (!term || term.length === 0) {
-      return;
+      return false;
     }
 
     let result: ISearchResult;
@@ -111,10 +111,11 @@ export class SearchHelper {
 
   private _selectResult(result: ISearchResult): boolean {
     if (!result) {
-      return;
+      return false;
     }
     this._terminal.selectionManager.setSelection(result.col, result.row, result.term.length);
     this._terminal.scrollDisp(result.row - this._terminal.ydisp, false);
+    return true;
   }
 
   // TODO: Consolidate with SelectionManager function

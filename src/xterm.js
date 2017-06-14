@@ -1406,6 +1406,26 @@ Terminal.prototype.selectAll = function() {
 }
 
 /**
+ * Find the next instance of the term, then scroll to and select it. If it
+ * doesn't exist, do nothing.
+ * @param term The term to search for.
+ * @return Whether a result was found.
+ */
+Terminal.prototype.findNext = function(term) {
+  return this.searchHelper.findNext(term);
+}
+
+/**
+ * Find the previous instance of the term, then scroll to and select it. If it
+ * doesn't exist, do nothing.
+ * @param term The term to search for.
+ * @return Whether a result was found.
+ */
+Terminal.prototype.findPrevious = function(term) {
+  return this.searchHelper.findPrevious(term);
+}
+
+/**
  * Handle a keydown event
  * Key Resources:
  *   - https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
