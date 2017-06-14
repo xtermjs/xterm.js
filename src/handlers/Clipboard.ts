@@ -22,7 +22,7 @@ declare var window: IWindow;
  */
 export function prepareTextForTerminal(text: string, isMSWindows: boolean): string {
   if (isMSWindows) {
-    return text.replace(/\r?\n/g, '\n');
+    return text.replace(/\r?\n/g, '\r');
   }
   return text;
 }
