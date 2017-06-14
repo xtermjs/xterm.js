@@ -78,6 +78,8 @@ Note: Do not use ConEmu, as it seems to break the demo for some reason.
 
 Then open http://127.0.0.1:3000 in a web browser.
 
+To run the demo against PowerShell, replace `'cmd.exe'` with `'powershell.exe'` in `demo/app.js`
+
 ## Getting Started
 
 To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to the head of your html page. Then create a `<div id="terminal"></div>` onto which xterm can attach itself.
