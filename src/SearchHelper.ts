@@ -8,6 +8,10 @@ interface ISearchResult {
 
 export class SearchHelper {
   constructor(private _terminal: ITerminal) {
+    // TODO: Search for multiple instances on 1 line
+    // TODO: Don't use the actual selection, instead use a "find selection" so multiple instances can be highlighted
+    // TODO: Highlight other instances in the viewport
+    // TODO: Support regex, case sensitivity, etc.
   }
 
   /**
@@ -20,7 +24,6 @@ export class SearchHelper {
     if (!term || term.length === 0) {
       return;
     }
-    // TODO: Return number of results?
 
     let result: ISearchResult;
 
@@ -41,6 +44,47 @@ export class SearchHelper {
     // Search from the top to the current ydisp
     if (!result) {
       for (let y = 0; y < startRow; y++) {
+        result = this._findInLine(term, y);
+        if (result) {
+          break;
+        }
+      }
+    }
+
+    // Set selection and scroll if a result was found
+    return this._selectResult(result);
+  }
+
+  /**
+   * Find the previous instance of the term, then scroll to and select it. If it
+   * doesn't exist, do nothing.
+   * @param term The term to search for.
+   * @return Whether a result was found.
+   */
+  public findPrevious(term: string): boolean {
+    if (!term || term.length === 0) {
+      return;
+    }
+
+    let result: ISearchResult;
+
+    let startRow = this._terminal.ydisp;
+    if (this._terminal.selectionManager.selectionStart) {
+      // Start from the selection end if there is a selection
+      startRow = this._terminal.selectionManager.selectionStart[1];
+    }
+
+    // Search from ydisp + 1 to end
+    for (let y = startRow - 1; y >= 0; y--) {
+      result = this._findInLine(term, y);
+      if (result) {
+        break;
+      }
+    }
+
+    // Search from the top to the current ydisp
+    if (!result) {
+      for (let y = this._terminal.ybase + this._terminal.rows - 1; y > startRow; y--) {
         result = this._findInLine(term, y);
         if (result) {
           break;
