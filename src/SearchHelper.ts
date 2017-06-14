@@ -70,8 +70,7 @@ export class SearchHelper {
       return;
     }
     this._terminal.selectionManager.setSelection(result.col, result.row, result.term.length);
-    const scrollAmount = Math.max(Math.min(result.row - this._terminal.ydisp, this._terminal.ybase), 0);
-    this._terminal.scrollDisp(scrollAmount, false);
+    this._terminal.scrollDisp(result.row - this._terminal.ydisp, false);
   }
 
   // TODO: Consolidate with SelectionManager function
