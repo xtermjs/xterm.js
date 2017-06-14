@@ -8,6 +8,7 @@ import { EventEmitter } from './EventEmitter';
 import * as Mouse from './utils/Mouse';
 import { ITerminal } from './Interfaces';
 import { SelectionModel } from './SelectionModel';
+import { translateBufferLineToString } from './utils/BufferLine';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -179,16 +180,16 @@ export class SelectionManager extends EventEmitter {
     // Get first row
     const startRowEndCol = start[1] === end[1] ? end[0] : null;
     let result: string[] = [];
-    result.push(this._translateBufferLineToString(this._buffer.get(start[1]), true, start[0], startRowEndCol));
+    result.push(translateBufferLineToString(this._buffer.get(start[1]), true, start[0], startRowEndCol));
 
     // Get middle rows
     for (let i = start[1] + 1; i <= end[1] - 1; i++) {
-      result.push(this._translateBufferLineToString(this._buffer.get(i), true));
+      result.push(translateBufferLineToString(this._buffer.get(i), true));
     }
 
     // Get final row
     if (start[1] !== end[1]) {
-      result.push(this._translateBufferLineToString(this._buffer.get(end[1]), true, 0, end[0]));
+      result.push(translateBufferLineToString(this._buffer.get(end[1]), true, 0, end[0]));
     }
 
     // Format string by replacing non-breaking space chars with regular spaces
@@ -207,55 +208,6 @@ export class SelectionManager extends EventEmitter {
     this._model.clearSelection();
     this._removeMouseDownListeners();
     this.refresh();
-  }
-
-  /**
-   * Translates a buffer line to a string, with optional start and end columns.
-   * Wide characters will count as two columns in the resulting string. This
-   * function is useful for getting the actual text underneath the raw selection
-   * position.
-   * @param line The line being translated.
-   * @param trimRight Whether to trim whitespace to the right.
-   * @param startCol The column to start at.
-   * @param endCol The column to end at.
-   */
-  private _translateBufferLineToString(line: any, trimRight: boolean, startCol: number = 0, endCol: number = null): string {
-    // TODO: This function should live in a buffer or buffer line class
-
-    // Get full line
-    let lineString = '';
-    let widthAdjustedStartCol = startCol;
-    let widthAdjustedEndCol = endCol;
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      lineString += char[LINE_DATA_CHAR_INDEX];
-      // Adjust start and end cols for wide characters if they affect their
-      // column indexes
-      if (char[LINE_DATA_WIDTH_INDEX] === 0) {
-        if (startCol >= i) {
-          widthAdjustedStartCol--;
-        }
-        if (endCol >= i) {
-          widthAdjustedEndCol--;
-        }
-      }
-    }
-
-    // Calculate the final end col by trimming whitespace on the right of the
-    // line if needed.
-    let finalEndCol = widthAdjustedEndCol || line.length;
-    if (trimRight) {
-      const rightWhitespaceIndex = lineString.search(/\s+$/);
-      if (rightWhitespaceIndex !== -1) {
-        finalEndCol = Math.min(finalEndCol, rightWhitespaceIndex);
-      }
-      // Return the empty string if only trimmed whitespace is selected
-      if (finalEndCol <= widthAdjustedStartCol) {
-        return '';
-      }
-    }
-
-    return lineString.substring(widthAdjustedStartCol, finalEndCol);
   }
 
   /**
@@ -570,7 +522,7 @@ export class SelectionManager extends EventEmitter {
    */
   protected _selectWordAt(coords: [number, number]): void {
     const bufferLine = this._buffer.get(coords[1]);
-    const line = this._translateBufferLineToString(bufferLine, false);
+    const line = translateBufferLineToString(bufferLine, false);
 
     // Get actual index, taking into consideration wide characters
     let endIndex = this._convertViewportColToCharacterIndex(bufferLine, coords);
