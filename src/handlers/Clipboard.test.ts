@@ -9,6 +9,6 @@ describe('evaluatePastedTextProcessing', function () {
           windowsProcessedText = Clipboard.prepareTextForTerminal(pastedText, true);
 
     assert.equal(processedText, 'foo\r\nbar\r\n');
-    assert.equal(windowsProcessedText, 'foo\nbar\n');
+    assert.equal(windowsProcessedText, 'foo\rbar\r');
   });
 });
