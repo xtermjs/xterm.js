@@ -377,6 +377,11 @@ describe('xterm.js', function() {
       stopPropagation: function() {},
       type: 'keydown'
     }
+    var evKeyPress = {
+      preventDefault: function() {},
+      stopPropagation: function() {},
+      type: 'keypress'
+    }
 
     beforeEach(function() {
       xterm.handler = function() {};
@@ -384,6 +389,11 @@ describe('xterm.js', function() {
       xterm.clearSelection = function() {};
       xterm.compositionHelper = {
         keydown: {
+          bind: function() {
+            return function () { return true; }
+          }
+        },
+        keypress: {
           bind: function() {
             return function () { return true; }
           }
@@ -403,13 +413,30 @@ describe('xterm.js', function() {
       assert.equal(xterm.keyDown(Object.assign({}, evKeyDown, { keyCode: 77 })), false);
     });
 
+    it('should process the keypress event based on what the handler returns', function () {
+      assert.equal(xterm.keyPress(Object.assign({}, evKeyPress, { keyCode: 77 })), true);
+      xterm.attachCustomKeypressHandler(function (ev) {
+        return ev.keyCode === 77;
+      });
+      assert.equal(xterm.keyPress(Object.assign({}, evKeyPress, { keyCode: 77 })), true);
+      xterm.attachCustomKeypressHandler(function (ev) {
+        return ev.keyCode !== 77;
+      });
+      assert.equal(xterm.keyPress(Object.assign({}, evKeyPress, { keyCode: 77 })), false);
+    });
+
     it('should alive after reset(ESC c Full Reset (RIS))', function () {
       xterm.attachCustomKeydownHandler(function (ev) {
         return ev.keyCode !== 77;
       });
+      xterm.attachCustomKeypressHandler(function (ev) {
+        return ev.keyCode !== 77;
+      });
       assert.equal(xterm.keyDown(Object.assign({}, evKeyDown, { keyCode: 77 })), false);
+      assert.equal(xterm.keyPress(Object.assign({}, evKeyPress, { keyCode: 77 })), false);
       xterm.reset();
       assert.equal(xterm.keyDown(Object.assign({}, evKeyDown, { keyCode: 77 })), false);
+      assert.equal(xterm.keyPress(Object.assign({}, evKeyPress, { keyCode: 77 })), false);
     });
   });
 

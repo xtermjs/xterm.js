@@ -168,6 +168,7 @@ function Terminal(options) {
   this.scrollTop = 0;
   this.scrollBottom = this.rows - 1;
   this.customKeydownHandler = null;
+  this.customKeypressHandler = null;
   this.cursorBlinkInterval = null;
 
   // modes
@@ -1317,6 +1318,18 @@ Terminal.prototype.attachCustomKeydownHandler = function(customKeydownHandler) {
 }
 
 /**
+ * Attaches a custom keypress handler which is run before keys are processed, giving consumers of
+ * xterm.js ultimate control as to what keys should be processed by the terminal and what keys
+ * should not.
+ * @param {function} customKeypressHandler The custom KeyboardEvent handler to attach. This is a
+ *   function that takes a KeyboardEvent, allowing consumers to stop propogation and/or prevent
+ *   the default action. The function returns whether the event should be processed by xterm.js.
+ */
+Terminal.prototype.attachCustomKeypressHandler = function(customKeypressHandler) {
+  this.customKeypressHandler = customKeypressHandler;
+}
+
+/**
  * Attaches a http(s) link handler, forcing web links to behave differently to
  * regular <a> tags. This will trigger a refresh as links potentially need to be
  * reconstructed. Calling this with null will remove the handler.
@@ -1777,6 +1790,10 @@ Terminal.prototype.setgCharset = function(g, charset) {
 Terminal.prototype.keyPress = function(ev) {
   var key;
 
+  if (this.customKeypressHandler && this.customKeypressHandler(ev) === false) {
+    return false;
+  }
+
   this.cancel(ev);
 
   if (ev.charCode) {
@@ -1802,7 +1819,7 @@ Terminal.prototype.keyPress = function(ev) {
   this.showCursor();
   this.handler(key);
 
-  return false;
+  return true;
 };
 
 /**
@@ -2236,9 +2253,11 @@ Terminal.prototype.reset = function() {
   this.options.rows = this.rows;
   this.options.cols = this.cols;
   var customKeydownHandler = this.customKeydownHandler;
+  var customKeypressHandler = this.customKeypressHandler; 
   var cursorBlinkInterval = this.cursorBlinkInterval;
   Terminal.call(this, this.options);
   this.customKeydownHandler = customKeydownHandler;
+  this.customKeypressHandler = customKeypressHandler;
   this.cursorBlinkInterval = cursorBlinkInterval;
   this.refresh(0, this.rows - 1);
   this.viewport.syncScrollArea();
