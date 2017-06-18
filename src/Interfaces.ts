@@ -36,6 +36,7 @@ export interface ITerminal {
   x: number;
   y: number;
   defAttr: number;
+  scrollback: number;
 
   /**
    * Emit the 'data' event and populate the given data.
