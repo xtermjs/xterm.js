@@ -144,10 +144,10 @@ export class Renderer {
       let line = this._terminal.buffer.lines.get(row);
 
       let x;
-      if (this._terminal.y === y - (this._terminal.buffer.ybase - this._terminal.buffer.ydisp) &&
+      if (this._terminal.buffer.y === y - (this._terminal.buffer.ybase - this._terminal.buffer.ydisp) &&
           this._terminal.cursorState &&
           !this._terminal.cursorHidden) {
-        x = this._terminal.x;
+        x = this._terminal.buffer.x;
       } else {
         x = -1;
       }
