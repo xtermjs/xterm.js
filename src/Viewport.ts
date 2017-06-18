@@ -83,7 +83,7 @@ export class Viewport {
     }
 
     // Sync scrollTop
-    const scrollTop = this.terminal.ydisp * this.currentRowHeight;
+    const scrollTop = this.terminal.buffer.ydisp * this.currentRowHeight;
     if (this.viewportElement.scrollTop !== scrollTop) {
       this.viewportElement.scrollTop = scrollTop;
     }
@@ -96,7 +96,7 @@ export class Viewport {
    */
   private onScroll(ev: Event) {
     const newRow = Math.round(this.viewportElement.scrollTop / this.currentRowHeight);
-    const diff = newRow - this.terminal.ydisp;
+    const diff = newRow - this.terminal.buffer.ydisp;
     this.terminal.scrollDisp(diff, true);
   }
 
