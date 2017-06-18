@@ -355,7 +355,7 @@ export class SelectionManager extends EventEmitter {
     coords[0]--;
     coords[1]--;
     // Convert viewport coords to buffer coords
-    coords[1] += this._terminal.ydisp;
+    coords[1] += this._terminal.buffer.ydisp;
     return coords;
   }
 
@@ -578,9 +578,9 @@ export class SelectionManager extends EventEmitter {
       this._terminal.scrollDisp(this._dragScrollAmount, false);
       // Re-evaluate selection
       if (this._dragScrollAmount > 0) {
-        this._model.selectionEnd = [this._terminal.cols - 1, this._terminal.ydisp + this._terminal.rows];
+        this._model.selectionEnd = [this._terminal.cols - 1, this._terminal.buffer.ydisp + this._terminal.rows];
       } else {
-        this._model.selectionEnd = [0, this._terminal.ydisp];
+        this._model.selectionEnd = [0, this._terminal.buffer.ydisp];
       }
       this.refresh();
     }
