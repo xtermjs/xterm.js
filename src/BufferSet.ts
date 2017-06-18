@@ -38,11 +38,13 @@ export class BufferSet extends EventEmitter {
 
   public activateNormalBuffer(): void {
     this._activeBuffer = this._normal;
+    this.resetTerminal();
     this.emit('activate', this._normal);
   }
 
   public activateAltBuffer(): void {
     this._activeBuffer = this._alt;
+    this.resetTerminal();
     this.emit('activate', this._alt);
   }
 }

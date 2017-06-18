@@ -139,12 +139,12 @@ export class Renderer {
     }
 
     for (; y <= end; y++) {
-      let row = y + this._terminal.ydisp;
+      let row = y + this._terminal.buffer.ydisp;
 
       let line = this._terminal.buffer.lines.get(row);
 
       let x;
-      if (this._terminal.y === y - (this._terminal.ybase - this._terminal.ydisp) &&
+      if (this._terminal.y === y - (this._terminal.buffer.ybase - this._terminal.buffer.ydisp) &&
           this._terminal.cursorState &&
           !this._terminal.cursorHidden) {
         x = this._terminal.x;
@@ -337,8 +337,8 @@ export class Renderer {
     }
 
     // Translate from buffer position to viewport position
-    const viewportStartRow = start[1] - this._terminal.ydisp;
-    const viewportEndRow = end[1] - this._terminal.ydisp;
+    const viewportStartRow = start[1] - this._terminal.buffer.ydisp;
+    const viewportEndRow = end[1] - this._terminal.buffer.ydisp;
     const viewportCappedStartRow = Math.max(viewportStartRow, 0);
     const viewportCappedEndRow = Math.min(viewportEndRow, this._terminal.rows - 1);
 
