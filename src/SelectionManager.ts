@@ -45,9 +45,21 @@ const LINE_DATA_WIDTH_INDEX = 2;
 const NON_BREAKING_SPACE_CHAR = String.fromCharCode(160);
 const ALL_NON_BREAKING_SPACE_REGEX = new RegExp(NON_BREAKING_SPACE_CHAR, 'g');
 
+/**
+ * Represents a position of a word on a line.
+ */
 interface IWordPosition {
   start: number;
   length: number;
+}
+
+/**
+ * A selection mode, this drives how the selection behaves on mouse move.
+ */
+enum SelectionMode {
+  NORMAL,
+  WORD,
+  LINE
 }
 
 /**
@@ -85,14 +97,9 @@ export class SelectionManager extends EventEmitter {
   private _clickCount: number;
 
   /**
-   * Whether line select mode is active, this occurs after a triple click.
+   * The current selection mode.
    */
-  private _isLineSelectModeActive: boolean;
-
-  /**
-   * Whether word select mode is active, this occurs after a double click.
-   */
-  private _isWordSelectModeActive: boolean;
+  private _activeSelectionMode: SelectionMode;
 
   /**
    * A setInterval timer that is active while the mouse is down whose callback
@@ -122,8 +129,7 @@ export class SelectionManager extends EventEmitter {
 
     this._model = new SelectionModel(_terminal);
     this._lastMouseDownTime = 0;
-    this._isLineSelectModeActive = false;
-    this._isWordSelectModeActive = false;
+    this._activeSelectionMode = SelectionMode.NORMAL;
   }
 
   /**
@@ -422,8 +428,7 @@ export class SelectionManager extends EventEmitter {
   private _onSingleClick(event: MouseEvent): void {
     this._model.selectionStartLength = 0;
     this._model.isSelectAllActive = false;
-    this._isLineSelectModeActive = false;
-    this._isWordSelectModeActive = false;
+    this._activeSelectionMode = SelectionMode.NORMAL;
     this._model.selectionStart = this._getMouseBufferCoords(event);
     if (this._model.selectionStart) {
       this._model.selectionEnd = null;
@@ -443,7 +448,7 @@ export class SelectionManager extends EventEmitter {
   private _onDoubleClick(event: MouseEvent): void {
     const coords = this._getMouseBufferCoords(event);
     if (coords) {
-      this._isWordSelectModeActive = true;
+      this._activeSelectionMode = SelectionMode.WORD;
       this._selectWordAt(coords);
     }
   }
@@ -456,7 +461,7 @@ export class SelectionManager extends EventEmitter {
   private _onTripleClick(event: MouseEvent): void {
     const coords = this._getMouseBufferCoords(event);
     if (coords) {
-      this._isLineSelectModeActive = true;
+      this._activeSelectionMode = SelectionMode.LINE;
       this._selectLineAt(coords[1]);
     }
   }
@@ -501,15 +506,13 @@ export class SelectionManager extends EventEmitter {
     this._model.selectionEnd = this._getMouseBufferCoords(event);
 
     // Select the entire line if line select mode is active.
-    if (this._isLineSelectModeActive) {
+    if (this._activeSelectionMode === SelectionMode.LINE) {
       if (this._model.selectionEnd[1] < this._model.selectionStart[1]) {
         this._model.selectionEnd[0] = 0;
       } else {
         this._model.selectionEnd[0] = this._terminal.cols;
       }
-    }
-
-    if (this._isWordSelectModeActive) {
+    } else if (this._activeSelectionMode === SelectionMode.WORD) {
       this._selectToWordAt(this._model.selectionEnd);
     }
 
