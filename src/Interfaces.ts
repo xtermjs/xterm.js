@@ -38,6 +38,8 @@ export interface ITerminal {
   y: number;
   defAttr: number;
   scrollback: number;
+  buffer: any;  // This should be a `Buffer` class, but it would result in circular dependency
+  viewport: any;  // This should be a `Viewport` class, but it would result in circular dependency
 
   /**
    * Emit the 'data' event and populate the given data.
@@ -49,6 +51,8 @@ export interface ITerminal {
   cancel(ev: Event, force?: boolean);
   log(text: string): void;
   emit(event: string, data: any);
+  reset(): void;
+  showCursor(): void;
 }
 
 export interface ISelectionManager {
