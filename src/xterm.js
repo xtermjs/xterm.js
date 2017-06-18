@@ -10,6 +10,7 @@
  * @license MIT
  */
 
+import { BufferSet } from './BufferSet';
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './EventEmitter';
 import { Viewport } from './Viewport';
@@ -242,6 +243,7 @@ function Terminal(options) {
   // leftover surrogate high from previous write invocation
   this.surrogate_high = '';
 
+  this.buffers = new BufferSet(this);
   /**
    * An array of all lines in the entire buffer, including the prompt. The lines are array of
    * characters which are 2-length arrays where [0] is an attribute and [1] is the character.
