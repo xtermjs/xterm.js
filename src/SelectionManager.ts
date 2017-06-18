@@ -45,6 +45,11 @@ const LINE_DATA_WIDTH_INDEX = 2;
 const NON_BREAKING_SPACE_CHAR = String.fromCharCode(160);
 const ALL_NON_BREAKING_SPACE_REGEX = new RegExp(NON_BREAKING_SPACE_CHAR, 'g');
 
+interface IWordPosition {
+  start: number;
+  length: number;
+}
+
 /**
  * A class that manages the selection of the terminal. With help from
  * SelectionModel, SelectionManager handles with all logic associated with
@@ -85,6 +90,11 @@ export class SelectionManager extends EventEmitter {
   private _isLineSelectModeActive: boolean;
 
   /**
+   * Whether word select mode is active, this occurs after a double click.
+   */
+  private _isWordSelectModeActive: boolean;
+
+  /**
    * A setInterval timer that is active while the mouse is down whose callback
    * scrolls the viewport when necessary.
    */
@@ -113,6 +123,7 @@ export class SelectionManager extends EventEmitter {
     this._model = new SelectionModel(_terminal);
     this._lastMouseDownTime = 0;
     this._isLineSelectModeActive = false;
+    this._isWordSelectModeActive = false;
   }
 
   /**
@@ -412,6 +423,7 @@ export class SelectionManager extends EventEmitter {
     this._model.selectionStartLength = 0;
     this._model.isSelectAllActive = false;
     this._isLineSelectModeActive = false;
+    this._isWordSelectModeActive = false;
     this._model.selectionStart = this._getMouseBufferCoords(event);
     if (this._model.selectionStart) {
       this._model.selectionEnd = null;
@@ -431,6 +443,7 @@ export class SelectionManager extends EventEmitter {
   private _onDoubleClick(event: MouseEvent): void {
     const coords = this._getMouseBufferCoords(event);
     if (coords) {
+      this._isWordSelectModeActive = true;
       this._selectWordAt(coords);
     }
   }
@@ -494,6 +507,10 @@ export class SelectionManager extends EventEmitter {
       } else {
         this._model.selectionEnd[0] = this._terminal.cols;
       }
+    }
+
+    if (this._isWordSelectModeActive) {
+      this._selectToWordAt(this._model.selectionEnd);
     }
 
     // Determine the amount of scrolling that will happen.
@@ -567,11 +584,10 @@ export class SelectionManager extends EventEmitter {
   }
 
   /**
-   * Selects the word at the coordinates specified. Words are defined as all
-   * non-whitespace characters.
+   * Gets positional information for the word at the coordinated specified.
    * @param coords The coordinates to get the word at.
    */
-  protected _selectWordAt(coords: [number, number]): void {
+  private _getWordAt(coords: [number, number]): IWordPosition {
     const bufferLine = this._buffer.get(coords[1]);
     const line = this._translateBufferLineToString(bufferLine, false);
 
@@ -630,9 +646,28 @@ export class SelectionManager extends EventEmitter {
       }
     }
 
-    // Record the resulting selection
-    this._model.selectionStart = [startIndex + charOffset - leftWideCharCount, coords[1]];
-    this._model.selectionStartLength = Math.min(endIndex - startIndex + leftWideCharCount + rightWideCharCount + 1/*include endIndex char*/, this._terminal.cols);
+    const start = startIndex + charOffset - leftWideCharCount;
+    const length = Math.min(endIndex - startIndex + leftWideCharCount + rightWideCharCount + 1/*include endIndex char*/, this._terminal.cols);
+    return {start, length};
+  }
+
+  /**
+   * Selects the word at the coordinates specified.
+   * @param coords The coordinates to get the word at.
+   */
+  protected _selectWordAt(coords: [number, number]): void {
+    const wordPosition = this._getWordAt(coords);
+    this._model.selectionStart = [wordPosition.start, coords[1]];
+    this._model.selectionStartLength = wordPosition.length;
+  }
+
+  /**
+   * Sets the selection end to the word at the coordinated specified.
+   * @param coords The coordinates to get the word at.
+   */
+  private _selectToWordAt(coords: [number, number]): void {
+    const wordPosition = this._getWordAt(coords);
+    this._model.selectionEnd = [this._model.areSelectionValuesReversed() ? wordPosition.start : (wordPosition.start + wordPosition.length), coords[1]];
   }
 
   /**
