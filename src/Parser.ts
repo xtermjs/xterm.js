@@ -52,7 +52,7 @@ escapedStateHandler['c'] = (parser, terminal) => {
 };
 escapedStateHandler['E'] = (parser, terminal) => {
   // ESC E Next Line ( NEL is 0x85).
-  terminal.x = 0;
+  terminal.buffer.x = 0;
   terminal.index();
   parser.setState(ParserState.NORMAL);
 };
