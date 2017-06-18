@@ -37,6 +37,12 @@ const CLEAR_MOUSE_DOWN_TIME = 400;
  */
 const CLEAR_MOUSE_DISTANCE = 10;
 
+/**
+ * A string containing all characters that are considered word separated by the
+ * double click to select work logic.
+ */
+const WORD_SEPARATORS = ' ()[]{}:';
+
 // TODO: Move these constants elsewhere, they belong in a buffer or buffer
 //       data/line class.
 const LINE_DATA_CHAR_INDEX = 1;
@@ -610,7 +616,7 @@ export class SelectionManager extends EventEmitter {
         endCol++;
       }
       // Expand the string in both directions until a space is hit
-      while (startIndex > 0 && line.charAt(startIndex - 1) !== ' ') {
+      while (startIndex > 0 && !this._isCharWordSeparator(line.charAt(startIndex - 1))) {
         if (bufferLine[startCol - 1][LINE_DATA_WIDTH_INDEX] === 0) {
           // If the next character is a wide char, record it and skip the column
           leftWideCharCount++;
@@ -619,7 +625,7 @@ export class SelectionManager extends EventEmitter {
         startIndex--;
         startCol--;
       }
-      while (endIndex + 1 < line.length && line.charAt(endIndex + 1) !== ' ') {
+      while (endIndex + 1 < line.length && !this._isCharWordSeparator(line.charAt(endIndex + 1))) {
         if (bufferLine[endCol + 1][LINE_DATA_WIDTH_INDEX] === 2) {
           // If the next character is a wide char, record it and skip the column
           rightWideCharCount++;
@@ -633,6 +639,15 @@ export class SelectionManager extends EventEmitter {
     // Record the resulting selection
     this._model.selectionStart = [startIndex + charOffset - leftWideCharCount, coords[1]];
     this._model.selectionStartLength = Math.min(endIndex - startIndex + leftWideCharCount + rightWideCharCount + 1/*include endIndex char*/, this._terminal.cols);
+  }
+
+  /**
+   * Gets whether the character is considered a word separator by the select
+   * word logic.
+   * @param char The character to check.
+   */
+  private _isCharWordSeparator(char: string): boolean {
+    return WORD_SEPARATORS.indexOf(char) >= 0;
   }
 
   /**

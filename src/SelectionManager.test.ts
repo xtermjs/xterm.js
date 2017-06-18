@@ -142,6 +142,41 @@ describe('SelectionManager', () => {
       selectionManager.selectWordAt([14, 0]);
       assert.equal(selectionManager.selectionText, 'foo');
     });
+    it('should select up to non-path characters that are commonly adjacent to paths', () => {
+      buffer.push(stringToRow(':ab:(cd)[ef]{gh}'));
+      selectionManager.selectWordAt([0, 0]);
+      assert.equal(selectionManager.selectionText, ':ab');
+      selectionManager.selectWordAt([1, 0]);
+      assert.equal(selectionManager.selectionText, 'ab');
+      selectionManager.selectWordAt([2, 0]);
+      assert.equal(selectionManager.selectionText, 'ab');
+      selectionManager.selectWordAt([3, 0]);
+      assert.equal(selectionManager.selectionText, 'ab:');
+      selectionManager.selectWordAt([4, 0]);
+      assert.equal(selectionManager.selectionText, '(cd');
+      selectionManager.selectWordAt([5, 0]);
+      assert.equal(selectionManager.selectionText, 'cd');
+      selectionManager.selectWordAt([6, 0]);
+      assert.equal(selectionManager.selectionText, 'cd');
+      selectionManager.selectWordAt([7, 0]);
+      assert.equal(selectionManager.selectionText, 'cd)');
+      selectionManager.selectWordAt([8, 0]);
+      assert.equal(selectionManager.selectionText, '[ef');
+      selectionManager.selectWordAt([9, 0]);
+      assert.equal(selectionManager.selectionText, 'ef');
+      selectionManager.selectWordAt([10, 0]);
+      assert.equal(selectionManager.selectionText, 'ef');
+      selectionManager.selectWordAt([11, 0]);
+      assert.equal(selectionManager.selectionText, 'ef]');
+      selectionManager.selectWordAt([12, 0]);
+      assert.equal(selectionManager.selectionText, '{gh');
+      selectionManager.selectWordAt([13, 0]);
+      assert.equal(selectionManager.selectionText, 'gh');
+      selectionManager.selectWordAt([14, 0]);
+      assert.equal(selectionManager.selectionText, 'gh');
+      selectionManager.selectWordAt([15, 0]);
+      assert.equal(selectionManager.selectionText, 'gh}');
+    });
   });
 
   describe('_selectLineAt', () => {
