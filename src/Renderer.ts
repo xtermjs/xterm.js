@@ -141,7 +141,7 @@ export class Renderer {
     for (; y <= end; y++) {
       let row = y + this._terminal.ydisp;
 
-      let line = this._terminal.lines.get(row);
+      let line = this._terminal.buffer.lines.get(row);
 
       let x;
       if (this._terminal.y === y - (this._terminal.ybase - this._terminal.ydisp) &&

@@ -4,13 +4,15 @@
 
 import { ITerminal } from './Interfaces';
 import { Buffer } from './Buffer';
+import { EventEmitter } from './EventEmitter';
 
-export class BufferSet {
+export class BufferSet extends EventEmitter {
   private _normal: Buffer;
   private _alt: Buffer;
   private _activeBuffer: Buffer;
 
   constructor(private _terminal: ITerminal) {
+    super();
     this._normal = new Buffer(this._terminal);
     this._alt = new Buffer(this._terminal);
     this._activeBuffer = this._normal;
@@ -36,9 +38,11 @@ export class BufferSet {
 
   public activateNormalBuffer(): void {
     this._activeBuffer = this._normal;
+    this.emit('activate', this._normal);
   }
 
   public activateAltBuffer(): void {
-    this._activeBuffer = this._normal;
+    this._activeBuffer = this._alt;
+    this.emit('activate', this._alt);
   }
 }
