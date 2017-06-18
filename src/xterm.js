@@ -2070,7 +2070,7 @@ Terminal.prototype.setupStops = function(i) {
  * @param {number} x The position to move the cursor to the previous tab stop.
  */
 Terminal.prototype.prevStop = function(x) {
-  if (x == null) x = this.x;
+  if (x == null) x = this.buffer.x;
   while (!this.tabs[--x] && x > 0);
   return x >= this.cols
     ? this.cols - 1
@@ -2083,7 +2083,7 @@ Terminal.prototype.prevStop = function(x) {
  * @param {number} x The position to move the cursor one tab stop forward.
  */
 Terminal.prototype.nextStop = function(x) {
-  if (x == null) x = this.x;
+  if (x == null) x = this.buffer.x;
   while (!this.tabs[++x] && x < this.cols);
   return x >= this.cols
     ? this.cols - 1
@@ -2254,7 +2254,7 @@ Terminal.prototype.index = function() {
   }
   // If the end of the line is hit, prevent this action from wrapping around to the next line.
   if (this.buffer.x >= this.cols) {
-    this.x--;
+    this.buffer.x--;
   }
 };
 
@@ -2300,7 +2300,7 @@ Terminal.prototype.reset = function() {
  * ESC H Tab Set (HTS is 0x88).
  */
 Terminal.prototype.tabSet = function() {
-  this.tabs[this.x] = true;
+  this.tabs[this.buffer.x] = true;
 };
 
 /**
