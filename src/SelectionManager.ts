@@ -41,7 +41,7 @@ const CLEAR_MOUSE_DISTANCE = 10;
  * A string containing all characters that are considered word separated by the
  * double click to select work logic.
  */
-const WORD_SEPARATORS = ' ()[]{}:';
+const WORD_SEPARATORS = ' ()[]{}:\'"';
 
 // TODO: Move these constants elsewhere, they belong in a buffer or buffer
 //       data/line class.

@@ -143,7 +143,7 @@ describe('SelectionManager', () => {
       assert.equal(selectionManager.selectionText, 'foo');
     });
     it('should select up to non-path characters that are commonly adjacent to paths', () => {
-      buffer.push(stringToRow(':ab:(cd)[ef]{gh}'));
+      buffer.push(stringToRow(':ab:(cd)[ef]{gh}\'ij"'));
       selectionManager.selectWordAt([0, 0]);
       assert.equal(selectionManager.selectionText, ':ab');
       selectionManager.selectWordAt([1, 0]);
@@ -176,6 +176,14 @@ describe('SelectionManager', () => {
       assert.equal(selectionManager.selectionText, 'gh');
       selectionManager.selectWordAt([15, 0]);
       assert.equal(selectionManager.selectionText, 'gh}');
+      selectionManager.selectWordAt([16, 0]);
+      assert.equal(selectionManager.selectionText, '\'ij');
+      selectionManager.selectWordAt([17, 0]);
+      assert.equal(selectionManager.selectionText, 'ij');
+      selectionManager.selectWordAt([18, 0]);
+      assert.equal(selectionManager.selectionText, 'ij');
+      selectionManager.selectWordAt([19, 0]);
+      assert.equal(selectionManager.selectionText, 'ij"');
     });
   });
 
