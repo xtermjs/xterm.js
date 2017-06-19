@@ -293,9 +293,22 @@ export class SelectionManager extends EventEmitter {
   /**
    * Queues a refresh, redrawing the selection on the next opportunity.
    */
-  public refresh(): void {
+  public refresh(fromMouseEvent?: boolean): void {
+    // Queue the refresh for the renderer
     if (!this._refreshAnimationFrame) {
       this._refreshAnimationFrame = window.requestAnimationFrame(() => this._refresh());
+    }
+
+    // If the refresh comes from a mouse event then emit a newselection event
+    if (!fromMouseEvent) {
+      return;
+    }
+    // TODO: Only do this when the selection has actually changed
+    // TODO: Ensure we're not doing more work than absolutely necessary, particularly for large selections
+    // TODO: Only do this on Linux
+    const selectionText = this.selectionText;
+    if (selectionText.length) {
+      this.emit('newselection', this.selectionText);
     }
   }
 
@@ -392,7 +405,7 @@ export class SelectionManager extends EventEmitter {
     }
 
     this._addMouseDownListeners();
-    this.refresh();
+    this.refresh(true);
   }
 
   /**

@@ -703,7 +703,14 @@ Terminal.prototype.open = function(parent, focus) {
   this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
   this.renderer = new Renderer(this);
   this.selectionManager = new SelectionManager(this, this.lines, this.rowContainer, this.charMeasure);
-  this.selectionManager.on('refresh', data => this.renderer.refreshSelection(data.start, data.end));
+  this.selectionManager.on('refresh', data => {
+    this.renderer.refreshSelection(data.start, data.end);
+  });
+  this.selectionManager.on('newselection', text => {
+    this.textarea.value = text;
+    this.textarea.focus();
+    this.textarea.select();
+  });
   this.on('scroll', () => this.selectionManager.refresh());
   this.viewportElement.addEventListener('scroll', () => this.selectionManager.refresh());
 
