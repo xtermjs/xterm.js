@@ -11,8 +11,6 @@ class TestSelectionModel extends SelectionModel {
   ) {
     super(terminal);
   }
-
-  public areSelectionValuesReversed(): boolean { return this._areSelectionValuesReversed(); }
 }
 
 describe('SelectionManager', () => {
@@ -39,7 +37,7 @@ describe('SelectionManager', () => {
     });
   });
 
-  describe('_areSelectionValuesReversed', () => {
+  describe('areSelectionValuesReversed', () => {
     it('should return true when the selection end is before selection start', () => {
       model.selectionStart = [1, 0];
       model.selectionEnd = [0, 0];

@@ -30,12 +30,17 @@ export function getCoordsRelativeToElement(event: MouseEvent, element: HTMLEleme
  * @param event The mouse event.
  * @param rowContainer The terminal's row container.
  * @param charMeasure The char measure object used to determine character sizes.
+ * @param colCount The number of columns in the terminal.
+ * @param rowCount The number of rows n the terminal.
+ * @param isSelection Whether the request is for the selection or not. This will
+ * apply an offset to the x value such that the left half of the cell will
+ * select that cell and the right half will select the next cell.
  */
-export function getCoords(event: MouseEvent, rowContainer: HTMLElement, charMeasure: CharMeasure, colCount: number, rowCount: number): [number, number] {
+export function getCoords(event: MouseEvent, rowContainer: HTMLElement, charMeasure: CharMeasure, colCount: number, rowCount: number, isSelection?: boolean): [number, number] {
   const coords = getCoordsRelativeToElement(event, rowContainer);
 
-  // Convert to cols/rows
-  coords[0] = Math.ceil(coords[0] / charMeasure.width);
+  // Convert to cols/rows.
+  coords[0] = Math.ceil((coords[0] + (isSelection ? charMeasure.width / 2 : 0)) / charMeasure.width);
   coords[1] = Math.ceil(coords[1] / charMeasure.height);
 
   // Ensure coordinates are within the terminal viewport.

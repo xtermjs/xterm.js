@@ -37,6 +37,12 @@ const CLEAR_MOUSE_DOWN_TIME = 400;
  */
 const CLEAR_MOUSE_DISTANCE = 10;
 
+/**
+ * A string containing all characters that are considered word separated by the
+ * double click to select work logic.
+ */
+const WORD_SEPARATORS = ' ()[]{}:\'"';
+
 // TODO: Move these constants elsewhere, they belong in a buffer or buffer
 //       data/line class.
 const LINE_DATA_CHAR_INDEX = 1;
@@ -44,6 +50,23 @@ const LINE_DATA_WIDTH_INDEX = 2;
 
 const NON_BREAKING_SPACE_CHAR = String.fromCharCode(160);
 const ALL_NON_BREAKING_SPACE_REGEX = new RegExp(NON_BREAKING_SPACE_CHAR, 'g');
+
+/**
+ * Represents a position of a word on a line.
+ */
+interface IWordPosition {
+  start: number;
+  length: number;
+}
+
+/**
+ * A selection mode, this drives how the selection behaves on mouse move.
+ */
+enum SelectionMode {
+  NORMAL,
+  WORD,
+  LINE
+}
 
 /**
  * A class that manages the selection of the terminal. With help from
@@ -80,9 +103,9 @@ export class SelectionManager extends EventEmitter {
   private _clickCount: number;
 
   /**
-   * Whether line select mode is active, this occurs after a triple click.
+   * The current selection mode.
    */
-  private _isLineSelectModeActive: boolean;
+  private _activeSelectionMode: SelectionMode;
 
   /**
    * A setInterval timer that is active while the mouse is down whose callback
@@ -112,7 +135,7 @@ export class SelectionManager extends EventEmitter {
 
     this._model = new SelectionModel(_terminal);
     this._lastMouseDownTime = 0;
-    this._isLineSelectModeActive = false;
+    this._activeSelectionMode = SelectionMode.NORMAL;
   }
 
   /**
@@ -309,7 +332,7 @@ export class SelectionManager extends EventEmitter {
    * @param event The mouse event.
    */
   private _getMouseBufferCoords(event: MouseEvent): [number, number] {
-    const coords = Mouse.getCoords(event, this._rowContainer, this._charMeasure, this._terminal.cols, this._terminal.rows);
+    const coords = Mouse.getCoords(event, this._rowContainer, this._charMeasure, this._terminal.cols, this._terminal.rows, true);
     // Convert to 0-based
     coords[0]--;
     coords[1]--;
@@ -411,7 +434,7 @@ export class SelectionManager extends EventEmitter {
   private _onSingleClick(event: MouseEvent): void {
     this._model.selectionStartLength = 0;
     this._model.isSelectAllActive = false;
-    this._isLineSelectModeActive = false;
+    this._activeSelectionMode = SelectionMode.NORMAL;
     this._model.selectionStart = this._getMouseBufferCoords(event);
     if (this._model.selectionStart) {
       this._model.selectionEnd = null;
@@ -431,6 +454,7 @@ export class SelectionManager extends EventEmitter {
   private _onDoubleClick(event: MouseEvent): void {
     const coords = this._getMouseBufferCoords(event);
     if (coords) {
+      this._activeSelectionMode = SelectionMode.WORD;
       this._selectWordAt(coords);
     }
   }
@@ -443,7 +467,7 @@ export class SelectionManager extends EventEmitter {
   private _onTripleClick(event: MouseEvent): void {
     const coords = this._getMouseBufferCoords(event);
     if (coords) {
-      this._isLineSelectModeActive = true;
+      this._activeSelectionMode = SelectionMode.LINE;
       this._selectLineAt(coords[1]);
     }
   }
@@ -488,12 +512,14 @@ export class SelectionManager extends EventEmitter {
     this._model.selectionEnd = this._getMouseBufferCoords(event);
 
     // Select the entire line if line select mode is active.
-    if (this._isLineSelectModeActive) {
+    if (this._activeSelectionMode === SelectionMode.LINE) {
       if (this._model.selectionEnd[1] < this._model.selectionStart[1]) {
         this._model.selectionEnd[0] = 0;
       } else {
         this._model.selectionEnd[0] = this._terminal.cols;
       }
+    } else if (this._activeSelectionMode === SelectionMode.WORD) {
+      this._selectToWordAt(this._model.selectionEnd);
     }
 
     // Determine the amount of scrolling that will happen.
@@ -567,11 +593,10 @@ export class SelectionManager extends EventEmitter {
   }
 
   /**
-   * Selects the word at the coordinates specified. Words are defined as all
-   * non-whitespace characters.
+   * Gets positional information for the word at the coordinated specified.
    * @param coords The coordinates to get the word at.
    */
-  protected _selectWordAt(coords: [number, number]): void {
+  private _getWordAt(coords: [number, number]): IWordPosition {
     const bufferLine = this._buffer.get(coords[1]);
     const line = this._translateBufferLineToString(bufferLine, false);
 
@@ -610,7 +635,7 @@ export class SelectionManager extends EventEmitter {
         endCol++;
       }
       // Expand the string in both directions until a space is hit
-      while (startIndex > 0 && line.charAt(startIndex - 1) !== ' ') {
+      while (startIndex > 0 && !this._isCharWordSeparator(line.charAt(startIndex - 1))) {
         if (bufferLine[startCol - 1][LINE_DATA_WIDTH_INDEX] === 0) {
           // If the next character is a wide char, record it and skip the column
           leftWideCharCount++;
@@ -619,7 +644,7 @@ export class SelectionManager extends EventEmitter {
         startIndex--;
         startCol--;
       }
-      while (endIndex + 1 < line.length && line.charAt(endIndex + 1) !== ' ') {
+      while (endIndex + 1 < line.length && !this._isCharWordSeparator(line.charAt(endIndex + 1))) {
         if (bufferLine[endCol + 1][LINE_DATA_WIDTH_INDEX] === 2) {
           // If the next character is a wide char, record it and skip the column
           rightWideCharCount++;
@@ -630,9 +655,37 @@ export class SelectionManager extends EventEmitter {
       }
     }
 
-    // Record the resulting selection
-    this._model.selectionStart = [startIndex + charOffset - leftWideCharCount, coords[1]];
-    this._model.selectionStartLength = Math.min(endIndex - startIndex + leftWideCharCount + rightWideCharCount + 1/*include endIndex char*/, this._terminal.cols);
+    const start = startIndex + charOffset - leftWideCharCount;
+    const length = Math.min(endIndex - startIndex + leftWideCharCount + rightWideCharCount + 1/*include endIndex char*/, this._terminal.cols);
+    return {start, length};
+  }
+
+  /**
+   * Selects the word at the coordinates specified.
+   * @param coords The coordinates to get the word at.
+   */
+  protected _selectWordAt(coords: [number, number]): void {
+    const wordPosition = this._getWordAt(coords);
+    this._model.selectionStart = [wordPosition.start, coords[1]];
+    this._model.selectionStartLength = wordPosition.length;
+  }
+
+  /**
+   * Sets the selection end to the word at the coordinated specified.
+   * @param coords The coordinates to get the word at.
+   */
+  private _selectToWordAt(coords: [number, number]): void {
+    const wordPosition = this._getWordAt(coords);
+    this._model.selectionEnd = [this._model.areSelectionValuesReversed() ? wordPosition.start : (wordPosition.start + wordPosition.length), coords[1]];
+  }
+
+  /**
+   * Gets whether the character is considered a word separator by the select
+   * word logic.
+   * @param char The character to check.
+   */
+  private _isCharWordSeparator(char: string): boolean {
+    return WORD_SEPARATORS.indexOf(char) >= 0;
   }
 
   /**
