@@ -647,8 +647,7 @@ Terminal.prototype.open = function(parent, focus) {
   this.viewportScrollArea.classList.add('xterm-scroll-area');
   this.viewportElement.appendChild(this.viewportScrollArea);
 
-  // Create the selection container. This needs to be added before the
-  // rowContainer as the selection must be below the text.
+  // Create the selection container.
   this.selectionContainer = document.createElement('div');
   this.selectionContainer.classList.add('xterm-selection');
   this.element.appendChild(this.selectionContainer);
