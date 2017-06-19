@@ -167,8 +167,7 @@ function Terminal(options) {
   this.queue = '';
   this.scrollTop = 0;
   this.scrollBottom = this.rows - 1;
-  this.customKeydownHandler = null;
-  this.customKeypressHandler = null;
+  this.customKeyEventHandler = null;
   this.cursorBlinkInterval = null;
 
   // modes
@@ -1306,27 +1305,27 @@ Terminal.prototype.writeln = function(data) {
 };
 
 /**
- * Attaches a custom keydown handler which is run before keys are processed, giving consumers of
- * xterm.js ultimate control as to what keys should be processed by the terminal and what keys
- * should not.
+ * DEPRECATED: only for backward compatibility. Please use attachCustomKeyEventHandler() instead.
  * @param {function} customKeydownHandler The custom KeyboardEvent handler to attach. This is a
  *   function that takes a KeyboardEvent, allowing consumers to stop propogation and/or prevent
  *   the default action. The function returns whether the event should be processed by xterm.js.
  */
 Terminal.prototype.attachCustomKeydownHandler = function(customKeydownHandler) {
-  this.customKeydownHandler = customKeydownHandler;
+  let message = 'attachCustomKeydownHandler() is DEPRECATED and will be removed soon. Please use attachCustomKeyEventHandler() instead.';
+  console.warn(message);
+  this.attachCustomKeyEventHandler(customKeydownHandler);
 }
 
 /**
- * Attaches a custom keypress handler which is run before keys are processed, giving consumers of
+ * Attaches a custom key event handler which is run before keys are processed, giving consumers of
  * xterm.js ultimate control as to what keys should be processed by the terminal and what keys
  * should not.
  * @param {function} customKeypressHandler The custom KeyboardEvent handler to attach. This is a
  *   function that takes a KeyboardEvent, allowing consumers to stop propogation and/or prevent
  *   the default action. The function returns whether the event should be processed by xterm.js.
  */
-Terminal.prototype.attachCustomKeypressHandler = function(customKeypressHandler) {
-  this.customKeypressHandler = customKeypressHandler;
+Terminal.prototype.attachCustomKeyEventHandler = function(customKeyEventHandler) {
+  this.customKeyEventHandler = customKeyEventHandler;
 }
 
 /**
@@ -1425,7 +1424,7 @@ Terminal.prototype.selectAll = function() {
  * @param {KeyboardEvent} ev The keydown event to be handled.
  */
 Terminal.prototype.keyDown = function(ev) {
-  if (this.customKeydownHandler && this.customKeydownHandler(ev) === false) {
+  if (this.customKeyEventHandler && this.customKeyEventHandler(ev) === false) {
     return false;
   }
 
@@ -1790,7 +1789,7 @@ Terminal.prototype.setgCharset = function(g, charset) {
 Terminal.prototype.keyPress = function(ev) {
   var key;
 
-  if (this.customKeypressHandler && this.customKeypressHandler(ev) === false) {
+  if (this.customKeyEventHandler && this.customKeyEventHandler(ev) === false) {
     return false;
   }
 
@@ -2252,12 +2251,10 @@ Terminal.prototype.reverseIndex = function() {
 Terminal.prototype.reset = function() {
   this.options.rows = this.rows;
   this.options.cols = this.cols;
-  var customKeydownHandler = this.customKeydownHandler;
-  var customKeypressHandler = this.customKeypressHandler; 
+  var customKeyEventHandler = this.customKeyEventHandler;
   var cursorBlinkInterval = this.cursorBlinkInterval;
   Terminal.call(this, this.options);
-  this.customKeydownHandler = customKeydownHandler;
-  this.customKeypressHandler = customKeypressHandler;
+  this.customKeyEventHandler = customKeyEventHandler;
   this.cursorBlinkInterval = cursorBlinkInterval;
   this.refresh(0, this.rows - 1);
   this.viewport.syncScrollArea();
