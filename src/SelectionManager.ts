@@ -37,6 +37,12 @@ const CLEAR_MOUSE_DOWN_TIME = 400;
  */
 const CLEAR_MOUSE_DISTANCE = 10;
 
+/**
+ * A string containing all characters that are considered word separated by the
+ * double click to select work logic.
+ */
+const WORD_SEPARATORS = ' ()[]{}:\'"';
+
 // TODO: Move these constants elsewhere, they belong in a buffer or buffer
 //       data/line class.
 const LINE_DATA_CHAR_INDEX = 1;
@@ -326,7 +332,7 @@ export class SelectionManager extends EventEmitter {
    * @param event The mouse event.
    */
   private _getMouseBufferCoords(event: MouseEvent): [number, number] {
-    const coords = Mouse.getCoords(event, this._rowContainer, this._charMeasure, this._terminal.cols, this._terminal.rows);
+    const coords = Mouse.getCoords(event, this._rowContainer, this._charMeasure, this._terminal.cols, this._terminal.rows, true);
     // Convert to 0-based
     coords[0]--;
     coords[1]--;
@@ -629,7 +635,7 @@ export class SelectionManager extends EventEmitter {
         endCol++;
       }
       // Expand the string in both directions until a space is hit
-      while (startIndex > 0 && line.charAt(startIndex - 1) !== ' ') {
+      while (startIndex > 0 && !this._isCharWordSeparator(line.charAt(startIndex - 1))) {
         if (bufferLine[startCol - 1][LINE_DATA_WIDTH_INDEX] === 0) {
           // If the next character is a wide char, record it and skip the column
           leftWideCharCount++;
@@ -638,7 +644,7 @@ export class SelectionManager extends EventEmitter {
         startIndex--;
         startCol--;
       }
-      while (endIndex + 1 < line.length && line.charAt(endIndex + 1) !== ' ') {
+      while (endIndex + 1 < line.length && !this._isCharWordSeparator(line.charAt(endIndex + 1))) {
         if (bufferLine[endCol + 1][LINE_DATA_WIDTH_INDEX] === 2) {
           // If the next character is a wide char, record it and skip the column
           rightWideCharCount++;
@@ -671,6 +677,15 @@ export class SelectionManager extends EventEmitter {
   private _selectToWordAt(coords: [number, number]): void {
     const wordPosition = this._getWordAt(coords);
     this._model.selectionEnd = [this._model.areSelectionValuesReversed() ? wordPosition.start : (wordPosition.start + wordPosition.length), coords[1]];
+  }
+
+  /**
+   * Gets whether the character is considered a word separator by the select
+   * word logic.
+   * @param char The character to check.
+   */
+  private _isCharWordSeparator(char: string): boolean {
+    return WORD_SEPARATORS.indexOf(char) >= 0;
   }
 
   /**
