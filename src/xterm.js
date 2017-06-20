@@ -13,7 +13,7 @@
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './EventEmitter';
 import { Viewport } from './Viewport';
-import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard';
+import { moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './handlers/Clipboard';
 import { CircularList } from './utils/CircularList';
 import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
@@ -537,15 +537,29 @@ Terminal.prototype.initGlobal = function() {
   on(this.textarea, 'paste', pasteHandlerWrapper);
   on(this.element, 'paste', pasteHandlerWrapper);
 
+  // Handle right click context menus
   if (term.browser.isFirefox) {
     on(this.element, 'mousedown', event => {
       if (ev.button == 2) {
-        rightClickHandler(event, this.textarea, this.selectionManager);
+        moveTextAreaUnderMouseCursor(event, this.textarea, this.selectionManager);
       }
     });
   } else {
     on(this.element, 'contextmenu', event => {
-      rightClickHandler(event, this.textarea, this.selectionManager);
+      moveTextAreaUnderMouseCursor(event, this.textarea, this.selectionManager);
+    });
+  }
+
+  // Move the textarea under the cursor when middle clicking on Linux to ensure
+  // middle click to paste selection works. This only appears to work in Chrome
+  // at the time is writing.
+  if (term.browser.isLinux) {
+    // Use auxclick event over mousedown the latter doesn't seem to work. Note
+    // that the regular click event doesn't fire for the middle mouse button.
+    on(this.element, 'click', event => {
+      if (event.button === 1) {
+        moveTextAreaUnderMouseCursor(event, this.textarea, this.selectionManager);
+      }
     });
   }
 };

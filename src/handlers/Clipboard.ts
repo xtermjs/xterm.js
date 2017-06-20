@@ -80,7 +80,7 @@ export function pasteHandler(ev: ClipboardEvent, term: ITerminal) {
  * @param term The terminal on which to apply the handled paste event
  * @param selectionManager The terminal's selection manager.
  */
-export function rightClickHandler(ev: MouseEvent, textarea: HTMLTextAreaElement, selectionManager: ISelectionManager) {
+export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLTextAreaElement, selectionManager: ISelectionManager) {
   // Bring textarea at the cursor position
   textarea.style.position = 'fixed';
   textarea.style.width = '20px';

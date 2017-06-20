@@ -2,10 +2,11 @@
  * @license MIT
  */
 
+import * as Mouse from './utils/Mouse';
+import * as Browser from './utils/Browser';
 import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
 import { EventEmitter } from './EventEmitter';
-import * as Mouse from './utils/Mouse';
 import { ITerminal } from './Interfaces';
 import { SelectionModel } from './SelectionModel';
 
@@ -299,16 +300,13 @@ export class SelectionManager extends EventEmitter {
       this._refreshAnimationFrame = window.requestAnimationFrame(() => this._refresh());
     }
 
-    // If the refresh comes from a mouse event then emit a newselection event
-    if (!fromMouseEvent) {
-      return;
-    }
-    // TODO: Only do this when the selection has actually changed
-    // TODO: Ensure we're not doing more work than absolutely necessary, particularly for large selections
-    // TODO: Only do this on Linux
-    const selectionText = this.selectionText;
-    if (selectionText.length) {
-      this.emit('newselection', this.selectionText);
+    // If the platform is Linux and the refresh call comes from a mouse event,
+    // we need to update the selection for middle click to paste selection.
+    if (Browser.isLinux && fromMouseEvent) {
+      const selectionText = this.selectionText;
+      if (selectionText.length) {
+        this.emit('newselection', this.selectionText);
+      }
     }
   }
 
@@ -560,7 +558,7 @@ export class SelectionManager extends EventEmitter {
     if (!previousSelectionEnd ||
         previousSelectionEnd[0] !== this._model.selectionEnd[0] ||
         previousSelectionEnd[1] !== this._model.selectionEnd[1]) {
-      this.refresh();
+      this.refresh(true);
     }
   }
 
