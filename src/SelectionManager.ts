@@ -183,7 +183,12 @@ export class SelectionManager extends EventEmitter {
    * Gets whether there is an active text selection.
    */
   public get hasSelection(): boolean {
-    return !!this._model.finalSelectionStart && !!this._model.finalSelectionEnd;
+    const start = this._model.finalSelectionStart;
+    const end = this._model.finalSelectionEnd;
+    if (!start || !end) {
+      return false;
+    }
+    return start[0] !== end[0] || start[1] !== end[1];
   }
 
   /**

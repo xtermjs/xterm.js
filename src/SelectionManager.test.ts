@@ -209,4 +209,20 @@ describe('SelectionManager', () => {
       assert.equal(selectionManager.selectionText, '1\n2\n3\n4\n5');
     });
   });
+
+  describe('hasSelection', () => {
+    it('should return whether there is a selection', () => {
+      selectionManager.model.selectionStart = [0, 0];
+      selectionManager.model.selectionStartLength = 0;
+      assert.equal(selectionManager.hasSelection, false);
+      selectionManager.model.selectionEnd = [0, 0];
+      assert.equal(selectionManager.hasSelection, false);
+      selectionManager.model.selectionEnd = [1, 0];
+      assert.equal(selectionManager.hasSelection, true);
+      selectionManager.model.selectionEnd = [0, 1];
+      assert.equal(selectionManager.hasSelection, true);
+      selectionManager.model.selectionEnd = [1, 1];
+      assert.equal(selectionManager.hasSelection, true);
+    });
+  });
 });
