@@ -721,6 +721,9 @@ Terminal.prototype.open = function(parent, focus) {
     this.renderer.refreshSelection(data.start, data.end);
   });
   this.selectionManager.on('newselection', text => {
+    // If there's a new selection, put it into the textarea, focus and select it
+    // in order to register it as a selection on the OS. This event is fired
+    // only on Linux to enable middle click to paste selection.
     this.textarea.value = text;
     this.textarea.focus();
     this.textarea.select();
