@@ -556,7 +556,7 @@ Terminal.prototype.initGlobal = function() {
   if (term.browser.isLinux) {
     // Use auxclick event over mousedown the latter doesn't seem to work. Note
     // that the regular click event doesn't fire for the middle mouse button.
-    on(this.element, 'click', event => {
+    on(this.element, 'auxclick', event => {
       if (event.button === 1) {
         moveTextAreaUnderMouseCursor(event, this.textarea, this.selectionManager);
       }
