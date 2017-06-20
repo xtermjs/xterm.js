@@ -75,12 +75,11 @@ export function pasteHandler(ev: ClipboardEvent, term: ITerminal) {
 }
 
 /**
- * Bind to right-click event and allow right-click copy and paste.
- * @param ev The original right click event to be handled
- * @param term The terminal on which to apply the handled paste event
- * @param selectionManager The terminal's selection manager.
+ * Moves the textarea under the mouse cursor and focuses it.
+ * @param ev The original right click event to be handled.
+ * @param textarea The terminal's textarea.
  */
-export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLTextAreaElement, selectionManager: ISelectionManager) {
+export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLTextAreaElement) {
   // Bring textarea at the cursor position
   textarea.style.position = 'fixed';
   textarea.style.width = '20px';
@@ -89,10 +88,7 @@ export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLTextA
   textarea.style.top = (ev.clientY - 10) + 'px';
   textarea.style.zIndex = '1000';
 
-  // Get textarea ready to copy from the context menu
-  textarea.value = selectionManager.selectionText;
   textarea.focus();
-  textarea.select();
 
   // Reset the terminal textarea's styling
   setTimeout(function () {
@@ -103,4 +99,18 @@ export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLTextA
     textarea.style.top = null;
     textarea.style.zIndex = null;
   }, 4);
+}
+
+/**
+ * Bind to right-click event and allow right-click copy and paste.
+ * @param ev The original right click event to be handled.
+ * @param textarea The terminal's textarea.
+ * @param selectionManager The terminal's selection manager.
+ */
+export function rightClickHandler(ev: MouseEvent, textarea: HTMLTextAreaElement, selectionManager: ISelectionManager) {
+  moveTextAreaUnderMouseCursor(ev, textarea);
+
+  // Get textarea ready to copy from the context menu
+  textarea.value = selectionManager.selectionText;
+  textarea.select();
 }
