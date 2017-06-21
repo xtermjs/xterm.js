@@ -2,10 +2,11 @@
  * @license MIT
  */
 
+import * as Mouse from './utils/Mouse';
+import * as Browser from './utils/Browser';
 import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
 import { EventEmitter } from './EventEmitter';
-import * as Mouse from './utils/Mouse';
 import { ITerminal } from './Interfaces';
 import { SelectionModel } from './SelectionModel';
 
@@ -292,10 +293,22 @@ export class SelectionManager extends EventEmitter {
 
   /**
    * Queues a refresh, redrawing the selection on the next opportunity.
+   * @param isNewSelection Whether the selection should be registered as a new
+   * selection on Linux.
    */
-  public refresh(): void {
+  public refresh(isNewSelection?: boolean): void {
+    // Queue the refresh for the renderer
     if (!this._refreshAnimationFrame) {
       this._refreshAnimationFrame = window.requestAnimationFrame(() => this._refresh());
+    }
+
+    // If the platform is Linux and the refresh call comes from a mouse event,
+    // we need to update the selection for middle click to paste selection.
+    if (Browser.isLinux && isNewSelection) {
+      const selectionText = this.selectionText;
+      if (selectionText.length) {
+        this.emit('newselection', this.selectionText);
+      }
     }
   }
 
@@ -392,7 +405,7 @@ export class SelectionManager extends EventEmitter {
     }
 
     this._addMouseDownListeners();
-    this.refresh();
+    this.refresh(true);
   }
 
   /**
@@ -547,7 +560,7 @@ export class SelectionManager extends EventEmitter {
     if (!previousSelectionEnd ||
         previousSelectionEnd[0] !== this._model.selectionEnd[0] ||
         previousSelectionEnd[1] !== this._model.selectionEnd[1]) {
-      this.refresh();
+      this.refresh(true);
     }
   }
 
