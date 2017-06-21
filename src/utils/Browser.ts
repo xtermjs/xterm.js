@@ -20,3 +20,4 @@ export const isMac = contains(['Macintosh', 'MacIntel', 'MacPPC', 'Mac68K'], pla
 export const isIpad = platform === 'iPad';
 export const isIphone = platform === 'iPhone';
 export const isMSWindows = contains(['Windows', 'Win16', 'Win32', 'WinCE'], platform);
+export const isLinux = platform.indexOf('Linux') >= 0;
