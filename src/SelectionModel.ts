@@ -59,7 +59,7 @@ export class SelectionModel {
       return this.selectionStart;
     }
 
-    return this._areSelectionValuesReversed() ? this.selectionEnd : this.selectionStart;
+    return this.areSelectionValuesReversed() ? this.selectionEnd : this.selectionStart;
   }
 
   /**
@@ -76,7 +76,7 @@ export class SelectionModel {
     }
 
     // Use the selection start if the end doesn't exist or they're reversed
-    if (!this.selectionEnd || this._areSelectionValuesReversed()) {
+    if (!this.selectionEnd || this.areSelectionValuesReversed()) {
       return [this.selectionStart[0] + this.selectionStartLength, this.selectionStart[1]];
     }
 
@@ -93,7 +93,7 @@ export class SelectionModel {
   /**
    * Returns whether the selection start and end are reversed.
    */
-  protected _areSelectionValuesReversed(): boolean {
+  public areSelectionValuesReversed(): boolean {
     const start = this.selectionStart;
     const end = this.selectionEnd;
     return start[1] > end[1] || (start[1] === end[1] && start[0] > end[0]);
