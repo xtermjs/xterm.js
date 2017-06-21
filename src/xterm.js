@@ -538,8 +538,9 @@ Terminal.prototype.initGlobal = function() {
   on(this.element, 'paste', pasteHandlerWrapper);
 
   if (term.browser.isFirefox) {
+    // Firefox doesn't appear to fire the contextmenu event on right click
     on(this.element, 'mousedown', event => {
-      if (ev.button == 2) {
+      if (event.button == 2) {
         rightClickHandler(event, this.textarea, this.selectionManager);
       }
     });
