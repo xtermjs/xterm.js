@@ -10,7 +10,6 @@ import { CircularList } from './utils/CircularList';
  */
 export class Buffer {
   public lines: CircularList<any>;
-  private _tabs: any;
 
   /**
    * Create a new Buffer.
@@ -26,7 +25,11 @@ export class Buffer {
     public ybase: number = 0,
     public y: number = 0,
     public x: number = 0,
+    public scrollBottom: number = 0,
+    public scrollTop: number = 0,
+    public tabs: any = {},
   ) {
     this.lines = new CircularList(this.terminal.scrollback);
+    this.scrollBottom = this.terminal.rows - 1;
   }
 }
