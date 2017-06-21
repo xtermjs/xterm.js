@@ -103,8 +103,9 @@ export class SearchHelper {
 
   private _findInLine(term: string, y: number): ISearchResult {
     const bufferLine = this._terminal.lines.get(y);
-    const stringLine = translateBufferLineToString(bufferLine, true);
-    const searchIndex = stringLine.indexOf(term);
+    const lowerStringLine = translateBufferLineToString(bufferLine, true).toLowerCase();
+    const lowerTerm = term.toLowerCase();
+    const searchIndex = lowerStringLine.indexOf(lowerTerm);
     if (searchIndex >= 0) {
       return {
         term,
