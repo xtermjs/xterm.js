@@ -24,9 +24,6 @@ export interface ITerminal {
   selectionManager: ISelectionManager;
   charMeasure: ICharMeasure;
   textarea: HTMLTextAreaElement;
-  ybase: number;
-  ydisp: number;
-  lines: ICircularList<string>;
   rows: number;
   cols: number;
   browser: IBrowser;
@@ -34,8 +31,6 @@ export interface ITerminal {
   children: HTMLElement[];
   cursorHidden: boolean;
   cursorState: number;
-  x: number;
-  y: number;
   defAttr: number;
   scrollback: number;
   buffer: any;  // This should be a `Buffer` class, but it would result in circular dependency

@@ -146,9 +146,13 @@ function Terminal(options) {
   this.cursorHidden = false;
   this.convertEol;
   this.queue = '';
+<<<<<<< HEAD
   this.scrollTop = 0;
   this.scrollBottom = this.rows - 1;
   this.customKeyEventHandler = null;
+=======
+  this.customKeydownHandler = null;
+>>>>>>> Move `scrollTop` and `scrollBottom` into `Buffer`
   this.cursorBlinkInterval = null;
 
   // modes
@@ -244,7 +248,6 @@ function Terminal(options) {
     this.selectionManager.setBuffer(this.buffer.lines);
   }
 
-  this.tabs;
   this.setupStops();
 
   // Store if user went browsing history in scrollback
@@ -1175,7 +1178,7 @@ Terminal.prototype.scroll = function(isWrapped) {
   row = this.buffer.ybase + this.rows - 1;
 
   // subtract the bottom scroll region
-  row -= this.rows - 1 - this.scrollBottom;
+  row -= this.rows - 1 - this.buffer.scrollBottom;
 
   if (row === this.buffer.lines.length) {
     // Optimization: pushing is faster than splicing when they amount to the same behavior
@@ -1185,19 +1188,19 @@ Terminal.prototype.scroll = function(isWrapped) {
     this.buffer.lines.splice(row, 0, this.blankLine(undefined, isWrapped));
   }
 
-  if (this.scrollTop !== 0) {
+  if (this.buffer.scrollTop !== 0) {
     if (this.buffer.ybase !== 0) {
       this.buffer.ybase--;
       if (!this.userScrolling) {
         this.buffer.ydisp = this.buffer.ybase;
       }
     }
-    this.buffer.lines.splice(this.buffer.ybase + this.scrollTop, 1);
+    this.buffer.lines.splice(this.buffer.ybase + this.buffer.scrollTop, 1);
   }
 
   // this.maxRange();
-  this.updateRange(this.scrollTop);
-  this.updateRange(this.scrollBottom);
+  this.updateRange(this.buffer.scrollTop);
+  this.updateRange(this.buffer.scrollBottom);
 
   /**
    * This event is emitted whenever the terminal is scrolled.
@@ -2016,8 +2019,8 @@ Terminal.prototype.resize = function(x, y) {
     this.buffer.x = x - 1;
   }
 
-  this.scrollTop = 0;
-  this.scrollBottom = y - 1;
+  this.buffer.scrollTop = 0;
+  this.buffer.scrollBottom = y - 1;
 
   this.charMeasure.measure();
 
@@ -2060,16 +2063,16 @@ Terminal.prototype.maxRange = function() {
  */
 Terminal.prototype.setupStops = function(i) {
   if (i != null) {
-    if (!this.tabs[i]) {
+    if (!this.buffer.tabs[i]) {
       i = this.prevStop(i);
     }
   } else {
-    this.tabs = {};
+    this.buffer.tabs = {};
     i = 0;
   }
 
   for (; i < this.cols; i += this.getOption('tabStopWidth')) {
-    this.tabs[i] = true;
+    this.buffer.tabs[i] = true;
   }
 };
 
@@ -2080,7 +2083,7 @@ Terminal.prototype.setupStops = function(i) {
  */
 Terminal.prototype.prevStop = function(x) {
   if (x == null) x = this.buffer.x;
-  while (!this.tabs[--x] && x > 0);
+  while (!this.buffer.tabs[--x] && x > 0);
   return x >= this.cols
     ? this.cols - 1
   : x < 0 ? 0 : x;
@@ -2093,7 +2096,7 @@ Terminal.prototype.prevStop = function(x) {
  */
 Terminal.prototype.nextStop = function(x) {
   if (x == null) x = this.buffer.x;
-  while (!this.tabs[++x] && x < this.cols);
+  while (!this.buffer.tabs[++x] && x < this.cols);
   return x >= this.cols
     ? this.cols - 1
   : x < 0 ? 0 : x;
@@ -2262,7 +2265,7 @@ Terminal.prototype.handleTitle = function(title) {
  */
 Terminal.prototype.index = function() {
   this.buffer.y++;
-  if (this.buffer.y > this.scrollBottom) {
+  if (this.buffer.y > this.buffer.scrollBottom) {
     this.buffer.y--;
     this.scroll();
   }
@@ -2280,14 +2283,14 @@ Terminal.prototype.index = function() {
  */
 Terminal.prototype.reverseIndex = function() {
   var j;
-  if (this.buffer.y === this.scrollTop) {
+  if (this.buffer.y === this.buffer.scrollTop) {
     // possibly move the code below to term.reverseScroll();
     // test: echo -ne '\e[1;1H\e[44m\eM\e[0m'
     // blankLine(true) is xterm/linux behavior
     this.buffer.lines.shiftElements(this.buffer.y + this.buffer.ybase, this.rows - 1, 1);
     this.buffer.lines.set(this.buffer.y + this.buffer.ybase, this.blankLine(true));
-    this.updateRange(this.scrollTop);
-    this.updateRange(this.scrollBottom);
+    this.updateRange(this.buffer.scrollTop);
+    this.updateRange(this.buffer.scrollBottom);
   } else {
     this.buffer.y--;
   }
@@ -2314,7 +2317,7 @@ Terminal.prototype.reset = function() {
  * ESC H Tab Set (HTS is 0x88).
  */
 Terminal.prototype.tabSet = function() {
-  this.tabs[this.buffer.x] = true;
+  this.buffer.tabs[this.buffer.x] = true;
 };
 
 /**

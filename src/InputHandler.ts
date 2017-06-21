@@ -55,7 +55,7 @@ export class InputHandler implements IInputHandler {
         if (this._terminal.wraparoundMode) {
           this._terminal.buffer.x = 0;
           this._terminal.buffer.y++;
-          if (this._terminal.buffer.y > this._terminal.scrollBottom) {
+          if (this._terminal.buffer.y > this._terminal.buffer.scrollBottom) {
             this._terminal.buffer.y--;
             this._terminal.scroll(true);
           } else {
@@ -124,7 +124,7 @@ export class InputHandler implements IInputHandler {
       this._terminal.buffer.x = 0;
     }
     this._terminal.buffer.y++;
-    if (this._terminal.buffer.y > this._terminal.scrollBottom) {
+    if (this._terminal.buffer.y > this._terminal.buffer.scrollBottom) {
       this._terminal.buffer.y--;
       this._terminal.scroll();
     }
@@ -441,7 +441,7 @@ export class InputHandler implements IInputHandler {
     }
     row = this._terminal.buffer.y + this._terminal.buffer.ybase;
 
-    j = this._terminal.rows - 1 - this._terminal.scrollBottom;
+    j = this._terminal.rows - 1 - this._terminal.buffer.scrollBottom;
     j = this._terminal.rows - 1 + this._terminal.buffer.ybase - j + 1;
 
     while (param--) {
@@ -461,7 +461,7 @@ export class InputHandler implements IInputHandler {
 
     // this.maxRange();
     this._terminal.updateRange(this._terminal.buffer.y);
-    this._terminal.updateRange(this._terminal.scrollBottom);
+    this._terminal.updateRange(this._terminal.buffer.scrollBottom);
   }
 
   /**
@@ -477,7 +477,7 @@ export class InputHandler implements IInputHandler {
     }
     row = this._terminal.buffer.y + this._terminal.buffer.ybase;
 
-    j = this._terminal.rows - 1 - this._terminal.scrollBottom;
+    j = this._terminal.rows - 1 - this._terminal.buffer.scrollBottom;
     j = this._terminal.rows - 1 + this._terminal.buffer.ybase - j;
 
     while (param--) {
@@ -495,7 +495,7 @@ export class InputHandler implements IInputHandler {
 
     // this.maxRange();
     this._terminal.updateRange(this._terminal.buffer.y);
-    this._terminal.updateRange(this._terminal.scrollBottom);
+    this._terminal.updateRange(this._terminal.buffer.scrollBottom);
   }
 
   /**
@@ -525,12 +525,12 @@ export class InputHandler implements IInputHandler {
   public scrollUp(params: number[]): void {
     let param = params[0] || 1;
     while (param--) {
-      this._terminal.buffer.lines.splice(this._terminal.buffer.ybase + this._terminal.scrollTop, 1);
-      this._terminal.buffer.lines.splice(this._terminal.buffer.ybase + this._terminal.scrollBottom, 0, this._terminal.blankLine());
+      this._terminal.buffer.lines.splice(this._terminal.buffer.ybase + this._terminal.buffer.scrollTop, 1);
+      this._terminal.buffer.lines.splice(this._terminal.buffer.ybase + this._terminal.buffer.scrollBottom, 0, this._terminal.blankLine());
     }
     // this.maxRange();
-    this._terminal.updateRange(this._terminal.scrollTop);
-    this._terminal.updateRange(this._terminal.scrollBottom);
+    this._terminal.updateRange(this._terminal.buffer.scrollTop);
+    this._terminal.updateRange(this._terminal.buffer.scrollBottom);
   }
 
   /**
@@ -539,12 +539,12 @@ export class InputHandler implements IInputHandler {
   public scrollDown(params: number[]): void {
     let param = params[0] || 1;
     while (param--) {
-      this._terminal.buffer.lines.splice(this._terminal.buffer.ybase + this._terminal.scrollBottom, 1);
-      this._terminal.buffer.lines.splice(this._terminal.buffer.ybase + this._terminal.scrollTop, 0, this._terminal.blankLine());
+      this._terminal.buffer.lines.splice(this._terminal.buffer.ybase + this._terminal.buffer.scrollBottom, 1);
+      this._terminal.buffer.lines.splice(this._terminal.buffer.ybase + this._terminal.buffer.scrollTop, 0, this._terminal.blankLine());
     }
     // this.maxRange();
-    this._terminal.updateRange(this._terminal.scrollTop);
-    this._terminal.updateRange(this._terminal.scrollBottom);
+    this._terminal.updateRange(this._terminal.buffer.scrollTop);
+    this._terminal.updateRange(this._terminal.buffer.scrollBottom);
   }
 
   /**
@@ -754,9 +754,9 @@ export class InputHandler implements IInputHandler {
   public tabClear(params: number[]): void {
     let param = params[0];
     if (param <= 0) {
-      delete this._terminal.tabs[this._terminal.buffer.x];
+      delete this._terminal.buffer.tabs[this._terminal.buffer.x];
     } else if (param === 3) {
-      this._terminal.tabs = {};
+      this._terminal.buffer.tabs = {};
     }
   }
 
@@ -948,13 +948,7 @@ export class InputHandler implements IInputHandler {
         case 1047: // alt screen buffer
           if (!this._terminal.normal) {
             let normal = {
-              scrollTop: this._terminal.scrollTop,
-              scrollBottom: this._terminal.scrollBottom,
-              tabs: this._terminal.tabs
-              // XXX save charset(s) here?
-              // charset: this._terminal.charset,
-              // glevel: this._terminal.glevel,
-              // charsets: this._terminal.charsets
+              scrollBottom: this._terminal.buffer.scrollBottom,
             };
             this._terminal.buffers.activateAltBuffer();
           }
@@ -1118,22 +1112,12 @@ export class InputHandler implements IInputHandler {
           ; // FALL-THROUGH
         case 47: // normal screen buffer
         case 1047: // normal screen buffer - clearing it first
-          if (this._terminal.normal) {
-            this._terminal.scrollTop = this._terminal.normal.scrollTop;
-            this._terminal.scrollBottom = this._terminal.normal.scrollBottom;
-            this._terminal.tabs = this._terminal.normal.tabs;
-            this._terminal.normal = null;
-            // Ensure the selection manager has the correct buffer
-            this._terminal.selectionManager.setBuffer(this._terminal.buffer.lines);
-            // if (params === 1049) {
-            //   this.x = this.savedX;
-            //   this.y = this.savedY;
-            // }
-            this._terminal.buffers.activateNormalBuffer();
-            this._terminal.refresh(0, this._terminal.rows - 1);
-            this._terminal.viewport.syncScrollArea();
-            this._terminal.showCursor();
-          }
+          // Ensure the selection manager has the correct buffer
+          this._terminal.buffers.activateNormalBuffer();
+          this._terminal.selectionManager.setBuffer(this._terminal.buffer.lines);
+          this._terminal.refresh(0, this._terminal.rows - 1);
+          this._terminal.viewport.syncScrollArea();
+          this._terminal.showCursor();
           break;
       }
     }
@@ -1403,8 +1387,8 @@ export class InputHandler implements IInputHandler {
     this._terminal.applicationKeypad = false; // ?
     this._terminal.viewport.syncScrollArea();
     this._terminal.applicationCursor = false;
-    this._terminal.scrollTop = 0;
-    this._terminal.scrollBottom = this._terminal.rows - 1;
+    this._terminal.buffer.scrollTop = 0;
+    this._terminal.buffer.scrollBottom = this._terminal.rows - 1;
     this._terminal.curAttr = this._terminal.defAttr;
     this._terminal.buffer.x = this._terminal.buffer.y = 0; // ?
     this._terminal.charset = null;
@@ -1450,8 +1434,8 @@ export class InputHandler implements IInputHandler {
    */
   public setScrollRegion(params: number[]): void {
     if (this._terminal.prefix) return;
-    this._terminal.scrollTop = (params[0] || 1) - 1;
-    this._terminal.scrollBottom = (params[1] && params[1] <= this._terminal.rows ? params[1] : this._terminal.rows) - 1;
+    this._terminal.buffer.scrollTop = (params[0] || 1) - 1;
+    this._terminal.buffer.scrollBottom = (params[1] && params[1] <= this._terminal.rows ? params[1] : this._terminal.rows) - 1;
     this._terminal.buffer.x = 0;
     this._terminal.buffer.y = 0;
   }
