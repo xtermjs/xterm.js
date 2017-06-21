@@ -205,7 +205,7 @@ describe('SelectionManager', () => {
       buffer.push(stringToRow('4'));
       buffer.push(stringToRow('5'));
       selectionManager.selectAll();
-      terminal.ybase = buffer.length - terminal.rows;
+      terminal.buffer.ybase = buffer.length - terminal.rows;
       assert.equal(selectionManager.selectionText, '1\n2\n3\n4\n5');
     });
   });
