@@ -539,8 +539,9 @@ Terminal.prototype.initGlobal = function() {
 
   // Handle right click context menus
   if (term.browser.isFirefox) {
+    // Firefox doesn't appear to fire the contextmenu event on right click
     on(this.element, 'mousedown', event => {
-      if (ev.button == 2) {
+      if (event.button == 2) {
         rightClickHandler(event, this.textarea, this.selectionManager);
       }
     });
@@ -661,8 +662,7 @@ Terminal.prototype.open = function(parent, focus) {
   this.viewportScrollArea.classList.add('xterm-scroll-area');
   this.viewportElement.appendChild(this.viewportScrollArea);
 
-  // Create the selection container. This needs to be added before the
-  // rowContainer as the selection must be below the text.
+  // Create the selection container.
   this.selectionContainer = document.createElement('div');
   this.selectionContainer.classList.add('xterm-selection');
   this.element.appendChild(this.selectionContainer);
