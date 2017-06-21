@@ -13,7 +13,7 @@
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './EventEmitter';
 import { Viewport } from './Viewport';
-import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard';
+import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './handlers/Clipboard';
 import { CircularList } from './utils/CircularList';
 import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
@@ -537,15 +537,30 @@ Terminal.prototype.initGlobal = function() {
   on(this.textarea, 'paste', pasteHandlerWrapper);
   on(this.element, 'paste', pasteHandlerWrapper);
 
+  // Handle right click context menus
   if (term.browser.isFirefox) {
+    // Firefox doesn't appear to fire the contextmenu event on right click
     on(this.element, 'mousedown', event => {
-      if (ev.button == 2) {
+      if (event.button == 2) {
         rightClickHandler(event, this.textarea, this.selectionManager);
       }
     });
   } else {
     on(this.element, 'contextmenu', event => {
       rightClickHandler(event, this.textarea, this.selectionManager);
+    });
+  }
+
+  // Move the textarea under the cursor when middle clicking on Linux to ensure
+  // middle click to paste selection works. This only appears to work in Chrome
+  // at the time is writing.
+  if (term.browser.isLinux) {
+    // Use auxclick event over mousedown the latter doesn't seem to work. Note
+    // that the regular click event doesn't fire for the middle mouse button.
+    on(this.element, 'auxclick', event => {
+      if (event.button === 1) {
+        moveTextAreaUnderMouseCursor(event, this.textarea, this.selectionManager);
+      }
     });
   }
 };
@@ -647,8 +662,7 @@ Terminal.prototype.open = function(parent, focus) {
   this.viewportScrollArea.classList.add('xterm-scroll-area');
   this.viewportElement.appendChild(this.viewportScrollArea);
 
-  // Create the selection container. This needs to be added before the
-  // rowContainer as the selection must be below the text.
+  // Create the selection container.
   this.selectionContainer = document.createElement('div');
   this.selectionContainer.classList.add('xterm-selection');
   this.element.appendChild(this.selectionContainer);
@@ -703,7 +717,17 @@ Terminal.prototype.open = function(parent, focus) {
   this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
   this.renderer = new Renderer(this);
   this.selectionManager = new SelectionManager(this, this.lines, this.rowContainer, this.charMeasure);
-  this.selectionManager.on('refresh', data => this.renderer.refreshSelection(data.start, data.end));
+  this.selectionManager.on('refresh', data => {
+    this.renderer.refreshSelection(data.start, data.end);
+  });
+  this.selectionManager.on('newselection', text => {
+    // If there's a new selection, put it into the textarea, focus and select it
+    // in order to register it as a selection on the OS. This event is fired
+    // only on Linux to enable middle click to paste selection.
+    this.textarea.value = text;
+    this.textarea.focus();
+    this.textarea.select();
+  });
   this.on('scroll', () => this.selectionManager.refresh());
   this.viewportElement.addEventListener('scroll', () => this.selectionManager.refresh());
 
