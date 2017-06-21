@@ -499,9 +499,9 @@ export class Parser {
                   // DECSTBM
                   case 'r':
                     pt = ''
-                      + (this._terminal.scrollTop + 1)
+                      + (this._terminal.buffer.scrollTop + 1)
                       + ';'
-                      + (this._terminal.scrollBottom + 1)
+                      + (this._terminal.buffer.scrollBottom + 1)
                       + 'r';
                     break;
 
