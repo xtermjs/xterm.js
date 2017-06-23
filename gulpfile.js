@@ -14,6 +14,7 @@ const ts = require('gulp-typescript');
 
 let buildDir = process.env.BUILD_DIR || 'build';
 let tsProject = ts.createProject('tsconfig.json');
+let tsProjectSearchAddon = ts.createProject('./src/addons/search/tsconfig.json');
 let srcDir = tsProject.config.compilerOptions.rootDir;
 let outDir = tsProject.config.compilerOptions.outDir;
 
@@ -30,13 +31,18 @@ gulp.task('tsc', function () {
   let tsResult = tsProject.src().pipe(sourcemaps.init()).pipe(tsProject());
   let tsc = tsResult.js.pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''})).pipe(gulp.dest(outDir));
 
+  fs.emptyDirSync(`${outDir}/addons`);
+  fs.emptyDirSync(`${outDir}/addons/search`);
+  let tsResultSearchAddon = tsProjectSearchAddon.src().pipe(sourcemaps.init()).pipe(tsProjectSearchAddon());
+  let tscSearchAddon = tsResultSearchAddon.js.pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''})).pipe(gulp.dest(`${outDir}/addons/search`));
+
   // Copy all addons from ${srcDir}/ to ${outDir}/
-  let copyAddons = gulp.src(`${srcDir}/addons/**/*`).pipe(gulp.dest(`${outDir}/addons`));
+  let copyAddons = gulp.src([`${srcDir}/addons/**/*`, `!${srcDir}/addons/search`, `!${srcDir}/addons/search/**`]).pipe(gulp.dest(`${outDir}/addons`));
 
   // Copy stylesheets from ${srcDir}/ to ${outDir}/
   let copyStylesheets = gulp.src(`${srcDir}/**/*.css`).pipe(gulp.dest(outDir));
 
-  return merge(tsc, copyAddons, copyStylesheets);
+  return merge(tsc, tscSearchAddon, copyAddons, copyStylesheets);
 });
 
 /**
@@ -63,13 +69,28 @@ gulp.task('browserify', ['tsc'], function() {
         .pipe(sourcemaps.write('./'))
         .pipe(gulp.dest(buildDir));
 
+  let browserifyOptionsSearchAddon = {
+    basedir: buildDir,
+    debug: true,
+    entries: [`../${outDir}/addons/search/search.js`],
+    cache: {},
+    packageCache: {}
+  };
+  let bundleStreamSearchAddon = browserify(browserifyOptionsSearchAddon)
+        .bundle()
+        .pipe(source('./addons/search/search.js'))
+        .pipe(buffer())
+        .pipe(sourcemaps.init({loadMaps: true, sourceRoot: '..'}))
+        .pipe(sourcemaps.write('./'))
+        .pipe(gulp.dest(buildDir));
+
   // Copy all add-ons from ${outDir}/ to buildDir
-  let copyAddons = gulp.src(`${outDir}/addons/**/*`).pipe(gulp.dest(`${buildDir}/addons`));
+  let copyAddons = gulp.src([`${outDir}/addons/**/*`, `!${outDir}/addons/search`, `!${outDir}/addons/search/**`]).pipe(gulp.dest(`${buildDir}/addons`));
 
   // Copy stylesheets from ${outDir}/ to ${buildDir}/
   let copyStylesheets = gulp.src(`${outDir}/**/*.css`).pipe(gulp.dest(buildDir));
 
-  return merge(bundleStream, copyAddons, copyStylesheets);
+  return merge(bundleStream, bundleStreamSearchAddon, copyAddons, copyStylesheets);
 });
 
 gulp.task('instrument-test', function () {

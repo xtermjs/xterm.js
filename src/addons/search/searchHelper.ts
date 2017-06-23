@@ -2,8 +2,8 @@
  * @license MIT
  */
 
-import { ITerminal } from './Interfaces';
-import { translateBufferLineToString } from './utils/BufferLine';
+// import { ITerminal } from '../../Interfaces';
+// import { translateBufferLineToString } from '../../utils/BufferLine';
 
 interface ISearchResult {
   term: string;
@@ -12,7 +12,7 @@ interface ISearchResult {
 }
 
 export class SearchHelper {
-  constructor(private _terminal: ITerminal) {
+  constructor(private _terminal: any, private _translateBufferLineToString: any) {
     // TODO: Search for multiple instances on 1 line
     // TODO: Don't use the actual selection, instead use a "find selection" so multiple instances can be highlighted
     // TODO: Highlight other instances in the viewport
@@ -103,7 +103,7 @@ export class SearchHelper {
 
   private _findInLine(term: string, y: number): ISearchResult {
     const bufferLine = this._terminal.lines.get(y);
-    const lowerStringLine = translateBufferLineToString(bufferLine, true).toLowerCase();
+    const lowerStringLine = this._translateBufferLineToString(bufferLine, true).toLowerCase();
     const lowerTerm = term.toLowerCase();
     const searchIndex = lowerStringLine.indexOf(lowerTerm);
     if (searchIndex >= 0) {
