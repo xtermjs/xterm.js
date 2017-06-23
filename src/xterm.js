@@ -13,7 +13,7 @@
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './EventEmitter';
 import { Viewport } from './Viewport';
-import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard';
+import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './handlers/Clipboard';
 import { CircularList } from './utils/CircularList';
 import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
@@ -168,7 +168,7 @@ function Terminal(options) {
   this.queue = '';
   this.scrollTop = 0;
   this.scrollBottom = this.rows - 1;
-  this.customKeydownHandler = null;
+  this.customKeyEventHandler = null;
   this.cursorBlinkInterval = null;
 
   // modes
@@ -538,15 +538,30 @@ Terminal.prototype.initGlobal = function() {
   on(this.textarea, 'paste', pasteHandlerWrapper);
   on(this.element, 'paste', pasteHandlerWrapper);
 
+  // Handle right click context menus
   if (term.browser.isFirefox) {
+    // Firefox doesn't appear to fire the contextmenu event on right click
     on(this.element, 'mousedown', event => {
-      if (ev.button == 2) {
+      if (event.button == 2) {
         rightClickHandler(event, this.textarea, this.selectionManager);
       }
     });
   } else {
     on(this.element, 'contextmenu', event => {
       rightClickHandler(event, this.textarea, this.selectionManager);
+    });
+  }
+
+  // Move the textarea under the cursor when middle clicking on Linux to ensure
+  // middle click to paste selection works. This only appears to work in Chrome
+  // at the time is writing.
+  if (term.browser.isLinux) {
+    // Use auxclick event over mousedown the latter doesn't seem to work. Note
+    // that the regular click event doesn't fire for the middle mouse button.
+    on(this.element, 'auxclick', event => {
+      if (event.button === 1) {
+        moveTextAreaUnderMouseCursor(event, this.textarea, this.selectionManager);
+      }
     });
   }
 };
@@ -648,8 +663,7 @@ Terminal.prototype.open = function(parent, focus) {
   this.viewportScrollArea.classList.add('xterm-scroll-area');
   this.viewportElement.appendChild(this.viewportScrollArea);
 
-  // Create the selection container. This needs to be added before the
-  // rowContainer as the selection must be below the text.
+  // Create the selection container.
   this.selectionContainer = document.createElement('div');
   this.selectionContainer.classList.add('xterm-selection');
   this.element.appendChild(this.selectionContainer);
@@ -704,7 +718,17 @@ Terminal.prototype.open = function(parent, focus) {
   this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
   this.renderer = new Renderer(this);
   this.selectionManager = new SelectionManager(this, this.lines, this.rowContainer, this.charMeasure);
-  this.selectionManager.on('refresh', data => this.renderer.refreshSelection(data.start, data.end));
+  this.selectionManager.on('refresh', data => {
+    this.renderer.refreshSelection(data.start, data.end);
+  });
+  this.selectionManager.on('newselection', text => {
+    // If there's a new selection, put it into the textarea, focus and select it
+    // in order to register it as a selection on the OS. This event is fired
+    // only on Linux to enable middle click to paste selection.
+    this.textarea.value = text;
+    this.textarea.focus();
+    this.textarea.select();
+  });
   this.on('scroll', () => this.selectionManager.refresh());
   this.viewportElement.addEventListener('scroll', () => this.selectionManager.refresh());
 
@@ -1306,15 +1330,27 @@ Terminal.prototype.writeln = function(data) {
 };
 
 /**
- * Attaches a custom keydown handler which is run before keys are processed, giving consumers of
- * xterm.js ultimate control as to what keys should be processed by the terminal and what keys
- * should not.
+ * DEPRECATED: only for backward compatibility. Please use attachCustomKeyEventHandler() instead.
  * @param {function} customKeydownHandler The custom KeyboardEvent handler to attach. This is a
  *   function that takes a KeyboardEvent, allowing consumers to stop propogation and/or prevent
  *   the default action. The function returns whether the event should be processed by xterm.js.
  */
 Terminal.prototype.attachCustomKeydownHandler = function(customKeydownHandler) {
-  this.customKeydownHandler = customKeydownHandler;
+  let message = 'attachCustomKeydownHandler() is DEPRECATED and will be removed soon. Please use attachCustomKeyEventHandler() instead.';
+  console.warn(message);
+  this.attachCustomKeyEventHandler(customKeydownHandler);
+}
+
+/**
+ * Attaches a custom key event handler which is run before keys are processed, giving consumers of
+ * xterm.js ultimate control as to what keys should be processed by the terminal and what keys
+ * should not.
+ * @param {function} customKeypressHandler The custom KeyboardEvent handler to attach. This is a
+ *   function that takes a KeyboardEvent, allowing consumers to stop propogation and/or prevent
+ *   the default action. The function returns whether the event should be processed by xterm.js.
+ */
+Terminal.prototype.attachCustomKeyEventHandler = function(customKeyEventHandler) {
+  this.customKeyEventHandler = customKeyEventHandler;
 }
 
 /**
@@ -1413,7 +1449,7 @@ Terminal.prototype.selectAll = function() {
  * @param {KeyboardEvent} ev The keydown event to be handled.
  */
 Terminal.prototype.keyDown = function(ev) {
-  if (this.customKeydownHandler && this.customKeydownHandler(ev) === false) {
+  if (this.customKeyEventHandler && this.customKeyEventHandler(ev) === false) {
     return false;
   }
 
@@ -1778,6 +1814,10 @@ Terminal.prototype.setgCharset = function(g, charset) {
 Terminal.prototype.keyPress = function(ev) {
   var key;
 
+  if (this.customKeyEventHandler && this.customKeyEventHandler(ev) === false) {
+    return false;
+  }
+
   this.cancel(ev);
 
   if (ev.charCode) {
@@ -1803,7 +1843,7 @@ Terminal.prototype.keyPress = function(ev) {
   this.showCursor();
   this.handler(key);
 
-  return false;
+  return true;
 };
 
 /**
@@ -2236,10 +2276,10 @@ Terminal.prototype.reverseIndex = function() {
 Terminal.prototype.reset = function() {
   this.options.rows = this.rows;
   this.options.cols = this.cols;
-  var customKeydownHandler = this.customKeydownHandler;
+  var customKeyEventHandler = this.customKeyEventHandler;
   var cursorBlinkInterval = this.cursorBlinkInterval;
   Terminal.call(this, this.options);
-  this.customKeydownHandler = customKeydownHandler;
+  this.customKeyEventHandler = customKeyEventHandler;
   this.cursorBlinkInterval = cursorBlinkInterval;
   this.refresh(0, this.rows - 1);
   this.viewport.syncScrollArea();
