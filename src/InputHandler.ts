@@ -942,16 +942,14 @@ export class InputHandler implements IInputHandler {
           this._terminal.cursorHidden = false;
           break;
         case 1049: // alt screen buffer cursor
-          // this._terminal.saveCursor();
-          ; // FALL-THROUGH
+          this.saveCursor(params);
+          // FALL-THROUGH
         case 47: // alt screen buffer
         case 1047: // alt screen buffer
-          if (!this._terminal.normal) {
-            let normal = {
-              scrollBottom: this._terminal.buffer.scrollBottom,
-            };
-            this._terminal.buffers.activateAltBuffer();
-          }
+          this._terminal.buffers.activateAltBuffer();
+          this._terminal.reset();
+          this._terminal.viewport.syncScrollArea();
+          this._terminal.showCursor();
           break;
       }
     }
@@ -1114,6 +1112,9 @@ export class InputHandler implements IInputHandler {
         case 1047: // normal screen buffer - clearing it first
           // Ensure the selection manager has the correct buffer
           this._terminal.buffers.activateNormalBuffer();
+          if (params[0] === 1049) {
+            this.restoreCursor(params);
+          }
           this._terminal.selectionManager.setBuffer(this._terminal.buffer.lines);
           this._terminal.refresh(0, this._terminal.rows - 1);
           this._terminal.viewport.syncScrollArea();
@@ -1446,8 +1447,8 @@ export class InputHandler implements IInputHandler {
    *   Save cursor (ANSI.SYS).
    */
   public saveCursor(params: number[]): void {
-    this._terminal.savedX = this._terminal.buffer.x;
-    this._terminal.savedY = this._terminal.buffer.y;
+    this._terminal.buffers.active.x = this._terminal.buffer.x;
+    this._terminal.buffers.active.y = this._terminal.buffer.y;
   }
 
 
@@ -1456,8 +1457,8 @@ export class InputHandler implements IInputHandler {
    *   Restore cursor (ANSI.SYS).
    */
   public restoreCursor(params: number[]): void {
-    this._terminal.buffer.x = this._terminal.savedX || 0;
-    this._terminal.buffer.y = this._terminal.savedY || 0;
+    this._terminal.buffer.x = this._terminal.buffers.active.x || 0;
+    this._terminal.buffer.y = this._terminal.buffers.active.y || 0;
   }
 }
 

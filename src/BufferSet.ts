@@ -30,21 +30,13 @@ export class BufferSet extends EventEmitter {
     return this._normal;
   }
 
-  private resetTerminal() {
-    this._terminal.reset();
-    this._terminal.viewport.syncScrollArea();
-    this._terminal.showCursor();
-  }
-
   public activateNormalBuffer(): void {
     this._activeBuffer = this._normal;
-    this.resetTerminal();
-    this.emit('activate', this._normal);
+    this.emit('activate', this._normal); // todo maybe simpler this._terminal.buffer = this._terminal.buffers.normal than using EventEmitter?
   }
 
   public activateAltBuffer(): void {
     this._activeBuffer = this._alt;
-    this.resetTerminal();
-    this.emit('activate', this._alt);
+    this.emit('activate', this._alt); // todo maybe simpler this._terminal.buffer = this._terminal.buffers.alt than using EventEmitter?
   }
 }
