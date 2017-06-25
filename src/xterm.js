@@ -161,7 +161,6 @@ function Terminal(options) {
   this.originMode = false;
   this.insertMode = false;
   this.wraparoundMode = true; // defaults: xterm - true, vt100 - false
-  this.normal = null;
 
   // charset
   this.charset = null;
@@ -228,10 +227,12 @@ function Terminal(options) {
   this.surrogate_high = '';
 
   // Create the terminal's buffers and set the current buffer
-  this.buffers = new BufferSet(this);
-  this.buffer = this.buffers.active;  // Convenience shortcut;
+  if (!this.buffers) {
+    this.buffers = new BufferSet(this);
+    this.buffer = this.buffers.active;  // Convenience shortcut;
+  }
   this.buffers.on('activate', function (buffer) {
-    this.buffer = buffer;
+    this._terminal.buffer = buffer;
   });
 
   /**
@@ -2026,8 +2027,6 @@ Terminal.prototype.resize = function(x, y) {
 
   this.refresh(0, this.rows - 1);
 
-  this.normal = null;
-
   this.geometry = [this.cols, this.rows];
   this.emit('resize', {terminal: this, cols: x, rows: y});
 };
@@ -2305,9 +2304,13 @@ Terminal.prototype.reset = function() {
   this.options.cols = this.cols;
   var customKeyEventHandler = this.customKeyEventHandler;
   var cursorBlinkInterval = this.cursorBlinkInterval;
+  var inputHandler = this.inputHandler;
+  var buf = this.buffers;
   Terminal.call(this, this.options);
   this.customKeyEventHandler = customKeyEventHandler;
   this.cursorBlinkInterval = cursorBlinkInterval;
+  this.inputHandler = inputHandler;
+  this.buffers = buf;
   this.refresh(0, this.rows - 1);
   this.viewport.syncScrollArea();
 };
