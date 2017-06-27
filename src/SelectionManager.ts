@@ -178,6 +178,7 @@ export class SelectionManager extends EventEmitter {
    */
   public setBuffer(buffer: CircularList<any>): void {
     this._buffer = buffer;
+    this.clearSelection();
   }
 
   /**
