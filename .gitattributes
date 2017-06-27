@@ -1,18 +1,3 @@
 * text=auto eol=lf
 logo.png binary
-src/test/escape_sequence_files/t0005-CR.in eol=cr
-src/test/escape_sequence_files/t0011-RI_scroll.in eol=cr
-src/test/escape_sequence_files/t0014-CAN.in eol=cr
-src/test/escape_sequence_files/t0015-SUB.in eol=cr
-src/test/escape_sequence_files/t0023-CUU_scroll.in eol=cr
-src/test/escape_sequence_files/t0024-CUD.in eol=cr
-src/test/escape_sequence_files/t0026-CNL.in eol=cr
-src/test/escape_sequence_files/t0033-VPB_scroll.in eol=cr
-src/test/escape_sequence_files/t0034-VPR.in eol=cr
-src/test/escape_sequence_files/t0051-IL.in eol=cr
-src/test/escape_sequence_files/t0052-DL.in eol=cr
-src/test/escape_sequence_files/t0073-DECSTBM_RI.in eol=cr
-src/test/escape_sequence_files/t0101-NLM.in eol=cr
-src/test/escape_sequence_files/t0500-bash_long_line.in eol=cr
-src/test/escape_sequence_files/t0503-zsh_ls_color.in eol=cr
-src/test/escape_sequence_files/t0504-vim.in eol=cr
+src/test/escape_sequence_files/* binary
