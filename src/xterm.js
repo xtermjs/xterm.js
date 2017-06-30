@@ -1355,7 +1355,7 @@ Terminal.prototype.attachCustomKeyEventHandler = function(customKeyEventHandler)
  * Attaches a http(s) link handler, forcing web links to behave differently to
  * regular <a> tags. This will trigger a refresh as links potentially need to be
  * reconstructed. Calling this with null will remove the handler.
- * @param {handler} handler The handler callback function.
+ * @param {LinkMatcherHandler} handler The handler callback function.
  */
 Terminal.prototype.setHypertextLinkHandler = function(handler) {
   if (!this.linkifier) {
@@ -1369,14 +1369,14 @@ Terminal.prototype.setHypertextLinkHandler = function(handler) {
 /**
  * Attaches a validation callback for hypertext links. This is useful to use
  * validation logic or to do something with the link's element and url.
- * @param {LinkMatcherValidationCallback} handler The callback to use, this can
+ * @param {LinkMatcherValidationCallback} callback The callback to use, this can
  * be cleared with null.
  */
-Terminal.prototype.setHypertextValidationCallback = function(handler) {
+Terminal.prototype.setHypertextValidationCallback = function(callback) {
   if (!this.linkifier) {
     throw new Error('Cannot attach a hypertext validation callback before Terminal.open is called');
   }
-  this.linkifier.setHypertextValidationCallback(handler);
+  this.linkifier.setHypertextValidationCallback(callback);
   // Refresh to force links to refresh
   this.refresh(0, this.rows - 1);
 };
@@ -1387,7 +1387,7 @@ Terminal.prototype.setHypertextValidationCallback = function(handler) {
    * @param {RegExp} regex The regular expression to search for, specifically
    * this searches the textContent of the rows. You will want to use \s to match
    * a space ' ' character for example.
-   * @param {handler} handler The callback when the link is called.
+   * @param {LinkMatcherHandler} handler The callback when the link is called.
    * @param {LinkMatcherOptions} [options] Options for the link matcher.
    * @return {number} The ID of the new matcher, this can be used to deregister.
  */
