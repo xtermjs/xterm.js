@@ -62,7 +62,8 @@
     "tslint": "^4.0.2",
     "typescript": "~2.2.0",
     "vinyl-buffer": "^1.0.0",
-    "vinyl-source-stream": "^1.1.0"
+    "vinyl-source-stream": "^1.1.0",
+    "gulp-util": "^3.0.8"
   },
   "scripts": {
     "prestart": "npm run build",

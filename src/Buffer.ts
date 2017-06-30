@@ -9,7 +9,7 @@ import { CircularList } from './utils/CircularList';
  * This class represents a terminal buffer (an internal state of the terminal)/
  */
 export class Buffer {
-  public lines: CircularList<any>;
+  public lines: CircularList<string>;
 
   /**
    * Create a new Buffer.
@@ -29,7 +29,7 @@ export class Buffer {
     public scrollTop: number = 0,
     public tabs: any = {},
   ) {
-    this.lines = new CircularList(this.terminal.scrollback);
+    this.lines = new CircularList<string>(this.terminal.scrollback);
     this.scrollBottom = this.terminal.rows - 1;
   }
 }
