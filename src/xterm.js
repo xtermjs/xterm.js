@@ -710,7 +710,9 @@ Terminal.prototype.open = function(parent, focus) {
 
   this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
   this.renderer = new Renderer(this);
-  this.selectionManager = new SelectionManager(this, this.buffer.lines, this.rowContainer, this.charMeasure);
+  this.selectionManager = new SelectionManager(
+    this, this.buffer.lines, this.rowContainer, this.charMeasure
+  );
   this.selectionManager.on('refresh', data => {
     this.renderer.refreshSelection(data.start, data.end);
   });
