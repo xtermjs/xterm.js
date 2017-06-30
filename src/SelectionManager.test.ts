@@ -8,6 +8,7 @@ import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
 import { SelectionManager } from './SelectionManager';
 import { SelectionModel } from './SelectionModel';
+import {BufferSet} from './BufferSet';
 
 class TestSelectionManager extends SelectionManager {
   constructor(
@@ -40,13 +41,31 @@ describe('SelectionManager', () => {
   let rowContainer: HTMLElement;
   let selectionManager: TestSelectionManager;
 
+<<<<<<< HEAD
   beforeEach(() => {
     dom = new jsdom.JSDOM('');
     window = dom.window;
-    document = window.document;
-    buffer = new CircularList<any>(100);
+    document = window.document
     terminal = <any>{ cols: 80, rows: 2 };
+    terminal.scrollback = 100;
+    terminal.buffers = new BufferSet(terminal);
+    terminal.buffer = terminal.buffers.active;
     selectionManager = new TestSelectionManager(terminal, buffer, rowContainer, null);
+=======
+  beforeEach(done => {
+    jsdom.env('', (err, w) => {
+      window = w;
+      document = window.document;
+      buffer = new CircularList<any>(100);
+      terminal = <any>{ cols: 80, rows: 2 };
+      terminal.scrollback = 10;
+      terminal.buffers = new BufferSet(terminal);
+      terminal.buffer = terminal.buffers.active;
+
+      selectionManager = new TestSelectionManager(terminal, buffer, rowContainer, null);
+      done();
+    });
+>>>>>>> Fix some tests and docs, little code fix up.
   });
 
   function stringToRow(text: string): [number, string, number][] {
