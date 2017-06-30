@@ -10,7 +10,7 @@ const sorcery = require('sorcery');
 const source = require('vinyl-source-stream');
 const sourcemaps = require('gulp-sourcemaps');
 const ts = require('gulp-typescript');
-
+const util = require('gulp-util');
 
 let buildDir = process.env.BUILD_DIR || 'build';
 let tsProject = ts.createProject('tsconfig.json');
@@ -88,12 +88,25 @@ gulp.task('mocha', ['instrument-test'], function () {
 });
 
 /**
+ * Run single test file by file name(without file extension). Example of the command:
+ * gulp mocha-test --test InputHandler.test
+ */
+gulp.task('mocha-test', ['instrument-test'], function () {
+  let testName = util.env.test;
+  util.log("Run test by Name: " + testName);
+  return gulp.src([`${outDir}/${testName}.js`, `${outDir}/**/${testName}.js`], {read: false})
+         .pipe(mocha())
+         .once('error', () => process.exit(1))
+         .pipe(istanbul.writeReports());
+});
+
+/**
  * Use `sorcery` to resolve the source map chain and point back to the TypeScript files.
  * (Without this task the source maps produced for the JavaScript bundle points into the
  * compiled JavaScript files in ${outDir}/).
  */
 gulp.task('sorcery', ['browserify'], function () {
-  var chain = sorcery.loadSync(`${buildDir}/xterm.js`);
+  let chain = sorcery.loadSync(`${buildDir}/xterm.js`);
   chain.apply();
   chain.writeSync();
 });

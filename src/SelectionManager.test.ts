@@ -8,6 +8,7 @@ import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
 import { SelectionManager } from './SelectionManager';
 import { SelectionModel } from './SelectionModel';
+import {BufferSet} from './BufferSet';
 
 class TestSelectionManager extends SelectionManager {
   constructor(
@@ -45,6 +46,10 @@ describe('SelectionManager', () => {
       document = window.document;
       buffer = new CircularList<any>(100);
       terminal = <any>{ cols: 80, rows: 2 };
+      terminal.scrollback = 10;
+      terminal.buffers = new BufferSet(terminal);
+      terminal.buffer = terminal.buffers.active;
+
       selectionManager = new TestSelectionManager(terminal, buffer, rowContainer, null);
       done();
     });

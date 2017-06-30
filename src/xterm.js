@@ -405,7 +405,7 @@ Terminal.prototype.setOption = function(key, value) {
   switch (key) {
     case 'scrollback':
       if (this.options[key] !== value) {
-        if (this.buffer.length > value) {
+        if (this.buffer.lines.length > value) {
           const amountToTrim = this.buffer.lines.length - value;
           const needsRefresh = (this.buffer.ydisp - amountToTrim < 0);
           this.buffer.lines.trimStart(amountToTrim);
@@ -488,7 +488,7 @@ Terminal.prototype.blur = function() {
  */
 Terminal.bindBlur = function (term) {
   on(term.textarea, 'blur', function (ev) {
-    term.refresh(term.y, term.y);
+    term.refresh(term.buffer.y, term.buffer.y);
     if (term.sendFocus) {
       term.send(C0.ESC + '[O');
     }

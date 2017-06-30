@@ -19,7 +19,7 @@ export class Viewport {
    * @param terminal The terminal this viewport belongs to.
    * @param viewportElement The DOM element acting as the viewport.
    * @param scrollArea The DOM element acting as the scroll area.
-   * @param charMeasureElement A DOM element used to measure the character size of. the terminal.
+   * @param charMeasure A DOM element used to measure the character size of. the terminal.
    */
   constructor(
     private terminal: ITerminal,
@@ -42,8 +42,6 @@ export class Viewport {
   /**
    * Refreshes row height, setting line-height, viewport height and scroll area height if
    * necessary.
-   * @param charSize A character size measurement bounding rect object, if it doesn't exist it will
-   *   be created.
    */
   private refresh(): void {
     if (this.charMeasure.height > 0) {
