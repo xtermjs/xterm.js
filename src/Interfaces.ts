@@ -32,6 +32,7 @@ export interface ITerminal {
   cursorState: number;
   defAttr: number;
   scrollback: number;
+  buffers: any;  // This should be a `BufferSet` class, but it would result in circular dependency
   buffer: any;  // This should be a `Buffer` class, but it would result in circular dependency
   viewport: any;  // This should be a `Viewport` class, but it would result in circular dependency
 
