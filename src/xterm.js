@@ -146,13 +146,7 @@ function Terminal(options) {
   this.cursorHidden = false;
   this.convertEol;
   this.queue = '';
-<<<<<<< HEAD
-  this.scrollTop = 0;
-  this.scrollBottom = this.rows - 1;
   this.customKeyEventHandler = null;
-=======
-  this.customKeydownHandler = null;
->>>>>>> Move `scrollTop` and `scrollBottom` into `Buffer`
   this.cursorBlinkInterval = null;
 
   // modes
