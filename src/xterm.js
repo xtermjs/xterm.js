@@ -145,13 +145,7 @@ function Terminal(options) {
   this.cursorHidden = false;
   this.convertEol;
   this.queue = '';
-<<<<<<< HEAD
-  this.scrollTop = 0;
-  this.scrollBottom = this.rows - 1;
   this.customKeyEventHandler = null;
-=======
-  this.customKeydownHandler = null;
->>>>>>> Move `scrollTop` and `scrollBottom` into `Buffer`
   this.cursorBlinkInterval = null;
 
   // modes
@@ -707,7 +701,6 @@ Terminal.prototype.open = function(parent, focus) {
 
   this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
   this.renderer = new Renderer(this);
-<<<<<<< HEAD
   this.selectionManager = new SelectionManager(this, this.lines, this.rowContainer, this.charMeasure);
   this.selectionManager.on('refresh', data => {
     this.renderer.refreshSelection(data.start, data.end);
@@ -720,10 +713,6 @@ Terminal.prototype.open = function(parent, focus) {
     this.textarea.focus();
     this.textarea.select();
   });
-=======
-  this.selectionManager = new SelectionManager(this, this.buffer.lines, this.rowContainer, this.charMeasure);
-  this.selectionManager.on('refresh', data => this.renderer.refreshSelection(data.start, data.end));
->>>>>>> Create `terminal.buffer` convenience attribute
   this.on('scroll', () => this.selectionManager.refresh());
   this.viewportElement.addEventListener('scroll', () => this.selectionManager.refresh());
 
