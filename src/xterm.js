@@ -1095,6 +1095,18 @@ Terminal.prototype.bindMouse = function() {
     self.viewport.onWheel(ev);
     return self.cancel(ev);
   });
+
+  on(el, 'touchstart', function(ev) {
+    if (self.mouseEvents) return;
+    self.viewport.onTouchStart(ev);
+    return self.cancel(ev);
+  });
+
+  on(el, 'touchmove', function(ev) {
+    if (self.mouseEvents) return;
+    self.viewport.onTouchMove(ev);
+    return self.cancel(ev);
+  });
 };
 
 /**
