@@ -419,6 +419,15 @@ Terminal.prototype.setOption = function(key, value) {
   }
   switch (key) {
     case 'scrollback':
+      if (value < this.rows) {
+        let msg = 'Setting the scrollback value less than the number of rows ';
+
+        msg += `(${this.rows}) is not allowed.`;
+
+        console.warn(msg);
+        return false;
+      }
+
       if (this.options[key] !== value) {
         if (this.lines.length > value) {
           const amountToTrim = this.lines.length - value;
