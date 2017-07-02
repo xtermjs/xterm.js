@@ -1915,6 +1915,10 @@ Terminal.prototype.resize = function(x, y) {
     return;
   }
 
+  if (y > this.getOption('scrollback')) {
+    this.setOption('scrollback', y)
+  }
+
   var line
   , el
   , i
