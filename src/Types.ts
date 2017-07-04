@@ -2,7 +2,6 @@
  * @license MIT
  */
 
-
 /**
  * Character data, the array's format is:
  * - string: The character.

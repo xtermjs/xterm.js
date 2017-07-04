@@ -8,6 +8,7 @@ import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
 import { SelectionManager } from './SelectionManager';
 import { SelectionModel } from './SelectionModel';
+import { CharData } from "./Types";
 
 class TestSelectionManager extends SelectionManager {
   constructor(
@@ -50,10 +51,10 @@ describe('SelectionManager', () => {
     });
   });
 
-  function stringToRow(text: string): [number, string, number][] {
-    let result: [number, string, number][] = [];
+  function stringToRow(text: string): CharData[] {
+    let result: CharData[] = [];
     for (let i = 0; i < text.length; i++) {
-      result.push([0, text.charAt(i), 1]);
+      result.push([text.charAt(i), 1, 0, 0, 0]);
     }
     return result;
   }
@@ -92,21 +93,21 @@ describe('SelectionManager', () => {
     it('should expand selection for wide characters', () => {
       // Wide characters use a special format
       buffer.push([
-        [null, '中', 2],
-        [null, '', 0],
-        [null, '文', 2],
-        [null, '', 0],
-        [null, ' ', 1],
-        [null, 'a', 1],
-        [null, '中', 2],
-        [null, '', 0],
-        [null, '文', 2],
-        [null, '', 0],
-        [null, 'b', 1],
-        [null, ' ', 1],
-        [null, 'f', 1],
-        [null, 'o', 1],
-        [null, 'o', 1]
+        ['中', 2, null, null, null],
+        ['', 0, null, null, null],
+        ['文', 2, null, null, null],
+        ['', 0, null, null, null],
+        [' ', 1, null, null, null],
+        ['a', 1, null, null, null],
+        ['中', 2, null, null, null],
+        ['', 0, null, null, null],
+        ['文', 2, null, null, null],
+        ['', 0, null, null, null],
+        ['b', 1, null, null, null],
+        [' ', 1, null, null, null],
+        ['f', 1, null, null, null],
+        ['o', 1, null, null, null],
+        ['o', 1, null, null, null]
       ]);
       // Ensure wide characters take up 2 columns
       selectionManager.selectWordAt([0, 0]);

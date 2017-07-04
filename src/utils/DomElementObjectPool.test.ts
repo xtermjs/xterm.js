@@ -1,7 +1,8 @@
 import { assert } from 'chai';
 import { DomElementObjectPool } from './DomElementObjectPool';
 
-class MockDocument {
+class MockElement {
+  public style = {};
   private _attr: {[key: string]: string} = {};
   constructor() {}
   public getAttribute(key: string): string { return this._attr[key]; };
@@ -14,7 +15,7 @@ describe('DomElementObjectPool', () => {
   beforeEach(() => {
     pool = new DomElementObjectPool('span');
     (<any>global).document = {
-      createElement: () => new MockDocument()
+      createElement: () => new MockElement()
     };
   });
 
