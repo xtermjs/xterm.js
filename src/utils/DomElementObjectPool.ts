@@ -71,5 +71,7 @@ export class DomElementObjectPool {
   private _cleanElement(element: HTMLElement): void {
     element.className = '';
     element.innerHTML = '';
+    element.style.color = '';
+    element.style.backgroundColor = '';
   }
 }
