@@ -268,28 +268,31 @@ export class Renderer {
                 }
               }
 
-              if (isTrueColorFg) {
-                let rgb = fg.toString(16);
-                while (rgb.length < 6) {
-                  rgb = '0' + rgb;
-                }
-                currentElement.style.color = `#${rgb}`;
-              } else {
-                if (fg < 256) {
-                  currentElement.classList.add(`xterm-color-${fg}`);
+              if (fg !== this._terminal.defaultFgColor) {
+                if (isTrueColorFg) {
+                  let rgb = fg.toString(16);
+                  while (rgb.length < 6) {
+                    rgb = '0' + rgb;
+                  }
+                  currentElement.style.color = `#${rgb}`;
+                } else {
+                  if (fg < 256) {
+                    currentElement.classList.add(`xterm-color-${fg}`);
+                  }
                 }
               }
 
-              if (isTrueColorBg) {
-                console.log(bg);
-                let rgb = bg.toString(16);
-                while (rgb.length < 6) {
-                  rgb = '0' + rgb;
-                }
-                currentElement.style.backgroundColor = `#${rgb}`;
-              } else {
-                if (bg < 256) {
-                  currentElement.classList.add(`xterm-bg-color-${bg}`);
+              if (bg !== this._terminal.defaultBgColor) {
+                if (isTrueColorBg) {
+                  let rgb = bg.toString(16);
+                  while (rgb.length < 6) {
+                    rgb = '0' + rgb;
+                  }
+                  currentElement.style.backgroundColor = `#${rgb}`;
+                } else {
+                  if (bg < 256) {
+                    currentElement.classList.add(`xterm-bg-color-${bg}`);
+                  }
                 }
               }
             }

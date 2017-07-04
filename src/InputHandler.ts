@@ -186,7 +186,7 @@ export class InputHandler implements IInputHandler {
 
     row = this._terminal.y + this._terminal.ybase;
     j = this._terminal.x;
-    ch = [' ', 1, this._terminal.defaultFlags, this._terminal.currentFgColor, this._terminal.currentBgColor]; // xterm
+    ch = [' ', 1, this._terminal.defaultFlags, this._terminal.defaultFgColor, this._terminal.currentBgColor]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       this._terminal.lines.get(row).splice(j++, 0, ch);
@@ -505,7 +505,7 @@ export class InputHandler implements IInputHandler {
     }
 
     row = this._terminal.y + this._terminal.ybase;
-    ch = [' ', 1, this._terminal.defaultFlags, this._terminal.currentFgColor, this._terminal.currentBgColor]; // xterm
+    ch = [' ', 1, this._terminal.defaultFlags, this._terminal.defaultFgColor, this._terminal.currentBgColor]; // xterm
 
     while (param--) {
       this._terminal.lines.get(row).splice(this._terminal.x, 1);
@@ -555,7 +555,7 @@ export class InputHandler implements IInputHandler {
 
     row = this._terminal.y + this._terminal.ybase;
     j = this._terminal.x;
-    ch = [' ', 1, this._terminal.defaultFlags, this._terminal.currentFgColor, this._terminal.currentBgColor]; // xterm
+    ch = [' ', 1, this._terminal.defaultFlags, this._terminal.defaultFgColor, this._terminal.currentBgColor]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       this._terminal.lines.get(row)[j++] = ch;
@@ -1301,7 +1301,6 @@ export class InputHandler implements IInputHandler {
           this._terminal.currentFlags |= 64;
           i += 2;
           this._terminal.currentBgColor = ((params[i] & 0xff) << 16) | ((params[i + 1] & 0xff) << 8) | (params[i + 2] & 0xff);
-          console.log('this._terminal.currentBgColor: ' + this._terminal.currentBgColor);
           if (this._terminal.currentBgColor === -1) {
             this._terminal.currentBgColor = this._terminal.defaultBgColor;
           }

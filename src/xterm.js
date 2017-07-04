@@ -2124,7 +2124,7 @@ Terminal.prototype.eraseRight = function(x, y) {
   if (!line) {
     return;
   }
-  var ch = [' ', 1, this.defaultFlags, this.currentFgColor, this.currentBgColor]; // xterm
+  var ch = [' ', 1, this.defaultFlags, this.defaultFgColor, this.currentBgColor]; // xterm
   for (; x < this.cols; x++) {
     line[x] = ch;
   }
@@ -2143,7 +2143,7 @@ Terminal.prototype.eraseLeft = function(x, y) {
   if (!line) {
     return;
   }
-  var ch = [' ', 1, this._terminal.defaultFlags, this._terminal.currentFgColor, this._terminal.currentBgColor]; // xterm
+  var ch = [' ', 1, this._terminal.defaultFlags, this._terminal.defaultFgColor, this._terminal.currentBgColor]; // xterm
   x++;
   while (x--) {
     line[x] = ch;
@@ -2209,7 +2209,7 @@ Terminal.prototype.blankLine = function(cur, isWrapped) {
  */
 Terminal.prototype.ch = function(cur) {
   return cur
-    ? [' ', 1, this.defaultFlags, this.currentFgColor, this.currentBgColor]
+    ? [' ', 1, this.defaultFlags, this.defaultFgColor, this.currentBgColor]
     : [' ', 1, this.defaultFlags, this.defaultFgColor, this.defaultBgColor];
 };
 
