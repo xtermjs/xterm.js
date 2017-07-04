@@ -9,6 +9,7 @@ import { CircularList } from './utils/CircularList';
 import { EventEmitter } from './EventEmitter';
 import { ITerminal } from './Interfaces';
 import { SelectionModel } from './SelectionModel';
+import { CharData } from './Types';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -46,8 +47,8 @@ const WORD_SEPARATORS = ' ()[]{}\'"';
 
 // TODO: Move these constants elsewhere, they belong in a buffer or buffer
 //       data/line class.
-const LINE_DATA_CHAR_INDEX = 1;
-const LINE_DATA_WIDTH_INDEX = 2;
+const LINE_DATA_CHAR_INDEX = 0;
+const LINE_DATA_WIDTH_INDEX = 1;
 
 const NON_BREAKING_SPACE_CHAR = String.fromCharCode(160);
 const ALL_NON_BREAKING_SPACE_REGEX = new RegExp(NON_BREAKING_SPACE_CHAR, 'g');
@@ -258,7 +259,7 @@ export class SelectionManager extends EventEmitter {
    * @param startCol The column to start at.
    * @param endCol The column to end at.
    */
-  private _translateBufferLineToString(line: any, trimRight: boolean, startCol: number = 0, endCol: number = null): string {
+  private _translateBufferLineToString(line: CharData[], trimRight: boolean, startCol: number = 0, endCol: number = null): string {
     // TODO: This function should live in a buffer or buffer line class
 
     // Get full line
@@ -557,7 +558,7 @@ export class SelectionManager extends EventEmitter {
     // have a character.
     if (this._model.selectionEnd[1] < this._buffer.length) {
       const char = this._buffer.get(this._model.selectionEnd[1])[this._model.selectionEnd[0]];
-      if (char && char[2] === 0) {
+      if (char && char[LINE_DATA_WIDTH_INDEX] === 0) {
         this._model.selectionEnd[0]++;
       }
     }

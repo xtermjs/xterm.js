@@ -208,10 +208,6 @@ export class Renderer {
               currentElement.classList.add('reverse-video');
               currentElement.classList.add('terminal-cursor');
             } else {
-              // let bg = data & 0x1ff;
-              // let fg = (data >> 9) & 0x1ff;
-              // let flags = data >> 18;
-
               if (flags & FLAGS.BOLD) {
                 if (!brokenBold) {
                   currentElement.classList.add('xterm-bold');
