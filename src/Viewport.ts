@@ -123,10 +123,18 @@ export class Viewport {
     ev.preventDefault();
   };
 
+  /**
+   * Handles the touchstart event, recording the touch occurred.
+   * @param ev The touch event.
+   */
   public onTouchStart(ev: TouchEvent) {
     this.lastTouchY = ev.touches[0].pageY;
   };
 
+  /**
+   * Handles the touchmove event, scrolling the viewport if the position shifted.
+   * @param ev The touch event.
+   */
   public onTouchMove(ev: TouchEvent) {
     let deltaY = this.lastTouchY - ev.touches[0].pageY;
     this.lastTouchY = ev.touches[0].pageY;
