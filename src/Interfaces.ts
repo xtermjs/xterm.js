@@ -3,7 +3,7 @@
  */
 
 import { LinkMatcherOptions } from './Interfaces';
-import { LinkMatcherHandler, LinkMatcherValidationCallback } from './Types';
+import { CharData, LinkMatcherHandler, LinkMatcherValidationCallback } from './Types';
 
 export interface IBrowser {
   isNode: boolean;
@@ -25,7 +25,7 @@ export interface ITerminal {
   textarea: HTMLTextAreaElement;
   ybase: number;
   ydisp: number;
-  lines: ICircularList<[string, number, number, number, number]>;
+  lines: ICircularList<CharData>;
   rows: number;
   cols: number;
   browser: IBrowser;

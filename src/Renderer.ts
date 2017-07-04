@@ -170,9 +170,8 @@ export class Renderer {
       }
 
       for (let i = 0; i < width; i++) {
-        // TODO: Could data be a more specific type?
-        const ch = line[i][0];
-        const ch_width: any = line[i][1];
+        const ch: string = line[i][0];
+        const ch_width: number = line[i][1];
         let flags: number = line[i][2];
         let fg: number = line[i][3];
         let bg: number = line[i][4];
