@@ -124,7 +124,7 @@ export class Renderer {
    */
   private _refresh(start: number, end: number): void {
     // If this is a big refresh, remove the terminal rows from the DOM for faster calculations
-    let parent;
+    let parent: Node;
     if (end - start >= this._terminal.rows / 2) {
       parent = this._terminal.element.parentNode;
       if (parent) {
@@ -133,25 +133,23 @@ export class Renderer {
     }
 
     let width = this._terminal.cols;
-    let y = start;
 
     if (end >= this._terminal.rows) {
       this._terminal.log('`end` is too large. Most likely a bad CSR.');
       end = this._terminal.rows - 1;
     }
 
-    for (; y <= end; y++) {
+    for (let y = start; y <= end; y++) {
       let row = y + this._terminal.ydisp;
 
       let line = this._terminal.lines.get(row);
 
-      let x;
+      let cursorIndex: number;
       if (this._terminal.y === y - (this._terminal.ybase - this._terminal.ydisp) &&
-          this._terminal.cursorState &&
-          !this._terminal.cursorHidden) {
-        x = this._terminal.x;
+          this._terminal.cursorState && !this._terminal.cursorHidden) {
+        cursorIndex = this._terminal.x;
       } else {
-        x = -1;
+        cursorIndex = -1;
       }
 
       let lastFlags = this._terminal.defaultFlags;
@@ -160,7 +158,7 @@ export class Renderer {
 
       const documentFragment = document.createDocumentFragment();
       let innerHTML = '';
-      let currentElement;
+      let currentElement: HTMLElement;
 
       // Return the row's spans to the pool
       while (this._terminal.children[y].children.length) {
@@ -181,8 +179,9 @@ export class Renderer {
         }
 
         // Force a refresh if the character is the cursor
-        if (i === x) {
-          flags = -1;
+        const IS_CURSOR = -1;
+        if (i === cursorIndex) {
+          flags = IS_CURSOR;
         }
 
         // Determine what element the character is going to be put in
@@ -210,7 +209,7 @@ export class Renderer {
               documentFragment.appendChild(currentElement);
             }
             currentElement = this._spanElementObjectPool.acquire();
-            if (flags === -1) {
+            if (flags === IS_CURSOR) {
               currentElement.classList.add('reverse-video');
               currentElement.classList.add('terminal-cursor');
             } else {
