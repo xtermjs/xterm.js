@@ -209,8 +209,18 @@ function Terminal(options) {
   this.readable = true;
   this.writable = true;
 
-  this.defAttr = (0 << 18) | (257 << 9) | (256 << 0);
-  this.curAttr = this.defAttr;
+  // this.defAttr = (0 << 18) | (257 << 9) | (256 << 0);
+  // this.curAttr = this.defAttr;
+
+
+  this.defaultFlags = 0;
+  this.defaultFgColor = 1 << 24;
+  this.defaultBgColor = 1 << 24;
+
+  this.currentFlags = this.defaultFlags;
+  this.currentFgColor = this.defaultFgColor;
+  this.currentBgColor = this.defaultBgColor;
+
 
   this.params = [];
   this.currentParam = 0;
@@ -268,10 +278,10 @@ inherits(Terminal, EventEmitter);
 /**
  * back_color_erase feature for xterm.
  */
-Terminal.prototype.eraseAttr = function() {
-  // if (this.is('screen')) return this.defAttr;
-  return (this.defAttr & ~0x1ff) | (this.curAttr & 0x1ff);
-};
+// Terminal.prototype.eraseAttr = function() {
+//   // if (this.is('screen')) return this.defAttr;
+//   return (this.defAttr & ~0x1ff) | (this.curAttr & 0x1ff);
+// };
 
 /**
  * Colors
@@ -1948,7 +1958,7 @@ Terminal.prototype.resize = function(x, y) {
   // resize cols
   j = this.cols;
   if (j < x) {
-    ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
+    ch = [' ', 1, this.defaultFlags, this.defaultFgColor, this.defaultBgColor]; // does xterm use the default attr?
     i = this.lines.length;
     while (i--) {
       while (this.lines.get(i).length < x) {
@@ -2114,7 +2124,7 @@ Terminal.prototype.eraseRight = function(x, y) {
   if (!line) {
     return;
   }
-  var ch = [this.eraseAttr(), ' ', 1]; // xterm
+  var ch = [' ', 1, this.defaultFlags, this.currentFgColor, this.currentBgColor]; // xterm
   for (; x < this.cols; x++) {
     line[x] = ch;
   }
@@ -2133,7 +2143,7 @@ Terminal.prototype.eraseLeft = function(x, y) {
   if (!line) {
     return;
   }
-  var ch = [this.eraseAttr(), ' ', 1]; // xterm
+  var ch = [' ', 1, this._terminal.defaultFlags, this._terminal.currentFgColor, this._terminal.currentBgColor]; // xterm
   x++;
   while (x--) {
     line[x] = ch;
@@ -2176,13 +2186,8 @@ Terminal.prototype.eraseLine = function(y) {
  * @param {boolean} isWrapped Whether the new line is wrapped from the previous line.
  */
 Terminal.prototype.blankLine = function(cur, isWrapped) {
-  var attr = cur
-  ? this.eraseAttr()
-  : this.defAttr;
-
-  var ch = [attr, ' ', 1]  // width defaults to 1 halfwidth character
-  , line = []
-  , i = 0;
+  var ch = this.ch(cur);  // width defaults to 1 halfwidth character
+  var line = [];
 
   // TODO: It is not ideal that this is a property on an array, a buffer line
   // class should be added that will hold this data and other useful functions.
@@ -2190,7 +2195,7 @@ Terminal.prototype.blankLine = function(cur, isWrapped) {
     line.isWrapped = isWrapped;
   }
 
-  for (; i < this.cols; i++) {
+  for (var i = 0; i < this.cols; i++) {
     line[i] = ch;
   }
 
@@ -2204,8 +2209,8 @@ Terminal.prototype.blankLine = function(cur, isWrapped) {
  */
 Terminal.prototype.ch = function(cur) {
   return cur
-    ? [this.eraseAttr(), ' ', 1]
-  : [this.defAttr, ' ', 1];
+    ? [' ', 1, this.defaultFlags, this.currentFgColor, this.currentBgColor]
+    : [' ', 1, this.defaultFlags, this.defaultFgColor, this.defaultBgColor];
 };
 
 

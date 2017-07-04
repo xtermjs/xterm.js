@@ -20,7 +20,9 @@ enum FLAGS {
   UNDERLINE = 2,
   BLINK = 4,
   INVERSE = 8,
-  INVISIBLE = 16
+  INVISIBLE = 16,
+  TRUECOLOR_FG = 32,
+  TRUECOLOR_BG = 64
 };
 
 let brokenBold: boolean = null;
@@ -152,7 +154,9 @@ export class Renderer {
         x = -1;
       }
 
-      let attr = this._terminal.defAttr;
+      let lastFlags = this._terminal.defaultFlags;
+      let lastFgColor = this._terminal.defaultFgColor;
+      let lastBgColor = this._terminal.defaultBgColor;
 
       const documentFragment = document.createDocumentFragment();
       let innerHTML = '';
@@ -167,19 +171,22 @@ export class Renderer {
 
       for (let i = 0; i < width; i++) {
         // TODO: Could data be a more specific type?
-        let data: any = line[i][0];
-        const ch = line[i][1];
-        const ch_width: any = line[i][2];
+        console.log('line[i]: ' + line[i]);
+        const ch = line[i][0];
+        const ch_width: any = line[i][1];
+        let flags: number = line[i][2];
+        let fg: number = line[i][3];
+        let bg: number = line[i][4];
         if (!ch_width) {
           continue;
         }
 
         if (i === x) {
-          data = -1;
+          flags = -1;
         }
 
-        if (data !== attr) {
-          if (attr !== this._terminal.defAttr) {
+        if (flags !== lastFlags || fg !== lastFgColor || bg !== lastBgColor) {
+          if (lastFlags !== this._terminal.defaultFlags) {
             if (innerHTML) {
               currentElement.innerHTML = innerHTML;
               innerHTML = '';
@@ -187,7 +194,7 @@ export class Renderer {
             documentFragment.appendChild(currentElement);
             currentElement = null;
           }
-          if (data !== this._terminal.defAttr) {
+          if (flags !== this._terminal.defaultFlags || fg !== this._terminal.defaultFgColor || bg !== this._terminal.defaultBgColor) {
             if (innerHTML && !currentElement) {
               currentElement = this._spanElementObjectPool.acquire();
             }
@@ -199,13 +206,13 @@ export class Renderer {
               documentFragment.appendChild(currentElement);
             }
             currentElement = this._spanElementObjectPool.acquire();
-            if (data === -1) {
+            if (flags === -1) {
               currentElement.classList.add('reverse-video');
               currentElement.classList.add('terminal-cursor');
             } else {
-              let bg = data & 0x1ff;
-              let fg = (data >> 9) & 0x1ff;
-              let flags = data >> 18;
+              // let bg = data & 0x1ff;
+              // let fg = (data >> 9) & 0x1ff;
+              // let flags = data >> 18;
 
               if (flags & FLAGS.BOLD) {
                 if (!brokenBold) {
@@ -295,7 +302,9 @@ export class Renderer {
           }
         }
 
-        attr = data;
+        lastFlags = flags;
+        lastFgColor = fg;
+        lastBgColor = bg;
       }
 
       if (innerHTML && !currentElement) {

@@ -25,7 +25,7 @@ export interface ITerminal {
   textarea: HTMLTextAreaElement;
   ybase: number;
   ydisp: number;
-  lines: ICircularList<string>;
+  lines: ICircularList<[string, number, number, number, number]>;
   rows: number;
   cols: number;
   browser: IBrowser;
@@ -36,6 +36,10 @@ export interface ITerminal {
   x: number;
   y: number;
   defAttr: number;
+
+  defaultFlags: number;
+  defaultFgColor: number;
+  defaultBgColor: number;
 
   /**
    * Emit the 'data' event and populate the given data.
