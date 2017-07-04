@@ -1280,35 +1280,34 @@ export class InputHandler implements IInputHandler {
         // reset bg
         this._terminal.currentBgColor = this._terminal.defaultBgColor;
       } else if (p === 38) {
-        // fg color 256
         if (params[i + 1] === 2) {
+          // fg color 16mil
+          this._terminal.currentFlags |= 32;
           i += 2;
-          this._terminal.currentFgColor = this._terminal.matchColor(
-            params[i] & 0xff,
-            params[i + 1] & 0xff,
-            params[i + 2] & 0xff);
+          this._terminal.currentFgColor = ((params[i] & 0xff) << 16) | ((params[i + 1]) & 0xff << 8) | ((params[i + 2]) & 0xff);
           if (this._terminal.currentFgColor === -1) {
             this._terminal.currentFgColor = this._terminal.defaultFgColor;
           }
           i += 2;
         } else if (params[i + 1] === 5) {
+          // fg color 256
           i += 2;
           p = params[i] & 0xff;
           this._terminal.currentFgColor = p;
         }
       } else if (p === 48) {
-        // bg color 256
         if (params[i + 1] === 2) {
+          // bg color 16mil
+          this._terminal.currentFlags |= 64;
           i += 2;
-          this._terminal.currentBgColor = this._terminal.matchColor(
-            params[i] & 0xff,
-            params[i + 1] & 0xff,
-            params[i + 2] & 0xff);
+          this._terminal.currentBgColor = ((params[i] & 0xff) << 16) | ((params[i + 1] & 0xff) << 8) | (params[i + 2] & 0xff);
+          console.log('this._terminal.currentBgColor: ' + this._terminal.currentBgColor);
           if (this._terminal.currentBgColor === -1) {
             this._terminal.currentBgColor = this._terminal.defaultBgColor;
           }
           i += 2;
         } else if (params[i + 1] === 5) {
+          // bg color 256
           i += 2;
           p = params[i] & 0xff;
           this._terminal.currentBgColor = p;

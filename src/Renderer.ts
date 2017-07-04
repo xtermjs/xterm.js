@@ -171,7 +171,6 @@ export class Renderer {
 
       for (let i = 0; i < width; i++) {
         // TODO: Could data be a more specific type?
-        console.log('line[i]: ' + line[i]);
         const ch = line[i][0];
         const ch_width: any = line[i][1];
         let flags: number = line[i][2];
@@ -232,11 +231,17 @@ export class Renderer {
                 currentElement.classList.add('xterm-blink');
               }
 
+              let isTrueColorFg = flags & FLAGS.TRUECOLOR_FG;
+              let isTrueColorBg = flags & FLAGS.TRUECOLOR_BG;
+
               // If inverse flag is on, then swap the foreground and background variables.
               if (flags & FLAGS.INVERSE) {
                 let temp = bg;
                 bg = fg;
                 fg = temp;
+                temp = isTrueColorBg;
+                isTrueColorBg = isTrueColorFg;
+                isTrueColorFg = temp;
                 // Should inverse just be before the above boldColors effect instead?
                 if ((flags & 1) && fg < 8) {
                   fg += 8;
@@ -255,20 +260,37 @@ export class Renderer {
                * Source: https://github.com/sourcelair/xterm.js/issues/57
                */
               if (flags & FLAGS.INVERSE) {
-                if (bg === 257) {
+                if (bg === this._terminal.defaultBgColor) {
                   bg = 15;
                 }
-                if (fg === 256) {
+                if (fg === this._terminal.defaultFgColor) {
                   fg = 0;
                 }
               }
 
-              if (bg < 256) {
-                currentElement.classList.add(`xterm-bg-color-${bg}`);
+              if (isTrueColorFg) {
+                let rgb = fg.toString(16);
+                while (rgb.length < 6) {
+                  rgb = '0' + rgb;
+                }
+                currentElement.style.color = `#${rgb}`;
+              } else {
+                if (fg < 256) {
+                  currentElement.classList.add(`xterm-color-${fg}`);
+                }
               }
 
-              if (fg < 256) {
-                currentElement.classList.add(`xterm-color-${fg}`);
+              if (isTrueColorBg) {
+                console.log(bg);
+                let rgb = bg.toString(16);
+                while (rgb.length < 6) {
+                  rgb = '0' + rgb;
+                }
+                currentElement.style.backgroundColor = `#${rgb}`;
+              } else {
+                if (bg < 256) {
+                  currentElement.classList.add(`xterm-bg-color-${bg}`);
+                }
               }
             }
           }
