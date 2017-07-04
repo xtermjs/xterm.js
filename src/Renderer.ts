@@ -169,6 +169,7 @@ export class Renderer {
         this._spanElementObjectPool.release(<HTMLElement>child);
       }
 
+      // Process each character in the line
       for (let i = 0; i < width; i++) {
         const ch: string = line[i][0];
         const ch_width: number = line[i][1];
@@ -179,12 +180,15 @@ export class Renderer {
           continue;
         }
 
+        // Force a refresh if the character is the cursor
         if (i === x) {
           flags = -1;
         }
 
+        // Determine what element the character is going to be put in
         if (flags !== lastFlags || fg !== lastFgColor || bg !== lastBgColor) {
-          if (lastFlags !== this._terminal.defaultFlags) {
+          // Add the current element to the document fragment if it exists
+          if (currentElement) {
             if (innerHTML) {
               currentElement.innerHTML = innerHTML;
               innerHTML = '';
@@ -192,6 +196,8 @@ export class Renderer {
             documentFragment.appendChild(currentElement);
             currentElement = null;
           }
+
+          // Create a new span if the flags and colors are not the default
           if (flags !== this._terminal.defaultFlags || fg !== this._terminal.defaultFgColor || bg !== this._terminal.defaultBgColor) {
             if (innerHTML && !currentElement) {
               currentElement = this._spanElementObjectPool.acquire();
