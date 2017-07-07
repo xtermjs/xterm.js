@@ -103,22 +103,6 @@ export class Renderer {
 
   /**
    * Refreshes (re-renders) terminal content within two rows (inclusive)
-   *
-   * Rendering Engine:
-   *
-   * In the screen buffer, each character is stored as a an array with a character
-   * and a 32-bit integer:
-   *   - First value: a utf-16 character.
-   *   - Second value:
-   *   - Next 9 bits: background color (0-511).
-   *   - Next 9 bits: foreground color (0-511).
-   *   - Next 14 bits: a mask for misc. flags:
-   *     - 1=bold
-   *     - 2=underline
-   *     - 4=blink
-   *     - 8=inverse
-   *     - 16=invisible
-   *
    * @param {number} start The row to start from (between 0 and terminal's height terminal - 1)
    * @param {number} end The row to end at (between fromRow and terminal's height terminal - 1)
    */
@@ -141,7 +125,6 @@ export class Renderer {
 
     for (let y = start; y <= end; y++) {
       let row = y + this._terminal.ydisp;
-
       let line = this._terminal.lines.get(row);
 
       let cursorIndex: number;
