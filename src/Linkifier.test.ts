@@ -17,7 +17,7 @@ class TestLinkifier extends Linkifier {
 }
 
 describe('Linkifier', () => {
-  let dom = jsdom.JSDOM;
+  let dom: jsdom.JSDOM;
   let window: Window;
   let document: Document;
 
