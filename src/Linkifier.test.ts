@@ -26,7 +26,7 @@ describe('Linkifier', () => {
   let linkifier: TestLinkifier;
 
   beforeEach(() => {
-    dom = new jsdom.JSDOM('')
+    dom = new jsdom.JSDOM('');
     window = dom.window;
     document = window.document;
     linkifier = new TestLinkifier();
