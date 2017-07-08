@@ -430,6 +430,9 @@ var InputHandler = (function () {
                         this._terminal.y--;
                         this._terminal.scroll(true);
                     }
+                    else {
+                        this._terminal.lines.get(this._terminal.y).isWrapped = true;
+                    }
                 }
                 else {
                     if (ch_width === 2)
