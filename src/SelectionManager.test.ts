@@ -31,6 +31,7 @@ class TestSelectionManager extends SelectionManager {
 }
 
 describe('SelectionManager', () => {
+  let dom: jsdom.JSDOM;
   let window: Window;
   let document: Document;
 
@@ -39,15 +40,13 @@ describe('SelectionManager', () => {
   let rowContainer: HTMLElement;
   let selectionManager: TestSelectionManager;
 
-  beforeEach(done => {
-    jsdom.env('', (err, w) => {
-      window = w;
-      document = window.document;
-      buffer = new CircularList<any>(100);
-      terminal = <any>{ cols: 80, rows: 2 };
-      selectionManager = new TestSelectionManager(terminal, buffer, rowContainer, null);
-      done();
-    });
+  beforeEach(() => {
+    dom = new jsdom.JSDOM('');
+    window = dom.window;
+    document = window.document;
+    buffer = new CircularList<any>(100);
+    terminal = <any>{ cols: 80, rows: 2 };
+    selectionManager = new TestSelectionManager(terminal, buffer, rowContainer, null);
   });
 
   function stringToRow(text: string): [number, string, number][] {
