@@ -906,7 +906,7 @@ export class InputHandler implements IInputHandler {
 
           // TODO: Why are params[0] compares nested within a switch for params[0]?
 
-          this._terminal.buffer.x10Mouse = params[0] === 9;
+          this._terminal.x10Mouse = params[0] === 9;
           this._terminal.vt200Mouse = params[0] === 1000;
           this._terminal.normalMouse = params[0] > 1000;
           this._terminal.mouseEvents = true;

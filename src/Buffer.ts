@@ -29,7 +29,7 @@ export class Buffer {
     public scrollTop: number = 0,
     public tabs: any = {},
   ) {
-    this.lines = new CircularList<string>(this.terminal.scrollback);
+    this.lines = new CircularList<[string, number, string]>(this.terminal.scrollback);
     this.scrollBottom = this.terminal.rows - 1;
   }
 }
