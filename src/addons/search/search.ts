@@ -32,7 +32,7 @@ declare var window: any;
   /**
    * Find the next instance of the term, then scroll to and select it. If it
    * doesn't exist, do nothing.
-   * @param term The term to search for.
+   * @param term Tne search term.
    * @return Whether a result was found.
    */
   Terminal.prototype.findNext = function(term: string): boolean {
@@ -45,7 +45,7 @@ declare var window: any;
   /**
    * Find the previous instance of the term, then scroll to and select it. If it
    * doesn't exist, do nothing.
-   * @param term The term to search for.
+   * @param term Tne search term.
    * @return Whether a result was found.
    */
   Terminal.prototype.findPrevious = function(term: string): boolean {
