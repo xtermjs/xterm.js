@@ -61,7 +61,7 @@ export class InputHandler implements IInputHandler {
           } else {
             // The line already exists (eg. the initial viewport), mark it as a
             // wrapped line
-            this._terminal.lines.get(this._terminal.y).isWrapped = true;
+            this._terminal.buffer.lines.get(this._terminal.buffer.y).isWrapped = true;
           }
         } else {
           if (ch_width === 2)  // FIXME: check for xterm behavior
