@@ -24,7 +24,7 @@ var primitive_pty = pty.native.open(COLS, ROWS);
 // we just pipe the data from slave to master as a child program would do
 // pty.js opens pipe fds with O_NONBLOCK
 // just wait 10ms instead of setting fds to blocking mode
-function pty_write_read(s, cb) {
+function ptyWriteRead(s, cb) {
   fs.writeSync(primitive_pty.slave, s);
   setTimeout(() => {
     var b = Buffer(64000);
@@ -34,8 +34,8 @@ function pty_write_read(s, cb) {
 }
 
 // make sure raw pty is at x=0 and has no pending data
-function pty_reset(cb) {
-    pty_write_read('\r\n', cb);
+function ptyReset(cb) {
+    ptyWriteRead('\r\n', cb);
 }
 
 /* debug helpers */
@@ -107,9 +107,9 @@ describe('xterm output comparison', function() {
     }
     (function(filename) {
       it(filename.split('/').slice(-1)[0], done => {
-        pty_reset(() => {
+        ptyReset(() => {
           var in_file = fs.readFileSync(filename, 'utf8');
-          pty_write_read(in_file, from_pty => {
+          ptyWriteRead(in_file, from_pty => {
             // uncomment this to get log from terminal
             //console.log = function(){};
 
