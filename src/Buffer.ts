@@ -9,7 +9,7 @@ import { CircularList } from './utils/CircularList';
  * This class represents a terminal buffer (an internal state of the terminal)/
  */
 export class Buffer {
-  public lines: CircularList<string>;
+  public lines: CircularList<[string, number, string]>;
 
   /**
    * Create a new Buffer.
