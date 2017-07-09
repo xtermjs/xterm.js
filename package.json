@@ -58,7 +58,6 @@
     "merge-stream": "^1.0.1",
     "node-pty": "^0.4.1",
     "nodemon": "1.10.2",
-    "sleep": "^3.0.1",
     "sorcery": "^0.10.0",
     "tslint": "^4.0.2",
     "typescript": "~2.2.0",
