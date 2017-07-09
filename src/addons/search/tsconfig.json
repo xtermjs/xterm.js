@@ -3,7 +3,7 @@
     "module": "commonjs",
     "target": "es5",
     "rootDir": ".",
-    "outDir": "./c",
+    "outDir": "../../../lib/addons/search/",
     "sourceMap": true,
     "removeComments": true
   }
