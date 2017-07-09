@@ -17,6 +17,7 @@ class TestLinkifier extends Linkifier {
 }
 
 describe('Linkifier', () => {
+  let dom: jsdom.JSDOM;
   let window: Window;
   let document: Document;
 
@@ -24,13 +25,11 @@ describe('Linkifier', () => {
   let rows: HTMLElement[];
   let linkifier: TestLinkifier;
 
-  beforeEach(done => {
-    jsdom.env('', (err, w) => {
-      window = w;
-      document = window.document;
-      linkifier = new TestLinkifier();
-      done();
-    });
+  beforeEach(() => {
+    dom = new jsdom.JSDOM('');
+    window = dom.window;
+    document = window.document;
+    linkifier = new TestLinkifier();
   });
 
   function addRow(html: string) {
@@ -118,6 +117,12 @@ describe('Linkifier', () => {
       });
       it('should match a link immediately after a link at the end of a text node', done => {
         assertLinkifiesRow('<span>foo bar</span>baz', /bar|baz/, '<span>foo <a>bar</a></span><a>baz</a>', done);
+      });
+      it('should not duplicate text after a unicode character (wrapped in a span)', done => {
+        // This is a regression test for an issue that came about when using
+        // an oh-my-zsh theme that added the large blue diamond unicode
+        // character (U+1F537) which caused the path to be duplicated. See #642.
+        assertLinkifiesRow('echo \'<span class="xterm-normal-char">🔷</span>foo\'', /foo/, 'echo \'<span class="xterm-normal-char">🔷</span><a>foo</a>\'', done);
       });
     });
 

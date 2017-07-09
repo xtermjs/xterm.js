@@ -55,6 +55,11 @@ describe('xterm.js', function() {
     it('should throw when setting a non-existant option', function() {
       assert.throws(xterm.setOption.bind(xterm, 'fake', true));
     });
+    it('should not allow scrollback less than number of rows', function() {
+      let setOptionCall = xterm.setOption.bind(xterm, 'scrollback', xterm.rows - 1);
+
+      assert.equal(setOptionCall(), false);
+    });
   });
 
   describe('clear', function() {
@@ -371,11 +376,16 @@ describe('xterm.js', function() {
     });
   });
 
-  describe('attachCustomEventHandler', function () {
+  describe('attachCustomKeyEventHandler', function () {
     var evKeyDown = {
       preventDefault: function() {},
       stopPropagation: function() {},
       type: 'keydown'
+    }
+    var evKeyPress = {
+      preventDefault: function() {},
+      stopPropagation: function() {},
+      type: 'keypress'
     }
 
     beforeEach(function() {
@@ -387,29 +397,39 @@ describe('xterm.js', function() {
           bind: function() {
             return function () { return true; }
           }
+        },
+        keypress: {
+          bind: function() {
+            return function () { return true; }
+          }
         }
       }
     });
 
-    it('should process the keydown event based on what the handler returns', function () {
+    it('should process the keydown/keypress event based on what the handler returns', function () {
       assert.equal(xterm.keyDown(Object.assign({}, evKeyDown, { keyCode: 77 })), true);
-      xterm.attachCustomKeydownHandler(function (ev) {
+      assert.equal(xterm.keyPress(Object.assign({}, evKeyPress, { keyCode: 77 })), true);
+      xterm.attachCustomKeyEventHandler(function (ev) {
         return ev.keyCode === 77;
       });
       assert.equal(xterm.keyDown(Object.assign({}, evKeyDown, { keyCode: 77 })), true);
-      xterm.attachCustomKeydownHandler(function (ev) {
+      assert.equal(xterm.keyPress(Object.assign({}, evKeyPress, { keyCode: 77 })), true);
+      xterm.attachCustomKeyEventHandler(function (ev) {
         return ev.keyCode !== 77;
       });
       assert.equal(xterm.keyDown(Object.assign({}, evKeyDown, { keyCode: 77 })), false);
+      assert.equal(xterm.keyPress(Object.assign({}, evKeyPress, { keyCode: 77 })), false);
     });
 
     it('should alive after reset(ESC c Full Reset (RIS))', function () {
-      xterm.attachCustomKeydownHandler(function (ev) {
+      xterm.attachCustomKeyEventHandler(function (ev) {
         return ev.keyCode !== 77;
       });
       assert.equal(xterm.keyDown(Object.assign({}, evKeyDown, { keyCode: 77 })), false);
+      assert.equal(xterm.keyPress(Object.assign({}, evKeyPress, { keyCode: 77 })), false);
       xterm.reset();
       assert.equal(xterm.keyDown(Object.assign({}, evKeyDown, { keyCode: 77 })), false);
+      assert.equal(xterm.keyPress(Object.assign({}, evKeyPress, { keyCode: 77 })), false);
     });
   });
 

@@ -50,7 +50,7 @@ gulp.task('browserify', ['tsc'], function() {
   let browserifyOptions = {
     basedir: buildDir,
     debug: true,
-    entries: [`../${outDir}/xterm.js`],
+    entries: [`${outDir}/xterm.js`],
     standalone: 'Terminal',
     cache: {},
     packageCache: {}

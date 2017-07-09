@@ -13,7 +13,7 @@
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './EventEmitter';
 import { Viewport } from './Viewport';
-import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard';
+import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './handlers/Clipboard';
 import { CircularList } from './utils/CircularList';
 import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
@@ -167,7 +167,7 @@ function Terminal(options) {
   this.queue = '';
   this.scrollTop = 0;
   this.scrollBottom = this.rows - 1;
-  this.customKeydownHandler = null;
+  this.customKeyEventHandler = null;
   this.cursorBlinkInterval = null;
 
   // modes
@@ -419,6 +419,15 @@ Terminal.prototype.setOption = function(key, value) {
   }
   switch (key) {
     case 'scrollback':
+      if (value < this.rows) {
+        let msg = 'Setting the scrollback value less than the number of rows ';
+
+        msg += `(${this.rows}) is not allowed.`;
+
+        console.warn(msg);
+        return false;
+      }
+
       if (this.options[key] !== value) {
         if (this.lines.length > value) {
           const amountToTrim = this.lines.length - value;
@@ -537,15 +546,30 @@ Terminal.prototype.initGlobal = function() {
   on(this.textarea, 'paste', pasteHandlerWrapper);
   on(this.element, 'paste', pasteHandlerWrapper);
 
+  // Handle right click context menus
   if (term.browser.isFirefox) {
+    // Firefox doesn't appear to fire the contextmenu event on right click
     on(this.element, 'mousedown', event => {
-      if (ev.button == 2) {
+      if (event.button == 2) {
         rightClickHandler(event, this.textarea, this.selectionManager);
       }
     });
   } else {
     on(this.element, 'contextmenu', event => {
       rightClickHandler(event, this.textarea, this.selectionManager);
+    });
+  }
+
+  // Move the textarea under the cursor when middle clicking on Linux to ensure
+  // middle click to paste selection works. This only appears to work in Chrome
+  // at the time is writing.
+  if (term.browser.isLinux) {
+    // Use auxclick event over mousedown the latter doesn't seem to work. Note
+    // that the regular click event doesn't fire for the middle mouse button.
+    on(this.element, 'auxclick', event => {
+      if (event.button === 1) {
+        moveTextAreaUnderMouseCursor(event, this.textarea, this.selectionManager);
+      }
     });
   }
 };
@@ -637,7 +661,6 @@ Terminal.prototype.open = function(parent, focus) {
   this.element.classList.add('xterm-theme-' + this.theme);
   this.setCursorBlinking(this.options.cursorBlink);
 
-  this.element.style.height;
   this.element.setAttribute('tabindex', 0);
 
   this.viewportElement = document.createElement('div');
@@ -647,8 +670,7 @@ Terminal.prototype.open = function(parent, focus) {
   this.viewportScrollArea.classList.add('xterm-scroll-area');
   this.viewportElement.appendChild(this.viewportScrollArea);
 
-  // Create the selection container. This needs to be added before the
-  // rowContainer as the selection must be below the text.
+  // Create the selection container.
   this.selectionContainer = document.createElement('div');
   this.selectionContainer.classList.add('xterm-selection');
   this.element.appendChild(this.selectionContainer);
@@ -703,7 +725,17 @@ Terminal.prototype.open = function(parent, focus) {
   this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
   this.renderer = new Renderer(this);
   this.selectionManager = new SelectionManager(this, this.lines, this.rowContainer, this.charMeasure);
-  this.selectionManager.on('refresh', data => this.renderer.refreshSelection(data.start, data.end));
+  this.selectionManager.on('refresh', data => {
+    this.renderer.refreshSelection(data.start, data.end);
+  });
+  this.selectionManager.on('newselection', text => {
+    // If there's a new selection, put it into the textarea, focus and select it
+    // in order to register it as a selection on the OS. This event is fired
+    // only on Linux to enable middle click to paste selection.
+    this.textarea.value = text;
+    this.textarea.focus();
+    this.textarea.select();
+  });
   this.on('scroll', () => this.selectionManager.refresh());
   this.viewportElement.addEventListener('scroll', () => this.selectionManager.refresh());
 
@@ -779,7 +811,8 @@ Terminal.loadAddon = function(addon, callback) {
 Terminal.prototype.updateCharSizeStyles = function() {
   this.charSizeStyleElement.textContent =
       `.xterm-wide-char{width:${this.charMeasure.width * 2}px;}` +
-      `.xterm-normal-char{width:${this.charMeasure.width}px;}`;
+      `.xterm-normal-char{width:${this.charMeasure.width}px;}` +
+      `.xterm-rows > div{height:${this.charMeasure.height}px;}`;
 }
 
 /**
@@ -1062,6 +1095,18 @@ Terminal.prototype.bindMouse = function() {
     self.viewport.onWheel(ev);
     return self.cancel(ev);
   });
+
+  on(el, 'touchstart', function(ev) {
+    if (self.mouseEvents) return;
+    self.viewport.onTouchStart(ev);
+    return self.cancel(ev);
+  });
+
+  on(el, 'touchmove', function(ev) {
+    if (self.mouseEvents) return;
+    self.viewport.onTouchMove(ev);
+    return self.cancel(ev);
+  });
 };
 
 /**
@@ -1102,7 +1147,7 @@ Terminal.prototype.queueLinkification = function(start, end) {
       this.linkifier.linkifyRow(i);
     }
   }
-}
+};
 
 /**
  * Display the cursor element
@@ -1116,8 +1161,10 @@ Terminal.prototype.showCursor = function() {
 
 /**
  * Scroll the terminal down 1 row, creating a blank line.
+ * @param {boolean} isWrapped Whether the new line is wrapped from the previous
+ * line.
  */
-Terminal.prototype.scroll = function() {
+Terminal.prototype.scroll = function(isWrapped) {
   var row;
 
   // Make room for the new row in lines
@@ -1144,10 +1191,10 @@ Terminal.prototype.scroll = function() {
 
   if (row === this.lines.length) {
     // Optimization: pushing is faster than splicing when they amount to the same behavior
-    this.lines.push(this.blankLine());
+    this.lines.push(this.blankLine(undefined, isWrapped));
   } else {
     // add our new line
-    this.lines.splice(row, 0, this.blankLine());
+    this.lines.splice(row, 0, this.blankLine(undefined, isWrapped));
   }
 
   if (this.scrollTop !== 0) {
@@ -1211,25 +1258,25 @@ Terminal.prototype.scrollDisp = function(disp, suppressScrollEvent) {
  */
 Terminal.prototype.scrollPages = function(pageCount) {
   this.scrollDisp(pageCount * (this.rows - 1));
-}
+};
 
 /**
  * Scrolls the display of the terminal to the top.
  */
 Terminal.prototype.scrollToTop = function() {
   this.scrollDisp(-this.ydisp);
-}
+};
 
 /**
  * Scrolls the display of the terminal to the bottom.
  */
 Terminal.prototype.scrollToBottom = function() {
   this.scrollDisp(this.ybase - this.ydisp);
-}
+};
 
 /**
  * Writes text to the terminal.
- * @param {string} text The text to write to the terminal.
+ * @param {string} data The text to write to the terminal.
  */
 Terminal.prototype.write = function(data) {
   this.writeBuffer.push(data);
@@ -1253,7 +1300,7 @@ Terminal.prototype.write = function(data) {
       self.innerWrite();
     });
   }
-}
+};
 
 Terminal.prototype.innerWrite = function() {
   var writeBatch = this.writeBuffer.splice(0, WRITE_BATCH_SIZE);
@@ -1295,29 +1342,41 @@ Terminal.prototype.innerWrite = function() {
 
 /**
  * Writes text to the terminal, followed by a break line character (\n).
- * @param {string} text The text to write to the terminal.
+ * @param {string} data The text to write to the terminal.
  */
 Terminal.prototype.writeln = function(data) {
   this.write(data + '\r\n');
 };
 
 /**
- * Attaches a custom keydown handler which is run before keys are processed, giving consumers of
- * xterm.js ultimate control as to what keys should be processed by the terminal and what keys
- * should not.
+ * DEPRECATED: only for backward compatibility. Please use attachCustomKeyEventHandler() instead.
  * @param {function} customKeydownHandler The custom KeyboardEvent handler to attach. This is a
  *   function that takes a KeyboardEvent, allowing consumers to stop propogation and/or prevent
  *   the default action. The function returns whether the event should be processed by xterm.js.
  */
 Terminal.prototype.attachCustomKeydownHandler = function(customKeydownHandler) {
-  this.customKeydownHandler = customKeydownHandler;
-}
+  let message = 'attachCustomKeydownHandler() is DEPRECATED and will be removed soon. Please use attachCustomKeyEventHandler() instead.';
+  console.warn(message);
+  this.attachCustomKeyEventHandler(customKeydownHandler);
+};
+
+/**
+ * Attaches a custom key event handler which is run before keys are processed, giving consumers of
+ * xterm.js ultimate control as to what keys should be processed by the terminal and what keys
+ * should not.
+ * @param {function} customKeyEventHandler The custom KeyboardEvent handler to attach. This is a
+ *   function that takes a KeyboardEvent, allowing consumers to stop propogation and/or prevent
+ *   the default action. The function returns whether the event should be processed by xterm.js.
+ */
+Terminal.prototype.attachCustomKeyEventHandler = function(customKeyEventHandler) {
+  this.customKeyEventHandler = customKeyEventHandler;
+};
 
 /**
  * Attaches a http(s) link handler, forcing web links to behave differently to
  * regular <a> tags. This will trigger a refresh as links potentially need to be
  * reconstructed. Calling this with null will remove the handler.
- * @param {LinkHandler} handler The handler callback function.
+ * @param {LinkMatcherHandler} handler The handler callback function.
  */
 Terminal.prototype.setHypertextLinkHandler = function(handler) {
   if (!this.linkifier) {
@@ -1326,7 +1385,7 @@ Terminal.prototype.setHypertextLinkHandler = function(handler) {
   this.linkifier.setHypertextLinkHandler(handler);
   // Refresh to force links to refresh
   this.refresh(0, this.rows - 1);
-}
+};
 
 /**
  * Attaches a validation callback for hypertext links. This is useful to use
@@ -1334,14 +1393,14 @@ Terminal.prototype.setHypertextLinkHandler = function(handler) {
  * @param {LinkMatcherValidationCallback} callback The callback to use, this can
  * be cleared with null.
  */
-Terminal.prototype.setHypertextValidationCallback = function(handler) {
+Terminal.prototype.setHypertextValidationCallback = function(callback) {
   if (!this.linkifier) {
     throw new Error('Cannot attach a hypertext validation callback before Terminal.open is called');
   }
-  this.linkifier.setHypertextValidationCallback(handler);
+  this.linkifier.setHypertextValidationCallback(callback);
   // Refresh to force links to refresh
   this.refresh(0, this.rows - 1);
-}
+};
 
 /**
    * Registers a link matcher, allowing custom link patterns to be matched and
@@ -1349,7 +1408,7 @@ Terminal.prototype.setHypertextValidationCallback = function(handler) {
    * @param {RegExp} regex The regular expression to search for, specifically
    * this searches the textContent of the rows. You will want to use \s to match
    * a space ' ' character for example.
-   * @param {LinkHandler} handler The callback when the link is called.
+   * @param {LinkMatcherHandler} handler The callback when the link is called.
    * @param {LinkMatcherOptions} [options] Options for the link matcher.
    * @return {number} The ID of the new matcher, this can be used to deregister.
  */
@@ -1359,7 +1418,7 @@ Terminal.prototype.registerLinkMatcher = function(regex, handler, options) {
     this.refresh(0, this.rows - 1);
     return matcherId;
   }
-}
+};
 
 /**
  * Deregisters a link matcher if it has been registered.
@@ -1371,14 +1430,14 @@ Terminal.prototype.deregisterLinkMatcher = function(matcherId) {
       this.refresh(0, this.rows - 1);
     }
   }
-}
+};
 
 /**
  * Gets whether the terminal has an active selection.
  */
 Terminal.prototype.hasSelection = function() {
   return this.selectionManager.hasSelection;
-}
+};
 
 /**
  * Gets the terminal's current selection, this is useful for implementing copy
@@ -1386,21 +1445,21 @@ Terminal.prototype.hasSelection = function() {
  */
 Terminal.prototype.getSelection = function() {
   return this.selectionManager.selectionText;
-}
+};
 
 /**
  * Clears the current terminal selection.
  */
 Terminal.prototype.clearSelection = function() {
   this.selectionManager.clearSelection();
-}
+};
 
 /**
  * Selects all text within the terminal.
  */
 Terminal.prototype.selectAll = function() {
   this.selectionManager.selectAll();
-}
+};
 
 /**
  * Handle a keydown event
@@ -1409,7 +1468,7 @@ Terminal.prototype.selectAll = function() {
  * @param {KeyboardEvent} ev The keydown event to be handled.
  */
 Terminal.prototype.keyDown = function(ev) {
-  if (this.customKeydownHandler && this.customKeydownHandler(ev) === false) {
+  if (this.customKeyEventHandler && this.customKeyEventHandler(ev) === false) {
     return false;
   }
 
@@ -1774,6 +1833,10 @@ Terminal.prototype.setgCharset = function(g, charset) {
 Terminal.prototype.keyPress = function(ev) {
   var key;
 
+  if (this.customKeyEventHandler && this.customKeyEventHandler(ev) === false) {
+    return false;
+  }
+
   this.cancel(ev);
 
   if (ev.charCode) {
@@ -1799,7 +1862,7 @@ Terminal.prototype.keyPress = function(ev) {
   this.showCursor();
   this.handler(key);
 
-  return false;
+  return true;
 };
 
 /**
@@ -1864,6 +1927,10 @@ Terminal.prototype.resize = function(x, y) {
     return;
   }
 
+  if (y > this.getOption('scrollback')) {
+    this.setOption('scrollback', y)
+  }
+
   var line
   , el
   , i
@@ -1905,7 +1972,7 @@ Terminal.prototype.resize = function(x, y) {
           // There is room above the buffer and there are no empty elements below the line,
           // scroll up
           this.ybase--;
-          addToY++
+          addToY++;
           if (this.ydisp > 0) {
             // Viewport is at the top of the buffer, must increase downwards
             this.ydisp--;
@@ -2106,8 +2173,9 @@ Terminal.prototype.eraseLine = function(y) {
 /**
  * Return the data array of a blank line
  * @param {number} cur First bunch of data for each "blank" character.
+ * @param {boolean} isWrapped Whether the new line is wrapped from the previous line.
  */
-Terminal.prototype.blankLine = function(cur) {
+Terminal.prototype.blankLine = function(cur, isWrapped) {
   var attr = cur
   ? this.eraseAttr()
   : this.defAttr;
@@ -2115,6 +2183,12 @@ Terminal.prototype.blankLine = function(cur) {
   var ch = [attr, ' ', 1]  // width defaults to 1 halfwidth character
   , line = []
   , i = 0;
+
+  // TODO: It is not ideal that this is a property on an array, a buffer line
+  // class should be added that will hold this data and other useful functions.
+  if (isWrapped) {
+    line.isWrapped = isWrapped;
+  }
 
   for (; i < this.cols; i++) {
     line[i] = ch;
@@ -2225,10 +2299,10 @@ Terminal.prototype.reverseIndex = function() {
 Terminal.prototype.reset = function() {
   this.options.rows = this.rows;
   this.options.cols = this.cols;
-  var customKeydownHandler = this.customKeydownHandler;
+  var customKeyEventHandler = this.customKeyEventHandler;
   var cursorBlinkInterval = this.cursorBlinkInterval;
   Terminal.call(this, this.options);
-  this.customKeydownHandler = customKeydownHandler;
+  this.customKeyEventHandler = customKeyEventHandler;
   this.cursorBlinkInterval = cursorBlinkInterval;
   this.refresh(0, this.rows - 1);
   this.viewport.syncScrollArea();

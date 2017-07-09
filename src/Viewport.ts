@@ -13,6 +13,7 @@ export class Viewport {
   private currentRowHeight: number;
   private lastRecordedBufferLength: number;
   private lastRecordedViewportHeight: number;
+  private lastTouchY: number;
 
   /**
    * Creates a new Viewport.
@@ -119,6 +120,28 @@ export class Viewport {
     }
     this.viewportElement.scrollTop += ev.deltaY * multiplier;
     // Prevent the page from scrolling when the terminal scrolls
+    ev.preventDefault();
+  };
+
+  /**
+   * Handles the touchstart event, recording the touch occurred.
+   * @param ev The touch event.
+   */
+  public onTouchStart(ev: TouchEvent) {
+    this.lastTouchY = ev.touches[0].pageY;
+  };
+
+  /**
+   * Handles the touchmove event, scrolling the viewport if the position shifted.
+   * @param ev The touch event.
+   */
+  public onTouchMove(ev: TouchEvent) {
+    let deltaY = this.lastTouchY - ev.touches[0].pageY;
+    this.lastTouchY = ev.touches[0].pageY;
+    if (deltaY === 0) {
+      return;
+    }
+    this.viewportElement.scrollTop += deltaY;
     ev.preventDefault();
   };
 }

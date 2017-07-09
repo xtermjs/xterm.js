@@ -31,6 +31,7 @@ class TestSelectionManager extends SelectionManager {
 }
 
 describe('SelectionManager', () => {
+  let dom: jsdom.JSDOM;
   let window: Window;
   let document: Document;
 
@@ -39,15 +40,13 @@ describe('SelectionManager', () => {
   let rowContainer: HTMLElement;
   let selectionManager: TestSelectionManager;
 
-  beforeEach(done => {
-    jsdom.env('', (err, w) => {
-      window = w;
-      document = window.document;
-      buffer = new CircularList<any>(100);
-      terminal = <any>{ cols: 80, rows: 2 };
-      selectionManager = new TestSelectionManager(terminal, buffer, rowContainer, null);
-      done();
-    });
+  beforeEach(() => {
+    dom = new jsdom.JSDOM('');
+    window = dom.window;
+    document = window.document;
+    buffer = new CircularList<any>(100);
+    terminal = <any>{ cols: 80, rows: 2 };
+    selectionManager = new TestSelectionManager(terminal, buffer, rowContainer, null);
   });
 
   function stringToRow(text: string): [number, string, number][] {
@@ -142,6 +141,41 @@ describe('SelectionManager', () => {
       selectionManager.selectWordAt([14, 0]);
       assert.equal(selectionManager.selectionText, 'foo');
     });
+    it('should select up to non-path characters that are commonly adjacent to paths', () => {
+      buffer.push(stringToRow('(cd)[ef]{gh}\'ij"'));
+      selectionManager.selectWordAt([0, 0]);
+      assert.equal(selectionManager.selectionText, '(cd');
+      selectionManager.selectWordAt([1, 0]);
+      assert.equal(selectionManager.selectionText, 'cd');
+      selectionManager.selectWordAt([2, 0]);
+      assert.equal(selectionManager.selectionText, 'cd');
+      selectionManager.selectWordAt([3, 0]);
+      assert.equal(selectionManager.selectionText, 'cd)');
+      selectionManager.selectWordAt([4, 0]);
+      assert.equal(selectionManager.selectionText, '[ef');
+      selectionManager.selectWordAt([5, 0]);
+      assert.equal(selectionManager.selectionText, 'ef');
+      selectionManager.selectWordAt([6, 0]);
+      assert.equal(selectionManager.selectionText, 'ef');
+      selectionManager.selectWordAt([7, 0]);
+      assert.equal(selectionManager.selectionText, 'ef]');
+      selectionManager.selectWordAt([8, 0]);
+      assert.equal(selectionManager.selectionText, '{gh');
+      selectionManager.selectWordAt([9, 0]);
+      assert.equal(selectionManager.selectionText, 'gh');
+      selectionManager.selectWordAt([10, 0]);
+      assert.equal(selectionManager.selectionText, 'gh');
+      selectionManager.selectWordAt([11, 0]);
+      assert.equal(selectionManager.selectionText, 'gh}');
+      selectionManager.selectWordAt([12, 0]);
+      assert.equal(selectionManager.selectionText, '\'ij');
+      selectionManager.selectWordAt([13, 0]);
+      assert.equal(selectionManager.selectionText, 'ij');
+      selectionManager.selectWordAt([14, 0]);
+      assert.equal(selectionManager.selectionText, 'ij');
+      selectionManager.selectWordAt([15, 0]);
+      assert.equal(selectionManager.selectionText, 'ij"');
+    });
   });
 
   describe('_selectLineAt', () => {
@@ -164,6 +198,22 @@ describe('SelectionManager', () => {
       selectionManager.selectAll();
       terminal.ybase = buffer.length - terminal.rows;
       assert.equal(selectionManager.selectionText, '1\n2\n3\n4\n5');
+    });
+  });
+
+  describe('hasSelection', () => {
+    it('should return whether there is a selection', () => {
+      selectionManager.model.selectionStart = [0, 0];
+      selectionManager.model.selectionStartLength = 0;
+      assert.equal(selectionManager.hasSelection, false);
+      selectionManager.model.selectionEnd = [0, 0];
+      assert.equal(selectionManager.hasSelection, false);
+      selectionManager.model.selectionEnd = [1, 0];
+      assert.equal(selectionManager.hasSelection, true);
+      selectionManager.model.selectionEnd = [0, 1];
+      assert.equal(selectionManager.hasSelection, true);
+      selectionManager.model.selectionEnd = [1, 1];
+      assert.equal(selectionManager.hasSelection, true);
     });
   });
 });

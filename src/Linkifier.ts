@@ -200,7 +200,7 @@ export class Linkifier {
    * Linkifies a row given a specific handler.
    * @param {HTMLElement} row The row to linkify.
    * @param {LinkMatcher} matcher The link matcher for this line.
-   * @return The link element if it was added, otherwise undefined.
+   * @return The link element(s) that were added.
    */
   private _doLinkifyRow(row: HTMLElement, matcher: LinkMatcher): HTMLElement[] {
     // Iterate over nodes as we want to consider text nodes
@@ -235,8 +235,21 @@ export class Linkifier {
             element.innerHTML = '';
             element.appendChild(linkElement);
           }
+        } else if (node.childNodes.length > 1) {
+          // Matches part of string in an element with multiple child nodes
+          for (let j = 0; j < node.childNodes.length; j++) {
+            const childNode = node.childNodes[j];
+            const childSearchIndex = childNode.textContent.indexOf(uri);
+            if (childSearchIndex !== -1) {
+              // Match found in currentNode
+              this._replaceNodeSubstringWithNode(childNode, linkElement, uri, childSearchIndex);
+              // Don't need to count nodesAdded by replacing the node as this
+              // is a child node, not a top-level node.
+              break;
+            }
+          }
         } else {
-          // Matches part of string
+          // Matches part of string in a single text node
           const nodesAdded = this._replaceNodeSubstringWithNode(node, linkElement, uri, searchIndex);
           // No need to consider the new nodes
           i += nodesAdded;
@@ -308,25 +321,26 @@ export class Linkifier {
    * @return The number of nodes to skip when searching for the next uri.
    */
   private _replaceNodeSubstringWithNode(targetNode: Node, newNode: Node, substring: string, substringIndex: number): number {
-    let node = targetNode;
-    if (node.nodeType !== 3/*Node.TEXT_NODE*/) {
-      node = node.childNodes[0];
+    // If the targetNode is a non-text node with a single child, make the child
+    // the new targetNode.
+    if (targetNode.childNodes.length === 1) {
+      targetNode = targetNode.childNodes[0];
     }
 
     // The targetNode will be either a text node or a <span>. The text node
     // (targetNode or its only-child) needs to be replaced with newNode plus new
     // text nodes potentially on either side.
-    if (node.childNodes.length === 0 && node.nodeType !== 3/*Node.TEXT_NODE*/) {
+    if (targetNode.nodeType !== 3/*Node.TEXT_NODE*/) {
       throw new Error('targetNode must be a text node or only contain a single text node');
     }
 
-    const fullText = node.textContent;
+    const fullText = targetNode.textContent;
 
     if (substringIndex === 0) {
       // Replace with <newNode><textnode>
       const rightText = fullText.substring(substring.length);
       const rightTextNode = this._document.createTextNode(rightText);
-      this._replaceNode(node, newNode, rightTextNode);
+      this._replaceNode(targetNode, newNode, rightTextNode);
       return 0;
     }
 
@@ -334,7 +348,7 @@ export class Linkifier {
       // Replace with <textnode><newNode>
       const leftText = fullText.substring(0, substringIndex);
       const leftTextNode = this._document.createTextNode(leftText);
-      this._replaceNode(node, leftTextNode, newNode);
+      this._replaceNode(targetNode, leftTextNode, newNode);
       return 0;
     }
 
@@ -343,7 +357,7 @@ export class Linkifier {
     const leftTextNode = this._document.createTextNode(leftText);
     const rightText = fullText.substring(substringIndex + substring.length);
     const rightTextNode = this._document.createTextNode(rightText);
-    this._replaceNode(node, leftTextNode, newNode, rightTextNode);
+    this._replaceNode(targetNode, leftTextNode, newNode, rightTextNode);
     return 1;
   }
 }
