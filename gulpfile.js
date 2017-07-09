@@ -82,13 +82,13 @@ gulp.task('browserify-addons', ['tsc'], function() {
   let searchOptions = {
     basedir: `${buildDir}/addons/search`,
     debug: true,
-    entries: [`${outDir}/addons/search/Search.js`],
+    entries: [`${outDir}/addons/search/search.js`],
     cache: {},
     packageCache: {}
   };
   let searchBundle = browserify(searchOptions)
         .bundle()
-        .pipe(source('./addons/search/Search.js'))
+        .pipe(source('./addons/search/search.js'))
         .pipe(buffer())
         .pipe(sourcemaps.init({loadMaps: true, sourceRoot: ''}))
         .pipe(sourcemaps.write('./'))
