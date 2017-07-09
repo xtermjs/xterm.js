@@ -44,12 +44,12 @@ describe('SelectionManager', () => {
   beforeEach(() => {
     dom = new jsdom.JSDOM('');
     window = dom.window;
-    document = window.document
+    document = window.document;
     terminal = <any>{ cols: 80, rows: 2 };
     terminal.scrollback = 100;
     terminal.buffers = new BufferSet(terminal);
     terminal.buffer = terminal.buffers.active;
-    bufferLines = terminal.buffer.lines
+    bufferLines = terminal.buffer.lines;
     selectionManager = new TestSelectionManager(terminal, bufferLines, rowContainer, null);
   });
 
