@@ -65,7 +65,7 @@ function terminalToString(term) {
   for (var line = term.ybase; line < term.ybase + term.rows; line++) {
     line_s = '';
     for (var cell=0; cell<term.cols; ++cell) {
-      line_s += term.lines.get(line)[cell][1];
+      line_s += term.buffer.lines.get(line)[cell][1];
     }
     // rtrim empty cells as xterm does
     line_s = line_s.replace(/\s+$/, '');
