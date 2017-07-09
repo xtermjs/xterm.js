@@ -7,21 +7,19 @@ import { ICharMeasure, ITerminal } from '../Interfaces';
 import { CharMeasure } from './CharMeasure';
 
 describe('CharMeasure', () => {
+  let dom: jsdom.JSDOM;
   let window: Window;
   let document: Document;
-
   let container: HTMLElement;
   let charMeasure: ICharMeasure;
 
-  beforeEach(done => {
-    jsdom.env('', (err, w) => {
-      window = w;
-      document = window.document;
-      container = document.createElement('div');
-      document.body.appendChild(container);
-      charMeasure = new CharMeasure(document, container);
-      done();
-    });
+  beforeEach(() => {
+    dom = new jsdom.JSDOM('');
+    window = dom.window;
+    document = window.document;
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    charMeasure = new CharMeasure(document, container);
   });
 
   describe('measure', () => {

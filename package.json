@@ -1,7 +1,7 @@
 {
   "name": "xterm",
   "description": "Full xterm terminal, in your browser",
-  "version": "2.8.0",
+  "version": "2.8.1",
   "ignore": [
     "demo",
     "test",
@@ -36,7 +36,7 @@
   ],
   "devDependencies": {
     "@types/chai": "^3.4.34",
-    "@types/jsdom": "^2.0.30",
+    "@types/jsdom": "^11.0.1",
     "@types/mocha": "^2.2.33",
     "@types/node": "^6.0.41",
     "browserify": "^13.1.0",
@@ -54,11 +54,10 @@
     "gulp-sourcemaps": "1.9.1",
     "gulp-typescript": "^3.1.3",
     "jsdoc": "3.4.3",
-    "jsdom": "^9.11.0",
+    "jsdom": "^11.1.0",
     "merge-stream": "^1.0.1",
     "node-pty": "^0.4.1",
     "nodemon": "1.10.2",
-    "sleep": "^3.0.1",
     "sorcery": "^0.10.0",
     "tslint": "^4.0.2",
     "typescript": "~2.2.0",
