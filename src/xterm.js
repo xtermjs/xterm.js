@@ -419,6 +419,15 @@ Terminal.prototype.setOption = function(key, value) {
   }
   switch (key) {
     case 'scrollback':
+      if (value < this.rows) {
+        let msg = 'Setting the scrollback value less than the number of rows ';
+
+        msg += `(${this.rows}) is not allowed.`;
+
+        console.warn(msg);
+        return false;
+      }
+
       if (this.options[key] !== value) {
         if (this.lines.length > value) {
           const amountToTrim = this.lines.length - value;
@@ -652,7 +661,6 @@ Terminal.prototype.open = function(parent, focus) {
   this.element.classList.add('xterm-theme-' + this.theme);
   this.setCursorBlinking(this.options.cursorBlink);
 
-  this.element.style.height;
   this.element.setAttribute('tabindex', 0);
 
   this.viewportElement = document.createElement('div');
@@ -1087,6 +1095,18 @@ Terminal.prototype.bindMouse = function() {
     self.viewport.onWheel(ev);
     return self.cancel(ev);
   });
+
+  on(el, 'touchstart', function(ev) {
+    if (self.mouseEvents) return;
+    self.viewport.onTouchStart(ev);
+    return self.cancel(ev);
+  });
+
+  on(el, 'touchmove', function(ev) {
+    if (self.mouseEvents) return;
+    self.viewport.onTouchMove(ev);
+    return self.cancel(ev);
+  });
 };
 
 /**
@@ -1127,7 +1147,7 @@ Terminal.prototype.queueLinkification = function(start, end) {
       this.linkifier.linkifyRow(i);
     }
   }
-}
+};
 
 /**
  * Display the cursor element
@@ -1238,25 +1258,25 @@ Terminal.prototype.scrollDisp = function(disp, suppressScrollEvent) {
  */
 Terminal.prototype.scrollPages = function(pageCount) {
   this.scrollDisp(pageCount * (this.rows - 1));
-}
+};
 
 /**
  * Scrolls the display of the terminal to the top.
  */
 Terminal.prototype.scrollToTop = function() {
   this.scrollDisp(-this.ydisp);
-}
+};
 
 /**
  * Scrolls the display of the terminal to the bottom.
  */
 Terminal.prototype.scrollToBottom = function() {
   this.scrollDisp(this.ybase - this.ydisp);
-}
+};
 
 /**
  * Writes text to the terminal.
- * @param {string} text The text to write to the terminal.
+ * @param {string} data The text to write to the terminal.
  */
 Terminal.prototype.write = function(data) {
   this.writeBuffer.push(data);
@@ -1280,7 +1300,7 @@ Terminal.prototype.write = function(data) {
       self.innerWrite();
     });
   }
-}
+};
 
 Terminal.prototype.innerWrite = function() {
   var writeBatch = this.writeBuffer.splice(0, WRITE_BATCH_SIZE);
@@ -1322,7 +1342,7 @@ Terminal.prototype.innerWrite = function() {
 
 /**
  * Writes text to the terminal, followed by a break line character (\n).
- * @param {string} text The text to write to the terminal.
+ * @param {string} data The text to write to the terminal.
  */
 Terminal.prototype.writeln = function(data) {
   this.write(data + '\r\n');
@@ -1338,25 +1358,25 @@ Terminal.prototype.attachCustomKeydownHandler = function(customKeydownHandler) {
   let message = 'attachCustomKeydownHandler() is DEPRECATED and will be removed soon. Please use attachCustomKeyEventHandler() instead.';
   console.warn(message);
   this.attachCustomKeyEventHandler(customKeydownHandler);
-}
+};
 
 /**
  * Attaches a custom key event handler which is run before keys are processed, giving consumers of
  * xterm.js ultimate control as to what keys should be processed by the terminal and what keys
  * should not.
- * @param {function} customKeypressHandler The custom KeyboardEvent handler to attach. This is a
+ * @param {function} customKeyEventHandler The custom KeyboardEvent handler to attach. This is a
  *   function that takes a KeyboardEvent, allowing consumers to stop propogation and/or prevent
  *   the default action. The function returns whether the event should be processed by xterm.js.
  */
 Terminal.prototype.attachCustomKeyEventHandler = function(customKeyEventHandler) {
   this.customKeyEventHandler = customKeyEventHandler;
-}
+};
 
 /**
  * Attaches a http(s) link handler, forcing web links to behave differently to
  * regular <a> tags. This will trigger a refresh as links potentially need to be
  * reconstructed. Calling this with null will remove the handler.
- * @param {LinkHandler} handler The handler callback function.
+ * @param {LinkMatcherHandler} handler The handler callback function.
  */
 Terminal.prototype.setHypertextLinkHandler = function(handler) {
   if (!this.linkifier) {
@@ -1365,7 +1385,7 @@ Terminal.prototype.setHypertextLinkHandler = function(handler) {
   this.linkifier.setHypertextLinkHandler(handler);
   // Refresh to force links to refresh
   this.refresh(0, this.rows - 1);
-}
+};
 
 /**
  * Attaches a validation callback for hypertext links. This is useful to use
@@ -1373,14 +1393,14 @@ Terminal.prototype.setHypertextLinkHandler = function(handler) {
  * @param {LinkMatcherValidationCallback} callback The callback to use, this can
  * be cleared with null.
  */
-Terminal.prototype.setHypertextValidationCallback = function(handler) {
+Terminal.prototype.setHypertextValidationCallback = function(callback) {
   if (!this.linkifier) {
     throw new Error('Cannot attach a hypertext validation callback before Terminal.open is called');
   }
-  this.linkifier.setHypertextValidationCallback(handler);
+  this.linkifier.setHypertextValidationCallback(callback);
   // Refresh to force links to refresh
   this.refresh(0, this.rows - 1);
-}
+};
 
 /**
    * Registers a link matcher, allowing custom link patterns to be matched and
@@ -1388,7 +1408,7 @@ Terminal.prototype.setHypertextValidationCallback = function(handler) {
    * @param {RegExp} regex The regular expression to search for, specifically
    * this searches the textContent of the rows. You will want to use \s to match
    * a space ' ' character for example.
-   * @param {LinkHandler} handler The callback when the link is called.
+   * @param {LinkMatcherHandler} handler The callback when the link is called.
    * @param {LinkMatcherOptions} [options] Options for the link matcher.
    * @return {number} The ID of the new matcher, this can be used to deregister.
  */
@@ -1398,7 +1418,7 @@ Terminal.prototype.registerLinkMatcher = function(regex, handler, options) {
     this.refresh(0, this.rows - 1);
     return matcherId;
   }
-}
+};
 
 /**
  * Deregisters a link matcher if it has been registered.
@@ -1410,14 +1430,14 @@ Terminal.prototype.deregisterLinkMatcher = function(matcherId) {
       this.refresh(0, this.rows - 1);
     }
   }
-}
+};
 
 /**
  * Gets whether the terminal has an active selection.
  */
 Terminal.prototype.hasSelection = function() {
   return this.selectionManager.hasSelection;
-}
+};
 
 /**
  * Gets the terminal's current selection, this is useful for implementing copy
@@ -1425,21 +1445,21 @@ Terminal.prototype.hasSelection = function() {
  */
 Terminal.prototype.getSelection = function() {
   return this.selectionManager.selectionText;
-}
+};
 
 /**
  * Clears the current terminal selection.
  */
 Terminal.prototype.clearSelection = function() {
   this.selectionManager.clearSelection();
-}
+};
 
 /**
  * Selects all text within the terminal.
  */
 Terminal.prototype.selectAll = function() {
   this.selectionManager.selectAll();
-}
+};
 
 /**
  * Handle a keydown event
@@ -1907,6 +1927,10 @@ Terminal.prototype.resize = function(x, y) {
     return;
   }
 
+  if (y > this.getOption('scrollback')) {
+    this.setOption('scrollback', y)
+  }
+
   var line
   , el
   , i
@@ -1948,7 +1972,7 @@ Terminal.prototype.resize = function(x, y) {
           // There is room above the buffer and there are no empty elements below the line,
           // scroll up
           this.ybase--;
-          addToY++
+          addToY++;
           if (this.ydisp > 0) {
             // Viewport is at the top of the buffer, must increase downwards
             this.ydisp--;
