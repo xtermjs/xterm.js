@@ -43,7 +43,7 @@ const CLEAR_MOUSE_DISTANCE = 10;
  * A string containing all characters that are considered word separated by the
  * double click to select work logic.
  */
-const WORD_SEPARATORS = ' ()[]{}:\'"';
+const WORD_SEPARATORS = ' ()[]{}\'"';
 
 // TODO: Move these constants elsewhere, they belong in a buffer or buffer
 //       data/line class.
@@ -179,6 +179,7 @@ export class SelectionManager extends EventEmitter {
    */
   public setBuffer(buffer: CircularList<any>): void {
     this._buffer = buffer;
+    this.clearSelection();
   }
 
   public get selectionStart(): [number, number] { return this._model.finalSelectionStart; }
@@ -237,7 +238,7 @@ export class SelectionManager extends EventEmitter {
     // and joining the array into a multi-line string.
     const formattedResult = result.map(line => {
       return line.replace(ALL_NON_BREAKING_SPACE_REGEX, ' ');
-    }).join('\n');
+    }).join(Browser.isMSWindows ? '\r\n' : '\n');
 
     return formattedResult;
   }

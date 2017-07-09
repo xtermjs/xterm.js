@@ -200,7 +200,8 @@ export class Renderer {
             }
             currentElement = this._spanElementObjectPool.acquire();
             if (data === -1) {
-              currentElement.classList.add('reverse-video', 'terminal-cursor');
+              currentElement.classList.add('reverse-video');
+              currentElement.classList.add('terminal-cursor');
             } else {
               let bg = data & 0x1ff;
               let fg = (data >> 9) & 0x1ff;

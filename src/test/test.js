@@ -55,6 +55,11 @@ describe('xterm.js', function() {
     it('should throw when setting a non-existant option', function() {
       assert.throws(xterm.setOption.bind(xterm, 'fake', true));
     });
+    it('should not allow scrollback less than number of rows', function() {
+      let setOptionCall = xterm.setOption.bind(xterm, 'scrollback', xterm.rows - 1);
+
+      assert.equal(setOptionCall(), false);
+    });
   });
 
   describe('clear', function() {

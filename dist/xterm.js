@@ -428,7 +428,10 @@ var InputHandler = (function () {
                     this._terminal.y++;
                     if (this._terminal.y > this._terminal.scrollBottom) {
                         this._terminal.y--;
-                        this._terminal.scroll();
+                        this._terminal.scroll(true);
+                    }
+                    else {
+                        this._terminal.lines.get(this._terminal.y).isWrapped = true;
                     }
                 }
                 else {
@@ -442,8 +445,9 @@ var InputHandler = (function () {
                     var removed = this._terminal.lines.get(this._terminal.y + this._terminal.ybase).pop();
                     if (removed[2] === 0
                         && this._terminal.lines.get(row)[this._terminal.cols - 2]
-                        && this._terminal.lines.get(row)[this._terminal.cols - 2][2] === 2)
+                        && this._terminal.lines.get(row)[this._terminal.cols - 2][2] === 2) {
                         this._terminal.lines.get(row)[this._terminal.cols - 2] = [this._terminal.curAttr, ' ', 1];
+                    }
                     this._terminal.lines.get(row).splice(this._terminal.x, 0, [this._terminal.curAttr, ' ', 1]);
                 }
             }
@@ -907,7 +911,8 @@ var InputHandler = (function () {
                     this._terminal.vt200Mouse = params[0] === 1000;
                     this._terminal.normalMouse = params[0] > 1000;
                     this._terminal.mouseEvents = true;
-                    this._terminal.element.style.cursor = 'default';
+                    this._terminal.element.classList.add('enable-mouse-events');
+                    this._terminal.selectionManager.disable();
                     this._terminal.log('Binding to mouse events.');
                     break;
                 case 1004:
@@ -997,7 +1002,8 @@ var InputHandler = (function () {
                     this._terminal.vt200Mouse = false;
                     this._terminal.normalMouse = false;
                     this._terminal.mouseEvents = false;
-                    this._terminal.element.style.cursor = '';
+                    this._terminal.element.classList.remove('enable-mouse-events');
+                    this._terminal.selectionManager.enable();
                     break;
                 case 1004:
                     this._terminal.sendFocus = false;
@@ -1028,6 +1034,7 @@ var InputHandler = (function () {
                         this._terminal.scrollBottom = this._terminal.normal.scrollBottom;
                         this._terminal.tabs = this._terminal.normal.tabs;
                         this._terminal.normal = null;
+                        this._terminal.selectionManager.setBuffer(this._terminal.lines);
                         this._terminal.refresh(0, this._terminal.rows - 1);
                         this._terminal.viewport.syncScrollArea();
                         this._terminal.showCursor();
@@ -1468,6 +1475,16 @@ var Linkifier = (function () {
                         element.appendChild(linkElement);
                     }
                 }
+                else if (node.childNodes.length > 1) {
+                    for (var j = 0; j < node.childNodes.length; j++) {
+                        var childNode = node.childNodes[j];
+                        var childSearchIndex = childNode.textContent.indexOf(uri);
+                        if (childSearchIndex !== -1) {
+                            this._replaceNodeSubstringWithNode(childNode, linkElement, uri, childSearchIndex);
+                            break;
+                        }
+                    }
+                }
                 else {
                     var nodesAdded = this._replaceNodeSubstringWithNode(node, linkElement, uri, searchIndex);
                     i += nodesAdded;
@@ -1518,31 +1535,30 @@ var Linkifier = (function () {
         parent.removeChild(oldNode);
     };
     Linkifier.prototype._replaceNodeSubstringWithNode = function (targetNode, newNode, substring, substringIndex) {
-        var node = targetNode;
-        if (node.nodeType !== 3) {
-            node = node.childNodes[0];
+        if (targetNode.childNodes.length === 1) {
+            targetNode = targetNode.childNodes[0];
         }
-        if (node.childNodes.length === 0 && node.nodeType !== 3) {
+        if (targetNode.nodeType !== 3) {
             throw new Error('targetNode must be a text node or only contain a single text node');
         }
-        var fullText = node.textContent;
+        var fullText = targetNode.textContent;
         if (substringIndex === 0) {
             var rightText_1 = fullText.substring(substring.length);
             var rightTextNode_1 = this._document.createTextNode(rightText_1);
-            this._replaceNode(node, newNode, rightTextNode_1);
+            this._replaceNode(targetNode, newNode, rightTextNode_1);
             return 0;
         }
         if (substringIndex === targetNode.textContent.length - substring.length) {
             var leftText_1 = fullText.substring(0, substringIndex);
             var leftTextNode_1 = this._document.createTextNode(leftText_1);
-            this._replaceNode(node, leftTextNode_1, newNode);
+            this._replaceNode(targetNode, leftTextNode_1, newNode);
             return 0;
         }
         var leftText = fullText.substring(0, substringIndex);
         var leftTextNode = this._document.createTextNode(leftText);
         var rightText = fullText.substring(substringIndex + substring.length);
         var rightTextNode = this._document.createTextNode(rightText);
-        this._replaceNode(node, leftTextNode, newNode, rightTextNode);
+        this._replaceNode(targetNode, leftTextNode, newNode, rightTextNode);
         return 1;
     };
     return Linkifier;
@@ -2161,7 +2177,8 @@ var Renderer = (function () {
                         }
                         currentElement = this._spanElementObjectPool.acquire();
                         if (data === -1) {
-                            currentElement.classList.add('reverse-video', 'terminal-cursor');
+                            currentElement.classList.add('reverse-video');
+                            currentElement.classList.add('terminal-cursor');
                         }
                         else {
                             var bg = data & 0x1ff;
@@ -2257,6 +2274,41 @@ var Renderer = (function () {
         this._terminal.emit('refresh', { element: this._terminal.element, start: start, end: end });
     };
     ;
+    Renderer.prototype.refreshSelection = function (start, end) {
+        while (this._terminal.selectionContainer.children.length) {
+            this._terminal.selectionContainer.removeChild(this._terminal.selectionContainer.children[0]);
+        }
+        if (!start || !end) {
+            return;
+        }
+        var viewportStartRow = start[1] - this._terminal.ydisp;
+        var viewportEndRow = end[1] - this._terminal.ydisp;
+        var viewportCappedStartRow = Math.max(viewportStartRow, 0);
+        var viewportCappedEndRow = Math.min(viewportEndRow, this._terminal.rows - 1);
+        if (viewportCappedStartRow >= this._terminal.rows || viewportCappedEndRow < 0) {
+            return;
+        }
+        var documentFragment = document.createDocumentFragment();
+        var startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
+        var endCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : this._terminal.cols;
+        documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow, startCol, endCol));
+        var middleRowsCount = viewportCappedEndRow - viewportCappedStartRow - 1;
+        documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow + 1, 0, this._terminal.cols, middleRowsCount));
+        if (viewportCappedStartRow !== viewportCappedEndRow) {
+            var endCol_1 = viewportEndRow === viewportCappedEndRow ? end[0] : this._terminal.cols;
+            documentFragment.appendChild(this._createSelectionElement(viewportCappedEndRow, 0, endCol_1));
+        }
+        this._terminal.selectionContainer.appendChild(documentFragment);
+    };
+    Renderer.prototype._createSelectionElement = function (row, colStart, colEnd, rowCount) {
+        if (rowCount === void 0) { rowCount = 1; }
+        var element = document.createElement('div');
+        element.style.height = rowCount * this._terminal.charMeasure.height + "px";
+        element.style.top = row * this._terminal.charMeasure.height + "px";
+        element.style.left = colStart * this._terminal.charMeasure.width + "px";
+        element.style.width = this._terminal.charMeasure.width * (colEnd - colStart) + "px";
+        return element;
+    };
     return Renderer;
 }());
 exports.Renderer = Renderer;
@@ -2276,7 +2328,490 @@ function checkBoldBroken(terminal) {
 
 
 
-},{"./utils/DomElementObjectPool":14}],9:[function(require,module,exports){
+},{"./utils/DomElementObjectPool":16}],9:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var Mouse = require("./utils/Mouse");
+var Browser = require("./utils/Browser");
+var EventEmitter_1 = require("./EventEmitter");
+var SelectionModel_1 = require("./SelectionModel");
+var DRAG_SCROLL_MAX_THRESHOLD = 50;
+var DRAG_SCROLL_MAX_SPEED = 15;
+var DRAG_SCROLL_INTERVAL = 50;
+var CLEAR_MOUSE_DOWN_TIME = 400;
+var CLEAR_MOUSE_DISTANCE = 10;
+var WORD_SEPARATORS = ' ()[]{}\'"';
+var LINE_DATA_CHAR_INDEX = 1;
+var LINE_DATA_WIDTH_INDEX = 2;
+var NON_BREAKING_SPACE_CHAR = String.fromCharCode(160);
+var ALL_NON_BREAKING_SPACE_REGEX = new RegExp(NON_BREAKING_SPACE_CHAR, 'g');
+var SelectionMode;
+(function (SelectionMode) {
+    SelectionMode[SelectionMode["NORMAL"] = 0] = "NORMAL";
+    SelectionMode[SelectionMode["WORD"] = 1] = "WORD";
+    SelectionMode[SelectionMode["LINE"] = 2] = "LINE";
+})(SelectionMode || (SelectionMode = {}));
+var SelectionManager = (function (_super) {
+    __extends(SelectionManager, _super);
+    function SelectionManager(_terminal, _buffer, _rowContainer, _charMeasure) {
+        var _this = _super.call(this) || this;
+        _this._terminal = _terminal;
+        _this._buffer = _buffer;
+        _this._rowContainer = _rowContainer;
+        _this._charMeasure = _charMeasure;
+        _this._initListeners();
+        _this.enable();
+        _this._model = new SelectionModel_1.SelectionModel(_terminal);
+        _this._lastMouseDownTime = 0;
+        _this._activeSelectionMode = SelectionMode.NORMAL;
+        return _this;
+    }
+    SelectionManager.prototype._initListeners = function () {
+        var _this = this;
+        this._bufferTrimListener = function (amount) { return _this._onTrim(amount); };
+        this._mouseMoveListener = function (event) { return _this._onMouseMove(event); };
+        this._mouseDownListener = function (event) { return _this._onMouseDown(event); };
+        this._mouseUpListener = function (event) { return _this._onMouseUp(event); };
+    };
+    SelectionManager.prototype.disable = function () {
+        this.clearSelection();
+        this._buffer.off('trim', this._bufferTrimListener);
+        this._rowContainer.removeEventListener('mousedown', this._mouseDownListener);
+    };
+    SelectionManager.prototype.enable = function () {
+        this._buffer.on('trim', this._bufferTrimListener);
+        this._rowContainer.addEventListener('mousedown', this._mouseDownListener);
+    };
+    SelectionManager.prototype.setBuffer = function (buffer) {
+        this._buffer = buffer;
+        this.clearSelection();
+    };
+    Object.defineProperty(SelectionManager.prototype, "hasSelection", {
+        get: function () {
+            var start = this._model.finalSelectionStart;
+            var end = this._model.finalSelectionEnd;
+            if (!start || !end) {
+                return false;
+            }
+            return start[0] !== end[0] || start[1] !== end[1];
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(SelectionManager.prototype, "selectionText", {
+        get: function () {
+            var start = this._model.finalSelectionStart;
+            var end = this._model.finalSelectionEnd;
+            if (!start || !end) {
+                return '';
+            }
+            var startRowEndCol = start[1] === end[1] ? end[0] : null;
+            var result = [];
+            result.push(this._translateBufferLineToString(this._buffer.get(start[1]), true, start[0], startRowEndCol));
+            for (var i = start[1] + 1; i <= end[1] - 1; i++) {
+                var bufferLine = this._buffer.get(i);
+                var lineText = this._translateBufferLineToString(bufferLine, true);
+                if (bufferLine.isWrapped) {
+                    result[result.length - 1] += lineText;
+                }
+                else {
+                    result.push(lineText);
+                }
+            }
+            if (start[1] !== end[1]) {
+                var bufferLine = this._buffer.get(end[1]);
+                var lineText = this._translateBufferLineToString(bufferLine, true, 0, end[0]);
+                if (bufferLine.isWrapped) {
+                    result[result.length - 1] += lineText;
+                }
+                else {
+                    result.push(lineText);
+                }
+            }
+            var formattedResult = result.map(function (line) {
+                return line.replace(ALL_NON_BREAKING_SPACE_REGEX, ' ');
+            }).join(Browser.isMSWindows ? '\r\n' : '\n');
+            return formattedResult;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    SelectionManager.prototype.clearSelection = function () {
+        this._model.clearSelection();
+        this._removeMouseDownListeners();
+        this.refresh();
+    };
+    SelectionManager.prototype._translateBufferLineToString = function (line, trimRight, startCol, endCol) {
+        if (startCol === void 0) { startCol = 0; }
+        if (endCol === void 0) { endCol = null; }
+        var lineString = '';
+        var widthAdjustedStartCol = startCol;
+        var widthAdjustedEndCol = endCol;
+        for (var i = 0; i < line.length; i++) {
+            var char = line[i];
+            lineString += char[LINE_DATA_CHAR_INDEX];
+            if (char[LINE_DATA_WIDTH_INDEX] === 0) {
+                if (startCol >= i) {
+                    widthAdjustedStartCol--;
+                }
+                if (endCol >= i) {
+                    widthAdjustedEndCol--;
+                }
+            }
+        }
+        var finalEndCol = widthAdjustedEndCol || line.length;
+        if (trimRight) {
+            var rightWhitespaceIndex = lineString.search(/\s+$/);
+            if (rightWhitespaceIndex !== -1) {
+                finalEndCol = Math.min(finalEndCol, rightWhitespaceIndex);
+            }
+            if (finalEndCol <= widthAdjustedStartCol) {
+                return '';
+            }
+        }
+        return lineString.substring(widthAdjustedStartCol, finalEndCol);
+    };
+    SelectionManager.prototype.refresh = function (isNewSelection) {
+        var _this = this;
+        if (!this._refreshAnimationFrame) {
+            this._refreshAnimationFrame = window.requestAnimationFrame(function () { return _this._refresh(); });
+        }
+        if (Browser.isLinux && isNewSelection) {
+            var selectionText = this.selectionText;
+            if (selectionText.length) {
+                this.emit('newselection', this.selectionText);
+            }
+        }
+    };
+    SelectionManager.prototype._refresh = function () {
+        this._refreshAnimationFrame = null;
+        this.emit('refresh', { start: this._model.finalSelectionStart, end: this._model.finalSelectionEnd });
+    };
+    SelectionManager.prototype.selectAll = function () {
+        this._model.isSelectAllActive = true;
+        this.refresh();
+    };
+    SelectionManager.prototype._onTrim = function (amount) {
+        var needsRefresh = this._model.onTrim(amount);
+        if (needsRefresh) {
+            this.refresh();
+        }
+    };
+    SelectionManager.prototype._getMouseBufferCoords = function (event) {
+        var coords = Mouse.getCoords(event, this._rowContainer, this._charMeasure, this._terminal.cols, this._terminal.rows, true);
+        coords[0]--;
+        coords[1]--;
+        coords[1] += this._terminal.ydisp;
+        return coords;
+    };
+    SelectionManager.prototype._getMouseEventScrollAmount = function (event) {
+        var offset = Mouse.getCoordsRelativeToElement(event, this._rowContainer)[1];
+        var terminalHeight = this._terminal.rows * this._charMeasure.height;
+        if (offset >= 0 && offset <= terminalHeight) {
+            return 0;
+        }
+        if (offset > terminalHeight) {
+            offset -= terminalHeight;
+        }
+        offset = Math.min(Math.max(offset, -DRAG_SCROLL_MAX_THRESHOLD), DRAG_SCROLL_MAX_THRESHOLD);
+        offset /= DRAG_SCROLL_MAX_THRESHOLD;
+        return (offset / Math.abs(offset)) + Math.round(offset * (DRAG_SCROLL_MAX_SPEED - 1));
+    };
+    SelectionManager.prototype._onMouseDown = function (event) {
+        if (event.button !== 0) {
+            return;
+        }
+        event.preventDefault();
+        this._dragScrollAmount = 0;
+        this._setMouseClickCount(event);
+        if (event.shiftKey) {
+            this._onShiftClick(event);
+        }
+        else {
+            if (this._clickCount === 1) {
+                this._onSingleClick(event);
+            }
+            else if (this._clickCount === 2) {
+                this._onDoubleClick(event);
+            }
+            else if (this._clickCount === 3) {
+                this._onTripleClick(event);
+            }
+        }
+        this._addMouseDownListeners();
+        this.refresh(true);
+    };
+    SelectionManager.prototype._addMouseDownListeners = function () {
+        var _this = this;
+        this._rowContainer.ownerDocument.addEventListener('mousemove', this._mouseMoveListener);
+        this._rowContainer.ownerDocument.addEventListener('mouseup', this._mouseUpListener);
+        this._dragScrollIntervalTimer = setInterval(function () { return _this._dragScroll(); }, DRAG_SCROLL_INTERVAL);
+    };
+    SelectionManager.prototype._removeMouseDownListeners = function () {
+        this._rowContainer.ownerDocument.removeEventListener('mousemove', this._mouseMoveListener);
+        this._rowContainer.ownerDocument.removeEventListener('mouseup', this._mouseUpListener);
+        clearInterval(this._dragScrollIntervalTimer);
+        this._dragScrollIntervalTimer = null;
+    };
+    SelectionManager.prototype._onShiftClick = function (event) {
+        if (this._model.selectionStart) {
+            this._model.selectionEnd = this._getMouseBufferCoords(event);
+        }
+    };
+    SelectionManager.prototype._onSingleClick = function (event) {
+        this._model.selectionStartLength = 0;
+        this._model.isSelectAllActive = false;
+        this._activeSelectionMode = SelectionMode.NORMAL;
+        this._model.selectionStart = this._getMouseBufferCoords(event);
+        if (this._model.selectionStart) {
+            this._model.selectionEnd = null;
+            var char = this._buffer.get(this._model.selectionStart[1])[this._model.selectionStart[0]];
+            if (char[LINE_DATA_WIDTH_INDEX] === 0) {
+                this._model.selectionStart[0]++;
+            }
+        }
+    };
+    SelectionManager.prototype._onDoubleClick = function (event) {
+        var coords = this._getMouseBufferCoords(event);
+        if (coords) {
+            this._activeSelectionMode = SelectionMode.WORD;
+            this._selectWordAt(coords);
+        }
+    };
+    SelectionManager.prototype._onTripleClick = function (event) {
+        var coords = this._getMouseBufferCoords(event);
+        if (coords) {
+            this._activeSelectionMode = SelectionMode.LINE;
+            this._selectLineAt(coords[1]);
+        }
+    };
+    SelectionManager.prototype._setMouseClickCount = function (event) {
+        var currentTime = (new Date()).getTime();
+        if (currentTime - this._lastMouseDownTime > CLEAR_MOUSE_DOWN_TIME || this._distanceFromLastMousePosition(event) > CLEAR_MOUSE_DISTANCE) {
+            this._clickCount = 0;
+        }
+        this._lastMouseDownTime = currentTime;
+        this._lastMousePosition = [event.pageX, event.pageY];
+        this._clickCount++;
+    };
+    SelectionManager.prototype._distanceFromLastMousePosition = function (event) {
+        var result = Math.max(Math.abs(this._lastMousePosition[0] - event.pageX), Math.abs(this._lastMousePosition[1] - event.pageY));
+        return result;
+    };
+    SelectionManager.prototype._onMouseMove = function (event) {
+        var previousSelectionEnd = this._model.selectionEnd ? [this._model.selectionEnd[0], this._model.selectionEnd[1]] : null;
+        this._model.selectionEnd = this._getMouseBufferCoords(event);
+        if (this._activeSelectionMode === SelectionMode.LINE) {
+            if (this._model.selectionEnd[1] < this._model.selectionStart[1]) {
+                this._model.selectionEnd[0] = 0;
+            }
+            else {
+                this._model.selectionEnd[0] = this._terminal.cols;
+            }
+        }
+        else if (this._activeSelectionMode === SelectionMode.WORD) {
+            this._selectToWordAt(this._model.selectionEnd);
+        }
+        this._dragScrollAmount = this._getMouseEventScrollAmount(event);
+        if (this._dragScrollAmount > 0) {
+            this._model.selectionEnd[0] = this._terminal.cols - 1;
+        }
+        else if (this._dragScrollAmount < 0) {
+            this._model.selectionEnd[0] = 0;
+        }
+        if (this._model.selectionEnd[1] < this._buffer.length) {
+            var char = this._buffer.get(this._model.selectionEnd[1])[this._model.selectionEnd[0]];
+            if (char && char[2] === 0) {
+                this._model.selectionEnd[0]++;
+            }
+        }
+        if (!previousSelectionEnd ||
+            previousSelectionEnd[0] !== this._model.selectionEnd[0] ||
+            previousSelectionEnd[1] !== this._model.selectionEnd[1]) {
+            this.refresh(true);
+        }
+    };
+    SelectionManager.prototype._dragScroll = function () {
+        if (this._dragScrollAmount) {
+            this._terminal.scrollDisp(this._dragScrollAmount, false);
+            if (this._dragScrollAmount > 0) {
+                this._model.selectionEnd = [this._terminal.cols - 1, this._terminal.ydisp + this._terminal.rows];
+            }
+            else {
+                this._model.selectionEnd = [0, this._terminal.ydisp];
+            }
+            this.refresh();
+        }
+    };
+    SelectionManager.prototype._onMouseUp = function (event) {
+        this._removeMouseDownListeners();
+    };
+    SelectionManager.prototype._convertViewportColToCharacterIndex = function (bufferLine, coords) {
+        var charIndex = coords[0];
+        for (var i = 0; coords[0] >= i; i++) {
+            var char = bufferLine[i];
+            if (char[LINE_DATA_WIDTH_INDEX] === 0) {
+                charIndex--;
+            }
+        }
+        return charIndex;
+    };
+    SelectionManager.prototype._getWordAt = function (coords) {
+        var bufferLine = this._buffer.get(coords[1]);
+        var line = this._translateBufferLineToString(bufferLine, false);
+        var endIndex = this._convertViewportColToCharacterIndex(bufferLine, coords);
+        var startIndex = endIndex;
+        var charOffset = coords[0] - startIndex;
+        var leftWideCharCount = 0;
+        var rightWideCharCount = 0;
+        if (line.charAt(startIndex) === ' ') {
+            while (startIndex > 0 && line.charAt(startIndex - 1) === ' ') {
+                startIndex--;
+            }
+            while (endIndex < line.length && line.charAt(endIndex + 1) === ' ') {
+                endIndex++;
+            }
+        }
+        else {
+            var startCol = coords[0];
+            var endCol = coords[0];
+            if (bufferLine[startCol][LINE_DATA_WIDTH_INDEX] === 0) {
+                leftWideCharCount++;
+                startCol--;
+            }
+            if (bufferLine[endCol][LINE_DATA_WIDTH_INDEX] === 2) {
+                rightWideCharCount++;
+                endCol++;
+            }
+            while (startIndex > 0 && !this._isCharWordSeparator(line.charAt(startIndex - 1))) {
+                if (bufferLine[startCol - 1][LINE_DATA_WIDTH_INDEX] === 0) {
+                    leftWideCharCount++;
+                    startCol--;
+                }
+                startIndex--;
+                startCol--;
+            }
+            while (endIndex + 1 < line.length && !this._isCharWordSeparator(line.charAt(endIndex + 1))) {
+                if (bufferLine[endCol + 1][LINE_DATA_WIDTH_INDEX] === 2) {
+                    rightWideCharCount++;
+                    endCol++;
+                }
+                endIndex++;
+                endCol++;
+            }
+        }
+        var start = startIndex + charOffset - leftWideCharCount;
+        var length = Math.min(endIndex - startIndex + leftWideCharCount + rightWideCharCount + 1, this._terminal.cols);
+        return { start: start, length: length };
+    };
+    SelectionManager.prototype._selectWordAt = function (coords) {
+        var wordPosition = this._getWordAt(coords);
+        this._model.selectionStart = [wordPosition.start, coords[1]];
+        this._model.selectionStartLength = wordPosition.length;
+    };
+    SelectionManager.prototype._selectToWordAt = function (coords) {
+        var wordPosition = this._getWordAt(coords);
+        this._model.selectionEnd = [this._model.areSelectionValuesReversed() ? wordPosition.start : (wordPosition.start + wordPosition.length), coords[1]];
+    };
+    SelectionManager.prototype._isCharWordSeparator = function (char) {
+        return WORD_SEPARATORS.indexOf(char) >= 0;
+    };
+    SelectionManager.prototype._selectLineAt = function (line) {
+        this._model.selectionStart = [0, line];
+        this._model.selectionStartLength = this._terminal.cols;
+    };
+    return SelectionManager;
+}(EventEmitter_1.EventEmitter));
+exports.SelectionManager = SelectionManager;
+
+
+
+},{"./EventEmitter":4,"./SelectionModel":10,"./utils/Browser":13,"./utils/Mouse":18}],10:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var SelectionModel = (function () {
+    function SelectionModel(_terminal) {
+        this._terminal = _terminal;
+        this.clearSelection();
+    }
+    SelectionModel.prototype.clearSelection = function () {
+        this.selectionStart = null;
+        this.selectionEnd = null;
+        this.isSelectAllActive = false;
+        this.selectionStartLength = 0;
+    };
+    Object.defineProperty(SelectionModel.prototype, "finalSelectionStart", {
+        get: function () {
+            if (this.isSelectAllActive) {
+                return [0, 0];
+            }
+            if (!this.selectionEnd || !this.selectionStart) {
+                return this.selectionStart;
+            }
+            return this.areSelectionValuesReversed() ? this.selectionEnd : this.selectionStart;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(SelectionModel.prototype, "finalSelectionEnd", {
+        get: function () {
+            if (this.isSelectAllActive) {
+                return [this._terminal.cols, this._terminal.ybase + this._terminal.rows - 1];
+            }
+            if (!this.selectionStart) {
+                return null;
+            }
+            if (!this.selectionEnd || this.areSelectionValuesReversed()) {
+                return [this.selectionStart[0] + this.selectionStartLength, this.selectionStart[1]];
+            }
+            if (this.selectionStartLength) {
+                if (this.selectionEnd[1] === this.selectionStart[1]) {
+                    return [Math.max(this.selectionStart[0] + this.selectionStartLength, this.selectionEnd[0]), this.selectionEnd[1]];
+                }
+            }
+            return this.selectionEnd;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    SelectionModel.prototype.areSelectionValuesReversed = function () {
+        var start = this.selectionStart;
+        var end = this.selectionEnd;
+        return start[1] > end[1] || (start[1] === end[1] && start[0] > end[0]);
+    };
+    SelectionModel.prototype.onTrim = function (amount) {
+        if (this.selectionStart) {
+            this.selectionStart[1] -= amount;
+        }
+        if (this.selectionEnd) {
+            this.selectionEnd[1] -= amount;
+        }
+        if (this.selectionEnd && this.selectionEnd[1] < 0) {
+            this.clearSelection();
+            return true;
+        }
+        if (this.selectionStart && this.selectionStart[1] < 0) {
+            this.selectionStart[1] = 0;
+        }
+        return false;
+    };
+    return SelectionModel;
+}());
+exports.SelectionModel = SelectionModel;
+
+
+
+},{}],11:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Viewport = (function () {
@@ -2306,6 +2841,7 @@ var Viewport = (function () {
             if (rowHeightChanged || viewportHeightChanged) {
                 this.lastRecordedViewportHeight = this.terminal.rows;
                 this.viewportElement.style.height = this.charMeasure.height * this.terminal.rows + 'px';
+                this.terminal.selectionContainer.style.height = this.viewportElement.style.height;
             }
             this.scrollArea.style.height = (this.charMeasure.height * this.lastRecordedBufferLength) + 'px';
         }
@@ -2348,37 +2884,42 @@ var Viewport = (function () {
         ev.preventDefault();
     };
     ;
+    Viewport.prototype.onTouchStart = function (ev) {
+        this.lastTouchY = ev.touches[0].pageY;
+    };
+    ;
+    Viewport.prototype.onTouchMove = function (ev) {
+        var deltaY = this.lastTouchY - ev.touches[0].pageY;
+        this.lastTouchY = ev.touches[0].pageY;
+        if (deltaY === 0) {
+            return;
+        }
+        this.viewportElement.scrollTop += deltaY;
+        ev.preventDefault();
+    };
+    ;
     return Viewport;
 }());
 exports.Viewport = Viewport;
 
 
 
-},{}],10:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-function prepareTextForClipboard(text) {
-    var space = String.fromCharCode(32), nonBreakingSpace = String.fromCharCode(160), allNonBreakingSpaces = new RegExp(nonBreakingSpace, 'g'), processedText = text.split('\n').map(function (line) {
-        var processedLine = line.replace(/\s+$/g, '').replace(allNonBreakingSpaces, space);
-        return processedLine;
-    }).join('\n');
-    return processedText;
-}
-exports.prepareTextForClipboard = prepareTextForClipboard;
 function prepareTextForTerminal(text, isMSWindows) {
     if (isMSWindows) {
-        return text.replace(/\r?\n/g, '\n');
+        return text.replace(/\r?\n/g, '\r');
     }
     return text;
 }
 exports.prepareTextForTerminal = prepareTextForTerminal;
-function copyHandler(ev, term) {
-    var copiedText = window.getSelection().toString(), text = prepareTextForClipboard(copiedText);
+function copyHandler(ev, term, selectionManager) {
     if (term.browser.isMSIE) {
-        window.clipboardData.setData('Text', text);
+        window.clipboardData.setData('Text', selectionManager.selectionText);
     }
     else {
-        ev.clipboardData.setData('text/plain', text);
+        ev.clipboardData.setData('text/plain', selectionManager.selectionText);
     }
     ev.preventDefault();
 }
@@ -2407,45 +2948,34 @@ function pasteHandler(ev, term) {
     }
 }
 exports.pasteHandler = pasteHandler;
-function rightClickHandler(ev, term) {
-    var s = document.getSelection(), selectedText = prepareTextForClipboard(s.toString()), clickIsOnSelection = false, x = ev.clientX, y = ev.clientY;
-    if (s.rangeCount) {
-        var r = s.getRangeAt(0), cr = r.getClientRects();
-        for (var i = 0; i < cr.length; i++) {
-            var rect = cr[i];
-            clickIsOnSelection = ((x > rect.left) && (x < rect.right) &&
-                (y > rect.top) && (y < rect.bottom));
-            if (clickIsOnSelection) {
-                break;
-            }
-        }
-        if (selectedText.match(/^\s$/) || !selectedText.length) {
-            clickIsOnSelection = false;
-        }
-    }
-    if (!clickIsOnSelection) {
-        term.textarea.style.position = 'fixed';
-        term.textarea.style.width = '20px';
-        term.textarea.style.height = '20px';
-        term.textarea.style.left = (x - 10) + 'px';
-        term.textarea.style.top = (y - 10) + 'px';
-        term.textarea.style.zIndex = '1000';
-        term.textarea.focus();
-        setTimeout(function () {
-            term.textarea.style.position = null;
-            term.textarea.style.width = null;
-            term.textarea.style.height = null;
-            term.textarea.style.left = null;
-            term.textarea.style.top = null;
-            term.textarea.style.zIndex = null;
-        }, 4);
-    }
+function moveTextAreaUnderMouseCursor(ev, textarea) {
+    textarea.style.position = 'fixed';
+    textarea.style.width = '20px';
+    textarea.style.height = '20px';
+    textarea.style.left = (ev.clientX - 10) + 'px';
+    textarea.style.top = (ev.clientY - 10) + 'px';
+    textarea.style.zIndex = '1000';
+    textarea.focus();
+    setTimeout(function () {
+        textarea.style.position = null;
+        textarea.style.width = null;
+        textarea.style.height = null;
+        textarea.style.left = null;
+        textarea.style.top = null;
+        textarea.style.zIndex = null;
+    }, 4);
+}
+exports.moveTextAreaUnderMouseCursor = moveTextAreaUnderMouseCursor;
+function rightClickHandler(ev, textarea, selectionManager) {
+    moveTextAreaUnderMouseCursor(ev, textarea);
+    textarea.value = selectionManager.selectionText;
+    textarea.select();
 }
 exports.rightClickHandler = rightClickHandler;
 
 
 
-},{}],11:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Generic_1 = require("./Generic");
@@ -2458,10 +2988,11 @@ exports.isMac = Generic_1.contains(['Macintosh', 'MacIntel', 'MacPPC', 'Mac68K']
 exports.isIpad = platform === 'iPad';
 exports.isIphone = platform === 'iPhone';
 exports.isMSWindows = Generic_1.contains(['Windows', 'Win16', 'Win32', 'WinCE'], platform);
+exports.isLinux = platform.indexOf('Linux') >= 0;
 
 
 
-},{"./Generic":15}],12:[function(require,module,exports){
+},{"./Generic":17}],14:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -2530,14 +3061,28 @@ exports.CharMeasure = CharMeasure;
 
 
 
-},{"../EventEmitter.js":4}],13:[function(require,module,exports){
+},{"../EventEmitter.js":4}],15:[function(require,module,exports){
 "use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
-var CircularList = (function () {
+var EventEmitter_1 = require("../EventEmitter");
+var CircularList = (function (_super) {
+    __extends(CircularList, _super);
     function CircularList(maxLength) {
-        this._array = new Array(maxLength);
-        this._startIndex = 0;
-        this._length = 0;
+        var _this = _super.call(this) || this;
+        _this._array = new Array(maxLength);
+        _this._startIndex = 0;
+        _this._length = 0;
+        return _this;
     }
     Object.defineProperty(CircularList.prototype, "maxLength", {
         get: function () {
@@ -2571,7 +3116,14 @@ var CircularList = (function () {
     });
     Object.defineProperty(CircularList.prototype, "forEach", {
         get: function () {
-            return this._array.forEach;
+            var _this = this;
+            return function (callbackfn) {
+                var i = 0;
+                var length = _this.length;
+                for (var i_1 = 0; i_1 < length; i_1++) {
+                    callbackfn(_this.get(i_1), i_1);
+                }
+            };
         },
         enumerable: true,
         configurable: true
@@ -2589,6 +3141,7 @@ var CircularList = (function () {
             if (this._startIndex === this.maxLength) {
                 this._startIndex = 0;
             }
+            this.emit('trim', 1);
         }
         else {
             this._length++;
@@ -2616,8 +3169,10 @@ var CircularList = (function () {
                 this._array[this._getCyclicIndex(start + i)] = items[i];
             }
             if (this._length + items.length > this.maxLength) {
-                this._startIndex += (this._length + items.length) - this.maxLength;
+                var countToTrim = (this._length + items.length) - this.maxLength;
+                this._startIndex += countToTrim;
                 this._length = this.maxLength;
+                this.emit('trim', countToTrim);
             }
             else {
                 this._length += items.length;
@@ -2630,6 +3185,7 @@ var CircularList = (function () {
         }
         this._startIndex += count;
         this._length -= count;
+        this.emit('trim', count);
     };
     CircularList.prototype.shiftElements = function (start, count, offset) {
         if (count <= 0) {
@@ -2651,6 +3207,7 @@ var CircularList = (function () {
                 while (this._length > this.maxLength) {
                     this._length--;
                     this._startIndex++;
+                    this.emit('trim', 1);
                 }
             }
         }
@@ -2664,12 +3221,12 @@ var CircularList = (function () {
         return (this._startIndex + index) % this.maxLength;
     };
     return CircularList;
-}());
+}(EventEmitter_1.EventEmitter));
 exports.CircularList = CircularList;
 
 
 
-},{}],14:[function(require,module,exports){
+},{"../EventEmitter":4}],16:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var DomElementObjectPool = (function () {
@@ -2716,7 +3273,7 @@ exports.DomElementObjectPool = DomElementObjectPool;
 
 
 
-},{}],15:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function contains(arr, el) {
@@ -2727,32 +3284,36 @@ exports.contains = contains;
 
 
 
-},{}],16:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-function getCoords(event, rowContainer, charMeasure) {
+function getCoordsRelativeToElement(event, element) {
     if (event.pageX == null) {
         return null;
     }
     var x = event.pageX;
     var y = event.pageY;
-    var el = rowContainer;
-    while (el && el !== self.document.documentElement) {
-        x -= el.offsetLeft;
-        y -= el.offsetTop;
-        el = 'offsetParent' in el ? el.offsetParent : el.parentElement;
+    while (element && element !== self.document.documentElement) {
+        x -= element.offsetLeft;
+        y -= element.offsetTop;
+        element = 'offsetParent' in element ? element.offsetParent : element.parentElement;
     }
-    x = Math.ceil(x / charMeasure.width);
-    y = Math.ceil(y / charMeasure.height);
     return [x, y];
+}
+exports.getCoordsRelativeToElement = getCoordsRelativeToElement;
+function getCoords(event, rowContainer, charMeasure, colCount, rowCount, isSelection) {
+    var coords = getCoordsRelativeToElement(event, rowContainer);
+    coords[0] = Math.ceil((coords[0] + (isSelection ? charMeasure.width / 2 : 0)) / charMeasure.width);
+    coords[1] = Math.ceil(coords[1] / charMeasure.height);
+    coords[0] = Math.min(Math.max(coords[0], 1), colCount + 1);
+    coords[1] = Math.min(Math.max(coords[1], 1), rowCount + 1);
+    return coords;
 }
 exports.getCoords = getCoords;
 function getRawByteCoords(event, rowContainer, charMeasure, colCount, rowCount) {
-    var coords = getCoords(event, rowContainer, charMeasure);
+    var coords = getCoords(event, rowContainer, charMeasure, colCount, rowCount);
     var x = coords[0];
     var y = coords[1];
-    x = Math.min(Math.max(x, 0), colCount);
-    y = Math.min(Math.max(y, 0), rowCount);
     x += 32;
     y += 32;
     return { x: x, y: y };
@@ -2761,7 +3322,7 @@ exports.getRawByteCoords = getRawByteCoords;
 
 
 
-},{}],17:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var CompositionHelper_1 = require("./CompositionHelper");
@@ -2774,6 +3335,7 @@ var InputHandler_1 = require("./InputHandler");
 var Parser_1 = require("./Parser");
 var Renderer_1 = require("./Renderer");
 var Linkifier_1 = require("./Linkifier");
+var SelectionManager_1 = require("./SelectionManager");
 var CharMeasure_1 = require("./utils/CharMeasure");
 var Browser = require("./utils/Browser");
 var Mouse_1 = require("./utils/Mouse");
@@ -2837,7 +3399,7 @@ function Terminal(options) {
     this.queue = '';
     this.scrollTop = 0;
     this.scrollBottom = this.rows - 1;
-    this.customKeydownHandler = null;
+    this.customKeyEventHandler = null;
     this.cursorBlinkInterval = null;
     this.applicationKeypad = false;
     this.applicationCursor = false;
@@ -2877,6 +3439,7 @@ function Terminal(options) {
     this.inputHandler = new InputHandler_1.InputHandler(this);
     this.parser = new Parser_1.Parser(this.inputHandler, this);
     this.renderer = this.renderer || null;
+    this.selectionManager = this.selectionManager || null;
     this.linkifier = this.linkifier || new Linkifier_1.Linkifier();
     this.writeBuffer = [];
     this.writeInProgress = false;
@@ -2887,6 +3450,9 @@ function Terminal(options) {
     var i = this.rows;
     while (i--) {
         this.lines.push(this.blankLine());
+    }
+    if (this.selectionManager) {
+        this.selectionManager.setBuffer(this.lines);
     }
     this.tabs;
     this.setupStops();
@@ -2989,6 +3555,12 @@ Terminal.prototype.setOption = function (key, value) {
     }
     switch (key) {
         case 'scrollback':
+            if (value < this.rows) {
+                var msg = 'Setting the scrollback value less than the number of rows ';
+                msg += "(" + this.rows + ") is not allowed.";
+                console.warn(msg);
+                return false;
+            }
             if (this.options[key] !== value) {
                 if (this.lines.length > value) {
                     var amountToTrim = this.lines.length - value;
@@ -3068,31 +3640,38 @@ Terminal.bindBlur = function (term) {
     });
 };
 Terminal.prototype.initGlobal = function () {
+    var _this = this;
     var term = this;
     Terminal.bindKeys(this);
     Terminal.bindFocus(this);
     Terminal.bindBlur(this);
-    on(this.element, 'copy', function (ev) {
-        Clipboard_1.copyHandler.call(this, ev, term);
+    on(this.element, 'copy', function (event) {
+        if (_this.mouseEvents) {
+            return;
+        }
+        Clipboard_1.copyHandler(event, term, _this.selectionManager);
     });
-    on(this.textarea, 'paste', function (ev) {
-        Clipboard_1.pasteHandler.call(this, ev, term);
-    });
-    on(this.element, 'paste', function (ev) {
-        Clipboard_1.pasteHandler.call(this, ev, term);
-    });
-    function rightClickHandlerWrapper(ev) {
-        Clipboard_1.rightClickHandler.call(this, ev, term);
-    }
+    var pasteHandlerWrapper = function (event) { return Clipboard_1.pasteHandler(event, term); };
+    on(this.textarea, 'paste', pasteHandlerWrapper);
+    on(this.element, 'paste', pasteHandlerWrapper);
     if (term.browser.isFirefox) {
-        on(this.element, 'mousedown', function (ev) {
-            if (ev.button == 2) {
-                rightClickHandlerWrapper(ev);
+        on(this.element, 'mousedown', function (event) {
+            if (event.button == 2) {
+                Clipboard_1.rightClickHandler(event, _this.textarea, _this.selectionManager);
             }
         });
     }
     else {
-        on(this.element, 'contextmenu', rightClickHandlerWrapper);
+        on(this.element, 'contextmenu', function (event) {
+            Clipboard_1.rightClickHandler(event, _this.textarea, _this.selectionManager);
+        });
+    }
+    if (term.browser.isLinux) {
+        on(this.element, 'auxclick', function (event) {
+            if (event.button === 1) {
+                Clipboard_1.moveTextAreaUnderMouseCursor(event, _this.textarea, _this.selectionManager);
+            }
+        });
     }
 };
 Terminal.bindKeys = function (term) {
@@ -3137,6 +3716,7 @@ Terminal.prototype.insertRow = function (row) {
     return row;
 };
 Terminal.prototype.open = function (parent, focus) {
+    var _this = this;
     var self = this, i = 0, div;
     this.parent = parent || this.parent;
     if (!this.parent) {
@@ -3150,7 +3730,6 @@ Terminal.prototype.open = function (parent, focus) {
     this.element.classList.add('xterm');
     this.element.classList.add('xterm-theme-' + this.theme);
     this.setCursorBlinking(this.options.cursorBlink);
-    this.element.style.height;
     this.element.setAttribute('tabindex', 0);
     this.viewportElement = document.createElement('div');
     this.viewportElement.classList.add('xterm-viewport');
@@ -3158,6 +3737,9 @@ Terminal.prototype.open = function (parent, focus) {
     this.viewportScrollArea = document.createElement('div');
     this.viewportScrollArea.classList.add('xterm-scroll-area');
     this.viewportElement.appendChild(this.viewportScrollArea);
+    this.selectionContainer = document.createElement('div');
+    this.selectionContainer.classList.add('xterm-selection');
+    this.element.appendChild(this.selectionContainer);
     this.rowContainer = document.createElement('div');
     this.rowContainer.classList.add('xterm-rows');
     this.element.appendChild(this.rowContainer);
@@ -3191,11 +3773,22 @@ Terminal.prototype.open = function (parent, focus) {
     this.parent.appendChild(this.element);
     this.charMeasure = new CharMeasure_1.CharMeasure(document, this.helperContainer);
     this.charMeasure.on('charsizechanged', function () {
-        self.updateCharSizeCSS();
+        self.updateCharSizeStyles();
     });
     this.charMeasure.measure();
     this.viewport = new Viewport_1.Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
     this.renderer = new Renderer_1.Renderer(this);
+    this.selectionManager = new SelectionManager_1.SelectionManager(this, this.lines, this.rowContainer, this.charMeasure);
+    this.selectionManager.on('refresh', function (data) {
+        _this.renderer.refreshSelection(data.start, data.end);
+    });
+    this.selectionManager.on('newselection', function (text) {
+        _this.textarea.value = text;
+        _this.textarea.focus();
+        _this.textarea.select();
+    });
+    this.on('scroll', function () { return _this.selectionManager.refresh(); });
+    this.viewportElement.addEventListener('scroll', function () { return _this.selectionManager.refresh(); });
     this.refresh(0, this.rows - 1);
     this.initGlobal();
     if (typeof focus == 'undefined') {
@@ -3229,10 +3822,11 @@ Terminal.loadAddon = function (addon, callback) {
         return false;
     }
 };
-Terminal.prototype.updateCharSizeCSS = function () {
+Terminal.prototype.updateCharSizeStyles = function () {
     this.charSizeStyleElement.textContent =
         ".xterm-wide-char{width:" + this.charMeasure.width * 2 + "px;}" +
-            (".xterm-normal-char{width:" + this.charMeasure.width + "px;}");
+            (".xterm-normal-char{width:" + this.charMeasure.width + "px;}") +
+            (".xterm-rows > div{height:" + this.charMeasure.height + "px;}");
 };
 Terminal.prototype.bindMouse = function () {
     var el = this.element, self = this, pressed = 32;
@@ -3434,6 +4028,18 @@ Terminal.prototype.bindMouse = function () {
         self.viewport.onWheel(ev);
         return self.cancel(ev);
     });
+    on(el, 'touchstart', function (ev) {
+        if (self.mouseEvents)
+            return;
+        self.viewport.onTouchStart(ev);
+        return self.cancel(ev);
+    });
+    on(el, 'touchmove', function (ev) {
+        if (self.mouseEvents)
+            return;
+        self.viewport.onTouchMove(ev);
+        return self.cancel(ev);
+    });
 };
 Terminal.prototype.destroy = function () {
     this.readable = false;
@@ -3463,7 +4069,7 @@ Terminal.prototype.showCursor = function () {
         this.refresh(this.y, this.y);
     }
 };
-Terminal.prototype.scroll = function () {
+Terminal.prototype.scroll = function (isWrapped) {
     var row;
     if (this.lines.length === this.lines.maxLength) {
         this.lines.trimStart(1);
@@ -3479,10 +4085,10 @@ Terminal.prototype.scroll = function () {
     row = this.ybase + this.rows - 1;
     row -= this.rows - 1 - this.scrollBottom;
     if (row === this.lines.length) {
-        this.lines.push(this.blankLine());
+        this.lines.push(this.blankLine(undefined, isWrapped));
     }
     else {
-        this.lines.splice(row, 0, this.blankLine());
+        this.lines.splice(row, 0, this.blankLine(undefined, isWrapped));
     }
     if (this.scrollTop !== 0) {
         if (this.ybase !== 0) {
@@ -3499,6 +4105,9 @@ Terminal.prototype.scroll = function () {
 };
 Terminal.prototype.scrollDisp = function (disp, suppressScrollEvent) {
     if (disp < 0) {
+        if (this.ydisp === 0) {
+            return;
+        }
         this.userScrolling = true;
     }
     else if (disp + this.ydisp >= this.ybase) {
@@ -3569,7 +4178,12 @@ Terminal.prototype.writeln = function (data) {
     this.write(data + '\r\n');
 };
 Terminal.prototype.attachCustomKeydownHandler = function (customKeydownHandler) {
-    this.customKeydownHandler = customKeydownHandler;
+    var message = 'attachCustomKeydownHandler() is DEPRECATED and will be removed soon. Please use attachCustomKeyEventHandler() instead.';
+    console.warn(message);
+    this.attachCustomKeyEventHandler(customKeydownHandler);
+};
+Terminal.prototype.attachCustomKeyEventHandler = function (customKeyEventHandler) {
+    this.customKeyEventHandler = customKeyEventHandler;
 };
 Terminal.prototype.setHypertextLinkHandler = function (handler) {
     if (!this.linkifier) {
@@ -3578,11 +4192,11 @@ Terminal.prototype.setHypertextLinkHandler = function (handler) {
     this.linkifier.setHypertextLinkHandler(handler);
     this.refresh(0, this.rows - 1);
 };
-Terminal.prototype.setHypertextValidationCallback = function (handler) {
+Terminal.prototype.setHypertextValidationCallback = function (callback) {
     if (!this.linkifier) {
         throw new Error('Cannot attach a hypertext validation callback before Terminal.open is called');
     }
-    this.linkifier.setHypertextValidationCallback(handler);
+    this.linkifier.setHypertextValidationCallback(callback);
     this.refresh(0, this.rows - 1);
 };
 Terminal.prototype.registerLinkMatcher = function (regex, handler, options) {
@@ -3599,8 +4213,20 @@ Terminal.prototype.deregisterLinkMatcher = function (matcherId) {
         }
     }
 };
+Terminal.prototype.hasSelection = function () {
+    return this.selectionManager.hasSelection;
+};
+Terminal.prototype.getSelection = function () {
+    return this.selectionManager.selectionText;
+};
+Terminal.prototype.clearSelection = function () {
+    this.selectionManager.clearSelection();
+};
+Terminal.prototype.selectAll = function () {
+    this.selectionManager.selectAll();
+};
 Terminal.prototype.keyDown = function (ev) {
-    if (this.customKeydownHandler && this.customKeydownHandler(ev) === false) {
+    if (this.customKeyEventHandler && this.customKeyEventHandler(ev) === false) {
         return false;
     }
     this.restartCursorBlinking();
@@ -3900,6 +4526,11 @@ Terminal.prototype.evaluateKeyEscapeSequence = function (ev) {
                     result.key = EscapeSequences_1.C0.ESC + (ev.keyCode - 48);
                 }
             }
+            else if (this.browser.isMac && !ev.altKey && !ev.ctrlKey && ev.metaKey) {
+                if (ev.keyCode === 65) {
+                    this.selectAll();
+                }
+            }
             break;
     }
     return result;
@@ -3916,6 +4547,9 @@ Terminal.prototype.setgCharset = function (g, charset) {
 };
 Terminal.prototype.keyPress = function (ev) {
     var key;
+    if (this.customKeyEventHandler && this.customKeyEventHandler(ev) === false) {
+        return false;
+    }
     this.cancel(ev);
     if (ev.charCode) {
         key = ev.charCode;
@@ -3937,7 +4571,7 @@ Terminal.prototype.keyPress = function (ev) {
     this.emit('key', key, ev);
     this.showCursor();
     this.handler(key);
-    return false;
+    return true;
 };
 Terminal.prototype.send = function (data) {
     var self = this;
@@ -3979,6 +4613,9 @@ Terminal.prototype.error = function () {
 Terminal.prototype.resize = function (x, y) {
     if (isNaN(x) || isNaN(y)) {
         return;
+    }
+    if (y > this.getOption('scrollback')) {
+        this.setOption('scrollback', y);
     }
     var line, el, i, j, ch, addToY;
     if (x === this.cols && y === this.rows) {
@@ -4142,11 +4779,14 @@ Terminal.prototype.clear = function () {
 Terminal.prototype.eraseLine = function (y) {
     this.eraseRight(0, y);
 };
-Terminal.prototype.blankLine = function (cur) {
+Terminal.prototype.blankLine = function (cur, isWrapped) {
     var attr = cur
         ? this.eraseAttr()
         : this.defAttr;
     var ch = [attr, ' ', 1], line = [], i = 0;
+    if (isWrapped) {
+        line.isWrapped = isWrapped;
+    }
     for (; i < this.cols; i++) {
         line[i] = ch;
     }
@@ -4198,10 +4838,10 @@ Terminal.prototype.reverseIndex = function () {
 Terminal.prototype.reset = function () {
     this.options.rows = this.rows;
     this.options.cols = this.cols;
-    var customKeydownHandler = this.customKeydownHandler;
+    var customKeyEventHandler = this.customKeyEventHandler;
     var cursorBlinkInterval = this.cursorBlinkInterval;
     Terminal.call(this, this.options);
-    this.customKeydownHandler = customKeydownHandler;
+    this.customKeyEventHandler = customKeyEventHandler;
     this.cursorBlinkInterval = cursorBlinkInterval;
     this.refresh(0, this.rows - 1);
     this.viewport.syncScrollArea();
@@ -4313,6 +4953,6 @@ module.exports = Terminal;
 
 
 
-},{"./CompositionHelper":2,"./EscapeSequences":3,"./EventEmitter":4,"./InputHandler":5,"./Linkifier":6,"./Parser":7,"./Renderer":8,"./Viewport":9,"./handlers/Clipboard":10,"./utils/Browser":11,"./utils/CharMeasure":12,"./utils/CircularList":13,"./utils/Mouse":16}]},{},[17])(17)
+},{"./CompositionHelper":2,"./EscapeSequences":3,"./EventEmitter":4,"./InputHandler":5,"./Linkifier":6,"./Parser":7,"./Renderer":8,"./SelectionManager":9,"./Viewport":11,"./handlers/Clipboard":12,"./utils/Browser":13,"./utils/CharMeasure":14,"./utils/CircularList":15,"./utils/Mouse":18}]},{},[19])(19)
 });
 //# sourceMappingURL=xterm.js.map
