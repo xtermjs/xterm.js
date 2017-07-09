@@ -72,7 +72,7 @@ gulp.task('browserify', ['tsc'], function() {
   let browserifyOptionsSearchAddon = {
     basedir: buildDir,
     debug: true,
-    entries: [`../${outDir}/addons/search/search.js`],
+    entries: [`${outDir}/addons/search/search.js`],
     cache: {},
     packageCache: {}
   };
