@@ -22,8 +22,11 @@ export const tangoColors = [
   '#eeeeec'
 ];
 
-// Colors 0-15 + 16-255
-// Much thanks to TooTallNate for writing this.
+/**
+ * Colors 0-15 + 16-255
+ * 
+ * Much thanks to TooTallNate for writing this.
+ */
 export const colors: string[] = (function () {
   const colors = tangoColors.slice();
   let r = [0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff];
@@ -35,7 +38,7 @@ export const colors: string[] = (function () {
 
   // 232-255 (grey)
   for (let i = 0; i < 24; i++) {
-    let r = 8 + i * 10;
+    const r = 8 + i * 10;
     out(r, r, r);
   }
 
