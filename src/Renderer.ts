@@ -161,6 +161,7 @@ export class Renderer {
       // Return the row's spans to the pool
       while (this._terminal.children[y].children.length) {
         const child = this._terminal.children[y].children[0];
+        console.log('pool:release', child);
         this._terminal.children[y].removeChild(child);
         this._spanElementObjectPool.release(<HTMLElement>child);
       }
@@ -257,7 +258,7 @@ export class Renderer {
               }
 
               if (bg < 256) {
-                currentElement.classList.add(`xterm-bg-color-${bg}`);
+                innerHTML += `<span class="xterm-bg xterm-bg-color-${bg}"></span>`;
               }
 
               if (fg < 256) {

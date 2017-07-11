@@ -165,11 +165,24 @@
     position: absolute;
     left: 0;
     top: 0;
+    z-index: 0;
 }
 
 .terminal .xterm-rows > div {
     /* Lines containing spans and text nodes ocassionally wrap despite being the same width (#327) */
     white-space: nowrap;
+}
+
+.terminal .xterm-rows > div > span {
+    position: relative;
+}
+
+.terminal .xterm-rows .xterm-bg {
+    display: inline-block;
+    width: 100%;
+    position: absolute;
+    height: 100%;
+    z-index: -2;
 }
 
 .terminal .xterm-scroll-area {
@@ -192,14 +205,13 @@
     position: absolute;
     top: 0;
     left: 0;
-    z-index: 1;
-    opacity: 0.3;
+    z-index: -1;
     pointer-events: none;
 }
 
 .terminal .xterm-selection div {
     position: absolute;
-    background-color: #fff;
+    background-color: #4273d0;
 }
 
 /*
