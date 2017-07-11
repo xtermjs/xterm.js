@@ -325,13 +325,13 @@ export class SelectionManager extends EventEmitter {
   private _refresh(): void {
     this._refreshAnimationFrame = null;
     this.emit('refresh', { start: this._model.finalSelectionStart, end: this._model.finalSelectionEnd });
-    
+
     // Set / unset the 'selection-active' class on the terminal.
     // If the class exists, the background will be rendered inside a :before
     // element, which allows us to draw the selection between the foreground
     // and the background
-    this.hasSelection ? 
-      this._terminal.element.classList.add('selection-active') : 
+    this.hasSelection ?
+      this._terminal.element.classList.add('selection-active') :
       this._terminal.element.classList.remove('selection-active');
   }
 
