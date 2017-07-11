@@ -15,6 +15,7 @@ import { EventEmitter } from './EventEmitter';
 import { Viewport } from './Viewport';
 import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './handlers/Clipboard';
 import { CircularList } from './utils/CircularList';
+import * as Colors from './utils/Colors';
 import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Parser } from './Parser';
@@ -276,80 +277,10 @@ Terminal.prototype.eraseAttr = function() {
 /**
  * Colors
  */
-
-// Colors 0-15
-Terminal.tangoColors = [
-  // dark:
-  '#2e3436',
-  '#cc0000',
-  '#4e9a06',
-  '#c4a000',
-  '#3465a4',
-  '#75507b',
-  '#06989a',
-  '#d3d7cf',
-  // bright:
-  '#555753',
-  '#ef2929',
-  '#8ae234',
-  '#fce94f',
-  '#729fcf',
-  '#ad7fa8',
-  '#34e2e2',
-  '#eeeeec'
-];
-
-// Colors 0-15 + 16-255
-// Much thanks to TooTallNate for writing this.
-Terminal.colors = (function() {
-  var colors = Terminal.tangoColors.slice()
-  , r = [0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff]
-  , i;
-
-  // 16-231
-  i = 0;
-  for (; i < 216; i++) {
-    out(r[(i / 36) % 6 | 0], r[(i / 6) % 6 | 0], r[i % 6]);
-  }
-
-  // 232-255 (grey)
-  i = 0;
-  for (; i < 24; i++) {
-    r = 8 + i * 10;
-    out(r, r, r);
-  }
-
-  function out(r, g, b) {
-    colors.push('#' + hex(r) + hex(g) + hex(b));
-  }
-
-  function hex(c) {
-    c = c.toString(16);
-    return c.length < 2 ? '0' + c : c;
-  }
-
-  return colors;
-})();
-
-Terminal._colors = Terminal.colors.slice();
-
-Terminal.vcolors = (function() {
-  var out = []
-  , colors = Terminal.colors
-  , i = 0
-  , color;
-
-  for (; i < 256; i++) {
-    color = parseInt(colors[i].substring(1), 16);
-    out.push([
-      (color >> 16) & 0xff,
-      (color >> 8) & 0xff,
-      color & 0xff
-    ]);
-  }
-
-  return out;
-})();
+Terminal.tangoColors = Colors.tangoColors;
+Terminal.colors = Colors.colors;
+Terminal._colors = Colors.colors.slice();
+Terminal.vcolors = Colors.vcolors;
 
 /**
  * Options
