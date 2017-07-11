@@ -257,7 +257,8 @@ export class Renderer {
               }
 
               if (bg < 256) {
-                innerHTML += `<span class="xterm-bg xterm-bg-color-${bg}"></span>`;
+                currentElement.classList.add('xterm-bg');
+                currentElement.classList.add(`xterm-bg-color-${bg}`);
               }
 
               if (fg < 256) {
