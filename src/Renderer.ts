@@ -161,7 +161,6 @@ export class Renderer {
       // Return the row's spans to the pool
       while (this._terminal.children[y].children.length) {
         const child = this._terminal.children[y].children[0];
-        console.log('pool:release', child);
         this._terminal.children[y].removeChild(child);
         this._spanElementObjectPool.release(<HTMLElement>child);
       }
