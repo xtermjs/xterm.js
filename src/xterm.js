@@ -1939,6 +1939,10 @@ Terminal.prototype.resize = function(x, y) {
   , addToY;
 
   if (x === this.cols && y === this.rows) {
+    // Check if we still need to measure the char size (fixes #785).
+    if (!this.charMeasure.width || !this.charMeasure.height) {
+      this.charMeasure.measure();
+    }
     return;
   }
 
