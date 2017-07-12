@@ -1084,7 +1084,7 @@ export class InputHandler implements IInputHandler {
         case 1000: // vt200 mouse
         case 1002: // button event mouse
         case 1003: // any event mouse
-          this._terminal.buffer.x10Mouse = false;
+          this._terminal.x10Mouse = false;
           this._terminal.vt200Mouse = false;
           this._terminal.normalMouse = false;
           this._terminal.mouseEvents = false;
