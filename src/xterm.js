@@ -221,10 +221,8 @@ function Terminal(options) {
   this.surrogate_high = '';
 
   // Create the terminal's buffers and set the current buffer
-  if (!this.buffers) {
-    this.buffers = new BufferSet(this);
-    this.buffer = this.buffers.active;  // Convenience shortcut;
-  }
+  this.buffers = new BufferSet(this);
+  this.buffer = this.buffers.active;  // Convenience shortcut;
   this.buffers.on('activate', function (buffer) {
     this._terminal.buffer = buffer;
   });
