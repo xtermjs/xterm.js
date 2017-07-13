@@ -88,23 +88,6 @@ export class SelectionManager extends EventEmitter {
   private _dragScrollAmount: number;
 
   /**
-   * The last time the mousedown event fired, this is used to track double and
-   * triple clicks.
-   */
-  private _lastMouseDownTime: number;
-
-  /**
-   * The last position the mouse was clicked [x, y].
-   */
-  private _lastMousePosition: [number, number];
-
-  /**
-   * The number of clicks of the mousedown event. This is used to keep track of
-   * double and triple clicks.
-   */
-  private _clickCount: number;
-
-  /**
    * The current selection mode.
    */
   private _activeSelectionMode: SelectionMode;
@@ -136,7 +119,6 @@ export class SelectionManager extends EventEmitter {
     this.enable();
 
     this._model = new SelectionModel(_terminal);
-    this._lastMouseDownTime = 0;
     this._activeSelectionMode = SelectionMode.NORMAL;
   }
 
@@ -351,16 +333,14 @@ export class SelectionManager extends EventEmitter {
     // Reset drag scroll state
     this._dragScrollAmount = 0;
 
-    this._setMouseClickCount(event);
-
     if (event.shiftKey) {
       this._onShiftClick(event);
     } else {
-      if (this._clickCount === 1) {
+      if (event.detail === 1) {
           this._onSingleClick(event);
-      } else if (this._clickCount === 2) {
+      } else if (event.detail === 2) {
           this._onDoubleClick(event);
-      } else if (this._clickCount === 3) {
+      } else if (event.detail === 3) {
           this._onTripleClick(event);
       }
     }
@@ -444,32 +424,6 @@ export class SelectionManager extends EventEmitter {
       this._activeSelectionMode = SelectionMode.LINE;
       this._selectLineAt(coords[1]);
     }
-  }
-
-  /**
-   * Sets the number of clicks for the current mousedown event based on the time
-   * and position of the last mousedown event.
-   * @param event The mouse event.
-   */
-  private _setMouseClickCount(event: MouseEvent): void {
-    let currentTime = (new Date()).getTime();
-    if (currentTime - this._lastMouseDownTime > CLEAR_MOUSE_DOWN_TIME || this._distanceFromLastMousePosition(event) > CLEAR_MOUSE_DISTANCE) {
-      this._clickCount = 0;
-    }
-    this._lastMouseDownTime = currentTime;
-    this._lastMousePosition = [event.pageX, event.pageY];
-    this._clickCount++;
-  }
-
-  /**
-   * Gets the maximum number of pixels in each direction the mouse has moved.
-   * @param event The mouse event.
-   */
-  private _distanceFromLastMousePosition(event: MouseEvent): number {
-    const result = Math.max(
-        Math.abs(this._lastMousePosition[0] - event.pageX),
-        Math.abs(this._lastMousePosition[1] - event.pageY));
-    return result;
   }
 
   /**

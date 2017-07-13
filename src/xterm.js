@@ -1238,12 +1238,12 @@ Terminal.prototype.scrollDisp = function(disp, suppressScrollEvent) {
     this.userScrolling = false;
   }
 
-  this.ydisp += disp;
+  const oldYdisp = this.ydisp;
+  this.ydisp = Math.max(Math.min(this.ydisp + disp, this.ybase), 0);
 
-  if (this.ydisp > this.ybase) {
-    this.ydisp = this.ybase;
-  } else if (this.ydisp < 0) {
-    this.ydisp = 0;
+  // No change occurred, don't trigger scroll/refresh
+  if (oldYdisp === this.ydisp) {
+    return;
   }
 
   if (!suppressScrollEvent) {
@@ -1940,6 +1940,10 @@ Terminal.prototype.resize = function(x, y) {
   , addToY;
 
   if (x === this.cols && y === this.rows) {
+    // Check if we still need to measure the char size (fixes #785).
+    if (!this.charMeasure.width || !this.charMeasure.height) {
+      this.charMeasure.measure();
+    }
     return;
   }
 
