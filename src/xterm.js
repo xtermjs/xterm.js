@@ -396,7 +396,7 @@ Terminal.prototype.focus = function() {
  * Retrieves an option's value from the terminal.
  * @param {string} key The option key.
  */
-Terminal.prototype.getOption = function(key, value) {
+Terminal.prototype.getOption = function(key) {
   if (!(key in Terminal.defaults)) {
     throw new Error('No option with key "' + key + '"');
   }
