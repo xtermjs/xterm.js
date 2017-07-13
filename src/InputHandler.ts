@@ -397,6 +397,8 @@ export class InputHandler implements IInputHandler {
           this._terminal.lines.trimStart(scrollBackSize);
           this._terminal.ybase = Math.max(this._terminal.ybase - scrollBackSize, 0);
           this._terminal.ydisp = Math.max(this._terminal.ydisp - scrollBackSize, 0);
+          // Force a scroll event to refresh viewport
+          this._terminal.emit('scroll', 0);
         }
         break;
     }
