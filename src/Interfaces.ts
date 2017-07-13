@@ -21,6 +21,7 @@ export interface ITerminal {
   element: HTMLElement;
   rowContainer: HTMLElement;
   selectionContainer: HTMLElement;
+  selectionManager: ISelectionManager;
   charMeasure: ICharMeasure;
   textarea: HTMLTextAreaElement;
   ybase: number;
@@ -51,6 +52,10 @@ export interface ITerminal {
 
 export interface ISelectionManager {
   selectionText: string;
+  selectionStart: [number, number];
+  selectionEnd: [number, number];
+
+  setSelection(row: number, col: number, length: number);
 }
 
 export interface ICharMeasure {

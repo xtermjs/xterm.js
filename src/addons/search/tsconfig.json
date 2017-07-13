@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es5",
+    "rootDir": ".",
+    "outDir": "../../../lib/addons/search/",
+    "sourceMap": true,
+    "removeComments": true
+  }
+}
