@@ -7,6 +7,10 @@ var term,
     charHeight;
 
 var terminalContainer = document.getElementById('terminal-container'),
+    actionElements = {
+      findNext: document.querySelector('#find-next'),
+      findPrevious: document.querySelector('#find-previous')
+    },
     optionElements = {
       cursorBlink: document.querySelector('#option-cursor-blink'),
       cursorStyle: document.querySelector('#option-cursor-style'),
@@ -29,6 +33,19 @@ function setTerminalSize () {
 
 colsElement.addEventListener('change', setTerminalSize);
 rowsElement.addEventListener('change', setTerminalSize);
+
+actionElements.findNext.addEventListener('keypress', function (e) {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    term.findNext(actionElements.findNext.value);
+  }
+});
+actionElements.findPrevious.addEventListener('keypress', function (e) {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    term.findPrevious(actionElements.findPrevious.value);
+  }
+});
 
 optionElements.cursorBlink.addEventListener('change', function () {
   term.setOption('cursorBlink', optionElements.cursorBlink.checked);

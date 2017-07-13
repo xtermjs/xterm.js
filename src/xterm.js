@@ -26,6 +26,7 @@ import * as Browser from './utils/Browser';
 import * as Mouse from './utils/Mouse';
 import { CHARSETS } from './Charsets';
 import { getRawByteCoords } from './utils/Mouse';
+import { translateBufferLineToString } from './utils/BufferLine';
 
 /**
  * Terminal Emulation References:
@@ -2453,6 +2454,7 @@ function keys(obj) {
  * Expose
  */
 
+Terminal.translateBufferLineToString = translateBufferLineToString;
 Terminal.EventEmitter = EventEmitter;
 Terminal.inherits = inherits;
 

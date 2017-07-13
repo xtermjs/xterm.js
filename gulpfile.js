@@ -1,3 +1,7 @@
+/**
+ * @license MIT
+ */
+
 const browserify = require('browserify');
 const buffer = require('vinyl-buffer');
 const coveralls = require('gulp-coveralls');
@@ -14,6 +18,7 @@ const ts = require('gulp-typescript');
 
 let buildDir = process.env.BUILD_DIR || 'build';
 let tsProject = ts.createProject('tsconfig.json');
+let tsProjectSearchAddon = ts.createProject('./src/addons/search/tsconfig.json');
 let srcDir = tsProject.config.compilerOptions.rootDir;
 let outDir = tsProject.config.compilerOptions.outDir;
 
@@ -30,13 +35,17 @@ gulp.task('tsc', function () {
   let tsResult = tsProject.src().pipe(sourcemaps.init()).pipe(tsProject());
   let tsc = tsResult.js.pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''})).pipe(gulp.dest(outDir));
 
+  fs.emptyDirSync(`${outDir}/addons/search`);
+  let tsResultSearchAddon = tsProjectSearchAddon.src().pipe(sourcemaps.init()).pipe(tsProjectSearchAddon());
+  let tscSearchAddon = tsResultSearchAddon.js.pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''})).pipe(gulp.dest(`${outDir}/addons/search`));
+
   // Copy all addons from ${srcDir}/ to ${outDir}/
-  let copyAddons = gulp.src(`${srcDir}/addons/**/*`).pipe(gulp.dest(`${outDir}/addons`));
+  let copyAddons = gulp.src([`${srcDir}/addons/**/*`, `!${srcDir}/addons/search`, `!${srcDir}/addons/search/**`]).pipe(gulp.dest(`${outDir}/addons`));
 
   // Copy stylesheets from ${srcDir}/ to ${outDir}/
   let copyStylesheets = gulp.src(`${srcDir}/**/*.css`).pipe(gulp.dest(outDir));
 
-  return merge(tsc, copyAddons, copyStylesheets);
+  return merge(tsc, tscSearchAddon, copyAddons, copyStylesheets);
 });
 
 /**
@@ -63,13 +72,38 @@ gulp.task('browserify', ['tsc'], function() {
         .pipe(sourcemaps.write('./'))
         .pipe(gulp.dest(buildDir));
 
-  // Copy all add-ons from ${outDir}/ to buildDir
-  let copyAddons = gulp.src(`${outDir}/addons/**/*`).pipe(gulp.dest(`${buildDir}/addons`));
-
   // Copy stylesheets from ${outDir}/ to ${buildDir}/
   let copyStylesheets = gulp.src(`${outDir}/**/*.css`).pipe(gulp.dest(buildDir));
 
-  return merge(bundleStream, copyAddons, copyStylesheets);
+  return merge(bundleStream, copyStylesheets);
+});
+
+gulp.task('browserify-addons', ['tsc'], function() {
+  let searchOptions = {
+    basedir: `${buildDir}/addons/search`,
+    debug: true,
+    entries: [`${outDir}/addons/search/search.js`],
+    cache: {},
+    packageCache: {}
+  };
+  let searchBundle = browserify(searchOptions)
+        .bundle()
+        .pipe(source('./addons/search/search.js'))
+        .pipe(buffer())
+        .pipe(sourcemaps.init({loadMaps: true, sourceRoot: ''}))
+        .pipe(sourcemaps.write('./'))
+        .pipe(gulp.dest(buildDir));
+
+  // Copy all add-ons from outDir to buildDir
+  let copyAddons = gulp.src([
+    // Copy JS addons
+    `${outDir}/addons/**/*`,
+    // Exclude TS addons from copy as they are being built via browserify
+    `!${outDir}/addons/search`,
+    `!${outDir}/addons/search/**`
+  ]).pipe(gulp.dest(`${buildDir}/addons`));
+
+  return merge(searchBundle, copyAddons);
 });
 
 gulp.task('instrument-test', function () {
@@ -98,6 +132,12 @@ gulp.task('sorcery', ['browserify'], function () {
   chain.writeSync();
 });
 
+gulp.task('sorcery-addons', ['browserify-addons'], function () {
+  var chain = sorcery.loadSync(`${buildDir}/addons/search/search.js`);
+  chain.apply();
+  chain.writeSync();
+});
+
 /**
  * Submit coverage results to coveralls.io
  */
@@ -106,6 +146,6 @@ gulp.task('coveralls', function () {
     .pipe(coveralls());
 });
 
-gulp.task('build', ['sorcery']);
+gulp.task('build', ['sorcery', 'sorcery-addons']);
 gulp.task('test', ['mocha']);
 gulp.task('default', ['build']);
