@@ -1437,7 +1437,7 @@ Terminal.prototype.deregisterLinkMatcher = function(matcherId) {
  * Gets whether the terminal has an active selection.
  */
 Terminal.prototype.hasSelection = function() {
-  return this.selectionManager.hasSelection;
+  return !!(this.selectionManager && this.selectionManager.hasSelection);
 };
 
 /**
@@ -1445,21 +1445,25 @@ Terminal.prototype.hasSelection = function() {
  * behavior outside of xterm.js.
  */
 Terminal.prototype.getSelection = function() {
-  return this.selectionManager.selectionText;
+  return this.selectionManager ? this.selectionManager.selectionText : '';
 };
 
 /**
  * Clears the current terminal selection.
  */
 Terminal.prototype.clearSelection = function() {
-  this.selectionManager.clearSelection();
+  if (this.selectionManager) {
+    this.selectionManager.clearSelection();
+  }
 };
 
 /**
  * Selects all text within the terminal.
  */
 Terminal.prototype.selectAll = function() {
-  this.selectionManager.selectAll();
+  if (this.selectionManager) {
+    this.selectionManager.selectAll();
+  }
 };
 
 /**
