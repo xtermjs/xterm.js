@@ -2234,6 +2234,11 @@ Terminal.prototype.handler = function(data) {
     return;
   }
 
+  // Clear the selection
+  if (this.hasSelection()) {
+    this.clearSelection();
+  }
+
   // Input is being sent to the terminal, the terminal should focus the prompt.
   if (this.ybase !== this.ydisp) {
     this.scrollToBottom();
