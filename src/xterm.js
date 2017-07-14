@@ -2238,6 +2238,11 @@ Terminal.prototype.handler = function(data) {
     return;
   }
 
+  // Clear the selection if the selection manager is available and has an active selection
+  if (this.selectionManager && this.selectionManager.hasSelection) {
+    this.selectionManager.clearSelection();
+  }
+
   // Input is being sent to the terminal, the terminal should focus the prompt.
   if (this.ybase !== this.ydisp) {
     this.scrollToBottom();
