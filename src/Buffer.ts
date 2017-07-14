@@ -6,16 +6,20 @@ import { ITerminal } from './Interfaces';
 import { CircularList } from './utils/CircularList';
 
 /**
- * This class represents a terminal buffer (an internal state of the terminal)/
+ * This class represents a terminal buffer (an internal state of the terminal), where the
+ * following information is stored (in high-level):
+ *   - text content of this particular buffer
+ *   - cursor position
+ *   - scroll position
  */
 export class Buffer {
   public lines: CircularList<[string, number, string]>;
 
   /**
    * Create a new Buffer.
-   * @param {Terminal} terminal - The terminal the buffer will belong to
-   * @param {number} ydisp - The scroll position of the buffer in the viewport
-   * @param {number} ybase - The scroll position of the y cursor (ybase + y = the y position within the buffer)
+   * @param {Terminal} terminal - The terminal the Buffer will belong to
+   * @param {number} ydisp - The scroll position of the Buffer in the viewport
+   * @param {number} ybase - The scroll position of the y cursor (ybase + y = the y position within the Buffer)
    * @param {number} y - The cursor's y position after ybase
    * @param {number} x - The cursor's x position after ybase
    */
