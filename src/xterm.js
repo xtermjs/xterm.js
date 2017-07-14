@@ -1437,7 +1437,7 @@ Terminal.prototype.deregisterLinkMatcher = function(matcherId) {
  * Gets whether the terminal has an active selection.
  */
 Terminal.prototype.hasSelection = function() {
-  return !!(this.selectionManager && this.selectionManager.hasSelection);
+  return this.selectionManager ? this.selectionManager.hasSelection : false;
 };
 
 /**
