@@ -17,6 +17,7 @@ class TestLinkifier extends Linkifier {
 }
 
 describe('Linkifier', () => {
+  let dom: jsdom.JSDOM;
   let window: Window;
   let document: Document;
 
@@ -24,13 +25,11 @@ describe('Linkifier', () => {
   let rows: HTMLElement[];
   let linkifier: TestLinkifier;
 
-  beforeEach(done => {
-    jsdom.env('', (err, w) => {
-      window = w;
-      document = window.document;
-      linkifier = new TestLinkifier();
-      done();
-    });
+  beforeEach(() => {
+    dom = new jsdom.JSDOM('');
+    window = dom.window;
+    document = window.document;
+    linkifier = new TestLinkifier();
   });
 
   function addRow(html: string) {

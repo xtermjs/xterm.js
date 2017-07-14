@@ -1,18 +1,18 @@
 language: node_js
+os:
+  - linux
+  - osx
 node_js:
   - 6
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get -qq update ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get -qq install g++-4.8 ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CXX=g++-4.8 ; fi
 env:
-  global:
-    - CXX=g++-4.8
   matrix:
     - NPM_COMMAND=lint
     - NPM_COMMAND=test
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - g++-4.8
 notifications:
   email: false
 script: npm run $NPM_COMMAND

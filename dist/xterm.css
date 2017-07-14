@@ -41,6 +41,9 @@
     font-family: courier-new, courier, monospace;
     font-feature-settings: "liga" 0;
     position: relative;
+    user-select: none;
+    -ms-user-select: none;
+    -webkit-user-select: none;
 }
 
 .terminal.focus,
@@ -178,6 +181,25 @@
     visibility: hidden;
     position: absolute;
     left: -9999em;
+}
+
+.terminal.enable-mouse-events {
+    /* When mouse events are enabled (eg. tmux), revert to the standard pointer cursor */
+    cursor: default;
+}
+
+.terminal .xterm-selection {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+.terminal .xterm-selection div {
+    position: absolute;
+    background-color: #fff;
 }
 
 /*

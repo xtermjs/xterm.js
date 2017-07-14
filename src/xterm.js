@@ -26,6 +26,7 @@ import * as Browser from './utils/Browser';
 import * as Mouse from './utils/Mouse';
 import { CHARSETS } from './Charsets';
 import { getRawByteCoords } from './utils/Mouse';
+import { translateBufferLineToString } from './utils/BufferLine';
 
 /**
  * Terminal Emulation References:
@@ -406,7 +407,7 @@ Terminal.prototype.focus = function() {
  * Retrieves an option's value from the terminal.
  * @param {string} key The option key.
  */
-Terminal.prototype.getOption = function(key, value) {
+Terminal.prototype.getOption = function(key) {
   if (!(key in Terminal.defaults)) {
     throw new Error('No option with key "' + key + '"');
   }
@@ -1247,12 +1248,12 @@ Terminal.prototype.scrollDisp = function(disp, suppressScrollEvent) {
     this.userScrolling = false;
   }
 
-  this.ydisp += disp;
+  const oldYdisp = this.ydisp;
+  this.ydisp = Math.max(Math.min(this.ydisp + disp, this.ybase), 0);
 
-  if (this.ydisp > this.ybase) {
-    this.ydisp = this.ybase;
-  } else if (this.ydisp < 0) {
-    this.ydisp = 0;
+  // No change occurred, don't trigger scroll/refresh
+  if (oldYdisp === this.ydisp) {
+    return;
   }
 
   if (!suppressScrollEvent) {
@@ -1949,6 +1950,10 @@ Terminal.prototype.resize = function(x, y) {
   , addToY;
 
   if (x === this.cols && y === this.rows) {
+    // Check if we still need to measure the char size (fixes #785).
+    if (!this.charMeasure.width || !this.charMeasure.height) {
+      this.charMeasure.measure();
+    }
     return;
   }
 
@@ -2454,6 +2459,7 @@ function keys(obj) {
  * Expose
  */
 
+Terminal.translateBufferLineToString = translateBufferLineToString;
 Terminal.EventEmitter = EventEmitter;
 Terminal.inherits = inherits;
 

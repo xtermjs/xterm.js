@@ -56,8 +56,13 @@ export class InputHandler implements IInputHandler {
           this._terminal.x = 0;
           this._terminal.y++;
           if (this._terminal.y > this._terminal.scrollBottom) {
+            // Insert a new line, scroll and mark as a wrapped line
             this._terminal.y--;
             this._terminal.scroll(true);
+          } else {
+            // The line already exists (eg. the initial viewport), mark it as a
+            // wrapped line
+            this._terminal.lines.get(this._terminal.y).isWrapped = true;
           }
         } else {
           if (ch_width === 2)  // FIXME: check for xterm behavior
@@ -392,6 +397,8 @@ export class InputHandler implements IInputHandler {
           this._terminal.lines.trimStart(scrollBackSize);
           this._terminal.ybase = Math.max(this._terminal.ybase - scrollBackSize, 0);
           this._terminal.ydisp = Math.max(this._terminal.ydisp - scrollBackSize, 0);
+          // Force a scroll event to refresh viewport
+          this._terminal.emit('scroll', 0);
         }
         break;
     }
