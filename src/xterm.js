@@ -2299,12 +2299,12 @@ Terminal.prototype.reset = function() {
   var customKeyEventHandler = this.customKeyEventHandler;
   var cursorBlinkInterval = this.cursorBlinkInterval;
   var inputHandler = this.inputHandler;
-  var buf = this.buffers;
+  var buffers = this.buffers;
   Terminal.call(this, this.options);
   this.customKeyEventHandler = customKeyEventHandler;
   this.cursorBlinkInterval = cursorBlinkInterval;
   this.inputHandler = inputHandler;
-  this.buffers = buf;
+  this.buffers = buffers;
   this.refresh(0, this.rows - 1);
   this.viewport.syncScrollArea();
 };
