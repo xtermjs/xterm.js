@@ -8,7 +8,7 @@ import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
 import { SelectionManager } from './SelectionManager';
 import { SelectionModel } from './SelectionModel';
-import {BufferSet} from './BufferSet';
+import { BufferSet } from './BufferSet';
 
 class TestSelectionManager extends SelectionManager {
   constructor(
