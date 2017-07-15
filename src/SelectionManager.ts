@@ -29,18 +29,6 @@ const DRAG_SCROLL_MAX_SPEED = 15;
 const DRAG_SCROLL_INTERVAL = 50;
 
 /**
- * The amount of time before mousedown events are no longer stacked to create
- * double/triple click events.
- */
-const CLEAR_MOUSE_DOWN_TIME = 400;
-
-/**
- * The number of pixels in each direction that the mouse must move before
- * mousedown events are no longer stacked to create double/triple click events.
- */
-const CLEAR_MOUSE_DISTANCE = 10;
-
-/**
  * A string containing all characters that are considered word separated by the
  * double click to select work logic.
  */
