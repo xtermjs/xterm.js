@@ -13,7 +13,7 @@ import { CircularList } from './utils/CircularList';
  *   - scroll position
  */
 export class Buffer {
-  public lines: CircularList<[string, number, string]>;
+  public lines: CircularList<[number, string, number][]>;
 
   /**
    * Create a new Buffer.
@@ -33,7 +33,7 @@ export class Buffer {
     public scrollTop: number = 0,
     public tabs: any = {},
   ) {
-    this.lines = new CircularList<[string, number, string]>(this.terminal.scrollback);
+    this.lines = new CircularList<[number, string, number][]>(this.terminal.scrollback);
     this.scrollBottom = this.terminal.rows - 1;
   }
 }

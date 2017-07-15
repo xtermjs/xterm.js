@@ -7,7 +7,7 @@ import * as Browser from './utils/Browser';
 import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
 import { EventEmitter } from './EventEmitter';
-import { ITerminal } from './Interfaces';
+import { ITerminal, ICircularList } from './Interfaces';
 import { SelectionModel } from './SelectionModel';
 import { translateBufferLineToString } from './utils/BufferLine';
 
@@ -98,7 +98,7 @@ export class SelectionManager extends EventEmitter {
 
   constructor(
     private _terminal: ITerminal,
-    private _buffer: CircularList<any>,
+    private _buffer: ICircularList<[number, string, number][]>,
     private _rowContainer: HTMLElement,
     private _charMeasure: CharMeasure
   ) {
@@ -147,7 +147,7 @@ export class SelectionManager extends EventEmitter {
    * switched in or out.
    * @param buffer The active buffer.
    */
-  public setBuffer(buffer: CircularList<any>): void {
+  public setBuffer(buffer: ICircularList<[number, string, number][]>): void {
     this._buffer = buffer;
     this.clearSelection();
   }
@@ -186,7 +186,7 @@ export class SelectionManager extends EventEmitter {
     for (let i = start[1] + 1; i <= end[1] - 1; i++) {
       const bufferLine = this._buffer.get(i);
       const lineText = translateBufferLineToString(bufferLine, true);
-      if (bufferLine.isWrapped) {
+      if ((<any>bufferLine).isWrapped) {
         result[result.length - 1] += lineText;
       } else {
         result.push(lineText);
@@ -197,7 +197,7 @@ export class SelectionManager extends EventEmitter {
     if (start[1] !== end[1]) {
       const bufferLine = this._buffer.get(end[1]);
       const lineText = translateBufferLineToString(bufferLine, true, 0, end[0]);
-      if (bufferLine.isWrapped) {
+      if ((<any>bufferLine).isWrapped) {
         result[result.length - 1] += lineText;
       } else {
         result.push(lineText);

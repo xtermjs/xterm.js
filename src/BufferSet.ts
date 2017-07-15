@@ -2,7 +2,7 @@
  * @license MIT
  */
 
-import { ITerminal } from './Interfaces';
+import { ITerminal, IBufferSet } from './Interfaces';
 import { Buffer } from './Buffer';
 import { EventEmitter } from './EventEmitter';
 
@@ -10,7 +10,7 @@ import { EventEmitter } from './EventEmitter';
  * The BufferSet represents the set of two buffers used by xterm terminals (normal and alt) and
  * provides also utilities for working with them.
  */
-export class BufferSet extends EventEmitter {
+export class BufferSet extends EventEmitter implements IBufferSet {
   private _normal: Buffer;
   private _alt: Buffer;
   private _activeBuffer: Buffer;
