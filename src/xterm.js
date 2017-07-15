@@ -227,10 +227,6 @@ function Terminal(options) {
     this._terminal.buffer = buffer;
   });
 
-  /**
-   * An array of all lines in the entire buffer, including the prompt. The lines are array of
-   * characters which are 2-length arrays where [0] is an attribute and [1] is the character.
-   */
   var i = this.rows;
 
   while (i--) {
