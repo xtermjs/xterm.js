@@ -2,12 +2,14 @@
  * @license MIT
  */
 
+import { IEventEmitter } from './Interfaces';
+
 interface ListenerType {
     (): void;
     listener?: () => void;
 };
 
-export class EventEmitter {
+export class EventEmitter implements IEventEmitter {
   private _events: {[type: string]: ListenerType[]};
 
   constructor() {
