@@ -221,7 +221,8 @@ function Terminal(options) {
   this.currentFlags = this.defaultFlags;
   this.currentFgColor = this.defaultFgColor;
   this.currentBgColor = this.defaultBgColor;
-
+  this.currentCharAttributes = null;
+  this.charAttributes = [];
 
   this.params = [];
   this.currentParam = 0;
@@ -1230,6 +1231,15 @@ Terminal.prototype.scroll = function(isWrapped) {
    */
   this.emit('scroll', this.ydisp);
 };
+
+Terminal.prototype.finalizeCharAttributes = function() {
+  if (!this.currentCharAttributes) {
+    return;
+  }
+  this.currentCharAttributes.x2 = this.x;
+  this.currentCharAttributes.y2 = this.ybase + this.y;
+  this.currentCharAttributes = null;
+}
 
 /**
  * Scroll the display of the terminal

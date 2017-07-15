@@ -5,6 +5,7 @@
 import { IInputHandler, ITerminal } from './Interfaces';
 import { C0 } from './EscapeSequences';
 import { DEFAULT_CHARSET } from './Charsets';
+import { CharAttributes } from "./CharAttributes";
 
 /**
  * The terminal's standard implementation of IInputHandler, this handles all
@@ -1219,6 +1220,8 @@ export class InputHandler implements IInputHandler {
   public charAttributes(params: number[]): void {
     // Optimize a single SGR0.
     if (params.length === 1 && params[0] === 0) {
+      this._terminal.finalizeCharAttributes();
+      console.log('Current char attr list:', this._terminal.charAttributes);
       this._terminal.currentFlags = this._terminal.defaultFlags;
       this._terminal.currentFgColor = this._terminal.defaultFgColor;
       this._terminal.currentBgColor = this._terminal.defaultBgColor;
@@ -1326,6 +1329,11 @@ export class InputHandler implements IInputHandler {
         this._terminal.error('Unknown SGR attribute: %d.', p);
       }
     }
+
+    this._terminal.finalizeCharAttributes();
+    this._terminal.currentCharAttributes = new CharAttributes(this._terminal.x, this._terminal.ybase + this._terminal.y, null, null, [this._terminal.currentFlags, this._terminal.currentFgColor, this._terminal.currentBgColor]);
+    this._terminal.charAttributes.push(this._terminal.currentCharAttributes);
+    console.log('Creating new style attr:', this._terminal.currentCharAttributes);
   }
 
   /**

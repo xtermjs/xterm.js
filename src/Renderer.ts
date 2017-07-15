@@ -4,6 +4,7 @@
 
 import { ITerminal } from './Interfaces';
 import { DomElementObjectPool } from './utils/DomElementObjectPool';
+import { CharAttributes } from "./CharAttributes";
 
 /**
  * The maximum number of refresh frames to skip when the write buffer is non-
@@ -123,6 +124,17 @@ export class Renderer {
       end = this._terminal.rows - 1;
     }
 
+    let nextCharAttributeIndex: number = -1;
+    let currentCharAttributes: CharAttributes;
+    for (let i = 0; i < (<any>this._terminal).charAttributes.length; i++) {
+      const charAttribute = (<any>this._terminal).charAttributes[i];
+      if (charAttribute.y1 === start + this._terminal.ydisp || charAttribute.y2 >= start + this._terminal.ydisp) {
+        nextCharAttributeIndex = i;
+        console.log(`initial char attributes index:`, nextCharAttributeIndex);
+        break;
+      }
+    }
+
     for (let y = start; y <= end; y++) {
       let row = y + this._terminal.ydisp;
       let line = this._terminal.lines.get(row);
@@ -159,6 +171,28 @@ export class Renderer {
         let bg: number = line[i][4];
         if (!ch_width) {
           continue;
+        }
+
+        if (currentCharAttributes && currentCharAttributes.x2 === i && currentCharAttributes.y2 === y + this._terminal.ydisp) {
+          currentCharAttributes = null;
+          nextCharAttributeIndex++;
+          if (nextCharAttributeIndex === (<any>this._terminal).charAttributes.length) {
+            nextCharAttributeIndex = -1;
+          }
+        }
+        if (nextCharAttributeIndex !== -1 &&
+            (<any>this._terminal).charAttributes[nextCharAttributeIndex].x1 === i &&
+            (<any>this._terminal).charAttributes[nextCharAttributeIndex].y1 === y + this._terminal.ydisp) {
+          currentCharAttributes = (<any>this._terminal).charAttributes[nextCharAttributeIndex];
+          console.log(`current char attributes ${i},${y}:`, currentCharAttributes);
+        }
+
+        // TODO: This is temporary to test new method
+        if (currentCharAttributes) {
+          flags = currentCharAttributes.flags;
+          // v Temporary v
+          fg = currentCharAttributes._data[1];
+          bg = currentCharAttributes._data[2];
         }
 
         // Force a refresh if the character is the cursor
@@ -253,11 +287,12 @@ export class Renderer {
 
               if (fg !== this._terminal.defaultFgColor) {
                 if (isTrueColorFg) {
-                  let rgb = fg.toString(16);
-                  while (rgb.length < 6) {
-                    rgb = '0' + rgb;
-                  }
-                  currentElement.style.color = `#${rgb}`;
+                  // let rgb = fg.toString(16);
+                  // while (rgb.length < 6) {
+                  //   rgb = '0' + rgb;
+                  // }
+                  // currentElement.style.color = `#${rgb}`;
+                  currentElement.style.color = currentCharAttributes.truecolorFg;
                 } else {
                   if (fg < 256) {
                     currentElement.classList.add(`xterm-color-${fg}`);
@@ -267,11 +302,11 @@ export class Renderer {
 
               if (bg !== this._terminal.defaultBgColor) {
                 if (isTrueColorBg) {
-                  let rgb = bg.toString(16);
-                  while (rgb.length < 6) {
-                    rgb = '0' + rgb;
-                  }
-                  currentElement.style.backgroundColor = `#${rgb}`;
+                  // let rgb = bg.toString(16);
+                  // while (rgb.length < 6) {
+                  //   rgb = '0' + rgb;
+                  // }
+                  currentElement.style.backgroundColor = currentCharAttributes.truecolorBg;
                 } else {
                   if (bg < 256) {
                     currentElement.classList.add(`xterm-bg-color-${bg}`);
