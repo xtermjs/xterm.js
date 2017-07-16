@@ -1616,7 +1616,7 @@ export const wcwidth = (function(opts) {
         num = (num << 2) | wcwidthBMP(CODEPOINTS_PER_ITEM * i + pos);
       table[i] = num;
     }
-    // get width from lookup table for num < 65536:
+    // get width from lookup table
     //   position in container   : num / CODEPOINTS_PER_ITEM
     //     ==> n = table[Math.floor(num / 16)]
     //     ==> n = table[num >> 4]
@@ -1626,7 +1626,7 @@ export const wcwidth = (function(opts) {
     //     ==> m = (num & 15) << 1
     //   right shift to position m
     //     ==> n = n >> m     e.g. m=12  000000000000FFEEDDCCBBAA99887766
-    //   we are only interested in 2 LSBs, cut off higher
+    //   we are only interested in 2 LSBs, cut off higher bits
     //     ==> n = n & 3      e.g.       000000000000000000000000000000XX
     return function (num) {
       num = num | 0;  // get asm.js like optimization under V8
