@@ -190,6 +190,7 @@ function Terminal(options) {
   // this.curAttr = this.defAttr;
 
 
+  // TODO: Move these into buffer? Need a way of creating new attributes based on previous ones if so
   this.defaultFlags = 0;
   this.defaultFgColor = 1 << 24;
   this.defaultBgColor = 1 << 24;
@@ -197,7 +198,6 @@ function Terminal(options) {
   this.currentFlags = this.defaultFlags;
   this.currentFgColor = this.defaultFgColor;
   this.currentBgColor = this.defaultBgColor;
-  this.currentCharAttributes = null;
 
   this.params = [];
   this.currentParam = 0;
@@ -1210,15 +1210,6 @@ Terminal.prototype.scroll = function(isWrapped) {
    */
   this.emit('scroll', this.buffer.ydisp);
 };
-
-Terminal.prototype.finalizeCharAttributes = function() {
-  if (!this.currentCharAttributes) {
-    return;
-  }
-  this.currentCharAttributes.x2 = this.buffer.x;
-  this.currentCharAttributes.y2 = this.buffer.linesIndexOffset + this.buffer.ybase + this.buffer.y;
-  this.currentCharAttributes = null;
-}
 
 /**
  * Scroll the display of the terminal

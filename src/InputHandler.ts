@@ -949,6 +949,7 @@ export class InputHandler implements IInputHandler {
         case 47: // alt screen buffer
         case 1047: // alt screen buffer
           this._terminal.buffers.activateAltBuffer();
+          // TODO: Discard current charattribute?
           this._terminal.selectionManager.setBuffer(this._terminal.buffer);
           this._terminal.reset();
           this._terminal.viewport.syncScrollArea();
@@ -1115,6 +1116,7 @@ export class InputHandler implements IInputHandler {
         case 1047: // normal screen buffer - clearing it first
           // Ensure the selection manager has the correct buffer
           this._terminal.buffers.activateNormalBuffer();
+          // TODO: Discard current charattribute?
           if (params[0] === 1049) {
             this.restoreCursor(params);
           }
@@ -1194,7 +1196,7 @@ export class InputHandler implements IInputHandler {
   public charAttributes(params: number[]): void {
     // Optimize a single SGR0.
     if (params.length === 1 && params[0] === 0) {
-      this._terminal.finalizeCharAttributes();
+      (<ITerminal>this._terminal).buffer.finishCharAttributes();
       console.log('Current char attr list:', this._terminal.buffer.charAttributes);
       this._terminal.currentFlags = this._terminal.defaultFlags;
       this._terminal.currentFgColor = this._terminal.defaultFgColor;
@@ -1304,10 +1306,8 @@ export class InputHandler implements IInputHandler {
       }
     }
 
-    this._terminal.finalizeCharAttributes();
-    this._terminal.currentCharAttributes = new CharAttributes(this._terminal.buffer.x, this._terminal.buffer.ybase + this._terminal.buffer.y + (<any>this._terminal.buffer).linesIndexOffset, null, null, [this._terminal.currentFlags, this._terminal.currentFgColor, this._terminal.currentBgColor]);
-    this._terminal.buffer.charAttributes.push(this._terminal.currentCharAttributes);
-    console.log('Creating new style attr:', this._terminal.currentCharAttributes);
+    (<ITerminal>this._terminal).buffer.finishCharAttributes();
+    (<ITerminal>this._terminal).buffer.startCharAttributes(this._terminal.currentFlags, this._terminal.currentFgColor, this._terminal.currentBgColor);
   }
 
   /**

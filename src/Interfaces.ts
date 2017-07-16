@@ -62,6 +62,8 @@ export interface IBuffer {
   x: number;
   tabs: any;
 
+  startCharAttributes(flags: number, fgColor: number, bgColor: number): void;
+  finishCharAttributes(): void;
   translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string;
 }
 
