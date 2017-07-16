@@ -167,7 +167,7 @@ describe('wcwidth', () => {
     let start_new = new Date().getTime();
     let x = 0;
     for (let runs = 0; runs < 1; ++runs)
-      for (let i=0; i<65536; ++i)
+      for (let i = 0; i < 65536; ++i)
         x = wcwidth(i);
     let end_new = new Date().getTime();
     let start_old = new Date().getTime();
@@ -176,6 +176,6 @@ describe('wcwidth', () => {
       for (let i = 0; i < 65536; ++i)
         y = old_wcwidth(i);
     let end_old = new Date().getTime();
-    assert.equal(((end_new-start_new) * 10 < (end_old-start_old)), true);
+    assert.equal(((end_new - start_new) * 10 < (end_old - start_old)), true);
   });
 });
