@@ -27,7 +27,6 @@ import * as Browser from './utils/Browser';
 import * as Mouse from './utils/Mouse';
 import { CHARSETS } from './Charsets';
 import { getRawByteCoords } from './utils/Mouse';
-import { translateBufferLineToString } from './utils/BufferLine';
 
 /**
  * Terminal Emulation References:
@@ -245,7 +244,7 @@ function Terminal(options) {
   }
   // Ensure the selection manager has the correct buffer
   if (this.selectionManager) {
-    this.selectionManager.setBuffer(this.buffer.lines);
+    this.selectionManager.setBuffer(this.buffer);
   }
 
   this.setupStops();
@@ -716,7 +715,7 @@ Terminal.prototype.open = function(parent, focus) {
   this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
   this.renderer = new Renderer(this);
   this.selectionManager = new SelectionManager(
-    this, this.buffer.lines, this.rowContainer, this.charMeasure
+    this, this.buffer, this.rowContainer, this.charMeasure
   );
   this.selectionManager.on('refresh', data => {
     this.renderer.refreshSelection(data.start, data.end);
@@ -1217,8 +1216,8 @@ Terminal.prototype.finalizeCharAttributes = function() {
   if (!this.currentCharAttributes) {
     return;
   }
-  this.currentCharAttributes.x2 = this.x;
-  this.currentCharAttributes.y2 = this.ybase + this.y;
+  this.currentCharAttributes.x2 = this.buffer.x;
+  this.currentCharAttributes.y2 = this.buffer.ybase + this.buffer.y;
   this.currentCharAttributes = null;
 }
 
@@ -2461,7 +2460,6 @@ function keys(obj) {
  * Expose
  */
 
-Terminal.translateBufferLineToString = translateBufferLineToString;
 Terminal.EventEmitter = EventEmitter;
 Terminal.inherits = inherits;
 

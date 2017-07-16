@@ -3,7 +3,7 @@
  */
 import jsdom = require('jsdom');
 import { assert } from 'chai';
-import { ITerminal, ICircularList } from './Interfaces';
+import { ITerminal, ICircularList, IBuffer } from './Interfaces';
 import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
 import { SelectionManager } from './SelectionManager';
@@ -14,7 +14,7 @@ import { BufferSet } from './BufferSet';
 class TestSelectionManager extends SelectionManager {
   constructor(
     terminal: ITerminal,
-    buffer: ICircularList<LineData>,
+    buffer: IBuffer,
     rowContainer: HTMLElement,
     charMeasure: CharMeasure
   ) {
@@ -51,7 +51,7 @@ describe('SelectionManager', () => {
     terminal.buffers = new BufferSet(terminal);
     terminal.buffer = terminal.buffers.active;
     bufferLines = terminal.buffer.lines;
-    selectionManager = new TestSelectionManager(terminal, bufferLines, rowContainer, null);
+    selectionManager = new TestSelectionManager(terminal, terminal.buffer, rowContainer, null);
   });
 
   function stringToRow(text: string): CharData[] {

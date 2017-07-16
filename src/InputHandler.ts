@@ -6,7 +6,7 @@ import { IInputHandler, ITerminal } from './Interfaces';
 import { C0 } from './EscapeSequences';
 import { DEFAULT_CHARSET } from './Charsets';
 import { CharAttributes } from './CharAttributes';
-import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from './utils/BufferLine';
+import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from './Buffer';
 
 /**
  * The terminal's standard implementation of IInputHandler, this handles all
@@ -949,6 +949,7 @@ export class InputHandler implements IInputHandler {
         case 47: // alt screen buffer
         case 1047: // alt screen buffer
           this._terminal.buffers.activateAltBuffer();
+          this._terminal.selectionManager.setBuffer(this._terminal.buffer);
           this._terminal.reset();
           this._terminal.viewport.syncScrollArea();
           this._terminal.showCursor();
@@ -1117,7 +1118,7 @@ export class InputHandler implements IInputHandler {
           if (params[0] === 1049) {
             this.restoreCursor(params);
           }
-          this._terminal.selectionManager.setBuffer(this._terminal.buffer.lines);
+          this._terminal.selectionManager.setBuffer(this._terminal.buffer);
           this._terminal.refresh(0, this._terminal.rows - 1);
           this._terminal.viewport.syncScrollArea();
           this._terminal.showCursor();

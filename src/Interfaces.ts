@@ -61,6 +61,8 @@ export interface IBuffer {
   y: number;
   x: number;
   tabs: any;
+
+  translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string;
 }
 
 export interface IBufferSet {

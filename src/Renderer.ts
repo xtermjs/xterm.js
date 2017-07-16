@@ -5,7 +5,7 @@
 import { ITerminal } from './Interfaces';
 import { DomElementObjectPool } from './utils/DomElementObjectPool';
 import { CharAttributes } from './CharAttributes';
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './utils/BufferLine';
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
 
 /**
  * The maximum number of refresh frames to skip when the write buffer is non-
