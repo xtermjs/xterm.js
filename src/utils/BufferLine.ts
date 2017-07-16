@@ -4,7 +4,7 @@
 
 // TODO: This module should be merged into a buffer or buffer line class
 
-import { CharData } from "../Types";
+import { CharData } from '../Types';
 
 export const CHAR_DATA_CHAR_INDEX = 0;
 export const CHAR_DATA_WIDTH_INDEX = 1;

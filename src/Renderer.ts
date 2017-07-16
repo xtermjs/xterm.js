@@ -5,6 +5,7 @@
 import { ITerminal } from './Interfaces';
 import { DomElementObjectPool } from './utils/DomElementObjectPool';
 import { CharAttributes } from './CharAttributes';
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './utils/BufferLine';
 
 /**
  * The maximum number of refresh frames to skip when the write buffer is non-
@@ -164,8 +165,8 @@ export class Renderer {
 
       // Process each character in the line
       for (let i = 0; i < width; i++) {
-        const ch: string = line[i][0];
-        const ch_width: number = line[i][1];
+        const ch: string = line[i][CHAR_DATA_CHAR_INDEX];
+        const ch_width: number = line[i][CHAR_DATA_WIDTH_INDEX];
         let flags: number = line[i][2];
         let fg: number = line[i][3];
         let bg: number = line[i][4];

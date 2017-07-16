@@ -11,7 +11,7 @@ declare var require: any;
 declare var window: any;
 
 (function (addon) {
-  if ('Terminal' in window) {
+  if (typeof window !== 'undefined' && 'Terminal' in window) {
     /**
      * Plain browser environment
      */
@@ -22,7 +22,7 @@ declare var window: any;
      */
     const xterm = '../../xterm';
     module.exports = addon(require(xterm));
-  } else if (typeof define == 'function') {
+  } else if (typeof define === 'function') {
     /**
      * Require.js is available
      */

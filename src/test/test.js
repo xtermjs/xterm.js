@@ -588,8 +588,8 @@ describe('xterm.js', function() {
       for (var i=0xDC00; i<=0xDCFF; ++i) {
         xterm.buffer.x = xterm.cols - 1;
         xterm.write(high + String.fromCharCode(i));
-        expect(xterm.buffer.lines.get(0)[xterm.x-1][0]).eql(high + String.fromCharCode(i));
-        expect(xterm.buffer.lines.get(0)[xterm.x-1][0].length).eql(2);
+        expect(xterm.buffer.lines.get(0)[xterm.buffer.x-1][0]).eql(high + String.fromCharCode(i));
+        expect(xterm.buffer.lines.get(0)[xterm.buffer.x-1][0].length).eql(2);
         expect(xterm.buffer.lines.get(1)[0][0]).eql(' ');
         xterm.reset();
       }
