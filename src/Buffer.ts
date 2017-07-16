@@ -5,6 +5,7 @@
 import { ITerminal, IBuffer } from './Interfaces';
 import { CircularList } from './utils/CircularList';
 import { LineData } from './Types';
+import { CharAttributes } from "./CharAttributes";
 
 export const CHAR_DATA_CHAR_INDEX = 0;
 export const CHAR_DATA_WIDTH_INDEX = 1;
@@ -18,6 +19,9 @@ export const CHAR_DATA_WIDTH_INDEX = 1;
  */
 export class Buffer implements IBuffer {
   public lines: CircularList<LineData>;
+  public charAttributes: CharAttributes[];
+  // linesIndexOffset usage should be encapsulated
+  public linesIndexOffset: number;
 
   /**
    * Create a new Buffer.
@@ -38,7 +42,20 @@ export class Buffer implements IBuffer {
     public tabs: any = {},
   ) {
     this.lines = new CircularList<LineData>(this.terminal.scrollback);
+    this.charAttributes = [];
+    this.linesIndexOffset = 0;
     this.scrollBottom = this.terminal.rows - 1;
+
+    // TODO: Listen to line's trim and adjust char attributes
+    this.lines.on('trim', (amount: number) => this._onTrim(amount));
+  }
+
+  private _onTrim(amount: number): void {
+    // Trim the top of charAttributes to ensure it never points at trimmed rows
+    this.linesIndexOffset += amount;
+    while (this.charAttributes.length > 0 && this.charAttributes[0].y1 <= this.linesIndexOffset) {
+      this.charAttributes.shift();
+    }
   }
 
   /**

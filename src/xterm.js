@@ -198,7 +198,6 @@ function Terminal(options) {
   this.currentFgColor = this.defaultFgColor;
   this.currentBgColor = this.defaultBgColor;
   this.currentCharAttributes = null;
-  this.charAttributes = [];
 
   this.params = [];
   this.currentParam = 0;
@@ -1217,7 +1216,7 @@ Terminal.prototype.finalizeCharAttributes = function() {
     return;
   }
   this.currentCharAttributes.x2 = this.buffer.x;
-  this.currentCharAttributes.y2 = this.buffer.ybase + this.buffer.y;
+  this.currentCharAttributes.y2 = this.buffer.linesIndexOffset + this.buffer.ybase + this.buffer.y;
   this.currentCharAttributes = null;
 }
 

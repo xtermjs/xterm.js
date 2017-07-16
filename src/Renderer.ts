@@ -127,9 +127,9 @@ export class Renderer {
 
     let nextCharAttributeIndex: number = -1;
     let currentCharAttributes: CharAttributes;
-    for (let i = 0; i < (<any>this._terminal).charAttributes.length; i++) {
-      const charAttribute = (<any>this._terminal).charAttributes[i];
-      if (charAttribute.y1 === start + this._terminal.buffer.ydisp || charAttribute.y2 >= start + this._terminal.buffer.ydisp) {
+    for (let i = 0; i < (<any>this._terminal.buffer).charAttributes.length; i++) {
+      const charAttribute = (<any>this._terminal.buffer).charAttributes[i];
+      if (charAttribute.y1 - (<any>this._terminal.buffer).linesIndexOffset === start + this._terminal.buffer.ydisp || charAttribute.y2 - (<any>this._terminal.buffer).linesIndexOffset >= start + this._terminal.buffer.ydisp) {
         nextCharAttributeIndex = i;
         console.log(`initial char attributes index:`, nextCharAttributeIndex);
         break;
@@ -167,24 +167,24 @@ export class Renderer {
       for (let i = 0; i < width; i++) {
         const ch: string = line[i][CHAR_DATA_CHAR_INDEX];
         const ch_width: number = line[i][CHAR_DATA_WIDTH_INDEX];
-        let flags: number = line[i][2];
-        let fg: number = line[i][3];
-        let bg: number = line[i][4];
+        let flags: number;// = line[i][2];
+        let fg: number;// = line[i][3];
+        let bg: number;// = line[i][4];
         if (!ch_width) {
           continue;
         }
 
-        if (currentCharAttributes && currentCharAttributes.x2 === i && currentCharAttributes.y2 === y + this._terminal.buffer.ydisp) {
+        if (currentCharAttributes && currentCharAttributes.x2 === i && currentCharAttributes.y2 - (<any>this._terminal.buffer).linesIndexOffset === y + this._terminal.buffer.ydisp) {
           currentCharAttributes = null;
           nextCharAttributeIndex++;
-          if (nextCharAttributeIndex === (<any>this._terminal).charAttributes.length) {
+          if (nextCharAttributeIndex === (<any>this._terminal.buffer).charAttributes.length) {
             nextCharAttributeIndex = -1;
           }
         }
         if (nextCharAttributeIndex !== -1 &&
-            (<any>this._terminal).charAttributes[nextCharAttributeIndex].x1 === i &&
-            (<any>this._terminal).charAttributes[nextCharAttributeIndex].y1 === y + this._terminal.buffer.ydisp) {
-          currentCharAttributes = (<any>this._terminal).charAttributes[nextCharAttributeIndex];
+            (<any>this._terminal.buffer).charAttributes[nextCharAttributeIndex].x1 === i &&
+            (<any>this._terminal.buffer).charAttributes[nextCharAttributeIndex].y1 - (<any>this._terminal.buffer).linesIndexOffset === y + this._terminal.buffer.ydisp) {
+          currentCharAttributes = (<any>this._terminal.buffer).charAttributes[nextCharAttributeIndex];
           console.log(`current char attributes ${i},${y}:`, currentCharAttributes);
         }
 

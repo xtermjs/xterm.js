@@ -1195,7 +1195,7 @@ export class InputHandler implements IInputHandler {
     // Optimize a single SGR0.
     if (params.length === 1 && params[0] === 0) {
       this._terminal.finalizeCharAttributes();
-      console.log('Current char attr list:', this._terminal.charAttributes);
+      console.log('Current char attr list:', this._terminal.buffer.charAttributes);
       this._terminal.currentFlags = this._terminal.defaultFlags;
       this._terminal.currentFgColor = this._terminal.defaultFgColor;
       this._terminal.currentBgColor = this._terminal.defaultBgColor;
@@ -1305,8 +1305,8 @@ export class InputHandler implements IInputHandler {
     }
 
     this._terminal.finalizeCharAttributes();
-    this._terminal.currentCharAttributes = new CharAttributes(this._terminal.buffer.x, this._terminal.buffer.ybase + this._terminal.buffer.y, null, null, [this._terminal.currentFlags, this._terminal.currentFgColor, this._terminal.currentBgColor]);
-    this._terminal.charAttributes.push(this._terminal.currentCharAttributes);
+    this._terminal.currentCharAttributes = new CharAttributes(this._terminal.buffer.x, this._terminal.buffer.ybase + this._terminal.buffer.y + (<any>this._terminal.buffer).linesIndexOffset, null, null, [this._terminal.currentFlags, this._terminal.currentFgColor, this._terminal.currentBgColor]);
+    this._terminal.buffer.charAttributes.push(this._terminal.currentCharAttributes);
     console.log('Creating new style attr:', this._terminal.currentCharAttributes);
   }
 
