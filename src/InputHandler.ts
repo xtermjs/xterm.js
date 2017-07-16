@@ -1601,21 +1601,21 @@ export const wcwidth = (function(opts) {
         return 1;
     }
     let table = new Uint8Array(16384);
-    for (let i=0; i<16384; ++i) {
+    for (let i = 0; i < 16384; ++i) {
         let j = i * 4;
         let num = 0;
-        num |= (wcwidthBMP(j+3));
+        num |= (wcwidthBMP(j + 3));
         num <<= 2;
-        num |= (wcwidthBMP(j+2));
+        num |= (wcwidthBMP(j + 2));
         num <<= 2;
-        num |= (wcwidthBMP(j+1));
+        num |= (wcwidthBMP(j + 1));
         num <<= 2;
         num |= (wcwidthBMP(j));
         table[i] = num;
     }
     return function (num) {
-        num = num|0;
-        return (num<65536) ? (table[num>>2] >> ((num & 3) * 2))&3 : wcwidthHigh(num);
+        num = num | 0;
+        return (num < 65536) ? (table[num >> 2] >> ((num & 3) * 2)) & 3 : wcwidthHigh(num);
     }
 })({nul: 0, control: 0});  // configurable options
 

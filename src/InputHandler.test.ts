@@ -156,7 +156,7 @@ const old_wcwidth = (function(opts) {
 
 describe('wcwidth', () => {
   it('same as old implementation for BMP and individual higher', () => {
-    for (let i=0; i<65536; ++i)
+    for (let i = 0; i < 65536; ++i)
       assert.equal(wcwidth(i), old_wcwidth(i));
     // test some individual higher to fullfill branching
     assert.equal(wcwidth(0x10A01), old_wcwidth(0x10A01));
@@ -166,16 +166,16 @@ describe('wcwidth', () => {
   it('new is at least 10 times faster', () => {
     let start_new = new Date().getTime();
     let x = 0;
-    for (let runs=0; runs<1; ++runs)
+    for (let runs = 0; runs < 1; ++runs)
       for (let i=0; i<65536; ++i)
         x = wcwidth(i);
     let end_new = new Date().getTime();
     let start_old = new Date().getTime();
     let y = 0;
-    for (let runs=0; runs<1; ++runs)
-      for (let i=0; i<65536; ++i)
+    for (let runs = 0; runs < 1; ++runs)
+      for (let i = 0; i < 65536; ++i)
         y = old_wcwidth(i);
     let end_old = new Date().getTime();
-    assert.equal(((end_new-start_new)*10 < (end_old-start_old)), true);
+    assert.equal(((end_new-start_new) * 10 < (end_old-start_old)), true);
   });
 });
