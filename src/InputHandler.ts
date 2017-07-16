@@ -1616,6 +1616,6 @@ export const wcwidth = (function(opts) {
     return function (num) {
         num = num | 0;
         return (num < 65536) ? (table[num >> 2] >> ((num & 3) * 2)) & 3 : wcwidthHigh(num);
-    }
+    };
 })({nul: 0, control: 0});  // configurable options
 
