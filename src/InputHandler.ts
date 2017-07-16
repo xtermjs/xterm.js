@@ -5,7 +5,7 @@
 import { IInputHandler, ITerminal } from './Interfaces';
 import { C0 } from './EscapeSequences';
 import { DEFAULT_CHARSET } from './Charsets';
-import { CharAttributes } from "./CharAttributes";
+import { CharAttributes } from './CharAttributes';
 
 /**
  * The terminal's standard implementation of IInputHandler, this handles all
@@ -28,49 +28,48 @@ export class InputHandler implements IInputHandler {
         char = this._terminal.charset[char];
       }
 
-      let row = this._terminal.y + this._terminal.ybase;
+      let row = this._terminal.buffer.y + this._terminal.buffer.ybase;
 
       // insert combining char in last cell
       // FIXME: needs handling after cursor jumps
-      if (!ch_width && this._terminal.x) {
+      if (!ch_width && this._terminal.buffer.x) {
         // dont overflow left
-        if (this._terminal.lines.get(row)[this._terminal.x - 1]) {
-          if (!this._terminal.lines.get(row)[this._terminal.x - 1][2]) {
+        if (this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1]) {
+          if (!this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1][2]) {
 
             // found empty cell after fullwidth, need to go 2 cells back
-            if (this._terminal.lines.get(row)[this._terminal.x - 2])
-              this._terminal.lines.get(row)[this._terminal.x - 2][1] += char;
+            if (this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 2])
+              this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 2][1] += char;
 
           } else {
-            this._terminal.lines.get(row)[this._terminal.x - 1][1] += char;
+            this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1][1] += char;
           }
-          this._terminal.updateRange(this._terminal.y);
+          this._terminal.updateRange(this._terminal.buffer.y);
         }
         return;
       }
 
       // goto next line if ch would overflow
       // TODO: needs a global min terminal width of 2
-      if (this._terminal.x + ch_width - 1 >= this._terminal.cols) {
+      if (this._terminal.buffer.x + ch_width - 1 >= this._terminal.cols) {
         // autowrap - DECAWM
         if (this._terminal.wraparoundMode) {
-          this._terminal.x = 0;
-          this._terminal.y++;
-          if (this._terminal.y > this._terminal.scrollBottom) {
-            // Insert a new line, scroll and mark as a wrapped line
-            this._terminal.y--;
+          this._terminal.buffer.x = 0;
+          this._terminal.buffer.y++;
+          if (this._terminal.buffer.y > this._terminal.buffer.scrollBottom) {
+            this._terminal.buffer.y--;
             this._terminal.scroll(true);
           } else {
             // The line already exists (eg. the initial viewport), mark it as a
             // wrapped line
-            this._terminal.lines.get(this._terminal.y).isWrapped = true;
+            this._terminal.buffer.lines.get(this._terminal.buffer.y).isWrapped = true;
           }
         } else {
           if (ch_width === 2)  // FIXME: check for xterm behavior
             return;
         }
       }
-      row = this._terminal.y + this._terminal.ybase;
+      row = this._terminal.buffer.y + this._terminal.buffer.ybase;
 
       // insert mode: move characters to right
       if (this._terminal.insertMode) {
@@ -78,26 +77,26 @@ export class InputHandler implements IInputHandler {
         for (let moves = 0; moves < ch_width; ++moves) {
           // remove last cell, if it's width is 0
           // we have to adjust the second last cell as well
-          const removed = this._terminal.lines.get(this._terminal.y + this._terminal.ybase).pop();
+          const removed = this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).pop();
           if (removed[2] === 0
-              && this._terminal.lines.get(row)[this._terminal.cols - 2]
-              && this._terminal.lines.get(row)[this._terminal.cols - 2][2] === 2) {
-            this._terminal.lines.get(row)[this._terminal.cols - 2] = [' ', 1, this._terminal.currentFlags, this._terminal.currentFgColor, this._terminal.currentBgColor];
+              && this._terminal.buffer.lines.get(row)[this._terminal.cols - 2]
+              && this._terminal.buffer.lines.get(row)[this._terminal.cols - 2][2] === 2) {
+            this._terminal.buffer.lines.get(row)[this._terminal.cols - 2] = [' ', 1, this._terminal.currentFlags, this._terminal.currentFgColor, this._terminal.currentBgColor];
           }
 
           // insert empty cell at cursor
-          this._terminal.lines.get(row).splice(this._terminal.x, 0, [' ', 1, this._terminal.currentFlags, this._terminal.currentFgColor, this._terminal.currentBgColor]);
+          this._terminal.buffer.lines.get(row).splice(this._terminal.x, 0, [' ', 1, this._terminal.currentFlags, this._terminal.currentFgColor, this._terminal.currentBgColor]);
         }
       }
 
-      this._terminal.lines.get(row)[this._terminal.x] = [char, ch_width, this._terminal.currentFlags, this._terminal.currentFgColor, this._terminal.currentBgColor];
-      this._terminal.x++;
-      this._terminal.updateRange(this._terminal.y);
+      this._terminal.buffer.lines.get(row)[this._terminal.buffer.x] = [char, ch_width, this._terminal.currentFlags, this._terminal.currentFgColor, this._terminal.currentBgColor];
+      this._terminal.buffer.x++;
+      this._terminal.updateRange(this._terminal.buffer.y);
 
       // fullwidth char - set next cell width to zero and advance cursor
       if (ch_width === 2) {
-        this._terminal.lines.get(row)[this._terminal.x] = ['', 0, this._terminal.currentFlags, this._terminal.currentFgColor, this._terminal.currentBgColor];
-        this._terminal.x++;
+        this._terminal.buffer.lines.get(row)[this._terminal.buffer.x] = ['', 0, this._terminal.currentFlags, this._terminal.currentFgColor, this._terminal.currentBgColor];
+        this._terminal.buffer.x++;
       }
     }
   }
@@ -123,16 +122,16 @@ export class InputHandler implements IInputHandler {
    */
   public lineFeed(): void {
     if (this._terminal.convertEol) {
-      this._terminal.x = 0;
+      this._terminal.buffer.x = 0;
     }
-    this._terminal.y++;
-    if (this._terminal.y > this._terminal.scrollBottom) {
-      this._terminal.y--;
+    this._terminal.buffer.y++;
+    if (this._terminal.buffer.y > this._terminal.buffer.scrollBottom) {
+      this._terminal.buffer.y--;
       this._terminal.scroll();
     }
     // If the end of the line is hit, prevent this action from wrapping around to the next line.
-    if (this._terminal.x >= this._terminal.cols) {
-      this._terminal.x--;
+    if (this._terminal.buffer.x >= this._terminal.cols) {
+      this._terminal.buffer.x--;
     }
   }
 
@@ -141,7 +140,7 @@ export class InputHandler implements IInputHandler {
    * Carriage Return (Ctrl-M).
    */
   public carriageReturn(): void {
-    this._terminal.x = 0;
+    this._terminal.buffer.x = 0;
   }
 
   /**
@@ -149,8 +148,8 @@ export class InputHandler implements IInputHandler {
    * Backspace (Ctrl-H).
    */
   public backspace(): void {
-    if (this._terminal.x > 0) {
-      this._terminal.x--;
+    if (this._terminal.buffer.x > 0) {
+      this._terminal.buffer.x--;
     }
   }
 
@@ -159,7 +158,7 @@ export class InputHandler implements IInputHandler {
    * Horizontal Tab (HT) (Ctrl-I).
    */
   public tab(): void {
-    this._terminal.x = this._terminal.nextStop();
+    this._terminal.buffer.x = this._terminal.nextStop();
   }
 
   /**
@@ -190,13 +189,13 @@ export class InputHandler implements IInputHandler {
     param = params[0];
     if (param < 1) param = 1;
 
-    row = this._terminal.y + this._terminal.ybase;
-    j = this._terminal.x;
+    row = this._terminal.buffer.y + this._terminal.buffer.ybase;
+    j = this._terminal.buffer.x;
     ch = [' ', 1, this._terminal.defaultFlags, this._terminal.defaultFgColor, this._terminal.currentBgColor]; // xterm
 
     while (param-- && j < this._terminal.cols) {
-      this._terminal.lines.get(row).splice(j++, 0, ch);
-      this._terminal.lines.get(row).pop();
+      this._terminal.buffer.lines.get(row).splice(j++, 0, ch);
+      this._terminal.buffer.lines.get(row).pop();
     }
   }
 
@@ -209,9 +208,9 @@ export class InputHandler implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
-    this._terminal.y -= param;
-    if (this._terminal.y < 0) {
-      this._terminal.y = 0;
+    this._terminal.buffer.y -= param;
+    if (this._terminal.buffer.y < 0) {
+      this._terminal.buffer.y = 0;
     }
   }
 
@@ -224,13 +223,13 @@ export class InputHandler implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
-    this._terminal.y += param;
-    if (this._terminal.y >= this._terminal.rows) {
-      this._terminal.y = this._terminal.rows - 1;
+    this._terminal.buffer.y += param;
+    if (this._terminal.buffer.y >= this._terminal.rows) {
+      this._terminal.buffer.y = this._terminal.rows - 1;
     }
     // If the end of the line is hit, prevent this action from wrapping around to the next line.
-    if (this._terminal.x >= this._terminal.cols) {
-      this._terminal.x--;
+    if (this._terminal.buffer.x >= this._terminal.cols) {
+      this._terminal.buffer.x--;
     }
   }
 
@@ -243,9 +242,9 @@ export class InputHandler implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
-    this._terminal.x += param;
-    if (this._terminal.x >= this._terminal.cols) {
-      this._terminal.x = this._terminal.cols - 1;
+    this._terminal.buffer.x += param;
+    if (this._terminal.buffer.x >= this._terminal.cols) {
+      this._terminal.buffer.x = this._terminal.cols - 1;
     }
   }
 
@@ -259,12 +258,12 @@ export class InputHandler implements IInputHandler {
       param = 1;
     }
     // If the end of the line is hit, prevent this action from wrapping around to the next line.
-    if (this._terminal.x >= this._terminal.cols) {
-      this._terminal.x--;
+    if (this._terminal.buffer.x >= this._terminal.cols) {
+      this._terminal.buffer.x--;
     }
-    this._terminal.x -= param;
-    if (this._terminal.x < 0) {
-      this._terminal.x = 0;
+    this._terminal.buffer.x -= param;
+    if (this._terminal.buffer.x < 0) {
+      this._terminal.buffer.x = 0;
     }
   }
 
@@ -278,11 +277,11 @@ export class InputHandler implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
-    this._terminal.y += param;
-    if (this._terminal.y >= this._terminal.rows) {
-      this._terminal.y = this._terminal.rows - 1;
+    this._terminal.buffer.y += param;
+    if (this._terminal.buffer.y >= this._terminal.rows) {
+      this._terminal.buffer.y = this._terminal.rows - 1;
     }
-    this._terminal.x = 0;
+    this._terminal.buffer.x = 0;
   };
 
 
@@ -296,11 +295,11 @@ export class InputHandler implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
-    this._terminal.y -= param;
-    if (this._terminal.y < 0) {
-      this._terminal.y = 0;
+    this._terminal.buffer.y -= param;
+    if (this._terminal.buffer.y < 0) {
+      this._terminal.buffer.y = 0;
     }
-    this._terminal.x = 0;
+    this._terminal.buffer.x = 0;
   };
 
 
@@ -313,7 +312,7 @@ export class InputHandler implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
-    this._terminal.x = param - 1;
+    this._terminal.buffer.x = param - 1;
   }
 
   /**
@@ -343,8 +342,8 @@ export class InputHandler implements IInputHandler {
       col = this._terminal.cols - 1;
     }
 
-    this._terminal.x = col;
-    this._terminal.y = row;
+    this._terminal.buffer.x = col;
+    this._terminal.buffer.y = row;
   }
 
   /**
@@ -354,7 +353,7 @@ export class InputHandler implements IInputHandler {
   public cursorForwardTab(params: number[]): void {
     let param = params[0] || 1;
     while (param--) {
-      this._terminal.x = this._terminal.nextStop();
+      this._terminal.buffer.x = this._terminal.nextStop();
     }
   }
 
@@ -374,15 +373,15 @@ export class InputHandler implements IInputHandler {
     let j;
     switch (params[0]) {
       case 0:
-        this._terminal.eraseRight(this._terminal.x, this._terminal.y);
-        j = this._terminal.y + 1;
+        this._terminal.eraseRight(this._terminal.buffer.x, this._terminal.buffer.y);
+        j = this._terminal.buffer.y + 1;
         for (; j < this._terminal.rows; j++) {
           this._terminal.eraseLine(j);
         }
         break;
       case 1:
-        this._terminal.eraseLeft(this._terminal.x, this._terminal.y);
-        j = this._terminal.y;
+        this._terminal.eraseLeft(this._terminal.buffer.x, this._terminal.buffer.y);
+        j = this._terminal.buffer.y;
         while (j--) {
           this._terminal.eraseLine(j);
         }
@@ -393,11 +392,11 @@ export class InputHandler implements IInputHandler {
         break;
       case 3:
         // Clear scrollback (everything not in viewport)
-        const scrollBackSize = this._terminal.lines.length - this._terminal.rows;
+        const scrollBackSize = this._terminal.buffer.lines.length - this._terminal.rows;
         if (scrollBackSize > 0) {
-          this._terminal.lines.trimStart(scrollBackSize);
-          this._terminal.ybase = Math.max(this._terminal.ybase - scrollBackSize, 0);
-          this._terminal.ydisp = Math.max(this._terminal.ydisp - scrollBackSize, 0);
+          this._terminal.buffer.lines.trimStart(scrollBackSize);
+          this._terminal.buffer.ybase = Math.max(this._terminal.buffer.ybase - scrollBackSize, 0);
+          this._terminal.buffer.ydisp = Math.max(this._terminal.buffer.ydisp - scrollBackSize, 0);
           // Force a scroll event to refresh viewport
           this._terminal.emit('scroll', 0);
         }
@@ -419,13 +418,13 @@ export class InputHandler implements IInputHandler {
   public eraseInLine(params: number[]): void {
     switch (params[0]) {
       case 0:
-        this._terminal.eraseRight(this._terminal.x, this._terminal.y);
+        this._terminal.eraseRight(this._terminal.buffer.x, this._terminal.buffer.y);
         break;
       case 1:
-        this._terminal.eraseLeft(this._terminal.x, this._terminal.y);
+        this._terminal.eraseLeft(this._terminal.buffer.x, this._terminal.buffer.y);
         break;
       case 2:
-        this._terminal.eraseLine(this._terminal.y);
+        this._terminal.eraseLine(this._terminal.buffer.y);
         break;
     }
   }
@@ -441,29 +440,29 @@ export class InputHandler implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
-    row = this._terminal.y + this._terminal.ybase;
+    row = this._terminal.buffer.y + this._terminal.buffer.ybase;
 
-    j = this._terminal.rows - 1 - this._terminal.scrollBottom;
-    j = this._terminal.rows - 1 + this._terminal.ybase - j + 1;
+    j = this._terminal.rows - 1 - this._terminal.buffer.scrollBottom;
+    j = this._terminal.rows - 1 + this._terminal.buffer.ybase - j + 1;
 
     while (param--) {
-      if (this._terminal.lines.length === this._terminal.lines.maxLength) {
+      if (this._terminal.buffer.lines.length === this._terminal.buffer.lines.maxLength) {
         // Trim the start of lines to make room for the new line
-        this._terminal.lines.trimStart(1);
-        this._terminal.ybase--;
-        this._terminal.ydisp--;
+        this._terminal.buffer.lines.trimStart(1);
+        this._terminal.buffer.ybase--;
+        this._terminal.buffer.ydisp--;
         row--;
         j--;
       }
       // test: echo -e '\e[44m\e[1L\e[0m'
       // blankLine(true) - xterm/linux behavior
-      this._terminal.lines.splice(row, 0, this._terminal.blankLine(true));
-      this._terminal.lines.splice(j, 1);
+      this._terminal.buffer.lines.splice(row, 0, this._terminal.blankLine(true));
+      this._terminal.buffer.lines.splice(j, 1);
     }
 
     // this.maxRange();
-    this._terminal.updateRange(this._terminal.y);
-    this._terminal.updateRange(this._terminal.scrollBottom);
+    this._terminal.updateRange(this._terminal.buffer.y);
+    this._terminal.updateRange(this._terminal.buffer.scrollBottom);
   }
 
   /**
@@ -477,27 +476,27 @@ export class InputHandler implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
-    row = this._terminal.y + this._terminal.ybase;
+    row = this._terminal.buffer.y + this._terminal.buffer.ybase;
 
-    j = this._terminal.rows - 1 - this._terminal.scrollBottom;
-    j = this._terminal.rows - 1 + this._terminal.ybase - j;
+    j = this._terminal.rows - 1 - this._terminal.buffer.scrollBottom;
+    j = this._terminal.rows - 1 + this._terminal.buffer.ybase - j;
 
     while (param--) {
-      if (this._terminal.lines.length === this._terminal.lines.maxLength) {
+      if (this._terminal.buffer.lines.length === this._terminal.buffer.lines.maxLength) {
         // Trim the start of lines to make room for the new line
-        this._terminal.lines.trimStart(1);
-        this._terminal.ybase -= 1;
-        this._terminal.ydisp -= 1;
+        this._terminal.buffer.lines.trimStart(1);
+        this._terminal.buffer.ybase -= 1;
+        this._terminal.buffer.ydisp -= 1;
       }
       // test: echo -e '\e[44m\e[1M\e[0m'
       // blankLine(true) - xterm/linux behavior
-      this._terminal.lines.splice(j + 1, 0, this._terminal.blankLine(true));
-      this._terminal.lines.splice(row, 1);
+      this._terminal.buffer.lines.splice(j + 1, 0, this._terminal.blankLine(true));
+      this._terminal.buffer.lines.splice(row, 1);
     }
 
     // this.maxRange();
-    this._terminal.updateRange(this._terminal.y);
-    this._terminal.updateRange(this._terminal.scrollBottom);
+    this._terminal.updateRange(this._terminal.buffer.y);
+    this._terminal.updateRange(this._terminal.buffer.scrollBottom);
   }
 
   /**
@@ -512,12 +511,12 @@ export class InputHandler implements IInputHandler {
       param = 1;
     }
 
-    row = this._terminal.y + this._terminal.ybase;
+    row = this._terminal.buffer.y + this._terminal.buffer.ybase;
     ch = [' ', 1, this._terminal.defaultFlags, this._terminal.defaultFgColor, this._terminal.currentBgColor]; // xterm
 
     while (param--) {
-      this._terminal.lines.get(row).splice(this._terminal.x, 1);
-      this._terminal.lines.get(row).push(ch);
+      this._terminal.buffer.lines.get(row).splice(this._terminal.buffer.x, 1);
+      this._terminal.buffer.lines.get(row).push(ch);
     }
   }
 
@@ -527,12 +526,12 @@ export class InputHandler implements IInputHandler {
   public scrollUp(params: number[]): void {
     let param = params[0] || 1;
     while (param--) {
-      this._terminal.lines.splice(this._terminal.ybase + this._terminal.scrollTop, 1);
-      this._terminal.lines.splice(this._terminal.ybase + this._terminal.scrollBottom, 0, this._terminal.blankLine());
+      this._terminal.buffer.lines.splice(this._terminal.buffer.ybase + this._terminal.buffer.scrollTop, 1);
+      this._terminal.buffer.lines.splice(this._terminal.buffer.ybase + this._terminal.buffer.scrollBottom, 0, this._terminal.blankLine());
     }
     // this.maxRange();
-    this._terminal.updateRange(this._terminal.scrollTop);
-    this._terminal.updateRange(this._terminal.scrollBottom);
+    this._terminal.updateRange(this._terminal.buffer.scrollTop);
+    this._terminal.updateRange(this._terminal.buffer.scrollBottom);
   }
 
   /**
@@ -541,12 +540,12 @@ export class InputHandler implements IInputHandler {
   public scrollDown(params: number[]): void {
     let param = params[0] || 1;
     while (param--) {
-      this._terminal.lines.splice(this._terminal.ybase + this._terminal.scrollBottom, 1);
-      this._terminal.lines.splice(this._terminal.ybase + this._terminal.scrollTop, 0, this._terminal.blankLine());
+      this._terminal.buffer.lines.splice(this._terminal.buffer.ybase + this._terminal.buffer.scrollBottom, 1);
+      this._terminal.buffer.lines.splice(this._terminal.buffer.ybase + this._terminal.buffer.scrollTop, 0, this._terminal.blankLine());
     }
     // this.maxRange();
-    this._terminal.updateRange(this._terminal.scrollTop);
-    this._terminal.updateRange(this._terminal.scrollBottom);
+    this._terminal.updateRange(this._terminal.buffer.scrollTop);
+    this._terminal.updateRange(this._terminal.buffer.scrollBottom);
   }
 
   /**
@@ -561,12 +560,12 @@ export class InputHandler implements IInputHandler {
       param = 1;
     }
 
-    row = this._terminal.y + this._terminal.ybase;
-    j = this._terminal.x;
+    row = this._terminal.buffer.y + this._terminal.buffer.ybase;
+    j = this._terminal.buffer.x;
     ch = [' ', 1, this._terminal.defaultFlags, this._terminal.defaultFgColor, this._terminal.currentBgColor]; // xterm
 
     while (param-- && j < this._terminal.cols) {
-      this._terminal.lines.get(row)[j++] = ch;
+      this._terminal.buffer.lines.get(row)[j++] = ch;
     }
   }
 
@@ -576,7 +575,7 @@ export class InputHandler implements IInputHandler {
   public cursorBackwardTab(params: number[]): void {
     let param = params[0] || 1;
     while (param--) {
-      this._terminal.x = this._terminal.prevStop();
+      this._terminal.buffer.x = this._terminal.prevStop();
     }
   }
 
@@ -589,9 +588,9 @@ export class InputHandler implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
-    this._terminal.x = param - 1;
-    if (this._terminal.x >= this._terminal.cols) {
-      this._terminal.x = this._terminal.cols - 1;
+    this._terminal.buffer.x = param - 1;
+    if (this._terminal.buffer.x >= this._terminal.cols) {
+      this._terminal.buffer.x = this._terminal.cols - 1;
     }
   }
 
@@ -605,9 +604,9 @@ export class InputHandler implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
-    this._terminal.x += param;
-    if (this._terminal.x >= this._terminal.cols) {
-      this._terminal.x = this._terminal.cols - 1;
+    this._terminal.buffer.x += param;
+    if (this._terminal.buffer.x >= this._terminal.cols) {
+      this._terminal.buffer.x = this._terminal.cols - 1;
     }
   }
 
@@ -616,11 +615,11 @@ export class InputHandler implements IInputHandler {
    */
   public repeatPrecedingCharacter(params: number[]): void {
     let param = params[0] || 1
-      , line = this._terminal.lines.get(this._terminal.ybase + this._terminal.y)
-      , ch = line[this._terminal.x - 1] || [this._terminal.defAttr, ' ', 1];
+      , line = this._terminal.buffer.lines.get(this._terminal.buffer.ybase + this._terminal.buffer.y)
+      , ch = line[this._terminal.buffer.x - 1] || [this._terminal.defAttr, ' ', 1];
 
     while (param--) {
-      line[this._terminal.x++] = ch;
+      line[this._terminal.buffer.x++] = ch;
     }
   }
 
@@ -699,9 +698,9 @@ export class InputHandler implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
-    this._terminal.y = param - 1;
-    if (this._terminal.y >= this._terminal.rows) {
-      this._terminal.y = this._terminal.rows - 1;
+    this._terminal.buffer.y = param - 1;
+    if (this._terminal.buffer.y >= this._terminal.rows) {
+      this._terminal.buffer.y = this._terminal.rows - 1;
     }
   }
 
@@ -715,13 +714,13 @@ export class InputHandler implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
-    this._terminal.y += param;
-    if (this._terminal.y >= this._terminal.rows) {
-      this._terminal.y = this._terminal.rows - 1;
+    this._terminal.buffer.y += param;
+    if (this._terminal.buffer.y >= this._terminal.rows) {
+      this._terminal.buffer.y = this._terminal.rows - 1;
     }
     // If the end of the line is hit, prevent this action from wrapping around to the next line.
-    if (this._terminal.x >= this._terminal.cols) {
-      this._terminal.x--;
+    if (this._terminal.buffer.x >= this._terminal.cols) {
+      this._terminal.buffer.x--;
     }
   }
 
@@ -734,14 +733,14 @@ export class InputHandler implements IInputHandler {
     if (params[0] < 1) params[0] = 1;
     if (params[1] < 1) params[1] = 1;
 
-    this._terminal.y = params[0] - 1;
-    if (this._terminal.y >= this._terminal.rows) {
-      this._terminal.y = this._terminal.rows - 1;
+    this._terminal.buffer.y = params[0] - 1;
+    if (this._terminal.buffer.y >= this._terminal.rows) {
+      this._terminal.buffer.y = this._terminal.rows - 1;
     }
 
-    this._terminal.x = params[1] - 1;
-    if (this._terminal.x >= this._terminal.cols) {
-      this._terminal.x = this._terminal.cols - 1;
+    this._terminal.buffer.x = params[1] - 1;
+    if (this._terminal.buffer.x >= this._terminal.cols) {
+      this._terminal.buffer.x = this._terminal.cols - 1;
     }
   }
 
@@ -756,9 +755,9 @@ export class InputHandler implements IInputHandler {
   public tabClear(params: number[]): void {
     let param = params[0];
     if (param <= 0) {
-      delete this._terminal.tabs[this._terminal.x];
+      delete this._terminal.buffer.tabs[this._terminal.buffer.x];
     } else if (param === 3) {
-      this._terminal.tabs = {};
+      this._terminal.buffer.tabs = {};
     }
   }
 
@@ -944,30 +943,14 @@ export class InputHandler implements IInputHandler {
           this._terminal.cursorHidden = false;
           break;
         case 1049: // alt screen buffer cursor
-          // this._terminal.saveCursor();
-          ; // FALL-THROUGH
+          this.saveCursor(params);
+          // FALL-THROUGH
         case 47: // alt screen buffer
         case 1047: // alt screen buffer
-          if (!this._terminal.normal) {
-            let normal = {
-              lines: this._terminal.lines,
-              ybase: this._terminal.ybase,
-              ydisp: this._terminal.ydisp,
-              x: this._terminal.x,
-              y: this._terminal.y,
-              scrollTop: this._terminal.scrollTop,
-              scrollBottom: this._terminal.scrollBottom,
-              tabs: this._terminal.tabs
-              // XXX save charset(s) here?
-              // charset: this._terminal.charset,
-              // glevel: this._terminal.glevel,
-              // charsets: this._terminal.charsets
-            };
-            this._terminal.reset();
-            this._terminal.viewport.syncScrollArea();
-            this._terminal.normal = normal;
-            this._terminal.showCursor();
-          }
+          this._terminal.buffers.activateAltBuffer();
+          this._terminal.reset();
+          this._terminal.viewport.syncScrollArea();
+          this._terminal.showCursor();
           break;
       }
     }
@@ -1128,26 +1111,15 @@ export class InputHandler implements IInputHandler {
           ; // FALL-THROUGH
         case 47: // normal screen buffer
         case 1047: // normal screen buffer - clearing it first
-          if (this._terminal.normal) {
-            this._terminal.lines = this._terminal.normal.lines;
-            this._terminal.ybase = this._terminal.normal.ybase;
-            this._terminal.ydisp = this._terminal.normal.ydisp;
-            this._terminal.x = this._terminal.normal.x;
-            this._terminal.y = this._terminal.normal.y;
-            this._terminal.scrollTop = this._terminal.normal.scrollTop;
-            this._terminal.scrollBottom = this._terminal.normal.scrollBottom;
-            this._terminal.tabs = this._terminal.normal.tabs;
-            this._terminal.normal = null;
-            // Ensure the selection manager has the correct buffer
-            this._terminal.selectionManager.setBuffer(this._terminal.lines);
-            // if (params === 1049) {
-            //   this.x = this.savedX;
-            //   this.y = this.savedY;
-            // }
-            this._terminal.refresh(0, this._terminal.rows - 1);
-            this._terminal.viewport.syncScrollArea();
-            this._terminal.showCursor();
+          // Ensure the selection manager has the correct buffer
+          this._terminal.buffers.activateNormalBuffer();
+          if (params[0] === 1049) {
+            this.restoreCursor(params);
           }
+          this._terminal.selectionManager.setBuffer(this._terminal.buffer.lines);
+          this._terminal.refresh(0, this._terminal.rows - 1);
+          this._terminal.viewport.syncScrollArea();
+          this._terminal.showCursor();
           break;
       }
     }
@@ -1369,9 +1341,9 @@ export class InputHandler implements IInputHandler {
         case 6:
           // cursor position
           this._terminal.send(C0.ESC + '['
-                    + (this._terminal.y + 1)
+                    + (this._terminal.buffer.y + 1)
                     + ';'
-                    + (this._terminal.x + 1)
+                    + (this._terminal.buffer.x + 1)
                     + 'R');
           break;
       }
@@ -1382,9 +1354,9 @@ export class InputHandler implements IInputHandler {
         case 6:
           // cursor position
           this._terminal.send(C0.ESC + '[?'
-                    + (this._terminal.y + 1)
+                    + (this._terminal.buffer.y + 1)
                     + ';'
-                    + (this._terminal.x + 1)
+                    + (this._terminal.buffer.x + 1)
                     + 'R');
           break;
         case 15:
@@ -1419,12 +1391,12 @@ export class InputHandler implements IInputHandler {
     this._terminal.applicationKeypad = false; // ?
     this._terminal.viewport.syncScrollArea();
     this._terminal.applicationCursor = false;
-    this._terminal.scrollTop = 0;
-    this._terminal.scrollBottom = this._terminal.rows - 1;
+    this._terminal.buffer.scrollTop = 0;
+    this._terminal.buffer.scrollBottom = this._terminal.rows - 1;
     this._terminal.currentFlags = this._terminal.defaultFlags;
     this._terminal.currentFgColor = this._terminal.defaultFgColor;
     this._terminal.currentBgColor = this._terminal.defaultBgColor;
-    this._terminal.x = this._terminal.y = 0; // ?
+    this._terminal.buffer.x = this._terminal.buffer.y = 0; // ?
     this._terminal.charset = null;
     this._terminal.glevel = 0; // ??
     this._terminal.charsets = [null]; // ??
@@ -1468,10 +1440,10 @@ export class InputHandler implements IInputHandler {
    */
   public setScrollRegion(params: number[]): void {
     if (this._terminal.prefix) return;
-    this._terminal.scrollTop = (params[0] || 1) - 1;
-    this._terminal.scrollBottom = (params[1] && params[1] <= this._terminal.rows ? params[1] : this._terminal.rows) - 1;
-    this._terminal.x = 0;
-    this._terminal.y = 0;
+    this._terminal.buffer.scrollTop = (params[0] || 1) - 1;
+    this._terminal.buffer.scrollBottom = (params[1] && params[1] <= this._terminal.rows ? params[1] : this._terminal.rows) - 1;
+    this._terminal.buffer.x = 0;
+    this._terminal.buffer.y = 0;
   }
 
 
@@ -1480,8 +1452,8 @@ export class InputHandler implements IInputHandler {
    *   Save cursor (ANSI.SYS).
    */
   public saveCursor(params: number[]): void {
-    this._terminal.savedX = this._terminal.x;
-    this._terminal.savedY = this._terminal.y;
+    this._terminal.buffers.active.x = this._terminal.buffer.x;
+    this._terminal.buffers.active.y = this._terminal.buffer.y;
   }
 
 
@@ -1490,8 +1462,8 @@ export class InputHandler implements IInputHandler {
    *   Restore cursor (ANSI.SYS).
    */
   public restoreCursor(params: number[]): void {
-    this._terminal.x = this._terminal.savedX || 0;
-    this._terminal.y = this._terminal.savedY || 0;
+    this._terminal.buffer.x = this._terminal.buffers.active.x || 0;
+    this._terminal.buffer.y = this._terminal.buffers.active.y || 0;
   }
 }
 

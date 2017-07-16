@@ -35,6 +35,8 @@
  */
 export type CharData = [string, number, number, number, number];
 
+export type LineData = CharData[];
+
 export type LinkMatcher = {
   id: number,
   regex: RegExp,

@@ -3,7 +3,7 @@
  */
 
 import { LinkMatcherOptions } from './Interfaces';
-import { CharData, LinkMatcherHandler, LinkMatcherValidationCallback } from './Types';
+import { CharData, LinkMatcherHandler, LinkMatcherValidationCallback, LineData } from './Types';
 
 export interface IBrowser {
   isNode: boolean;
@@ -24,9 +24,6 @@ export interface ITerminal {
   selectionManager: ISelectionManager;
   charMeasure: ICharMeasure;
   textarea: HTMLTextAreaElement;
-  ybase: number;
-  ydisp: number;
-  lines: ICircularList<CharData>;
   rows: number;
   cols: number;
   browser: IBrowser;
@@ -34,9 +31,10 @@ export interface ITerminal {
   children: HTMLElement[];
   cursorHidden: boolean;
   cursorState: number;
-  x: number;
-  y: number;
   defAttr: number;
+  scrollback: number;
+  buffers: IBufferSet;
+  buffer: IBuffer;
 
   defaultFlags: number;
   defaultFgColor: number;
@@ -52,6 +50,26 @@ export interface ITerminal {
   cancel(ev: Event, force?: boolean);
   log(text: string): void;
   emit(event: string, data: any);
+  reset(): void;
+  showCursor(): void;
+}
+
+export interface IBuffer {
+  lines: ICircularList<LineData>;
+  ydisp: number;
+  ybase: number;
+  y: number;
+  x: number;
+  tabs: any;
+}
+
+export interface IBufferSet {
+  alt: IBuffer;
+  normal: IBuffer;
+  active: IBuffer;
+
+  activateNormalBuffer(): void;
+  activateAltBuffer(): void;
 }
 
 export interface ISelectionManager {
@@ -75,11 +93,11 @@ export interface ILinkifier {
   deregisterLinkMatcher(matcherId: number): boolean;
 }
 
-interface ICircularList<T> {
+export interface ICircularList<T> extends IEventEmitter {
   length: number;
   maxLength: number;
+  forEach: (callbackfn: (value: T, index: number) => void) => void;
 
-  forEach(callbackfn: (value: T, index: number, array: T[]) => void): void;
   get(index: number): T;
   set(index: number, value: T): void;
   push(value: T): void;
@@ -87,6 +105,11 @@ interface ICircularList<T> {
   splice(start: number, deleteCount: number, ...items: T[]): void;
   trimStart(count: number): void;
   shiftElements(start: number, count: number, offset: number): void;
+}
+
+export interface IEventEmitter {
+  on(type, listener): void;
+  off(type, listener): void;
 }
 
 export interface LinkMatcherOptions {

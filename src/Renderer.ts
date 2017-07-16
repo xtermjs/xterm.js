@@ -4,7 +4,7 @@
 
 import { ITerminal } from './Interfaces';
 import { DomElementObjectPool } from './utils/DomElementObjectPool';
-import { CharAttributes } from "./CharAttributes";
+import { CharAttributes } from './CharAttributes';
 
 /**
  * The maximum number of refresh frames to skip when the write buffer is non-
@@ -128,7 +128,7 @@ export class Renderer {
     let currentCharAttributes: CharAttributes;
     for (let i = 0; i < (<any>this._terminal).charAttributes.length; i++) {
       const charAttribute = (<any>this._terminal).charAttributes[i];
-      if (charAttribute.y1 === start + this._terminal.ydisp || charAttribute.y2 >= start + this._terminal.ydisp) {
+      if (charAttribute.y1 === start + this._terminal.buffer.ydisp || charAttribute.y2 >= start + this._terminal.buffer.ydisp) {
         nextCharAttributeIndex = i;
         console.log(`initial char attributes index:`, nextCharAttributeIndex);
         break;
@@ -136,13 +136,13 @@ export class Renderer {
     }
 
     for (let y = start; y <= end; y++) {
-      let row = y + this._terminal.ydisp;
-      let line = this._terminal.lines.get(row);
+      let row = y + this._terminal.buffer.ydisp;
+      let line = this._terminal.buffer.lines.get(row);
 
       let cursorIndex: number;
-      if (this._terminal.y === y - (this._terminal.ybase - this._terminal.ydisp) &&
+      if (this._terminal.buffer.y === y - (this._terminal.buffer.ybase - this._terminal.buffer.ydisp) &&
           this._terminal.cursorState && !this._terminal.cursorHidden) {
-        cursorIndex = this._terminal.x;
+        cursorIndex = this._terminal.buffer.x;
       } else {
         cursorIndex = -1;
       }
@@ -173,7 +173,7 @@ export class Renderer {
           continue;
         }
 
-        if (currentCharAttributes && currentCharAttributes.x2 === i && currentCharAttributes.y2 === y + this._terminal.ydisp) {
+        if (currentCharAttributes && currentCharAttributes.x2 === i && currentCharAttributes.y2 === y + this._terminal.buffer.ydisp) {
           currentCharAttributes = null;
           nextCharAttributeIndex++;
           if (nextCharAttributeIndex === (<any>this._terminal).charAttributes.length) {
@@ -182,7 +182,7 @@ export class Renderer {
         }
         if (nextCharAttributeIndex !== -1 &&
             (<any>this._terminal).charAttributes[nextCharAttributeIndex].x1 === i &&
-            (<any>this._terminal).charAttributes[nextCharAttributeIndex].y1 === y + this._terminal.ydisp) {
+            (<any>this._terminal).charAttributes[nextCharAttributeIndex].y1 === y + this._terminal.buffer.ydisp) {
           currentCharAttributes = (<any>this._terminal).charAttributes[nextCharAttributeIndex];
           console.log(`current char attributes ${i},${y}:`, currentCharAttributes);
         }
@@ -389,8 +389,8 @@ export class Renderer {
     }
 
     // Translate from buffer position to viewport position
-    const viewportStartRow = start[1] - this._terminal.ydisp;
-    const viewportEndRow = end[1] - this._terminal.ydisp;
+    const viewportStartRow = start[1] - this._terminal.buffer.ydisp;
+    const viewportEndRow = end[1] - this._terminal.buffer.ydisp;
     const viewportCappedStartRow = Math.max(viewportStartRow, 0);
     const viewportCappedEndRow = Math.min(viewportEndRow, this._terminal.rows - 1);
 

@@ -10,6 +10,7 @@
  * @license MIT
  */
 
+import { BufferSet } from './BufferSet';
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './EventEmitter';
 import { Viewport } from './Viewport';
@@ -141,33 +142,10 @@ function Terminal(options) {
     this.on('data', options.handler);
   }
 
-  /**
-   * The scroll position of the y cursor, ie. ybase + y = the y position within the entire
-   * buffer
-   */
-  this.ybase = 0;
-
-  /**
-   * The scroll position of the viewport
-   */
-  this.ydisp = 0;
-
-  /**
-   * The cursor's x position after ybase
-   */
-  this.x = 0;
-
-  /**
-   * The cursor's y position after ybase
-   */
-  this.y = 0;
-
   this.cursorState = 0;
   this.cursorHidden = false;
   this.convertEol;
   this.queue = '';
-  this.scrollTop = 0;
-  this.scrollBottom = this.rows - 1;
   this.customKeyEventHandler = null;
   this.cursorBlinkInterval = null;
 
@@ -177,7 +155,6 @@ function Terminal(options) {
   this.originMode = false;
   this.insertMode = false;
   this.wraparoundMode = true; // defaults: xterm - true, vt100 - false
-  this.normal = null;
 
   // charset
   this.charset = null;
@@ -254,21 +231,23 @@ function Terminal(options) {
   // leftover surrogate high from previous write invocation
   this.surrogate_high = '';
 
-  /**
-   * An array of all lines in the entire buffer, including the prompt. The lines are array of
-   * characters which are 2-length arrays where [0] is an attribute and [1] is the character.
-   */
-  this.lines = new CircularList(this.scrollback);
+  // Create the terminal's buffers and set the current buffer
+  this.buffers = new BufferSet(this);
+  this.buffer = this.buffers.active;  // Convenience shortcut;
+  this.buffers.on('activate', function (buffer) {
+    this._terminal.buffer = buffer;
+  });
+
   var i = this.rows;
+
   while (i--) {
-    this.lines.push(this.blankLine());
+    this.buffer.lines.push(this.blankLine());
   }
   // Ensure the selection manager has the correct buffer
   if (this.selectionManager) {
-    this.selectionManager.setBuffer(this.lines);
+    this.selectionManager.setBuffer(this.buffer.lines);
   }
 
-  this.tabs;
   this.setupStops();
 
   // Store if user went browsing history in scrollback
@@ -441,17 +420,17 @@ Terminal.prototype.setOption = function(key, value) {
       }
 
       if (this.options[key] !== value) {
-        if (this.lines.length > value) {
-          const amountToTrim = this.lines.length - value;
-          const needsRefresh = (this.ydisp - amountToTrim < 0);
-          this.lines.trimStart(amountToTrim);
-          this.ybase = Math.max(this.ybase - amountToTrim, 0);
-          this.ydisp = Math.max(this.ydisp - amountToTrim, 0);
+        if (this.buffer.lines.length > value) {
+          const amountToTrim = this.buffer.lines.length - value;
+          const needsRefresh = (this.buffer.ydisp - amountToTrim < 0);
+          this.buffer.lines.trimStart(amountToTrim);
+          this.buffer.ybase = Math.max(this.buffer.ybase - amountToTrim, 0);
+          this.buffer.ydisp = Math.max(this.buffer.ydisp - amountToTrim, 0);
           if (needsRefresh) {
             this.refresh(0, this.rows - 1);
           }
         }
-        this.lines.maxLength = value;
+        this.buffer.lines.maxLength = value;
         this.viewport.syncScrollArea();
       }
       break;
@@ -524,7 +503,7 @@ Terminal.prototype.blur = function() {
  */
 Terminal.bindBlur = function (term) {
   on(term.textarea, 'blur', function (ev) {
-    term.refresh(term.y, term.y);
+    term.refresh(term.buffer.y, term.buffer.y);
     if (term.sendFocus) {
       term.send(C0.ESC + '[O');
     }
@@ -736,7 +715,9 @@ Terminal.prototype.open = function(parent, focus) {
 
   this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
   this.renderer = new Renderer(this);
-  this.selectionManager = new SelectionManager(this, this.lines, this.rowContainer, this.charMeasure);
+  this.selectionManager = new SelectionManager(
+    this, this.buffer.lines, this.rowContainer, this.charMeasure
+  );
   this.selectionManager.on('refresh', data => {
     this.renderer.refreshSelection(data.start, data.end);
   });
@@ -1167,7 +1148,7 @@ Terminal.prototype.queueLinkification = function(start, end) {
 Terminal.prototype.showCursor = function() {
   if (!this.cursorState) {
     this.cursorState = 1;
-    this.refresh(this.y, this.y);
+    this.refresh(this.buffer.y, this.buffer.y);
   }
 };
 
@@ -1180,48 +1161,48 @@ Terminal.prototype.scroll = function(isWrapped) {
   var row;
 
   // Make room for the new row in lines
-  if (this.lines.length === this.lines.maxLength) {
-    this.lines.trimStart(1);
-    this.ybase--;
-    if (this.ydisp !== 0) {
-      this.ydisp--;
+  if (this.buffer.lines.length === this.buffer.lines.maxLength) {
+    this.buffer.lines.trimStart(1);
+    this.buffer.ybase--;
+    if (this.buffer.ydisp !== 0) {
+      this.buffer.ydisp--;
     }
   }
 
-  this.ybase++;
+  this.buffer.ybase++;
 
   // TODO: Why is this done twice?
   if (!this.userScrolling) {
-    this.ydisp = this.ybase;
+    this.buffer.ydisp = this.buffer.ybase;
   }
 
   // last line
-  row = this.ybase + this.rows - 1;
+  row = this.buffer.ybase + this.rows - 1;
 
   // subtract the bottom scroll region
-  row -= this.rows - 1 - this.scrollBottom;
+  row -= this.rows - 1 - this.buffer.scrollBottom;
 
-  if (row === this.lines.length) {
+  if (row === this.buffer.lines.length) {
     // Optimization: pushing is faster than splicing when they amount to the same behavior
-    this.lines.push(this.blankLine(undefined, isWrapped));
+    this.buffer.lines.push(this.blankLine(undefined, isWrapped));
   } else {
     // add our new line
-    this.lines.splice(row, 0, this.blankLine(undefined, isWrapped));
+    this.buffer.lines.splice(row, 0, this.blankLine(undefined, isWrapped));
   }
 
-  if (this.scrollTop !== 0) {
-    if (this.ybase !== 0) {
-      this.ybase--;
+  if (this.buffer.scrollTop !== 0) {
+    if (this.buffer.ybase !== 0) {
+      this.buffer.ybase--;
       if (!this.userScrolling) {
-        this.ydisp = this.ybase;
+        this.buffer.ydisp = this.buffer.ybase;
       }
     }
-    this.lines.splice(this.ybase + this.scrollTop, 1);
+    this.buffer.lines.splice(this.buffer.ybase + this.buffer.scrollTop, 1);
   }
 
   // this.maxRange();
-  this.updateRange(this.scrollTop);
-  this.updateRange(this.scrollBottom);
+  this.updateRange(this.buffer.scrollTop);
+  this.updateRange(this.buffer.scrollBottom);
 
   /**
    * This event is emitted whenever the terminal is scrolled.
@@ -1229,7 +1210,7 @@ Terminal.prototype.scroll = function(isWrapped) {
    *
    * @event scroll
    */
-  this.emit('scroll', this.ydisp);
+  this.emit('scroll', this.buffer.ydisp);
 };
 
 Terminal.prototype.finalizeCharAttributes = function() {
@@ -1250,24 +1231,24 @@ Terminal.prototype.finalizeCharAttributes = function() {
  */
 Terminal.prototype.scrollDisp = function(disp, suppressScrollEvent) {
   if (disp < 0) {
-    if (this.ydisp === 0) {
+    if (this.buffer.ydisp === 0) {
       return;
     }
     this.userScrolling = true;
-  } else if (disp + this.ydisp >= this.ybase) {
+  } else if (disp + this.buffer.ydisp >= this.buffer.ybase) {
     this.userScrolling = false;
   }
 
-  const oldYdisp = this.ydisp;
-  this.ydisp = Math.max(Math.min(this.ydisp + disp, this.ybase), 0);
+  const oldYdisp = this.buffer.ydisp;
+  this.buffer.ydisp = Math.max(Math.min(this.buffer.ydisp + disp, this.buffer.ybase), 0);
 
   // No change occurred, don't trigger scroll/refresh
-  if (oldYdisp === this.ydisp) {
+  if (oldYdisp === this.buffer.ydisp) {
     return;
   }
 
   if (!suppressScrollEvent) {
-    this.emit('scroll', this.ydisp);
+    this.emit('scroll', this.buffer.ydisp);
   }
 
   this.refresh(0, this.rows - 1);
@@ -1285,14 +1266,14 @@ Terminal.prototype.scrollPages = function(pageCount) {
  * Scrolls the display of the terminal to the top.
  */
 Terminal.prototype.scrollToTop = function() {
-  this.scrollDisp(-this.ydisp);
+  this.scrollDisp(-this.buffer.ydisp);
 };
 
 /**
  * Scrolls the display of the terminal to the bottom.
  */
 Terminal.prototype.scrollToBottom = function() {
-  this.scrollDisp(this.ybase - this.ydisp);
+  this.scrollDisp(this.buffer.ybase - this.buffer.ydisp);
 };
 
 /**
@@ -1336,8 +1317,8 @@ Terminal.prototype.innerWrite = function() {
       this.xoffSentToCatchUp = false;
     }
 
-    this.refreshStart = this.y;
-    this.refreshEnd = this.y;
+    this.refreshStart = this.buffer.y;
+    this.refreshEnd = this.buffer.y;
 
     // HACK: Set the parser state based on it's state at the time of return.
     // This works around the bug #662 which saw the parser state reset in the
@@ -1347,7 +1328,7 @@ Terminal.prototype.innerWrite = function() {
     var state = this.parser.parse(data);
     this.parser.setState(state);
 
-    this.updateRange(this.y);
+    this.updateRange(this.buffer.y);
     this.refresh(this.refreshStart, this.refreshEnd);
   }
   if (this.writeBuffer.length > 0) {
@@ -1500,7 +1481,7 @@ Terminal.prototype.keyDown = function(ev) {
   this.restartCursorBlinking();
 
   if (!this.compositionHelper.keydown.bind(this.compositionHelper)(ev)) {
-    if (this.ybase !== this.ydisp) {
+    if (this.buffer.ybase !== this.buffer.ydisp) {
       this.scrollToBottom();
     }
     return false;
@@ -1978,10 +1959,10 @@ Terminal.prototype.resize = function(x, y) {
   j = this.cols;
   if (j < x) {
     ch = [' ', 1, this.defaultFlags, this.defaultFgColor, this.defaultBgColor]; // does xterm use the default attr?
-    i = this.lines.length;
+    i = this.buffer.lines.length;
     while (i--) {
-      while (this.lines.get(i).length < x) {
-        this.lines.get(i).push(ch);
+      while (this.buffer.lines.get(i).length < x) {
+        this.buffer.lines.get(i).push(ch);
       }
     }
   }
@@ -1995,21 +1976,21 @@ Terminal.prototype.resize = function(x, y) {
   if (j < y) {
     el = this.element;
     while (j++ < y) {
-      // y is rows, not this.y
-      if (this.lines.length < y + this.ybase) {
-        if (this.ybase > 0 && this.lines.length <= this.ybase + this.y + addToY + 1) {
+      // y is rows, not this.buffer.y
+      if (this.buffer.lines.length < y + this.buffer.ybase) {
+        if (this.buffer.ybase > 0 && this.buffer.lines.length <= this.buffer.ybase + this.buffer.y + addToY + 1) {
           // There is room above the buffer and there are no empty elements below the line,
           // scroll up
-          this.ybase--;
+          this.buffer.ybase--;
           addToY++;
-          if (this.ydisp > 0) {
+          if (this.buffer.ydisp > 0) {
             // Viewport is at the top of the buffer, must increase downwards
-            this.ydisp--;
+            this.buffer.ydisp--;
           }
         } else {
           // Add a blank line if there is no buffer left at the top to scroll to, or if there
           // are blank lines after the cursor
-          this.lines.push(this.blankLine());
+          this.buffer.lines.push(this.blankLine());
         }
       }
       if (this.children.length < y) {
@@ -2018,14 +1999,14 @@ Terminal.prototype.resize = function(x, y) {
     }
   } else { // (j > y)
     while (j-- > y) {
-      if (this.lines.length > y + this.ybase) {
-        if (this.lines.length > this.ybase + this.y + 1) {
+      if (this.buffer.lines.length > y + this.buffer.ybase) {
+        if (this.buffer.lines.length > this.buffer.ybase + this.buffer.y + 1) {
           // The line is a blank line below the cursor, remove it
-          this.lines.pop();
+          this.buffer.lines.pop();
         } else {
           // The line is the cursor, scroll down
-          this.ybase++;
-          this.ydisp++;
+          this.buffer.ybase++;
+          this.buffer.ydisp++;
         }
       }
       if (this.children.length > y) {
@@ -2038,25 +2019,23 @@ Terminal.prototype.resize = function(x, y) {
   this.rows = y;
 
   // Make sure that the cursor stays on screen
-  if (this.y >= y) {
-    this.y = y - 1;
+  if (this.buffer.y >= y) {
+    this.buffer.y = y - 1;
   }
   if (addToY) {
-    this.y += addToY;
+    this.buffer.y += addToY;
   }
 
-  if (this.x >= x) {
-    this.x = x - 1;
+  if (this.buffer.x >= x) {
+    this.buffer.x = x - 1;
   }
 
-  this.scrollTop = 0;
-  this.scrollBottom = y - 1;
+  this.buffer.scrollTop = 0;
+  this.buffer.scrollBottom = y - 1;
 
   this.charMeasure.measure();
 
   this.refresh(0, this.rows - 1);
-
-  this.normal = null;
 
   this.geometry = [this.cols, this.rows];
   this.emit('resize', {terminal: this, cols: x, rows: y});
@@ -2093,16 +2072,16 @@ Terminal.prototype.maxRange = function() {
  */
 Terminal.prototype.setupStops = function(i) {
   if (i != null) {
-    if (!this.tabs[i]) {
+    if (!this.buffer.tabs[i]) {
       i = this.prevStop(i);
     }
   } else {
-    this.tabs = {};
+    this.buffer.tabs = {};
     i = 0;
   }
 
   for (; i < this.cols; i += this.getOption('tabStopWidth')) {
-    this.tabs[i] = true;
+    this.buffer.tabs[i] = true;
   }
 };
 
@@ -2112,8 +2091,8 @@ Terminal.prototype.setupStops = function(i) {
  * @param {number} x The position to move the cursor to the previous tab stop.
  */
 Terminal.prototype.prevStop = function(x) {
-  if (x == null) x = this.x;
-  while (!this.tabs[--x] && x > 0);
+  if (x == null) x = this.buffer.x;
+  while (!this.buffer.tabs[--x] && x > 0);
   return x >= this.cols
     ? this.cols - 1
   : x < 0 ? 0 : x;
@@ -2125,8 +2104,8 @@ Terminal.prototype.prevStop = function(x) {
  * @param {number} x The position to move the cursor one tab stop forward.
  */
 Terminal.prototype.nextStop = function(x) {
-  if (x == null) x = this.x;
-  while (!this.tabs[++x] && x < this.cols);
+  if (x == null) x = this.buffer.x;
+  while (!this.buffer.tabs[++x] && x < this.cols);
   return x >= this.cols
     ? this.cols - 1
   : x < 0 ? 0 : x;
@@ -2139,7 +2118,7 @@ Terminal.prototype.nextStop = function(x) {
  * @param {number} y The line in which to operate.
  */
 Terminal.prototype.eraseRight = function(x, y) {
-  var line = this.lines.get(this.ybase + y);
+  var line = this.buffer.lines.get(this.buffer.ybase + y);
   if (!line) {
     return;
   }
@@ -2158,7 +2137,7 @@ Terminal.prototype.eraseRight = function(x, y) {
  * @param {number} y The line in which to operate.
  */
 Terminal.prototype.eraseLeft = function(x, y) {
-  var line = this.lines.get(this.ybase + y);
+  var line = this.buffer.lines.get(this.buffer.ybase + y);
   if (!line) {
     return;
   }
@@ -2174,20 +2153,20 @@ Terminal.prototype.eraseLeft = function(x, y) {
  * Clears the entire buffer, making the prompt line the new first line.
  */
 Terminal.prototype.clear = function() {
-  if (this.ybase === 0 && this.y === 0) {
+  if (this.buffer.ybase === 0 && this.buffer.y === 0) {
     // Don't clear if it's already clear
     return;
   }
-  this.lines.set(0, this.lines.get(this.ybase + this.y));
-  this.lines.length = 1;
-  this.ydisp = 0;
-  this.ybase = 0;
-  this.y = 0;
+  this.buffer.lines.set(0, this.buffer.lines.get(this.buffer.ybase + this.buffer.y));
+  this.buffer.lines.length = 1;
+  this.buffer.ydisp = 0;
+  this.buffer.ybase = 0;
+  this.buffer.y = 0;
   for (var i = 1; i < this.rows; i++) {
-    this.lines.push(this.blankLine());
+    this.buffer.lines.push(this.blankLine());
   }
   this.refresh(0, this.rows - 1);
-  this.emit('scroll', this.ydisp);
+  this.emit('scroll', this.buffer.ydisp);
 };
 
 /**
@@ -2259,7 +2238,7 @@ Terminal.prototype.handler = function(data) {
   }
 
   // Input is being sent to the terminal, the terminal should focus the prompt.
-  if (this.ybase !== this.ydisp) {
+  if (this.buffer.ybase !== this.buffer.ydisp) {
     this.scrollToBottom();
   }
   this.emit('data', data);
@@ -2289,14 +2268,14 @@ Terminal.prototype.handleTitle = function(title) {
  * ESC D Index (IND is 0x84).
  */
 Terminal.prototype.index = function() {
-  this.y++;
-  if (this.y > this.scrollBottom) {
-    this.y--;
+  this.buffer.y++;
+  if (this.buffer.y > this.buffer.scrollBottom) {
+    this.buffer.y--;
     this.scroll();
   }
   // If the end of the line is hit, prevent this action from wrapping around to the next line.
-  if (this.x >= this.cols) {
-    this.x--;
+  if (this.buffer.x >= this.cols) {
+    this.buffer.x--;
   }
 };
 
@@ -2308,16 +2287,16 @@ Terminal.prototype.index = function() {
  */
 Terminal.prototype.reverseIndex = function() {
   var j;
-  if (this.y === this.scrollTop) {
+  if (this.buffer.y === this.buffer.scrollTop) {
     // possibly move the code below to term.reverseScroll();
     // test: echo -ne '\e[1;1H\e[44m\eM\e[0m'
     // blankLine(true) is xterm/linux behavior
-    this.lines.shiftElements(this.y + this.ybase, this.rows - 1, 1);
-    this.lines.set(this.y + this.ybase, this.blankLine(true));
-    this.updateRange(this.scrollTop);
-    this.updateRange(this.scrollBottom);
+    this.buffer.lines.shiftElements(this.buffer.y + this.buffer.ybase, this.rows - 1, 1);
+    this.buffer.lines.set(this.buffer.y + this.buffer.ybase, this.blankLine(true));
+    this.updateRange(this.buffer.scrollTop);
+    this.updateRange(this.buffer.scrollBottom);
   } else {
-    this.y--;
+    this.buffer.y--;
   }
 };
 
@@ -2330,9 +2309,13 @@ Terminal.prototype.reset = function() {
   this.options.cols = this.cols;
   var customKeyEventHandler = this.customKeyEventHandler;
   var cursorBlinkInterval = this.cursorBlinkInterval;
+  var inputHandler = this.inputHandler;
+  var buffers = this.buffers;
   Terminal.call(this, this.options);
   this.customKeyEventHandler = customKeyEventHandler;
   this.cursorBlinkInterval = cursorBlinkInterval;
+  this.inputHandler = inputHandler;
+  this.buffers = buffers;
   this.refresh(0, this.rows - 1);
   this.viewport.syncScrollArea();
 };
@@ -2342,7 +2325,7 @@ Terminal.prototype.reset = function() {
  * ESC H Tab Set (HTS is 0x88).
  */
 Terminal.prototype.tabSet = function() {
-  this.tabs[this.x] = true;
+  this.buffer.tabs[this.buffer.x] = true;
 };
 
 /**
