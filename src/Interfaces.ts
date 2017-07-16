@@ -4,6 +4,7 @@
 
 import { LinkMatcherOptions } from './Interfaces';
 import { CharData, LinkMatcherHandler, LinkMatcherValidationCallback, LineData } from './Types';
+import { TextStyle } from "./TextStyle";
 
 export interface IBrowser {
   isNode: boolean;
@@ -56,14 +57,15 @@ export interface ITerminal {
 
 export interface IBuffer {
   lines: ICircularList<LineData>;
+  textStyles: TextStyle[];
   ydisp: number;
   ybase: number;
   y: number;
   x: number;
   tabs: any;
 
-  startCharAttributes(flags: number, fgColor: number, bgColor: number): void;
-  finishCharAttributes(): void;
+  startTextStyle(flags: number, fgColor: number, bgColor: number): void;
+  finishTextStyle(): void;
   translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string;
 }
 

@@ -5,7 +5,7 @@
 import { IInputHandler, ITerminal } from './Interfaces';
 import { C0 } from './EscapeSequences';
 import { DEFAULT_CHARSET } from './Charsets';
-import { CharAttributes } from './CharAttributes';
+import { TextStyle } from './TextStyle';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from './Buffer';
 
 /**
@@ -1196,7 +1196,7 @@ export class InputHandler implements IInputHandler {
   public charAttributes(params: number[]): void {
     // Optimize a single SGR0.
     if (params.length === 1 && params[0] === 0) {
-      (<ITerminal>this._terminal).buffer.finishCharAttributes();
+      (<ITerminal>this._terminal).buffer.finishTextStyle();
       console.log('Current char attr list:', this._terminal.buffer.charAttributes);
       this._terminal.currentFlags = this._terminal.defaultFlags;
       this._terminal.currentFgColor = this._terminal.defaultFgColor;
@@ -1306,8 +1306,8 @@ export class InputHandler implements IInputHandler {
       }
     }
 
-    (<ITerminal>this._terminal).buffer.finishCharAttributes();
-    (<ITerminal>this._terminal).buffer.startCharAttributes(this._terminal.currentFlags, this._terminal.currentFgColor, this._terminal.currentBgColor);
+    (<ITerminal>this._terminal).buffer.finishTextStyle();
+    (<ITerminal>this._terminal).buffer.startTextStyle(this._terminal.currentFlags, this._terminal.currentFgColor, this._terminal.currentBgColor);
   }
 
   /**

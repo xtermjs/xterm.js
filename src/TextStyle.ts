@@ -4,7 +4,7 @@
 
 const DEFAULT_COLOR = 1 << 24;
 
-export class CharAttributes {
+export class TextStyle {
   constructor(
     public x1: number,
     public y1: number,

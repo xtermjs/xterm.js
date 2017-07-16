@@ -5,7 +5,7 @@
 import { ITerminal, IBuffer } from './Interfaces';
 import { CircularList } from './utils/CircularList';
 import { LineData } from './Types';
-import { CharAttributes } from './CharAttributes';
+import { TextStyle } from './TextStyle';
 
 export const CHAR_DATA_CHAR_INDEX = 0;
 export const CHAR_DATA_WIDTH_INDEX = 1;
@@ -19,9 +19,9 @@ export const CHAR_DATA_WIDTH_INDEX = 1;
  */
 export class Buffer implements IBuffer {
   public lines: CircularList<LineData>;
-  public charAttributes: CharAttributes[];
+  public textStyles: TextStyle[];
 
-  private _currentCharAttributes: CharAttributes;
+  private _currentTextStyle: TextStyle;
   // linesIndexOffset usage should be encapsulated
   private _linesIndexOffset: number;
 
@@ -44,7 +44,7 @@ export class Buffer implements IBuffer {
     public tabs: any = {},
   ) {
     this.lines = new CircularList<LineData>(this.terminal.scrollback);
-    this.charAttributes = [];
+    this.textStyles = [];
     this._linesIndexOffset = 0;
     this.scrollBottom = this.terminal.rows - 1;
 
@@ -55,30 +55,30 @@ export class Buffer implements IBuffer {
   /**
    * Starts a new character attributes at the cursor.
    */
-  public startCharAttributes(flags: number, fgColor: number, bgColor: number): void {
+  public startTextStyle(flags: number, fgColor: number, bgColor: number): void {
     // TODO: Move current* variables into the buffer?
-    this._currentCharAttributes = new CharAttributes(this.x, this.ybase + this.y + this._linesIndexOffset, null, null, [flags, fgColor, bgColor]);
-    this.charAttributes.push(this._currentCharAttributes);
+    this._currentTextStyle = new TextStyle(this.x, this.ybase + this.y + this._linesIndexOffset, null, null, [flags, fgColor, bgColor]);
+    this.textStyles.push(this._currentTextStyle);
   }
 
   /**
    * Finishes the current character attributes at the cursor. Do nothing if
    * there is not a current character attributes.
    */
-  public finishCharAttributes(): void {
-    if (!this._currentCharAttributes) {
+  public finishTextStyle(): void {
+    if (!this._currentTextStyle) {
       return;
     }
-    this._currentCharAttributes.x2 = this.x;
-    this._currentCharAttributes.y2 = this._linesIndexOffset + this.ybase + this.y;
-    this._currentCharAttributes = null;
+    this._currentTextStyle.x2 = this.x;
+    this._currentTextStyle.y2 = this._linesIndexOffset + this.ybase + this.y;
+    this._currentTextStyle = null;
   }
 
   private _onTrim(amount: number): void {
     // Trim the top of charAttributes to ensure it never points at trimmed rows
     this._linesIndexOffset += amount;
-    while (this.charAttributes.length > 0 && this.charAttributes[0].y1 < this._linesIndexOffset) {
-      this.charAttributes.shift();
+    while (this.textStyles.length > 0 && this.textStyles[0].y1 < this._linesIndexOffset) {
+      this.textStyles.shift();
     }
   }
 

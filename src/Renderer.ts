@@ -4,7 +4,7 @@
 
 import { ITerminal } from './Interfaces';
 import { DomElementObjectPool } from './utils/DomElementObjectPool';
-import { CharAttributes } from './CharAttributes';
+import { TextStyle } from './TextStyle';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
 
 /**
@@ -125,13 +125,13 @@ export class Renderer {
       end = this._terminal.rows - 1;
     }
 
-    let nextCharAttributeIndex: number = -1;
-    let currentCharAttributes: CharAttributes;
-    for (let i = 0; i < (<any>this._terminal.buffer).charAttributes.length; i++) {
-      const charAttribute = (<any>this._terminal.buffer).charAttributes[i];
-      if (charAttribute.y1 - (<any>this._terminal.buffer)._linesIndexOffset === start + this._terminal.buffer.ydisp || charAttribute.y2 - (<any>this._terminal.buffer)._linesIndexOffset >= start + this._terminal.buffer.ydisp) {
-        nextCharAttributeIndex = i;
-        console.log(`initial char attributes index:`, nextCharAttributeIndex);
+    let nextTextStyleIndex: number = -1;
+    let currentTextStyle: TextStyle;
+    for (let i = 0; i < (<any>this._terminal.buffer).textStyles.length; i++) {
+      const textStyle = (<any>this._terminal.buffer).textStyles[i];
+      if (textStyle.y1 - (<any>this._terminal.buffer)._linesIndexOffset === start + this._terminal.buffer.ydisp || textStyle.y2 - (<any>this._terminal.buffer)._linesIndexOffset >= start + this._terminal.buffer.ydisp) {
+        nextTextStyleIndex = i;
+        console.log(`initial char attributes index:`, nextTextStyleIndex);
         break;
       }
     }
@@ -151,6 +151,7 @@ export class Renderer {
       let lastFlags = this._terminal.defaultFlags;
       let lastFgColor = this._terminal.defaultFgColor;
       let lastBgColor = this._terminal.defaultBgColor;
+      let lastTextStyle: TextStyle = null;
 
       const documentFragment = document.createDocumentFragment();
       let innerHTML = '';
@@ -174,36 +175,36 @@ export class Renderer {
           continue;
         }
 
-        if (currentCharAttributes && currentCharAttributes.x2 === i && currentCharAttributes.y2 - (<any>this._terminal.buffer)._linesIndexOffset === y + this._terminal.buffer.ydisp) {
-          currentCharAttributes = null;
-          nextCharAttributeIndex++;
-          if (nextCharAttributeIndex === (<any>this._terminal.buffer).charAttributes.length) {
-            nextCharAttributeIndex = -1;
+        if (currentTextStyle && currentTextStyle.x2 === i && currentTextStyle.y2 - (<any>this._terminal.buffer)._linesIndexOffset === y + (<ITerminal>this._terminal).buffer.ydisp) {
+          currentTextStyle = null;
+          nextTextStyleIndex++;
+          if (nextTextStyleIndex === (<ITerminal>this._terminal).buffer.textStyles.length) {
+            nextTextStyleIndex = -1;
           }
         }
-        if (nextCharAttributeIndex !== -1 &&
-            (<any>this._terminal.buffer).charAttributes[nextCharAttributeIndex].x1 === i &&
-            (<any>this._terminal.buffer).charAttributes[nextCharAttributeIndex].y1 - (<any>this._terminal.buffer)._linesIndexOffset === y + this._terminal.buffer.ydisp) {
-          currentCharAttributes = (<any>this._terminal.buffer).charAttributes[nextCharAttributeIndex];
-          console.log(`current char attributes ${i},${y}:`, currentCharAttributes);
+        if (nextTextStyleIndex !== -1 &&
+            (<any>this._terminal.buffer).textStyles[nextTextStyleIndex].x1 === i &&
+            (<any>this._terminal.buffer).textStyles[nextTextStyleIndex].y1 - (<any>(<ITerminal>this._terminal).buffer)._linesIndexOffset === y + (<ITerminal>this._terminal).buffer.ydisp) {
+          currentTextStyle = (<any>this._terminal.buffer).textStyles[nextTextStyleIndex];
+          console.log(`current char attributes ${i},${y}:`, currentTextStyle);
         }
 
         // TODO: This is temporary to test new method
-        if (currentCharAttributes) {
-          flags = currentCharAttributes.flags;
+        if (currentTextStyle) {
+          flags = currentTextStyle.flags;
           // v Temporary v
-          fg = currentCharAttributes._data[1];
-          bg = currentCharAttributes._data[2];
+          fg = currentTextStyle._data[1];
+          bg = currentTextStyle._data[2];
         }
 
         // Force a refresh if the character is the cursor
-        const IS_CURSOR = -1;
-        if (i === cursorIndex) {
-          flags = IS_CURSOR;
+        const isCursor = i === cursorIndex;
+        if (isCursor) {
+          currentTextStyle = null;
         }
 
         // Determine what element the character is going to be put in
-        if (flags !== lastFlags || fg !== lastFgColor || bg !== lastBgColor) {
+        if (isCursor || i === cursorIndex + 1 || currentTextStyle !== lastTextStyle) {
           // Add the current element to the document fragment if it exists
           if (currentElement) {
             if (innerHTML) {
@@ -227,7 +228,7 @@ export class Renderer {
               documentFragment.appendChild(currentElement);
             }
             currentElement = this._spanElementObjectPool.acquire();
-            if (flags === IS_CURSOR) {
+            if (isCursor) {
               currentElement.classList.add('reverse-video');
               currentElement.classList.add('terminal-cursor');
             } else {
@@ -293,7 +294,7 @@ export class Renderer {
                   //   rgb = '0' + rgb;
                   // }
                   // currentElement.style.color = `#${rgb}`;
-                  currentElement.style.color = currentCharAttributes.truecolorFg;
+                  currentElement.style.color = currentTextStyle.truecolorFg;
                 } else {
                   if (fg < 256) {
                     currentElement.classList.add(`xterm-color-${fg}`);
@@ -307,7 +308,7 @@ export class Renderer {
                   // while (rgb.length < 6) {
                   //   rgb = '0' + rgb;
                   // }
-                  currentElement.style.backgroundColor = currentCharAttributes.truecolorBg;
+                  currentElement.style.backgroundColor = currentTextStyle.truecolorBg;
                 } else {
                   if (bg < 256) {
                     currentElement.classList.add(`xterm-bg-color-${bg}`);
@@ -346,9 +347,7 @@ export class Renderer {
           }
         }
 
-        lastFlags = flags;
-        lastFgColor = fg;
-        lastBgColor = bg;
+        lastTextStyle = currentTextStyle;
       }
 
       if (innerHTML && !currentElement) {
