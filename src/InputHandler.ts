@@ -1600,21 +1600,26 @@ export const wcwidth = (function(opts) {
       }
       return 1;
     }
-    // lookup table for BMP
-    const CODEPOINTS = 65536;  // BMP holds 65536 codepoints
-    const BITWIDTH = 2;        // a codepoint can have a width of 0, 1 or 2
-    const ITEMSIZE = 32;       // using uint32_t
-    const CONTAINERSIZE = CODEPOINTS * BITWIDTH / ITEMSIZE;
-    const CODEPOINTS_PER_ITEM = ITEMSIZE / BITWIDTH;
-    const table = (typeof Uint32Array === 'undefined')
-      ? new Array(CONTAINERSIZE)
-      : new Uint32Array(CONTAINERSIZE);
-    for (let i = 0; i < CONTAINERSIZE; ++i) {
-      let num = 0;
-      let pos = CODEPOINTS_PER_ITEM;
-      while (pos--)
-        num = (num << 2) | wcwidthBMP(CODEPOINTS_PER_ITEM * i + pos);
-      table[i] = num;
+    const control = opts.control | 0;
+    let table = null;
+    function init_table() {
+      // lookup table for BMP
+      const CODEPOINTS = 65536;  // BMP holds 65536 codepoints
+      const BITWIDTH = 2;        // a codepoint can have a width of 0, 1 or 2
+      const ITEMSIZE = 32;       // using uint32_t
+      const CONTAINERSIZE = CODEPOINTS * BITWIDTH / ITEMSIZE;
+      const CODEPOINTS_PER_ITEM = ITEMSIZE / BITWIDTH;
+      table = (typeof Uint32Array === 'undefined')
+        ? new Array(CONTAINERSIZE)
+        : new Uint32Array(CONTAINERSIZE);
+      for (let i = 0; i < CONTAINERSIZE; ++i) {
+        let num = 0;
+        let pos = CODEPOINTS_PER_ITEM;
+        while (pos--)
+          num = (num << 2) | wcwidthBMP(CODEPOINTS_PER_ITEM * i + pos);
+        table[i] = num;
+      }
+    return table;
     }
     // get width from lookup table
     //   position in container   : num / CODEPOINTS_PER_ITEM
@@ -1631,12 +1636,13 @@ export const wcwidth = (function(opts) {
     return function (num) {
       num = num | 0;  // get asm.js like optimization under V8
       if (num < 32)
-        return opts.control;
-      else if (num < 127)
+        return control | 0;
+      if (num < 127)
         return 1;
-      else if (num < 65536)
-        return table[num >> 4] >> ((num & 15) << 1) & 3;
+      let t = table || init_table();
+      if (num < 65536)
+        return t[num >> 4] >> ((num & 15) << 1) & 3;
       // do a full search for high codepoints
-      else return wcwidthHigh(num);
+      return wcwidthHigh(num);
     };
 })({nul: 0, control: 0});  // configurable options
