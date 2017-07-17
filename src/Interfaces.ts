@@ -24,9 +24,6 @@ export interface ITerminal {
   selectionManager: ISelectionManager;
   charMeasure: ICharMeasure;
   textarea: HTMLTextAreaElement;
-  ybase: number;
-  ydisp: number;
-  lines: ICircularList<string>;
   rows: number;
   cols: number;
   browser: IBrowser;
@@ -34,9 +31,10 @@ export interface ITerminal {
   children: HTMLElement[];
   cursorHidden: boolean;
   cursorState: number;
-  x: number;
-  y: number;
   defAttr: number;
+  scrollback: number;
+  buffers: IBufferSet;
+  buffer: IBuffer;
 
   /**
    * Emit the 'data' event and populate the given data.
@@ -48,6 +46,26 @@ export interface ITerminal {
   cancel(ev: Event, force?: boolean);
   log(text: string): void;
   emit(event: string, data: any);
+  reset(): void;
+  showCursor(): void;
+}
+
+export interface IBuffer {
+  lines: ICircularList<[number, string, number][]>;
+  ydisp: number;
+  ybase: number;
+  y: number;
+  x: number;
+  tabs: any;
+}
+
+export interface IBufferSet {
+  alt: IBuffer;
+  normal: IBuffer;
+  active: IBuffer;
+
+  activateNormalBuffer(): void;
+  activateAltBuffer(): void;
 }
 
 export interface ISelectionManager {
@@ -71,7 +89,7 @@ export interface ILinkifier {
   deregisterLinkMatcher(matcherId: number): boolean;
 }
 
-interface ICircularList<T> {
+export interface ICircularList<T> extends IEventEmitter {
   length: number;
   maxLength: number;
 
@@ -83,6 +101,11 @@ interface ICircularList<T> {
   splice(start: number, deleteCount: number, ...items: T[]): void;
   trimStart(count: number): void;
   shiftElements(start: number, count: number, offset: number): void;
+}
+
+export interface IEventEmitter {
+  on(type, listener): void;
+  off(type, listener): void;
 }
 
 export interface LinkMatcherOptions {

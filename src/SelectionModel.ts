@@ -68,7 +68,7 @@ export class SelectionModel {
    */
   public get finalSelectionEnd(): [number, number] {
     if (this.isSelectAllActive) {
-      return [this._terminal.cols, this._terminal.ybase + this._terminal.rows - 1];
+      return [this._terminal.cols, this._terminal.buffer.ybase + this._terminal.rows - 1];
     }
 
     if (!this.selectionStart) {

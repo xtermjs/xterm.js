@@ -1,10 +1,10 @@
 import { assert } from 'chai';
 import { Viewport } from './Viewport';
+import {BufferSet} from './BufferSet';
 
 describe('Viewport', () => {
   let terminal;
   let viewportElement;
-  let selectionContainer;
   let charMeasure;
   let viewport;
   let scrollAreaElement;
@@ -13,7 +13,6 @@ describe('Viewport', () => {
 
   beforeEach(() => {
     terminal = {
-      lines: [],
       rows: 0,
       ydisp: 0,
       on: () => {},
@@ -26,8 +25,11 @@ describe('Viewport', () => {
         style: {
           height: 0
         }
-      }
+      },
+      scrollback: 10
     };
+    terminal.buffers = new BufferSet(terminal);
+    terminal.buffer = terminal.buffers.active;
     viewportElement = {
       addEventListener: () => {},
       style: {
@@ -60,14 +62,14 @@ describe('Viewport', () => {
       }, 0);
     });
     it('should set the height of the viewport when the line-height changed', () => {
-      terminal.lines.push('');
-      terminal.lines.push('');
+      terminal.buffer.lines.push('');
+      terminal.buffer.lines.push('');
       terminal.rows = 1;
       viewport.refresh();
       assert.equal(viewportElement.style.height, 1 * CHARACTER_HEIGHT + 'px');
-      charMeasure.height = 20;
+      charMeasure.height = 2 * CHARACTER_HEIGHT;
       viewport.refresh();
-      assert.equal(viewportElement.style.height, 20 + 'px');
+      assert.equal(viewportElement.style.height, 2 * CHARACTER_HEIGHT + 'px');
     });
   });
 
@@ -75,13 +77,13 @@ describe('Viewport', () => {
     it('should sync the scroll area', done => {
       // Allow CharMeasure to be initialized
       setTimeout(() => {
-        terminal.lines.push('');
+        terminal.buffer.lines.push('');
         terminal.rows = 1;
         assert.equal(scrollAreaElement.style.height, 0 * CHARACTER_HEIGHT + 'px');
         viewport.syncScrollArea();
         assert.equal(viewportElement.style.height, 1 * CHARACTER_HEIGHT + 'px');
         assert.equal(scrollAreaElement.style.height, 1 * CHARACTER_HEIGHT + 'px');
-        terminal.lines.push('');
+        terminal.buffer.lines.push('');
         viewport.syncScrollArea();
         assert.equal(viewportElement.style.height, 1 * CHARACTER_HEIGHT + 'px');
         assert.equal(scrollAreaElement.style.height, 2 * CHARACTER_HEIGHT + 'px');

@@ -4,6 +4,7 @@
 import { assert } from 'chai';
 import { ITerminal } from './Interfaces';
 import { SelectionModel } from './SelectionModel';
+import {BufferSet} from './BufferSet';
 
 class TestSelectionModel extends SelectionModel {
   constructor(
@@ -22,6 +23,10 @@ describe('SelectionManager', () => {
 
   beforeEach(() => {
     terminal = <any>{ cols: 80, rows: 2, ybase: 0 };
+    terminal.scrollback = 10;
+    terminal.buffers = new BufferSet(terminal);
+    terminal.buffer = terminal.buffers.active;
+
     model = new TestSelectionModel(terminal);
   });
 

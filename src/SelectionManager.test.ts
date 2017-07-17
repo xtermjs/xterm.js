@@ -3,16 +3,17 @@
  */
 import jsdom = require('jsdom');
 import { assert } from 'chai';
-import { ITerminal } from './Interfaces';
+import { ITerminal, ICircularList } from './Interfaces';
 import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
 import { SelectionManager } from './SelectionManager';
 import { SelectionModel } from './SelectionModel';
+import { BufferSet } from './BufferSet';
 
 class TestSelectionManager extends SelectionManager {
   constructor(
     terminal: ITerminal,
-    buffer: CircularList<any>,
+    buffer: ICircularList<[number, string, number][]>,
     rowContainer: HTMLElement,
     charMeasure: CharMeasure
   ) {
@@ -36,7 +37,7 @@ describe('SelectionManager', () => {
   let document: Document;
 
   let terminal: ITerminal;
-  let buffer: CircularList<any>;
+  let bufferLines: ICircularList<[number, string, number][]>;
   let rowContainer: HTMLElement;
   let selectionManager: TestSelectionManager;
 
@@ -44,9 +45,12 @@ describe('SelectionManager', () => {
     dom = new jsdom.JSDOM('');
     window = dom.window;
     document = window.document;
-    buffer = new CircularList<any>(100);
     terminal = <any>{ cols: 80, rows: 2 };
-    selectionManager = new TestSelectionManager(terminal, buffer, rowContainer, null);
+    terminal.scrollback = 100;
+    terminal.buffers = new BufferSet(terminal);
+    terminal.buffer = terminal.buffers.active;
+    bufferLines = terminal.buffer.lines;
+    selectionManager = new TestSelectionManager(terminal, bufferLines, rowContainer, null);
   });
 
   function stringToRow(text: string): [number, string, number][] {
@@ -59,7 +63,7 @@ describe('SelectionManager', () => {
 
   describe('_selectWordAt', () => {
     it('should expand selection for normal width chars', () => {
-      buffer.push(stringToRow('foo bar'));
+      bufferLines.push(stringToRow('foo bar'));
       selectionManager.selectWordAt([0, 0]);
       assert.equal(selectionManager.selectionText, 'foo');
       selectionManager.selectWordAt([1, 0]);
@@ -76,7 +80,7 @@ describe('SelectionManager', () => {
       assert.equal(selectionManager.selectionText, 'bar');
     });
     it('should expand selection for whitespace', () => {
-      buffer.push(stringToRow('a   b'));
+      bufferLines.push(stringToRow('a   b'));
       selectionManager.selectWordAt([0, 0]);
       assert.equal(selectionManager.selectionText, 'a');
       selectionManager.selectWordAt([1, 0]);
@@ -90,7 +94,7 @@ describe('SelectionManager', () => {
     });
     it('should expand selection for wide characters', () => {
       // Wide characters use a special format
-      buffer.push([
+      bufferLines.push([
         [null, '中', 2],
         [null, '', 0],
         [null, '文', 2],
@@ -142,7 +146,7 @@ describe('SelectionManager', () => {
       assert.equal(selectionManager.selectionText, 'foo');
     });
     it('should select up to non-path characters that are commonly adjacent to paths', () => {
-      buffer.push(stringToRow('(cd)[ef]{gh}\'ij"'));
+      bufferLines.push(stringToRow('(cd)[ef]{gh}\'ij"'));
       selectionManager.selectWordAt([0, 0]);
       assert.equal(selectionManager.selectionText, '(cd');
       selectionManager.selectWordAt([1, 0]);
@@ -180,7 +184,7 @@ describe('SelectionManager', () => {
 
   describe('_selectLineAt', () => {
     it('should select the entire line', () => {
-      buffer.push(stringToRow('foo bar'));
+      bufferLines.push(stringToRow('foo bar'));
       selectionManager.selectLineAt(0);
       assert.equal(selectionManager.selectionText, 'foo bar', 'The selected text is correct');
       assert.deepEqual(selectionManager.model.finalSelectionStart, [0, 0]);
@@ -190,13 +194,13 @@ describe('SelectionManager', () => {
 
   describe('selectAll', () => {
     it('should select the entire buffer, beyond the viewport', () => {
-      buffer.push(stringToRow('1'));
-      buffer.push(stringToRow('2'));
-      buffer.push(stringToRow('3'));
-      buffer.push(stringToRow('4'));
-      buffer.push(stringToRow('5'));
+      bufferLines.push(stringToRow('1'));
+      bufferLines.push(stringToRow('2'));
+      bufferLines.push(stringToRow('3'));
+      bufferLines.push(stringToRow('4'));
+      bufferLines.push(stringToRow('5'));
       selectionManager.selectAll();
-      terminal.ybase = buffer.length - terminal.rows;
+      terminal.buffer.ybase = bufferLines.length - terminal.rows;
       assert.equal(selectionManager.selectionText, '1\n2\n3\n4\n5');
     });
   });
