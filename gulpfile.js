@@ -21,6 +21,7 @@ let tsProject = ts.createProject('tsconfig.json');
 let tsProjectSearchAddon = ts.createProject('./src/addons/search/tsconfig.json');
 let srcDir = tsProject.config.compilerOptions.rootDir;
 let outDir = tsProject.config.compilerOptions.outDir;
+console.log('top outDir: ' + outDir);
 
 /**
  * Compile TypeScript sources to JavaScript files and create a source map file for each TypeScript
