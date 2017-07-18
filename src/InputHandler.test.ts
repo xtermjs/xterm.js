@@ -155,14 +155,15 @@ const old_wcwidth = (function(opts) {
 })({nul: 0, control: 0});  // configurable options
 
 describe('wcwidth', () => {
-  it('same as old implementation for BMP and individual higher', () => {
+  it('same as old implementation for BMP and individual higher', (done) => {
     for (let i = 0; i < 65536; ++i)
       assert.equal(wcwidth(i), old_wcwidth(i));
     // test some individual higher to fullfill branching
     assert.equal(wcwidth(0x10A01), old_wcwidth(0x10A01));
     assert.equal(wcwidth(0x30000), old_wcwidth(0x30000));
     assert.equal(wcwidth(0x3fffe), old_wcwidth(0x3fffe));
-  });
+    done();
+  }).timeout(3000);
   /*
   it('new is at least 5 times faster', () => {
     let start_new = new Date().getTime();
