@@ -21,6 +21,9 @@ let tsProject = ts.createProject('tsconfig.json');
 let tsProjectSearchAddon = ts.createProject('./src/addons/search/tsconfig.json');
 let srcDir = tsProject.config.compilerOptions.rootDir;
 let outDir = tsProject.config.compilerOptions.outDir;
+if (outDir.indexOf(__dirname) !== 0) {
+  outDir = `${__dirname}/${outDir}`;
+}
 console.log('top outDir: ' + outDir);
 
 /**
