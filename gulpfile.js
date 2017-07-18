@@ -55,7 +55,7 @@ gulp.task('tsc', function () {
 gulp.task('browserify', ['tsc'], function() {
   // Ensure that the build directory exists
   fs.ensureDirSync(buildDir);
-
+console.log('outDir: ' + outDir);
   let browserifyOptions = {
     basedir: buildDir,
     debug: true,
