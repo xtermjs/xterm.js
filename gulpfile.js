@@ -59,7 +59,7 @@ gulp.task('browserify', ['tsc'], function() {
   let browserifyOptions = {
     basedir: buildDir,
     debug: true,
-    entries: [`${__dirname}/${outDir}/xterm.js`],
+    entries: [`../${outDir}/xterm.js`],
     standalone: 'Terminal',
     cache: {},
     packageCache: {}
@@ -82,7 +82,7 @@ gulp.task('browserify-addons', ['tsc'], function() {
   let searchOptions = {
     basedir: `${buildDir}/addons/search`,
     debug: true,
-    entries: [`${__dirname}/${outDir}/addons/search/search.js`],
+    entries: [`../../../${outDir}/addons/search/search.js`],
     cache: {},
     packageCache: {}
   };
