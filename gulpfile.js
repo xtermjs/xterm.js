@@ -22,6 +22,12 @@ let tsProjectSearchAddon = ts.createProject('./src/addons/search/tsconfig.json')
 let srcDir = tsProject.config.compilerOptions.rootDir;
 let outDir = tsProject.config.compilerOptions.outDir;
 
+// Under some environments like TravisCI, this comes out at absolute which can
+// break the build. This ensures that the outDir is absolute.
+if (outDir.indexOf(__dirname) !== 0) {
+  outDir = `${__dirname}/${outDir}`;
+}
+
 /**
  * Compile TypeScript sources to JavaScript files and create a source map file for each TypeScript
  * file compiled.
