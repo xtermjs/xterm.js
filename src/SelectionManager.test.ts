@@ -46,6 +46,7 @@ describe('SelectionManager', () => {
     window = dom.window;
     document = window.document;
     terminal = <any>{ cols: 80, rows: 2 };
+    terminal.blankLine = function() {};
     terminal.scrollback = 100;
     terminal.buffers = new BufferSet(terminal);
     terminal.buffer = terminal.buffers.active;

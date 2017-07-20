@@ -33,7 +33,38 @@ export class Buffer {
     public scrollTop: number = 0,
     public tabs: any = {},
   ) {
-    this.lines = new CircularList<[number, string, number][]>(this.terminal.scrollback);
-    this.scrollBottom = this.terminal.rows - 1;
+    this.reset(); // todo ensure rows...
+  }
+
+  /**
+   * Check amount of rows in the terminal, if terminal has not enough lines to the end of the terminal
+   * then render empty lines.
+   */
+  public ensureRows(): void {
+    // todo rework it
+    if (this.lines.length === 0) {
+      let i = this.terminal.rows;
+      while (i--) {
+        this.lines.push(this.terminal.blankLine());
+      }
+    }
+  }
+
+  public reset(): void { // rename to clear ?
+      this.ydisp = 0;
+      this.ybase = 0;
+      this.y = 0;
+      this.x = 0;
+      this.scrollBottom = this.terminal.rows - 1; // todo it should be here ?
+      this.tabs = {};
+
+      // todo investigate: seems for alt buffer max lines length = this.terminal.rows - 1....
+      this.lines = new CircularList<[number, string, number][]>(this.terminal.scrollback);
+      if (this.lines.length === 0) {
+        let i = this.terminal.rows;
+        while (i--) {
+          this.lines.push(this.terminal.blankLine());
+        }
+      }
   }
 }
