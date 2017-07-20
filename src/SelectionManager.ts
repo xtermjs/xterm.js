@@ -522,6 +522,10 @@ export class SelectionManager extends EventEmitter {
    */
   private _getWordAt(coords: [number, number]): IWordPosition {
     const bufferLine = this._buffer.get(coords[1]);
+    if (!bufferLine) {
+      return null;
+    }
+
     const line = translateBufferLineToString(bufferLine, false);
 
     // Get actual index, taking into consideration wide characters
@@ -590,8 +594,10 @@ export class SelectionManager extends EventEmitter {
    */
   protected _selectWordAt(coords: [number, number]): void {
     const wordPosition = this._getWordAt(coords);
-    this._model.selectionStart = [wordPosition.start, coords[1]];
-    this._model.selectionStartLength = wordPosition.length;
+    if (wordPosition) {
+      this._model.selectionStart = [wordPosition.start, coords[1]];
+      this._model.selectionStartLength = wordPosition.length;
+    }
   }
 
   /**
@@ -600,7 +606,9 @@ export class SelectionManager extends EventEmitter {
    */
   private _selectToWordAt(coords: [number, number]): void {
     const wordPosition = this._getWordAt(coords);
-    this._model.selectionEnd = [this._model.areSelectionValuesReversed() ? wordPosition.start : (wordPosition.start + wordPosition.length), coords[1]];
+    if (wordPosition) {
+      this._model.selectionEnd = [this._model.areSelectionValuesReversed() ? wordPosition.start : (wordPosition.start + wordPosition.length), coords[1]];
+    }
   }
 
   /**
