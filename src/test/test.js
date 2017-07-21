@@ -113,23 +113,6 @@ describe('xterm.js', function() {
     });
   });
 
-  // simple debug output of terminal cells
-  function terminalToString(term) {
-    var result = '';
-    var line_s = '';
-    for (var line = term.buffer.ybase; line < term.buffer.ybase + term.rows; line++) {
-      line_s = '';
-      for (var cell=0; cell<term.cols; ++cell) {
-        line_s += term.buffer.lines.get(line)[cell][1];
-      }
-      // rtrim empty cells as xterm does
-      line_s = line_s.replace(/\s+$/, '');
-      result += line_s;
-      result += '\n';
-    }
-    return result;
-  }
-
   describe('full reset', function () {
     it('should reset buffers equal to rows', function() {
       // Fill alt and normal buffers with dummy rows

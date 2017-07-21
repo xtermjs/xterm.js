@@ -2290,7 +2290,7 @@ Terminal.prototype.reset = function() {
   Terminal.call(this, this.options);
   this.customKeyEventHandler = customKeyEventHandler;
   this.cursorBlinkInterval = cursorBlinkInterval;
-  this.buffers.normal.reset();//todo check which parameters should be reset
+  this.buffers.normal.reset();
   this.buffers.alt.reset();
   if (this.selectionManager) {
     this.selectionManager.setBuffer(this.buffer.lines);
