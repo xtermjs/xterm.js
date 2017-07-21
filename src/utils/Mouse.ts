@@ -37,7 +37,15 @@ export function getCoordsRelativeToElement(event: MouseEvent, element: HTMLEleme
  * select that cell and the right half will select the next cell.
  */
 export function getCoords(event: MouseEvent, rowContainer: HTMLElement, charMeasure: CharMeasure, colCount: number, rowCount: number, isSelection?: boolean): [number, number] {
+  // Coordinates cannot be measured if charMeasure has not been initialized
+  if (!charMeasure.width || !charMeasure.height) {
+    return null;
+  }
+
   const coords = getCoordsRelativeToElement(event, rowContainer);
+  if (!coords) {
+    return null;
+  }
 
   // Convert to cols/rows.
   coords[0] = Math.ceil((coords[0] + (isSelection ? charMeasure.width / 2 : 0)) / charMeasure.width);

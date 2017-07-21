@@ -277,6 +277,10 @@ export class SelectionManager extends EventEmitter {
    */
   private _getMouseBufferCoords(event: MouseEvent): [number, number] {
     const coords = Mouse.getCoords(event, this._rowContainer, this._charMeasure, this._terminal.cols, this._terminal.rows, true);
+    if (!coords) {
+      return null;
+    }
+
     // Convert to 0-based
     coords[0]--;
     coords[1]--;
@@ -377,15 +381,25 @@ export class SelectionManager extends EventEmitter {
     this._model.selectionStartLength = 0;
     this._model.isSelectAllActive = false;
     this._activeSelectionMode = SelectionMode.NORMAL;
+
+    // Initialize the new selection
     this._model.selectionStart = this._getMouseBufferCoords(event);
-    if (this._model.selectionStart) {
-      this._model.selectionEnd = null;
-      // If the mouse is over the second half of a wide character, adjust the
-      // selection to cover the whole character
-      const char = this._buffer.get(this._model.selectionStart[1])[this._model.selectionStart[0]];
-      if (char[LINE_DATA_WIDTH_INDEX] === 0) {
-        this._model.selectionStart[0]++;
-      }
+    if (!this._model.selectionStart) {
+      return;
+    }
+    this._model.selectionEnd = null;
+
+    // Ensure the line exists
+    const line = this._buffer.get(this._model.selectionStart[1]);
+    if (!line) {
+      return;
+    }
+
+    // If the mouse is over the second half of a wide character, adjust the
+    // selection to cover the whole character
+    const char = line[this._model.selectionStart[0]];
+    if (char[LINE_DATA_WIDTH_INDEX] === 0) {
+      this._model.selectionStart[0]++;
     }
   }
 
@@ -426,6 +440,10 @@ export class SelectionManager extends EventEmitter {
 
     // Set the initial selection end based on the mouse coordinates
     this._model.selectionEnd = this._getMouseBufferCoords(event);
+    if (!this._model.selectionEnd) {
+      this.refresh(true);
+      return;
+    }
 
     // Select the entire line if line select mode is active.
     if (this._activeSelectionMode === SelectionMode.LINE) {
