@@ -213,6 +213,47 @@ describe('xterm.js', function() {
     }
   });
 
+  it('render prompt after reset', function() {
+    xterm.writeln("]0;user@aandrienko:~/Terminal/CHE-5084-2/xterm.js[user@aandrienko xterm.js]$ ");
+    xterm.write("]0;user@aandrienko:~/projects/xterm.js");
+    xterm.write("[user@aandrienko xterm.js]$");
+    xterm.write("c");
+    xterm.write("]0;user@aandrienko:~/projects/xterm.js");
+    xterm.write("[user@aandrienko xterm.js]$");
+
+    console.log("______________________________________________________");
+    console.log(terminalToString(xterm));
+    console.log("______________________________________________________");
+
+    assert.equal(getTextFromLine(xterm.buffers.normal.lines, 0).trim(), "[user@aandrienko xterm.js]$");
+  });
+
+  // simple debug output of terminal cells
+  function terminalToString(term) {
+    var result = '';
+    var line_s = '';
+    for (var line = term.buffer.ybase; line < term.buffer.ybase + term.rows; line++) {
+      line_s = '';
+      for (var cell=0; cell<term.cols; ++cell) {
+        line_s += term.buffer.lines.get(line)[cell][1];
+      }
+      // rtrim empty cells as xterm does
+      line_s = line_s.replace(/\s+$/, '');
+      result += line_s;
+      result += '\n';
+    }
+    return result;
+  }
+
+  function getTextFromLine(lines, lineNumber) {
+    var text = "";
+    for (var i = 0; i < lines.get(lineNumber).length - 1; i++) {
+      text += lines.get(lineNumber)[i][1];
+    }
+    // console.log("*" + text);
+    return text;
+  }
+
   describe('scroll', function() {
     describe('scrollDisp', function() {
       var startYDisp;
