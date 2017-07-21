@@ -113,69 +113,120 @@ describe('xterm.js', function() {
     });
   });
 
-  // todo full reset should clear both: alt and normal buffers
+  // simple debug output of terminal cells
+  function terminalToString(term) {
+    var result = '';
+    var line_s = '';
+    for (var line = term.buffer.ybase; line < term.buffer.ybase + term.rows; line++) {
+      line_s = '';
+      for (var cell=0; cell<term.cols; ++cell) {
+        line_s += term.buffer.lines.get(line)[cell][1];
+      }
+      // rtrim empty cells as xterm does
+      line_s = line_s.replace(/\s+$/, '');
+      result += line_s;
+      result += '\n';
+    }
+    return result;
+  }
+
   describe('full reset', function () {
     it('should reset buffers equal to rows', function() {
       // Fill alt and normal buffers with dummy rows
-      console.log("***********************************" + xterm.rows);
+      xterm.buffers.activateAltBuffer();
       for (var i = 0; i < xterm.rows - 1; i++) {
         xterm.writeln('test');
       }
-      // xterm.write('test');
+      xterm.write('test');
+      xterm.buffers.activateNormalBuffer();
+      for (var i = 0; i < xterm.rows - 1; i++) {
+        xterm.writeln('test');
+      }
+      xterm.write('test');
 
-      console.log("*****" + xterm.buffer.lines.length);
-      //xterm.buffers.active = xterm.buffers.alt;
-
-      // for (var i = 0; i < xterm.rows; i++) {
-      //   xterm.write('test\n');
-      // }
-      // xterm.buffers.active = xterm.buffers.normal;
-      assert.equal(xterm.buffers.normal.lines.length, xterm.rows);
-      // assert.equal(xterm.buffers.alt.lines.length, xterm.rows);
-
-      var promptLine = xterm.buffer.lines.get(xterm.buffer.ybase + xterm.buffer.y);
       xterm.reset();
-      assert.equal(xterm.buffer.y, 0);
-      assert.equal(xterm.buffer.ybase, 0);
-      assert.equal(xterm.buffer.ydisp, 0);
-      assert.equal(xterm.buffer.lines.length, xterm.rows);
-      assert.deepEqual(xterm.buffer.lines.get(0), promptLine);
-      for (var i = 1; i < xterm.rows; i++) {
-        assert.deepEqual(xterm.buffer.lines.get(i), xterm.blankLine());
+
+      //normal buffer should be reset
+      assert.equal(xterm.buffers.normal.y, 0);
+      assert.equal(xterm.buffers.normal.ybase, 0);
+      assert.equal(xterm.buffers.normal.ydisp, 0);
+      assert.equal(xterm.buffers.normal.lines.length, xterm.rows);
+      for (var i = 0; i < xterm.rows; i++) {
+        assert.deepEqual(xterm.buffers.normal.lines.get(i), xterm.blankLine());
+      }
+
+      //alt buffer should be reset
+      assert.equal(xterm.buffers.alt.y, 0);
+      assert.equal(xterm.buffers.alt.ybase, 0);
+      assert.equal(xterm.buffers.alt.ydisp, 0);
+      assert.equal(xterm.buffers.alt.lines.length, xterm.rows);
+      for (var i = 0; i < xterm.rows; i++) {
+        assert.deepEqual(xterm.buffers.alt.lines.get(i), xterm.blankLine());
       }
     });
   });
-  it('should reset normal buffer larger than rows and alt buffer with equal to rows', function() {
+  it('should reset normal and alt buffer larger than rows', function() {
     // Fill the buffer with dummy rows
+    xterm.buffers.activateAltBuffer();
     for (var i = 0; i < xterm.rows * 2; i++) {
-      xterm.write('test\n');
+      xterm.writeln('test');
+    }
+    xterm.buffers.activateNormalBuffer();
+    for (var i = 0; i < xterm.rows * 2; i++) {
+      xterm.writeln('test');
     }
 
-    var promptLine = xterm.buffer.lines.get(xterm.buffer.ybase + xterm.buffer.y);
     xterm.reset();
-    assert.equal(xterm.buffer.y, 0);
-    assert.equal(xterm.buffer.ybase, 0);
-    assert.equal(xterm.buffer.ydisp, 0);
-    assert.equal(xterm.buffer.lines.length, xterm.rows);
-    assert.deepEqual(xterm.buffer.lines.get(0), promptLine);
-    for (var i = 1; i < xterm.rows; i++) {
-      assert.deepEqual(xterm.buffer.lines.get(i), xterm.blankLine());
+
+    //normal buffer should be reset
+    assert.equal(xterm.buffers.normal.y, 0);
+    assert.equal(xterm.buffers.normal.ybase, 0);
+    assert.equal(xterm.buffers.normal.ydisp, 0);
+    assert.equal(xterm.buffers.normal.lines.length, xterm.rows);
+    for (var i = 0; i < xterm.rows; i++) {
+      assert.deepEqual(xterm.buffers.normal.lines.get(i), xterm.blankLine());
+    }
+
+    //alt buffer should be reset
+    assert.equal(xterm.buffers.alt.y, 0);
+    assert.equal(xterm.buffers.alt.ybase, 0);
+    assert.equal(xterm.buffers.alt.ydisp, 0);
+    assert.equal(xterm.buffers.alt.lines.length, xterm.rows);
+    for (var i = 0; i < xterm.rows; i++) {
+      assert.deepEqual(xterm.buffers.alt.lines.get(i), xterm.blankLine());
     }
   });
   it('should not break the prompt when terminal was reset twice', function() {
-    for (var i = 0; i < xterm.rows; i++) {
-      xterm.write('test\n');
+    xterm.buffers.activateAltBuffer();
+    for (var i = 0; i < xterm.rows - 1; i++) {
+      xterm.writeln('test');
     }
-    var promptLine = xterm.buffer.lines.get(xterm.buffer.ybase + xterm.buffer.y);
+    xterm.write('test');
+    xterm.buffers.activateNormalBuffer();
+    for (var i = 0; i < xterm.rows - 1; i++) {
+      xterm.writeln('test');
+    }
+    xterm.write('test');
+
     xterm.reset();
     xterm.reset();
-    assert.equal(xterm.buffer.y, 0);
-    assert.equal(xterm.buffer.ybase, 0);
-    assert.equal(xterm.buffer.ydisp, 0);
-    assert.equal(xterm.buffer.lines.length, xterm.rows);
-    assert.deepEqual(xterm.buffer.lines.get(0), promptLine);
-    for (var i = 1; i < xterm.rows; i++) {
-      assert.deepEqual(xterm.buffer.lines.get(i), xterm.blankLine());
+
+    //normal buffer should be reset
+    assert.equal(xterm.buffers.normal.y, 0);
+    assert.equal(xterm.buffers.normal.ybase, 0);
+    assert.equal(xterm.buffers.normal.ydisp, 0);
+    assert.equal(xterm.buffers.normal.lines.length, xterm.rows);
+    for (var i = 0; i < xterm.rows; i++) {
+      assert.deepEqual(xterm.buffers.normal.lines.get(i), xterm.blankLine());
+    }
+
+    //alt buffer should be reset
+    assert.equal(xterm.buffers.alt.y, 0);
+    assert.equal(xterm.buffers.alt.ybase, 0);
+    assert.equal(xterm.buffers.alt.ydisp, 0);
+    assert.equal(xterm.buffers.alt.lines.length, xterm.rows);
+    for (var i = 0; i < xterm.rows; i++) {
+      assert.deepEqual(xterm.buffers.alt.lines.get(i), xterm.blankLine());
     }
   });
 
@@ -1013,7 +1064,6 @@ describe('xterm.js', function() {
       assert.equal(xterm.buffers.normal.y, 3);
 
       // write text on the colored background. Notice: '(B'- Set United States G0 character set
-      console.log(xterm.buffer.lines.length);
       xterm.write("(B[30m[46m test");
       assert.equal(getTextFromLine(xterm.buffer.lines, 11), "                                   test                                        ");
 
