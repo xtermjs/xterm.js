@@ -33,7 +33,7 @@ export class Buffer {
     public scrollTop: number = 0,
     public tabs: any = {},
   ) {
-    this.reset(); // todo ensure rows...
+    this.reset();
   }
 
   /**

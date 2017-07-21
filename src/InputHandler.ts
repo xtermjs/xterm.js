@@ -949,13 +949,11 @@ export class InputHandler implements IInputHandler {
         case 1047: // alt screen buffer
           this._terminal.buffers.activateAltBuffer();
 
-          // todo for now can use this code because it's clears cursor position
+          // todo for now we can use this methods because it's clears cursor position
           // this._terminal.buffer.reset();
           // this._terminal.reset();
 
-          // clean up alt screen
-          // clear rows but not cursor position...
-          // todo it's a temp solution ...
+          // todo create separated method for this...
           let i = this._terminal.buffer.lines.length;
            this._terminal.buffer.lines = new CircularList<[number, string, number][]>(this._terminal.scrollback);
            while (i--) {
