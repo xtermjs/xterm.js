@@ -41,7 +41,8 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**Selenoid UI**](https://github.com/aerokube/selenoid-ui): Simple UI for the scallable golang implementation of Selenium Hub named Selenoid. We use XTerm for streaming logs over websockets from docker containers.
 - [**Portainer**](https://portainer.io): Simple management UI for Docker.
 - [**SSHy**](https://github.com/stuicey/SSHy): HTML5 Based SSHv2 Web Client with E2E encryption utilising `xterm.js`, SJCL & websockets.
-
+- [**JupyterLab**](https://github.com/jupyterlab/jupyterlab): An extensible 
+computational environment for Jupyter, supporting interactive data science and scientific computing across all programming languages.
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list.
 
