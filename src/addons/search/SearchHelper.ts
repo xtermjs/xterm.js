@@ -35,14 +35,14 @@ export class SearchHelper {
 
     let result: ISearchResult;
 
-    let startRow = this._terminal.ydisp;
+    let startRow = this._terminal.buffer.ydisp;
     if (this._terminal.selectionManager.selectionEnd) {
       // Start from the selection end if there is a selection
       startRow = this._terminal.selectionManager.selectionEnd[1];
     }
 
     // Search from ydisp + 1 to end
-    for (let y = startRow + 1; y < this._terminal.ybase + this._terminal.rows; y++) {
+    for (let y = startRow + 1; y < this._terminal.buffer.ybase + this._terminal.rows; y++) {
       result = this._findInLine(term, y);
       if (result) {
         break;
@@ -76,7 +76,7 @@ export class SearchHelper {
 
     let result: ISearchResult;
 
-    let startRow = this._terminal.ydisp;
+    let startRow = this._terminal.buffer.ydisp;
     if (this._terminal.selectionManager.selectionStart) {
       // Start from the selection end if there is a selection
       startRow = this._terminal.selectionManager.selectionStart[1];
@@ -92,7 +92,7 @@ export class SearchHelper {
 
     // Search from the top to the current ydisp
     if (!result) {
-      for (let y = this._terminal.ybase + this._terminal.rows - 1; y > startRow; y--) {
+      for (let y = this._terminal.buffer.ybase + this._terminal.rows - 1; y > startRow; y--) {
         result = this._findInLine(term, y);
         if (result) {
           break;
@@ -111,7 +111,7 @@ export class SearchHelper {
    * @return The search result if it was found.
    */
   private _findInLine(term: string, y: number): ISearchResult {
-    const bufferLine = this._terminal.lines.get(y);
+    const bufferLine = this._terminal.buffer.lines.get(y);
     const lowerStringLine = this._translateBufferLineToString(bufferLine, true).toLowerCase();
     const lowerTerm = term.toLowerCase();
     const searchIndex = lowerStringLine.indexOf(lowerTerm);
@@ -134,7 +134,7 @@ export class SearchHelper {
       return false;
     }
     this._terminal.selectionManager.setSelection(result.col, result.row, result.term.length);
-    this._terminal.scrollDisp(result.row - this._terminal.ydisp, false);
+    this._terminal.scrollDisp(result.row - this._terminal.buffer.ydisp, false);
     return true;
   }
 }
