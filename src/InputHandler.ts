@@ -132,11 +132,11 @@ export class InputHandler implements IInputHandler {
     if (this._terminal.buffer.x >= this._terminal.cols) {
       this._terminal.buffer.x--;
     }
-  /**
-   * This event is emitted whenever the terminal outputs a LF or NL.
-   *
-   * @event lineFeed
-   */
+    /**
+     * This event is emitted whenever the terminal outputs a LF or NL.
+     *
+     * @event lineFeed
+     */
     this._terminal.emit('lineFeed');
   }
 
