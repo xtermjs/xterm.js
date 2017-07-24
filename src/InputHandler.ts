@@ -132,6 +132,12 @@ export class InputHandler implements IInputHandler {
     if (this._terminal.buffer.x >= this._terminal.cols) {
       this._terminal.buffer.x--;
     }
+    /**
+     * This event is emitted whenever the terminal outputs a LF or NL.
+     *
+     * @event lineFeed
+     */
+    this._terminal.emit('lineFeed');
   }
 
   /**
@@ -281,7 +287,7 @@ export class InputHandler implements IInputHandler {
       this._terminal.buffer.y = this._terminal.rows - 1;
     }
     this._terminal.buffer.x = 0;
-  };
+  }
 
 
   /**
@@ -299,7 +305,7 @@ export class InputHandler implements IInputHandler {
       this._terminal.buffer.y = 0;
     }
     this._terminal.buffer.x = 0;
-  };
+  }
 
 
   /**
@@ -1107,7 +1113,7 @@ export class InputHandler implements IInputHandler {
           this._terminal.cursorHidden = true;
           break;
         case 1049: // alt screen buffer cursor
-          ; // FALL-THROUGH
+           // FALL-THROUGH
         case 47: // normal screen buffer
         case 1047: // normal screen buffer - clearing it first
           // Ensure the selection manager has the correct buffer
