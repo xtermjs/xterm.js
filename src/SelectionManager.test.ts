@@ -45,6 +45,7 @@ describe('SelectionManager', () => {
     dom = new jsdom.JSDOM('');
     window = dom.window;
     document = window.document;
+    rowContainer = document.createElement('div');
     terminal = <any>{ cols: 80, rows: 2 };
     terminal.scrollback = 100;
     terminal.buffers = new BufferSet(terminal);
