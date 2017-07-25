@@ -517,7 +517,7 @@ Terminal.prototype.initGlobal = function() {
   on(this.element, 'copy', event => {
     // If mouse events are active it means the selection manager is disabled and
     // copy should be handled by the host program.
-    if (!this.selectionManager.hasSelection) {
+    if (!term.hasSelection) {
       return;
     }
     copyHandler(event, term, this.selectionManager);
