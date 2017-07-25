@@ -319,7 +319,7 @@ export class SelectionManager extends EventEmitter {
   private _onMouseDown(event: MouseEvent) {
     // Ignore this event when selection is disabled
     if (!this._enabled) {
-      if (!event.altKey) {
+      if (!(Browser.isLinux ? event.shiftKey : event.altKey)) {
         return;
       } else {
 
@@ -339,8 +339,8 @@ export class SelectionManager extends EventEmitter {
     // Reset drag scroll state
     this._dragScrollAmount = 0;
 
-    if (event.shiftKey) {
-      this._onShiftClick(event);
+    if (this._enabled && event.shiftKey) {
+      this._onIncrementalClick(event);
     } else {
       if (event.detail === 1) {
         this._onSingleClick(event);
@@ -376,11 +376,11 @@ export class SelectionManager extends EventEmitter {
   }
 
   /**
-   * Performs a shift click, setting the selection end position to the mouse
+   * Performs an incremental click, setting the selection end position to the mouse
    * position.
    * @param event The mouse event.
    */
-  private _onShiftClick(event: MouseEvent): void {
+  private _onIncrementalClick(event: MouseEvent): void {
     if (this._model.selectionStart) {
       this._model.selectionEnd = this._getMouseBufferCoords(event);
     }
