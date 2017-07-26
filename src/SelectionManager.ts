@@ -317,20 +317,27 @@ export class SelectionManager extends EventEmitter {
    * @param event The mousedown event.
    */
   private _onMouseDown(event: MouseEvent) {
-    // Ignore this event when selection is disabled
-    if (!this._enabled) {
-      if (!(Browser.isLinux ? event.shiftKey : event.altKey)) {
-        return;
-      } else {
-
-        // Don't send the mouse down event to the current process
-        event.stopPropagation();
-      }
+    // If we have selection, we want the context menu on right click
+    if (event.button === 2 && this.hasSelection) {
+      event.stopPropagation();
+      return;
     }
 
     // Only action the primary button
     if (event.button !== 0) {
       return;
+    }
+
+    // Allow selection when using a specific modifier key, even when disabled
+    if (!this._enabled) {
+      const shouldForceSelection = Browser.isMac ? event.altKey : event.shiftKey;
+
+      if (!shouldForceSelection) {
+        return;
+      }
+
+      // Don't send the mouse down event to the current process, we want to select
+      event.stopPropagation();
     }
 
     // Tell the browser not to start a regular selection
