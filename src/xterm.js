@@ -1941,6 +1941,9 @@ Terminal.prototype.resize = function(x, y) {
     ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
     i = this.buffer.lines.length;
     while (i--) {
+      if (this.buffer.lines.get(i) === undefined) {
+        this.buffer.lines.set(i, this.blankLine());
+      }
       while (this.buffer.lines.get(i).length < x) {
         this.buffer.lines.get(i).push(ch);
       }
