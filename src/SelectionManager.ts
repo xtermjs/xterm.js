@@ -317,7 +317,8 @@ export class SelectionManager extends EventEmitter {
    * @param event The mousedown event.
    */
   private _onMouseDown(event: MouseEvent) {
-    // If we have selection, we want the context menu on right click
+    // If we have selection, we want the context menu on right click even if the
+    // terminal is in mouse mode.
     if (event.button === 2 && this.hasSelection) {
       event.stopPropagation();
       return;
@@ -330,7 +331,7 @@ export class SelectionManager extends EventEmitter {
 
     // Allow selection when using a specific modifier key, even when disabled
     if (!this._enabled) {
-      const shouldForceSelection = Browser.isMac ? event.altKey : event.shiftKey;
+      const shouldForceSelection = Browser.isMac && event.altKey;
 
       if (!shouldForceSelection) {
         return;
