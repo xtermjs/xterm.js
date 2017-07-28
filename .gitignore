@@ -13,6 +13,7 @@ npm-debug.log
 .env
 build/
 .vscode/
+.DS_Store
 
 # Directories needed for code coverage
 /coverage/
