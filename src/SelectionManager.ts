@@ -91,9 +91,12 @@ export class SelectionManager extends EventEmitter {
    */
   private _refreshAnimationFrame: number;
 
-  private _bufferTrimListener: any;
+  /**
+   * Whether selection is enabled.
+   */
+  private _enabled = true;
+
   private _mouseMoveListener: EventListener;
-  private _mouseDownListener: EventListener;
   private _mouseUpListener: EventListener;
 
   constructor(
@@ -114,10 +117,16 @@ export class SelectionManager extends EventEmitter {
    * Initializes listener variables.
    */
   private _initListeners() {
-    this._bufferTrimListener = (amount: number) => this._onTrim(amount);
     this._mouseMoveListener = event => this._onMouseMove(<MouseEvent>event);
-    this._mouseDownListener = event => this._onMouseDown(<MouseEvent>event);
     this._mouseUpListener = event => this._onMouseUp(<MouseEvent>event);
+
+    this._rowContainer.addEventListener('mousedown', event => this._onMouseDown(<MouseEvent>event));
+
+    // Only adjust the selection on trim, shiftElements is rarely used (only in
+    // reverseIndex) and delete in a splice is only ever used when the same
+    // number of elements was just added. Given this is could actually be
+    // beneficial to leave the selection as is for these cases.
+    this._buffer.on('trim', (amount: number) => this._onTrim(amount));
   }
 
   /**
@@ -126,20 +135,14 @@ export class SelectionManager extends EventEmitter {
    */
   public disable() {
     this.clearSelection();
-    this._buffer.off('trim', this._bufferTrimListener);
-    this._rowContainer.removeEventListener('mousedown', this._mouseDownListener);
+    this._enabled = false;
   }
 
   /**
    * Enable the selection manager.
    */
   public enable() {
-    // Only adjust the selection on trim, shiftElements is rarely used (only in
-    // reverseIndex) and delete in a splice is only ever used when the same
-    // number of elements was just added. Given this is could actually be
-    // beneficial to leave the selection as is for these cases.
-    this._buffer.on('trim', this._bufferTrimListener);
-    this._rowContainer.addEventListener('mousedown', this._mouseDownListener);
+    this._enabled = true;
   }
 
   /**
@@ -314,9 +317,28 @@ export class SelectionManager extends EventEmitter {
    * @param event The mousedown event.
    */
   private _onMouseDown(event: MouseEvent) {
+    // If we have selection, we want the context menu on right click even if the
+    // terminal is in mouse mode.
+    if (event.button === 2 && this.hasSelection) {
+      event.stopPropagation();
+      return;
+    }
+
     // Only action the primary button
     if (event.button !== 0) {
       return;
+    }
+
+    // Allow selection when using a specific modifier key, even when disabled
+    if (!this._enabled) {
+      const shouldForceSelection = Browser.isMac && event.altKey;
+
+      if (!shouldForceSelection) {
+        return;
+      }
+
+      // Don't send the mouse down event to the current process, we want to select
+      event.stopPropagation();
     }
 
     // Tell the browser not to start a regular selection
@@ -325,15 +347,15 @@ export class SelectionManager extends EventEmitter {
     // Reset drag scroll state
     this._dragScrollAmount = 0;
 
-    if (event.shiftKey) {
-      this._onShiftClick(event);
+    if (this._enabled && event.shiftKey) {
+      this._onIncrementalClick(event);
     } else {
       if (event.detail === 1) {
-          this._onSingleClick(event);
+        this._onSingleClick(event);
       } else if (event.detail === 2) {
-          this._onDoubleClick(event);
+        this._onDoubleClick(event);
       } else if (event.detail === 3) {
-          this._onTripleClick(event);
+        this._onTripleClick(event);
       }
     }
 
@@ -362,11 +384,11 @@ export class SelectionManager extends EventEmitter {
   }
 
   /**
-   * Performs a shift click, setting the selection end position to the mouse
+   * Performs an incremental click, setting the selection end position to the mouse
    * position.
    * @param event The mouse event.
    */
-  private _onShiftClick(event: MouseEvent): void {
+  private _onIncrementalClick(event: MouseEvent): void {
     if (this._model.selectionStart) {
       this._model.selectionEnd = this._getMouseBufferCoords(event);
     }
@@ -479,8 +501,8 @@ export class SelectionManager extends EventEmitter {
 
     // Only draw here if the selection changes.
     if (!previousSelectionEnd ||
-        previousSelectionEnd[0] !== this._model.selectionEnd[0] ||
-        previousSelectionEnd[1] !== this._model.selectionEnd[1]) {
+      previousSelectionEnd[0] !== this._model.selectionEnd[0] ||
+      previousSelectionEnd[1] !== this._model.selectionEnd[1]) {
       this.refresh(true);
     }
   }
@@ -603,7 +625,7 @@ export class SelectionManager extends EventEmitter {
 
     const start = startIndex + charOffset - leftWideCharCount;
     const length = Math.min(endIndex - startIndex + leftWideCharCount + rightWideCharCount + 1/*include endIndex char*/, this._terminal.cols);
-    return {start, length};
+    return { start, length };
   }
 
   /**
