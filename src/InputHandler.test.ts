@@ -3,6 +3,21 @@ import { InputHandler } from './InputHandler';
 import { wcwidth } from './InputHandler';
 
 describe('InputHandler', () => {
+  describe('save and restore cursor', () => {
+    let terminal = { buffer: { x: 1, y: 2 } };
+    let inputHandler = new InputHandler(terminal);
+    // Save cursor position
+    inputHandler.saveCursor([]);
+    assert.equal(terminal.buffer.x, 1);
+    assert.equal(terminal.buffer.y, 2);
+    // Change cursor position
+    terminal.buffer.x = 10;
+    terminal.buffer.y = 20;
+    // Restore cursor position
+    inputHandler.restoreCursor([]);
+    assert.equal(terminal.buffer.x, 1);
+    assert.equal(terminal.buffer.y, 2);
+  });
   describe('setCursorStyle', () => {
     it('should call Terminal.setOption with correct params', () => {
       let options = {};

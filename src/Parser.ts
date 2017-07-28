@@ -184,6 +184,10 @@ export class Parser {
   public parse(data: string): ParserState {
     let l = data.length, j, cs, ch, code, low;
 
+    if (this._terminal.debug) {
+      this._terminal.log('data: ' + data);
+    }
+
     this._position = 0;
     // apply leftover surrogate high from last write
     if (this._terminal.surrogate_high) {
@@ -458,6 +462,9 @@ export class Parser {
 
         case ParserState.CSI:
           if (ch in csiStateHandler) {
+            if (this._terminal.debug) {
+              this._terminal.log(`CSI ${this._terminal.prefix ? this._terminal.prefix : ''} ${this._terminal.params ? this._terminal.params.join(';') : ''} ${this._terminal.postfix ? this._terminal.postfix : ''} ${ch}`);
+            }
             csiStateHandler[ch](this._inputHandler, this._terminal.params, this._terminal.prefix, this._terminal.postfix, this);
           } else {
             this._terminal.error('Unknown CSI code: %s.', ch);
