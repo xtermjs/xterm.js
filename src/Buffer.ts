@@ -25,6 +25,9 @@ export class Buffer implements IBuffer {
   // linesIndexOffset usage should be encapsulated
   private _linesIndexOffset: number;
 
+  public savedY: number;
+  public savedX: number;
+
   /**
    * Create a new Buffer.
    * @param {Terminal} terminal - The terminal the Buffer will belong to

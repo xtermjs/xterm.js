@@ -526,7 +526,7 @@ Terminal.prototype.initGlobal = function() {
   on(this.element, 'copy', event => {
     // If mouse events are active it means the selection manager is disabled and
     // copy should be handled by the host program.
-    if (this.mouseEvents) {
+    if (!term.hasSelection()) {
       return;
     }
     copyHandler(event, term, this.selectionManager);
@@ -1950,6 +1950,9 @@ Terminal.prototype.resize = function(x, y) {
     ch = [' ', 1, this.defaultFlags, this.defaultFgColor, this.defaultBgColor]; // does xterm use the default attr?
     i = this.buffer.lines.length;
     while (i--) {
+      if (this.buffer.lines.get(i) === undefined) {
+        this.buffer.lines.set(i, this.blankLine());
+      }
       while (this.buffer.lines.get(i).length < x) {
         this.buffer.lines.get(i).push(ch);
       }

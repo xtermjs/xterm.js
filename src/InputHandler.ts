@@ -134,6 +134,12 @@ export class InputHandler implements IInputHandler {
     if (this._terminal.buffer.x >= this._terminal.cols) {
       this._terminal.buffer.x--;
     }
+    /**
+     * This event is emitted whenever the terminal outputs a LF or NL.
+     *
+     * @event lineFeed
+     */
+    this._terminal.emit('lineFeed');
   }
 
   /**
@@ -283,7 +289,7 @@ export class InputHandler implements IInputHandler {
       this._terminal.buffer.y = this._terminal.rows - 1;
     }
     this._terminal.buffer.x = 0;
-  };
+  }
 
 
   /**
@@ -301,7 +307,7 @@ export class InputHandler implements IInputHandler {
       this._terminal.buffer.y = 0;
     }
     this._terminal.buffer.x = 0;
-  };
+  }
 
 
   /**
@@ -944,7 +950,8 @@ export class InputHandler implements IInputHandler {
           this._terminal.cursorHidden = false;
           break;
         case 1049: // alt screen buffer cursor
-          this.saveCursor(params);
+          // TODO: Not sure if we need to save/restore after switching the buffer
+          // this.saveCursor(params);
           // FALL-THROUGH
         case 47: // alt screen buffer
         case 1047: // alt screen buffer
@@ -1111,15 +1118,15 @@ export class InputHandler implements IInputHandler {
           this._terminal.cursorHidden = true;
           break;
         case 1049: // alt screen buffer cursor
-          ; // FALL-THROUGH
+           // FALL-THROUGH
         case 47: // normal screen buffer
         case 1047: // normal screen buffer - clearing it first
           // Ensure the selection manager has the correct buffer
           this._terminal.buffers.activateNormalBuffer();
-          // TODO: Discard current charattribute?
-          if (params[0] === 1049) {
-            this.restoreCursor(params);
-          }
+          // TODO: Not sure if we need to save/restore after switching the buffer
+          // if (params[0] === 1049) {
+          //   this.restoreCursor(params);
+          // }
           this._terminal.selectionManager.setBuffer(this._terminal.buffer);
           this._terminal.refresh(0, this._terminal.rows - 1);
           this._terminal.viewport.syncScrollArea();
@@ -1454,8 +1461,8 @@ export class InputHandler implements IInputHandler {
    *   Save cursor (ANSI.SYS).
    */
   public saveCursor(params: number[]): void {
-    this._terminal.buffers.active.x = this._terminal.buffer.x;
-    this._terminal.buffers.active.y = this._terminal.buffer.y;
+    this._terminal.buffer.savedX = this._terminal.buffer.x;
+    this._terminal.buffer.savedY = this._terminal.buffer.y;
   }
 
 
@@ -1464,8 +1471,8 @@ export class InputHandler implements IInputHandler {
    *   Restore cursor (ANSI.SYS).
    */
   public restoreCursor(params: number[]): void {
-    this._terminal.buffer.x = this._terminal.buffers.active.x || 0;
-    this._terminal.buffer.y = this._terminal.buffers.active.y || 0;
+    this._terminal.buffer.x = this._terminal.buffer.savedX || 0;
+    this._terminal.buffer.y = this._terminal.buffer.savedY || 0;
   }
 }
 
