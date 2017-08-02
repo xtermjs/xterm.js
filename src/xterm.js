@@ -747,15 +747,6 @@ Terminal.prototype.open = function(parent, focus) {
     this.focus();
   }
 
-  on(this.element, 'click', function() {
-    var selection = document.getSelection(),
-        collapsed = selection.isCollapsed,
-        isRange = typeof collapsed == 'boolean' ? !collapsed : selection.type == 'Range';
-    if (!isRange) {
-      self.focus();
-    }
-  });
-
   // Listen for mouse events and translate
   // them into terminal mouse protocols.
   this.bindMouse();
@@ -1026,16 +1017,16 @@ Terminal.prototype.bindMouse = function() {
   }
 
   on(el, 'mousedown', function(ev) {
-    // prevent the focus on the textarea from getting lost
+
+    // Prevent the focus on the textarea from getting lost
+    // and make sure we get focused on mousedown
     ev.preventDefault();
+    self.focus();
 
     if (!self.mouseEvents) return;
 
     // send the button
     sendButton(ev);
-
-    // ensure focus
-    self.focus();
 
     // fix for odd bug
     //if (self.vt200Mouse && !self.normalMouse) {
@@ -2205,7 +2196,7 @@ Terminal.prototype.ch = function(cur) {
 
 
 /**
- * Evaluate if the current erminal is the given argument.
+ * Evaluate if the current terminal is the given argument.
  * @param {object} term The terminal to evaluate
  */
 Terminal.prototype.is = function(term) {
