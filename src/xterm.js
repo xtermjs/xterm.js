@@ -650,11 +650,6 @@ Terminal.prototype.open = function(parent, focus) {
   this.viewportScrollArea.classList.add('xterm-scroll-area');
   this.viewportElement.appendChild(this.viewportScrollArea);
 
-  // Create the selection container.
-  this.selectionContainer = document.createElement('div');
-  this.selectionContainer.classList.add('xterm-selection');
-  this.element.appendChild(this.selectionContainer);
-
   // Create the container that will hold the lines of the terminal and then
   // produce the lines the lines.
   this.rowContainer = document.createElement('div');
@@ -662,6 +657,11 @@ Terminal.prototype.open = function(parent, focus) {
   this.element.appendChild(this.rowContainer);
   this.children = [];
   this.linkifier.attachToDom(document, this.children);
+
+  // Create the selection container.
+  this.selectionContainer = document.createElement('div');
+  this.selectionContainer.classList.add('xterm-selection');
+  this.rowContainer.appendChild(this.selectionContainer);
 
   // Create the container that will hold helpers like the textarea for
   // capturing DOM Events. Then produce the helpers.

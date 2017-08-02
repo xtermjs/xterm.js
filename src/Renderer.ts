@@ -257,6 +257,7 @@ export class Renderer {
               }
 
               if (bg < 256) {
+                currentElement.classList.add('xterm-bg');
                 currentElement.classList.add(`xterm-bg-color-${bg}`);
               }
 
