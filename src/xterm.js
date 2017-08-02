@@ -746,13 +746,9 @@ Terminal.prototype.open = function(parent, focus) {
     this.focus();
   }
 
+  // Focus terminal when it gets clicked
   on(this.element, 'click', function() {
-    var selection = document.getSelection(),
-        collapsed = selection.isCollapsed,
-        isRange = typeof collapsed == 'boolean' ? !collapsed : selection.type == 'Range';
-    if (!isRange) {
-      self.focus();
-    }
+    self.focus();
   });
 
   // Listen for mouse events and translate
@@ -2201,7 +2197,7 @@ Terminal.prototype.ch = function(cur) {
 
 
 /**
- * Evaluate if the current erminal is the given argument.
+ * Evaluate if the current terminal is the given argument.
  * @param {object} term The terminal to evaluate
  */
 Terminal.prototype.is = function(term) {
