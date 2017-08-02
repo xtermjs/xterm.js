@@ -746,11 +746,6 @@ Terminal.prototype.open = function(parent, focus) {
     this.focus();
   }
 
-  // Focus terminal when it gets clicked
-  on(this.element, 'click', function() {
-    self.focus();
-  });
-
   // Listen for mouse events and translate
   // them into terminal mouse protocols.
   this.bindMouse();
@@ -1021,13 +1016,13 @@ Terminal.prototype.bindMouse = function() {
   }
 
   on(el, 'mousedown', function(ev) {
+    // ensure focus
+    self.focus();
+
     if (!self.mouseEvents) return;
 
     // send the button
     sendButton(ev);
-
-    // ensure focus
-    self.focus();
 
     // fix for odd bug
     //if (self.vt200Mouse && !self.normalMouse) {
