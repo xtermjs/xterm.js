@@ -22,8 +22,14 @@ describe('xterm.js', function() {
     xterm.element = {
       classList: {
         toggle: function(){},
-        remove: function(){}
+        remove: function(){},
+        add: function () {}
       }
+    };
+    xterm.selectionManager = {
+      disable: function () {},
+      enable: function () {},
+      setBuffer: function (buffer) {}
     };
   });
 
@@ -106,6 +112,147 @@ describe('xterm.js', function() {
       }
     });
   });
+
+  describe('full reset', function () {
+    it('should reset buffers equal to rows', function() {
+      // Fill alt and normal buffers with dummy rows
+      xterm.buffers.activateAltBuffer();
+      for (var i = 0; i < xterm.rows - 1; i++) {
+        xterm.writeln('test');
+      }
+      xterm.write('test');
+      xterm.buffers.activateNormalBuffer();
+      for (var i = 0; i < xterm.rows - 1; i++) {
+        xterm.writeln('test');
+      }
+      xterm.write('test');
+
+      xterm.reset();
+
+      //normal buffer should be reset
+      assert.equal(xterm.buffers.normal.y, 0);
+      assert.equal(xterm.buffers.normal.ybase, 0);
+      assert.equal(xterm.buffers.normal.ydisp, 0);
+      assert.equal(xterm.buffers.normal.lines.length, xterm.rows);
+      for (var i = 0; i < xterm.rows; i++) {
+        assert.deepEqual(xterm.buffers.normal.lines.get(i), xterm.blankLine());
+      }
+
+      //alt buffer should be reset
+      assert.equal(xterm.buffers.alt.y, 0);
+      assert.equal(xterm.buffers.alt.ybase, 0);
+      assert.equal(xterm.buffers.alt.ydisp, 0);
+      assert.equal(xterm.buffers.alt.lines.length, xterm.rows);
+      for (var i = 0; i < xterm.rows; i++) {
+        assert.deepEqual(xterm.buffers.alt.lines.get(i), xterm.blankLine());
+      }
+    });
+  });
+  it('should reset normal and alt buffer larger than rows', function() {
+    // Fill the buffer with dummy rows
+    xterm.buffers.activateAltBuffer();
+    for (var i = 0; i < xterm.rows * 2; i++) {
+      xterm.writeln('test');
+    }
+    xterm.buffers.activateNormalBuffer();
+    for (var i = 0; i < xterm.rows * 2; i++) {
+      xterm.writeln('test');
+    }
+
+    xterm.reset();
+
+    //normal buffer should be reset
+    assert.equal(xterm.buffers.normal.y, 0);
+    assert.equal(xterm.buffers.normal.ybase, 0);
+    assert.equal(xterm.buffers.normal.ydisp, 0);
+    assert.equal(xterm.buffers.normal.lines.length, xterm.rows);
+    for (var i = 0; i < xterm.rows; i++) {
+      assert.deepEqual(xterm.buffers.normal.lines.get(i), xterm.blankLine());
+    }
+
+    //alt buffer should be reset
+    assert.equal(xterm.buffers.alt.y, 0);
+    assert.equal(xterm.buffers.alt.ybase, 0);
+    assert.equal(xterm.buffers.alt.ydisp, 0);
+    assert.equal(xterm.buffers.alt.lines.length, xterm.rows);
+    for (var i = 0; i < xterm.rows; i++) {
+      assert.deepEqual(xterm.buffers.alt.lines.get(i), xterm.blankLine());
+    }
+  });
+  it('should not break the prompt when terminal was reset twice', function() {
+    xterm.buffers.activateAltBuffer();
+    for (var i = 0; i < xterm.rows - 1; i++) {
+      xterm.writeln('test');
+    }
+    xterm.write('test');
+    xterm.buffers.activateNormalBuffer();
+    for (var i = 0; i < xterm.rows - 1; i++) {
+      xterm.writeln('test');
+    }
+    xterm.write('test');
+
+    xterm.reset();
+    xterm.reset();
+
+    //normal buffer should be reset
+    assert.equal(xterm.buffers.normal.y, 0);
+    assert.equal(xterm.buffers.normal.ybase, 0);
+    assert.equal(xterm.buffers.normal.ydisp, 0);
+    assert.equal(xterm.buffers.normal.lines.length, xterm.rows);
+    for (var i = 0; i < xterm.rows; i++) {
+      assert.deepEqual(xterm.buffers.normal.lines.get(i), xterm.blankLine());
+    }
+
+    //alt buffer should be reset
+    assert.equal(xterm.buffers.alt.y, 0);
+    assert.equal(xterm.buffers.alt.ybase, 0);
+    assert.equal(xterm.buffers.alt.ydisp, 0);
+    assert.equal(xterm.buffers.alt.lines.length, xterm.rows);
+    for (var i = 0; i < xterm.rows; i++) {
+      assert.deepEqual(xterm.buffers.alt.lines.get(i), xterm.blankLine());
+    }
+  });
+
+  it('render prompt after reset', function() {
+    xterm.writeln("]0;user@aandrienko:~/Terminal/CHE-5084-2/xterm.js[user@aandrienko xterm.js]$ ");
+    xterm.write("]0;user@aandrienko:~/projects/xterm.js");
+    xterm.write("[user@aandrienko xterm.js]$");
+    xterm.write("c");
+    xterm.write("]0;user@aandrienko:~/projects/xterm.js");
+    xterm.write("[user@aandrienko xterm.js]$");
+
+    console.log("______________________________________________________");
+    console.log(terminalToString(xterm));
+    console.log("______________________________________________________");
+
+    assert.equal(getTextFromLine(xterm.buffers.normal.lines, 0).trim(), "[user@aandrienko xterm.js]$");
+  });
+
+  // simple debug output of terminal cells
+  function terminalToString(term) {
+    var result = '';
+    var line_s = '';
+    for (var line = term.buffer.ybase; line < term.buffer.ybase + term.rows; line++) {
+      line_s = '';
+      for (var cell=0; cell<term.cols; ++cell) {
+        line_s += term.buffer.lines.get(line)[cell][1];
+      }
+      // rtrim empty cells as xterm does
+      line_s = line_s.replace(/\s+$/, '');
+      result += line_s;
+      result += '\n';
+    }
+    return result;
+  }
+
+  function getTextFromLine(lines, lineNumber) {
+    var text = "";
+    for (var i = 0; i < lines.get(lineNumber).length - 1; i++) {
+      text += lines.get(lineNumber)[i][1];
+    }
+    // console.log("*" + text);
+    return text;
+  }
 
   describe('scroll', function() {
     describe('scrollDisp', function() {
@@ -874,4 +1021,402 @@ describe('xterm.js', function() {
       expect(xterm.buffer.lines.get(0)[79][1]).eql('');  // empty cell after fullwidth
     });
   });
+
+  describe("switchFromNormalBufferToTheAltBufferAndOtherwise", function() {
+    it('switch from normal buffer to the alt and otherwise: ' +
+      'use sequence: switch normal to alt -> 1049h; switch alt to normal: -> 1049l', function () {
+      assert.equal(xterm.buffer, xterm.buffers.normal);
+      assert.equal(xterm.buffers.active, xterm.buffers.normal);
+      assert.equal(xterm.buffers.alt.x, 0);
+      assert.equal(xterm.buffers.alt.y, 0);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 0);
+
+      // render content for normal buffer
+      xterm.write("]0;@60617cc44283:/terminal[root@60617cc44283 terminal]# ");
+      xterm.write("\r[K[root@60617cc44283 terminal]# ");
+      xterm.write("\r\n]0;@60617cc44283:/terminal[root@60617cc44283 terminal]# ");
+      xterm.write("\r\n]0;@60617cc44283:/terminal[root@60617cc44283 terminal]# test");
+
+      // save cursor for normal buffer and switch to alt buffer
+      xterm.write("\r\n[?1049h");
+      assert.equal(xterm.buffer, xterm.buffers.alt);
+      assert.equal(xterm.buffers.active, xterm.buffers.alt);
+      assert.equal(xterm.buffers.alt.x, 0);
+      assert.equal(xterm.buffers.alt.y, 0);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      // todo
+      xterm.write("[1;10r[4l");
+
+      // move cursor to the new position x = 0, y = 23
+      xterm.write("[24;1H");
+      assert.equal(xterm.buffers.alt.x, 0);
+      assert.equal(xterm.buffers.alt.y, 23);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      xterm.write("\r[K\r");
+
+      // switch to normal buffer and restore cursor position for normal buffer
+      xterm.write("[?1049l");
+      assert.equal(xterm.buffers.active, xterm.buffers.normal);
+      assert.equal(xterm.buffer, xterm.buffers.normal);
+      assert.equal(xterm.buffers.alt.x, 0);
+      assert.equal(xterm.buffers.alt.y, 23);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      // set up mouse params
+      xterm.write("[?1001s[?1002h[?1006h[?2004h");
+
+      // save cursor position and switch to alt buffer
+      xterm.write("[?1049h");
+      assert.equal(xterm.buffer, xterm.buffers.alt);
+      assert.equal(xterm.buffers.active, xterm.buffers.alt);
+      assert.equal(xterm.buffers.alt.x, 0);
+      assert.equal(xterm.buffers.alt.y, 23);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      //set cursor position in the middle of the screen
+      xterm.write("[12;35H");
+      assert.equal(xterm.buffers.alt.x, 34);
+      assert.equal(xterm.buffers.alt.y, 11);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      // write text on the colored background. Notice: '(B'- Set United States G0 character set
+      xterm.write("(B[30m[46m test");
+      assert.equal(getTextFromLine(xterm.buffer.lines, 11), "                                   test                                        ");
+
+      // apply mouse params and set new cursor position
+      xterm.write("[?1006l[?1002l[?1001r[?2004l");
+      xterm.write("[1;1H");
+      assert.equal(xterm.buffers.alt.x, 0);
+      assert.equal(xterm.buffers.alt.y, 0);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      // Bellow we clean up alt buffer and go back to the normal buffer.
+      // All lines of the normal buffer should not be lost and cursor state should be restored.
+      // Notice: '[K' - delete line
+      xterm.write("[K");
+      xterm.write("\n[K");
+      xterm.write("\n[K");
+      xterm.write("\n[K");
+      xterm.write("\n[K");
+      xterm.write("\n[K");
+      xterm.write("\n[K");
+      xterm.write("\n[K");
+      xterm.write("\n[K");
+      // set cursor position on the begin of the buffer
+      xterm.write("[1;34H");
+      assert.equal(xterm.buffers.alt.x, 33);
+      assert.equal(xterm.buffers.alt.y, 0);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      xterm.write("[?1l>");
+      // set cursor position on the end of the buffer
+      xterm.write("[24;1H");
+      assert.equal(xterm.buffers.alt.x, 0);
+      assert.equal(xterm.buffers.alt.y, 23);
+      assert.equal(xterm.buffers.normal.x,0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      xterm.write("(B[m[39;49m");
+      xterm.write("\r[K");
+
+      //switch to normal buffer
+      xterm.write("\r[?1049l");
+      assert.equal(xterm.buffer, xterm.buffers.normal);
+      assert.equal(xterm.buffers.alt.x, 0);
+      assert.equal(xterm.buffers.alt.y, 23);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      xterm.write("\r\n[root@60617cc44283 terminal#] ");
+      assert.equal(xterm.buffer.x, 30);
+      assert.equal(xterm.buffer.y, 4);
+      assert.equal(getTextFromLine(xterm.buffer.lines, 0), "[root@60617cc44283 terminal]#                                                  ");
+      assert.equal(getTextFromLine(xterm.buffer.lines, 1), "[root@60617cc44283 terminal]#                                                  ");
+      assert.equal(getTextFromLine(xterm.buffer.lines, 2), "[root@60617cc44283 terminal]# test                                             ");
+      assert.equal(getTextFromLine(xterm.buffer.lines, 3), "                                                                               ");
+      assert.equal(getTextFromLine(xterm.buffer.lines, 4), "[root@60617cc44283 terminal#]                                                  ");
+    });
+
+    it('switch from normal buffer to the alt and otherwise: ' +
+      'use sequence: switch normal to alt -> 7 + 47h; switch alt to normal: -> 47l + 8', function () {
+      assert.equal(xterm.buffer, xterm.buffers.normal);
+      assert.equal(xterm.buffers.active, xterm.buffers.normal);
+      assert.equal(xterm.buffers.alt.x, 0);
+      assert.equal(xterm.buffers.alt.y, 0);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 0);
+
+      // render content for normal buffer
+      xterm.write("]0;root@2e5435072925: /terminalroot@2e5435072925:/terminal# ");
+      xterm.write("\r[K]0;root@2e5435072925: /terminalroot@2e5435072925:/terminal# ");
+      xterm.write("\r\n]0;root@2e5435072925: /terminalroot@2e5435072925:/terminal# ");
+      xterm.write("\r\n]0;root@2e5435072925: /terminalroot@2e5435072925:/terminal# test");
+
+      // save cursor for normal buffer and switch to alt buffer
+      xterm.write("\r\n7[?47h");
+      assert.equal(xterm.buffer, xterm.buffers.alt);
+      assert.equal(xterm.buffers.alt.x, 0);
+      assert.equal(xterm.buffers.alt.y, 0);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      // todo
+      xterm.write("[1;10r[4l");
+
+      // move cursor to the new position x = 0, y = 23
+      xterm.write("[24;1H");
+      assert.equal(xterm.buffers.alt.x, 0);
+      assert.equal(xterm.buffers.alt.y, 23);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      xterm.write("\r[K\r");
+
+      // switch to normal buffer "[?47" and restore cursor position "8" for normal buffer
+      xterm.write("[?47l8");
+      assert.equal(xterm.buffers.active, xterm.buffers.normal);
+      assert.equal(xterm.buffer, xterm.buffers.normal);
+      assert.equal(xterm.buffers.alt.x, 0);
+      assert.equal(xterm.buffers.alt.y, 23);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      //set up mouse params
+      xterm.write("[?1001s[?1002h[?1006h[?2004h");
+
+      // save cursor position "7" and switch to alt buffer "[?47h"
+      xterm.write("7[?47h");
+      assert.equal(xterm.buffer, xterm.buffers.alt);
+      assert.equal(xterm.buffers.active, xterm.buffers.alt);
+      assert.equal(xterm.buffers.alt.x, 0);
+      assert.equal(xterm.buffers.alt.y, 23);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      // set cursor position in the middle of the screen
+      xterm.write("[12;35H");
+      assert.equal(xterm.buffers.alt.x, 34);
+      assert.equal(xterm.buffers.alt.y, 11);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      //write text on the colored background. Notice: '(B'- Set United States G0 character set
+      xterm.write("[30m[46m test");
+      assert.equal(getTextFromLine(xterm.buffer.lines, 11), "                                   test                                        ");
+
+      // apply mouse params and set new cursor position
+      xterm.write("[?1006l[?1002l[?1001r[?2004l");//set up mouse params
+      xterm.write("[1;1H");
+      assert.equal(xterm.buffers.alt.x, 0);
+      assert.equal(xterm.buffers.alt.y, 0);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      // Bellow we clean up alt buffer and go back to the normal buffer.
+      // All lines of the normal buffer should not be lost and cursor state should be restored.
+      // Notice: '[K' - delete line
+      xterm.write("[K");
+      xterm.write("\n[K");
+      xterm.write("\n[K");
+      xterm.write("\n[K");
+      xterm.write("\n[K");
+      xterm.write("\n[K");
+      xterm.write("\n[K");
+      xterm.write("\n[K");
+      xterm.write("\n[K");
+      xterm.write("\n[K");
+      xterm.write("[1;34H");
+      assert.equal(xterm.buffers.alt.x, 33);
+      assert.equal(xterm.buffers.alt.y, 0);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      xterm.write("[?1l>");
+      xterm.write("[24;1H");
+      assert.equal(xterm.buffers.alt.x, 0);
+      assert.equal(xterm.buffers.alt.y, 23);
+      assert.equal(xterm.buffers.normal.x,0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      xterm.write("(B[m[39;49m");
+      xterm.write("\r[K\r");
+
+      //switch to normal buffer "[?47l" and restore cursor position "8"
+      xterm.write("[?47l8");
+      assert.equal(xterm.buffer, xterm.buffers.normal);
+      assert.equal(xterm.buffers.alt.x, 0);
+      assert.equal(xterm.buffers.alt.y, 23);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      xterm.write("\r\nroot@2e5435072925:/terminal# ");
+
+      assert.equal(xterm.buffer.x, 29);
+      assert.equal(xterm.buffer.y, 4);
+
+      assert.equal(getTextFromLine(xterm.buffer.lines, 0), "root@2e5435072925:/terminal#                                                   ");
+      assert.equal(getTextFromLine(xterm.buffer.lines, 1), "root@2e5435072925:/terminal#                                                   ");
+      assert.equal(getTextFromLine(xterm.buffer.lines, 2), "root@2e5435072925:/terminal# test                                              ");
+      assert.equal(getTextFromLine(xterm.buffer.lines, 3), "                                                                               ");
+      assert.equal(getTextFromLine(xterm.buffer.lines, 4), "root@2e5435072925:/terminal#                                                   ");
+    });
+
+    // "Mix" control sequences: 7 + 47h and 1049h; 47l + 8 and 1049l
+    it('switch from normal buffer to the alt and otherwise: ' +
+      'use sequence: switch normal to alt -> 7 + 47h and 1049h too; switch alt to normal: -> 47l + 8 and 1049l too', function () {
+      assert.equal(xterm.buffer, xterm.buffers.normal);
+      assert.equal(xterm.buffers.alt.x, 0);
+      assert.equal(xterm.buffers.alt.y, 0);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 0);
+
+      // render content for normal buffer
+      xterm.write("]0;root@2e5435072925: /terminalroot@2e5435072925:/terminal# ");
+      xterm.write("\r[K]0;root@2e5435072925: /terminalroot@2e5435072925:/terminal# ");
+      xterm.write("\r\n]0;root@2e5435072925: /terminalroot@2e5435072925:/terminal# ");
+      xterm.write("\r\n]0;root@2e5435072925: /terminalroot@2e5435072925:/terminal# test");
+
+      // save cursor for normal buffer and switch to alternative buffer
+      xterm.write("\r\n[?1049h");
+      assert.equal(xterm.buffer, xterm.buffers.alt);
+      assert.equal(xterm.buffers.alt.x, 0);
+      assert.equal(xterm.buffers.alt.y, 0);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      // todo
+      xterm.write("[1;10r[4l");
+
+      // move cursor to the new position x = 0, y = 23
+      xterm.write("[24;1H");
+      assert.equal(xterm.buffers.alt.x, 0);
+      assert.equal(xterm.buffers.alt.y, 23);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      xterm.write("\r[K\r");
+
+      //switch to normal buffer and restore cursor position for normal buffer
+      xterm.write("[?1049l");
+      assert.equal(xterm.buffer, xterm.buffers.normal);
+      assert.equal(xterm.buffers.alt.x, 0);
+      assert.equal(xterm.buffers.alt.y, 23);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      // set up mouse params
+      xterm.write("[?1001s[?1002h[?1006h[?2004h");
+
+      //save cursor '7' and switch to alternative buffer '[?47h'
+      assert.equal(xterm.buffer, xterm.buffers.normal);
+      xterm.write("7[?47h");
+      assert.equal(xterm.buffers.alt.x, 0);
+      assert.equal(xterm.buffers.alt.y, 23);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      //set up mouse params
+      xterm.write("[?1001s[?1002h[?1006h[?2004h");
+
+      //"control shot" - duplicated command to switch to alternative buffer, analog previous combination 7[?47h
+      xterm.write("[?1049h");
+      assert.equal(xterm.buffer, xterm.buffers.alt);
+      assert.equal(xterm.buffers.alt.x, 0);
+      assert.equal(xterm.buffers.alt.y, 23);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      // set cursor position in the middle of the screen
+      xterm.write("[12;35H");
+      assert.equal(xterm.buffers.alt.x, 34);
+      assert.equal(xterm.buffers.alt.y, 11);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      //write text on the colored background
+      xterm.write("[30m[46m test");
+      assert.equal(getTextFromLine(xterm.buffer.lines, 11), "                                   test                                        ");
+
+      // apply mouse params and set new cursor position
+      xterm.write("[?1006l[?1002l[?1001r[?2004l");//set up mouse params
+      xterm.write("[1;1H");
+      assert.equal(xterm.buffers.alt.x, 0);
+      assert.equal(xterm.buffers.alt.y, 0);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      // Bellow we clean up alt buffer and go back to the normal buffer.
+      // All lines of the normal buffer should not be lost and cursor state should be restored.
+      // Notice: '[K' - delete line
+      xterm.write("[K");
+      xterm.write("\n[K");
+      xterm.write("\n[K");
+      xterm.write("\n[K");
+      xterm.write("\n[K");
+      xterm.write("\n[K");
+      xterm.write("\n[K");
+      xterm.write("\n[K");
+      xterm.write("\n[K");
+      xterm.write("\n[K");
+      // set cursor position on the begin of the buffer
+      xterm.write("[1;34H");
+      assert.equal(xterm.buffers.alt.x, 33);
+      assert.equal(xterm.buffers.alt.y, 0);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      xterm.write("[?1l>");
+      // set cursor position on the end of the buffer
+      xterm.write("[24;1H");
+      assert.equal(xterm.buffers.alt.x, 0);
+      assert.equal(xterm.buffers.alt.y, 23);
+      assert.equal(xterm.buffers.normal.x,0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      xterm.write("(B[m[39;49m");
+      xterm.write("\r[K\r");
+
+      //switch to normal buffer
+      xterm.write("[?1049l");
+      assert.equal(xterm.buffer, xterm.buffers.normal);
+
+      //"control shot" - duplicated command to switch to normal buffer, analog previous combination [?1049l
+      xterm.write("[?47l8");
+      assert.equal(xterm.buffer, xterm.buffers.normal);
+      assert.equal(xterm.buffers.alt.x, 0);
+      assert.equal(xterm.buffers.alt.y, 23);
+      assert.equal(xterm.buffers.normal.x, 0);
+      assert.equal(xterm.buffers.normal.y, 3);
+
+      xterm.write("\r\nroot@2e5435072925:/terminal# ");
+
+      assert.equal(xterm.buffer.x, 29);
+      assert.equal(xterm.buffer.y, 4);
+
+      assert.equal(getTextFromLine(xterm.buffer.lines, 0), "root@2e5435072925:/terminal#                                                   ");
+      assert.equal(getTextFromLine(xterm.buffer.lines, 1), "root@2e5435072925:/terminal#                                                   ");
+      assert.equal(getTextFromLine(xterm.buffer.lines, 2), "root@2e5435072925:/terminal# test                                              ");
+      assert.equal(getTextFromLine(xterm.buffer.lines, 3), "                                                                               ");
+      assert.equal(getTextFromLine(xterm.buffer.lines, 4), "root@2e5435072925:/terminal#                                                   ");
+    });
+  });
+
+  function getTextFromLine(lines, lineNumber) {
+    var text = "";
+    for (var i = 0; i < lines.get(lineNumber).length - 1; i++) {
+      text += lines.get(lineNumber)[i][1];
+    }
+    // console.log("*" + text);
+    return text;
+  }
 });

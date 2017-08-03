@@ -5,6 +5,7 @@
 import { IInputHandler, ITerminal } from './Interfaces';
 import { C0 } from './EscapeSequences';
 import { DEFAULT_CHARSET } from './Charsets';
+import {CircularList} from "./utils/CircularList";
 
 /**
  * The terminal's standard implementation of IInputHandler, this handles all
@@ -954,7 +955,18 @@ export class InputHandler implements IInputHandler {
         case 47: // alt screen buffer
         case 1047: // alt screen buffer
           this._terminal.buffers.activateAltBuffer();
-          this._terminal.reset();
+
+          // todo for now we can use this methods because it's clears cursor position
+          // this._terminal.buffer.reset();
+          // this._terminal.reset();
+
+          // todo create separated method for this...
+          let i = this._terminal.buffer.lines.length;
+           this._terminal.buffer.lines = new CircularList<[number, string, number][]>(this._terminal.scrollback);
+           while (i--) {
+             this._terminal.buffer.lines.push(this._terminal.blankLine());
+           }
+
           this._terminal.viewport.syncScrollArea();
           this._terminal.showCursor();
           break;

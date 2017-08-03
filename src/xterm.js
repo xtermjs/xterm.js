@@ -179,8 +179,6 @@ function Terminal(options) {
   this.children;
   this.refreshStart;
   this.refreshEnd;
-  this.savedX;
-  this.savedY;
   this.savedCols;
 
   // stream
@@ -195,7 +193,7 @@ function Terminal(options) {
   this.prefix = '';
   this.postfix = '';
 
-  this.inputHandler = new InputHandler(this);
+  this.inputHandler = this.inputHandler || new InputHandler(this);
   this.parser = new Parser(this.inputHandler, this);
   // Reuse renderer if the Terminal is being recreated via a Terminal.reset call.
   this.renderer = this.renderer || null;
@@ -221,17 +219,12 @@ function Terminal(options) {
   this.surrogate_high = '';
 
   // Create the terminal's buffers and set the current buffer
-  this.buffers = new BufferSet(this);
+  this.buffers = this.buffers || new BufferSet(this);
   this.buffer = this.buffers.active;  // Convenience shortcut;
   this.buffers.on('activate', function (buffer) {
     this._terminal.buffer = buffer;
   });
 
-  var i = this.rows;
-
-  while (i--) {
-    this.buffer.lines.push(this.blankLine());
-  }
   // Ensure the selection manager has the correct buffer
   if (this.selectionManager) {
     this.selectionManager.setBuffer(this.buffer.lines);
@@ -2292,13 +2285,14 @@ Terminal.prototype.reset = function() {
   this.options.cols = this.cols;
   var customKeyEventHandler = this.customKeyEventHandler;
   var cursorBlinkInterval = this.cursorBlinkInterval;
-  var inputHandler = this.inputHandler;
-  var buffers = this.buffers;
   Terminal.call(this, this.options);
   this.customKeyEventHandler = customKeyEventHandler;
   this.cursorBlinkInterval = cursorBlinkInterval;
-  this.inputHandler = inputHandler;
-  this.buffers = buffers;
+  this.buffers.normal.reset();
+  this.buffers.alt.reset();
+  if (this.selectionManager) {
+    this.selectionManager.setBuffer(this.buffer.lines);
+  }
   this.refresh(0, this.rows - 1);
   this.viewport.syncScrollArea();
 };

@@ -36,7 +36,26 @@ export class Buffer {
     public scrollTop: number = 0,
     public tabs: any = {},
   ) {
-    this.lines = new CircularList<[number, string, number][]>(this.terminal.scrollback);
-    this.scrollBottom = this.terminal.rows - 1;
+    this.reset();
+  }
+
+  /**
+   * Reset buffer to initial state.
+   */
+  public reset(): void {
+      this.ydisp = 0;
+      this.ybase = 0;
+      this.y = 0;
+      this.x = 0;
+      this.scrollBottom = this.terminal.rows - 1;
+      this.tabs = {};
+
+      this.lines = new CircularList<[number, string, number][]>(this.terminal.scrollback);
+      if (this.lines.length === 0) {
+        let i = this.terminal.rows;
+        while (i--) {
+          this.lines.push(this.terminal.blankLine());
+        }
+      }
   }
 }
