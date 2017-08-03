@@ -170,16 +170,13 @@ export class Renderer {
         let data: any = line[i][0];
         const ch = line[i][1];
         const ch_width: any = line[i][2];
+        const isCursor: boolean = i === x;
         if (!ch_width) {
           continue;
         }
 
-        if (i === x) {
-          data = -1;
-        }
-
-        if (data !== attr) {
-          if (attr !== this._terminal.defAttr) {
+        if (data !== attr || isCursor) {
+          if (attr !== this._terminal.defAttr && !isCursor) {
             if (innerHTML) {
               currentElement.innerHTML = innerHTML;
               innerHTML = '';
@@ -187,7 +184,7 @@ export class Renderer {
             documentFragment.appendChild(currentElement);
             currentElement = null;
           }
-          if (data !== this._terminal.defAttr) {
+          if (data !== this._terminal.defAttr || isCursor) {
             if (innerHTML && !currentElement) {
               currentElement = this._spanElementObjectPool.acquire();
             }
@@ -199,71 +196,73 @@ export class Renderer {
               documentFragment.appendChild(currentElement);
             }
             currentElement = this._spanElementObjectPool.acquire();
-            if (data === -1) {
+
+            let bg = data & 0x1ff;
+            let fg = (data >> 9) & 0x1ff;
+            let flags = data >> 18;
+
+            if (isCursor) {
               currentElement.classList.add('reverse-video');
               currentElement.classList.add('terminal-cursor');
-            } else {
-              let bg = data & 0x1ff;
-              let fg = (data >> 9) & 0x1ff;
-              let flags = data >> 18;
+            }
 
-              if (flags & FLAGS.BOLD) {
-                if (!brokenBold) {
-                  currentElement.classList.add('xterm-bold');
-                }
-                // See: XTerm*boldColors
-                if (fg < 8) {
-                  fg += 8;
-                }
+            if (flags & FLAGS.BOLD) {
+              if (!brokenBold) {
+                currentElement.classList.add('xterm-bold');
               }
-
-              if (flags & FLAGS.UNDERLINE) {
-                currentElement.classList.add('xterm-underline');
-              }
-
-              if (flags & FLAGS.BLINK) {
-                currentElement.classList.add('xterm-blink');
-              }
-
-              // If inverse flag is on, then swap the foreground and background variables.
-              if (flags & FLAGS.INVERSE) {
-                let temp = bg;
-                bg = fg;
-                fg = temp;
-                // Should inverse just be before the above boldColors effect instead?
-                if ((flags & 1) && fg < 8) {
-                  fg += 8;
-                }
-              }
-
-              if (flags & FLAGS.INVISIBLE) {
-                currentElement.classList.add('xterm-hidden');
-              }
-
-              /**
-               * Weird situation: Invert flag used black foreground and white background results
-               * in invalid background color, positioned at the 256 index of the 256 terminal
-               * color map. Pin the colors manually in such a case.
-               *
-               * Source: https://github.com/sourcelair/xterm.js/issues/57
-               */
-              if (flags & FLAGS.INVERSE) {
-                if (bg === 257) {
-                  bg = 15;
-                }
-                if (fg === 256) {
-                  fg = 0;
-                }
-              }
-
-              if (bg < 256) {
-                currentElement.classList.add(`xterm-bg-color-${bg}`);
-              }
-
-              if (fg < 256) {
-                currentElement.classList.add(`xterm-color-${fg}`);
+              // See: XTerm*boldColors
+              if (fg < 8) {
+                fg += 8;
               }
             }
+
+            if (flags & FLAGS.UNDERLINE) {
+              currentElement.classList.add('xterm-underline');
+            }
+
+            if (flags & FLAGS.BLINK) {
+              currentElement.classList.add('xterm-blink');
+            }
+
+            // If inverse flag is on, then swap the foreground and background variables.
+            if (flags & FLAGS.INVERSE) {
+              let temp = bg;
+              bg = fg;
+              fg = temp;
+              // Should inverse just be before the above boldColors effect instead?
+              if ((flags & 1) && fg < 8) {
+                fg += 8;
+              }
+            }
+
+            if (flags & FLAGS.INVISIBLE && !isCursor) {
+              currentElement.classList.add('xterm-hidden');
+            }
+
+            /**
+             * Weird situation: Invert flag used black foreground and white background results
+             * in invalid background color, positioned at the 256 index of the 256 terminal
+             * color map. Pin the colors manually in such a case.
+             *
+             * Source: https://github.com/sourcelair/xterm.js/issues/57
+             */
+            if (flags & FLAGS.INVERSE) {
+              if (bg === 257) {
+                bg = 15;
+              }
+              if (fg === 256) {
+                fg = 0;
+              }
+            }
+
+            if (bg < 256) {
+              currentElement.classList.add(`xterm-bg-color-${bg}`);
+            }
+
+            if (fg < 256) {
+              currentElement.classList.add(`xterm-color-${fg}`);
+            }
+
           }
         }
 
@@ -295,7 +294,10 @@ export class Renderer {
           }
         }
 
-        attr = data;
+        // The cursor needs its own element, therefore we set attr to -1
+        // which will cause the next character to be rendered in a new element
+        attr = isCursor ? -1 : data;
+
       }
 
       if (innerHTML && !currentElement) {

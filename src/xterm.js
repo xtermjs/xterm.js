@@ -429,7 +429,7 @@ Terminal.prototype.setOption = function(key, value) {
   switch (key) {
     case 'cursorBlink': this.setCursorBlinking(value); break;
     case 'cursorStyle':
-      // Style 'block' applies with no class
+      this.element.classList.toggle(`xterm-cursor-style-block`, value === 'block');
       this.element.classList.toggle(`xterm-cursor-style-underline`, value === 'underline');
       this.element.classList.toggle(`xterm-cursor-style-bar`, value === 'bar');
       break;
@@ -639,6 +639,7 @@ Terminal.prototype.open = function(parent, focus) {
   this.element.classList.add('terminal');
   this.element.classList.add('xterm');
   this.element.classList.add('xterm-theme-' + this.theme);
+  this.element.classList.add(`xterm-cursor-style-${this.options.cursorStyle}`);
   this.setCursorBlinking(this.options.cursorBlink);
 
   this.element.setAttribute('tabindex', 0);
@@ -1016,7 +1017,10 @@ Terminal.prototype.bindMouse = function() {
   }
 
   on(el, 'mousedown', function(ev) {
-    // ensure focus
+
+    // Prevent the focus on the textarea from getting lost
+    // and make sure we get focused on mousedown
+    ev.preventDefault();
     self.focus();
 
     if (!self.mouseEvents) return;
