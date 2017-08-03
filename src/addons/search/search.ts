@@ -20,8 +20,7 @@ declare var window: any;
     /**
      * CommonJS environment
      */
-    const xterm = '../../xterm';
-    module.exports = addon(require(xterm));
+    module.exports = addon(require('../../xterm'));
   } else if (typeof define == 'function') {
     /**
      * Require.js is available
