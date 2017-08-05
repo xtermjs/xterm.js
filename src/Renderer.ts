@@ -171,6 +171,7 @@ export class Renderer {
         let flags: number;
         let fg: number;
         let bg: number;
+
         if (!ch_width) {
           continue;
         }
@@ -228,94 +229,104 @@ export class Renderer {
               documentFragment.appendChild(currentElement);
             }
             currentElement = this._spanElementObjectPool.acquire();
+
             if (isCursor) {
               currentElement.classList.add('reverse-video');
               currentElement.classList.add('terminal-cursor');
-            } else {
-              if (flags & FLAGS.BOLD) {
-                if (!brokenBold) {
-                  currentElement.classList.add('xterm-bold');
-                }
-                // See: XTerm*boldColors
-                if (fg < 8) {
-                  fg += 8;
-                }
+            }
+
+            if (flags & FLAGS.BOLD) {
+              if (!brokenBold) {
+                currentElement.classList.add('xterm-bold');
               }
-
-              if (flags & FLAGS.UNDERLINE) {
-                currentElement.classList.add('xterm-underline');
+              // See: XTerm*boldColors
+              if (fg < 8) {
+                fg += 8;
               }
+            }
 
-              if (flags & FLAGS.BLINK) {
-                currentElement.classList.add('xterm-blink');
+            let isTrueColorFg = flags & FLAGS.TRUECOLOR_FG;
+            let isTrueColorBg = flags & FLAGS.TRUECOLOR_BG;
+
+            // If inverse flag is on, then swap the foreground and background variables.
+            if (flags & FLAGS.INVERSE) {
+              let temp = bg;
+              bg = fg;
+              fg = temp;
+              temp = isTrueColorBg;
+              isTrueColorBg = isTrueColorFg;
+              isTrueColorFg = temp;
+              // Should inverse just be before the above boldColors effect instead?
+              if ((flags & 1) && fg < 8) {
+                fg += 8;
               }
+            }
 
-              let isTrueColorFg = flags & FLAGS.TRUECOLOR_FG;
-              let isTrueColorBg = flags & FLAGS.TRUECOLOR_BG;
+            if (flags & FLAGS.UNDERLINE) {
+              currentElement.classList.add('xterm-underline');
+            }
 
-              // If inverse flag is on, then swap the foreground and background variables.
-              if (flags & FLAGS.INVERSE) {
-                let temp = bg;
-                bg = fg;
-                fg = temp;
-                temp = isTrueColorBg;
-                isTrueColorBg = isTrueColorFg;
-                isTrueColorFg = temp;
-                // Should inverse just be before the above boldColors effect instead?
-                if ((flags & 1) && fg < 8) {
-                  fg += 8;
-                }
+            if (flags & FLAGS.BLINK) {
+              currentElement.classList.add('xterm-blink');
+            }
+
+            /**
+             * Weird situation: Invert flag used black foreground and white background results
+             * in invalid background color, positioned at the 256 index of the 256 terminal
+             * color map. Pin the colors manually in such a case.
+             *
+             * Source: https://github.com/sourcelair/xterm.js/issues/57
+             */
+            if (flags & FLAGS.INVERSE) {
+              if (bg === this._terminal.defaultBgColor) {
+                bg = 15;
               }
-
-              if (flags & FLAGS.INVISIBLE) {
-                currentElement.classList.add('xterm-hidden');
+              if (fg === this._terminal.defaultFgColor) {
+                fg = 0;
               }
+            }
 
-              /**
-               * Weird situation: Invert flag used black foreground and white background results
-               * in invalid background color, positioned at the 256 index of the 256 terminal
-               * color map. Pin the colors manually in such a case.
-               *
-               * Source: https://github.com/sourcelair/xterm.js/issues/57
-               */
-              if (flags & FLAGS.INVERSE) {
-                if (bg === this._terminal.defaultBgColor) {
-                  bg = 15;
-                }
-                if (fg === this._terminal.defaultFgColor) {
-                  fg = 0;
-                }
-              }
-
-              if (fg !== this._terminal.defaultFgColor) {
-                if (isTrueColorFg) {
-                  // let rgb = fg.toString(16);
-                  // while (rgb.length < 6) {
-                  //   rgb = '0' + rgb;
-                  // }
-                  // currentElement.style.color = `#${rgb}`;
-                  currentElement.style.color = currentTextStyle.truecolorFg;
-                } else {
-                  if (fg < 256) {
-                    currentElement.classList.add(`xterm-color-${fg}`);
-                  }
-                }
-              }
-
-              if (bg !== this._terminal.defaultBgColor) {
-                if (isTrueColorBg) {
-                  // let rgb = bg.toString(16);
-                  // while (rgb.length < 6) {
-                  //   rgb = '0' + rgb;
-                  // }
-                  currentElement.style.backgroundColor = currentTextStyle.truecolorBg;
-                } else {
-                  if (bg < 256) {
-                    currentElement.classList.add(`xterm-bg-color-${bg}`);
-                  }
+            if (fg !== this._terminal.defaultFgColor) {
+              if (isTrueColorFg) {
+                // let rgb = fg.toString(16);
+                // while (rgb.length < 6) {
+                //   rgb = '0' + rgb;
+                // }
+                // currentElement.style.color = `#${rgb}`;
+                currentElement.style.color = currentTextStyle.truecolorFg;
+              } else {
+                if (fg < 256) {
+                  currentElement.classList.add(`xterm-color-${fg}`);
                 }
               }
             }
+
+            if (bg !== this._terminal.defaultBgColor) {
+              if (isTrueColorBg) {
+                // let rgb = bg.toString(16);
+                // while (rgb.length < 6) {
+                //   rgb = '0' + rgb;
+                // }
+                currentElement.style.backgroundColor = currentTextStyle.truecolorBg;
+              } else {
+                if (bg < 256) {
+                  currentElement.classList.add(`xterm-bg-color-${bg}`);
+                }
+              }
+            }
+
+            if (flags & FLAGS.INVISIBLE && !isCursor) {
+              currentElement.classList.add('xterm-hidden');
+            }
+
+            if (bg < 256) {
+              currentElement.classList.add(`xterm-bg-color-${bg}`);
+            }
+
+            if (fg < 256) {
+              currentElement.classList.add(`xterm-color-${fg}`);
+            }
+
           }
         }
 
