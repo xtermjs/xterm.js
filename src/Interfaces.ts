@@ -92,8 +92,8 @@ export interface ILinkifier {
 export interface ICircularList<T> extends IEventEmitter {
   length: number;
   maxLength: number;
+  forEach: (callbackfn: (value: T, index: number) => void) => void;
 
-  forEach(callbackfn: (value: T, index: number, array: T[]) => void): void;
   get(index: number): T;
   set(index: number, value: T): void;
   push(value: T): void;

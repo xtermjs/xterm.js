@@ -68,4 +68,8 @@ export class EventEmitter implements IEventEmitter {
   public listeners(type): ListenerType[] {
     return this._events[type] || [];
   }
+
+  protected destroy(): void {
+    this._events = {};
+  }
 }
