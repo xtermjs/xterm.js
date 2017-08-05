@@ -168,8 +168,9 @@ export class Terminal extends EventEmitter implements ITerminal {
   public element: HTMLElement;
   public rowContainer: HTMLElement;
 
-  // TODO: Do we need a reference to body? There is also a body variable?
-  // The body of the terminal
+  /**
+   * The HTMLElement that the terminal is created in, set by Terminal.open.
+   */
   private parent: HTMLElement;
   private context: Window;
   private document: Document;
@@ -307,7 +308,7 @@ export class Terminal extends EventEmitter implements ITerminal {
         this.options[key] = DEFAULT_OPTIONS[key];
       }
       // TODO: We should move away from duplicate options on the Terminal object
-      self[key] = this.options[key];
+      this[key] = this.options[key];
     });
 
     if (this.options.colors.length === 8) {
@@ -326,7 +327,7 @@ export class Terminal extends EventEmitter implements ITerminal {
     // this.context = options.context || window;
     // this.document = options.document || document;
     // TODO: WHy not document.body?
-    this.parent = document ? document.getElementsByTagName('body')[0] : null;
+    this.parent = document ? document.body : null;
 
     this.cols = this.options.cols || this.options.geometry[0];
     this.rows = this.options.rows || this.options.geometry[1];
@@ -671,7 +672,7 @@ export class Terminal extends EventEmitter implements ITerminal {
     // Grab global elements
     this.context = this.parent.ownerDocument.defaultView;
     this.document = this.parent.ownerDocument;
-    this.body = this.document.getElementsByTagName('body')[0];
+    this.body = <HTMLBodyElement>this.document.body;
 
     // Create main element container
     this.element = this.document.createElement('div');
@@ -763,8 +764,7 @@ export class Terminal extends EventEmitter implements ITerminal {
     // Setup loop that draws to screen
     this.refresh(0, this.rows - 1);
 
-    // Initialize global actions that
-    // need to be taken on the document.
+    // Initialize global actions that need to be taken on the document.
     this.initGlobal();
 
     /**
