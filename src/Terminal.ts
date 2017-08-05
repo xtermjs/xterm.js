@@ -163,13 +163,6 @@ const DEFAULT_OPTIONS: TerminalOptions = {
   // focusKeys: false,
 };
 
-
-
-
-
-
-
-
 export class Terminal extends EventEmitter implements ITerminal {
   public textarea: HTMLTextAreaElement;
   public element: HTMLElement;
@@ -223,24 +216,22 @@ export class Terminal extends EventEmitter implements ITerminal {
   private charsets: Charset[] = [null];
 
   // mouse properties
-  private decLocator;
-  private x10Mouse;
-  private vt200Mouse;
-  private vt300Mouse;
-  private normalMouse;
-  private mouseEvents;
-  private sendFocus;
-  private utfMouse;
-  private sgrMouse;
-  private urxvtMouse;
+  private decLocator: boolean; // This is unstable and never set
+  private x10Mouse: boolean;
+  private vt200Mouse: boolean;
+  private vt300Mouse: boolean; // This is unstable and never set
+  private normalMouse: boolean;
+  private mouseEvents: boolean;
+  private sendFocus: boolean;
+  private utfMouse: boolean;
+  private sgrMouse: boolean;
+  private urxvtMouse: boolean;
 
   // misc
   public children: HTMLElement[];
-  private refreshStart;
-  private refreshEnd;
-  private savedX;
-  private savedY;
-  private savedCols;
+  private refreshStart: number;
+  private refreshEnd: number;
+  private savedCols: boolean;
 
   // stream
   private readable: boolean = true;
