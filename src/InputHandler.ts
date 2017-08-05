@@ -2,7 +2,7 @@
  * @license MIT
  */
 
-import { IInputHandler, ITerminal } from './Interfaces';
+import { IInputHandler, ITerminal, IInputHandlingTerminal } from './Interfaces';
 import { C0 } from './EscapeSequences';
 import { DEFAULT_CHARSET } from './Charsets';
 
@@ -15,7 +15,7 @@ import { DEFAULT_CHARSET } from './Charsets';
  */
 export class InputHandler implements IInputHandler {
   // TODO: We want to type _terminal when it's pulled into TS
-  constructor(private _terminal: any) { }
+  constructor(private _terminal: IInputHandlingTerminal) { }
 
   public addChar(char: string, code: number): void {
     if (char >= ' ') {
@@ -61,7 +61,7 @@ export class InputHandler implements IInputHandler {
           } else {
             // The line already exists (eg. the initial viewport), mark it as a
             // wrapped line
-            this._terminal.buffer.lines.get(this._terminal.buffer.y).isWrapped = true;
+            (<any>this._terminal.buffer.lines.get(this._terminal.buffer.y)).isWrapped = true;
           }
         } else {
           if (ch_width === 2)  // FIXME: check for xterm behavior
@@ -105,12 +105,12 @@ export class InputHandler implements IInputHandler {
    * Bell (Ctrl-G).
    */
   public bell(): void {
-    if (!this._terminal.visualBell) {
+    if (!this._terminal.options.visualBell) {
       return;
     }
     this._terminal.element.style.borderColor = 'white';
     setTimeout(() => this._terminal.element.style.borderColor = '', 10);
-    if (this._terminal.popOnBell) {
+    if (this._terminal.options.popOnBell) {
       this._terminal.focus();
     }
   }
@@ -194,7 +194,7 @@ export class InputHandler implements IInputHandler {
 
     const row = this._terminal.buffer.y + this._terminal.buffer.ybase;
     let j = this._terminal.buffer.x;
-    const ch = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    const ch: [number, string, number] = [this._terminal.eraseAttr(), ' ', 1]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       this._terminal.buffer.lines.get(row).splice(j++, 0, ch);
@@ -510,7 +510,7 @@ export class InputHandler implements IInputHandler {
     }
 
     const row = this._terminal.buffer.y + this._terminal.buffer.ybase;
-    const ch = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    const ch: [number, string, number] = [this._terminal.eraseAttr(), ' ', 1]; // xterm
 
     while (param--) {
       this._terminal.buffer.lines.get(row).splice(this._terminal.buffer.x, 1);
@@ -558,7 +558,7 @@ export class InputHandler implements IInputHandler {
 
     const row = this._terminal.buffer.y + this._terminal.buffer.ybase;
     let j = this._terminal.buffer.x;
-    const ch = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    const ch: [number, string, number] = [this._terminal.eraseAttr(), ' ', 1]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       this._terminal.buffer.lines.get(row)[j++] = ch;
@@ -858,7 +858,7 @@ export class InputHandler implements IInputHandler {
           this._terminal.insertMode = true;
           break;
         case 20:
-          // this._terminal.convertEol = true;
+          // this._t.convertEol = true;
           break;
       }
     } else if (this._terminal.prefix === '?') {
@@ -1050,7 +1050,7 @@ export class InputHandler implements IInputHandler {
           this._terminal.insertMode = false;
           break;
         case 20:
-          // this._terminal.convertEol = false;
+          // this._t.convertEol = false;
           break;
       }
     } else if (this._terminal.prefix === '?') {

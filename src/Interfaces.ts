@@ -3,7 +3,7 @@
  */
 
 import { LinkMatcherOptions } from './Interfaces';
-import { LinkMatcherHandler, LinkMatcherValidationCallback } from './Types';
+import { LinkMatcherHandler, LinkMatcherValidationCallback, Charset } from './Types';
 
 export interface IBrowser {
   isNode: boolean;
@@ -17,7 +17,7 @@ export interface IBrowser {
   isMSWindows: boolean;
 }
 
-export interface ITerminal {
+export interface ITerminal extends IEventEmitter {
   element: HTMLElement;
   rowContainer: HTMLElement;
   selectionContainer: HTMLElement;
@@ -45,9 +45,71 @@ export interface ITerminal {
   scrollDisp(disp: number, suppressScrollEvent: boolean);
   cancel(ev: Event, force?: boolean);
   log(text: string): void;
-  emit(event: string, data: any);
   reset(): void;
   showCursor(): void;
+}
+
+/**
+ * This interface encapsulates everything needed from the Terminal by the
+ * InputHandler. This cleanly separates the large amount of methods needed by
+ * InputHandler cleanly from the ITerminal interface.
+ */
+export interface IInputHandlingTerminal extends IEventEmitter {
+  element: HTMLElement;
+  options: ITerminalOptions;
+  cols: number;
+  rows: number;
+  charset: Charset;
+  gcharset: number;
+  glevel: number;
+  charsets: Charset[];
+  applicationKeypad: boolean;
+  applicationCursor: boolean;
+  originMode: boolean;
+  insertMode: boolean;
+  wraparoundMode: boolean;
+  defAttr: number;
+  curAttr: number;
+  prefix: string;
+  savedCols: number;
+  x10Mouse: boolean;
+  vt200Mouse: boolean;
+  normalMouse: boolean;
+  mouseEvents: boolean;
+  sendFocus: boolean;
+  utfMouse: boolean;
+  sgrMouse: boolean;
+  urxvtMouse: boolean;
+  cursorHidden: boolean;
+
+  buffers: IBufferSet;
+  buffer: IBuffer;
+  viewport: IViewport;
+  selectionManager: ISelectionManager;
+
+  focus(): void;
+  convertEol: boolean;
+  updateRange(y: number): void;
+  scroll(isWrapped?: boolean): void;
+  nextStop(x?: number): number;
+  setgLevel(g: number): void;
+  eraseAttr(): any;
+  eraseRight(x: number, y: number): void;
+  eraseLine(y: number): void;
+  eraseLeft(x: number, y: number): void;
+  blankLine(cur?: boolean, isWrapped?: boolean): [number, string, number][];
+  prevStop(x?: number): number;
+  is(term: string): boolean;
+  send(data: string): void;
+  setgCharset(g: number, charset: Charset): void;
+  resize(x: number, y: number): void;
+  log(text: string, data?: any): void;
+  reset(): void;
+  showCursor(): void;
+  refresh(start: number, end: number): void;
+  matchColor(r1, g1, b1): any;
+  error(text: string, data?: any): void;
+  setOption(key: string, value: any): void;
 }
 
 export interface ITerminalOptions {
@@ -78,6 +140,10 @@ export interface IBuffer {
   y: number;
   x: number;
   tabs: any;
+  scrollBottom: number;
+  scrollTop: number;
+  savedY: number;
+  savedX: number;
 }
 
 export interface IBufferSet {
@@ -89,11 +155,18 @@ export interface IBufferSet {
   activateAltBuffer(): void;
 }
 
+export interface IViewport {
+  syncScrollArea(): void;
+}
+
 export interface ISelectionManager {
   selectionText: string;
   selectionStart: [number, number];
   selectionEnd: [number, number];
 
+  disable(): void;
+  enable(): void;
+  setBuffer(buffer: ICircularList<[number, string, number][]>): void;
   setSelection(row: number, col: number, length: number);
 }
 
@@ -127,6 +200,7 @@ export interface ICircularList<T> extends IEventEmitter {
 export interface IEventEmitter {
   on(type, listener): void;
   off(type, listener): void;
+  emit(type: string, data?: any): void;
 }
 
 export interface LinkMatcherOptions {

@@ -30,7 +30,7 @@ import { CHARSETS } from './Charsets';
 import { getRawByteCoords } from './utils/Mouse';
 import { translateBufferLineToString } from './utils/BufferLine';
 import { CustomKeyEventHandler, Charset } from './Types';
-import { ITerminal, IBrowser, ITerminalOptions } from './Interfaces';
+import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal } from './Interfaces';
 
 // Declare for RequireJS in loadAddon
 declare var define: any;
@@ -163,7 +163,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   // focusKeys: false,
 };
 
-export class Terminal extends EventEmitter implements ITerminal {
+export class Terminal extends EventEmitter implements ITerminal, IInputHandlingTerminal {
   public textarea: HTMLTextAreaElement;
   public element: HTMLElement;
   public rowContainer: HTMLElement;
@@ -193,7 +193,7 @@ export class Terminal extends EventEmitter implements ITerminal {
   // TODO: This can be changed to an enum or boolean, 0 and 1 seem to be the only options
   public cursorState: number;
   public cursorHidden: boolean;
-  private convertEol: boolean;
+  public convertEol: boolean;
   // TODO: This is the data queue for send, improve name and documentation
   private queue: string;
   private customKeyEventHandler: CustomKeyEventHandler;
@@ -203,36 +203,36 @@ export class Terminal extends EventEmitter implements ITerminal {
   private cursorBlinkInterval: NodeJS.Timer;
 
   // modes
-  private applicationKeypad: boolean;
-  private applicationCursor: boolean;
-  private originMode: boolean;
-  private insertMode: boolean;
-  private wraparoundMode: boolean; // defaults: xterm - true, vt100 - false
+  public applicationKeypad: boolean;
+  public applicationCursor: boolean;
+  public originMode: boolean;
+  public insertMode: boolean;
+  public wraparoundMode: boolean; // defaults: xterm - true, vt100 - false
 
   // charset
   // The current charset
-  private charset: Charset;
-  private gcharset: number;
-  private glevel: number;
-  private charsets: Charset[];
+  public charset: Charset;
+  public gcharset: number;
+  public glevel: number;
+  public charsets: Charset[];
 
   // mouse properties
   private decLocator: boolean; // This is unstable and never set
-  private x10Mouse: boolean;
-  private vt200Mouse: boolean;
+  public x10Mouse: boolean;
+  public vt200Mouse: boolean;
   private vt300Mouse: boolean; // This is unstable and never set
-  private normalMouse: boolean;
-  private mouseEvents: boolean;
-  private sendFocus: boolean;
-  private utfMouse: boolean;
-  private sgrMouse: boolean;
-  private urxvtMouse: boolean;
+  public normalMouse: boolean;
+  public mouseEvents: boolean;
+  public sendFocus: boolean;
+  public utfMouse: boolean;
+  public sgrMouse: boolean;
+  public urxvtMouse: boolean;
 
   // misc
   public children: HTMLElement[];
   private refreshStart: number;
   private refreshEnd: number;
-  private savedCols: boolean;
+  public savedCols: number;
 
   // stream
   private readable: boolean;
@@ -274,7 +274,7 @@ export class Terminal extends EventEmitter implements ITerminal {
   private linkifier: Linkifier;
   public buffers: BufferSet;
   public buffer: Buffer;
-  private viewport: Viewport;
+  public viewport: Viewport;
   private compositionHelper: CompositionHelper;
   public charMeasure: CharMeasure;
 
@@ -440,7 +440,7 @@ export class Terminal extends EventEmitter implements ITerminal {
    * @param {string} key The option key.
    * @param {any} value The option value.
    */
-  public setOption(key: string, value: any) {
+  public setOption(key: string, value: any): void {
     // TODO: Give value a better type (boolean | string, ...)
     if (!(key in DEFAULT_OPTIONS)) {
       throw new Error('No option with key "' + key + '"');
@@ -453,7 +453,7 @@ export class Terminal extends EventEmitter implements ITerminal {
           msg += `(${this.rows}) is not allowed.`;
 
           console.warn(msg);
-          return false;
+          return;
         }
 
         if (this.options[key] !== value) {
@@ -1167,7 +1167,7 @@ export class Terminal extends EventEmitter implements ITerminal {
   /**
    * Display the cursor element
    */
-  public showCursor() {
+  public showCursor(): void {
     if (!this.cursorState) {
       this.cursorState = 1;
       this.refresh(this.buffer.y, this.buffer.y);
@@ -1882,7 +1882,7 @@ export class Terminal extends EventEmitter implements ITerminal {
    * Send data for handling to the terminal
    * @param {string} data
    */
-  private send(data) {
+  public send(data: string): void {
     if (!this.queue) {
       setTimeout(() => {
         this.handler(this.queue);
@@ -1909,21 +1909,19 @@ export class Terminal extends EventEmitter implements ITerminal {
   /**
    * Log the current state to the console.
    */
-  public log(): void {
+  public log(text: string, data?: any): void {
     if (!this.options.debug) return;
     if (!this.context.console || !this.context.console.log) return;
-    const args = Array.prototype.slice.call(arguments);
-    this.context.console.log.apply(this.context.console, args);
+    this.context.console.log(text, data);
   }
 
   /**
    * Log the current state as error to the console.
    */
-  public error(): void {
+  public error(text: string, data?: any): void {
     if (!this.options.debug) return;
     if (!this.context.console || !this.context.console.error) return;
-    const args = Array.prototype.slice.call(arguments);
-    this.context.console.error.apply(this.context.console, args);
+    this.context.console.error(text, data);
   }
 
   /**
@@ -1932,7 +1930,7 @@ export class Terminal extends EventEmitter implements ITerminal {
    * @param {number} x The number of columns to resize to.
    * @param {number} y The number of rows to resize to.
    */
-  public resize(x: number, y: number) {
+  public resize(x: number, y: number): void {
     if (isNaN(x) || isNaN(y)) {
       return;
     }
@@ -2052,7 +2050,7 @@ export class Terminal extends EventEmitter implements ITerminal {
    * Updates the range of rows to refresh
    * @param {number} y The number of rows to refresh next.
    */
-  public updateRange(y) {
+  public updateRange(y: number): void {
     if (y < this.refreshStart) this.refreshStart = y;
     if (y > this.refreshEnd) this.refreshEnd = y;
     // if (y > this.refreshEnd) {
@@ -2094,7 +2092,7 @@ export class Terminal extends EventEmitter implements ITerminal {
    * Move the cursor to the previous tab stop from the given position (default is current).
    * @param {number} x The position to move the cursor to the previous tab stop.
    */
-  public prevStop(x) {
+  public prevStop(x?: number): number {
     if (x == null) x = this.buffer.x;
     while (!this.buffer.tabs[--x] && x > 0);
     return x >= this.cols ? this.cols - 1 : x < 0 ? 0 : x;
@@ -2104,12 +2102,10 @@ export class Terminal extends EventEmitter implements ITerminal {
    * Move the cursor one tab stop forward from the given position (default is current).
    * @param {number} x The position to move the cursor one tab stop forward.
    */
-  public nextStop(x) {
+  public nextStop(x?: number): number {
     if (x == null) x = this.buffer.x;
     while (!this.buffer.tabs[++x] && x < this.cols);
-    return x >= this.cols
-      ? this.cols - 1
-    : x < 0 ? 0 : x;
+    return x >= this.cols ? this.cols - 1 : x < 0 ? 0 : x;
   }
 
   /**
@@ -2134,7 +2130,7 @@ export class Terminal extends EventEmitter implements ITerminal {
    * @param {number} x The column from which to start erasing to the start of the line.
    * @param {number} y The line in which to operate.
    */
-  public eraseLeft(x: number, y: number) {
+  public eraseLeft(x: number, y: number): void {
     const line = this.buffer.lines.get(this.buffer.ybase + y);
     if (!line) {
       return;
@@ -2171,7 +2167,7 @@ export class Terminal extends EventEmitter implements ITerminal {
    * Erase all content in the given line
    * @param {number} y The line to erase all of its contents.
    */
-  public eraseLine(y): void {
+  public eraseLine(y: number): void {
     this.eraseRight(0, y);
   }
 
@@ -2180,7 +2176,7 @@ export class Terminal extends EventEmitter implements ITerminal {
    * @param {boolean} cur First bunch of data for each "blank" character.
    * @param {boolean} isWrapped Whether the new line is wrapped from the previous line.
    */
-  public blankLine(cur?, isWrapped?: boolean) {
+  public blankLine(cur?: boolean, isWrapped?: boolean): [number, string, number][] {
     const attr = cur ? this.eraseAttr() : this.defAttr;
 
     const ch = [attr, ' ', 1]; // width defaults to 1 halfwidth character
@@ -2209,12 +2205,10 @@ export class Terminal extends EventEmitter implements ITerminal {
 
   /**
    * Evaluate if the current terminal is the given argument.
-   * @param {object} term The terminal to evaluate
+   * @param term The terminal name to evaluate
    */
-  private is(term) {
-    // TODO: Do we need this?
-    const name = this.options.termName;
-    return (name + '').indexOf(term) === 0;
+  public is(term: string): boolean {
+    return (this.options.termName + '').indexOf(term) === 0;
   }
 
   /**
@@ -2294,7 +2288,7 @@ export class Terminal extends EventEmitter implements ITerminal {
   /**
    * ESC c Full Reset (RIS).
    */
-  public reset() {
+  public reset(): void {
     this.options.rows = this.rows;
     this.options.cols = this.cols;
     const customKeyEventHandler = this.customKeyEventHandler;
@@ -2329,7 +2323,7 @@ export class Terminal extends EventEmitter implements ITerminal {
 
   // Expose to InputHandler
   // TODO: Revise when truecolor is introduced.
-  public matchColor(r1, g1, b1) {
+  public matchColor(r1, g1, b1): any {
     const hash = (r1 << 16) | (g1 << 8) | b1;
 
     if (matchColorCache[hash] != null) {

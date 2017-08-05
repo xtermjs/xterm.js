@@ -5,7 +5,8 @@ import { wcwidth } from './InputHandler';
 describe('InputHandler', () => {
   describe('save and restore cursor', () => {
     let terminal = { buffer: { x: 1, y: 2 } };
-    let inputHandler = new InputHandler(terminal);
+    // TODO: Create proper mock IInputHandlingTerminal test util object
+    let inputHandler = new InputHandler(<any>terminal);
     // Save cursor position
     inputHandler.saveCursor([]);
     assert.equal(terminal.buffer.x, 1);
@@ -24,7 +25,7 @@ describe('InputHandler', () => {
       let terminal = {
         setOption: (option, value) => options[option] = value
       };
-      let inputHandler = new InputHandler(terminal);
+      let inputHandler = new InputHandler(<any>terminal);
 
       inputHandler.setCursorStyle([0]);
       assert.equal(options['cursorStyle'], 'block');

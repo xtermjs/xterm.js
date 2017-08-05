@@ -2,14 +2,14 @@
  * @license MIT
  */
 
-import { ITerminal } from './Interfaces';
+import { ITerminal, IViewport } from './Interfaces';
 import { CharMeasure } from './utils/CharMeasure';
 
 /**
  * Represents the viewport of a terminal, the visible area within the larger buffer of output.
  * Logic for the virtual scroll bar is included in this object.
  */
-export class Viewport {
+export class Viewport implements IViewport {
   private currentRowHeight: number;
   private lastRecordedBufferLength: number;
   private lastRecordedViewportHeight: number;

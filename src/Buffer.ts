@@ -2,7 +2,7 @@
  * @license MIT
  */
 
-import { ITerminal } from './Interfaces';
+import { ITerminal, IBuffer } from './Interfaces';
 import { CircularList } from './utils/CircularList';
 
 /**
@@ -12,7 +12,7 @@ import { CircularList } from './utils/CircularList';
  *   - cursor position
  *   - scroll position
  */
-export class Buffer {
+export class Buffer implements IBuffer {
   public lines: CircularList<[number, string, number][]>;
 
   public savedY: number;

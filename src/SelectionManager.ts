@@ -133,7 +133,7 @@ export class SelectionManager extends EventEmitter {
    * Disables the selection manager. This is useful for when terminal mouse
    * are enabled.
    */
-  public disable() {
+  public disable(): void {
     this.clearSelection();
     this._enabled = false;
   }
@@ -141,7 +141,7 @@ export class SelectionManager extends EventEmitter {
   /**
    * Enable the selection manager.
    */
-  public enable() {
+  public enable(): void {
     this._enabled = true;
   }
 
