@@ -47,36 +47,29 @@ declare var define: any;
  */
 
 // Let it work inside Node.js for automated testing purposes.
-var document = (typeof window != 'undefined') ? window.document : null;
+const document = (typeof window !== 'undefined') ? window.document : null;
 
 /**
  * The amount of write requests to queue before sending an XOFF signal to the
  * pty process. This number must be small in order for ^C and similar sequences
  * to be responsive.
  */
-var WRITE_BUFFER_PAUSE_THRESHOLD = 5;
+const WRITE_BUFFER_PAUSE_THRESHOLD = 5;
 
 /**
  * The number of writes to perform in a single batch before allowing the
  * renderer to catch up with a 0ms setTimeout.
  */
-var WRITE_BATCH_SIZE = 300;
+const WRITE_BATCH_SIZE = 300;
 
 /**
  * The time between cursor blinks. This is driven by JS rather than a CSS
  * animation due to a bug in Chromium that causes it to use excessive CPU time.
  * See https://github.com/Microsoft/vscode/issues/22900
  */
-var CURSOR_BLINK_INTERVAL = 600;
+const CURSOR_BLINK_INTERVAL = 600;
 
-
-
-
-
-
-
-
-
+// TODO: Most of the color code should be removed after truecolor is implemented
 // Colors 0-15
 const tangoColors = [
   // dark:
@@ -135,13 +128,11 @@ const defaultColors = (function() {
 const _colors = defaultColors.slice();
 
 const vcolors = (function() {
-  var out = []
-  , colors = defaultColors
-  , i = 0
-  , color;
+  const out = [];
+  let color;
 
-  for (; i < 256; i++) {
-    color = parseInt(colors[i].substring(1), 16);
+  for (let i = 0; i < 256; i++) {
+    color = parseInt(defaultColors[i].substring(1), 16);
     out.push([
       (color >> 16) & 0xff,
       (color >> 8) & 0xff,
@@ -287,7 +278,7 @@ export class Terminal extends EventEmitter implements ITerminal {
   private inputHandler: InputHandler;
   private parser: Parser;
   private renderer: Renderer;
-  public selectionManager: SelectionManager;;
+  public selectionManager: SelectionManager;
   private linkifier: Linkifier;
   public buffers: BufferSet;
   public buffer: Buffer;
@@ -757,7 +748,7 @@ export class Terminal extends EventEmitter implements ITerminal {
      * Automatic focus functionality.
      * TODO: Default to `false` starting with xterm.js 3.0.
      */
-    if (typeof focus == 'undefined') {
+    if (typeof focus === 'undefined') {
       let message = 'You did not pass the `focus` argument in `Terminal.prototype.open()`.\n';
 
       message += 'The `focus` argument now defaults to `true` but starting with xterm.js 3.0 ';
@@ -823,14 +814,16 @@ export class Terminal extends EventEmitter implements ITerminal {
    *   BtnCode, EmitButtonCode, EditorButton, SendMousePosition
    */
   public bindMouse() {
-    var el = this.element, self = this, pressed = 32;
+    const el = this.element;
+    const self = this;
+    let pressed = 32;
 
     // mouseup, mousedown, wheel
     // left click: ^[[M 3<^[[M#3<
     // wheel up: ^[[M`3>
     function sendButton(ev) {
-      var button
-      , pos;
+      let button;
+      let pos;
 
       // get the xterm-style button
       button = getButton(ev);
@@ -861,8 +854,8 @@ export class Terminal extends EventEmitter implements ITerminal {
     // motion example of a left click:
     // ^[[M 3<^[[M@4<^[[M@5<^[[M@6<^[[M@7<^[[M#7<
     function sendMove(ev) {
-      let button = pressed
-      , pos;
+      let button = pressed;
+      let pos;
 
       pos = getRawByteCoords(ev, self.rowContainer, self.charMeasure, self.cols, self.rows);
       if (!pos) return;
@@ -1052,7 +1045,7 @@ export class Terminal extends EventEmitter implements ITerminal {
       sendButton(ev);
 
       // fix for odd bug
-      //if (this.vt200Mouse && !this.normalMouse) {
+      // if (this.vt200Mouse && !this.normalMouse) {
       if (this.vt200Mouse) {
         (<any>ev).overrideType = 'mouseup';
         sendButton(ev);
@@ -1164,7 +1157,7 @@ export class Terminal extends EventEmitter implements ITerminal {
    * line.
    */
   public scroll(isWrapped?: boolean): void {
-    var row;
+    let row;
 
     // Make room for the new row in lines
     if (this.buffer.lines.length === this.buffer.lines.maxLength) {
@@ -1301,10 +1294,9 @@ export class Terminal extends EventEmitter implements ITerminal {
   }
 
   private innerWrite() {
-    var writeBatch = this.writeBuffer.splice(0, WRITE_BATCH_SIZE);
+    const writeBatch = this.writeBuffer.splice(0, WRITE_BATCH_SIZE);
     while (writeBatch.length > 0) {
-      var data = writeBatch.shift();
-      var l = data.length, i = 0, j, cs, ch, code, low, ch_width, row;
+      const data = writeBatch.shift();
 
       // If XOFF was sent in order to catch up with the pty process, resume it if
       // the writeBuffer is empty to allow more data to come in.
@@ -1321,7 +1313,7 @@ export class Terminal extends EventEmitter implements ITerminal {
       // middle of parsing escape sequence in two chunks. For some reason the
       // state of the parser resets to 0 after exiting parser.parse. This change
       // just sets the state back based on the correct return statement.
-      var state = this.parser.parse(data);
+      const state = this.parser.parse(data);
       this.parser.setState(state);
 
       this.updateRange(this.buffer.y);
@@ -1329,10 +1321,7 @@ export class Terminal extends EventEmitter implements ITerminal {
     }
     if (this.writeBuffer.length > 0) {
       // Allow renderer to catch up before processing the next batch
-      var self = this;
-      setTimeout(function () {
-        self.innerWrite();
-      }, 0);
+      setTimeout(() => this.innerWrite(), 0);
     } else {
       this.writeInProgress = false;
     }
@@ -1412,7 +1401,7 @@ export class Terminal extends EventEmitter implements ITerminal {
    */
   public registerLinkMatcher(regex, handler, options) {
     if (this.linkifier) {
-      var matcherId = this.linkifier.registerLinkMatcher(regex, handler, options);
+      const matcherId = this.linkifier.registerLinkMatcher(regex, handler, options);
       this.refresh(0, this.rows - 1);
       return matcherId;
     }
@@ -1525,7 +1514,7 @@ export class Terminal extends EventEmitter implements ITerminal {
    * @param {KeyboardEvent} ev The keyboard event to be translated to key escape sequence.
    */
   private evaluateKeyEscapeSequence(ev) {
-    var result = {
+    const result = {
       // Whether to cancel event propogation (NOTE: this may not be needed since the event is
       // canceled at the end of keyDown
       cancel: false,
@@ -1534,7 +1523,7 @@ export class Terminal extends EventEmitter implements ITerminal {
       // The number of characters to scroll, if this is defined it will cancel the event
       scrollDisp: undefined
     };
-    var modifiers = ev.shiftKey << 0 | ev.altKey << 1 | ev.ctrlKey << 2 | ev.metaKey << 3;
+    const modifiers = ev.shiftKey << 0 | ev.altKey << 1 | ev.ctrlKey << 2 | ev.metaKey << 3;
     switch (ev.keyCode) {
       case 8:
         // backspace
@@ -1570,7 +1559,7 @@ export class Terminal extends EventEmitter implements ITerminal {
           // HACK: Make Alt + left-arrow behave like Ctrl + left-arrow: move one word backwards
           // http://unix.stackexchange.com/a/108106
           // macOS uses different escape sequences than linux
-          if (result.key == C0.ESC + '[1;3D') {
+          if (result.key === C0.ESC + '[1;3D') {
             result.key = (this.browser.isMac) ? C0.ESC + 'b' : C0.ESC + '[1;5D';
           }
         } else if (this.applicationCursor) {
@@ -1586,7 +1575,7 @@ export class Terminal extends EventEmitter implements ITerminal {
           // HACK: Make Alt + right-arrow behave like Ctrl + right-arrow: move one word forward
           // http://unix.stackexchange.com/a/108106
           // macOS uses different escape sequences than linux
-          if (result.key == C0.ESC + '[1;3C') {
+          if (result.key === C0.ESC + '[1;3C') {
             result.key = (this.browser.isMac) ? C0.ESC + 'f' : C0.ESC + '[1;5C';
           }
         } else if (this.applicationCursor) {
@@ -1601,7 +1590,7 @@ export class Terminal extends EventEmitter implements ITerminal {
           result.key = C0.ESC + '[1;' + (modifiers + 1) + 'A';
           // HACK: Make Alt + up-arrow behave like Ctrl + up-arrow
           // http://unix.stackexchange.com/a/108106
-          if (result.key == C0.ESC + '[1;3A') {
+          if (result.key === C0.ESC + '[1;3A') {
             result.key = C0.ESC + '[1;5A';
           }
         } else if (this.applicationCursor) {
@@ -1616,7 +1605,7 @@ export class Terminal extends EventEmitter implements ITerminal {
           result.key = C0.ESC + '[1;' + (modifiers + 1) + 'B';
           // HACK: Make Alt + down-arrow behave like Ctrl + down-arrow
           // http://unix.stackexchange.com/a/108106
-          if (result.key == C0.ESC + '[1;3B') {
+          if (result.key === C0.ESC + '[1;3B') {
             result.key = C0.ESC + '[1;5B';
           }
         } else if (this.applicationCursor) {
@@ -1808,7 +1797,7 @@ export class Terminal extends EventEmitter implements ITerminal {
    * Set the G level of the terminal
    * @param g
    */
-  public setgLevel = function(g: number) {
+  public setgLevel(g: number): void {
     this.glevel = g;
     this.charset = this.charsets[g];
   }
@@ -1818,7 +1807,7 @@ export class Terminal extends EventEmitter implements ITerminal {
    * @param g
    * @param charset
    */
-  public setgCharset(g: number, charset: Charset) {
+  public setgCharset(g: number, charset: Charset): void {
     this.charsets[g] = charset;
     if (this.glevel === g) {
       this.charset = charset;
@@ -1832,7 +1821,7 @@ export class Terminal extends EventEmitter implements ITerminal {
    * @param {KeyboardEvent} ev The keypress event to be handled.
    */
   private keyPress(ev) {
-    var key;
+    let key;
 
     if (this.customKeyEventHandler && this.customKeyEventHandler(ev) === false) {
       return false;
@@ -1929,7 +1918,7 @@ export class Terminal extends EventEmitter implements ITerminal {
       this.setOption('scrollback', y);
     }
 
-    var line
+    let line
     , el
     , i
     , j
@@ -2148,7 +2137,7 @@ export class Terminal extends EventEmitter implements ITerminal {
     this.buffer.ydisp = 0;
     this.buffer.ybase = 0;
     this.buffer.y = 0;
-    for (var i = 1; i < this.rows; i++) {
+    for (let i = 1; i < this.rows; i++) {
       this.buffer.lines.push(this.blankLine());
     }
     this.refresh(0, this.rows - 1);
@@ -2266,7 +2255,6 @@ export class Terminal extends EventEmitter implements ITerminal {
    * Move the cursor up one row, inserting a new blank line if necessary.
    */
   public reverseIndex() {
-    var j;
     if (this.buffer.y === this.buffer.scrollTop) {
       // possibly move the code below to term.reverseScroll();
       // test: echo -ne '\e[1;1H\e[44m\eM\e[0m'
@@ -2286,10 +2274,10 @@ export class Terminal extends EventEmitter implements ITerminal {
   public reset() {
     this.options.rows = this.rows;
     this.options.cols = this.cols;
-    var customKeyEventHandler = this.customKeyEventHandler;
-    var cursorBlinkInterval = this.cursorBlinkInterval;
-    var inputHandler = this.inputHandler;
-    var buffers = this.buffers;
+    const customKeyEventHandler = this.customKeyEventHandler;
+    const cursorBlinkInterval = this.cursorBlinkInterval;
+    const inputHandler = this.inputHandler;
+    const buffers = this.buffers;
     Terminal.call(this, this.options);
     this.customKeyEventHandler = customKeyEventHandler;
     this.cursorBlinkInterval = cursorBlinkInterval;
@@ -2319,7 +2307,7 @@ export class Terminal extends EventEmitter implements ITerminal {
   // Expose to InputHandler
   // TODO: Revise when truecolor is introduced.
   public matchColor(r1, g1, b1) {
-    var hash = (r1 << 16) | (g1 << 8) | b1;
+    const hash = (r1 << 16) | (g1 << 8) | b1;
 
     if (matchColorCache[hash] != null) {
       return matchColorCache[hash];
@@ -2402,7 +2390,7 @@ function indexOf(obj, el) {
 }
 
 function isThirdLevelShift(term, ev) {
-  var thirdLevelKey =
+  const thirdLevelKey =
       (term.browser.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
       (term.browser.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
 
