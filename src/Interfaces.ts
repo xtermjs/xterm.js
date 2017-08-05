@@ -3,7 +3,7 @@
  */
 
 import { LinkMatcherOptions } from './Interfaces';
-import { LinkMatcherHandler, LinkMatcherValidationCallback, TerminalOptions } from './Types';
+import { LinkMatcherHandler, LinkMatcherValidationCallback } from './Types';
 
 export interface IBrowser {
   isNode: boolean;
@@ -32,7 +32,7 @@ export interface ITerminal {
   cursorHidden: boolean;
   cursorState: number;
   defAttr: number;
-  options: TerminalOptions;
+  options: ITerminalOptions;
   buffers: IBufferSet;
   buffer: IBuffer;
 

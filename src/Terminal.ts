@@ -190,30 +190,30 @@ export class Terminal extends EventEmitter implements ITerminal {
   private colors: any;
 
   // TODO: This can be changed to an enum or boolean, 0 and 1 seem to be the only options
-  public cursorState: number = 0;
-  public cursorHidden: boolean = false;
+  public cursorState: number;
+  public cursorHidden: boolean;
   private convertEol: boolean;
   // TODO: This is the data queue for send, improve name and documentation
-  private queue: string = '';
-  private customKeyEventHandler: CustomKeyEventHandler = null;
+  private queue: string;
+  private customKeyEventHandler: CustomKeyEventHandler;
   // The ID from a setInterval that tracks the blink animation. This animation
   // is done in JS due to a Chromium bug with CSS animations that thrashed the
   // CPU.
-  private cursorBlinkInterval: NodeJS.Timer = null;
+  private cursorBlinkInterval: NodeJS.Timer;
 
   // modes
-  private applicationKeypad: boolean = false;
-  private applicationCursor: boolean = false;
-  private originMode: boolean = false;
-  private insertMode: boolean = false;
-  private wraparoundMode: boolean = true; // defaults: xterm - true, vt100 - false
+  private applicationKeypad: boolean;
+  private applicationCursor: boolean;
+  private originMode: boolean;
+  private insertMode: boolean;
+  private wraparoundMode: boolean; // defaults: xterm - true, vt100 - false
 
   // charset
   // The current charset
-  private charset: Charset = null;
-  private gcharset: number = null;
-  private glevel: number = 0;
-  private charsets: Charset[] = [null];
+  private charset: Charset;
+  private gcharset: number;
+  private glevel: number;
+  private charsets: Charset[];
 
   // mouse properties
   private decLocator: boolean; // This is unstable and never set
@@ -234,20 +234,20 @@ export class Terminal extends EventEmitter implements ITerminal {
   private savedCols: boolean;
 
   // stream
-  private readable: boolean = true;
-  private writable: boolean = true;
+  private readable: boolean;
+  private writable: boolean;
 
-  public defAttr: number = (0 << 18) | (257 << 9) | (256 << 0);
-  public curAttr: number = (0 << 18) | (257 << 9) | (256 << 0);
+  public defAttr: number;
+  public curAttr: number;
 
-  public params: (string | number)[] = [];
-  public currentParam: string | number = 0;
-  public prefix: string = '';
-  public postfix: string = '';
+  public params: (string | number)[];
+  public currentParam: string | number;
+  public prefix: string;
+  public postfix: string;
 
   // user input states
-  public writeBuffer: string[] = [];
-  private writeInProgress: boolean = false;
+  public writeBuffer: string[];
+  private writeInProgress: boolean;
 
   /**
    * Whether _xterm.js_ sent XOFF in order to catch up with the pty process.
@@ -255,16 +255,16 @@ export class Terminal extends EventEmitter implements ITerminal {
    * XOFF via ^S that it will not automatically resume when the writeBuffer goes
    * below threshold.
    */
-  private xoffSentToCatchUp: boolean = false;
+  private xoffSentToCatchUp: boolean;
 
   /** Whether writing has been stopped as a result of XOFF */
-  private writeStopped: boolean = false;
+  private writeStopped: boolean;
 
   // leftover surrogate high from previous write invocation
-  private surrogate_high: string = '';
+  private surrogate_high: string;
 
   // Store if user went browsing history in scrollback
-  private userScrolling: boolean = false;
+  private userScrolling: boolean;
 
   private inputHandler: InputHandler;
   private parser: Parser;
@@ -297,56 +297,88 @@ export class Terminal extends EventEmitter implements ITerminal {
     options: ITerminalOptions = {}
   ) {
     super();
+    this.options = options;
+    this.setup();
+  }
 
-    let self: any = this;
-
-    // TODO: Can this be removed?
-    if (!(this instanceof Terminal)) {
-      return new Terminal({
-        cols: arguments[0],
-        rows: arguments[1],
-        handler: arguments[2]
-      });
-    }
-
-    Object.keys(DEFAULT_OPTIONS).forEach(function(key) {
-      if (options[key] == null) {
-        options[key] = DEFAULT_OPTIONS[key];
+  private setup(): void {
+    Object.keys(DEFAULT_OPTIONS).forEach((key) => {
+      if (this.options[key] == null) {
+        this.options[key] = DEFAULT_OPTIONS[key];
       }
       // TODO: We should move away from duplicate options on the Terminal object
-      self[key] = options[key];
+      self[key] = this.options[key];
     });
 
-    if (options.colors.length === 8) {
-      options.colors = options.colors.concat(_colors.slice(8));
-    } else if (options.colors.length === 16) {
-      options.colors = options.colors.concat(_colors.slice(16));
-    } else if (options.colors.length === 10) {
-      options.colors = options.colors.slice(0, -2).concat(
-        _colors.slice(8, -2), options.colors.slice(-2));
-    } else if (options.colors.length === 18) {
-      options.colors = options.colors.concat(
-        _colors.slice(16, -2), options.colors.slice(-2));
+    if (this.options.colors.length === 8) {
+      this.options.colors = this.options.colors.concat(_colors.slice(8));
+    } else if (this.options.colors.length === 16) {
+      this.options.colors = this.options.colors.concat(_colors.slice(16));
+    } else if (this.options.colors.length === 10) {
+      this.options.colors = this.options.colors.slice(0, -2).concat(
+        _colors.slice(8, -2), this.options.colors.slice(-2));
+    } else if (this.options.colors.length === 18) {
+      this.options.colors = this.options.colors.concat(
+        _colors.slice(16, -2), this.options.colors.slice(-2));
     }
-    this.options = options;
-    this.colors = options.colors;
+    this.colors = this.options.colors;
 
     // this.context = options.context || window;
     // this.document = options.document || document;
     // TODO: WHy not document.body?
     this.parent = document ? document.getElementsByTagName('body')[0] : null;
 
-    this.cols = options.cols || options.geometry[0];
-    this.rows = options.rows || options.geometry[1];
+    this.cols = this.options.cols || this.options.geometry[0];
+    this.rows = this.options.rows || this.options.geometry[1];
     this.geometry = [this.cols, this.rows];
 
-    if (options.handler) {
-      this.on('data', options.handler);
+    if (this.options.handler) {
+      this.on('data', this.options.handler);
     }
+
+    this.cursorState = 0;
+    this.cursorHidden = false;
+    this.queue = '';
+    this.customKeyEventHandler = null;
+    this.cursorBlinkInterval = null;
+
+    // modes
+    this.applicationKeypad = false;
+    this.applicationCursor = false;
+    this.originMode = false;
+    this.insertMode = false;
+    this.wraparoundMode = true; // defaults: xterm - true, vt100 - false
+
+    // charset
+    this.charset = null;
+    this.gcharset = null;
+    this.glevel = 0;
+    // TODO: Can this be just []?
+    this.charsets = [null];
+
+    this.readable = true;
+    this.writable = true;
+
+    this.defAttr = (0 << 18) | (257 << 9) | (256 << 0);
+    this.curAttr = (0 << 18) | (257 << 9) | (256 << 0);
+
+    this.params = [];
+    this.currentParam = 0;
+    this.prefix = '';
+    this.postfix = '';
+
+    // user input states
+    this.writeBuffer = [];
+    this.writeInProgress = false;
+
+    this.xoffSentToCatchUp = false;
+    this.writeStopped = false;
+    this.surrogate_high = '';
+    this.userScrolling = false;
 
     this.inputHandler = new InputHandler(this);
     this.parser = new Parser(this.inputHandler, this);
-    // Reuse renderer if the Terminal is being recreated via a Terminal.reset call.
+    // Reuse renderer if the Terminal is being recreated via a reset call.
     this.renderer = this.renderer || null;
     this.selectionManager = this.selectionManager || null;
     this.linkifier = this.linkifier || new Linkifier();
@@ -2269,8 +2301,7 @@ export class Terminal extends EventEmitter implements ITerminal {
     const cursorBlinkInterval = this.cursorBlinkInterval;
     const inputHandler = this.inputHandler;
     const buffers = this.buffers;
-    // TODO: Need to make sure this still works
-    Terminal.call(this, this.options);
+    this.setup();
     this.customKeyEventHandler = customKeyEventHandler;
     this.cursorBlinkInterval = cursorBlinkInterval;
     this.inputHandler = inputHandler;
