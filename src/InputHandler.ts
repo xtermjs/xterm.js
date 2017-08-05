@@ -189,14 +189,12 @@ export class InputHandler implements IInputHandler {
    * Insert Ps (Blank) Character(s) (default = 1) (ICH).
    */
   public insertChars(params: number[]): void {
-    let param, row, j, ch;
-
-    param = params[0];
+    let param = params[0];
     if (param < 1) param = 1;
 
-    row = this._terminal.buffer.y + this._terminal.buffer.ybase;
-    j = this._terminal.buffer.x;
-    ch = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    const row = this._terminal.buffer.y + this._terminal.buffer.ybase;
+    let j = this._terminal.buffer.x;
+    const ch = [this._terminal.eraseAttr(), ' ', 1]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       this._terminal.buffer.lines.get(row).splice(j++, 0, ch);
@@ -325,9 +323,8 @@ export class InputHandler implements IInputHandler {
    * Cursor Position [row;column] (default = [1,1]) (CUP).
    */
   public cursorPosition(params: number[]): void {
-    let row, col;
-
-    row = params[0] - 1;
+    let col: number;
+    let row: number = params[0] - 1;
 
     if (params.length >= 2) {
       col = params[1] - 1;
@@ -439,14 +436,13 @@ export class InputHandler implements IInputHandler {
    * Insert Ps Line(s) (default = 1) (IL).
    */
   public insertLines(params: number[]): void {
-    let param, row, j;
-
-    param = params[0];
+    let param: number = params[0];
     if (param < 1) {
       param = 1;
     }
-    row = this._terminal.buffer.y + this._terminal.buffer.ybase;
+    let row: number = this._terminal.buffer.y + this._terminal.buffer.ybase;
 
+    let j: number;
     j = this._terminal.rows - 1 - this._terminal.buffer.scrollBottom;
     j = this._terminal.rows - 1 + this._terminal.buffer.ybase - j + 1;
 
@@ -475,14 +471,13 @@ export class InputHandler implements IInputHandler {
    * Delete Ps Line(s) (default = 1) (DL).
    */
   public deleteLines(params: number[]): void {
-    let param, row, j;
-
-    param = params[0];
+    let param = params[0];
     if (param < 1) {
       param = 1;
     }
-    row = this._terminal.buffer.y + this._terminal.buffer.ybase;
+    const row: number = this._terminal.buffer.y + this._terminal.buffer.ybase;
 
+    let j: number;
     j = this._terminal.rows - 1 - this._terminal.buffer.scrollBottom;
     j = this._terminal.rows - 1 + this._terminal.buffer.ybase - j;
 
@@ -509,15 +504,13 @@ export class InputHandler implements IInputHandler {
    * Delete Ps Character(s) (default = 1) (DCH).
    */
   public deleteChars(params: number[]): void {
-    let param, row, ch;
-
-    param = params[0];
+    let param: number = params[0];
     if (param < 1) {
       param = 1;
     }
 
-    row = this._terminal.buffer.y + this._terminal.buffer.ybase;
-    ch = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    const row = this._terminal.buffer.y + this._terminal.buffer.ybase;
+    const ch = [this._terminal.eraseAttr(), ' ', 1]; // xterm
 
     while (param--) {
       this._terminal.buffer.lines.get(row).splice(this._terminal.buffer.x, 1);
@@ -558,16 +551,14 @@ export class InputHandler implements IInputHandler {
    * Erase Ps Character(s) (default = 1) (ECH).
    */
   public eraseChars(params: number[]): void {
-    let param, row, j, ch;
-
-    param = params[0];
+    let param = params[0];
     if (param < 1) {
       param = 1;
     }
 
-    row = this._terminal.buffer.y + this._terminal.buffer.ybase;
-    j = this._terminal.buffer.x;
-    ch = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    const row = this._terminal.buffer.y + this._terminal.buffer.ybase;
+    let j = this._terminal.buffer.x;
+    const ch = [this._terminal.eraseAttr(), ' ', 1]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       this._terminal.buffer.lines.get(row)[j++] = ch;
@@ -619,9 +610,9 @@ export class InputHandler implements IInputHandler {
    * CSI Ps b  Repeat the preceding graphic character Ps times (REP).
    */
   public repeatPrecedingCharacter(params: number[]): void {
-    let param = params[0] || 1
-      , line = this._terminal.buffer.lines.get(this._terminal.buffer.ybase + this._terminal.buffer.y)
-      , ch = line[this._terminal.buffer.x - 1] || [this._terminal.defAttr, ' ', 1];
+    let param = params[0] || 1;
+    const line = this._terminal.buffer.lines.get(this._terminal.buffer.ybase + this._terminal.buffer.y);
+    const ch = line[this._terminal.buffer.x - 1] || [this._terminal.defAttr, ' ', 1];
 
     while (param--) {
       line[this._terminal.buffer.x++] = ch;
@@ -1203,14 +1194,13 @@ export class InputHandler implements IInputHandler {
       return;
     }
 
-    let l = params.length
-    , i = 0
-    , flags = this._terminal.curAttr >> 18
-    , fg = (this._terminal.curAttr >> 9) & 0x1ff
-    , bg = this._terminal.curAttr & 0x1ff
-    , p;
+    const l = params.length;
+    let flags = this._terminal.curAttr >> 18;
+    let fg = (this._terminal.curAttr >> 9) & 0x1ff;
+    let bg = this._terminal.curAttr & 0x1ff;
+    let p;
 
-    for (; i < l; i++) {
+    for (let i = 0; i < l; i++) {
       p = params[i];
       if (p >= 30 && p <= 37) {
         // fg color 8

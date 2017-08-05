@@ -95,9 +95,9 @@ const tangoColors = [
 // Colors 0-15 + 16-255
 // Much thanks to TooTallNate for writing this.
 const defaultColors = (function() {
-  let colors = tangoColors.slice()
-  , r = [0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff]
-  , i;
+  let colors = tangoColors.slice();
+  let r = [0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff];
+  let i;
 
   // 16-231
   i = 0;
@@ -971,11 +971,11 @@ export class Terminal extends EventEmitter implements ITerminal {
     }
 
     function getButton(ev) {
-      let button
-      , shift
-      , meta
-      , ctrl
-      , mod;
+      let button;
+      let shift;
+      let meta;
+      let ctrl;
+      let mod;
 
       // two low bits:
       // 0 = left
@@ -1918,12 +1918,12 @@ export class Terminal extends EventEmitter implements ITerminal {
       this.setOption('scrollback', y);
     }
 
-    let line
-    , el
-    , i
-    , j
-    , ch
-    , addToY;
+    let line;
+    let el;
+    let i;
+    let j;
+    let ch;
+    let addToY;
 
     if (x === this.cols && y === this.rows) {
       // Check if we still need to measure the char size (fixes #785).
@@ -2426,8 +2426,8 @@ function wasMondifierKeyOnlyEvent(ev) {
 
 function keys(obj) {
   if (Object.keys) return Object.keys(obj);
-  let key, keys = [];
-  for (key in obj) {
+  const keys = [];
+  for (let key in obj) {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
       keys.push(key);
     }

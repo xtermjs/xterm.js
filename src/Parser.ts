@@ -182,7 +182,12 @@ export class Parser {
    * @param data The data to parse.
    */
   public parse(data: string): ParserState {
-    let l = data.length, j, cs, ch, code, low;
+    const l = data.length;
+    let j;
+    let cs;
+    let ch;
+    let code;
+    let low;
 
     if (this._terminal.debug) {
       this._terminal.log('data: ' + data);
