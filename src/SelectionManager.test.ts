@@ -3,17 +3,18 @@
  */
 import jsdom = require('jsdom');
 import { assert } from 'chai';
-import { ITerminal, ICircularList } from './Interfaces';
+import { ITerminal, ICircularList, IBuffer } from './Interfaces';
 import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
 import { SelectionManager } from './SelectionManager';
 import { SelectionModel } from './SelectionModel';
+import { CharData, LineData } from './Types';
 import { BufferSet } from './BufferSet';
 
 class TestSelectionManager extends SelectionManager {
   constructor(
     terminal: ITerminal,
-    buffer: ICircularList<[number, string, number][]>,
+    buffer: IBuffer,
     rowContainer: HTMLElement,
     charMeasure: CharMeasure
   ) {
@@ -37,7 +38,7 @@ describe('SelectionManager', () => {
   let document: Document;
 
   let terminal: ITerminal;
-  let bufferLines: ICircularList<[number, string, number][]>;
+  let bufferLines: ICircularList<LineData>;
   let rowContainer: HTMLElement;
   let selectionManager: TestSelectionManager;
 
@@ -51,13 +52,13 @@ describe('SelectionManager', () => {
     terminal.buffers = new BufferSet(terminal);
     terminal.buffer = terminal.buffers.active;
     bufferLines = terminal.buffer.lines;
-    selectionManager = new TestSelectionManager(terminal, bufferLines, rowContainer, null);
+    selectionManager = new TestSelectionManager(terminal, terminal.buffer, rowContainer, null);
   });
 
-  function stringToRow(text: string): [number, string, number][] {
-    let result: [number, string, number][] = [];
+  function stringToRow(text: string): CharData[] {
+    let result: CharData[] = [];
     for (let i = 0; i < text.length; i++) {
-      result.push([0, text.charAt(i), 1]);
+      result.push([text.charAt(i), 1, 0, 0, 0]);
     }
     return result;
   }
@@ -96,21 +97,21 @@ describe('SelectionManager', () => {
     it('should expand selection for wide characters', () => {
       // Wide characters use a special format
       bufferLines.push([
-        [null, '中', 2],
-        [null, '', 0],
-        [null, '文', 2],
-        [null, '', 0],
-        [null, ' ', 1],
-        [null, 'a', 1],
-        [null, '中', 2],
-        [null, '', 0],
-        [null, '文', 2],
-        [null, '', 0],
-        [null, 'b', 1],
-        [null, ' ', 1],
-        [null, 'f', 1],
-        [null, 'o', 1],
-        [null, 'o', 1]
+        ['中', 2, null, null, null],
+        ['', 0, null, null, null],
+        ['文', 2, null, null, null],
+        ['', 0, null, null, null],
+        [' ', 1, null, null, null],
+        ['a', 1, null, null, null],
+        ['中', 2, null, null, null],
+        ['', 0, null, null, null],
+        ['文', 2, null, null, null],
+        ['', 0, null, null, null],
+        ['b', 1, null, null, null],
+        [' ', 1, null, null, null],
+        ['f', 1, null, null, null],
+        ['o', 1, null, null, null],
+        ['o', 1, null, null, null]
       ]);
       // Ensure wide characters take up 2 columns
       selectionManager.selectWordAt([0, 0]);

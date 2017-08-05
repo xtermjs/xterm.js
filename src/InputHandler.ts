@@ -5,6 +5,8 @@
 import { IInputHandler, ITerminal } from './Interfaces';
 import { C0 } from './EscapeSequences';
 import { DEFAULT_CHARSET } from './Charsets';
+import { TextStyle } from './TextStyle';
+import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from './Buffer';
 
 /**
  * The terminal's standard implementation of IInputHandler, this handles all
@@ -34,14 +36,14 @@ export class InputHandler implements IInputHandler {
       if (!ch_width && this._terminal.buffer.x) {
         // dont overflow left
         if (this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1]) {
-          if (!this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1][2]) {
+          if (!this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1][CHAR_DATA_WIDTH_INDEX]) {
 
             // found empty cell after fullwidth, need to go 2 cells back
             if (this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 2])
-              this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 2][1] += char;
+              this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 2][CHAR_DATA_CHAR_INDEX] += char;
 
           } else {
-            this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1][1] += char;
+            this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1][CHAR_DATA_CHAR_INDEX] += char;
           }
           this._terminal.updateRange(this._terminal.buffer.y);
         }
@@ -77,24 +79,24 @@ export class InputHandler implements IInputHandler {
           // remove last cell, if it's width is 0
           // we have to adjust the second last cell as well
           const removed = this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).pop();
-          if (removed[2] === 0
+          if (removed[CHAR_DATA_WIDTH_INDEX] === 0
               && this._terminal.buffer.lines.get(row)[this._terminal.cols - 2]
-              && this._terminal.buffer.lines.get(row)[this._terminal.cols - 2][2] === 2) {
-            this._terminal.buffer.lines.get(row)[this._terminal.cols - 2] = [this._terminal.curAttr, ' ', 1];
+              && this._terminal.buffer.lines.get(row)[this._terminal.cols - 2][CHAR_DATA_WIDTH_INDEX] === 2) {
+            this._terminal.buffer.lines.get(row)[this._terminal.cols - 2] = [' ', 1, this._terminal.currentFlags, this._terminal.currentFgColor, this._terminal.currentBgColor];
           }
 
           // insert empty cell at cursor
-          this._terminal.buffer.lines.get(row).splice(this._terminal.buffer.x, 0, [this._terminal.curAttr, ' ', 1]);
+          this._terminal.buffer.lines.get(row).splice(this._terminal.buffer.x, 0, [' ', 1, this._terminal.currentFlags, this._terminal.currentFgColor, this._terminal.currentBgColor]);
         }
       }
 
-      this._terminal.buffer.lines.get(row)[this._terminal.buffer.x] = [this._terminal.curAttr, char, ch_width];
+      this._terminal.buffer.lines.get(row)[this._terminal.buffer.x] = [char, ch_width, this._terminal.currentFlags, this._terminal.currentFgColor, this._terminal.currentBgColor];
       this._terminal.buffer.x++;
       this._terminal.updateRange(this._terminal.buffer.y);
 
       // fullwidth char - set next cell width to zero and advance cursor
       if (ch_width === 2) {
-        this._terminal.buffer.lines.get(row)[this._terminal.buffer.x] = [this._terminal.curAttr, '', 0];
+        this._terminal.buffer.lines.get(row)[this._terminal.buffer.x] = ['', 0, this._terminal.currentFlags, this._terminal.currentFgColor, this._terminal.currentBgColor];
         this._terminal.buffer.x++;
       }
     }
@@ -196,7 +198,7 @@ export class InputHandler implements IInputHandler {
 
     row = this._terminal.buffer.y + this._terminal.buffer.ybase;
     j = this._terminal.buffer.x;
-    ch = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    ch = [' ', 1, this._terminal.defaultFlags, this._terminal.defaultFgColor, this._terminal.currentBgColor]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       this._terminal.buffer.lines.get(row).splice(j++, 0, ch);
@@ -517,7 +519,7 @@ export class InputHandler implements IInputHandler {
     }
 
     row = this._terminal.buffer.y + this._terminal.buffer.ybase;
-    ch = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    ch = [' ', 1, this._terminal.defaultFlags, this._terminal.defaultFgColor, this._terminal.currentBgColor]; // xterm
 
     while (param--) {
       this._terminal.buffer.lines.get(row).splice(this._terminal.buffer.x, 1);
@@ -567,7 +569,7 @@ export class InputHandler implements IInputHandler {
 
     row = this._terminal.buffer.y + this._terminal.buffer.ybase;
     j = this._terminal.buffer.x;
-    ch = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    ch = [' ', 1, this._terminal.defaultFlags, this._terminal.defaultFgColor, this._terminal.currentBgColor]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       this._terminal.buffer.lines.get(row)[j++] = ch;
@@ -954,6 +956,8 @@ export class InputHandler implements IInputHandler {
         case 47: // alt screen buffer
         case 1047: // alt screen buffer
           this._terminal.buffers.activateAltBuffer();
+          // TODO: Discard current charattribute?
+          this._terminal.selectionManager.setBuffer(this._terminal.buffer);
           this._terminal.reset();
           this._terminal.viewport.syncScrollArea();
           this._terminal.showCursor();
@@ -1123,7 +1127,7 @@ export class InputHandler implements IInputHandler {
           // if (params[0] === 1049) {
           //   this.restoreCursor(params);
           // }
-          this._terminal.selectionManager.setBuffer(this._terminal.buffer.lines);
+          this._terminal.selectionManager.setBuffer(this._terminal.buffer);
           this._terminal.refresh(0, this._terminal.rows - 1);
           this._terminal.viewport.syncScrollArea();
           this._terminal.showCursor();
@@ -1199,118 +1203,118 @@ export class InputHandler implements IInputHandler {
   public charAttributes(params: number[]): void {
     // Optimize a single SGR0.
     if (params.length === 1 && params[0] === 0) {
-      this._terminal.curAttr = this._terminal.defAttr;
+      (<ITerminal>this._terminal).buffer.finishTextStyle();
+      console.log('Current char attr list:', this._terminal.buffer.charAttributes);
+      this._terminal.currentFlags = this._terminal.defaultFlags;
+      this._terminal.currentFgColor = this._terminal.defaultFgColor;
+      this._terminal.currentBgColor = this._terminal.defaultBgColor;
       return;
     }
 
-    let l = params.length
-    , i = 0
-    , flags = this._terminal.curAttr >> 18
-    , fg = (this._terminal.curAttr >> 9) & 0x1ff
-    , bg = this._terminal.curAttr & 0x1ff
-    , p;
+    let l = params.length;
+    let p: number;
 
-    for (; i < l; i++) {
+    for (let i = 0; i < l; i++) {
       p = params[i];
       if (p >= 30 && p <= 37) {
         // fg color 8
-        fg = p - 30;
+        this._terminal.currentFgColor = p - 30;
       } else if (p >= 40 && p <= 47) {
         // bg color 8
-        bg = p - 40;
+        this._terminal.currentBgColor = p - 40;
       } else if (p >= 90 && p <= 97) {
         // fg color 16
         p += 8;
-        fg = p - 90;
+        this._terminal.currentFgColor = p - 90;
       } else if (p >= 100 && p <= 107) {
         // bg color 16
         p += 8;
-        bg = p - 100;
+        this._terminal.currentBgColor = p - 100;
       } else if (p === 0) {
         // default
-        flags = this._terminal.defAttr >> 18;
-        fg = (this._terminal.defAttr >> 9) & 0x1ff;
-        bg = this._terminal.defAttr & 0x1ff;
-        // flags = 0;
-        // fg = 0x1ff;
-        // bg = 0x1ff;
+        this._terminal.currentFlags = this._terminal.defaultFlags;
+        this._terminal.currentFgColor = this._terminal.defaultFgColor;
+        this._terminal.currentBgColor = this._terminal.defaultBgColor;
       } else if (p === 1) {
         // bold text
-        flags |= 1;
+        this._terminal.currentFlags |= 1;
       } else if (p === 4) {
         // underlined text
-        flags |= 2;
+        this._terminal.currentFlags |= 2;
       } else if (p === 5) {
         // blink
-        flags |= 4;
+        this._terminal.currentFlags |= 4;
       } else if (p === 7) {
         // inverse and positive
         // test with: echo -e '\e[31m\e[42mhello\e[7mworld\e[27mhi\e[m'
-        flags |= 8;
+        this._terminal.currentFlags |= 8;
       } else if (p === 8) {
         // invisible
-        flags |= 16;
+        this._terminal.currentFlags |= 16;
       } else if (p === 22) {
         // not bold
-        flags &= ~1;
+        this._terminal.currentFlags &= ~1;
       } else if (p === 24) {
         // not underlined
-        flags &= ~2;
+        this._terminal.currentFlags &= ~2;
       } else if (p === 25) {
         // not blink
-        flags &= ~4;
+        this._terminal.currentFlags &= ~4;
       } else if (p === 27) {
         // not inverse
-        flags &= ~8;
+        this._terminal.currentFlags &= ~8;
       } else if (p === 28) {
         // not invisible
-        flags &= ~16;
+        this._terminal.currentFlags &= ~16;
       } else if (p === 39) {
         // reset fg
-        fg = (this._terminal.defAttr >> 9) & 0x1ff;
+        this._terminal.currentFgColor = this._terminal.defaultFgColor;
       } else if (p === 49) {
         // reset bg
-        bg = this._terminal.defAttr & 0x1ff;
+        this._terminal.currentBgColor = this._terminal.defaultBgColor;
       } else if (p === 38) {
-        // fg color 256
         if (params[i + 1] === 2) {
+          // fg color 16mil
+          this._terminal.currentFlags |= 32;
           i += 2;
-          fg = this._terminal.matchColor(
-            params[i] & 0xff,
-            params[i + 1] & 0xff,
-            params[i + 2] & 0xff);
-          if (fg === -1) fg = 0x1ff;
+          this._terminal.currentFgColor = ((params[i] & 0xff) << 16) | ((params[i + 1]) & 0xff << 8) | ((params[i + 2]) & 0xff);
+          if (this._terminal.currentFgColor === -1) {
+            this._terminal.currentFgColor = this._terminal.defaultFgColor;
+          }
           i += 2;
         } else if (params[i + 1] === 5) {
+          // fg color 256
           i += 2;
           p = params[i] & 0xff;
-          fg = p;
+          this._terminal.currentFgColor = p;
         }
       } else if (p === 48) {
-        // bg color 256
         if (params[i + 1] === 2) {
+          // bg color 16mil
+          this._terminal.currentFlags |= 64;
           i += 2;
-          bg = this._terminal.matchColor(
-            params[i] & 0xff,
-            params[i + 1] & 0xff,
-            params[i + 2] & 0xff);
-          if (bg === -1) bg = 0x1ff;
+          this._terminal.currentBgColor = ((params[i] & 0xff) << 16) | ((params[i + 1] & 0xff) << 8) | (params[i + 2] & 0xff);
+          if (this._terminal.currentBgColor === -1) {
+            this._terminal.currentBgColor = this._terminal.defaultBgColor;
+          }
           i += 2;
         } else if (params[i + 1] === 5) {
+          // bg color 256
           i += 2;
           p = params[i] & 0xff;
-          bg = p;
+          this._terminal.currentBgColor = p;
         }
       } else if (p === 100) {
         // reset fg/bg
-        fg = (this._terminal.defAttr >> 9) & 0x1ff;
-        bg = this._terminal.defAttr & 0x1ff;
+        this._terminal.currentFgColor = this._terminal.defaultFgColor;
+        this._terminal.currentBgColor = this._terminal.defaultBgColor;
       } else {
         this._terminal.error('Unknown SGR attribute: %d.', p);
       }
     }
 
-    this._terminal.curAttr = (flags << 18) | (fg << 9) | bg;
+    (<ITerminal>this._terminal).buffer.finishTextStyle();
+    (<ITerminal>this._terminal).buffer.startTextStyle(this._terminal.currentFlags, this._terminal.currentFgColor, this._terminal.currentBgColor);
   }
 
   /**
@@ -1398,7 +1402,9 @@ export class InputHandler implements IInputHandler {
     this._terminal.applicationCursor = false;
     this._terminal.buffer.scrollTop = 0;
     this._terminal.buffer.scrollBottom = this._terminal.rows - 1;
-    this._terminal.curAttr = this._terminal.defAttr;
+    this._terminal.currentFlags = this._terminal.defaultFlags;
+    this._terminal.currentFgColor = this._terminal.defaultFgColor;
+    this._terminal.currentBgColor = this._terminal.defaultBgColor;
     this._terminal.buffer.x = this._terminal.buffer.y = 0; // ?
     this._terminal.charset = null;
     this._terminal.glevel = 0; // ??

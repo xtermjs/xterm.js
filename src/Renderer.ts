@@ -4,6 +4,8 @@
 
 import { ITerminal } from './Interfaces';
 import { DomElementObjectPool } from './utils/DomElementObjectPool';
+import { TextStyle } from './TextStyle';
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
 
 /**
  * The maximum number of refresh frames to skip when the write buffer is non-
@@ -20,7 +22,9 @@ enum FLAGS {
   UNDERLINE = 2,
   BLINK = 4,
   INVERSE = 8,
-  INVISIBLE = 16
+  INVISIBLE = 16,
+  TRUECOLOR_FG = 32,
+  TRUECOLOR_BG = 64
 };
 
 let brokenBold: boolean = null;
@@ -101,28 +105,12 @@ export class Renderer {
 
   /**
    * Refreshes (re-renders) terminal content within two rows (inclusive)
-   *
-   * Rendering Engine:
-   *
-   * In the screen buffer, each character is stored as a an array with a character
-   * and a 32-bit integer:
-   *   - First value: a utf-16 character.
-   *   - Second value:
-   *   - Next 9 bits: background color (0-511).
-   *   - Next 9 bits: foreground color (0-511).
-   *   - Next 14 bits: a mask for misc. flags:
-   *     - 1=bold
-   *     - 2=underline
-   *     - 4=blink
-   *     - 8=inverse
-   *     - 16=invisible
-   *
    * @param {number} start The row to start from (between 0 and terminal's height terminal - 1)
    * @param {number} end The row to end at (between fromRow and terminal's height terminal - 1)
    */
   private _refresh(start: number, end: number): void {
     // If this is a big refresh, remove the terminal rows from the DOM for faster calculations
-    let parent;
+    let parent: Node;
     if (end - start >= this._terminal.rows / 2) {
       parent = this._terminal.element.parentNode;
       if (parent) {
@@ -131,32 +119,43 @@ export class Renderer {
     }
 
     let width = this._terminal.cols;
-    let y = start;
 
     if (end >= this._terminal.rows) {
       this._terminal.log('`end` is too large. Most likely a bad CSR.');
       end = this._terminal.rows - 1;
     }
 
-    for (; y <= end; y++) {
-      let row = y + this._terminal.buffer.ydisp;
+    let nextTextStyleIndex: number = -1;
+    let currentTextStyle: TextStyle;
+    for (let i = 0; i < (<any>this._terminal.buffer).textStyles.length; i++) {
+      const textStyle = (<any>this._terminal.buffer).textStyles[i];
+      if (textStyle.y1 - (<any>this._terminal.buffer)._linesIndexOffset === start + this._terminal.buffer.ydisp || textStyle.y2 - (<any>this._terminal.buffer)._linesIndexOffset >= start + this._terminal.buffer.ydisp) {
+        nextTextStyleIndex = i;
+        console.log(`initial char attributes index:`, nextTextStyleIndex);
+        break;
+      }
+    }
 
+    for (let y = start; y <= end; y++) {
+      let row = y + this._terminal.buffer.ydisp;
       let line = this._terminal.buffer.lines.get(row);
 
-      let x;
+      let cursorIndex: number;
       if (this._terminal.buffer.y === y - (this._terminal.buffer.ybase - this._terminal.buffer.ydisp) &&
-          this._terminal.cursorState &&
-          !this._terminal.cursorHidden) {
-        x = this._terminal.buffer.x;
+          this._terminal.cursorState && !this._terminal.cursorHidden) {
+        cursorIndex = this._terminal.buffer.x;
       } else {
-        x = -1;
+        cursorIndex = -1;
       }
 
-      let attr = this._terminal.defAttr;
+      let lastFlags = this._terminal.defaultFlags;
+      let lastFgColor = this._terminal.defaultFgColor;
+      let lastBgColor = this._terminal.defaultBgColor;
+      let lastTextStyle: TextStyle = null;
 
       const documentFragment = document.createDocumentFragment();
       let innerHTML = '';
-      let currentElement;
+      let currentElement: HTMLElement;
 
       // Return the row's spans to the pool
       while (this._terminal.children[y].children.length) {
@@ -165,18 +164,50 @@ export class Renderer {
         this._spanElementObjectPool.release(<HTMLElement>child);
       }
 
+      // Process each character in the line
       for (let i = 0; i < width; i++) {
-        // TODO: Could data be a more specific type?
-        let data: any = line[i][0];
-        const ch = line[i][1];
-        const ch_width: any = line[i][2];
-        const isCursor: boolean = i === x;
+        const ch: string = line[i][CHAR_DATA_CHAR_INDEX];
+        const ch_width: number = line[i][CHAR_DATA_WIDTH_INDEX];
+        let flags: number;
+        let fg: number;
+        let bg: number;
+
         if (!ch_width) {
           continue;
         }
 
-        if (data !== attr || isCursor) {
-          if (attr !== this._terminal.defAttr && !isCursor) {
+        if (currentTextStyle && currentTextStyle.x2 === i && currentTextStyle.y2 - (<any>this._terminal.buffer)._linesIndexOffset === y + (<ITerminal>this._terminal).buffer.ydisp) {
+          currentTextStyle = null;
+          nextTextStyleIndex++;
+          if (nextTextStyleIndex === (<ITerminal>this._terminal).buffer.textStyles.length) {
+            nextTextStyleIndex = -1;
+          }
+        }
+        if (nextTextStyleIndex !== -1 &&
+            (<any>this._terminal.buffer).textStyles[nextTextStyleIndex].x1 === i &&
+            (<any>this._terminal.buffer).textStyles[nextTextStyleIndex].y1 - (<any>(<ITerminal>this._terminal).buffer)._linesIndexOffset === y + (<ITerminal>this._terminal).buffer.ydisp) {
+          currentTextStyle = (<any>this._terminal.buffer).textStyles[nextTextStyleIndex];
+          console.log(`current char attributes ${i},${y}:`, currentTextStyle);
+        }
+
+        // TODO: This is temporary to test new method
+        if (currentTextStyle) {
+          flags = currentTextStyle.flags;
+          // v Temporary v
+          fg = currentTextStyle._data[1];
+          bg = currentTextStyle._data[2];
+        }
+
+        // Force a refresh if the character is the cursor
+        const isCursor = i === cursorIndex;
+        if (isCursor) {
+          currentTextStyle = null;
+        }
+
+        // Determine what element the character is going to be put in
+        if (isCursor || i === cursorIndex + 1 || currentTextStyle !== lastTextStyle) {
+          // Add the current element to the document fragment if it exists
+          if (currentElement) {
             if (innerHTML) {
               currentElement.innerHTML = innerHTML;
               innerHTML = '';
@@ -184,7 +215,9 @@ export class Renderer {
             documentFragment.appendChild(currentElement);
             currentElement = null;
           }
-          if (data !== this._terminal.defAttr || isCursor) {
+
+          // Create a new span if the flags and colors are not the default
+          if (flags !== this._terminal.defaultFlags || fg !== this._terminal.defaultFgColor || bg !== this._terminal.defaultBgColor) {
             if (innerHTML && !currentElement) {
               currentElement = this._spanElementObjectPool.acquire();
             }
@@ -196,10 +229,6 @@ export class Renderer {
               documentFragment.appendChild(currentElement);
             }
             currentElement = this._spanElementObjectPool.acquire();
-
-            let bg = data & 0x1ff;
-            let fg = (data >> 9) & 0x1ff;
-            let flags = data >> 18;
 
             if (isCursor) {
               currentElement.classList.add('reverse-video');
@@ -216,27 +245,29 @@ export class Renderer {
               }
             }
 
-            if (flags & FLAGS.UNDERLINE) {
-              currentElement.classList.add('xterm-underline');
-            }
-
-            if (flags & FLAGS.BLINK) {
-              currentElement.classList.add('xterm-blink');
-            }
+            let isTrueColorFg = flags & FLAGS.TRUECOLOR_FG;
+            let isTrueColorBg = flags & FLAGS.TRUECOLOR_BG;
 
             // If inverse flag is on, then swap the foreground and background variables.
             if (flags & FLAGS.INVERSE) {
               let temp = bg;
               bg = fg;
               fg = temp;
+              temp = isTrueColorBg;
+              isTrueColorBg = isTrueColorFg;
+              isTrueColorFg = temp;
               // Should inverse just be before the above boldColors effect instead?
               if ((flags & 1) && fg < 8) {
                 fg += 8;
               }
             }
 
-            if (flags & FLAGS.INVISIBLE && !isCursor) {
-              currentElement.classList.add('xterm-hidden');
+            if (flags & FLAGS.UNDERLINE) {
+              currentElement.classList.add('xterm-underline');
+            }
+
+            if (flags & FLAGS.BLINK) {
+              currentElement.classList.add('xterm-blink');
             }
 
             /**
@@ -247,12 +278,45 @@ export class Renderer {
              * Source: https://github.com/sourcelair/xterm.js/issues/57
              */
             if (flags & FLAGS.INVERSE) {
-              if (bg === 257) {
+              if (bg === this._terminal.defaultBgColor) {
                 bg = 15;
               }
-              if (fg === 256) {
+              if (fg === this._terminal.defaultFgColor) {
                 fg = 0;
               }
+            }
+
+            if (fg !== this._terminal.defaultFgColor) {
+              if (isTrueColorFg) {
+                // let rgb = fg.toString(16);
+                // while (rgb.length < 6) {
+                //   rgb = '0' + rgb;
+                // }
+                // currentElement.style.color = `#${rgb}`;
+                currentElement.style.color = currentTextStyle.truecolorFg;
+              } else {
+                if (fg < 256) {
+                  currentElement.classList.add(`xterm-color-${fg}`);
+                }
+              }
+            }
+
+            if (bg !== this._terminal.defaultBgColor) {
+              if (isTrueColorBg) {
+                // let rgb = bg.toString(16);
+                // while (rgb.length < 6) {
+                //   rgb = '0' + rgb;
+                // }
+                currentElement.style.backgroundColor = currentTextStyle.truecolorBg;
+              } else {
+                if (bg < 256) {
+                  currentElement.classList.add(`xterm-bg-color-${bg}`);
+                }
+              }
+            }
+
+            if (flags & FLAGS.INVISIBLE && !isCursor) {
+              currentElement.classList.add('xterm-hidden');
             }
 
             if (bg < 256) {
@@ -294,10 +358,7 @@ export class Renderer {
           }
         }
 
-        // The cursor needs its own element, therefore we set attr to -1
-        // which will cause the next character to be rendered in a new element
-        attr = isCursor ? -1 : data;
-
+        lastTextStyle = currentTextStyle;
       }
 
       if (innerHTML && !currentElement) {

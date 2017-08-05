@@ -5,8 +5,9 @@
  * @license MIT
  */
 import { EventEmitter } from '../EventEmitter';
+import { ICircularList } from '../Interfaces';
 
-export class CircularList<T> extends EventEmitter {
+export class CircularList<T> extends EventEmitter implements ICircularList<T> {
   private _array: T[];
   private _startIndex: number;
   private _length: number;

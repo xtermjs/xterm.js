@@ -576,10 +576,10 @@ describe('xterm.js', function() {
       for (var i=0xDC00; i<=0xDCFF; ++i) {
         xterm.write(high + String.fromCharCode(i));
         var tchar = xterm.buffer.lines.get(0)[0];
-        expect(tchar[1]).eql(high + String.fromCharCode(i));
-        expect(tchar[1].length).eql(2);
-        expect(tchar[2]).eql(1);
-        expect(xterm.buffer.lines.get(0)[1][1]).eql(' ');
+        expect(tchar[0]).eql(high + String.fromCharCode(i));
+        expect(tchar[0].length).eql(2);
+        expect(tchar[1]).eql(1);
+        expect(xterm.buffer.lines.get(0)[1][0]).eql(' ');
         xterm.reset();
       }
     });
@@ -588,9 +588,9 @@ describe('xterm.js', function() {
       for (var i=0xDC00; i<=0xDCFF; ++i) {
         xterm.buffer.x = xterm.cols - 1;
         xterm.write(high + String.fromCharCode(i));
-        expect(xterm.buffer.lines.get(0)[xterm.buffer.x-1][1]).eql(high + String.fromCharCode(i));
-        expect(xterm.buffer.lines.get(0)[xterm.buffer.x-1][1].length).eql(2);
-        expect(xterm.buffer.lines.get(1)[0][1]).eql(' ');
+        expect(xterm.buffer.lines.get(0)[xterm.buffer.x-1][0]).eql(high + String.fromCharCode(i));
+        expect(xterm.buffer.lines.get(0)[xterm.buffer.x-1][0].length).eql(2);
+        expect(xterm.buffer.lines.get(1)[0][0]).eql(' ');
         xterm.reset();
       }
     });
@@ -600,10 +600,10 @@ describe('xterm.js', function() {
         xterm.buffer.x = xterm.cols - 1;
         xterm.wraparoundMode = true;
         xterm.write('a' + high + String.fromCharCode(i));
-        expect(xterm.buffer.lines.get(0)[xterm.cols-1][1]).eql('a');
-        expect(xterm.buffer.lines.get(1)[0][1]).eql(high + String.fromCharCode(i));
-        expect(xterm.buffer.lines.get(1)[0][1].length).eql(2);
-        expect(xterm.buffer.lines.get(1)[1][1]).eql(' ');
+        expect(xterm.buffer.lines.get(0)[xterm.cols-1][0]).eql('a');
+        expect(xterm.buffer.lines.get(1)[0][0]).eql(high + String.fromCharCode(i));
+        expect(xterm.buffer.lines.get(1)[0][0].length).eql(2);
+        expect(xterm.buffer.lines.get(1)[1][0]).eql(' ');
         xterm.reset();
       }
     });
@@ -614,9 +614,9 @@ describe('xterm.js', function() {
         xterm.wraparoundMode = false;
         xterm.write('a' + high + String.fromCharCode(i));
         // auto wraparound mode should cut off the rest of the line
-        expect(xterm.buffer.lines.get(0)[xterm.cols-1][1]).eql('a');
-        expect(xterm.buffer.lines.get(0)[xterm.cols-1][1].length).eql(1);
-        expect(xterm.buffer.lines.get(1)[1][1]).eql(' ');
+        expect(xterm.buffer.lines.get(0)[xterm.cols-1][0]).eql('a');
+        expect(xterm.buffer.lines.get(0)[xterm.cols-1][0].length).eql(1);
+        expect(xterm.buffer.lines.get(1)[1][0]).eql(' ');
         xterm.reset();
       }
     });
@@ -626,10 +626,10 @@ describe('xterm.js', function() {
         xterm.write(high);
         xterm.write(String.fromCharCode(i));
         var tchar = xterm.buffer.lines.get(0)[0];
-        expect(tchar[1]).eql(high + String.fromCharCode(i));
-        expect(tchar[1].length).eql(2);
-        expect(tchar[2]).eql(1);
-        expect(xterm.buffer.lines.get(0)[1][1]).eql(' ');
+        expect(tchar[0]).eql(high + String.fromCharCode(i));
+        expect(tchar[0].length).eql(2);
+        expect(tchar[1]).eql(1);
+        expect(xterm.buffer.lines.get(0)[1][0]).eql(' ');
         xterm.reset();
       }
     });
@@ -638,47 +638,47 @@ describe('xterm.js', function() {
   describe('unicode - combining characters', function() {
     it('café', function () {
       xterm.write('cafe\u0301');
-      expect(xterm.buffer.lines.get(0)[3][1]).eql('e\u0301');
-      expect(xterm.buffer.lines.get(0)[3][1].length).eql(2);
-      expect(xterm.buffer.lines.get(0)[3][2]).eql(1);
+      expect(xterm.buffer.lines.get(0)[3][0]).eql('e\u0301');
+      expect(xterm.buffer.lines.get(0)[3][0].length).eql(2);
+      expect(xterm.buffer.lines.get(0)[3][1]).eql(1);
     });
     it('café - end of line', function() {
       xterm.buffer.x = xterm.cols - 1 - 3;
       xterm.write('cafe\u0301');
-      expect(xterm.buffer.lines.get(0)[xterm.cols-1][1]).eql('e\u0301');
-      expect(xterm.buffer.lines.get(0)[xterm.cols-1][1].length).eql(2);
-      expect(xterm.buffer.lines.get(0)[xterm.cols-1][2]).eql(1);
-      expect(xterm.buffer.lines.get(0)[1][1]).eql(' ');
-      expect(xterm.buffer.lines.get(0)[1][1].length).eql(1);
-      expect(xterm.buffer.lines.get(0)[1][2]).eql(1);
+      expect(xterm.buffer.lines.get(0)[xterm.cols-1][0]).eql('e\u0301');
+      expect(xterm.buffer.lines.get(0)[xterm.cols-1][0].length).eql(2);
+      expect(xterm.buffer.lines.get(0)[xterm.cols-1][1]).eql(1);
+      expect(xterm.buffer.lines.get(0)[1][0]).eql(' ');
+      expect(xterm.buffer.lines.get(0)[1][0].length).eql(1);
+      expect(xterm.buffer.lines.get(0)[1][1]).eql(1);
     });
     it('multiple combined é', function() {
       xterm.wraparoundMode = true;
       xterm.write(Array(100).join('e\u0301'));
       for (var i=0; i<xterm.cols; ++i) {
         var tchar = xterm.buffer.lines.get(0)[i];
-        expect(tchar[1]).eql('e\u0301');
-        expect(tchar[1].length).eql(2);
-        expect(tchar[2]).eql(1);
+        expect(tchar[0]).eql('e\u0301');
+        expect(tchar[0].length).eql(2);
+        expect(tchar[1]).eql(1);
       }
       tchar = xterm.buffer.lines.get(1)[0];
-      expect(tchar[1]).eql('e\u0301');
-      expect(tchar[1].length).eql(2);
-      expect(tchar[2]).eql(1);
+      expect(tchar[0]).eql('e\u0301');
+      expect(tchar[0].length).eql(2);
+      expect(tchar[1]).eql(1);
     });
     it('multiple surrogate with combined', function() {
       xterm.wraparoundMode = true;
       xterm.write(Array(100).join('\uD800\uDC00\u0301'));
       for (var i=0; i<xterm.cols; ++i) {
         var tchar = xterm.buffer.lines.get(0)[i];
-        expect(tchar[1]).eql('\uD800\uDC00\u0301');
-        expect(tchar[1].length).eql(3);
-        expect(tchar[2]).eql(1);
+        expect(tchar[0]).eql('\uD800\uDC00\u0301');
+        expect(tchar[0].length).eql(3);
+        expect(tchar[1]).eql(1);
       }
       tchar = xterm.buffer.lines.get(1)[0];
-      expect(tchar[1]).eql('\uD800\uDC00\u0301');
-      expect(tchar[1].length).eql(3);
-      expect(tchar[2]).eql(1);
+      expect(tchar[0]).eql('\uD800\uDC00\u0301');
+      expect(tchar[0].length).eql(3);
+      expect(tchar[1]).eql(1);
     });
   });
 
@@ -700,19 +700,19 @@ describe('xterm.js', function() {
       for (var i=0; i<xterm.cols; ++i) {
         var tchar = xterm.buffer.lines.get(0)[i];
         if (i % 2) {
-          expect(tchar[1]).eql('');
-          expect(tchar[1].length).eql(0);
-          expect(tchar[2]).eql(0);
+          expect(tchar[0]).eql('');
+          expect(tchar[0].length).eql(0);
+          expect(tchar[1]).eql(0);
         } else {
-          expect(tchar[1]).eql('￥');
-          expect(tchar[1].length).eql(1);
-          expect(tchar[2]).eql(2);
+          expect(tchar[0]).eql('￥');
+          expect(tchar[0].length).eql(1);
+          expect(tchar[1]).eql(2);
         }
       }
       tchar = xterm.buffer.lines.get(1)[0];
-      expect(tchar[1]).eql('￥');
-      expect(tchar[1].length).eql(1);
-      expect(tchar[2]).eql(2);
+      expect(tchar[0]).eql('￥');
+      expect(tchar[0].length).eql(1);
+      expect(tchar[1]).eql(2);
     });
     it('line of ￥ odd', function() {
       xterm.wraparoundMode = true;
@@ -721,23 +721,23 @@ describe('xterm.js', function() {
       for (var i=1; i<xterm.cols-1; ++i) {
         var tchar = xterm.buffer.lines.get(0)[i];
         if (!(i % 2)) {
-          expect(tchar[1]).eql('');
-          expect(tchar[1].length).eql(0);
-          expect(tchar[2]).eql(0);
+          expect(tchar[0]).eql('');
+          expect(tchar[0].length).eql(0);
+          expect(tchar[1]).eql(0);
         } else {
-          expect(tchar[1]).eql('￥');
-          expect(tchar[1].length).eql(1);
-          expect(tchar[2]).eql(2);
+          expect(tchar[0]).eql('￥');
+          expect(tchar[0].length).eql(1);
+          expect(tchar[1]).eql(2);
         }
       }
       tchar = xterm.buffer.lines.get(0)[xterm.cols-1];
-      expect(tchar[1]).eql(' ');
-      expect(tchar[1].length).eql(1);
-      expect(tchar[2]).eql(1);
+      expect(tchar[0]).eql(' ');
+      expect(tchar[0].length).eql(1);
+      expect(tchar[1]).eql(1);
       tchar = xterm.buffer.lines.get(1)[0];
-      expect(tchar[1]).eql('￥');
-      expect(tchar[1].length).eql(1);
-      expect(tchar[2]).eql(2);
+      expect(tchar[0]).eql('￥');
+      expect(tchar[0].length).eql(1);
+      expect(tchar[1]).eql(2);
     });
     it('line of ￥ with combining odd', function() {
       xterm.wraparoundMode = true;
@@ -746,23 +746,23 @@ describe('xterm.js', function() {
       for (var i=1; i<xterm.cols-1; ++i) {
         var tchar = xterm.buffer.lines.get(0)[i];
         if (!(i % 2)) {
-          expect(tchar[1]).eql('');
-          expect(tchar[1].length).eql(0);
-          expect(tchar[2]).eql(0);
+          expect(tchar[0]).eql('');
+          expect(tchar[0].length).eql(0);
+          expect(tchar[1]).eql(0);
         } else {
-          expect(tchar[1]).eql('￥\u0301');
-          expect(tchar[1].length).eql(2);
-          expect(tchar[2]).eql(2);
+          expect(tchar[0]).eql('￥\u0301');
+          expect(tchar[0].length).eql(2);
+          expect(tchar[1]).eql(2);
         }
       }
       tchar = xterm.buffer.lines.get(0)[xterm.cols-1];
-      expect(tchar[1]).eql(' ');
-      expect(tchar[1].length).eql(1);
-      expect(tchar[2]).eql(1);
+      expect(tchar[0]).eql(' ');
+      expect(tchar[0].length).eql(1);
+      expect(tchar[1]).eql(1);
       tchar = xterm.buffer.lines.get(1)[0];
-      expect(tchar[1]).eql('￥\u0301');
-      expect(tchar[1].length).eql(2);
-      expect(tchar[2]).eql(2);
+      expect(tchar[0]).eql('￥\u0301');
+      expect(tchar[0].length).eql(2);
+      expect(tchar[1]).eql(2);
     });
     it('line of ￥ with combining even', function() {
       xterm.wraparoundMode = true;
@@ -770,19 +770,19 @@ describe('xterm.js', function() {
       for (var i=0; i<xterm.cols; ++i) {
         var tchar = xterm.buffer.lines.get(0)[i];
         if (i % 2) {
-          expect(tchar[1]).eql('');
-          expect(tchar[1].length).eql(0);
-          expect(tchar[2]).eql(0);
+          expect(tchar[0]).eql('');
+          expect(tchar[0].length).eql(0);
+          expect(tchar[1]).eql(0);
         } else {
-          expect(tchar[1]).eql('￥\u0301');
-          expect(tchar[1].length).eql(2);
-          expect(tchar[2]).eql(2);
+          expect(tchar[0]).eql('￥\u0301');
+          expect(tchar[0].length).eql(2);
+          expect(tchar[1]).eql(2);
         }
       }
       tchar = xterm.buffer.lines.get(1)[0];
-      expect(tchar[1]).eql('￥\u0301');
-      expect(tchar[1].length).eql(2);
-      expect(tchar[2]).eql(2);
+      expect(tchar[0]).eql('￥\u0301');
+      expect(tchar[0].length).eql(2);
+      expect(tchar[1]).eql(2);
     });
     it('line of surrogate fullwidth with combining odd', function() {
       xterm.wraparoundMode = true;
@@ -791,23 +791,23 @@ describe('xterm.js', function() {
       for (var i=1; i<xterm.cols-1; ++i) {
         var tchar = xterm.buffer.lines.get(0)[i];
         if (!(i % 2)) {
-          expect(tchar[1]).eql('');
-          expect(tchar[1].length).eql(0);
-          expect(tchar[2]).eql(0);
+          expect(tchar[0]).eql('');
+          expect(tchar[0].length).eql(0);
+          expect(tchar[1]).eql(0);
         } else {
-          expect(tchar[1]).eql('\ud843\ude6d\u0301');
-          expect(tchar[1].length).eql(3);
-          expect(tchar[2]).eql(2);
+          expect(tchar[0]).eql('\ud843\ude6d\u0301');
+          expect(tchar[0].length).eql(3);
+          expect(tchar[1]).eql(2);
         }
       }
     tchar = xterm.buffer.lines.get(0)[xterm.cols-1];
-      expect(tchar[1]).eql(' ');
-      expect(tchar[1].length).eql(1);
-      expect(tchar[2]).eql(1);
+      expect(tchar[0]).eql(' ');
+      expect(tchar[0].length).eql(1);
+      expect(tchar[1]).eql(1);
       tchar = xterm.buffer.lines.get(1)[0];
-      expect(tchar[1]).eql('\ud843\ude6d\u0301');
-      expect(tchar[1].length).eql(3);
-      expect(tchar[2]).eql(2);
+      expect(tchar[0]).eql('\ud843\ude6d\u0301');
+      expect(tchar[0].length).eql(3);
+      expect(tchar[1]).eql(2);
     });
     it('line of surrogate fullwidth with combining even', function() {
       xterm.wraparoundMode = true;
@@ -815,19 +815,19 @@ describe('xterm.js', function() {
       for (var i=0; i<xterm.cols; ++i) {
         var tchar = xterm.buffer.lines.get(0)[i];
         if (i % 2) {
-          expect(tchar[1]).eql('');
-          expect(tchar[1].length).eql(0);
-          expect(tchar[2]).eql(0);
+          expect(tchar[0]).eql('');
+          expect(tchar[0].length).eql(0);
+          expect(tchar[1]).eql(0);
         } else {
-          expect(tchar[1]).eql('\ud843\ude6d\u0301');
-          expect(tchar[1].length).eql(3);
-          expect(tchar[2]).eql(2);
+          expect(tchar[0]).eql('\ud843\ude6d\u0301');
+          expect(tchar[0].length).eql(3);
+          expect(tchar[1]).eql(2);
         }
       }
       tchar = xterm.buffer.lines.get(1)[0];
-      expect(tchar[1]).eql('\ud843\ude6d\u0301');
-      expect(tchar[1].length).eql(3);
-      expect(tchar[2]).eql(2);
+      expect(tchar[0]).eql('\ud843\ude6d\u0301');
+      expect(tchar[0].length).eql(3);
+      expect(tchar[1]).eql(2);
     });
   });
 
@@ -839,10 +839,10 @@ describe('xterm.js', function() {
       xterm.insertMode = true;
       xterm.write('abcde');
       expect(xterm.buffer.lines.get(0).length).eql(xterm.cols);
-      expect(xterm.buffer.lines.get(0)[10][1]).eql('a');
-      expect(xterm.buffer.lines.get(0)[14][1]).eql('e');
-      expect(xterm.buffer.lines.get(0)[15][1]).eql('0');
-      expect(xterm.buffer.lines.get(0)[79][1]).eql('4');
+      expect(xterm.buffer.lines.get(0)[10][0]).eql('a');
+      expect(xterm.buffer.lines.get(0)[14][0]).eql('e');
+      expect(xterm.buffer.lines.get(0)[15][0]).eql('0');
+      expect(xterm.buffer.lines.get(0)[79][0]).eql('4');
     });
     it('fullwidth - insert', function() {
       xterm.write(Array(9).join('0123456789').slice(-80));
@@ -851,11 +851,11 @@ describe('xterm.js', function() {
       xterm.insertMode = true;
       xterm.write('￥￥￥');
       expect(xterm.buffer.lines.get(0).length).eql(xterm.cols);
-      expect(xterm.buffer.lines.get(0)[10][1]).eql('￥');
-      expect(xterm.buffer.lines.get(0)[11][1]).eql('');
-      expect(xterm.buffer.lines.get(0)[14][1]).eql('￥');
-      expect(xterm.buffer.lines.get(0)[15][1]).eql('');
-      expect(xterm.buffer.lines.get(0)[79][1]).eql('3');
+      expect(xterm.buffer.lines.get(0)[10][0]).eql('￥');
+      expect(xterm.buffer.lines.get(0)[11][0]).eql('');
+      expect(xterm.buffer.lines.get(0)[14][0]).eql('￥');
+      expect(xterm.buffer.lines.get(0)[15][0]).eql('');
+      expect(xterm.buffer.lines.get(0)[79][0]).eql('3');
     });
     it('fullwidth - right border', function() {
       xterm.write(Array(41).join('￥'));
@@ -864,14 +864,14 @@ describe('xterm.js', function() {
       xterm.insertMode = true;
       xterm.write('a');
       expect(xterm.buffer.lines.get(0).length).eql(xterm.cols);
-      expect(xterm.buffer.lines.get(0)[10][1]).eql('a');
-      expect(xterm.buffer.lines.get(0)[11][1]).eql('￥');
-      expect(xterm.buffer.lines.get(0)[79][1]).eql(' ');  // fullwidth char got replaced
+      expect(xterm.buffer.lines.get(0)[10][0]).eql('a');
+      expect(xterm.buffer.lines.get(0)[11][0]).eql('￥');
+      expect(xterm.buffer.lines.get(0)[79][0]).eql(' ');  // fullwidth char got replaced
       xterm.write('b');
       expect(xterm.buffer.lines.get(0).length).eql(xterm.cols);
-      expect(xterm.buffer.lines.get(0)[11][1]).eql('b');
-      expect(xterm.buffer.lines.get(0)[12][1]).eql('￥');
-      expect(xterm.buffer.lines.get(0)[79][1]).eql('');  // empty cell after fullwidth
+      expect(xterm.buffer.lines.get(0)[11][0]).eql('b');
+      expect(xterm.buffer.lines.get(0)[12][0]).eql('￥');
+      expect(xterm.buffer.lines.get(0)[79][0]).eql('');  // empty cell after fullwidth
     });
   });
 });

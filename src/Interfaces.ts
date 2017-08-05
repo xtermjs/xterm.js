@@ -3,7 +3,8 @@
  */
 
 import { LinkMatcherOptions } from './Interfaces';
-import { LinkMatcherHandler, LinkMatcherValidationCallback } from './Types';
+import { CharData, LinkMatcherHandler, LinkMatcherValidationCallback, LineData } from './Types';
+import { TextStyle } from "./TextStyle";
 
 export interface IBrowser {
   isNode: boolean;
@@ -36,6 +37,10 @@ export interface ITerminal {
   buffers: IBufferSet;
   buffer: IBuffer;
 
+  defaultFlags: number;
+  defaultFgColor: number;
+  defaultBgColor: number;
+
   /**
    * Emit the 'data' event and populate the given data.
    * @param data The data to populate in the event.
@@ -51,12 +56,17 @@ export interface ITerminal {
 }
 
 export interface IBuffer {
-  lines: ICircularList<[number, string, number][]>;
+  lines: ICircularList<LineData>;
+  textStyles: TextStyle[];
   ydisp: number;
   ybase: number;
   y: number;
   x: number;
   tabs: any;
+
+  startTextStyle(flags: number, fgColor: number, bgColor: number): void;
+  finishTextStyle(): void;
+  translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string;
 }
 
 export interface IBufferSet {
@@ -92,8 +102,8 @@ export interface ILinkifier {
 export interface ICircularList<T> extends IEventEmitter {
   length: number;
   maxLength: number;
+  forEach: (callbackfn: (value: T, index: number) => void) => void;
 
-  forEach(callbackfn: (value: T, index: number, array: T[]) => void): void;
   get(index: number): T;
   set(index: number, value: T): void;
   push(value: T): void;
