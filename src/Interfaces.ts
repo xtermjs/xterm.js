@@ -50,6 +50,27 @@ export interface ITerminal {
   showCursor(): void;
 }
 
+export interface ITerminalOptions {
+  cancelEvents?: boolean;
+  colors?: string[];
+  cols?: number;
+  convertEol?: boolean;
+  cursorBlink?: boolean;
+  cursorStyle?: string;
+  debug?: boolean;
+  disableStdin?: boolean;
+  geometry?: [number, number];
+  handler?: (data: string) => void;
+  popOnBell?: boolean;
+  rows?: number;
+  screenKeys?: boolean;
+  scrollback?: number;
+  tabStopWidth?: number;
+  termName?: string;
+  useFlowControl?: boolean;
+  visualBell?: boolean;
+}
+
 export interface IBuffer {
   lines: ICircularList<[number, string, number][]>;
   ydisp: number;

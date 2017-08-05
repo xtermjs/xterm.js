@@ -29,8 +29,8 @@ import * as Mouse from './utils/Mouse';
 import { CHARSETS } from './Charsets';
 import { getRawByteCoords } from './utils/Mouse';
 import { translateBufferLineToString } from './utils/BufferLine';
-import { TerminalOptions, CustomKeyEventHandler, Charset } from './Types';
-import { ITerminal, IBrowser } from './Interfaces';
+import { CustomKeyEventHandler, Charset } from './Types';
+import { ITerminal, IBrowser, ITerminalOptions } from './Interfaces';
 
 // Declare for RequireJS in loadAddon
 declare var define: any;
@@ -71,7 +71,7 @@ const CURSOR_BLINK_INTERVAL = 600;
 
 // TODO: Most of the color code should be removed after truecolor is implemented
 // Colors 0-15
-const tangoColors = [
+const tangoColors: string[] = [
   // dark:
   '#2e3436',
   '#cc0000',
@@ -94,7 +94,7 @@ const tangoColors = [
 
 // Colors 0-15 + 16-255
 // Much thanks to TooTallNate for writing this.
-const defaultColors = (function() {
+const defaultColors: string[] = (function() {
   let colors = tangoColors.slice();
   let r = [0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff];
   let i;
@@ -125,9 +125,9 @@ const defaultColors = (function() {
   return colors;
 })();
 
-const _colors = defaultColors.slice();
+const _colors: string[] = defaultColors.slice();
 
-const vcolors = (function() {
+const vcolors: number[][] = (function() {
   const out = [];
   let color;
 
@@ -143,7 +143,7 @@ const vcolors = (function() {
   return out;
 })();
 
-const DEFAULT_OPTIONS: TerminalOptions = {
+const DEFAULT_OPTIONS: ITerminalOptions = {
   colors: defaultColors,
   convertEol: false,
   termName: 'xterm',
@@ -186,7 +186,7 @@ export class Terminal extends EventEmitter implements ITerminal {
   public browser: IBrowser = <any>Browser;
 
   // TODO: Options should be private, remove from interface in favor of getOption
-  public options: TerminalOptions;
+  public options: ITerminalOptions;
   private colors: any;
 
   // TODO: This can be changed to an enum or boolean, 0 and 1 seem to be the only options
@@ -294,7 +294,7 @@ export class Terminal extends EventEmitter implements ITerminal {
    * @alias module:xterm/src/xterm
    */
   constructor(
-    options: any = {}
+    options: ITerminalOptions = {}
   ) {
     super();
 
@@ -2269,6 +2269,7 @@ export class Terminal extends EventEmitter implements ITerminal {
     const cursorBlinkInterval = this.cursorBlinkInterval;
     const inputHandler = this.inputHandler;
     const buffers = this.buffers;
+    // TODO: Need to make sure this still works
     Terminal.call(this, this.options);
     this.customKeyEventHandler = customKeyEventHandler;
     this.cursorBlinkInterval = cursorBlinkInterval;
