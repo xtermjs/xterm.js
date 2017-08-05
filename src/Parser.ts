@@ -613,7 +613,7 @@ export class Parser {
    *
    * @param param the parameter.
    */
-  public setParam(param: number) {
+  public setParam(param: number): void {
     this._terminal.currentParam = param;
   }
 

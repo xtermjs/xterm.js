@@ -92,7 +92,7 @@ export class Viewport implements IViewport {
    * terminal to scroll to it.
    * @param ev The scroll event.
    */
-  private onScroll(ev: Event) {
+  private onScroll(ev: Event): void {
     const newRow = Math.round(this.viewportElement.scrollTop / this.currentRowHeight);
     const diff = newRow - this.terminal.buffer.ydisp;
     this.terminal.scrollDisp(diff, true);
@@ -104,7 +104,7 @@ export class Viewport implements IViewport {
    * `Viewport`.
    * @param ev The mouse wheel event.
    */
-  public onWheel(ev: WheelEvent) {
+  public onWheel(ev: WheelEvent): void {
     if (ev.deltaY === 0) {
       // Do nothing if it's not a vertical scroll event
       return;
@@ -125,7 +125,7 @@ export class Viewport implements IViewport {
    * Handles the touchstart event, recording the touch occurred.
    * @param ev The touch event.
    */
-  public onTouchStart(ev: TouchEvent) {
+  public onTouchStart(ev: TouchEvent): void {
     this.lastTouchY = ev.touches[0].pageY;
   };
 
@@ -133,7 +133,7 @@ export class Viewport implements IViewport {
    * Handles the touchmove event, scrolling the viewport if the position shifted.
    * @param ev The touch event.
    */
-  public onTouchMove(ev: TouchEvent) {
+  public onTouchMove(ev: TouchEvent): void {
     let deltaY = this.lastTouchY - ev.touches[0].pageY;
     this.lastTouchY = ev.touches[0].pageY;
     if (deltaY === 0) {

@@ -9,6 +9,11 @@
       true,
       "spaces"
     ],
+    "typedef": [
+      true,
+      "call-signature",
+      "parameter"
+    ],
     "eofline": true,
     "no-eval": true,
     "no-internal-module": true,

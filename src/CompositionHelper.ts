@@ -51,7 +51,7 @@ export class CompositionHelper {
   /**
    * Handles the compositionstart event, activating the composition view.
    */
-  public compositionstart() {
+  public compositionstart(): void {
     this.isComposing = true;
     this.compositionPosition.start = this.textarea.value.length;
     this.compositionView.textContent = '';
@@ -62,7 +62,7 @@ export class CompositionHelper {
    * Handles the compositionupdate event, updating the composition view.
    * @param {CompositionEvent} ev The event.
    */
-  public compositionupdate(ev: CompositionEvent) {
+  public compositionupdate(ev: CompositionEvent): void {
     this.compositionView.textContent = ev.data;
     this.updateCompositionElements();
     setTimeout(() => {
@@ -74,7 +74,7 @@ export class CompositionHelper {
    * Handles the compositionend event, hiding the composition view and sending the composition to
    * the handler.
    */
-  public compositionend() {
+  public compositionend(): void {
     this.finalizeComposition(true);
   }
 
@@ -83,7 +83,7 @@ export class CompositionHelper {
    * @param ev The keydown event.
    * @return Whether the Terminal should continue processing the keydown event.
    */
-  public keydown(ev: KeyboardEvent) {
+  public keydown(ev: KeyboardEvent): boolean {
     if (this.isComposing || this.isSendingComposition) {
       if (ev.keyCode === 229) {
         // Continue composing if the keyCode is the "composition character"
@@ -116,7 +116,7 @@ export class CompositionHelper {
    *   compositionend event is triggered, such as enter, so that the composition is send before
    *   the command is executed.
    */
-  private finalizeComposition(waitForPropogation: boolean) {
+  private finalizeComposition(waitForPropogation: boolean): void {
     this.compositionView.classList.remove('active');
     this.isComposing = false;
     this.clearTextareaPosition();
@@ -169,7 +169,7 @@ export class CompositionHelper {
    * character" (229) is triggered, in order to allow non-composition text to be entered when an
    * IME is active.
    */
-  private handleAnyTextareaChanges() {
+  private handleAnyTextareaChanges(): void {
     const oldValue = this.textarea.value;
     setTimeout(() => {
       // Ignore if a composition has started since the timeout
@@ -189,7 +189,7 @@ export class CompositionHelper {
    * @param dontRecurse Whether to use setTimeout to recursively trigger another update, this is
    *   necessary as the IME events across browsers are not consistently triggered.
    */
-  public updateCompositionElements(dontRecurse?: boolean) {
+  public updateCompositionElements(dontRecurse?: boolean): void {
     if (!this.isComposing) {
       return;
     }
@@ -222,7 +222,7 @@ export class CompositionHelper {
    * Clears the textarea's position so that the cursor does not blink on IE.
    * @private
    */
-  private clearTextareaPosition() {
+  private clearTextareaPosition(): void {
     this.textarea.style.left = '';
     this.textarea.style.top = '';
   };

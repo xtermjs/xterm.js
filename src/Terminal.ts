@@ -29,8 +29,8 @@ import * as Mouse from './utils/Mouse';
 import { CHARSETS } from './Charsets';
 import { getRawByteCoords } from './utils/Mouse';
 import { translateBufferLineToString } from './utils/BufferLine';
-import { CustomKeyEventHandler, Charset } from './Types';
-import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal } from './Interfaces';
+import { CustomKeyEventHandler, Charset, LinkMatcherHandler, LinkMatcherValidationCallback } from './Types';
+import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions } from './Interfaces';
 
 // Declare for RequireJS in loadAddon
 declare var define: any;
@@ -94,7 +94,7 @@ const tangoColors: string[] = [
 
 // Colors 0-15 + 16-255
 // Much thanks to TooTallNate for writing this.
-const defaultColors: string[] = (function() {
+const defaultColors: string[] = (function(): string[] {
   let colors = tangoColors.slice();
   let r = [0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff];
   let i;
@@ -113,13 +113,13 @@ const defaultColors: string[] = (function() {
     out(c, c, c);
   }
 
-  function out(r, g, b) {
+  function out(r: number, g: number, b: number): void {
     colors.push('#' + hex(r) + hex(g) + hex(b));
   }
 
-  function hex(c) {
-    c = c.toString(16);
-    return c.length < 2 ? '0' + c : c;
+  function hex(c: number): string {
+    let s = c.toString(16);
+    return s.length < 2 ? '0' + s : s;
   }
 
   return colors;
@@ -127,8 +127,8 @@ const defaultColors: string[] = (function() {
 
 const _colors: string[] = defaultColors.slice();
 
-const vcolors: number[][] = (function() {
-  const out = [];
+const vcolors: number[][] = (function(): number[][] {
+  const out: number[][] = [];
   let color;
 
   for (let i = 0; i < 256; i++) {
@@ -387,8 +387,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // Create the terminal's buffers and set the current buffer
     this.buffers = new BufferSet(this);
     this.buffer = this.buffers.active;  // Convenience shortcut;
-    this.buffers.on('activate', function (buffer) {
-      this._terminal.buffer = buffer;
+    this.buffers.on('activate', (buffer: Buffer) => {
+      this.buffer = buffer;
     });
 
     let i = this.rows;
@@ -485,11 +485,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     }
   }
 
-  private restartCursorBlinking() {
+  private restartCursorBlinking(): void {
     this.setCursorBlinking(this.options.cursorBlink);
   }
 
-  private setCursorBlinking(enabled) {
+  private setCursorBlinking(enabled: boolean): void {
     this.element.classList.toggle('xterm-cursor-blink', enabled);
     this.clearCursorBlinkingInterval();
     if (enabled) {
@@ -499,7 +499,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     }
   }
 
-  private clearCursorBlinkingInterval() {
+  private clearCursorBlinkingInterval(): void {
     this.element.classList.remove('xterm-cursor-blink-on');
     if (this.cursorBlinkInterval) {
       clearInterval(this.cursorBlinkInterval);
@@ -510,7 +510,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   /**
    * Binds the desired focus behavior on a given terminal object.
    */
-  private bindFocus() {
+  private bindFocus(): void {
     globalOn(this.textarea, 'focus', (ev) => {
       if (this.sendFocus) {
         this.send(C0.ESC + '[I');
@@ -526,14 +526,14 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   /**
    * Blur the terminal. Delegates blur handling to the terminal's DOM element.
    */
-  private blur() {
+  private blur(): void {
     return this.textarea.blur();
   }
 
   /**
    * Binds the desired blur behavior on a given terminal object.
    */
-  private bindBlur() {
+  private bindBlur(): void {
     on(this.textarea, 'blur', (ev) => {
       this.refresh(this.buffer.y, this.buffer.y);
       if (this.sendFocus) {
@@ -549,7 +549,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   /**
    * Initialize default behavior
    */
-  private initGlobal() {
+  private initGlobal(): void {
     this.bindKeys();
     this.bindFocus();
     this.bindBlur();
@@ -598,33 +598,33 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   /**
    * Apply key handling to the terminal
    */
-  private bindKeys() {
+  private bindKeys(): void {
     const self = this;
-    on(this.element, 'keydown', function (ev) {
+    on(this.element, 'keydown', function (ev: KeyboardEvent): void {
       if (document.activeElement !== this) {
         return;
       }
       self.keyDown(ev);
     }, true);
 
-    on(this.element, 'keypress', function (ev) {
+    on(this.element, 'keypress', function (ev: KeyboardEvent): void {
       if (document.activeElement !== this) {
         return;
       }
       self.keyPress(ev);
     }, true);
 
-    on(this.element, 'keyup', (ev) => {
+    on(this.element, 'keyup', (ev: KeyboardEvent) => {
       if (!wasMondifierKeyOnlyEvent(ev)) {
         this.focus();
       }
     }, true);
 
-    on(this.textarea, 'keydown', (ev) => {
+    on(this.textarea, 'keydown', (ev: KeyboardEvent) => {
       this.keyDown(ev);
     }, true);
 
-    on(this.textarea, 'keypress', (ev) => {
+    on(this.textarea, 'keypress', (ev: KeyboardEvent) => {
       this.keyPress(ev);
       // Truncate the textarea's value, since it is not needed
       this.textarea.value = '';
@@ -642,7 +642,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * if no row argument is passed. Return the inserted row.
    * @param {HTMLElement} row (optional) The row to append to the terminal.
    */
-  private insertRow(row?: HTMLElement) {
+  private insertRow(row?: HTMLElement): HTMLElement {
     if (typeof row !== 'object') {
       row = document.createElement('div');
     }
@@ -659,7 +659,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param {HTMLElement} parent The element to create the terminal within.
    * @param {boolean} focus Focus the terminal, after it gets instantiated in the DOM
    */
-  private open(parent, focus) {
+  private open(parent: HTMLElement, focus?: boolean): void {
     let i = 0;
     let div;
 
@@ -802,7 +802,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param {string} addon The name of the addon to load
    * @static
    */
-  public static loadAddon(addon, callback) {
+  public static loadAddon(addon: string, callback?: Function): boolean | any {
+    // TODO: Improve return type and documentation
     if (typeof exports === 'object' && typeof module === 'object') {
       // CommonJS
       return require('./addons/' + addon + '/' + addon);
@@ -819,7 +820,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Updates the helper CSS class with any changes necessary after the terminal's
    * character width has been changed.
    */
-  public updateCharSizeStyles() {
+  public updateCharSizeStyles(): void {
     this.charSizeStyleElement.textContent =
         `.xterm-wide-char{width:${this.charMeasure.width * 2}px;}` +
         `.xterm-normal-char{width:${this.charMeasure.width}px;}` +
@@ -836,7 +837,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Relevant functions in xterm/button.c:
    *   BtnCode, EmitButtonCode, EditorButton, SendMousePosition
    */
-  public bindMouse() {
+  public bindMouse(): void {
     const el = this.element;
     const self = this;
     let pressed = 32;
@@ -844,7 +845,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // mouseup, mousedown, wheel
     // left click: ^[[M 3<^[[M#3<
     // wheel up: ^[[M`3>
-    function sendButton(ev) {
+    function sendButton(ev: MouseEvent | WheelEvent): void {
       let button;
       let pos;
 
@@ -857,7 +858,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
       sendEvent(button, pos);
 
-      switch (ev.overrideType || ev.type) {
+      switch ((<any>ev).overrideType || ev.type) {
         case 'mousedown':
           pressed = button;
           break;
@@ -876,11 +877,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     // motion example of a left click:
     // ^[[M 3<^[[M@4<^[[M@5<^[[M@6<^[[M@7<^[[M#7<
-    function sendMove(ev) {
+    function sendMove(ev: MouseEvent): void {
       let button = pressed;
-      let pos;
-
-      pos = getRawByteCoords(ev, self.rowContainer, self.charMeasure, self.cols, self.rows);
+      let pos = getRawByteCoords(ev, self.rowContainer, self.charMeasure, self.cols, self.rows);
       if (!pos) return;
 
       // buttons marked as motions
@@ -892,13 +891,19 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     // encode button and
     // position to characters
-    function encode(data, ch) {
+    function encode(data: number[], ch: number): void {
       if (!self.utfMouse) {
-        if (ch === 255) return data.push(0);
+        if (ch === 255) {
+          data.push(0);
+          return;
+        }
         if (ch > 127) ch = 127;
         data.push(ch);
       } else {
-        if (ch === 2047) return data.push(0);
+        if (ch === 2047) {
+          data.push(0);
+          return;
+        }
         if (ch < 127) {
           data.push(ch);
         } else {
@@ -915,7 +920,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // sgr: ^[[ Cb ; Cx ; Cy M/m
     // vt300: ^[[ 24(1/3/5)~ [ Cx , Cy ] \r
     // locator: CSI P e ; P b ; P r ; P c ; P p & w
-    function sendEvent(button, pos) {
+    function sendEvent(button: number, pos: {x: number, y: number}): void {
       // self.emit('mouse', {
       //   x: pos.x - 32,
       //   y: pos.x - 32,
@@ -957,7 +962,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
                   + ';'
                   + pos.x
                   + ';'
-                  + (pos.page || 0)
+                  // Not sure what page is meant to be
+                  + (<any>pos).page || 0
                   + '&w');
         return;
       }
@@ -984,7 +990,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         return;
       }
 
-      let data = [];
+      let data: number[] = [];
 
       encode(data, button);
       encode(data, pos.x);
@@ -993,7 +999,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       self.send(C0.ESC + '[M' + String.fromCharCode.apply(String, data));
     }
 
-    function getButton(ev) {
+    function getButton(ev: MouseEvent): number {
       let button;
       let shift;
       let meta;
@@ -1007,7 +1013,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       // 3 = release
       // wheel up/down:
       // 1, and 2 - with 64 added
-      switch (ev.overrideType || ev.type) {
+      switch ((<any>ev).overrideType || ev.type) {
         case 'mousedown':
           button = ev.button != null
             ? +ev.button
@@ -1028,7 +1034,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
           : 65;
           break;
         case 'wheel':
-          button = ev.wheelDeltaY > 0
+          button = (<WheelEvent>ev).wheelDeltaY > 0
             ? 64
           : 65;
           break;
@@ -1055,7 +1061,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       return button;
     }
 
-    on(el, 'mousedown', (ev) => {
+    on(el, 'mousedown', (ev: MouseEvent) => {
 
       // Prevent the focus on the textarea from getting lost
       // and make sure we get focused on mousedown
@@ -1082,10 +1088,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       if (!this.x10Mouse) {
         const handler = (ev: MouseEvent) => {
           sendButton(ev);
+          // TODO: Seems dangerous calling this on document?
           if (this.normalMouse) off(this.document, 'mousemove', sendMove);
           off(this.document, 'mouseup', handler);
           return this.cancel(ev);
         };
+        // TODO: Seems dangerous calling this on document?
         on(this.document, 'mouseup', handler);
       }
 
@@ -1096,7 +1104,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     //  on(this.document, 'mousemove', sendMove);
     // }
 
-    on(el, 'wheel', (ev) => {
+    on(el, 'wheel', (ev: WheelEvent) => {
       if (!this.mouseEvents) return;
       if (this.x10Mouse || this.vt300Mouse || this.decLocator) return;
       sendButton(ev);
@@ -1131,8 +1139,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     super.destroy();
     this.readable = false;
     this.writable = false;
-    this.handler = function() {};
-    this.write = function() {};
+    this.handler = () => {};
+    this.write = () => {};
     if (this.element && this.element.parentNode) {
       this.element.parentNode.removeChild(this.element);
     }
@@ -1316,7 +1324,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     }
   }
 
-  private innerWrite() {
+  private innerWrite(): void {
     const writeBatch = this.writeBuffer.splice(0, WRITE_BATCH_SIZE);
     while (writeBatch.length > 0) {
       const data = writeBatch.shift();
@@ -1354,7 +1362,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Writes text to the terminal, followed by a break line character (\n).
    * @param {string} data The text to write to the terminal.
    */
-  public writeln(data): void {
+  public writeln(data: string): void {
     this.write(data + '\r\n');
   }
 
@@ -1386,9 +1394,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Attaches a http(s) link handler, forcing web links to behave differently to
    * regular <a> tags. This will trigger a refresh as links potentially need to be
    * reconstructed. Calling this with null will remove the handler.
-   * @param {LinkMatcherHandler} handler The handler callback function.
+   * @param handler The handler callback function.
    */
-  public setHypertextLinkHandler(handler) {
+  public setHypertextLinkHandler(handler: LinkMatcherHandler): void {
     if (!this.linkifier) {
       throw new Error('Cannot attach a hypertext link handler before Terminal.open is called');
     }
@@ -1400,10 +1408,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   /**
    * Attaches a validation callback for hypertext links. This is useful to use
    * validation logic or to do something with the link's element and url.
-   * @param {LinkMatcherValidationCallback} callback The callback to use, this can
+   * @param callback The callback to use, this can
    * be cleared with null.
    */
-  public setHypertextValidationCallback(callback) {
+  public setHypertextValidationCallback(callback: LinkMatcherValidationCallback): void {
     if (!this.linkifier) {
       throw new Error('Cannot attach a hypertext validation callback before Terminal.open is called');
     }
@@ -1413,16 +1421,16 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 
   /**
-     * Registers a link matcher, allowing custom link patterns to be matched and
-     * handled.
-     * @param {RegExp} regex The regular expression to search for, specifically
-     * this searches the textContent of the rows. You will want to use \s to match
-     * a space ' ' character for example.
-     * @param {LinkMatcherHandler} handler The callback when the link is called.
-     * @param {LinkMatcherOptions} [options] Options for the link matcher.
-     * @return {number} The ID of the new matcher, this can be used to deregister.
+   * Registers a link matcher, allowing custom link patterns to be matched and
+   * handled.
+   * @param regex The regular expression to search for, specifically
+   * this searches the textContent of the rows. You will want to use \s to match
+   * a space ' ' character for example.
+   * @param handler The callback when the link is called.
+   * @param [options] Options for the link matcher.
+   * @return The ID of the new matcher, this can be used to deregister.
    */
-  public registerLinkMatcher(regex, handler, options) {
+  public registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options: ILinkMatcherOptions): number {
     if (this.linkifier) {
       const matcherId = this.linkifier.registerLinkMatcher(regex, handler, options);
       this.refresh(0, this.rows - 1);
@@ -1432,9 +1440,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
   /**
    * Deregisters a link matcher if it has been registered.
-   * @param {number} matcherId The link matcher's ID (returned after register)
+   * @param matcherId The link matcher's ID (returned after register)
    */
-  public deregisterLinkMatcher(matcherId) {
+  public deregisterLinkMatcher(matcherId: number): void {
     if (this.linkifier) {
       if (this.linkifier.deregisterLinkMatcher(matcherId)) {
         this.refresh(0, this.rows - 1);
@@ -1445,7 +1453,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   /**
    * Gets whether the terminal has an active selection.
    */
-  public hasSelection() {
+  public hasSelection(): boolean {
     return this.selectionManager ? this.selectionManager.hasSelection : false;
   }
 
@@ -1453,14 +1461,14 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Gets the terminal's current selection, this is useful for implementing copy
    * behavior outside of xterm.js.
    */
-  public getSelection() {
+  public getSelection(): string {
     return this.selectionManager ? this.selectionManager.selectionText : '';
   }
 
   /**
    * Clears the current terminal selection.
    */
-  public clearSelection() {
+  public clearSelection(): void {
     if (this.selectionManager) {
       this.selectionManager.clearSelection();
     }
@@ -1469,7 +1477,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   /**
    * Selects all text within the terminal.
    */
-  public selectAll() {
+  public selectAll(): void {
     if (this.selectionManager) {
       this.selectionManager.selectAll();
     }
@@ -1481,7 +1489,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    *   - https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
    * @param {KeyboardEvent} ev The keydown event to be handled.
    */
-  private keyDown(ev) {
+  private keyDown(ev: KeyboardEvent): boolean {
     if (this.customKeyEventHandler && this.customKeyEventHandler(ev) === false) {
       return false;
     }
@@ -1508,7 +1516,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       return this.cancel(ev, true);
     }
 
-    if (isThirdLevelShift(this, ev)) {
+    if (isThirdLevelShift(ev)) {
       return true;
     }
 
@@ -1534,10 +1542,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * returned value is the new key code to pass to the PTY.
    *
    * Reference: http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
-   * @param {KeyboardEvent} ev The keyboard event to be translated to key escape sequence.
+   * @param ev The keyboard event to be translated to key escape sequence.
    */
-  private evaluateKeyEscapeSequence(ev) {
-    const result = {
+  private evaluateKeyEscapeSequence(ev: KeyboardEvent): {cancel: boolean, key: string, scrollDisp: number} {
+    const result: {cancel: boolean, key: string, scrollDisp: number} = {
       // Whether to cancel event propogation (NOTE: this may not be needed since the event is
       // canceled at the end of keyDown
       cancel: false,
@@ -1546,7 +1554,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       // The number of characters to scroll, if this is defined it will cancel the event
       scrollDisp: undefined
     };
-    const modifiers = ev.shiftKey << 0 | ev.altKey << 1 | ev.ctrlKey << 2 | ev.metaKey << 3;
+    const modifiers = (ev.shiftKey ? 1 : 0) | (ev.altKey ? 2 : 0) | (ev.ctrlKey ? 4 : 0) | (ev.metaKey ? 8 : 0);
     switch (ev.keyCode) {
       case 8:
         // backspace
@@ -1843,7 +1851,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    *   - https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
    * @param {KeyboardEvent} ev The keypress event to be handled.
    */
-  private keyPress(ev) {
+  private keyPress(ev: KeyboardEvent): boolean {
     let key;
 
     if (this.customKeyEventHandler && this.customKeyEventHandler(ev) === false) {
@@ -1863,7 +1871,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     }
 
     if (!key || (
-      (ev.altKey || ev.ctrlKey || ev.metaKey) && !isThirdLevelShift(this, ev)
+      (ev.altKey || ev.ctrlKey || ev.metaKey) && !isThirdLevelShift(ev)
     )) {
       return false;
     }
@@ -1897,7 +1905,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Ring the bell.
    * Note: We could do sweet things with webaudio here
    */
-  public bell() {
+  public bell(): void {
     if (!this.options.visualBell) return;
     this.element.style.borderColor = 'white';
     setTimeout(() => {
@@ -2064,7 +2072,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   /**
    * Set the range of refreshing to the maximum value
    */
-  public maxRange() {
+  public maxRange(): void {
     this.refreshStart = 0;
     this.refreshEnd = this.rows - 1;
   }
@@ -2073,7 +2081,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Setup the tab stops.
    * @param {number} i
    */
-  public setupStops(i?: number) {
+  public setupStops(i?: number): void {
     if (i != null) {
       if (!this.buffer.tabs[i]) {
         i = this.prevStop(i);
@@ -2146,7 +2154,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   /**
    * Clears the entire buffer, making the prompt line the new first line.
    */
-  public clear() {
+  public clear(): void {
     if (this.buffer.ybase === 0 && this.buffer.y === 0) {
       // Don't clear if it's already clear
       return;
@@ -2197,9 +2205,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
   /**
    * If cur return the back color xterm feature attribute. Else return defAttr.
-   * @param {object} cur
+   * @param cur
    */
-  public ch(cur) {
+  public ch(cur?: boolean): [number, string, number] {
     return cur ? [this.eraseAttr(), ' ', 1] : [this.defAttr, ' ', 1];
   }
 
@@ -2237,7 +2245,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Emit the 'title' event and populate the given title.
    * @param {string} title The title to populate in the event.
    */
-  private handleTitle(title: string) {
+  private handleTitle(title: string): void {
     /**
      * This event is emitted when the title of the terminal is changed
      * from inside the terminal. The parameter is the new title.
@@ -2254,7 +2262,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   /**
    * ESC D Index (IND is 0x84).
    */
-  public index() {
+  public index(): void {
     this.buffer.y++;
     if (this.buffer.y > this.buffer.scrollBottom) {
       this.buffer.y--;
@@ -2271,7 +2279,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    *
    * Move the cursor up one row, inserting a new blank line if necessary.
    */
-  public reverseIndex() {
+  public reverseIndex(): void {
     if (this.buffer.y === this.buffer.scrollTop) {
       // possibly move the code below to term.reverseScroll();
       // test: echo -ne '\e[1;1H\e[44m\eM\e[0m'
@@ -2308,11 +2316,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   /**
    * ESC H Tab Set (HTS is 0x88).
    */
-  private tabSet() {
+  private tabSet(): void {
     this.buffer.tabs[this.buffer.x] = true;
   }
 
-  public cancel(ev: Event, force?: boolean) {
+  public cancel(ev: Event, force?: boolean): boolean {
     if (!this.options.cancelEvents && !force) {
       return;
     }
@@ -2323,7 +2331,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
   // Expose to InputHandler
   // TODO: Revise when truecolor is introduced.
-  public matchColor(r1, g1, b1): any {
+  public matchColor(r1: number, g1: number, b1: number): any {
     const hash = (r1 << 16) | (g1 << 8) | b1;
 
     if (matchColorCache[hash] != null) {
@@ -2375,41 +2383,25 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
  * Helpers
  */
 
-function globalOn(el: any, type: string, handler: (event: Event) => any, capture?: boolean) {
+function globalOn(el: any, type: string, handler: (event: Event) => any, capture?: boolean): void {
   if (!Array.isArray(el)) {
     el = [el];
   }
-  el.forEach(function (element) {
+  el.forEach((element: HTMLElement) => {
     element.addEventListener(type, handler, capture || false);
   });
 }
 // TODO: Remove once everything is typed
 const on = globalOn;
 
-function off(el, type, handler, capture: boolean = false) {
+function off(el: any, type: string, handler: (event: Event) => any, capture: boolean = false): void {
   el.removeEventListener(type, handler, capture);
 }
 
-function inherits(child, parent) {
-  function f() {
-    this.constructor = child;
-  }
-  f.prototype = parent.prototype;
-  child.prototype = new f;
-}
-
-function indexOf(obj, el) {
-  let i = obj.length;
-  while (i--) {
-    if (obj[i] === el) return i;
-  }
-  return -1;
-}
-
-function isThirdLevelShift(term, ev) {
+function isThirdLevelShift(ev: KeyboardEvent): boolean {
   const thirdLevelKey =
-      (term.browser.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
-      (term.browser.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
+      (Browser.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
+      (Browser.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
 
   if (ev.type === 'keypress') {
     return thirdLevelKey;
@@ -2422,34 +2414,16 @@ function isThirdLevelShift(term, ev) {
 const matchColorCache = {};
 
 // http://stackoverflow.com/questions/1633828
-const matchColorDistance = function(r1, g1, b1, r2, g2, b2) {
+const matchColorDistance = function(r1: number, g1: number, b1: number, r2: number, g2: number, b2: number): number {
   return Math.pow(30 * (r1 - r2), 2)
     + Math.pow(59 * (g1 - g2), 2)
     + Math.pow(11 * (b1 - b2), 2);
 };
 
-function each(obj, iter, con) {
-  if (obj.forEach) return obj.forEach(iter, con);
-  for (let i = 0; i < obj.length; i++) {
-    iter.call(con, obj[i], i, obj);
-  }
-}
-
-function wasMondifierKeyOnlyEvent(ev) {
+function wasMondifierKeyOnlyEvent(ev: KeyboardEvent): boolean {
   return ev.keyCode === 16 || // Shift
     ev.keyCode === 17 || // Ctrl
     ev.keyCode === 18; // Alt
-}
-
-function keys(obj) {
-  if (Object.keys) return Object.keys(obj);
-  const keys = [];
-  for (let key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      keys.push(key);
-    }
-  }
-  return keys;
 }
 
 /**

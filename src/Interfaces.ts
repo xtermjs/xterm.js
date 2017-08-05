@@ -2,7 +2,7 @@
  * @license MIT
  */
 
-import { LinkMatcherOptions } from './Interfaces';
+import { ILinkMatcherOptions } from './Interfaces';
 import { LinkMatcherHandler, LinkMatcherValidationCallback, Charset } from './Types';
 
 export interface IBrowser {
@@ -40,10 +40,9 @@ export interface ITerminal extends IEventEmitter {
    * Emit the 'data' event and populate the given data.
    * @param data The data to populate in the event.
    */
-  handler(data: string);
-  on(event: string, callback: () => void);
-  scrollDisp(disp: number, suppressScrollEvent: boolean);
-  cancel(ev: Event, force?: boolean);
+  handler(data: string): void;
+  scrollDisp(disp: number, suppressScrollEvent?: boolean): void;
+  cancel(ev: Event, force?: boolean): boolean | void;
   log(text: string): void;
   reset(): void;
   showCursor(): void;
@@ -107,7 +106,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   reset(): void;
   showCursor(): void;
   refresh(start: number, end: number): void;
-  matchColor(r1, g1, b1): any;
+  matchColor(r1: number, g1: number, b1: number): any;
   error(text: string, data?: any): void;
   setOption(key: string, value: any): void;
 }
@@ -167,7 +166,7 @@ export interface ISelectionManager {
   disable(): void;
   enable(): void;
   setBuffer(buffer: ICircularList<[number, string, number][]>): void;
-  setSelection(row: number, col: number, length: number);
+  setSelection(row: number, col: number, length: number): void;
 }
 
 export interface ICharMeasure {
@@ -179,7 +178,7 @@ export interface ICharMeasure {
 export interface ILinkifier {
   linkifyRow(rowIndex: number): void;
   attachHypertextLinkHandler(handler: LinkMatcherHandler): void;
-  registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options?: LinkMatcherOptions): number;
+  registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options?: ILinkMatcherOptions): number;
   deregisterLinkMatcher(matcherId: number): boolean;
 }
 
@@ -198,12 +197,17 @@ export interface ICircularList<T> extends IEventEmitter {
 }
 
 export interface IEventEmitter {
-  on(type, listener): void;
-  off(type, listener): void;
+  on(type: string, listener: IListenerType): void;
+  off(type: string, listener: IListenerType): void;
   emit(type: string, data?: any): void;
 }
 
-export interface LinkMatcherOptions {
+export interface IListenerType {
+    (data?: any): void;
+    listener?: (data?: any) => void;
+};
+
+export interface ILinkMatcherOptions {
   /**
    * The index of the link from the regex.match(text) call. This defaults to 0
    * (for regular expressions without capture groups).

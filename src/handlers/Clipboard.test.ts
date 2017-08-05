@@ -2,8 +2,8 @@ import { assert } from 'chai';
 import * as Terminal from '../xterm';
 import * as Clipboard from './Clipboard';
 
-describe('evaluatePastedTextProcessing', function () {
-  it('should replace carriage return + line feed with line feed on windows', function () {
+describe('evaluatePastedTextProcessing', () => {
+  it('should replace carriage return + line feed with line feed on windows', () => {
     const pastedText = 'foo\r\nbar\r\n';
     const processedText = Clipboard.prepareTextForTerminal(pastedText, false);
     const windowsProcessedText = Clipboard.prepareTextForTerminal(pastedText, true);

@@ -65,7 +65,7 @@ describe('InputHandler', () => {
   });
 });
 
-const old_wcwidth = (function(opts) {
+const old_wcwidth = (function(opts: {nul: number, control: number}): (ucs: number) => number {
     // extracted from https://www.cl.cam.ac.uk/%7Emgk25/ucs/wcwidth.c
     // combining characters
     const COMBINING = [
@@ -119,7 +119,7 @@ const old_wcwidth = (function(opts) {
         [0xE0100, 0xE01EF]
     ];
     // binary search
-    function bisearch(ucs) {
+    function bisearch(ucs: number): boolean {
         let min = 0;
         let max = COMBINING.length - 1;
         let mid;
@@ -136,23 +136,26 @@ const old_wcwidth = (function(opts) {
         }
         return false;
     }
-    function wcwidth(ucs) {
-        // test for 8-bit control characters
-        if (ucs === 0)
-            return opts.nul;
-        if (ucs < 32 || (ucs >= 0x7f && ucs < 0xa0))
-            return opts.control;
-        // binary search in table of non-spacing characters
-        if (bisearch(ucs))
-            return 0;
-        // if we arrive here, ucs is not a combining or C0/C1 control character
-        if (isWide(ucs)) {
-            return 2;
-        }
-        return 1;
+    function wcwidth(ucs: number): number {
+      // test for 8-bit control characters
+      if (ucs === 0) {
+        return opts.nul;
+      }
+      if (ucs < 32 || (ucs >= 0x7f && ucs < 0xa0)) {
+        return opts.control;
+      }
+      // binary search in table of non-spacing characters
+      if (bisearch(ucs)) {
+        return 0;
+      }
+      // if we arrive here, ucs is not a combining or C0/C1 control character
+      if (isWide(ucs)) {
+        return 2;
+      }
+      return 1;
     }
-    function isWide(ucs) {
-        return (
+    function isWide(ucs: number): boolean {
+      return (
         ucs >= 0x1100 && (
         ucs <= 0x115f ||                // Hangul Jamo init. consonants
         ucs === 0x2329 ||

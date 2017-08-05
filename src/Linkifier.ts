@@ -2,7 +2,7 @@
  * @license MIT
  */
 
-import { LinkMatcherOptions } from './Interfaces';
+import { ILinkMatcherOptions } from './Interfaces';
 import { LinkMatcher, LinkMatcherHandler, LinkMatcherValidationCallback } from './Types';
 
 const INVALID_LINK_CLASS = 'xterm-invalid-link';
@@ -60,7 +60,7 @@ export class Linkifier {
    * @param document The document object.
    * @param rows The array of rows to apply links to.
    */
-  public attachToDom(document: Document, rows: HTMLElement[]) {
+  public attachToDom(document: Document, rows: HTMLElement[]): void {
     this._document = document;
     this._rows = rows;
   }
@@ -108,10 +108,10 @@ export class Linkifier {
    * this searches the textContent of the rows. You will want to use \s to match
    * a space ' ' character for example.
    * @param {LinkHandler} handler The callback when the link is called.
-   * @param {LinkMatcherOptions} [options] Options for the link matcher.
+   * @param {ILinkMatcherOptions} [options] Options for the link matcher.
    * @return {number} The ID of the new matcher, this can be used to deregister.
    */
-  public registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options: LinkMatcherOptions = {}): number {
+  public registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options: ILinkMatcherOptions = {}): number {
     if (this._nextLinkMatcherId !== HYPERTEXT_LINK_MATCHER_ID && !handler) {
       throw new Error('handler must be defined');
     }

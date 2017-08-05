@@ -221,7 +221,7 @@ export class InputHandler implements IInputHandler {
    * CSI Ps B
    * Cursor Down Ps Times (default = 1) (CUD).
    */
-  public cursorDown(params: number[]) {
+  public cursorDown(params: number[]): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -240,7 +240,7 @@ export class InputHandler implements IInputHandler {
    * CSI Ps C
    * Cursor Forward Ps Times (default = 1) (CUF).
    */
-  public cursorForward(params: number[]) {
+  public cursorForward(params: number[]): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -255,7 +255,7 @@ export class InputHandler implements IInputHandler {
    * CSI Ps D
    * Cursor Backward Ps Times (default = 1) (CUB).
    */
-  public cursorBackward(params: number[]) {
+  public cursorBackward(params: number[]): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -1460,7 +1460,7 @@ export class InputHandler implements IInputHandler {
   }
 }
 
-export const wcwidth = (function(opts) {
+export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: number) => number {
     // extracted from https://www.cl.cam.ac.uk/%7Emgk25/ucs/wcwidth.c
     // combining characters
     const COMBINING_BMP = [
@@ -1516,7 +1516,7 @@ export const wcwidth = (function(opts) {
       [0xE0100, 0xE01EF]
     ];
     // binary search
-    function bisearch(ucs, data) {
+    function bisearch(ucs: number, data: number[][]): boolean {
       let min = 0;
       let max = data.length - 1;
       let mid;
@@ -1533,7 +1533,7 @@ export const wcwidth = (function(opts) {
       }
       return false;
     }
-    function wcwidthBMP(ucs) {
+    function wcwidthBMP(ucs: number): number {
       // test for 8-bit control characters
       if (ucs === 0)
         return opts.nul;
@@ -1548,7 +1548,7 @@ export const wcwidth = (function(opts) {
       }
       return 1;
     }
-    function isWideBMP(ucs) {
+    function isWideBMP(ucs: number): boolean {
       return (
         ucs >= 0x1100 && (
         ucs <= 0x115f ||                // Hangul Jamo init. consonants
@@ -1562,7 +1562,7 @@ export const wcwidth = (function(opts) {
         (ucs >= 0xff00 && ucs <= 0xff60) ||    // Fullwidth Forms
         (ucs >= 0xffe0 && ucs <= 0xffe6)));
     }
-    function wcwidthHigh(ucs) {
+    function wcwidthHigh(ucs: number): 0 | 1 | 2 {
       if (bisearch(ucs, COMBINING_HIGH))
         return 0;
       if ((ucs >= 0x20000 && ucs <= 0x2fffd) || (ucs >= 0x30000 && ucs <= 0x3fffd)) {
@@ -1571,8 +1571,8 @@ export const wcwidth = (function(opts) {
       return 1;
     }
     const control = opts.control | 0;
-    let table = null;
-    function init_table() {
+    let table: number[] | Uint32Array = null;
+    function init_table(): number[] | Uint32Array {
       // lookup table for BMP
       const CODEPOINTS = 65536;  // BMP holds 65536 codepoints
       const BITWIDTH = 2;        // a codepoint can have a width of 0, 1 or 2
@@ -1589,7 +1589,7 @@ export const wcwidth = (function(opts) {
           num = (num << 2) | wcwidthBMP(CODEPOINTS_PER_ITEM * i + pos);
         table[i] = num;
       }
-    return table;
+      return table;
     }
     // get width from lookup table
     //   position in container   : num / CODEPOINTS_PER_ITEM
@@ -1603,7 +1603,7 @@ export const wcwidth = (function(opts) {
     //     ==> n = n >> m     e.g. m=12  000000000000FFEEDDCCBBAA99887766
     //   we are only interested in 2 LSBs, cut off higher bits
     //     ==> n = n & 3      e.g.       000000000000000000000000000000XX
-    return function (num) {
+    return function (num: number): number {
       num = num | 0;  // get asm.js like optimization under V8
       if (num < 32)
         return control | 0;
