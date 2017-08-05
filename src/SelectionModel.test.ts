@@ -22,8 +22,8 @@ describe('SelectionManager', () => {
   let model: TestSelectionModel;
 
   beforeEach(() => {
-    terminal = <any>{ cols: 80, rows: 2, ybase: 0 };
-    terminal.scrollback = 10;
+    terminal = <any>{ cols: 80, rows: 2, ybase: 0, options: {} };
+    terminal.options.scrollback = 10;
     terminal.buffers = new BufferSet(terminal);
     terminal.buffer = terminal.buffers.active;
 

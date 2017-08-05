@@ -36,7 +36,8 @@ export class Buffer {
     public scrollTop: number = 0,
     public tabs: any = {},
   ) {
-    this.lines = new CircularList<[number, string, number][]>(this.terminal.scrollback);
+    // TODO: Don't cast terminal to any
+    this.lines = new CircularList<[number, string, number][]>(this.terminal.options.scrollback);
     this.scrollBottom = this.terminal.rows - 1;
   }
 }

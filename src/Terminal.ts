@@ -30,7 +30,7 @@ import { CHARSETS } from './Charsets';
 import { getRawByteCoords } from './utils/Mouse';
 import { translateBufferLineToString } from './utils/BufferLine';
 import { TerminalOptions, CustomKeyEventHandler, Charset } from './Types';
-import { ITerminal, IBrowser } from "./Interfaces";
+import { ITerminal, IBrowser } from './Interfaces';
 
 // Declare for RequireJS in loadAddon
 declare var define: any;
@@ -192,7 +192,7 @@ export class Terminal extends EventEmitter implements ITerminal {
   private body: HTMLBodyElement;
   private viewportScrollArea: HTMLElement;
   private viewportElement: HTMLElement;
-  private selectionContainer: HTMLElement;
+  public selectionContainer: HTMLElement;
   private helperContainer: HTMLElement;
   private compositionView: HTMLElement;
   private charSizeStyleElement: HTMLStyleElement;
@@ -201,12 +201,13 @@ export class Terminal extends EventEmitter implements ITerminal {
   // in Browser for themselves.
   public browser: IBrowser = <any>Browser;
 
-  private options: TerminalOptions;
+  // TODO: Options should be private, remove from interface in favor of getOption
+  public options: TerminalOptions;
   private colors: any;
 
   // TODO: This can be changed to an enum or boolean, 0 and 1 seem to be the only options
-  private cursorState: number = 0;
-  private cursorHidden: boolean = false;
+  public cursorState: number = 0;
+  public cursorHidden: boolean = false;
   private convertEol: boolean;
   // TODO: This is the data queue for send, improve name and documentation
   private queue: string = '';
@@ -243,7 +244,7 @@ export class Terminal extends EventEmitter implements ITerminal {
   private urxvtMouse;
 
   // misc
-  private children;
+  public children: HTMLElement[];
   private refreshStart;
   private refreshEnd;
   private savedX;
@@ -254,13 +255,13 @@ export class Terminal extends EventEmitter implements ITerminal {
   private readable: boolean = true;
   private writable: boolean = true;
 
-  private defAttr: number = (0 << 18) | (257 << 9) | (256 << 0);
-  private curAttr: number = (0 << 18) | (257 << 9) | (256 << 0);
+  public defAttr: number = (0 << 18) | (257 << 9) | (256 << 0);
+  public curAttr: number = (0 << 18) | (257 << 9) | (256 << 0);
 
-  private params: (string | number)[] = [];
-  private currentParam: string | number = 0;
-  private prefix: string = '';
-  private postfix: string = '';
+  public params: (string | number)[] = [];
+  public currentParam: string | number = 0;
+  public prefix: string = '';
+  public postfix: string = '';
 
   // user input states
   public writeBuffer: string[] = [];
@@ -286,13 +287,13 @@ export class Terminal extends EventEmitter implements ITerminal {
   private inputHandler: InputHandler;
   private parser: Parser;
   private renderer: Renderer;
-  private selectionManager: SelectionManager;;
+  public selectionManager: SelectionManager;;
   private linkifier: Linkifier;
-  private buffers: BufferSet;
-  private buffer: Buffer;
+  public buffers: BufferSet;
+  public buffer: Buffer;
   private viewport: Viewport;
   private compositionHelper: CompositionHelper;
-  private charMeasure: CharMeasure;
+  public charMeasure: CharMeasure;
 
   public cols: number;
   public rows: number;
@@ -328,10 +329,9 @@ export class Terminal extends EventEmitter implements ITerminal {
 
     Object.keys(DEFAULT_OPTIONS).forEach(function(key) {
       if (options[key] == null) {
-        if (Terminal[key] !== DEFAULT_OPTIONS[key]) {
-          options[key] = Terminal[key];
-        }
+        options[key] = DEFAULT_OPTIONS[key];
       }
+      // TODO: We should move away from duplicate options on the Terminal object
       self[key] = options[key];
     });
 
@@ -346,6 +346,7 @@ export class Terminal extends EventEmitter implements ITerminal {
       options.colors = options.colors.concat(
         _colors.slice(16, -2), options.colors.slice(-2));
     }
+    this.options = options;
     this.colors = options.colors;
 
     // this.context = options.context || window;
@@ -598,20 +599,20 @@ export class Terminal extends EventEmitter implements ITerminal {
       self.keyPress(ev);
     }, true);
 
-    on(this.element, 'keyup', function(ev) {
+    on(this.element, 'keyup', (ev) => {
       if (!wasMondifierKeyOnlyEvent(ev)) {
-        this.focus(this);
+        this.focus();
       }
     }, true);
 
-    on(this.textarea, 'keydown', function(ev) {
+    on(this.textarea, 'keydown', (ev) => {
       this.keyDown(ev);
     }, true);
 
-    on(this.textarea, 'keypress', function(ev) {
+    on(this.textarea, 'keypress', (ev) => {
       this.keyPress(ev);
       // Truncate the textarea's value, since it is not needed
-      this.value = '';
+      this.textarea.value = '';
     }, true);
 
     on(this.textarea, 'compositionstart', this.compositionHelper.compositionstart.bind(this.compositionHelper));
@@ -1063,20 +1064,21 @@ export class Terminal extends EventEmitter implements ITerminal {
 
       // x10 compatibility mode can't send button releases
       if (!this.x10Mouse) {
-        on(this.document, 'mouseup', (ev: MouseEvent) => {
+        const handler = (ev: MouseEvent) => {
           sendButton(ev);
           if (this.normalMouse) off(this.document, 'mousemove', sendMove);
-          off(this.document, 'mouseup', up);
+          off(this.document, 'mouseup', handler);
           return this.cancel(ev);
-        });
+        };
+        on(this.document, 'mouseup', handler);
       }
 
       return this.cancel(ev);
     });
 
-    //if (this.normalMouse) {
+    // if (this.normalMouse) {
     //  on(this.document, 'mousemove', sendMove);
-    //}
+    // }
 
     on(el, 'wheel', (ev) => {
       if (!this.mouseEvents) return;
@@ -1149,7 +1151,7 @@ export class Terminal extends EventEmitter implements ITerminal {
   /**
    * Display the cursor element
    */
-  private showCursor() {
+  public showCursor() {
     if (!this.cursorState) {
       this.cursorState = 1;
       this.refresh(this.buffer.y, this.buffer.y);
@@ -2207,7 +2209,7 @@ export class Terminal extends EventEmitter implements ITerminal {
    * Emit the 'data' event and populate the given data.
    * @param {string} data The data to populate in the event.
    */
-  private handler(data: string): void {
+  public handler(data: string): void {
     // Prevents all events to pty process if stdin is disabled
     if (this.options.disableStdin) {
       return;
@@ -2305,7 +2307,7 @@ export class Terminal extends EventEmitter implements ITerminal {
     this.buffer.tabs[this.buffer.x] = true;
   }
 
-  private cancel(ev: Event, force?: boolean) {
+  public cancel(ev: Event, force?: boolean) {
     if (!this.options.cancelEvents && !force) {
       return;
     }
@@ -2368,7 +2370,7 @@ export class Terminal extends EventEmitter implements ITerminal {
  * Helpers
  */
 
-function globalOn(el: HTMLElement | HTMLElement[], type: string, handler: (event: Event) => any, capture?: boolean) {
+function globalOn(el: any, type: string, handler: (event: Event) => any, capture?: boolean) {
   if (!Array.isArray(el)) {
     el = [el];
   }
@@ -2379,8 +2381,8 @@ function globalOn(el: HTMLElement | HTMLElement[], type: string, handler: (event
 // TODO: Remove once everything is typed
 const on = globalOn;
 
-function off(el, type, handler, capture) {
-  el.removeEventListener(type, handler, capture || false);
+function off(el, type, handler, capture: boolean = false) {
+  el.removeEventListener(type, handler, capture);
 }
 
 function inherits(child, parent) {
@@ -2392,7 +2394,7 @@ function inherits(child, parent) {
 }
 
 function indexOf(obj, el) {
-  var i = obj.length;
+  let i = obj.length;
   while (i--) {
     if (obj[i] === el) return i;
   }
@@ -2462,4 +2464,4 @@ function keys(obj) {
 // Terminal.on = on;
 // Terminal.off = off;
 
-module.exports = Terminal;
+// module.exports = Terminal;
