@@ -80,7 +80,7 @@ describe('xterm output comparison', function() {
   var xterm;
 
   beforeEach(function () {
-    xterm = new Terminal(COLS, ROWS);
+    xterm = new Terminal({ cols: COLS, rows: ROWS });
     xterm.refresh = function() {};
     xterm.viewport = {
       syncScrollArea: function() {}

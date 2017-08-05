@@ -779,7 +779,7 @@ export class Terminal extends EventEmitter implements ITerminal {
    * @param {string} addon The name of the addon to load
    * @static
    */
-  public loadAddon(addon, callback) {
+  public static loadAddon(addon, callback) {
     if (typeof exports === 'object' && typeof module === 'object') {
       // CommonJS
       return require('./addons/' + addon + '/' + addon);

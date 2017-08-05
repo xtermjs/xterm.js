@@ -14,7 +14,9 @@ describe('Buffer', () => {
     terminal = <any>{
       cols: 80,
       rows: 24,
-      scrollback: 1000
+      options: {
+        scrollback: 1000
+      }
     };
     buffer = new Buffer(terminal);
   });
