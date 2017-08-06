@@ -1,3 +1,7 @@
+/**
+ * @license MIT
+ */
+
 import { assert } from 'chai';
 import { Viewport } from './Viewport';
 import {BufferSet} from './BufferSet';
@@ -26,7 +30,9 @@ describe('Viewport', () => {
           height: 0
         }
       },
-      scrollback: 10
+      options: {
+        scrollback: 10
+      }
     };
     terminal.buffers = new BufferSet(terminal);
     terminal.buffer = terminal.buffers.active;

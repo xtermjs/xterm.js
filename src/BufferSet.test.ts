@@ -1,21 +1,22 @@
 /**
  * @license MIT
  */
+
 import { assert } from 'chai';
 import { ITerminal } from './Interfaces';
 import { BufferSet } from './BufferSet';
 import { Buffer } from './Buffer';
+import { MockTerminal } from './utils/TestUtils';
 
 describe('BufferSet', () => {
   let terminal: ITerminal;
   let bufferSet: BufferSet;
 
   beforeEach(() => {
-    terminal = <any>{
-      cols: 80,
-      rows: 24,
-      scrollback: 1000
-    };
+    terminal = new MockTerminal();
+    terminal.cols = 80;
+    terminal.rows = 24;
+    terminal.options.scrollback = 1000;
     bufferSet = new BufferSet(terminal);
   });
 

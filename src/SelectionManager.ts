@@ -7,9 +7,10 @@ import * as Browser from './utils/Browser';
 import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
 import { EventEmitter } from './EventEmitter';
-import { ITerminal, ICircularList } from './Interfaces';
+import { ITerminal, ICircularList, ISelectionManager } from './Interfaces';
 import { SelectionModel } from './SelectionModel';
 import { translateBufferLineToString } from './utils/BufferLine';
+import { LineData } from './Types';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -66,7 +67,7 @@ enum SelectionMode {
  * not handled by the SelectionManager but a 'refresh' event is fired when the
  * selection is ready to be redrawn.
  */
-export class SelectionManager extends EventEmitter {
+export class SelectionManager extends EventEmitter implements ISelectionManager {
   protected _model: SelectionModel;
 
   /**
@@ -101,7 +102,7 @@ export class SelectionManager extends EventEmitter {
 
   constructor(
     private _terminal: ITerminal,
-    private _buffer: ICircularList<[number, string, number][]>,
+    private _buffer: ICircularList<LineData>,
     private _rowContainer: HTMLElement,
     private _charMeasure: CharMeasure
   ) {
@@ -116,7 +117,7 @@ export class SelectionManager extends EventEmitter {
   /**
    * Initializes listener variables.
    */
-  private _initListeners() {
+  private _initListeners(): void {
     this._mouseMoveListener = event => this._onMouseMove(<MouseEvent>event);
     this._mouseUpListener = event => this._onMouseUp(<MouseEvent>event);
 
@@ -133,7 +134,7 @@ export class SelectionManager extends EventEmitter {
    * Disables the selection manager. This is useful for when terminal mouse
    * are enabled.
    */
-  public disable() {
+  public disable(): void {
     this.clearSelection();
     this._enabled = false;
   }
@@ -141,7 +142,7 @@ export class SelectionManager extends EventEmitter {
   /**
    * Enable the selection manager.
    */
-  public enable() {
+  public enable(): void {
     this._enabled = true;
   }
 
@@ -150,7 +151,7 @@ export class SelectionManager extends EventEmitter {
    * switched in or out.
    * @param buffer The active buffer.
    */
-  public setBuffer(buffer: ICircularList<[number, string, number][]>): void {
+  public setBuffer(buffer: ICircularList<LineData>): void {
     this._buffer = buffer;
     this.clearSelection();
   }
@@ -267,7 +268,7 @@ export class SelectionManager extends EventEmitter {
    * Handle the buffer being trimmed, adjust the selection position.
    * @param amount The amount the buffer is being trimmed.
    */
-  private _onTrim(amount: number) {
+  private _onTrim(amount: number): void {
     const needsRefresh = this._model.onTrim(amount);
     if (needsRefresh) {
       this.refresh();
@@ -316,7 +317,7 @@ export class SelectionManager extends EventEmitter {
    * Handles te mousedown event, setting up for a new selection.
    * @param event The mousedown event.
    */
-  private _onMouseDown(event: MouseEvent) {
+  private _onMouseDown(event: MouseEvent): void {
     // If we have selection, we want the context menu on right click even if the
     // terminal is in mouse mode.
     if (event.button === 2 && this.hasSelection) {
@@ -455,7 +456,7 @@ export class SelectionManager extends EventEmitter {
    * end of the selection and refreshing the selection.
    * @param event The mousemove event.
    */
-  private _onMouseMove(event: MouseEvent) {
+  private _onMouseMove(event: MouseEvent): void {
     // Record the previous position so we know whether to redraw the selection
     // at the end.
     const previousSelectionEnd = this._model.selectionEnd ? [this._model.selectionEnd[0], this._model.selectionEnd[1]] : null;
@@ -511,7 +512,7 @@ export class SelectionManager extends EventEmitter {
    * The callback that occurs every DRAG_SCROLL_INTERVAL ms that does the
    * scrolling of the viewport.
    */
-  private _dragScroll() {
+  private _dragScroll(): void {
     if (this._dragScrollAmount) {
       this._terminal.scrollDisp(this._dragScrollAmount, false);
       // Re-evaluate selection
@@ -528,7 +529,7 @@ export class SelectionManager extends EventEmitter {
    * Handles the mouseup event, removing the mousedown listeners.
    * @param event The mouseup event.
    */
-  private _onMouseUp(event: MouseEvent) {
+  private _onMouseUp(event: MouseEvent): void {
     this._removeMouseDownListeners();
   }
 

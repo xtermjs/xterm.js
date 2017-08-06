@@ -37,7 +37,7 @@ export class Renderer {
     // Figure out whether boldness affects
     // the character width of monospace fonts.
     if (brokenBold === null) {
-      brokenBold = checkBoldBroken((<any>this._terminal).element);
+      brokenBold = checkBoldBroken(this._terminal.element);
     }
     this._spanElementObjectPool = new DomElementObjectPool('span');
 
@@ -327,7 +327,7 @@ export class Renderer {
    * @param start The selection start.
    * @param end The selection end.
    */
-  public refreshSelection(start: [number, number], end: [number, number]) {
+  public refreshSelection(start: [number, number], end: [number, number]): void {
     // Remove all selections
     while (this._terminal.selectionContainer.children.length) {
       this._terminal.selectionContainer.removeChild(this._terminal.selectionContainer.children[0]);
@@ -385,16 +385,16 @@ export class Renderer {
 
 
 // If bold is broken, we can't use it in the terminal.
-function checkBoldBroken(terminal) {
-  const document = terminal.ownerDocument;
+function checkBoldBroken(terminalElement: HTMLElement): boolean {
+  const document = terminalElement.ownerDocument;
   const el = document.createElement('span');
   el.innerHTML = 'hello world';
-  terminal.appendChild(el);
+  terminalElement.appendChild(el);
   const w1 = el.offsetWidth;
   const h1 = el.offsetHeight;
   el.style.fontWeight = 'bold';
   const w2 = el.offsetWidth;
   const h2 = el.offsetHeight;
-  terminal.removeChild(el);
+  terminalElement.removeChild(el);
   return w1 !== w2 || h1 !== h2;
 }

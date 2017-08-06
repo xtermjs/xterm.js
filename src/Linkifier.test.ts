@@ -1,6 +1,7 @@
 /**
  * @license MIT
  */
+
 import jsdom = require('jsdom');
 import { assert } from 'chai';
 import { ITerminal, ILinkifier } from './Interfaces';
@@ -32,7 +33,7 @@ describe('Linkifier', () => {
     linkifier = new TestLinkifier();
   });
 
-  function addRow(html: string) {
+  function addRow(html: string): void {
     const element = document.createElement('div');
     element.innerHTML = html;
     container.appendChild(element);
@@ -57,24 +58,24 @@ describe('Linkifier', () => {
       document.body.appendChild(container);
     });
 
-    function clickElement(element: Node) {
+    function clickElement(element: Node): void {
       const event = document.createEvent('MouseEvent');
       event.initMouseEvent('click', true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
       element.dispatchEvent(event);
     }
 
-    function assertLinkifiesEntireRow(uri: string, done: MochaDone) {
-        addRow(uri);
-        linkifier.linkifyRow(0);
-        setTimeout(() => {
-          assert.equal((<HTMLElement>rows[0].firstChild).tagName, 'A');
-          assert.equal((<HTMLElement>rows[0].firstChild).textContent, uri);
-          done();
-        }, 0);
+    function assertLinkifiesEntireRow(uri: string, done: MochaDone): void {
+      addRow(uri);
+      linkifier.linkifyRow(0);
+      setTimeout(() => {
+        assert.equal((<HTMLElement>rows[0].firstChild).tagName, 'A');
+        assert.equal((<HTMLElement>rows[0].firstChild).textContent, uri);
+        done();
+      }, 0);
     }
 
     describe('http links', () => {
-      function assertLinkifiesEntireRow(uri: string, done: MochaDone) {
+      function assertLinkifiesEntireRow(uri: string, done: MochaDone): void {
         addRow(uri);
         linkifier.linkifyRow(0);
         setTimeout(() => {
@@ -87,7 +88,7 @@ describe('Linkifier', () => {
     });
 
     describe('link matcher', () => {
-      function assertLinkifiesRow(rowText: string, linkMatcherRegex: RegExp, expectedHtml: string, done: MochaDone) {
+      function assertLinkifiesRow(rowText: string, linkMatcherRegex: RegExp, expectedHtml: string, done: MochaDone): void {
         addRow(rowText);
         linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
         linkifier.linkifyRow(0);

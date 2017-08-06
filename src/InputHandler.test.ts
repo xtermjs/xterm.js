@@ -1,10 +1,17 @@
+/**
+ * @license MIT
+ */
+
 import { assert } from 'chai';
 import { InputHandler } from './InputHandler';
 import { wcwidth } from './InputHandler';
+import { MockInputHandlingTerminal } from './utils/TestUtils';
 
 describe('InputHandler', () => {
   describe('save and restore cursor', () => {
-    let terminal = { buffer: { x: 1, y: 2 } };
+    let terminal = new MockInputHandlingTerminal();
+    terminal.buffer.x = 1;
+    terminal.buffer.y = 2;
     let inputHandler = new InputHandler(terminal);
     // Save cursor position
     inputHandler.saveCursor([]);
@@ -20,51 +27,47 @@ describe('InputHandler', () => {
   });
   describe('setCursorStyle', () => {
     it('should call Terminal.setOption with correct params', () => {
-      let options = {};
-      let terminal = {
-        setOption: (option, value) => options[option] = value
-      };
+      let terminal = new MockInputHandlingTerminal();
       let inputHandler = new InputHandler(terminal);
 
       inputHandler.setCursorStyle([0]);
-      assert.equal(options['cursorStyle'], 'block');
-      assert.equal(options['cursorBlink'], true);
+      assert.equal(terminal.options['cursorStyle'], 'block');
+      assert.equal(terminal.options['cursorBlink'], true);
 
-      options = {};
+      terminal.options = {};
       inputHandler.setCursorStyle([1]);
-      assert.equal(options['cursorStyle'], 'block');
-      assert.equal(options['cursorBlink'], true);
+      assert.equal(terminal.options['cursorStyle'], 'block');
+      assert.equal(terminal.options['cursorBlink'], true);
 
-      options = {};
+      terminal.options = {};
       inputHandler.setCursorStyle([2]);
-      assert.equal(options['cursorStyle'], 'block');
-      assert.equal(options['cursorBlink'], false);
+      assert.equal(terminal.options['cursorStyle'], 'block');
+      assert.equal(terminal.options['cursorBlink'], false);
 
-      options = {};
+      terminal.options = {};
       inputHandler.setCursorStyle([3]);
-      assert.equal(options['cursorStyle'], 'underline');
-      assert.equal(options['cursorBlink'], true);
+      assert.equal(terminal.options['cursorStyle'], 'underline');
+      assert.equal(terminal.options['cursorBlink'], true);
 
-      options = {};
+      terminal.options = {};
       inputHandler.setCursorStyle([4]);
-      assert.equal(options['cursorStyle'], 'underline');
-      assert.equal(options['cursorBlink'], false);
+      assert.equal(terminal.options['cursorStyle'], 'underline');
+      assert.equal(terminal.options['cursorBlink'], false);
 
-      options = {};
+      terminal.options = {};
       inputHandler.setCursorStyle([5]);
-      assert.equal(options['cursorStyle'], 'bar');
-      assert.equal(options['cursorBlink'], true);
+      assert.equal(terminal.options['cursorStyle'], 'bar');
+      assert.equal(terminal.options['cursorBlink'], true);
 
-      options = {};
+      terminal.options = {};
       inputHandler.setCursorStyle([6]);
-      assert.equal(options['cursorStyle'], 'bar');
-      assert.equal(options['cursorBlink'], false);
-
+      assert.equal(terminal.options['cursorStyle'], 'bar');
+      assert.equal(terminal.options['cursorBlink'], false);
     });
   });
 });
 
-const old_wcwidth = (function(opts) {
+const old_wcwidth = (function(opts: {nul: number, control: number}): (ucs: number) => number {
     // extracted from https://www.cl.cam.ac.uk/%7Emgk25/ucs/wcwidth.c
     // combining characters
     const COMBINING = [
@@ -118,7 +121,7 @@ const old_wcwidth = (function(opts) {
         [0xE0100, 0xE01EF]
     ];
     // binary search
-    function bisearch(ucs) {
+    function bisearch(ucs: number): boolean {
         let min = 0;
         let max = COMBINING.length - 1;
         let mid;
@@ -135,23 +138,26 @@ const old_wcwidth = (function(opts) {
         }
         return false;
     }
-    function wcwidth(ucs) {
-        // test for 8-bit control characters
-        if (ucs === 0)
-            return opts.nul;
-        if (ucs < 32 || (ucs >= 0x7f && ucs < 0xa0))
-            return opts.control;
-        // binary search in table of non-spacing characters
-        if (bisearch(ucs))
-            return 0;
-        // if we arrive here, ucs is not a combining or C0/C1 control character
-        if (isWide(ucs)) {
-            return 2;
-        }
-        return 1;
+    function wcwidth(ucs: number): number {
+      // test for 8-bit control characters
+      if (ucs === 0) {
+        return opts.nul;
+      }
+      if (ucs < 32 || (ucs >= 0x7f && ucs < 0xa0)) {
+        return opts.control;
+      }
+      // binary search in table of non-spacing characters
+      if (bisearch(ucs)) {
+        return 0;
+      }
+      // if we arrive here, ucs is not a combining or C0/C1 control character
+      if (isWide(ucs)) {
+        return 2;
+      }
+      return 1;
     }
-    function isWide(ucs) {
-        return (
+    function isWide(ucs: number): boolean {
+      return (
         ucs >= 0x1100 && (
         ucs <= 0x115f ||                // Hangul Jamo init. consonants
         ucs === 0x2329 ||
