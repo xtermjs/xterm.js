@@ -5,6 +5,7 @@ import { assert } from 'chai';
 import { ITerminal } from './Interfaces';
 import { SelectionModel } from './SelectionModel';
 import {BufferSet} from './BufferSet';
+import { MockTerminal } from './utils/TestUtils';
 
 class TestSelectionModel extends SelectionModel {
   constructor(
@@ -22,7 +23,9 @@ describe('SelectionManager', () => {
   let model: TestSelectionModel;
 
   beforeEach(() => {
-    terminal = <any>{ cols: 80, rows: 2, ybase: 0 };
+    terminal = new MockTerminal();
+    terminal.cols = 80;
+    terminal.rows = 2;
     terminal.scrollback = 10;
     terminal.buffers = new BufferSet(terminal);
     terminal.buffer = terminal.buffers.active;

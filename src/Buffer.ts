@@ -2,7 +2,7 @@
  * @license MIT
  */
 
-import { ITerminal } from './Interfaces';
+import { ITerminal, IBuffer } from './Interfaces';
 import { CircularList } from './utils/CircularList';
 
 /**
@@ -12,9 +12,16 @@ import { CircularList } from './utils/CircularList';
  *   - cursor position
  *   - scroll position
  */
-export class Buffer {
-  public readonly lines: CircularList<[number, string, number][]>;
+export class Buffer implements IBuffer {
+  private _lines: CircularList<[number, string, number][]>;
 
+  public ydisp: number;
+  public ybase: number;
+  public y: number;
+  public x: number;
+  public scrollBottom: number;
+  public scrollTop: number;
+  public tabs: any;
   public savedY: number;
   public savedX: number;
 
@@ -27,34 +34,51 @@ export class Buffer {
    * @param {number} x - The cursor's x position after ybase
    */
   constructor(
-    private _terminal: ITerminal,
-    public ydisp: number = 0,
-    public ybase: number = 0,
-    public y: number = 0,
-    public x: number = 0,
-    public scrollBottom: number = 0,
-    public scrollTop: number = 0,
-    public tabs: any = {},
+    private _terminal: ITerminal
   ) {
-    this.lines = new CircularList<[number, string, number][]>(this._terminal.scrollback);
+    this.clear();
+  }
+
+  public get lines(): CircularList<[number, string, number][]> {
+    return this._lines;
+  }
+
+  public fillViewportRows(): void {
+    if (this._lines.length === 0) {
+      let i = this._terminal.rows;
+      while (i--) {
+        this.lines.push(this._terminal.blankLine());
+      }
+    }
+  }
+
+  public clear(): void {
+    this.ydisp = 0;
+    this.ybase = 0;
+    this.y = 0;
+    this.x = 0;
+    this.scrollBottom = 0;
+    this.scrollTop = 0;
+    this.tabs = {};
+    this._lines = new CircularList<[number, string, number][]>(this._terminal.scrollback);
     this.scrollBottom = this._terminal.rows - 1;
   }
 
   public resize(newCols: number, newRows: number): void {
     // Don't resize the buffer if it's empty and hasn't been used yet.
-    if (this.lines.length === 0) {
+    if (this._lines.length === 0) {
       return;
     }
 
     // Deal with columns increasing (we don't do anything when columns reduce)
     if (this._terminal.cols < newCols) {
       const ch: [number, string, number] = [this._terminal.defAttr, ' ', 1]; // does xterm use the default attr?
-      for (let i = 0; i < this.lines.length; i++) {
-        if (this.lines.get(i) === undefined) {
-          this.lines.set(i, this._terminal.blankLine());
+      for (let i = 0; i < this._lines.length; i++) {
+        if (this._lines.get(i) === undefined) {
+          this._lines.set(i, this._terminal.blankLine());
         }
-        while (this.lines.get(i).length < newCols) {
-          this.lines.get(i).push(ch);
+        while (this._lines.get(i).length < newCols) {
+          this._lines.get(i).push(ch);
         }
       }
     }
@@ -63,8 +87,8 @@ export class Buffer {
     let addToY = 0;
     if (this._terminal.rows < newRows) {
       for (let y = this._terminal.rows; y < newRows; y++) {
-        if (this.lines.length < newRows + this.ybase) {
-          if (this.ybase > 0 && this.lines.length <= this.ybase + this.y + addToY + 1) {
+        if (this._lines.length < newRows + this.ybase) {
+          if (this.ybase > 0 && this._lines.length <= this.ybase + this.y + addToY + 1) {
             // There is room above the buffer and there are no empty elements below the line,
             // scroll up
             this.ybase--;
@@ -76,16 +100,16 @@ export class Buffer {
           } else {
             // Add a blank line if there is no buffer left at the top to scroll to, or if there
             // are blank lines after the cursor
-            this.lines.push(this._terminal.blankLine());
+            this._lines.push(this._terminal.blankLine());
           }
         }
       }
     } else { // (this._terminal.rows >= newRows)
       for (let y = this._terminal.rows; y > newRows; y--) {
-        if (this.lines.length > newRows + this.ybase) {
-          if (this.lines.length > this.ybase + this.y + 1) {
+        if (this._lines.length > newRows + this.ybase) {
+          if (this._lines.length > this.ybase + this.y + 1) {
             // The line is a blank line below the cursor, remove it
-            this.lines.pop();
+            this._lines.pop();
           } else {
             // The line is the cursor, scroll down
             this.ybase++;
