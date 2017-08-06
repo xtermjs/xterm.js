@@ -3,25 +3,93 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var CircularList_1 = require("./utils/CircularList");
 var Buffer = (function () {
-    function Buffer(terminal, ydisp, ybase, y, x, scrollBottom, scrollTop, tabs) {
-        if (ydisp === void 0) { ydisp = 0; }
-        if (ybase === void 0) { ybase = 0; }
-        if (y === void 0) { y = 0; }
-        if (x === void 0) { x = 0; }
-        if (scrollBottom === void 0) { scrollBottom = 0; }
-        if (scrollTop === void 0) { scrollTop = 0; }
-        if (tabs === void 0) { tabs = {}; }
-        this.terminal = terminal;
-        this.ydisp = ydisp;
-        this.ybase = ybase;
-        this.y = y;
-        this.x = x;
-        this.scrollBottom = scrollBottom;
-        this.scrollTop = scrollTop;
-        this.tabs = tabs;
-        this.lines = new CircularList_1.CircularList(this.terminal.scrollback);
-        this.scrollBottom = this.terminal.rows - 1;
+    function Buffer(_terminal) {
+        this._terminal = _terminal;
+        this.clear();
     }
+    Object.defineProperty(Buffer.prototype, "lines", {
+        get: function () {
+            return this._lines;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Buffer.prototype.fillViewportRows = function () {
+        if (this._lines.length === 0) {
+            var i = this._terminal.rows;
+            while (i--) {
+                this.lines.push(this._terminal.blankLine());
+            }
+        }
+    };
+    Buffer.prototype.clear = function () {
+        this.ydisp = 0;
+        this.ybase = 0;
+        this.y = 0;
+        this.x = 0;
+        this.scrollBottom = 0;
+        this.scrollTop = 0;
+        this.tabs = {};
+        this._lines = new CircularList_1.CircularList(this._terminal.scrollback);
+        this.scrollBottom = this._terminal.rows - 1;
+    };
+    Buffer.prototype.resize = function (newCols, newRows) {
+        if (this._lines.length === 0) {
+            return;
+        }
+        if (this._terminal.cols < newCols) {
+            var ch = [this._terminal.defAttr, ' ', 1];
+            for (var i = 0; i < this._lines.length; i++) {
+                if (this._lines.get(i) === undefined) {
+                    this._lines.set(i, this._terminal.blankLine());
+                }
+                while (this._lines.get(i).length < newCols) {
+                    this._lines.get(i).push(ch);
+                }
+            }
+        }
+        var addToY = 0;
+        if (this._terminal.rows < newRows) {
+            for (var y = this._terminal.rows; y < newRows; y++) {
+                if (this._lines.length < newRows + this.ybase) {
+                    if (this.ybase > 0 && this._lines.length <= this.ybase + this.y + addToY + 1) {
+                        this.ybase--;
+                        addToY++;
+                        if (this.ydisp > 0) {
+                            this.ydisp--;
+                        }
+                    }
+                    else {
+                        this._lines.push(this._terminal.blankLine());
+                    }
+                }
+            }
+        }
+        else {
+            for (var y = this._terminal.rows; y > newRows; y--) {
+                if (this._lines.length > newRows + this.ybase) {
+                    if (this._lines.length > this.ybase + this.y + 1) {
+                        this._lines.pop();
+                    }
+                    else {
+                        this.ybase++;
+                        this.ydisp++;
+                    }
+                }
+            }
+        }
+        if (this.y >= newRows) {
+            this.y = newRows - 1;
+        }
+        if (addToY) {
+            this.y += addToY;
+        }
+        if (this.x >= newCols) {
+            this.x = newCols - 1;
+        }
+        this.scrollTop = 0;
+        this.scrollBottom = newRows - 1;
+    };
     return Buffer;
 }());
 exports.Buffer = Buffer;
@@ -49,6 +117,7 @@ var BufferSet = (function (_super) {
         var _this = _super.call(this) || this;
         _this._terminal = _terminal;
         _this._normal = new Buffer_1.Buffer(_this._terminal);
+        _this._normal.fillViewportRows();
         _this._alt = new Buffer_1.Buffer(_this._terminal);
         _this._activeBuffer = _this._normal;
         return _this;
@@ -75,12 +144,18 @@ var BufferSet = (function (_super) {
         configurable: true
     });
     BufferSet.prototype.activateNormalBuffer = function () {
+        this._alt.clear();
         this._activeBuffer = this._normal;
         this.emit('activate', this._normal);
     };
     BufferSet.prototype.activateAltBuffer = function () {
+        this._alt.fillViewportRows();
         this._activeBuffer = this._alt;
         this.emit('activate', this._alt);
+    };
+    BufferSet.prototype.resize = function (newCols, newRows) {
+        this._normal.resize(newCols, newRows);
+        this._alt.resize(newCols, newRows);
     };
     return BufferSet;
 }(EventEmitter_1.EventEmitter));
@@ -1024,7 +1099,6 @@ var InputHandler = (function () {
                 case 47:
                 case 1047:
                     this._terminal.buffers.activateAltBuffer();
-                    this._terminal.reset();
                     this._terminal.viewport.syncScrollArea();
                     this._terminal.showCursor();
                     break;
@@ -3596,10 +3670,6 @@ function Terminal(options) {
     this.buffers.on('activate', function (buffer) {
         this._terminal.buffer = buffer;
     });
-    var i = this.rows;
-    while (i--) {
-        this.buffer.lines.push(this.blankLine());
-    }
     if (this.selectionManager) {
         this.selectionManager.setBuffer(this.buffer.lines);
     }
@@ -4775,74 +4845,19 @@ Terminal.prototype.resize = function (x, y) {
         x = 1;
     if (y < 1)
         y = 1;
-    j = this.cols;
-    if (j < x) {
-        ch = [this.defAttr, ' ', 1];
-        i = this.buffer.lines.length;
-        while (i--) {
-            if (this.buffer.lines.get(i) === undefined) {
-                this.buffer.lines.set(i, this.blankLine());
-            }
-            while (this.buffer.lines.get(i).length < x) {
-                this.buffer.lines.get(i).push(ch);
-            }
-        }
+    this.buffers.resize(x, y);
+    while (this.children.length < y) {
+        this.insertRow();
+    }
+    while (this.children.length > y) {
+        el = this.children.shift();
+        if (!el)
+            continue;
+        el.parentNode.removeChild(el);
     }
     this.cols = x;
-    this.setupStops(this.cols);
-    j = this.rows;
-    addToY = 0;
-    if (j < y) {
-        el = this.element;
-        while (j++ < y) {
-            if (this.buffer.lines.length < y + this.buffer.ybase) {
-                if (this.buffer.ybase > 0 && this.buffer.lines.length <= this.buffer.ybase + this.buffer.y + addToY + 1) {
-                    this.buffer.ybase--;
-                    addToY++;
-                    if (this.buffer.ydisp > 0) {
-                        this.buffer.ydisp--;
-                    }
-                }
-                else {
-                    this.buffer.lines.push(this.blankLine());
-                }
-            }
-            if (this.children.length < y) {
-                this.insertRow();
-            }
-        }
-    }
-    else {
-        while (j-- > y) {
-            if (this.buffer.lines.length > y + this.buffer.ybase) {
-                if (this.buffer.lines.length > this.buffer.ybase + this.buffer.y + 1) {
-                    this.buffer.lines.pop();
-                }
-                else {
-                    this.buffer.ybase++;
-                    this.buffer.ydisp++;
-                }
-            }
-            if (this.children.length > y) {
-                el = this.children.shift();
-                if (!el)
-                    continue;
-                el.parentNode.removeChild(el);
-            }
-        }
-    }
     this.rows = y;
-    if (this.buffer.y >= y) {
-        this.buffer.y = y - 1;
-    }
-    if (addToY) {
-        this.buffer.y += addToY;
-    }
-    if (this.buffer.x >= x) {
-        this.buffer.x = x - 1;
-    }
-    this.buffer.scrollTop = 0;
-    this.buffer.scrollBottom = y - 1;
+    this.setupStops(this.cols);
     this.charMeasure.measure();
     this.refresh(0, this.rows - 1);
     this.geometry = [this.cols, this.rows];
@@ -4996,12 +5011,10 @@ Terminal.prototype.reset = function () {
     var customKeyEventHandler = this.customKeyEventHandler;
     var cursorBlinkInterval = this.cursorBlinkInterval;
     var inputHandler = this.inputHandler;
-    var buffers = this.buffers;
     Terminal.call(this, this.options);
     this.customKeyEventHandler = customKeyEventHandler;
     this.cursorBlinkInterval = cursorBlinkInterval;
     this.inputHandler = inputHandler;
-    this.buffers = buffers;
     this.refresh(0, this.rows - 1);
     this.viewport.syncScrollArea();
 };
