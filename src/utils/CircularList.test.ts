@@ -5,6 +5,13 @@
 import { assert } from 'chai';
 import { CircularList } from './CircularList';
 
+class TestCircularList<T> extends CircularList<T> {
+  public get array(): T[] { return this._array; }
+}
+
+const MAX_LENGTH_PADDING = 40;
+const MAX_LENGTH_SHRINK_REBUILD_THRESHOLD = 120;
+
 describe('CircularList', () => {
   describe('push', () => {
     it('should push values onto the array', () => {
@@ -67,6 +74,28 @@ describe('CircularList', () => {
       assert.equal(list.maxLength, 2);
       list.maxLength = 4;
       assert.equal(list.maxLength, 4);
+    });
+
+    it('should resize the backing array\'s size only when it increases beyond the allocated padding', () => {
+      const initSize = 200;
+      const list = new TestCircularList<string>(initSize);
+      const expectedBackingMaxLength = initSize + MAX_LENGTH_PADDING;
+      assert.equal(list.array.length, expectedBackingMaxLength);
+      list.maxLength = expectedBackingMaxLength;
+      assert.equal(list.array.length, expectedBackingMaxLength);
+      list.maxLength = expectedBackingMaxLength + 1;
+      assert.equal(list.array.length, expectedBackingMaxLength + 1 + MAX_LENGTH_PADDING);
+    });
+
+    it('should resize the backing array\'s size only when it reduces beyond the shrink threshold', () => {
+      const initSize = 200;
+      const list = new TestCircularList<string>(initSize);
+      const expectedThresholdMaxLength = initSize + MAX_LENGTH_PADDING - MAX_LENGTH_SHRINK_REBUILD_THRESHOLD;
+      assert.equal(list.array.length, initSize + MAX_LENGTH_PADDING);
+      list.maxLength = expectedThresholdMaxLength;
+      assert.equal(list.array.length, initSize + MAX_LENGTH_PADDING);
+      list.maxLength = expectedThresholdMaxLength - 1;
+      assert.equal(list.array.length, expectedThresholdMaxLength - 1 + MAX_LENGTH_PADDING);
     });
   });
 

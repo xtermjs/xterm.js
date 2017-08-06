@@ -8,33 +8,60 @@
 import { EventEmitter } from '../EventEmitter';
 import { ICircularList } from '../Interfaces';
 
+/**
+ * Padding added to the max length of the CircularList, this allows increasing
+ * the max length of the list without reconstructing the backing array and then
+ * copying over the values.
+ */
+const MAX_LENGTH_PADDING = 40;
+
+const MAX_LENGTH_SHRINK_REBUILD_THRESHOLD = MAX_LENGTH_PADDING * 3;
+
 export class CircularList<T> extends EventEmitter implements ICircularList<T> {
-  private _array: T[];
+  protected _array: T[];
   private _startIndex: number;
   private _length: number;
 
-  constructor(maxLength: number) {
+  constructor(
+    private _maxLength: number
+  ) {
     super();
-    this._array = new Array<T>(maxLength);
+    this._array = new Array<T>(this._maxLength + MAX_LENGTH_PADDING);
     this._startIndex = 0;
     this._length = 0;
   }
 
   public get maxLength(): number {
-    return this._array.length;
+    return this._maxLength;
   }
 
   public set maxLength(newMaxLength: number) {
-    if (this.maxLength === newMaxLength) {
+    // There was no change in maxLength, return early.
+    if (this._maxLength === newMaxLength) {
       return;
     }
+
+    // Ensure the array has padding to expand into.
+    if (this._array.length >= newMaxLength) {
+      // Ensure that the array hasn't shrunk significantly, if it has we
+      // should rebuild the array with a new max length to reclaim some memory.
+      if (this._array.length - newMaxLength <= MAX_LENGTH_SHRINK_REBUILD_THRESHOLD) {
+        // Increase the max length and return.
+        this._maxLength = newMaxLength;
+        return;
+      }
+    }
+
     // Reconstruct array, starting at index 0. Only transfer values from the
-    // indexes 0 to length.
-    let newArray = new Array<T>(newMaxLength);
+    // indexes 0 to length. The new array's size includes some padding that
+    // allows the array's size to increase a little without rebuilding the
+    // array.
+    let newArray = new Array<T>(newMaxLength + MAX_LENGTH_PADDING);
     for (let i = 0; i < Math.min(newMaxLength, this.length); i++) {
       newArray[i] = this._array[this._getCyclicIndex(i)];
     }
     this._array = newArray;
+    this._maxLength = newMaxLength;
     this._startIndex = 0;
   }
 
@@ -92,9 +119,9 @@ export class CircularList<T> extends EventEmitter implements ICircularList<T> {
    */
   public push(value: T): void {
     this._array[this._getCyclicIndex(this._length)] = value;
-    if (this._length === this.maxLength) {
+    if (this._length === this._maxLength) {
       this._startIndex++;
-      if (this._startIndex === this.maxLength) {
+      if (this._startIndex === this._maxLength) {
         this._startIndex = 0;
       }
       this.emit('trim', 1);
