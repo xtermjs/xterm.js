@@ -1100,7 +1100,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       if (!this.mouseEvents) return;
       if (this.x10Mouse || this.vt300Mouse || this.decLocator) return;
       sendButton(ev);
-      return this.cancel(ev);
+      ev.preventDefault();
     });
 
     // allow wheel scrolling in
@@ -2247,6 +2247,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.buffer.tabs[this.buffer.x] = true;
   }
 
+  // TODO: Remove cancel function and cancelEvents option
   public cancel(ev: Event, force?: boolean): boolean {
     if (!this.options.cancelEvents && !force) {
       return;
