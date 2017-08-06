@@ -4,6 +4,7 @@
  * @module xterm/utils/CircularList
  * @license MIT
  */
+
 import { EventEmitter } from '../EventEmitter';
 import { ICircularList } from '../Interfaces';
 

@@ -1,6 +1,7 @@
 /**
  * @license MIT
  */
+
 import jsdom = require('jsdom');
 import { assert } from 'chai';
 import { ITerminal, ICircularList } from './Interfaces';

@@ -1,3 +1,7 @@
+/**
+ * @license MIT
+ */
+
 import { assert } from 'chai';
 import { CompositionHelper } from './CompositionHelper';
 

@@ -15,7 +15,6 @@ import { CharData } from './Types';
  * each function's header comment.
  */
 export class InputHandler implements IInputHandler {
-  // TODO: We want to type _terminal when it's pulled into TS
   constructor(private _terminal: IInputHandlingTerminal) { }
 
   public addChar(char: string, code: number): void {

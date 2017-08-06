@@ -1,6 +1,7 @@
 /**
  * @license MIT
  */
+
 import { assert } from 'chai';
 import { ITerminal } from './Interfaces';
 import { BufferSet } from './BufferSet';

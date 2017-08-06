@@ -1,12 +1,18 @@
+/**
+ * @license MIT
+ */
+
 import { assert } from 'chai';
 import { InputHandler } from './InputHandler';
 import { wcwidth } from './InputHandler';
+import { MockInputHandlingTerminal } from './utils/TestUtils';
 
 describe('InputHandler', () => {
   describe('save and restore cursor', () => {
-    let terminal = { buffer: { x: 1, y: 2 } };
-    // TODO: Create proper mock IInputHandlingTerminal test util object
-    let inputHandler = new InputHandler(<any>terminal);
+    let terminal = new MockInputHandlingTerminal();
+    terminal.buffer.x = 1;
+    terminal.buffer.y = 2;
+    let inputHandler = new InputHandler(terminal);
     // Save cursor position
     inputHandler.saveCursor([]);
     assert.equal(terminal.buffer.x, 1);
@@ -21,46 +27,42 @@ describe('InputHandler', () => {
   });
   describe('setCursorStyle', () => {
     it('should call Terminal.setOption with correct params', () => {
-      let options = {};
-      let terminal = {
-        setOption: (option, value) => options[option] = value
-      };
-      let inputHandler = new InputHandler(<any>terminal);
+      let terminal = new MockInputHandlingTerminal();
+      let inputHandler = new InputHandler(terminal);
 
       inputHandler.setCursorStyle([0]);
-      assert.equal(options['cursorStyle'], 'block');
-      assert.equal(options['cursorBlink'], true);
+      assert.equal(terminal.options['cursorStyle'], 'block');
+      assert.equal(terminal.options['cursorBlink'], true);
 
-      options = {};
+      terminal.options = {};
       inputHandler.setCursorStyle([1]);
-      assert.equal(options['cursorStyle'], 'block');
-      assert.equal(options['cursorBlink'], true);
+      assert.equal(terminal.options['cursorStyle'], 'block');
+      assert.equal(terminal.options['cursorBlink'], true);
 
-      options = {};
+      terminal.options = {};
       inputHandler.setCursorStyle([2]);
-      assert.equal(options['cursorStyle'], 'block');
-      assert.equal(options['cursorBlink'], false);
+      assert.equal(terminal.options['cursorStyle'], 'block');
+      assert.equal(terminal.options['cursorBlink'], false);
 
-      options = {};
+      terminal.options = {};
       inputHandler.setCursorStyle([3]);
-      assert.equal(options['cursorStyle'], 'underline');
-      assert.equal(options['cursorBlink'], true);
+      assert.equal(terminal.options['cursorStyle'], 'underline');
+      assert.equal(terminal.options['cursorBlink'], true);
 
-      options = {};
+      terminal.options = {};
       inputHandler.setCursorStyle([4]);
-      assert.equal(options['cursorStyle'], 'underline');
-      assert.equal(options['cursorBlink'], false);
+      assert.equal(terminal.options['cursorStyle'], 'underline');
+      assert.equal(terminal.options['cursorBlink'], false);
 
-      options = {};
+      terminal.options = {};
       inputHandler.setCursorStyle([5]);
-      assert.equal(options['cursorStyle'], 'bar');
-      assert.equal(options['cursorBlink'], true);
+      assert.equal(terminal.options['cursorStyle'], 'bar');
+      assert.equal(terminal.options['cursorBlink'], true);
 
-      options = {};
+      terminal.options = {};
       inputHandler.setCursorStyle([6]);
-      assert.equal(options['cursorStyle'], 'bar');
-      assert.equal(options['cursorBlink'], false);
-
+      assert.equal(terminal.options['cursorStyle'], 'bar');
+      assert.equal(terminal.options['cursorBlink'], false);
     });
   });
 });
