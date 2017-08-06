@@ -93,7 +93,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   scroll(isWrapped?: boolean): void;
   nextStop(x?: number): number;
   setgLevel(g: number): void;
-  eraseAttr(): any;
+  eraseAttr(): number;
   eraseRight(x: number, y: number): void;
   eraseLine(y: number): void;
   eraseLeft(x: number, y: number): void;
@@ -107,7 +107,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   reset(): void;
   showCursor(): void;
   refresh(start: number, end: number): void;
-  matchColor(r1: number, g1: number, b1: number): any;
+  matchColor(r1: number, g1: number, b1: number): number;
   error(text: string, data?: any): void;
   setOption(key: string, value: any): void;
 }

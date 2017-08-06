@@ -107,7 +107,7 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   setgLevel(g: number): void {
     throw new Error('Method not implemented.');
   }
-  eraseAttr() {
+  eraseAttr(): number {
     throw new Error('Method not implemented.');
   }
   eraseRight(x: number, y: number): void {
@@ -149,7 +149,7 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   refresh(start: number, end: number): void {
     throw new Error('Method not implemented.');
   }
-  matchColor(r1: number, g1: number, b1: number) {
+  matchColor(r1: number, g1: number, b1: number): number {
     throw new Error('Method not implemented.');
   }
   error(text: string, data?: any): void {

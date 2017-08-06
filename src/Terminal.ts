@@ -182,11 +182,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   private compositionView: HTMLElement;
   private charSizeStyleElement: HTMLStyleElement;
 
-  // TODO: This should be removed from the interface, opting for modules to pull
-  // in Browser for themselves.
   public browser: IBrowser = <any>Browser;
 
-  // TODO: Options should be private, remove from interface in favor of getOption
   public options: ITerminalOptions;
   private colors: any;
 
@@ -194,8 +191,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   public cursorState: number;
   public cursorHidden: boolean;
   public convertEol: boolean;
-  // TODO: This is the data queue for send, improve name and documentation
-  private queue: string;
+
+  private sendDataQueue: string;
   private customKeyEventHandler: CustomKeyEventHandler;
   // The ID from a setInterval that tracks the blink animation. This animation
   // is done in JS due to a Chromium bug with CSS animations that thrashed the
@@ -339,7 +336,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     this.cursorState = 0;
     this.cursorHidden = false;
-    this.queue = '';
+    this.sendDataQueue = '';
     this.customKeyEventHandler = null;
     this.cursorBlinkInterval = null;
 
@@ -402,7 +399,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   /**
    * back_color_erase feature for xterm.
    */
-  public eraseAttr(): any {
+  public eraseAttr(): number {
     // if (this.is('screen')) return this.defAttr;
     return (this.defAttr & ~0x1ff) | (this.curAttr & 0x1ff);
   }
@@ -1886,14 +1883,14 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param {string} data
    */
   public send(data: string): void {
-    if (!this.queue) {
+    if (!this.sendDataQueue) {
       setTimeout(() => {
-        this.handler(this.queue);
-        this.queue = '';
+        this.handler(this.sendDataQueue);
+        this.sendDataQueue = '';
       }, 1);
     }
 
-    this.queue += data;
+    this.sendDataQueue += data;
   }
 
   /**
@@ -2261,7 +2258,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
   // Expose to InputHandler
   // TODO: Revise when truecolor is introduced.
-  public matchColor(r1: number, g1: number, b1: number): any {
+  public matchColor(r1: number, g1: number, b1: number): number {
     const hash = (r1 << 16) | (g1 << 8) | b1;
 
     if (matchColorCache[hash] != null) {
@@ -2271,11 +2268,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     let ldiff = Infinity;
     let li = -1;
     let i = 0;
-    let c;
-    let r2;
-    let g2;
-    let b2;
-    let diff;
+    let c: number[];
+    let r2: number;
+    let g2: number;
+    let b2: number;
+    let diff: number;
 
     for (; i < vcolors.length; i++) {
       c = vcolors[i];
@@ -2341,7 +2338,7 @@ function isThirdLevelShift(ev: KeyboardEvent): boolean {
   return thirdLevelKey && (!ev.keyCode || ev.keyCode > 47);
 }
 
-const matchColorCache = {};
+const matchColorCache: {[colorRGBHash: number]: number} = {};
 
 // http://stackoverflow.com/questions/1633828
 const matchColorDistance = function(r1: number, g1: number, b1: number, r2: number, g2: number, b2: number): number {
