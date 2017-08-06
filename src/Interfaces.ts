@@ -48,6 +48,7 @@ export interface ITerminal {
   emit(event: string, data: any);
   reset(): void;
   showCursor(): void;
+  blankLine(cur?: boolean, isWrapped?: boolean);
 }
 
 export interface IBuffer {

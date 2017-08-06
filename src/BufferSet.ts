@@ -65,4 +65,9 @@ export class BufferSet extends EventEmitter implements IBufferSet {
     this._activeBuffer = this._alt;
     this.emit('activate', this._alt);
   }
+
+  public resize(newCols: number, newRows: number): void {
+    this._normal.resize(newCols, newRows);
+    this._alt.resize(newCols, newRows);
+  }
 }
