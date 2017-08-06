@@ -10,6 +10,7 @@ import { EventEmitter } from './EventEmitter';
 import { ITerminal, ICircularList, ISelectionManager } from './Interfaces';
 import { SelectionModel } from './SelectionModel';
 import { translateBufferLineToString } from './utils/BufferLine';
+import { LineData } from './Types';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -101,7 +102,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
   constructor(
     private _terminal: ITerminal,
-    private _buffer: ICircularList<[number, string, number][]>,
+    private _buffer: ICircularList<LineData>,
     private _rowContainer: HTMLElement,
     private _charMeasure: CharMeasure
   ) {
@@ -150,7 +151,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * switched in or out.
    * @param buffer The active buffer.
    */
-  public setBuffer(buffer: ICircularList<[number, string, number][]>): void {
+  public setBuffer(buffer: ICircularList<LineData>): void {
     this._buffer = buffer;
     this.clearSelection();
   }

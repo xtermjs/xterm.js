@@ -1,4 +1,5 @@
 import { ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, IListenerType } from '../Interfaces';
+import { LineData } from '../Types';
 
 export class MockTerminal implements ITerminal {
   options: ITerminalOptions = {};
@@ -47,8 +48,8 @@ export class MockTerminal implements ITerminal {
   showCursor(): void {
     throw new Error('Method not implemented.');
   }
-  blankLine(cur?: boolean, isWrapped?: boolean): [number, string, number][] {
-    const line: [number, string, number][] = [];
+  blankLine(cur?: boolean, isWrapped?: boolean): LineData {
+    const line: LineData = [];
     for (let i = 0; i < this.cols; i++) {
       line.push([0, ' ', 1]);
     }

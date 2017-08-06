@@ -4,6 +4,7 @@
 
 import { ITerminal, IBuffer } from './Interfaces';
 import { CircularList } from './utils/CircularList';
+import { LineData, CharData } from './Types';
 
 /**
  * This class represents a terminal buffer (an internal state of the terminal), where the
@@ -13,7 +14,7 @@ import { CircularList } from './utils/CircularList';
  *   - scroll position
  */
 export class Buffer implements IBuffer {
-  private _lines: CircularList<[number, string, number][]>;
+  private _lines: CircularList<LineData>;
 
   public ydisp: number;
   public ybase: number;
@@ -39,7 +40,7 @@ export class Buffer implements IBuffer {
     this.clear();
   }
 
-  public get lines(): CircularList<[number, string, number][]> {
+  public get lines(): CircularList<LineData> {
     return this._lines;
   }
 
@@ -60,7 +61,7 @@ export class Buffer implements IBuffer {
     this.scrollBottom = 0;
     this.scrollTop = 0;
     this.tabs = {};
-    this._lines = new CircularList<[number, string, number][]>(this._terminal.options.scrollback);
+    this._lines = new CircularList<LineData>(this._terminal.options.scrollback);
     this.scrollBottom = this._terminal.rows - 1;
   }
 
@@ -72,7 +73,7 @@ export class Buffer implements IBuffer {
 
     // Deal with columns increasing (we don't do anything when columns reduce)
     if (this._terminal.cols < newCols) {
-      const ch: [number, string, number] = [this._terminal.defAttr, ' ', 1]; // does xterm use the default attr?
+      const ch: CharData = [this._terminal.defAttr, ' ', 1]; // does xterm use the default attr?
       for (let i = 0; i < this._lines.length; i++) {
         if (this._lines.get(i) === undefined) {
           this._lines.set(i, this._terminal.blankLine());

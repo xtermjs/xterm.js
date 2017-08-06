@@ -10,11 +10,12 @@ import { SelectionManager } from './SelectionManager';
 import { SelectionModel } from './SelectionModel';
 import { BufferSet } from './BufferSet';
 import { MockTerminal } from './utils/TestUtils';
+import { LineData } from './Types';
 
 class TestSelectionManager extends SelectionManager {
   constructor(
     terminal: ITerminal,
-    buffer: ICircularList<[number, string, number][]>,
+    buffer: ICircularList<LineData>,
     rowContainer: HTMLElement,
     charMeasure: CharMeasure
   ) {
@@ -38,7 +39,7 @@ describe('SelectionManager', () => {
   let document: Document;
 
   let terminal: ITerminal;
-  let bufferLines: ICircularList<[number, string, number][]>;
+  let bufferLines: ICircularList<LineData>;
   let rowContainer: HTMLElement;
   let selectionManager: TestSelectionManager;
 
@@ -57,8 +58,8 @@ describe('SelectionManager', () => {
     selectionManager = new TestSelectionManager(terminal, bufferLines, rowContainer, null);
   });
 
-  function stringToRow(text: string): [number, string, number][] {
-    let result: [number, string, number][] = [];
+  function stringToRow(text: string): LineData {
+    let result: LineData = [];
     for (let i = 0; i < text.length; i++) {
       result.push([0, text.charAt(i), 1]);
     }

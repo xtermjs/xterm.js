@@ -5,6 +5,7 @@
 import { IInputHandler, ITerminal, IInputHandlingTerminal } from './Interfaces';
 import { C0 } from './EscapeSequences';
 import { DEFAULT_CHARSET } from './Charsets';
+import { CharData } from './Types';
 
 /**
  * The terminal's standard implementation of IInputHandler, this handles all
@@ -194,7 +195,7 @@ export class InputHandler implements IInputHandler {
 
     const row = this._terminal.buffer.y + this._terminal.buffer.ybase;
     let j = this._terminal.buffer.x;
-    const ch: [number, string, number] = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       this._terminal.buffer.lines.get(row).splice(j++, 0, ch);
@@ -510,7 +511,7 @@ export class InputHandler implements IInputHandler {
     }
 
     const row = this._terminal.buffer.y + this._terminal.buffer.ybase;
-    const ch: [number, string, number] = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1]; // xterm
 
     while (param--) {
       this._terminal.buffer.lines.get(row).splice(this._terminal.buffer.x, 1);
@@ -558,7 +559,7 @@ export class InputHandler implements IInputHandler {
 
     const row = this._terminal.buffer.y + this._terminal.buffer.ybase;
     let j = this._terminal.buffer.x;
-    const ch: [number, string, number] = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       this._terminal.buffer.lines.get(row)[j++] = ch;

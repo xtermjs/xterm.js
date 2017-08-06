@@ -29,7 +29,7 @@ import * as Mouse from './utils/Mouse';
 import { CHARSETS } from './Charsets';
 import { getRawByteCoords } from './utils/Mouse';
 import { translateBufferLineToString } from './utils/BufferLine';
-import { CustomKeyEventHandler, Charset, LinkMatcherHandler, LinkMatcherValidationCallback } from './Types';
+import { CustomKeyEventHandler, Charset, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
 import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions } from './Interfaces';
 
 // Declare for RequireJS in loadAddon
@@ -2056,7 +2056,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     if (!line) {
       return;
     }
-    const ch: [number, string, number] = [this.eraseAttr(), ' ', 1]; // xterm
+    const ch: CharData = [this.eraseAttr(), ' ', 1]; // xterm
     for (; x < this.cols; x++) {
       line[x] = ch;
     }
@@ -2073,7 +2073,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     if (!line) {
       return;
     }
-    const ch: [number, string, number] = [this.eraseAttr(), ' ', 1]; // xterm
+    const ch: CharData = [this.eraseAttr(), ' ', 1]; // xterm
     x++;
     while (x--) {
       line[x] = ch;
@@ -2114,11 +2114,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param {boolean} cur First bunch of data for each "blank" character.
    * @param {boolean} isWrapped Whether the new line is wrapped from the previous line.
    */
-  public blankLine(cur?: boolean, isWrapped?: boolean): [number, string, number][] {
+  public blankLine(cur?: boolean, isWrapped?: boolean): LineData {
     const attr = cur ? this.eraseAttr() : this.defAttr;
 
-    const ch = [attr, ' ', 1]; // width defaults to 1 halfwidth character
-    const line = [];
+    const ch: CharData = [attr, ' ', 1]; // width defaults to 1 halfwidth character
+    const line: LineData = [];
 
     // TODO: It is not ideal that this is a property on an array, a buffer line
     // class should be added that will hold this data and other useful functions.
@@ -2137,7 +2137,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * If cur return the back color xterm feature attribute. Else return defAttr.
    * @param cur
    */
-  public ch(cur?: boolean): [number, string, number] {
+  public ch(cur?: boolean): CharData {
     return cur ? [this.eraseAttr(), ' ', 1] : [this.defAttr, ' ', 1];
   }
 

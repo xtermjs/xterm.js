@@ -3,7 +3,7 @@
  */
 
 import { ILinkMatcherOptions } from './Interfaces';
-import { LinkMatcherHandler, LinkMatcherValidationCallback, Charset } from './Types';
+import { LinkMatcherHandler, LinkMatcherValidationCallback, Charset, LineData } from './Types';
 
 export interface IBrowser {
   isNode: boolean;
@@ -46,7 +46,7 @@ export interface ITerminal extends IEventEmitter {
   log(text: string): void;
   reset(): void;
   showCursor(): void;
-  blankLine(cur?: boolean, isWrapped?: boolean): [number, string, number];
+  blankLine(cur?: boolean, isWrapped?: boolean): LineData;
 }
 
 /**
@@ -97,7 +97,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   eraseRight(x: number, y: number): void;
   eraseLine(y: number): void;
   eraseLeft(x: number, y: number): void;
-  blankLine(cur?: boolean, isWrapped?: boolean): [number, string, number][];
+  blankLine(cur?: boolean, isWrapped?: boolean): LineData;
   prevStop(x?: number): number;
   is(term: string): boolean;
   send(data: string): void;
@@ -134,7 +134,7 @@ export interface ITerminalOptions {
 }
 
 export interface IBuffer {
-  lines: ICircularList<[number, string, number][]>;
+  lines: ICircularList<LineData>;
   ydisp: number;
   ybase: number;
   y: number;
@@ -166,7 +166,7 @@ export interface ISelectionManager {
 
   disable(): void;
   enable(): void;
-  setBuffer(buffer: ICircularList<[number, string, number][]>): void;
+  setBuffer(buffer: ICircularList<LineData>): void;
   setSelection(row: number, col: number, length: number): void;
 }
 
