@@ -438,6 +438,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       throw new Error('No option with key "' + key + '"');
     }
     switch (key) {
+      case 'tabStopWidth':
+        if (value < 1) {
+          console.warn(`tabStopWidth cannot be less than 1, value: ${value}`);
+          return;
+        }
+        break;
       case 'scrollback':
         if (value < this.rows) {
           let msg = 'Setting the scrollback value less than the number of rows ';
