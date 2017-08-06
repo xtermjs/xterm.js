@@ -35,17 +35,6 @@ import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal, ILinkMat
 // Declare for RequireJS in loadAddon
 declare var define: any;
 
-/**
- * Terminal Emulation References:
- *   http://vt100.net/
- *   http://invisible-island.net/xterm/ctlseqs/ctlseqs.txt
- *   http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
- *   http://invisible-island.net/vttest/
- *   http://www.inwap.com/pdp10/ansicode.txt
- *   http://linux.die.net/man/4/console_codes
- *   http://linux.die.net/man/7/urxvt
- */
-
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
 
@@ -2308,15 +2297,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 }
 
-
-
-// TODO: Make sure things work after this is removed
-// each(keys(Terminal.defaults), function(key) {
-//   Terminal[key] = Terminal.defaults[key];
-//   Terminal.options[key] = Terminal.defaults[key];
-// });
-
-
 /**
  * Helpers
  */
@@ -2363,22 +2343,3 @@ function wasMondifierKeyOnlyEvent(ev: KeyboardEvent): boolean {
     ev.keyCode === 17 || // Ctrl
     ev.keyCode === 18; // Alt
 }
-
-/**
- * Expose
- */
-
-// Terminal.translateBufferLineToString = translateBufferLineToString;
-// Terminal.EventEmitter = EventEmitter;
-// Terminal.inherits = inherits;
-
-/**
- * Adds an event listener to the terminal.
- *
- * @param {string} event The name of the event. TODO: Document all event types
- * @param {function} callback The function to call when the event is triggered.
- */
-// Terminal.on = on;
-// Terminal.off = off;
-
-// module.exports = Terminal;
