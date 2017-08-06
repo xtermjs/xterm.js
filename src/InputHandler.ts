@@ -954,7 +954,6 @@ export class InputHandler implements IInputHandler {
         case 47: // alt screen buffer
         case 1047: // alt screen buffer
           this._terminal.buffers.activateAltBuffer();
-          this._terminal.reset();
           this._terminal.viewport.syncScrollArea();
           this._terminal.showCursor();
           break;

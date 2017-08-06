@@ -48,6 +48,7 @@ export interface ITerminal {
   emit(event: string, data: any);
   reset(): void;
   showCursor(): void;
+  blankLine(cur?: boolean, isWrapped?: boolean);
 }
 
 export interface IBuffer {
@@ -92,8 +93,8 @@ export interface ILinkifier {
 export interface ICircularList<T> extends IEventEmitter {
   length: number;
   maxLength: number;
+  forEach: (callbackfn: (value: T, index: number) => void) => void;
 
-  forEach(callbackfn: (value: T, index: number, array: T[]) => void): void;
   get(index: number): T;
   set(index: number, value: T): void;
   push(value: T): void;
