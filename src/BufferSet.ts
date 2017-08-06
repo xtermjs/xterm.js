@@ -76,6 +76,11 @@ export class BufferSet extends EventEmitter implements IBufferSet {
     this.emit('activate', this._alt);
   }
 
+  /**
+   * Resizes both normal and alt buffers, adjusting their data accordingly.
+   * @param newCols The new number of columns.
+   * @param newRows The new number of rows.
+   */
   public resize(newCols: number, newRows: number): void {
     this._normal.resize(newCols, newRows);
     this._alt.resize(newCols, newRows);

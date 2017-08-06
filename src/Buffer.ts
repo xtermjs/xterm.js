@@ -44,6 +44,9 @@ export class Buffer implements IBuffer {
     return this._lines;
   }
 
+  /**
+   * Fills the buffer's viewport with blank lines.
+   */
   public fillViewportRows(): void {
     if (this._lines.length === 0) {
       let i = this._terminal.rows;
@@ -53,6 +56,9 @@ export class Buffer implements IBuffer {
     }
   }
 
+  /**
+   * Clears the buffer to it's initial state, discarding all previous data.
+   */
   public clear(): void {
     this.ydisp = 0;
     this.ybase = 0;
@@ -65,6 +71,11 @@ export class Buffer implements IBuffer {
     this.scrollBottom = this._terminal.rows - 1;
   }
 
+  /**
+   * Resizes the buffer, adjusting its data accordingly.
+   * @param newCols The new number of columns.
+   * @param newRows The new number of rows.
+   */
   public resize(newCols: number, newRows: number): void {
     // Don't resize the buffer if it's empty and hasn't been used yet.
     if (this._lines.length === 0) {
