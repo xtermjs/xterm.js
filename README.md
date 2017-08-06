@@ -63,7 +63,9 @@ Xterm.js works seamlessly in Electron apps and may even work on earlier versions
 
 ### Linux or macOS
 
-Run the following commands:
+First, be sure that a C++ compiler such as GCC-C++ or Clang is installed
+
+Then run the following commands:
 
 ```
 $ npm install
