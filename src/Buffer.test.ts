@@ -24,9 +24,9 @@ describe('Buffer', () => {
   });
 
   describe('constructor', () => {
-    it('should create a CircularList with max length equal to scrollback, for its lines', () => {
+    it('should create a CircularList with max length equal to rows + scrollback, for its lines', () => {
       assert.instanceOf(buffer.lines, CircularList);
-      assert.equal(buffer.lines.maxLength, terminal.options.scrollback);
+      assert.equal(buffer.lines.maxLength, terminal.rows + terminal.options.scrollback);
     });
     it('should set the Buffer\'s scrollBottom value equal to the terminal\'s rows -1', () => {
       assert.equal(buffer.scrollBottom, terminal.rows - 1);

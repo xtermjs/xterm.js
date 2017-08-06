@@ -25,6 +25,9 @@ export class CircularList<T> extends EventEmitter implements ICircularList<T> {
   }
 
   public set maxLength(newMaxLength: number) {
+    if (this.maxLength === newMaxLength) {
+      return;
+    }
     // Reconstruct array, starting at index 0. Only transfer values from the
     // indexes 0 to length.
     let newArray = new Array<T>(newMaxLength);

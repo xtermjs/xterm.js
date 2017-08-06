@@ -67,7 +67,7 @@ export class Buffer implements IBuffer {
     this.scrollBottom = 0;
     this.scrollTop = 0;
     this.tabs = {};
-    this._lines = new CircularList<LineData>(this._terminal.options.scrollback);
+    this._lines = new CircularList<LineData>(this._terminal.rows + this._terminal.options.scrollback);
     this.scrollBottom = this._terminal.rows - 1;
   }
 

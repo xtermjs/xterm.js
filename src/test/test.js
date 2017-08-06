@@ -44,16 +44,6 @@ describe('xterm.js', function() {
   });
 
   describe('setOption', function() {
-    let originalWarn;
-    let warnCallCount;
-    beforeEach(() => {
-      originalWarn = console.warn;
-      warnCallCount = 0;
-      console.warn = () => warnCallCount++;
-    });
-    afterEach(() => {
-      console.warn = originalWarn;
-    });
     it('should set the option correctly', function() {
       xterm.setOption('cursorBlink', true);
       assert.equal(xterm.cursorBlink, true);
@@ -63,12 +53,7 @@ describe('xterm.js', function() {
       assert.equal(xterm.options.cursorBlink, false);
     });
     it('should throw when setting a non-existant option', function() {
-      assert.throws(xterm.setOption.bind(xterm, 'fake', true));
-    });
-    it('should warn and do nothing when scrollback is less than number of rows', function() {
-      xterm.setOption('scrollback', xterm.rows - 1);
-      assert.equal(xterm.getOption('scrollback'), 1000);
-      assert.equal(warnCallCount, 1);
+      assert.throws(() => xterm.setOption('fake', true));
     });
   });
 

@@ -439,18 +439,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     }
     switch (key) {
       case 'scrollback':
-        if (value < this.rows) {
-          let msg = 'Setting the scrollback value less than the number of rows ';
-
-          msg += `(${this.rows}) is not allowed.`;
-
-          console.warn(msg);
-          return;
-        }
-
         if (this.options[key] !== value) {
-          if (this.buffer.lines.length > value) {
-            const amountToTrim = this.buffer.lines.length - value;
+          const newBufferLength = this.rows + value;
+          if (this.buffer.lines.length > newBufferLength) {
+            const amountToTrim = this.buffer.lines.length - newBufferLength;
             const needsRefresh = (this.buffer.ydisp - amountToTrim < 0);
             this.buffer.lines.trimStart(amountToTrim);
             this.buffer.ybase = Math.max(this.buffer.ybase - amountToTrim, 0);
@@ -459,8 +451,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
               this.refresh(0, this.rows - 1);
             }
           }
-          this.buffer.lines.maxLength = value;
-          this.viewport.syncScrollArea();
         }
         break;
     }
@@ -472,6 +462,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         this.element.classList.toggle(`xterm-cursor-style-block`, value === 'block');
         this.element.classList.toggle(`xterm-cursor-style-underline`, value === 'underline');
         this.element.classList.toggle(`xterm-cursor-style-bar`, value === 'bar');
+        break;
+      case 'scrollback':
+        this.buffers.refreshMaxLength(this.rows);
+        this.viewport.syncScrollArea();
         break;
       case 'tabStopWidth': this.setupStops(); break;
     }
@@ -1933,10 +1927,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   public resize(x: number, y: number): void {
     if (isNaN(x) || isNaN(y)) {
       return;
-    }
-
-    if (y > this.getOption('scrollback')) {
-      this.setOption('scrollback', y);
     }
 
     let line;

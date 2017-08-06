@@ -77,6 +77,17 @@ export class BufferSet extends EventEmitter implements IBufferSet {
   }
 
   /**
+   * Refreshes the max length of the buffer set, this should be called whenever
+   * terminal rows or scrollback changes.
+   * @param rows The number of terminal rows.
+   */
+  public refreshMaxLength(rows: number): void {
+    this._normal.lines.maxLength = rows + this._terminal.options.scrollback;
+    // TODO: The alt buffer should never have scrollback, see https://github.com/sourcelair/xterm.js/issues/802
+    this._alt.lines.maxLength = rows + this._terminal.options.scrollback;
+  }
+
+  /**
    * Resizes both normal and alt buffers, adjusting their data accordingly.
    * @param newCols The new number of columns.
    * @param newRows The new number of rows.
@@ -84,5 +95,6 @@ export class BufferSet extends EventEmitter implements IBufferSet {
   public resize(newCols: number, newRows: number): void {
     this._normal.resize(newCols, newRows);
     this._alt.resize(newCols, newRows);
+    this.refreshMaxLength(newRows);
   }
 }
