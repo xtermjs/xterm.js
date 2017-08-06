@@ -32,14 +32,24 @@ describe('Buffer', () => {
     });
   });
 
+  describe('fillViewportRows', () => {
+    it('should fill the buffer with blank lines based on the size of the viewport', () => {
+      const blankLineChar = terminal.blankLine()[0];
+      buffer.fillViewportRows();
+      assert.equal(buffer.lines.length, INIT_ROWS);
+      for (let y = 0; y < INIT_ROWS; y++) {
+        assert.equal(buffer.lines.get(y).length, INIT_COLS);
+        for (let x = 0; x < INIT_COLS; x++) {
+          assert.deepEqual(buffer.lines.get(y)[x], blankLineChar);
+        }
+      }
+    });
+  });
+
   describe('resize', () => {
     describe('column size is reduced', () => {
       it('should not trim the data in the buffer', () => {
         buffer.fillViewportRows();
-        for (let i = 0; i < INIT_ROWS; i++) {
-          assert.equal(buffer.lines.length, INIT_ROWS);
-          assert.equal(buffer.lines.get(i).length, INIT_COLS);
-        }
         buffer.resize(INIT_COLS / 2, INIT_ROWS);
         assert.equal(buffer.lines.length, INIT_ROWS);
         for (let i = 0; i < INIT_ROWS; i++) {
@@ -51,10 +61,6 @@ describe('Buffer', () => {
     describe('column size is increased', () => {
       it('should add pad columns', () => {
         buffer.fillViewportRows();
-        assert.equal(buffer.lines.length, INIT_ROWS);
-        for (let i = 0; i < INIT_ROWS; i++) {
-          assert.equal(buffer.lines.get(i).length, INIT_COLS);
-        }
         buffer.resize(INIT_COLS + 10, INIT_ROWS);
         assert.equal(buffer.lines.length, INIT_ROWS);
         for (let i = 0; i < INIT_ROWS; i++) {
@@ -66,14 +72,12 @@ describe('Buffer', () => {
     describe('row size reduced', () => {
       it('should trim blank lines from the end', () => {
         buffer.fillViewportRows();
-        assert.equal(buffer.lines.length, INIT_ROWS);
         buffer.resize(INIT_COLS, INIT_ROWS - 10);
         assert.equal(buffer.lines.length, INIT_ROWS - 10);
       });
 
       it('should move the viewport down when it\'s at the end', () => {
         buffer.fillViewportRows();
-        assert.equal(buffer.lines.length, INIT_ROWS);
         // Set cursor y to have 5 blank lines below it
         buffer.y = INIT_ROWS - 5 - 1;
         buffer.resize(INIT_COLS, INIT_ROWS - 10);
@@ -90,7 +94,6 @@ describe('Buffer', () => {
         it('should add blank lines to end', () => {
           buffer.fillViewportRows();
           assert.equal(buffer.ydisp, 0);
-          assert.equal(buffer.lines.length, INIT_ROWS);
           buffer.resize(INIT_COLS, INIT_ROWS + 10);
           assert.equal(buffer.ydisp, 0);
           assert.equal(buffer.lines.length, INIT_ROWS + 10);
