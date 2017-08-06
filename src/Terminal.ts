@@ -391,11 +391,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       this.buffer = buffer;
     });
 
-    let i = this.rows;
-
-    while (i--) {
-      this.buffer.lines.push(this.blankLine());
-    }
     // Ensure the selection manager has the correct buffer
     if (this.selectionManager) {
       this.selectionManager.setBuffer(this.buffer.lines);
@@ -1965,86 +1960,21 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     if (x < 1) x = 1;
     if (y < 1) y = 1;
 
-    // resize cols
-    j = this.cols;
-    if (j < x) {
-      ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
-      i = this.buffer.lines.length;
-      while (i--) {
-        if (this.buffer.lines.get(i) === undefined) {
-          this.buffer.lines.set(i, this.blankLine());
-        }
-        while (this.buffer.lines.get(i).length < x) {
-          this.buffer.lines.get(i).push(ch);
-        }
-      }
+    this.buffers.resize(x, y);
+
+    // Adjust rows in the DOM to accurately reflect the new dimensions
+    while (this.children.length < y) {
+      this.insertRow();
+    }
+    while (this.children.length > y) {
+      el = this.children.shift();
+      if (!el) continue;
+      el.parentNode.removeChild(el);
     }
 
     this.cols = x;
-    this.setupStops(this.cols);
-
-    // resize rows
-    j = this.rows;
-    addToY = 0;
-    if (j < y) {
-      el = this.element;
-      while (j++ < y) {
-        // y is rows, not this.buffer.y
-        if (this.buffer.lines.length < y + this.buffer.ybase) {
-          if (this.buffer.ybase > 0 && this.buffer.lines.length <= this.buffer.ybase + this.buffer.y + addToY + 1) {
-            // There is room above the buffer and there are no empty elements below the line,
-            // scroll up
-            this.buffer.ybase--;
-            addToY++;
-            if (this.buffer.ydisp > 0) {
-              // Viewport is at the top of the buffer, must increase downwards
-              this.buffer.ydisp--;
-            }
-          } else {
-            // Add a blank line if there is no buffer left at the top to scroll to, or if there
-            // are blank lines after the cursor
-            this.buffer.lines.push(this.blankLine());
-          }
-        }
-        if (this.children.length < y) {
-          this.insertRow();
-        }
-      }
-    } else { // (j > y)
-      while (j-- > y) {
-        if (this.buffer.lines.length > y + this.buffer.ybase) {
-          if (this.buffer.lines.length > this.buffer.ybase + this.buffer.y + 1) {
-            // The line is a blank line below the cursor, remove it
-            this.buffer.lines.pop();
-          } else {
-            // The line is the cursor, scroll down
-            this.buffer.ybase++;
-            this.buffer.ydisp++;
-          }
-        }
-        if (this.children.length > y) {
-          el = this.children.shift();
-          if (!el) continue;
-          el.parentNode.removeChild(el);
-        }
-      }
-    }
     this.rows = y;
-
-    // Make sure that the cursor stays on screen
-    if (this.buffer.y >= y) {
-      this.buffer.y = y - 1;
-    }
-    if (addToY) {
-      this.buffer.y += addToY;
-    }
-
-    if (this.buffer.x >= x) {
-      this.buffer.x = x - 1;
-    }
-
-    this.buffer.scrollTop = 0;
-    this.buffer.scrollBottom = y - 1;
+    this.setupStops(this.cols);
 
     this.charMeasure.measure();
 
