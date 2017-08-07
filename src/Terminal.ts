@@ -759,20 +759,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // Initialize global actions that need to be taken on the document.
     this.initGlobal();
 
-    /**
-     * Automatic focus functionality.
-     * TODO: Default to `false` starting with xterm.js 3.0.
-     */
-    if (typeof focus === 'undefined') {
-      let message = 'You did not pass the `focus` argument in `Terminal.prototype.open()`.\n';
-
-      message += 'The `focus` argument now defaults to `true` but starting with xterm.js 3.0 ';
-      message += 'it will default to `false`.';
-
-      console.warn(message);
-      focus = true;
-    }
-
     if (focus) {
       this.focus();
     }
