@@ -1359,18 +1359,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 
   /**
-   * DEPRECATED: only for backward compatibility. Please use attachCustomKeyEventHandler() instead.
-   * @param {function} customKeydownHandler The custom KeyboardEvent handler to attach. This is a
-   *   function that takes a KeyboardEvent, allowing consumers to stop propogation and/or prevent
-   *   the default action. The function returns whether the event should be processed by xterm.js.
-   */
-  public attachCustomKeydownHandler(customKeydownHandler: CustomKeyEventHandler): void {
-    const message = 'attachCustomKeydownHandler() is DEPRECATED and will be removed soon. Please use attachCustomKeyEventHandler() instead.';
-    console.warn(message);
-    this.attachCustomKeyEventHandler(customKeydownHandler);
-  }
-
-  /**
    * Attaches a custom key event handler which is run before keys are processed, giving consumers of
    * xterm.js ultimate control as to what keys should be processed by the terminal and what keys
    * should not.

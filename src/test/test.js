@@ -239,7 +239,7 @@ describe('xterm.js', function() {
           xterm.writeln('test');
         }
         var startYDisp = (xterm.rows * 2) + 1;
-        xterm.attachCustomKeydownHandler(function () {
+        xterm.attachCustomKeyEventHandler(function () {
           return false;
         });
 
