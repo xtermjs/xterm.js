@@ -28,7 +28,6 @@ import * as Browser from './utils/Browser';
 import * as Mouse from './utils/Mouse';
 import { CHARSETS } from './Charsets';
 import { getRawByteCoords } from './utils/Mouse';
-import { translateBufferLineToString } from './utils/BufferLine';
 import { CustomKeyEventHandler, Charset, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData, Option, StringOption, BooleanOption, StringArrayOption, NumberOption, GeometryOption, HandlerOption } from './Types';
 import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions } from './Interfaces';
 
@@ -379,7 +378,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     // Ensure the selection manager has the correct buffer
     if (this.selectionManager) {
-      this.selectionManager.setBuffer(this.buffer.lines);
+      this.selectionManager.setBuffer(this.buffer);
     }
 
     this.setupStops();
@@ -744,7 +743,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
     this.renderer = new Renderer(this);
-    this.selectionManager = new SelectionManager(this, this.buffer.lines, this.rowContainer, this.charMeasure);
+    this.selectionManager = new SelectionManager(this, this.buffer, this.rowContainer, this.charMeasure);
     this.selectionManager.on('refresh', data => {
       this.renderer.refreshSelection(data.start, data.end);
     });
