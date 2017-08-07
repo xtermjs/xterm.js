@@ -154,12 +154,12 @@ export class Buffer implements IBuffer {
     // would otherwise cut data from the bottom of the buffer.
     if (newMaxLength < this._lines.maxLength) {
       // Trim from the top of the buffer and adjust ybase and ydisp.
-      // const amountToTrim = this._lines.length - newMaxLength;
-      // if (amountToTrim > 0) {
-      //   this._lines.trimStart(amountToTrim);
-      //   this.ybase = Math.max(this.ybase - amountToTrim, 0);
-      //   this.ydisp = Math.max(this.ydisp - amountToTrim, 0);
-      // }
+      const amountToTrim = this._lines.length - newMaxLength;
+      if (amountToTrim > 0) {
+        this._lines.trimStart(amountToTrim);
+        this.ybase = Math.max(this.ybase - amountToTrim, 0);
+        this.ydisp = Math.max(this.ydisp - amountToTrim, 0);
+      }
       this._lines.maxLength = newMaxLength;
     }
 

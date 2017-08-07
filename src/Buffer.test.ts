@@ -88,6 +88,21 @@ describe('Buffer', () => {
         assert.equal(buffer.ydisp, 5);
         assert.equal(buffer.ybase, 5);
       });
+
+      describe('no scrollback', () => {
+        it('should trim from the top of the buffer when the cursor reaches the bottom', () => {
+          terminal.options.scrollback = 0;
+          buffer = new Buffer(terminal, false);
+          assert.equal(buffer.lines.maxLength, INIT_ROWS);
+          buffer.y = INIT_ROWS - 1;
+          buffer.fillViewportRows();
+          buffer.lines.get(5)[0][1] = 'a';
+          buffer.lines.get(INIT_ROWS - 1)[0][1] = 'b';
+          buffer.resize(INIT_COLS, INIT_ROWS - 5);
+          assert.equal(buffer.lines.get(0)[0][1], 'a');
+          assert.equal(buffer.lines.get(INIT_ROWS - 1 - 5)[0][1], 'b');
+        });
+      });
     });
 
     describe('row size increased', () => {
