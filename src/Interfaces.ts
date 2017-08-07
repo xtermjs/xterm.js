@@ -144,6 +144,7 @@ export interface IBuffer {
   scrollTop: number;
   savedY: number;
   savedX: number;
+  translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string;
 }
 
 export interface IBufferSet {
@@ -166,7 +167,7 @@ export interface ISelectionManager {
 
   disable(): void;
   enable(): void;
-  setBuffer(buffer: ICircularList<LineData>): void;
+  setBuffer(buffer: IBuffer): void;
   setSelection(row: number, col: number, length: number): void;
 }
 

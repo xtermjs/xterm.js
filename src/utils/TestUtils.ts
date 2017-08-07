@@ -180,4 +180,7 @@ export class MockBuffer implements IBuffer {
   scrollTop: number;
   savedY: number;
   savedX: number;
+  translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string {
+    throw new Error('Method not implemented.');
+  }
 }

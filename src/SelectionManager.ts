@@ -7,10 +7,10 @@ import * as Browser from './utils/Browser';
 import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
 import { EventEmitter } from './EventEmitter';
-import { ITerminal, ICircularList, ISelectionManager } from './Interfaces';
+import { ITerminal, ICircularList, ISelectionManager, IBuffer } from './Interfaces';
 import { SelectionModel } from './SelectionModel';
-import { translateBufferLineToString } from './utils/BufferLine';
 import { LineData } from './Types';
+import { CHAR_DATA_WIDTH_INDEX } from './Buffer';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -33,11 +33,6 @@ const DRAG_SCROLL_INTERVAL = 50;
  * double click to select work logic.
  */
 const WORD_SEPARATORS = ' ()[]{}\'"';
-
-// TODO: Move these constants elsewhere, they belong in a buffer or buffer
-//       data/line class.
-const LINE_DATA_CHAR_INDEX = 1;
-const LINE_DATA_WIDTH_INDEX = 2;
 
 const NON_BREAKING_SPACE_CHAR = String.fromCharCode(160);
 const ALL_NON_BREAKING_SPACE_REGEX = new RegExp(NON_BREAKING_SPACE_CHAR, 'g');
@@ -102,7 +97,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
   constructor(
     private _terminal: ITerminal,
-    private _buffer: ICircularList<LineData>,
+    private _buffer: IBuffer,
     private _rowContainer: HTMLElement,
     private _charMeasure: CharMeasure
   ) {
@@ -127,7 +122,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     // reverseIndex) and delete in a splice is only ever used when the same
     // number of elements was just added. Given this is could actually be
     // beneficial to leave the selection as is for these cases.
-    this._buffer.on('trim', (amount: number) => this._onTrim(amount));
+    this._buffer.lines.on('trim', (amount: number) => this._onTrim(amount));
   }
 
   /**
@@ -151,7 +146,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * switched in or out.
    * @param buffer The active buffer.
    */
-  public setBuffer(buffer: ICircularList<LineData>): void {
+  public setBuffer(buffer: IBuffer): void {
     this._buffer = buffer;
     this.clearSelection();
   }
@@ -184,12 +179,12 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     // Get first row
     const startRowEndCol = start[1] === end[1] ? end[0] : null;
     let result: string[] = [];
-    result.push(translateBufferLineToString(this._buffer.get(start[1]), true, start[0], startRowEndCol));
+    result.push(this._buffer.translateBufferLineToString(start[1], true, start[0], startRowEndCol));
 
     // Get middle rows
     for (let i = start[1] + 1; i <= end[1] - 1; i++) {
-      const bufferLine = this._buffer.get(i);
-      const lineText = translateBufferLineToString(bufferLine, true);
+      const bufferLine = this._buffer.lines.get(i);
+      const lineText = this._buffer.translateBufferLineToString(i, true);
       if ((<any>bufferLine).isWrapped) {
         result[result.length - 1] += lineText;
       } else {
@@ -199,8 +194,8 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
     // Get final row
     if (start[1] !== end[1]) {
-      const bufferLine = this._buffer.get(end[1]);
-      const lineText = translateBufferLineToString(bufferLine, true, 0, end[0]);
+      const bufferLine = this._buffer.lines.get(end[1]);
+      const lineText = this._buffer.translateBufferLineToString(end[1], true, 0, end[0]);
       if ((<any>bufferLine).isWrapped) {
         result[result.length - 1] += lineText;
       } else {
@@ -413,7 +408,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     this._model.selectionEnd = null;
 
     // Ensure the line exists
-    const line = this._buffer.get(this._model.selectionStart[1]);
+    const line = this._buffer.lines.get(this._model.selectionStart[1]);
     if (!line) {
       return;
     }
@@ -421,7 +416,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     // If the mouse is over the second half of a wide character, adjust the
     // selection to cover the whole character
     const char = line[this._model.selectionStart[0]];
-    if (char[LINE_DATA_WIDTH_INDEX] === 0) {
+    if (char[CHAR_DATA_WIDTH_INDEX] === 0) {
       this._model.selectionStart[0]++;
     }
   }
@@ -493,9 +488,9 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     // If the character is a wide character include the cell to the right in the
     // selection. Note that selections at the very end of the line will never
     // have a character.
-    if (this._model.selectionEnd[1] < this._buffer.length) {
-      const char = this._buffer.get(this._model.selectionEnd[1])[this._model.selectionEnd[0]];
-      if (char && char[2] === 0) {
+    if (this._model.selectionEnd[1] < this._buffer.lines.length) {
+      const char = this._buffer.lines.get(this._model.selectionEnd[1])[this._model.selectionEnd[0]];
+      if (char && char[CHAR_DATA_WIDTH_INDEX] === 0) {
         this._model.selectionEnd[0]++;
       }
     }
@@ -542,7 +537,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     let charIndex = coords[0];
     for (let i = 0; coords[0] >= i; i++) {
       const char = bufferLine[i];
-      if (char[LINE_DATA_WIDTH_INDEX] === 0) {
+      if (char[CHAR_DATA_WIDTH_INDEX] === 0) {
         charIndex--;
       }
     }
@@ -562,12 +557,12 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param coords The coordinates to get the word at.
    */
   private _getWordAt(coords: [number, number]): IWordPosition {
-    const bufferLine = this._buffer.get(coords[1]);
+    const bufferLine = this._buffer.lines.get(coords[1]);
     if (!bufferLine) {
       return null;
     }
 
-    const line = translateBufferLineToString(bufferLine, false);
+    const line = this._buffer.translateBufferLineToString(coords[1], false);
 
     // Get actual index, taking into consideration wide characters
     let endIndex = this._convertViewportColToCharacterIndex(bufferLine, coords);
@@ -595,17 +590,17 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
       let endCol = coords[0];
       // Consider the initial position, skip it and increment the wide char
       // variable
-      if (bufferLine[startCol][LINE_DATA_WIDTH_INDEX] === 0) {
+      if (bufferLine[startCol][CHAR_DATA_WIDTH_INDEX] === 0) {
         leftWideCharCount++;
         startCol--;
       }
-      if (bufferLine[endCol][LINE_DATA_WIDTH_INDEX] === 2) {
+      if (bufferLine[endCol][CHAR_DATA_WIDTH_INDEX] === 2) {
         rightWideCharCount++;
         endCol++;
       }
       // Expand the string in both directions until a space is hit
       while (startIndex > 0 && !this._isCharWordSeparator(line.charAt(startIndex - 1))) {
-        if (bufferLine[startCol - 1][LINE_DATA_WIDTH_INDEX] === 0) {
+        if (bufferLine[startCol - 1][CHAR_DATA_WIDTH_INDEX] === 0) {
           // If the next character is a wide char, record it and skip the column
           leftWideCharCount++;
           startCol--;
@@ -614,7 +609,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
         startCol--;
       }
       while (endIndex + 1 < line.length && !this._isCharWordSeparator(line.charAt(endIndex + 1))) {
-        if (bufferLine[endCol + 1][LINE_DATA_WIDTH_INDEX] === 2) {
+        if (bufferLine[endCol + 1][CHAR_DATA_WIDTH_INDEX] === 2) {
           // If the next character is a wide char, record it and skip the column
           rightWideCharCount++;
           endCol++;
