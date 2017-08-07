@@ -464,7 +464,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         this.element.classList.toggle(`xterm-cursor-style-bar`, value === 'bar');
         break;
       case 'scrollback':
-        this.buffers.refreshMaxLength(this.rows);
+        this.buffers.resize(this.cols, this.rows);
         this.viewport.syncScrollArea();
         break;
       case 'tabStopWidth': this.setupStops(); break;
@@ -1177,17 +1177,16 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     let row;
 
     // Make room for the new row in lines
-    if (this.buffer.lines.length === this.buffer.lines.maxLength) {
+    const bufferNeedsTrimming = this.buffer.lines.length === this.buffer.lines.maxLength;
+    if (bufferNeedsTrimming) {
       this.buffer.lines.trimStart(1);
       this.buffer.ybase--;
-      if (this.buffer.ydisp !== 0) {
-        this.buffer.ydisp--;
-      }
+      this.buffer.ydisp = Math.max(this.buffer.ydisp - 1, 0);
     }
 
     this.buffer.ybase++;
 
-    // TODO: Why is this done twice?
+    // Scroll the viewport down to the bottom if the user is not scrolling
     if (!this.userScrolling) {
       this.buffer.ydisp = this.buffer.ybase;
     }

@@ -20,7 +20,7 @@ describe('Buffer', () => {
     terminal.cols = INIT_COLS;
     terminal.rows = INIT_ROWS;
     terminal.options.scrollback = 1000;
-    buffer = new Buffer(terminal);
+    buffer = new Buffer(terminal, false);
   });
 
   describe('constructor', () => {
@@ -143,6 +143,22 @@ describe('Buffer', () => {
           assert.equal(buffer.lines.length, INIT_ROWS + 10);
         });
       });
+    });
+  });
+
+  describe('alt buffer', () => {
+    it('should always have a scrollback of 0', () => {
+      assert.equal(terminal.options.scrollback, 1000);
+      // Test size on initialization
+      buffer = new Buffer(terminal, true);
+      buffer.fillViewportRows();
+      assert.equal(buffer.lines.maxLength, INIT_ROWS);
+      // Test size on buffer increase
+      buffer.resize(INIT_COLS, INIT_ROWS * 2);
+      assert.equal(buffer.lines.maxLength, INIT_ROWS * 2);
+      // Test size on buffer decrease
+      buffer.resize(INIT_COLS, INIT_ROWS / 2);
+      assert.equal(buffer.lines.maxLength, INIT_ROWS / 2);
     });
   });
 });

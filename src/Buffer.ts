@@ -28,20 +28,32 @@ export class Buffer implements IBuffer {
 
   /**
    * Create a new Buffer.
-   * @param {Terminal} _terminal - The terminal the Buffer will belong to
-   * @param {number} ydisp - The scroll position of the Buffer in the viewport
-   * @param {number} ybase - The scroll position of the y cursor (ybase + y = the y position within the Buffer)
-   * @param {number} y - The cursor's y position after ybase
-   * @param {number} x - The cursor's x position after ybase
+   * @param _terminal The terminal the Buffer will belong to.
+   * @param _isAltBuffer Whether the buffer is the alt buffer.
    */
   constructor(
-    private _terminal: ITerminal
+    private _terminal: ITerminal,
+    private _isAltBuffer: boolean
   ) {
     this.clear();
   }
 
   public get lines(): CircularList<LineData> {
     return this._lines;
+  }
+
+  /**
+   * Gets the correct buffer length based on the rows provided, the terminal's
+   * scrollback and whether this is an alt buffer.
+   * @param rows The terminal rows to use in the calculation.
+   */
+  private _getCorrectBufferLength(rows: number): number {
+    // The alt buffer should never have scrollback.
+    // See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-The-Alternate-Screen-Buffer
+    if (this._isAltBuffer) {
+      return rows;
+    }
+    return rows + this._terminal.options.scrollback;
   }
 
   /**
@@ -67,7 +79,7 @@ export class Buffer implements IBuffer {
     this.scrollBottom = 0;
     this.scrollTop = 0;
     this.tabs = {};
-    this._lines = new CircularList<LineData>(this._terminal.rows + this._terminal.options.scrollback);
+    this._lines = new CircularList<LineData>(this._getCorrectBufferLength(this._terminal.rows));
     this.scrollBottom = this._terminal.rows - 1;
   }
 
@@ -80,6 +92,13 @@ export class Buffer implements IBuffer {
     // Don't resize the buffer if it's empty and hasn't been used yet.
     if (this._lines.length === 0) {
       return;
+    }
+
+    // Increase max length if needed before adjustments to allow space to fill
+    // as required.
+    const newMaxLength = this._getCorrectBufferLength(newRows);
+    if (newMaxLength > this._lines.maxLength) {
+      this._lines.maxLength = newMaxLength;
     }
 
     // Deal with columns increasing (we don't do anything when columns reduce)
@@ -129,6 +148,19 @@ export class Buffer implements IBuffer {
           }
         }
       }
+    }
+
+    // Reduce max length if needed after adjustments, this is done after as it
+    // would otherwise cut data from the bottom of the buffer.
+    if (newMaxLength < this._lines.maxLength) {
+      // Trim from the top of the buffer and adjust ybase and ydisp.
+      // const amountToTrim = this._lines.length - newMaxLength;
+      // if (amountToTrim > 0) {
+      //   this._lines.trimStart(amountToTrim);
+      //   this.ybase = Math.max(this.ybase - amountToTrim, 0);
+      //   this.ydisp = Math.max(this.ydisp - amountToTrim, 0);
+      // }
+      this._lines.maxLength = newMaxLength;
     }
 
     // Make sure that the cursor stays on screen
