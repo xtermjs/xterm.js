@@ -6,8 +6,8 @@ import { ITerminal, IBuffer } from './Interfaces';
 import { CircularList } from './utils/CircularList';
 import { LineData, CharData } from './Types';
 
-const CHAR_DATA_CHAR_INDEX = 1;
-const CHAR_DATA_WIDTH_INDEX = 2;
+export const CHAR_DATA_CHAR_INDEX = 1;
+export const CHAR_DATA_WIDTH_INDEX = 2;
 
 /**
  * This class represents a terminal buffer (an internal state of the terminal), where the

@@ -10,6 +10,7 @@ import { EventEmitter } from './EventEmitter';
 import { ITerminal, ICircularList, ISelectionManager, IBuffer } from './Interfaces';
 import { SelectionModel } from './SelectionModel';
 import { LineData } from './Types';
+import { CHAR_DATA_WIDTH_INDEX } from './Buffer';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -32,11 +33,6 @@ const DRAG_SCROLL_INTERVAL = 50;
  * double click to select work logic.
  */
 const WORD_SEPARATORS = ' ()[]{}\'"';
-
-// TODO: Move these constants elsewhere, they belong in a buffer or buffer
-//       data/line class.
-const LINE_DATA_CHAR_INDEX = 1;
-const LINE_DATA_WIDTH_INDEX = 2;
 
 const NON_BREAKING_SPACE_CHAR = String.fromCharCode(160);
 const ALL_NON_BREAKING_SPACE_REGEX = new RegExp(NON_BREAKING_SPACE_CHAR, 'g');
@@ -420,7 +416,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     // If the mouse is over the second half of a wide character, adjust the
     // selection to cover the whole character
     const char = line[this._model.selectionStart[0]];
-    if (char[LINE_DATA_WIDTH_INDEX] === 0) {
+    if (char[CHAR_DATA_WIDTH_INDEX] === 0) {
       this._model.selectionStart[0]++;
     }
   }
@@ -494,7 +490,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     // have a character.
     if (this._model.selectionEnd[1] < this._buffer.lines.length) {
       const char = this._buffer.lines.get(this._model.selectionEnd[1])[this._model.selectionEnd[0]];
-      if (char && char[2] === 0) {
+      if (char && char[CHAR_DATA_WIDTH_INDEX] === 0) {
         this._model.selectionEnd[0]++;
       }
     }
@@ -541,7 +537,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     let charIndex = coords[0];
     for (let i = 0; coords[0] >= i; i++) {
       const char = bufferLine[i];
-      if (char[LINE_DATA_WIDTH_INDEX] === 0) {
+      if (char[CHAR_DATA_WIDTH_INDEX] === 0) {
         charIndex--;
       }
     }
@@ -594,17 +590,17 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
       let endCol = coords[0];
       // Consider the initial position, skip it and increment the wide char
       // variable
-      if (bufferLine[startCol][LINE_DATA_WIDTH_INDEX] === 0) {
+      if (bufferLine[startCol][CHAR_DATA_WIDTH_INDEX] === 0) {
         leftWideCharCount++;
         startCol--;
       }
-      if (bufferLine[endCol][LINE_DATA_WIDTH_INDEX] === 2) {
+      if (bufferLine[endCol][CHAR_DATA_WIDTH_INDEX] === 2) {
         rightWideCharCount++;
         endCol++;
       }
       // Expand the string in both directions until a space is hit
       while (startIndex > 0 && !this._isCharWordSeparator(line.charAt(startIndex - 1))) {
-        if (bufferLine[startCol - 1][LINE_DATA_WIDTH_INDEX] === 0) {
+        if (bufferLine[startCol - 1][CHAR_DATA_WIDTH_INDEX] === 0) {
           // If the next character is a wide char, record it and skip the column
           leftWideCharCount++;
           startCol--;
@@ -613,7 +609,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
         startCol--;
       }
       while (endIndex + 1 < line.length && !this._isCharWordSeparator(line.charAt(endIndex + 1))) {
-        if (bufferLine[endCol + 1][LINE_DATA_WIDTH_INDEX] === 2) {
+        if (bufferLine[endCol + 1][CHAR_DATA_WIDTH_INDEX] === 2) {
           // If the next character is a wide char, record it and skip the column
           rightWideCharCount++;
           endCol++;

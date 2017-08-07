@@ -6,6 +6,7 @@ import { IInputHandler, ITerminal, IInputHandlingTerminal } from './Interfaces';
 import { C0 } from './EscapeSequences';
 import { DEFAULT_CHARSET } from './Charsets';
 import { CharData } from './Types';
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
 
 /**
  * The terminal's standard implementation of IInputHandler, this handles all
@@ -34,14 +35,14 @@ export class InputHandler implements IInputHandler {
       if (!ch_width && this._terminal.buffer.x) {
         // dont overflow left
         if (this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1]) {
-          if (!this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1][2]) {
+          if (!this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1][CHAR_DATA_WIDTH_INDEX]) {
 
             // found empty cell after fullwidth, need to go 2 cells back
             if (this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 2])
-              this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 2][1] += char;
+              this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 2][CHAR_DATA_CHAR_INDEX] += char;
 
           } else {
-            this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1][1] += char;
+            this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1][CHAR_DATA_CHAR_INDEX] += char;
           }
           this._terminal.updateRange(this._terminal.buffer.y);
         }
@@ -77,9 +78,9 @@ export class InputHandler implements IInputHandler {
           // remove last cell, if it's width is 0
           // we have to adjust the second last cell as well
           const removed = this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).pop();
-          if (removed[2] === 0
+          if (removed[CHAR_DATA_WIDTH_INDEX] === 0
               && this._terminal.buffer.lines.get(row)[this._terminal.cols - 2]
-              && this._terminal.buffer.lines.get(row)[this._terminal.cols - 2][2] === 2) {
+              && this._terminal.buffer.lines.get(row)[this._terminal.cols - 2][CHAR_DATA_WIDTH_INDEX] === 2) {
             this._terminal.buffer.lines.get(row)[this._terminal.cols - 2] = [this._terminal.curAttr, ' ', 1];
           }
 

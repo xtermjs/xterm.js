@@ -3,6 +3,7 @@ var fs = require('fs');
 var os = require('os');
 var pty = require('node-pty');
 var Terminal = require('../xterm');
+var CHAR_DATA_CHAR_INDEX = require('../Buffer').CHAR_DATA_CHAR_INDEX;
 
 if (os.platform() === 'win32') {
   // Skip tests on Windows since pty.open isn't supported
@@ -65,7 +66,7 @@ function terminalToString(term) {
   for (var line = term.buffer.ybase; line < term.buffer.ybase + term.rows; line++) {
     line_s = '';
     for (var cell=0; cell<term.cols; ++cell) {
-      line_s += term.buffer.lines.get(line)[cell][1];
+      line_s += term.buffer.lines.get(line)[cell][CHAR_DATA_CHAR_INDEX];
     }
     // rtrim empty cells as xterm does
     line_s = line_s.replace(/\s+$/, '');
