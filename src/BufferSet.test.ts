@@ -6,7 +6,7 @@ import { assert } from 'chai';
 import { ITerminal } from './Interfaces';
 import { BufferSet } from './BufferSet';
 import { Buffer } from './Buffer';
-import { MockTerminal } from './utils/TestUtils';
+import { MockTerminal } from './utils/TestUtils.test';
 
 describe('BufferSet', () => {
   let terminal: ITerminal;
