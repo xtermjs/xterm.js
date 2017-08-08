@@ -1,5 +1,5 @@
 import { assert } from 'chai';
-import * as Terminal from '../xterm';
+import * as Terminal from '../Terminal';
 import * as Clipboard from './Clipboard';
 
 describe('evaluatePastedTextProcessing', () => {
