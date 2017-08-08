@@ -29,7 +29,7 @@ import * as Mouse from './utils/Mouse';
 import { CHARSETS } from './Charsets';
 import { getRawByteCoords } from './utils/Mouse';
 import { CustomKeyEventHandler, Charset, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData, Option, StringOption, BooleanOption, StringArrayOption, NumberOption, GeometryOption, HandlerOption } from './Types';
-import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions } from './Interfaces';
+import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper } from './Interfaces';
 
 // Declare for RequireJS in loadAddon
 declare var define: any;
@@ -259,8 +259,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   private linkifier: Linkifier;
   public buffers: BufferSet;
   public buffer: Buffer;
-  public viewport: Viewport;
-  private compositionHelper: CompositionHelper;
+  public viewport: IViewport;
+  private compositionHelper: ICompositionHelper;
   public charMeasure: CharMeasure;
 
   public cols: number;
@@ -601,14 +601,14 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       if (document.activeElement !== this) {
         return;
       }
-      self.keyDown(ev);
+      self._keyDown(ev);
     }, true);
 
     on(this.element, 'keypress', function (ev: KeyboardEvent): void {
       if (document.activeElement !== this) {
         return;
       }
-      self.keyPress(ev);
+      self._keyPress(ev);
     }, true);
 
     on(this.element, 'keyup', (ev: KeyboardEvent) => {
@@ -618,19 +618,19 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     }, true);
 
     on(this.textarea, 'keydown', (ev: KeyboardEvent) => {
-      this.keyDown(ev);
+      this._keyDown(ev);
     }, true);
 
     on(this.textarea, 'keypress', (ev: KeyboardEvent) => {
-      this.keyPress(ev);
+      this._keyPress(ev);
       // Truncate the textarea's value, since it is not needed
       this.textarea.value = '';
     }, true);
 
-    on(this.textarea, 'compositionstart', this.compositionHelper.compositionstart.bind(this.compositionHelper));
-    on(this.textarea, 'compositionupdate', this.compositionHelper.compositionupdate.bind(this.compositionHelper));
-    on(this.textarea, 'compositionend', this.compositionHelper.compositionend.bind(this.compositionHelper));
-    this.on('refresh', this.compositionHelper.updateCompositionElements.bind(this.compositionHelper));
+    on(this.textarea, 'compositionstart', () => this.compositionHelper.compositionstart());
+    on(this.textarea, 'compositionupdate', (e: CompositionEvent) => this.compositionHelper.compositionupdate(e));
+    on(this.textarea, 'compositionend', () => this.compositionHelper.compositionend());
+    this.on('refresh', () => this.compositionHelper.updateCompositionElements());
     this.on('refresh', (data) => this.queueLinkification(data.start, data.end));
   }
 
@@ -1474,21 +1474,21 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    *   - https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
    * @param {KeyboardEvent} ev The keydown event to be handled.
    */
-  private keyDown(ev: KeyboardEvent): boolean {
+  protected _keyDown(ev: KeyboardEvent): boolean {
     if (this.customKeyEventHandler && this.customKeyEventHandler(ev) === false) {
       return false;
     }
 
     this.restartCursorBlinking();
 
-    if (!this.compositionHelper.keydown.bind(this.compositionHelper)(ev)) {
+    if (!this.compositionHelper.keydown(ev)) {
       if (this.buffer.ybase !== this.buffer.ydisp) {
         this.scrollToBottom();
       }
       return false;
     }
 
-    const result = this.evaluateKeyEscapeSequence(ev);
+    const result = this._evaluateKeyEscapeSequence(ev);
 
     if (result.key === C0.DC3) { // XOFF
       this.writeStopped = true;
@@ -1501,7 +1501,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       return this.cancel(ev, true);
     }
 
-    if (isThirdLevelShift(ev)) {
+    if (isThirdLevelShift(this.browser, ev)) {
       return true;
     }
 
@@ -1529,7 +1529,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Reference: http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
    * @param ev The keyboard event to be translated to key escape sequence.
    */
-  private evaluateKeyEscapeSequence(ev: KeyboardEvent): {cancel: boolean, key: string, scrollDisp: number} {
+  protected _evaluateKeyEscapeSequence(ev: KeyboardEvent): {cancel: boolean, key: string, scrollDisp: number} {
     const result: {cancel: boolean, key: string, scrollDisp: number} = {
       // Whether to cancel event propogation (NOTE: this may not be needed since the event is
       // canceled at the end of keyDown
@@ -1836,7 +1836,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    *   - https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
    * @param {KeyboardEvent} ev The keypress event to be handled.
    */
-  private keyPress(ev: KeyboardEvent): boolean {
+  protected _keyPress(ev: KeyboardEvent): boolean {
     let key;
 
     if (this.customKeyEventHandler && this.customKeyEventHandler(ev) === false) {
@@ -1856,7 +1856,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     }
 
     if (!key || (
-      (ev.altKey || ev.ctrlKey || ev.metaKey) && !isThirdLevelShift(ev)
+      (ev.altKey || ev.ctrlKey || ev.metaKey) && !isThirdLevelShift(this.browser, ev)
     )) {
       return false;
     }
@@ -2309,10 +2309,10 @@ function off(el: any, type: string, handler: (event: Event) => any, capture: boo
   el.removeEventListener(type, handler, capture);
 }
 
-function isThirdLevelShift(ev: KeyboardEvent): boolean {
+function isThirdLevelShift(browser: IBrowser, ev: KeyboardEvent): boolean {
   const thirdLevelKey =
-      (Browser.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
-      (Browser.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
+      (browser.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
+      (browser.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
 
   if (ev.type === 'keypress') {
     return thirdLevelKey;

@@ -10,7 +10,7 @@ import { CircularList } from './utils/CircularList';
 import { SelectionManager } from './SelectionManager';
 import { SelectionModel } from './SelectionModel';
 import { BufferSet } from './BufferSet';
-import { MockTerminal } from './utils/TestUtils';
+import { MockTerminal } from './utils/TestUtils.test';
 import { LineData } from './Types';
 
 class TestSelectionManager extends SelectionManager {
