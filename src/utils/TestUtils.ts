@@ -43,9 +43,10 @@ export class MockTerminal implements ITerminal {
   showCursor(): void {
     throw new Error('Method not implemented.');
   }
-  blankLine(cur?: boolean, isWrapped?: boolean) {
+  blankLine(cur?: boolean, isWrapped?: boolean, cols?: number) {
     const line = [];
-    for (let i = 0; i < this.cols; i++) {
+    cols = cols || this.cols;
+    for (let i = 0; i < cols; i++) {
       line.push([0, ' ', 1]);
     }
     return line;
