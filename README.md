@@ -126,6 +126,18 @@ var xterm = new Terminal();
 xterm.fit();
 ```
 
+## CommonJS
+
+Importing xterm.js in a CommonJS environment (eg. [Electron](https://electron.atom.io/)) can be done like so:
+
+```ts
+// JavaScript
+var Terminal = require('xterm').Terminal;
+
+// TypeScript
+import { Terminal } from 'xterm';
+```
+
 ## Releases
 
 Xterm.js follows a monthly release cycle roughly.

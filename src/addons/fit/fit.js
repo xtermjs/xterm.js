@@ -16,7 +16,7 @@
     /*
      * CommonJS environment
      */
-    module.exports = fit(require('../../xterm'));
+    module.exports = fit(require('../../Terminal').Terminal);
   } else if (typeof define == 'function') {
     /*
      * Require.js is available
@@ -28,7 +28,7 @@
      */
     fit(window.Terminal);
   }
-})(function (Xterm) {
+})(function (Terminal) {
   var exports = {};
 
   exports.proposeGeometry = function (term) {
@@ -74,11 +74,11 @@
     }
   };
 
-  Xterm.prototype.proposeGeometry = function () {
+  Terminal.prototype.proposeGeometry = function () {
     return exports.proposeGeometry(this);
   };
 
-  Xterm.prototype.fit = function () {
+  Terminal.prototype.fit = function () {
     return exports.fit(this);
   };
 

@@ -20,7 +20,7 @@ declare var window: any;
     /**
      * CommonJS environment
      */
-    module.exports = addon(require('../../xterm'));
+    module.exports = addon(require('../../Terminal').Terminal);
   } else if (typeof define === 'function') {
     /**
      * Require.js is available
