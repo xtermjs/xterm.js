@@ -1,15 +1,16 @@
 /**
  * @license MIT
  *
- * This file contains integration tests for xterm.js
+ * This file contains integration tests for xterm.js.
  */
 
 import * as glob from 'glob';
 import * as fs from 'fs';
 import * as os from 'os';
+import * as path from 'path';
 import * as pty from 'node-pty';
-import { Terminal } from '../Terminal';
-import { CHAR_DATA_CHAR_INDEX } from '../Buffer';
+import { Terminal } from './Terminal';
+import { CHAR_DATA_CHAR_INDEX } from './Buffer';
 
 let primitive_pty: any;
 
@@ -95,7 +96,7 @@ if (os.platform() !== 'win32') {
 
     // omit stack trace for escape sequence files
     Error.stackTraceLimit = 0;
-    let files = glob.sync('**/escape_sequence_files/*.in');
+    let files = glob.sync('**/escape_sequence_files/*.in', { cwd: path.join(__dirname, '..')});
     // only successful tests for now
     let skip = [
       10, 16, 17, 19, 32, 33, 34, 35, 36, 39,
