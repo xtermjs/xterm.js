@@ -36,7 +36,7 @@ declare var window: any;
    */
   Terminal.prototype.findNext = function(term: string): boolean {
     if (!this._searchHelper) {
-      this.searchHelper = new SearchHelper(this, Terminal.translateBufferLineToString);
+      this.searchHelper = new SearchHelper(this);
     }
     return (<SearchHelper>this.searchHelper).findNext(term);
   };
@@ -49,7 +49,7 @@ declare var window: any;
    */
   Terminal.prototype.findPrevious = function(term: string): boolean {
     if (!this._searchHelper) {
-      this.searchHelper = new SearchHelper(this, Terminal.translateBufferLineToString);
+      this.searchHelper = new SearchHelper(this);
     }
     return (<SearchHelper>this.searchHelper).findPrevious(term);
   };
