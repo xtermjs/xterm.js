@@ -649,9 +649,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Opens the terminal within an element.
    *
    * @param {HTMLElement} parent The element to create the terminal within.
-   * @param {boolean} focus Focus the terminal, after it gets instantiated in the DOM
    */
-  private open(parent: HTMLElement, focus?: boolean): void {
+  public open(parent: HTMLElement): void {
     let i = 0;
     let div;
 
@@ -758,10 +757,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     // Initialize global actions that need to be taken on the document.
     this.initGlobal();
-
-    if (focus) {
-      this.focus();
-    }
 
     // Listen for mouse events and translate
     // them into terminal mouse protocols.
