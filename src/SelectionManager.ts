@@ -327,7 +327,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
     // Allow selection when using a specific modifier key, even when disabled
     if (!this._enabled) {
-      const shouldForceSelection = Browser.isMac && event.altKey;
+      const shouldForceSelection = Browser.isMac ? event.altKey : event.shiftKey;
 
       if (!shouldForceSelection) {
         return;
