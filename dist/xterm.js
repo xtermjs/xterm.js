@@ -41,7 +41,7 @@ var Buffer = (function () {
             var ch = [this._terminal.defAttr, ' ', 1];
             for (var i = 0; i < this._lines.length; i++) {
                 if (this._lines.get(i) === undefined) {
-                    this._lines.set(i, this._terminal.blankLine());
+                    this._lines.set(i, this._terminal.blankLine(undefined, undefined, newCols));
                 }
                 while (this._lines.get(i).length < newCols) {
                     this._lines.get(i).push(ch);
@@ -60,7 +60,7 @@ var Buffer = (function () {
                         }
                     }
                     else {
-                        this._lines.push(this._terminal.blankLine());
+                        this._lines.push(this._terminal.blankLine(undefined, undefined, newCols));
                     }
                 }
             }
@@ -4946,7 +4946,7 @@ Terminal.prototype.clear = function () {
 Terminal.prototype.eraseLine = function (y) {
     this.eraseRight(0, y);
 };
-Terminal.prototype.blankLine = function (cur, isWrapped) {
+Terminal.prototype.blankLine = function (cur, isWrapped, cols) {
     var attr = cur
         ? this.eraseAttr()
         : this.defAttr;
@@ -4954,7 +4954,8 @@ Terminal.prototype.blankLine = function (cur, isWrapped) {
     if (isWrapped) {
         line.isWrapped = isWrapped;
     }
-    for (; i < this.cols; i++) {
+    cols = cols || this.cols;
+    for (; i < cols; i++) {
         line[i] = ch;
     }
     return line;
