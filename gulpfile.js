@@ -39,7 +39,10 @@ gulp.task('tsc', function () {
   // Build all TypeScript files (including tests) to ${outDir}/, based on the configuration defined in
   // `tsconfig.json`.
   let tsResult = tsProject.src().pipe(sourcemaps.init()).pipe(tsProject());
-  let tsc = tsResult.js.pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''})).pipe(gulp.dest(outDir));
+  let tsc = merge(
+    tsResult.js.pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''})).pipe(gulp.dest(outDir)),
+    tsResult.dts.pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''})).pipe(gulp.dest(outDir))
+  );
 
   fs.emptyDirSync(`${outDir}/addons/search`);
   let tsResultSearchAddon = tsProjectSearchAddon.src().pipe(sourcemaps.init()).pipe(tsProjectSearchAddon());
@@ -121,7 +124,12 @@ gulp.task('instrument-test', function () {
 });
 
 gulp.task('mocha', ['instrument-test'], function () {
-  return gulp.src([`${outDir}/*test.js`, `${outDir}/**/*test.js`], {read: false})
+  return gulp.src([
+    `${outDir}/*test.js`,
+    `${outDir}/**/*test.js`,
+    `${outDir}/*integration.js`,
+    `${outDir}/**/*integration.js`
+  ], {read: false})
       .pipe(mocha())
       .once('error', () => process.exit(1))
       .pipe(istanbul.writeReports());

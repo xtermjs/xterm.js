@@ -4,7 +4,7 @@
 
 import { assert } from 'chai';
 import { Viewport } from './Viewport';
-import {BufferSet} from './BufferSet';
+import { BufferSet } from './BufferSet';
 
 describe('Viewport', () => {
   let terminal;

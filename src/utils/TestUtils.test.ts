@@ -2,8 +2,9 @@
  * @license MIT
  */
 
-import { ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, IListenerType, IInputHandlingTerminal, IViewport, ICircularList } from '../Interfaces';
+import { ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, IListenerType, IInputHandlingTerminal, IViewport, ICircularList, ICompositionHelper } from '../Interfaces';
 import { LineData } from '../Types';
+import * as Browser from './Browser';
 
 export class MockTerminal implements ITerminal {
   options: ITerminalOptions = {};
@@ -15,7 +16,7 @@ export class MockTerminal implements ITerminal {
   textarea: HTMLTextAreaElement;
   rows: number;
   cols: number;
-  browser: IBrowser;
+  browser: IBrowser = <any>Browser;
   writeBuffer: string[];
   children: HTMLElement[];
   cursorHidden: boolean;
@@ -180,4 +181,38 @@ export class MockBuffer implements IBuffer {
   scrollTop: number;
   savedY: number;
   savedX: number;
+  translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string {
+    throw new Error('Method not implemented.');
+  }
+}
+
+export class MockViewport implements IViewport {
+  onWheel(ev: WheelEvent): void {
+    throw new Error('Method not implemented.');
+  }
+  onTouchStart(ev: TouchEvent): void {
+    throw new Error('Method not implemented.');
+  }
+  onTouchMove(ev: TouchEvent): void {
+    throw new Error('Method not implemented.');
+  }
+  syncScrollArea(): void { }
+}
+
+export class MockCompositionHelper implements ICompositionHelper {
+  compositionstart(): void {
+    throw new Error('Method not implemented.');
+  }
+  compositionupdate(ev: CompositionEvent): void {
+    throw new Error('Method not implemented.');
+  }
+  compositionend(): void {
+    throw new Error('Method not implemented.');
+  }
+  updateCompositionElements(dontRecurse?: boolean): void {
+    throw new Error('Method not implemented.');
+  }
+  keydown(ev: KeyboardEvent): boolean {
+    return true;
+  }
 }

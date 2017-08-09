@@ -11,7 +11,7 @@ declare var require: any;
 declare var window: any;
 
 (function (addon) {
-  if ('Terminal' in window) {
+  if (typeof window !== 'undefined' && 'Terminal' in window) {
     /**
      * Plain browser environment
      */
@@ -20,8 +20,8 @@ declare var window: any;
     /**
      * CommonJS environment
      */
-    module.exports = addon(require('../../xterm'));
-  } else if (typeof define == 'function') {
+    module.exports = addon(require('../../Terminal').Terminal);
+  } else if (typeof define === 'function') {
     /**
      * Require.js is available
      */
@@ -36,7 +36,7 @@ declare var window: any;
    */
   Terminal.prototype.findNext = function(term: string): boolean {
     if (!this._searchHelper) {
-      this.searchHelper = new SearchHelper(this, Terminal.translateBufferLineToString);
+      this.searchHelper = new SearchHelper(this);
     }
     return (<SearchHelper>this.searchHelper).findNext(term);
   };
@@ -49,7 +49,7 @@ declare var window: any;
    */
   Terminal.prototype.findPrevious = function(term: string): boolean {
     if (!this._searchHelper) {
-      this.searchHelper = new SearchHelper(this, Terminal.translateBufferLineToString);
+      this.searchHelper = new SearchHelper(this);
     }
     return (<SearchHelper>this.searchHelper).findPrevious(term);
   };

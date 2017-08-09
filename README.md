@@ -63,7 +63,9 @@ Xterm.js works seamlessly in Electron apps and may even work on earlier versions
 
 ### Linux or macOS
 
-Run the following commands:
+First, be sure that a C++ compiler such as GCC-C++ or Clang is installed
+
+Then run the following commands:
 
 ```
 $ npm install
@@ -122,6 +124,18 @@ To use an addon, just include the JavaScript file after xterm.js and before the 
 var xterm = new Terminal();
 // init code...
 xterm.fit();
+```
+
+## CommonJS
+
+Importing xterm.js in a CommonJS environment (eg. [Electron](https://electron.atom.io/)) can be done like so:
+
+```ts
+// JavaScript
+var Terminal = require('xterm').Terminal;
+
+// TypeScript
+import { Terminal } from 'xterm';
 ```
 
 ## Releases

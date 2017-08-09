@@ -144,6 +144,7 @@ export interface IBuffer {
   scrollTop: number;
   savedY: number;
   savedX: number;
+  translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string;
 }
 
 export interface IBufferSet {
@@ -157,6 +158,9 @@ export interface IBufferSet {
 
 export interface IViewport {
   syncScrollArea(): void;
+  onWheel(ev: WheelEvent): void;
+  onTouchStart(ev: TouchEvent): void;
+  onTouchMove(ev: TouchEvent): void;
 }
 
 export interface ISelectionManager {
@@ -166,8 +170,16 @@ export interface ISelectionManager {
 
   disable(): void;
   enable(): void;
-  setBuffer(buffer: ICircularList<LineData>): void;
+  setBuffer(buffer: IBuffer): void;
   setSelection(row: number, col: number, length: number): void;
+}
+
+export interface ICompositionHelper {
+  compositionstart(): void;
+  compositionupdate(ev: CompositionEvent): void;
+  compositionend(): void;
+  updateCompositionElements(dontRecurse?: boolean): void;
+  keydown(ev: KeyboardEvent): boolean;
 }
 
 export interface ICharMeasure {

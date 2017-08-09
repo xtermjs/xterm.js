@@ -6,7 +6,7 @@ import { assert } from 'chai';
 import { ITerminal } from './Interfaces';
 import { Buffer } from './Buffer';
 import { CircularList } from './utils/CircularList';
-import { MockTerminal } from './utils/TestUtils';
+import { MockTerminal } from './utils/TestUtils.test';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;

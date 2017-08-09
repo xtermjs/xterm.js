@@ -8,7 +8,7 @@
     /*
      * CommonJS environment
      */
-    module.exports = fullscreen(require('../../xterm'));
+    module.exports = fullscreen(require('../../Terminal').Terminal);
   } else if (typeof define == 'function') {
     /*
      * Require.js is available
@@ -20,12 +20,12 @@
      */
     fullscreen(window.Terminal);
   }
-})(function (Xterm) {
+})(function (Terminal) {
   var exports = {};
 
   /**
    * Toggle the given terminal's fullscreen mode.
-   * @param {Xterm} term - The terminal to toggle full screen mode
+   * @param {Terminal} term - The terminal to toggle full screen mode
    * @param {boolean} fullscreen - Toggle fullscreen on (true) or off (false)
    */
   exports.toggleFullScreen = function (term, fullscreen) {
@@ -42,7 +42,7 @@
     term.element.classList[fn]('fullscreen');
   };
 
-  Xterm.prototype.toggleFullscreen = function (fullscreen) {
+  Terminal.prototype.toggleFullscreen = function (fullscreen) {
     exports.toggleFullScreen(this, fullscreen);
   };
 

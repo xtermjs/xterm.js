@@ -148,7 +148,7 @@ csiStateHandler['s'] = (handler, params) => handler.saveCursor(params);
 csiStateHandler['u'] = (handler, params) => handler.restoreCursor(params);
 csiStateHandler[C0.CAN] = (handler, params, prefix, postfix, parser) => parser.setState(ParserState.NORMAL);
 
-enum ParserState {
+export enum ParserState {
   NORMAL = 0,
   ESCAPED = 1,
   CSI_PARAM = 2,
