@@ -85,8 +85,10 @@ export class Buffer implements IBuffer {
     if (this._terminal.cols < newCols) {
       const ch: [number, string, number] = [this._terminal.defAttr, ' ', 1]; // does xterm use the default attr?
       for (let i = 0; i < this._lines.length; i++) {
+        // TODO: This should be removed, with tests setup for the case that was
+        // causing the underlying bug, see https://github.com/sourcelair/xterm.js/issues/824
         if (this._lines.get(i) === undefined) {
-          this._lines.set(i, this._terminal.blankLine());
+          this._lines.set(i, this._terminal.blankLine(undefined, undefined, newCols));
         }
         while (this._lines.get(i).length < newCols) {
           this._lines.get(i).push(ch);
@@ -111,7 +113,7 @@ export class Buffer implements IBuffer {
           } else {
             // Add a blank line if there is no buffer left at the top to scroll to, or if there
             // are blank lines after the cursor
-            this._lines.push(this._terminal.blankLine());
+            this._lines.push(this._terminal.blankLine(undefined, undefined, newCols));
           }
         }
       }

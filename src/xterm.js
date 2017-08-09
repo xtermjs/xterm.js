@@ -2091,7 +2091,7 @@ Terminal.prototype.eraseLine = function(y) {
  * @param {number} cur First bunch of data for each "blank" character.
  * @param {boolean} isWrapped Whether the new line is wrapped from the previous line.
  */
-Terminal.prototype.blankLine = function(cur, isWrapped) {
+Terminal.prototype.blankLine = function(cur, isWrapped, cols) {
   var attr = cur
   ? this.eraseAttr()
   : this.defAttr;
@@ -2106,7 +2106,8 @@ Terminal.prototype.blankLine = function(cur, isWrapped) {
     line.isWrapped = isWrapped;
   }
 
-  for (; i < this.cols; i++) {
+  cols = cols || this.cols;
+  for (; i < cols; i++) {
     line[i] = ch;
   }
 
