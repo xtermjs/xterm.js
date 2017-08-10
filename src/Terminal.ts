@@ -689,6 +689,14 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.viewportScrollArea.classList.add('xterm-scroll-area');
     this.viewportElement.appendChild(this.viewportScrollArea);
 
+    // preload audio
+    if (this.options.bellSound) {
+      this.bellAudioElement = document.createElement('audio');
+      this.bellAudioElement.setAttribute('preload', 'auto');
+      this.bellAudioElement.setAttribute('src', this.options.bellSound);
+      this.element.appendChild(this.bellAudioElement);
+    }
+
     // Create the selection container.
     this.selectionContainer = document.createElement('div');
     this.selectionContainer.classList.add('xterm-selection');
