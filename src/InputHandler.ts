@@ -108,8 +108,8 @@ export class InputHandler implements IInputHandler {
    */
   public bell(): void {
     this._terminal.emit('bell');
-    if (this._terminal.playDefaultBell) {
-      (new Audio(Bell)).play();
+    if (this._terminal.bellSound) {
+      this._terminal.bellAudioElement.play();
     }
     if (!this._terminal.visualBell) {
       return;
