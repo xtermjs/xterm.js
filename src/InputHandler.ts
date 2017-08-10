@@ -7,7 +7,7 @@ import { C0 } from './EscapeSequences';
 import { DEFAULT_CHARSET } from './Charsets';
 import { CharData } from './Types';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
-import { Bell } from './utils/Bell';
+import { BellSound } from './utils/Sounds';
 
 /**
  * The terminal's standard implementation of IInputHandler, this handles all
