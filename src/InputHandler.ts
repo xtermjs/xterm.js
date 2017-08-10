@@ -7,6 +7,7 @@ import { C0 } from './EscapeSequences';
 import { DEFAULT_CHARSET } from './Charsets';
 import { CharData } from './Types';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
+import { Bell } from './utils/Bell';
 
 /**
  * The terminal's standard implementation of IInputHandler, this handles all
@@ -106,7 +107,11 @@ export class InputHandler implements IInputHandler {
    * Bell (Ctrl-G).
    */
   public bell(): void {
-    if (!this._terminal.options.visualBell) {
+    this._terminal.emit('bell');
+    if (this._terminal.playDefaultBell) {
+      (new Audio(Bell)).play();
+    }
+    if (!this._terminal.visualBell) {
       return;
     }
     this._terminal.element.style.borderColor = 'white';
