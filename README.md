@@ -59,43 +59,22 @@ Since xterm.js is typically implemented as a developer tool, only modern browser
 
 Xterm.js works seamlessly in Electron apps and may even work on earlier versions of the browsers but these are the browsers we strive to keep working.
 
-## Demo
-
-### Linux or macOS
-
-First, be sure that a C++ compiler such as GCC-C++ or Clang is installed
-
-Then run the following commands:
-
-```
-$ npm install
-$ npm start
-```
-
-Then open http://0.0.0.0:3000 in a web browser.
-
-### Windows
-
-First, ensure [node-gyp](https://github.com/nodejs/node-gyp) is installed and configured correctly, then run these commands.
-
-Note: Do not use ConEmu, as it seems to break the demo for some reason.
-
-```
-> npm install
-> npm start
-```
-
-Then open http://127.0.0.1:3000 in a web browser.
-
 ## Getting Started
 
+First you need to install the module, we ship exclusively through [npm](https://www.npmjs.com/) so you need that installed and then add xterm.js as a dependency by running:
+
+```
+npm install
+```
+
 To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to the head of your html page. Then create a `<div id="terminal"></div>` onto which xterm can attach itself.
+
 ```html
 <!doctype html>
   <html>
     <head>
-      <link rel="stylesheet" href="bower_components/xterm.js/dist/xterm.css" />
-      <script src="bower_components/xterm.js/dist/xterm.js"></script>
+      <link rel="stylesheet" href="node_modules/xterm/dist/xterm.css" />
+      <script src="node_modules/xterm/dist/xterm.js"></script>
     </head>
     <body>
       <div id="terminal"></div>
@@ -107,36 +86,78 @@ To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to t
     </body>
   </html>
 ```
+
 Finally instantiate the `Terminal` object and then call the `open` function with the DOM object of the `div`.
 
-## Addons
+### Addons
 
 Addons are JavaScript modules that attach functions to the `Terminal` prototype to extend its functionality. There are a handful available in the main repository in the `dist/addons` directory, you can even write your own (though they may break when the internals of xterm.js change across versions).
 
 To use an addon, just include the JavaScript file after xterm.js and before the `Terminal` object has been instantiated. The function should then be exposed on the `Terminal` object:
 
 ```html
-<script src="node_modules/dist/xterm.js"></script>
-<script src="node_modules/dist/addons/fit/fit.js"></script>
+<script src="node_modules/xterm/dist/xterm.js"></script>
+<script src="node_modules/xterm/dist/addons/fit/fit.js"></script>
 ```
 
 ```js
+// Instantiate the terminal and call fit
 var xterm = new Terminal();
-// init code...
 xterm.fit();
 ```
 
-## CommonJS
+### Importing
 
-Importing xterm.js in a CommonJS environment (eg. [Electron](https://electron.atom.io/)) can be done like so:
+If the environment allows it, you can import xterm.js like so:
 
 ```ts
-// JavaScript
+// CommonJS
 var Terminal = require('xterm').Terminal;
 
-// TypeScript
+// ES6 / TypeScript
 import { Terminal } from 'xterm';
 ```
+
+Importing addons in this environment can be done using a `Terminal.loadAddon` call:
+
+```ts
+import { Terminal } from 'xterm';
+
+// Notice it's called statically on the type, not an object
+Terminal.loadAddon('fit');
+
+// Instantiate the terminal and call fit
+var xterm = new Terminal();
+xterm.fit();
+```
+
+Note for TypeScript users there is currently no solution for addon 
+
+## Demo
+
+### Linux or macOS
+
+First, be sure that a C++ compiler such as GCC-C++ or Clang is installed, then run these commands:
+
+```
+npm install
+npm start
+```
+
+Then open http://0.0.0.0:3000 in a web browser.
+
+### Windows
+
+First, ensure [node-gyp](https://github.com/nodejs/node-gyp) is installed and configured correctly, then run these commands.
+
+Note: Do not use ConEmu, as it seems to break the demo for some reason.
+
+```
+npm install
+npm start
+```
+
+Then open http://127.0.0.1:3000 in a web browser.
 
 ## Releases
 
