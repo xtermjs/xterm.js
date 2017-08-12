@@ -1890,9 +1890,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     }
     if (this.options.bellStyles.indexOf(BellStyles.Visual) > -1) {
       var cursor = this.element.querySelector('.terminal-cursor') as HTMLElement;
+      var originalBackground = cursor.style.backgroundColor;
       cursor.style.backgroundColor = "#fff";
       setTimeout(function() {
-        cursor.style.backgroundColor = "#e6e6e6";
+        cursor.style.backgroundColor = originalBackground;
       }, 200);
     }
   }
