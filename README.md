@@ -19,46 +19,6 @@ It enables applications to provide fully featured terminals to their users and c
 - Xterm.js is not a terminal application that you can download and use on your computer
 - Xterm.js is not `bash`. Xterm.js can be connected to processes like `bash` and let you interact with them (provide input, receive output)
 
-## Real-world uses
-Xterm.js is used in several world-class applications to provide great terminal experiences.
-
-- [**SourceLair**](https://www.sourcelair.com/): In-browser IDE that provides its users with fully-featured Linux terminals based on xterm.js
-- [**Microsoft Visual Studio Code**](http://code.visualstudio.com/): Modern, versatile and powerful open source code editor that provides an integrated terminal based on xterm.js
-- [**ttyd**](https://github.com/tsl0922/ttyd): A command-line tool for sharing terminal over the web, with fully-featured terminal emulation based on xterm.js
-- [**Katacoda**](https://www.katacoda.com/): Katacoda is an Interactive Learning Platform for software developers, covering the latest Cloud Native technologies.
-- [**Eclipse Che**](http://www.eclipse.org/che): Developer workspace server, cloud IDE, and Eclipse next-generation IDE.
-- [**Codenvy**](http://www.codenvy.com): Cloud workspaces for development teams.
-- [**CoderPad**](https://coderpad.io): Online interviewing platform for programmers. Run code in many programming languages, with results displayed by `xterm.js`.
-- [**WebSSH2**](https://github.com/billchurch/WebSSH2): A web based SSH2 client using `xterm.js`, socket.io, and ssh2.
-- [**Spyder Terminal**](https://github.com/spyder-ide/spyder-terminal): A full fledged system terminal embedded on Spyder IDE.
-- [**Cloud Commander**](https://cloudcmd.io "Cloud Commander"): Orthodox web file manager with console and editor.
-- [**Codevolve**](https://www.codevolve.com "Codevolve"): Online platform for interactive coding and web development courses. Live container-backed terminal uses `xterm.js`.
-- [**RStudio**](https://www.rstudio.com/products/RStudio "RStudio"): RStudio is an integrated development environment (IDE) for R.
-- [**Terminal for Atom**](https://github.com/jsmecham/atom-terminal-tab): A simple terminal for the Atom text editor.
-- [**Eclipse Orion**](https://orionhub.org): A modern, open source software development environment that runs in the cloud. Code, deploy and run in the cloud.
-- [**Gravitational Teleport**](https://github.com/gravitational/teleport): Gravitational Teleport is a modern SSH server for remotely accessing clusters of Linux servers via SSH or HTTPS.
-- [**Hexlet**](https://en.hexlet.io): Practical programming courses (JavaScript, PHP, Unix, databases, functional programming). A steady path from the first line of code to the first job.
-- [**Selenoid UI**](https://github.com/aerokube/selenoid-ui): Simple UI for the scallable golang implementation of Selenium Hub named Selenoid. We use XTerm for streaming logs over websockets from docker containers.
-- [**Portainer**](https://portainer.io): Simple management UI for Docker.
-- [**SSHy**](https://github.com/stuicey/SSHy): HTML5 Based SSHv2 Web Client with E2E encryption utilising `xterm.js`, SJCL & websockets.
-- [**JupyterLab**](https://github.com/jupyterlab/jupyterlab): An extensible 
-computational environment for Jupyter, supporting interactive data science and scientific computing across all programming languages.
-
-Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list.
-
-## Browser Support
-
-Since xterm.js is typically implemented as a developer tool, only modern browsers are supported officially. Here is a list of the versions we aim to support:
-
-- Chrome 48+
-- Edge 13+
-- Firefox 44+
-- Internet Explorer 11+
-- Opera 35+
-- Safari 8+
-
-Xterm.js works seamlessly in Electron apps and may even work on earlier versions of the browsers but these are the browsers we strive to keep working.
-
 ## Getting Started
 
 First you need to install the module, we ship exclusively through [npm](https://www.npmjs.com/) so you need that installed and then add xterm.js as a dependency by running:
@@ -131,7 +91,47 @@ var xterm = new Terminal();
 xterm.fit();
 ```
 
-Note for TypeScript users there is currently no solution for addon 
+*Note: There are currently no typings for addons so you will need to upcast if using TypeScript, eg. `(<any>xterm).fit()`*
+
+## Browser Support
+
+Since xterm.js is typically implemented as a developer tool, only modern browsers are supported officially. Here is a list of the versions we aim to support:
+
+- Chrome 48+
+- Edge 13+
+- Firefox 44+
+- Internet Explorer 11+
+- Opera 35+
+- Safari 8+
+
+Xterm.js works seamlessly in Electron apps and may even work on earlier versions of the browsers but these are the browsers we strive to keep working.
+
+## Real-world uses
+Xterm.js is used in several world-class applications to provide great terminal experiences.
+
+- [**SourceLair**](https://www.sourcelair.com/): In-browser IDE that provides its users with fully-featured Linux terminals based on xterm.js
+- [**Microsoft Visual Studio Code**](http://code.visualstudio.com/): Modern, versatile and powerful open source code editor that provides an integrated terminal based on xterm.js
+- [**ttyd**](https://github.com/tsl0922/ttyd): A command-line tool for sharing terminal over the web, with fully-featured terminal emulation based on xterm.js
+- [**Katacoda**](https://www.katacoda.com/): Katacoda is an Interactive Learning Platform for software developers, covering the latest Cloud Native technologies.
+- [**Eclipse Che**](http://www.eclipse.org/che): Developer workspace server, cloud IDE, and Eclipse next-generation IDE.
+- [**Codenvy**](http://www.codenvy.com): Cloud workspaces for development teams.
+- [**CoderPad**](https://coderpad.io): Online interviewing platform for programmers. Run code in many programming languages, with results displayed by `xterm.js`.
+- [**WebSSH2**](https://github.com/billchurch/WebSSH2): A web based SSH2 client using `xterm.js`, socket.io, and ssh2.
+- [**Spyder Terminal**](https://github.com/spyder-ide/spyder-terminal): A full fledged system terminal embedded on Spyder IDE.
+- [**Cloud Commander**](https://cloudcmd.io "Cloud Commander"): Orthodox web file manager with console and editor.
+- [**Codevolve**](https://www.codevolve.com "Codevolve"): Online platform for interactive coding and web development courses. Live container-backed terminal uses `xterm.js`.
+- [**RStudio**](https://www.rstudio.com/products/RStudio "RStudio"): RStudio is an integrated development environment (IDE) for R.
+- [**Terminal for Atom**](https://github.com/jsmecham/atom-terminal-tab): A simple terminal for the Atom text editor.
+- [**Eclipse Orion**](https://orionhub.org): A modern, open source software development environment that runs in the cloud. Code, deploy and run in the cloud.
+- [**Gravitational Teleport**](https://github.com/gravitational/teleport): Gravitational Teleport is a modern SSH server for remotely accessing clusters of Linux servers via SSH or HTTPS.
+- [**Hexlet**](https://en.hexlet.io): Practical programming courses (JavaScript, PHP, Unix, databases, functional programming). A steady path from the first line of code to the first job.
+- [**Selenoid UI**](https://github.com/aerokube/selenoid-ui): Simple UI for the scallable golang implementation of Selenium Hub named Selenoid. We use XTerm for streaming logs over websockets from docker containers.
+- [**Portainer**](https://portainer.io): Simple management UI for Docker.
+- [**SSHy**](https://github.com/stuicey/SSHy): HTML5 Based SSHv2 Web Client with E2E encryption utilising `xterm.js`, SJCL & websockets.
+- [**JupyterLab**](https://github.com/jupyterlab/jupyterlab): An extensible 
+computational environment for Jupyter, supporting interactive data science and scientific computing across all programming languages.
+
+Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list.
 
 ## Demo
 
@@ -150,14 +150,14 @@ Then open http://0.0.0.0:3000 in a web browser.
 
 First, ensure [node-gyp](https://github.com/nodejs/node-gyp) is installed and configured correctly, then run these commands.
 
-Note: Do not use ConEmu, as it seems to break the demo for some reason.
-
 ```
 npm install
 npm start
 ```
 
 Then open http://127.0.0.1:3000 in a web browser.
+
+*Note: Do not use ConEmu, as it seems to break the demo for some reason.*
 
 ## Releases
 
