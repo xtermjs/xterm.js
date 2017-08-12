@@ -3,7 +3,7 @@
  */
 
 import { ILinkMatcherOptions } from './Interfaces';
-import { LinkMatcherHandler, LinkMatcherValidationCallback, Charset, LineData } from './Types';
+import { LinkMatcherHandler, LinkMatcherValidationCallback, Charset, LineData, BellStylesEnum } from './Types';
 
 export interface IBrowser {
   isNode: boolean;
@@ -113,6 +113,8 @@ export interface IInputHandlingTerminal extends IEventEmitter {
 }
 
 export interface ITerminalOptions {
+  bellSound?: string;
+  bellStyles?: BellStylesEnum[];
   cancelEvents?: boolean;
   colors?: string[];
   cols?: number;
@@ -123,14 +125,12 @@ export interface ITerminalOptions {
   disableStdin?: boolean;
   geometry?: [number, number];
   handler?: (data: string) => void;
-  popOnBell?: boolean;
   rows?: number;
   screenKeys?: boolean;
   scrollback?: number;
   tabStopWidth?: number;
   termName?: string;
   useFlowControl?: boolean;
-  visualBell?: boolean;
 }
 
 export interface IBuffer {

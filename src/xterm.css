@@ -94,12 +94,12 @@
 }
 
 .terminal:not(.focus) .terminal-cursor {
-    outline: 1px solid #fff;
+    outline: 1px solid #e6e6e6;
     outline-offset: -1px;
 }
 
 .terminal.xterm-cursor-style-block.focus:not(.xterm-cursor-blink-on) .terminal-cursor {
-    background-color: #fff;
+    background-color: #e6e6e6;
     color: #000;
 }
 
@@ -107,7 +107,7 @@
 .terminal.focus.xterm-cursor-style-underline:not(.xterm-cursor-blink-on) .terminal-cursor::before {
     content: '';
     position: absolute;
-    background-color: #fff;
+    background-color: ##e6e6e6;
 }
 
 .terminal.focus.xterm-cursor-style-bar:not(.xterm-cursor-blink-on) .terminal-cursor::before {

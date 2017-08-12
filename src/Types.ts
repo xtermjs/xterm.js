@@ -2,6 +2,8 @@
  * @license MIT
  */
 
+import { BellStyles } from './utils/BellStyles';
+
 export type LinkMatcher = {
   id: number,
   regex: RegExp,
@@ -26,10 +28,8 @@ export type BooleanOption =
     'cursorBlink' |
     'debug' |
     'disableStdin' |
-    'popOnBell' |
     'screenKeys' |
-    'useFlowControl' |
-    'visualBell';
+    'useFlowControl';
 export type StringOption =
     'cursorStyle' |
     'termName';
@@ -41,3 +41,5 @@ export type NumberOption =
     'scrollback';
 export type GeometryOption = 'geometry';
 export type HandlerOption = 'handler';
+
+export type BellStylesEnum = BellStyles;

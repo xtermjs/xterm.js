@@ -39,6 +39,8 @@ import { CHARSETS } from './Charsets';
 import { getRawByteCoords } from './utils/Mouse';
 import { CustomKeyEventHandler, Charset, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData, Option, StringOption, BooleanOption, StringArrayOption, NumberOption, GeometryOption, HandlerOption } from './Types';
 import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper } from './Interfaces';
+import { BellSound } from './utils/Sounds';
+import { BellStyles } from './utils/BellStyles';
 
 // Declare for RequireJS in loadAddon
 declare var define: any;
@@ -147,8 +149,8 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   geometry: [80, 24],
   cursorBlink: false,
   cursorStyle: 'block',
-  visualBell: false,
-  popOnBell: false,
+  bellSound: BellSound,
+  bellStyles: [BellStyles.Sound],
   scrollback: 1000,
   screenKeys: false,
   debug: false,
@@ -1882,12 +1884,17 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Note: We could do sweet things with webaudio here
    */
   public bell(): void {
-    if (!this.options.visualBell) return;
-    this.element.style.borderColor = 'white';
-    setTimeout(() => {
-      this.element.style.borderColor = '';
-    }, 10);
-    if (this.options.popOnBell) this.focus();
+    this.emit('bell');
+    if (this.options.bellStyles.indexOf(BellStyles.Sound) > -1) {
+      this.bellAudioElement.play();
+    }
+    if (this.options.bellStyles.indexOf(BellStyles.Visual) > -1) {
+      var cursor = this.element.querySelector('.terminal-cursor') as HTMLElement;
+      cursor.style.backgroundColor = "#fff";
+      setTimeout(function() {
+        cursor.style.backgroundColor = "#e6e6e6";
+      }, 200);
+    }
   }
 
   /**
