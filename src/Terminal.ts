@@ -150,7 +150,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   cursorBlink: false,
   cursorStyle: 'block',
   bellSound: BellSound,
-  bellStyles: [BellStyles.Sound],
+  bellStyles: [BellStyles.Sound, BellStyles.Visual],
   scrollback: 1000,
   screenKeys: false,
   debug: false,
@@ -180,6 +180,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   private helperContainer: HTMLElement;
   private compositionView: HTMLElement;
   private charSizeStyleElement: HTMLStyleElement;
+  private bellAudioElement: HTMLAudioElement;
+  private visualBellTimer: number;
 
   public browser: IBrowser = <any>Browser;
 
@@ -692,7 +694,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.viewportElement.appendChild(this.viewportScrollArea);
 
     // preload audio
-    if (this.options.bellSound) {
+    if (this.options.bellStyles.indexOf(BellStyles.Sound) > -1) {
       this.bellAudioElement = document.createElement('audio');
       this.bellAudioElement.setAttribute('preload', 'auto');
       this.bellAudioElement.setAttribute('src', this.options.bellSound);
@@ -1889,11 +1891,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       this.bellAudioElement.play();
     }
     if (this.options.bellStyles.indexOf(BellStyles.Visual) > -1) {
-      var cursor = this.element.querySelector('.terminal-cursor') as HTMLElement;
-      var originalBackground = cursor.style.backgroundColor;
-      cursor.style.backgroundColor = "#fff";
-      setTimeout(function() {
-        cursor.style.backgroundColor = originalBackground;
+      this.element.classList.add("visual-bell-active");
+      clearTimeout(this.visualBellTimer);
+      this.visualBellTimer = window.setTimeout(() => {
+        this.element.classList.remove("visual-bell-active");
       }, 200);
     }
   }
