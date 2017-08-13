@@ -1891,10 +1891,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       this.bellAudioElement.play();
     }
     if (this.options.bellStyles.indexOf(BellStyles.Visual) > -1) {
-      this.element.classList.add("visual-bell-active");
+      this.element.classList.add('visual-bell-active');
       clearTimeout(this.visualBellTimer);
       this.visualBellTimer = window.setTimeout(() => {
-        this.element.classList.remove("visual-bell-active");
+        this.element.classList.remove('visual-bell-active');
       }, 200);
     }
   }
