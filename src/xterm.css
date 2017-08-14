@@ -91,6 +91,7 @@
 
 .terminal .terminal-cursor {
     position: relative;
+    transition: background-color 150ms ease;
 }
 
 .terminal:not(.focus) .terminal-cursor {
@@ -108,6 +109,7 @@
     content: '';
     position: absolute;
     background-color: #fff;
+    transition: background-color 150ms ease;
 }
 
 .terminal.focus.xterm-cursor-style-bar:not(.xterm-cursor-blink-on) .terminal-cursor::before {
@@ -124,8 +126,12 @@
     height: 1px;
 }
 
-.visual-bell-active .terminal-cursor {
+.terminal.focus.xterm-cursor-style-block.visual-bell-active .terminal-cursor {
   background-color: #ccc !important;
+}
+.terminal.focus.xterm-cursor-style-bar.visual-bell-active .terminal-cursor::before,
+.terminal.focus.xterm-cursor-style-underline.visual-bell-active .terminal-cursor::before {
+  background-color: transparent;
 }
 
 .terminal .composition-view {
