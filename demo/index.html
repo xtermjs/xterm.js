@@ -12,10 +12,24 @@
         <script src="/build/addons/fit/fit.js" ></script>
         <script src="/build/addons/fullscreen/fullscreen.js" ></script>
         <script src="/build/addons/search/search.js" ></script>
+        <!-- for split panel https://github.com/nathancahill/Split.js -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/3.0.3/normalize.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.8.0/styles/github.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.8.0/highlight.min.js"></script>
+        <script src="https://unpkg.com/split.js@1.3.5/split.min.js"></script>
     </head>
     <body>
-        <h1>xterm.js: xterm, in the browser</h1>
-        <div id="terminal-container"></div>
+        <h4><b>xterm.js: xterm, in the browser</b></h4>
+        <div id="parent-container">
+          <div id="left" class="split split-horizontal">
+            <div id="top"></div>
+            <div id="bottom">
+              <div id="terminal-container"></div>
+            </div>
+          </div>
+          <div id="right" class="split split-horizontal"></div>
+        </div>
         <div>
           <h2>Actions</h2>
           <p>
@@ -23,8 +37,8 @@
             <label>Find previous <input id="find-previous"/></label>
           </p>
         </div>
-        <div>
-          <h2>Options</h2>
+        <div id="options">
+          <h4><b>Options</b></h4>
           <p>
             <label><input type="checkbox" id="option-cursor-blink"> cursorBlink</label>
           </p>
@@ -44,19 +58,6 @@
           <p>
             <label>tabStopWidth <input type="number" id="option-tabstopwidth" value="8" /></label>
           </p>
-          <div>
-          	<h3>Size</h3>
-            <div>
-              <div style="display: inline-block; margin-right: 16px;">
-                <label for="cols">Columns</label>
-                <input type="number" id="cols" />
-              </div>
-              <div style="display: inline-block; margin-right: 16px;">
-                <label for="rows">Rows</label>
-                <input type="number" id="rows" />
-              </div>
-            </div>
-          </div>
         </div>
         <p><strong>Attention:</strong> The demo is a barebones implementation and is designed for xterm.js evaluation purposes only. Exposing the demo to the public as is would introduce security risks for the host.</p>
         <script src="main.js" defer ></script>

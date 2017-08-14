@@ -4,13 +4,13 @@ body {
     color: #111;
 }
 
-h1 {
+h4 {
     text-align: center;
 }
 
 #terminal-container {
-    width: 800px;
-    height: 450px;
+    width: 100%;
+    height: calc(100% - 4px);
     margin: 0 auto;
     padding: 2px;
 }
@@ -20,3 +20,63 @@ h1 {
     color: #fafafa;
     padding: 2px;
 }
+.xterm {
+    line-height: 12px;
+}
+
+#parent-container {
+    width: 1600px;
+    height: 400px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.split p {
+    padding: 20px;
+}
+
+.split {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+.gutter {
+    background-color: #87875f;
+    background-repeat: no-repeat;
+    background-position: 50%;
+}
+
+.split.split-horizontal, .gutter.gutter-horizontal {
+    height: 100%;
+    float: left;
+}
+
+#bottom {
+    overflow: hidden;
+}
+
+input.term-disp  {
+    padding: 0 !important;
+    height: 20px !important;
+    width: 50px;
+    margin: 0 !important;
+}
+
+span.value-disp {
+    width: 50px;
+    margin-bottom: 0;
+    padding: 0;
+}
+
+div.elem {
+    border: 1px solid black;
+}
+
+#options p, label, input {
+    margin: 0;
+    display: inline-block;
+    text-indent: 0;
+}
+
