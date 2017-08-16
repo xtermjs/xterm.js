@@ -2082,8 +2082,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Return the data array of a blank line
    * @param {boolean} cur First bunch of data for each "blank" character.
    * @param {boolean} isWrapped Whether the new line is wrapped from the previous line.
+   * @param {boolean} cols The number of columns in the terminal, if this is not
+   * set, the terminal's current column count would be used.
    */
-  public blankLine(cur?: boolean, isWrapped?: boolean): LineData {
+  public blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): LineData {
     const attr = cur ? this.eraseAttr() : this.defAttr;
 
     const ch: CharData = [attr, ' ', 1]; // width defaults to 1 halfwidth character
@@ -2095,7 +2097,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       (<any>line).isWrapped = isWrapped;
     }
 
-    for (let i = 0; i < this.cols; i++) {
+    cols = cols || this.cols;
+    for (let i = 0; i < cols; i++) {
       line[i] = ch;
     }
 

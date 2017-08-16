@@ -159,6 +159,17 @@ describe('Buffer', () => {
         });
       });
     });
+
+    describe('row and column increased', () => {
+      it('should resize properly', () => {
+        buffer.fillViewportRows();
+        buffer.resize(INIT_COLS + 5, INIT_ROWS + 5);
+        assert.equal(buffer.lines.length, INIT_ROWS + 5);
+        for (let i = 0; i < INIT_ROWS + 5; i++) {
+          assert.equal(buffer.lines.get(i).length, INIT_COLS + 5);
+        }
+      });
+    });
   });
 
   describe('alt buffer', () => {
