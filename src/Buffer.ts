@@ -32,11 +32,12 @@ export class Buffer implements IBuffer {
   /**
    * Create a new Buffer.
    * @param _terminal The terminal the Buffer will belong to.
-   * @param _isAltBuffer Whether the buffer is the alt buffer.
+   * @param _hasScrollback Whether the buffer should respecr the scrollback of
+   * the terminal..
    */
   constructor(
     private _terminal: ITerminal,
-    private _isAltBuffer: boolean
+    private _hasScrollback: boolean
   ) {
     this.clear();
   }
@@ -47,13 +48,11 @@ export class Buffer implements IBuffer {
 
   /**
    * Gets the correct buffer length based on the rows provided, the terminal's
-   * scrollback and whether this is an alt buffer.
+   * scrollback and whether this buffer is flagged to have scrollback or not.
    * @param rows The terminal rows to use in the calculation.
    */
   private _getCorrectBufferLength(rows: number): number {
-    // The alt buffer should never have scrollback.
-    // See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-The-Alternate-Screen-Buffer
-    if (this._isAltBuffer) {
+    if (!this._hasScrollback) {
       return rows;
     }
     return rows + this._terminal.options.scrollback;

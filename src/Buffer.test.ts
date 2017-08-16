@@ -20,7 +20,7 @@ describe('Buffer', () => {
     terminal.cols = INIT_COLS;
     terminal.rows = INIT_ROWS;
     terminal.options.scrollback = 1000;
-    buffer = new Buffer(terminal, false);
+    buffer = new Buffer(terminal, true);
   });
 
   describe('constructor', () => {
@@ -92,7 +92,7 @@ describe('Buffer', () => {
       describe('no scrollback', () => {
         it('should trim from the top of the buffer when the cursor reaches the bottom', () => {
           terminal.options.scrollback = 0;
-          buffer = new Buffer(terminal, false);
+          buffer = new Buffer(terminal, true);
           assert.equal(buffer.lines.maxLength, INIT_ROWS);
           buffer.y = INIT_ROWS - 1;
           buffer.fillViewportRows();
@@ -172,11 +172,11 @@ describe('Buffer', () => {
     });
   });
 
-  describe('alt buffer', () => {
+  describe('buffer marked to have no scrollback', () => {
     it('should always have a scrollback of 0', () => {
       assert.equal(terminal.options.scrollback, 1000);
       // Test size on initialization
-      buffer = new Buffer(terminal, true);
+      buffer = new Buffer(terminal, false);
       buffer.fillViewportRows();
       assert.equal(buffer.lines.maxLength, INIT_ROWS);
       // Test size on buffer increase

@@ -21,9 +21,12 @@ export class BufferSet extends EventEmitter implements IBufferSet {
    */
   constructor(private _terminal: ITerminal) {
     super();
-    this._normal = new Buffer(this._terminal, false);
+    this._normal = new Buffer(this._terminal, true);
     this._normal.fillViewportRows();
-    this._alt = new Buffer(this._terminal, true);
+
+    // The alt buffer should never have scrollback.
+    // See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-The-Alternate-Screen-Buffer
+    this._alt = new Buffer(this._terminal, false);
     this._activeBuffer = this._normal;
   }
 
