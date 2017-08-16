@@ -2284,19 +2284,19 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     return matchColorCache[hash] = li;
   }
 
-  private visualBell() {
+  private visualBell(): boolean {
     var styles = [].concat.apply([], [this.options.bellStyle]);
 
     return styles.indexOf('visual') > -1 || styles.indexOf('both') > -1
   }
 
-  private soundBell() {
+  private soundBell(): boolean {
     var styles = [].concat.apply([], [this.options.bellStyle]);
 
     return styles.indexOf('sound') > -1 || styles.indexOf('both') > -1
   }
 
-  private preloadBellSound() {
+  private preloadBellSound(): void {
     if (this.soundBell()) {
       this.bellAudioElement = document.createElement('audio');
       this.bellAudioElement.setAttribute('preload', 'auto');
