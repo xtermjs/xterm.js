@@ -45,6 +45,8 @@ Xterm.js is used in several world-class applications to provide great terminal e
 computational environment for Jupyter, supporting interactive data science and scientific computing across all programming languages.
 - [**Script Runner**](https://github.com/ioquatix/script-runner): Run scripts (or a shell) in Atom.
 - [**Whack Whack Terminal**](https://github.com/Microsoft/WhackWhackTerminal): Terminal emulator for Visual Studio 2017.
+- [**VTerm**](https://github.com/vterm/vterm): Extensible terminal emulator based on Electron and React.
+
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list.
 
