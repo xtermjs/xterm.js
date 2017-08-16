@@ -40,7 +40,6 @@ import { getRawByteCoords } from './utils/Mouse';
 import { CustomKeyEventHandler, Charset, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData, Option, StringOption, BooleanOption, StringArrayOption, NumberOption, GeometryOption, HandlerOption } from './Types';
 import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper } from './Interfaces';
 import { BellSound } from './utils/Sounds';
-import { BellStyles } from './utils/BellStyles';
 
 // Declare for RequireJS in loadAddon
 declare var define: any;
@@ -150,7 +149,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   cursorBlink: false,
   cursorStyle: 'block',
   bellSound: BellSound,
-  bellStyles: [BellStyles.Sound, BellStyles.Visual],
+  bellStyle: null,
   scrollback: 1000,
   screenKeys: false,
   debug: false,
@@ -486,6 +485,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         this.viewport.syncScrollArea();
         break;
       case 'tabStopWidth': this.setupStops(); break;
+      case 'bellStyle': this.preloadBellSound(); break;
     }
   }
 
@@ -694,12 +694,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.viewportElement.appendChild(this.viewportScrollArea);
 
     // preload audio
-    if (this.options.bellStyles.indexOf(BellStyles.Sound) > -1) {
-      this.bellAudioElement = document.createElement('audio');
-      this.bellAudioElement.setAttribute('preload', 'auto');
-      this.bellAudioElement.setAttribute('src', this.options.bellSound);
-      this.element.appendChild(this.bellAudioElement);
-    }
+    this.preloadBellSound()
 
     // Create the selection container.
     this.selectionContainer = document.createElement('div');
@@ -1887,10 +1882,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    */
   public bell(): void {
     this.emit('bell');
-    if (this.options.bellStyles.indexOf(BellStyles.Sound) > -1) {
+    if (this.soundBell()) {
       this.bellAudioElement.play();
     }
-    if (this.options.bellStyles.indexOf(BellStyles.Visual) > -1) {
+    if (this.visualBell()) {
       this.element.classList.add('visual-bell-active');
       clearTimeout(this.visualBellTimer);
       this.visualBellTimer = window.setTimeout(() => {
@@ -2287,6 +2282,27 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     }
 
     return matchColorCache[hash] = li;
+  }
+
+  private visualBell() {
+    var styles = [].concat.apply([], [this.options.bellStyle]);
+
+    return styles.indexOf('visual') > -1 || styles.indexOf('both') > -1
+  }
+
+  private soundBell() {
+    var styles = [].concat.apply([], [this.options.bellStyle]);
+
+    return styles.indexOf('sound') > -1 || styles.indexOf('both') > -1
+  }
+
+  private preloadBellSound() {
+    if (this.soundBell()) {
+      this.bellAudioElement = document.createElement('audio');
+      this.bellAudioElement.setAttribute('preload', 'auto');
+      this.bellAudioElement.setAttribute('src', this.options.bellSound);
+      this.element.appendChild(this.bellAudioElement);
+    }
   }
 }
 

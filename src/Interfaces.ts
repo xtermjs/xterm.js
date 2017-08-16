@@ -3,7 +3,7 @@
  */
 
 import { ILinkMatcherOptions } from './Interfaces';
-import { LinkMatcherHandler, LinkMatcherValidationCallback, Charset, LineData, BellStylesEnum } from './Types';
+import { LinkMatcherHandler, LinkMatcherValidationCallback, Charset, LineData } from './Types';
 
 export interface IBrowser {
   isNode: boolean;
@@ -114,7 +114,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
 
 export interface ITerminalOptions {
   bellSound?: string;
-  bellStyles?: BellStylesEnum[];
+  bellStyle?: string[];
   cancelEvents?: boolean;
   colors?: string[];
   cols?: number;

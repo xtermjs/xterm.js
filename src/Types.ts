@@ -2,8 +2,6 @@
  * @license MIT
  */
 
-import { BellStyles } from './utils/BellStyles';
-
 export type LinkMatcher = {
   id: number,
   regex: RegExp,
@@ -32,6 +30,7 @@ export type BooleanOption =
     'useFlowControl';
 export type StringOption =
     'cursorStyle' |
+    'bellStyle' |
     'termName';
 export type StringArrayOption = 'colors';
 export type NumberOption =
@@ -41,5 +40,3 @@ export type NumberOption =
     'scrollback';
 export type GeometryOption = 'geometry';
 export type HandlerOption = 'handler';
-
-export type BellStylesEnum = BellStyles;
