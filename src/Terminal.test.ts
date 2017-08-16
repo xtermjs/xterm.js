@@ -95,16 +95,6 @@ describe('term.js addons', () => {
   });
 
   describe('setOption', () => {
-    let originalWarn;
-    let warnCallCount;
-    beforeEach(() => {
-      originalWarn = console.warn;
-      warnCallCount = 0;
-      console.warn = () => warnCallCount++;
-    });
-    afterEach(() => {
-      console.warn = originalWarn;
-    });
     it('should set the option correctly', () => {
       term.setOption('cursorBlink', true);
       assert.equal(term.options.cursorBlink, true);
@@ -113,11 +103,6 @@ describe('term.js addons', () => {
     });
     it('should throw when setting a non-existant option', () => {
       assert.throws(term.setOption.bind(term, 'fake', true));
-    });
-    it('should warn and do nothing when scrollback is less than number of rows', () => {
-      term.setOption('scrollback', term.rows - 1);
-      assert.equal(term.getOption('scrollback'), 1000);
-      assert.equal(warnCallCount, 1);
     });
   });
 

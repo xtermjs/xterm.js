@@ -443,23 +443,13 @@ export class InputHandler implements IInputHandler {
     }
     let row: number = this._terminal.buffer.y + this._terminal.buffer.ybase;
 
-    let j: number;
-    j = this._terminal.rows - 1 - this._terminal.buffer.scrollBottom;
-    j = this._terminal.rows - 1 + this._terminal.buffer.ybase - j + 1;
-
+    let scrollBottomRowsOffset = this._terminal.rows - 1 - this._terminal.buffer.scrollBottom;
+    let scrollBottomAbsolute = this._terminal.rows - 1 + this._terminal.buffer.ybase - scrollBottomRowsOffset + 1;
     while (param--) {
-      if (this._terminal.buffer.lines.length === this._terminal.buffer.lines.maxLength) {
-        // Trim the start of lines to make room for the new line
-        this._terminal.buffer.lines.trimStart(1);
-        this._terminal.buffer.ybase--;
-        this._terminal.buffer.ydisp--;
-        row--;
-        j--;
-      }
       // test: echo -e '\e[44m\e[1L\e[0m'
       // blankLine(true) - xterm/linux behavior
+      this._terminal.buffer.lines.splice(scrollBottomAbsolute - 1, 1);
       this._terminal.buffer.lines.splice(row, 0, this._terminal.blankLine(true));
-      this._terminal.buffer.lines.splice(j, 1);
     }
 
     // this.maxRange();
@@ -481,18 +471,11 @@ export class InputHandler implements IInputHandler {
     let j: number;
     j = this._terminal.rows - 1 - this._terminal.buffer.scrollBottom;
     j = this._terminal.rows - 1 + this._terminal.buffer.ybase - j;
-
     while (param--) {
-      if (this._terminal.buffer.lines.length === this._terminal.buffer.lines.maxLength) {
-        // Trim the start of lines to make room for the new line
-        this._terminal.buffer.lines.trimStart(1);
-        this._terminal.buffer.ybase -= 1;
-        this._terminal.buffer.ydisp -= 1;
-      }
       // test: echo -e '\e[44m\e[1M\e[0m'
       // blankLine(true) - xterm/linux behavior
-      this._terminal.buffer.lines.splice(j + 1, 0, this._terminal.blankLine(true));
-      this._terminal.buffer.lines.splice(row, 1);
+      this._terminal.buffer.lines.splice(row - 1, 1);
+      this._terminal.buffer.lines.splice(j, 0, this._terminal.blankLine(true));
     }
 
     // this.maxRange();

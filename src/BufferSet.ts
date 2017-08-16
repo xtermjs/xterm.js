@@ -21,9 +21,12 @@ export class BufferSet extends EventEmitter implements IBufferSet {
    */
   constructor(private _terminal: ITerminal) {
     super();
-    this._normal = new Buffer(this._terminal);
+    this._normal = new Buffer(this._terminal, true);
     this._normal.fillViewportRows();
-    this._alt = new Buffer(this._terminal);
+
+    // The alt buffer should never have scrollback.
+    // See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-The-Alternate-Screen-Buffer
+    this._alt = new Buffer(this._terminal, false);
     this._activeBuffer = this._normal;
   }
 
@@ -71,7 +74,6 @@ export class BufferSet extends EventEmitter implements IBufferSet {
     // Since the alt buffer is always cleared when the normal buffer is
     // activated, we want to fill it when switching to it.
     this._alt.fillViewportRows();
-
     this._activeBuffer = this._alt;
     this.emit('activate', this._alt);
   }
