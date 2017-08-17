@@ -2284,15 +2284,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 
   private visualBell(): boolean {
-    let styles = [].concat.apply([], [this.options.bellStyle]);
-
-    return styles.indexOf('visual') > -1 || styles.indexOf('both') > -1;
+    return this.options.bellStyle == 'visual' || this.options.bellStyle == 'both';
   }
 
   private soundBell(): boolean {
-    let styles = [].concat.apply([], [this.options.bellStyle]);
-
-    return styles.indexOf('sound') > -1 || styles.indexOf('both') > -1;
+    return this.options.bellStyle == 'sound' || this.options.bellStyle == 'both';
   }
 
   private preloadBellSound(): void {

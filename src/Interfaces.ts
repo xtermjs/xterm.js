@@ -115,7 +115,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
 
 export interface ITerminalOptions {
   bellSound?: string;
-  bellStyle?: string[];
+  bellStyle?: string;
   cancelEvents?: boolean;
   colors?: string[];
   cols?: number;
