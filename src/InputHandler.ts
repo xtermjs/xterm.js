@@ -107,18 +107,7 @@ export class InputHandler implements IInputHandler {
    * Bell (Ctrl-G).
    */
   public bell(): void {
-    this._terminal.emit('bell');
-    if (this._terminal.bellSound) {
-      this._terminal.bellAudioElement.play();
-    }
-    if (!this._terminal.visualBell) {
-      return;
-    }
-    this._terminal.element.style.borderColor = 'white';
-    setTimeout(() => this._terminal.element.style.borderColor = '', 10);
-    if (this._terminal.options.popOnBell) {
-      this._terminal.focus();
-    }
+    this._terminal.bell();
   }
 
   /**

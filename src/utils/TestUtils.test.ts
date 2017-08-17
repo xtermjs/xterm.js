@@ -97,6 +97,10 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
     throw new Error('Method not implemented.');
   }
   convertEol: boolean;
+  bell(): void {
+    throw new Error('Method not implemented.');
+  }
+
   updateRange(y: number): void {
     throw new Error('Method not implemented.');
   }

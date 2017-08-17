@@ -87,6 +87,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   viewport: IViewport;
   selectionManager: ISelectionManager;
 
+  bell(): void;
   focus(): void;
   convertEol: boolean;
   updateRange(y: number): void;

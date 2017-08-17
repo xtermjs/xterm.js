@@ -1882,9 +1882,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    */
   public bell(): void {
     this.emit('bell');
-    if (this.soundBell()) {
-      this.bellAudioElement.play();
-    }
+    if (this.soundBell()) this.bellAudioElement.play();
+
     if (this.visualBell()) {
       this.element.classList.add('visual-bell-active');
       clearTimeout(this.visualBellTimer);
