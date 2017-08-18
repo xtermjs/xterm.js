@@ -8,7 +8,7 @@
     ".gitignore"
   ],
   "main": "lib/Terminal.js",
-  "types": "lib/Terminal.d.ts",
+  "types": "typings/xterm.d.ts",
   "repository": "https://github.com/sourcelair/xterm.js",
   "license": "MIT",
   "files": [
