@@ -341,7 +341,9 @@ export class Parser {
             case '=':
               this._terminal.log('Serial port requested application keypad.');
               this._terminal.applicationKeypad = true;
-              this._terminal.viewport.syncScrollArea();
+              if (this._terminal.viewport) {
+                this._terminal.viewport.syncScrollArea();
+              }
               this._state = ParserState.NORMAL;
               break;
 
@@ -349,7 +351,9 @@ export class Parser {
             case '>':
               this._terminal.log('Switching back to normal keypad.');
               this._terminal.applicationKeypad = false;
-              this._terminal.viewport.syncScrollArea();
+              if (this._terminal.viewport) {
+                this._terminal.viewport.syncScrollArea();
+              }
               this._state = ParserState.NORMAL;
               break;
 
