@@ -37,7 +37,7 @@ import * as Browser from './utils/Browser';
 import * as Mouse from './utils/Mouse';
 import { CHARSETS } from './Charsets';
 import { getRawByteCoords } from './utils/Mouse';
-import { CustomKeyEventHandler, Charset, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData, Option, StringOption, BooleanOption, StringArrayOption, NumberOption, GeometryOption, HandlerOption } from './Types';
+import { CustomKeyEventHandler, Charset, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
 import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper } from './Interfaces';
 
 // Declare for RequireJS in loadAddon
@@ -412,13 +412,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Retrieves an option's value from the terminal.
    * @param {string} key The option key.
    */
-  public getOption(key: StringOption): string;
-  public getOption(key: BooleanOption): boolean;
-  public getOption(key: StringArrayOption): string[];
-  public getOption(key: NumberOption): number;
-  public getOption(key: GeometryOption): [number, number];
-  public getOption(key: HandlerOption): (data: string) => void;
-  public getOption(key: Option): any {
+  public getOption(key: string): any {
     if (!(key in DEFAULT_OPTIONS)) {
       throw new Error('No option with key "' + key + '"');
     }
@@ -435,13 +429,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param {string} key The option key.
    * @param {any} value The option value.
    */
-  public setOption(key: StringOption, value: string): void;
-  public setOption(key: BooleanOption, value: boolean): void;
-  public setOption(key: StringArrayOption, value: number[]): void;
-  public setOption(key: NumberOption, value: number): void;
-  public setOption(key: GeometryOption, value: [number, number]): void;
-  public setOption(key: HandlerOption, value: (data: string) => void): void;
-  public setOption(key: Option, value: any): void {
+  public setOption(key: string, value: any): void {
     if (!(key in DEFAULT_OPTIONS)) {
       throw new Error('No option with key "' + key + '"');
     }
