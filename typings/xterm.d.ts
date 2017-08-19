@@ -109,6 +109,14 @@ declare module 'xterm' {
      * @param type The type of the event.
      * @param listener The listener.
      */
+    on(type: 'blur' | 'focus' | 'lineFeed' | 'open', listener: () => void): void;
+    on(type: 'data', listener: (data: string) => void): void;
+    on(type: 'key', listener: (key: string, event: KeyboardEvent) => void): void;
+    on(type: 'keypress' | 'keydown', listener: (event: KeyboardEvent) => void): void;
+    on(type: 'refresh', listener: (data: {element: HTMLElement, start: number, end: number}) => void): void;
+    on(type: 'resize', listener: (data: {terminal: Terminal, cols: number, rows: number}) => void): void;
+    on(type: 'scroll', listener: (ydisp: number) => void): void;
+    on(type: 'title', listener: (title: string) => void): void;
     on(type: string, listener: (data: any) => void): void;
 
     /**
