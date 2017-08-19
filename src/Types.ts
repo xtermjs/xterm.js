@@ -31,6 +31,7 @@ export type BooleanOption =
 export type StringOption =
     'cursorStyle' |
     'bellStyle' |
+    'bellSound' |
     'termName';
 export type StringArrayOption = 'colors';
 export type NumberOption =
