@@ -87,6 +87,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   viewport: IViewport;
   selectionManager: ISelectionManager;
 
+  bell(): void;
   focus(): void;
   convertEol: boolean;
   updateRange(y: number): void;
@@ -113,6 +114,8 @@ export interface IInputHandlingTerminal extends IEventEmitter {
 }
 
 export interface ITerminalOptions {
+  bellSound?: string;
+  bellStyle?: string;
   cancelEvents?: boolean;
   colors?: string[];
   cols?: number;
@@ -123,14 +126,12 @@ export interface ITerminalOptions {
   disableStdin?: boolean;
   geometry?: [number, number];
   handler?: (data: string) => void;
-  popOnBell?: boolean;
   rows?: number;
   screenKeys?: boolean;
   scrollback?: number;
   tabStopWidth?: number;
   termName?: string;
   useFlowControl?: boolean;
-  visualBell?: boolean;
 }
 
 export interface IBuffer {

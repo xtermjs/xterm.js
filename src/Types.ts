@@ -26,12 +26,11 @@ export type BooleanOption =
     'cursorBlink' |
     'debug' |
     'disableStdin' |
-    'popOnBell' |
     'screenKeys' |
-    'useFlowControl' |
-    'visualBell';
+    'useFlowControl';
 export type StringOption =
     'cursorStyle' |
+    'bellStyle' |
     'termName';
 export type StringArrayOption = 'colors';
 export type NumberOption =

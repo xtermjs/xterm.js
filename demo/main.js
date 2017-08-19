@@ -15,7 +15,8 @@ var terminalContainer = document.getElementById('terminal-container'),
       cursorBlink: document.querySelector('#option-cursor-blink'),
       cursorStyle: document.querySelector('#option-cursor-style'),
       scrollback: document.querySelector('#option-scrollback'),
-      tabstopwidth: document.querySelector('#option-tabstopwidth')
+      tabstopwidth: document.querySelector('#option-tabstopwidth'),
+      bellStyle: document.querySelector('#option-bell-style')
     },
     colsElement = document.getElementById('cols'),
     rowsElement = document.getElementById('rows');
@@ -52,6 +53,9 @@ optionElements.cursorBlink.addEventListener('change', function () {
 });
 optionElements.cursorStyle.addEventListener('change', function () {
   term.setOption('cursorStyle', optionElements.cursorStyle.value);
+});
+optionElements.bellStyle.addEventListener('change', function () {
+  term.setOption('bellStyle', optionElements.bellStyle.value);
 });
 optionElements.scrollback.addEventListener('change', function () {
   term.setOption('scrollback', parseInt(optionElements.scrollback.value, 10));

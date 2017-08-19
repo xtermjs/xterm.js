@@ -39,6 +39,7 @@ import { CHARSETS } from './Charsets';
 import { getRawByteCoords } from './utils/Mouse';
 import { CustomKeyEventHandler, Charset, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData, Option, StringOption, BooleanOption, StringArrayOption, NumberOption, GeometryOption, HandlerOption } from './Types';
 import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper } from './Interfaces';
+import { BellSound } from './utils/Sounds';
 
 // Declare for RequireJS in loadAddon
 declare var define: any;
@@ -147,8 +148,8 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   geometry: [80, 24],
   cursorBlink: false,
   cursorStyle: 'block',
-  visualBell: false,
-  popOnBell: false,
+  bellSound: BellSound,
+  bellStyle: null,
   scrollback: 1000,
   screenKeys: false,
   debug: false,
@@ -178,6 +179,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   private helperContainer: HTMLElement;
   private compositionView: HTMLElement;
   private charSizeStyleElement: HTMLStyleElement;
+  private bellAudioElement: HTMLAudioElement;
+  private visualBellTimer: number;
 
   public browser: IBrowser = <any>Browser;
 
@@ -482,6 +485,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         this.viewport.syncScrollArea();
         break;
       case 'tabStopWidth': this.setupStops(); break;
+      case 'bellStyle': this.preloadBellSound(); break;
     }
   }
 
@@ -688,6 +692,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.viewportScrollArea = document.createElement('div');
     this.viewportScrollArea.classList.add('xterm-scroll-area');
     this.viewportElement.appendChild(this.viewportScrollArea);
+
+    // preload audio
+    this.preloadBellSound();
 
     // Create the selection container.
     this.selectionContainer = document.createElement('div');
@@ -1874,12 +1881,16 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Note: We could do sweet things with webaudio here
    */
   public bell(): void {
-    if (!this.options.visualBell) return;
-    this.element.style.borderColor = 'white';
-    setTimeout(() => {
-      this.element.style.borderColor = '';
-    }, 10);
-    if (this.options.popOnBell) this.focus();
+    this.emit('bell');
+    if (this.soundBell()) this.bellAudioElement.play();
+
+    if (this.visualBell()) {
+      this.element.classList.add('visual-bell-active');
+      clearTimeout(this.visualBellTimer);
+      this.visualBellTimer = window.setTimeout(() => {
+        this.element.classList.remove('visual-bell-active');
+      }, 200);
+    }
   }
 
   /**
@@ -2270,6 +2281,27 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     }
 
     return matchColorCache[hash] = li;
+  }
+
+  private visualBell(): boolean {
+    return this.options.bellStyle === 'visual' ||
+        this.options.bellStyle === 'both';
+  }
+
+  private soundBell(): boolean {
+    return this.options.bellStyle === 'sound' ||
+        this.options.bellStyle === 'both';
+  }
+
+  private preloadBellSound(): void {
+    if (this.soundBell()) {
+      this.bellAudioElement = document.createElement('audio');
+      this.bellAudioElement.setAttribute('preload', 'auto');
+      this.bellAudioElement.setAttribute('src', this.options.bellSound);
+      this.helperContainer.appendChild(this.bellAudioElement);
+    } else if (this.bellAudioElement) {
+      this.helperContainer.removeChild(this.bellAudioElement);
+    }
   }
 }
 
