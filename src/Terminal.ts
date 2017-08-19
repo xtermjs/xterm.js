@@ -511,7 +511,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       this.showCursor();
       this.restartCursorBlinking.apply(this);
       // TODO: Why pass terminal here?
-      this.emit('focus', {terminal: this});
+      this.emit('focus');
     });
   };
 
@@ -535,7 +535,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       this.element.classList.remove('focus');
       this.clearCursorBlinkingInterval.apply(this);
       // TODO: Why pass terminal here?
-      this.emit('blur', {terminal: this});
+      this.emit('blur');
     });
   }
 
@@ -710,14 +710,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.textarea.setAttribute('autocapitalize', 'off');
     this.textarea.setAttribute('spellcheck', 'false');
     this.textarea.tabIndex = 0;
-    this.textarea.addEventListener('focus', () => {
-      // TODO: Do we need terminal passed here?
-      this.emit('focus', {terminal: this});
-    });
-    this.textarea.addEventListener('blur', () => {
-      // TODO: Do we need terminal passed here?
-      this.emit('blur', {terminal: this});
-    });
+    this.textarea.addEventListener('focus', () => this.emit('focus'));
+    this.textarea.addEventListener('blur', () => this.emit('blur'));
     this.helperContainer.appendChild(this.textarea);
 
     this.compositionView = document.createElement('div');
