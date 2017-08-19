@@ -765,13 +765,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // Listen for mouse events and translate
     // them into terminal mouse protocols.
     this.bindMouse();
-
-    /**
-     * This event is emitted when terminal has completed opening.
-     *
-     * @event open
-     */
-    this.emit('open');
   }
 
   /**

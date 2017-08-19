@@ -63,7 +63,6 @@ namespace methods_core {
     t.on('blur', () => {});
     t.on('focus', () => {});
     t.on('lineFeed', () => {});
-    t.on('open', () => {});
     // args
     t.on('data', () => {});
     t.on('data', (data: string) => console.log(data));
@@ -89,7 +88,6 @@ namespace methods_core {
     t.off('blur', () => {});
     t.off('focus', () => {});
     t.off('lineFeed', () => {});
-    t.off('open', () => {});
     // args
     t.off('data', () => {});
     t.off('data', (data: string) => console.log(data));
