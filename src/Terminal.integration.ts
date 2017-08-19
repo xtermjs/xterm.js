@@ -149,7 +149,10 @@ if (os.platform() !== 'win32') {
 describe('typings', () => {
   it('should throw no compile errors', function (): void {
     this.timeout(20000);
-    const tsc = path.join(__dirname, '..', 'node_modules', '.bin', 'tsc');
+    let tsc = path.join(__dirname, '..', 'node_modules', '.bin', 'tsc');
+    if (process.platform === 'win32') {
+      tsc += '.cmd';
+    }
     const fixtureDir = path.join(__dirname, '..', 'fixtures', 'typings-test');
     let result = cp.spawnSync(tsc, { cwd: fixtureDir });
     assert.equal(result.status, 0, `build did not succeed:\nstdout: ${result.stdout.toString()}\nstderr: ${result.stderr.toString()}\n`);
