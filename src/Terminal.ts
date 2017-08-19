@@ -1944,7 +1944,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.refresh(0, this.rows - 1);
 
     this.geometry = [this.cols, this.rows];
-    this.emit('resize', {terminal: this, cols: x, rows: y});
+    this.emit('resize', {cols: x, rows: y});
   }
 
   /**

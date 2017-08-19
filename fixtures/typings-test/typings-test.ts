@@ -74,9 +74,9 @@ namespace methods_core {
     t.on('keypress', () => {});
     t.on('keypress', (event: KeyboardEvent) => console.log(event));
     t.on('refresh', () => {});
-    t.on('refresh', (data: {element: HTMLElement, start: number, end: number}) => console.log(data));
+    t.on('refresh', (data: {start: number, end: number}) => console.log(data));
     t.on('resize', () => {});
-    t.on('resize', (data: {terminal: Terminal, cols: number, rows: number}) => console.log(data));
+    t.on('resize', (data: {cols: number, rows: number}) => console.log(data));
     t.on('scroll', () => {});
     t.on('scroll', (ydisp: number) => console.log(ydisp));
     t.on('title', () => {});

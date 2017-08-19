@@ -136,13 +136,13 @@ declare module 'xterm' {
      * @param type The type of the event.
      * @param listener The listener.
      */
-    on(type: 'refresh', listener: (data?: {element: HTMLElement, start: number, end: number}) => void): void;
+    on(type: 'refresh', listener: (data?: {start: number, end: number}) => void): void;
     /**
      * Registers an event listener.
      * @param type The type of the event.
      * @param listener The listener.
      */
-    on(type: 'resize', listener: (data?: {terminal: Terminal, cols: number, rows: number}) => void): void;
+    on(type: 'resize', listener: (data?: {cols: number, rows: number}) => void): void;
     /**
      * Registers an event listener.
      * @param type The type of the event.
