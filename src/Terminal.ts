@@ -524,9 +524,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   };
 
   /**
-   * Blur the terminal. Delegates blur handling to the terminal's DOM element.
+   * Blur the terminal, calling the blur function on the terminal's underlying
+   * textarea.
    */
-  private blur(): void {
+  public blur(): void {
     return this.textarea.blur();
   }
 
@@ -1225,9 +1226,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
   /**
    * Scroll the display of the terminal
-   * @param {number} disp The number of lines to scroll down (negatives scroll up).
+   * @param {number} disp The number of lines to scroll down (negative scroll up).
    * @param {boolean} suppressScrollEvent Don't emit the scroll event as scrollDisp. This is used
-   * to avoid unwanted events being handled by the veiwport when the event was triggered from the
+   * to avoid unwanted events being handled by the viewport when the event was triggered from the
    * viewport originally.
    */
   public scrollDisp(disp: number, suppressScrollEvent?: boolean): void {
@@ -1347,12 +1348,13 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 
   /**
-   * Attaches a custom key event handler which is run before keys are processed, giving consumers of
-   * xterm.js ultimate control as to what keys should be processed by the terminal and what keys
-   * should not.
-   * @param {function} customKeyEventHandler The custom KeyboardEvent handler to attach. This is a
-   *   function that takes a KeyboardEvent, allowing consumers to stop propogation and/or prevent
-   *   the default action. The function returns whether the event should be processed by xterm.js.
+   * Attaches a custom key event handler which is run before keys are processed,
+   * giving consumers of xterm.js ultimate control as to what keys should be
+   * processed by the terminal and what keys should not.
+   * @param customKeyEventHandler The custom KeyboardEvent handler to attach.
+   * This is a function that takes a KeyboardEvent, allowing consumers to stop
+   * propogation and/or prevent the default action. The function returns whether
+   * the event should be processed by xterm.js.
    */
   public attachCustomKeyEventHandler(customKeyEventHandler: CustomKeyEventHandler): void {
     this.customKeyEventHandler = customKeyEventHandler;
@@ -2051,7 +2053,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 
   /**
-   * Clears the entire buffer, making the prompt line the new first line.
+   * Clear the entire buffer, making the prompt line the new first line.
    */
   public clear(): void {
     if (this.buffer.ybase === 0 && this.buffer.y === 0) {
