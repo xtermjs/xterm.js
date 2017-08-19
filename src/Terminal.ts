@@ -1397,10 +1397,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * this searches the textContent of the rows. You will want to use \s to match
    * a space ' ' character for example.
    * @param handler The callback when the link is called.
-   * @param [options] Options for the link matcher.
+   * @param options Options for the link matcher.
    * @return The ID of the new matcher, this can be used to deregister.
    */
-  public registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options: ILinkMatcherOptions): number {
+  public registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options?: ILinkMatcherOptions): number {
     if (this.linkifier) {
       const matcherId = this.linkifier.registerLinkMatcher(regex, handler, options);
       this.refresh(0, this.rows - 1);

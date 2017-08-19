@@ -48,6 +48,30 @@ interface ITerminalOptions {
   tabStopWidth?: number;
 }
 
+/**
+ * An object containing options for a link matcher.
+ */
+interface ILinkMatcherOptions {
+  /**
+   * The index of the link from the regex.match(text) call. This defaults to 0
+   * (for regular expressions without capture groups).
+   */
+  matchIndex?: number;
+
+  /**
+   * A callback that validates an individual link, returning true if valid and
+   * false if invalid.
+   */
+  validationCallback?: (uri: string, element: HTMLElement, callback: (isValid: boolean) => void) => void;
+
+  /**
+   * The priority of the link matcher, this defines the order in which the link
+   * matcher is evaluated relative to others, from highest to lowest. The
+   * default value is 0.
+   */
+  priority?: number;
+}
+
 declare module 'xterm' {
   /**
    * The class that represents an xterm.js terminal.
@@ -159,23 +183,23 @@ declare module 'xterm' {
      */
     attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean);
 
-    // /**
-    //  * Registers a link matcher, allowing custom link patterns to be matched and
-    //  * handled.
-    //  * @param {RegExp} regex The regular expression to search for, specifically
-    //  * this searches the textContent of the rows. You will want to use \s to match
-    //  * a space ' ' character for example.
-    //  * @param {LinkMatcherHandler} handler The callback when the link is called.
-    //  * @param {LinkMatcherOptions} [options] Options for the link matcher.
-    //  * @return {number} The ID of the new matcher, this can be used to deregister.
-    //  */
-    // registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler , options?: any);
+  /**
+   * (EXPERIMENTAL) Registers a link matcher, allowing custom link patterns to
+   * be matched and handled.
+   * @param regex The regular expression to search for, specifically this
+   * searches the textContent of the rows. You will want to use \s to match a
+   * space ' ' character for example.
+   * @param handler The callback when the link is called.
+   * @param options Options for the link matcher.
+   * @return The ID of the new matcher, this can be used to deregister.
+   */
+    registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => boolean | void , options?: any);
 
-    // /**
-    //  * Deregisters a link matcher if it has been registered.
-    //  * @param matcherId The link matcher's ID (returned after register)
-    //  */
-    // deregisterLinkMatcher(matcherId: number): void;
+    /**
+     * (EXPERIMENTAL) Deregisters a link matcher if it has been registered.
+     * @param matcherId The link matcher's ID (returned after register)
+     */
+    deregisterLinkMatcher(matcherId: number): void;
 
     /**
      * Gets whether the terminal has an active selection.
