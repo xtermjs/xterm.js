@@ -127,7 +127,7 @@
 }
 
 .terminal.focus.xterm-cursor-style-block.visual-bell-active .terminal-cursor {
-  background-color: #ccc !important;
+  opacity: 0.5;
 }
 .terminal.focus.xterm-cursor-style-bar.visual-bell-active .terminal-cursor::before,
 .terminal.focus.xterm-cursor-style-underline.visual-bell-active .terminal-cursor::before {
