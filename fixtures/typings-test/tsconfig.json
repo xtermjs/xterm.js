@@ -1,6 +1,6 @@
 {
   "files": [
-      "typing-tests.ts"
+      "typings-test.ts"
   ],
   "compilerOptions": {
     "module": "commonjs",
