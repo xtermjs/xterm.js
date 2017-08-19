@@ -485,6 +485,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         this.viewport.syncScrollArea();
         break;
       case 'tabStopWidth': this.setupStops(); break;
+      case 'bellSound': this.syncBellSound(); break;
       case 'bellStyle': this.preloadBellSound(); break;
     }
   }
@@ -2301,6 +2302,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       this.helperContainer.appendChild(this.bellAudioElement);
     } else if (this.bellAudioElement) {
       this.helperContainer.removeChild(this.bellAudioElement);
+    }
+  }
+
+  private syncBellSound(): void {
+    if (this.soundBell() && this.bellAudioElement) {
+      this.bellAudioElement.setAttribute('src', this.options.bellSound);
     }
   }
 }
