@@ -181,19 +181,19 @@ declare module 'xterm' {
      * propogation and/or prevent the default action. The function returns
      * whether the event should be processed by xterm.js.
      */
-    attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean);
+    attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void;
 
-  /**
-   * (EXPERIMENTAL) Registers a link matcher, allowing custom link patterns to
-   * be matched and handled.
-   * @param regex The regular expression to search for, specifically this
-   * searches the textContent of the rows. You will want to use \s to match a
-   * space ' ' character for example.
-   * @param handler The callback when the link is called.
-   * @param options Options for the link matcher.
-   * @return The ID of the new matcher, this can be used to deregister.
-   */
-    registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => boolean | void , options?: any);
+    /**
+     * (EXPERIMENTAL) Registers a link matcher, allowing custom link patterns to
+     * be matched and handled.
+     * @param regex The regular expression to search for, specifically this
+     * searches the textContent of the rows. You will want to use \s to match a
+     * space ' ' character for example.
+     * @param handler The callback when the link is called.
+     * @param options Options for the link matcher.
+     * @return The ID of the new matcher, this can be used to deregister.
+     */
+    registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => boolean | void , options?: any): number;
 
     /**
      * (EXPERIMENTAL) Deregisters a link matcher if it has been registered.
