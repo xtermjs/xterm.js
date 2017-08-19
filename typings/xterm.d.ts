@@ -12,6 +12,16 @@
  */
 interface ITerminalOptions {
   /**
+   * A data uri of the sound to use for the bell (needs bellStyle = 'sound').
+   */
+  bellSound?: string;
+
+  /**
+   * The type of the bell notification the terminal will use.
+   */
+  bellStyle?: 'none' | 'visual' | 'sound' | 'both';
+
+  /**
    * The number of columns in the terminal.
    */
   cols?: number;
