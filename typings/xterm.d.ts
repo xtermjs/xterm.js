@@ -277,6 +277,6 @@ declare module 'xterm' {
      * available to all newly created Terminals.
      * @param addon The addon to load.
      */
-    static loadAddon(addon: string): void;
+    static loadAddon(addon: 'attach' | 'fit' | 'fullscreen' | 'search' | 'terminado'): void;
   }
 }
