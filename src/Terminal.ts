@@ -149,7 +149,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   cursorBlink: false,
   cursorStyle: 'block',
   bellSound: BellSound,
-  bellStyle: null,
+  bellStyle: 'none',
   scrollback: 1000,
   screenKeys: false,
   debug: false,

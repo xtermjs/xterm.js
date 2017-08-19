@@ -140,6 +140,8 @@ namespace methods_core {
       const r16: number = t.getOption('scrollback');
       const r17: [number, number] = t.getOption('geometry');
       const r18: (data: string) => void = t.getOption('handler');
+      const r19: string = t.getOption('bellSound');
+      const r20: string = t.getOption('bellStyle');
     }
     {
       const t: Terminal = new Terminal();
@@ -161,6 +163,11 @@ namespace methods_core {
       t.setOption('scrollback', 1);
       t.setOption('geometry', [1, 1]);
       t.setOption('handler', (data: string) => console.log(data));
+      t.setOption('bellSound', 'foo');
+      t.setOption('bellStyle', 'none');
+      t.setOption('bellStyle', 'visual');
+      t.setOption('bellStyle', 'sound');
+      t.setOption('bellStyle', 'both');
     }
   }
   namespace scrolling {

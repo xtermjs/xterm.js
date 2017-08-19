@@ -290,7 +290,7 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'cursorStyle' | 'termName'): string;
+    getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'termName'): string;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
@@ -322,7 +322,19 @@ declare module 'xterm' {
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: 'cursorStyle' | 'termName', value: string): void;
+    setOption(key: 'termName' | 'bellSound', value: string): void;
+    /**
+     * Sets an option on the terminal.
+     * @param key The option key.
+     * @param value The option value.
+     */
+    setOption(key: 'bellStyle', value: 'none' | 'visual' | 'sound' | 'both'): void;
+    /**
+     * Sets an option on the terminal.
+     * @param key The option key.
+     * @param value The option value.
+     */
+    setOption(key: 'cursorStyle', value: 'block' | 'underline' | 'bar'): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
