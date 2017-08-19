@@ -485,8 +485,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         this.viewport.syncScrollArea();
         break;
       case 'tabStopWidth': this.setupStops(); break;
-      case 'bellSound': this.syncBellSound(); break;
-      case 'bellStyle': this.preloadBellSound(); break;
+      case 'bellSound':
+      case 'bellStyle': this.syncBellSound(); break;
     }
   }
 
@@ -695,7 +695,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.viewportElement.appendChild(this.viewportScrollArea);
 
     // preload audio
-    this.preloadBellSound();
+    this.syncBellSound();
 
     // Create the selection container.
     this.selectionContainer = document.createElement('div');
@@ -2294,20 +2294,16 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         this.options.bellStyle === 'both';
   }
 
-  private preloadBellSound(): void {
-    if (this.soundBell()) {
+  private syncBellSound(): void {
+    if (this.soundBell() && this.bellAudioElement) {
+      this.bellAudioElement.setAttribute('src', this.options.bellSound);
+    } else if (this.soundBell()) {
       this.bellAudioElement = document.createElement('audio');
       this.bellAudioElement.setAttribute('preload', 'auto');
       this.bellAudioElement.setAttribute('src', this.options.bellSound);
       this.helperContainer.appendChild(this.bellAudioElement);
     } else if (this.bellAudioElement) {
       this.helperContainer.removeChild(this.bellAudioElement);
-    }
-  }
-
-  private syncBellSound(): void {
-    if (this.soundBell() && this.bellAudioElement) {
-      this.bellAudioElement.setAttribute('src', this.options.bellSound);
     }
   }
 }
