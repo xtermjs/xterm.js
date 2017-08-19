@@ -147,7 +147,8 @@ if (os.platform() !== 'win32') {
 }
 
 describe('typings', () => {
-  it('should throw no compile errors', () => {
+  it('should throw no compile errors', function () {
+    this.timeout(20000);
     let result = cp.spawnSync(path.join(__dirname, '..', 'node_modules', '.bin', 'tsc'), {
       cwd: path.join(__dirname, '..', 'fixtures', 'typings-test')
     });

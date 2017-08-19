@@ -414,7 +414,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    */
   public getOption(key: StringOption): string;
   public getOption(key: BooleanOption): boolean;
-  public getOption(key: StringArrayOption): number[];
+  public getOption(key: StringArrayOption): string[];
   public getOption(key: NumberOption): number;
   public getOption(key: GeometryOption): [number, number];
   public getOption(key: HandlerOption): (data: string) => void;

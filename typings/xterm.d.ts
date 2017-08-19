@@ -193,7 +193,7 @@ declare module 'xterm' {
      * @param options Options for the link matcher.
      * @return The ID of the new matcher, this can be used to deregister.
      */
-    registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => boolean | void , options?: any): number;
+    registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => boolean | void , options?: ILinkMatcherOptions): number;
 
     /**
      * (EXPERIMENTAL) Deregisters a link matcher if it has been registered.
@@ -290,7 +290,7 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'colors'): number[];
+    getOption(key: 'colors'): string[];
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
@@ -324,7 +324,7 @@ declare module 'xterm' {
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: 'colors', value: number[]): void;
+    setOption(key: 'colors', value: string[]): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
