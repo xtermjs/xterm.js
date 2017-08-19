@@ -2298,9 +2298,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       this.bellAudioElement = document.createElement('audio');
       this.bellAudioElement.setAttribute('preload', 'auto');
       this.bellAudioElement.setAttribute('src', this.options.bellSound);
-      this.element.appendChild(this.bellAudioElement);
+      this.helperContainer.appendChild(this.bellAudioElement);
     } else if (this.bellAudioElement) {
-      this.element.removeChild(this.bellAudioElement);
+      this.helperContainer.removeChild(this.bellAudioElement);
     }
   }
 }
