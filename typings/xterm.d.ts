@@ -48,30 +48,6 @@ interface ITerminalOptions {
   tabStopWidth?: number;
 }
 
-
-type Option = BooleanOption | StringOption | StringArrayOption | NumberOption | GeometryOption | HandlerOption;
-type BooleanOption =
-    'cancelEvents' |
-    'convertEol' |
-    'cursorBlink' |
-    'debug' |
-    'disableStdin' |
-    'popOnBell' |
-    'screenKeys' |
-    'useFlowControl' |
-    'visualBell';
-type StringOption =
-    'cursorStyle' |
-    'termName';
-type StringArrayOption = 'colors';
-type NumberOption =
-    'cols' |
-    'rows' |
-    'tabStopWidth' |
-    'scrollback';
-type GeometryOption = 'geometry';
-type HandlerOption = 'handler';
-
 declare module 'xterm' {
   /**
    * The class that represents an xterm.js terminal.
@@ -102,22 +78,56 @@ declare module 'xterm' {
      * @param type The type of the event.
      * @param listener The listener.
      */
-    on(type: string, listener: (data: any) => void): void;
+    on(type: 'blur' | 'focus' | 'lineFeed' | 'open', listener: () => void): void;
+    /**
+     * Registers an event listener.
+     * @param type The type of the event.
+     * @param listener The listener.
+     */
+    on(type: 'data', listener: (data?: string) => void): void;
+    /**
+     * Registers an event listener.
+     * @param type The type of the event.
+     * @param listener The listener.
+     */
+    on(type: 'key', listener: (key?: string, event?: KeyboardEvent) => void): void;
+    /**
+     * Registers an event listener.
+     * @param type The type of the event.
+     * @param listener The listener.
+     */
+    on(type: 'keypress' | 'keydown', listener: (event?: KeyboardEvent) => void): void;
+    /**
+     * Registers an event listener.
+     * @param type The type of the event.
+     * @param listener The listener.
+     */
+    on(type: 'refresh', listener: (data?: {element: HTMLElement, start: number, end: number}) => void): void;
+    /**
+     * Registers an event listener.
+     * @param type The type of the event.
+     * @param listener The listener.
+     */
+    on(type: 'resize', listener: (data?: {terminal: Terminal, cols: number, rows: number}) => void): void;
+    /**
+     * Registers an event listener.
+     * @param type The type of the event.
+     * @param listener The listener.
+     */
+    on(type: 'scroll', listener: (ydisp?: number) => void): void;
+    /**
+     * Registers an event listener.
+     * @param type The type of the event.
+     * @param listener The listener.
+     */
+    on(type: 'title', listener: (title?: string) => void): void;
 
     /**
      * Deregisters an event listener.
      * @param type The type of the event.
      * @param listener The listener.
      */
-    on(type: 'blur' | 'focus' | 'lineFeed' | 'open', listener: () => void): void;
-    on(type: 'data', listener: (data: string) => void): void;
-    on(type: 'key', listener: (key: string, event: KeyboardEvent) => void): void;
-    on(type: 'keypress' | 'keydown', listener: (event: KeyboardEvent) => void): void;
-    on(type: 'refresh', listener: (data: {element: HTMLElement, start: number, end: number}) => void): void;
-    on(type: 'resize', listener: (data: {terminal: Terminal, cols: number, rows: number}) => void): void;
-    on(type: 'scroll', listener: (ydisp: number) => void): void;
-    on(type: 'title', listener: (title: string) => void): void;
-    on(type: string, listener: (data: any) => void): void;
+    off(type: 'blur' | 'focus' | 'lineFeed' | 'open' | 'data' | 'key' | 'keypress' | 'keydown' | 'refresh' | 'resize' | 'scroll' | 'title', listener: (...args: any[]) => void): void;
 
     /**
      * Resizes the terminal.
@@ -148,18 +158,6 @@ declare module 'xterm' {
      * whether the event should be processed by xterm.js.
      */
     attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean);
-
-    /**
-     * Retrieves an option's value from the terminal.
-     * @param key The option key.
-     */
-    getOption(key: StringOption): string;
-    getOption(key: BooleanOption): boolean;
-    getOption(key: StringArrayOption): number[];
-    getOption(key: NumberOption): number;
-    getOption(key: GeometryOption): [number, number];
-    getOption(key: HandlerOption): (data: string) => void;
-    getOption(key: Option): any;
 
     // /**
     //  * Registers a link matcher, allowing custom link patterns to be matched and
@@ -255,17 +253,72 @@ declare module 'xterm' {
     write(data: string): void;
 
     /**
+     * Retrieves an option's value from the terminal.
+     * @param key The option key.
+     */
+    getOption(key: 'cursorStyle' | 'termName'): string;
+    /**
+     * Retrieves an option's value from the terminal.
+     * @param key The option key.
+     */
+    getOption(key: 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell'): boolean;
+    /**
+     * Retrieves an option's value from the terminal.
+     * @param key The option key.
+     */
+    getOption(key: 'colors'): number[];
+    /**
+     * Retrieves an option's value from the terminal.
+     * @param key The option key.
+     */
+    getOption(key: 'cols' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
+    /**
+     * Retrieves an option's value from the terminal.
+     * @param key The option key.
+     */
+    getOption(key: 'geometry'): [number, number];
+    /**
+     * Retrieves an option's value from the terminal.
+     * @param key The option key.
+     */
+    getOption(key: 'handler'): (data: string) => void;
+
+    /**
      * Sets an option on the terminal.
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: StringOption, value: string): void;
-    setOption(key: BooleanOption, value: boolean): void;
-    setOption(key: StringArrayOption, value: number[]): void;
-    setOption(key: NumberOption, value: number): void;
-    setOption(key: GeometryOption, value: [number, number]): void;
-    setOption(key: HandlerOption, value: (data: string) => void): void;
-    setOption(key: Option, value: any): void;
+    setOption(key: 'cursorStyle' | 'termName', value: string): void;
+    /**
+     * Sets an option on the terminal.
+     * @param key The option key.
+     * @param value The option value.
+     */
+    setOption(key: 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell', value: boolean): void;
+    /**
+     * Sets an option on the terminal.
+     * @param key The option key.
+     * @param value The option value.
+     */
+    setOption(key: 'colors', value: number[]): void;
+    /**
+     * Sets an option on the terminal.
+     * @param key The option key.
+     * @param value The option value.
+     */
+    setOption(key: 'cols' | 'rows' | 'tabStopWidth' | 'scrollback', value: number): void;
+    /**
+     * Sets an option on the terminal.
+     * @param key The option key.
+     * @param value The option value.
+     */
+    setOption(key: 'geometry', value: [number, number]): void;
+    /**
+     * Sets an option on the terminal.
+     * @param key The option key.
+     * @param value The option value.
+     */
+    setOption(key: 'handler', value: (data: string) => void): void;
 
     /**
      * Tells the renderer to refresh terminal content between two rows
