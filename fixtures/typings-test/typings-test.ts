@@ -145,7 +145,9 @@ namespace methods_core {
     }
     {
       const t: Terminal = new Terminal();
-      t.setOption('cursorStyle', 'foo');
+      t.setOption('cursorStyle', 'bar');
+      t.setOption('cursorStyle', 'block');
+      t.setOption('cursorStyle', 'underline');
       t.setOption('termName', 'foo');
       t.setOption('cancelEvents', true);
       t.setOption('convertEol', true);
