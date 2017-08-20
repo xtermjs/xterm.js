@@ -437,6 +437,16 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       throw new Error('No option with key "' + key + '"');
     }
     switch (key) {
+      case 'bellStyle':
+        if (!value) {
+          value = 'none';
+        }
+        break;
+      case 'cursorStyle':
+      if (!value) {
+        value = 'block';
+      }
+      break;
       case 'tabStopWidth':
         if (value < 1) {
           console.warn(`tabStopWidth cannot be less than 1, value: ${value}`);

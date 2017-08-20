@@ -328,13 +328,13 @@ declare module 'xterm' {
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: 'bellStyle', value: 'none' | 'visual' | 'sound' | 'both'): void;
+    setOption(key: 'bellStyle', value: null | 'none' | 'visual' | 'sound' | 'both'): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: 'cursorStyle', value: 'block' | 'underline' | 'bar'): void;
+    setOption(key: 'cursorStyle', value: null | 'block' | 'underline' | 'bar'): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
