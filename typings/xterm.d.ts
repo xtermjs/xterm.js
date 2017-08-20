@@ -87,8 +87,25 @@ declare module 'xterm' {
    * The class that represents an xterm.js terminal.
    */
   export class Terminal {
+    /**
+     * The element containing the terminal.
+     */
     element: HTMLElement;
+
+    /**
+     * The textarea that accepts input for the terminal.
+     */
     textarea: HTMLTextAreaElement;
+
+    /**
+     * The number of rows in the terminal's viewport.
+     */
+    rows: number;
+
+    /**
+     * The number of columns in the terminal's viewport.
+     */
+    cols: number;
 
     /**
      * Creates a new `Terminal` object.
