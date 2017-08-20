@@ -37,7 +37,7 @@ import * as Browser from './utils/Browser';
 import * as Mouse from './utils/Mouse';
 import { CHARSETS } from './Charsets';
 import { getRawByteCoords } from './utils/Mouse';
-import { CustomKeyEventHandler, Charset, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData, Option, StringOption, BooleanOption, StringArrayOption, NumberOption, GeometryOption, HandlerOption } from './Types';
+import { CustomKeyEventHandler, Charset, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
 import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper } from './Interfaces';
 import { BellSound } from './utils/Sounds';
 
@@ -149,7 +149,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   cursorBlink: false,
   cursorStyle: 'block',
   bellSound: BellSound,
-  bellStyle: null,
+  bellStyle: 'none',
   scrollback: 1000,
   screenKeys: false,
   debug: false,
@@ -415,13 +415,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Retrieves an option's value from the terminal.
    * @param {string} key The option key.
    */
-  public getOption(key: StringOption): string;
-  public getOption(key: BooleanOption): boolean;
-  public getOption(key: StringArrayOption): number[];
-  public getOption(key: NumberOption): number;
-  public getOption(key: GeometryOption): [number, number];
-  public getOption(key: HandlerOption): (data: string) => void;
-  public getOption(key: Option): any {
+  public getOption(key: string): any {
     if (!(key in DEFAULT_OPTIONS)) {
       throw new Error('No option with key "' + key + '"');
     }
@@ -438,17 +432,21 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param {string} key The option key.
    * @param {any} value The option value.
    */
-  public setOption(key: StringOption, value: string): void;
-  public setOption(key: BooleanOption, value: boolean): void;
-  public setOption(key: StringArrayOption, value: number[]): void;
-  public setOption(key: NumberOption, value: number): void;
-  public setOption(key: GeometryOption, value: [number, number]): void;
-  public setOption(key: HandlerOption, value: (data: string) => void): void;
-  public setOption(key: Option, value: any): void {
+  public setOption(key: string, value: any): void {
     if (!(key in DEFAULT_OPTIONS)) {
       throw new Error('No option with key "' + key + '"');
     }
     switch (key) {
+      case 'bellStyle':
+        if (!value) {
+          value = 'none';
+        }
+        break;
+      case 'cursorStyle':
+      if (!value) {
+        value = 'block';
+      }
+      break;
       case 'tabStopWidth':
         if (value < 1) {
           console.warn(`tabStopWidth cannot be less than 1, value: ${value}`);
@@ -524,14 +522,15 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       this.showCursor();
       this.restartCursorBlinking.apply(this);
       // TODO: Why pass terminal here?
-      this.emit('focus', {terminal: this});
+      this.emit('focus');
     });
   };
 
   /**
-   * Blur the terminal. Delegates blur handling to the terminal's DOM element.
+   * Blur the terminal, calling the blur function on the terminal's underlying
+   * textarea.
    */
-  private blur(): void {
+  public blur(): void {
     return this.textarea.blur();
   }
 
@@ -547,7 +546,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       this.element.classList.remove('focus');
       this.clearCursorBlinkingInterval.apply(this);
       // TODO: Why pass terminal here?
-      this.emit('blur', {terminal: this});
+      this.emit('blur');
     });
   }
 
@@ -722,14 +721,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.textarea.setAttribute('autocapitalize', 'off');
     this.textarea.setAttribute('spellcheck', 'false');
     this.textarea.tabIndex = 0;
-    this.textarea.addEventListener('focus', () => {
-      // TODO: Do we need terminal passed here?
-      this.emit('focus', {terminal: this});
-    });
-    this.textarea.addEventListener('blur', () => {
-      // TODO: Do we need terminal passed here?
-      this.emit('blur', {terminal: this});
-    });
+    this.textarea.addEventListener('focus', () => this.emit('focus'));
+    this.textarea.addEventListener('blur', () => this.emit('blur'));
     this.helperContainer.appendChild(this.textarea);
 
     this.compositionView = document.createElement('div');
@@ -777,13 +770,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // Listen for mouse events and translate
     // them into terminal mouse protocols.
     this.bindMouse();
-
-    /**
-     * This event is emitted when terminal has completed opening.
-     *
-     * @event open
-     */
-    this.emit('open');
   }
 
   /**
@@ -1233,9 +1219,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
   /**
    * Scroll the display of the terminal
-   * @param {number} disp The number of lines to scroll down (negatives scroll up).
+   * @param {number} disp The number of lines to scroll down (negative scroll up).
    * @param {boolean} suppressScrollEvent Don't emit the scroll event as scrollDisp. This is used
-   * to avoid unwanted events being handled by the veiwport when the event was triggered from the
+   * to avoid unwanted events being handled by the viewport when the event was triggered from the
    * viewport originally.
    */
   public scrollDisp(disp: number, suppressScrollEvent?: boolean): void {
@@ -1355,12 +1341,13 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 
   /**
-   * Attaches a custom key event handler which is run before keys are processed, giving consumers of
-   * xterm.js ultimate control as to what keys should be processed by the terminal and what keys
-   * should not.
-   * @param {function} customKeyEventHandler The custom KeyboardEvent handler to attach. This is a
-   *   function that takes a KeyboardEvent, allowing consumers to stop propogation and/or prevent
-   *   the default action. The function returns whether the event should be processed by xterm.js.
+   * Attaches a custom key event handler which is run before keys are processed,
+   * giving consumers of xterm.js ultimate control as to what keys should be
+   * processed by the terminal and what keys should not.
+   * @param customKeyEventHandler The custom KeyboardEvent handler to attach.
+   * This is a function that takes a KeyboardEvent, allowing consumers to stop
+   * propogation and/or prevent the default action. The function returns whether
+   * the event should be processed by xterm.js.
    */
   public attachCustomKeyEventHandler(customKeyEventHandler: CustomKeyEventHandler): void {
     this.customKeyEventHandler = customKeyEventHandler;
@@ -1403,10 +1390,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * this searches the textContent of the rows. You will want to use \s to match
    * a space ' ' character for example.
    * @param handler The callback when the link is called.
-   * @param [options] Options for the link matcher.
+   * @param options Options for the link matcher.
    * @return The ID of the new matcher, this can be used to deregister.
    */
-  public registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options: ILinkMatcherOptions): number {
+  public registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options?: ILinkMatcherOptions): number {
     if (this.linkifier) {
       const matcherId = this.linkifier.registerLinkMatcher(regex, handler, options);
       this.refresh(0, this.rows - 1);
@@ -1962,7 +1949,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.refresh(0, this.rows - 1);
 
     this.geometry = [this.cols, this.rows];
-    this.emit('resize', {terminal: this, cols: x, rows: y});
+    this.emit('resize', {cols: x, rows: y});
   }
 
   /**
@@ -2063,7 +2050,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 
   /**
-   * Clears the entire buffer, making the prompt line the new first line.
+   * Clear the entire buffer, making the prompt line the new first line.
    */
   public clear(): void {
     if (this.buffer.ybase === 0 && this.buffer.y === 0) {

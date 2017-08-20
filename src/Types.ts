@@ -18,26 +18,3 @@ export type Charset = {[key: string]: string};
 
 export type CharData = [number, string, number];
 export type LineData = CharData[];
-
-export type Option = BooleanOption | StringOption | StringArrayOption | NumberOption | GeometryOption | HandlerOption;
-export type BooleanOption =
-    'cancelEvents' |
-    'convertEol' |
-    'cursorBlink' |
-    'debug' |
-    'disableStdin' |
-    'screenKeys' |
-    'useFlowControl';
-export type StringOption =
-    'cursorStyle' |
-    'bellStyle' |
-    'bellSound' |
-    'termName';
-export type StringArrayOption = 'colors';
-export type NumberOption =
-    'cols' |
-    'rows' |
-    'tabStopWidth' |
-    'scrollback';
-export type GeometryOption = 'geometry';
-export type HandlerOption = 'handler';

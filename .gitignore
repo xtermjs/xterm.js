@@ -14,6 +14,7 @@ npm-debug.log
 build/
 .vscode/
 .DS_Store
+fixtures/typings-test/*.js
 
 # Directories needed for code coverage
 /coverage/
