@@ -172,13 +172,19 @@ declare module 'xterm' {
      * @param listener The listener.
      */
     on(type: 'title', listener: (title?: string) => void): void;
+    /**
+     * Registers an event listener.
+     * @param type The type of the event.
+     * @param listener The listener.
+     */
+    on(type: string, listener: (...args: any[]) => void): void;
 
     /**
      * Deregisters an event listener.
      * @param type The type of the event.
      * @param listener The listener.
      */
-    off(type: 'blur' | 'focus' | 'lineFeed' | 'data' | 'key' | 'keypress' | 'keydown' | 'refresh' | 'resize' | 'scroll' | 'title', listener: (...args: any[]) => void): void;
+    off(type: 'blur' | 'focus' | 'lineFeed' | 'data' | 'key' | 'keypress' | 'keydown' | 'refresh' | 'resize' | 'scroll' | 'title' | string, listener: (...args: any[]) => void): void;
 
     /**
      * Resizes the terminal.
@@ -333,6 +339,11 @@ declare module 'xterm' {
      * @param key The option key.
      */
     getOption(key: 'handler'): (data: string) => void;
+    /**
+     * Retrieves an option's value from the terminal.
+     * @param key The option key.
+     */
+    getOption(key: string): any;
 
     /**
      * Sets an option on the terminal.
@@ -382,6 +393,12 @@ declare module 'xterm' {
      * @param value The option value.
      */
     setOption(key: 'handler', value: (data: string) => void): void;
+    /**
+     * Sets an option on the terminal.
+     * @param key The option key.
+     * @param value The option value.
+     */
+    setOption(key: string, value: any): void;
 
     /**
      * Tells the renderer to refresh terminal content between two rows
