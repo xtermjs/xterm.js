@@ -21,12 +21,12 @@ export function getCoordsRelativeToElement(event: MouseEvent, element: HTMLEleme
     y -= element.offsetTop;
     element = 'offsetParent' in element ? <HTMLElement>element.offsetParent : <HTMLElement>element.parentElement;
   }
-  element = originalElement; 
+  element = originalElement;
   while (element && element !== self.document.documentElement) {
     x += element.scrollLeft;
     y += element.scrollTop;
     element = <HTMLElement>element.parentElement;
-  }      
+  }
   return [x, y];
 }
 
