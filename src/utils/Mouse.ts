@@ -12,6 +12,7 @@ export function getCoordsRelativeToElement(event: MouseEvent, element: HTMLEleme
 
   let x = event.pageX;
   let y = event.pageY;
+  const originalElement = element;
 
   // Converts the coordinates from being relative to the document to being
   // relative to the terminal.
@@ -20,6 +21,12 @@ export function getCoordsRelativeToElement(event: MouseEvent, element: HTMLEleme
     y -= element.offsetTop;
     element = 'offsetParent' in element ? <HTMLElement>element.offsetParent : <HTMLElement>element.parentElement;
   }
+  element = originalElement; 
+  while (element && element !== self.document.documentElement) {
+    x += element.scrollLeft;
+    y += element.scrollTop;
+    element = <HTMLElement>element.parentElement;
+  }      
   return [x, y];
 }
 
