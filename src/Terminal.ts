@@ -454,6 +454,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         }
         break;
       case 'scrollback':
+        if (value < 0) {
+          console.warn(`scrollback cannot be less than 0, value: ${value}`);
+          return;
+        }
         if (this.options[key] !== value) {
           const newBufferLength = this.rows + value;
           if (this.buffer.lines.length > newBufferLength) {
