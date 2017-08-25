@@ -6,6 +6,7 @@ const browserify = require('browserify');
 const buffer = require('vinyl-buffer');
 const coveralls = require('gulp-coveralls');
 const fs = require('fs-extra');
+const path = require('path');
 const gulp = require('gulp');
 const istanbul = require('gulp-istanbul');
 const merge = require('merge-stream');
@@ -93,6 +94,7 @@ gulp.task('browserify-addons', ['tsc'], function() {
     packageCache: {}
   };
   let searchBundle = browserify(searchOptions)
+        .external(path.join(outDir, 'xterm.js'))
         .bundle()
         .pipe(source('./addons/search/search.js'))
         .pipe(buffer())
