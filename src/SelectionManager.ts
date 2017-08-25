@@ -316,7 +316,6 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     // If we have selection, we want the context menu on right click even if the
     // terminal is in mouse mode.
     if (event.button === 2 && this.hasSelection) {
-      event.stopPropagation();
       return;
     }
 
