@@ -1184,39 +1184,62 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // This should work with minimal effort utilizing the CiruclarList
 
     // TODO: Need to hold onto top given the if?
-    const bottomRow = this.buffer.ybase + this.buffer.scrollBottom;
+    const newLine = this.blankLine(undefined, isWrapped);
+    const topRow = this.buffer.ybase + this.buffer.scrollTop;
+    let bottomRow = this.buffer.ybase + this.buffer.scrollBottom;
+
+
+
+// TODO: There's a problem with ybase going beyond scrollback?
+
+
     console.log('bottomRow', bottomRow);
     console.log('this.buffer.scrollTop: ' + this.buffer.scrollTop);
     if (this.buffer.scrollTop === 0) {
       const willBufferBeTrimmed = this.buffer.lines.length === this.buffer.lines.maxLength;
 
+      // Remove the line first if there is no scrollback so the list is not
+      // trimmed
+      if (!this.buffer.hasScrollback) {
+        this.buffer.lines.splice(topRow, 1);
+        // Adjust bottomRow to make up for the deleted row
+        // bottomRow--;
+      }
+
       if (bottomRow === this.buffer.lines.length - 1) {
         // Pushing when possible is faster than splicing
-        this.buffer.lines.push(this.blankLine(undefined, isWrapped));
+        this.buffer.lines.push(newLine);
         console.log('push');
       } else {
         // Insert a row *below* the bottomRow, pushing the top row into the scrollback
-        this.buffer.lines.splice(bottomRow + 1, 0, this.blankLine(undefined, isWrapped));
+        if (!this.buffer.hasScrollback) {
+          // A line is deleted in this case so bottomRow is pushed up
+          this.buffer.lines.splice(bottomRow, 0, newLine);
+        } else {
+          this.buffer.lines.splice(bottomRow + 1, 0, newLine);
+        }
         console.log('splice');
       }
 
-      // Adjust ydisp and ybase to accommodate the changes after the buffer was
-      // trimmed.
+      // Only adjust ybase and ydisp when the buffer is not trimmed
       if (!willBufferBeTrimmed) {
         console.log('increment ydisp/ybase');
         this.buffer.ybase++;
         this.buffer.ydisp++;
       }
+
       console.log('this.buffer.ybase: ' + this.buffer.ybase);
-      console.log('this.buffer.ybase: ' + this.buffer.ydisp);
+      console.log('this.buffer.ydisp: ' + this.buffer.ydisp);
+
     } else {
-      const topRow = this.buffer.ybase + this.buffer.scrollTop;
       const scrollRegionHeight = bottomRow - topRow + 1/*as it's zero-based*/;
-console.log('shiftElements');
-console.log('topRow: ' + topRow + '(' + this.buffer.lines.get(topRow)[0][1] + ')');
-console.log('scrollRegionHeight: ' + scrollRegionHeight);
+
+      console.log('shiftElements');
+      console.log('topRow: ' + topRow + '(' + this.buffer.lines.get(topRow)[0][1] + ')');
+      console.log('scrollRegionHeight: ' + scrollRegionHeight);
+
       this.buffer.lines.shiftElements(topRow + 1, scrollRegionHeight - 1, -1);
-      this.buffer.lines.set(bottomRow, this.blankLine(undefined, isWrapped));
+      this.buffer.lines.set(bottomRow, newLine);
     }
 
     if (!this.userScrolling) {
@@ -2247,7 +2270,8 @@ console.log('scrollRegionHeight: ' + scrollRegionHeight);
       // possibly move the code below to term.reverseScroll();
       // test: echo -ne '\e[1;1H\e[44m\eM\e[0m'
       // blankLine(true) is xterm/linux behavior
-      this.buffer.lines.shiftElements(this.buffer.y + this.buffer.ybase, this.rows - 1, 1);
+      const scrollRegionHeight = this.buffer.scrollBottom - this.buffer.scrollTop;
+      this.buffer.lines.shiftElements(this.buffer.y + this.buffer.ybase, scrollRegionHeight, 1);
       this.buffer.lines.set(this.buffer.y + this.buffer.ybase, this.blankLine(true));
       this.updateRange(this.buffer.scrollTop);
       this.updateRange(this.buffer.scrollBottom);
