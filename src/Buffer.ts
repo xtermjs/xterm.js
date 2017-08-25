@@ -78,10 +78,9 @@ export class Buffer implements IBuffer {
     this.ybase = 0;
     this.y = 0;
     this.x = 0;
-    this.scrollBottom = 0;
-    this.scrollTop = 0;
     this.tabs = {};
     this._lines = new CircularList<LineData>(this._getCorrectBufferLength(this._terminal.rows));
+    this.scrollTop = 0;
     this.scrollBottom = this._terminal.rows - 1;
   }
 
