@@ -1163,133 +1163,44 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
   /**
    * Scroll the terminal down 1 row, creating a blank line.
-   * @param {boolean} isWrapped Whether the new line is wrapped from the previous
-   * line.
+   * @param isWrapped Whether the new line is wrapped from the previous line.
    */
   public scroll(isWrapped?: boolean): void {
-    // The problem is caused when scrollback = 0. This section was written
-    // around the assumption that there would be buffer to trim when necessary.
-
-
-    // shiftElements should be used here
-
-    // If scrollTop is set (non-zero), we should shiftElements
-    // scrollBottom defines the position at which the new element is inserted
-
-    // Note that both scrollBottom and scrollTop need to be handled individually
-    // because they can be set to terminal.rows or 0 respectively
-
-    // Don't mess with ybase temporarily, asking for trouble
-
-    // This should work with minimal effort utilizing the CiruclarList
-
-    // TODO: Need to hold onto top given the if?
     const newLine = this.blankLine(undefined, isWrapped);
     const topRow = this.buffer.ybase + this.buffer.scrollTop;
     let bottomRow = this.buffer.ybase + this.buffer.scrollBottom;
 
-
-
-// TODO: There's a problem with ybase going beyond scrollback?
-
-
-    console.log('bottomRow', bottomRow);
-    console.log('this.buffer.scrollTop: ' + this.buffer.scrollTop);
     if (this.buffer.scrollTop === 0) {
+      // Determine whether the buffer is going to be trimmed after insertion.
       const willBufferBeTrimmed = this.buffer.lines.length === this.buffer.lines.maxLength;
 
-      // Remove the line first if there is no scrollback so the list is not
-      // trimmed
-      if (!this.buffer.hasScrollback) {
-        this.buffer.lines.splice(topRow, 1);
-        // Adjust bottomRow to make up for the deleted row
-        // bottomRow--;
-      }
-
+      // Insert the line using the fastest method
       if (bottomRow === this.buffer.lines.length - 1) {
-        // Pushing when possible is faster than splicing
         this.buffer.lines.push(newLine);
-        console.log('push');
       } else {
-        // Insert a row *below* the bottomRow, pushing the top row into the scrollback
-        if (!this.buffer.hasScrollback) {
-          // A line is deleted in this case so bottomRow is pushed up
-          this.buffer.lines.splice(bottomRow, 0, newLine);
-        } else {
-          this.buffer.lines.splice(bottomRow + 1, 0, newLine);
-        }
-        console.log('splice');
+        this.buffer.lines.splice(bottomRow + 1, 0, newLine);
       }
 
       // Only adjust ybase and ydisp when the buffer is not trimmed
       if (!willBufferBeTrimmed) {
-        console.log('increment ydisp/ybase');
         this.buffer.ybase++;
         this.buffer.ydisp++;
       }
-
-      console.log('this.buffer.ybase: ' + this.buffer.ybase);
-      console.log('this.buffer.ydisp: ' + this.buffer.ydisp);
-
     } else {
+      // scrollTop is non-zero which means no line will be going to the
+      // scrollback, instead we can just shift them in-place.
       const scrollRegionHeight = bottomRow - topRow + 1/*as it's zero-based*/;
-
-      console.log('shiftElements');
-      console.log('topRow: ' + topRow + '(' + this.buffer.lines.get(topRow)[0][1] + ')');
-      console.log('scrollRegionHeight: ' + scrollRegionHeight);
-
       this.buffer.lines.shiftElements(topRow + 1, scrollRegionHeight - 1, -1);
       this.buffer.lines.set(bottomRow, newLine);
     }
 
+    // Move the viewport to the bottom of the buffer unless the user is
+    // scrolling.
     if (!this.userScrolling) {
       this.buffer.ydisp = this.buffer.ybase;
     }
 
-
-    // Make room for the new row in lines
-    // const bufferNeedsTrimming = this.buffer.lines.length === this.buffer.lines.maxLength;
-    // if (bufferNeedsTrimming) {
-    //   this.buffer.lines.trimStart(1);
-    //   this.buffer.ybase--;
-    //   this.buffer.ydisp = Math.max(this.buffer.ydisp - 1, 0);
-    // }
-
-    // this.buffer.ybase++;
-
-    // // Scroll the viewport down to the bottom if the user is not scrolling
-    // if (!this.userScrolling) {
-    //   this.buffer.ydisp = this.buffer.ybase;
-    // }
-
-    // // last line
-    // let row = this.buffer.ybase + this.rows - 1;
-
-    // // subtract the bottom scroll region
-    // row -= this.rows - 1 - this.buffer.scrollBottom;
-
-    // // Same as this?
-    // // row = this.buffer.ybase + this.buffer.scrollBottom;
-
-    // if (row === this.buffer.lines.length) {
-    //   // Optimization: pushing is faster than splicing when they amount to the same behavior
-    //   this.buffer.lines.push(this.blankLine(undefined, isWrapped));
-    // } else {
-    //   // add our new line
-    //   this.buffer.lines.splice(row, 0, this.blankLine(undefined, isWrapped));
-    // }
-
-    // if (this.buffer.scrollTop !== 0) {
-    //   if (this.buffer.ybase !== 0) {
-    //     this.buffer.ybase--;
-    //     if (!this.userScrolling) {
-    //       this.buffer.ydisp = this.buffer.ybase;
-    //     }
-    //   }
-    //   this.buffer.lines.splice(this.buffer.ybase + this.buffer.scrollTop, 1);
-    // }
-
-    // this.maxRange();
+    // Flag rows that need updating
     this.updateRange(this.buffer.scrollTop);
     this.updateRange(this.buffer.scrollBottom);
 

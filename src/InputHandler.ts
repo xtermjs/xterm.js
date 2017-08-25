@@ -464,13 +464,10 @@ export class InputHandler implements IInputHandler {
     let j: number;
     j = this._terminal.rows - 1 - this._terminal.buffer.scrollBottom;
     j = this._terminal.rows - 1 + this._terminal.buffer.ybase - j;
-    console.log('deleteLines', params);
     while (param--) {
       // test: echo -e '\e[44m\e[1M\e[0m'
       // blankLine(true) - xterm/linux behavior
-      console.log('splice delete row: ' + (row - 1) + '(' + this._terminal.buffer.lines.get(row - 1)[0][1] + ')');
       this._terminal.buffer.lines.splice(row - 1, 1);
-      console.log('splice add blank row: ' + (j) + '(' + this._terminal.buffer.lines.get(j)[0][1] + ')');
       this._terminal.buffer.lines.splice(j, 0, this._terminal.blankLine(true));
     }
 
