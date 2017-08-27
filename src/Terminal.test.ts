@@ -3,6 +3,9 @@ import { Terminal } from './Terminal';
 import { MockViewport, MockCompositionHelper } from './utils/TestUtils.test';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
 
+const INIT_COLS = 80;
+const INIT_ROWS = 24;
+
 class TestTerminal extends Terminal {
   public evaluateKeyEscapeSequence(ev: any): {cancel: boolean, key: string, scrollDisp: number} { return this._evaluateKeyEscapeSequence(<KeyboardEvent>ev); }
   public keyDown(ev: any): boolean { return this._keyDown(ev); }
@@ -13,7 +16,10 @@ describe('term.js addons', () => {
   let term: TestTerminal;
 
   beforeEach(() => {
-    term = new TestTerminal();
+    term = new TestTerminal({
+      cols: INIT_COLS,
+      rows: INIT_ROWS
+    });
     term.refresh = () => {};
     term.viewport = new MockViewport();
     (<any>term).compositionHelper = new MockCompositionHelper();
@@ -281,6 +287,138 @@ describe('term.js addons', () => {
         assert.equal(term.buffer.ydisp, startYDisp - 1);
         term.keyDown(<KeyboardEvent>{ keyCode: 0 });
         assert.equal(term.buffer.ydisp, startYDisp - 1);
+      });
+    });
+
+    describe('scroll() function', () => {
+      describe('when scrollback > 0', () => {
+        it('should create a new line and scroll', () => {
+          term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX] = 'a';
+          term.buffer.lines.get(INIT_ROWS - 1)[0][CHAR_DATA_CHAR_INDEX] = 'b';
+          term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
+          term.scroll();
+          assert.equal(term.buffer.lines.length, INIT_ROWS + 1);
+          assert.equal(term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX], 'a');
+          assert.equal(term.buffer.lines.get(INIT_ROWS - 1)[0][CHAR_DATA_CHAR_INDEX], 'b');
+          assert.equal(term.buffer.lines.get(INIT_ROWS)[0][CHAR_DATA_CHAR_INDEX], ' ');
+        });
+
+        it('should properly scroll inside a scroll region (scrollTop set)', () => {
+          term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX] = 'a';
+          term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX] = 'b';
+          term.buffer.lines.get(2)[0][CHAR_DATA_CHAR_INDEX] = 'c';
+          term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
+          term.buffer.scrollTop = 1;
+          term.scroll();
+          assert.equal(term.buffer.lines.length, INIT_ROWS);
+          assert.equal(term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX], 'a');
+          assert.equal(term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX], 'c');
+        });
+
+        it('should properly scroll inside a scroll region (scrollBottom set)', () => {
+          term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX] = 'a';
+          term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX] = 'b';
+          term.buffer.lines.get(2)[0][CHAR_DATA_CHAR_INDEX] = 'c';
+          term.buffer.lines.get(3)[0][CHAR_DATA_CHAR_INDEX] = 'd';
+          term.buffer.lines.get(4)[0][CHAR_DATA_CHAR_INDEX] = 'e';
+          term.buffer.y = 3;
+          term.buffer.scrollBottom = 3;
+          term.scroll();
+          assert.equal(term.buffer.lines.length, INIT_ROWS + 1);
+          assert.equal(term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX], 'a', '\'a\' should be pushed to the scrollback');
+          assert.equal(term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX], 'b');
+          assert.equal(term.buffer.lines.get(2)[0][CHAR_DATA_CHAR_INDEX], 'c');
+          assert.equal(term.buffer.lines.get(3)[0][CHAR_DATA_CHAR_INDEX], 'd');
+          assert.equal(term.buffer.lines.get(4)[0][CHAR_DATA_CHAR_INDEX], ' ', 'a blank line should be added at scrollBottom\'s index');
+          assert.equal(term.buffer.lines.get(5)[0][CHAR_DATA_CHAR_INDEX], 'e');
+        });
+
+        it('should properly scroll inside a scroll region (scrollTop and scrollBottom set)', () => {
+          term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX] = 'a';
+          term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX] = 'b';
+          term.buffer.lines.get(2)[0][CHAR_DATA_CHAR_INDEX] = 'c';
+          term.buffer.lines.get(3)[0][CHAR_DATA_CHAR_INDEX] = 'd';
+          term.buffer.lines.get(4)[0][CHAR_DATA_CHAR_INDEX] = 'e';
+          term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
+          term.buffer.scrollTop = 1;
+          term.buffer.scrollBottom = 3;
+          term.scroll();
+          assert.equal(term.buffer.lines.length, INIT_ROWS);
+          assert.equal(term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX], 'a');
+          assert.equal(term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX], 'c', '\'b\' should be removed from the buffer');
+          assert.equal(term.buffer.lines.get(2)[0][CHAR_DATA_CHAR_INDEX], 'd');
+          assert.equal(term.buffer.lines.get(3)[0][CHAR_DATA_CHAR_INDEX], ' ', 'a blank line should be added at scrollBottom\'s index');
+          assert.equal(term.buffer.lines.get(4)[0][CHAR_DATA_CHAR_INDEX], 'e');
+        });
+      });
+
+      describe('when scrollback === 0', () => {
+        beforeEach(() => {
+          term.setOption('scrollback', 0);
+          assert.equal(term.buffer.lines.maxLength, INIT_ROWS);
+        });
+
+        it('should create a new line and shift everything up', () => {
+          term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX] = 'a';
+          term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX] = 'b';
+          term.buffer.lines.get(INIT_ROWS - 1)[0][CHAR_DATA_CHAR_INDEX] = 'c';
+          term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
+          assert.equal(term.buffer.lines.length, INIT_ROWS);
+          term.scroll();
+          assert.equal(term.buffer.lines.length, INIT_ROWS);
+          // 'a' gets pushed out of buffer
+          assert.equal(term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX], 'b');
+          assert.equal(term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX], ' ');
+          assert.equal(term.buffer.lines.get(INIT_ROWS - 2)[0][CHAR_DATA_CHAR_INDEX], 'c');
+          assert.equal(term.buffer.lines.get(INIT_ROWS - 1)[0][CHAR_DATA_CHAR_INDEX], ' ');
+        });
+
+        it('should properly scroll inside a scroll region (scrollTop set)', () => {
+          term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX] = 'a';
+          term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX] = 'b';
+          term.buffer.lines.get(2)[0][CHAR_DATA_CHAR_INDEX] = 'c';
+          term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
+          term.buffer.scrollTop = 1;
+          term.scroll();
+          assert.equal(term.buffer.lines.length, INIT_ROWS);
+          assert.equal(term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX], 'a');
+          assert.equal(term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX], 'c');
+        });
+
+        it('should properly scroll inside a scroll region (scrollBottom set)', () => {
+          term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX] = 'a';
+          term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX] = 'b';
+          term.buffer.lines.get(2)[0][CHAR_DATA_CHAR_INDEX] = 'c';
+          term.buffer.lines.get(3)[0][CHAR_DATA_CHAR_INDEX] = 'd';
+          term.buffer.lines.get(4)[0][CHAR_DATA_CHAR_INDEX] = 'e';
+          term.buffer.y = 3;
+          term.buffer.scrollBottom = 3;
+          term.scroll();
+          assert.equal(term.buffer.lines.length, INIT_ROWS);
+          assert.equal(term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX], 'b');
+          assert.equal(term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX], 'c');
+          assert.equal(term.buffer.lines.get(2)[0][CHAR_DATA_CHAR_INDEX], 'd');
+          assert.equal(term.buffer.lines.get(3)[0][CHAR_DATA_CHAR_INDEX], ' ', 'a blank line should be added at scrollBottom\'s index');
+          assert.equal(term.buffer.lines.get(4)[0][CHAR_DATA_CHAR_INDEX], 'e');
+        });
+
+        it('should properly scroll inside a scroll region (scrollTop and scrollBottom set)', () => {
+          term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX] = 'a';
+          term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX] = 'b';
+          term.buffer.lines.get(2)[0][CHAR_DATA_CHAR_INDEX] = 'c';
+          term.buffer.lines.get(3)[0][CHAR_DATA_CHAR_INDEX] = 'd';
+          term.buffer.lines.get(4)[0][CHAR_DATA_CHAR_INDEX] = 'e';
+          term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
+          term.buffer.scrollTop = 1;
+          term.buffer.scrollBottom = 3;
+          term.scroll();
+          assert.equal(term.buffer.lines.length, INIT_ROWS);
+          assert.equal(term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX], 'a');
+          assert.equal(term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX], 'c', '\'b\' should be removed from the buffer');
+          assert.equal(term.buffer.lines.get(2)[0][CHAR_DATA_CHAR_INDEX], 'd');
+          assert.equal(term.buffer.lines.get(3)[0][CHAR_DATA_CHAR_INDEX], ' ', 'a blank line should be added at scrollBottom\'s index');
+          assert.equal(term.buffer.lines.get(4)[0][CHAR_DATA_CHAR_INDEX], 'e');
+        });
       });
     });
   });

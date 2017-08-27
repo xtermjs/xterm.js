@@ -1163,52 +1163,44 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
   /**
    * Scroll the terminal down 1 row, creating a blank line.
-   * @param {boolean} isWrapped Whether the new line is wrapped from the previous
-   * line.
+   * @param isWrapped Whether the new line is wrapped from the previous line.
    */
   public scroll(isWrapped?: boolean): void {
-    let row;
+    const newLine = this.blankLine(undefined, isWrapped);
+    const topRow = this.buffer.ybase + this.buffer.scrollTop;
+    let bottomRow = this.buffer.ybase + this.buffer.scrollBottom;
 
-    // Make room for the new row in lines
-    const bufferNeedsTrimming = this.buffer.lines.length === this.buffer.lines.maxLength;
-    if (bufferNeedsTrimming) {
-      this.buffer.lines.trimStart(1);
-      this.buffer.ybase--;
-      this.buffer.ydisp = Math.max(this.buffer.ydisp - 1, 0);
+    if (this.buffer.scrollTop === 0) {
+      // Determine whether the buffer is going to be trimmed after insertion.
+      const willBufferBeTrimmed = this.buffer.lines.length === this.buffer.lines.maxLength;
+
+      // Insert the line using the fastest method
+      if (bottomRow === this.buffer.lines.length - 1) {
+        this.buffer.lines.push(newLine);
+      } else {
+        this.buffer.lines.splice(bottomRow + 1, 0, newLine);
+      }
+
+      // Only adjust ybase and ydisp when the buffer is not trimmed
+      if (!willBufferBeTrimmed) {
+        this.buffer.ybase++;
+        this.buffer.ydisp++;
+      }
+    } else {
+      // scrollTop is non-zero which means no line will be going to the
+      // scrollback, instead we can just shift them in-place.
+      const scrollRegionHeight = bottomRow - topRow + 1/*as it's zero-based*/;
+      this.buffer.lines.shiftElements(topRow + 1, scrollRegionHeight - 1, -1);
+      this.buffer.lines.set(bottomRow, newLine);
     }
 
-    this.buffer.ybase++;
-
-    // Scroll the viewport down to the bottom if the user is not scrolling
+    // Move the viewport to the bottom of the buffer unless the user is
+    // scrolling.
     if (!this.userScrolling) {
       this.buffer.ydisp = this.buffer.ybase;
     }
 
-    // last line
-    row = this.buffer.ybase + this.rows - 1;
-
-    // subtract the bottom scroll region
-    row -= this.rows - 1 - this.buffer.scrollBottom;
-
-    if (row === this.buffer.lines.length) {
-      // Optimization: pushing is faster than splicing when they amount to the same behavior
-      this.buffer.lines.push(this.blankLine(undefined, isWrapped));
-    } else {
-      // add our new line
-      this.buffer.lines.splice(row, 0, this.blankLine(undefined, isWrapped));
-    }
-
-    if (this.buffer.scrollTop !== 0) {
-      if (this.buffer.ybase !== 0) {
-        this.buffer.ybase--;
-        if (!this.userScrolling) {
-          this.buffer.ydisp = this.buffer.ybase;
-        }
-      }
-      this.buffer.lines.splice(this.buffer.ybase + this.buffer.scrollTop, 1);
-    }
-
-    // this.maxRange();
+    // Flag rows that need updating
     this.updateRange(this.buffer.scrollTop);
     this.updateRange(this.buffer.scrollBottom);
 
@@ -2189,7 +2181,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       // possibly move the code below to term.reverseScroll();
       // test: echo -ne '\e[1;1H\e[44m\eM\e[0m'
       // blankLine(true) is xterm/linux behavior
-      this.buffer.lines.shiftElements(this.buffer.y + this.buffer.ybase, this.rows - 1, 1);
+      const scrollRegionHeight = this.buffer.scrollBottom - this.buffer.scrollTop;
+      this.buffer.lines.shiftElements(this.buffer.y + this.buffer.ybase, scrollRegionHeight, 1);
       this.buffer.lines.set(this.buffer.y + this.buffer.ybase, this.blankLine(true));
       this.updateRange(this.buffer.scrollTop);
       this.updateRange(this.buffer.scrollBottom);
