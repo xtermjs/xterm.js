@@ -7,6 +7,7 @@ const buffer = require('vinyl-buffer');
 const coveralls = require('gulp-coveralls');
 const fs = require('fs-extra');
 const gulp = require('gulp');
+const path = require('path');
 const istanbul = require('gulp-istanbul');
 const merge = require('merge-stream');
 const mocha = require('gulp-mocha');
@@ -96,6 +97,7 @@ gulp.task('browserify-addons', ['tsc'], function() {
     packageCache: {}
   };
   let searchBundle = browserify(searchOptions)
+        .external(path.join(outDir, 'Terminal.js'))
         .bundle()
         .pipe(source('./addons/search/search.js'))
         .pipe(buffer())
