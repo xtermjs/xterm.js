@@ -157,7 +157,7 @@ export class InputHandler implements IInputHandler {
    * Horizontal Tab (HT) (Ctrl-I).
    */
   public tab(): void {
-    this._terminal.buffer.x = this._terminal.nextStop();
+    this._terminal.buffer.x = this._terminal.buffer.nextStop();
   }
 
   /**
@@ -349,7 +349,7 @@ export class InputHandler implements IInputHandler {
   public cursorForwardTab(params: number[]): void {
     let param = params[0] || 1;
     while (param--) {
-      this._terminal.buffer.x = this._terminal.nextStop();
+      this._terminal.buffer.x = this._terminal.buffer.nextStop();
     }
   }
 
@@ -548,7 +548,7 @@ export class InputHandler implements IInputHandler {
   public cursorBackwardTab(params: number[]): void {
     let param = params[0] || 1;
     while (param--) {
-      this._terminal.buffer.x = this._terminal.prevStop();
+      this._terminal.buffer.x = this._terminal.buffer.prevStop();
     }
   }
 

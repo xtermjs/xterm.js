@@ -28,6 +28,8 @@ export class BufferSet extends EventEmitter implements IBufferSet {
     // See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-The-Alternate-Screen-Buffer
     this._alt = new Buffer(this._terminal, false);
     this._activeBuffer = this._normal;
+
+    this.setupTabStops();
   }
 
   /**
@@ -86,5 +88,14 @@ export class BufferSet extends EventEmitter implements IBufferSet {
   public resize(newCols: number, newRows: number): void {
     this._normal.resize(newCols, newRows);
     this._alt.resize(newCols, newRows);
+  }
+
+  /**
+   * Setup the tab stops.
+   * @param i The index to start setting up tab stops from.
+   */
+  public setupTabStops(i?: number): void {
+    this._normal.setupTabStops(i);
+    this._alt.setupTabStops(i);
   }
 }

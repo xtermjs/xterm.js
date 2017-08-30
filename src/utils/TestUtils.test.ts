@@ -189,6 +189,12 @@ export class MockBuffer implements IBuffer {
   translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string {
     throw new Error('Method not implemented.');
   }
+  nextStop(x?: number): number {
+    throw new Error('Method not implemented.');
+  }
+  prevStop(x?: number): number {
+    throw new Error('Method not implemented.');
+  }
 }
 
 export class MockViewport implements IViewport {
