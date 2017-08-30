@@ -175,6 +175,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   private body: HTMLBodyElement;
   private viewportScrollArea: HTMLElement;
   private viewportElement: HTMLElement;
+  public canvasElement: HTMLCanvasElement;
+  public canvasContext: CanvasRenderingContext2D;
   public selectionContainer: HTMLElement;
   private helperContainer: HTMLElement;
   private compositionView: HTMLElement;
@@ -703,6 +705,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.selectionContainer.classList.add('xterm-selection');
     this.element.appendChild(this.selectionContainer);
 
+
+    this.canvasElement = document.createElement('canvas');
+    this.canvasContext = this.canvasElement.getContext('2d');
+    this.element.appendChild(this.canvasElement);
+
+
     // Create the container that will hold the lines of the terminal and then
     // produce the lines the lines.
     this.rowContainer = document.createElement('div');
@@ -745,6 +753,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       this.updateCharSizeStyles();
     });
     this.charMeasure.measure();
+
+    this.charMeasure.on('charsizechanged', () => {
+      this.canvasElement.setAttribute('width', `${Math.ceil(this.charMeasure.width) * this.cols}px`);
+      this.canvasElement.setAttribute('height', `${Math.ceil(this.charMeasure.height) * this.rows}px`);
+    });
 
     this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
     this.renderer = new Renderer(this);

@@ -97,7 +97,8 @@ export class Renderer {
     }
     this._refreshRowsQueue = [];
     this._refreshAnimationFrame = null;
-    this._refresh(start, end);
+    // this._refresh(start, end);
+    this._canvasRender(start, end);
   }
 
   /**
@@ -322,6 +323,79 @@ export class Renderer {
 
     this._terminal.emit('refresh', {start, end});
   };
+
+  private _imageDataCache = {};
+  private _colors = [
+    // dark:
+    '#2e3436',
+    '#cc0000',
+    '#4e9a06',
+    '#c4a000',
+    '#3465a4',
+    '#75507b',
+    '#06989a',
+    '#d3d7cf',
+    // bright:
+    '#555753',
+    '#ef2929',
+    '#8ae234',
+    '#fce94f',
+    '#729fcf',
+    '#ad7fa8',
+    '#34e2e2',
+    '#eeeeec'
+  ];
+
+  private _canvasRender(start: number, end: number): void {
+    const charWidth = Math.ceil(this._terminal.charMeasure.width);
+    const charHeight = Math.ceil(this._terminal.charMeasure.height);
+    const ctx = this._terminal.canvasContext;
+    ctx.font = '16px Hack';
+    ctx.fillStyle = '#000000';
+    // console.log('fill', start, end);
+    // console.log('fill', start * charHeight, (end - start + 1) * charHeight);
+    ctx.fillRect(0, start * charHeight, charWidth * this._terminal.cols, (end - start + 1) * charHeight);
+    ctx.fillStyle = 'rgb(255, 255, 255)';
+    ctx.textBaseline = 'top';
+
+    for (let y = start; y <= end; y++) {
+      let row = y + this._terminal.buffer.ydisp;
+      let line = this._terminal.buffer.lines.get(row);
+      for (let x = 0; x < this._terminal.cols; x++) {
+        let data: any = line[x][0];
+        const ch = line[x][CHAR_DATA_CHAR_INDEX];
+
+        // if (ch === ' ') {
+        //   continue;
+        // }
+
+        let bg = data & 0x1ff;
+        let fg = (data >> 9) & 0x1ff;
+        let flags = data >> 18;
+
+        // if (bg < 16) {
+        // }
+
+        if (fg < 16) {
+          ctx.fillStyle = this._colors[fg];
+        }
+
+        // let imageData;
+        // let key = ch + fg;
+        // if (key in this._imageDataCache) {
+        //   imageData = this._imageDataCache[key];
+        // } else {
+          ctx.fillText(ch, x * charWidth, y * charHeight);
+        //   imageData = ctx.getImageData(x * charWidth, y * charHeight, charWidth, charHeight);
+        //   this._imageDataCache[key] = imageData;
+        // }
+
+        // ctx.fillText(ch, x * charWidth, y * charHeight);
+        // ctx.putImageData(imageData, x * charWidth, y * charHeight);
+      }
+    }
+    this._imageDataCache = {};
+  }
 
   /**
    * Refreshes the selection in the DOM.
