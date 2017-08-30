@@ -392,8 +392,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     if (this.selectionManager) {
       this.selectionManager.setBuffer(this.buffer);
     }
-
-    this.setupStops();
   }
 
   /**
@@ -486,7 +484,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         this.buffers.resize(this.cols, this.rows);
         this.viewport.syncScrollArea();
         break;
-      case 'tabStopWidth': this.setupStops(); break;
+      case 'tabStopWidth': this.buffers.setupTabStops(); break;
       case 'bellSound':
       case 'bellStyle': this.syncBellSound(); break;
     }
@@ -1938,7 +1936,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     this.cols = x;
     this.rows = y;
-    this.setupStops(this.cols);
+    this.buffers.setupTabStops(this.cols);
 
     this.charMeasure.measure();
 
@@ -1969,45 +1967,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   public maxRange(): void {
     this.refreshStart = 0;
     this.refreshEnd = this.rows - 1;
-  }
-
-  /**
-   * Setup the tab stops.
-   * @param {number} i
-   */
-  public setupStops(i?: number): void {
-    if (i != null) {
-      if (!this.buffer.tabs[i]) {
-        i = this.prevStop(i);
-      }
-    } else {
-      this.buffer.tabs = {};
-      i = 0;
-    }
-
-    for (; i < this.cols; i += this.getOption('tabStopWidth')) {
-      this.buffer.tabs[i] = true;
-    }
-  }
-
-  /**
-   * Move the cursor to the previous tab stop from the given position (default is current).
-   * @param {number} x The position to move the cursor to the previous tab stop.
-   */
-  public prevStop(x?: number): number {
-    if (x == null) x = this.buffer.x;
-    while (!this.buffer.tabs[--x] && x > 0);
-    return x >= this.cols ? this.cols - 1 : x < 0 ? 0 : x;
-  }
-
-  /**
-   * Move the cursor one tab stop forward from the given position (default is current).
-   * @param {number} x The position to move the cursor one tab stop forward.
-   */
-  public nextStop(x?: number): number {
-    if (x == null) x = this.buffer.x;
-    while (!this.buffer.tabs[++x] && x < this.cols);
-    return x >= this.cols ? this.cols - 1 : x < 0 ? 0 : x;
   }
 
   /**

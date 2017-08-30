@@ -92,14 +92,12 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   convertEol: boolean;
   updateRange(y: number): void;
   scroll(isWrapped?: boolean): void;
-  nextStop(x?: number): number;
   setgLevel(g: number): void;
   eraseAttr(): number;
   eraseRight(x: number, y: number): void;
   eraseLine(y: number): void;
   eraseLeft(x: number, y: number): void;
   blankLine(cur?: boolean, isWrapped?: boolean): LineData;
-  prevStop(x?: number): number;
   is(term: string): boolean;
   send(data: string): void;
   setgCharset(g: number, charset: Charset): void;
@@ -146,6 +144,8 @@ export interface IBuffer {
   savedY: number;
   savedX: number;
   translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string;
+  nextStop(x?: number): number;
+  prevStop(x?: number): number;
 }
 
 export interface IBufferSet {

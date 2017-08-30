@@ -82,10 +82,10 @@ export class Buffer implements IBuffer {
     this.ybase = 0;
     this.y = 0;
     this.x = 0;
-    this.tabs = {};
     this._lines = new CircularList<LineData>(this._getCorrectBufferLength(this._terminal.rows));
     this.scrollTop = 0;
     this.scrollBottom = this._terminal.rows - 1;
+    this.setupTabStops();
   }
 
   /**
@@ -232,5 +232,48 @@ export class Buffer implements IBuffer {
     }
 
     return lineString.substring(widthAdjustedStartCol, finalEndCol);
+  }
+
+  /**
+   * Setup the tab stops.
+   * @param i The index to start setting up tab stops from.
+   */
+  public setupTabStops(i?: number): void {
+    if (i != null) {
+      if (!this.tabs[i]) {
+        i = this.prevStop(i);
+      }
+    } else {
+      this.tabs = {};
+      i = 0;
+    }
+
+    for (; i < this._terminal.cols; i += this._terminal.options.tabStopWidth) {
+      this.tabs[i] = true;
+    }
+  }
+
+  /**
+   * Move the cursor to the previous tab stop from the given position (default is current).
+   * @param x The position to move the cursor to the previous tab stop.
+   */
+  public prevStop(x?: number): number {
+    if (x == null) {
+      x = this.x;
+    }
+    while (!this.tabs[--x] && x > 0);
+    return x >= this._terminal.cols ? this._terminal.cols - 1 : x < 0 ? 0 : x;
+  }
+
+  /**
+   * Move the cursor one tab stop forward from the given position (default is current).
+   * @param x The position to move the cursor one tab stop forward.
+   */
+  public nextStop(x?: number): number {
+    if (x == null) {
+      x = this.x;
+    }
+    while (!this.tabs[++x] && x < this._terminal.cols);
+    return x >= this._terminal.cols ? this._terminal.cols - 1 : x < 0 ? 0 : x;
   }
 }
