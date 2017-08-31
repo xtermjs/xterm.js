@@ -32,15 +32,12 @@ export class Renderer {
   private _refreshFramesSkipped = 0;
   private _refreshAnimationFrame = null;
 
-  private _spanElementObjectPool = new DomElementObjectPool('span');
-
   constructor(private _terminal: ITerminal) {
     // Figure out whether boldness affects
     // the character width of monospace fonts.
     if (brokenBold === null) {
       brokenBold = checkBoldBroken(this._terminal.element);
     }
-    this._spanElementObjectPool = new DomElementObjectPool('span');
 
     // TODO: Pull more DOM interactions into Renderer.constructor, element for
     // example should be owned by Renderer (and also exposed by Terminal due to
@@ -98,231 +95,8 @@ export class Renderer {
     this._refreshRowsQueue = [];
     this._refreshAnimationFrame = null;
     this._refresh(start, end);
-    this._canvasRender(start, end);
-  }
-
-  /**
-   * Refreshes (re-renders) terminal content within two rows (inclusive)
-   *
-   * Rendering Engine:
-   *
-   * In the screen buffer, each character is stored as a an array with a character
-   * and a 32-bit integer:
-   *   - First value: a utf-16 character.
-   *   - Second value:
-   *   - Next 9 bits: background color (0-511).
-   *   - Next 9 bits: foreground color (0-511).
-   *   - Next 14 bits: a mask for misc. flags:
-   *     - 1=bold
-   *     - 2=underline
-   *     - 4=blink
-   *     - 8=inverse
-   *     - 16=invisible
-   *
-   * @param {number} start The row to start from (between 0 and terminal's height terminal - 1)
-   * @param {number} end The row to end at (between fromRow and terminal's height terminal - 1)
-   */
-  private _refresh(start: number, end: number): void {
-    // If this is a big refresh, remove the terminal rows from the DOM for faster calculations
-    let parent;
-    if (end - start >= this._terminal.rows / 2) {
-      parent = this._terminal.element.parentNode;
-      if (parent) {
-        this._terminal.element.removeChild(this._terminal.rowContainer);
-      }
-    }
-
-    let width = this._terminal.cols;
-    let y = start;
-
-    if (end >= this._terminal.rows) {
-      this._terminal.log('`end` is too large. Most likely a bad CSR.');
-      end = this._terminal.rows - 1;
-    }
-
-    for (; y <= end; y++) {
-      let row = y + this._terminal.buffer.ydisp;
-
-      let line = this._terminal.buffer.lines.get(row);
-
-      let x;
-      if (this._terminal.buffer.y === y - (this._terminal.buffer.ybase - this._terminal.buffer.ydisp) &&
-          this._terminal.cursorState &&
-          !this._terminal.cursorHidden) {
-        x = this._terminal.buffer.x;
-      } else {
-        x = -1;
-      }
-
-      let attr = this._terminal.defAttr;
-
-      const documentFragment = document.createDocumentFragment();
-      let innerHTML = '';
-      let currentElement;
-
-      // Return the row's spans to the pool
-      while (this._terminal.children[y].children.length) {
-        const child = this._terminal.children[y].children[0];
-        this._terminal.children[y].removeChild(child);
-        this._spanElementObjectPool.release(<HTMLElement>child);
-      }
-
-      for (let i = 0; i < width; i++) {
-        // TODO: Could data be a more specific type?
-        let data: any = line[i][0];
-        const ch = line[i][CHAR_DATA_CHAR_INDEX];
-        const ch_width: any = line[i][CHAR_DATA_WIDTH_INDEX];
-        const isCursor: boolean = i === x;
-        if (!ch_width) {
-          continue;
-        }
-
-        if (data !== attr || isCursor) {
-          if (attr !== this._terminal.defAttr && !isCursor) {
-            if (innerHTML) {
-              currentElement.innerHTML = innerHTML;
-              innerHTML = '';
-            }
-            documentFragment.appendChild(currentElement);
-            currentElement = null;
-          }
-          if (data !== this._terminal.defAttr || isCursor) {
-            if (innerHTML && !currentElement) {
-              currentElement = this._spanElementObjectPool.acquire();
-            }
-            if (currentElement) {
-              if (innerHTML) {
-                currentElement.innerHTML = innerHTML;
-                innerHTML = '';
-              }
-              documentFragment.appendChild(currentElement);
-            }
-            currentElement = this._spanElementObjectPool.acquire();
-
-            let bg = data & 0x1ff;
-            let fg = (data >> 9) & 0x1ff;
-            let flags = data >> 18;
-
-            if (isCursor) {
-              currentElement.classList.add('reverse-video');
-              currentElement.classList.add('terminal-cursor');
-            }
-
-            if (flags & FLAGS.BOLD) {
-              if (!brokenBold) {
-                currentElement.classList.add('xterm-bold');
-              }
-              // See: XTerm*boldColors
-              if (fg < 8) {
-                fg += 8;
-              }
-            }
-
-            if (flags & FLAGS.UNDERLINE) {
-              currentElement.classList.add('xterm-underline');
-            }
-
-            if (flags & FLAGS.BLINK) {
-              currentElement.classList.add('xterm-blink');
-            }
-
-            // If inverse flag is on, then swap the foreground and background variables.
-            if (flags & FLAGS.INVERSE) {
-              let temp = bg;
-              bg = fg;
-              fg = temp;
-              // Should inverse just be before the above boldColors effect instead?
-              if ((flags & 1) && fg < 8) {
-                fg += 8;
-              }
-            }
-
-            if (flags & FLAGS.INVISIBLE && !isCursor) {
-              currentElement.classList.add('xterm-hidden');
-            }
-
-            /**
-             * Weird situation: Invert flag used black foreground and white background results
-             * in invalid background color, positioned at the 256 index of the 256 terminal
-             * color map. Pin the colors manually in such a case.
-             *
-             * Source: https://github.com/sourcelair/xterm.js/issues/57
-             */
-            if (flags & FLAGS.INVERSE) {
-              if (bg === 257) {
-                bg = 15;
-              }
-              if (fg === 256) {
-                fg = 0;
-              }
-            }
-
-            if (bg < 256) {
-              currentElement.classList.add(`xterm-bg-color-${bg}`);
-            }
-
-            if (fg < 256) {
-              currentElement.classList.add(`xterm-color-${fg}`);
-            }
-
-          }
-        }
-
-        if (ch_width === 2) {
-          // Wrap wide characters so they're sized correctly. It's more difficult to release these
-          // from the object pool so just create new ones via innerHTML.
-          innerHTML += `<span class="xterm-wide-char">${ch}</span>`;
-        } else if (ch.charCodeAt(0) > 255) {
-          // Wrap any non-wide unicode character as some fonts size them badly
-          innerHTML += `<span class="xterm-normal-char">${ch}</span>`;
-        } else {
-          switch (ch) {
-            case '&':
-              innerHTML += '&amp;';
-              break;
-            case '<':
-              innerHTML += '&lt;';
-              break;
-            case '>':
-              innerHTML += '&gt;';
-              break;
-            default:
-              if (ch <= ' ') {
-                innerHTML += '&nbsp;';
-              } else {
-                innerHTML += ch;
-              }
-              break;
-          }
-        }
-
-        // The cursor needs its own element, therefore we set attr to -1
-        // which will cause the next character to be rendered in a new element
-        attr = isCursor ? -1 : data;
-
-      }
-
-      if (innerHTML && !currentElement) {
-        currentElement = this._spanElementObjectPool.acquire();
-      }
-      if (currentElement) {
-        if (innerHTML) {
-          currentElement.innerHTML = innerHTML;
-          innerHTML = '';
-        }
-        documentFragment.appendChild(currentElement);
-        currentElement = null;
-      }
-
-      this._terminal.children[y].appendChild(documentFragment);
-    }
-
-    if (parent) {
-      this._terminal.element.appendChild(this._terminal.rowContainer);
-    }
-
     this._terminal.emit('refresh', {start, end});
-  };
+  }
 
   private _imageDataCache = {};
   private _colors = [
@@ -346,8 +120,28 @@ export class Renderer {
     '#eeeeec'
   ];
 
-  private _canvasRender(start: number, end: number): void {
-
+  /**
+   * Refreshes (re-renders) terminal content within two rows (inclusive)
+   *
+   * Rendering Engine:
+   *
+   * In the screen buffer, each character is stored as a an array with a character
+   * and a 32-bit integer:
+   *   - First value: a utf-16 character.
+   *   - Second value:
+   *   - Next 9 bits: background color (0-511).
+   *   - Next 9 bits: foreground color (0-511).
+   *   - Next 14 bits: a mask for misc. flags:
+   *     - 1=bold
+   *     - 2=underline
+   *     - 4=blink
+   *     - 8=inverse
+   *     - 16=invisible
+   *
+   * @param {number} start The row to start from (between 0 and terminal's height terminal - 1)
+   * @param {number} end The row to end at (between fromRow and terminal's height terminal - 1)
+   */
+  private _refresh(start: number, end: number): void {
     const charWidth = Math.ceil(this._terminal.charMeasure.width) * window.devicePixelRatio;
     const charHeight = Math.ceil(this._terminal.charMeasure.height) * window.devicePixelRatio;
     const ctx = this._terminal.canvasContext;
@@ -370,7 +164,7 @@ export class Renderer {
       let row = y + this._terminal.buffer.ydisp;
       let line = this._terminal.buffer.lines.get(row);
       for (let x = 0; x < this._terminal.cols; x++) {
-        let data: any = line[x][0];
+        let data: number = line[x][0];
         const ch = line[x][CHAR_DATA_CHAR_INDEX];
 
         // if (ch === ' ') {
@@ -393,17 +187,24 @@ export class Renderer {
           }
         }
 
-        if (fg < 16) {
+        if (fg > 255) {
+          ctx.fillStyle = '#ffffff';
+        } else if (fg > 15) {
+          // TODO: Support colors 16-255
+        } else {
           ctx.fillStyle = this._colors[fg];
         }
 
         // Simulate cache
         let imageData;
-        let key = ch + fg;
+        let key = ch + data;
         if (key in this._imageDataCache) {
           imageData = this._imageDataCache[key];
         } else {
           ctx.fillText(ch, x * charWidth, y * charHeight);
+          if (flags & FLAGS.UNDERLINE) {
+            ctx.fillRect(x * charWidth, (y + 1) * charHeight - window.devicePixelRatio, charWidth, window.devicePixelRatio);
+          }
           imageData = ctx.getImageData(x * charWidth, y * charHeight, charWidth, charHeight);
           this._imageDataCache[key] = imageData;
         }

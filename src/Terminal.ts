@@ -29,7 +29,8 @@ import { CircularList } from './utils/CircularList';
 import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Parser } from './Parser';
-import { Renderer } from './Renderer';
+// import { Renderer } from './Renderer';
+import { Renderer } from './RendererCanvas';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
 import { CharMeasure } from './utils/CharMeasure';
@@ -708,6 +709,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     this.canvasElement = document.createElement('canvas');
     this.canvasContext = this.canvasElement.getContext('2d');
+    // Scale the context for HDPI screens
+    this.canvasContext.scale(window.devicePixelRatio, window.devicePixelRatio);
     this.element.appendChild(this.canvasElement);
 
 
@@ -755,8 +758,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.charMeasure.measure();
 
     this.charMeasure.on('charsizechanged', () => {
-      this.canvasElement.setAttribute('width', `${Math.ceil(this.charMeasure.width) * this.cols}px`);
-      this.canvasElement.setAttribute('height', `${Math.ceil(this.charMeasure.height) * this.rows}px`);
+      const width = Math.ceil(this.charMeasure.width) * this.cols;
+      const height = Math.ceil(this.charMeasure.height) * this.rows;
+      this.canvasElement.width = width * window.devicePixelRatio;
+      this.canvasElement.height = height * window.devicePixelRatio;
+      this.canvasElement.style.width = `${width}px`;
+      this.canvasElement.style.height = `${height}px`;
     });
 
     this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
