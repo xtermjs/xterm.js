@@ -3,6 +3,7 @@ import { IBuffer, ICharMeasure, ITerminal } from '../Interfaces';
 import { CHAR_DATA_ATTR_INDEX } from '../Buffer';
 import { TANGO_COLORS } from './Color';
 import { GridCache } from './GridCache';
+import { FLAGS } from './Types';
 
 export class BackgroundRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -34,9 +35,19 @@ export class BackgroundRenderLayer implements IRenderLayer {
       let row = y + terminal.buffer.ydisp;
       let line = terminal.buffer.lines.get(row);
       for (let x = 0; x < terminal.cols; x++) {
-        const data: number = line[x][CHAR_DATA_ATTR_INDEX];
-        const bg = data & 0x1ff;
-        const flags = data >> 18;
+        const attr: number = line[x][CHAR_DATA_ATTR_INDEX];
+        let bg = attr & 0x1ff;
+        const flags = attr >> 18;
+
+
+        // If inverse flag is on, the background should become the foreground.
+        if (flags & FLAGS.INVERSE) {
+          bg = (attr >> 9) & 0x1ff;
+          // TODO: Is this case still needed
+          if (bg === 257) {
+            bg = 15;
+          }
+        }
 
         const cellState = this._state.cache[x][y];
         const needsRefresh = (bg < 16 && cellState !== bg) || cellState !== null;

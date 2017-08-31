@@ -42,13 +42,6 @@ export class ForegroundRenderLayer implements IRenderLayer {
     const scaledCharWidth = Math.ceil(terminal.charMeasure.width) * window.devicePixelRatio;
     const scaledCharHeight = Math.ceil(terminal.charMeasure.height) * window.devicePixelRatio;
 
-    // TODO: Needs to react to terminal resize
-    // Initialize image data
-    // if (!this._imageData) {
-    //   this._imageData = textCtx.createImageData(scaledCharWidth * this._terminal.cols * window.devicePixelRatio, scaledCharHeight * this._terminal.rows * window.devicePixelRatio);
-    //   this._imageData.data.set(createBackgroundFillData(this._imageData.width, this._imageData.height, 255, 0, 0, 255));
-    // }
-
     // TODO: Ensure that the render is eventually performed
     // Don't bother render until the atlas bitmap is ready
     if (!this._charAtlas) {
@@ -81,12 +74,21 @@ export class ForegroundRenderLayer implements IRenderLayer {
         this._ctx.clearRect(x * scaledCharWidth, y * scaledCharHeight, scaledCharWidth, scaledCharHeight);
 
         // Skip rendering if the character is invisible
-        if (!code || code === 32/*' '*/) {
+        if (!code || code === 32 /*' '*/) {
           continue;
         }
 
         let fg = (attr >> 9) & 0x1ff;
         const flags = attr >> 18;
+
+        // If inverse flag is on, the foreground should become the background.
+        if (flags & FLAGS.INVERSE) {
+          fg = attr & 0x1ff;
+          // TODO: Is this case still needed
+          if (fg === 257) {
+            fg = 0;
+          }
+        }
 
         if (flags & FLAGS.BOLD) {
           this._ctx.font = `bold ${this._ctx.font}`;
@@ -116,7 +118,7 @@ export class ForegroundRenderLayer implements IRenderLayer {
     // this._ctx.drawImage(this._charAtlas, 0, 0);
   }
 
-  private _drawUnicodeChar(char: string, width: number, fg: number, x: number, y: number, scaledCharWidth: number, scaledCharHeight: number) {
+  private _drawUnicodeChar(char: string, width: number, fg: number, x: number, y: number, scaledCharWidth: number, scaledCharHeight: number): void {
     this._ctx.save();
     this._ctx.font = `${16 * window.devicePixelRatio}px courier`;
     this._ctx.textBaseline = 'top';
