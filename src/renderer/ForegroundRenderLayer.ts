@@ -20,14 +20,14 @@ export class ForegroundRenderLayer implements IRenderLayer {
     this._charAtlasGenerator = new CharAtlasGenerator();
   }
 
-  public resize(canvasWidth: number, canvasHeight: number, charWidth: number, charHeight: number, charSizeChanged: boolean): void {
+  public resize(terminal: ITerminal, canvasWidth: number, canvasHeight: number, charSizeChanged: boolean): void {
     this._canvas.width = canvasWidth * window.devicePixelRatio;
     this._canvas.height = canvasHeight * window.devicePixelRatio;
     this._canvas.style.width = `${canvasWidth}px`;
     this._canvas.style.height = `${canvasHeight}px`;
     if (charSizeChanged) {
       this._charAtlas = null;
-      this._charAtlasGenerator.generate(charWidth, charHeight).then(bitmap => {
+      this._charAtlasGenerator.generate(terminal.charMeasure.width, terminal.charMeasure.height).then(bitmap => {
         this._charAtlas = bitmap;
       });
     }

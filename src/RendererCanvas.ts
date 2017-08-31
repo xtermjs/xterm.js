@@ -33,13 +33,10 @@ export class Renderer {
   }
 
   public onResize(cols: number, rows: number): void {
-    // TODO: This could be triggered immediately after onCharSizeChanged?
-    const charWidth = this._terminal.charMeasure.width;
-    const charHeight = this._terminal.charMeasure.height;
-    const width = Math.ceil(charWidth) * this._terminal.cols;
-    const height = Math.ceil(charHeight) * this._terminal.rows;
+    const width = Math.ceil(this._terminal.charMeasure.width) * this._terminal.cols;
+    const height = Math.ceil(this._terminal.charMeasure.height) * this._terminal.rows;
     for (let i = 0; i < this._renderLayers.length; i++) {
-      this._renderLayers[i].resize(width, height, charWidth, charHeight, false);
+      this._renderLayers[i].resize(this._terminal, width, height, false);
     }
   }
 
@@ -47,7 +44,7 @@ export class Renderer {
     const width = Math.ceil(charWidth) * this._terminal.cols;
     const height = Math.ceil(charHeight) * this._terminal.rows;
     for (let i = 0; i < this._renderLayers.length; i++) {
-      this._renderLayers[i].resize(width, height, charWidth, charHeight, true);
+      this._renderLayers[i].resize(this._terminal, width, height, true);
     }
   }
 

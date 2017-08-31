@@ -6,6 +6,7 @@ import { TANGO_COLORS } from './Color';
 export class BackgroundRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
   private _ctx: CanvasRenderingContext2D;
+  private _currentState: number[][];
 
   constructor(container: HTMLElement) {
     this._canvas = document.createElement('canvas');
@@ -13,13 +14,27 @@ export class BackgroundRenderLayer implements IRenderLayer {
     this._ctx = this._canvas.getContext('2d');
     this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
     container.appendChild(this._canvas);
+
+    this._currentState = [];
   }
 
-  public resize(canvasWidth: number, canvasHeight: number, charWidth: number, charHeight: number, charSizeChanged: boolean): void {
+  public resize(terminal: ITerminal, canvasWidth: number, canvasHeight: number, charSizeChanged: boolean): void {
     this._canvas.width = canvasWidth * window.devicePixelRatio;
     this._canvas.height = canvasHeight * window.devicePixelRatio;
     this._canvas.style.width = `${canvasWidth}px`;
     this._canvas.style.height = `${canvasHeight}px`;
+    // Initialize current state grid
+    this._currentState = [];
+    for (let y = 0; y < terminal.rows; y++) {
+      if (this._currentState.length <= y) {
+        this._currentState.push([]);
+      }
+      for (let x = this._currentState[y].length; x < terminal.cols; x++) {
+        this._currentState[y].push(null);
+      }
+      this._currentState[y].length = terminal.cols;
+    }
+    this._currentState.length = terminal.rows;
   }
 
   public render(terminal: ITerminal, startRow: number, endRow: number): void {
@@ -34,14 +49,18 @@ export class BackgroundRenderLayer implements IRenderLayer {
         const bg = data & 0x1ff;
         const flags = data >> 18;
 
-        if (bg < 16) {
-          this._ctx.save();
-          this._ctx.fillStyle = TANGO_COLORS[bg];
-          this._ctx.fillRect(x * scaledCharWidth, y * scaledCharHeight, scaledCharWidth, scaledCharHeight);
-          this._ctx.restore();
-        } else {
-          // TODO: Only clear if needed
-          this._ctx.clearRect(x * scaledCharWidth, y * scaledCharHeight, scaledCharWidth, scaledCharHeight);
+        const needsRefresh = (bg < 16 && this._currentState[y][x] !== bg) || this._currentState[y][x] !== null;
+        if (needsRefresh) {
+          if (bg < 16) {
+            this._ctx.save();
+            this._ctx.fillStyle = TANGO_COLORS[bg];
+            this._ctx.fillRect(x * scaledCharWidth, y * scaledCharHeight, scaledCharWidth, scaledCharHeight);
+            this._ctx.restore();
+            this._currentState[y][x] = bg;
+          } else {
+            this._ctx.clearRect(x * scaledCharWidth, y * scaledCharHeight, scaledCharWidth, scaledCharHeight);
+            this._currentState[y][x] = null;
+          }
         }
       }
     }
