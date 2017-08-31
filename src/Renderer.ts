@@ -98,7 +98,6 @@ export class Renderer {
     this._refreshRowsQueue = [];
     this._refreshAnimationFrame = null;
     this._refresh(start, end);
-    this._canvasRender(start, end);
   }
 
   /**
@@ -345,75 +344,6 @@ export class Renderer {
     '#34e2e2',
     '#eeeeec'
   ];
-
-  private _canvasRender(start: number, end: number): void {
-
-    const charWidth = Math.ceil(this._terminal.charMeasure.width) * window.devicePixelRatio;
-    const charHeight = Math.ceil(this._terminal.charMeasure.height) * window.devicePixelRatio;
-    const ctx = this._terminal.canvasContext;
-
-    ctx.fillStyle = '#000000';
-    // console.log('fill', start, end);
-    // console.log('fill', start * charHeight, (end - start + 1) * charHeight);
-    // ctx.fillRect(0, start * charHeight, charWidth * this._terminal.cols, (end - start + 1) * charHeight);
-    ctx.fillStyle = 'rgb(255, 255, 255)';
-    ctx.textBaseline = 'top';
-
-    // Indicates whether to reset the font next cell
-    let resetFont = true;
-
-    for (let y = start; y <= end; y++) {
-      if (resetFont) {
-        ctx.font = `${16 * window.devicePixelRatio}px courier`;
-        resetFont = false;
-      }
-      let row = y + this._terminal.buffer.ydisp;
-      let line = this._terminal.buffer.lines.get(row);
-      for (let x = 0; x < this._terminal.cols; x++) {
-        let data: any = line[x][0];
-        const ch = line[x][CHAR_DATA_CHAR_INDEX];
-
-        // if (ch === ' ') {
-        //   continue;
-        // }
-
-        let bg = data & 0x1ff;
-        let fg = (data >> 9) & 0x1ff;
-        let flags = data >> 18;
-
-        // if (bg < 16) {
-        // }
-
-        if (flags & FLAGS.BOLD) {
-          ctx.font = `bold ${ctx.font}`;
-          resetFont = true;
-          // Convert the FG color to the bold variant
-          if (fg < 8) {
-            fg += 8;
-          }
-        }
-
-        if (fg < 16) {
-          ctx.fillStyle = this._colors[fg];
-        }
-
-        // Simulate cache
-        let imageData;
-        let key = ch + fg;
-        if (key in this._imageDataCache) {
-          imageData = this._imageDataCache[key];
-        } else {
-          ctx.fillText(ch, x * charWidth, y * charHeight);
-          imageData = ctx.getImageData(x * charWidth, y * charHeight, charWidth, charHeight);
-          this._imageDataCache[key] = imageData;
-        }
-        ctx.putImageData(imageData, x * charWidth, y * charHeight);
-
-        // Always write text
-        // ctx.fillText(ch, x * charWidth, y * charHeight);
-      }
-    }
-  }
 
   /**
    * Refreshes the selection in the DOM.

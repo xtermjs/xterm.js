@@ -176,8 +176,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   private body: HTMLBodyElement;
   private viewportScrollArea: HTMLElement;
   private viewportElement: HTMLElement;
-  public canvasElement: HTMLCanvasElement;
-  public canvasContext: CanvasRenderingContext2D;
   public selectionContainer: HTMLElement;
   private helperContainer: HTMLElement;
   private compositionView: HTMLElement;
@@ -706,14 +704,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.selectionContainer.classList.add('xterm-selection');
     this.element.appendChild(this.selectionContainer);
 
-
-    this.canvasElement = document.createElement('canvas');
-    this.canvasContext = this.canvasElement.getContext('2d');
-    // Scale the context for HDPI screens
-    this.canvasContext.scale(window.devicePixelRatio, window.devicePixelRatio);
-    this.element.appendChild(this.canvasElement);
-
-
     // Create the container that will hold the lines of the terminal and then
     // produce the lines the lines.
     this.rowContainer = document.createElement('div');
@@ -757,17 +747,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     });
     this.charMeasure.measure();
 
-    this.charMeasure.on('charsizechanged', () => {
-      const width = Math.ceil(this.charMeasure.width) * this.cols;
-      const height = Math.ceil(this.charMeasure.height) * this.rows;
-      this.canvasElement.width = width * window.devicePixelRatio;
-      this.canvasElement.height = height * window.devicePixelRatio;
-      this.canvasElement.style.width = `${width}px`;
-      this.canvasElement.style.height = `${height}px`;
-    });
-
     this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
     this.renderer = new Renderer(this);
+    this.on('resize', () => this.renderer.onResize(this.cols, this.rows));
+    this.charMeasure.on('charsizechanged', () => this.renderer.onCharSizeChanged(this.charMeasure.width, this.charMeasure.height));
     this.selectionManager = new SelectionManager(this, this.buffer, this.rowContainer, this.charMeasure);
     this.selectionManager.on('refresh', data => {
       this.renderer.refreshSelection(data.start, data.end);

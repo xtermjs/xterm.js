@@ -21,8 +21,6 @@ export interface ITerminal extends IEventEmitter {
   element: HTMLElement;
   rowContainer: HTMLElement;
   selectionContainer: HTMLElement;
-  canvasElement: HTMLCanvasElement;
-  canvasContext: CanvasRenderingContext2D;
   selectionManager: ISelectionManager;
   charMeasure: ICharMeasure;
   textarea: HTMLTextAreaElement;
