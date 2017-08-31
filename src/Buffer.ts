@@ -9,6 +9,7 @@ import { LineData, CharData } from './Types';
 export const CHAR_DATA_ATTR_INDEX = 0;
 export const CHAR_DATA_CHAR_INDEX = 1;
 export const CHAR_DATA_WIDTH_INDEX = 2;
+export const CHAR_DATA_CODE_INDEX = 3;
 
 /**
  * This class represents a terminal buffer (an internal state of the terminal), where the

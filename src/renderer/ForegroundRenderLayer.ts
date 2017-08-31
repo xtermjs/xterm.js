@@ -1,6 +1,6 @@
 import { IRenderLayer } from './Interfaces';
 import { IBuffer, ICharMeasure, ITerminal } from '../Interfaces';
-import { CHAR_DATA_ATTR_INDEX } from '../Buffer';
+import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from '../Buffer';
 import { TANGO_COLORS } from './Color';
 import { FLAGS } from './Types';
 
@@ -62,19 +62,15 @@ export class ForegroundRenderLayer implements IRenderLayer {
       let row = y + terminal.buffer.ydisp;
       let line = terminal.buffer.lines.get(row);
       for (let x = 0; x < terminal.cols; x++) {
-        this._ctx.save();
+        const code: number = <number>line[x][CHAR_DATA_CODE_INDEX];
 
-        let data: number = line[x][0];
-        // const ch = line[x][CHAR_DATA_CHAR_INDEX];
-        const code: number = <number>line[x][3];
+        if (!code) {
+          continue;
+        }
 
-        // if (ch === ' ') {
-        //   continue;
-        // }
-
-        // let bg = data & 0x1ff;
-        let fg = (data >> 9) & 0x1ff;
-        let flags = data >> 18;
+        const attr: number = line[x][CHAR_DATA_ATTR_INDEX];
+        let fg = (attr >> 9) & 0x1ff;
+        const flags = attr >> 18;
 
         if (flags & FLAGS.BOLD) {
           this._ctx.font = `bold ${this._ctx.font}`;
@@ -84,46 +80,42 @@ export class ForegroundRenderLayer implements IRenderLayer {
           }
         }
 
-        // if (fg < 16) {
-        //   ctx.fillStyle = this._colors[fg];
-        // } else if (fg < 256) {
-        //   // TODO: Support colors 16-255
-        // }
-
         let colorIndex = 0;
         if (fg < 16) {
           colorIndex = fg + 1;
         }
 
-        // Simulate cache
-        // let imageData;
-        // let key = ch + data;
-        // if (key in this._imageDataCache) {
-        //   imageData = this._imageDataCache[key];
-        // } else {
-        //   ctx.fillText(ch, x * scaledCharWidth, y * scaledCharHeight);
-        //   if (flags & FLAGS.UNDERLINE) {
-        //     ctx.fillRect(x * scaledCharWidth, (y + 1) * scaledCharHeight - window.devicePixelRatio, scaledCharWidth, window.devicePixelRatio);
-        //   }
-        //   imageData = ctx.getImageData(x * scaledCharWidth, y * scaledCharHeight, scaledCharWidth, scaledCharHeight);
-        //   this._imageDataCache[key] = imageData;
-        // }
-        // ctx.putImageData(imageData, x * scaledCharWidth, y * scaledCharHeight);
-
-        // TODO: Try to get atlas working
-        // This seems too slow :(
-        // ctx.putImageData(this._charImageDataAtlas, x * scaledCharWidth - ch.charCodeAt(0) * scaledCharWidth, y * scaledCharHeight, ch.charCodeAt(0) * scaledCharWidth, 0, scaledCharWidth, scaledCharHeight);
-
-        // ctx.drawImage(this._offscreenCanvas, code * scaledCharWidth, 0, scaledCharWidth, scaledCharHeight, x * scaledCharWidth, y * scaledCharHeight, scaledCharWidth, scaledCharHeight);
-
-        // ImageBitmap's draw about twice as fast as from a canvas
-        this._ctx.drawImage(this._charAtlas, code * scaledCharWidth, colorIndex * scaledCharHeight, scaledCharWidth, scaledCharHeight, x * scaledCharWidth, y * scaledCharHeight, scaledCharWidth, scaledCharHeight);
-        this._ctx.restore();
+        if (code < 256) {
+          // ImageBitmap's draw about twice as fast as from a canvas
+          this._ctx.drawImage(this._charAtlas, code * scaledCharWidth, colorIndex * scaledCharHeight, scaledCharWidth, scaledCharHeight, x * scaledCharWidth, y * scaledCharHeight, scaledCharWidth, scaledCharHeight);
+        } else {
+          // TODO: Evaluate how long it takes to convert from a number
+          const char: string = line[x][CHAR_DATA_CHAR_INDEX];
+          const width: number = line[x][CHAR_DATA_WIDTH_INDEX];
+          this._drawUnicodeChar(char, width, fg, x, y, scaledCharWidth, scaledCharHeight);
+        }
       }
     }
 
     // This draws the atlas (for debugging purposes)
     // this._ctx.drawImage(this._charAtlas, 0, 0);
+  }
+
+  private _drawUnicodeChar(char: string, width: number, fg: number, x: number, y: number, scaledCharWidth: number, scaledCharHeight: number) {
+    this._ctx.save();
+
+    this._ctx.font = `${16 * window.devicePixelRatio}px courier`;
+    this._ctx.textBaseline = 'top';
+
+    if (fg < 16) {
+      this._ctx.fillStyle = TANGO_COLORS[fg];
+    } else {
+      this._ctx.fillStyle = '#ffffff';
+    }
+
+    // TODO: Do we care about width for rendering wide chars?
+    this._ctx.fillText(char, x * scaledCharWidth, y * scaledCharHeight);
+    this._ctx.restore();
   }
 }
 
