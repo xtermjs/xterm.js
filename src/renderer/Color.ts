@@ -1,7 +1,7 @@
 // TODO: Ideally colors would be exposed through some theme manager since colors
 // are moving to JS.
 
-export const TANGO_COLORS = [
+const TANGO_COLORS = [
   // dark:
   '#2e3436',
   '#cc0000',

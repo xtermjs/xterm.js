@@ -1,7 +1,6 @@
 import { ISelectionRenderLayer } from './Interfaces';
 import { IBuffer, ICharMeasure, ITerminal } from '../Interfaces';
 import { CHAR_DATA_ATTR_INDEX } from '../Buffer';
-import { TANGO_COLORS } from './Color';
 import { GridCache } from './GridCache';
 import { FLAGS } from './Types';
 
