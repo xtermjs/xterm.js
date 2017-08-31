@@ -1,7 +1,7 @@
 import { IDataRenderLayer } from './Interfaces';
 import { IBuffer, ICharMeasure, ITerminal } from '../Interfaces';
 import { CHAR_DATA_ATTR_INDEX } from '../Buffer';
-import { TANGO_COLORS } from './Color';
+import { COLORS } from './Color';
 import { GridCache } from './GridCache';
 import { FLAGS } from './Types';
 
@@ -49,11 +49,11 @@ export class BackgroundRenderLayer implements IDataRenderLayer {
         }
 
         const cellState = this._state.cache[x][y];
-        const needsRefresh = (bg < 16 && cellState !== bg) || cellState !== null;
+        const needsRefresh = (bg < 256 && cellState !== bg) || cellState !== null;
         if (needsRefresh) {
-          if (bg < 16) {
+          if (bg < 256) {
             this._ctx.save();
-            this._ctx.fillStyle = TANGO_COLORS[bg];
+            this._ctx.fillStyle = COLORS[bg];
             this._ctx.fillRect(x * scaledCharWidth, y * scaledCharHeight, scaledCharWidth, scaledCharHeight);
             this._ctx.restore();
             this._state.cache[x][y] = bg;

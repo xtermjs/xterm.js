@@ -1,7 +1,7 @@
 import { IDataRenderLayer } from './Interfaces';
 import { IBuffer, ICharMeasure, ITerminal } from '../Interfaces';
 import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from '../Buffer';
-import { TANGO_COLORS } from './Color';
+import { COLORS } from './Color';
 import { FLAGS } from './Types';
 import { GridCache } from './GridCache';
 import { CharData } from '../Types';
@@ -104,13 +104,13 @@ export class ForegroundRenderLayer implements IDataRenderLayer {
           colorIndex = fg + 1;
         }
 
-        if (code < 256) {
+        if (code < 256 && (colorIndex > 0 || fg > 255)) {
           // ImageBitmap's draw about twice as fast as from a canvas
           this._ctx.drawImage(this._charAtlas, code * scaledCharWidth, colorIndex * scaledCharHeight, scaledCharWidth, scaledCharHeight, x * scaledCharWidth, y * scaledCharHeight, scaledCharWidth, scaledCharHeight);
         } else {
           // TODO: Evaluate how long it takes to convert from a number
           const width: number = charData[CHAR_DATA_WIDTH_INDEX];
-          this._drawUnicodeChar(char, width, fg, x, y, scaledCharWidth, scaledCharHeight);
+          this._drawUncachedChar(char, width, fg, x, y, scaledCharWidth, scaledCharHeight);
         }
       }
     }
@@ -119,13 +119,14 @@ export class ForegroundRenderLayer implements IDataRenderLayer {
     // this._ctx.drawImage(this._charAtlas, 0, 0);
   }
 
-  private _drawUnicodeChar(char: string, width: number, fg: number, x: number, y: number, scaledCharWidth: number, scaledCharHeight: number): void {
+  private _drawUncachedChar(char: string, width: number, fg: number, x: number, y: number, scaledCharWidth: number, scaledCharHeight: number): void {
     this._ctx.save();
     this._ctx.font = `${16 * window.devicePixelRatio}px courier`;
     this._ctx.textBaseline = 'top';
 
-    if (fg < 16) {
-      this._ctx.fillStyle = TANGO_COLORS[fg];
+    // 256 color support
+    if (fg < 256) {
+      this._ctx.fillStyle = COLORS[fg];
     } else {
       this._ctx.fillStyle = '#ffffff';
     }
@@ -174,7 +175,7 @@ class CharAtlasGenerator {
       this._ctx.clearRect(0, y, this._canvas.width, scaledCharHeight);
       // Draw ascii characters
       for (let i = 0; i < 256; i++) {
-        this._ctx.fillStyle = TANGO_COLORS[colorIndex];
+        this._ctx.fillStyle = COLORS[colorIndex];
         this._ctx.fillText(String.fromCharCode(i), i * scaledCharWidth, y);
       }
     }
