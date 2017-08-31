@@ -3,11 +3,14 @@ import { IBuffer, ICharMeasure, ITerminal } from '../Interfaces';
 import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from '../Buffer';
 import { TANGO_COLORS } from './Color';
 import { FLAGS } from './Types';
+import { GridCache } from './GridCache';
+import { CharData } from '../Types';
 
 export class ForegroundRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
   private _ctx: CanvasRenderingContext2D;
   private _charAtlas: ImageBitmap;
+  private _state: GridCache<CharData>;
 
   private _charAtlasGenerator: CharAtlasGenerator;
 
@@ -18,6 +21,7 @@ export class ForegroundRenderLayer implements IRenderLayer {
     this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
     container.appendChild(this._canvas);
     this._charAtlasGenerator = new CharAtlasGenerator();
+    this._state = new GridCache<CharData>();
   }
 
   public resize(terminal: ITerminal, canvasWidth: number, canvasHeight: number, charSizeChanged: boolean): void {
@@ -25,6 +29,7 @@ export class ForegroundRenderLayer implements IRenderLayer {
     this._canvas.height = canvasHeight * window.devicePixelRatio;
     this._canvas.style.width = `${canvasWidth}px`;
     this._canvas.style.height = `${canvasHeight}px`;
+    this._state.resize(terminal.cols, terminal.rows);
     if (charSizeChanged) {
       this._charAtlas = null;
       this._charAtlasGenerator.generate(terminal.charMeasure.width, terminal.charMeasure.height).then(bitmap => {
@@ -54,21 +59,32 @@ export class ForegroundRenderLayer implements IRenderLayer {
     this._ctx.textBaseline = 'top';
     this._ctx.font = `${16 * window.devicePixelRatio}px courier`;
 
-    // Clear out the old data
-    // TODO: This should be optimised, we don't want to rewrite every character
-    this._ctx.clearRect(0, startRow * scaledCharHeight, scaledCharWidth * terminal.cols, (endRow - startRow + 1) * scaledCharHeight);
-
     for (let y = startRow; y <= endRow; y++) {
       let row = y + terminal.buffer.ydisp;
       let line = terminal.buffer.lines.get(row);
       for (let x = 0; x < terminal.cols; x++) {
-        const code: number = <number>line[x][CHAR_DATA_CODE_INDEX];
+        const charData = line[x];
+        const code: number = <number>charData[CHAR_DATA_CODE_INDEX];
+        const char: string = charData[CHAR_DATA_CHAR_INDEX];
+        const attr: number = charData[CHAR_DATA_ATTR_INDEX];
 
-        if (!code) {
+        // Skip rendering if the character is identical
+        const state = this._state.cache[x][y];
+        if (state && state[CHAR_DATA_CHAR_INDEX] === char && state[CHAR_DATA_ATTR_INDEX] === attr) {
+          // Skip render, contents are identical
+          this._state.cache[x][y] = charData;
+          continue;
+        }
+        this._state.cache[x][y] = charData;
+
+        // Clear the old character
+        this._ctx.clearRect(x * scaledCharWidth, y * scaledCharHeight, scaledCharWidth, scaledCharHeight);
+
+        // Skip rendering if the character is invisible
+        if (!code || code === 32/*' '*/) {
           continue;
         }
 
-        const attr: number = line[x][CHAR_DATA_ATTR_INDEX];
         let fg = (attr >> 9) & 0x1ff;
         const flags = attr >> 18;
 
@@ -90,8 +106,7 @@ export class ForegroundRenderLayer implements IRenderLayer {
           this._ctx.drawImage(this._charAtlas, code * scaledCharWidth, colorIndex * scaledCharHeight, scaledCharWidth, scaledCharHeight, x * scaledCharWidth, y * scaledCharHeight, scaledCharWidth, scaledCharHeight);
         } else {
           // TODO: Evaluate how long it takes to convert from a number
-          const char: string = line[x][CHAR_DATA_CHAR_INDEX];
-          const width: number = line[x][CHAR_DATA_WIDTH_INDEX];
+          const width: number = charData[CHAR_DATA_WIDTH_INDEX];
           this._drawUnicodeChar(char, width, fg, x, y, scaledCharWidth, scaledCharHeight);
         }
       }
@@ -103,7 +118,6 @@ export class ForegroundRenderLayer implements IRenderLayer {
 
   private _drawUnicodeChar(char: string, width: number, fg: number, x: number, y: number, scaledCharWidth: number, scaledCharHeight: number) {
     this._ctx.save();
-
     this._ctx.font = `${16 * window.devicePixelRatio}px courier`;
     this._ctx.textBaseline = 'top';
 
