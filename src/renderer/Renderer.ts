@@ -10,17 +10,9 @@ import { IRenderLayer } from './Interfaces';
 import { BackgroundRenderLayer } from './BackgroundRenderLayer';
 import { ForegroundRenderLayer } from './ForegroundRenderLayer';
 
-/**
- * The maximum number of refresh frames to skip when the write buffer is non-
- * empty. Note that these frames may be intermingled with frames that are
- * skipped via requestAnimationFrame's mechanism.
- */
-const MAX_REFRESH_FRAME_SKIP = 5;
-
 export class Renderer {
   /** A queue of the rows to be refreshed */
   private _refreshRowsQueue: {start: number, end: number}[] = [];
-  private _refreshFramesSkipped = 0;
   private _refreshAnimationFrame = null;
 
   private _renderLayers: IRenderLayer[];
@@ -66,17 +58,6 @@ export class Renderer {
    * necessary before queueing up the next one.
    */
   private _refreshLoop(): void {
-    // Skip MAX_REFRESH_FRAME_SKIP frames if the writeBuffer is non-empty as it
-    // will need to be immediately refreshed anyway. This saves a lot of
-    // rendering time as the viewport DOM does not need to be refreshed, no
-    // scroll events, no layouts, etc.
-    const skipFrame = this._terminal.writeBuffer.length > 0 && this._refreshFramesSkipped++ <= MAX_REFRESH_FRAME_SKIP;
-    if (skipFrame) {
-      this._refreshAnimationFrame = window.requestAnimationFrame(this._refreshLoop.bind(this));
-      return;
-    }
-
-    this._refreshFramesSkipped = 0;
     let start;
     let end;
     if (this._refreshRowsQueue.length > 4) {
