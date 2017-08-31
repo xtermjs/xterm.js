@@ -30,7 +30,7 @@ import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Parser } from './Parser';
 // import { Renderer } from './Renderer';
-import { Renderer } from './RendererCanvas';
+import { Renderer } from './renderer/Renderer';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
 import { CharMeasure } from './utils/CharMeasure';

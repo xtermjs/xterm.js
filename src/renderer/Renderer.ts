@@ -2,13 +2,13 @@
  * @license MIT
  */
 
-import { ITerminal } from './Interfaces';
-import { DomElementObjectPool } from './utils/DomElementObjectPool';
-import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from './Buffer';
-import { createBackgroundFillData } from './renderer/Canvas';
-import { IRenderLayer } from './renderer/Interfaces';
-import { BackgroundRenderLayer } from './renderer/BackgroundRenderLayer';
-import { ForegroundRenderLayer } from './renderer/ForegroundRenderLayer';
+import { ITerminal } from '../Interfaces';
+import { DomElementObjectPool } from '../utils/DomElementObjectPool';
+import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
+import { createBackgroundFillData } from './Canvas';
+import { IRenderLayer } from './Interfaces';
+import { BackgroundRenderLayer } from './BackgroundRenderLayer';
+import { ForegroundRenderLayer } from './ForegroundRenderLayer';
 
 /**
  * The maximum number of refresh frames to skip when the write buffer is non-
