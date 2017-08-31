@@ -6,37 +6,51 @@ import { ITerminal } from '../Interfaces';
 import { DomElementObjectPool } from '../utils/DomElementObjectPool';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
 import { createBackgroundFillData } from './Canvas';
-import { IRenderLayer } from './Interfaces';
+import { IDataRenderLayer, ISelectionRenderLayer } from './Interfaces';
 import { BackgroundRenderLayer } from './BackgroundRenderLayer';
 import { ForegroundRenderLayer } from './ForegroundRenderLayer';
+import { SelectionRenderLayer } from './SelectionRenderLayer';
 
 export class Renderer {
   /** A queue of the rows to be refreshed */
   private _refreshRowsQueue: {start: number, end: number}[] = [];
   private _refreshAnimationFrame = null;
 
-  private _renderLayers: IRenderLayer[];
+  private _dataRenderLayers: IDataRenderLayer[];
+  private _selectionRenderLayers: ISelectionRenderLayer[];
 
   constructor(private _terminal: ITerminal) {
-    this._renderLayers = [
+    this._dataRenderLayers = [
       new BackgroundRenderLayer(this._terminal.element),
       new ForegroundRenderLayer(this._terminal.element)
+    ];
+    this._selectionRenderLayers = [
+      new SelectionRenderLayer(this._terminal.element)
     ];
   }
 
   public onResize(cols: number, rows: number): void {
     const width = Math.ceil(this._terminal.charMeasure.width) * this._terminal.cols;
     const height = Math.ceil(this._terminal.charMeasure.height) * this._terminal.rows;
-    for (let i = 0; i < this._renderLayers.length; i++) {
-      this._renderLayers[i].resize(this._terminal, width, height, false);
+    for (let i = 0; i < this._dataRenderLayers.length; i++) {
+      this._dataRenderLayers[i].resize(this._terminal, width, height, false);
     }
   }
 
   public onCharSizeChanged(charWidth: number, charHeight: number): void {
     const width = Math.ceil(charWidth) * this._terminal.cols;
     const height = Math.ceil(charHeight) * this._terminal.rows;
-    for (let i = 0; i < this._renderLayers.length; i++) {
-      this._renderLayers[i].resize(this._terminal, width, height, true);
+    for (let i = 0; i < this._dataRenderLayers.length; i++) {
+      this._dataRenderLayers[i].resize(this._terminal, width, height, true);
+    }
+    for (let i = 0; i < this._selectionRenderLayers.length; i++) {
+      this._selectionRenderLayers[i].resize(this._terminal, width, height, true);
+    }
+  }
+
+  public onSelectionChanged(start: [number, number], end: [number, number]): void {
+    for (let i = 0; i < this._selectionRenderLayers.length; i++) {
+      this._selectionRenderLayers[i].render(this._terminal, start, end);
     }
   }
 
@@ -81,8 +95,8 @@ export class Renderer {
     this._refreshAnimationFrame = null;
 
     // Render
-    for (let i = 0; i < this._renderLayers.length; i++) {
-      this._renderLayers[i].render(this._terminal, start, end);
+    for (let i = 0; i < this._dataRenderLayers.length; i++) {
+      this._dataRenderLayers[i].render(this._terminal, start, end);
     }
     this._terminal.emit('refresh', {start, end});
   }

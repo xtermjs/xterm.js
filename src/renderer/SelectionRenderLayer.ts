@@ -1,21 +1,20 @@
-import { IRenderLayer } from './Interfaces';
+import { ISelectionRenderLayer } from './Interfaces';
 import { IBuffer, ICharMeasure, ITerminal } from '../Interfaces';
 import { CHAR_DATA_ATTR_INDEX } from '../Buffer';
 import { TANGO_COLORS } from './Color';
 import { GridCache } from './GridCache';
 import { FLAGS } from './Types';
 
-export class BackgroundRenderLayer implements IRenderLayer {
+export class SelectionRenderLayer implements ISelectionRenderLayer {
   private _canvas: HTMLCanvasElement;
   private _ctx: CanvasRenderingContext2D;
   private _state: {start: [number, number], end: [number, number]};
 
   constructor(container: HTMLElement) {
     this._canvas = document.createElement('canvas');
-    this._canvas.classList.add('xterm-bg-layer');
+    this._canvas.classList.add('xterm-selection-layer');
     this._ctx = this._canvas.getContext('2d');
     this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-    this._ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
     container.appendChild(this._canvas);
     this._state = {
       start: null,
@@ -30,14 +29,9 @@ export class BackgroundRenderLayer implements IRenderLayer {
     this._canvas.style.height = `${canvasHeight}px`;
   }
 
-  public render(terminal: ITerminal, startRow: number, endRow: number): void {
+  public render(terminal: ITerminal, start: [number, number], end: [number, number]): void {
     const scaledCharWidth = Math.ceil(terminal.charMeasure.width) * window.devicePixelRatio;
     const scaledCharHeight = Math.ceil(terminal.charMeasure.height) * window.devicePixelRatio;
-
-    const start = terminal.selectionManager.selectionStart;
-    const end = terminal.selectionManager.selectionEnd;
-
-    // TODO: Need to redraw selection if the viewport has moved
 
     // Selection has not changed
     if (this._state.start === start || this._state.end === end) {
@@ -63,21 +57,21 @@ export class BackgroundRenderLayer implements IRenderLayer {
       return;
     }
 
-    // Create the selections
     // Draw first row
     const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
-    const endCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : terminal.cols;
-    this._ctx.fillRect(startCol * scaledCharWidth, viewportCappedStartRow * scaledCharHeight, (endCol - startCol) * scaledCharWidth, scaledCharHeight);
-    // documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow, startCol, endCol));
+    const startRowEndCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : terminal.cols;
+    this._ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    this._ctx.fillRect(startCol * scaledCharWidth, viewportCappedStartRow * scaledCharHeight, (startRowEndCol - startCol) * scaledCharWidth, scaledCharHeight);
+
     // Draw middle rows
-    // const middleRowsCount = viewportCappedEndRow - viewportCappedStartRow - 1;
-    // documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow + 1, 0, this._terminal.cols, middleRowsCount));
-    // // Draw final row
-    // if (viewportCappedStartRow !== viewportCappedEndRow) {
-    //   // Only draw viewportEndRow if it's not the same as viewporttartRow
-    //   const endCol = viewportEndRow === viewportCappedEndRow ? end[0] : this._terminal.cols;
-    //   documentFragment.appendChild(this._createSelectionElement(viewportCappedEndRow, 0, endCol));
-    // }
-    // this._terminal.selectionContainer.appendChild(documentFragment);
+    const middleRowsCount = Math.max(viewportCappedEndRow - viewportCappedStartRow - 1, 0);
+    this._ctx.fillRect(0, (viewportCappedStartRow + 1) * scaledCharHeight, terminal.cols * scaledCharWidth, middleRowsCount * scaledCharHeight);
+
+    // Draw final row
+    if (viewportCappedStartRow !== viewportCappedEndRow) {
+      // Only draw viewportEndRow if it's not the same as viewporttartRow
+      const endCol = viewportEndRow === viewportCappedEndRow ? end[0] : terminal.cols;
+      this._ctx.fillRect(0, viewportCappedEndRow * scaledCharHeight, endCol * scaledCharWidth, scaledCharHeight);
+    }
   }
 }

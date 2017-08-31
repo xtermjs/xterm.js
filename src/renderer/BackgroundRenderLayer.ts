@@ -1,11 +1,11 @@
-import { IRenderLayer } from './Interfaces';
+import { IDataRenderLayer } from './Interfaces';
 import { IBuffer, ICharMeasure, ITerminal } from '../Interfaces';
 import { CHAR_DATA_ATTR_INDEX } from '../Buffer';
 import { TANGO_COLORS } from './Color';
 import { GridCache } from './GridCache';
 import { FLAGS } from './Types';
 
-export class BackgroundRenderLayer implements IRenderLayer {
+export class BackgroundRenderLayer implements IDataRenderLayer {
   private _canvas: HTMLCanvasElement;
   private _ctx: CanvasRenderingContext2D;
   private _state: GridCache<number>;

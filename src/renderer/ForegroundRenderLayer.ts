@@ -1,4 +1,4 @@
-import { IRenderLayer } from './Interfaces';
+import { IDataRenderLayer } from './Interfaces';
 import { IBuffer, ICharMeasure, ITerminal } from '../Interfaces';
 import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from '../Buffer';
 import { TANGO_COLORS } from './Color';
@@ -6,7 +6,7 @@ import { FLAGS } from './Types';
 import { GridCache } from './GridCache';
 import { CharData } from '../Types';
 
-export class ForegroundRenderLayer implements IRenderLayer {
+export class ForegroundRenderLayer implements IDataRenderLayer {
   private _canvas: HTMLCanvasElement;
   private _ctx: CanvasRenderingContext2D;
   private _charAtlas: ImageBitmap;

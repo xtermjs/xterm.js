@@ -116,8 +116,6 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     this._mouseMoveListener = event => this._onMouseMove(<MouseEvent>event);
     this._mouseUpListener = event => this._onMouseUp(<MouseEvent>event);
 
-    this._rowContainer.addEventListener('mousedown', event => this._onMouseDown(<MouseEvent>event));
-
     // Only adjust the selection on trim, shiftElements is rarely used (only in
     // reverseIndex) and delete in a splice is only ever used when the same
     // number of elements was just added. Given this is could actually be
@@ -312,7 +310,8 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * Handles te mousedown event, setting up for a new selection.
    * @param event The mousedown event.
    */
-  private _onMouseDown(event: MouseEvent): void {
+  public onMouseDown(event: MouseEvent): void {
+    console.log('mousedown selectionmanager');
     // If we have selection, we want the context menu on right click even if the
     // terminal is in mouse mode.
     if (event.button === 2 && this.hasSelection) {
