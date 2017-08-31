@@ -98,6 +98,7 @@ export class Renderer {
     this._terminal.emit('refresh', {start, end});
   }
 
+  // TODO: This would be better as a large texture atlas rather than a cache of ImageData objects
   private _imageDataCache = {};
   private _colors = [
     // dark:
@@ -150,20 +151,16 @@ export class Renderer {
     // console.log('fill', start, end);
     // console.log('fill', start * charHeight, (end - start + 1) * charHeight);
     // ctx.fillRect(0, start * charHeight, charWidth * this._terminal.cols, (end - start + 1) * charHeight);
-    ctx.fillStyle = 'rgb(255, 255, 255)';
+    ctx.fillStyle = '#ffffff';
     ctx.textBaseline = 'top';
-
-    // Indicates whether to reset the font next cell
-    let resetFont = true;
+    ctx.font = `${16 * window.devicePixelRatio}px courier`;
 
     for (let y = start; y <= end; y++) {
-      if (resetFont) {
-        ctx.font = `${16 * window.devicePixelRatio}px courier`;
-        resetFont = false;
-      }
       let row = y + this._terminal.buffer.ydisp;
       let line = this._terminal.buffer.lines.get(row);
       for (let x = 0; x < this._terminal.cols; x++) {
+        ctx.save();
+
         let data: number = line[x][0];
         const ch = line[x][CHAR_DATA_CHAR_INDEX];
 
@@ -180,19 +177,16 @@ export class Renderer {
 
         if (flags & FLAGS.BOLD) {
           ctx.font = `bold ${ctx.font}`;
-          resetFont = true;
           // Convert the FG color to the bold variant
           if (fg < 8) {
             fg += 8;
           }
         }
 
-        if (fg > 255) {
-          ctx.fillStyle = '#ffffff';
-        } else if (fg > 15) {
-          // TODO: Support colors 16-255
-        } else {
+        if (fg < 16) {
           ctx.fillStyle = this._colors[fg];
+        } else if (fg < 256) {
+          // TODO: Support colors 16-255
         }
 
         // Simulate cache
@@ -212,6 +206,7 @@ export class Renderer {
 
         // Always write text
         // ctx.fillText(ch, x * charWidth, y * charHeight);
+        ctx.restore();
       }
     }
   }
