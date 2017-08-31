@@ -164,11 +164,11 @@
     top: 0;
 }
 
-.terminal .xterm-bg-canvas {
+.terminal .xterm-bg-layer {
     z-index: 0;
 }
 
-.terminal .xterm-text-canvas {
+.terminal .xterm-fg-layer {
     z-index: 1;
 }
 
