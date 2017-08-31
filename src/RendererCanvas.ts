@@ -23,40 +23,13 @@ export class Renderer {
   private _refreshFramesSkipped = 0;
   private _refreshAnimationFrame = null;
 
-  // private _textCanvasElement: HTMLCanvasElement;
-  // private _textCanvasContext: CanvasRenderingContext2D;
-  // private _offscreenCanvas: HTMLCanvasElement;
-  // private _offscreenContext: CanvasRenderingContext2D;
-
   private _renderLayers: IRenderLayer[];
 
-  // private _charAtlasBitmap;//: ImageBitmap;
-
-  // TODO: This would be better as a large texture atlas rather than a cache of ImageData objects
-  // private _imageDataCache = {};
-  // private _imageData: ImageData;
-
   constructor(private _terminal: ITerminal) {
-    // Figure out whether boldness affects
-    // the character width of monospace fonts.
-    // if (brokenBold === null) {
-    //   brokenBold = checkBoldBroken(this._terminal.element);
-    // }
-
-    // this._offscreenCanvas = document.createElement('canvas');
-    // this._offscreenContext = this._offscreenCanvas.getContext('2d');
-    // this._offscreenContext.scale(window.devicePixelRatio, window.devicePixelRatio);
-
     this._renderLayers = [
       new BackgroundRenderLayer(this._terminal.element),
       new ForegroundRenderLayer(this._terminal.element)
     ];
-
-    // this._terminal.element.appendChild(this._textCanvasElement);
-
-    // TODO: Pull more DOM interactions into Renderer.constructor, element for
-    // example should be owned by Renderer (and also exposed by Terminal due to
-    // to established public API).
   }
 
   public onResize(cols: number, rows: number): void {
@@ -73,50 +46,10 @@ export class Renderer {
   public onCharSizeChanged(charWidth: number, charHeight: number): void {
     const width = Math.ceil(charWidth) * this._terminal.cols;
     const height = Math.ceil(charHeight) * this._terminal.rows;
-    // this._textCanvasElement.width = width * window.devicePixelRatio;
-    // this._textCanvasElement.height = height * window.devicePixelRatio;
-    // this._textCanvasElement.style.width = `${width}px`;
-    // this._textCanvasElement.style.height = `${height}px`;
-    // this._offscreenCanvas.width = 255 * charWidth * window.devicePixelRatio;
-    // this._offscreenCanvas.height = (/*default*/1 + /*0-15*/16) * charHeight * window.devicePixelRatio;
-    // this._refreshCharImageDataAtlas();
     for (let i = 0; i < this._renderLayers.length; i++) {
       this._renderLayers[i].resize(width, height, charWidth, charHeight, true);
     }
   }
-
-  // private _refreshCharImageDataAtlas(): void {
-  //   const scaledCharWidth = Math.ceil(this._terminal.charMeasure.width) * window.devicePixelRatio;
-  //   const scaledCharHeight = Math.ceil(this._terminal.charMeasure.height) * window.devicePixelRatio;
-
-  //   this._offscreenContext.save();
-  //   this._offscreenContext.fillStyle = '#ffffff';
-  //   this._offscreenContext.font = `${16 * window.devicePixelRatio}px courier`;
-  //   this._offscreenContext.textBaseline = 'top';
-  //   // Default color
-  //   for (let i = 0; i < 256; i++) {
-  //     this._offscreenContext.fillText(String.fromCharCode(i), i * scaledCharWidth, 0);
-  //   }
-  //   // Colors 0-15
-  //   for (let colorIndex = 0; colorIndex < 16; colorIndex++) {
-  //     // colors 8-15 are bold
-  //     if (colorIndex === 8) {
-  //       this._offscreenContext.font = `bold ${this._offscreenContext.font}`;
-  //     }
-  //     for (let i = 0; i < 256; i++) {
-  //       this._offscreenContext.fillStyle = this._colors[colorIndex];
-  //       this._offscreenContext.fillText(String.fromCharCode(i), i * scaledCharWidth, (colorIndex + 1) * scaledCharHeight);
-  //     }
-  //   }
-  //   this._offscreenContext.restore();
-
-  //   const charAtlasImageData = this._offscreenContext.getImageData(0, 0, this._offscreenCanvas.width, this._offscreenCanvas.height);
-  //   (<any>window).createImageBitmap(charAtlasImageData).then(bitmap => {
-  //     this._charAtlasBitmap = bitmap;
-  //   });
-
-  //   this._offscreenContext.clearRect(0, 0, this._offscreenCanvas.width, this._offscreenCanvas.height);
-  // }
 
   /**
    * Queues a refresh between two rows (inclusive), to be done on next animation
@@ -168,38 +101,13 @@ export class Renderer {
     }
     this._refreshRowsQueue = [];
     this._refreshAnimationFrame = null;
-    // this._refresh(start, end);
+
+    // Render
     for (let i = 0; i < this._renderLayers.length; i++) {
       this._renderLayers[i].render(this._terminal, start, end);
     }
     this._terminal.emit('refresh', {start, end});
   }
-
-  /**
-   * Refreshes (re-renders) terminal content within two rows (inclusive)
-   *
-   * Rendering Engine:
-   *
-   * In the screen buffer, each character is stored as a an array with a character
-   * and a 32-bit integer:
-   *   - First value: a utf-16 character.
-   *   - Second value:
-   *   - Next 9 bits: background color (0-511).
-   *   - Next 9 bits: foreground color (0-511).
-   *   - Next 14 bits: a mask for misc. flags:
-   *     - 1=bold
-   *     - 2=underline
-   *     - 4=blink
-   *     - 8=inverse
-   *     - 16=invisible
-   *
-   * @param {number} start The row to start from (between 0 and terminal's height terminal - 1)
-   * @param {number} end The row to end at (between fromRow and terminal's height terminal - 1)
-   */
-  // private _refresh(start: number, end: number): void {
-  //   const scaledCharWidth = Math.ceil(this._terminal.charMeasure.width) * window.devicePixelRatio;
-  //   const scaledCharHeight = Math.ceil(this._terminal.charMeasure.height) * window.devicePixelRatio;
-  // }
 
   /**
    * Refreshes the selection in the DOM.
@@ -261,19 +169,3 @@ export class Renderer {
     return element;
   }
 }
-
-
-// If bold is broken, we can't use it in the terminal.
-// function checkBoldBroken(terminalElement: HTMLElement): boolean {
-//   const document = terminalElement.ownerDocument;
-//   const el = document.createElement('span');
-//   el.innerHTML = 'hello world';
-//   terminalElement.appendChild(el);
-//   const w1 = el.offsetWidth;
-//   const h1 = el.offsetHeight;
-//   el.style.fontWeight = 'bold';
-//   const w2 = el.offsetWidth;
-//   const h2 = el.offsetHeight;
-//   terminalElement.removeChild(el);
-//   return w1 !== w2 || h1 !== h2;
-// }

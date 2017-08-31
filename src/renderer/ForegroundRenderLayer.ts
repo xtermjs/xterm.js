@@ -50,9 +50,6 @@ export class ForegroundRenderLayer implements IRenderLayer {
       return;
     }
 
-    // console.log('fill', start, end);
-    // console.log('fill', start * charHeight, (end - start + 1) * charHeight);
-    // ctx.fillRect(0, start * charHeight, charWidth * this._terminal.cols, (end - start + 1) * charHeight);
     this._ctx.fillStyle = '#ffffff';
     this._ctx.textBaseline = 'top';
     this._ctx.font = `${16 * window.devicePixelRatio}px courier`;
@@ -65,7 +62,6 @@ export class ForegroundRenderLayer implements IRenderLayer {
       let row = y + terminal.buffer.ydisp;
       let line = terminal.buffer.lines.get(row);
       for (let x = 0; x < terminal.cols; x++) {
-        console.log('fg', x, y);
         this._ctx.save();
 
         let data: number = line[x][0];
@@ -127,7 +123,7 @@ export class ForegroundRenderLayer implements IRenderLayer {
     }
 
     // This draws the atlas (for debugging purposes)
-    this._ctx.drawImage(this._charAtlas, 0, 0);
+    // this._ctx.drawImage(this._charAtlas, 0, 0);
   }
 }
 
@@ -164,9 +160,13 @@ class CharAtlasGenerator {
       if (colorIndex === 8) {
         this._ctx.font = `bold ${this._ctx.font}`;
       }
+      const y = (colorIndex + 1) * scaledCharHeight;
+      // Clear rectangle as some fonts seem to draw over the bottom boundary
+      this._ctx.clearRect(0, y, this._canvas.width, scaledCharHeight);
+      // Draw ascii characters
       for (let i = 0; i < 256; i++) {
         this._ctx.fillStyle = TANGO_COLORS[colorIndex];
-        this._ctx.fillText(String.fromCharCode(i), i * scaledCharWidth, (colorIndex + 1) * scaledCharHeight);
+        this._ctx.fillText(String.fromCharCode(i), i * scaledCharWidth, y);
       }
     }
     this._ctx.restore();

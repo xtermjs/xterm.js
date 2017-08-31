@@ -34,13 +34,13 @@ export class BackgroundRenderLayer implements IRenderLayer {
         const bg = data & 0x1ff;
         const flags = data >> 18;
 
-        // TODO: Draw background
         if (bg < 16) {
           this._ctx.save();
           this._ctx.fillStyle = TANGO_COLORS[bg];
           this._ctx.fillRect(x * scaledCharWidth, y * scaledCharHeight, scaledCharWidth, scaledCharHeight);
           this._ctx.restore();
         } else {
+          // TODO: Only clear if needed
           this._ctx.clearRect(x * scaledCharWidth, y * scaledCharHeight, scaledCharWidth, scaledCharHeight);
         }
       }
