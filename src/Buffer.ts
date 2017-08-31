@@ -6,6 +6,7 @@ import { ITerminal, IBuffer } from './Interfaces';
 import { CircularList } from './utils/CircularList';
 import { LineData, CharData } from './Types';
 
+export const CHAR_DATA_ATTR_INDEX = 0;
 export const CHAR_DATA_CHAR_INDEX = 1;
 export const CHAR_DATA_WIDTH_INDEX = 2;
 

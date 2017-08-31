@@ -6,6 +6,8 @@ import { ITerminal } from './Interfaces';
 import { DomElementObjectPool } from './utils/DomElementObjectPool';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from './Buffer';
 import { createBackgroundFillData } from './renderer/Canvas';
+import { IRenderLayer } from './renderer/Interfaces';
+import { BackgroundRenderLayer } from './renderer/BackgroundRenderLayer';
 
 /**
  * The maximum number of refresh frames to skip when the write buffer is non-
@@ -33,13 +35,14 @@ export class Renderer {
   private _refreshFramesSkipped = 0;
   private _refreshAnimationFrame = null;
 
-  private _canvasElement: HTMLCanvasElement;
-  private _canvasContext: CanvasRenderingContext2D;
+  private _textCanvasElement: HTMLCanvasElement;
+  private _textCanvasContext: CanvasRenderingContext2D;
   private _offscreenCanvas: HTMLCanvasElement;
   private _offscreenContext: CanvasRenderingContext2D;
 
-  private _charImageDataAtlas: ImageData;
-  private _charImageDataAtlasBitmap;//: ImageBitmap;
+  private _renderLayers: IRenderLayer[];
+
+  private _charAtlasBitmap;//: ImageBitmap;
 
   // TODO: This would be better as a large texture atlas rather than a cache of ImageData objects
   private _imageDataCache = {};
@@ -72,15 +75,20 @@ export class Renderer {
       brokenBold = checkBoldBroken(this._terminal.element);
     }
 
+    this._textCanvasElement = document.createElement('canvas');
+    this._textCanvasElement.classList.add('xterm-text-canvas');
+    this._textCanvasContext = this._textCanvasElement.getContext('2d');
+    this._textCanvasContext.scale(window.devicePixelRatio, window.devicePixelRatio);
 
     this._offscreenCanvas = document.createElement('canvas');
     this._offscreenContext = this._offscreenCanvas.getContext('2d');
+    this._offscreenContext.scale(window.devicePixelRatio, window.devicePixelRatio);
 
-    this._canvasElement = document.createElement('canvas');
-    this._canvasContext = this._canvasElement.getContext('2d');
-    // Scale the context for HDPI screens
-    this._canvasContext.scale(window.devicePixelRatio, window.devicePixelRatio);
-    this._terminal.element.appendChild(this._canvasElement);
+    this._renderLayers = [
+      new BackgroundRenderLayer(this._terminal.element)
+    ];
+
+    this._terminal.element.appendChild(this._textCanvasElement);
 
     // TODO: Pull more DOM interactions into Renderer.constructor, element for
     // example should be owned by Renderer (and also exposed by Terminal due to
@@ -94,14 +102,16 @@ export class Renderer {
   public onCharSizeChanged(charWidth: number, charHeight: number): void {
     const width = Math.ceil(charWidth) * this._terminal.cols;
     const height = Math.ceil(charHeight) * this._terminal.rows;
-    this._canvasElement.width = width * window.devicePixelRatio;
-    this._canvasElement.height = height * window.devicePixelRatio;
-    this._canvasElement.style.width = `${width}px`;
-    this._canvasElement.style.height = `${height}px`;
-
+    this._textCanvasElement.width = width * window.devicePixelRatio;
+    this._textCanvasElement.height = height * window.devicePixelRatio;
+    this._textCanvasElement.style.width = `${width}px`;
+    this._textCanvasElement.style.height = `${height}px`;
     this._offscreenCanvas.width = 255 * charWidth * window.devicePixelRatio;
     this._offscreenCanvas.height = (/*default*/1 + /*0-15*/16) * charHeight * window.devicePixelRatio;
     this._refreshCharImageDataAtlas();
+    for (let i = 0; i < this._renderLayers.length; i++) {
+      this._renderLayers[i].resize(width, height, charWidth, charHeight);
+    }
   }
 
   private _refreshCharImageDataAtlas(): void {
@@ -118,6 +128,10 @@ export class Renderer {
     }
     // Colors 0-15
     for (let colorIndex = 0; colorIndex < 16; colorIndex++) {
+      // colors 8-15 are bold
+      if (colorIndex === 8) {
+        this._offscreenContext.font = `bold ${this._offscreenContext.font}`;
+      }
       for (let i = 0; i < 256; i++) {
         this._offscreenContext.fillStyle = this._colors[colorIndex];
         this._offscreenContext.fillText(String.fromCharCode(i), i * scaledCharWidth, (colorIndex + 1) * scaledCharHeight);
@@ -125,10 +139,12 @@ export class Renderer {
     }
     this._offscreenContext.restore();
 
-    this._charImageDataAtlas = this._offscreenContext.getImageData(0, 0, this._offscreenCanvas.width, this._offscreenCanvas.height);
-    (<any>window).createImageBitmap(this._charImageDataAtlas).then(bitmap => {
-      this._charImageDataAtlasBitmap = bitmap;
+    const charAtlasImageData = this._offscreenContext.getImageData(0, 0, this._offscreenCanvas.width, this._offscreenCanvas.height);
+    (<any>window).createImageBitmap(charAtlasImageData).then(bitmap => {
+      this._charAtlasBitmap = bitmap;
     });
+
+    this._offscreenContext.clearRect(0, 0, this._offscreenCanvas.width, this._offscreenCanvas.height);
   }
 
   /**
@@ -182,6 +198,9 @@ export class Renderer {
     this._refreshRowsQueue = [];
     this._refreshAnimationFrame = null;
     this._refresh(start, end);
+    for (let i = 0; i < this._renderLayers.length; i++) {
+      this._renderLayers[i].render(this._terminal, start, end);
+    }
     this._terminal.emit('refresh', {start, end});
   }
 
@@ -209,35 +228,35 @@ export class Renderer {
   private _refresh(start: number, end: number): void {
     const scaledCharWidth = Math.ceil(this._terminal.charMeasure.width) * window.devicePixelRatio;
     const scaledCharHeight = Math.ceil(this._terminal.charMeasure.height) * window.devicePixelRatio;
-    const ctx = this._canvasContext;
+    const textCtx = this._textCanvasContext;
 
     // TODO: Needs to react to terminal resize
     // Initialize image data
     if (!this._imageData) {
-      this._imageData = ctx.createImageData(scaledCharWidth * this._terminal.cols * window.devicePixelRatio, scaledCharHeight * this._terminal.rows * window.devicePixelRatio);
+      this._imageData = textCtx.createImageData(scaledCharWidth * this._terminal.cols * window.devicePixelRatio, scaledCharHeight * this._terminal.rows * window.devicePixelRatio);
       this._imageData.data.set(createBackgroundFillData(this._imageData.width, this._imageData.height, 255, 0, 0, 255));
     }
 
     // Don't bother rendering until the atlas bitmap is ready
-    if (!this._charImageDataAtlasBitmap) {
+    if (!this._charAtlasBitmap) {
       return;
     }
 
     // console.log('fill', start, end);
     // console.log('fill', start * charHeight, (end - start + 1) * charHeight);
     // ctx.fillRect(0, start * charHeight, charWidth * this._terminal.cols, (end - start + 1) * charHeight);
-    ctx.fillStyle = '#ffffff';
-    ctx.textBaseline = 'top';
-    ctx.font = `${16 * window.devicePixelRatio}px courier`;
+    textCtx.fillStyle = '#ffffff';
+    textCtx.textBaseline = 'top';
+    textCtx.font = `${16 * window.devicePixelRatio}px courier`;
 
     // Clear out the old data
-    ctx.clearRect(0, start * scaledCharHeight, scaledCharWidth * this._terminal.cols, (end - start + 1) * scaledCharHeight);
+    textCtx.clearRect(0, start * scaledCharHeight, scaledCharWidth * this._terminal.cols, (end - start + 1) * scaledCharHeight);
 
     for (let y = start; y <= end; y++) {
       let row = y + this._terminal.buffer.ydisp;
       let line = this._terminal.buffer.lines.get(row);
       for (let x = 0; x < this._terminal.cols; x++) {
-        ctx.save();
+        textCtx.save();
 
         let data: number = line[x][0];
         // const ch = line[x][CHAR_DATA_CHAR_INDEX];
@@ -247,15 +266,12 @@ export class Renderer {
         //   continue;
         // }
 
-        let bg = data & 0x1ff;
+        // let bg = data & 0x1ff;
         let fg = (data >> 9) & 0x1ff;
         let flags = data >> 18;
 
-        // if (bg < 16) {
-        // }
-
         if (flags & FLAGS.BOLD) {
-          ctx.font = `bold ${ctx.font}`;
+          textCtx.font = `bold ${textCtx.font}`;
           // Convert the FG color to the bold variant
           if (fg < 8) {
             fg += 8;
@@ -290,27 +306,16 @@ export class Renderer {
 
         // TODO: Try to get atlas working
         // This seems too slow :(
-        //ctx.putImageData(this._charImageDataAtlas, x * scaledCharWidth - ch.charCodeAt(0) * scaledCharWidth, y * scaledCharHeight, ch.charCodeAt(0) * scaledCharWidth, 0, scaledCharWidth, scaledCharHeight);
-
-        // TODO: Draw background
-        // Maybe background should be on a separate layer?
-        // ctx.save();
-        // if (bg < 16) {
-        //   ctx.fillStyle = this._colors[fg];
-        // } else {
-        //   ctx.fillStyle = '#000000';
-        // }
-        // ctx.fillRect(x * scaledCharWidth, y * scaledCharHeight, scaledCharWidth, scaledCharHeight);
-        // ctx.restore();
+        // ctx.putImageData(this._charImageDataAtlas, x * scaledCharWidth - ch.charCodeAt(0) * scaledCharWidth, y * scaledCharHeight, ch.charCodeAt(0) * scaledCharWidth, 0, scaledCharWidth, scaledCharHeight);
 
         // ctx.drawImage(this._offscreenCanvas, code * scaledCharWidth, 0, scaledCharWidth, scaledCharHeight, x * scaledCharWidth, y * scaledCharHeight, scaledCharWidth, scaledCharHeight);
 
         // ImageBitmap's draw about twice as fast as from a canvas
-        ctx.drawImage(this._charImageDataAtlasBitmap, code * scaledCharWidth, colorIndex * scaledCharHeight, scaledCharWidth, scaledCharHeight, x * scaledCharWidth, y * scaledCharHeight, scaledCharWidth, scaledCharHeight);
+        textCtx.drawImage(this._charAtlasBitmap, code * scaledCharWidth, colorIndex * scaledCharHeight, scaledCharWidth, scaledCharHeight, x * scaledCharWidth, y * scaledCharHeight, scaledCharWidth, scaledCharHeight);
 
         // Always write text
         // ctx.fillText(ch, x * charWidth, y * charHeight);
-        ctx.restore();
+        textCtx.restore();
       }
 
 
@@ -319,7 +324,7 @@ export class Renderer {
     }
 
     // This draws the atlas (for debugging purposes)
-    //ctx.putImageData(this._charImageDataAtlas, 0, 0);
+    // ctx.putImageData(this._charImageDataAtlas, 0, 0);
   }
 
   /**

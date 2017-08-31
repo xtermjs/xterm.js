@@ -158,10 +158,27 @@
     display: inline-block;
 }
 
+.terminal canvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.terminal .xterm-bg-canvas {
+    z-index: 0;
+}
+
+.terminal .xterm-text-canvas {
+    z-index: 1;
+}
+
 .terminal .xterm-rows {
     position: absolute;
     left: 0;
     top: 0;
+
+    /* Hide temporarily, this should be removed eventually */
+    visibility: hidden;
 }
 
 .terminal .xterm-rows > div {
