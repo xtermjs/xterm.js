@@ -73,5 +73,9 @@ export class SelectionRenderLayer implements ISelectionRenderLayer {
       const endCol = viewportEndRow === viewportCappedEndRow ? end[0] : terminal.cols;
       this._ctx.fillRect(0, viewportCappedEndRow * scaledCharHeight, endCol * scaledCharWidth, scaledCharHeight);
     }
+
+    // Save state for next render
+    this._state.start = [start[0], start[1]];
+    this._state.end = [end[0], end[1]];
   }
 }

@@ -311,7 +311,6 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param event The mousedown event.
    */
   public onMouseDown(event: MouseEvent): void {
-    console.log('mousedown selectionmanager');
     // If we have selection, we want the context menu on right click even if the
     // terminal is in mouse mode.
     if (event.button === 2 && this.hasSelection) {
