@@ -752,9 +752,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.on('resize', () => this.renderer.onResize(this.cols, this.rows));
     this.charMeasure.on('charsizechanged', () => this.renderer.onCharSizeChanged(this.charMeasure.width, this.charMeasure.height));
     this.selectionManager = new SelectionManager(this, this.buffer, this.rowContainer, this.charMeasure);
-    this.selectionManager.on('refresh', data => {
-      this.renderer.refreshSelection(data.start, data.end);
-    });
+    // this.selectionManager.on('refresh', data => {
+    //   this.renderer.refreshSelection(data.start, data.end);
+    // });
     this.selectionManager.on('newselection', text => {
       // If there's a new selection, put it into the textarea, focus and select it
       // in order to register it as a selection on the OS. This event is fired

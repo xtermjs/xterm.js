@@ -55,6 +55,7 @@ export class ForegroundRenderLayer implements IRenderLayer {
     for (let y = startRow; y <= endRow; y++) {
       let row = y + terminal.buffer.ydisp;
       let line = terminal.buffer.lines.get(row);
+
       for (let x = 0; x < terminal.cols; x++) {
         const charData = line[x];
         const code: number = <number>charData[CHAR_DATA_CODE_INDEX];

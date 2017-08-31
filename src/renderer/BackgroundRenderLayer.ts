@@ -39,7 +39,6 @@ export class BackgroundRenderLayer implements IRenderLayer {
         let bg = attr & 0x1ff;
         const flags = attr >> 18;
 
-
         // If inverse flag is on, the background should become the foreground.
         if (flags & FLAGS.INVERSE) {
           bg = (attr >> 9) & 0x1ff;
