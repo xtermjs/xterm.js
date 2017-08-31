@@ -1146,9 +1146,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    */
   private queueLinkification(start: number, end: number): void {
     if (this.linkifier) {
-      for (let i = start; i <= end; i++) {
-        this.linkifier.linkifyRow(i);
-      }
+      this.linkifier.linkifyRows(0, this.rows);
+      // for (let i = start; i <= end; i++) {
+      //   this.linkifier.linkifyRow(i);
+      // }
     }
   }
 

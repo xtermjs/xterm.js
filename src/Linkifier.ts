@@ -47,6 +47,7 @@ export class Linkifier {
   private _document: Document;
   private _rows: HTMLElement[];
   private _rowTimeoutIds: number[];
+  private _rowsTimeoutId: number;
   private _nextLinkMatcherId = HYPERTEXT_LINK_MATCHER_ID;
 
   constructor() {
@@ -63,6 +64,29 @@ export class Linkifier {
   public attachToDom(document: Document, rows: HTMLElement[]): void {
     this._document = document;
     this._rows = rows;
+  }
+
+  public linkifyRows(start: number, end: number): void {
+    // for (let i = start; i <= end; i++) {
+    //   this.linkifyRow(i);
+    // }
+
+
+    // Don't attempt linkify if not yet attached to DOM
+    if (!this._document) {
+      return;
+    }
+
+    if (this._rowsTimeoutId) {
+      clearTimeout(this._rowsTimeoutId);
+    }
+    this._rowsTimeoutId = setTimeout(this._linkifyRows.bind(this, start, end), Linkifier.TIME_BEFORE_LINKIFY);
+  }
+
+  private _linkifyRows(start: number, end: number): void {
+    for (let i = start; i <= end; i++) {
+      this._linkifyRow(i);
+    }
   }
 
   /**
