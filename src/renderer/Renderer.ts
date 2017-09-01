@@ -10,6 +10,7 @@ import { IDataRenderLayer, ISelectionRenderLayer } from './Interfaces';
 import { BackgroundRenderLayer } from './BackgroundRenderLayer';
 import { ForegroundRenderLayer } from './ForegroundRenderLayer';
 import { SelectionRenderLayer } from './SelectionRenderLayer';
+import { CursorRenderLayer } from './CursorRenderLayer';
 
 export class Renderer {
   /** A queue of the rows to be refreshed */
@@ -22,7 +23,8 @@ export class Renderer {
   constructor(private _terminal: ITerminal) {
     this._dataRenderLayers = [
       new BackgroundRenderLayer(this._terminal.element),
-      new ForegroundRenderLayer(this._terminal.element)
+      new ForegroundRenderLayer(this._terminal.element),
+      new CursorRenderLayer(this._terminal.element)
     ];
     this._selectionRenderLayers = [
       new SelectionRenderLayer(this._terminal.element)

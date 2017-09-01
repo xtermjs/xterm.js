@@ -53,8 +53,8 @@ export class ForegroundRenderLayer implements IDataRenderLayer {
     this._ctx.font = `${16 * window.devicePixelRatio}px courier`;
 
     for (let y = startRow; y <= endRow; y++) {
-      let row = y + terminal.buffer.ydisp;
-      let line = terminal.buffer.lines.get(row);
+      const row = y + terminal.buffer.ydisp;
+      const line = terminal.buffer.lines.get(row);
 
       for (let x = 0; x < terminal.cols; x++) {
         const charData = line[x];
