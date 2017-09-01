@@ -38,7 +38,6 @@ export class CursorRenderLayer extends BaseRenderLayer {
   }
 
   public onOptionsChanged(terminal: ITerminal): void {
-    super.onOptionsChanged(terminal);
     if (terminal.options.cursorBlink) {
       if (!this._cursorBlinkStateManager) {
         this._cursorBlinkStateManager = new CursorBlinkStateManager(terminal, () => {
