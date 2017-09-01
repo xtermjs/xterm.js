@@ -19,9 +19,9 @@ export class BackgroundRenderLayer extends BaseRenderLayer implements IDataRende
     this._state.resize(terminal.cols, terminal.rows);
   }
 
-  public clear(terminal: ITerminal): void {
+  public reset(terminal: ITerminal): void {
     this._state.clear();
-    this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+    this.clearAll();
   }
 
   public render(terminal: ITerminal, startRow: number, endRow: number): void {
@@ -48,11 +48,11 @@ export class BackgroundRenderLayer extends BaseRenderLayer implements IDataRende
           if (bg < 256) {
             this._ctx.save();
             this._ctx.fillStyle = COLORS[bg];
-            this._ctx.fillRect(x * this.scaledCharWidth, y * this.scaledCharHeight, this.scaledCharWidth, this.scaledCharHeight);
+            this.fillCells(x, y, 1, 1);
             this._ctx.restore();
             this._state.cache[x][y] = bg;
           } else {
-            this._ctx.clearRect(x * this.scaledCharWidth, y * this.scaledCharHeight, this.scaledCharWidth, this.scaledCharHeight);
+            this.clearCells(x, y, 1, 1);
             this._state.cache[x][y] = null;
           }
         }

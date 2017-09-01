@@ -20,18 +20,18 @@ export class ForegroundRenderLayer extends BaseRenderLayer implements IDataRende
     this._state.resize(terminal.cols, terminal.rows);
   }
 
-  public clear(terminal: ITerminal): void {
+  public reset(terminal: ITerminal): void {
     this._state.clear();
-    this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+    this.clearAll();
   }
 
   public render(terminal: ITerminal, startRow: number, endRow: number): void {
     // TODO: Ensure that the render is eventually performed
     // Don't bother render until the atlas bitmap is ready
     // TODO: Move this to BaseRenderLayer?
-    if (!BaseRenderLayer._charAtlas) {
-      return;
-    }
+    // if (!BaseRenderLayer._charAtlas) {
+    //   return;
+    // }
 
     for (let y = startRow; y <= endRow; y++) {
       const row = y + terminal.buffer.ydisp;
@@ -53,7 +53,7 @@ export class ForegroundRenderLayer extends BaseRenderLayer implements IDataRende
         this._state.cache[x][y] = charData;
 
         // Clear the old character
-        this._ctx.clearRect(x * this.scaledCharWidth, y * this.scaledCharHeight, this.scaledCharWidth, this.scaledCharHeight);
+        this.clearCells(x, y, 1, 1);
 
         // Skip rendering if the character is invisible
         if (!code || code === 32 /*' '*/) {
@@ -72,6 +72,7 @@ export class ForegroundRenderLayer extends BaseRenderLayer implements IDataRende
           }
         }
 
+        this._ctx.save();
         if (flags & FLAGS.BOLD) {
           this._ctx.font = `bold ${this._ctx.font}`;
           // Convert the FG color to the bold variant
@@ -80,7 +81,8 @@ export class ForegroundRenderLayer extends BaseRenderLayer implements IDataRende
           }
         }
 
-        this.drawChar(terminal, char, code, fg, x, y, this.scaledCharWidth, this.scaledCharHeight);
+        this.drawChar(terminal, char, code, fg, x, y);
+        this._ctx.restore();
       }
     }
   }

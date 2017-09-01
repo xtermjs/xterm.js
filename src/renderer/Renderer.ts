@@ -59,10 +59,10 @@ export class Renderer {
 
   public clear(): void {
     for (let i = 0; i < this._dataRenderLayers.length; i++) {
-      this._dataRenderLayers[i].clear(this._terminal);
+      this._dataRenderLayers[i].reset(this._terminal);
     }
     for (let i = 0; i < this._selectionRenderLayers.length; i++) {
-      this._selectionRenderLayers[i].clear(this._terminal);
+      this._selectionRenderLayers[i].reset(this._terminal);
     }
   }
 

@@ -14,7 +14,7 @@ export class CursorRenderLayer extends BaseRenderLayer implements IDataRenderLay
     this._state = null;
   }
 
-  public clear(terminal: ITerminal): void {
+  public reset(terminal: ITerminal): void {
     this._clearCursor();
   }
 
@@ -46,18 +46,18 @@ export class CursorRenderLayer extends BaseRenderLayer implements IDataRenderLay
 
     this._ctx.save();
     this._ctx.fillStyle = COLORS[COLOR_CODES.WHITE];
-    this._ctx.fillRect(terminal.buffer.x * this.scaledCharWidth, viewportRelativeCursorY * this.scaledCharHeight, this.scaledCharWidth, this.scaledCharHeight);
+    this.fillCells(terminal.buffer.x, viewportRelativeCursorY, 1, 1);
     this._ctx.restore();
 
     const charData = terminal.buffer.lines.get(cursorY)[terminal.buffer.x];
-    this.drawChar(terminal, charData[CHAR_DATA_CHAR_INDEX], <number>charData[CHAR_DATA_CODE_INDEX], COLOR_CODES.BLACK, terminal.buffer.x, viewportRelativeCursorY, this.scaledCharWidth, this.scaledCharHeight);
+    this.drawChar(terminal, charData[CHAR_DATA_CHAR_INDEX], <number>charData[CHAR_DATA_CODE_INDEX], COLOR_CODES.BLACK, terminal.buffer.x, viewportRelativeCursorY);
 
     this._state = [terminal.buffer.x, viewportRelativeCursorY];
   }
 
   private _clearCursor(): void {
     if (this._state) {
-      this._ctx.clearRect(this._state[0] * this.scaledCharWidth, this._state[1] * this.scaledCharHeight, this.scaledCharWidth, this.scaledCharHeight);
+      this.clearCells(this._state[0], this._state[1], 1, 1);
       this._state = null;
     }
   }

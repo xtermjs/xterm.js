@@ -9,7 +9,7 @@ export interface IRenderLayer {
   /**
    * Clear the state of the render layer.
    */
-  clear(terminal: ITerminal): void;
+  reset(terminal: ITerminal): void;
 }
 
 export interface IDataRenderLayer extends IRenderLayer {

@@ -16,13 +16,13 @@ export class SelectionRenderLayer extends BaseRenderLayer implements ISelectionR
     };
   }
 
-  public clear(terminal: ITerminal): void {
+  public reset(terminal: ITerminal): void {
     if (this._state.start && this._state.end) {
       this._state = {
         start: null,
         end: null
       };
-      this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+      this.clearAll();
     }
   }
 
@@ -33,7 +33,7 @@ export class SelectionRenderLayer extends BaseRenderLayer implements ISelectionR
     }
 
     // Remove all selections
-    this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+    this.clearAll();
 
     // Selection does not exist
     if (!start || !end) {
@@ -55,17 +55,17 @@ export class SelectionRenderLayer extends BaseRenderLayer implements ISelectionR
     const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
     const startRowEndCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : terminal.cols;
     this._ctx.fillStyle = 'rgba(255,255,255,0.3)';
-    this._ctx.fillRect(startCol * this.scaledCharWidth, viewportCappedStartRow * this.scaledCharHeight, (startRowEndCol - startCol) * this.scaledCharWidth, this.scaledCharHeight);
+    this.fillCells(startCol, viewportCappedStartRow, startRowEndCol - startCol, 1);
 
     // Draw middle rows
     const middleRowsCount = Math.max(viewportCappedEndRow - viewportCappedStartRow - 1, 0);
-    this._ctx.fillRect(0, (viewportCappedStartRow + 1) * this.scaledCharHeight, terminal.cols * this.scaledCharWidth, middleRowsCount * this.scaledCharHeight);
+    this.fillCells(0, viewportCappedStartRow + 1, terminal.cols, middleRowsCount);
 
     // Draw final row
     if (viewportCappedStartRow !== viewportCappedEndRow) {
       // Only draw viewportEndRow if it's not the same as viewporttartRow
       const endCol = viewportEndRow === viewportCappedEndRow ? end[0] : terminal.cols;
-      this._ctx.fillRect(0, viewportCappedEndRow * this.scaledCharHeight, endCol * this.scaledCharWidth, this.scaledCharHeight);
+      this.fillCells(0, viewportCappedEndRow, endCol, 1);
     }
 
     // Save state for next render

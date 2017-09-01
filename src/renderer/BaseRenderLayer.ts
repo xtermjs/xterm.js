@@ -3,13 +3,13 @@ import { ITerminal } from '../Interfaces';
 import { COLORS } from './Color';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
-  protected _canvas: HTMLCanvasElement;
+  private _canvas: HTMLCanvasElement;
   protected _ctx: CanvasRenderingContext2D;
-  protected scaledCharWidth: number;
-  protected scaledCharHeight: number;
+  private scaledCharWidth: number;
+  private scaledCharHeight: number;
 
   // TODO: This will apply to all terminals, should it be per-terminal?
-  protected static _charAtlas: ImageBitmap;
+  private static _charAtlas: ImageBitmap;
   private static _charAtlasCharWidth: number;
   private static _charAtlasCharHeight: number;
   private static _charAtlasGenerator: CharAtlasGenerator;
@@ -50,9 +50,21 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     }
   }
 
-  public abstract clear(terminal: ITerminal): void;
+  public abstract reset(terminal: ITerminal): void;
 
-  protected drawChar(terminal: ITerminal, char: string, code: number, fg: number, x: number, y: number, scaledCharWidth: number, scaledCharHeight: number): void {
+  protected fillCells(startCol: number, startRow: number, colWidth: number, colHeight: number): void {
+    this._ctx.fillRect(startCol * this.scaledCharWidth, startRow * this.scaledCharHeight, colWidth * this.scaledCharWidth, colHeight * this.scaledCharHeight);
+  }
+
+  protected clearAll(): void {
+    this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+  }
+
+  protected clearCells(startCol: number, startRow: number, colWidth: number, colHeight: number): void {
+    this._ctx.clearRect(startCol * this.scaledCharWidth, startRow * this.scaledCharHeight, colWidth * this.scaledCharWidth, colHeight * this.scaledCharHeight);
+  }
+
+  protected drawChar(terminal: ITerminal, char: string, code: number, fg: number, x: number, y: number): void {
     let colorIndex = 0;
     if (fg < 256) {
       colorIndex = fg + 1;
@@ -60,10 +72,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (code < 256 && (colorIndex > 0 || fg > 255)) {
       // ImageBitmap's draw about twice as fast as from a canvas
       this._ctx.drawImage(BaseRenderLayer._charAtlas,
-          code * scaledCharWidth, colorIndex * scaledCharHeight, scaledCharWidth, scaledCharHeight,
-          x * scaledCharWidth, y * scaledCharHeight, scaledCharWidth, scaledCharHeight);
+          code * this.scaledCharWidth, colorIndex * this.scaledCharHeight, this.scaledCharWidth, this.scaledCharHeight,
+          x * this.scaledCharWidth, y * this.scaledCharHeight, this.scaledCharWidth, this.scaledCharHeight);
     } else {
-      this._drawUncachedChar(terminal, char, fg, x, y, scaledCharWidth, scaledCharHeight);
+      this._drawUncachedChar(terminal, char, fg, x, y, this.scaledCharWidth, this.scaledCharHeight);
     }
     // This draws the atlas (for debugging purposes)
     // this._ctx.drawImage(BaseRenderLayer._charAtlas, 0, 0);
@@ -100,14 +112,12 @@ class CharAtlasGenerator {
   public generate(terminal: ITerminal, charWidth: number, charHeight: number): Promise<ImageBitmap> {
     const scaledCharWidth = Math.ceil(charWidth) * window.devicePixelRatio;
     const scaledCharHeight = Math.ceil(charHeight) * window.devicePixelRatio;
-console.log('generate');
     this._canvas.width = 255 * scaledCharWidth;
     this._canvas.height = (/*default*/1 + /*0-15*/16) * scaledCharHeight;
 
     this._ctx.save();
     this._ctx.fillStyle = '#ffffff';
     this._ctx.font = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
-    console.log(this._ctx.font, scaledCharWidth, scaledCharHeight);
     this._ctx.textBaseline = 'top';
 
     // Default color
