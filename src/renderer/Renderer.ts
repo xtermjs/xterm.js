@@ -22,12 +22,12 @@ export class Renderer {
 
   constructor(private _terminal: ITerminal) {
     this._dataRenderLayers = [
-      new BackgroundRenderLayer(this._terminal.element),
-      new ForegroundRenderLayer(this._terminal.element),
-      new CursorRenderLayer(this._terminal.element)
+      new BackgroundRenderLayer(this._terminal.element, 0),
+      new ForegroundRenderLayer(this._terminal.element, 2),
+      new CursorRenderLayer(this._terminal.element, 3)
     ];
     this._selectionRenderLayers = [
-      new SelectionRenderLayer(this._terminal.element)
+      new SelectionRenderLayer(this._terminal.element, 1)
     ];
   }
 

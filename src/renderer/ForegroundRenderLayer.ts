@@ -5,30 +5,22 @@ import { COLORS } from './Color';
 import { FLAGS } from './Types';
 import { GridCache } from './GridCache';
 import { CharData } from '../Types';
+import { BaseRenderLayer } from './BaseRenderLayer';
 
-export class ForegroundRenderLayer implements IDataRenderLayer {
-  private _canvas: HTMLCanvasElement;
-  private _ctx: CanvasRenderingContext2D;
+export class ForegroundRenderLayer extends BaseRenderLayer implements IDataRenderLayer {
   private _charAtlas: ImageBitmap;
   private _state: GridCache<CharData>;
 
   private _charAtlasGenerator: CharAtlasGenerator;
 
-  constructor(container: HTMLElement) {
-    this._canvas = document.createElement('canvas');
-    this._canvas.classList.add('xterm-fg-layer');
-    this._ctx = this._canvas.getContext('2d');
-    this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-    container.appendChild(this._canvas);
+  constructor(container: HTMLElement, zIndex: number) {
+    super(container, 'fg', zIndex);
     this._charAtlasGenerator = new CharAtlasGenerator();
     this._state = new GridCache<CharData>();
   }
 
   public resize(terminal: ITerminal, canvasWidth: number, canvasHeight: number, charSizeChanged: boolean): void {
-    this._canvas.width = canvasWidth * window.devicePixelRatio;
-    this._canvas.height = canvasHeight * window.devicePixelRatio;
-    this._canvas.style.width = `${canvasWidth}px`;
-    this._canvas.style.height = `${canvasHeight}px`;
+    super.resize(terminal, canvasWidth, canvasHeight, charSizeChanged);
     this._state.resize(terminal.cols, terminal.rows);
     if (charSizeChanged) {
       this._charAtlas = null;

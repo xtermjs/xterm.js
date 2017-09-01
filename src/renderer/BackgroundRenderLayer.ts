@@ -4,26 +4,18 @@ import { CHAR_DATA_ATTR_INDEX } from '../Buffer';
 import { COLORS } from './Color';
 import { GridCache } from './GridCache';
 import { FLAGS } from './Types';
+import { BaseRenderLayer } from './BaseRenderLayer';
 
-export class BackgroundRenderLayer implements IDataRenderLayer {
-  private _canvas: HTMLCanvasElement;
-  private _ctx: CanvasRenderingContext2D;
+export class BackgroundRenderLayer extends BaseRenderLayer implements IDataRenderLayer {
   private _state: GridCache<number>;
 
-  constructor(container: HTMLElement) {
-    this._canvas = document.createElement('canvas');
-    this._canvas.classList.add('xterm-bg-layer');
-    this._ctx = this._canvas.getContext('2d');
-    this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-    container.appendChild(this._canvas);
+  constructor(container: HTMLElement, zIndex: number) {
+    super(container, 'bg', zIndex);
     this._state = new GridCache<number>();
   }
 
   public resize(terminal: ITerminal, canvasWidth: number, canvasHeight: number, charSizeChanged: boolean): void {
-    this._canvas.width = canvasWidth * window.devicePixelRatio;
-    this._canvas.height = canvasHeight * window.devicePixelRatio;
-    this._canvas.style.width = `${canvasWidth}px`;
-    this._canvas.style.height = `${canvasHeight}px`;
+    super.resize(terminal, canvasWidth, canvasHeight, charSizeChanged);
     this._state.resize(terminal.cols, terminal.rows);
   }
 
