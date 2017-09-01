@@ -1,5 +1,5 @@
 import { IRenderLayer } from './Interfaces';
-import { ITerminal } from '../Interfaces';
+import { ITerminal, ITerminalOptions } from '../Interfaces';
 import { COLORS } from './Color';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
@@ -25,6 +25,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (!BaseRenderLayer._charAtlasGenerator) {
       BaseRenderLayer._charAtlasGenerator = new CharAtlasGenerator();
     }
+  }
+
+  public onOptionsChanged(options: ITerminal): void {
+    // TODO: Should this do anything?
   }
 
   public resize(terminal: ITerminal, canvasWidth: number, canvasHeight: number, charSizeChanged: boolean): void {
@@ -54,6 +58,22 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
   protected fillCells(startCol: number, startRow: number, colWidth: number, colHeight: number): void {
     this._ctx.fillRect(startCol * this.scaledCharWidth, startRow * this.scaledCharHeight, colWidth * this.scaledCharWidth, colHeight * this.scaledCharHeight);
+  }
+
+  protected fillBottomLineAtCell(x: number, y: number): void {
+    this._ctx.fillRect(
+        x * this.scaledCharWidth,
+        (y + 1) * this.scaledCharHeight - window.devicePixelRatio - 1 /* Ensure it's drawn within the cell */,
+        this.scaledCharWidth,
+        window.devicePixelRatio);
+  }
+
+  protected fillLeftLineAtCell(x: number, y: number): void {
+    this._ctx.fillRect(
+        x * this.scaledCharWidth,
+        y * this.scaledCharHeight,
+        window.devicePixelRatio,
+        this.scaledCharHeight);
   }
 
   protected clearAll(): void {

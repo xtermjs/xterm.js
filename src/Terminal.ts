@@ -497,6 +497,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       case 'bellSound':
       case 'bellStyle': this.syncBellSound(); break;
     }
+    this.renderer.onOptionsChanged();
   }
 
   private restartCursorBlinking(): void {
