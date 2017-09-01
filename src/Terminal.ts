@@ -2046,7 +2046,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   public blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): LineData {
     const attr = cur ? this.eraseAttr() : this.defAttr;
 
-    const ch: CharData = [attr, ' ', 1]; // width defaults to 1 halfwidth character
+    const ch: CharData = [attr, ' ', 1, 32 /* ' '.charCodeAt(0) */]; // width defaults to 1 halfwidth character
     const line: LineData = [];
 
     // TODO: It is not ideal that this is a property on an array, a buffer line

@@ -50,10 +50,12 @@ export class ForegroundRenderLayer extends BaseRenderLayer implements IDataRende
           this._state.cache[x][y] = charData;
           continue;
         }
-        this._state.cache[x][y] = charData;
 
-        // Clear the old character
-        this.clearCells(x, y, 1, 1);
+        // Clear the old character if present
+        if (state && state[CHAR_DATA_CODE_INDEX] !== 32 /*' '*/) {
+          this.clearCells(x, y, 1, 1);
+        }
+        this._state.cache[x][y] = charData;
 
         // Skip rendering if the character is invisible
         if (!code || code === 32 /*' '*/) {
