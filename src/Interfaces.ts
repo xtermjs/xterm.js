@@ -47,6 +47,7 @@ export interface ITerminal extends IEventEmitter {
   reset(): void;
   showCursor(): void;
   blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): LineData;
+  refresh(start: number, end: number): void;
 }
 
 /**

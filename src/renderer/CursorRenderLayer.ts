@@ -19,6 +19,15 @@ export class CursorRenderLayer extends BaseRenderLayer implements IDataRenderLay
   private _blinkInterval: number;
   private _isVisible: boolean;
 
+  /**
+   * The time at which the animation frame was restarted, this is used on the
+   * next render to restart the timers so they don't need to restart the timers
+   * multiple times over a short period.
+   */
+  private _animationTimeRestarted: number;
+
+  private _cursorBlinkStateManager: CursorBlinkStateManager;
+
   constructor(container: HTMLElement, zIndex: number) {
     super(container, 'cursor', zIndex);
     this._state = null;
@@ -28,6 +37,7 @@ export class CursorRenderLayer extends BaseRenderLayer implements IDataRenderLay
       'block': this._renderBlockCursor.bind(this),
       'underline': this._renderUnderlineCursor.bind(this)
     };
+    // TODO: Consider initial options? Maybe onOptionsChanged should be called at the end of open?
   }
 
   public reset(terminal: ITerminal): void {
@@ -37,21 +47,36 @@ export class CursorRenderLayer extends BaseRenderLayer implements IDataRenderLay
 
   public onOptionsChanged(terminal: ITerminal): void {
     super.onOptionsChanged(terminal);
-    this._refreshBlinkState(terminal);
+    if (terminal.options.cursorBlink) {
+      if (!this._cursorBlinkStateManager) {
+        this._cursorBlinkStateManager = new CursorBlinkStateManager(terminal, () => {
+          this._render(terminal, true);
+        });
+      }
+    } else {
+      if (this._cursorBlinkStateManager) {
+        this._cursorBlinkStateManager.dispose();
+        this._cursorBlinkStateManager = null;
+      }
+      // Request a refresh from the terminal as management of rendering is being
+      // moved back to the terminal
+      terminal.refresh(terminal.buffer.y, terminal.buffer.y);
+    }
   }
 
   public render(terminal: ITerminal, startRow: number, endRow: number): void {
     // Only render if the animation frame is not active
-    if (!this._blinkInterval) {
+    if (!this._cursorBlinkStateManager) {
       this._render(terminal, false);
     }
   }
 
   private _render(terminal: ITerminal, triggeredByAnimationFrame: boolean): void {
     // TODO: Track blur/focus somehow, support unfocused cursor
-
     // Don't draw the cursor if it's hidden
-    if (!terminal.cursorState || terminal.cursorHidden || !this._isVisible) {
+    if (!terminal.cursorState ||
+        terminal.cursorHidden ||
+        (this._cursorBlinkStateManager && !this._cursorBlinkStateManager.isCursorVisible)) {
       this._clearCursor();
       return;
     }
@@ -100,32 +125,41 @@ export class CursorRenderLayer extends BaseRenderLayer implements IDataRenderLay
   private _renderUnderlineCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
     this.fillBottomLineAtCell(x, y);
   }
+}
 
-  private _refreshBlinkState(terminal: ITerminal): void {
-    if (terminal.options.cursorBlink) {
-      if (!this._blinkInterval) {
-        this._blinkInterval = <number><any>setInterval(() => {
-          this._isVisible = !this._isVisible;
-          this._animationFrame = window.requestAnimationFrame(() => {
-            this._render(terminal, true);
-            this._animationFrame = null;
-          });
-        }, BLINK_INTERVAL);
-      }
-    } else {
-      if (this._animationFrame) {
-        window.clearInterval(this._blinkInterval);
-        this._blinkInterval = null;
-        window.cancelAnimationFrame(this._animationFrame);
+class CursorBlinkStateManager {
+  public isCursorVisible: boolean;
+
+  private _animationFrame: number;
+  private _blinkInterval: number;
+
+  constructor(
+    terminal: ITerminal,
+    private renderCallback: () => void
+  ) {
+    this.isCursorVisible = true;
+    this._blinkInterval = <number><any>setInterval(() => {
+      this.isCursorVisible = !this.isCursorVisible;
+      this._animationFrame = window.requestAnimationFrame(() => {
+        this.renderCallback();
         this._animationFrame = null;
-        this._isVisible = true;
-      }
+      });
+    }, BLINK_INTERVAL);
+  }
+
+  public dispose(): void {
+    window.clearInterval(this._blinkInterval);
+    this._blinkInterval = null;
+    if (this._animationFrame) {
+      window.cancelAnimationFrame(this._animationFrame);
+      this._animationFrame = null;
     }
   }
 
   private _restartBlinkAnimation(terminal: ITerminal): void {
     // TODO: Restart the blink animation when input is received
     // How can this be done efficiently, without thrashing with restarting the timers?
+    // Could record the time it was restarted and diff that on next render?
   }
 
   private _pauseBlinkAnimation(): void {
