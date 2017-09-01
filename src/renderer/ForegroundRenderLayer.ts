@@ -26,6 +26,7 @@ export class ForegroundRenderLayer extends BaseRenderLayer implements IDataRende
 
     // TODO: Ensure that the render is eventually performed
     // Don't bother render until the atlas bitmap is ready
+    // TODO: Move this to BaseRenderLayer?
     if (!BaseRenderLayer._charAtlas) {
       return;
     }
@@ -81,40 +82,8 @@ export class ForegroundRenderLayer extends BaseRenderLayer implements IDataRende
           }
         }
 
-        let colorIndex = 0;
-        if (fg < 16) {
-          colorIndex = fg + 1;
-        }
-
-        if (code < 256 && (colorIndex > 0 || fg > 255)) {
-          // ImageBitmap's draw about twice as fast as from a canvas
-          this._ctx.drawImage(BaseRenderLayer._charAtlas, code * scaledCharWidth, colorIndex * scaledCharHeight, scaledCharWidth, scaledCharHeight, x * scaledCharWidth, y * scaledCharHeight, scaledCharWidth, scaledCharHeight);
-        } else {
-          // TODO: Evaluate how long it takes to convert from a number
-          const width: number = charData[CHAR_DATA_WIDTH_INDEX];
-          this._drawUncachedChar(char, width, fg, x, y, scaledCharWidth, scaledCharHeight);
-        }
+        this.drawChar(char, code, fg, x, y, scaledCharWidth, scaledCharHeight);
       }
     }
-
-    // This draws the atlas (for debugging purposes)
-    // this._ctx.drawImage(this._charAtlas, 0, 0);
-  }
-
-  private _drawUncachedChar(char: string, width: number, fg: number, x: number, y: number, scaledCharWidth: number, scaledCharHeight: number): void {
-    this._ctx.save();
-    this._ctx.font = `${16 * window.devicePixelRatio}px courier`;
-    this._ctx.textBaseline = 'top';
-
-    // 256 color support
-    if (fg < 256) {
-      this._ctx.fillStyle = COLORS[fg];
-    } else {
-      this._ctx.fillStyle = '#ffffff';
-    }
-
-    // TODO: Do we care about width for rendering wide chars?
-    this._ctx.fillText(char, x * scaledCharWidth, y * scaledCharHeight);
-    this._ctx.restore();
   }
 }

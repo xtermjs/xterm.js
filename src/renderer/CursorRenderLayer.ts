@@ -1,6 +1,6 @@
 import { IDataRenderLayer } from './Interfaces';
 import { IBuffer, ICharMeasure, ITerminal } from '../Interfaces';
-import { CHAR_DATA_ATTR_INDEX } from '../Buffer';
+import { CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
 import { COLORS } from './Color';
 import { GridCache } from './GridCache';
 import { FLAGS } from './Types';
@@ -43,13 +43,13 @@ export class CursorRenderLayer extends BaseRenderLayer implements IDataRenderLay
       this._clearCursor(scaledCharWidth, scaledCharHeight);
     }
 
-    // TODO: Draw text in COLORS[0], using the char atlas if possible
-    // const charData = terminal.buffer.lines.get(viewportRelativeCursorY)[terminal.buffer.x];
-
     this._ctx.save();
     this._ctx.fillStyle = COLORS[7];
     this._ctx.fillRect(terminal.buffer.x * scaledCharWidth, viewportRelativeCursorY * scaledCharHeight, scaledCharWidth, scaledCharHeight);
     this._ctx.restore();
+
+    const charData = terminal.buffer.lines.get(viewportRelativeCursorY)[terminal.buffer.x];
+    this.drawChar(charData[CHAR_DATA_CHAR_INDEX], <number>charData[CHAR_DATA_CODE_INDEX], 0, terminal.buffer.x, viewportRelativeCursorY, scaledCharWidth, scaledCharHeight);
 
     this._state = [terminal.buffer.x, viewportRelativeCursorY];
   }

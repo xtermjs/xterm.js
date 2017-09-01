@@ -44,6 +44,40 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       }
     }
   }
+
+  protected drawChar(char: string, code: number, fg: number, x: number, y: number, scaledCharWidth: number, scaledCharHeight: number): void {
+    let colorIndex = 0;
+    if (fg < 256) {
+      colorIndex = fg + 1;
+    }
+    if (code < 256 && (colorIndex > 0 || fg > 255)) {
+      // ImageBitmap's draw about twice as fast as from a canvas
+      this._ctx.drawImage(BaseRenderLayer._charAtlas,
+          code * scaledCharWidth, colorIndex * scaledCharHeight, scaledCharWidth, scaledCharHeight,
+          x * scaledCharWidth, y * scaledCharHeight, scaledCharWidth, scaledCharHeight);
+    } else {
+      this._drawUncachedChar(char, fg, x, y, scaledCharWidth, scaledCharHeight);
+    }
+    // This draws the atlas (for debugging purposes)
+    // this._ctx.drawImage(BaseRenderLayer._charAtlas, 0, 0);
+  }
+
+  private _drawUncachedChar(char: string, fg: number, x: number, y: number, scaledCharWidth: number, scaledCharHeight: number): void {
+    this._ctx.save();
+    this._ctx.font = `${16 * window.devicePixelRatio}px courier`;
+    this._ctx.textBaseline = 'top';
+
+    // 256 color support
+    if (fg < 256) {
+      this._ctx.fillStyle = COLORS[fg];
+    } else {
+      this._ctx.fillStyle = '#ffffff';
+    }
+
+    // TODO: Do we care about width for rendering wide chars?
+    this._ctx.fillText(char, x * scaledCharWidth, y * scaledCharHeight);
+    this._ctx.restore();
+  }
 }
 
 class CharAtlasGenerator {
