@@ -15,23 +15,11 @@ const BLINK_INTERVAL = 600;
 export class CursorRenderLayer extends BaseRenderLayer implements IDataRenderLayer {
   private _state: [number, number];
   private _cursorRenderers: {[key: string]: (terminal: ITerminal, x: number, y: number, charData: CharData) => void};
-  private _animationFrame: number;
-  private _blinkInterval: number;
-  private _isVisible: boolean;
-
-  /**
-   * The time at which the animation frame was restarted, this is used on the
-   * next render to restart the timers so they don't need to restart the timers
-   * multiple times over a short period.
-   */
-  private _animationTimeRestarted: number;
-
   private _cursorBlinkStateManager: CursorBlinkStateManager;
 
   constructor(container: HTMLElement, zIndex: number) {
     super(container, 'cursor', zIndex);
     this._state = null;
-    this._isVisible = true;
     this._cursorRenderers = {
       'bar': this._renderBarCursor.bind(this),
       'block': this._renderBlockCursor.bind(this),
@@ -42,7 +30,11 @@ export class CursorRenderLayer extends BaseRenderLayer implements IDataRenderLay
 
   public reset(terminal: ITerminal): void {
     this._clearCursor();
-    this._isVisible = true;
+    if (this._cursorBlinkStateManager) {
+      this._cursorBlinkStateManager.dispose();
+      this._cursorBlinkStateManager = null;
+      this.onOptionsChanged(terminal);
+    }
   }
 
   public onOptionsChanged(terminal: ITerminal): void {
@@ -61,6 +53,12 @@ export class CursorRenderLayer extends BaseRenderLayer implements IDataRenderLay
       // Request a refresh from the terminal as management of rendering is being
       // moved back to the terminal
       terminal.refresh(terminal.buffer.y, terminal.buffer.y);
+    }
+  }
+
+  public onCursorMove(terminal: ITerminal): void {
+    if (this._cursorBlinkStateManager) {
+      this._cursorBlinkStateManager.restartBlinkAnimation(terminal);
     }
   }
 
@@ -131,20 +129,22 @@ class CursorBlinkStateManager {
   public isCursorVisible: boolean;
 
   private _animationFrame: number;
+  private _blinkStartTimeout: number;
   private _blinkInterval: number;
+
+  /**
+   * The time at which the animation frame was restarted, this is used on the
+   * next render to restart the timers so they don't need to restart the timers
+   * multiple times over a short period.
+   */
+  private _animationTimeRestarted: number;
 
   constructor(
     terminal: ITerminal,
     private renderCallback: () => void
   ) {
     this.isCursorVisible = true;
-    this._blinkInterval = <number><any>setInterval(() => {
-      this.isCursorVisible = !this.isCursorVisible;
-      this._animationFrame = window.requestAnimationFrame(() => {
-        this.renderCallback();
-        this._animationFrame = null;
-      });
-    }, BLINK_INTERVAL);
+    this._restartInterval();
   }
 
   public dispose(): void {
@@ -156,10 +156,71 @@ class CursorBlinkStateManager {
     }
   }
 
-  private _restartBlinkAnimation(terminal: ITerminal): void {
-    // TODO: Restart the blink animation when input is received
-    // How can this be done efficiently, without thrashing with restarting the timers?
-    // Could record the time it was restarted and diff that on next render?
+  public restartBlinkAnimation(terminal: ITerminal): void {
+    console.log('restartBlinkAnimation');
+    // Save a timestamp so that the restart can be done on the next interval
+    this._animationTimeRestarted = Date.now();
+    // Force a cursor render to ensure it's visible and in the correct position
+    this.isCursorVisible = true;
+    if (!this._animationFrame) {
+      this._animationFrame = window.requestAnimationFrame(() => {
+        this.renderCallback();
+        this._animationFrame = null;
+      });
+    }
+  }
+
+  private _restartInterval(timeToStart: number = BLINK_INTERVAL): void {
+    // Clear any existing interval
+    if (this._blinkInterval) {
+      window.clearInterval(this._blinkInterval);
+    }
+
+    console.log('restartInterval');
+    // Setup the initial timeout which will hide the cursor, this is done before
+    // the regular interval is setup in order to support restarting the blink
+    // animation in a lightweight way (without thrashing clearInterval and
+    // setInterval).
+    this._blinkStartTimeout = <number><any>setTimeout(() => {
+      // Check if another animation restart was requested while this was being
+      // started
+      if (this._animationTimeRestarted) {
+        const time = BLINK_INTERVAL - (Date.now() - this._animationTimeRestarted);
+        this._animationTimeRestarted = null;
+        this._restartInterval(time);
+        return;
+      }
+
+      console.log('timeout');
+      // Hide the cursor
+      this.isCursorVisible = false;
+      this._animationFrame = window.requestAnimationFrame(() => {
+        this.renderCallback();
+        this._animationFrame = null;
+      });
+
+      // Setup the blink interval
+      this._blinkInterval = <number><any>setInterval(() => {
+        console.log('interval');
+        // Adjust the animation time if it was restarted
+        if (this._animationTimeRestarted) {
+          // calc time diff
+          // Make restart interval do a setTimeout initially?
+          const time = BLINK_INTERVAL - (Date.now() - this._animationTimeRestarted);
+          this._animationTimeRestarted = null;
+          console.log('  restart in ', time);
+          this._restartInterval(time);
+          return;
+        }
+
+        // Invert visibility and render
+        this.isCursorVisible = !this.isCursorVisible;
+        this._animationFrame = window.requestAnimationFrame(() => {
+          this.renderCallback();
+          this._animationFrame = null;
+        });
+      }, BLINK_INTERVAL);
+    }, timeToStart);
   }
 
   private _pauseBlinkAnimation(): void {

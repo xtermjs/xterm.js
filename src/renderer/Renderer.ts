@@ -56,6 +56,15 @@ export class Renderer {
     }
   }
 
+  public onCursorMove(): void {
+    for (let i = 0; i < this._dataRenderLayers.length; i++) {
+      this._dataRenderLayers[i].onCursorMove(this._terminal);
+    }
+    for (let i = 0; i < this._selectionRenderLayers.length; i++) {
+      this._selectionRenderLayers[i].onCursorMove(this._terminal);
+    }
+  }
+
   public onOptionsChanged(): void {
     for (let i = 0; i < this._dataRenderLayers.length; i++) {
       this._dataRenderLayers[i].onOptionsChanged(this._terminal);

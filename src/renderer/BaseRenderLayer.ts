@@ -27,9 +27,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     }
   }
 
-  public onOptionsChanged(options: ITerminal): void {
     // TODO: Should this do anything?
-  }
+  public onOptionsChanged(options: ITerminal): void {}
+  public onCursorMove(options: ITerminal): void {}
 
   public resize(terminal: ITerminal, canvasWidth: number, canvasHeight: number, charSizeChanged: boolean): void {
     this.scaledCharWidth = terminal.charMeasure.width * window.devicePixelRatio;

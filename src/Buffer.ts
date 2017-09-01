@@ -34,8 +34,8 @@ export class Buffer implements IBuffer {
   /**
    * Create a new Buffer.
    * @param _terminal The terminal the Buffer will belong to.
-   * @param _hasScrollback Whether the buffer should respecr the scrollback of
-   * the terminal..
+   * @param _hasScrollback Whether the buffer should respect the scrollback of
+   * the terminal.
    */
   constructor(
     private _terminal: ITerminal,

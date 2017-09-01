@@ -1,6 +1,7 @@
 import { ITerminal, ITerminalOptions } from '../Interfaces';
 
 export interface IRenderLayer {
+  onCursorMove(options: ITerminal): void;
   onOptionsChanged(options: ITerminal): void;
 
   /**
