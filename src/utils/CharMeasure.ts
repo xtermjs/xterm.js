@@ -4,11 +4,14 @@
  */
 
 import { EventEmitter } from '../EventEmitter.js';
+import { ICharMeasure, ITerminal, ITerminalOptions } from '../Interfaces';
 
 /**
- * Utility class that measures the size of a character.
+ * Utility class that measures the size of a character. Measurements are done in
+ * the DOM rather than with a canvas context because support for extracting the
+ * height of characters is patchy across browsers.
  */
-export class CharMeasure extends EventEmitter {
+export class CharMeasure extends EventEmitter implements ICharMeasure {
   private _document: Document;
   private _parentElement: HTMLElement;
   private _measureElement: HTMLElement;
@@ -29,7 +32,7 @@ export class CharMeasure extends EventEmitter {
     return this._height;
   }
 
-  public measure(): void {
+  public measure(options: ITerminalOptions): void {
     if (!this._measureElement) {
       this._measureElement = this._document.createElement('span');
       this._measureElement.style.position = 'absolute';
@@ -40,13 +43,15 @@ export class CharMeasure extends EventEmitter {
       this._parentElement.appendChild(this._measureElement);
       // Perform _doMeasure async if the element was just attached as sometimes
       // getBoundingClientRect does not return accurate values without this.
-      setTimeout(() => this._doMeasure(), 0);
+      setTimeout(() => this._doMeasure(options), 0);
     } else {
-      this._doMeasure();
+      this._doMeasure(options);
     }
   }
 
-  private _doMeasure(): void {
+  private _doMeasure(options: ITerminalOptions): void {
+    this._measureElement.style.fontFamily = options.fontFamily;
+    this._measureElement.style.fontSize = `${options.fontSize}px`;
     const geometry = this._measureElement.getBoundingClientRect();
     // The element is likely currently display:none, we should retain the
     // previous value.

@@ -20,6 +20,11 @@ export class ForegroundRenderLayer extends BaseRenderLayer implements IDataRende
     this._state.resize(terminal.cols, terminal.rows);
   }
 
+  public clear(terminal: ITerminal): void {
+    this._state.clear();
+    this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+  }
+
   public render(terminal: ITerminal, startRow: number, endRow: number): void {
     const scaledCharWidth = Math.ceil(terminal.charMeasure.width) * window.devicePixelRatio;
     const scaledCharHeight = Math.ceil(terminal.charMeasure.height) * window.devicePixelRatio;
@@ -30,10 +35,6 @@ export class ForegroundRenderLayer extends BaseRenderLayer implements IDataRende
     if (!BaseRenderLayer._charAtlas) {
       return;
     }
-
-    this._ctx.fillStyle = '#ffffff';
-    this._ctx.textBaseline = 'top';
-    this._ctx.font = `${16 * window.devicePixelRatio}px courier`;
 
     for (let y = startRow; y <= endRow; y++) {
       const row = y + terminal.buffer.ydisp;
@@ -82,7 +83,7 @@ export class ForegroundRenderLayer extends BaseRenderLayer implements IDataRende
           }
         }
 
-        this.drawChar(char, code, fg, x, y, scaledCharWidth, scaledCharHeight);
+        this.drawChar(terminal, char, code, fg, x, y, scaledCharWidth, scaledCharHeight);
       }
     }
   }

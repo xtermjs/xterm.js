@@ -19,6 +19,11 @@ export class BackgroundRenderLayer extends BaseRenderLayer implements IDataRende
     this._state.resize(terminal.cols, terminal.rows);
   }
 
+  public clear(terminal: ITerminal): void {
+    this._state.clear();
+    this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+  }
+
   public render(terminal: ITerminal, startRow: number, endRow: number): void {
     const scaledCharWidth = Math.ceil(terminal.charMeasure.width) * window.devicePixelRatio;
     const scaledCharHeight = Math.ceil(terminal.charMeasure.height) * window.devicePixelRatio;

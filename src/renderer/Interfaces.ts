@@ -1,7 +1,15 @@
 import { ITerminal } from '../Interfaces';
 
 export interface IRenderLayer {
+  /**
+   * Resize the render layer.
+   */
   resize(terminal: ITerminal, canvasWidth: number, canvasHeight: number, charSizeChanged: boolean): void;
+
+  /**
+   * Clear the state of the render layer.
+   */
+  clear(terminal: ITerminal): void;
 }
 
 export interface IDataRenderLayer extends IRenderLayer {

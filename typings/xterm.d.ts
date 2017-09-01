@@ -313,7 +313,7 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'termName'): string;
+    getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'termName'): string;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
@@ -328,7 +328,7 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'cols' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
+    getOption(key: 'cols' | 'fontSize' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
@@ -350,7 +350,7 @@ declare module 'xterm' {
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: 'termName' | 'bellSound', value: string): void;
+    setOption(key: 'fontFamily' | 'termName' | 'bellSound', value: string): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
@@ -380,7 +380,7 @@ declare module 'xterm' {
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: 'cols' | 'rows' | 'tabStopWidth' | 'scrollback', value: number): void;
+    setOption(key: 'cols' | 'fontSize' | 'rows' | 'tabStopWidth' | 'scrollback', value: number): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.

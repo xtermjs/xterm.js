@@ -39,14 +39,16 @@ export abstract class BaseRenderLayer implements IRenderLayer {
         BaseRenderLayer._charAtlas = null;
         BaseRenderLayer._charAtlasCharWidth = terminal.charMeasure.width;
         BaseRenderLayer._charAtlasCharHeight = terminal.charMeasure.height;
-        BaseRenderLayer._charAtlasGenerator.generate(terminal.charMeasure.width, terminal.charMeasure.height).then(bitmap => {
+        BaseRenderLayer._charAtlasGenerator.generate(terminal, terminal.charMeasure.width, terminal.charMeasure.height).then(bitmap => {
           BaseRenderLayer._charAtlas = bitmap;
         });
       }
     }
   }
 
-  protected drawChar(char: string, code: number, fg: number, x: number, y: number, scaledCharWidth: number, scaledCharHeight: number): void {
+  public abstract clear(terminal: ITerminal): void;
+
+  protected drawChar(terminal: ITerminal, char: string, code: number, fg: number, x: number, y: number, scaledCharWidth: number, scaledCharHeight: number): void {
     let colorIndex = 0;
     if (fg < 256) {
       colorIndex = fg + 1;
@@ -57,15 +59,15 @@ export abstract class BaseRenderLayer implements IRenderLayer {
           code * scaledCharWidth, colorIndex * scaledCharHeight, scaledCharWidth, scaledCharHeight,
           x * scaledCharWidth, y * scaledCharHeight, scaledCharWidth, scaledCharHeight);
     } else {
-      this._drawUncachedChar(char, fg, x, y, scaledCharWidth, scaledCharHeight);
+      this._drawUncachedChar(terminal, char, fg, x, y, scaledCharWidth, scaledCharHeight);
     }
     // This draws the atlas (for debugging purposes)
     // this._ctx.drawImage(BaseRenderLayer._charAtlas, 0, 0);
   }
 
-  private _drawUncachedChar(char: string, fg: number, x: number, y: number, scaledCharWidth: number, scaledCharHeight: number): void {
+  private _drawUncachedChar(terminal: ITerminal, char: string, fg: number, x: number, y: number, scaledCharWidth: number, scaledCharHeight: number): void {
     this._ctx.save();
-    this._ctx.font = `${16 * window.devicePixelRatio}px courier`;
+    this._ctx.font = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
     this._ctx.textBaseline = 'top';
 
     // 256 color support
@@ -91,16 +93,17 @@ class CharAtlasGenerator {
     this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
   }
 
-  public generate(charWidth: number, charHeight: number): Promise<ImageBitmap> {
+  public generate(terminal: ITerminal, charWidth: number, charHeight: number): Promise<ImageBitmap> {
     const scaledCharWidth = Math.ceil(charWidth) * window.devicePixelRatio;
     const scaledCharHeight = Math.ceil(charHeight) * window.devicePixelRatio;
-
+console.log('generate');
     this._canvas.width = 255 * scaledCharWidth;
     this._canvas.height = (/*default*/1 + /*0-15*/16) * scaledCharHeight;
 
     this._ctx.save();
     this._ctx.fillStyle = '#ffffff';
-    this._ctx.font = `${16 * window.devicePixelRatio}px courier`;
+    this._ctx.font = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
+    console.log(this._ctx.font, scaledCharWidth, scaledCharHeight);
     this._ctx.textBaseline = 'top';
 
     // Default color

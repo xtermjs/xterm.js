@@ -122,6 +122,8 @@ export interface ITerminalOptions {
   cursorStyle?: string;
   debug?: boolean;
   disableStdin?: boolean;
+  fontSize?: number;
+  fontFamily?: string;
   geometry?: [number, number];
   handler?: (data: string) => void;
   rows?: number;
@@ -186,7 +188,7 @@ export interface ICompositionHelper {
 export interface ICharMeasure {
   width: number;
   height: number;
-  measure(): void;
+  measure(options: ITerminalOptions): void;
 }
 
 export interface ILinkifier {

@@ -164,11 +164,6 @@
     top: 0;
 }
 
-/* .terminal .xterm-bg-layer { z-index: 0; }
-.terminal .xterm-selection-layer { z-index: 1; }
-.terminal .xterm-fg-layer { z-index: 2; }
-.terminal .xterm-cursor-layer { z-index: 3; } */
-
 .terminal .xterm-rows {
     position: absolute;
     left: 0;

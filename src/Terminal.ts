@@ -151,6 +151,8 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   cursorStyle: 'block',
   bellSound: BellSound,
   bellStyle: 'none',
+  fontFamily: 'courier-new, courier, monospace',
+  fontSize: 15,
   scrollback: 1000,
   screenKeys: false,
   debug: false,
@@ -481,6 +483,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         this.element.classList.toggle(`xterm-cursor-style-underline`, value === 'underline');
         this.element.classList.toggle(`xterm-cursor-style-bar`, value === 'bar');
         break;
+      case 'fontFamily':
+      case 'fontSize':
+        // When the font changes the size of the cells may change which requires a renderer clear
+        this.renderer.clear();
+        this.charMeasure.measure(this.options);
+        break;
       case 'scrollback':
         this.buffers.resize(this.cols, this.rows);
         this.viewport.syncScrollArea();
@@ -742,15 +750,15 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.parent.appendChild(this.element);
 
     this.charMeasure = new CharMeasure(document, this.helperContainer);
-    this.charMeasure.on('charsizechanged', () => {
-      this.updateCharSizeStyles();
-    });
-    this.charMeasure.measure();
 
     this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
     this.renderer = new Renderer(this);
     this.on('resize', () => this.renderer.onResize(this.cols, this.rows));
-    this.charMeasure.on('charsizechanged', () => this.renderer.onCharSizeChanged(this.charMeasure.width, this.charMeasure.height));
+    this.charMeasure.on('charsizechanged', () => {
+      this.renderer.onCharSizeChanged(this.charMeasure.width, this.charMeasure.height);
+      // Force a refresh for the char size change
+      this.renderer.queueRefresh(0, this.rows - 1);
+    });
 
     this.selectionManager = new SelectionManager(this, this.buffer, this.rowContainer, this.charMeasure);
     this.element.addEventListener('mousedown', (e: MouseEvent) => this.selectionManager.onMouseDown(e));
@@ -765,6 +773,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     });
     this.on('scroll', () => this.selectionManager.refresh());
     this.viewportElement.addEventListener('scroll', () => this.selectionManager.refresh());
+
+    // Measure the character size
+    this.charMeasure.measure(this.options);
 
     // Setup loop that draws to screen
     this.refresh(0, this.rows - 1);
@@ -794,17 +805,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       console.error('Cannot load a module without a CommonJS or RequireJS environment.');
       return false;
     }
-  }
-
-  /**
-   * Updates the helper CSS class with any changes necessary after the terminal's
-   * character width has been changed.
-   */
-  public updateCharSizeStyles(): void {
-    this.charSizeStyleElement.textContent =
-        `.xterm-wide-char{width:${this.charMeasure.width * 2}px;}` +
-        `.xterm-normal-char{width:${this.charMeasure.width}px;}` +
-        `.xterm-rows > div{height:${this.charMeasure.height}px;}`;
   }
 
   /**
@@ -1918,7 +1918,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     if (x === this.cols && y === this.rows) {
       // Check if we still need to measure the char size (fixes #785).
       if (!this.charMeasure.width || !this.charMeasure.height) {
-        this.charMeasure.measure();
+        this.charMeasure.measure(this.options);
       }
       return;
     }
@@ -1942,7 +1942,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.rows = y;
     this.buffers.setupTabStops(this.cols);
 
-    this.charMeasure.measure();
+    this.charMeasure.measure(this.options);
 
     this.refresh(0, this.rows - 1);
 

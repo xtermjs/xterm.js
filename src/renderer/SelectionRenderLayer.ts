@@ -16,6 +16,16 @@ export class SelectionRenderLayer extends BaseRenderLayer implements ISelectionR
     };
   }
 
+  public clear(terminal: ITerminal): void {
+    if (this._state.start && this._state.end) {
+      this._state = {
+        start: null,
+        end: null
+      };
+      this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+    }
+  }
+
   public render(terminal: ITerminal, start: [number, number], end: [number, number]): void {
     const scaledCharWidth = Math.ceil(terminal.charMeasure.width) * window.devicePixelRatio;
     const scaledCharHeight = Math.ceil(terminal.charMeasure.height) * window.devicePixelRatio;

@@ -40,6 +40,7 @@ export class Renderer {
   }
 
   public onCharSizeChanged(charWidth: number, charHeight: number): void {
+    console.log('Renderer.onCharSizeChanged', charWidth, charHeight);
     const width = Math.ceil(charWidth) * this._terminal.cols;
     const height = Math.ceil(charHeight) * this._terminal.rows;
     for (let i = 0; i < this._dataRenderLayers.length; i++) {
@@ -53,6 +54,15 @@ export class Renderer {
   public onSelectionChanged(start: [number, number], end: [number, number]): void {
     for (let i = 0; i < this._selectionRenderLayers.length; i++) {
       this._selectionRenderLayers[i].render(this._terminal, start, end);
+    }
+  }
+
+  public clear(): void {
+    for (let i = 0; i < this._dataRenderLayers.length; i++) {
+      this._dataRenderLayers[i].clear(this._terminal);
+    }
+    for (let i = 0; i < this._selectionRenderLayers.length; i++) {
+      this._selectionRenderLayers[i].clear(this._terminal);
     }
   }
 
@@ -101,65 +111,5 @@ export class Renderer {
       this._dataRenderLayers[i].render(this._terminal, start, end);
     }
     this._terminal.emit('refresh', {start, end});
-  }
-
-  /**
-   * Refreshes the selection in the DOM.
-   * @param start The selection start.
-   * @param end The selection end.
-   */
-  public refreshSelection(start: [number, number], end: [number, number]): void {
-    // Remove all selections
-    while (this._terminal.selectionContainer.children.length) {
-      this._terminal.selectionContainer.removeChild(this._terminal.selectionContainer.children[0]);
-    }
-
-    // Selection does not exist
-    if (!start || !end) {
-      return;
-    }
-
-    // Translate from buffer position to viewport position
-    const viewportStartRow = start[1] - this._terminal.buffer.ydisp;
-    const viewportEndRow = end[1] - this._terminal.buffer.ydisp;
-    const viewportCappedStartRow = Math.max(viewportStartRow, 0);
-    const viewportCappedEndRow = Math.min(viewportEndRow, this._terminal.rows - 1);
-
-    // No need to draw the selection
-    if (viewportCappedStartRow >= this._terminal.rows || viewportCappedEndRow < 0) {
-      return;
-    }
-
-    // Create the selections
-    const documentFragment = document.createDocumentFragment();
-    // Draw first row
-    const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
-    const endCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : this._terminal.cols;
-    documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow, startCol, endCol));
-    // Draw middle rows
-    const middleRowsCount = viewportCappedEndRow - viewportCappedStartRow - 1;
-    documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow + 1, 0, this._terminal.cols, middleRowsCount));
-    // Draw final row
-    if (viewportCappedStartRow !== viewportCappedEndRow) {
-      // Only draw viewportEndRow if it's not the same as viewporttartRow
-      const endCol = viewportEndRow === viewportCappedEndRow ? end[0] : this._terminal.cols;
-      documentFragment.appendChild(this._createSelectionElement(viewportCappedEndRow, 0, endCol));
-    }
-    this._terminal.selectionContainer.appendChild(documentFragment);
-  }
-
-  /**
-   * Creates a selection element at the specified position.
-   * @param row The row of the selection.
-   * @param colStart The start column.
-   * @param colEnd The end columns.
-   */
-  private _createSelectionElement(row: number, colStart: number, colEnd: number, rowCount: number = 1): HTMLElement {
-    const element = document.createElement('div');
-    element.style.height = `${rowCount * this._terminal.charMeasure.height}px`;
-    element.style.top = `${row * this._terminal.charMeasure.height}px`;
-    element.style.left = `${colStart * this._terminal.charMeasure.width}px`;
-    element.style.width = `${this._terminal.charMeasure.width * (colEnd - colStart)}px`;
-    return element;
   }
 }

@@ -17,4 +17,12 @@ export class GridCache<T> {
     }
     this.cache.length = width;
   }
+
+  public clear() {
+    for (let x = 0; x < this.cache.length; x++) {
+      for (let y = 0; y < this.cache[x].length; y++) {
+        this.cache[x][y] = null;
+      }
+    }
+  }
 }

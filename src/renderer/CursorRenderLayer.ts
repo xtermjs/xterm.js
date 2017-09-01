@@ -14,6 +14,12 @@ export class CursorRenderLayer extends BaseRenderLayer implements IDataRenderLay
     this._state = null;
   }
 
+  public clear(terminal: ITerminal): void {
+    const scaledCharWidth = Math.ceil(terminal.charMeasure.width) * window.devicePixelRatio;
+    const scaledCharHeight = Math.ceil(terminal.charMeasure.height) * window.devicePixelRatio;
+    this._clearCursor(scaledCharWidth, scaledCharHeight);
+  }
+
   public render(terminal: ITerminal, startRow: number, endRow: number): void {
     // TODO: Track blur/focus somehow, support unfocused cursor
 
@@ -50,7 +56,7 @@ export class CursorRenderLayer extends BaseRenderLayer implements IDataRenderLay
     this._ctx.restore();
 
     const charData = terminal.buffer.lines.get(viewportRelativeCursorY)[terminal.buffer.x];
-    this.drawChar(charData[CHAR_DATA_CHAR_INDEX], <number>charData[CHAR_DATA_CODE_INDEX], COLOR_CODES.BLACK, terminal.buffer.x, viewportRelativeCursorY, scaledCharWidth, scaledCharHeight);
+    this.drawChar(terminal, charData[CHAR_DATA_CHAR_INDEX], <number>charData[CHAR_DATA_CODE_INDEX], COLOR_CODES.BLACK, terminal.buffer.x, viewportRelativeCursorY, scaledCharWidth, scaledCharHeight);
 
     this._state = [terminal.buffer.x, viewportRelativeCursorY];
   }
