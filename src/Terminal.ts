@@ -1983,7 +1983,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     if (!line) {
       return;
     }
-    const ch: CharData = [this.eraseAttr(), ' ', 1]; // xterm
+    const ch: CharData = [this.eraseAttr(), ' ', 1, 32 /* ' '.charCodeAt(0) */]; // xterm
     for (; x < this.cols; x++) {
       line[x] = ch;
     }
@@ -2000,7 +2000,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     if (!line) {
       return;
     }
-    const ch: CharData = [this.eraseAttr(), ' ', 1]; // xterm
+    const ch: CharData = [this.eraseAttr(), ' ', 1, 32 /* ' '.charCodeAt(0) */]; // xterm
     x++;
     while (x--) {
       line[x] = ch;
@@ -2068,7 +2068,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param cur
    */
   public ch(cur?: boolean): CharData {
-    return cur ? [this.eraseAttr(), ' ', 1] : [this.defAttr, ' ', 1];
+    if (cur) {
+      return [this.eraseAttr(), ' ', 1, 32 /* ' '.charCodeAt(0) */];
+    }
+    return [this.defAttr, ' ', 1, 32 /* ' '.charCodeAt(0) */];
   }
 
   /**
