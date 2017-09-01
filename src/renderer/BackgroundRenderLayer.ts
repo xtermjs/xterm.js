@@ -1,11 +1,11 @@
-import { IDataRenderLayer, IColorSet } from './Interfaces';
+import { IColorSet } from './Interfaces';
 import { IBuffer, ICharMeasure, ITerminal } from '../Interfaces';
 import { CHAR_DATA_ATTR_INDEX } from '../Buffer';
 import { GridCache } from './GridCache';
 import { FLAGS } from './Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 
-export class BackgroundRenderLayer extends BaseRenderLayer implements IDataRenderLayer {
+export class BackgroundRenderLayer extends BaseRenderLayer {
   private _state: GridCache<number>;
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
@@ -23,7 +23,7 @@ export class BackgroundRenderLayer extends BaseRenderLayer implements IDataRende
     this.clearAll();
   }
 
-  public render(terminal: ITerminal, startRow: number, endRow: number): void {
+  public onGridChanged(terminal: ITerminal, startRow: number, endRow: number): void {
     for (let y = startRow; y <= endRow; y++) {
       let row = y + terminal.buffer.ydisp;
       let line = terminal.buffer.lines.get(row);

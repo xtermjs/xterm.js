@@ -1,4 +1,4 @@
-import { IDataRenderLayer, IColorSet } from './Interfaces';
+import { IColorSet } from './Interfaces';
 import { IBuffer, ICharMeasure, ITerminal, ITerminalOptions } from '../Interfaces';
 import { CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
 import { GridCache } from './GridCache';
@@ -12,7 +12,7 @@ import { COLOR_CODES } from './ColorManager';
  */
 const BLINK_INTERVAL = 600;
 
-export class CursorRenderLayer extends BaseRenderLayer implements IDataRenderLayer {
+export class CursorRenderLayer extends BaseRenderLayer {
   private _state: [number, number];
   private _cursorRenderers: {[key: string]: (terminal: ITerminal, x: number, y: number, charData: CharData) => void};
   private _cursorBlinkStateManager: CursorBlinkStateManager;
@@ -62,7 +62,7 @@ export class CursorRenderLayer extends BaseRenderLayer implements IDataRenderLay
     }
   }
 
-  public render(terminal: ITerminal, startRow: number, endRow: number): void {
+  public onGridChanged(terminal: ITerminal, startRow: number, endRow: number): void {
     // Only render if the animation frame is not active
     if (!this._cursorBlinkStateManager) {
       this._render(terminal, false);

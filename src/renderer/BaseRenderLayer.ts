@@ -29,6 +29,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   // TODO: Should this do anything?
   public onOptionsChanged(terminal: ITerminal): void {}
   public onCursorMove(terminal: ITerminal): void {}
+  public onGridChanged(terminal: ITerminal, startRow: number, endRow: number): void {}
+  public onSelectionChanged(terminal: ITerminal, start: [number, number], end: [number, number]): void {}
 
   public onThemeChanged(terminal: ITerminal, colorSet: IColorSet): void {
     this._charAtlas = null;

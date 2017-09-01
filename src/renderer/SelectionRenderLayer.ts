@@ -1,11 +1,11 @@
-import { ISelectionRenderLayer, IColorSet } from './Interfaces';
+import { IColorSet } from './Interfaces';
 import { IBuffer, ICharMeasure, ITerminal } from '../Interfaces';
 import { CHAR_DATA_ATTR_INDEX } from '../Buffer';
 import { GridCache } from './GridCache';
 import { FLAGS } from './Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 
-export class SelectionRenderLayer extends BaseRenderLayer implements ISelectionRenderLayer {
+export class SelectionRenderLayer extends BaseRenderLayer {
   private _state: {start: [number, number], end: [number, number]};
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
@@ -26,7 +26,7 @@ export class SelectionRenderLayer extends BaseRenderLayer implements ISelectionR
     }
   }
 
-  public render(terminal: ITerminal, start: [number, number], end: [number, number]): void {
+  public onSelectionChanged(terminal: ITerminal, start: [number, number], end: [number, number]): void {
     // Selection has not changed
     if (this._state.start === start || this._state.end === end) {
       return;

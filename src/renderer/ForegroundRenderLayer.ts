@@ -1,4 +1,4 @@
-import { IDataRenderLayer, IColorSet } from './Interfaces';
+import { IColorSet } from './Interfaces';
 import { IBuffer, ICharMeasure, ITerminal } from '../Interfaces';
 import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from '../Buffer';
 import { FLAGS } from './Types';
@@ -6,7 +6,7 @@ import { GridCache } from './GridCache';
 import { CharData } from '../Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 
-export class ForegroundRenderLayer extends BaseRenderLayer implements IDataRenderLayer {
+export class ForegroundRenderLayer extends BaseRenderLayer {
   private _state: GridCache<CharData>;
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
@@ -24,7 +24,7 @@ export class ForegroundRenderLayer extends BaseRenderLayer implements IDataRende
     this.clearAll();
   }
 
-  public render(terminal: ITerminal, startRow: number, endRow: number): void {
+  public onGridChanged(terminal: ITerminal, startRow: number, endRow: number): void {
     // TODO: Ensure that the render is eventually performed
     // Don't bother render until the atlas bitmap is ready
     // TODO: Move this to BaseRenderLayer?
