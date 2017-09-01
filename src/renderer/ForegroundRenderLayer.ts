@@ -1,7 +1,6 @@
-import { IDataRenderLayer } from './Interfaces';
+import { IDataRenderLayer, IColorSet } from './Interfaces';
 import { IBuffer, ICharMeasure, ITerminal } from '../Interfaces';
 import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from '../Buffer';
-import { COLORS } from './Color';
 import { FLAGS } from './Types';
 import { GridCache } from './GridCache';
 import { CharData } from '../Types';
@@ -10,8 +9,8 @@ import { BaseRenderLayer } from './BaseRenderLayer';
 export class ForegroundRenderLayer extends BaseRenderLayer implements IDataRenderLayer {
   private _state: GridCache<CharData>;
 
-  constructor(container: HTMLElement, zIndex: number) {
-    super(container, 'fg', zIndex);
+  constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
+    super(container, 'fg', zIndex, colors);
     this._state = new GridCache<CharData>();
   }
 

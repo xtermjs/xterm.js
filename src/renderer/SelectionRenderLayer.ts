@@ -1,4 +1,4 @@
-import { ISelectionRenderLayer } from './Interfaces';
+import { ISelectionRenderLayer, IColorSet } from './Interfaces';
 import { IBuffer, ICharMeasure, ITerminal } from '../Interfaces';
 import { CHAR_DATA_ATTR_INDEX } from '../Buffer';
 import { GridCache } from './GridCache';
@@ -8,8 +8,8 @@ import { BaseRenderLayer } from './BaseRenderLayer';
 export class SelectionRenderLayer extends BaseRenderLayer implements ISelectionRenderLayer {
   private _state: {start: [number, number], end: [number, number]};
 
-  constructor(container: HTMLElement, zIndex: number) {
-    super(container, 'selection', zIndex);
+  constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
+    super(container, 'selection', zIndex, colors);
     this._state = {
       start: null,
       end: null

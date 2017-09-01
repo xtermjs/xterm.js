@@ -1,8 +1,9 @@
 import { ITerminal, ITerminalOptions } from '../Interfaces';
 
 export interface IRenderLayer {
-  onCursorMove(options: ITerminal): void;
-  onOptionsChanged(options: ITerminal): void;
+  onCursorMove(terminal: ITerminal): void;
+  onOptionsChanged(terminal: ITerminal): void;
+  onThemeChanged(terminal: ITerminal, colorSet: IColorSet): void;
 
   /**
    * Resize the render layer.
@@ -27,4 +28,11 @@ export interface IDataRenderLayer extends IRenderLayer {
  */
 export interface ISelectionRenderLayer extends IRenderLayer {
   render(terminal: ITerminal, start: [number, number], end: [number, number]): void;
+}
+
+
+export interface IColorSet {
+  foreground: string;
+  background: string;
+  ansi: string[];
 }

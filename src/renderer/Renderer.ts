@@ -2,7 +2,7 @@
  * @license MIT
  */
 
-import { ITerminal } from '../Interfaces';
+import { ITerminal, ITheme } from '../Interfaces';
 import { DomElementObjectPool } from '../utils/DomElementObjectPool';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
 import { createBackgroundFillData } from './Canvas';
@@ -11,6 +11,8 @@ import { BackgroundRenderLayer } from './BackgroundRenderLayer';
 import { ForegroundRenderLayer } from './ForegroundRenderLayer';
 import { SelectionRenderLayer } from './SelectionRenderLayer';
 import { CursorRenderLayer } from './CursorRenderLayer';
+import { ColorManager } from './ColorManager';
+import { BaseRenderLayer } from './BaseRenderLayer';
 
 export class Renderer {
   /** A queue of the rows to be refreshed */
@@ -20,15 +22,35 @@ export class Renderer {
   private _dataRenderLayers: IDataRenderLayer[];
   private _selectionRenderLayers: ISelectionRenderLayer[];
 
+  private _colorManager: ColorManager;
+
   constructor(private _terminal: ITerminal) {
+    this._colorManager = new ColorManager();
     this._dataRenderLayers = [
-      new BackgroundRenderLayer(this._terminal.element, 0),
-      new ForegroundRenderLayer(this._terminal.element, 2),
-      new CursorRenderLayer(this._terminal.element, 3)
+      new BackgroundRenderLayer(this._terminal.element, 0, this._colorManager.colors),
+      new ForegroundRenderLayer(this._terminal.element, 2, this._colorManager.colors),
+      new CursorRenderLayer(this._terminal.element, 3, this._colorManager.colors)
     ];
     this._selectionRenderLayers = [
-      new SelectionRenderLayer(this._terminal.element, 1)
+      new SelectionRenderLayer(this._terminal.element, 1, this._colorManager.colors)
     ];
+  }
+
+  public setTheme(theme: ITheme): void {
+    console.log('setTheme');
+    this._colorManager.setTheme(theme);
+    // Clear layers and force a full render
+    for (let i = 0; i < this._dataRenderLayers.length; i++) {
+      this._dataRenderLayers[i].onThemeChanged(this._terminal, this._colorManager.colors);
+      this._dataRenderLayers[i].reset(this._terminal);
+    }
+    for (let i = 0; i < this._selectionRenderLayers.length; i++) {
+      this._selectionRenderLayers[i].onThemeChanged(this._terminal, this._colorManager.colors);
+      this._selectionRenderLayers[i].reset(this._terminal);
+    }
+
+    // TODO: This is currently done for every single terminal, but it's static so it's wasting time
+    this._terminal.refresh(0, this._terminal.rows - 1);
   }
 
   public onResize(cols: number, rows: number): void {

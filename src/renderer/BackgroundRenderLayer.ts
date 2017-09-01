@@ -1,7 +1,6 @@
-import { IDataRenderLayer } from './Interfaces';
+import { IDataRenderLayer, IColorSet } from './Interfaces';
 import { IBuffer, ICharMeasure, ITerminal } from '../Interfaces';
 import { CHAR_DATA_ATTR_INDEX } from '../Buffer';
-import { COLORS } from './Color';
 import { GridCache } from './GridCache';
 import { FLAGS } from './Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
@@ -9,8 +8,8 @@ import { BaseRenderLayer } from './BaseRenderLayer';
 export class BackgroundRenderLayer extends BaseRenderLayer implements IDataRenderLayer {
   private _state: GridCache<number>;
 
-  constructor(container: HTMLElement, zIndex: number) {
-    super(container, 'bg', zIndex);
+  constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
+    super(container, 'bg', zIndex, colors);
     this._state = new GridCache<number>();
   }
 
@@ -47,7 +46,7 @@ export class BackgroundRenderLayer extends BaseRenderLayer implements IDataRende
         if (needsRefresh) {
           if (bg < 256) {
             this._ctx.save();
-            this._ctx.fillStyle = COLORS[bg];
+            this._ctx.fillStyle = this.colors.ansi[bg];
             this.fillCells(x, y, 1, 1);
             this._ctx.restore();
             this._state.cache[x][y] = bg;

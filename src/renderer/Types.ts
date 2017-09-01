@@ -8,8 +8,3 @@ export enum FLAGS {
   INVERSE = 8,
   INVISIBLE = 16
 };
-
-export type Point = {
-  x: number,
-  y: number
-};

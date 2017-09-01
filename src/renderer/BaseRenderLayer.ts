@@ -1,6 +1,6 @@
-import { IRenderLayer } from './Interfaces';
+import { IRenderLayer, IColorSet } from './Interfaces';
 import { ITerminal, ITerminalOptions } from '../Interfaces';
-import { COLORS } from './Color';
+import { acquireCharAtlas } from '../utils/CharAtlas';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -8,28 +8,34 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private scaledCharWidth: number;
   private scaledCharHeight: number;
 
-  // TODO: This will apply to all terminals, should it be per-terminal?
-  private static _charAtlas: ImageBitmap;
-  private static _charAtlasCharWidth: number;
-  private static _charAtlasCharHeight: number;
-  private static _charAtlasGenerator: CharAtlasGenerator;
+  // TODO: This should be shared between terminals, but not for static as some
+  // terminals may have different styles
+  private _charAtlas: ImageBitmap;
 
-  constructor(container: HTMLElement, id: string, zIndex: number) {
+  constructor(
+    container: HTMLElement,
+    id: string,
+    zIndex: number,
+    protected colors: IColorSet
+  ) {
     this._canvas = document.createElement('canvas');
     this._canvas.id = `xterm-${id}-layer`;
     this._canvas.style.zIndex = zIndex.toString();
     this._ctx = this._canvas.getContext('2d');
     this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
     container.appendChild(this._canvas);
-
-    if (!BaseRenderLayer._charAtlasGenerator) {
-      BaseRenderLayer._charAtlasGenerator = new CharAtlasGenerator();
-    }
   }
 
-    // TODO: Should this do anything?
-  public onOptionsChanged(options: ITerminal): void {}
-  public onCursorMove(options: ITerminal): void {}
+  // TODO: Should this do anything?
+  public onOptionsChanged(terminal: ITerminal): void {}
+  public onCursorMove(terminal: ITerminal): void {}
+
+  public onThemeChanged(terminal: ITerminal, colorSet: IColorSet): void {
+    this._charAtlas = null;
+    acquireCharAtlas(terminal, this.colors).then(bitmap => {
+      this._charAtlas = bitmap;
+    });
+  }
 
   public resize(terminal: ITerminal, canvasWidth: number, canvasHeight: number, charSizeChanged: boolean): void {
     this.scaledCharWidth = terminal.charMeasure.width * window.devicePixelRatio;
@@ -40,17 +46,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._canvas.style.height = `${canvasHeight}px`;
 
     if (charSizeChanged) {
-      // Only update the char atlas if an update for the right dimensions is not
-      // already in progress
-      if (BaseRenderLayer._charAtlasCharWidth !== terminal.charMeasure.width ||
-          BaseRenderLayer._charAtlasCharHeight !== terminal.charMeasure.height) {
-        BaseRenderLayer._charAtlas = null;
-        BaseRenderLayer._charAtlasCharWidth = terminal.charMeasure.width;
-        BaseRenderLayer._charAtlasCharHeight = terminal.charMeasure.height;
-        BaseRenderLayer._charAtlasGenerator.generate(terminal, this.scaledCharWidth, this.scaledCharHeight).then(bitmap => {
-          BaseRenderLayer._charAtlas = bitmap;
-        });
-      }
+      acquireCharAtlas(terminal, this.colors).then(bitmap => {
+        this._charAtlas = bitmap;
+      });
     }
   }
 
@@ -91,7 +89,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     }
     if (code < 256 && (colorIndex > 0 || fg > 255)) {
       // ImageBitmap's draw about twice as fast as from a canvas
-      this._ctx.drawImage(BaseRenderLayer._charAtlas,
+      this._ctx.drawImage(this._charAtlas,
           code * this.scaledCharWidth, colorIndex * this.scaledCharHeight, this.scaledCharWidth, this.scaledCharHeight,
           x * this.scaledCharWidth, y * this.scaledCharHeight, this.scaledCharWidth, this.scaledCharHeight);
     } else {
@@ -108,7 +106,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
     // 256 color support
     if (fg < 256) {
-      this._ctx.fillStyle = COLORS[fg];
+      this._ctx.fillStyle = this.colors.ansi[fg];
     } else {
       this._ctx.fillStyle = '#ffffff';
     }
@@ -119,51 +117,3 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   }
 }
 
-class CharAtlasGenerator {
-  private _canvas: HTMLCanvasElement;
-  private _ctx: CanvasRenderingContext2D;
-
-  constructor() {
-    this._canvas = document.createElement('canvas');
-    this._ctx = this._canvas.getContext('2d');
-    this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-  }
-
-  public generate(terminal: ITerminal, scaledCharWidth: number, scaledCharHeight: number): Promise<ImageBitmap> {
-    this._canvas.width = 255 * scaledCharWidth;
-    this._canvas.height = (/*default*/1 + /*0-15*/16) * scaledCharHeight;
-
-    this._ctx.save();
-    this._ctx.fillStyle = '#ffffff';
-    this._ctx.font = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
-    this._ctx.textBaseline = 'top';
-
-    // Default color
-    for (let i = 0; i < 256; i++) {
-      this._ctx.fillText(String.fromCharCode(i), i * scaledCharWidth, 0);
-    }
-
-    // Colors 0-15
-    for (let colorIndex = 0; colorIndex < 16; colorIndex++) {
-      // colors 8-15 are bold
-      if (colorIndex === 8) {
-        this._ctx.font = `bold ${this._ctx.font}`;
-      }
-      const y = (colorIndex + 1) * scaledCharHeight;
-      // Clear rectangle as some fonts seem to draw over the bottom boundary
-      this._ctx.clearRect(0, y, this._canvas.width, scaledCharHeight);
-      // Draw ascii characters
-      for (let i = 0; i < 256; i++) {
-        this._ctx.fillStyle = COLORS[colorIndex];
-        this._ctx.fillText(String.fromCharCode(i), i * scaledCharWidth, y);
-      }
-    }
-    this._ctx.restore();
-
-    const charAtlasImageData = this._ctx.getImageData(0, 0, this._canvas.width, this._canvas.height);
-    const promise = window.createImageBitmap(charAtlasImageData);
-    // Clear the rect while the promise is in progress
-    this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
-    return promise;
-  }
-}

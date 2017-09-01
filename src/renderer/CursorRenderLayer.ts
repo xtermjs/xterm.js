@@ -1,11 +1,11 @@
-import { IDataRenderLayer } from './Interfaces';
+import { IDataRenderLayer, IColorSet } from './Interfaces';
 import { IBuffer, ICharMeasure, ITerminal, ITerminalOptions } from '../Interfaces';
 import { CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
-import { COLORS, COLOR_CODES } from './Color';
 import { GridCache } from './GridCache';
 import { FLAGS } from './Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { CharData } from '../Types';
+import { COLOR_CODES } from './ColorManager';
 
 /**
  * The time between cursor blinks.
@@ -17,8 +17,8 @@ export class CursorRenderLayer extends BaseRenderLayer implements IDataRenderLay
   private _cursorRenderers: {[key: string]: (terminal: ITerminal, x: number, y: number, charData: CharData) => void};
   private _cursorBlinkStateManager: CursorBlinkStateManager;
 
-  constructor(container: HTMLElement, zIndex: number) {
-    super(container, 'cursor', zIndex);
+  constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
+    super(container, 'cursor', zIndex, colors);
     this._state = null;
     this._cursorRenderers = {
       'bar': this._renderBarCursor.bind(this),
@@ -98,7 +98,7 @@ export class CursorRenderLayer extends BaseRenderLayer implements IDataRenderLay
 
     const charData = terminal.buffer.lines.get(cursorY)[terminal.buffer.x];
     this._ctx.save();
-    this._ctx.fillStyle = COLORS[COLOR_CODES.WHITE];
+    this._ctx.fillStyle = this.colors.ansi[COLOR_CODES.WHITE];
     this._cursorRenderers[terminal.options.cursorStyle || 'block'](terminal, terminal.buffer.x, viewportRelativeCursorY, charData);
     this._ctx.restore();
     this._state = [terminal.buffer.x, viewportRelativeCursorY];
@@ -157,7 +157,6 @@ class CursorBlinkStateManager {
   }
 
   public restartBlinkAnimation(terminal: ITerminal): void {
-    console.log('restartBlinkAnimation');
     // Save a timestamp so that the restart can be done on the next interval
     this._animationTimeRestarted = Date.now();
     // Force a cursor render to ensure it's visible and in the correct position
@@ -176,7 +175,6 @@ class CursorBlinkStateManager {
       window.clearInterval(this._blinkInterval);
     }
 
-    console.log('restartInterval');
     // Setup the initial timeout which will hide the cursor, this is done before
     // the regular interval is setup in order to support restarting the blink
     // animation in a lightweight way (without thrashing clearInterval and
@@ -191,7 +189,6 @@ class CursorBlinkStateManager {
         return;
       }
 
-      console.log('timeout');
       // Hide the cursor
       this.isCursorVisible = false;
       this._animationFrame = window.requestAnimationFrame(() => {
@@ -201,14 +198,12 @@ class CursorBlinkStateManager {
 
       // Setup the blink interval
       this._blinkInterval = <number><any>setInterval(() => {
-        console.log('interval');
         // Adjust the animation time if it was restarted
         if (this._animationTimeRestarted) {
           // calc time diff
           // Make restart interval do a setTimeout initially?
           const time = BLINK_INTERVAL - (Date.now() - this._animationTimeRestarted);
           this._animationTimeRestarted = null;
-          console.log('  restart in ', time);
           this._restartInterval(time);
           return;
         }

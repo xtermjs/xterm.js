@@ -39,7 +39,7 @@ import * as Mouse from './utils/Mouse';
 import { CHARSETS } from './Charsets';
 import { getRawByteCoords } from './utils/Mouse';
 import { CustomKeyEventHandler, Charset, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
-import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper } from './Interfaces';
+import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper, ITheme } from './Interfaces';
 import { BellSound } from './utils/Sounds';
 
 // Declare for RequireJS in loadAddon
@@ -410,6 +410,13 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    */
   public focus(): void {
     this.textarea.focus();
+  }
+
+  public setTheme(theme: ITheme): void {
+    // TODO: Allow setting of theme before renderer is ready
+    if (this.renderer) {
+      this.renderer.setTheme(theme);
+    }
   }
 
   /**
