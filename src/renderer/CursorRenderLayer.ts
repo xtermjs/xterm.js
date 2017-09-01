@@ -55,7 +55,7 @@ export class CursorRenderLayer extends BaseRenderLayer implements IDataRenderLay
     this._ctx.fillRect(terminal.buffer.x * scaledCharWidth, viewportRelativeCursorY * scaledCharHeight, scaledCharWidth, scaledCharHeight);
     this._ctx.restore();
 
-    const charData = terminal.buffer.lines.get(viewportRelativeCursorY)[terminal.buffer.x];
+    const charData = terminal.buffer.lines.get(cursorY)[terminal.buffer.x];
     this.drawChar(terminal, charData[CHAR_DATA_CHAR_INDEX], <number>charData[CHAR_DATA_CODE_INDEX], COLOR_CODES.BLACK, terminal.buffer.x, viewportRelativeCursorY, scaledCharWidth, scaledCharHeight);
 
     this._state = [terminal.buffer.x, viewportRelativeCursorY];
