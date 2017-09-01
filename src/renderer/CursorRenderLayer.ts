@@ -1,7 +1,7 @@
 import { IDataRenderLayer } from './Interfaces';
 import { IBuffer, ICharMeasure, ITerminal } from '../Interfaces';
 import { CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
-import { COLORS } from './Color';
+import { COLORS, COLOR_CODES } from './Color';
 import { GridCache } from './GridCache';
 import { FLAGS } from './Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
@@ -17,6 +17,7 @@ export class CursorRenderLayer extends BaseRenderLayer implements IDataRenderLay
   public render(terminal: ITerminal, startRow: number, endRow: number): void {
     // TODO: Track blur/focus somehow, support unfocused cursor
 
+    // TODO: scaledCharWidth should probably be on Base as a per-terminal thing
     const scaledCharWidth = Math.ceil(terminal.charMeasure.width) * window.devicePixelRatio;
     const scaledCharHeight = Math.ceil(terminal.charMeasure.height) * window.devicePixelRatio;
 
@@ -44,12 +45,12 @@ export class CursorRenderLayer extends BaseRenderLayer implements IDataRenderLay
     }
 
     this._ctx.save();
-    this._ctx.fillStyle = COLORS[7];
+    this._ctx.fillStyle = COLORS[COLOR_CODES.WHITE];
     this._ctx.fillRect(terminal.buffer.x * scaledCharWidth, viewportRelativeCursorY * scaledCharHeight, scaledCharWidth, scaledCharHeight);
     this._ctx.restore();
 
     const charData = terminal.buffer.lines.get(viewportRelativeCursorY)[terminal.buffer.x];
-    this.drawChar(charData[CHAR_DATA_CHAR_INDEX], <number>charData[CHAR_DATA_CODE_INDEX], 0, terminal.buffer.x, viewportRelativeCursorY, scaledCharWidth, scaledCharHeight);
+    this.drawChar(charData[CHAR_DATA_CHAR_INDEX], <number>charData[CHAR_DATA_CODE_INDEX], COLOR_CODES.BLACK, terminal.buffer.x, viewportRelativeCursorY, scaledCharWidth, scaledCharHeight);
 
     this._state = [terminal.buffer.x, viewportRelativeCursorY];
   }

@@ -6,6 +6,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   protected _canvas: HTMLCanvasElement;
   protected _ctx: CanvasRenderingContext2D;
 
+  // TODO: This will apply to all terminals, should it be per-terminal?
   protected static _charAtlas: ImageBitmap;
   private static _charAtlasCharWidth: number;
   private static _charAtlasCharHeight: number;
@@ -29,7 +30,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._canvas.height = canvasHeight * window.devicePixelRatio;
     this._canvas.style.width = `${canvasWidth}px`;
     this._canvas.style.height = `${canvasHeight}px`;
-    // Only update the char atlas if the char size changed
+
     if (charSizeChanged) {
       // Only update the char atlas if an update for the right dimensions is not
       // already in progress
