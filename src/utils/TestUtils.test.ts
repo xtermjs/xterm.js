@@ -52,6 +52,9 @@ export class MockTerminal implements ITerminal {
   showCursor(): void {
     throw new Error('Method not implemented.');
   }
+  refresh(start: number, end: number): void {
+    throw new Error('Method not implemented.');
+  }
   blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): LineData {
     const line: LineData = [];
     cols = cols || this.cols;

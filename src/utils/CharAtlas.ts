@@ -1,17 +1,92 @@
-import { ITerminal } from '../Interfaces';
+import { ITerminal, ITheme } from '../Interfaces';
 import { IColorSet } from '../renderer/Interfaces';
+
+interface ICharAtlasConfig {
+  fontSize: number;
+  fontFamily: string;
+  scaledCharWidth: number;
+  scaledCharHeight: number;
+  colors: IColorSet;
+}
+
+interface ICharAtlasCacheEntry {
+  bitmap: Promise<ImageBitmap>;
+  config: ICharAtlasConfig;
+  ownedBy: ITerminal[];
+}
+
+let charAtlasCache: ICharAtlasCacheEntry[] = [];
 
 export function acquireCharAtlas(terminal: ITerminal, colors: IColorSet): Promise<ImageBitmap> {
   const scaledCharWidth = terminal.charMeasure.width * window.devicePixelRatio;
   const scaledCharHeight = terminal.charMeasure.height * window.devicePixelRatio;
+  const newConfig = generateConfig(scaledCharWidth, scaledCharHeight, terminal, colors);
 
-  // TODO: Check to see if the atlas already exists in a cache
+  // Check to see if the terminal already owns this config
+  for (let i = 0; i < charAtlasCache.length; i++) {
+    const entry = charAtlasCache[i];
+    const ownedByIndex = entry.ownedBy.indexOf(terminal);
+    if (ownedByIndex >= 0) {
+      if (configEquals(entry.config, newConfig)) {
+        return entry.bitmap;
+      } else {
+        // The configs differ, release the terminal from the entry
+        if (entry.ownedBy.length === 1) {
+          charAtlasCache.splice(i, 1);
+        } else {
+          entry.ownedBy.splice(ownedByIndex, 1);
+        }
+        break;
+      }
+    }
+  }
 
-  return generator.generate(scaledCharWidth, scaledCharHeight, terminal.options.fontSize, terminal.options.fontFamily, colors.foreground, colors.ansi);
+  // Try match a char atlas from the cache
+  for (let i = 0; i < charAtlasCache.length; i++) {
+    const entry = charAtlasCache[i];
+    if (configEquals(entry.config, newConfig)) {
+      // Add the terminal to the cache entry and return
+      entry.ownedBy.push(terminal);
+      return entry.bitmap;
+    }
+  }
+
+  const newEntry: ICharAtlasCacheEntry = {
+    bitmap: generator.generate(scaledCharWidth, scaledCharHeight, terminal.options.fontSize, terminal.options.fontFamily, colors.foreground, colors.ansi),
+    config: newConfig,
+    ownedBy: [terminal]
+  };
+  charAtlasCache.push(newEntry);
+  return newEntry.bitmap;
 }
 
-export function releaseCharAtlas(terminal: ITerminal): void {
-  // TODO: Release the char atlas if it's no longer needed
+function generateConfig(scaledCharWidth: number, scaledCharHeight: number, terminal: ITerminal, colors: IColorSet): ICharAtlasConfig {
+  const clonedColors = {
+    foreground: colors.foreground,
+    background: colors.background,
+    ansi: colors.ansi.slice(0, 16)
+  };
+  return {
+    scaledCharWidth,
+    scaledCharHeight,
+    fontFamily: terminal.options.fontFamily,
+    fontSize: terminal.options.fontSize,
+    colors: clonedColors
+  };
+}
+
+function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean {
+  for (let i = 0; i < a.colors.ansi.length; i++) {
+    if (a.colors.ansi[i] !== b.colors.ansi[i]) {
+      return false;
+    }
+  }
+  return a.fontFamily === b.fontFamily &&
+      a.fontSize === b.fontSize &&
+      a.scaledCharWidth === b.scaledCharWidth &&
+      a.scaledCharHeight === b.scaledCharHeight &&
+      a.colors.foreground === b.colors.foreground &&
+      a.colors.background === b.colors.background;
 }
 
 class CharAtlasGenerator {

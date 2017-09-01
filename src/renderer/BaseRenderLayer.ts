@@ -32,9 +32,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
   public onThemeChanged(terminal: ITerminal, colorSet: IColorSet): void {
     this._charAtlas = null;
-    acquireCharAtlas(terminal, this.colors).then(bitmap => {
-      this._charAtlas = bitmap;
-    });
+    acquireCharAtlas(terminal, this.colors).then(bitmap => this._charAtlas = bitmap);
   }
 
   public resize(terminal: ITerminal, canvasWidth: number, canvasHeight: number, charSizeChanged: boolean): void {
@@ -46,9 +44,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._canvas.style.height = `${canvasHeight}px`;
 
     if (charSizeChanged) {
-      acquireCharAtlas(terminal, this.colors).then(bitmap => {
-        this._charAtlas = bitmap;
-      });
+      acquireCharAtlas(terminal, this.colors).then(bitmap => this._charAtlas = bitmap);
     }
   }
 
