@@ -28,8 +28,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   }
 
   public resize(terminal: ITerminal, canvasWidth: number, canvasHeight: number, charSizeChanged: boolean): void {
-    this.scaledCharWidth = Math.ceil(terminal.charMeasure.width) * window.devicePixelRatio;
-    this.scaledCharHeight = Math.ceil(terminal.charMeasure.height) * window.devicePixelRatio;
+    this.scaledCharWidth = terminal.charMeasure.width * window.devicePixelRatio;
+    this.scaledCharHeight = terminal.charMeasure.height * window.devicePixelRatio;
     this._canvas.width = canvasWidth * window.devicePixelRatio;
     this._canvas.height = canvasHeight * window.devicePixelRatio;
     this._canvas.style.width = `${canvasWidth}px`;
@@ -43,7 +43,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
         BaseRenderLayer._charAtlas = null;
         BaseRenderLayer._charAtlasCharWidth = terminal.charMeasure.width;
         BaseRenderLayer._charAtlasCharHeight = terminal.charMeasure.height;
-        BaseRenderLayer._charAtlasGenerator.generate(terminal, terminal.charMeasure.width, terminal.charMeasure.height).then(bitmap => {
+        BaseRenderLayer._charAtlasGenerator.generate(terminal, this.scaledCharWidth, this.scaledCharHeight).then(bitmap => {
           BaseRenderLayer._charAtlas = bitmap;
         });
       }
@@ -109,9 +109,7 @@ class CharAtlasGenerator {
     this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
   }
 
-  public generate(terminal: ITerminal, charWidth: number, charHeight: number): Promise<ImageBitmap> {
-    const scaledCharWidth = Math.ceil(charWidth) * window.devicePixelRatio;
-    const scaledCharHeight = Math.ceil(charHeight) * window.devicePixelRatio;
+  public generate(terminal: ITerminal, scaledCharWidth: number, scaledCharHeight: number): Promise<ImageBitmap> {
     this._canvas.width = 255 * scaledCharWidth;
     this._canvas.height = (/*default*/1 + /*0-15*/16) * scaledCharHeight;
 

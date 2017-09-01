@@ -32,17 +32,16 @@ export class Renderer {
   }
 
   public onResize(cols: number, rows: number): void {
-    const width = Math.ceil(this._terminal.charMeasure.width) * this._terminal.cols;
-    const height = Math.ceil(this._terminal.charMeasure.height) * this._terminal.rows;
+    const width = this._terminal.charMeasure.width * this._terminal.cols;
+    const height = this._terminal.charMeasure.height * this._terminal.rows;
     for (let i = 0; i < this._dataRenderLayers.length; i++) {
       this._dataRenderLayers[i].resize(this._terminal, width, height, false);
     }
   }
 
   public onCharSizeChanged(charWidth: number, charHeight: number): void {
-    console.log('Renderer.onCharSizeChanged', charWidth, charHeight);
-    const width = Math.ceil(charWidth) * this._terminal.cols;
-    const height = Math.ceil(charHeight) * this._terminal.rows;
+    const width = charWidth * this._terminal.cols;
+    const height = charHeight * this._terminal.rows;
     for (let i = 0; i < this._dataRenderLayers.length; i++) {
       this._dataRenderLayers[i].resize(this._terminal, width, height, true);
     }
