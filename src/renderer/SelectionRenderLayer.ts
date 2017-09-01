@@ -27,9 +27,6 @@ export class SelectionRenderLayer extends BaseRenderLayer implements ISelectionR
   }
 
   public render(terminal: ITerminal, start: [number, number], end: [number, number]): void {
-    const scaledCharWidth = Math.ceil(terminal.charMeasure.width) * window.devicePixelRatio;
-    const scaledCharHeight = Math.ceil(terminal.charMeasure.height) * window.devicePixelRatio;
-
     // Selection has not changed
     if (this._state.start === start || this._state.end === end) {
       return;
@@ -58,17 +55,17 @@ export class SelectionRenderLayer extends BaseRenderLayer implements ISelectionR
     const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
     const startRowEndCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : terminal.cols;
     this._ctx.fillStyle = 'rgba(255,255,255,0.3)';
-    this._ctx.fillRect(startCol * scaledCharWidth, viewportCappedStartRow * scaledCharHeight, (startRowEndCol - startCol) * scaledCharWidth, scaledCharHeight);
+    this._ctx.fillRect(startCol * this.scaledCharWidth, viewportCappedStartRow * this.scaledCharHeight, (startRowEndCol - startCol) * this.scaledCharWidth, this.scaledCharHeight);
 
     // Draw middle rows
     const middleRowsCount = Math.max(viewportCappedEndRow - viewportCappedStartRow - 1, 0);
-    this._ctx.fillRect(0, (viewportCappedStartRow + 1) * scaledCharHeight, terminal.cols * scaledCharWidth, middleRowsCount * scaledCharHeight);
+    this._ctx.fillRect(0, (viewportCappedStartRow + 1) * this.scaledCharHeight, terminal.cols * this.scaledCharWidth, middleRowsCount * this.scaledCharHeight);
 
     // Draw final row
     if (viewportCappedStartRow !== viewportCappedEndRow) {
       // Only draw viewportEndRow if it's not the same as viewporttartRow
       const endCol = viewportEndRow === viewportCappedEndRow ? end[0] : terminal.cols;
-      this._ctx.fillRect(0, viewportCappedEndRow * scaledCharHeight, endCol * scaledCharWidth, scaledCharHeight);
+      this._ctx.fillRect(0, viewportCappedEndRow * this.scaledCharHeight, endCol * this.scaledCharWidth, this.scaledCharHeight);
     }
 
     // Save state for next render

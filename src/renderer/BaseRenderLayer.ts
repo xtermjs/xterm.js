@@ -5,6 +5,8 @@ import { COLORS } from './Color';
 export abstract class BaseRenderLayer implements IRenderLayer {
   protected _canvas: HTMLCanvasElement;
   protected _ctx: CanvasRenderingContext2D;
+  protected scaledCharWidth: number;
+  protected scaledCharHeight: number;
 
   // TODO: This will apply to all terminals, should it be per-terminal?
   protected static _charAtlas: ImageBitmap;
@@ -26,6 +28,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   }
 
   public resize(terminal: ITerminal, canvasWidth: number, canvasHeight: number, charSizeChanged: boolean): void {
+    this.scaledCharWidth = Math.ceil(terminal.charMeasure.width) * window.devicePixelRatio;
+    this.scaledCharHeight = Math.ceil(terminal.charMeasure.height) * window.devicePixelRatio;
     this._canvas.width = canvasWidth * window.devicePixelRatio;
     this._canvas.height = canvasHeight * window.devicePixelRatio;
     this._canvas.style.width = `${canvasWidth}px`;

@@ -25,9 +25,6 @@ export class BackgroundRenderLayer extends BaseRenderLayer implements IDataRende
   }
 
   public render(terminal: ITerminal, startRow: number, endRow: number): void {
-    const scaledCharWidth = Math.ceil(terminal.charMeasure.width) * window.devicePixelRatio;
-    const scaledCharHeight = Math.ceil(terminal.charMeasure.height) * window.devicePixelRatio;
-
     for (let y = startRow; y <= endRow; y++) {
       let row = y + terminal.buffer.ydisp;
       let line = terminal.buffer.lines.get(row);
@@ -51,11 +48,11 @@ export class BackgroundRenderLayer extends BaseRenderLayer implements IDataRende
           if (bg < 256) {
             this._ctx.save();
             this._ctx.fillStyle = COLORS[bg];
-            this._ctx.fillRect(x * scaledCharWidth, y * scaledCharHeight, scaledCharWidth, scaledCharHeight);
+            this._ctx.fillRect(x * this.scaledCharWidth, y * this.scaledCharHeight, this.scaledCharWidth, this.scaledCharHeight);
             this._ctx.restore();
             this._state.cache[x][y] = bg;
           } else {
-            this._ctx.clearRect(x * scaledCharWidth, y * scaledCharHeight, scaledCharWidth, scaledCharHeight);
+            this._ctx.clearRect(x * this.scaledCharWidth, y * this.scaledCharHeight, this.scaledCharWidth, this.scaledCharHeight);
             this._state.cache[x][y] = null;
           }
         }

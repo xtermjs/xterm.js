@@ -15,21 +15,15 @@ export class CursorRenderLayer extends BaseRenderLayer implements IDataRenderLay
   }
 
   public clear(terminal: ITerminal): void {
-    const scaledCharWidth = Math.ceil(terminal.charMeasure.width) * window.devicePixelRatio;
-    const scaledCharHeight = Math.ceil(terminal.charMeasure.height) * window.devicePixelRatio;
-    this._clearCursor(scaledCharWidth, scaledCharHeight);
+    this._clearCursor();
   }
 
   public render(terminal: ITerminal, startRow: number, endRow: number): void {
     // TODO: Track blur/focus somehow, support unfocused cursor
 
-    // TODO: scaledCharWidth should probably be on Base as a per-terminal thing
-    const scaledCharWidth = Math.ceil(terminal.charMeasure.width) * window.devicePixelRatio;
-    const scaledCharHeight = Math.ceil(terminal.charMeasure.height) * window.devicePixelRatio;
-
     // Don't draw the cursor if it's hidden
     if (!terminal.cursorState || terminal.cursorHidden) {
-      this._clearCursor(scaledCharWidth, scaledCharHeight);
+      this._clearCursor();
       return;
     }
 
@@ -38,7 +32,7 @@ export class CursorRenderLayer extends BaseRenderLayer implements IDataRenderLay
 
     // Don't draw the cursor if it's off-screen
     if (viewportRelativeCursorY < 0 || viewportRelativeCursorY >= terminal.rows) {
-      this._clearCursor(scaledCharWidth, scaledCharHeight);
+      this._clearCursor();
       return;
     }
 
@@ -47,23 +41,23 @@ export class CursorRenderLayer extends BaseRenderLayer implements IDataRenderLay
       if (this._state[0] === terminal.buffer.x && this._state[1] === viewportRelativeCursorY) {
         return;
       }
-      this._clearCursor(scaledCharWidth, scaledCharHeight);
+      this._clearCursor();
     }
 
     this._ctx.save();
     this._ctx.fillStyle = COLORS[COLOR_CODES.WHITE];
-    this._ctx.fillRect(terminal.buffer.x * scaledCharWidth, viewportRelativeCursorY * scaledCharHeight, scaledCharWidth, scaledCharHeight);
+    this._ctx.fillRect(terminal.buffer.x * this.scaledCharWidth, viewportRelativeCursorY * this.scaledCharHeight, this.scaledCharWidth, this.scaledCharHeight);
     this._ctx.restore();
 
     const charData = terminal.buffer.lines.get(cursorY)[terminal.buffer.x];
-    this.drawChar(terminal, charData[CHAR_DATA_CHAR_INDEX], <number>charData[CHAR_DATA_CODE_INDEX], COLOR_CODES.BLACK, terminal.buffer.x, viewportRelativeCursorY, scaledCharWidth, scaledCharHeight);
+    this.drawChar(terminal, charData[CHAR_DATA_CHAR_INDEX], <number>charData[CHAR_DATA_CODE_INDEX], COLOR_CODES.BLACK, terminal.buffer.x, viewportRelativeCursorY, this.scaledCharWidth, this.scaledCharHeight);
 
     this._state = [terminal.buffer.x, viewportRelativeCursorY];
   }
 
-  private _clearCursor(scaledCharWidth: number, scaledCharHeight: number): void {
+  private _clearCursor(): void {
     if (this._state) {
-      this._ctx.clearRect(this._state[0] * scaledCharWidth, this._state[1] * scaledCharHeight, scaledCharWidth, scaledCharHeight);
+      this._ctx.clearRect(this._state[0] * this.scaledCharWidth, this._state[1] * this.scaledCharHeight, this.scaledCharWidth, this.scaledCharHeight);
       this._state = null;
     }
   }

@@ -26,9 +26,6 @@ export class ForegroundRenderLayer extends BaseRenderLayer implements IDataRende
   }
 
   public render(terminal: ITerminal, startRow: number, endRow: number): void {
-    const scaledCharWidth = Math.ceil(terminal.charMeasure.width) * window.devicePixelRatio;
-    const scaledCharHeight = Math.ceil(terminal.charMeasure.height) * window.devicePixelRatio;
-
     // TODO: Ensure that the render is eventually performed
     // Don't bother render until the atlas bitmap is ready
     // TODO: Move this to BaseRenderLayer?
@@ -56,7 +53,7 @@ export class ForegroundRenderLayer extends BaseRenderLayer implements IDataRende
         this._state.cache[x][y] = charData;
 
         // Clear the old character
-        this._ctx.clearRect(x * scaledCharWidth, y * scaledCharHeight, scaledCharWidth, scaledCharHeight);
+        this._ctx.clearRect(x * this.scaledCharWidth, y * this.scaledCharHeight, this.scaledCharWidth, this.scaledCharHeight);
 
         // Skip rendering if the character is invisible
         if (!code || code === 32 /*' '*/) {
@@ -83,7 +80,7 @@ export class ForegroundRenderLayer extends BaseRenderLayer implements IDataRende
           }
         }
 
-        this.drawChar(terminal, char, code, fg, x, y, scaledCharWidth, scaledCharHeight);
+        this.drawChar(terminal, char, code, fg, x, y, this.scaledCharWidth, this.scaledCharHeight);
       }
     }
   }
