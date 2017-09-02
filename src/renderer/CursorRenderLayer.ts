@@ -13,7 +13,7 @@ import { COLOR_CODES } from './ColorManager';
 const BLINK_INTERVAL = 600;
 
 export class CursorRenderLayer extends BaseRenderLayer {
-  private _state: [number, number, string];
+  private _state: [number, number, boolean, string];
   private _cursorRenderers: {[key: string]: (terminal: ITerminal, x: number, y: number, charData: CharData) => void};
   private _cursorBlinkStateManager: CursorBlinkStateManager;
   private _isFocused: boolean;
@@ -40,14 +40,14 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
   public onBlur(terminal: ITerminal): void {
     if (this._cursorBlinkStateManager) {
-      // this._cursorBlinkStateManager.pause();
+      this._cursorBlinkStateManager.pause();
     }
     terminal.refresh(terminal.buffer.y, terminal.buffer.y);
   }
 
   public onFocus(terminal: ITerminal): void {
     if (this._cursorBlinkStateManager) {
-      // this._cursorBlinkStateManager.resume();
+      this._cursorBlinkStateManager.resume();
     }
     terminal.refresh(terminal.buffer.y, terminal.buffer.y);
   }
@@ -107,6 +107,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
       this._ctx.fillStyle = this.colors.ansi[COLOR_CODES.WHITE];
       this._renderBlurCursor(terminal, terminal.buffer.x, viewportRelativeCursorY, charData);
       this._ctx.restore();
+      this._state = [terminal.buffer.x, viewportRelativeCursorY, terminal.isFocused, terminal.options.cursorStyle];
       return;
     }
 
@@ -120,7 +121,8 @@ export class CursorRenderLayer extends BaseRenderLayer {
       // The cursor is already in the correct spot, don't redraw
       if (this._state[0] === terminal.buffer.x &&
           this._state[1] === viewportRelativeCursorY &&
-          this._state[2] === terminal.options.cursorStyle) {
+          this._state[2] === terminal.isFocused &&
+          this._state[3] === terminal.options.cursorStyle) {
         // TODO: Ideally cursorStyle would be stored as a number here to prevent the string compare
         return;
       }
@@ -131,7 +133,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     this._ctx.fillStyle = this.colors.ansi[COLOR_CODES.WHITE];
     this._cursorRenderers[terminal.options.cursorStyle || 'block'](terminal, terminal.buffer.x, viewportRelativeCursorY, charData);
     this._ctx.restore();
-    this._state = [terminal.buffer.x, viewportRelativeCursorY, terminal.options.cursorStyle];
+    this._state = [terminal.buffer.x, viewportRelativeCursorY, terminal.isFocused, terminal.options.cursorStyle];
   }
 
   private _clearCursor(): void {
@@ -261,11 +263,18 @@ class CursorBlinkStateManager {
     }, timeToStart);
   }
 
-  private _pauseBlinkAnimation(): void {
-    // TODO: Pause the blink animation on blur
+  public pause(): void {
+    this.isCursorVisible = true;
+    window.clearInterval(this._blinkInterval);
+    this._blinkInterval = null;
+    if (this._animationFrame) {
+      window.cancelAnimationFrame(this._animationFrame);
+      this._animationFrame = null;
+    }
   }
 
-  private _resumeBlinkAnimation(): void {
-    // TODO: Resume the blink animation on focus
+  public resume(): void {
+    console.log('resume');
+    this._restartInterval();
   }
 }
