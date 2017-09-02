@@ -35,6 +35,7 @@ export interface ITerminal extends IEventEmitter {
   options: ITerminalOptions;
   buffers: IBufferSet;
   buffer: IBuffer;
+  isFocused: boolean;
 
   /**
    * Emit the 'data' event and populate the given data.

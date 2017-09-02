@@ -2,6 +2,16 @@ import { ITerminal, ITerminalOptions } from '../Interfaces';
 
 export interface IRenderLayer {
   /**
+   * Called when the terminal loses focus.
+   */
+  onBlur(terminal: ITerminal): void;
+
+  /**
+   * * Called when the terminal gets focus.
+   */
+  onFocus(terminal: ITerminal): void;
+
+  /**
    * Called when the cursor is moved.
    */
   onCursorMove(terminal: ITerminal): void;

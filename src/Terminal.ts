@@ -412,6 +412,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.textarea.focus();
   }
 
+  public get isFocused(): boolean {
+    return document.activeElement === this.textarea;
+  }
+
   public setTheme(theme: ITheme): void {
     // TODO: Allow setting of theme before renderer is ready
     if (this.renderer) {

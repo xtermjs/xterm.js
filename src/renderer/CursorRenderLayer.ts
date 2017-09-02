@@ -16,6 +16,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
   private _state: [number, number];
   private _cursorRenderers: {[key: string]: (terminal: ITerminal, x: number, y: number, charData: CharData) => void};
   private _cursorBlinkStateManager: CursorBlinkStateManager;
+  private _isFocused: boolean;
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
     super(container, 'cursor', zIndex, colors);
@@ -35,6 +36,20 @@ export class CursorRenderLayer extends BaseRenderLayer {
       this._cursorBlinkStateManager = null;
       this.onOptionsChanged(terminal);
     }
+  }
+
+  public onBlur(terminal: ITerminal): void {
+    if (this._cursorBlinkStateManager) {
+      // this._cursorBlinkStateManager.pause();
+    }
+    terminal.refresh(terminal.buffer.y, terminal.buffer.y);
+  }
+
+  public onFocus(terminal: ITerminal): void {
+    if (this._cursorBlinkStateManager) {
+      // this._cursorBlinkStateManager.resume();
+    }
+    terminal.refresh(terminal.buffer.y, terminal.buffer.y);
   }
 
   public onOptionsChanged(terminal: ITerminal): void {
@@ -69,11 +84,8 @@ export class CursorRenderLayer extends BaseRenderLayer {
   }
 
   private _render(terminal: ITerminal, triggeredByAnimationFrame: boolean): void {
-    // TODO: Track blur/focus somehow, support unfocused cursor
     // Don't draw the cursor if it's hidden
-    if (!terminal.cursorState ||
-        terminal.cursorHidden ||
-        (this._cursorBlinkStateManager && !this._cursorBlinkStateManager.isCursorVisible)) {
+    if (!terminal.cursorState || terminal.cursorHidden) {
       this._clearCursor();
       return;
     }
@@ -87,6 +99,23 @@ export class CursorRenderLayer extends BaseRenderLayer {
       return;
     }
 
+    const charData = terminal.buffer.lines.get(cursorY)[terminal.buffer.x];
+
+    if (!terminal.isFocused) {
+      this._clearCursor();
+      this._ctx.save();
+      this._ctx.fillStyle = this.colors.ansi[COLOR_CODES.WHITE];
+      this._renderBlurCursor(terminal, terminal.buffer.x, viewportRelativeCursorY, charData);
+      this._ctx.restore();
+      return;
+    }
+
+    // Don't draw the cursor if it's blinking
+    if (this._cursorBlinkStateManager && !this._cursorBlinkStateManager.isCursorVisible) {
+      this._clearCursor();
+      return;
+    }
+
     if (this._state) {
       // The cursor is already in the correct spot, don't redraw
       if (this._state[0] === terminal.buffer.x && this._state[1] === viewportRelativeCursorY) {
@@ -95,7 +124,6 @@ export class CursorRenderLayer extends BaseRenderLayer {
       this._clearCursor();
     }
 
-    const charData = terminal.buffer.lines.get(cursorY)[terminal.buffer.x];
     this._ctx.save();
     this._ctx.fillStyle = this.colors.ansi[COLOR_CODES.WHITE];
     this._cursorRenderers[terminal.options.cursorStyle || 'block'](terminal, terminal.buffer.x, viewportRelativeCursorY, charData);
@@ -111,7 +139,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
   }
 
   private _renderBarCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
-    this.fillLeftLineAtCell(x, y);
+    this.drawLeftLineAtCell(x, y);
   }
 
   private _renderBlockCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
@@ -120,7 +148,12 @@ export class CursorRenderLayer extends BaseRenderLayer {
   }
 
   private _renderUnderlineCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
-    this.fillBottomLineAtCell(x, y);
+    this.drawBottomLineAtCell(x, y);
+  }
+
+  private _renderBlurCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
+    // TODO: Support cursor colors
+    this.drawSquareAtCell(x, y, this.colors.foreground);
   }
 }
 

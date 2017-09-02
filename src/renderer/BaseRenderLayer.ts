@@ -30,6 +30,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
   // TODO: Should this do anything?
   public onOptionsChanged(terminal: ITerminal): void {}
+  public onBlur(terminal: ITerminal): void {}
+  public onFocus(terminal: ITerminal): void {}
   public onCursorMove(terminal: ITerminal): void {}
   public onGridChanged(terminal: ITerminal, startRow: number, endRow: number): void {}
   public onSelectionChanged(terminal: ITerminal, start: [number, number], end: [number, number]): void {}
@@ -58,7 +60,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.fillRect(startCol * this.scaledCharWidth, startRow * this.scaledCharHeight, colWidth * this.scaledCharWidth, colHeight * this.scaledCharHeight);
   }
 
-  protected fillBottomLineAtCell(x: number, y: number): void {
+  protected drawBottomLineAtCell(x: number, y: number): void {
     this._ctx.fillRect(
         x * this.scaledCharWidth,
         (y + 1) * this.scaledCharHeight - window.devicePixelRatio - 1 /* Ensure it's drawn within the cell */,
@@ -66,12 +68,22 @@ export abstract class BaseRenderLayer implements IRenderLayer {
         window.devicePixelRatio);
   }
 
-  protected fillLeftLineAtCell(x: number, y: number): void {
+  protected drawLeftLineAtCell(x: number, y: number): void {
     this._ctx.fillRect(
         x * this.scaledCharWidth,
         y * this.scaledCharHeight,
         window.devicePixelRatio,
         this.scaledCharHeight);
+  }
+
+  protected drawSquareAtCell(x: number, y: number, color: string): void {
+    this._ctx.strokeStyle = color;
+    this._ctx.lineWidth = window.devicePixelRatio;
+    this._ctx.strokeRect(
+        x * this.scaledCharWidth + window.devicePixelRatio / 2,
+        y * this.scaledCharHeight + (window.devicePixelRatio / 2),
+        this.scaledCharWidth - window.devicePixelRatio,
+        this.scaledCharHeight - window.devicePixelRatio);
   }
 
   protected clearAll(): void {

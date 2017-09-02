@@ -57,6 +57,14 @@ export class Renderer {
     this._renderLayers.forEach(l => l.resize(this._terminal, width, height, true));
   }
 
+  public onBlur(): void {
+    this._renderLayers.forEach(l => l.onBlur(this._terminal));
+  }
+
+  public onFocus(): void {
+    this._renderLayers.forEach(l => l.onFocus(this._terminal));
+  }
+
   public onSelectionChanged(start: [number, number], end: [number, number]): void {
     this._renderLayers.forEach(l => l.onSelectionChanged(this._terminal, start, end));
   }
