@@ -3,7 +3,7 @@ import { IBuffer, ICharMeasure, ITerminal } from '../Interfaces';
 import { CHAR_DATA_ATTR_INDEX } from '../Buffer';
 import { GridCache } from './GridCache';
 import { FLAGS } from './Types';
-import { BaseRenderLayer } from './BaseRenderLayer';
+import { BaseRenderLayer, INVERTED_DEFAULT_COLOR } from './BaseRenderLayer';
 
 export class BackgroundRenderLayer extends BaseRenderLayer {
   private _state: GridCache<number>;
@@ -39,9 +39,8 @@ export class BackgroundRenderLayer extends BaseRenderLayer {
         // If inverse flag is on, the background should become the foreground.
         if (flags & FLAGS.INVERSE) {
           bg = (attr >> 9) & 0x1ff;
-          // TODO: Is this case still needed
           if (bg === 257) {
-            bg = 15;
+            bg = INVERTED_DEFAULT_COLOR;
           }
         }
 
@@ -50,7 +49,7 @@ export class BackgroundRenderLayer extends BaseRenderLayer {
         if (needsRefresh) {
           if (bg < 256) {
             this._ctx.save();
-            this._ctx.fillStyle = this.colors.ansi[bg];
+            this._ctx.fillStyle = (bg === INVERTED_DEFAULT_COLOR ? this.colors.foreground : this.colors.ansi[bg]);
             this.fillCells(x, y, 1, 1);
             this._ctx.restore();
             this._state.cache[x][y] = bg;

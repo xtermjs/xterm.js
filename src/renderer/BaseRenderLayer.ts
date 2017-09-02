@@ -2,6 +2,8 @@ import { IRenderLayer, IColorSet } from './Interfaces';
 import { ITerminal, ITerminalOptions } from '../Interfaces';
 import { acquireCharAtlas } from '../utils/CharAtlas';
 
+export const INVERTED_DEFAULT_COLOR = -1;
+
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
   protected _ctx: CanvasRenderingContext2D;
@@ -102,11 +104,13 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.font = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
     this._ctx.textBaseline = 'top';
 
-    // 256 color support
-    if (fg < 256) {
+    if (fg === INVERTED_DEFAULT_COLOR) {
+      this._ctx.fillStyle = this.colors.background;
+    } else if (fg < 256) {
+      // 256 color support
       this._ctx.fillStyle = this.colors.ansi[fg];
     } else {
-      this._ctx.fillStyle = '#ffffff';
+      this._ctx.fillStyle = this.colors.foreground;
     }
 
     // TODO: Do we care about width for rendering wide chars?

@@ -4,7 +4,7 @@ import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_
 import { FLAGS } from './Types';
 import { GridCache } from './GridCache';
 import { CharData } from '../Types';
-import { BaseRenderLayer } from './BaseRenderLayer';
+import { BaseRenderLayer, INVERTED_DEFAULT_COLOR } from './BaseRenderLayer';
 
 export class ForegroundRenderLayer extends BaseRenderLayer {
   private _state: GridCache<CharData>;
@@ -74,8 +74,8 @@ export class ForegroundRenderLayer extends BaseRenderLayer {
         if (flags & FLAGS.INVERSE) {
           fg = attr & 0x1ff;
           // TODO: Is this case still needed
-          if (fg === 257) {
-            fg = 0;
+          if (fg === 256) {
+            fg = INVERTED_DEFAULT_COLOR;
           }
         }
 
