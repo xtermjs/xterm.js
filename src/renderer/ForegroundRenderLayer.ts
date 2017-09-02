@@ -101,7 +101,6 @@ export class ForegroundRenderLayer extends BaseRenderLayer {
         }
 
         const width: number = charData[CHAR_DATA_WIDTH_INDEX];
-
         this.drawChar(terminal, char, code, width, x, y, fg);
 
         this._ctx.restore();

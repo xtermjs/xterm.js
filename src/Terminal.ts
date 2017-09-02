@@ -41,6 +41,7 @@ import { getRawByteCoords } from './utils/Mouse';
 import { CustomKeyEventHandler, Charset, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
 import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper, ITheme } from './Interfaces';
 import { BellSound } from './utils/Sounds';
+import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 
 // Declare for RequireJS in loadAddon
 declare var define: any;
@@ -60,80 +61,6 @@ const WRITE_BUFFER_PAUSE_THRESHOLD = 5;
  * renderer to catch up with a 0ms setTimeout.
  */
 const WRITE_BATCH_SIZE = 300;
-
-// TODO: Most of the color code should be removed after truecolor is implemented
-// Colors 0-15
-const tangoColors: string[] = [
-  // dark:
-  '#2e3436',
-  '#cc0000',
-  '#4e9a06',
-  '#c4a000',
-  '#3465a4',
-  '#75507b',
-  '#06989a',
-  '#d3d7cf',
-  // bright:
-  '#555753',
-  '#ef2929',
-  '#8ae234',
-  '#fce94f',
-  '#729fcf',
-  '#ad7fa8',
-  '#34e2e2',
-  '#eeeeec'
-];
-
-// Colors 0-15 + 16-255
-// Much thanks to TooTallNate for writing this.
-const defaultColors: string[] = (function(): string[] {
-  let colors = tangoColors.slice();
-  let r = [0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff];
-  let i;
-
-  // 16-231
-  i = 0;
-  for (; i < 216; i++) {
-    out(r[(i / 36) % 6 | 0], r[(i / 6) % 6 | 0], r[i % 6]);
-  }
-
-  // 232-255 (grey)
-  i = 0;
-  let c: number;
-  for (; i < 24; i++) {
-    c = 8 + i * 10;
-    out(c, c, c);
-  }
-
-  function out(r: number, g: number, b: number): void {
-    colors.push('#' + hex(r) + hex(g) + hex(b));
-  }
-
-  function hex(c: number): string {
-    let s = c.toString(16);
-    return s.length < 2 ? '0' + s : s;
-  }
-
-  return colors;
-})();
-
-const _colors: string[] = defaultColors.slice();
-
-const vcolors: number[][] = (function(): number[][] {
-  const out: number[][] = [];
-  let color;
-
-  for (let i = 0; i < 256; i++) {
-    color = parseInt(defaultColors[i].substring(1), 16);
-    out.push([
-      (color >> 16) & 0xff,
-      (color >> 8) & 0xff,
-      color & 0xff
-    ]);
-  }
-
-  return out;
-})();
 
 const DEFAULT_OPTIONS: ITerminalOptions = {
   convertEol: false,
@@ -2139,44 +2066,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     return false;
   }
 
-  // Expose to InputHandler
-  // TODO: Revise when truecolor is introduced.
+  // TODO: Remove when true color is implemented
   public matchColor(r1: number, g1: number, b1: number): number {
-    const hash = (r1 << 16) | (g1 << 8) | b1;
-
-    if (matchColorCache[hash] != null) {
-      return matchColorCache[hash];
-    }
-
-    let ldiff = Infinity;
-    let li = -1;
-    let i = 0;
-    let c: number[];
-    let r2: number;
-    let g2: number;
-    let b2: number;
-    let diff: number;
-
-    for (; i < vcolors.length; i++) {
-      c = vcolors[i];
-      r2 = c[0];
-      g2 = c[1];
-      b2 = c[2];
-
-      diff = matchColorDistance(r1, g1, b1, r2, g2, b2);
-
-      if (diff === 0) {
-        li = i;
-        break;
-      }
-
-      if (diff < ldiff) {
-        ldiff = diff;
-        li = i;
-      }
-    }
-
-    return matchColorCache[hash] = li;
+    return matchColor_(r1, g1, b1);
   }
 
   private visualBell(): boolean {
@@ -2235,17 +2127,95 @@ function isThirdLevelShift(browser: IBrowser, ev: KeyboardEvent): boolean {
   return thirdLevelKey && (!ev.keyCode || ev.keyCode > 47);
 }
 
+function wasMondifierKeyOnlyEvent(ev: KeyboardEvent): boolean {
+  return ev.keyCode === 16 || // Shift
+    ev.keyCode === 17 || // Ctrl
+    ev.keyCode === 18; // Alt
+}
+
+/**
+ * TODO:
+ * The below color-related code can be removed when true color is implemented.
+ * It's only purpose is to match true color requests with the closest matching
+ * ANSI color code.
+ */
+
+// Colors 0-15 + 16-255
+// Much thanks to TooTallNate for writing this.
+const vcolors: number[][] = (function(): number[][] {
+  const result = DEFAULT_ANSI_COLORS.map(c => {
+    c = c.substring(1);
+    return [
+      parseInt(c.substring(0, 2), 16),
+      parseInt(c.substring(2, 4), 16),
+      parseInt(c.substring(4, 6), 16)
+    ];
+  });
+  const r = [0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff];
+
+  // 16-231
+  for (let i = 0; i < 216; i++) {
+    result.push([
+      r[(i / 36) % 6 | 0],
+      r[(i / 6) % 6 | 0],
+      r[i % 6]
+    ]);
+  }
+
+  // 232-255 (grey)
+  let c: number;
+  for (let i = 0; i < 24; i++) {
+    c = 8 + i * 10;
+    result.push([c, c, c]);
+  }
+
+  return result;
+})();
+
 const matchColorCache: {[colorRGBHash: number]: number} = {};
 
 // http://stackoverflow.com/questions/1633828
-const matchColorDistance = function(r1: number, g1: number, b1: number, r2: number, g2: number, b2: number): number {
+function matchColorDistance(r1: number, g1: number, b1: number, r2: number, g2: number, b2: number): number {
   return Math.pow(30 * (r1 - r2), 2)
     + Math.pow(59 * (g1 - g2), 2)
     + Math.pow(11 * (b1 - b2), 2);
 };
 
-function wasMondifierKeyOnlyEvent(ev: KeyboardEvent): boolean {
-  return ev.keyCode === 16 || // Shift
-    ev.keyCode === 17 || // Ctrl
-    ev.keyCode === 18; // Alt
+
+function matchColor_(r1: number, g1: number, b1: number): number {
+  const hash = (r1 << 16) | (g1 << 8) | b1;
+
+  if (matchColorCache[hash] != null) {
+    return matchColorCache[hash];
+  }
+
+  let ldiff = Infinity;
+  let li = -1;
+  let i = 0;
+  let c: number[];
+  let r2: number;
+  let g2: number;
+  let b2: number;
+  let diff: number;
+
+  for (; i < vcolors.length; i++) {
+    c = vcolors[i];
+    r2 = c[0];
+    g2 = c[1];
+    b2 = c[2];
+
+    diff = matchColorDistance(r1, g1, b1, r2, g2, b2);
+
+    if (diff === 0) {
+      li = i;
+      break;
+    }
+
+    if (diff < ldiff) {
+      ldiff = diff;
+      li = i;
+    }
+  }
+
+  return matchColorCache[hash] = li;
 }

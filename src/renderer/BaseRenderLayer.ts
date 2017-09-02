@@ -128,7 +128,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (fg < 256) {
       colorIndex = fg + 1;
     }
-    if (code < 256 && (colorIndex > 0 || fg >= 256)) {
+    const isAscii = code < 256;
+    const isBasicColor = (colorIndex > 0 && fg < 16);
+    const isDefaultColor = fg >= 256;
+    if (isAscii && (isBasicColor || isDefaultColor)) {
       // ImageBitmap's draw about twice as fast as from a canvas
       const charAtlasCellWidth = this.scaledCharWidth + CHAR_ATLAS_CELL_SPACING;
       const charAtlasCellHeight = this.scaledCharHeight + CHAR_ATLAS_CELL_SPACING;

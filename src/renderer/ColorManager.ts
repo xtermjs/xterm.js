@@ -23,7 +23,7 @@ export enum COLOR_CODES {
   BRIGHT_WHITE = 15
 }
 
-const DEFAULT_ANSI_COLORS = [
+export const DEFAULT_ANSI_COLORS = [
   // dark:
   '#2e3436',
   '#cc0000',
