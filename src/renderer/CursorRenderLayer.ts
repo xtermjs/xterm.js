@@ -1,11 +1,19 @@
 import { IColorSet } from './Interfaces';
 import { IBuffer, ICharMeasure, ITerminal, ITerminalOptions } from '../Interfaces';
-import { CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
+import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
 import { GridCache } from './GridCache';
 import { FLAGS } from './Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { CharData } from '../Types';
 import { COLOR_CODES } from './ColorManager';
+
+interface CursorState {
+  x: number;
+  y: number;
+  isFocused: boolean;
+  style: string;
+  width: number;
+}
 
 /**
  * The time between cursor blinks.
@@ -13,14 +21,20 @@ import { COLOR_CODES } from './ColorManager';
 const BLINK_INTERVAL = 600;
 
 export class CursorRenderLayer extends BaseRenderLayer {
-  private _state: [number, number, boolean, string];
+  private _state: CursorState;
   private _cursorRenderers: {[key: string]: (terminal: ITerminal, x: number, y: number, charData: CharData) => void};
   private _cursorBlinkStateManager: CursorBlinkStateManager;
   private _isFocused: boolean;
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
     super(container, 'cursor', zIndex, colors);
-    this._state = null;
+    this._state = {
+      x: null,
+      y: null,
+      isFocused: null,
+      style: null,
+      width: null,
+    };
     this._cursorRenderers = {
       'bar': this._renderBarCursor.bind(this),
       'block': this._renderBlockCursor.bind(this),
@@ -42,14 +56,15 @@ export class CursorRenderLayer extends BaseRenderLayer {
     if (this._cursorBlinkStateManager) {
       this._cursorBlinkStateManager.pause();
     }
-    terminal.emit('cursormove');
+    terminal.refresh(terminal.buffer.y, terminal.buffer.y);
   }
 
   public onFocus(terminal: ITerminal): void {
     if (this._cursorBlinkStateManager) {
-      this._cursorBlinkStateManager.resume();
+      this._cursorBlinkStateManager.resume(terminal);
+    } else {
+      terminal.refresh(terminal.buffer.y, terminal.buffer.y);
     }
-    terminal.emit('cursormove');
   }
 
   public onOptionsChanged(terminal: ITerminal): void {
@@ -107,7 +122,11 @@ export class CursorRenderLayer extends BaseRenderLayer {
       this._ctx.fillStyle = this.colors.ansi[COLOR_CODES.WHITE];
       this._renderBlurCursor(terminal, terminal.buffer.x, viewportRelativeCursorY, charData);
       this._ctx.restore();
-      this._state = [terminal.buffer.x, viewportRelativeCursorY, false, terminal.options.cursorStyle];
+      this._state.x = terminal.buffer.x;
+      this._state.y = viewportRelativeCursorY;
+      this._state.isFocused = false;
+      this._state.style = terminal.options.cursorStyle;
+      this._state.width = charData[CHAR_DATA_WIDTH_INDEX];
       return;
     }
 
@@ -119,10 +138,11 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
     if (this._state) {
       // The cursor is already in the correct spot, don't redraw
-      if (this._state[0] === terminal.buffer.x &&
-          this._state[1] === viewportRelativeCursorY &&
-          this._state[2] === terminal.isFocused &&
-          this._state[3] === terminal.options.cursorStyle) {
+      if (this._state.x === terminal.buffer.x &&
+          this._state.y === viewportRelativeCursorY &&
+          this._state.isFocused === terminal.isFocused &&
+          this._state.style === terminal.options.cursorStyle &&
+          this._state.width === charData[CHAR_DATA_WIDTH_INDEX]) {
         return;
       }
       this._clearCursor();
@@ -132,13 +152,24 @@ export class CursorRenderLayer extends BaseRenderLayer {
     this._ctx.fillStyle = this.colors.ansi[COLOR_CODES.WHITE];
     this._cursorRenderers[terminal.options.cursorStyle || 'block'](terminal, terminal.buffer.x, viewportRelativeCursorY, charData);
     this._ctx.restore();
-    this._state = [terminal.buffer.x, viewportRelativeCursorY, true, terminal.options.cursorStyle];
+
+    this._state.x = terminal.buffer.x;
+    this._state.y = viewportRelativeCursorY;
+    this._state.isFocused = false;
+    this._state.style = terminal.options.cursorStyle;
+    this._state.width = charData[CHAR_DATA_WIDTH_INDEX];
   }
 
   private _clearCursor(): void {
     if (this._state) {
-      this.clearCells(this._state[0], this._state[1], 1, 1);
-      this._state = null;
+      this.clearCells(this._state.x, this._state.y, this._state.width, 1);
+      this._state = {
+        x: null,
+        y: null,
+        isFocused: null,
+        style: null,
+        width: null,
+      };
     }
   }
 
@@ -152,9 +183,9 @@ export class CursorRenderLayer extends BaseRenderLayer {
   private _renderBlockCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
     this._ctx.save();
     this._ctx.fillStyle = this.colors.cursor;
-    this.fillCells(x, y, 1, 1);
+    this.fillCells(x, y, charData[CHAR_DATA_WIDTH_INDEX], 1);
     this._ctx.restore();
-    this.drawCharTrueColor(terminal, charData[CHAR_DATA_CHAR_INDEX], <number>charData[CHAR_DATA_CODE_INDEX], x, y, this.colors.background);
+    this.drawCharTrueColor(terminal, charData, x, y, this.colors.background);
   }
 
   private _renderUnderlineCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
@@ -166,7 +197,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
   private _renderBlurCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
     this._ctx.save();
-    this.drawSquareAtCell(x, y, this.colors.cursor);
+    this.drawRectAtCell(x, y, charData[CHAR_DATA_WIDTH_INDEX], 1, this.colors.cursor);
     this._ctx.restore();
   }
 }
@@ -295,8 +326,9 @@ class CursorBlinkStateManager {
     }
   }
 
-  public resume(): void {
+  public resume(terminal: ITerminal): void {
     this._animationTimeRestarted = null;
     this._restartInterval();
+    this.restartBlinkAnimation(terminal);
   }
 }

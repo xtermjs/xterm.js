@@ -1,6 +1,8 @@
 import { IRenderLayer, IColorSet } from './Interfaces';
 import { ITerminal, ITerminalOptions } from '../Interfaces';
 import { acquireCharAtlas, CHAR_ATLAS_CELL_SPACING } from './CharAtlas';
+import { CharData } from '../Types';
+import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
 
 export const INVERTED_DEFAULT_COLOR = -1;
 
@@ -76,14 +78,14 @@ export abstract class BaseRenderLayer implements IRenderLayer {
         this.scaledCharHeight);
   }
 
-  protected drawSquareAtCell(x: number, y: number, color: string): void {
+  protected drawRectAtCell(x: number, y: number, width: number, height: number, color: string): void {
     this._ctx.strokeStyle = color;
     this._ctx.lineWidth = window.devicePixelRatio;
     this._ctx.strokeRect(
         x * this.scaledCharWidth + window.devicePixelRatio / 2,
         y * this.scaledCharHeight + (window.devicePixelRatio / 2),
-        this.scaledCharWidth - window.devicePixelRatio,
-        this.scaledCharHeight - window.devicePixelRatio);
+        (width * this.scaledCharWidth) - window.devicePixelRatio,
+        (height * this.scaledCharHeight) - window.devicePixelRatio);
   }
 
   protected clearAll(): void {
@@ -94,16 +96,25 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.clearRect(startCol * this.scaledCharWidth, startRow * this.scaledCharHeight, colWidth * this.scaledCharWidth, colHeight * this.scaledCharHeight);
   }
 
-  protected drawCharTrueColor(terminal: ITerminal, char: string, code: number, x: number, y: number, color: string): void {
+  protected drawCharTrueColor(terminal: ITerminal, charData: CharData, x: number, y: number, color: string): void {
     this._ctx.save();
     this._ctx.font = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
     this._ctx.textBaseline = 'top';
     this._ctx.fillStyle = color;
-    this._ctx.fillText(char, x * this.scaledCharWidth, y * this.scaledCharHeight);
+
+    // Since uncached characters are not coming off the char atlas with source
+    // coordinates, it means that text drawn to the canvas (particularly '_')
+    // can bleed into other cells. This code will clip the following fillText,
+    // ensuring that its contents don't go beyond the cell bounds.
+    this._ctx.beginPath();
+    this._ctx.rect(x * this.scaledCharWidth, y * this.scaledCharHeight, charData[CHAR_DATA_WIDTH_INDEX] * this.scaledCharWidth, this.scaledCharHeight);
+    this._ctx.clip();
+
+    this._ctx.fillText(charData[CHAR_DATA_CHAR_INDEX], x * this.scaledCharWidth, y * this.scaledCharHeight);
     this._ctx.restore();
   }
 
-  protected drawChar(terminal: ITerminal, char: string, code: number, x: number, y: number, fg: number, underline: boolean = false): void {
+  protected drawChar(terminal: ITerminal, char: string, code: number, width: number, x: number, y: number, fg: number, underline: boolean = false): void {
     let colorIndex = 0;
     if (fg < 256) {
       colorIndex = fg + 1;
@@ -116,13 +127,13 @@ export abstract class BaseRenderLayer implements IRenderLayer {
           code * charAtlasCellWidth, colorIndex * charAtlasCellHeight, this.scaledCharWidth, this.scaledCharHeight,
           x * this.scaledCharWidth, y * this.scaledCharHeight, this.scaledCharWidth, this.scaledCharHeight);
     } else {
-      this._drawUncachedChar(terminal, char, fg, x, y);
+      this._drawUncachedChar(terminal, char, width, fg, x, y);
     }
     // This draws the atlas (for debugging purposes)
     // this._ctx.drawImage(this._charAtlas, 0, 0);
   }
 
-  private _drawUncachedChar(terminal: ITerminal, char: string, fg: number, x: number, y: number): void {
+  private _drawUncachedChar(terminal: ITerminal, char: string, width: number, fg: number, x: number, y: number): void {
     this._ctx.save();
     this._ctx.font = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
     this._ctx.textBaseline = 'top';
@@ -141,7 +152,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     // can bleed into other cells. This code will clip the following fillText,
     // ensuring that its contents don't go beyond the cell bounds.
     this._ctx.beginPath();
-    this._ctx.rect(x * this.scaledCharWidth, y * this.scaledCharHeight, this.scaledCharWidth, this.scaledCharHeight);
+    this._ctx.rect(x * this.scaledCharWidth, y * this.scaledCharHeight, width * this.scaledCharWidth, this.scaledCharHeight);
     this._ctx.clip();
 
     // Draw the character
