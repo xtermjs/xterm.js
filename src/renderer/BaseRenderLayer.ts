@@ -1,6 +1,6 @@
 import { IRenderLayer, IColorSet } from './Interfaces';
 import { ITerminal, ITerminalOptions } from '../Interfaces';
-import { acquireCharAtlas } from './CharAtlas';
+import { acquireCharAtlas, CHAR_ATLAS_CELL_SPACING } from './CharAtlas';
 
 export const INVERTED_DEFAULT_COLOR = -1;
 
@@ -110,14 +110,16 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     }
     if (code < 256 && colorIndex > 0 && fg < 16) {
       // ImageBitmap's draw about twice as fast as from a canvas
+      const charAtlasCellWidth = this.scaledCharWidth + CHAR_ATLAS_CELL_SPACING;
+      const charAtlasCellHeight = this.scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
       this._ctx.drawImage(this._charAtlas,
-          code * this.scaledCharWidth, colorIndex * this.scaledCharHeight, this.scaledCharWidth, this.scaledCharHeight,
+          code * charAtlasCellWidth, colorIndex * charAtlasCellHeight, this.scaledCharWidth, this.scaledCharHeight,
           x * this.scaledCharWidth, y * this.scaledCharHeight, this.scaledCharWidth, this.scaledCharHeight);
     } else {
       this._drawUncachedChar(terminal, char, fg, x, y);
     }
     // This draws the atlas (for debugging purposes)
-    // this._ctx.drawImage(BaseRenderLayer._charAtlas, 0, 0);
+    // this._ctx.drawImage(this._charAtlas, 0, 0);
   }
 
   private _drawUncachedChar(terminal: ITerminal, char: string, fg: number, x: number, y: number): void {

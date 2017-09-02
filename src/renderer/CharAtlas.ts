@@ -1,6 +1,8 @@
 import { ITerminal, ITheme } from '../Interfaces';
 import { IColorSet } from '../renderer/Interfaces';
 
+export const CHAR_ATLAS_CELL_SPACING = 1;
+
 interface ICharAtlasConfig {
   fontSize: number;
   fontFamily: string;
@@ -100,8 +102,10 @@ class CharAtlasGenerator {
   }
 
   public generate(scaledCharWidth: number, scaledCharHeight: number, fontSize: number, fontFamily: string, foreground: string, ansiColors: string[]): Promise<ImageBitmap> {
-    this._canvas.width = 255 * scaledCharWidth;
-    this._canvas.height = (/*default*/1 + /*0-15*/16) * scaledCharHeight;
+    const cellWidth = scaledCharWidth + CHAR_ATLAS_CELL_SPACING;
+    const cellHeight = scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
+    this._canvas.width = 255 * cellWidth;
+    this._canvas.height = (/*default*/1 + /*0-15*/16) * cellHeight;
 
     this._ctx.save();
     this._ctx.fillStyle = foreground;
@@ -110,7 +114,7 @@ class CharAtlasGenerator {
 
     // Default color
     for (let i = 0; i < 256; i++) {
-      this._ctx.fillText(String.fromCharCode(i), i * scaledCharWidth, 0);
+      this._ctx.fillText(String.fromCharCode(i), i * cellWidth, 0);
     }
 
     // Colors 0-15
@@ -119,13 +123,11 @@ class CharAtlasGenerator {
       if (colorIndex === 8) {
         this._ctx.font = `bold ${this._ctx.font}`;
       }
-      const y = (colorIndex + 1) * scaledCharHeight;
-      // Clear rectangle as some fonts seem to draw over the bottom boundary
-      this._ctx.clearRect(0, y, this._canvas.width, scaledCharHeight);
+      const y = (colorIndex + 1) * cellHeight;
       // Draw ascii characters
       for (let i = 0; i < 256; i++) {
         this._ctx.fillStyle = ansiColors[colorIndex];
-        this._ctx.fillText(String.fromCharCode(i), i * scaledCharWidth, y);
+        this._ctx.fillText(String.fromCharCode(i), i * cellWidth, y);
       }
     }
     this._ctx.restore();
