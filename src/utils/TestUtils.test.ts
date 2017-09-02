@@ -7,6 +7,7 @@ import { LineData } from '../Types';
 import * as Browser from './Browser';
 
 export class MockTerminal implements ITerminal {
+  isFocused: boolean;
   options: ITerminalOptions = {};
   element: HTMLElement;
   rowContainer: HTMLElement;

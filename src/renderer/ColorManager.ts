@@ -77,6 +77,7 @@ export class ColorManager {
     this.colors = {
       foreground: '#ffffff',
       background: '#000000',
+      cursor: '#ffffff',
       ansi: generate256Colors(DEFAULT_ANSI_COLORS)
     };
   }
@@ -84,6 +85,7 @@ export class ColorManager {
   public setTheme(theme: ITheme): void {
     if (theme.foreground) this.colors.foreground = theme.foreground;
     if (theme.background) this.colors.background = theme.background;
+    if (theme.cursor) this.colors.cursor = theme.cursor;
     if (theme.black) this.colors.ansi[0] = theme.black;
     if (theme.red) this.colors.ansi[1] = theme.red;
     if (theme.green) this.colors.ansi[2] = theme.green;

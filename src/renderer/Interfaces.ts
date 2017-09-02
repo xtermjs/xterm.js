@@ -52,5 +52,6 @@ export interface IRenderLayer {
 export interface IColorSet {
   foreground: string;
   background: string;
+  cursor: string;
   ansi: string[];
 }

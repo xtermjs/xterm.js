@@ -139,21 +139,29 @@ export class CursorRenderLayer extends BaseRenderLayer {
   }
 
   private _renderBarCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
+    this._ctx.save();
+    this._ctx.fillStyle = this.colors.cursor;
     this.drawLeftLineAtCell(x, y);
+    this._ctx.restore();
   }
 
   private _renderBlockCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
+    this._ctx.save();
+    this._ctx.fillStyle = this.colors.cursor;
     this.fillCells(x, y, 1, 1);
-    this.drawChar(terminal, charData[CHAR_DATA_CHAR_INDEX], <number>charData[CHAR_DATA_CODE_INDEX], x, y, COLOR_CODES.BLACK);
+    this._ctx.restore();
+    this.drawCharTrueColor(terminal, charData[CHAR_DATA_CHAR_INDEX], <number>charData[CHAR_DATA_CODE_INDEX], x, y, this.colors.background);
   }
 
   private _renderUnderlineCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
+    this._ctx.save();
+    this._ctx.fillStyle = this.colors.cursor;
     this.drawBottomLineAtCell(x, y);
+    this._ctx.restore();
   }
 
   private _renderBlurCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
-    // TODO: Support cursor colors
-    this.drawSquareAtCell(x, y, this.colors.foreground);
+    this.drawSquareAtCell(x, y, this.colors.cursor);
   }
 }
 

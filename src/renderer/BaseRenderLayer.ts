@@ -1,6 +1,6 @@
 import { IRenderLayer, IColorSet } from './Interfaces';
 import { ITerminal, ITerminalOptions } from '../Interfaces';
-import { acquireCharAtlas } from '../utils/CharAtlas';
+import { acquireCharAtlas } from './CharAtlas';
 
 export const INVERTED_DEFAULT_COLOR = -1;
 
@@ -94,6 +94,15 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.clearRect(startCol * this.scaledCharWidth, startRow * this.scaledCharHeight, colWidth * this.scaledCharWidth, colHeight * this.scaledCharHeight);
   }
 
+  protected drawCharTrueColor(terminal: ITerminal, char: string, code: number, x: number, y: number, color: string): void {
+    this._ctx.save();
+    this._ctx.font = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
+    this._ctx.textBaseline = 'top';
+    this._ctx.fillStyle = color;
+    this._ctx.fillText(char, x * this.scaledCharWidth, y * this.scaledCharHeight);
+    this._ctx.restore();
+  }
+
   protected drawChar(terminal: ITerminal, char: string, code: number, x: number, y: number, fg: number, underline: boolean = false): void {
     let colorIndex = 0;
     if (fg < 256) {
@@ -105,13 +114,13 @@ export abstract class BaseRenderLayer implements IRenderLayer {
           code * this.scaledCharWidth, colorIndex * this.scaledCharHeight, this.scaledCharWidth, this.scaledCharHeight,
           x * this.scaledCharWidth, y * this.scaledCharHeight, this.scaledCharWidth, this.scaledCharHeight);
     } else {
-      this._drawUncachedChar(terminal, char, fg, x, y, this.scaledCharWidth, this.scaledCharHeight);
+      this._drawUncachedChar(terminal, char, fg, x, y);
     }
     // This draws the atlas (for debugging purposes)
     // this._ctx.drawImage(BaseRenderLayer._charAtlas, 0, 0);
   }
 
-  private _drawUncachedChar(terminal: ITerminal, char: string, fg: number, x: number, y: number, scaledCharWidth: number, scaledCharHeight: number): void {
+  private _drawUncachedChar(terminal: ITerminal, char: string, fg: number, x: number, y: number): void {
     this._ctx.save();
     this._ctx.font = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
     this._ctx.textBaseline = 'top';
@@ -125,7 +134,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       this._ctx.fillStyle = this.colors.foreground;
     }
 
-    this._ctx.fillText(char, x * scaledCharWidth, y * scaledCharHeight);
+    this._ctx.fillText(char, x * this.scaledCharWidth, y * this.scaledCharHeight);
     this._ctx.restore();
   }
 }

@@ -299,7 +299,7 @@ export interface IInputHandler {
 export interface ITheme {
   foreground?: string;
   background?: string;
-  // cursor?: string;
+  cursor?: string;
   black?: string;
   red?: string;
   green?: string;

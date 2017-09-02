@@ -63,7 +63,8 @@ export function acquireCharAtlas(terminal: ITerminal, colors: IColorSet): Promis
 function generateConfig(scaledCharWidth: number, scaledCharHeight: number, terminal: ITerminal, colors: IColorSet): ICharAtlasConfig {
   const clonedColors = {
     foreground: colors.foreground,
-    background: colors.background,
+    background: null,
+    cursor: null,
     ansi: colors.ansi.slice(0, 16)
   };
   return {
@@ -85,8 +86,7 @@ function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean {
       a.fontSize === b.fontSize &&
       a.scaledCharWidth === b.scaledCharWidth &&
       a.scaledCharHeight === b.scaledCharHeight &&
-      a.colors.foreground === b.colors.foreground &&
-      a.colors.background === b.colors.background;
+      a.colors.foreground === b.colors.foreground;
 }
 
 class CharAtlasGenerator {
