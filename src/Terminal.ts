@@ -318,7 +318,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   public setTheme(theme: ITheme): void {
     // TODO: Allow setting of theme before renderer is ready
     if (this.renderer) {
-      this.renderer.setTheme(theme);
+      const colors = this.renderer.setTheme(theme);
+      if (this.viewport) {
+        this.viewport.onThemeChanged(colors);
+      }
     }
   }
 

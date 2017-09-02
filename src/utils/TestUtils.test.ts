@@ -202,6 +202,9 @@ export class MockBuffer implements IBuffer {
 }
 
 export class MockViewport implements IViewport {
+  onThemeChanged(colors: IColorSet): void {
+    throw new Error('Method not implemented.');
+  }
   onWheel(ev: WheelEvent): void {
     throw new Error('Method not implemented.');
   }

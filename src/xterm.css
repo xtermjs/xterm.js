@@ -36,9 +36,6 @@
  */
 
 .terminal {
-    /** TODO: Remove colors from xterm.css */
-    background-color: #000;
-    color: #fff;
     font-family: courier-new, courier, monospace;
     font-feature-settings: "liga" 0;
     position: relative;
@@ -76,6 +73,7 @@
 }
 
 .terminal .composition-view {
+    /* TODO: Composition position got messed up somewhere */
     background: #000;
     color: #FFF;
     display: none;

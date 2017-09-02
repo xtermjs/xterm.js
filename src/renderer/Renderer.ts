@@ -11,7 +11,7 @@ import { SelectionRenderLayer } from './SelectionRenderLayer';
 import { CursorRenderLayer } from './CursorRenderLayer';
 import { ColorManager } from './ColorManager';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { IRenderLayer } from './Interfaces';
+import { IRenderLayer, IColorSet } from './Interfaces';
 
 export class Renderer {
   /** A queue of the rows to be refreshed */
@@ -32,7 +32,7 @@ export class Renderer {
     ];
   }
 
-  public setTheme(theme: ITheme): void {
+  public setTheme(theme: ITheme): IColorSet {
     this._colorManager.setTheme(theme);
     // Clear layers and force a full render
     this._renderLayers.forEach(l => {
@@ -42,6 +42,8 @@ export class Renderer {
 
     // TODO: This is currently done for every single terminal, but it's static so it's wasting time
     this._terminal.refresh(0, this._terminal.rows - 1);
+
+    return this._colorManager.colors;
   }
 
   public onResize(cols: number, rows: number): void {

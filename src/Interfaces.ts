@@ -4,6 +4,7 @@
 
 import { ILinkMatcherOptions } from './Interfaces';
 import { LinkMatcherHandler, LinkMatcherValidationCallback, Charset, LineData } from './Types';
+import { IColorSet } from './renderer/Interfaces';
 
 export interface IBrowser {
   isNode: boolean;
@@ -163,6 +164,7 @@ export interface IViewport {
   onWheel(ev: WheelEvent): void;
   onTouchStart(ev: TouchEvent): void;
   onTouchMove(ev: TouchEvent): void;
+  onThemeChanged(colors: IColorSet): void;
 }
 
 export interface ISelectionManager {

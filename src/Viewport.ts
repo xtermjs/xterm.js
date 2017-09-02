@@ -4,6 +4,7 @@
 
 import { ITerminal, IViewport } from './Interfaces';
 import { CharMeasure } from './utils/CharMeasure';
+import { IColorSet } from './renderer/Interfaces';
 
 /**
  * Represents the viewport of a terminal, the visible area within the larger buffer of output.
@@ -38,6 +39,10 @@ export class Viewport implements IViewport {
 
     // Perform this async to ensure the CharMeasure is ready.
     setTimeout(() => this.syncScrollArea(), 0);
+  }
+
+  public onThemeChanged(colors: IColorSet): void {
+    this.viewportElement.style.backgroundColor = colors.background;
   }
 
   /**
