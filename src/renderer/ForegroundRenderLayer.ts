@@ -88,7 +88,20 @@ export class ForegroundRenderLayer extends BaseRenderLayer {
           }
         }
 
+        if (flags & FLAGS.UNDERLINE) {
+          if (fg === INVERTED_DEFAULT_COLOR) {
+            this._ctx.fillStyle = this.colors.background;
+          } else if (fg < 256) {
+            // 256 color support
+            this._ctx.fillStyle = this.colors.ansi[fg];
+          } else {
+            this._ctx.fillStyle = this.colors.foreground;
+          }
+          this.fillBottomLineAtCell(x, y);
+        }
+
         this.drawChar(terminal, char, code, x, y, fg);
+
         this._ctx.restore();
       }
     }

@@ -82,7 +82,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.clearRect(startCol * this.scaledCharWidth, startRow * this.scaledCharHeight, colWidth * this.scaledCharWidth, colHeight * this.scaledCharHeight);
   }
 
-  protected drawChar(terminal: ITerminal, char: string, code: number, x: number, y: number, fg: number): void {
+  protected drawChar(terminal: ITerminal, char: string, code: number, x: number, y: number, fg: number, underline: boolean = false): void {
     let colorIndex = 0;
     if (fg < 256) {
       colorIndex = fg + 1;
@@ -113,7 +113,6 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       this._ctx.fillStyle = this.colors.foreground;
     }
 
-    // TODO: Do we care about width for rendering wide chars?
     this._ctx.fillText(char, x * scaledCharWidth, y * scaledCharHeight);
     this._ctx.restore();
   }
