@@ -33,7 +33,6 @@ export class Renderer {
   }
 
   public setTheme(theme: ITheme): void {
-    console.log('setTheme');
     this._colorManager.setTheme(theme);
     // Clear layers and force a full render
     this._renderLayers.forEach(l => {

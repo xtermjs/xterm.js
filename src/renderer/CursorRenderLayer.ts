@@ -42,14 +42,14 @@ export class CursorRenderLayer extends BaseRenderLayer {
     if (this._cursorBlinkStateManager) {
       this._cursorBlinkStateManager.pause();
     }
-    terminal.refresh(terminal.buffer.y, terminal.buffer.y);
+    terminal.emit('cursormove');
   }
 
   public onFocus(terminal: ITerminal): void {
     if (this._cursorBlinkStateManager) {
       this._cursorBlinkStateManager.resume();
     }
-    terminal.refresh(terminal.buffer.y, terminal.buffer.y);
+    terminal.emit('cursormove');
   }
 
   public onOptionsChanged(terminal: ITerminal): void {
@@ -78,7 +78,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
   public onGridChanged(terminal: ITerminal, startRow: number, endRow: number): void {
     // Only render if the animation frame is not active
-    if (!this._cursorBlinkStateManager) {
+    if (!this._cursorBlinkStateManager || this._cursorBlinkStateManager.isPaused) {
       this._render(terminal, false);
     }
   }
@@ -107,7 +107,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
       this._ctx.fillStyle = this.colors.ansi[COLOR_CODES.WHITE];
       this._renderBlurCursor(terminal, terminal.buffer.x, viewportRelativeCursorY, charData);
       this._ctx.restore();
-      this._state = [terminal.buffer.x, viewportRelativeCursorY, terminal.isFocused, terminal.options.cursorStyle];
+      this._state = [terminal.buffer.x, viewportRelativeCursorY, false, terminal.options.cursorStyle];
       return;
     }
 
@@ -123,7 +123,6 @@ export class CursorRenderLayer extends BaseRenderLayer {
           this._state[1] === viewportRelativeCursorY &&
           this._state[2] === terminal.isFocused &&
           this._state[3] === terminal.options.cursorStyle) {
-        // TODO: Ideally cursorStyle would be stored as a number here to prevent the string compare
         return;
       }
       this._clearCursor();
@@ -133,7 +132,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     this._ctx.fillStyle = this.colors.ansi[COLOR_CODES.WHITE];
     this._cursorRenderers[terminal.options.cursorStyle || 'block'](terminal, terminal.buffer.x, viewportRelativeCursorY, charData);
     this._ctx.restore();
-    this._state = [terminal.buffer.x, viewportRelativeCursorY, terminal.isFocused, terminal.options.cursorStyle];
+    this._state = [terminal.buffer.x, viewportRelativeCursorY, true, terminal.options.cursorStyle];
   }
 
   private _clearCursor(): void {
@@ -189,12 +188,22 @@ class CursorBlinkStateManager {
     private renderCallback: () => void
   ) {
     this.isCursorVisible = true;
-    this._restartInterval();
+    if (terminal.isFocused) {
+      this._restartInterval();
+    }
   }
 
+  public get isPaused(): boolean { return !(this._blinkStartTimeout || this._blinkInterval); }
+
   public dispose(): void {
-    window.clearInterval(this._blinkInterval);
-    this._blinkInterval = null;
+    if (this._blinkInterval) {
+      window.clearInterval(this._blinkInterval);
+      this._blinkInterval = null;
+    }
+    if (this._blinkStartTimeout) {
+      window.clearTimeout(this._blinkStartTimeout);
+      this._blinkStartTimeout = null;
+    }
     if (this._animationFrame) {
       window.cancelAnimationFrame(this._animationFrame);
       this._animationFrame = null;
@@ -202,6 +211,9 @@ class CursorBlinkStateManager {
   }
 
   public restartBlinkAnimation(terminal: ITerminal): void {
+    if (this.isPaused) {
+      return;
+    }
     // Save a timestamp so that the restart can be done on the next interval
     this._animationTimeRestarted = Date.now();
     // Force a cursor render to ensure it's visible and in the correct position
@@ -230,8 +242,10 @@ class CursorBlinkStateManager {
       if (this._animationTimeRestarted) {
         const time = BLINK_INTERVAL - (Date.now() - this._animationTimeRestarted);
         this._animationTimeRestarted = null;
-        this._restartInterval(time);
-        return;
+        if (time > 0) {
+          this._restartInterval(time);
+          return;
+        }
       }
 
       // Hide the cursor
@@ -265,8 +279,14 @@ class CursorBlinkStateManager {
 
   public pause(): void {
     this.isCursorVisible = true;
-    window.clearInterval(this._blinkInterval);
-    this._blinkInterval = null;
+    if (this._blinkInterval) {
+      window.clearInterval(this._blinkInterval);
+      this._blinkInterval = null;
+    }
+    if (this._blinkStartTimeout) {
+      window.clearTimeout(this._blinkStartTimeout);
+      this._blinkStartTimeout = null;
+    }
     if (this._animationFrame) {
       window.cancelAnimationFrame(this._animationFrame);
       this._animationFrame = null;
@@ -274,7 +294,7 @@ class CursorBlinkStateManager {
   }
 
   public resume(): void {
-    console.log('resume');
+    this._animationTimeRestarted = null;
     this._restartInterval();
   }
 }
