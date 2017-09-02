@@ -532,17 +532,14 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   /**
    * Binds the desired focus behavior on a given terminal object.
    */
-  private bindFocus(): void {
-    globalOn(this.textarea, 'focus', (ev) => {
-      if (this.sendFocus) {
-        this.send(C0.ESC + '[I');
-      }
-      this.element.classList.add('focus');
-      this.showCursor();
-      this.restartCursorBlinking.apply(this);
-      // TODO: Why pass terminal here?
-      this.emit('focus');
-    });
+  private _onTextAreaFocus(): void {
+    if (this.sendFocus) {
+      this.send(C0.ESC + '[I');
+    }
+    this.element.classList.add('focus');
+    this.showCursor();
+    this.restartCursorBlinking.apply(this);
+    this.emit('focus');
   };
 
   /**
@@ -556,17 +553,14 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   /**
    * Binds the desired blur behavior on a given terminal object.
    */
-  private bindBlur(): void {
-    on(this.textarea, 'blur', (ev) => {
-      this.refresh(this.buffer.y, this.buffer.y);
-      if (this.sendFocus) {
-        this.send(C0.ESC + '[O');
-      }
-      this.element.classList.remove('focus');
-      this.clearCursorBlinkingInterval.apply(this);
-      // TODO: Why pass terminal here?
-      this.emit('blur');
-    });
+  private _onTextAreaBlur(): void {
+    this.refresh(this.buffer.y, this.buffer.y);
+    if (this.sendFocus) {
+      this.send(C0.ESC + '[O');
+    }
+    this.element.classList.remove('focus');
+    this.clearCursorBlinkingInterval.apply(this);
+    this.emit('blur');
   }
 
   /**
@@ -574,8 +568,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    */
   private initGlobal(): void {
     this.bindKeys();
-    this.bindFocus();
-    this.bindBlur();
 
     // Bind clipboard functionality
     on(this.element, 'copy', (event: ClipboardEvent) => {
@@ -740,8 +732,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.textarea.setAttribute('autocapitalize', 'off');
     this.textarea.setAttribute('spellcheck', 'false');
     this.textarea.tabIndex = 0;
-    this.textarea.addEventListener('focus', () => this.emit('focus'));
-    this.textarea.addEventListener('blur', () => this.emit('blur'));
+    this.textarea.addEventListener('focus', () => this._onTextAreaFocus());
+    this.textarea.addEventListener('blur', () => this._onTextAreaBlur());
     this.helperContainer.appendChild(this.textarea);
 
     this.compositionView = document.createElement('div');
@@ -763,6 +755,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.renderer = new Renderer(this);
     this.on('cursormove', () => this.renderer.onCursorMove());
     this.on('resize', () => this.renderer.onResize(this.cols, this.rows));
+    this.on('blur', () => this.renderer.onBlur());
+    this.on('focus', () => this.renderer.onFocus());
     this.charMeasure.on('charsizechanged', () => {
       this.renderer.onCharSizeChanged(this.charMeasure.width, this.charMeasure.height);
       // Force a refresh for the char size change
