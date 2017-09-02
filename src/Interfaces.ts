@@ -127,6 +127,7 @@ export interface ITerminalOptions {
   fontFamily?: string;
   geometry?: [number, number];
   handler?: (data: string) => void;
+  lineHeight?: number;
   rows?: number;
   screenKeys?: boolean;
   scrollback?: number;

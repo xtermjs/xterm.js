@@ -36,7 +36,7 @@ export function getCoordsRelativeToElement(event: MouseEvent, element: HTMLEleme
  * apply an offset to the x value such that the left half of the cell will
  * select that cell and the right half will select the next cell.
  */
-export function getCoords(event: MouseEvent, rowContainer: HTMLElement, charMeasure: CharMeasure, colCount: number, rowCount: number, isSelection?: boolean): [number, number] {
+export function getCoords(event: MouseEvent, rowContainer: HTMLElement, charMeasure: CharMeasure, lineHeight: number, colCount: number, rowCount: number, isSelection?: boolean): [number, number] {
   // Coordinates cannot be measured if charMeasure has not been initialized
   if (!charMeasure.width || !charMeasure.height) {
     return null;
@@ -49,7 +49,7 @@ export function getCoords(event: MouseEvent, rowContainer: HTMLElement, charMeas
 
   // Convert to cols/rows.
   coords[0] = Math.ceil((coords[0] + (isSelection ? charMeasure.width / 2 : 0)) / charMeasure.width);
-  coords[1] = Math.ceil(coords[1] / charMeasure.height);
+  coords[1] = Math.ceil(coords[1] / Math.ceil(charMeasure.height * lineHeight));
 
   // Ensure coordinates are within the terminal viewport.
   coords[0] = Math.min(Math.max(coords[0], 1), colCount + 1);
@@ -68,8 +68,8 @@ export function getCoords(event: MouseEvent, rowContainer: HTMLElement, charMeas
  * @param colCount The number of columns in the terminal.
  * @param rowCount The number of rows in the terminal.
  */
-export function getRawByteCoords(event: MouseEvent, rowContainer: HTMLElement, charMeasure: CharMeasure, colCount: number, rowCount: number): { x: number, y: number } {
-  const coords = getCoords(event, rowContainer, charMeasure, colCount, rowCount);
+export function getRawByteCoords(event: MouseEvent, rowContainer: HTMLElement, charMeasure: CharMeasure, lineHeight: number, colCount: number, rowCount: number): { x: number, y: number } {
+  const coords = getCoords(event, rowContainer, charMeasure, lineHeight, colCount, rowCount);
   let x = coords[0];
   let y = coords[1];
 

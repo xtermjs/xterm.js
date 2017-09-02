@@ -328,7 +328,7 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'cols' | 'fontSize' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
+    getOption(key: 'cols' | 'fontSize' | 'lineHeight' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
@@ -380,7 +380,7 @@ declare module 'xterm' {
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: 'cols' | 'fontSize' | 'rows' | 'tabStopWidth' | 'scrollback', value: number): void;
+    setOption(key: 'cols' | 'fontSize' | 'lineHeight' | 'rows' | 'tabStopWidth' | 'scrollback', value: number): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.

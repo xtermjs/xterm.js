@@ -46,19 +46,20 @@ export class Viewport implements IViewport {
    */
   private refresh(): void {
     if (this.charMeasure.height > 0) {
-      const rowHeightChanged = this.charMeasure.height !== this.currentRowHeight;
+      const lineHeight = Math.ceil(this.charMeasure.height * this.terminal.options.lineHeight);
+      const rowHeightChanged = lineHeight !== this.currentRowHeight;
       if (rowHeightChanged) {
-        this.currentRowHeight = this.charMeasure.height;
-        this.viewportElement.style.lineHeight = this.charMeasure.height + 'px';
-        this.terminal.rowContainer.style.lineHeight = this.charMeasure.height + 'px';
+        this.currentRowHeight = lineHeight;
+        this.viewportElement.style.lineHeight = lineHeight + 'px';
+        this.terminal.rowContainer.style.lineHeight = lineHeight + 'px';
       }
       const viewportHeightChanged = this.lastRecordedViewportHeight !== this.terminal.rows;
       if (rowHeightChanged || viewportHeightChanged) {
         this.lastRecordedViewportHeight = this.terminal.rows;
-        this.viewportElement.style.height = this.charMeasure.height * this.terminal.rows + 'px';
+        this.viewportElement.style.height = lineHeight * this.terminal.rows + 'px';
         this.terminal.selectionContainer.style.height = this.viewportElement.style.height;
       }
-      this.scrollArea.style.height = (this.charMeasure.height * this.lastRecordedBufferLength) + 'px';
+      this.scrollArea.style.height = (lineHeight * this.lastRecordedBufferLength) + 'px';
     }
   }
 
@@ -75,7 +76,7 @@ export class Viewport implements IViewport {
       this.refresh();
     } else {
       // If size has changed, refresh viewport
-      if (this.charMeasure.height !== this.currentRowHeight) {
+      if (Math.ceil(this.charMeasure.height * this.terminal.options.lineHeight) !== this.currentRowHeight) {
         this.refresh();
       }
     }

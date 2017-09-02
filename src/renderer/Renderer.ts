@@ -46,7 +46,7 @@ export class Renderer {
 
   public onResize(cols: number, rows: number): void {
     const width = this._terminal.charMeasure.width * this._terminal.cols;
-    const height = this._terminal.charMeasure.height * this._terminal.rows;
+    const height = Math.ceil(this._terminal.charMeasure.height * this._terminal.options.lineHeight) * this._terminal.rows;
     this._renderLayers.forEach(l => l.resize(this._terminal, width, height, false));
   }
 

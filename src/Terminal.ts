@@ -72,6 +72,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   bellStyle: 'none',
   fontFamily: 'courier-new, courier, monospace',
   fontSize: 15,
+  lineHeight: 1.0,
   scrollback: 1000,
   screenKeys: false,
   debug: false,
@@ -356,19 +357,24 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         }
         break;
       case 'cursorStyle':
-      if (!value) {
-        value = 'block';
-      }
-      break;
+        if (!value) {
+          value = 'block';
+        }
+        break;
+      case 'lineHeight':
+        if (value < 1) {
+          console.warn(`${key} cannot be less than 1, value: ${value}`);
+          return;
+        }
       case 'tabStopWidth':
         if (value < 1) {
-          console.warn(`tabStopWidth cannot be less than 1, value: ${value}`);
+          console.warn(`${key} cannot be less than 1, value: ${value}`);
           return;
         }
         break;
       case 'scrollback':
         if (value < 0) {
-          console.warn(`scrollback cannot be less than 0, value: ${value}`);
+          console.warn(`${key} cannot be less than 0, value: ${value}`);
           return;
         }
         if (this.options[key] !== value) {
@@ -395,6 +401,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         this.renderer.clear();
         this.charMeasure.measure(this.options);
         break;
+      case 'lineHeight':
+        // When the font changes the size of the cells may change which requires a renderer clear
+        this.renderer.clear();
+        this.renderer.onResize(this.cols, this.rows);
+        this.refresh(0, this.rows - 1);
+        // this.charMeasure.measure(this.options);
       case 'scrollback':
         this.buffers.resize(this.cols, this.rows);
         this.viewport.syncScrollArea();
@@ -709,7 +721,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       button = getButton(ev);
 
       // get mouse coordinates
-      pos = getRawByteCoords(ev, self.rowContainer, self.charMeasure, self.cols, self.rows);
+      pos = getRawByteCoords(ev, self.rowContainer, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
       if (!pos) return;
 
       sendEvent(button, pos);
@@ -735,7 +747,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // ^[[M 3<^[[M@4<^[[M@5<^[[M@6<^[[M@7<^[[M#7<
     function sendMove(ev: MouseEvent): void {
       let button = pressed;
-      let pos = getRawByteCoords(ev, self.rowContainer, self.charMeasure, self.cols, self.rows);
+      let pos = getRawByteCoords(ev, self.rowContainer, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
       if (!pos) return;
 
       // buttons marked as motions

@@ -49,7 +49,7 @@
 
     var geometry = {
       cols: parseInt(availableWidth / term.charMeasure.width, 10),
-      rows: parseInt(availableHeight / term.charMeasure.height, 10)
+      rows: parseInt(availableHeight / (term.charMeasure.height * term.getOption('lineHeight')), 10)
     };
 
     return geometry;
@@ -62,6 +62,8 @@
       var geometry = exports.proposeGeometry(term);
 
       if (geometry) {
+        // Force a full render
+        term.renderer.clear();
         term.resize(geometry.cols, geometry.rows);
       }
     }, 0);

@@ -273,7 +273,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param event The mouse event.
    */
   private _getMouseBufferCoords(event: MouseEvent): [number, number] {
-    const coords = Mouse.getCoords(event, this._rowContainer, this._charMeasure, this._terminal.cols, this._terminal.rows, true);
+    const coords = Mouse.getCoords(event, this._rowContainer, this._charMeasure, this._terminal.options.lineHeight, this._terminal.cols, this._terminal.rows, true);
     if (!coords) {
       return null;
     }
@@ -293,7 +293,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    */
   private _getMouseEventScrollAmount(event: MouseEvent): number {
     let offset = Mouse.getCoordsRelativeToElement(event, this._rowContainer)[1];
-    const terminalHeight = this._terminal.rows * this._charMeasure.height;
+    const terminalHeight = this._terminal.rows * Math.ceil(this._charMeasure.height * this._terminal.options.lineHeight);
     if (offset >= 0 && offset <= terminalHeight) {
       return 0;
     }
