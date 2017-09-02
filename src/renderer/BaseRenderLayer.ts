@@ -108,7 +108,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (fg < 256) {
       colorIndex = fg + 1;
     }
-    if (code < 256 && (colorIndex > 0 || fg > 255)) {
+    if (code < 256 && colorIndex > 0 && fg < 16) {
       // ImageBitmap's draw about twice as fast as from a canvas
       this._ctx.drawImage(this._charAtlas,
           code * this.scaledCharWidth, colorIndex * this.scaledCharHeight, this.scaledCharWidth, this.scaledCharHeight,
