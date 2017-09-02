@@ -61,13 +61,14 @@ export class ForegroundRenderLayer extends BaseRenderLayer {
         }
         this._state.cache[x][y] = charData;
 
+        const flags = attr >> 18;
+
         // Skip rendering if the character is invisible
-        if (!code || code === 32 /*' '*/) {
+        if (!code || code === 32 /*' '*/ || (flags & FLAGS.INVISIBLE)) {
           continue;
         }
 
         let fg = (attr >> 9) & 0x1ff;
-        const flags = attr >> 18;
 
         // If inverse flag is on, the foreground should become the background.
         if (flags & FLAGS.INVERSE) {
@@ -87,7 +88,7 @@ export class ForegroundRenderLayer extends BaseRenderLayer {
           }
         }
 
-        this.drawChar(terminal, char, code, fg, x, y);
+        this.drawChar(terminal, char, code, x, y, fg);
         this._ctx.restore();
       }
     }

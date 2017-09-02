@@ -80,7 +80,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.clearRect(startCol * this.scaledCharWidth, startRow * this.scaledCharHeight, colWidth * this.scaledCharWidth, colHeight * this.scaledCharHeight);
   }
 
-  protected drawChar(terminal: ITerminal, char: string, code: number, fg: number, x: number, y: number): void {
+  protected drawChar(terminal: ITerminal, char: string, code: number, x: number, y: number, fg: number): void {
     let colorIndex = 0;
     if (fg < 256) {
       colorIndex = fg + 1;

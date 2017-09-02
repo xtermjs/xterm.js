@@ -116,7 +116,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
   private _renderBlockCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
     this.fillCells(x, y, 1, 1);
-    this.drawChar(terminal, charData[CHAR_DATA_CHAR_INDEX], <number>charData[CHAR_DATA_CODE_INDEX], COLOR_CODES.BLACK, x, y);
+    this.drawChar(terminal, charData[CHAR_DATA_CHAR_INDEX], <number>charData[CHAR_DATA_CODE_INDEX], x, y, COLOR_CODES.BLACK);
   }
 
   private _renderUnderlineCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
