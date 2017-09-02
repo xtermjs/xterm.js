@@ -59,6 +59,50 @@ interface ITerminalOptions {
 }
 
 /**
+ * Contains colors to theme the terminal with.
+ */
+interface ITheme {
+  /** The default foreground color */
+  foreground?: string,
+  /** The default background color */
+  background?: string,
+  /** The cursor color */
+  cursor?: string,
+  /** ANSI black (eg. `\x1b[30m`) */
+  black?: string,
+  /** ANSI red (eg. `\x1b[31m`) */
+  red?: string,
+  /** ANSI green (eg. `\x1b[32m`) */
+  green?: string,
+  /** ANSI yellow (eg. `\x1b[33m`) */
+  yellow?: string,
+  /** ANSI blue (eg. `\x1b[34m`) */
+  blue?: string,
+  /** ANSI magenta (eg. `\x1b[35m`) */
+  magenta?: string,
+  /** ANSI cyan (eg. `\x1b[36m`) */
+  cyan?: string,
+  /** ANSI white (eg. `\x1b[37m`) */
+  white?: string,
+  /** ANSI bright black (eg. `\x1b[1;30m`) */
+  brightBlack?: string,
+  /** ANSI bright red (eg. `\x1b[1;31m`) */
+  brightRed?: string,
+  /** ANSI bright green (eg. `\x1b[1;32m`) */
+  brightGreen?: string,
+  /** ANSI bright yellow (eg. `\x1b[1;33m`) */
+  brightYellow?: string,
+  /** ANSI bright blue (eg. `\x1b[1;34m`) */
+  brightBlue?: string,
+  /** ANSI bright magenta (eg. `\x1b[1;35m`) */
+  brightMagenta?: string,
+  /** ANSI bright cyan (eg. `\x1b[1;36m`) */
+  brightCyan?: string,
+  /** ANSI bright white (eg. `\x1b[1;37m`) */
+  brightWhite?: string
+}
+
+/**
  * An object containing options for a link matcher.
  */
 interface ILinkMatcherOptions {
@@ -399,6 +443,12 @@ declare module 'xterm' {
      * @param value The option value.
      */
     setOption(key: string, value: any): void;
+
+    /**
+     * Sets the theme of the terminal.
+     * @param theme The theme to use.
+     */
+    setTheme(theme: ITheme): void;
 
     /**
      * Tells the renderer to refresh terminal content between two rows
