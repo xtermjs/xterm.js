@@ -61,13 +61,6 @@ const WRITE_BUFFER_PAUSE_THRESHOLD = 5;
  */
 const WRITE_BATCH_SIZE = 300;
 
-/**
- * The time between cursor blinks. This is driven by JS rather than a CSS
- * animation due to a bug in Chromium that causes it to use excessive CPU time.
- * See https://github.com/Microsoft/vscode/issues/22900
- */
-const CURSOR_BLINK_INTERVAL = 600;
-
 // TODO: Most of the color code should be removed after truecolor is implemented
 // Colors 0-15
 const tangoColors: string[] = [
@@ -197,10 +190,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
   private sendDataQueue: string;
   private customKeyEventHandler: CustomKeyEventHandler;
-  // The ID from a setInterval that tracks the blink animation. This animation
-  // is done in JS due to a Chromium bug with CSS animations that thrashed the
-  // CPU.
-  private cursorBlinkInterval: NodeJS.Timer;
 
   // modes
   public applicationKeypad: boolean;
@@ -341,7 +330,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.cursorHidden = false;
     this.sendDataQueue = '';
     this.customKeyEventHandler = null;
-    this.cursorBlinkInterval = null;
 
     // modes
     this.applicationKeypad = false;
@@ -488,12 +476,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this[key] = value;
     this.options[key] = value;
     switch (key) {
-      case 'cursorBlink': this.setCursorBlinking(value); break;
-      case 'cursorStyle':
-        this.element.classList.toggle(`xterm-cursor-style-block`, value === 'block');
-        this.element.classList.toggle(`xterm-cursor-style-underline`, value === 'underline');
-        this.element.classList.toggle(`xterm-cursor-style-bar`, value === 'bar');
-        break;
       case 'fontFamily':
       case 'fontSize':
         // When the font changes the size of the cells may change which requires a renderer clear
@@ -511,28 +493,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.renderer.onOptionsChanged();
   }
 
-  private restartCursorBlinking(): void {
-    this.setCursorBlinking(this.options.cursorBlink);
-  }
-
-  private setCursorBlinking(enabled: boolean): void {
-    this.element.classList.toggle('xterm-cursor-blink', enabled);
-    this.clearCursorBlinkingInterval();
-    if (enabled) {
-      this.cursorBlinkInterval = setInterval(() => {
-        this.element.classList.toggle('xterm-cursor-blink-on');
-      }, CURSOR_BLINK_INTERVAL);
-    }
-  }
-
-  private clearCursorBlinkingInterval(): void {
-    this.element.classList.remove('xterm-cursor-blink-on');
-    if (this.cursorBlinkInterval) {
-      clearInterval(this.cursorBlinkInterval);
-      this.cursorBlinkInterval = null;
-    }
-  }
-
   /**
    * Binds the desired focus behavior on a given terminal object.
    */
@@ -542,7 +502,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     }
     this.element.classList.add('focus');
     this.showCursor();
-    this.restartCursorBlinking.apply(this);
     this.emit('focus');
   };
 
@@ -563,7 +522,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       this.send(C0.ESC + '[O');
     }
     this.element.classList.remove('focus');
-    this.clearCursorBlinkingInterval.apply(this);
     this.emit('blur');
   }
 
@@ -696,8 +654,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.element = this.document.createElement('div');
     this.element.classList.add('terminal');
     this.element.classList.add('xterm');
-    this.element.classList.add(`xterm-cursor-style-${this.options.cursorStyle}`);
-    this.setCursorBlinking(this.options.cursorBlink);
 
     this.element.setAttribute('tabindex', '0');
 
@@ -1462,8 +1418,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       return false;
     }
 
-    this.restartCursorBlinking();
-
     if (!this.compositionHelper.keydown(ev)) {
       if (this.buffer.ybase !== this.buffer.ydisp) {
         this.scrollToBottom();
@@ -2171,12 +2125,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.options.rows = this.rows;
     this.options.cols = this.cols;
     const customKeyEventHandler = this.customKeyEventHandler;
-    const cursorBlinkInterval = this.cursorBlinkInterval;
     const inputHandler = this.inputHandler;
     const buffers = this.buffers;
     this.setup();
     this.customKeyEventHandler = customKeyEventHandler;
-    this.cursorBlinkInterval = cursorBlinkInterval;
     this.inputHandler = inputHandler;
     this.buffers = buffers;
     this.refresh(0, this.rows - 1);

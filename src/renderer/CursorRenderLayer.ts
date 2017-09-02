@@ -13,7 +13,7 @@ import { COLOR_CODES } from './ColorManager';
 const BLINK_INTERVAL = 600;
 
 export class CursorRenderLayer extends BaseRenderLayer {
-  private _state: [number, number];
+  private _state: [number, number, string];
   private _cursorRenderers: {[key: string]: (terminal: ITerminal, x: number, y: number, charData: CharData) => void};
   private _cursorBlinkStateManager: CursorBlinkStateManager;
   private _isFocused: boolean;
@@ -118,7 +118,10 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
     if (this._state) {
       // The cursor is already in the correct spot, don't redraw
-      if (this._state[0] === terminal.buffer.x && this._state[1] === viewportRelativeCursorY) {
+      if (this._state[0] === terminal.buffer.x &&
+          this._state[1] === viewportRelativeCursorY &&
+          this._state[2] === terminal.options.cursorStyle) {
+        // TODO: Ideally cursorStyle would be stored as a number here to prevent the string compare
         return;
       }
       this._clearCursor();
@@ -128,7 +131,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     this._ctx.fillStyle = this.colors.ansi[COLOR_CODES.WHITE];
     this._cursorRenderers[terminal.options.cursorStyle || 'block'](terminal, terminal.buffer.x, viewportRelativeCursorY, charData);
     this._ctx.restore();
-    this._state = [terminal.buffer.x, viewportRelativeCursorY];
+    this._state = [terminal.buffer.x, viewportRelativeCursorY, terminal.options.cursorStyle];
   }
 
   private _clearCursor(): void {
