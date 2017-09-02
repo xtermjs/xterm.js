@@ -28,7 +28,7 @@ export function getCoordsRelativeToElement(event: MouseEvent, element: HTMLEleme
  * is returned as an array in the form [x, y] instead of an object as it's a
  * little faster and this function is used in some low level code.
  * @param event The mouse event.
- * @param rowContainer The terminal's row container.
+ * @param element The terminal's container element.
  * @param charMeasure The char measure object used to determine character sizes.
  * @param colCount The number of columns in the terminal.
  * @param rowCount The number of rows n the terminal.
@@ -36,13 +36,13 @@ export function getCoordsRelativeToElement(event: MouseEvent, element: HTMLEleme
  * apply an offset to the x value such that the left half of the cell will
  * select that cell and the right half will select the next cell.
  */
-export function getCoords(event: MouseEvent, rowContainer: HTMLElement, charMeasure: CharMeasure, lineHeight: number, colCount: number, rowCount: number, isSelection?: boolean): [number, number] {
+export function getCoords(event: MouseEvent, element: HTMLElement, charMeasure: CharMeasure, lineHeight: number, colCount: number, rowCount: number, isSelection?: boolean): [number, number] {
   // Coordinates cannot be measured if charMeasure has not been initialized
   if (!charMeasure.width || !charMeasure.height) {
     return null;
   }
 
-  const coords = getCoordsRelativeToElement(event, rowContainer);
+  const coords = getCoordsRelativeToElement(event, element);
   if (!coords) {
     return null;
   }
@@ -63,13 +63,13 @@ export function getCoords(event: MouseEvent, rowContainer: HTMLElement, charMeas
  * them to the bounds of the terminal and adding 32 to both the x and y values
  * as expected by xterm.
  * @param event The mouse event.
- * @param rowContainer The terminal's row container.
+ * @param element The terminal's container element.
  * @param charMeasure The char measure object used to determine character sizes.
  * @param colCount The number of columns in the terminal.
  * @param rowCount The number of rows in the terminal.
  */
-export function getRawByteCoords(event: MouseEvent, rowContainer: HTMLElement, charMeasure: CharMeasure, lineHeight: number, colCount: number, rowCount: number): { x: number, y: number } {
-  const coords = getCoords(event, rowContainer, charMeasure, lineHeight, colCount, rowCount);
+export function getRawByteCoords(event: MouseEvent, element: HTMLElement, charMeasure: CharMeasure, lineHeight: number, colCount: number, rowCount: number): { x: number, y: number } {
+  const coords = getCoords(event, element, charMeasure, lineHeight, colCount, rowCount);
   let x = coords[0];
   let y = coords[1];
 

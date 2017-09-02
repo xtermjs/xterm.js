@@ -51,7 +51,7 @@ export class Viewport implements IViewport {
       if (rowHeightChanged) {
         this.currentRowHeight = lineHeight;
         this.viewportElement.style.lineHeight = lineHeight + 'px';
-        this.terminal.rowContainer.style.lineHeight = lineHeight + 'px';
+        this.terminal.element.style.lineHeight = lineHeight + 'px';
       }
       const viewportHeightChanged = this.lastRecordedViewportHeight !== this.terminal.rows;
       if (rowHeightChanged || viewportHeightChanged) {

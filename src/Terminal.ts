@@ -31,7 +31,7 @@ import { InputHandler } from './InputHandler';
 import { Parser } from './Parser';
 // import { Renderer } from './Renderer';
 import { Renderer } from './renderer/Renderer';
-import { Linkifier } from './Linkifier';
+// import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
 import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './utils/Browser';
@@ -87,7 +87,6 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
 export class Terminal extends EventEmitter implements ITerminal, IInputHandlingTerminal {
   public textarea: HTMLTextAreaElement;
   public element: HTMLElement;
-  public rowContainer: HTMLElement;
 
   /**
    * The HTMLElement that the terminal is created in, set by Terminal.open.
@@ -145,7 +144,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   public urxvtMouse: boolean;
 
   // misc
-  public children: HTMLElement[];
   private refreshStart: number;
   private refreshEnd: number;
   public savedCols: number;
@@ -187,7 +185,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   private parser: Parser;
   private renderer: Renderer;
   public selectionManager: SelectionManager;
-  private linkifier: Linkifier;
+  // private linkifier: Linkifier;
   public buffers: BufferSet;
   public buffer: Buffer;
   public viewport: IViewport;
@@ -284,7 +282,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // Reuse renderer if the Terminal is being recreated via a reset call.
     this.renderer = this.renderer || null;
     this.selectionManager = this.selectionManager || null;
-    this.linkifier = this.linkifier || new Linkifier();
+    // this.linkifier = this.linkifier || new Linkifier();
 
     // Create the terminal's buffers and set the current buffer
     this.buffers = new BufferSet(this);
@@ -540,22 +538,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 
   /**
-   * Insert the given row to the terminal or produce a new one
-   * if no row argument is passed. Return the inserted row.
-   * @param {HTMLElement} row (optional) The row to append to the terminal.
-   */
-  private insertRow(row?: HTMLElement): HTMLElement {
-    if (typeof row !== 'object') {
-      row = document.createElement('div');
-    }
-
-    this.rowContainer.appendChild(row);
-    this.children.push(row);
-
-    return row;
-  };
-
-  /**
    * Opens the terminal within an element.
    *
    * @param {HTMLElement} parent The element to create the terminal within.
@@ -597,13 +579,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.selectionContainer.classList.add('xterm-selection');
     this.element.appendChild(this.selectionContainer);
 
-    // Create the container that will hold the lines of the terminal and then
-    // produce the lines the lines.
-    this.rowContainer = document.createElement('div');
-    this.rowContainer.classList.add('xterm-rows');
-    this.element.appendChild(this.rowContainer);
-    this.children = [];
-    this.linkifier.attachToDom(document, this.children);
+    // TODO: Re-enable linkifier
+    // this.linkifier.attachToDom(document, this.children);
 
     // Create the container that will hold helpers like the textarea for
     // capturing DOM Events. Then produce the helpers.
@@ -629,9 +606,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.charSizeStyleElement = document.createElement('style');
     this.helperContainer.appendChild(this.charSizeStyleElement);
 
-    for (; i < this.rows; i++) {
-      this.insertRow();
-    }
     this.parent.appendChild(this.element);
 
     this.charMeasure = new CharMeasure(document, this.helperContainer);
@@ -648,7 +622,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       this.renderer.queueRefresh(0, this.rows - 1);
     });
 
-    this.selectionManager = new SelectionManager(this, this.buffer, this.rowContainer, this.charMeasure);
+    this.selectionManager = new SelectionManager(this, this.buffer, this.charMeasure);
     this.element.addEventListener('mousedown', (e: MouseEvent) => this.selectionManager.onMouseDown(e));
     this.selectionManager.on('refresh', data => this.renderer.onSelectionChanged(data.start, data.end));
     this.selectionManager.on('newselection', text => {
@@ -721,7 +695,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       button = getButton(ev);
 
       // get mouse coordinates
-      pos = getRawByteCoords(ev, self.rowContainer, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
+      pos = getRawByteCoords(ev, self.element, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
       if (!pos) return;
 
       sendEvent(button, pos);
@@ -747,7 +721,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // ^[[M 3<^[[M@4<^[[M@5<^[[M@6<^[[M@7<^[[M#7<
     function sendMove(ev: MouseEvent): void {
       let button = pressed;
-      let pos = getRawByteCoords(ev, self.rowContainer, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
+      let pos = getRawByteCoords(ev, self.element, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
       if (!pos) return;
 
       // buttons marked as motions
@@ -1033,12 +1007,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param {number} end The row to end at (between start and this.rows - 1).
    */
   private queueLinkification(start: number, end: number): void {
-    if (this.linkifier) {
-      this.linkifier.linkifyRows(0, this.rows);
-      // for (let i = start; i <= end; i++) {
-      //   this.linkifier.linkifyRow(i);
-      // }
-    }
+    // if (this.linkifier) {
+    //   this.linkifier.linkifyRows(0, this.rows);
+    // }
   }
 
   /**
@@ -1246,12 +1217,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param handler The handler callback function.
    */
   public setHypertextLinkHandler(handler: LinkMatcherHandler): void {
-    if (!this.linkifier) {
-      throw new Error('Cannot attach a hypertext link handler before Terminal.open is called');
-    }
-    this.linkifier.setHypertextLinkHandler(handler);
-    // Refresh to force links to refresh
-    this.refresh(0, this.rows - 1);
+    // if (!this.linkifier) {
+    //   throw new Error('Cannot attach a hypertext link handler before Terminal.open is called');
+    // }
+    // this.linkifier.setHypertextLinkHandler(handler);
+    // // Refresh to force links to refresh
+    // this.refresh(0, this.rows - 1);
   }
 
   /**
@@ -1261,12 +1232,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * be cleared with null.
    */
   public setHypertextValidationCallback(callback: LinkMatcherValidationCallback): void {
-    if (!this.linkifier) {
-      throw new Error('Cannot attach a hypertext validation callback before Terminal.open is called');
-    }
-    this.linkifier.setHypertextValidationCallback(callback);
-    // Refresh to force links to refresh
-    this.refresh(0, this.rows - 1);
+    // if (!this.linkifier) {
+    //   throw new Error('Cannot attach a hypertext validation callback before Terminal.open is called');
+    // }
+    // this.linkifier.setHypertextValidationCallback(callback);
+    // // Refresh to force links to refresh
+    // this.refresh(0, this.rows - 1);
   }
 
   /**
@@ -1280,11 +1251,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @return The ID of the new matcher, this can be used to deregister.
    */
   public registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options?: ILinkMatcherOptions): number {
-    if (this.linkifier) {
-      const matcherId = this.linkifier.registerLinkMatcher(regex, handler, options);
-      this.refresh(0, this.rows - 1);
-      return matcherId;
-    }
+    // if (this.linkifier) {
+    //   const matcherId = this.linkifier.registerLinkMatcher(regex, handler, options);
+    //   this.refresh(0, this.rows - 1);
+    //   return matcherId;
+    // }
+    return 0;
   }
 
   /**
@@ -1292,11 +1264,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param matcherId The link matcher's ID (returned after register)
    */
   public deregisterLinkMatcher(matcherId: number): void {
-    if (this.linkifier) {
-      if (this.linkifier.deregisterLinkMatcher(matcherId)) {
-        this.refresh(0, this.rows - 1);
-      }
-    }
+    // if (this.linkifier) {
+    //   if (this.linkifier.deregisterLinkMatcher(matcherId)) {
+    //     this.refresh(0, this.rows - 1);
+    //   }
+    // }
   }
 
   /**
@@ -1794,13 +1766,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       return;
     }
 
-    let line;
-    let el;
-    let i;
-    let j;
-    let ch;
-    let addToY;
-
     if (x === this.cols && y === this.rows) {
       // Check if we still need to measure the char size (fixes #785).
       if (!this.charMeasure.width || !this.charMeasure.height) {
@@ -1813,16 +1778,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     if (y < 1) y = 1;
 
     this.buffers.resize(x, y);
-
-    // Adjust rows in the DOM to accurately reflect the new dimensions
-    while (this.children.length < y) {
-      this.insertRow();
-    }
-    while (this.children.length > y) {
-      el = this.children.shift();
-      if (!el) continue;
-      el.parentNode.removeChild(el);
-    }
 
     this.cols = x;
     this.rows = y;

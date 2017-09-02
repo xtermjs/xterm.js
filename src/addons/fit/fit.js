@@ -35,18 +35,14 @@
     if (!term.element.parentElement) {
       return null;
     }
-    var parentElementStyle = window.getComputedStyle(term.element.parentElement),
-        parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height')),
-        parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')) - 17),
-        elementStyle = window.getComputedStyle(term.element),
-        elementPaddingVer = parseInt(elementStyle.getPropertyValue('padding-top')) + parseInt(elementStyle.getPropertyValue('padding-bottom')),
-        elementPaddingHor = parseInt(elementStyle.getPropertyValue('padding-right')) + parseInt(elementStyle.getPropertyValue('padding-left')),
-        availableHeight = parentElementHeight - elementPaddingVer,
-        availableWidth = parentElementWidth - elementPaddingHor,
-        container = term.rowContainer,
-        subjectRow = term.rowContainer.firstElementChild,
-        contentBuffer = subjectRow.innerHTML;
-
+    var parentElementStyle = window.getComputedStyle(term.element.parentElement);
+    var parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height'));
+    var parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')) - 17);
+    var elementStyle = window.getComputedStyle(term.element);
+    var elementPaddingVer = parseInt(elementStyle.getPropertyValue('padding-top')) + parseInt(elementStyle.getPropertyValue('padding-bottom'));
+    var elementPaddingHor = parseInt(elementStyle.getPropertyValue('padding-right')) + parseInt(elementStyle.getPropertyValue('padding-left'));
+    var availableHeight = parentElementHeight - elementPaddingVer;
+    var availableWidth = parentElementWidth - elementPaddingHor;
     var geometry = {
       cols: parseInt(availableWidth / term.charMeasure.width, 10),
       rows: parseInt(availableHeight / (term.charMeasure.height * term.getOption('lineHeight')), 10)

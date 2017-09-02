@@ -17,10 +17,9 @@ class TestSelectionManager extends SelectionManager {
   constructor(
     terminal: ITerminal,
     buffer: IBuffer,
-    rowContainer: HTMLElement,
     charMeasure: CharMeasure
   ) {
-    super(terminal, buffer, rowContainer, charMeasure);
+    super(terminal, buffer, charMeasure);
   }
 
   public get model(): SelectionModel { return this._model; }
@@ -48,7 +47,6 @@ describe('SelectionManager', () => {
     dom = new jsdom.JSDOM('');
     window = dom.window;
     document = window.document;
-    rowContainer = document.createElement('div');
     terminal = new MockTerminal();
     terminal.cols = 80;
     terminal.rows = 2;
@@ -56,7 +54,7 @@ describe('SelectionManager', () => {
     terminal.buffers = new BufferSet(terminal);
     terminal.buffer = terminal.buffers.active;
     buffer = terminal.buffer;
-    selectionManager = new TestSelectionManager(terminal, buffer, rowContainer, null);
+    selectionManager = new TestSelectionManager(terminal, buffer, null);
   });
 
   function stringToRow(text: string): LineData {

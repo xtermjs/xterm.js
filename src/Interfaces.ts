@@ -19,7 +19,6 @@ export interface IBrowser {
 
 export interface ITerminal extends IEventEmitter {
   element: HTMLElement;
-  rowContainer: HTMLElement;
   selectionContainer: HTMLElement;
   selectionManager: ISelectionManager;
   charMeasure: ICharMeasure;
@@ -28,7 +27,6 @@ export interface ITerminal extends IEventEmitter {
   cols: number;
   browser: IBrowser;
   writeBuffer: string[];
-  children: HTMLElement[];
   cursorHidden: boolean;
   cursorState: number;
   defAttr: number;
