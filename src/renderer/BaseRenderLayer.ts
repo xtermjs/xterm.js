@@ -108,7 +108,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (fg < 256) {
       colorIndex = fg + 1;
     }
-    if (code < 256 && colorIndex > 0 && fg < 16) {
+    if (code < 256 && (colorIndex > 0 || fg >= 256)) {
       // ImageBitmap's draw about twice as fast as from a canvas
       const charAtlasCellWidth = this.scaledCharWidth + CHAR_ATLAS_CELL_SPACING;
       const charAtlasCellHeight = this.scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
@@ -136,6 +136,15 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       this._ctx.fillStyle = this.colors.foreground;
     }
 
+    // Since uncached characters are not coming off the char atlas with source
+    // coordinates, it means that text drawn to the canvas (particularly '_')
+    // can bleed into other cells. This code will clip the following fillText,
+    // ensuring that its contents don't go beyond the cell bounds.
+    this._ctx.beginPath();
+    this._ctx.rect(x * this.scaledCharWidth, y * this.scaledCharHeight, this.scaledCharWidth, this.scaledCharHeight);
+    this._ctx.clip();
+
+    // Draw the character
     this._ctx.fillText(char, x * this.scaledCharWidth, y * this.scaledCharHeight);
     this._ctx.restore();
   }

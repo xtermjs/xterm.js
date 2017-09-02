@@ -165,7 +165,9 @@ export class CursorRenderLayer extends BaseRenderLayer {
   }
 
   private _renderBlurCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
+    this._ctx.save();
     this.drawSquareAtCell(x, y, this.colors.cursor);
+    this._ctx.restore();
   }
 }
 
