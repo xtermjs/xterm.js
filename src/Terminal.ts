@@ -97,7 +97,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   private body: HTMLBodyElement;
   private viewportScrollArea: HTMLElement;
   private viewportElement: HTMLElement;
-  public selectionContainer: HTMLElement;
   private helperContainer: HTMLElement;
   private compositionView: HTMLElement;
   private charSizeStyleElement: HTMLStyleElement;
@@ -573,11 +572,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     // preload audio
     this.syncBellSound();
-
-    // Create the selection container.
-    this.selectionContainer = document.createElement('div');
-    this.selectionContainer.classList.add('xterm-selection');
-    this.element.appendChild(this.selectionContainer);
 
     // TODO: Re-enable linkifier
     // this.linkifier.attachToDom(document, this.children);

@@ -57,7 +57,6 @@ export class Viewport implements IViewport {
       if (rowHeightChanged || viewportHeightChanged) {
         this.lastRecordedViewportHeight = this.terminal.rows;
         this.viewportElement.style.height = lineHeight * this.terminal.rows + 'px';
-        this.terminal.selectionContainer.style.height = this.viewportElement.style.height;
       }
       this.scrollArea.style.height = (lineHeight * this.lastRecordedBufferLength) + 'px';
     }

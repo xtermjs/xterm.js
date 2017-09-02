@@ -19,7 +19,6 @@ export interface IBrowser {
 
 export interface ITerminal extends IEventEmitter {
   element: HTMLElement;
-  selectionContainer: HTMLElement;
   selectionManager: ISelectionManager;
   charMeasure: ICharMeasure;
   textarea: HTMLTextAreaElement;
