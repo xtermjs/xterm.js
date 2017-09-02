@@ -136,7 +136,6 @@ const vcolors: number[][] = (function(): number[][] {
 })();
 
 const DEFAULT_OPTIONS: ITerminalOptions = {
-  colors: defaultColors,
   convertEol: false,
   termName: 'xterm',
   geometry: [80, 24],
@@ -299,19 +298,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       // TODO: We should move away from duplicate options on the Terminal object
       this[key] = this.options[key];
     });
-
-    if (this.options.colors.length === 8) {
-      this.options.colors = this.options.colors.concat(_colors.slice(8));
-    } else if (this.options.colors.length === 16) {
-      this.options.colors = this.options.colors.concat(_colors.slice(16));
-    } else if (this.options.colors.length === 10) {
-      this.options.colors = this.options.colors.slice(0, -2).concat(
-        _colors.slice(8, -2), this.options.colors.slice(-2));
-    } else if (this.options.colors.length === 18) {
-      this.options.colors = this.options.colors.concat(
-        _colors.slice(16, -2), this.options.colors.slice(-2));
-    }
-    this.colors = this.options.colors;
 
     // this.context = options.context || window;
     // this.document = options.document || document;

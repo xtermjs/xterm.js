@@ -117,7 +117,6 @@ export interface ITerminalOptions {
   bellSound?: string;
   bellStyle?: string;
   cancelEvents?: boolean;
-  colors?: string[];
   cols?: number;
   convertEol?: boolean;
   cursorBlink?: boolean;
