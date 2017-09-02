@@ -14,7 +14,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
   // TODO: This should be shared between terminals, but not for static as some
   // terminals may have different styles
-  private _charAtlas: ImageBitmap;
+  private _charAtlas: HTMLCanvasElement | ImageBitmap;
 
   constructor(
     container: HTMLElement,
@@ -39,8 +39,17 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   public onSelectionChanged(terminal: ITerminal, start: [number, number], end: [number, number]): void {}
 
   public onThemeChanged(terminal: ITerminal, colorSet: IColorSet): void {
+    this._refreshCharAtlas(terminal, colorSet);
+  }
+
+  private _refreshCharAtlas(terminal: ITerminal, colorSet: IColorSet): void {
     this._charAtlas = null;
-    acquireCharAtlas(terminal, this.colors).then(bitmap => this._charAtlas = bitmap);
+    const result = acquireCharAtlas(terminal, this.colors);
+    if (result instanceof HTMLCanvasElement) {
+      this._charAtlas = result;
+    } else {
+      result.then(bitmap => this._charAtlas = bitmap);
+    }
   }
 
   public resize(terminal: ITerminal, canvasWidth: number, canvasHeight: number, charSizeChanged: boolean): void {
@@ -52,7 +61,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._canvas.style.height = `${canvasHeight}px`;
 
     if (charSizeChanged) {
-      acquireCharAtlas(terminal, this.colors).then(bitmap => this._charAtlas = bitmap);
+      this._refreshCharAtlas(terminal, this.colors);
     }
   }
 
