@@ -97,10 +97,10 @@ function createTerminal() {
     colsElement.value = term.cols;
     rowsElement.value = term.rows;
 
-    fetch('/terminals?cols=' + cols + '&rows=' + rows, {method: 'POST'}).then(function (res) {
+    fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, {method: 'POST'}).then(function (res) {
 
-      charWidth = Math.ceil(term.element.offsetWidth / cols);
-      charHeight = Math.ceil(term.element.offsetHeight / rows);
+      charWidth = Math.ceil(term.element.offsetWidth / term.cols);
+      charHeight = Math.ceil(term.element.offsetHeight / term.rows);
 
       res.text().then(function (pid) {
         window.pid = pid;
