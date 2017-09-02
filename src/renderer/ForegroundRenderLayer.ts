@@ -32,6 +32,11 @@ export class ForegroundRenderLayer extends BaseRenderLayer {
     //   return;
     // }
 
+    // Resize has not been called yet
+    if (this._state.cache.length === 0) {
+      return;
+    }
+
     for (let y = startRow; y <= endRow; y++) {
       const row = y + terminal.buffer.ydisp;
       const line = terminal.buffer.lines.get(row);

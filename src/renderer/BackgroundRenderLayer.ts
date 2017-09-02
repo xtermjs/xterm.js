@@ -24,6 +24,10 @@ export class BackgroundRenderLayer extends BaseRenderLayer {
   }
 
   public onGridChanged(terminal: ITerminal, startRow: number, endRow: number): void {
+    // Resize has not been called yet
+    if (this._state.cache.length === 0) {
+      return;
+    }
     for (let y = startRow; y <= endRow; y++) {
       let row = y + terminal.buffer.ydisp;
       let line = terminal.buffer.lines.get(row);

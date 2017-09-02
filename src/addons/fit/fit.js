@@ -45,33 +45,26 @@
         availableWidth = parentElementWidth - elementPaddingHor,
         container = term.rowContainer,
         subjectRow = term.rowContainer.firstElementChild,
-        contentBuffer = subjectRow.innerHTML,
-        characterHeight,
-        rows,
-        characterWidth,
-        cols,
-        geometry;
+        contentBuffer = subjectRow.innerHTML;
 
-    subjectRow.style.display = 'inline';
-    subjectRow.innerHTML = 'W'; // Common character for measuring width, although on monospace
-    characterWidth = subjectRow.getBoundingClientRect().width;
-    subjectRow.style.display = ''; // Revert style before calculating height, since they differ.
-    characterHeight = subjectRow.getBoundingClientRect().height;
-    subjectRow.innerHTML = contentBuffer;
+    var geometry = {
+      cols: parseInt(availableWidth / term.charMeasure.width, 10),
+      rows: parseInt(availableHeight / term.charMeasure.height, 10)
+    };
 
-    rows = parseInt(availableHeight / characterHeight);
-    cols = parseInt(availableWidth / characterWidth);
-
-    geometry = {cols: cols, rows: rows};
     return geometry;
   };
 
   exports.fit = function (term) {
-    var geometry = exports.proposeGeometry(term);
+    // Wrap fit in a setTimeout as charMeasure needs time to get initialized
+    // after calling Terminal.open
+    setTimeout(() => {
+      var geometry = exports.proposeGeometry(term);
 
-    if (geometry) {
-      term.resize(geometry.cols, geometry.rows);
-    }
+      if (geometry) {
+        term.resize(geometry.cols, geometry.rows);
+      }
+    }, 0);
   };
 
   Terminal.prototype.proposeGeometry = function () {

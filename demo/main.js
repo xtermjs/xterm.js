@@ -92,27 +92,26 @@ function createTerminal() {
   term.open(terminalContainer);
   term.fit();
 
-  var initialGeometry = term.proposeGeometry(),
-      cols = initialGeometry.cols,
-      rows = initialGeometry.rows;
+  // fit is called within a setTimeout, cols and rows need this.
+  setTimeout(() => {
+    colsElement.value = term.cols;
+    rowsElement.value = term.rows;
 
-  colsElement.value = cols;
-  rowsElement.value = rows;
+    fetch('/terminals?cols=' + cols + '&rows=' + rows, {method: 'POST'}).then(function (res) {
 
-  fetch('/terminals?cols=' + cols + '&rows=' + rows, {method: 'POST'}).then(function (res) {
+      charWidth = Math.ceil(term.element.offsetWidth / cols);
+      charHeight = Math.ceil(term.element.offsetHeight / rows);
 
-    charWidth = Math.ceil(term.element.offsetWidth / cols);
-    charHeight = Math.ceil(term.element.offsetHeight / rows);
-
-    res.text().then(function (pid) {
-      window.pid = pid;
-      socketURL += pid;
-      socket = new WebSocket(socketURL);
-      socket.onopen = runRealTerminal;
-      socket.onclose = runFakeTerminal;
-      socket.onerror = runFakeTerminal;
+      res.text().then(function (pid) {
+        window.pid = pid;
+        socketURL += pid;
+        socket = new WebSocket(socketURL);
+        socket.onopen = runRealTerminal;
+        socket.onclose = runFakeTerminal;
+        socket.onerror = runFakeTerminal;
+      });
     });
-  });
+  }, 0);
 }
 
 function runRealTerminal() {
