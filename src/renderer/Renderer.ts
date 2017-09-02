@@ -3,7 +3,6 @@
  */
 
 import { ITerminal, ITheme } from '../Interfaces';
-import { DomElementObjectPool } from '../utils/DomElementObjectPool';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
 import { createBackgroundFillData } from './Canvas';
 import { BackgroundRenderLayer } from './BackgroundRenderLayer';
