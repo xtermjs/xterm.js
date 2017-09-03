@@ -123,6 +123,8 @@ export class Renderer {
     this._refreshAnimationFrame = null;
 
     // Render
+    start = Math.max(start, 0);
+    end = Math.min(end, this._terminal.rows - 1);
     this._renderLayers.forEach(l => l.onGridChanged(this._terminal, start, end));
     this._terminal.emit('refresh', {start, end});
   }
