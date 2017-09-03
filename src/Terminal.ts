@@ -43,6 +43,7 @@ import { BellSound } from './utils/Sounds';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { IMouseZoneManager } from './input/Interfaces';
 import { MouseZoneManager } from './input/MouseZoneManager';
+import { initialize as initializeCharAtlas } from './renderer/CharAtlas';
 
 // Declare for RequireJS in loadAddon
 declare var define: any;
@@ -561,6 +562,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.context = this.parent.ownerDocument.defaultView;
     this.document = this.parent.ownerDocument;
     this.body = <HTMLBodyElement>this.document.body;
+
+    initializeCharAtlas(this.document);
 
     // Create main element container
     this.element = this.document.createElement('div');

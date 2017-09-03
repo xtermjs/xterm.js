@@ -91,12 +91,20 @@ function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean {
       a.colors.foreground === b.colors.foreground;
 }
 
+let generator: CharAtlasGenerator;
+
+export function initialize(document: Document): void {
+  if (!generator) {
+    generator = new CharAtlasGenerator(document);
+  }
+}
+
 class CharAtlasGenerator {
   private _canvas: HTMLCanvasElement;
   private _ctx: CanvasRenderingContext2D;
 
-  constructor() {
-    this._canvas = document.createElement('canvas');
+  constructor(private _document: Document) {
+    this._canvas = this._document.createElement('canvas');
     this._ctx = this._canvas.getContext('2d');
     this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
   }
@@ -147,7 +155,7 @@ class CharAtlasGenerator {
     if (!('createImageBitmap' in window)) {
       // Regenerate canvas and context as they are now owned by the char atlas
       const result = this._canvas;
-      this._canvas = document.createElement('canvas');
+      this._canvas = this._document.createElement('canvas');
       this._ctx = this._canvas.getContext('2d');
       this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
       return result;
@@ -159,5 +167,3 @@ class CharAtlasGenerator {
     return promise;
   }
 }
-
-const generator = new CharAtlasGenerator();
