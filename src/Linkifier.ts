@@ -2,8 +2,10 @@
  * @license MIT
  */
 
-import { ILinkMatcherOptions } from './Interfaces';
-import { LinkMatcher, LinkMatcherHandler, LinkMatcherValidationCallback } from './Types';
+import { ILinkMatcherOptions, ITerminal } from './Interfaces';
+import { LinkMatcher, LinkMatcherHandler, LinkMatcherValidationCallback, LineData } from './Types';
+import { IMouseZoneManager } from './input/Interfaces';
+import { MouseZone } from './input/MouseZoneManager';
 
 const INVALID_LINK_CLASS = 'xterm-invalid-link';
 
@@ -44,13 +46,14 @@ export class Linkifier {
 
   protected _linkMatchers: LinkMatcher[];
 
-  private _document: Document;
-  private _rows: HTMLElement[];
+  private _mouseZoneManager: IMouseZoneManager;
   private _rowTimeoutIds: number[];
   private _rowsTimeoutId: number;
   private _nextLinkMatcherId = HYPERTEXT_LINK_MATCHER_ID;
 
-  constructor() {
+  constructor(
+    private _terminal: ITerminal
+  ) {
     this._rowTimeoutIds = [];
     this._linkMatchers = [];
     this.registerLinkMatcher(strictUrlRegex, null, { matchIndex: 1 });
@@ -61,21 +64,20 @@ export class Linkifier {
    * @param document The document object.
    * @param rows The array of rows to apply links to.
    */
-  public attachToDom(document: Document, rows: HTMLElement[]): void {
-    this._document = document;
-    this._rows = rows;
+  public attachToDom(mouseZoneManager: IMouseZoneManager): void {
+    console.log('attachToDom', mouseZoneManager);
+    this._mouseZoneManager = mouseZoneManager;
   }
 
   public linkifyRows(start: number, end: number): void {
-    // for (let i = start; i <= end; i++) {
-    //   this.linkifyRow(i);
-    // }
-
-
     // Don't attempt linkify if not yet attached to DOM
-    if (!this._document) {
+    if (!this._mouseZoneManager) {
       return;
     }
+
+    // Clear out any existing links
+    this._mouseZoneManager.clearAll();
+    // TODO: Cancel any validation callbacks
 
     if (this._rowsTimeoutId) {
       clearTimeout(this._rowsTimeoutId);
@@ -95,7 +97,7 @@ export class Linkifier {
    */
   public linkifyRow(rowIndex: number): void {
     // Don't attempt linkify if not yet attached to DOM
-    if (!this._document) {
+    if (!this._mouseZoneManager) {
       return;
     }
 
@@ -194,194 +196,68 @@ export class Linkifier {
    * @param {number} rowIndex The index of the row to linkify.
    */
   private _linkifyRow(rowIndex: number): void {
-    const row = this._rows[rowIndex];
-    if (!row) {
+    const absoluteRowIndex = this._terminal.buffer.ydisp + rowIndex;
+    if (absoluteRowIndex >= this._terminal.buffer.lines.length) {
       return;
     }
-    const text = row.textContent;
+    const text = this._terminal.buffer.translateBufferLineToString(absoluteRowIndex, false);
     for (let i = 0; i < this._linkMatchers.length; i++) {
-      const matcher = this._linkMatchers[i];
-      const linkElements = this._doLinkifyRow(row, matcher);
-        if (linkElements.length > 0) {
-        // Fire validation callback
-        if (matcher.validationCallback) {
-          for (let j = 0; j < linkElements.length; j++) {
-            const element = linkElements[j];
-            matcher.validationCallback(element.textContent, element, isValid => {
-              if (!isValid) {
-                element.classList.add(INVALID_LINK_CLASS);
-              }
-            });
-          }
-        }
-        // Only allow a single LinkMatcher to trigger on any given row.
-        return;
-      }
+      this._doLinkifyRow(rowIndex, text, this._linkMatchers[i]);
     }
   }
 
   /**
    * Linkifies a row given a specific handler.
-   * @param {HTMLElement} row The row to linkify.
+   * @param rowIndex The row index to linkify.
+   * @param text The text of the row.
    * @param {LinkMatcher} matcher The link matcher for this line.
    * @return The link element(s) that were added.
    */
-  private _doLinkifyRow(row: HTMLElement, matcher: LinkMatcher): HTMLElement[] {
+  private _doLinkifyRow(rowIndex: number, text: string, matcher: LinkMatcher): void {
     // Iterate over nodes as we want to consider text nodes
     let result = [];
     const isHttpLinkMatcher = matcher.id === HYPERTEXT_LINK_MATCHER_ID;
-    const nodes = row.childNodes;
-
+console.log('linkifyRow: ', text);
     // Find the first match
-    let match = row.textContent.match(matcher.regex);
+    let match = text.match(matcher.regex);
     if (!match || match.length === 0) {
-      return result;
+      return;
     }
     let uri = match[typeof matcher.matchIndex !== 'number' ? 0 : matcher.matchIndex];
+
+    // TODO: Match more than one link per row
     // Set the next searches start index
-    let rowStartIndex = match.index + uri.length;
-
-    for (let i = 0; i < nodes.length; i++) {
-      const node = nodes[i];
-      const searchIndex = node.textContent.indexOf(uri);
-      if (searchIndex >= 0) {
-        const linkElement = this._createAnchorElement(uri, matcher.handler, isHttpLinkMatcher);
-        if (node.textContent.length === uri.length) {
-          // Matches entire string
-          if (node.nodeType === 3 /*Node.TEXT_NODE*/) {
-            this._replaceNode(node, linkElement);
-          } else {
-            const element = (<HTMLElement>node);
-            if (element.nodeName === 'A') {
-              // This row has already been linkified
-              return result;
-            }
-            element.innerHTML = '';
-            element.appendChild(linkElement);
-          }
-        } else if (node.childNodes.length > 1) {
-          // Matches part of string in an element with multiple child nodes
-          for (let j = 0; j < node.childNodes.length; j++) {
-            const childNode = node.childNodes[j];
-            const childSearchIndex = childNode.textContent.indexOf(uri);
-            if (childSearchIndex !== -1) {
-              // Match found in currentNode
-              this._replaceNodeSubstringWithNode(childNode, linkElement, uri, childSearchIndex);
-              // Don't need to count nodesAdded by replacing the node as this
-              // is a child node, not a top-level node.
-              break;
-            }
-          }
-        } else {
-          // Matches part of string in a single text node
-          const nodesAdded = this._replaceNodeSubstringWithNode(node, linkElement, uri, searchIndex);
-          // No need to consider the new nodes
-          i += nodesAdded;
-        }
-        result.push(linkElement);
-
-        // Find the next match
-        match = row.textContent.substring(rowStartIndex).match(matcher.regex);
-        if (!match || match.length === 0) {
-          return result;
-        }
-        uri = match[typeof matcher.matchIndex !== 'number' ? 0 : matcher.matchIndex];
-        rowStartIndex += match.index + uri.length;
-      }
-    }
-    return result;
-  }
-
-  /**
-   * Creates a link anchor element.
-   * @param {string} uri The uri of the link.
-   * @return {HTMLAnchorElement} The link.
-   */
-  private _createAnchorElement(uri: string, handler: LinkMatcherHandler, isHypertextLinkHandler: boolean): HTMLAnchorElement {
-    const element = this._document.createElement('a');
-    element.textContent = uri;
-    element.draggable = false;
-    if (isHypertextLinkHandler) {
-      element.href = uri;
-      // Force link on another tab so work is not lost
-      element.target = '_blank';
-      element.addEventListener('click', (event: MouseEvent) => {
-        if (handler) {
-          return handler(event, uri);
+    // let rowStartIndex = match.index + uri.length;
+console.log('matcher', matcher);
+    // Ensure the link is valid before registering
+    if (matcher.validationCallback) {
+      matcher.validationCallback(text, isValid => {
+        if (isValid) {
+          // TODO: Discard link if the line has already changed?
+          this._addLink(match.index, match.length, uri, matcher);
         }
       });
     } else {
-      element.addEventListener('click', (event: MouseEvent) => {
-        // Don't execute the handler if the link is flagged as invalid
-        if (element.classList.contains(INVALID_LINK_CLASS)) {
-          return;
+      this._addLink(match.index, match.length, uri, matcher);
+    }
+  }
+
+  private _addLink(x: number, length: number, uri: string, matcher: LinkMatcher): void {
+    this._mouseZoneManager.add(new MouseZone(
+      x,
+      x + length,
+      e => {
+        if (matcher.hoverCallback) {
+          return matcher.hoverCallback(e, uri);
         }
-        return handler(event, uri);
-      });
-    }
-    return element;
-  }
-
-  /**
-   * Replace a node with 1 or more other nodes.
-   * @param {Node} oldNode The node to replace.
-   * @param {Node[]} newNodes The new nodes to insert in order.
-   */
-  private _replaceNode(oldNode: Node, ...newNodes: Node[]): void {
-    const parent = oldNode.parentNode;
-    for (let i = 0; i < newNodes.length; i++) {
-      parent.insertBefore(newNodes[i], oldNode);
-    }
-    parent.removeChild(oldNode);
-  }
-
-  /**
-   * Replace a substring within a node with a new node.
-   * @param {Node} targetNode The target node; either a text node or a <span>
-   * containing a single text node.
-   * @param {Node} newNode The new node to insert.
-   * @param {string} substring The substring to replace.
-   * @param {number} substringIndex The index of the substring within the string.
-   * @return The number of nodes to skip when searching for the next uri.
-   */
-  private _replaceNodeSubstringWithNode(targetNode: Node, newNode: Node, substring: string, substringIndex: number): number {
-    // If the targetNode is a non-text node with a single child, make the child
-    // the new targetNode.
-    if (targetNode.childNodes.length === 1) {
-      targetNode = targetNode.childNodes[0];
-    }
-
-    // The targetNode will be either a text node or a <span>. The text node
-    // (targetNode or its only-child) needs to be replaced with newNode plus new
-    // text nodes potentially on either side.
-    if (targetNode.nodeType !== 3/*Node.TEXT_NODE*/) {
-      throw new Error('targetNode must be a text node or only contain a single text node');
-    }
-
-    const fullText = targetNode.textContent;
-
-    if (substringIndex === 0) {
-      // Replace with <newNode><textnode>
-      const rightText = fullText.substring(substring.length);
-      const rightTextNode = this._document.createTextNode(rightText);
-      this._replaceNode(targetNode, newNode, rightTextNode);
-      return 0;
-    }
-
-    if (substringIndex === targetNode.textContent.length - substring.length) {
-      // Replace with <textnode><newNode>
-      const leftText = fullText.substring(0, substringIndex);
-      const leftTextNode = this._document.createTextNode(leftText);
-      this._replaceNode(targetNode, leftTextNode, newNode);
-      return 0;
-    }
-
-    // Replace with <textnode><newNode><textnode>
-    const leftText = fullText.substring(0, substringIndex);
-    const leftTextNode = this._document.createTextNode(leftText);
-    const rightText = fullText.substring(substringIndex + substring.length);
-    const rightTextNode = this._document.createTextNode(rightText);
-    this._replaceNode(targetNode, leftTextNode, newNode, rightTextNode);
-    return 1;
+        console.log('hover', uri);
+      },
+      e => {
+        if (matcher.handler) {
+          return matcher.handler(e, uri);
+        }
+        window.open(uri, '_blink');
+      }
+    ));
   }
 }

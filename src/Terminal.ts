@@ -29,9 +29,8 @@ import { CircularList } from './utils/CircularList';
 import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Parser } from './Parser';
-// import { Renderer } from './Renderer';
 import { Renderer } from './renderer/Renderer';
-// import { Linkifier } from './Linkifier';
+import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
 import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './utils/Browser';
@@ -42,6 +41,8 @@ import { CustomKeyEventHandler, Charset, LinkMatcherHandler, LinkMatcherValidati
 import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper, ITheme } from './Interfaces';
 import { BellSound } from './utils/Sounds';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
+import { IMouseZoneManager } from './input/Interfaces';
+import { MouseZoneManager } from './input/MouseZoneManager';
 
 // Declare for RequireJS in loadAddon
 declare var define: any;
@@ -184,12 +185,13 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   private parser: Parser;
   private renderer: Renderer;
   public selectionManager: SelectionManager;
-  // private linkifier: Linkifier;
+  private linkifier: Linkifier;
   public buffers: BufferSet;
   public buffer: Buffer;
   public viewport: IViewport;
   private compositionHelper: ICompositionHelper;
   public charMeasure: CharMeasure;
+  private _mouseZoneManager: IMouseZoneManager;
 
   public cols: number;
   public rows: number;
@@ -281,7 +283,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // Reuse renderer if the Terminal is being recreated via a reset call.
     this.renderer = this.renderer || null;
     this.selectionManager = this.selectionManager || null;
-    // this.linkifier = this.linkifier || new Linkifier();
+    this.linkifier = this.linkifier || new Linkifier(this);
+    this._mouseZoneManager = this._mouseZoneManager || null;
 
     // Create the terminal's buffers and set the current buffer
     this.buffers = new BufferSet(this);
@@ -576,8 +579,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // preload audio
     this.syncBellSound();
 
-    // TODO: Re-enable linkifier
-    // this.linkifier.attachToDom(document, this.children);
+    this._mouseZoneManager = new MouseZoneManager(this);
+    this.linkifier.attachToDom(this._mouseZoneManager);
 
     // Create the container that will hold helpers like the textarea for
     // capturing DOM Events. Then produce the helpers.
@@ -1005,9 +1008,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param {number} end The row to end at (between start and this.rows - 1).
    */
   private queueLinkification(start: number, end: number): void {
-    // if (this.linkifier) {
-    //   this.linkifier.linkifyRows(0, this.rows);
-    // }
+    if (this.linkifier) {
+      this.linkifier.linkifyRows(0, this.rows);
+    }
   }
 
   /**
@@ -1215,11 +1218,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param handler The handler callback function.
    */
   public setHypertextLinkHandler(handler: LinkMatcherHandler): void {
-    // if (!this.linkifier) {
-    //   throw new Error('Cannot attach a hypertext link handler before Terminal.open is called');
-    // }
-    // this.linkifier.setHypertextLinkHandler(handler);
-    // // Refresh to force links to refresh
+    if (!this.linkifier) {
+      throw new Error('Cannot attach a hypertext link handler before Terminal.open is called');
+    }
+    this.linkifier.setHypertextLinkHandler(handler);
+    // Refresh to force links to refresh
     // this.refresh(0, this.rows - 1);
   }
 
@@ -1230,10 +1233,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * be cleared with null.
    */
   public setHypertextValidationCallback(callback: LinkMatcherValidationCallback): void {
-    // if (!this.linkifier) {
-    //   throw new Error('Cannot attach a hypertext validation callback before Terminal.open is called');
-    // }
-    // this.linkifier.setHypertextValidationCallback(callback);
+    if (!this.linkifier) {
+      throw new Error('Cannot attach a hypertext validation callback before Terminal.open is called');
+    }
+    this.linkifier.setHypertextValidationCallback(callback);
     // // Refresh to force links to refresh
     // this.refresh(0, this.rows - 1);
   }
@@ -1249,11 +1252,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @return The ID of the new matcher, this can be used to deregister.
    */
   public registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options?: ILinkMatcherOptions): number {
-    // if (this.linkifier) {
-    //   const matcherId = this.linkifier.registerLinkMatcher(regex, handler, options);
-    //   this.refresh(0, this.rows - 1);
-    //   return matcherId;
-    // }
+    if (this.linkifier) {
+      const matcherId = this.linkifier.registerLinkMatcher(regex, handler, options);
+      // this.refresh(0, this.rows - 1);
+      return matcherId;
+    }
     return 0;
   }
 
@@ -1262,11 +1265,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param matcherId The link matcher's ID (returned after register)
    */
   public deregisterLinkMatcher(matcherId: number): void {
-    // if (this.linkifier) {
-    //   if (this.linkifier.deregisterLinkMatcher(matcherId)) {
-    //     this.refresh(0, this.rows - 1);
-    //   }
-    // }
+    if (this.linkifier) {
+      if (this.linkifier.deregisterLinkMatcher(matcherId)) {
+        // this.refresh(0, this.rows - 1);
+      }
+    }
   }
 
   /**
