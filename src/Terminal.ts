@@ -608,6 +608,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.charMeasure = new CharMeasure(document, this.helperContainer);
 
     this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
+    this.charMeasure.on('charsizechanged', () => this.viewport.syncScrollArea());
     this.renderer = new Renderer(this);
     this.on('cursormove', () => this.renderer.onCursorMove());
     this.on('resize', () => this.renderer.onResize(this.cols, this.rows));
