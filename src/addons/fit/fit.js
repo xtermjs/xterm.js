@@ -44,8 +44,8 @@
     var availableHeight = parentElementHeight - elementPaddingVer;
     var availableWidth = parentElementWidth - elementPaddingHor;
     var geometry = {
-      cols: parseInt(availableWidth / term.charMeasure.width, 10),
-      rows: parseInt(availableHeight / (term.charMeasure.height * term.getOption('lineHeight')), 10)
+      cols: Math.floor(availableWidth / term.charMeasure.width),
+      rows: Math.floor(availableHeight / Math.ceil(term.charMeasure.height * term.getOption('lineHeight')))
     };
 
     return geometry;
@@ -59,8 +59,10 @@
 
       if (geometry) {
         // Force a full render
-        term.renderer.clear();
-        term.resize(geometry.cols, geometry.rows);
+        if (term.rows !== geometry.rows || term.cols !== geometry.cols) {
+          term.renderer.clear();
+          term.resize(geometry.cols, geometry.rows);
+        }
       }
     }, 0);
   };
