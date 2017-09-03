@@ -57,7 +57,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   public resize(terminal: ITerminal, canvasWidth: number, canvasHeight: number, charSizeChanged: boolean): void {
     this.scaledCharWidth = terminal.charMeasure.width * window.devicePixelRatio;
     this.scaledCharHeight = terminal.charMeasure.height * window.devicePixelRatio;
-    this.scaledLineHeight = Math.ceil(this.scaledCharHeight * terminal.options.lineHeight);
+    this.scaledLineHeight = Math.floor(this.scaledCharHeight * terminal.options.lineHeight);
     this.scaledLineDrawY = terminal.options.lineHeight === 1 ? 0 : Math.round((this.scaledLineHeight - this.scaledCharHeight) / 2);
     this._canvas.width = canvasWidth * window.devicePixelRatio;
     this._canvas.height = canvasHeight * window.devicePixelRatio;
@@ -143,7 +143,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       }
     }
     const isAscii = code < 256;
-    const isBasicColor = (colorIndex > 0 && fg < 16);
+    const isBasicColor = (colorIndex > 1 && fg < 16);
     const isDefaultColor = fg >= 256;
     if (isAscii && (isBasicColor || isDefaultColor)) {
       // ImageBitmap's draw about twice as fast as from a canvas
