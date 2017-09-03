@@ -128,6 +128,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   }
 
   protected drawChar(terminal: ITerminal, char: string, code: number, width: number, x: number, y: number, fg: number, underline: boolean = false): void {
+    // Clear the cell next to this character if it's wide
+    if (width === 2) {
+      this.clearCells(x + 1, y, 1, 1);
+    }
+
     let colorIndex = 0;
     if (fg < 256) {
       colorIndex = fg + 1;

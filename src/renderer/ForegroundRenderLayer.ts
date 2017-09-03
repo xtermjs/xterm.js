@@ -48,6 +48,14 @@ export class ForegroundRenderLayer extends BaseRenderLayer {
         const code: number = <number>charData[CHAR_DATA_CODE_INDEX];
         const char: string = charData[CHAR_DATA_CHAR_INDEX];
         const attr: number = charData[CHAR_DATA_ATTR_INDEX];
+        const width: number = charData[CHAR_DATA_WIDTH_INDEX];
+
+        // The character to the left is a wide character, drawing is owned by
+        // the char at x-1
+        if (width === 0) {
+          this._state.cache[x][y] = null;
+          continue;
+        }
 
         // Skip rendering if the character is identical
         const state = this._state.cache[x][y];
@@ -59,7 +67,7 @@ export class ForegroundRenderLayer extends BaseRenderLayer {
 
         // Clear the old character if present
         if (state && state[CHAR_DATA_CODE_INDEX] !== 32 /*' '*/) {
-          this.clearCells(x, y, 1, 1);
+          this.clearChar(x, y);
         }
         this._state.cache[x][y] = charData;
 
@@ -102,11 +110,20 @@ export class ForegroundRenderLayer extends BaseRenderLayer {
           this.drawBottomLineAtCell(x, y);
         }
 
-        const width: number = charData[CHAR_DATA_WIDTH_INDEX];
         this.drawChar(terminal, char, code, width, x, y, fg);
 
         this._ctx.restore();
       }
     }
+  }
+
+  private clearChar(x: number, y: number): void {
+    let colsToClear = 1;
+    // Clear the adjacent character if it was wide
+    const state = this._state.cache[x][y];
+    if (state && state[CHAR_DATA_WIDTH_INDEX] === 2) {
+      colsToClear = 2;
+    }
+    this.clearCells(x, y, colsToClear, 1);
   }
 }
