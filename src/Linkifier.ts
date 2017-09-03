@@ -217,7 +217,7 @@ export class Linkifier {
     // Iterate over nodes as we want to consider text nodes
     let result = [];
     const isHttpLinkMatcher = matcher.id === HYPERTEXT_LINK_MATCHER_ID;
-console.log('linkifyRow: ', text);
+
     // Find the first match
     let match = text.match(matcher.regex);
     if (!match || match.length === 0) {
@@ -228,29 +228,32 @@ console.log('linkifyRow: ', text);
     // TODO: Match more than one link per row
     // Set the next searches start index
     // let rowStartIndex = match.index + uri.length;
-console.log('matcher', matcher);
+
+    // Get index, match.index is for the outer match which includes negated chars
+    const index = text.indexOf(uri);
+
     // Ensure the link is valid before registering
     if (matcher.validationCallback) {
       matcher.validationCallback(text, isValid => {
         if (isValid) {
           // TODO: Discard link if the line has already changed?
-          this._addLink(match.index, match.length, uri, matcher);
+          this._addLink(index, rowIndex, uri, matcher);
         }
       });
     } else {
-      this._addLink(match.index, match.length, uri, matcher);
+      this._addLink(index, rowIndex, uri, matcher);
     }
   }
 
-  private _addLink(x: number, length: number, uri: string, matcher: LinkMatcher): void {
+  private _addLink(x: number, y: number, uri: string, matcher: LinkMatcher): void {
     this._mouseZoneManager.add(new MouseZone(
-      x,
-      x + length,
+      x + 1,
+      x + 1 + uri.length,
+      y + 1,
       e => {
         if (matcher.hoverCallback) {
           return matcher.hoverCallback(e, uri);
         }
-        console.log('hover', uri);
       },
       e => {
         if (matcher.handler) {

@@ -1,5 +1,6 @@
 import { IMouseZoneManager, IMouseZone } from './Interfaces';
 import { ITerminal } from '../Interfaces';
+import { getCoords } from '../utils/Mouse';
 
 /**
  * The MouseZoneManager allows components to register zones within the terminal
@@ -26,7 +27,6 @@ export class MouseZoneManager implements IMouseZoneManager {
   }
 
   public add(zone: IMouseZone): void {
-    console.log('add zone', zone);
     this._zones.push(zone);
     if (this._zones.length === 1) {
       this._activate();
@@ -40,7 +40,6 @@ export class MouseZoneManager implements IMouseZoneManager {
 
   private _activate(): void {
     if (!this._areZonesActive) {
-      console.log('_addMoveListener');
       this._areZonesActive = true;
       this._terminal.element.addEventListener('mousemove', this._mouseMoveListener);
       this._terminal.element.addEventListener('click', this._clickListener);
@@ -49,7 +48,6 @@ export class MouseZoneManager implements IMouseZoneManager {
 
   private _deactivate(): void {
     if (this._areZonesActive) {
-      console.log('_removeMoveListener');
       this._areZonesActive = false;
       this._terminal.element.removeEventListener('mousemove', this._mouseMoveListener);
       this._terminal.element.removeEventListener('click', this._clickListener);
@@ -57,7 +55,6 @@ export class MouseZoneManager implements IMouseZoneManager {
   }
 
   private _onMouseMove(e: MouseEvent): void {
-    console.log('move');
     // TODO: Handle hover
   }
 
@@ -70,7 +67,14 @@ export class MouseZoneManager implements IMouseZoneManager {
   }
 
   private _findZoneEventAt(e: MouseEvent): IMouseZone {
-    return this._zones[0];
+    const coords = getCoords(e, this._terminal.element, this._terminal.charMeasure,this._terminal.options.lineHeight, this._terminal.cols, this._terminal.rows);
+    for (let i = 0; i < this._zones.length; i++) {
+      const zone = this._zones[i];
+      if (zone.y === coords[1] && zone.x1 <= coords[0] && zone.x2 > coords[0]) {
+        return zone;
+      }
+    };
+    return null;
   }
 }
 
@@ -78,6 +82,7 @@ export class MouseZone implements IMouseZone {
   constructor(
     public x1: number,
     public x2: number,
+    public y: number,
     public hoverCallback: (e: MouseEvent) => any,
     public clickCallback: (e: MouseEvent) => any
   ) {
