@@ -52,6 +52,12 @@ export class Buffer implements IBuffer {
     return this._hasScrollback && this.lines.maxLength > this._terminal.rows;
   }
 
+  public get isCursorInViewport(): boolean {
+    const absoluteY = this.ybase + this.y;
+    const relativeY = absoluteY - this.ydisp;
+    return (relativeY >= 0 && relativeY < this._terminal.rows);
+  }
+
   /**
    * Gets the correct buffer length based on the rows provided, the terminal's
    * scrollback and whether this buffer is flagged to have scrollback or not.

@@ -145,6 +145,7 @@ export interface IBuffer {
   scrollTop: number;
   savedY: number;
   savedX: number;
+  isCursorInViewport: boolean;
   translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string;
   nextStop(x?: number): number;
   prevStop(x?: number): number;

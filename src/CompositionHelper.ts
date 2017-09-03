@@ -63,6 +63,7 @@ export class CompositionHelper {
    * @param {CompositionEvent} ev The event.
    */
   public compositionupdate(ev: CompositionEvent): void {
+  console.log('compositionupdate');
     this.compositionView.textContent = ev.data;
     this.updateCompositionElements();
     setTimeout(() => {
@@ -193,26 +194,26 @@ export class CompositionHelper {
     if (!this.isComposing) {
       return;
     }
-    const cursor = <HTMLElement>this.terminal.element.querySelector('.terminal-cursor');
-    if (cursor) {
-      // Take .xterm-rows offsetTop into account as well in case it's positioned absolutely within
-      // the .xterm element.
-      const xtermRows = <HTMLElement>this.terminal.element.querySelector('.xterm-rows');
-      const cursorTop = xtermRows.offsetTop + cursor.offsetTop;
 
-      this.compositionView.style.left = cursor.offsetLeft + 'px';
+    if (this.terminal.buffer.isCursorInViewport) {
+      const cellHeight = Math.ceil(this.terminal.charMeasure.height * this.terminal.options.lineHeight);
+      const cursorTop = this.terminal.buffer.y * cellHeight;
+      const cursorLeft = this.terminal.buffer.x * this.terminal.charMeasure.width;
+
+      this.compositionView.style.left = cursorLeft + 'px';
       this.compositionView.style.top = cursorTop + 'px';
-      this.compositionView.style.height = cursor.offsetHeight + 'px';
-      this.compositionView.style.lineHeight = cursor.offsetHeight + 'px';
+      this.compositionView.style.height = cellHeight + 'px';
+      this.compositionView.style.lineHeight = cellHeight + 'px';
       // Sync the textarea to the exact position of the composition view so the IME knows where the
       // text is.
       const compositionViewBounds = this.compositionView.getBoundingClientRect();
-      this.textarea.style.left = cursor.offsetLeft + 'px';
+      this.textarea.style.left = cursorLeft + 'px';
       this.textarea.style.top = cursorTop + 'px';
       this.textarea.style.width = compositionViewBounds.width + 'px';
       this.textarea.style.height = compositionViewBounds.height + 'px';
       this.textarea.style.lineHeight = compositionViewBounds.height + 'px';
     }
+
     if (!dontRecurse) {
       setTimeout(() => this.updateCompositionElements(true), 0);
     }
