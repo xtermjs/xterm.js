@@ -65,7 +65,6 @@ export class Linkifier {
    * @param rows The array of rows to apply links to.
    */
   public attachToDom(mouseZoneManager: IMouseZoneManager): void {
-    console.log('attachToDom', mouseZoneManager);
     this._mouseZoneManager = mouseZoneManager;
   }
 
@@ -147,6 +146,7 @@ export class Linkifier {
       handler,
       matchIndex: options.matchIndex,
       validationCallback: options.validationCallback,
+      hoverCallback: options.hoverCallback,
       priority: options.priority || 0
     };
     this._addLinkMatcherToList(matcher);
@@ -251,15 +251,15 @@ export class Linkifier {
       x + 1 + uri.length,
       y + 1,
       e => {
-        if (matcher.hoverCallback) {
-          return matcher.hoverCallback(e, uri);
-        }
-      },
-      e => {
         if (matcher.handler) {
           return matcher.handler(e, uri);
         }
         window.open(uri, '_blink');
+      },
+      e => {
+        if (matcher.hoverCallback) {
+          return matcher.hoverCallback(e, uri);
+        }
       }
     ));
   }

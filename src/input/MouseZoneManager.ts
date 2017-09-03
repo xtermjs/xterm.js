@@ -2,6 +2,8 @@ import { IMouseZoneManager, IMouseZone } from './Interfaces';
 import { ITerminal } from '../Interfaces';
 import { getCoords } from '../utils/Mouse';
 
+const HOVER_DURATION = 500;
+
 /**
  * The MouseZoneManager allows components to register zones within the terminal
  * that trigger hover and click callbacks.
@@ -17,6 +19,9 @@ export class MouseZoneManager implements IMouseZoneManager {
   private _mouseMoveListener: (e: MouseEvent) => any;
   private _mouseDownListener: (e: MouseEvent) => any;
   private _clickListener: (e: MouseEvent) => any;
+
+  private _hoverTimeout: number;
+  private _lastHoverCoords: [number, number] = [null, null];
 
   constructor(
     private _terminal: ITerminal
@@ -55,7 +60,21 @@ export class MouseZoneManager implements IMouseZoneManager {
   }
 
   private _onMouseMove(e: MouseEvent): void {
-    // TODO: Handle hover
+    if (this._lastHoverCoords[0] !== e.pageX && this._lastHoverCoords[1] !== e.pageY) {
+      if (this._hoverTimeout) {
+        clearTimeout(this._hoverTimeout);
+      }
+      this._hoverTimeout = <number><any>setTimeout(() => this._onHover(e), HOVER_DURATION);
+      this._lastHoverCoords = [e.pageX, e.pageY];
+    }
+  }
+
+  private _onHover(e: MouseEvent): void {
+    const coords = getCoords(e, this._terminal.element, this._terminal.charMeasure, this._terminal.options.lineHeight, this._terminal.cols, this._terminal.rows);
+    const zone = this._findZoneEventAt(e);
+    if (zone && zone.hoverCallback) {
+      zone.hoverCallback(e);
+    }
   }
 
   private _onClick(e: MouseEvent): void {
@@ -67,7 +86,7 @@ export class MouseZoneManager implements IMouseZoneManager {
   }
 
   private _findZoneEventAt(e: MouseEvent): IMouseZone {
-    const coords = getCoords(e, this._terminal.element, this._terminal.charMeasure,this._terminal.options.lineHeight, this._terminal.cols, this._terminal.rows);
+    const coords = getCoords(e, this._terminal.element, this._terminal.charMeasure, this._terminal.options.lineHeight, this._terminal.cols, this._terminal.rows);
     for (let i = 0; i < this._zones.length; i++) {
       const zone = this._zones[i];
       if (zone.y === coords[1] && zone.x1 <= coords[0] && zone.x2 > coords[0]) {
@@ -83,8 +102,8 @@ export class MouseZone implements IMouseZone {
     public x1: number,
     public x2: number,
     public y: number,
-    public hoverCallback: (e: MouseEvent) => any,
-    public clickCallback: (e: MouseEvent) => any
+    public clickCallback: (e: MouseEvent) => any,
+    public hoverCallback?: (e: MouseEvent) => any
   ) {
   }
 }

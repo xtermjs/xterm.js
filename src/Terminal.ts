@@ -1223,7 +1223,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     }
     this.linkifier.setHypertextLinkHandler(handler);
     // Refresh to force links to refresh
-    // this.refresh(0, this.rows - 1);
+    this.refresh(0, this.rows - 1);
   }
 
   /**
@@ -1238,7 +1238,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     }
     this.linkifier.setHypertextValidationCallback(callback);
     // // Refresh to force links to refresh
-    // this.refresh(0, this.rows - 1);
+    this.refresh(0, this.rows - 1);
   }
 
   /**
@@ -1254,7 +1254,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   public registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options?: ILinkMatcherOptions): number {
     if (this.linkifier) {
       const matcherId = this.linkifier.registerLinkMatcher(regex, handler, options);
-      // this.refresh(0, this.rows - 1);
+      this.refresh(0, this.rows - 1);
       return matcherId;
     }
     return 0;
@@ -1267,7 +1267,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   public deregisterLinkMatcher(matcherId: number): void {
     if (this.linkifier) {
       if (this.linkifier.deregisterLinkMatcher(matcherId)) {
-        // this.refresh(0, this.rows - 1);
+        this.refresh(0, this.rows - 1);
       }
     }
   }
