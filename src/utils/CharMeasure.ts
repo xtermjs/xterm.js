@@ -38,6 +38,7 @@ export class CharMeasure extends EventEmitter implements ICharMeasure {
       this._measureElement.style.position = 'absolute';
       this._measureElement.style.top = '0';
       this._measureElement.style.left = '-9999em';
+      this._measureElement.style.lineHeight = 'normal';
       this._measureElement.textContent = 'W';
       this._measureElement.setAttribute('aria-hidden', 'true');
       this._parentElement.appendChild(this._measureElement);
