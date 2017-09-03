@@ -4,6 +4,7 @@
 
 import { ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, IListenerType, IInputHandlingTerminal, IViewport, ICircularList, ICompositionHelper } from '../Interfaces';
 import { LineData } from '../Types';
+import { Buffer } from '../Buffer';
 import * as Browser from './Browser';
 import { IColorSet } from '../renderer/Interfaces';
 
@@ -61,7 +62,7 @@ export class MockTerminal implements ITerminal {
     const line: LineData = [];
     cols = cols || this.cols;
     for (let i = 0; i < cols; i++) {
-      line.push([0, ' ', 1]);
+      line.push([0, ' ', 1, 32]);
     }
     return line;
   }
@@ -130,7 +131,7 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   eraseLeft(x: number, y: number): void {
     throw new Error('Method not implemented.');
   }
-  blankLine(cur?: boolean, isWrapped?: boolean): [number, string, number][] {
+  blankLine(cur?: boolean, isWrapped?: boolean): [number, string, number, number][] {
     throw new Error('Method not implemented.');
   }
   prevStop(x?: number): number {
@@ -182,7 +183,7 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
 
 export class MockBuffer implements IBuffer {
   isCursorInViewport: boolean;
-  lines: ICircularList<[number, string, number][]>;
+  lines: ICircularList<[number, string, number, number][]>;
   ydisp: number;
   ybase: number;
   y: number;
@@ -193,7 +194,7 @@ export class MockBuffer implements IBuffer {
   savedY: number;
   savedX: number;
   translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string {
-    throw new Error('Method not implemented.');
+    return Buffer.prototype.translateBufferLineToString.apply(this, arguments);
   }
   nextStop(x?: number): number {
     throw new Error('Method not implemented.');

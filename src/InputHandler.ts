@@ -189,7 +189,7 @@ export class InputHandler implements IInputHandler {
 
     const row = this._terminal.buffer.y + this._terminal.buffer.ybase;
     let j = this._terminal.buffer.x;
-    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       this._terminal.buffer.lines.get(row).splice(j++, 0, ch);
@@ -488,7 +488,7 @@ export class InputHandler implements IInputHandler {
     }
 
     const row = this._terminal.buffer.y + this._terminal.buffer.ybase;
-    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32]; // xterm
 
     while (param--) {
       this._terminal.buffer.lines.get(row).splice(this._terminal.buffer.x, 1);
@@ -536,7 +536,7 @@ export class InputHandler implements IInputHandler {
 
     const row = this._terminal.buffer.y + this._terminal.buffer.ybase;
     let j = this._terminal.buffer.x;
-    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       this._terminal.buffer.lines.get(row)[j++] = ch;
@@ -590,7 +590,7 @@ export class InputHandler implements IInputHandler {
   public repeatPrecedingCharacter(params: number[]): void {
     let param = params[0] || 1;
     const line = this._terminal.buffer.lines.get(this._terminal.buffer.ybase + this._terminal.buffer.y);
-    const ch = line[this._terminal.buffer.x - 1] || [this._terminal.defAttr, ' ', 1];
+    const ch = line[this._terminal.buffer.x - 1] || [this._terminal.defAttr, ' ', 1, 32];
 
     while (param--) {
       line[this._terminal.buffer.x++] = ch;

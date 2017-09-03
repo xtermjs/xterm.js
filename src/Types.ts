@@ -17,6 +17,5 @@ export type LinkMatcherValidationCallback = (uri: string, callback: (isValid: bo
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 export type Charset = {[key: string]: string};
 
-// TODO: Add code here?
-export type CharData = [number, string, number];
+export type CharData = [number, string, number, number];
 export type LineData = CharData[];

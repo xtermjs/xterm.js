@@ -114,7 +114,7 @@ export class Buffer implements IBuffer {
     if (this._lines.length > 0) {
       // Deal with columns increasing (we don't do anything when columns reduce)
       if (this._terminal.cols < newCols) {
-        const ch: CharData = [this._terminal.defAttr, ' ', 1]; // does xterm use the default attr?
+        const ch: CharData = [this._terminal.defAttr, ' ', 1, 32]; // does xterm use the default attr?
         for (let i = 0; i < this._lines.length; i++) {
           // TODO: This should be removed, with tests setup for the case that was
           // causing the underlying bug, see https://github.com/sourcelair/xterm.js/issues/824

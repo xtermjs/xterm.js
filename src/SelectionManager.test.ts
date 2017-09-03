@@ -60,7 +60,7 @@ describe('SelectionManager', () => {
   function stringToRow(text: string): LineData {
     let result: LineData = [];
     for (let i = 0; i < text.length; i++) {
-      result.push([0, text.charAt(i), 1]);
+      result.push([0, text.charAt(i), 1, text.charCodeAt(i)]);
     }
     return result;
   }
@@ -99,21 +99,21 @@ describe('SelectionManager', () => {
     it('should expand selection for wide characters', () => {
       // Wide characters use a special format
       buffer.lines.set(0, [
-        [null, '中', 2],
-        [null, '', 0],
-        [null, '文', 2],
-        [null, '', 0],
-        [null, ' ', 1],
-        [null, 'a', 1],
-        [null, '中', 2],
-        [null, '', 0],
-        [null, '文', 2],
-        [null, '', 0],
-        [null, 'b', 1],
-        [null, ' ', 1],
-        [null, 'f', 1],
-        [null, 'o', 1],
-        [null, 'o', 1]
+        [null, '中', 2, '中'.charCodeAt(0)],
+        [null, '', 0, null],
+        [null, '文', 2, '文'.charCodeAt(0)],
+        [null, '', 0, null],
+        [null, ' ', 1, ' '.charCodeAt(0)],
+        [null, 'a', 1, 'a'.charCodeAt(0)],
+        [null, '中', 2, '中'.charCodeAt(0)],
+        [null, '', 0, null],
+        [null, '文', 2, '文'.charCodeAt(0)],
+        [null, '', 0, ''.charCodeAt(0)],
+        [null, 'b', 1, 'b'.charCodeAt(0)],
+        [null, ' ', 1, ' '.charCodeAt(0)],
+        [null, 'f', 1, 'f'.charCodeAt(0)],
+        [null, 'o', 1, 'o'.charCodeAt(0)],
+        [null, 'o', 1, 'o'.charCodeAt(0)]
       ]);
       // Ensure wide characters take up 2 columns
       selectionManager.selectWordAt([0, 0]);

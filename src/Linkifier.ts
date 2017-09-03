@@ -2,7 +2,7 @@
  * @license MIT
  */
 
-import { ILinkMatcherOptions, ITerminal } from './Interfaces';
+import { ILinkMatcherOptions, ITerminal, IBufferAccessor } from './Interfaces';
 import { LinkMatcher, LinkMatcherHandler, LinkMatcherValidationCallback, LineData } from './Types';
 import { IMouseZoneManager } from './input/Interfaces';
 import { MouseZone } from './input/MouseZoneManager';
@@ -52,7 +52,7 @@ export class Linkifier {
   private _nextLinkMatcherId = HYPERTEXT_LINK_MATCHER_ID;
 
   constructor(
-    private _terminal: ITerminal
+    private _terminal: IBufferAccessor
   ) {
     this._rowTimeoutIds = [];
     this._linkMatchers = [];
@@ -213,7 +213,7 @@ export class Linkifier {
    * @param {LinkMatcher} matcher The link matcher for this line.
    * @return The link element(s) that were added.
    */
-  private _doLinkifyRow(rowIndex: number, text: string, matcher: LinkMatcher): void {
+  private _doLinkifyRow(rowIndex: number, text: string, matcher: LinkMatcher, offset: number = 0): void {
     // Iterate over nodes as we want to consider text nodes
     let result = [];
     const isHttpLinkMatcher = matcher.id === HYPERTEXT_LINK_MATCHER_ID;
@@ -225,10 +225,6 @@ export class Linkifier {
     }
     let uri = match[typeof matcher.matchIndex !== 'number' ? 0 : matcher.matchIndex];
 
-    // TODO: Match more than one link per row
-    // Set the next searches start index
-    // let rowStartIndex = match.index + uri.length;
-
     // Get index, match.index is for the outer match which includes negated chars
     const index = text.indexOf(uri);
 
@@ -237,11 +233,18 @@ export class Linkifier {
       matcher.validationCallback(text, isValid => {
         if (isValid) {
           // TODO: Discard link if the line has already changed?
-          this._addLink(index, rowIndex, uri, matcher);
+          this._addLink(offset + index, rowIndex, uri, matcher);
         }
       });
     } else {
-      this._addLink(index, rowIndex, uri, matcher);
+      this._addLink(offset + index, rowIndex, uri, matcher);
+    }
+
+    // Recursively check for links in the rest of the text
+    const remainingStartIndex = index + uri.length;
+    const remainingText = text.substr(remainingStartIndex);
+    if (remainingText.length > 0) {
+      this._doLinkifyRow(rowIndex, remainingText, matcher, offset + remainingStartIndex);
     }
   }
 

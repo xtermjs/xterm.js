@@ -18,7 +18,11 @@ export interface IBrowser {
   isMSWindows: boolean;
 }
 
-export interface ITerminal extends IEventEmitter {
+export interface IBufferAccessor {
+  buffer: IBuffer;
+}
+
+export interface ITerminal extends IBufferAccessor, IEventEmitter {
   element: HTMLElement;
   selectionManager: ISelectionManager;
   charMeasure: ICharMeasure;
@@ -32,7 +36,6 @@ export interface ITerminal extends IEventEmitter {
   defAttr: number;
   options: ITerminalOptions;
   buffers: IBufferSet;
-  buffer: IBuffer;
   isFocused: boolean;
 
   /**
