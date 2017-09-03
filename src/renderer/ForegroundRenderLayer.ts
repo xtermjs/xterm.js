@@ -110,7 +110,7 @@ export class ForegroundRenderLayer extends BaseRenderLayer {
           this.drawBottomLineAtCell(x, y);
         }
 
-        this.drawChar(terminal, char, code, width, x, y, fg);
+        this.drawChar(terminal, char, code, width, x, y, fg, !!(flags & FLAGS.BOLD));
 
         this._ctx.restore();
       }

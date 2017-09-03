@@ -127,7 +127,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.restore();
   }
 
-  protected drawChar(terminal: ITerminal, char: string, code: number, width: number, x: number, y: number, fg: number, underline: boolean = false): void {
+  protected drawChar(terminal: ITerminal, char: string, code: number, width: number, x: number, y: number, fg: number, bold: boolean): void {
     // Clear the cell next to this character if it's wide
     if (width === 2) {
       this.clearCells(x + 1, y, 1, 1);
@@ -135,7 +135,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
     let colorIndex = 0;
     if (fg < 256) {
-      colorIndex = fg + 1;
+      colorIndex = fg + 2;
+    } else {
+      // If default color and bold
+      if (bold) {
+        colorIndex = 1;
+      }
     }
     const isAscii = code < 256;
     const isBasicColor = (colorIndex > 0 && fg < 16);
@@ -151,6 +156,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       this._drawUncachedChar(terminal, char, width, fg, x, y);
     }
     // This draws the atlas (for debugging purposes)
+    // this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
     // this._ctx.drawImage(this._charAtlas, 0, 0);
   }
 

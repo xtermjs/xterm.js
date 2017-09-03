@@ -105,7 +105,7 @@ class CharAtlasGenerator {
     const cellWidth = scaledCharWidth + CHAR_ATLAS_CELL_SPACING;
     const cellHeight = scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
     this._canvas.width = 255 * cellWidth;
-    this._canvas.height = (/*default*/1 + /*0-15*/16) * cellHeight;
+    this._canvas.height = (/*default+default bold*/2 + /*0-15*/16) * cellHeight;
 
     this._ctx.save();
     this._ctx.fillStyle = foreground;
@@ -116,14 +116,22 @@ class CharAtlasGenerator {
     for (let i = 0; i < 256; i++) {
       this._ctx.fillText(String.fromCharCode(i), i * cellWidth, 0);
     }
+    // Default color bold
+    this._ctx.save();
+    this._ctx.font = `bold ${this._ctx.font}`;
+    for (let i = 0; i < 256; i++) {
+      this._ctx.fillText(String.fromCharCode(i), i * cellWidth, cellHeight);
+    }
+    this._ctx.restore();
 
     // Colors 0-15
+    this._ctx.font = `${fontSize * window.devicePixelRatio}px ${fontFamily}`;
     for (let colorIndex = 0; colorIndex < 16; colorIndex++) {
       // colors 8-15 are bold
       if (colorIndex === 8) {
         this._ctx.font = `bold ${this._ctx.font}`;
       }
-      const y = (colorIndex + 1) * cellHeight;
+      const y = (colorIndex + 2) * cellHeight;
       // Draw ascii characters
       for (let i = 0; i < 256; i++) {
         this._ctx.fillStyle = ansiColors[colorIndex];
