@@ -5,6 +5,7 @@
 import { ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, IListenerType, IInputHandlingTerminal, IViewport, ICircularList, ICompositionHelper } from '../Interfaces';
 import { LineData } from '../Types';
 import * as Browser from './Browser';
+import { IColorSet } from '../renderer/Interfaces';
 
 export class MockTerminal implements ITerminal {
   isFocused: boolean;
@@ -180,6 +181,7 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
 }
 
 export class MockBuffer implements IBuffer {
+  isCursorInViewport: boolean;
   lines: ICircularList<[number, string, number][]>;
   ydisp: number;
   ybase: number;

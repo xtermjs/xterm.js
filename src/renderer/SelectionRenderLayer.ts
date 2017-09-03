@@ -16,6 +16,15 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     };
   }
 
+  public resize(terminal: ITerminal, canvasWidth: number, canvasHeight: number, charSizeChanged: boolean): void {
+    super.resize(terminal, canvasWidth, canvasHeight, charSizeChanged);
+    // Resizing the canvas discards the contents of the canvas so clear state
+    this._state = {
+      start: null,
+      end: null
+    };
+  }
+
   public reset(terminal: ITerminal): void {
     if (this._state.start && this._state.end) {
       this._state = {
