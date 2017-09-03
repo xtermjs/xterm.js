@@ -1,4 +1,17 @@
-import { ITerminal, ITerminalOptions } from '../Interfaces';
+import { ITerminal, ITerminalOptions, ITheme } from '../Interfaces';
+
+export interface IRenderer {
+  setTheme(theme: ITheme): IColorSet;
+  onResize(cols: number, rows: number): void;
+  onCharSizeChanged(charWidth: number, charHeight: number): void;
+  onBlur(): void;
+  onFocus(): void;
+  onSelectionChanged(start: [number, number], end: [number, number]): void;
+  onCursorMove(): void;
+  onOptionsChanged(): void;
+  clear(): void;
+  queueRefresh(start: number, end: number): void;
+}
 
 export interface IRenderLayer {
   /**

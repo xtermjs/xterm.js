@@ -11,9 +11,9 @@ import { SelectionRenderLayer } from './SelectionRenderLayer';
 import { CursorRenderLayer } from './CursorRenderLayer';
 import { ColorManager } from './ColorManager';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { IRenderLayer, IColorSet } from './Interfaces';
+import { IRenderLayer, IColorSet, IRenderer } from './Interfaces';
 
-export class Renderer {
+export class Renderer implements IRenderer {
   /** A queue of the rows to be refreshed */
   private _refreshRowsQueue: {start: number, end: number}[] = [];
   private _refreshAnimationFrame = null;

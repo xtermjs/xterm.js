@@ -44,6 +44,7 @@ import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { IMouseZoneManager } from './input/Interfaces';
 import { MouseZoneManager } from './input/MouseZoneManager';
 import { initialize as initializeCharAtlas } from './renderer/CharAtlas';
+import { IRenderer } from './renderer/Interfaces';
 
 // Declare for RequireJS in loadAddon
 declare var define: any;
@@ -184,7 +185,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
   private inputHandler: InputHandler;
   private parser: Parser;
-  private renderer: Renderer;
+  private renderer: IRenderer;
   public selectionManager: SelectionManager;
   private linkifier: Linkifier;
   public buffers: BufferSet;

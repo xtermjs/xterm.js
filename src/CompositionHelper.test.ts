@@ -42,6 +42,16 @@ describe('CompositionHelper', () => {
       },
       handler: (text: string) => {
         handledText += text;
+      },
+      buffer: {
+        isCursorInViewport: true
+      },
+      charMeasure: {
+        height: 10,
+        width: 10
+      },
+      options: {
+        lineHeight: 1
       }
     };
     handledText = '';

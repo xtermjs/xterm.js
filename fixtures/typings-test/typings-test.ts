@@ -210,8 +210,8 @@ namespace methods_experimental {
     t.registerLinkMatcher(/foo/, () => true, {
       matchIndex: 1,
       priority: 1,
-      validationCallback: (uri: string, element: HTMLElement, callback: (isValid: boolean) => void) => {
-        console.log(uri, element, callback);
+      validationCallback: (uri: string, callback: (isValid: boolean) => void) => {
+        console.log(uri, callback);
       }
     });
     t.deregisterLinkMatcher(1);

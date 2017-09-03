@@ -2,11 +2,11 @@
  * @license MIT
  */
 
-import { ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, IListenerType, IInputHandlingTerminal, IViewport, ICircularList, ICompositionHelper } from '../Interfaces';
+import { ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, IListenerType, IInputHandlingTerminal, IViewport, ICircularList, ICompositionHelper, ITheme } from '../Interfaces';
 import { LineData } from '../Types';
 import { Buffer } from '../Buffer';
 import * as Browser from './Browser';
-import { IColorSet } from '../renderer/Interfaces';
+import { IColorSet, IRenderer } from '../renderer/Interfaces';
 
 export class MockTerminal implements ITerminal {
   isFocused: boolean;
@@ -202,6 +202,19 @@ export class MockBuffer implements IBuffer {
   prevStop(x?: number): number {
     throw new Error('Method not implemented.');
   }
+}
+
+export class MockRenderer implements IRenderer {
+  setTheme(theme: ITheme): IColorSet { return <IColorSet>{}; }
+  onResize(cols: number, rows: number): void {}
+  onCharSizeChanged(charWidth: number, charHeight: number): void {}
+  onBlur(): void {}
+  onFocus(): void {}
+  onSelectionChanged(start: [number, number], end: [number, number]): void {}
+  onCursorMove(): void {}
+  onOptionsChanged(): void {}
+  clear(): void {}
+  queueRefresh(start: number, end: number): void {}
 }
 
 export class MockViewport implements IViewport {

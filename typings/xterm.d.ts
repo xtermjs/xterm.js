@@ -131,12 +131,12 @@ interface ILinkMatcherOptions {
    * A callback that validates an individual link, returning true if valid and
    * false if invalid.
    */
-  validationCallback?: (uri: string, element: HTMLElement, callback: (isValid: boolean) => void) => void;
+  validationCallback?: (uri: string, callback: (isValid: boolean) => void) => void;
 
   /**
    * A callback that fired when the mouse hovers over a link.
    */
-  hoverCallback?: LinkMatcherHandler;
+  hoverCallback?: (event: MouseEvent, uri: string) => boolean | void;
 
   /**
    * The priority of the link matcher, this defines the order in which the link
@@ -290,7 +290,7 @@ declare module 'xterm' {
      * @param options Options for the link matcher.
      * @return The ID of the new matcher, this can be used to deregister.
      */
-    registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => boolean | void , options?: ILinkMatcherOptions): number;
+    registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => boolean | void, options?: ILinkMatcherOptions): number;
 
     /**
      * (EXPERIMENTAL) Deregisters a link matcher if it has been registered.

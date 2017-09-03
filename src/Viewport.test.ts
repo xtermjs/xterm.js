@@ -31,7 +31,8 @@ describe('Viewport', () => {
         }
       },
       options: {
-        scrollback: 10
+        scrollback: 10,
+        lineHeight: 1
       }
     };
     terminal.buffers = new BufferSet(terminal);
