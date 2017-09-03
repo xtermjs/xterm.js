@@ -42,6 +42,21 @@ interface ITerminalOptions {
   disableStdin?: boolean;
 
   /**
+   * The font size used to render text.
+   */
+  fontSize?: number;
+
+  /**
+   * The font family used to render text.
+   */
+  fontFamily?: string;
+
+  /**
+   * The line height used to render text.
+   */
+  lineHeight?: number;
+
+  /**
    * The number of rows in the terminal.
    */
   rows?: number;
