@@ -4,7 +4,7 @@ import { ITheme } from '../Interfaces';
 const DEFAULT_FOREGROUND = '#ffffff';
 const DEFAULT_BACKGROUND = '#000000';
 const DEFAULT_CURSOR = '#ffffff';
-const DEFAULT_SELECTION = 'rgba(255, 255, 255, 0.9)';
+const DEFAULT_SELECTION = 'rgba(255, 255, 255, 0.3)';
 export const DEFAULT_ANSI_COLORS = [
   // dark:
   '#2e3436',
