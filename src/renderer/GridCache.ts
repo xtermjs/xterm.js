@@ -5,7 +5,7 @@ export class GridCache<T> {
     this.cache = [];
   }
 
-  public resize(width: number, height: number) {
+  public resize(width: number, height: number): void {
     for (let x = 0; x < width; x++) {
       if (this.cache.length <= x) {
         this.cache.push([]);
