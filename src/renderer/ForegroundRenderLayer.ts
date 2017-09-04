@@ -93,6 +93,13 @@ export class ForegroundRenderLayer extends BaseRenderLayer {
         // If the character is an emoji and the character to the right is a
         // space, take ownership of the cell to the right.
         if (this._isEmoji(char)) {
+          // If the character is an emoji, we want to force a re-render on every
+          // frame. This is specifically to work around the case where two
+          // emoji's `a` and `b` are adjacent, the cursor is moved to b and a
+          // space is added. Without this, the first half of `b` would never
+          // get removed, and `a` would not re-render because it thinks it's
+          // already in the correct state.
+          this._state.cache[x][y] = EMOJI_OWNED_CHAR_DATA;
           if (x < line.length && line[x + 1][CHAR_DATA_CODE_INDEX] === 32 /*' '*/) {
             width = 2;
             this._clearChar(x + 1, y);
