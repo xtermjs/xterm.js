@@ -82,7 +82,8 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   cancelEvents: false,
   disableStdin: false,
   useFlowControl: false,
-  tabStopWidth: 8
+  tabStopWidth: 8,
+  theme: null
   // programFeatures: false,
   // focusKeys: false,
 };
@@ -320,16 +321,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     return document.activeElement === this.textarea;
   }
 
-  public setTheme(theme: ITheme): void {
-    // TODO: Allow setting of theme before renderer is ready
-    if (this.renderer) {
-      const colors = this.renderer.setTheme(theme);
-      if (this.viewport) {
-        this.viewport.onThemeChanged(colors);
-      }
-    }
-  }
-
   /**
    * Retrieves an option's value from the terminal.
    * @param {string} key The option key.
@@ -377,6 +368,14 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
           return;
         }
         break;
+      case 'theme':
+        // If open has been called we do not want to set options.theme as the
+        // source of truth is owned by the renderer.
+        if (this.renderer) {
+          this._setTheme(<ITheme>value);
+          return;
+        }
+        break;
       case 'scrollback':
         if (value < 0) {
           console.warn(`${key} cannot be less than 0, value: ${value}`);
@@ -420,7 +419,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       case 'bellSound':
       case 'bellStyle': this.syncBellSound(); break;
     }
-    this.renderer.onOptionsChanged();
+    // Inform renderer of changes
+    if (this.renderer) {
+      this.renderer.onOptionsChanged();
+    }
   }
 
   /**
@@ -644,6 +646,15 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // Measure the character size
     this.charMeasure.measure(this.options);
 
+    // Set the theme if it was set via setOption/constructor before open. This
+    // must be run after CharMeasure.measure as it depends on char dimensions.
+    setTimeout(() => {
+      if (this.options.theme) {
+        this._setTheme(this.options.theme);
+        this.options.theme = null;
+      }
+    }, 0);
+
     // Setup loop that draws to screen
     this.refresh(0, this.rows - 1);
 
@@ -653,6 +664,17 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // Listen for mouse events and translate
     // them into terminal mouse protocols.
     this.bindMouse();
+  }
+
+  /**
+   * Sets the theme on the renderer. The renderer must have been initialized.
+   * @param theme The theme to ste.
+   */
+  private _setTheme(theme: ITheme): void {
+    const colors = this.renderer.setTheme(theme);
+    if (this.viewport) {
+      this.viewport.onThemeChanged(colors);
+    }
   }
 
   /**

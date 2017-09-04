@@ -71,6 +71,11 @@ interface ITerminalOptions {
    * The size of tab stops in the terminal.
    */
   tabStopWidth?: number;
+
+  /**
+   * The color theme of the terminal.
+   */
+  theme?: ITheme;
 }
 
 /**
@@ -464,13 +469,13 @@ declare module 'xterm' {
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: string, value: any): void;
-
+    setOption(key: 'theme', value: ITheme): void;
     /**
-     * Sets the theme of the terminal.
-     * @param theme The theme to use.
+     * Sets an option on the terminal.
+     * @param key The option key.
+     * @param value The option value.
      */
-    setTheme(theme: ITheme): void;
+    setOption(key: string, value: any): void;
 
     /**
      * Tells the renderer to refresh terminal content between two rows

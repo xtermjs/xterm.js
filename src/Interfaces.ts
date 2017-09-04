@@ -134,6 +134,7 @@ export interface ITerminalOptions {
   scrollback?: number;
   tabStopWidth?: number;
   termName?: string;
+  theme?: ITheme;
   useFlowControl?: boolean;
 }
 
