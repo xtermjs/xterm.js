@@ -1,5 +1,6 @@
 import { ITerminal, ITheme } from '../Interfaces';
 import { IColorSet } from '../renderer/Interfaces';
+import { isFirefox } from '../utils/Browser';
 
 export const CHAR_ATLAS_CELL_SPACING = 1;
 
@@ -152,8 +153,10 @@ class CharAtlasGenerator {
     const charAtlasImageData = this._ctx.getImageData(0, 0, this._canvas.width, this._canvas.height);
 
     // Support is patchy for createImageBitmap at the moment, pass a canvas back
-    // if support is lacking as drawImage works there too.
-    if (!('createImageBitmap' in window)) {
+    // if support is lacking as drawImage works there too. Firefox is also
+    // included here as ImageBitmap appears both buggy and has horrible
+    // performance (tested on v55).
+    if (!('createImageBitmap' in window) || isFirefox) {
       // Regenerate canvas and context as they are now owned by the char atlas
       const result = this._canvas;
       this._canvas = this._document.createElement('canvas');
