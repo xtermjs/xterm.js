@@ -5,7 +5,6 @@ import { GridCache } from './GridCache';
 import { FLAGS } from './Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { CharData } from '../Types';
-import { COLOR_CODES } from './ColorManager';
 
 interface CursorState {
   x: number;
@@ -131,7 +130,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     if (!terminal.isFocused) {
       this._clearCursor();
       this._ctx.save();
-      this._ctx.fillStyle = this.colors.ansi[COLOR_CODES.WHITE];
+      this._ctx.fillStyle = this.colors.cursor;
       this._renderBlurCursor(terminal, terminal.buffer.x, viewportRelativeCursorY, charData);
       this._ctx.restore();
       this._state.x = terminal.buffer.x;
@@ -161,7 +160,6 @@ export class CursorRenderLayer extends BaseRenderLayer {
     }
 
     this._ctx.save();
-    this._ctx.fillStyle = this.colors.ansi[COLOR_CODES.WHITE];
     this._cursorRenderers[terminal.options.cursorStyle || 'block'](terminal, terminal.buffer.x, viewportRelativeCursorY, charData);
     this._ctx.restore();
 
