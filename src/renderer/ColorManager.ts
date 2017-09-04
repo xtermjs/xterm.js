@@ -1,9 +1,6 @@
 import { IColorSet } from './Interfaces';
 import { ITheme } from '../Interfaces';
 
-// TODO: Ideally colors would be exposed through some theme manager since colors
-// are moving to JS.
-
 export enum COLOR_CODES {
   BLACK = 0,
   RED = 1,
@@ -23,6 +20,9 @@ export enum COLOR_CODES {
   BRIGHT_WHITE = 15
 }
 
+const DEFAULT_FOREGROUND = '#ffffff';
+const DEFAULT_BACKGROUND = '#000000';
+const DEFAULT_CURSOR = '#ffffff';
 export const DEFAULT_ANSI_COLORS = [
   // dark:
   '#2e3436',
@@ -75,32 +75,37 @@ export class ColorManager {
 
   constructor() {
     this.colors = {
-      foreground: '#ffffff',
-      background: '#000000',
-      cursor: '#ffffff',
+      foreground: DEFAULT_FOREGROUND,
+      background: DEFAULT_BACKGROUND,
+      cursor: DEFAULT_CURSOR,
       ansi: generate256Colors(DEFAULT_ANSI_COLORS)
     };
   }
 
+  /**
+   * Sets the terminal's theme.
+   * @param theme The  theme to use. If a partial theme is provided then default
+   * colors will be used where colors are not defined.
+   */
   public setTheme(theme: ITheme): void {
-    if (theme.foreground) this.colors.foreground = theme.foreground;
-    if (theme.background) this.colors.background = theme.background;
-    if (theme.cursor) this.colors.cursor = theme.cursor;
-    if (theme.black) this.colors.ansi[0] = theme.black;
-    if (theme.red) this.colors.ansi[1] = theme.red;
-    if (theme.green) this.colors.ansi[2] = theme.green;
-    if (theme.yellow) this.colors.ansi[3] = theme.yellow;
-    if (theme.blue) this.colors.ansi[4] = theme.blue;
-    if (theme.magenta) this.colors.ansi[5] = theme.magenta;
-    if (theme.cyan) this.colors.ansi[6] = theme.cyan;
-    if (theme.white) this.colors.ansi[7] = theme.white;
-    if (theme.brightBlack) this.colors.ansi[8] = theme.brightBlack;
-    if (theme.brightRed) this.colors.ansi[9] = theme.brightRed;
-    if (theme.brightGreen) this.colors.ansi[10] = theme.brightGreen;
-    if (theme.brightYellow) this.colors.ansi[11] = theme.brightYellow;
-    if (theme.brightBlue) this.colors.ansi[12] = theme.brightBlue;
-    if (theme.brightMagenta) this.colors.ansi[13] = theme.brightMagenta;
-    if (theme.brightCyan) this.colors.ansi[14] = theme.brightCyan;
-    if (theme.brightWhite) this.colors.ansi[15] = theme.brightWhite;
+    this.colors.foreground = theme.foreground || DEFAULT_FOREGROUND;
+    this.colors.background = theme.background || DEFAULT_BACKGROUND;
+    this.colors.cursor = theme.cursor || DEFAULT_CURSOR;
+    this.colors.ansi[0] = theme.black || DEFAULT_ANSI_COLORS[0];
+    this.colors.ansi[1] = theme.red || DEFAULT_ANSI_COLORS[1];
+    this.colors.ansi[2] = theme.green || DEFAULT_ANSI_COLORS[2];
+    this.colors.ansi[3] = theme.yellow || DEFAULT_ANSI_COLORS[3];
+    this.colors.ansi[4] = theme.blue || DEFAULT_ANSI_COLORS[4];
+    this.colors.ansi[5] = theme.magenta || DEFAULT_ANSI_COLORS[5];
+    this.colors.ansi[6] = theme.cyan || DEFAULT_ANSI_COLORS[6];
+    this.colors.ansi[7] = theme.white || DEFAULT_ANSI_COLORS[7];
+    this.colors.ansi[8] = theme.brightBlack || DEFAULT_ANSI_COLORS[8];
+    this.colors.ansi[9] = theme.brightRed || DEFAULT_ANSI_COLORS[9];
+    this.colors.ansi[10] = theme.brightGreen || DEFAULT_ANSI_COLORS[10];
+    this.colors.ansi[11] = theme.brightYellow || DEFAULT_ANSI_COLORS[11];
+    this.colors.ansi[12] = theme.brightBlue || DEFAULT_ANSI_COLORS[12];
+    this.colors.ansi[13] = theme.brightMagenta || DEFAULT_ANSI_COLORS[13];
+    this.colors.ansi[14] = theme.brightCyan || DEFAULT_ANSI_COLORS[14];
+    this.colors.ansi[15] = theme.brightWhite || DEFAULT_ANSI_COLORS[15];
   }
 }
