@@ -68,6 +68,14 @@ export class MockTerminal implements ITerminal {
   }
 }
 
+export class MockCharMeasure implements ICharMeasure {
+  width: number;
+  height: number;
+  measure(options: ITerminalOptions): void {
+    throw new Error('Method not implemented.');
+  }
+}
+
 export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   element: HTMLElement;
   options: ITerminalOptions = {};

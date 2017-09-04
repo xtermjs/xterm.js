@@ -4,7 +4,7 @@
 
 import { ICharMeasure } from '../Interfaces';
 
-export function getCoordsRelativeToElement(event: MouseEvent, element: HTMLElement): [number, number] {
+export function getCoordsRelativeToElement(event: {pageX: number, pageY: number}, element: HTMLElement): [number, number] {
   // Ignore browsers that don't support MouseEvent.pageX
   if (event.pageX == null) {
     return null;
@@ -15,7 +15,7 @@ export function getCoordsRelativeToElement(event: MouseEvent, element: HTMLEleme
 
   // Converts the coordinates from being relative to the document to being
   // relative to the terminal.
-  while (element && element !== self.document.documentElement) {
+  while (element) {
     x -= element.offsetLeft;
     y -= element.offsetTop;
     element = 'offsetParent' in element ? <HTMLElement>element.offsetParent : <HTMLElement>element.parentElement;
@@ -36,7 +36,7 @@ export function getCoordsRelativeToElement(event: MouseEvent, element: HTMLEleme
  * apply an offset to the x value such that the left half of the cell will
  * select that cell and the right half will select the next cell.
  */
-export function getCoords(event: MouseEvent, element: HTMLElement, charMeasure: ICharMeasure, lineHeight: number, colCount: number, rowCount: number, isSelection?: boolean): [number, number] {
+export function getCoords(event: {pageX: number, pageY: number}, element: HTMLElement, charMeasure: ICharMeasure, lineHeight: number, colCount: number, rowCount: number, isSelection?: boolean): [number, number] {
   // Coordinates cannot be measured if charMeasure has not been initialized
   if (!charMeasure.width || !charMeasure.height) {
     return null;
