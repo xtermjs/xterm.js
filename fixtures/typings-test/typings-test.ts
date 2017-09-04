@@ -168,6 +168,10 @@ namespace methods_core {
       t.setOption('bellStyle', 'visual');
       t.setOption('bellStyle', 'sound');
       t.setOption('bellStyle', 'both');
+      t.setOption('fontSize', 1);
+      t.setOption('lineHeight', 1);
+      t.setOption('fontFamily', 'foo');
+      t.setOption('theme', {background: '#ff0000'});
     }
   }
   namespace scrolling {
@@ -212,6 +216,9 @@ namespace methods_experimental {
       priority: 1,
       validationCallback: (uri: string, callback: (isValid: boolean) => void) => {
         console.log(uri, callback);
+      },
+      hoverCallback: (e: MouseEvent, uri: string) => {
+        console.log(e, uri);
       }
     });
     t.deregisterLinkMatcher(1);
