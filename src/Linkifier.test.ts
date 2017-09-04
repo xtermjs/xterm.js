@@ -11,12 +11,13 @@ import { MockBuffer } from './utils/TestUtils.test';
 import { CircularList } from './utils/CircularList';
 
 class TestLinkifier extends Linkifier {
-  constructor(bufferAccessor: IBufferAccessor) {
+  constructor(private _bufferAccessor: IBufferAccessor) {
+    super(_bufferAccessor);
     Linkifier.TIME_BEFORE_LINKIFY = 0;
-    super(bufferAccessor);
   }
 
   public get linkMatchers(): LinkMatcher[] { return this._linkMatchers; }
+  public linkifyRows(): void { super.linkifyRows(0, this._bufferAccessor.buffer.lines.length - 1); }
 }
 
 class TestMouseZoneManager implements IMouseZoneManager {
@@ -57,7 +58,7 @@ describe('Linkifier', () => {
 
   function assertLinkifiesEntireRow(uri: string, done: MochaDone): void {
     addRow(uri);
-    linkifier.linkifyRow(0);
+    linkifier.linkifyRows();
     setTimeout(() => {
       assert.equal(mouseZoneManager.zones[0].x1, 1);
       assert.equal(mouseZoneManager.zones[0].x2, uri.length + 1);
@@ -69,7 +70,7 @@ describe('Linkifier', () => {
   function assertLinkifiesRow(rowText: string, linkMatcherRegex: RegExp, links: {x: number, length: number}[], done: MochaDone): void {
     addRow(rowText);
     linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
-    linkifier.linkifyRow(0);
+    linkifier.linkifyRows();
     // Allow linkify to happen
     setTimeout(() => {
       assert.equal(mouseZoneManager.zones.length, links.length);
@@ -148,7 +149,7 @@ describe('Linkifier', () => {
             mouseZoneManager.zones[0].clickCallback(<any>{});
           }
         });
-        linkifier.linkifyRow(0);
+        linkifier.linkifyRows();
       });
 
       it('should disable link if false', done => {
@@ -160,7 +161,7 @@ describe('Linkifier', () => {
             assert.equal(mouseZoneManager.zones.length, 0);
           }
         });
-        linkifier.linkifyRow(0);
+        linkifier.linkifyRows();
         // Allow time for the validation callback to be performed
         setTimeout(() => done(), 10);
       });
@@ -177,7 +178,7 @@ describe('Linkifier', () => {
             cb(false);
           }
         });
-        linkifier.linkifyRow(0);
+        linkifier.linkifyRows();
       });
     });
 
