@@ -33,13 +33,13 @@ export class Renderer implements IRenderer {
 
   public setTheme(theme: ITheme): IColorSet {
     this._colorManager.setTheme(theme);
+
     // Clear layers and force a full render
     this._renderLayers.forEach(l => {
       l.onThemeChanged(this._terminal, this._colorManager.colors);
       l.reset(this._terminal);
     });
 
-    // TODO: This is currently done for every single terminal, but it's static so it's wasting time
     this._terminal.refresh(0, this._terminal.rows - 1);
 
     return this._colorManager.colors;

@@ -14,8 +14,6 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private scaledLineHeight: number;
   private scaledLineDrawY: number;
 
-  // TODO: This should be shared between terminals, but not for static as some
-  // terminals may have different styles
   private _charAtlas: HTMLCanvasElement | ImageBitmap;
 
   constructor(
@@ -32,7 +30,6 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     container.appendChild(this._canvas);
   }
 
-  // TODO: Should this do anything?
   public onOptionsChanged(terminal: ITerminal): void {}
   public onBlur(terminal: ITerminal): void {}
   public onFocus(terminal: ITerminal): void {}

@@ -77,7 +77,6 @@ export class Linkifier {
 
     // Clear out any existing links
     this._mouseZoneManager.clearAll();
-    // TODO: Cancel any validation callbacks
 
     if (this._rowsTimeoutId) {
       clearTimeout(this._rowsTimeoutId);
@@ -91,6 +90,7 @@ export class Linkifier {
    * @param end The row to end at.
    */
   private _linkifyRows(start: number, end: number): void {
+    this._rowsTimeoutId = null;
     for (let i = start; i <= end; i++) {
       this._linkifyRow(i);
     }
@@ -220,8 +220,11 @@ export class Linkifier {
     // Ensure the link is valid before registering
     if (matcher.validationCallback) {
       matcher.validationCallback(text, isValid => {
+        // Discard link if the line has already changed
+        if (this._rowsTimeoutId) {
+          return;
+        }
         if (isValid) {
-          // TODO: Discard link if the line has already changed?
           this._addLink(offset + index, rowIndex, uri, matcher);
         }
       });
