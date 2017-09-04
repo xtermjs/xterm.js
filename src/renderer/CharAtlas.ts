@@ -67,6 +67,7 @@ function generateConfig(scaledCharWidth: number, scaledCharHeight: number, termi
     foreground: colors.foreground,
     background: null,
     cursor: null,
+    selection: null,
     ansi: colors.ansi.slice(0, 16)
   };
   return {

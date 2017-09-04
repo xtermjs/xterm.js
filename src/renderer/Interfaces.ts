@@ -66,5 +66,6 @@ export interface IColorSet {
   foreground: string;
   background: string;
   cursor: string;
+  selection: string;
   ansi: string[];
 }

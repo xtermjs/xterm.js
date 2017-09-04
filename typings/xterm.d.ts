@@ -83,6 +83,8 @@ interface ITheme {
   background?: string,
   /** The cursor color */
   cursor?: string,
+  /** The selection color (can be transparent) */
+  selection?: string,
   /** ANSI black (eg. `\x1b[30m`) */
   black?: string,
   /** ANSI red (eg. `\x1b[31m`) */
