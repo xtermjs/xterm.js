@@ -409,6 +409,11 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
       return;
     }
 
+    // Return early if the click event is not in the buffer (eg. in scroll bar)
+    if (line.length >= this._model.selectionStart[0]) {
+      return;
+    }
+
     // If the mouse is over the second half of a wide character, adjust the
     // selection to cover the whole character
     const char = line[this._model.selectionStart[0]];
