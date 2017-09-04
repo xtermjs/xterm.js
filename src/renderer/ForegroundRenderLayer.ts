@@ -6,6 +6,13 @@ import { GridCache } from './GridCache';
 import { CharData } from '../Types';
 import { BaseRenderLayer, INVERTED_DEFAULT_COLOR } from './BaseRenderLayer';
 
+/**
+ * This CharData looks like a null character, which will forc a clear and render
+ * when the character changes (a regular space ' ' character may not as it's
+ * drawn state is a cleared cell).
+ */
+const EMOJI_OWNED_CHAR_DATA: CharData = [null, '', 0, -1];
+
 export class ForegroundRenderLayer extends BaseRenderLayer {
   private _state: GridCache<CharData>;
 
@@ -27,13 +34,6 @@ export class ForegroundRenderLayer extends BaseRenderLayer {
   }
 
   public onGridChanged(terminal: ITerminal, startRow: number, endRow: number): void {
-    // TODO: Ensure that the render is eventually performed
-    // Don't bother render until the atlas bitmap is ready
-    // TODO: Move this to BaseRenderLayer?
-    // if (!BaseRenderLayer._charAtlas) {
-    //   return;
-    // }
-
     // Resize has not been called yet
     if (this._state.cache.length === 0) {
       return;
@@ -48,13 +48,25 @@ export class ForegroundRenderLayer extends BaseRenderLayer {
         const code: number = <number>charData[CHAR_DATA_CODE_INDEX];
         const char: string = charData[CHAR_DATA_CHAR_INDEX];
         const attr: number = charData[CHAR_DATA_ATTR_INDEX];
-        const width: number = charData[CHAR_DATA_WIDTH_INDEX];
+        let width: number = charData[CHAR_DATA_WIDTH_INDEX];
 
         // The character to the left is a wide character, drawing is owned by
         // the char at x-1
         if (width === 0) {
           this._state.cache[x][y] = null;
           continue;
+        }
+
+        // If the character is a space and the character to the left is an
+        // emoji, skip the character and allow the emoji char to take full
+        // control over this character's cell.
+        if (code === 32 /*' '*/) {
+          if (x > 0) {
+            const previousChar: CharData = line[x - 1];
+            if (this._isEmoji(previousChar[CHAR_DATA_CHAR_INDEX])) {
+              continue;
+            }
+          }
         }
 
         // Skip rendering if the character is identical
@@ -67,7 +79,7 @@ export class ForegroundRenderLayer extends BaseRenderLayer {
 
         // Clear the old character if present
         if (state && state[CHAR_DATA_CODE_INDEX] !== 32 /*' '*/) {
-          this.clearChar(x, y);
+          this._clearChar(x, y);
         }
         this._state.cache[x][y] = charData;
 
@@ -76,6 +88,19 @@ export class ForegroundRenderLayer extends BaseRenderLayer {
         // Skip rendering if the character is invisible
         if (!code || code === 32 /*' '*/ || (flags & FLAGS.INVISIBLE)) {
           continue;
+        }
+
+        // If the character is an emoji and the character to the right is a
+        // space, take ownership of the cell to the right.
+        if (this._isEmoji(char)) {
+          if (x < line.length && line[x + 1][CHAR_DATA_CODE_INDEX] === 32 /*' '*/) {
+            width = 2;
+            this._clearChar(x + 1, y);
+            // The emoji owned char data will force a clear and render when the
+            // emoji is no longer to the left of the character and also when the
+            // space changes to another character.
+            this._state.cache[x + 1][y] = EMOJI_OWNED_CHAR_DATA;
+          }
         }
 
         let fg = (attr >> 9) & 0x1ff;
@@ -117,7 +142,20 @@ export class ForegroundRenderLayer extends BaseRenderLayer {
     }
   }
 
-  private clearChar(x: number, y: number): void {
+  /**
+   * Whether the character is an emoji.
+   * @param char The character to search.
+   */
+  private _isEmoji(char: string): boolean {
+    return char.search(/([\uD800-\uDBFF][\uDC00-\uDFFF])/g) >= 0;
+  }
+
+  /**
+   * Clear the charcater at the cell specified.
+   * @param x The column of the char.
+   * @param y The row of the char.
+   */
+  private _clearChar(x: number, y: number): void {
     let colsToClear = 1;
     // Clear the adjacent character if it was wide
     const state = this._state.cache[x][y];
