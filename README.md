@@ -97,12 +97,10 @@ xterm.fit();
 
 Since xterm.js is typically implemented as a developer tool, only modern browsers are supported officially. Here is a list of the versions we aim to support:
 
-- Chrome 48+
-- Edge 13+
-- Firefox 44+
-- Internet Explorer 11+
-- Opera 35+
-- Safari 8+
+- Chrome latest
+- Edge latest
+- Firefox latest
+- Safari latest
 
 Xterm.js works seamlessly in Electron apps and may even work on earlier versions of the browsers but these are the browsers we strive to keep working.
 
