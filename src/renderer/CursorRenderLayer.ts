@@ -186,7 +186,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
   private _renderBarCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
     this._ctx.save();
     this._ctx.fillStyle = this.colors.cursor;
-    this.drawLeftLineAtCell(x, y);
+    this.fillLeftLineAtCell(x, y);
     this._ctx.restore();
   }
 
@@ -194,20 +194,22 @@ export class CursorRenderLayer extends BaseRenderLayer {
     this._ctx.save();
     this._ctx.fillStyle = this.colors.cursor;
     this.fillCells(x, y, charData[CHAR_DATA_WIDTH_INDEX], 1);
+    this._ctx.fillStyle = this.colors.background;
+    this.fillCharTrueColor(terminal, charData, x, y);
     this._ctx.restore();
-    this.drawCharTrueColor(terminal, charData, x, y, this.colors.background);
   }
 
   private _renderUnderlineCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
     this._ctx.save();
     this._ctx.fillStyle = this.colors.cursor;
-    this.drawBottomLineAtCell(x, y);
+    this.fillBottomLineAtCell(x, y);
     this._ctx.restore();
   }
 
   private _renderBlurCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
     this._ctx.save();
-    this.drawRectAtCell(x, y, charData[CHAR_DATA_WIDTH_INDEX], 1, this.colors.cursor);
+    this._ctx.strokeStyle = this.colors.cursor;
+    this.strokeRectAtCell(x, y, charData[CHAR_DATA_WIDTH_INDEX], 1);
     this._ctx.restore();
   }
 }

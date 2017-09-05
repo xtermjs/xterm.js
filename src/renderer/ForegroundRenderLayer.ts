@@ -139,7 +139,7 @@ export class ForegroundRenderLayer extends BaseRenderLayer {
           } else {
             this._ctx.fillStyle = this.colors.foreground;
           }
-          this.drawBottomLineAtCell(x, y);
+          this.fillBottomLineAtCell(x, y);
         }
 
         this.drawChar(terminal, char, code, width, x, y, fg, !!(flags & FLAGS.BOLD));
