@@ -20,6 +20,12 @@ interface ICharAtlasCacheEntry {
 
 let charAtlasCache: ICharAtlasCacheEntry[] = [];
 
+/**
+ * Acquires a char atlas, either generating a new one or returning an existing
+ * one that is in use by another terminal.
+ * @param terminal The terminal.
+ * @param colors The colors to use.
+ */
 export function acquireCharAtlas(terminal: ITerminal, colors: IColorSet): HTMLCanvasElement | Promise<ImageBitmap> {
   const scaledCharWidth = terminal.charMeasure.width * window.devicePixelRatio;
   const scaledCharHeight = terminal.charMeasure.height * window.devicePixelRatio;
@@ -95,6 +101,10 @@ function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean {
 
 let generator: CharAtlasGenerator;
 
+/**
+ * Initializes the char atlas generator.
+ * @param document The document.
+ */
 export function initialize(document: Document): void {
   if (!generator) {
     generator = new CharAtlasGenerator(document);

@@ -26,6 +26,10 @@ export const DEFAULT_ANSI_COLORS = [
   '#eeeeec'
 ];
 
+/**
+ * Fills an existing 16 length string with the remaining 240 ANSI colors.
+ * @param first16Colors The first 16 ANSI colors.
+ */
 function generate256Colors(first16Colors: string[]): string[] {
   let colors = first16Colors.slice();
 
@@ -52,6 +56,9 @@ function toPaddedHex(c: number): string {
   return s.length < 2 ? '0' + s : s;
 }
 
+/**
+ * Manages the source of truth for a terminal's colors.
+ */
 export class ColorManager {
   public colors: IColorSet;
 
