@@ -10,7 +10,7 @@ import { ITerminal, ISelectionManager } from '../Interfaces';
 interface IWindow extends Window {
   clipboardData?: {
     getData(format: string): string;
-    setData(format: string, data: string);
+    setData(format: string, data: string): void;
   };
 }
 
@@ -31,7 +31,7 @@ export function prepareTextForTerminal(text: string, isMSWindows: boolean): stri
  * Binds copy functionality to the given terminal.
  * @param {ClipboardEvent} ev The original copy event to be handled
  */
-export function copyHandler(ev: ClipboardEvent, term: ITerminal, selectionManager: ISelectionManager) {
+export function copyHandler(ev: ClipboardEvent, term: ITerminal, selectionManager: ISelectionManager): void {
   if (term.browser.isMSIE) {
     window.clipboardData.setData('Text', selectionManager.selectionText);
   } else {
@@ -47,18 +47,17 @@ export function copyHandler(ev: ClipboardEvent, term: ITerminal, selectionManage
  * @param {ClipboardEvent} ev The original paste event to be handled
  * @param {Terminal} term The terminal on which to apply the handled paste event
  */
-export function pasteHandler(ev: ClipboardEvent, term: ITerminal) {
+export function pasteHandler(ev: ClipboardEvent, term: ITerminal): void {
   ev.stopPropagation();
 
   let text: string;
 
-  let dispatchPaste = function(text) {
+  let dispatchPaste = function(text: string): void {
     text = prepareTextForTerminal(text, term.browser.isMSWindows);
     term.handler(text);
     term.textarea.value = '';
     term.emit('paste', text);
-
-    return term.cancel(ev);
+    term.cancel(ev);
   };
 
   if (term.browser.isMSIE) {
@@ -79,7 +78,7 @@ export function pasteHandler(ev: ClipboardEvent, term: ITerminal) {
  * @param ev The original right click event to be handled.
  * @param textarea The terminal's textarea.
  */
-export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLTextAreaElement) {
+export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLTextAreaElement): void {
   // Bring textarea at the cursor position
   textarea.style.position = 'fixed';
   textarea.style.width = '20px';
@@ -91,7 +90,7 @@ export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLTextA
   textarea.focus();
 
   // Reset the terminal textarea's styling
-  setTimeout(function () {
+  setTimeout(() => {
     textarea.style.position = null;
     textarea.style.width = null;
     textarea.style.height = null;
@@ -107,7 +106,7 @@ export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLTextA
  * @param textarea The terminal's textarea.
  * @param selectionManager The terminal's selection manager.
  */
-export function rightClickHandler(ev: MouseEvent, textarea: HTMLTextAreaElement, selectionManager: ISelectionManager) {
+export function rightClickHandler(ev: MouseEvent, textarea: HTMLTextAreaElement, selectionManager: ISelectionManager): void {
   moveTextAreaUnderMouseCursor(ev, textarea);
 
   // Get textarea ready to copy from the context menu

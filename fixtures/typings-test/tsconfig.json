@@ -1,0 +1,9 @@
+{
+  "files": [
+      "typings-test.ts"
+  ],
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es5"
+  }
+}

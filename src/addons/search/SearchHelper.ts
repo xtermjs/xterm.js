@@ -15,7 +15,7 @@ interface ISearchResult {
  * A class that knows how to search the terminal and how to display the results.
  */
 export class SearchHelper {
-  constructor(private _terminal: any, private _translateBufferLineToString: any) {
+  constructor(private _terminal: any) {
     // TODO: Search for multiple instances on 1 line
     // TODO: Don't use the actual selection, instead use a "find selection" so multiple instances can be highlighted
     // TODO: Highlight other instances in the viewport
@@ -111,8 +111,7 @@ export class SearchHelper {
    * @return The search result if it was found.
    */
   private _findInLine(term: string, y: number): ISearchResult {
-    const bufferLine = this._terminal.buffer.lines.get(y);
-    const lowerStringLine = this._translateBufferLineToString(bufferLine, true).toLowerCase();
+    const lowerStringLine = this._terminal.buffer.translateBufferLineToString(y, true).toLowerCase();
     const lowerTerm = term.toLowerCase();
     const searchIndex = lowerStringLine.indexOf(lowerTerm);
     if (searchIndex >= 0) {

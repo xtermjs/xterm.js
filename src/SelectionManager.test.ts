@@ -1,20 +1,22 @@
 /**
  * @license MIT
  */
+
 import jsdom = require('jsdom');
 import { assert } from 'chai';
-import { ITerminal, ICircularList } from './Interfaces';
+import { ITerminal, ICircularList, IBuffer } from './Interfaces';
 import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
 import { SelectionManager } from './SelectionManager';
 import { SelectionModel } from './SelectionModel';
 import { BufferSet } from './BufferSet';
-import { MockTerminal } from './utils/TestUtils';
+import { MockTerminal } from './utils/TestUtils.test';
+import { LineData } from './Types';
 
 class TestSelectionManager extends SelectionManager {
   constructor(
     terminal: ITerminal,
-    buffer: ICircularList<[number, string, number][]>,
+    buffer: IBuffer,
     rowContainer: HTMLElement,
     charMeasure: CharMeasure
   ) {
@@ -38,7 +40,7 @@ describe('SelectionManager', () => {
   let document: Document;
 
   let terminal: ITerminal;
-  let bufferLines: ICircularList<[number, string, number][]>;
+  let buffer: IBuffer;
   let rowContainer: HTMLElement;
   let selectionManager: TestSelectionManager;
 
@@ -50,15 +52,15 @@ describe('SelectionManager', () => {
     terminal = new MockTerminal();
     terminal.cols = 80;
     terminal.rows = 2;
-    terminal.scrollback = 100;
+    terminal.options.scrollback = 100;
     terminal.buffers = new BufferSet(terminal);
     terminal.buffer = terminal.buffers.active;
-    bufferLines = terminal.buffer.lines;
-    selectionManager = new TestSelectionManager(terminal, bufferLines, rowContainer, null);
+    buffer = terminal.buffer;
+    selectionManager = new TestSelectionManager(terminal, buffer, rowContainer, null);
   });
 
-  function stringToRow(text: string): [number, string, number][] {
-    let result: [number, string, number][] = [];
+  function stringToRow(text: string): LineData {
+    let result: LineData = [];
     for (let i = 0; i < text.length; i++) {
       result.push([0, text.charAt(i), 1]);
     }
@@ -67,7 +69,7 @@ describe('SelectionManager', () => {
 
   describe('_selectWordAt', () => {
     it('should expand selection for normal width chars', () => {
-      bufferLines.set(0, stringToRow('foo bar'));
+      buffer.lines.set(0, stringToRow('foo bar'));
       selectionManager.selectWordAt([0, 0]);
       assert.equal(selectionManager.selectionText, 'foo');
       selectionManager.selectWordAt([1, 0]);
@@ -84,7 +86,7 @@ describe('SelectionManager', () => {
       assert.equal(selectionManager.selectionText, 'bar');
     });
     it('should expand selection for whitespace', () => {
-      bufferLines.set(0, stringToRow('a   b'));
+      buffer.lines.set(0, stringToRow('a   b'));
       selectionManager.selectWordAt([0, 0]);
       assert.equal(selectionManager.selectionText, 'a');
       selectionManager.selectWordAt([1, 0]);
@@ -98,7 +100,7 @@ describe('SelectionManager', () => {
     });
     it('should expand selection for wide characters', () => {
       // Wide characters use a special format
-      bufferLines.set(0, [
+      buffer.lines.set(0, [
         [null, '中', 2],
         [null, '', 0],
         [null, '文', 2],
@@ -150,7 +152,7 @@ describe('SelectionManager', () => {
       assert.equal(selectionManager.selectionText, 'foo');
     });
     it('should select up to non-path characters that are commonly adjacent to paths', () => {
-      bufferLines.set(0, stringToRow('(cd)[ef]{gh}\'ij"'));
+      buffer.lines.set(0, stringToRow('(cd)[ef]{gh}\'ij"'));
       selectionManager.selectWordAt([0, 0]);
       assert.equal(selectionManager.selectionText, '(cd');
       selectionManager.selectWordAt([1, 0]);
@@ -188,7 +190,7 @@ describe('SelectionManager', () => {
 
   describe('_selectLineAt', () => {
     it('should select the entire line', () => {
-      bufferLines.set(0, stringToRow('foo bar'));
+      buffer.lines.set(0, stringToRow('foo bar'));
       selectionManager.selectLineAt(0);
       assert.equal(selectionManager.selectionText, 'foo bar', 'The selected text is correct');
       assert.deepEqual(selectionManager.model.finalSelectionStart, [0, 0]);
@@ -198,14 +200,14 @@ describe('SelectionManager', () => {
 
   describe('selectAll', () => {
     it('should select the entire buffer, beyond the viewport', () => {
-      bufferLines.length = 5;
-      bufferLines.set(0, stringToRow('1'));
-      bufferLines.set(1, stringToRow('2'));
-      bufferLines.set(2, stringToRow('3'));
-      bufferLines.set(3, stringToRow('4'));
-      bufferLines.set(4, stringToRow('5'));
+      buffer.lines.length = 5;
+      buffer.lines.set(0, stringToRow('1'));
+      buffer.lines.set(1, stringToRow('2'));
+      buffer.lines.set(2, stringToRow('3'));
+      buffer.lines.set(3, stringToRow('4'));
+      buffer.lines.set(4, stringToRow('5'));
       selectionManager.selectAll();
-      terminal.buffer.ybase = bufferLines.length - terminal.rows;
+      terminal.buffer.ybase = buffer.lines.length - terminal.rows;
       assert.equal(selectionManager.selectionText, '1\n2\n3\n4\n5');
     });
   });

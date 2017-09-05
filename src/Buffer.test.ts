@@ -1,11 +1,12 @@
 /**
  * @license MIT
  */
+
 import { assert } from 'chai';
 import { ITerminal } from './Interfaces';
 import { Buffer } from './Buffer';
 import { CircularList } from './utils/CircularList';
-import { MockTerminal } from './utils/TestUtils';
+import { MockTerminal } from './utils/TestUtils.test';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
@@ -18,14 +19,14 @@ describe('Buffer', () => {
     terminal = new MockTerminal();
     terminal.cols = INIT_COLS;
     terminal.rows = INIT_ROWS;
-    terminal.scrollback = 1000;
-    buffer = new Buffer(terminal);
+    terminal.options.scrollback = 1000;
+    buffer = new Buffer(terminal, true);
   });
 
   describe('constructor', () => {
-    it('should create a CircularList with max length equal to scrollback, for its lines', () => {
+    it('should create a CircularList with max length equal to rows + scrollback, for its lines', () => {
       assert.instanceOf(buffer.lines, CircularList);
-      assert.equal(buffer.lines.maxLength, terminal.scrollback);
+      assert.equal(buffer.lines.maxLength, terminal.rows + terminal.options.scrollback);
     });
     it('should set the Buffer\'s scrollBottom value equal to the terminal\'s rows -1', () => {
       assert.equal(buffer.scrollBottom, terminal.rows - 1);
@@ -86,6 +87,21 @@ describe('Buffer', () => {
         // Shift the viewport down 5 rows
         assert.equal(buffer.ydisp, 5);
         assert.equal(buffer.ybase, 5);
+      });
+
+      describe('no scrollback', () => {
+        it('should trim from the top of the buffer when the cursor reaches the bottom', () => {
+          terminal.options.scrollback = 0;
+          buffer = new Buffer(terminal, true);
+          assert.equal(buffer.lines.maxLength, INIT_ROWS);
+          buffer.y = INIT_ROWS - 1;
+          buffer.fillViewportRows();
+          buffer.lines.get(5)[0][1] = 'a';
+          buffer.lines.get(INIT_ROWS - 1)[0][1] = 'b';
+          buffer.resize(INIT_COLS, INIT_ROWS - 5);
+          assert.equal(buffer.lines.get(0)[0][1], 'a');
+          assert.equal(buffer.lines.get(INIT_ROWS - 1 - 5)[0][1], 'b');
+        });
       });
     });
 
@@ -153,6 +169,22 @@ describe('Buffer', () => {
           assert.equal(buffer.lines.get(i).length, INIT_COLS + 5);
         }
       });
+    });
+  });
+
+  describe('buffer marked to have no scrollback', () => {
+    it('should always have a scrollback of 0', () => {
+      assert.equal(terminal.options.scrollback, 1000);
+      // Test size on initialization
+      buffer = new Buffer(terminal, false);
+      buffer.fillViewportRows();
+      assert.equal(buffer.lines.maxLength, INIT_ROWS);
+      // Test size on buffer increase
+      buffer.resize(INIT_COLS, INIT_ROWS * 2);
+      assert.equal(buffer.lines.maxLength, INIT_ROWS * 2);
+      // Test size on buffer decrease
+      buffer.resize(INIT_COLS, INIT_ROWS / 2);
+      assert.equal(buffer.lines.maxLength, INIT_ROWS / 2);
     });
   });
 });

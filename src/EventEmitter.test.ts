@@ -1,3 +1,7 @@
+/**
+ * @license MIT
+ */
+
 import { assert } from 'chai';
 import { EventEmitter } from './EventEmitter';
 

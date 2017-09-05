@@ -2,9 +2,11 @@
  * @license MIT
  */
 
-import { IInputHandler, ITerminal } from './Interfaces';
+import { IInputHandler, ITerminal, IInputHandlingTerminal } from './Interfaces';
 import { C0 } from './EscapeSequences';
 import { DEFAULT_CHARSET } from './Charsets';
+import { CharData } from './Types';
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
 
 /**
  * The terminal's standard implementation of IInputHandler, this handles all
@@ -14,8 +16,7 @@ import { DEFAULT_CHARSET } from './Charsets';
  * each function's header comment.
  */
 export class InputHandler implements IInputHandler {
-  // TODO: We want to type _terminal when it's pulled into TS
-  constructor(private _terminal: any) { }
+  constructor(private _terminal: IInputHandlingTerminal) { }
 
   public addChar(char: string, code: number): void {
     if (char >= ' ') {
@@ -34,14 +35,14 @@ export class InputHandler implements IInputHandler {
       if (!ch_width && this._terminal.buffer.x) {
         // dont overflow left
         if (this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1]) {
-          if (!this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1][2]) {
+          if (!this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1][CHAR_DATA_WIDTH_INDEX]) {
 
             // found empty cell after fullwidth, need to go 2 cells back
             if (this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 2])
-              this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 2][1] += char;
+              this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 2][CHAR_DATA_CHAR_INDEX] += char;
 
           } else {
-            this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1][1] += char;
+            this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1][CHAR_DATA_CHAR_INDEX] += char;
           }
           this._terminal.updateRange(this._terminal.buffer.y);
         }
@@ -61,7 +62,7 @@ export class InputHandler implements IInputHandler {
           } else {
             // The line already exists (eg. the initial viewport), mark it as a
             // wrapped line
-            this._terminal.buffer.lines.get(this._terminal.buffer.y).isWrapped = true;
+            (<any>this._terminal.buffer.lines.get(this._terminal.buffer.y)).isWrapped = true;
           }
         } else {
           if (ch_width === 2)  // FIXME: check for xterm behavior
@@ -77,9 +78,9 @@ export class InputHandler implements IInputHandler {
           // remove last cell, if it's width is 0
           // we have to adjust the second last cell as well
           const removed = this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).pop();
-          if (removed[2] === 0
+          if (removed[CHAR_DATA_WIDTH_INDEX] === 0
               && this._terminal.buffer.lines.get(row)[this._terminal.cols - 2]
-              && this._terminal.buffer.lines.get(row)[this._terminal.cols - 2][2] === 2) {
+              && this._terminal.buffer.lines.get(row)[this._terminal.cols - 2][CHAR_DATA_WIDTH_INDEX] === 2) {
             this._terminal.buffer.lines.get(row)[this._terminal.cols - 2] = [this._terminal.curAttr, ' ', 1];
           }
 
@@ -105,14 +106,7 @@ export class InputHandler implements IInputHandler {
    * Bell (Ctrl-G).
    */
   public bell(): void {
-    if (!this._terminal.visualBell) {
-      return;
-    }
-    this._terminal.element.style.borderColor = 'white';
-    setTimeout(() => this._terminal.element.style.borderColor = '', 10);
-    if (this._terminal.popOnBell) {
-      this._terminal.focus();
-    }
+    this._terminal.bell();
   }
 
   /**
@@ -163,7 +157,7 @@ export class InputHandler implements IInputHandler {
    * Horizontal Tab (HT) (Ctrl-I).
    */
   public tab(): void {
-    this._terminal.buffer.x = this._terminal.nextStop();
+    this._terminal.buffer.x = this._terminal.buffer.nextStop();
   }
 
   /**
@@ -189,14 +183,12 @@ export class InputHandler implements IInputHandler {
    * Insert Ps (Blank) Character(s) (default = 1) (ICH).
    */
   public insertChars(params: number[]): void {
-    let param, row, j, ch;
-
-    param = params[0];
+    let param = params[0];
     if (param < 1) param = 1;
 
-    row = this._terminal.buffer.y + this._terminal.buffer.ybase;
-    j = this._terminal.buffer.x;
-    ch = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    const row = this._terminal.buffer.y + this._terminal.buffer.ybase;
+    let j = this._terminal.buffer.x;
+    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       this._terminal.buffer.lines.get(row).splice(j++, 0, ch);
@@ -223,7 +215,7 @@ export class InputHandler implements IInputHandler {
    * CSI Ps B
    * Cursor Down Ps Times (default = 1) (CUD).
    */
-  public cursorDown(params: number[]) {
+  public cursorDown(params: number[]): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -242,7 +234,7 @@ export class InputHandler implements IInputHandler {
    * CSI Ps C
    * Cursor Forward Ps Times (default = 1) (CUF).
    */
-  public cursorForward(params: number[]) {
+  public cursorForward(params: number[]): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -257,7 +249,7 @@ export class InputHandler implements IInputHandler {
    * CSI Ps D
    * Cursor Backward Ps Times (default = 1) (CUB).
    */
-  public cursorBackward(params: number[]) {
+  public cursorBackward(params: number[]): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -325,9 +317,8 @@ export class InputHandler implements IInputHandler {
    * Cursor Position [row;column] (default = [1,1]) (CUP).
    */
   public cursorPosition(params: number[]): void {
-    let row, col;
-
-    row = params[0] - 1;
+    let col: number;
+    let row: number = params[0] - 1;
 
     if (params.length >= 2) {
       col = params[1] - 1;
@@ -358,7 +349,7 @@ export class InputHandler implements IInputHandler {
   public cursorForwardTab(params: number[]): void {
     let param = params[0] || 1;
     while (param--) {
-      this._terminal.buffer.x = this._terminal.nextStop();
+      this._terminal.buffer.x = this._terminal.buffer.nextStop();
     }
   }
 
@@ -439,30 +430,19 @@ export class InputHandler implements IInputHandler {
    * Insert Ps Line(s) (default = 1) (IL).
    */
   public insertLines(params: number[]): void {
-    let param, row, j;
-
-    param = params[0];
+    let param: number = params[0];
     if (param < 1) {
       param = 1;
     }
-    row = this._terminal.buffer.y + this._terminal.buffer.ybase;
+    let row: number = this._terminal.buffer.y + this._terminal.buffer.ybase;
 
-    j = this._terminal.rows - 1 - this._terminal.buffer.scrollBottom;
-    j = this._terminal.rows - 1 + this._terminal.buffer.ybase - j + 1;
-
+    let scrollBottomRowsOffset = this._terminal.rows - 1 - this._terminal.buffer.scrollBottom;
+    let scrollBottomAbsolute = this._terminal.rows - 1 + this._terminal.buffer.ybase - scrollBottomRowsOffset + 1;
     while (param--) {
-      if (this._terminal.buffer.lines.length === this._terminal.buffer.lines.maxLength) {
-        // Trim the start of lines to make room for the new line
-        this._terminal.buffer.lines.trimStart(1);
-        this._terminal.buffer.ybase--;
-        this._terminal.buffer.ydisp--;
-        row--;
-        j--;
-      }
       // test: echo -e '\e[44m\e[1L\e[0m'
       // blankLine(true) - xterm/linux behavior
+      this._terminal.buffer.lines.splice(scrollBottomAbsolute - 1, 1);
       this._terminal.buffer.lines.splice(row, 0, this._terminal.blankLine(true));
-      this._terminal.buffer.lines.splice(j, 1);
     }
 
     // this.maxRange();
@@ -475,28 +455,20 @@ export class InputHandler implements IInputHandler {
    * Delete Ps Line(s) (default = 1) (DL).
    */
   public deleteLines(params: number[]): void {
-    let param, row, j;
-
-    param = params[0];
+    let param = params[0];
     if (param < 1) {
       param = 1;
     }
-    row = this._terminal.buffer.y + this._terminal.buffer.ybase;
+    const row: number = this._terminal.buffer.y + this._terminal.buffer.ybase;
 
+    let j: number;
     j = this._terminal.rows - 1 - this._terminal.buffer.scrollBottom;
     j = this._terminal.rows - 1 + this._terminal.buffer.ybase - j;
-
     while (param--) {
-      if (this._terminal.buffer.lines.length === this._terminal.buffer.lines.maxLength) {
-        // Trim the start of lines to make room for the new line
-        this._terminal.buffer.lines.trimStart(1);
-        this._terminal.buffer.ybase -= 1;
-        this._terminal.buffer.ydisp -= 1;
-      }
       // test: echo -e '\e[44m\e[1M\e[0m'
       // blankLine(true) - xterm/linux behavior
-      this._terminal.buffer.lines.splice(j + 1, 0, this._terminal.blankLine(true));
-      this._terminal.buffer.lines.splice(row, 1);
+      this._terminal.buffer.lines.splice(row - 1, 1);
+      this._terminal.buffer.lines.splice(j, 0, this._terminal.blankLine(true));
     }
 
     // this.maxRange();
@@ -509,15 +481,13 @@ export class InputHandler implements IInputHandler {
    * Delete Ps Character(s) (default = 1) (DCH).
    */
   public deleteChars(params: number[]): void {
-    let param, row, ch;
-
-    param = params[0];
+    let param: number = params[0];
     if (param < 1) {
       param = 1;
     }
 
-    row = this._terminal.buffer.y + this._terminal.buffer.ybase;
-    ch = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    const row = this._terminal.buffer.y + this._terminal.buffer.ybase;
+    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1]; // xterm
 
     while (param--) {
       this._terminal.buffer.lines.get(row).splice(this._terminal.buffer.x, 1);
@@ -558,16 +528,14 @@ export class InputHandler implements IInputHandler {
    * Erase Ps Character(s) (default = 1) (ECH).
    */
   public eraseChars(params: number[]): void {
-    let param, row, j, ch;
-
-    param = params[0];
+    let param = params[0];
     if (param < 1) {
       param = 1;
     }
 
-    row = this._terminal.buffer.y + this._terminal.buffer.ybase;
-    j = this._terminal.buffer.x;
-    ch = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    const row = this._terminal.buffer.y + this._terminal.buffer.ybase;
+    let j = this._terminal.buffer.x;
+    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       this._terminal.buffer.lines.get(row)[j++] = ch;
@@ -580,7 +548,7 @@ export class InputHandler implements IInputHandler {
   public cursorBackwardTab(params: number[]): void {
     let param = params[0] || 1;
     while (param--) {
-      this._terminal.buffer.x = this._terminal.prevStop();
+      this._terminal.buffer.x = this._terminal.buffer.prevStop();
     }
   }
 
@@ -619,9 +587,9 @@ export class InputHandler implements IInputHandler {
    * CSI Ps b  Repeat the preceding graphic character Ps times (REP).
    */
   public repeatPrecedingCharacter(params: number[]): void {
-    let param = params[0] || 1
-      , line = this._terminal.buffer.lines.get(this._terminal.buffer.ybase + this._terminal.buffer.y)
-      , ch = line[this._terminal.buffer.x - 1] || [this._terminal.defAttr, ' ', 1];
+    let param = params[0] || 1;
+    const line = this._terminal.buffer.lines.get(this._terminal.buffer.ybase + this._terminal.buffer.y);
+    const ch = line[this._terminal.buffer.x - 1] || [this._terminal.defAttr, ' ', 1];
 
     while (param--) {
       line[this._terminal.buffer.x++] = ch;
@@ -867,7 +835,7 @@ export class InputHandler implements IInputHandler {
           this._terminal.insertMode = true;
           break;
         case 20:
-          // this._terminal.convertEol = true;
+          // this._t.convertEol = true;
           break;
       }
     } else if (this._terminal.prefix === '?') {
@@ -954,6 +922,7 @@ export class InputHandler implements IInputHandler {
         case 47: // alt screen buffer
         case 1047: // alt screen buffer
           this._terminal.buffers.activateAltBuffer();
+          this._terminal.selectionManager.setBuffer(this._terminal.buffer);
           this._terminal.viewport.syncScrollArea();
           this._terminal.showCursor();
           break;
@@ -1058,7 +1027,7 @@ export class InputHandler implements IInputHandler {
           this._terminal.insertMode = false;
           break;
         case 20:
-          // this._terminal.convertEol = false;
+          // this._t.convertEol = false;
           break;
       }
     } else if (this._terminal.prefix === '?') {
@@ -1122,7 +1091,7 @@ export class InputHandler implements IInputHandler {
           // if (params[0] === 1049) {
           //   this.restoreCursor(params);
           // }
-          this._terminal.selectionManager.setBuffer(this._terminal.buffer.lines);
+          this._terminal.selectionManager.setBuffer(this._terminal.buffer);
           this._terminal.refresh(0, this._terminal.rows - 1);
           this._terminal.viewport.syncScrollArea();
           this._terminal.showCursor();
@@ -1202,14 +1171,13 @@ export class InputHandler implements IInputHandler {
       return;
     }
 
-    let l = params.length
-    , i = 0
-    , flags = this._terminal.curAttr >> 18
-    , fg = (this._terminal.curAttr >> 9) & 0x1ff
-    , bg = this._terminal.curAttr & 0x1ff
-    , p;
+    const l = params.length;
+    let flags = this._terminal.curAttr >> 18;
+    let fg = (this._terminal.curAttr >> 9) & 0x1ff;
+    let bg = this._terminal.curAttr & 0x1ff;
+    let p;
 
-    for (; i < l; i++) {
+    for (let i = 0; i < l; i++) {
       p = params[i];
       if (p >= 30 && p <= 37) {
         // fg color 8
@@ -1469,7 +1437,7 @@ export class InputHandler implements IInputHandler {
   }
 }
 
-export const wcwidth = (function(opts) {
+export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: number) => number {
     // extracted from https://www.cl.cam.ac.uk/%7Emgk25/ucs/wcwidth.c
     // combining characters
     const COMBINING_BMP = [
@@ -1525,7 +1493,7 @@ export const wcwidth = (function(opts) {
       [0xE0100, 0xE01EF]
     ];
     // binary search
-    function bisearch(ucs, data) {
+    function bisearch(ucs: number, data: number[][]): boolean {
       let min = 0;
       let max = data.length - 1;
       let mid;
@@ -1542,7 +1510,7 @@ export const wcwidth = (function(opts) {
       }
       return false;
     }
-    function wcwidthBMP(ucs) {
+    function wcwidthBMP(ucs: number): number {
       // test for 8-bit control characters
       if (ucs === 0)
         return opts.nul;
@@ -1557,7 +1525,7 @@ export const wcwidth = (function(opts) {
       }
       return 1;
     }
-    function isWideBMP(ucs) {
+    function isWideBMP(ucs: number): boolean {
       return (
         ucs >= 0x1100 && (
         ucs <= 0x115f ||                // Hangul Jamo init. consonants
@@ -1571,7 +1539,7 @@ export const wcwidth = (function(opts) {
         (ucs >= 0xff00 && ucs <= 0xff60) ||    // Fullwidth Forms
         (ucs >= 0xffe0 && ucs <= 0xffe6)));
     }
-    function wcwidthHigh(ucs) {
+    function wcwidthHigh(ucs: number): 0 | 1 | 2 {
       if (bisearch(ucs, COMBINING_HIGH))
         return 0;
       if ((ucs >= 0x20000 && ucs <= 0x2fffd) || (ucs >= 0x30000 && ucs <= 0x3fffd)) {
@@ -1580,8 +1548,8 @@ export const wcwidth = (function(opts) {
       return 1;
     }
     const control = opts.control | 0;
-    let table = null;
-    function init_table() {
+    let table: number[] | Uint32Array = null;
+    function init_table(): number[] | Uint32Array {
       // lookup table for BMP
       const CODEPOINTS = 65536;  // BMP holds 65536 codepoints
       const BITWIDTH = 2;        // a codepoint can have a width of 0, 1 or 2
@@ -1598,7 +1566,7 @@ export const wcwidth = (function(opts) {
           num = (num << 2) | wcwidthBMP(CODEPOINTS_PER_ITEM * i + pos);
         table[i] = num;
       }
-    return table;
+      return table;
     }
     // get width from lookup table
     //   position in container   : num / CODEPOINTS_PER_ITEM
@@ -1612,7 +1580,7 @@ export const wcwidth = (function(opts) {
     //     ==> n = n >> m     e.g. m=12  000000000000FFEEDDCCBBAA99887766
     //   we are only interested in 2 LSBs, cut off higher bits
     //     ==> n = n & 3      e.g.       000000000000000000000000000000XX
-    return function (num) {
+    return function (num: number): number {
       num = num | 0;  // get asm.js like optimization under V8
       if (num < 32)
         return control | 0;

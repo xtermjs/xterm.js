@@ -9,7 +9,7 @@
     /*
      * CommonJS environment
      */
-    module.exports = attach(require('../../xterm'));
+    module.exports = attach(require('../../Terminal').Terminal);
   } else if (typeof define == 'function') {
     /*
      * Require.js is available
@@ -21,7 +21,7 @@
      */
     attach(window.Terminal);
   }
-})(function (Xterm) {
+})(function (Terminal) {
   'use strict';
 
   var exports = {};
@@ -29,7 +29,7 @@
   /**
    * Attaches the given terminal to the given socket.
    *
-   * @param {Xterm} term - The terminal to be attached to the given socket.
+   * @param {Terminal} term - The terminal to be attached to the given socket.
    * @param {WebSocket} socket - The socket to attach the current terminal.
    * @param {boolean} bidirectional - Whether the terminal should send data
    *                                  to the socket as well.
@@ -86,7 +86,7 @@
   /**
    * Detaches the given terminal from the given socket
    *
-   * @param {Xterm} term - The terminal to be detached from the given socket.
+   * @param {Terminal} term - The terminal to be detached from the given socket.
    * @param {WebSocket} socket - The socket from which to detach the current
    *                             terminal.
    */
@@ -112,7 +112,7 @@
    *                             should happen instantly or at a maximum
    *                             frequency of 1 rendering per 10ms.
    */
-  Xterm.prototype.attach = function (socket, bidirectional, buffered) {
+  Terminal.prototype.attach = function (socket, bidirectional, buffered) {
     return exports.attach(this, socket, bidirectional, buffered);
   };
 
@@ -122,7 +122,7 @@
    * @param {WebSocket} socket - The socket from which to detach the current
    *                             terminal.
    */
-  Xterm.prototype.detach = function (socket) {
+  Terminal.prototype.detach = function (socket) {
     return exports.detach(this, socket);
   };
 

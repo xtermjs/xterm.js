@@ -9,10 +9,19 @@
       true,
       "spaces"
     ],
+    "typedef": [
+      true,
+      "call-signature",
+      "parameter"
+    ],
     "eofline": true,
     "no-eval": true,
     "no-internal-module": true,
     "no-trailing-whitespace": true,
+    "one-variable-per-declaration": [
+      true,
+      true
+    ],
     "no-unsafe-finally": true,
     "no-var-keyword": true,
     "quotemark": [

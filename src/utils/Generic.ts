@@ -9,6 +9,6 @@
  * @param {Array} array The array to search for the given element.
  * @param {Object} el The element to look for into the array
  */
-export function contains(arr: any[], el: any) {
+export function contains(arr: any[], el: any): boolean {
   return arr.indexOf(el) >= 0;
 };

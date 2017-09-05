@@ -1,9 +1,0 @@
-{
-  "name": "xterm.js",
-  "version": "2.9.2",
-  "ignore": ["demo", "test", ".gitignore"],
-  "main": [
-    "dist/xterm.js",
-    "dist/xterm.css"
-  ]
-}

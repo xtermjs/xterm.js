@@ -4,26 +4,34 @@
  * @module xterm/utils/CircularList
  * @license MIT
  */
+
 import { EventEmitter } from '../EventEmitter';
 import { ICircularList } from '../Interfaces';
 
 export class CircularList<T> extends EventEmitter implements ICircularList<T> {
-  private _array: T[];
+  protected _array: T[];
   private _startIndex: number;
   private _length: number;
 
-  constructor(maxLength: number) {
+  constructor(
+    private _maxLength: number
+  ) {
     super();
-    this._array = new Array<T>(maxLength);
+    this._array = new Array<T>(this._maxLength);
     this._startIndex = 0;
     this._length = 0;
   }
 
   public get maxLength(): number {
-    return this._array.length;
+    return this._maxLength;
   }
 
   public set maxLength(newMaxLength: number) {
+    // There was no change in maxLength, return early.
+    if (this._maxLength === newMaxLength) {
+      return;
+    }
+
     // Reconstruct array, starting at index 0. Only transfer values from the
     // indexes 0 to length.
     let newArray = new Array<T>(newMaxLength);
@@ -31,6 +39,7 @@ export class CircularList<T> extends EventEmitter implements ICircularList<T> {
       newArray[i] = this._array[this._getCyclicIndex(i)];
     }
     this._array = newArray;
+    this._maxLength = newMaxLength;
     this._startIndex = 0;
   }
 
@@ -88,9 +97,9 @@ export class CircularList<T> extends EventEmitter implements ICircularList<T> {
    */
   public push(value: T): void {
     this._array[this._getCyclicIndex(this._length)] = value;
-    if (this._length === this.maxLength) {
+    if (this._length === this._maxLength) {
       this._startIndex++;
-      if (this._startIndex === this.maxLength) {
+      if (this._startIndex === this._maxLength) {
         this._startIndex = 0;
       }
       this.emit('trim', 1);

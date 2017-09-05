@@ -4,6 +4,7 @@
 
 import { ITerminal } from './Interfaces';
 import { DomElementObjectPool } from './utils/DomElementObjectPool';
+import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from './Buffer';
 
 /**
  * The maximum number of refresh frames to skip when the write buffer is non-
@@ -37,7 +38,7 @@ export class Renderer {
     // Figure out whether boldness affects
     // the character width of monospace fonts.
     if (brokenBold === null) {
-      brokenBold = checkBoldBroken((<any>this._terminal).element);
+      brokenBold = checkBoldBroken(this._terminal.element);
     }
     this._spanElementObjectPool = new DomElementObjectPool('span');
 
@@ -168,8 +169,8 @@ export class Renderer {
       for (let i = 0; i < width; i++) {
         // TODO: Could data be a more specific type?
         let data: any = line[i][0];
-        const ch = line[i][1];
-        const ch_width: any = line[i][2];
+        const ch = line[i][CHAR_DATA_CHAR_INDEX];
+        const ch_width: any = line[i][CHAR_DATA_WIDTH_INDEX];
         const isCursor: boolean = i === x;
         if (!ch_width) {
           continue;
@@ -319,7 +320,7 @@ export class Renderer {
       this._terminal.element.appendChild(this._terminal.rowContainer);
     }
 
-    this._terminal.emit('refresh', {element: this._terminal.element, start: start, end: end});
+    this._terminal.emit('refresh', {start, end});
   };
 
   /**
@@ -327,7 +328,7 @@ export class Renderer {
    * @param start The selection start.
    * @param end The selection end.
    */
-  public refreshSelection(start: [number, number], end: [number, number]) {
+  public refreshSelection(start: [number, number], end: [number, number]): void {
     // Remove all selections
     while (this._terminal.selectionContainer.children.length) {
       this._terminal.selectionContainer.removeChild(this._terminal.selectionContainer.children[0]);
@@ -385,16 +386,16 @@ export class Renderer {
 
 
 // If bold is broken, we can't use it in the terminal.
-function checkBoldBroken(terminal) {
-  const document = terminal.ownerDocument;
+function checkBoldBroken(terminalElement: HTMLElement): boolean {
+  const document = terminalElement.ownerDocument;
   const el = document.createElement('span');
   el.innerHTML = 'hello world';
-  terminal.appendChild(el);
+  terminalElement.appendChild(el);
   const w1 = el.offsetWidth;
   const h1 = el.offsetHeight;
   el.style.fontWeight = 'bold';
   const w2 = el.offsetWidth;
   const h2 = el.offsetHeight;
-  terminal.removeChild(el);
+  terminalElement.removeChild(el);
   return w1 !== w2 || h1 !== h2;
 }
