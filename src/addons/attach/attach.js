@@ -44,8 +44,6 @@
     term._flushBuffer = function () {
       term.write(term._attachSocketBuffer);
       term._attachSocketBuffer = null;
-      clearTimeout(term._attachSocketBufferTimer);
-      term._attachSocketBufferTimer = null;
     };
 
     term._pushToBuffer = function (data) {
