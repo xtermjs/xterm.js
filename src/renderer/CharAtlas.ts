@@ -26,9 +26,7 @@ let charAtlasCache: ICharAtlasCacheEntry[] = [];
  * @param terminal The terminal.
  * @param colors The colors to use.
  */
-export function acquireCharAtlas(terminal: ITerminal, colors: IColorSet): HTMLCanvasElement | Promise<ImageBitmap> {
-  const scaledCharWidth = terminal.charMeasure.width * window.devicePixelRatio;
-  const scaledCharHeight = terminal.charMeasure.height * window.devicePixelRatio;
+export function acquireCharAtlas(terminal: ITerminal, colors: IColorSet, scaledCharWidth: number, scaledCharHeight: number): HTMLCanvasElement | Promise<ImageBitmap> {
   const newConfig = generateConfig(scaledCharWidth, scaledCharHeight, terminal, colors);
 
   // Check to see if the terminal already owns this config

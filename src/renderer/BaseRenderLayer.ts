@@ -48,7 +48,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   private _refreshCharAtlas(terminal: ITerminal, colorSet: IColorSet): void {
     this._charAtlas = null;
-    const result = acquireCharAtlas(terminal, this.colors);
+    const result = acquireCharAtlas(terminal, this.colors, this.scaledCharWidth, this.scaledCharHeight);
     if (result instanceof HTMLCanvasElement) {
       this._charAtlas = result;
     } else {
@@ -57,12 +57,31 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   }
 
   public resize(terminal: ITerminal, canvasWidth: number, canvasHeight: number, charSizeChanged: boolean): void {
-    this.scaledCharWidth = terminal.charMeasure.width * window.devicePixelRatio;
-    this.scaledCharHeight = terminal.charMeasure.height * window.devicePixelRatio;
+    // Calculate the scaled character dimensions, if devicePixelRatio is a
+    // floating point number then the value is ceiled to ensure there is enough
+    // space to draw the character to the cell
+    this.scaledCharWidth = Math.ceil(terminal.charMeasure.width * window.devicePixelRatio);
+    this.scaledCharHeight = Math.ceil(terminal.charMeasure.height * window.devicePixelRatio);
+
+    // Calculate the scaled line height, if lineHeight is not 1 then the value
+    // will be floored because since lineHeight can never be lower then 1, there
+    // is a guarentee that the scaled line height will always be larger than
+    // scaled char height.
     this.scaledLineHeight = Math.floor(this.scaledCharHeight * terminal.options.lineHeight);
+
+    // Calculate the y coordinate within a cell that text should draw from in
+    // order to draw in the center of a cell.
     this.scaledLineDrawY = terminal.options.lineHeight === 1 ? 0 : Math.round((this.scaledLineHeight - this.scaledCharHeight) / 2);
-    this._canvas.width = canvasWidth * window.devicePixelRatio;
-    this._canvas.height = canvasHeight * window.devicePixelRatio;
+
+    // Recalcualte the canvas dimensions; width/height define the actual number
+    // of pixels in the canvas, style.width/height define the size of the canvas
+    // on the page. It's very important that this rounds to nearest integer and
+    // not ceils as browsers often set window.devicePixelRatio as something like
+    // 1.100000023841858, when it's actually 1.1. Ceiling causes blurriness as
+    // the backing canvas image is 1 pixel too large for the canvas element
+    // size.
+    this._canvas.width = Math.round(canvasWidth * window.devicePixelRatio);
+    this._canvas.height = Math.round(canvasHeight * window.devicePixelRatio);
     this._canvas.style.width = `${canvasWidth}px`;
     this._canvas.style.height = `${canvasHeight}px`;
 
