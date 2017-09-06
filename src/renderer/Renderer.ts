@@ -18,6 +18,7 @@ export class Renderer implements IRenderer {
   private _refreshAnimationFrame = null;
 
   private _renderLayers: IRenderLayer[];
+  private _devicePixelRatio: number;
 
   private _colorManager: ColorManager;
 
@@ -29,6 +30,16 @@ export class Renderer implements IRenderer {
       new ForegroundRenderLayer(this._terminal.element, 2, this._colorManager.colors),
       new CursorRenderLayer(this._terminal.element, 3, this._colorManager.colors)
     ];
+    this._devicePixelRatio = window.devicePixelRatio;
+  }
+
+  public onWindowResize(devicePixelRatio: number): void {
+    // If the device pixel ratio changed, the char atlas needs to be regenerated
+    // and the terminal needs to refreshed
+    if (this._devicePixelRatio !== devicePixelRatio) {
+      this._devicePixelRatio = devicePixelRatio;
+      this.onResize(this._terminal.cols, this._terminal.rows, true);
+    }
   }
 
   public setTheme(theme: ITheme): IColorSet {
@@ -45,19 +56,20 @@ export class Renderer implements IRenderer {
     return this._colorManager.colors;
   }
 
-  public onResize(cols: number, rows: number): void {
+  public onResize(cols: number, rows: number, didCharSizeChange: boolean): void {
     if (!this._terminal.charMeasure.width || !this._terminal.charMeasure.height) {
       return;
     }
-    const width = this._terminal.charMeasure.width * this._terminal.cols;
-    const height = Math.floor(this._terminal.charMeasure.height * this._terminal.options.lineHeight) * this._terminal.rows;
-    this._renderLayers.forEach(l => l.resize(this._terminal, width, height, false));
+    const width = this._terminal.charMeasure.width * cols;
+    const height = Math.floor(this._terminal.charMeasure.height * this._terminal.options.lineHeight) * rows;
+    // Resize all render layers
+    this._renderLayers.forEach(l => l.resize(this._terminal, width, height, didCharSizeChange));
+    // Force a refresh
+    this._terminal.refresh(0, this._terminal.rows - 1);
   }
 
-  public onCharSizeChanged(charWidth: number, charHeight: number): void {
-    const width = charWidth * this._terminal.cols;
-    const height = Math.floor(charHeight * this._terminal.options.lineHeight) * this._terminal.rows;
-    this._renderLayers.forEach(l => l.resize(this._terminal, width, height, true));
+  public onCharSizeChanged(): void {
+    this.onResize(this._terminal.cols, this._terminal.rows, true);
   }
 
   public onBlur(): void {

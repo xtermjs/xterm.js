@@ -408,7 +408,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       case 'lineHeight':
         // When the font changes the size of the cells may change which requires a renderer clear
         this.renderer.clear();
-        this.renderer.onResize(this.cols, this.rows);
+        this.renderer.onResize(this.cols, this.rows, false);
         this.refresh(0, this.rows - 1);
         // this.charMeasure.measure(this.options);
       case 'scrollback':
@@ -620,14 +620,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.charMeasure.on('charsizechanged', () => this.viewport.syncScrollArea());
     this.renderer = new Renderer(this);
     this.on('cursormove', () => this.renderer.onCursorMove());
-    this.on('resize', () => this.renderer.onResize(this.cols, this.rows));
+    this.on('resize', () => this.renderer.onResize(this.cols, this.rows, false));
     this.on('blur', () => this.renderer.onBlur());
     this.on('focus', () => this.renderer.onFocus());
-    this.charMeasure.on('charsizechanged', () => {
-      this.renderer.onCharSizeChanged(this.charMeasure.width, this.charMeasure.height);
-      // Force a refresh for the char size change
-      this.renderer.queueRefresh(0, this.rows - 1);
-    });
+    window.addEventListener('resize', () => this.renderer.onWindowResize(window.devicePixelRatio));
+    this.charMeasure.on('charsizechanged', () => this.renderer.onResize(this.cols, this.rows, true));
 
     this.selectionManager = new SelectionManager(this, this.buffer, this.charMeasure);
     this.element.addEventListener('mousedown', (e: MouseEvent) => this.selectionManager.onMouseDown(e));

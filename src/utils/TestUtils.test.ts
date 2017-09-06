@@ -214,13 +214,14 @@ export class MockBuffer implements IBuffer {
 
 export class MockRenderer implements IRenderer {
   setTheme(theme: ITheme): IColorSet { return <IColorSet>{}; }
-  onResize(cols: number, rows: number): void {}
-  onCharSizeChanged(charWidth: number, charHeight: number): void {}
+  onResize(cols: number, rows: number, didCharSizeChange: boolean): void {}
+  onCharSizeChanged(): void {}
   onBlur(): void {}
   onFocus(): void {}
   onSelectionChanged(start: [number, number], end: [number, number]): void {}
   onCursorMove(): void {}
   onOptionsChanged(): void {}
+  onWindowResize(devicePixelRatio: number): void {}
   clear(): void {}
   queueRefresh(start: number, end: number): void {}
 }

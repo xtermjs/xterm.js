@@ -2,8 +2,9 @@ import { ITerminal, ITerminalOptions, ITheme } from '../Interfaces';
 
 export interface IRenderer {
   setTheme(theme: ITheme): IColorSet;
-  onResize(cols: number, rows: number): void;
-  onCharSizeChanged(charWidth: number, charHeight: number): void;
+  onWindowResize(devicePixelRatio: number): void;
+  onResize(cols: number, rows: number, didCharSizeChange: boolean): void;
+  onCharSizeChanged(): void;
   onBlur(): void;
   onFocus(): void;
   onSelectionChanged(start: [number, number], end: [number, number]): void;
