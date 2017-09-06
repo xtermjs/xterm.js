@@ -11,21 +11,25 @@ declare var require: any;
 declare var window: any;
 
 (function (addon) {
-  if ('Terminal' in window) {
-    /**
-     * Plain browser environment
+  // One of the most prominent consumer is VSCode which uses a CommonJS environment and has global
+  // 'define' function exposed through its loader (https://github.com/Microsoft/vscode-loader).
+  // Checking only define first would break it, so we check for an AMD environment with 'define.amd'
+  // which is compliant with RequireJS.
+  if (typeof define === 'function' && define.amd) {
+    /*
+     * AMD environment
      */
-    addon(window.Terminal);
+    define(['../../xterm'], addon);
   } else if (typeof exports === 'object' && typeof module === 'object') {
-    /**
+    /*
      * CommonJS environment
      */
     module.exports = addon(require('../../xterm'));
-  } else if (typeof define == 'function') {
-    /**
-     * Require.js is available
+  } else {
+    /*
+     * Plain browser environment
      */
-    define(['../../xterm'], addon);
+    addon(window.Terminal);
   }
 })((Terminal: any) => {
   /**
