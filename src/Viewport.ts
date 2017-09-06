@@ -35,6 +35,11 @@ export class Viewport {
     this.terminal.on('scroll', this.syncScrollArea.bind(this));
     this.terminal.on('resize', this.syncScrollArea.bind(this));
     this.viewportElement.addEventListener('scroll', this.onScroll.bind(this));
+    this.viewportElement.addEventListener('mousedown', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.terminal.rowContainer.dispatchEvent(new MouseEvent(e.type, e));
+    });
 
     // Perform this async to ensure the CharMeasure is ready.
     setTimeout(() => this.syncScrollArea(), 0);
@@ -56,6 +61,7 @@ export class Viewport {
       if (rowHeightChanged || viewportHeightChanged) {
         this.lastRecordedViewportHeight = this.terminal.rows;
         this.viewportElement.style.height = this.charMeasure.height * this.terminal.rows + 'px';
+        this.terminal.element.style.height = this.viewportElement.style.height;
         this.terminal.selectionContainer.style.height = this.viewportElement.style.height;
       }
       this.scrollArea.style.height = (this.charMeasure.height * this.lastRecordedBufferLength) + 'px';
