@@ -241,9 +241,13 @@ export interface ILinkMatcherOptions {
    */
   validationCallback?: LinkMatcherValidationCallback;
   /**
-   * A callback that fired when the mouse hovers over a link.
+   * A callback that fires when the mouse hovers over a link.
    */
-  hoverCallback?: LinkMatcherHandler;
+  hoverStartCallback?: LinkMatcherHandler;
+  /**
+   * A callback that fires when the mouse leaves a link that was hovered.
+   */
+  hoverEndCallback?: () => void;
   /**
    * The priority of the link matcher, this defines the order in which the link
    * matcher is evaluated relative to others, from highest to lowest. The

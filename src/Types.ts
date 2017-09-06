@@ -6,7 +6,8 @@ export type LinkMatcher = {
   id: number,
   regex: RegExp,
   handler: LinkMatcherHandler,
-  hoverCallback?: LinkMatcherHandler,
+  hoverStartCallback?: LinkMatcherHandler,
+  hoverEndCallback?: () => void,
   matchIndex?: number,
   validationCallback?: LinkMatcherValidationCallback,
   priority?: number

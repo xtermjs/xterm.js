@@ -141,9 +141,14 @@ interface ILinkMatcherOptions {
   validationCallback?: (uri: string, callback: (isValid: boolean) => void) => void;
 
   /**
-   * A callback that fired when the mouse hovers over a link.
+   * A callback that fires when the mouse hovers over a link.
    */
-  hoverCallback?: (event: MouseEvent, uri: string) => boolean | void;
+  hoverStartCallback?: (event: MouseEvent, uri: string) => boolean | void;
+
+  /**
+   * A callback that fires when the mouse leaves a link that was hovered.
+   */
+  hoverEndCallback?: (event: MouseEvent, uri: string) => boolean | void;
 
   /**
    * The priority of the link matcher, this defines the order in which the link

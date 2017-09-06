@@ -133,7 +133,8 @@ export class Linkifier {
       handler,
       matchIndex: options.matchIndex,
       validationCallback: options.validationCallback,
-      hoverCallback: options.hoverCallback,
+      hoverStartCallback: options.hoverStartCallback,
+      hoverEndCallback: options.hoverEndCallback,
       priority: options.priority || 0
     };
     this._addLinkMatcherToList(matcher);
@@ -259,8 +260,13 @@ export class Linkifier {
         window.open(uri, '_blank');
       },
       e => {
-        if (matcher.hoverCallback) {
-          return matcher.hoverCallback(e, uri);
+        if (matcher.hoverStartCallback) {
+          matcher.hoverStartCallback(e, uri);
+        }
+      },
+      () => {
+        if (matcher.hoverEndCallback) {
+          matcher.hoverEndCallback();
         }
       }
     ));
