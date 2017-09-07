@@ -467,7 +467,7 @@ export class InputHandler implements IInputHandler {
     while (param--) {
       // test: echo -e '\e[44m\e[1M\e[0m'
       // blankLine(true) - xterm/linux behavior
-      this._terminal.buffer.lines.splice(row - 1, 1);
+      this._terminal.buffer.lines.splice(row, 1);
       this._terminal.buffer.lines.splice(j, 0, this._terminal.blankLine(true));
     }
 

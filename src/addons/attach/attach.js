@@ -66,6 +66,10 @@
     };
 
     term._sendData = function (data) {
+      if (socket.readyState !== 1) {
+        return;
+      }
+
       socket.send(data);
     };
 
