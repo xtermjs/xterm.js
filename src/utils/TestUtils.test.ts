@@ -2,13 +2,14 @@
  * @license MIT
  */
 
-import { ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, IListenerType, IInputHandlingTerminal, IViewport, ICircularList, ICompositionHelper, ITheme } from '../Interfaces';
+import { ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, IListenerType, IInputHandlingTerminal, IViewport, ICircularList, ICompositionHelper, ITheme, ILinkifier } from '../Interfaces';
 import { LineData } from '../Types';
 import { Buffer } from '../Buffer';
 import * as Browser from './Browser';
 import { IColorSet, IRenderer } from '../renderer/Interfaces';
 
 export class MockTerminal implements ITerminal {
+  linkifier: ILinkifier;
   isFocused: boolean;
   options: ITerminalOptions = {};
   element: HTMLElement;

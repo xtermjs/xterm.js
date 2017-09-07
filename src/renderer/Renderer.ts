@@ -11,6 +11,7 @@ import { CursorRenderLayer } from './CursorRenderLayer';
 import { ColorManager } from './ColorManager';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { IRenderLayer, IColorSet, IRenderer } from './Interfaces';
+import { LinkRenderLayer } from './LinkRenderLayer';
 
 export class Renderer implements IRenderer {
   /** A queue of the rows to be refreshed */
@@ -28,7 +29,8 @@ export class Renderer implements IRenderer {
       new BackgroundRenderLayer(this._terminal.element, 0, this._colorManager.colors),
       new SelectionRenderLayer(this._terminal.element, 1, this._colorManager.colors),
       new ForegroundRenderLayer(this._terminal.element, 2, this._colorManager.colors),
-      new CursorRenderLayer(this._terminal.element, 3, this._colorManager.colors)
+      new LinkRenderLayer(this._terminal.element, 3, this._colorManager.colors, this._terminal),
+      new CursorRenderLayer(this._terminal.element, 4, this._colorManager.colors)
     ];
     this._devicePixelRatio = window.devicePixelRatio;
   }

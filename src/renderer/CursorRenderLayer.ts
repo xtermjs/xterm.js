@@ -202,7 +202,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
   private _renderUnderlineCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
     this._ctx.save();
     this._ctx.fillStyle = this.colors.cursor;
-    this.fillBottomLineAtCell(x, y);
+    this.fillBottomLineAtCells(x, y);
     this._ctx.restore();
   }
 

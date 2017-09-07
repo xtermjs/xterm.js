@@ -5,6 +5,7 @@
 import { ILinkMatcherOptions } from './Interfaces';
 import { LinkMatcherHandler, LinkMatcherValidationCallback, Charset, LineData } from './Types';
 import { IColorSet } from './renderer/Interfaces';
+import { IMouseZoneManager } from './input/Interfaces';
 
 export interface IBrowser {
   isNode: boolean;
@@ -22,8 +23,15 @@ export interface IBufferAccessor {
   buffer: IBuffer;
 }
 
-export interface ITerminal extends IBufferAccessor, IEventEmitter {
+export interface IElementAccessor {
   element: HTMLElement;
+}
+
+export interface ILinkifierAccessor {
+  linkifier: ILinkifier;
+}
+
+export interface ITerminal extends ILinkifierAccessor, IBufferAccessor, IElementAccessor, IEventEmitter {
   selectionManager: ISelectionManager;
   charMeasure: ICharMeasure;
   textarea: HTMLTextAreaElement;
@@ -197,9 +205,11 @@ export interface ICharMeasure {
   measure(options: ITerminalOptions): void;
 }
 
-export interface ILinkifier {
-  linkifyRow(rowIndex: number): void;
-  attachHypertextLinkHandler(handler: LinkMatcherHandler): void;
+export interface ILinkifier extends IEventEmitter {
+  attachToDom(mouseZoneManager: IMouseZoneManager): void;
+  linkifyRows(start: number, end: number): void;
+  setHypertextLinkHandler(handler: LinkMatcherHandler): void;
+  setHypertextValidationCallback(callback: LinkMatcherValidationCallback): void;
   registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options?: ILinkMatcherOptions): number;
   deregisterLinkMatcher(matcherId: number): boolean;
 }
@@ -243,11 +253,11 @@ export interface ILinkMatcherOptions {
   /**
    * A callback that fires when the mouse hovers over a link.
    */
-  hoverStartCallback?: LinkMatcherHandler;
+  tooltipCallback?: LinkMatcherHandler;
   /**
    * A callback that fires when the mouse leaves a link that was hovered.
    */
-  hoverEndCallback?: () => void;
+  leaveCallback?: () => void;
   /**
    * The priority of the link matcher, this defines the order in which the link
    * matcher is evaluated relative to others, from highest to lowest. The

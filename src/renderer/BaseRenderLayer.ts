@@ -109,11 +109,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param x The column to fill.
    * @param y The row to fill.
    */
-  protected fillBottomLineAtCell(x: number, y: number): void {
+  protected fillBottomLineAtCells(x: number, y: number, width: number = 1): void {
     this._ctx.fillRect(
         x * this.scaledCharWidth,
         (y + 1) * this.scaledLineHeight - window.devicePixelRatio - 1 /* Ensure it's drawn within the cell */,
-        this.scaledCharWidth,
+        width * this.scaledCharWidth,
         window.devicePixelRatio);
   }
 

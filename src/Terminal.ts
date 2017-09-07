@@ -38,7 +38,7 @@ import * as Mouse from './utils/Mouse';
 import { CHARSETS } from './Charsets';
 import { getRawByteCoords } from './utils/Mouse';
 import { CustomKeyEventHandler, Charset, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
-import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper, ITheme } from './Interfaces';
+import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper, ITheme, ILinkifier } from './Interfaces';
 import { BellSound } from './utils/Sounds';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { IMouseZoneManager } from './input/Interfaces';
@@ -188,7 +188,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   private parser: Parser;
   private renderer: IRenderer;
   public selectionManager: SelectionManager;
-  private linkifier: Linkifier;
+  public linkifier: ILinkifier;
   public buffers: BufferSet;
   public buffer: Buffer;
   public viewport: IViewport;

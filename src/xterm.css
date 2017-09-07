@@ -120,5 +120,5 @@
 }
 
 .terminal:not(.enable-mouse-events) {
-    cursor:  text;
+    cursor: text;
 }

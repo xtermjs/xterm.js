@@ -2,12 +2,11 @@
  * @license MIT
  */
 
-import { ILinkMatcherOptions, ITerminal, IBufferAccessor } from './Interfaces';
-import { LinkMatcher, LinkMatcherHandler, LinkMatcherValidationCallback, LineData } from './Types';
+import { ILinkMatcherOptions, ITerminal, IBufferAccessor, ILinkifier, IElementAccessor } from './Interfaces';
+import { LinkMatcher, LinkMatcherHandler, LinkMatcherValidationCallback, LineData, LinkHoverEvent, LinkHoverEventTypes } from './Types';
 import { IMouseZoneManager } from './input/Interfaces';
 import { MouseZone } from './input/MouseZoneManager';
-
-const INVALID_LINK_CLASS = 'xterm-invalid-link';
+import { EventEmitter } from './EventEmitter';
 
 const protocolClause = '(https?:\\/\\/)';
 const domainCharacterSet = '[\\da-z\\.-]+';
@@ -36,7 +35,7 @@ const HYPERTEXT_LINK_MATCHER_ID = 0;
 /**
  * The Linkifier applies links to rows shortly after they have been refreshed.
  */
-export class Linkifier {
+export class Linkifier extends EventEmitter implements ILinkifier {
   /**
    * The time to wait after a row is changed before it is linkified. This prevents
    * the costly operation of searching every row multiple times, potentially a
@@ -51,8 +50,9 @@ export class Linkifier {
   private _nextLinkMatcherId = HYPERTEXT_LINK_MATCHER_ID;
 
   constructor(
-    private _terminal: IBufferAccessor
+    private _terminal: IBufferAccessor & IElementAccessor
   ) {
+    super();
     this.registerLinkMatcher(strictUrlRegex, null, { matchIndex: 1 });
   }
 
@@ -133,8 +133,8 @@ export class Linkifier {
       handler,
       matchIndex: options.matchIndex,
       validationCallback: options.validationCallback,
-      hoverStartCallback: options.hoverStartCallback,
-      hoverEndCallback: options.hoverEndCallback,
+      hoverTooltipCallback: options.tooltipCallback,
+      hoverLeaveCallback: options.leaveCallback,
       priority: options.priority || 0
     };
     this._addLinkMatcherToList(matcher);
@@ -260,13 +260,20 @@ export class Linkifier {
         window.open(uri, '_blank');
       },
       e => {
-        if (matcher.hoverStartCallback) {
-          matcher.hoverStartCallback(e, uri);
+        this.emit(LinkHoverEventTypes.HOVER, <LinkHoverEvent>{ x, y, length: uri.length});
+        this._terminal.element.style.cursor = 'pointer';
+      },
+      e => {
+        this.emit(LinkHoverEventTypes.TOOLTIP, <LinkHoverEvent>{ x, y, length: uri.length});
+        if (matcher.hoverTooltipCallback) {
+          matcher.hoverTooltipCallback(e, uri);
         }
       },
       () => {
-        if (matcher.hoverEndCallback) {
-          matcher.hoverEndCallback();
+        this.emit(LinkHoverEventTypes.LEAVE, <LinkHoverEvent>{ x, y, length: uri.length});
+        this._terminal.element.style.cursor = '';
+        if (matcher.hoverLeaveCallback) {
+          matcher.hoverLeaveCallback();
         }
       }
     ));

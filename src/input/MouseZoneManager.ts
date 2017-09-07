@@ -20,7 +20,7 @@ export class MouseZoneManager implements IMouseZoneManager {
   private _mouseDownListener: (e: MouseEvent) => any;
   private _clickListener: (e: MouseEvent) => any;
 
-  private _hoverTimeout: number = null;
+  private _tooltipTimeout: number = null;
   private _currentZone: IMouseZone = null;
   private _lastHoverCoords: [number, number] = [null, null];
 
@@ -63,30 +63,49 @@ export class MouseZoneManager implements IMouseZoneManager {
   private _onMouseMove(e: MouseEvent): void {
     // TODO: Ideally this would only clear the hover state when the mouse moves
     // outside of the mouse zone
-    if (this._lastHoverCoords[0] !== e.pageX && this._lastHoverCoords[1] !== e.pageY) {
-      // Restart the timeout
-      if (this._hoverTimeout) {
-        clearTimeout(this._hoverTimeout);
-      }
-      this._hoverTimeout = <number><any>setTimeout(() => this._onHover(e), HOVER_DURATION);
-
-      // Fire the hover end callback if a zone was being hovered
-      if (this._currentZone) {
-        this._currentZone.hoverEndCallback();
-        this._currentZone = null;
-      }
-
+    if (this._lastHoverCoords[0] !== e.pageX || this._lastHoverCoords[1] !== e.pageY) {
+      this._onHover(e);
       // Record the current coordinates
       this._lastHoverCoords = [e.pageX, e.pageY];
     }
   }
 
   private _onHover(e: MouseEvent): void {
-    const coords = getCoords(e, this._terminal.element, this._terminal.charMeasure, this._terminal.options.lineHeight, this._terminal.cols, this._terminal.rows);
     const zone = this._findZoneEventAt(e);
-    if (zone && zone.hoverStartCallback) {
-      this._currentZone = zone;
-      zone.hoverStartCallback(e);
+
+    // Do nothing if the zone is the same
+    if (zone === this._currentZone) {
+      return;
+    }
+
+    // Fire the hover end callback if a zone was being hovered
+    if (this._currentZone) {
+      this._currentZone.leaveCallback();
+      this._currentZone = null;
+    }
+
+    // Exit if there is not zone
+    if (!zone) {
+      return;
+    }
+    this._currentZone = zone;
+
+    // Trigger the hover callback
+    if (zone.hoverCallback) {
+      zone.hoverCallback(e);
+    }
+
+    // Restart the timeout
+    if (this._tooltipTimeout) {
+      clearTimeout(this._tooltipTimeout);
+    }
+    this._tooltipTimeout = <number><any>setTimeout(() => this._onTooltip(e), HOVER_DURATION);
+  }
+
+  private _onTooltip(e: MouseEvent): void {
+    const zone = this._findZoneEventAt(e);
+    if (zone && zone.tooltipCallback) {
+      zone.tooltipCallback(e);
     }
   }
 
@@ -116,8 +135,9 @@ export class MouseZone implements IMouseZone {
     public x2: number,
     public y: number,
     public clickCallback: (e: MouseEvent) => any,
-    public hoverStartCallback?: (e: MouseEvent) => any,
-    public hoverEndCallback?: () => void
+    public hoverCallback?: (e: MouseEvent) => any,
+    public tooltipCallback?: (e: MouseEvent) => any,
+    public leaveCallback?: () => void
   ) {
   }
 }

@@ -8,6 +8,7 @@ export interface IMouseZone {
   x2: number;
   y: number;
   clickCallback: (e: MouseEvent) => any;
-  hoverStartCallback?: (e: MouseEvent) => any;
-  hoverEndCallback?: () => any;
+  hoverCallback?: (e: MouseEvent) => any;
+  tooltipCallback?: (e: MouseEvent) => any;
+  leaveCallback?: () => any;
 }
