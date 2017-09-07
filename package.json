@@ -64,7 +64,7 @@
     "nodemon": "1.10.2",
     "sorcery": "^0.10.0",
     "tslint": "^4.0.2",
-    "typescript": "~2.3.0",
+    "typescript": "~2.4.0",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.1.0"
   },
