@@ -128,6 +128,8 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**SSHy**](https://github.com/stuicey/SSHy): HTML5 Based SSHv2 Web Client with E2E encryption utilising `xterm.js`, SJCL & websockets.
 - [**JupyterLab**](https://github.com/jupyterlab/jupyterlab): An extensible 
 computational environment for Jupyter, supporting interactive data science and scientific computing across all programming languages.
+- [**Theia**](https://github.com/theia-ide/theia): Theia is a cloud & desktop IDE framework implemented in TypeScript.
+
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list.
 
