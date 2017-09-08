@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2017 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
 import { IColorSet } from './Interfaces';
 import { ITheme } from '../Interfaces';
 

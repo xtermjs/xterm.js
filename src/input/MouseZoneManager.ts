@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2017 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
 import { IMouseZoneManager, IMouseZone } from './Interfaces';
 import { ITerminal } from '../Interfaces';
 import { getCoords } from '../utils/Mouse';

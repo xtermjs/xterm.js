@@ -1,4 +1,9 @@
 /**
+ * Copyright (c) 2017 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
+ /**
  * Flags used to render terminal text properly.
  */
 export enum FLAGS {

@@ -1,8 +1,8 @@
 /**
- * Fullscreen addon for xterm.js
- * @module xterm/addons/fullscreen/fullscreen
+ * Copyright (c) 2014 The xterm.js authors. All rights reserved.
  * @license MIT
  */
+
 (function (fullscreen) {
   if (typeof exports === 'object' && typeof module === 'object') {
     /*

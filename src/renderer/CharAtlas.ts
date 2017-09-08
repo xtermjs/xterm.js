@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2017 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
 import { ITerminal, ITheme } from '../Interfaces';
 import { IColorSet } from '../renderer/Interfaces';
 import { isFirefox } from '../utils/Browser';

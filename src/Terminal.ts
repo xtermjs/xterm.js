@@ -1,5 +1,8 @@
 /**
- * xterm.js: xterm, in the browser
+ * Copyright (c) 2014 The xterm.js authors. All rights reserved.
+ * Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)
+ * @license MIT
+ *
  * Originally forked from (with the author's permission):
  *   Fabrice Bellard's javascript vt100 for jslinux:
  *   http://bellard.org/jslinux/
@@ -7,7 +10,6 @@
  *   The original design remains. The terminal itself
  *   has been extended to include xterm CSI codes, among
  *   other features.
- * @license MIT
  *
  * Terminal Emulation References:
  *   http://vt100.net/

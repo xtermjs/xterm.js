@@ -1,6 +1,5 @@
 /**
- * Attributes and methods to help with identifying the current browser and platform.
- * @module xterm/utils/Browser
+ * Copyright (c) 2016 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 
