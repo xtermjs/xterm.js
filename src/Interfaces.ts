@@ -1,9 +1,12 @@
 /**
+ * Copyright (c) 2017 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 
 import { ILinkMatcherOptions } from './Interfaces';
 import { LinkMatcherHandler, LinkMatcherValidationCallback, Charset, LineData } from './Types';
+import { IColorSet } from './renderer/Interfaces';
+import { IMouseZoneManager } from './input/Interfaces';
 
 export interface IBrowser {
   isNode: boolean;
@@ -17,10 +20,19 @@ export interface IBrowser {
   isMSWindows: boolean;
 }
 
-export interface ITerminal extends IEventEmitter {
+export interface IBufferAccessor {
+  buffer: IBuffer;
+}
+
+export interface IElementAccessor {
   element: HTMLElement;
-  rowContainer: HTMLElement;
-  selectionContainer: HTMLElement;
+}
+
+export interface ILinkifierAccessor {
+  linkifier: ILinkifier;
+}
+
+export interface ITerminal extends ILinkifierAccessor, IBufferAccessor, IElementAccessor, IEventEmitter {
   selectionManager: ISelectionManager;
   charMeasure: ICharMeasure;
   textarea: HTMLTextAreaElement;
@@ -28,13 +40,12 @@ export interface ITerminal extends IEventEmitter {
   cols: number;
   browser: IBrowser;
   writeBuffer: string[];
-  children: HTMLElement[];
   cursorHidden: boolean;
   cursorState: number;
   defAttr: number;
   options: ITerminalOptions;
   buffers: IBufferSet;
-  buffer: IBuffer;
+  isFocused: boolean;
 
   /**
    * Emit the 'data' event and populate the given data.
@@ -47,6 +58,7 @@ export interface ITerminal extends IEventEmitter {
   reset(): void;
   showCursor(): void;
   blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): LineData;
+  refresh(start: number, end: number): void;
 }
 
 /**
@@ -115,20 +127,23 @@ export interface ITerminalOptions {
   bellSound?: string;
   bellStyle?: string;
   cancelEvents?: boolean;
-  colors?: string[];
   cols?: number;
   convertEol?: boolean;
   cursorBlink?: boolean;
   cursorStyle?: string;
   debug?: boolean;
   disableStdin?: boolean;
+  fontSize?: number;
+  fontFamily?: string;
   geometry?: [number, number];
   handler?: (data: string) => void;
+  lineHeight?: number;
   rows?: number;
   screenKeys?: boolean;
   scrollback?: number;
   tabStopWidth?: number;
   termName?: string;
+  theme?: ITheme;
   useFlowControl?: boolean;
 }
 
@@ -143,6 +158,7 @@ export interface IBuffer {
   scrollTop: number;
   savedY: number;
   savedX: number;
+  isCursorInViewport: boolean;
   translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string;
   nextStop(x?: number): number;
   prevStop(x?: number): number;
@@ -162,6 +178,7 @@ export interface IViewport {
   onWheel(ev: WheelEvent): void;
   onTouchStart(ev: TouchEvent): void;
   onTouchMove(ev: TouchEvent): void;
+  onThemeChanged(colors: IColorSet): void;
 }
 
 export interface ISelectionManager {
@@ -186,12 +203,14 @@ export interface ICompositionHelper {
 export interface ICharMeasure {
   width: number;
   height: number;
-  measure(): void;
+  measure(options: ITerminalOptions): void;
 }
 
-export interface ILinkifier {
-  linkifyRow(rowIndex: number): void;
-  attachHypertextLinkHandler(handler: LinkMatcherHandler): void;
+export interface ILinkifier extends IEventEmitter {
+  attachToDom(mouseZoneManager: IMouseZoneManager): void;
+  linkifyRows(start: number, end: number): void;
+  setHypertextLinkHandler(handler: LinkMatcherHandler): void;
+  setHypertextValidationCallback(callback: LinkMatcherValidationCallback): void;
   registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options?: ILinkMatcherOptions): number;
   deregisterLinkMatcher(matcherId: number): boolean;
 }
@@ -232,6 +251,14 @@ export interface ILinkMatcherOptions {
    * false if invalid.
    */
   validationCallback?: LinkMatcherValidationCallback;
+  /**
+   * A callback that fires when the mouse hovers over a link.
+   */
+  tooltipCallback?: LinkMatcherHandler;
+  /**
+   * A callback that fires when the mouse leaves a link that was hovered.
+   */
+  leaveCallback?: () => void;
   /**
    * The priority of the link matcher, this defines the order in which the link
    * matcher is evaluated relative to others, from highest to lowest. The
@@ -290,4 +317,27 @@ export interface IInputHandler {
   /** CSI r */ setScrollRegion(params?: number[]): void;
   /** CSI s */ saveCursor(params?: number[]): void;
   /** CSI u */ restoreCursor(params?: number[]): void;
+}
+
+export interface ITheme {
+  foreground?: string;
+  background?: string;
+  cursor?: string;
+  selection?: string;
+  black?: string;
+  red?: string;
+  green?: string;
+  yellow?: string;
+  blue?: string;
+  magenta?: string;
+  cyan?: string;
+  white?: string;
+  brightBlack?: string;
+  brightRed?: string;
+  brightGreen?: string;
+  brightYellow?: string;
+  brightBlue?: string;
+  brightMagenta?: string;
+  brightCyan?: string;
+  brightWhite?: string;
 }

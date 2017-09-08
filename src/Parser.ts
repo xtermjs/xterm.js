@@ -1,4 +1,6 @@
 /**
+ * Copyright (c) 2014 The xterm.js authors. All rights reserved.
+ * Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)
  * @license MIT
  */
 
@@ -188,6 +190,9 @@ export class Parser {
     let ch;
     let code;
     let low;
+
+    const cursorStartX = this._terminal.buffer.x;
+    const cursorStartY = this._terminal.buffer.y;
 
     if (this._terminal.debug) {
       this._terminal.log('data: ' + data);
@@ -580,6 +585,13 @@ export class Parser {
           break;
       }
     }
+
+    // Fire the cursormove event if it's moved. This is done inside the parser
+    // as a render cannot happen in the middle of a parsing round.
+    if (this._terminal.buffer.x !== cursorStartX || this._terminal.buffer.y !== cursorStartY) {
+      this._terminal.emit('cursormove');
+    }
+
     return this._state;
   }
 

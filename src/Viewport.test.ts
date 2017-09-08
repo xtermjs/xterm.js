@@ -1,4 +1,5 @@
 /**
+ * Copyright (c) 2016 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 
@@ -31,7 +32,8 @@ describe('Viewport', () => {
         }
       },
       options: {
-        scrollback: 10
+        scrollback: 10,
+        lineHeight: 1
       }
     };
     terminal.buffers = new BufferSet(terminal);
@@ -55,18 +57,6 @@ describe('Viewport', () => {
   });
 
   describe('refresh', () => {
-    it('should set the line-height of the terminal', done => {
-      // Allow CharMeasure to be initialized
-      setTimeout(() => {
-        assert.equal(viewportElement.style.lineHeight, CHARACTER_HEIGHT + 'px');
-        assert.equal(terminal.rowContainer.style.lineHeight, CHARACTER_HEIGHT + 'px');
-        charMeasure.height = 1;
-        viewport.refresh();
-        assert.equal(viewportElement.style.lineHeight, '1px');
-        assert.equal(terminal.rowContainer.style.lineHeight, '1px');
-        done();
-      }, 0);
-    });
     it('should set the height of the viewport when the line-height changed', () => {
       terminal.buffer.lines.push('');
       terminal.buffer.lines.push('');

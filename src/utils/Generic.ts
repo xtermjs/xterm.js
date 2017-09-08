@@ -1,6 +1,5 @@
 /**
- * Generic utilities module with methods that can be helpful at different parts of the code base.
- * @module xterm/utils/Generic
+ * Copyright (c) 2016 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 

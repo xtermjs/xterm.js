@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2016 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
 import { assert } from 'chai';
 import * as Terminal from '../Terminal';
 import * as Clipboard from './Clipboard';

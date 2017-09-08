@@ -1,6 +1,11 @@
-import { assert, expect } from 'chai';
+/**
+ * Copyright (c) 2016 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
+ import { assert, expect } from 'chai';
 import { Terminal } from './Terminal';
-import { MockViewport, MockCompositionHelper } from './utils/TestUtils.test';
+import { MockViewport, MockCompositionHelper, MockRenderer } from './utils/TestUtils.test';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
 
 const INIT_COLS = 80;
@@ -21,6 +26,7 @@ describe('term.js addons', () => {
       rows: INIT_ROWS
     });
     term.refresh = () => {};
+    (<any>term).renderer = new MockRenderer();
     term.viewport = new MockViewport();
     (<any>term).compositionHelper = new MockCompositionHelper();
     // Force synchronous writes

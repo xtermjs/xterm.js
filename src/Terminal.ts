@@ -1,5 +1,8 @@
 /**
- * xterm.js: xterm, in the browser
+ * Copyright (c) 2014 The xterm.js authors. All rights reserved.
+ * Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)
+ * @license MIT
+ *
  * Originally forked from (with the author's permission):
  *   Fabrice Bellard's javascript vt100 for jslinux:
  *   http://bellard.org/jslinux/
@@ -7,7 +10,6 @@
  *   The original design remains. The terminal itself
  *   has been extended to include xterm CSI codes, among
  *   other features.
- * @license MIT
  *
  * Terminal Emulation References:
  *   http://vt100.net/
@@ -29,7 +31,7 @@ import { CircularList } from './utils/CircularList';
 import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Parser } from './Parser';
-import { Renderer } from './Renderer';
+import { Renderer } from './renderer/Renderer';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
 import { CharMeasure } from './utils/CharMeasure';
@@ -38,8 +40,13 @@ import * as Mouse from './utils/Mouse';
 import { CHARSETS } from './Charsets';
 import { getRawByteCoords } from './utils/Mouse';
 import { CustomKeyEventHandler, Charset, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
-import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper } from './Interfaces';
+import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper, ITheme, ILinkifier } from './Interfaces';
 import { BellSound } from './utils/Sounds';
+import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
+import { IMouseZoneManager } from './input/Interfaces';
+import { MouseZoneManager } from './input/MouseZoneManager';
+import { initialize as initializeCharAtlas } from './renderer/CharAtlas';
+import { IRenderer } from './renderer/Interfaces';
 
 // Declare for RequireJS in loadAddon
 declare var define: any;
@@ -60,89 +67,7 @@ const WRITE_BUFFER_PAUSE_THRESHOLD = 5;
  */
 const WRITE_BATCH_SIZE = 300;
 
-/**
- * The time between cursor blinks. This is driven by JS rather than a CSS
- * animation due to a bug in Chromium that causes it to use excessive CPU time.
- * See https://github.com/Microsoft/vscode/issues/22900
- */
-const CURSOR_BLINK_INTERVAL = 600;
-
-// TODO: Most of the color code should be removed after truecolor is implemented
-// Colors 0-15
-const tangoColors: string[] = [
-  // dark:
-  '#2e3436',
-  '#cc0000',
-  '#4e9a06',
-  '#c4a000',
-  '#3465a4',
-  '#75507b',
-  '#06989a',
-  '#d3d7cf',
-  // bright:
-  '#555753',
-  '#ef2929',
-  '#8ae234',
-  '#fce94f',
-  '#729fcf',
-  '#ad7fa8',
-  '#34e2e2',
-  '#eeeeec'
-];
-
-// Colors 0-15 + 16-255
-// Much thanks to TooTallNate for writing this.
-const defaultColors: string[] = (function(): string[] {
-  let colors = tangoColors.slice();
-  let r = [0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff];
-  let i;
-
-  // 16-231
-  i = 0;
-  for (; i < 216; i++) {
-    out(r[(i / 36) % 6 | 0], r[(i / 6) % 6 | 0], r[i % 6]);
-  }
-
-  // 232-255 (grey)
-  i = 0;
-  let c: number;
-  for (; i < 24; i++) {
-    c = 8 + i * 10;
-    out(c, c, c);
-  }
-
-  function out(r: number, g: number, b: number): void {
-    colors.push('#' + hex(r) + hex(g) + hex(b));
-  }
-
-  function hex(c: number): string {
-    let s = c.toString(16);
-    return s.length < 2 ? '0' + s : s;
-  }
-
-  return colors;
-})();
-
-const _colors: string[] = defaultColors.slice();
-
-const vcolors: number[][] = (function(): number[][] {
-  const out: number[][] = [];
-  let color;
-
-  for (let i = 0; i < 256; i++) {
-    color = parseInt(defaultColors[i].substring(1), 16);
-    out.push([
-      (color >> 16) & 0xff,
-      (color >> 8) & 0xff,
-      color & 0xff
-    ]);
-  }
-
-  return out;
-})();
-
 const DEFAULT_OPTIONS: ITerminalOptions = {
-  colors: defaultColors,
   convertEol: false,
   termName: 'xterm',
   geometry: [80, 24],
@@ -150,13 +75,17 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   cursorStyle: 'block',
   bellSound: BellSound,
   bellStyle: 'none',
+  fontFamily: 'courier-new, courier, monospace',
+  fontSize: 15,
+  lineHeight: 1.0,
   scrollback: 1000,
   screenKeys: false,
   debug: false,
   cancelEvents: false,
   disableStdin: false,
   useFlowControl: false,
-  tabStopWidth: 8
+  tabStopWidth: 8,
+  theme: null
   // programFeatures: false,
   // focusKeys: false,
 };
@@ -164,7 +93,6 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
 export class Terminal extends EventEmitter implements ITerminal, IInputHandlingTerminal {
   public textarea: HTMLTextAreaElement;
   public element: HTMLElement;
-  public rowContainer: HTMLElement;
 
   /**
    * The HTMLElement that the terminal is created in, set by Terminal.open.
@@ -175,7 +103,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   private body: HTMLBodyElement;
   private viewportScrollArea: HTMLElement;
   private viewportElement: HTMLElement;
-  public selectionContainer: HTMLElement;
   private helperContainer: HTMLElement;
   private compositionView: HTMLElement;
   private charSizeStyleElement: HTMLStyleElement;
@@ -194,10 +121,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
   private sendDataQueue: string;
   private customKeyEventHandler: CustomKeyEventHandler;
-  // The ID from a setInterval that tracks the blink animation. This animation
-  // is done in JS due to a Chromium bug with CSS animations that thrashed the
-  // CPU.
-  private cursorBlinkInterval: NodeJS.Timer;
 
   // modes
   public applicationKeypad: boolean;
@@ -226,7 +149,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   public urxvtMouse: boolean;
 
   // misc
-  public children: HTMLElement[];
   private refreshStart: number;
   private refreshEnd: number;
   public savedCols: number;
@@ -266,14 +188,15 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
   private inputHandler: InputHandler;
   private parser: Parser;
-  private renderer: Renderer;
+  private renderer: IRenderer;
   public selectionManager: SelectionManager;
-  private linkifier: Linkifier;
+  public linkifier: ILinkifier;
   public buffers: BufferSet;
   public buffer: Buffer;
   public viewport: IViewport;
   private compositionHelper: ICompositionHelper;
   public charMeasure: CharMeasure;
+  private _mouseZoneManager: IMouseZoneManager;
 
   public cols: number;
   public rows: number;
@@ -308,19 +231,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       this[key] = this.options[key];
     });
 
-    if (this.options.colors.length === 8) {
-      this.options.colors = this.options.colors.concat(_colors.slice(8));
-    } else if (this.options.colors.length === 16) {
-      this.options.colors = this.options.colors.concat(_colors.slice(16));
-    } else if (this.options.colors.length === 10) {
-      this.options.colors = this.options.colors.slice(0, -2).concat(
-        _colors.slice(8, -2), this.options.colors.slice(-2));
-    } else if (this.options.colors.length === 18) {
-      this.options.colors = this.options.colors.concat(
-        _colors.slice(16, -2), this.options.colors.slice(-2));
-    }
-    this.colors = this.options.colors;
-
     // this.context = options.context || window;
     // this.document = options.document || document;
     // TODO: WHy not document.body?
@@ -338,7 +248,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.cursorHidden = false;
     this.sendDataQueue = '';
     this.customKeyEventHandler = null;
-    this.cursorBlinkInterval = null;
 
     // modes
     this.applicationKeypad = false;
@@ -379,7 +288,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // Reuse renderer if the Terminal is being recreated via a reset call.
     this.renderer = this.renderer || null;
     this.selectionManager = this.selectionManager || null;
-    this.linkifier = this.linkifier || new Linkifier();
+    this.linkifier = this.linkifier || new Linkifier(this);
+    this._mouseZoneManager = this._mouseZoneManager || null;
 
     // Create the terminal's buffers and set the current buffer
     this.buffers = new BufferSet(this);
@@ -407,6 +317,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    */
   public focus(): void {
     this.textarea.focus();
+  }
+
+  public get isFocused(): boolean {
+    return document.activeElement === this.textarea;
   }
 
   /**
@@ -441,19 +355,32 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         }
         break;
       case 'cursorStyle':
-      if (!value) {
-        value = 'block';
-      }
-      break;
+        if (!value) {
+          value = 'block';
+        }
+        break;
+      case 'lineHeight':
+        if (value < 1) {
+          console.warn(`${key} cannot be less than 1, value: ${value}`);
+          return;
+        }
       case 'tabStopWidth':
         if (value < 1) {
-          console.warn(`tabStopWidth cannot be less than 1, value: ${value}`);
+          console.warn(`${key} cannot be less than 1, value: ${value}`);
+          return;
+        }
+        break;
+      case 'theme':
+        // If open has been called we do not want to set options.theme as the
+        // source of truth is owned by the renderer.
+        if (this.renderer) {
+          this._setTheme(<ITheme>value);
           return;
         }
         break;
       case 'scrollback':
         if (value < 0) {
-          console.warn(`scrollback cannot be less than 0, value: ${value}`);
+          console.warn(`${key} cannot be less than 0, value: ${value}`);
           return;
         }
         if (this.options[key] !== value) {
@@ -474,12 +401,18 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this[key] = value;
     this.options[key] = value;
     switch (key) {
-      case 'cursorBlink': this.setCursorBlinking(value); break;
-      case 'cursorStyle':
-        this.element.classList.toggle(`xterm-cursor-style-block`, value === 'block');
-        this.element.classList.toggle(`xterm-cursor-style-underline`, value === 'underline');
-        this.element.classList.toggle(`xterm-cursor-style-bar`, value === 'bar');
+      case 'fontFamily':
+      case 'fontSize':
+        // When the font changes the size of the cells may change which requires a renderer clear
+        this.renderer.clear();
+        this.charMeasure.measure(this.options);
         break;
+      case 'lineHeight':
+        // When the font changes the size of the cells may change which requires a renderer clear
+        this.renderer.clear();
+        this.renderer.onResize(this.cols, this.rows, false);
+        this.refresh(0, this.rows - 1);
+        // this.charMeasure.measure(this.options);
       case 'scrollback':
         this.buffers.resize(this.cols, this.rows);
         this.viewport.syncScrollArea();
@@ -488,44 +421,22 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       case 'bellSound':
       case 'bellStyle': this.syncBellSound(); break;
     }
-  }
-
-  private restartCursorBlinking(): void {
-    this.setCursorBlinking(this.options.cursorBlink);
-  }
-
-  private setCursorBlinking(enabled: boolean): void {
-    this.element.classList.toggle('xterm-cursor-blink', enabled);
-    this.clearCursorBlinkingInterval();
-    if (enabled) {
-      this.cursorBlinkInterval = setInterval(() => {
-        this.element.classList.toggle('xterm-cursor-blink-on');
-      }, CURSOR_BLINK_INTERVAL);
-    }
-  }
-
-  private clearCursorBlinkingInterval(): void {
-    this.element.classList.remove('xterm-cursor-blink-on');
-    if (this.cursorBlinkInterval) {
-      clearInterval(this.cursorBlinkInterval);
-      this.cursorBlinkInterval = null;
+    // Inform renderer of changes
+    if (this.renderer) {
+      this.renderer.onOptionsChanged();
     }
   }
 
   /**
    * Binds the desired focus behavior on a given terminal object.
    */
-  private bindFocus(): void {
-    globalOn(this.textarea, 'focus', (ev) => {
-      if (this.sendFocus) {
-        this.send(C0.ESC + '[I');
-      }
-      this.element.classList.add('focus');
-      this.showCursor();
-      this.restartCursorBlinking.apply(this);
-      // TODO: Why pass terminal here?
-      this.emit('focus');
-    });
+  private _onTextAreaFocus(): void {
+    if (this.sendFocus) {
+      this.send(C0.ESC + '[I');
+    }
+    this.element.classList.add('focus');
+    this.showCursor();
+    this.emit('focus');
   };
 
   /**
@@ -539,17 +450,13 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   /**
    * Binds the desired blur behavior on a given terminal object.
    */
-  private bindBlur(): void {
-    on(this.textarea, 'blur', (ev) => {
-      this.refresh(this.buffer.y, this.buffer.y);
-      if (this.sendFocus) {
-        this.send(C0.ESC + '[O');
-      }
-      this.element.classList.remove('focus');
-      this.clearCursorBlinkingInterval.apply(this);
-      // TODO: Why pass terminal here?
-      this.emit('blur');
-    });
+  private _onTextAreaBlur(): void {
+    this.refresh(this.buffer.y, this.buffer.y);
+    if (this.sendFocus) {
+      this.send(C0.ESC + '[O');
+    }
+    this.element.classList.remove('focus');
+    this.emit('blur');
   }
 
   /**
@@ -557,8 +464,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    */
   private initGlobal(): void {
     this.bindKeys();
-    this.bindFocus();
-    this.bindBlur();
 
     // Bind clipboard functionality
     on(this.element, 'copy', (event: ClipboardEvent) => {
@@ -644,22 +549,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 
   /**
-   * Insert the given row to the terminal or produce a new one
-   * if no row argument is passed. Return the inserted row.
-   * @param {HTMLElement} row (optional) The row to append to the terminal.
-   */
-  private insertRow(row?: HTMLElement): HTMLElement {
-    if (typeof row !== 'object') {
-      row = document.createElement('div');
-    }
-
-    this.rowContainer.appendChild(row);
-    this.children.push(row);
-
-    return row;
-  };
-
-  /**
    * Opens the terminal within an element.
    *
    * @param {HTMLElement} parent The element to create the terminal within.
@@ -679,12 +568,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.document = this.parent.ownerDocument;
     this.body = <HTMLBodyElement>this.document.body;
 
+    initializeCharAtlas(this.document);
+
     // Create main element container
     this.element = this.document.createElement('div');
     this.element.classList.add('terminal');
     this.element.classList.add('xterm');
-    this.element.classList.add(`xterm-cursor-style-${this.options.cursorStyle}`);
-    this.setCursorBlinking(this.options.cursorBlink);
 
     this.element.setAttribute('tabindex', '0');
 
@@ -698,18 +587,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // preload audio
     this.syncBellSound();
 
-    // Create the selection container.
-    this.selectionContainer = document.createElement('div');
-    this.selectionContainer.classList.add('xterm-selection');
-    this.element.appendChild(this.selectionContainer);
-
-    // Create the container that will hold the lines of the terminal and then
-    // produce the lines the lines.
-    this.rowContainer = document.createElement('div');
-    this.rowContainer.classList.add('xterm-rows');
-    this.element.appendChild(this.rowContainer);
-    this.children = [];
-    this.linkifier.attachToDom(document, this.children);
+    this._mouseZoneManager = new MouseZoneManager(this);
+    this.linkifier.attachToDom(this._mouseZoneManager);
 
     // Create the container that will hold helpers like the textarea for
     // capturing DOM Events. Then produce the helpers.
@@ -723,8 +602,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.textarea.setAttribute('autocapitalize', 'off');
     this.textarea.setAttribute('spellcheck', 'false');
     this.textarea.tabIndex = 0;
-    this.textarea.addEventListener('focus', () => this.emit('focus'));
-    this.textarea.addEventListener('blur', () => this.emit('blur'));
+    this.textarea.addEventListener('focus', () => this._onTextAreaFocus());
+    this.textarea.addEventListener('blur', () => this._onTextAreaBlur());
     this.helperContainer.appendChild(this.textarea);
 
     this.compositionView = document.createElement('div');
@@ -735,23 +614,23 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.charSizeStyleElement = document.createElement('style');
     this.helperContainer.appendChild(this.charSizeStyleElement);
 
-    for (; i < this.rows; i++) {
-      this.insertRow();
-    }
     this.parent.appendChild(this.element);
 
     this.charMeasure = new CharMeasure(document, this.helperContainer);
-    this.charMeasure.on('charsizechanged', () => {
-      this.updateCharSizeStyles();
-    });
-    this.charMeasure.measure();
 
     this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
+    this.charMeasure.on('charsizechanged', () => this.viewport.syncScrollArea());
     this.renderer = new Renderer(this);
-    this.selectionManager = new SelectionManager(this, this.buffer, this.rowContainer, this.charMeasure);
-    this.selectionManager.on('refresh', data => {
-      this.renderer.refreshSelection(data.start, data.end);
-    });
+    this.on('cursormove', () => this.renderer.onCursorMove());
+    this.on('resize', () => this.renderer.onResize(this.cols, this.rows, false));
+    this.on('blur', () => this.renderer.onBlur());
+    this.on('focus', () => this.renderer.onFocus());
+    window.addEventListener('resize', () => this.renderer.onWindowResize(window.devicePixelRatio));
+    this.charMeasure.on('charsizechanged', () => this.renderer.onResize(this.cols, this.rows, true));
+
+    this.selectionManager = new SelectionManager(this, this.buffer, this.charMeasure);
+    this.element.addEventListener('mousedown', (e: MouseEvent) => this.selectionManager.onMouseDown(e));
+    this.selectionManager.on('refresh', data => this.renderer.onSelectionChanged(data.start, data.end));
     this.selectionManager.on('newselection', text => {
       // If there's a new selection, put it into the textarea, focus and select it
       // in order to register it as a selection on the OS. This event is fired
@@ -763,6 +642,18 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.on('scroll', () => this.selectionManager.refresh());
     this.viewportElement.addEventListener('scroll', () => this.selectionManager.refresh());
 
+    // Measure the character size
+    this.charMeasure.measure(this.options);
+
+    // Set the theme if it was set via setOption/constructor before open. This
+    // must be run after CharMeasure.measure as it depends on char dimensions.
+    setTimeout(() => {
+      if (this.options.theme) {
+        this._setTheme(this.options.theme);
+        this.options.theme = null;
+      }
+    }, 0);
+
     // Setup loop that draws to screen
     this.refresh(0, this.rows - 1);
 
@@ -772,6 +663,17 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // Listen for mouse events and translate
     // them into terminal mouse protocols.
     this.bindMouse();
+  }
+
+  /**
+   * Sets the theme on the renderer. The renderer must have been initialized.
+   * @param theme The theme to ste.
+   */
+  private _setTheme(theme: ITheme): void {
+    const colors = this.renderer.setTheme(theme);
+    if (this.viewport) {
+      this.viewport.onThemeChanged(colors);
+    }
   }
 
   /**
@@ -791,17 +693,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       console.error('Cannot load a module without a CommonJS or RequireJS environment.');
       return false;
     }
-  }
-
-  /**
-   * Updates the helper CSS class with any changes necessary after the terminal's
-   * character width has been changed.
-   */
-  public updateCharSizeStyles(): void {
-    this.charSizeStyleElement.textContent =
-        `.xterm-wide-char{width:${this.charMeasure.width * 2}px;}` +
-        `.xterm-normal-char{width:${this.charMeasure.width}px;}` +
-        `.xterm-rows > div{height:${this.charMeasure.height}px;}`;
   }
 
   /**
@@ -830,7 +721,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       button = getButton(ev);
 
       // get mouse coordinates
-      pos = getRawByteCoords(ev, self.rowContainer, self.charMeasure, self.cols, self.rows);
+      pos = getRawByteCoords(ev, self.element, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
       if (!pos) return;
 
       sendEvent(button, pos);
@@ -856,7 +747,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // ^[[M 3<^[[M@4<^[[M@5<^[[M@6<^[[M@7<^[[M#7<
     function sendMove(ev: MouseEvent): void {
       let button = pressed;
-      let pos = getRawByteCoords(ev, self.rowContainer, self.charMeasure, self.cols, self.rows);
+      let pos = getRawByteCoords(ev, self.element, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
       if (!pos) return;
 
       // buttons marked as motions
@@ -1143,9 +1034,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    */
   private queueLinkification(start: number, end: number): void {
     if (this.linkifier) {
-      for (let i = start; i <= end; i++) {
-        this.linkifier.linkifyRow(i);
-      }
+      this.linkifier.linkifyRows(0, this.rows);
     }
   }
 
@@ -1373,7 +1262,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       throw new Error('Cannot attach a hypertext validation callback before Terminal.open is called');
     }
     this.linkifier.setHypertextValidationCallback(callback);
-    // Refresh to force links to refresh
+    // // Refresh to force links to refresh
     this.refresh(0, this.rows - 1);
   }
 
@@ -1393,6 +1282,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       this.refresh(0, this.rows - 1);
       return matcherId;
     }
+    return 0;
   }
 
   /**
@@ -1450,8 +1340,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     if (this.customKeyEventHandler && this.customKeyEventHandler(ev) === false) {
       return false;
     }
-
-    this.restartCursorBlinking();
 
     if (!this.compositionHelper.keydown(ev)) {
       if (this.buffer.ybase !== this.buffer.ydisp) {
@@ -1904,17 +1792,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       return;
     }
 
-    let line;
-    let el;
-    let i;
-    let j;
-    let ch;
-    let addToY;
-
     if (x === this.cols && y === this.rows) {
       // Check if we still need to measure the char size (fixes #785).
       if (!this.charMeasure.width || !this.charMeasure.height) {
-        this.charMeasure.measure();
+        this.charMeasure.measure(this.options);
       }
       return;
     }
@@ -1924,21 +1805,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     this.buffers.resize(x, y);
 
-    // Adjust rows in the DOM to accurately reflect the new dimensions
-    while (this.children.length < y) {
-      this.insertRow();
-    }
-    while (this.children.length > y) {
-      el = this.children.shift();
-      if (!el) continue;
-      el.parentNode.removeChild(el);
-    }
-
     this.cols = x;
     this.rows = y;
     this.buffers.setupTabStops(this.cols);
 
-    this.charMeasure.measure();
+    this.charMeasure.measure(this.options);
 
     this.refresh(0, this.rows - 1);
 
@@ -1979,7 +1850,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     if (!line) {
       return;
     }
-    const ch: CharData = [this.eraseAttr(), ' ', 1]; // xterm
+    const ch: CharData = [this.eraseAttr(), ' ', 1, 32 /* ' '.charCodeAt(0) */]; // xterm
     for (; x < this.cols; x++) {
       line[x] = ch;
     }
@@ -1996,7 +1867,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     if (!line) {
       return;
     }
-    const ch: CharData = [this.eraseAttr(), ' ', 1]; // xterm
+    const ch: CharData = [this.eraseAttr(), ' ', 1, 32 /* ' '.charCodeAt(0) */]; // xterm
     x++;
     while (x--) {
       line[x] = ch;
@@ -2042,7 +1913,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   public blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): LineData {
     const attr = cur ? this.eraseAttr() : this.defAttr;
 
-    const ch: CharData = [attr, ' ', 1]; // width defaults to 1 halfwidth character
+    const ch: CharData = [attr, ' ', 1, 32 /* ' '.charCodeAt(0) */]; // width defaults to 1 halfwidth character
     const line: LineData = [];
 
     // TODO: It is not ideal that this is a property on an array, a buffer line
@@ -2064,7 +1935,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param cur
    */
   public ch(cur?: boolean): CharData {
-    return cur ? [this.eraseAttr(), ' ', 1] : [this.defAttr, ' ', 1];
+    if (cur) {
+      return [this.eraseAttr(), ' ', 1, 32 /* ' '.charCodeAt(0) */];
+    }
+    return [this.defAttr, ' ', 1, 32 /* ' '.charCodeAt(0) */];
   }
 
   /**
@@ -2157,12 +2031,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.options.rows = this.rows;
     this.options.cols = this.cols;
     const customKeyEventHandler = this.customKeyEventHandler;
-    const cursorBlinkInterval = this.cursorBlinkInterval;
     const inputHandler = this.inputHandler;
     const buffers = this.buffers;
     this.setup();
     this.customKeyEventHandler = customKeyEventHandler;
-    this.cursorBlinkInterval = cursorBlinkInterval;
     this.inputHandler = inputHandler;
     this.buffers = buffers;
     this.refresh(0, this.rows - 1);
@@ -2187,44 +2059,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     return false;
   }
 
-  // Expose to InputHandler
-  // TODO: Revise when truecolor is introduced.
+  // TODO: Remove when true color is implemented
   public matchColor(r1: number, g1: number, b1: number): number {
-    const hash = (r1 << 16) | (g1 << 8) | b1;
-
-    if (matchColorCache[hash] != null) {
-      return matchColorCache[hash];
-    }
-
-    let ldiff = Infinity;
-    let li = -1;
-    let i = 0;
-    let c: number[];
-    let r2: number;
-    let g2: number;
-    let b2: number;
-    let diff: number;
-
-    for (; i < vcolors.length; i++) {
-      c = vcolors[i];
-      r2 = c[0];
-      g2 = c[1];
-      b2 = c[2];
-
-      diff = matchColorDistance(r1, g1, b1, r2, g2, b2);
-
-      if (diff === 0) {
-        li = i;
-        break;
-      }
-
-      if (diff < ldiff) {
-        ldiff = diff;
-        li = i;
-      }
-    }
-
-    return matchColorCache[hash] = li;
+    return matchColor_(r1, g1, b1);
   }
 
   private visualBell(): boolean {
@@ -2283,17 +2120,95 @@ function isThirdLevelShift(browser: IBrowser, ev: KeyboardEvent): boolean {
   return thirdLevelKey && (!ev.keyCode || ev.keyCode > 47);
 }
 
+function wasMondifierKeyOnlyEvent(ev: KeyboardEvent): boolean {
+  return ev.keyCode === 16 || // Shift
+    ev.keyCode === 17 || // Ctrl
+    ev.keyCode === 18; // Alt
+}
+
+/**
+ * TODO:
+ * The below color-related code can be removed when true color is implemented.
+ * It's only purpose is to match true color requests with the closest matching
+ * ANSI color code.
+ */
+
+// Colors 0-15 + 16-255
+// Much thanks to TooTallNate for writing this.
+const vcolors: number[][] = (function(): number[][] {
+  const result = DEFAULT_ANSI_COLORS.map(c => {
+    c = c.substring(1);
+    return [
+      parseInt(c.substring(0, 2), 16),
+      parseInt(c.substring(2, 4), 16),
+      parseInt(c.substring(4, 6), 16)
+    ];
+  });
+  const r = [0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff];
+
+  // 16-231
+  for (let i = 0; i < 216; i++) {
+    result.push([
+      r[(i / 36) % 6 | 0],
+      r[(i / 6) % 6 | 0],
+      r[i % 6]
+    ]);
+  }
+
+  // 232-255 (grey)
+  let c: number;
+  for (let i = 0; i < 24; i++) {
+    c = 8 + i * 10;
+    result.push([c, c, c]);
+  }
+
+  return result;
+})();
+
 const matchColorCache: {[colorRGBHash: number]: number} = {};
 
 // http://stackoverflow.com/questions/1633828
-const matchColorDistance = function(r1: number, g1: number, b1: number, r2: number, g2: number, b2: number): number {
+function matchColorDistance(r1: number, g1: number, b1: number, r2: number, g2: number, b2: number): number {
   return Math.pow(30 * (r1 - r2), 2)
     + Math.pow(59 * (g1 - g2), 2)
     + Math.pow(11 * (b1 - b2), 2);
 };
 
-function wasMondifierKeyOnlyEvent(ev: KeyboardEvent): boolean {
-  return ev.keyCode === 16 || // Shift
-    ev.keyCode === 17 || // Ctrl
-    ev.keyCode === 18; // Alt
+
+function matchColor_(r1: number, g1: number, b1: number): number {
+  const hash = (r1 << 16) | (g1 << 8) | b1;
+
+  if (matchColorCache[hash] != null) {
+    return matchColorCache[hash];
+  }
+
+  let ldiff = Infinity;
+  let li = -1;
+  let i = 0;
+  let c: number[];
+  let r2: number;
+  let g2: number;
+  let b2: number;
+  let diff: number;
+
+  for (; i < vcolors.length; i++) {
+    c = vcolors[i];
+    r2 = c[0];
+    g2 = c[1];
+    b2 = c[2];
+
+    diff = matchColorDistance(r1, g1, b1, r2, g2, b2);
+
+    if (diff === 0) {
+      li = i;
+      break;
+    }
+
+    if (diff < ldiff) {
+      ldiff = diff;
+      li = i;
+    }
+  }
+
+  return matchColorCache[hash] = li;
 }

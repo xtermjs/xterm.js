@@ -1,4 +1,5 @@
 /**
+ * Copyright (c) 2017 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 
@@ -6,8 +7,10 @@ import { ITerminal, IBuffer } from './Interfaces';
 import { CircularList } from './utils/CircularList';
 import { LineData, CharData } from './Types';
 
+export const CHAR_DATA_ATTR_INDEX = 0;
 export const CHAR_DATA_CHAR_INDEX = 1;
 export const CHAR_DATA_WIDTH_INDEX = 2;
+export const CHAR_DATA_CODE_INDEX = 3;
 
 /**
  * This class represents a terminal buffer (an internal state of the terminal), where the
@@ -32,8 +35,8 @@ export class Buffer implements IBuffer {
   /**
    * Create a new Buffer.
    * @param _terminal The terminal the Buffer will belong to.
-   * @param _hasScrollback Whether the buffer should respecr the scrollback of
-   * the terminal..
+   * @param _hasScrollback Whether the buffer should respect the scrollback of
+   * the terminal.
    */
   constructor(
     private _terminal: ITerminal,
@@ -48,6 +51,12 @@ export class Buffer implements IBuffer {
 
   public get hasScrollback(): boolean {
     return this._hasScrollback && this.lines.maxLength > this._terminal.rows;
+  }
+
+  public get isCursorInViewport(): boolean {
+    const absoluteY = this.ybase + this.y;
+    const relativeY = absoluteY - this.ydisp;
+    return (relativeY >= 0 && relativeY < this._terminal.rows);
   }
 
   /**
@@ -106,7 +115,7 @@ export class Buffer implements IBuffer {
     if (this._lines.length > 0) {
       // Deal with columns increasing (we don't do anything when columns reduce)
       if (this._terminal.cols < newCols) {
-        const ch: CharData = [this._terminal.defAttr, ' ', 1]; // does xterm use the default attr?
+        const ch: CharData = [this._terminal.defAttr, ' ', 1, 32]; // does xterm use the default attr?
         for (let i = 0; i < this._lines.length; i++) {
           // TODO: This should be removed, with tests setup for the case that was
           // causing the underlying bug, see https://github.com/sourcelair/xterm.js/issues/824

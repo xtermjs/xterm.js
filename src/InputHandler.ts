@@ -1,4 +1,6 @@
 /**
+ * Copyright (c) 2014 The xterm.js authors. All rights reserved.
+ * Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)
  * @license MIT
  */
 
@@ -36,13 +38,14 @@ export class InputHandler implements IInputHandler {
         // dont overflow left
         if (this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1]) {
           if (!this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1][CHAR_DATA_WIDTH_INDEX]) {
-
             // found empty cell after fullwidth, need to go 2 cells back
-            if (this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 2])
+            if (this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 2]) {
               this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 2][CHAR_DATA_CHAR_INDEX] += char;
-
+              this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 2][3] = char.charCodeAt(0);
+            }
           } else {
             this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1][CHAR_DATA_CHAR_INDEX] += char;
+            this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1][3] = char.charCodeAt(0);
           }
           this._terminal.updateRange(this._terminal.buffer.y);
         }
@@ -81,21 +84,21 @@ export class InputHandler implements IInputHandler {
           if (removed[CHAR_DATA_WIDTH_INDEX] === 0
               && this._terminal.buffer.lines.get(row)[this._terminal.cols - 2]
               && this._terminal.buffer.lines.get(row)[this._terminal.cols - 2][CHAR_DATA_WIDTH_INDEX] === 2) {
-            this._terminal.buffer.lines.get(row)[this._terminal.cols - 2] = [this._terminal.curAttr, ' ', 1];
+            this._terminal.buffer.lines.get(row)[this._terminal.cols - 2] = [this._terminal.curAttr, ' ', 1, ' '.charCodeAt(0)];
           }
 
           // insert empty cell at cursor
-          this._terminal.buffer.lines.get(row).splice(this._terminal.buffer.x, 0, [this._terminal.curAttr, ' ', 1]);
+          this._terminal.buffer.lines.get(row).splice(this._terminal.buffer.x, 0, [this._terminal.curAttr, ' ', 1, ' '.charCodeAt(0)]);
         }
       }
 
-      this._terminal.buffer.lines.get(row)[this._terminal.buffer.x] = [this._terminal.curAttr, char, ch_width];
+      this._terminal.buffer.lines.get(row)[this._terminal.buffer.x] = [this._terminal.curAttr, char, ch_width, char.charCodeAt(0)];
       this._terminal.buffer.x++;
       this._terminal.updateRange(this._terminal.buffer.y);
 
       // fullwidth char - set next cell width to zero and advance cursor
       if (ch_width === 2) {
-        this._terminal.buffer.lines.get(row)[this._terminal.buffer.x] = [this._terminal.curAttr, '', 0];
+        this._terminal.buffer.lines.get(row)[this._terminal.buffer.x] = [this._terminal.curAttr, '', 0, undefined];
         this._terminal.buffer.x++;
       }
     }
@@ -188,7 +191,7 @@ export class InputHandler implements IInputHandler {
 
     const row = this._terminal.buffer.y + this._terminal.buffer.ybase;
     let j = this._terminal.buffer.x;
-    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       this._terminal.buffer.lines.get(row).splice(j++, 0, ch);
@@ -487,7 +490,7 @@ export class InputHandler implements IInputHandler {
     }
 
     const row = this._terminal.buffer.y + this._terminal.buffer.ybase;
-    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32]; // xterm
 
     while (param--) {
       this._terminal.buffer.lines.get(row).splice(this._terminal.buffer.x, 1);
@@ -535,7 +538,7 @@ export class InputHandler implements IInputHandler {
 
     const row = this._terminal.buffer.y + this._terminal.buffer.ybase;
     let j = this._terminal.buffer.x;
-    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       this._terminal.buffer.lines.get(row)[j++] = ch;
@@ -589,7 +592,7 @@ export class InputHandler implements IInputHandler {
   public repeatPrecedingCharacter(params: number[]): void {
     let param = params[0] || 1;
     const line = this._terminal.buffer.lines.get(this._terminal.buffer.ybase + this._terminal.buffer.y);
-    const ch = line[this._terminal.buffer.x - 1] || [this._terminal.defAttr, ' ', 1];
+    const ch = line[this._terminal.buffer.x - 1] || [this._terminal.defAttr, ' ', 1, 32];
 
     while (param--) {
       line[this._terminal.buffer.x++] = ch;

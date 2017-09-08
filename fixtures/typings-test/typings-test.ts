@@ -168,6 +168,10 @@ namespace methods_core {
       t.setOption('bellStyle', 'visual');
       t.setOption('bellStyle', 'sound');
       t.setOption('bellStyle', 'both');
+      t.setOption('fontSize', 1);
+      t.setOption('lineHeight', 1);
+      t.setOption('fontFamily', 'foo');
+      t.setOption('theme', {background: '#ff0000'});
     }
   }
   namespace scrolling {
@@ -210,9 +214,13 @@ namespace methods_experimental {
     t.registerLinkMatcher(/foo/, () => true, {
       matchIndex: 1,
       priority: 1,
-      validationCallback: (uri: string, element: HTMLElement, callback: (isValid: boolean) => void) => {
-        console.log(uri, element, callback);
-      }
+      validationCallback: (uri: string, callback: (isValid: boolean) => void) => {
+        console.log(uri, callback);
+      },
+      tooltipCallback: (e: MouseEvent, uri: string) => {
+        console.log(e, uri);
+      },
+      leaveCallback: () => {}
     });
     t.deregisterLinkMatcher(1);
   }

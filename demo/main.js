@@ -2,9 +2,7 @@ var term,
     protocol,
     socketURL,
     socket,
-    pid,
-    charWidth,
-    charHeight;
+    pid;
 
 var terminalContainer = document.getElementById('terminal-container'),
     actionElements = {
@@ -21,11 +19,13 @@ var terminalContainer = document.getElementById('terminal-container'),
     colsElement = document.getElementById('cols'),
     rowsElement = document.getElementById('rows');
 
-function setTerminalSize () {
-  var cols = parseInt(colsElement.value, 10),
-      rows = parseInt(rowsElement.value, 10),
-      width = (cols * charWidth).toString() + 'px',
-      height = (rows * charHeight).toString() + 'px';
+function setTerminalSize() {
+  var cols = parseInt(colsElement.value, 10);
+  var rows = parseInt(rowsElement.value, 10);
+  var viewportElement = document.querySelector('.xterm-viewport');
+  var scrollBarWidth = viewportElement.offsetWidth - viewportElement.clientWidth;
+  var width = (cols * term.charMeasure.width + 20 /*room for scrollbar*/).toString() + 'px';
+  var height = (rows * term.charMeasure.height).toString() + 'px';
 
   terminalContainer.style.width = width;
   terminalContainer.style.height = height;
@@ -92,27 +92,26 @@ function createTerminal() {
   term.open(terminalContainer);
   term.fit();
 
-  var initialGeometry = term.proposeGeometry(),
-      cols = initialGeometry.cols,
-      rows = initialGeometry.rows;
+  // fit is called within a setTimeout, cols and rows need this.
+  setTimeout(() => {
+    colsElement.value = term.cols;
+    rowsElement.value = term.rows;
 
-  colsElement.value = cols;
-  rowsElement.value = rows;
+    // Set terminal size again to set the specific dimensions on the demo
+    setTerminalSize();
 
-  fetch('/terminals?cols=' + cols + '&rows=' + rows, {method: 'POST'}).then(function (res) {
+    fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, {method: 'POST'}).then(function (res) {
 
-    charWidth = Math.ceil(term.element.offsetWidth / cols);
-    charHeight = Math.ceil(term.element.offsetHeight / rows);
-
-    res.text().then(function (pid) {
-      window.pid = pid;
-      socketURL += pid;
-      socket = new WebSocket(socketURL);
-      socket.onopen = runRealTerminal;
-      socket.onclose = runFakeTerminal;
-      socket.onerror = runFakeTerminal;
+      res.text().then(function (pid) {
+        window.pid = pid;
+        socketURL += pid;
+        socket = new WebSocket(socketURL);
+        socket.onopen = runRealTerminal;
+        socket.onclose = runFakeTerminal;
+        socket.onerror = runFakeTerminal;
+      });
     });
-  });
+  }, 0);
 }
 
 function runRealTerminal() {

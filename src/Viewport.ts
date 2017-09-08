@@ -1,9 +1,11 @@
 /**
+ * Copyright (c) 2016 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 
 import { ITerminal, IViewport } from './Interfaces';
 import { CharMeasure } from './utils/CharMeasure';
+import { IColorSet } from './renderer/Interfaces';
 
 /**
  * Represents the viewport of a terminal, the visible area within the larger buffer of output.
@@ -40,25 +42,28 @@ export class Viewport implements IViewport {
     setTimeout(() => this.syncScrollArea(), 0);
   }
 
+  public onThemeChanged(colors: IColorSet): void {
+    this.viewportElement.style.backgroundColor = colors.background;
+  }
+
   /**
    * Refreshes row height, setting line-height, viewport height and scroll area height if
    * necessary.
    */
   private refresh(): void {
     if (this.charMeasure.height > 0) {
-      const rowHeightChanged = this.charMeasure.height !== this.currentRowHeight;
+      const lineHeight = Math.ceil(this.charMeasure.height * this.terminal.options.lineHeight);
+      const rowHeightChanged = lineHeight !== this.currentRowHeight;
       if (rowHeightChanged) {
-        this.currentRowHeight = this.charMeasure.height;
-        this.viewportElement.style.lineHeight = this.charMeasure.height + 'px';
-        this.terminal.rowContainer.style.lineHeight = this.charMeasure.height + 'px';
+        this.currentRowHeight = lineHeight;
+        this.viewportElement.style.lineHeight = lineHeight + 'px';
       }
       const viewportHeightChanged = this.lastRecordedViewportHeight !== this.terminal.rows;
       if (rowHeightChanged || viewportHeightChanged) {
         this.lastRecordedViewportHeight = this.terminal.rows;
-        this.viewportElement.style.height = this.charMeasure.height * this.terminal.rows + 'px';
-        this.terminal.selectionContainer.style.height = this.viewportElement.style.height;
+        this.viewportElement.style.height = lineHeight * this.terminal.rows + 'px';
       }
-      this.scrollArea.style.height = (this.charMeasure.height * this.lastRecordedBufferLength) + 'px';
+      this.scrollArea.style.height = (lineHeight * this.lastRecordedBufferLength) + 'px';
     }
   }
 
@@ -75,7 +80,7 @@ export class Viewport implements IViewport {
       this.refresh();
     } else {
       // If size has changed, refresh viewport
-      if (this.charMeasure.height !== this.currentRowHeight) {
+      if (Math.ceil(this.charMeasure.height * this.terminal.options.lineHeight) !== this.currentRowHeight) {
         this.refresh();
       }
     }

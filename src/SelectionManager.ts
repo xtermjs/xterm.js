@@ -1,4 +1,5 @@
 /**
+ * Copyright (c) 2017 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 
@@ -98,7 +99,6 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   constructor(
     private _terminal: ITerminal,
     private _buffer: IBuffer,
-    private _rowContainer: HTMLElement,
     private _charMeasure: CharMeasure
   ) {
     super();
@@ -115,8 +115,6 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   private _initListeners(): void {
     this._mouseMoveListener = event => this._onMouseMove(<MouseEvent>event);
     this._mouseUpListener = event => this._onMouseUp(<MouseEvent>event);
-
-    this._rowContainer.addEventListener('mousedown', event => this._onMouseDown(<MouseEvent>event));
 
     // Only adjust the selection on trim, shiftElements is rarely used (only in
     // reverseIndex) and delete in a splice is only ever used when the same
@@ -275,7 +273,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param event The mouse event.
    */
   private _getMouseBufferCoords(event: MouseEvent): [number, number] {
-    const coords = Mouse.getCoords(event, this._rowContainer, this._charMeasure, this._terminal.cols, this._terminal.rows, true);
+    const coords = Mouse.getCoords(event, this._terminal.element, this._charMeasure, this._terminal.options.lineHeight, this._terminal.cols, this._terminal.rows, true);
     if (!coords) {
       return null;
     }
@@ -294,8 +292,8 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param event The mouse event.
    */
   private _getMouseEventScrollAmount(event: MouseEvent): number {
-    let offset = Mouse.getCoordsRelativeToElement(event, this._rowContainer)[1];
-    const terminalHeight = this._terminal.rows * this._charMeasure.height;
+    let offset = Mouse.getCoordsRelativeToElement(event, this._terminal.element)[1];
+    const terminalHeight = this._terminal.rows * Math.ceil(this._charMeasure.height * this._terminal.options.lineHeight);
     if (offset >= 0 && offset <= terminalHeight) {
       return 0;
     }
@@ -312,7 +310,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * Handles te mousedown event, setting up for a new selection.
    * @param event The mousedown event.
    */
-  private _onMouseDown(event: MouseEvent): void {
+  public onMouseDown(event: MouseEvent): void {
     // If we have selection, we want the context menu on right click even if the
     // terminal is in mouse mode.
     if (event.button === 2 && this.hasSelection) {
@@ -363,8 +361,8 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    */
   private _addMouseDownListeners(): void {
     // Listen on the document so that dragging outside of viewport works
-    this._rowContainer.ownerDocument.addEventListener('mousemove', this._mouseMoveListener);
-    this._rowContainer.ownerDocument.addEventListener('mouseup', this._mouseUpListener);
+    this._terminal.element.ownerDocument.addEventListener('mousemove', this._mouseMoveListener);
+    this._terminal.element.ownerDocument.addEventListener('mouseup', this._mouseUpListener);
     this._dragScrollIntervalTimer = setInterval(() => this._dragScroll(), DRAG_SCROLL_INTERVAL);
   }
 
@@ -372,8 +370,8 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * Removes the listeners that are registered when mousedown is triggered.
    */
   private _removeMouseDownListeners(): void {
-    this._rowContainer.ownerDocument.removeEventListener('mousemove', this._mouseMoveListener);
-    this._rowContainer.ownerDocument.removeEventListener('mouseup', this._mouseUpListener);
+    this._terminal.element.ownerDocument.removeEventListener('mousemove', this._mouseMoveListener);
+    this._terminal.element.ownerDocument.removeEventListener('mouseup', this._mouseUpListener);
     clearInterval(this._dragScrollIntervalTimer);
     this._dragScrollIntervalTimer = null;
   }
@@ -409,6 +407,11 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     // Ensure the line exists
     const line = this._buffer.lines.get(this._model.selectionStart[1]);
     if (!line) {
+      return;
+    }
+
+    // Return early if the click event is not in the buffer (eg. in scroll bar)
+    if (line.length >= this._model.selectionStart[0]) {
       return;
     }
 
