@@ -51,7 +51,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
   private _nextLinkMatcherId = HYPERTEXT_LINK_MATCHER_ID;
 
   constructor(
-    private _terminal: IBufferAccessor & IElementAccessor
+    protected _terminal: IBufferAccessor & IElementAccessor
   ) {
     super();
     this.registerLinkMatcher(strictUrlRegex, null, { matchIndex: 1 });

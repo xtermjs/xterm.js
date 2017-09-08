@@ -217,9 +217,10 @@ namespace methods_experimental {
       validationCallback: (uri: string, callback: (isValid: boolean) => void) => {
         console.log(uri, callback);
       },
-      hoverCallback: (e: MouseEvent, uri: string) => {
+      tooltipCallback: (e: MouseEvent, uri: string) => {
         console.log(e, uri);
-      }
+      },
+      leaveCallback: () => {}
     });
     t.deregisterLinkMatcher(1);
   }

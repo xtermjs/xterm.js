@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { ITerminal, ILinkifier, IBuffer, IBufferAccessor } from './Interfaces';
+import { ITerminal, ILinkifier, IBuffer, IBufferAccessor, IElementAccessor } from './Interfaces';
 import { Linkifier } from './Linkifier';
 import { LinkMatcher, LineData } from './Types';
 import { IMouseZoneManager, IMouseZone } from './input/Interfaces';
@@ -12,13 +12,13 @@ import { MockBuffer } from './utils/TestUtils.test';
 import { CircularList } from './utils/CircularList';
 
 class TestLinkifier extends Linkifier {
-  constructor(private _bufferAccessor: IBufferAccessor) {
-    super(_bufferAccessor);
+  constructor(_terminal: IBufferAccessor & IElementAccessor) {
+    super(_terminal);
     Linkifier.TIME_BEFORE_LINKIFY = 0;
   }
 
   public get linkMatchers(): LinkMatcher[] { return this._linkMatchers; }
-  public linkifyRows(): void { super.linkifyRows(0, this._bufferAccessor.buffer.lines.length - 1); }
+  public linkifyRows(): void { super.linkifyRows(0, this._terminal.buffer.lines.length - 1); }
 }
 
 class TestMouseZoneManager implements IMouseZoneManager {
@@ -33,15 +33,18 @@ class TestMouseZoneManager implements IMouseZoneManager {
 }
 
 describe('Linkifier', () => {
-  let bufferAccessor: IBufferAccessor;
+  let terminal: IBufferAccessor & IElementAccessor;
   let linkifier: TestLinkifier;
   let mouseZoneManager: TestMouseZoneManager;
 
   beforeEach(() => {
-    bufferAccessor = { buffer: new MockBuffer() };
-    bufferAccessor.buffer.lines = new CircularList<LineData>(20);
-    bufferAccessor.buffer.ydisp = 0;
-    linkifier = new TestLinkifier(bufferAccessor);
+    terminal = {
+      buffer: new MockBuffer(),
+      element: <HTMLElement>{}
+    };
+    terminal.buffer.lines = new CircularList<LineData>(20);
+    terminal.buffer.ydisp = 0;
+    linkifier = new TestLinkifier(terminal);
     mouseZoneManager = new TestMouseZoneManager();
   });
 
@@ -54,7 +57,7 @@ describe('Linkifier', () => {
   }
 
   function addRow(text: string): void {
-    bufferAccessor.buffer.lines.push(stringToRow(text));
+    terminal.buffer.lines.push(stringToRow(text));
   }
 
   function assertLinkifiesEntireRow(uri: string, done: MochaDone): void {
@@ -63,7 +66,7 @@ describe('Linkifier', () => {
     setTimeout(() => {
       assert.equal(mouseZoneManager.zones[0].x1, 1);
       assert.equal(mouseZoneManager.zones[0].x2, uri.length + 1);
-      assert.equal(mouseZoneManager.zones[0].y, bufferAccessor.buffer.lines.length);
+      assert.equal(mouseZoneManager.zones[0].y, terminal.buffer.lines.length);
       done();
     }, 0);
   }
@@ -78,7 +81,7 @@ describe('Linkifier', () => {
       links.forEach((l, i) => {
         assert.equal(mouseZoneManager.zones[i].x1, l.x + 1);
         assert.equal(mouseZoneManager.zones[i].x2, l.x + l.length + 1);
-        assert.equal(mouseZoneManager.zones[i].y, bufferAccessor.buffer.lines.length);
+        assert.equal(mouseZoneManager.zones[i].y, terminal.buffer.lines.length);
       });
       done();
     }, 0);
