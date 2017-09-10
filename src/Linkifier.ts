@@ -49,11 +49,16 @@ export class Linkifier extends EventEmitter implements ILinkifier {
   private _mouseZoneManager: IMouseZoneManager;
   private _rowsTimeoutId: number;
   private _nextLinkMatcherId = HYPERTEXT_LINK_MATCHER_ID;
+  private _rowsToLinkify: {start: number, end: number};
 
   constructor(
     protected _terminal: IBufferAccessor & IElementAccessor
   ) {
     super();
+    this._rowsToLinkify = {
+      start: null,
+      end: null
+    };
     this.registerLinkMatcher(strictUrlRegex, null, { matchIndex: 1 });
   }
 
@@ -76,25 +81,35 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       return;
     }
 
-    // Clear out any existing links
-    this._mouseZoneManager.clearAll();
+    // Increase range to linkify
+    if (!this._rowsToLinkify.start) {
+      this._rowsToLinkify.start = start;
+      this._rowsToLinkify.end = end;
+    } else {
+      this._rowsToLinkify.start = this._rowsToLinkify.start < start ? this._rowsToLinkify.start : start;
+      this._rowsToLinkify.end = this._rowsToLinkify.end < end ? this._rowsToLinkify.end : end;
+    }
 
+    // Clear out any existing links on this row range
+    this._mouseZoneManager.clearAll(start, end);
+
+    // Restart timer
     if (this._rowsTimeoutId) {
       clearTimeout(this._rowsTimeoutId);
     }
-    this._rowsTimeoutId = setTimeout(this._linkifyRows.bind(this, start, end), Linkifier.TIME_BEFORE_LINKIFY);
+    this._rowsTimeoutId = <number><any>setTimeout(() => this._linkifyRows(), Linkifier.TIME_BEFORE_LINKIFY);
   }
 
   /**
-   * Linkifies
-   * @param start The row to start at.
-   * @param end The row to end at.
+   * Linkifies the rows requested.
    */
-  private _linkifyRows(start: number, end: number): void {
+  private _linkifyRows(): void {
     this._rowsTimeoutId = null;
-    for (let i = start; i <= end; i++) {
+    for (let i = this._rowsToLinkify.start; i <= this._rowsToLinkify.end; i++) {
       this._linkifyRow(i);
     }
+    this._rowsToLinkify.start = null;
+    this._rowsToLinkify.end = null;
   }
 
   /**
