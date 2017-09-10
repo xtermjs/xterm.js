@@ -7,9 +7,10 @@ import { ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManag
 import { LineData } from '../Types';
 import { Buffer } from '../Buffer';
 import * as Browser from './Browser';
-import { IColorSet, IRenderer } from '../renderer/Interfaces';
+import { IColorSet, IRenderer, IRenderDimensions } from '../renderer/Interfaces';
 
 export class MockTerminal implements ITerminal {
+  renderer: IRenderer;
   linkifier: ILinkifier;
   isFocused: boolean;
   options: ITerminalOptions = {};
@@ -215,6 +216,16 @@ export class MockBuffer implements IBuffer {
 }
 
 export class MockRenderer implements IRenderer {
+  on(type: string, listener: IListenerType): void {
+    throw new Error('Method not implemented.');
+  }
+  off(type: string, listener: IListenerType): void {
+    throw new Error('Method not implemented.');
+  }
+  emit(type: string, data?: any): void {
+    throw new Error('Method not implemented.');
+  }
+  dimensions: IRenderDimensions;
   setTheme(theme: ITheme): IColorSet { return <IColorSet>{}; }
   onResize(cols: number, rows: number, didCharSizeChange: boolean): void {}
   onCharSizeChanged(): void {}
