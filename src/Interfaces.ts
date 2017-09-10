@@ -323,6 +323,7 @@ export interface ITheme {
   foreground?: string;
   background?: string;
   cursor?: string;
+  cursorAccent?: string;
   selection?: string;
   black?: string;
   red?: string;

@@ -199,7 +199,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     this._ctx.save();
     this._ctx.fillStyle = this.colors.cursor;
     this.fillCells(x, y, charData[CHAR_DATA_WIDTH_INDEX], 1);
-    this._ctx.fillStyle = this.colors.background;
+    this._ctx.fillStyle = this.colors.cursorAccent;
     this.fillCharTrueColor(terminal, charData, x, y);
     this._ctx.restore();
   }
