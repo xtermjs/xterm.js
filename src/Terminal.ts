@@ -48,8 +48,11 @@ import { MouseZoneManager } from './input/MouseZoneManager';
 import { initialize as initializeCharAtlas } from './renderer/CharAtlas';
 import { IRenderer } from './renderer/Interfaces';
 
-// Declare for RequireJS in loadAddon
+// Declares required for loadAddon
+declare var exports: any;
+declare var module: any;
 declare var define: any;
+declare var require: any;
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -588,6 +591,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.syncBellSound();
 
     this._mouseZoneManager = new MouseZoneManager(this);
+    this.on('scroll', () => this._mouseZoneManager.clearAll());
     this.linkifier.attachToDom(this._mouseZoneManager);
 
     // Create the container that will hold helpers like the textarea for
@@ -1034,7 +1038,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    */
   private queueLinkification(start: number, end: number): void {
     if (this.linkifier) {
-      this.linkifier.linkifyRows(0, this.rows);
+      this.linkifier.linkifyRows(start, end);
     }
   }
 

@@ -5,7 +5,7 @@
 
 export interface IMouseZoneManager {
   add(zone: IMouseZone): void;
-  clearAll(): void;
+  clearAll(start?: number, end?: number): void;
 }
 
 export interface IMouseZone {
