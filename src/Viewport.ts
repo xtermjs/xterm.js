@@ -12,9 +12,10 @@ import { IColorSet } from './renderer/Interfaces';
  * Logic for the virtual scroll bar is included in this object.
  */
 export class Viewport implements IViewport {
-  private currentRowHeight: number;
-  private lastRecordedBufferLength: number;
-  private lastRecordedViewportHeight: number;
+  private currentRowHeight: number = 0;
+  private lastRecordedBufferLength: number = 0;
+  private lastRecordedViewportHeight: number = 0;
+  private lastRecordedBufferHeight: number = 0;
   private lastTouchY: number;
 
   /**
@@ -30,10 +31,6 @@ export class Viewport implements IViewport {
     private scrollArea: HTMLElement,
     private charMeasure: CharMeasure
   ) {
-    this.currentRowHeight = 0;
-    this.lastRecordedBufferLength = 0;
-    this.lastRecordedViewportHeight = 0;
-
     this.viewportElement.addEventListener('scroll', this.onScroll.bind(this));
 
     // Perform this async to ensure the CharMeasure is ready.
@@ -50,20 +47,18 @@ export class Viewport implements IViewport {
    */
   private refresh(): void {
     if (this.charMeasure.height > 0) {
-      const lineHeight = (<any>this.terminal).renderer.dimensions.scaledLineHeight / window.devicePixelRatio;
-      const rowHeightChanged = lineHeight !== this.currentRowHeight;
-      // TODO: Do we need lineHeight anymore??
-      if (rowHeightChanged) {
-        this.currentRowHeight = lineHeight;
-        this.viewportElement.style.lineHeight = lineHeight + 'px';
-      }
-      // const viewportHeightChanged = this.lastRecordedViewportHeight !== this.terminal.rows;
-      const viewportHeightChanged = this.lastRecordedViewportHeight !== this.terminal.renderer.dimensions.canvasHeight;
-      if (viewportHeightChanged) {
+      this.currentRowHeight = this.terminal.renderer.dimensions.scaledLineHeight / window.devicePixelRatio;
+
+      if (this.lastRecordedViewportHeight !== this.terminal.renderer.dimensions.canvasHeight) {
         this.lastRecordedViewportHeight = this.terminal.renderer.dimensions.canvasHeight;
         this.viewportElement.style.height = this.lastRecordedViewportHeight + 'px';
       }
-      this.scrollArea.style.height = Math.round(lineHeight * this.lastRecordedBufferLength) + 'px';
+
+      const newBufferHeight = Math.round(this.currentRowHeight * this.lastRecordedBufferLength);
+      if (this.lastRecordedBufferHeight !== newBufferHeight) {
+        this.lastRecordedBufferHeight = newBufferHeight;
+        this.scrollArea.style.height = this.lastRecordedBufferHeight + 'px';
+      }
     }
   }
 
@@ -80,7 +75,6 @@ export class Viewport implements IViewport {
       this.refresh();
     } else {
       // If size has changed, refresh viewport
-      console.log(this.terminal.renderer.dimensions.scaledLineHeight / window.devicePixelRatio);
       if (this.terminal.renderer.dimensions.scaledLineHeight / window.devicePixelRatio !== this.currentRowHeight) {
         this.refresh();
       }
