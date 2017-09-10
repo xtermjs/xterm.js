@@ -90,7 +90,7 @@ function createTerminal() {
   socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
 
   term.open(terminalContainer);
-  term.fit();
+  //term.fit();
 
   // fit is called within a setTimeout, cols and rows need this.
   setTimeout(() => {
@@ -109,13 +109,160 @@ function createTerminal() {
         socket.onopen = runRealTerminal;
         socket.onclose = runFakeTerminal;
         socket.onerror = runFakeTerminal;
+
+        socket.addEventListener("message", handleWSMessage);
       });
     });
   }, 0);
 }
 
+var text_encoder = new TextEncoder();
+var zsentry = new Zmodem.Sentry();
+
+var zsession;
+function handleWSMessage(evt) {
+    var binary = text_encoder.encode(evt.data);
+    var input = Array.prototype.slice.call( new Uint8Array(binary) );
+console.log("from WS", evt.data, input, evt.data.charCodeAt( evt.data.length - 2 ));
+
+    if (zsession) {
+        zsession.consume(input);
+        if (zsession.has_ended()) {
+            input = zsession.get_trailing_bytes();
+            zsession = null;
+        }
+    }
+    else {
+        let termbytes;
+        [termbytes, zsession] = zsentry.parse(input);
+        input = termbytes;
+
+        if (zsession) {
+
+            zsession.set_sender( (octets) => {
+                socket.send( String.fromCharCode.apply(String, octets) );
+            } );
+
+            var start_form = document.getElementById("zm_start");
+            start_form.style.display = "";
+            start_form.onsubmit = function(e) {
+                start_form.style.display = "none";
+
+                if (zsession.type === "receive") {
+                    zsession.on("offer", function(xfer) {
+                        _show_file_info(xfer);
+
+                        var offer_form = document.getElementById("zm_offer");
+                        offer_form.style.display = "";
+                        offer_form.onsubmit = function(e) {
+                            offer_form.style.display = "none";
+
+                            if (offer_form.zmaccept) {
+                                var FILE_BUFFER = [];
+                                xfer.on("input", (payload) => {
+                                    _update_progress(xfer);
+                                    FILE_BUFFER.push.apply(FILE_BUFFER, payload);
+                                });
+                                xfer.accept().then( () => {
+                                    _download(xfer, FILE_BUFFER);
+                                    _hide_file_info();
+                                } );
+                            }
+                            else {
+                                _hide_file_info();
+                                xfer.skip();
+                            }
+                        };
+                    } );
+
+                    zsession.start();
+                }
+                else {
+                    var choose_form = document.getElementById("zm_choose");
+                    choose_form.style.display = "";
+                    choose_form.onsubmit = function(e) {
+                        choose_form.style.display = "none";
+
+                        var file_el = document.getElementById("zm_files");
+                        var batch = [];
+                        var total_size = 0;
+                        for (var f=0; f<file_el.files.length; f++) {
+                            var fobj = file_el.files[f];
+                            batch.push( {
+                                obj: fobj,
+                                name: fobj.name,
+                                size: fobj.size,
+                            } );
+                            total_size += fobj.size;
+                        }
+
+                        var file_idx = 0;
+                        function promise_callback() {
+                            var cur_b = batch[file_idx];
+                            if (cur_b) {
+                                file_idx++;
+
+                                zsession.send_offer(cur_b).then( (xfer) => {
+                                    if (xfer === undefined) {
+                                        return promise_callback();   //skipped
+                                    }
+
+                                    return new Promise( (res) => {
+                                        var reader = new FileReader();
+                                        reader.onerror = function(e) {
+                                            console.error("file read error", e);
+                                            throw("File read error: " + e);
+                                        };
+
+                                        var offset = xfer.get_offset();
+                                        reader.onprogress = function(e) {
+                                            xfer.send(
+                                                new Uint8Array(e.target.result, offset)
+                                            );
+                                            offset = e.loaded;
+                                        };
+
+                                        reader.onload = function(e) {
+                                            xfer.end(
+                                                new Uint8Array(e.target.result, offset)
+                                            ).then(res).then(promise_callback);
+                                        };
+
+                                        reader.readAsArrayBuffer(cur_b.obj);
+                                    } );
+                                } )
+                            }
+                            else {
+                                zsession.close();
+                                choose_form.style.display = "none";
+                            }
+                        }
+
+                        promise_callback();
+                    };
+
+                }
+            };
+        }
+    }
+
+    if (input.length) {
+        term.write(
+            String.fromCharCode.apply(String, input)
+        );
+    }
+}
+
+//var text_encoder = new TextEncoder();
+
 function runRealTerminal() {
-  term.attach(socket);
+  //term.attach(socket);
+
+    term.on("data", (d) => {
+        //socket.send( text_encoder.encode(d) );
+        socket.send(d);
+    });
+
   term._initialized = true;
 }
 
