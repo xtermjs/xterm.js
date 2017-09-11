@@ -106,6 +106,7 @@ function createTerminal() {
         window.pid = pid;
         socketURL += pid;
         socket = new WebSocket(socketURL);
+        socket.binaryType = "arraybuffer";
         socket.onopen = runRealTerminal;
         socket.onclose = runFakeTerminal;
         socket.onerror = runFakeTerminal;
@@ -116,21 +117,79 @@ function createTerminal() {
   }, 0);
 }
 
+//----------------------------------------------------------------------
+// UI STUFF
+
+function _show_file_info(xfer) {
+    var file_info = xfer.get_details();
+
+    document.getElementById("name").textContent = file_info.name;
+    document.getElementById("size").textContent = file_info.size;
+    document.getElementById("mtime").textContent = file_info.mtime;
+    document.getElementById("files_remaining").textContent = file_info.files_remaining;
+    document.getElementById("bytes_remaining").textContent = file_info.bytes_remaining;
+
+    document.getElementById("mode").textContent = "0" + file_info.mode.toString(8);
+
+    document.getElementById("zm_file").style.display = "";
+}
+function _hide_file_info() {
+    document.getElementById("zm_file").style.display = "none";
+}
+
+function _download(xfer, buffer) {
+    var uint8array = new Uint8Array(buffer);
+    var blob = new Blob([uint8array]);
+    var url = URL.createObjectURL(blob);
+
+    var el = document.createElement("a");
+    el.style.display = "none";
+    el.href = url;
+    el.download = xfer.get_details().name;
+    document.body.appendChild(el);
+
+    //It seems like a security problem that this actually works.
+    //But, hey.
+    el.click();
+}
+
+function _update_progress(xfer) {
+    document.getElementById("zm_progress").style.display = "";
+
+    var total_in = xfer.get_offset();
+
+    document.getElementById("bytes_received").textContent = total_in;
+
+    var percent_received = 100 * total_in / xfer.get_details().size;
+    document.getElementById("percent_received").textContent = percent_received;
+}
+
+// END UI STUFF
+//----------------------------------------------------------------------
+
 var text_encoder = new TextEncoder();
 var zsentry = new Zmodem.Sentry();
 
 var zsession;
 function handleWSMessage(evt) {
-    var binary = text_encoder.encode(evt.data);
-    var input = Array.prototype.slice.call( new Uint8Array(binary) );
-console.log("from WS", evt.data, input, evt.data.charCodeAt( evt.data.length - 2 ));
+    var input = Array.prototype.slice.call(
+        new Uint8Array(
+            (typeof evt.data === "string") ? text_encoder.encode(evt.data) : evt.data
+        )
+    );
 
     if (zsession) {
         zsession.consume(input);
         if (zsession.has_ended()) {
-            input = zsession.get_trailing_bytes();
+            if (zsession.type === "receive") {
+                input = zsession.get_trailing_bytes();
+            }
+            else {
+                input = [];
+            }
             zsession = null;
         }
+        else input = [];    //keep ZMODEM from going to the terminal
     }
     else {
         let termbytes;
@@ -140,7 +199,8 @@ console.log("from WS", evt.data, input, evt.data.charCodeAt( evt.data.length - 2
         if (zsession) {
 
             zsession.set_sender( (octets) => {
-                socket.send( String.fromCharCode.apply(String, octets) );
+                //socket.send( String.fromCharCode.apply(String, octets) );
+                socket.send( new Uint8Array(octets) );
             } );
 
             var start_form = document.getElementById("zm_start");

@@ -29,6 +29,7 @@ app.post('/terminals', function (req, res) {
   var cols = parseInt(req.query.cols),
       rows = parseInt(req.query.rows),
       term = pty.spawn(process.platform === 'win32' ? 'cmd.exe' : 'bash', [], {
+        encoding: null,
         name: 'xterm-color',
         cols: cols || 80,
         rows: rows || 24,
@@ -63,7 +64,6 @@ app.ws('/terminals/:pid', function (ws, req) {
   ws.send(logs[term.pid]);
 
   term.on('data', function(data) {
-console.log("From PTY: ", escape(data) );
     try {
       ws.send(data);
     } catch (ex) {
