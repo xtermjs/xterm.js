@@ -1071,7 +1071,16 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       // Only adjust ybase and ydisp when the buffer is not trimmed
       if (!willBufferBeTrimmed) {
         this.buffer.ybase++;
-        this.buffer.ydisp++;
+        // Only scroll the ydisp with ybase if the user has not scrolled up
+        if (!this.userScrolling) {
+          this.buffer.ydisp++;
+        }
+      } else {
+        // When the buffer is full and the user has scrolled up, keep the text
+        // stable unless ydisp is right at the top
+        if (this.userScrolling) {
+          this.buffer.ydisp = Math.max(this.buffer.ydisp - 1, 0);
+        }
       }
     } else {
       // scrollTop is non-zero which means no line will be going to the
