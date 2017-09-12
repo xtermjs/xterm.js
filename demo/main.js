@@ -90,7 +90,7 @@ function createTerminal() {
   socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
 
   term.open(terminalContainer);
-  //term.fit();
+  term.fit();
 
   // fit is called within a setTimeout, cols and rows need this.
   setTimeout(() => {
@@ -199,7 +199,6 @@ function handleWSMessage(evt) {
         if (zsession) {
 
             zsession.set_sender( (octets) => {
-                //socket.send( String.fromCharCode.apply(String, octets) );
                 socket.send( new Uint8Array(octets) );
             } );
 
