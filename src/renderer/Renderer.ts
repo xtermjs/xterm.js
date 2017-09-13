@@ -77,10 +77,17 @@ export class Renderer extends EventEmitter implements IRenderer {
       return;
     }
 
-    // Calculate the scaled character dimensions, if devicePixelRatio is a
-    // floating point number then the value is ceiled to ensure there is enough
-    // space to draw the character to the cell
-    this.dimensions.scaledCharWidth = Math.ceil(this._terminal.charMeasure.width * window.devicePixelRatio);
+    // Calculate the scaled character width. Width is kept as a decimal to
+    // provide better letter spacing, otherwise the text can look odd.
+    // Characters drawn using this decimal number do have the potential to
+    // overlap, but only by a single pixel. As such, it's not a big deal when
+    // they do as that pixel is always cleared as necessary before drawing the
+    // character.
+    this.dimensions.scaledCharWidth = this._terminal.charMeasure.width * window.devicePixelRatio;
+
+    // Calculate the scaled character height. Height is ceiled in case
+    // devicePixelRatio is a floating point number in order to ensure there is
+    // enough space to draw the character to the cell.
     this.dimensions.scaledCharHeight = Math.ceil(this._terminal.charMeasure.height * window.devicePixelRatio);
 
     // Calculate the scaled line height, if lineHeight is not 1 then the value
@@ -96,7 +103,7 @@ export class Renderer extends EventEmitter implements IRenderer {
     // Recalculate the canvas dimensions; scaled* define the actual number of
     // pixel in the canvas
     this.dimensions.scaledCanvasHeight = this._terminal.rows * this.dimensions.scaledLineHeight;
-    this.dimensions.scaledCanvasWidth = this._terminal.cols * this.dimensions.scaledCharWidth;
+    this.dimensions.scaledCanvasWidth = Math.round(this._terminal.cols * this.dimensions.scaledCharWidth);
 
     // The the size of the canvas on the page. It's very important that this
     // rounds to nearest integer and not ceils as browsers often set
