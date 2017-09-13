@@ -159,6 +159,7 @@ export class ForegroundRenderLayer extends BaseRenderLayer {
    * @param char The character to search.
    */
   private _isEmoji(char: string): boolean {
+    // TODO: We need a generic solution for handling characters like this
     // Check special ambiguous width characters
     if (char === '➜') {
       return true;
