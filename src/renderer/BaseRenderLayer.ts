@@ -25,12 +25,13 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     container: HTMLElement,
     id: string,
     zIndex: number,
+    alpha: boolean,
     protected colors: IColorSet
   ) {
     this._canvas = document.createElement('canvas');
     this._canvas.id = `xterm-${id}-layer`;
     this._canvas.style.zIndex = zIndex.toString();
-    this._ctx = this._canvas.getContext('2d');
+    this._ctx = this._canvas.getContext('2d', {alpha});
     this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
     container.appendChild(this._canvas);
   }

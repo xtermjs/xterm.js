@@ -14,7 +14,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
   private _state: {start: [number, number], end: [number, number]};
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
-    super(container, 'selection', zIndex, colors);
+    super(container, 'selection', zIndex, true, colors);
     this._state = {
       start: null,
       end: null

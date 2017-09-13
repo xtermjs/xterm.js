@@ -31,7 +31,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
   private _isFocused: boolean;
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
-    super(container, 'cursor', zIndex, colors);
+    super(container, 'cursor', zIndex, true, colors);
     this._state = {
       x: null,
       y: null,

@@ -18,29 +18,34 @@ import { BaseRenderLayer, INVERTED_DEFAULT_COLOR } from './BaseRenderLayer';
  */
 const EMOJI_OWNED_CHAR_DATA: CharData = [null, '', 0, -1];
 
-export class ForegroundRenderLayer extends BaseRenderLayer {
-  private _state: GridCache<CharData>;
+export class TextRenderLayer extends BaseRenderLayer {
+  private _fgState: GridCache<CharData>;
+  private _bgState: GridCache<number>;
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
-    super(container, 'fg', zIndex, colors);
-    this._state = new GridCache<CharData>();
+    super(container, 'text', zIndex, false, colors);
+    this._fgState = new GridCache<CharData>();
+    this._bgState = new GridCache<number>();
   }
 
   public resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void {
     super.resize(terminal, dim, charSizeChanged);
     // Resizing the canvas discards the contents of the canvas so clear state
-    this._state.clear();
-    this._state.resize(terminal.cols, terminal.rows);
+    this._fgState.clear();
+    this._bgState.clear();
+    this._fgState.resize(terminal.cols, terminal.rows);
+    this._bgState.resize(terminal.cols, terminal.rows);
   }
 
   public reset(terminal: ITerminal): void {
-    this._state.clear();
+    this._fgState.clear();
+    this._bgState.clear();
     this.clearAll();
   }
 
   public onGridChanged(terminal: ITerminal, startRow: number, endRow: number): void {
     // Resize has not been called yet
-    if (this._state.cache.length === 0) {
+    if (this._fgState.cache.length === 0) {
       return;
     }
 
@@ -58,7 +63,7 @@ export class ForegroundRenderLayer extends BaseRenderLayer {
         // The character to the left is a wide character, drawing is owned by
         // the char at x-1
         if (width === 0) {
-          this._state.cache[x][y] = null;
+          this._fgState.cache[x][y] = null;
           continue;
         }
 
@@ -75,10 +80,10 @@ export class ForegroundRenderLayer extends BaseRenderLayer {
         }
 
         // Skip rendering if the character is identical
-        const state = this._state.cache[x][y];
+        const state = this._fgState.cache[x][y];
         if (state && state[CHAR_DATA_CHAR_INDEX] === char && state[CHAR_DATA_ATTR_INDEX] === attr) {
           // Skip render, contents are identical
-          this._state.cache[x][y] = charData;
+          this._fgState.cache[x][y] = charData;
           continue;
         }
 
@@ -86,7 +91,7 @@ export class ForegroundRenderLayer extends BaseRenderLayer {
         if (state && state[CHAR_DATA_CODE_INDEX] !== 32 /*' '*/) {
           this._clearChar(x, y);
         }
-        this._state.cache[x][y] = charData;
+        this._fgState.cache[x][y] = charData;
 
         const flags = attr >> 18;
 
@@ -104,14 +109,14 @@ export class ForegroundRenderLayer extends BaseRenderLayer {
           // space is added. Without this, the first half of `b` would never
           // get removed, and `a` would not re-render because it thinks it's
           // already in the correct state.
-          this._state.cache[x][y] = EMOJI_OWNED_CHAR_DATA;
+          this._fgState.cache[x][y] = EMOJI_OWNED_CHAR_DATA;
           if (x < line.length && line[x + 1][CHAR_DATA_CODE_INDEX] === 32 /*' '*/) {
             width = 2;
             this._clearChar(x + 1, y);
             // The emoji owned char data will force a clear and render when the
             // emoji is no longer to the left of the character and also when the
             // space changes to another character.
-            this._state.cache[x + 1][y] = EMOJI_OWNED_CHAR_DATA;
+            this._fgState.cache[x + 1][y] = EMOJI_OWNED_CHAR_DATA;
           }
         }
 
@@ -176,7 +181,7 @@ export class ForegroundRenderLayer extends BaseRenderLayer {
   private _clearChar(x: number, y: number): void {
     let colsToClear = 1;
     // Clear the adjacent character if it was wide
-    const state = this._state.cache[x][y];
+    const state = this._fgState.cache[x][y];
     if (state && state[CHAR_DATA_WIDTH_INDEX] === 2) {
       colsToClear = 2;
     }
