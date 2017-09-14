@@ -22,17 +22,20 @@ export class Renderer extends EventEmitter implements IRenderer {
   private _renderLayers: IRenderLayer[];
   private _devicePixelRatio: number;
 
-  private _colorManager: ColorManager;
+  public colorManager: ColorManager;
   public dimensions: IRenderDimensions;
 
-  constructor(private _terminal: ITerminal) {
+  constructor(private _terminal: ITerminal, theme: ITheme) {
     super();
-    this._colorManager = new ColorManager();
+    this.colorManager = new ColorManager();
+    if (theme) {
+      this.colorManager.setTheme(theme);
+    }
     this._renderLayers = [
-      new TextRenderLayer(this._terminal.element, 0, this._colorManager.colors),
-      new SelectionRenderLayer(this._terminal.element, 1, this._colorManager.colors),
-      new LinkRenderLayer(this._terminal.element, 2, this._colorManager.colors, this._terminal),
-      new CursorRenderLayer(this._terminal.element, 3, this._colorManager.colors)
+      new TextRenderLayer(this._terminal.element, 0, this.colorManager.colors),
+      new SelectionRenderLayer(this._terminal.element, 1, this.colorManager.colors),
+      new LinkRenderLayer(this._terminal.element, 2, this.colorManager.colors, this._terminal),
+      new CursorRenderLayer(this._terminal.element, 3, this.colorManager.colors)
     ];
     this.dimensions = {
       scaledCharWidth: null,
@@ -57,17 +60,17 @@ export class Renderer extends EventEmitter implements IRenderer {
   }
 
   public setTheme(theme: ITheme): IColorSet {
-    this._colorManager.setTheme(theme);
+    this.colorManager.setTheme(theme);
 
     // Clear layers and force a full render
     this._renderLayers.forEach(l => {
-      l.onThemeChanged(this._terminal, this._colorManager.colors);
+      l.onThemeChanged(this._terminal, this.colorManager.colors);
       l.reset(this._terminal);
     });
 
     this._terminal.refresh(0, this._terminal.rows - 1);
 
-    return this._colorManager.colors;
+    return this.colorManager.colors;
   }
 
   public onResize(cols: number, rows: number, didCharSizeChange: boolean): void {

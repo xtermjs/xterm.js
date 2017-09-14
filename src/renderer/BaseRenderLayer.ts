@@ -14,10 +14,10 @@ export const INVERTED_DEFAULT_COLOR = -1;
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
   protected _ctx: CanvasRenderingContext2D;
-  private scaledCharWidth: number;
-  private scaledCharHeight: number;
-  private scaledLineHeight: number;
-  private scaledLineDrawY: number;
+  private _scaledCharWidth: number;
+  private _scaledCharHeight: number;
+  private _scaledLineHeight: number;
+  private _scaledLineDrawY: number;
 
   private _charAtlas: HTMLCanvasElement | ImageBitmap;
 
@@ -25,16 +25,17 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     container: HTMLElement,
     id: string,
     zIndex: number,
-    private alpha: boolean,
-    protected colors: IColorSet
+    private _alpha: boolean,
+    protected _colors: IColorSet
   ) {
     this._canvas = document.createElement('canvas');
     this._canvas.id = `xterm-${id}-layer`;
     this._canvas.style.zIndex = zIndex.toString();
-    this._ctx = this._canvas.getContext('2d', {alpha});
+    this._ctx = this._canvas.getContext('2d', {_alpha});
     this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
     // Draw the background if this is an opaque layer
-    if (!alpha) {
+    if (!_alpha) {
+      console.log('clearAll!');
       this.clearAll();
     }
     container.appendChild(this._canvas);
@@ -58,7 +59,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   private _refreshCharAtlas(terminal: ITerminal, colorSet: IColorSet): void {
     this._charAtlas = null;
-    const result = acquireCharAtlas(terminal, this.colors, this.scaledCharWidth, this.scaledCharHeight);
+    const result = acquireCharAtlas(terminal, this._colors, this._scaledCharWidth, this._scaledCharHeight);
     if (result instanceof HTMLCanvasElement) {
       this._charAtlas = result;
     } else {
@@ -67,22 +68,22 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   }
 
   public resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void {
-    this.scaledCharWidth = dim.scaledCharWidth;
-    this.scaledCharHeight = dim.scaledCharHeight;
-    this.scaledLineHeight = dim.scaledLineHeight;
-    this.scaledLineDrawY = dim.scaledLineDrawY;
+    this._scaledCharWidth = dim.scaledCharWidth;
+    this._scaledCharHeight = dim.scaledCharHeight;
+    this._scaledLineHeight = dim.scaledLineHeight;
+    this._scaledLineDrawY = dim.scaledLineDrawY;
     this._canvas.width = dim.scaledCanvasWidth;
     this._canvas.height = dim.scaledCanvasHeight;
     this._canvas.style.width = `${dim.canvasWidth}px`;
     this._canvas.style.height = `${dim.canvasHeight}px`;
 
     // Draw the background if this is an opaque layer
-    if (!this.alpha) {
+    if (!this._alpha) {
       this.clearAll();
     }
 
     if (charSizeChanged) {
-      this._refreshCharAtlas(terminal, this.colors);
+      this._refreshCharAtlas(terminal, this._colors);
     }
   }
 
@@ -95,7 +96,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param x The column of the cell.
    */
   private _getCellLeft(x: number): number {
-    return Math.round(x * this.scaledCharWidth);
+    return Math.round(x * this._scaledCharWidth);
   }
 
   /**
@@ -109,9 +110,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     const cellLeft = this._getCellLeft(x);
     this._ctx.fillRect(
       cellLeft,
-      y * this.scaledLineHeight,
+      y * this._scaledLineHeight,
       this._getCellLeft(x + width) - cellLeft,
-      height * this.scaledLineHeight);
+      height * this._scaledLineHeight);
   }
 
   /**
@@ -124,7 +125,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     const cellLeft = this._getCellLeft(x);
     this._ctx.fillRect(
         cellLeft,
-        (y + 1) * this.scaledLineHeight - window.devicePixelRatio - 1 /* Ensure it's drawn within the cell */,
+        (y + 1) * this._scaledLineHeight - window.devicePixelRatio - 1 /* Ensure it's drawn within the cell */,
         this._getCellLeft(x + width) - cellLeft,
         window.devicePixelRatio);
   }
@@ -138,9 +139,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   protected fillLeftLineAtCell(x: number, y: number): void {
     this._ctx.fillRect(
         this._getCellLeft(x),
-        y * this.scaledLineHeight,
+        y * this._scaledLineHeight,
         window.devicePixelRatio,
-        this.scaledLineHeight);
+        this._scaledLineHeight);
   }
 
   /**
@@ -154,19 +155,20 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.lineWidth = window.devicePixelRatio;
     this._ctx.strokeRect(
         cellLeft + window.devicePixelRatio / 2,
-        y * this.scaledLineHeight + (window.devicePixelRatio / 2),
+        y * this._scaledLineHeight + (window.devicePixelRatio / 2),
         this._getCellLeft(x + width) - cellLeft - window.devicePixelRatio,
-        (height * this.scaledLineHeight) - window.devicePixelRatio);
+        (height * this._scaledLineHeight) - window.devicePixelRatio);
   }
 
   /**
    * Clears the entire canvas.
    */
   protected clearAll(): void {
-    if (this.alpha) {
+    if (this._alpha) {
       this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
     } else {
-      this._ctx.fillStyle = this.colors.background;
+      console.log('fill with', this._colors.background);
+      this._ctx.fillStyle = this._colors.background;
       this._ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);
     }
   }
@@ -180,19 +182,19 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   protected clearCells(x: number, y: number, width: number, height: number): void {
     const cellLeft = this._getCellLeft(x);
-    if (this.alpha) {
+    if (this._alpha) {
       this._ctx.clearRect(
           cellLeft,
-          y * this.scaledLineHeight,
+          y * this._scaledLineHeight,
           this._getCellLeft(x + width) - cellLeft,
-          height * this.scaledLineHeight);
+          height * this._scaledLineHeight);
     } else {
-      this._ctx.fillStyle = this.colors.background;
+      this._ctx.fillStyle = this._colors.background;
       this._ctx.fillRect(
           cellLeft,
-          y * this.scaledLineHeight,
+          y * this._scaledLineHeight,
           this._getCellLeft(x + width) - cellLeft,
-          height * this.scaledLineHeight);
+          height * this._scaledLineHeight);
     }
   }
 
@@ -215,9 +217,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     // can bleed into other cells. This code will clip the following fillText,
     // ensuring that its contents don't go beyond the cell bounds.
     this._ctx.beginPath();
-    this._ctx.rect(x * this.scaledCharWidth, y * this.scaledLineHeight + this.scaledLineDrawY, charData[CHAR_DATA_WIDTH_INDEX] * this.scaledCharWidth, this.scaledCharHeight);
+    this._ctx.rect(x * this._scaledCharWidth, y * this._scaledLineHeight + this._scaledLineDrawY, charData[CHAR_DATA_WIDTH_INDEX] * this._scaledCharWidth, this._scaledCharHeight);
     this._ctx.clip();
-    this._ctx.fillText(charData[CHAR_DATA_CHAR_INDEX], x * this.scaledCharWidth, y * this.scaledCharHeight);
+    this._ctx.fillText(charData[CHAR_DATA_CHAR_INDEX], x * this._scaledCharWidth, y * this._scaledCharHeight);
   }
 
   /**
@@ -255,11 +257,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     const isDefaultBackground = bg >= 256;
     if (isAscii && (isBasicColor || isDefaultColor) && isDefaultBackground) {
       // ImageBitmap's draw about twice as fast as from a canvas
-      const charAtlasCellWidth = this.scaledCharWidth + CHAR_ATLAS_CELL_SPACING;
-      const charAtlasCellHeight = this.scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
+      const charAtlasCellWidth = this._scaledCharWidth + CHAR_ATLAS_CELL_SPACING;
+      const charAtlasCellHeight = this._scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
       this._ctx.drawImage(this._charAtlas,
-          code * charAtlasCellWidth, colorIndex * charAtlasCellHeight, this.scaledCharWidth, this.scaledCharHeight,
-          x * this.scaledCharWidth, y * this.scaledLineHeight + this.scaledLineDrawY, this.scaledCharWidth, this.scaledCharHeight);
+          code * charAtlasCellWidth, colorIndex * charAtlasCellHeight, this._scaledCharWidth, this._scaledCharHeight,
+          x * this._scaledCharWidth, y * this._scaledLineHeight + this._scaledLineDrawY, this._scaledCharWidth, this._scaledCharHeight);
     } else {
       this._drawUncachedChar(terminal, char, width, fg, x, y, bold);
     }
@@ -288,12 +290,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.textBaseline = 'top';
 
     if (fg === INVERTED_DEFAULT_COLOR) {
-      this._ctx.fillStyle = this.colors.background;
+      this._ctx.fillStyle = this._colors.background;
     } else if (fg < 256) {
       // 256 color support
-      this._ctx.fillStyle = this.colors.ansi[fg];
+      this._ctx.fillStyle = this._colors.ansi[fg];
     } else {
-      this._ctx.fillStyle = this.colors.foreground;
+      this._ctx.fillStyle = this._colors.foreground;
     }
 
     // Since uncached characters are not coming off the char atlas with source
@@ -301,11 +303,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     // can bleed into other cells. This code will clip the following fillText,
     // ensuring that its contents don't go beyond the cell bounds.
     this._ctx.beginPath();
-    this._ctx.rect(x * this.scaledCharWidth, y * this.scaledLineHeight + this.scaledLineDrawY, width * this.scaledCharWidth, this.scaledCharHeight);
+    this._ctx.rect(x * this._scaledCharWidth, y * this._scaledLineHeight + this._scaledLineDrawY, width * this._scaledCharWidth, this._scaledCharHeight);
     this._ctx.clip();
 
     // Draw the character
-    this._ctx.fillText(char, x * this.scaledCharWidth, y * this.scaledLineHeight + this.scaledLineDrawY);
+    this._ctx.fillText(char, x * this._scaledCharWidth, y * this._scaledLineHeight + this._scaledLineDrawY);
     this._ctx.restore();
   }
 }

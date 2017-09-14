@@ -68,7 +68,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     // Draw first row
     const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
     const startRowEndCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : terminal.cols;
-    this._ctx.fillStyle = this.colors.selection;
+    this._ctx.fillStyle = this._colors.selection;
     this.fillCells(startCol, viewportCappedStartRow, startRowEndCol - startCol, 1);
 
     // Draw middle rows

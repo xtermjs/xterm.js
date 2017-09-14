@@ -38,7 +38,7 @@ export class LinkRenderLayer extends BaseRenderLayer {
   }
 
   private _onLinkHover(e: LinkHoverEvent): void {
-    this._ctx.fillStyle = this.colors.foreground;
+    this._ctx.fillStyle = this._colors.foreground;
     this.fillBottomLineAtCells(e.x, e.y, e.length);
     this._state = e;
   }
