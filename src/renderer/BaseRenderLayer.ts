@@ -25,7 +25,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     container: HTMLElement,
     id: string,
     zIndex: number,
-    alpha: boolean,
+    private alpha: boolean,
     protected colors: IColorSet
   ) {
     this._canvas = document.createElement('canvas');
@@ -154,7 +154,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * Clears the entire canvas.
    */
   protected clearAll(): void {
-    this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+    if (this.alpha) {
+      this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+    } else {
+      this._ctx.fillStyle = this.colors.background;
+      this._ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);
+    }
   }
 
   /**
@@ -166,11 +171,20 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   protected clearCells(x: number, y: number, width: number, height: number): void {
     const cellLeft = this._getCellLeft(x);
-    this._ctx.clearRect(
-        cellLeft,
-        y * this.scaledLineHeight,
-        this._getCellLeft(x + width) - cellLeft,
-        height * this.scaledLineHeight);
+    if (this.alpha) {
+      this._ctx.clearRect(
+          cellLeft,
+          y * this.scaledLineHeight,
+          this._getCellLeft(x + width) - cellLeft,
+          height * this.scaledLineHeight);
+    } else {
+      this._ctx.fillStyle = this.colors.background;
+      this._ctx.fillRect(
+          cellLeft,
+          y * this.scaledLineHeight,
+          this._getCellLeft(x + width) - cellLeft,
+          height * this.scaledLineHeight);
+    }
   }
 
   /**
