@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IColorSet } from './Interfaces';
+import { IColorSet, IColorManager } from './Interfaces';
 import { ITheme } from '../Interfaces';
 
 const DEFAULT_FOREGROUND = '#ffffff';
@@ -65,7 +65,7 @@ function toPaddedHex(c: number): string {
 /**
  * Manages the source of truth for a terminal's colors.
  */
-export class ColorManager {
+export class ColorManager implements IColorManager {
   public colors: IColorSet;
 
   constructor() {

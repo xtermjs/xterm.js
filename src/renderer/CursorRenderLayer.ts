@@ -31,7 +31,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
   private _isFocused: boolean;
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
-    super(container, 'cursor', zIndex, colors);
+    super(container, 'cursor', zIndex, true, colors);
     this._state = {
       x: null,
       y: null,
@@ -135,7 +135,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     if (!terminal.isFocused) {
       this._clearCursor();
       this._ctx.save();
-      this._ctx.fillStyle = this.colors.cursor;
+      this._ctx.fillStyle = this._colors.cursor;
       this._renderBlurCursor(terminal, terminal.buffer.x, viewportRelativeCursorY, charData);
       this._ctx.restore();
       this._state.x = terminal.buffer.x;
@@ -190,30 +190,30 @@ export class CursorRenderLayer extends BaseRenderLayer {
 
   private _renderBarCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
     this._ctx.save();
-    this._ctx.fillStyle = this.colors.cursor;
+    this._ctx.fillStyle = this._colors.cursor;
     this.fillLeftLineAtCell(x, y);
     this._ctx.restore();
   }
 
   private _renderBlockCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
     this._ctx.save();
-    this._ctx.fillStyle = this.colors.cursor;
+    this._ctx.fillStyle = this._colors.cursor;
     this.fillCells(x, y, charData[CHAR_DATA_WIDTH_INDEX], 1);
-    this._ctx.fillStyle = this.colors.cursorAccent;
+    this._ctx.fillStyle = this._colors.cursorAccent;
     this.fillCharTrueColor(terminal, charData, x, y);
     this._ctx.restore();
   }
 
   private _renderUnderlineCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
     this._ctx.save();
-    this._ctx.fillStyle = this.colors.cursor;
+    this._ctx.fillStyle = this._colors.cursor;
     this.fillBottomLineAtCells(x, y);
     this._ctx.restore();
   }
 
   private _renderBlurCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
     this._ctx.save();
-    this._ctx.strokeStyle = this.colors.cursor;
+    this._ctx.strokeStyle = this._colors.cursor;
     this.strokeRectAtCell(x, y, charData[CHAR_DATA_WIDTH_INDEX], 1);
     this._ctx.restore();
   }

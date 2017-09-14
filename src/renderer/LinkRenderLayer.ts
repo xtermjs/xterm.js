@@ -15,7 +15,7 @@ export class LinkRenderLayer extends BaseRenderLayer {
   private _state: LinkHoverEvent = null;
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet, terminal: ILinkifierAccessor) {
-    super(container, 'link', zIndex, colors);
+    super(container, 'link', zIndex, true, colors);
     terminal.linkifier.on(LinkHoverEventTypes.HOVER, (e: LinkHoverEvent) => this._onLinkHover(e));
     terminal.linkifier.on(LinkHoverEventTypes.LEAVE, (e: LinkHoverEvent) => this._onLinkLeave(e));
   }
@@ -38,7 +38,7 @@ export class LinkRenderLayer extends BaseRenderLayer {
   }
 
   private _onLinkHover(e: LinkHoverEvent): void {
-    this._ctx.fillStyle = this.colors.foreground;
+    this._ctx.fillStyle = this._colors.foreground;
     this.fillBottomLineAtCells(e.x, e.y, e.length);
     this._state = e;
   }

@@ -18,11 +18,11 @@ import { BaseRenderLayer, INVERTED_DEFAULT_COLOR } from './BaseRenderLayer';
  */
 const EMOJI_OWNED_CHAR_DATA: CharData = [null, '', 0, -1];
 
-export class ForegroundRenderLayer extends BaseRenderLayer {
+export class TextRenderLayer extends BaseRenderLayer {
   private _state: GridCache<CharData>;
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
-    super(container, 'fg', zIndex, colors);
+    super(container, 'text', zIndex, false, colors);
     this._state = new GridCache<CharData>();
   }
 
@@ -82,16 +82,19 @@ export class ForegroundRenderLayer extends BaseRenderLayer {
           continue;
         }
 
-        // Clear the old character if present
-        if (state && state[CHAR_DATA_CODE_INDEX] !== 32 /*' '*/) {
+        // Clear the old character was not a space with the default background
+        if (state && !(state[CHAR_DATA_CODE_INDEX] === 32 /*' '*/ && (state[CHAR_DATA_ATTR_INDEX] & 0x1ff) >= 256)) {
           this._clearChar(x, y);
         }
         this._state.cache[x][y] = charData;
 
         const flags = attr >> 18;
+        let bg = attr & 0x1ff;
 
         // Skip rendering if the character is invisible
-        if (!code || code === 32 /*' '*/ || (flags & FLAGS.INVISIBLE)) {
+        const isDefaultBackground = bg >= 256;
+        const isInvisible = flags & FLAGS.INVISIBLE;
+        if (!code || (code === 32 /*' '*/ && isDefaultBackground) || isInvisible) {
           continue;
         }
 
@@ -119,11 +122,23 @@ export class ForegroundRenderLayer extends BaseRenderLayer {
 
         // If inverse flag is on, the foreground should become the background.
         if (flags & FLAGS.INVERSE) {
-          fg = attr & 0x1ff;
-          // TODO: Is this case still needed
+          const temp = bg;
+          bg = fg;
+          fg = bg;
           if (fg === 256) {
             fg = INVERTED_DEFAULT_COLOR;
           }
+          if (bg === 257) {
+            bg = INVERTED_DEFAULT_COLOR;
+          }
+        }
+
+        // Draw background
+        if (bg < 256) {
+          this._ctx.save();
+          this._ctx.fillStyle = (bg === INVERTED_DEFAULT_COLOR ? this._colors.foreground : this._colors.ansi[bg]);
+          this.fillCells(x, y, width, 1);
+          this._ctx.restore();
         }
 
         this._ctx.save();
@@ -137,17 +152,17 @@ export class ForegroundRenderLayer extends BaseRenderLayer {
 
         if (flags & FLAGS.UNDERLINE) {
           if (fg === INVERTED_DEFAULT_COLOR) {
-            this._ctx.fillStyle = this.colors.background;
+            this._ctx.fillStyle = this._colors.background;
           } else if (fg < 256) {
             // 256 color support
-            this._ctx.fillStyle = this.colors.ansi[fg];
+            this._ctx.fillStyle = this._colors.ansi[fg];
           } else {
-            this._ctx.fillStyle = this.colors.foreground;
+            this._ctx.fillStyle = this._colors.foreground;
           }
           this.fillBottomLineAtCells(x, y);
         }
 
-        this.drawChar(terminal, char, code, width, x, y, fg, !!(flags & FLAGS.BOLD));
+        this.drawChar(terminal, char, code, width, x, y, fg, bg, !!(flags & FLAGS.BOLD));
 
         this._ctx.restore();
       }
