@@ -7,7 +7,7 @@ import { ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManag
 import { LineData } from '../Types';
 import { Buffer } from '../Buffer';
 import * as Browser from './Browser';
-import { IColorSet, IRenderer, IRenderDimensions } from '../renderer/Interfaces';
+import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../renderer/Interfaces';
 
 export class MockTerminal implements ITerminal {
   renderer: IRenderer;
@@ -216,6 +216,7 @@ export class MockBuffer implements IBuffer {
 }
 
 export class MockRenderer implements IRenderer {
+  colorManager: IColorManager;
   on(type: string, listener: IListenerType): void {
     throw new Error('Method not implemented.');
   }

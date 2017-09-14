@@ -78,6 +78,7 @@ export interface IColorSet {
   foreground: string;
   background: string;
   cursor: string;
+  cursorAccent: string;
   selection: string;
   ansi: string[];
 }
