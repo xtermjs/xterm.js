@@ -58,6 +58,6 @@ describe('getCoords', () => {
     assert.deepEqual(coords, [1, 1]);
     // Event are double the cols/rows
     coords = getCoords({ pageX: CHAR_WIDTH * 20, pageY: CHAR_HEIGHT * 20 }, document.createElement('div'), charMeasure, 1, 10, 10);
-    assert.deepEqual(coords, [11, 11], 'coordinates should never come back as larger than the terminal');
+    assert.deepEqual(coords, [10, 10], 'coordinates should never come back as larger than the terminal');
   });
 });
