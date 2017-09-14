@@ -207,9 +207,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param x The column to draw at.
    * @param y The row to draw at.
    * @param fg The foreground color, in the format stored within the attributes.
+   * @param bg The background color, in the format stored within the attributes.
+   * This is used to validate whether a cached image can be used.
    * @param bold Whether the text is bold.
    */
-  protected drawChar(terminal: ITerminal, char: string, code: number, width: number, x: number, y: number, fg: number, bold: boolean): void {
+  protected drawChar(terminal: ITerminal, char: string, code: number, width: number, x: number, y: number, fg: number, bg: number, bold: boolean): void {
     // Clear the cell next to this character if it's wide
     if (width === 2) {
       this.clearCells(x + 1, y, 1, 1);
@@ -227,7 +229,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     const isAscii = code < 256;
     const isBasicColor = (colorIndex > 1 && fg < 16);
     const isDefaultColor = fg >= 256;
-    if (isAscii && (isBasicColor || isDefaultColor)) {
+    const isDefaultBackground = bg >= 256;
+    if (isAscii && (isBasicColor || isDefaultColor) && isDefaultBackground) {
       // ImageBitmap's draw about twice as fast as from a canvas
       const charAtlasCellWidth = this.scaledCharWidth + CHAR_ATLAS_CELL_SPACING;
       const charAtlasCellHeight = this.scaledCharHeight + CHAR_ATLAS_CELL_SPACING;

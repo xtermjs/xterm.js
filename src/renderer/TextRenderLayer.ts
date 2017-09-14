@@ -19,33 +19,28 @@ import { BaseRenderLayer, INVERTED_DEFAULT_COLOR } from './BaseRenderLayer';
 const EMOJI_OWNED_CHAR_DATA: CharData = [null, '', 0, -1];
 
 export class TextRenderLayer extends BaseRenderLayer {
-  private _fgState: GridCache<CharData>;
-  private _bgState: GridCache<number>;
+  private _state: GridCache<CharData>;
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
     super(container, 'text', zIndex, false, colors);
-    this._fgState = new GridCache<CharData>();
-    this._bgState = new GridCache<number>();
+    this._state = new GridCache<CharData>();
   }
 
   public resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void {
     super.resize(terminal, dim, charSizeChanged);
     // Resizing the canvas discards the contents of the canvas so clear state
-    this._fgState.clear();
-    this._bgState.clear();
-    this._fgState.resize(terminal.cols, terminal.rows);
-    this._bgState.resize(terminal.cols, terminal.rows);
+    this._state.clear();
+    this._state.resize(terminal.cols, terminal.rows);
   }
 
   public reset(terminal: ITerminal): void {
-    this._fgState.clear();
-    this._bgState.clear();
+    this._state.clear();
     this.clearAll();
   }
 
   public onGridChanged(terminal: ITerminal, startRow: number, endRow: number): void {
     // Resize has not been called yet
-    if (this._fgState.cache.length === 0) {
+    if (this._state.cache.length === 0) {
       return;
     }
 
@@ -63,7 +58,7 @@ export class TextRenderLayer extends BaseRenderLayer {
         // The character to the left is a wide character, drawing is owned by
         // the char at x-1
         if (width === 0) {
-          this._fgState.cache[x][y] = null;
+          this._state.cache[x][y] = null;
           continue;
         }
 
@@ -80,23 +75,26 @@ export class TextRenderLayer extends BaseRenderLayer {
         }
 
         // Skip rendering if the character is identical
-        const state = this._fgState.cache[x][y];
+        const state = this._state.cache[x][y];
         if (state && state[CHAR_DATA_CHAR_INDEX] === char && state[CHAR_DATA_ATTR_INDEX] === attr) {
           // Skip render, contents are identical
-          this._fgState.cache[x][y] = charData;
+          this._state.cache[x][y] = charData;
           continue;
         }
 
-        // Clear the old character if present
-        if (state && state[CHAR_DATA_CODE_INDEX] !== 32 /*' '*/) {
+        // Clear the old character was not a space with the default background
+        if (state && !(state[CHAR_DATA_CODE_INDEX] === 32 /*' '*/ && (state[CHAR_DATA_ATTR_INDEX] & 0x1ff) >= 256)) {
           this._clearChar(x, y);
         }
-        this._fgState.cache[x][y] = charData;
+        this._state.cache[x][y] = charData;
 
         const flags = attr >> 18;
+        let bg = attr & 0x1ff;
 
         // Skip rendering if the character is invisible
-        if (!code || code === 32 /*' '*/ || (flags & FLAGS.INVISIBLE)) {
+        const isDefaultBackground = bg >= 256;
+        const isInvisible = flags & FLAGS.INVISIBLE;
+        if (!code || (code === 32 /*' '*/ && isDefaultBackground) || isInvisible) {
           continue;
         }
 
@@ -109,14 +107,14 @@ export class TextRenderLayer extends BaseRenderLayer {
           // space is added. Without this, the first half of `b` would never
           // get removed, and `a` would not re-render because it thinks it's
           // already in the correct state.
-          this._fgState.cache[x][y] = EMOJI_OWNED_CHAR_DATA;
+          this._state.cache[x][y] = EMOJI_OWNED_CHAR_DATA;
           if (x < line.length && line[x + 1][CHAR_DATA_CODE_INDEX] === 32 /*' '*/) {
             width = 2;
             this._clearChar(x + 1, y);
             // The emoji owned char data will force a clear and render when the
             // emoji is no longer to the left of the character and also when the
             // space changes to another character.
-            this._fgState.cache[x + 1][y] = EMOJI_OWNED_CHAR_DATA;
+            this._state.cache[x + 1][y] = EMOJI_OWNED_CHAR_DATA;
           }
         }
 
@@ -124,11 +122,23 @@ export class TextRenderLayer extends BaseRenderLayer {
 
         // If inverse flag is on, the foreground should become the background.
         if (flags & FLAGS.INVERSE) {
-          fg = attr & 0x1ff;
-          // TODO: Is this case still needed
+          const temp = bg;
+          bg = fg;
+          fg = bg;
           if (fg === 256) {
             fg = INVERTED_DEFAULT_COLOR;
           }
+          if (bg === 257) {
+            bg = INVERTED_DEFAULT_COLOR;
+          }
+        }
+
+        // Draw background
+        if (bg < 256) {
+          this._ctx.save();
+          this._ctx.fillStyle = (bg === INVERTED_DEFAULT_COLOR ? this.colors.foreground : this.colors.ansi[bg]);
+          this.fillCells(x, y, width, 1);
+          this._ctx.restore();
         }
 
         this._ctx.save();
@@ -152,7 +162,7 @@ export class TextRenderLayer extends BaseRenderLayer {
           this.fillBottomLineAtCells(x, y);
         }
 
-        this.drawChar(terminal, char, code, width, x, y, fg, !!(flags & FLAGS.BOLD));
+        this.drawChar(terminal, char, code, width, x, y, fg, bg, !!(flags & FLAGS.BOLD));
 
         this._ctx.restore();
       }
@@ -181,7 +191,7 @@ export class TextRenderLayer extends BaseRenderLayer {
   private _clearChar(x: number, y: number): void {
     let colsToClear = 1;
     // Clear the adjacent character if it was wide
-    const state = this._fgState.cache[x][y];
+    const state = this._state.cache[x][y];
     if (state && state[CHAR_DATA_WIDTH_INDEX] === 2) {
       colsToClear = 2;
     }
