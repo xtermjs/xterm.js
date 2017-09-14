@@ -235,7 +235,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
           code * charAtlasCellWidth, colorIndex * charAtlasCellHeight, this.scaledCharWidth, this.scaledCharHeight,
           x * this.scaledCharWidth, y * this.scaledLineHeight + this.scaledLineDrawY, this.scaledCharWidth, this.scaledCharHeight);
     } else {
-      this._drawUncachedChar(terminal, char, width, fg, x, y);
+      this._drawUncachedChar(terminal, char, width, fg, x, y, bold);
     }
     // This draws the atlas (for debugging purposes)
     // this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
@@ -253,9 +253,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param x The column to draw at.
    * @param y The row to draw at.
    */
-  private _drawUncachedChar(terminal: ITerminal, char: string, width: number, fg: number, x: number, y: number): void {
+  private _drawUncachedChar(terminal: ITerminal, char: string, width: number, fg: number, x: number, y: number, bold: boolean): void {
     this._ctx.save();
     this._ctx.font = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
+    if (bold) {
+      this._ctx.font = `bold ${this._ctx.font}`;
+    }
     this._ctx.textBaseline = 'top';
 
     if (fg === INVERTED_DEFAULT_COLOR) {
