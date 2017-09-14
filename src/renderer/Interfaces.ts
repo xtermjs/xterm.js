@@ -7,6 +7,7 @@ import { ITerminal, ITerminalOptions, ITheme, IEventEmitter } from '../Interface
 
 export interface IRenderer extends IEventEmitter {
   dimensions: IRenderDimensions;
+  colorManager: IColorManager;
 
   setTheme(theme: ITheme): IColorSet;
   onWindowResize(devicePixelRatio: number): void;
@@ -69,6 +70,9 @@ export interface IRenderLayer {
   reset(terminal: ITerminal): void;
 }
 
+export interface IColorManager {
+  colors: IColorSet;
+}
 
 export interface IColorSet {
   foreground: string;
