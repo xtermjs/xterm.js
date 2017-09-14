@@ -76,6 +76,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._canvas.style.width = `${dim.canvasWidth}px`;
     this._canvas.style.height = `${dim.canvasHeight}px`;
 
+    // Draw the background if this is an opaque layer
+    if (!this.alpha) {
+      this.clearAll();
+    }
+
     if (charSizeChanged) {
       this._refreshCharAtlas(terminal, this.colors);
     }
