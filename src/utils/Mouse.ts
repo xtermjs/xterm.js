@@ -53,8 +53,8 @@ export function getCoords(event: {pageX: number, pageY: number}, element: HTMLEl
   coords[1] = Math.ceil(coords[1] / Math.ceil(charMeasure.height * lineHeight));
 
   // Ensure coordinates are within the terminal viewport.
-  coords[0] = Math.min(Math.max(coords[0], 1), colCount + 1);
-  coords[1] = Math.min(Math.max(coords[1], 1), rowCount + 1);
+  coords[0] = Math.min(Math.max(coords[0], 1), colCount);
+  coords[1] = Math.min(Math.max(coords[1], 1), rowCount);
 
   return coords;
 }
