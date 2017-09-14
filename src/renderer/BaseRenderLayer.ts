@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IRenderLayer, IColorSet } from './Interfaces';
+import { IRenderLayer, IColorSet, IRenderDimensions } from './Interfaces';
 import { ITerminal, ITerminalOptions } from '../Interfaces';
 import { acquireCharAtlas, CHAR_ATLAS_CELL_SPACING } from './CharAtlas';
 import { CharData } from '../Types';
@@ -61,34 +61,15 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     }
   }
 
-  public resize(terminal: ITerminal, canvasWidth: number, canvasHeight: number, charSizeChanged: boolean): void {
-    // Calculate the scaled character dimensions, if devicePixelRatio is a
-    // floating point number then the value is ceiled to ensure there is enough
-    // space to draw the character to the cell
-    this.scaledCharWidth = Math.ceil(terminal.charMeasure.width * window.devicePixelRatio);
-    this.scaledCharHeight = Math.ceil(terminal.charMeasure.height * window.devicePixelRatio);
-
-    // Calculate the scaled line height, if lineHeight is not 1 then the value
-    // will be floored because since lineHeight can never be lower then 1, there
-    // is a guarentee that the scaled line height will always be larger than
-    // scaled char height.
-    this.scaledLineHeight = Math.floor(this.scaledCharHeight * terminal.options.lineHeight);
-
-    // Calculate the y coordinate within a cell that text should draw from in
-    // order to draw in the center of a cell.
-    this.scaledLineDrawY = terminal.options.lineHeight === 1 ? 0 : Math.round((this.scaledLineHeight - this.scaledCharHeight) / 2);
-
-    // Recalcualte the canvas dimensions; width/height define the actual number
-    // of pixels in the canvas, style.width/height define the size of the canvas
-    // on the page. It's very important that this rounds to nearest integer and
-    // not ceils as browsers often set window.devicePixelRatio as something like
-    // 1.100000023841858, when it's actually 1.1. Ceiling causes blurriness as
-    // the backing canvas image is 1 pixel too large for the canvas element
-    // size.
-    this._canvas.width = Math.round(canvasWidth * window.devicePixelRatio);
-    this._canvas.height = Math.round(canvasHeight * window.devicePixelRatio);
-    this._canvas.style.width = `${canvasWidth}px`;
-    this._canvas.style.height = `${canvasHeight}px`;
+  public resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void {
+    this.scaledCharWidth = dim.scaledCharWidth;
+    this.scaledCharHeight = dim.scaledCharHeight;
+    this.scaledLineHeight = dim.scaledLineHeight;
+    this.scaledLineDrawY = dim.scaledLineDrawY;
+    this._canvas.width = dim.scaledCanvasWidth;
+    this._canvas.height = dim.scaledCanvasHeight;
+    this._canvas.style.width = `${dim.canvasWidth}px`;
+    this._canvas.style.height = `${dim.canvasHeight}px`;
 
     if (charSizeChanged) {
       this._refreshCharAtlas(terminal, this.colors);
@@ -98,6 +79,16 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   public abstract reset(terminal: ITerminal): void;
 
   /**
+   * Gets the left position of a cell. Since character width is stored as a
+   * float in order to prevent bad letter spacing, drawing shapes in the cell
+   * need to be rounded.
+   * @param x The column of the cell.
+   */
+  private _getCellLeft(x: number): number {
+    return Math.round(x * this.scaledCharWidth);
+  }
+
+  /**
    * Fills 1+ cells completely. This uses the existing fillStyle on the context.
    * @param x The column to start at.
    * @param y The row to start at
@@ -105,7 +96,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param height The number of rows to fill.
    */
   protected fillCells(x: number, y: number, width: number, height: number): void {
-    this._ctx.fillRect(x * this.scaledCharWidth, y * this.scaledLineHeight, width * this.scaledCharWidth, height * this.scaledLineHeight);
+    const cellLeft = this._getCellLeft(x);
+    this._ctx.fillRect(
+      cellLeft,
+      y * this.scaledLineHeight,
+      this._getCellLeft(x + width) - cellLeft,
+      height * this.scaledLineHeight);
   }
 
   /**
@@ -115,10 +111,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param y The row to fill.
    */
   protected fillBottomLineAtCells(x: number, y: number, width: number = 1): void {
+    const cellLeft = this._getCellLeft(x);
     this._ctx.fillRect(
-        x * this.scaledCharWidth,
+        cellLeft,
         (y + 1) * this.scaledLineHeight - window.devicePixelRatio - 1 /* Ensure it's drawn within the cell */,
-        width * this.scaledCharWidth,
+        this._getCellLeft(x + width) - cellLeft,
         window.devicePixelRatio);
   }
 
@@ -130,7 +127,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   protected fillLeftLineAtCell(x: number, y: number): void {
     this._ctx.fillRect(
-        x * this.scaledCharWidth,
+        this._getCellLeft(x),
         y * this.scaledLineHeight,
         window.devicePixelRatio,
         this.scaledLineHeight);
@@ -143,11 +140,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param y The row to fill.
    */
   protected strokeRectAtCell(x: number, y: number, width: number, height: number): void {
+    const cellLeft = this._getCellLeft(x);
     this._ctx.lineWidth = window.devicePixelRatio;
     this._ctx.strokeRect(
-        x * this.scaledCharWidth + window.devicePixelRatio / 2,
+        cellLeft + window.devicePixelRatio / 2,
         y * this.scaledLineHeight + (window.devicePixelRatio / 2),
-        (width * this.scaledCharWidth) - window.devicePixelRatio,
+        this._getCellLeft(x + width) - cellLeft - window.devicePixelRatio,
         (height * this.scaledLineHeight) - window.devicePixelRatio);
   }
 
@@ -166,7 +164,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param height The number of rows to clear.
    */
   protected clearCells(x: number, y: number, width: number, height: number): void {
-    this._ctx.clearRect(x * this.scaledCharWidth, y * this.scaledLineHeight, width * this.scaledCharWidth, height * this.scaledLineHeight);
+    const cellLeft = this._getCellLeft(x);
+    this._ctx.clearRect(
+        cellLeft,
+        y * this.scaledLineHeight,
+        this._getCellLeft(x + width) - cellLeft,
+        height * this.scaledLineHeight);
   }
 
   /**

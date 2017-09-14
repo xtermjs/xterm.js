@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IColorSet } from './Interfaces';
+import { IColorSet, IRenderDimensions } from './Interfaces';
 import { IBuffer, ICharMeasure, ITerminal, ILinkifierAccessor } from '../Interfaces';
 import { CHAR_DATA_ATTR_INDEX } from '../Buffer';
 import { GridCache } from './GridCache';
@@ -20,8 +20,8 @@ export class LinkRenderLayer extends BaseRenderLayer {
     terminal.linkifier.on(LinkHoverEventTypes.LEAVE, (e: LinkHoverEvent) => this._onLinkLeave(e));
   }
 
-  public resize(terminal: ITerminal, canvasWidth: number, canvasHeight: number, charSizeChanged: boolean): void {
-    super.resize(terminal, canvasWidth, canvasHeight, charSizeChanged);
+  public resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void {
+    super.resize(terminal, dim, charSizeChanged);
     // Resizing the canvas discards the contents of the canvas so clear state
     this._state = null;
   }

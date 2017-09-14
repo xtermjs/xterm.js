@@ -48,8 +48,11 @@ import { MouseZoneManager } from './input/MouseZoneManager';
 import { initialize as initializeCharAtlas } from './renderer/CharAtlas';
 import { IRenderer } from './renderer/Interfaces';
 
-// Declare for RequireJS in loadAddon
+// Declares required for loadAddon
+declare var exports: any;
+declare var module: any;
 declare var define: any;
+declare var require: any;
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -188,7 +191,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
   private inputHandler: InputHandler;
   private parser: Parser;
-  private renderer: IRenderer;
+  public renderer: IRenderer;
   public selectionManager: SelectionManager;
   public linkifier: ILinkifier;
   public buffers: BufferSet;
@@ -588,6 +591,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.syncBellSound();
 
     this._mouseZoneManager = new MouseZoneManager(this);
+    this.on('scroll', () => this._mouseZoneManager.clearAll());
     this.linkifier.attachToDom(this._mouseZoneManager);
 
     // Create the container that will hold helpers like the textarea for
@@ -619,7 +623,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.charMeasure = new CharMeasure(document, this.helperContainer);
 
     this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
-    this.charMeasure.on('charsizechanged', () => this.viewport.syncScrollArea());
     this.renderer = new Renderer(this);
     this.on('cursormove', () => this.renderer.onCursorMove());
     this.on('resize', () => this.renderer.onResize(this.cols, this.rows, false));
@@ -627,6 +630,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.on('focus', () => this.renderer.onFocus());
     window.addEventListener('resize', () => this.renderer.onWindowResize(window.devicePixelRatio));
     this.charMeasure.on('charsizechanged', () => this.renderer.onResize(this.cols, this.rows, true));
+    this.renderer.on('resize', (dimensions) => this.viewport.syncScrollArea());
 
     this.selectionManager = new SelectionManager(this, this.buffer, this.charMeasure);
     this.element.addEventListener('mousedown', (e: MouseEvent) => this.selectionManager.onMouseDown(e));
@@ -639,7 +643,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       this.textarea.focus();
       this.textarea.select();
     });
-    this.on('scroll', () => this.selectionManager.refresh());
+    this.on('scroll', () => {
+      this.viewport.syncScrollArea();
+      this.selectionManager.refresh();
+    });
     this.viewportElement.addEventListener('scroll', () => this.selectionManager.refresh());
 
     // Measure the character size
@@ -1034,7 +1041,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    */
   private queueLinkification(start: number, end: number): void {
     if (this.linkifier) {
-      this.linkifier.linkifyRows(0, this.rows);
+      this.linkifier.linkifyRows(start, end);
     }
   }
 

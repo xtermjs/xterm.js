@@ -3,9 +3,11 @@
  * @license MIT
  */
 
-import { ITerminal, ITerminalOptions, ITheme } from '../Interfaces';
+import { ITerminal, ITerminalOptions, ITheme, IEventEmitter } from '../Interfaces';
 
-export interface IRenderer {
+export interface IRenderer extends IEventEmitter {
+  dimensions: IRenderDimensions;
+
   setTheme(theme: ITheme): IColorSet;
   onWindowResize(devicePixelRatio: number): void;
   onResize(cols: number, rows: number, didCharSizeChange: boolean): void;
@@ -59,7 +61,7 @@ export interface IRenderLayer {
   /**
    * Resize the render layer.
    */
-  resize(terminal: ITerminal, canvasWidth: number, canvasHeight: number, charSizeChanged: boolean): void;
+  resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void;
 
   /**
    * Clear the state of the render layer.
@@ -75,4 +77,15 @@ export interface IColorSet {
   cursorAccent: string;
   selection: string;
   ansi: string[];
+}
+
+export interface IRenderDimensions {
+  scaledCharWidth: number;
+  scaledCharHeight: number;
+  scaledLineHeight: number;
+  scaledLineDrawY: number;
+  scaledCanvasWidth: number;
+  scaledCanvasHeight: number;
+  canvasWidth: number;
+  canvasHeight: number;
 }

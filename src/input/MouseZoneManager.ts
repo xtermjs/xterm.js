@@ -44,9 +44,28 @@ export class MouseZoneManager implements IMouseZoneManager {
     }
   }
 
-  public clearAll(): void {
-    this._zones.length = 0;
-    this._deactivate();
+  public clearAll(start?: number, end?: number): void {
+    // Exit if there's nothing to clear
+    if (this._zones.length === 0) {
+      return;
+    }
+
+    // Iterate through zones and clear them out if they're within the range
+    for (let i = 0; i < this._zones.length; i++) {
+      const zone = this._zones[i];
+      if (zone.y >= start && zone.y <= end) {
+        if (this._currentZone && this._currentZone === zone) {
+          this._currentZone.leaveCallback();
+          this._currentZone = null;
+        }
+        this._zones.splice(i--, 1);
+      }
+    }
+
+    // Deactivate the mouse zone manager if all the zones have been removed
+    if (this._zones.length === 0) {
+      this._deactivate();
+    }
   }
 
   private _activate(): void {

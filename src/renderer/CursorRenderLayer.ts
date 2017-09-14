@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IColorSet } from './Interfaces';
+import { IColorSet, IRenderDimensions } from './Interfaces';
 import { IBuffer, ICharMeasure, ITerminal, ITerminalOptions } from '../Interfaces';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
 import { GridCache } from './GridCache';
@@ -47,8 +47,8 @@ export class CursorRenderLayer extends BaseRenderLayer {
     // TODO: Consider initial options? Maybe onOptionsChanged should be called at the end of open?
   }
 
-  public resize(terminal: ITerminal, canvasWidth: number, canvasHeight: number, charSizeChanged: boolean): void {
-    super.resize(terminal, canvasWidth, canvasHeight, charSizeChanged);
+  public resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void {
+    super.resize(terminal, dim, charSizeChanged);
     // Resizing the canvas discards the contents of the canvas so clear state
     this._state = {
       x: null,

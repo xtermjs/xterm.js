@@ -454,6 +454,11 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param event The mousemove event.
    */
   private _onMouseMove(event: MouseEvent): void {
+    // If the mousemove listener is active it means that a selection is
+    // currently being made, we should stop propogation to prevent mouse events
+    // to be sent to the pty.
+    event.stopImmediatePropagation();
+
     // Record the previous position so we know whether to redraw the selection
     // at the end.
     const previousSelectionEnd = this._model.selectionEnd ? [this._model.selectionEnd[0], this._model.selectionEnd[1]] : null;
