@@ -622,8 +622,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     this.charMeasure = new CharMeasure(document, this.helperContainer);
 
+    this.renderer = new Renderer(this, this.options.theme);
+    this.options.theme = null;
     this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
-    this.renderer = new Renderer(this);
+    this.viewport.onThemeChanged(this.renderer.colorManager.colors);
+
     this.on('cursormove', () => this.renderer.onCursorMove());
     this.on('resize', () => this.renderer.onResize(this.cols, this.rows, false));
     this.on('blur', () => this.renderer.onBlur());
@@ -651,15 +654,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     // Measure the character size
     this.charMeasure.measure(this.options);
-
-    // Set the theme if it was set via setOption/constructor before open. This
-    // must be run after CharMeasure.measure as it depends on char dimensions.
-    setTimeout(() => {
-      if (this.options.theme) {
-        this._setTheme(this.options.theme);
-        this.options.theme = null;
-      }
-    }, 0);
 
     // Setup loop that draws to screen
     this.refresh(0, this.rows - 1);
@@ -1078,7 +1072,16 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       // Only adjust ybase and ydisp when the buffer is not trimmed
       if (!willBufferBeTrimmed) {
         this.buffer.ybase++;
-        this.buffer.ydisp++;
+        // Only scroll the ydisp with ybase if the user has not scrolled up
+        if (!this.userScrolling) {
+          this.buffer.ydisp++;
+        }
+      } else {
+        // When the buffer is full and the user has scrolled up, keep the text
+        // stable unless ydisp is right at the top
+        if (this.userScrolling) {
+          this.buffer.ydisp = Math.max(this.buffer.ydisp - 1, 0);
+        }
       }
     } else {
       // scrollTop is non-zero which means no line will be going to the

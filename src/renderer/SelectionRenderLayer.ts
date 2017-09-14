@@ -14,7 +14,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
   private _state: {start: [number, number], end: [number, number]};
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
-    super(container, 'selection', zIndex, colors);
+    super(container, 'selection', zIndex, true, colors);
     this._state = {
       start: null,
       end: null
@@ -68,7 +68,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     // Draw first row
     const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
     const startRowEndCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : terminal.cols;
-    this._ctx.fillStyle = this.colors.selection;
+    this._ctx.fillStyle = this._colors.selection;
     this.fillCells(startCol, viewportCappedStartRow, startRowEndCol - startCol, 1);
 
     // Draw middle rows

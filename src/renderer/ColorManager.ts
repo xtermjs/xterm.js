@@ -3,12 +3,13 @@
  * @license MIT
  */
 
-import { IColorSet } from './Interfaces';
+import { IColorSet, IColorManager } from './Interfaces';
 import { ITheme } from '../Interfaces';
 
 const DEFAULT_FOREGROUND = '#ffffff';
 const DEFAULT_BACKGROUND = '#000000';
 const DEFAULT_CURSOR = '#ffffff';
+const DEFAULT_CURSOR_ACCENT = '#000000';
 const DEFAULT_SELECTION = 'rgba(255, 255, 255, 0.3)';
 export const DEFAULT_ANSI_COLORS = [
   // dark:
@@ -64,7 +65,7 @@ function toPaddedHex(c: number): string {
 /**
  * Manages the source of truth for a terminal's colors.
  */
-export class ColorManager {
+export class ColorManager implements IColorManager {
   public colors: IColorSet;
 
   constructor() {
@@ -72,6 +73,7 @@ export class ColorManager {
       foreground: DEFAULT_FOREGROUND,
       background: DEFAULT_BACKGROUND,
       cursor: DEFAULT_CURSOR,
+      cursorAccent: DEFAULT_CURSOR_ACCENT,
       selection: DEFAULT_SELECTION,
       ansi: generate256Colors(DEFAULT_ANSI_COLORS)
     };
@@ -86,6 +88,7 @@ export class ColorManager {
     this.colors.foreground = theme.foreground || DEFAULT_FOREGROUND;
     this.colors.background = theme.background || DEFAULT_BACKGROUND;
     this.colors.cursor = theme.cursor || DEFAULT_CURSOR;
+    this.colors.cursorAccent = theme.cursorAccent || DEFAULT_CURSOR_ACCENT;
     this.colors.selection = theme.selection || DEFAULT_SELECTION;
     this.colors.ansi[0] = theme.black || DEFAULT_ANSI_COLORS[0];
     this.colors.ansi[1] = theme.red || DEFAULT_ANSI_COLORS[1];

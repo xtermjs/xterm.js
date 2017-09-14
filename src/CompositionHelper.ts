@@ -64,7 +64,6 @@ export class CompositionHelper {
    * @param {CompositionEvent} ev The event.
    */
   public compositionupdate(ev: CompositionEvent): void {
-  console.log('compositionupdate');
     this.compositionView.textContent = ev.data;
     this.updateCompositionElements();
     setTimeout(() => {
