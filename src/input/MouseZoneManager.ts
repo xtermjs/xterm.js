@@ -102,10 +102,14 @@ export class MouseZoneManager implements IMouseZoneManager {
       return;
     }
 
-    // Fire the hover end callback if a zone was being hovered
+    // Fire the hover end callback and cancel any existing timer if a new zone
+    // is being hovered
     if (this._currentZone) {
       this._currentZone.leaveCallback();
       this._currentZone = null;
+      if (this._tooltipTimeout) {
+        clearTimeout(this._tooltipTimeout);
+      }
     }
 
     // Exit if there is not zone
@@ -119,14 +123,12 @@ export class MouseZoneManager implements IMouseZoneManager {
       zone.hoverCallback(e);
     }
 
-    // Restart the timeout
-    if (this._tooltipTimeout) {
-      clearTimeout(this._tooltipTimeout);
-    }
+    // Restart the tooltip timeout
     this._tooltipTimeout = <number><any>setTimeout(() => this._onTooltip(e), HOVER_DURATION);
   }
 
   private _onTooltip(e: MouseEvent): void {
+    this._tooltipTimeout = null;
     const zone = this._findZoneEventAt(e);
     if (zone && zone.tooltipCallback) {
       zone.tooltipCallback(e);
