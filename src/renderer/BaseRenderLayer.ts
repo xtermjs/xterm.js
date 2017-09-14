@@ -35,7 +35,6 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
     // Draw the background if this is an opaque layer
     if (!_alpha) {
-      console.log('clearAll!');
       this.clearAll();
     }
     container.appendChild(this._canvas);
@@ -167,7 +166,6 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (this._alpha) {
       this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
     } else {
-      console.log('fill with', this._colors.background);
       this._ctx.fillStyle = this._colors.background;
       this._ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);
     }
