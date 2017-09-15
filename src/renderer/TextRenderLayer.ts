@@ -121,7 +121,7 @@ export class TextRenderLayer extends BaseRenderLayer {
         let fg = (attr >> 9) & 0x1ff;
 
         // If inverse flag is on, the foreground should become the background.
-				if (flags & FLAGS.INVERSE) {
+        if (flags & FLAGS.INVERSE) {
           const temp = bg;
           bg = fg;
           fg = temp;
