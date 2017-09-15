@@ -20,9 +20,9 @@ const OVERLAP_OWNED_CHAR_DATA: CharData = [null, '', 0, -1];
 
 export class TextRenderLayer extends BaseRenderLayer {
   private _state: GridCache<CharData>;
-	private _characterWidth: number;
-	private _characterFont: string;
-	private _characterOverlapCache: { [key: string]: boolean } = {};
+  private _characterWidth: number;
+  private _characterFont: string;
+  private _characterOverlapCache: { [key: string]: boolean } = {};
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
     super(container, 'text', zIndex, false, colors);
@@ -32,14 +32,14 @@ export class TextRenderLayer extends BaseRenderLayer {
   public resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void {
     super.resize(terminal, dim, charSizeChanged);
 		
-		// Clear the character width cache if the font or width has changed
-		const terminalFont = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
-		if (this._characterWidth !== dim.scaledCharWidth || this._characterFont !== terminalFont) {
-			this._characterWidth = dim.scaledCharWidth;
-			this._characterFont = terminalFont;
-			this._characterOverlapCache = {};
-		}
-		// Resizing the canvas discards the contents of the canvas so clear state
+    // Clear the character width cache if the font or width has changed
+    const terminalFont = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
+    if (this._characterWidth !== dim.scaledCharWidth || this._characterFont !== terminalFont) {
+      this._characterWidth = dim.scaledCharWidth;
+      this._characterFont = terminalFont;
+      this._characterOverlapCache = {};
+    }
+    // Resizing the canvas discards the contents of the canvas so clear state
     this._state.clear();
     this._state.resize(terminal.cols, terminal.rows);
   }
