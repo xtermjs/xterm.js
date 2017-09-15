@@ -152,6 +152,10 @@ function _update_progress(xfer) {
     document.getElementById("percent_received").textContent = percent_received;
 }
 
+function _hide_progress() {
+    document.getElementById("zm_progress").style.display = "none";
+}
+
 var start_form = document.getElementById("zm_start");
 
 // END UI STUFF
@@ -176,6 +180,7 @@ function _handle_receive_session(zsession) {
                 xfer.accept().then( () => {
                     _download(xfer, FILE_BUFFER);
                     _hide_file_info();
+                    _hide_progress();
                 } );
             }
             else {
