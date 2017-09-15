@@ -138,19 +138,7 @@ function _hide_file_info() {
 }
 
 function _download(xfer, buffer) {
-    var uint8array = new Uint8Array(buffer);
-    var blob = new Blob([uint8array]);
-    var url = URL.createObjectURL(blob);
-
-    var el = document.createElement("a");
-    el.style.display = "none";
-    el.href = url;
-    el.download = xfer.get_details().name;
-    document.body.appendChild(el);
-
-    //It seems like a security problem that this actually works.
-    //But, hey.
-    el.click();
+    return Zmodem.Browser.save_to_disk(buffer, xfer.get_details().name);
 }
 
 function _update_progress(xfer) {
@@ -164,151 +152,118 @@ function _update_progress(xfer) {
     document.getElementById("percent_received").textContent = percent_received;
 }
 
+var start_form = document.getElementById("zm_start");
+
 // END UI STUFF
 //----------------------------------------------------------------------
 
-var text_encoder = new TextEncoder();
-var zsentry = new Zmodem.Sentry();
+function _handle_receive_session(zsession) {
+    zsession.on("offer", function(xfer) {
+        _show_file_info(xfer);
 
-var zsession;
-function handleWSMessage(evt) {
-    var input = Array.prototype.slice.call(
-        new Uint8Array(
-            (typeof evt.data === "string") ? text_encoder.encode(evt.data) : evt.data
-        )
-    );
+        var offer_form = document.getElementById("zm_offer");
+        offer_form.style.display = "";
+        offer_form.onsubmit = function(e) {
+            offer_form.style.display = "none";
 
-    if (zsession) {
-        zsession.consume(input);
-        if (zsession.has_ended()) {
-            if (zsession.type === "receive") {
-                input = zsession.get_trailing_bytes();
+            //START
+            if (offer_form.zmaccept.value) {
+                var FILE_BUFFER = [];
+                xfer.on("input", (payload) => {
+                    _update_progress(xfer);
+                    FILE_BUFFER.push.apply(FILE_BUFFER, payload);
+                });
+                xfer.accept().then( () => {
+                    _download(xfer, FILE_BUFFER);
+                    _hide_file_info();
+                } );
             }
             else {
-                input = [];
+                _hide_file_info();
+                xfer.skip();
             }
-            zsession = null;
-        }
-        else input = [];    //keep ZMODEM from going to the terminal
+            //END
+        };
+    } );
+
+    zsession.start();
+}
+
+function _handle_send_session(zsession) {
+    var choose_form = document.getElementById("zm_choose");
+    choose_form.style.display = "";
+    choose_form.onsubmit = function(e) {
+        choose_form.style.display = "none";
+
+        var file_el = document.getElementById("zm_files");
+        var files_obj = file_el.files;
+
+        Zmodem.Browser.send_files(
+            zsession,
+            files_obj,
+            {
+                on_offer_response(obj, xfer) {
+                    console.log("offer", xfer ? "accepted" : "skipped");
+                },
+                on_file_complete(obj) {
+                    console.log("COMPLETE", obj);
+                },
+            }
+        ).then(
+            zsession.close.bind(zsession),
+            console.error.bind(console)
+        );
+    };
+}
+
+var text_encoder = new TextEncoder();
+var zsentry = new Zmodem.Sentry( {
+    to_terminal(octets) {
+        term.write(
+            String.fromCharCode.apply(String, octets)
+        );
+    },
+
+    sender(octets) {
+        socket.send( new Uint8Array(octets) );
+    },
+
+    on_retract() {
+        start_form.style.display = "none";
+        start_form.onsubmit = null;
+    },
+
+    on_detect(detection) {
+        start_form.style.display = "";
+        start_form.onsubmit = function(e) {
+            start_form.style.display = "none";
+
+            //Aborted
+            if (!e.currentTarget.zmstart.value) {
+                return;
+            }
+
+            var zsession = detection.confirm();
+
+            //HERE
+            if (zsession.type === "receive") {
+                _handle_receive_session(zsession);
+            }
+            else {
+                _handle_send_session(zsession);
+            }
+        };
+    },
+} );
+
+function handleWSMessage(evt) {
+
+    //For some reason the first message from the server is text.
+    if (typeof evt.data === "string") {
+        term.write(evt.data);
     }
     else {
-        let termbytes;
-        [termbytes, zsession] = zsentry.parse(input);
-        input = termbytes;
-
-        if (zsession) {
-
-            zsession.set_sender( (octets) => {
-                socket.send( new Uint8Array(octets) );
-            } );
-
-            var start_form = document.getElementById("zm_start");
-            start_form.style.display = "";
-            start_form.onsubmit = function(e) {
-                start_form.style.display = "none";
-
-                if (zsession.type === "receive") {
-                    zsession.on("offer", function(xfer) {
-                        _show_file_info(xfer);
-
-                        var offer_form = document.getElementById("zm_offer");
-                        offer_form.style.display = "";
-                        offer_form.onsubmit = function(e) {
-                            offer_form.style.display = "none";
-
-                            if (offer_form.zmaccept) {
-                                var FILE_BUFFER = [];
-                                xfer.on("input", (payload) => {
-                                    _update_progress(xfer);
-                                    FILE_BUFFER.push.apply(FILE_BUFFER, payload);
-                                });
-                                xfer.accept().then( () => {
-                                    _download(xfer, FILE_BUFFER);
-                                    _hide_file_info();
-                                } );
-                            }
-                            else {
-                                _hide_file_info();
-                                xfer.skip();
-                            }
-                        };
-                    } );
-
-                    zsession.start();
-                }
-                else {
-                    var choose_form = document.getElementById("zm_choose");
-                    choose_form.style.display = "";
-                    choose_form.onsubmit = function(e) {
-                        choose_form.style.display = "none";
-
-                        var file_el = document.getElementById("zm_files");
-                        var batch = [];
-                        var total_size = 0;
-                        for (var f=0; f<file_el.files.length; f++) {
-                            var fobj = file_el.files[f];
-                            batch.push( {
-                                obj: fobj,
-                                name: fobj.name,
-                                size: fobj.size,
-                            } );
-                            total_size += fobj.size;
-                        }
-
-                        var file_idx = 0;
-                        function promise_callback() {
-                            var cur_b = batch[file_idx];
-                            if (cur_b) {
-                                file_idx++;
-
-                                zsession.send_offer(cur_b).then( (xfer) => {
-                                    if (xfer === undefined) {
-                                        return promise_callback();   //skipped
-                                    }
-
-                                    return new Promise( (res) => {
-                                        var reader = new FileReader();
-                                        reader.onerror = function(e) {
-                                            console.error("file read error", e);
-                                            throw("File read error: " + e);
-                                        };
-
-                                        var offset = xfer.get_offset();
-                                        reader.onprogress = function(e) {
-                                            xfer.send(
-                                                new Uint8Array(e.target.result, offset)
-                                            );
-                                            offset = e.loaded;
-                                        };
-
-                                        reader.onload = function(e) {
-                                            xfer.end(
-                                                new Uint8Array(e.target.result, offset)
-                                            ).then(res).then(promise_callback);
-                                        };
-
-                                        reader.readAsArrayBuffer(cur_b.obj);
-                                    } );
-                                } )
-                            }
-                            else {
-                                zsession.close();
-                                choose_form.style.display = "none";
-                            }
-                        }
-
-                        promise_callback();
-                    };
-
-                }
-            };
-        }
-    }
-
-    if (input.length) {
-        term.write(
-            String.fromCharCode.apply(String, input)
-        );
+        zsentry.consume(evt.data);
     }
 }
 
