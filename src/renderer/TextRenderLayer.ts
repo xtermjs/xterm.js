@@ -79,7 +79,7 @@ export class TextRenderLayer extends BaseRenderLayer {
         if (code === 32 /*' '*/) {
           if (x > 0) {
             const previousChar: CharData = line[x - 1];
-            if (this._isOverlapping(previousChar[CHAR_DATA_CHAR_INDEX])) {
+            if (this._isOverlapping(previousChar)) {
               continue;
             }
           }
@@ -111,7 +111,7 @@ export class TextRenderLayer extends BaseRenderLayer {
 
         // If the character is an overlapping char and the character to the right is a
         // space, take ownership of the cell to the right.
-        if (width !== 0 && this._isOverlapping(char)) {
+        if (width !== 0 && this._isOverlapping(charData)) {
           // If the character is overlapping, we want to force a re-render on every
           // frame. This is specifically to work around the case where two
           // overlaping chars `a` and `b` are adjacent, the cursor is moved to b and a
@@ -184,32 +184,35 @@ export class TextRenderLayer extends BaseRenderLayer {
 	 * Whether a character is overlapping to the
 	 * next cell.
 	 */
-	private _isOverlapping(char: string): boolean {
+  private _isOverlapping(charData: CharData): boolean {
+    // We assume that any ascii character will not overlap
+    const code = charData[CHAR_DATA_CODE_INDEX];
+    if (code < 256) {
+      return false;
+    }
+
+    // Deliver from cache if available
+    const char = charData[CHAR_DATA_CHAR_INDEX];
+    if (this._characterOverlapCache.hasOwnProperty(char)) {
+      return this._characterOverlapCache[char];
+    }
 		
-		// Deliver from cache if available
-		if (this._characterOverlapCache.hasOwnProperty(char)) {
-			return this._characterOverlapCache[char];
-		}
+    // Setup the font
+    this._ctx.save();
+    this._ctx.font = this._characterFont;
 		
-		// Set the correct character font for the current context
-		let font;
-		if (this._ctx.font !== this._characterFont) {
-			font = this._ctx.font;
-			this._ctx.font = this._characterFont;
-		}
+    // Measure the width of the character, but Math.floor it
+    // because that is what the renderer does when it calculates
+    // the character dimensions we are comparing against
+    const overlaps = Math.floor(this._ctx.measureText(char).width) > this._characterWidth;
 		
-		// Measure the width of the character, but Math.floor it
-		// because that is what the renderer does when it calculates
-		// the character dimensions we are comparing against
-		const overlaps = Math.floor(this._ctx.measureText(char).width) > this._characterWidth;
+    // Restore the original context
+    this._ctx.restore();
 		
-		// Restore the original font to the context
-		if (font) this._ctx.font = font;
-		
-		// Cache and return
-		return this._characterOverlapCache[char] = overlaps;
-		
-	}
+    // Cache and return
+    this._characterOverlapCache[char] = overlaps;
+    return overlaps;
+  }
 
   /**
    * Clear the charcater at the cell specified.
