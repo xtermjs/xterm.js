@@ -210,11 +210,14 @@ function _handle_send_session(zsession) {
                 on_offer_response(obj, xfer) {
                     console.log("offer", xfer ? "accepted" : "skipped");
                 },
+                on_progress(obj, xfer) {
+                    _update_progress(xfer);
+                },
                 on_file_complete(obj) {
                     console.log("COMPLETE", obj);
                 },
             }
-        ).then(
+        ).then(_hide_progress).then(
             zsession.close.bind(zsession),
             console.error.bind(console)
         );
