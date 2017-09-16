@@ -83,7 +83,8 @@ export class TextRenderLayer extends BaseRenderLayer {
         }
 
         // Clear the old character was not a space with the default background
-        if (state && !(state[CHAR_DATA_CODE_INDEX] === 32 /*' '*/ && (state[CHAR_DATA_ATTR_INDEX] & 0x1ff) >= 256)) {
+        const wasInverted = !!(state && state[CHAR_DATA_ATTR_INDEX] && state[CHAR_DATA_ATTR_INDEX] >> 18 & FLAGS.INVERSE);
+        if (state && !(state[CHAR_DATA_CODE_INDEX] === 32 /*' '*/ && (state[CHAR_DATA_ATTR_INDEX] & 0x1ff) >= 256 && !wasInverted)) {
           this._clearChar(x, y);
         }
         this._state.cache[x][y] = charData;
@@ -94,7 +95,8 @@ export class TextRenderLayer extends BaseRenderLayer {
         // Skip rendering if the character is invisible
         const isDefaultBackground = bg >= 256;
         const isInvisible = flags & FLAGS.INVISIBLE;
-        if (!code || (code === 32 /*' '*/ && isDefaultBackground) || isInvisible) {
+        const isInverted = flags & FLAGS.INVERSE;
+        if (!code || (code === 32 /*' '*/ && isDefaultBackground && !isInverted) || isInvisible) {
           continue;
         }
 
@@ -121,10 +123,10 @@ export class TextRenderLayer extends BaseRenderLayer {
         let fg = (attr >> 9) & 0x1ff;
 
         // If inverse flag is on, the foreground should become the background.
-        if (flags & FLAGS.INVERSE) {
+        if (isInverted) {
           const temp = bg;
           bg = fg;
-          fg = bg;
+          fg = temp;
           if (fg === 256) {
             fg = INVERTED_DEFAULT_COLOR;
           }
