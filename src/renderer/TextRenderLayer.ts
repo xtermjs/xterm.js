@@ -83,7 +83,7 @@ export class TextRenderLayer extends BaseRenderLayer {
         }
 
         // Clear the old character was not a space with the default background
-        const wasInverted = state && state[CHAR_DATA_ATTR_INDEX & FLAGS.INVERSE];
+        const wasInverted = !!(state && state[CHAR_DATA_ATTR_INDEX] && state[CHAR_DATA_ATTR_INDEX] >> 18 & FLAGS.INVERSE);
         if (state && !(state[CHAR_DATA_CODE_INDEX] === 32 /*' '*/ && (state[CHAR_DATA_ATTR_INDEX] & 0x1ff) >= 256 && !wasInverted)) {
           this._clearChar(x, y);
         }
