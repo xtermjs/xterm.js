@@ -31,7 +31,7 @@ export class TextRenderLayer extends BaseRenderLayer {
 
   public resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void {
     super.resize(terminal, dim, charSizeChanged);
-		
+
     // Clear the character width cache if the font or width has changed
     const terminalFont = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
     if (this._characterWidth !== dim.scaledCharWidth || this._characterFont !== terminalFont) {
@@ -123,7 +123,7 @@ export class TextRenderLayer extends BaseRenderLayer {
             width = 2;
             this._clearChar(x + 1, y);
             // The overlapping char's char data will force a clear and render when the
-            // overlapping char is no longer to the left of the character and also when 
+            // overlapping char is no longer to the left of the character and also when
             // the space changes to another character.
             this._state.cache[x + 1][y] = OVERLAP_OWNED_CHAR_DATA;
           }
@@ -179,7 +179,7 @@ export class TextRenderLayer extends BaseRenderLayer {
       }
     }
   }
-	
+
 	/**
 	 * Whether a character is overlapping to the
 	 * next cell.
@@ -196,19 +196,19 @@ export class TextRenderLayer extends BaseRenderLayer {
     if (this._characterOverlapCache.hasOwnProperty(char)) {
       return this._characterOverlapCache[char];
     }
-		
+
     // Setup the font
     this._ctx.save();
     this._ctx.font = this._characterFont;
-		
+
     // Measure the width of the character, but Math.floor it
     // because that is what the renderer does when it calculates
     // the character dimensions we are comparing against
     const overlaps = Math.floor(this._ctx.measureText(char).width) > this._characterWidth;
-		
+
     // Restore the original context
     this._ctx.restore();
-		
+
     // Cache and return
     this._characterOverlapCache[char] = overlaps;
     return overlaps;
