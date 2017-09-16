@@ -57,6 +57,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param colorSet The color set to use for the char atlas.
    */
   private _refreshCharAtlas(terminal: ITerminal, colorSet: IColorSet): void {
+    if (this._scaledCharWidth > 0 && this._scaledCharHeight > 0) {
+      return;
+    }
     this._charAtlas = null;
     const result = acquireCharAtlas(terminal, this._colors, this._scaledCharWidth, this._scaledCharHeight);
     if (result instanceof HTMLCanvasElement) {
