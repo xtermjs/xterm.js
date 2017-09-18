@@ -246,19 +246,18 @@ var zsentry = new Zmodem.Sentry( {
         start_form.onsubmit = function(e) {
             start_form.style.display = "none";
 
-            //Aborted
-            if (!e.currentTarget.zmstart.value) {
-                return;
-            }
+            if (e.currentTarget.zmstart.value) {
+                let zsession = detection.confirm();
 
-            var zsession = detection.confirm();
-
-            //HERE
-            if (zsession.type === "receive") {
-                _handle_receive_session(zsession);
+                if (zsession.type === "receive") {
+                    _handle_receive_session(zsession);
+                }
+                else {
+                    _handle_send_session(zsession);
+                }
             }
             else {
-                _handle_send_session(zsession);
+                detection.deny();
             }
         };
     },
