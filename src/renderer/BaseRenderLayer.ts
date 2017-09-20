@@ -89,16 +89,6 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   public abstract reset(terminal: ITerminal): void;
 
   /**
-   * Gets the left position of a cell. Since character width is stored as a
-   * float in order to prevent bad letter spacing, drawing shapes in the cell
-   * need to be rounded.
-   * @param x The column of the cell.
-   */
-  private _getCellLeft(x: number): number {
-    return Math.round(x * this._scaledCharWidth);
-  }
-
-  /**
    * Fills 1+ cells completely. This uses the existing fillStyle on the context.
    * @param x The column to start at.
    * @param y The row to start at
@@ -106,12 +96,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param height The number of rows to fill.
    */
   protected fillCells(x: number, y: number, width: number, height: number): void {
-    const cellLeft = this._getCellLeft(x);
     this._ctx.fillRect(
-      cellLeft,
-      y * this._scaledLineHeight,
-      this._getCellLeft(x + width) - cellLeft,
-      height * this._scaledLineHeight);
+        x * this._scaledCharWidth,
+        y * this._scaledLineHeight,
+        width * this._scaledCharWidth,
+        height * this._scaledLineHeight);
   }
 
   /**
@@ -121,11 +110,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param y The row to fill.
    */
   protected fillBottomLineAtCells(x: number, y: number, width: number = 1): void {
-    const cellLeft = this._getCellLeft(x);
     this._ctx.fillRect(
-        cellLeft,
+        x * this._scaledCharWidth,
         (y + 1) * this._scaledLineHeight - window.devicePixelRatio - 1 /* Ensure it's drawn within the cell */,
-        this._getCellLeft(x + width) - cellLeft,
+        width * this._scaledCharWidth,
         window.devicePixelRatio);
   }
 
@@ -137,7 +125,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   protected fillLeftLineAtCell(x: number, y: number): void {
     this._ctx.fillRect(
-        this._getCellLeft(x),
+        x * this._scaledCharWidth,
         y * this._scaledLineHeight,
         window.devicePixelRatio,
         this._scaledLineHeight);
@@ -150,12 +138,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param y The row to fill.
    */
   protected strokeRectAtCell(x: number, y: number, width: number, height: number): void {
-    const cellLeft = this._getCellLeft(x);
     this._ctx.lineWidth = window.devicePixelRatio;
     this._ctx.strokeRect(
-        cellLeft + window.devicePixelRatio / 2,
+        x * this._scaledCharWidth + window.devicePixelRatio / 2,
         y * this._scaledLineHeight + (window.devicePixelRatio / 2),
-        this._getCellLeft(x + width) - cellLeft - window.devicePixelRatio,
+        width * this._scaledCharWidth - window.devicePixelRatio,
         (height * this._scaledLineHeight) - window.devicePixelRatio);
   }
 
@@ -179,19 +166,18 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param height The number of rows to clear.
    */
   protected clearCells(x: number, y: number, width: number, height: number): void {
-    const cellLeft = this._getCellLeft(x);
     if (this._alpha) {
       this._ctx.clearRect(
-          cellLeft,
+          x * this._scaledCharWidth,
           y * this._scaledLineHeight,
-          this._getCellLeft(x + width) - cellLeft,
+          width * this._scaledCharWidth,
           height * this._scaledLineHeight);
     } else {
       this._ctx.fillStyle = this._colors.background;
       this._ctx.fillRect(
-          cellLeft,
+          x * this._scaledCharWidth,
           y * this._scaledLineHeight,
-          this._getCellLeft(x + width) - cellLeft,
+          width * this._scaledCharWidth,
           height * this._scaledLineHeight);
     }
   }
