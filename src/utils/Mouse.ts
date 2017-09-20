@@ -49,7 +49,8 @@ export function getCoords(event: {pageX: number, pageY: number}, element: HTMLEl
   }
 
   // Convert to cols/rows.
-  coords[0] = Math.ceil((coords[0] + (isSelection ? charMeasure.width / 2 : 0)) / charMeasure.width);
+  const flooredCharWidth = Math.floor(charMeasure.width);
+  coords[0] = Math.ceil((coords[0] + (isSelection ? flooredCharWidth / 2 : 0)) / flooredCharWidth);
   coords[1] = Math.ceil(coords[1] / Math.ceil(charMeasure.height * lineHeight));
 
   // Ensure coordinates are within the terminal viewport.
