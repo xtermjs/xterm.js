@@ -57,7 +57,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param colorSet The color set to use for the char atlas.
    */
   private _refreshCharAtlas(terminal: ITerminal, colorSet: IColorSet): void {
-    if (this._scaledCharWidth > 0 && this._scaledCharHeight > 0) {
+    if (this._scaledCharWidth <= 0 && this._scaledCharHeight <= 0) {
       return;
     }
     this._charAtlas = null;
@@ -256,7 +256,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     const isBasicColor = (colorIndex > 1 && fg < 16);
     const isDefaultColor = fg >= 256;
     const isDefaultBackground = bg >= 256;
-    if (isAscii && (isBasicColor || isDefaultColor) && isDefaultBackground) {
+    if (this._charAtlas && isAscii && (isBasicColor || isDefaultColor) && isDefaultBackground) {
       // ImageBitmap's draw about twice as fast as from a canvas
       const charAtlasCellWidth = this._scaledCharWidth + CHAR_ATLAS_CELL_SPACING;
       const charAtlasCellHeight = this._scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
