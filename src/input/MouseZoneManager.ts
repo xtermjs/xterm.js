@@ -50,10 +50,16 @@ export class MouseZoneManager implements IMouseZoneManager {
       return;
     }
 
+    // Clear all if start/end weren't set
+    if (!end) {
+      start = 0;
+      end = this._terminal.rows - 1;
+    }
+
     // Iterate through zones and clear them out if they're within the range
     for (let i = 0; i < this._zones.length; i++) {
       const zone = this._zones[i];
-      if (zone.y >= start && zone.y <= end) {
+      if (zone.y > start && zone.y <= end + 1) {
         if (this._currentZone && this._currentZone === zone) {
           this._currentZone.leaveCallback();
           this._currentZone = null;
