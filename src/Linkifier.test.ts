@@ -156,6 +156,17 @@ describe('Linkifier', () => {
         linkifier.linkifyRows();
       });
 
+      it('should validate the uri, not the row', done => {
+        addRow('abc test abc');
+        linkifier.registerLinkMatcher(/test/, () => done(), {
+          validationCallback: (uri, cb) => {
+            assert.equal(uri, 'test');
+            done();
+          }
+        });
+        linkifier.linkifyRows();
+      });
+
       it('should disable link if false', done => {
         addRow('test');
         linkifier.registerLinkMatcher(/test/, () => assert.fail(), {
