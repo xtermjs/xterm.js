@@ -137,7 +137,7 @@ function _hide_file_info() {
     document.getElementById("zm_file").style.display = "none";
 }
 
-function _download(xfer, buffer) {
+function _save_to_disk(xfer, buffer) {
     return Zmodem.Browser.save_to_disk(buffer, xfer.get_details().name);
 }
 
@@ -175,10 +175,12 @@ function _handle_receive_session(zsession) {
                 var FILE_BUFFER = [];
                 xfer.on("input", (payload) => {
                     _update_progress(xfer);
-                    FILE_BUFFER.push.apply(FILE_BUFFER, payload);
+                    FILE_BUFFER.push( new Uint8Array(payload) );
                 });
-                xfer.accept().then( () => {
-                    _download(xfer, FILE_BUFFER);
+                xfer.accept().then(
+                    () => { _save_to_disk(xfer, FILE_BUFFER); },
+                    console.error.bind(console)
+                ).then( () => {
                     _hide_file_info();
                     _hide_progress();
                 } );
@@ -224,6 +226,13 @@ function _handle_send_session(zsession) {
     };
 }
 
+//This is here to allow canceling of an in-progress ZMODEM transfer.
+var current_zsession;
+
+function abort_current_session() {
+    current_zsession.abort();
+}
+
 var text_encoder = new TextEncoder();
 var zsentry = new Zmodem.Sentry( {
     to_terminal(octets) {
@@ -248,6 +257,8 @@ var zsentry = new Zmodem.Sentry( {
 
             if (e.currentTarget.zmstart.value) {
                 let zsession = detection.confirm();
+
+                current_zsession = zsession;
 
                 if (zsession.type === "receive") {
                     _handle_receive_session(zsession);

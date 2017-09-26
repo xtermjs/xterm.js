@@ -22,6 +22,7 @@
         <script src="/zmodemjs/zsubpacket.js"></script>
         <script src="/zmodemjs/zsession.js"></script>
         <script src="/zmodemjs/zsentry.js"></script>
+        <script src="/zmodemjs/zerror.js"></script>
         <script src="/zmodemjs/zbrowser.js"></script>
     </head>
     <body>
@@ -56,6 +57,7 @@
 
     <form id="zm_progress" style="display: none" action="javascript:void(0)">
         <div><span id="percent_received"></span>% (<span id="bytes_received"></span> bytes) received</div>
+        <button type="button" onclick="abort_current_session(); this.form.style.display='none';">Abort ZMODEM</button>
     </form>
 
     <form id="zm_choose" style="display: none" action="javascript:void(0)">
