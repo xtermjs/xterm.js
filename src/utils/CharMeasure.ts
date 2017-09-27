@@ -60,7 +60,7 @@ export class CharMeasure extends EventEmitter implements ICharMeasure {
       return;
     }
     if (this._width !== geometry.width || this._height !== geometry.height) {
-      this._width = Math.ceil(geometry.width);
+      this._width = geometry.width;
       this._height = Math.ceil(geometry.height);
       this.emit('charsizechanged');
     }

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IColorSet } from './Interfaces';
+import { IColorSet, IRenderDimensions } from './Interfaces';
 import { IBuffer, ICharMeasure, ITerminal, ILinkifierAccessor } from '../Interfaces';
 import { CHAR_DATA_ATTR_INDEX } from '../Buffer';
 import { GridCache } from './GridCache';
@@ -15,13 +15,13 @@ export class LinkRenderLayer extends BaseRenderLayer {
   private _state: LinkHoverEvent = null;
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet, terminal: ILinkifierAccessor) {
-    super(container, 'link', zIndex, colors);
+    super(container, 'link', zIndex, true, colors);
     terminal.linkifier.on(LinkHoverEventTypes.HOVER, (e: LinkHoverEvent) => this._onLinkHover(e));
     terminal.linkifier.on(LinkHoverEventTypes.LEAVE, (e: LinkHoverEvent) => this._onLinkLeave(e));
   }
 
-  public resize(terminal: ITerminal, canvasWidth: number, canvasHeight: number, charSizeChanged: boolean): void {
-    super.resize(terminal, canvasWidth, canvasHeight, charSizeChanged);
+  public resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void {
+    super.resize(terminal, dim, charSizeChanged);
     // Resizing the canvas discards the contents of the canvas so clear state
     this._state = null;
   }
@@ -38,7 +38,7 @@ export class LinkRenderLayer extends BaseRenderLayer {
   }
 
   private _onLinkHover(e: LinkHoverEvent): void {
-    this._ctx.fillStyle = this.colors.foreground;
+    this._ctx.fillStyle = this._colors.foreground;
     this.fillBottomLineAtCells(e.x, e.y, e.length);
     this._state = e;
   }

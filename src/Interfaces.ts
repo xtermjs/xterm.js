@@ -5,7 +5,7 @@
 
 import { ILinkMatcherOptions } from './Interfaces';
 import { LinkMatcherHandler, LinkMatcherValidationCallback, Charset, LineData } from './Types';
-import { IColorSet } from './renderer/Interfaces';
+import { IColorSet, IRenderer } from './renderer/Interfaces';
 import { IMouseZoneManager } from './input/Interfaces';
 
 export interface IBrowser {
@@ -36,6 +36,7 @@ export interface ITerminal extends ILinkifierAccessor, IBufferAccessor, IElement
   selectionManager: ISelectionManager;
   charMeasure: ICharMeasure;
   textarea: HTMLTextAreaElement;
+  renderer: IRenderer;
   rows: number;
   cols: number;
   browser: IBrowser;
@@ -323,6 +324,7 @@ export interface ITheme {
   foreground?: string;
   background?: string;
   cursor?: string;
+  cursorAccent?: string;
   selection?: string;
   black?: string;
   red?: string;

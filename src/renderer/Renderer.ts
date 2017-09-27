@@ -5,16 +5,16 @@
 
 import { ITerminal, ITheme } from '../Interfaces';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
-import { BackgroundRenderLayer } from './BackgroundRenderLayer';
-import { ForegroundRenderLayer } from './ForegroundRenderLayer';
+import { TextRenderLayer } from './TextRenderLayer';
 import { SelectionRenderLayer } from './SelectionRenderLayer';
 import { CursorRenderLayer } from './CursorRenderLayer';
 import { ColorManager } from './ColorManager';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { IRenderLayer, IColorSet, IRenderer } from './Interfaces';
+import { IRenderLayer, IColorSet, IRenderer, IRenderDimensions } from './Interfaces';
 import { LinkRenderLayer } from './LinkRenderLayer';
+import { EventEmitter } from '../EventEmitter';
 
-export class Renderer implements IRenderer {
+export class Renderer extends EventEmitter implements IRenderer {
   /** A queue of the rows to be refreshed */
   private _refreshRowsQueue: {start: number, end: number}[] = [];
   private _refreshAnimationFrame = null;
@@ -22,17 +22,31 @@ export class Renderer implements IRenderer {
   private _renderLayers: IRenderLayer[];
   private _devicePixelRatio: number;
 
-  private _colorManager: ColorManager;
+  public colorManager: ColorManager;
+  public dimensions: IRenderDimensions;
 
-  constructor(private _terminal: ITerminal) {
-    this._colorManager = new ColorManager();
+  constructor(private _terminal: ITerminal, theme: ITheme) {
+    super();
+    this.colorManager = new ColorManager();
+    if (theme) {
+      this.colorManager.setTheme(theme);
+    }
     this._renderLayers = [
-      new BackgroundRenderLayer(this._terminal.element, 0, this._colorManager.colors),
-      new SelectionRenderLayer(this._terminal.element, 1, this._colorManager.colors),
-      new ForegroundRenderLayer(this._terminal.element, 2, this._colorManager.colors),
-      new LinkRenderLayer(this._terminal.element, 3, this._colorManager.colors, this._terminal),
-      new CursorRenderLayer(this._terminal.element, 4, this._colorManager.colors)
+      new TextRenderLayer(this._terminal.element, 0, this.colorManager.colors),
+      new SelectionRenderLayer(this._terminal.element, 1, this.colorManager.colors),
+      new LinkRenderLayer(this._terminal.element, 2, this.colorManager.colors, this._terminal),
+      new CursorRenderLayer(this._terminal.element, 3, this.colorManager.colors)
     ];
+    this.dimensions = {
+      scaledCharWidth: null,
+      scaledCharHeight: null,
+      scaledLineHeight: null,
+      scaledLineDrawY: null,
+      scaledCanvasWidth: null,
+      scaledCanvasHeight: null,
+      canvasWidth: null,
+      canvasHeight: null
+    };
     this._devicePixelRatio = window.devicePixelRatio;
   }
 
@@ -46,29 +60,68 @@ export class Renderer implements IRenderer {
   }
 
   public setTheme(theme: ITheme): IColorSet {
-    this._colorManager.setTheme(theme);
+    this.colorManager.setTheme(theme);
 
     // Clear layers and force a full render
     this._renderLayers.forEach(l => {
-      l.onThemeChanged(this._terminal, this._colorManager.colors);
+      l.onThemeChanged(this._terminal, this.colorManager.colors);
       l.reset(this._terminal);
     });
 
     this._terminal.refresh(0, this._terminal.rows - 1);
 
-    return this._colorManager.colors;
+    return this.colorManager.colors;
   }
 
   public onResize(cols: number, rows: number, didCharSizeChange: boolean): void {
     if (!this._terminal.charMeasure.width || !this._terminal.charMeasure.height) {
       return;
     }
-    const width = this._terminal.charMeasure.width * cols;
-    const height = Math.floor(this._terminal.charMeasure.height * this._terminal.options.lineHeight) * rows;
+
+    // Calculate the scaled character width. Width is floored as it must be
+    // drawn to an integer grid in order for the CharAtlas "stamps" to not be
+    // blurry. When text is drawn to the grid not using the CharAtlas, it is
+    // clipped to ensure there is no overlap with the next cell.
+    this.dimensions.scaledCharWidth = Math.floor(this._terminal.charMeasure.width * window.devicePixelRatio);
+
+    // Calculate the scaled character height. Height is ceiled in case
+    // devicePixelRatio is a floating point number in order to ensure there is
+    // enough space to draw the character to the cell.
+    this.dimensions.scaledCharHeight = Math.ceil(this._terminal.charMeasure.height * window.devicePixelRatio);
+
+    // Calculate the scaled line height, if lineHeight is not 1 then the value
+    // will be floored because since lineHeight can never be lower then 1, there
+    // is a guarentee that the scaled line height will always be larger than
+    // scaled char height.
+    this.dimensions.scaledLineHeight = Math.floor(this.dimensions.scaledCharHeight * this._terminal.options.lineHeight);
+
+    // Calculate the y coordinate within a cell that text should draw from in
+    // order to draw in the center of a cell.
+    this.dimensions.scaledLineDrawY = this._terminal.options.lineHeight === 1 ? 0 : Math.round((this.dimensions.scaledLineHeight - this.dimensions.scaledCharHeight) / 2);
+
+    // Recalculate the canvas dimensions; scaled* define the actual number of
+    // pixel in the canvas
+    this.dimensions.scaledCanvasHeight = this._terminal.rows * this.dimensions.scaledLineHeight;
+    this.dimensions.scaledCanvasWidth = this._terminal.cols * this.dimensions.scaledCharWidth;
+
+    // The the size of the canvas on the page. It's very important that this
+    // rounds to nearest integer and not ceils as browsers often set
+    // window.devicePixelRatio as something like 1.100000023841858, when it's
+    // actually 1.1. Ceiling causes blurriness as the backing canvas image is 1
+    // pixel too large for the canvas element size.
+    this.dimensions.canvasHeight = Math.round(this.dimensions.scaledCanvasHeight / window.devicePixelRatio);
+    this.dimensions.canvasWidth = Math.round(this.dimensions.scaledCanvasWidth / window.devicePixelRatio);
+
     // Resize all render layers
-    this._renderLayers.forEach(l => l.resize(this._terminal, width, height, didCharSizeChange));
+    this._renderLayers.forEach(l => l.resize(this._terminal, this.dimensions, didCharSizeChange));
+
     // Force a refresh
     this._terminal.refresh(0, this._terminal.rows - 1);
+
+    this.emit('resize', {
+      width: this.dimensions.canvasWidth,
+      height: this.dimensions.canvasHeight
+    });
   }
 
   public onCharSizeChanged(): void {

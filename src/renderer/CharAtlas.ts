@@ -64,7 +64,7 @@ export function acquireCharAtlas(terminal: ITerminal, colors: IColorSet, scaledC
   }
 
   const newEntry: ICharAtlasCacheEntry = {
-    bitmap: generator.generate(scaledCharWidth, scaledCharHeight, terminal.options.fontSize, terminal.options.fontFamily, colors.foreground, colors.ansi),
+    bitmap: generator.generate(scaledCharWidth, scaledCharHeight, terminal.options.fontSize, terminal.options.fontFamily, colors.background, colors.foreground, colors.ansi),
     config: newConfig,
     ownedBy: [terminal]
   };
@@ -75,8 +75,9 @@ export function acquireCharAtlas(terminal: ITerminal, colors: IColorSet, scaledC
 function generateConfig(scaledCharWidth: number, scaledCharHeight: number, terminal: ITerminal, colors: IColorSet): ICharAtlasConfig {
   const clonedColors = {
     foreground: colors.foreground,
-    background: null,
+    background: colors.background,
     cursor: null,
+    cursorAccent: null,
     selection: null,
     ansi: colors.ansi.slice(0, 16)
   };
@@ -99,7 +100,8 @@ function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean {
       a.fontSize === b.fontSize &&
       a.scaledCharWidth === b.scaledCharWidth &&
       a.scaledCharHeight === b.scaledCharHeight &&
-      a.colors.foreground === b.colors.foreground;
+      a.colors.foreground === b.colors.foreground &&
+      a.colors.background === b.colors.background;
 }
 
 let generator: CharAtlasGenerator;
@@ -120,15 +122,18 @@ class CharAtlasGenerator {
 
   constructor(private _document: Document) {
     this._canvas = this._document.createElement('canvas');
-    this._ctx = this._canvas.getContext('2d');
+    this._ctx = this._canvas.getContext('2d', {alpha: false});
     this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
   }
 
-  public generate(scaledCharWidth: number, scaledCharHeight: number, fontSize: number, fontFamily: string, foreground: string, ansiColors: string[]): HTMLCanvasElement | Promise<ImageBitmap> {
+  public generate(scaledCharWidth: number, scaledCharHeight: number, fontSize: number, fontFamily: string, background: string, foreground: string, ansiColors: string[]): HTMLCanvasElement | Promise<ImageBitmap> {
     const cellWidth = scaledCharWidth + CHAR_ATLAS_CELL_SPACING;
     const cellHeight = scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
     this._canvas.width = 255 * cellWidth;
     this._canvas.height = (/*default+default bold*/2 + /*0-15*/16) * cellHeight;
+
+    this._ctx.fillStyle = background;
+    this._ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);
 
     this._ctx.save();
     this._ctx.fillStyle = foreground;

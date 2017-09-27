@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IColorSet } from './Interfaces';
+import { IColorSet, IRenderDimensions } from './Interfaces';
 import { IBuffer, ICharMeasure, ITerminal } from '../Interfaces';
 import { CHAR_DATA_ATTR_INDEX } from '../Buffer';
 import { GridCache } from './GridCache';
@@ -14,15 +14,15 @@ export class SelectionRenderLayer extends BaseRenderLayer {
   private _state: {start: [number, number], end: [number, number]};
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
-    super(container, 'selection', zIndex, colors);
+    super(container, 'selection', zIndex, true, colors);
     this._state = {
       start: null,
       end: null
     };
   }
 
-  public resize(terminal: ITerminal, canvasWidth: number, canvasHeight: number, charSizeChanged: boolean): void {
-    super.resize(terminal, canvasWidth, canvasHeight, charSizeChanged);
+  public resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void {
+    super.resize(terminal, dim, charSizeChanged);
     // Resizing the canvas discards the contents of the canvas so clear state
     this._state = {
       start: null,
@@ -68,7 +68,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     // Draw first row
     const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
     const startRowEndCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : terminal.cols;
-    this._ctx.fillStyle = this.colors.selection;
+    this._ctx.fillStyle = this._colors.selection;
     this.fillCells(startCol, viewportCappedStartRow, startRowEndCol - startCol, 1);
 
     // Draw middle rows
