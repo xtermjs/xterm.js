@@ -16,10 +16,13 @@ import { BaseRenderLayer, INVERTED_DEFAULT_COLOR } from './BaseRenderLayer';
  * when the character changes (a regular space ' ' character may not as it's
  * drawn state is a cleared cell).
  */
-const EMOJI_OWNED_CHAR_DATA: CharData = [null, '', 0, -1];
+const OVERLAP_OWNED_CHAR_DATA: CharData = [null, '', 0, -1];
 
 export class TextRenderLayer extends BaseRenderLayer {
   private _state: GridCache<CharData>;
+  private _characterWidth: number;
+  private _characterFont: string;
+  private _characterOverlapCache: { [key: string]: boolean } = {};
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
     super(container, 'text', zIndex, false, colors);
@@ -28,6 +31,14 @@ export class TextRenderLayer extends BaseRenderLayer {
 
   public resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void {
     super.resize(terminal, dim, charSizeChanged);
+
+    // Clear the character width cache if the font or width has changed
+    const terminalFont = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
+    if (this._characterWidth !== dim.scaledCharWidth || this._characterFont !== terminalFont) {
+      this._characterWidth = dim.scaledCharWidth;
+      this._characterFont = terminalFont;
+      this._characterOverlapCache = {};
+    }
     // Resizing the canvas discards the contents of the canvas so clear state
     this._state.clear();
     this._state.resize(terminal.cols, terminal.rows);
@@ -63,12 +74,12 @@ export class TextRenderLayer extends BaseRenderLayer {
         }
 
         // If the character is a space and the character to the left is an
-        // emoji, skip the character and allow the emoji char to take full
-        // control over this character's cell.
+        // overlapping character, skip the character and allow the overlapping
+        // char to take full control over this character's cell.
         if (code === 32 /*' '*/) {
           if (x > 0) {
             const previousChar: CharData = line[x - 1];
-            if (this._isEmoji(previousChar[CHAR_DATA_CHAR_INDEX])) {
+            if (this._isOverlapping(previousChar)) {
               continue;
             }
           }
@@ -83,7 +94,8 @@ export class TextRenderLayer extends BaseRenderLayer {
         }
 
         // Clear the old character was not a space with the default background
-        if (state && !(state[CHAR_DATA_CODE_INDEX] === 32 /*' '*/ && (state[CHAR_DATA_ATTR_INDEX] & 0x1ff) >= 256)) {
+        const wasInverted = !!(state && state[CHAR_DATA_ATTR_INDEX] && state[CHAR_DATA_ATTR_INDEX] >> 18 & FLAGS.INVERSE);
+        if (state && !(state[CHAR_DATA_CODE_INDEX] === 32 /*' '*/ && (state[CHAR_DATA_ATTR_INDEX] & 0x1ff) >= 256 && !wasInverted)) {
           this._clearChar(x, y);
         }
         this._state.cache[x][y] = charData;
@@ -94,37 +106,38 @@ export class TextRenderLayer extends BaseRenderLayer {
         // Skip rendering if the character is invisible
         const isDefaultBackground = bg >= 256;
         const isInvisible = flags & FLAGS.INVISIBLE;
-        if (!code || (code === 32 /*' '*/ && isDefaultBackground) || isInvisible) {
+        const isInverted = flags & FLAGS.INVERSE;
+        if (!code || (code === 32 /*' '*/ && isDefaultBackground && !isInverted) || isInvisible) {
           continue;
         }
 
-        // If the character is an emoji and the character to the right is a
+        // If the character is an overlapping char and the character to the right is a
         // space, take ownership of the cell to the right.
-        if (this._isEmoji(char)) {
-          // If the character is an emoji, we want to force a re-render on every
+        if (width !== 0 && this._isOverlapping(charData)) {
+          // If the character is overlapping, we want to force a re-render on every
           // frame. This is specifically to work around the case where two
-          // emoji's `a` and `b` are adjacent, the cursor is moved to b and a
+          // overlaping chars `a` and `b` are adjacent, the cursor is moved to b and a
           // space is added. Without this, the first half of `b` would never
           // get removed, and `a` would not re-render because it thinks it's
           // already in the correct state.
-          this._state.cache[x][y] = EMOJI_OWNED_CHAR_DATA;
+          this._state.cache[x][y] = OVERLAP_OWNED_CHAR_DATA;
           if (x < line.length && line[x + 1][CHAR_DATA_CODE_INDEX] === 32 /*' '*/) {
             width = 2;
             this._clearChar(x + 1, y);
-            // The emoji owned char data will force a clear and render when the
-            // emoji is no longer to the left of the character and also when the
-            // space changes to another character.
-            this._state.cache[x + 1][y] = EMOJI_OWNED_CHAR_DATA;
+            // The overlapping char's char data will force a clear and render when the
+            // overlapping char is no longer to the left of the character and also when
+            // the space changes to another character.
+            this._state.cache[x + 1][y] = OVERLAP_OWNED_CHAR_DATA;
           }
         }
 
         let fg = (attr >> 9) & 0x1ff;
 
         // If inverse flag is on, the foreground should become the background.
-        if (flags & FLAGS.INVERSE) {
+        if (isInverted) {
           const temp = bg;
           bg = fg;
-          fg = bg;
+          fg = temp;
           if (fg === 256) {
             fg = INVERTED_DEFAULT_COLOR;
           }
@@ -169,18 +182,38 @@ export class TextRenderLayer extends BaseRenderLayer {
     }
   }
 
-  /**
-   * Whether the character is an emoji.
-   * @param char The character to search.
-   */
-  private _isEmoji(char: string): boolean {
-    // TODO: We need a generic solution for handling characters like this
-    // Check special ambiguous width characters
-    if (char === '➜') {
-      return true;
+	/**
+	 * Whether a character is overlapping to the
+	 * next cell.
+	 */
+  private _isOverlapping(charData: CharData): boolean {
+    // We assume that any ascii character will not overlap
+    const code = charData[CHAR_DATA_CODE_INDEX];
+    if (code < 256) {
+      return false;
     }
-    // Check emoji unicode range
-    return char.search(/([\uD800-\uDBFF][\uDC00-\uDFFF])/g) >= 0;
+
+    // Deliver from cache if available
+    const char = charData[CHAR_DATA_CHAR_INDEX];
+    if (this._characterOverlapCache.hasOwnProperty(char)) {
+      return this._characterOverlapCache[char];
+    }
+
+    // Setup the font
+    this._ctx.save();
+    this._ctx.font = this._characterFont;
+
+    // Measure the width of the character, but Math.floor it
+    // because that is what the renderer does when it calculates
+    // the character dimensions we are comparing against
+    const overlaps = Math.floor(this._ctx.measureText(char).width) > this._characterWidth;
+
+    // Restore the original context
+    this._ctx.restore();
+
+    // Cache and return
+    this._characterOverlapCache[char] = overlaps;
+    return overlaps;
   }
 
   /**

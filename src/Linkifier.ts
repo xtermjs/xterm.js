@@ -236,7 +236,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
 
     // Ensure the link is valid before registering
     if (matcher.validationCallback) {
-      matcher.validationCallback(text, isValid => {
+      matcher.validationCallback(uri, isValid => {
         // Discard link if the line has already changed
         if (this._rowsTimeoutId) {
           return;
