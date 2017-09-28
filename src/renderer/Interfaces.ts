@@ -92,4 +92,6 @@ export interface IRenderDimensions {
   scaledCanvasHeight: number;
   canvasWidth: number;
   canvasHeight: number;
+  actualCellWidth: number;
+  actualCellHeight: number;
 }
