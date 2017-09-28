@@ -18,6 +18,11 @@ import { BaseRenderLayer, INVERTED_DEFAULT_COLOR } from './BaseRenderLayer';
  */
 const OVERLAP_OWNED_CHAR_DATA: CharData = [null, '', 0, -1];
 
+/**
+ * Generated using https://github.com/alexandrudima/unicode-utils/blob/master/generate-emoji-test.js
+ */
+const CONTAINS_EMOJI_REGEX = /(?:[\u231A\u231B\u23F0\u23F3\u2600-\u27BF\u2B50\u2B55]|\uD83C[\uDDE6-\uDDFF\uDF00-\uDFFF]|\uD83D[\uDC00-\uDE4F\uDE80-\uDEF8]|\uD83E[\uDD00-\uDDE6])/;
+
 export class TextRenderLayer extends BaseRenderLayer {
   private _state: GridCache<CharData>;
   private _characterWidth: number;
@@ -199,21 +204,34 @@ export class TextRenderLayer extends BaseRenderLayer {
       return this._characterOverlapCache[char];
     }
 
-    // Setup the font
-    this._ctx.save();
-    this._ctx.font = this._characterFont;
+    let isOverlapping: boolean;
+    if (this._isEmoji(char)) {
+      isOverlapping = true;
+    } else {
+      // Setup the font
+      this._ctx.save();
+      this._ctx.font = this._characterFont;
 
-    // Measure the width of the character, but Math.floor it
-    // because that is what the renderer does when it calculates
-    // the character dimensions we are comparing against
-    const overlaps = Math.floor(this._ctx.measureText(char).width) > this._characterWidth;
+      // Measure the width of the character, but Math.floor it
+      // because that is what the renderer does when it calculates
+      // the character dimensions we are comparing against
+      isOverlapping = Math.floor(this._ctx.measureText(char).width) > this._characterWidth;
 
-    // Restore the original context
-    this._ctx.restore();
+      // Restore the original context
+      this._ctx.restore();
+    }
 
     // Cache and return
-    this._characterOverlapCache[char] = overlaps;
-    return overlaps;
+    this._characterOverlapCache[char] = isOverlapping;
+    return isOverlapping;
+  }
+
+  /**
+   * Returns whether a character is (probably) an emoji.
+   * @param char The character to test.
+   */
+  private _isEmoji(char: string): boolean {
+    return CONTAINS_EMOJI_REGEX.test(char);
   }
 
   /**
