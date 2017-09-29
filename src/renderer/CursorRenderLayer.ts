@@ -131,6 +131,9 @@ export class CursorRenderLayer extends BaseRenderLayer {
     }
 
     const charData = terminal.buffer.lines.get(cursorY)[terminal.buffer.x];
+    if (!charData) {
+      return;
+    }
 
     if (!terminal.isFocused) {
       this._clearCursor();
