@@ -5,7 +5,6 @@
 
 import { IMouseZoneManager, IMouseZone } from './Interfaces';
 import { ITerminal } from '../Interfaces';
-import { getCoords } from '../utils/Mouse';
 
 const HOVER_DURATION = 500;
 
@@ -144,7 +143,7 @@ export class MouseZoneManager implements IMouseZoneManager {
   }
 
   private _findZoneEventAt(e: MouseEvent): IMouseZone {
-    const coords = getCoords(e, this._terminal.element, this._terminal.charMeasure, this._terminal.options.lineHeight, this._terminal.cols, this._terminal.rows);
+    const coords = this._terminal.mouseHelper.getCoords(e, this._terminal.element, this._terminal.charMeasure, this._terminal.options.lineHeight, this._terminal.cols, this._terminal.rows);
     for (let i = 0; i < this._zones.length; i++) {
       const zone = this._zones[i];
       if (zone.y === coords[1] && zone.x1 <= coords[0] && zone.x2 > coords[0]) {
