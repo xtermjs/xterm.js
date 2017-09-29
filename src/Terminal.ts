@@ -688,10 +688,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // TODO: Improve return type and documentation
     if (typeof exports === 'object' && typeof module === 'object') {
       // CommonJS
-      return require('./addons/' + addon + '/' + addon);
+      return require('./addons/' + addon + '/' + addon + '.js');
     } else if (typeof define === 'function') {
       // RequireJS
-      return (<any>require)(['./addons/' + addon + '/' + addon], callback);
+      return (<any>require)(['./addons/' + addon + '/' + addon + '.js'], callback);
     } else {
       console.error('Cannot load a module without a CommonJS or RequireJS environment.');
       return false;
