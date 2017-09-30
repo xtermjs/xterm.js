@@ -10,7 +10,7 @@ import { CircularList } from './utils/CircularList';
 import { EventEmitter } from './EventEmitter';
 import { ITerminal, ICircularList, ISelectionManager, IBuffer } from './Interfaces';
 import { SelectionModel } from './SelectionModel';
-import { LineData } from './Types';
+import { LineData, CharData } from './Types';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from './Buffer';
 
 /**
@@ -611,7 +611,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
         endCol++;
       }
       // Expand the string in both directions until a space is hit
-      while (startIndex > 0 && !this._isCharWordSeparator(bufferLine[startCol - 1][CHAR_DATA_CHAR_INDEX])) {
+      while (startIndex > 0 && !this._isCharWordSeparator(bufferLine[startCol - 1])) {
         const char = bufferLine[startCol - 1];
         if (char[CHAR_DATA_WIDTH_INDEX] === 0) {
           // If the next character is a wide char, record it and skip the column
@@ -625,7 +625,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
         startIndex--;
         startCol--;
       }
-      while (endIndex + 1 < line.length && !this._isCharWordSeparator(bufferLine[endCol + 1][CHAR_DATA_CHAR_INDEX])) {
+      while (endIndex + 1 < line.length && !this._isCharWordSeparator(bufferLine[endCol + 1])) {
         const char = bufferLine[endCol + 1];
         if (char[CHAR_DATA_WIDTH_INDEX] === 2) {
           // If the next character is a wide char, record it and skip the column
@@ -674,8 +674,13 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * word logic.
    * @param char The character to check.
    */
-  private _isCharWordSeparator(char: string): boolean {
-    return WORD_SEPARATORS.indexOf(char) >= 0;
+  private _isCharWordSeparator(charData: CharData): boolean {
+    // Zero width characters are never separators as they are always to the
+    // right of wide characters
+    if (charData[CHAR_DATA_WIDTH_INDEX] === 0) {
+      return false;
+    }
+    return WORD_SEPARATORS.indexOf(charData[CHAR_DATA_CHAR_INDEX]) >= 0;
   }
 
   /**

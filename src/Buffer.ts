@@ -228,10 +228,10 @@ export class Buffer implements IBuffer {
       // column indexes
       if (char[CHAR_DATA_WIDTH_INDEX] === 0) {
         if (startCol >= i) {
-          startIndex -= char[CHAR_DATA_CHAR_INDEX].length;
+          startIndex--;
         }
         if (endCol >= i) {
-          endIndex -= char[CHAR_DATA_CHAR_INDEX].length;
+          endIndex--;
         }
       } else {
         // Adjust the columns to take glyphs that are represented by multiple
