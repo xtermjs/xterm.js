@@ -237,16 +237,14 @@ export class Buffer implements IBuffer {
         // Adjust the columns to take glyphs that are represented by multiple
         // code points into account.
         if (char[CHAR_DATA_CHAR_INDEX].length > 1) {
-          if (startCol >= i) {
+          if (startCol > i) {
             startIndex += char[CHAR_DATA_CHAR_INDEX].length - 1;
           }
-          if (endCol >= i) {
+          if (endCol > i) {
             endIndex += char[CHAR_DATA_CHAR_INDEX].length - 1;
           }
         }
       }
-      // TODO: startCol needs to be emoji-aware, currently each emoji code point is
-      // consuming addition space in the selection text
     }
 
     // Calculate the final end col by trimming whitespace on the right of the
