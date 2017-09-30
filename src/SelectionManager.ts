@@ -11,7 +11,7 @@ import { EventEmitter } from './EventEmitter';
 import { ITerminal, ICircularList, ISelectionManager, IBuffer } from './Interfaces';
 import { SelectionModel } from './SelectionModel';
 import { LineData } from './Types';
-import { CHAR_DATA_WIDTH_INDEX } from './Buffer';
+import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from './Buffer';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -281,6 +281,9 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     // Convert to 0-based
     coords[0]--;
     coords[1]--;
+
+    console.log('coords', coords);
+
     // Convert viewport coords to buffer coords
     coords[1] += this._terminal.buffer.ydisp;
     return coords;
@@ -545,9 +548,16 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     for (let i = 0; coords[0] >= i; i++) {
       const char = bufferLine[i];
       if (char[CHAR_DATA_WIDTH_INDEX] === 0) {
+        // Wide characters aren't included in the line string so decrement the index
         charIndex--;
+      // }
+      } else if (char[CHAR_DATA_CHAR_INDEX].length > 1) {
+        console.log('char length > 1', char[CHAR_DATA_CHAR_INDEX], char[CHAR_DATA_CHAR_INDEX].length);
+        // Emojis take up multiple characters, so adjust accordingly
+        charIndex += char[CHAR_DATA_CHAR_INDEX].length - 1;
       }
     }
+    console.log('character index: ', charIndex);
     return charIndex;
   }
 
@@ -606,20 +616,47 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
         endCol++;
       }
       // Expand the string in both directions until a space is hit
-      while (startIndex > 0 && !this._isCharWordSeparator(line.charAt(startIndex - 1))) {
-        if (bufferLine[startCol - 1][CHAR_DATA_WIDTH_INDEX] === 0) {
+      let nextCharData = startIndex > 0 ? bufferLine[startCol - 1] : null;
+
+
+
+// TODO: Need to make sure that characters whose strings are longer than 1 get compensated for
+// Double click words should expand to the spaces.
+
+
+      // while (startIndex > 0 && !this._isCharWordSeparator(line.charAt(startIndex - 1))) {
+      console.log('start char: ' + bufferLine[startCol]);
+      console.log('scan backwards');
+      console.log('  startIndex:',startIndex);
+      while (startIndex > 0 && !this._isCharWordSeparator(bufferLine[startCol - 1][CHAR_DATA_CHAR_INDEX])) {
+        const char = bufferLine[startCol - 1];
+        console.log('  char: ' + char);
+        if (char[CHAR_DATA_WIDTH_INDEX] === 0) {
           // If the next character is a wide char, record it and skip the column
           leftWideCharCount++;
           startCol--;
+        } else if (char[CHAR_DATA_CHAR_INDEX].length > 1) {
+          startIndex -= char[CHAR_DATA_CHAR_INDEX].length - 1;
+console.log('x', char[CHAR_DATA_CHAR_INDEX], char[CHAR_DATA_CHAR_INDEX].length);
         }
         startIndex--;
         startCol--;
       }
-      while (endIndex + 1 < line.length && !this._isCharWordSeparator(line.charAt(endIndex + 1))) {
-        if (bufferLine[endCol + 1][CHAR_DATA_WIDTH_INDEX] === 2) {
+      console.log('scan forwards');
+      // while (endIndex + 1 < line.length && !this._isCharWordSeparator(line.charAt(endIndex + 1))) {
+        console.log('  first checking: ',bufferLine[endCol + 1]);
+        console.log('  endIndex:',endIndex);
+        console.log('  line:',line);
+        console.log('  line.length:',line.length);
+      while (endIndex + 1 < line.length && !this._isCharWordSeparator(bufferLine[endCol + 1][CHAR_DATA_CHAR_INDEX])) {
+        const char = bufferLine[endCol + 1];
+        console.log('  char: ' + char);
+        if (char[CHAR_DATA_WIDTH_INDEX] === 2) {
           // If the next character is a wide char, record it and skip the column
           rightWideCharCount++;
           endCol++;
+        } else if (char[CHAR_DATA_CHAR_INDEX].length > 1) {
+          startIndex += char[CHAR_DATA_CHAR_INDEX].length - 1;
         }
         endIndex++;
         endCol++;
