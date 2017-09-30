@@ -656,8 +656,27 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
       }
     }
 
-    const start = startIndex + charOffset - leftWideCharCount + leftLongCharOffset;
-    const length = Math.min(endIndex - startIndex + leftWideCharCount + rightWideCharCount - leftLongCharOffset - rightLongCharOffset + 1/*include endIndex char*/, this._terminal.cols);
+    // Incremenet the end index so it is at the start of the next character
+    endIndex++;
+
+    // Calculate the start _column_, converting the the string indexes back to
+    // column coordinates.
+    const start =
+        startIndex // The index of the selection's start char in the line string
+        + charOffset // The difference between the initial char's column and index
+        - leftWideCharCount // The number of wide chars left of the initial char
+        + leftLongCharOffset; // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
+
+    // Calculate the length in _columns_, converting the the string indexes back
+    // to column coordinates.
+    const length = Math.min(this._terminal.cols, // Disallow lengths larger than the terminal cols
+        endIndex // The index of the selection's end char in the line string
+        - startIndex // The index of the selection's start char in the line string
+        + leftWideCharCount // The number of wide chars left of the initial char
+        + rightWideCharCount // The number of wide chars right of the initial char (inclusive)
+        - leftLongCharOffset // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
+        - rightLongCharOffset); // The number of additional chars right of the initial char (inclusive) added by columns with strings longer than 1 (emojis)
+
     return { start, length };
   }
 
