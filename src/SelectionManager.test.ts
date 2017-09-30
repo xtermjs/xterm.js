@@ -12,7 +12,7 @@ import { SelectionManager } from './SelectionManager';
 import { SelectionModel } from './SelectionModel';
 import { BufferSet } from './BufferSet';
 import { MockTerminal } from './utils/TestUtils.test';
-import { LineData } from './Types';
+import { LineData, CharData } from './Types';
 
 class TestSelectionManager extends SelectionManager {
   constructor(
@@ -64,6 +64,10 @@ describe('SelectionManager', () => {
       result.push([0, text.charAt(i), 1, text.charCodeAt(i)]);
     }
     return result;
+  }
+
+  function stringArrayToRow(chars: string[]): LineData {
+    return chars.map(c => <CharData>[0, c, 1, c.charCodeAt(0)]);
   }
 
   describe('_selectWordAt', () => {
@@ -184,6 +188,53 @@ describe('SelectionManager', () => {
       assert.equal(selectionManager.selectionText, 'ij');
       selectionManager.selectWordAt([15, 0]);
       assert.equal(selectionManager.selectionText, 'ij"');
+    });
+    describe('emoji', () => {
+      it('should treat a single emoji as a word when wrapped in spaces', () => {
+        buffer.lines.set(0, stringToRow(' ⚽ a')); // The a is here to prevent the space being trimmed in selectionText
+        selectionManager.selectWordAt([0, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+        selectionManager.selectWordAt([1, 0]);
+        assert.equal(selectionManager.selectionText, '⚽');
+        selectionManager.selectWordAt([2, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+      });
+      it('should treat multiple emojis as a word when wrapped in spaces', () => {
+        buffer.lines.set(0, stringToRow(' ⚽⚽ a')); // The a is here to prevent the space being trimmed in selectionText
+        selectionManager.selectWordAt([0, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+        selectionManager.selectWordAt([1, 0]);
+        assert.equal(selectionManager.selectionText, '⚽⚽');
+        selectionManager.selectWordAt([2, 0]);
+        assert.equal(selectionManager.selectionText, '⚽⚽');
+        selectionManager.selectWordAt([3, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+      });
+      it('should treat emojis using the zero-width-joiner as a single word', () => {
+        buffer.lines.set(0, stringArrayToRow([
+          ' ',
+          '👨‍', // Note that the first 3 emojis include the invisible ZWJ char
+          '👩‍',
+          '👧‍',
+          '👦',
+          ' ',
+          'a'
+        ])); // The a is here to prevent the space being trimmed in selectionText
+        selectionManager.selectWordAt([0, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+        // ZWJ emojis do not combine in the terminal so the family emoji used here consumed 4 cells
+        // The selection text should retain ZWJ chars despite not combining on the terminal
+        selectionManager.selectWordAt([1, 0]);
+        assert.equal(selectionManager.selectionText, '👨‍👩‍👧‍👦');
+        selectionManager.selectWordAt([2, 0]);
+        assert.equal(selectionManager.selectionText, '👨‍👩‍👧‍👦');
+        selectionManager.selectWordAt([3, 0]);
+        assert.equal(selectionManager.selectionText, '👨‍👩‍👧‍👦');
+        selectionManager.selectWordAt([4, 0]);
+        assert.equal(selectionManager.selectionText, '👨‍👩‍👧‍👦');
+        selectionManager.selectWordAt([5, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+      });
     });
   });
 
