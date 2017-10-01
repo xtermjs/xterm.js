@@ -47,6 +47,7 @@ export interface ITerminal extends ILinkifierAccessor, IBufferAccessor, IElement
   options: ITerminalOptions;
   buffers: IBufferSet;
   isFocused: boolean;
+  mouseHelper: IMouseHelper;
 
   /**
    * Emit the 'data' event and populate the given data.
@@ -172,6 +173,11 @@ export interface IBufferSet {
 
   activateNormalBuffer(): void;
   activateAltBuffer(): void;
+}
+
+export interface IMouseHelper {
+  getCoords(event: {pageX: number, pageY: number}, element: HTMLElement, charMeasure: ICharMeasure, lineHeight: number, colCount: number, rowCount: number, isSelection?: boolean): [number, number];
+  getRawByteCoords(event: MouseEvent, element: HTMLElement, charMeasure: ICharMeasure, lineHeight: number, colCount: number, rowCount: number): { x: number, y: number };
 }
 
 export interface IViewport {

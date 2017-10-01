@@ -45,7 +45,9 @@ export class Renderer extends EventEmitter implements IRenderer {
       scaledCanvasWidth: null,
       scaledCanvasHeight: null,
       canvasWidth: null,
-      canvasHeight: null
+      canvasHeight: null,
+      actualCellWidth: null,
+      actualCellHeight: null
     };
     this._devicePixelRatio = window.devicePixelRatio;
   }
@@ -111,6 +113,15 @@ export class Renderer extends EventEmitter implements IRenderer {
     // pixel too large for the canvas element size.
     this.dimensions.canvasHeight = Math.round(this.dimensions.scaledCanvasHeight / window.devicePixelRatio);
     this.dimensions.canvasWidth = Math.round(this.dimensions.scaledCanvasWidth / window.devicePixelRatio);
+
+    // Get the _actual_ dimensions of an individual cell. This needs to be
+    // derived from the canvasWidth/Height calculated above which takes into
+    // account window.devicePixelRatio. CharMeasure.width/height by itself is
+    // insufficient when the page is not at 100% zoom level as CharMeasure is
+    // measured in CSS pixels, but the actual char size on the canvas can
+    // differ.
+    this.dimensions.actualCellHeight = this.dimensions.canvasHeight / this._terminal.rows;
+    this.dimensions.actualCellWidth = this.dimensions.canvasWidth / this._terminal.cols;
 
     // Resize all render layers
     this._renderLayers.forEach(l => l.resize(this._terminal, this.dimensions, didCharSizeChange));

@@ -36,9 +36,8 @@ import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
 import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './utils/Browser';
-import * as Mouse from './utils/Mouse';
+import { MouseHelper } from './utils/MouseHelper';
 import { CHARSETS } from './Charsets';
-import { getRawByteCoords } from './utils/Mouse';
 import { CustomKeyEventHandler, Charset, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
 import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper, ITheme, ILinkifier } from './Interfaces';
 import { BellSound } from './utils/Sounds';
@@ -200,6 +199,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   private compositionHelper: ICompositionHelper;
   public charMeasure: CharMeasure;
   private _mouseZoneManager: IMouseZoneManager;
+  public mouseHelper: MouseHelper;
 
   public cols: number;
   public rows: number;
@@ -652,6 +652,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     });
     this.viewportElement.addEventListener('scroll', () => this.selectionManager.refresh());
 
+    this.mouseHelper = new MouseHelper(this.renderer);
+
     // Measure the character size
     this.charMeasure.measure(this.options);
 
@@ -722,7 +724,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       button = getButton(ev);
 
       // get mouse coordinates
-      pos = getRawByteCoords(ev, self.element, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
+      pos = self.mouseHelper.getRawByteCoords(ev, self.element, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
       if (!pos) return;
 
       sendEvent(button, pos);
@@ -748,7 +750,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // ^[[M 3<^[[M@4<^[[M@5<^[[M@6<^[[M@7<^[[M#7<
     function sendMove(ev: MouseEvent): void {
       let button = pressed;
-      let pos = getRawByteCoords(ev, self.element, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
+      let pos = self.mouseHelper.getRawByteCoords(ev, self.element, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
       if (!pos) return;
 
       // buttons marked as motions
