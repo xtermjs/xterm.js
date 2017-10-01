@@ -178,15 +178,15 @@ function _handle_receive_session(zsession) {
                     FILE_BUFFER.push( new Uint8Array(payload) );
                 });
                 xfer.accept().then(
-                    () => { _save_to_disk(xfer, FILE_BUFFER); },
+                    () => {
+                        _hide_file_info();
+                        _hide_progress();
+                        _save_to_disk(xfer, FILE_BUFFER);
+                    },
                     console.error.bind(console)
-                ).then( () => {
-                    _hide_file_info();
-                    _hide_progress();
-                } );
+                );
             }
             else {
-                _hide_file_info();
                 xfer.skip();
             }
             //END
@@ -217,12 +217,16 @@ function _handle_send_session(zsession) {
                 },
                 on_file_complete(obj) {
                     console.log("COMPLETE", obj);
+                    _hide_progress();
                 },
             }
         ).then(_hide_progress).then(
             zsession.close.bind(zsession),
             console.error.bind(console)
-        );
+        ).then( () => {
+            _hide_file_info();
+            _hide_progress();
+        } );
     };
 }
 
