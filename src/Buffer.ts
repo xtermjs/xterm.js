@@ -211,6 +211,9 @@ export class Buffer implements IBuffer {
     let widthAdjustedStartCol = startCol;
     let widthAdjustedEndCol = endCol;
     const line = this.lines.get(lineIndex);
+    if (!line) {
+      return '';
+    }
     for (let i = 0; i < line.length; i++) {
       const char = line[i];
       lineString += char[CHAR_DATA_CHAR_INDEX];

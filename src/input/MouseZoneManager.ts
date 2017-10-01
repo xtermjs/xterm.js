@@ -5,7 +5,6 @@
 
 import { IMouseZoneManager, IMouseZone } from './Interfaces';
 import { ITerminal } from '../Interfaces';
-import { getCoords } from '../utils/Mouse';
 
 const HOVER_DURATION = 500;
 
@@ -50,10 +49,16 @@ export class MouseZoneManager implements IMouseZoneManager {
       return;
     }
 
+    // Clear all if start/end weren't set
+    if (!end) {
+      start = 0;
+      end = this._terminal.rows - 1;
+    }
+
     // Iterate through zones and clear them out if they're within the range
     for (let i = 0; i < this._zones.length; i++) {
       const zone = this._zones[i];
-      if (zone.y >= start && zone.y <= end) {
+      if (zone.y > start && zone.y <= end + 1) {
         if (this._currentZone && this._currentZone === zone) {
           this._currentZone.leaveCallback();
           this._currentZone = null;
@@ -144,7 +149,7 @@ export class MouseZoneManager implements IMouseZoneManager {
   }
 
   private _findZoneEventAt(e: MouseEvent): IMouseZone {
-    const coords = getCoords(e, this._terminal.element, this._terminal.charMeasure, this._terminal.options.lineHeight, this._terminal.cols, this._terminal.rows);
+    const coords = this._terminal.mouseHelper.getCoords(e, this._terminal.element, this._terminal.charMeasure, this._terminal.options.lineHeight, this._terminal.cols, this._terminal.rows);
     for (let i = 0; i < this._zones.length; i++) {
       const zone = this._zones[i];
       if (zone.y === coords[1] && zone.x1 <= coords[0] && zone.x2 > coords[0]) {
