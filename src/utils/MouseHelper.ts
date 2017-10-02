@@ -27,7 +27,7 @@ export class MouseHelper {
       element = 'offsetParent' in element ? <HTMLElement>element.offsetParent : <HTMLElement>element.parentElement;
     }
     element = originalElement;
-    while (element && element !== self.document.body) {
+    while (element && element !== element.ownerDocument.body) {
       x += element.scrollLeft;
       y += element.scrollTop;
       element = <HTMLElement>element.parentElement;
