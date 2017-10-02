@@ -75,7 +75,7 @@
     "lint": "tslint src/*.ts src/**/*.ts",
     "test": "gulp test",
     "build:docs": "jsdoc -c jsdoc.json",
-    "build": "gulp build",
+    "build": "gulp build; cd demo/zmodemjs; npm install",
     "prepublish": "npm run build",
     "coveralls": "gulp coveralls"
   }
