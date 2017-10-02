@@ -1,8 +1,9 @@
 /**
- * This module provides methods for attaching a terminal to a terminado WebSocket stream.
- *
- * @module xterm/addons/terminado/terminado
+ * Copyright (c) 2016 The xterm.js authors. All rights reserved.
  * @license MIT
+ *
+ * This module provides methods for attaching a terminal to a terminado
+ * WebSocket stream.
  */
 
 (function (attach) {
@@ -45,8 +46,6 @@
     term._flushBuffer = function () {
       term.write(term._attachSocketBuffer);
       term._attachSocketBuffer = null;
-      clearTimeout(term._attachSocketBufferTimer);
-      term._attachSocketBufferTimer = null;
     };
 
     term._pushToBuffer = function (data) {

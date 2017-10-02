@@ -97,12 +97,10 @@ xterm.fit();
 
 Since xterm.js is typically implemented as a developer tool, only modern browsers are supported officially. Here is a list of the versions we aim to support:
 
-- Chrome 48+
-- Edge 13+
-- Firefox 44+
-- Internet Explorer 11+
-- Opera 35+
-- Safari 8+
+- Chrome latest
+- Edge latest
+- Firefox latest
+- Safari latest
 
 Xterm.js works seamlessly in Electron apps and may even work on earlier versions of the browsers but these are the browsers we strive to keep working.
 
@@ -130,6 +128,8 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**SSHy**](https://github.com/stuicey/SSHy): HTML5 Based SSHv2 Web Client with E2E encryption utilising `xterm.js`, SJCL & websockets.
 - [**JupyterLab**](https://github.com/jupyterlab/jupyterlab): An extensible 
 computational environment for Jupyter, supporting interactive data science and scientific computing across all programming languages.
+- [**Theia**](https://github.com/theia-ide/theia): Theia is a cloud & desktop IDE framework implemented in TypeScript.
+- [**DevOps Helper**](https://github.com/ricktbaker/devops_helper) DevOps Helper tool to make life easier working with AWS instances across multiple organizations.
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list.
 

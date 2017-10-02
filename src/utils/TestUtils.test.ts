@@ -1,12 +1,19 @@
 /**
+ * Copyright (c) 2017 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 
-import { ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, IListenerType, IInputHandlingTerminal, IViewport, ICircularList, ICompositionHelper } from '../Interfaces';
+import { ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, IListenerType, IInputHandlingTerminal, IViewport, ICircularList, ICompositionHelper, ITheme, ILinkifier, IMouseHelper } from '../Interfaces';
 import { LineData } from '../Types';
+import { Buffer } from '../Buffer';
 import * as Browser from './Browser';
+import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../renderer/Interfaces';
 
 export class MockTerminal implements ITerminal {
+  mouseHelper: IMouseHelper;
+  renderer: IRenderer;
+  linkifier: ILinkifier;
+  isFocused: boolean;
   options: ITerminalOptions = {};
   element: HTMLElement;
   rowContainer: HTMLElement;
@@ -52,13 +59,24 @@ export class MockTerminal implements ITerminal {
   showCursor(): void {
     throw new Error('Method not implemented.');
   }
+  refresh(start: number, end: number): void {
+    throw new Error('Method not implemented.');
+  }
   blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): LineData {
     const line: LineData = [];
     cols = cols || this.cols;
     for (let i = 0; i < cols; i++) {
-      line.push([0, ' ', 1]);
+      line.push([0, ' ', 1, 32]);
     }
     return line;
+  }
+}
+
+export class MockCharMeasure implements ICharMeasure {
+  width: number;
+  height: number;
+  measure(options: ITerminalOptions): void {
+    throw new Error('Method not implemented.');
   }
 }
 
@@ -125,7 +143,7 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   eraseLeft(x: number, y: number): void {
     throw new Error('Method not implemented.');
   }
-  blankLine(cur?: boolean, isWrapped?: boolean): [number, string, number][] {
+  blankLine(cur?: boolean, isWrapped?: boolean): [number, string, number, number][] {
     throw new Error('Method not implemented.');
   }
   prevStop(x?: number): number {
@@ -176,7 +194,8 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
 }
 
 export class MockBuffer implements IBuffer {
-  lines: ICircularList<[number, string, number][]>;
+  isCursorInViewport: boolean;
+  lines: ICircularList<[number, string, number, number][]>;
   ydisp: number;
   ybase: number;
   y: number;
@@ -187,11 +206,45 @@ export class MockBuffer implements IBuffer {
   savedY: number;
   savedX: number;
   translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string {
+    return Buffer.prototype.translateBufferLineToString.apply(this, arguments);
+  }
+  nextStop(x?: number): number {
+    throw new Error('Method not implemented.');
+  }
+  prevStop(x?: number): number {
     throw new Error('Method not implemented.');
   }
 }
 
+export class MockRenderer implements IRenderer {
+  colorManager: IColorManager;
+  on(type: string, listener: IListenerType): void {
+    throw new Error('Method not implemented.');
+  }
+  off(type: string, listener: IListenerType): void {
+    throw new Error('Method not implemented.');
+  }
+  emit(type: string, data?: any): void {
+    throw new Error('Method not implemented.');
+  }
+  dimensions: IRenderDimensions;
+  setTheme(theme: ITheme): IColorSet { return <IColorSet>{}; }
+  onResize(cols: number, rows: number, didCharSizeChange: boolean): void {}
+  onCharSizeChanged(): void {}
+  onBlur(): void {}
+  onFocus(): void {}
+  onSelectionChanged(start: [number, number], end: [number, number]): void {}
+  onCursorMove(): void {}
+  onOptionsChanged(): void {}
+  onWindowResize(devicePixelRatio: number): void {}
+  clear(): void {}
+  queueRefresh(start: number, end: number): void {}
+}
+
 export class MockViewport implements IViewport {
+  onThemeChanged(colors: IColorSet): void {
+    throw new Error('Method not implemented.');
+  }
   onWheel(ev: WheelEvent): void {
     throw new Error('Method not implemented.');
   }

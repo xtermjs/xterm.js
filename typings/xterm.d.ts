@@ -42,6 +42,21 @@ interface ITerminalOptions {
   disableStdin?: boolean;
 
   /**
+   * The font size used to render text.
+   */
+  fontSize?: number;
+
+  /**
+   * The font family used to render text.
+   */
+  fontFamily?: string;
+
+  /**
+   * The line height used to render text.
+   */
+  lineHeight?: number;
+
+  /**
    * The number of rows in the terminal.
    */
   rows?: number;
@@ -56,6 +71,59 @@ interface ITerminalOptions {
    * The size of tab stops in the terminal.
    */
   tabStopWidth?: number;
+
+  /**
+   * The color theme of the terminal.
+   */
+  theme?: ITheme;
+}
+
+/**
+ * Contains colors to theme the terminal with.
+ */
+interface ITheme {
+  /** The default foreground color */
+  foreground?: string,
+  /** The default background color */
+  background?: string,
+  /** The cursor color */
+  cursor?: string,
+  /** The accent color of the cursor (used as the foreground color for a block cursor) */
+  cursorAccent?: string,
+  /** The selection color (can be transparent) */
+  selection?: string,
+  /** ANSI black (eg. `\x1b[30m`) */
+  black?: string,
+  /** ANSI red (eg. `\x1b[31m`) */
+  red?: string,
+  /** ANSI green (eg. `\x1b[32m`) */
+  green?: string,
+  /** ANSI yellow (eg. `\x1b[33m`) */
+  yellow?: string,
+  /** ANSI blue (eg. `\x1b[34m`) */
+  blue?: string,
+  /** ANSI magenta (eg. `\x1b[35m`) */
+  magenta?: string,
+  /** ANSI cyan (eg. `\x1b[36m`) */
+  cyan?: string,
+  /** ANSI white (eg. `\x1b[37m`) */
+  white?: string,
+  /** ANSI bright black (eg. `\x1b[1;30m`) */
+  brightBlack?: string,
+  /** ANSI bright red (eg. `\x1b[1;31m`) */
+  brightRed?: string,
+  /** ANSI bright green (eg. `\x1b[1;32m`) */
+  brightGreen?: string,
+  /** ANSI bright yellow (eg. `\x1b[1;33m`) */
+  brightYellow?: string,
+  /** ANSI bright blue (eg. `\x1b[1;34m`) */
+  brightBlue?: string,
+  /** ANSI bright magenta (eg. `\x1b[1;35m`) */
+  brightMagenta?: string,
+  /** ANSI bright cyan (eg. `\x1b[1;36m`) */
+  brightCyan?: string,
+  /** ANSI bright white (eg. `\x1b[1;37m`) */
+  brightWhite?: string
 }
 
 /**
@@ -72,7 +140,18 @@ interface ILinkMatcherOptions {
    * A callback that validates an individual link, returning true if valid and
    * false if invalid.
    */
-  validationCallback?: (uri: string, element: HTMLElement, callback: (isValid: boolean) => void) => void;
+  validationCallback?: (uri: string, callback: (isValid: boolean) => void) => void;
+
+  /**
+   * A callback that fires when the mouse hovers over a link for a moment.
+   */
+  tooltipCallback?: (event: MouseEvent, uri: string) => boolean | void;
+
+  /**
+   * A callback that fires when the mouse leaves a link. Note that this can
+   * happen even when tooltipCallback hasn't fired for the link yet.
+   */
+  leaveCallback?: (event: MouseEvent, uri: string) => boolean | void;
 
   /**
    * The priority of the link matcher, this defines the order in which the link
@@ -226,7 +305,7 @@ declare module 'xterm' {
      * @param options Options for the link matcher.
      * @return The ID of the new matcher, this can be used to deregister.
      */
-    registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => boolean | void , options?: ILinkMatcherOptions): number;
+    registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => boolean | void, options?: ILinkMatcherOptions): number;
 
     /**
      * (EXPERIMENTAL) Deregisters a link matcher if it has been registered.
@@ -313,7 +392,7 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'termName'): string;
+    getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'termName'): string;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
@@ -328,7 +407,7 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'cols' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
+    getOption(key: 'cols' | 'fontSize' | 'lineHeight' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
@@ -350,7 +429,7 @@ declare module 'xterm' {
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: 'termName' | 'bellSound', value: string): void;
+    setOption(key: 'fontFamily' | 'termName' | 'bellSound', value: string): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
@@ -380,7 +459,7 @@ declare module 'xterm' {
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: 'cols' | 'rows' | 'tabStopWidth' | 'scrollback', value: number): void;
+    setOption(key: 'cols' | 'fontSize' | 'lineHeight' | 'rows' | 'tabStopWidth' | 'scrollback', value: number): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
@@ -393,6 +472,12 @@ declare module 'xterm' {
      * @param value The option value.
      */
     setOption(key: 'handler', value: (data: string) => void): void;
+    /**
+     * Sets an option on the terminal.
+     * @param key The option key.
+     * @param value The option value.
+     */
+    setOption(key: 'theme', value: ITheme): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.

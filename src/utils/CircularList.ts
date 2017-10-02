@@ -1,13 +1,15 @@
 /**
- * Represents a circular list; a list with a maximum size that wraps around when push is called,
- * overriding values at the start of the list.
- * @module xterm/utils/CircularList
+ * Copyright (c) 2016 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 
 import { EventEmitter } from '../EventEmitter';
 import { ICircularList } from '../Interfaces';
 
+/**
+ * Represents a circular list; a list with a maximum size that wraps around when push is called,
+ * overriding values at the start of the list.
+ */
 export class CircularList<T> extends EventEmitter implements ICircularList<T> {
   protected _array: T[];
   private _startIndex: number;

@@ -1,7 +1,5 @@
 /**
- * Clipboard handler module: exports methods for handling all clipboard-related events in the
- * terminal.
- * @module xterm/handlers/Clipboard
+ * Copyright (c) 2016 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 
