@@ -15,6 +15,7 @@ export class MouseHelper {
       return null;
     }
 
+    const originalElement = element;
     let x = event.pageX;
     let y = event.pageY;
 
@@ -24,6 +25,12 @@ export class MouseHelper {
       x -= element.offsetLeft;
       y -= element.offsetTop;
       element = 'offsetParent' in element ? <HTMLElement>element.offsetParent : <HTMLElement>element.parentElement;
+    }
+    element = originalElement;
+    while (element && element !== element.ownerDocument.body) {
+      x += element.scrollLeft;
+      y += element.scrollTop;
+      element = <HTMLElement>element.parentElement;
     }
     return [x, y];
   }
