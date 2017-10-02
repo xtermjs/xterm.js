@@ -21,7 +21,6 @@ export class MouseZoneManager implements IMouseZoneManager {
 
   private _areZonesActive: boolean = false;
   private _mouseMoveListener: (e: MouseEvent) => any;
-  private _mouseDownListener: (e: MouseEvent) => any;
   private _clickListener: (e: MouseEvent) => any;
 
   private _tooltipTimeout: number = null;
@@ -31,6 +30,8 @@ export class MouseZoneManager implements IMouseZoneManager {
   constructor(
     private _terminal: ITerminal
   ) {
+    this._terminal.element.addEventListener('mousedown', e => this._onMouseDown(e));
+
     // These events are expensive, only listen to it when mouse zones are active
     this._mouseMoveListener = e => this._onMouseMove(e);
     this._clickListener = e => this._onClick(e);
@@ -140,11 +141,30 @@ export class MouseZoneManager implements IMouseZoneManager {
     }
   }
 
+  private _onMouseDown(e: MouseEvent): void {
+    // Ignore the event if there are no zones active
+    if (!this._areZonesActive) {
+      return;
+    }
+
+    // Find the active zone, prevent event propagation if found to prevent other
+    // components from handling the mouse event.
+    const zone = this._findZoneEventAt(e);
+    if (zone) {
+      // TODO: When link modifier support is added, the event should only be
+      // cancelled when the modifier is held (see #1021)
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  }
+
   private _onClick(e: MouseEvent): void {
+    // Find the active zone and click it if found
     const zone = this._findZoneEventAt(e);
     if (zone) {
       zone.clickCallback(e);
       e.preventDefault();
+      e.stopImmediatePropagation();
     }
   }
 
