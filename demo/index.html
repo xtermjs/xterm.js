@@ -13,6 +13,9 @@
         <script src="/build/addons/fullscreen/fullscreen.js" ></script>
         <script src="/build/addons/search/search.js" ></script>
 
+        <!-- Edge needs this, as of late 2017 -->
+        <script src="/js/text-encoding.js"></script>
+
         <script src="/zmodemjs/zmodem.js"></script>
     </head>
     <body>
@@ -21,7 +24,7 @@
 <div id="zmodem_controls">
     <form id="zm_start" style="display: none" action="javascript:void(0)">
         ZMODEM detected: Start ZMODEM session?
-        <label><input name="zmstart" type=radio checked value="1"> Yes</label>
+        <label><input id="zmstart_yes" name="zmstart" type=radio checked value="1"> Yes</label>
         &nbsp;
         <label><input name="zmstart" type=radio value=""> No</label>
         <button type="submit">Submit</button>
@@ -39,7 +42,7 @@
     <form id="zm_offer" style="display: none" action="javascript:void(0)">
         <p>ZMODEM File offered!</p>
 
-        <label><input name="zmaccept" type=radio checked value="1"> Accept</label>
+        <label><input id="zmaccept_yes" name="zmaccept" type=radio checked value="1"> Accept</label>
         &nbsp;
         <label><input name="zmaccept" type=radio value=""> Skip</label>
         <button type="submit">Submit</button>

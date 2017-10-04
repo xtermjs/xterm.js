@@ -78,5 +78,8 @@
     "build": "gulp build; cd demo/zmodemjs; npm install",
     "prepublish": "npm run build",
     "coveralls": "gulp coveralls"
+  },
+  "dependencies": {
+    "text-encoding": "^0.6.4"
   }
 }

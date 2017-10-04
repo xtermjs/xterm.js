@@ -168,10 +168,12 @@ function _handle_receive_session(zsession) {
         var offer_form = document.getElementById("zm_offer");
         offer_form.style.display = "";
         offer_form.onsubmit = function(e) {
-            offer_form.style.display = "none";
+            var the_form = e.currentTarget;
+            the_form.style.display = "none";
 
             //START
-            if (offer_form.zmaccept.value) {
+            //if (offer_form.zmaccept.value) {
+            if (document.getElementById("zmaccept_yes").checked) {
                 var FILE_BUFFER = [];
                 xfer.on("input", (payload) => {
                     _update_progress(xfer);
@@ -259,7 +261,7 @@ var zsentry = new Zmodem.Sentry( {
         start_form.onsubmit = function(e) {
             start_form.style.display = "none";
 
-            if (e.currentTarget.zmstart.value) {
+            if (document.getElementById("zmstart_yes").checked) {
                 let zsession = detection.confirm();
 
                 current_zsession = zsession;
