@@ -56,7 +56,7 @@
   exports.fit = function (term) {
     // Wrap fit in a setTimeout as charMeasure needs time to get initialized
     // after calling Terminal.open
-    setTimeout(() => {
+    setTimeout(function () {
       var geometry = exports.proposeGeometry(term);
 
       if (geometry) {
