@@ -142,13 +142,23 @@ class CharAtlasGenerator {
 
     // Default color
     for (let i = 0; i < 256; i++) {
+      this._ctx.save();
+      this._ctx.beginPath();
+      this._ctx.rect(i * cellWidth, 0, cellWidth, cellHeight);
+      this._ctx.clip();
       this._ctx.fillText(String.fromCharCode(i), i * cellWidth, 0);
+      this._ctx.restore();
     }
     // Default color bold
     this._ctx.save();
     this._ctx.font = `bold ${this._ctx.font}`;
     for (let i = 0; i < 256; i++) {
+      this._ctx.save();
+      this._ctx.beginPath();
+      this._ctx.rect(i * cellWidth, cellHeight, cellWidth, cellHeight);
+      this._ctx.clip();
       this._ctx.fillText(String.fromCharCode(i), i * cellWidth, cellHeight);
+      this._ctx.restore();
     }
     this._ctx.restore();
 
@@ -162,13 +172,16 @@ class CharAtlasGenerator {
       const y = (colorIndex + 2) * cellHeight;
       // Draw ascii characters
       for (let i = 0; i < 256; i++) {
+        this._ctx.save();
+        this._ctx.beginPath();
+        this._ctx.rect(i * cellWidth, y, cellWidth, cellHeight);
+        this._ctx.clip();
         this._ctx.fillStyle = ansiColors[colorIndex];
         this._ctx.fillText(String.fromCharCode(i), i * cellWidth, y);
+        this._ctx.restore();
       }
     }
     this._ctx.restore();
-
-    const charAtlasImageData = this._ctx.getImageData(0, 0, this._canvas.width, this._canvas.height);
 
     // Support is patchy for createImageBitmap at the moment, pass a canvas back
     // if support is lacking as drawImage works there too. Firefox is also
@@ -183,9 +196,27 @@ class CharAtlasGenerator {
       return result;
     }
 
+    const charAtlasImageData = this._ctx.getImageData(0, 0, this._canvas.width, this._canvas.height);
+
+    // Remove the background color from the image so characters may overlap
+    const r = parseInt(background.substr(1, 2), 16);
+    const g = parseInt(background.substr(3, 2), 16);
+    const b = parseInt(background.substr(5, 2), 16);
+    this._clearColor(charAtlasImageData, r, g, b);
+
     const promise = window.createImageBitmap(charAtlasImageData);
     // Clear the rect while the promise is in progress
     this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
     return promise;
+  }
+
+  private _clearColor(imageData: ImageData, r: number, g: number, b: number): void {
+    for (let offset = 0; offset < imageData.data.length; offset += 4) {
+      if (imageData.data[offset] === r &&
+          imageData.data[offset + 1] === g &&
+          imageData.data[offset + 2] === b) {
+        imageData.data[offset + 3] = 0;
+      }
+    }
   }
 }

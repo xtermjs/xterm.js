@@ -31,7 +31,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._canvas = document.createElement('canvas');
     this._canvas.id = `xterm-${id}-layer`;
     this._canvas.style.zIndex = zIndex.toString();
-    this._ctx = this._canvas.getContext('2d', {_alpha});
+    this._ctx = this._canvas.getContext('2d', {alpha: _alpha});
     this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
     // Draw the background if this is an opaque layer
     if (!_alpha) {
@@ -224,11 +224,6 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param bold Whether the text is bold.
    */
   protected drawChar(terminal: ITerminal, char: string, code: number, width: number, x: number, y: number, fg: number, bg: number, bold: boolean): void {
-    // Clear the cell next to this character if it's wide
-    if (width === 2) {
-      this.clearCells(x + 1, y, 1, 1);
-    }
-
     let colorIndex = 0;
     if (fg < 256) {
       colorIndex = fg + 2;
@@ -247,7 +242,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       const charAtlasCellWidth = this._scaledCharWidth + CHAR_ATLAS_CELL_SPACING;
       const charAtlasCellHeight = this._scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
       this._ctx.drawImage(this._charAtlas,
-          code * charAtlasCellWidth, colorIndex * charAtlasCellHeight, this._scaledCharWidth, this._scaledCharHeight,
+          code * charAtlasCellWidth, colorIndex * charAtlasCellHeight, charAtlasCellWidth, this._scaledCharHeight,
           x * this._scaledCharWidth, y * this._scaledLineHeight + this._scaledLineDrawY, this._scaledCharWidth, this._scaledCharHeight);
     } else {
       this._drawUncachedChar(terminal, char, width, fg, x, y, bold);
@@ -290,7 +285,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     // can bleed into other cells. This code will clip the following fillText,
     // ensuring that its contents don't go beyond the cell bounds.
     this._ctx.beginPath();
-    this._ctx.rect(x * this._scaledCharWidth, y * this._scaledLineHeight + this._scaledLineDrawY, width * this._scaledCharWidth, this._scaledCharHeight);
+    this._ctx.rect(0, y * this._scaledLineHeight + this._scaledLineDrawY, terminal.cols * this._scaledCharWidth, this._scaledCharHeight);
     this._ctx.clip();
 
     // Draw the character
