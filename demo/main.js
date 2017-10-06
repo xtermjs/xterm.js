@@ -93,7 +93,7 @@ function createTerminal() {
   term.fit();
 
   // fit is called within a setTimeout, cols and rows need this.
-  setTimeout(() => {
+  setTimeout(function () {
     colsElement.value = term.cols;
     rowsElement.value = term.rows;
 

@@ -101,6 +101,7 @@ Since xterm.js is typically implemented as a developer tool, only modern browser
 - Edge latest
 - Firefox latest
 - Safari latest
+- IE11
 
 Xterm.js works seamlessly in Electron apps and may even work on earlier versions of the browsers but these are the browsers we strive to keep working.
 
