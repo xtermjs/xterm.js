@@ -146,6 +146,11 @@ export class TextRenderLayer extends BaseRenderLayer {
           }
         }
 
+        // Clear the cell next to this character if it's wide
+        if (width === 2) {
+          this.clearCells(x + 1, y, 1, 1);
+        }
+
         // Draw background
         if (bg < 256) {
           this._ctx.save();
