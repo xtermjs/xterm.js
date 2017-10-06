@@ -12,7 +12,7 @@ import { SelectionManager } from './SelectionManager';
 import { SelectionModel } from './SelectionModel';
 import { BufferSet } from './BufferSet';
 import { MockTerminal } from './utils/TestUtils.test';
-import { LineData } from './Types';
+import { LineData, CharData } from './Types';
 
 class TestSelectionManager extends SelectionManager {
   constructor(
@@ -64,6 +64,10 @@ describe('SelectionManager', () => {
       result.push([0, text.charAt(i), 1, text.charCodeAt(i)]);
     }
     return result;
+  }
+
+  function stringArrayToRow(chars: string[]): LineData {
+    return chars.map(c => <CharData>[0, c, 1, c.charCodeAt(0)]);
   }
 
   describe('_selectWordAt', () => {
@@ -184,6 +188,113 @@ describe('SelectionManager', () => {
       assert.equal(selectionManager.selectionText, 'ij');
       selectionManager.selectWordAt([15, 0]);
       assert.equal(selectionManager.selectionText, 'ij"');
+    });
+    describe('emoji', () => {
+      it('should treat a single emoji as a word when wrapped in spaces', () => {
+        buffer.lines.set(0, stringToRow(' ⚽ a')); // The a is here to prevent the space being trimmed in selectionText
+        selectionManager.selectWordAt([0, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+        selectionManager.selectWordAt([1, 0]);
+        assert.equal(selectionManager.selectionText, '⚽');
+        selectionManager.selectWordAt([2, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+      });
+      it('should treat multiple emojis as a word when wrapped in spaces', () => {
+        buffer.lines.set(0, stringToRow(' ⚽⚽ a')); // The a is here to prevent the space being trimmed in selectionText
+        selectionManager.selectWordAt([0, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+        selectionManager.selectWordAt([1, 0]);
+        assert.equal(selectionManager.selectionText, '⚽⚽');
+        selectionManager.selectWordAt([2, 0]);
+        assert.equal(selectionManager.selectionText, '⚽⚽');
+        selectionManager.selectWordAt([3, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+      });
+      it('should treat emojis using the zero-width-joiner as a single word', () => {
+        // Note that the first 3 emojis include the invisible ZWJ char
+        buffer.lines.set(0, stringArrayToRow([
+          ' ', '👨‍', '👩‍', '👧‍', '👦', ' ', 'a'
+        ])); // The a is here to prevent the space being trimmed in selectionText
+        selectionManager.selectWordAt([0, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+        // ZWJ emojis do not combine in the terminal so the family emoji used here consumed 4 cells
+        // The selection text should retain ZWJ chars despite not combining on the terminal
+        selectionManager.selectWordAt([1, 0]);
+        assert.equal(selectionManager.selectionText, '👨‍👩‍👧‍👦');
+        selectionManager.selectWordAt([2, 0]);
+        assert.equal(selectionManager.selectionText, '👨‍👩‍👧‍👦');
+        selectionManager.selectWordAt([3, 0]);
+        assert.equal(selectionManager.selectionText, '👨‍👩‍👧‍👦');
+        selectionManager.selectWordAt([4, 0]);
+        assert.equal(selectionManager.selectionText, '👨‍👩‍👧‍👦');
+        selectionManager.selectWordAt([5, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+      });
+      it('should treat emojis and characters joined together as a word', () => {
+        buffer.lines.set(0, stringToRow(' ⚽ab cd⚽ ef⚽gh')); // The a is here to prevent the space being trimmed in selectionText
+        selectionManager.selectWordAt([0, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+        selectionManager.selectWordAt([1, 0]);
+        assert.equal(selectionManager.selectionText, '⚽ab');
+        selectionManager.selectWordAt([2, 0]);
+        assert.equal(selectionManager.selectionText, '⚽ab');
+        selectionManager.selectWordAt([3, 0]);
+        assert.equal(selectionManager.selectionText, '⚽ab');
+        selectionManager.selectWordAt([4, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+        selectionManager.selectWordAt([5, 0]);
+        assert.equal(selectionManager.selectionText, 'cd⚽');
+        selectionManager.selectWordAt([6, 0]);
+        assert.equal(selectionManager.selectionText, 'cd⚽');
+        selectionManager.selectWordAt([7, 0]);
+        assert.equal(selectionManager.selectionText, 'cd⚽');
+        selectionManager.selectWordAt([8, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+        selectionManager.selectWordAt([9, 0]);
+        assert.equal(selectionManager.selectionText, 'ef⚽gh');
+        selectionManager.selectWordAt([10, 0]);
+        assert.equal(selectionManager.selectionText, 'ef⚽gh');
+        selectionManager.selectWordAt([11, 0]);
+        assert.equal(selectionManager.selectionText, 'ef⚽gh');
+        selectionManager.selectWordAt([12, 0]);
+        assert.equal(selectionManager.selectionText, 'ef⚽gh');
+        selectionManager.selectWordAt([13, 0]);
+        assert.equal(selectionManager.selectionText, 'ef⚽gh');
+      });
+      it('should treat complex emojis and characters joined together as a word', () => {
+        // This emoji is the flag for England and is made up of: 1F3F4 E0067 E0062 E0065 E006E E0067 E007F
+        buffer.lines.set(0, stringArrayToRow([
+          ' ', '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'a', 'b', ' ', 'c', 'd', '🏴󠁧󠁢󠁥󠁮󠁧󠁿', ' ', 'e', 'f', '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'g', 'h', ' ', 'a'
+        ])); // The a is here to prevent the space being trimmed in selectionText
+        selectionManager.selectWordAt([0, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+        selectionManager.selectWordAt([1, 0]);
+        assert.equal(selectionManager.selectionText, '🏴󠁧󠁢󠁥󠁮󠁧󠁿ab');
+        selectionManager.selectWordAt([2, 0]);
+        assert.equal(selectionManager.selectionText, '🏴󠁧󠁢󠁥󠁮󠁧󠁿ab');
+        selectionManager.selectWordAt([3, 0]);
+        assert.equal(selectionManager.selectionText, '🏴󠁧󠁢󠁥󠁮󠁧󠁿ab');
+        selectionManager.selectWordAt([4, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+        selectionManager.selectWordAt([5, 0]);
+        assert.equal(selectionManager.selectionText, 'cd🏴󠁧󠁢󠁥󠁮󠁧󠁿');
+        selectionManager.selectWordAt([6, 0]);
+        assert.equal(selectionManager.selectionText, 'cd🏴󠁧󠁢󠁥󠁮󠁧󠁿');
+        selectionManager.selectWordAt([7, 0]);
+        assert.equal(selectionManager.selectionText, 'cd🏴󠁧󠁢󠁥󠁮󠁧󠁿');
+        selectionManager.selectWordAt([8, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+        selectionManager.selectWordAt([9, 0]);
+        assert.equal(selectionManager.selectionText, 'ef🏴󠁧󠁢󠁥󠁮󠁧󠁿gh');
+        selectionManager.selectWordAt([10, 0]);
+        assert.equal(selectionManager.selectionText, 'ef🏴󠁧󠁢󠁥󠁮󠁧󠁿gh');
+        selectionManager.selectWordAt([11, 0]);
+        assert.equal(selectionManager.selectionText, 'ef🏴󠁧󠁢󠁥󠁮󠁧󠁿gh');
+        selectionManager.selectWordAt([12, 0]);
+        assert.equal(selectionManager.selectionText, 'ef🏴󠁧󠁢󠁥󠁮󠁧󠁿gh');
+        selectionManager.selectWordAt([13, 0]);
+        assert.equal(selectionManager.selectionText, 'ef🏴󠁧󠁢󠁥󠁮󠁧󠁿gh');
+      });
     });
   });
 

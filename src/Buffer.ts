@@ -208,12 +208,19 @@ export class Buffer implements IBuffer {
   public translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol: number = 0, endCol: number = null): string {
     // Get full line
     let lineString = '';
-    let widthAdjustedStartCol = startCol;
-    let widthAdjustedEndCol = endCol;
     const line = this.lines.get(lineIndex);
     if (!line) {
       return '';
     }
+
+    // Initialize column and index values. Column values represent the actual
+    // cell column, indexes represent the index in the string. Indexes are
+    // needed here because some chars are 0 characters long (eg. after wide
+    // chars) and some chars are longer than 1 characters long (eg. emojis).
+    let startIndex = startCol;
+    endCol = endCol || line.length;
+    let endIndex = endCol;
+
     for (let i = 0; i < line.length; i++) {
       const char = line[i];
       lineString += char[CHAR_DATA_CHAR_INDEX];
@@ -221,29 +228,39 @@ export class Buffer implements IBuffer {
       // column indexes
       if (char[CHAR_DATA_WIDTH_INDEX] === 0) {
         if (startCol >= i) {
-          widthAdjustedStartCol--;
+          startIndex--;
         }
         if (endCol >= i) {
-          widthAdjustedEndCol--;
+          endIndex--;
+        }
+      } else {
+        // Adjust the columns to take glyphs that are represented by multiple
+        // code points into account.
+        if (char[CHAR_DATA_CHAR_INDEX].length > 1) {
+          if (startCol > i) {
+            startIndex += char[CHAR_DATA_CHAR_INDEX].length - 1;
+          }
+          if (endCol > i) {
+            endIndex += char[CHAR_DATA_CHAR_INDEX].length - 1;
+          }
         }
       }
     }
 
     // Calculate the final end col by trimming whitespace on the right of the
     // line if needed.
-    let finalEndCol = widthAdjustedEndCol || line.length;
     if (trimRight) {
       const rightWhitespaceIndex = lineString.search(/\s+$/);
       if (rightWhitespaceIndex !== -1) {
-        finalEndCol = Math.min(finalEndCol, rightWhitespaceIndex);
+        endIndex = Math.min(endIndex, rightWhitespaceIndex);
       }
       // Return the empty string if only trimmed whitespace is selected
-      if (finalEndCol <= widthAdjustedStartCol) {
+      if (endIndex <= startIndex) {
         return '';
       }
     }
 
-    return lineString.substring(widthAdjustedStartCol, finalEndCol);
+    return lineString.substring(startIndex, endIndex);
   }
 
   /**
