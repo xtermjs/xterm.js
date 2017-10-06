@@ -121,7 +121,7 @@ export class TextRenderLayer extends BaseRenderLayer {
           // get removed, and `a` would not re-render because it thinks it's
           // already in the correct state.
           this._state.cache[x][y] = OVERLAP_OWNED_CHAR_DATA;
-          if (x < line.length && line[x + 1][CHAR_DATA_CODE_INDEX] === 32 /*' '*/) {
+          if (x < line.length - 1 && line[x + 1][CHAR_DATA_CODE_INDEX] === 32 /*' '*/) {
             width = 2;
             this._clearChar(x + 1, y);
             // The overlapping char's char data will force a clear and render when the
