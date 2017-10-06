@@ -59,6 +59,11 @@ export class TextRenderLayer extends BaseRenderLayer {
       const row = y + terminal.buffer.ydisp;
       const line = terminal.buffer.lines.get(row);
 
+      this.clearCells(0, y, terminal.cols, 1);
+      // for (let x = 0; x < terminal.cols; x++) {
+      //   this._state.cache[x][y] = null;
+      // }
+
       for (let x = 0; x < terminal.cols; x++) {
         const charData = line[x];
         const code: number = <number>charData[CHAR_DATA_CODE_INDEX];
@@ -69,7 +74,7 @@ export class TextRenderLayer extends BaseRenderLayer {
         // The character to the left is a wide character, drawing is owned by
         // the char at x-1
         if (width === 0) {
-          this._state.cache[x][y] = null;
+          // this._state.cache[x][y] = null;
           continue;
         }
 
@@ -86,19 +91,19 @@ export class TextRenderLayer extends BaseRenderLayer {
         }
 
         // Skip rendering if the character is identical
-        const state = this._state.cache[x][y];
-        if (state && state[CHAR_DATA_CHAR_INDEX] === char && state[CHAR_DATA_ATTR_INDEX] === attr) {
-          // Skip render, contents are identical
-          this._state.cache[x][y] = charData;
-          continue;
-        }
+        // const state = this._state.cache[x][y];
+        // if (state && state[CHAR_DATA_CHAR_INDEX] === char && state[CHAR_DATA_ATTR_INDEX] === attr) {
+        //   // Skip render, contents are identical
+        //   this._state.cache[x][y] = charData;
+        //   continue;
+        // }
 
         // Clear the old character was not a space with the default background
-        const wasInverted = !!(state && state[CHAR_DATA_ATTR_INDEX] && state[CHAR_DATA_ATTR_INDEX] >> 18 & FLAGS.INVERSE);
-        if (state && !(state[CHAR_DATA_CODE_INDEX] === 32 /*' '*/ && (state[CHAR_DATA_ATTR_INDEX] & 0x1ff) >= 256 && !wasInverted)) {
-          this._clearChar(x, y);
-        }
-        this._state.cache[x][y] = charData;
+        // const wasInverted = !!(state && state[CHAR_DATA_ATTR_INDEX] && state[CHAR_DATA_ATTR_INDEX] >> 18 & FLAGS.INVERSE);
+        // if (state && !(state[CHAR_DATA_CODE_INDEX] === 32 /*' '*/ && (state[CHAR_DATA_ATTR_INDEX] & 0x1ff) >= 256 && !wasInverted)) {
+        //   this._clearChar(x, y);
+        // }
+        // this._state.cache[x][y] = charData;
 
         const flags = attr >> 18;
         let bg = attr & 0x1ff;
@@ -120,14 +125,14 @@ export class TextRenderLayer extends BaseRenderLayer {
           // space is added. Without this, the first half of `b` would never
           // get removed, and `a` would not re-render because it thinks it's
           // already in the correct state.
-          this._state.cache[x][y] = OVERLAP_OWNED_CHAR_DATA;
+          // this._state.cache[x][y] = OVERLAP_OWNED_CHAR_DATA;
           if (x < line.length - 1 && line[x + 1][CHAR_DATA_CODE_INDEX] === 32 /*' '*/) {
             width = 2;
-            this._clearChar(x + 1, y);
+            // this._clearChar(x + 1, y);
             // The overlapping char's char data will force a clear and render when the
             // overlapping char is no longer to the left of the character and also when
             // the space changes to another character.
-            this._state.cache[x + 1][y] = OVERLAP_OWNED_CHAR_DATA;
+            // this._state.cache[x + 1][y] = OVERLAP_OWNED_CHAR_DATA;
           }
         }
 
@@ -148,7 +153,7 @@ export class TextRenderLayer extends BaseRenderLayer {
 
         // Clear the cell next to this character if it's wide
         if (width === 2) {
-          this.clearCells(x + 1, y, 1, 1);
+          // this.clearCells(x + 1, y, 1, 1);
         }
 
         // Draw background
