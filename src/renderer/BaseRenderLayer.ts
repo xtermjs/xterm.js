@@ -31,7 +31,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._canvas = document.createElement('canvas');
     this._canvas.id = `xterm-${id}-layer`;
     this._canvas.style.zIndex = zIndex.toString();
-    this._ctx = this._canvas.getContext('2d', {_alpha});
+    this._ctx = this._canvas.getContext('2d', {alpha: _alpha});
     this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
     // Draw the background if this is an opaque layer
     if (!_alpha) {
