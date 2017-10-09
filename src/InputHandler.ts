@@ -1225,6 +1225,9 @@ export class InputHandler implements IInputHandler {
       } else if (p === 2) {
         // dimmed text
         flags |= FLAGS.DIM;
+      } else if (p === 21) {
+        // bold off not widely supported; double underline hardly ever supported.
+        flags &= ~FLAGS.BOLD;
       } else if (p === 22) {
         // not bold nor faint
         flags &= ~FLAGS.BOLD;
