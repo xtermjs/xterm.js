@@ -185,7 +185,7 @@ export class TextRenderLayer extends BaseRenderLayer {
           this.fillBottomLineAtCells(x, y);
         }
 
-        this.drawChar(terminal, char, code, width, x, y, fg, bg, !!(flags & FLAGS.BOLD));
+        this.drawChar(terminal, char, code, width, x, y, fg, bg, !!(flags & FLAGS.BOLD), !!(flags & FLAGS.DIM));
 
         this._ctx.restore();
       }
