@@ -579,6 +579,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.element.classList.add('xterm');
 
     this.element.setAttribute('tabindex', '0');
+    this.element.setAttribute('contenteditable', 'true');
 
     this.viewportElement = document.createElement('div');
     this.viewportElement.classList.add('xterm-viewport');
