@@ -1113,6 +1113,7 @@ export class InputHandler implements IInputHandler {
    *     Ps = 5  -> Blink (appears as Bold).
    *     Ps = 7  -> Inverse.
    *     Ps = 8  -> Invisible, i.e., hidden (VT300).
+   *     Ps = 2 1  -> 	Bold off or Double Underline.
    *     Ps = 2 2  -> Normal (neither bold nor faint).
    *     Ps = 2 4  -> Not underlined.
    *     Ps = 2 5  -> Steady (not blinking).
