@@ -241,9 +241,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       // ImageBitmap's draw about twice as fast as from a canvas
       const charAtlasCellWidth = this._scaledCharWidth + CHAR_ATLAS_CELL_SPACING;
       const charAtlasCellHeight = this._scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
-			if (dim) {
-				this._ctx.globalAlpha = 0.5;
-			}
+      // Apply alpha to dim the character
+      if (dim) {
+        this._ctx.globalAlpha = 0.5;
+      }
       this._ctx.drawImage(this._charAtlas,
           code * charAtlasCellWidth, colorIndex * charAtlasCellHeight, charAtlasCellWidth, this._scaledCharHeight,
           x * this._scaledCharWidth, y * this._scaledLineHeight + this._scaledLineDrawY, this._scaledCharWidth, this._scaledCharHeight);
@@ -292,9 +293,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.clip();
 
     // Apply alpha to dim the character
-		if (dim) {
-			this._ctx.globalAlpha = 0.5;
-		}
+    if (dim) {
+      this._ctx.globalAlpha = 0.5;
+    }
 		// Draw the character
     this._ctx.fillText(char, x * this._scaledCharWidth, y * this._scaledLineHeight + this._scaledLineDrawY);
     this._ctx.restore();

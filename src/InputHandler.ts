@@ -1107,7 +1107,7 @@ export class InputHandler implements IInputHandler {
    * CSI Pm m  Character Attributes (SGR).
    *     Ps = 0  -> Normal (default).
    *     Ps = 1  -> Bold.
-	 *     Ps = 2  -> Faint, decreased intensity (ISO 6429).
+   *     Ps = 2  -> Faint, decreased intensity (ISO 6429).
    *     Ps = 4  -> Underlined.
    *     Ps = 5  -> Blink (appears as Bold).
    *     Ps = 7  -> Inverse.
@@ -1221,10 +1221,10 @@ export class InputHandler implements IInputHandler {
       } else if (p === 8) {
         // invisible
         flags |= 16;
-			} else if (p === 2) {
-				// dimmed text
-				flags |= 32;
-			} else if (p === 22) {
+      } else if (p === 2) {
+        // dimmed text
+        flags |= 32;
+      } else if (p === 22) {
         // not bold
         flags &= ~1;
       } else if (p === 24) {
