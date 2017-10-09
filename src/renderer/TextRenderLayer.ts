@@ -29,7 +29,7 @@ export class TextRenderLayer extends BaseRenderLayer {
 
     // Clear the character width cache if the font or width has changed
     const terminalFont = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
-		
+
     // Resizing the canvas discards the contents of the canvas so clear state
     this._state.clear();
     this._state.resize(terminal.cols, terminal.rows);
