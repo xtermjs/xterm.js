@@ -10,6 +10,7 @@ import { CharData } from '../Types';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
 
 export const INVERTED_DEFAULT_COLOR = -1;
+const DIM_OPACITY = 0.5;
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -243,7 +244,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       const charAtlasCellHeight = this._scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
       // Apply alpha to dim the character
       if (dim) {
-        this._ctx.globalAlpha = 0.5;
+        this._ctx.globalAlpha = DIM_OPACITY;
       }
       this._ctx.drawImage(this._charAtlas,
           code * charAtlasCellWidth, colorIndex * charAtlasCellHeight, charAtlasCellWidth, this._scaledCharHeight,
@@ -294,7 +295,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
     // Apply alpha to dim the character
     if (dim) {
-      this._ctx.globalAlpha = 0.5;
+      this._ctx.globalAlpha = DIM_OPACITY;
     }
     // Draw the character
     this._ctx.fillText(char, x * this._scaledCharWidth, y * this._scaledLineHeight + this._scaledLineDrawY);
