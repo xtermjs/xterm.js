@@ -1208,7 +1208,7 @@ export class InputHandler implements IInputHandler {
       } else if (p === 1) {
         // bold text
         flags |= 1;
-			} else if (p === 4) {
+      } else if (p === 4) {
         // underlined text
         flags |= 2;
       } else if (p === 5) {

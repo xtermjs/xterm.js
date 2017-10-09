@@ -296,7 +296,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (dim) {
       this._ctx.globalAlpha = 0.5;
     }
-		// Draw the character
+    // Draw the character
     this._ctx.fillText(char, x * this._scaledCharWidth, y * this._scaledLineHeight + this._scaledLineDrawY);
     this._ctx.restore();
   }
