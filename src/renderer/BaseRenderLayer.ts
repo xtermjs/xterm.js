@@ -202,19 +202,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   protected fillCharTrueColor(terminal: ITerminal, charData: CharData, x: number, y: number): void {
     this._ctx.font = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
     this._ctx.textBaseline = 'top';
-
-    // Since uncached characters are not coming off the char atlas with source
-    // coordinates, it means that text drawn to the canvas (particularly '_')
-    // can bleed into other cells. This code will clip the following fillText,
-    // ensuring that its contents don't go beyond the cell bounds.
-    this._ctx.beginPath();
-    // TODO: Make clip rect use cell size?
-    this._ctx.rect(
-        x * this._scaledCellWidth + this._scaledCharLeft,
-        y * this._scaledCellHeight + this._scaledCharTop,
-        charData[CHAR_DATA_WIDTH_INDEX] * this._scaledCharWidth,
-        this._scaledCharHeight);
-    this._ctx.clip();
+    this._clipRow(terminal, y);
     this._ctx.fillText(
         charData[CHAR_DATA_CHAR_INDEX],
         x * this._scaledCellWidth + this._scaledCharLeft,
@@ -298,18 +286,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       this._ctx.fillStyle = this._colors.foreground;
     }
 
-    // Since uncached characters are not coming off the char atlas with source
-    // coordinates, it means that text drawn to the canvas (particularly '_')
-    // can bleed into other cells. This code will clip the following fillText,
-    // ensuring that its contents don't go beyond the cell bounds.
-    this._ctx.beginPath();
-    // TODO: Why is this be clipped at char top?
-    this._ctx.rect(
-        0,
-        y * this._scaledCellHeight + this._scaledCharTop,
-        terminal.cols * this._scaledCharWidth,
-        this._scaledCharHeight);
-    this._ctx.clip();
+    this._clipRow(terminal, y);
 
     // Draw the character
     this._ctx.fillText(
@@ -317,6 +294,21 @@ export abstract class BaseRenderLayer implements IRenderLayer {
         x * this._scaledCellWidth + this._scaledCharLeft,
         y * this._scaledCellHeight + this._scaledCharTop);
     this._ctx.restore();
+  }
+
+  /**
+   * Clips a row to ensure no pixels will be drawn outside the cells in the row.
+   * @param terminal The terminal.
+   * @param y The row to clip.
+   */
+  private _clipRow(terminal: ITerminal, y: number): void {
+    this._ctx.beginPath();
+    this._ctx.rect(
+        0,
+        y * this._scaledCellHeight,
+        terminal.cols * this._scaledCellWidth,
+        this._scaledCellHeight);
+    this._ctx.clip();
   }
 }
 

@@ -40,7 +40,9 @@ export class Renderer extends EventEmitter implements IRenderer {
     this.dimensions = {
       scaledCharWidth: null,
       scaledCharHeight: null,
+      scaledCellWidth: null,
       scaledCellHeight: null,
+      scaledCharLeft: null,
       scaledCharTop: null,
       scaledCanvasWidth: null,
       scaledCanvasHeight: null,
