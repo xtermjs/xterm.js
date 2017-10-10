@@ -80,6 +80,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   fontFamily: 'courier-new, courier, monospace',
   fontSize: 15,
   lineHeight: 1.0,
+  letterSpacing: 0,
   scrollback: 1000,
   screenKeys: false,
   debug: false,
@@ -410,6 +411,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         this.renderer.clear();
         this.charMeasure.measure(this.options);
         break;
+      case 'letterSpacing':
       case 'lineHeight':
         // When the font changes the size of the cells may change which requires a renderer clear
         this.renderer.clear();

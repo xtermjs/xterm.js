@@ -47,7 +47,7 @@ export class Viewport implements IViewport {
    */
   private refresh(): void {
     if (this.charMeasure.height > 0) {
-      this.currentRowHeight = this.terminal.renderer.dimensions.scaledLineHeight / window.devicePixelRatio;
+      this.currentRowHeight = this.terminal.renderer.dimensions.scaledCellHeight / window.devicePixelRatio;
 
       if (this.lastRecordedViewportHeight !== this.terminal.renderer.dimensions.canvasHeight) {
         this.lastRecordedViewportHeight = this.terminal.renderer.dimensions.canvasHeight;
@@ -75,7 +75,7 @@ export class Viewport implements IViewport {
       this.refresh();
     } else {
       // If size has changed, refresh viewport
-      if (this.terminal.renderer.dimensions.scaledLineHeight / window.devicePixelRatio !== this.currentRowHeight) {
+      if (this.terminal.renderer.dimensions.scaledCellHeight / window.devicePixelRatio !== this.currentRowHeight) {
         this.refresh();
       }
     }
