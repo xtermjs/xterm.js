@@ -10,6 +10,7 @@ import { CharData } from '../Types';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
 
 export const INVERTED_DEFAULT_COLOR = -1;
+const DIM_OPACITY = 0.5;
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -223,7 +224,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * This is used to validate whether a cached image can be used.
    * @param bold Whether the text is bold.
    */
-  protected drawChar(terminal: ITerminal, char: string, code: number, width: number, x: number, y: number, fg: number, bg: number, bold: boolean): void {
+  protected drawChar(terminal: ITerminal, char: string, code: number, width: number, x: number, y: number, fg: number, bg: number, bold: boolean, dim: boolean): void {
     let colorIndex = 0;
     if (fg < 256) {
       colorIndex = fg + 2;
@@ -241,11 +242,15 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       // ImageBitmap's draw about twice as fast as from a canvas
       const charAtlasCellWidth = this._scaledCharWidth + CHAR_ATLAS_CELL_SPACING;
       const charAtlasCellHeight = this._scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
+      // Apply alpha to dim the character
+      if (dim) {
+        this._ctx.globalAlpha = DIM_OPACITY;
+      }
       this._ctx.drawImage(this._charAtlas,
           code * charAtlasCellWidth, colorIndex * charAtlasCellHeight, charAtlasCellWidth, this._scaledCharHeight,
           x * this._scaledCharWidth, y * this._scaledLineHeight + this._scaledLineDrawY, charAtlasCellWidth, this._scaledCharHeight);
     } else {
-      this._drawUncachedChar(terminal, char, width, fg, x, y, bold);
+      this._drawUncachedChar(terminal, char, width, fg, x, y, bold, dim);
     }
     // This draws the atlas (for debugging purposes)
     // this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
@@ -263,7 +268,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param x The column to draw at.
    * @param y The row to draw at.
    */
-  private _drawUncachedChar(terminal: ITerminal, char: string, width: number, fg: number, x: number, y: number, bold: boolean): void {
+  private _drawUncachedChar(terminal: ITerminal, char: string, width: number, fg: number, x: number, y: number, bold: boolean, dim: boolean): void {
     this._ctx.save();
     this._ctx.font = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
     if (bold) {
@@ -288,6 +293,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.rect(0, y * this._scaledLineHeight + this._scaledLineDrawY, terminal.cols * this._scaledCharWidth, this._scaledCharHeight);
     this._ctx.clip();
 
+    // Apply alpha to dim the character
+    if (dim) {
+      this._ctx.globalAlpha = DIM_OPACITY;
+    }
     // Draw the character
     this._ctx.fillText(char, x * this._scaledCharWidth, y * this._scaledLineHeight + this._scaledLineDrawY);
     this._ctx.restore();
