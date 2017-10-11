@@ -234,7 +234,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       }
     }
     const isAscii = code < 256;
-    const isBasicColor = (colorIndex > 1 && fg < 16);
+    // A color is basic if it is one of the standard normal or bold weight
+    // colors of the characters held in the char atlas. Note that this excludes
+    // the normal weight light color characters
+    const isBasicColor = (colorIndex > 1 && fg < 16) && (fg < 8 || bold);
     const isDefaultColor = fg >= 256;
     const isDefaultBackground = bg >= 256;
     if (this._charAtlas && isAscii && (isBasicColor || isDefaultColor) && isDefaultBackground) {
