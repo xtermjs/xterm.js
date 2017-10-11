@@ -243,7 +243,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       const charAtlasCellHeight = this._scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
       this._ctx.drawImage(this._charAtlas,
           code * charAtlasCellWidth, colorIndex * charAtlasCellHeight, charAtlasCellWidth, this._scaledCharHeight,
-          x * this._scaledCharWidth, y * this._scaledLineHeight + this._scaledLineDrawY, this._scaledCharWidth, this._scaledCharHeight);
+          x * this._scaledCharWidth, y * this._scaledLineHeight + this._scaledLineDrawY, charAtlasCellWidth, this._scaledCharHeight);
     } else {
       this._drawUncachedChar(terminal, char, width, fg, x, y, bold);
     }
