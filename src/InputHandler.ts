@@ -1113,7 +1113,6 @@ export class InputHandler implements IInputHandler {
    *     Ps = 5  -> Blink (appears as Bold).
    *     Ps = 7  -> Inverse.
    *     Ps = 8  -> Invisible, i.e., hidden (VT300).
-   *     Ps = 2 1  -> Bold off or Double Underline.
    *     Ps = 2 2  -> Normal (neither bold nor faint).
    *     Ps = 2 4  -> Not underlined.
    *     Ps = 2 5  -> Steady (not blinking).
@@ -1226,9 +1225,6 @@ export class InputHandler implements IInputHandler {
       } else if (p === 2) {
         // dimmed text
         flags |= FLAGS.DIM;
-      } else if (p === 21) {
-        // bold off not widely supported; double underline hardly ever supported.
-        flags &= ~FLAGS.BOLD;
       } else if (p === 22) {
         // not bold nor faint
         flags &= ~FLAGS.BOLD;
