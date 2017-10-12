@@ -14,62 +14,7 @@
         <script src="/build/addons/search/search.js" ></script>
     </head>
     <body>
-        <h1>xterm.js: xterm, in the browser</h1>
         <div id="terminal-container"></div>
-        <div>
-          <h2>Actions</h2>
-          <p>
-            <label>Find next <input id="find-next"/></label>
-            <label>Find previous <input id="find-previous"/></label>
-          </p>
-        </div>
-        <div>
-          <h2>Options</h2>
-          <p>
-            <label><input type="checkbox" id="option-cursor-blink"> cursorBlink</label>
-          </p>
-          <p>
-            <label>
-              cursorStyle
-              <select id="option-cursor-style">
-                <option value="block">block</option>
-                <option value="underline">underline</option>
-                <option value="bar">bar</option>
-              </select>
-            </label>
-          </p>
-          <p>
-            <label>
-              bellStyle
-              <select id="option-bell-style">
-                <option value="">none</option>
-                <option value="sound">sound</option>
-                <option value="visual">visual</option>
-                <option value="both">both</option>
-              </select>
-            </label>
-          </p>
-          <p>
-            <label>scrollback <input type="number" id="option-scrollback" value="1000" /></label>
-          </p>
-          <p>
-            <label>tabStopWidth <input type="number" id="option-tabstopwidth" value="8" /></label>
-          </p>
-          <div>
-          	<h3>Size</h3>
-            <div>
-              <div style="display: inline-block; margin-right: 16px;">
-                <label for="cols">Columns</label>
-                <input type="number" id="cols" />
-              </div>
-              <div style="display: inline-block; margin-right: 16px;">
-                <label for="rows">Rows</label>
-                <input type="number" id="rows" />
-              </div>
-            </div>
-          </div>
-        </div>
-        <p><strong>Attention:</strong> The demo is a barebones implementation and is designed for xterm.js evaluation purposes only. Exposing the demo to the public as is would introduce security risks for the host.</p>
         <script src="main.js" defer ></script>
     </body>
 </html>

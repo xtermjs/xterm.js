@@ -4,78 +4,82 @@ var term,
     socket,
     pid;
 
-var terminalContainer = document.getElementById('terminal-container'),
-    actionElements = {
-      findNext: document.querySelector('#find-next'),
-      findPrevious: document.querySelector('#find-previous')
-    },
-    optionElements = {
-      cursorBlink: document.querySelector('#option-cursor-blink'),
-      cursorStyle: document.querySelector('#option-cursor-style'),
-      scrollback: document.querySelector('#option-scrollback'),
-      tabstopwidth: document.querySelector('#option-tabstopwidth'),
-      bellStyle: document.querySelector('#option-bell-style')
-    },
-    colsElement = document.getElementById('cols'),
-    rowsElement = document.getElementById('rows');
+var terminalContainer = document.getElementById('terminal-container');
+    // actionElements = {
+    //   findNext: document.querySelector('#find-next'),
+    //   findPrevious: document.querySelector('#find-previous')
+    // },
+    // optionElements = {
+    //   cursorBlink: document.querySelector('#option-cursor-blink'),
+    //   cursorStyle: document.querySelector('#option-cursor-style'),
+    //   scrollback: document.querySelector('#option-scrollback'),
+    //   tabstopwidth: document.querySelector('#option-tabstopwidth'),
+    //   bellStyle: document.querySelector('#option-bell-style')
+    // },
+    // colsElement = document.getElementById('cols'),
+    // rowsElement = document.getElementById('rows');
 
-function setTerminalSize() {
-  var cols = parseInt(colsElement.value, 10);
-  var rows = parseInt(rowsElement.value, 10);
-  var viewportElement = document.querySelector('.xterm-viewport');
-  var scrollBarWidth = viewportElement.offsetWidth - viewportElement.clientWidth;
-  var width = (cols * term.charMeasure.width + 20 /*room for scrollbar*/).toString() + 'px';
-  var height = (rows * term.charMeasure.height).toString() + 'px';
+// var colsElementValue;
+// var rowsElementValue;
 
-  terminalContainer.style.width = width;
-  terminalContainer.style.height = height;
-  term.resize(cols, rows);
-}
+// function setTerminalSize() {
+//   var cols = parseInt(colsElementValue, 10);
+//   var rows = parseInt(rowsElementValue, 10);
+//   var viewportElement = document.querySelector('.xterm-viewport');
+//   var scrollBarWidth = viewportElement.offsetWidth - viewportElement.clientWidth;
+//   var width = (cols * term.charMeasure.width + 20 /*room for scrollbar*/).toString() + 'px';
+//   var height = (rows * term.charMeasure.height).toString() + 'px';
 
-colsElement.addEventListener('change', setTerminalSize);
-rowsElement.addEventListener('change', setTerminalSize);
+//   terminalContainer.style.width = width;
+//   terminalContainer.style.height = height;
+//   term.resize(cols, rows);
+// }
 
-actionElements.findNext.addEventListener('keypress', function (e) {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    term.findNext(actionElements.findNext.value);
-  }
-});
-actionElements.findPrevious.addEventListener('keypress', function (e) {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    term.findPrevious(actionElements.findPrevious.value);
-  }
-});
+//colsElement.addEventListener('change', setTerminalSize);
+//rowsElement.addEventListener('change', setTerminalSize);
 
-optionElements.cursorBlink.addEventListener('change', function () {
-  term.setOption('cursorBlink', optionElements.cursorBlink.checked);
-});
-optionElements.cursorStyle.addEventListener('change', function () {
-  term.setOption('cursorStyle', optionElements.cursorStyle.value);
-});
-optionElements.bellStyle.addEventListener('change', function () {
-  term.setOption('bellStyle', optionElements.bellStyle.value);
-});
-optionElements.scrollback.addEventListener('change', function () {
-  term.setOption('scrollback', parseInt(optionElements.scrollback.value, 10));
-});
-optionElements.tabstopwidth.addEventListener('change', function () {
-  term.setOption('tabStopWidth', parseInt(optionElements.tabstopwidth.value, 10));
-});
+// actionElements.findNext.addEventListener('keypress', function (e) {
+//   if (e.key === "Enter") {
+//     e.preventDefault();
+//     term.findNext(actionElements.findNext.value);
+//   }
+// });
+// actionElements.findPrevious.addEventListener('keypress', function (e) {
+//   if (e.key === "Enter") {
+//     e.preventDefault();
+//     term.findPrevious(actionElements.findPrevious.value);
+//   }
+// });
+
+// optionElements.cursorBlink.addEventListener('change', function () {
+//   term.setOption('cursorBlink', optionElements.cursorBlink.checked);
+// });
+// optionElements.cursorStyle.addEventListener('change', function () {
+//   term.setOption('cursorStyle', optionElements.cursorStyle.value);
+// });
+// optionElements.bellStyle.addEventListener('change', function () {
+//   term.setOption('bellStyle', optionElements.bellStyle.value);
+// });
+// optionElements.scrollback.addEventListener('change', function () {
+//   term.setOption('scrollback', parseInt(optionElements.scrollback.value, 10));
+// });
+// optionElements.tabstopwidth.addEventListener('change', function () {
+//   term.setOption('tabStopWidth', parseInt(optionElements.tabstopwidth.value, 10));
+// });
 
 createTerminal();
+term.focus();
 
 function createTerminal() {
   // Clean terminal
   while (terminalContainer.children.length) {
     terminalContainer.removeChild(terminalContainer.children[0]);
   }
-  term = new Terminal({
+  term = new Terminal(/*{
     cursorBlink: optionElements.cursorBlink.checked,
     scrollback: parseInt(optionElements.scrollback.value, 10),
     tabStopWidth: parseInt(optionElements.tabstopwidth.value, 10)
-  });
+  }*/);
   term.on('resize', function (size) {
     if (!pid) {
       return;
@@ -84,6 +88,7 @@ function createTerminal() {
         rows = size.rows,
         url = '/terminals/' + pid + '/size?cols=' + cols + '&rows=' + rows;
 
+    console.log("fetch resize", url);
     fetch(url, {method: 'POST'});
   });
   protocol = (location.protocol === 'https:') ? 'wss://' : 'ws://';
@@ -94,12 +99,12 @@ function createTerminal() {
 
   // fit is called within a setTimeout, cols and rows need this.
   setTimeout(function () {
-    colsElement.value = term.cols;
-    rowsElement.value = term.rows;
+    // colsElementValue = term.cols;
+    // rowsElementValue = term.rows;
 
-    // Set terminal size again to set the specific dimensions on the demo
-    setTerminalSize();
-
+    // // Set terminal size again to set the specific dimensions on the demo
+    //setTerminalSize();
+    console.log('rows', term.rows, 'cols', term.cols);
     fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, {method: 'POST'}).then(function (res) {
 
       res.text().then(function (pid) {
@@ -112,6 +117,10 @@ function createTerminal() {
       });
     });
   }, 0);
+
+  window.addEventListener('resize', function() {
+    term.fit();
+  }, true);
 }
 
 function runRealTerminal() {
