@@ -230,14 +230,14 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       colorIndex = fg + 2;
     } else {
       // If default color and bold
-      if (bold) {
+      if (bold && terminal.options.enableBold) {
         colorIndex = 1;
       }
     }
     const isAscii = code < 256;
     // A color is basic if it is one of the standard normal or bold weight
     // colors of the characters held in the char atlas. Note that this excludes
-    // the normal weight light color characters
+    // the normal weight _light_ color characters.
     const isBasicColor = (colorIndex > 1 && fg < 16) && (fg < 8 || bold);
     const isDefaultColor = fg >= 256;
     const isDefaultBackground = bg >= 256;
@@ -245,10 +245,22 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       // ImageBitmap's draw about twice as fast as from a canvas
       const charAtlasCellWidth = this._scaledCharWidth + CHAR_ATLAS_CELL_SPACING;
       const charAtlasCellHeight = this._scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
+
       // Apply alpha to dim the character
       if (dim) {
         this._ctx.globalAlpha = DIM_OPACITY;
       }
+
+      // Draw the non-bold version of the same color if bold is not enabled
+      if (bold && !terminal.options.enableBold) {
+        if (colorIndex === 1) {
+          // The default color
+          colorIndex = 0;
+        } else {
+          colorIndex -= 8;
+        }
+      }
+
       this._ctx.drawImage(this._charAtlas,
           code * charAtlasCellWidth, colorIndex * charAtlasCellHeight, charAtlasCellWidth, this._scaledCharHeight,
           x * this._scaledCharWidth, y * this._scaledLineHeight + this._scaledLineDrawY, charAtlasCellWidth, this._scaledCharHeight);
@@ -274,7 +286,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _drawUncachedChar(terminal: ITerminal, char: string, width: number, fg: number, x: number, y: number, bold: boolean, dim: boolean): void {
     this._ctx.save();
     this._ctx.font = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
-    if (bold) {
+    if (bold && terminal.options.enableBold) {
       this._ctx.font = `bold ${this._ctx.font}`;
     }
     this._ctx.textBaseline = 'top';

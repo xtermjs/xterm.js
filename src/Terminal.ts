@@ -77,6 +77,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   cursorStyle: 'block',
   bellSound: BellSound,
   bellStyle: 'none',
+  enableBold: true,
   fontFamily: 'courier-new, courier, monospace',
   fontSize: 15,
   lineHeight: 1.0,
@@ -410,6 +411,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         this.renderer.clear();
         this.charMeasure.measure(this.options);
         break;
+      case 'enableBold':
       case 'lineHeight':
         // When the font changes the size of the cells may change which requires a renderer clear
         this.renderer.clear();
