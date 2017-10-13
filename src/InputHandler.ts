@@ -9,6 +9,7 @@ import { C0 } from './EscapeSequences';
 import { DEFAULT_CHARSET } from './Charsets';
 import { CharData } from './Types';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
+import { FLAGS } from './renderer/Types';
 
 /**
  * The terminal's standard implementation of IInputHandler, this handles all
@@ -1107,6 +1108,7 @@ export class InputHandler implements IInputHandler {
    * CSI Pm m  Character Attributes (SGR).
    *     Ps = 0  -> Normal (default).
    *     Ps = 1  -> Bold.
+   *     Ps = 2  -> Faint, decreased intensity (ISO 6429).
    *     Ps = 4  -> Underlined.
    *     Ps = 5  -> Blink (appears as Bold).
    *     Ps = 7  -> Inverse.
@@ -1206,35 +1208,39 @@ export class InputHandler implements IInputHandler {
         // bg = 0x1ff;
       } else if (p === 1) {
         // bold text
-        flags |= 1;
+        flags |= FLAGS.BOLD;
       } else if (p === 4) {
         // underlined text
-        flags |= 2;
+        flags |= FLAGS.UNDERLINE;
       } else if (p === 5) {
         // blink
-        flags |= 4;
+        flags |= FLAGS.BLINK;
       } else if (p === 7) {
         // inverse and positive
         // test with: echo -e '\e[31m\e[42mhello\e[7mworld\e[27mhi\e[m'
-        flags |= 8;
+        flags |= FLAGS.INVERSE;
       } else if (p === 8) {
         // invisible
-        flags |= 16;
+        flags |= FLAGS.INVISIBLE;
+      } else if (p === 2) {
+        // dimmed text
+        flags |= FLAGS.DIM;
       } else if (p === 22) {
-        // not bold
-        flags &= ~1;
+        // not bold nor faint
+        flags &= ~FLAGS.BOLD;
+        flags &= ~FLAGS.DIM;
       } else if (p === 24) {
         // not underlined
-        flags &= ~2;
+        flags &= ~FLAGS.UNDERLINE;
       } else if (p === 25) {
         // not blink
-        flags &= ~4;
+        flags &= ~FLAGS.BLINK;
       } else if (p === 27) {
         // not inverse
-        flags &= ~8;
+        flags &= ~FLAGS.INVERSE;
       } else if (p === 28) {
         // not invisible
-        flags &= ~16;
+        flags &= ~FLAGS.INVISIBLE;
       } else if (p === 39) {
         // reset fg
         fg = (this._terminal.defAttr >> 9) & 0x1ff;

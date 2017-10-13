@@ -11,5 +11,6 @@ export enum FLAGS {
   UNDERLINE = 2,
   BLINK = 4,
   INVERSE = 8,
-  INVISIBLE = 16
+  INVISIBLE = 16,
+  DIM = 32
 };
