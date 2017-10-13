@@ -253,10 +253,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
       // Draw the non-bold version of the same color if bold is not enabled
       if (bold && !terminal.options.enableBold) {
-        if (colorIndex === 1) {
-          // The default color
-          colorIndex = 0;
-        } else {
+        // Ignore default color as it's not touched above
+        if (colorIndex > 1) {
           colorIndex -= 8;
         }
       }
