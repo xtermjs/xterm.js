@@ -80,6 +80,7 @@
     "coveralls": "gulp coveralls"
   },
   "dependencies": {
+    "formdata-polyfill": "^2.0.4",
     "text-encoding": "^0.6.4"
   }
 }
