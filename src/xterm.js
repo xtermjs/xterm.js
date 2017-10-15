@@ -1511,6 +1511,36 @@ Terminal.prototype.evaluateKeyEscapeSequence = function(ev) {
   };
   var modifiers = ev.shiftKey << 0 | ev.altKey << 1 | ev.ctrlKey << 2 | ev.metaKey << 3;
   switch (ev.keyCode) {
+    case 0:
+      if (ev.key === "UIKeyInputUpArrow") {
+        if (this.applicationCursor) {
+          result.key = C0.ESC + 'OA';
+        } else {
+          result.key = C0.ESC + '[A';
+        }
+      }
+      else if (ev.key === "UIKeyInputLeftArrow") {
+        if (this.applicationCursor) {
+          result.key = C0.ESC + 'OD';
+        } else {
+          result.key = C0.ESC + '[D';
+        }
+      }
+      else if (ev.key === "UIKeyInputRightArrow") {
+        if (this.applicationCursor) {
+          result.key = C0.ESC + 'OC';
+        } else {
+          result.key = C0.ESC + '[C';
+        }
+      }
+      else if (ev.key === "UIKeyInputDownArrow") {
+        if (this.applicationCursor) {
+          result.key = C0.ESC + 'OB';
+        } else {
+          result.key = C0.ESC + '[B';
+        }
+      }
+      break;
     case 8:
       // backspace
       if (ev.shiftKey) {
