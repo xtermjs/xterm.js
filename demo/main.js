@@ -106,12 +106,9 @@ function createTerminal() {
         window.pid = pid;
         socketURL += pid;
         socket = new WebSocket(socketURL);
-        socket.binaryType = "arraybuffer";
         socket.onopen = runRealTerminal;
         socket.onclose = runFakeTerminal;
         socket.onerror = runFakeTerminal;
-
-        socket.addEventListener("message", handleWSMessage);
       });
     });
   }, 0);
@@ -235,75 +232,47 @@ function _handle_send_session(zsession) {
 //This is here to allow canceling of an in-progress ZMODEM transfer.
 var current_zsession;
 
+//Called from HTML directly.
 function abort_current_session() {
     current_zsession.abort();
 }
 
-var text_encoder = new TextEncoder();
-var zsentry = new Zmodem.Sentry( {
-    to_terminal(octets) {
-        term.write(
-            String.fromCharCode.apply(String, octets)
-        );
-    },
+term.zmodemAttach(socket);
 
-    sender(octets) {
-        socket.send( new Uint8Array(octets) );
-    },
+term.on("zmodemRetract", () => {
+    start_form.style.display = "none";
+    start_form.onsubmit = null;
+});
 
-    on_retract() {
+term.on("zmodemDetect", () => {
+    start_form.style.display = "";
+    start_form.onsubmit = function(e) {
         start_form.style.display = "none";
-        start_form.onsubmit = null;
-    },
 
-    on_detect(detection) {
-        start_form.style.display = "";
-        start_form.onsubmit = function(e) {
-            start_form.style.display = "none";
+        if (document.getElementById("zmstart_yes").checked) {
+            let zsession = detection.confirm();
 
-            if (document.getElementById("zmstart_yes").checked) {
-                let zsession = detection.confirm();
+            current_zsession = zsession;
 
-                current_zsession = zsession;
-
-                if (zsession.type === "receive") {
-                    _handle_receive_session(zsession);
-                }
-                else {
-                    _handle_send_session(zsession);
-                }
+            if (zsession.type === "receive") {
+                _handle_receive_session(zsession);
             }
             else {
-                detection.deny();
+                _handle_send_session(zsession);
             }
-        };
-    },
-} );
-
-function handleWSMessage(evt) {
-
-    //For some reason the first message from the server is text.
-    if (typeof evt.data === "string") {
-        term.write(evt.data);
-    }
-    else {
-        zsentry.consume(evt.data);
-    }
-}
-
-//var text_encoder = new TextEncoder();
+        }
+        else {
+            detection.deny();
+        }
+    };
+});
 
 function runRealTerminal() {
-  term.attach(socket, false);
-
-/*
     term.on("data", (d) => {
-        //socket.send( text_encoder.encode(d) );
         socket.send(d);
     });
-*/
 
-  term._initialized = true;
+    term._initialized = true;
 }
 
 function runFakeTerminal() {
