@@ -1,3 +1,5 @@
+"use strict";
+
 var term,
     protocol,
     socketURL,
@@ -109,6 +111,36 @@ function createTerminal() {
         socket.onopen = runRealTerminal;
         socket.onclose = runFakeTerminal;
         socket.onerror = runFakeTerminal;
+
+        term.zmodemAttach(socket);
+
+        term.on("zmodemRetract", () => {
+            start_form.style.display = "none";
+            start_form.onsubmit = null;
+        });
+
+        term.on("zmodemDetect", (detection) => {
+            start_form.style.display = "";
+            start_form.onsubmit = function(e) {
+                start_form.style.display = "none";
+
+                if (document.getElementById("zmstart_yes").checked) {
+                    let zsession = detection.confirm();
+
+                    current_zsession = zsession;
+
+                    if (zsession.type === "receive") {
+                        _handle_receive_session(zsession);
+                    }
+                    else {
+                        _handle_send_session(zsession);
+                    }
+                }
+                else {
+                    detection.deny();
+                }
+            };
+        });
       });
     });
   }, 0);
@@ -236,36 +268,6 @@ var current_zsession;
 function abort_current_session() {
     current_zsession.abort();
 }
-
-term.zmodemAttach(socket);
-
-term.on("zmodemRetract", () => {
-    start_form.style.display = "none";
-    start_form.onsubmit = null;
-});
-
-term.on("zmodemDetect", () => {
-    start_form.style.display = "";
-    start_form.onsubmit = function(e) {
-        start_form.style.display = "none";
-
-        if (document.getElementById("zmstart_yes").checked) {
-            let zsession = detection.confirm();
-
-            current_zsession = zsession;
-
-            if (zsession.type === "receive") {
-                _handle_receive_session(zsession);
-            }
-            else {
-                _handle_send_session(zsession);
-            }
-        }
-        else {
-            detection.deny();
-        }
-    };
-});
 
 function runRealTerminal() {
     term.on("data", (d) => {
