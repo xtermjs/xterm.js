@@ -294,12 +294,14 @@ function handleWSMessage(evt) {
 //var text_encoder = new TextEncoder();
 
 function runRealTerminal() {
-  //term.attach(socket);
+  term.attach(socket, false);
 
+/*
     term.on("data", (d) => {
         //socket.send( text_encoder.encode(d) );
         socket.send(d);
     });
+*/
 
   term._initialized = true;
 }
