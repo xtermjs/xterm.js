@@ -19,12 +19,6 @@
     addon(window.Terminal);
   }
 })(function _zmodemAddon(Terminal) {
-    for (let f of ["attach", "terminadoAttach"]) {
-        if (Terminal.prototype[f]) {
-            throw new Error(`The “zmodem” and “${f}” addons are mutually incompatible.`);
-        }
-    }
-
     Object.assign(
         Terminal.prototype,
         {

@@ -125,15 +125,23 @@ function createTerminal() {
                 start_form.style.display = "none";
 
                 if (document.getElementById("zmstart_yes").checked) {
-                    let zsession = detection.confirm();
 
-                    current_zsession = zsession;
+                    try {
+                        term.detach();
+                        let zsession = detection.confirm();
 
-                    if (zsession.type === "receive") {
-                        _handle_receive_session(zsession);
+                        current_zsession = zsession;
+
+                        if (zsession.type === "receive") {
+                            _handle_receive_session(zsession);
+                        }
+                        else {
+                            _handle_send_session(zsession);
+                        }
                     }
-                    else {
-                        _handle_send_session(zsession);
+                    catch(e) { throw e }
+                    finally {
+                        term.attach(socket);
                     }
                 }
                 else {
@@ -270,9 +278,7 @@ function abort_current_session() {
 }
 
 function runRealTerminal() {
-    term.on("data", (d) => {
-        socket.send(d);
-    });
+    term.attach(socket);
 
     term._initialized = true;
 }
