@@ -23,45 +23,46 @@
     <body>
         <h1>xterm.js: xterm, in the browser</h1>
 
-<div id="zmodem_controls">
-    <form id="zm_start" style="display: none" action="javascript:void(0)">
-        ZMODEM detected: Start ZMODEM session?
-        <label><input id="zmstart_yes" name="zmstart" type=radio checked value="1"> Yes</label>
-        &nbsp;
-        <label><input name="zmstart" type=radio value=""> No</label>
-        <button type="submit">Submit</button>
-    </form>
-
-    <div id="zm_file" style="display: none">
-        <div>Name: <span id="name"></span></div>
-        <div>Size: <span id="size"></span></div>
-        <div>Last modified: <span id="mtime"></span></div>
-        <div>Mode: <span id="mode"></span></div>
-        <div>Files remaining: <span id="files_remaining"></span></div>
-        <div>Bytes remaining: <span id="bytes_remaining"></span></div>
-    </div>
-
-    <form id="zm_offer" style="display: none" action="javascript:void(0)">
-        <p>ZMODEM File offered!</p>
-
-        <label><input id="zmaccept_yes" name="zmaccept" type=radio checked value="1"> Accept</label>
-        &nbsp;
-        <label><input name="zmaccept" type=radio value=""> Skip</label>
-        <button type="submit">Submit</button>
-    </form>
-
-    <form id="zm_progress" style="display: none" action="javascript:void(0)">
-        <div><span id="percent_received"></span>% (<span id="bytes_received"></span> bytes) received</div>
-        <button type="button" onclick="abort_current_session(); this.form.style.display='none';">Abort ZMODEM</button>
-    </form>
-
-    <form id="zm_choose" style="display: none" action="javascript:void(0)">
-        <label>Choose file(s): <input id="zm_files" type="file" multiple></label>
-        <button type="submit">Send</button>
-    </form>
-</div>
-
         <div id="terminal-container"></div>
+
+        <div id="zmodem_controls">
+            <form id="zm_start" style="display: none" action="javascript:void(0)">
+                ZMODEM detected: Start ZMODEM session?
+                <label><input id="zmstart_yes" name="zmstart" type=radio checked value="1"> Yes</label>
+                &nbsp;
+                <label><input name="zmstart" type=radio value=""> No</label>
+                <button type="submit">Submit</button>
+            </form>
+
+            <div id="zm_file" style="display: none">
+                <div>Name: <span id="name"></span></div>
+                <div>Size: <span id="size"></span></div>
+                <div>Last modified: <span id="mtime"></span></div>
+                <div>Mode: <span id="mode"></span></div>
+                <div>Files remaining: <span id="files_remaining"></span></div>
+                <div>Bytes remaining: <span id="bytes_remaining"></span></div>
+            </div>
+
+            <form id="zm_offer" style="display: none" action="javascript:void(0)">
+                <p>ZMODEM File offered!</p>
+
+                <label><input id="zmaccept_yes" name="zmaccept" type=radio checked value="1"> Accept</label>
+                &nbsp;
+                <label><input name="zmaccept" type=radio value=""> Skip</label>
+                <button type="submit">Submit</button>
+            </form>
+
+            <form id="zm_progress" style="display: none" action="javascript:void(0)">
+                <div><span id="percent_received"></span>% (<span id="bytes_received"></span> bytes) received</div>
+                <button type="button" onclick="abort_current_session(); this.form.style.display='none';">Abort ZMODEM</button>
+            </form>
+
+            <form id="zm_choose" style="display: none" action="javascript:void(0)">
+                <label>Choose file(s): <input id="zm_files" type="file" multiple></label>
+                <button type="submit">Send</button>
+            </form>
+        </div>
+
         <div>
           <h2>Actions</h2>
           <p>
@@ -115,6 +116,7 @@
             </div>
           </div>
         </div>
+        <p>ZMODEM file transfers are supported via an addon. To try it out, install <a href="https://ohse.de/uwe/software/lrzsz.html"><code>lrzsz</code></a> onto the remote peer, then type <code>rz</code> to send from your browser or <code>sz &lt;file&gt;</code> to send from the remote peer.</p>
         <p><strong>Attention:</strong> The demo is a barebones implementation and is designed for xterm.js evaluation purposes only. Exposing the demo to the public as is would introduce security risks for the host.</p>
         <script src="main.js" defer ></script>
     </body>
