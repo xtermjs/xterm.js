@@ -168,6 +168,11 @@ function _show_file_info(xfer) {
 
     document.getElementById("mode").textContent = "0" + file_info.mode.toString(8);
 
+    var xfer_opts = xfer.get_options();
+    ["conversion", "management", "transport", "sparse"].forEach( (lbl) => {
+        document.getElementById(`zfile_${lbl}`).textContent = xfer_opts[lbl];
+    } );
+
     document.getElementById("zm_file").style.display = "";
 }
 function _hide_file_info() {
@@ -218,8 +223,6 @@ function _handle_receive_session(zsession) {
                 });
                 xfer.accept().then(
                     () => {
-                        _hide_file_info();
-                        _hide_progress();
                         _save_to_disk(xfer, FILE_BUFFER);
                     },
                     console.error.bind(console)
@@ -230,6 +233,11 @@ function _handle_receive_session(zsession) {
             }
             //END
         };
+    } );
+
+    zsession.on("session_end", () => {
+        _hide_file_info();
+        _hide_progress();
     } );
 
     zsession.start();
