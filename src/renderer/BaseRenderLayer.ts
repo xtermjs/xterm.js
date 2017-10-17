@@ -17,8 +17,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   protected _ctx: CanvasRenderingContext2D;
   private _scaledCharWidth: number;
   private _scaledCharHeight: number;
-  private _scaledLineHeight: number;
-  private _scaledLineDrawY: number;
+  private _scaledCellWidth: number;
+  private _scaledCellHeight: number;
+  private _scaledCharLeft: number;
+  private _scaledCharTop: number;
 
   private _charAtlas: HTMLCanvasElement | ImageBitmap;
 
@@ -71,10 +73,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   }
 
   public resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void {
+    this._scaledCellWidth = dim.scaledCellWidth;
+    this._scaledCellHeight = dim.scaledCellHeight;
     this._scaledCharWidth = dim.scaledCharWidth;
     this._scaledCharHeight = dim.scaledCharHeight;
-    this._scaledLineHeight = dim.scaledLineHeight;
-    this._scaledLineDrawY = dim.scaledLineDrawY;
+    this._scaledCharLeft = dim.scaledCharLeft;
+    this._scaledCharTop = dim.scaledCharTop;
     this._canvas.width = dim.scaledCanvasWidth;
     this._canvas.height = dim.scaledCanvasHeight;
     this._canvas.style.width = `${dim.canvasWidth}px`;
@@ -101,10 +105,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   protected fillCells(x: number, y: number, width: number, height: number): void {
     this._ctx.fillRect(
-        x * this._scaledCharWidth,
-        y * this._scaledLineHeight,
-        width * this._scaledCharWidth,
-        height * this._scaledLineHeight);
+        x * this._scaledCellWidth,
+        y * this._scaledCellHeight,
+        width * this._scaledCellWidth,
+        height * this._scaledCellHeight);
   }
 
   /**
@@ -115,9 +119,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   protected fillBottomLineAtCells(x: number, y: number, width: number = 1): void {
     this._ctx.fillRect(
-        x * this._scaledCharWidth,
-        (y + 1) * this._scaledLineHeight - window.devicePixelRatio - 1 /* Ensure it's drawn within the cell */,
-        width * this._scaledCharWidth,
+        x * this._scaledCellWidth,
+        (y + 1) * this._scaledCellHeight - window.devicePixelRatio - 1 /* Ensure it's drawn within the cell */,
+        width * this._scaledCellWidth,
         window.devicePixelRatio);
   }
 
@@ -129,10 +133,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   protected fillLeftLineAtCell(x: number, y: number): void {
     this._ctx.fillRect(
-        x * this._scaledCharWidth,
-        y * this._scaledLineHeight,
+        x * this._scaledCellWidth,
+        y * this._scaledCellHeight,
         window.devicePixelRatio,
-        this._scaledLineHeight);
+        this._scaledCellHeight);
   }
 
   /**
@@ -144,10 +148,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   protected strokeRectAtCell(x: number, y: number, width: number, height: number): void {
     this._ctx.lineWidth = window.devicePixelRatio;
     this._ctx.strokeRect(
-        x * this._scaledCharWidth + window.devicePixelRatio / 2,
-        y * this._scaledLineHeight + (window.devicePixelRatio / 2),
-        width * this._scaledCharWidth - window.devicePixelRatio,
-        (height * this._scaledLineHeight) - window.devicePixelRatio);
+        x * this._scaledCellWidth + window.devicePixelRatio / 2,
+        y * this._scaledCellHeight + (window.devicePixelRatio / 2),
+        width * this._scaledCellWidth - window.devicePixelRatio,
+        (height * this._scaledCellHeight) - window.devicePixelRatio);
   }
 
   /**
@@ -172,17 +176,17 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   protected clearCells(x: number, y: number, width: number, height: number): void {
     if (this._alpha) {
       this._ctx.clearRect(
-          x * this._scaledCharWidth,
-          y * this._scaledLineHeight,
-          width * this._scaledCharWidth,
-          height * this._scaledLineHeight);
+          x * this._scaledCellWidth,
+          y * this._scaledCellHeight,
+          width * this._scaledCellWidth,
+          height * this._scaledCellHeight);
     } else {
       this._ctx.fillStyle = this._colors.background;
       this._ctx.fillRect(
-          x * this._scaledCharWidth,
-          y * this._scaledLineHeight,
-          width * this._scaledCharWidth,
-          height * this._scaledLineHeight);
+          x * this._scaledCellWidth,
+          y * this._scaledCellHeight,
+          width * this._scaledCellWidth,
+          height * this._scaledCellHeight);
     }
   }
 
@@ -199,15 +203,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   protected fillCharTrueColor(terminal: ITerminal, charData: CharData, x: number, y: number): void {
     this._ctx.font = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
     this._ctx.textBaseline = 'top';
-
-    // Since uncached characters are not coming off the char atlas with source
-    // coordinates, it means that text drawn to the canvas (particularly '_')
-    // can bleed into other cells. This code will clip the following fillText,
-    // ensuring that its contents don't go beyond the cell bounds.
-    this._ctx.beginPath();
-    this._ctx.rect(x * this._scaledCharWidth, y * this._scaledLineHeight + this._scaledLineDrawY, charData[CHAR_DATA_WIDTH_INDEX] * this._scaledCharWidth, this._scaledCharHeight);
-    this._ctx.clip();
-    this._ctx.fillText(charData[CHAR_DATA_CHAR_INDEX], x * this._scaledCharWidth, y * this._scaledCharHeight);
+    this._clipRow(terminal, y);
+    this._ctx.fillText(
+        charData[CHAR_DATA_CHAR_INDEX],
+        x * this._scaledCellWidth + this._scaledCharLeft,
+        y * this._scaledCellHeight + this._scaledCharTop);
   }
 
   /**
@@ -260,8 +260,14 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       }
 
       this._ctx.drawImage(this._charAtlas,
-          code * charAtlasCellWidth, colorIndex * charAtlasCellHeight, charAtlasCellWidth, this._scaledCharHeight,
-          x * this._scaledCharWidth, y * this._scaledLineHeight + this._scaledLineDrawY, charAtlasCellWidth, this._scaledCharHeight);
+          code * charAtlasCellWidth,
+          colorIndex * charAtlasCellHeight,
+          charAtlasCellWidth,
+          this._scaledCharHeight,
+          x * this._scaledCellWidth + this._scaledCharLeft,
+          y * this._scaledCellHeight + this._scaledCharTop,
+          charAtlasCellWidth,
+          this._scaledCharHeight);
     } else {
       this._drawUncachedChar(terminal, char, width, fg, x, y, bold, dim);
     }
@@ -298,21 +304,33 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       this._ctx.fillStyle = this._colors.foreground;
     }
 
-    // Since uncached characters are not coming off the char atlas with source
-    // coordinates, it means that text drawn to the canvas (particularly '_')
-    // can bleed into other cells. This code will clip the following fillText,
-    // ensuring that its contents don't go beyond the cell bounds.
-    this._ctx.beginPath();
-    this._ctx.rect(0, y * this._scaledLineHeight + this._scaledLineDrawY, terminal.cols * this._scaledCharWidth, this._scaledCharHeight);
-    this._ctx.clip();
+    this._clipRow(terminal, y);
 
     // Apply alpha to dim the character
     if (dim) {
       this._ctx.globalAlpha = DIM_OPACITY;
     }
     // Draw the character
-    this._ctx.fillText(char, x * this._scaledCharWidth, y * this._scaledLineHeight + this._scaledLineDrawY);
+    this._ctx.fillText(
+        char,
+        x * this._scaledCellWidth + this._scaledCharLeft,
+        y * this._scaledCellHeight + this._scaledCharTop);
     this._ctx.restore();
+  }
+
+  /**
+   * Clips a row to ensure no pixels will be drawn outside the cells in the row.
+   * @param terminal The terminal.
+   * @param y The row to clip.
+   */
+  private _clipRow(terminal: ITerminal, y: number): void {
+    this._ctx.beginPath();
+    this._ctx.rect(
+        0,
+        y * this._scaledCellHeight,
+        terminal.cols * this._scaledCellWidth,
+        this._scaledCellHeight);
+    this._ctx.clip();
   }
 }
 

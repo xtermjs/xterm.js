@@ -141,6 +141,7 @@ namespace methods_core {
       const r19: string = t.getOption('bellSound');
       const r20: string = t.getOption('bellStyle');
       const r21: boolean = t.getOption('enableBold');
+      const r22: number = t.getOption('letterSpacing');
     }
     {
       const t: Terminal = new Terminal();
@@ -159,6 +160,7 @@ namespace methods_core {
       t.setOption('useFlowControl', true);
       t.setOption('visualBell', true);
       t.setOption('colors', ['a', 'b']);
+      t.setOption('letterSpacing', 1);
       t.setOption('cols', 1);
       t.setOption('rows', 1);
       t.setOption('tabStopWidth', 1);
