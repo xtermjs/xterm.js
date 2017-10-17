@@ -63,10 +63,12 @@
     "node-pty": "0.6.4",
     "nodemon": "1.10.2",
     "sorcery": "^0.10.0",
+    "text-encoding": "^0.6.4",
     "tslint": "^4.0.2",
     "typescript": "~2.4.0",
     "vinyl-buffer": "^1.0.0",
-    "vinyl-source-stream": "^1.1.0"
+    "vinyl-source-stream": "^1.1.0",
+    "zmodem.js": "^0.1.1"
   },
   "scripts": {
     "prestart": "npm run build",
@@ -75,12 +77,9 @@
     "lint": "tslint src/*.ts src/**/*.ts",
     "test": "gulp test",
     "build:docs": "jsdoc -c jsdoc.json",
-    "build": "gulp build; cd src/addons/zmodem/zmodemjs; npm install",
+    "build": "gulp build",
     "prepublish": "npm run build",
     "coveralls": "gulp coveralls"
   },
-  "dependencies": {
-    "formdata-polyfill": "^2.0.4",
-    "text-encoding": "^0.6.4"
-  }
+  "dependencies": {}
 }

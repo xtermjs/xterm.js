@@ -1,3 +1,0 @@
-[submodule "zmodemjs"]
-	path = src/addons/zmodem/zmodemjs
-	url = https://github.com/FGasper/zmodemjs.git
