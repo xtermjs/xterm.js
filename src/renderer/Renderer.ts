@@ -40,8 +40,10 @@ export class Renderer extends EventEmitter implements IRenderer {
     this.dimensions = {
       scaledCharWidth: null,
       scaledCharHeight: null,
-      scaledLineHeight: null,
-      scaledLineDrawY: null,
+      scaledCellWidth: null,
+      scaledCellHeight: null,
+      scaledCharLeft: null,
+      scaledCharTop: null,
       scaledCanvasWidth: null,
       scaledCanvasHeight: null,
       canvasWidth: null,
@@ -91,20 +93,27 @@ export class Renderer extends EventEmitter implements IRenderer {
     // enough space to draw the character to the cell.
     this.dimensions.scaledCharHeight = Math.ceil(this._terminal.charMeasure.height * window.devicePixelRatio);
 
-    // Calculate the scaled line height, if lineHeight is not 1 then the value
+    // Calculate the scaled cell height, if lineHeight is not 1 then the value
     // will be floored because since lineHeight can never be lower then 1, there
     // is a guarentee that the scaled line height will always be larger than
     // scaled char height.
-    this.dimensions.scaledLineHeight = Math.floor(this.dimensions.scaledCharHeight * this._terminal.options.lineHeight);
+    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._terminal.options.lineHeight);
 
     // Calculate the y coordinate within a cell that text should draw from in
     // order to draw in the center of a cell.
-    this.dimensions.scaledLineDrawY = this._terminal.options.lineHeight === 1 ? 0 : Math.round((this.dimensions.scaledLineHeight - this.dimensions.scaledCharHeight) / 2);
+    this.dimensions.scaledCharTop = this._terminal.options.lineHeight === 1 ? 0 : Math.round((this.dimensions.scaledCellHeight - this.dimensions.scaledCharHeight) / 2);
+
+    // Calculate the scaled cell width, taking the letterSpacing into account.
+    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._terminal.options.letterSpacing);
+
+    // Calculate the x coordinate with a cell that text should draw from in
+    // order to draw in the center of a cell.
+    this.dimensions.scaledCharLeft = Math.floor(this._terminal.options.letterSpacing / 2);
 
     // Recalculate the canvas dimensions; scaled* define the actual number of
     // pixel in the canvas
-    this.dimensions.scaledCanvasHeight = this._terminal.rows * this.dimensions.scaledLineHeight;
-    this.dimensions.scaledCanvasWidth = this._terminal.cols * this.dimensions.scaledCharWidth;
+    this.dimensions.scaledCanvasHeight = this._terminal.rows * this.dimensions.scaledCellHeight;
+    this.dimensions.scaledCanvasWidth = this._terminal.cols * this.dimensions.scaledCellWidth;
 
     // The the size of the canvas on the page. It's very important that this
     // rounds to nearest integer and not ceils as browsers often set

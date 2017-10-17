@@ -86,8 +86,10 @@ export interface IColorSet {
 export interface IRenderDimensions {
   scaledCharWidth: number;
   scaledCharHeight: number;
-  scaledLineHeight: number;
-  scaledLineDrawY: number;
+  scaledCellWidth: number;
+  scaledCellHeight: number;
+  scaledCharLeft: number;
+  scaledCharTop: number;
   scaledCanvasWidth: number;
   scaledCanvasHeight: number;
   canvasWidth: number;

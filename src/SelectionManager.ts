@@ -10,8 +10,8 @@ import { CircularList } from './utils/CircularList';
 import { EventEmitter } from './EventEmitter';
 import { ITerminal, ICircularList, ISelectionManager, IBuffer } from './Interfaces';
 import { SelectionModel } from './SelectionModel';
-import { LineData } from './Types';
-import { CHAR_DATA_WIDTH_INDEX } from './Buffer';
+import { LineData, CharData } from './Types';
+import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from './Buffer';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -281,6 +281,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     // Convert to 0-based
     coords[0]--;
     coords[1]--;
+
     // Convert viewport coords to buffer coords
     coords[1] += this._terminal.buffer.ydisp;
     return coords;
@@ -545,7 +546,14 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     for (let i = 0; coords[0] >= i; i++) {
       const char = bufferLine[i];
       if (char[CHAR_DATA_WIDTH_INDEX] === 0) {
+        // Wide characters aren't included in the line string so decrement the
+        // index so the index is back on the wide character.
         charIndex--;
+      } else if (char[CHAR_DATA_CHAR_INDEX].length > 1 && coords[0] !== i) {
+        // Emojis take up multiple characters, so adjust accordingly. For these
+        // we don't want ot include the character at the column as we're
+        // returning the start index in the string, not the end index.
+        charIndex += char[CHAR_DATA_CHAR_INDEX].length - 1;
       }
     }
     return charIndex;
@@ -572,13 +580,15 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     const line = this._buffer.translateBufferLineToString(coords[1], false);
 
     // Get actual index, taking into consideration wide characters
-    let endIndex = this._convertViewportColToCharacterIndex(bufferLine, coords);
-    let startIndex = endIndex;
+    let startIndex = this._convertViewportColToCharacterIndex(bufferLine, coords);
+    let endIndex = startIndex;
 
     // Record offset to be used later
     const charOffset = coords[0] - startIndex;
     let leftWideCharCount = 0;
     let rightWideCharCount = 0;
+    let leftLongCharOffset = 0;
+    let rightLongCharOffset = 0;
 
     if (line.charAt(startIndex) === ' ') {
       // Expand until non-whitespace is hit
@@ -595,6 +605,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
       // character is hit, it is recorded and the column index is adjusted.
       let startCol = coords[0];
       let endCol = coords[0];
+
       // Consider the initial position, skip it and increment the wide char
       // variable
       if (bufferLine[startCol][CHAR_DATA_WIDTH_INDEX] === 0) {
@@ -605,29 +616,67 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
         rightWideCharCount++;
         endCol++;
       }
+
+      // Adjust the end index for characters whose length are > 1 (emojis)
+      if (bufferLine[endCol][CHAR_DATA_CHAR_INDEX].length > 1) {
+        rightLongCharOffset += bufferLine[endCol][CHAR_DATA_CHAR_INDEX].length - 1;
+        endIndex += bufferLine[endCol][CHAR_DATA_CHAR_INDEX].length - 1;
+      }
+
       // Expand the string in both directions until a space is hit
-      while (startIndex > 0 && !this._isCharWordSeparator(line.charAt(startIndex - 1))) {
-        if (bufferLine[startCol - 1][CHAR_DATA_WIDTH_INDEX] === 0) {
+      while (startCol > 0 && startIndex > 0 && !this._isCharWordSeparator(bufferLine[startCol - 1])) {
+        const char = bufferLine[startCol - 1];
+        if (char[CHAR_DATA_WIDTH_INDEX] === 0) {
           // If the next character is a wide char, record it and skip the column
           leftWideCharCount++;
           startCol--;
+        } else if (char[CHAR_DATA_CHAR_INDEX].length > 1) {
+          // If the next character's string is longer than 1 char (eg. emoji),
+          // adjust the index
+          leftLongCharOffset += char[CHAR_DATA_CHAR_INDEX].length - 1;
+          startIndex -= char[CHAR_DATA_CHAR_INDEX].length - 1;
         }
         startIndex--;
         startCol--;
       }
-      while (endIndex + 1 < line.length && !this._isCharWordSeparator(line.charAt(endIndex + 1))) {
-        if (bufferLine[endCol + 1][CHAR_DATA_WIDTH_INDEX] === 2) {
+      while (endCol < bufferLine.length && endIndex + 1 < line.length && !this._isCharWordSeparator(bufferLine[endCol + 1])) {
+        const char = bufferLine[endCol + 1];
+        if (char[CHAR_DATA_WIDTH_INDEX] === 2) {
           // If the next character is a wide char, record it and skip the column
           rightWideCharCount++;
           endCol++;
+        } else if (char[CHAR_DATA_CHAR_INDEX].length > 1) {
+          // If the next character's string is longer than 1 char (eg. emoji),
+          // adjust the index
+          rightLongCharOffset += char[CHAR_DATA_CHAR_INDEX].length - 1;
+          endIndex += char[CHAR_DATA_CHAR_INDEX].length - 1;
         }
         endIndex++;
         endCol++;
       }
     }
 
-    const start = startIndex + charOffset - leftWideCharCount;
-    const length = Math.min(endIndex - startIndex + leftWideCharCount + rightWideCharCount + 1/*include endIndex char*/, this._terminal.cols);
+    // Incremenet the end index so it is at the start of the next character
+    endIndex++;
+
+    // Calculate the start _column_, converting the the string indexes back to
+    // column coordinates.
+    const start =
+        startIndex // The index of the selection's start char in the line string
+        + charOffset // The difference between the initial char's column and index
+        - leftWideCharCount // The number of wide chars left of the initial char
+        + leftLongCharOffset; // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
+
+    // Calculate the length in _columns_, converting the the string indexes back
+    // to column coordinates.
+    const length = Math.min(this._terminal.cols, // Disallow lengths larger than the terminal cols
+        endIndex // The index of the selection's end char in the line string
+        - startIndex // The index of the selection's start char in the line string
+        + leftWideCharCount // The number of wide chars left of the initial char
+        + rightWideCharCount // The number of wide chars right of the initial char (inclusive)
+        - leftLongCharOffset // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
+        - rightLongCharOffset); // The number of additional chars right of the initial char (inclusive) added by columns with strings longer than 1 (emojis)
+
     return { start, length };
   }
 
@@ -659,8 +708,13 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * word logic.
    * @param char The character to check.
    */
-  private _isCharWordSeparator(char: string): boolean {
-    return WORD_SEPARATORS.indexOf(char) >= 0;
+  private _isCharWordSeparator(charData: CharData): boolean {
+    // Zero width characters are never separators as they are always to the
+    // right of wide characters
+    if (charData[CHAR_DATA_WIDTH_INDEX] === 0) {
+      return false;
+    }
+    return WORD_SEPARATORS.indexOf(charData[CHAR_DATA_CHAR_INDEX]) >= 0;
   }
 
   /**

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { EventEmitter } from '../EventEmitter.js';
+import { EventEmitter } from '../EventEmitter';
 import { ICharMeasure, ITerminal, ITerminalOptions } from '../Interfaces';
 
 /**

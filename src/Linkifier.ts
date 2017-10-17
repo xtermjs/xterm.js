@@ -87,7 +87,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       this._rowsToLinkify.end = end;
     } else {
       this._rowsToLinkify.start = this._rowsToLinkify.start < start ? this._rowsToLinkify.start : start;
-      this._rowsToLinkify.end = this._rowsToLinkify.end < end ? this._rowsToLinkify.end : end;
+      this._rowsToLinkify.end = this._rowsToLinkify.end > end ? this._rowsToLinkify.end : end;
     }
 
     // Clear out any existing links on this row range

@@ -101,6 +101,7 @@ Since xterm.js is typically implemented as a developer tool, only modern browser
 - Edge latest
 - Firefox latest
 - Safari latest
+- IE11
 
 Xterm.js works seamlessly in Electron apps and may even work on earlier versions of the browsers but these are the browsers we strive to keep working.
 
@@ -129,7 +130,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**JupyterLab**](https://github.com/jupyterlab/jupyterlab): An extensible 
 computational environment for Jupyter, supporting interactive data science and scientific computing across all programming languages.
 - [**Theia**](https://github.com/theia-ide/theia): Theia is a cloud & desktop IDE framework implemented in TypeScript.
-- [**DevOps Helper**](https://github.com/ricktbaker/devops_helper) DevOps Helper tool to make life easier working with AWS instances across multiple organizations.
+- [**Opshell**](https://github.com/ricktbaker/opshell) Ops Helper tool to make life easier working with AWS instances across multiple organizations.
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list.
 

@@ -25,8 +25,8 @@ let outDir = tsProject.config.compilerOptions.outDir;
 
 // Under some environments like TravisCI, this comes out at absolute which can
 // break the build. This ensures that the outDir is absolute.
-if (outDir.indexOf(__dirname) !== 0) {
-  outDir = `${__dirname}/${outDir}`;
+if (path.normalize(outDir).indexOf(__dirname) !== 0) {
+  outDir = `${__dirname}/${path.normalize(outDir)}`;
 }
 
 /**
