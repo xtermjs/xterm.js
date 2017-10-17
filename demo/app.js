@@ -21,15 +21,11 @@ app.get('/main.js', function(req, res){
   res.sendFile(__dirname + '/main.js');
 });
 
-app.get('/zmodemjs/*.js', function(req, res){
-    res.sendFile(__dirname + req.url);
-});
-
 app.get('/js/*.js', function(req, res){
     res.sendFile(__dirname + req.url);
 });
 
-var shell_args = {
+const SHELL_ARGS = {
     bash: ['--login'],
     'cmd.exe': [],
 };
@@ -39,7 +35,7 @@ var shell_name = process.platform === 'win32' ? 'cmd.exe' : 'bash';
 app.post('/terminals', function (req, res) {
   var cols = parseInt(req.query.cols),
       rows = parseInt(req.query.rows),
-      term = pty.spawn(shell_name, shell_args[shell_name], {
+      term = pty.spawn(shell_name, SHELL_ARGS[shell_name], {
         encoding: null,
         name: 'xterm-color',
         cols: cols || 80,

@@ -1,6 +1,25 @@
-//Eventually?
-//import { Zmodem } from './zmodemjs/dist/zmodem';
-
+/**
+ *
+ * Allow xterm.js to handle ZMODEM uploads and downloads.
+ *
+ * This addon is a wrapper around zmodem.js. It adds the following:
+ *
+ * - function `zmodemAttach(<WebSocket>)` - creates a Zmodem.Sentry
+ *      on the passed WebSocket object.
+ *
+ * - event `zmodemDetect` - fired on Zmodem.Sentry’s `on_detect` callback.
+ *      Passes the zmodem.js Detection object.
+ *
+ * - event `zmodemRetract` - fired on Zmodem.Sentry’s `on_retract` callback.
+ *
+ * You’ll need to provide logic to handle uploads and downloads.
+ * See zmodem.js’s documentation for more details.
+ *
+ * **IMPORTANT:** After you confirm() a zmodem.js Detection, if you have
+ *  used the `attach` or `turbinado` addons, you’ll need to suspend their
+ *  operation for the duration of the ZMODEM session. (The demo does this
+ *  via `detach()` and a re-`attach()`.)
+ */
 (function (addon) {
   if (typeof exports === 'object' && typeof module === 'object') {
     /*
