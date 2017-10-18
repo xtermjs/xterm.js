@@ -1,7 +1,8 @@
 var term,
     protocol,
-    socketURL,
+    baseSocketURL,
     socket,
+    cmdSocket,
     pid;
 
 var terminalContainer = document.getElementById('terminal-container');
@@ -70,16 +71,44 @@ var terminalContainer = document.getElementById('terminal-container');
 createTerminal();
 term.focus();
 
+document.getElementById('button').onclick = () => {
+  console.log("click")
+  //term.detach(socket);
+  console.log('detached');
+  var cmd = 'dzn';
+  var args = '-V';
+  term.writeln(cmd + ' ' + args)
+  fetch('/terminals?cmd='+cmd+'&args='+args+'&cols=' + term.cols + '&rows=' + term.rows, {method: 'POST'}).then(function (res) {
+    
+          res.text().then(function (pid) {
+            console.log('exec resp pid', pid);
+            window.pid = pid;
+            var socketURL = baseSocketURL + pid;
+            cmdSocket = new WebSocket(socketURL);
+            cmdSocket.onopen = runRealTerminal;
+            cmdSocket.onclose = runFakeTerminal;
+            cmdSocket.onerror = runFakeTerminal;
+          });
+        });
+}
+
 function createTerminal() {
   // Clean terminal
   while (terminalContainer.children.length) {
     terminalContainer.removeChild(terminalContainer.children[0]);
   }
-  term = new Terminal(/*{
-    cursorBlink: optionElements.cursorBlink.checked,
-    scrollback: parseInt(optionElements.scrollback.value, 10),
-    tabStopWidth: parseInt(optionElements.tabstopwidth.value, 10)
-  }*/);
+  term = new Terminal({
+    //cursorBlink: optionElements.cursorBlink.checked,
+    //scrollback: parseInt(optionElements.scrollback.value, 10),
+    //tabStopWidth: parseInt(optionElements.tabstopwidth.value, 10)
+    theme: {
+      foreground: '#000000',
+      background: '#ffffff',
+      cursor: '#000000',
+      cursorAccent: '#ffffff',
+      selection: 'rgba(0, 0, 0, 0.3)'
+    }
+  });
   term.on('resize', function (size) {
     if (!pid) {
       return;
@@ -92,7 +121,7 @@ function createTerminal() {
     fetch(url, {method: 'POST'});
   });
   protocol = (location.protocol === 'https:') ? 'wss://' : 'ws://';
-  socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
+  baseSocketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
 
   term.open(terminalContainer);
   term.fit();
@@ -109,7 +138,7 @@ function createTerminal() {
 
       res.text().then(function (pid) {
         window.pid = pid;
-        socketURL += pid;
+        var socketURL = baseSocketURL + pid;
         socket = new WebSocket(socketURL);
         socket.onopen = runRealTerminal;
         socket.onclose = runFakeTerminal;
@@ -124,11 +153,19 @@ function createTerminal() {
 }
 
 function runRealTerminal() {
-  term.attach(socket);
+  term.attach(cmdSocket || socket);
   term._initialized = true;
 }
 
-function runFakeTerminal() {
+function runFakeTerminal(e) {
+  console.log('error or close', e)
+  if (socket && cmdSocket) {
+    term.detach(cmdSocket);
+    cmdSocket = null;
+    socket.send('\r');
+    term.focus();
+    //term.attach(socket);
+  }
   if (term._initialized) {
     return;
   }
