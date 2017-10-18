@@ -23,21 +23,31 @@ app.get('/main.js', function(req, res){
 
 app.post('/terminals', function (req, res) {
   var cols = parseInt(req.query.cols),
-      rows = parseInt(req.query.rows),
-      term = pty.spawn(process.platform === 'win32' ? 'cmd.exe' : 'bash', [], {
-        name: 'xterm-color',
+    rows = parseInt(req.query.rows),
+      //term = pty.spawn(process.platform === 'win32' ? 'cmd.exe' : 'bash', ['-c', 'ls -l'], {
+	term = pty.spawn("ls" , ['-l'], {       
+	    name: 'xterm-color',
         cols: cols || 80,
         rows: rows || 24,
         cwd: process.env.PWD,
         env: process.env
-      });
-
+    });
+	  
+  term.on('exit', function(exit, signal) {
+	  console.log(logs[term.pid])
+  });
+  
+  term.on('close', function(exit, signal) {
+	  console.log('EXIT CODE desde close: ' + exit);
+  });
+  
   console.log('Created terminal with PID: ' + term.pid);
   terminals[term.pid] = term;
   logs[term.pid] = '';
   term.on('data', function(data) {
     logs[term.pid] += data;
   });
+  
   res.send(term.pid.toString());
   res.end();
 });
