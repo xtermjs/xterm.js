@@ -120,34 +120,42 @@ function createTerminal() {
         });
 
         term.on("zmodemDetect", (detection) => {
-            start_form.style.display = "";
-            start_form.onsubmit = function(e) {
-                start_form.style.display = "none";
+            function do_zmodem() {
+                try {
+                    term.detach();
+                    let zsession = detection.confirm();
 
-                if (document.getElementById("zmstart_yes").checked) {
+                    current_zsession = zsession;
 
-                    try {
-                        term.detach();
-                        let zsession = detection.confirm();
-
-                        current_zsession = zsession;
-
-                        if (zsession.type === "receive") {
-                            _handle_receive_session(zsession);
-                        }
-                        else {
-                            _handle_send_session(zsession);
-                        }
+                    if (zsession.type === "receive") {
+                        _handle_receive_session(zsession);
                     }
-                    catch(e) { throw e }
-                    finally {
-                        term.attach(socket);
+                    else {
+                        _handle_send_session(zsession);
                     }
                 }
-                else {
-                    detection.deny();
+                catch(e) { throw e }
+                finally {
+                    term.attach(socket);
                 }
-            };
+            }
+
+            if (_auto_zmodem()) {
+                do_zmodem();
+            }
+            else {
+                start_form.style.display = "";
+                start_form.onsubmit = function(e) {
+                    start_form.style.display = "none";
+
+                    if (document.getElementById("zmstart_yes").checked) {
+                        do_zmodem();
+                    }
+                    else {
+                        detection.deny();
+                    }
+                };
+            }
         });
       });
     });
@@ -200,6 +208,10 @@ function _hide_progress() {
 
 var start_form = document.getElementById("zm_start");
 
+function _auto_zmodem() {
+    return document.getElementById("zmodem-auto").checked;
+}
+
 // END UI STUFF
 //----------------------------------------------------------------------
 
@@ -208,10 +220,9 @@ function _handle_receive_session(zsession) {
         _show_file_info(xfer);
 
         var offer_form = document.getElementById("zm_offer");
-        offer_form.style.display = "";
-        offer_form.onsubmit = function(e) {
-            var the_form = e.currentTarget;
-            the_form.style.display = "none";
+
+        function on_form_submit() {
+            offer_form.style.display = "none";
 
             //START
             //if (offer_form.zmaccept.value) {
@@ -232,7 +243,15 @@ function _handle_receive_session(zsession) {
                 xfer.skip();
             }
             //END
-        };
+        }
+
+        if (_auto_zmodem()) {
+            on_form_submit();
+        }
+        else {
+            offer_form.onsubmit = on_form_submit;
+            offer_form.style.display = "";
+        }
     } );
 
     zsession.on("session_end", () => {
@@ -257,13 +276,13 @@ function _handle_send_session(zsession) {
             files_obj,
             {
                 on_offer_response(obj, xfer) {
-                    console.log("offer", xfer ? "accepted" : "skipped");
+                    //console.log("offer", xfer ? "accepted" : "skipped");
                 },
                 on_progress(obj, xfer) {
                     _update_progress(xfer);
                 },
                 on_file_complete(obj) {
-                    console.log("COMPLETE", obj);
+                    //console.log("COMPLETE", obj);
                     _hide_progress();
                 },
             }

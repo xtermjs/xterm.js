@@ -68,7 +68,7 @@
     "typescript": "~2.4.0",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.1.0",
-    "zmodem.js": "^0.1.1"
+    "zmodem.js": "^0.1.4"
   },
   "scripts": {
     "prestart": "npm run build",
