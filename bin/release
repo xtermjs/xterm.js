@@ -1,0 +1,22 @@
+#! /usr/bin/env sh
+
+# Usage: ./bin/release x.y.z
+# x.y.z should be semver (e.g. 1.0.0)
+
+set -e
+
+if [ -z "$1" ];
+  then
+    echo "No version supplied. Please a version argument\n"
+    echo "Usage: $0 VERSION\n"
+    echo "Example: $0 1.0.0"
+    exit
+fi
+
+NEW_VERSION=$1
+
+./bin/prepare-release $NEW_VERSION
+
+git push && \
+git push --tags && \
+npm publish

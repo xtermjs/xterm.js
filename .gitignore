@@ -1,8 +1,7 @@
 node_modules/
 *.swp
-build/*
 .lock-wscript
-out/
+lib/
 Makefile.gyp
 *.Makefile
 *.target.gyp.mk
@@ -10,3 +9,11 @@ Makefile.gyp
 example/*.log
 docs/
 npm-debug.log
+/.idea/
+.env
+build/
+.vscode/
+.DS_Store
+
+# Directories needed for code coverage
+/coverage/

@@ -1,0 +1,7 @@
+#! /usr/bin/env sh
+
+tail --lines=+3 AUTHORS > AUTHORS.tmp
+git log --format='%aN <%aE>' >> AUTHORS.tmp
+echo "List of xterm.js contributors. Updated before every release.\n" > AUTHORS
+sort -u AUTHORS.tmp >> AUTHORS
+rm -f AUTHORS.tmp

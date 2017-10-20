@@ -1,0 +1,34 @@
+#! /usr/bin/env sh
+
+# Usage: ./bin/prepare-release x.y.z
+# x.y.z should be semver (e.g. 1.0.0)
+
+set -e
+
+NEW_VERSION=$1
+CURRENT_PACKAGE_JSON_VERSION=$(cat package.json \
+  | grep version \
+  | head -1 \
+  | awk -F: '{ print $2 }' \
+  | sed 's/[",]//g' \
+  | tr -d '[[:space:]]')
+CURRENT_BOWER_JSON_VERSION=$(cat bower.json \
+  | grep version \
+  | head -1 \
+  | awk -F: '{ print $2 }' \
+  | sed 's/[",]//g' \
+  | tr -d '[[:space:]]')
+
+# Build xterm.js into `dist`
+export BUILD_DIR=dist
+npm run build
+
+# Update AUTHORS file
+sh bin/generate-authors
+
+# Update version in package.json and bower.json
+sed -i "s/\"version\": \"$CURRENT_PACKAGE_JSON_VERSION\"/\"version\": \"$NEW_VERSION\"/g" package.json
+sed -i "s/\"version\": \"$CURRENT_BOWER_JSON_VERSION\"/\"version\": \"$NEW_VERSION\"/g" bower.json
+
+git commit -S -s -a -m "Bump version to $NEW_VERSION"
+git tag $NEW_VERSION

@@ -2,10 +2,12 @@ var express = require('express');
 var app = express();
 var expressWs = require('express-ws')(app);
 var os = require('os');
-var pty = require('pty.js');
+var pty = require('node-pty');
 
-app.use('/src', express.static(__dirname + '/../src'));
-app.use('/addons', express.static(__dirname + '/../addons'));
+var terminals = {},
+    logs = {};
+
+app.use('/build', express.static(__dirname + '/../build'));
 
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
@@ -19,17 +21,43 @@ app.get('/main.js', function(req, res){
   res.sendFile(__dirname + '/main.js');
 });
 
-app.ws('/bash', function(ws, req) {
-  /**
-   * Open bash terminal and attach it
-   */
-  var term = pty.spawn(process.platform === 'win32' ? 'cmd.exe' : 'bash', [], {
-    name: 'xterm-color',
-    cols: 80,
-    rows: 24,
-    cwd: process.env.PWD,
-    env: process.env
+app.post('/terminals', function (req, res) {
+  var cols = parseInt(req.query.cols),
+      rows = parseInt(req.query.rows),
+      term = pty.spawn(process.platform === 'win32' ? 'cmd.exe' : 'bash', [], {
+        name: 'xterm-color',
+        cols: cols || 80,
+        rows: rows || 24,
+        cwd: process.env.PWD,
+        env: process.env
+      });
+
+  console.log('Created terminal with PID: ' + term.pid);
+  terminals[term.pid] = term;
+  logs[term.pid] = '';
+  term.on('data', function(data) {
+    logs[term.pid] += data;
   });
+  res.send(term.pid.toString());
+  res.end();
+});
+
+app.post('/terminals/:pid/size', function (req, res) {
+  var pid = parseInt(req.params.pid),
+      cols = parseInt(req.query.cols),
+      rows = parseInt(req.query.rows),
+      term = terminals[pid];
+
+  term.resize(cols, rows);
+  console.log('Resized terminal ' + pid + ' to ' + cols + ' cols and ' + rows + ' rows.');
+  res.end();
+});
+
+app.ws('/terminals/:pid', function (ws, req) {
+  var term = terminals[parseInt(req.params.pid)];
+  console.log('Connected to terminal ' + term.pid);
+  ws.send(logs[term.pid]);
+
   term.on('data', function(data) {
     try {
       ws.send(data);
@@ -41,8 +69,11 @@ app.ws('/bash', function(ws, req) {
     term.write(msg);
   });
   ws.on('close', function () {
-    console.log('close');
-    process.kill(term.pid);
+    term.kill();
+    console.log('Closed terminal ' + term.pid);
+    // Clean things up
+    delete terminals[term.pid];
+    delete logs[term.pid];
   });
 });
 

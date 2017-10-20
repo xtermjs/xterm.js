@@ -1,0 +1,25 @@
+a       b       c       d       e       f       g       h       i       j      k
+l
+                                x
+1 3     2
+
+
+CHT before EOL:
+no tab: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890abcdefgh@
+tab:    abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890abcdefgh@
+tab (2):abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890abcdefg @
+
+CHT at EOL:
+no tab: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890abcdefghi
+@
+tab:    abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890abcdefghi
+@
+with clipping:                                                  4567890abcdefgh@
+
+a                               e               g
+                                e                       h
+                                                                               x
+
+
+
+
