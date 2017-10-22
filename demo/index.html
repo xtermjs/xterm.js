@@ -10,7 +10,7 @@
         <script src="/build/xterm.js" ></script>
 
         <script src="/build/addons/attach/attach.js" ></script>
-        <script src="/build/addons/zmodem/zmodemjs/dist/zmodem.js" ></script>
+        <script src="/js/zmodem.devel.js" ></script>
         <script src="/build/addons/zmodem/zmodem.js" ></script>
 
         <script src="/build/addons/fit/fit.js" ></script>
@@ -57,7 +57,7 @@
 
             <form id="zm_progress" style="display: none" action="javascript:void(0)">
                 <div><span id="percent_received"></span>% (<span id="bytes_received"></span> bytes) received</div>
-                <button type="button" onclick="abort_current_session(); this.form.style.display='none';">Abort ZMODEM</button>
+                <button id="zm_progress_skipper" type="button" onclick="skip_current_file();">Skip File</button>
             </form>
 
             <form id="zm_choose" style="display: none" action="javascript:void(0)">
@@ -123,7 +123,7 @@
           </div>
         </div>
         <p><strong>Attention:</strong> The demo is a barebones implementation and is designed for xterm.js evaluation purposes only. Exposing the demo to the public as is would introduce security risks for the host.</p>
-        <p><sup>*</sup> ZMODEM file transfers are supported via an addon. To try it out, install <a href="https://ohse.de/uwe/software/lrzsz.html"><code>lrzsz</code></a> onto the remote peer, then type <code>rz</code> to send from your browser or <code>sz &lt;file&gt;</code> to send from the remote peer.</p>
+        <p><sup>*</sup> ZMODEM file transfers are supported via an addon. To try it out, install <a href="https://ohse.de/uwe/software/lrzsz.html"><code>lrzsz</code></a> onto the remote peer, then run <code>rz</code> to send from your browser or <code>sz &lt;file&gt;</code> to send from the remote peer.</p>
         <script src="main.js" defer ></script>
     </body>
 </html>

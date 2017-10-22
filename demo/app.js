@@ -21,6 +21,10 @@ app.get('/main.js', function(req, res){
   res.sendFile(__dirname + '/main.js');
 });
 
+app.get('/js/*.js', function(req, res){
+    res.sendFile(__dirname + req.url);
+});
+
 const SHELL_ARGS = {
     bash: ['--login'],
     'cmd.exe': [],
