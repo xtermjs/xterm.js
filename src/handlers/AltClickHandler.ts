@@ -39,8 +39,14 @@ export class AltClickHandler {
     if (this._terminal.buffer === this._terminal.buffers.normal) {
       keyboardArrows = this.buildArrowSequence(this.normalCharCount(), this.horizontalCursorCommand(this.normalMoveForward()));
     } else {
-      keyboardArrows = this.buildArrowSequence(this.altVerticalCharCount(), this.verticalCursorCommand(this.altMoveUpward()));
-      keyboardArrows += this.buildArrowSequence(this.altHorizontalCharCount(), this.horizontalCursorCommand(this.altMoveForward()));
+      let verticalChars = this.buildArrowSequence(this.altVerticalCharCount(), this.verticalCursorCommand(this.altMoveUpward()));
+      let horizontalChars = this.buildArrowSequence(this.altHorizontalCharCount(), this.horizontalCursorCommand(this.altMoveForward()));
+
+      if (this.altMoveForward()) {
+        keyboardArrows = verticalChars + horizontalChars
+      } else {
+        keyboardArrows = horizontalChars + verticalChars
+      }
     }
 
     this._terminal.send(keyboardArrows);
