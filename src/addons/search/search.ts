@@ -11,7 +11,7 @@ declare var require: any;
 declare var window: any;
 
 (function (addon) {
-  if ('Terminal' in window) {
+  if ( typeof window !== 'undefined' && 'Terminal' in window) {
     /**
      * Plain browser environment
      */
