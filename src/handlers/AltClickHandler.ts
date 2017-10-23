@@ -43,9 +43,9 @@ export class AltClickHandler {
       let horizontalChars = this.buildArrowSequence(this.altHorizontalCharCount(), this.horizontalCursorCommand(this.altMoveForward()));
 
       if (this.altMoveForward()) {
-        keyboardArrows = verticalChars + horizontalChars
+        keyboardArrows = verticalChars + horizontalChars;
       } else {
-        keyboardArrows = horizontalChars + verticalChars
+        keyboardArrows = horizontalChars + verticalChars;
       }
     }
 
