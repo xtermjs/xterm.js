@@ -126,7 +126,7 @@ export class SelectionManager extends EventEmitter {
     // reverseIndex) and delete in a splice is only ever used when the same
     // number of elements was just added. Given this is could actually be
     // beneficial to leave the selection as is for these cases.
-    this._buffer.on('trim', (amount: number) => this._onTrim(amount));
+    this._terminal.buffer.lines.on('trim', (amount: number) => this._onTrim(amount));
   }
 
   /**
@@ -145,15 +145,6 @@ export class SelectionManager extends EventEmitter {
     this._enabled = true;
   }
 
-  /**
-   * Sets the active buffer, this should be called when the alt buffer is
-   * switched in or out.
-   * @param buffer The active buffer.
-   */
-  public setBuffer(buffer: ICircularList<[number, string, number][]>): void {
-    this._buffer = buffer;
-    this.clearSelection();
-  }
 
   public get selectionStart(): [number, number] { return this._model.finalSelectionStart; }
   public get selectionEnd(): [number, number] { return this._model.finalSelectionEnd; }
@@ -183,11 +174,11 @@ export class SelectionManager extends EventEmitter {
     // Get first row
     const startRowEndCol = start[1] === end[1] ? end[0] : null;
     let result: string[] = [];
-    result.push(translateBufferLineToString(this._buffer.get(start[1]), true, start[0], startRowEndCol));
+    result.push(translateBufferLineToString(this._terminal.buffer.lines.get(start[1]), true, start[0], startRowEndCol));
 
     // Get middle rows
     for (let i = start[1] + 1; i <= end[1] - 1; i++) {
-      const bufferLine = this._buffer.get(i);
+      const bufferLine = this._terminal.buffer.lines.get(i);
       const lineText = translateBufferLineToString(bufferLine, true);
       if ((<any>bufferLine).isWrapped) {
         result[result.length - 1] += lineText;
@@ -198,7 +189,7 @@ export class SelectionManager extends EventEmitter {
 
     // Get final row
     if (start[1] !== end[1]) {
-      const bufferLine = this._buffer.get(end[1]);
+      const bufferLine = this._terminal.buffer.lines.get(end[1]);
       const lineText = translateBufferLineToString(bufferLine, true, 0, end[0]);
       if ((<any>bufferLine).isWrapped) {
         result[result.length - 1] += lineText;
@@ -412,7 +403,7 @@ export class SelectionManager extends EventEmitter {
     this._model.selectionEnd = null;
 
     // Ensure the line exists
-    const line = this._buffer.get(this._model.selectionStart[1]);
+    const line = this._terminal.buffer.lines.get(this._model.selectionStart[1]);
     if (!line) {
       return;
     }
@@ -492,8 +483,8 @@ export class SelectionManager extends EventEmitter {
     // If the character is a wide character include the cell to the right in the
     // selection. Note that selections at the very end of the line will never
     // have a character.
-    if (this._model.selectionEnd[1] < this._buffer.length) {
-      const char = this._buffer.get(this._model.selectionEnd[1])[this._model.selectionEnd[0]];
+    if (this._model.selectionEnd[1] < this._terminal.buffer.lines.length) {
+      const char = this._terminal.buffer.lines.get(this._model.selectionEnd[1])[this._model.selectionEnd[0]];
       if (char && char[2] === 0) {
         this._model.selectionEnd[0]++;
       }
@@ -561,7 +552,7 @@ export class SelectionManager extends EventEmitter {
    * @param coords The coordinates to get the word at.
    */
   private _getWordAt(coords: [number, number]): IWordPosition {
-    const bufferLine = this._buffer.get(coords[1]);
+    const bufferLine = this._terminal.buffer.lines.get(coords[1]);
     if (!bufferLine) {
       return null;
     }
