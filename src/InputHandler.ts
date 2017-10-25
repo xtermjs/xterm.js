@@ -1122,7 +1122,6 @@ export class InputHandler implements IInputHandler {
           // if (params[0] === 1049) {
           //   this.restoreCursor(params);
           // }
-          this._terminal.selectionManager.setBuffer(this._terminal.buffer.lines);
           this._terminal.refresh(0, this._terminal.rows - 1);
           this._terminal.viewport.syncScrollArea();
           this._terminal.showCursor();
