@@ -269,6 +269,12 @@ describe('ColorManager', () => {
   });
 
   describe('setTheme', () => {
+    it('should not throw when not setting all colors', () => {
+      assert.doesNotThrow(() => {
+        cm.setTheme({});
+      });
+    });
+
     it('should set a partial set of colors, using the default if not present', () => {
       assert.equal(cm.colors.background, '#000000');
       assert.equal(cm.colors.foreground, '#ffffff');
