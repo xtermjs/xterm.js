@@ -22,6 +22,7 @@ app.get('/main.js', function(req, res){
 });
 
 app.post('/terminals', function (req, res) {
+	
   var cols = parseInt(req.query.cols),
       rows = parseInt(req.query.rows),
       cmd = req.query.cmd,
@@ -31,9 +32,12 @@ app.post('/terminals', function (req, res) {
 	    name: 'xterm-color',
         cols: cols || 80,
         rows: rows || 24,
-        cwd: process.env.PWD,
+        cwd: req.query.cwd || process.env.PWD,
         env: process.env
     });
+	if(req.query.cwd != undefined){
+	  term.cwd = req.query.cwd;
+	}
 	   
   if(req.query.cmd === undefined || req.query.cmd === null){
 	term.terminal = true;
@@ -65,10 +69,15 @@ app.ws('/terminals/:pid', function (ws, req) {
   var term = terminals[parseInt(req.params.pid)];
   term.ws = ws;
   console.log('Connected to terminal ' + term.pid);
-    ws.send(logs[term.pid]);
+  ws.send(logs[term.pid]);
   Object.keys(terminals).map(function(key, index) {
 	var t = terminals[key];
 	if(t.terminal && t != term){
+		console.log('-------------------Working Directory: ' + term.cwd);
+		if(t.cwd != term.cwd){
+			t.write('cd '+ term.cwd + '\r');
+			console.log('-------------------Write CWD on Terminal Client: ' + term.cwd);
+		}
 		t.ws.send(logs[term.pid]);
 	}
   });
@@ -78,6 +87,7 @@ app.ws('/terminals/:pid', function (ws, req) {
 	  Object.keys(terminals).map(function(key, index) {
 		var t = terminals[key];
 		if(t.terminal && t != term){
+			console.log('-------------------Send Output to Terminal Client: ' + data);
 			t.ws.send(data);
 		}
 	  });
