@@ -25,17 +25,10 @@ app.get('/js/*.js', function(req, res){
     res.sendFile(__dirname + req.url);
 });
 
-const SHELL_ARGS = {
-    bash: ['--login'],
-    'cmd.exe': [],
-};
-
-var shell_name = process.platform === 'win32' ? 'cmd.exe' : 'bash';
-
 app.post('/terminals', function (req, res) {
   var cols = parseInt(req.query.cols),
       rows = parseInt(req.query.rows),
-      term = pty.spawn(shell_name, SHELL_ARGS[shell_name], {
+      term = pty.spawn(process.platform === 'win32' ? 'cmd.exe' : 'bash', [], {
         encoding: null,
         name: 'xterm-color',
         cols: cols || 80,

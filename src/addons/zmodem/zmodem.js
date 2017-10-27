@@ -16,7 +16,7 @@
  * See zmodem.js’s documentation for more details.
  *
  * **IMPORTANT:** After you confirm() a zmodem.js Detection, if you have
- *  used the `attach` or `turbinado` addons, you’ll need to suspend their
+ *  used the `attach` or `terminado` addons, you’ll need to suspend their
  *  operation for the duration of the ZMODEM session. (The demo does this
  *  via `detach()` and a re-`attach()`.)
  */
