@@ -25,21 +25,27 @@ app.post('/terminals', function (req, res) {
   var cols = parseInt(req.query.cols),
       rows = parseInt(req.query.rows),
       cmd = req.query.cmd,
-      args = req.query.args ? ['-c', cmd + ' ' + req.query.args] : [],
-      term = pty.spawn(process.platform === 'win32' ? 'cmd.exe' : 'bash', args || [], {
-        name: 'xterm-color',
+      args = req.query.args ? ['-v', '-c', cmd + ' ' + req.query.args] : [],
+     term = pty.spawn(process.platform === 'win32' ? 'cmd.exe' : 'bash', args || [], {
+    // term = pty.spawn("ls" , ['-l'], {       
+	    name: 'xterm-color',
         cols: cols || 80,
         rows: rows || 24,
         cwd: process.env.PWD,
         env: process.env
-      });
-
+    });
+	   
+  if(req.query.cmd === undefined || req.query.cmd === null){
+	term.terminal = true;
+  }
+  
   console.log('Created terminal with PID: ' + term.pid);
   terminals[term.pid] = term;
   logs[term.pid] = '';
   term.on('data', function(data) {
     logs[term.pid] += data;
   });
+  
   res.send(term.pid.toString());
   res.end();
 });
@@ -57,19 +63,38 @@ app.post('/terminals/:pid/size', function (req, res) {
 
 app.ws('/terminals/:pid', function (ws, req) {
   var term = terminals[parseInt(req.params.pid)];
+  term.ws = ws;
   console.log('Connected to terminal ' + term.pid);
-  ws.send(logs[term.pid]);
-
+    ws.send(logs[term.pid]);
+  Object.keys(terminals).map(function(key, index) {
+	var t = terminals[key];
+	if(t.terminal && t != term){
+		t.ws.send(logs[term.pid]);
+	}
+  });
   term.on('data', function(data) {
     try {
       ws.send(data);
+	  Object.keys(terminals).map(function(key, index) {
+		var t = terminals[key];
+		if(t.terminal && t != term){
+			t.ws.send(data);
+		}
+	  });
     } catch (ex) {
       // The WebSocket is not open, ignore
     }
   });
   term.on('exit', function(exit) {
     console.log('exited', term.pid, 'code', exit);
-    ws.close(3001);
+	Object.keys(terminals).map(function(key, index) {
+		var t = terminals[key];
+		if(t.terminal){
+			t.write('\r');
+		}
+	});
+    ws.close(1000,exit+"");
+	//ws.close(3001,'reason');
   });
   ws.on('message', function(msg) {
     term.write(msg);
