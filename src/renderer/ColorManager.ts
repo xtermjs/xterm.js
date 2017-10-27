@@ -109,6 +109,9 @@ export class ColorManager implements IColorManager {
   }
 
   private _validateColor(color: string, fallback: string): string {
+    if (!color) {
+      return fallback;
+    }
     if (color.length === 7 && color.charAt(0) === '#') {
       return color;
     }
