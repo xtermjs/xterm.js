@@ -91,6 +91,7 @@ function createTerminal() {
 
   term.open(terminalContainer);
   term.fit();
+  term.winptyCompatInit();
 
   // fit is called within a setTimeout, cols and rows need this.
   setTimeout(function () {
