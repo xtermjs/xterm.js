@@ -1,3 +1,11 @@
+import { Zmodem } from '../../../node_modules/zmodem.js/dist/zmodem.js';
+
+declare var exports: any;
+declare var module: any;
+declare var define: any;
+declare var require: any;
+declare var window: any;
+
 /**
  *
  * Allow xterm.js to handle ZMODEM uploads and downloads.

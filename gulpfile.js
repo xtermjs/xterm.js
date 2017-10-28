@@ -20,6 +20,7 @@ const util = require('gulp-util');
 let buildDir = process.env.BUILD_DIR || 'build';
 let tsProject = ts.createProject('tsconfig.json');
 let tsProjectSearchAddon = ts.createProject('./src/addons/search/tsconfig.json');
+let tsProjectZmodemAddon = ts.createProject('./src/addons/zmodem/tsconfig.json');
 let srcDir = tsProject.config.compilerOptions.rootDir;
 let outDir = tsProject.config.compilerOptions.outDir;
 
@@ -49,13 +50,17 @@ gulp.task('tsc', function () {
   let tsResultSearchAddon = tsProjectSearchAddon.src().pipe(sourcemaps.init()).pipe(tsProjectSearchAddon());
   let tscSearchAddon = tsResultSearchAddon.js.pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''})).pipe(gulp.dest(`${outDir}/addons/search`));
 
+  fs.emptyDirSync(`${outDir}/addons/zmodem`);
+  let tsResultZmodemAddon = tsProjectZmodemAddon.src().pipe(sourcemaps.init()).pipe(tsProjectZmodemAddon());
+  let tscZmodemAddon = tsResultZmodemAddon.js.pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''})).pipe(gulp.dest(`${outDir}/addons/zmodem`));
+
   // Copy all addons from ${srcDir}/ to ${outDir}/
-  let copyAddons = gulp.src([`${srcDir}/addons/**/*`, `!${srcDir}/addons/search`, `!${srcDir}/addons/search/**`]).pipe(gulp.dest(`${outDir}/addons`));
+  let copyAddons = gulp.src([`${srcDir}/addons/**/*`, `!${srcDir}/addons/search`, `!${srcDir}/addons/search/**`, `!${srcDir}/addons/zmodem`, `!${srcDir}/addons/zmodem/**`]).pipe(gulp.dest(`${outDir}/addons`));
 
   // Copy stylesheets from ${srcDir}/ to ${outDir}/
   let copyStylesheets = gulp.src(`${srcDir}/**/*.css`).pipe(gulp.dest(outDir));
 
-  return merge(tsc, tscSearchAddon, copyAddons, copyStylesheets);
+  return merge(tsc, tscSearchAddon, tscZmodemAddon, copyAddons, copyStylesheets);
 });
 
 /**
@@ -105,16 +110,35 @@ gulp.task('browserify-addons', ['tsc'], function() {
         .pipe(sourcemaps.write('./'))
         .pipe(gulp.dest(buildDir));
 
+  let zmodemOptions = {
+    basedir: `${buildDir}/addons/zmodem`,
+    debug: true,
+    entries: [`${outDir}/addons/zmodem/zmodem.js`],
+    cache: {},
+    packageCache: {}
+  };
+  let zmodemBundle = browserify(zmodemOptions)
+        .external(path.join(outDir, 'Terminal.js'))
+        .bundle()
+        .pipe(source('./addons/zmodem/zmodem.js'))
+        .pipe(buffer())
+        .pipe(sourcemaps.init({loadMaps: true, sourceRoot: ''}))
+        .pipe(sourcemaps.write('./'))
+        .pipe(gulp.dest(buildDir));
+
   // Copy all add-ons from outDir to buildDir
   let copyAddons = gulp.src([
     // Copy JS addons
     `${outDir}/addons/**/*`,
+
     // Exclude TS addons from copy as they are being built via browserify
     `!${outDir}/addons/search`,
-    `!${outDir}/addons/search/**`
+    `!${outDir}/addons/search/**`,
+    `!${outDir}/addons/zmodem`,
+    `!${outDir}/addons/zmodem/**`,
   ]).pipe(gulp.dest(`${buildDir}/addons`));
 
-  return merge(searchBundle, copyAddons);
+  return merge(searchBundle, zmodemBundle, copyAddons);
 });
 
 gulp.task('instrument-test', function () {
