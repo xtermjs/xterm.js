@@ -41,18 +41,28 @@
     Object.assign(
         Terminal.prototype,
         {
-            zmodemAttach: function zmodemAttach(ws) {
+            zmodemAttach: function zmodemAttach(ws, opts) {
                 var term = this;
+
+                if (!opts) opts = {};
 
                 var senderFunc = function _ws_sender_func(octets) {
                     ws.send( new Uint8Array(octets) );
                 };
 
-                var zsentry = new Zmodem.Sentry( {
+                var zsentry;
+
+                function _shouldWrite() {
+                    return !!zsentry.get_confirmed_session() || !opts.noTerminalWriteOutsideSession;
+                }
+
+                zsentry = new Zmodem.Sentry( {
                     to_terminal: function _to_terminal(octets) {
-                        term.write(
-                            String.fromCharCode.apply(String, octets)
-                        );
+                        if (_shouldWrite()) {
+                            term.write(
+                                String.fromCharCode.apply(String, octets)
+                            );
+                        }
                     },
 
                     sender: senderFunc,
@@ -68,9 +78,14 @@
 
                 function handleWSMessage(evt) {
 
-                    //For some reason the first message from the server is text.
+                    //In testing with xterm.js’s demo the first message was
+                    //always text even if the rest were binary. While that
+                    //may be specific to xterm.js’s demo, ultimately we
+                    //should reject anything that isn’t binary.
                     if (typeof evt.data === "string") {
-                        term.write(evt.data);
+                        if (_shouldWrite()) {
+                            term.write(evt.data);
+                        }
                     }
                     else {
                         zsentry.consume(evt.data);

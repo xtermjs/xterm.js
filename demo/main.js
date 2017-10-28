@@ -112,7 +112,9 @@ function createTerminal() {
         socket.onclose = runFakeTerminal;
         socket.onerror = runFakeTerminal;
 
-        term.zmodemAttach(socket);
+        term.zmodemAttach(socket, {
+            noTerminalWriteOutsideSession: true,
+        } );
 
         term.on("zmodemDetect", (detection) => {
             term.detach();
