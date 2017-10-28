@@ -2,10 +2,16 @@
  *
  * Allow xterm.js to handle ZMODEM uploads and downloads.
  *
- * This addon is a wrapper around zmodem.js. It adds the following:
+ * This addon is a wrapper around zmodem.js. It adds the following to the
+ *  Terminal class:
  *
- * - function `zmodemAttach(<WebSocket>)` - creates a Zmodem.Sentry
- *      on the passed WebSocket object.
+ * - function `zmodemAttach(<WebSocket>, <Object>)` - creates a Zmodem.Sentry
+ *      on the passed WebSocket object. The Object passed is optional and
+ *      can contain:
+ *          - noTerminalWriteOutsideSession: Suppress writes from the Sentry
+ *            object to the Terminal while there is no active Session. This
+ *            is necessary for compatibility with, for example, the
+ *            `attach.js` addon.
  *
  * - event `zmodemDetect` - fired on Zmodem.Sentry’s `on_detect` callback.
  *      Passes the zmodem.js Detection object.
