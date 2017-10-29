@@ -163,12 +163,12 @@ function zmodemHandleSendSession(zsession) {
         choose_form.onsubmit = function(e) {
             choose_form.style.display = "none";
 
-            var file_el = document.getElementById("zm_files");
-            var files_obj = file_el.files;
+            var fileEl = document.getElementById("zm_files");
+            var filesObj = fileEl.files;
 
             Zmodem.Browser.send_files(
                 zsession,
-                files_obj
+                filesObj
             ).then(
                 zsession.close.bind(zsession),
                 console.error.bind(console)

@@ -21,10 +21,6 @@ app.get('/main.js', function(req, res){
   res.sendFile(__dirname + '/main.js');
 });
 
-app.get('/js/*.js', function(req, res){
-    res.sendFile(__dirname + req.url);
-});
-
 app.post('/terminals', function (req, res) {
   var cols = parseInt(req.query.cols),
       rows = parseInt(req.query.rows),
