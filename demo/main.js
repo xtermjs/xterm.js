@@ -156,14 +156,15 @@ function zmodemHandleReceiveSession(zsession) {
 }
 
 function zmodemHandleSendSession(zsession) {
-    var choose_form = document.getElementById("zm_choose");
-    choose_form.style.display = "";
+    var chooseForm = document.getElementById("zm_choose");
+    var fileEl = document.getElementById("zm_files");
+
+    chooseForm.style.display = "";
 
     return new Promise( (res) => {
-        choose_form.onsubmit = function(e) {
-            choose_form.style.display = "none";
+        fileEl.onchange = function(e) {
+            chooseForm.style.display = "none";
 
-            var fileEl = document.getElementById("zm_files");
             var filesObj = fileEl.files;
 
             Zmodem.Browser.send_files(
