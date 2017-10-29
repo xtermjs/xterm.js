@@ -43,7 +43,7 @@ declare var define: any;
     // wrapped.
     this.on('lineFeed', () => {
       const line = this.buffer.lines.get(this.buffer.ybase + this.buffer.y - 1);
-      const lastChar = line[line.length - 1];
+      const lastChar = line[this.cols - 1];
       if (lastChar[3] !== 32 /* ' ' */) {
         const nextLine = this.buffer.lines.get(this.buffer.ybase + this.buffer.y);
         (<any>nextLine).isWrapped = true;
