@@ -4,10 +4,7 @@
  */
 
 declare var exports: any;
-declare var module: any;
 declare var define: any;
-declare var require: any;
-declare var window: any;
 
 (function (addon) {
   if (typeof window !== 'undefined' && 'Terminal' in window) {
