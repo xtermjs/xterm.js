@@ -51,6 +51,7 @@
     "glob": "^7.0.5",
     "gulp": "3.9.1",
     "gulp-cli": "^1.2.2",
+    "gulp-concat": "^2.6.1",
     "gulp-coveralls": "^0.1.4",
     "gulp-istanbul": "^1.1.1",
     "gulp-mocha": "^3.0.1",
@@ -68,7 +69,7 @@
     "typescript": "~2.4.0",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.1.0",
-    "zmodem.js": "^0.1.4"
+    "zmodem.js": "^0.1.5"
   },
   "scripts": {
     "prestart": "npm run build",
