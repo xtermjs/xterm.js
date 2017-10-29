@@ -1,5 +1,3 @@
-"use strict";
-
 var term,
     protocol,
     socketURL,
@@ -180,9 +178,8 @@ function zmodemHandleSendSession(zsession) {
 }
 
 function runRealTerminal() {
-    term.attach(socket);
-
-    term._initialized = true;
+  term.attach(socket);
+  term._initialized = true;
 }
 
 function runFakeTerminal() {
