@@ -15,12 +15,12 @@ const DIM_OPACITY = 0.5;
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
   protected _ctx: CanvasRenderingContext2D;
-  private _scaledCharWidth: number;
-  private _scaledCharHeight: number;
-  private _scaledCellWidth: number;
-  private _scaledCellHeight: number;
-  private _scaledCharLeft: number;
-  private _scaledCharTop: number;
+  private _scaledCharWidth: number = 0;
+  private _scaledCharHeight: number = 0;
+  private _scaledCellWidth: number = 0;
+  private _scaledCellHeight: number = 0;
+  private _scaledCharLeft: number = 0;
+  private _scaledCharTop: number = 0;
 
   private _charAtlas: HTMLCanvasElement | ImageBitmap;
 
