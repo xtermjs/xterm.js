@@ -930,6 +930,9 @@ export class InputHandler implements IInputHandler {
           this._terminal.viewport.syncScrollArea();
           this._terminal.showCursor();
           break;
+        case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
+          this._terminal.bracketedPasteMode = true;
+          break;
       }
     }
   }
@@ -1099,6 +1102,9 @@ export class InputHandler implements IInputHandler {
           this._terminal.refresh(0, this._terminal.rows - 1);
           this._terminal.viewport.syncScrollArea();
           this._terminal.showCursor();
+          break;
+        case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
+          this._terminal.bracketedPasteMode = false;
           break;
       }
     }
