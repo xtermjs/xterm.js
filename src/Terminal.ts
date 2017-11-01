@@ -943,7 +943,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       ev.preventDefault();
       this.focus();
 
-      if (!this.mouseEvents) return;
+      // Don't send the mouse button to the pty if mouse events are disabled or
+      // if the selection manager is having selection forced (ie. a modifier is
+      // held).
+      if (!this.mouseEvents || this.selectionManager.shouldForceSelection(ev)) {
+        return;
+      }
 
       // send the button
       sendButton(ev);
