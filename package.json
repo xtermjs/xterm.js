@@ -60,7 +60,7 @@
     "jsdoc": "3.4.3",
     "jsdom": "^11.1.0",
     "merge-stream": "^1.0.1",
-    "node-pty": "^0.4.1",
+    "node-pty": "^0.7.2",
     "nodemon": "1.10.2",
     "sorcery": "^0.10.0",
     "tslint": "^4.0.2",
