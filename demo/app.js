@@ -41,11 +41,16 @@ app.post('/terminals', function (req, res) {
 	   
   if(req.query.cmd === undefined || req.query.cmd === null){
 	term.terminal = true;
+	term.name = 'webClient';
+  }else{
+	  term.terminal = false;
+	  term.name = 'javaClient';
   }
   
-  console.log('Created terminal with PID: ' + term.pid);
+  console.log('Created terminal with PID: ' + term.pid + ' - terminal.name: ' + term.name);
   terminals[term.pid] = term;
   logs[term.pid] = '';
+  
   term.on('data', function(data) {
     logs[term.pid] += data;
   });
@@ -68,26 +73,54 @@ app.post('/terminals/:pid/size', function (req, res) {
 app.ws('/terminals/:pid', function (ws, req) {
   var term = terminals[parseInt(req.params.pid)];
   term.ws = ws;
-  console.log('Connected to terminal ' + term.pid);
+  console.log('Connected to terminal ' + term.pid + ' - terminal.name: ' + term.name);
   ws.send(logs[term.pid]);
   Object.keys(terminals).map(function(key, index) {
 	var t = terminals[key];
 	if(t.terminal && t != term){
-		console.log('-------------------Working Directory: ' + term.cwd);
 		if(t.cwd != term.cwd){
+			t.once('data', function(data) {
+				try {
+					console.log('******** Send  "'+ logs[term.pid] + '"               ( from t.once(data.... ) to  terminal ---> "' + t.name + '" ********');
+					t.ws.send(logs[term.pid]);
+					t.disable=false;
+				} catch (ex) {
+				  // The WebSocket is not open, ignore
+				}
+			});
+			console.log('******** Write "cd ' + term.cwd + '" on terminal ---> "'+ t.name + '" ********');
+			t.disable=true;
 			t.write('cd '+ term.cwd + '\r');
-			console.log('-------------------Write CWD on Terminal Client: ' + term.cwd);
+		}else{
+			console.log('******** Send  "'+ logs[term.pid] + '"              ( from t.on(data.... ) to  terminal ---> ' + t.name + '" ********');
+			t.ws.send(logs[term.pid]);
 		}
-		t.ws.send(logs[term.pid]);
 	}
   });
+  
+  term.on('exit', function(exit) {
+    console.log('exited', term.pid, 'code', exit);
+	Object.keys(terminals).map(function(key, index) {
+		var t = terminals[key];
+		if(t.terminal){
+			t.write('cd ..\r');
+			t.write('\r')
+		}
+	});
+		ws.close(1000,exit+"");
+  });
+  
   term.on('data', function(data) {
     try {
       ws.send(data);
 	  Object.keys(terminals).map(function(key, index) {
+		if(t.disable){
+			return;
+		}
 		var t = terminals[key];
 		if(t.terminal && t != term){
-			console.log('-------------------Send Output to Terminal Client: ' + data);
+			console.log('-------- Send Output "' + data + '"                to terminal ---> "' + t.name + '" --------');
+			t.write('\r');
 			t.ws.send(data);
 		}
 	  });
@@ -95,17 +128,7 @@ app.ws('/terminals/:pid', function (ws, req) {
       // The WebSocket is not open, ignore
     }
   });
-  term.on('exit', function(exit) {
-    console.log('exited', term.pid, 'code', exit);
-	Object.keys(terminals).map(function(key, index) {
-		var t = terminals[key];
-		if(t.terminal){
-			t.write('\r');
-		}
-	});
-    ws.close(1000,exit+"");
-	//ws.close(3001,'reason');
-  });
+
   ws.on('message', function(msg) {
     term.write(msg);
   });
