@@ -109,73 +109,9 @@ function createTerminal() {
         socket.onopen = runRealTerminal;
         socket.onclose = runFakeTerminal;
         socket.onerror = runFakeTerminal;
-
-        term.zmodemAttach(socket, {
-            noTerminalWriteOutsideSession: true,
-        } );
-
-        term.on("zmodemDetect", (detection) => {
-            term.detach();
-            let zsession = detection.confirm();
-
-            var promise;
-
-            if (zsession.type === "receive") {
-                promise = zmodemHandleReceiveSession(zsession);
-            }
-            else {
-                promise = zmodemHandleSendSession(zsession);
-            }
-
-            promise.catch( console.error.bind(console) ).then( () => {
-                term.attach(socket);
-            } );
-        });
       });
     });
   }, 0);
-}
-
-function zmodemHandleReceiveSession(zsession) {
-    zsession.on("offer", function(xfer) {
-        xfer.accept().then(
-            (inputs) => {
-                Zmodem.Browser.save_to_disk(inputs, xfer.get_details().name);
-            },
-            console.error.bind(console)
-        );
-    } );
-
-    var promise = new Promise( (res) => {
-        zsession.on("session_end", res);
-    } );
-
-    zsession.start();
-
-    return promise;
-}
-
-function zmodemHandleSendSession(zsession) {
-    var chooseForm = document.getElementById("zm_choose");
-    var fileEl = document.getElementById("zm_files");
-
-    chooseForm.style.display = "";
-
-    return new Promise( (res) => {
-        fileEl.onchange = function(e) {
-            chooseForm.style.display = "none";
-
-            var filesObj = fileEl.files;
-
-            Zmodem.Browser.send_files(
-                zsession,
-                filesObj
-            ).then(
-                zsession.close.bind(zsession),
-                console.error.bind(console)
-            ).then(res);
-        };
-    } );
 }
 
 function runRealTerminal() {

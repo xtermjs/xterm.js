@@ -111,6 +111,11 @@ gulp.task('browserify-addons', ['tsc'], function() {
         './src/addons/zmodem/zmodem.js',
   ]).pipe( concat('zmodem.js') ).pipe( gulp.dest( `${buildDir}/addons/zmodem` ) );
 
+  let zmodemDemoBundle = gulp.src([
+    // Copy JS addons
+    `${outDir}/addons/zmodem/demo/**`,
+  ]).pipe(gulp.dest(`${buildDir}/addons/zmodem/demo`));
+
   // Copy all add-ons from outDir to buildDir
   let copyAddons = gulp.src([
     // Copy JS addons
@@ -121,7 +126,7 @@ gulp.task('browserify-addons', ['tsc'], function() {
     `!${outDir}/addons/zmodem/**`,
   ]).pipe(gulp.dest(`${buildDir}/addons`));
 
-  return merge(searchBundle, copyAddons);
+  return merge(searchBundle, zmodemBundle, zmodemDemoBundle, copyAddons);
 });
 
 gulp.task('instrument-test', function () {
