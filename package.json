@@ -73,7 +73,8 @@
   "scripts": {
     "prestart": "npm run build",
     "start": "node demo/app",
-    "start-zmodem": "npm run build; node build/addons/zmodem/demo/app",
+    "prestart-zmodem": "npm run build",
+    "start-zmodem": "node build/addons/zmodem/demo/app",
     "dev": "nodemon -e js,ts,css --watch src --watch demo --exec npm start",
     "lint": "tslint src/*.ts src/**/*.ts",
     "test": "gulp test",
