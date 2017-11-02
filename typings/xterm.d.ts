@@ -290,7 +290,9 @@ declare module 'xterm' {
 
     /**
      * Opens the terminal within an element.
-     * @param parent The element to create the terminal within.
+     * @param parent The element to create the terminal within. This element
+     * must be visible (have dimensions) when `open` is called as several DOM-
+     * based measurements need to be performed when this function is called.
      */
     open(parent: HTMLElement): void;
 
@@ -513,6 +515,6 @@ declare module 'xterm' {
      * available to all newly created Terminals.
      * @param addon The addon to load.
      */
-    static loadAddon(addon: 'attach' | 'fit' | 'fullscreen' | 'search' | 'terminado'): void;
+    static loadAddon(addon: 'attach' | 'fit' | 'fullscreen' | 'search' | 'terminado' | 'winptyCompat'): void;
   }
 }

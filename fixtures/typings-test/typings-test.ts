@@ -41,6 +41,7 @@ namespace static_methods {
     Terminal.loadAddon('fullscreen');
     Terminal.loadAddon('search');
     Terminal.loadAddon('terminado');
+    Terminal.loadAddon('winptyCompat');
   }
 }
 

@@ -308,6 +308,15 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   }
 
   /**
+   * Returns whether the selection manager should force selection, regardless of
+   * whether the terminal is in mouse events mode.
+   * @param event The mouse event.
+   */
+  public shouldForceSelection(event: MouseEvent): boolean {
+    return Browser.isMac ? event.altKey : event.shiftKey;
+  }
+
+  /**
    * Handles te mousedown event, setting up for a new selection.
    * @param event The mousedown event.
    */
@@ -325,9 +334,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
     // Allow selection when using a specific modifier key, even when disabled
     if (!this._enabled) {
-      const shouldForceSelection = Browser.isMac ? event.altKey : event.shiftKey;
-
-      if (!shouldForceSelection) {
+      if (!this.shouldForceSelection(event)) {
         return;
       }
 
