@@ -95,7 +95,7 @@ export class Viewport implements IViewport {
   private onScroll(ev: Event): void {
     const newRow = Math.round(this.viewportElement.scrollTop / this.currentRowHeight);
     const diff = newRow - this.terminal.buffer.ydisp;
-    this.terminal.scrollDisp(diff, true);
+    this.terminal.scrollLines(diff, true);
   }
 
   /**

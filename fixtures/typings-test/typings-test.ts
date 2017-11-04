@@ -181,10 +181,10 @@ namespace methods_core {
   namespace scrolling {
     {
       const t: Terminal = new Terminal();
-      t.scrollDisp(-1);
-      t.scrollDisp(1);
-      t.scrollDisp(-1);
-      t.scrollDisp(1);
+      t.scrollLines(-1);
+      t.scrollLines(1);
+      t.scrollLines(-1);
+      t.scrollLines(1);
       t.scrollToTop();
       t.scrollToBottom();
     }
