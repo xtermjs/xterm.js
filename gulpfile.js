@@ -5,7 +5,6 @@
 const browserify = require('browserify');
 const buffer = require('vinyl-buffer');
 const coveralls = require('gulp-coveralls');
-const concat = require('gulp-concat');
 const fs = require('fs-extra');
 const gulp = require('gulp');
 const path = require('path');
@@ -118,16 +117,6 @@ gulp.task('browserify-addons', ['tsc'], function() {
         .pipe(sourcemaps.write('./'))
         .pipe(gulp.dest(buildDir));
 
-  let zmodemBundle = gulp.src([
-        './node_modules/zmodem.js/dist/zmodem.js',
-        './src/addons/zmodem/zmodem.js',
-  ]).pipe( concat('zmodem.js') ).pipe( gulp.dest( `${buildDir}/addons/zmodem` ) );
-
-  let zmodemDemoBundle = gulp.src([
-    // Copy JS addons
-    `${outDir}/addons/zmodem/demo/**`,
-  ]).pipe(gulp.dest(`${buildDir}/addons/zmodem/demo`));
-
   let winptyCompatOptions = {
     basedir: `${buildDir}/addons/winptyCompat`,
     debug: true,
@@ -151,10 +140,9 @@ gulp.task('browserify-addons', ['tsc'], function() {
     // Exclude TS addons from copy as they are being built via browserify
     `!${outDir}/addons/search`,
     `!${outDir}/addons/search/**`,
-    `!${outDir}/addons/zmodem/**`,
   ]).pipe(gulp.dest(`${buildDir}/addons`));
 
-  return merge(searchBundle, zmodemBundle, zmodemDemoBundle, winptyCompatBundle, copyAddons);
+  return merge(searchBundle, winptyCompatBundle, copyAddons);
 });
 
 gulp.task('instrument-test', function () {
