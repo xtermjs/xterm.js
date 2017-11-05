@@ -1124,11 +1124,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   /**
    * Scroll the display of the terminal
    * @param {number} disp The number of lines to scroll down (negative scroll up).
-   * @param {boolean} suppressScrollEvent Don't emit the scroll event as scrollDisp. This is used
+   * @param {boolean} suppressScrollEvent Don't emit the scroll event as scrollLines. This is used
    * to avoid unwanted events being handled by the viewport when the event was triggered from the
    * viewport originally.
    */
-  public scrollDisp(disp: number, suppressScrollEvent?: boolean): void {
+  public scrollLines(disp: number, suppressScrollEvent?: boolean): void {
     if (disp < 0) {
       if (this.buffer.ydisp === 0) {
         return;
@@ -1158,21 +1158,21 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param {number} pageCount The number of pages to scroll (negative scrolls up).
    */
   public scrollPages(pageCount: number): void {
-    this.scrollDisp(pageCount * (this.rows - 1));
+    this.scrollLines(pageCount * (this.rows - 1));
   }
 
   /**
    * Scrolls the display of the terminal to the top.
    */
   public scrollToTop(): void {
-    this.scrollDisp(-this.buffer.ydisp);
+    this.scrollLines(-this.buffer.ydisp);
   }
 
   /**
    * Scrolls the display of the terminal to the bottom.
    */
   public scrollToBottom(): void {
-    this.scrollDisp(this.buffer.ybase - this.buffer.ydisp);
+    this.scrollLines(this.buffer.ybase - this.buffer.ydisp);
   }
 
   /**
@@ -1377,8 +1377,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       this.writeStopped = false;
     }
 
-    if (result.scrollDisp) {
-      this.scrollDisp(result.scrollDisp);
+    if (result.scrollLines) {
+      this.scrollLines(result.scrollLines);
       return this.cancel(ev, true);
     }
 
@@ -1410,15 +1410,15 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Reference: http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
    * @param ev The keyboard event to be translated to key escape sequence.
    */
-  protected _evaluateKeyEscapeSequence(ev: KeyboardEvent): {cancel: boolean, key: string, scrollDisp: number} {
-    const result: {cancel: boolean, key: string, scrollDisp: number} = {
+  protected _evaluateKeyEscapeSequence(ev: KeyboardEvent): {cancel: boolean, key: string, scrollLines: number} {
+    const result: {cancel: boolean, key: string, scrollLines: number} = {
       // Whether to cancel event propogation (NOTE: this may not be needed since the event is
       // canceled at the end of keyDown
       cancel: false,
       // The new key even to emit
       key: undefined,
       // The number of characters to scroll, if this is defined it will cancel the event
-      scrollDisp: undefined
+      scrollLines: undefined
     };
     const modifiers = (ev.shiftKey ? 1 : 0) | (ev.altKey ? 2 : 0) | (ev.ctrlKey ? 4 : 0) | (ev.metaKey ? 8 : 0);
     switch (ev.keyCode) {
@@ -1578,7 +1578,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       case 33:
         // page up
         if (ev.shiftKey) {
-          result.scrollDisp = -(this.rows - 1);
+          result.scrollLines = -(this.rows - 1);
         } else {
           result.key = C0.ESC + '[5~';
         }
@@ -1586,7 +1586,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       case 34:
         // page down
         if (ev.shiftKey) {
-          result.scrollDisp = this.rows - 1;
+          result.scrollLines = this.rows - 1;
         } else {
           result.key = C0.ESC + '[6~';
         }

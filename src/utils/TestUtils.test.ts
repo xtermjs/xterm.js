@@ -41,7 +41,7 @@ export class MockTerminal implements ITerminal {
   off(type: string, listener: IListenerType): void {
     throw new Error('Method not implemented.');
   }
-  scrollDisp(disp: number, suppressScrollEvent: boolean): void {
+  scrollLines(disp: number, suppressScrollEvent: boolean): void {
     throw new Error('Method not implemented.');
   }
   cancel(ev: Event, force?: boolean): void {

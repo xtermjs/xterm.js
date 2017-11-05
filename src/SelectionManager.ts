@@ -524,7 +524,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    */
   private _dragScroll(): void {
     if (this._dragScrollAmount) {
-      this._terminal.scrollDisp(this._dragScrollAmount, false);
+      this._terminal.scrollLines(this._dragScrollAmount, false);
       // Re-evaluate selection
       if (this._dragScrollAmount > 0) {
         this._model.selectionEnd = [this._terminal.cols - 1, this._terminal.buffer.ydisp + this._terminal.rows];

@@ -54,7 +54,7 @@ export interface ITerminal extends ILinkifierAccessor, IBufferAccessor, IElement
    * @param data The data to populate in the event.
    */
   handler(data: string): void;
-  scrollDisp(disp: number, suppressScrollEvent?: boolean): void;
+  scrollLines(disp: number, suppressScrollEvent?: boolean): void;
   cancel(ev: Event, force?: boolean): boolean | void;
   log(text: string): void;
   reset(): void;
