@@ -497,6 +497,7 @@ export class InputHandler implements IInputHandler {
       this._terminal.buffer.lines.get(row).splice(this._terminal.buffer.x, 1);
       this._terminal.buffer.lines.get(row).push(ch);
     }
+    this._terminal.updateRange(this._terminal.buffer.y);
   }
 
   /**
