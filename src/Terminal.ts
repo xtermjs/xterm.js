@@ -384,7 +384,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         }
         break;
       case 'scrollback':
-        value = value > 0 && value <= MAX_BUFFER_SIZE ? value : MAX_BUFFER_SIZE;
+        value = Math.min(value, MAX_BUFFER_SIZE);
 
         if (value < 0) {
           console.warn(`${key} cannot be less than 0, value: ${value}`);

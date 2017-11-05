@@ -11,7 +11,7 @@ export const CHAR_DATA_ATTR_INDEX = 0;
 export const CHAR_DATA_CHAR_INDEX = 1;
 export const CHAR_DATA_WIDTH_INDEX = 2;
 export const CHAR_DATA_CODE_INDEX = 3;
-export const MAX_BUFFER_SIZE = -1 >>> 0; // 2^32 - 1
+export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 
 /**
  * This class represents a terminal buffer (an internal state of the terminal), where the
@@ -70,9 +70,9 @@ export class Buffer implements IBuffer {
       return rows;
     }
 
-    const correctBuferLength = rows + this._terminal.options.scrollback;
+    const correctBufferLength = rows + this._terminal.options.scrollback;
 
-    return correctBuferLength > MAX_BUFFER_SIZE ? MAX_BUFFER_SIZE : correctBuferLength;
+    return correctBufferLength > MAX_BUFFER_SIZE ? MAX_BUFFER_SIZE : correctBufferLength;
   }
 
   /**
