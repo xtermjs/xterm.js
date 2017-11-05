@@ -77,7 +77,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
 
     // Draw final row
     if (viewportCappedStartRow !== viewportCappedEndRow) {
-      // Only draw viewportEndRow if it's not the same as viewporttartRow
+      // Only draw viewportEndRow if it's not the same as viewportStartRow
       const endCol = viewportEndRow === viewportCappedEndRow ? end[0] : terminal.cols;
       this.fillCells(0, viewportCappedEndRow, endCol, 1);
     }
