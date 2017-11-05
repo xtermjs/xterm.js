@@ -11,7 +11,7 @@ declare module 'xterm' {
   /**
    * An object containing start up options for the terminal.
    */
-  interface ITerminalOptions {
+  export interface ITerminalOptions {
     /**
      * A data uri of the sound to use for the bell (needs bellStyle = 'sound').
      */
@@ -92,7 +92,7 @@ declare module 'xterm' {
   /**
    * Contains colors to theme the terminal with.
    */
-  interface ITheme {
+  export interface ITheme {
     /** The default foreground color */
     foreground?: string,
     /** The default background color */
@@ -140,7 +140,7 @@ declare module 'xterm' {
   /**
    * An object containing options for a link matcher.
    */
-  interface ILinkMatcherOptions {
+  export interface ILinkMatcherOptions {
     /**
      * The index of the link from the regex.match(text) call. This defaults to 0
      * (for regular expressions without capture groups).
