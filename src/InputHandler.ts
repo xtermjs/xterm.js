@@ -10,7 +10,7 @@ import { DEFAULT_CHARSET } from './Charsets';
 import { CharData } from './Types';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
 import { FLAGS } from './renderer/Types';
-import { wcwidth} from './CharWidth';
+import { wcwidth } from './CharWidth';
 
 /**
  * The terminal's standard implementation of IInputHandler, this handles all
