@@ -250,6 +250,18 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   }
 
   /**
+   * Selects word at the current mouse event coordenates.
+   * @param event The mouse event.
+   */
+  public selectWordAtCursor(event: MouseEvent): void {
+    const coords = this._getMouseBufferCoords(event);
+    if (coords) {
+      this._selectWordAt(coords, false);
+      this.refresh(true);
+    }
+  }
+
+  /**
    * Selects all text within the terminal.
    */
   public selectAll(): void {
@@ -439,7 +451,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     const coords = this._getMouseBufferCoords(event);
     if (coords) {
       this._activeSelectionMode = SelectionMode.WORD;
-      this._selectWordAt(coords);
+      this._selectWordAt(coords, true);
     }
   }
 
@@ -578,7 +590,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * Gets positional information for the word at the coordinated specified.
    * @param coords The coordinates to get the word at.
    */
-  private _getWordAt(coords: [number, number]): IWordPosition {
+  private _getWordAt(coords: [number, number], selectWhiteSpace: boolean): IWordPosition {
     const bufferLine = this._buffer.lines.get(coords[1]);
     if (!bufferLine) {
       return null;
@@ -684,15 +696,19 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
         - leftLongCharOffset // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
         - rightLongCharOffset); // The number of additional chars right of the initial char (inclusive) added by columns with strings longer than 1 (emojis)
 
+    if (!selectWhiteSpace && line.slice(startIndex, endIndex).trim() === '')
+      return null;
+
     return { start, length };
   }
 
   /**
    * Selects the word at the coordinates specified.
    * @param coords The coordinates to get the word at.
+   * @param selectWhiteSpace If whitespace should be selected
    */
-  protected _selectWordAt(coords: [number, number]): void {
-    const wordPosition = this._getWordAt(coords);
+  protected _selectWordAt(coords: [number, number], selectWhiteSpace: boolean): void {
+    const wordPosition = this._getWordAt(coords, selectWhiteSpace);
     if (wordPosition) {
       this._model.selectionStart = [wordPosition.start, coords[1]];
       this._model.selectionStartLength = wordPosition.length;
@@ -704,7 +720,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param coords The coordinates to get the word at.
    */
   private _selectToWordAt(coords: [number, number]): void {
-    const wordPosition = this._getWordAt(coords);
+    const wordPosition = this._getWordAt(coords, true);
     if (wordPosition) {
       this._model.selectionEnd = [this._model.areSelectionValuesReversed() ? wordPosition.start : (wordPosition.start + wordPosition.length), coords[1]];
     }

@@ -149,6 +149,7 @@ export interface ITerminalOptions {
   termName?: string;
   theme?: ITheme;
   useFlowControl?: boolean;
+  rightClickSelectsWord?: boolean;
 }
 
 export interface IBuffer {
@@ -194,11 +195,13 @@ export interface ISelectionManager {
   selectionText: string;
   selectionStart: [number, number];
   selectionEnd: [number, number];
+  hasSelection: boolean;
 
   disable(): void;
   enable(): void;
   setBuffer(buffer: IBuffer): void;
   setSelection(row: number, col: number, length: number): void;
+  selectWordAtCursor(event: MouseEvent): void;
 }
 
 export interface ICompositionHelper {
