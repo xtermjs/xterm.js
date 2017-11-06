@@ -22,7 +22,7 @@
  */
 
 import { BufferSet } from './BufferSet';
-import { Buffer } from './Buffer';
+import { Buffer, MAX_BUFFER_SIZE } from './Buffer';
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './EventEmitter';
 import { Viewport } from './Viewport';
@@ -384,6 +384,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         }
         break;
       case 'scrollback':
+        value = Math.min(value, MAX_BUFFER_SIZE);
+
         if (value < 0) {
           console.warn(`${key} cannot be less than 0, value: ${value}`);
           return;
