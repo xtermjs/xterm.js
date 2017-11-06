@@ -495,7 +495,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     // If the cursor was above or below the viewport, make sure it's at the
     // start or end of the viewport respectively.
     if (this._dragScrollAmount > 0) {
-      this._model.selectionEnd[0] = this._terminal.cols - 1;
+      this._model.selectionEnd[0] = this._terminal.cols;
     } else if (this._dragScrollAmount < 0) {
       this._model.selectionEnd[0] = 0;
     }

@@ -62,8 +62,10 @@ export class MouseHelper {
     coords[0] = Math.ceil((coords[0] + (isSelection ? this._renderer.dimensions.actualCellWidth / 2 : 0)) / this._renderer.dimensions.actualCellWidth);
     coords[1] = Math.ceil(coords[1] / this._renderer.dimensions.actualCellHeight);
 
-    // Ensure coordinates are within the terminal viewport.
-    coords[0] = Math.min(Math.max(coords[0], 1), colCount);
+    // Ensure coordinates are within the terminal viewport. Note that selections
+    // need an addition point of precision to cover the end point (as characters
+    // cover half of one char and half of the next).
+    coords[0] = Math.min(Math.max(coords[0], 1), colCount + (isSelection ? 1 : 0));
     coords[1] = Math.min(Math.max(coords[1], 1), rowCount);
 
     return coords;
