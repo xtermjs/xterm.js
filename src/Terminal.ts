@@ -586,6 +586,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     this.element.setAttribute('tabindex', '0');
 
+    // Workaround for paste issue in Firefox
+    this.element.setAttribute('contenteditable', 'true');
+
     this.viewportElement = document.createElement('div');
     this.viewportElement.classList.add('xterm-viewport');
     this.element.appendChild(this.viewportElement);
