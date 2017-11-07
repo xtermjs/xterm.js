@@ -5,7 +5,6 @@
 
 import { assert } from 'chai';
 import { InputHandler } from './InputHandler';
-import { wcwidth } from './InputHandler';
 import { MockInputHandlingTerminal } from './utils/TestUtils.test';
 
 describe('InputHandler', () => {
