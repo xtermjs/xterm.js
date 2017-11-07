@@ -255,6 +255,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   public selectAll(): void {
     this._model.isSelectAllActive = true;
     this.refresh();
+    this.emit('selection');
   }
 
   /**
@@ -541,6 +542,9 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    */
   private _onMouseUp(event: MouseEvent): void {
     this._removeMouseDownListeners();
+
+    if (this.hasSelection)
+      this.emit('selection');
   }
 
   /**
