@@ -56,11 +56,27 @@
       }
     };
 
+    var myTextDecoder;
+
     term._getMessage = function (ev) {
+      var str;
+      if (typeof ev.data === "object") {
+        if (ev.data instanceof ArrayBuffer) {
+            if (!myTextDecoder) {
+              myTextDecoder = new TextDecoder();
+            }
+
+            str = myTextDecoder.decode( ev.data );
+        }
+        else {
+          throw "TODO: handle Blob?";
+        }
+      }
+
       if (buffered) {
-        term._pushToBuffer(ev.data);
+        term._pushToBuffer(str || ev.data);
       } else {
-        term.write(ev.data);
+        term.write(str || ev.data);
       }
     };
 
