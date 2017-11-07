@@ -218,7 +218,7 @@ declare module 'xterm' {
      * @param type The type of the event.
      * @param listener The listener.
      */
-    on(type: 'blur' | 'focus' | 'lineFeed', listener: () => void): void;
+    on(type: 'blur' | 'focus' | 'lineFeed' | 'selection', listener: () => void): void;
     /**
      * Registers an event listener.
      * @param type The type of the event.
@@ -273,7 +273,7 @@ declare module 'xterm' {
      * @param type The type of the event.
      * @param listener The listener.
      */
-    off(type: 'blur' | 'focus' | 'lineFeed' | 'data' | 'key' | 'keypress' | 'keydown' | 'refresh' | 'resize' | 'scroll' | 'title' | string, listener: (...args: any[]) => void): void;
+    off(type: 'blur' | 'focus' | 'lineFeed' | 'selection' | 'data' | 'key' | 'keypress' | 'keydown' | 'refresh' | 'resize' | 'scroll' | 'title' | string, listener: (...args: any[]) => void): void;
 
     /**
      * Resizes the terminal.
