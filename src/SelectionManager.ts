@@ -250,7 +250,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   }
 
   /**
-   * Selects word at the current mouse event coordenates.
+   * Selects word at the current mouse event coordinates.
    * @param event The mouse event.
    */
   public selectWordAtCursor(event: MouseEvent): void {
@@ -590,7 +590,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * Gets positional information for the word at the coordinated specified.
    * @param coords The coordinates to get the word at.
    */
-  private _getWordAt(coords: [number, number], selectWhiteSpace: boolean): IWordPosition {
+  private _getWordAt(coords: [number, number], allowWhitespaceOnlySelection: boolean): IWordPosition {
     const bufferLine = this._buffer.lines.get(coords[1]);
     if (!bufferLine) {
       return null;
@@ -696,8 +696,9 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
         - leftLongCharOffset // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
         - rightLongCharOffset); // The number of additional chars right of the initial char (inclusive) added by columns with strings longer than 1 (emojis)
 
-    if (!selectWhiteSpace && line.slice(startIndex, endIndex).trim() === '')
+    if (!allowWhitespaceOnlySelection && line.slice(startIndex, endIndex).trim() === '') {
       return null;
+    }
 
     return { start, length };
   }
@@ -705,10 +706,10 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   /**
    * Selects the word at the coordinates specified.
    * @param coords The coordinates to get the word at.
-   * @param selectWhiteSpace If whitespace should be selected
+   * @param allowWhitespaceOnlySelection If whitespace should be selected
    */
-  protected _selectWordAt(coords: [number, number], selectWhiteSpace: boolean): void {
-    const wordPosition = this._getWordAt(coords, selectWhiteSpace);
+  protected _selectWordAt(coords: [number, number], allowWhitespaceOnlySelection: boolean): void {
+    const wordPosition = this._getWordAt(coords, allowWhitespaceOnlySelection);
     if (wordPosition) {
       this._model.selectionStart = [wordPosition.start, coords[1]];
       this._model.selectionStartLength = wordPosition.length;
