@@ -33,7 +33,7 @@ export class TextRenderLayer extends BaseRenderLayer {
     super.resize(terminal, dim, charSizeChanged);
 
     // Clear the character width cache if the font or width has changed
-    const terminalFont = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
+    const terminalFont = `${terminal.options.fontWeight} ${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
     if (this._characterWidth !== dim.scaledCharWidth || this._characterFont !== terminalFont) {
       this._characterWidth = dim.scaledCharWidth;
       this._characterFont = terminalFont;

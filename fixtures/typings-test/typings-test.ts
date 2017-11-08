@@ -143,8 +143,9 @@ namespace methods_core {
       const r18: (data: string) => void = t.getOption('handler');
       const r19: string = t.getOption('bellSound');
       const r20: string = t.getOption('bellStyle');
-      const r21: boolean = t.getOption('enableBold');
-      const r22: number = t.getOption('letterSpacing');
+      const r21: number = t.getOption('letterSpacing');
+      const r22: number = t.getOption('fontWeight');
+      const r23: number = t.getOption('fontWeightBold');
     }
     {
       const t: Terminal = new Terminal();
@@ -157,7 +158,8 @@ namespace methods_core {
       t.setOption('cursorBlink', true);
       t.setOption('debug', true);
       t.setOption('disableStdin', true);
-      t.setOption('enableBold', true);
+      t.setOption('fontWeight', 'normal');
+      t.setOption('fontWeightBold', 'bold');
       t.setOption('popOnBell', true);
       t.setOption('screenKeys', true);
       t.setOption('useFlowControl', true);

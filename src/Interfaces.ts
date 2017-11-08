@@ -137,9 +137,10 @@ export interface ITerminalOptions {
   cursorStyle?: string;
   debug?: boolean;
   disableStdin?: boolean;
-  enableBold?: boolean;
   fontSize?: number;
   fontFamily?: string;
+  fontWeight?: string;
+  fontWeightBold?: string;
   geometry?: [number, number];
   handler?: (data: string) => void;
   letterSpacing?: number;

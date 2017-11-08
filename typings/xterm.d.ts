@@ -443,6 +443,12 @@ declare module 'xterm' {
      */
     setOption(key: 'fontFamily' | 'termName' | 'bellSound', value: string): void;
     /**
+    * Sets an option on the terminal.
+    * @param key The option key.
+    * @param value The option value.
+    */
+    setOption(key: 'fontWeight' | 'fontWeightBold', value: null | 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900'): void;
+    /**
      * Sets an option on the terminal.
      * @param key The option key.
      * @param value The option value.
