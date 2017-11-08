@@ -201,6 +201,7 @@ export interface ISelectionManager {
   enable(): void;
   setBuffer(buffer: IBuffer): void;
   setSelection(row: number, col: number, length: number): void;
+  isClickInSelection(event: MouseEvent): boolean;
   selectWordAtCursor(event: MouseEvent): void;
 }
 

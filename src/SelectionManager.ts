@@ -250,16 +250,36 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   }
 
   /**
+   * Checks if the current click was inside the current selection
+   * @param event The mouse event
+   */
+  public isClickInSelection(event: MouseEvent): boolean {
+    const coords = this._getMouseBufferCoords(event);
+    const start = this._model.finalSelectionStart;
+    const end = this._model.finalSelectionEnd;
+
+    if (!start || !end) {
+      return false;
+    }
+
+    return (start[1] < coords[1] && end[1] > coords[1]) || (start[1] === coords[1] && coords[0] > start[0]) || (end[1] === coords[1] && coords[0] < end[0]);
+  }
+
+  /**
    * Selects word at the current mouse event coordinates.
    * @param event The mouse event.
    */
   public selectWordAtCursor(event: MouseEvent): void {
     const coords = this._getMouseBufferCoords(event);
     if (coords) {
-      this._selectWordAt(coords, false);
-      this.refresh(true);
+      const wordPosition = this._getWordAt(coords, true);
+      if (wordPosition) {
+        this._model.selectionStart = [wordPosition.start, coords[1]];
+        this._model.selectionStartLength = wordPosition.length;
+        this._model.selectionEnd = [this._model.areSelectionValuesReversed() ? wordPosition.start : (wordPosition.start + wordPosition.length), coords[1]];
+        this.refresh(true);
+      }
     }
-  }
 
   /**
    * Selects all text within the terminal.
