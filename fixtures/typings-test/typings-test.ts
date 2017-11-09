@@ -139,7 +139,6 @@ namespace methods_core {
       const r14: number = t.getOption('rows');
       const r15: number = t.getOption('tabStopWidth');
       const r16: number = t.getOption('scrollback');
-      const r17: [number, number] = t.getOption('geometry');
       const r18: (data: string) => void = t.getOption('handler');
       const r19: string = t.getOption('bellSound');
       const r20: string = t.getOption('bellStyle');
@@ -168,7 +167,6 @@ namespace methods_core {
       t.setOption('rows', 1);
       t.setOption('tabStopWidth', 1);
       t.setOption('scrollback', 1);
-      t.setOption('geometry', [1, 1]);
       t.setOption('handler', (data: string) => console.log(data));
       t.setOption('bellSound', 'foo');
       t.setOption('bellStyle', 'none');
