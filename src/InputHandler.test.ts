@@ -65,4 +65,18 @@ describe('InputHandler', () => {
       assert.equal(terminal.options['cursorBlink'], false);
     });
   });
+  describe('setMode', () => {
+    it('should toggle Terminal.bracketedPasteMode', () => {
+      let terminal = new MockInputHandlingTerminal();
+      terminal.prefix = '?';
+      terminal.bracketedPasteMode = false;
+      let inputHandler = new InputHandler(terminal);
+      // Set bracketed paste mode
+      inputHandler.setMode([2004]);
+      assert.equal(terminal.bracketedPasteMode, true);
+      // Reset bracketed paste mode
+      inputHandler.resetMode([2004]);
+      assert.equal(terminal.bracketedPasteMode, false);
+    });
+  });
 });

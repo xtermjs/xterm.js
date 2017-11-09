@@ -10,6 +10,7 @@ import * as Browser from './Browser';
 import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../renderer/Interfaces';
 
 export class MockTerminal implements ITerminal {
+  bracketedPasteMode: boolean;
   mouseHelper: IMouseHelper;
   renderer: IRenderer;
   linkifier: ILinkifier;
@@ -94,6 +95,7 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   originMode: boolean;
   insertMode: boolean;
   wraparoundMode: boolean;
+  bracketedPasteMode: boolean;
   defAttr: number;
   curAttr: number;
   prefix: string;

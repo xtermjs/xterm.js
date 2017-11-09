@@ -132,6 +132,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   public originMode: boolean;
   public insertMode: boolean;
   public wraparoundMode: boolean; // defaults: xterm - true, vt100 - false
+  public bracketedPasteMode: boolean;
 
   // charset
   // The current charset
@@ -260,6 +261,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.originMode = false;
     this.insertMode = false;
     this.wraparoundMode = true; // defaults: xterm - true, vt100 - false
+    this.bracketedPasteMode = false;
 
     // charset
     this.charset = null;
