@@ -50,6 +50,7 @@ export interface ITerminal extends ILinkifierAccessor, IBufferAccessor, IElement
   isFocused: boolean;
   mouseHelper: IMouseHelper;
   viewport: IViewport;
+  bracketedPasteMode: boolean;
 
   /**
    * Emit the 'data' event and populate the given data.
@@ -84,6 +85,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   originMode: boolean;
   insertMode: boolean;
   wraparoundMode: boolean;
+  bracketedPasteMode: boolean;
   defAttr: number;
   curAttr: number;
   prefix: string;

@@ -26,6 +26,17 @@ export function prepareTextForTerminal(text: string, isMSWindows: boolean): stri
 }
 
 /**
+ * Bracket text for paste, if necessary, as per https://cirw.in/blog/bracketed-paste
+ * @param text The pasted text to bracket
+ */
+export function bracketTextForPaste(text: string, bracketedPasteMode: boolean): string {
+  if (bracketedPasteMode) {
+    return '\x1b[200~' + text + '\x1b[201~';
+  }
+  return text;
+}
+
+/**
  * Binds copy functionality to the given terminal.
  * @param {ClipboardEvent} ev The original copy event to be handled
  */
@@ -52,6 +63,7 @@ export function pasteHandler(ev: ClipboardEvent, term: ITerminal): void {
 
   let dispatchPaste = function(text: string): void {
     text = prepareTextForTerminal(text, term.browser.isMSWindows);
+    text = bracketTextForPaste(text, term.bracketedPasteMode);
     term.handler(text);
     term.textarea.value = '';
     term.emit('paste', text);
