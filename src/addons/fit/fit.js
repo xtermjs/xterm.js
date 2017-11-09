@@ -39,15 +39,21 @@
     }
     var parentElementStyle = window.getComputedStyle(term.element.parentElement);
     var parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height'));
-    var parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')) - 17);
+    var parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')));
     var elementStyle = window.getComputedStyle(term.element);
-    var elementPaddingVer = parseInt(elementStyle.getPropertyValue('padding-top')) + parseInt(elementStyle.getPropertyValue('padding-bottom'));
-    var elementPaddingHor = parseInt(elementStyle.getPropertyValue('padding-right')) + parseInt(elementStyle.getPropertyValue('padding-left'));
+    var elementPadding = {
+      top: parseInt(elementStyle.getPropertyValue('padding-top')),
+      bottom: parseInt(elementStyle.getPropertyValue('padding-bottom')),
+      right: parseInt(elementStyle.getPropertyValue('padding-right')),
+      left: parseInt(elementStyle.getPropertyValue('padding-left'))
+    }
+    var elementPaddingVer = elementPadding.top + elementPadding.bottom;
+    var elementPaddingHor = elementPadding.right + elementPadding.left;
     var availableHeight = parentElementHeight - elementPaddingVer;
-    var availableWidth = parentElementWidth - elementPaddingHor;
+		var availableWidth = parentElementWidth - elementPaddingHor - term.viewport.scrollBarWidth;
     var geometry = {
-      cols: Math.floor(availableWidth / term.charMeasure.width),
-      rows: Math.floor(availableHeight / Math.floor(term.charMeasure.height * term.getOption('lineHeight')))
+      cols: Math.floor(availableWidth / term.renderer.dimensions.actualCellWidth),
+      rows: Math.floor(availableHeight / term.renderer.dimensions.actualCellHeight)
     };
 
     return geometry;
