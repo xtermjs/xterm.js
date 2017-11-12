@@ -143,7 +143,7 @@ class CharAtlasGenerator {
 
     this._ctx.save();
     this._ctx.fillStyle = foreground;
-    this._ctx.font = `${fontWeight} ${fontSize * window.devicePixelRatio}px ${fontFamily}`;
+    this._ctx.font = this._getFont(fontWeight, fontSize, fontFamily);
     this._ctx.textBaseline = 'top';
 
     // Default color
@@ -157,7 +157,7 @@ class CharAtlasGenerator {
     }
     // Default color bold
     this._ctx.save();
-    this._ctx.font = `${fontWeightBold} ${fontSize * window.devicePixelRatio}px ${fontFamily}`;
+    this._ctx.font = this._getFont(fontWeightBold, fontSize, fontFamily);
     for (let i = 0; i < 256; i++) {
       this._ctx.save();
       this._ctx.beginPath();
@@ -169,11 +169,11 @@ class CharAtlasGenerator {
     this._ctx.restore();
 
     // Colors 0-15
-    this._ctx.font = `${fontWeight} ${fontSize * window.devicePixelRatio}px ${fontFamily}`;
+    this._ctx.font = this._getFont(fontWeight, fontSize, fontFamily);
     for (let colorIndex = 0; colorIndex < 16; colorIndex++) {
       // colors 8-15 are bold
       if (colorIndex === 8) {
-        this._ctx.font = `${fontWeightBold} ${fontSize * window.devicePixelRatio}px ${fontFamily}`;
+        this._ctx.font = this._getFont(fontWeightBold, fontSize, fontFamily);
       }
       const y = (colorIndex + 2) * cellHeight;
       // Draw ascii characters
@@ -224,5 +224,9 @@ class CharAtlasGenerator {
         imageData.data[offset + 3] = 0;
       }
     }
+  }
+
+  private _getFont(fontWeight: string, fontSize: number, fontFamily: string): string {
+    return `${fontWeight} ${fontSize * window.devicePixelRatio}px ${fontFamily}`;
   }
 }

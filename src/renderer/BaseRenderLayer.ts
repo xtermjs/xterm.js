@@ -251,13 +251,6 @@ export abstract class BaseRenderLayer implements IRenderLayer {
         this._ctx.globalAlpha = DIM_OPACITY;
       }
 
-      // Draw the non-bold version of the same color if bold is not enabled
-      if (bold) {
-        // Ignore default color as it's not touched above
-        if (colorIndex > 1) {
-          colorIndex -= 8;
-        }
-      }
 
       this._ctx.drawImage(this._charAtlas,
           code * charAtlasCellWidth,
@@ -333,9 +326,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   /**
    * Gets the current font.
    * @param terminal The terminal.
-   * @param isBold The font weight that should be used uses terminal option as fallback.
+   * @param isBold If we should use the bold fontWeight.
    */
-  private _getFont(terminal: ITerminal, isBold: boolean): string {
+  protected _getFont(terminal: ITerminal, isBold: boolean): string {
     const fontWeight = isBold ? terminal.options.fontWeightBold : terminal.options.fontWeight;
 
     return `${fontWeight} ${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
