@@ -280,6 +280,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
         this.refresh(true);
       }
     }
+  }
 
   /**
    * Selects all text within the terminal.

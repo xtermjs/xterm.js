@@ -195,7 +195,6 @@ export interface ISelectionManager {
   selectionText: string;
   selectionStart: [number, number];
   selectionEnd: [number, number];
-  hasSelection: boolean;
 
   disable(): void;
   enable(): void;

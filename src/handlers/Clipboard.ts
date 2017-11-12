@@ -108,7 +108,7 @@ export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLTextA
 export function rightClickHandler(ev: MouseEvent, textarea: HTMLTextAreaElement, selectionManager: ISelectionManager, shouldSelectWord: boolean): void {
   moveTextAreaUnderMouseCursor(ev, textarea);
 
-  if (shouldSelectWord && (!selectionManager.hasSelection || !selectionManager.isClickInSelection(ev)))
+  if (shouldSelectWord && !selectionManager.isClickInSelection(ev))
     selectionManager.selectWordAtCursor(ev);
 
   // Get textarea ready to copy from the context menu
