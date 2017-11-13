@@ -49,7 +49,7 @@ interface IWordPosition {
 /**
  * A selection mode, this drives how the selection behaves on mouse move.
  */
-enum SelectionMode {
+const enum SelectionMode {
   NORMAL,
   WORD,
   LINE
@@ -91,7 +91,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   /**
    * Whether selection is enabled.
    */
-  private _enabled = true;
+  private _enabled: boolean;
 
   private _mouseMoveListener: EventListener;
   private _mouseUpListener: EventListener;
@@ -103,10 +103,15 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   ) {
     super();
     this._initListeners();
-    this.enable();
 
     this._model = new SelectionModel(_terminal);
     this._activeSelectionMode = SelectionMode.NORMAL;
+
+    if (_terminal.options.enableSelection) {
+      this.enable();
+    } else {
+      this.disable();
+    }
   }
 
   /**
@@ -130,6 +135,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   public disable(): void {
     this.clearSelection();
     this._enabled = false;
+    this._terminal.element.classList.add('disable-selection');
   }
 
   /**
@@ -137,6 +143,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    */
   public enable(): void {
     this._enabled = true;
+    this._terminal.element.classList.remove('disable-selection');
   }
 
   /**
@@ -253,6 +260,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * Selects all text within the terminal.
    */
   public selectAll(): void {
+    if (!this._enabled) return;
     this._model.isSelectAllActive = true;
     this.refresh();
     this.emit('selection');
@@ -314,6 +322,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param event The mouse event.
    */
   public shouldForceSelection(event: MouseEvent): boolean {
+    if (!this._enabled) return false;
     return Browser.isMac ? event.altKey : event.shiftKey;
   }
 
@@ -322,6 +331,8 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param event The mousedown event.
    */
   public onMouseDown(event: MouseEvent): void {
+    if (!this._enabled) return;
+
     // If we have selection, we want the context menu on right click even if the
     // terminal is in mouse mode.
     if (event.button === 2 && this.hasSelection) {
@@ -333,8 +344,8 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
       return;
     }
 
-    // Allow selection when using a specific modifier key, even when disabled
-    if (!this._enabled) {
+    // Allow selection using a specific modifier key when mouse events are enabled
+    if (this._terminal.mouseEvents) {
       if (!this.shouldForceSelection(event)) {
         return;
       }

@@ -891,7 +891,7 @@ export class InputHandler implements IInputHandler {
           this._terminal.normalMouse = params[0] > 1000;
           this._terminal.mouseEvents = true;
           this._terminal.element.classList.add('enable-mouse-events');
-          this._terminal.selectionManager.disable();
+          this._terminal.selectionManager.clearSelection();
           this._terminal.log('Binding to mouse events.');
           break;
         case 1004: // send focusin/focusout events
@@ -1073,7 +1073,6 @@ export class InputHandler implements IInputHandler {
           this._terminal.normalMouse = false;
           this._terminal.mouseEvents = false;
           this._terminal.element.classList.remove('enable-mouse-events');
-          this._terminal.selectionManager.enable();
           break;
         case 1004: // send focusin/focusout events
           this._terminal.sendFocus = false;

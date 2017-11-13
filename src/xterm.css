@@ -39,6 +39,7 @@
     font-family: courier-new, courier, monospace;
     font-feature-settings: "liga" 0;
     position: relative;
+    cursor: text;
     user-select: none;
     -ms-user-select: none;
     -webkit-user-select: none;
@@ -114,11 +115,9 @@
     left: -9999em;
 }
 
-.xterm.enable-mouse-events {
-    /* When mouse events are enabled (eg. tmux), revert to the standard pointer cursor */
+.xterm.enable-mouse-events,
+.xterm.disable-selection {
+    /* When selection is disabled or mouse events are enabled (eg. tmux),
+    revert to the standard pointer cursor */
     cursor: default;
-}
-
-.xterm:not(.enable-mouse-events) {
-    cursor: text;
 }
