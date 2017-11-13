@@ -91,7 +91,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   /**
    * Whether selection is enabled.
    */
-  private _enabled: boolean;
+  private _enabled = true;
 
   private _mouseMoveListener: EventListener;
   private _mouseUpListener: EventListener;
