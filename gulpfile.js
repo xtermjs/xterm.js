@@ -44,8 +44,15 @@ gulp.task('tsc', function () {
     tsResult.dts.pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''})).pipe(gulp.dest(outDir))
   );
 
+  fs.emptyDirSync(`${outDir}/addons/attach`);
   fs.emptyDirSync(`${outDir}/addons/search`);
   fs.emptyDirSync(`${outDir}/addons/winptyCompat`);
+
+  let tsProjectAttachAddon = ts.createProject('./src/addons/attach/tsconfig.json');
+  let tsResultAttachAddon = tsProjectAttachAddon.src().pipe(sourcemaps.init()).pipe(tsProjectAttachAddon());
+  let tscAttachAddon = tsResultAttachAddon.js
+    .pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''}))
+    .pipe(gulp.dest(`${outDir}/addons/attach`));
 
   let tsProjectSearchAddon = ts.createProject('./src/addons/search/tsconfig.json');
   let tsResultSearchAddon = tsProjectSearchAddon.src().pipe(sourcemaps.init()).pipe(tsProjectSearchAddon());
@@ -58,6 +65,8 @@ gulp.task('tsc', function () {
   // Copy all addons from ${srcDir}/ to ${outDir}/
   let copyAddons = gulp.src([
     `${srcDir}/addons/**/*`,
+    `!${srcDir}/addons/attach`,
+    `!${srcDir}/addons/attach/**`,
     `!${srcDir}/addons/search`,
     `!${srcDir}/addons/search/**`,
     `!${srcDir}/addons/winptyCompat`,
