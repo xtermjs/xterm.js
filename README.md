@@ -67,7 +67,7 @@ To use an addon, just import the JavaScript module and pass it to `Terminal`'s `
 
 ```javascript
 import { Terminal } from xterm;
-import * as fit from 'xterm/addons/fit/fit';
+import * as fit from 'xterm/lib/addons/fit/fit';
 
 
 Terminal.applyAddon(fit);
