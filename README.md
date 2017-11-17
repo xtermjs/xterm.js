@@ -49,11 +49,21 @@ To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to t
 
 Finally instantiate the `Terminal` object and then call the `open` function with the DOM object of the `div`.
 
+### Importing
+
+The proposed way to load xterm.js is via the ES6 module syntax.
+
+```javascript
+import { Terminal } from 'xterm';
+```
+
+*Note: There are currently no typings for addons so you will need to upcast if using TypeScript, eg. `(<any>xterm).fit()`.*
+
 ### Addons
 
-Addons are JavaScript modules that attach functions to the `Terminal` prototype to extend its functionality. There are a handful available in the main repository in the `dist/addons` directory, you can even write your own (though they may break when the internals of xterm.js change across versions).
+Addons are JavaScript modules that extend the `Terminal` prototype with new methods and attributes to provide additional functionality. There are a handful available in the main repository in the `src/addons` directory and you can even write your own, by using xterm.js' public API.
 
-To use an addon, just include the JavaScript file after xterm.js and before the `Terminal` object has been instantiated. The function should then be exposed on the `Terminal` object:
+To use an addon, just import the JavaScript module and pass it to `Terminal`'s `applyAddon` method:
 
 ```html
 <script src="node_modules/xterm/dist/xterm.js"></script>
@@ -61,37 +71,15 @@ To use an addon, just include the JavaScript file after xterm.js and before the 
 ```
 
 ```js
-// Instantiate the terminal and call fit
-var xterm = new Terminal();
-xterm.fit();
+import { Terminal } from xterm;
+import * as fit from 'xterm/addons/fit/fit';
+
+
+Terminal.applyAddon(fit);
+
+var xterm = new Terminal();  // Instantiate the terminal
+xterm.fit();                 // Use the `fit` method, provided by the `fit` addon
 ```
-
-### Importing
-
-If the environment allows it, you can import xterm.js like so:
-
-```ts
-// CommonJS
-var Terminal = require('xterm').Terminal;
-
-// ES6 / TypeScript
-import { Terminal } from 'xterm';
-```
-
-Importing addons in this environment can be done using a `Terminal.loadAddon` call:
-
-```ts
-import { Terminal } from 'xterm';
-
-// Notice it's called statically on the type, not an object
-Terminal.loadAddon('fit');
-
-// Instantiate the terminal and call fit
-var xterm = new Terminal();
-xterm.fit();
-```
-
-*Note: There are currently no typings for addons so you will need to upcast if using TypeScript, eg. `(<any>xterm).fit()`*
 
 ## Browser Support
 
