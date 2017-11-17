@@ -40,12 +40,11 @@ app.post('/terminals', function (req, res) {
 	}
 	   
   if(req.query.cmd === undefined || req.query.cmd === null){
-	term.terminal = true;
-	term.name = 'webClient';
+	  term.interactiveTerm = true;
   }else{
-	  term.terminal = false;
-	  term.name = 'javaClient';
+	  term.interactiveTerm = false;
   }
+  term.name = cmd;
   
   console.log('Created terminal with PID: ' + term.pid + ' - terminal.name: ' + term.name);
   terminals[term.pid] = term;
@@ -75,55 +74,53 @@ app.ws('/terminals/:pid', function (ws, req) {
   term.ws = ws;
   console.log('Connected to terminal ' + term.pid + ' - terminal.name: ' + term.name);
   ws.send(logs[term.pid]);
-  Object.keys(terminals).map(function(key, index) {
-	var t = terminals[key];
-	if(t.terminal && t != term){
-		if(t.cwd != term.cwd){
-			t.once('data', function(data) {
-				try {
-					console.log('******** Send  "'+ logs[term.pid] + '"               ( from t.once(data.... ) to  terminal ---> "' + t.name + '" ********');
-					t.ws.send(logs[term.pid]);
-					t.disable=false;
-				} catch (ex) {
-				  // The WebSocket is not open, ignore
-				}
-			});
-			console.log('******** Write "cd ' + term.cwd + '" on terminal ---> "'+ t.name + '" ********');
-			t.disable=true;
-			t.write('cd '+ term.cwd + '\r');
-		}else{
-			console.log('******** Send  "'+ logs[term.pid] + '"              ( from t.on(data.... ) to  terminal ---> ' + t.name + '" ********');
-			t.ws.send(logs[term.pid]);
-		}
-	}
-  });
+  
+  var interactiveTerm = getTerminalForCmd(term);
+  console.log('** en app.ws(/terminals/:pid..., interactiveTerm: ' + interactiveTerm + ' *****');
+  if(interactiveTerm){
+	  if(interactiveTerm.cwd != term.cwd){
+				interactiveTerm.once('data', function(data) {
+					try {
+						interactiveTerm.ws.send(logs[term.pid]);
+						interactiveTerm.disable=false;
+					} catch (ex) {
+					  // The WebSocket is not open, ignore
+					}
+				});
+				interactiveTerm.disable=true;
+				interactiveTerm.write('cd '+ term.cwd + '\r');
+			}else{
+				interactiveTerm.ws.send(logs[term.pid]);
+			}
+  }
   
   term.on('exit', function(exit) {
     console.log('exited', term.pid, 'code', exit);
-	Object.keys(terminals).map(function(key, index) {
-		var t = terminals[key];
-		if(t.terminal){
-			t.write('cd ..\r');
-			t.write('\r')
-		}
-	});
+	
+	var interactiveTerm = getTerminalForCmd(term);
+	 console.log('** en term.on(exit..., interactiveTerm: ' + interactiveTerm + ' *****');
+	if(interactiveTerm){
+		interactiveTerm.write('cd ..\r');
+		interactiveTerm.write('\r');
+	}
 		ws.close(1000,exit+"");
   });
   
   term.on('data', function(data) {
     try {
-      ws.send(data);
-	  Object.keys(terminals).map(function(key, index) {
-		if(t.disable){
-			return;
-		}
-		var t = terminals[key];
-		if(t.terminal && t != term){
-			console.log('-------- Send Output "' + data + '"                to terminal ---> "' + t.name + '" --------');
-			t.write('\r');
-			t.ws.send(data);
-		}
-	  });
+		ws.send(data);
+	  
+	  if(data.trim()){
+			var interactiveTerm = getTerminalForCmd(term);
+			if(interactiveTerm){
+				if(interactiveTerm.disable){
+					return;
+				}
+				console.log('Send Output "' + data + '"                to terminal ---> "' + interactiveTerm.name + '"');
+				interactiveTerm.write('\r');
+				interactiveTerm.ws.send(data);
+			}
+	  }	  
     } catch (ex) {
       // The WebSocket is not open, ignore
     }
@@ -140,6 +137,21 @@ app.ws('/terminals/:pid', function (ws, req) {
     delete logs[term.pid];
   });
 });
+
+
+function getTerminalForCmd(term) {
+	if(!term.interactiveTerm){
+		var interactiveTerm;
+		Object.keys(terminals).map(function(key, index) {
+			var t = terminals[key];
+			if(t.interactiveTerm && t!=term){
+				interactiveTerm = t;
+			}
+		});
+		return interactiveTerm;
+	}
+	return null;
+}
 
 var port = process.env.PORT || 3000,
     host = os.platform() === 'win32' ? '127.0.0.1' : '0.0.0.0';
