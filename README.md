@@ -65,12 +65,7 @@ Addons are JavaScript modules that extend the `Terminal` prototype with new meth
 
 To use an addon, just import the JavaScript module and pass it to `Terminal`'s `applyAddon` method:
 
-```html
-<script src="node_modules/xterm/dist/xterm.js"></script>
-<script src="node_modules/xterm/dist/addons/fit/fit.js"></script>
-```
-
-```js
+```javascript
 import { Terminal } from xterm;
 import * as fit from 'xterm/addons/fit/fit';
 
