@@ -686,7 +686,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param addon The addon to apply.
    */
   public static applyAddon(addon: any): void {
-    addon.default(Terminal);
+    addon.apply(Terminal);
   }
 
   /**
