@@ -103,6 +103,19 @@ export class InputHandler implements IInputHandler {
         this._terminal.buffer.lines.get(row)[this._terminal.buffer.x] = [this._terminal.curAttr, '', 0, undefined];
         this._terminal.buffer.x++;
       }
+
+      /* put cursor at start of next line of we are past EOL */
+      if (this._terminal.buffer.x >= this._terminal.cols) {
+        // autowrap - DECAWM
+        if (this._terminal.wraparoundMode) {
+          this._terminal.buffer.x = 0;
+          this._terminal.buffer.y++;
+          if (this._terminal.buffer.y > this._terminal.buffer.scrollBottom) {
+            this._terminal.buffer.y--;
+            this._terminal.scroll(true);
+          }
+        }
+      }
     }
   }
 
