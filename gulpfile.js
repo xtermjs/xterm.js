@@ -44,30 +44,31 @@ gulp.task('tsc', function () {
     tsResult.dts.pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''})).pipe(gulp.dest(outDir))
   );
 
-  fs.emptyDirSync(`${outDir}/addons/search`);
-  fs.emptyDirSync(`${outDir}/addons/winptyCompat`);
+  let addons = ['attach', 'fit', 'fullscreen', 'search', 'terminado', 'winptyCompat', 'zmodem'];
+  let addonStreams = addons.map(function(addon) {
+    fs.emptyDirSync(`${outDir}/addons/${addon}`);
 
-  let tsProjectSearchAddon = ts.createProject('./src/addons/search/tsconfig.json');
-  let tsResultSearchAddon = tsProjectSearchAddon.src().pipe(sourcemaps.init()).pipe(tsProjectSearchAddon());
-  let tscSearchAddon = tsResultSearchAddon.js.pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''})).pipe(gulp.dest(`${outDir}/addons/search`));
+    let tsProjectAddon = ts.createProject(`./src/addons/${addon}/tsconfig.json`);
+    let tsResultAddon = tsProjectAddon.src().pipe(sourcemaps.init()).pipe(tsProjectAddon());
+    let tscAddon = tsResultAddon.js
+      .pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''}))
+      .pipe(gulp.dest(`${outDir}/addons/${addon}`));
 
-  let tsProjectWinptyCompatAddon = ts.createProject('./src/addons/winptyCompat/tsconfig.json');
-  let tsResultWinptyCompatAddon = tsProjectWinptyCompatAddon.src().pipe(sourcemaps.init()).pipe(tsProjectWinptyCompatAddon());
-  let tscWinptyCompatAddon = tsResultWinptyCompatAddon.js.pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''})).pipe(gulp.dest(`${outDir}/addons/winptyCompat`));
+    return tscAddon;
+  });
 
   // Copy all addons from ${srcDir}/ to ${outDir}/
   let copyAddons = gulp.src([
-    `${srcDir}/addons/**/*`,
-    `!${srcDir}/addons/search`,
-    `!${srcDir}/addons/search/**`,
-    `!${srcDir}/addons/winptyCompat`,
-    `!${srcDir}/addons/winptyCompat/**`
+    `${srcDir}/addons/**/**`
   ]).pipe(gulp.dest(`${outDir}/addons`));
 
   // Copy stylesheets from ${srcDir}/ to ${outDir}/
   let copyStylesheets = gulp.src(`${srcDir}/**/*.css`).pipe(gulp.dest(outDir));
 
-  return merge(tsc, tscSearchAddon, tscWinptyCompatAddon, copyAddons, copyStylesheets);
+  // Join all streams into a single array
+  let streams = [tsc].concat(addonStreams).concat([copyAddons, copyStylesheets]);
+
+  return merge.apply(this, streams);
 });
 
 /**

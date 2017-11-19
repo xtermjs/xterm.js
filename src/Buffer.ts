@@ -130,6 +130,11 @@ export class Buffer implements IBuffer {
             this._lines.get(i).push(ch);
           }
         }
+      } else {
+        /* trim lines to newCols length */
+        for (let i = 0; i < this._lines.length; i++) {
+          this._lines.get(i).length = newCols;
+        }
       }
 
       // Resize rows in both directions as needed
@@ -181,6 +186,11 @@ export class Buffer implements IBuffer {
         this._lines.maxLength = newMaxLength;
       }
 
+      if (this.x >= newCols && this.y < newRows - 1) {
+        /* move cursor to begin of next line if there are more rows */
+        this.x = 0;
+        this.y++;
+      }
       // Make sure that the cursor stays on screen
       if (this.y >= newRows) {
         this.y = newRows - 1;
@@ -189,9 +199,6 @@ export class Buffer implements IBuffer {
         this.y += addToY;
       }
 
-      if (this.x >= newCols) {
-        this.x = newCols - 1;
-      }
 
       this.scrollTop = 0;
     }

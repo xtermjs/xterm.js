@@ -42,6 +42,7 @@
     "@types/jsdom": "^11.0.1",
     "@types/mocha": "^2.2.33",
     "@types/node": "^6.0.41",
+    "@types/text-encoding": "0.0.32",
     "browserify": "^13.3.0",
     "chai": "3.5.0",
     "docdash": "0.4.0",
