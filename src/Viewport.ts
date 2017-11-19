@@ -6,6 +6,7 @@
 import { ITerminal, IViewport } from './Interfaces';
 import { CharMeasure } from './utils/CharMeasure';
 import { IColorSet } from './renderer/Interfaces';
+import { isMac } from './utils/Browser';
 
 /**
  * Represents the viewport of a terminal, the visible area within the larger buffer of output.
@@ -41,6 +42,14 @@ export class Viewport implements IViewport {
 
   public onThemeChanged(colors: IColorSet): void {
     this.terminal.element.style.backgroundColor = colors.background;
+
+    // Workaround: OSX by default uses a overlay scrollbar (0px width). OSX calculates the
+    // scrollbar thumb color from the background color of the viewport element.
+    // Since the viewport element has to be transparent in order to see the underlying contents,
+    // we use the terminal background color from the theme and add a very low alpha value to it.
+    if (isMac && this.scrollBarWidth === 0 && colors.background.length === 7) {
+      this.viewportElement.style.backgroundColor = `${colors.background}01`;
+    }
   }
 
   /**
