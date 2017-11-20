@@ -9,6 +9,7 @@ const isNode = (typeof navigator === 'undefined') ? true : false;
 const userAgent = (isNode) ? 'node' : navigator.userAgent;
 const platform = (isNode) ? 'node' : navigator.platform;
 
+export const isChrome = !!~userAgent.indexOf('Chrome');
 export const isFirefox = !!~userAgent.indexOf('Firefox');
 export const isMSIE = !!~userAgent.indexOf('MSIE') || !!~userAgent.indexOf('Trident');
 
