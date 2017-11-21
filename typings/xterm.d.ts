@@ -424,11 +424,6 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'geometry'): [number, number];
-    /**
-     * Retrieves an option's value from the terminal.
-     * @param key The option key.
-     */
     getOption(key: 'handler'): (data: string) => void;
     /**
      * Retrieves an option's value from the terminal.
@@ -471,13 +466,7 @@ declare module 'xterm' {
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: 'cols' | 'fontSize' | 'letterSpacing' | 'lineHeight' | 'rows' | 'tabStopWidth' | 'scrollback', value: number): void;
-    /**
-     * Sets an option on the terminal.
-     * @param key The option key.
-     * @param value The option value.
-     */
-    setOption(key: 'geometry', value: [number, number]): void;
+    setOption(key: 'fontSize' | 'letterSpacing' | 'lineHeight' | 'tabStopWidth' | 'scrollback', value: number): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.

@@ -70,9 +70,10 @@ const WRITE_BUFFER_PAUSE_THRESHOLD = 5;
 const WRITE_BATCH_SIZE = 300;
 
 const DEFAULT_OPTIONS: ITerminalOptions = {
+  cols: 80,
+  rows: 24,
   convertEol: false,
   termName: 'xterm',
-  geometry: [80, 24],
   cursorBlink: false,
   cursorStyle: 'block',
   bellSound: BellSound,
@@ -206,7 +207,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
   public cols: number;
   public rows: number;
-  public geometry: [/*cols*/number, /*rows*/number];
 
   /**
    * Creates a new `Terminal` object.
@@ -242,9 +242,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // TODO: WHy not document.body?
     this.parent = document ? document.body : null;
 
-    this.cols = this.options.cols || this.options.geometry[0];
-    this.rows = this.options.rows || this.options.geometry[1];
-    this.geometry = [this.cols, this.rows];
+    this.cols = this.options.cols;
+    this.rows = this.options.rows;
 
     if (this.options.handler) {
       this.on('data', this.options.handler);
@@ -1867,8 +1866,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.charMeasure.measure(this.options);
 
     this.refresh(0, this.rows - 1);
-
-    this.geometry = [this.cols, this.rows];
     this.emit('resize', {cols: x, rows: y});
   }
 
