@@ -16,7 +16,7 @@
  *                             should happen instantly or at a maximum
  *                             frequency of 1 rendering per 10ms.
  */
-function attach(term, socket, bidirectional, buffered) {
+export function attach(term, socket, bidirectional, buffered) {
   bidirectional = (typeof bidirectional == 'undefined') ? true : bidirectional;
   term.socket = socket;
 
@@ -79,7 +79,7 @@ function attach(term, socket, bidirectional, buffered) {
  * @param {WebSocket} socket - The socket from which to detach the current
  *                             terminal.
  */
-function detach(term, socket) {
+export function detach(term, socket) {
   term.off('data', term._sendData);
 
   socket = (typeof socket == 'undefined') ? term.socket : socket;

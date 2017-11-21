@@ -3,8 +3,7 @@
  * @license MIT
  */
 
-export function apply(terminalConstructor) {
-  terminalConstructor.prototype.winptyCompatInit = function(): void {
+export function winptyCompatInit(terminal): void {
     // Don't do anything when the platform is not Windows
     const isWindows = ['Windows', 'Win16', 'Win32', 'WinCE'].indexOf(navigator.platform) >= 0;
     if (!isWindows) {
@@ -21,13 +20,18 @@ export function apply(terminalConstructor) {
     // space. This is certainly not without its problems, but generally on
     // Windows when text reaches the end of the terminal it's likely going to be
     // wrapped.
-    this.on('lineFeed', () => {
-      const line = this.buffer.lines.get(this.buffer.ybase + this.buffer.y - 1);
-      const lastChar = line[this.cols - 1];
+    terminal.on('lineFeed', () => {
+      const line = terminal.buffer.lines.get(terminal.buffer.ybase + terminal.buffer.y - 1);
+      const lastChar = line[terminal.cols - 1];
+
       if (lastChar[3] !== 32 /* ' ' */) {
-        const nextLine = this.buffer.lines.get(this.buffer.ybase + this.buffer.y);
+        const nextLine = terminal.buffer.lines.get(terminal.buffer.ybase + terminal.buffer.y);
         (<any>nextLine).isWrapped = true;
       }
     });
+
+export function apply(terminalConstructor) {
+  terminalConstructor.prototype.winptyCompatInit = function(): void {
+    winptyCompatInit(this);
   };
 }

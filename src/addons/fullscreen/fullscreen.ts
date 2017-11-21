@@ -8,7 +8,7 @@
  * @param {Terminal} term - The terminal to toggle full screen mode
  * @param {boolean} fullscreen - Toggle fullscreen on (true) or off (false)
  */
-function toggleFullScreen(term, fullscreen) {
+export function toggleFullScreen(term, fullscreen) {
   var fn;
 
   if (typeof fullscreen == 'undefined') {

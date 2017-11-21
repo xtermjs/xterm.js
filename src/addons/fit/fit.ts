@@ -13,7 +13,7 @@
  *          row and truncate its width with the current number of columns).
  */
 
-function proposeGeometry(term) {
+export function proposeGeometry(term) {
   if (!term.element.parentElement) {
     return null;
   }
@@ -33,7 +33,7 @@ function proposeGeometry(term) {
   return geometry;
 };
 
-function fit(term) {
+export function fit(term) {
   // Wrap fit in a setTimeout as charMeasure needs time to get initialized
   // after calling Terminal.open
   setTimeout(function () {

@@ -4,54 +4,41 @@
  */
 
 import { SearchHelper } from './SearchHelper';
+import { ITerminal } from '../../Interfaces';
 
-declare var exports: any;
-declare var module: any;
-declare var define: any;
-declare var require: any;
-declare var window: any;
 
-(function (addon) {
-  if (typeof window !== 'undefined' && 'Terminal' in window) {
-    /**
-     * Plain browser environment
-     */
-    addon(window.Terminal);
-  } else if (typeof exports === 'object' && typeof module === 'object') {
-    /**
-     * CommonJS environment
-     */
-    module.exports = addon(require('../../Terminal').Terminal);
-  } else if (typeof define === 'function') {
-    /**
-     * Require.js is available
-     */
-    define(['../../xterm'], addon);
+/**
+ * Find the next instance of the term, then scroll to and select it. If it
+ * doesn't exist, do nothing.
+ * @param term Tne search term.
+ * @return Whether a result was found.
+ */
+function findNext(terminal: ITerminal, term: string): boolean {
+  if (!terminal._searchHelper) {
+    terminal.searchHelper = new SearchHelper(terminal);
   }
-})((Terminal: any) => {
-  /**
-   * Find the next instance of the term, then scroll to and select it. If it
-   * doesn't exist, do nothing.
-   * @param term Tne search term.
-   * @return Whether a result was found.
-   */
-  Terminal.prototype.findNext = function(term: string): boolean {
-    if (!this._searchHelper) {
-      this.searchHelper = new SearchHelper(this);
-    }
-    return (<SearchHelper>this.searchHelper).findNext(term);
-  };
+  return (<SearchHelper>terminal.searchHelper).findNext(term);
+};
 
-  /**
-   * Find the previous instance of the term, then scroll to and select it. If it
-   * doesn't exist, do nothing.
-   * @param term Tne search term.
-   * @return Whether a result was found.
-   */
-  Terminal.prototype.findPrevious = function(term: string): boolean {
-    if (!this._searchHelper) {
-      this.searchHelper = new SearchHelper(this);
-    }
-    return (<SearchHelper>this.searchHelper).findPrevious(term);
-  };
-});
+/**
+ * Find the previous instance of the term, then scroll to and select it. If it
+ * doesn't exist, do nothing.
+ * @param term Tne search term.
+ * @return Whether a result was found.
+ */
+Terminal.prototype.findPrevious = function(terminal: ITerminal, term: string): boolean {
+  if (!terminal._searchHelper) {
+    terminal.searchHelper = new SearchHelper(terminal);
+  }
+  return (<SearchHelper>terminal.searchHelper).findPrevious(term);
+};
+
+export function apply(terminalConstructor) {
+  terminalConstructor.prototype.findNext = function(term) {
+    return findNext(this, term);
+  }
+
+  terminalConstructor.prototype.findPrevious = function(term) {
+    return findPrevious(this, term);
+  }
+}
