@@ -29,6 +29,7 @@ export function winptyCompatInit(terminal): void {
         (<any>nextLine).isWrapped = true;
       }
     });
+}
 
 export function apply(terminalConstructor) {
   terminalConstructor.prototype.winptyCompatInit = function(): void {

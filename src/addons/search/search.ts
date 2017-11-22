@@ -4,7 +4,6 @@
  */
 
 import { SearchHelper } from './SearchHelper';
-import { ITerminal } from '../../Interfaces';
 
 
 /**
@@ -13,7 +12,7 @@ import { ITerminal } from '../../Interfaces';
  * @param term Tne search term.
  * @return Whether a result was found.
  */
-function findNext(terminal: ITerminal, term: string): boolean {
+function findNext(terminal: any, term: string): boolean {
   if (!terminal._searchHelper) {
     terminal.searchHelper = new SearchHelper(terminal);
   }
@@ -26,7 +25,7 @@ function findNext(terminal: ITerminal, term: string): boolean {
  * @param term Tne search term.
  * @return Whether a result was found.
  */
-Terminal.prototype.findPrevious = function(terminal: ITerminal, term: string): boolean {
+function findPrevious(terminal: any, term: string): boolean {
   if (!terminal._searchHelper) {
     terminal.searchHelper = new SearchHelper(terminal);
   }
