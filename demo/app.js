@@ -23,6 +23,8 @@ app.get('/main.js', function(req, res){
 
 app.post('/terminals', function (req, res) {
 	
+	process.env.PROMPT_COMMAND='history -a';
+	
   var cols = parseInt(req.query.cols),
       rows = parseInt(req.query.rows),
       cmd = req.query.cmd,
@@ -35,6 +37,7 @@ app.post('/terminals', function (req, res) {
         cwd: req.query.cwd || process.env.PWD,
         env: process.env
     });
+	
 	if(req.query.cwd != undefined){
 	  term.cwd = req.query.cwd;
 	}
@@ -76,7 +79,6 @@ app.ws('/terminals/:pid', function (ws, req) {
   ws.send(logs[term.pid]);
   
   var interactiveTerm = getTerminalForCmd(term);
-  console.log('** en app.ws(/terminals/:pid..., interactiveTerm: ' + interactiveTerm + ' *****');
   if(interactiveTerm){
 	  if(interactiveTerm.cwd != term.cwd){
 				interactiveTerm.once('data', function(data) {
@@ -94,14 +96,15 @@ app.ws('/terminals/:pid', function (ws, req) {
 			}
   }
   
+  var interactiveTerm = null;
+  
   term.on('exit', function(exit) {
     console.log('exited', term.pid, 'code', exit);
-	
-	var interactiveTerm = getTerminalForCmd(term);
-	 console.log('** en term.on(exit..., interactiveTerm: ' + interactiveTerm + ' *****');
+
 	if(interactiveTerm){
 		interactiveTerm.write('cd ..\r');
 		interactiveTerm.write('\r');
+		interactiveTerm.used = false;
 	}
 		ws.close(1000,exit+"");
   });
@@ -111,13 +114,19 @@ app.ws('/terminals/:pid', function (ws, req) {
 		ws.send(data);
 	  
 	  if(data.trim()){
-			var interactiveTerm = getTerminalForCmd(term);
-			if(interactiveTerm){
-				if(interactiveTerm.disable){
-					return;
+		  if(!interactiveTerm){
+				interactiveTerm = getTerminalForCmd(term);
+				if(interactiveTerm){
+					if(interactiveTerm.disable){
+						return;
+					}
+					console.log('    -----------------    ');
+					console.log('  Send Output: ' + data);
+					console.log('    -----------------    ');
+					interactiveTerm.ws.send(data);
+					interactiveTerm.used = true;
 				}
-				console.log('Send Output "' + data + '"                to terminal ---> "' + interactiveTerm.name + '"');
-				interactiveTerm.write('\r');
+			}else{
 				interactiveTerm.ws.send(data);
 			}
 	  }	  
@@ -144,12 +153,12 @@ function getTerminalForCmd(term) {
 		var interactiveTerm;
 		Object.keys(terminals).map(function(key, index) {
 			var t = terminals[key];
-			if(t.interactiveTerm && t!=term){
+			if(t.interactiveTerm && t!=term && !t.used){
 				interactiveTerm = t;
 			}
 		});
 		return interactiveTerm;
-	}
+	}	
 	return null;
 }
 
