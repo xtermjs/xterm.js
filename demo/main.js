@@ -134,22 +134,75 @@ function createTerminal() {
     // // Set terminal size again to set the specific dimensions on the demo
     //setTerminalSize();
     console.log('rows', term.rows, 'cols', term.cols);
-    fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, {method: 'POST'}).then(function (res) {
+	
+	const regex = /\?pid=([^&]+)/g;
 
-      res.text().then(function (pid) {
-        window.pid = pid;
-        var socketURL = baseSocketURL + pid;
-        socket = new WebSocket(socketURL);
-        socket.onopen = runRealTerminal;
-        socket.onclose = runFakeTerminal;
-        socket.onerror = runFakeTerminal;
-      });
-    });
+	var params = parseQueryString();
+	var pid = parseInt(params["pid"]);
+	console.log('********** PID'+ pid);
+	
+	
+	
+	if(pid){
+		console.log('IF----------------------------------- tiene PID'+ pid);
+		createSocket(pid);
+	}else{
+		console.log('ELSE----------------------------------- Hago FETCH'+ pid);
+		fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, {method: 'POST'}).then(function (res) {
+		  res.text().then(function (pid) {
+			createSocket(pid);			
+		  });
+		});
+	}
   }, 0);
-
+	  
+  
   window.addEventListener('resize', function() {
     term.fit();
   }, true);
+}
+
+
+
+
+
+
+
+var parseQueryString = function() {
+
+    var str = window.location.search;
+    var objURL = {};
+
+    str.replace(
+        new RegExp( "([^?=&]+)(=([^&]*))?", "g" ),
+        function( $0, $1, $2, $3 ){
+            objURL[ $1 ] = $3;
+        }
+    );
+    return objURL;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function createSocket(pid) {
+	window.pid = pid;		
+	var socketURL = baseSocketURL + pid;
+	socket = new WebSocket(socketURL);
+	socket.onopen = runRealTerminal;
+	socket.onclose = runFakeTerminal;
+	socket.onerror = runFakeTerminal;
 }
 
 function runRealTerminal() {
