@@ -104,7 +104,7 @@ export function apply(terminalConstructor) {
    *                             frequency of 1 rendering per 10ms.
    */
   terminalConstructor.prototype.attach = function(socket, bidirectional, buffered) {
-    return exports.attach(this, socket, bidirectional, buffered);
+    return attach(this, socket, bidirectional, buffered);
   };
 
   /**
@@ -114,6 +114,6 @@ export function apply(terminalConstructor) {
    *                             terminal.
    */
   terminalConstructor.prototype.detach = function(socket) {
-    return exports.detach(this, socket);
+    return detach(this, socket);
   };
 }
