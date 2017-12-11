@@ -95,6 +95,7 @@
     /* On OS X this is required in order for the scroll bar to appear fully opaque */
     background-color: #000;
     overflow-y: scroll;
+    cursor: default;
 }
 
 .xterm canvas {
