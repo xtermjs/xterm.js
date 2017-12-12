@@ -441,6 +441,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Binds the desired focus behavior on a given terminal object.
    */
   private _onTextAreaFocus(): void {
+    this.refresh(this.buffer.y, this.buffer.y);
     if (this.sendFocus) {
       this.send(C0.ESC + '[I');
     }
