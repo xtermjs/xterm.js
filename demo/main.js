@@ -1,3 +1,18 @@
+import * as Terminal from '../build/xterm';
+import * as attach from '../build/addons/attach/attach';
+import * as fit from '../build/addons/fit/fit';
+import * as fullscreen from '../build/addons/fullscreen/fullscreen';
+import * as search from '../build/addons/search/search';
+import * as winptyCompat from '../build/addons/winptyCompat/winptyCompat';
+
+
+Terminal.applyAddon(attach);
+Terminal.applyAddon(fit);
+Terminal.applyAddon(fullscreen);
+Terminal.applyAddon(search);
+Terminal.applyAddon(winptyCompat);
+
+
 var term,
     protocol,
     socketURL,

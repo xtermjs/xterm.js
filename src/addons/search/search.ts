@@ -12,7 +12,7 @@ import { SearchHelper } from './SearchHelper';
  * @param term Tne search term.
  * @return Whether a result was found.
  */
-function findNext(terminal: any, term: string): boolean {
+export function findNext(terminal: any, term: string): boolean {
   if (!terminal._searchHelper) {
     terminal.searchHelper = new SearchHelper(terminal);
   }
@@ -25,7 +25,7 @@ function findNext(terminal: any, term: string): boolean {
  * @param term Tne search term.
  * @return Whether a result was found.
  */
-function findPrevious(terminal: any, term: string): boolean {
+export function findPrevious(terminal: any, term: string): boolean {
   if (!terminal._searchHelper) {
     terminal.searchHelper = new SearchHelper(terminal);
   }

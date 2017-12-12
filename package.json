@@ -69,20 +69,22 @@
     "typescript": "~2.4.0",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.1.0",
+    "webpack": "^3.10.0",
+    "webpack-stream": "^4.0.0",
     "zmodem.js": "^0.1.5"
   },
   "scripts": {
-    "prestart": "npm run build",
+    "prestart": "gulp webpack",
     "start": "node demo/app",
     "prestart-zmodem": "npm run build",
     "start-zmodem": "node build/addons/zmodem/demo/app",
-    "dev": "nodemon -e js,ts,css --watch src --watch demo --exec npm start",
     "lint": "tslint src/*.ts src/**/*.ts",
     "test": "gulp test",
     "build:docs": "jsdoc -c jsdoc.json",
     "build": "gulp build",
     "prepublish": "npm run build",
-    "coveralls": "gulp coveralls"
+    "coveralls": "gulp coveralls",
+    "webpack": "webpack"
   },
   "dependencies": {}
 }
