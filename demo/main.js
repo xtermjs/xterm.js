@@ -71,29 +71,10 @@ var terminalContainer = document.getElementById('terminal-container');
 createTerminal();
 term.focus();
 
-document.getElementById('button').onclick = () => {
-  console.log("click")
-  //term.detach(socket);
-  console.log('detached');
-  var cmd = 'dzn';
-  var args = '-V';
-  term.writeln(cmd + ' ' + args)
-  fetch('/terminals?cmd='+cmd+'&args='+args+'&cols=' + term.cols + '&rows=' + term.rows, {method: 'POST'}).then(function (res) {
-    
-          res.text().then(function (pid) {
-            console.log('exec resp pid', pid);
-            window.pid = pid;
-            var socketURL = baseSocketURL + pid;
-            cmdSocket = new WebSocket(socketURL);
-            cmdSocket.onopen = runRealTerminal;
-            cmdSocket.onclose = runFakeTerminal;
-            cmdSocket.onerror = runFakeTerminal;
-          });
-        });
-}
 
 function createTerminal() {
   // Clean terminal
+
   while (terminalContainer.children.length) {
     terminalContainer.removeChild(terminalContainer.children[0]);
   }
@@ -164,10 +145,6 @@ function createTerminal() {
 
 
 
-
-
-
-
 var parseQueryString = function() {
 
     var str = window.location.search;
@@ -181,18 +158,6 @@ var parseQueryString = function() {
     );
     return objURL;
 };
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

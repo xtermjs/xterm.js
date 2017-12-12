@@ -49,6 +49,11 @@ app.ws('/terminals/:pid', function (ws, req) {
 
 	var interactiveTerm = getTerminalForCmd(term);
 	if (interactiveTerm) {
+		
+		//ws.removeListener('message', writeMsg);
+		//interactiveTerm.ws.on('message', writeMsg)// esto es cuando el user escribe input en la interactive Term, redirijilo a cmdTerm ;
+		interactiveTerm.cmdTerm=term
+
 		if (interactiveTerm.cwd != term.cwd) {
 			console.log('Entro al IF  app.ws(/terminals/:pid ----------interactiveTerm: ' + interactiveTerm.name);
 			interactiveTerm.once('data', function (data) {
@@ -57,7 +62,6 @@ app.ws('/terminals/:pid', function (ws, req) {
 					interactiveTerm.disable = false;
 				} catch (ex) {
 					// The WebSocket is not open, ignore
-					console.log('xxxxxxx Entro al catch');
 				}
 			});
 			interactiveTerm.disable = true;
@@ -77,6 +81,10 @@ app.ws('/terminals/:pid', function (ws, req) {
 			interactiveTerm.write('cd ..\r');
 			interactiveTerm.write('\r');
 			interactiveTerm.used = false;
+			
+		//	ws.on('message', writeMsg);
+		//	interactiveTerm.ws.removeListener('message', writeMsg)
+			interactiveTerm.cmdTerm=null
 		}
 		ws.close(1000, exit + "");
 	});
@@ -107,9 +115,17 @@ app.ws('/terminals/:pid', function (ws, req) {
 		}
 	});
 
+	
+	
+//	ws.on('message', writeMsg(term, msg));
 	ws.on('message', function (msg) {
-		term.write(msg);
+		if (term.cmdTerm){
+			term.cmdTerm.write(msg);
+		}else{
+			term.write(msg);			
+		}
 	});
+	
 	ws.on('close', function () {
 		term.kill();
 		console.log('Closed terminal ' + term.pid);
@@ -119,6 +135,10 @@ app.ws('/terminals/:pid', function (ws, req) {
 	});
 });
 
+/*function writeMsg(term, msg) {
+	console.log('-------- writeMsg' + msg + '   term-' + term.name);
+		term.write(msg);
+	}*/
 
 /*function getTerminalForCmd(term) {
 	if(!term.interactiveTerm){

@@ -1,21 +1,137 @@
+
+
 <!doctype html>
 <html>
-    <head>
-        <title>xterm.js demo</title>
-        <link rel="stylesheet" href="/build/xterm.css" />
-        <link rel="stylesheet" href="/build/addons/fullscreen/fullscreen.css" />
-        <link rel="stylesheet" href="style.css" />
-      	<script src="https://cdnjs.cloudflare.com/ajax/libs/es6-promise/4.1.1/es6-promise.auto.min.js"></script>
-      	<script src="https://cdnjs.cloudflare.com/ajax/libs/fetch/1.0.0/fetch.min.js"></script>
-        <script src="/build/xterm.js" ></script>
-        <script src="/build/addons/attach/attach.js" ></script>
-        <script src="/build/addons/fit/fit.js" ></script>
-        <script src="/build/addons/fullscreen/fullscreen.js" ></script>
-        <script src="/build/addons/search/search.js" ></script>
-    </head>
-    <body>
-        <button id="button">dzn</button>
-        <div id="terminal-container"></div>
-        <script src="main.js" defer ></script>
-    </body>
+   <head>
+      <title>xterm.js demo</title>
+      <link rel="stylesheet" href="/build/xterm.css" />
+      <link rel="stylesheet" href="/build/addons/fullscreen/fullscreen.css" />
+      <link rel="stylesheet" href="style.css" />
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/es6-promise/4.1.1/es6-promise.auto.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/fetch/1.0.0/fetch.min.js"></script>
+      <script src="/build/xterm.js" ></script>
+      <script src="/build/addons/attach/attach.js" ></script>
+      <script src="/build/addons/fit/fit.js" ></script>
+      <script src="/build/addons/fullscreen/fullscreen.js" ></script>
+      <script src="/build/addons/search/search.js" ></script>
+      <link href='https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons' rel="stylesheet">
+      <link href="https://unpkg.com/vuetify/dist/vuetify.min.css" rel="stylesheet">
+      <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui"
+   </head>
+   <body>
+      <div id="app">
+         <v-app id="inspire">
+            <v-layout wrap>
+               <v-content>
+                  <v-container fluid fill-height style="padding-top: inherit;padding-left: inherit;">
+                     <div id="terminal-container"></div>
+                  </v-container>
+               </v-content>
+               <!-- <v-container fluid fill-height style="padding-top: inherit;padding-left: inherit;">
+                  <div id="terminal-container"></div>
+                  <v-layout justify-right>
+                     <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
+                  </v-layout>
+                  </v-container>-->
+               <v-navigation-drawer
+                  permanent
+                  v-model="drawer"
+                  dark
+                  absolute
+                  right
+                  app
+                  >
+                  <v-toolbar flat class="transparent">
+                     <v-list class="pa-0">
+                        <v-list-tile avatar>
+                           <v-list-tile-content>
+                              <v-list-tile-title>Terminals</v-list-tile-title>
+                           </v-list-tile-content>
+                        </v-list-tile>
+                     </v-list>
+                  </v-toolbar>
+                  <v-list class="pt-0" dense two-line>
+                     <v-divider></v-divider>
+                     <v-list-tile  @click="">
+                       
+                        <v-list-tile-action>
+                           <v-speed-dial
+                              v-model="fab"
+                              :direction="direction" 
+                              hover 
+                              :transition="transition"
+                              >
+                              <v-btn slot="activator" class="blue darken-2" small dark fab hover v-model="fab">
+                                 <v-icon>settings_ethernet</v-icon>
+                                 <v-icon>close</v-icon>
+                              </v-btn>
+                              <v-tooltip left>
+                                 <v-btn fab dark small color="red lighten-3" slot="activator">
+                                    <v-icon>stop</v-icon>
+                                 </v-btn>
+                                 <span>Stop</span>
+                              </v-tooltip>
+                              <v-tooltip left>
+                                  <v-btn fab dark small color="red" slot="activator">
+                                     <v-icon>delete</v-icon>
+                                  </v-btn>
+                                  <span>Delete</span>
+                               </v-tooltip>
+                           </v-speed-dial>                           
+                        </v-list-tile-action>
+                        <v-list-tile-content>
+                            <v-tooltip right>
+                              <v-badge color="green" slot="activator">
+                                <v-icon slot="badge" dark>done</v-icon>
+                                <span>Terminal 0</span>
+                              </v-badge>
+                           <span>Success</span>
+                          </v-tooltip>
+                        </v-list-tile-content>
+                     </v-list-tile>
+
+                     <v-toolbar flat class="transparent">
+                        <v-list class="pa-0">
+                           <v-list-tile>
+                              <v-list-tile-content>
+                                  <v-tooltip left>
+                                  <v-btn color="pink" dark small fixed bottom right fab slot="activator">
+                                      <v-icon>add</v-icon>
+                                   </v-btn>
+                                   <span>Add Terminal</span>
+                                  </v-tooltip>
+                              </v-list-tile-content>
+                           </v-list-tile>
+                        </v-list>
+                     </v-toolbar>
+
+                  </v-list>
+               </v-navigation-drawer>
+
+            </v-layout>
+         </v-app>
+      </div>
+      <script src="https://unpkg.com/vue/dist/vue.js"></script>
+      <script src="https://unpkg.com/vuetify/dist/vuetify.js"></script>
+      <script>
+
+        new Vue({
+        el: '#app',
+        data () {
+          return {
+            items: [
+              { title: 'Home', icon: 'dashboard' },
+              { title: 'About', icon: 'question_answer' }
+            ],
+            drawer: true,
+            mini: true,
+            direction: "bottom",
+            transition: 'slide-y-reverse-transition'
+          }
+         }
+      })
+
+      </script>
+      <script src="main.js" defer ></script>
+   </body>
 </html>
