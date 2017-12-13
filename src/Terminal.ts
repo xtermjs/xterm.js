@@ -588,16 +588,16 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     this.element.setAttribute('tabindex', '0');
 
-    this.screenElement = document.createElement('div');
-    this.screenElement.classList.add('xterm-screen');
-    this.element.appendChild(this.screenElement);
-
     this.viewportElement = document.createElement('div');
     this.viewportElement.classList.add('xterm-viewport');
     this.element.appendChild(this.viewportElement);
     this.viewportScrollArea = document.createElement('div');
     this.viewportScrollArea.classList.add('xterm-scroll-area');
     this.viewportElement.appendChild(this.viewportScrollArea);
+
+    this.screenElement = document.createElement('div');
+    this.screenElement.classList.add('xterm-screen');
+    this.element.appendChild(this.screenElement);
 
     // preload audio
     this.syncBellSound();

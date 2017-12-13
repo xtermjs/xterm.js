@@ -33,7 +33,10 @@ export class Viewport implements IViewport {
     private scrollArea: HTMLElement,
     private charMeasure: CharMeasure
   ) {
-    this.scrollBarWidth = this.viewportElement.offsetWidth - this.scrollArea.offsetWidth;
+    // Measure the width of the scrollbar. If it is 0 we can assume it's an OSX overlay scrollbar.
+    // Unfortunately the overlay scrollbar would be hidden underneath the screen element in that case,
+    // therefore we account 15px to make it visible.
+    this.scrollBarWidth = (this.viewportElement.offsetWidth - this.scrollArea.offsetWidth) || 15;
     this.viewportElement.addEventListener('scroll', this.onScroll.bind(this));
 
     // Perform this async to ensure the CharMeasure is ready.
@@ -41,15 +44,7 @@ export class Viewport implements IViewport {
   }
 
   public onThemeChanged(colors: IColorSet): void {
-    this.terminal.element.style.backgroundColor = colors.background;
-
-    // Workaround: OSX by default uses a overlay scrollbar (0px width). On Chrome, OSX
-    // calculates the scrollbar thumb color from the background color of the viewport element.
-    // Since the viewport element has to be transparent in order to see the underlying canvas,
-    // we use the terminal background color from the theme and add a very low alpha value to it.
-    if (isMac && isChrome && this.scrollBarWidth === 0 && colors.background.length === 7) {
-      this.viewportElement.style.backgroundColor = `${colors.background}01`;
-    }
+    this.viewportElement.style.backgroundColor = colors.background;
   }
 
   /**
