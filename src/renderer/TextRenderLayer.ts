@@ -24,7 +24,7 @@ export class TextRenderLayer extends BaseRenderLayer {
   private _characterFont: string;
   private _characterOverlapCache: { [key: string]: boolean } = {};
 
-  constructor(container: HTMLElement, zIndex: number, alpha: boolean, colors: IColorSet) {
+  constructor(container: HTMLElement, zIndex: number, colors: IColorSet, alpha: boolean) {
     super(container, 'text', zIndex, alpha, colors);
     this._state = new GridCache<CharData>();
   }

@@ -630,7 +630,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     this.charMeasure = new CharMeasure(document, this.helperContainer);
 
-    this.renderer = new Renderer(this, this.options.theme, this.options.allowTransparency);
+    this.renderer = new Renderer(this, this.options.theme);
     this.options.theme = null;
     this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
     this.viewport.onThemeChanged(this.renderer.colorManager.colors);
