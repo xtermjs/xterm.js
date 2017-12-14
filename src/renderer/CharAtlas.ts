@@ -110,9 +110,9 @@ let generator: CharAtlasGenerator;
  * Initializes the char atlas generator.
  * @param document The document.
  */
-export function initialize(document: Document): void {
+export function initialize(document: Document, alpha: boolean): void {
   if (!generator) {
-    generator = new CharAtlasGenerator(document);
+    generator = new CharAtlasGenerator(document, alpha);
   }
 }
 
@@ -120,9 +120,9 @@ class CharAtlasGenerator {
   private _canvas: HTMLCanvasElement;
   private _ctx: CanvasRenderingContext2D;
 
-  constructor(private _document: Document) {
+  constructor(private _document: Document, alpha: boolean) {
     this._canvas = this._document.createElement('canvas');
-    this._ctx = this._canvas.getContext('2d', {alpha: false});
+    this._ctx = this._canvas.getContext('2d', {alpha});
     this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
   }
 

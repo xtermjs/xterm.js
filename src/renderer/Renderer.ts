@@ -25,14 +25,15 @@ export class Renderer extends EventEmitter implements IRenderer {
   public colorManager: ColorManager;
   public dimensions: IRenderDimensions;
 
-  constructor(private _terminal: ITerminal, theme: ITheme) {
+  constructor(private _terminal: ITerminal, theme: ITheme, alpha: boolean) {
     super();
     this.colorManager = new ColorManager();
     if (theme) {
       this.colorManager.setTheme(theme);
     }
+
     this._renderLayers = [
-      new TextRenderLayer(this._terminal.element, 0, this.colorManager.colors),
+      new TextRenderLayer(this._terminal.element, 0, alpha, this.colorManager.colors),
       new SelectionRenderLayer(this._terminal.element, 1, this.colorManager.colors),
       new LinkRenderLayer(this._terminal.element, 2, this.colorManager.colors, this._terminal),
       new CursorRenderLayer(this._terminal.element, 3, this.colorManager.colors)

@@ -144,6 +144,7 @@ namespace methods_core {
       const r20: string = t.getOption('bellStyle');
       const r21: boolean = t.getOption('enableBold');
       const r22: number = t.getOption('letterSpacing');
+      const r23: boolean = t.getOption('allowTransparency');
     }
     {
       const t: Terminal = new Terminal();
@@ -160,6 +161,7 @@ namespace methods_core {
       t.setOption('popOnBell', true);
       t.setOption('screenKeys', true);
       t.setOption('useFlowControl', true);
+      t.setOption('allowTransparency', true);
       t.setOption('visualBell', true);
       t.setOption('colors', ['a', 'b']);
       t.setOption('letterSpacing', 1);
