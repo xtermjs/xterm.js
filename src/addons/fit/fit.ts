@@ -50,6 +50,11 @@ export function fit(term) {
 };
 
 export function apply(terminalConstructor) {
-  terminalConstructor.prototype.proposeGeometry = proposeGeometry.bind(this, this);
-  terminalConstructor.prototype.fit = fit.bind(this, this);
+  terminalConstructor.prototype.proposeGeometry = function() {
+    return proposeGeometry(this);
+  }
+
+  terminalConstructor.prototype.fit = function() {
+    return fit(this);
+  }
 }

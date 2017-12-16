@@ -84,7 +84,7 @@
     "build": "gulp build",
     "prepublish": "npm run build",
     "coveralls": "gulp coveralls",
-    "webpack": "webpack"
+    "webpack": "gulp webpack"
   },
   "dependencies": {}
 }

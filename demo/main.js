@@ -91,6 +91,7 @@ function createTerminal() {
     scrollback: parseInt(optionElements.scrollback.value, 10),
     tabStopWidth: parseInt(optionElements.tabstopwidth.value, 10)
   });
+  window.term = term;  // Expose `term` to window for debugging purposes
   term.on('resize', function (size) {
     if (!pid) {
       return;
@@ -105,8 +106,9 @@ function createTerminal() {
   socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
 
   term.open(terminalContainer);
-  term.fit();
   term.winptyCompatInit();
+  term.fit();
+  term.focus();
 
   // fit is called within a setTimeout, cols and rows need this.
   setTimeout(function () {

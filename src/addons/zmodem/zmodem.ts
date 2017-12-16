@@ -27,6 +27,8 @@
  *  via `detach()` and a re-`attach()`.)
  */
 
+let Zmodem;
+
 export function zmodemAttach(term, ws, opts) {
   if (!opts) opts = {};
 
@@ -81,7 +83,7 @@ export function zmodemAttach(term, ws, opts) {
 }
 
 export function apply(terminalConstructor) {
-  let Zmodem = (typeof window == 'object') ? (<any>window).ZModem : {Browser: null};  // Nullify browser for tests
+  Zmodem = (typeof window == 'object') ? (<any>window).ZModem : {Browser: null};  // Nullify browser for tests
 
   terminalConstructor.prototype.zmodemAttach = zmodemAttach.bind(this, this);
   terminalConstructor.prototype.zmodemBrowser = Zmodem.Browser

@@ -196,7 +196,7 @@ gulp.task('sorcery-addons', ['browserify-addons'], function () {
 
 gulp.task('webpack', ['build'], function() {
   return gulp.src('demo/main.js')
-    .pipe(webpack())
+    .pipe(webpack(require('./webpack.config.js')))
     .pipe(gulp.dest('demo/dist/'));
 });
 
