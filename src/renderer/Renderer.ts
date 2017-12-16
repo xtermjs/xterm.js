@@ -32,10 +32,10 @@ export class Renderer extends EventEmitter implements IRenderer {
       this.colorManager.setTheme(theme);
     }
     this._renderLayers = [
-      new TextRenderLayer(this._terminal.element, 0, this.colorManager.colors),
-      new SelectionRenderLayer(this._terminal.element, 1, this.colorManager.colors),
-      new LinkRenderLayer(this._terminal.element, 2, this.colorManager.colors, this._terminal),
-      new CursorRenderLayer(this._terminal.element, 3, this.colorManager.colors)
+      new TextRenderLayer(this._terminal.screenElement, 0, this.colorManager.colors),
+      new SelectionRenderLayer(this._terminal.screenElement, 1, this.colorManager.colors),
+      new LinkRenderLayer(this._terminal.screenElement, 2, this.colorManager.colors, this._terminal),
+      new CursorRenderLayer(this._terminal.screenElement, 3, this.colorManager.colors)
     ];
     this.dimensions = {
       scaledCharWidth: null,
@@ -134,6 +134,10 @@ export class Renderer extends EventEmitter implements IRenderer {
 
     // Resize all render layers
     this._renderLayers.forEach(l => l.resize(this._terminal, this.dimensions, didCharSizeChange));
+
+		// Resize the screen
+    this._terminal.screenElement.style.width = `${this.dimensions.canvasWidth + this._terminal.viewport.scrollBarWidth}px`;
+    this._terminal.screenElement.style.height = `${this.dimensions.canvasHeight}px`;
 
     // Force a refresh
     this._terminal.refresh(0, this._terminal.rows - 1);

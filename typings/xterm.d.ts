@@ -182,6 +182,11 @@ declare module 'xterm' {
     element: HTMLElement;
 
     /**
+     * The element containing the rendered screen content.
+     */
+    screenElement: HTMLElement;
+
+    /**
      * The textarea that accepts input for the terminal.
      */
     textarea: HTMLTextAreaElement;
