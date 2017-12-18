@@ -193,11 +193,13 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     // Get final row
     if (start[1] !== end[1]) {
       const bufferLine = this._buffer.lines.get(end[1]);
-      const lineText = this._buffer.translateBufferLineToString(end[1], true, 0, end[0]);
-      if ((<any>bufferLine).isWrapped) {
-        result[result.length - 1] += lineText;
-      } else {
-        result.push(lineText);
+      if (bufferLine) {
+        const lineText = this._buffer.translateBufferLineToString(end[1], true, 0, end[0]);
+        if ((<any>bufferLine).isWrapped) {
+          result[result.length - 1] += lineText;
+        } else {
+          result.push(lineText);
+        }
       }
     }
 
