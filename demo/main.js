@@ -93,12 +93,12 @@ function createTerminal() {
   });
   window.term = term;  // Expose `term` to window for debugging purposes
   term.on('resize', function (size) {
-    if (!pid) {
+    if (!window.pid) {
       return;
     }
     var cols = size.cols,
         rows = size.rows,
-        url = '/terminals/' + pid + '/size?cols=' + cols + '&rows=' + rows;
+        url = '/terminals/' + window.pid + '/size?cols=' + cols + '&rows=' + rows;
 
     fetch(url, {method: 'POST'});
   });
