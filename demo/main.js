@@ -93,12 +93,12 @@ function createTerminal() {
   });
   window.term = term;  // Expose `term` to window for debugging purposes
   term.on('resize', function (size) {
-    if (!window.pid) {
+    if (!pid) {
       return;
     }
     var cols = size.cols,
         rows = size.rows,
-        url = '/terminals/' + window.pid + '/size?cols=' + cols + '&rows=' + rows;
+        url = '/terminals/' + pid + '/size?cols=' + cols + '&rows=' + rows;
 
     fetch(url, {method: 'POST'});
   });
@@ -120,9 +120,9 @@ function createTerminal() {
 
     fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, {method: 'POST'}).then(function (res) {
 
-      res.text().then(function (pid) {
-        window.pid = pid;
-        socketURL += pid;
+      res.text().then(function (processId) {
+        pid = processId;
+        socketURL += processId;
         socket = new WebSocket(socketURL);
         socket.onopen = runRealTerminal;
         socket.onclose = runFakeTerminal;
