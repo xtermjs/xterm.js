@@ -24,8 +24,8 @@ function setTerminalSize() {
   var rows = parseInt(rowsElement.value, 10);
   var viewportElement = document.querySelector('.xterm-viewport');
   var scrollBarWidth = viewportElement.offsetWidth - viewportElement.clientWidth;
-  var width = (cols * term.charMeasure.width + 20 /*room for scrollbar*/).toString() + 'px';
-  var height = (rows * term.charMeasure.height).toString() + 'px';
+  var width = (cols * term.renderer.dimensions.actualCellWidth + 20 /*room for scrollbar*/).toString() + 'px';
+  var height = (rows * term.renderer.dimensions.actualCellHeight).toString() + 'px';
 
   terminalContainer.style.width = width;
   terminalContainer.style.height = height;
