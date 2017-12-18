@@ -90,6 +90,7 @@ function createTerminal() {
   socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
 
   term.open(terminalContainer);
+  term.focus();
   term.fit();
   term.winptyCompatInit();
 

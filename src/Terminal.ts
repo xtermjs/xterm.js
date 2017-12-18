@@ -584,8 +584,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.element = this.document.createElement('div');
     this.element.classList.add('terminal');
     this.element.classList.add('xterm');
-
     this.element.setAttribute('tabindex', '0');
+    this.parent.appendChild(this.element);
 
     this.viewportElement = document.createElement('div');
     this.viewportElement.classList.add('xterm-viewport');
@@ -624,9 +624,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     this.charSizeStyleElement = document.createElement('style');
     this.helperContainer.appendChild(this.charSizeStyleElement);
-
-    this.parent.appendChild(this.element);
-
     this.charMeasure = new CharMeasure(document, this.helperContainer);
 
     this.renderer = new Renderer(this, this.options.theme);
@@ -673,6 +670,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // Listen for mouse events and translate
     // them into terminal mouse protocols.
     this.bindMouse();
+
   }
 
   /**
