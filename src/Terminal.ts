@@ -581,9 +581,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.element.setAttribute('tabindex', '0');
     this.parent.appendChild(this.element);
 
+    // Performance: Use a document fragment to build the terminal
+    // viewport and helper elements detached from the DOM
+    const fragment = document.createDocumentFragment();
     this.viewportElement = document.createElement('div');
     this.viewportElement.classList.add('xterm-viewport');
-    this.element.appendChild(this.viewportElement);
+    fragment.appendChild(this.viewportElement);
     this.viewportScrollArea = document.createElement('div');
     this.viewportScrollArea.classList.add('xterm-scroll-area');
     this.viewportElement.appendChild(this.viewportScrollArea);
@@ -599,8 +602,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // capturing DOM Events. Then produce the helpers.
     this.helperContainer = document.createElement('div');
     this.helperContainer.classList.add('xterm-helpers');
-    // TODO: This should probably be inserted once it's filled to prevent an additional layout
-    this.element.appendChild(this.helperContainer);
+    fragment.appendChild(this.helperContainer);
+
     this.textarea = document.createElement('textarea');
     this.textarea.classList.add('xterm-helper-textarea');
     this.textarea.setAttribute('autocorrect', 'off');
@@ -619,6 +622,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.charSizeStyleElement = document.createElement('style');
     this.helperContainer.appendChild(this.charSizeStyleElement);
     this.charMeasure = new CharMeasure(document, this.helperContainer);
+
+    // Performance: Add viewport and helper elements from the fragment
+    this.element.appendChild(fragment);
 
     this.renderer = new Renderer(this, this.options.theme);
     this.options.theme = null;
