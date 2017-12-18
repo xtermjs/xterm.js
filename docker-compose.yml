@@ -1,0 +1,9 @@
+version: "3"
+
+services:
+  web:
+    build: .
+    volumes:
+      - ./:/usr/src/app
+    ports:
+      - ${XTERMJS_PORT:3000}:3000

@@ -47,12 +47,6 @@ import { MouseZoneManager } from './input/MouseZoneManager';
 import { initialize as initializeCharAtlas } from './renderer/CharAtlas';
 import { IRenderer } from './renderer/Interfaces';
 
-// Declares required for loadAddon
-declare var exports: any;
-declare var module: any;
-declare var define: any;
-declare var require: any;
-
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
 
@@ -685,22 +679,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 
   /**
-   * Attempts to load an add-on using CommonJS or RequireJS (whichever is available).
-   * @param {string} addon The name of the addon to load
-   * @static
+   * Apply the provided addon on the `Terminal` class.
+   * @param addon The addon to apply.
    */
-  public static loadAddon(addon: string, callback?: Function): boolean | any {
-    // TODO: Improve return type and documentation
-    if (typeof exports === 'object' && typeof module === 'object') {
-      // CommonJS
-      return require('./addons/' + addon + '/' + addon);
-    } else if (typeof define === 'function') {
-      // RequireJS
-      return (<any>require)(['./addons/' + addon + '/' + addon], callback);
-    } else {
-      console.error('Cannot load a module without a CommonJS or RequireJS environment.');
-      return false;
-    }
+  public static applyAddon(addon: any): void {
+    addon.apply(Terminal);
   }
 
   /**
