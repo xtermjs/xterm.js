@@ -316,7 +316,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Focus the terminal. Delegates focus handling to the terminal's DOM element.
    */
   public focus(): void {
-    this.textarea.focus();
+    if (this.textarea) {
+      this.textarea.focus();
+    }
   }
 
   public get isFocused(): boolean {
