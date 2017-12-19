@@ -1,3 +1,18 @@
+import * as Terminal from '../build/xterm';
+import * as attach from '../build/addons/attach/attach';
+import * as fit from '../build/addons/fit/fit';
+import * as fullscreen from '../build/addons/fullscreen/fullscreen';
+import * as search from '../build/addons/search/search';
+import * as winptyCompat from '../build/addons/winptyCompat/winptyCompat';
+
+
+Terminal.applyAddon(attach);
+Terminal.applyAddon(fit);
+Terminal.applyAddon(fullscreen);
+Terminal.applyAddon(search);
+Terminal.applyAddon(winptyCompat);
+
+
 var term,
     protocol,
     socketURL,
@@ -76,6 +91,7 @@ function createTerminal() {
     scrollback: parseInt(optionElements.scrollback.value, 10),
     tabStopWidth: parseInt(optionElements.tabstopwidth.value, 10)
   });
+  window.term = term;  // Expose `term` to window for debugging purposes
   term.on('resize', function (size) {
     if (!pid) {
       return;
@@ -90,8 +106,9 @@ function createTerminal() {
   socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
 
   term.open(terminalContainer);
-  term.fit();
   term.winptyCompatInit();
+  term.fit();
+  term.focus();
 
   // fit is called within a setTimeout, cols and rows need this.
   setTimeout(function () {

@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es5",
+    "rootDir": ".",
+    "outDir": "../../../lib/addons/fullscreen/",
+    "sourceMap": true,
+    "removeComments": true
+  }
+}
