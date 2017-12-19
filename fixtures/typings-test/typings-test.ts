@@ -170,9 +170,9 @@ namespace methods_core {
       t.setOption('handler', (data: string) => console.log(data));
       t.setOption('bellSound', 'foo');
       t.setOption('bellStyle', 'none');
-      t.setOption('bellStyle', 'visual');
+      // t.setOption('bellStyle', 'visual');
       t.setOption('bellStyle', 'sound');
-      t.setOption('bellStyle', 'both');
+      // t.setOption('bellStyle', 'both');
       t.setOption('fontSize', 1);
       t.setOption('lineHeight', 1);
       t.setOption('fontFamily', 'foo');

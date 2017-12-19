@@ -20,7 +20,7 @@ declare module 'xterm' {
     /**
      * The type of the bell notification the terminal will use.
      */
-    bellStyle?: 'none' | 'visual' | 'sound' | 'both';
+    bellStyle?: 'none' /*| 'visual'*/ | 'sound' /*| 'both'*/;
 
     /**
      * The number of columns in the terminal.
