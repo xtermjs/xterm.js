@@ -145,6 +145,7 @@ export interface ITerminalOptions {
   lineHeight?: number;
   rows?: number;
   screenKeys?: boolean;
+  screenReaderMode?: boolean;
   scrollback?: number;
   tabStopWidth?: number;
   termName?: string;
@@ -351,4 +352,8 @@ export interface ITheme {
   brightMagenta?: string;
   brightCyan?: string;
   brightWhite?: string;
+}
+
+export interface IDisposable {
+  dispose(): void;
 }

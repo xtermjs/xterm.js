@@ -46,6 +46,7 @@ import { IMouseZoneManager } from './input/Interfaces';
 import { MouseZoneManager } from './input/MouseZoneManager';
 import { initialize as initializeCharAtlas } from './renderer/CharAtlas';
 import { IRenderer } from './renderer/Interfaces';
+import { AccessibilityManager } from './AccessibilityManager';
 
 // Declares required for loadAddon
 declare var exports: any;
@@ -85,6 +86,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   letterSpacing: 0,
   scrollback: 1000,
   screenKeys: false,
+  screenReaderMode: false,
   debug: false,
   cancelEvents: false,
   disableStdin: false,
@@ -204,6 +206,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   public charMeasure: CharMeasure;
   private _mouseZoneManager: IMouseZoneManager;
   public mouseHelper: MouseHelper;
+  private _accessibilityManager: AccessibilityManager;
 
   public cols: number;
   public rows: number;
@@ -426,6 +429,18 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       case 'scrollback':
         this.buffers.resize(this.cols, this.rows);
         this.viewport.syncScrollArea();
+        break;
+      case 'screenReaderMode':
+        if (value) {
+          if (!this._accessibilityManager) {
+            this._accessibilityManager = new AccessibilityManager(this);
+          }
+        } else {
+          if (this._accessibilityManager) {
+            this._accessibilityManager.dispose();
+            this._accessibilityManager = null;
+          }
+        }
         break;
       case 'tabStopWidth': this.buffers.setupTabStops(); break;
       case 'bellSound':
@@ -660,6 +675,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.viewportElement.addEventListener('scroll', () => this.selectionManager.refresh());
 
     this.mouseHelper = new MouseHelper(this.renderer);
+
+    if (this.options.screenReaderMode) {
+      this._accessibilityManager = new AccessibilityManager(this);
+    }
 
     // Measure the character size
     this.charMeasure.measure(this.options);
