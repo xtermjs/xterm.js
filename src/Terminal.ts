@@ -470,6 +470,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Binds the desired blur behavior on a given terminal object.
    */
   private _onTextAreaBlur(): void {
+    // Text can safely be removed on blur. Doing it earlier could interfere with
+    // screen readers reading it out.
+    this.textarea.value = '';
     this.refresh(this.buffer.y, this.buffer.y);
     if (this.sendFocus) {
       this.send(C0.ESC + '[O');
@@ -550,16 +553,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       }
     }, true);
 
-    on(this.textarea, 'keydown', (ev: KeyboardEvent) => {
-      this._keyDown(ev);
-    }, true);
-
-    on(this.textarea, 'keypress', (ev: KeyboardEvent) => {
-      this._keyPress(ev);
-      // Truncate the textarea's value, since it is not needed
-      this.textarea.value = '';
-    }, true);
-
+    on(this.textarea, 'keydown', (ev: KeyboardEvent) => this._keyDown(ev), true);
+    on(this.textarea, 'keypress', (ev: KeyboardEvent) => this._keyPress(ev), true);
     on(this.textarea, 'compositionstart', () => this.compositionHelper.compositionstart());
     on(this.textarea, 'compositionupdate', (e: CompositionEvent) => this.compositionHelper.compositionupdate(e));
     on(this.textarea, 'compositionend', () => this.compositionHelper.compositionend());

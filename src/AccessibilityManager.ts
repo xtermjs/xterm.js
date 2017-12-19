@@ -40,11 +40,13 @@ export class AccessibilityManager implements IDisposable {
     this._addTerminalEventListener('resize', data => this._onResize(data.cols, data.rows));
     this._addTerminalEventListener('refresh', data => this._refreshRows(data.start, data.end));
     // Line feed is an issue as the prompt won't be read out after a command is run
-    // this._terminal.on('lineFeed', () => this._onLineFeed());
     this._addTerminalEventListener('a11y.char', (char) => this._onChar(char));
     this._addTerminalEventListener('lineFeed', () => this._onChar('\n'));
+    // Ensure \t is covered, if not a line of output from `ls` is read as one word
+    this._addTerminalEventListener('a11y.tab', () => this._onChar(' '));
     this._addTerminalEventListener('charsizechanged', () => this._refreshRowsDimensions());
     this._addTerminalEventListener('key', keyChar => this._onKey(keyChar));
+    this._addTerminalEventListener('blur', () => this._clearLiveRegion());
   }
 
   private _addTerminalEventListener(type: string, listener: (...args: any[]) => any): void {
@@ -86,6 +88,10 @@ export class AccessibilityManager implements IDisposable {
     } else {
       this._liveRegion.textContent += char;
     }
+
+    if (this._liveRegion.textContent.length > 0 && !this._liveRegion.parentNode) {
+      this._accessibilityTreeRoot.appendChild(this._liveRegion);
+    }
     // TODO: Clear at some point
     // TOOD: Handle heaps of data
 
@@ -93,26 +99,18 @@ export class AccessibilityManager implements IDisposable {
     this._refreshRows();
   }
 
-  private _onKey(keyChar: string): void {
-    this._charsToConsume.push(keyChar);
+  private _clearLiveRegion(): void {
+    if (this._liveRegion.parentNode) {
+      this._accessibilityTreeRoot.removeChild(this._liveRegion);
+    }
+    this._liveRegion.textContent = '';
   }
 
-  // private _onLineFeed(): void {
-  //   const buffer: IBuffer = (<any>this._terminal.buffer);
-  //   const newLine = buffer.lines.get(buffer.ybase + buffer.y);
-  //   // Only use the data when the new line is ready
-  //   if (!(<any>newLine).isWrapped) {
-  //     this._accessibilityTreeRoot.textContent += `${this._getWrappedLineData(buffer, buffer.ybase + buffer.y - 1)}\n`;
-  //   }
-  // }
-
-  // private _getWrappedLineData(buffer: IBuffer, lineIndex: number): string {
-  //   let lineData = buffer.translateBufferLineToString(lineIndex, true);
-  //   while (lineIndex >= 0 && (<any>buffer.lines.get(lineIndex--)).isWrapped) {
-  //     lineData = buffer.translateBufferLineToString(lineIndex, true) + lineData;
-  //   }
-  //   return lineData;
-  // }
+  private _onKey(keyChar: string): void {
+    console.log('key event', keyChar);
+    this._clearLiveRegion();
+    this._charsToConsume.push(keyChar);
+  }
 
   // TODO: Hook up to refresh when the renderer refreshes the range? Slower to prevent layout thrashing?
   private _refreshRows(start?: number, end?: number): void {

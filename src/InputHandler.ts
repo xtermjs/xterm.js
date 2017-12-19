@@ -167,6 +167,9 @@ export class InputHandler implements IInputHandler {
    */
   public tab(): void {
     this._terminal.buffer.x = this._terminal.buffer.nextStop();
+    if (this._terminal.options.screenReaderMode) {
+      this._terminal.emit('a11y.tab');
+    }
   }
 
   /**
