@@ -63,7 +63,7 @@ namespace methods_core {
     // no arg
     t.on('blur', () => {});
     t.on('focus', () => {});
-    t.on('lineFeed', () => {});
+    t.on('linefeed', () => {});
     t.on('selection', () => {});
     // args
     t.on('data', () => {});
@@ -89,7 +89,7 @@ namespace methods_core {
     // no arg
     t.off('blur', () => {});
     t.off('focus', () => {});
-    t.off('lineFeed', () => {});
+    t.off('linefeed', () => {});
     t.off('selection', () => {});
     // args
     t.off('data', () => {});
