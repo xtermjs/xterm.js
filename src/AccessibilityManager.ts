@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2017 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
 import { ITerminal, IBuffer, IDisposable } from './Interfaces';
 
 export class AccessibilityManager implements IDisposable {
@@ -47,6 +52,9 @@ export class AccessibilityManager implements IDisposable {
     this._addTerminalEventListener('charsizechanged', () => this._refreshRowsDimensions());
     this._addTerminalEventListener('key', keyChar => this._onKey(keyChar));
     this._addTerminalEventListener('blur', () => this._clearLiveRegion());
+    // TODO: Dispose of this listener when disposed
+    // TODO: Only refresh when devicePixelRatio changed
+    window.addEventListener('resize', () => this._refreshRowsDimensions());
   }
 
   private _addTerminalEventListener(type: string, listener: (...args: any[]) => any): void {
@@ -89,10 +97,6 @@ export class AccessibilityManager implements IDisposable {
       this._liveRegion.textContent += char;
     }
 
-    if (this._liveRegion.textContent.length > 0 && !this._liveRegion.parentNode) {
-      this._accessibilityTreeRoot.appendChild(this._liveRegion);
-    }
-    // TODO: Clear at some point
     // TOOD: Handle heaps of data
 
     // This is temporary, should refresh at a much slower rate
@@ -100,14 +104,10 @@ export class AccessibilityManager implements IDisposable {
   }
 
   private _clearLiveRegion(): void {
-    if (this._liveRegion.parentNode) {
-      this._accessibilityTreeRoot.removeChild(this._liveRegion);
-    }
     this._liveRegion.textContent = '';
   }
 
   private _onKey(keyChar: string): void {
-    console.log('key event', keyChar);
     this._clearLiveRegion();
     this._charsToConsume.push(keyChar);
   }
