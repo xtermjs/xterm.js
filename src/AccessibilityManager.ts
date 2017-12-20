@@ -5,11 +5,14 @@
 
 import { ITerminal, IBuffer, IDisposable } from './Interfaces';
 
+const MAX_ROWS_TO_READ = 20;
+
 export class AccessibilityManager implements IDisposable {
   private _accessibilityTreeRoot: HTMLElement;
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[] = [];
   private _liveRegion: HTMLElement;
+  private _liveRegionLineCount: number = 0;
 
   private _disposables: IDisposable[] = [];
 
@@ -78,26 +81,38 @@ export class AccessibilityManager implements IDisposable {
   }
 
   private _onResize(cols: number, rows: number): void {
+    // Grow rows as required
     for (let i = this._rowContainer.children.length; i < this._terminal.rows; i++) {
       this._rowElements[i] = document.createElement('div');
       this._rowContainer.appendChild(this._rowElements[i]);
     }
-    // TODO: Handle case when rows reduces
+    // Shrink rows as required
+    while (this._rowElements.length > rows) {
+      this._rowContainer.removeChild(this._rowElements.pop());
+    }
 
     this._refreshRowsDimensions();
   }
 
   private _onChar(char: string): void {
-    if (this._charsToConsume.length > 0) {
-      // Have the screen reader ignore the char if it was just input
-      if (this._charsToConsume.shift() !== char) {
+    if (this._liveRegionLineCount < MAX_ROWS_TO_READ + 1) {
+      if (this._charsToConsume.length > 0) {
+        // Have the screen reader ignore the char if it was just input
+        if (this._charsToConsume.shift() !== char) {
+          this._liveRegion.textContent += char;
+        }
+      } else {
         this._liveRegion.textContent += char;
       }
-    } else {
-      this._liveRegion.textContent += char;
-    }
 
-    // TOOD: Handle heaps of data
+      if (char === '\n') {
+        this._liveRegionLineCount++;
+        if (this._liveRegionLineCount === MAX_ROWS_TO_READ + 1) {
+          // TODO: Enable localization
+          this._liveRegion.textContent += 'Too much output to announce, navigate to rows manually to read';
+        }
+      }
+    }
 
     // This is temporary, should refresh at a much slower rate
     this._refreshRows();
@@ -105,6 +120,7 @@ export class AccessibilityManager implements IDisposable {
 
   private _clearLiveRegion(): void {
     this._liveRegion.textContent = '';
+    this._liveRegionLineCount = 0;
   }
 
   private _onKey(keyChar: string): void {
