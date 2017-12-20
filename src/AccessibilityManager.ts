@@ -4,6 +4,7 @@
  */
 
 import { ITerminal, IBuffer, IDisposable } from './Interfaces';
+import { isMac } from './utils/Browser';
 
 const MAX_ROWS_TO_READ = 20;
 
@@ -112,6 +113,13 @@ export class AccessibilityManager implements IDisposable {
           this._liveRegion.textContent += 'Too much output to announce, navigate to rows manually to read';
         }
       }
+
+      // Only detach/attach on mac as otherwise messages can go unaccounced
+      if (isMac) {
+        if (this._liveRegion.textContent.length > 0 && !this._liveRegion.parentNode) {
+          this._accessibilityTreeRoot.appendChild(this._liveRegion);
+        }
+      }
     }
 
     // This is temporary, should refresh at a much slower rate
@@ -121,6 +129,13 @@ export class AccessibilityManager implements IDisposable {
   private _clearLiveRegion(): void {
     this._liveRegion.textContent = '';
     this._liveRegionLineCount = 0;
+
+    // Only detach/attach on mac as otherwise messages can go unaccounced
+    if (isMac) {
+      if (this._liveRegion.parentNode) {
+        this._accessibilityTreeRoot.removeChild(this._liveRegion);
+      }
+    }
   }
 
   private _onKey(keyChar: string): void {
