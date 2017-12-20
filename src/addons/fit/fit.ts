@@ -26,27 +26,22 @@ export function proposeGeometry(term) {
   var availableHeight = parentElementHeight - elementPaddingVer;
   var availableWidth = parentElementWidth - elementPaddingHor;
   var geometry = {
-    cols: Math.floor(availableWidth / term.charMeasure.width),
-    rows: Math.floor(availableHeight / Math.floor(term.charMeasure.height * term.getOption('lineHeight')))
+    cols: Math.floor(availableWidth / term.renderer.dimensions.actualCellWidth),
+    rows: Math.floor(availableHeight / term.renderer.dimensions.actualCellHeight)
   };
 
   return geometry;
 };
 
 export function fit(term) {
-  // Wrap fit in a setTimeout as charMeasure needs time to get initialized
-  // after calling Terminal.open
-  setTimeout(function () {
-    var geometry = exports.proposeGeometry(term);
-
-    if (geometry) {
-      // Force a full render
-      if (term.rows !== geometry.rows || term.cols !== geometry.cols) {
-        term.renderer.clear();
-        term.resize(geometry.cols, geometry.rows);
-      }
+  var geometry = exports.proposeGeometry(term);
+  if (geometry) {
+    // Force a full render
+    if (term.rows !== geometry.rows || term.cols !== geometry.cols) {
+      term.renderer.clear();
+      term.resize(geometry.cols, geometry.rows);
     }
-  }, 0);
+  }
 };
 
 export function apply(terminalConstructor) {
