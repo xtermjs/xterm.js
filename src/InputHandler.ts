@@ -134,9 +134,9 @@ export class InputHandler implements IInputHandler {
     /**
      * This event is emitted whenever the terminal outputs a LF or NL.
      *
-     * @event lineFeed
+     * @event linefeed
      */
-    this._terminal.emit('lineFeed');
+    this._terminal.emit('linefeed');
   }
 
   /**
