@@ -26,8 +26,8 @@ export function proposeGeometry(term) {
   var availableHeight = parentElementHeight - elementPaddingVer;
   var availableWidth = parentElementWidth - elementPaddingHor;
   var geometry = {
-    cols: Math.floor(availableWidth / (term.renderer.dimensions.actualCellWidth + term.getOption('letterSpacing'))),
-    rows: Math.floor(availableHeight / Math.floor(term.renderer.dimensions.actualCellHeight * term.getOption('lineHeight')))
+    cols: Math.floor(availableWidth / term.renderer.dimensions.actualCellWidth),
+    rows: Math.floor(availableHeight / term.renderer.dimensions.actualCellHeight)
   };
 
   return geometry;
