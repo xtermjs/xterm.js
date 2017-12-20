@@ -73,6 +73,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   bellSound: BellSound,
   bellStyle: 'none',
   enableBold: true,
+  enableSelection: true,
   fontFamily: 'courier-new, courier, monospace',
   fontSize: 15,
   lineHeight: 1.0,
@@ -424,6 +425,13 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       case 'tabStopWidth': this.buffers.setupTabStops(); break;
       case 'bellSound':
       case 'bellStyle': this.syncBellSound(); break;
+      case 'enableSelection':
+        if (value) {
+          this.selectionManager.enable();
+        } else {
+          this.selectionManager.disable();
+        }
+        break;
     }
     // Inform renderer of changes
     if (this.renderer) {

@@ -26,6 +26,7 @@ var terminalContainer = document.getElementById('terminal-container'),
     },
     optionElements = {
       cursorBlink: document.querySelector('#option-cursor-blink'),
+      enableSelection: document.querySelector('#option-enable-selection'),
       cursorStyle: document.querySelector('#option-cursor-style'),
       scrollback: document.querySelector('#option-scrollback'),
       tabstopwidth: document.querySelector('#option-tabstopwidth'),
@@ -66,6 +67,9 @@ actionElements.findPrevious.addEventListener('keypress', function (e) {
 optionElements.cursorBlink.addEventListener('change', function () {
   term.setOption('cursorBlink', optionElements.cursorBlink.checked);
 });
+optionElements.enableSelection.addEventListener('change', function () {
+  term.setOption('enableSelection', optionElements.enableSelection.checked);
+});
 optionElements.cursorStyle.addEventListener('change', function () {
   term.setOption('cursorStyle', optionElements.cursorStyle.value);
 });
@@ -88,6 +92,7 @@ function createTerminal() {
   }
   term = new Terminal({
     cursorBlink: optionElements.cursorBlink.checked,
+    enableSelection: optionElements.enableSelection.checked,
     scrollback: parseInt(optionElements.scrollback.value, 10),
     tabStopWidth: parseInt(optionElements.tabstopwidth.value, 10)
   });

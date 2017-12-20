@@ -47,6 +47,7 @@ export interface ITerminal extends ILinkifierAccessor, IBufferAccessor, IElement
   options: ITerminalOptions;
   buffers: IBufferSet;
   isFocused: boolean;
+  mouseEvents: boolean;
   mouseHelper: IMouseHelper;
   bracketedPasteMode: boolean;
 
@@ -138,6 +139,7 @@ export interface ITerminalOptions {
   debug?: boolean;
   disableStdin?: boolean;
   enableBold?: boolean;
+  enableSelection?: boolean;
   fontSize?: number;
   fontFamily?: string;
   handler?: (data: string) => void;
@@ -200,6 +202,7 @@ export interface ISelectionManager {
   enable(): void;
   setBuffer(buffer: IBuffer): void;
   setSelection(row: number, col: number, length: number): void;
+  clearSelection(): void;
 }
 
 export interface ICompositionHelper {

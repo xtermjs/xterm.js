@@ -12,6 +12,7 @@ import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../rende
 export class MockTerminal implements ITerminal {
   bracketedPasteMode: boolean;
   mouseHelper: IMouseHelper;
+  mouseEvents: boolean;
   renderer: IRenderer;
   linkifier: ILinkifier;
   isFocused: boolean;
