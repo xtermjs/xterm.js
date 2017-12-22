@@ -5,7 +5,182 @@ var term,
     cmdSocket,
     pid;
 
+    
+
+var p = (location.protocol === 'https:') ? 'wss://' : 'ws://';
+var url = p + location.hostname + ((location.port) ? (':' + location.port) : '') + '/controller';
+console.log('URL Notifications Socket: ' + url);
+var socketNotifications = new WebSocket(url);
+
+const RUNNING_COLOR = 'indigo lighten-2';
+const RUNNING_BADGE = 'schedule';
+const SUCCESS_COLOR = 'green lighten-2';
+const SUCCESS_BADGE = 'done';
+const FAILED_COLOR = 'red lighten-2';
+const FAILED_BADGE = 'priority_high';
+
+socketNotifications.onmessage = function(e) {
+  console.log('Entry to onmessage (Notifications sockets). Message: ' + e.data);
+  msg = JSON.parse(e.data);
+
+  /*if(e.data.includes('needConsole')){
+    newPid = e.data.substring(e.data.indexOf("-") + 1, e.data.lenght);
+    vue.addTerminal(newPid);
+  }*/
+  /*if(msg.type=='needConsole'){
+    vue.addTerminal(msg.pid);
+  }
+
+  if(msg.type=='status'){
+    console.log('Receive a message');
+  }*/
+
+
+  switch(msg.type) {
+
+      case 'needConsole':
+          vue.addTerminal(msg.pid);
+          break;
+      case 'status':
+          vue.setStatus(msg);
+          break;
+
+      default:
+          console.log('does not match any type: ' + msg.type + '.');
+  }
+
+}
+socketNotifications.onerror = function(e) {
+  console.log('Entry to onError (Notifications sockets)');
+}
+socketNotifications.onclose = function(e) {
+  console.log('Entry to onclose (Notifications sockets)');
+}
+socketNotifications.onopen = function(e) {
+  console.log('Entry to onopen (Notifications sockets)');
+}
+
+var vue = new Vue({
+  el: '#app',
+  data() {
+    return {
+      //terminals: [{ id: 'A', name: 'Terminal A', terminal:term, state: 'Running', badge: 'watch_later', color:"light-blue lighten-3", fab: false }],
+      terminals: [],
+      dialogNewTerminal: false,
+      dialogRemoveTerminal: false,
+      dialogRenameTerminal: false,
+      drawer: true,
+      mini: false,
+      newTerminal: "",
+      rename: "",
+      currentTerminal: 0,
+      countTerminal: 0,
+      abc: new Array('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z')
+    };
+  },
+  methods: {
+    addTerminal: function (newPid) {
+      t = createTerminal();
+      if(newPid){
+        createSocket(newPid);
+      }
+     /* if (this.countTerminal == 2)
+        this.terminals.push({ id: this.abc[this.countTerminal], name: 'Terminal ' + this.abc[this.countTerminal], terminal: term, status: this.abc[this.countTerminal], badge: '', color:'', fab: false });
+      else if (this.countTerminal == 3)
+         this.terminals.push({ id: this.abc[this.countTerminal], name: 'Terminal ' + this.abc[this.countTerminal], terminal: term, status: this.abc[this.countTerminal], badge: '', color:'', fab: false });
+      else*/
+
+        this.terminals.push({ id: this.abc[this.countTerminal], name: 'Terminal ' + this.abc[this.countTerminal], terminal: term, status: this.abc[this.countTerminal], badge: '', color: '', colorText: '', fab: false, cmd: ''});
+     
+        this.countTerminal = this.countTerminal + 1;
+    },
+
+    setTerminalSelected: function (index) {
+      this.currentTerminal = index;
+      this.rename = this.terminals[index].name;
+      t = this.terminals[index].terminal;
+      while (terminalContainer.children.length) {
+        terminalContainer.removeChild(terminalContainer.children[0]);
+      }
+      var theme = {
+        foreground: '#000000',
+        background: '#ffffff',
+        cursor: '#000000',
+        cursorAccent: '#ffffff',
+        selection: 'rgba(0, 0, 0, 0.3)'
+      };
+      t.open(terminalContainer);
+     // t.setOption('theme', theme);
+      t.fit();
+
+      socketNotifications.send(JSON.stringify({type: 'selected', pid: t.pid}));
+    },
+    
+    renameTerminal: function (index) {
+      this.terminals[index].name = this.rename;
+      this.rename = "";
+    },
+
+    removeTerminal: function (index) {
+      this.terminals.splice(index, 1);
+    },
+
+    stopExecution: function (index) {
+      t = this.terminals[index].terminal;
+      t.send('\x03');
+    },
+
+    setStatus: function (msg) {
+      for (i in this.terminals){
+        t = this.terminals[i];
+        if(t.terminal.pid == msg.interactiveTermPid){
+          
+
+          t.cmd = msg.cmd;
+
+          switch(msg.status) {
+
+            case 'running':
+                t.status = 'Running';
+                t.badge = RUNNING_BADGE;
+                t.color = RUNNING_COLOR;
+                t.colorText = RUNNING_COLOR + '--text';
+                break;
+            case 'success':
+                t.status = 'Success';
+                t.badge = SUCCESS_BADGE;
+                t.color = SUCCESS_COLOR;
+                t.colorText = SUCCESS_COLOR + '--text';
+                break;
+            case 'failed':
+                t.status = 'Failed';
+                t.badge = FAILED_BADGE;
+                t.color = FAILED_COLOR;
+                t.colorText = FAILED_COLOR + '--text';
+                break;
+
+            default:
+                console.log('does not match any status: ' + msg.status + '.');
+        }
+
+        }
+      }
+    }
+
+  }
+
+});
+
+
+
 var terminalContainer = document.getElementById('terminal-container');
+
+vue.addTerminal(null);
+//createTerminal();
+//term.focus();
+
+
+
     // actionElements = {
     //   findNext: document.querySelector('#find-next'),
     //   findPrevious: document.querySelector('#find-previous')
@@ -68,13 +243,10 @@ var terminalContainer = document.getElementById('terminal-container');
 //   term.setOption('tabStopWidth', parseInt(optionElements.tabstopwidth.value, 10));
 // });
 
-createTerminal();
-term.focus();
 
 
 function createTerminal() {
-  // Clean terminal
-
+  // Clean terminal  
   while (terminalContainer.children.length) {
     terminalContainer.removeChild(terminalContainer.children[0]);
   }
@@ -120,27 +292,28 @@ function createTerminal() {
 
 	var params = parseQueryString();
 	var pid = parseInt(params["pid"]);
-	console.log('********** PID'+ pid);
-	
-	
 	
 	if(pid){
-		console.log('IF----------------------------------- tiene PID'+ pid);
-		createSocket(pid);
+		console.log('URL has PID: '+ pid);
+    createSocket(pid);
+    term.pid = pid;
 	}else{
-		console.log('ELSE----------------------------------- Hago FETCH'+ pid);
+		console.log('URL has not PID, do FETCH...');
 		fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, {method: 'POST'}).then(function (res) {
 		  res.text().then(function (pid) {
-			createSocket(pid);			
+      createSocket(pid);
+      term.pid = pid;			
 		  });
 		});
 	}
   }, 0);
-	  
-  
+
   window.addEventListener('resize', function() {
     term.fit();
   }, true);
+
+  return term;
+
 }
 
 
@@ -222,4 +395,6 @@ function runFakeTerminal(e) {
   term.on('paste', function (data, ev) {
     term.write(data);
   });
+
+
 }
