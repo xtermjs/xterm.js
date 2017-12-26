@@ -2116,6 +2116,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 
   private syncBellSound(): void {
+    // Don't update anything if the terminal has not been opened yet
+    if (!this.element) {
+      return;
+    }
+
     if (this.soundBell() && this.bellAudioElement) {
       this.bellAudioElement.setAttribute('src', this.options.bellSound);
     } else if (this.soundBell()) {
