@@ -150,6 +150,7 @@ export interface ITerminalOptions {
   termName?: string;
   theme?: ITheme;
   useFlowControl?: boolean;
+  translations?: object;
 }
 
 export interface IBuffer {

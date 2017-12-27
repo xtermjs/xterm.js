@@ -84,7 +84,8 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   disableStdin: false,
   useFlowControl: false,
   tabStopWidth: 8,
-  theme: null
+  theme: null,
+  translations: {}
   // programFeatures: false,
   // focusKeys: false,
 };
@@ -1413,6 +1414,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       scrollLines: undefined
     };
     const modifiers = (ev.shiftKey ? 1 : 0) | (ev.altKey ? 2 : 0) | (ev.ctrlKey ? 4 : 0) | (ev.metaKey ? 8 : 0);
+    const translations = this.getOption('translations');
     switch (ev.keyCode) {
       case 0:
         if (ev.key === 'UIKeyInputUpArrow') {
@@ -1468,8 +1470,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         break;
       case 27:
         // escape
-        result.key = C0.ESC;
-        result.cancel = true;
+        if (translations['Esc'])
+          result.key = translations['Esc'];
+        else {
+          result.key = C0.ESC;
+          result.cancel = true;
+        }
         break;
       case 37:
         // left-arrow
@@ -1551,7 +1557,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         break;
       case 36:
         // home
-        if (modifiers)
+        if (translations['Home'])
+          result.key = translations['Home'];
+        else if (modifiers)
           result.key = C0.ESC + '[1;' + (modifiers + 1) + 'H';
         else if (this.applicationCursor)
           result.key = C0.ESC + 'OH';
@@ -1560,7 +1568,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         break;
       case 35:
         // end
-        if (modifiers)
+        if (translations['End'])
+          result.key = translations['End'];
+        else if (modifiers)
           result.key = C0.ESC + '[1;' + (modifiers + 1) + 'F';
         else if (this.applicationCursor)
           result.key = C0.ESC + 'OF';
