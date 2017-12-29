@@ -161,10 +161,10 @@ describe('KeyMap', () => {
           metaKey   : !!(mods & MODIFIERS.META)
         };
         let strMods = [
-          ev.shiftKey? '+Shift' : '',
-          ev.altKey?   '+Alt'   : '',
-          ev.ctrlKey?  '+Ctrl'  : '',
-          ev.metaKey?  '+Meta'  : ''
+          ev.shiftKey ? '+Shift' : '',
+          ev.altKey   ? '+Alt'   : '',
+          ev.ctrlKey  ? '+Ctrl'  : '',
+          ev.metaKey  ? '+Meta'  : ''
         ].join('');
         for (let k = 0; k < 4; k++) {
           let myEnv = {
@@ -173,12 +173,12 @@ describe('KeyMap', () => {
             browser: { ...keyMapEnv.browser, isMac: !(k & 2) }
           };
           let checkName = 'check ' + names.join('/') + ' [' + i + '] ' + strMods +
-            ' appCursor=' + (myEnv.applicationCursor? 'on' : 'off') +
-            ' isMac=' + (myEnv.browser.isMac? 'on' : 'off');
+            ' appCursor=' + (myEnv.applicationCursor ? 'on' : 'off') +
+            ' isMac=' + (myEnv.browser.isMac ? 'on' : 'off');
           it(checkName, () => {
             const result: IKeyHandlerResult = keyMap.mapFromKeyboardEvent(ev, myEnv);
             const defaultResult: IKeyHandlerResult = getDefaultMapping (keyMap, ev, myEnv);
-            assert.equal(result? result.key : undefined, defaultResult? defaultResult.key : undefined);
+            assert.equal(result ? result.key : undefined, defaultResult ? defaultResult.key : undefined);
           });
         }
       }

@@ -25,7 +25,7 @@ export interface IKeyboardEvent {
 }
 
 export interface IKeyMapEnv {
-  browser: IBrowser,
+  browser: IBrowser;
   applicationCursor: boolean;
   rows: number;
   cols: number;
@@ -109,52 +109,52 @@ const arrowHelper = (stdSuffix, macSuffix, mods, env) => {
  * So Shift+Backspace would handle exactly Shift+Backspace and nothing else!
  */
 const DEFAULT_DEFINITIONS = {
-  "Backspace"           : (mods) => ({ key: !!(mods & MODIFIERS.SHIFT)? C0.BS : C0.DEL }),
-  "Tab"                 : (mods) => (!!(mods & MODIFIERS.SHIFT)? { key: (C0.ESC + '[Z'), cancel: true } : { key: C0.HT }),
-  "Enter"               : { key: C0.CR, cancel: true },
-  "Escape"              : { key: C0.ESC, cancel: true },
-  "Left"                : (mods, env) => arrowHelper('D', 'b', mods, env),
-  "Right"               : (mods, env) => arrowHelper('C', 'f', mods, env),
-  "Up"                  : (mods, env) => arrowHelper('A', null, mods, env),
-  "Down"                : (mods, env) => arrowHelper('B', null, mods, env),
-  "Insert"              : (mods) => ((!(mods & (MODIFIERS.SHIFT | MODIFIERS.CONTROL))) ? { key: C0.ESC + '[2~' } : undefined),
-  "Delete"              : (mods) => ({ key: C0.ESC + '[3' + (mods? (';' + (mods + 1)) : '') + '~' }),
-  "Home"                : (mods, env) => ({
-    key: C0.ESC + (mods? ('[1;' + (mods + 1)) : (env.applicationCursor? 'O' : '[')) + 'H'
+  'Backspace'           : (mods) => ({ key: !!(mods & MODIFIERS.SHIFT) ? C0.BS : C0.DEL }),
+  'Tab'                 : (mods) => (!!(mods & MODIFIERS.SHIFT) ? { key: (C0.ESC + '[Z'), cancel: true } : { key: C0.HT }),
+  'Enter'               : { key: C0.CR, cancel: true },
+  'Escape'              : { key: C0.ESC, cancel: true },
+  'Left'                : (mods, env) => arrowHelper('D', 'b', mods, env),
+  'Right'               : (mods, env) => arrowHelper('C', 'f', mods, env),
+  'Up'                  : (mods, env) => arrowHelper('A', null, mods, env),
+  'Down'                : (mods, env) => arrowHelper('B', null, mods, env),
+  'Insert'              : (mods) => ((!(mods & (MODIFIERS.SHIFT | MODIFIERS.CONTROL))) ? { key: C0.ESC + '[2~' } : undefined),
+  'Delete'              : (mods) => ({ key: C0.ESC + '[3' + (mods ? (';' + (mods + 1)) : '') + '~' }),
+  'Home'                : (mods, env) => ({
+    key: C0.ESC + (mods ? ('[1;' + (mods + 1)) : (env.applicationCursor ? 'O' : '[')) + 'H'
   }),
-  "End"                 : (mods, env) => ({
-    key: C0.ESC + (mods? ('[1;' + (mods + 1)) : (env.applicationCursor? 'O' : '[')) + 'F'
+  'End'                 : (mods, env) => ({
+    key: C0.ESC + (mods ? ('[1;' + (mods + 1)) : (env.applicationCursor ? 'O' : '[')) + 'F'
   }),
-  "PageUp"              : (mods, env) => (!(mods & MODIFIERS.SHIFT)? { key: C0.ESC + '[5~' } : { scrollLines: -(env.rows - 1) }),
-  "PageDown"            : (mods, env) => (!(mods & MODIFIERS.SHIFT)? { key: C0.ESC + '[6~' } : { scrollLines: env.rows - 1 }),
-  "KP0"                 : '0',
-  "KP1"                 : '1',
-  "KP2"                 : '2',
-  "KP3"                 : '3',
-  "KP4"                 : '4',
-  "KP5"                 : '5',
-  "KP6"                 : '6',
-  "KP7"                 : '7',
-  "KP8"                 : '8',
-  "KP9"                 : '9',
-  "KP_Multiply"         : '*',
-  "KP_Add"              : '+',
-  "KP_Subtract"         : '-',
-  "KP_Decimal"          : '.',
-  "KP_Divide"           : '/',
-  "KP_Enter"            : { key: C0.CR, cancel: true },
-  "F1"                  : (mods) => ({ key: C0.ESC + (mods? ('[1;' + (mods + 1)) : 'O') + 'P' }),
-  "F2"                  : (mods) => ({ key: C0.ESC + (mods? ('[1;' + (mods + 1)) : 'O') + 'Q' }),
-  "F3"                  : (mods) => ({ key: C0.ESC + (mods? ('[1;' + (mods + 1)) : 'O') + 'R' }),
-  "F4"                  : (mods) => ({ key: C0.ESC + (mods? ('[1;' + (mods + 1)) : 'O') + 'S' }),
-  "F5"                  : (mods) => ({ key: C0.ESC + ('[15' + (mods? (';' + (mods + 1)) : '') + '~') }),
-  "F6"                  : (mods) => ({ key: C0.ESC + ('[17' + (mods? (';' + (mods + 1)) : '') + '~') }),
-  "F7"                  : (mods) => ({ key: C0.ESC + ('[18' + (mods? (';' + (mods + 1)) : '') + '~') }),
-  "F8"                  : (mods) => ({ key: C0.ESC + ('[19' + (mods? (';' + (mods + 1)) : '') + '~') }),
-  "F9"                  : (mods) => ({ key: C0.ESC + ('[20' + (mods? (';' + (mods + 1)) : '') + '~') }),
-  "F10"                 : (mods) => ({ key: C0.ESC + ('[21' + (mods? (';' + (mods + 1)) : '') + '~') }),
-  "F11"                 : (mods) => ({ key: C0.ESC + ('[23' + (mods? (';' + (mods + 1)) : '') + '~') }),
-  "F12"                 : (mods) => ({ key: C0.ESC + ('[24' + (mods? (';' + (mods + 1)) : '') + '~') })
+  'PageUp'              : (mods, env) => (!(mods & MODIFIERS.SHIFT) ? { key: C0.ESC + '[5~' } : { scrollLines: -(env.rows - 1) }),
+  'PageDown'            : (mods, env) => (!(mods & MODIFIERS.SHIFT) ? { key: C0.ESC + '[6~' } : { scrollLines: env.rows - 1 }),
+  'KP0'                 : '0',
+  'KP1'                 : '1',
+  'KP2'                 : '2',
+  'KP3'                 : '3',
+  'KP4'                 : '4',
+  'KP5'                 : '5',
+  'KP6'                 : '6',
+  'KP7'                 : '7',
+  'KP8'                 : '8',
+  'KP9'                 : '9',
+  'KP_Multiply'         : '*',
+  'KP_Add'              : '+',
+  'KP_Subtract'         : '-',
+  'KP_Decimal'          : '.',
+  'KP_Divide'           : '/',
+  'KP_Enter'            : { key: C0.CR, cancel: true },
+  'F1'                  : (mods) => ({ key: C0.ESC + (mods ? ('[1;' + (mods + 1)) : 'O') + 'P' }),
+  'F2'                  : (mods) => ({ key: C0.ESC + (mods ? ('[1;' + (mods + 1)) : 'O') + 'Q' }),
+  'F3'                  : (mods) => ({ key: C0.ESC + (mods ? ('[1;' + (mods + 1)) : 'O') + 'R' }),
+  'F4'                  : (mods) => ({ key: C0.ESC + (mods ? ('[1;' + (mods + 1)) : 'O') + 'S' }),
+  'F5'                  : (mods) => ({ key: C0.ESC + ('[15' + (mods ? (';' + (mods + 1)) : '') + '~') }),
+  'F6'                  : (mods) => ({ key: C0.ESC + ('[17' + (mods ? (';' + (mods + 1)) : '') + '~') }),
+  'F7'                  : (mods) => ({ key: C0.ESC + ('[18' + (mods ? (';' + (mods + 1)) : '') + '~') }),
+  'F8'                  : (mods) => ({ key: C0.ESC + ('[19' + (mods ? (';' + (mods + 1)) : '') + '~') }),
+  'F9'                  : (mods) => ({ key: C0.ESC + ('[20' + (mods ? (';' + (mods + 1)) : '') + '~') }),
+  'F10'                 : (mods) => ({ key: C0.ESC + ('[21' + (mods ? (';' + (mods + 1)) : '') + '~') }),
+  'F11'                 : (mods) => ({ key: C0.ESC + ('[23' + (mods ? (';' + (mods + 1)) : '') + '~') }),
+  'F12'                 : (mods) => ({ key: C0.ESC + ('[24' + (mods ? (';' + (mods + 1)) : '') + '~') })
 };
 
 export class KeyMap implements IKeyMap {
@@ -201,11 +201,11 @@ export class KeyMap implements IKeyMap {
     return ((ev.keyCode << 4) | this.modifiersFromKeyboardEvent(ev));
   }
 
-  private getKeyHandlerResultByHash(hash: number, env: IKeyMapEnv) {
+  private getKeyHandlerResultByHash(hash: number, env: IKeyMapEnv): IKeyHandlerResult | undefined {
     const base  = hash >> 4 << 4;
     const mods  = hash ^ base;
     const entry = this.cache[hash] || this.cache[base];
-    return (typeof (entry) === 'function')? entry (mods, env) : entry;
+    return (typeof (entry) === 'function') ? entry (mods, env) : entry;
   }
 
   /**
