@@ -47,6 +47,8 @@ import { MouseZoneManager } from './input/MouseZoneManager';
 import { initialize as initializeCharAtlas } from './renderer/CharAtlas';
 import { IRenderer } from './renderer/Interfaces';
 
+import { IKeyHandlerResult, IKeyMap, KeyMap } from './utils/KeyMap';
+
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
 
@@ -122,7 +124,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   private sendDataQueue: string;
   private customKeyEventHandler: CustomKeyEventHandler;
 
-  private _keyMapCache: any;
+  private _keyMap: IKeyMap;
 
   // modes
   public applicationKeypad: boolean;
@@ -306,8 +308,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       this.selectionManager.setBuffer(this.buffer);
     }
 
-    // Build keyMap cache
-    this._rebuildKeyMapCache();
+    this._reloadKeyMap();
   }
 
   /**
@@ -433,7 +434,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       case 'bellSound':
       case 'bellStyle': this.syncBellSound(); break;
       case 'keyMap':
-        this._rebuildKeyMapCache();
+        this._reloadKeyMap ();
         break;
     }
     // Inform renderer of changes
@@ -1404,60 +1405,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     return this.cancel(ev, true);
   }
 
-  /**
-   * Returns an object that contains keyName and numeric representative of modifiers
-   * included in the input string.
-   * The input string can be: 'Control+Alt-F1' hence '+' and '-' delimiters are allowed
-   * and it is not order sensitive.
-   * @param keyWithModStr The key binding string.
-   */
-  protected _parseKeyWithModsString(keyWithModStr: string): {mods: number, key: string} {
-    const keys = keyWithModStr.toUpperCase().split(/\+|-/);
-    let [len, mods, key] = [keys.length, 0, null];
-    while (len--) {
-      switch (keys[len]) {
-        case 'S':
-        case 'SHIFT':
-          mods |= 1;
-          break;
-        case 'A':
-        case 'ALT':
-          mods |= 2;
-          break;
-        case 'C':
-        case 'CTRL':
-        case 'CONTROL':
-          mods |= 4;
-          break;
-        case 'M':
-        case 'META':
-          mods |= 8;
-          break;
-        default:
-          if (key) throw Error('Invariant: more than one non-modified key: ' + keyWithModStr);
-          key = keys[len];
-          break;
-      }
-    }
-    return { mods, key };
-  }
-
-  protected _rebuildKeyMapCache(): void {
-    const keyMap = this.getOption('keyMap');
-    let result = {};
-    Object.keys (keyMap).forEach ((keyWithModStr) => {
-      const keyProps = this._parseKeyWithModsString (keyWithModStr);
-      // NOTE: This could be a single number if we could resolve key back to its keyCode.
-      // The question is if it is cheaper to build a code<=>name conversion table or to
-      // keep _keyMapCache as a two-dimensional string-number indexed array rather than
-      // one dimensional number indexed one.
-      // If we had this table, we could also have faster getKeyMapping calls and call
-      // it once per key!
-      result[keyProps.key] = result[keyProps.key] || {};
-      result[keyProps.key][keyProps.mods] = keyMap [keyWithModStr];
-    });
-    this._keyMapCache = result;
-    console.log (this._keyMapCache);
+  protected _reloadKeyMap(): void {
+    this._keyMap = new KeyMap(this.getOption('keyMap'));
   }
 
   /**
@@ -1467,8 +1416,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Reference: http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
    * @param ev The keyboard event to be translated to key escape sequence.
    */
-  protected _evaluateKeyEscapeSequence(ev: KeyboardEvent): {cancel: boolean, key: string, scrollLines: number} {
-    const result: {cancel: boolean, key: string, scrollLines: number} = {
+  protected _evaluateKeyEscapeSequence(ev: KeyboardEvent): IKeyHandlerResult {
+    const mappedResult: IKeyHandlerResult = this._keyMap.mapFromKeyboardEvent (ev, this);
+    if (mappedResult) return mappedResult;
+    const result: IKeyHandlerResult = {
       // Whether to cancel event propogation (NOTE: this may not be needed since the event is
       // canceled at the end of keyDown
       cancel: false,
@@ -1477,8 +1428,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       // The number of characters to scroll, if this is defined it will cancel the event
       scrollLines: undefined
     };
-    const modifiers = (ev.shiftKey ? 1 : 0) | (ev.altKey ? 2 : 0) | (ev.ctrlKey ? 4 : 0) | (ev.metaKey ? 8 : 0);
-    const getKeyMapping = (keyName) => this._keyMapCache[keyName.toUpperCase()][modifiers];
+    const modifiers = this._keyMap.modifiersFromKeyboardEvent(ev);
     switch (ev.keyCode) {
       case 0:
         if (ev.key === 'UIKeyInputUpArrow') {
@@ -1508,387 +1458,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
           } else {
             result.key = C0.ESC + '[B';
           }
-        }
-        break;
-      case 8:
-        // backspace
-        if (ev.shiftKey) {
-          result.key = C0.BS; // ^H
-          break;
-        }
-        result.key = C0.DEL; // ^?
-        break;
-      case 9:
-        // tab
-        if (ev.shiftKey) {
-          result.key = C0.ESC + '[Z';
-          break;
-        }
-        result.key = C0.HT;
-        result.cancel = true;
-        break;
-      case 13:
-        // return/enter
-        result.key = C0.CR;
-        result.cancel = true;
-        break;
-      case 27:
-        // escape
-        if (getKeyMapping('Esc'))
-          result.key = getKeyMapping('Esc');
-        else {
-          result.key = C0.ESC;
-          result.cancel = true;
-        }
-        break;
-      case 37:
-        // left-arrow
-        if (modifiers) {
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'D';
-          // HACK: Make Alt + left-arrow behave like Ctrl + left-arrow: move one word backwards
-          // http://unix.stackexchange.com/a/108106
-          // macOS uses different escape sequences than linux
-          if (result.key === C0.ESC + '[1;3D') {
-            result.key = (this.browser.isMac) ? C0.ESC + 'b' : C0.ESC + '[1;5D';
-          }
-        } else if (this.applicationCursor) {
-          result.key = C0.ESC + 'OD';
-        } else {
-          result.key = C0.ESC + '[D';
-        }
-        break;
-      case 39:
-        // right-arrow
-        if (modifiers) {
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'C';
-          // HACK: Make Alt + right-arrow behave like Ctrl + right-arrow: move one word forward
-          // http://unix.stackexchange.com/a/108106
-          // macOS uses different escape sequences than linux
-          if (result.key === C0.ESC + '[1;3C') {
-            result.key = (this.browser.isMac) ? C0.ESC + 'f' : C0.ESC + '[1;5C';
-          }
-        } else if (this.applicationCursor) {
-          result.key = C0.ESC + 'OC';
-        } else {
-          result.key = C0.ESC + '[C';
-        }
-        break;
-      case 38:
-        // up-arrow
-        if (modifiers) {
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'A';
-          // HACK: Make Alt + up-arrow behave like Ctrl + up-arrow
-          // http://unix.stackexchange.com/a/108106
-          if (result.key === C0.ESC + '[1;3A') {
-            result.key = C0.ESC + '[1;5A';
-          }
-        } else if (this.applicationCursor) {
-          result.key = C0.ESC + 'OA';
-        } else {
-          result.key = C0.ESC + '[A';
-        }
-        break;
-      case 40:
-        // down-arrow
-        if (modifiers) {
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'B';
-          // HACK: Make Alt + down-arrow behave like Ctrl + down-arrow
-          // http://unix.stackexchange.com/a/108106
-          if (result.key === C0.ESC + '[1;3B') {
-            result.key = C0.ESC + '[1;5B';
-          }
-        } else if (this.applicationCursor) {
-          result.key = C0.ESC + 'OB';
-        } else {
-          result.key = C0.ESC + '[B';
-        }
-        break;
-      case 45:
-        // insert
-        if (getKeyMapping('Insert'))
-          result.key = getKeyMapping('Insert');
-        else if (!ev.shiftKey && !ev.ctrlKey) {
-          // <Ctrl> or <Shift> + <Insert> are used to
-          // copy-paste on some systems.
-          result.key = C0.ESC + '[2~';
-        }
-        break;
-      case 46:
-        // delete
-        if (modifiers) {
-          result.key = C0.ESC + '[3;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[3~';
-        }
-        break;
-      case 36:
-        // home
-        if (getKeyMapping('Home'))
-          result.key = getKeyMapping('Home');
-        else if (modifiers)
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'H';
-        else if (this.applicationCursor)
-          result.key = C0.ESC + 'OH';
-        else
-          result.key = C0.ESC + '[H';
-        break;
-      case 35:
-        // end
-        if (getKeyMapping('End'))
-          result.key = getKeyMapping('End');
-        else if (modifiers)
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'F';
-        else if (this.applicationCursor)
-          result.key = C0.ESC + 'OF';
-        else
-          result.key = C0.ESC + '[F';
-        break;
-      case 33:
-        // page up
-        if (ev.shiftKey) {
-          result.scrollLines = -(this.rows - 1);
-        } else {
-          result.key = C0.ESC + '[5~';
-        }
-        break;
-      case 34:
-        // page down
-        if (ev.shiftKey) {
-          result.scrollLines = this.rows - 1;
-        } else {
-          result.key = C0.ESC + '[6~';
-        }
-        break;
-      case 93:
-        // Select
-        if (getKeyMapping('Select'))
-          result.key = getKeyMapping('Select');
-        // XXX: default behaviour?
-        break;
-      case 96:
-        // KP_0
-        if (getKeyMapping('KP_0'))
-          result.key = getKeyMapping('KP_0');
-        else
-          result.key = '0';
-        break;
-      case 97:
-        // KP_1
-        if (getKeyMapping('KP_1'))
-          result.key = getKeyMapping('KP_1');
-        else
-          result.key = '1';
-        break;
-      case 98:
-        // KP_2
-        if (getKeyMapping('KP_2'))
-          result.key = getKeyMapping('KP_2');
-        else
-          result.key = '2';
-        break;
-      case 99:
-        // KP_3
-        if (getKeyMapping('KP_3'))
-          result.key = getKeyMapping('KP_3');
-        else
-          result.key = '3';
-        break;
-      case 100:
-        // KP_4
-        if (getKeyMapping('KP_4'))
-          result.key = getKeyMapping('KP_4');
-        else
-          result.key = '4';
-        break;
-      case 101:
-        // KP_5
-        if (getKeyMapping('KP_5'))
-          result.key = getKeyMapping('KP_5');
-        else
-          result.key = '5';
-        break;
-      case 102:
-        // KP_6
-        if (getKeyMapping('KP_6'))
-          result.key = getKeyMapping('KP_6');
-        else
-          result.key = '6';
-        break;
-      case 103:
-        // KP_7
-        if (getKeyMapping('KP_7'))
-          result.key = getKeyMapping('KP_7');
-        else
-          result.key = '7';
-        break;
-      case 104:
-        // KP_8
-        if (getKeyMapping('KP_8'))
-          result.key = getKeyMapping('KP_8');
-        else
-          result.key = '8';
-        break;
-      case 105:
-        // KP_9
-        if (getKeyMapping('KP_9'))
-          result.key = getKeyMapping('KP_9');
-        else
-          result.key = '9';
-        break;
-      case 106:
-        // KP_Multiply
-        if (getKeyMapping('KP_Multiply'))
-          result.key = getKeyMapping('KP_Multiply');
-        else
-          result.key = '*';
-        break;
-      case 107:
-        // KP_Add
-        if (getKeyMapping('KP_Add'))
-          result.key = getKeyMapping('KP_Add');
-        else
-          result.key = '+';
-        break;
-      case 109:
-        // KP_Subtract
-        if (getKeyMapping('KP_Subtract'))
-          result.key = getKeyMapping('KP_Subtract');
-        else
-          result.key = '-';
-        break;
-      case 110:
-        // KP_Decimal
-        if (getKeyMapping('KP_Decimal'))
-          result.key = getKeyMapping('KP_Decimal');
-        else
-          result.key = '.';
-        break;
-      case 111:
-        // KP_Divide
-        if (getKeyMapping('KP_Divide'))
-          result.key = getKeyMapping('KP_Divide');
-        else
-          result.key = '/';
-        break;
-      case 144:
-        // NumLock
-        if (getKeyMapping('NumLock'))
-          result.key = getKeyMapping('NumLock');
-        // XXX: default behaviour?
-        break;
-      case 144:
-        // ScrollLock
-        if (getKeyMapping('ScrollLock'))
-          result.key = getKeyMapping('ScrollLock');
-        // XXX: default behaviour?
-        break;
-      case 112:
-        // F1-F12
-        if (getKeyMapping('F1'))
-          result.key = getKeyMapping('F1');
-        else if (modifiers) {
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'P';
-        } else {
-          result.key = C0.ESC + 'OP';
-        }
-        break;
-      case 113:
-        if (getKeyMapping('F2'))
-          result.key = getKeyMapping('F2');
-        else if (modifiers) {
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'Q';
-        } else {
-          result.key = C0.ESC + 'OQ';
-        }
-        break;
-      case 114:
-        if (getKeyMapping('F3'))
-          result.key = getKeyMapping('F3');
-        else if (modifiers) {
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'R';
-        } else {
-          result.key = C0.ESC + 'OR';
-        }
-        break;
-      case 115:
-        if (getKeyMapping('F4'))
-          result.key = getKeyMapping('F4');
-        else if (modifiers) {
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'S';
-        } else {
-          result.key = C0.ESC + 'OS';
-        }
-        break;
-      case 116:
-        if (getKeyMapping('F5'))
-          result.key = getKeyMapping('F5');
-        else if (modifiers) {
-          result.key = C0.ESC + '[15;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[15~';
-        }
-        break;
-      case 117:
-        if (getKeyMapping('F6'))
-          result.key = getKeyMapping('F6');
-        else if (modifiers) {
-          result.key = C0.ESC + '[17;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[17~';
-        }
-        break;
-      case 118:
-        if (getKeyMapping('F7'))
-          result.key = getKeyMapping('F7');
-        else if (modifiers) {
-          result.key = C0.ESC + '[18;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[18~';
-        }
-        break;
-      case 119:
-        if (getKeyMapping('F8'))
-          result.key = getKeyMapping('F8');
-        else if (modifiers) {
-          result.key = C0.ESC + '[19;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[19~';
-        }
-        break;
-      case 120:
-        if (getKeyMapping('F9'))
-          result.key = getKeyMapping('F9');
-        else if (modifiers) {
-          result.key = C0.ESC + '[20;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[20~';
-        }
-        break;
-      case 121:
-        if (getKeyMapping('F10'))
-          result.key = getKeyMapping('F10');
-        else if (modifiers) {
-          result.key = C0.ESC + '[21;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[21~';
-        }
-        break;
-      case 122:
-        if (getKeyMapping('F11'))
-          result.key = getKeyMapping('F11');
-        else if (modifiers) {
-          result.key = C0.ESC + '[23;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[23~';
-        }
-        break;
-      case 123:
-        if (getKeyMapping('F12'))
-          result.key = getKeyMapping('F12');
-        else if (modifiers) {
-          result.key = C0.ESC + '[24;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[24~';
         }
         break;
       default:
