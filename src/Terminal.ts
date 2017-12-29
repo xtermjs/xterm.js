@@ -637,7 +637,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.on('resize', () => this.renderer.onResize(this.cols, this.rows, false));
     this.on('blur', () => this.renderer.onBlur());
     this.on('focus', () => this.renderer.onFocus());
-    window.addEventListener('resize', () => this.renderer.onWindowResize(window.devicePixelRatio));
+    const rendererResizeListener = () => this.renderer.onWindowResize(window.devicePixelRatio);
+    // Listen for window zoom
+    window.addEventListener('resize', () => rendererResizeListener);
+    // Listen for monitor DPI change
+    window.matchMedia('screen and (-webkit-min-device-pixel-ratio: 1.5)').addListener(rendererResizeListener);
     this.charMeasure.on('charsizechanged', () => this.renderer.onResize(this.cols, this.rows, true));
     this.renderer.on('resize', (dimensions) => this.viewport.syncScrollArea());
 
