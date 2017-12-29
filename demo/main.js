@@ -89,13 +89,7 @@ function createTerminal() {
   term = new Terminal({
     cursorBlink: optionElements.cursorBlink.checked,
     scrollback: parseInt(optionElements.scrollback.value, 10),
-    tabStopWidth: parseInt(optionElements.tabstopwidth.value, 10),
-    translations: {
-      // XXX: only these are supported now
-      Home  : '\x1b[1~',
-      End   : '\x1b[4~',
-      Esc   : '\x1b[20~'
-    }
+    tabStopWidth: parseInt(optionElements.tabstopwidth.value, 10)
   });
   window.term = term;  // Expose `term` to window for debugging purposes
   term.on('resize', function (size) {
