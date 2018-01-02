@@ -19,8 +19,7 @@ export class ScreenDprMonitor {
   private _currentDevicePixelRatio: number;
   private _outerListener: MediaQueryListListener;
   private _listener: ScreenDprListener;
-  private _minMediaMatchList: MediaQueryList;
-  private _maxMediaMatchList: MediaQueryList;
+  private _resolutionMediaMatchList: MediaQueryList;
 
   public setListener(listener: ScreenDprListener): void {
     if (this._listener) {
@@ -28,6 +27,7 @@ export class ScreenDprMonitor {
     }
     this._listener = listener;
     this._outerListener = () => {
+      console.log('change!');
       this._listener(window.devicePixelRatio, this._currentDevicePixelRatio);
       this._updateDpr();
     };
@@ -36,26 +36,20 @@ export class ScreenDprMonitor {
 
   private _updateDpr(): void {
     // Clear listeners for old DPR
-    if (this._minMediaMatchList) {
-      this._minMediaMatchList.removeListener(this._outerListener);
-    }
-    if (this._maxMediaMatchList) {
-      this._maxMediaMatchList.removeListener(this._outerListener);
+    if (this._resolutionMediaMatchList) {
+      this._resolutionMediaMatchList.removeListener(this._outerListener);
     }
     // Add listeners for new DPR
     this._currentDevicePixelRatio = window.devicePixelRatio;
-    this._minMediaMatchList = window.matchMedia(`screen and (-webkit-min-device-pixel-ratio: ${window.devicePixelRatio})`);
-    this._maxMediaMatchList = window.matchMedia(`screen and (-webkit-max-device-pixel-ratio: ${window.devicePixelRatio})`);
-    this._minMediaMatchList.addListener(this._outerListener);
-    this._maxMediaMatchList.addListener(this._outerListener);
+    this._resolutionMediaMatchList = window.matchMedia(`screen and (resolution: ${window.devicePixelRatio}dppx)`);
+    this._resolutionMediaMatchList.addListener(this._outerListener);
   }
 
   public clearListener(): void {
     if (!this._listener) {
       return;
     }
-    this._minMediaMatchList.removeListener(this._outerListener);
-    this._maxMediaMatchList.removeListener(this._outerListener);
+    this._resolutionMediaMatchList.removeListener(this._outerListener);
     this._listener = null;
     this._outerListener = null;
   }
