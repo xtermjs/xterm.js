@@ -34,7 +34,7 @@ export function proposeGeometry(term) {
 };
 
 export function fit(term) {
-  var geometry = exports.proposeGeometry(term);
+  var geometry = proposeGeometry(term);
   if (geometry) {
     // Force a full render
     if (term.rows !== geometry.rows || term.cols !== geometry.cols) {
