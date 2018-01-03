@@ -22,6 +22,14 @@ export class CharMeasure extends EventEmitter implements ICharMeasure {
     super();
     this._document = document;
     this._parentElement = parentElement;
+    this._measureElement = this._document.createElement('span');
+    this._measureElement.style.position = 'absolute';
+    this._measureElement.style.top = '0';
+    this._measureElement.style.left = '-9999em';
+    this._measureElement.style.lineHeight = 'normal';
+    this._measureElement.textContent = 'W';
+    this._measureElement.setAttribute('aria-hidden', 'true');
+    this._parentElement.appendChild(this._measureElement);
   }
 
   public get width(): number {
@@ -33,24 +41,6 @@ export class CharMeasure extends EventEmitter implements ICharMeasure {
   }
 
   public measure(options: ITerminalOptions): void {
-    if (!this._measureElement) {
-      this._measureElement = this._document.createElement('span');
-      this._measureElement.style.position = 'absolute';
-      this._measureElement.style.top = '0';
-      this._measureElement.style.left = '-9999em';
-      this._measureElement.style.lineHeight = 'normal';
-      this._measureElement.textContent = 'W';
-      this._measureElement.setAttribute('aria-hidden', 'true');
-      this._parentElement.appendChild(this._measureElement);
-      // Perform _doMeasure async if the element was just attached as sometimes
-      // getBoundingClientRect does not return accurate values without this.
-      setTimeout(() => this._doMeasure(options), 0);
-    } else {
-      this._doMeasure(options);
-    }
-  }
-
-  private _doMeasure(options: ITerminalOptions): void {
     this._measureElement.style.fontFamily = options.fontFamily;
     this._measureElement.style.fontSize = `${options.fontSize}px`;
     const geometry = this._measureElement.getBoundingClientRect();
@@ -65,4 +55,5 @@ export class CharMeasure extends EventEmitter implements ICharMeasure {
       this.emit('charsizechanged');
     }
   }
+
 }
