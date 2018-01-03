@@ -37,6 +37,7 @@ export class AccessibilityManager implements IDisposable {
       this._rowElements[i] = document.createElement('div');
       this._rowContainer.appendChild(this._rowElements[i]);
     }
+    this._refreshRowsDimensions();
     this._accessibilityTreeRoot.appendChild(this._rowContainer);
 
     this._liveRegion = document.createElement('div');
