@@ -50,14 +50,14 @@ export class AccessibilityManager implements IDisposable {
     this._addTerminalEventListener('refresh', data => this._refreshRows(data.start, data.end));
     // Line feed is an issue as the prompt won't be read out after a command is run
     this._addTerminalEventListener('a11y.char', (char) => this._onChar(char));
-    this._addTerminalEventListener('lineFeed', () => this._onChar('\n'));
+    this._addTerminalEventListener('linefeed', () => this._onChar('\n'));
     // Ensure \t is covered, if not a line of output from `ls` is read as one word
     this._addTerminalEventListener('a11y.tab', () => this._onChar(' '));
     this._addTerminalEventListener('charsizechanged', () => this._refreshRowsDimensions());
     this._addTerminalEventListener('key', keyChar => this._onKey(keyChar));
     this._addTerminalEventListener('blur', () => this._clearLiveRegion());
     // TODO: Dispose of this listener when disposed
-    // TODO: Only refresh when devicePixelRatio changed
+    // TODO: Only refresh when devicePixelRatio changed (depends on PR #1172)
     window.addEventListener('resize', () => this._refreshRowsDimensions());
   }
 
@@ -97,9 +97,13 @@ export class AccessibilityManager implements IDisposable {
 
   private _onChar(char: string): void {
     if (this._liveRegionLineCount < MAX_ROWS_TO_READ + 1) {
+      // \n needs to be printed as a space, otherwise it will be collapsed to
+      // "" in the DOM and the last and first words of the rows will be read
+      // as a single word
       if (this._charsToConsume.length > 0) {
         // Have the screen reader ignore the char if it was just input
-        if (this._charsToConsume.shift() !== char) {
+        const shiftedChar = this._charsToConsume.shift();
+        if (shiftedChar !== char) {
           this._liveRegion.textContent += char;
         }
       } else {
