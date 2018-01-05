@@ -5,7 +5,6 @@
 
 import { assert } from 'chai';
 import { InputHandler } from './InputHandler';
-import { wcwidth } from './InputHandler';
 import { MockInputHandlingTerminal } from './utils/TestUtils.test';
 
 describe('InputHandler', () => {
@@ -64,6 +63,20 @@ describe('InputHandler', () => {
       inputHandler.setCursorStyle([6]);
       assert.equal(terminal.options['cursorStyle'], 'bar');
       assert.equal(terminal.options['cursorBlink'], false);
+    });
+  });
+  describe('setMode', () => {
+    it('should toggle Terminal.bracketedPasteMode', () => {
+      let terminal = new MockInputHandlingTerminal();
+      terminal.prefix = '?';
+      terminal.bracketedPasteMode = false;
+      let inputHandler = new InputHandler(terminal);
+      // Set bracketed paste mode
+      inputHandler.setMode([2004]);
+      assert.equal(terminal.bracketedPasteMode, true);
+      // Reset bracketed paste mode
+      inputHandler.resetMode([2004]);
+      assert.equal(terminal.bracketedPasteMode, false);
     });
   });
 });

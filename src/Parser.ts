@@ -286,36 +286,43 @@ export class Parser {
             // Single Shift Select of G2 Character Set
             // ( SS2 is 0x8e). This affects next character only.
             case 'N':
+              this._state = ParserState.NORMAL;
               break;
             // ESC O
             // Single Shift Select of G3 Character Set
             // ( SS3 is 0x8f). This affects next character only.
             case 'O':
+              this._state = ParserState.NORMAL;
               break;
             // ESC n
             // Invoke the G2 Character Set as GL (LS2).
             case 'n':
               this._terminal.setgLevel(2);
+              this._state = ParserState.NORMAL;
               break;
             // ESC o
             // Invoke the G3 Character Set as GL (LS3).
             case 'o':
               this._terminal.setgLevel(3);
+              this._state = ParserState.NORMAL;
               break;
             // ESC |
             // Invoke the G3 Character Set as GR (LS3R).
             case '|':
               this._terminal.setgLevel(3);
+              this._state = ParserState.NORMAL;
               break;
             // ESC }
             // Invoke the G2 Character Set as GR (LS2R).
             case '}':
               this._terminal.setgLevel(2);
+              this._state = ParserState.NORMAL;
               break;
             // ESC ~
             // Invoke the G1 Character Set as GR (LS1R).
             case '~':
               this._terminal.setgLevel(1);
+              this._state = ParserState.NORMAL;
               break;
 
             // ESC 7 Save Cursor (DECSC).

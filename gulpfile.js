@@ -16,6 +16,7 @@ const source = require('vinyl-source-stream');
 const sourcemaps = require('gulp-sourcemaps');
 const ts = require('gulp-typescript');
 const util = require('gulp-util');
+const webpack = require('webpack-stream');
 
 let buildDir = process.env.BUILD_DIR || 'build';
 let tsProject = ts.createProject('tsconfig.json');
@@ -44,30 +45,31 @@ gulp.task('tsc', function () {
     tsResult.dts.pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''})).pipe(gulp.dest(outDir))
   );
 
-  fs.emptyDirSync(`${outDir}/addons/search`);
-  fs.emptyDirSync(`${outDir}/addons/winptyCompat`);
+  let addons = ['attach', 'fit', 'fullscreen', 'search', 'terminado', 'winptyCompat', 'zmodem'];
+  let addonStreams = addons.map(function(addon) {
+    fs.emptyDirSync(`${outDir}/addons/${addon}`);
 
-  let tsProjectSearchAddon = ts.createProject('./src/addons/search/tsconfig.json');
-  let tsResultSearchAddon = tsProjectSearchAddon.src().pipe(sourcemaps.init()).pipe(tsProjectSearchAddon());
-  let tscSearchAddon = tsResultSearchAddon.js.pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''})).pipe(gulp.dest(`${outDir}/addons/search`));
+    let tsProjectAddon = ts.createProject(`./src/addons/${addon}/tsconfig.json`);
+    let tsResultAddon = tsProjectAddon.src().pipe(sourcemaps.init()).pipe(tsProjectAddon());
+    let tscAddon = tsResultAddon.js
+      .pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''}))
+      .pipe(gulp.dest(`${outDir}/addons/${addon}`));
 
-  let tsProjectWinptyCompatAddon = ts.createProject('./src/addons/winptyCompat/tsconfig.json');
-  let tsResultWinptyCompatAddon = tsProjectWinptyCompatAddon.src().pipe(sourcemaps.init()).pipe(tsProjectWinptyCompatAddon());
-  let tscWinptyCompatAddon = tsResultWinptyCompatAddon.js.pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''})).pipe(gulp.dest(`${outDir}/addons/winptyCompat`));
+    return tscAddon;
+  });
 
   // Copy all addons from ${srcDir}/ to ${outDir}/
   let copyAddons = gulp.src([
-    `${srcDir}/addons/**/*`,
-    `!${srcDir}/addons/search`,
-    `!${srcDir}/addons/search/**`,
-    `!${srcDir}/addons/winptyCompat`,
-    `!${srcDir}/addons/winptyCompat/**`
+    `${srcDir}/addons/**/**`
   ]).pipe(gulp.dest(`${outDir}/addons`));
 
   // Copy stylesheets from ${srcDir}/ to ${outDir}/
   let copyStylesheets = gulp.src(`${srcDir}/**/*.css`).pipe(gulp.dest(outDir));
 
-  return merge(tsc, tscSearchAddon, tscWinptyCompatAddon, copyAddons, copyStylesheets);
+  // Join all streams into a single array
+  let streams = [tsc].concat(addonStreams).concat([copyAddons, copyStylesheets]);
+
+  return merge.apply(this, streams);
 });
 
 /**
@@ -136,10 +138,7 @@ gulp.task('browserify-addons', ['tsc'], function() {
   // Copy all add-ons from outDir to buildDir
   let copyAddons = gulp.src([
     // Copy JS addons
-    `${outDir}/addons/**/*`,
-    // Exclude TS addons from copy as they are being built via browserify
-    `!${outDir}/addons/search`,
-    `!${outDir}/addons/search/**`
+    `${outDir}/addons/**/*`
   ]).pipe(gulp.dest(`${buildDir}/addons`));
 
   return merge(searchBundle, winptyCompatBundle, copyAddons);
@@ -193,6 +192,12 @@ gulp.task('sorcery-addons', ['browserify-addons'], function () {
   var chain = sorcery.loadSync(`${buildDir}/addons/search/search.js`);
   chain.apply();
   chain.writeSync();
+});
+
+gulp.task('webpack', ['build'], function() {
+  return gulp.src('demo/main.js')
+    .pipe(webpack(require('./webpack.config.js')))
+    .pipe(gulp.dest('demo/dist/'));
 });
 
 /**

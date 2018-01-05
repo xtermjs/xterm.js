@@ -7,7 +7,9 @@ var pty = require('node-pty');
 var terminals = {},
     logs = {};
 
-app.use('/build', express.static(__dirname + '/../build'));
+app.use('/build', express.static(__dirname + '/../../../../build'));
+app.use('/demo', express.static(__dirname + '/../../../../demo'));
+app.use('/zmodemjs', express.static(__dirname + '/../../../../node_modules/zmodem.js/dist'));
 
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
@@ -17,18 +19,15 @@ app.get('/style.css', function(req, res){
   res.sendFile(__dirname + '/style.css');
 });
 
-app.get('/dist/bundle.js', function(req, res){
-  res.sendFile(__dirname + '/dist/bundle.js');
-});
-
-app.get('/dist/bundle.js.map', function(req, res){
-  res.sendFile(__dirname + '/dist/bundle.js.map');
+app.get('/main.js', function(req, res){
+  res.sendFile(__dirname + '/main.js');
 });
 
 app.post('/terminals', function (req, res) {
   var cols = parseInt(req.query.cols),
       rows = parseInt(req.query.rows),
       term = pty.spawn(process.platform === 'win32' ? 'cmd.exe' : 'bash', [], {
+        encoding: null,
         name: 'xterm-color',
         cols: cols || 80,
         rows: rows || 24,

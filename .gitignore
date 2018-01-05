@@ -23,3 +23,6 @@ fixtures/typings-test/*.js
 dist/
 src/utils/TestUtils.ts
 src/xterm.js
+
+# Keep the demo builds out of Git
+demo/dist/
