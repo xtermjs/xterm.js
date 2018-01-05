@@ -3,8 +3,9 @@
  * @license MIT
  */
 
- import { assert, expect } from 'chai';
+import { assert, expect } from 'chai';
 import { Terminal } from './Terminal';
+import * as attach from './addons/attach/attach';
 import { MockViewport, MockCompositionHelper, MockRenderer } from './utils/TestUtils.test';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
 
@@ -42,9 +43,9 @@ describe('term.js addons', () => {
     };
   });
 
-  it('should load addons with Terminal.loadAddon', () => {
-    Terminal.loadAddon('attach');
-    // Test that addon was loaded successfully, adding attach to Terminal's
+  it('should apply addons with Terminal.applyAddon', () => {
+    Terminal.applyAddon(attach);
+    // Test that addon was applied successfully, adding attach to Terminal's
     // prototype.
     assert.equal(typeof (<any>Terminal).prototype.attach, 'function');
   });

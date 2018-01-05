@@ -36,12 +36,12 @@ namespace properties {
 
 namespace static_methods {
   {
-    Terminal.loadAddon('attach');
-    Terminal.loadAddon('fit');
-    Terminal.loadAddon('fullscreen');
-    Terminal.loadAddon('search');
-    Terminal.loadAddon('terminado');
-    Terminal.loadAddon('winptyCompat');
+    Terminal.applyAddon({});
+    Terminal.applyAddon({});
+    Terminal.applyAddon({});
+    Terminal.applyAddon({});
+    Terminal.applyAddon({});
+    Terminal.applyAddon({});
   }
 }
 
@@ -63,7 +63,7 @@ namespace methods_core {
     // no arg
     t.on('blur', () => {});
     t.on('focus', () => {});
-    t.on('lineFeed', () => {});
+    t.on('linefeed', () => {});
     t.on('selection', () => {});
     // args
     t.on('data', () => {});
@@ -89,7 +89,7 @@ namespace methods_core {
     // no arg
     t.off('blur', () => {});
     t.off('focus', () => {});
-    t.off('lineFeed', () => {});
+    t.off('linefeed', () => {});
     t.off('selection', () => {});
     // args
     t.off('data', () => {});
@@ -172,9 +172,9 @@ namespace methods_core {
       t.setOption('handler', (data: string) => console.log(data));
       t.setOption('bellSound', 'foo');
       t.setOption('bellStyle', 'none');
-      t.setOption('bellStyle', 'visual');
+      // t.setOption('bellStyle', 'visual');
       t.setOption('bellStyle', 'sound');
-      t.setOption('bellStyle', 'both');
+      // t.setOption('bellStyle', 'both');
       t.setOption('fontSize', 1);
       t.setOption('lineHeight', 1);
       t.setOption('fontFamily', 'foo');
