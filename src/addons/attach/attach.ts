@@ -59,6 +59,9 @@ export function attach(term, socket, bidirectional, buffered) {
   };
 
   term._sendData = function(data) {
+    if (socket.readyState !== 1) {
+      return;
+    }
     socket.send(data);
   };
 

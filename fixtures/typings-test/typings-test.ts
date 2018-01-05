@@ -36,12 +36,12 @@ namespace properties {
 
 namespace static_methods {
   {
-    Terminal.loadAddon('attach');
-    Terminal.loadAddon('fit');
-    Terminal.loadAddon('fullscreen');
-    Terminal.loadAddon('search');
-    Terminal.loadAddon('terminado');
-    Terminal.loadAddon('winptyCompat');
+    Terminal.applyAddon({});
+    Terminal.applyAddon({});
+    Terminal.applyAddon({});
+    Terminal.applyAddon({});
+    Terminal.applyAddon({});
+    Terminal.applyAddon({});
   }
 }
 

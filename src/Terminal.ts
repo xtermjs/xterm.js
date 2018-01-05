@@ -593,9 +593,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.viewportScrollArea.classList.add('xterm-scroll-area');
     this.viewportElement.appendChild(this.viewportScrollArea);
 
-    // preload audio
-    this.syncBellSound();
-
     this._mouseZoneManager = new MouseZoneManager(this);
     this.on('scroll', () => this._mouseZoneManager.clearAll());
     this.linkifier.attachToDom(this._mouseZoneManager);
@@ -624,6 +621,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.charSizeStyleElement = document.createElement('style');
     this.helperContainer.appendChild(this.charSizeStyleElement);
     this.charMeasure = new CharMeasure(document, this.helperContainer);
+
+    // Preload audio, this relied on helperContainer
+    this.syncBellSound();
 
     // Performance: Add viewport and helper elements from the fragment
     this.element.appendChild(fragment);
@@ -1449,6 +1449,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         if (ev.shiftKey) {
           result.key = C0.BS; // ^H
           break;
+        } else if (ev.altKey) {
+          result.key = C0.ESC + C0.DEL; // \e ^?
+          break;
         }
         result.key = C0.DEL; // ^?
         break;
@@ -2116,6 +2119,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 
   private syncBellSound(): void {
+    // Don't update anything if the terminal has not been opened yet
+    if (!this.element) {
+      return;
+    }
+
     if (this.soundBell() && this.bellAudioElement) {
       this.bellAudioElement.setAttribute('src', this.options.bellSound);
     } else if (this.soundBell()) {

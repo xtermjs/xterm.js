@@ -500,10 +500,10 @@ declare module 'xterm' {
     reset(): void
 
     /**
-     * Loads an addon, attaching it to the Terminal prototype and making it
-     * available to all newly created Terminals.
-     * @param addon The addon to load.
+     * Applies an addon to the Terminal prototype, making it available to all
+     * newly created Terminals.
+     * @param addon The addon to apply.
      */
-    static loadAddon(addon: 'attach' | 'fit' | 'fullscreen' | 'search' | 'terminado' | 'winptyCompat'): void;
+    static applyAddon(addon: any): void;
   }
 }
