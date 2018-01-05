@@ -47,6 +47,8 @@ import { MouseZoneManager } from './input/MouseZoneManager';
 import { initialize as initializeCharAtlas } from './renderer/CharAtlas';
 import { IRenderer } from './renderer/Interfaces';
 
+import { IKeyHandlerResult, IKeyMap, KeyMap } from './utils/KeyMap';
+
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
 
@@ -84,7 +86,8 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   disableStdin: false,
   useFlowControl: false,
   tabStopWidth: 8,
-  theme: null
+  theme: null,
+  keyMap: {}
   // programFeatures: false,
   // focusKeys: false,
 };
@@ -120,6 +123,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
   private sendDataQueue: string;
   private customKeyEventHandler: CustomKeyEventHandler;
+
+  private _keyMap: IKeyMap;
 
   // modes
   public applicationKeypad: boolean;
@@ -302,6 +307,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     if (this.selectionManager) {
       this.selectionManager.setBuffer(this.buffer);
     }
+
+    this._reloadKeyMap();
   }
 
   /**
@@ -426,6 +433,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       case 'tabStopWidth': this.buffers.setupTabStops(); break;
       case 'bellSound':
       case 'bellStyle': this.syncBellSound(); break;
+      case 'keyMap':
+        this._reloadKeyMap ();
+        break;
     }
     // Inform renderer of changes
     if (this.renderer) {
@@ -1395,6 +1405,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     return this.cancel(ev, true);
   }
 
+  protected _reloadKeyMap(): void {
+    this._keyMap = new KeyMap(this.getOption('keyMap'));
+  }
+
   /**
    * Returns an object that determines how a KeyboardEvent should be handled. The key of the
    * returned value is the new key code to pass to the PTY.
@@ -1402,8 +1416,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Reference: http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
    * @param ev The keyboard event to be translated to key escape sequence.
    */
-  protected _evaluateKeyEscapeSequence(ev: KeyboardEvent): {cancel: boolean, key: string, scrollLines: number} {
-    const result: {cancel: boolean, key: string, scrollLines: number} = {
+  protected _evaluateKeyEscapeSequence(ev: KeyboardEvent): IKeyHandlerResult {
+    const mappedResult: IKeyHandlerResult = this._keyMap.mapFromKeyboardEvent (ev, this);
+    if (mappedResult) return mappedResult;
+    const result: IKeyHandlerResult = {
       // Whether to cancel event propogation (NOTE: this may not be needed since the event is
       // canceled at the end of keyDown
       cancel: false,
@@ -1412,7 +1428,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       // The number of characters to scroll, if this is defined it will cancel the event
       scrollLines: undefined
     };
-    const modifiers = (ev.shiftKey ? 1 : 0) | (ev.altKey ? 2 : 0) | (ev.ctrlKey ? 4 : 0) | (ev.metaKey ? 8 : 0);
+    const modifiers = this._keyMap.modifiersFromKeyboardEvent(ev);
     switch (ev.keyCode) {
       case 0:
         if (ev.key === 'UIKeyInputUpArrow') {
@@ -1442,230 +1458,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
           } else {
             result.key = C0.ESC + '[B';
           }
-        }
-        break;
-      case 8:
-        // backspace
-        if (ev.shiftKey) {
-          result.key = C0.BS; // ^H
-          break;
-        }
-        result.key = C0.DEL; // ^?
-        break;
-      case 9:
-        // tab
-        if (ev.shiftKey) {
-          result.key = C0.ESC + '[Z';
-          break;
-        }
-        result.key = C0.HT;
-        result.cancel = true;
-        break;
-      case 13:
-        // return/enter
-        result.key = C0.CR;
-        result.cancel = true;
-        break;
-      case 27:
-        // escape
-        result.key = C0.ESC;
-        result.cancel = true;
-        break;
-      case 37:
-        // left-arrow
-        if (modifiers) {
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'D';
-          // HACK: Make Alt + left-arrow behave like Ctrl + left-arrow: move one word backwards
-          // http://unix.stackexchange.com/a/108106
-          // macOS uses different escape sequences than linux
-          if (result.key === C0.ESC + '[1;3D') {
-            result.key = (this.browser.isMac) ? C0.ESC + 'b' : C0.ESC + '[1;5D';
-          }
-        } else if (this.applicationCursor) {
-          result.key = C0.ESC + 'OD';
-        } else {
-          result.key = C0.ESC + '[D';
-        }
-        break;
-      case 39:
-        // right-arrow
-        if (modifiers) {
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'C';
-          // HACK: Make Alt + right-arrow behave like Ctrl + right-arrow: move one word forward
-          // http://unix.stackexchange.com/a/108106
-          // macOS uses different escape sequences than linux
-          if (result.key === C0.ESC + '[1;3C') {
-            result.key = (this.browser.isMac) ? C0.ESC + 'f' : C0.ESC + '[1;5C';
-          }
-        } else if (this.applicationCursor) {
-          result.key = C0.ESC + 'OC';
-        } else {
-          result.key = C0.ESC + '[C';
-        }
-        break;
-      case 38:
-        // up-arrow
-        if (modifiers) {
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'A';
-          // HACK: Make Alt + up-arrow behave like Ctrl + up-arrow
-          // http://unix.stackexchange.com/a/108106
-          if (result.key === C0.ESC + '[1;3A') {
-            result.key = C0.ESC + '[1;5A';
-          }
-        } else if (this.applicationCursor) {
-          result.key = C0.ESC + 'OA';
-        } else {
-          result.key = C0.ESC + '[A';
-        }
-        break;
-      case 40:
-        // down-arrow
-        if (modifiers) {
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'B';
-          // HACK: Make Alt + down-arrow behave like Ctrl + down-arrow
-          // http://unix.stackexchange.com/a/108106
-          if (result.key === C0.ESC + '[1;3B') {
-            result.key = C0.ESC + '[1;5B';
-          }
-        } else if (this.applicationCursor) {
-          result.key = C0.ESC + 'OB';
-        } else {
-          result.key = C0.ESC + '[B';
-        }
-        break;
-      case 45:
-        // insert
-        if (!ev.shiftKey && !ev.ctrlKey) {
-          // <Ctrl> or <Shift> + <Insert> are used to
-          // copy-paste on some systems.
-          result.key = C0.ESC + '[2~';
-        }
-        break;
-      case 46:
-        // delete
-        if (modifiers) {
-          result.key = C0.ESC + '[3;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[3~';
-        }
-        break;
-      case 36:
-        // home
-        if (modifiers)
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'H';
-        else if (this.applicationCursor)
-          result.key = C0.ESC + 'OH';
-        else
-          result.key = C0.ESC + '[H';
-        break;
-      case 35:
-        // end
-        if (modifiers)
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'F';
-        else if (this.applicationCursor)
-          result.key = C0.ESC + 'OF';
-        else
-          result.key = C0.ESC + '[F';
-        break;
-      case 33:
-        // page up
-        if (ev.shiftKey) {
-          result.scrollLines = -(this.rows - 1);
-        } else {
-          result.key = C0.ESC + '[5~';
-        }
-        break;
-      case 34:
-        // page down
-        if (ev.shiftKey) {
-          result.scrollLines = this.rows - 1;
-        } else {
-          result.key = C0.ESC + '[6~';
-        }
-        break;
-      case 112:
-        // F1-F12
-        if (modifiers) {
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'P';
-        } else {
-          result.key = C0.ESC + 'OP';
-        }
-        break;
-      case 113:
-        if (modifiers) {
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'Q';
-        } else {
-          result.key = C0.ESC + 'OQ';
-        }
-        break;
-      case 114:
-        if (modifiers) {
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'R';
-        } else {
-          result.key = C0.ESC + 'OR';
-        }
-        break;
-      case 115:
-        if (modifiers) {
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'S';
-        } else {
-          result.key = C0.ESC + 'OS';
-        }
-        break;
-      case 116:
-        if (modifiers) {
-          result.key = C0.ESC + '[15;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[15~';
-        }
-        break;
-      case 117:
-        if (modifiers) {
-          result.key = C0.ESC + '[17;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[17~';
-        }
-        break;
-      case 118:
-        if (modifiers) {
-          result.key = C0.ESC + '[18;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[18~';
-        }
-        break;
-      case 119:
-        if (modifiers) {
-          result.key = C0.ESC + '[19;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[19~';
-        }
-        break;
-      case 120:
-        if (modifiers) {
-          result.key = C0.ESC + '[20;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[20~';
-        }
-        break;
-      case 121:
-        if (modifiers) {
-          result.key = C0.ESC + '[21;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[21~';
-        }
-        break;
-      case 122:
-        if (modifiers) {
-          result.key = C0.ESC + '[23;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[23~';
-        }
-        break;
-      case 123:
-        if (modifiers) {
-          result.key = C0.ESC + '[24;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[24~';
         }
         break;
       default:
