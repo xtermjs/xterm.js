@@ -1448,6 +1448,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         if (ev.shiftKey) {
           result.key = C0.BS; // ^H
           break;
+        } else if (ev.altKey) {
+          result.key = C0.ESC + C0.DEL; // \e ^?
+          break;
         }
         result.key = C0.DEL; // ^?
         break;
