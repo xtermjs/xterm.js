@@ -141,7 +141,6 @@ export interface ITerminalOptions {
   fontFamily?: string;
   fontWeight?: string;
   fontWeightBold?: string;
-  geometry?: [number, number];
   handler?: (data: string) => void;
   letterSpacing?: number;
   lineHeight?: number;
