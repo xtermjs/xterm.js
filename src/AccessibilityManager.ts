@@ -66,7 +66,7 @@ export class AccessibilityManager implements IDisposable {
     this._addTerminalEventListener('key', keyChar => this._onKey(keyChar));
     this._addTerminalEventListener('blur', () => this._clearLiveRegion());
     // TODO: Dispose of this listener when disposed
-    // TODO: Only refresh when devicePixelRatio changed (depends on PR #1172)
+    // TODO: Listen instead to when devicePixelRatio changed (depends on PR #1172)
     window.addEventListener('resize', () => this._refreshRowsDimensions());
   }
 
@@ -80,6 +80,10 @@ export class AccessibilityManager implements IDisposable {
   }
 
   public dispose(): void {
+    if (this._refreshAnimationFrame) {
+      window.cancelAnimationFrame(this._refreshAnimationFrame);
+      this._refreshAnimationFrame = null;
+    }
     this._terminal.element.removeChild(this._accessibilityTreeRoot);
     this._accessibilityTreeRoot = null;
     this._rowContainer = null;
@@ -145,9 +149,6 @@ export class AccessibilityManager implements IDisposable {
         }
       }
     }
-
-    // This is temporary, should refresh at a much slower rate
-    this._refreshRows();
   }
 
   private _clearLiveRegion(): void {
@@ -167,7 +168,6 @@ export class AccessibilityManager implements IDisposable {
     this._charsToConsume.push(keyChar);
   }
 
-  // TODO: Hook up to refresh when the renderer refreshes the range? Slower to prevent layout thrashing?
   private _refreshRows(start?: number, end?: number): void {
     start = start || 0;
     end = end || this._terminal.rows - 1;
@@ -182,7 +182,6 @@ export class AccessibilityManager implements IDisposable {
   }
 
   private _innerRefreshRows(): void {
-    console.log('innerRefreshRows');
     const buffer: IBuffer = (<any>this._terminal.buffer);
     for (let i = this._refreshRowStart; i <= this._refreshRowEnd; i++) {
       const lineData = buffer.translateBufferLineToString(buffer.ybase + i, true);
@@ -199,7 +198,5 @@ export class AccessibilityManager implements IDisposable {
     for (let i = 0; i < this._terminal.rows; i++) {
       this._rowElements[i].style.height = `${dimensions.actualCellHeight}px`;
     }
-    // TODO: Verify it works on macOS and varying zoom levels
-    // TODO: Fire when window resizes
   }
 }
