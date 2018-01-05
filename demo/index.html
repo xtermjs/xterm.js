@@ -7,11 +7,6 @@
         <link rel="stylesheet" href="style.css" />
       	<script src="https://cdnjs.cloudflare.com/ajax/libs/es6-promise/4.1.1/es6-promise.auto.min.js"></script>
       	<script src="https://cdnjs.cloudflare.com/ajax/libs/fetch/1.0.0/fetch.min.js"></script>
-        <script src="/build/xterm.js" ></script>
-        <script src="/build/addons/attach/attach.js" ></script>
-        <script src="/build/addons/fit/fit.js" ></script>
-        <script src="/build/addons/fullscreen/fullscreen.js" ></script>
-        <script src="/build/addons/search/search.js" ></script>
     </head>
     <body>
         <h1>xterm.js: xterm, in the browser</h1>
@@ -39,6 +34,17 @@
             </label>
           </p>
           <p>
+            <label>
+              bellStyle
+              <select id="option-bell-style">
+                <option value="">none</option>
+                <option value="sound">sound</option>
+                <option value="visual">visual</option>
+                <option value="both">both</option>
+              </select>
+            </label>
+          </p>
+          <p>
             <label>scrollback <input type="number" id="option-scrollback" value="1000" /></label>
           </p>
           <p>
@@ -59,6 +65,6 @@
           </div>
         </div>
         <p><strong>Attention:</strong> The demo is a barebones implementation and is designed for xterm.js evaluation purposes only. Exposing the demo to the public as is would introduce security risks for the host.</p>
-        <script src="main.js" defer ></script>
+        <script src="dist/bundle.js" defer ></script>
     </body>
 </html>

@@ -1,4 +1,5 @@
 /**
+ * Copyright (c) 2017 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 
@@ -96,6 +97,9 @@ export class SelectionModel {
   public areSelectionValuesReversed(): boolean {
     const start = this.selectionStart;
     const end = this.selectionEnd;
+    if (!start || !end) {
+      return false;
+    }
     return start[1] > end[1] || (start[1] === end[1] && start[0] > end[0]);
   }
 

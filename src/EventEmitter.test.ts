@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2017 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
 import { assert } from 'chai';
 import { EventEmitter } from './EventEmitter';
 

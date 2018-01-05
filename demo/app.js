@@ -17,8 +17,12 @@ app.get('/style.css', function(req, res){
   res.sendFile(__dirname + '/style.css');
 });
 
-app.get('/main.js', function(req, res){
-  res.sendFile(__dirname + '/main.js');
+app.get('/dist/bundle.js', function(req, res){
+  res.sendFile(__dirname + '/dist/bundle.js');
+});
+
+app.get('/dist/bundle.js.map', function(req, res){
+  res.sendFile(__dirname + '/dist/bundle.js.map');
 });
 
 app.post('/terminals', function (req, res) {

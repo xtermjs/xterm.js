@@ -1,42 +1,90 @@
 /**
+ * Copyright (c) 2017 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import jsdom = require('jsdom');
+
 import { assert } from 'chai';
-import { ITerminal, ILinkifier } from './Interfaces';
+import { ITerminal, ILinkifier, IBuffer, IBufferAccessor, IElementAccessor } from './Interfaces';
 import { Linkifier } from './Linkifier';
-import { LinkMatcher } from './Types';
+import { LinkMatcher, LineData } from './Types';
+import { IMouseZoneManager, IMouseZone } from './input/Interfaces';
+import { MockBuffer } from './utils/TestUtils.test';
+import { CircularList } from './utils/CircularList';
 
 class TestLinkifier extends Linkifier {
-  constructor() {
+  constructor(_terminal: IBufferAccessor & IElementAccessor) {
+    super(_terminal);
     Linkifier.TIME_BEFORE_LINKIFY = 0;
-    super();
   }
 
   public get linkMatchers(): LinkMatcher[] { return this._linkMatchers; }
+  public linkifyRows(): void { super.linkifyRows(0, this._terminal.buffer.lines.length - 1); }
+}
+
+class TestMouseZoneManager implements IMouseZoneManager {
+  public clears: number = 0;
+  public zones: IMouseZone[] = [];
+  add(zone: IMouseZone): void {
+    this.zones.push(zone);
+  }
+  clearAll(): void {
+    this.clears++;
+  }
 }
 
 describe('Linkifier', () => {
-  let dom: jsdom.JSDOM;
-  let window: Window;
-  let document: Document;
-
-  let container: HTMLElement;
-  let rows: HTMLElement[];
+  let terminal: IBufferAccessor & IElementAccessor;
   let linkifier: TestLinkifier;
+  let mouseZoneManager: TestMouseZoneManager;
 
   beforeEach(() => {
-    dom = new jsdom.JSDOM('');
-    window = dom.window;
-    document = window.document;
-    linkifier = new TestLinkifier();
+    terminal = {
+      buffer: new MockBuffer(),
+      element: <HTMLElement>{}
+    };
+    terminal.buffer.lines = new CircularList<LineData>(20);
+    terminal.buffer.ydisp = 0;
+    linkifier = new TestLinkifier(terminal);
+    mouseZoneManager = new TestMouseZoneManager();
   });
 
-  function addRow(html: string) {
-    const element = document.createElement('div');
-    element.innerHTML = html;
-    container.appendChild(element);
-    rows.push(element);
+  function stringToRow(text: string): LineData {
+    let result: LineData = [];
+    for (let i = 0; i < text.length; i++) {
+      result.push([0, text.charAt(i), 1, text.charCodeAt(i)]);
+    }
+    return result;
+  }
+
+  function addRow(text: string): void {
+    terminal.buffer.lines.push(stringToRow(text));
+  }
+
+  function assertLinkifiesEntireRow(uri: string, done: MochaDone): void {
+    addRow(uri);
+    linkifier.linkifyRows();
+    setTimeout(() => {
+      assert.equal(mouseZoneManager.zones[0].x1, 1);
+      assert.equal(mouseZoneManager.zones[0].x2, uri.length + 1);
+      assert.equal(mouseZoneManager.zones[0].y, terminal.buffer.lines.length);
+      done();
+    }, 0);
+  }
+
+  function assertLinkifiesRow(rowText: string, linkMatcherRegex: RegExp, links: {x: number, length: number}[], done: MochaDone): void {
+    addRow(rowText);
+    linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
+    linkifier.linkifyRows();
+    // Allow linkify to happen
+    setTimeout(() => {
+      assert.equal(mouseZoneManager.zones.length, links.length);
+      links.forEach((l, i) => {
+        assert.equal(mouseZoneManager.zones[i].x1, l.x + 1);
+        assert.equal(mouseZoneManager.zones[i].x2, l.x + l.length + 1);
+        assert.equal(mouseZoneManager.zones[i].y, terminal.buffer.lines.length);
+      });
+      done();
+    }, 0);
   }
 
   describe('before attachToDom', () => {
@@ -51,78 +99,42 @@ describe('Linkifier', () => {
 
   describe('after attachToDom', () => {
     beforeEach(() => {
-      rows = [];
-      linkifier.attachToDom(document, rows);
-      container = document.createElement('div');
-      document.body.appendChild(container);
+      linkifier.attachToDom(mouseZoneManager);
     });
 
-    function clickElement(element: Node) {
-      const event = document.createEvent('MouseEvent');
-      event.initMouseEvent('click', true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
-      element.dispatchEvent(event);
-    }
-
-    function assertLinkifiesEntireRow(uri: string, done: MochaDone) {
-        addRow(uri);
-        linkifier.linkifyRow(0);
-        setTimeout(() => {
-          assert.equal((<HTMLElement>rows[0].firstChild).tagName, 'A');
-          assert.equal((<HTMLElement>rows[0].firstChild).textContent, uri);
-          done();
-        }, 0);
-    }
-
     describe('http links', () => {
-      function assertLinkifiesEntireRow(uri: string, done: MochaDone) {
-        addRow(uri);
-        linkifier.linkifyRow(0);
-        setTimeout(() => {
-          assert.equal((<HTMLElement>rows[0].firstChild).tagName, 'A');
-          assert.equal((<HTMLElement>rows[0].firstChild).textContent, uri);
-          done();
-        }, 0);
-      }
-      it('should allow ~ character in URI path', done => assertLinkifiesEntireRow('http://foo.com/a~b#c~d?e~f', done));
+      it('should allow ~ character in URI path', (done) => {
+        assertLinkifiesEntireRow('http://foo.com/a~b#c~d?e~f', done);
+      });
     });
 
     describe('link matcher', () => {
-      function assertLinkifiesRow(rowText: string, linkMatcherRegex: RegExp, expectedHtml: string, done: MochaDone) {
-        addRow(rowText);
-        linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
-        linkifier.linkifyRow(0);
-        // Allow linkify to happen
-        setTimeout(() => {
-          assert.equal(rows[0].innerHTML, expectedHtml);
-          done();
-        }, 0);
-      }
       it('should match a single link', done => {
-        assertLinkifiesRow('foo', /foo/, '<a>foo</a>', done);
+        assertLinkifiesRow('foo', /foo/, [{x: 0, length: 3}], done);
       });
       it('should match a single link at the start of a text node', done => {
-        assertLinkifiesRow('foo bar', /foo/, '<a>foo</a> bar', done);
+        assertLinkifiesRow('foo bar', /foo/, [{x: 0, length: 3}], done);
       });
       it('should match a single link in the middle of a text node', done => {
-        assertLinkifiesRow('foo bar baz', /bar/, 'foo <a>bar</a> baz', done);
+        assertLinkifiesRow('foo bar baz', /bar/, [{x: 4, length: 3}], done);
       });
       it('should match a single link at the end of a text node', done => {
-        assertLinkifiesRow('foo bar', /bar/, 'foo <a>bar</a>', done);
+        assertLinkifiesRow('foo bar', /bar/, [{x: 4, length: 3}], done);
       });
       it('should match a link after a link at the start of a text node', done => {
-        assertLinkifiesRow('foo bar', /foo|bar/, '<a>foo</a> <a>bar</a>', done);
+        assertLinkifiesRow('foo bar', /foo|bar/, [{x: 0, length: 3}, {x: 4, length: 3}], done);
       });
       it('should match a link after a link in the middle of a text node', done => {
-        assertLinkifiesRow('foo bar baz', /bar|baz/, 'foo <a>bar</a> <a>baz</a>', done);
+        assertLinkifiesRow('foo bar baz', /bar|baz/, [{x: 4, length: 3}, {x: 8, length: 3}], done);
       });
       it('should match a link immediately after a link at the end of a text node', done => {
-        assertLinkifiesRow('<span>foo bar</span>baz', /bar|baz/, '<span>foo <a>bar</a></span><a>baz</a>', done);
+        assertLinkifiesRow('foo barbaz', /bar|baz/, [{x: 4, length: 3}, {x: 7, length: 3}], done);
       });
       it('should not duplicate text after a unicode character (wrapped in a span)', done => {
         // This is a regression test for an issue that came about when using
         // an oh-my-zsh theme that added the large blue diamond unicode
         // character (U+1F537) which caused the path to be duplicated. See #642.
-        assertLinkifiesRow('echo \'<span class="xterm-normal-char">🔷</span>foo\'', /foo/, 'echo \'<span class="xterm-normal-char">🔷</span><a>foo</a>\'', done);
+        assertLinkifiesRow('echo \'🔷foo\'', /foo/, [{x: 8, length: 3}], done);
       });
     });
 
@@ -130,26 +142,42 @@ describe('Linkifier', () => {
       it('should enable link if true', done => {
         addRow('test');
         linkifier.registerLinkMatcher(/test/, () => done(), {
-          validationCallback: (url, element, cb) => {
+          validationCallback: (url, cb) => {
+            assert.equal(mouseZoneManager.zones.length, 0);
             cb(true);
-            assert.equal((<HTMLElement>rows[0].firstChild).tagName, 'A');
-            setTimeout(() => clickElement(rows[0].firstChild), 0);
+            assert.equal(mouseZoneManager.zones.length, 1);
+            assert.equal(mouseZoneManager.zones[0].x1, 1);
+            assert.equal(mouseZoneManager.zones[0].x2, 5);
+            assert.equal(mouseZoneManager.zones[0].y, 1);
+            // Fires done()
+            mouseZoneManager.zones[0].clickCallback(<any>{});
           }
         });
-        linkifier.linkifyRow(0);
+        linkifier.linkifyRows();
+      });
+
+      it('should validate the uri, not the row', done => {
+        addRow('abc test abc');
+        linkifier.registerLinkMatcher(/test/, () => done(), {
+          validationCallback: (uri, cb) => {
+            assert.equal(uri, 'test');
+            done();
+          }
+        });
+        linkifier.linkifyRows();
       });
 
       it('should disable link if false', done => {
         addRow('test');
         linkifier.registerLinkMatcher(/test/, () => assert.fail(), {
-          validationCallback: (url, element, cb) => {
+          validationCallback: (url, cb) => {
+            assert.equal(mouseZoneManager.zones.length, 0);
             cb(false);
-            assert.equal((<HTMLElement>rows[0].firstChild).tagName, 'A');
-            setTimeout(() => clickElement(rows[0].firstChild), 0);
+            assert.equal(mouseZoneManager.zones.length, 0);
           }
         });
-        linkifier.linkifyRow(0);
-        // Allow time for the click to be performed
+        linkifier.linkifyRows();
+        // Allow time for the validation callback to be performed
         setTimeout(() => done(), 10);
       });
 
@@ -157,7 +185,7 @@ describe('Linkifier', () => {
         addRow('test test');
         let count = 0;
         linkifier.registerLinkMatcher(/test/, () => assert.fail(), {
-          validationCallback: (url, element, cb) => {
+          validationCallback: (url, cb) => {
             count += 1;
             if (count === 2) {
               done();
@@ -165,7 +193,7 @@ describe('Linkifier', () => {
             cb(false);
           }
         });
-        linkifier.linkifyRow(0);
+        linkifier.linkifyRows();
       });
     });
 

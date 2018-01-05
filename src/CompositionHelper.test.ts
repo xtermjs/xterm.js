@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2016 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
 import { assert } from 'chai';
 import { CompositionHelper } from './CompositionHelper';
 
@@ -36,8 +41,18 @@ describe('CompositionHelper', () => {
           return { offsetLeft: 0, offsetTop: 0 };
         }
       },
-      handler: function (text) {
+      handler: (text: string) => {
         handledText += text;
+      },
+      buffer: {
+        isCursorInViewport: true
+      },
+      charMeasure: {
+        height: 10,
+        width: 10
+      },
+      options: {
+        lineHeight: 1
       }
     };
     handledText = '';
@@ -45,7 +60,7 @@ describe('CompositionHelper', () => {
   });
 
   describe('Input', () => {
-    it('Should insert simple characters', function (done) {
+    it('Should insert simple characters', (done) => {
       // First character 'ㅇ'
       compositionHelper.compositionstart();
       compositionHelper.compositionupdate({ data: 'ㅇ' });
@@ -69,7 +84,7 @@ describe('CompositionHelper', () => {
       }, 0);
     });
 
-    it('Should insert complex characters', function (done) {
+    it('Should insert complex characters', (done) => {
       // First character '앙'
       compositionHelper.compositionstart();
       compositionHelper.compositionupdate({ data: 'ㅇ' });
@@ -109,7 +124,7 @@ describe('CompositionHelper', () => {
       }, 0);
     });
 
-    it('Should insert complex characters that change with following character', function (done) {
+    it('Should insert complex characters that change with following character', (done) => {
       // First character '아'
       compositionHelper.compositionstart();
       compositionHelper.compositionupdate({ data: 'ㅇ' });
@@ -138,7 +153,7 @@ describe('CompositionHelper', () => {
       }, 0);
     });
 
-    it('Should insert multi-characters compositions', function (done) {
+    it('Should insert multi-characters compositions', (done) => {
       // First character 'だ'
       compositionHelper.compositionstart();
       compositionHelper.compositionupdate({ data: 'd' });
@@ -161,7 +176,7 @@ describe('CompositionHelper', () => {
       }, 0);
     });
 
-    it('Should insert multi-character compositions that are converted to other characters with the same length', function (done) {
+    it('Should insert multi-character compositions that are converted to other characters with the same length', (done) => {
       // First character 'だ'
       compositionHelper.compositionstart();
       compositionHelper.compositionupdate({ data: 'd' });
@@ -189,7 +204,7 @@ describe('CompositionHelper', () => {
       }, 0);
     });
 
-    it('Should insert multi-character compositions that are converted to other characters with different lengths', function (done) {
+    it('Should insert multi-character compositions that are converted to other characters with different lengths', (done) => {
       // First character 'い'
       compositionHelper.compositionstart();
       compositionHelper.compositionupdate({ data: 'い' });
@@ -217,7 +232,7 @@ describe('CompositionHelper', () => {
       }, 0);
     });
 
-    it('Should insert non-composition characters input immediately after composition characters', function (done) {
+    it('Should insert non-composition characters input immediately after composition characters', (done) => {
       // First character 'ㅇ'
       compositionHelper.compositionstart();
       compositionHelper.compositionupdate({ data: 'ㅇ' });

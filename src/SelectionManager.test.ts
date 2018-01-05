@@ -1,24 +1,30 @@
 /**
+ * Copyright (c) 2017 The xterm.js authors. All rights reserved.
  * @license MIT
  */
+
 import jsdom = require('jsdom');
 import { assert } from 'chai';
-import { ITerminal, ICircularList } from './Interfaces';
+import { ITerminal, ICircularList, IBuffer } from './Interfaces';
 import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
 import { SelectionManager } from './SelectionManager';
 import { SelectionModel } from './SelectionModel';
 import { BufferSet } from './BufferSet';
-import { MockTerminal } from './utils/TestUtils';
+import { MockTerminal } from './utils/TestUtils.test';
+import { LineData, CharData } from './Types';
+
+class TestMockTerminal extends MockTerminal {
+  emit(event: string, data: any): void {}
+}
 
 class TestSelectionManager extends SelectionManager {
   constructor(
     terminal: ITerminal,
-    buffer: ICircularList<[number, string, number][]>,
-    rowContainer: HTMLElement,
+    buffer: IBuffer,
     charMeasure: CharMeasure
   ) {
-    super(terminal, buffer, rowContainer, charMeasure);
+    super(terminal, buffer, charMeasure);
   }
 
   public get model(): SelectionModel { return this._model; }
@@ -38,7 +44,7 @@ describe('SelectionManager', () => {
   let document: Document;
 
   let terminal: ITerminal;
-  let bufferLines: ICircularList<[number, string, number][]>;
+  let buffer: IBuffer;
   let rowContainer: HTMLElement;
   let selectionManager: TestSelectionManager;
 
@@ -46,28 +52,31 @@ describe('SelectionManager', () => {
     dom = new jsdom.JSDOM('');
     window = dom.window;
     document = window.document;
-    rowContainer = document.createElement('div');
-    terminal = new MockTerminal();
+    terminal = new TestMockTerminal();
     terminal.cols = 80;
     terminal.rows = 2;
-    terminal.scrollback = 100;
+    terminal.options.scrollback = 100;
     terminal.buffers = new BufferSet(terminal);
     terminal.buffer = terminal.buffers.active;
-    bufferLines = terminal.buffer.lines;
-    selectionManager = new TestSelectionManager(terminal, bufferLines, rowContainer, null);
+    buffer = terminal.buffer;
+    selectionManager = new TestSelectionManager(terminal, buffer, null);
   });
 
-  function stringToRow(text: string): [number, string, number][] {
-    let result: [number, string, number][] = [];
+  function stringToRow(text: string): LineData {
+    let result: LineData = [];
     for (let i = 0; i < text.length; i++) {
-      result.push([0, text.charAt(i), 1]);
+      result.push([0, text.charAt(i), 1, text.charCodeAt(i)]);
     }
     return result;
   }
 
+  function stringArrayToRow(chars: string[]): LineData {
+    return chars.map(c => <CharData>[0, c, 1, c.charCodeAt(0)]);
+  }
+
   describe('_selectWordAt', () => {
     it('should expand selection for normal width chars', () => {
-      bufferLines.set(0, stringToRow('foo bar'));
+      buffer.lines.set(0, stringToRow('foo bar'));
       selectionManager.selectWordAt([0, 0]);
       assert.equal(selectionManager.selectionText, 'foo');
       selectionManager.selectWordAt([1, 0]);
@@ -84,7 +93,7 @@ describe('SelectionManager', () => {
       assert.equal(selectionManager.selectionText, 'bar');
     });
     it('should expand selection for whitespace', () => {
-      bufferLines.set(0, stringToRow('a   b'));
+      buffer.lines.set(0, stringToRow('a   b'));
       selectionManager.selectWordAt([0, 0]);
       assert.equal(selectionManager.selectionText, 'a');
       selectionManager.selectWordAt([1, 0]);
@@ -98,22 +107,22 @@ describe('SelectionManager', () => {
     });
     it('should expand selection for wide characters', () => {
       // Wide characters use a special format
-      bufferLines.set(0, [
-        [null, '中', 2],
-        [null, '', 0],
-        [null, '文', 2],
-        [null, '', 0],
-        [null, ' ', 1],
-        [null, 'a', 1],
-        [null, '中', 2],
-        [null, '', 0],
-        [null, '文', 2],
-        [null, '', 0],
-        [null, 'b', 1],
-        [null, ' ', 1],
-        [null, 'f', 1],
-        [null, 'o', 1],
-        [null, 'o', 1]
+      buffer.lines.set(0, [
+        [null, '中', 2, '中'.charCodeAt(0)],
+        [null, '', 0, null],
+        [null, '文', 2, '文'.charCodeAt(0)],
+        [null, '', 0, null],
+        [null, ' ', 1, ' '.charCodeAt(0)],
+        [null, 'a', 1, 'a'.charCodeAt(0)],
+        [null, '中', 2, '中'.charCodeAt(0)],
+        [null, '', 0, null],
+        [null, '文', 2, '文'.charCodeAt(0)],
+        [null, '', 0, ''.charCodeAt(0)],
+        [null, 'b', 1, 'b'.charCodeAt(0)],
+        [null, ' ', 1, ' '.charCodeAt(0)],
+        [null, 'f', 1, 'f'.charCodeAt(0)],
+        [null, 'o', 1, 'o'.charCodeAt(0)],
+        [null, 'o', 1, 'o'.charCodeAt(0)]
       ]);
       // Ensure wide characters take up 2 columns
       selectionManager.selectWordAt([0, 0]);
@@ -150,7 +159,7 @@ describe('SelectionManager', () => {
       assert.equal(selectionManager.selectionText, 'foo');
     });
     it('should select up to non-path characters that are commonly adjacent to paths', () => {
-      bufferLines.set(0, stringToRow('(cd)[ef]{gh}\'ij"'));
+      buffer.lines.set(0, stringToRow('(cd)[ef]{gh}\'ij"'));
       selectionManager.selectWordAt([0, 0]);
       assert.equal(selectionManager.selectionText, '(cd');
       selectionManager.selectWordAt([1, 0]);
@@ -184,11 +193,118 @@ describe('SelectionManager', () => {
       selectionManager.selectWordAt([15, 0]);
       assert.equal(selectionManager.selectionText, 'ij"');
     });
+    describe('emoji', () => {
+      it('should treat a single emoji as a word when wrapped in spaces', () => {
+        buffer.lines.set(0, stringToRow(' ⚽ a')); // The a is here to prevent the space being trimmed in selectionText
+        selectionManager.selectWordAt([0, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+        selectionManager.selectWordAt([1, 0]);
+        assert.equal(selectionManager.selectionText, '⚽');
+        selectionManager.selectWordAt([2, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+      });
+      it('should treat multiple emojis as a word when wrapped in spaces', () => {
+        buffer.lines.set(0, stringToRow(' ⚽⚽ a')); // The a is here to prevent the space being trimmed in selectionText
+        selectionManager.selectWordAt([0, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+        selectionManager.selectWordAt([1, 0]);
+        assert.equal(selectionManager.selectionText, '⚽⚽');
+        selectionManager.selectWordAt([2, 0]);
+        assert.equal(selectionManager.selectionText, '⚽⚽');
+        selectionManager.selectWordAt([3, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+      });
+      it('should treat emojis using the zero-width-joiner as a single word', () => {
+        // Note that the first 3 emojis include the invisible ZWJ char
+        buffer.lines.set(0, stringArrayToRow([
+          ' ', '👨‍', '👩‍', '👧‍', '👦', ' ', 'a'
+        ])); // The a is here to prevent the space being trimmed in selectionText
+        selectionManager.selectWordAt([0, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+        // ZWJ emojis do not combine in the terminal so the family emoji used here consumed 4 cells
+        // The selection text should retain ZWJ chars despite not combining on the terminal
+        selectionManager.selectWordAt([1, 0]);
+        assert.equal(selectionManager.selectionText, '👨‍👩‍👧‍👦');
+        selectionManager.selectWordAt([2, 0]);
+        assert.equal(selectionManager.selectionText, '👨‍👩‍👧‍👦');
+        selectionManager.selectWordAt([3, 0]);
+        assert.equal(selectionManager.selectionText, '👨‍👩‍👧‍👦');
+        selectionManager.selectWordAt([4, 0]);
+        assert.equal(selectionManager.selectionText, '👨‍👩‍👧‍👦');
+        selectionManager.selectWordAt([5, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+      });
+      it('should treat emojis and characters joined together as a word', () => {
+        buffer.lines.set(0, stringToRow(' ⚽ab cd⚽ ef⚽gh')); // The a is here to prevent the space being trimmed in selectionText
+        selectionManager.selectWordAt([0, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+        selectionManager.selectWordAt([1, 0]);
+        assert.equal(selectionManager.selectionText, '⚽ab');
+        selectionManager.selectWordAt([2, 0]);
+        assert.equal(selectionManager.selectionText, '⚽ab');
+        selectionManager.selectWordAt([3, 0]);
+        assert.equal(selectionManager.selectionText, '⚽ab');
+        selectionManager.selectWordAt([4, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+        selectionManager.selectWordAt([5, 0]);
+        assert.equal(selectionManager.selectionText, 'cd⚽');
+        selectionManager.selectWordAt([6, 0]);
+        assert.equal(selectionManager.selectionText, 'cd⚽');
+        selectionManager.selectWordAt([7, 0]);
+        assert.equal(selectionManager.selectionText, 'cd⚽');
+        selectionManager.selectWordAt([8, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+        selectionManager.selectWordAt([9, 0]);
+        assert.equal(selectionManager.selectionText, 'ef⚽gh');
+        selectionManager.selectWordAt([10, 0]);
+        assert.equal(selectionManager.selectionText, 'ef⚽gh');
+        selectionManager.selectWordAt([11, 0]);
+        assert.equal(selectionManager.selectionText, 'ef⚽gh');
+        selectionManager.selectWordAt([12, 0]);
+        assert.equal(selectionManager.selectionText, 'ef⚽gh');
+        selectionManager.selectWordAt([13, 0]);
+        assert.equal(selectionManager.selectionText, 'ef⚽gh');
+      });
+      it('should treat complex emojis and characters joined together as a word', () => {
+        // This emoji is the flag for England and is made up of: 1F3F4 E0067 E0062 E0065 E006E E0067 E007F
+        buffer.lines.set(0, stringArrayToRow([
+          ' ', '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'a', 'b', ' ', 'c', 'd', '🏴󠁧󠁢󠁥󠁮󠁧󠁿', ' ', 'e', 'f', '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'g', 'h', ' ', 'a'
+        ])); // The a is here to prevent the space being trimmed in selectionText
+        selectionManager.selectWordAt([0, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+        selectionManager.selectWordAt([1, 0]);
+        assert.equal(selectionManager.selectionText, '🏴󠁧󠁢󠁥󠁮󠁧󠁿ab');
+        selectionManager.selectWordAt([2, 0]);
+        assert.equal(selectionManager.selectionText, '🏴󠁧󠁢󠁥󠁮󠁧󠁿ab');
+        selectionManager.selectWordAt([3, 0]);
+        assert.equal(selectionManager.selectionText, '🏴󠁧󠁢󠁥󠁮󠁧󠁿ab');
+        selectionManager.selectWordAt([4, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+        selectionManager.selectWordAt([5, 0]);
+        assert.equal(selectionManager.selectionText, 'cd🏴󠁧󠁢󠁥󠁮󠁧󠁿');
+        selectionManager.selectWordAt([6, 0]);
+        assert.equal(selectionManager.selectionText, 'cd🏴󠁧󠁢󠁥󠁮󠁧󠁿');
+        selectionManager.selectWordAt([7, 0]);
+        assert.equal(selectionManager.selectionText, 'cd🏴󠁧󠁢󠁥󠁮󠁧󠁿');
+        selectionManager.selectWordAt([8, 0]);
+        assert.equal(selectionManager.selectionText, ' ');
+        selectionManager.selectWordAt([9, 0]);
+        assert.equal(selectionManager.selectionText, 'ef🏴󠁧󠁢󠁥󠁮󠁧󠁿gh');
+        selectionManager.selectWordAt([10, 0]);
+        assert.equal(selectionManager.selectionText, 'ef🏴󠁧󠁢󠁥󠁮󠁧󠁿gh');
+        selectionManager.selectWordAt([11, 0]);
+        assert.equal(selectionManager.selectionText, 'ef🏴󠁧󠁢󠁥󠁮󠁧󠁿gh');
+        selectionManager.selectWordAt([12, 0]);
+        assert.equal(selectionManager.selectionText, 'ef🏴󠁧󠁢󠁥󠁮󠁧󠁿gh');
+        selectionManager.selectWordAt([13, 0]);
+        assert.equal(selectionManager.selectionText, 'ef🏴󠁧󠁢󠁥󠁮󠁧󠁿gh');
+      });
+    });
   });
 
   describe('_selectLineAt', () => {
     it('should select the entire line', () => {
-      bufferLines.set(0, stringToRow('foo bar'));
+      buffer.lines.set(0, stringToRow('foo bar'));
       selectionManager.selectLineAt(0);
       assert.equal(selectionManager.selectionText, 'foo bar', 'The selected text is correct');
       assert.deepEqual(selectionManager.model.finalSelectionStart, [0, 0]);
@@ -198,14 +314,14 @@ describe('SelectionManager', () => {
 
   describe('selectAll', () => {
     it('should select the entire buffer, beyond the viewport', () => {
-      bufferLines.length = 5;
-      bufferLines.set(0, stringToRow('1'));
-      bufferLines.set(1, stringToRow('2'));
-      bufferLines.set(2, stringToRow('3'));
-      bufferLines.set(3, stringToRow('4'));
-      bufferLines.set(4, stringToRow('5'));
+      buffer.lines.length = 5;
+      buffer.lines.set(0, stringToRow('1'));
+      buffer.lines.set(1, stringToRow('2'));
+      buffer.lines.set(2, stringToRow('3'));
+      buffer.lines.set(3, stringToRow('4'));
+      buffer.lines.set(4, stringToRow('5'));
       selectionManager.selectAll();
-      terminal.buffer.ybase = bufferLines.length - terminal.rows;
+      terminal.buffer.ybase = buffer.lines.length - terminal.rows;
       assert.equal(selectionManager.selectionText, '1\n2\n3\n4\n5');
     });
   });

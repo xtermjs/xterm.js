@@ -14,9 +14,3 @@ h1 {
     margin: 0 auto;
     padding: 2px;
 }
-
-#terminal-container .terminal {
-    background-color: #111;
-    color: #fafafa;
-    padding: 2px;
-}

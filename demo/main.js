@@ -1,10 +1,23 @@
+import * as Terminal from '../build/xterm';
+import * as attach from '../build/addons/attach/attach';
+import * as fit from '../build/addons/fit/fit';
+import * as fullscreen from '../build/addons/fullscreen/fullscreen';
+import * as search from '../build/addons/search/search';
+import * as winptyCompat from '../build/addons/winptyCompat/winptyCompat';
+
+
+Terminal.applyAddon(attach);
+Terminal.applyAddon(fit);
+Terminal.applyAddon(fullscreen);
+Terminal.applyAddon(search);
+Terminal.applyAddon(winptyCompat);
+
+
 var term,
     protocol,
     socketURL,
     socket,
-    pid,
-    charWidth,
-    charHeight;
+    pid;
 
 var terminalContainer = document.getElementById('terminal-container'),
     actionElements = {
@@ -15,16 +28,19 @@ var terminalContainer = document.getElementById('terminal-container'),
       cursorBlink: document.querySelector('#option-cursor-blink'),
       cursorStyle: document.querySelector('#option-cursor-style'),
       scrollback: document.querySelector('#option-scrollback'),
-      tabstopwidth: document.querySelector('#option-tabstopwidth')
+      tabstopwidth: document.querySelector('#option-tabstopwidth'),
+      bellStyle: document.querySelector('#option-bell-style')
     },
     colsElement = document.getElementById('cols'),
     rowsElement = document.getElementById('rows');
 
-function setTerminalSize () {
-  var cols = parseInt(colsElement.value, 10),
-      rows = parseInt(rowsElement.value, 10),
-      width = (cols * charWidth).toString() + 'px',
-      height = (rows * charHeight).toString() + 'px';
+function setTerminalSize() {
+  var cols = parseInt(colsElement.value, 10);
+  var rows = parseInt(rowsElement.value, 10);
+  var viewportElement = document.querySelector('.xterm-viewport');
+  var scrollBarWidth = viewportElement.offsetWidth - viewportElement.clientWidth;
+  var width = (cols * term.renderer.dimensions.actualCellWidth + 20 /*room for scrollbar*/).toString() + 'px';
+  var height = (rows * term.renderer.dimensions.actualCellHeight).toString() + 'px';
 
   terminalContainer.style.width = width;
   terminalContainer.style.height = height;
@@ -53,6 +69,9 @@ optionElements.cursorBlink.addEventListener('change', function () {
 optionElements.cursorStyle.addEventListener('change', function () {
   term.setOption('cursorStyle', optionElements.cursorStyle.value);
 });
+optionElements.bellStyle.addEventListener('change', function () {
+  term.setOption('bellStyle', optionElements.bellStyle.value);
+});
 optionElements.scrollback.addEventListener('change', function () {
   term.setOption('scrollback', parseInt(optionElements.scrollback.value, 10));
 });
@@ -72,6 +91,7 @@ function createTerminal() {
     scrollback: parseInt(optionElements.scrollback.value, 10),
     tabStopWidth: parseInt(optionElements.tabstopwidth.value, 10)
   });
+  window.term = term;  // Expose `term` to window for debugging purposes
   term.on('resize', function (size) {
     if (!pid) {
       return;
@@ -86,29 +106,30 @@ function createTerminal() {
   socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
 
   term.open(terminalContainer);
+  term.winptyCompatInit();
   term.fit();
+  term.focus();
 
-  var initialGeometry = term.proposeGeometry(),
-      cols = initialGeometry.cols,
-      rows = initialGeometry.rows;
+  // fit is called within a setTimeout, cols and rows need this.
+  setTimeout(function () {
+    colsElement.value = term.cols;
+    rowsElement.value = term.rows;
 
-  colsElement.value = cols;
-  rowsElement.value = rows;
+    // Set terminal size again to set the specific dimensions on the demo
+    setTerminalSize();
 
-  fetch('/terminals?cols=' + cols + '&rows=' + rows, {method: 'POST'}).then(function (res) {
+    fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, {method: 'POST'}).then(function (res) {
 
-    charWidth = Math.ceil(term.element.offsetWidth / cols);
-    charHeight = Math.ceil(term.element.offsetHeight / rows);
-
-    res.text().then(function (pid) {
-      window.pid = pid;
-      socketURL += pid;
-      socket = new WebSocket(socketURL);
-      socket.onopen = runRealTerminal;
-      socket.onclose = runFakeTerminal;
-      socket.onerror = runFakeTerminal;
+      res.text().then(function (processId) {
+        pid = processId;
+        socketURL += processId;
+        socket = new WebSocket(socketURL);
+        socket.onopen = runRealTerminal;
+        socket.onclose = runFakeTerminal;
+        socket.onerror = runFakeTerminal;
+      });
     });
-  });
+  }, 0);
 }
 
 function runRealTerminal() {

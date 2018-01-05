@@ -1,4 +1,5 @@
 /**
+ * Copyright (c) 2016 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 
@@ -51,7 +52,7 @@ export class CompositionHelper {
   /**
    * Handles the compositionstart event, activating the composition view.
    */
-  public compositionstart() {
+  public compositionstart(): void {
     this.isComposing = true;
     this.compositionPosition.start = this.textarea.value.length;
     this.compositionView.textContent = '';
@@ -62,7 +63,7 @@ export class CompositionHelper {
    * Handles the compositionupdate event, updating the composition view.
    * @param {CompositionEvent} ev The event.
    */
-  public compositionupdate(ev: CompositionEvent) {
+  public compositionupdate(ev: CompositionEvent): void {
     this.compositionView.textContent = ev.data;
     this.updateCompositionElements();
     setTimeout(() => {
@@ -74,7 +75,7 @@ export class CompositionHelper {
    * Handles the compositionend event, hiding the composition view and sending the composition to
    * the handler.
    */
-  public compositionend() {
+  public compositionend(): void {
     this.finalizeComposition(true);
   }
 
@@ -83,7 +84,7 @@ export class CompositionHelper {
    * @param ev The keydown event.
    * @return Whether the Terminal should continue processing the keydown event.
    */
-  public keydown(ev: KeyboardEvent) {
+  public keydown(ev: KeyboardEvent): boolean {
     if (this.isComposing || this.isSendingComposition) {
       if (ev.keyCode === 229) {
         // Continue composing if the keyCode is the "composition character"
@@ -116,7 +117,7 @@ export class CompositionHelper {
    *   compositionend event is triggered, such as enter, so that the composition is send before
    *   the command is executed.
    */
-  private finalizeComposition(waitForPropogation: boolean) {
+  private finalizeComposition(waitForPropogation: boolean): void {
     this.compositionView.classList.remove('active');
     this.isComposing = false;
     this.clearTextareaPosition();
@@ -169,7 +170,7 @@ export class CompositionHelper {
    * character" (229) is triggered, in order to allow non-composition text to be entered when an
    * IME is active.
    */
-  private handleAnyTextareaChanges() {
+  private handleAnyTextareaChanges(): void {
     const oldValue = this.textarea.value;
     setTimeout(() => {
       // Ignore if a composition has started since the timeout
@@ -189,30 +190,30 @@ export class CompositionHelper {
    * @param dontRecurse Whether to use setTimeout to recursively trigger another update, this is
    *   necessary as the IME events across browsers are not consistently triggered.
    */
-  public updateCompositionElements(dontRecurse?: boolean) {
+  public updateCompositionElements(dontRecurse?: boolean): void {
     if (!this.isComposing) {
       return;
     }
-    const cursor = <HTMLElement>this.terminal.element.querySelector('.terminal-cursor');
-    if (cursor) {
-      // Take .xterm-rows offsetTop into account as well in case it's positioned absolutely within
-      // the .xterm element.
-      const xtermRows = <HTMLElement>this.terminal.element.querySelector('.xterm-rows');
-      const cursorTop = xtermRows.offsetTop + cursor.offsetTop;
 
-      this.compositionView.style.left = cursor.offsetLeft + 'px';
+    if (this.terminal.buffer.isCursorInViewport) {
+      const cellHeight = Math.ceil(this.terminal.charMeasure.height * this.terminal.options.lineHeight);
+      const cursorTop = this.terminal.buffer.y * cellHeight;
+      const cursorLeft = this.terminal.buffer.x * this.terminal.charMeasure.width;
+
+      this.compositionView.style.left = cursorLeft + 'px';
       this.compositionView.style.top = cursorTop + 'px';
-      this.compositionView.style.height = cursor.offsetHeight + 'px';
-      this.compositionView.style.lineHeight = cursor.offsetHeight + 'px';
+      this.compositionView.style.height = cellHeight + 'px';
+      this.compositionView.style.lineHeight = cellHeight + 'px';
       // Sync the textarea to the exact position of the composition view so the IME knows where the
       // text is.
       const compositionViewBounds = this.compositionView.getBoundingClientRect();
-      this.textarea.style.left = cursor.offsetLeft + 'px';
+      this.textarea.style.left = cursorLeft + 'px';
       this.textarea.style.top = cursorTop + 'px';
       this.textarea.style.width = compositionViewBounds.width + 'px';
       this.textarea.style.height = compositionViewBounds.height + 'px';
       this.textarea.style.lineHeight = compositionViewBounds.height + 'px';
     }
+
     if (!dontRecurse) {
       setTimeout(() => this.updateCompositionElements(true), 0);
     }
@@ -222,7 +223,7 @@ export class CompositionHelper {
    * Clears the textarea's position so that the cursor does not blink on IE.
    * @private
    */
-  private clearTextareaPosition() {
+  private clearTextareaPosition(): void {
     this.textarea.style.left = '';
     this.textarea.style.top = '';
   };

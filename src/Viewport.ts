@@ -1,18 +1,21 @@
 /**
+ * Copyright (c) 2016 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 
-import { ITerminal } from './Interfaces';
+import { ITerminal, IViewport } from './Interfaces';
 import { CharMeasure } from './utils/CharMeasure';
+import { IColorSet } from './renderer/Interfaces';
 
 /**
  * Represents the viewport of a terminal, the visible area within the larger buffer of output.
  * Logic for the virtual scroll bar is included in this object.
  */
-export class Viewport {
-  private currentRowHeight: number;
-  private lastRecordedBufferLength: number;
-  private lastRecordedViewportHeight: number;
+export class Viewport implements IViewport {
+  private currentRowHeight: number = 0;
+  private lastRecordedBufferLength: number = 0;
+  private lastRecordedViewportHeight: number = 0;
+  private lastRecordedBufferHeight: number = 0;
   private lastTouchY: number;
 
   /**
@@ -28,16 +31,14 @@ export class Viewport {
     private scrollArea: HTMLElement,
     private charMeasure: CharMeasure
   ) {
-    this.currentRowHeight = 0;
-    this.lastRecordedBufferLength = 0;
-    this.lastRecordedViewportHeight = 0;
-
-    this.terminal.on('scroll', this.syncScrollArea.bind(this));
-    this.terminal.on('resize', this.syncScrollArea.bind(this));
     this.viewportElement.addEventListener('scroll', this.onScroll.bind(this));
 
     // Perform this async to ensure the CharMeasure is ready.
     setTimeout(() => this.syncScrollArea(), 0);
+  }
+
+  public onThemeChanged(colors: IColorSet): void {
+    this.viewportElement.style.backgroundColor = colors.background;
   }
 
   /**
@@ -46,19 +47,18 @@ export class Viewport {
    */
   private refresh(): void {
     if (this.charMeasure.height > 0) {
-      const rowHeightChanged = this.charMeasure.height !== this.currentRowHeight;
-      if (rowHeightChanged) {
-        this.currentRowHeight = this.charMeasure.height;
-        this.viewportElement.style.lineHeight = this.charMeasure.height + 'px';
-        this.terminal.rowContainer.style.lineHeight = this.charMeasure.height + 'px';
+      this.currentRowHeight = this.terminal.renderer.dimensions.scaledCellHeight / window.devicePixelRatio;
+
+      if (this.lastRecordedViewportHeight !== this.terminal.renderer.dimensions.canvasHeight) {
+        this.lastRecordedViewportHeight = this.terminal.renderer.dimensions.canvasHeight;
+        this.viewportElement.style.height = this.lastRecordedViewportHeight + 'px';
       }
-      const viewportHeightChanged = this.lastRecordedViewportHeight !== this.terminal.rows;
-      if (rowHeightChanged || viewportHeightChanged) {
-        this.lastRecordedViewportHeight = this.terminal.rows;
-        this.viewportElement.style.height = this.charMeasure.height * this.terminal.rows + 'px';
-        this.terminal.selectionContainer.style.height = this.viewportElement.style.height;
+
+      const newBufferHeight = Math.round(this.currentRowHeight * this.lastRecordedBufferLength);
+      if (this.lastRecordedBufferHeight !== newBufferHeight) {
+        this.lastRecordedBufferHeight = newBufferHeight;
+        this.scrollArea.style.height = this.lastRecordedBufferHeight + 'px';
       }
-      this.scrollArea.style.height = (this.charMeasure.height * this.lastRecordedBufferLength) + 'px';
     }
   }
 
@@ -70,12 +70,12 @@ export class Viewport {
       // If buffer height changed
       this.lastRecordedBufferLength = this.terminal.buffer.lines.length;
       this.refresh();
-    } else if (this.lastRecordedViewportHeight !== this.terminal.rows) {
+    } else if (this.lastRecordedViewportHeight !== (<any>this.terminal).renderer.dimensions.canvasHeight) {
       // If viewport height changed
       this.refresh();
     } else {
       // If size has changed, refresh viewport
-      if (this.charMeasure.height !== this.currentRowHeight) {
+      if (this.terminal.renderer.dimensions.scaledCellHeight / window.devicePixelRatio !== this.currentRowHeight) {
         this.refresh();
       }
     }
@@ -92,10 +92,10 @@ export class Viewport {
    * terminal to scroll to it.
    * @param ev The scroll event.
    */
-  private onScroll(ev: Event) {
+  private onScroll(ev: Event): void {
     const newRow = Math.round(this.viewportElement.scrollTop / this.currentRowHeight);
     const diff = newRow - this.terminal.buffer.ydisp;
-    this.terminal.scrollDisp(diff, true);
+    this.terminal.scrollLines(diff, true);
   }
 
   /**
@@ -104,7 +104,7 @@ export class Viewport {
    * `Viewport`.
    * @param ev The mouse wheel event.
    */
-  public onWheel(ev: WheelEvent) {
+  public onWheel(ev: WheelEvent): void {
     if (ev.deltaY === 0) {
       // Do nothing if it's not a vertical scroll event
       return;
@@ -125,7 +125,7 @@ export class Viewport {
    * Handles the touchstart event, recording the touch occurred.
    * @param ev The touch event.
    */
-  public onTouchStart(ev: TouchEvent) {
+  public onTouchStart(ev: TouchEvent): void {
     this.lastTouchY = ev.touches[0].pageY;
   };
 
@@ -133,7 +133,7 @@ export class Viewport {
    * Handles the touchmove event, scrolling the viewport if the position shifted.
    * @param ev The touch event.
    */
-  public onTouchMove(ev: TouchEvent) {
+  public onTouchMove(ev: TouchEvent): void {
     let deltaY = this.lastTouchY - ev.touches[0].pageY;
     this.lastTouchY = ev.touches[0].pageY;
     if (deltaY === 0) {

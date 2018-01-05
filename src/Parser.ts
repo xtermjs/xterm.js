@@ -1,4 +1,6 @@
 /**
+ * Copyright (c) 2014 The xterm.js authors. All rights reserved.
+ * Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)
  * @license MIT
  */
 
@@ -148,7 +150,7 @@ csiStateHandler['s'] = (handler, params) => handler.saveCursor(params);
 csiStateHandler['u'] = (handler, params) => handler.restoreCursor(params);
 csiStateHandler[C0.CAN] = (handler, params, prefix, postfix, parser) => parser.setState(ParserState.NORMAL);
 
-enum ParserState {
+export enum ParserState {
   NORMAL = 0,
   ESCAPED = 1,
   CSI_PARAM = 2,
@@ -182,7 +184,15 @@ export class Parser {
    * @param data The data to parse.
    */
   public parse(data: string): ParserState {
-    let l = data.length, j, cs, ch, code, low;
+    const l = data.length;
+    let j;
+    let cs;
+    let ch;
+    let code;
+    let low;
+
+    const cursorStartX = this._terminal.buffer.x;
+    const cursorStartY = this._terminal.buffer.y;
 
     if (this._terminal.debug) {
       this._terminal.log('data: ' + data);
@@ -336,7 +346,9 @@ export class Parser {
             case '=':
               this._terminal.log('Serial port requested application keypad.');
               this._terminal.applicationKeypad = true;
-              this._terminal.viewport.syncScrollArea();
+              if (this._terminal.viewport) {
+                this._terminal.viewport.syncScrollArea();
+              }
               this._state = ParserState.NORMAL;
               break;
 
@@ -344,7 +356,9 @@ export class Parser {
             case '>':
               this._terminal.log('Switching back to normal keypad.');
               this._terminal.applicationKeypad = false;
-              this._terminal.viewport.syncScrollArea();
+              if (this._terminal.viewport) {
+                this._terminal.viewport.syncScrollArea();
+              }
               this._state = ParserState.NORMAL;
               break;
 
@@ -571,6 +585,13 @@ export class Parser {
           break;
       }
     }
+
+    // Fire the cursormove event if it's moved. This is done inside the parser
+    // as a render cannot happen in the middle of a parsing round.
+    if (this._terminal.buffer.x !== cursorStartX || this._terminal.buffer.y !== cursorStartY) {
+      this._terminal.emit('cursormove');
+    }
+
     return this._state;
   }
 
@@ -608,7 +629,7 @@ export class Parser {
    *
    * @param param the parameter.
    */
-  public setParam(param: number) {
+  public setParam(param: number): void {
     this._terminal.currentParam = param;
   }
 

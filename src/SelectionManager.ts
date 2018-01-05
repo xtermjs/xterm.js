@@ -1,15 +1,17 @@
 /**
+ * Copyright (c) 2017 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 
-import * as Mouse from './utils/Mouse';
+import { MouseHelper } from './utils/MouseHelper';
 import * as Browser from './utils/Browser';
 import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
 import { EventEmitter } from './EventEmitter';
-import { ITerminal, ICircularList } from './Interfaces';
+import { ITerminal, ICircularList, ISelectionManager, IBuffer } from './Interfaces';
 import { SelectionModel } from './SelectionModel';
-import { translateBufferLineToString } from './utils/BufferLine';
+import { LineData, CharData } from './Types';
+import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from './Buffer';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -32,11 +34,6 @@ const DRAG_SCROLL_INTERVAL = 50;
  * double click to select work logic.
  */
 const WORD_SEPARATORS = ' ()[]{}\'"';
-
-// TODO: Move these constants elsewhere, they belong in a buffer or buffer
-//       data/line class.
-const LINE_DATA_CHAR_INDEX = 1;
-const LINE_DATA_WIDTH_INDEX = 2;
 
 const NON_BREAKING_SPACE_CHAR = String.fromCharCode(160);
 const ALL_NON_BREAKING_SPACE_REGEX = new RegExp(NON_BREAKING_SPACE_CHAR, 'g');
@@ -66,7 +63,7 @@ enum SelectionMode {
  * not handled by the SelectionManager but a 'refresh' event is fired when the
  * selection is ready to be redrawn.
  */
-export class SelectionManager extends EventEmitter {
+export class SelectionManager extends EventEmitter implements ISelectionManager {
   protected _model: SelectionModel;
 
   /**
@@ -101,8 +98,7 @@ export class SelectionManager extends EventEmitter {
 
   constructor(
     private _terminal: ITerminal,
-    private _buffer: ICircularList<[number, string, number][]>,
-    private _rowContainer: HTMLElement,
+    private _buffer: IBuffer,
     private _charMeasure: CharMeasure
   ) {
     super();
@@ -116,24 +112,22 @@ export class SelectionManager extends EventEmitter {
   /**
    * Initializes listener variables.
    */
-  private _initListeners() {
+  private _initListeners(): void {
     this._mouseMoveListener = event => this._onMouseMove(<MouseEvent>event);
     this._mouseUpListener = event => this._onMouseUp(<MouseEvent>event);
-
-    this._rowContainer.addEventListener('mousedown', event => this._onMouseDown(<MouseEvent>event));
 
     // Only adjust the selection on trim, shiftElements is rarely used (only in
     // reverseIndex) and delete in a splice is only ever used when the same
     // number of elements was just added. Given this is could actually be
     // beneficial to leave the selection as is for these cases.
-    this._buffer.on('trim', (amount: number) => this._onTrim(amount));
+    this._buffer.lines.on('trim', (amount: number) => this._onTrim(amount));
   }
 
   /**
    * Disables the selection manager. This is useful for when terminal mouse
    * are enabled.
    */
-  public disable() {
+  public disable(): void {
     this.clearSelection();
     this._enabled = false;
   }
@@ -141,7 +135,7 @@ export class SelectionManager extends EventEmitter {
   /**
    * Enable the selection manager.
    */
-  public enable() {
+  public enable(): void {
     this._enabled = true;
   }
 
@@ -150,7 +144,7 @@ export class SelectionManager extends EventEmitter {
    * switched in or out.
    * @param buffer The active buffer.
    */
-  public setBuffer(buffer: ICircularList<[number, string, number][]>): void {
+  public setBuffer(buffer: IBuffer): void {
     this._buffer = buffer;
     this.clearSelection();
   }
@@ -183,12 +177,12 @@ export class SelectionManager extends EventEmitter {
     // Get first row
     const startRowEndCol = start[1] === end[1] ? end[0] : null;
     let result: string[] = [];
-    result.push(translateBufferLineToString(this._buffer.get(start[1]), true, start[0], startRowEndCol));
+    result.push(this._buffer.translateBufferLineToString(start[1], true, start[0], startRowEndCol));
 
     // Get middle rows
     for (let i = start[1] + 1; i <= end[1] - 1; i++) {
-      const bufferLine = this._buffer.get(i);
-      const lineText = translateBufferLineToString(bufferLine, true);
+      const bufferLine = this._buffer.lines.get(i);
+      const lineText = this._buffer.translateBufferLineToString(i, true);
       if ((<any>bufferLine).isWrapped) {
         result[result.length - 1] += lineText;
       } else {
@@ -198,8 +192,8 @@ export class SelectionManager extends EventEmitter {
 
     // Get final row
     if (start[1] !== end[1]) {
-      const bufferLine = this._buffer.get(end[1]);
-      const lineText = translateBufferLineToString(bufferLine, true, 0, end[0]);
+      const bufferLine = this._buffer.lines.get(end[1]);
+      const lineText = this._buffer.translateBufferLineToString(end[1], true, 0, end[0]);
       if ((<any>bufferLine).isWrapped) {
         result[result.length - 1] += lineText;
       } else {
@@ -261,13 +255,14 @@ export class SelectionManager extends EventEmitter {
   public selectAll(): void {
     this._model.isSelectAllActive = true;
     this.refresh();
+    this._terminal.emit('selection');
   }
 
   /**
    * Handle the buffer being trimmed, adjust the selection position.
    * @param amount The amount the buffer is being trimmed.
    */
-  private _onTrim(amount: number) {
+  private _onTrim(amount: number): void {
     const needsRefresh = this._model.onTrim(amount);
     if (needsRefresh) {
       this.refresh();
@@ -279,7 +274,7 @@ export class SelectionManager extends EventEmitter {
    * @param event The mouse event.
    */
   private _getMouseBufferCoords(event: MouseEvent): [number, number] {
-    const coords = Mouse.getCoords(event, this._rowContainer, this._charMeasure, this._terminal.cols, this._terminal.rows, true);
+    const coords = this._terminal.mouseHelper.getCoords(event, this._terminal.element, this._charMeasure, this._terminal.options.lineHeight, this._terminal.cols, this._terminal.rows, true);
     if (!coords) {
       return null;
     }
@@ -287,6 +282,7 @@ export class SelectionManager extends EventEmitter {
     // Convert to 0-based
     coords[0]--;
     coords[1]--;
+
     // Convert viewport coords to buffer coords
     coords[1] += this._terminal.buffer.ydisp;
     return coords;
@@ -298,8 +294,8 @@ export class SelectionManager extends EventEmitter {
    * @param event The mouse event.
    */
   private _getMouseEventScrollAmount(event: MouseEvent): number {
-    let offset = Mouse.getCoordsRelativeToElement(event, this._rowContainer)[1];
-    const terminalHeight = this._terminal.rows * this._charMeasure.height;
+    let offset = MouseHelper.getCoordsRelativeToElement(event, this._terminal.element)[1];
+    const terminalHeight = this._terminal.rows * Math.ceil(this._charMeasure.height * this._terminal.options.lineHeight);
     if (offset >= 0 && offset <= terminalHeight) {
       return 0;
     }
@@ -313,14 +309,22 @@ export class SelectionManager extends EventEmitter {
   }
 
   /**
+   * Returns whether the selection manager should force selection, regardless of
+   * whether the terminal is in mouse events mode.
+   * @param event The mouse event.
+   */
+  public shouldForceSelection(event: MouseEvent): boolean {
+    return Browser.isMac ? event.altKey : event.shiftKey;
+  }
+
+  /**
    * Handles te mousedown event, setting up for a new selection.
    * @param event The mousedown event.
    */
-  private _onMouseDown(event: MouseEvent) {
+  public onMouseDown(event: MouseEvent): void {
     // If we have selection, we want the context menu on right click even if the
     // terminal is in mouse mode.
     if (event.button === 2 && this.hasSelection) {
-      event.stopPropagation();
       return;
     }
 
@@ -331,9 +335,7 @@ export class SelectionManager extends EventEmitter {
 
     // Allow selection when using a specific modifier key, even when disabled
     if (!this._enabled) {
-      const shouldForceSelection = Browser.isMac && event.altKey;
-
-      if (!shouldForceSelection) {
+      if (!this.shouldForceSelection(event)) {
         return;
       }
 
@@ -368,8 +370,8 @@ export class SelectionManager extends EventEmitter {
    */
   private _addMouseDownListeners(): void {
     // Listen on the document so that dragging outside of viewport works
-    this._rowContainer.ownerDocument.addEventListener('mousemove', this._mouseMoveListener);
-    this._rowContainer.ownerDocument.addEventListener('mouseup', this._mouseUpListener);
+    this._terminal.element.ownerDocument.addEventListener('mousemove', this._mouseMoveListener);
+    this._terminal.element.ownerDocument.addEventListener('mouseup', this._mouseUpListener);
     this._dragScrollIntervalTimer = setInterval(() => this._dragScroll(), DRAG_SCROLL_INTERVAL);
   }
 
@@ -377,8 +379,8 @@ export class SelectionManager extends EventEmitter {
    * Removes the listeners that are registered when mousedown is triggered.
    */
   private _removeMouseDownListeners(): void {
-    this._rowContainer.ownerDocument.removeEventListener('mousemove', this._mouseMoveListener);
-    this._rowContainer.ownerDocument.removeEventListener('mouseup', this._mouseUpListener);
+    this._terminal.element.ownerDocument.removeEventListener('mousemove', this._mouseMoveListener);
+    this._terminal.element.ownerDocument.removeEventListener('mouseup', this._mouseUpListener);
     clearInterval(this._dragScrollIntervalTimer);
     this._dragScrollIntervalTimer = null;
   }
@@ -412,15 +414,20 @@ export class SelectionManager extends EventEmitter {
     this._model.selectionEnd = null;
 
     // Ensure the line exists
-    const line = this._buffer.get(this._model.selectionStart[1]);
+    const line = this._buffer.lines.get(this._model.selectionStart[1]);
     if (!line) {
+      return;
+    }
+
+    // Return early if the click event is not in the buffer (eg. in scroll bar)
+    if (line.length >= this._model.selectionStart[0]) {
       return;
     }
 
     // If the mouse is over the second half of a wide character, adjust the
     // selection to cover the whole character
     const char = line[this._model.selectionStart[0]];
-    if (char[LINE_DATA_WIDTH_INDEX] === 0) {
+    if (char[CHAR_DATA_WIDTH_INDEX] === 0) {
       this._model.selectionStart[0]++;
     }
   }
@@ -455,7 +462,12 @@ export class SelectionManager extends EventEmitter {
    * end of the selection and refreshing the selection.
    * @param event The mousemove event.
    */
-  private _onMouseMove(event: MouseEvent) {
+  private _onMouseMove(event: MouseEvent): void {
+    // If the mousemove listener is active it means that a selection is
+    // currently being made, we should stop propogation to prevent mouse events
+    // to be sent to the pty.
+    event.stopImmediatePropagation();
+
     // Record the previous position so we know whether to redraw the selection
     // at the end.
     const previousSelectionEnd = this._model.selectionEnd ? [this._model.selectionEnd[0], this._model.selectionEnd[1]] : null;
@@ -484,7 +496,7 @@ export class SelectionManager extends EventEmitter {
     // If the cursor was above or below the viewport, make sure it's at the
     // start or end of the viewport respectively.
     if (this._dragScrollAmount > 0) {
-      this._model.selectionEnd[0] = this._terminal.cols - 1;
+      this._model.selectionEnd[0] = this._terminal.cols;
     } else if (this._dragScrollAmount < 0) {
       this._model.selectionEnd[0] = 0;
     }
@@ -492,9 +504,9 @@ export class SelectionManager extends EventEmitter {
     // If the character is a wide character include the cell to the right in the
     // selection. Note that selections at the very end of the line will never
     // have a character.
-    if (this._model.selectionEnd[1] < this._buffer.length) {
-      const char = this._buffer.get(this._model.selectionEnd[1])[this._model.selectionEnd[0]];
-      if (char && char[2] === 0) {
+    if (this._model.selectionEnd[1] < this._buffer.lines.length) {
+      const char = this._buffer.lines.get(this._model.selectionEnd[1])[this._model.selectionEnd[0]];
+      if (char && char[CHAR_DATA_WIDTH_INDEX] === 0) {
         this._model.selectionEnd[0]++;
       }
     }
@@ -511,9 +523,9 @@ export class SelectionManager extends EventEmitter {
    * The callback that occurs every DRAG_SCROLL_INTERVAL ms that does the
    * scrolling of the viewport.
    */
-  private _dragScroll() {
+  private _dragScroll(): void {
     if (this._dragScrollAmount) {
-      this._terminal.scrollDisp(this._dragScrollAmount, false);
+      this._terminal.scrollLines(this._dragScrollAmount, false);
       // Re-evaluate selection
       if (this._dragScrollAmount > 0) {
         this._model.selectionEnd = [this._terminal.cols - 1, this._terminal.buffer.ydisp + this._terminal.rows];
@@ -528,8 +540,11 @@ export class SelectionManager extends EventEmitter {
    * Handles the mouseup event, removing the mousedown listeners.
    * @param event The mouseup event.
    */
-  private _onMouseUp(event: MouseEvent) {
+  private _onMouseUp(event: MouseEvent): void {
     this._removeMouseDownListeners();
+
+    if (this.hasSelection)
+      this._terminal.emit('selection');
   }
 
   /**
@@ -541,8 +556,15 @@ export class SelectionManager extends EventEmitter {
     let charIndex = coords[0];
     for (let i = 0; coords[0] >= i; i++) {
       const char = bufferLine[i];
-      if (char[LINE_DATA_WIDTH_INDEX] === 0) {
+      if (char[CHAR_DATA_WIDTH_INDEX] === 0) {
+        // Wide characters aren't included in the line string so decrement the
+        // index so the index is back on the wide character.
         charIndex--;
+      } else if (char[CHAR_DATA_CHAR_INDEX].length > 1 && coords[0] !== i) {
+        // Emojis take up multiple characters, so adjust accordingly. For these
+        // we don't want ot include the character at the column as we're
+        // returning the start index in the string, not the end index.
+        charIndex += char[CHAR_DATA_CHAR_INDEX].length - 1;
       }
     }
     return charIndex;
@@ -561,21 +583,23 @@ export class SelectionManager extends EventEmitter {
    * @param coords The coordinates to get the word at.
    */
   private _getWordAt(coords: [number, number]): IWordPosition {
-    const bufferLine = this._buffer.get(coords[1]);
+    const bufferLine = this._buffer.lines.get(coords[1]);
     if (!bufferLine) {
       return null;
     }
 
-    const line = translateBufferLineToString(bufferLine, false);
+    const line = this._buffer.translateBufferLineToString(coords[1], false);
 
     // Get actual index, taking into consideration wide characters
-    let endIndex = this._convertViewportColToCharacterIndex(bufferLine, coords);
-    let startIndex = endIndex;
+    let startIndex = this._convertViewportColToCharacterIndex(bufferLine, coords);
+    let endIndex = startIndex;
 
     // Record offset to be used later
     const charOffset = coords[0] - startIndex;
     let leftWideCharCount = 0;
     let rightWideCharCount = 0;
+    let leftLongCharOffset = 0;
+    let rightLongCharOffset = 0;
 
     if (line.charAt(startIndex) === ' ') {
       // Expand until non-whitespace is hit
@@ -592,39 +616,78 @@ export class SelectionManager extends EventEmitter {
       // character is hit, it is recorded and the column index is adjusted.
       let startCol = coords[0];
       let endCol = coords[0];
+
       // Consider the initial position, skip it and increment the wide char
       // variable
-      if (bufferLine[startCol][LINE_DATA_WIDTH_INDEX] === 0) {
+      if (bufferLine[startCol][CHAR_DATA_WIDTH_INDEX] === 0) {
         leftWideCharCount++;
         startCol--;
       }
-      if (bufferLine[endCol][LINE_DATA_WIDTH_INDEX] === 2) {
+      if (bufferLine[endCol][CHAR_DATA_WIDTH_INDEX] === 2) {
         rightWideCharCount++;
         endCol++;
       }
+
+      // Adjust the end index for characters whose length are > 1 (emojis)
+      if (bufferLine[endCol][CHAR_DATA_CHAR_INDEX].length > 1) {
+        rightLongCharOffset += bufferLine[endCol][CHAR_DATA_CHAR_INDEX].length - 1;
+        endIndex += bufferLine[endCol][CHAR_DATA_CHAR_INDEX].length - 1;
+      }
+
       // Expand the string in both directions until a space is hit
-      while (startIndex > 0 && !this._isCharWordSeparator(line.charAt(startIndex - 1))) {
-        if (bufferLine[startCol - 1][LINE_DATA_WIDTH_INDEX] === 0) {
+      while (startCol > 0 && startIndex > 0 && !this._isCharWordSeparator(bufferLine[startCol - 1])) {
+        const char = bufferLine[startCol - 1];
+        if (char[CHAR_DATA_WIDTH_INDEX] === 0) {
           // If the next character is a wide char, record it and skip the column
           leftWideCharCount++;
           startCol--;
+        } else if (char[CHAR_DATA_CHAR_INDEX].length > 1) {
+          // If the next character's string is longer than 1 char (eg. emoji),
+          // adjust the index
+          leftLongCharOffset += char[CHAR_DATA_CHAR_INDEX].length - 1;
+          startIndex -= char[CHAR_DATA_CHAR_INDEX].length - 1;
         }
         startIndex--;
         startCol--;
       }
-      while (endIndex + 1 < line.length && !this._isCharWordSeparator(line.charAt(endIndex + 1))) {
-        if (bufferLine[endCol + 1][LINE_DATA_WIDTH_INDEX] === 2) {
+      while (endCol < bufferLine.length && endIndex + 1 < line.length && !this._isCharWordSeparator(bufferLine[endCol + 1])) {
+        const char = bufferLine[endCol + 1];
+        if (char[CHAR_DATA_WIDTH_INDEX] === 2) {
           // If the next character is a wide char, record it and skip the column
           rightWideCharCount++;
           endCol++;
+        } else if (char[CHAR_DATA_CHAR_INDEX].length > 1) {
+          // If the next character's string is longer than 1 char (eg. emoji),
+          // adjust the index
+          rightLongCharOffset += char[CHAR_DATA_CHAR_INDEX].length - 1;
+          endIndex += char[CHAR_DATA_CHAR_INDEX].length - 1;
         }
         endIndex++;
         endCol++;
       }
     }
 
-    const start = startIndex + charOffset - leftWideCharCount;
-    const length = Math.min(endIndex - startIndex + leftWideCharCount + rightWideCharCount + 1/*include endIndex char*/, this._terminal.cols);
+    // Incremenet the end index so it is at the start of the next character
+    endIndex++;
+
+    // Calculate the start _column_, converting the the string indexes back to
+    // column coordinates.
+    const start =
+        startIndex // The index of the selection's start char in the line string
+        + charOffset // The difference between the initial char's column and index
+        - leftWideCharCount // The number of wide chars left of the initial char
+        + leftLongCharOffset; // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
+
+    // Calculate the length in _columns_, converting the the string indexes back
+    // to column coordinates.
+    const length = Math.min(this._terminal.cols, // Disallow lengths larger than the terminal cols
+        endIndex // The index of the selection's end char in the line string
+        - startIndex // The index of the selection's start char in the line string
+        + leftWideCharCount // The number of wide chars left of the initial char
+        + rightWideCharCount // The number of wide chars right of the initial char (inclusive)
+        - leftLongCharOffset // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
+        - rightLongCharOffset); // The number of additional chars right of the initial char (inclusive) added by columns with strings longer than 1 (emojis)
+
     return { start, length };
   }
 
@@ -656,8 +719,13 @@ export class SelectionManager extends EventEmitter {
    * word logic.
    * @param char The character to check.
    */
-  private _isCharWordSeparator(char: string): boolean {
-    return WORD_SEPARATORS.indexOf(char) >= 0;
+  private _isCharWordSeparator(charData: CharData): boolean {
+    // Zero width characters are never separators as they are always to the
+    // right of wide characters
+    if (charData[CHAR_DATA_WIDTH_INDEX] === 0) {
+      return false;
+    }
+    return WORD_SEPARATORS.indexOf(charData[CHAR_DATA_CHAR_INDEX]) >= 0;
   }
 
   /**

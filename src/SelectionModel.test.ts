@@ -1,11 +1,13 @@
 /**
+ * Copyright (c) 2017 The xterm.js authors. All rights reserved.
  * @license MIT
  */
+
 import { assert } from 'chai';
 import { ITerminal } from './Interfaces';
 import { SelectionModel } from './SelectionModel';
 import {BufferSet} from './BufferSet';
-import { MockTerminal } from './utils/TestUtils';
+import { MockTerminal } from './utils/TestUtils.test';
 
 class TestSelectionModel extends SelectionModel {
   constructor(
@@ -26,7 +28,7 @@ describe('SelectionManager', () => {
     terminal = new MockTerminal();
     terminal.cols = 80;
     terminal.rows = 2;
-    terminal.scrollback = 10;
+    terminal.options.scrollback = 10;
     terminal.buffers = new BufferSet(terminal);
     terminal.buffer = terminal.buffers.active;
 

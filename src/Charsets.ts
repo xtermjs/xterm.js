@@ -1,18 +1,21 @@
 /**
+ * Copyright (c) 2016 The xterm.js authors. All rights reserved.
  * @license MIT
  */
+
+import { Charset } from './Types';
 
 /**
  * The character sets supported by the terminal. These enable several languages
  * to be represented within the terminal with only 8-bit encoding. See ISO 2022
  * for a discussion on character sets. Only VT100 character sets are supported.
  */
-export const CHARSETS: {[key: string]: {[key: string]: string}} = {};
+export const CHARSETS: { [key: string]: Charset } = {};
 
 /**
  * The default character set, US.
  */
-export const DEFAULT_CHARSET = CHARSETS['B'];
+export const DEFAULT_CHARSET: Charset = CHARSETS['B'];
 
 /**
  * DEC Special Character and Line Drawing Set.

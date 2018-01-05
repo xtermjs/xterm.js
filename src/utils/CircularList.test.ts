@@ -1,5 +1,14 @@
+/**
+ * Copyright (c) 2016 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
 import { assert } from 'chai';
 import { CircularList } from './CircularList';
+
+class TestCircularList<T> extends CircularList<T> {
+  public get array(): T[] { return this._array; }
+}
 
 describe('CircularList', () => {
   describe('push', () => {

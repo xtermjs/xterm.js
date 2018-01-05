@@ -1,6 +1,5 @@
 /**
- * Generic utilities module with methods that can be helpful at different parts of the code base.
- * @module xterm/utils/Generic
+ * Copyright (c) 2016 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 
@@ -9,6 +8,6 @@
  * @param {Array} array The array to search for the given element.
  * @param {Object} el The element to look for into the array
  */
-export function contains(arr: any[], el: any) {
+export function contains(arr: any[], el: any): boolean {
   return arr.indexOf(el) >= 0;
 };
