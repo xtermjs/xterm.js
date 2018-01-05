@@ -27,7 +27,6 @@ export class ScreenDprMonitor {
     }
     this._listener = listener;
     this._outerListener = () => {
-      console.log('change!');
       this._listener(window.devicePixelRatio, this._currentDevicePixelRatio);
       this._updateDpr();
     };
