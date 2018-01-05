@@ -47,12 +47,6 @@ import { MouseZoneManager } from './input/MouseZoneManager';
 import { initialize as initializeCharAtlas } from './renderer/CharAtlas';
 import { IRenderer } from './renderer/Interfaces';
 
-// Declares required for loadAddon
-declare var exports: any;
-declare var module: any;
-declare var define: any;
-declare var require: any;
-
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
 
@@ -70,9 +64,10 @@ const WRITE_BUFFER_PAUSE_THRESHOLD = 5;
 const WRITE_BATCH_SIZE = 300;
 
 const DEFAULT_OPTIONS: ITerminalOptions = {
+  cols: 80,
+  rows: 24,
   convertEol: false,
   termName: 'xterm',
-  geometry: [80, 24],
   cursorBlink: false,
   cursorStyle: 'block',
   bellSound: BellSound,
@@ -206,7 +201,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
   public cols: number;
   public rows: number;
-  public geometry: [/*cols*/number, /*rows*/number];
 
   /**
    * Creates a new `Terminal` object.
@@ -242,9 +236,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // TODO: WHy not document.body?
     this.parent = document ? document.body : null;
 
-    this.cols = this.options.cols || this.options.geometry[0];
-    this.rows = this.options.rows || this.options.geometry[1];
-    this.geometry = [this.cols, this.rows];
+    this.cols = this.options.cols;
+    this.rows = this.options.rows;
 
     if (this.options.handler) {
       this.on('data', this.options.handler);
@@ -323,7 +316,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Focus the terminal. Delegates focus handling to the terminal's DOM element.
    */
   public focus(): void {
-    this.textarea.focus();
+    if (this.textarea) {
+      this.textarea.focus();
+    }
   }
 
   public get isFocused(): boolean {
@@ -585,18 +580,18 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.element = this.document.createElement('div');
     this.element.classList.add('terminal');
     this.element.classList.add('xterm');
-
     this.element.setAttribute('tabindex', '0');
+    this.parent.appendChild(this.element);
 
+    // Performance: Use a document fragment to build the terminal
+    // viewport and helper elements detached from the DOM
+    const fragment = document.createDocumentFragment();
     this.viewportElement = document.createElement('div');
     this.viewportElement.classList.add('xterm-viewport');
-    this.element.appendChild(this.viewportElement);
+    fragment.appendChild(this.viewportElement);
     this.viewportScrollArea = document.createElement('div');
     this.viewportScrollArea.classList.add('xterm-scroll-area');
     this.viewportElement.appendChild(this.viewportScrollArea);
-
-    // preload audio
-    this.syncBellSound();
 
     this._mouseZoneManager = new MouseZoneManager(this);
     this.on('scroll', () => this._mouseZoneManager.clearAll());
@@ -606,8 +601,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // capturing DOM Events. Then produce the helpers.
     this.helperContainer = document.createElement('div');
     this.helperContainer.classList.add('xterm-helpers');
-    // TODO: This should probably be inserted once it's filled to prevent an additional layout
-    this.element.appendChild(this.helperContainer);
+    fragment.appendChild(this.helperContainer);
+
     this.textarea = document.createElement('textarea');
     this.textarea.classList.add('xterm-helper-textarea');
     this.textarea.setAttribute('autocorrect', 'off');
@@ -625,10 +620,13 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     this.charSizeStyleElement = document.createElement('style');
     this.helperContainer.appendChild(this.charSizeStyleElement);
-
-    this.parent.appendChild(this.element);
-
     this.charMeasure = new CharMeasure(document, this.helperContainer);
+
+    // Preload audio, this relied on helperContainer
+    this.syncBellSound();
+
+    // Performance: Add viewport and helper elements from the fragment
+    this.element.appendChild(fragment);
 
     this.renderer = new Renderer(this, this.options.theme);
     this.options.theme = null;
@@ -674,6 +672,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // Listen for mouse events and translate
     // them into terminal mouse protocols.
     this.bindMouse();
+
   }
 
   /**
@@ -688,22 +687,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 
   /**
-   * Attempts to load an add-on using CommonJS or RequireJS (whichever is available).
-   * @param {string} addon The name of the addon to load
-   * @static
+   * Apply the provided addon on the `Terminal` class.
+   * @param addon The addon to apply.
    */
-  public static loadAddon(addon: string, callback?: Function): boolean | any {
-    // TODO: Improve return type and documentation
-    if (typeof exports === 'object' && typeof module === 'object') {
-      // CommonJS
-      return require('./addons/' + addon + '/' + addon);
-    } else if (typeof define === 'function') {
-      // RequireJS
-      return (<any>require)(['./addons/' + addon + '/' + addon], callback);
-    } else {
-      console.error('Cannot load a module without a CommonJS or RequireJS environment.');
-      return false;
-    }
+  public static applyAddon(addon: any): void {
+    addon.apply(Terminal);
   }
 
   /**
@@ -1461,6 +1449,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         if (ev.shiftKey) {
           result.key = C0.BS; // ^H
           break;
+        } else if (ev.altKey) {
+          result.key = C0.ESC + C0.DEL; // \e ^?
+          break;
         }
         result.key = C0.DEL; // ^?
         break;
@@ -1867,8 +1858,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.charMeasure.measure(this.options);
 
     this.refresh(0, this.rows - 1);
-
-    this.geometry = [this.cols, this.rows];
     this.emit('resize', {cols: x, rows: y});
   }
 
@@ -2130,6 +2119,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 
   private syncBellSound(): void {
+    // Don't update anything if the terminal has not been opened yet
+    if (!this.element) {
+      return;
+    }
+
     if (this.soundBell() && this.bellAudioElement) {
       this.bellAudioElement.setAttribute('src', this.options.bellSound);
     } else if (this.soundBell()) {

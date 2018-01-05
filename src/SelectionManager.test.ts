@@ -14,6 +14,10 @@ import { BufferSet } from './BufferSet';
 import { MockTerminal } from './utils/TestUtils.test';
 import { LineData, CharData } from './Types';
 
+class TestMockTerminal extends MockTerminal {
+  emit(event: string, data: any): void {}
+}
+
 class TestSelectionManager extends SelectionManager {
   constructor(
     terminal: ITerminal,
@@ -48,7 +52,7 @@ describe('SelectionManager', () => {
     dom = new jsdom.JSDOM('');
     window = dom.window;
     document = window.document;
-    terminal = new MockTerminal();
+    terminal = new TestMockTerminal();
     terminal.cols = 80;
     terminal.rows = 2;
     terminal.options.scrollback = 100;

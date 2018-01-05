@@ -52,6 +52,7 @@ export class Renderer extends EventEmitter implements IRenderer {
       actualCellHeight: null
     };
     this._devicePixelRatio = window.devicePixelRatio;
+    this._updateDimensions();
   }
 
   public onWindowResize(devicePixelRatio: number): void {
@@ -78,59 +79,8 @@ export class Renderer extends EventEmitter implements IRenderer {
   }
 
   public onResize(cols: number, rows: number, didCharSizeChange: boolean): void {
-    if (!this._terminal.charMeasure.width || !this._terminal.charMeasure.height) {
-      return;
-    }
-
-    // Calculate the scaled character width. Width is floored as it must be
-    // drawn to an integer grid in order for the CharAtlas "stamps" to not be
-    // blurry. When text is drawn to the grid not using the CharAtlas, it is
-    // clipped to ensure there is no overlap with the next cell.
-    this.dimensions.scaledCharWidth = Math.floor(this._terminal.charMeasure.width * window.devicePixelRatio);
-
-    // Calculate the scaled character height. Height is ceiled in case
-    // devicePixelRatio is a floating point number in order to ensure there is
-    // enough space to draw the character to the cell.
-    this.dimensions.scaledCharHeight = Math.ceil(this._terminal.charMeasure.height * window.devicePixelRatio);
-
-    // Calculate the scaled cell height, if lineHeight is not 1 then the value
-    // will be floored because since lineHeight can never be lower then 1, there
-    // is a guarentee that the scaled line height will always be larger than
-    // scaled char height.
-    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._terminal.options.lineHeight);
-
-    // Calculate the y coordinate within a cell that text should draw from in
-    // order to draw in the center of a cell.
-    this.dimensions.scaledCharTop = this._terminal.options.lineHeight === 1 ? 0 : Math.round((this.dimensions.scaledCellHeight - this.dimensions.scaledCharHeight) / 2);
-
-    // Calculate the scaled cell width, taking the letterSpacing into account.
-    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._terminal.options.letterSpacing);
-
-    // Calculate the x coordinate with a cell that text should draw from in
-    // order to draw in the center of a cell.
-    this.dimensions.scaledCharLeft = Math.floor(this._terminal.options.letterSpacing / 2);
-
-    // Recalculate the canvas dimensions; scaled* define the actual number of
-    // pixel in the canvas
-    this.dimensions.scaledCanvasHeight = this._terminal.rows * this.dimensions.scaledCellHeight;
-    this.dimensions.scaledCanvasWidth = this._terminal.cols * this.dimensions.scaledCellWidth;
-
-    // The the size of the canvas on the page. It's very important that this
-    // rounds to nearest integer and not ceils as browsers often set
-    // window.devicePixelRatio as something like 1.100000023841858, when it's
-    // actually 1.1. Ceiling causes blurriness as the backing canvas image is 1
-    // pixel too large for the canvas element size.
-    this.dimensions.canvasHeight = Math.round(this.dimensions.scaledCanvasHeight / window.devicePixelRatio);
-    this.dimensions.canvasWidth = Math.round(this.dimensions.scaledCanvasWidth / window.devicePixelRatio);
-
-    // Get the _actual_ dimensions of an individual cell. This needs to be
-    // derived from the canvasWidth/Height calculated above which takes into
-    // account window.devicePixelRatio. CharMeasure.width/height by itself is
-    // insufficient when the page is not at 100% zoom level as CharMeasure is
-    // measured in CSS pixels, but the actual char size on the canvas can
-    // differ.
-    this.dimensions.actualCellHeight = this.dimensions.canvasHeight / this._terminal.rows;
-    this.dimensions.actualCellWidth = this.dimensions.canvasWidth / this._terminal.cols;
+    // Update character and canvas dimensions
+    this._updateDimensions();
 
     // Resize all render layers
     this._renderLayers.forEach(l => l.resize(this._terminal, this.dimensions, didCharSizeChange));
@@ -218,4 +168,66 @@ export class Renderer extends EventEmitter implements IRenderer {
     this._renderLayers.forEach(l => l.onGridChanged(this._terminal, start, end));
     this._terminal.emit('refresh', {start, end});
   }
+
+  /**
+   * Recalculates the character and canvas dimensions.
+   */
+  private _updateDimensions(): void {
+    // Perform a new measure if the CharMeasure dimensions are not yet available
+    if (!this._terminal.charMeasure.width || !this._terminal.charMeasure.height) {
+      return;
+    }
+
+    // Calculate the scaled character width. Width is floored as it must be
+    // drawn to an integer grid in order for the CharAtlas "stamps" to not be
+    // blurry. When text is drawn to the grid not using the CharAtlas, it is
+    // clipped to ensure there is no overlap with the next cell.
+    this.dimensions.scaledCharWidth = Math.floor(this._terminal.charMeasure.width * window.devicePixelRatio);
+
+    // Calculate the scaled character height. Height is ceiled in case
+    // devicePixelRatio is a floating point number in order to ensure there is
+    // enough space to draw the character to the cell.
+    this.dimensions.scaledCharHeight = Math.ceil(this._terminal.charMeasure.height * window.devicePixelRatio);
+
+    // Calculate the scaled cell height, if lineHeight is not 1 then the value
+    // will be floored because since lineHeight can never be lower then 1, there
+    // is a guarentee that the scaled line height will always be larger than
+    // scaled char height.
+    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._terminal.options.lineHeight);
+
+    // Calculate the y coordinate within a cell that text should draw from in
+    // order to draw in the center of a cell.
+    this.dimensions.scaledCharTop = this._terminal.options.lineHeight === 1 ? 0 : Math.round((this.dimensions.scaledCellHeight - this.dimensions.scaledCharHeight) / 2);
+
+    // Calculate the scaled cell width, taking the letterSpacing into account.
+    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._terminal.options.letterSpacing);
+
+    // Calculate the x coordinate with a cell that text should draw from in
+    // order to draw in the center of a cell.
+    this.dimensions.scaledCharLeft = Math.floor(this._terminal.options.letterSpacing / 2);
+
+    // Recalculate the canvas dimensions; scaled* define the actual number of
+    // pixel in the canvas
+    this.dimensions.scaledCanvasHeight = this._terminal.rows * this.dimensions.scaledCellHeight;
+    this.dimensions.scaledCanvasWidth = this._terminal.cols * this.dimensions.scaledCellWidth;
+
+    // The the size of the canvas on the page. It's very important that this
+    // rounds to nearest integer and not ceils as browsers often set
+    // window.devicePixelRatio as something like 1.100000023841858, when it's
+    // actually 1.1. Ceiling causes blurriness as the backing canvas image is 1
+    // pixel too large for the canvas element size.
+    this.dimensions.canvasHeight = Math.round(this.dimensions.scaledCanvasHeight / window.devicePixelRatio);
+    this.dimensions.canvasWidth = Math.round(this.dimensions.scaledCanvasWidth / window.devicePixelRatio);
+
+    // Get the _actual_ dimensions of an individual cell. This needs to be
+    // derived from the canvasWidth/Height calculated above which takes into
+    // account window.devicePixelRatio. CharMeasure.width/height by itself is
+    // insufficient when the page is not at 100% zoom level as CharMeasure is
+    // measured in CSS pixels, but the actual char size on the canvas can
+    // differ.
+    this.dimensions.actualCellHeight = this.dimensions.canvasHeight / this._terminal.rows;
+    this.dimensions.actualCellWidth = this.dimensions.canvasWidth / this._terminal.cols;
+
+  }
+
 }
