@@ -20,7 +20,7 @@ declare module 'xterm' {
     /**
      * The type of the bell notification the terminal will use.
      */
-    bellStyle?: 'none' | 'visual' | 'sound' | 'both';
+    bellStyle?: 'none' /*| 'visual'*/ | 'sound' /*| 'both'*/;
 
     /**
      * The number of columns in the terminal.
@@ -218,7 +218,7 @@ declare module 'xterm' {
      * @param type The type of the event.
      * @param listener The listener.
      */
-    on(type: 'blur' | 'focus' | 'lineFeed' | 'selection', listener: () => void): void;
+    on(type: 'blur' | 'focus' | 'linefeed' | 'selection', listener: () => void): void;
     /**
      * Registers an event listener.
      * @param type The type of the event.
@@ -273,7 +273,7 @@ declare module 'xterm' {
      * @param type The type of the event.
      * @param listener The listener.
      */
-    off(type: 'blur' | 'focus' | 'lineFeed' | 'selection' | 'data' | 'key' | 'keypress' | 'keydown' | 'refresh' | 'resize' | 'scroll' | 'title' | string, listener: (...args: any[]) => void): void;
+    off(type: 'blur' | 'focus' | 'linefeed' | 'selection' | 'data' | 'key' | 'keypress' | 'keydown' | 'refresh' | 'resize' | 'scroll' | 'title' | string, listener: (...args: any[]) => void): void;
 
     /**
      * Resizes the terminal.
@@ -500,10 +500,10 @@ declare module 'xterm' {
     reset(): void
 
     /**
-     * Loads an addon, attaching it to the Terminal prototype and making it
-     * available to all newly created Terminals.
-     * @param addon The addon to load.
+     * Applies an addon to the Terminal prototype, making it available to all
+     * newly created Terminals.
+     * @param addon The addon to apply.
      */
-    static loadAddon(addon: 'attach' | 'fit' | 'fullscreen' | 'search' | 'terminado' | 'winptyCompat'): void;
+    static applyAddon(addon: any): void;
   }
 }
