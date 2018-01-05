@@ -118,6 +118,7 @@ computational environment for Jupyter, supporting interactive data science and s
 - [**Script Runner**](https://github.com/ioquatix/script-runner): Run scripts (or a shell) in Atom.
 - [**Whack Whack Terminal**](https://github.com/Microsoft/WhackWhackTerminal): Terminal emulator for Visual Studio 2017.
 - [**VTerm**](https://github.com/vterm/vterm): Extensible terminal emulator based on Electron and React.
+- [**electerm**](http://electerm.html5beta.com): electerm is a terminal/ssh/sftp client(mac, win, linux) based on electron/node-pty/xterm.
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list.
 
