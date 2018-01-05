@@ -21,6 +21,8 @@ export class Renderer extends EventEmitter implements IRenderer {
 
   private _renderLayers: IRenderLayer[];
   private _devicePixelRatio: number;
+  private _isPaused: boolean = false;
+  private _needsFullRefresh: boolean = false;
 
   public colorManager: ColorManager;
   public dimensions: IRenderDimensions;
@@ -53,6 +55,20 @@ export class Renderer extends EventEmitter implements IRenderer {
     };
     this._devicePixelRatio = window.devicePixelRatio;
     this._updateDimensions();
+
+    // Detect whether IntersectionObserver is detected and enable renderer pause
+    // and resume based on terminal visibility if so
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver(e => this.onIntersectionChange(e[0]), {threshold: 0});
+      observer.observe(this._terminal.element);
+    }
+  }
+
+  public onIntersectionChange(entry: IntersectionObserverEntry): void {
+    this._isPaused = entry.intersectionRatio === 0;
+    if (!this._isPaused && this._needsFullRefresh) {
+      this._terminal.refresh(0, this._terminal.rows - 1);
+    }
   }
 
   public onWindowResize(devicePixelRatio: number): void {
@@ -73,7 +89,11 @@ export class Renderer extends EventEmitter implements IRenderer {
       l.reset(this._terminal);
     });
 
-    this._terminal.refresh(0, this._terminal.rows - 1);
+    if (this._isPaused) {
+      this._needsFullRefresh = true;
+    } else {
+      this._terminal.refresh(0, this._terminal.rows - 1);
+    }
 
     return this.colorManager.colors;
   }
@@ -86,7 +106,11 @@ export class Renderer extends EventEmitter implements IRenderer {
     this._renderLayers.forEach(l => l.resize(this._terminal, this.dimensions, didCharSizeChange));
 
     // Force a refresh
-    this._terminal.refresh(0, this._terminal.rows - 1);
+    if (this._isPaused) {
+      this._needsFullRefresh = true;
+    } else {
+      this._terminal.refresh(0, this._terminal.rows - 1);
+    }
 
     this.emit('resize', {
       width: this.dimensions.canvasWidth,
@@ -99,27 +123,35 @@ export class Renderer extends EventEmitter implements IRenderer {
   }
 
   public onBlur(): void {
-    this._renderLayers.forEach(l => l.onBlur(this._terminal));
+    this._runOperation(l => l.onBlur(this._terminal));
   }
 
   public onFocus(): void {
-    this._renderLayers.forEach(l => l.onFocus(this._terminal));
+    this._runOperation(l => l.onFocus(this._terminal));
   }
 
   public onSelectionChanged(start: [number, number], end: [number, number]): void {
-    this._renderLayers.forEach(l => l.onSelectionChanged(this._terminal, start, end));
+    this._runOperation(l => l.onSelectionChanged(this._terminal, start, end));
   }
 
   public onCursorMove(): void {
-    this._renderLayers.forEach(l => l.onCursorMove(this._terminal));
+    this._runOperation(l => l.onCursorMove(this._terminal));
   }
 
   public onOptionsChanged(): void {
-    this._renderLayers.forEach(l => l.onOptionsChanged(this._terminal));
+    this._runOperation(l => l.onOptionsChanged(this._terminal));
   }
 
   public clear(): void {
-    this._renderLayers.forEach(l => l.reset(this._terminal));
+    this._runOperation(l => l.reset(this._terminal));
+  }
+
+  private _runOperation(operation: (layer: IRenderLayer) => void): void {
+    if (this._isPaused) {
+      this._needsFullRefresh = true;
+    } else {
+      this._renderLayers.forEach(l => operation(l));
+    }
   }
 
   /**
@@ -129,6 +161,10 @@ export class Renderer extends EventEmitter implements IRenderer {
    * @param {number} end The end row.
    */
   public queueRefresh(start: number, end: number): void {
+    if (this._isPaused) {
+      this._needsFullRefresh = true;
+      return;
+    }
     this._refreshRowsQueue.push({ start: start, end: end });
     if (!this._refreshAnimationFrame) {
       this._refreshAnimationFrame = window.requestAnimationFrame(this._refreshLoop.bind(this));
