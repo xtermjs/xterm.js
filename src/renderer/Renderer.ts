@@ -52,7 +52,7 @@ export class Renderer extends EventEmitter implements IRenderer {
     };
     this._devicePixelRatio = window.devicePixelRatio;
     this._updateDimensions();
-    this._renderDebouncer = new RenderDebouncer(this._terminal, this._refreshLoop.bind(this));
+    this._renderDebouncer = new RenderDebouncer(this._terminal, this._renderRows.bind(this));
   }
 
   public onWindowResize(devicePixelRatio: number): void {
@@ -128,7 +128,7 @@ export class Renderer extends EventEmitter implements IRenderer {
    * @param {number} start The start row.
    * @param {number} end The end row.
    */
-  public queueRefresh(start: number, end: number): void {
+  public refreshRows(start: number, end: number): void {
     this._renderDebouncer.refresh(start, end);
   }
 
@@ -136,7 +136,7 @@ export class Renderer extends EventEmitter implements IRenderer {
    * Performs the refresh loop callback, calling refresh only if a refresh is
    * necessary before queueing up the next one.
    */
-  private _refreshLoop(start: number, end: number): void {
+  private _renderRows(start: number, end: number): void {
     this._renderLayers.forEach(l => l.onGridChanged(this._terminal, start, end));
     this._terminal.emit('refresh', {start, end});
   }

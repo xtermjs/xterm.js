@@ -19,7 +19,7 @@ export interface IRenderer extends IEventEmitter {
   onCursorMove(): void;
   onOptionsChanged(): void;
   clear(): void;
-  queueRefresh(start: number, end: number): void;
+  refreshRows(start: number, end: number): void;
 }
 
 export interface IRenderLayer {

@@ -240,7 +240,7 @@ export class MockRenderer implements IRenderer {
   onOptionsChanged(): void {}
   onWindowResize(devicePixelRatio: number): void {}
   clear(): void {}
-  queueRefresh(start: number, end: number): void {}
+  refreshRows(start: number, end: number): void {}
 }
 
 export class MockViewport implements IViewport {

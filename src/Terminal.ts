@@ -1041,7 +1041,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    */
   public refresh(start: number, end: number): void {
     if (this.renderer) {
-      this.renderer.queueRefresh(start, end);
+      this.renderer.refreshRows(start, end);
     }
   }
 
