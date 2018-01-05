@@ -17,7 +17,7 @@ import { EventEmitter } from '../EventEmitter';
 export class Renderer extends EventEmitter implements IRenderer {
   /** A queue of the rows to be refreshed */
   private _refreshRowsQueue: {start: number, end: number}[] = [];
-  private _refreshAnimationFrame = null;
+  private _refreshAnimationFrame: number = null;
 
   private _renderLayers: IRenderLayer[];
   private _devicePixelRatio: number;

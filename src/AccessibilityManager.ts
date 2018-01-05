@@ -15,6 +15,10 @@ export class AccessibilityManager implements IDisposable {
   private _liveRegion: HTMLElement;
   private _liveRegionLineCount: number = 0;
 
+  private _refreshRowStart: number;
+  private _refreshRowEnd: number;
+  private _refreshAnimationFrame: number = null;
+
   private _disposables: IDisposable[] = [];
 
   /**
@@ -42,7 +46,7 @@ export class AccessibilityManager implements IDisposable {
 
     this._liveRegion = document.createElement('div');
     this._liveRegion.classList.add('live-region');
-    this._liveRegion.setAttribute('aria-live', 'polite');
+    this._liveRegion.setAttribute('aria-live', 'assertive');
     this._accessibilityTreeRoot.appendChild(this._liveRegion);
 
     this._terminal.element.appendChild(this._accessibilityTreeRoot);
@@ -52,8 +56,12 @@ export class AccessibilityManager implements IDisposable {
     // Line feed is an issue as the prompt won't be read out after a command is run
     this._addTerminalEventListener('a11y.char', (char) => this._onChar(char));
     this._addTerminalEventListener('linefeed', () => this._onChar('\n'));
-    // Ensure \t is covered, if not a line of output from `ls` is read as one word
-    this._addTerminalEventListener('a11y.tab', () => this._onChar(' '));
+    // Ensure \t is covered, if not 2 words separated by only a tab will be read as 1 word
+    this._addTerminalEventListener('a11y.tab', spaceCount => {
+      for (let i = 0; i < spaceCount; i++) {
+        this._onChar(' ');
+      }
+    });
     this._addTerminalEventListener('charsizechanged', () => this._refreshRowsDimensions());
     this._addTerminalEventListener('key', keyChar => this._onKey(keyChar));
     this._addTerminalEventListener('blur', () => this._clearLiveRegion());
@@ -105,9 +113,18 @@ export class AccessibilityManager implements IDisposable {
         // Have the screen reader ignore the char if it was just input
         const shiftedChar = this._charsToConsume.shift();
         if (shiftedChar !== char) {
-          this._liveRegion.textContent += char;
+          if (char === ' ') {
+            // Always use nbsp for spaces in order to preserve the space between characters in
+            // voiceover's caption window
+            this._liveRegion.innerHTML += '&nbsp;';
+          } else {
+            this._liveRegion.textContent += char;
+          }
         }
       } else {
+        if (char === ' ') {
+          this._liveRegion.innerHTML += '&nbsp;';
+        } else
         this._liveRegion.textContent += char;
       }
 
@@ -122,7 +139,9 @@ export class AccessibilityManager implements IDisposable {
       // Only detach/attach on mac as otherwise messages can go unaccounced
       if (isMac) {
         if (this._liveRegion.textContent.length > 0 && !this._liveRegion.parentNode) {
-          this._accessibilityTreeRoot.appendChild(this._liveRegion);
+          setTimeout(() => {
+            this._accessibilityTreeRoot.appendChild(this._liveRegion);
+          }, 0);
         }
       }
     }
@@ -150,13 +169,28 @@ export class AccessibilityManager implements IDisposable {
 
   // TODO: Hook up to refresh when the renderer refreshes the range? Slower to prevent layout thrashing?
   private _refreshRows(start?: number, end?: number): void {
-    const buffer: IBuffer = (<any>this._terminal.buffer);
     start = start || 0;
     end = end || this._terminal.rows - 1;
-    for (let i = start; i <= end; i++) {
+    this._refreshRowStart = this._refreshRowStart ? Math.min(this._refreshRowStart, start) : start;
+    this._refreshRowEnd = this._refreshRowEnd ? Math.max(this._refreshRowEnd, end) : end;
+
+    if (this._refreshAnimationFrame) {
+      return;
+    }
+
+    this._refreshAnimationFrame = window.requestAnimationFrame(() => this._innerRefreshRows());
+  }
+
+  private _innerRefreshRows(): void {
+    console.log('innerRefreshRows');
+    const buffer: IBuffer = (<any>this._terminal.buffer);
+    for (let i = this._refreshRowStart; i <= this._refreshRowEnd; i++) {
       const lineData = buffer.translateBufferLineToString(buffer.ybase + i, true);
       this._rowElements[i].textContent = lineData;
     }
+    this._refreshRowStart = null;
+    this._refreshRowEnd = null;
+    this._refreshAnimationFrame = null;
   }
 
   private _refreshRowsDimensions(): void {

@@ -166,9 +166,10 @@ export class InputHandler implements IInputHandler {
    * Horizontal Tab (HT) (Ctrl-I).
    */
   public tab(): void {
+    const originalX = this._terminal.buffer.x;
     this._terminal.buffer.x = this._terminal.buffer.nextStop();
     if (this._terminal.options.screenReaderMode) {
-      this._terminal.emit('a11y.tab');
+      this._terminal.emit('a11y.tab', this._terminal.buffer.x - originalX);
     }
   }
 
