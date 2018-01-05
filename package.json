@@ -35,7 +35,8 @@
     "src/*.ts",
     "src/**/*.js",
     "src/**/*.js.map",
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "typings/*.d.ts"
   ],
   "devDependencies": {
     "@types/chai": "^3.4.34",
