@@ -647,7 +647,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.on('resize', () => this.renderer.onResize(this.cols, this.rows, false));
     this.on('blur', () => this.renderer.onBlur());
     this.on('focus', () => this.renderer.onFocus());
-    window.addEventListener('resize', () => this.renderer.onWindowResize(window.devicePixelRatio));
     this.charMeasure.on('charsizechanged', () => this.renderer.onResize(this.cols, this.rows, true));
     this.renderer.on('resize', (dimensions) => this.viewport.syncScrollArea());
 
@@ -1462,6 +1461,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         // backspace
         if (ev.shiftKey) {
           result.key = C0.BS; // ^H
+          break;
+        } else if (ev.altKey) {
+          result.key = C0.ESC + C0.DEL; // \e ^?
           break;
         }
         result.key = C0.DEL; // ^?

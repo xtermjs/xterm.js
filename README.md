@@ -1,6 +1,6 @@
 # [![xterm.js logo](logo-full.png)](https://xtermjs.org)
 
-[![xterm.js build status](https://api.travis-ci.org/sourcelair/xterm.js.svg)](https://travis-ci.org/sourcelair/xterm.js) [![Coverage Status](https://coveralls.io/repos/github/sourcelair/xterm.js/badge.svg)](https://coveralls.io/github/sourcelair/xterm.js) [![Gitter](https://badges.gitter.im/sourcelair/xterm.js.svg)](https://gitter.im/sourcelair/xterm.js?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![jsDelivr Hits](https://data.jsdelivr.com/v1/package/npm/xterm/badge?style=rounded)](https://www.jsdelivr.com/package/npm/xterm)
+[![xterm.js build status](https://api.travis-ci.org/xtermjs/xterm.js.svg)](https://travis-ci.org/xtermjs/xterm.js) [![Coverage Status](https://coveralls.io/repos/github/sourcelair/xterm.js/badge.svg)](https://coveralls.io/github/sourcelair/xterm.js) [![Gitter](https://badges.gitter.im/sourcelair/xterm.js.svg)](https://gitter.im/sourcelair/xterm.js?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![jsDelivr Hits](https://data.jsdelivr.com/v1/package/npm/xterm/badge?style=rounded)](https://www.jsdelivr.com/package/npm/xterm)
 
 Xterm.js is a terminal front-end component written in JavaScript that works in the browser.
 
@@ -115,6 +115,11 @@ computational environment for Jupyter, supporting interactive data science and s
 - [**Theia**](https://github.com/theia-ide/theia): Theia is a cloud & desktop IDE framework implemented in TypeScript.
 - [**Opshell**](https://github.com/ricktbaker/opshell) Ops Helper tool to make life easier working with AWS instances across multiple organizations.
 - [**Proxmox VE**](https://www.proxmox.com/en/proxmox-ve): Proxmox VE is a complete open-source platform for enterprise virtualization. It uses xterm.js for container terminals and the host shell.
+- [**Script Runner**](https://github.com/ioquatix/script-runner): Run scripts (or a shell) in Atom.
+- [**Whack Whack Terminal**](https://github.com/Microsoft/WhackWhackTerminal): Terminal emulator for Visual Studio 2017.
+- [**VTerm**](https://github.com/vterm/vterm): Extensible terminal emulator based on Electron and React.
+- [**electerm**](http://electerm.html5beta.com): electerm is a terminal/ssh/sftp client(mac, win, linux) based on electron/node-pty/xterm.
+- [**Kubebox**](https://github.com/astefanutti/kubebox): Terminal console for Kubernetes clusters.
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list.
 
