@@ -5,6 +5,7 @@
 
 import { ITerminal, IBuffer, IDisposable } from './Interfaces';
 import { isMac } from './utils/Browser';
+import { RenderDebouncer } from './utils/RenderDebouncer';
 
 const MAX_ROWS_TO_READ = 20;
 
@@ -15,9 +16,7 @@ export class AccessibilityManager implements IDisposable {
   private _liveRegion: HTMLElement;
   private _liveRegionLineCount: number = 0;
 
-  private _refreshRowStart: number;
-  private _refreshRowEnd: number;
-  private _refreshAnimationFrame: number = null;
+  private _renderRowsDebouncer: RenderDebouncer;
 
   private _disposables: IDisposable[] = [];
 
@@ -43,6 +42,8 @@ export class AccessibilityManager implements IDisposable {
     }
     this._refreshRowsDimensions();
     this._accessibilityTreeRoot.appendChild(this._rowContainer);
+
+    this._renderRowsDebouncer = new RenderDebouncer(this._terminal, this._renderRows.bind(this));
 
     this._liveRegion = document.createElement('div');
     this._liveRegion.classList.add('live-region');
@@ -80,10 +81,7 @@ export class AccessibilityManager implements IDisposable {
   }
 
   public dispose(): void {
-    if (this._refreshAnimationFrame) {
-      window.cancelAnimationFrame(this._refreshAnimationFrame);
-      this._refreshAnimationFrame = null;
-    }
+    this._renderRowsDebouncer.dispose();
     this._terminal.element.removeChild(this._accessibilityTreeRoot);
     this._accessibilityTreeRoot = null;
     this._rowContainer = null;
@@ -169,27 +167,15 @@ export class AccessibilityManager implements IDisposable {
   }
 
   private _refreshRows(start?: number, end?: number): void {
-    start = start || 0;
-    end = end || this._terminal.rows - 1;
-    this._refreshRowStart = this._refreshRowStart ? Math.min(this._refreshRowStart, start) : start;
-    this._refreshRowEnd = this._refreshRowEnd ? Math.max(this._refreshRowEnd, end) : end;
-
-    if (this._refreshAnimationFrame) {
-      return;
-    }
-
-    this._refreshAnimationFrame = window.requestAnimationFrame(() => this._innerRefreshRows());
+    this._renderRowsDebouncer.refresh(start, end);
   }
 
-  private _innerRefreshRows(): void {
+  private _renderRows(start: number, end: number): void {
     const buffer: IBuffer = (<any>this._terminal.buffer);
-    for (let i = this._refreshRowStart; i <= this._refreshRowEnd; i++) {
+    for (let i = start; i <= end; i++) {
       const lineData = buffer.translateBufferLineToString(buffer.ybase + i, true);
       this._rowElements[i].textContent = lineData;
     }
-    this._refreshRowStart = null;
-    this._refreshRowEnd = null;
-    this._refreshAnimationFrame = null;
   }
 
   private _refreshRowsDimensions(): void {
