@@ -4,7 +4,7 @@
  */
 
 import { MouseHelper } from './utils/MouseHelper';
-import * as Browser from './utils/Browser';
+import * as Browser from './shared/utils/Browser';
 import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
 import { EventEmitter } from './EventEmitter';
