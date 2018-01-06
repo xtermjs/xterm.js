@@ -5,6 +5,7 @@
     "rootDir": ".",
     "outDir": "../../../lib/addons/attach/",
     "sourceMap": true,
-    "removeComments": true
+    "removeComments": true,
+    "declaration": true
   }
 }
