@@ -1,3 +1,5 @@
+
+
 <!doctype html>
 <html>
    <head>
@@ -14,167 +16,175 @@
       <script src="/build/addons/search/search.js" ></script>
       <link href='https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons' rel="stylesheet">
       <link href="https://unpkg.com/vuetify/dist/vuetify.min.css" rel="stylesheet">
+      <link href="https://unpkg.com/vue-router@2.0.0/dist/vue-router.js">
       <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
    </head>
    <body>
       <div id="app">
          <v-app id="inspire">
-            <v-content>
-               <!--v-container fluid fill-height style="padding: initial;"-->
-               <div id="terminal-container"></div>
-               <!--/v-container-->
-            </v-content>
-            <!-- <v-container fluid fill-height style="padding-top: inherit;padding-left: inherit;">
-               <div id="terminal-container"></div>
-               <v-layout justify-right>
-                  <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
-               </v-layout>
-               </v-container>-->
-            <v-navigation-drawer
-               permanent
-               :v-model="drawer"
-               absolute
-               dark
-               right
-               app               
-               :mini-variant.sync="mini"
-               >
-               <v-toolbar flat class="transparent">
-                  <v-list class="pa-0">
-                     <v-list-tile avatar @click.stop="mini = !mini">
-                       
-                      <v-list-tile-action v-if="!mini">
-                           <v-btn icon @click.native.stop="mini = !mini">
-                              <v-icon>chevron_right</v-icon>
-                           </v-btn>
-                        </v-list-tile-action>
-                        
-                        <v-list-tile-avatar>
-                           <v-icon>web_asset</v-icon>
-                        </v-list-tile-avatar>
-                        
-                        <v-list-tile-content>
-                           <v-list-tile-title>Terminals</v-list-tile-title>
-                        </v-list-tile-content>
-
-                     </v-list-tile>
-                  </v-list>
-               </v-toolbar>
-
-               <v-list two-line>
-                  <v-divider></v-divider>
-                  <v-list-group v-for="(item, i) in terminals" :value="item.active" v-bind:key="item.name">
-                     <v-list-tile slot="item" @click="setTerminalSelected(i)">
-                        <v-list-tile-action>
-                           <v-tooltip bottom>
-                              <v-badge overlap flat :color="item.color" slot="activator">
-                                 <v-icon slot="badge" dark>{{ item.badge }}</v-icon>
-                                 <v-speed-dial
-                                    :v-model="item.fab"
-                                    direction="top" 
-                                    
-                                    transition="slide-y-reverse-transition"
-                                    >
-                                    <v-btn slot="activator" flat class="transparent" small dark fab hover :v-model="item.fab">
-                                       <v-icon class="white--text headline">{{ item.id }}</v-icon>
-                                       <v-icon>close</v-icon>
+            <v-container fluid>
+               <!--v-content>
+                  <div id="terminal-container"></div>
+                  </v-content-->
+               <v-layout row>
+                  <v-flex xs9>
+                     <v-content wrap>
+                        <div v-for="item of terminals" :id="item.name" style="position: absolute;"></div>
+                     </v-content>
+                  </v-flex>
+                  <v-flex xs3>
+                     <!-- <v-container fluid fill-height style="padding-top: inherit;padding-left: inherit;">
+                        <div id="terminal-container"></div>
+                        <v-layout justify-right>
+                            <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
+                        </v-layout>
+                        </v-container>-->
+                     <v-navigation-drawer
+                        permanent
+                        :v-model="drawer"
+                        absolute
+                        dark
+                        right
+                        app               
+                        :mini-variant.sync="mini"
+                        >
+                        <v-toolbar flat class="transparent">
+                           <v-list class="pa-0">
+                              <v-list-tile avatar @click.stop="mini = !mini">
+                                 <v-list-tile-action v-if="!mini">
+                                    <v-btn icon @click.native.stop="mini = !mini">
+                                       <v-icon>chevron_right</v-icon>
                                     </v-btn>
-                                    <v-tooltip left>
-                                       <v-btn fab dark small color="indigo lighten-3" slot="activator" @click.native.stop="dialogRenameTerminal = !dialogRenameTerminal">
-                                          <v-icon>mode_edit</v-icon>
-                                       </v-btn>
-                                       <span>Rename</span>
+                                 </v-list-tile-action>
+                                 <v-list-tile-avatar>
+                                    <v-icon>web_asset</v-icon>
+                                 </v-list-tile-avatar>
+                                 <v-list-tile-content>
+                                    <v-list-tile-title>Terminals</v-list-tile-title>
+                                 </v-list-tile-content>
+                              </v-list-tile>
+                           </v-list>
+                        </v-toolbar>
+                        <v-list two-line>
+                           <v-divider></v-divider>
+                           <v-list-group v-for="(item, i) in terminals" :value="item.active" v-bind:key="item.name">
+                              <v-list-tile slot="item" @click="setTerminalSelected(i)">
+                                 <v-list-tile-action>
+                                    <v-tooltip bottom>
+                                       <v-badge overlap flat :color="item.color" slot="activator">
+                                          <v-icon slot="badge" dark>{{ item.badge }}</v-icon>
+                                          <v-speed-dial
+                                             :v-model="item.fab"
+                                             direction="top" 
+                                             transition="slide-y-reverse-transition"
+                                             >
+                                             <v-btn slot="activator" flat class="transparent" small dark fab hover :v-model="item.fab">
+                                                <v-icon class="white--text headline">{{ item.id }}</v-icon>
+                                                <v-icon>close</v-icon>
+                                             </v-btn>
+                                             <v-tooltip left>
+                                                <v-btn fab dark small color="indigo lighten-3" slot="activator" @click.native.stop="dialogRenameTerminal = !dialogRenameTerminal">
+                                                   <v-icon>mode_edit</v-icon>
+                                                </v-btn>
+                                                <span>Rename</span>
+                                             </v-tooltip>
+                                             <v-tooltip left>
+                                                <v-btn fab dark small color="red lighten-3" slot="activator" @click="stopExecution(currentTerminal)">
+                                                   <v-icon>stop</v-icon>
+                                                </v-btn>
+                                                <span>Stop</span>
+                                             </v-tooltip>
+                                             <v-tooltip left>
+                                                <v-btn fab dark small color="red" slot="activator" @click.native.stop="dialogRemoveTerminal = !dialogRemoveTerminal">
+                                                   <v-icon>delete</v-icon>
+                                                </v-btn>
+                                                <span>Remove</span>
+                                             </v-tooltip>
+                                          </v-speed-dial>
+                                       </v-badge>
+                                       <span :class="item.colorText"><kbd>{{ item.cmd }}</kbd> {{ item.status }}</span>
                                     </v-tooltip>
-                                    <v-tooltip left>
-                                       <v-btn fab dark small color="red lighten-3" slot="activator" @click="stopExecution(currentTerminal)">
-                                          <v-icon>stop</v-icon>
-                                       </v-btn>
-                                       <span>Stop</span>
-                                    </v-tooltip>
-                                    <v-tooltip left>
-                                       <v-btn fab dark small color="red" slot="activator" @click.native.stop="dialogRemoveTerminal = !dialogRemoveTerminal">
-                                          <v-icon>delete</v-icon>
-                                       </v-btn>
-                                       <span>Remove</span>
-                                    </v-tooltip>
-                                 </v-speed-dial>
-                              </v-badge>
-                              <span :class="item.colorText"><kbd>{{ item.cmd }}</kbd> {{ item.status }}</span>
+                                 </v-list-tile-action>
+                                 <v-list-tile-content>
+                                    <v-list-tile-title>{{ item.name }}</v-list-tile-title>
+                                 </v-list-tile-content>
+                              </v-list-tile>
+                           </v-list-group>
+                           <v-tooltip left>
+                              <v-btn color="pink" dark small fixed bottom right fab slot="activator" v-on:click="addTerminal()">
+                                 <v-icon>add</v-icon>
+                              </v-btn>
+                              <span >Add Terminal</span>
                            </v-tooltip>
-                        </v-list-tile-action>
-                        <v-list-tile-content>
-                           <v-list-tile-title>{{ item.name }}</v-list-tile-title>
-                        </v-list-tile-content>
-                     </v-list-tile>
-                  </v-list-group>
-
-                  <v-tooltip left>
-                      <v-btn color="pink" dark small fixed bottom right fab slot="activator" v-on:click="addTerminal()">
-                         <v-icon>add</v-icon>
-                      </v-btn>
-                      <span >Add Terminal</span>
-                   </v-tooltip>
-                   
-               </v-list>          
-            </v-navigation-drawer>
-            <!--v-dialog v-model="dialogNewTerminal" max-width="300px">
-               <v-card>
-                   <v-toolbar dark color="pink">
-                       <v-btn icon @click.native="dialogNewTerminal = false" dark>
-                         <v-icon>close</v-icon>
-                       </v-btn>
-                       <v-toolbar-title>Add New Terminal</v-toolbar-title>
-                     </v-toolbar>
-                <v-card-text>
-                   <v-text-field label="Terminal name" v-model="newTerminal" prepend-icon="web_asset"></v-text-field>
-                </v-card-text>
-                <v-card-actions>
-                  <v-spacer></v-spacer>
-                  <v-btn flat color="primary" @click.native="dialogNewTerminal = false" v-on:click="addTerminal()">ADD...</v-btn>
-                </v-card-actions>
-               </v-card>
-               </v-dialog-->
-            <v-dialog v-model="dialogRenameTerminal" max-width="300px">
-               <v-card>
-                  <v-toolbar dark color="primary">
-                     <v-btn icon @click.native="dialogRenameTerminal = false" dark>
-                        <v-icon>close</v-icon>
-                     </v-btn>
-                     <v-toolbar-title>Rename Terminal</v-toolbar-title>
-                  </v-toolbar>
-                  <v-card-text>
-                     <v-text-field label="New name" v-model="rename" prepend-icon="web_asset"></v-text-field>
-                  </v-card-text>
-                  <v-card-actions>
-                     <v-spacer></v-spacer>
-                     <v-btn flat color="primary" @click.native="dialogRenameTerminal = false" v-on:click="renameTerminal(currentTerminal)">OK!</v-btn>
-                  </v-card-actions>
-               </v-card>
-            </v-dialog>
-
-            <v-dialog v-model="dialogRemoveTerminal" max-width="350px">
-              <v-card>
-                 <v-toolbar dark color="red">
-                    <v-btn icon @click.native="dialogRemoveTerminal = false" dark>
-                       <v-icon>close</v-icon>
-                    </v-btn>
-                    <v-toolbar-title>Remove Terminal</v-toolbar-title>
-                 </v-toolbar>
-                 <v-card-text>
-                  <v-card-text> Are you sure you want to delete: "{{ rename }}"?</v-card-text>
-                 </v-card-text>
-                 <v-card-actions>
-                    <v-spacer></v-spacer>
-                    <v-btn flat color="red" @click.native="dialogRemoveTerminal = false">No</v-btn>
-                    <v-btn flat color="red" @click.native="dialogRemoveTerminal = false" v-on:click="removeTerminal(currentTerminal)">YES</v-btn>                    
-                 </v-card-actions>
-              </v-card>
-           </v-dialog>
-
+                           <!--v-footer class="transparent">
+                              <v-spacer></v-spacer>
+                              <div> <v-btn color="pink" dark small  bottom right fab slot="activator"  v-on:click="addTerminal()">
+                                                <v-icon>add</v-icon>
+                                              </v-btn>
+                                            </div>
+                              </v-foote-->
+                        </v-list>
+                     </v-navigation-drawer>
+                     <!--v-dialog v-model="dialogNewTerminal" max-width="300px">
+                        <v-card>
+                            <v-toolbar dark color="pink">
+                                <v-btn icon @click.native="dialogNewTerminal = false" dark>
+                                  <v-icon>close</v-icon>
+                                </v-btn>
+                                <v-toolbar-title>Add New Terminal</v-toolbar-title>
+                              </v-toolbar>
+                          <v-card-text>
+                            <v-text-field label="Terminal name" v-model="newTerminal" prepend-icon="web_asset"></v-text-field>
+                          </v-card-text>
+                          <v-card-actions>
+                            <v-spacer></v-spacer>
+                            <v-btn flat color="primary" @click.native="dialogNewTerminal = false" v-on:click="addTerminal()">ADD...</v-btn>
+                          </v-card-actions>
+                        </v-card>
+                        </v-dialog-->
+                     <v-dialog v-model="dialogRenameTerminal" max-width="300px">
+                        <v-card>
+                           <v-toolbar dark color="primary">
+                              <v-btn icon @click.native="dialogRenameTerminal = false" dark>
+                                 <v-icon>close</v-icon>
+                              </v-btn>
+                              <v-toolbar-title>Rename Terminal</v-toolbar-title>
+                           </v-toolbar>
+                           <v-card-text>
+                              <v-text-field label="New name" v-model="rename" prepend-icon="web_asset"></v-text-field>
+                           </v-card-text>
+                           <v-card-actions>
+                              <v-spacer></v-spacer>
+                              <v-btn flat color="primary" @click.native="dialogRenameTerminal = false" v-on:click="renameTerminal(currentTerminal)">OK!</v-btn>
+                           </v-card-actions>
+                        </v-card>
+                     </v-dialog>
+                     <v-dialog v-model="dialogRemoveTerminal" max-width="350px">
+                        <v-card>
+                           <v-toolbar dark color="red">
+                              <v-btn icon @click.native="dialogRemoveTerminal = false" dark>
+                                 <v-icon>close</v-icon>
+                              </v-btn>
+                              <v-toolbar-title>Remove Terminal</v-toolbar-title>
+                           </v-toolbar>
+                           <v-card-text>
+                              <v-card-text> Are you sure you want to delete: "{{ rename }}"?</v-card-text>
+                           </v-card-text>
+                           <v-card-actions>
+                              <v-spacer></v-spacer>
+                              <v-btn flat color="red" @click.native="dialogRemoveTerminal = false">No</v-btn>
+                              <v-btn flat color="red" @click.native="dialogRemoveTerminal = false" v-on:click="removeTerminal(currentTerminal)">YES</v-btn>
+                           </v-card-actions>
+                        </v-card>
+                     </v-dialog>
+                  </v-flex>
+               </v-layout>
+            </v-container>
          </v-app>
       </div>
       <script src="https://unpkg.com/vue/dist/vue.js"></script>
       <script src="https://unpkg.com/vuetify/dist/vuetify.js"></script>
+      <!--script src="https://unpkg.com/vue-router/dist/vue-router.js"></script-->
       <script src="main.js" defer ></script>
    </body>
 </html>
