@@ -352,3 +352,6 @@ export interface ITheme {
   brightCyan?: string;
   brightWhite?: string;
 }
+export interface ISoundManager {
+  playBellSound(): void;
+}

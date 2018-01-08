@@ -40,7 +40,7 @@ import { MouseHelper } from './utils/MouseHelper';
 import { CHARSETS } from './Charsets';
 import { CustomKeyEventHandler, Charset, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
 import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper, ITheme, ILinkifier } from './Interfaces';
-import { BellSound } from './utils/Sounds';
+import { DefaultBellSound, SoundManager } from './SoundManager';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { IMouseZoneManager } from './input/Interfaces';
 import { MouseZoneManager } from './input/MouseZoneManager';
@@ -70,7 +70,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   termName: 'xterm',
   cursorBlink: false,
   cursorStyle: 'block',
-  bellSound: BellSound,
+  bellSound: DefaultBellSound,
   bellStyle: 'none',
   enableBold: true,
   fontFamily: 'courier-new, courier, monospace',
@@ -105,7 +105,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   private helperContainer: HTMLElement;
   private compositionView: HTMLElement;
   private charSizeStyleElement: HTMLStyleElement;
-  private bellAudioElement: HTMLAudioElement;
+
   private visualBellTimer: number;
 
   public browser: IBrowser = <any>Browser;
@@ -187,9 +187,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   private userScrolling: boolean;
 
   private inputHandler: InputHandler;
+  public soundManager: SoundManager;
   private parser: Parser;
   public renderer: IRenderer;
-  public selectionManager: SelectionManager;
   public linkifier: ILinkifier;
   public buffers: BufferSet;
   public buffer: Buffer;
@@ -198,6 +198,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   public charMeasure: CharMeasure;
   private _mouseZoneManager: IMouseZoneManager;
   public mouseHelper: MouseHelper;
+  public selectionManager: SelectionManager;
 
   public cols: number;
   public rows: number;
@@ -290,6 +291,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.selectionManager = this.selectionManager || null;
     this.linkifier = this.linkifier || new Linkifier(this);
     this._mouseZoneManager = this._mouseZoneManager || null;
+    this.soundManager = this.soundManager || new SoundManager(this);
 
     // Create the terminal's buffers and set the current buffer
     this.buffers = new BufferSet(this);
@@ -424,8 +426,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         this.viewport.syncScrollArea();
         break;
       case 'tabStopWidth': this.buffers.setupTabStops(); break;
-      case 'bellSound':
-      case 'bellStyle': this.syncBellSound(); break;
     }
     // Inform renderer of changes
     if (this.renderer) {
@@ -621,9 +621,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.charSizeStyleElement = document.createElement('style');
     this.helperContainer.appendChild(this.charSizeStyleElement);
     this.charMeasure = new CharMeasure(document, this.helperContainer);
-
-    // Preload audio, this relied on helperContainer
-    this.syncBellSound();
 
     // Performance: Add viewport and helper elements from the fragment
     this.element.appendChild(fragment);
@@ -1797,7 +1794,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    */
   public bell(): void {
     this.emit('bell');
-    if (this.soundBell()) this.bellAudioElement.play();
+    if (this.soundBell()) {
+      this.soundManager.playBellSound();
+    }
 
     if (this.visualBell()) {
       this.element.classList.add('visual-bell-active');
@@ -2116,25 +2115,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     return this.options.bellStyle === 'sound' ||
         this.options.bellStyle === 'both';
   }
-
-  private syncBellSound(): void {
-    // Don't update anything if the terminal has not been opened yet
-    if (!this.element) {
-      return;
-    }
-
-    if (this.soundBell() && this.bellAudioElement) {
-      this.bellAudioElement.setAttribute('src', this.options.bellSound);
-    } else if (this.soundBell()) {
-      this.bellAudioElement = document.createElement('audio');
-      this.bellAudioElement.setAttribute('preload', 'auto');
-      this.bellAudioElement.setAttribute('src', this.options.bellSound);
-      this.helperContainer.appendChild(this.bellAudioElement);
-    } else if (this.bellAudioElement) {
-      this.helperContainer.removeChild(this.bellAudioElement);
-    }
-  }
-}
 
 /**
  * Helpers
