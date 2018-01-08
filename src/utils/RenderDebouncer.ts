@@ -24,8 +24,8 @@ export class RenderDebouncer implements IDisposable {
   public refresh(rowStart?: number, rowEnd?: number): void {
     rowStart = rowStart || 0;
     rowEnd = rowEnd || this._terminal.rows - 1;
-    this._rowStart = this._rowStart ? Math.min(this._rowStart, rowStart) : rowStart;
-    this._rowEnd = this._rowEnd ? Math.max(this._rowEnd, rowEnd) : rowEnd;
+    this._rowStart = this._rowStart !== null ? Math.min(this._rowStart, rowStart) : rowStart;
+    this._rowEnd = this._rowEnd !== null ? Math.max(this._rowEnd, rowEnd) : rowEnd;
 
     if (this._animationFrame) {
       return;
