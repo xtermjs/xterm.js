@@ -6,8 +6,6 @@ var term,
     pid;
 
     
-var terminalContainer;
-
 
 var p = (location.protocol === 'https:') ? 'wss://' : 'ws://';
 var url = p + location.hostname + ((location.port) ? (':' + location.port) : '') + '/controller';
@@ -65,6 +63,9 @@ socketNotifications.onopen = function(e) {
   console.log('Entry to onopen (Notifications sockets)');
 }
 
+
+
+
 var vue = new Vue({
   el: '#app',
   data() {
@@ -85,52 +86,29 @@ var vue = new Vue({
   },
   methods: {
     addTerminal: function (newPid) {
-
-      var currentTerminalElement = null;
-      if(this.terminals.length != 0){
-        var previousTerminalElement = document.getElementById(this.terminals[this.currentTerminal].name);
-        previousTerminalElement.style.visibility = "hidden";
-      }
-
       t = createTerminal();
       if(newPid){
         createSocket(newPid);
       }
-      
      /* if (this.countTerminal == 2)
         this.terminals.push({ id: this.abc[this.countTerminal], name: 'Terminal ' + this.abc[this.countTerminal], terminal: term, status: this.abc[this.countTerminal], badge: '', color:'', fab: false });
       else if (this.countTerminal == 3)
          this.terminals.push({ id: this.abc[this.countTerminal], name: 'Terminal ' + this.abc[this.countTerminal], terminal: term, status: this.abc[this.countTerminal], badge: '', color:'', fab: false });
       else*/
 
-      this.terminals.push({ id: this.abc[this.countTerminal], name: 'Terminal ' + this.abc[this.countTerminal], terminal: term, badge: '', color: '', colorText: '', fab: false, cmd: this.abc[this.countTerminal], status: ''});
+        this.terminals.push({ id: this.abc[this.countTerminal], name: 'Terminal ' + this.abc[this.countTerminal], terminal: term, badge: '', color: '', colorText: '', fab: false, cmd: this.abc[this.countTerminal], status: '' });
      
+        this.countTerminal = this.countTerminal + 1;
 
-      this.currentTerminal = this.countTerminal;
-      this.countTerminal = this.countTerminal + 1;
-      
-          
-      
-      
     },
 
     setTerminalSelected: function (index) {
-
-      var previousTerminalElement = document.getElementById(this.terminals[this.currentTerminal].name);
-      previousTerminalElement.style.visibility = "hidden";    
-      var currentTerminalElement = document.getElementById(this.terminals[index].name);
-      if(previousTerminalElement.style.visibility == "hidden"){
-        currentTerminalElement.style.visibility = "visible";
-      }
-      //terminalContainer = currentTerminalElement;
-
       this.currentTerminal = index;
       this.rename = this.terminals[index].name;
-
-      /*t = this.terminals[index].terminal;
+      t = this.terminals[index].terminal;
       while (terminalContainer.children.length) {
         terminalContainer.removeChild(terminalContainer.children[0]);
-      }*/
+      }
       var theme = {
         foreground: '#000000',
         background: '#ffffff',
@@ -138,11 +116,10 @@ var vue = new Vue({
         cursorAccent: '#ffffff',
         selection: 'rgba(0, 0, 0, 0.3)'
       };
-     /* t.open(terminalContainer);
+      t.open(terminalContainer);
      // t.setOption('theme', theme);
-      t.fit();*/
-      t.focus();
-      
+      t.fit();
+
       socketNotifications.send(JSON.stringify({type: 'selected', pid: t.pid}));
 
       this.removeStatus();
@@ -210,23 +187,15 @@ var vue = new Vue({
       }
     }
 
-  },
-  updated: function () {
-    // `this` points to the vm instance
-
-    if(this.terminals.length!=0){
-      container = document.getElementById(this.terminals[this.terminals.length - 1].name);
-      this.terminals[this.currentTerminal].terminal.open(container);
-    }
   }
 
 });
 
 
 
-//var terminalContainer = document.getElementById('terminal-container');
+var terminalContainer = document.getElementById('terminal-container');
 
-//vue.addTerminal(null);
+vue.addTerminal(null);
 
 //createTerminal();
 //term.focus();
@@ -299,9 +268,9 @@ var vue = new Vue({
 
 function createTerminal() {
   // Clean terminal  
- /* while (terminalContainer.children.length) {
+  while (terminalContainer.children.length) {
     terminalContainer.removeChild(terminalContainer.children[0]);
-  }*/
+  }
   term = new Terminal({
     //cursorBlink: optionElements.cursorBlink.checked,
     //scrollback: parseInt(optionElements.scrollback.value, 10),
@@ -328,7 +297,7 @@ function createTerminal() {
   protocol = (location.protocol === 'https:') ? 'wss://' : 'ws://';
   baseSocketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
 
-//  term.open(terminalContainer);
+  term.open(terminalContainer);
   term.fit();
 
   // fit is called within a setTimeout, cols and rows need this.
