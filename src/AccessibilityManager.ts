@@ -66,6 +66,10 @@ export class AccessibilityManager implements IDisposable {
     this._addTerminalEventListener('charsizechanged', () => this._refreshRowsDimensions());
     this._addTerminalEventListener('key', keyChar => this._onKey(keyChar));
     this._addTerminalEventListener('blur', () => this._clearLiveRegion());
+    // TODO: Maybe renderer should fire an event on terminal when the characters change and that
+    //       should be listened to instead? That would mean that the order of events are always
+    //       guarenteed
+    this._addTerminalEventListener('dprchange', () => this._refreshRowsDimensions());
     // TODO: Dispose of this listener when disposed
     // TODO: Listen instead to when devicePixelRatio changed (depends on PR #1172)
     window.addEventListener('resize', () => this._refreshRowsDimensions());

@@ -47,6 +47,7 @@ import { MouseZoneManager } from './input/MouseZoneManager';
 import { initialize as initializeCharAtlas } from './renderer/CharAtlas';
 import { IRenderer } from './renderer/Interfaces';
 import { AccessibilityManager } from './AccessibilityManager';
+import { ScreenDprMonitor } from './utils/ScreenDprMonitor';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -201,6 +202,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   private _mouseZoneManager: IMouseZoneManager;
   public mouseHelper: MouseHelper;
   private _accessibilityManager: AccessibilityManager;
+  private _screenDprMonitor: ScreenDprMonitor;
 
   public cols: number;
   public rows: number;
@@ -586,6 +588,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     initializeCharAtlas(this.document);
 
+    this._screenDprMonitor = new ScreenDprMonitor();
+    this._screenDprMonitor.setListener(() => this.emit('dprchange', window.devicePixelRatio));
+
     // Create main element container
     this.element = this.document.createElement('div');
     this.element.classList.add('terminal');
@@ -647,6 +652,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.on('resize', () => this.renderer.onResize(this.cols, this.rows, false));
     this.on('blur', () => this.renderer.onBlur());
     this.on('focus', () => this.renderer.onFocus());
+    this.on('dprchange', () => this.renderer.onWindowResize(window.devicePixelRatio));
+    // dprchange should handle this case, we need this as well for browsers that don't support the
+    // matchMedia query.
+    window.addEventListener('resize', () => this.renderer.onWindowResize(window.devicePixelRatio));
     this.charMeasure.on('charsizechanged', () => this.renderer.onResize(this.cols, this.rows, true));
     this.renderer.on('resize', (dimensions) => this.viewport.syncScrollArea());
 
@@ -670,6 +679,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.mouseHelper = new MouseHelper(this.renderer);
 
     if (this.options.screenReaderMode) {
+      // Note that this must be done *after* the renderer is created in order to
+      // ensure the correct order of the dprchange event
       this._accessibilityManager = new AccessibilityManager(this);
     }
 
