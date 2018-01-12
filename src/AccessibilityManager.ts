@@ -8,8 +8,13 @@ import { isMac } from './utils/Browser';
 import { RenderDebouncer } from './utils/RenderDebouncer';
 
 const MAX_ROWS_TO_READ = 20;
+const ACTIVE_ITEM_ID_PREFIX = 'xterm-active-item-';
 
 export class AccessibilityManager implements IDisposable {
+  private _activeItemId: string;
+  private _isNavigationModeActive: boolean = false;
+  private _navigationModeFocusedRow: number;
+
   private _accessibilityTreeRoot: HTMLElement;
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[] = [];
@@ -32,12 +37,13 @@ export class AccessibilityManager implements IDisposable {
   private _charsToConsume: string[] = [];
 
   constructor(private _terminal: ITerminal) {
+    this._activeItemId = ACTIVE_ITEM_ID_PREFIX + Math.floor((Math.random() * 100000));
     this._accessibilityTreeRoot = document.createElement('div');
-    this._accessibilityTreeRoot.classList.add('accessibility');
+    this._accessibilityTreeRoot.classList.add('xterm-accessibility');
     this._rowContainer = document.createElement('div');
-    this._rowContainer.classList.add('accessibility-tree');
+    this._rowContainer.classList.add('xterm-accessibility-tree');
     for (let i = 0; i < this._terminal.rows; i++) {
-      this._rowElements[i] = document.createElement('div');
+      this._rowElements[i] = this._createAccessibilityTreeNode();
       this._rowContainer.appendChild(this._rowElements[i]);
     }
     this._refreshRowsDimensions();
@@ -73,6 +79,41 @@ export class AccessibilityManager implements IDisposable {
     // TODO: Dispose of this listener when disposed
     // TODO: Listen instead to when devicePixelRatio changed (depends on PR #1172)
     window.addEventListener('resize', () => this._refreshRowsDimensions());
+
+    this._rowContainer.addEventListener('keyup', e => {
+      switch (e.keyCode) {
+        case 27: // Escape
+          this.leaveNavigationMode();
+          break;
+          // TODO: Jump up/down to next non-blank row
+        case 38: /*ArrowUp*/
+          this._navigateToElement(this._navigationModeFocusedRow - 1);
+          break;
+        case 40: /*ArrowDown*/
+          this._navigateToElement(this._navigationModeFocusedRow + 1);
+          break;
+      }
+      this._rowContainer.focus();
+      console.log('keydown2', e);
+      e.preventDefault();
+      e.stopPropagation();
+      return true;
+
+      // no handler
+      //return false;
+    });
+    this._rowContainer.addEventListener('keydown', e => {
+      if (this._isNavigationModeActive) {
+        e.preventDefault();
+        e.stopPropagation();
+        return true;
+      }
+      return false;
+    });
+  }
+
+  public get isNavigationModeActive(): boolean {
+    return this._isNavigationModeActive;
   }
 
   private _addTerminalEventListener(type: string, listener: (...args: any[]) => any): void {
@@ -99,7 +140,7 @@ export class AccessibilityManager implements IDisposable {
   private _onResize(cols: number, rows: number): void {
     // Grow rows as required
     for (let i = this._rowContainer.children.length; i < this._terminal.rows; i++) {
-      this._rowElements[i] = document.createElement('div');
+      this._rowElements[i] = this._createAccessibilityTreeNode();
       this._rowContainer.appendChild(this._rowElements[i]);
     }
     // Shrink rows as required
@@ -108,6 +149,12 @@ export class AccessibilityManager implements IDisposable {
     }
 
     this._refreshRowsDimensions();
+  }
+
+  private _createAccessibilityTreeNode(): HTMLElement {
+    const element = document.createElement('div');
+    element.setAttribute('role', 'menuitem');
+    return element;
   }
 
   private _onChar(char: string): void {
@@ -179,6 +226,7 @@ export class AccessibilityManager implements IDisposable {
     for (let i = start; i <= end; i++) {
       const lineData = buffer.translateBufferLineToString(buffer.ybase + i, true);
       this._rowElements[i].textContent = lineData;
+      this._rowElements[i].setAttribute('aria-label', lineData);
     }
   }
 
@@ -188,5 +236,40 @@ export class AccessibilityManager implements IDisposable {
     for (let i = 0; i < this._terminal.rows; i++) {
       this._rowElements[i].style.height = `${dimensions.actualCellHeight}px`;
     }
+  }
+
+  public enterNavigationMode(): void {
+    this._isNavigationModeActive = true;
+    this._clearLiveRegion();
+    this._liveRegion.textContent += 'Entered line navigation mode';
+    this._rowContainer.tabIndex = 0;
+    this._rowContainer.setAttribute('role', 'menu');
+    this._rowContainer.setAttribute('aria-activedescendant', this._activeItemId);
+    this._rowContainer.focus();
+    this._navigateToElement(this._terminal.buffer.y);
+  }
+
+  public leaveNavigationMode(): void {
+    this._isNavigationModeActive = false;
+    this._liveRegion.textContent += 'Left line navigation mode';
+    this._rowContainer.removeAttribute('tabindex');
+    this._rowContainer.removeAttribute('aria-activedescendant');
+    this._rowContainer.removeAttribute('role');
+    const selected = document.querySelector('#' + this._activeItemId);
+    if (selected) {
+      selected.removeAttribute('id');
+    }
+    this._terminal.textarea.focus();
+  }
+
+  private _navigateToElement(row: number): void {
+    // TODO: Store this state
+    const selected = document.querySelector('#' + this._activeItemId);
+    if (selected) {
+      selected.removeAttribute('id');
+    }
+    this._navigationModeFocusedRow = row;
+    const selectedElement = this._rowElements[row];
+    selectedElement.id = this._activeItemId;
   }
 }

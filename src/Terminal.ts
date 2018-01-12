@@ -454,6 +454,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Binds the desired focus behavior on a given terminal object.
    */
   private _onTextAreaFocus(): void {
+    console.log('textarea.focus');
     if (this.sendFocus) {
       this.send(C0.ESC + '[I');
     }
@@ -1374,6 +1375,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param {KeyboardEvent} ev The keydown event to be handled.
    */
   protected _keyDown(ev: KeyboardEvent): boolean {
+    console.log('a');
+    if (this._accessibilityManager && this._accessibilityManager.isNavigationModeActive) {
+      console.log('b');
+      return;
+    }
+
     if (this.customKeyEventHandler && this.customKeyEventHandler(ev) === false) {
       return false;
     }
