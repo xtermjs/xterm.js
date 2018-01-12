@@ -60,6 +60,7 @@ export class AccessibilityManager implements IDisposable {
 
     this._addTerminalEventListener('resize', data => this._onResize(data.cols, data.rows));
     this._addTerminalEventListener('refresh', data => this._refreshRows(data.start, data.end));
+    this._addTerminalEventListener('scroll', data => this._refreshRows());
     // Line feed is an issue as the prompt won't be read out after a command is run
     this._addTerminalEventListener('a11y.char', (char) => this._onChar(char));
     this._addTerminalEventListener('linefeed', () => this._onChar('\n'));
@@ -224,7 +225,7 @@ export class AccessibilityManager implements IDisposable {
   private _renderRows(start: number, end: number): void {
     const buffer: IBuffer = (<any>this._terminal.buffer);
     for (let i = start; i <= end; i++) {
-      const lineData = buffer.translateBufferLineToString(buffer.ybase + i, true);
+      const lineData = buffer.translateBufferLineToString(buffer.ydisp + i, true);
       this._rowElements[i].textContent = lineData;
       this._rowElements[i].setAttribute('aria-label', lineData);
     }
@@ -263,6 +264,15 @@ export class AccessibilityManager implements IDisposable {
   }
 
   private _navigateToElement(row: number): void {
+    if (row < 0) {
+      if (this._terminal.buffer.ydisp > 0) {
+        this._terminal.scrollLines(-1);
+        row = 0;
+        // TODO: This doesn't reliably read the element, maybe a new row needs to be inserted at the top?
+        // Exit early since the same element is focused
+        return;
+      }
+    }
     // TODO: Store this state
     const selected = document.querySelector('#' + this._activeItemId);
     if (selected) {
