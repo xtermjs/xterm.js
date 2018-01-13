@@ -98,7 +98,6 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
   constructor(
     private _terminal: ITerminal,
-    private _buffer: IBuffer,
     private _charMeasure: CharMeasure
   ) {
     super();
@@ -107,6 +106,10 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
     this._model = new SelectionModel(_terminal);
     this._activeSelectionMode = SelectionMode.NORMAL;
+  }
+
+  private get _buffer(): IBuffer {
+      return this._terminal.buffers.active;
   }
 
   /**
@@ -137,16 +140,6 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    */
   public enable(): void {
     this._enabled = true;
-  }
-
-  /**
-   * Sets the active buffer, this should be called when the alt buffer is
-   * switched in or out.
-   * @param buffer The active buffer.
-   */
-  public setBuffer(buffer: IBuffer): void {
-    this._buffer = buffer;
-    this.clearSelection();
   }
 
   public get selectionStart(): [number, number] { return this._model.finalSelectionStart; }

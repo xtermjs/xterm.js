@@ -198,7 +198,6 @@ export interface ISelectionManager {
 
   disable(): void;
   enable(): void;
-  setBuffer(buffer: IBuffer): void;
   setSelection(row: number, col: number, length: number): void;
 }
 

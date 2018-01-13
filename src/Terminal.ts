@@ -192,7 +192,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   public selectionManager: SelectionManager;
   public linkifier: ILinkifier;
   public buffers: BufferSet;
-  public buffer: Buffer;
   public viewport: IViewport;
   private compositionHelper: ICompositionHelper;
   public charMeasure: CharMeasure;
@@ -293,15 +292,13 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     // Create the terminal's buffers and set the current buffer
     this.buffers = new BufferSet(this);
-    this.buffer = this.buffers.active;  // Convenience shortcut;
-    this.buffers.on('activate', (buffer: Buffer) => {
-      this.buffer = buffer;
-    });
+  }
 
-    // Ensure the selection manager has the correct buffer
-    if (this.selectionManager) {
-      this.selectionManager.setBuffer(this.buffer);
-    }
+  /**
+   * Convenience property to active buffer.
+   */
+  public get buffer(): Buffer {
+      return this.buffers.active;
   }
 
   /**
@@ -640,7 +637,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.charMeasure.on('charsizechanged', () => this.renderer.onResize(this.cols, this.rows, true));
     this.renderer.on('resize', (dimensions) => this.viewport.syncScrollArea());
 
-    this.selectionManager = new SelectionManager(this, this.buffer, this.charMeasure);
+    this.selectionManager = new SelectionManager(this, this.charMeasure);
     this.element.addEventListener('mousedown', (e: MouseEvent) => this.selectionManager.onMouseDown(e));
     this.selectionManager.on('refresh', data => this.renderer.onSelectionChanged(data.start, data.end));
     this.selectionManager.on('newselection', text => {
@@ -2079,11 +2076,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.options.cols = this.cols;
     const customKeyEventHandler = this.customKeyEventHandler;
     const inputHandler = this.inputHandler;
-    const buffers = this.buffers;
     this.setup();
     this.customKeyEventHandler = customKeyEventHandler;
     this.inputHandler = inputHandler;
-    this.buffers = buffers;
     this.refresh(0, this.rows - 1);
     this.viewport.syncScrollArea();
   }
