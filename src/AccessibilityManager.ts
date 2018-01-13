@@ -95,7 +95,6 @@ export class AccessibilityManager implements IDisposable {
           break;
       }
       this._rowContainer.focus();
-      console.log('keydown2', e);
       e.preventDefault();
       e.stopPropagation();
       return true;
