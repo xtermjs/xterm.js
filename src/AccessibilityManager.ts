@@ -56,35 +56,23 @@ export class AccessibilityManager implements IDisposable {
 
     this._terminal.element.appendChild(this._accessibilityTreeRoot);
 
-    this._terminal.addDisposableListener('resize', data => this._onResize(data.cols, data.rows));
-    this._terminal.addDisposableListener('refresh', data => this._refreshRows(data.start, data.end));
-    this._terminal.addDisposableListener('scroll', data => this._refreshRows());
+    this._disposables.push(this._terminal.addDisposableListener('resize', data => this._onResize(data.cols, data.rows)));
+    this._disposables.push(this._terminal.addDisposableListener('refresh', data => this._refreshRows(data.start, data.end)));
+    this._disposables.push(this._terminal.addDisposableListener('scroll', data => this._refreshRows()));
     // Line feed is an issue as the prompt won't be read out after a command is run
-    this._terminal.addDisposableListener('a11y.char', (char) => this._onChar(char));
-    this._terminal.addDisposableListener('linefeed', () => this._onChar('\n'));
-    this._terminal.addDisposableListener('a11y.tab', spaceCount => this._onTab(spaceCount));
-    this._terminal.addDisposableListener('charsizechanged', () => this._refreshRowsDimensions());
-    this._terminal.addDisposableListener('key', keyChar => this._onKey(keyChar));
-    this._terminal.addDisposableListener('blur', () => this._clearLiveRegion());
+    this._disposables.push(this._terminal.addDisposableListener('a11y.char', (char) => this._onChar(char)));
+    this._disposables.push(this._terminal.addDisposableListener('linefeed', () => this._onChar('\n')));
+    this._disposables.push(this._terminal.addDisposableListener('a11y.tab', spaceCount => this._onTab(spaceCount)));
+    this._disposables.push(this._terminal.addDisposableListener('charsizechanged', () => this._refreshRowsDimensions()));
+    this._disposables.push(this._terminal.addDisposableListener('key', keyChar => this._onKey(keyChar)));
+    this._disposables.push(this._terminal.addDisposableListener('blur', () => this._clearLiveRegion()));
     // TODO: Maybe renderer should fire an event on terminal when the characters change and that
     //       should be listened to instead? That would mean that the order of events are always
     //       guarenteed
-    this._terminal.addDisposableListener('dprchange', () => this._refreshRowsDimensions());
-    // TODO: Dispose of this listener when disposed
-    addDisposableListener(window, 'resize', () => this._refreshRowsDimensions());
-
-    this._rowContainer.addEventListener('keyup', e => {
-      if (this._navigationMode.isActive) {
-        return this._navigationMode.onKeyUp(e);
-      }
-      return false;
-    });
-    this._rowContainer.addEventListener('keydown', e => {
-      if (this._navigationMode.isActive) {
-        return this._navigationMode.onKeyDown(e);
-      }
-      return false;
-    });
+    this._disposables.push(this._terminal.addDisposableListener('dprchange', () => this._refreshRowsDimensions()));
+    // This shouldn't be needed on modern browsers but is present in case the
+    // media query that drives the dprchange event isn't supported
+    this._disposables.push(addDisposableListener(window, 'resize', () => this._refreshRowsDimensions()));
   }
 
   public dispose(): void {
@@ -217,6 +205,8 @@ class NavigationMode {
   private _isNavigationModeActive: boolean = false;
   private _navigationModeFocusedRow: number;
 
+  private _disposables: IDisposable[] = [];
+
   constructor(
     private _terminal: ITerminal,
     private _rowContainer: HTMLElement,
@@ -224,6 +214,24 @@ class NavigationMode {
     private _accessibilityManager: AccessibilityManager
   ) {
     this._activeItemId = ACTIVE_ITEM_ID_PREFIX + Math.floor((Math.random() * 100000));
+
+    this._disposables.push(addDisposableListener(this._rowContainer, 'keyup', e => {
+      if (this.isActive) {
+        return this.onKeyUp(e);
+      }
+      return false;
+    }));
+    this._disposables.push(addDisposableListener(this._rowContainer, 'keydown', e => {
+      if (this.isActive) {
+        return this.onKeyDown(e);
+      }
+      return false;
+    }));
+  }
+
+  public dispose(): void {
+    this._disposables.forEach(d => d.dispose);
+    this._disposables = null;
   }
 
   public enter(): void {
