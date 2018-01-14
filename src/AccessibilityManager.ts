@@ -56,6 +56,8 @@ export class AccessibilityManager implements IDisposable {
 
     this._terminal.element.appendChild(this._accessibilityTreeRoot);
 
+    this._disposables.push(this._renderRowsDebouncer);
+    this._disposables.push(this._navigationMode);
     this._disposables.push(this._terminal.addDisposableListener('resize', data => this._onResize(data.cols, data.rows)));
     this._disposables.push(this._terminal.addDisposableListener('refresh', data => this._refreshRows(data.start, data.end)));
     this._disposables.push(this._terminal.addDisposableListener('scroll', data => this._refreshRows()));
@@ -76,15 +78,14 @@ export class AccessibilityManager implements IDisposable {
   }
 
   public dispose(): void {
-    this._renderRowsDebouncer.dispose();
     this._terminal.element.removeChild(this._accessibilityTreeRoot);
+    this._disposables.forEach(d => d.dispose());
+    this._disposables = null;
     this._accessibilityTreeRoot = null;
     this._rowContainer = null;
     this._liveRegion = null;
     this._rowContainer = null;
     this._rowElements = null;
-    this._disposables.forEach(d => d.dispose());
-    this._disposables = null;
   }
 
   private _onResize(cols: number, rows: number): void {
@@ -115,9 +116,6 @@ export class AccessibilityManager implements IDisposable {
 
   private _onChar(char: string): void {
     if (this._liveRegionLineCount < MAX_ROWS_TO_READ + 1) {
-      // \n needs to be printed as a space, otherwise it will be collapsed to
-      // "" in the DOM and the last and first words of the rows will be read
-      // as a single word
       if (this._charsToConsume.length > 0) {
         // Have the screen reader ignore the char if it was just input
         const shiftedChar = this._charsToConsume.shift();
@@ -200,7 +198,7 @@ export class AccessibilityManager implements IDisposable {
   }
 }
 
-class NavigationMode {
+class NavigationMode implements IDisposable {
   private _activeItemId: string;
   private _isNavigationModeActive: boolean = false;
   private _navigationModeFocusedRow: number;
@@ -230,7 +228,7 @@ class NavigationMode {
   }
 
   public dispose(): void {
-    this._disposables.forEach(d => d.dispose);
+    this._disposables.forEach(d => d.dispose());
     this._disposables = null;
   }
 
@@ -263,7 +261,6 @@ class NavigationMode {
 
   public onKeyDown(e: KeyboardEvent): boolean {
     return this._onKey(e, e => {
-      console.log('keydown', e);
       if (this._isNavigationModeActive) {
         return true;
       }
@@ -273,7 +270,6 @@ class NavigationMode {
 
   public onKeyUp(e: KeyboardEvent): boolean {
     return this._onKey(e, e => {
-      console.log('keyup', e);
       switch (e.keyCode) {
         case 27: return this._onEscape(e);
         case 38: return this._onArrowUp(e);
