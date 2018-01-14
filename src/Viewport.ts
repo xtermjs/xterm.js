@@ -12,6 +12,7 @@ import { IColorSet } from './renderer/Interfaces';
  * Logic for the virtual scroll bar is included in this object.
  */
 export class Viewport implements IViewport {
+  public scrollBarWidth: number = 0;
   private currentRowHeight: number = 0;
   private lastRecordedBufferLength: number = 0;
   private lastRecordedViewportHeight: number = 0;
@@ -31,6 +32,10 @@ export class Viewport implements IViewport {
     private scrollArea: HTMLElement,
     private charMeasure: CharMeasure
   ) {
+    // Measure the width of the scrollbar. If it is 0 we can assume it's an OSX overlay scrollbar.
+    // Unfortunately the overlay scrollbar would be hidden underneath the screen element in that case,
+    // therefore we account 15px to make it visible
+    this.scrollBarWidth = (this.viewportElement.offsetWidth - this.scrollArea.offsetWidth) || 15;
     this.viewportElement.addEventListener('scroll', this.onScroll.bind(this));
 
     // Perform this async to ensure the CharMeasure is ready.
@@ -48,13 +53,8 @@ export class Viewport implements IViewport {
   private refresh(): void {
     if (this.charMeasure.height > 0) {
       this.currentRowHeight = this.terminal.renderer.dimensions.scaledCellHeight / window.devicePixelRatio;
-
-      if (this.lastRecordedViewportHeight !== this.terminal.renderer.dimensions.canvasHeight) {
-        this.lastRecordedViewportHeight = this.terminal.renderer.dimensions.canvasHeight;
-        this.viewportElement.style.height = this.lastRecordedViewportHeight + 'px';
-      }
-
-      const newBufferHeight = Math.round(this.currentRowHeight * this.lastRecordedBufferLength);
+      this.lastRecordedViewportHeight = this.viewportElement.offsetHeight;
+      const newBufferHeight = Math.round(this.currentRowHeight * this.lastRecordedBufferLength) + (this.lastRecordedViewportHeight - this.terminal.renderer.dimensions.canvasHeight);
       if (this.lastRecordedBufferHeight !== newBufferHeight) {
         this.lastRecordedBufferHeight = newBufferHeight;
         this.scrollArea.style.height = this.lastRecordedBufferHeight + 'px';
