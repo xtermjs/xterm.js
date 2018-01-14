@@ -169,7 +169,7 @@ export interface IBuffer {
   prevStop(x?: number): number;
 }
 
-export interface IBufferSet {
+export interface IBufferSet extends IEventEmitter {
   alt: IBuffer;
   normal: IBuffer;
   active: IBuffer;

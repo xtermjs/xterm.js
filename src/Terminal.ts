@@ -292,6 +292,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     // Create the terminal's buffers and set the current buffer
     this.buffers = new BufferSet(this);
+    this.emit('setup');
   }
 
   /**

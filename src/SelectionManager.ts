@@ -119,11 +119,27 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     this._mouseMoveListener = event => this._onMouseMove(<MouseEvent>event);
     this._mouseUpListener = event => this._onMouseUp(<MouseEvent>event);
 
-    // Only adjust the selection on trim, shiftElements is rarely used (only in
-    // reverseIndex) and delete in a splice is only ever used when the same
-    // number of elements was just added. Given this is could actually be
-    // beneficial to leave the selection as is for these cases.
-    this._buffer.lines.on('trim', (amount: number) => this._onTrim(amount));
+    this._updateBufferSetHandlers();
+    this._terminal.on('setup', () => {
+        this._onSetupHandler();
+    });
+  }
+
+  private _onSetupHandler(): void {
+      this.clearSelection();
+      this._updateBufferSetHandlers();
+  }
+
+  private _updateBufferSetHandlers(): void {
+      this._terminal.buffers.on('activate', (buffer: IBuffer) => {
+          this.clearSelection();
+      });
+      // Only adjust the selection on trim, shiftElements is rarely used (only in
+      // reverseIndex) and delete in a splice is only ever used when the same
+      // number of elements was just added. Given this is could actually be
+      // beneficial to leave the selection as is for these cases.
+      this._terminal.buffers.normal.lines.on('trim', (amount: number) => this._onTrim(amount));
+      this._terminal.buffers.alt.lines.on('trim', (amount: number) => this._onTrim(amount));
   }
 
   /**
