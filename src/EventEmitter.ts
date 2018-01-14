@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IEventEmitter, IListenerType } from './Interfaces';
+import { IEventEmitter, IListenerType, IDisposable } from './Interfaces';
 
 export class EventEmitter implements IEventEmitter {
   private _events: {[type: string]: IListenerType[]};
@@ -17,6 +17,25 @@ export class EventEmitter implements IEventEmitter {
   public on(type: string, listener: IListenerType): void {
     this._events[type] = this._events[type] || [];
     this._events[type].push(listener);
+  }
+
+  /**
+   * Adds a disposabe listener to the EventEmitter, returning the disposable.
+   * @param type The event type.
+   * @param handler The handler for the listener.
+   */
+  public addDisposableListener(type: string, handler: IListenerType): IDisposable {
+    this.on(type, handler);
+    return {
+      dispose: () => {
+        if (!handler) {
+          // Already disposed
+          return;
+        }
+        this.off(type, handler);
+        handler = null;
+      }
+    };
   }
 
   public off(type: string, listener: IListenerType): void {

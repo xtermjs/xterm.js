@@ -244,6 +244,7 @@ export interface IEventEmitter {
   on(type: string, listener: IListenerType): void;
   off(type: string, listener: IListenerType): void;
   emit(type: string, data?: any): void;
+  addDisposableListener(type: string, handler: IListenerType): IDisposable;
 }
 
 export interface IListenerType {

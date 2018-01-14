@@ -6,6 +6,7 @@
 import { ITerminal, IBuffer, IDisposable } from './Interfaces';
 import { isMac } from './utils/Browser';
 import { RenderDebouncer } from './utils/RenderDebouncer';
+import { addDisposableListener } from './utils/Dom';
 
 const MAX_ROWS_TO_READ = 20;
 const ACTIVE_ITEM_ID_PREFIX = 'xterm-active-item-';
@@ -55,28 +56,22 @@ export class AccessibilityManager implements IDisposable {
 
     this._terminal.element.appendChild(this._accessibilityTreeRoot);
 
-    this._addTerminalEventListener('resize', data => this._onResize(data.cols, data.rows));
-    this._addTerminalEventListener('refresh', data => this._refreshRows(data.start, data.end));
-    this._addTerminalEventListener('scroll', data => this._refreshRows());
+    this._terminal.addDisposableListener('resize', data => this._onResize(data.cols, data.rows));
+    this._terminal.addDisposableListener('refresh', data => this._refreshRows(data.start, data.end));
+    this._terminal.addDisposableListener('scroll', data => this._refreshRows());
     // Line feed is an issue as the prompt won't be read out after a command is run
-    this._addTerminalEventListener('a11y.char', (char) => this._onChar(char));
-    this._addTerminalEventListener('linefeed', () => this._onChar('\n'));
-    // Ensure \t is covered, if not 2 words separated by only a tab will be read as 1 word
-    this._addTerminalEventListener('a11y.tab', spaceCount => {
-      for (let i = 0; i < spaceCount; i++) {
-        this._onChar(' ');
-      }
-    });
-    this._addTerminalEventListener('charsizechanged', () => this._refreshRowsDimensions());
-    this._addTerminalEventListener('key', keyChar => this._onKey(keyChar));
-    this._addTerminalEventListener('blur', () => this._clearLiveRegion());
+    this._terminal.addDisposableListener('a11y.char', (char) => this._onChar(char));
+    this._terminal.addDisposableListener('linefeed', () => this._onChar('\n'));
+    this._terminal.addDisposableListener('a11y.tab', spaceCount => this._onTab(spaceCount));
+    this._terminal.addDisposableListener('charsizechanged', () => this._refreshRowsDimensions());
+    this._terminal.addDisposableListener('key', keyChar => this._onKey(keyChar));
+    this._terminal.addDisposableListener('blur', () => this._clearLiveRegion());
     // TODO: Maybe renderer should fire an event on terminal when the characters change and that
     //       should be listened to instead? That would mean that the order of events are always
     //       guarenteed
-    this._addTerminalEventListener('dprchange', () => this._refreshRowsDimensions());
+    this._terminal.addDisposableListener('dprchange', () => this._refreshRowsDimensions());
     // TODO: Dispose of this listener when disposed
-    // TODO: Listen instead to when devicePixelRatio changed (depends on PR #1172)
-    window.addEventListener('resize', () => this._refreshRowsDimensions());
+    addDisposableListener(window, 'resize', () => this._refreshRowsDimensions());
 
     this._rowContainer.addEventListener('keyup', e => {
       if (this._navigationMode.isActive) {
@@ -89,15 +84,6 @@ export class AccessibilityManager implements IDisposable {
         return this._navigationMode.onKeyDown(e);
       }
       return false;
-    });
-  }
-
-  private _addTerminalEventListener(type: string, listener: (...args: any[]) => any): void {
-    this._terminal.on(type, listener);
-    this._disposables.push({
-      dispose: () => {
-        this._terminal.off(type, listener);
-      }
     });
   }
 
@@ -131,6 +117,12 @@ export class AccessibilityManager implements IDisposable {
     const element = document.createElement('div');
     element.setAttribute('role', 'menuitem');
     return element;
+  }
+
+  private _onTab(spaceCount: number): void {
+    for (let i = 0; i < spaceCount; i++) {
+      this._onChar(' ');
+    }
   }
 
   private _onChar(char: string): void {
