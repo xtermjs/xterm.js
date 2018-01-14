@@ -11,10 +11,6 @@ const MAX_ROWS_TO_READ = 20;
 const ACTIVE_ITEM_ID_PREFIX = 'xterm-active-item-';
 
 export class AccessibilityManager implements IDisposable {
-  private _activeItemId: string;
-  private _isNavigationModeActive: boolean = false;
-  private _navigationModeFocusedRow: number;
-
   private _accessibilityTreeRoot: HTMLElement;
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[] = [];
@@ -22,6 +18,7 @@ export class AccessibilityManager implements IDisposable {
   private _liveRegionLineCount: number = 0;
 
   private _renderRowsDebouncer: RenderDebouncer;
+  private _navigationMode: NavigationMode;
 
   private _disposables: IDisposable[] = [];
 
@@ -37,7 +34,6 @@ export class AccessibilityManager implements IDisposable {
   private _charsToConsume: string[] = [];
 
   constructor(private _terminal: ITerminal) {
-    this._activeItemId = ACTIVE_ITEM_ID_PREFIX + Math.floor((Math.random() * 100000));
     this._accessibilityTreeRoot = document.createElement('div');
     this._accessibilityTreeRoot.classList.add('xterm-accessibility');
     this._rowContainer = document.createElement('div');
@@ -50,6 +46,7 @@ export class AccessibilityManager implements IDisposable {
     this._accessibilityTreeRoot.appendChild(this._rowContainer);
 
     this._renderRowsDebouncer = new RenderDebouncer(this._terminal, this._renderRows.bind(this));
+    this._navigationMode = new NavigationMode(this._terminal, this._rowContainer, this._rowElements, this);
 
     this._liveRegion = document.createElement('div');
     this._liveRegion.classList.add('live-region');
@@ -82,38 +79,17 @@ export class AccessibilityManager implements IDisposable {
     window.addEventListener('resize', () => this._refreshRowsDimensions());
 
     this._rowContainer.addEventListener('keyup', e => {
-      switch (e.keyCode) {
-        case 27: // Escape
-          this.leaveNavigationMode();
-          break;
-          // TODO: Jump up/down to next non-blank row
-        case 38: /*ArrowUp*/
-          this._navigateToElement(this._navigationModeFocusedRow - 1);
-          break;
-        case 40: /*ArrowDown*/
-          this._navigateToElement(this._navigationModeFocusedRow + 1);
-          break;
-      }
-      this._rowContainer.focus();
-      e.preventDefault();
-      e.stopPropagation();
-      return true;
-
-      // no handler
-      //return false;
-    });
-    this._rowContainer.addEventListener('keydown', e => {
-      if (this._isNavigationModeActive) {
-        e.preventDefault();
-        e.stopPropagation();
-        return true;
+      if (this._navigationMode.isActive) {
+        return this._navigationMode.onKeyUp(e);
       }
       return false;
     });
-  }
-
-  public get isNavigationModeActive(): boolean {
-    return this._isNavigationModeActive;
+    this._rowContainer.addEventListener('keydown', e => {
+      if (this._navigationMode.isActive) {
+        return this._navigationMode.onKeyDown(e);
+      }
+      return false;
+    });
   }
 
   private _addTerminalEventListener(type: string, listener: (...args: any[]) => any): void {
@@ -238,10 +214,29 @@ export class AccessibilityManager implements IDisposable {
     }
   }
 
-  public enterNavigationMode(): void {
-    this._isNavigationModeActive = true;
+  public announce(text: string): void {
     this._clearLiveRegion();
-    this._liveRegion.textContent += 'Entered line navigation mode';
+    this._liveRegion.textContent = text;
+  }
+}
+
+class NavigationMode {
+  private _activeItemId: string;
+  private _isNavigationModeActive: boolean = false;
+  private _navigationModeFocusedRow: number;
+
+  constructor(
+    private _terminal: ITerminal,
+    private _rowContainer: HTMLElement,
+    private _rowElements: HTMLElement[],
+    private _accessibilityManager: AccessibilityManager
+  ) {
+    this._activeItemId = ACTIVE_ITEM_ID_PREFIX + Math.floor((Math.random() * 100000));
+  }
+
+  public enter(): void {
+    this._isNavigationModeActive = true;
+    this._accessibilityManager.announce('Entered line navigation mode');
     this._rowContainer.tabIndex = 0;
     this._rowContainer.setAttribute('role', 'menu');
     this._rowContainer.setAttribute('aria-activedescendant', this._activeItemId);
@@ -249,9 +244,9 @@ export class AccessibilityManager implements IDisposable {
     this._navigateToElement(this._terminal.buffer.y);
   }
 
-  public leaveNavigationMode(): void {
+  public leave(): void {
     this._isNavigationModeActive = false;
-    this._liveRegion.textContent += 'Left line navigation mode';
+    this._accessibilityManager.announce('Left line navigation mode');
     this._rowContainer.removeAttribute('tabindex');
     this._rowContainer.removeAttribute('aria-activedescendant');
     this._rowContainer.removeAttribute('role');
@@ -260,6 +255,57 @@ export class AccessibilityManager implements IDisposable {
       selected.removeAttribute('id');
     }
     this._terminal.textarea.focus();
+  }
+
+  public get isActive(): boolean {
+    return this._isNavigationModeActive;
+  }
+
+  public onKeyDown(e: KeyboardEvent): boolean {
+    return this._onKey(e, e => {
+      console.log('keydown', e);
+      if (this._isNavigationModeActive) {
+        return true;
+      }
+      return false;
+    });
+  }
+
+  public onKeyUp(e: KeyboardEvent): boolean {
+    return this._onKey(e, e => {
+      console.log('keyup', e);
+      switch (e.keyCode) {
+        case 27: return this._onEscape(e);
+        case 38: return this._onArrowUp(e);
+        case 40: return this._onArrowDown(e);
+      }
+      return false;
+    });
+  }
+
+  private _onKey(e: KeyboardEvent, handler: (e: KeyboardEvent) => boolean): boolean {
+    if (handler && handler(e)) {
+      return true;
+    }
+    return false;
+  }
+
+  private _onEscape(e: KeyboardEvent): boolean {
+    this.leave();
+    return true;
+  }
+
+  private _onArrowUp(e: KeyboardEvent): boolean {
+    // TODO: Jump up/down to next non-blank row
+    this._navigateToElement(this._navigationModeFocusedRow - 1);
+    this._rowContainer.focus();
+    return true;
+  }
+
+  private _onArrowDown(e: KeyboardEvent): boolean {
+    this._navigateToElement(this._navigationModeFocusedRow + 1);
+    this._rowContainer.focus();
+    return true;
   }
 
   private _navigateToElement(row: number): void {
