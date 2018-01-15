@@ -8,7 +8,7 @@ import * as Browser from './utils/Browser';
 import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
 import { EventEmitter } from './EventEmitter';
-import { ITerminal, ICircularList, ISelectionManager, IBuffer } from './Interfaces';
+import { ITerminal, ICircularList, ISelectionManager, IBuffer, IListenerType } from './Interfaces';
 import { SelectionModel } from './SelectionModel';
 import { LineData, CharData } from './Types';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from './Buffer';
@@ -95,6 +95,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
   private _mouseMoveListener: EventListener;
   private _mouseUpListener: EventListener;
+  private _trimListener: IListenerType;
 
   constructor(
     private _terminal: ITerminal,
@@ -118,28 +119,10 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   private _initListeners(): void {
     this._mouseMoveListener = event => this._onMouseMove(<MouseEvent>event);
     this._mouseUpListener = event => this._onMouseUp(<MouseEvent>event);
+    this._trimListener = (amount: number) => this._onTrim(amount);
 
-    this._updateBufferSetHandlers();
-    this._terminal.on('setup', () => {
-        this._onSetupHandler();
-    });
-  }
-
-  private _onSetupHandler(): void {
-      this.clearSelection();
-      this._updateBufferSetHandlers();
-  }
-
-  private _updateBufferSetHandlers(): void {
-      this._terminal.buffers.on('activate', (buffer: IBuffer) => {
-          this.clearSelection();
-      });
-      // Only adjust the selection on trim, shiftElements is rarely used (only in
-      // reverseIndex) and delete in a splice is only ever used when the same
-      // number of elements was just added. Given this is could actually be
-      // beneficial to leave the selection as is for these cases.
-      this._terminal.buffers.normal.lines.on('trim', (amount: number) => this._onTrim(amount));
-      this._terminal.buffers.alt.lines.on('trim', (amount: number) => this._onTrim(amount));
+    this._terminal.buffer.lines.on('trim', this._trimListener);
+    this._terminal.buffers.on('activate', e => this._onBufferActivate(e));
   }
 
   /**
@@ -554,6 +537,16 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
     if (this.hasSelection)
       this._terminal.emit('selection');
+  }
+
+  private _onBufferActivate(e: {activeBuffer: IBuffer, inactiveBuffer: IBuffer}): void {
+    this.clearSelection();
+    // Only adjust the selection on trim, shiftElements is rarely used (only in
+    // reverseIndex) and delete in a splice is only ever used when the same
+    // number of elements was just added. Given this is could actually be
+    // beneficial to leave the selection as is for these cases.
+    e.inactiveBuffer.lines.off('trim', this._trimListener);
+    e.activeBuffer.lines.on('trim', this._trimListener);
   }
 
   /**

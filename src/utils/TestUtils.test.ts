@@ -37,7 +37,7 @@ export class MockTerminal implements ITerminal {
     throw new Error('Method not implemented.');
   }
   on(event: string, callback: () => void): void {
-    /* Simply do nothing */
+    throw new Error('Method not implemented.');
   }
   off(type: string, listener: IListenerType): void {
     throw new Error('Method not implemented.');
