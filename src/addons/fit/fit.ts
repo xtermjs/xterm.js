@@ -19,7 +19,7 @@ export function proposeGeometry(term) {
   }
   var parentElementStyle = window.getComputedStyle(term.element.parentElement);
   var parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height'));
-  var parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')) - 17);
+  var parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')));
   var elementStyle = window.getComputedStyle(term.element);
   var elementPadding = {
     top: parseInt(elementStyle.getPropertyValue('padding-top')),
