@@ -56,6 +56,7 @@ export interface ITerminal extends ILinkifierAccessor, IBufferAccessor, IElement
    */
   handler(data: string): void;
   scrollLines(disp: number, suppressScrollEvent?: boolean): void;
+  scrollToRow(row: number): number;
   cancel(ev: Event, force?: boolean): boolean | void;
   log(text: string): void;
   reset(): void;

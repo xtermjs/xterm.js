@@ -211,7 +211,7 @@ export class AccessibilityManager implements IDisposable {
 class NavigationMode implements IDisposable {
   private _activeItemId: string;
   private _isNavigationModeActive: boolean = false;
-  private _navigationModeFocusedRow: number;
+  private _absoluteFocusedRow: number;
 
   private _disposables: IDisposable[] = [];
 
@@ -243,13 +243,14 @@ class NavigationMode implements IDisposable {
   }
 
   public enter(): void {
+    // TODO: Should entering navigation mode send ydisp to ybase?
     this._isNavigationModeActive = true;
     this._accessibilityManager.announce('Entered line navigation mode');
     this._rowContainer.tabIndex = 0;
     this._rowContainer.setAttribute('role', 'menu');
     this._rowContainer.setAttribute('aria-activedescendant', this._activeItemId);
     this._rowContainer.focus();
-    this._navigateToElement(this._terminal.buffer.y);
+    this._navigateToElement(this._terminal.buffer.ydisp + this._terminal.buffer.y);
   }
 
   public leave(): void {
@@ -280,10 +281,16 @@ class NavigationMode implements IDisposable {
 
   public onKeyUp(e: KeyboardEvent): boolean {
     return this._onKey(e, e => {
-      switch (e.keyCode) {
-        case 27: return this._onEscape(e);
-        case 38: return this._onArrowUp(e);
-        case 40: return this._onArrowDown(e);
+      if (this._isNavigationModeActive) {
+        switch (e.keyCode) {
+          case 27: return this._onEscape(e);
+          case 33: return this._onPageUp(e);
+          case 34: return this._onPageDown(e);
+          case 35: return this._onEnd(e);
+          case 36: return this._onHome(e);
+          case 38: return this._onArrowUp(e);
+          case 40: return this._onArrowDown(e);
+        }
       }
       return false;
     });
@@ -302,35 +309,45 @@ class NavigationMode implements IDisposable {
   }
 
   private _onArrowUp(e: KeyboardEvent): boolean {
-    // TODO: Jump up/down to next non-blank row
-    this._navigateToElement(this._navigationModeFocusedRow - 1);
-    this._rowContainer.focus();
-    return true;
+    return this._focusRow(this._absoluteFocusedRow - 1);
   }
 
   private _onArrowDown(e: KeyboardEvent): boolean {
-    this._navigateToElement(this._navigationModeFocusedRow + 1);
+    return this._focusRow(this._absoluteFocusedRow + 1);
+  }
+
+  private _onPageUp(e: KeyboardEvent): boolean {
+    return this._focusRow(this._absoluteFocusedRow - this._terminal.rows);
+  }
+
+  private _onPageDown(e: KeyboardEvent): boolean {
+    return this._focusRow(this._absoluteFocusedRow + this._terminal.rows);
+  }
+
+  private _onHome(e: KeyboardEvent): boolean {
+    return this._focusRow(0);
+  }
+
+  private _onEnd(e: KeyboardEvent): boolean {
+    return this._focusRow(this._terminal.buffer.lines.length - 1);
+  }
+
+  private _focusRow(row: number): boolean {
+    this._navigateToElement(row);
     this._rowContainer.focus();
     return true;
   }
 
-  private _navigateToElement(row: number): void {
-    if (row < 0) {
-      if (this._terminal.buffer.ydisp > 0) {
-        this._terminal.scrollLines(-1);
-        row = 0;
-        // TODO: This doesn't reliably read the element, maybe a new row needs to be inserted at the top?
-        // Exit early since the same element is focused
-        return;
-      }
-    }
+  private _navigateToElement(absoluteRow: number): void {
+    absoluteRow = this._terminal.scrollToRow(absoluteRow);
+
     // TODO: Store this state
     const selected = document.querySelector('#' + this._activeItemId);
     if (selected) {
       selected.removeAttribute('id');
     }
-    this._navigationModeFocusedRow = row;
-    const selectedElement = this._rowElements[row];
+    this._absoluteFocusedRow = absoluteRow;
+    const selectedElement = this._rowElements[absoluteRow - this._terminal.buffer.ydisp];
     selectedElement.id = this._activeItemId;
   }
 }

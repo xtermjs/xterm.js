@@ -48,6 +48,9 @@ export class MockTerminal implements ITerminal {
   scrollLines(disp: number, suppressScrollEvent: boolean): void {
     throw new Error('Method not implemented.');
   }
+  scrollToRow(absoluteRow: number): number {
+    throw new Error('Method not implemented.');
+  }
   cancel(ev: Event, force?: boolean): void {
     throw new Error('Method not implemented.');
   }
