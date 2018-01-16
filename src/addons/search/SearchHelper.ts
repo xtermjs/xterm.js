@@ -114,8 +114,17 @@ export class SearchHelper {
   private _findInLine(term: string, y: number): ISearchResult {
     const lowerStringLine = this._terminal.buffer.translateBufferLineToString(y, true).toLowerCase();
     const lowerTerm = term.toLowerCase();
-    const searchIndex = lowerStringLine.indexOf(lowerTerm);
+    let searchIndex = lowerStringLine.indexOf(lowerTerm);
     if (searchIndex >= 0) {
+      const line = this._terminal.buffer.lines.get(y);
+      for (let i = 0; i < searchIndex; i++) {
+        // Adjust the selection for empty characters following wide unicode chars
+        const char = line[i];
+        const charWidth = char[2/*CHAR_DATA_WIDTH_INDEX*/];
+        if (charWidth === 0) {
+          searchIndex++;
+        }
+      }
       return {
         term,
         col: searchIndex,
