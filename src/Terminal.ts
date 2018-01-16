@@ -292,6 +292,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     // Create the terminal's buffers and set the current buffer
     this.buffers = new BufferSet(this);
+    if (this.selectionManager) {
+        this.selectionManager.clearSelection();
+        this.selectionManager.initBuffersListeners();
+    }
   }
 
   /**
@@ -2076,11 +2080,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.options.cols = this.cols;
     const customKeyEventHandler = this.customKeyEventHandler;
     const inputHandler = this.inputHandler;
-    const buffers = this.buffers;
     this.setup();
     this.customKeyEventHandler = customKeyEventHandler;
     this.inputHandler = inputHandler;
-    this.buffers = buffers;
     this.refresh(0, this.rows - 1);
     this.viewport.syncScrollArea();
   }

@@ -121,6 +121,10 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     this._mouseUpListener = event => this._onMouseUp(<MouseEvent>event);
     this._trimListener = (amount: number) => this._onTrim(amount);
 
+    this.initBuffersListeners();
+  }
+
+  public initBuffersListeners(): void {
     this._terminal.buffer.lines.on('trim', this._trimListener);
     this._terminal.buffers.on('activate', e => this._onBufferActivate(e));
   }
