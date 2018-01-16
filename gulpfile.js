@@ -18,10 +18,12 @@ const ts = require('gulp-typescript');
 const util = require('gulp-util');
 const webpack = require('webpack-stream');
 
-let buildDir = process.env.BUILD_DIR || 'build';
-let tsProject = ts.createProject('tsconfig.json');
-let srcDir = tsProject.config.compilerOptions.rootDir;
+const buildDir = process.env.BUILD_DIR || 'build';
+const tsProject = ts.createProject('tsconfig.json');
+const srcDir = tsProject.config.compilerOptions.rootDir;
 let outDir = tsProject.config.compilerOptions.outDir;
+
+const addons = ['attach', 'fit', 'fullscreen', 'search', 'terminado', 'winptyCompat', 'zmodem'];
 
 // Under some environments like TravisCI, this comes out at absolute which can
 // break the build. This ensures that the outDir is absolute.
@@ -45,7 +47,6 @@ gulp.task('tsc', function () {
     tsResult.dts.pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''})).pipe(gulp.dest(outDir))
   );
 
-  let addons = ['attach', 'fit', 'fullscreen', 'search', 'terminado', 'winptyCompat', 'zmodem'];
   let addonStreams = addons.map(function(addon) {
     fs.emptyDirSync(`${outDir}/addons/${addon}`);
 
@@ -103,45 +104,29 @@ gulp.task('browserify', ['tsc'], function() {
 });
 
 gulp.task('browserify-addons', ['tsc'], function() {
-  let searchOptions = {
-    basedir: `${buildDir}/addons/search`,
-    debug: true,
-    entries: [`${outDir}/addons/search/search.js`],
-    cache: {},
-    packageCache: {}
-  };
-  let searchBundle = browserify(searchOptions)
-        .external(path.join(outDir, 'Terminal.js'))
-        .bundle()
-        .pipe(source('./addons/search/search.js'))
-        .pipe(buffer())
-        .pipe(sourcemaps.init({loadMaps: true, sourceRoot: ''}))
-        .pipe(sourcemaps.write('./'))
-        .pipe(gulp.dest(buildDir));
+  const bundles = addons.map((addon) => {
+    const addonOptions = {
+      basedir: `${buildDir}/addons/${addon}`,
+      debug: true,
+      entries: [`${outDir}/addons/${addon}/${addon}.js`],
+      standalone: addon,
+      cache: {},
+      packageCache: {}
+    };
 
-  let winptyCompatOptions = {
-    basedir: `${buildDir}/addons/winptyCompat`,
-    debug: true,
-    entries: [`${outDir}/addons/winptyCompat/winptyCompat.js`],
-    cache: {},
-    packageCache: {}
-  };
-  let winptyCompatBundle = browserify(winptyCompatOptions)
-        .external(path.join(outDir, 'Terminal.js'))
-        .bundle()
-        .pipe(source('./addons/winptyCompat/winptyCompat.js'))
-        .pipe(buffer())
-        .pipe(sourcemaps.init({loadMaps: true, sourceRoot: ''}))
-        .pipe(sourcemaps.write('./'))
-        .pipe(gulp.dest(buildDir));
+    const addonBundle = browserify(addonOptions)
+      .external(path.join(outDir, 'Terminal.js'))
+      .bundle()
+      .pipe(source(`./addons/${addon}/${addon}.js`))
+      .pipe(buffer())
+      .pipe(sourcemaps.init({loadMaps: true, sourceRoot: ''}))
+      .pipe(sourcemaps.write('./'))
+      .pipe(gulp.dest(buildDir));
 
-  // Copy all add-ons from outDir to buildDir
-  let copyAddons = gulp.src([
-    // Copy JS addons
-    `${outDir}/addons/**/*`
-  ]).pipe(gulp.dest(`${buildDir}/addons`));
+    return addonBundle;
+  });
 
-  return merge(searchBundle, winptyCompatBundle, copyAddons);
+  return merge(...bundles);
 });
 
 gulp.task('instrument-test', function () {
@@ -189,9 +174,11 @@ gulp.task('sorcery', ['browserify'], function () {
 });
 
 gulp.task('sorcery-addons', ['browserify-addons'], function () {
-  var chain = sorcery.loadSync(`${buildDir}/addons/search/search.js`);
-  chain.apply();
-  chain.writeSync();
+  addons.forEach((addon) => {
+    const chain = sorcery.loadSync(`${buildDir}/addons/${addon}/${addon}.js`);
+    chain.apply();
+    chain.writeSync();
+  })
 });
 
 gulp.task('webpack', ['build'], function() {
