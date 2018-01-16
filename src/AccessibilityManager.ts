@@ -298,6 +298,8 @@ class NavigationMode implements IDisposable {
 
   private _onKey(e: KeyboardEvent, handler: (e: KeyboardEvent) => boolean): boolean {
     if (handler && handler(e)) {
+      e.preventDefault();
+      e.stopPropagation();
       return true;
     }
     return false;
