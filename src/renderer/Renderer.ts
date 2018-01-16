@@ -53,6 +53,7 @@ export class Renderer extends EventEmitter implements IRenderer {
     };
     this._devicePixelRatio = window.devicePixelRatio;
     this._updateDimensions();
+    this.onOptionsChanged();
   }
 
   public onWindowResize(devicePixelRatio: number): void {
