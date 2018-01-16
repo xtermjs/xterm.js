@@ -88,6 +88,10 @@ export class AccessibilityManager implements IDisposable {
     this._rowElements = null;
   }
 
+  public get isNavigationModeActive(): boolean {
+    return this._navigationMode.isActive;
+  }
+
   private _onResize(cols: number, rows: number): void {
     // Grow rows as required
     for (let i = this._rowContainer.children.length; i < this._terminal.rows; i++) {
