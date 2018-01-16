@@ -29,8 +29,10 @@ var terminalContainer = document.getElementById('terminal-container'),
       cursorStyle: document.querySelector('#option-cursor-style'),
       scrollback: document.querySelector('#option-scrollback'),
       tabstopwidth: document.querySelector('#option-tabstopwidth'),
-      bellStyle: document.querySelector('#option-bell-style')
+      bellStyle: document.querySelector('#option-bell-style'),
+      screenReaderMode: document.querySelector('#option-screen-reader-mode')
     },
+    navigationModeElement = document.querySelector('#screen-reader-navigation-mode'),
     colsElement = document.getElementById('cols'),
     rowsElement = document.getElementById('rows');
 
@@ -78,6 +80,16 @@ optionElements.scrollback.addEventListener('change', function () {
 optionElements.tabstopwidth.addEventListener('change', function () {
   term.setOption('tabStopWidth', parseInt(optionElements.tabstopwidth.value, 10));
 });
+optionElements.screenReaderMode.addEventListener('change', function () {
+  term.setOption('screenReaderMode', optionElements.screenReaderMode.value);
+});
+navigationModeElement.addEventListener('click', function () {
+  if (term.getOption('screenReaderMode')) {
+    term.enterNavigationMode();
+  } else {
+    console.warn('screenReaderMode must be true to enter navigation mode');
+  }
+});
 
 createTerminal();
 
@@ -89,7 +101,8 @@ function createTerminal() {
   term = new Terminal({
     cursorBlink: optionElements.cursorBlink.checked,
     scrollback: parseInt(optionElements.scrollback.value, 10),
-    tabStopWidth: parseInt(optionElements.tabstopwidth.value, 10)
+    tabStopWidth: parseInt(optionElements.tabstopwidth.value, 10),
+    screenReaderMode: optionElements.screenReaderMode.checked
   });
   window.term = term;  // Expose `term` to window for debugging purposes
   term.on('resize', function (size) {

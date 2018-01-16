@@ -47,6 +47,8 @@ export class AccessibilityManager implements IDisposable {
     this._accessibilityTreeRoot.appendChild(this._rowContainer);
 
     this._renderRowsDebouncer = new RenderDebouncer(this._terminal, this._renderRows.bind(this));
+    this._refreshRows();
+
     this._navigationMode = new NavigationMode(this._terminal, this._rowContainer, this._rowElements, this);
 
     this._liveRegion = document.createElement('div');
@@ -90,6 +92,10 @@ export class AccessibilityManager implements IDisposable {
 
   public get isNavigationModeActive(): boolean {
     return this._navigationMode.isActive;
+  }
+
+  public enterNavigationMode(): void {
+    this._navigationMode.enter();
   }
 
   private _onResize(cols: number, rows: number): void {

@@ -1334,6 +1334,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     }
   }
 
+  public enterNavigationMode(): void {
+    if (this._accessibilityManager) {
+      this._accessibilityManager.enterNavigationMode();
+    }
+  }
+
   /**
    * Gets whether the terminal has an active selection.
    */
