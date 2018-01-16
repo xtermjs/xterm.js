@@ -118,9 +118,15 @@ export class SearchHelper {
     if (searchIndex >= 0) {
       const line = this._terminal.buffer.lines.get(y);
       for (let i = 0; i < searchIndex; i++) {
-        // Adjust the selection for empty characters following wide unicode chars
-        const char = line[i];
-        const charWidth = char[2/*CHAR_DATA_WIDTH_INDEX*/];
+        const charData = line[i];
+        // Adjust the searchIndex to normalize emoji into single chars
+        const char = charData[1/*CHAR_DATA_CHAR_INDEX*/];
+        if (char.length > 1) {
+          searchIndex -= char.length - 1;
+        }
+        // Adjust the searchIndex for empty characters following wide unicode
+        // chars (eg. CJK)
+        const charWidth = charData[2/*CHAR_DATA_WIDTH_INDEX*/];
         if (charWidth === 0) {
           searchIndex++;
         }
