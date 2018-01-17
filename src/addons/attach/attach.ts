@@ -72,7 +72,7 @@ export function attach(term: any, socket: WebSocket, bidirectional: boolean, buf
 
   socket.addEventListener('close', term.detach.bind(term, socket));
   socket.addEventListener('error', term.detach.bind(term, socket));
-};
+}
 
 /**
  * Detaches the given terminal from the given socket
@@ -91,7 +91,7 @@ export function detach(term: any, socket: WebSocket): void {
   }
 
   delete term.socket;
-};
+}
 
 
 export function apply(terminalConstructor: any): void {
@@ -118,4 +118,4 @@ export function apply(terminalConstructor: any): void {
   terminalConstructor.prototype.detach = (socket: WebSocket) => {
     return detach(this, socket);
   };
-};
+}

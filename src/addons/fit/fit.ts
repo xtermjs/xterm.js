@@ -47,7 +47,7 @@ export function fit(term: any): void {
       term.resize(geometry.cols, geometry.rows);
     }
   }
-};
+}
 
 export function apply(terminalConstructor: any): void {
   terminalConstructor.prototype.proposeGeometry = function (): IGeometry {

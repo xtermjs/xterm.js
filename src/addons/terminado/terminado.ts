@@ -63,7 +63,7 @@ export function terminadoAttach(term: any, socket: WebSocket, bidirectional: boo
 
   socket.addEventListener('close', term.terminadoDetach.bind(term, socket));
   socket.addEventListener('error', term.terminadoDetach.bind(term, socket));
-};
+}
 
 /**
  * Detaches the given terminal from the given socket
@@ -82,7 +82,7 @@ export function terminadoDetach(term: any, socket: WebSocket): void {
   }
 
   delete term.socket;
-};
+}
 
 export function apply(terminalConstructor: any): void {
   /**

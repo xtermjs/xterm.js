@@ -248,7 +248,7 @@ export interface IEventEmitter {
 export interface IListenerType {
     (data?: any): void;
     listener?: (data?: any) => void;
-};
+}
 
 export interface ILinkMatcherOptions {
   /**

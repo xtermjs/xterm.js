@@ -32,4 +32,4 @@ export enum LinkHoverEventTypes {
   HOVER = 'linkhover',
   TOOLTIP = 'linktooltip',
   LEAVE = 'linkleave'
-};
+}

@@ -443,7 +443,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.element.classList.add('focus');
     this.showCursor();
     this.emit('focus');
-  };
+  }
 
   /**
    * Blur the terminal, calling the blur function on the terminal's underlying
@@ -2220,7 +2220,7 @@ function matchColorDistance(r1: number, g1: number, b1: number, r2: number, g2: 
   return Math.pow(30 * (r1 - r2), 2)
     + Math.pow(59 * (g1 - g2), 2)
     + Math.pow(11 * (b1 - b2), 2);
-};
+}
 
 
 function matchColor_(r1: number, g1: number, b1: number): number {

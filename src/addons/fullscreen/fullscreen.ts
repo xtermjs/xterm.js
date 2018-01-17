@@ -20,7 +20,7 @@ export function toggleFullScreen(term: any, fullscreen: boolean): void {
   }
 
   term.element.classList[fn]('fullscreen');
-};
+}
 
 export function apply(terminalConstructor: any): void {
   terminalConstructor.prototype.toggleFullScreen = function (fullscreen: boolean): void {
