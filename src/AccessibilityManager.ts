@@ -190,7 +190,8 @@ export class AccessibilityManager implements IDisposable {
     for (let i = start; i <= end; i++) {
       const lineData = buffer.translateBufferLineToString(buffer.ydisp + i, true);
       this._rowElements[i].textContent = lineData;
-      this._rowElements[i].setAttribute('aria-label', lineData);
+      this._rowElements[i].setAttribute('aria-posinset', (buffer.ydisp + i + 1).toString());
+      this._rowElements[i].setAttribute('aria-setsize', (buffer.lines.length).toString());
     }
   }
 
