@@ -213,6 +213,7 @@ class NavigationMode implements IDisposable {
   private _activeItemId: string;
   private _isNavigationModeActive: boolean = false;
   private _absoluteFocusedRow: number;
+  private _focusedElement: HTMLElement;
 
   private _disposables: IDisposable[] = [];
 
@@ -260,9 +261,8 @@ class NavigationMode implements IDisposable {
     this._rowContainer.removeAttribute('tabindex');
     this._rowContainer.removeAttribute('aria-activedescendant');
     this._rowContainer.removeAttribute('role');
-    const selected = document.querySelector('#' + this._activeItemId);
-    if (selected) {
-      selected.removeAttribute('id');
+    if (this._focusedElement) {
+      this._focusedElement.removeAttribute('id');
     }
     this._terminal.textarea.focus();
   }
@@ -344,13 +344,11 @@ class NavigationMode implements IDisposable {
   private _navigateToElement(absoluteRow: number): void {
     absoluteRow = this._terminal.scrollToRow(absoluteRow);
 
-    // TODO: Store this state
-    const selected = document.querySelector('#' + this._activeItemId);
-    if (selected) {
-      selected.removeAttribute('id');
+    if (this._focusedElement) {
+      this._focusedElement.removeAttribute('id');
     }
     this._absoluteFocusedRow = absoluteRow;
-    const selectedElement = this._rowElements[absoluteRow - this._terminal.buffer.ydisp];
-    selectedElement.id = this._activeItemId;
+    this._focusedElement = this._rowElements[absoluteRow - this._terminal.buffer.ydisp];
+    this._focusedElement.id = this._activeItemId;
   }
 }
