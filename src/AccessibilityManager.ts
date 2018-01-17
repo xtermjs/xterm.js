@@ -187,12 +187,22 @@ export class AccessibilityManager implements IDisposable {
 
   private _renderRows(start: number, end: number): void {
     const buffer: IBuffer = (<any>this._terminal.buffer);
+    const setSize = (buffer.lines.length).toString();
     for (let i = start; i <= end; i++) {
       const lineData = buffer.translateBufferLineToString(buffer.ydisp + i, true);
       this._rowElements[i].textContent = lineData;
-      this._rowElements[i].setAttribute('aria-posinset', (buffer.ydisp + i + 1).toString());
-      this._rowElements[i].setAttribute('aria-setsize', (buffer.lines.length).toString());
+      const posInSet = (buffer.ydisp + i + 1).toString();
+      this._rowElements[i].setAttribute('aria-posinset', posInSet);
+      this._rowElements[i].setAttribute('aria-setsize', setSize);
     }
+  }
+
+  public rotateRows(): void {
+    this._rowContainer.removeChild(this._rowElements.shift());
+    const newRowIndex = this._rowElements.length;
+    this._rowElements[newRowIndex] = this._createAccessibilityTreeNode();
+    this._rowContainer.appendChild(this._rowElements[newRowIndex]);
+    this._refreshRowsDimensions();
   }
 
   private _refreshRowsDimensions(): void {
@@ -342,6 +352,11 @@ class NavigationMode implements IDisposable {
   }
 
   private _navigateToElement(absoluteRow: number): void {
+    if (absoluteRow < this._terminal.buffer.ydisp || absoluteRow >= this._terminal.buffer.ydisp + this._terminal.rows) {
+      // Rotate rows to ensure the next focused item is read out correctly
+      this._accessibilityManager.rotateRows();
+    }
+
     absoluteRow = this._terminal.scrollToRow(absoluteRow);
 
     if (this._focusedElement) {
