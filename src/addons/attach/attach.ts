@@ -16,16 +16,16 @@
  *                             should happen instantly or at a maximum
  *                             frequency of 1 rendering per 10ms.
  */
-export function attach(term, socket, bidirectional, buffered) {
-  bidirectional = (typeof bidirectional == 'undefined') ? true : bidirectional;
+export function attach(term: any, socket: WebSocket, bidirectional: boolean, buffered: boolean): void {
+  bidirectional = (typeof bidirectional === 'undefined') ? true : bidirectional;
   term.socket = socket;
 
-  term._flushBuffer = function() {
+  term._flushBuffer = () => {
     term.write(term._attachSocketBuffer);
     term._attachSocketBuffer = null;
   };
 
-  term._pushToBuffer = function(data) {
+  term._pushToBuffer = (data: string) => {
     if (term._attachSocketBuffer) {
       term._attachSocketBuffer += data;
     } else {
@@ -34,20 +34,19 @@ export function attach(term, socket, bidirectional, buffered) {
     }
   };
 
-  var myTextDecoder;
+  let myTextDecoder;
 
-  term._getMessage = function(ev) {
-    var str;
-    if (typeof ev.data === "object") {
+  term._getMessage = function(ev: MessageEvent): void {
+    let str;
+    if (typeof ev.data === 'object') {
       if (ev.data instanceof ArrayBuffer) {
           if (!myTextDecoder) {
             myTextDecoder = new TextDecoder();
           }
 
           str = myTextDecoder.decode( ev.data );
-      }
-      else {
-        throw "TODO: handle Blob?";
+      } else {
+        throw 'TODO: handle Blob?';
       }
     }
 
@@ -58,7 +57,7 @@ export function attach(term, socket, bidirectional, buffered) {
     }
   };
 
-  term._sendData = function(data) {
+  term._sendData = (data: string) => {
     if (socket.readyState !== 1) {
       return;
     }
@@ -82,10 +81,10 @@ export function attach(term, socket, bidirectional, buffered) {
  * @param {WebSocket} socket - The socket from which to detach the current
  *                             terminal.
  */
-export function detach(term, socket) {
+export function detach(term: any, socket: WebSocket): void {
   term.off('data', term._sendData);
 
-  socket = (typeof socket == 'undefined') ? term.socket : socket;
+  socket = (typeof socket === 'undefined') ? term.socket : socket;
 
   if (socket) {
     socket.removeEventListener('message', term._getMessage);
@@ -95,7 +94,7 @@ export function detach(term, socket) {
 };
 
 
-export function apply(terminalConstructor) {
+export function apply(terminalConstructor: any): void {
   /**
    * Attaches the current terminal to the given socket
    *
@@ -106,7 +105,7 @@ export function apply(terminalConstructor) {
    *                             should happen instantly or at a maximum
    *                             frequency of 1 rendering per 10ms.
    */
-  terminalConstructor.prototype.attach = function(socket, bidirectional, buffered) {
+  terminalConstructor.prototype.attach = (socket: WebSocket, bidirectional: boolean, buffered: boolean) => {
     return attach(this, socket, bidirectional, buffered);
   };
 
@@ -116,7 +115,7 @@ export function apply(terminalConstructor) {
    * @param {WebSocket} socket - The socket from which to detach the current
    *                             terminal.
    */
-  terminalConstructor.prototype.detach = function(socket) {
+  terminalConstructor.prototype.detach = (socket: WebSocket) => {
     return detach(this, socket);
   };
-}
+};

@@ -5,7 +5,7 @@
 
 import { assert, expect } from 'chai';
 
-import * as fullscreen from './fullscreen'
+import * as fullscreen from './fullscreen';
 
 class MockTerminal {}
 

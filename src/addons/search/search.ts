@@ -32,12 +32,12 @@ export function findPrevious(terminal: any, term: string): boolean {
   return (<SearchHelper>terminal.searchHelper).findPrevious(term);
 };
 
-export function apply(terminalConstructor) {
-  terminalConstructor.prototype.findNext = function(term) {
+export function apply(terminalConstructor: any): void {
+  terminalConstructor.prototype.findNext = function(term: any): boolean {
     return findNext(this, term);
-  }
+  };
 
-  terminalConstructor.prototype.findPrevious = function(term) {
+  terminalConstructor.prototype.findPrevious = function(term: any): boolean {
     return findPrevious(this, term);
-  }
+  };
 }
