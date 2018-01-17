@@ -105,8 +105,8 @@ export function apply(terminalConstructor: any): void {
    *                             should happen instantly or at a maximum
    *                             frequency of 1 rendering per 10ms.
    */
-  terminalConstructor.prototype.attach = (socket: WebSocket, bidirectional: boolean, buffered: boolean) => {
-    return attach(this, socket, bidirectional, buffered);
+  terminalConstructor.prototype.attach = function (socket: WebSocket, bidirectional: boolean, buffered: boolean): void {
+    attach(this, socket, bidirectional, buffered);
   };
 
   /**
@@ -115,7 +115,7 @@ export function apply(terminalConstructor: any): void {
    * @param {WebSocket} socket - The socket from which to detach the current
    *                             terminal.
    */
-  terminalConstructor.prototype.detach = (socket: WebSocket) => {
-    return detach(this, socket);
+  terminalConstructor.prototype.detach = function (socket: WebSocket): void {
+    detach(this, socket);
   };
 }

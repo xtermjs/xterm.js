@@ -13,6 +13,11 @@
       true,
       "spaces"
     ],
+    "interface-name": [
+      true,
+      "always-prefix"
+    ],
+    "interface-over-type-literal": true,
     "typedef": [
       true,
       "call-signature",

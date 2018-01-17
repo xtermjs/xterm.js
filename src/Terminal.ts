@@ -38,8 +38,8 @@ import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './utils/Browser';
 import { MouseHelper } from './utils/MouseHelper';
 import { CHARSETS } from './Charsets';
-import { CustomKeyEventHandler, Charset, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
-import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper, ITheme, ILinkifier } from './Interfaces';
+import { CustomKeyEventHandler, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
+import { ITerminal, IBrowser, ICharset, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper, ITheme, ILinkifier } from './Interfaces';
 import { BELL_SOUND } from './utils/Sounds';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { IMouseZoneManager } from './input/Interfaces';
@@ -131,10 +131,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
   // charset
   // The current charset
-  public charset: Charset;
+  public charset: ICharset;
   public gcharset: number;
   public glevel: number;
-  public charsets: Charset[];
+  public charsets: ICharset[];
 
   // mouse properties
   private decLocator: boolean; // This is unstable and never set
@@ -1728,7 +1728,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param g
    * @param charset
    */
-  public setgCharset(g: number, charset: Charset): void {
+  public setgCharset(g: number, charset: ICharset): void {
     this.charsets[g] = charset;
     if (this.glevel === g) {
       this.charset = charset;
