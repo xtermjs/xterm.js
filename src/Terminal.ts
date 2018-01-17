@@ -40,7 +40,7 @@ import { MouseHelper } from './utils/MouseHelper';
 import { CHARSETS } from './Charsets';
 import { CustomKeyEventHandler, Charset, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
 import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper, ITheme, ILinkifier } from './Interfaces';
-import { BellSound } from './utils/Sounds';
+import { BELL_SOUND } from './utils/Sounds';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { IMouseZoneManager } from './input/Interfaces';
 import { MouseZoneManager } from './input/MouseZoneManager';
@@ -70,7 +70,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   termName: 'xterm',
   cursorBlink: false,
   cursorStyle: 'block',
-  bellSound: BellSound,
+  bellSound: BELL_SOUND,
   bellStyle: 'none',
   enableBold: true,
   fontFamily: 'courier-new, courier, monospace',
@@ -181,7 +181,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   private writeStopped: boolean;
 
   // leftover surrogate high from previous write invocation
-  private surrogate_high: string;
+  private surrogateHigh: string;
 
   // Store if user went browsing history in scrollback
   private userScrolling: boolean;
@@ -280,7 +280,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     this.xoffSentToCatchUp = false;
     this.writeStopped = false;
-    this.surrogate_high = '';
+    this.surrogateHigh = '';
     this.userScrolling = false;
 
     this.inputHandler = new InputHandler(this);

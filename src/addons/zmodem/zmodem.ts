@@ -27,7 +27,7 @@
  *  via `detach()` and a re-`attach()`.)
  */
 
-let Zmodem;
+let zmodem;
 
 export interface IZModemOptions {
   noTerminalWriteOutsideSession?: boolean;
@@ -42,7 +42,7 @@ export function zmodemAttach(term: any, ws: WebSocket, opts: IZModemOptions = {}
     return !!zsentry.get_confirmed_session() || !opts.noTerminalWriteOutsideSession;
   }
 
-  zsentry = new Zmodem.Sentry({
+  zsentry = new zmodem.Sentry({
     to_terminal: (octets: ArrayLike<number>) => {
       if (_shouldWrite()) {
         term.write(
@@ -76,8 +76,8 @@ export function zmodemAttach(term: any, ws: WebSocket, opts: IZModemOptions = {}
 }
 
 export function apply(terminalConstructor: any): void {
-  Zmodem = (typeof window === 'object') ? (<any>window).ZModem : {Browser: null};  // Nullify browser for tests
+  zmodem = (typeof window === 'object') ? (<any>window).ZModem : {Browser: null};  // Nullify browser for tests
 
   terminalConstructor.prototype.zmodemAttach = zmodemAttach.bind(this, this);
-  terminalConstructor.prototype.zmodemBrowser = Zmodem.Browser;
+  terminalConstructor.prototype.zmodemBrowser = zmodem.Browser;
 }
