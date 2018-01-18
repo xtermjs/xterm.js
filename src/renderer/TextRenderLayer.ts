@@ -192,9 +192,9 @@ export class TextRenderLayer extends BaseRenderLayer {
     }
   }
 
-	/**
-	 * Whether a character is overlapping to the next cell.
-	 */
+  /**
+   * Whether a character is overlapping to the next cell.
+   */
   private _isOverlapping(charData: CharData): boolean {
     // Only single cell characters can be overlapping, rendering issues can
     // occur without this check

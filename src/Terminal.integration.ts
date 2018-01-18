@@ -15,17 +15,17 @@ import { assert } from 'chai';
 import { Terminal } from './Terminal';
 import { CHAR_DATA_CHAR_INDEX } from './Buffer';
 
-let primitive_pty: any;
+let primitivePty: any;
 
 // fake sychronous pty write - read
 // we just pipe the data from slave to master as a child program would do
 // pty.js opens pipe fds with O_NONBLOCK
 // just wait 10ms instead of setting fds to blocking mode
 function ptyWriteRead(data: string, cb: (result: string) => void): void {
-  fs.writeSync(primitive_pty.slave, data);
+  fs.writeSync(primitivePty.slave, data);
   setTimeout(() => {
     let b = new Buffer(64000);
-    let bytes = fs.readSync(primitive_pty.master, b, 0, 64000, null);
+    let bytes = fs.readSync(primitivePty.master, b, 0, 64000, null);
     cb(b.toString('utf8', 0, bytes));
   });
 }
@@ -37,7 +37,7 @@ function ptyReset(cb: (result: string) => void): void {
 
 /* debug helpers */
 // generate colorful noisy output to compare xterm and emulator cell states
-function formatError(in_: string, out_: string, expected: string): string {
+function formatError(input: string, output: string, expected: string): string {
   function addLineNumber(start: number, color: string): (s: string) => string {
     let counter = start || 0;
     return function(s: string): string {
@@ -47,9 +47,9 @@ function formatError(in_: string, out_: string, expected: string): string {
   }
   let line80 = '12345678901234567890123456789012345678901234567890123456789012345678901234567890';
   let s = '';
-  s += '\n\x1b[34m' + JSON.stringify(in_);
+  s += '\n\x1b[34m' + JSON.stringify(input);
   s += '\n\x1b[33m  ' + line80 + '\n';
-  s += out_.split('\n').map(addLineNumber(0, '\x1b[31m')).join('\n');
+  s += output.split('\n').map(addLineNumber(0, '\x1b[31m')).join('\n');
   s += '\n\x1b[33m  ' + line80 + '\n';
   s += expected.split('\n').map(addLineNumber(0, '\x1b[32m')).join('\n');
   return s;
@@ -58,15 +58,15 @@ function formatError(in_: string, out_: string, expected: string): string {
 // simple debug output of terminal cells
 function terminalToString(term: Terminal): string {
   let result = '';
-  let line_s = '';
+  let lineText = '';
   for (let line = term.buffer.ybase; line < term.buffer.ybase + term.rows; line++) {
-    line_s = '';
+    lineText = '';
     for (let cell = 0; cell < term.cols; ++cell) {
-      line_s += term.buffer.lines.get(line)[cell][CHAR_DATA_CHAR_INDEX];
+      lineText += term.buffer.lines.get(line)[cell][CHAR_DATA_CHAR_INDEX];
     }
     // rtrim empty cells as xterm does
-    line_s = line_s.replace(/\s+$/, '');
-    result += line_s;
+    lineText = lineText.replace(/\s+$/, '');
+    result += lineText;
     result += '\n';
   }
   return result;
@@ -83,7 +83,7 @@ if (os.platform() !== 'win32') {
   /** some helpers for pty interaction */
   // we need a pty in between to get the termios decorations
   // for the basic test cases a raw pty device is enough
-  primitive_pty = pty.native.open(COLS, ROWS);
+  primitivePty = pty.native.open(COLS, ROWS);
 
   /** tests */
   describe('xterm output comparison', () => {
@@ -118,24 +118,24 @@ if (os.platform() !== 'win32') {
       ((filename: string) => {
         it(filename.split('/').slice(-1)[0], done => {
           ptyReset(() => {
-            let in_file = fs.readFileSync(filename, 'utf8');
-            ptyWriteRead(in_file, from_pty => {
+            let inFile = fs.readFileSync(filename, 'utf8');
+            ptyWriteRead(inFile, fromPty => {
               // uncomment this to get log from terminal
               // console.log = function(){};
 
               // Perform a synchronous .write(data)
-              xterm.writeBuffer.push(from_pty);
+              xterm.writeBuffer.push(fromPty);
               xterm.innerWrite();
 
-              let from_emulator = terminalToString(xterm);
+              let fromEmulator = terminalToString(xterm);
               console.log = CONSOLE_LOG;
               let expected = fs.readFileSync(filename.split('.')[0] + '.text', 'utf8');
               // Some of the tests have whitespace on the right of lines, we trim all the linex
               // from xterm.js so ignore this for now at least.
               let expectedRightTrimmed = expected.split('\n').map(l => l.replace(/\s+$/, '')).join('\n');
-              if (from_emulator !== expectedRightTrimmed) {
+              if (fromEmulator !== expectedRightTrimmed) {
                 // uncomment to get noisy output
-                throw new Error(formatError(in_file, from_emulator, expected));
+                throw new Error(formatError(inFile, fromEmulator, expected));
               //   throw new Error('mismatch');
               }
               done();

@@ -5,7 +5,7 @@
 
 import { assert, expect } from 'chai';
 
-import * as attach from './attach'
+import * as attach from './attach';
 
 class MockTerminal {}
 

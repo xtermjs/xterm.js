@@ -38,9 +38,9 @@ import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './utils/Browser';
 import { MouseHelper } from './utils/MouseHelper';
 import { CHARSETS } from './Charsets';
-import { CustomKeyEventHandler, Charset, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
-import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper, ITheme, ILinkifier } from './Interfaces';
-import { BellSound } from './utils/Sounds';
+import { CustomKeyEventHandler, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
+import { ITerminal, IBrowser, ICharset, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper, ITheme, ILinkifier } from './Interfaces';
+import { BELL_SOUND } from './utils/Sounds';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { IMouseZoneManager } from './input/Interfaces';
 import { MouseZoneManager } from './input/MouseZoneManager';
@@ -70,7 +70,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   termName: 'xterm',
   cursorBlink: false,
   cursorStyle: 'block',
-  bellSound: BellSound,
+  bellSound: BELL_SOUND,
   bellStyle: 'none',
   enableBold: true,
   fontFamily: 'courier-new, courier, monospace',
@@ -131,10 +131,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
   // charset
   // The current charset
-  public charset: Charset;
+  public charset: ICharset;
   public gcharset: number;
   public glevel: number;
-  public charsets: Charset[];
+  public charsets: ICharset[];
 
   // mouse properties
   private decLocator: boolean; // This is unstable and never set
@@ -181,7 +181,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   private writeStopped: boolean;
 
   // leftover surrogate high from previous write invocation
-  private surrogate_high: string;
+  private surrogateHigh: string;
 
   // Store if user went browsing history in scrollback
   private userScrolling: boolean;
@@ -280,7 +280,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     this.xoffSentToCatchUp = false;
     this.writeStopped = false;
-    this.surrogate_high = '';
+    this.surrogateHigh = '';
     this.userScrolling = false;
 
     this.inputHandler = new InputHandler(this);
@@ -443,7 +443,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.element.classList.add('focus');
     this.showCursor();
     this.emit('focus');
-  };
+  }
 
   /**
    * Blur the terminal, calling the blur function on the terminal's underlying
@@ -1732,7 +1732,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param g
    * @param charset
    */
-  public setgCharset(g: number, charset: Charset): void {
+  public setgCharset(g: number, charset: ICharset): void {
     this.charsets[g] = charset;
     if (this.glevel === g) {
       this.charset = charset;
@@ -2224,7 +2224,7 @@ function matchColorDistance(r1: number, g1: number, b1: number, r2: number, g2: 
   return Math.pow(30 * (r1 - r2), 2)
     + Math.pow(59 * (g1 - g2), 2)
     + Math.pow(11 * (b1 - b2), 2);
-};
+}
 
 
 function matchColor_(r1: number, g1: number, b1: number): number {

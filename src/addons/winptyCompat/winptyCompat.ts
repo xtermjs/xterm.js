@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-export function winptyCompatInit(terminal): void {
+export function winptyCompatInit(terminal: any): void {
     // Don't do anything when the platform is not Windows
     const isWindows = ['Windows', 'Win16', 'Win32', 'WinCE'].indexOf(navigator.platform) >= 0;
     if (!isWindows) {
@@ -31,7 +31,7 @@ export function winptyCompatInit(terminal): void {
     });
 }
 
-export function apply(terminalConstructor) {
+export function apply(terminalConstructor: any): void {
   terminalConstructor.prototype.winptyCompatInit = function(): void {
     winptyCompatInit(this);
   };

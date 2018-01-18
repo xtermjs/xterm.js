@@ -119,7 +119,7 @@ export class Viewport implements IViewport {
     this.viewportElement.scrollTop += ev.deltaY * multiplier;
     // Prevent the page from scrolling when the terminal scrolls
     ev.preventDefault();
-  };
+  }
 
   /**
    * Handles the touchstart event, recording the touch occurred.
@@ -127,7 +127,7 @@ export class Viewport implements IViewport {
    */
   public onTouchStart(ev: TouchEvent): void {
     this.lastTouchY = ev.touches[0].pageY;
-  };
+  }
 
   /**
    * Handles the touchmove event, scrolling the viewport if the position shifted.
@@ -141,5 +141,5 @@ export class Viewport implements IViewport {
     }
     this.viewportElement.scrollTop += deltaY;
     ev.preventDefault();
-  };
+  }
 }
