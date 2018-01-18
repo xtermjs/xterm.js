@@ -52,9 +52,14 @@ gulp.task('tsc', function () {
 
     let tsProjectAddon = ts.createProject(`./src/addons/${addon}/tsconfig.json`);
     let tsResultAddon = tsProjectAddon.src().pipe(sourcemaps.init()).pipe(tsProjectAddon());
-    let tscAddon = tsResultAddon.js
-      .pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''}))
-      .pipe(gulp.dest(`${outDir}/addons/${addon}`));
+    let tscAddon = merge(
+      tsResultAddon.js
+        .pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''}))
+        .pipe(gulp.dest(`${outDir}/addons/${addon}`)),
+      tsResultAddon.dts
+        .pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''}))
+        .pipe(gulp.dest(`${outDir}/addons/${addon}`))
+    )
 
     return tscAddon;
   });
