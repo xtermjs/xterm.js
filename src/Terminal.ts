@@ -1573,6 +1573,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         // page up
         if (ev.shiftKey) {
           result.scrollLines = -(this.rows - 1);
+        } else if (modifiers) {
+          result.key = C0.ESC + '[5;' + (modifiers + 1) + '~';
         } else {
           result.key = C0.ESC + '[5~';
         }
@@ -1581,6 +1583,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         // page down
         if (ev.shiftKey) {
           result.scrollLines = this.rows - 1;
+        } else if (modifiers) {
+          result.key = C0.ESC + '[6;' + (modifiers + 1) + '~';
         } else {
           result.key = C0.ESC + '[6~';
         }
