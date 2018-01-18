@@ -363,6 +363,7 @@ export interface ILinkMatcher {
   validationCallback?: LinkMatcherValidationCallback;
   priority?: number;
 }
+
 export interface ICharset {
   [key: string]: string;
 }
