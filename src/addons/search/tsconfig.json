@@ -5,6 +5,7 @@
     "rootDir": ".",
     "outDir": "../../../lib/addons/search/",
     "sourceMap": true,
-    "removeComments": true
+    "removeComments": true,
+    "declaration": true
   }
 }

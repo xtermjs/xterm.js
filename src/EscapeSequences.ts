@@ -76,4 +76,4 @@ export namespace C0 {
   export const SP  = '\x20';
   /** Delete (Caret = ^?) */
   export const DEL = '\x7f';
-};
+}

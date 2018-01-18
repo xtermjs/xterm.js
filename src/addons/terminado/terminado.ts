@@ -17,16 +17,16 @@
  *                             should happen instantly or at a maximum
  *                             frequency of 1 rendering per 10ms.
  */
-export function terminadoAttach(term, socket, bidirectional, buffered) {
-  bidirectional = (typeof bidirectional == 'undefined') ? true : bidirectional;
+export function terminadoAttach(term: any, socket: WebSocket, bidirectional: boolean, buffered: boolean): void {
+  bidirectional = (typeof bidirectional === 'undefined') ? true : bidirectional;
   term.socket = socket;
 
-  term._flushBuffer = function() {
+  term._flushBuffer = () => {
     term.write(term._attachSocketBuffer);
     term._attachSocketBuffer = null;
   };
 
-  term._pushToBuffer = function(data) {
+  term._pushToBuffer = (data) => {
     if (term._attachSocketBuffer) {
       term._attachSocketBuffer += data;
     } else {
@@ -35,9 +35,9 @@ export function terminadoAttach(term, socket, bidirectional, buffered) {
     }
   };
 
-  term._getMessage = function(ev) {
-    var data = JSON.parse(ev.data)
-    if( data[0] == "stdout" ) {
+  term._getMessage = (ev: MessageEvent) => {
+    const data = JSON.parse(ev.data);
+    if (data[0] === 'stdout') {
       if (buffered) {
         term._pushToBuffer(data[1]);
       } else {
@@ -46,11 +46,11 @@ export function terminadoAttach(term, socket, bidirectional, buffered) {
     }
   };
 
-  term._sendData = function(data) {
+  term._sendData = (data: string) => {
     socket.send(JSON.stringify(['stdin', data]));
   };
 
-  term._setSize = function(size) {
+  term._setSize = (size: {rows: number, cols: number}) => {
     socket.send(JSON.stringify(['set_size', size.rows, size.cols]));
   };
 
@@ -63,7 +63,7 @@ export function terminadoAttach(term, socket, bidirectional, buffered) {
 
   socket.addEventListener('close', term.terminadoDetach.bind(term, socket));
   socket.addEventListener('error', term.terminadoDetach.bind(term, socket));
-};
+}
 
 /**
  * Detaches the given terminal from the given socket
@@ -72,19 +72,19 @@ export function terminadoAttach(term, socket, bidirectional, buffered) {
  * @param {WebSocket} socket - The socket from which to detach the current
  *                             terminal.
  */
-export function terminadoDetach(term, socket) {
+export function terminadoDetach(term: any, socket: WebSocket): void {
   term.off('data', term._sendData);
 
-  socket = (typeof socket == 'undefined') ? term.socket : socket;
+  socket = (typeof socket === 'undefined') ? term.socket : socket;
 
   if (socket) {
     socket.removeEventListener('message', term._getMessage);
   }
 
   delete term.socket;
-};
+}
 
-export function apply(terminalConstructor) {
+export function apply(terminalConstructor: any): void {
   /**
    * Attaches the current terminal to the given socket
    *
@@ -95,7 +95,7 @@ export function apply(terminalConstructor) {
    *                             should happen instantly or at a maximum
    *                             frequency of 1 rendering per 10ms.
    */
-  terminalConstructor.prototype.terminadoAttach = function(socket, bidirectional, buffered) {
+  terminalConstructor.prototype.terminadoAttach = function(socket: WebSocket, bidirectional: boolean, buffered: boolean): void {
     return terminadoAttach(this, socket, bidirectional, buffered);
   };
 
@@ -105,7 +105,7 @@ export function apply(terminalConstructor) {
    * @param {WebSocket} socket - The socket from which to detach the current
    *                             terminal.
    */
-  terminalConstructor.prototype.terminadoDetach = function(socket) {
+  terminalConstructor.prototype.terminadoDetach = function(socket: WebSocket): void {
     return terminadoDetach(this, socket);
   };
 }

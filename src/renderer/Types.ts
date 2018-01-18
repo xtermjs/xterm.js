@@ -13,4 +13,4 @@ export enum FLAGS {
   INVERSE = 8,
   INVISIBLE = 16,
   DIM = 32
-};
+}

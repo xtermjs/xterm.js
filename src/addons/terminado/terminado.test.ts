@@ -5,7 +5,7 @@
 
 import { assert, expect } from 'chai';
 
-import * as terminado from './terminado'
+import * as terminado from './terminado';
 
 class MockTerminal {}
 
