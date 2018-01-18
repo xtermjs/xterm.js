@@ -12,7 +12,7 @@ class MockTerminal {}
 describe('terminado addon', () => {
   describe('apply', () => {
     it('should do register the `terminadoAttach` and `terminadoDetach` methods', () => {
-      terminado.apply(MockTerminal);
+      terminado.apply(<any>MockTerminal);
       assert.equal(typeof (<any>MockTerminal).prototype.terminadoAttach, 'function');
       assert.equal(typeof (<any>MockTerminal).prototype.terminadoDetach, 'function');
     });
