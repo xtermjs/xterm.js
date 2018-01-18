@@ -108,9 +108,10 @@ export class CursorRenderLayer extends BaseRenderLayer {
   }
 
   public onGridChanged(terminal: ITerminal, startRow: number, endRow: number): void {
-    // Only render if the animation frame is not active
     if (!this._cursorBlinkStateManager || this._cursorBlinkStateManager.isPaused) {
       this._render(terminal, false);
+    } else {
+      this._cursorBlinkStateManager.restartBlinkAnimation(terminal);
     }
   }
 
