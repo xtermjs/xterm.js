@@ -16,7 +16,7 @@ import { ISearchAddonTerminal } from './Interfaces';
  * @return Whether a result was found.
  */
 export function findNext(terminal: Terminal, term: string): boolean {
-  const addonTerminal = (<ISearchAddonTerminal>terminal);
+  const addonTerminal = <ISearchAddonTerminal>terminal;
   if (!addonTerminal.__searchHelper) {
     addonTerminal.__searchHelper = new SearchHelper(addonTerminal);
   }
@@ -30,19 +30,19 @@ export function findNext(terminal: Terminal, term: string): boolean {
  * @return Whether a result was found.
  */
 export function findPrevious(terminal: Terminal, term: string): boolean {
-  const addonTerminal = (<ISearchAddonTerminal>terminal);
+  const addonTerminal = <ISearchAddonTerminal>terminal;
   if (!addonTerminal.__searchHelper) {
     addonTerminal.__searchHelper = new SearchHelper(addonTerminal);
   }
   return addonTerminal.__searchHelper.findPrevious(term);
 }
 
-export function apply(terminalConstructor: any): void {
-  terminalConstructor.prototype.findNext = function(term: string): boolean {
+export function apply(terminalConstructor: typeof Terminal): void {
+  (<any>terminalConstructor.prototype).findNext = function(term: string): boolean {
     return findNext(this, term);
   };
 
-  terminalConstructor.prototype.findPrevious = function(term: string): boolean {
+  (<any>terminalConstructor.prototype).findPrevious = function(term: string): boolean {
     return findPrevious(this, term);
   };
 }

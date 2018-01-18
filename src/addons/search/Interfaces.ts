@@ -6,7 +6,7 @@
 import { Terminal } from 'xterm';
 
 export interface ISearchAddonTerminal extends Terminal {
-  __searchHelper: ISearchHelper;
+  __searchHelper?: ISearchHelper;
 
   // TODO: Reuse ITerminal from core
   buffer: any;
