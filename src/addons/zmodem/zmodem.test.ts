@@ -5,7 +5,7 @@
 
 import { assert, expect } from 'chai';
 
-import * as zmodem from './zmodem'
+import * as zmodem from './zmodem';
 
 class MockTerminal {}
 

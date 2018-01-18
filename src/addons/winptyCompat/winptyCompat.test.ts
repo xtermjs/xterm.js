@@ -5,7 +5,7 @@
 
 import { assert, expect } from 'chai';
 
-import * as winptyCompat from './winptyCompat'
+import * as winptyCompat from './winptyCompat';
 
 class MockTerminal {}
 

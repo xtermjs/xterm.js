@@ -5,7 +5,7 @@
 
 import { assert, expect } from 'chai';
 
-import * as fit from './fit'
+import * as fit from './fit';
 
 class MockTerminal {}
 

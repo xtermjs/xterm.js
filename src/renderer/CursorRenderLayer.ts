@@ -11,7 +11,7 @@ import { FLAGS } from './Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { CharData } from '../Types';
 
-interface CursorState {
+interface ICursorState {
   x: number;
   y: number;
   isFocused: boolean;
@@ -25,7 +25,7 @@ interface CursorState {
 const BLINK_INTERVAL = 600;
 
 export class CursorRenderLayer extends BaseRenderLayer {
-  private _state: CursorState;
+  private _state: ICursorState;
   private _cursorRenderers: {[key: string]: (terminal: ITerminal, x: number, y: number, charData: CharData) => void};
   private _cursorBlinkStateManager: CursorBlinkStateManager;
   private _isFocused: boolean;
@@ -108,9 +108,10 @@ export class CursorRenderLayer extends BaseRenderLayer {
   }
 
   public onGridChanged(terminal: ITerminal, startRow: number, endRow: number): void {
-    // Only render if the animation frame is not active
     if (!this._cursorBlinkStateManager || this._cursorBlinkStateManager.isPaused) {
       this._render(terminal, false);
+    } else {
+      this._cursorBlinkStateManager.restartBlinkAnimation(terminal);
     }
   }
 
