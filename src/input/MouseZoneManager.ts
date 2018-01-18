@@ -178,7 +178,7 @@ export class MouseZoneManager implements IMouseZoneManager {
       if (zone.y === coords[1] && zone.x1 <= coords[0] && zone.x2 > coords[0]) {
         return zone;
       }
-    };
+    }
     return null;
   }
 }

@@ -10,4 +10,4 @@
  */
 export function contains(arr: any[], el: any): boolean {
   return arr.indexOf(el) >= 0;
-};
+}

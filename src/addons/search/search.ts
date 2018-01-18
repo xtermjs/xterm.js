@@ -17,7 +17,7 @@ export function findNext(terminal: any, term: string): boolean {
     terminal.searchHelper = new SearchHelper(terminal);
   }
   return (<SearchHelper>terminal.searchHelper).findNext(term);
-};
+}
 
 /**
  * Find the previous instance of the term, then scroll to and select it. If it
@@ -30,14 +30,14 @@ export function findPrevious(terminal: any, term: string): boolean {
     terminal.searchHelper = new SearchHelper(terminal);
   }
   return (<SearchHelper>terminal.searchHelper).findPrevious(term);
-};
+}
 
-export function apply(terminalConstructor) {
-  terminalConstructor.prototype.findNext = function(term) {
+export function apply(terminalConstructor: any): void {
+  terminalConstructor.prototype.findNext = function(term: any): boolean {
     return findNext(this, term);
-  }
+  };
 
-  terminalConstructor.prototype.findPrevious = function(term) {
+  terminalConstructor.prototype.findPrevious = function(term: any): boolean {
     return findPrevious(this, term);
-  }
+  };
 }

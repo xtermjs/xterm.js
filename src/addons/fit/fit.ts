@@ -13,7 +13,12 @@
  *          row and truncate its width with the current number of columns).
  */
 
-export function proposeGeometry(term) {
+export interface IGeometry {
+  rows: number;
+  cols: number;
+}
+
+export function proposeGeometry(term: any): IGeometry {
   if (!term.element.parentElement) {
     return null;
   }
@@ -35,12 +40,11 @@ export function proposeGeometry(term) {
     cols: Math.floor(availableWidth / term.renderer.dimensions.actualCellWidth),
     rows: Math.floor(availableHeight / term.renderer.dimensions.actualCellHeight)
   };
-
   return geometry;
-};
+}
 
-export function fit(term) {
-  var geometry = proposeGeometry(term);
+export function fit(term: any): void {
+  const geometry = proposeGeometry(term);
   if (geometry) {
     // Force a full render
     if (term.rows !== geometry.rows || term.cols !== geometry.cols) {
@@ -48,14 +52,14 @@ export function fit(term) {
       term.resize(geometry.cols, geometry.rows);
     }
   }
-};
+}
 
-export function apply(terminalConstructor) {
-  terminalConstructor.prototype.proposeGeometry = function() {
+export function apply(terminalConstructor: any): void {
+  terminalConstructor.prototype.proposeGeometry = function (): IGeometry {
     return proposeGeometry(this);
-  }
+  };
 
-  terminalConstructor.prototype.fit = function() {
-    return fit(this);
-  }
+  terminalConstructor.prototype.fit = function (): void {
+    fit(this);
+  };
 }

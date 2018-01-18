@@ -8,10 +8,10 @@
  * @param {Terminal} term - The terminal to toggle full screen mode
  * @param {boolean} fullscreen - Toggle fullscreen on (true) or off (false)
  */
-export function toggleFullScreen(term, fullscreen) {
-  var fn;
+export function toggleFullScreen(term: any, fullscreen: boolean): void {
+  let fn;
 
-  if (typeof fullscreen == 'undefined') {
+  if (typeof fullscreen === 'undefined') {
     fn = (term.element.classList.contains('fullscreen')) ? 'remove' : 'add';
   } else if (!fullscreen) {
     fn = 'remove';
@@ -20,10 +20,10 @@ export function toggleFullScreen(term, fullscreen) {
   }
 
   term.element.classList[fn]('fullscreen');
-};
+}
 
-export function apply(terminalConstructor) {
-  terminalConstructor.prototype.toggleFullScreen = function (fullscreen) {
-    return toggleFullScreen(this, fullscreen);
+export function apply(terminalConstructor: any): void {
+  terminalConstructor.prototype.toggleFullScreen = function (fullscreen: boolean): void {
+    toggleFullScreen(this, fullscreen);
   };
 }
