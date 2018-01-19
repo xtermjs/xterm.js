@@ -21,6 +21,7 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
+import { ITerminalOptions, ITerminal, IBrowser, IRenderer, ILinkifier, IMouseZoneManager, ITheme, LinkMatcherHandler, LinkMatcherValidationCallback, ILinkMatcherOptions, CharData, LineData } from '../typings/xterm-internal';
 import { BufferSet } from './BufferSet';
 import { Buffer, MAX_BUFFER_SIZE } from './Buffer';
 import { CompositionHelper } from './CompositionHelper';
@@ -38,14 +39,12 @@ import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './utils/Browser';
 import { MouseHelper } from './utils/MouseHelper';
 import { CHARSETS } from './Charsets';
-import { CustomKeyEventHandler, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
-import { ITerminal, IBrowser, ICharset, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper, ITheme, ILinkifier } from './Interfaces';
+import { CustomKeyEventHandler } from './Types';
+import { ICharset, IInputHandlingTerminal, IViewport, ICompositionHelper } from './Interfaces';
 import { BELL_SOUND } from './utils/Sounds';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
-import { IMouseZoneManager } from './input/Interfaces';
 import { MouseZoneManager } from './input/MouseZoneManager';
 import { initialize as initializeCharAtlas } from './renderer/CharAtlas';
-import { IRenderer } from './renderer/Interfaces';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;

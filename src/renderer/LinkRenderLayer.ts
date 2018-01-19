@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { IColorSet, IRenderDimensions } from './Interfaces';
-import { IBuffer, ICharMeasure, ILinkHoverEvent, ITerminal, ILinkifierAccessor } from '../Interfaces';
+import { IColorSet, IRenderDimensions, ITerminal, ILinkifierAccessor, IBuffer, ICharMeasure } from '../../typings/xterm-internal';
+import { ILinkHoverEvent } from '../Interfaces';
 import { CHAR_DATA_ATTR_INDEX } from '../Buffer';
 import { GridCache } from './GridCache';
 import { FLAGS } from './Types';

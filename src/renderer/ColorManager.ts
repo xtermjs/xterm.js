@@ -3,8 +3,7 @@
  * @license MIT
  */
 
-import { IColorSet, IColorManager } from './Interfaces';
-import { ITheme } from '../Interfaces';
+import { IColorSet, IColorManager, ITheme } from '../../typings/xterm-internal';
 
 const DEFAULT_FOREGROUND = '#ffffff';
 const DEFAULT_BACKGROUND = '#000000';

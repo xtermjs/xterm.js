@@ -3,14 +3,14 @@
  * @license MIT
  */
 
-import { ITerminal, ITheme } from '../Interfaces';
+import { ITerminal, ITheme, IColorSet, IRenderer, IRenderDimensions } from '../../typings/xterm-internal';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
 import { TextRenderLayer } from './TextRenderLayer';
 import { SelectionRenderLayer } from './SelectionRenderLayer';
 import { CursorRenderLayer } from './CursorRenderLayer';
 import { ColorManager } from './ColorManager';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { IRenderLayer, IColorSet, IRenderer, IRenderDimensions } from './Interfaces';
+import { IRenderLayer } from './Interfaces';
 import { LinkRenderLayer } from './LinkRenderLayer';
 import { EventEmitter } from '../EventEmitter';
 import { ScreenDprMonitor } from '../utils/ScreenDprMonitor';

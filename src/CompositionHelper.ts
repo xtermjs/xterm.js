@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminal } from './Interfaces';
+import { ITerminal } from '../typings/xterm-internal';
 
 interface IPosition {
   start: number;

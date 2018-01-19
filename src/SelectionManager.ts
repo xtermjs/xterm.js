@@ -3,14 +3,13 @@
  * @license MIT
  */
 
+import { ITerminal, ICircularList, ISelectionManager, IBuffer, LineData, CharData } from '../typings/xterm-internal';
 import { MouseHelper } from './utils/MouseHelper';
 import * as Browser from './utils/Browser';
 import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
 import { EventEmitter } from './EventEmitter';
-import { ITerminal, ICircularList, ISelectionManager, IBuffer } from './Interfaces';
 import { SelectionModel } from './SelectionModel';
-import { LineData, CharData } from './Types';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from './Buffer';
 
 /**

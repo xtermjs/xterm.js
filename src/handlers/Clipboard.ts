@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminal, ISelectionManager } from '../Interfaces';
+import { ITerminal, ISelectionManager } from '../../typings/xterm-internal';
 
 interface IWindow extends Window {
   clipboardData?: {

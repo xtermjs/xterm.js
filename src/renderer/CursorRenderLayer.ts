@@ -3,13 +3,12 @@
  * @license MIT
  */
 
-import { IColorSet, IRenderDimensions } from './Interfaces';
-import { IBuffer, ICharMeasure, ITerminal, ITerminalOptions } from '../Interfaces';
+import { IColorSet, IRenderDimensions, IBuffer, ICharMeasure, ITerminal, ITerminalOptions, CharData } from '../../typings/xterm-internal';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
 import { GridCache } from './GridCache';
 import { FLAGS } from './Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { CharData } from '../Types';
+import {  } from '../Types';
 
 interface ICursorState {
   x: number;

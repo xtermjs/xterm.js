@@ -3,10 +3,9 @@
  * @license MIT
  */
 
-import { IRenderLayer, IColorSet, IRenderDimensions } from './Interfaces';
-import { ITerminal, ITerminalOptions } from '../Interfaces';
+import { IColorSet, IRenderDimensions, ITerminal, ITerminalOptions, CharData } from '../../typings/xterm-internal';
+import { IRenderLayer } from './Interfaces';
 import { acquireCharAtlas, CHAR_ATLAS_CELL_SPACING } from './CharAtlas';
-import { CharData } from '../Types';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
 
 export const INVERTED_DEFAULT_COLOR = -1;

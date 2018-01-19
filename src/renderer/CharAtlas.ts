@@ -3,8 +3,7 @@
  * @license MIT
  */
 
-import { ITerminal, ITheme } from '../Interfaces';
-import { IColorSet } from '../renderer/Interfaces';
+import { ITerminal, ITheme, IColorSet } from '../../typings/xterm-internal';
 import { isFirefox } from '../utils/Browser';
 
 export const CHAR_ATLAS_CELL_SPACING = 1;

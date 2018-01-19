@@ -3,8 +3,7 @@
  * @license MIT
  */
 
-import { ICharMeasure } from '../Interfaces';
-import { IRenderer } from '../renderer/Interfaces';
+import { ICharMeasure, IRenderer } from '../../typings/xterm-internal';
 
 export class MouseHelper {
   constructor(private _renderer: IRenderer) {}
@@ -24,7 +23,7 @@ export class MouseHelper {
     while (element) {
       x -= element.offsetLeft;
       y -= element.offsetTop;
-      element = 'offsetParent' in element ? <HTMLElement>element.offsetParent : <HTMLElement>element.parentElement;
+      element = <HTMLElement>element.offsetParent;
     }
     element = originalElement;
     while (element && element !== element.ownerDocument.body) {
