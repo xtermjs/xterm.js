@@ -1,4 +1,9 @@
-import { IDisposable } from "../Interfaces";
+/**
+ * Copyright (c) 2018 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
+import { IDisposable } from '../Interfaces';
 
 /**
  * Adds a disposabe listener to a node in the DOM, returning the disposable.

@@ -4,20 +4,20 @@
  */
 
 import { IColorSet, IRenderDimensions } from './Interfaces';
-import { IBuffer, ICharMeasure, ITerminal, ILinkifierAccessor } from '../Interfaces';
+import { IBuffer, ICharMeasure, ILinkHoverEvent, ITerminal, ILinkifierAccessor } from '../Interfaces';
 import { CHAR_DATA_ATTR_INDEX } from '../Buffer';
 import { GridCache } from './GridCache';
 import { FLAGS } from './Types';
 import { BaseRenderLayer, INVERTED_DEFAULT_COLOR } from './BaseRenderLayer';
-import { LinkHoverEvent, LinkHoverEventTypes } from '../Types';
+import { LinkHoverEventTypes } from '../Types';
 
 export class LinkRenderLayer extends BaseRenderLayer {
-  private _state: LinkHoverEvent = null;
+  private _state: ILinkHoverEvent = null;
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet, terminal: ILinkifierAccessor) {
     super(container, 'link', zIndex, true, colors);
-    terminal.linkifier.on(LinkHoverEventTypes.HOVER, (e: LinkHoverEvent) => this._onLinkHover(e));
-    terminal.linkifier.on(LinkHoverEventTypes.LEAVE, (e: LinkHoverEvent) => this._onLinkLeave(e));
+    terminal.linkifier.on(LinkHoverEventTypes.HOVER, (e: ILinkHoverEvent) => this._onLinkHover(e));
+    terminal.linkifier.on(LinkHoverEventTypes.LEAVE, (e: ILinkHoverEvent) => this._onLinkLeave(e));
   }
 
   public resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void {
@@ -37,13 +37,13 @@ export class LinkRenderLayer extends BaseRenderLayer {
     }
   }
 
-  private _onLinkHover(e: LinkHoverEvent): void {
+  private _onLinkHover(e: ILinkHoverEvent): void {
     this._ctx.fillStyle = this._colors.foreground;
     this.fillBottomLineAtCells(e.x, e.y, e.length);
     this._state = e;
   }
 
-  private _onLinkLeave(e: LinkHoverEvent): void {
+  private _onLinkLeave(e: ILinkHoverEvent): void {
     this._clearCurrentLink();
   }
 }

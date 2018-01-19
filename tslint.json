@@ -1,5 +1,9 @@
 {
   "rules": {
+    "array-type": [
+      true,
+      "array"
+    ],
     "class-name": true,
     "comment-format": [
       true,
@@ -9,6 +13,11 @@
       true,
       "spaces"
     ],
+    "interface-name": [
+      true,
+      "always-prefix"
+    ],
+    "interface-over-type-literal": true,
     "typedef": [
       true,
       "call-signature",
@@ -18,10 +27,7 @@
     "no-eval": true,
     "no-internal-module": true,
     "no-trailing-whitespace": true,
-    "one-variable-per-declaration": [
-      true,
-      true
-    ],
+    "one-variable-per-declaration": true,
     "no-unsafe-finally": true,
     "no-var-keyword": true,
     "quotemark": [
@@ -48,15 +54,21 @@
     ],
     "variable-name": [
       true,
-      "ban-keywords"
+      "ban-keywords",
+      "check-format",
+      "allow-leading-underscore"
     ],
     "whitespace": [
       true,
       "check-branch",
       "check-decl",
+      "check-module",
       "check-operator",
+      "check-rest-spread",
       "check-separator",
-      "check-type"
+      "check-type",
+      "check-type-operator",
+      "check-preblock"
     ]
   }
 }

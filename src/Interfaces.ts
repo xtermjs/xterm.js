@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { ILinkMatcherOptions } from './Interfaces';
-import { LinkMatcherHandler, LinkMatcherValidationCallback, Charset, LineData } from './Types';
+import { ICharset, ILinkMatcherOptions } from './Interfaces';
+import { LinkMatcherHandler, LinkMatcherValidationCallback, LineData } from './Types';
 import { IColorSet, IRenderer } from './renderer/Interfaces';
 import { IMouseZoneManager } from './input/Interfaces';
 
@@ -75,10 +75,10 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   options: ITerminalOptions;
   cols: number;
   rows: number;
-  charset: Charset;
+  charset: ICharset;
   gcharset: number;
   glevel: number;
-  charsets: Charset[];
+  charsets: ICharset[];
   applicationKeypad: boolean;
   applicationCursor: boolean;
   originMode: boolean;
@@ -117,7 +117,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   blankLine(cur?: boolean, isWrapped?: boolean): LineData;
   is(term: string): boolean;
   send(data: string): void;
-  setgCharset(g: number, charset: Charset): void;
+  setgCharset(g: number, charset: ICharset): void;
   resize(x: number, y: number): void;
   log(text: string, data?: any): void;
   reset(): void;
@@ -171,7 +171,7 @@ export interface IBuffer {
   prevStop(x?: number): number;
 }
 
-export interface IBufferSet {
+export interface IBufferSet extends IEventEmitter {
   alt: IBuffer;
   normal: IBuffer;
   active: IBuffer;
@@ -200,7 +200,6 @@ export interface ISelectionManager {
 
   disable(): void;
   enable(): void;
-  setBuffer(buffer: IBuffer): void;
   setSelection(row: number, col: number, length: number): void;
 }
 
@@ -358,4 +357,25 @@ export interface ITheme {
 
 export interface IDisposable {
   dispose(): void;
+}
+
+export interface ILinkMatcher {
+  id: number;
+  regex: RegExp;
+  handler: LinkMatcherHandler;
+  hoverTooltipCallback?: LinkMatcherHandler;
+  hoverLeaveCallback?: () => void;
+  matchIndex?: number;
+  validationCallback?: LinkMatcherValidationCallback;
+  priority?: number;
+}
+
+export interface ICharset {
+  [key: string]: string;
+}
+
+export interface ILinkHoverEvent {
+  x: number;
+  y: number;
+  length: number;
 }
