@@ -13,6 +13,12 @@ declare module 'xterm' {
    */
   export interface ITerminalOptions {
     /**
+     * Whether background should support non-opaque color. It must be set before 
+     * executing open() method and can't be changed later without excuting it again.
+     * Warning: Enabling this option can reduce performances somewhat.
+     */
+    allowTransparency?: boolean;
+    /**
      * A data uri of the sound to use for the bell (needs bellStyle = 'sound').
      */
     bellSound?: string;
@@ -409,7 +415,7 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell'): boolean;
+    getOption(key: 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell' | 'allowTransparency'): boolean;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
@@ -454,7 +460,7 @@ declare module 'xterm' {
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell', value: boolean): void;
+    setOption(key: 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell' | 'allowTransparency', value: boolean): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.

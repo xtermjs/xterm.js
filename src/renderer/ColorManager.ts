@@ -86,7 +86,7 @@ export class ColorManager implements IColorManager {
    */
   public setTheme(theme: ITheme): void {
     this.colors.foreground = theme.foreground || DEFAULT_FOREGROUND;
-    this.colors.background = this._validateColor(theme.background, DEFAULT_BACKGROUND);
+    this.colors.background = theme.background || DEFAULT_BACKGROUND;
     this.colors.cursor = theme.cursor || DEFAULT_CURSOR;
     this.colors.cursorAccent = theme.cursorAccent || DEFAULT_CURSOR_ACCENT;
     this.colors.selection = theme.selection || DEFAULT_SELECTION;
@@ -106,21 +106,5 @@ export class ColorManager implements IColorManager {
     this.colors.ansi[13] = theme.brightMagenta || DEFAULT_ANSI_COLORS[13];
     this.colors.ansi[14] = theme.brightCyan || DEFAULT_ANSI_COLORS[14];
     this.colors.ansi[15] = theme.brightWhite || DEFAULT_ANSI_COLORS[15];
-  }
-
-  private _validateColor(color: string, fallback: string): string {
-    if (!color) {
-      return fallback;
-    }
-    if (color.length === 7 && color.charAt(0) === '#') {
-      return color;
-    }
-    if (color.length === 4 && color.charAt(0) === '#') {
-      const r = color.charAt(1);
-      const g = color.charAt(2);
-      const b = color.charAt(3);
-      return `#${r}${r}${g}${g}${b}${b}`;
-    }
-    return fallback;
   }
 }

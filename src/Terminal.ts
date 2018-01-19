@@ -83,6 +83,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   cancelEvents: false,
   disableStdin: false,
   useFlowControl: false,
+  allowTransparency: false,
   tabStopWidth: 8,
   theme: null
   // programFeatures: false,
@@ -575,7 +576,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.document = this.parent.ownerDocument;
     this.body = <HTMLBodyElement>this.document.body;
 
-    initializeCharAtlas(this.document);
+    initializeCharAtlas(this.document, this.options.allowTransparency);
 
     // Create main element container
     this.element = this.document.createElement('div');
