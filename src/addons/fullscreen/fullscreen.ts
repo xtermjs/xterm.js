@@ -3,13 +3,17 @@
  * @license MIT
  */
 
+/// <reference path="../../../typings/xterm.d.ts"/>
+
+import { Terminal } from 'xterm';
+
 /**
  * Toggle the given terminal's fullscreen mode.
- * @param {Terminal} term - The terminal to toggle full screen mode
- * @param {boolean} fullscreen - Toggle fullscreen on (true) or off (false)
+ * @param term The terminal to toggle full screen mode
+ * @param fullscreen Toggle fullscreen on (true) or off (false)
  */
-export function toggleFullScreen(term: any, fullscreen: boolean): void {
-  let fn;
+export function toggleFullScreen(term: Terminal, fullscreen: boolean): void {
+  let fn: string;
 
   if (typeof fullscreen === 'undefined') {
     fn = (term.element.classList.contains('fullscreen')) ? 'remove' : 'add';
@@ -22,8 +26,8 @@ export function toggleFullScreen(term: any, fullscreen: boolean): void {
   term.element.classList[fn]('fullscreen');
 }
 
-export function apply(terminalConstructor: any): void {
-  terminalConstructor.prototype.toggleFullScreen = function (fullscreen: boolean): void {
+export function apply(terminalConstructor: typeof Terminal): void {
+  (<any>terminalConstructor.prototype).toggleFullScreen = function (fullscreen: boolean): void {
     toggleFullScreen(this, fullscreen);
   };
 }

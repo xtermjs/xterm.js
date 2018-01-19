@@ -12,7 +12,7 @@ class MockTerminal {}
 describe('zmodem addon', () => {
   describe('apply', () => {
     it('should do register the `zmodemAttach` method and `zmodemBrowser` attribute', () => {
-      zmodem.apply(MockTerminal);
+      zmodem.apply(<any>MockTerminal);
       assert.equal(typeof (<any>MockTerminal).prototype.zmodemAttach, 'function');
       assert.equal(typeof (<any>MockTerminal).prototype.zmodemBrowser, 'object');
     });
