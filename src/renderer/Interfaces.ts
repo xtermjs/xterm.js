@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { ITerminal, ITerminalOptions, ITheme, IEventEmitter } from '../Interfaces';
+import { ITerminal, ITerminalOptions, ITheme } from '../Interfaces';
+import { IEventEmitter } from 'xterm';
 
 export interface IRenderer extends IEventEmitter {
   dimensions: IRenderDimensions;

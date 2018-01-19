@@ -3,6 +3,9 @@
  * @license MIT
  */
 
+/// <reference path="../typings/xterm.d.ts"/>
+
+import { Terminal as PublicTerminal, ITerminalOptions as IPublicTerminalOptions, IEventEmitter } from 'xterm';
 import { ICharset, ILinkMatcherOptions } from './Interfaces';
 import { LinkMatcherHandler, LinkMatcherValidationCallback, LineData } from './Types';
 import { IColorSet, IRenderer } from './renderer/Interfaces';
@@ -32,7 +35,7 @@ export interface ILinkifierAccessor {
   linkifier: ILinkifier;
 }
 
-export interface ITerminal extends ILinkifierAccessor, IBufferAccessor, IElementAccessor, IEventEmitter {
+export interface ITerminal extends PublicTerminal, ILinkifierAccessor, IBufferAccessor, IElementAccessor {
   selectionManager: ISelectionManager;
   charMeasure: ICharMeasure;
   textarea: HTMLTextAreaElement;
@@ -127,28 +130,14 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   setOption(key: string, value: any): void;
 }
 
-export interface ITerminalOptions {
-  bellSound?: string;
-  bellStyle?: string;
+// TODO: The options that are not in the public API should be reviewed
+export interface ITerminalOptions extends IPublicTerminalOptions {
   cancelEvents?: boolean;
-  cols?: number;
   convertEol?: boolean;
-  cursorBlink?: boolean;
-  cursorStyle?: string;
   debug?: boolean;
-  disableStdin?: boolean;
-  enableBold?: boolean;
-  fontSize?: number;
-  fontFamily?: string;
   handler?: (data: string) => void;
-  letterSpacing?: number;
-  lineHeight?: number;
-  rows?: number;
   screenKeys?: boolean;
-  scrollback?: number;
-  tabStopWidth?: number;
   termName?: string;
-  theme?: ITheme;
   useFlowControl?: boolean;
 }
 
@@ -237,17 +226,6 @@ export interface ICircularList<T> extends IEventEmitter {
   splice(start: number, deleteCount: number, ...items: T[]): void;
   trimStart(count: number): void;
   shiftElements(start: number, count: number, offset: number): void;
-}
-
-export interface IEventEmitter {
-  on(type: string, listener: IListenerType): void;
-  off(type: string, listener: IListenerType): void;
-  emit(type: string, data?: any): void;
-}
-
-export interface IListenerType {
-    (data?: any): void;
-    listener?: (data?: any) => void;
 }
 
 export interface ILinkMatcherOptions {

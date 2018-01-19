@@ -2112,13 +2112,15 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 
   private visualBell(): boolean {
-    return this.options.bellStyle === 'visual' ||
-        this.options.bellStyle === 'both';
+    return false;
+    // return this.options.bellStyle === 'visual' ||
+    //     this.options.bellStyle === 'both';
   }
 
   private soundBell(): boolean {
-    return this.options.bellStyle === 'sound' ||
-        this.options.bellStyle === 'both';
+    return this.options.bellStyle === 'sound';
+    // return this.options.bellStyle === 'sound' ||
+    //     this.options.bellStyle === 'both';
   }
 
   private syncBellSound(): void {

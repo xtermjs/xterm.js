@@ -172,10 +172,16 @@ declare module 'xterm' {
     priority?: number;
   }
 
+  export interface IEventEmitter {
+    on(type: string, listener: (...args: any[]) => void): void;
+    off(type: string, listener: (...args: any[]) => void): void;
+    emit(type: string, data?: any): void;
+  }
+
   /**
    * The class that represents an xterm.js terminal.
    */
-  export class Terminal {
+  export class Terminal implements IEventEmitter {
     /**
      * The element containing the terminal.
      */
@@ -224,7 +230,7 @@ declare module 'xterm' {
      * @param type The type of the event.
      * @param listener The listener.
      */
-    on(type: 'data', listener: (data?: string) => void): void;
+    on(type: 'data', listener: (...args: any[]) => void): void;
     /**
      * Registers an event listener.
      * @param type The type of the event.
@@ -274,6 +280,8 @@ declare module 'xterm' {
      * @param listener The listener.
      */
     off(type: 'blur' | 'focus' | 'linefeed' | 'selection' | 'data' | 'key' | 'keypress' | 'keydown' | 'refresh' | 'resize' | 'scroll' | 'title' | string, listener: (...args: any[]) => void): void;
+
+    emit(type: string, data?: any): void;
 
     /**
      * Resizes the terminal.
