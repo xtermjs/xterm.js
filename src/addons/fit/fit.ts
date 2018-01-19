@@ -13,53 +13,57 @@
  *          row and truncate its width with the current number of columns).
  */
 
+/// <reference path="../../../typings/xterm.d.ts"/>
+
+import { Terminal } from 'xterm';
+
 export interface IGeometry {
   rows: number;
   cols: number;
 }
 
-export function proposeGeometry(term: any): IGeometry {
+export function proposeGeometry(term: Terminal): IGeometry {
   if (!term.element.parentElement) {
     return null;
   }
-  var parentElementStyle = window.getComputedStyle(term.element.parentElement);
-  var parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height'));
-  var parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')));
-  var elementStyle = window.getComputedStyle(term.element);
-  var elementPadding = {
+  const parentElementStyle = window.getComputedStyle(term.element.parentElement);
+  const parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height'));
+  const parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')));
+  const elementStyle = window.getComputedStyle(term.element);
+  const elementPadding = {
     top: parseInt(elementStyle.getPropertyValue('padding-top')),
     bottom: parseInt(elementStyle.getPropertyValue('padding-bottom')),
     right: parseInt(elementStyle.getPropertyValue('padding-right')),
     left: parseInt(elementStyle.getPropertyValue('padding-left'))
   }
-  var elementPaddingVer = elementPadding.top + elementPadding.bottom;
-  var elementPaddingHor = elementPadding.right + elementPadding.left;
-  var availableHeight = parentElementHeight - elementPaddingVer;
-  var availableWidth = parentElementWidth - elementPaddingHor - term.viewport.scrollBarWidth;
-  var geometry = {
-    cols: Math.floor(availableWidth / term.renderer.dimensions.actualCellWidth),
-    rows: Math.floor(availableHeight / term.renderer.dimensions.actualCellHeight)
+  const elementPaddingVer = elementPadding.top + elementPadding.bottom;
+  const elementPaddingHor = elementPadding.right + elementPadding.left;
+  const availableHeight = parentElementHeight - elementPaddingVer;
+  const availableWidth = parentElementWidth - elementPaddingHor - term.viewport.scrollBarWidth;
+  const geometry = {
+    cols: Math.floor(availableWidth / (<any>term).renderer.dimensions.actualCellWidth),
+    rows: Math.floor(availableHeight / (<any>term).renderer.dimensions.actualCellHeight)
   };
   return geometry;
 }
 
-export function fit(term: any): void {
+export function fit(term: Terminal): void {
   const geometry = proposeGeometry(term);
   if (geometry) {
     // Force a full render
     if (term.rows !== geometry.rows || term.cols !== geometry.cols) {
-      term.renderer.clear();
+      (<any>term).renderer.clear();
       term.resize(geometry.cols, geometry.rows);
     }
   }
 }
 
-export function apply(terminalConstructor: any): void {
-  terminalConstructor.prototype.proposeGeometry = function (): IGeometry {
+export function apply(terminalConstructor: typeof Terminal): void {
+  (<any>terminalConstructor.prototype).proposeGeometry = function (): IGeometry {
     return proposeGeometry(this);
   };
 
-  terminalConstructor.prototype.fit = function (): void {
+  (<any>terminalConstructor.prototype).fit = function (): void {
     fit(this);
   };
 }
