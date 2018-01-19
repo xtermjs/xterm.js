@@ -35,11 +35,11 @@ export function proposeGeometry(term: Terminal): IGeometry {
     bottom: parseInt(elementStyle.getPropertyValue('padding-bottom')),
     right: parseInt(elementStyle.getPropertyValue('padding-right')),
     left: parseInt(elementStyle.getPropertyValue('padding-left'))
-  }
+  };
   const elementPaddingVer = elementPadding.top + elementPadding.bottom;
   const elementPaddingHor = elementPadding.right + elementPadding.left;
   const availableHeight = parentElementHeight - elementPaddingVer;
-  const availableWidth = parentElementWidth - elementPaddingHor - term.viewport.scrollBarWidth;
+  const availableWidth = parentElementWidth - elementPaddingHor - (<any>term).viewport.scrollBarWidth;
   const geometry = {
     cols: Math.floor(availableWidth / (<any>term).renderer.dimensions.actualCellWidth),
     rows: Math.floor(availableHeight / (<any>term).renderer.dimensions.actualCellHeight)
