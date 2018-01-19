@@ -38,10 +38,7 @@ export interface ILinkifierAccessor {
 export interface ITerminal extends PublicTerminal, ILinkifierAccessor, IBufferAccessor, IElementAccessor {
   selectionManager: ISelectionManager;
   charMeasure: ICharMeasure;
-  textarea: HTMLTextAreaElement;
   renderer: IRenderer;
-  rows: number;
-  cols: number;
   browser: IBrowser;
   writeBuffer: string[];
   cursorHidden: boolean;
@@ -61,10 +58,8 @@ export interface ITerminal extends PublicTerminal, ILinkifierAccessor, IBufferAc
   scrollLines(disp: number, suppressScrollEvent?: boolean): void;
   cancel(ev: Event, force?: boolean): boolean | void;
   log(text: string): void;
-  reset(): void;
   showCursor(): void;
   blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): LineData;
-  refresh(start: number, end: number): void;
 }
 
 /**

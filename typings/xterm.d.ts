@@ -354,22 +354,6 @@ declare module 'xterm' {
      */
     selectAll(): void;
 
-    // /**
-    //  * Find the next instance of the term, then scroll to and select it. If it
-    //  * doesn't exist, do nothing.
-    //  * @param term Tne search term.
-    //  * @return Whether a result was found.
-    //  */
-    // findNext(term: string): boolean;
-
-    // /**
-    //  * Find the previous instance of the term, then scroll to and select it. If it
-    //  * doesn't exist, do nothing.
-    //  * @param term Tne search term.
-    //  * @return Whether a result was found.
-    //  */
-    // findPrevious(term: string): boolean;
-
     /**
      * Destroys the terminal and detaches it from the DOM.
      */
