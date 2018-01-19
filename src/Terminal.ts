@@ -620,6 +620,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     this.textarea = document.createElement('textarea');
     this.textarea.classList.add('xterm-helper-textarea');
+    // TODO: New API to set title? This could say "Terminal bash input", etc.
+    this.textarea.setAttribute('aria-label', 'Terminal input');
+    this.textarea.setAttribute('aria-multiline', 'false');
     this.textarea.setAttribute('autocorrect', 'off');
     this.textarea.setAttribute('autocapitalize', 'off');
     this.textarea.setAttribute('spellcheck', 'false');
