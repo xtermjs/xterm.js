@@ -293,8 +293,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // Create the terminal's buffers and set the current buffer
     this.buffers = new BufferSet(this);
     if (this.selectionManager) {
-        this.selectionManager.clearSelection();
-        this.selectionManager.initBuffersListeners();
+      this.selectionManager.clearSelection();
+      this.selectionManager.initBuffersListeners();
     }
   }
 
@@ -302,7 +302,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Convenience property to active buffer.
    */
   public get buffer(): Buffer {
-      return this.buffers.active;
+    return this.buffers.active;
   }
 
   /**

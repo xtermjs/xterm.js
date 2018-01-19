@@ -110,7 +110,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   }
 
   private get _buffer(): IBuffer {
-      return this._terminal.buffers.active;
+    return this._terminal.buffers.active;
   }
 
   /**
