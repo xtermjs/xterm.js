@@ -80,6 +80,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   scrollback: 1000,
   screenKeys: false,
   debug: false,
+  altIsMeta: false,
   cancelEvents: false,
   disableStdin: false,
   useFlowControl: false,
@@ -1373,7 +1374,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       return this.cancel(ev, true);
     }
 
-    if (isThirdLevelShift(this.browser, ev)) {
+    if (!this.options.altIsMeta && isThirdLevelShift(this.browser, ev)) {
       return true;
     }
 
@@ -1698,8 +1699,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
             // ^] - Operating System Command (OSC)
             result.key = String.fromCharCode(29);
           }
-        } else if (!this.browser.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) {
-          // On Mac this is a third level shift. Use <Esc> instead.
+        } else if ((!this.browser.isMac || this.options.altIsMeta) && ev.altKey && !ev.ctrlKey && !ev.metaKey) {
+          // On Mac this is a third level shift. Use <Esc> instead if !altIsMeta
           if (ev.keyCode >= 65 && ev.keyCode <= 90) {
             result.key = C0.ESC + String.fromCharCode(ev.keyCode + 32);
           } else if (ev.keyCode === 192) {

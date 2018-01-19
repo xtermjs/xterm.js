@@ -128,6 +128,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
 }
 
 export interface ITerminalOptions {
+  altIsMeta?: boolean;
   bellSound?: string;
   bellStyle?: string;
   cancelEvents?: boolean;
