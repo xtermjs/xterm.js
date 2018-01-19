@@ -13,12 +13,16 @@
  *          row and truncate its width with the current number of columns).
  */
 
+/// <reference path="../../../typings/xterm.d.ts"/>
+
+import { Terminal } from 'xterm';
+
 export interface IGeometry {
   rows: number;
   cols: number;
 }
 
-export function proposeGeometry(term: any): IGeometry {
+export function proposeGeometry(term: Terminal): IGeometry {
   if (!term.element.parentElement) {
     return null;
   }
@@ -31,30 +35,30 @@ export function proposeGeometry(term: any): IGeometry {
   const availableHeight = parentElementHeight - elementPaddingVer;
   const availableWidth = parentElementWidth - elementPaddingHor;
   const geometry = {
-    cols: Math.floor(availableWidth / term.renderer.dimensions.actualCellWidth),
-    rows: Math.floor(availableHeight / term.renderer.dimensions.actualCellHeight)
+    cols: Math.floor(availableWidth / (<any>term).renderer.dimensions.actualCellWidth),
+    rows: Math.floor(availableHeight / (<any>term).renderer.dimensions.actualCellHeight)
   };
 
   return geometry;
 }
 
-export function fit(term: any): void {
+export function fit(term: Terminal): void {
   const geometry = proposeGeometry(term);
   if (geometry) {
     // Force a full render
     if (term.rows !== geometry.rows || term.cols !== geometry.cols) {
-      term.renderer.clear();
+      (<any>term).renderer.clear();
       term.resize(geometry.cols, geometry.rows);
     }
   }
 }
 
-export function apply(terminalConstructor: any): void {
-  terminalConstructor.prototype.proposeGeometry = function (): IGeometry {
+export function apply(terminalConstructor: typeof Terminal): void {
+  (<any>terminalConstructor.prototype).proposeGeometry = function (): IGeometry {
     return proposeGeometry(this);
   };
 
-  terminalConstructor.prototype.fit = function (): void {
+  (<any>terminalConstructor.prototype).fit = function (): void {
     fit(this);
   };
 }
