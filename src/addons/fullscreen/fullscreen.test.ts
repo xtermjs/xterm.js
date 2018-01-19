@@ -12,7 +12,7 @@ class MockTerminal {}
 describe('fullscreen addon', () => {
   describe('apply', () => {
     it('should do register the `toggleFullscreen` method', () => {
-      fullscreen.apply(MockTerminal);
+      fullscreen.apply(<any>MockTerminal);
       assert.equal(typeof (<any>MockTerminal).prototype.toggleFullScreen, 'function');
     });
   });
