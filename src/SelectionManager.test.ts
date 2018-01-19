@@ -21,10 +21,9 @@ class TestMockTerminal extends MockTerminal {
 class TestSelectionManager extends SelectionManager {
   constructor(
     terminal: ITerminal,
-    buffer: IBuffer,
     charMeasure: CharMeasure
   ) {
-    super(terminal, buffer, charMeasure);
+    super(terminal, charMeasure);
   }
 
   public get model(): SelectionModel { return this._model; }
@@ -59,7 +58,7 @@ describe('SelectionManager', () => {
     terminal.buffers = new BufferSet(terminal);
     terminal.buffer = terminal.buffers.active;
     buffer = terminal.buffer;
-    selectionManager = new TestSelectionManager(terminal, buffer, null);
+    selectionManager = new TestSelectionManager(terminal, null);
   });
 
   function stringToRow(text: string): LineData {
