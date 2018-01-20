@@ -128,7 +128,6 @@ export interface IInputHandlingTerminal extends IEventEmitter {
 }
 
 export interface ITerminalOptions {
-  altIsMeta?: boolean;
   bellSound?: string;
   bellStyle?: string;
   cancelEvents?: boolean;
@@ -144,6 +143,7 @@ export interface ITerminalOptions {
   handler?: (data: string) => void;
   letterSpacing?: number;
   lineHeight?: number;
+  macOptionIsMeta?: boolean;
   rows?: number;
   screenKeys?: boolean;
   scrollback?: number;

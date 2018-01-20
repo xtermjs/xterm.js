@@ -523,10 +523,10 @@ describe('term.js addons', () => {
       });
     });
 
-    describe('with altIsMeta', () => {
+    describe('with macOptionIsMeta', () => {
       beforeEach(() => {
         term.browser.isMac = true;
-        term.setOption('altIsMeta', true);
+        term.setOption('macOptionIsMeta', true);
       });
       it('should return \\x1ba for alt+a', () => {
         assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, keyCode: 65 }).key, '\x1ba');
@@ -613,10 +613,10 @@ describe('term.js addons', () => {
       };
     });
 
-    describe('with altIsMeta', () => {
+    describe('with macOptionIsMeta', () => {
       beforeEach(() => {
         term.browser.isMac = true;
-        term.setOption('altIsMeta', true);
+        term.setOption('macOptionIsMeta', true);
       });
 
       it('should interfere with the alt key on keyDown', () => {
