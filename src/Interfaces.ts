@@ -143,6 +143,7 @@ export interface ITerminalOptions {
   handler?: (data: string) => void;
   letterSpacing?: number;
   lineHeight?: number;
+  macOptionIsMeta?: boolean;
   rows?: number;
   screenKeys?: boolean;
   scrollback?: number;
