@@ -236,10 +236,6 @@ export class Parser {
           }
           break;
         case ParserState.ESCAPED:
-	  if (ch in normalStateHandler) {
-	    normalStateHandler[ch](this, this._inputHandler);
-	    break;
-	  }
           if (ch in escapedStateHandler) {
             escapedStateHandler[ch](this, this._terminal);
             // Skip switch as it was just handled
