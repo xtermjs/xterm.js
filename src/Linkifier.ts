@@ -97,7 +97,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     if (this._rowsTimeoutId) {
       clearTimeout(this._rowsTimeoutId);
     }
-    this._rowsTimeoutId = window.setTimeout(() => this._linkifyRows(), Linkifier.TIME_BEFORE_LINKIFY);
+    this._rowsTimeoutId = <number><any>setTimeout(() => this._linkifyRows(), Linkifier.TIME_BEFORE_LINKIFY);
   }
 
   /**
