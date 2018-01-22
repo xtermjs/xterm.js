@@ -1721,7 +1721,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
           } else if (ev.keyCode >= 48 && ev.keyCode <= 57) {
             result.key = C0.ESC + (ev.keyCode - 48);
           } else {
-            const t = (p,s) => !ev.shiftKey ? p : s;
+            const t = (p, s) => !ev.shiftKey ? p : s;
             switch (ev.keyCode) {
               case 186:
                 result.key = C0.ESC + t(';', ':');
