@@ -27,6 +27,7 @@ var terminalContainer = document.getElementById('terminal-container'),
     optionElements = {
       cursorBlink: document.querySelector('#option-cursor-blink'),
       cursorStyle: document.querySelector('#option-cursor-style'),
+      macOptionIsMeta: document.querySelector('#option-mac-option-is-meta'),
       scrollback: document.querySelector('#option-scrollback'),
       tabstopwidth: document.querySelector('#option-tabstopwidth'),
       bellStyle: document.querySelector('#option-bell-style'),
@@ -74,6 +75,9 @@ optionElements.cursorStyle.addEventListener('change', function () {
 optionElements.bellStyle.addEventListener('change', function () {
   term.setOption('bellStyle', optionElements.bellStyle.value);
 });
+optionElements.macOptionIsMeta.addEventListener('change', function () {
+  term.setOption('macOptionIsMeta', optionElements.macOptionIsMeta.checked);
+});
 optionElements.scrollback.addEventListener('change', function () {
   term.setOption('scrollback', parseInt(optionElements.scrollback.value, 10));
 });
@@ -99,6 +103,7 @@ function createTerminal() {
     terminalContainer.removeChild(terminalContainer.children[0]);
   }
   term = new Terminal({
+    macOptionIsMeta: optionElements.macOptionIsMeta.enabled,
     cursorBlink: optionElements.cursorBlink.checked,
     scrollback: parseInt(optionElements.scrollback.value, 10),
     tabStopWidth: parseInt(optionElements.tabstopwidth.value, 10),

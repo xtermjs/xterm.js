@@ -83,6 +83,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   screenKeys: false,
   screenReaderMode: false,
   debug: false,
+  macOptionIsMeta: false,
   cancelEvents: false,
   disableStdin: false,
   useFlowControl: false,
@@ -1434,7 +1435,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       return this.cancel(ev, true);
     }
 
-    if (isThirdLevelShift(this.browser, ev)) {
+    if (this._isThirdLevelShift(this.browser, ev)) {
       return true;
     }
 
@@ -1453,6 +1454,19 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.handler(result.key);
 
     return this.cancel(ev, true);
+  }
+
+  private _isThirdLevelShift(browser: IBrowser, ev: KeyboardEvent): boolean {
+    const thirdLevelKey =
+        (browser.isMac && !this.options.macOptionIsMeta && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
+        (browser.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
+
+    if (ev.type === 'keypress') {
+      return thirdLevelKey;
+    }
+
+    // Don't invoke for arrows, pageDown, home, backspace, etc. (on non-keypress events)
+    return thirdLevelKey && (!ev.keyCode || ev.keyCode > 47);
   }
 
   /**
@@ -1759,8 +1773,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
             // ^] - Operating System Command (OSC)
             result.key = String.fromCharCode(29);
           }
-        } else if (!this.browser.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) {
-          // On Mac this is a third level shift. Use <Esc> instead.
+        } else if ((!this.browser.isMac || this.options.macOptionIsMeta) && ev.altKey && !ev.ctrlKey && !ev.metaKey) {
+          // On macOS this is a third level shift when !macOptionIsMeta. Use <Esc> instead.
           if (ev.keyCode >= 65 && ev.keyCode <= 90) {
             result.key = C0.ESC + String.fromCharCode(ev.keyCode + 32);
           } else if (ev.keyCode === 192) {
@@ -1826,7 +1840,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     }
 
     if (!key || (
-      (ev.altKey || ev.ctrlKey || ev.metaKey) && !isThirdLevelShift(this.browser, ev)
+      (ev.altKey || ev.ctrlKey || ev.metaKey) && !this._isThirdLevelShift(this.browser, ev)
     )) {
       return false;
     }
@@ -2216,19 +2230,6 @@ const on = globalOn;
 
 function off(el: any, type: string, handler: (event: Event) => any, capture: boolean = false): void {
   el.removeEventListener(type, handler, capture);
-}
-
-function isThirdLevelShift(browser: IBrowser, ev: KeyboardEvent): boolean {
-  const thirdLevelKey =
-      (browser.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
-      (browser.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
-
-  if (ev.type === 'keypress') {
-    return thirdLevelKey;
-  }
-
-  // Don't invoke for arrows, pageDown, home, backspace, etc. (on non-keypress events)
-  return thirdLevelKey && (!ev.keyCode || ev.keyCode > 47);
 }
 
 function wasMondifierKeyOnlyEvent(ev: KeyboardEvent): boolean {

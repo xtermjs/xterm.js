@@ -467,7 +467,7 @@ declare module 'xterm' {
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell', value: boolean): void;
+    setOption(key: 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell', value: boolean): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
