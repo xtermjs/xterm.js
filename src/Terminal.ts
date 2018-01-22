@@ -1713,14 +1713,46 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
             // ^] - Operating System Command (OSC)
             result.key = String.fromCharCode(29);
           }
-        } else if ((!this.browser.isMac || this.options.macOptionIsMeta) && ev.altKey && !ev.ctrlKey && !ev.metaKey) {
+        } else if ((!this.browser.isMac || this.options.macOptionIsMeta) && ev.altKey && !ev.metaKey) {
           // On macOS this is a third level shift when !macOptionIsMeta. Use <Esc> instead.
           if (ev.keyCode >= 65 && ev.keyCode <= 90) {
-            result.key = C0.ESC + String.fromCharCode(ev.keyCode + 32);
-          } else if (ev.keyCode === 192) {
-            result.key = C0.ESC + '`';
+            const keyCode = ev.ctrlKey ? ev.keyCode - 64 : ev.keyCode + 32;
+            result.key = C0.ESC + String.fromCharCode(keyCode);
           } else if (ev.keyCode >= 48 && ev.keyCode <= 57) {
             result.key = C0.ESC + (ev.keyCode - 48);
+          } else {
+            const t = (p,s) => !ev.shiftKey ? p : s;
+            switch (ev.keyCode) {
+              case 186:
+                result.key = C0.ESC + t(';', ':');
+                break;
+              case 187:
+                result.key = C0.ESC + t('=', '+');
+                break;
+              case 188:
+                result.key = C0.ESC + t(',', '<');
+                break;
+              case 189:
+                result.key = C0.ESC + t('-', '_');
+                break;
+              case 190:
+                result.key = C0.ESC + t('.', '>');
+                break;
+              case 192:
+                // the tilde is a DEAD key
+                result.key = C0.ESC + '`';
+                break;
+              case 219:
+                result.key = C0.ESC + t('[', '{');
+                break;
+              case 221:
+                result.key = C0.ESC + t(']', '}');
+                break;
+              case 222:
+                result.key = C0.ESC + t('\'', '|');
+                break;
+
+            }
           }
         } else if (this.browser.isMac && !ev.altKey && !ev.ctrlKey && ev.metaKey) {
           if (ev.keyCode === 65) { // cmd + a

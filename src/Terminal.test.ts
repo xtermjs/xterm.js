@@ -578,6 +578,50 @@ describe('term.js addons', () => {
       assert.equal(term.evaluateKeyEscapeSequence({ ctrlKey: true, keyCode: 122 }).key, '\x1b[23;5~');
       assert.equal(term.evaluateKeyEscapeSequence({ ctrlKey: true, keyCode: 123 }).key, '\x1b[24;5~');
     });
+
+    // Characters using ctrl+alt sequences
+    it('should return proper sequence for ctrl+alt+a', () => {
+      assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, ctrlKey: true, keyCode: 65 }).key, '\x1b\x01');
+    });
+
+    // Characters using alt sequences
+    it('should return proper sequences for alt+;', () => {
+      assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: false, keyCode: 186 }).key, '\x1b;');
+      assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: true,  keyCode: 186 }).key, '\x1b:');
+    });
+    it('should return proper sequences for alt+=', () => {
+      assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: false, keyCode: 187 }).key, '\x1b=');
+      assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: true,  keyCode: 187 }).key, '\x1b+');
+    });
+    it('should return proper sequences for alt+,', () => {
+      assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: false, keyCode: 188 }).key, '\x1b,');
+      assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: true,  keyCode: 188 }).key, '\x1b<');
+    });
+    it('should return proper sequences for alt+-', () => {
+      assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: false, keyCode: 189 }).key, '\x1b-');
+      assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: true,  keyCode: 189 }).key, '\x1b_');
+    });
+    it('should return proper sequences for alt+.', () => {
+      assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: false, keyCode: 190 }).key, '\x1b.');
+      assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: true,  keyCode: 190 }).key, '\x1b>');
+    });
+    it('should return proper sequences for alt+~', () => {
+      // tilde is a DEAD key
+      assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: false, keyCode: 192 }).key, '\x1b`');
+      assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: true, keyCode: 192 }).key, '\x1b`');
+    });
+    it('should return proper sequences for alt+[', () => {
+      assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: false, keyCode: 219 }).key, '\x1b[');
+      assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: true,  keyCode: 219 }).key, '\x1b{');
+    });
+    it('should return proper sequences for alt+]', () => {
+      assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: false, keyCode: 221 }).key, '\x1b]');
+      assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: true,  keyCode: 221 }).key, '\x1b}');
+    });
+    it('should return proper sequences for alt+\\', () => {
+      assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: false, keyCode: 222 }).key, '\x1b\'');
+      assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: true,  keyCode: 222 }).key, '\x1b|');
+    });
   });
 
   describe('Third level shift', () => {
