@@ -230,7 +230,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       colorIndex = fg + 2;
     } else {
       // If default color and bold
-      if (bold) {
+      if (bold && terminal.options.enableBold) {
         colorIndex = 1;
       }
     }
@@ -251,6 +251,13 @@ export abstract class BaseRenderLayer implements IRenderLayer {
         this._ctx.globalAlpha = DIM_OPACITY;
       }
 
+      // Draw the non-bold version of the same color if bold is not enabled
+      if (bold && !terminal.options.enableBold) {
+        // Ignore default color as it's not touched above
+        if (colorIndex > 1) {
+          colorIndex -= 8;
+        }
+      }
 
       this._ctx.drawImage(this._charAtlas,
           code * charAtlasCellWidth,
@@ -262,7 +269,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
           charAtlasCellWidth,
           this._scaledCharHeight);
     } else {
-      this._drawUncachedChar(terminal, char, width, fg, x, y, bold, dim);
+      this._drawUncachedChar(terminal, char, width, fg, x, y, bold && terminal.options.enableBold, dim);
     }
     // This draws the atlas (for debugging purposes)
     // this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
