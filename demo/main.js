@@ -85,7 +85,7 @@ optionElements.tabstopwidth.addEventListener('change', function () {
   term.setOption('tabStopWidth', parseInt(optionElements.tabstopwidth.value, 10));
 });
 optionElements.screenReaderMode.addEventListener('change', function () {
-  term.setOption('screenReaderMode', optionElements.screenReaderMode.value);
+  term.setOption('screenReaderMode', optionElements.screenReaderMode.checked);
 });
 navigationModeElement.addEventListener('click', function () {
   if (term.getOption('screenReaderMode')) {
