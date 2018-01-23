@@ -144,6 +144,7 @@ export interface ITerminalOptions {
   handler?: (data: string) => void;
   letterSpacing?: number;
   lineHeight?: number;
+  macOptionIsMeta?: boolean;
   rows?: number;
   screenKeys?: boolean;
   scrollback?: number;
@@ -170,7 +171,7 @@ export interface IBuffer {
   prevStop(x?: number): number;
 }
 
-export interface IBufferSet {
+export interface IBufferSet extends IEventEmitter {
   alt: IBuffer;
   normal: IBuffer;
   active: IBuffer;
@@ -199,7 +200,6 @@ export interface ISelectionManager {
 
   disable(): void;
   enable(): void;
-  setBuffer(buffer: IBuffer): void;
   setSelection(row: number, col: number, length: number): void;
 }
 
