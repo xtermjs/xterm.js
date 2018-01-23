@@ -56,7 +56,7 @@ export class AccessibilityManager implements IDisposable {
     this._liveRegion.setAttribute('aria-live', 'assertive');
     this._accessibilityTreeRoot.appendChild(this._liveRegion);
 
-    this._terminal.element.appendChild(this._accessibilityTreeRoot);
+    this._terminal.element.insertAdjacentElement('afterbegin', this._accessibilityTreeRoot);
 
     this._disposables.push(this._renderRowsDebouncer);
     this._disposables.push(this._navigationMode);
