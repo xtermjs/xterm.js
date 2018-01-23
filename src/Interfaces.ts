@@ -4,7 +4,7 @@
  */
 
 import { ICharset, ILinkMatcherOptions } from './Interfaces';
-import { LinkMatcherHandler, LinkMatcherValidationCallback, LineData } from './Types';
+import { LinkMatcherHandler, LinkMatcherValidationCallback, LineData, FontWeight } from './Types';
 import { IColorSet, IRenderer } from './renderer/Interfaces';
 import { IMouseZoneManager } from './input/Interfaces';
 
@@ -139,8 +139,8 @@ export interface ITerminalOptions {
   disableStdin?: boolean;
   fontSize?: number;
   fontFamily?: string;
-  fontWeight?: string;
-  fontWeightBold?: string;
+  fontWeight?: FontWeight;
+  fontWeightBold?: FontWeight;
   handler?: (data: string) => void;
   letterSpacing?: number;
   lineHeight?: number;
