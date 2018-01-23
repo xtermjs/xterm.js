@@ -261,8 +261,8 @@ class NavigationMode implements IDisposable {
     this._rowContainer.tabIndex = 0;
     this._rowContainer.setAttribute('role', 'menu');
     this._rowContainer.setAttribute('aria-activedescendant', this._activeItemId);
-    this._rowContainer.focus();
     this._navigateToElement(this._terminal.buffer.ydisp + this._terminal.buffer.y);
+    this._rowContainer.focus();
   }
 
   public leave(): void {
@@ -352,19 +352,23 @@ class NavigationMode implements IDisposable {
   }
 
   private _navigateToElement(absoluteRow: number): void {
-    if (absoluteRow < this._terminal.buffer.ydisp || absoluteRow >= this._terminal.buffer.ydisp + this._terminal.rows) {
-      // Rotate rows to ensure the next focused item is read out correctly
-      this._accessibilityManager.rotateRows();
-    }
-
-    // Make sure there is no active element when scroll happens
+    // Make sure there is no active element when scroll and rotate happens
     if (this._focusedElement) {
+      this._rowContainer.removeAttribute('aria-activedescendant');
       this._focusedElement.removeAttribute('id');
     }
 
-    absoluteRow = this._terminal.scrollToRow(absoluteRow);
+    // Rotate rows to ensure the next focused item is read out correctly
+    if (absoluteRow < this._terminal.buffer.ydisp || absoluteRow >= this._terminal.buffer.ydisp + this._terminal.rows) {
+      this._accessibilityManager.rotateRows();
+    }
 
+    // Scroll to row if it's outside of the viewport
+    absoluteRow = this._terminal.scrollToRow(absoluteRow);
     this._absoluteFocusedRow = absoluteRow;
+
+    // Focus the new active element
+    this._rowContainer.setAttribute('aria-activedescendant', this._activeItemId);
     this._focusedElement = this._rowElements[absoluteRow - this._terminal.buffer.ydisp];
     this._focusedElement.id = this._activeItemId;
   }
