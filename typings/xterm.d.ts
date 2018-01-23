@@ -11,7 +11,7 @@ declare module 'xterm' {
   /**
    * A string representing text font weight.
    */
-  export type FontWeight = 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
+  export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
 
   /**
    * An object containing start up options for the terminal.
@@ -457,7 +457,7 @@ declare module 'xterm' {
     * @param key The option key.
     * @param value The option value.
     */
-    setOption(key: 'fontWeight' | 'fontWeightBold', value: null | 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900'): void;
+    setOption(key: 'fontWeight' | 'fontWeightBold', value: null | 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900'): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
