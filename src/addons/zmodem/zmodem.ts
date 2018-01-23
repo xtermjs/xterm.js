@@ -1,4 +1,13 @@
 /**
+ * Copyright (c) 2017 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
+/// <reference path="../../../typings/xterm.d.ts"/>
+
+import { Terminal } from 'xterm';
+
+/**
  *
  * Allow xterm.js to handle ZMODEM uploads and downloads.
  *
@@ -27,47 +36,40 @@
  *  via `detach()` and a re-`attach()`.)
  */
 
-let Zmodem;
+let zmodem;
 
-export function zmodemAttach(term, ws, opts) {
-  if (!opts) opts = {};
+export interface IZModemOptions {
+  noTerminalWriteOutsideSession?: boolean;
+}
 
-  var senderFunc = function _ws_sender_func(octets) {
-    ws.send(new Uint8Array(octets));
-  };
+export function zmodemAttach(term: Terminal, ws: WebSocket, opts: IZModemOptions = {}): void {
+  const senderFunc = (octets: ArrayLike<number>) => ws.send(new Uint8Array(octets));
 
-  var zsentry;
+  let zsentry;
 
-  function _shouldWrite() {
+  function _shouldWrite(): boolean {
     return !!zsentry.get_confirmed_session() || !opts.noTerminalWriteOutsideSession;
   }
 
-  zsentry = new Zmodem.Sentry( {
-    to_terminal: function _to_terminal(octets) {
+  zsentry = new zmodem.Sentry({
+    to_terminal: (octets: ArrayLike<number>) => {
       if (_shouldWrite()) {
         term.write(
           String.fromCharCode.apply(String, octets)
         );
       }
     },
-
     sender: senderFunc,
+    on_retract: () => (<any>term).emit('zmodemRetract'),
+    on_detect: (detection: any) => (<any>term).emit('zmodemDetect', detection)
+  });
 
-    on_retract: function _on_retract() {
-      term.emit('zmodemRetract');
-    },
+  function handleWSMessage(evt: MessageEvent): void {
 
-    on_detect: function _on_detect(detection) {
-      term.emit('zmodemDetect', detection);
-    },
-  } );
-
-  function handleWSMessage(evt) {
-
-    //In testing with xterm.js’s demo the first message was
-    //always text even if the rest were binary. While that
-    //may be specific to xterm.js’s demo, ultimately we
-    //should reject anything that isn’t binary.
+    // In testing with xterm.js’s demo the first message was
+    // always text even if the rest were binary. While that
+    // may be specific to xterm.js’s demo, ultimately we
+    // should reject anything that isn’t binary.
     if (typeof evt.data === 'string') {
       if (_shouldWrite()) {
         term.write(evt.data);
@@ -82,9 +84,9 @@ export function zmodemAttach(term, ws, opts) {
   ws.addEventListener('message', handleWSMessage);
 }
 
-export function apply(terminalConstructor) {
-  Zmodem = (typeof window == 'object') ? (<any>window).ZModem : {Browser: null};  // Nullify browser for tests
+export function apply(terminalConstructor: typeof Terminal): void {
+  zmodem = (typeof window === 'object') ? (<any>window).ZModem : {Browser: null};  // Nullify browser for tests
 
-  terminalConstructor.prototype.zmodemAttach = zmodemAttach.bind(this, this);
-  terminalConstructor.prototype.zmodemBrowser = Zmodem.Browser
+  (<any>terminalConstructor.prototype).zmodemAttach = zmodemAttach.bind(this, this);
+  (<any>terminalConstructor.prototype).zmodemBrowser = zmodem.Browser;
 }

@@ -13,43 +13,52 @@
  *          row and truncate its width with the current number of columns).
  */
 
-export function proposeGeometry(term) {
+/// <reference path="../../../typings/xterm.d.ts"/>
+
+import { Terminal } from 'xterm';
+
+export interface IGeometry {
+  rows: number;
+  cols: number;
+}
+
+export function proposeGeometry(term: Terminal): IGeometry {
   if (!term.element.parentElement) {
     return null;
   }
-  var parentElementStyle = window.getComputedStyle(term.element.parentElement);
-  var parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height'));
-  var parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')) - 17);
-  var elementStyle = window.getComputedStyle(term.element);
-  var elementPaddingVer = parseInt(elementStyle.getPropertyValue('padding-top')) + parseInt(elementStyle.getPropertyValue('padding-bottom'));
-  var elementPaddingHor = parseInt(elementStyle.getPropertyValue('padding-right')) + parseInt(elementStyle.getPropertyValue('padding-left'));
-  var availableHeight = parentElementHeight - elementPaddingVer;
-  var availableWidth = parentElementWidth - elementPaddingHor;
-  var geometry = {
-    cols: Math.floor(availableWidth / term.renderer.dimensions.actualCellWidth),
-    rows: Math.floor(availableHeight / term.renderer.dimensions.actualCellHeight)
+  const parentElementStyle = window.getComputedStyle(term.element.parentElement);
+  const parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height'));
+  const parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')) - 17);
+  const elementStyle = window.getComputedStyle(term.element);
+  const elementPaddingVer = parseInt(elementStyle.getPropertyValue('padding-top')) + parseInt(elementStyle.getPropertyValue('padding-bottom'));
+  const elementPaddingHor = parseInt(elementStyle.getPropertyValue('padding-right')) + parseInt(elementStyle.getPropertyValue('padding-left'));
+  const availableHeight = parentElementHeight - elementPaddingVer;
+  const availableWidth = parentElementWidth - elementPaddingHor;
+  const geometry = {
+    cols: Math.floor(availableWidth / (<any>term).renderer.dimensions.actualCellWidth),
+    rows: Math.floor(availableHeight / (<any>term).renderer.dimensions.actualCellHeight)
   };
 
   return geometry;
-};
+}
 
-export function fit(term) {
-  var geometry = proposeGeometry(term);
+export function fit(term: Terminal): void {
+  const geometry = proposeGeometry(term);
   if (geometry) {
     // Force a full render
     if (term.rows !== geometry.rows || term.cols !== geometry.cols) {
-      term.renderer.clear();
+      (<any>term).renderer.clear();
       term.resize(geometry.cols, geometry.rows);
     }
   }
-};
+}
 
-export function apply(terminalConstructor) {
-  terminalConstructor.prototype.proposeGeometry = function() {
+export function apply(terminalConstructor: typeof Terminal): void {
+  (<any>terminalConstructor.prototype).proposeGeometry = function (): IGeometry {
     return proposeGeometry(this);
-  }
+  };
 
-  terminalConstructor.prototype.fit = function() {
-    return fit(this);
-  }
+  (<any>terminalConstructor.prototype).fit = function (): void {
+    fit(this);
+  };
 }

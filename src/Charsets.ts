@@ -3,19 +3,19 @@
  * @license MIT
  */
 
-import { Charset } from './Types';
+import { ICharset } from './Interfaces';
 
 /**
  * The character sets supported by the terminal. These enable several languages
  * to be represented within the terminal with only 8-bit encoding. See ISO 2022
  * for a discussion on character sets. Only VT100 character sets are supported.
  */
-export const CHARSETS: { [key: string]: Charset } = {};
+export const CHARSETS: { [key: string]: ICharset } = {};
 
 /**
  * The default character set, US.
  */
-export const DEFAULT_CHARSET: Charset = CHARSETS['B'];
+export const DEFAULT_CHARSET: ICharset = CHARSETS['B'];
 
 /**
  * DEC Special Character and Line Drawing Set.

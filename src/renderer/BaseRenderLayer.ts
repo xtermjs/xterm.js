@@ -201,7 +201,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param color The color of the character.
    */
   protected fillCharTrueColor(terminal: ITerminal, charData: CharData, x: number, y: number): void {
-    this._ctx.font = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
+    this._ctx.font = this._getFont(terminal, false);
     this._ctx.textBaseline = 'top';
     this._clipRow(terminal, y);
     this._ctx.fillText(
@@ -230,7 +230,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       colorIndex = fg + 2;
     } else {
       // If default color and bold
-      if (bold && terminal.options.enableBold) {
+      if (bold) {
         colorIndex = 1;
       }
     }
@@ -251,13 +251,6 @@ export abstract class BaseRenderLayer implements IRenderLayer {
         this._ctx.globalAlpha = DIM_OPACITY;
       }
 
-      // Draw the non-bold version of the same color if bold is not enabled
-      if (bold && !terminal.options.enableBold) {
-        // Ignore default color as it's not touched above
-        if (colorIndex > 1) {
-          colorIndex -= 8;
-        }
-      }
 
       this._ctx.drawImage(this._charAtlas,
           code * charAtlasCellWidth,
@@ -289,10 +282,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   private _drawUncachedChar(terminal: ITerminal, char: string, width: number, fg: number, x: number, y: number, bold: boolean, dim: boolean): void {
     this._ctx.save();
-    this._ctx.font = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
-    if (bold && terminal.options.enableBold) {
-      this._ctx.font = `bold ${this._ctx.font}`;
-    }
+    this._ctx.font = this._getFont(terminal, bold);
     this._ctx.textBaseline = 'top';
 
     if (fg === INVERTED_DEFAULT_COLOR) {
@@ -331,6 +321,17 @@ export abstract class BaseRenderLayer implements IRenderLayer {
         terminal.cols * this._scaledCellWidth,
         this._scaledCellHeight);
     this._ctx.clip();
+  }
+
+  /**
+   * Gets the current font.
+   * @param terminal The terminal.
+   * @param isBold If we should use the bold fontWeight.
+   */
+  protected _getFont(terminal: ITerminal, isBold: boolean): string {
+    const fontWeight = isBold ? terminal.options.fontWeightBold : terminal.options.fontWeight;
+
+    return `${fontWeight} ${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
   }
 }
 

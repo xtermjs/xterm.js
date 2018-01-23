@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { ILinkMatcherOptions } from './Interfaces';
-import { LinkMatcherHandler, LinkMatcherValidationCallback, Charset, LineData } from './Types';
+import { ICharset, ILinkMatcherOptions } from './Interfaces';
+import { LinkMatcherHandler, LinkMatcherValidationCallback, LineData, FontWeight } from './Types';
 import { IColorSet, IRenderer } from './renderer/Interfaces';
 import { IMouseZoneManager } from './input/Interfaces';
 
@@ -74,10 +74,10 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   options: ITerminalOptions;
   cols: number;
   rows: number;
-  charset: Charset;
+  charset: ICharset;
   gcharset: number;
   glevel: number;
-  charsets: Charset[];
+  charsets: ICharset[];
   applicationKeypad: boolean;
   applicationCursor: boolean;
   originMode: boolean;
@@ -116,7 +116,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   blankLine(cur?: boolean, isWrapped?: boolean): LineData;
   is(term: string): boolean;
   send(data: string): void;
-  setgCharset(g: number, charset: Charset): void;
+  setgCharset(g: number, charset: ICharset): void;
   resize(x: number, y: number): void;
   log(text: string, data?: any): void;
   reset(): void;
@@ -137,12 +137,14 @@ export interface ITerminalOptions {
   cursorStyle?: string;
   debug?: boolean;
   disableStdin?: boolean;
-  enableBold?: boolean;
   fontSize?: number;
   fontFamily?: string;
+  fontWeight?: FontWeight;
+  fontWeightBold?: FontWeight;
   handler?: (data: string) => void;
   letterSpacing?: number;
   lineHeight?: number;
+  macOptionIsMeta?: boolean;
   rows?: number;
   screenKeys?: boolean;
   scrollback?: number;
@@ -169,7 +171,7 @@ export interface IBuffer {
   prevStop(x?: number): number;
 }
 
-export interface IBufferSet {
+export interface IBufferSet extends IEventEmitter {
   alt: IBuffer;
   normal: IBuffer;
   active: IBuffer;
@@ -198,7 +200,6 @@ export interface ISelectionManager {
 
   disable(): void;
   enable(): void;
-  setBuffer(buffer: IBuffer): void;
   setSelection(row: number, col: number, length: number): void;
 }
 
@@ -248,7 +249,7 @@ export interface IEventEmitter {
 export interface IListenerType {
     (data?: any): void;
     listener?: (data?: any) => void;
-};
+}
 
 export interface ILinkMatcherOptions {
   /**
@@ -351,4 +352,25 @@ export interface ITheme {
   brightMagenta?: string;
   brightCyan?: string;
   brightWhite?: string;
+}
+
+export interface ILinkMatcher {
+  id: number;
+  regex: RegExp;
+  handler: LinkMatcherHandler;
+  hoverTooltipCallback?: LinkMatcherHandler;
+  hoverLeaveCallback?: () => void;
+  matchIndex?: number;
+  validationCallback?: LinkMatcherValidationCallback;
+  priority?: number;
+}
+
+export interface ICharset {
+  [key: string]: string;
+}
+
+export interface ILinkHoverEvent {
+  x: number;
+  y: number;
+  length: number;
 }

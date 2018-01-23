@@ -5,14 +5,14 @@
 
 import { assert, expect } from 'chai';
 
-import * as fullscreen from './fullscreen'
+import * as fullscreen from './fullscreen';
 
 class MockTerminal {}
 
 describe('fullscreen addon', () => {
   describe('apply', () => {
     it('should do register the `toggleFullscreen` method', () => {
-      fullscreen.apply(MockTerminal);
+      fullscreen.apply(<any>MockTerminal);
       assert.equal(typeof (<any>MockTerminal).prototype.toggleFullScreen, 'function');
     });
   });
