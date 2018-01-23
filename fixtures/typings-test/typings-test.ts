@@ -145,8 +145,8 @@ namespace methods_core {
       const r21: boolean = t.getOption('enableBold');
       const r22: number = t.getOption('letterSpacing');
       const r23: boolean = t.getOption('macOptionIsMeta');
-      const r24: number = t.getOption('fontWeight');
-      const r25: number = t.getOption('fontWeightBold');
+      const r24: string = t.getOption('fontWeight');
+      const r25: string = t.getOption('fontWeightBold');
     }
     {
       const t: Terminal = new Terminal();
@@ -160,6 +160,8 @@ namespace methods_core {
       t.setOption('debug', true);
       t.setOption('disableStdin', true);
       t.setOption('fontWeight', 'normal');
+      t.setOption('fontWeight', 'bold');
+      t.setOption('fontWeightBold', 'normal');
       t.setOption('fontWeightBold', 'bold');
       t.setOption('popOnBell', true);
       t.setOption('screenKeys', true);
