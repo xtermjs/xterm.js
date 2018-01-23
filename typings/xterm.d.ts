@@ -410,7 +410,7 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'termName'): string;
+    getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'fontWeight' | 'fontWeightBold'| 'termName'): string;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
@@ -444,6 +444,12 @@ declare module 'xterm' {
      */
     setOption(key: 'fontFamily' | 'termName' | 'bellSound', value: string): void;
     /**
+    * Sets an option on the terminal.
+    * @param key The option key.
+    * @param value The option value.
+    */
+    setOption(key: 'fontWeight' | 'fontWeightBold', value: null | 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900'): void;
+    /**
      * Sets an option on the terminal.
      * @param key The option key.
      * @param value The option value.
@@ -460,7 +466,7 @@ declare module 'xterm' {
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell' | 'allowTransparency', value: boolean): void;
+    setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell', value: boolean): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.

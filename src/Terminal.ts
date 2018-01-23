@@ -38,9 +38,9 @@ import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './utils/Browser';
 import { MouseHelper } from './utils/MouseHelper';
 import { CHARSETS } from './Charsets';
-import { CustomKeyEventHandler, Charset, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
-import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper, ITheme, ILinkifier } from './Interfaces';
-import { BellSound } from './utils/Sounds';
+import { CustomKeyEventHandler, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
+import { ITerminal, IBrowser, ICharset, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper, ITheme, ILinkifier } from './Interfaces';
+import { BELL_SOUND } from './utils/Sounds';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { IMouseZoneManager } from './input/Interfaces';
 import { MouseZoneManager } from './input/MouseZoneManager';
@@ -70,16 +70,18 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   termName: 'xterm',
   cursorBlink: false,
   cursorStyle: 'block',
-  bellSound: BellSound,
+  bellSound: BELL_SOUND,
   bellStyle: 'none',
-  enableBold: true,
   fontFamily: 'courier-new, courier, monospace',
   fontSize: 15,
+  fontWeight: 'normal',
+  fontWeightBold: 'bold',
   lineHeight: 1.0,
   letterSpacing: 0,
   scrollback: 1000,
   screenKeys: false,
   debug: false,
+  macOptionIsMeta: false,
   cancelEvents: false,
   disableStdin: false,
   useFlowControl: false,
@@ -132,10 +134,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
   // charset
   // The current charset
-  public charset: Charset;
+  public charset: ICharset;
   public gcharset: number;
   public glevel: number;
-  public charsets: Charset[];
+  public charsets: ICharset[];
 
   // mouse properties
   private decLocator: boolean; // This is unstable and never set
@@ -182,7 +184,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   private writeStopped: boolean;
 
   // leftover surrogate high from previous write invocation
-  private surrogate_high: string;
+  private surrogateHigh: string;
 
   // Store if user went browsing history in scrollback
   private userScrolling: boolean;
@@ -193,7 +195,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   public selectionManager: SelectionManager;
   public linkifier: ILinkifier;
   public buffers: BufferSet;
-  public buffer: Buffer;
   public viewport: IViewport;
   private compositionHelper: ICompositionHelper;
   public charMeasure: CharMeasure;
@@ -281,7 +282,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     this.xoffSentToCatchUp = false;
     this.writeStopped = false;
-    this.surrogate_high = '';
+    this.surrogateHigh = '';
     this.userScrolling = false;
 
     this.inputHandler = new InputHandler(this);
@@ -294,15 +295,17 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     // Create the terminal's buffers and set the current buffer
     this.buffers = new BufferSet(this);
-    this.buffer = this.buffers.active;  // Convenience shortcut;
-    this.buffers.on('activate', (buffer: Buffer) => {
-      this.buffer = buffer;
-    });
-
-    // Ensure the selection manager has the correct buffer
     if (this.selectionManager) {
-      this.selectionManager.setBuffer(this.buffer);
+      this.selectionManager.clearSelection();
+      this.selectionManager.initBuffersListeners();
     }
+  }
+
+  /**
+   * Convenience property to active buffer.
+   */
+  public get buffer(): Buffer {
+    return this.buffers.active;
   }
 
   /**
@@ -362,6 +365,16 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
           value = 'block';
         }
         break;
+      case 'fontWeight':
+        if (!value) {
+          value = 'normal';
+        }
+        break;
+      case 'fontWeightBold':
+        if (!value) {
+          value = 'bold';
+        }
+        break;
       case 'lineHeight':
         if (value < 1) {
           console.warn(`${key} cannot be less than 1, value: ${value}`);
@@ -412,14 +425,16 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         this.renderer.clear();
         this.charMeasure.measure(this.options);
         break;
-      case 'enableBold':
       case 'letterSpacing':
       case 'lineHeight':
+      case 'fontWeight':
+      case 'fontWeightBold':
+        const didCharSizeChange = (key === 'fontWeight' || key === 'fontWeightBold');
+
         // When the font changes the size of the cells may change which requires a renderer clear
         this.renderer.clear();
-        this.renderer.onResize(this.cols, this.rows, false);
+        this.renderer.onResize(this.cols, this.rows, didCharSizeChange);
         this.refresh(0, this.rows - 1);
-        // this.charMeasure.measure(this.options);
       case 'scrollback':
         this.buffers.resize(this.cols, this.rows);
         this.viewport.syncScrollArea();
@@ -444,7 +459,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.element.classList.add('focus');
     this.showCursor();
     this.emit('focus');
-  };
+  }
 
   /**
    * Blur the terminal, calling the blur function on the terminal's underlying
@@ -638,11 +653,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.on('resize', () => this.renderer.onResize(this.cols, this.rows, false));
     this.on('blur', () => this.renderer.onBlur());
     this.on('focus', () => this.renderer.onFocus());
-    window.addEventListener('resize', () => this.renderer.onWindowResize(window.devicePixelRatio));
     this.charMeasure.on('charsizechanged', () => this.renderer.onResize(this.cols, this.rows, true));
     this.renderer.on('resize', (dimensions) => this.viewport.syncScrollArea());
 
-    this.selectionManager = new SelectionManager(this, this.buffer, this.charMeasure);
+    this.selectionManager = new SelectionManager(this, this.charMeasure);
     this.element.addEventListener('mousedown', (e: MouseEvent) => this.selectionManager.onMouseDown(e));
     this.selectionManager.on('refresh', data => this.renderer.onSelectionChanged(data.start, data.end));
     this.selectionManager.on('newselection', text => {
@@ -1375,7 +1389,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       return this.cancel(ev, true);
     }
 
-    if (isThirdLevelShift(this.browser, ev)) {
+    if (this._isThirdLevelShift(this.browser, ev)) {
       return true;
     }
 
@@ -1394,6 +1408,19 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.handler(result.key);
 
     return this.cancel(ev, true);
+  }
+
+  private _isThirdLevelShift(browser: IBrowser, ev: KeyboardEvent): boolean {
+    const thirdLevelKey =
+        (browser.isMac && !this.options.macOptionIsMeta && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
+        (browser.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
+
+    if (ev.type === 'keypress') {
+      return thirdLevelKey;
+    }
+
+    // Don't invoke for arrows, pageDown, home, backspace, etc. (on non-keypress events)
+    return thirdLevelKey && (!ev.keyCode || ev.keyCode > 47);
   }
 
   /**
@@ -1575,6 +1602,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         // page up
         if (ev.shiftKey) {
           result.scrollLines = -(this.rows - 1);
+        } else if (modifiers) {
+          result.key = C0.ESC + '[5;' + (modifiers + 1) + '~';
         } else {
           result.key = C0.ESC + '[5~';
         }
@@ -1583,6 +1612,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         // page down
         if (ev.shiftKey) {
           result.scrollLines = this.rows - 1;
+        } else if (modifiers) {
+          result.key = C0.ESC + '[6;' + (modifiers + 1) + '~';
         } else {
           result.key = C0.ESC + '[6~';
         }
@@ -1696,8 +1727,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
             // ^] - Operating System Command (OSC)
             result.key = String.fromCharCode(29);
           }
-        } else if (!this.browser.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) {
-          // On Mac this is a third level shift. Use <Esc> instead.
+        } else if ((!this.browser.isMac || this.options.macOptionIsMeta) && ev.altKey && !ev.ctrlKey && !ev.metaKey) {
+          // On macOS this is a third level shift when !macOptionIsMeta. Use <Esc> instead.
           if (ev.keyCode >= 65 && ev.keyCode <= 90) {
             result.key = C0.ESC + String.fromCharCode(ev.keyCode + 32);
           } else if (ev.keyCode === 192) {
@@ -1730,7 +1761,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param g
    * @param charset
    */
-  public setgCharset(g: number, charset: Charset): void {
+  public setgCharset(g: number, charset: ICharset): void {
     this.charsets[g] = charset;
     if (this.glevel === g) {
       this.charset = charset;
@@ -1763,7 +1794,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     }
 
     if (!key || (
-      (ev.altKey || ev.ctrlKey || ev.metaKey) && !isThirdLevelShift(this.browser, ev)
+      (ev.altKey || ev.ctrlKey || ev.metaKey) && !this._isThirdLevelShift(this.browser, ev)
     )) {
       return false;
     }
@@ -2077,11 +2108,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.options.cols = this.cols;
     const customKeyEventHandler = this.customKeyEventHandler;
     const inputHandler = this.inputHandler;
-    const buffers = this.buffers;
     this.setup();
     this.customKeyEventHandler = customKeyEventHandler;
     this.inputHandler = inputHandler;
-    this.buffers = buffers;
     this.refresh(0, this.rows - 1);
     this.viewport.syncScrollArea();
   }
@@ -2157,19 +2186,6 @@ function off(el: any, type: string, handler: (event: Event) => any, capture: boo
   el.removeEventListener(type, handler, capture);
 }
 
-function isThirdLevelShift(browser: IBrowser, ev: KeyboardEvent): boolean {
-  const thirdLevelKey =
-      (browser.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
-      (browser.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
-
-  if (ev.type === 'keypress') {
-    return thirdLevelKey;
-  }
-
-  // Don't invoke for arrows, pageDown, home, backspace, etc. (on non-keypress events)
-  return thirdLevelKey && (!ev.keyCode || ev.keyCode > 47);
-}
-
 function wasMondifierKeyOnlyEvent(ev: KeyboardEvent): boolean {
   return ev.keyCode === 16 || // Shift
     ev.keyCode === 17 || // Ctrl
@@ -2222,7 +2238,7 @@ function matchColorDistance(r1: number, g1: number, b1: number, r2: number, g2: 
   return Math.pow(30 * (r1 - r2), 2)
     + Math.pow(59 * (g1 - g2), 2)
     + Math.pow(11 * (b1 - b2), 2);
-};
+}
 
 
 function matchColor_(r1: number, g1: number, b1: number): number {

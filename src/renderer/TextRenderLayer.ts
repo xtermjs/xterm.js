@@ -33,7 +33,7 @@ export class TextRenderLayer extends BaseRenderLayer {
     super.resize(terminal, dim, charSizeChanged);
 
     // Clear the character width cache if the font or width has changed
-    const terminalFont = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
+    const terminalFont = this._getFont(terminal, false);
     if (this._characterWidth !== dim.scaledCharWidth || this._characterFont !== terminalFont) {
       this._characterWidth = dim.scaledCharWidth;
       this._characterFont = terminalFont;
@@ -166,7 +166,7 @@ export class TextRenderLayer extends BaseRenderLayer {
 
         this._ctx.save();
         if (flags & FLAGS.BOLD) {
-          this._ctx.font = `bold ${this._ctx.font}`;
+          this._ctx.font = this._getFont(terminal, true);
           // Convert the FG color to the bold variant
           if (fg < 8) {
             fg += 8;
@@ -192,9 +192,9 @@ export class TextRenderLayer extends BaseRenderLayer {
     }
   }
 
-	/**
-	 * Whether a character is overlapping to the next cell.
-	 */
+  /**
+   * Whether a character is overlapping to the next cell.
+   */
   private _isOverlapping(charData: CharData): boolean {
     // Only single cell characters can be overlapping, rendering issues can
     // occur without this check

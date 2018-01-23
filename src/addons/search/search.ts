@@ -3,8 +3,11 @@
  * @license MIT
  */
 
-import { SearchHelper } from './SearchHelper';
+/// <reference path="../../../typings/xterm.d.ts"/>
 
+import { SearchHelper } from './SearchHelper';
+import { Terminal } from 'xterm';
+import { ISearchAddonTerminal } from './Interfaces';
 
 /**
  * Find the next instance of the term, then scroll to and select it. If it
@@ -12,12 +15,13 @@ import { SearchHelper } from './SearchHelper';
  * @param term Tne search term.
  * @return Whether a result was found.
  */
-export function findNext(terminal: any, term: string): boolean {
-  if (!terminal._searchHelper) {
-    terminal.searchHelper = new SearchHelper(terminal);
+export function findNext(terminal: Terminal, term: string): boolean {
+  const addonTerminal = <ISearchAddonTerminal>terminal;
+  if (!addonTerminal.__searchHelper) {
+    addonTerminal.__searchHelper = new SearchHelper(addonTerminal);
   }
-  return (<SearchHelper>terminal.searchHelper).findNext(term);
-};
+  return addonTerminal.__searchHelper.findNext(term);
+}
 
 /**
  * Find the previous instance of the term, then scroll to and select it. If it
@@ -25,19 +29,20 @@ export function findNext(terminal: any, term: string): boolean {
  * @param term Tne search term.
  * @return Whether a result was found.
  */
-export function findPrevious(terminal: any, term: string): boolean {
-  if (!terminal._searchHelper) {
-    terminal.searchHelper = new SearchHelper(terminal);
+export function findPrevious(terminal: Terminal, term: string): boolean {
+  const addonTerminal = <ISearchAddonTerminal>terminal;
+  if (!addonTerminal.__searchHelper) {
+    addonTerminal.__searchHelper = new SearchHelper(addonTerminal);
   }
-  return (<SearchHelper>terminal.searchHelper).findPrevious(term);
-};
+  return addonTerminal.__searchHelper.findPrevious(term);
+}
 
-export function apply(terminalConstructor) {
-  terminalConstructor.prototype.findNext = function(term) {
+export function apply(terminalConstructor: typeof Terminal): void {
+  (<any>terminalConstructor.prototype).findNext = function(term: string): boolean {
     return findNext(this, term);
-  }
+  };
 
-  terminalConstructor.prototype.findPrevious = function(term) {
+  (<any>terminalConstructor.prototype).findPrevious = function(term: string): boolean {
     return findPrevious(this, term);
-  }
+  };
 }

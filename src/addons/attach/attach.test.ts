@@ -5,14 +5,14 @@
 
 import { assert, expect } from 'chai';
 
-import * as attach from './attach'
+import * as attach from './attach';
 
 class MockTerminal {}
 
 describe('attach addon', () => {
   describe('apply', () => {
     it('should do register the `attach` and `detach` methods', () => {
-      attach.apply(MockTerminal);
+      attach.apply(<any>MockTerminal);
       assert.equal(typeof (<any>MockTerminal).prototype.attach, 'function');
       assert.equal(typeof (<any>MockTerminal).prototype.detach, 'function');
     });

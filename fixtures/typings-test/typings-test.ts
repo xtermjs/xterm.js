@@ -144,7 +144,10 @@ namespace methods_core {
       const r20: string = t.getOption('bellStyle');
       const r21: boolean = t.getOption('enableBold');
       const r22: number = t.getOption('letterSpacing');
-      const r23: boolean = t.getOption('allowTransparency');
+      const r23: boolean = t.getOption('macOptionIsMeta');
+      const r24: string = t.getOption('fontWeight');
+      const r25: string = t.getOption('fontWeightBold');
+      const r26: boolean = t.getOption('allowTransparency');
     }
     {
       const t: Terminal = new Terminal();
@@ -157,7 +160,10 @@ namespace methods_core {
       t.setOption('cursorBlink', true);
       t.setOption('debug', true);
       t.setOption('disableStdin', true);
-      t.setOption('enableBold', true);
+      t.setOption('fontWeight', 'normal');
+      t.setOption('fontWeight', 'bold');
+      t.setOption('fontWeightBold', 'normal');
+      t.setOption('fontWeightBold', 'bold');
       t.setOption('popOnBell', true);
       t.setOption('screenKeys', true);
       t.setOption('useFlowControl', true);
@@ -179,6 +185,7 @@ namespace methods_core {
       t.setOption('lineHeight', 1);
       t.setOption('fontFamily', 'foo');
       t.setOption('theme', {background: '#ff0000'});
+      t.setOption('macOptionIsMeta', true);
     }
   }
   namespace scrolling {

@@ -12,6 +12,8 @@ export const CHAR_ATLAS_CELL_SPACING = 1;
 interface ICharAtlasConfig {
   fontSize: number;
   fontFamily: string;
+  fontWeight: string;
+  fontWeightBold: string;
   scaledCharWidth: number;
   scaledCharHeight: number;
   colors: IColorSet;
@@ -64,7 +66,7 @@ export function acquireCharAtlas(terminal: ITerminal, colors: IColorSet, scaledC
   }
 
   const newEntry: ICharAtlasCacheEntry = {
-    bitmap: generator.generate(scaledCharWidth, scaledCharHeight, terminal.options.fontSize, terminal.options.fontFamily, colors.background, colors.foreground, colors.ansi),
+    bitmap: generator.generate(scaledCharWidth, scaledCharHeight, terminal.options.fontSize, terminal.options.fontFamily, terminal.options.fontWeight, terminal.options.fontWeightBold, colors.background, colors.foreground, colors.ansi),
     config: newConfig,
     ownedBy: [terminal]
   };
@@ -86,6 +88,8 @@ function generateConfig(scaledCharWidth: number, scaledCharHeight: number, termi
     scaledCharHeight,
     fontFamily: terminal.options.fontFamily,
     fontSize: terminal.options.fontSize,
+    fontWeight: terminal.options.fontWeight,
+    fontWeightBold: terminal.options.fontWeightBold,
     colors: clonedColors
   };
 }
@@ -98,6 +102,8 @@ function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean {
   }
   return a.fontFamily === b.fontFamily &&
       a.fontSize === b.fontSize &&
+      a.fontWeight === b.fontWeight &&
+      a.fontWeightBold === b.fontWeightBold &&
       a.scaledCharWidth === b.scaledCharWidth &&
       a.scaledCharHeight === b.scaledCharHeight &&
       a.colors.foreground === b.colors.foreground &&
@@ -126,7 +132,7 @@ class CharAtlasGenerator {
     this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
   }
 
-  public generate(scaledCharWidth: number, scaledCharHeight: number, fontSize: number, fontFamily: string, background: string, foreground: string, ansiColors: string[]): HTMLCanvasElement | Promise<ImageBitmap> {
+  public generate(scaledCharWidth: number, scaledCharHeight: number, fontSize: number, fontFamily: string, fontWeight: string, fontWeightBold: string, background: string, foreground: string, ansiColors: string[]): HTMLCanvasElement | Promise<ImageBitmap> {
     const cellWidth = scaledCharWidth + CHAR_ATLAS_CELL_SPACING;
     const cellHeight = scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
     this._canvas.width = 255 * cellWidth;
@@ -137,7 +143,7 @@ class CharAtlasGenerator {
 
     this._ctx.save();
     this._ctx.fillStyle = foreground;
-    this._ctx.font = `${fontSize * window.devicePixelRatio}px ${fontFamily}`;
+    this._ctx.font = this._getFont(fontWeight, fontSize, fontFamily);
     this._ctx.textBaseline = 'top';
 
     // Default color
@@ -151,7 +157,7 @@ class CharAtlasGenerator {
     }
     // Default color bold
     this._ctx.save();
-    this._ctx.font = `bold ${this._ctx.font}`;
+    this._ctx.font = this._getFont(fontWeightBold, fontSize, fontFamily);
     for (let i = 0; i < 256; i++) {
       this._ctx.save();
       this._ctx.beginPath();
@@ -163,11 +169,11 @@ class CharAtlasGenerator {
     this._ctx.restore();
 
     // Colors 0-15
-    this._ctx.font = `${fontSize * window.devicePixelRatio}px ${fontFamily}`;
+    this._ctx.font = this._getFont(fontWeight, fontSize, fontFamily);
     for (let colorIndex = 0; colorIndex < 16; colorIndex++) {
       // colors 8-15 are bold
       if (colorIndex === 8) {
-        this._ctx.font = `bold ${this._ctx.font}`;
+        this._ctx.font = this._getFont(fontWeightBold, fontSize, fontFamily);
       }
       const y = (colorIndex + 2) * cellHeight;
       // Draw ascii characters
@@ -218,5 +224,9 @@ class CharAtlasGenerator {
         imageData.data[offset + 3] = 0;
       }
     }
+  }
+
+  private _getFont(fontWeight: string, fontSize: number, fontFamily: string): string {
+    return `${fontWeight} ${fontSize * window.devicePixelRatio}px ${fontFamily}`;
   }
 }
