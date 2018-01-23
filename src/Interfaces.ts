@@ -4,7 +4,7 @@
  */
 
 import { ICharset, ILinkMatcherOptions } from './Interfaces';
-import { LinkMatcherHandler, LinkMatcherValidationCallback, LineData } from './Types';
+import { LinkMatcherHandler, LinkMatcherValidationCallback, LineData, FontWeight } from './Types';
 import { IColorSet, IRenderer } from './renderer/Interfaces';
 import { IMouseZoneManager } from './input/Interfaces';
 
@@ -137,12 +137,14 @@ export interface ITerminalOptions {
   cursorStyle?: string;
   debug?: boolean;
   disableStdin?: boolean;
-  enableBold?: boolean;
   fontSize?: number;
   fontFamily?: string;
+  fontWeight?: FontWeight;
+  fontWeightBold?: FontWeight;
   handler?: (data: string) => void;
   letterSpacing?: number;
   lineHeight?: number;
+  macOptionIsMeta?: boolean;
   rows?: number;
   screenKeys?: boolean;
   scrollback?: number;
