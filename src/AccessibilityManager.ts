@@ -357,11 +357,13 @@ class NavigationMode implements IDisposable {
       this._accessibilityManager.rotateRows();
     }
 
-    absoluteRow = this._terminal.scrollToRow(absoluteRow);
-
+    // Make sure there is no active element when scroll happens
     if (this._focusedElement) {
       this._focusedElement.removeAttribute('id');
     }
+
+    absoluteRow = this._terminal.scrollToRow(absoluteRow);
+
     this._absoluteFocusedRow = absoluteRow;
     this._focusedElement = this._rowElements[absoluteRow - this._terminal.buffer.ydisp];
     this._focusedElement.id = this._activeItemId;
