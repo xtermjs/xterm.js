@@ -72,9 +72,10 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   cursorStyle: 'block',
   bellSound: BELL_SOUND,
   bellStyle: 'none',
-  enableBold: true,
   fontFamily: 'courier-new, courier, monospace',
   fontSize: 15,
+  fontWeight: 'normal',
+  fontWeightBold: 'bold',
   lineHeight: 1.0,
   letterSpacing: 0,
   scrollback: 1000,
@@ -363,6 +364,16 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
           value = 'block';
         }
         break;
+      case 'fontWeight':
+        if (!value) {
+          value = 'normal';
+        }
+        break;
+      case 'fontWeightBold':
+        if (!value) {
+          value = 'bold';
+        }
+        break;
       case 'lineHeight':
         if (value < 1) {
           console.warn(`${key} cannot be less than 1, value: ${value}`);
@@ -413,14 +424,16 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         this.renderer.clear();
         this.charMeasure.measure(this.options);
         break;
-      case 'enableBold':
       case 'letterSpacing':
       case 'lineHeight':
+      case 'fontWeight':
+      case 'fontWeightBold':
+        const didCharSizeChange = (key === 'fontWeight' || key === 'fontWeightBold');
+
         // When the font changes the size of the cells may change which requires a renderer clear
         this.renderer.clear();
-        this.renderer.onResize(this.cols, this.rows, false);
+        this.renderer.onResize(this.cols, this.rows, didCharSizeChange);
         this.refresh(0, this.rows - 1);
-        // this.charMeasure.measure(this.options);
       case 'scrollback':
         this.buffers.resize(this.cols, this.rows);
         this.viewport.syncScrollArea();
