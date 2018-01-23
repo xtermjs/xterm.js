@@ -8,7 +8,7 @@
 /// <reference path="../../../typings/xterm.d.ts"/>
 
 import { Terminal } from 'xterm';
-import { IAttachAddonTerminal } from './Intefaces';
+import { IAttachAddonTerminal } from './Interfaces';
 
 /**
  * Attaches the given terminal to the given socket.
