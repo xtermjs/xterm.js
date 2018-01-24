@@ -9,7 +9,7 @@
 /// <reference path="../../../typings/xterm.d.ts"/>
 
 import { Terminal } from 'xterm';
-import { ITerminadoAddonTerminal } from './Intefaces';
+import { ITerminadoAddonTerminal } from './Interfaces';
 
 /**
  * Attaches the given terminal to the given socket.
