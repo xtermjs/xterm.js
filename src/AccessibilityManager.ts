@@ -16,6 +16,7 @@ export class AccessibilityManager implements IDisposable {
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[] = [];
   private _liveRegion: HTMLElement;
+  private _moreRowsElement: HTMLElement;
   private _liveRegionLineCount: number = 0;
 
   private _renderRowsDebouncer: RenderDebouncer;
@@ -37,6 +38,12 @@ export class AccessibilityManager implements IDisposable {
   constructor(private _terminal: ITerminal) {
     this._accessibilityTreeRoot = document.createElement('div');
     this._accessibilityTreeRoot.classList.add('xterm-accessibility');
+
+    this._moreRowsElement = document.createElement('div');
+    this._moreRowsElement.style.clip = 'clip(0 0 0 0)';
+    this._moreRowsElement.textContent = 'In order to properly navigation the terminal buffer you need to enter navigation mode';
+    this._accessibilityTreeRoot.appendChild(this._moreRowsElement);
+
     this._rowContainer = document.createElement('div');
     this._rowContainer.classList.add('xterm-accessibility-tree');
     for (let i = 0; i < this._terminal.rows; i++) {
