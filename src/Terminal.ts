@@ -36,6 +36,7 @@ import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
 import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './utils/Browser';
+import * as Strings from './Strings';
 import { MouseHelper } from './utils/MouseHelper';
 import { CHARSETS } from './Charsets';
 import { CustomKeyEventHandler, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
@@ -623,7 +624,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.textarea = document.createElement('textarea');
     this.textarea.classList.add('xterm-helper-textarea');
     // TODO: New API to set title? This could say "Terminal bash input", etc.
-    this.textarea.setAttribute('aria-label', 'Terminal input');
+    this.textarea.setAttribute('aria-label', Strings.promptLabel);
     this.textarea.setAttribute('aria-multiline', 'false');
     this.textarea.setAttribute('autocorrect', 'off');
     this.textarea.setAttribute('autocapitalize', 'off');

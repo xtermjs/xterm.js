@@ -3,6 +3,7 @@
  * @license MIT
  */
 
+import * as Strings from './Strings';
 import { ITerminal, IBuffer, IDisposable } from './Interfaces';
 import { isMac } from './utils/Browser';
 import { RenderDebouncer } from './utils/RenderDebouncer';
@@ -41,7 +42,7 @@ export class AccessibilityManager implements IDisposable {
 
     this._moreRowsElement = document.createElement('div');
     this._moreRowsElement.style.clip = 'clip(0 0 0 0)';
-    this._moreRowsElement.textContent = 'In order to properly navigation the terminal buffer you need to enter navigation mode';
+    this._moreRowsElement.textContent = Strings.navigationModeMoreRows;
     this._accessibilityTreeRoot.appendChild(this._moreRowsElement);
 
     this._rowContainer = document.createElement('div');
@@ -156,7 +157,7 @@ export class AccessibilityManager implements IDisposable {
         this._liveRegionLineCount++;
         if (this._liveRegionLineCount === MAX_ROWS_TO_READ + 1) {
           // TODO: Enable localization
-          this._liveRegion.textContent += 'Too much output to announce, navigate to rows manually to read';
+          this._liveRegion.textContent += Strings.tooMuchOutput;
         }
       }
 
