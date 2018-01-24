@@ -25,7 +25,7 @@ export class AltClickHandler {
       this._terminal.options.lineHeight,
       this._terminal.cols,
       this._terminal.rows,
-      true
+      false
     ).map((coordinate: number) => {
       return coordinate - 1;
     });
