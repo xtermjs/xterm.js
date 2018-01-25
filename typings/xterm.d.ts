@@ -9,6 +9,11 @@
 
 declare module 'xterm' {
   /**
+   * A string representing text font weight.
+   */
+  export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
+
+  /**
    * An object containing start up options for the terminal.
    */
   export interface ITerminalOptions {
@@ -56,6 +61,16 @@ declare module 'xterm' {
      * The font family used to render text.
      */
     fontFamily?: string;
+
+    /**
+     * The font weight used to render non-bold text.
+     */
+    fontWeight?: FontWeight;
+
+    /**
+     * The font weight used to render bold text.
+     */
+    fontWeightBold?: FontWeight;
 
     /**
      * The spacing in whole pixels between characters..
@@ -442,7 +457,7 @@ declare module 'xterm' {
     * @param key The option key.
     * @param value The option value.
     */
-    setOption(key: 'fontWeight' | 'fontWeightBold', value: null | 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900'): void;
+    setOption(key: 'fontWeight' | 'fontWeightBold', value: null | 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900'): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.

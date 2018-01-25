@@ -137,6 +137,7 @@ export interface ITerminalOptions {
   cursorStyle?: string;
   debug?: boolean;
   disableStdin?: boolean;
+  enableBold?: boolean;
   fontSize?: number;
   fontFamily?: string;
   fontWeight?: FontWeight;
