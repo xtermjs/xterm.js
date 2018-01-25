@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { ITerminal } from '../typings/xterm-internal';
+import { ITerminal } from './Types';
 import { BufferSet } from './BufferSet';
 import { Buffer } from './Buffer';
 import { MockTerminal } from './utils/TestUtils.test';

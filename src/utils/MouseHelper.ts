@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { ICharMeasure, IRenderer } from '../../typings/xterm-internal';
+import { ICharMeasure } from '../Types';
+import { IRenderer } from '../renderer/Types';
 
 export class MouseHelper {
   constructor(private _renderer: IRenderer) {}

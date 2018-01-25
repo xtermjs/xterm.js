@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { ITerminal, IColorSet } from '../typings/xterm-internal';
-import { IViewport } from './Types';
+import { IColorSet } from './renderer/Types';
+import { ITerminal, IViewport } from './Types';
 import { CharMeasure } from './utils/CharMeasure';
 
 /**

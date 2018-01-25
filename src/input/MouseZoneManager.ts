@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { IMouseZoneManager, IMouseZone, ITerminal } from '../../typings/xterm-internal';
+import { ITerminal } from '../Types';
+import { IMouseZoneManager, IMouseZone } from './Types';
 
 const HOVER_DURATION = 500;
 

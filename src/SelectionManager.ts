@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminal, ICircularList, ISelectionManager, IBuffer, LineData, CharData } from '../typings/xterm-internal';
+import { ITerminal, ICircularList, ISelectionManager, IBuffer, LineData, CharData } from './Types';
 import { MouseHelper } from './utils/MouseHelper';
 import * as Browser from './shared/utils/Browser';
 import { CharMeasure } from './utils/CharMeasure';

@@ -3,9 +3,8 @@
  * @license MIT
  */
 
-import { ILinkMatcherOptions, ITerminal, IBufferAccessor, ILinkifier, IElementAccessor, LinkMatcherHandler, LinkMatcherValidationCallback, LineData, IMouseZoneManager } from '../typings/xterm-internal';
-import { ILinkHoverEvent, ILinkMatcher } from './Types';
-import { LinkHoverEventTypes } from './Types';
+import { IMouseZoneManager } from './input/Types';
+import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkMatcherValidationCallback, LineData, LinkHoverEventTypes, ILinkMatcherOptions, ITerminal, IBufferAccessor, ILinkifier, IElementAccessor } from './Types';
 import { MouseZone } from './input/MouseZoneManager';
 import { EventEmitter } from './EventEmitter';
 

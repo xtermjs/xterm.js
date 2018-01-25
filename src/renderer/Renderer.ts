@@ -3,17 +3,18 @@
  * @license MIT
  */
 
-import { ITerminal, ITheme, IColorSet, IRenderer, IRenderDimensions } from '../../typings/xterm-internal';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
 import { TextRenderLayer } from './TextRenderLayer';
 import { SelectionRenderLayer } from './SelectionRenderLayer';
 import { CursorRenderLayer } from './CursorRenderLayer';
 import { ColorManager } from './ColorManager';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { IRenderLayer } from './Types';
+import { IRenderLayer, IColorSet, IRenderer, IRenderDimensions } from './Types';
+import { ITerminal } from '../Types';
 import { LinkRenderLayer } from './LinkRenderLayer';
 import { EventEmitter } from '../EventEmitter';
 import { ScreenDprMonitor } from '../utils/ScreenDprMonitor';
+import { ITheme } from 'xterm';
 
 export class Renderer extends EventEmitter implements IRenderer {
   /** A queue of the rows to be refreshed */

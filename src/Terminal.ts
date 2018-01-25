@@ -21,7 +21,9 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { ITerminalOptions, ITerminal, IBrowser, IRenderer, ILinkifier, IMouseZoneManager, ITheme, LinkMatcherHandler, LinkMatcherValidationCallback, ILinkMatcherOptions, CharData, LineData } from '../typings/xterm-internal';
+import { ICharset, IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
+import { IMouseZoneManager } from './input/Types';
+import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
 import { Buffer, MAX_BUFFER_SIZE } from './Buffer';
 import { CompositionHelper } from './CompositionHelper';
@@ -39,11 +41,10 @@ import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './shared/utils/Browser';
 import { MouseHelper } from './utils/MouseHelper';
 import { CHARSETS } from './Charsets';
-import { CustomKeyEventHandler } from './Types';
-import { ICharset, IInputHandlingTerminal, IViewport, ICompositionHelper } from './Types';
 import { BELL_SOUND } from './utils/Sounds';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { MouseZoneManager } from './input/MouseZoneManager';
+import { ITheme } from 'xterm';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;

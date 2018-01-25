@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ICharMeasure, ITerminal, ITerminalOptions } from '../../typings/xterm-internal';
+import { ICharMeasure, ITerminal, ITerminalOptions } from '../Types';
 import { EventEmitter } from '../EventEmitter';
 
 /**

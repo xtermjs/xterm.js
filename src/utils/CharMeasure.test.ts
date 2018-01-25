@@ -4,7 +4,7 @@
  */
 
 import jsdom = require('jsdom');
-import { ICharMeasure, ITerminal } from '../../typings/xterm-internal';
+import { ICharMeasure, ITerminal } from '../Types';
 import { assert } from 'chai';
 import { CharMeasure } from './CharMeasure';
 

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminal } from '../typings/xterm-internal';
+import { ITerminal } from './Types';
 
 /**
  * Represents a selection within the buffer. This model only cares about column

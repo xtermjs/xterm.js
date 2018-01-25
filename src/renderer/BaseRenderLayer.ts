@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { IColorSet, IRenderDimensions, ITerminal, ITerminalOptions, CharData } from '../../typings/xterm-internal';
-import { IRenderLayer } from './Types';
+import { IRenderLayer, IColorSet, IRenderDimensions } from './Types';
+import { CharData, ITerminal, ITerminalOptions } from '../Types';
 import { acquireCharAtlas, CHAR_ATLAS_CELL_SPACING } from './CharAtlas';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
 

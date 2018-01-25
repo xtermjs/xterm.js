@@ -3,10 +3,11 @@
  * @license MIT
  */
 
-import { ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ICircularList, ITheme, ILinkifier, IMouseHelper, ILinkMatcherOptions, LineData, IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../../typings/xterm-internal';
-import { IInputHandlingTerminal, IViewport, ICompositionHelper } from '../Types';
+import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../renderer/Types';
+import { LineData, IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ICircularList, ILinkifier, IMouseHelper, ILinkMatcherOptions } from '../Types';
 import { Buffer } from '../Buffer';
 import * as Browser from '../shared/utils/Browser';
+import { ITheme } from 'xterm';
 
 export class MockTerminal implements ITerminal {
   getOption(key: any): any {

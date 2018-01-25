@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { ITerminal, ITheme, IColorSet } from '../../typings/xterm-internal';
+import { ITerminal } from '../Types';
+import { IColorSet } from './Types';
 import { isFirefox } from '../shared/utils/Browser';
 import { generateCharAtlas, ICharAtlasRequest } from '../shared/CharAtlasGenerator';
 
