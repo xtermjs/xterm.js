@@ -13,6 +13,8 @@ export const CHAR_ATLAS_CELL_SPACING = 1;
 interface ICharAtlasConfig {
   fontSize: number;
   fontFamily: string;
+  fontWeight: string;
+  fontWeightBold: string;
   scaledCharWidth: number;
   scaledCharHeight: number;
   colors: IColorSet;
@@ -76,6 +78,8 @@ export function acquireCharAtlas(terminal: ITerminal, colors: IColorSet, scaledC
     scaledCharHeight,
     fontSize: terminal.options.fontSize,
     fontFamily: terminal.options.fontFamily,
+    fontWeight: terminal.options.fontWeight,
+    fontWeightBold: terminal.options.fontWeightBold,
     background: colors.background,
     foreground: colors.foreground,
     ansiColors: colors.ansi,
@@ -105,6 +109,8 @@ function generateConfig(scaledCharWidth: number, scaledCharHeight: number, termi
     scaledCharHeight,
     fontFamily: terminal.options.fontFamily,
     fontSize: terminal.options.fontSize,
+    fontWeight: terminal.options.fontWeight,
+    fontWeightBold: terminal.options.fontWeightBold,
     colors: clonedColors
   };
 }
@@ -117,6 +123,8 @@ function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean {
   }
   return a.fontFamily === b.fontFamily &&
       a.fontSize === b.fontSize &&
+      a.fontWeight === b.fontWeight &&
+      a.fontWeightBold === b.fontWeightBold &&
       a.scaledCharWidth === b.scaledCharWidth &&
       a.scaledCharHeight === b.scaledCharHeight &&
       a.colors.foreground === b.colors.foreground &&

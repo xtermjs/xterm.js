@@ -4,6 +4,7 @@
  */
 
 import { isFirefox } from './utils/Browser';
+import { FontWeight } from './Types';
 
 declare const Promise: any;
 
@@ -19,6 +20,8 @@ export interface ICharAtlasRequest {
   scaledCharHeight: number;
   fontSize: number;
   fontFamily: string;
+  fontWeight: FontWeight;
+  fontWeightBold: FontWeight;
   background: string;
   foreground: string;
   ansiColors: string[];
@@ -47,7 +50,7 @@ export function generateCharAtlas(context: Window, canvasFactory: (width: number
 
   ctx.save();
   ctx.fillStyle = request.foreground;
-  ctx.font = `${request.fontSize * request.devicePixelRatio}px ${request.fontFamily}`;
+  ctx.font = getFont(request.fontWeight, request);
   ctx.textBaseline = 'top';
 
   // Default color
@@ -61,7 +64,7 @@ export function generateCharAtlas(context: Window, canvasFactory: (width: number
   }
   // Default color bold
   ctx.save();
-  ctx.font = `bold ${ctx.font}`;
+  ctx.font = getFont(request.fontWeightBold, request);
   for (let i = 0; i < 256; i++) {
     ctx.save();
     ctx.beginPath();
@@ -73,11 +76,11 @@ export function generateCharAtlas(context: Window, canvasFactory: (width: number
   ctx.restore();
 
   // Colors 0-15
-  ctx.font = `${request.fontSize * request.devicePixelRatio}px ${request.fontFamily}`;
+  ctx.font = getFont(request.fontWeight, request);
   for (let colorIndex = 0; colorIndex < 16; colorIndex++) {
     // colors 8-15 are bold
     if (colorIndex === 8) {
-      ctx.font = `bold ${ctx.font}`;
+      ctx.font = getFont(request.fontWeightBold, request);
     }
     const y = (colorIndex + 2) * cellHeight;
     // Draw ascii characters
@@ -130,4 +133,8 @@ function clearColor(imageData: ImageData, r: number, g: number, b: number): void
       imageData.data[offset + 3] = 0;
     }
   }
+}
+
+function getFont(fontWeight: FontWeight, request: ICharAtlasRequest): string {
+  return `${fontWeight} ${request.fontSize * request.devicePixelRatio}px ${request.fontFamily}`;
 }

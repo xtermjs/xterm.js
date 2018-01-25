@@ -6,7 +6,7 @@
 import { ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, IListenerType, IInputHandlingTerminal, IViewport, ICircularList, ICompositionHelper, ITheme, ILinkifier, IMouseHelper } from '../Interfaces';
 import { LineData } from '../Types';
 import { Buffer } from '../Buffer';
-import * as Browser from './Browser';
+import * as Browser from '../shared/utils/Browser';
 import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../renderer/Interfaces';
 
 export class MockTerminal implements ITerminal {
