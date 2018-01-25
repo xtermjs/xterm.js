@@ -124,7 +124,8 @@
     cursor: text;
 }
 
-.xterm .xterm-accessibility {
+.xterm .xterm-accessibility,
+.xterm .xterm-message {
     position: absolute;
     left: 0;
     top: 0;
