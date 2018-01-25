@@ -200,7 +200,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param color The color of the character.
    */
   protected fillCharTrueColor(terminal: ITerminal, charData: CharData, x: number, y: number): void {
-    this._ctx.font = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
+    this._ctx.font = this._getFont(terminal, false);
     this._ctx.textBaseline = 'top';
     this._clipRow(terminal, y);
     this._ctx.fillText(
@@ -268,7 +268,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
           charAtlasCellWidth,
           this._scaledCharHeight);
     } else {
-      this._drawUncachedChar(terminal, char, width, fg, x, y, bold, dim);
+      this._drawUncachedChar(terminal, char, width, fg, x, y, bold && terminal.options.enableBold, dim);
     }
     // This draws the atlas (for debugging purposes)
     // this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
@@ -288,10 +288,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   private _drawUncachedChar(terminal: ITerminal, char: string, width: number, fg: number, x: number, y: number, bold: boolean, dim: boolean): void {
     this._ctx.save();
-    this._ctx.font = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
-    if (bold && terminal.options.enableBold) {
-      this._ctx.font = `bold ${this._ctx.font}`;
-    }
+    this._ctx.font = this._getFont(terminal, bold);
     this._ctx.textBaseline = 'top';
 
     if (fg === INVERTED_DEFAULT_COLOR) {
@@ -330,6 +327,17 @@ export abstract class BaseRenderLayer implements IRenderLayer {
         terminal.cols * this._scaledCellWidth,
         this._scaledCellHeight);
     this._ctx.clip();
+  }
+
+  /**
+   * Gets the current font.
+   * @param terminal The terminal.
+   * @param isBold If we should use the bold fontWeight.
+   */
+  protected _getFont(terminal: ITerminal, isBold: boolean): string {
+    const fontWeight = isBold ? terminal.options.fontWeightBold : terminal.options.fontWeight;
+
+    return `${fontWeight} ${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
   }
 }
 

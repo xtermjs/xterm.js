@@ -7,8 +7,6 @@ import { IEventEmitter } from 'xterm';
 import { ITerminalOptions, ILinkMatcherOptions, IMouseZoneManager, LinkMatcherHandler, LinkMatcherValidationCallback, LineData, IColorSet, IRenderer, IBufferSet, IBuffer, ISelectionManager } from '../typings/xterm-internal';
 import { ICharset } from './Interfaces';
 
-
-
 /**
  * This interface encapsulates everything needed from the Terminal by the
  * InputHandler. This cleanly separates the large amount of methods needed by

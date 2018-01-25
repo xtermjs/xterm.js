@@ -120,11 +120,6 @@ export class Buffer implements IBuffer {
       if (this._terminal.cols < newCols) {
         const ch: CharData = [this._terminal.defAttr, ' ', 1, 32]; // does xterm use the default attr?
         for (let i = 0; i < this._lines.length; i++) {
-          // TODO: This should be removed, with tests setup for the case that was
-          // causing the underlying bug, see https://github.com/sourcelair/xterm.js/issues/824
-          if (this._lines.get(i) === undefined) {
-            this._lines.set(i, this._terminal.blankLine(undefined, undefined, newCols));
-          }
           while (this._lines.get(i).length < newCols) {
             this._lines.get(i).push(ch);
           }
@@ -181,16 +176,13 @@ export class Buffer implements IBuffer {
       }
 
       // Make sure that the cursor stays on screen
-      if (this.y >= newRows) {
-        this.y = newRows - 1;
-      }
+      this.x = Math.min(this.x, newCols - 1);
+      this.y = Math.min(this.y, newRows - 1);
       if (addToY) {
         this.y += addToY;
       }
-
-      if (this.x >= newCols) {
-        this.x = newCols - 1;
-      }
+      this.savedY = Math.min(this.savedY, newRows - 1);
+      this.savedX = Math.min(this.savedX, newCols - 1);
 
       this.scrollTop = 0;
     }

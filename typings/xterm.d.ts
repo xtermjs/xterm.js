@@ -9,6 +9,11 @@
 
 declare module 'xterm' {
   /**
+   * A string representing text font weight.
+   */
+  export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
+
+  /**
    * An object containing start up options for the terminal.
    */
   export interface ITerminalOptions {
@@ -58,6 +63,16 @@ declare module 'xterm' {
     fontFamily?: string;
 
     /**
+     * The font weight used to render non-bold text.
+     */
+    fontWeight?: FontWeight;
+
+    /**
+     * The font weight used to render bold text.
+     */
+    fontWeightBold?: FontWeight;
+
+    /**
      * The spacing in whole pixels between characters..
      */
     letterSpacing?: number;
@@ -66,6 +81,11 @@ declare module 'xterm' {
      * The line height used to render text.
      */
     lineHeight?: number;
+
+    /**
+     * Whether to treat option as the meta key.
+     */
+    macOptionIsMeta?: boolean;
 
     /**
      * The number of rows in the terminal.
@@ -396,12 +416,12 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'termName'): string;
+    getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'fontWeight' | 'fontWeightBold'| 'termName'): string;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell'): boolean;
+    getOption(key: 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell'): boolean;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
@@ -430,6 +450,12 @@ declare module 'xterm' {
      */
     setOption(key: 'fontFamily' | 'termName' | 'bellSound', value: string): void;
     /**
+    * Sets an option on the terminal.
+    * @param key The option key.
+    * @param value The option value.
+    */
+    setOption(key: 'fontWeight' | 'fontWeightBold', value: null | 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900'): void;
+    /**
      * Sets an option on the terminal.
      * @param key The option key.
      * @param value The option value.
@@ -446,7 +472,7 @@ declare module 'xterm' {
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell', value: boolean): void;
+    setOption(key: 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell', value: boolean): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.

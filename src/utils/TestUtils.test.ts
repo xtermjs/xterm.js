@@ -5,9 +5,8 @@
 
 import { ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ICircularList, ITheme, ILinkifier, IMouseHelper, ILinkMatcherOptions, LineData, IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../../typings/xterm-internal';
 import { IInputHandlingTerminal, IViewport, ICompositionHelper } from '../Interfaces';
-import {  } from '../Types';
 import { Buffer } from '../Buffer';
-import * as Browser from './Browser';
+import * as Browser from '../shared/utils/Browser';
 
 export class MockTerminal implements ITerminal {
   getOption(key: any): any {

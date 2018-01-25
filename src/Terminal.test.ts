@@ -503,6 +503,9 @@ describe('term.js addons', () => {
       it('should return \\x1b[5C for alt+right', () => {
         assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, keyCode: 39 }).key, '\x1b[1;5C'); // CSI 5 C
       });
+      it('should return \\x1ba for alt+a', () => {
+        assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, keyCode: 65 }).key, '\x1ba');
+      });
     });
 
     describe('On macOS platforms', () => {
@@ -514,6 +517,19 @@ describe('term.js addons', () => {
       });
       it('should return \\x1bf for alt+right', () => {
         assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, keyCode: 39 }).key, '\x1bf'); // CSI 5 C
+      });
+      it('should return undefined for alt+a', () => {
+        assert.strictEqual(term.evaluateKeyEscapeSequence({ altKey: true, keyCode: 65 }).key, undefined);
+      });
+    });
+
+    describe('with macOptionIsMeta', () => {
+      beforeEach(() => {
+        term.browser.isMac = true;
+        term.setOption('macOptionIsMeta', true);
+      });
+      it('should return \\x1ba for alt+a', () => {
+        assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, keyCode: 65 }).key, '\x1ba');
       });
     });
 
@@ -595,6 +611,22 @@ describe('term.js addons', () => {
         charCode: null,
         keyCode: null
       };
+    });
+
+    describe('with macOptionIsMeta', () => {
+      beforeEach(() => {
+        term.browser.isMac = true;
+        term.setOption('macOptionIsMeta', true);
+      });
+
+      it('should interfere with the alt key on keyDown', () => {
+        evKeyDown.altKey = true;
+        evKeyDown.keyCode = 81;
+        assert.equal(term.keyDown(evKeyDown), false);
+        evKeyDown.altKey = true;
+        evKeyDown.keyCode = 192;
+        assert.equal(term.keyDown(evKeyDown), false);
+      });
     });
 
     describe('On Mac OS', () => {

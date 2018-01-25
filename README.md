@@ -123,6 +123,8 @@ computational environment for Jupyter, supporting interactive data science and s
 - [**Azure Cloud Shell**](https://shell.azure.com): Azure Cloud Shell is a Microsoft-managed admin machine built on Azure, for Azure.
 - [**atom-xterm**](https://atom.io/packages/atom-xterm): Atom plugin for providing terminals inside your Atom workspace.
 - [**rtty**](https://github.com/zhaojh329/rtty): A reverse proxy WebTTY. It is composed of the client and the server.
+- [**Pisth**](https://github.com/ColdGrub1384/Pisth): An SFTP and SSH client for iOS
+- [**abstruse**](https://github.com/bleenco/abstruse): Abstruse CI is a continuous integration platform based on Node.JS and Docker.
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list.
 
@@ -163,6 +165,10 @@ The existing releases are available at this GitHub repo's [Releases](https://git
 Xterm.js is maintained by [SourceLair](https://www.sourcelair.com/) and a few external contributors, but we would love to receive contributions from everyone!
 
 To contribute either code, documentation or issues to xterm.js please read the [Contributing document](CONTRIBUTING.md) beforehand. The development of xterm.js does not require any special tool. All you need is an editor that supports JavaScript/TypeScript and a browser. You will need Node.js installed locally to get all the features working in the demo.
+
+### Code structure
+
+`src/` is roughly split up into areas of functionality such as `renderer/` that handles all rendering and `utils/` which provides general utility functions. The `shared/` folder contains code that can be used from either the main thread or a web worker thread, all code inside a `shared/` folder should only ever import other code from a `shared/` folder to minimize the amount of code run what launching a web worker.
 
 ## License Agreement
 

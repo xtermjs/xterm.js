@@ -82,12 +82,12 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     }
 
     // Increase range to linkify
-    if (!this._rowsToLinkify.start) {
+    if (this._rowsToLinkify.start === null) {
       this._rowsToLinkify.start = start;
       this._rowsToLinkify.end = end;
     } else {
-      this._rowsToLinkify.start = this._rowsToLinkify.start < start ? this._rowsToLinkify.start : start;
-      this._rowsToLinkify.end = this._rowsToLinkify.end > end ? this._rowsToLinkify.end : end;
+      this._rowsToLinkify.start = Math.min(this._rowsToLinkify.start, start);
+      this._rowsToLinkify.end = Math.max(this._rowsToLinkify.end, end);
     }
 
     // Clear out any existing links on this row range
