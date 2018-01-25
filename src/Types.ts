@@ -283,6 +283,8 @@ export interface ISelectionManager {
   disable(): void;
   enable(): void;
   setSelection(row: number, col: number, length: number): void;
+  isClickInSelection(event: MouseEvent): boolean;
+  selectWordAtCursor(event: MouseEvent): void;
 }
 
 export interface ILinkifier extends IEventEmitter {
