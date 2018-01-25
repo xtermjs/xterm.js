@@ -177,16 +177,13 @@ export class Buffer implements IBuffer {
       }
 
       // Make sure that the cursor stays on screen
-      if (this.y >= newRows) {
-        this.y = newRows - 1;
-      }
+      this.x = Math.min(this.x, newCols - 1);
+      this.y = Math.min(this.y, newRows - 1);
       if (addToY) {
         this.y += addToY;
       }
-
-      if (this.x >= newCols) {
-        this.x = newCols - 1;
-      }
+      this.savedY = Math.min(this.savedY, newRows - 1);
+      this.savedX = Math.min(this.savedX, newCols - 1);
 
       this.scrollTop = 0;
     }
