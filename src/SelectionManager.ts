@@ -538,8 +538,9 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   private _onMouseUp(event: MouseEvent): void {
     this._removeMouseDownListeners();
 
-    if (this.hasSelection)
+    if (this.hasSelection) {
       this._terminal.emit('selection');
+    }
   }
 
   private _onBufferActivate(e: {activeBuffer: IBuffer, inactiveBuffer: IBuffer}): void {
