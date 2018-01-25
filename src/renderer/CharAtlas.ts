@@ -17,6 +17,7 @@ interface ICharAtlasConfig {
   fontWeightBold: string;
   scaledCharWidth: number;
   scaledCharHeight: number;
+  allowTransparency: boolean;
   colors: IColorSet;
 }
 
@@ -112,6 +113,7 @@ function generateConfig(scaledCharWidth: number, scaledCharHeight: number, termi
     fontSize: terminal.options.fontSize,
     fontWeight: terminal.options.fontWeight,
     fontWeightBold: terminal.options.fontWeightBold,
+    allowTransparency: terminal.options.allowTransparency,
     colors: clonedColors
   };
 }
@@ -126,6 +128,7 @@ function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean {
       a.fontSize === b.fontSize &&
       a.fontWeight === b.fontWeight &&
       a.fontWeightBold === b.fontWeightBold &&
+      a.allowTransparency === b.allowTransparency &&
       a.scaledCharWidth === b.scaledCharWidth &&
       a.scaledCharHeight === b.scaledCharHeight &&
       a.colors.foreground === b.colors.foreground &&

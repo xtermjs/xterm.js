@@ -54,6 +54,26 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._refreshCharAtlas(terminal, colorSet);
   }
 
+  protected setTransparency(terminal: ITerminal, alpha: boolean): void {
+    if (alpha === this._alpha) {
+      return;
+    }
+    this._alpha = alpha
+    const oldCanvas = this._canvas
+    // Cloning preserves canvas properties and permits to acquire a new context 
+    this._canvas = <HTMLCanvasElement>this._canvas.cloneNode();
+    this._ctx = this._canvas.getContext('2d', {alpha: this._alpha});
+    this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    // Draw the background if this is an opaque layer
+    if (!this._alpha) {
+      this.clearAll();
+    }
+    oldCanvas.parentNode.replaceChild(this._canvas, oldCanvas);
+    this._refreshCharAtlas(terminal, this._colors);
+    // Force a full redraw
+    this.onGridChanged(terminal, 0, terminal.rows - 1)
+  }
+
   /**
    * Refreshes the char atlas, aquiring a new one if necessary.
    * @param terminal The terminal.
@@ -64,7 +84,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       return;
     }
     this._charAtlas = null;
-    const result = acquireCharAtlas(terminal, this._colors, this._scaledCharWidth, this._scaledCharHeight);
+    const result = acquireCharAtlas(terminal, colorSet, this._scaledCharWidth, this._scaledCharHeight);
     if (result instanceof HTMLCanvasElement) {
       this._charAtlas = result;
     } else {

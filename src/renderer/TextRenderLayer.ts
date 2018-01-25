@@ -192,6 +192,10 @@ export class TextRenderLayer extends BaseRenderLayer {
     }
   }
 
+  public onOptionsChanged(terminal: ITerminal): void {
+    this.setTransparency(terminal, terminal.options.allowTransparency);
+  }
+
   /**
    * Whether a character is overlapping to the next cell.
    */
