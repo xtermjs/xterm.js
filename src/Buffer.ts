@@ -3,9 +3,8 @@
  * @license MIT
  */
 
-import { ITerminal, IBuffer } from './Interfaces';
 import { CircularList } from './utils/CircularList';
-import { LineData, CharData } from './Types';
+import { LineData, CharData, ITerminal, IBuffer } from './Types';
 
 export const CHAR_DATA_ATTR_INDEX = 0;
 export const CHAR_DATA_CHAR_INDEX = 1;

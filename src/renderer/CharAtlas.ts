@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { ITerminal, ITheme } from '../Interfaces';
-import { IColorSet } from '../renderer/Interfaces';
+import { ITerminal } from '../Types';
+import { IColorSet } from './Types';
 import { isFirefox } from '../shared/utils/Browser';
 import { generateCharAtlas, ICharAtlasRequest } from '../shared/CharAtlasGenerator';
 
