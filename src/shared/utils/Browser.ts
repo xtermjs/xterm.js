@@ -26,4 +26,4 @@ export const isLinux = platform.indexOf('Linux') >= 0;
  */
 export function contains(arr: any[], el: any): boolean {
   return arr.indexOf(el) >= 0;
-};
+}

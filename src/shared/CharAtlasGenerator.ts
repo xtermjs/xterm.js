@@ -3,8 +3,8 @@
  * @license MIT
  */
 
+import { FontWeight } from 'xterm';
 import { isFirefox } from './utils/Browser';
-import { FontWeight } from './Types';
 
 declare const Promise: any;
 
