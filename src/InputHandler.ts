@@ -4,10 +4,9 @@
  * @license MIT
  */
 
-import { IInputHandler, ITerminal, IInputHandlingTerminal } from './Interfaces';
+import { CharData, IInputHandler, IInputHandlingTerminal, ITerminal } from './Types';
 import { C0 } from './EscapeSequences';
 import { DEFAULT_CHARSET } from './Charsets';
-import { CharData } from './Types';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
 import { FLAGS } from './renderer/Types';
 import { wcwidth } from './CharWidth';
@@ -928,7 +927,6 @@ export class InputHandler implements IInputHandler {
         case 47: // alt screen buffer
         case 1047: // alt screen buffer
           this._terminal.buffers.activateAltBuffer();
-          this._terminal.selectionManager.setBuffer(this._terminal.buffer);
           this._terminal.viewport.syncScrollArea();
           this._terminal.showCursor();
           break;
@@ -1100,7 +1098,6 @@ export class InputHandler implements IInputHandler {
           // if (params[0] === 1049) {
           //   this.restoreCursor(params);
           // }
-          this._terminal.selectionManager.setBuffer(this._terminal.buffer);
           this._terminal.refresh(0, this._terminal.rows - 1);
           this._terminal.viewport.syncScrollArea();
           this._terminal.showCursor();
