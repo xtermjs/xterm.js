@@ -4,7 +4,7 @@
  */
 
 import { IColorSet, IRenderDimensions, ITerminal, ILinkifierAccessor, IBuffer, ICharMeasure } from '../../typings/xterm-internal';
-import { ILinkHoverEvent } from '../Interfaces';
+import { ILinkHoverEvent } from '../Types';
 import { CHAR_DATA_ATTR_INDEX } from '../Buffer';
 import { GridCache } from './GridCache';
 import { FLAGS } from './Types';

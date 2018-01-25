@@ -5,7 +5,14 @@
 
 import { IEventEmitter } from 'xterm';
 import { ITerminalOptions, ILinkMatcherOptions, IMouseZoneManager, LinkMatcherHandler, LinkMatcherValidationCallback, LineData, IColorSet, IRenderer, IBufferSet, IBuffer, ISelectionManager } from '../typings/xterm-internal';
-import { ICharset } from './Interfaces';
+
+export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
+
+export enum LinkHoverEventTypes {
+  HOVER = 'linkhover',
+  TOOLTIP = 'linktooltip',
+  LEAVE = 'linkleave'
+}
 
 /**
  * This interface encapsulates everything needed from the Terminal by the

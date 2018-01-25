@@ -4,8 +4,19 @@
  */
 
 import { IColorSet, IRenderDimensions, ITerminal } from '../../typings/xterm-internal';
-
 import { IEventEmitter } from 'xterm';
+
+/**
+ * Flags used to render terminal text properly.
+ */
+export enum FLAGS {
+  BOLD = 1,
+  UNDERLINE = 2,
+  BLINK = 4,
+  INVERSE = 8,
+  INVISIBLE = 16,
+  DIM = 32
+}
 
 export interface IRenderLayer {
   /**

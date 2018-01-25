@@ -5,7 +5,7 @@
  */
 
 import { CharData, ITerminal } from '../typings/xterm-internal';
-import { IInputHandler, IInputHandlingTerminal } from './Interfaces';
+import { IInputHandler, IInputHandlingTerminal } from './Types';
 import { C0 } from './EscapeSequences';
 import { DEFAULT_CHARSET } from './Charsets';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';

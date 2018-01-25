@@ -4,7 +4,7 @@
  */
 
 import { ITerminal, IColorSet } from '../typings/xterm-internal';
-import { IViewport } from './Interfaces';
+import { IViewport } from './Types';
 import { CharMeasure } from './utils/CharMeasure';
 
 /**

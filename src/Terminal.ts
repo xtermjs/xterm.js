@@ -40,7 +40,7 @@ import * as Browser from './shared/utils/Browser';
 import { MouseHelper } from './utils/MouseHelper';
 import { CHARSETS } from './Charsets';
 import { CustomKeyEventHandler } from './Types';
-import { ICharset, IInputHandlingTerminal, IViewport, ICompositionHelper } from './Interfaces';
+import { ICharset, IInputHandlingTerminal, IViewport, ICompositionHelper } from './Types';
 import { BELL_SOUND } from './utils/Sounds';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { MouseZoneManager } from './input/MouseZoneManager';

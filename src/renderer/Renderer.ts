@@ -10,7 +10,7 @@ import { SelectionRenderLayer } from './SelectionRenderLayer';
 import { CursorRenderLayer } from './CursorRenderLayer';
 import { ColorManager } from './ColorManager';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { IRenderLayer } from './Interfaces';
+import { IRenderLayer } from './Types';
 import { LinkRenderLayer } from './LinkRenderLayer';
 import { EventEmitter } from '../EventEmitter';
 import { ScreenDprMonitor } from '../utils/ScreenDprMonitor';

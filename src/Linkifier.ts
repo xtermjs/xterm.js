@@ -4,7 +4,7 @@
  */
 
 import { ILinkMatcherOptions, ITerminal, IBufferAccessor, ILinkifier, IElementAccessor, LinkMatcherHandler, LinkMatcherValidationCallback, LineData, IMouseZoneManager } from '../typings/xterm-internal';
-import { ILinkHoverEvent, ILinkMatcher } from './Interfaces';
+import { ILinkHoverEvent, ILinkMatcher } from './Types';
 import { LinkHoverEventTypes } from './Types';
 import { MouseZone } from './input/MouseZoneManager';
 import { EventEmitter } from './EventEmitter';
