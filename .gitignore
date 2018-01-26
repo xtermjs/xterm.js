@@ -19,5 +19,6 @@ fixtures/typings-test/*.js
 # Directories needed for code coverage
 /coverage/
 
-# Keep the demo builds out of Git
+# Keep bundled code out of Git
+dist/
 demo/dist/
