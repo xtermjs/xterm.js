@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IDisposable } from '../Interfaces';
+import { IDisposable } from 'xterm';
 
 /**
  * Adds a disposabe listener to a node in the DOM, returning the disposable.

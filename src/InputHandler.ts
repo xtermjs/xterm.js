@@ -4,10 +4,9 @@
  * @license MIT
  */
 
-import { IInputHandler, ITerminal, IInputHandlingTerminal } from './Interfaces';
+import { CharData, IInputHandler, IInputHandlingTerminal, ITerminal } from './Types';
 import { C0 } from './EscapeSequences';
 import { DEFAULT_CHARSET } from './Charsets';
-import { CharData } from './Types';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
 import { FLAGS } from './renderer/Types';
 import { wcwidth } from './CharWidth';

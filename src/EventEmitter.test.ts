@@ -13,18 +13,6 @@ describe('EventEmitter', () => {
     eventEmitter = new EventEmitter();
   });
 
-  describe('once', () => {
-    it('should trigger the listener only once', () => {
-      let count = 0;
-      const listener = () => count++;
-      eventEmitter.once('test', listener);
-      eventEmitter.emit('test');
-      assert.equal(count, 1);
-      eventEmitter.emit('test');
-      assert.equal(count, 1);
-    });
-  });
-
   describe('emit', () => {
     it('should emit events to listeners', () => {
       let count1 = 0;

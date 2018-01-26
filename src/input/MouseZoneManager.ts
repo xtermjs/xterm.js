@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { IMouseZoneManager, IMouseZone } from './Interfaces';
-import { ITerminal } from '../Interfaces';
+import { ITerminal } from '../Types';
+import { IMouseZoneManager, IMouseZone } from './Types';
 
 const HOVER_DURATION = 500;
 

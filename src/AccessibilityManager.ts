@@ -4,10 +4,11 @@
  */
 
 import * as Strings from './Strings';
-import { ITerminal, IBuffer, IDisposable } from './Interfaces';
-import { isMac } from './utils/Browser';
+import { ITerminal, IBuffer } from './Types';
+import { isMac } from './shared/utils/Browser';
 import { RenderDebouncer } from './utils/RenderDebouncer';
 import { addDisposableListener } from './utils/Dom';
+import { IDisposable } from 'xterm';
 
 const MAX_ROWS_TO_READ = 20;
 const ACTIVE_ITEM_ID_PREFIX = 'xterm-active-item-';

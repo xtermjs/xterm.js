@@ -21,6 +21,9 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
+import { ICharset, IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
+import { IMouseZoneManager } from './input/Types';
+import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
 import { Buffer, MAX_BUFFER_SIZE } from './Buffer';
 import { CompositionHelper } from './CompositionHelper';
@@ -35,20 +38,16 @@ import { Renderer } from './renderer/Renderer';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
 import { CharMeasure } from './utils/CharMeasure';
-import * as Browser from './utils/Browser';
+import * as Browser from './shared/utils/Browser';
 import * as Strings from './Strings';
 import { MouseHelper } from './utils/MouseHelper';
 import { CHARSETS } from './Charsets';
-import { CustomKeyEventHandler, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
-import { ITerminal, IBrowser, ICharset, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper, ITheme, ILinkifier } from './Interfaces';
 import { BELL_SOUND } from './utils/Sounds';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
-import { IMouseZoneManager } from './input/Interfaces';
 import { MouseZoneManager } from './input/MouseZoneManager';
-import { initialize as initializeCharAtlas } from './renderer/CharAtlas';
-import { IRenderer } from './renderer/Interfaces';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ScreenDprMonitor } from './utils/ScreenDprMonitor';
+import { ITheme } from 'xterm';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -78,6 +77,8 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   enableBold: true,
   fontFamily: 'courier-new, courier, monospace',
   fontSize: 15,
+  fontWeight: 'normal',
+  fontWeightBold: 'bold',
   lineHeight: 1.0,
   letterSpacing: 0,
   scrollback: 1000,
@@ -369,6 +370,16 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
           value = 'block';
         }
         break;
+      case 'fontWeight':
+        if (!value) {
+          value = 'normal';
+        }
+        break;
+      case 'fontWeightBold':
+        if (!value) {
+          value = 'bold';
+        }
+        break;
       case 'lineHeight':
         if (value < 1) {
           console.warn(`${key} cannot be less than 1, value: ${value}`);
@@ -422,11 +433,14 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       case 'enableBold':
       case 'letterSpacing':
       case 'lineHeight':
+      case 'fontWeight':
+      case 'fontWeightBold':
+        const didCharSizeChange = (key === 'fontWeight' || key === 'fontWeightBold' || key === 'enableBold');
+
         // When the font changes the size of the cells may change which requires a renderer clear
         this.renderer.clear();
-        this.renderer.onResize(this.cols, this.rows, false);
+        this.renderer.onResize(this.cols, this.rows, didCharSizeChange);
         this.refresh(0, this.rows - 1);
-        // this.charMeasure.measure(this.options);
       case 'scrollback':
         this.buffers.resize(this.cols, this.rows);
         this.viewport.syncScrollArea();
@@ -588,8 +602,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.context = this.parent.ownerDocument.defaultView;
     this.document = this.parent.ownerDocument;
     this.body = <HTMLBodyElement>this.document.body;
-
-    initializeCharAtlas(this.document);
 
     this._screenDprMonitor = new ScreenDprMonitor();
     this._screenDprMonitor.setListener(() => this.emit('dprchange', window.devicePixelRatio));
@@ -2186,13 +2198,15 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 
   private visualBell(): boolean {
-    return this.options.bellStyle === 'visual' ||
-        this.options.bellStyle === 'both';
+    return false;
+    // return this.options.bellStyle === 'visual' ||
+    //     this.options.bellStyle === 'both';
   }
 
   private soundBell(): boolean {
-    return this.options.bellStyle === 'sound' ||
-        this.options.bellStyle === 'both';
+    return this.options.bellStyle === 'sound';
+    // return this.options.bellStyle === 'sound' ||
+    //     this.options.bellStyle === 'both';
   }
 
   private syncBellSound(): void {

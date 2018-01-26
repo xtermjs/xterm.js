@@ -1,4 +1,5 @@
-import { ITerminal, IDisposable } from '../Interfaces';
+import { ITerminal } from '../Types';
+import { IDisposable } from 'xterm';
 
 /**
  * Debounces calls to render terminal rows using animation frames.
