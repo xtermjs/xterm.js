@@ -3,13 +3,11 @@
  * @license MIT
  */
 
-import { IColorSet, IRenderDimensions } from './Interfaces';
-import { IBuffer, ICharMeasure, ILinkHoverEvent, ITerminal, ILinkifierAccessor } from '../Interfaces';
+import { ILinkHoverEvent, ITerminal, ILinkifierAccessor, IBuffer, ICharMeasure, LinkHoverEventTypes } from '../Types';
 import { CHAR_DATA_ATTR_INDEX } from '../Buffer';
 import { GridCache } from './GridCache';
-import { FLAGS } from './Types';
+import { FLAGS, IColorSet, IRenderDimensions } from './Types';
 import { BaseRenderLayer, INVERTED_DEFAULT_COLOR } from './BaseRenderLayer';
-import { LinkHoverEventTypes } from '../Types';
 
 export class LinkRenderLayer extends BaseRenderLayer {
   private _state: ILinkHoverEvent = null;

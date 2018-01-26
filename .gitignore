@@ -19,10 +19,6 @@ fixtures/typings-test/*.js
 # Directories needed for code coverage
 /coverage/
 
-# Keep legacy files out of the repo, this can be removed when we merge v3 into master
+# Keep bundled code out of Git
 dist/
-src/utils/TestUtils.ts
-src/xterm.js
-
-# Keep the demo builds out of Git
 demo/dist/
