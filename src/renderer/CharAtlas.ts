@@ -3,9 +3,10 @@
  * @license MIT
  */
 
-import { ITerminal, ITheme } from '../Interfaces';
-import { IColorSet } from '../renderer/Interfaces';
-import { isFirefox } from '../utils/Browser';
+import { ITerminal } from '../Types';
+import { IColorSet } from './Types';
+import { isFirefox } from '../shared/utils/Browser';
+import { generateCharAtlas, ICharAtlasRequest } from '../shared/CharAtlasGenerator';
 
 export const CHAR_ATLAS_CELL_SPACING = 1;
 
@@ -65,8 +66,28 @@ export function acquireCharAtlas(terminal: ITerminal, colors: IColorSet, scaledC
     }
   }
 
+  const canvasFactory = (width: number, height: number) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    return canvas;
+  };
+
+  const charAtlasConfig: ICharAtlasRequest = {
+    scaledCharWidth,
+    scaledCharHeight,
+    fontSize: terminal.options.fontSize,
+    fontFamily: terminal.options.fontFamily,
+    fontWeight: terminal.options.fontWeight,
+    fontWeightBold: terminal.options.fontWeightBold,
+    background: colors.background,
+    foreground: colors.foreground,
+    ansiColors: colors.ansi,
+    devicePixelRatio: window.devicePixelRatio
+  };
+
   const newEntry: ICharAtlasCacheEntry = {
-    bitmap: generator.generate(scaledCharWidth, scaledCharHeight, terminal.options.fontSize, terminal.options.fontFamily, terminal.options.fontWeight, terminal.options.fontWeightBold, colors.background, colors.foreground, colors.ansi),
+    bitmap: generateCharAtlas(window, canvasFactory, charAtlasConfig),
     config: newConfig,
     ownedBy: [terminal]
   };
@@ -108,125 +129,4 @@ function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean {
       a.scaledCharHeight === b.scaledCharHeight &&
       a.colors.foreground === b.colors.foreground &&
       a.colors.background === b.colors.background;
-}
-
-let generator: CharAtlasGenerator;
-
-/**
- * Initializes the char atlas generator.
- * @param document The document.
- */
-export function initialize(document: Document): void {
-  if (!generator) {
-    generator = new CharAtlasGenerator(document);
-  }
-}
-
-class CharAtlasGenerator {
-  private _canvas: HTMLCanvasElement;
-  private _ctx: CanvasRenderingContext2D;
-
-  constructor(private _document: Document) {
-    this._canvas = this._document.createElement('canvas');
-    this._ctx = this._canvas.getContext('2d', {alpha: false});
-    this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-  }
-
-  public generate(scaledCharWidth: number, scaledCharHeight: number, fontSize: number, fontFamily: string, fontWeight: string, fontWeightBold: string, background: string, foreground: string, ansiColors: string[]): HTMLCanvasElement | Promise<ImageBitmap> {
-    const cellWidth = scaledCharWidth + CHAR_ATLAS_CELL_SPACING;
-    const cellHeight = scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
-    this._canvas.width = 255 * cellWidth;
-    this._canvas.height = (/*default+default bold*/2 + /*0-15*/16) * cellHeight;
-
-    this._ctx.fillStyle = background;
-    this._ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);
-
-    this._ctx.save();
-    this._ctx.fillStyle = foreground;
-    this._ctx.font = this._getFont(fontWeight, fontSize, fontFamily);
-    this._ctx.textBaseline = 'top';
-
-    // Default color
-    for (let i = 0; i < 256; i++) {
-      this._ctx.save();
-      this._ctx.beginPath();
-      this._ctx.rect(i * cellWidth, 0, cellWidth, cellHeight);
-      this._ctx.clip();
-      this._ctx.fillText(String.fromCharCode(i), i * cellWidth, 0);
-      this._ctx.restore();
-    }
-    // Default color bold
-    this._ctx.save();
-    this._ctx.font = this._getFont(fontWeightBold, fontSize, fontFamily);
-    for (let i = 0; i < 256; i++) {
-      this._ctx.save();
-      this._ctx.beginPath();
-      this._ctx.rect(i * cellWidth, cellHeight, cellWidth, cellHeight);
-      this._ctx.clip();
-      this._ctx.fillText(String.fromCharCode(i), i * cellWidth, cellHeight);
-      this._ctx.restore();
-    }
-    this._ctx.restore();
-
-    // Colors 0-15
-    this._ctx.font = this._getFont(fontWeight, fontSize, fontFamily);
-    for (let colorIndex = 0; colorIndex < 16; colorIndex++) {
-      // colors 8-15 are bold
-      if (colorIndex === 8) {
-        this._ctx.font = this._getFont(fontWeightBold, fontSize, fontFamily);
-      }
-      const y = (colorIndex + 2) * cellHeight;
-      // Draw ascii characters
-      for (let i = 0; i < 256; i++) {
-        this._ctx.save();
-        this._ctx.beginPath();
-        this._ctx.rect(i * cellWidth, y, cellWidth, cellHeight);
-        this._ctx.clip();
-        this._ctx.fillStyle = ansiColors[colorIndex];
-        this._ctx.fillText(String.fromCharCode(i), i * cellWidth, y);
-        this._ctx.restore();
-      }
-    }
-    this._ctx.restore();
-
-    // Support is patchy for createImageBitmap at the moment, pass a canvas back
-    // if support is lacking as drawImage works there too. Firefox is also
-    // included here as ImageBitmap appears both buggy and has horrible
-    // performance (tested on v55).
-    if (!('createImageBitmap' in window) || isFirefox) {
-      // Regenerate canvas and context as they are now owned by the char atlas
-      const result = this._canvas;
-      this._canvas = this._document.createElement('canvas');
-      this._ctx = this._canvas.getContext('2d');
-      this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-      return result;
-    }
-
-    const charAtlasImageData = this._ctx.getImageData(0, 0, this._canvas.width, this._canvas.height);
-
-    // Remove the background color from the image so characters may overlap
-    const r = parseInt(background.substr(1, 2), 16);
-    const g = parseInt(background.substr(3, 2), 16);
-    const b = parseInt(background.substr(5, 2), 16);
-    this._clearColor(charAtlasImageData, r, g, b);
-
-    const promise = window.createImageBitmap(charAtlasImageData);
-    // Clear the rect while the promise is in progress
-    this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
-    return promise;
-  }
-
-  private _clearColor(imageData: ImageData, r: number, g: number, b: number): void {
-    for (let offset = 0; offset < imageData.data.length; offset += 4) {
-      if (imageData.data[offset] === r &&
-          imageData.data[offset + 1] === g &&
-          imageData.data[offset + 2] === b) {
-        imageData.data[offset + 3] = 0;
-      }
-    }
-  }
-
-  private _getFont(fontWeight: string, fontSize: number, fontFamily: string): string {
-    return `${fontWeight} ${fontSize * window.devicePixelRatio}px ${fontFamily}`;
-  }
 }

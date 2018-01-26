@@ -3,9 +3,8 @@
  * @license MIT
  */
 
-import { ILinkHoverEvent, ILinkMatcher, ILinkMatcherOptions, ITerminal, IBufferAccessor, ILinkifier, IElementAccessor } from './Interfaces';
-import { LinkMatcherHandler, LinkMatcherValidationCallback, LineData, LinkHoverEventTypes } from './Types';
-import { IMouseZoneManager } from './input/Interfaces';
+import { IMouseZoneManager } from './input/Types';
+import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkMatcherValidationCallback, LineData, LinkHoverEventTypes, ILinkMatcherOptions, ITerminal, IBufferAccessor, ILinkifier, IElementAccessor } from './Types';
 import { MouseZone } from './input/MouseZoneManager';
 import { EventEmitter } from './EventEmitter';
 

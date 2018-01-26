@@ -3,8 +3,6 @@
  * @license MIT
  */
 
-import { contains } from './Generic';
-
 const isNode = (typeof navigator === 'undefined') ? true : false;
 const userAgent = (isNode) ? 'node' : navigator.userAgent;
 const platform = (isNode) ? 'node' : navigator.platform;
@@ -20,3 +18,12 @@ export const isIpad = platform === 'iPad';
 export const isIphone = platform === 'iPhone';
 export const isMSWindows = contains(['Windows', 'Win16', 'Win32', 'WinCE'], platform);
 export const isLinux = platform.indexOf('Linux') >= 0;
+
+/**
+ * Return if the given array contains the given element
+ * @param {Array} array The array to search for the given element.
+ * @param {Object} el The element to look for into the array
+ */
+function contains(arr: any[], el: any): boolean {
+  return arr.indexOf(el) >= 0;
+}

@@ -4,7 +4,7 @@
  */
 
 import { EventEmitter } from '../EventEmitter';
-import { ICircularList } from '../Interfaces';
+import { ICircularList } from '../Types';
 
 /**
  * Represents a circular list; a list with a maximum size that wraps around when push is called,
