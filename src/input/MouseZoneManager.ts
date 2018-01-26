@@ -6,7 +6,7 @@
 import { ITerminal } from '../Types';
 import { IMouseZoneManager, IMouseZone } from './Types';
 
-const HOVER_DURATION = 500;
+export const HOVER_DURATION = 500;
 
 /**
  * The MouseZoneManager allows components to register zones within the terminal
@@ -130,7 +130,13 @@ export class MouseZoneManager implements IMouseZoneManager {
     }
 
     // Restart the tooltip timeout
-    this._tooltipTimeout = <number><any>setTimeout(() => this._onTooltip(e), HOVER_DURATION);
+    if (zone.tooltipDelay <= 0) {
+      // Trigger the tooltip immediately, don't queue it up into the event
+      // loop.
+      this._onTooltip(e);
+    } else {
+      this._tooltipTimeout = <number><any>setTimeout(() => this._onTooltip(e), zone.tooltipDelay);
+    }
   }
 
   private _onTooltip(e: MouseEvent): void {
@@ -191,7 +197,8 @@ export class MouseZone implements IMouseZone {
     public clickCallback: (e: MouseEvent) => any,
     public hoverCallback?: (e: MouseEvent) => any,
     public tooltipCallback?: (e: MouseEvent) => any,
-    public leaveCallback?: () => void
+    public leaveCallback?: () => void,
+    public tooltipDelay: number = HOVER_DURATION,
   ) {
   }
 }

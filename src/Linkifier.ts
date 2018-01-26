@@ -5,7 +5,7 @@
 
 import { IMouseZoneManager } from './input/Types';
 import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkMatcherValidationCallback, LineData, LinkHoverEventTypes, ILinkMatcherOptions, ITerminal, IBufferAccessor, ILinkifier, IElementAccessor } from './Types';
-import { MouseZone } from './input/MouseZoneManager';
+import { MouseZone, HOVER_DURATION } from './input/MouseZoneManager';
 import { EventEmitter } from './EventEmitter';
 
 const protocolClause = '(https?:\\/\\/)';
@@ -142,6 +142,10 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     if (this._nextLinkMatcherId !== HYPERTEXT_LINK_MATCHER_ID && !handler) {
       throw new Error('handler must be defined');
     }
+    let tooltipDelay = options.tooltipDelay;
+    if (tooltipDelay === undefined) {
+      tooltipDelay = HOVER_DURATION;
+    }
     const matcher: ILinkMatcher = {
       id: this._nextLinkMatcherId++,
       regex,
@@ -150,7 +154,8 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       validationCallback: options.validationCallback,
       hoverTooltipCallback: options.tooltipCallback,
       hoverLeaveCallback: options.leaveCallback,
-      priority: options.priority || 0
+      priority: options.priority || 0,
+      tooltipDelay: tooltipDelay
     };
     this._addLinkMatcherToList(matcher);
     return matcher.id;
@@ -290,7 +295,8 @@ export class Linkifier extends EventEmitter implements ILinkifier {
         if (matcher.hoverLeaveCallback) {
           matcher.hoverLeaveCallback();
         }
-      }
+      },
+      matcher.tooltipDelay
     ));
   }
 }

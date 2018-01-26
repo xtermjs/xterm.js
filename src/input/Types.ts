@@ -16,4 +16,5 @@ export interface IMouseZone {
   hoverCallback?: (e: MouseEvent) => any;
   tooltipCallback?: (e: MouseEvent) => any;
   leaveCallback?: () => any;
+  tooltipDelay?: number;
 }
