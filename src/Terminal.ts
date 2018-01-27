@@ -46,6 +46,33 @@ import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { MouseZoneManager } from './input/MouseZoneManager';
 import { ITheme } from 'xterm';
 
+// reg + shift key mappings for digits and special chars
+const KEYCODE_KEY_MAPPINGS = {
+  // digits 0-9
+  48: ['0', ')'],
+  49: ['1', '!'],
+  50: ['2', '@'],
+  51: ['3', '#'],
+  52: ['4', '$'],
+  53: ['5', '%'],
+  54: ['6', '^'],
+  55: ['7', '&'],
+  56: ['8', '*'],
+  57: ['9', '('],
+
+  // special chars
+  186: [';', ':'],
+  187: ['=', '+'],
+  188: [',', '<'],
+  189: ['-', '_'],
+  190: ['.', '>'],
+  191: ['/', '?'],
+  192: ['`', '~'],
+  219: ['[', '{'],
+  221: [']', '}'],
+  222: ['\'', '|']
+};
+
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
 
@@ -1727,44 +1754,13 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
           }
         } else if ((!this.browser.isMac || this.options.macOptionIsMeta) && ev.altKey && !ev.metaKey) {
           // On macOS this is a third level shift when !macOptionIsMeta. Use <Esc> instead.
-          if (ev.keyCode >= 65 && ev.keyCode <= 90) {
+          const keyMapping = KEYCODE_KEY_MAPPINGS[ev.keyCode];
+          const key = keyMapping && keyMapping[!ev.shiftKey ? 0 : 1];
+          if (key) {
+            result.key = C0.ESC + key;
+          } else if (ev.keyCode >= 65 && ev.keyCode <= 90) {
             const keyCode = ev.ctrlKey ? ev.keyCode - 64 : ev.keyCode + 32;
             result.key = C0.ESC + String.fromCharCode(keyCode);
-          } else if (ev.keyCode >= 48 && ev.keyCode <= 57) {
-            result.key = C0.ESC + (ev.keyCode - 48);
-          } else {
-            const t = (p, s) => !ev.shiftKey ? p : s;
-            switch (ev.keyCode) {
-              case 186:
-                result.key = C0.ESC + t(';', ':');
-                break;
-              case 187:
-                result.key = C0.ESC + t('=', '+');
-                break;
-              case 188:
-                result.key = C0.ESC + t(',', '<');
-                break;
-              case 189:
-                result.key = C0.ESC + t('-', '_');
-                break;
-              case 190:
-                result.key = C0.ESC + t('.', '>');
-                break;
-              case 192:
-                // the tilde is a DEAD key
-                result.key = C0.ESC + '`';
-                break;
-              case 219:
-                result.key = C0.ESC + t('[', '{');
-                break;
-              case 221:
-                result.key = C0.ESC + t(']', '}');
-                break;
-              case 222:
-                result.key = C0.ESC + t('\'', '|');
-                break;
-
-            }
           }
         } else if (this.browser.isMac && !ev.altKey && !ev.ctrlKey && ev.metaKey) {
           if (ev.keyCode === 65) { // cmd + a
