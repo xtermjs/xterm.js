@@ -73,8 +73,6 @@ export class AccessibilityManager implements IDisposable {
     this._renderRowsDebouncer = new RenderDebouncer(this._terminal, this._renderRows.bind(this));
     this._refreshRows();
 
-    // this._navigationMode = new NavigationMode(this._terminal, this._rowContainer, this._rowElements, this);
-
     this._liveRegion = document.createElement('div');
     this._liveRegion.classList.add('live-region');
     this._liveRegion.setAttribute('aria-live', 'assertive');
@@ -83,7 +81,6 @@ export class AccessibilityManager implements IDisposable {
     this._terminal.element.insertAdjacentElement('afterbegin', this._accessibilityTreeRoot);
 
     this._disposables.push(this._renderRowsDebouncer);
-    // this._disposables.push(this._navigationMode);
     this._disposables.push(this._terminal.addDisposableListener('resize', data => this._onResize(data.cols, data.rows)));
     this._disposables.push(this._terminal.addDisposableListener('refresh', data => this._refreshRows(data.start, data.end)));
     this._disposables.push(this._terminal.addDisposableListener('scroll', data => this._refreshRows()));
@@ -118,56 +115,60 @@ export class AccessibilityManager implements IDisposable {
     const boundaryElement = <HTMLElement>e.target;
     const beforeBoundaryElement = <HTMLElement>this._rowElements[position === BoundaryPosition.Top ? 1 : this._rowElements.length - 2];
 
-    // Don't scroll if the buffer top has been reached
-    const posInSet = this._rowElements[0].getAttribute('aria-posinset');
-    if (posInSet === '1') {
+    // Don't scroll if the buffer top has reached the end in that direction
+    const posInSet = boundaryElement.getAttribute('aria-posinset');
+    const lastRowPos = position === BoundaryPosition.Top ? '1' : `${this._terminal.buffer.lines.length}`;
+    if (posInSet === lastRowPos) {
       return;
     }
-    console.log('posInSet', posInSet);
 
     // Don't scroll when the last focused item was not the second row (focus is going the other
     // direction)
-    console.log('related', <HTMLElement>e.relatedTarget);
     if (<HTMLElement>e.relatedTarget !== beforeBoundaryElement) {
       console.log('cancel');
       return;
     }
 
-    boundaryElement.removeEventListener('focus', this._topBoundaryFocusListener);
-    let oldLastElement: HTMLElement;
-    // TODO: oldLastElement.removeEventListener(...)
-
+    // TODO: Refactor to reduce duplication, define top and bottom boundary elements
+    let otherBoundaryElement: HTMLElement;
     if (position === BoundaryPosition.Top) {
-      oldLastElement = this._rowElements.pop();
+      // Remove old other boundary element from array
+      otherBoundaryElement = this._rowElements.pop();
+
+      // Remove listeners from old boundary elements
+      boundaryElement.removeEventListener('focus', this._topBoundaryFocusListener);
+      otherBoundaryElement.removeEventListener('focus', this._bottomBoundaryFocusListener);
+
+      // Add new element to array/DOM
       this._rowElements.unshift(this._createAccessibilityTreeNode());
-      this._rowElements[0].addEventListener('focus', this._topBoundaryFocusListener);
       this._rowContainer.insertAdjacentElement('afterbegin', this._rowElements[0]);
+
+      // Add listeners to new boundary elements
+      this._rowElements[0].addEventListener('focus', this._topBoundaryFocusListener);
+      this._rowElements[this._rowElements.length - 1].addEventListener('focus', this._bottomBoundaryFocusListener);
     } else {
-      oldLastElement = this._rowElements.shift();
+      // Remove old other boundary element from array
+      otherBoundaryElement = this._rowElements.shift();
+
+      // Remove listeners from old boundary elements
+      otherBoundaryElement.removeEventListener('focus', this._topBoundaryFocusListener);
+      boundaryElement.removeEventListener('focus', this._bottomBoundaryFocusListener);
+
+      // Add new element to array/DOM
       this._rowElements.push(this._createAccessibilityTreeNode());
-      this._rowElements[this._rowElements.length - 1].addEventListener('focus', this._topBoundaryFocusListener);
       this._rowContainer.appendChild(this._rowElements[this._rowElements.length - 1]);
+
+      // Add listeners to new boundary elements
+      this._rowElements[0].addEventListener('focus', this._topBoundaryFocusListener);
+      this._rowElements[this._rowElements.length - 1].addEventListener('focus', this._bottomBoundaryFocusListener);
     }
-    this._rowContainer.removeChild(oldLastElement);
-
-
-
-
-    // TODO: Add bottom boundary listeners and remove in both cases
-
-
-
+    this._rowContainer.removeChild(otherBoundaryElement);
 
     // Scroll up
     this._terminal.scrollLines(position === BoundaryPosition.Top ? -1 : 1);
 
     // TODO: Only refresh single
     this._refreshRowsDimensions();
-
-    // Focus the new active element
-    // this._rowContainer.setAttribute('aria-activedescendant', this._activeItemId);
-    // this._focusedElement = this._rowElements[1];
-    // this._focusedElement.id = this._activeItemId;
 
     // Focus new boundary before element
     this._rowElements[position === BoundaryPosition.Top ? 1 : this._rowElements.length - 2].focus();
