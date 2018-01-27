@@ -105,7 +105,7 @@ export class AccessibilityManager implements IDisposable {
 
   private _onBoundaryFocus(e: FocusEvent, position: BoundaryPosition): void {
     const boundaryElement = <HTMLElement>e.target;
-    const beforeBoundaryElement = <HTMLElement>this._rowElements[position === BoundaryPosition.Top ? 1 : this._rowElements.length - 2];
+    const beforeBoundaryElement = this._rowElements[position === BoundaryPosition.Top ? 1 : this._rowElements.length - 2];
 
     // Don't scroll if the buffer top has reached the end in that direction
     const posInSet = boundaryElement.getAttribute('aria-posinset');
@@ -116,50 +116,44 @@ export class AccessibilityManager implements IDisposable {
 
     // Don't scroll when the last focused item was not the second row (focus is going the other
     // direction)
-    if (<HTMLElement>e.relatedTarget !== beforeBoundaryElement) {
-      console.log('cancel');
+    if (e.relatedTarget !== beforeBoundaryElement) {
       return;
     }
 
-    // TODO: Refactor to reduce duplication, define top and bottom boundary elements
-    let otherBoundaryElement: HTMLElement;
+    // Remove old boundary element from array
+    let topBoundaryElement: HTMLElement;
+    let bottomBoundaryElement: HTMLElement;
     if (position === BoundaryPosition.Top) {
-      // Remove old other boundary element from array
-      otherBoundaryElement = this._rowElements.pop();
+      topBoundaryElement = boundaryElement;
+      bottomBoundaryElement = this._rowElements.pop();
+      this._rowContainer.removeChild(bottomBoundaryElement);
+    } else {
+      topBoundaryElement = this._rowElements.shift();
+      bottomBoundaryElement = boundaryElement;
+      this._rowContainer.removeChild(topBoundaryElement);
+    }
 
-      // Remove listeners from old boundary elements
-      boundaryElement.removeEventListener('focus', this._topBoundaryFocusListener);
-      otherBoundaryElement.removeEventListener('focus', this._bottomBoundaryFocusListener);
+    // Remove listeners from old boundary elements
+    topBoundaryElement.removeEventListener('focus', this._topBoundaryFocusListener);
+    bottomBoundaryElement.removeEventListener('focus', this._bottomBoundaryFocusListener);
 
-      // Add new element to array/DOM
+    // Add new element to array/DOM
+    if (position === BoundaryPosition.Top) {
       this._rowElements.unshift(this._createAccessibilityTreeNode());
       this._rowContainer.insertAdjacentElement('afterbegin', this._rowElements[0]);
-
-      // Add listeners to new boundary elements
-      this._rowElements[0].addEventListener('focus', this._topBoundaryFocusListener);
-      this._rowElements[this._rowElements.length - 1].addEventListener('focus', this._bottomBoundaryFocusListener);
     } else {
-      // Remove old other boundary element from array
-      otherBoundaryElement = this._rowElements.shift();
-
-      // Remove listeners from old boundary elements
-      otherBoundaryElement.removeEventListener('focus', this._topBoundaryFocusListener);
-      boundaryElement.removeEventListener('focus', this._bottomBoundaryFocusListener);
-
-      // Add new element to array/DOM
       this._rowElements.push(this._createAccessibilityTreeNode());
       this._rowContainer.appendChild(this._rowElements[this._rowElements.length - 1]);
-
-      // Add listeners to new boundary elements
-      this._rowElements[0].addEventListener('focus', this._topBoundaryFocusListener);
-      this._rowElements[this._rowElements.length - 1].addEventListener('focus', this._bottomBoundaryFocusListener);
     }
-    this._rowContainer.removeChild(otherBoundaryElement);
+
+    // Add listeners to new boundary elements
+    this._rowElements[0].addEventListener('focus', this._topBoundaryFocusListener);
+    this._rowElements[this._rowElements.length - 1].addEventListener('focus', this._bottomBoundaryFocusListener);
 
     // Scroll up
     this._terminal.scrollLines(position === BoundaryPosition.Top ? -1 : 1);
 
-    // TODO: Only refresh single
+    // TODO: Only refresh only a single row
     this._refreshRowsDimensions();
 
     // Focus new boundary before element
