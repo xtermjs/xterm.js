@@ -23,11 +23,9 @@ export class AccessibilityManager implements IDisposable {
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[] = [];
   private _liveRegion: HTMLElement;
-  private _moreRowsElement: HTMLElement;
   private _liveRegionLineCount: number = 0;
 
   private _renderRowsDebouncer: RenderDebouncer;
-  // private _navigationMode: NavigationMode;
 
   private _topBoundaryFocusListener: (e: FocusEvent) => void;
   private _bottomBoundaryFocusListener: (e: FocusEvent) => void;
@@ -48,12 +46,6 @@ export class AccessibilityManager implements IDisposable {
   constructor(private _terminal: ITerminal) {
     this._accessibilityTreeRoot = document.createElement('div');
     this._accessibilityTreeRoot.classList.add('xterm-accessibility');
-
-    this._moreRowsElement = document.createElement('div');
-    this._moreRowsElement.classList.add('xterm-message');
-    this._moreRowsElement.style.clip = 'clip(0 0 0 0)';
-    this._moreRowsElement.textContent = Strings.navigationModeMoreRows;
-    this._accessibilityTreeRoot.appendChild(this._moreRowsElement);
 
     this._rowContainer = document.createElement('div');
     this._rowContainer.classList.add('xterm-accessibility-tree');
@@ -176,25 +168,6 @@ export class AccessibilityManager implements IDisposable {
     // Prevent the standard behavior
     e.preventDefault();
     e.stopImmediatePropagation();
-  }
-
-  public get isNavigationModeActive(): boolean {
-    // TODO: Remove this function
-    return true;
-    // return this._navigationMode.isActive;
-  }
-
-  public enterNavigationMode(): void {
-    // this._navigationMode.enter();
-
-    // this._isNavigationModeActive = true;
-    this.announce('Entered line navigation mode');
-    // this._rowContainer.tabIndex = 0;
-    // this._rowContainer.setAttribute('role', 'list');
-    // this._rowContainer.setAttribute('aria-activedescendant', this._activeItemId);
-    // this._navigateToElement(this._terminal.buffer.ydisp + this._terminal.buffer.y);
-    // this._rowContainer.focus();
-    this._rowElements[this._rowElements.length - 1].focus();
   }
 
   private _onResize(cols: number, rows: number): void {

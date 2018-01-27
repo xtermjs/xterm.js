@@ -1374,12 +1374,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     }
   }
 
-  public enterNavigationMode(): void {
-    if (this._accessibilityManager) {
-      this._accessibilityManager.enterNavigationMode();
-    }
-  }
-
   /**
    * Gets whether the terminal has an active selection.
    */
@@ -1420,10 +1414,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param {KeyboardEvent} ev The keydown event to be handled.
    */
   protected _keyDown(ev: KeyboardEvent): boolean {
-    if (this._accessibilityManager && this._accessibilityManager.isNavigationModeActive) {
-      return;
-    }
-
     if (this.customKeyEventHandler && this.customKeyEventHandler(ev) === false) {
       return false;
     }

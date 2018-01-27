@@ -33,7 +33,6 @@ var terminalContainer = document.getElementById('terminal-container'),
       bellStyle: document.querySelector('#option-bell-style'),
       screenReaderMode: document.querySelector('#option-screen-reader-mode')
     },
-    navigationModeElement = document.querySelector('#screen-reader-navigation-mode'),
     colsElement = document.getElementById('cols'),
     rowsElement = document.getElementById('rows');
 
@@ -86,13 +85,6 @@ optionElements.tabstopwidth.addEventListener('change', function () {
 });
 optionElements.screenReaderMode.addEventListener('change', function () {
   term.setOption('screenReaderMode', optionElements.screenReaderMode.checked);
-});
-navigationModeElement.addEventListener('click', function () {
-  if (term.getOption('screenReaderMode')) {
-    term.enterNavigationMode();
-  } else {
-    console.warn('screenReaderMode must be true to enter navigation mode');
-  }
 });
 
 createTerminal();
