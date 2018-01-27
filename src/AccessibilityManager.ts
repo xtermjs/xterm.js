@@ -139,11 +139,15 @@ export class AccessibilityManager implements IDisposable {
 
     // Add new element to array/DOM
     if (position === BoundaryPosition.Top) {
-      this._rowElements.unshift(this._createAccessibilityTreeNode());
-      this._rowContainer.insertAdjacentElement('afterbegin', this._rowElements[0]);
+      const newElement = this._createAccessibilityTreeNode();
+      this._rowElements.unshift(newElement);
+      this._refreshRowDimensions(newElement);
+      this._rowContainer.insertAdjacentElement('afterbegin', newElement);
     } else {
-      this._rowElements.push(this._createAccessibilityTreeNode());
-      this._rowContainer.appendChild(this._rowElements[this._rowElements.length - 1]);
+      const newElement = this._createAccessibilityTreeNode();
+      this._rowElements.push(newElement);
+      this._refreshRowDimensions(newElement);
+      this._rowContainer.appendChild(newElement);
     }
 
     // Add listeners to new boundary elements
@@ -152,9 +156,6 @@ export class AccessibilityManager implements IDisposable {
 
     // Scroll up
     this._terminal.scrollLines(position === BoundaryPosition.Top ? -1 : 1);
-
-    // TODO: Only refresh only a single row
-    this._refreshRowsDimensions();
 
     // Focus new boundary before element
     this._rowElements[position === BoundaryPosition.Top ? 1 : this._rowElements.length - 2].focus();
@@ -266,20 +267,15 @@ export class AccessibilityManager implements IDisposable {
     // TODO: Clean up
   }
 
-  public rotateRows(): void {
-    // this._rowContainer.removeChild(this._rowElements.shift());
-    // const newRowIndex = this._rowElements.length;
-    // this._rowElements[newRowIndex] = this._createAccessibilityTreeNode();
-    // this._rowContainer.appendChild(this._rowElements[newRowIndex]);
-    // this._refreshRowsDimensions();
-  }
-
   private _refreshRowsDimensions(): void {
     const buffer: IBuffer = (<any>this._terminal.buffer);
-    const dimensions = this._terminal.renderer.dimensions;
     for (let i = 0; i < this._terminal.rows; i++) {
-      this._rowElements[i].style.height = `${dimensions.actualCellHeight}px`;
+      this._refreshRowDimensions(this._rowElements[i]);
     }
+  }
+
+  private _refreshRowDimensions(element: HTMLElement): void {
+    element.style.height = `${this._terminal.renderer.dimensions.actualCellHeight}px`;
   }
 
   public announce(text: string): void {
