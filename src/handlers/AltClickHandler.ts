@@ -20,7 +20,10 @@ export class AltClickHandler {
   private _endCol: number;
   private _lines: ICircularList<LineData>;
 
-  constructor(private _mouseEvent: MouseEvent, private _terminal: ITerminal) {
+  constructor(
+    private _mouseEvent: MouseEvent,
+    private _terminal: ITerminal
+  ) {
     this._lines = this._terminal.buffer.lines;
     this._startCol = this._terminal.buffer.x;
     this._startRow = this._terminal.buffer.y;
@@ -42,7 +45,9 @@ export class AltClickHandler {
    * Writes the escape sequences of arrows to the terminal
    */
   public move(): void {
-    if (this._mouseEvent.altKey) this._terminal.send(this._arrowSequences());
+    if (this._mouseEvent.altKey) {
+      this._terminal.send(this._arrowSequences());
+    }
   }
 
   /**
@@ -199,7 +204,8 @@ export class AltClickHandler {
     startRow: number,
     endCol: number,
     endRow: number,
-    forward: boolean): string {
+    forward: boolean
+  ): string {
     let currentCol = startCol;
     let currentRow = startRow;
     let bufferStr = '';
@@ -233,36 +239,23 @@ export class AltClickHandler {
    * Constructs the escape sequence for clicking an arrow
    * @param direction The direction to move
    */
-   private _sequence(direction: Direction): string {
-     const mod = this._terminal.applicationCursor ? 'O' : '[';
-     return C0.ESC + mod + direction;
-   }
+  private _sequence(direction: Direction): string {
+    const mod = this._terminal.applicationCursor ? 'O' : '[';
+    return C0.ESC + mod + direction;
+  }
 }
 
 /**
  * Returns a string repeated a given number of times
  * Polyfill from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/repeat
- * @param {Number} count The number of times to repeat the string
- * @param {String} string The string that is to be repeated
+ * @param count The number of times to repeat the string
+ * @param string The string that is to be repeated
  */
 function repeat(count: number, str: string): string {
-  if (count < 0) throw new RangeError('repeat count must be non-negative');
-  if (count === Infinity) throw new RangeError('repeat count must be less than infinity');
-
   count = Math.floor(count);
-  if (str.length === 0 || count === 0) return '';
-
-  // Ensuring count is a 31-bit integer allows us to heavily optimize the
-  // main part. But anyway, most current (August 2014) browsers can't handle
-  // strings 1 << 28 chars or longer, so:
-  if (str.length * count >= 1 << 28) {
-    throw new RangeError('repeat count must not overflow maximum string size');
-  }
-
   let rpt = '';
   for (let i = 0; i < count; i++) {
     rpt += str;
   }
-
   return rpt;
 }

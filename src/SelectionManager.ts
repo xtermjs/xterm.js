@@ -30,6 +30,12 @@ const DRAG_SCROLL_MAX_SPEED = 15;
 const DRAG_SCROLL_INTERVAL = 50;
 
 /**
+ * The maximum amount of time that can have elapsed for an alt click to move the
+ * cursor.
+ */
+const ALT_CLICK_MOVE_CURSOR_TIME = 500;
+
+/**
  * A string containing all characters that are considered word separated by the
  * double click to select work logic.
  */
@@ -544,7 +550,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
     this._removeMouseDownListeners();
 
-    if (this.selectionText.length <= 1 && timeElapsed < 500) {
+    if (this.selectionText.length <= 1 && timeElapsed < ALT_CLICK_MOVE_CURSOR_TIME) {
       (new AltClickHandler(event, this._terminal)).move();
     } else if (this.hasSelection) {
       this._terminal.emit('selection');
