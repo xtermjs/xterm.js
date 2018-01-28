@@ -103,20 +103,24 @@ export class AccessibilityManager implements IDisposable {
     this._rowElements = null;
   }
 
+  public get isNavigatingRows(): boolean {
+    return this._rowElements.indexOf(<HTMLElement>document.activeElement) >= 0;
+  }
+
   private _onBoundaryFocus(e: FocusEvent, position: BoundaryPosition): void {
     const boundaryElement = <HTMLElement>e.target;
     const beforeBoundaryElement = this._rowElements[position === BoundaryPosition.Top ? 1 : this._rowElements.length - 2];
+
+    // Don't scroll when the last focused item was not the second row (focus is going the other
+    // direction)
+    if (e.relatedTarget !== beforeBoundaryElement) {
+      return;
+    }
 
     // Don't scroll if the buffer top has reached the end in that direction
     const posInSet = boundaryElement.getAttribute('aria-posinset');
     const lastRowPos = position === BoundaryPosition.Top ? '1' : `${this._terminal.buffer.lines.length}`;
     if (posInSet === lastRowPos) {
-      return;
-    }
-
-    // Don't scroll when the last focused item was not the second row (focus is going the other
-    // direction)
-    if (e.relatedTarget !== beforeBoundaryElement) {
       return;
     }
 
@@ -161,6 +165,64 @@ export class AccessibilityManager implements IDisposable {
     // Prevent the standard behavior
     e.preventDefault();
     e.stopImmediatePropagation();
+  }
+
+  /**
+   * Moves the focus of the terminal relatively by a number of rows.
+   * @param amount The amount of rows to scroll
+   */
+  public moveRowFocus(amount: number): void {
+    console.log('moveRowFocus', amount);
+    // Do nothing if not navigating rows or the amount to navigate is 0
+    if (!this.isNavigatingRows || amount === 0) {
+      return;
+    }
+
+    // Find and validate the new absolute row position
+    const buffer = this._terminal.buffer;
+    const oldRelativeRow = this._rowElements.indexOf(<HTMLElement>document.activeElement);
+    const oldAbsoluteRow = buffer.ydisp + oldRelativeRow;
+    const newAbsoluteRow = Math.max(Math.min(oldAbsoluteRow + amount, buffer.lines.length - 1), 0);
+    if (oldAbsoluteRow === newAbsoluteRow) {
+      return;
+    }
+
+    // Find the new relative row, this cannot be on a boundary element unless the focused row is the
+    // top-most or bottom-most row in the buffer.
+    let newRelativeRow: number;
+    if (newAbsoluteRow === 0) {
+      newRelativeRow = 0;
+    } else if (newAbsoluteRow === buffer.lines.length - 1) {
+      newRelativeRow = this._terminal.rows - 1;
+    } else {
+      newRelativeRow = Math.max(Math.min(oldRelativeRow + amount, this._terminal.rows - 2), 1);
+    }
+
+    // Find the new viewport position
+    let newYDisp: number;
+    if (newAbsoluteRow === 0) {
+      // Start of buffer
+      newYDisp = 0;
+    } else if (newAbsoluteRow === buffer.lines.length - 1) {
+      // End of buffer
+      newYDisp = buffer.lines.length - 1 - this._terminal.rows;
+    } else if (newAbsoluteRow > buffer.ydisp && newAbsoluteRow < buffer.ydisp + this._terminal.rows - 1) {
+      // No scrolling necessary
+      newYDisp = buffer.ydisp;
+    } else if (newAbsoluteRow < oldAbsoluteRow) {
+      // Scrolling up needed
+      newYDisp = newAbsoluteRow - 1;
+    } else { // if (newAbsoluteRow > oldAbsoluteRow)
+      // Scrolling down needed
+      newYDisp = newAbsoluteRow + this._terminal.rows - 2;
+    }
+
+    // Perform scroll
+    const scrollAmount = newYDisp - buffer.ydisp;
+    this._terminal.scrollLines(scrollAmount);
+
+    // Focus new row
+    this._rowElements[newRelativeRow].focus();
   }
 
   private _onResize(cols: number, rows: number): void {
