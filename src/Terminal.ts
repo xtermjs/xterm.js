@@ -85,6 +85,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   cancelEvents: false,
   disableStdin: false,
   useFlowControl: false,
+  allowTransparency: false,
   tabStopWidth: 8,
   theme: null
   // programFeatures: false,
