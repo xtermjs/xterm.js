@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminal } from './Interfaces';
+import { ITerminal } from './Types';
 
 interface IPosition {
   start: number;

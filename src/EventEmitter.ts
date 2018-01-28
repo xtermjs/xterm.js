@@ -3,10 +3,10 @@
  * @license MIT
  */
 
-import { IEventEmitter, IListenerType } from './Interfaces';
+import { IEventEmitter } from 'xterm';
 
 export class EventEmitter implements IEventEmitter {
-  private _events: {[type: string]: IListenerType[]};
+  private _events: {[type: string]: ((...args: any[]) => void)[]};
 
   constructor() {
     // Restore the previous events if available, this will happen if the
@@ -14,12 +14,12 @@ export class EventEmitter implements IEventEmitter {
     this._events = this._events || {};
   }
 
-  public on(type: string, listener: IListenerType): void {
+  public on(type: string, listener: ((...args: any[]) => void)): void {
     this._events[type] = this._events[type] || [];
     this._events[type].push(listener);
   }
 
-  public off(type: string, listener: IListenerType): void {
+  public off(type: string, listener: ((...args: any[]) => void)): void {
     if (!this._events[type]) {
       return;
     }
@@ -28,7 +28,7 @@ export class EventEmitter implements IEventEmitter {
     let i = obj.length;
 
     while (i--) {
-      if (obj[i] === listener || obj[i].listener === listener) {
+      if (obj[i] === listener) {
         obj.splice(i, 1);
         return;
       }
@@ -41,16 +41,6 @@ export class EventEmitter implements IEventEmitter {
     }
   }
 
-  public once(type: string, listener: IListenerType): void {
-    function on(): void {
-      let args = Array.prototype.slice.call(arguments);
-      this.off(type, on);
-      listener.apply(this, args);
-    }
-    (<any>on).listener = listener;
-    this.on(type, on);
-  }
-
   public emit(type: string, ...args: any[]): void {
     if (!this._events[type]) {
       return;
@@ -61,7 +51,7 @@ export class EventEmitter implements IEventEmitter {
     }
   }
 
-  public listeners(type: string): IListenerType[] {
+  public listeners(type: string): ((...args: any[]) => void)[] {
     return this._events[type] || [];
   }
 

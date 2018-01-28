@@ -166,6 +166,10 @@ Xterm.js is maintained by [SourceLair](https://www.sourcelair.com/) and a few ex
 
 To contribute either code, documentation or issues to xterm.js please read the [Contributing document](CONTRIBUTING.md) beforehand. The development of xterm.js does not require any special tool. All you need is an editor that supports JavaScript/TypeScript and a browser. You will need Node.js installed locally to get all the features working in the demo.
 
+### Code structure
+
+`src/` is roughly split up into areas of functionality such as `renderer/` that handles all rendering and `utils/` which provides general utility functions. The `shared/` folder contains code that can be used from either the main thread or a web worker thread, all code inside a `shared/` folder should only ever import other code from a `shared/` folder to minimize the amount of code run what launching a web worker.
+
 ## License Agreement
 
 If you contribute code to this project, you are implicitly allowing your code to be distributed under the MIT license. You are also implicitly verifying that all code is your original work.

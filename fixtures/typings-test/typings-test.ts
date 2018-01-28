@@ -159,6 +159,7 @@ namespace methods_core {
       t.setOption('cursorBlink', true);
       t.setOption('debug', true);
       t.setOption('disableStdin', true);
+      t.setOption('enableBold', true);
       t.setOption('fontWeight', 'normal');
       t.setOption('fontWeight', 'bold');
       t.setOption('fontWeightBold', 'normal');

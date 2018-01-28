@@ -113,8 +113,23 @@ export class SearchHelper implements ISearchHelper {
   private _findInLine(term: string, y: number): ISearchResult {
     const lowerStringLine = this._terminal.buffer.translateBufferLineToString(y, true).toLowerCase();
     const lowerTerm = term.toLowerCase();
-    const searchIndex = lowerStringLine.indexOf(lowerTerm);
+    let searchIndex = lowerStringLine.indexOf(lowerTerm);
     if (searchIndex >= 0) {
+      const line = this._terminal.buffer.lines.get(y);
+      for (let i = 0; i < searchIndex; i++) {
+        const charData = line[i];
+        // Adjust the searchIndex to normalize emoji into single chars
+        const char = charData[1/*CHAR_DATA_CHAR_INDEX*/];
+        if (char.length > 1) {
+          searchIndex -= char.length - 1;
+        }
+        // Adjust the searchIndex for empty characters following wide unicode
+        // chars (eg. CJK)
+        const charWidth = charData[2/*CHAR_DATA_WIDTH_INDEX*/];
+        if (charWidth === 0) {
+          searchIndex++;
+        }
+      }
       return {
         term,
         col: searchIndex,

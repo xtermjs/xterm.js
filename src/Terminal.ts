@@ -21,6 +21,9 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
+import { ICharset, IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
+import { IMouseZoneManager } from './input/Types';
+import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
 import { Buffer, MAX_BUFFER_SIZE } from './Buffer';
 import { CompositionHelper } from './CompositionHelper';
@@ -36,17 +39,13 @@ import { Renderer } from './renderer/Renderer';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
 import { CharMeasure } from './utils/CharMeasure';
-import * as Browser from './utils/Browser';
+import * as Browser from './shared/utils/Browser';
 import { MouseHelper } from './utils/MouseHelper';
 import { CHARSETS } from './Charsets';
-import { CustomKeyEventHandler, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
-import { ITerminal, IBrowser, ICharset, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper, ITheme, ILinkifier } from './Interfaces';
 import { BELL_SOUND } from './utils/Sounds';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
-import { IMouseZoneManager } from './input/Interfaces';
 import { MouseZoneManager } from './input/MouseZoneManager';
-import { initialize as initializeCharAtlas } from './renderer/CharAtlas';
-import { IRenderer } from './renderer/Interfaces';
+import { ITheme } from 'xterm';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -73,6 +72,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   cursorStyle: 'block',
   bellSound: BELL_SOUND,
   bellStyle: 'none',
+  enableBold: true,
   fontFamily: 'courier-new, courier, monospace',
   fontSize: 15,
   fontWeight: 'normal',
@@ -425,11 +425,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         this.renderer.clear();
         this.charMeasure.measure(this.options);
         break;
+      case 'enableBold':
       case 'letterSpacing':
       case 'lineHeight':
       case 'fontWeight':
       case 'fontWeightBold':
-        const didCharSizeChange = (key === 'fontWeight' || key === 'fontWeightBold');
+        const didCharSizeChange = (key === 'fontWeight' || key === 'fontWeightBold' || key === 'enableBold');
 
         // When the font changes the size of the cells may change which requires a renderer clear
         this.renderer.clear();
@@ -589,8 +590,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.context = this.parent.ownerDocument.defaultView;
     this.document = this.parent.ownerDocument;
     this.body = <HTMLBodyElement>this.document.body;
-
-    initializeCharAtlas(this.document);
 
     // Create main element container
     this.element = this.document.createElement('div');
@@ -2140,13 +2139,15 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 
   private visualBell(): boolean {
-    return this.options.bellStyle === 'visual' ||
-        this.options.bellStyle === 'both';
+    return false;
+    // return this.options.bellStyle === 'visual' ||
+    //     this.options.bellStyle === 'both';
   }
 
   private soundBell(): boolean {
-    return this.options.bellStyle === 'sound' ||
-        this.options.bellStyle === 'both';
+    return this.options.bellStyle === 'sound';
+    // return this.options.bellStyle === 'sound' ||
+    //     this.options.bellStyle === 'both';
   }
 
   private syncBellSound(): void {

@@ -24,6 +24,7 @@
       "parameter"
     ],
     "eofline": true,
+    "no-duplicate-imports": true,
     "no-eval": true,
     "no-internal-module": true,
     "no-trailing-whitespace": true,
