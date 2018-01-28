@@ -8,6 +8,13 @@ import { C0 } from '../EscapeSequences';
 import { CircularList } from '../utils/CircularList';
 import { LineData } from '../Types';
 
+enum Direction {
+  Up = 'A',
+  Down = 'B',
+  Right = 'C',
+  Left = 'D'
+};
+
 export class AltClickHandler {
   private _startRow: number;
   private _startCol: number;
@@ -66,7 +73,7 @@ export class AltClickHandler {
       return repeat(this._bufferLine(
         this._startCol, this._startRow, this._startCol,
         this._startRow - this._wrappedRowsForRow(this._startRow), false
-      ).length, this._colSequence(false));
+      ).length, this._sequence(Direction.Left));
     }
   }
 
@@ -80,7 +87,7 @@ export class AltClickHandler {
 
     let rowsToMove = Math.abs(startRow - endRow) - this._wrappedRowsCount();
 
-    return repeat(rowsToMove, this._rowSequence(this._shouldMoveUp()));
+    return repeat(rowsToMove, this._sequence(this._verticalDirection()));
   }
 
   /**
@@ -95,11 +102,12 @@ export class AltClickHandler {
     }
 
     let endRow = this._endRow;
-    let forward = this._shouldMoveForward();
+    let direction = this._horizontalDirection();
 
     return repeat(this._bufferLine(
-      this._startCol, startRow, this._endCol, endRow, forward
-    ).length, this._colSequence(forward));
+      this._startCol, startRow, this._endCol, endRow,
+      direction === Direction.Right
+    ).length, this._sequence(direction));
   }
 
   /**
@@ -116,7 +124,7 @@ export class AltClickHandler {
     let endRow = this._endRow - this._wrappedRowsForRow(this._endRow);
 
     for (let i = 0; i < Math.abs(startRow - endRow); i++) {
-      let direction = this._shouldMoveUp() ? -1 : 1;
+      let direction = this._verticalDirection() === Direction.Up ? -1 : 1;
 
       if ((<any>this._lines.get(startRow + (direction * i))).isWrapped) {
         wrappedRows++;
@@ -150,7 +158,7 @@ export class AltClickHandler {
   /**
    * Determines if the right or left arrow is needed
    */
-  private _shouldMoveForward(): boolean {
+  private _horizontalDirection(): Direction {
     let startRow;
     if (this._moveToRequestedRow().length > 0) {
       startRow = this._endRow - this._wrappedRowsForRow(this._endRow);
@@ -158,17 +166,25 @@ export class AltClickHandler {
       startRow = this._startRow;
     }
 
-    return (this._startCol < this._endCol &&
+    if ((this._startCol < this._endCol &&
       startRow <= this._endRow) || // down/right or same y/right
       (this._startCol >= this._endCol &&
-      startRow < this._endRow);  // down/left or same y/left
+      startRow < this._endRow)) {  // down/left or same y/left
+      return Direction.Right;
+    } else {
+      return Direction.Left;
+    }
   }
 
   /**
    * Determines if the up or down arrow is needed
    */
-  private _shouldMoveUp(): boolean {
-    return this._startRow > this._endRow;
+  private _verticalDirection(): Direction {
+    if (this._startRow > this._endRow) {
+      return Direction.Up;
+    } else {
+      return Direction.Down;
+    }
   }
 
   /**
@@ -216,36 +232,13 @@ export class AltClickHandler {
   }
 
   /**
-   * Arrow escape sequences
+   * Constructs the escape sequence for clicking an arrow
+   * @param direction The direction to move
    */
-
-  /**
-   * Constructs the escape sequence for the left or right arrow
-   * @param forward Right arrow or left arrow
-   */
-  private _colSequence(forward: boolean): string {
-    let mod = this._terminal.applicationCursor ? 'O' : '[';
-
-    if (forward) {
-      return C0.ESC + mod + 'C';
-    } else {
-      return C0.ESC + mod + 'D';
-    }
-  }
-
-  /**
-   * Constructs the escape sequence for clicking the up or down arrow
-   * @param up Up arrow or down arrow
-   */
-  private _rowSequence(up: boolean): string {
-    let mod = this._terminal.applicationCursor ? 'O' : '[';
-
-    if (up) {
-      return C0.ESC + mod + 'A';
-    } else {
-      return C0.ESC + mod + 'B';
-    }
-  }
+   private _sequence(direction: Direction): string {
+     const mod = this._terminal.applicationCursor ? 'O' : '[';
+     return C0.ESC + mod + direction;
+   }
 }
 
 /**
