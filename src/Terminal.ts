@@ -1188,39 +1188,25 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 
   /**
-   * Scrolls the viewport by a number of rows when not navigating rows. When
-   * navigating rows, move focus relatively by a number of rows.
-   * @param amount The number of lines to scroll.
-   */
-  private _accessibilityAwareScrollLines(amount: number): void {
-    console.log('_accessibilityAwareScrollLines');
-    if (this.options.screenReaderMode && this._accessibilityManager.isNavigatingRows) {
-      this._accessibilityManager.moveRowFocus(amount);
-    } else {
-      this.scrollLines(amount);
-    }
-  }
-
-  /**
    * Scroll the display of the terminal by a number of pages.
    * @param {number} pageCount The number of pages to scroll (negative scrolls up).
    */
   public scrollPages(pageCount: number): void {
-    this._accessibilityAwareScrollLines(pageCount * (this.rows - 1));
+    this.scrollLines(pageCount * (this.rows - 1));
   }
 
   /**
    * Scrolls the display of the terminal to the top.
    */
   public scrollToTop(): void {
-    this._accessibilityAwareScrollLines(-this.buffer.ydisp);
+    this.scrollLines(-this.buffer.ydisp);
   }
 
   /**
    * Scrolls the display of the terminal to the bottom.
    */
   public scrollToBottom(): void {
-    this._accessibilityAwareScrollLines(this.buffer.ybase - this.buffer.ydisp);
+    this.scrollLines(this.buffer.ybase - this.buffer.ydisp);
   }
 
   /**
