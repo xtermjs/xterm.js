@@ -141,12 +141,10 @@ export class AccessibilityManager implements IDisposable {
     if (position === BoundaryPosition.Top) {
       const newElement = this._createAccessibilityTreeNode();
       this._rowElements.unshift(newElement);
-      this._refreshRowDimensions(newElement);
       this._rowContainer.insertAdjacentElement('afterbegin', newElement);
     } else {
       const newElement = this._createAccessibilityTreeNode();
       this._rowElements.push(newElement);
-      this._refreshRowDimensions(newElement);
       this._rowContainer.appendChild(newElement);
     }
 
@@ -166,6 +164,9 @@ export class AccessibilityManager implements IDisposable {
   }
 
   private _onResize(cols: number, rows: number): void {
+    // Remove bottom boundary listener
+    this._rowElements[this._rowElements.length - 1].removeEventListener('focus', this._bottomBoundaryFocusListener);
+
     // Grow rows as required
     for (let i = this._rowContainer.children.length; i < this._terminal.rows; i++) {
       this._rowElements[i] = this._createAccessibilityTreeNode();
@@ -176,7 +177,8 @@ export class AccessibilityManager implements IDisposable {
       this._rowContainer.removeChild(this._rowElements.pop());
     }
 
-    // TODO: Fix up boundary listeners
+    // Add bottom boundary listener
+    this._rowElements[this._rowElements.length - 1].addEventListener('focus', this._bottomBoundaryFocusListener);
 
     this._refreshRowsDimensions();
   }
@@ -185,6 +187,7 @@ export class AccessibilityManager implements IDisposable {
     const element = document.createElement('div');
     element.setAttribute('role', 'listitem');
     element.tabIndex = -1;
+    this._refreshRowDimensions(element);
     return element;
   }
 
@@ -200,19 +203,10 @@ export class AccessibilityManager implements IDisposable {
         // Have the screen reader ignore the char if it was just input
         const shiftedChar = this._charsToConsume.shift();
         if (shiftedChar !== char) {
-          if (char === ' ') {
-            // Always use nbsp for spaces in order to preserve the space between characters in
-            // voiceover's caption window
-            this._liveRegion.innerHTML += '&nbsp;';
-          } else {
-            this._liveRegion.textContent += char;
-          }
+          this._announceCharacter(char);
         }
       } else {
-        if (char === ' ') {
-          this._liveRegion.innerHTML += '&nbsp;';
-        } else
-        this._liveRegion.textContent += char;
+        this._announceCharacter(char);
       }
 
       if (char === '\n') {
@@ -255,20 +249,20 @@ export class AccessibilityManager implements IDisposable {
   }
 
   private _renderRows(start: number, end: number): void {
-    const buffer: IBuffer = (<any>this._terminal.buffer);
-    const setSize = (buffer.lines.length).toString();
+    const buffer: IBuffer = this._terminal.buffer;
+    const setSize = buffer.lines.length.toString();
     for (let i = start; i <= end; i++) {
       const lineData = buffer.translateBufferLineToString(buffer.ydisp + i, true);
-      this._rowElements[i].textContent = lineData.length === 0 ? 'Blank line' : lineData;
       const posInSet = (buffer.ydisp + i + 1).toString();
-      this._rowElements[i].setAttribute('aria-posinset', posInSet);
-      this._rowElements[i].setAttribute('aria-setsize', setSize);
+      const element = this._rowElements[i];
+      element.textContent = lineData.length === 0 ? Strings.blankLine : lineData;
+      element.setAttribute('aria-posinset', posInSet);
+      element.setAttribute('aria-setsize', setSize);
     }
-    // TODO: Clean up
   }
 
   private _refreshRowsDimensions(): void {
-    const buffer: IBuffer = (<any>this._terminal.buffer);
+    const buffer: IBuffer = this._terminal.buffer;
     for (let i = 0; i < this._terminal.rows; i++) {
       this._refreshRowDimensions(this._rowElements[i]);
     }
@@ -278,8 +272,13 @@ export class AccessibilityManager implements IDisposable {
     element.style.height = `${this._terminal.renderer.dimensions.actualCellHeight}px`;
   }
 
-  public announce(text: string): void {
-    this._clearLiveRegion();
-    this._liveRegion.textContent = text;
+  private _announceCharacter(char: string): void {
+    if (char === ' ') {
+      // Always use nbsp for spaces in order to preserve the space between characters in
+      // voiceover's caption window
+      this._liveRegion.innerHTML += '&nbsp;';
+    } else {
+      this._liveRegion.textContent += char;
+    }
   }
 }
