@@ -242,7 +242,5 @@ export class Renderer extends EventEmitter implements IRenderer {
     // differ.
     this.dimensions.actualCellHeight = this.dimensions.canvasHeight / this._terminal.rows;
     this.dimensions.actualCellWidth = this.dimensions.canvasWidth / this._terminal.cols;
-
   }
-
 }

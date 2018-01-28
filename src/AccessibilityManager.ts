@@ -80,13 +80,13 @@ export class AccessibilityManager implements IDisposable {
     this._disposables.push(this._terminal.addDisposableListener('a11y.char', (char) => this._onChar(char)));
     this._disposables.push(this._terminal.addDisposableListener('linefeed', () => this._onChar('\n')));
     this._disposables.push(this._terminal.addDisposableListener('a11y.tab', spaceCount => this._onTab(spaceCount)));
-    this._disposables.push(this._terminal.addDisposableListener('charsizechanged', () => this._refreshRowsDimensions()));
     this._disposables.push(this._terminal.addDisposableListener('key', keyChar => this._onKey(keyChar)));
     this._disposables.push(this._terminal.addDisposableListener('blur', () => this._clearLiveRegion()));
     // TODO: Maybe renderer should fire an event on terminal when the characters change and that
     //       should be listened to instead? That would mean that the order of events are always
     //       guarenteed
     this._disposables.push(this._terminal.addDisposableListener('dprchange', () => this._refreshRowsDimensions()));
+    this._disposables.push(this._terminal.renderer.addDisposableListener('resize', () => this._refreshRowsDimensions()));
     // This shouldn't be needed on modern browsers but is present in case the
     // media query that drives the dprchange event isn't supported
     this._disposables.push(addDisposableListener(window, 'resize', () => this._refreshRowsDimensions()));
@@ -262,6 +262,9 @@ export class AccessibilityManager implements IDisposable {
   }
 
   private _refreshRowsDimensions(): void {
+    if (!this._terminal.renderer.dimensions.actualCellHeight) {
+      return;
+    }
     const buffer: IBuffer = this._terminal.buffer;
     for (let i = 0; i < this._terminal.rows; i++) {
       this._refreshRowDimensions(this._rowElements[i]);
