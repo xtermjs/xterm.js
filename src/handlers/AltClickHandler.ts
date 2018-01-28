@@ -172,32 +172,32 @@ export class AltClickHandler {
     endCol: number,
     endRow: number,
     forward: boolean): string {
-    let currentRow = startCol;
-    let currentCol = startRow;
+    let currentCol = startCol;
+    let currentRow = startRow;
     let bufferStr = '';
 
-    while (currentRow !== endCol || (currentCol !== endRow)) {
-      currentRow += forward ? 1 : -1;
+    while (currentCol !== endCol || currentRow !== endRow) {
+      currentCol += forward ? 1 : -1;
 
-      if (forward && currentRow > this._terminal.cols - 1) {
+      if (forward && currentCol > this._terminal.cols - 1) {
         bufferStr += this._terminal.buffer.translateBufferLineToString(
-          currentCol, false, startCol, currentRow
+          currentRow, false, startCol, currentCol
         );
-        currentRow = 0;
+        currentCol = 0;
         startCol = 0;
-        currentCol++;
-      } else if (!forward && currentRow < 0) {
+        currentRow++;
+      } else if (!forward && currentCol < 0) {
         bufferStr += this._terminal.buffer.translateBufferLineToString(
-          currentCol, false, 0, startCol + 1
+          currentRow, false, 0, startCol + 1
         );
-        currentRow = this._terminal.cols - 1;
-        startCol = currentRow;
-        currentCol--;
+        currentCol = this._terminal.cols - 1;
+        startCol = currentCol;
+        currentRow--;
       }
     }
 
     return bufferStr + this._terminal.buffer.translateBufferLineToString(
-      currentCol, false, startCol, currentRow
+      currentRow, false, startCol, currentCol
     );
   }
 
