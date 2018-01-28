@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminal, IBufferSet } from './Interfaces';
+import { ITerminal, IBufferSet } from './Types';
 import { Buffer } from './Buffer';
 import { EventEmitter } from './EventEmitter';
 

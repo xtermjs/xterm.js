@@ -3,11 +3,10 @@
  * @license MIT
  */
 
-import { IColorSet, IRenderDimensions } from './Interfaces';
-import { IBuffer, ICharMeasure, ITerminal } from '../Interfaces';
+import { IBuffer, ICharMeasure, ITerminal } from '../Types';
 import { CHAR_DATA_ATTR_INDEX } from '../Buffer';
 import { GridCache } from './GridCache';
-import { FLAGS } from './Types';
+import { FLAGS, IColorSet, IRenderDimensions } from './Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 
 export class SelectionRenderLayer extends BaseRenderLayer {

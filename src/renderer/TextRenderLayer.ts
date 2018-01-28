@@ -3,12 +3,10 @@
  * @license MIT
  */
 
-import { IColorSet, IRenderDimensions } from './Interfaces';
-import { IBuffer, ICharMeasure, ITerminal } from '../Interfaces';
 import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from '../Buffer';
-import { FLAGS } from './Types';
+import { FLAGS, IColorSet, IRenderDimensions } from './Types';
+import { CharData, IBuffer, ICharMeasure, ITerminal } from '../Types';
 import { GridCache } from './GridCache';
-import { CharData } from '../Types';
 import { BaseRenderLayer, INVERTED_DEFAULT_COLOR } from './BaseRenderLayer';
 
 /**

@@ -5,7 +5,7 @@
  */
 
 import { C0 } from './EscapeSequences';
-import { IInputHandler } from './Interfaces';
+import { IInputHandler } from './Types';
 import { CHARSETS, DEFAULT_CHARSET } from './Charsets';
 
 const normalStateHandler: {[key: string]: (parser: Parser, handler: IInputHandler) => void} = {};

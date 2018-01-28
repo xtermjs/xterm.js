@@ -5,14 +5,13 @@
 
 import jsdom = require('jsdom');
 import { assert } from 'chai';
-import { ITerminal, ICircularList, IBuffer } from './Interfaces';
 import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
 import { SelectionManager } from './SelectionManager';
 import { SelectionModel } from './SelectionModel';
 import { BufferSet } from './BufferSet';
+import { LineData, CharData, ITerminal, ICircularList, IBuffer } from './Types';
 import { MockTerminal } from './utils/TestUtils.test';
-import { LineData, CharData } from './Types';
 
 class TestMockTerminal extends MockTerminal {
   emit(event: string, data: any): void {}

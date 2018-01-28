@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { ITerminal, IViewport } from './Interfaces';
+import { IColorSet } from './renderer/Types';
+import { ITerminal, IViewport } from './Types';
 import { CharMeasure } from './utils/CharMeasure';
-import { IColorSet } from './renderer/Interfaces';
 
 /**
  * Represents the viewport of a terminal, the visible area within the larger buffer of output.
