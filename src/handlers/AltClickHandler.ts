@@ -9,22 +9,19 @@ import { CircularList } from '../utils/CircularList';
 import { LineData } from '../Types';
 
 export class AltClickHandler {
-  private _terminal: Terminal;
   private _startRow: number;
   private _startCol: number;
   private _endRow: number;
   private _endCol: number;
   private _lines: CircularList<LineData>;
-  private _mouseEvent: MouseEvent;
 
-  constructor(mouseEvent: MouseEvent, terminal: Terminal) {
-    this._terminal = terminal;
-    this._lines = terminal.buffer.lines;
+  constructor(private _mouseEvent: MouseEvent, private _terminal: Terminal) {
+    this._lines = this._terminal.buffer.lines;
     this._startCol = this._terminal.buffer.x;
     this._startRow = this._terminal.buffer.y;
 
     [this._endCol, this._endRow] = this._terminal.mouseHelper.getCoords(
-      (this._mouseEvent = mouseEvent),
+      this._mouseEvent,
       this._terminal.element,
       this._terminal.charMeasure,
       this._terminal.options.lineHeight,
