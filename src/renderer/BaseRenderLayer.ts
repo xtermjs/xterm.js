@@ -31,7 +31,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     protected _colors: IColorSet
   ) {
     this._canvas = document.createElement('canvas');
-    this._canvas.id = `xterm-${id}-layer`;
+    this._canvas.classList.add(`xterm-${id}-layer`);
     this._canvas.style.zIndex = zIndex.toString();
     this._ctx = this._canvas.getContext('2d', {alpha: _alpha});
     this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
