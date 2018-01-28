@@ -1,24 +1,32 @@
 /**
- * Alt+Click handler module: exports methods for handling all alt+click-related events in the
- * terminal.
+ * Alt+Click handler module: exports methods for handling all alt+click-related
+ * events in the terminal.
  * @module xterm/handlers/AltClickHandler
  * @license MIT
  */
 
 import { Terminal } from '../Terminal';
-import { CHAR_DATA_WIDTH_INDEX } from '../Buffer';
 import { C0 } from '../EscapeSequences';
+import { repeat } from '../utils/Generic';
+import { CircularList } from '../utils/CircularList';
+import { LineData } from '../Types';
 
 export class AltClickHandler {
   private _terminal: Terminal;
-  private _mouseRow: number;
-  private _mouseCol: number;
+  private _startRow: number;
+  private _startCol: number;
+  private _endRow: number;
+  private _endCol: number;
+  private _lines: CircularList<LineData>;
   private _mouseEvent: MouseEvent;
 
   constructor(mouseEvent: MouseEvent, terminal: Terminal) {
     this._terminal = terminal;
+    this._lines = terminal.buffer.lines;
+    this._startCol = this._terminal.buffer.x;
+    this._startRow = this._terminal.buffer.y;
 
-    [this._mouseCol, this._mouseRow] = this._terminal.mouseHelper.getCoords(
+    [this._endCol, this._endRow] = this._terminal.mouseHelper.getCoords(
       (this._mouseEvent = mouseEvent),
       this._terminal.element,
       this._terminal.charMeasure,
@@ -31,106 +39,197 @@ export class AltClickHandler {
     });
   }
 
+  /**
+   * Writes the escape sequences of arrows to the terminal
+   */
   public move(): void {
-    if (!this._mouseEvent.altKey) return;
+    if (this._mouseEvent.altKey) this._terminal.send(this._arrowSequences());
+  }
 
-    let keyboardArrows;
+  /**
+   * Concatenates all the arrow sequences together.
+   * Resets the starting row to an unwrapped row, moves to the requested row,
+   * then moves to requested col.
+   */
+  private _arrowSequences(): string {
+    return this._resetStartingRow() +
+      this._moveToRequestedRow() +
+      this._moveToRequestedCol();
+  }
 
-    if (this._terminal.buffer === this._terminal.buffers.normal) {
-      keyboardArrows = this.buildArrowSequence(this.normalCharCount(), this.horizontalCursorCommand(this.normalMoveForward()));
-    } else {
-      let verticalChars = this.buildArrowSequence(this.altVerticalCharCount(), this.verticalCursorCommand(this.altMoveUpward()));
-      let horizontalChars = this.buildArrowSequence(this.altHorizontalCharCount(), this.horizontalCursorCommand(this.altMoveForward()));
+  /**
+   * If the initial position of the cursor is on a row that is wrapped, move the
+   * cursor up to the first row that is not wrapped to have accurate vertical
+   * positioning.
+   */
+  private _resetStartingRow(): string {
+    return repeat(this._bufferLine(
+      this._startCol, this._startRow, this._startCol,
+      this._startRow - this._wrappedRowsForRow(this._startRow), false
+    ).length, this._colSequence(false));
+  }
 
-      if (this.altMoveForward()) {
-        keyboardArrows = verticalChars + horizontalChars;
-      } else {
-        keyboardArrows = horizontalChars + verticalChars;
+  /**
+   * Using the reset starting and ending row, move to the requested row,
+   * ignoring wrapped rows
+   */
+  private _moveToRequestedRow(): string {
+    let startRow = this._startRow - this._wrappedRowsForRow(this._startRow);
+    let endRow = this._endRow - this._wrappedRowsForRow(this._endRow);
+
+    let rowsToMove = Math.abs(startRow - endRow) - this._wrappedRowsCount();
+
+    return repeat(rowsToMove, this._rowSequence(this._shouldMoveUp()));
+  }
+
+  /**
+   * Move to the requested col on the ending row
+   */
+  private _moveToRequestedCol(): string {
+    let startRow = this._endRow - this._wrappedRowsForRow(this._endRow);
+    let endRow = this._endRow;
+    let forward = this._shouldMoveForward();
+
+    return repeat(this._bufferLine(
+      this._startCol, startRow, this._endCol, endRow, forward
+    ).length, this._colSequence(forward));
+  }
+
+  /**
+   * Utility functions
+   */
+
+  /**
+   * Calculates the number of wrapped rows between the unwrapped starting and
+   * ending rows. These rows need to ignored since the cursor skips over them.
+   */
+  private _wrappedRowsCount(): number {
+    let wrappedRows = 0;
+    let startRow = this._startRow - this._wrappedRowsForRow(this._startRow);
+    let endRow = this._endRow - this._wrappedRowsForRow(this._endRow);
+
+    for (let i = 0; i < Math.abs(startRow - endRow); i++) {
+      let direction = this._shouldMoveUp() ? -1 : 1;
+
+      if (this._lines.get(startRow + (direction * i)).isWrapped) wrappedRows++;
+    }
+
+    return wrappedRows;
+  }
+
+  /**
+   * Calculates the number of wrapped rows that make up a given row.
+   * @param currentRow The row to determine how many wrapped rows make it up
+   */
+  private _wrappedRowsForRow(currentRow: number): number {
+    let rowCount = 0;
+    let lineWraps = this._lines.get(currentRow).isWrapped;
+
+    while (lineWraps && currentRow >= 0 && currentRow < this._terminal.rows) {
+      rowCount++;
+      currentRow--;
+      lineWraps = this._lines.get(currentRow).isWrapped;
+    }
+
+    return rowCount;
+  }
+
+  /**
+   * Direction determiners
+   */
+
+  /**
+   * Determines if the right or left arrow is needed
+   */
+  private _shouldMoveForward(): boolean {
+    let startRow = this._endRow - this._wrappedRowsForRow(this._endRow);
+
+    return (this._startCol < this._endCol &&
+      startRow <= this._endRow) || // down/right or same y/right
+      (this._startCol >= this._endCol &&
+      startRow < this._endRow);  // down/left or same y/left
+  }
+
+  /**
+   * Determines if the up or down arrow is needed
+   */
+  private _shouldMoveUp(): boolean {
+    return this._startRow > this._endRow;
+  }
+
+  /**
+   * Constructs the string of chars in the buffer from a starting row and col
+   * to an ending row and col
+   * @param startCol The starting column position
+   * @param startRow The starting row position
+   * @param endCol The ending column position
+   * @param endRow The ending row position
+   * @param forward Direction to move
+   */
+  private _bufferLine(
+    startCol: number,
+    startRow: number,
+    endCol: number,
+    endRow: number,
+    forward: boolean): string {
+    let currentRow = startCol;
+    let currentCol = startRow;
+    let bufferStr = '';
+
+    while (currentRow !== endCol || (currentCol !== endRow)) {
+      currentRow += forward ? 1 : -1;
+
+      if (forward && currentRow > this._terminal.cols - 1) {
+        bufferStr += this._terminal.buffer.translateBufferLineToString(
+          currentCol, false, startCol, currentRow
+        );
+        currentRow = 0;
+        startCol = 0;
+        currentCol++;
+      } else if (!forward && currentRow < 0) {
+        bufferStr += this._terminal.buffer.translateBufferLineToString(
+          currentCol, false, 0, startCol + 1
+        );
+        currentRow = this._terminal.cols - 1;
+        startCol = currentRow;
+        currentCol--;
       }
     }
 
-    this._terminal.send(keyboardArrows);
+    return bufferStr + this._terminal.buffer.translateBufferLineToString(
+      currentCol, false, startCol, currentRow
+    );
   }
 
-  private buildArrowSequence(count: number, sequence: string): string {
-    return Array(count).join(sequence);
-  }
+  /**
+   * Arrow escape sequences
+   */
 
-  private altMoveUpward(): boolean {
-    return this._terminal.buffer.y > this._mouseRow;
-  }
-
-  private altMoveForward(): boolean {
-    return this._terminal.buffer.x < this._mouseCol;
-  }
-
-  private normalMoveForward(): boolean {
-    return (this._terminal.buffer.x < this._mouseCol &&
-      this._terminal.buffer.y <= this._mouseRow) || // down/right or same row/right
-      (this._terminal.buffer.x >= this._mouseCol &&
-        this._terminal.buffer.y < this._mouseRow);  // down/left or same row/left
-  }
-
-  private horizontalCursorCommand(moveForward: boolean): string {
+  /**
+   * Constructs the escape sequence for the left or right arrow
+   * @param forward Right arrow or left arrow
+   */
+  private _colSequence(forward: boolean): string {
     let mod = this._terminal.applicationCursor ? 'O' : '[';
 
-    if (moveForward) {
+    if (forward) {
       return C0.ESC + mod + 'C';
     } else {
       return C0.ESC + mod + 'D';
     }
   }
 
-  private verticalCursorCommand(moveUp: boolean): string {
+  /**
+   * Constructs the escape sequence for clicking the up or down arrow
+   * @param up Up arrow or down arrow
+   */
+  private _rowSequence(up: boolean): string {
     let mod = this._terminal.applicationCursor ? 'O' : '[';
 
-    if (moveUp) {
+    if (up) {
       return C0.ESC + mod + 'A';
     } else {
       return C0.ESC + mod + 'B';
     }
-  }
-
-  private altVerticalCharCount(): number {
-    return Math.abs(this._terminal.buffer.y - this._mouseRow) + 1;
-  }
-
-  private altHorizontalCharCount(): number {
-    return Math.abs(this._terminal.buffer.x - this._mouseCol) + 1;
-  }
-
-  private normalCharCount(): number {
-    let currentX = this._terminal.buffer.x;
-    let currentY = this._terminal.buffer.y;
-    let startCol = this._terminal.buffer.x;
-    let bufferStr = '';
-
-    while (currentX !== this._mouseCol || (currentY !== this._mouseRow)) {
-      if (this.normalMoveForward()) {
-        currentX++;
-        if (currentX > this._terminal.cols - 1) {
-          bufferStr += this._terminal.buffer.translateBufferLineToString(currentY, false, startCol, currentX);
-          currentX = 0;
-          startCol = 0;
-          currentY++;
-        }
-      } else {
-        currentX--;
-        if (currentX < 0) {
-          bufferStr += this._terminal.buffer.translateBufferLineToString(currentY, false, 0, startCol + 1);
-          currentX = this._terminal.cols - 1;
-          startCol = currentX;
-          currentY--;
-        }
-      }
-    }
-
-    if (this.normalMoveForward()) {
-      currentX++;
-    } else {
-      currentX--;
-    }
-    bufferStr += this._terminal.buffer.translateBufferLineToString(currentY, false, startCol, currentX);
-    return bufferStr.length;
   }
 }
