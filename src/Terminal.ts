@@ -30,7 +30,6 @@ import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './EventEmitter';
 import { Viewport } from './Viewport';
 import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './handlers/Clipboard';
-import { AltClickHandler } from './handlers/AltClickHandler';
 import { CircularList } from './utils/CircularList';
 import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
@@ -953,7 +952,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       // if the selection manager is having selection forced (ie. a modifier is
       // held).
       if (!this.mouseEvents || this.selectionManager.shouldForceSelection(ev)) {
-        (new AltClickHandler(ev, this)).move();
         return;
       }
 
