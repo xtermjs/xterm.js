@@ -1188,28 +1188,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 
   /**
-   * Scroll the viewport to an absolute row in the buffer.
-   * @param absoluteRow The absolute row in the buffer to scroll to.
-   * @returns The actual absolute row that was scrolled to (including boundary checked).
-   */
-  public scrollToRow(absoluteRow: number): number {
-    // Ensure value is valid
-    absoluteRow = Math.max(Math.min(absoluteRow, this.buffer.lines.length - 1), 0);
-
-    // Move viewport as necessary
-    const relativeRow = absoluteRow - this.buffer.ydisp;
-    let scrollAmount = 0;
-    if (relativeRow < 0) {
-      scrollAmount = relativeRow;
-    } else if (relativeRow >= this.rows) {
-      scrollAmount = relativeRow - this.rows + 1;
-    }
-    this.scrollLines(scrollAmount);
-
-    return absoluteRow;
-  }
-
-  /**
    * Scroll the display of the terminal by a number of pages.
    * @param {number} pageCount The number of pages to scroll (negative scrolls up).
    */

@@ -197,7 +197,6 @@ export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAcce
    */
   handler(data: string): void;
   scrollLines(disp: number, suppressScrollEvent?: boolean): void;
-  scrollToRow(row: number): number;
   cancel(ev: Event, force?: boolean): boolean | void;
   log(text: string): void;
   showCursor(): void;
