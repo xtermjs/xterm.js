@@ -63,10 +63,17 @@ export class AltClickHandler {
    * positioning.
    */
   private _resetStartingRow(): string {
-    return repeat(this._bufferLine(
-      this._startCol, this._startRow, this._startCol,
-      this._startRow - this._wrappedRowsForRow(this._startRow), false
-    ).length, this._colSequence(false));
+    let startRow = this._endRow - this._wrappedRowsForRow(this._endRow);
+    let endRow = this._endRow;
+
+    if (this._moveToRequestedRow().length === 0) {
+      return ""
+    } else {
+      return repeat(this._bufferLine(
+        this._startCol, this._startRow, this._startCol,
+        this._startRow - this._wrappedRowsForRow(this._startRow), false
+      ).length, this._colSequence(false));
+    }
   }
 
   /**
@@ -86,7 +93,13 @@ export class AltClickHandler {
    * Move to the requested col on the ending row
    */
   private _moveToRequestedCol(): string {
-    let startRow = this._endRow - this._wrappedRowsForRow(this._endRow);
+    let startRow;
+    if (this._moveToRequestedRow().length > 0) {
+      startRow = this._endRow - this._wrappedRowsForRow(this._endRow);
+    } else {
+      startRow = this._startRow;
+    }
+
     let endRow = this._endRow;
     let forward = this._shouldMoveForward();
 
@@ -142,7 +155,12 @@ export class AltClickHandler {
    * Determines if the right or left arrow is needed
    */
   private _shouldMoveForward(): boolean {
-    let startRow = this._endRow - this._wrappedRowsForRow(this._endRow);
+    let startRow;
+    if (this._moveToRequestedRow().length > 0) {
+      startRow = this._endRow - this._wrappedRowsForRow(this._endRow);
+    } else {
+      startRow = this._startRow;
+    }
 
     return (this._startCol < this._endCol &&
       startRow <= this._endRow) || // down/right or same y/right
