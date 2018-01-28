@@ -10,6 +10,7 @@ import * as Browser from '../shared/utils/Browser';
 import { ITheme, IDisposable } from 'xterm';
 
 export class MockTerminal implements ITerminal {
+  static string: any;
   getOption(key: any): any {
     throw new Error('Method not implemented.');
   }

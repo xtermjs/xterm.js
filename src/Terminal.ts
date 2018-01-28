@@ -47,7 +47,7 @@ import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { MouseZoneManager } from './input/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ScreenDprMonitor } from './utils/ScreenDprMonitor';
-import { ITheme } from 'xterm';
+import { ITheme, ILocalizableStrings } from 'xterm';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -311,6 +311,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    */
   public get buffer(): Buffer {
     return this.buffers.active;
+  }
+
+  public static get strings(): ILocalizableStrings {
+    return Strings;
   }
 
   /**

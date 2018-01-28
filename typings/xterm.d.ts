@@ -207,10 +207,16 @@ declare module 'xterm' {
   }
 
   /**
-   * An object that can be disposed via a dipose function.
+   * An object that can be disposed via a dispose function.
    */
   export interface IDisposable {
     dispose(): void;
+  }
+
+  export interface ILocalizableStrings {
+    blankLine: string;
+    promptLabel: string;
+    tooMuchOutput: string;
   }
 
   /**
@@ -236,6 +242,11 @@ declare module 'xterm' {
      * The number of columns in the terminal's viewport.
      */
     cols: number;
+
+    /**
+     * Natural language strings that can be localized.
+     */
+    static strings: ILocalizableStrings;
 
     /**
      * Creates a new `Terminal` object.
