@@ -3,16 +3,15 @@
  * @license MIT
  */
 
-import { ITerminal, ICircularList } from '../Types';
+import { ITerminal, ICircularList, LineData } from '../Types';
 import { C0 } from '../EscapeSequences';
-import { LineData } from '../Types';
 
 enum Direction {
   Up = 'A',
   Down = 'B',
   Right = 'C',
   Left = 'D'
-};
+}
 
 export class AltClickHandler {
   private _startRow: number;
