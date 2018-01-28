@@ -24,7 +24,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _charAtlas: HTMLCanvasElement | ImageBitmap;
 
   constructor(
-    container: HTMLElement,
+    private _container: HTMLElement,
     id: string,
     zIndex: number,
     private _alpha: boolean,
@@ -33,13 +33,16 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._canvas = document.createElement('canvas');
     this._canvas.classList.add(`xterm-${id}-layer`);
     this._canvas.style.zIndex = zIndex.toString();
-    this._ctx = this._canvas.getContext('2d', {alpha: _alpha});
-    this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    this._initCanvas();
+    this._container.appendChild(this._canvas);
+  }
+
+  private _initCanvas(): void {
+    this._ctx = this._canvas.getContext('2d', {alpha: this._alpha});
     // Draw the background if this is an opaque layer
-    if (!_alpha) {
+    if (!this._alpha) {
       this.clearAll();
     }
-    container.appendChild(this._canvas);
   }
 
   public onOptionsChanged(terminal: ITerminal): void {}
@@ -54,23 +57,22 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   }
 
   protected setTransparency(terminal: ITerminal, alpha: boolean): void {
+    // Do nothing when alpha doesn't change
     if (alpha === this._alpha) {
       return;
     }
-    this._alpha = alpha
-    const oldCanvas = this._canvas
-    // Cloning preserves canvas properties and permits to acquire a new context 
+
+    // Create new canvas and replace old one
+    const oldCanvas = this._canvas;
+    this._alpha = alpha;
+    // Closing preserves properties
     this._canvas = <HTMLCanvasElement>this._canvas.cloneNode();
-    this._ctx = this._canvas.getContext('2d', {alpha: this._alpha});
-    this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-    // Draw the background if this is an opaque layer
-    if (!this._alpha) {
-      this.clearAll();
-    }
-    oldCanvas.parentNode.replaceChild(this._canvas, oldCanvas);
+    this._initCanvas();
+    this._container.replaceChild(this._canvas, oldCanvas);
+
+    // Regenerate char atlas and force a full redraw
     this._refreshCharAtlas(terminal, this._colors);
-    // Force a full redraw
-    this.onGridChanged(terminal, 0, terminal.rows - 1)
+    this.onGridChanged(terminal, 0, terminal.rows - 1);
   }
 
   /**
