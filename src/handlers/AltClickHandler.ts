@@ -7,7 +7,6 @@
 
 import { Terminal } from '../Terminal';
 import { C0 } from '../EscapeSequences';
-import { repeat } from '../utils/Generic';
 import { CircularList } from '../utils/CircularList';
 import { LineData } from '../Types';
 
