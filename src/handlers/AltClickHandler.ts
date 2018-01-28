@@ -1,7 +1,5 @@
 /**
- * Alt+Click handler module: exports methods for handling all alt+click-related
- * events in the terminal.
- * @module xterm/handlers/AltClickHandler
+ * Copyright (c) 2017 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 
