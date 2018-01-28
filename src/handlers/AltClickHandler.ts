@@ -3,9 +3,8 @@
  * @license MIT
  */
 
-import { Terminal } from '../Terminal';
+import { ITerminal, ICircularList } from '../Types';
 import { C0 } from '../EscapeSequences';
-import { CircularList } from '../utils/CircularList';
 import { LineData } from '../Types';
 
 enum Direction {
@@ -20,9 +19,9 @@ export class AltClickHandler {
   private _startCol: number;
   private _endRow: number;
   private _endCol: number;
-  private _lines: CircularList<LineData>;
+  private _lines: ICircularList<LineData>;
 
-  constructor(private _mouseEvent: MouseEvent, private _terminal: Terminal) {
+  constructor(private _mouseEvent: MouseEvent, private _terminal: ITerminal) {
     this._lines = this._terminal.buffer.lines;
     this._startCol = this._terminal.buffer.x;
     this._startRow = this._terminal.buffer.y;
