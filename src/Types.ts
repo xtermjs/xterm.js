@@ -189,6 +189,7 @@ export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAcce
   mouseHelper: IMouseHelper;
   bracketedPasteMode: boolean;
   applicationCursor: boolean;
+
   /**
    * Emit the 'data' event and populate the given data.
    * @param data The data to populate in the event.
