@@ -67,7 +67,7 @@ export class AltClickHandler {
     let endRow = this._endRow;
 
     if (this._moveToRequestedRow().length === 0) {
-      return ""
+      return '';
     } else {
       return repeat(this._bufferLine(
         this._startCol, this._startRow, this._startCol,
