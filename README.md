@@ -125,6 +125,7 @@ computational environment for Jupyter, supporting interactive data science and s
 - [**rtty**](https://github.com/zhaojh329/rtty): A reverse proxy WebTTY. It is composed of the client and the server.
 - [**Pisth**](https://github.com/ColdGrub1384/Pisth): An SFTP and SSH client for iOS
 - [**abstruse**](https://github.com/bleenco/abstruse): Abstruse CI is a continuous integration platform based on Node.JS and Docker.
+- [**Microsoft SQL Operations Studio**](https://github.com/Microsoft/sqlopsstudio): A data management tool that enables working with SQL Server, Azure SQL DB and SQL DW from Windows, macOS and Linux
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list.
 
