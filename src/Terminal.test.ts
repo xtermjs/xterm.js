@@ -659,13 +659,17 @@ describe('term.js addons', () => {
       assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: false, keyCode: 219 }).key, '\x1b[');
       assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: true,  keyCode: 219 }).key, '\x1b{');
     });
+    it('should return proper sequences for alt+\\', () => {
+      assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: false, keyCode: 220 }).key, '\x1b\\');
+      assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: true,  keyCode: 220 }).key, '\x1b|');
+    });
     it('should return proper sequences for alt+]', () => {
       assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: false, keyCode: 221 }).key, '\x1b]');
       assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: true,  keyCode: 221 }).key, '\x1b}');
     });
-    it('should return proper sequences for alt+\\', () => {
+    it('should return proper sequences for alt+\'', () => {
       assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: false, keyCode: 222 }).key, '\x1b\'');
-      assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: true,  keyCode: 222 }).key, '\x1b|');
+      assert.equal(term.evaluateKeyEscapeSequence({ altKey: true, shiftKey: true,  keyCode: 222 }).key, '\x1b"');
     });
   });
 

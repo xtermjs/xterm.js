@@ -69,8 +69,9 @@ const KEYCODE_KEY_MAPPINGS = {
   191: ['/', '?'],
   192: ['`', '~'],
   219: ['[', '{'],
+  220: ['\\', '|'],
   221: [']', '}'],
-  222: ['\'', '|']
+  222: ['\'', '"']
 };
 
 // Let it work inside Node.js for automated testing purposes.
