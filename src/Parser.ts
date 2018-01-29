@@ -237,6 +237,10 @@ export class Parser {
           }
           break;
         case ParserState.ESCAPED:
+	  if (ch in normalStateHandler) {
+	    normalStateHandler[ch](this, this._inputHandler);
+	    break;
+	  }
           if (ch in escapedStateHandler) {
             escapedStateHandler[ch](this, this._terminal);
             // Skip switch as it was just handled
@@ -488,6 +492,9 @@ export class Parser {
               this._terminal.log(`CSI ${this._terminal.prefix ? this._terminal.prefix : ''} ${this._terminal.params ? this._terminal.params.join(';') : ''} ${this._terminal.postfix ? this._terminal.postfix : ''} ${ch}`);
             }
             csiStateHandler[ch](this._inputHandler, this._terminal.params, this._terminal.prefix, this._terminal.postfix, this);
+          } else if (ch in normalStateHandler){
+              normalStateHandler[ch](this, this._inputHandler);
+              break;
           } else {
             this._terminal.error('Unknown CSI code: %s.', ch);
           }
