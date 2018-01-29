@@ -11,6 +11,7 @@ before_install:
   - npm install -g npm@5.1.0
 env:
   matrix:
+    - NPM_COMMAND=tsc
     - NPM_COMMAND=lint
     - NPM_COMMAND=test
 notifications:
