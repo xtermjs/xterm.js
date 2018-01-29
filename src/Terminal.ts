@@ -991,7 +991,20 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // }
 
     on(el, 'wheel', (ev: WheelEvent) => {
-      if (!this.mouseEvents) return;
+      if (!this.mouseEvents) {
+        // Convert wheel events into up/down events when the buffer does not have scrollback, this
+        // enables scrolling in apps hosted in the alt buffer such as vim or tmux. 
+        if (!this.buffer.hasScrollback) {
+          let sequence = C0.ESC + (this.applicationCursor ? 'O' : '[');
+          if (ev.wheelDeltaY > 0) {
+            sequence += 'A';
+          } else {
+            sequence += 'B';
+          }
+          this.send(sequence);
+        }
+        return;
+      }
       if (this.x10Mouse || this.vt300Mouse || this.decLocator) return;
       sendButton(ev);
       ev.preventDefault();
