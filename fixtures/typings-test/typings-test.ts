@@ -147,6 +147,7 @@ namespace methods_core {
       const r23: boolean = t.getOption('macOptionIsMeta');
       const r24: string = t.getOption('fontWeight');
       const r25: string = t.getOption('fontWeightBold');
+      const r26: boolean = t.getOption('allowTransparency');
     }
     {
       const t: Terminal = new Terminal();
@@ -167,6 +168,7 @@ namespace methods_core {
       t.setOption('popOnBell', true);
       t.setOption('screenKeys', true);
       t.setOption('useFlowControl', true);
+      t.setOption('allowTransparency', true);
       t.setOption('visualBell', true);
       t.setOption('colors', ['a', 'b']);
       t.setOption('letterSpacing', 1);
