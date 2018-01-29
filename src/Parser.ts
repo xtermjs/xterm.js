@@ -224,8 +224,9 @@ export class Parser {
         ch += data.charAt(this._position + 1);
       }
       // surrogate low - already handled above
-      if (0xDC00 <= code && code <= 0xDFFF)
+      if (0xDC00 <= code && code <= 0xDFFF) {
         continue;
+      }
 
       switch (this._state) {
         case ParserState.NORMAL:
