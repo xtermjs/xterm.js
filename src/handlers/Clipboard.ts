@@ -100,6 +100,7 @@ export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLTextA
   textarea.focus();
 
   // Reset the terminal textarea's styling
+  // Timeout needs to be long enough for click event to be handled.
   setTimeout(() => {
     textarea.style.position = null;
     textarea.style.width = null;
@@ -107,7 +108,7 @@ export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLTextA
     textarea.style.left = null;
     textarea.style.top = null;
     textarea.style.zIndex = null;
-  }, 4);
+  }, 200);
 }
 
 /**

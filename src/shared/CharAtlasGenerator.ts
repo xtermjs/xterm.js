@@ -26,6 +26,7 @@ export interface ICharAtlasRequest {
   foreground: string;
   ansiColors: string[];
   devicePixelRatio: number;
+  allowTransparency: boolean;
 }
 
 export const CHAR_ATLAS_CELL_SPACING = 1;
@@ -43,7 +44,7 @@ export function generateCharAtlas(context: Window, canvasFactory: (width: number
     /*255 ascii chars*/255 * cellWidth,
     (/*default+default bold*/2 + /*0-15*/16) * cellHeight
   );
-  const ctx = canvas.getContext('2d', {alpha: false});
+  const ctx = canvas.getContext('2d', {alpha: request.allowTransparency});
 
   ctx.fillStyle = request.background;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
