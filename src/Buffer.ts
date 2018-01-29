@@ -213,7 +213,10 @@ export class Buffer implements IBuffer {
     // needed here because some chars are 0 characters long (eg. after wide
     // chars) and some chars are longer than 1 characters long (eg. emojis).
     let startIndex = startCol;
-    endCol = endCol || line.length;
+    // Only set endCol to the line length when it is null. 0 is a valid column.
+    if (endCol === null) {
+      endCol = line.length;
+    }
     let endIndex = endCol;
 
     for (let i = 0; i < line.length; i++) {

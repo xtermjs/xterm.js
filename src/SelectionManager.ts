@@ -11,6 +11,7 @@ import { CircularList } from './utils/CircularList';
 import { EventEmitter } from './EventEmitter';
 import { SelectionModel } from './SelectionModel';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from './Buffer';
+import { AltClickHandler } from './handlers/AltClickHandler';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -27,6 +28,12 @@ const DRAG_SCROLL_MAX_SPEED = 15;
  * The number of milliseconds between drag scroll updates.
  */
 const DRAG_SCROLL_INTERVAL = 50;
+
+/**
+ * The maximum amount of time that can have elapsed for an alt click to move the
+ * cursor.
+ */
+const ALT_CLICK_MOVE_CURSOR_TIME = 500;
 
 /**
  * A string containing all characters that are considered word separated by the
@@ -95,6 +102,8 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   private _mouseMoveListener: EventListener;
   private _mouseUpListener: EventListener;
   private _trimListener: (...args: any[]) => void;
+
+  private _mouseDownTimeStamp: number;
 
   constructor(
     private _terminal: ITerminal,
@@ -317,6 +326,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param event The mousedown event.
    */
   public onMouseDown(event: MouseEvent): void {
+    this._mouseDownTimeStamp = event.timeStamp;
     // If we have selection, we want the context menu on right click even if the
     // terminal is in mouse mode.
     if (event.button === 2 && this.hasSelection) {
@@ -536,9 +546,13 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param event The mouseup event.
    */
   private _onMouseUp(event: MouseEvent): void {
+    let timeElapsed = event.timeStamp - this._mouseDownTimeStamp;
+
     this._removeMouseDownListeners();
 
-    if (this.hasSelection) {
+    if (this.selectionText.length <= 1 && timeElapsed < ALT_CLICK_MOVE_CURSOR_TIME) {
+      (new AltClickHandler(event, this._terminal)).move();
+    } else if (this.hasSelection) {
       this._terminal.emit('selection');
     }
   }
