@@ -269,13 +269,8 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   public selectWordAtCursor(event: MouseEvent): void {
     const coords = this._getMouseBufferCoords(event);
     if (coords) {
-      const wordPosition = this._getWordAt(coords, false);
-      if (wordPosition) {
-        this._model.selectionStart = [wordPosition.start, coords[1]];
-        this._model.selectionStartLength = wordPosition.length;
-        this._model.selectionEnd = [this._model.areSelectionValuesReversed() ? wordPosition.start : (wordPosition.start + wordPosition.length), coords[1]];
-        this.refresh(true);
-      }
+      this._selectWordAt(coords, false);
+      this.refresh(true);
     }
   }
 
