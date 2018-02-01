@@ -151,10 +151,10 @@ export class MouseZoneManager implements IMouseZoneManager {
     // components from handling the mouse event.
     const zone = this._findZoneEventAt(e);
     if (zone) {
-      // TODO: When link modifier support is added, the event should only be
-      // cancelled when the modifier is held (see #1021)
-      e.preventDefault();
-      e.stopImmediatePropagation();
+      if (zone.willLinkActivate(e)) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
     }
   }
 
@@ -189,9 +189,10 @@ export class MouseZone implements IMouseZone {
     public x2: number,
     public y: number,
     public clickCallback: (e: MouseEvent) => any,
-    public hoverCallback?: (e: MouseEvent) => any,
-    public tooltipCallback?: (e: MouseEvent) => any,
-    public leaveCallback?: () => void
+    public hoverCallback: (e: MouseEvent) => any,
+    public tooltipCallback: (e: MouseEvent) => any,
+    public leaveCallback: () => void,
+    public willLinkActivate: (e: MouseEvent) => boolean
   ) {
   }
 }
