@@ -328,7 +328,7 @@ export interface ILinkMatcherOptions {
    * only activating a link when a certain modifier is held down, if not the
    * mouse event will continue propagation (eg. double click to select word).
    */
-  willLinkActivate?: (event: MouseEvent, uri: string) => boolean; 
+  willLinkActivate?: (event: MouseEvent, uri: string) => boolean;
 }
 
 export interface IBrowser {
