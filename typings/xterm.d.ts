@@ -196,6 +196,12 @@ declare module 'xterm' {
      * default value is 0.
      */
     priority?: number;
+
+    /**
+     * The amount of time to delay in milliseconds before triggering the tooltip
+     * callback.
+     */
+    tooltipDelay?: number;
   }
 
   export interface IEventEmitter {
