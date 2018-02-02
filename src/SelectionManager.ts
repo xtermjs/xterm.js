@@ -270,6 +270,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     const coords = this._getMouseBufferCoords(event);
     if (coords) {
       this._selectWordAt(coords, false);
+      this._model.selectionEnd = null;
       this.refresh(true);
     }
   }
