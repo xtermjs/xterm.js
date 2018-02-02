@@ -1582,21 +1582,23 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         break;
       case 36:
         // home
-        if (modifiers)
+        if (modifiers) {
           result.key = C0.ESC + '[1;' + (modifiers + 1) + 'H';
-        else if (this.applicationCursor)
+        } else if (this.applicationCursor) {
           result.key = C0.ESC + 'OH';
-        else
+        } else {
           result.key = C0.ESC + '[H';
+        }
         break;
       case 35:
         // end
-        if (modifiers)
+        if (modifiers) {
           result.key = C0.ESC + '[1;' + (modifiers + 1) + 'F';
-        else if (this.applicationCursor)
+        } else if (this.applicationCursor) {
           result.key = C0.ESC + 'OF';
-        else
+        } else {
           result.key = C0.ESC + '[F';
+        }
         break;
       case 33:
         // page up
