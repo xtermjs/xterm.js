@@ -87,7 +87,8 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   useFlowControl: false,
   allowTransparency: false,
   tabStopWidth: 8,
-  theme: null
+  theme: null,
+  rightClickSelectsWord: Browser.isMac
   // programFeatures: false,
   // focusKeys: false,
 };
@@ -506,12 +507,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       // Firefox doesn't appear to fire the contextmenu event on right click
       on(this.element, 'mousedown', (event: MouseEvent) => {
         if (event.button === 2) {
-          rightClickHandler(event, this.textarea, this.selectionManager);
+          rightClickHandler(event, this.textarea, this.selectionManager, this.options.rightClickSelectsWord);
         }
       });
     } else {
       on(this.element, 'contextmenu', (event: MouseEvent) => {
-        rightClickHandler(event, this.textarea, this.selectionManager);
+        rightClickHandler(event, this.textarea, this.selectionManager, this.options.rightClickSelectsWord);
       });
     }
 
