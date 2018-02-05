@@ -192,6 +192,10 @@ gulp.task('webpack', ['build'], function() {
     .pipe(gulp.dest('demo/dist/'));
 });
 
+gulp.task('webpack:watch', ['webpack'], () => {
+  gulp.watch('./src/*', ['webpack']);
+});
+
 /**
  * Submit coverage results to coveralls.io
  */
