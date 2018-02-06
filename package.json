@@ -75,7 +75,6 @@
     "zmodem.js": "^0.1.5"
   },
   "scripts": {
-    "prestart": "gulp webpack",
     "start": "node demo/app",
     "prestart-zmodem": "npm run build",
     "start-zmodem": "node build/addons/zmodem/demo/app",
@@ -86,7 +85,8 @@
     "build": "gulp build",
     "prepublish": "npm run build",
     "coveralls": "gulp coveralls",
-    "webpack": "gulp webpack"
+    "webpack": "gulp webpack",
+    "watch": "gulp watch"
   },
   "dependencies": {}
 }

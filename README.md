@@ -131,27 +131,60 @@ Do you use xterm.js in your application as well? Please [open a Pull Request](ht
 
 ## Demo
 
-### Linux or macOS
+Xterm.js ships with a barebones demo implementation, designed for the development and evaluation of the library only. Exposing the demo to the public as is would introduce security risks for the host.
 
-First, be sure that a C++ compiler such as GCC-C++ or Clang is installed, then run these commands:
+Below you can find instructions on how to run the demo on different platforms.
+
+### SourceLair
+
+SourceLair will run the demo and builder in parallel automatically. Just make sure to choose the "Node.js" project type, when cloning the xterm.js repo (or just use this shortcut; https://lair.io/xtermjs/xtermjs).
+
+Then open your project's [Public URL](https://help.sourcelair.com/projects/the-public-url/) to access the demo.
+
+### Docker
+
+First, make sure you have Docker Engine 1.13.0 (or newer) and Docker Compose 1.10.0 (or newer). To run the demo and builder in parallel, run the following command in your terminal:
+
+```
+docker-compose up
+```
+
+Then open http://0.0.0.0:3000 in a web browser to access the demo. If you prefer a different port than `3000` to access the xterm.js demo, then set the `XTERMJS_PORT` environment variable to the desired port.
+
+### Foreman (or other Procfile runner)
+
+First, be sure that a C++ compiler such as GCC-C++ or Clang is installed, then run the following commands in your terminal:
 
 ```
 npm install
-npm start
+foreman start  # Replace foreman with "honcho", "forego" etc. depending on your runner
 ```
 
-Then open http://0.0.0.0:3000 in a web browser.
+Then open http://0.0.0.0:3000 in a web browser to access the demo.
+
+### Linux or macOS
+
+First, be sure that a C++ compiler such as GCC-C++ or Clang is installed, then run the following commands in your terminal:
+
+```
+npm install
+npm start      # Run this in its own terminal
+npm run watch  # Run this in its own terminal
+```
+
+Then open http://0.0.0.0:3000 in a web browser to access the demo.
 
 ### Windows
 
-First, ensure [node-gyp](https://github.com/nodejs/node-gyp) is installed and configured correctly, then run these commands.
+First, ensure [node-gyp](https://github.com/nodejs/node-gyp) is installed and configured correctly, then run the following commands in your terminal:
 
 ```
 npm install
-npm start
+npm start      # Run this in its own terminal
+npm run watch  # Run this in its own terminal
 ```
 
-Then open http://127.0.0.1:3000 in a web browser.
+Then open http://127.0.0.1:3000 in a web browser to access the demo.
 
 *Note: Do not use ConEmu, as it seems to break the demo for some reason.*
 
