@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014 The xterm.js authors. All rights reserved.
+ * Copyright (c) 2014-2018 The xterm.js authors. All rights reserved.
  * @license MIT
  *
  * Fit terminal columns and rows to the dimensions of its DOM element.

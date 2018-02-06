@@ -163,7 +163,9 @@ The existing releases are available at this GitHub repo's [Releases](https://git
 
 ## Development and Contribution
 
-Xterm.js is maintained by [SourceLair](https://www.sourcelair.com/) and a few external contributors, but we would love to receive contributions from everyone!
+Xterm.js is maintained by [Paris Kasidiaris](https://github.com/parisk), [Daniel Imms](https://github.com/Tyriar) and [Thomas Zilz](https://github.com/mofux).
+
+Development of xterm.js is done by both the maintainers above and its amazing external contributors.
 
 To contribute either code, documentation or issues to xterm.js please read the [Contributing document](CONTRIBUTING.md) beforehand. The development of xterm.js does not require any special tool. All you need is an editor that supports JavaScript/TypeScript and a browser. You will need Node.js installed locally to get all the features working in the demo.
 
@@ -175,6 +177,8 @@ To contribute either code, documentation or issues to xterm.js please read the [
 
 If you contribute code to this project, you are implicitly allowing your code to be distributed under the MIT license. You are also implicitly verifying that all code is your original work.
 
-Copyright (c) 2014-2017, SourceLair, Private Company ([www.sourcelair.com](https://www.sourcelair.com/home)) (MIT License)
+Copyright (c) 2017-2018, All xterm.js authors (MIT License)
+
+Copyright (c) 2014-2018, SourceLair, Private Company ([www.sourcelair.com](https://www.sourcelair.com/home)) (MIT License)
 
 Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014 The xterm.js authors. All rights reserved.
+ * Copyright (c) 2014-2018 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 

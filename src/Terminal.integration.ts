@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2016 The xterm.js authors. All rights reserved.
+ * Copyright (c) 2016-2018 The xterm.js authors. All rights reserved.
  * @license MIT
  *
  * This file contains integration tests for xterm.js.
