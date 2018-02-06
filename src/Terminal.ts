@@ -96,6 +96,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
 export class Terminal extends EventEmitter implements ITerminal, IInputHandlingTerminal {
   public textarea: HTMLTextAreaElement;
   public element: HTMLElement;
+  public screenElement: HTMLElement;
 
   /**
    * The HTMLElement that the terminal is created in, set by Terminal.open.
@@ -609,15 +610,18 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.viewportScrollArea.classList.add('xterm-scroll-area');
     this.viewportElement.appendChild(this.viewportScrollArea);
 
-    this._mouseZoneManager = new MouseZoneManager(this);
-    this.on('scroll', () => this._mouseZoneManager.clearAll());
-    this.linkifier.attachToDom(this._mouseZoneManager);
-
+    this.screenElement = document.createElement('div');
+    this.screenElement.classList.add('xterm-screen');
     // Create the container that will hold helpers like the textarea for
     // capturing DOM Events. Then produce the helpers.
     this.helperContainer = document.createElement('div');
     this.helperContainer.classList.add('xterm-helpers');
-    fragment.appendChild(this.helperContainer);
+    this.screenElement.appendChild(this.helperContainer);
+    fragment.appendChild(this.screenElement);
+
+    this._mouseZoneManager = new MouseZoneManager(this);
+    this.on('scroll', () => this._mouseZoneManager.clearAll());
+    this.linkifier.attachToDom(this._mouseZoneManager);
 
     this.textarea = document.createElement('textarea');
     this.textarea.classList.add('xterm-helper-textarea');
@@ -735,7 +739,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       button = getButton(ev);
 
       // get mouse coordinates
-      pos = self.mouseHelper.getRawByteCoords(ev, self.element, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
+      pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
       if (!pos) return;
 
       sendEvent(button, pos);
@@ -761,7 +765,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // ^[[M 3<^[[M@4<^[[M@5<^[[M@6<^[[M@7<^[[M#7<
     function sendMove(ev: MouseEvent): void {
       let button = pressed;
-      let pos = self.mouseHelper.getRawByteCoords(ev, self.element, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
+      let pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
       if (!pos) return;
 
       // buttons marked as motions

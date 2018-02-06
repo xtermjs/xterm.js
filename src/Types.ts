@@ -85,6 +85,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
 }
 
 export interface IViewport {
+  scrollBarWidth: number;
   syncScrollArea(): void;
   onWheel(ev: WheelEvent): void;
   onTouchStart(ev: TouchEvent): void;
@@ -175,6 +176,7 @@ export interface ILinkHoverEvent {
 }
 
 export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAccessor, ILinkifierAccessor {
+  screenElement: HTMLElement;
   selectionManager: ISelectionManager;
   charMeasure: ICharMeasure;
   renderer: IRenderer;
@@ -188,6 +190,7 @@ export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAcce
   buffers: IBufferSet;
   isFocused: boolean;
   mouseHelper: IMouseHelper;
+  viewport: IViewport;
   bracketedPasteMode: boolean;
   applicationCursor: boolean;
 
