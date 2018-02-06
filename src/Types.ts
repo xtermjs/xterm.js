@@ -176,6 +176,7 @@ export interface ILinkHoverEvent {
 }
 
 export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAccessor, ILinkifierAccessor {
+  screenElement: HTMLElement;
   selectionManager: ISelectionManager;
   charMeasure: ICharMeasure;
   renderer: IRenderer;
