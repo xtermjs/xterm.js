@@ -180,8 +180,8 @@ declare module 'xterm' {
     matchIndex?: number;
 
     /**
-     * A callback that validates an individual link, returning true if valid and
-     * false if invalid.
+     * A callback that validates whether to create an individual link, pass
+     * whether the link is valid to the callback.
      */
     validationCallback?: (uri: string, callback: (isValid: boolean) => void) => void;
 
@@ -202,6 +202,14 @@ declare module 'xterm' {
      * default value is 0.
      */
     priority?: number;
+
+    /**
+     * A callback that fires when the mousedown and click events occur that
+     * determines whether a link will be activated upon click. This enables
+     * only activating a link when a certain modifier is held down, if not the
+     * mouse event will continue propagation (eg. double click to select word).
+     */
+    willLinkActivate?: (event: MouseEvent, uri: string) => boolean;
   }
 
   export interface IEventEmitter {
