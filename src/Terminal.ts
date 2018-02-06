@@ -612,17 +612,16 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     this.screenElement = document.createElement('div');
     this.screenElement.classList.add('xterm-screen');
+    // Create the container that will hold helpers like the textarea for
+    // capturing DOM Events. Then produce the helpers.
+    this.helperContainer = document.createElement('div');
+    this.helperContainer.classList.add('xterm-helpers');
+    this.screenElement.appendChild(this.helperContainer);
     fragment.appendChild(this.screenElement);
 
     this._mouseZoneManager = new MouseZoneManager(this);
     this.on('scroll', () => this._mouseZoneManager.clearAll());
     this.linkifier.attachToDom(this._mouseZoneManager);
-
-    // Create the container that will hold helpers like the textarea for
-    // capturing DOM Events. Then produce the helpers.
-    this.helperContainer = document.createElement('div');
-    this.helperContainer.classList.add('xterm-helpers');
-    fragment.appendChild(this.helperContainer);
 
     this.textarea = document.createElement('textarea');
     this.textarea.classList.add('xterm-helper-textarea');
