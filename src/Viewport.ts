@@ -7,6 +7,8 @@ import { IColorSet } from './renderer/Types';
 import { ITerminal, IViewport } from './Types';
 import { CharMeasure } from './utils/CharMeasure';
 
+const FALLBACK_SCROLL_BAR_WIDTH = 15;
+
 /**
  * Represents the viewport of a terminal, the visible area within the larger buffer of output.
  * Logic for the virtual scroll bar is included in this object.
@@ -34,8 +36,8 @@ export class Viewport implements IViewport {
   ) {
     // Measure the width of the scrollbar. If it is 0 we can assume it's an OSX overlay scrollbar.
     // Unfortunately the overlay scrollbar would be hidden underneath the screen element in that case,
-    // therefore we account 15px to make it visible
-    this.scrollBarWidth = (this.viewportElement.offsetWidth - this.scrollArea.offsetWidth) || 15;
+    // therefore we account for a standard amount to make it visible
+    this.scrollBarWidth = (this.viewportElement.offsetWidth - this.scrollArea.offsetWidth) || FALLBACK_SCROLL_BAR_WIDTH;
     this.viewportElement.addEventListener('scroll', this.onScroll.bind(this));
 
     // Perform this async to ensure the CharMeasure is ready.
