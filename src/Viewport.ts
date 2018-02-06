@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { ITerminal, IViewport } from './Interfaces';
+import { IColorSet } from './renderer/Types';
+import { ITerminal, IViewport } from './Types';
 import { CharMeasure } from './utils/CharMeasure';
-import { IColorSet } from './renderer/Interfaces';
 
 /**
  * Represents the viewport of a terminal, the visible area within the larger buffer of output.
@@ -93,6 +93,12 @@ export class Viewport implements IViewport {
    * @param ev The scroll event.
    */
   private onScroll(ev: Event): void {
+    // Don't attempt to scroll if the element is not visible, otherwise scrollTop will be corrupt
+    // which causes the terminal to scroll the buffer to the top
+    if (!this.viewportElement.offsetParent) {
+      return;
+    }
+
     const newRow = Math.round(this.viewportElement.scrollTop / this.currentRowHeight);
     const diff = newRow - this.terminal.buffer.ydisp;
     this.terminal.scrollLines(diff, true);

@@ -9,6 +9,10 @@
       true,
       "check-space"
     ],
+    "curly": [
+      true,
+      "ignore-same-line"
+    ],
     "indent": [
       true,
       "spaces"
@@ -24,6 +28,7 @@
       "parameter"
     ],
     "eofline": true,
+    "no-duplicate-imports": true,
     "no-eval": true,
     "no-internal-module": true,
     "no-trailing-whitespace": true,

@@ -63,28 +63,33 @@ export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: nu
       let min = 0;
       let max = data.length - 1;
       let mid;
-      if (ucs < data[0][0] || ucs > data[max][1])
+      if (ucs < data[0][0] || ucs > data[max][1]) {
         return false;
+      }
       while (max >= min) {
         mid = (min + max) >> 1;
-        if (ucs > data[mid][1])
+        if (ucs > data[mid][1]) {
           min = mid + 1;
-        else if (ucs < data[mid][0])
+        } else if (ucs < data[mid][0]) {
           max = mid - 1;
-        else
+        } else {
           return true;
+        }
       }
       return false;
     }
     function wcwidthBMP(ucs: number): number {
       // test for 8-bit control characters
-      if (ucs === 0)
+      if (ucs === 0) {
         return opts.nul;
-      if (ucs < 32 || (ucs >= 0x7f && ucs < 0xa0))
+      }
+      if (ucs < 32 || (ucs >= 0x7f && ucs < 0xa0)) {
         return opts.control;
+      }
       // binary search in table of non-spacing characters
-      if (bisearch(ucs, COMBINING_BMP))
+      if (bisearch(ucs, COMBINING_BMP)) {
         return 0;
+      }
       // if we arrive here, ucs is not a combining or C0/C1 control character
       if (isWideBMP(ucs)) {
         return 2;
@@ -106,8 +111,9 @@ export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: nu
         (ucs >= 0xffe0 && ucs <= 0xffe6)));
     }
     function wcwidthHigh(ucs: number): 0 | 1 | 2 {
-      if (bisearch(ucs, COMBINING_HIGH))
+      if (bisearch(ucs, COMBINING_HIGH)) {
         return 0;
+      }
       if ((ucs >= 0x20000 && ucs <= 0x2fffd) || (ucs >= 0x30000 && ucs <= 0x3fffd)) {
         return 2;
       }
@@ -128,8 +134,9 @@ export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: nu
       for (let i = 0; i < CONTAINERSIZE; ++i) {
         let num = 0;
         let pos = CODEPOINTS_PER_ITEM;
-        while (pos--)
+        while (pos--) {
           num = (num << 2) | wcwidthBMP(CODEPOINTS_PER_ITEM * i + pos);
+        }
         table[i] = num;
       }
       return table;
@@ -148,13 +155,16 @@ export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: nu
     //     ==> n = n & 3      e.g.       000000000000000000000000000000XX
     return function (num: number): number {
       num = num | 0;  // get asm.js like optimization under V8
-      if (num < 32)
+      if (num < 32) {
         return control | 0;
-      if (num < 127)
+      }
+      if (num < 127) {
         return 1;
+      }
       let t = table || init_table();
-      if (num < 65536)
+      if (num < 65536) {
         return t[num >> 4] >> ((num & 15) << 1) & 3;
+      }
       // do a full search for high codepoints
       return wcwidthHigh(num);
     };

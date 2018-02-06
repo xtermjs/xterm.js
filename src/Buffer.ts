@@ -3,9 +3,8 @@
  * @license MIT
  */
 
-import { ITerminal, IBuffer } from './Interfaces';
 import { CircularList } from './utils/CircularList';
-import { LineData, CharData } from './Types';
+import { LineData, CharData, ITerminal, IBuffer } from './Types';
 
 export const CHAR_DATA_ATTR_INDEX = 0;
 export const CHAR_DATA_CHAR_INDEX = 1;
@@ -177,16 +176,13 @@ export class Buffer implements IBuffer {
       }
 
       // Make sure that the cursor stays on screen
-      if (this.y >= newRows) {
-        this.y = newRows - 1;
-      }
+      this.x = Math.min(this.x, newCols - 1);
+      this.y = Math.min(this.y, newRows - 1);
       if (addToY) {
         this.y += addToY;
       }
-
-      if (this.x >= newCols) {
-        this.x = newCols - 1;
-      }
+      this.savedY = Math.min(this.savedY, newRows - 1);
+      this.savedX = Math.min(this.savedX, newCols - 1);
 
       this.scrollTop = 0;
     }
@@ -217,7 +213,10 @@ export class Buffer implements IBuffer {
     // needed here because some chars are 0 characters long (eg. after wide
     // chars) and some chars are longer than 1 characters long (eg. emojis).
     let startIndex = startCol;
-    endCol = endCol || line.length;
+    // Only set endCol to the line length when it is null. 0 is a valid column.
+    if (endCol === null) {
+      endCol = line.length;
+    }
     let endIndex = endCol;
 
     for (let i = 0; i < line.length; i++) {

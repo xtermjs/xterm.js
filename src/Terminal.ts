@@ -21,6 +21,9 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
+import { ICharset, IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
+import { IMouseZoneManager } from './input/Types';
+import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
 import { Buffer, MAX_BUFFER_SIZE } from './Buffer';
 import { CompositionHelper } from './CompositionHelper';
@@ -35,17 +38,13 @@ import { Renderer } from './renderer/Renderer';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
 import { CharMeasure } from './utils/CharMeasure';
-import * as Browser from './utils/Browser';
+import * as Browser from './shared/utils/Browser';
 import { MouseHelper } from './utils/MouseHelper';
 import { CHARSETS } from './Charsets';
-import { CustomKeyEventHandler, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
-import { ITerminal, IBrowser, ICharset, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper, ITheme, ILinkifier } from './Interfaces';
 import { BELL_SOUND } from './utils/Sounds';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
-import { IMouseZoneManager } from './input/Interfaces';
 import { MouseZoneManager } from './input/MouseZoneManager';
-import { initialize as initializeCharAtlas } from './renderer/CharAtlas';
-import { IRenderer } from './renderer/Interfaces';
+import { ITheme } from 'xterm';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -75,16 +74,21 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   enableBold: true,
   fontFamily: 'courier-new, courier, monospace',
   fontSize: 15,
+  fontWeight: 'normal',
+  fontWeightBold: 'bold',
   lineHeight: 1.0,
   letterSpacing: 0,
   scrollback: 1000,
   screenKeys: false,
   debug: false,
+  macOptionIsMeta: false,
   cancelEvents: false,
   disableStdin: false,
   useFlowControl: false,
+  allowTransparency: false,
   tabStopWidth: 8,
-  theme: null
+  theme: null,
+  rightClickSelectsWord: Browser.isMac
   // programFeatures: false,
   // focusKeys: false,
 };
@@ -363,6 +367,16 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
           value = 'block';
         }
         break;
+      case 'fontWeight':
+        if (!value) {
+          value = 'normal';
+        }
+        break;
+      case 'fontWeightBold':
+        if (!value) {
+          value = 'bold';
+        }
+        break;
       case 'lineHeight':
         if (value < 1) {
           console.warn(`${key} cannot be less than 1, value: ${value}`);
@@ -416,11 +430,14 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       case 'enableBold':
       case 'letterSpacing':
       case 'lineHeight':
+      case 'fontWeight':
+      case 'fontWeightBold':
+        const didCharSizeChange = (key === 'fontWeight' || key === 'fontWeightBold' || key === 'enableBold');
+
         // When the font changes the size of the cells may change which requires a renderer clear
         this.renderer.clear();
-        this.renderer.onResize(this.cols, this.rows, false);
+        this.renderer.onResize(this.cols, this.rows, didCharSizeChange);
         this.refresh(0, this.rows - 1);
-        // this.charMeasure.measure(this.options);
       case 'scrollback':
         this.buffers.resize(this.cols, this.rows);
         this.viewport.syncScrollArea();
@@ -491,12 +508,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       // Firefox doesn't appear to fire the contextmenu event on right click
       on(this.element, 'mousedown', (event: MouseEvent) => {
         if (event.button === 2) {
-          rightClickHandler(event, this.textarea, this.selectionManager);
+          rightClickHandler(event, this.textarea, this.selectionManager, this.options.rightClickSelectsWord);
         }
       });
     } else {
       on(this.element, 'contextmenu', (event: MouseEvent) => {
-        rightClickHandler(event, this.textarea, this.selectionManager);
+        rightClickHandler(event, this.textarea, this.selectionManager, this.options.rightClickSelectsWord);
       });
     }
 
@@ -575,8 +592,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.context = this.parent.ownerDocument.defaultView;
     this.document = this.parent.ownerDocument;
     this.body = <HTMLBodyElement>this.document.body;
-
-    initializeCharAtlas(this.document);
 
     // Create main element container
     this.element = this.document.createElement('div');
@@ -1379,7 +1394,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       return this.cancel(ev, true);
     }
 
-    if (isThirdLevelShift(this.browser, ev)) {
+    if (this._isThirdLevelShift(this.browser, ev)) {
       return true;
     }
 
@@ -1398,6 +1413,19 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.handler(result.key);
 
     return this.cancel(ev, true);
+  }
+
+  private _isThirdLevelShift(browser: IBrowser, ev: KeyboardEvent): boolean {
+    const thirdLevelKey =
+        (browser.isMac && !this.options.macOptionIsMeta && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
+        (browser.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
+
+    if (ev.type === 'keypress') {
+      return thirdLevelKey;
+    }
+
+    // Don't invoke for arrows, pageDown, home, backspace, etc. (on non-keypress events)
+    return thirdLevelKey && (!ev.keyCode || ev.keyCode > 47);
   }
 
   /**
@@ -1559,28 +1587,28 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         break;
       case 36:
         // home
-        if (modifiers)
+        if (modifiers) {
           result.key = C0.ESC + '[1;' + (modifiers + 1) + 'H';
-        else if (this.applicationCursor)
+        } else if (this.applicationCursor) {
           result.key = C0.ESC + 'OH';
-        else
+        } else {
           result.key = C0.ESC + '[H';
+        }
         break;
       case 35:
         // end
-        if (modifiers)
+        if (modifiers) {
           result.key = C0.ESC + '[1;' + (modifiers + 1) + 'F';
-        else if (this.applicationCursor)
+        } else if (this.applicationCursor) {
           result.key = C0.ESC + 'OF';
-        else
+        } else {
           result.key = C0.ESC + '[F';
+        }
         break;
       case 33:
         // page up
         if (ev.shiftKey) {
           result.scrollLines = -(this.rows - 1);
-        } else if (modifiers) {
-          result.key = C0.ESC + '[5;' + (modifiers + 1) + '~';
         } else {
           result.key = C0.ESC + '[5~';
         }
@@ -1589,8 +1617,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         // page down
         if (ev.shiftKey) {
           result.scrollLines = this.rows - 1;
-        } else if (modifiers) {
-          result.key = C0.ESC + '[6;' + (modifiers + 1) + '~';
         } else {
           result.key = C0.ESC + '[6~';
         }
@@ -1704,8 +1730,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
             // ^] - Operating System Command (OSC)
             result.key = String.fromCharCode(29);
           }
-        } else if (!this.browser.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) {
-          // On Mac this is a third level shift. Use <Esc> instead.
+        } else if ((!this.browser.isMac || this.options.macOptionIsMeta) && ev.altKey && !ev.ctrlKey && !ev.metaKey) {
+          // On macOS this is a third level shift when !macOptionIsMeta. Use <Esc> instead.
           if (ev.keyCode >= 65 && ev.keyCode <= 90) {
             result.key = C0.ESC + String.fromCharCode(ev.keyCode + 32);
           } else if (ev.keyCode === 192) {
@@ -1771,7 +1797,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     }
 
     if (!key || (
-      (ev.altKey || ev.ctrlKey || ev.metaKey) && !isThirdLevelShift(this.browser, ev)
+      (ev.altKey || ev.ctrlKey || ev.metaKey) && !this._isThirdLevelShift(this.browser, ev)
     )) {
       return false;
     }
@@ -2116,13 +2142,15 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 
   private visualBell(): boolean {
-    return this.options.bellStyle === 'visual' ||
-        this.options.bellStyle === 'both';
+    return false;
+    // return this.options.bellStyle === 'visual' ||
+    //     this.options.bellStyle === 'both';
   }
 
   private soundBell(): boolean {
-    return this.options.bellStyle === 'sound' ||
-        this.options.bellStyle === 'both';
+    return this.options.bellStyle === 'sound';
+    // return this.options.bellStyle === 'sound' ||
+    //     this.options.bellStyle === 'both';
   }
 
   private syncBellSound(): void {
@@ -2161,19 +2189,6 @@ const on = globalOn;
 
 function off(el: any, type: string, handler: (event: Event) => any, capture: boolean = false): void {
   el.removeEventListener(type, handler, capture);
-}
-
-function isThirdLevelShift(browser: IBrowser, ev: KeyboardEvent): boolean {
-  const thirdLevelKey =
-      (browser.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
-      (browser.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
-
-  if (ev.type === 'keypress') {
-    return thirdLevelKey;
-  }
-
-  // Don't invoke for arrows, pageDown, home, backspace, etc. (on non-keypress events)
-  return thirdLevelKey && (!ev.keyCode || ev.keyCode > 47);
 }
 
 function wasMondifierKeyOnlyEvent(ev: KeyboardEvent): boolean {

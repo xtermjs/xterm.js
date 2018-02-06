@@ -9,9 +9,20 @@
 
 declare module 'xterm' {
   /**
+   * A string representing text font weight.
+   */
+  export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
+
+  /**
    * An object containing start up options for the terminal.
    */
   export interface ITerminalOptions {
+    /**
+     * Whether background should support non-opaque color. It must be set before
+     * executing open() method and can't be changed later without excuting it again.
+     * Warning: Enabling this option can reduce performances somewhat.
+     */
+    allowTransparency?: boolean;
     /**
      * A data uri of the sound to use for the bell (needs bellStyle = 'sound').
      */
@@ -58,6 +69,16 @@ declare module 'xterm' {
     fontFamily?: string;
 
     /**
+     * The font weight used to render non-bold text.
+     */
+    fontWeight?: FontWeight;
+
+    /**
+     * The font weight used to render bold text.
+     */
+    fontWeightBold?: FontWeight;
+
+    /**
      * The spacing in whole pixels between characters..
      */
     letterSpacing?: number;
@@ -66,6 +87,17 @@ declare module 'xterm' {
      * The line height used to render text.
      */
     lineHeight?: number;
+
+    /**
+     * Whether to treat option as the meta key.
+     */
+    macOptionIsMeta?: boolean;
+
+    /**
+     * Whether to select the word under the cursor on right click, this is
+     * standard behavior in a lot of macOS applications.
+     */
+    rightClickSelectsWord?: boolean;
 
     /**
      * The number of rows in the terminal.
@@ -148,8 +180,8 @@ declare module 'xterm' {
     matchIndex?: number;
 
     /**
-     * A callback that validates an individual link, returning true if valid and
-     * false if invalid.
+     * A callback that validates whether to create an individual link, pass
+     * whether the link is valid to the callback.
      */
     validationCallback?: (uri: string, callback: (isValid: boolean) => void) => void;
 
@@ -170,12 +202,26 @@ declare module 'xterm' {
      * default value is 0.
      */
     priority?: number;
+
+    /**
+     * A callback that fires when the mousedown and click events occur that
+     * determines whether a link will be activated upon click. This enables
+     * only activating a link when a certain modifier is held down, if not the
+     * mouse event will continue propagation (eg. double click to select word).
+     */
+    willLinkActivate?: (event: MouseEvent, uri: string) => boolean;
+  }
+
+  export interface IEventEmitter {
+    on(type: string, listener: (...args: any[]) => void): void;
+    off(type: string, listener: (...args: any[]) => void): void;
+    emit(type: string, data?: any): void;
   }
 
   /**
    * The class that represents an xterm.js terminal.
    */
-  export class Terminal {
+  export class Terminal implements IEventEmitter {
     /**
      * The element containing the terminal.
      */
@@ -229,7 +275,7 @@ declare module 'xterm' {
      * @param type The type of the event.
      * @param listener The listener.
      */
-    on(type: 'data', listener: (data?: string) => void): void;
+    on(type: 'data', listener: (...args: any[]) => void): void;
     /**
      * Registers an event listener.
      * @param type The type of the event.
@@ -279,6 +325,8 @@ declare module 'xterm' {
      * @param listener The listener.
      */
     off(type: 'blur' | 'focus' | 'linefeed' | 'selection' | 'data' | 'key' | 'keypress' | 'keydown' | 'refresh' | 'resize' | 'scroll' | 'title' | string, listener: (...args: any[]) => void): void;
+
+    emit(type: string, data?: any): void;
 
     /**
      * Resizes the terminal.
@@ -351,22 +399,6 @@ declare module 'xterm' {
      */
     selectAll(): void;
 
-    // /**
-    //  * Find the next instance of the term, then scroll to and select it. If it
-    //  * doesn't exist, do nothing.
-    //  * @param term Tne search term.
-    //  * @return Whether a result was found.
-    //  */
-    // findNext(term: string): boolean;
-
-    // /**
-    //  * Find the previous instance of the term, then scroll to and select it. If it
-    //  * doesn't exist, do nothing.
-    //  * @param term Tne search term.
-    //  * @return Whether a result was found.
-    //  */
-    // findPrevious(term: string): boolean;
-
     /**
      * Destroys the terminal and detaches it from the DOM.
      */
@@ -409,12 +441,12 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'termName'): string;
+    getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'fontWeight' | 'fontWeightBold'| 'termName'): string;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell'): boolean;
+    getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell'): boolean;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
@@ -443,6 +475,12 @@ declare module 'xterm' {
      */
     setOption(key: 'fontFamily' | 'termName' | 'bellSound', value: string): void;
     /**
+    * Sets an option on the terminal.
+    * @param key The option key.
+    * @param value The option value.
+    */
+    setOption(key: 'fontWeight' | 'fontWeightBold', value: null | 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900'): void;
+    /**
      * Sets an option on the terminal.
      * @param key The option key.
      * @param value The option value.
@@ -459,7 +497,7 @@ declare module 'xterm' {
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell', value: boolean): void;
+    setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'popOnBell' | 'rightClickSelectsWord' | 'screenKeys' | 'useFlowControl' | 'visualBell', value: boolean): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.

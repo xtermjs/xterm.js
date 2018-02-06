@@ -3,17 +3,18 @@
  * @license MIT
  */
 
-import { ITerminal, ITheme } from '../Interfaces';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
 import { TextRenderLayer } from './TextRenderLayer';
 import { SelectionRenderLayer } from './SelectionRenderLayer';
 import { CursorRenderLayer } from './CursorRenderLayer';
 import { ColorManager } from './ColorManager';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { IRenderLayer, IColorSet, IRenderer, IRenderDimensions } from './Interfaces';
+import { IRenderLayer, IColorSet, IRenderer, IRenderDimensions } from './Types';
+import { ITerminal } from '../Types';
 import { LinkRenderLayer } from './LinkRenderLayer';
 import { EventEmitter } from '../EventEmitter';
 import { ScreenDprMonitor } from '../utils/ScreenDprMonitor';
+import { ITheme } from 'xterm';
 
 export class Renderer extends EventEmitter implements IRenderer {
   /** A queue of the rows to be refreshed */
@@ -35,8 +36,9 @@ export class Renderer extends EventEmitter implements IRenderer {
     if (theme) {
       this.colorManager.setTheme(theme);
     }
+
     this._renderLayers = [
-      new TextRenderLayer(this._terminal.screenElement, 0, this.colorManager.colors),
+      new TextRenderLayer(this._terminal.screenElement, 0, this.colorManager.colors, this._terminal.options.allowTransparency),
       new SelectionRenderLayer(this._terminal.screenElement, 1, this.colorManager.colors),
       new LinkRenderLayer(this._terminal.screenElement, 2, this.colorManager.colors, this._terminal),
       new CursorRenderLayer(this._terminal.screenElement, 3, this.colorManager.colors)

@@ -1,7 +1,7 @@
 {
   "name": "xterm",
   "description": "Full xterm terminal, in your browser",
-  "version": "3.0.0",
+  "version": "3.1.0-master",
   "ignore": [
     "demo",
     "test",
@@ -67,7 +67,7 @@
     "nodemon": "1.10.2",
     "sorcery": "^0.10.0",
     "tslint": "^5.9.1",
-    "typescript": "~2.4.0",
+    "typescript": "~2.7.1",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.1.0",
     "webpack": "^3.10.0",
@@ -75,17 +75,18 @@
     "zmodem.js": "^0.1.5"
   },
   "scripts": {
-    "prestart": "gulp webpack",
     "start": "node demo/app",
     "prestart-zmodem": "npm run build",
     "start-zmodem": "node build/addons/zmodem/demo/app",
     "lint": "tslint src/*.ts src/**/*.ts",
     "test": "gulp test",
     "build:docs": "jsdoc -c jsdoc.json",
+    "tsc": "tsc",
     "build": "gulp build",
     "prepublish": "npm run build",
     "coveralls": "gulp coveralls",
-    "webpack": "gulp webpack"
+    "webpack": "gulp webpack",
+    "watch": "gulp watch"
   },
   "dependencies": {}
 }

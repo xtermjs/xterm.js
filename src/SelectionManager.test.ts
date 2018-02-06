@@ -5,14 +5,13 @@
 
 import jsdom = require('jsdom');
 import { assert } from 'chai';
-import { ITerminal, ICircularList, IBuffer } from './Interfaces';
 import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
 import { SelectionManager } from './SelectionManager';
 import { SelectionModel } from './SelectionModel';
 import { BufferSet } from './BufferSet';
+import { LineData, CharData, ITerminal, ICircularList, IBuffer } from './Types';
 import { MockTerminal } from './utils/TestUtils.test';
-import { LineData, CharData } from './Types';
 
 class TestMockTerminal extends MockTerminal {
   emit(event: string, data: any): void {}
@@ -29,7 +28,7 @@ class TestSelectionManager extends SelectionManager {
   public get model(): SelectionModel { return this._model; }
 
   public selectLineAt(line: number): void { this._selectLineAt(line); }
-  public selectWordAt(coords: [number, number]): void { this._selectWordAt(coords); }
+  public selectWordAt(coords: [number, number]): void { this._selectWordAt(coords, true); }
 
   // Disable DOM interaction
   public enable(): void {}

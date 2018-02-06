@@ -4,10 +4,9 @@
  * @license MIT
  */
 
-import { IInputHandler, ITerminal, IInputHandlingTerminal } from './Interfaces';
+import { CharData, IInputHandler, IInputHandlingTerminal, ITerminal } from './Types';
 import { C0 } from './EscapeSequences';
 import { DEFAULT_CHARSET } from './Charsets';
-import { CharData } from './Types';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
 import { FLAGS } from './renderer/Types';
 import { wcwidth } from './CharWidth';
@@ -70,8 +69,9 @@ export class InputHandler implements IInputHandler {
             (<any>this._terminal.buffer.lines.get(this._terminal.buffer.y)).isWrapped = true;
           }
         } else {
-          if (chWidth === 2)  // FIXME: check for xterm behavior
+          if (chWidth === 2) { // FIXME: check for xterm behavior
             return;
+          }
         }
       }
       row = this._terminal.buffer.y + this._terminal.buffer.ybase;
