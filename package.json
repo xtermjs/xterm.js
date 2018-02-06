@@ -86,7 +86,7 @@
     "prepublish": "npm run build",
     "coveralls": "gulp coveralls",
     "webpack": "gulp webpack",
-    "webpack:watch": "gulp webpack:watch"
+    "watch": "gulp watch"
   },
   "dependencies": {}
 }
