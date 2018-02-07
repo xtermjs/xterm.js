@@ -55,6 +55,8 @@ declare module 'xterm' {
 
     /**
      * Whether to enable the rendering of bold text.
+     * 
+     * @deprecated Use fontWeight and fontWeightBold instead.
      */
     enableBold?: boolean;
 
