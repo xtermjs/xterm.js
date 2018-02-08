@@ -55,6 +55,8 @@ declare module 'xterm' {
 
     /**
      * Whether to enable the rendering of bold text.
+     * 
+     * @deprecated Use fontWeight and fontWeightBold instead.
      */
     enableBold?: boolean;
 
@@ -92,6 +94,12 @@ declare module 'xterm' {
      * Whether to treat option as the meta key.
      */
     macOptionIsMeta?: boolean;
+
+    /**
+     * Whether to select the word under the cursor on right click, this is
+     * standard behavior in a lot of macOS applications.
+     */
+    rightClickSelectsWord?: boolean;
 
     /**
      * The number of rows in the terminal.
@@ -174,8 +182,8 @@ declare module 'xterm' {
     matchIndex?: number;
 
     /**
-     * A callback that validates an individual link, returning true if valid and
-     * false if invalid.
+     * A callback that validates whether to create an individual link, pass
+     * whether the link is valid to the callback.
      */
     validationCallback?: (uri: string, callback: (isValid: boolean) => void) => void;
 
@@ -196,6 +204,14 @@ declare module 'xterm' {
      * default value is 0.
      */
     priority?: number;
+
+    /**
+     * A callback that fires when the mousedown and click events occur that
+     * determines whether a link will be activated upon click. This enables
+     * only activating a link when a certain modifier is held down, if not the
+     * mouse event will continue propagation (eg. double click to select word).
+     */
+    willLinkActivate?: (event: MouseEvent, uri: string) => boolean;
   }
 
   export interface IEventEmitter {
@@ -427,7 +443,7 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell'): boolean;
+    getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell'): boolean;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
@@ -478,7 +494,7 @@ declare module 'xterm' {
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell', value: boolean): void;
+    setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'popOnBell' | 'rightClickSelectsWord' | 'screenKeys' | 'useFlowControl' | 'visualBell', value: boolean): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.

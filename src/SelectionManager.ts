@@ -254,6 +254,37 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   }
 
   /**
+   * Checks if the current click was inside the current selection
+   * @param event The mouse event
+   */
+  public isClickInSelection(event: MouseEvent): boolean {
+    const coords = this._getMouseBufferCoords(event);
+    const start = this._model.finalSelectionStart;
+    const end = this._model.finalSelectionEnd;
+
+    if (!start || !end) {
+      return false;
+    }
+
+    return (coords[1] > start[1] && coords[1] < end[1]) ||
+        (start[1] === end[1] && coords[1] === start[1] && coords[0] > start[0] && coords[0] < end[0]) ||
+        (start[1] < end[1] && coords[1] === end[1] && coords[0] < end[0]);
+  }
+
+  /**
+   * Selects word at the current mouse event coordinates.
+   * @param event The mouse event.
+   */
+  public selectWordAtCursor(event: MouseEvent): void {
+    const coords = this._getMouseBufferCoords(event);
+    if (coords) {
+      this._selectWordAt(coords, false);
+      this._model.selectionEnd = null;
+      this.refresh(true);
+    }
+  }
+
+  /**
    * Selects all text within the terminal.
    */
   public selectAll(): void {
@@ -278,7 +309,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param event The mouse event.
    */
   private _getMouseBufferCoords(event: MouseEvent): [number, number] {
-    const coords = this._terminal.mouseHelper.getCoords(event, this._terminal.element, this._charMeasure, this._terminal.options.lineHeight, this._terminal.cols, this._terminal.rows, true);
+    const coords = this._terminal.mouseHelper.getCoords(event, this._terminal.screenElement, this._charMeasure, this._terminal.options.lineHeight, this._terminal.cols, this._terminal.rows, true);
     if (!coords) {
       return null;
     }
@@ -298,7 +329,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param event The mouse event.
    */
   private _getMouseEventScrollAmount(event: MouseEvent): number {
-    let offset = MouseHelper.getCoordsRelativeToElement(event, this._terminal.element)[1];
+    let offset = MouseHelper.getCoordsRelativeToElement(event, this._terminal.screenElement)[1];
     const terminalHeight = this._terminal.rows * Math.ceil(this._charMeasure.height * this._terminal.options.lineHeight);
     if (offset >= 0 && offset <= terminalHeight) {
       return 0;
@@ -445,7 +476,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     const coords = this._getMouseBufferCoords(event);
     if (coords) {
       this._activeSelectionMode = SelectionMode.WORD;
-      this._selectWordAt(coords);
+      this._selectWordAt(coords, true);
     }
   }
 
@@ -602,7 +633,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * Gets positional information for the word at the coordinated specified.
    * @param coords The coordinates to get the word at.
    */
-  private _getWordAt(coords: [number, number]): IWordPosition {
+  private _getWordAt(coords: [number, number], allowWhitespaceOnlySelection: boolean): IWordPosition {
     const bufferLine = this._buffer.lines.get(coords[1]);
     if (!bufferLine) {
       return null;
@@ -708,15 +739,20 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
         - leftLongCharOffset // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
         - rightLongCharOffset); // The number of additional chars right of the initial char (inclusive) added by columns with strings longer than 1 (emojis)
 
+    if (!allowWhitespaceOnlySelection && line.slice(startIndex, endIndex).trim() === '') {
+      return null;
+    }
+
     return { start, length };
   }
 
   /**
    * Selects the word at the coordinates specified.
    * @param coords The coordinates to get the word at.
+   * @param allowWhitespaceOnlySelection If whitespace should be selected
    */
-  protected _selectWordAt(coords: [number, number]): void {
-    const wordPosition = this._getWordAt(coords);
+  protected _selectWordAt(coords: [number, number], allowWhitespaceOnlySelection: boolean): void {
+    const wordPosition = this._getWordAt(coords, allowWhitespaceOnlySelection);
     if (wordPosition) {
       this._model.selectionStart = [wordPosition.start, coords[1]];
       this._model.selectionStartLength = wordPosition.length;
@@ -728,7 +764,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param coords The coordinates to get the word at.
    */
   private _selectToWordAt(coords: [number, number]): void {
-    const wordPosition = this._getWordAt(coords);
+    const wordPosition = this._getWordAt(coords, true);
     if (wordPosition) {
       this._model.selectionEnd = [this._model.areSelectionValuesReversed() ? wordPosition.start : (wordPosition.start + wordPosition.length), coords[1]];
     }

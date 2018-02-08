@@ -28,7 +28,7 @@ class TestSelectionManager extends SelectionManager {
   public get model(): SelectionModel { return this._model; }
 
   public selectLineAt(line: number): void { this._selectLineAt(line); }
-  public selectWordAt(coords: [number, number]): void { this._selectWordAt(coords); }
+  public selectWordAt(coords: [number, number]): void { this._selectWordAt(coords, true); }
 
   // Disable DOM interaction
   public enable(): void {}

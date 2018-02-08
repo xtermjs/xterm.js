@@ -85,6 +85,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
 }
 
 export interface IViewport {
+  scrollBarWidth: number;
   syncScrollArea(): void;
   onWheel(ev: WheelEvent): void;
   onTouchStart(ev: TouchEvent): void;
@@ -161,6 +162,7 @@ export interface ILinkMatcher {
   matchIndex?: number;
   validationCallback?: LinkMatcherValidationCallback;
   priority?: number;
+  willLinkActivate?: (event: MouseEvent, uri: string) => boolean;
 }
 
 export interface ICharset {
@@ -174,6 +176,7 @@ export interface ILinkHoverEvent {
 }
 
 export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAccessor, ILinkifierAccessor {
+  screenElement: HTMLElement;
   selectionManager: ISelectionManager;
   charMeasure: ICharMeasure;
   renderer: IRenderer;
@@ -187,6 +190,7 @@ export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAcce
   buffers: IBufferSet;
   isFocused: boolean;
   mouseHelper: IMouseHelper;
+  viewport: IViewport;
   bracketedPasteMode: boolean;
   applicationCursor: boolean;
 
@@ -285,6 +289,8 @@ export interface ISelectionManager {
   disable(): void;
   enable(): void;
   setSelection(row: number, col: number, length: number): void;
+  isClickInSelection(event: MouseEvent): boolean;
+  selectWordAtCursor(event: MouseEvent): void;
 }
 
 export interface ILinkifier extends IEventEmitter {
@@ -321,6 +327,13 @@ export interface ILinkMatcherOptions {
    * default value is 0.
    */
   priority?: number;
+  /**
+   * A callback that fires when the mousedown and click events occur that
+   * determines whether a link will be activated upon click. This enables
+   * only activating a link when a certain modifier is held down, if not the
+   * mouse event will continue propagation (eg. double click to select word).
+   */
+  willLinkActivate?: (event: MouseEvent, uri: string) => boolean;
 }
 
 export interface IBrowser {

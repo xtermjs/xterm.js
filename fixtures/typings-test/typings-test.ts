@@ -148,6 +148,7 @@ namespace methods_core {
       const r24: string = t.getOption('fontWeight');
       const r25: string = t.getOption('fontWeightBold');
       const r26: boolean = t.getOption('allowTransparency');
+      const r27: boolean = t.getOption('rightClickSelectsWord');
     }
     {
       const t: Terminal = new Terminal();
@@ -187,6 +188,7 @@ namespace methods_core {
       t.setOption('fontFamily', 'foo');
       t.setOption('theme', {background: '#ff0000'});
       t.setOption('macOptionIsMeta', true);
+      t.setOption('rightClickSelectsWord', false);
     }
   }
   namespace scrolling {

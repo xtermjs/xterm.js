@@ -150,6 +150,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       validationCallback: options.validationCallback,
       hoverTooltipCallback: options.tooltipCallback,
       hoverLeaveCallback: options.leaveCallback,
+      willLinkActivate: options.willLinkActivate,
       priority: options.priority || 0
     };
     this._addLinkMatcherToList(matcher);
@@ -290,6 +291,12 @@ export class Linkifier extends EventEmitter implements ILinkifier {
         if (matcher.hoverLeaveCallback) {
           matcher.hoverLeaveCallback();
         }
+      },
+      e => {
+        if (matcher.willLinkActivate) {
+          return matcher.willLinkActivate(e, uri);
+        }
+        return true;
       }
     ));
   }
