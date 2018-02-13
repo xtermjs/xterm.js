@@ -110,7 +110,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**Selenoid UI**](https://github.com/aerokube/selenoid-ui): Simple UI for the scallable golang implementation of Selenium Hub named Selenoid. We use XTerm for streaming logs over websockets from docker containers.
 - [**Portainer**](https://portainer.io): Simple management UI for Docker.
 - [**SSHy**](https://github.com/stuicey/SSHy): HTML5 Based SSHv2 Web Client with E2E encryption utilising `xterm.js`, SJCL & websockets.
-- [**JupyterLab**](https://github.com/jupyterlab/jupyterlab): An extensible 
+- [**JupyterLab**](https://github.com/jupyterlab/jupyterlab): An extensible
 computational environment for Jupyter, supporting interactive data science and scientific computing across all programming languages.
 - [**Theia**](https://github.com/theia-ide/theia): Theia is a cloud & desktop IDE framework implemented in TypeScript.
 - [**Opshell**](https://github.com/ricktbaker/opshell) Ops Helper tool to make life easier working with AWS instances across multiple organizations.
@@ -126,6 +126,7 @@ computational environment for Jupyter, supporting interactive data science and s
 - [**Pisth**](https://github.com/ColdGrub1384/Pisth): An SFTP and SSH client for iOS
 - [**abstruse**](https://github.com/bleenco/abstruse): Abstruse CI is a continuous integration platform based on Node.JS and Docker.
 - [**Microsoft SQL Operations Studio**](https://github.com/Microsoft/sqlopsstudio): A data management tool that enables working with SQL Server, Azure SQL DB and SQL DW from Windows, macOS and Linux
+- [**FreeMAN**](https://github.com/matthew-matvei/freeman): A free, cross-platform file manager for power users
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list.
 

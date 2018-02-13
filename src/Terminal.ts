@@ -1918,7 +1918,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.rows = y;
     this.buffers.setupTabStops(this.cols);
 
-    this.charMeasure.measure(this.options);
+    if (this.charMeasure) {
+      this.charMeasure.measure(this.options);
+    }
 
     this.refresh(0, this.rows - 1);
     this.emit('resize', {cols: x, rows: y});
