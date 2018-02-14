@@ -34,23 +34,27 @@ var terminalContainer = document.getElementById('terminal-container'),
       screenReaderMode: document.querySelector('#option-screen-reader-mode')
     },
     colsElement = document.getElementById('cols'),
-    rowsElement = document.getElementById('rows');
+    rowsElement = document.getElementById('rows'),
+    paddingElement = document.getElementById('padding');
 
 function setTerminalSize() {
   var cols = parseInt(colsElement.value, 10);
   var rows = parseInt(rowsElement.value, 10);
-  var viewportElement = document.querySelector('.xterm-viewport');
-  var scrollBarWidth = viewportElement.offsetWidth - viewportElement.clientWidth;
-  var width = (cols * term.renderer.dimensions.actualCellWidth + 20 /*room for scrollbar*/).toString() + 'px';
+  var width = (cols * term.renderer.dimensions.actualCellWidth + term.viewport.scrollBarWidth).toString() + 'px';
   var height = (rows * term.renderer.dimensions.actualCellHeight).toString() + 'px';
-
   terminalContainer.style.width = width;
   terminalContainer.style.height = height;
-  term.resize(cols, rows);
+  term.fit();
+}
+
+function setPadding() {
+  term.element.style.padding = parseInt(paddingElement.value, 10).toString() + 'px';
+  term.fit();
 }
 
 colsElement.addEventListener('change', setTerminalSize);
 rowsElement.addEventListener('change', setTerminalSize);
+paddingElement.addEventListener('change', setPadding);
 
 actionElements.findNext.addEventListener('keypress', function (e) {
   if (e.key === "Enter") {
@@ -124,6 +128,7 @@ function createTerminal() {
   setTimeout(function () {
     colsElement.value = term.cols;
     rowsElement.value = term.rows;
+    paddingElement.value = 0;
 
     // Set terminal size again to set the specific dimensions on the demo
     setTerminalSize();

@@ -24,7 +24,7 @@ It enables applications to provide fully featured terminals to their users and c
 First you need to install the module, we ship exclusively through [npm](https://www.npmjs.com/) so you need that installed and then add xterm.js as a dependency by running:
 
 ```
-npm install
+npm install xterm
 ```
 
 To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to the head of your html page. Then create a `<div id="terminal"></div>` onto which xterm can attach itself.
@@ -110,7 +110,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**Selenoid UI**](https://github.com/aerokube/selenoid-ui): Simple UI for the scallable golang implementation of Selenium Hub named Selenoid. We use XTerm for streaming logs over websockets from docker containers.
 - [**Portainer**](https://portainer.io): Simple management UI for Docker.
 - [**SSHy**](https://github.com/stuicey/SSHy): HTML5 Based SSHv2 Web Client with E2E encryption utilising `xterm.js`, SJCL & websockets.
-- [**JupyterLab**](https://github.com/jupyterlab/jupyterlab): An extensible 
+- [**JupyterLab**](https://github.com/jupyterlab/jupyterlab): An extensible
 computational environment for Jupyter, supporting interactive data science and scientific computing across all programming languages.
 - [**Theia**](https://github.com/theia-ide/theia): Theia is a cloud & desktop IDE framework implemented in TypeScript.
 - [**Opshell**](https://github.com/ricktbaker/opshell) Ops Helper tool to make life easier working with AWS instances across multiple organizations.
@@ -125,32 +125,67 @@ computational environment for Jupyter, supporting interactive data science and s
 - [**rtty**](https://github.com/zhaojh329/rtty): A reverse proxy WebTTY. It is composed of the client and the server.
 - [**Pisth**](https://github.com/ColdGrub1384/Pisth): An SFTP and SSH client for iOS
 - [**abstruse**](https://github.com/bleenco/abstruse): Abstruse CI is a continuous integration platform based on Node.JS and Docker.
+- [**Microsoft SQL Operations Studio**](https://github.com/Microsoft/sqlopsstudio): A data management tool that enables working with SQL Server, Azure SQL DB and SQL DW from Windows, macOS and Linux
+- [**FreeMAN**](https://github.com/matthew-matvei/freeman): A free, cross-platform file manager for power users
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list.
 
 ## Demo
 
-### Linux or macOS
+Xterm.js ships with a barebones demo implementation, designed for the development and evaluation of the library only. Exposing the demo to the public as is would introduce security risks for the host.
 
-First, be sure that a C++ compiler such as GCC-C++ or Clang is installed, then run these commands:
+Below you can find instructions on how to run the demo on different platforms.
+
+### SourceLair
+
+SourceLair will run the demo and builder in parallel automatically. Just make sure to choose the "Node.js" project type, when cloning the xterm.js repo (or just use this shortcut; https://lair.io/xtermjs/xtermjs).
+
+Then open your project's [Public URL](https://help.sourcelair.com/projects/the-public-url/) to access the demo.
+
+### Docker
+
+First, make sure you have Docker Engine 1.13.0 (or newer) and Docker Compose 1.10.0 (or newer). To run the demo and builder in parallel, run the following command in your terminal:
+
+```
+docker-compose up
+```
+
+Then open http://0.0.0.0:3000 in a web browser to access the demo. If you prefer a different port than `3000` to access the xterm.js demo, then set the `XTERMJS_PORT` environment variable to the desired port.
+
+### Foreman (or other Procfile runner)
+
+First, be sure that a C++ compiler such as GCC-C++ or Clang is installed, then run the following commands in your terminal:
 
 ```
 npm install
-npm start
+foreman start  # Replace foreman with "honcho", "forego" etc. depending on your runner
 ```
 
-Then open http://0.0.0.0:3000 in a web browser.
+Then open http://0.0.0.0:3000 in a web browser to access the demo.
+
+### Linux or macOS
+
+First, be sure that a C++ compiler such as GCC-C++ or Clang is installed, then run the following commands in your terminal:
+
+```
+npm install
+npm start      # Run this in its own terminal
+npm run watch  # Run this in its own terminal
+```
+
+Then open http://0.0.0.0:3000 in a web browser to access the demo.
 
 ### Windows
 
-First, ensure [node-gyp](https://github.com/nodejs/node-gyp) is installed and configured correctly, then run these commands.
+First, ensure [node-gyp](https://github.com/nodejs/node-gyp) is installed and configured correctly, then run the following commands in your terminal:
 
 ```
 npm install
-npm start
+npm start      # Run this in its own terminal
+npm run watch  # Run this in its own terminal
 ```
 
-Then open http://127.0.0.1:3000 in a web browser.
+Then open http://127.0.0.1:3000 in a web browser to access the demo.
 
 *Note: Do not use ConEmu, as it seems to break the demo for some reason.*
 
@@ -174,6 +209,6 @@ To contribute either code, documentation or issues to xterm.js please read the [
 
 If you contribute code to this project, you are implicitly allowing your code to be distributed under the MIT license. You are also implicitly verifying that all code is your original work.
 
+Copyright (c) 2017-2018, [The xterm.js authors](https://github.com/xtermjs/xterm.js/graphs/contributors) (MIT License)
 Copyright (c) 2014-2017, SourceLair, Private Company ([www.sourcelair.com](https://www.sourcelair.com/home)) (MIT License)
-
 Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)

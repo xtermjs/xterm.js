@@ -24,22 +24,25 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _charAtlas: HTMLCanvasElement | ImageBitmap;
 
   constructor(
-    container: HTMLElement,
+    private _container: HTMLElement,
     id: string,
     zIndex: number,
     private _alpha: boolean,
     protected _colors: IColorSet
   ) {
     this._canvas = document.createElement('canvas');
-    this._canvas.id = `xterm-${id}-layer`;
+    this._canvas.classList.add(`xterm-${id}-layer`);
     this._canvas.style.zIndex = zIndex.toString();
-    this._ctx = this._canvas.getContext('2d', {alpha: _alpha});
-    this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    this._initCanvas();
+    this._container.appendChild(this._canvas);
+  }
+
+  private _initCanvas(): void {
+    this._ctx = this._canvas.getContext('2d', {alpha: this._alpha});
     // Draw the background if this is an opaque layer
-    if (!_alpha) {
+    if (!this._alpha) {
       this.clearAll();
     }
-    container.appendChild(this._canvas);
   }
 
   public onOptionsChanged(terminal: ITerminal): void {}
@@ -53,6 +56,25 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._refreshCharAtlas(terminal, colorSet);
   }
 
+  protected setTransparency(terminal: ITerminal, alpha: boolean): void {
+    // Do nothing when alpha doesn't change
+    if (alpha === this._alpha) {
+      return;
+    }
+
+    // Create new canvas and replace old one
+    const oldCanvas = this._canvas;
+    this._alpha = alpha;
+    // Cloning preserves properties
+    this._canvas = <HTMLCanvasElement>this._canvas.cloneNode();
+    this._initCanvas();
+    this._container.replaceChild(this._canvas, oldCanvas);
+
+    // Regenerate char atlas and force a full redraw
+    this._refreshCharAtlas(terminal, this._colors);
+    this.onGridChanged(terminal, 0, terminal.rows - 1);
+  }
+
   /**
    * Refreshes the char atlas, aquiring a new one if necessary.
    * @param terminal The terminal.
@@ -63,7 +85,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       return;
     }
     this._charAtlas = null;
-    const result = acquireCharAtlas(terminal, this._colors, this._scaledCharWidth, this._scaledCharHeight);
+    const result = acquireCharAtlas(terminal, colorSet, this._scaledCharWidth, this._scaledCharHeight);
     if (result instanceof HTMLCanvasElement) {
       this._charAtlas = result;
     } else {

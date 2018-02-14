@@ -100,6 +100,7 @@ export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLTextA
   textarea.focus();
 
   // Reset the terminal textarea's styling
+  // Timeout needs to be long enough for click event to be handled.
   setTimeout(() => {
     textarea.style.position = null;
     textarea.style.width = null;
@@ -107,7 +108,7 @@ export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLTextA
     textarea.style.left = null;
     textarea.style.top = null;
     textarea.style.zIndex = null;
-  }, 4);
+  }, 200);
 }
 
 /**
@@ -115,9 +116,14 @@ export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLTextA
  * @param ev The original right click event to be handled.
  * @param textarea The terminal's textarea.
  * @param selectionManager The terminal's selection manager.
+ * @param shouldSelectWord If true and there is no selection the current word will be selected
  */
-export function rightClickHandler(ev: MouseEvent, textarea: HTMLTextAreaElement, selectionManager: ISelectionManager): void {
+export function rightClickHandler(ev: MouseEvent, textarea: HTMLTextAreaElement, selectionManager: ISelectionManager, shouldSelectWord: boolean): void {
   moveTextAreaUnderMouseCursor(ev, textarea);
+
+  if (shouldSelectWord && !selectionManager.isClickInSelection(ev)) {
+    selectionManager.selectWordAtCursor(ev);
+  }
 
   // Get textarea ready to copy from the context menu
   textarea.value = selectionManager.selectionText;

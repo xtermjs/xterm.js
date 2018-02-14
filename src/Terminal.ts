@@ -89,8 +89,10 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   cancelEvents: false,
   disableStdin: false,
   useFlowControl: false,
+  allowTransparency: false,
   tabStopWidth: 8,
-  theme: null
+  theme: null,
+  rightClickSelectsWord: Browser.isMac
   // programFeatures: false,
   // focusKeys: false,
 };
@@ -98,6 +100,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
 export class Terminal extends EventEmitter implements ITerminal, IInputHandlingTerminal {
   public textarea: HTMLTextAreaElement;
   public element: HTMLElement;
+  public screenElement: HTMLElement;
 
   /**
    * The HTMLElement that the terminal is created in, set by Terminal.open.
@@ -530,12 +533,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       // Firefox doesn't appear to fire the contextmenu event on right click
       on(this.element, 'mousedown', (event: MouseEvent) => {
         if (event.button === 2) {
-          rightClickHandler(event, this.textarea, this.selectionManager);
+          rightClickHandler(event, this.textarea, this.selectionManager, this.options.rightClickSelectsWord);
         }
       });
     } else {
       on(this.element, 'contextmenu', (event: MouseEvent) => {
-        rightClickHandler(event, this.textarea, this.selectionManager);
+        rightClickHandler(event, this.textarea, this.selectionManager, this.options.rightClickSelectsWord);
       });
     }
 
@@ -627,15 +630,18 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.viewportScrollArea.classList.add('xterm-scroll-area');
     this.viewportElement.appendChild(this.viewportScrollArea);
 
-    this._mouseZoneManager = new MouseZoneManager(this);
-    this.on('scroll', () => this._mouseZoneManager.clearAll());
-    this.linkifier.attachToDom(this._mouseZoneManager);
-
+    this.screenElement = document.createElement('div');
+    this.screenElement.classList.add('xterm-screen');
     // Create the container that will hold helpers like the textarea for
     // capturing DOM Events. Then produce the helpers.
     this.helperContainer = document.createElement('div');
     this.helperContainer.classList.add('xterm-helpers');
-    fragment.appendChild(this.helperContainer);
+    this.screenElement.appendChild(this.helperContainer);
+    fragment.appendChild(this.screenElement);
+
+    this._mouseZoneManager = new MouseZoneManager(this);
+    this.on('scroll', () => this._mouseZoneManager.clearAll());
+    this.linkifier.attachToDom(this._mouseZoneManager);
 
     this.textarea = document.createElement('textarea');
     this.textarea.classList.add('xterm-helper-textarea');
@@ -766,7 +772,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       button = getButton(ev);
 
       // get mouse coordinates
-      pos = self.mouseHelper.getRawByteCoords(ev, self.element, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
+      pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
       if (!pos) return;
 
       sendEvent(button, pos);
@@ -792,7 +798,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // ^[[M 3<^[[M@4<^[[M@5<^[[M@6<^[[M@7<^[[M#7<
     function sendMove(ev: MouseEvent): void {
       let button = pressed;
-      let pos = self.mouseHelper.getRawByteCoords(ev, self.element, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
+      let pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
       if (!pos) return;
 
       // buttons marked as motions
@@ -1613,28 +1619,28 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         break;
       case 36:
         // home
-        if (modifiers)
+        if (modifiers) {
           result.key = C0.ESC + '[1;' + (modifiers + 1) + 'H';
-        else if (this.applicationCursor)
+        } else if (this.applicationCursor) {
           result.key = C0.ESC + 'OH';
-        else
+        } else {
           result.key = C0.ESC + '[H';
+        }
         break;
       case 35:
         // end
-        if (modifiers)
+        if (modifiers) {
           result.key = C0.ESC + '[1;' + (modifiers + 1) + 'F';
-        else if (this.applicationCursor)
+        } else if (this.applicationCursor) {
           result.key = C0.ESC + 'OF';
-        else
+        } else {
           result.key = C0.ESC + '[F';
+        }
         break;
       case 33:
         // page up
         if (ev.shiftKey) {
           result.scrollLines = -(this.rows - 1);
-        } else if (modifiers) {
-          result.key = C0.ESC + '[5;' + (modifiers + 1) + '~';
         } else {
           result.key = C0.ESC + '[5~';
         }
@@ -1643,8 +1649,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         // page down
         if (ev.shiftKey) {
           result.scrollLines = this.rows - 1;
-        } else if (modifiers) {
-          result.key = C0.ESC + '[6;' + (modifiers + 1) + '~';
         } else {
           result.key = C0.ESC + '[6~';
         }
@@ -1918,7 +1922,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.rows = y;
     this.buffers.setupTabStops(this.cols);
 
-    this.charMeasure.measure(this.options);
+    if (this.charMeasure) {
+      this.charMeasure.measure(this.options);
+    }
 
     this.refresh(0, this.rows - 1);
     this.emit('resize', {cols: x, rows: y});

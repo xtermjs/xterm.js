@@ -71,6 +71,9 @@ export class MockTerminal implements ITerminal {
   write(data: string): void {
     throw new Error('Method not implemented.');
   }
+  send(data: string): void {
+    throw new Error('Method not implemented.');
+  }
   bracketedPasteMode: boolean;
   mouseHelper: IMouseHelper;
   renderer: IRenderer;
@@ -78,6 +81,7 @@ export class MockTerminal implements ITerminal {
   isFocused: boolean;
   options: ITerminalOptions = {};
   element: HTMLElement;
+  screenElement: HTMLElement;
   rowContainer: HTMLElement;
   selectionContainer: HTMLElement;
   selectionManager: ISelectionManager;
@@ -94,6 +98,8 @@ export class MockTerminal implements ITerminal {
   scrollback: number;
   buffers: IBufferSet;
   buffer: IBuffer;
+  viewport: IViewport;
+  applicationCursor: boolean;
   handler(data: string): void {
     throw new Error('Method not implemented.');
   }
@@ -317,6 +323,7 @@ export class MockRenderer implements IRenderer {
 }
 
 export class MockViewport implements IViewport {
+  scrollBarWidth: number = 0;
   onThemeChanged(colors: IColorSet): void {
     throw new Error('Method not implemented.');
   }

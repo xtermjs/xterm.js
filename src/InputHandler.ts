@@ -73,8 +73,9 @@ export class InputHandler implements IInputHandler {
             (<any>this._terminal.buffer.lines.get(this._terminal.buffer.y)).isWrapped = true;
           }
         } else {
-          if (chWidth === 2)  // FIXME: check for xterm behavior
+          if (chWidth === 2) { // FIXME: check for xterm behavior
             return;
+          }
         }
       }
       row = this._terminal.buffer.y + this._terminal.buffer.ybase;
