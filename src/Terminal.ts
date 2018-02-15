@@ -39,12 +39,15 @@ import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
 import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './shared/utils/Browser';
+import * as Strings from './Strings';
 import { MouseHelper } from './utils/MouseHelper';
 import { CHARSETS } from './Charsets';
 import { BELL_SOUND } from './utils/Sounds';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { MouseZoneManager } from './input/MouseZoneManager';
-import { ITheme } from 'xterm';
+import { AccessibilityManager } from './AccessibilityManager';
+import { ScreenDprMonitor } from './utils/ScreenDprMonitor';
+import { ITheme, ILocalizableStrings } from 'xterm';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -80,6 +83,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   letterSpacing: 0,
   scrollback: 1000,
   screenKeys: false,
+  screenReaderMode: false,
   debug: false,
   macOptionIsMeta: false,
   cancelEvents: false,
@@ -202,6 +206,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   public charMeasure: CharMeasure;
   private _mouseZoneManager: IMouseZoneManager;
   public mouseHelper: MouseHelper;
+  private _accessibilityManager: AccessibilityManager;
+  private _screenDprMonitor: ScreenDprMonitor;
 
   public cols: number;
   public rows: number;
@@ -308,6 +314,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    */
   public get buffer(): Buffer {
     return this.buffers.active;
+  }
+
+  public static get strings(): ILocalizableStrings {
+    return Strings;
   }
 
   /**
@@ -442,6 +452,18 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         this.buffers.resize(this.cols, this.rows);
         this.viewport.syncScrollArea();
         break;
+      case 'screenReaderMode':
+        if (value) {
+          if (!this._accessibilityManager) {
+            this._accessibilityManager = new AccessibilityManager(this);
+          }
+        } else {
+          if (this._accessibilityManager) {
+            this._accessibilityManager.dispose();
+            this._accessibilityManager = null;
+          }
+        }
+        break;
       case 'tabStopWidth': this.buffers.setupTabStops(); break;
       case 'bellSound':
       case 'bellStyle': this.syncBellSound(); break;
@@ -476,6 +498,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Binds the desired blur behavior on a given terminal object.
    */
   private _onTextAreaBlur(): void {
+    // Text can safely be removed on blur. Doing it earlier could interfere with
+    // screen readers reading it out.
+    this.textarea.value = '';
     this.refresh(this.buffer.y, this.buffer.y);
     if (this.sendFocus) {
       this.send(C0.ESC + '[O');
@@ -556,16 +581,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       }
     }, true);
 
-    on(this.textarea, 'keydown', (ev: KeyboardEvent) => {
-      this._keyDown(ev);
-    }, true);
-
-    on(this.textarea, 'keypress', (ev: KeyboardEvent) => {
-      this._keyPress(ev);
-      // Truncate the textarea's value, since it is not needed
-      this.textarea.value = '';
-    }, true);
-
+    on(this.textarea, 'keydown', (ev: KeyboardEvent) => this._keyDown(ev), true);
+    on(this.textarea, 'keypress', (ev: KeyboardEvent) => this._keyPress(ev), true);
     on(this.textarea, 'compositionstart', () => this.compositionHelper.compositionstart());
     on(this.textarea, 'compositionupdate', (e: CompositionEvent) => this.compositionHelper.compositionupdate(e));
     on(this.textarea, 'compositionend', () => this.compositionHelper.compositionend());
@@ -592,6 +609,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.context = this.parent.ownerDocument.defaultView;
     this.document = this.parent.ownerDocument;
     this.body = <HTMLBodyElement>this.document.body;
+
+    this._screenDprMonitor = new ScreenDprMonitor();
+    this._screenDprMonitor.setListener(() => this.emit('dprchange', window.devicePixelRatio));
 
     // Create main element container
     this.element = this.document.createElement('div');
@@ -625,6 +645,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     this.textarea = document.createElement('textarea');
     this.textarea.classList.add('xterm-helper-textarea');
+    // TODO: New API to set title? This could say "Terminal bash input", etc.
+    this.textarea.setAttribute('aria-label', Strings.promptLabel);
+    this.textarea.setAttribute('aria-multiline', 'false');
     this.textarea.setAttribute('autocorrect', 'off');
     this.textarea.setAttribute('autocapitalize', 'off');
     this.textarea.setAttribute('spellcheck', 'false');
@@ -657,6 +680,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.on('resize', () => this.renderer.onResize(this.cols, this.rows, false));
     this.on('blur', () => this.renderer.onBlur());
     this.on('focus', () => this.renderer.onFocus());
+    this.on('dprchange', () => this.renderer.onWindowResize(window.devicePixelRatio));
+    // dprchange should handle this case, we need this as well for browsers that don't support the
+    // matchMedia query.
+    window.addEventListener('resize', () => this.renderer.onWindowResize(window.devicePixelRatio));
     this.charMeasure.on('charsizechanged', () => this.renderer.onResize(this.cols, this.rows, true));
     this.renderer.on('resize', (dimensions) => this.viewport.syncScrollArea());
 
@@ -678,6 +705,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.viewportElement.addEventListener('scroll', () => this.selectionManager.refresh());
 
     this.mouseHelper = new MouseHelper(this.renderer);
+
+    if (this.options.screenReaderMode) {
+      // Note that this must be done *after* the renderer is created in order to
+      // ensure the correct order of the dprchange event
+      this._accessibilityManager = new AccessibilityManager(this);
+    }
 
     // Measure the character size
     this.charMeasure.measure(this.options);
@@ -1046,7 +1079,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    */
   public refresh(start: number, end: number): void {
     if (this.renderer) {
-      this.renderer.queueRefresh(start, end);
+      this.renderer.refreshRows(start, end);
     }
   }
 
