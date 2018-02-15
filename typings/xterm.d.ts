@@ -107,6 +107,13 @@ declare module 'xterm' {
     rows?: number;
 
     /**
+     * Whether screen reader support is enabled. When on this will expose
+     * supporting elements in the DOM to support NVDA on Windows and VoiceOver
+     * on macOS.
+     */
+    screenReaderMode?: boolean;
+
+    /**
      * The amount of scrollback in the terminal. Scrollback is the amount of rows
      * that are retained when lines are scrolled beyond the initial viewport.
      */
@@ -218,6 +225,20 @@ declare module 'xterm' {
     on(type: string, listener: (...args: any[]) => void): void;
     off(type: string, listener: (...args: any[]) => void): void;
     emit(type: string, data?: any): void;
+    addDisposableListener(type: string, handler: (...args: any[]) => void): IDisposable;
+  }
+
+  /**
+   * An object that can be disposed via a dispose function.
+   */
+  export interface IDisposable {
+    dispose(): void;
+  }
+
+  export interface ILocalizableStrings {
+    blankLine: string;
+    promptLabel: string;
+    tooMuchOutput: string;
   }
 
   /**
@@ -243,6 +264,11 @@ declare module 'xterm' {
      * The number of columns in the terminal's viewport.
      */
     cols: number;
+
+    /**
+     * Natural language strings that can be localized.
+     */
+    static strings: ILocalizableStrings;
 
     /**
      * Creates a new `Terminal` object.
@@ -324,6 +350,8 @@ declare module 'xterm' {
     off(type: 'blur' | 'focus' | 'linefeed' | 'selection' | 'data' | 'key' | 'keypress' | 'keydown' | 'refresh' | 'resize' | 'scroll' | 'title' | string, listener: (...args: any[]) => void): void;
 
     emit(type: string, data?: any): void;
+
+    addDisposableListener(type: string, handler: (...args: any[]) => void): IDisposable;
 
     /**
      * Resizes the terminal.

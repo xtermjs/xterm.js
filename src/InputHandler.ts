@@ -31,6 +31,10 @@ export class InputHandler implements IInputHandler {
         char = this._terminal.charset[char];
       }
 
+      if (this._terminal.options.screenReaderMode) {
+        this._terminal.emit('a11y.char', char);
+      }
+
       let row = this._terminal.buffer.y + this._terminal.buffer.ybase;
 
       // insert combining char in last cell
@@ -162,7 +166,11 @@ export class InputHandler implements IInputHandler {
    * Horizontal Tab (HT) (Ctrl-I).
    */
   public tab(): void {
+    const originalX = this._terminal.buffer.x;
     this._terminal.buffer.x = this._terminal.buffer.nextStop();
+    if (this._terminal.options.screenReaderMode) {
+      this._terminal.emit('a11y.tab', this._terminal.buffer.x - originalX);
+    }
   }
 
   /**

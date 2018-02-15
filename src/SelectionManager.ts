@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminal, ICircularList, ISelectionManager, IBuffer, LineData, CharData } from './Types';
+import { ITerminal, ICircularList, ISelectionManager, IBuffer, LineData, CharData, XtermListener } from './Types';
 import { MouseHelper } from './utils/MouseHelper';
 import * as Browser from './shared/utils/Browser';
 import { CharMeasure } from './utils/CharMeasure';
@@ -101,7 +101,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
   private _mouseMoveListener: EventListener;
   private _mouseUpListener: EventListener;
-  private _trimListener: (...args: any[]) => void;
+  private _trimListener: XtermListener;
 
   private _mouseDownTimeStamp: number;
 
