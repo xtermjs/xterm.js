@@ -66,8 +66,6 @@ function toPaddedHex(c: number): string {
  * Manages the source of truth for a terminal's colors.
  */
 export class ColorManager implements IColorManager {
-  private VALID_NON_NAMED_COLORS = new RegExp('^(#[0-9a-f]{3}|#(?:[0-9a-f]{2}){2,4}|(rgb|hsl)a?\((-?\d+%?[,\s]+){2,3}\s*[\d\.]+%?\))$', 'i');
-
   public colors: IColorSet;
 
   constructor() {
@@ -115,7 +113,7 @@ export class ColorManager implements IColorManager {
       return fallback;
     }
 
-    const isColorValid = this.VALID_NON_NAMED_COLORS.exec(color) || this._validateNamedColor(color);
+    const isColorValid = this._isColorValid(color);
 
     if (!isColorValid) {
       console.warn(`Color: ${color} is invalid using fallback ${fallback}`);
@@ -124,7 +122,7 @@ export class ColorManager implements IColorManager {
     return isColorValid ? color : fallback;
   }
 
-  private _validateNamedColor(color: string): boolean {
+  private _isColorValid(color: string): boolean {
     const litmus = 'red';
     const d = document.createElement('div');
     d.style.color = litmus;
