@@ -49,6 +49,34 @@ import { AccessibilityManager } from './AccessibilityManager';
 import { ScreenDprMonitor } from './utils/ScreenDprMonitor';
 import { ITheme, ILocalizableStrings } from 'xterm';
 
+// reg + shift key mappings for digits and special chars
+const KEYCODE_KEY_MAPPINGS = {
+  // digits 0-9
+  48: ['0', ')'],
+  49: ['1', '!'],
+  50: ['2', '@'],
+  51: ['3', '#'],
+  52: ['4', '$'],
+  53: ['5', '%'],
+  54: ['6', '^'],
+  55: ['7', '&'],
+  56: ['8', '*'],
+  57: ['9', '('],
+
+  // special chars
+  186: [';', ':'],
+  187: ['=', '+'],
+  188: [',', '<'],
+  189: ['-', '_'],
+  190: ['.', '>'],
+  191: ['/', '?'],
+  192: ['`', '~'],
+  219: ['[', '{'],
+  220: ['\\', '|'],
+  221: [']', '}'],
+  222: ['\'', '"']
+};
+
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
 
@@ -1762,14 +1790,15 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
             // ^] - Operating System Command (OSC)
             result.key = String.fromCharCode(29);
           }
-        } else if ((!this.browser.isMac || this.options.macOptionIsMeta) && ev.altKey && !ev.ctrlKey && !ev.metaKey) {
+        } else if ((!this.browser.isMac || this.options.macOptionIsMeta) && ev.altKey && !ev.metaKey) {
           // On macOS this is a third level shift when !macOptionIsMeta. Use <Esc> instead.
-          if (ev.keyCode >= 65 && ev.keyCode <= 90) {
-            result.key = C0.ESC + String.fromCharCode(ev.keyCode + 32);
-          } else if (ev.keyCode === 192) {
-            result.key = C0.ESC + '`';
-          } else if (ev.keyCode >= 48 && ev.keyCode <= 57) {
-            result.key = C0.ESC + (ev.keyCode - 48);
+          const keyMapping = KEYCODE_KEY_MAPPINGS[ev.keyCode];
+          const key = keyMapping && keyMapping[!ev.shiftKey ? 0 : 1];
+          if (key) {
+            result.key = C0.ESC + key;
+          } else if (ev.keyCode >= 65 && ev.keyCode <= 90) {
+            const keyCode = ev.ctrlKey ? ev.keyCode - 64 : ev.keyCode + 32;
+            result.key = C0.ESC + String.fromCharCode(keyCode);
           }
         } else if (this.browser.isMac && !ev.altKey && !ev.ctrlKey && ev.metaKey) {
           if (ev.keyCode === 65) { // cmd + a
