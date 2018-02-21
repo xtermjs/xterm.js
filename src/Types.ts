@@ -349,3 +349,7 @@ export interface IBrowser {
   isIphone: boolean;
   isMSWindows: boolean;
 }
+
+export interface ISoundManager {
+  playBellSound(): void;
+}
