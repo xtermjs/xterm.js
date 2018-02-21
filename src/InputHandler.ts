@@ -4,10 +4,9 @@
  * @license MIT
  */
 
-import { IInputHandler, ITerminal, IInputHandlingTerminal } from './Interfaces';
+import { CharData, IInputHandler, IInputHandlingTerminal, ITerminal } from './Types';
 import { C0 } from './EscapeSequences';
 import { DEFAULT_CHARSET } from './Charsets';
-import { CharData } from './Types';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
 import { FLAGS } from './renderer/Types';
 import { wcwidth } from './CharWidth';
@@ -26,17 +25,21 @@ export class InputHandler implements IInputHandler {
     if (char >= ' ') {
       // calculate print space
       // expensive call, therefore we save width in line buffer
-      const ch_width = wcwidth(code);
+      const chWidth = wcwidth(code);
 
       if (this._terminal.charset && this._terminal.charset[char]) {
         char = this._terminal.charset[char];
+      }
+
+      if (this._terminal.options.screenReaderMode) {
+        this._terminal.emit('a11y.char', char);
       }
 
       let row = this._terminal.buffer.y + this._terminal.buffer.ybase;
 
       // insert combining char in last cell
       // FIXME: needs handling after cursor jumps
-      if (!ch_width && this._terminal.buffer.x) {
+      if (!chWidth && this._terminal.buffer.x) {
         // dont overflow left
         if (this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1]) {
           if (!this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1][CHAR_DATA_WIDTH_INDEX]) {
@@ -56,7 +59,7 @@ export class InputHandler implements IInputHandler {
 
       // goto next line if ch would overflow
       // TODO: needs a global min terminal width of 2
-      if (this._terminal.buffer.x + ch_width - 1 >= this._terminal.cols) {
+      if (this._terminal.buffer.x + chWidth - 1 >= this._terminal.cols) {
         // autowrap - DECAWM
         if (this._terminal.wraparoundMode) {
           this._terminal.buffer.x = 0;
@@ -70,8 +73,9 @@ export class InputHandler implements IInputHandler {
             (<any>this._terminal.buffer.lines.get(this._terminal.buffer.y)).isWrapped = true;
           }
         } else {
-          if (ch_width === 2)  // FIXME: check for xterm behavior
+          if (chWidth === 2) { // FIXME: check for xterm behavior
             return;
+          }
         }
       }
       row = this._terminal.buffer.y + this._terminal.buffer.ybase;
@@ -79,7 +83,7 @@ export class InputHandler implements IInputHandler {
       // insert mode: move characters to right
       if (this._terminal.insertMode) {
         // do this twice for a fullwidth char
-        for (let moves = 0; moves < ch_width; ++moves) {
+        for (let moves = 0; moves < chWidth; ++moves) {
           // remove last cell, if it's width is 0
           // we have to adjust the second last cell as well
           const removed = this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).pop();
@@ -94,12 +98,12 @@ export class InputHandler implements IInputHandler {
         }
       }
 
-      this._terminal.buffer.lines.get(row)[this._terminal.buffer.x] = [this._terminal.curAttr, char, ch_width, char.charCodeAt(0)];
+      this._terminal.buffer.lines.get(row)[this._terminal.buffer.x] = [this._terminal.curAttr, char, chWidth, char.charCodeAt(0)];
       this._terminal.buffer.x++;
       this._terminal.updateRange(this._terminal.buffer.y);
 
       // fullwidth char - set next cell width to zero and advance cursor
-      if (ch_width === 2) {
+      if (chWidth === 2) {
         this._terminal.buffer.lines.get(row)[this._terminal.buffer.x] = [this._terminal.curAttr, '', 0, undefined];
         this._terminal.buffer.x++;
       }
@@ -162,7 +166,11 @@ export class InputHandler implements IInputHandler {
    * Horizontal Tab (HT) (Ctrl-I).
    */
   public tab(): void {
+    const originalX = this._terminal.buffer.x;
     this._terminal.buffer.x = this._terminal.buffer.nextStop();
+    if (this._terminal.options.screenReaderMode) {
+      this._terminal.emit('a11y.tab', this._terminal.buffer.x - originalX);
+    }
   }
 
   /**
@@ -928,7 +936,6 @@ export class InputHandler implements IInputHandler {
         case 47: // alt screen buffer
         case 1047: // alt screen buffer
           this._terminal.buffers.activateAltBuffer();
-          this._terminal.selectionManager.setBuffer(this._terminal.buffer);
           this._terminal.viewport.syncScrollArea();
           this._terminal.showCursor();
           break;
@@ -1100,7 +1107,6 @@ export class InputHandler implements IInputHandler {
           // if (params[0] === 1049) {
           //   this.restoreCursor(params);
           // }
-          this._terminal.selectionManager.setBuffer(this._terminal.buffer);
           this._terminal.refresh(0, this._terminal.rows - 1);
           this._terminal.viewport.syncScrollArea();
           this._terminal.showCursor();

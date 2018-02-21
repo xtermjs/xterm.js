@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminal } from './Interfaces';
+import { ITerminal } from './Types';
 
 interface IPosition {
   start: number;
@@ -217,7 +217,7 @@ export class CompositionHelper {
     if (!dontRecurse) {
       setTimeout(() => this.updateCompositionElements(true), 0);
     }
-  };
+  }
 
   /**
    * Clears the textarea's position so that the cursor does not blink on IE.
@@ -226,5 +226,5 @@ export class CompositionHelper {
   private clearTextareaPosition(): void {
     this.textarea.style.left = '';
     this.textarea.style.top = '';
-  };
+  }
 }

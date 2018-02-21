@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { ITerminal } from './Interfaces';
+import { ITerminal } from './Types';
 import { Buffer } from './Buffer';
 import { CircularList } from './utils/CircularList';
 import { MockTerminal } from './utils/TestUtils.test';

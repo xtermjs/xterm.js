@@ -3,10 +3,11 @@
  * @license MIT
  */
 
-import { IEventEmitter, IListenerType } from './Interfaces';
+import { XtermListener } from './Types';
+import { IEventEmitter, IDisposable } from 'xterm';
 
 export class EventEmitter implements IEventEmitter {
-  private _events: {[type: string]: IListenerType[]};
+  private _events: {[type: string]: XtermListener[]};
 
   constructor() {
     // Restore the previous events if available, this will happen if the
@@ -14,12 +15,31 @@ export class EventEmitter implements IEventEmitter {
     this._events = this._events || {};
   }
 
-  public on(type: string, listener: IListenerType): void {
+  public on(type: string, listener: XtermListener): void {
     this._events[type] = this._events[type] || [];
     this._events[type].push(listener);
   }
 
-  public off(type: string, listener: IListenerType): void {
+  /**
+   * Adds a disposabe listener to the EventEmitter, returning the disposable.
+   * @param type The event type.
+   * @param handler The handler for the listener.
+   */
+  public addDisposableListener(type: string, handler: XtermListener): IDisposable {
+    this.on(type, handler);
+    return {
+      dispose: () => {
+        if (!handler) {
+          // Already disposed
+          return;
+        }
+        this.off(type, handler);
+        handler = null;
+      }
+    };
+  }
+
+  public off(type: string, listener: XtermListener): void {
     if (!this._events[type]) {
       return;
     }
@@ -28,7 +48,7 @@ export class EventEmitter implements IEventEmitter {
     let i = obj.length;
 
     while (i--) {
-      if (obj[i] === listener || obj[i].listener === listener) {
+      if (obj[i] === listener) {
         obj.splice(i, 1);
         return;
       }
@@ -41,16 +61,6 @@ export class EventEmitter implements IEventEmitter {
     }
   }
 
-  public once(type: string, listener: IListenerType): void {
-    function on(): void {
-      let args = Array.prototype.slice.call(arguments);
-      this.off(type, on);
-      listener.apply(this, args);
-    }
-    (<any>on).listener = listener;
-    this.on(type, on);
-  }
-
   public emit(type: string, ...args: any[]): void {
     if (!this._events[type]) {
       return;
@@ -61,7 +71,7 @@ export class EventEmitter implements IEventEmitter {
     }
   }
 
-  public listeners(type: string): IListenerType[] {
+  public listeners(type: string): XtermListener[] {
     return this._events[type] || [];
   }
 

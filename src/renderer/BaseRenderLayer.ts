@@ -3,10 +3,9 @@
  * @license MIT
  */
 
-import { IRenderLayer, IColorSet, IRenderDimensions } from './Interfaces';
-import { ITerminal, ITerminalOptions } from '../Interfaces';
+import { IRenderLayer, IColorSet, IRenderDimensions } from './Types';
+import { CharData, ITerminal, ITerminalOptions } from '../Types';
 import { acquireCharAtlas, CHAR_ATLAS_CELL_SPACING } from './CharAtlas';
-import { CharData } from '../Types';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
 
 export const INVERTED_DEFAULT_COLOR = -1;
@@ -25,22 +24,25 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _charAtlas: HTMLCanvasElement | ImageBitmap;
 
   constructor(
-    container: HTMLElement,
+    private _container: HTMLElement,
     id: string,
     zIndex: number,
     private _alpha: boolean,
     protected _colors: IColorSet
   ) {
     this._canvas = document.createElement('canvas');
-    this._canvas.id = `xterm-${id}-layer`;
+    this._canvas.classList.add(`xterm-${id}-layer`);
     this._canvas.style.zIndex = zIndex.toString();
-    this._ctx = this._canvas.getContext('2d', {alpha: _alpha});
-    this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    this._initCanvas();
+    this._container.appendChild(this._canvas);
+  }
+
+  private _initCanvas(): void {
+    this._ctx = this._canvas.getContext('2d', {alpha: this._alpha});
     // Draw the background if this is an opaque layer
-    if (!_alpha) {
+    if (!this._alpha) {
       this.clearAll();
     }
-    container.appendChild(this._canvas);
   }
 
   public onOptionsChanged(terminal: ITerminal): void {}
@@ -54,6 +56,25 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._refreshCharAtlas(terminal, colorSet);
   }
 
+  protected setTransparency(terminal: ITerminal, alpha: boolean): void {
+    // Do nothing when alpha doesn't change
+    if (alpha === this._alpha) {
+      return;
+    }
+
+    // Create new canvas and replace old one
+    const oldCanvas = this._canvas;
+    this._alpha = alpha;
+    // Cloning preserves properties
+    this._canvas = <HTMLCanvasElement>this._canvas.cloneNode();
+    this._initCanvas();
+    this._container.replaceChild(this._canvas, oldCanvas);
+
+    // Regenerate char atlas and force a full redraw
+    this._refreshCharAtlas(terminal, this._colors);
+    this.onGridChanged(terminal, 0, terminal.rows - 1);
+  }
+
   /**
    * Refreshes the char atlas, aquiring a new one if necessary.
    * @param terminal The terminal.
@@ -64,7 +85,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       return;
     }
     this._charAtlas = null;
-    const result = acquireCharAtlas(terminal, this._colors, this._scaledCharWidth, this._scaledCharHeight);
+    const result = acquireCharAtlas(terminal, colorSet, this._scaledCharWidth, this._scaledCharHeight);
     if (result instanceof HTMLCanvasElement) {
       this._charAtlas = result;
     } else {
@@ -201,7 +222,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param color The color of the character.
    */
   protected fillCharTrueColor(terminal: ITerminal, charData: CharData, x: number, y: number): void {
-    this._ctx.font = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
+    this._ctx.font = this._getFont(terminal, false);
     this._ctx.textBaseline = 'top';
     this._clipRow(terminal, y);
     this._ctx.fillText(
@@ -269,7 +290,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
           charAtlasCellWidth,
           this._scaledCharHeight);
     } else {
-      this._drawUncachedChar(terminal, char, width, fg, x, y, bold, dim);
+      this._drawUncachedChar(terminal, char, width, fg, x, y, bold && terminal.options.enableBold, dim);
     }
     // This draws the atlas (for debugging purposes)
     // this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
@@ -289,10 +310,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   private _drawUncachedChar(terminal: ITerminal, char: string, width: number, fg: number, x: number, y: number, bold: boolean, dim: boolean): void {
     this._ctx.save();
-    this._ctx.font = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
-    if (bold && terminal.options.enableBold) {
-      this._ctx.font = `bold ${this._ctx.font}`;
-    }
+    this._ctx.font = this._getFont(terminal, bold);
     this._ctx.textBaseline = 'top';
 
     if (fg === INVERTED_DEFAULT_COLOR) {
@@ -331,6 +349,17 @@ export abstract class BaseRenderLayer implements IRenderLayer {
         terminal.cols * this._scaledCellWidth,
         this._scaledCellHeight);
     this._ctx.clip();
+  }
+
+  /**
+   * Gets the current font.
+   * @param terminal The terminal.
+   * @param isBold If we should use the bold fontWeight.
+   */
+  protected _getFont(terminal: ITerminal, isBold: boolean): string {
+    const fontWeight = isBold ? terminal.options.fontWeightBold : terminal.options.fontWeight;
+
+    return `${fontWeight} ${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
   }
 }
 

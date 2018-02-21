@@ -3,13 +3,77 @@
  * @license MIT
  */
 
-import { ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, IListenerType, IInputHandlingTerminal, IViewport, ICircularList, ICompositionHelper, ITheme, ILinkifier, IMouseHelper } from '../Interfaces';
-import { LineData } from '../Types';
+import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../renderer/Types';
+import { LineData, IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ICircularList, ILinkifier, IMouseHelper, ILinkMatcherOptions, XtermListener } from '../Types';
 import { Buffer } from '../Buffer';
-import * as Browser from './Browser';
-import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../renderer/Interfaces';
+import * as Browser from '../shared/utils/Browser';
+import { ITheme, IDisposable } from 'xterm';
 
 export class MockTerminal implements ITerminal {
+  static string: any;
+  getOption(key: any): any {
+    throw new Error('Method not implemented.');
+  }
+  setOption(key: any, value: any): void {
+    throw new Error('Method not implemented.');
+  }
+  blur(): void {
+    throw new Error('Method not implemented.');
+  }
+  focus(): void {
+    throw new Error('Method not implemented.');
+  }
+  resize(columns: number, rows: number): void {
+    throw new Error('Method not implemented.');
+  }
+  writeln(data: string): void {
+    throw new Error('Method not implemented.');
+  }
+  open(parent: HTMLElement): void {
+    throw new Error('Method not implemented.');
+  }
+  attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void {
+    throw new Error('Method not implemented.');
+  }
+  registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => boolean | void, options?: ILinkMatcherOptions): number {
+    throw new Error('Method not implemented.');
+  }
+  deregisterLinkMatcher(matcherId: number): void {
+    throw new Error('Method not implemented.');
+  }
+  hasSelection(): boolean {
+    throw new Error('Method not implemented.');
+  }
+  getSelection(): string {
+    throw new Error('Method not implemented.');
+  }
+  clearSelection(): void {
+    throw new Error('Method not implemented.');
+  }
+  selectAll(): void {
+    throw new Error('Method not implemented.');
+  }
+  destroy(): void {
+    throw new Error('Method not implemented.');
+  }
+  scrollPages(pageCount: number): void {
+    throw new Error('Method not implemented.');
+  }
+  scrollToTop(): void {
+    throw new Error('Method not implemented.');
+  }
+  scrollToBottom(): void {
+    throw new Error('Method not implemented.');
+  }
+  clear(): void {
+    throw new Error('Method not implemented.');
+  }
+  write(data: string): void {
+    throw new Error('Method not implemented.');
+  }
+  send(data: string): void {
+    throw new Error('Method not implemented.');
+  }
   bracketedPasteMode: boolean;
   mouseHelper: IMouseHelper;
   renderer: IRenderer;
@@ -17,6 +81,7 @@ export class MockTerminal implements ITerminal {
   isFocused: boolean;
   options: ITerminalOptions = {};
   element: HTMLElement;
+  screenElement: HTMLElement;
   rowContainer: HTMLElement;
   selectionContainer: HTMLElement;
   selectionManager: ISelectionManager;
@@ -33,16 +98,24 @@ export class MockTerminal implements ITerminal {
   scrollback: number;
   buffers: IBufferSet;
   buffer: IBuffer;
+  viewport: IViewport;
+  applicationCursor: boolean;
   handler(data: string): void {
     throw new Error('Method not implemented.');
   }
   on(event: string, callback: () => void): void {
     throw new Error('Method not implemented.');
   }
-  off(type: string, listener: IListenerType): void {
+  off(type: string, listener: XtermListener): void {
+    throw new Error('Method not implemented.');
+  }
+  addDisposableListener(type: string, handler: XtermListener): IDisposable {
     throw new Error('Method not implemented.');
   }
   scrollLines(disp: number, suppressScrollEvent: boolean): void {
+    throw new Error('Method not implemented.');
+  }
+  scrollToRow(absoluteRow: number): number {
     throw new Error('Method not implemented.');
   }
   cancel(ev: Event, force?: boolean): void {
@@ -184,13 +257,16 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   setOption(key: string, value: any): void {
     this.options[key] = value;
   }
-  on(type: string, listener: IListenerType): void {
+  on(type: string, listener: XtermListener): void {
     throw new Error('Method not implemented.');
   }
-  off(type: string, listener: IListenerType): void {
+  off(type: string, listener: XtermListener): void {
     throw new Error('Method not implemented.');
   }
   emit(type: string, data?: any): void {
+    throw new Error('Method not implemented.');
+  }
+  addDisposableListener(type: string, handler: XtermListener): IDisposable {
     throw new Error('Method not implemented.');
   }
 }
@@ -220,13 +296,16 @@ export class MockBuffer implements IBuffer {
 
 export class MockRenderer implements IRenderer {
   colorManager: IColorManager;
-  on(type: string, listener: IListenerType): void {
+  on(type: string, listener: XtermListener): void {
     throw new Error('Method not implemented.');
   }
-  off(type: string, listener: IListenerType): void {
+  off(type: string, listener: XtermListener): void {
     throw new Error('Method not implemented.');
   }
   emit(type: string, data?: any): void {
+    throw new Error('Method not implemented.');
+  }
+  addDisposableListener(type: string, handler: XtermListener): IDisposable {
     throw new Error('Method not implemented.');
   }
   dimensions: IRenderDimensions;
@@ -240,10 +319,11 @@ export class MockRenderer implements IRenderer {
   onOptionsChanged(): void {}
   onWindowResize(devicePixelRatio: number): void {}
   clear(): void {}
-  queueRefresh(start: number, end: number): void {}
+  refreshRows(start: number, end: number): void {}
 }
 
 export class MockViewport implements IViewport {
+  scrollBarWidth: number = 0;
   onThemeChanged(colors: IColorSet): void {
     throw new Error('Method not implemented.');
   }

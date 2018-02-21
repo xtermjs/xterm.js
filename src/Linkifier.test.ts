@@ -4,10 +4,9 @@
  */
 
 import { assert } from 'chai';
-import { ITerminal, ILinkifier, IBuffer, IBufferAccessor, IElementAccessor } from './Interfaces';
+import { IMouseZoneManager, IMouseZone } from './input/Types';
+import { ILinkMatcher, LineData, ITerminal, ILinkifier, IBuffer, IBufferAccessor, IElementAccessor } from './Types';
 import { Linkifier } from './Linkifier';
-import { LinkMatcher, LineData } from './Types';
-import { IMouseZoneManager, IMouseZone } from './input/Interfaces';
 import { MockBuffer } from './utils/TestUtils.test';
 import { CircularList } from './utils/CircularList';
 
@@ -17,7 +16,7 @@ class TestLinkifier extends Linkifier {
     Linkifier.TIME_BEFORE_LINKIFY = 0;
   }
 
-  public get linkMatchers(): LinkMatcher[] { return this._linkMatchers; }
+  public get linkMatchers(): ILinkMatcher[] { return this._linkMatchers; }
   public linkifyRows(): void { super.linkifyRows(0, this._terminal.buffer.lines.length - 1); }
 }
 

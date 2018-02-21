@@ -3,9 +3,8 @@
  * @license MIT
  */
 
-import { ILinkMatcherOptions, ITerminal, IBufferAccessor, ILinkifier, IElementAccessor } from './Interfaces';
-import { LinkMatcher, LinkMatcherHandler, LinkMatcherValidationCallback, LineData, LinkHoverEvent, LinkHoverEventTypes } from './Types';
-import { IMouseZoneManager } from './input/Interfaces';
+import { IMouseZoneManager } from './input/Types';
+import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkMatcherValidationCallback, LineData, LinkHoverEventTypes, ILinkMatcherOptions, ITerminal, IBufferAccessor, ILinkifier, IElementAccessor } from './Types';
 import { MouseZone } from './input/MouseZoneManager';
 import { EventEmitter } from './EventEmitter';
 
@@ -44,7 +43,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    */
   protected static TIME_BEFORE_LINKIFY = 200;
 
-  protected _linkMatchers: LinkMatcher[] = [];
+  protected _linkMatchers: ILinkMatcher[] = [];
 
   private _mouseZoneManager: IMouseZoneManager;
   private _rowsTimeoutId: number;
@@ -82,12 +81,12 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     }
 
     // Increase range to linkify
-    if (!this._rowsToLinkify.start) {
+    if (this._rowsToLinkify.start === null) {
       this._rowsToLinkify.start = start;
       this._rowsToLinkify.end = end;
     } else {
-      this._rowsToLinkify.start = this._rowsToLinkify.start < start ? this._rowsToLinkify.start : start;
-      this._rowsToLinkify.end = this._rowsToLinkify.end > end ? this._rowsToLinkify.end : end;
+      this._rowsToLinkify.start = Math.min(this._rowsToLinkify.start, start);
+      this._rowsToLinkify.end = Math.max(this._rowsToLinkify.end, end);
     }
 
     // Clear out any existing links on this row range
@@ -143,7 +142,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     if (this._nextLinkMatcherId !== HYPERTEXT_LINK_MATCHER_ID && !handler) {
       throw new Error('handler must be defined');
     }
-    const matcher: LinkMatcher = {
+    const matcher: ILinkMatcher = {
       id: this._nextLinkMatcherId++,
       regex,
       handler,
@@ -151,6 +150,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       validationCallback: options.validationCallback,
       hoverTooltipCallback: options.tooltipCallback,
       hoverLeaveCallback: options.leaveCallback,
+      willLinkActivate: options.willLinkActivate,
       priority: options.priority || 0
     };
     this._addLinkMatcherToList(matcher);
@@ -163,7 +163,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * considered after older link matchers.
    * @param matcher The link matcher to be added.
    */
-  private _addLinkMatcherToList(matcher: LinkMatcher): void {
+  private _addLinkMatcherToList(matcher: ILinkMatcher): void {
     if (this._linkMatchers.length === 0) {
       this._linkMatchers.push(matcher);
       return;
@@ -219,7 +219,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @param offset The how much of the row has already been linkified.
    * @return The link element(s) that were added.
    */
-  private _doLinkifyRow(rowIndex: number, text: string, matcher: LinkMatcher, offset: number = 0): void {
+  private _doLinkifyRow(rowIndex: number, text: string, matcher: ILinkMatcher, offset: number = 0): void {
     // Iterate over nodes as we want to consider text nodes
     let result = [];
     const isHttpLinkMatcher = matcher.id === HYPERTEXT_LINK_MATCHER_ID;
@@ -264,7 +264,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @param uri The URI of the link.
    * @param matcher The link matcher for the link.
    */
-  private _addLink(x: number, y: number, uri: string, matcher: LinkMatcher): void {
+  private _addLink(x: number, y: number, uri: string, matcher: ILinkMatcher): void {
     this._mouseZoneManager.add(new MouseZone(
       x + 1,
       x + 1 + uri.length,
@@ -276,21 +276,27 @@ export class Linkifier extends EventEmitter implements ILinkifier {
         window.open(uri, '_blank');
       },
       e => {
-        this.emit(LinkHoverEventTypes.HOVER, <LinkHoverEvent>{ x, y, length: uri.length});
+        this.emit(LinkHoverEventTypes.HOVER, <ILinkHoverEvent>{ x, y, length: uri.length});
         this._terminal.element.style.cursor = 'pointer';
       },
       e => {
-        this.emit(LinkHoverEventTypes.TOOLTIP, <LinkHoverEvent>{ x, y, length: uri.length});
+        this.emit(LinkHoverEventTypes.TOOLTIP, <ILinkHoverEvent>{ x, y, length: uri.length});
         if (matcher.hoverTooltipCallback) {
           matcher.hoverTooltipCallback(e, uri);
         }
       },
       () => {
-        this.emit(LinkHoverEventTypes.LEAVE, <LinkHoverEvent>{ x, y, length: uri.length});
+        this.emit(LinkHoverEventTypes.LEAVE, <ILinkHoverEvent>{ x, y, length: uri.length});
         this._terminal.element.style.cursor = '';
         if (matcher.hoverLeaveCallback) {
           matcher.hoverLeaveCallback();
         }
+      },
+      e => {
+        if (matcher.willLinkActivate) {
+          return matcher.willLinkActivate(e, uri);
+        }
+        return true;
       }
     ));
   }

@@ -3,15 +3,15 @@
  * @license MIT
  */
 
+import { ITerminal, ICircularList, ISelectionManager, IBuffer, LineData, CharData, XtermListener } from './Types';
 import { MouseHelper } from './utils/MouseHelper';
-import * as Browser from './utils/Browser';
+import * as Browser from './shared/utils/Browser';
 import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
 import { EventEmitter } from './EventEmitter';
-import { ITerminal, ICircularList, ISelectionManager, IBuffer } from './Interfaces';
 import { SelectionModel } from './SelectionModel';
-import { LineData, CharData } from './Types';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from './Buffer';
+import { AltClickHandler } from './handlers/AltClickHandler';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -28,6 +28,12 @@ const DRAG_SCROLL_MAX_SPEED = 15;
  * The number of milliseconds between drag scroll updates.
  */
 const DRAG_SCROLL_INTERVAL = 50;
+
+/**
+ * The maximum amount of time that can have elapsed for an alt click to move the
+ * cursor.
+ */
+const ALT_CLICK_MOVE_CURSOR_TIME = 500;
 
 /**
  * A string containing all characters that are considered word separated by the
@@ -95,10 +101,12 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
   private _mouseMoveListener: EventListener;
   private _mouseUpListener: EventListener;
+  private _trimListener: XtermListener;
+
+  private _mouseDownTimeStamp: number;
 
   constructor(
     private _terminal: ITerminal,
-    private _buffer: IBuffer,
     private _charMeasure: CharMeasure
   ) {
     super();
@@ -109,18 +117,24 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     this._activeSelectionMode = SelectionMode.NORMAL;
   }
 
+  private get _buffer(): IBuffer {
+    return this._terminal.buffers.active;
+  }
+
   /**
    * Initializes listener variables.
    */
   private _initListeners(): void {
     this._mouseMoveListener = event => this._onMouseMove(<MouseEvent>event);
     this._mouseUpListener = event => this._onMouseUp(<MouseEvent>event);
+    this._trimListener = (amount: number) => this._onTrim(amount);
 
-    // Only adjust the selection on trim, shiftElements is rarely used (only in
-    // reverseIndex) and delete in a splice is only ever used when the same
-    // number of elements was just added. Given this is could actually be
-    // beneficial to leave the selection as is for these cases.
-    this._buffer.lines.on('trim', (amount: number) => this._onTrim(amount));
+    this.initBuffersListeners();
+  }
+
+  public initBuffersListeners(): void {
+    this._terminal.buffer.lines.on('trim', this._trimListener);
+    this._terminal.buffers.on('activate', e => this._onBufferActivate(e));
   }
 
   /**
@@ -137,16 +151,6 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    */
   public enable(): void {
     this._enabled = true;
-  }
-
-  /**
-   * Sets the active buffer, this should be called when the alt buffer is
-   * switched in or out.
-   * @param buffer The active buffer.
-   */
-  public setBuffer(buffer: IBuffer): void {
-    this._buffer = buffer;
-    this.clearSelection();
   }
 
   public get selectionStart(): [number, number] { return this._model.finalSelectionStart; }
@@ -250,6 +254,37 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   }
 
   /**
+   * Checks if the current click was inside the current selection
+   * @param event The mouse event
+   */
+  public isClickInSelection(event: MouseEvent): boolean {
+    const coords = this._getMouseBufferCoords(event);
+    const start = this._model.finalSelectionStart;
+    const end = this._model.finalSelectionEnd;
+
+    if (!start || !end) {
+      return false;
+    }
+
+    return (coords[1] > start[1] && coords[1] < end[1]) ||
+        (start[1] === end[1] && coords[1] === start[1] && coords[0] > start[0] && coords[0] < end[0]) ||
+        (start[1] < end[1] && coords[1] === end[1] && coords[0] < end[0]);
+  }
+
+  /**
+   * Selects word at the current mouse event coordinates.
+   * @param event The mouse event.
+   */
+  public selectWordAtCursor(event: MouseEvent): void {
+    const coords = this._getMouseBufferCoords(event);
+    if (coords) {
+      this._selectWordAt(coords, false);
+      this._model.selectionEnd = null;
+      this.refresh(true);
+    }
+  }
+
+  /**
    * Selects all text within the terminal.
    */
   public selectAll(): void {
@@ -274,7 +309,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param event The mouse event.
    */
   private _getMouseBufferCoords(event: MouseEvent): [number, number] {
-    const coords = this._terminal.mouseHelper.getCoords(event, this._terminal.element, this._charMeasure, this._terminal.options.lineHeight, this._terminal.cols, this._terminal.rows, true);
+    const coords = this._terminal.mouseHelper.getCoords(event, this._terminal.screenElement, this._charMeasure, this._terminal.options.lineHeight, this._terminal.cols, this._terminal.rows, true);
     if (!coords) {
       return null;
     }
@@ -294,7 +329,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param event The mouse event.
    */
   private _getMouseEventScrollAmount(event: MouseEvent): number {
-    let offset = MouseHelper.getCoordsRelativeToElement(event, this._terminal.element)[1];
+    let offset = MouseHelper.getCoordsRelativeToElement(event, this._terminal.screenElement)[1];
     const terminalHeight = this._terminal.rows * Math.ceil(this._charMeasure.height * this._terminal.options.lineHeight);
     if (offset >= 0 && offset <= terminalHeight) {
       return 0;
@@ -322,6 +357,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param event The mousedown event.
    */
   public onMouseDown(event: MouseEvent): void {
+    this._mouseDownTimeStamp = event.timeStamp;
     // If we have selection, we want the context menu on right click even if the
     // terminal is in mouse mode.
     if (event.button === 2 && this.hasSelection) {
@@ -440,7 +476,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     const coords = this._getMouseBufferCoords(event);
     if (coords) {
       this._activeSelectionMode = SelectionMode.WORD;
-      this._selectWordAt(coords);
+      this._selectWordAt(coords, true);
     }
   }
 
@@ -541,10 +577,25 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param event The mouseup event.
    */
   private _onMouseUp(event: MouseEvent): void {
+    let timeElapsed = event.timeStamp - this._mouseDownTimeStamp;
+
     this._removeMouseDownListeners();
 
-    if (this.hasSelection)
+    if (this.selectionText.length <= 1 && timeElapsed < ALT_CLICK_MOVE_CURSOR_TIME) {
+      (new AltClickHandler(event, this._terminal)).move();
+    } else if (this.hasSelection) {
       this._terminal.emit('selection');
+    }
+  }
+
+  private _onBufferActivate(e: {activeBuffer: IBuffer, inactiveBuffer: IBuffer}): void {
+    this.clearSelection();
+    // Only adjust the selection on trim, shiftElements is rarely used (only in
+    // reverseIndex) and delete in a splice is only ever used when the same
+    // number of elements was just added. Given this is could actually be
+    // beneficial to leave the selection as is for these cases.
+    e.inactiveBuffer.lines.off('trim', this._trimListener);
+    e.activeBuffer.lines.on('trim', this._trimListener);
   }
 
   /**
@@ -582,7 +633,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * Gets positional information for the word at the coordinated specified.
    * @param coords The coordinates to get the word at.
    */
-  private _getWordAt(coords: [number, number]): IWordPosition {
+  private _getWordAt(coords: [number, number], allowWhitespaceOnlySelection: boolean): IWordPosition {
     const bufferLine = this._buffer.lines.get(coords[1]);
     if (!bufferLine) {
       return null;
@@ -688,15 +739,20 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
         - leftLongCharOffset // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
         - rightLongCharOffset); // The number of additional chars right of the initial char (inclusive) added by columns with strings longer than 1 (emojis)
 
+    if (!allowWhitespaceOnlySelection && line.slice(startIndex, endIndex).trim() === '') {
+      return null;
+    }
+
     return { start, length };
   }
 
   /**
    * Selects the word at the coordinates specified.
    * @param coords The coordinates to get the word at.
+   * @param allowWhitespaceOnlySelection If whitespace should be selected
    */
-  protected _selectWordAt(coords: [number, number]): void {
-    const wordPosition = this._getWordAt(coords);
+  protected _selectWordAt(coords: [number, number], allowWhitespaceOnlySelection: boolean): void {
+    const wordPosition = this._getWordAt(coords, allowWhitespaceOnlySelection);
     if (wordPosition) {
       this._model.selectionStart = [wordPosition.start, coords[1]];
       this._model.selectionStartLength = wordPosition.length;
@@ -708,7 +764,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param coords The coordinates to get the word at.
    */
   private _selectToWordAt(coords: [number, number]): void {
-    const wordPosition = this._getWordAt(coords);
+    const wordPosition = this._getWordAt(coords, true);
     if (wordPosition) {
       this._model.selectionEnd = [this._model.areSelectionValuesReversed() ? wordPosition.start : (wordPosition.start + wordPosition.length), coords[1]];
     }

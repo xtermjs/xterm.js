@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { IMouseZoneManager, IMouseZone } from './Interfaces';
-import { ITerminal } from '../Interfaces';
+import { ITerminal } from '../Types';
+import { IMouseZoneManager, IMouseZone } from './Types';
 
 const HOVER_DURATION = 500;
 
@@ -151,10 +151,10 @@ export class MouseZoneManager implements IMouseZoneManager {
     // components from handling the mouse event.
     const zone = this._findZoneEventAt(e);
     if (zone) {
-      // TODO: When link modifier support is added, the event should only be
-      // cancelled when the modifier is held (see #1021)
-      e.preventDefault();
-      e.stopImmediatePropagation();
+      if (zone.willLinkActivate(e)) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
     }
   }
 
@@ -169,7 +169,7 @@ export class MouseZoneManager implements IMouseZoneManager {
   }
 
   private _findZoneEventAt(e: MouseEvent): IMouseZone {
-    const coords = this._terminal.mouseHelper.getCoords(e, this._terminal.element, this._terminal.charMeasure, this._terminal.options.lineHeight, this._terminal.cols, this._terminal.rows);
+    const coords = this._terminal.mouseHelper.getCoords(e, this._terminal.screenElement, this._terminal.charMeasure, this._terminal.options.lineHeight, this._terminal.cols, this._terminal.rows);
     if (!coords) {
       return null;
     }
@@ -178,7 +178,7 @@ export class MouseZoneManager implements IMouseZoneManager {
       if (zone.y === coords[1] && zone.x1 <= coords[0] && zone.x2 > coords[0]) {
         return zone;
       }
-    };
+    }
     return null;
   }
 }
@@ -189,9 +189,10 @@ export class MouseZone implements IMouseZone {
     public x2: number,
     public y: number,
     public clickCallback: (e: MouseEvent) => any,
-    public hoverCallback?: (e: MouseEvent) => any,
-    public tooltipCallback?: (e: MouseEvent) => any,
-    public leaveCallback?: () => void
+    public hoverCallback: (e: MouseEvent) => any,
+    public tooltipCallback: (e: MouseEvent) => any,
+    public leaveCallback: () => void,
+    public willLinkActivate: (e: MouseEvent) => boolean
   ) {
   }
 }

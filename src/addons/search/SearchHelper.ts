@@ -3,8 +3,7 @@
  * @license MIT
  */
 
-// import { ITerminal } from '../../Interfaces';
-// import { translateBufferLineToString } from '../../utils/BufferLine';
+import { ISearchHelper, ISearchAddonTerminal } from './Interfaces';
 
 interface ISearchResult {
   term: string;
@@ -15,8 +14,8 @@ interface ISearchResult {
 /**
  * A class that knows how to search the terminal and how to display the results.
  */
-export class SearchHelper {
-  constructor(private _terminal: any) {
+export class SearchHelper implements ISearchHelper {
+  constructor(private _terminal: ISearchAddonTerminal) {
     // TODO: Search for multiple instances on 1 line
     // TODO: Don't use the actual selection, instead use a "find selection" so multiple instances can be highlighted
     // TODO: Highlight other instances in the viewport
@@ -114,8 +113,23 @@ export class SearchHelper {
   private _findInLine(term: string, y: number): ISearchResult {
     const lowerStringLine = this._terminal.buffer.translateBufferLineToString(y, true).toLowerCase();
     const lowerTerm = term.toLowerCase();
-    const searchIndex = lowerStringLine.indexOf(lowerTerm);
+    let searchIndex = lowerStringLine.indexOf(lowerTerm);
     if (searchIndex >= 0) {
+      const line = this._terminal.buffer.lines.get(y);
+      for (let i = 0; i < searchIndex; i++) {
+        const charData = line[i];
+        // Adjust the searchIndex to normalize emoji into single chars
+        const char = charData[1/*CHAR_DATA_CHAR_INDEX*/];
+        if (char.length > 1) {
+          searchIndex -= char.length - 1;
+        }
+        // Adjust the searchIndex for empty characters following wide unicode
+        // chars (eg. CJK)
+        const charWidth = charData[2/*CHAR_DATA_WIDTH_INDEX*/];
+        if (charWidth === 0) {
+          searchIndex++;
+        }
+      }
       return {
         term,
         col: searchIndex,
@@ -134,7 +148,7 @@ export class SearchHelper {
       return false;
     }
     this._terminal.selectionManager.setSelection(result.col, result.row, result.term.length);
-    this._terminal.scrollLines(result.row - this._terminal.buffer.ydisp, false);
+    this._terminal.scrollLines(result.row - this._terminal.buffer.ydisp);
     return true;
   }
 }

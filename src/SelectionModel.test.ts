@@ -4,9 +4,9 @@
  */
 
 import { assert } from 'chai';
-import { ITerminal } from './Interfaces';
+import { ITerminal } from './Types';
 import { SelectionModel } from './SelectionModel';
-import {BufferSet} from './BufferSet';
+import { BufferSet } from './BufferSet';
 import { MockTerminal } from './utils/TestUtils.test';
 
 class TestSelectionModel extends SelectionModel {

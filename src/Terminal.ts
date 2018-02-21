@@ -21,6 +21,9 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
+import { ICharset, IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
+import { IMouseZoneManager } from './input/Types';
+import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
 import { Buffer, MAX_BUFFER_SIZE } from './Buffer';
 import { CompositionHelper } from './CompositionHelper';
@@ -35,17 +38,44 @@ import { Renderer } from './renderer/Renderer';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
 import { CharMeasure } from './utils/CharMeasure';
-import * as Browser from './utils/Browser';
+import * as Browser from './shared/utils/Browser';
+import * as Strings from './Strings';
 import { MouseHelper } from './utils/MouseHelper';
 import { CHARSETS } from './Charsets';
-import { CustomKeyEventHandler, Charset, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
-import { ITerminal, IBrowser, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper, ITheme, ILinkifier } from './Interfaces';
 import { DefaultBellSound, SoundManager } from './SoundManager';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
-import { IMouseZoneManager } from './input/Interfaces';
 import { MouseZoneManager } from './input/MouseZoneManager';
-import { initialize as initializeCharAtlas } from './renderer/CharAtlas';
-import { IRenderer } from './renderer/Interfaces';
+import { AccessibilityManager } from './AccessibilityManager';
+import { ScreenDprMonitor } from './utils/ScreenDprMonitor';
+import { ITheme, ILocalizableStrings } from 'xterm';
+
+// reg + shift key mappings for digits and special chars
+const KEYCODE_KEY_MAPPINGS = {
+  // digits 0-9
+  48: ['0', ')'],
+  49: ['1', '!'],
+  50: ['2', '@'],
+  51: ['3', '#'],
+  52: ['4', '$'],
+  53: ['5', '%'],
+  54: ['6', '^'],
+  55: ['7', '&'],
+  56: ['8', '*'],
+  57: ['9', '('],
+
+  // special chars
+  186: [';', ':'],
+  187: ['=', '+'],
+  188: [',', '<'],
+  189: ['-', '_'],
+  190: ['.', '>'],
+  191: ['/', '?'],
+  192: ['`', '~'],
+  219: ['[', '{'],
+  220: ['\\', '|'],
+  221: [']', '}'],
+  222: ['\'', '"']
+};
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -75,16 +105,22 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   enableBold: true,
   fontFamily: 'courier-new, courier, monospace',
   fontSize: 15,
+  fontWeight: 'normal',
+  fontWeightBold: 'bold',
   lineHeight: 1.0,
   letterSpacing: 0,
   scrollback: 1000,
   screenKeys: false,
+  screenReaderMode: false,
   debug: false,
+  macOptionIsMeta: false,
   cancelEvents: false,
   disableStdin: false,
   useFlowControl: false,
+  allowTransparency: false,
   tabStopWidth: 8,
-  theme: null
+  theme: null,
+  rightClickSelectsWord: Browser.isMac
   // programFeatures: false,
   // focusKeys: false,
 };
@@ -92,6 +128,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
 export class Terminal extends EventEmitter implements ITerminal, IInputHandlingTerminal {
   public textarea: HTMLTextAreaElement;
   public element: HTMLElement;
+  public screenElement: HTMLElement;
 
   /**
    * The HTMLElement that the terminal is created in, set by Terminal.open.
@@ -131,10 +168,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
   // charset
   // The current charset
-  public charset: Charset;
+  public charset: ICharset;
   public gcharset: number;
   public glevel: number;
-  public charsets: Charset[];
+  public charsets: ICharset[];
 
   // mouse properties
   private decLocator: boolean; // This is unstable and never set
@@ -181,7 +218,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   private writeStopped: boolean;
 
   // leftover surrogate high from previous write invocation
-  private surrogate_high: string;
+  private surrogateHigh: string;
 
   // Store if user went browsing history in scrollback
   private userScrolling: boolean;
@@ -190,15 +227,16 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   public soundManager: SoundManager;
   private parser: Parser;
   public renderer: IRenderer;
+  public selectionManager: SelectionManager;
   public linkifier: ILinkifier;
   public buffers: BufferSet;
-  public buffer: Buffer;
   public viewport: IViewport;
   private compositionHelper: ICompositionHelper;
   public charMeasure: CharMeasure;
   private _mouseZoneManager: IMouseZoneManager;
   public mouseHelper: MouseHelper;
-  public selectionManager: SelectionManager;
+  private _accessibilityManager: AccessibilityManager;
+  private _screenDprMonitor: ScreenDprMonitor;
 
   public cols: number;
   public rows: number;
@@ -281,7 +319,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     this.xoffSentToCatchUp = false;
     this.writeStopped = false;
-    this.surrogate_high = '';
+    this.surrogateHigh = '';
     this.userScrolling = false;
 
     this.inputHandler = new InputHandler(this);
@@ -295,15 +333,21 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     // Create the terminal's buffers and set the current buffer
     this.buffers = new BufferSet(this);
-    this.buffer = this.buffers.active;  // Convenience shortcut;
-    this.buffers.on('activate', (buffer: Buffer) => {
-      this.buffer = buffer;
-    });
-
-    // Ensure the selection manager has the correct buffer
     if (this.selectionManager) {
-      this.selectionManager.setBuffer(this.buffer);
+      this.selectionManager.clearSelection();
+      this.selectionManager.initBuffersListeners();
     }
+  }
+
+  /**
+   * Convenience property to active buffer.
+   */
+  public get buffer(): Buffer {
+    return this.buffers.active;
+  }
+
+  public static get strings(): ILocalizableStrings {
+    return Strings;
   }
 
   /**
@@ -363,6 +407,16 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
           value = 'block';
         }
         break;
+      case 'fontWeight':
+        if (!value) {
+          value = 'normal';
+        }
+        break;
+      case 'fontWeightBold':
+        if (!value) {
+          value = 'bold';
+        }
+        break;
       case 'lineHeight':
         if (value < 1) {
           console.warn(`${key} cannot be less than 1, value: ${value}`);
@@ -416,14 +470,29 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       case 'enableBold':
       case 'letterSpacing':
       case 'lineHeight':
+      case 'fontWeight':
+      case 'fontWeightBold':
+        const didCharSizeChange = (key === 'fontWeight' || key === 'fontWeightBold' || key === 'enableBold');
+
         // When the font changes the size of the cells may change which requires a renderer clear
         this.renderer.clear();
-        this.renderer.onResize(this.cols, this.rows, false);
+        this.renderer.onResize(this.cols, this.rows, didCharSizeChange);
         this.refresh(0, this.rows - 1);
-        // this.charMeasure.measure(this.options);
       case 'scrollback':
         this.buffers.resize(this.cols, this.rows);
         this.viewport.syncScrollArea();
+        break;
+      case 'screenReaderMode':
+        if (value) {
+          if (!this._accessibilityManager) {
+            this._accessibilityManager = new AccessibilityManager(this);
+          }
+        } else {
+          if (this._accessibilityManager) {
+            this._accessibilityManager.dispose();
+            this._accessibilityManager = null;
+          }
+        }
         break;
       case 'tabStopWidth': this.buffers.setupTabStops(); break;
     }
@@ -443,7 +512,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.element.classList.add('focus');
     this.showCursor();
     this.emit('focus');
-  };
+  }
 
   /**
    * Blur the terminal, calling the blur function on the terminal's underlying
@@ -457,6 +526,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Binds the desired blur behavior on a given terminal object.
    */
   private _onTextAreaBlur(): void {
+    // Text can safely be removed on blur. Doing it earlier could interfere with
+    // screen readers reading it out.
+    this.textarea.value = '';
     this.refresh(this.buffer.y, this.buffer.y);
     if (this.sendFocus) {
       this.send(C0.ESC + '[O');
@@ -489,12 +561,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       // Firefox doesn't appear to fire the contextmenu event on right click
       on(this.element, 'mousedown', (event: MouseEvent) => {
         if (event.button === 2) {
-          rightClickHandler(event, this.textarea, this.selectionManager);
+          rightClickHandler(event, this.textarea, this.selectionManager, this.options.rightClickSelectsWord);
         }
       });
     } else {
       on(this.element, 'contextmenu', (event: MouseEvent) => {
-        rightClickHandler(event, this.textarea, this.selectionManager);
+        rightClickHandler(event, this.textarea, this.selectionManager, this.options.rightClickSelectsWord);
       });
     }
 
@@ -537,16 +609,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       }
     }, true);
 
-    on(this.textarea, 'keydown', (ev: KeyboardEvent) => {
-      this._keyDown(ev);
-    }, true);
-
-    on(this.textarea, 'keypress', (ev: KeyboardEvent) => {
-      this._keyPress(ev);
-      // Truncate the textarea's value, since it is not needed
-      this.textarea.value = '';
-    }, true);
-
+    on(this.textarea, 'keydown', (ev: KeyboardEvent) => this._keyDown(ev), true);
+    on(this.textarea, 'keypress', (ev: KeyboardEvent) => this._keyPress(ev), true);
     on(this.textarea, 'compositionstart', () => this.compositionHelper.compositionstart());
     on(this.textarea, 'compositionupdate', (e: CompositionEvent) => this.compositionHelper.compositionupdate(e));
     on(this.textarea, 'compositionend', () => this.compositionHelper.compositionend());
@@ -574,7 +638,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.document = this.parent.ownerDocument;
     this.body = <HTMLBodyElement>this.document.body;
 
-    initializeCharAtlas(this.document);
+    this._screenDprMonitor = new ScreenDprMonitor();
+    this._screenDprMonitor.setListener(() => this.emit('dprchange', window.devicePixelRatio));
 
     // Create main element container
     this.element = this.document.createElement('div');
@@ -593,18 +658,24 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.viewportScrollArea.classList.add('xterm-scroll-area');
     this.viewportElement.appendChild(this.viewportScrollArea);
 
-    this._mouseZoneManager = new MouseZoneManager(this);
-    this.on('scroll', () => this._mouseZoneManager.clearAll());
-    this.linkifier.attachToDom(this._mouseZoneManager);
-
+    this.screenElement = document.createElement('div');
+    this.screenElement.classList.add('xterm-screen');
     // Create the container that will hold helpers like the textarea for
     // capturing DOM Events. Then produce the helpers.
     this.helperContainer = document.createElement('div');
     this.helperContainer.classList.add('xterm-helpers');
-    fragment.appendChild(this.helperContainer);
+    this.screenElement.appendChild(this.helperContainer);
+    fragment.appendChild(this.screenElement);
+
+    this._mouseZoneManager = new MouseZoneManager(this);
+    this.on('scroll', () => this._mouseZoneManager.clearAll());
+    this.linkifier.attachToDom(this._mouseZoneManager);
 
     this.textarea = document.createElement('textarea');
     this.textarea.classList.add('xterm-helper-textarea');
+    // TODO: New API to set title? This could say "Terminal bash input", etc.
+    this.textarea.setAttribute('aria-label', Strings.promptLabel);
+    this.textarea.setAttribute('aria-multiline', 'false');
     this.textarea.setAttribute('autocorrect', 'off');
     this.textarea.setAttribute('autocapitalize', 'off');
     this.textarea.setAttribute('spellcheck', 'false');
@@ -634,10 +705,14 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.on('resize', () => this.renderer.onResize(this.cols, this.rows, false));
     this.on('blur', () => this.renderer.onBlur());
     this.on('focus', () => this.renderer.onFocus());
+    this.on('dprchange', () => this.renderer.onWindowResize(window.devicePixelRatio));
+    // dprchange should handle this case, we need this as well for browsers that don't support the
+    // matchMedia query.
+    window.addEventListener('resize', () => this.renderer.onWindowResize(window.devicePixelRatio));
     this.charMeasure.on('charsizechanged', () => this.renderer.onResize(this.cols, this.rows, true));
     this.renderer.on('resize', (dimensions) => this.viewport.syncScrollArea());
 
-    this.selectionManager = new SelectionManager(this, this.buffer, this.charMeasure);
+    this.selectionManager = new SelectionManager(this, this.charMeasure);
     this.element.addEventListener('mousedown', (e: MouseEvent) => this.selectionManager.onMouseDown(e));
     this.selectionManager.on('refresh', data => this.renderer.onSelectionChanged(data.start, data.end));
     this.selectionManager.on('newselection', text => {
@@ -655,6 +730,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.viewportElement.addEventListener('scroll', () => this.selectionManager.refresh());
 
     this.mouseHelper = new MouseHelper(this.renderer);
+
+    if (this.options.screenReaderMode) {
+      // Note that this must be done *after* the renderer is created in order to
+      // ensure the correct order of the dprchange event
+      this._accessibilityManager = new AccessibilityManager(this);
+    }
 
     // Measure the character size
     this.charMeasure.measure(this.options);
@@ -716,7 +797,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       button = getButton(ev);
 
       // get mouse coordinates
-      pos = self.mouseHelper.getRawByteCoords(ev, self.element, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
+      pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
       if (!pos) return;
 
       sendEvent(button, pos);
@@ -742,7 +823,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // ^[[M 3<^[[M@4<^[[M@5<^[[M@6<^[[M@7<^[[M#7<
     function sendMove(ev: MouseEvent): void {
       let button = pressed;
-      let pos = self.mouseHelper.getRawByteCoords(ev, self.element, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
+      let pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
       if (!pos) return;
 
       // buttons marked as motions
@@ -1023,7 +1104,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    */
   public refresh(start: number, end: number): void {
     if (this.renderer) {
-      this.renderer.queueRefresh(start, end);
+      this.renderer.refreshRows(start, end);
     }
   }
 
@@ -1370,7 +1451,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       return this.cancel(ev, true);
     }
 
-    if (isThirdLevelShift(this.browser, ev)) {
+    if (this._isThirdLevelShift(this.browser, ev)) {
       return true;
     }
 
@@ -1389,6 +1470,19 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.handler(result.key);
 
     return this.cancel(ev, true);
+  }
+
+  private _isThirdLevelShift(browser: IBrowser, ev: KeyboardEvent): boolean {
+    const thirdLevelKey =
+        (browser.isMac && !this.options.macOptionIsMeta && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
+        (browser.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
+
+    if (ev.type === 'keypress') {
+      return thirdLevelKey;
+    }
+
+    // Don't invoke for arrows, pageDown, home, backspace, etc. (on non-keypress events)
+    return thirdLevelKey && (!ev.keyCode || ev.keyCode > 47);
   }
 
   /**
@@ -1550,21 +1644,23 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         break;
       case 36:
         // home
-        if (modifiers)
+        if (modifiers) {
           result.key = C0.ESC + '[1;' + (modifiers + 1) + 'H';
-        else if (this.applicationCursor)
+        } else if (this.applicationCursor) {
           result.key = C0.ESC + 'OH';
-        else
+        } else {
           result.key = C0.ESC + '[H';
+        }
         break;
       case 35:
         // end
-        if (modifiers)
+        if (modifiers) {
           result.key = C0.ESC + '[1;' + (modifiers + 1) + 'F';
-        else if (this.applicationCursor)
+        } else if (this.applicationCursor) {
           result.key = C0.ESC + 'OF';
-        else
+        } else {
           result.key = C0.ESC + '[F';
+        }
         break;
       case 33:
         // page up
@@ -1691,14 +1787,15 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
             // ^] - Operating System Command (OSC)
             result.key = String.fromCharCode(29);
           }
-        } else if (!this.browser.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) {
-          // On Mac this is a third level shift. Use <Esc> instead.
-          if (ev.keyCode >= 65 && ev.keyCode <= 90) {
-            result.key = C0.ESC + String.fromCharCode(ev.keyCode + 32);
-          } else if (ev.keyCode === 192) {
-            result.key = C0.ESC + '`';
-          } else if (ev.keyCode >= 48 && ev.keyCode <= 57) {
-            result.key = C0.ESC + (ev.keyCode - 48);
+        } else if ((!this.browser.isMac || this.options.macOptionIsMeta) && ev.altKey && !ev.metaKey) {
+          // On macOS this is a third level shift when !macOptionIsMeta. Use <Esc> instead.
+          const keyMapping = KEYCODE_KEY_MAPPINGS[ev.keyCode];
+          const key = keyMapping && keyMapping[!ev.shiftKey ? 0 : 1];
+          if (key) {
+            result.key = C0.ESC + key;
+          } else if (ev.keyCode >= 65 && ev.keyCode <= 90) {
+            const keyCode = ev.ctrlKey ? ev.keyCode - 64 : ev.keyCode + 32;
+            result.key = C0.ESC + String.fromCharCode(keyCode);
           }
         } else if (this.browser.isMac && !ev.altKey && !ev.ctrlKey && ev.metaKey) {
           if (ev.keyCode === 65) { // cmd + a
@@ -1725,7 +1822,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param g
    * @param charset
    */
-  public setgCharset(g: number, charset: Charset): void {
+  public setgCharset(g: number, charset: ICharset): void {
     this.charsets[g] = charset;
     if (this.glevel === g) {
       this.charset = charset;
@@ -1758,7 +1855,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     }
 
     if (!key || (
-      (ev.altKey || ev.ctrlKey || ev.metaKey) && !isThirdLevelShift(this.browser, ev)
+      (ev.altKey || ev.ctrlKey || ev.metaKey) && !this._isThirdLevelShift(this.browser, ev)
     )) {
       return false;
     }
@@ -1853,7 +1950,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.rows = y;
     this.buffers.setupTabStops(this.cols);
 
-    this.charMeasure.measure(this.options);
+    if (this.charMeasure) {
+      this.charMeasure.measure(this.options);
+    }
 
     this.refresh(0, this.rows - 1);
     this.emit('resize', {cols: x, rows: y});
@@ -2074,11 +2173,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.options.cols = this.cols;
     const customKeyEventHandler = this.customKeyEventHandler;
     const inputHandler = this.inputHandler;
-    const buffers = this.buffers;
     this.setup();
     this.customKeyEventHandler = customKeyEventHandler;
     this.inputHandler = inputHandler;
-    this.buffers = buffers;
     this.refresh(0, this.rows - 1);
     this.viewport.syncScrollArea();
   }
@@ -2107,14 +2204,17 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 
   private visualBell(): boolean {
-    return this.options.bellStyle === 'visual' ||
-        this.options.bellStyle === 'both';
+    return false;
+    // return this.options.bellStyle === 'visual' ||
+    //     this.options.bellStyle === 'both';
   }
 
   private soundBell(): boolean {
-    return this.options.bellStyle === 'sound' ||
-        this.options.bellStyle === 'both';
+    return this.options.bellStyle === 'sound';
+    // return this.options.bellStyle === 'sound' ||
+    //     this.options.bellStyle === 'both';
   }
+}
 
 /**
  * Helpers
@@ -2133,19 +2233,6 @@ const on = globalOn;
 
 function off(el: any, type: string, handler: (event: Event) => any, capture: boolean = false): void {
   el.removeEventListener(type, handler, capture);
-}
-
-function isThirdLevelShift(browser: IBrowser, ev: KeyboardEvent): boolean {
-  const thirdLevelKey =
-      (browser.isMac && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
-      (browser.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
-
-  if (ev.type === 'keypress') {
-    return thirdLevelKey;
-  }
-
-  // Don't invoke for arrows, pageDown, home, backspace, etc. (on non-keypress events)
-  return thirdLevelKey && (!ev.keyCode || ev.keyCode > 47);
 }
 
 function wasMondifierKeyOnlyEvent(ev: KeyboardEvent): boolean {
@@ -2200,7 +2287,7 @@ function matchColorDistance(r1: number, g1: number, b1: number, r2: number, g2: 
   return Math.pow(30 * (r1 - r2), 2)
     + Math.pow(59 * (g1 - g2), 2)
     + Math.pow(11 * (b1 - b2), 2);
-};
+}
 
 
 function matchColor_(r1: number, g1: number, b1: number): number {
