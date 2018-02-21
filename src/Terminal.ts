@@ -42,7 +42,7 @@ import * as Browser from './shared/utils/Browser';
 import * as Strings from './Strings';
 import { MouseHelper } from './utils/MouseHelper';
 import { CHARSETS } from './Charsets';
-import { DefaultBellSound, SoundManager } from './SoundManager';
+import { DEFAULT_BELL_SOUND, SoundManager } from './SoundManager';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { MouseZoneManager } from './input/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
@@ -100,7 +100,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   termName: 'xterm',
   cursorBlink: false,
   cursorStyle: 'block',
-  bellSound: DefaultBellSound,
+  bellSound: DEFAULT_BELL_SOUND,
   bellStyle: 'none',
   enableBold: true,
   fontFamily: 'courier-new, courier, monospace',

@@ -9,7 +9,7 @@ import { ITerminal, ISoundManager } from './Types';
 // This sound is released under the Creative Commons Attribution 3.0 Unported
 // (CC BY 3.0) license. It was created by 'altemark'. No modifications have been
 // made, apart from the conversion to base64.
-export const DefaultBellSound = 'data:audio/wav;base64,UklGRigBAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQBAADpAFgCwAMlBZoG/wdmCcoKRAypDQ8PbRDBEQQTOxRtFYcWlBePGIUZXhoiG88bcBz7HHIdzh0WHlMeZx51HmkeUx4WHs8dah0AHXwc3hs9G4saxRnyGBIYGBcQFv8U4RPAEoYRQBACD70NWwwHC6gJOwjWBloF7gOBAhABkf8b/qv8R/ve+Xf4Ife79W/0JfPZ8Z/wde9N7ijtE+wU6xvqM+lb6H7nw+YX5mrlxuQz5Mzje+Ma49fioeKD4nXiYeJy4pHitOL04j/jn+MN5IPkFOWs5U3mDefM55/ogOl36m7rdOyE7abuyu8D8Unyj/Pg9D/2qfcb+Yn6/vuK/Qj/lAAlAg==';
+export const DEFAULT_BELL_SOUND = 'data:audio/wav;base64,UklGRigBAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQBAADpAFgCwAMlBZoG/wdmCcoKRAypDQ8PbRDBEQQTOxRtFYcWlBePGIUZXhoiG88bcBz7HHIdzh0WHlMeZx51HmkeUx4WHs8dah0AHXwc3hs9G4saxRnyGBIYGBcQFv8U4RPAEoYRQBACD70NWwwHC6gJOwjWBloF7gOBAhABkf8b/qv8R/ve+Xf4Ife79W/0JfPZ8Z/wde9N7ijtE+wU6xvqM+lb6H7nw+YX5mrlxuQz5Mzje+Ma49fioeKD4nXiYeJy4pHitOL04j/jn+MN5IPkFOWs5U3mDefM55/ogOl36m7rdOyE7abuyu8D8Unyj/Pg9D/2qfcb+Yn6/vuK/Qj/lAAlAg==';
 
 export class SoundManager implements ISoundManager {
   private _terminal: ITerminal;
@@ -28,7 +28,7 @@ export class SoundManager implements ISoundManager {
     if (this._audioContext) {
       let bellAudioSource = this._audioContext.createBufferSource();
       let context = this._audioContext;
-      this._audioContext.decodeAudioData(this.base64ToArrayBuffer(this.removeMimeType(this._terminal.options.bellSound)), function (buffer) {
+      this._audioContext.decodeAudioData(this.base64ToArrayBuffer(this.removeMimeType(this._terminal.options.bellSound)), (buffer) => {
         bellAudioSource.buffer = buffer;
         bellAudioSource.connect(context.destination);
         bellAudioSource.start(0);
@@ -52,9 +52,9 @@ export class SoundManager implements ISoundManager {
 
   private removeMimeType(dataURI: string): string {
     // Split the input to get the mime-type and the data itself
-    const SplitURI = dataURI.split(',');
+    const splitUri = dataURI.split(',');
 
     // Return only the data
-    return SplitURI[1];
+    return splitUri[1];
   }
 }
