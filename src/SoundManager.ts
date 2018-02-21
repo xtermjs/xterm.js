@@ -21,8 +21,9 @@ export class SoundManager implements ISoundManager {
     }
 
     public playBellSound(): void {
-        if (!this._audioContext) {
-            this._audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const audioContextCtor: typeof AudioContext = (<any>window).AudioContext || (<any>window).webkitAudioContext;
+        if (!this._audioContext && audioContextCtor) {
+            this._audioContext = new audioContextCtor();
         }
 
         if (this._audioContext) {
@@ -33,8 +34,7 @@ export class SoundManager implements ISoundManager {
                 bellAudioSource.connect(context.destination);
                 bellAudioSource.start(0);
             });
-        }
-        else {
+        } else {
             console.warn('Sorry, but the Web Audio API is not supported by your browser. Please, consider upgrading to the latest version');
         }
     }
