@@ -67,8 +67,10 @@ function toPaddedHex(c: number): string {
  */
 export class ColorManager implements IColorManager {
   public colors: IColorSet;
+  private _document: Document;
 
-  constructor() {
+  constructor(document: Document) {
+    this._document = document;
     this.colors = {
       foreground: DEFAULT_FOREGROUND,
       background: DEFAULT_BACKGROUND,
@@ -124,7 +126,7 @@ export class ColorManager implements IColorManager {
 
   private _isColorValid(color: string): boolean {
     const litmus = 'red';
-    const d = document.createElement('div');
+    const d = this._document.createElement('div');
     d.style.color = litmus;
     d.style.color = color;
 
