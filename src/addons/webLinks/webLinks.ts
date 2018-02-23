@@ -5,7 +5,7 @@
 
 /// <reference path="../../../typings/xterm.d.ts"/>
 
-import { Terminal } from 'xterm';
+import { Terminal, ILinkMatcherOptions } from 'xterm';
 
 const protocolClause = '(https?:\\/\\/)';
 const domainCharacterSet = '[\\da-z\\.-]+';
@@ -30,12 +30,19 @@ function handleLink(event: MouseEvent, uri: string): void {
   window.open(uri, '_blank');
 }
 
-export function webLinksInit(term: Terminal): void {
-  term.registerLinkMatcher(strictUrlRegex, handleLink, { matchIndex: 1 });
+/**
+ * Initialize the web links addon, registering the link matcher.
+ * @param term The terminal to use web links within.
+ * @param handler A custom handler to use.
+ * @param options Custom options to use, matchIndex will always be ignored.
+ */
+export function webLinksInit(term: Terminal, handler: (event: MouseEvent, uri: string) => void = handleLink, options: ILinkMatcherOptions = {}): void {
+  options.matchIndex = 1;
+  term.registerLinkMatcher(strictUrlRegex, handler, options);
 }
 
 export function apply(terminalConstructor: typeof Terminal): void {
-  (<any>terminalConstructor.prototype).webLinksInit = function (): void {
-    webLinksInit(this);
+  (<any>terminalConstructor.prototype).webLinksInit = function (handler?: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): void {
+    webLinksInit(this, handler, options);
   };
 }
