@@ -14,7 +14,7 @@ export type XtermListener = (...args: any[]) => void;
 export type CharData = [number, string, number, number];
 export type LineData = CharData[];
 
-export type LinkMatcherHandler = (event: MouseEvent, uri: string) => boolean | void;
+export type LinkMatcherHandler = (event: MouseEvent, uri: string) => void;
 export type LinkMatcherValidationCallback = (uri: string, callback: (isValid: boolean) => void) => void;
 
 export enum LinkHoverEventTypes {
@@ -298,8 +298,6 @@ export interface ISelectionManager {
 export interface ILinkifier extends IEventEmitter {
   attachToDom(mouseZoneManager: IMouseZoneManager): void;
   linkifyRows(start: number, end: number): void;
-  setHypertextLinkHandler(handler: LinkMatcherHandler): void;
-  setHypertextValidationCallback(callback: LinkMatcherValidationCallback): void;
   registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options?: ILinkMatcherOptions): number;
   deregisterLinkMatcher(matcherId: number): boolean;
 }

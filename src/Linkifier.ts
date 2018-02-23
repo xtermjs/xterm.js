@@ -8,30 +8,6 @@ import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkMatcherValidatio
 import { MouseZone } from './input/MouseZoneManager';
 import { EventEmitter } from './EventEmitter';
 
-const protocolClause = '(https?:\\/\\/)';
-const domainCharacterSet = '[\\da-z\\.-]+';
-const negatedDomainCharacterSet = '[^\\da-z\\.-]+';
-const domainBodyClause = '(' + domainCharacterSet + ')';
-const tldClause = '([a-z\\.]{2,6})';
-const ipClause = '((\\d{1,3}\\.){3}\\d{1,3})';
-const localHostClause = '(localhost)';
-const portClause = '(:\\d{1,5})';
-const hostClause = '((' + domainBodyClause + '\\.' + tldClause + ')|' + ipClause + '|' + localHostClause + ')' + portClause + '?';
-const pathClause = '(\\/[\\/\\w\\.\\-%~]*)*';
-const queryStringHashFragmentCharacterSet = '[0-9\\w\\[\\]\\(\\)\\/\\?\\!#@$%&\'*+,:;~\\=\\.\\-]*';
-const queryStringClause = '(\\?' + queryStringHashFragmentCharacterSet + ')?';
-const hashFragmentClause = '(#' + queryStringHashFragmentCharacterSet + ')?';
-const negatedPathCharacterSet = '[^\\/\\w\\.\\-%]+';
-const bodyClause = hostClause + pathClause + queryStringClause + hashFragmentClause;
-const start = '(?:^|' + negatedDomainCharacterSet + ')(';
-const end = ')($|' + negatedPathCharacterSet + ')';
-const strictUrlRegex = new RegExp(start + protocolClause + bodyClause + end);
-
-/**
- * The ID of the built in http(s) link matcher.
- */
-const HYPERTEXT_LINK_MATCHER_ID = 0;
-
 /**
  * The Linkifier applies links to rows shortly after they have been refreshed.
  */
@@ -47,7 +23,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
 
   private _mouseZoneManager: IMouseZoneManager;
   private _rowsTimeoutId: number;
-  private _nextLinkMatcherId = HYPERTEXT_LINK_MATCHER_ID;
+  private _nextLinkMatcherId = 0;
   private _rowsToLinkify: {start: number, end: number};
 
   constructor(
@@ -58,7 +34,6 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       start: null,
       end: null
     };
-    this.registerLinkMatcher(strictUrlRegex, null, { matchIndex: 1 });
   }
 
   /**
@@ -112,23 +87,6 @@ export class Linkifier extends EventEmitter implements ILinkifier {
   }
 
   /**
-   * Attaches a handler for hypertext links, overriding default <a> behavior for
-   * tandard http(s) links.
-   * @param handler The handler to use, this can be cleared with null.
-   */
-  public setHypertextLinkHandler(handler: LinkMatcherHandler): void {
-    this._linkMatchers[HYPERTEXT_LINK_MATCHER_ID].handler = handler;
-  }
-
-  /**
-   * Attaches a validation callback for hypertext links.
-   * @param callback The callback to use, this can be cleared with null.
-   */
-  public setHypertextValidationCallback(callback: LinkMatcherValidationCallback): void {
-    this._linkMatchers[HYPERTEXT_LINK_MATCHER_ID].validationCallback = callback;
-  }
-
-  /**
    * Registers a link matcher, allowing custom link patterns to be matched and
    * handled.
    * @param regex The regular expression to search for. Specifically, this
@@ -139,7 +97,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @return The ID of the new matcher, this can be used to deregister.
    */
   public registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options: ILinkMatcherOptions = {}): number {
-    if (this._nextLinkMatcherId !== HYPERTEXT_LINK_MATCHER_ID && !handler) {
+    if (!handler) {
       throw new Error('handler must be defined');
     }
     const matcher: ILinkMatcher = {
@@ -222,7 +180,6 @@ export class Linkifier extends EventEmitter implements ILinkifier {
   private _doLinkifyRow(rowIndex: number, text: string, matcher: ILinkMatcher, offset: number = 0): void {
     // Iterate over nodes as we want to consider text nodes
     let result = [];
-    const isHttpLinkMatcher = matcher.id === HYPERTEXT_LINK_MATCHER_ID;
 
     // Find the first match
     let match = text.match(matcher.regex);

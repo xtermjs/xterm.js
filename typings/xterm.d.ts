@@ -395,7 +395,7 @@ declare module 'xterm' {
      * @param options Options for the link matcher.
      * @return The ID of the new matcher, this can be used to deregister.
      */
-    registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => boolean | void, options?: ILinkMatcherOptions): number;
+    registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): number;
 
     /**
      * (EXPERIMENTAL) Deregisters a link matcher if it has been registered.
