@@ -143,8 +143,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @return Whether a link matcher was found and deregistered.
    */
   public deregisterLinkMatcher(matcherId: number): boolean {
-    // ID 0 is the hypertext link matcher which cannot be deregistered
-    for (let i = 1; i < this._linkMatchers.length; i++) {
+    for (let i = 0; i < this._linkMatchers.length; i++) {
       if (this._linkMatchers[i].id === matcherId) {
         this._linkMatchers.splice(i, 1);
         return true;

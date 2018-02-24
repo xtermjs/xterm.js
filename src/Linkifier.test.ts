@@ -101,12 +101,6 @@ describe('Linkifier', () => {
       linkifier.attachToDom(mouseZoneManager);
     });
 
-    describe('http links', () => {
-      it('should allow ~ character in URI path', (done) => {
-        assertLinkifiesEntireRow('http://foo.com/a~b#c~d?e~f', done);
-      });
-    });
-
     describe('link matcher', () => {
       it('should match a single link', done => {
         assertLinkifiesRow('foo', /foo/, [{x: 0, length: 3}], done);
@@ -200,19 +194,19 @@ describe('Linkifier', () => {
       it('should order the list from highest priority to lowest #1', () => {
         const aId = linkifier.registerLinkMatcher(/a/, () => {}, { priority: 1 });
         const bId = linkifier.registerLinkMatcher(/b/, () => {}, { priority: -1 });
-        assert.deepEqual(linkifier.linkMatchers.map(lm => lm.id), [aId, 0, bId]);
+        assert.deepEqual(linkifier.linkMatchers.map(lm => lm.id), [aId, bId]);
       });
 
       it('should order the list from highest priority to lowest #2', () => {
         const aId = linkifier.registerLinkMatcher(/a/, () => {}, { priority: -1 });
         const bId = linkifier.registerLinkMatcher(/b/, () => {}, { priority: 1 });
-        assert.deepEqual(linkifier.linkMatchers.map(lm => lm.id), [bId, 0, aId]);
+        assert.deepEqual(linkifier.linkMatchers.map(lm => lm.id), [bId, aId]);
       });
 
       it('should order items of equal priority in the order they are added', () => {
         const aId = linkifier.registerLinkMatcher(/a/, () => {}, { priority: 0 });
         const bId = linkifier.registerLinkMatcher(/b/, () => {}, { priority: 0 });
-        assert.deepEqual(linkifier.linkMatchers.map(lm => lm.id), [0, aId, bId]);
+        assert.deepEqual(linkifier.linkMatchers.map(lm => lm.id), [aId, bId]);
       });
     });
   });
