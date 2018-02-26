@@ -487,12 +487,7 @@ declare module 'xterm' {
      * @param key The option key.
      */
     getOption(key: 'handler'): (data: string) => void;
-    /**
-     * Retrieves an option's value from the terminal.
-     * @param key The option key.
-     */
-    getOption(key: string): any;
-
+ 
     /**
      * Sets an option on the terminal.
      * @param key The option key.
@@ -548,12 +543,10 @@ declare module 'xterm' {
      */
     setOption(key: 'theme', value: ITheme): void;
     /**
-     * Sets an option on the terminal.
+     * Retrieves an option's value from the terminal.
      * @param key The option key.
-     * @param value The option value.
      */
-    setOption(key: string, value: any): void;
-
+    setOption(key: 'cols' | 'rows', value: number): void;
     /**
      * Tells the renderer to refresh terminal content between two rows
      * (inclusive) at the next opportunity.
