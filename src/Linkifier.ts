@@ -204,7 +204,19 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     if (absoluteRowIndex >= this._terminal.buffer.lines.length) {
       return;
     }
-    const text = this._terminal.buffer.translateBufferLineToString(absoluteRowIndex, false);
+    if ((<any>this._terminal.buffer.lines.get(absoluteRowIndex)).isWrapped) {
+      // TODO: Make sure if a wrapped line is requested to be linkified it gets backtracked to ensure the link is filled
+      return;
+    }
+
+    let text = this._terminal.buffer.translateBufferLineToString(absoluteRowIndex, false);
+
+    // Check if the line is wrapped
+    if (absoluteRowIndex + 1 < this._terminal.buffer.lines.length && (<any>this._terminal.buffer.lines.get(absoluteRowIndex + 1)).isWrapped) {
+      // TODO: Do this for lines that wrap over more than 2 lines
+      text += this._terminal.buffer.translateBufferLineToString(absoluteRowIndex + 1, false);
+    }
+
     for (let i = 0; i < this._linkMatchers.length; i++) {
       this._doLinkifyRow(rowIndex, text, this._linkMatchers[i]);
     }
@@ -265,6 +277,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @param matcher The link matcher for the link.
    */
   private _addLink(x: number, y: number, uri: string, matcher: ILinkMatcher): void {
+    // TODO: Make MouseZone's work over multiple lines
     this._mouseZoneManager.add(new MouseZone(
       x + 1,
       x + 1 + uri.length,
