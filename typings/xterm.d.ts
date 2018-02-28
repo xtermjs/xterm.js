@@ -552,6 +552,12 @@ declare module 'xterm' {
      * @param key The option key.
      * @param value The option value.
      */
+    setOption(key: 'cols' | 'rows', value: number): void;
+    /**
+     * Sets an option on the terminal.
+     * @param key The option key.
+     * @param value The option value.
+     */
     setOption(key: string, value: any): void;
 
     /**
