@@ -18,8 +18,8 @@ export class LinkRenderLayer extends BaseRenderLayer {
     terminal.linkifier.on(LinkHoverEventTypes.LEAVE, (e: ILinkHoverEvent) => this._onLinkLeave(e));
   }
 
-  public resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void {
-    super.resize(terminal, dim, charSizeChanged);
+  public resize(terminal: ITerminal, dim: IRenderDimensions): void {
+    super.resize(terminal, dim);
     // Resizing the canvas discards the contents of the canvas so clear state
     this._state = null;
   }

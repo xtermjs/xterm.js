@@ -93,7 +93,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     }
   }
 
-  public resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void {
+  public resize(terminal: ITerminal, dim: IRenderDimensions): void {
     this._scaledCellWidth = dim.scaledCellWidth;
     this._scaledCellHeight = dim.scaledCellHeight;
     this._scaledCharWidth = dim.scaledCharWidth;
@@ -110,9 +110,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       this.clearAll();
     }
 
-    if (charSizeChanged) {
-      this._refreshCharAtlas(terminal, this._colors);
-    }
+    this._refreshCharAtlas(terminal, this._colors);
   }
 
   public abstract reset(terminal: ITerminal): void;

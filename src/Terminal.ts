@@ -472,11 +472,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       case 'lineHeight':
       case 'fontWeight':
       case 'fontWeightBold':
-        const didCharSizeChange = (key === 'fontWeight' || key === 'fontWeightBold' || key === 'enableBold');
-
         // When the font changes the size of the cells may change which requires a renderer clear
         this.renderer.clear();
-        this.renderer.onResize(this.cols, this.rows, didCharSizeChange);
+        this.renderer.onResize(this.cols, this.rows);
         this.refresh(0, this.rows - 1);
       case 'scrollback':
         this.buffers.resize(this.cols, this.rows);
@@ -702,14 +700,14 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.viewport.onThemeChanged(this.renderer.colorManager.colors);
 
     this.on('cursormove', () => this.renderer.onCursorMove());
-    this.on('resize', () => this.renderer.onResize(this.cols, this.rows, false));
+    this.on('resize', () => this.renderer.onResize(this.cols, this.rows));
     this.on('blur', () => this.renderer.onBlur());
     this.on('focus', () => this.renderer.onFocus());
     this.on('dprchange', () => this.renderer.onWindowResize(window.devicePixelRatio));
     // dprchange should handle this case, we need this as well for browsers that don't support the
     // matchMedia query.
     window.addEventListener('resize', () => this.renderer.onWindowResize(window.devicePixelRatio));
-    this.charMeasure.on('charsizechanged', () => this.renderer.onResize(this.cols, this.rows, true));
+    this.charMeasure.on('charsizechanged', () => this.renderer.onResize(this.cols, this.rows));
     this.renderer.on('resize', (dimensions) => this.viewport.syncScrollArea());
 
     this.selectionManager = new SelectionManager(this, this.charMeasure);

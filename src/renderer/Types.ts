@@ -24,7 +24,7 @@ export interface IRenderer extends IEventEmitter {
 
   setTheme(theme: ITheme): IColorSet;
   onWindowResize(devicePixelRatio: number): void;
-  onResize(cols: number, rows: number, didCharSizeChange: boolean): void;
+  onResize(cols: number, rows: number): void;
   onCharSizeChanged(): void;
   onBlur(): void;
   onFocus(): void;
@@ -103,7 +103,7 @@ export interface IRenderLayer {
   /**
    * Resize the render layer.
    */
-  resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void;
+  resize(terminal: ITerminal, dim: IRenderDimensions): void;
 
   /**
    * Clear the state of the render layer.

@@ -27,8 +27,8 @@ export class TextRenderLayer extends BaseRenderLayer {
     this._state = new GridCache<CharData>();
   }
 
-  public resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void {
-    super.resize(terminal, dim, charSizeChanged);
+  public resize(terminal: ITerminal, dim: IRenderDimensions): void {
+    super.resize(terminal, dim);
 
     // Clear the character width cache if the font or width has changed
     const terminalFont = this._getFont(terminal, false);
