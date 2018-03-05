@@ -3,10 +3,11 @@
  * @license MIT
  */
 
-import { IEventEmitter } from 'xterm';
+import { XtermListener } from './Types';
+import { IEventEmitter, IDisposable } from 'xterm';
 
 export class EventEmitter implements IEventEmitter {
-  private _events: {[type: string]: ((...args: any[]) => void)[]};
+  private _events: {[type: string]: XtermListener[]};
 
   constructor() {
     // Restore the previous events if available, this will happen if the
@@ -14,12 +15,31 @@ export class EventEmitter implements IEventEmitter {
     this._events = this._events || {};
   }
 
-  public on(type: string, listener: ((...args: any[]) => void)): void {
+  public on(type: string, listener: XtermListener): void {
     this._events[type] = this._events[type] || [];
     this._events[type].push(listener);
   }
 
-  public off(type: string, listener: ((...args: any[]) => void)): void {
+  /**
+   * Adds a disposabe listener to the EventEmitter, returning the disposable.
+   * @param type The event type.
+   * @param handler The handler for the listener.
+   */
+  public addDisposableListener(type: string, handler: XtermListener): IDisposable {
+    this.on(type, handler);
+    return {
+      dispose: () => {
+        if (!handler) {
+          // Already disposed
+          return;
+        }
+        this.off(type, handler);
+        handler = null;
+      }
+    };
+  }
+
+  public off(type: string, listener: XtermListener): void {
     if (!this._events[type]) {
       return;
     }
@@ -51,7 +71,7 @@ export class EventEmitter implements IEventEmitter {
     }
   }
 
-  public listeners(type: string): ((...args: any[]) => void)[] {
+  public listeners(type: string): XtermListener[] {
     return this._events[type] || [];
   }
 

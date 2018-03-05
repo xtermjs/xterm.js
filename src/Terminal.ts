@@ -39,12 +39,43 @@ import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
 import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './shared/utils/Browser';
+import * as Strings from './Strings';
 import { MouseHelper } from './utils/MouseHelper';
 import { CHARSETS } from './Charsets';
-import { BELL_SOUND } from './utils/Sounds';
+import { DEFAULT_BELL_SOUND, SoundManager } from './SoundManager';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { MouseZoneManager } from './input/MouseZoneManager';
-import { ITheme } from 'xterm';
+import { AccessibilityManager } from './AccessibilityManager';
+import { ScreenDprMonitor } from './utils/ScreenDprMonitor';
+import { ITheme, ILocalizableStrings } from 'xterm';
+
+// reg + shift key mappings for digits and special chars
+const KEYCODE_KEY_MAPPINGS = {
+  // digits 0-9
+  48: ['0', ')'],
+  49: ['1', '!'],
+  50: ['2', '@'],
+  51: ['3', '#'],
+  52: ['4', '$'],
+  53: ['5', '%'],
+  54: ['6', '^'],
+  55: ['7', '&'],
+  56: ['8', '*'],
+  57: ['9', '('],
+
+  // special chars
+  186: [';', ':'],
+  187: ['=', '+'],
+  188: [',', '<'],
+  189: ['-', '_'],
+  190: ['.', '>'],
+  191: ['/', '?'],
+  192: ['`', '~'],
+  219: ['[', '{'],
+  220: ['\\', '|'],
+  221: [']', '}'],
+  222: ['\'', '"']
+};
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -69,7 +100,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   termName: 'xterm',
   cursorBlink: false,
   cursorStyle: 'block',
-  bellSound: BELL_SOUND,
+  bellSound: DEFAULT_BELL_SOUND,
   bellStyle: 'none',
   enableBold: true,
   fontFamily: 'courier-new, courier, monospace',
@@ -80,6 +111,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   letterSpacing: 0,
   scrollback: 1000,
   screenKeys: false,
+  screenReaderMode: false,
   debug: false,
   macOptionIsMeta: false,
   cancelEvents: false,
@@ -87,7 +119,8 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   useFlowControl: false,
   allowTransparency: false,
   tabStopWidth: 8,
-  theme: null
+  theme: null,
+  rightClickSelectsWord: Browser.isMac
   // programFeatures: false,
   // focusKeys: false,
 };
@@ -95,6 +128,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
 export class Terminal extends EventEmitter implements ITerminal, IInputHandlingTerminal {
   public textarea: HTMLTextAreaElement;
   public element: HTMLElement;
+  public screenElement: HTMLElement;
 
   /**
    * The HTMLElement that the terminal is created in, set by Terminal.open.
@@ -108,7 +142,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   private helperContainer: HTMLElement;
   private compositionView: HTMLElement;
   private charSizeStyleElement: HTMLStyleElement;
-  private bellAudioElement: HTMLAudioElement;
+
   private visualBellTimer: number;
 
   public browser: IBrowser = <any>Browser;
@@ -190,6 +224,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   private userScrolling: boolean;
 
   private inputHandler: InputHandler;
+  public soundManager: SoundManager;
   private parser: Parser;
   public renderer: IRenderer;
   public selectionManager: SelectionManager;
@@ -200,6 +235,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   public charMeasure: CharMeasure;
   private _mouseZoneManager: IMouseZoneManager;
   public mouseHelper: MouseHelper;
+  private _accessibilityManager: AccessibilityManager;
+  private _screenDprMonitor: ScreenDprMonitor;
 
   public cols: number;
   public rows: number;
@@ -292,6 +329,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.selectionManager = this.selectionManager || null;
     this.linkifier = this.linkifier || new Linkifier(this);
     this._mouseZoneManager = this._mouseZoneManager || null;
+    this.soundManager = this.soundManager || new SoundManager(this);
 
     // Create the terminal's buffers and set the current buffer
     this.buffers = new BufferSet(this);
@@ -306,6 +344,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    */
   public get buffer(): Buffer {
     return this.buffers.active;
+  }
+
+  public static get strings(): ILocalizableStrings {
+    return Strings;
   }
 
   /**
@@ -440,9 +482,19 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         this.buffers.resize(this.cols, this.rows);
         this.viewport.syncScrollArea();
         break;
+      case 'screenReaderMode':
+        if (value) {
+          if (!this._accessibilityManager) {
+            this._accessibilityManager = new AccessibilityManager(this);
+          }
+        } else {
+          if (this._accessibilityManager) {
+            this._accessibilityManager.dispose();
+            this._accessibilityManager = null;
+          }
+        }
+        break;
       case 'tabStopWidth': this.buffers.setupTabStops(); break;
-      case 'bellSound':
-      case 'bellStyle': this.syncBellSound(); break;
     }
     // Inform renderer of changes
     if (this.renderer) {
@@ -474,6 +526,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Binds the desired blur behavior on a given terminal object.
    */
   private _onTextAreaBlur(): void {
+    // Text can safely be removed on blur. Doing it earlier could interfere with
+    // screen readers reading it out.
+    this.textarea.value = '';
     this.refresh(this.buffer.y, this.buffer.y);
     if (this.sendFocus) {
       this.send(C0.ESC + '[O');
@@ -506,12 +561,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       // Firefox doesn't appear to fire the contextmenu event on right click
       on(this.element, 'mousedown', (event: MouseEvent) => {
         if (event.button === 2) {
-          rightClickHandler(event, this.textarea, this.selectionManager);
+          rightClickHandler(event, this.textarea, this.selectionManager, this.options.rightClickSelectsWord);
         }
       });
     } else {
       on(this.element, 'contextmenu', (event: MouseEvent) => {
-        rightClickHandler(event, this.textarea, this.selectionManager);
+        rightClickHandler(event, this.textarea, this.selectionManager, this.options.rightClickSelectsWord);
       });
     }
 
@@ -554,16 +609,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       }
     }, true);
 
-    on(this.textarea, 'keydown', (ev: KeyboardEvent) => {
-      this._keyDown(ev);
-    }, true);
-
-    on(this.textarea, 'keypress', (ev: KeyboardEvent) => {
-      this._keyPress(ev);
-      // Truncate the textarea's value, since it is not needed
-      this.textarea.value = '';
-    }, true);
-
+    on(this.textarea, 'keydown', (ev: KeyboardEvent) => this._keyDown(ev), true);
+    on(this.textarea, 'keypress', (ev: KeyboardEvent) => this._keyPress(ev), true);
     on(this.textarea, 'compositionstart', () => this.compositionHelper.compositionstart());
     on(this.textarea, 'compositionupdate', (e: CompositionEvent) => this.compositionHelper.compositionupdate(e));
     on(this.textarea, 'compositionend', () => this.compositionHelper.compositionend());
@@ -591,6 +638,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.document = this.parent.ownerDocument;
     this.body = <HTMLBodyElement>this.document.body;
 
+    this._screenDprMonitor = new ScreenDprMonitor();
+    this._screenDprMonitor.setListener(() => this.emit('dprchange', window.devicePixelRatio));
+
     // Create main element container
     this.element = this.document.createElement('div');
     this.element.classList.add('terminal');
@@ -608,18 +658,24 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.viewportScrollArea.classList.add('xterm-scroll-area');
     this.viewportElement.appendChild(this.viewportScrollArea);
 
-    this._mouseZoneManager = new MouseZoneManager(this);
-    this.on('scroll', () => this._mouseZoneManager.clearAll());
-    this.linkifier.attachToDom(this._mouseZoneManager);
-
+    this.screenElement = document.createElement('div');
+    this.screenElement.classList.add('xterm-screen');
     // Create the container that will hold helpers like the textarea for
     // capturing DOM Events. Then produce the helpers.
     this.helperContainer = document.createElement('div');
     this.helperContainer.classList.add('xterm-helpers');
-    fragment.appendChild(this.helperContainer);
+    this.screenElement.appendChild(this.helperContainer);
+    fragment.appendChild(this.screenElement);
+
+    this._mouseZoneManager = new MouseZoneManager(this);
+    this.on('scroll', () => this._mouseZoneManager.clearAll());
+    this.linkifier.attachToDom(this._mouseZoneManager);
 
     this.textarea = document.createElement('textarea');
     this.textarea.classList.add('xterm-helper-textarea');
+    // TODO: New API to set title? This could say "Terminal bash input", etc.
+    this.textarea.setAttribute('aria-label', Strings.promptLabel);
+    this.textarea.setAttribute('aria-multiline', 'false');
     this.textarea.setAttribute('autocorrect', 'off');
     this.textarea.setAttribute('autocapitalize', 'off');
     this.textarea.setAttribute('spellcheck', 'false');
@@ -637,9 +693,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.helperContainer.appendChild(this.charSizeStyleElement);
     this.charMeasure = new CharMeasure(document, this.helperContainer);
 
-    // Preload audio, this relied on helperContainer
-    this.syncBellSound();
-
     // Performance: Add viewport and helper elements from the fragment
     this.element.appendChild(fragment);
 
@@ -652,6 +705,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.on('resize', () => this.renderer.onResize(this.cols, this.rows, false));
     this.on('blur', () => this.renderer.onBlur());
     this.on('focus', () => this.renderer.onFocus());
+    this.on('dprchange', () => this.renderer.onWindowResize(window.devicePixelRatio));
+    // dprchange should handle this case, we need this as well for browsers that don't support the
+    // matchMedia query.
+    window.addEventListener('resize', () => this.renderer.onWindowResize(window.devicePixelRatio));
     this.charMeasure.on('charsizechanged', () => this.renderer.onResize(this.cols, this.rows, true));
     this.renderer.on('resize', (dimensions) => this.viewport.syncScrollArea());
 
@@ -673,6 +730,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.viewportElement.addEventListener('scroll', () => this.selectionManager.refresh());
 
     this.mouseHelper = new MouseHelper(this.renderer);
+
+    if (this.options.screenReaderMode) {
+      // Note that this must be done *after* the renderer is created in order to
+      // ensure the correct order of the dprchange event
+      this._accessibilityManager = new AccessibilityManager(this);
+    }
 
     // Measure the character size
     this.charMeasure.measure(this.options);
@@ -734,7 +797,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       button = getButton(ev);
 
       // get mouse coordinates
-      pos = self.mouseHelper.getRawByteCoords(ev, self.element, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
+      pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
       if (!pos) return;
 
       sendEvent(button, pos);
@@ -760,7 +823,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // ^[[M 3<^[[M@4<^[[M@5<^[[M@6<^[[M@7<^[[M#7<
     function sendMove(ev: MouseEvent): void {
       let button = pressed;
-      let pos = self.mouseHelper.getRawByteCoords(ev, self.element, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
+      let pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
       if (!pos) return;
 
       // buttons marked as motions
@@ -1054,7 +1117,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    */
   public refresh(start: number, end: number): void {
     if (this.renderer) {
-      this.renderer.queueRefresh(start, end);
+      this.renderer.refreshRows(start, end);
     }
   }
 
@@ -1616,8 +1679,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         // page up
         if (ev.shiftKey) {
           result.scrollLines = -(this.rows - 1);
-        } else if (modifiers) {
-          result.key = C0.ESC + '[5;' + (modifiers + 1) + '~';
         } else {
           result.key = C0.ESC + '[5~';
         }
@@ -1626,8 +1687,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         // page down
         if (ev.shiftKey) {
           result.scrollLines = this.rows - 1;
-        } else if (modifiers) {
-          result.key = C0.ESC + '[6;' + (modifiers + 1) + '~';
         } else {
           result.key = C0.ESC + '[6~';
         }
@@ -1741,14 +1800,15 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
             // ^] - Operating System Command (OSC)
             result.key = String.fromCharCode(29);
           }
-        } else if ((!this.browser.isMac || this.options.macOptionIsMeta) && ev.altKey && !ev.ctrlKey && !ev.metaKey) {
+        } else if ((!this.browser.isMac || this.options.macOptionIsMeta) && ev.altKey && !ev.metaKey) {
           // On macOS this is a third level shift when !macOptionIsMeta. Use <Esc> instead.
-          if (ev.keyCode >= 65 && ev.keyCode <= 90) {
-            result.key = C0.ESC + String.fromCharCode(ev.keyCode + 32);
-          } else if (ev.keyCode === 192) {
-            result.key = C0.ESC + '`';
-          } else if (ev.keyCode >= 48 && ev.keyCode <= 57) {
-            result.key = C0.ESC + (ev.keyCode - 48);
+          const keyMapping = KEYCODE_KEY_MAPPINGS[ev.keyCode];
+          const key = keyMapping && keyMapping[!ev.shiftKey ? 0 : 1];
+          if (key) {
+            result.key = C0.ESC + key;
+          } else if (ev.keyCode >= 65 && ev.keyCode <= 90) {
+            const keyCode = ev.ctrlKey ? ev.keyCode - 64 : ev.keyCode + 32;
+            result.key = C0.ESC + String.fromCharCode(keyCode);
           }
         } else if (this.browser.isMac && !ev.altKey && !ev.ctrlKey && ev.metaKey) {
           if (ev.keyCode === 65) { // cmd + a
@@ -1844,7 +1904,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    */
   public bell(): void {
     this.emit('bell');
-    if (this.soundBell()) this.bellAudioElement.play();
+    if (this.soundBell()) {
+      this.soundManager.playBellSound();
+    }
 
     if (this.visualBell()) {
       this.element.classList.add('visual-bell-active');
@@ -1901,7 +1963,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.rows = y;
     this.buffers.setupTabStops(this.cols);
 
-    this.charMeasure.measure(this.options);
+    if (this.charMeasure) {
+      this.charMeasure.measure(this.options);
+    }
 
     this.refresh(0, this.rows - 1);
     this.emit('resize', {cols: x, rows: y});
@@ -2162,24 +2226,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     return this.options.bellStyle === 'sound';
     // return this.options.bellStyle === 'sound' ||
     //     this.options.bellStyle === 'both';
-  }
-
-  private syncBellSound(): void {
-    // Don't update anything if the terminal has not been opened yet
-    if (!this.element) {
-      return;
-    }
-
-    if (this.soundBell() && this.bellAudioElement) {
-      this.bellAudioElement.setAttribute('src', this.options.bellSound);
-    } else if (this.soundBell()) {
-      this.bellAudioElement = document.createElement('audio');
-      this.bellAudioElement.setAttribute('preload', 'auto');
-      this.bellAudioElement.setAttribute('src', this.options.bellSound);
-      this.helperContainer.appendChild(this.bellAudioElement);
-    } else if (this.bellAudioElement) {
-      this.helperContainer.removeChild(this.bellAudioElement);
-    }
   }
 }
 

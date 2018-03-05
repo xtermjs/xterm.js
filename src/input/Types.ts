@@ -13,7 +13,8 @@ export interface IMouseZone {
   x2: number;
   y: number;
   clickCallback: (e: MouseEvent) => any;
-  hoverCallback?: (e: MouseEvent) => any;
-  tooltipCallback?: (e: MouseEvent) => any;
-  leaveCallback?: () => any;
+  hoverCallback: (e: MouseEvent) => any | undefined;
+  tooltipCallback: (e: MouseEvent) => any | undefined;
+  leaveCallback: () => any | undefined;
+  willLinkActivate: (e: MouseEvent) => boolean;
 }

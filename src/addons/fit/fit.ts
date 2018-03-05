@@ -28,17 +28,22 @@ export function proposeGeometry(term: Terminal): IGeometry {
   }
   const parentElementStyle = window.getComputedStyle(term.element.parentElement);
   const parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height'));
-  const parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')) - 17);
+  const parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')));
   const elementStyle = window.getComputedStyle(term.element);
-  const elementPaddingVer = parseInt(elementStyle.getPropertyValue('padding-top')) + parseInt(elementStyle.getPropertyValue('padding-bottom'));
-  const elementPaddingHor = parseInt(elementStyle.getPropertyValue('padding-right')) + parseInt(elementStyle.getPropertyValue('padding-left'));
+  const elementPadding = {
+    top: parseInt(elementStyle.getPropertyValue('padding-top')),
+    bottom: parseInt(elementStyle.getPropertyValue('padding-bottom')),
+    right: parseInt(elementStyle.getPropertyValue('padding-right')),
+    left: parseInt(elementStyle.getPropertyValue('padding-left'))
+  };
+  const elementPaddingVer = elementPadding.top + elementPadding.bottom;
+  const elementPaddingHor = elementPadding.right + elementPadding.left;
   const availableHeight = parentElementHeight - elementPaddingVer;
-  const availableWidth = parentElementWidth - elementPaddingHor;
+  const availableWidth = parentElementWidth - elementPaddingHor - (<any>term).viewport.scrollBarWidth;
   const geometry = {
     cols: Math.floor(availableWidth / (<any>term).renderer.dimensions.actualCellWidth),
     rows: Math.floor(availableHeight / (<any>term).renderer.dimensions.actualCellHeight)
   };
-
   return geometry;
 }
 

@@ -55,6 +55,8 @@ declare module 'xterm' {
 
     /**
      * Whether to enable the rendering of bold text.
+     * 
+     * @deprecated Use fontWeight and fontWeightBold instead.
      */
     enableBold?: boolean;
 
@@ -94,9 +96,22 @@ declare module 'xterm' {
     macOptionIsMeta?: boolean;
 
     /**
+     * Whether to select the word under the cursor on right click, this is
+     * standard behavior in a lot of macOS applications.
+     */
+    rightClickSelectsWord?: boolean;
+
+    /**
      * The number of rows in the terminal.
      */
     rows?: number;
+
+    /**
+     * Whether screen reader support is enabled. When on this will expose
+     * supporting elements in the DOM to support NVDA on Windows and VoiceOver
+     * on macOS.
+     */
+    screenReaderMode?: boolean;
 
     /**
      * The amount of scrollback in the terminal. Scrollback is the amount of rows
@@ -174,8 +189,8 @@ declare module 'xterm' {
     matchIndex?: number;
 
     /**
-     * A callback that validates an individual link, returning true if valid and
-     * false if invalid.
+     * A callback that validates whether to create an individual link, pass
+     * whether the link is valid to the callback.
      */
     validationCallback?: (uri: string, callback: (isValid: boolean) => void) => void;
 
@@ -196,12 +211,34 @@ declare module 'xterm' {
      * default value is 0.
      */
     priority?: number;
+
+    /**
+     * A callback that fires when the mousedown and click events occur that
+     * determines whether a link will be activated upon click. This enables
+     * only activating a link when a certain modifier is held down, if not the
+     * mouse event will continue propagation (eg. double click to select word).
+     */
+    willLinkActivate?: (event: MouseEvent, uri: string) => boolean;
   }
 
   export interface IEventEmitter {
     on(type: string, listener: (...args: any[]) => void): void;
     off(type: string, listener: (...args: any[]) => void): void;
     emit(type: string, data?: any): void;
+    addDisposableListener(type: string, handler: (...args: any[]) => void): IDisposable;
+  }
+
+  /**
+   * An object that can be disposed via a dispose function.
+   */
+  export interface IDisposable {
+    dispose(): void;
+  }
+
+  export interface ILocalizableStrings {
+    blankLine: string;
+    promptLabel: string;
+    tooMuchOutput: string;
   }
 
   /**
@@ -227,6 +264,11 @@ declare module 'xterm' {
      * The number of columns in the terminal's viewport.
      */
     cols: number;
+
+    /**
+     * Natural language strings that can be localized.
+     */
+    static strings: ILocalizableStrings;
 
     /**
      * Creates a new `Terminal` object.
@@ -308,6 +350,8 @@ declare module 'xterm' {
     off(type: 'blur' | 'focus' | 'linefeed' | 'selection' | 'data' | 'key' | 'keypress' | 'keydown' | 'refresh' | 'resize' | 'scroll' | 'title' | string, listener: (...args: any[]) => void): void;
 
     emit(type: string, data?: any): void;
+
+    addDisposableListener(type: string, handler: (...args: any[]) => void): IDisposable;
 
     /**
      * Resizes the terminal.
@@ -427,7 +471,7 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell'): boolean;
+    getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell'): boolean;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
@@ -478,7 +522,7 @@ declare module 'xterm' {
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell', value: boolean): void;
+    setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'popOnBell' | 'rightClickSelectsWord' | 'screenKeys' | 'useFlowControl' | 'visualBell', value: boolean): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
@@ -503,6 +547,12 @@ declare module 'xterm' {
      * @param value The option value.
      */
     setOption(key: 'theme', value: ITheme): void;
+    /**
+     * Sets an option on the terminal.
+     * @param key The option key.
+     * @param value The option value.
+     */
+    setOption(key: 'cols' | 'rows', value: number): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.

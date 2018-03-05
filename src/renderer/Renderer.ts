@@ -13,13 +13,12 @@ import { IRenderLayer, IColorSet, IRenderer, IRenderDimensions } from './Types';
 import { ITerminal } from '../Types';
 import { LinkRenderLayer } from './LinkRenderLayer';
 import { EventEmitter } from '../EventEmitter';
+import { RenderDebouncer } from '../utils/RenderDebouncer';
 import { ScreenDprMonitor } from '../utils/ScreenDprMonitor';
 import { ITheme } from 'xterm';
 
 export class Renderer extends EventEmitter implements IRenderer {
-  /** A queue of the rows to be refreshed */
-  private _refreshRowsQueue: {start: number, end: number}[] = [];
-  private _refreshAnimationFrame = null;
+  private _renderDebouncer: RenderDebouncer;
 
   private _renderLayers: IRenderLayer[];
   private _devicePixelRatio: number;
@@ -38,10 +37,10 @@ export class Renderer extends EventEmitter implements IRenderer {
     }
 
     this._renderLayers = [
-      new TextRenderLayer(this._terminal.element, 0, this.colorManager.colors, this._terminal.options.allowTransparency),
-      new SelectionRenderLayer(this._terminal.element, 1, this.colorManager.colors),
-      new LinkRenderLayer(this._terminal.element, 2, this.colorManager.colors, this._terminal),
-      new CursorRenderLayer(this._terminal.element, 3, this.colorManager.colors)
+      new TextRenderLayer(this._terminal.screenElement, 0, this.colorManager.colors, this._terminal.options.allowTransparency),
+      new SelectionRenderLayer(this._terminal.screenElement, 1, this.colorManager.colors),
+      new LinkRenderLayer(this._terminal.screenElement, 2, this.colorManager.colors, this._terminal),
+      new CursorRenderLayer(this._terminal.screenElement, 3, this.colorManager.colors)
     ];
     this.dimensions = {
       scaledCharWidth: null,
@@ -61,6 +60,7 @@ export class Renderer extends EventEmitter implements IRenderer {
     this._updateDimensions();
     this.onOptionsChanged();
 
+    this._renderDebouncer = new RenderDebouncer(this._terminal, this._renderRows.bind(this));
     this._screenDprMonitor = new ScreenDprMonitor();
     this._screenDprMonitor.setListener(() => this.onWindowResize(window.devicePixelRatio));
 
@@ -120,6 +120,10 @@ export class Renderer extends EventEmitter implements IRenderer {
       this._terminal.refresh(0, this._terminal.rows - 1);
     }
 
+    // Resize the screen
+    this._terminal.screenElement.style.width = `${this.dimensions.canvasWidth}px`;
+    this._terminal.screenElement.style.height = `${this.dimensions.canvasHeight}px`;
+
     this.emit('resize', {
       width: this.dimensions.canvasWidth,
       height: this.dimensions.canvasHeight
@@ -168,47 +172,19 @@ export class Renderer extends EventEmitter implements IRenderer {
    * @param {number} start The start row.
    * @param {number} end The end row.
    */
-  public queueRefresh(start: number, end: number): void {
+  public refreshRows(start: number, end: number): void {
     if (this._isPaused) {
       this._needsFullRefresh = true;
       return;
     }
-    this._refreshRowsQueue.push({ start: start, end: end });
-    if (!this._refreshAnimationFrame) {
-      this._refreshAnimationFrame = window.requestAnimationFrame(this._refreshLoop.bind(this));
-    }
+    this._renderDebouncer.refresh(start, end);
   }
 
   /**
    * Performs the refresh loop callback, calling refresh only if a refresh is
    * necessary before queueing up the next one.
    */
-  private _refreshLoop(): void {
-    let start;
-    let end;
-    if (this._refreshRowsQueue.length > 4) {
-      // Just do a full refresh when 5+ refreshes are queued
-      start = 0;
-      end = this._terminal.rows - 1;
-    } else {
-      // Get start and end rows that need refreshing
-      start = this._refreshRowsQueue[0].start;
-      end = this._refreshRowsQueue[0].end;
-      for (let i = 1; i < this._refreshRowsQueue.length; i++) {
-        if (this._refreshRowsQueue[i].start < start) {
-          start = this._refreshRowsQueue[i].start;
-        }
-        if (this._refreshRowsQueue[i].end > end) {
-          end = this._refreshRowsQueue[i].end;
-        }
-      }
-    }
-    this._refreshRowsQueue = [];
-    this._refreshAnimationFrame = null;
-
-    // Render
-    start = Math.max(start, 0);
-    end = Math.min(end, this._terminal.rows - 1);
+  private _renderRows(start: number, end: number): void {
     this._renderLayers.forEach(l => l.onGridChanged(this._terminal, start, end));
     this._terminal.emit('refresh', {start, end});
   }
@@ -271,7 +247,5 @@ export class Renderer extends EventEmitter implements IRenderer {
     // differ.
     this.dimensions.actualCellHeight = this.dimensions.canvasHeight / this._terminal.rows;
     this.dimensions.actualCellWidth = this.dimensions.canvasWidth / this._terminal.cols;
-
   }
-
 }
