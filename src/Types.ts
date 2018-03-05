@@ -252,6 +252,7 @@ export interface IBuffer {
   tabs: any;
   scrollBottom: number;
   scrollTop: number;
+  hasScrollback: boolean;
   savedY: number;
   savedX: number;
   isCursorInViewport: boolean;
