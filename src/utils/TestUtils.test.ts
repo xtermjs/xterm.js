@@ -276,6 +276,7 @@ export class MockBuffer implements IBuffer {
   lines: ICircularList<[number, string, number, number][]>;
   ydisp: number;
   ybase: number;
+  hasScrollback: boolean;
   y: number;
   x: number;
   tabs: any;

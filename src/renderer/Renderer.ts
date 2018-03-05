@@ -121,7 +121,7 @@ export class Renderer extends EventEmitter implements IRenderer {
     }
 
     // Resize the screen
-    this._terminal.screenElement.style.width = `${this.dimensions.canvasWidth + this._terminal.viewport.scrollBarWidth}px`;
+    this._terminal.screenElement.style.width = `${this.dimensions.canvasWidth}px`;
     this._terminal.screenElement.style.height = `${this.dimensions.canvasHeight}px`;
 
     this.emit('resize', {
