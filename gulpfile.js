@@ -23,7 +23,7 @@ const tsProject = ts.createProject('tsconfig.json');
 const srcDir = tsProject.config.compilerOptions.rootDir;
 let outDir = tsProject.config.compilerOptions.outDir;
 
-const addons = ['attach', 'fit', 'fullscreen', 'search', 'terminado', 'winptyCompat', 'zmodem'];
+const addons = fs.readdirSync(`${__dirname}/src/addons`);
 
 // Under some environments like TravisCI, this comes out at absolute which can
 // break the build. This ensures that the outDir is absolute.
