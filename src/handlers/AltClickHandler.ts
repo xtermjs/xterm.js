@@ -56,9 +56,13 @@ export class AltClickHandler {
    * then moves to requested col.
    */
   private _arrowSequences(): string {
-    return this._resetStartingRow() +
-      this._moveToRequestedRow() +
-      this._moveToRequestedCol();
+    // The alt buffer should try to navigate between rows
+    if (!this._terminal.buffer.hasScrollback) {
+      return this._resetStartingRow() + this._moveToRequestedRow() + this._moveToRequestedCol();
+    }
+
+    // Only move horizontally for the normal buffer
+    return this._moveHorizontallyOnly();
   }
 
   /**
@@ -111,6 +115,11 @@ export class AltClickHandler {
       this._startCol, startRow, this._endCol, endRow,
       direction === Direction.Right
     ).length, this._sequence(direction));
+  }
+
+  private _moveHorizontallyOnly(): string {
+    let direction = this._horizontalDirection();
+    return repeat(Math.abs(this._startCol - this._endCol), this._sequence(direction));
   }
 
   /**

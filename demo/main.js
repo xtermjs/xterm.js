@@ -30,7 +30,8 @@ var terminalContainer = document.getElementById('terminal-container'),
       macOptionIsMeta: document.querySelector('#option-mac-option-is-meta'),
       scrollback: document.querySelector('#option-scrollback'),
       tabstopwidth: document.querySelector('#option-tabstopwidth'),
-      bellStyle: document.querySelector('#option-bell-style')
+      bellStyle: document.querySelector('#option-bell-style'),
+      screenReaderMode: document.querySelector('#option-screen-reader-mode')
     },
     colsElement = document.getElementById('cols'),
     rowsElement = document.getElementById('rows'),
@@ -86,6 +87,9 @@ optionElements.scrollback.addEventListener('change', function () {
 optionElements.tabstopwidth.addEventListener('change', function () {
   term.setOption('tabStopWidth', parseInt(optionElements.tabstopwidth.value, 10));
 });
+optionElements.screenReaderMode.addEventListener('change', function () {
+  term.setOption('screenReaderMode', optionElements.screenReaderMode.checked);
+});
 
 createTerminal();
 
@@ -98,7 +102,8 @@ function createTerminal() {
     macOptionIsMeta: optionElements.macOptionIsMeta.enabled,
     cursorBlink: optionElements.cursorBlink.checked,
     scrollback: parseInt(optionElements.scrollback.value, 10),
-    tabStopWidth: parseInt(optionElements.tabstopwidth.value, 10)
+    tabStopWidth: parseInt(optionElements.tabstopwidth.value, 10),
+    screenReaderMode: optionElements.screenReaderMode.checked
   });
   window.term = term;  // Expose `term` to window for debugging purposes
   term.on('resize', function (size) {

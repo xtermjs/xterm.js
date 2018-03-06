@@ -3,11 +3,13 @@
  * @license MIT
  */
 
-import { Terminal as PublicTerminal, ITerminalOptions as IPublicTerminalOptions, IEventEmitter } from 'xterm';
+import { Terminal as PublicTerminal, ITerminalOptions as IPublicTerminalOptions, IEventEmitter as IPublicEventEmitter, IEventEmitter } from 'xterm';
 import { IColorSet, IRenderer } from './renderer/Types';
 import { IMouseZoneManager } from './input/Types';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
+
+export type XtermListener = (...args: any[]) => void;
 
 export type CharData = [number, string, number, number];
 export type LineData = CharData[];
@@ -250,6 +252,7 @@ export interface IBuffer {
   tabs: any;
   scrollBottom: number;
   scrollTop: number;
+  hasScrollback: boolean;
   savedY: number;
   savedX: number;
   isCursorInViewport: boolean;
@@ -346,4 +349,8 @@ export interface IBrowser {
   isIpad: boolean;
   isIphone: boolean;
   isMSWindows: boolean;
+}
+
+export interface ISoundManager {
+  playBellSound(): void;
 }
