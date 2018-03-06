@@ -24,7 +24,7 @@ export class Viewport implements IViewport {
   // Stores a partial line amount when scrolling, this is used to keep track of how much of a line
   // is scrolled so we can "scroll" over partial lines and feel natural on touchpads. This is a
   // quick fix and could have a more robust solution in place that reset the value when needed.
-  private _wheelPartialScroll: number;
+  private _wheelPartialScroll: number = 0;
 
   /**
    * Creates a new Viewport.
