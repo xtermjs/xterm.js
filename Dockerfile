@@ -16,4 +16,4 @@ RUN npm install
 COPY . /usr/src/app
 
 # Run the tests and build, to make sure everything is working nicely
-RUN npm run build && npm run test
+RUN npm run build && npm run webpack && npm run test
