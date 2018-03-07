@@ -2,6 +2,7 @@ version: "3"
 
 services:
   web:
+    image: xtermjs/xterm.js:latest
     build: .
     volumes:
       - ./:/usr/src/app

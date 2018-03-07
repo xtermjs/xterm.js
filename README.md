@@ -144,7 +144,19 @@ Then open your project's [Public URL](https://help.sourcelair.com/projects/the-p
 
 ### Docker
 
-First, make sure you have Docker Engine 1.13.0 (or newer) and Docker Compose 1.10.0 (or newer). To run the demo and builder in parallel, run the following command in your terminal:
+First, make sure you have Docker Engine 1.13.0 (or newer) and Docker Compose 1.10.0 (or newer).
+
+Xterm.js [provides a pre-built Docker image](https://hub.docker.com/r/xtermjs/xterm.js/) to help run the demo easily (Git tags are built as [tagged Docker images](https://hub.docker.com/r/xtermjs/xterm.js/tags/) too).
+
+To run the just demo (with no editing access). run the following command in your terminal:
+
+```
+docker run -p 3000:3000 xtermjs/xterm.js
+```
+
+Then open http://0.0.0.0:3000 in a web browser to access the demo.
+
+To run the demo and builder in parallel, run the following command in your terminal:
 
 ```
 docker-compose up
