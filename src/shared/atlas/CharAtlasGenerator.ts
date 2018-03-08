@@ -4,8 +4,8 @@
  */
 
 import { FontWeight } from 'xterm';
-import { CHAR_ATLAS_CELL_SPACING } from './atlas/Types';
-import { isFirefox } from './utils/Browser';
+import { CHAR_ATLAS_CELL_SPACING } from './Types';
+import { isFirefox } from '../utils/Browser';
 
 declare const Promise: any;
 

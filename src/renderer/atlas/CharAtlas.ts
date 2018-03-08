@@ -3,12 +3,12 @@
  * @license MIT
  */
 
-import { ITerminal } from '../Types';
-import { IColorSet } from './Types';
-import { ICharAtlasConfig } from './atlas/Types';
-import { isFirefox } from '../shared/utils/Browser';
-import { generateCharAtlas, ICharAtlasRequest } from '../shared/CharAtlasGenerator';
-import { generateConfig, configEquals } from './atlas/CharAtlasUtils';
+import { ITerminal } from '../../Types';
+import { IColorSet } from '../Types';
+import { ICharAtlasConfig } from './Types';
+import { isFirefox } from '../../shared/utils/Browser';
+import { generateCharAtlas, ICharAtlasRequest } from '../../shared/atlas/CharAtlasGenerator';
+import { generateConfig, configEquals } from './CharAtlasUtils';
 
 interface ICharAtlasCacheEntry {
   bitmap: HTMLCanvasElement | Promise<ImageBitmap>;
