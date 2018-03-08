@@ -10,8 +10,6 @@ import { isFirefox } from '../shared/utils/Browser';
 import { generateCharAtlas, ICharAtlasRequest } from '../shared/CharAtlasGenerator';
 import { generateConfig, configEquals } from './atlas/CharAtlasUtils';
 
-export const CHAR_ATLAS_CELL_SPACING = 1;
-
 interface ICharAtlasCacheEntry {
   bitmap: HTMLCanvasElement | Promise<ImageBitmap>;
   config: ICharAtlasConfig;

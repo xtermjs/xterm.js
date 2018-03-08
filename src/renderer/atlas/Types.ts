@@ -6,7 +6,6 @@
 import { FontWeight } from 'xterm';
 import { IColorSet } from '../Types';
 
-export const CHAR_ATLAS_CELL_SPACING = 1;
 export const INVERTED_DEFAULT_COLOR = -1;
 export const DIM_OPACITY = 0.5;
 

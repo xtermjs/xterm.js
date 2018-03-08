@@ -7,7 +7,8 @@ import { ILinkHoverEvent, ITerminal, ILinkifierAccessor, IBuffer, ICharMeasure, 
 import { CHAR_DATA_ATTR_INDEX } from '../Buffer';
 import { GridCache } from './GridCache';
 import { FLAGS, IColorSet, IRenderDimensions } from './Types';
-import { BaseRenderLayer, INVERTED_DEFAULT_COLOR } from './BaseRenderLayer';
+import { INVERTED_DEFAULT_COLOR } from './atlas/Types';
+import { BaseRenderLayer } from './BaseRenderLayer';
 
 export class LinkRenderLayer extends BaseRenderLayer {
   private _state: ILinkHoverEvent = null;

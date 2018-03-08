@@ -4,6 +4,7 @@
  */
 
 import { FontWeight } from 'xterm';
+import { CHAR_ATLAS_CELL_SPACING } from './atlas/Types';
 import { isFirefox } from './utils/Browser';
 
 declare const Promise: any;
@@ -28,8 +29,6 @@ export interface ICharAtlasRequest {
   devicePixelRatio: number;
   allowTransparency: boolean;
 }
-
-export const CHAR_ATLAS_CELL_SPACING = 1;
 
 /**
  * Generates a char atlas.
