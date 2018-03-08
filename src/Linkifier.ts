@@ -246,17 +246,17 @@ export class Linkifier extends EventEmitter implements ILinkifier {
         window.open(uri, '_blank');
       },
       e => {
-        this.emit(LinkHoverEventTypes.HOVER, <ILinkHoverEvent>{ x, y, length: uri.length});
+        this.emit(LinkHoverEventTypes.HOVER, this._createLinkHoverEvent(x, y, uri));
         this._terminal.element.style.cursor = 'pointer';
       },
       e => {
-        this.emit(LinkHoverEventTypes.TOOLTIP, <ILinkHoverEvent>{ x, y, length: uri.length});
+        this.emit(LinkHoverEventTypes.TOOLTIP, this._createLinkHoverEvent(x, y, uri));
         if (matcher.hoverTooltipCallback) {
           matcher.hoverTooltipCallback(e, uri);
         }
       },
       () => {
-        this.emit(LinkHoverEventTypes.LEAVE, <ILinkHoverEvent>{ x, y, length: uri.length});
+        this.emit(LinkHoverEventTypes.LEAVE, this._createLinkHoverEvent(x, y, uri));
         this._terminal.element.style.cursor = '';
         if (matcher.hoverLeaveCallback) {
           matcher.hoverLeaveCallback();
@@ -269,5 +269,16 @@ export class Linkifier extends EventEmitter implements ILinkifier {
         return true;
       }
     ));
+  }
+
+  private _createLinkHoverEvent(x: number, y: number, uri: string): ILinkHoverEvent {
+    return {
+      x1: x,
+      y1: y,
+      // TODO: Verify links on boundary work fine (x vs x + 1)
+      x2: (x + uri.length) % this._terminal.cols,
+      y2: y + Math.floor((x + uri.length) / this._terminal.cols),
+      cols: this._terminal.cols
+    };
   }
 }
