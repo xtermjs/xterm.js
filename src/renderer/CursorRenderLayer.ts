@@ -45,8 +45,8 @@ export class CursorRenderLayer extends BaseRenderLayer {
     // TODO: Consider initial options? Maybe onOptionsChanged should be called at the end of open?
   }
 
-  public resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void {
-    super.resize(terminal, dim, charSizeChanged);
+  public resize(terminal: ITerminal, dim: IRenderDimensions): void {
+    super.resize(terminal, dim);
     // Resizing the canvas discards the contents of the canvas so clear state
     this._state = {
       x: null,

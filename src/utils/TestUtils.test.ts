@@ -311,7 +311,7 @@ export class MockRenderer implements IRenderer {
   }
   dimensions: IRenderDimensions;
   setTheme(theme: ITheme): IColorSet { return <IColorSet>{}; }
-  onResize(cols: number, rows: number, didCharSizeChange: boolean): void {}
+  onResize(cols: number, rows: number): void {}
   onCharSizeChanged(): void {}
   onBlur(): void {}
   onFocus(): void {}
