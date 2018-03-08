@@ -6,8 +6,9 @@
 import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from '../Buffer';
 import { FLAGS, IColorSet, IRenderDimensions } from './Types';
 import { CharData, IBuffer, ICharMeasure, ITerminal } from '../Types';
+import { INVERTED_DEFAULT_COLOR } from './atlas/Types';
 import { GridCache } from './GridCache';
-import { BaseRenderLayer, INVERTED_DEFAULT_COLOR } from './BaseRenderLayer';
+import { BaseRenderLayer } from './BaseRenderLayer';
 
 /**
  * This CharData looks like a null character, which will forc a clear and render
@@ -27,8 +28,8 @@ export class TextRenderLayer extends BaseRenderLayer {
     this._state = new GridCache<CharData>();
   }
 
-  public resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void {
-    super.resize(terminal, dim, charSizeChanged);
+  public resize(terminal: ITerminal, dim: IRenderDimensions): void {
+    super.resize(terminal, dim);
 
     // Clear the character width cache if the font or width has changed
     const terminalFont = this._getFont(terminal, false);

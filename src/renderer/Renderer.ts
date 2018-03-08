@@ -31,7 +31,7 @@ export class Renderer extends EventEmitter implements IRenderer {
 
   constructor(private _terminal: ITerminal, theme: ITheme) {
     super();
-    this.colorManager = new ColorManager();
+    this.colorManager = new ColorManager(document);
     if (theme) {
       this.colorManager.setTheme(theme);
     }
@@ -84,7 +84,7 @@ export class Renderer extends EventEmitter implements IRenderer {
     // and the terminal needs to refreshed
     if (this._devicePixelRatio !== devicePixelRatio) {
       this._devicePixelRatio = devicePixelRatio;
-      this.onResize(this._terminal.cols, this._terminal.rows, true);
+      this.onResize(this._terminal.cols, this._terminal.rows);
     }
   }
 
@@ -106,12 +106,12 @@ export class Renderer extends EventEmitter implements IRenderer {
     return this.colorManager.colors;
   }
 
-  public onResize(cols: number, rows: number, didCharSizeChange: boolean): void {
+  public onResize(cols: number, rows: number): void {
     // Update character and canvas dimensions
     this._updateDimensions();
 
     // Resize all render layers
-    this._renderLayers.forEach(l => l.resize(this._terminal, this.dimensions, didCharSizeChange));
+    this._renderLayers.forEach(l => l.resize(this._terminal, this.dimensions));
 
     // Force a refresh
     if (this._isPaused) {
@@ -131,7 +131,7 @@ export class Renderer extends EventEmitter implements IRenderer {
   }
 
   public onCharSizeChanged(): void {
-    this.onResize(this._terminal.cols, this._terminal.rows, true);
+    this.onResize(this._terminal.cols, this._terminal.rows);
   }
 
   public onBlur(): void {

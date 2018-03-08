@@ -8,13 +8,19 @@ import * as Terminal from '../Terminal';
 import * as Clipboard from './Clipboard';
 
 describe('evaluatePastedTextProcessing', () => {
-  it('should replace carriage return + line feed with line feed on windows', () => {
-    const pastedText = 'foo\r\nbar\r\n';
-    const processedText = Clipboard.prepareTextForTerminal(pastedText, false);
-    const windowsProcessedText = Clipboard.prepareTextForTerminal(pastedText, true);
+  it('should replace carriage return and/or line feed with carriage return', () => {
+    const pastedText = {
+      unix: 'foo\nbar\n',
+      windows: 'foo\r\nbar\r\n'
+    };
 
-    assert.equal(processedText, 'foo\r\nbar\r\n');
-    assert.equal(windowsProcessedText, 'foo\rbar\r');
+    const processedText = {
+      unix: Clipboard.prepareTextForTerminal(pastedText.unix),
+      windows: Clipboard.prepareTextForTerminal(pastedText.windows)
+    };
+
+    assert.equal(processedText.unix, 'foo\rbar\r');
+    assert.equal(processedText.windows, 'foo\rbar\r');
   });
   it('should bracket pasted text in bracketedPasteMode', () => {
     const pastedText = 'foo bar';

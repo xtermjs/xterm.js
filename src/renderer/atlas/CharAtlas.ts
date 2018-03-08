@@ -3,23 +3,12 @@
  * @license MIT
  */
 
-import { ITerminal } from '../Types';
-import { IColorSet } from './Types';
-import { isFirefox } from '../shared/utils/Browser';
-import { generateCharAtlas, ICharAtlasRequest } from '../shared/CharAtlasGenerator';
-
-export const CHAR_ATLAS_CELL_SPACING = 1;
-
-interface ICharAtlasConfig {
-  fontSize: number;
-  fontFamily: string;
-  fontWeight: string;
-  fontWeightBold: string;
-  scaledCharWidth: number;
-  scaledCharHeight: number;
-  allowTransparency: boolean;
-  colors: IColorSet;
-}
+import { ITerminal } from '../../Types';
+import { IColorSet } from '../Types';
+import { ICharAtlasConfig } from './Types';
+import { isFirefox } from '../../shared/utils/Browser';
+import { generateCharAtlas, ICharAtlasRequest } from '../../shared/atlas/CharAtlasGenerator';
+import { generateConfig, configEquals } from './CharAtlasUtils';
 
 interface ICharAtlasCacheEntry {
   bitmap: HTMLCanvasElement | Promise<ImageBitmap>;
@@ -95,42 +84,4 @@ export function acquireCharAtlas(terminal: ITerminal, colors: IColorSet, scaledC
   };
   charAtlasCache.push(newEntry);
   return newEntry.bitmap;
-}
-
-function generateConfig(scaledCharWidth: number, scaledCharHeight: number, terminal: ITerminal, colors: IColorSet): ICharAtlasConfig {
-  const clonedColors = {
-    foreground: colors.foreground,
-    background: colors.background,
-    cursor: null,
-    cursorAccent: null,
-    selection: null,
-    ansi: colors.ansi.slice(0, 16)
-  };
-  return {
-    scaledCharWidth,
-    scaledCharHeight,
-    fontFamily: terminal.options.fontFamily,
-    fontSize: terminal.options.fontSize,
-    fontWeight: terminal.options.fontWeight,
-    fontWeightBold: terminal.options.fontWeightBold,
-    allowTransparency: terminal.options.allowTransparency,
-    colors: clonedColors
-  };
-}
-
-function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean {
-  for (let i = 0; i < a.colors.ansi.length; i++) {
-    if (a.colors.ansi[i] !== b.colors.ansi[i]) {
-      return false;
-    }
-  }
-  return a.fontFamily === b.fontFamily &&
-      a.fontSize === b.fontSize &&
-      a.fontWeight === b.fontWeight &&
-      a.fontWeightBold === b.fontWeightBold &&
-      a.allowTransparency === b.allowTransparency &&
-      a.scaledCharWidth === b.scaledCharWidth &&
-      a.scaledCharHeight === b.scaledCharHeight &&
-      a.colors.foreground === b.colors.foreground &&
-      a.colors.background === b.colors.background;
 }
