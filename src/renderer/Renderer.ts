@@ -31,7 +31,7 @@ export class Renderer extends EventEmitter implements IRenderer {
 
   constructor(private _terminal: ITerminal, theme: ITheme) {
     super();
-    this.colorManager = new ColorManager();
+    this.colorManager = new ColorManager(document);
     if (theme) {
       this.colorManager.setTheme(theme);
     }
