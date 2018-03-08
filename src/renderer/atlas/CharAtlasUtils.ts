@@ -6,7 +6,7 @@
 import { ITerminal } from '../../Types';
 import { ITheme } from 'xterm';
 import { IColorSet } from '../Types';
-import { ICharAtlasConfig } from './Types';
+import { ICharAtlasConfig } from '../../shared/atlas/Types';
 
 export function generateConfig(scaledCharWidth: number, scaledCharHeight: number, terminal: ITerminal, colors: IColorSet): ICharAtlasConfig {
   const clonedColors = {
@@ -18,6 +18,7 @@ export function generateConfig(scaledCharWidth: number, scaledCharHeight: number
     ansi: colors.ansi.slice(0, 16)
   };
   return {
+    devicePixelRatio: window.devicePixelRatio,
     scaledCharWidth,
     scaledCharHeight,
     fontFamily: terminal.options.fontFamily,
@@ -35,7 +36,8 @@ export function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean 
       return false;
     }
   }
-  return a.fontFamily === b.fontFamily &&
+  return a.devicePixelRatio === b.devicePixelRatio &&
+      a.fontFamily === b.fontFamily &&
       a.fontSize === b.fontSize &&
       a.fontWeight === b.fontWeight &&
       a.fontWeightBold === b.fontWeightBold &&
