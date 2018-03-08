@@ -168,10 +168,12 @@ export class Linkifier extends EventEmitter implements ILinkifier {
 
     let text = this._terminal.buffer.translateBufferLineToString(absoluteRowIndex, false);
 
-    // Check if the line is wrapped
-    if (absoluteRowIndex + 1 < this._terminal.buffer.lines.length && (<any>this._terminal.buffer.lines.get(absoluteRowIndex + 1)).isWrapped) {
-      // TODO: Do this for lines that wrap over more than 2 lines
-      text += this._terminal.buffer.translateBufferLineToString(absoluteRowIndex + 1, false);
+    // Construct full unwrapped line text
+    if (absoluteRowIndex + 1 < this._terminal.buffer.lines.length) {
+      let currentIndex = absoluteRowIndex + 1;
+      while ((<any>this._terminal.buffer.lines.get(currentIndex)).isWrapped) {
+        text += this._terminal.buffer.translateBufferLineToString(currentIndex++, false);
+      }
     }
 
     for (let i = 0; i < this._linkMatchers.length; i++) {
