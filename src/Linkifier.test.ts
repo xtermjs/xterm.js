@@ -7,11 +7,11 @@ import { assert } from 'chai';
 import { IMouseZoneManager, IMouseZone } from './input/Types';
 import { ILinkMatcher, LineData, ITerminal, ILinkifier, IBuffer, IBufferAccessor, IElementAccessor } from './Types';
 import { Linkifier } from './Linkifier';
-import { MockBuffer } from './utils/TestUtils.test';
+import { MockBuffer, MockTerminal } from './utils/TestUtils.test';
 import { CircularList } from './utils/CircularList';
 
 class TestLinkifier extends Linkifier {
-  constructor(_terminal: IBufferAccessor & IElementAccessor) {
+  constructor(_terminal: ITerminal) {
     super(_terminal);
     Linkifier.TIME_BEFORE_LINKIFY = 0;
   }
@@ -32,15 +32,14 @@ class TestMouseZoneManager implements IMouseZoneManager {
 }
 
 describe('Linkifier', () => {
-  let terminal: IBufferAccessor & IElementAccessor;
+  let terminal: ITerminal;
   let linkifier: TestLinkifier;
   let mouseZoneManager: TestMouseZoneManager;
 
   beforeEach(() => {
-    terminal = {
-      buffer: new MockBuffer(),
-      element: <HTMLElement>{}
-    };
+    terminal = new MockTerminal();
+    terminal.cols = 100;
+    terminal.buffer = new MockBuffer();
     terminal.buffer.lines = new CircularList<LineData>(20);
     terminal.buffer.ydisp = 0;
     linkifier = new TestLinkifier(terminal);
@@ -59,17 +58,6 @@ describe('Linkifier', () => {
     terminal.buffer.lines.push(stringToRow(text));
   }
 
-  function assertLinkifiesEntireRow(uri: string, done: MochaDone): void {
-    addRow(uri);
-    linkifier.linkifyRows();
-    setTimeout(() => {
-      assert.equal(mouseZoneManager.zones[0].x1, 1);
-      assert.equal(mouseZoneManager.zones[0].x2, uri.length + 1);
-      assert.equal(mouseZoneManager.zones[0].y, terminal.buffer.lines.length);
-      done();
-    }, 0);
-  }
-
   function assertLinkifiesRow(rowText: string, linkMatcherRegex: RegExp, links: {x: number, length: number}[], done: MochaDone): void {
     addRow(rowText);
     linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
@@ -80,7 +68,8 @@ describe('Linkifier', () => {
       links.forEach((l, i) => {
         assert.equal(mouseZoneManager.zones[i].x1, l.x + 1);
         assert.equal(mouseZoneManager.zones[i].x2, l.x + l.length + 1);
-        assert.equal(mouseZoneManager.zones[i].y, terminal.buffer.lines.length);
+        assert.equal(mouseZoneManager.zones[i].y1, terminal.buffer.lines.length);
+        assert.equal(mouseZoneManager.zones[i].y2, terminal.buffer.lines.length);
       });
       done();
     }, 0);
@@ -141,7 +130,8 @@ describe('Linkifier', () => {
             assert.equal(mouseZoneManager.zones.length, 1);
             assert.equal(mouseZoneManager.zones[0].x1, 1);
             assert.equal(mouseZoneManager.zones[0].x2, 5);
-            assert.equal(mouseZoneManager.zones[0].y, 1);
+            assert.equal(mouseZoneManager.zones[0].y1, 1);
+            assert.equal(mouseZoneManager.zones[0].y2, 1);
             // Fires done()
             mouseZoneManager.zones[0].clickCallback(<any>{});
           }
