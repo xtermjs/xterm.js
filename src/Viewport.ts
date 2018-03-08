@@ -21,6 +21,11 @@ export class Viewport implements IViewport {
   private _lastRecordedBufferHeight: number = 0;
   private _lastTouchY: number;
 
+  // Stores a partial line amount when scrolling, this is used to keep track of how much of a line
+  // is scrolled so we can "scroll" over partial lines and feel natural on touchpads. This is a
+  // quick fix and could have a more robust solution in place that reset the value when needed.
+  private _wheelPartialScroll: number = 0;
+
   /**
    * Creates a new Viewport.
    * @param _terminal The terminal this viewport belongs to.
@@ -113,20 +118,53 @@ export class Viewport implements IViewport {
    * @param ev The mouse wheel event.
    */
   public onWheel(ev: WheelEvent): void {
-    if (ev.deltaY === 0) {
-      // Do nothing if it's not a vertical scroll event
+    const amount = this._getPixelsScrolled(ev);
+    if (amount === 0) {
       return;
     }
-    // Fallback to WheelEvent.DOM_DELTA_PIXEL
-    let multiplier = 1;
-    if (ev.deltaMode === WheelEvent.DOM_DELTA_LINE) {
-      multiplier = this._currentRowHeight;
-    } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
-      multiplier = this._currentRowHeight * this._terminal.rows;
-    }
-    this._viewportElement.scrollTop += ev.deltaY * multiplier;
+    this._viewportElement.scrollTop += amount;
     // Prevent the page from scrolling when the terminal scrolls
     ev.preventDefault();
+  }
+
+  private _getPixelsScrolled(ev: WheelEvent): number {
+    // Do nothing if it's not a vertical scroll event
+    if (ev.deltaY === 0) {
+      return 0;
+    }
+
+    // Fallback to WheelEvent.DOM_DELTA_PIXEL
+    let amount = ev.deltaY;
+    if (ev.deltaMode === WheelEvent.DOM_DELTA_LINE) {
+      amount *= this._currentRowHeight;
+    } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+      amount *= this._currentRowHeight * this._terminal.rows;
+    }
+    return amount;
+  }
+
+  /**
+   * Gets the number of pixels scrolled by the mouse event taking into account what type of delta
+   * is being used.
+   * @param ev The mouse wheel event.
+   */
+  public getLinesScrolled(ev: WheelEvent): number {
+    // Do nothing if it's not a vertical scroll event
+    if (ev.deltaY === 0) {
+      return 0;
+    }
+
+    // Fallback to WheelEvent.DOM_DELTA_LINE
+    let amount = ev.deltaY;
+    if (ev.deltaMode === WheelEvent.DOM_DELTA_PIXEL) {
+      amount /= this._currentRowHeight + 0.0; // Prevent integer division
+      this._wheelPartialScroll += amount;
+      amount = Math.floor(Math.abs(this._wheelPartialScroll)) * (this._wheelPartialScroll > 0 ? 1 : -1);
+      this._wheelPartialScroll %= 1;
+    } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+      amount *= this._terminal.rows;
+    }
+    return amount;
   }
 
   /**
