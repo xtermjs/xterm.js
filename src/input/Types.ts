@@ -11,7 +11,8 @@ export interface IMouseZoneManager {
 export interface IMouseZone {
   x1: number;
   x2: number;
-  y: number;
+  y1: number;
+  y2: number;
   clickCallback: (e: MouseEvent) => any;
   hoverCallback: (e: MouseEvent) => any | undefined;
   tooltipCallback: (e: MouseEvent) => any | undefined;

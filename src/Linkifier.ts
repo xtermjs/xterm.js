@@ -27,7 +27,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
   private _rowsToLinkify: {start: number, end: number};
 
   constructor(
-    protected _terminal: IBufferAccessor & IElementAccessor
+    protected _terminal: ITerminal
   ) {
     super();
     this._rowsToLinkify = {
@@ -236,8 +236,9 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     // TODO: Make MouseZone's work over multiple lines
     this._mouseZoneManager.add(new MouseZone(
       x + 1,
-      x + 1 + uri.length,
       y + 1,
+      (x + 1 + uri.length) % this._terminal.cols,
+      y + 1 + Math.floor((x + 1 + uri.length) / this._terminal.cols),
       e => {
         if (matcher.handler) {
           return matcher.handler(e, uri);
