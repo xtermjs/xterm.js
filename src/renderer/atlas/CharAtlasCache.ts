@@ -4,18 +4,21 @@
  */
 
 import { ITerminal } from '../../Types';
+import BaseCharAtlas from './BaseCharAtlas';
+import StaticCharAtlas from './StaticCharAtlas';
 import { IColorSet } from '../Types';
 import { ICharAtlasConfig } from '../../shared/atlas/Types';
-import { generateCharAtlas } from '../../shared/atlas/CharAtlasGenerator';
 import { generateConfig, configEquals } from './CharAtlasUtils';
 
 interface ICharAtlasCacheEntry {
-  bitmap: HTMLCanvasElement | Promise<ImageBitmap>;
+  atlas: BaseCharAtlas;
   config: ICharAtlasConfig;
+  // N.B. This implementation potentially holds onto copies of the terminal forever, so
+  // this may cause memory leaks.
   ownedBy: ITerminal[];
 }
 
-let charAtlasCache: ICharAtlasCacheEntry[] = [];
+const charAtlasCache: ICharAtlasCacheEntry[] = [];
 
 /**
  * Acquires a char atlas, either generating a new one or returning an existing
@@ -23,7 +26,12 @@ let charAtlasCache: ICharAtlasCacheEntry[] = [];
  * @param terminal The terminal.
  * @param colors The colors to use.
  */
-export function acquireCharAtlas(terminal: ITerminal, colors: IColorSet, scaledCharWidth: number, scaledCharHeight: number): HTMLCanvasElement | Promise<ImageBitmap> {
+export function acquireCharAtlas(
+  terminal: ITerminal,
+  colors: IColorSet,
+  scaledCharWidth: number,
+  scaledCharHeight: number,
+): BaseCharAtlas {
   const newConfig = generateConfig(scaledCharWidth, scaledCharHeight, terminal, colors);
 
   // Check to see if the terminal already owns this config
@@ -32,7 +40,7 @@ export function acquireCharAtlas(terminal: ITerminal, colors: IColorSet, scaledC
     const ownedByIndex = entry.ownedBy.indexOf(terminal);
     if (ownedByIndex >= 0) {
       if (configEquals(entry.config, newConfig)) {
-        return entry.bitmap;
+        return entry.atlas;
       } else {
         // The configs differ, release the terminal from the entry
         if (entry.ownedBy.length === 1) {
@@ -51,22 +59,18 @@ export function acquireCharAtlas(terminal: ITerminal, colors: IColorSet, scaledC
     if (configEquals(entry.config, newConfig)) {
       // Add the terminal to the cache entry and return
       entry.ownedBy.push(terminal);
-      return entry.bitmap;
+      return entry.atlas;
     }
   }
 
-  const canvasFactory = (width: number, height: number) => {
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    return canvas;
-  };
-
   const newEntry: ICharAtlasCacheEntry = {
-    bitmap: generateCharAtlas(window, canvasFactory, newConfig),
+    atlas: new StaticCharAtlas(
+      document,
+      newConfig,
+    ),
     config: newConfig,
-    ownedBy: [terminal]
+    ownedBy: [terminal],
   };
   charAtlasCache.push(newEntry);
-  return newEntry.bitmap;
+  return newEntry.atlas;
 }
