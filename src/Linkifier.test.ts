@@ -5,7 +5,7 @@
 
 import { assert } from 'chai';
 import { IMouseZoneManager, IMouseZone } from './input/Types';
-import { ILinkMatcher, LineData, ITerminal, ILinkifier, IBuffer, IBufferAccessor, IElementAccessor } from './Types';
+import { ILinkMatcher, LineData, IBufferAccessor, IElementAccessor } from './Types';
 import { Linkifier } from './Linkifier';
 import { MockBuffer } from './utils/TestUtils.test';
 import { CircularList } from './utils/CircularList';
@@ -57,17 +57,6 @@ describe('Linkifier', () => {
 
   function addRow(text: string): void {
     terminal.buffer.lines.push(stringToRow(text));
-  }
-
-  function assertLinkifiesEntireRow(uri: string, done: MochaDone): void {
-    addRow(uri);
-    linkifier.linkifyRows();
-    setTimeout(() => {
-      assert.equal(mouseZoneManager.zones[0].x1, 1);
-      assert.equal(mouseZoneManager.zones[0].x2, uri.length + 1);
-      assert.equal(mouseZoneManager.zones[0].y, terminal.buffer.lines.length);
-      done();
-    }, 0);
   }
 
   function assertLinkifiesRow(rowText: string, linkMatcherRegex: RegExp, links: {x: number, length: number}[], done: MochaDone): void {

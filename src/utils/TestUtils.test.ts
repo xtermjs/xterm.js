@@ -269,6 +269,9 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   addDisposableListener(type: string, handler: XtermListener): IDisposable {
     throw new Error('Method not implemented.');
   }
+  tabSet(): void {
+    throw new Error('Method not implemented.');
+  }
 }
 
 export class MockBuffer implements IBuffer {

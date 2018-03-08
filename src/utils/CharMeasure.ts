@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ICharMeasure, ITerminal, ITerminalOptions } from '../Types';
+import { ICharMeasure, ITerminalOptions } from '../Types';
 import { EventEmitter } from '../EventEmitter';
 
 /**

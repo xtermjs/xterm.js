@@ -11,7 +11,6 @@ import { addDisposableListener } from './utils/Dom';
 import { IDisposable } from 'xterm';
 
 const MAX_ROWS_TO_READ = 20;
-const ACTIVE_ITEM_ID_PREFIX = 'xterm-active-item-';
 
 enum BoundaryPosition {
   Top,
@@ -265,7 +264,6 @@ export class AccessibilityManager implements IDisposable {
     if (!this._terminal.renderer.dimensions.actualCellHeight) {
       return;
     }
-    const buffer: IBuffer = this._terminal.buffer;
     for (let i = 0; i < this._terminal.rows; i++) {
       this._refreshRowDimensions(this._rowElements[i]);
     }

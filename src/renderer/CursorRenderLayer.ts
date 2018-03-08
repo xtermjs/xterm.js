@@ -3,11 +3,10 @@
  * @license MIT
  */
 
-import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
-import { GridCache } from './GridCache';
-import { FLAGS, IColorSet, IRenderDimensions } from './Types';
+import { CHAR_DATA_WIDTH_INDEX } from '../Buffer';
+import { IColorSet, IRenderDimensions } from './Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { CharData, IBuffer, ICharMeasure, ITerminal, ITerminalOptions } from '../Types';
+import { CharData, ITerminal } from '../Types';
 
 interface ICursorState {
   x: number;
@@ -26,7 +25,6 @@ export class CursorRenderLayer extends BaseRenderLayer {
   private _state: ICursorState;
   private _cursorRenderers: {[key: string]: (terminal: ITerminal, x: number, y: number, charData: CharData) => void};
   private _cursorBlinkStateManager: CursorBlinkStateManager;
-  private _isFocused: boolean;
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
     super(container, 'cursor', zIndex, true, colors);

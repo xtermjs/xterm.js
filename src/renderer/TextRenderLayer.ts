@@ -5,7 +5,7 @@
 
 import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from '../Buffer';
 import { FLAGS, IColorSet, IRenderDimensions } from './Types';
-import { CharData, IBuffer, ICharMeasure, ITerminal } from '../Types';
+import { CharData, ITerminal } from '../Types';
 import { INVERTED_DEFAULT_COLOR } from './atlas/Types';
 import { GridCache } from './GridCache';
 import { BaseRenderLayer } from './BaseRenderLayer';
@@ -15,7 +15,7 @@ import { BaseRenderLayer } from './BaseRenderLayer';
  * when the character changes (a regular space ' ' character may not as it's
  * drawn state is a cleared cell).
  */
-const OVERLAP_OWNED_CHAR_DATA: CharData = [null, '', 0, -1];
+// const OVERLAP_OWNED_CHAR_DATA: CharData = [null, '', 0, -1];
 
 export class TextRenderLayer extends BaseRenderLayer {
   private _state: GridCache<CharData>;
@@ -239,13 +239,13 @@ export class TextRenderLayer extends BaseRenderLayer {
    * @param x The column of the char.
    * @param y The row of the char.
    */
-  private _clearChar(x: number, y: number): void {
-    let colsToClear = 1;
-    // Clear the adjacent character if it was wide
-    const state = this._state.cache[x][y];
-    if (state && state[CHAR_DATA_WIDTH_INDEX] === 2) {
-      colsToClear = 2;
-    }
-    this.clearCells(x, y, colsToClear, 1);
-  }
+  // private _clearChar(x: number, y: number): void {
+  //   let colsToClear = 1;
+  //   // Clear the adjacent character if it was wide
+  //   const state = this._state.cache[x][y];
+  //   if (state && state[CHAR_DATA_WIDTH_INDEX] === 2) {
+  //     colsToClear = 2;
+  //   }
+  //   this.clearCells(x, y, colsToClear, 1);
+  // }
 }

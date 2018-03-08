@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal as PublicTerminal, ITerminalOptions as IPublicTerminalOptions, IEventEmitter as IPublicEventEmitter, IEventEmitter } from 'xterm';
+import { Terminal as PublicTerminal, ITerminalOptions as IPublicTerminalOptions, IEventEmitter } from 'xterm';
 import { IColorSet, IRenderer } from './renderer/Types';
 import { IMouseZoneManager } from './input/Types';
 
@@ -84,6 +84,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   matchColor(r1: number, g1: number, b1: number): number;
   error(text: string, data?: any): void;
   setOption(key: string, value: any): void;
+  tabSet(): void;
 }
 
 export interface IViewport {
