@@ -28,7 +28,7 @@ export class SoundManager implements ISoundManager {
     if (this._audioContext) {
       const bellAudioSource = this._audioContext.createBufferSource();
       const context = this._audioContext;
-      this._audioContext.decodeAudioData(this.base64ToArrayBuffer(this.removeMimeType(this._terminal.options.bellSound)), (buffer) => {
+      this._audioContext.decodeAudioData(this._base64ToArrayBuffer(this._removeMimeType(this._terminal.options.bellSound)), (buffer) => {
         bellAudioSource.buffer = buffer;
         bellAudioSource.connect(context.destination);
         bellAudioSource.start(0);
@@ -38,7 +38,7 @@ export class SoundManager implements ISoundManager {
     }
   }
 
-  private base64ToArrayBuffer(base64: string): ArrayBuffer {
+  private _base64ToArrayBuffer(base64: string): ArrayBuffer {
     const binaryString = window.atob(base64);
     const len = binaryString.length;
     const bytes = new Uint8Array(len);
@@ -50,7 +50,7 @@ export class SoundManager implements ISoundManager {
     return bytes.buffer;
   }
 
-  private removeMimeType(dataURI: string): string {
+  private _removeMimeType(dataURI: string): string {
     // Split the input to get the mime-type and the data itself
     const splitUri = dataURI.split(',');
 

@@ -237,7 +237,7 @@ class CursorBlinkStateManager {
 
   constructor(
     terminal: ITerminal,
-    private renderCallback: () => void
+    private _renderCallback: () => void
   ) {
     this.isCursorVisible = true;
     if (terminal.isFocused) {
@@ -272,7 +272,7 @@ class CursorBlinkStateManager {
     this.isCursorVisible = true;
     if (!this._animationFrame) {
       this._animationFrame = window.requestAnimationFrame(() => {
-        this.renderCallback();
+        this._renderCallback();
         this._animationFrame = null;
       });
     }
@@ -303,7 +303,7 @@ class CursorBlinkStateManager {
       // Hide the cursor
       this.isCursorVisible = false;
       this._animationFrame = window.requestAnimationFrame(() => {
-        this.renderCallback();
+        this._renderCallback();
         this._animationFrame = null;
       });
 
@@ -322,7 +322,7 @@ class CursorBlinkStateManager {
         // Invert visibility and render
         this.isCursorVisible = !this.isCursorVisible;
         this._animationFrame = window.requestAnimationFrame(() => {
-          this.renderCallback();
+          this._renderCallback();
           this._animationFrame = null;
         });
       }, BLINK_INTERVAL);

@@ -15,11 +15,11 @@ const FALLBACK_SCROLL_BAR_WIDTH = 15;
  */
 export class Viewport implements IViewport {
   public scrollBarWidth: number = 0;
-  private currentRowHeight: number = 0;
-  private lastRecordedBufferLength: number = 0;
-  private lastRecordedViewportHeight: number = 0;
-  private lastRecordedBufferHeight: number = 0;
-  private lastTouchY: number;
+  private _currentRowHeight: number = 0;
+  private _lastRecordedBufferLength: number = 0;
+  private _lastRecordedViewportHeight: number = 0;
+  private _lastRecordedBufferHeight: number = 0;
+  private _lastTouchY: number;
 
   // Stores a partial line amount when scrolling, this is used to keep track of how much of a line
   // is scrolled so we can "scroll" over partial lines and feel natural on touchpads. This is a
@@ -28,43 +28,43 @@ export class Viewport implements IViewport {
 
   /**
    * Creates a new Viewport.
-   * @param terminal The terminal this viewport belongs to.
-   * @param viewportElement The DOM element acting as the viewport.
-   * @param scrollArea The DOM element acting as the scroll area.
-   * @param charMeasure A DOM element used to measure the character size of. the terminal.
+   * @param _terminal The terminal this viewport belongs to.
+   * @param _viewportElement The DOM element acting as the viewport.
+   * @param _scrollArea The DOM element acting as the scroll area.
+   * @param _charMeasure A DOM element used to measure the character size of. the terminal.
    */
   constructor(
-    private terminal: ITerminal,
-    private viewportElement: HTMLElement,
-    private scrollArea: HTMLElement,
-    private charMeasure: CharMeasure
+    private _terminal: ITerminal,
+    private _viewportElement: HTMLElement,
+    private _scrollArea: HTMLElement,
+    private _charMeasure: CharMeasure
   ) {
     // Measure the width of the scrollbar. If it is 0 we can assume it's an OSX overlay scrollbar.
     // Unfortunately the overlay scrollbar would be hidden underneath the screen element in that case,
     // therefore we account for a standard amount to make it visible
-    this.scrollBarWidth = (this.viewportElement.offsetWidth - this.scrollArea.offsetWidth) || FALLBACK_SCROLL_BAR_WIDTH;
-    this.viewportElement.addEventListener('scroll', this.onScroll.bind(this));
+    this.scrollBarWidth = (this._viewportElement.offsetWidth - this._scrollArea.offsetWidth) || FALLBACK_SCROLL_BAR_WIDTH;
+    this._viewportElement.addEventListener('scroll', this._onScroll.bind(this));
 
     // Perform this async to ensure the CharMeasure is ready.
     setTimeout(() => this.syncScrollArea(), 0);
   }
 
   public onThemeChanged(colors: IColorSet): void {
-    this.viewportElement.style.backgroundColor = colors.background;
+    this._viewportElement.style.backgroundColor = colors.background;
   }
 
   /**
    * Refreshes row height, setting line-height, viewport height and scroll area height if
    * necessary.
    */
-  private refresh(): void {
-    if (this.charMeasure.height > 0) {
-      this.currentRowHeight = this.terminal.renderer.dimensions.scaledCellHeight / window.devicePixelRatio;
-      this.lastRecordedViewportHeight = this.viewportElement.offsetHeight;
-      const newBufferHeight = Math.round(this.currentRowHeight * this.lastRecordedBufferLength) + (this.lastRecordedViewportHeight - this.terminal.renderer.dimensions.canvasHeight);
-      if (this.lastRecordedBufferHeight !== newBufferHeight) {
-        this.lastRecordedBufferHeight = newBufferHeight;
-        this.scrollArea.style.height = this.lastRecordedBufferHeight + 'px';
+  private _refresh(): void {
+    if (this._charMeasure.height > 0) {
+      this._currentRowHeight = this._terminal.renderer.dimensions.scaledCellHeight / window.devicePixelRatio;
+      this._lastRecordedViewportHeight = this._viewportElement.offsetHeight;
+      const newBufferHeight = Math.round(this._currentRowHeight * this._lastRecordedBufferLength) + (this._lastRecordedViewportHeight - this._terminal.renderer.dimensions.canvasHeight);
+      if (this._lastRecordedBufferHeight !== newBufferHeight) {
+        this._lastRecordedBufferHeight = newBufferHeight;
+        this._scrollArea.style.height = this._lastRecordedBufferHeight + 'px';
       }
     }
   }
@@ -73,24 +73,24 @@ export class Viewport implements IViewport {
    * Updates dimensions and synchronizes the scroll area if necessary.
    */
   public syncScrollArea(): void {
-    if (this.lastRecordedBufferLength !== this.terminal.buffer.lines.length) {
+    if (this._lastRecordedBufferLength !== this._terminal.buffer.lines.length) {
       // If buffer height changed
-      this.lastRecordedBufferLength = this.terminal.buffer.lines.length;
-      this.refresh();
-    } else if (this.lastRecordedViewportHeight !== (<any>this.terminal).renderer.dimensions.canvasHeight) {
+      this._lastRecordedBufferLength = this._terminal.buffer.lines.length;
+      this._refresh();
+    } else if (this._lastRecordedViewportHeight !== (<any>this._terminal).renderer.dimensions.canvasHeight) {
       // If viewport height changed
-      this.refresh();
+      this._refresh();
     } else {
       // If size has changed, refresh viewport
-      if (this.terminal.renderer.dimensions.scaledCellHeight / window.devicePixelRatio !== this.currentRowHeight) {
-        this.refresh();
+      if (this._terminal.renderer.dimensions.scaledCellHeight / window.devicePixelRatio !== this._currentRowHeight) {
+        this._refresh();
       }
     }
 
     // Sync scrollTop
-    const scrollTop = this.terminal.buffer.ydisp * this.currentRowHeight;
-    if (this.viewportElement.scrollTop !== scrollTop) {
-      this.viewportElement.scrollTop = scrollTop;
+    const scrollTop = this._terminal.buffer.ydisp * this._currentRowHeight;
+    if (this._viewportElement.scrollTop !== scrollTop) {
+      this._viewportElement.scrollTop = scrollTop;
     }
   }
 
@@ -99,16 +99,16 @@ export class Viewport implements IViewport {
    * terminal to scroll to it.
    * @param ev The scroll event.
    */
-  private onScroll(ev: Event): void {
+  private _onScroll(ev: Event): void {
     // Don't attempt to scroll if the element is not visible, otherwise scrollTop will be corrupt
     // which causes the terminal to scroll the buffer to the top
-    if (!this.viewportElement.offsetParent) {
+    if (!this._viewportElement.offsetParent) {
       return;
     }
 
-    const newRow = Math.round(this.viewportElement.scrollTop / this.currentRowHeight);
-    const diff = newRow - this.terminal.buffer.ydisp;
-    this.terminal.scrollLines(diff, true);
+    const newRow = Math.round(this._viewportElement.scrollTop / this._currentRowHeight);
+    const diff = newRow - this._terminal.buffer.ydisp;
+    this._terminal.scrollLines(diff, true);
   }
 
   /**
@@ -122,7 +122,7 @@ export class Viewport implements IViewport {
     if (amount === 0) {
       return;
     }
-    this.viewportElement.scrollTop += amount;
+    this._viewportElement.scrollTop += amount;
     // Prevent the page from scrolling when the terminal scrolls
     ev.preventDefault();
   }
@@ -136,9 +136,9 @@ export class Viewport implements IViewport {
     // Fallback to WheelEvent.DOM_DELTA_PIXEL
     let amount = ev.deltaY;
     if (ev.deltaMode === WheelEvent.DOM_DELTA_LINE) {
-      amount *= this.currentRowHeight;
+      amount *= this._currentRowHeight;
     } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
-      amount *= this.currentRowHeight * this.terminal.rows;
+      amount *= this._currentRowHeight * this._terminal.rows;
     }
     return amount;
   }
@@ -157,12 +157,12 @@ export class Viewport implements IViewport {
     // Fallback to WheelEvent.DOM_DELTA_LINE
     let amount = ev.deltaY;
     if (ev.deltaMode === WheelEvent.DOM_DELTA_PIXEL) {
-      amount /= this.currentRowHeight + 0.0; // Prevent integer division
+      amount /= this._currentRowHeight + 0.0; // Prevent integer division
       this._wheelPartialScroll += amount;
       amount = Math.floor(Math.abs(this._wheelPartialScroll)) * (this._wheelPartialScroll > 0 ? 1 : -1);
       this._wheelPartialScroll %= 1;
     } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
-      amount *= this.terminal.rows;
+      amount *= this._terminal.rows;
     }
     return amount;
   }
@@ -172,7 +172,7 @@ export class Viewport implements IViewport {
    * @param ev The touch event.
    */
   public onTouchStart(ev: TouchEvent): void {
-    this.lastTouchY = ev.touches[0].pageY;
+    this._lastTouchY = ev.touches[0].pageY;
   }
 
   /**
@@ -180,12 +180,12 @@ export class Viewport implements IViewport {
    * @param ev The touch event.
    */
   public onTouchMove(ev: TouchEvent): void {
-    let deltaY = this.lastTouchY - ev.touches[0].pageY;
-    this.lastTouchY = ev.touches[0].pageY;
+    let deltaY = this._lastTouchY - ev.touches[0].pageY;
+    this._lastTouchY = ev.touches[0].pageY;
     if (deltaY === 0) {
       return;
     }
-    this.viewportElement.scrollTop += deltaY;
+    this._viewportElement.scrollTop += deltaY;
     ev.preventDefault();
   }
 }

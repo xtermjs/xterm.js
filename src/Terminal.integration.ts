@@ -125,7 +125,7 @@ if (os.platform() !== 'win32') {
 
               // Perform a synchronous .write(data)
               xterm.writeBuffer.push(fromPty);
-              xterm.innerWrite();
+              xterm._innerWrite();
 
               let fromEmulator = terminalToString(xterm);
               console.log = CONSOLE_LOG;
