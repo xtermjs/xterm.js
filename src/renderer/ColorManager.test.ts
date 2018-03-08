@@ -3,14 +3,21 @@
  * @license MIT
  */
 
+import jsdom = require('jsdom');
 import { assert } from 'chai';
 import { ColorManager } from './ColorManager';
 
 describe('ColorManager', () => {
   let cm: ColorManager;
+  let dom: jsdom.JSDOM;
+  let document: Document;
+  let window: Window;
 
   beforeEach(() => {
-    cm = new ColorManager();
+    dom = new jsdom.JSDOM('');
+    window = dom.window;
+    document = window.document;
+    cm = new ColorManager(document);
   });
 
   describe('constructor', () => {

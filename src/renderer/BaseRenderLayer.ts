@@ -5,11 +5,10 @@
 
 import { IRenderLayer, IColorSet, IRenderDimensions } from './Types';
 import { CharData, ITerminal, ITerminalOptions } from '../Types';
-import { acquireCharAtlas, CHAR_ATLAS_CELL_SPACING } from './CharAtlas';
+import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from './atlas/Types';
+import { CHAR_ATLAS_CELL_SPACING } from '../shared/atlas/Types';
+import { acquireCharAtlas } from './atlas/CharAtlas';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
-
-export const INVERTED_DEFAULT_COLOR = -1;
-const DIM_OPACITY = 0.5;
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -93,7 +92,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     }
   }
 
-  public resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void {
+  public resize(terminal: ITerminal, dim: IRenderDimensions): void {
     this._scaledCellWidth = dim.scaledCellWidth;
     this._scaledCellHeight = dim.scaledCellHeight;
     this._scaledCharWidth = dim.scaledCharWidth;
@@ -110,9 +109,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       this.clearAll();
     }
 
-    if (charSizeChanged) {
-      this._refreshCharAtlas(terminal, this._colors);
-    }
+    this._refreshCharAtlas(terminal, this._colors);
   }
 
   public abstract reset(terminal: ITerminal): void;

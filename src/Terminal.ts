@@ -472,11 +472,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       case 'lineHeight':
       case 'fontWeight':
       case 'fontWeightBold':
-        const didCharSizeChange = (key === 'fontWeight' || key === 'fontWeightBold' || key === 'enableBold');
-
         // When the font changes the size of the cells may change which requires a renderer clear
         this.renderer.clear();
-        this.renderer.onResize(this.cols, this.rows, didCharSizeChange);
+        this.renderer.onResize(this.cols, this.rows);
         this.refresh(0, this.rows - 1);
       case 'scrollback':
         this.buffers.resize(this.cols, this.rows);
@@ -702,14 +700,14 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.viewport.onThemeChanged(this.renderer.colorManager.colors);
 
     this.on('cursormove', () => this.renderer.onCursorMove());
-    this.on('resize', () => this.renderer.onResize(this.cols, this.rows, false));
+    this.on('resize', () => this.renderer.onResize(this.cols, this.rows));
     this.on('blur', () => this.renderer.onBlur());
     this.on('focus', () => this.renderer.onFocus());
     this.on('dprchange', () => this.renderer.onWindowResize(window.devicePixelRatio));
     // dprchange should handle this case, we need this as well for browsers that don't support the
     // matchMedia query.
     window.addEventListener('resize', () => this.renderer.onWindowResize(window.devicePixelRatio));
-    this.charMeasure.on('charsizechanged', () => this.renderer.onResize(this.cols, this.rows, true));
+    this.charMeasure.on('charsizechanged', () => this.renderer.onResize(this.cols, this.rows));
     this.renderer.on('resize', (dimensions) => this.viewport.syncScrollArea());
 
     this.selectionManager = new SelectionManager(this, this.charMeasure);
@@ -1327,36 +1325,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 
   /**
-   * Attaches a http(s) link handler, forcing web links to behave differently to
-   * regular <a> tags. This will trigger a refresh as links potentially need to be
-   * reconstructed. Calling this with null will remove the handler.
-   * @param handler The handler callback function.
-   */
-  public setHypertextLinkHandler(handler: LinkMatcherHandler): void {
-    if (!this.linkifier) {
-      throw new Error('Cannot attach a hypertext link handler before Terminal.open is called');
-    }
-    this.linkifier.setHypertextLinkHandler(handler);
-    // Refresh to force links to refresh
-    this.refresh(0, this.rows - 1);
-  }
-
-  /**
-   * Attaches a validation callback for hypertext links. This is useful to use
-   * validation logic or to do something with the link's element and url.
-   * @param callback The callback to use, this can
-   * be cleared with null.
-   */
-  public setHypertextValidationCallback(callback: LinkMatcherValidationCallback): void {
-    if (!this.linkifier) {
-      throw new Error('Cannot attach a hypertext validation callback before Terminal.open is called');
-    }
-    this.linkifier.setHypertextValidationCallback(callback);
-    // // Refresh to force links to refresh
-    this.refresh(0, this.rows - 1);
-  }
-
-  /**
    * Registers a link matcher, allowing custom link patterns to be matched and
    * handled.
    * @param regex The regular expression to search for, specifically
@@ -1367,12 +1335,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @return The ID of the new matcher, this can be used to deregister.
    */
   public registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options?: ILinkMatcherOptions): number {
-    if (this.linkifier) {
-      const matcherId = this.linkifier.registerLinkMatcher(regex, handler, options);
-      this.refresh(0, this.rows - 1);
-      return matcherId;
-    }
-    return 0;
+    const matcherId = this.linkifier.registerLinkMatcher(regex, handler, options);
+    this.refresh(0, this.rows - 1);
+    return matcherId;
   }
 
   /**
@@ -1380,10 +1345,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param matcherId The link matcher's ID (returned after register)
    */
   public deregisterLinkMatcher(matcherId: number): void {
-    if (this.linkifier) {
-      if (this.linkifier.deregisterLinkMatcher(matcherId)) {
-        this.refresh(0, this.rows - 1);
-      }
+    if (this.linkifier.deregisterLinkMatcher(matcherId)) {
+      this.refresh(0, this.rows - 1);
     }
   }
 
