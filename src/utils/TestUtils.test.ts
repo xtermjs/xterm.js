@@ -338,6 +338,9 @@ export class MockViewport implements IViewport {
     throw new Error('Method not implemented.');
   }
   syncScrollArea(): void { }
+  getLinesScrolled(ev: WheelEvent): number {
+    throw new Error('Method not implemented.');
+  }
 }
 
 export class MockCompositionHelper implements ICompositionHelper {
