@@ -29,11 +29,11 @@ describe('term.js addons', () => {
     term.refresh = () => {};
     (<any>term).renderer = new MockRenderer();
     term.viewport = new MockViewport();
-    (<any>term).compositionHelper = new MockCompositionHelper();
+    (<any>term)._compositionHelper = new MockCompositionHelper();
     // Force synchronous writes
     term.write = (data) => {
       term.writeBuffer.push(data);
-      (<any>term).innerWrite();
+      (<any>term)._innerWrite();
     };
     (<any>term).element = {
       classList: {
