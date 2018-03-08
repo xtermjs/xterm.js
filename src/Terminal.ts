@@ -2079,7 +2079,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Emit the 'title' event and populate the given title.
    * @param {string} title The title to populate in the event.
    */
-  private _handleTitle(title: string): void {
+  public handleTitle(title: string): void {
     /**
      * This event is emitted when the title of the terminal is changed
      * from inside the terminal. The parameter is the new title.
