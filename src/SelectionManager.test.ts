@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import jsdom = require('jsdom');
 import { assert } from 'chai';
 import { CharMeasure } from './utils/CharMeasure';
 import { SelectionManager } from './SelectionManager';
@@ -36,17 +35,11 @@ class TestSelectionManager extends SelectionManager {
 }
 
 describe('SelectionManager', () => {
-  let dom: jsdom.JSDOM;
-  let window: Window;
-
   let terminal: ITerminal;
   let buffer: IBuffer;
   let selectionManager: TestSelectionManager;
 
   beforeEach(() => {
-    dom = new jsdom.JSDOM('');
-    window = dom.window;
-    document = window.document;
     terminal = new TestMockTerminal();
     terminal.cols = 80;
     terminal.rows = 2;
