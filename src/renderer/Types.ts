@@ -5,6 +5,7 @@
 
 import { ITerminal } from '../Types';
 import { IEventEmitter, ITheme } from 'xterm';
+import { IColorSet } from '../shared/Types';
 
 /**
  * Flags used to render terminal text properly.
@@ -39,14 +40,8 @@ export interface IColorManager {
   colors: IColorSet;
 }
 
-export interface IColorSet {
-  foreground: string;
-  background: string;
-  cursor: string;
-  cursorAccent: string;
-  selection: string;
-  ansi: string[];
-}
+// TODO: We should probably rewrite the imports for IColorSet, but there's a lot of them
+export { IColorSet };
 
 export interface IRenderDimensions {
   scaledCharWidth: number;
