@@ -4,7 +4,7 @@
  */
 
 import { IMouseZoneManager } from './input/Types';
-import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkMatcherValidationCallback, LineData, LinkHoverEventTypes, ILinkMatcherOptions, ITerminal, IBufferAccessor, ILinkifier, IElementAccessor } from './Types';
+import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, IBufferAccessor, ILinkifier, IElementAccessor } from './Types';
 import { MouseZone } from './input/MouseZoneManager';
 import { EventEmitter } from './EventEmitter';
 
@@ -177,9 +177,6 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @return The link element(s) that were added.
    */
   private _doLinkifyRow(rowIndex: number, text: string, matcher: ILinkMatcher, offset: number = 0): void {
-    // Iterate over nodes as we want to consider text nodes
-    let result = [];
-
     // Find the first match
     let match = text.match(matcher.regex);
     if (!match || match.length === 0) {

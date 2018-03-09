@@ -4,7 +4,7 @@
  */
 
 import jsdom = require('jsdom');
-import { ICharMeasure, ITerminal } from '../Types';
+import { ICharMeasure } from '../Types';
 import { assert } from 'chai';
 import { CharMeasure } from './CharMeasure';
 

@@ -6,10 +6,6 @@
 import { assert } from 'chai';
 import { CircularList } from './CircularList';
 
-class TestCircularList<T> extends CircularList<T> {
-  public get array(): T[] { return this._array; }
-}
-
 describe('CircularList', () => {
   describe('push', () => {
     it('should push values onto the array', () => {

@@ -6,7 +6,6 @@
 import { ITerminal } from '../../Types';
 import { IColorSet } from '../Types';
 import { ICharAtlasConfig } from '../../shared/atlas/Types';
-import { isFirefox } from '../../shared/utils/Browser';
 import { generateCharAtlas } from '../../shared/atlas/CharAtlasGenerator';
 import { generateConfig, configEquals } from './CharAtlasUtils';
 

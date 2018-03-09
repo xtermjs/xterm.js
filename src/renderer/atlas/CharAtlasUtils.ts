@@ -4,7 +4,6 @@
  */
 
 import { ITerminal } from '../../Types';
-import { ITheme } from 'xterm';
 import { IColorSet } from '../Types';
 import { ICharAtlasConfig } from '../../shared/atlas/Types';
 

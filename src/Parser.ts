@@ -5,7 +5,7 @@
  */
 
 import { C0 } from './EscapeSequences';
-import { IInputHandler } from './Types';
+import { IInputHandler, IInputHandlingTerminal } from './Types';
 import { CHARSETS, DEFAULT_CHARSET } from './Charsets';
 
 const normalStateHandler: {[key: string]: (parser: Parser, handler: IInputHandler) => void} = {};
@@ -185,7 +185,6 @@ export class Parser {
    */
   public parse(data: string): ParserState {
     const l = data.length;
-    let j;
     let cs;
     let ch;
     let code;
@@ -346,7 +345,7 @@ export class Parser {
 
             // ESC H Tab Set (HTS is 0x88).
             case 'H':
-              this._terminal.tabSet();
+              (<IInputHandlingTerminal>this._terminal).tabSet();
               this._state = ParserState.NORMAL;
               break;
 

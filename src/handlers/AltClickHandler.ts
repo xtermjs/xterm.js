@@ -71,9 +71,6 @@ export class AltClickHandler {
    * positioning.
    */
   private _resetStartingRow(): string {
-    let startRow = this._endRow - this._wrappedRowsForRow(this._endRow);
-    let endRow = this._endRow;
-
     if (this._moveToRequestedRow().length === 0) {
       return '';
     } else {
