@@ -157,18 +157,19 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @param rowIndex The index of the row to linkify.
    */
   private _linkifyRow(rowIndex: number): void {
+    // Ensure the row exists
     const absoluteRowIndex = this._terminal.buffer.ydisp + rowIndex;
     if (absoluteRowIndex >= this._terminal.buffer.lines.length) {
       return;
     }
+
+    // Only attempt to linkify rows that start in the viewport
     if ((<any>this._terminal.buffer.lines.get(absoluteRowIndex)).isWrapped) {
-      // TODO: Make sure if a wrapped line is requested to be linkified it gets backtracked to ensure the link is filled
       return;
     }
 
-    let text = this._terminal.buffer.translateBufferLineToString(absoluteRowIndex, false);
-
     // Construct full unwrapped line text
+    let text = this._terminal.buffer.translateBufferLineToString(absoluteRowIndex, false);
     let currentIndex = absoluteRowIndex + 1;
     while (currentIndex < this._terminal.buffer.lines.length &&
         (<any>this._terminal.buffer.lines.get(currentIndex)).isWrapped) {
@@ -234,7 +235,6 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @param matcher The link matcher for the link.
    */
   private _addLink(x: number, y: number, uri: string, matcher: ILinkMatcher): void {
-    // TODO: Make MouseZone's work over multiple lines
     this._mouseZoneManager.add(new MouseZone(
       x + 1,
       y + 1,
@@ -276,7 +276,6 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     return {
       x1: x,
       y1: y,
-      // TODO: Verify links on boundary work fine (x vs x + 1)
       x2: (x + uri.length) % this._terminal.cols,
       y2: y + Math.floor((x + uri.length) / this._terminal.cols),
       cols: this._terminal.cols
