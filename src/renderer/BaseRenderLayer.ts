@@ -4,11 +4,11 @@
  */
 
 import { IRenderLayer, IColorSet, IRenderDimensions } from './Types';
-import { CharData, ITerminal, ITerminalOptions } from '../Types';
+import { CharData, ITerminal } from '../Types';
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from './atlas/Types';
 import { CHAR_ATLAS_CELL_SPACING } from '../shared/atlas/Types';
 import { acquireCharAtlas } from './atlas/CharAtlas';
-import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
+import { CHAR_DATA_CHAR_INDEX } from '../Buffer';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;

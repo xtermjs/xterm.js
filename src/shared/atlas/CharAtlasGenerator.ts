@@ -4,7 +4,7 @@
  */
 
 import { FontWeight } from 'xterm';
-import { CHAR_ATLAS_CELL_SPACING } from './Types';
+import { CHAR_ATLAS_CELL_SPACING, ICharAtlasConfig } from './Types';
 import { isFirefox } from '../utils/Browser';
 
 declare const Promise: any;
@@ -16,41 +16,27 @@ export interface IOffscreenCanvas {
   transferToImageBitmap(): ImageBitmap;
 }
 
-export interface ICharAtlasRequest {
-  scaledCharWidth: number;
-  scaledCharHeight: number;
-  fontSize: number;
-  fontFamily: string;
-  fontWeight: FontWeight;
-  fontWeightBold: FontWeight;
-  background: string;
-  foreground: string;
-  ansiColors: string[];
-  devicePixelRatio: number;
-  allowTransparency: boolean;
-}
-
 /**
  * Generates a char atlas.
  * @param context The window or worker context.
  * @param canvasFactory A function to generate a canvas with a width or height.
  * @param request The config for the new char atlas.
  */
-export function generateCharAtlas(context: Window, canvasFactory: (width: number, height: number) => HTMLCanvasElement | IOffscreenCanvas, request: ICharAtlasRequest): HTMLCanvasElement | Promise<ImageBitmap> {
-  const cellWidth = request.scaledCharWidth + CHAR_ATLAS_CELL_SPACING;
-  const cellHeight = request.scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
+export function generateCharAtlas(context: Window, canvasFactory: (width: number, height: number) => HTMLCanvasElement | IOffscreenCanvas, config: ICharAtlasConfig): HTMLCanvasElement | Promise<ImageBitmap> {
+  const cellWidth = config.scaledCharWidth + CHAR_ATLAS_CELL_SPACING;
+  const cellHeight = config.scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
   const canvas = canvasFactory(
     /*255 ascii chars*/255 * cellWidth,
     (/*default+default bold*/2 + /*0-15*/16) * cellHeight
   );
-  const ctx = canvas.getContext('2d', {alpha: request.allowTransparency});
+  const ctx = canvas.getContext('2d', {alpha: config.allowTransparency});
 
-  ctx.fillStyle = request.background;
+  ctx.fillStyle = config.colors.background;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.save();
-  ctx.fillStyle = request.foreground;
-  ctx.font = getFont(request.fontWeight, request);
+  ctx.fillStyle = config.colors.foreground;
+  ctx.font = getFont(config.fontWeight, config);
   ctx.textBaseline = 'top';
 
   // Default color
@@ -64,7 +50,7 @@ export function generateCharAtlas(context: Window, canvasFactory: (width: number
   }
   // Default color bold
   ctx.save();
-  ctx.font = getFont(request.fontWeightBold, request);
+  ctx.font = getFont(config.fontWeightBold, config);
   for (let i = 0; i < 256; i++) {
     ctx.save();
     ctx.beginPath();
@@ -76,11 +62,11 @@ export function generateCharAtlas(context: Window, canvasFactory: (width: number
   ctx.restore();
 
   // Colors 0-15
-  ctx.font = getFont(request.fontWeight, request);
+  ctx.font = getFont(config.fontWeight, config);
   for (let colorIndex = 0; colorIndex < 16; colorIndex++) {
     // colors 8-15 are bold
     if (colorIndex === 8) {
-      ctx.font = getFont(request.fontWeightBold, request);
+      ctx.font = getFont(config.fontWeightBold, config);
     }
     const y = (colorIndex + 2) * cellHeight;
     // Draw ascii characters
@@ -89,7 +75,7 @@ export function generateCharAtlas(context: Window, canvasFactory: (width: number
       ctx.beginPath();
       ctx.rect(i * cellWidth, y, cellWidth, cellHeight);
       ctx.clip();
-      ctx.fillStyle = request.ansiColors[colorIndex];
+      ctx.fillStyle = config.colors.ansi[colorIndex];
       ctx.fillText(String.fromCharCode(i), i * cellWidth, y);
       ctx.restore();
     }
@@ -114,9 +100,9 @@ export function generateCharAtlas(context: Window, canvasFactory: (width: number
   const charAtlasImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
   // Remove the background color from the image so characters may overlap
-  const r = parseInt(request.background.substr(1, 2), 16);
-  const g = parseInt(request.background.substr(3, 2), 16);
-  const b = parseInt(request.background.substr(5, 2), 16);
+  const r = parseInt(config.colors.background.substr(1, 2), 16);
+  const g = parseInt(config.colors.background.substr(3, 2), 16);
+  const b = parseInt(config.colors.background.substr(5, 2), 16);
   clearColor(charAtlasImageData, r, g, b);
 
   return context.createImageBitmap(charAtlasImageData);
@@ -135,6 +121,6 @@ function clearColor(imageData: ImageData, r: number, g: number, b: number): void
   }
 }
 
-function getFont(fontWeight: FontWeight, request: ICharAtlasRequest): string {
-  return `${fontWeight} ${request.fontSize * request.devicePixelRatio}px ${request.fontFamily}`;
+function getFont(fontWeight: FontWeight, config: ICharAtlasConfig): string {
+  return `${fontWeight} ${config.fontSize * config.devicePixelRatio}px ${config.fontFamily}`;
 }

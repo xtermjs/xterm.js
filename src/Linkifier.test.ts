@@ -5,7 +5,7 @@
 
 import { assert } from 'chai';
 import { IMouseZoneManager, IMouseZone } from './input/Types';
-import { ILinkMatcher, LineData, ITerminal, ILinkifier, IBuffer, IBufferAccessor, IElementAccessor } from './Types';
+import { ILinkMatcher, LineData, IBufferAccessor, IElementAccessor } from './Types';
 import { Linkifier } from './Linkifier';
 import { MockBuffer, MockTerminal } from './utils/TestUtils.test';
 import { CircularList } from './utils/CircularList';

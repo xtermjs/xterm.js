@@ -3,11 +3,8 @@
  * @license MIT
  */
 
-import { ILinkHoverEvent, ITerminal, ILinkifierAccessor, IBuffer, ICharMeasure, LinkHoverEventTypes } from '../Types';
-import { CHAR_DATA_ATTR_INDEX } from '../Buffer';
-import { GridCache } from './GridCache';
-import { FLAGS, IColorSet, IRenderDimensions } from './Types';
-import { INVERTED_DEFAULT_COLOR } from './atlas/Types';
+import { ILinkHoverEvent, ITerminal, ILinkifierAccessor, LinkHoverEventTypes } from '../Types';
+import { IColorSet, IRenderDimensions } from './Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 
 export class LinkRenderLayer extends BaseRenderLayer {

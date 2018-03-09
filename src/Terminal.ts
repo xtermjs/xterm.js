@@ -21,7 +21,7 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { ICharset, IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
+import { ICharset, IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharData, LineData } from './Types';
 import { IMouseZoneManager } from './input/Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
@@ -30,7 +30,6 @@ import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './EventEmitter';
 import { Viewport } from './Viewport';
 import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './handlers/Clipboard';
-import { CircularList } from './utils/CircularList';
 import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Parser } from './Parser';
@@ -41,7 +40,6 @@ import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './shared/utils/Browser';
 import * as Strings from './Strings';
 import { MouseHelper } from './utils/MouseHelper';
-import { CHARSETS } from './Charsets';
 import { DEFAULT_BELL_SOUND, SoundManager } from './SoundManager';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { MouseZoneManager } from './input/MouseZoneManager';
@@ -136,7 +134,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   private _parent: HTMLElement;
   private _context: Window;
   private _document: Document;
-  private _body: HTMLBodyElement;
   private _viewportScrollArea: HTMLElement;
   private _viewportElement: HTMLElement;
   private _helperContainer: HTMLElement;
@@ -148,7 +145,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   public browser: IBrowser = <any>Browser;
 
   public options: ITerminalOptions;
-  private _colors: any;
 
   // TODO: This can be changed to an enum or boolean, 0 and 1 seem to be the only options
   public cursorState: number;
@@ -190,10 +186,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   private _refreshEnd: number;
   public savedCols: number;
 
-  // stream
-  private _readable: boolean;
-  private _writable: boolean;
-
   public defAttr: number;
   public curAttr: number;
 
@@ -215,10 +207,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   private _xoffSentToCatchUp: boolean;
 
   /** Whether writing has been stopped as a result of XOFF */
-  private _writeStopped: boolean;
-
-  // leftover surrogate high from previous write invocation
-  private _surrogateHigh: string;
+  // private _writeStopped: boolean;
 
   // Store if user went browsing history in scrollback
   private _userScrolling: boolean;
@@ -302,9 +291,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // TODO: Can this be just []?
     this.charsets = [null];
 
-    this._readable = true;
-    this._writable = true;
-
     this.defAttr = (0 << 18) | (257 << 9) | (256 << 0);
     this.curAttr = (0 << 18) | (257 << 9) | (256 << 0);
 
@@ -318,8 +304,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this._writeInProgress = false;
 
     this._xoffSentToCatchUp = false;
-    this._writeStopped = false;
-    this._surrogateHigh = '';
+    // this._writeStopped = false;
     this._userScrolling = false;
 
     this._inputHandler = new InputHandler(this);
@@ -622,9 +607,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param {HTMLElement} parent The element to create the terminal within.
    */
   public open(parent: HTMLElement): void {
-    let i = 0;
-    let div;
-
     this._parent = parent || this._parent;
 
     if (!this._parent) {
@@ -634,7 +616,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // Grab global elements
     this._context = this._parent.ownerDocument.defaultView;
     this._document = this._parent.ownerDocument;
-    this._body = <HTMLBodyElement>this._document.body;
 
     this._screenDprMonitor = new ScreenDprMonitor();
     this._screenDprMonitor.setListener(() => this.emit('dprchange', window.devicePixelRatio));
@@ -1104,8 +1085,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    */
   public destroy(): void {
     super.destroy();
-    this._readable = false;
-    this._writable = false;
     this.handler = () => {};
     this.write = () => {};
     if (this.element && this.element.parentNode) {
@@ -1423,11 +1402,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     const result = this._evaluateKeyEscapeSequence(ev);
 
-    if (result.key === C0.DC3) { // XOFF
-      this._writeStopped = true;
-    } else if (result.key === C0.DC1) { // XON
-      this._writeStopped = false;
-    }
+    // if (result.key === C0.DC3) { // XOFF
+    //   this._writeStopped = true;
+    // } else if (result.key === C0.DC1) { // XON
+    //   this._writeStopped = false;
+    // }
 
     if (result.scrollLines) {
       this.scrollLines(result.scrollLines);
@@ -2167,7 +2146,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   /**
    * ESC H Tab Set (HTS is 0x88).
    */
-  private tabSet(): void {
+  public tabSet(): void {
     this.buffer.tabs[this.buffer.x] = true;
   }
 

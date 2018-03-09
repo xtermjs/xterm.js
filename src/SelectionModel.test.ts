@@ -18,9 +18,6 @@ class TestSelectionModel extends SelectionModel {
 }
 
 describe('SelectionManager', () => {
-  let window: Window;
-  let document: Document;
-
   let terminal: ITerminal;
   let model: TestSelectionModel;
 

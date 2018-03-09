@@ -5,9 +5,8 @@
 
 import { ITerminal } from '../../Types';
 import { IColorSet } from '../Types';
-import { ICharAtlasConfig } from './Types';
-import { isFirefox } from '../../shared/utils/Browser';
-import { generateCharAtlas, ICharAtlasRequest } from '../../shared/atlas/CharAtlasGenerator';
+import { ICharAtlasConfig } from '../../shared/atlas/Types';
+import { generateCharAtlas } from '../../shared/atlas/CharAtlasGenerator';
 import { generateConfig, configEquals } from './CharAtlasUtils';
 
 interface ICharAtlasCacheEntry {
@@ -63,22 +62,8 @@ export function acquireCharAtlas(terminal: ITerminal, colors: IColorSet, scaledC
     return canvas;
   };
 
-  const charAtlasConfig: ICharAtlasRequest = {
-    scaledCharWidth,
-    scaledCharHeight,
-    fontSize: terminal.options.fontSize,
-    fontFamily: terminal.options.fontFamily,
-    fontWeight: terminal.options.fontWeight,
-    fontWeightBold: terminal.options.fontWeightBold,
-    background: colors.background,
-    foreground: colors.foreground,
-    ansiColors: colors.ansi,
-    devicePixelRatio: window.devicePixelRatio,
-    allowTransparency: terminal.options.allowTransparency
-  };
-
   const newEntry: ICharAtlasCacheEntry = {
-    bitmap: generateCharAtlas(window, canvasFactory, charAtlasConfig),
+    bitmap: generateCharAtlas(window, canvasFactory, newConfig),
     config: newConfig,
     ownedBy: [terminal]
   };
