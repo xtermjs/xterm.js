@@ -232,11 +232,13 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @param matcher The link matcher for the link.
    */
   private _addLink(x: number, y: number, uri: string, matcher: ILinkMatcher): void {
+    const wrappedX = x % this._terminal.cols;
+    const wrappedY = y + Math.floor(x / this._terminal.cols);
     this._mouseZoneManager.add(new MouseZone(
-      x + 1,
-      y + 1,
-      (x + 1 + uri.length) % this._terminal.cols,
-      y + 1 + Math.floor((x + 1 + uri.length) / this._terminal.cols),
+      wrappedX + 1,
+      wrappedY + 1,
+      (wrappedX + 1 + uri.length) % this._terminal.cols,
+      wrappedY + 1 + Math.floor((wrappedX + 1 + uri.length) / this._terminal.cols),
       e => {
         if (matcher.handler) {
           return matcher.handler(e, uri);
@@ -244,17 +246,17 @@ export class Linkifier extends EventEmitter implements ILinkifier {
         window.open(uri, '_blank');
       },
       e => {
-        this.emit(LinkHoverEventTypes.HOVER, this._createLinkHoverEvent(x, y, uri));
+        this.emit(LinkHoverEventTypes.HOVER, this._createLinkHoverEvent(wrappedX, wrappedY, uri));
         this._terminal.element.style.cursor = 'pointer';
       },
       e => {
-        this.emit(LinkHoverEventTypes.TOOLTIP, this._createLinkHoverEvent(x, y, uri));
+        this.emit(LinkHoverEventTypes.TOOLTIP, this._createLinkHoverEvent(wrappedX, wrappedY, uri));
         if (matcher.hoverTooltipCallback) {
           matcher.hoverTooltipCallback(e, uri);
         }
       },
       () => {
-        this.emit(LinkHoverEventTypes.LEAVE, this._createLinkHoverEvent(x, y, uri));
+        this.emit(LinkHoverEventTypes.LEAVE, this._createLinkHoverEvent(wrappedX, wrappedY, uri));
         this._terminal.element.style.cursor = '';
         if (matcher.hoverLeaveCallback) {
           matcher.hoverLeaveCallback();
