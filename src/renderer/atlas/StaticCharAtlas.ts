@@ -6,7 +6,7 @@
 import { DIM_OPACITY, IGlyphIdentifier } from './Types';
 import { ICharAtlasConfig } from '../../shared/atlas/Types';
 import { CHAR_ATLAS_CELL_SPACING } from '../../shared/atlas/Types';
-import { generateCharAtlas } from '../../shared/atlas/CharAtlasGenerator';
+import { generateStaticCharAtlasTexture } from '../../shared/atlas/CharAtlasGenerator';
 import BaseCharAtlas from './BaseCharAtlas';
 
 export default class StaticCharAtlas extends BaseCharAtlas {
@@ -24,7 +24,7 @@ export default class StaticCharAtlas extends BaseCharAtlas {
   }
 
   public async _doWarmUp(): Promise<void> {
-    const result = generateCharAtlas(window, this._canvasFactory, this._config);
+    const result = generateStaticCharAtlasTexture(window, this._canvasFactory, this._config);
     if (result instanceof Promise) {
       this._texture = await result;
     } else {

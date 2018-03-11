@@ -8,13 +8,16 @@ import { IColorSet } from '../Types';
 import { ICharAtlasConfig } from '../../shared/atlas/Types';
 
 export function generateConfig(scaledCharWidth: number, scaledCharHeight: number, terminal: ITerminal, colors: IColorSet): ICharAtlasConfig {
+  // null out some fields that don't matter
   const clonedColors = {
     foreground: colors.foreground,
     background: colors.background,
     cursor: null,
     cursorAccent: null,
     selection: null,
-    ansi: colors.ansi.slice(0, 16)
+    // For the static char atlas, we only use the first 16 colors, but we need all 256 for the
+    // dynamic character atlas.
+    ansi: colors.ansi,
   };
   return {
     type: terminal.options.experimentalCharAtlas,
