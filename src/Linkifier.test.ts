@@ -75,6 +75,23 @@ describe('Linkifier', () => {
     }, 0);
   }
 
+  function assertLinkifiesMultiLineLink(rowText: string, linkMatcherRegex: RegExp, links: {x1: number, y1: number, x2: number, y2: number}[], done: MochaDone): void {
+    addRow(rowText);
+    linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
+    linkifier.linkifyRows();
+    // Allow linkify to happen
+    setTimeout(() => {
+      assert.equal(mouseZoneManager.zones.length, links.length);
+      links.forEach((l, i) => {
+        assert.equal(mouseZoneManager.zones[i].x1, l.x1 + 1);
+        assert.equal(mouseZoneManager.zones[i].x2, l.x2 + 1);
+        assert.equal(mouseZoneManager.zones[i].y1, l.y1 + 1);
+        assert.equal(mouseZoneManager.zones[i].y2, l.y2 + 1);
+      });
+      done();
+    }, 0);
+  }
+
   describe('before attachToDom', () => {
     it('should allow link matcher registration', done => {
       assert.doesNotThrow(() => {
@@ -117,6 +134,24 @@ describe('Linkifier', () => {
         // an oh-my-zsh theme that added the large blue diamond unicode
         // character (U+1F537) which caused the path to be duplicated. See #642.
         assertLinkifiesRow('echo \'🔷foo\'', /foo/, [{x: 8, length: 3}], done);
+      });
+      describe('multi-line links', () => {
+        it('should match links that start on line 1/2 of a wrapped line and end on the last character of line 1/2', done => {
+          terminal.cols = 4;
+          assertLinkifiesMultiLineLink('12345', /1234/, [{x1: 0, x2: 4, y1: 0, y2: 0}], done);
+        });
+        it('should match links that start on line 1/2 of a wrapped line and wrap to line 2/2', done => {
+          terminal.cols = 4;
+          assertLinkifiesMultiLineLink('12345', /12345/, [{x1: 0, x2: 1, y1: 0, y2: 1}], done);
+        });
+        it('should match links that start and end on line 2/2 of a wrapped line', done => {
+          terminal.cols = 4;
+          assertLinkifiesMultiLineLink('12345678', /5678/, [{x1: 0, x2: 4, y1: 1, y2: 1}], done);
+        });
+        it('should match links that start on line 2/3 of a wrapped line and wrap to line 3/3', done => {
+          terminal.cols = 4;
+          assertLinkifiesMultiLineLink('123456789', /56789/, [{x1: 0, x2: 1, y1: 1, y2: 2}], done);
+        });
       });
     });
 
