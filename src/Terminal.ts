@@ -102,6 +102,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   bellSound: DEFAULT_BELL_SOUND,
   bellStyle: 'none',
   enableBold: true,
+  experimentalCharAtlas: 'static',
   fontFamily: 'courier-new, courier, monospace',
   fontSize: 15,
   fontWeight: 'normal',
@@ -454,6 +455,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
           this.charMeasure.measure(this.options);
         }
         break;
+      case 'experimentalCharAtlas':
       case 'enableBold':
       case 'letterSpacing':
       case 'lineHeight':

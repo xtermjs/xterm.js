@@ -4,11 +4,17 @@
  */
 
 import { ITerminal } from '../../Types';
-import BaseCharAtlas from './BaseCharAtlas';
-import StaticCharAtlas from './StaticCharAtlas';
 import { IColorSet } from '../Types';
 import { ICharAtlasConfig } from '../../shared/atlas/Types';
 import { generateConfig, configEquals } from './CharAtlasUtils';
+import BaseCharAtlas from './BaseCharAtlas';
+import NoneCharAtlas from './NoneCharAtlas';
+import StaticCharAtlas from './StaticCharAtlas';
+
+const charAtlasImplementations = {
+  'none': NoneCharAtlas,
+  'static': StaticCharAtlas,
+};
 
 interface ICharAtlasCacheEntry {
   atlas: BaseCharAtlas;
@@ -64,7 +70,7 @@ export function acquireCharAtlas(
   }
 
   const newEntry: ICharAtlasCacheEntry = {
-    atlas: new StaticCharAtlas(
+    atlas: new charAtlasImplementations[terminal.options.experimentalCharAtlas](
       document,
       newConfig,
     ),
