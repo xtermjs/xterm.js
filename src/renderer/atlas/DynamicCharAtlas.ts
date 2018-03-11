@@ -15,6 +15,11 @@ const TEXTURE_HEIGHT = 1024;
 
 type GlyphCacheKey = string;
 
+interface IGlyphCacheValue {
+  index: number;
+  isEmpty: boolean;
+}
+
 /**
  * Removes and returns the oldest element in a map.
  */
@@ -35,7 +40,7 @@ function getGlyphCacheKey(glyph: IGlyphIdentifier): GlyphCacheKey {
 export default class DynamicCharAtlas extends BaseCharAtlas {
   // An ordered map that we're using to keep track of where each glyph is in the atlas texture.
   // It's ordered so that we can determine when to remove the old entries.
-  private _cacheMap: Map<GlyphCacheKey, number> = new Map();
+  private _cacheMap: Map<GlyphCacheKey, IGlyphCacheValue> = new Map();
 
   // The texture that the atlas is drawn to
   private _cacheCanvas: HTMLCanvasElement;
@@ -78,23 +83,23 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     y: number,
   ): boolean {
     const glyphKey = getGlyphCacheKey(glyph);
-    const index = this._cacheMap.get(glyphKey);
-    if (index != null) {
+    const cacheValue = this._cacheMap.get(glyphKey);
+    if (cacheValue != null) {
       // move to end of insertion order, so this can behave like an LRU cache
       this._cacheMap.delete(glyphKey);
-      this._cacheMap.set(glyphKey, index);
-      this._drawFromCache(ctx, index, x, y);
+      this._cacheMap.set(glyphKey, cacheValue);
+      this._drawFromCache(ctx, cacheValue, x, y);
       return true;
     } else if (this._canCache(glyph)) {
       let index;
       if (this._cacheMap.size < this._capacity) {
         index = this._cacheMap.size;
       } else {
-        index = mapShift(this._cacheMap)[1];
+        index = mapShift(this._cacheMap)[1].index;
       }
-      this._drawToCache(glyph, index);
-      this._cacheMap.set(glyphKey, index);
-      this._drawFromCache(ctx, index, x, y);
+      const cacheValue = this._drawToCache(glyph, index);
+      this._cacheMap.set(glyphKey, cacheValue);
+      this._drawFromCache(ctx, cacheValue, x, y);
       return true;
     } else {
       return false;
@@ -121,11 +126,15 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
 
   private _drawFromCache(
     ctx: CanvasRenderingContext2D,
-    index: number,
+    cacheValue: IGlyphCacheValue,
     x: number,
     y: number
   ): void {
-    const [cacheX, cacheY] = this._toCoordinates(index);
+    // We don't actually need to do anything if this is whitespace.
+    if (cacheValue.isEmpty) {
+      return;
+    }
+    const [cacheX, cacheY] = this._toCoordinates(cacheValue.index);
     ctx.drawImage(
       this._cacheCanvas,
       cacheX,
@@ -141,7 +150,7 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
 
   // TODO: We do this (or something similar) in multiple places. We should split this off
   // into a shared function.
-  private _drawToCache(glyph: IGlyphIdentifier, index: number): void {
+  private _drawToCache(glyph: IGlyphIdentifier, index: number): IGlyphCacheValue {
     this._tmpCtx.save();
     // no need to clear _tmpCtx, since we're going to draw a fully opaque background
 
@@ -185,11 +194,16 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     const imageData = this._tmpCtx.getImageData(
       0, 0, this._config.scaledCharWidth, this._config.scaledCharHeight,
     );
-    clearColor(imageData, backgroundColor);
+    const isEmpty = clearColor(imageData, backgroundColor);
 
     // copy the data from _tmpCanvas to _cacheCanvas
     const [x, y] = this._toCoordinates(index);
     // putImageData doesn't do any blending, so it will overwrite any existing cache entry for us
     this._cacheCtx.putImageData(imageData, x, y);
+
+    return {
+      index,
+      isEmpty,
+    };
   }
 }
