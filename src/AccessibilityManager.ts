@@ -121,10 +121,10 @@ export class AccessibilityManager implements IDisposable {
     let bottomBoundaryElement: HTMLElement;
     if (position === BoundaryPosition.Top) {
       topBoundaryElement = boundaryElement;
-      bottomBoundaryElement = <HTMLElement>this._rowElements.pop();
+      bottomBoundaryElement = this._rowElements.pop()!;
       this._rowContainer.removeChild(bottomBoundaryElement);
     } else {
-      topBoundaryElement = <HTMLElement>this._rowElements.shift();
+      topBoundaryElement = this._rowElements.shift()!;
       bottomBoundaryElement = boundaryElement;
       this._rowContainer.removeChild(topBoundaryElement);
     }
@@ -170,7 +170,7 @@ export class AccessibilityManager implements IDisposable {
     }
     // Shrink rows as required
     while (this._rowElements.length > rows) {
-      this._rowContainer.removeChild(<HTMLElement>this._rowElements.pop());
+      this._rowContainer.removeChild(this._rowElements.pop()!);
     }
 
     // Add bottom boundary listener
