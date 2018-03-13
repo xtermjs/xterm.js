@@ -620,10 +620,13 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this._screenDprMonitor = new ScreenDprMonitor();
     this._screenDprMonitor.setListener(() => this.emit('dprchange', window.devicePixelRatio));
 
+    let isRtl = (getComputedStyle(this._parent).direction === 'rtl');
+
     // Create main element container
     this.element = this._document.createElement('div');
     this.element.classList.add('terminal');
     this.element.classList.add('xterm');
+    this.element.classList.add( isRtl ? 'xterm-rtl' : 'xterm-ltr' );
     this.element.setAttribute('tabindex', '0');
     this._parent.appendChild(this.element);
 
