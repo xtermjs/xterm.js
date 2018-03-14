@@ -66,7 +66,6 @@
      */
     position: absolute;
     opacity: 0;
-    left: -9999em;
     top: 0;
     width: 0;
     height: 0;
@@ -75,6 +74,14 @@
     white-space: nowrap;
     overflow: hidden;
     resize: none;
+}
+
+.xterm.xterm-ltr .xterm-helper-textarea {
+    left: -9999em;
+}
+
+.xterm.xterm-rtl .xterm-helper-textarea {
+    right: -9999em;
 }
 
 .xterm .composition-view {
@@ -121,7 +128,14 @@
     display: inline-block;
     visibility: hidden;
     position: absolute;
+}
+
+.xterm.xterm-ltr .xterm-char-measure-element {
     left: -9999em;
+}
+
+.xterm.xterm-rtl .xterm-char-measure-element {
+    right: -9999em;
 }
 
 .xterm.enable-mouse-events {
@@ -146,8 +160,15 @@
 
 .xterm .live-region {
     position: absolute;
-    left: -9999px;
     width: 1px;
     height: 1px;
     overflow: hidden;
+}
+
+.xterm.xterm-ltr .live-region {
+    left: -9999px;
+}
+
+.xterm.xterm-rtl .live-region {
+    right: -9999px;
 }
