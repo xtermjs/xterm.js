@@ -311,6 +311,7 @@ export class Buffer implements IBuffer {
     const marker = new Marker(y);
     this.markers.push(marker);
     marker.disposables.push(this._lines.addDisposableListener('trim', amount => {
+      console.log('trim!' + amount);
       marker.line -= amount;
       // The marker should be disposed when the line is trimmed from the buffer
       if (marker.line < 0) {
@@ -324,7 +325,7 @@ export class Buffer implements IBuffer {
 
   private _removeMarker(marker: Marker): void {
     // TODO: This could probably be optimized by relying on sort order and trimming the array using .length
-    this.markers = this.markers.splice(this.markers.indexOf(marker), 1);
+    this.markers.splice(this.markers.indexOf(marker), 1);
   }
 }
 
