@@ -158,14 +158,21 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    */
   private _linkifyRow(rowIndex: number): void {
     // Ensure the row exists
-    const absoluteRowIndex = this._terminal.buffer.ydisp + rowIndex;
+    let absoluteRowIndex = this._terminal.buffer.ydisp + rowIndex;
     if (absoluteRowIndex >= this._terminal.buffer.lines.length) {
       return;
     }
 
-    // Only attempt to linkify rows that start in the viewport
     if ((<any>this._terminal.buffer.lines.get(absoluteRowIndex)).isWrapped) {
-      return;
+      // Only attempt to linkify rows that start in the viewport
+      if (rowIndex !== 0) {
+        return;
+      }
+      // If the first row is wrapped, backtrack to find the origin row and linkify that
+      do {
+        rowIndex--;
+        absoluteRowIndex--;
+      } while ((<any>this._terminal.buffer.lines.get(absoluteRowIndex)).isWrapped);
     }
 
     // Construct full unwrapped line text
