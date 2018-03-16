@@ -23,10 +23,7 @@ export class CharMeasure extends EventEmitter implements ICharMeasure {
     this._document = document;
     this._parentElement = parentElement;
     this._measureElement = this._document.createElement('span');
-    this._measureElement.style.position = 'absolute';
-    this._measureElement.style.top = '0';
-    this._measureElement.style.left = '-9999em';
-    this._measureElement.style.lineHeight = 'normal';
+    this._measureElement.classList.add('xterm-char-measure-element');
     this._measureElement.textContent = 'W';
     this._measureElement.setAttribute('aria-hidden', 'true');
     this._parentElement.appendChild(this._measureElement);
@@ -41,7 +38,7 @@ export class CharMeasure extends EventEmitter implements ICharMeasure {
   }
 
   public measure(options: ITerminalOptions): void {
-    this._measureElement.style.fontFamily = options.fontFamily;
+  this._measureElement.style.fontFamily = options.fontFamily;
     this._measureElement.style.fontSize = `${options.fontSize}px`;
     const geometry = this._measureElement.getBoundingClientRect();
     // The element is likely currently display:none, we should retain the
@@ -55,5 +52,4 @@ export class CharMeasure extends EventEmitter implements ICharMeasure {
       this.emit('charsizechanged');
     }
   }
-
 }

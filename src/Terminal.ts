@@ -118,7 +118,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   allowTransparency: false,
   tabStopWidth: 8,
   theme: null,
-  rightClickSelectsWord: Browser.isMac
+  rightClickSelectsWord: Browser.isMac,
   // programFeatures: false,
   // focusKeys: false,
 };
@@ -138,7 +138,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   private _viewportElement: HTMLElement;
   private _helperContainer: HTMLElement;
   private _compositionView: HTMLElement;
-  private _charSizeStyleElement: HTMLStyleElement;
 
   private _visualBellTimer: number;
 
@@ -668,8 +667,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this._compositionHelper = new CompositionHelper(this.textarea, this._compositionView, this);
     this._helperContainer.appendChild(this._compositionView);
 
-    this._charSizeStyleElement = document.createElement('style');
-    this._helperContainer.appendChild(this._charSizeStyleElement);
     this.charMeasure = new CharMeasure(document, this._helperContainer);
 
     // Performance: Add viewport and helper elements from the fragment

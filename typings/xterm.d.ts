@@ -23,6 +23,7 @@ declare module 'xterm' {
      * Warning: Enabling this option can reduce performances somewhat.
      */
     allowTransparency?: boolean;
+
     /**
      * A data uri of the sound to use for the bell (needs bellStyle = 'sound').
      */
@@ -55,7 +56,7 @@ declare module 'xterm' {
 
     /**
      * Whether to enable the rendering of bold text.
-     * 
+     *
      * @deprecated Use fontWeight and fontWeightBold instead.
      */
     enableBold?: boolean;
