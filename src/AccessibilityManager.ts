@@ -20,7 +20,7 @@ enum BoundaryPosition {
 export class AccessibilityManager implements IDisposable {
   private _accessibilityTreeRoot: HTMLElement;
   private _rowContainer: HTMLElement;
-  private _rowElements: HTMLElement[] = [];
+  private _rowElements: HTMLElement[];
   private _liveRegion: HTMLElement;
   private _liveRegionLineCount: number = 0;
 
@@ -48,6 +48,7 @@ export class AccessibilityManager implements IDisposable {
 
     this._rowContainer = document.createElement('div');
     this._rowContainer.classList.add('xterm-accessibility-tree');
+    this._rowElements = [];
     for (let i = 0; i < this._terminal.rows; i++) {
       this._rowElements[i] = this._createAccessibilityTreeNode();
       this._rowContainer.appendChild(this._rowElements[i]);
@@ -92,14 +93,10 @@ export class AccessibilityManager implements IDisposable {
   }
 
   public dispose(): void {
-    this._terminal.element.removeChild(this._accessibilityTreeRoot);
     this._disposables.forEach(d => d.dispose());
-    this._disposables = null;
-    this._accessibilityTreeRoot = null;
-    this._rowContainer = null;
-    this._liveRegion = null;
-    this._rowContainer = null;
-    this._rowElements = null;
+    this._disposables.length = 0;
+    this._terminal.element.removeChild(this._accessibilityTreeRoot);
+    this._rowElements.length = 0;
   }
 
   private _onBoundaryFocus(e: FocusEvent, position: BoundaryPosition): void {
@@ -124,10 +121,10 @@ export class AccessibilityManager implements IDisposable {
     let bottomBoundaryElement: HTMLElement;
     if (position === BoundaryPosition.Top) {
       topBoundaryElement = boundaryElement;
-      bottomBoundaryElement = this._rowElements.pop();
+      bottomBoundaryElement = <HTMLElement>this._rowElements.pop();
       this._rowContainer.removeChild(bottomBoundaryElement);
     } else {
-      topBoundaryElement = this._rowElements.shift();
+      topBoundaryElement = <HTMLElement>this._rowElements.shift();
       bottomBoundaryElement = boundaryElement;
       this._rowContainer.removeChild(topBoundaryElement);
     }
@@ -173,7 +170,7 @@ export class AccessibilityManager implements IDisposable {
     }
     // Shrink rows as required
     while (this._rowElements.length > rows) {
-      this._rowContainer.removeChild(this._rowElements.pop());
+      this._rowContainer.removeChild(<HTMLElement>this._rowElements.pop());
     }
 
     // Add bottom boundary listener
@@ -217,7 +214,7 @@ export class AccessibilityManager implements IDisposable {
 
       // Only detach/attach on mac as otherwise messages can go unaccounced
       if (isMac) {
-        if (this._liveRegion.textContent.length > 0 && !this._liveRegion.parentNode) {
+        if (this._liveRegion.textContent && this._liveRegion.textContent.length > 0 && !this._liveRegion.parentNode) {
           setTimeout(() => {
             this._accessibilityTreeRoot.appendChild(this._liveRegion);
           }, 0);
