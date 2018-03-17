@@ -7,40 +7,26 @@ import { DIM_OPACITY, IGlyphIdentifier, INVERTED_DEFAULT_COLOR } from './Types';
 import { ICharAtlasConfig } from '../../shared/atlas/Types';
 import BaseCharAtlas from './BaseCharAtlas';
 import { clearColor } from '../../shared/atlas/CharAtlasGenerator';
+import LRUMap from './LRUMap';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.
 const TEXTURE_WIDTH = 1024;
 const TEXTURE_HEIGHT = 1024;
 
-type GlyphCacheKey = string;
-
 interface IGlyphCacheValue {
   index: number;
   isEmpty: boolean;
 }
 
-/**
- * Removes and returns the oldest element in a map.
- */
-function mapShift<K, V>(map: Map<K, V>): [K, V] {
-  // Map guarantees insertion-order iteration.
-  const entry = map.entries().next().value;
-  if (entry === undefined) {
-    return undefined;
-  }
-  map.delete(entry[0]);
-  return entry;
-}
-
-function getGlyphCacheKey(glyph: IGlyphIdentifier): GlyphCacheKey {
+function getGlyphCacheKey(glyph: IGlyphIdentifier): string {
   return `${glyph.bg}_${glyph.fg}_${glyph.bold ? 0 : 1}${glyph.dim ? 0 : 1}${glyph.char}`;
 }
 
 export default class DynamicCharAtlas extends BaseCharAtlas {
   // An ordered map that we're using to keep track of where each glyph is in the atlas texture.
   // It's ordered so that we can determine when to remove the old entries.
-  private _cacheMap: Map<GlyphCacheKey, IGlyphCacheValue> = new Map();
+  private _cacheMap: LRUMap<IGlyphCacheValue>;
 
   // The texture that the atlas is drawn to
   private _cacheCanvas: HTMLCanvasElement;
@@ -51,7 +37,6 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
   private _tmpCtx: CanvasRenderingContext2D;
 
   // The number of characters stored in the atlas by width/height
-  private _capacity: number;
   private _width: number;
   private _height: number;
 
@@ -70,7 +55,9 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
 
     this._width = Math.floor(TEXTURE_WIDTH / this._config.scaledCharWidth);
     this._height = Math.floor(TEXTURE_HEIGHT / this._config.scaledCharHeight);
-    this._capacity = this._width * this._height;
+    const capacity = this._width * this._height;
+    this._cacheMap = new LRUMap(capacity);
+    this._cacheMap.prealloc(capacity);
 
     // This is useful for debugging
     // document.body.appendChild(this._cacheCanvas);
@@ -85,17 +72,15 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     const glyphKey = getGlyphCacheKey(glyph);
     const cacheValue = this._cacheMap.get(glyphKey);
     if (cacheValue != null) {
-      // move to end of insertion order, so this can behave like an LRU cache
-      this._cacheMap.delete(glyphKey);
-      this._cacheMap.set(glyphKey, cacheValue);
       this._drawFromCache(ctx, cacheValue, x, y);
       return true;
     } else if (this._canCache(glyph)) {
       let index;
-      if (this._cacheMap.size < this._capacity) {
+      if (this._cacheMap.size < this._cacheMap.capacity) {
         index = this._cacheMap.size;
       } else {
-        index = mapShift(this._cacheMap)[1].index;
+        // we're out of space, so our call to set will delete this item
+        index = this._cacheMap.peek().index;
       }
       const cacheValue = this._drawToCache(glyph, index);
       this._cacheMap.set(glyphKey, cacheValue);

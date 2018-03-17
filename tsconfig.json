@@ -6,9 +6,7 @@
       "DOM",
       "ES5",
       "ScriptHost",
-      "ES2015.Promise",
-      "ES2015.Collection",
-      "ES2015.Iterable"
+      "ES2015.Promise"
     ],
     "rootDir": "src",
     "outDir": "lib",
