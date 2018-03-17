@@ -272,8 +272,8 @@ declare module 'xterm' {
     cols: number;
 
     /**
-     * Get all markers registered against the buffer. If the alt buffer is
-     * active this will always return [].
+     * (EXPERIMENTAL) Get all markers registered against the buffer. If the alt
+     * buffer is active this will always return [].
      */
     markers: IMarker[];
 
@@ -416,8 +416,8 @@ declare module 'xterm' {
     deregisterLinkMatcher(matcherId: number): void;
 
     /**
-     * Adds a marker to the normal buffer and returns it. If the alt buffer is
-     * active, undefined is returned.
+     * (EXPERIMENTAL) Adds a marker to the normal buffer and returns it. If the
+     * alt buffer is active, undefined is returned.
      * @param cursorYOffset The y position offset of the marker from the cursor.
      */
     addMarker(cursorYOffset: number): IMarker;
