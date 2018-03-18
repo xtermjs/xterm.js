@@ -6,26 +6,24 @@
 import { IGlyphIdentifier } from './Types';
 
 export default abstract class BaseCharAtlas {
-  private _didWarmUp: Promise<any>;
+  private _didWarmUp: boolean = false;
 
   /**
    * Perform any work needed to warm the cache before it can be used. May be called multiple times.
    * Implement _doWarmUp instead if you only want to get called once.
    */
-  public warmUp(): Promise<any> {
-    if (this._didWarmUp == null) {
-      this._didWarmUp = this._doWarmUp();
+  public warmUp(): void {
+    if (!this._didWarmUp) {
+      this._doWarmUp();
+      this._didWarmUp = true;
     }
-    return this._didWarmUp;
   }
 
   /**
    * Perform any work needed to warm the cache before it can be used. Used by the default
    * implementation of warmUp(), and will only be called once.
    */
-  protected _doWarmUp(): Promise<any> {
-    return Promise.resolve();
-  }
+  protected _doWarmUp(): void { }
 
   /**
    * May be called before warmUp finishes, however it is okay for the implementation to
