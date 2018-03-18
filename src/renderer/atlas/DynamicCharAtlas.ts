@@ -14,6 +14,11 @@ import LRUMap from './LRUMap';
 const TEXTURE_WIDTH = 1024;
 const TEXTURE_HEIGHT = 1024;
 
+const TRANSPARENT_COLOR = {
+  css: 'rgba(0, 0, 0, 0)',
+  rgba: 0,
+}
+
 interface IGlyphCacheValue {
   index: number;
   isEmpty: boolean;
@@ -137,7 +142,6 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
   // into a shared function.
   private _drawToCache(glyph: IGlyphIdentifier, index: number): IGlyphCacheValue {
     this._tmpCtx.save();
-    // no need to clear _tmpCtx, since we're going to draw a fully opaque background
 
     // draw the background
     let backgroundColor = this._config.colors.background;
@@ -146,8 +150,25 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     } else if (glyph.bg < 256) {
       backgroundColor = this._config.colors.ansi[glyph.bg];
     }
+
+    let backgroundIsTransparent = false;
+    if ((backgroundColor.rgba & 0xFF) !== 0xFF) {
+      // The background color has some transparency, so we need to render it as fully transparent
+      // in the atlas. Otherwise we'd end up drawing the transparent background twice around the
+      // anti-aliased edges of the glyph, and it would look too dark.
+      //
+      // This has the side-effect of disabling RGB subpixel antialiasing, but most compositors will
+      // disable that anyways on a partially transparent background for similar reasons.
+      backgroundColor = TRANSPARENT_COLOR;
+      backgroundIsTransparent = true;
+    }
+
+    // Use a 'copy' composite operation to clear any existing glyph out of _tmpCtx, regardless of
+    // transparency in backgroundColor
+    this._tmpCtx.globalCompositeOperation = 'copy';
     this._tmpCtx.fillStyle = backgroundColor.css;
     this._tmpCtx.fillRect(0, 0, this._config.scaledCharWidth, this._config.scaledCharHeight);
+    this._tmpCtx.globalCompositeOperation = 'source-over';
 
     // draw the foreground/glyph
     this._tmpCtx.font =
@@ -179,7 +200,10 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     const imageData = this._tmpCtx.getImageData(
       0, 0, this._config.scaledCharWidth, this._config.scaledCharHeight,
     );
-    const isEmpty = clearColor(imageData, backgroundColor);
+    let isEmpty = false;
+    if (!backgroundIsTransparent) {
+      isEmpty = clearColor(imageData, backgroundColor);
+    }
 
     // copy the data from _tmpCanvas to _cacheCanvas
     const [x, y] = this._toCoordinates(index);

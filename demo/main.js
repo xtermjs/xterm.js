@@ -31,6 +31,7 @@ var terminalContainer = document.getElementById('terminal-container'),
       cursorStyle: document.querySelector('#option-cursor-style'),
       macOptionIsMeta: document.querySelector('#option-mac-option-is-meta'),
       scrollback: document.querySelector('#option-scrollback'),
+      transparency: document.querySelector('#option-transparency'),
       tabstopwidth: document.querySelector('#option-tabstopwidth'),
       experimentalCharAtlas: document.querySelector('#option-experimental-char-atlas'),
       bellStyle: document.querySelector('#option-bell-style'),
@@ -75,14 +76,19 @@ actionElements.findPrevious.addEventListener('keypress', function (e) {
 optionElements.cursorBlink.addEventListener('change', function () {
   term.setOption('cursorBlink', optionElements.cursorBlink.checked);
 });
+optionElements.macOptionIsMeta.addEventListener('change', function () {
+  term.setOption('macOptionIsMeta', optionElements.macOptionIsMeta.checked);
+});
+optionElements.transparency.addEventListener('change', function () {
+  var checked = optionElements.transparency.checked;
+  term.setOption('allowTransparency', checked);
+  term.setOption('theme', checked ? {background: 'rgba(0, 0, 0, .5)'} : {});
+});
 optionElements.cursorStyle.addEventListener('change', function () {
   term.setOption('cursorStyle', optionElements.cursorStyle.value);
 });
 optionElements.bellStyle.addEventListener('change', function () {
   term.setOption('bellStyle', optionElements.bellStyle.value);
-});
-optionElements.macOptionIsMeta.addEventListener('change', function () {
-  term.setOption('macOptionIsMeta', optionElements.macOptionIsMeta.checked);
 });
 optionElements.scrollback.addEventListener('change', function () {
   term.setOption('scrollback', parseInt(optionElements.scrollback.value, 10));
