@@ -37,9 +37,12 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
   private _cacheCanvas: HTMLCanvasElement;
   private _cacheCtx: CanvasRenderingContext2D;
 
-  // A temporary canvas that glyphs are drawn to before being transfered over to the atlas.
-  private _tmpCanvas: HTMLCanvasElement;
+  // A couple temporary canvases that glyphs are drawn to before being transfered to the atlas.
+  //
+  // We'll use the a ctx without alpha when possible, because that will preserve subpixel RGB
+  // anti-aliasing, and we'll fall back to a canvas with alpha when we have to.
   private _tmpCtx: CanvasRenderingContext2D;
+  private _tmpCtxWithAlpha: CanvasRenderingContext2D;
 
   // The number of characters stored in the atlas by width/height
   private _width: number;
@@ -51,12 +54,20 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     this._cacheCanvas.width = TEXTURE_WIDTH;
     this._cacheCanvas.height = TEXTURE_HEIGHT;
     // The canvas needs alpha because we use clearColor to convert the background color to alpha.
+    // It might also contain some characters with transparent backgrounds if allowTransparency is
+    // set.
     this._cacheCtx = this._cacheCanvas.getContext('2d', {alpha: true});
 
-    this._tmpCanvas = document.createElement('canvas');
-    this._tmpCanvas.width = this._config.scaledCharWidth;
-    this._tmpCanvas.height = this._config.scaledCharHeight;
-    this._tmpCtx = this._tmpCanvas.getContext('2d', {alpha: true});
+    // define a canvas/ctx for drawing glyphs with opaque backgrounds
+    const tmpCanvas = document.createElement('canvas');
+    tmpCanvas.width = this._config.scaledCharWidth;
+    tmpCanvas.height = this._config.scaledCharHeight;
+    this._tmpCtx = tmpCanvas.getContext('2d', {alpha: false});
+    // and define a canvas/ctx for glyphs with transparent backgrounds
+    const tmpCanvasWithAlpha = document.createElement('canvas');
+    tmpCanvasWithAlpha.width = this._config.scaledCharWidth;
+    tmpCanvasWithAlpha.height = this._config.scaledCharHeight;
+    this._tmpCtxWithAlpha = tmpCanvasWithAlpha.getContext('2d', {alpha: true});
 
     this._width = Math.floor(TEXTURE_WIDTH / this._config.scaledCharWidth);
     this._height = Math.floor(TEXTURE_HEIGHT / this._config.scaledCharHeight);
@@ -141,7 +152,6 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
   // TODO: We do this (or something similar) in multiple places. We should split this off
   // into a shared function.
   private _drawToCache(glyph: IGlyphIdentifier, index: number): IGlyphCacheValue {
-    this._tmpCtx.save();
 
     // draw the background
     let backgroundColor = this._config.colors.background;
@@ -151,6 +161,7 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
       backgroundColor = this._config.colors.ansi[glyph.bg];
     }
 
+    let ctx = this._tmpCtx;
     let backgroundIsTransparent = false;
     if ((backgroundColor.rgba & 0xFF) !== 0xFF) {
       // The background color has some transparency, so we need to render it as fully transparent
@@ -160,44 +171,46 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
       // This has the side-effect of disabling RGB subpixel antialiasing, but most compositors will
       // disable that anyways on a partially transparent background for similar reasons.
       backgroundColor = TRANSPARENT_COLOR;
+      ctx = this._tmpCtxWithAlpha;
       backgroundIsTransparent = true;
     }
+    ctx.save();
 
-    // Use a 'copy' composite operation to clear any existing glyph out of _tmpCtx, regardless of
+    // Use a 'copy' composite operation to clear any existing glyph out of _tmpCtxWithAlpha, regardless of
     // transparency in backgroundColor
-    this._tmpCtx.globalCompositeOperation = 'copy';
-    this._tmpCtx.fillStyle = backgroundColor.css;
-    this._tmpCtx.fillRect(0, 0, this._config.scaledCharWidth, this._config.scaledCharHeight);
-    this._tmpCtx.globalCompositeOperation = 'source-over';
+    ctx.globalCompositeOperation = 'copy';
+    ctx.fillStyle = backgroundColor.css;
+    ctx.fillRect(0, 0, this._config.scaledCharWidth, this._config.scaledCharHeight);
+    ctx.globalCompositeOperation = 'source-over';
 
     // draw the foreground/glyph
-    this._tmpCtx.font =
+    ctx.font =
       `${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
     if (glyph.bold) {
-      this._tmpCtx.font = `bold ${this._tmpCtx.font}`;
+      ctx.font = `bold ${ctx.font}`;
     }
-    this._tmpCtx.textBaseline = 'top';
+    ctx.textBaseline = 'top';
 
     if (glyph.fg === INVERTED_DEFAULT_COLOR) {
-      this._tmpCtx.fillStyle = this._config.colors.background.css;
+      ctx.fillStyle = this._config.colors.background.css;
     } else if (glyph.fg < 256) {
       // 256 color support
-      this._tmpCtx.fillStyle = this._config.colors.ansi[glyph.fg].css;
+      ctx.fillStyle = this._config.colors.ansi[glyph.fg].css;
     } else {
-      this._tmpCtx.fillStyle = this._config.colors.foreground.css;
+      ctx.fillStyle = this._config.colors.foreground.css;
     }
 
     // Apply alpha to dim the character
     if (glyph.dim) {
-      this._tmpCtx.globalAlpha = DIM_OPACITY;
+      ctx.globalAlpha = DIM_OPACITY;
     }
     // Draw the character
-    this._tmpCtx.fillText(glyph.char, 0, 0);
-    this._tmpCtx.restore();
+    ctx.fillText(glyph.char, 0, 0);
+    ctx.restore();
 
     // clear the background from the character to avoid issues with drawing over the previous
     // character if it extends past it's bounds
-    const imageData = this._tmpCtx.getImageData(
+    const imageData = ctx.getImageData(
       0, 0, this._config.scaledCharWidth, this._config.scaledCharHeight,
     );
     let isEmpty = false;
@@ -205,7 +218,7 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
       isEmpty = clearColor(imageData, backgroundColor);
     }
 
-    // copy the data from _tmpCanvas to _cacheCanvas
+    // copy the data from imageData to _cacheCanvas
     const [x, y] = this._toCoordinates(index);
     // putImageData doesn't do any blending, so it will overwrite any existing cache entry for us
     this._cacheCtx.putImageData(imageData, x, y);
