@@ -1243,7 +1243,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
   public scrollToLine(line: number): void {
     const scrollAmount = line - this.buffer.ydisp;
-    console.log('scrollAmount', scrollAmount);
     if (scrollAmount !== 0) {
       this.scrollLines(scrollAmount);
     }
