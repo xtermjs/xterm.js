@@ -118,7 +118,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   allowTransparency: false,
   tabStopWidth: 8,
   theme: null,
-  rightClickSelectsWord: Browser.isMac,
+  rightClickSelectsWord: Browser.isMac
   // programFeatures: false,
   // focusKeys: false,
 };
