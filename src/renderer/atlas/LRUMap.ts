@@ -37,7 +37,11 @@ export default class LRUMap<T> {
   }
 
   private _appendNode(node: ILinkedListNode<T>): void {
-    node.prev = this._tail;
+    const tail = this._tail;
+    if (tail !== null) {
+      tail.next = node;
+    }
+    node.prev = tail;
     node.next = null;
     this._tail = node;
     if (this._head === null) {
