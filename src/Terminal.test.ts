@@ -258,6 +258,34 @@ describe('term.js addons', () => {
       });
     });
 
+    describe('scrollToLine', () => {
+      let startYDisp;
+      beforeEach(() => {
+        for (let i = 0; i < term.rows * 3; i++) {
+          term.writeln('test');
+        }
+        startYDisp = (term.rows * 2) + 1;
+      });
+      it('should scroll to requested line', () => {
+        assert.equal(term.buffer.ydisp, startYDisp);
+        term.scrollToLine(0);
+        assert.equal(term.buffer.ydisp, 0);
+        term.scrollToLine(10);
+        assert.equal(term.buffer.ydisp, 10);
+        term.scrollToLine(startYDisp);
+        assert.equal(term.buffer.ydisp, startYDisp);
+        term.scrollToLine(20);
+        assert.equal(term.buffer.ydisp, 20);
+      });
+      it('should not scroll beyond boundary lines', () => {
+        assert.equal(term.buffer.ydisp, startYDisp);
+        term.scrollToLine(-1);
+        assert.equal(term.buffer.ydisp, 0);
+        term.scrollToLine(startYDisp + 1);
+        assert.equal(term.buffer.ydisp, startYDisp);
+      });
+    });
+
     describe('keyDown', () => {
       it('should scroll down, when a key is pressed and terminal is scrolled up', () => {
         // Override _evaluateKeyEscapeSequence to return cancel code

@@ -45,7 +45,7 @@ import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { MouseZoneManager } from './input/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ScreenDprMonitor } from './utils/ScreenDprMonitor';
-import { ITheme, ILocalizableStrings } from 'xterm';
+import { ITheme, ILocalizableStrings, IMarker } from 'xterm';
 
 // reg + shift key mappings for digits and special chars
 const KEYCODE_KEY_MAPPINGS = {
@@ -1238,6 +1238,13 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.scrollLines(this.buffer.ybase - this.buffer.ydisp);
   }
 
+  public scrollToLine(line: number): void {
+    const scrollAmount = line - this.buffer.ydisp;
+    if (scrollAmount !== 0) {
+      this.scrollLines(scrollAmount);
+    }
+  }
+
   /**
    * Writes text to the terminal.
    * @param {string} data The text to write to the terminal.
@@ -1346,6 +1353,19 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     }
   }
 
+  public get markers(): IMarker[] {
+    return this.buffer.markers;
+  }
+
+  public addMarker(cursorYOffset: number): IMarker {
+    // Disallow markers on the alt buffer
+    if (this.buffer !== this.buffers.normal) {
+      return;
+    }
+
+    return this.buffer.addMarker(this.buffer.ybase + this.buffer.y + cursorYOffset);
+  }
+
   /**
    * Gets whether the terminal has an active selection.
    */
@@ -1376,6 +1396,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   public selectAll(): void {
     if (this.selectionManager) {
       this.selectionManager.selectAll();
+    }
+  }
+
+  public selectLines(start: number, end: number): void {
+    if (this.selectionManager) {
+      this.selectionManager.selectLines(start, end);
     }
   }
 
