@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal as PublicTerminal, ITerminalOptions as IPublicTerminalOptions, IEventEmitter as IPublicEventEmitter, IEventEmitter } from 'xterm';
+import { Terminal as PublicTerminal, ITerminalOptions as IPublicTerminalOptions, IEventEmitter } from 'xterm';
 import { IColorSet, IRenderer } from './renderer/Types';
 import { IMouseZoneManager } from './input/Types';
 
@@ -14,7 +14,7 @@ export type XtermListener = (...args: any[]) => void;
 export type CharData = [number, string, number, number];
 export type LineData = CharData[];
 
-export type LinkMatcherHandler = (event: MouseEvent, uri: string) => boolean | void;
+export type LinkMatcherHandler = (event: MouseEvent, uri: string) => void;
 export type LinkMatcherValidationCallback = (uri: string, callback: (isValid: boolean) => void) => void;
 
 export enum LinkHoverEventTypes {
@@ -84,11 +84,13 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   matchColor(r1: number, g1: number, b1: number): number;
   error(text: string, data?: any): void;
   setOption(key: string, value: any): void;
+  tabSet(): void;
 }
 
 export interface IViewport {
   scrollBarWidth: number;
   syncScrollArea(): void;
+  getLinesScrolled(ev: WheelEvent): number;
   onWheel(ev: WheelEvent): void;
   onTouchStart(ev: TouchEvent): void;
   onTouchMove(ev: TouchEvent): void;
@@ -252,6 +254,7 @@ export interface IBuffer {
   tabs: any;
   scrollBottom: number;
   scrollTop: number;
+  hasScrollback: boolean;
   savedY: number;
   savedX: number;
   isCursorInViewport: boolean;
@@ -297,8 +300,6 @@ export interface ISelectionManager {
 export interface ILinkifier extends IEventEmitter {
   attachToDom(mouseZoneManager: IMouseZoneManager): void;
   linkifyRows(start: number, end: number): void;
-  setHypertextLinkHandler(handler: LinkMatcherHandler): void;
-  setHypertextValidationCallback(callback: LinkMatcherValidationCallback): void;
   registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options?: ILinkMatcherOptions): number;
   deregisterLinkMatcher(matcherId: number): boolean;
 }

@@ -5,6 +5,7 @@
 
 import { ITerminal } from '../Types';
 import { IEventEmitter, ITheme } from 'xterm';
+import { IColorSet } from '../shared/Types';
 
 /**
  * Flags used to render terminal text properly.
@@ -24,7 +25,7 @@ export interface IRenderer extends IEventEmitter {
 
   setTheme(theme: ITheme): IColorSet;
   onWindowResize(devicePixelRatio: number): void;
-  onResize(cols: number, rows: number, didCharSizeChange: boolean): void;
+  onResize(cols: number, rows: number): void;
   onCharSizeChanged(): void;
   onBlur(): void;
   onFocus(): void;
@@ -39,14 +40,8 @@ export interface IColorManager {
   colors: IColorSet;
 }
 
-export interface IColorSet {
-  foreground: string;
-  background: string;
-  cursor: string;
-  cursorAccent: string;
-  selection: string;
-  ansi: string[];
-}
+// TODO: We should probably rewrite the imports for IColorSet, but there's a lot of them
+export { IColorSet };
 
 export interface IRenderDimensions {
   scaledCharWidth: number;
@@ -103,7 +98,7 @@ export interface IRenderLayer {
   /**
    * Resize the render layer.
    */
-  resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void;
+  resize(terminal: ITerminal, dim: IRenderDimensions): void;
 
   /**
    * Clear the state of the render layer.

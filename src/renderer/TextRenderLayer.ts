@@ -5,16 +5,17 @@
 
 import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from '../Buffer';
 import { FLAGS, IColorSet, IRenderDimensions } from './Types';
-import { CharData, IBuffer, ICharMeasure, ITerminal } from '../Types';
+import { CharData, ITerminal } from '../Types';
+import { INVERTED_DEFAULT_COLOR } from './atlas/Types';
 import { GridCache } from './GridCache';
-import { BaseRenderLayer, INVERTED_DEFAULT_COLOR } from './BaseRenderLayer';
+import { BaseRenderLayer } from './BaseRenderLayer';
 
 /**
  * This CharData looks like a null character, which will forc a clear and render
  * when the character changes (a regular space ' ' character may not as it's
  * drawn state is a cleared cell).
  */
-const OVERLAP_OWNED_CHAR_DATA: CharData = [null, '', 0, -1];
+// const OVERLAP_OWNED_CHAR_DATA: CharData = [null, '', 0, -1];
 
 export class TextRenderLayer extends BaseRenderLayer {
   private _state: GridCache<CharData>;
@@ -27,8 +28,8 @@ export class TextRenderLayer extends BaseRenderLayer {
     this._state = new GridCache<CharData>();
   }
 
-  public resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void {
-    super.resize(terminal, dim, charSizeChanged);
+  public resize(terminal: ITerminal, dim: IRenderDimensions): void {
+    super.resize(terminal, dim);
 
     // Clear the character width cache if the font or width has changed
     const terminalFont = this._getFont(terminal, false);
@@ -238,13 +239,13 @@ export class TextRenderLayer extends BaseRenderLayer {
    * @param x The column of the char.
    * @param y The row of the char.
    */
-  private _clearChar(x: number, y: number): void {
-    let colsToClear = 1;
-    // Clear the adjacent character if it was wide
-    const state = this._state.cache[x][y];
-    if (state && state[CHAR_DATA_WIDTH_INDEX] === 2) {
-      colsToClear = 2;
-    }
-    this.clearCells(x, y, colsToClear, 1);
-  }
+  // private _clearChar(x: number, y: number): void {
+  //   let colsToClear = 1;
+  //   // Clear the adjacent character if it was wide
+  //   const state = this._state.cache[x][y];
+  //   if (state && state[CHAR_DATA_WIDTH_INDEX] === 2) {
+  //     colsToClear = 2;
+  //   }
+  //   this.clearCells(x, y, colsToClear, 1);
+  // }
 }

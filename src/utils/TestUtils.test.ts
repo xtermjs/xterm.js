@@ -269,6 +269,9 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   addDisposableListener(type: string, handler: XtermListener): IDisposable {
     throw new Error('Method not implemented.');
   }
+  tabSet(): void {
+    throw new Error('Method not implemented.');
+  }
 }
 
 export class MockBuffer implements IBuffer {
@@ -276,6 +279,7 @@ export class MockBuffer implements IBuffer {
   lines: ICircularList<[number, string, number, number][]>;
   ydisp: number;
   ybase: number;
+  hasScrollback: boolean;
   y: number;
   x: number;
   tabs: any;
@@ -310,7 +314,7 @@ export class MockRenderer implements IRenderer {
   }
   dimensions: IRenderDimensions;
   setTheme(theme: ITheme): IColorSet { return <IColorSet>{}; }
-  onResize(cols: number, rows: number, didCharSizeChange: boolean): void {}
+  onResize(cols: number, rows: number): void {}
   onCharSizeChanged(): void {}
   onBlur(): void {}
   onFocus(): void {}
@@ -337,6 +341,9 @@ export class MockViewport implements IViewport {
     throw new Error('Method not implemented.');
   }
   syncScrollArea(): void { }
+  getLinesScrolled(ev: WheelEvent): number {
+    throw new Error('Method not implemented.');
+  }
 }
 
 export class MockCompositionHelper implements ICompositionHelper {

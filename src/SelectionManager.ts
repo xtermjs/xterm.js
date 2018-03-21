@@ -3,11 +3,10 @@
  * @license MIT
  */
 
-import { ITerminal, ICircularList, ISelectionManager, IBuffer, LineData, CharData, XtermListener } from './Types';
+import { ITerminal, ISelectionManager, IBuffer, CharData, XtermListener } from './Types';
 import { MouseHelper } from './utils/MouseHelper';
 import * as Browser from './shared/utils/Browser';
 import { CharMeasure } from './utils/CharMeasure';
-import { CircularList } from './utils/CircularList';
 import { EventEmitter } from './EventEmitter';
 import { SelectionModel } from './SelectionModel';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from './Buffer';
@@ -634,6 +633,11 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param coords The coordinates to get the word at.
    */
   private _getWordAt(coords: [number, number], allowWhitespaceOnlySelection: boolean): IWordPosition {
+    // Ensure coords are within viewport (eg. not within scroll bar)
+    if (coords[0] >= this._terminal.cols) {
+      return null;
+    }
+
     const bufferLine = this._buffer.lines.get(coords[1]);
     if (!bufferLine) {
       return null;

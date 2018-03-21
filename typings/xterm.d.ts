@@ -23,6 +23,7 @@ declare module 'xterm' {
      * Warning: Enabling this option can reduce performances somewhat.
      */
     allowTransparency?: boolean;
+
     /**
      * A data uri of the sound to use for the bell (needs bellStyle = 'sound').
      */
@@ -55,7 +56,7 @@ declare module 'xterm' {
 
     /**
      * Whether to enable the rendering of bold text.
-     * 
+     *
      * @deprecated Use fontWeight and fontWeightBold instead.
      */
     enableBold?: boolean;
@@ -395,7 +396,7 @@ declare module 'xterm' {
      * @param options Options for the link matcher.
      * @return The ID of the new matcher, this can be used to deregister.
      */
-    registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => boolean | void, options?: ILinkMatcherOptions): number;
+    registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): number;
 
     /**
      * (EXPERIMENTAL) Deregisters a link matcher if it has been registered.

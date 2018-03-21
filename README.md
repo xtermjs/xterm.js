@@ -127,6 +127,7 @@ computational environment for Jupyter, supporting interactive data science and s
 - [**abstruse**](https://github.com/bleenco/abstruse): Abstruse CI is a continuous integration platform based on Node.JS and Docker.
 - [**Microsoft SQL Operations Studio**](https://github.com/Microsoft/sqlopsstudio): A data management tool that enables working with SQL Server, Azure SQL DB and SQL DW from Windows, macOS and Linux
 - [**FreeMAN**](https://github.com/matthew-matvei/freeman): A free, cross-platform file manager for power users
+- [**Fluent Terminal**](https://github.com/felixse/FluentTerminal): A terminal emulator based on UWP and web technologies.
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list.
 
@@ -144,7 +145,19 @@ Then open your project's [Public URL](https://help.sourcelair.com/projects/the-p
 
 ### Docker
 
-First, make sure you have Docker Engine 1.13.0 (or newer) and Docker Compose 1.10.0 (or newer). To run the demo and builder in parallel, run the following command in your terminal:
+First, make sure you have Docker Engine 1.13.0 (or newer) and Docker Compose 1.10.0 (or newer).
+
+Xterm.js [provides a pre-built Docker image](https://hub.docker.com/r/xtermjs/xterm.js/) to help run the demo easily (Git tags are built as [tagged Docker images](https://hub.docker.com/r/xtermjs/xterm.js/tags/) too).
+
+To run the just demo (with no editing access). run the following command in your terminal:
+
+```
+docker run -p 3000:3000 xtermjs/xterm.js
+```
+
+Then open http://0.0.0.0:3000 in a web browser to access the demo.
+
+To run the demo and builder in parallel, run the following command in your terminal:
 
 ```
 docker-compose up

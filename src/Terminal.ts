@@ -21,7 +21,7 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { ICharset, IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
+import { ICharset, IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharData, LineData } from './Types';
 import { IMouseZoneManager } from './input/Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
@@ -30,7 +30,6 @@ import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './EventEmitter';
 import { Viewport } from './Viewport';
 import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './handlers/Clipboard';
-import { CircularList } from './utils/CircularList';
 import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Parser } from './Parser';
@@ -41,7 +40,6 @@ import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './shared/utils/Browser';
 import * as Strings from './Strings';
 import { MouseHelper } from './utils/MouseHelper';
-import { CHARSETS } from './Charsets';
 import { DEFAULT_BELL_SOUND, SoundManager } from './SoundManager';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { MouseZoneManager } from './input/MouseZoneManager';
@@ -120,7 +118,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   allowTransparency: false,
   tabStopWidth: 8,
   theme: null,
-  rightClickSelectsWord: Browser.isMac
+  rightClickSelectsWord: Browser.isMac,
   // programFeatures: false,
   // focusKeys: false,
 };
@@ -133,30 +131,27 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   /**
    * The HTMLElement that the terminal is created in, set by Terminal.open.
    */
-  private parent: HTMLElement;
-  private context: Window;
-  private document: Document;
-  private body: HTMLBodyElement;
-  private viewportScrollArea: HTMLElement;
-  private viewportElement: HTMLElement;
-  private helperContainer: HTMLElement;
-  private compositionView: HTMLElement;
-  private charSizeStyleElement: HTMLStyleElement;
+  private _parent: HTMLElement;
+  private _context: Window;
+  private _document: Document;
+  private _viewportScrollArea: HTMLElement;
+  private _viewportElement: HTMLElement;
+  private _helperContainer: HTMLElement;
+  private _compositionView: HTMLElement;
 
-  private visualBellTimer: number;
+  private _visualBellTimer: number;
 
   public browser: IBrowser = <any>Browser;
 
   public options: ITerminalOptions;
-  private colors: any;
 
   // TODO: This can be changed to an enum or boolean, 0 and 1 seem to be the only options
   public cursorState: number;
   public cursorHidden: boolean;
   public convertEol: boolean;
 
-  private sendDataQueue: string;
-  private customKeyEventHandler: CustomKeyEventHandler;
+  private _sendDataQueue: string;
+  private _customKeyEventHandler: CustomKeyEventHandler;
 
   // modes
   public applicationKeypad: boolean;
@@ -174,10 +169,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   public charsets: ICharset[];
 
   // mouse properties
-  private decLocator: boolean; // This is unstable and never set
+  private _decLocator: boolean; // This is unstable and never set
   public x10Mouse: boolean;
   public vt200Mouse: boolean;
-  private vt300Mouse: boolean; // This is unstable and never set
+  private _vt300Mouse: boolean; // This is unstable and never set
   public normalMouse: boolean;
   public mouseEvents: boolean;
   public sendFocus: boolean;
@@ -186,13 +181,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   public urxvtMouse: boolean;
 
   // misc
-  private refreshStart: number;
-  private refreshEnd: number;
+  private _refreshStart: number;
+  private _refreshEnd: number;
   public savedCols: number;
-
-  // stream
-  private readable: boolean;
-  private writable: boolean;
 
   public defAttr: number;
   public curAttr: number;
@@ -204,7 +195,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
   // user input states
   public writeBuffer: string[];
-  private writeInProgress: boolean;
+  private _writeInProgress: boolean;
 
   /**
    * Whether _xterm.js_ sent XOFF in order to catch up with the pty process.
@@ -212,26 +203,23 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * XOFF via ^S that it will not automatically resume when the writeBuffer goes
    * below threshold.
    */
-  private xoffSentToCatchUp: boolean;
+  private _xoffSentToCatchUp: boolean;
 
   /** Whether writing has been stopped as a result of XOFF */
-  private writeStopped: boolean;
-
-  // leftover surrogate high from previous write invocation
-  private surrogateHigh: string;
+  // private _writeStopped: boolean;
 
   // Store if user went browsing history in scrollback
-  private userScrolling: boolean;
+  private _userScrolling: boolean;
 
-  private inputHandler: InputHandler;
+  private _inputHandler: InputHandler;
   public soundManager: SoundManager;
-  private parser: Parser;
+  private _parser: Parser;
   public renderer: IRenderer;
   public selectionManager: SelectionManager;
   public linkifier: ILinkifier;
   public buffers: BufferSet;
   public viewport: IViewport;
-  private compositionHelper: ICompositionHelper;
+  private _compositionHelper: ICompositionHelper;
   public charMeasure: CharMeasure;
   private _mouseZoneManager: IMouseZoneManager;
   public mouseHelper: MouseHelper;
@@ -258,10 +246,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   ) {
     super();
     this.options = options;
-    this.setup();
+    this._setup();
   }
 
-  private setup(): void {
+  private _setup(): void {
     Object.keys(DEFAULT_OPTIONS).forEach((key) => {
       if (this.options[key] == null) {
         this.options[key] = DEFAULT_OPTIONS[key];
@@ -273,7 +261,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // this.context = options.context || window;
     // this.document = options.document || document;
     // TODO: WHy not document.body?
-    this.parent = document ? document.body : null;
+    this._parent = document ? document.body : null;
 
     this.cols = this.options.cols;
     this.rows = this.options.rows;
@@ -284,8 +272,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     this.cursorState = 0;
     this.cursorHidden = false;
-    this.sendDataQueue = '';
-    this.customKeyEventHandler = null;
+    this._sendDataQueue = '';
+    this._customKeyEventHandler = null;
 
     // modes
     this.applicationKeypad = false;
@@ -302,9 +290,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // TODO: Can this be just []?
     this.charsets = [null];
 
-    this.readable = true;
-    this.writable = true;
-
     this.defAttr = (0 << 18) | (257 << 9) | (256 << 0);
     this.curAttr = (0 << 18) | (257 << 9) | (256 << 0);
 
@@ -315,15 +300,14 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     // user input states
     this.writeBuffer = [];
-    this.writeInProgress = false;
+    this._writeInProgress = false;
 
-    this.xoffSentToCatchUp = false;
-    this.writeStopped = false;
-    this.surrogateHigh = '';
-    this.userScrolling = false;
+    this._xoffSentToCatchUp = false;
+    // this._writeStopped = false;
+    this._userScrolling = false;
 
-    this.inputHandler = new InputHandler(this);
-    this.parser = new Parser(this.inputHandler, this);
+    this._inputHandler = new InputHandler(this);
+    this._parser = new Parser(this._inputHandler, this);
     // Reuse renderer if the Terminal is being recreated via a reset call.
     this.renderer = this.renderer || null;
     this.selectionManager = this.selectionManager || null;
@@ -472,11 +456,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       case 'lineHeight':
       case 'fontWeight':
       case 'fontWeightBold':
-        const didCharSizeChange = (key === 'fontWeight' || key === 'fontWeightBold' || key === 'enableBold');
-
         // When the font changes the size of the cells may change which requires a renderer clear
         this.renderer.clear();
-        this.renderer.onResize(this.cols, this.rows, didCharSizeChange);
+        this.renderer.onResize(this.cols, this.rows);
         this.refresh(0, this.rows - 1);
       case 'scrollback':
         this.buffers.resize(this.cols, this.rows);
@@ -540,8 +522,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   /**
    * Initialize default behavior
    */
-  private initGlobal(): void {
-    this.bindKeys();
+  private _initGlobal(): void {
+    this._bindKeys();
 
     // Bind clipboard functionality
     on(this.element, 'copy', (event: ClipboardEvent) => {
@@ -587,7 +569,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   /**
    * Apply key handling to the terminal
    */
-  private bindKeys(): void {
+  private _bindKeys(): void {
     const self = this;
     on(this.element, 'keydown', function (ev: KeyboardEvent): void {
       if (document.activeElement !== this) {
@@ -611,11 +593,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     on(this.textarea, 'keydown', (ev: KeyboardEvent) => this._keyDown(ev), true);
     on(this.textarea, 'keypress', (ev: KeyboardEvent) => this._keyPress(ev), true);
-    on(this.textarea, 'compositionstart', () => this.compositionHelper.compositionstart());
-    on(this.textarea, 'compositionupdate', (e: CompositionEvent) => this.compositionHelper.compositionupdate(e));
-    on(this.textarea, 'compositionend', () => this.compositionHelper.compositionend());
-    this.on('refresh', () => this.compositionHelper.updateCompositionElements());
-    this.on('refresh', (data) => this.queueLinkification(data.start, data.end));
+    on(this.textarea, 'compositionstart', () => this._compositionHelper.compositionstart());
+    on(this.textarea, 'compositionupdate', (e: CompositionEvent) => this._compositionHelper.compositionupdate(e));
+    on(this.textarea, 'compositionend', () => this._compositionHelper.compositionend());
+    this.on('refresh', () => this._compositionHelper.updateCompositionElements());
+    this.on('refresh', (data) => this._queueLinkification(data.start, data.end));
   }
 
   /**
@@ -624,47 +606,43 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param {HTMLElement} parent The element to create the terminal within.
    */
   public open(parent: HTMLElement): void {
-    let i = 0;
-    let div;
+    this._parent = parent || this._parent;
 
-    this.parent = parent || this.parent;
-
-    if (!this.parent) {
+    if (!this._parent) {
       throw new Error('Terminal requires a parent element.');
     }
 
     // Grab global elements
-    this.context = this.parent.ownerDocument.defaultView;
-    this.document = this.parent.ownerDocument;
-    this.body = <HTMLBodyElement>this.document.body;
+    this._context = this._parent.ownerDocument.defaultView;
+    this._document = this._parent.ownerDocument;
 
     this._screenDprMonitor = new ScreenDprMonitor();
     this._screenDprMonitor.setListener(() => this.emit('dprchange', window.devicePixelRatio));
 
     // Create main element container
-    this.element = this.document.createElement('div');
+    this.element = this._document.createElement('div');
     this.element.classList.add('terminal');
     this.element.classList.add('xterm');
     this.element.setAttribute('tabindex', '0');
-    this.parent.appendChild(this.element);
+    this._parent.appendChild(this.element);
 
     // Performance: Use a document fragment to build the terminal
     // viewport and helper elements detached from the DOM
     const fragment = document.createDocumentFragment();
-    this.viewportElement = document.createElement('div');
-    this.viewportElement.classList.add('xterm-viewport');
-    fragment.appendChild(this.viewportElement);
-    this.viewportScrollArea = document.createElement('div');
-    this.viewportScrollArea.classList.add('xterm-scroll-area');
-    this.viewportElement.appendChild(this.viewportScrollArea);
+    this._viewportElement = document.createElement('div');
+    this._viewportElement.classList.add('xterm-viewport');
+    fragment.appendChild(this._viewportElement);
+    this._viewportScrollArea = document.createElement('div');
+    this._viewportScrollArea.classList.add('xterm-scroll-area');
+    this._viewportElement.appendChild(this._viewportScrollArea);
 
     this.screenElement = document.createElement('div');
     this.screenElement.classList.add('xterm-screen');
     // Create the container that will hold helpers like the textarea for
     // capturing DOM Events. Then produce the helpers.
-    this.helperContainer = document.createElement('div');
-    this.helperContainer.classList.add('xterm-helpers');
-    this.screenElement.appendChild(this.helperContainer);
+    this._helperContainer = document.createElement('div');
+    this._helperContainer.classList.add('xterm-helpers');
+    this.screenElement.appendChild(this._helperContainer);
     fragment.appendChild(this.screenElement);
 
     this._mouseZoneManager = new MouseZoneManager(this);
@@ -682,34 +660,32 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.textarea.tabIndex = 0;
     this.textarea.addEventListener('focus', () => this._onTextAreaFocus());
     this.textarea.addEventListener('blur', () => this._onTextAreaBlur());
-    this.helperContainer.appendChild(this.textarea);
+    this._helperContainer.appendChild(this.textarea);
 
-    this.compositionView = document.createElement('div');
-    this.compositionView.classList.add('composition-view');
-    this.compositionHelper = new CompositionHelper(this.textarea, this.compositionView, this);
-    this.helperContainer.appendChild(this.compositionView);
+    this._compositionView = document.createElement('div');
+    this._compositionView.classList.add('composition-view');
+    this._compositionHelper = new CompositionHelper(this.textarea, this._compositionView, this);
+    this._helperContainer.appendChild(this._compositionView);
 
-    this.charSizeStyleElement = document.createElement('style');
-    this.helperContainer.appendChild(this.charSizeStyleElement);
-    this.charMeasure = new CharMeasure(document, this.helperContainer);
+    this.charMeasure = new CharMeasure(document, this._helperContainer);
 
     // Performance: Add viewport and helper elements from the fragment
     this.element.appendChild(fragment);
 
     this.renderer = new Renderer(this, this.options.theme);
     this.options.theme = null;
-    this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
+    this.viewport = new Viewport(this, this._viewportElement, this._viewportScrollArea, this.charMeasure);
     this.viewport.onThemeChanged(this.renderer.colorManager.colors);
 
     this.on('cursormove', () => this.renderer.onCursorMove());
-    this.on('resize', () => this.renderer.onResize(this.cols, this.rows, false));
+    this.on('resize', () => this.renderer.onResize(this.cols, this.rows));
     this.on('blur', () => this.renderer.onBlur());
     this.on('focus', () => this.renderer.onFocus());
     this.on('dprchange', () => this.renderer.onWindowResize(window.devicePixelRatio));
     // dprchange should handle this case, we need this as well for browsers that don't support the
     // matchMedia query.
     window.addEventListener('resize', () => this.renderer.onWindowResize(window.devicePixelRatio));
-    this.charMeasure.on('charsizechanged', () => this.renderer.onResize(this.cols, this.rows, true));
+    this.charMeasure.on('charsizechanged', () => this.renderer.onResize(this.cols, this.rows));
     this.renderer.on('resize', (dimensions) => this.viewport.syncScrollArea());
 
     this.selectionManager = new SelectionManager(this, this.charMeasure);
@@ -727,7 +703,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       this.viewport.syncScrollArea();
       this.selectionManager.refresh();
     });
-    this.viewportElement.addEventListener('scroll', () => this.selectionManager.refresh());
+    this._viewportElement.addEventListener('scroll', () => this.selectionManager.refresh());
 
     this.mouseHelper = new MouseHelper(this.renderer);
 
@@ -744,7 +720,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.refresh(0, this.rows - 1);
 
     // Initialize global actions that need to be taken on the document.
-    this.initGlobal();
+    this._initGlobal();
 
     // Listen for mouse events and translate
     // them into terminal mouse protocols.
@@ -871,7 +847,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       //   button: button
       // });
 
-      if (self.vt300Mouse) {
+      if (self._vt300Mouse) {
         // NOTE: Unstable.
         // http://www.vt100.net/docs/vt3xx-gp/chapter15.html
         button &= 3;
@@ -888,7 +864,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         return;
       }
 
-      if (self.decLocator) {
+      if (self._decLocator) {
         // NOTE: Unstable.
         button &= 3;
         pos.x -= 32;
@@ -1031,19 +1007,19 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       }
 
       // bind events
-      if (this.normalMouse) on(this.document, 'mousemove', sendMove);
+      if (this.normalMouse) on(this._document, 'mousemove', sendMove);
 
       // x10 compatibility mode can't send button releases
       if (!this.x10Mouse) {
         const handler = (ev: MouseEvent) => {
           sendButton(ev);
           // TODO: Seems dangerous calling this on document?
-          if (this.normalMouse) off(this.document, 'mousemove', sendMove);
-          off(this.document, 'mouseup', handler);
+          if (this.normalMouse) off(this._document, 'mousemove', sendMove);
+          off(this._document, 'mouseup', handler);
           return this.cancel(ev);
         };
         // TODO: Seems dangerous calling this on document?
-        on(this.document, 'mouseup', handler);
+        on(this._document, 'mouseup', handler);
       }
 
       return this.cancel(ev);
@@ -1054,8 +1030,28 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // }
 
     on(el, 'wheel', (ev: WheelEvent) => {
-      if (!this.mouseEvents) return;
-      if (this.x10Mouse || this.vt300Mouse || this.decLocator) return;
+      if (!this.mouseEvents) {
+        // Convert wheel events into up/down events when the buffer does not have scrollback, this
+        // enables scrolling in apps hosted in the alt buffer such as vim or tmux.
+        if (!this.buffer.hasScrollback) {
+          const amount = this.viewport.getLinesScrolled(ev);
+
+          // Do nothing if there's no vertical scroll
+          if (amount === 0) {
+            return;
+          }
+
+          // Construct and send sequences
+          const sequence = C0.ESC + (this.applicationCursor ? 'O' : '[') + ( ev.deltaY < 0 ? 'A' : 'B');
+          let data = '';
+          for (let i = 0; i < Math.abs(amount); i++) {
+            data += sequence;
+          }
+          this.send(data);
+        }
+        return;
+      }
+      if (this.x10Mouse || this._vt300Mouse || this._decLocator) return;
       sendButton(ev);
       ev.preventDefault();
     });
@@ -1086,8 +1082,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    */
   public destroy(): void {
     super.destroy();
-    this.readable = false;
-    this.writable = false;
     this.handler = () => {};
     this.write = () => {};
     if (this.element && this.element.parentNode) {
@@ -1113,7 +1107,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param {number} start The row to start from (between 0 and this.rows - 1).
    * @param {number} end The row to end at (between start and this.rows - 1).
    */
-  private queueLinkification(start: number, end: number): void {
+  private _queueLinkification(start: number, end: number): void {
     if (this.linkifier) {
       this.linkifier.linkifyRows(start, end);
     }
@@ -1153,13 +1147,13 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       if (!willBufferBeTrimmed) {
         this.buffer.ybase++;
         // Only scroll the ydisp with ybase if the user has not scrolled up
-        if (!this.userScrolling) {
+        if (!this._userScrolling) {
           this.buffer.ydisp++;
         }
       } else {
         // When the buffer is full and the user has scrolled up, keep the text
         // stable unless ydisp is right at the top
-        if (this.userScrolling) {
+        if (this._userScrolling) {
           this.buffer.ydisp = Math.max(this.buffer.ydisp - 1, 0);
         }
       }
@@ -1173,7 +1167,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     // Move the viewport to the bottom of the buffer unless the user is
     // scrolling.
-    if (!this.userScrolling) {
+    if (!this._userScrolling) {
       this.buffer.ydisp = this.buffer.ybase;
     }
 
@@ -1202,9 +1196,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       if (this.buffer.ydisp === 0) {
         return;
       }
-      this.userScrolling = true;
+      this._userScrolling = true;
     } else if (disp + this.buffer.ydisp >= this.buffer.ybase) {
-      this.userScrolling = false;
+      this._userScrolling = false;
     }
 
     const oldYdisp = this.buffer.ydisp;
@@ -1254,54 +1248,54 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // Send XOFF to pause the pty process if the write buffer becomes too large so
     // xterm.js can catch up before more data is sent. This is necessary in order
     // to keep signals such as ^C responsive.
-    if (this.options.useFlowControl && !this.xoffSentToCatchUp && this.writeBuffer.length >= WRITE_BUFFER_PAUSE_THRESHOLD) {
+    if (this.options.useFlowControl && !this._xoffSentToCatchUp && this.writeBuffer.length >= WRITE_BUFFER_PAUSE_THRESHOLD) {
       // XOFF - stop pty pipe
       // XON will be triggered by emulator before processing data chunk
       this.send(C0.DC3);
-      this.xoffSentToCatchUp = true;
+      this._xoffSentToCatchUp = true;
     }
 
-    if (!this.writeInProgress && this.writeBuffer.length > 0) {
+    if (!this._writeInProgress && this.writeBuffer.length > 0) {
       // Kick off a write which will write all data in sequence recursively
-      this.writeInProgress = true;
+      this._writeInProgress = true;
       // Kick off an async innerWrite so more writes can come in while processing data
       setTimeout(() => {
-        this.innerWrite();
+        this._innerWrite();
       });
     }
   }
 
-  private innerWrite(): void {
+  private _innerWrite(): void {
     const writeBatch = this.writeBuffer.splice(0, WRITE_BATCH_SIZE);
     while (writeBatch.length > 0) {
       const data = writeBatch.shift();
 
       // If XOFF was sent in order to catch up with the pty process, resume it if
       // the writeBuffer is empty to allow more data to come in.
-      if (this.xoffSentToCatchUp && writeBatch.length === 0 && this.writeBuffer.length === 0) {
+      if (this._xoffSentToCatchUp && writeBatch.length === 0 && this.writeBuffer.length === 0) {
         this.send(C0.DC1);
-        this.xoffSentToCatchUp = false;
+        this._xoffSentToCatchUp = false;
       }
 
-      this.refreshStart = this.buffer.y;
-      this.refreshEnd = this.buffer.y;
+      this._refreshStart = this.buffer.y;
+      this._refreshEnd = this.buffer.y;
 
       // HACK: Set the parser state based on it's state at the time of return.
       // This works around the bug #662 which saw the parser state reset in the
       // middle of parsing escape sequence in two chunks. For some reason the
       // state of the parser resets to 0 after exiting parser.parse. This change
       // just sets the state back based on the correct return statement.
-      const state = this.parser.parse(data);
-      this.parser.setState(state);
+      const state = this._parser.parse(data);
+      this._parser.setState(state);
 
       this.updateRange(this.buffer.y);
-      this.refresh(this.refreshStart, this.refreshEnd);
+      this.refresh(this._refreshStart, this._refreshEnd);
     }
     if (this.writeBuffer.length > 0) {
       // Allow renderer to catch up before processing the next batch
-      setTimeout(() => this.innerWrite(), 0);
+      setTimeout(() => this._innerWrite(), 0);
     } else {
-      this.writeInProgress = false;
+      this._writeInProgress = false;
     }
   }
 
@@ -1323,37 +1317,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * the event should be processed by xterm.js.
    */
   public attachCustomKeyEventHandler(customKeyEventHandler: CustomKeyEventHandler): void {
-    this.customKeyEventHandler = customKeyEventHandler;
-  }
-
-  /**
-   * Attaches a http(s) link handler, forcing web links to behave differently to
-   * regular <a> tags. This will trigger a refresh as links potentially need to be
-   * reconstructed. Calling this with null will remove the handler.
-   * @param handler The handler callback function.
-   */
-  public setHypertextLinkHandler(handler: LinkMatcherHandler): void {
-    if (!this.linkifier) {
-      throw new Error('Cannot attach a hypertext link handler before Terminal.open is called');
-    }
-    this.linkifier.setHypertextLinkHandler(handler);
-    // Refresh to force links to refresh
-    this.refresh(0, this.rows - 1);
-  }
-
-  /**
-   * Attaches a validation callback for hypertext links. This is useful to use
-   * validation logic or to do something with the link's element and url.
-   * @param callback The callback to use, this can
-   * be cleared with null.
-   */
-  public setHypertextValidationCallback(callback: LinkMatcherValidationCallback): void {
-    if (!this.linkifier) {
-      throw new Error('Cannot attach a hypertext validation callback before Terminal.open is called');
-    }
-    this.linkifier.setHypertextValidationCallback(callback);
-    // // Refresh to force links to refresh
-    this.refresh(0, this.rows - 1);
+    this._customKeyEventHandler = customKeyEventHandler;
   }
 
   /**
@@ -1367,12 +1331,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @return The ID of the new matcher, this can be used to deregister.
    */
   public registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options?: ILinkMatcherOptions): number {
-    if (this.linkifier) {
-      const matcherId = this.linkifier.registerLinkMatcher(regex, handler, options);
-      this.refresh(0, this.rows - 1);
-      return matcherId;
-    }
-    return 0;
+    const matcherId = this.linkifier.registerLinkMatcher(regex, handler, options);
+    this.refresh(0, this.rows - 1);
+    return matcherId;
   }
 
   /**
@@ -1380,10 +1341,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param matcherId The link matcher's ID (returned after register)
    */
   public deregisterLinkMatcher(matcherId: number): void {
-    if (this.linkifier) {
-      if (this.linkifier.deregisterLinkMatcher(matcherId)) {
-        this.refresh(0, this.rows - 1);
-      }
+    if (this.linkifier.deregisterLinkMatcher(matcherId)) {
+      this.refresh(0, this.rows - 1);
     }
   }
 
@@ -1427,11 +1386,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param {KeyboardEvent} ev The keydown event to be handled.
    */
   protected _keyDown(ev: KeyboardEvent): boolean {
-    if (this.customKeyEventHandler && this.customKeyEventHandler(ev) === false) {
+    if (this._customKeyEventHandler && this._customKeyEventHandler(ev) === false) {
       return false;
     }
 
-    if (!this.compositionHelper.keydown(ev)) {
+    if (!this._compositionHelper.keydown(ev)) {
       if (this.buffer.ybase !== this.buffer.ydisp) {
         this.scrollToBottom();
       }
@@ -1440,11 +1399,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     const result = this._evaluateKeyEscapeSequence(ev);
 
-    if (result.key === C0.DC3) { // XOFF
-      this.writeStopped = true;
-    } else if (result.key === C0.DC1) { // XON
-      this.writeStopped = false;
-    }
+    // if (result.key === C0.DC3) { // XOFF
+    //   this._writeStopped = true;
+    // } else if (result.key === C0.DC1) { // XON
+    //   this._writeStopped = false;
+    // }
 
     if (result.scrollLines) {
       this.scrollLines(result.scrollLines);
@@ -1838,7 +1797,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   protected _keyPress(ev: KeyboardEvent): boolean {
     let key;
 
-    if (this.customKeyEventHandler && this.customKeyEventHandler(ev) === false) {
+    if (this._customKeyEventHandler && this._customKeyEventHandler(ev) === false) {
       return false;
     }
 
@@ -1875,14 +1834,14 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param {string} data
    */
   public send(data: string): void {
-    if (!this.sendDataQueue) {
+    if (!this._sendDataQueue) {
       setTimeout(() => {
-        this.handler(this.sendDataQueue);
-        this.sendDataQueue = '';
+        this.handler(this._sendDataQueue);
+        this._sendDataQueue = '';
       }, 1);
     }
 
-    this.sendDataQueue += data;
+    this._sendDataQueue += data;
   }
 
   /**
@@ -1891,14 +1850,14 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    */
   public bell(): void {
     this.emit('bell');
-    if (this.soundBell()) {
+    if (this._soundBell()) {
       this.soundManager.playBellSound();
     }
 
-    if (this.visualBell()) {
+    if (this._visualBell()) {
       this.element.classList.add('visual-bell-active');
-      clearTimeout(this.visualBellTimer);
-      this.visualBellTimer = window.setTimeout(() => {
+      clearTimeout(this._visualBellTimer);
+      this._visualBellTimer = window.setTimeout(() => {
         this.element.classList.remove('visual-bell-active');
       }, 200);
     }
@@ -1909,8 +1868,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    */
   public log(text: string, data?: any): void {
     if (!this.options.debug) return;
-    if (!this.context.console || !this.context.console.log) return;
-    this.context.console.log(text, data);
+    if (!this._context.console || !this._context.console.log) return;
+    this._context.console.log(text, data);
   }
 
   /**
@@ -1918,8 +1877,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    */
   public error(text: string, data?: any): void {
     if (!this.options.debug) return;
-    if (!this.context.console || !this.context.console.error) return;
-    this.context.console.error(text, data);
+    if (!this._context.console || !this._context.console.error) return;
+    this._context.console.error(text, data);
   }
 
   /**
@@ -1963,8 +1922,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param {number} y The number of rows to refresh next.
    */
   public updateRange(y: number): void {
-    if (y < this.refreshStart) this.refreshStart = y;
-    if (y > this.refreshEnd) this.refreshEnd = y;
+    if (y < this._refreshStart) this._refreshStart = y;
+    if (y > this._refreshEnd) this._refreshEnd = y;
     // if (y > this.refreshEnd) {
     //   this.refreshEnd = y;
     //   if (y > this.rows - 1) {
@@ -1977,8 +1936,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Set the range of refreshing to the maximum value
    */
   public maxRange(): void {
-    this.refreshStart = 0;
-    this.refreshEnd = this.rows - 1;
+    this._refreshStart = 0;
+    this._refreshEnd = this.rows - 1;
   }
 
   /**
@@ -2116,7 +2075,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Emit the 'title' event and populate the given title.
    * @param {string} title The title to populate in the event.
    */
-  private handleTitle(title: string): void {
+  public handleTitle(title: string): void {
     /**
      * This event is emitted when the title of the terminal is changed
      * from inside the terminal. The parameter is the new title.
@@ -2171,11 +2130,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   public reset(): void {
     this.options.rows = this.rows;
     this.options.cols = this.cols;
-    const customKeyEventHandler = this.customKeyEventHandler;
-    const inputHandler = this.inputHandler;
-    this.setup();
-    this.customKeyEventHandler = customKeyEventHandler;
-    this.inputHandler = inputHandler;
+    const customKeyEventHandler = this._customKeyEventHandler;
+    const inputHandler = this._inputHandler;
+    this._setup();
+    this._customKeyEventHandler = customKeyEventHandler;
+    this._inputHandler = inputHandler;
     this.refresh(0, this.rows - 1);
     this.viewport.syncScrollArea();
   }
@@ -2184,7 +2143,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   /**
    * ESC H Tab Set (HTS is 0x88).
    */
-  private tabSet(): void {
+  public tabSet(): void {
     this.buffer.tabs[this.buffer.x] = true;
   }
 
@@ -2203,13 +2162,13 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     return matchColor_(r1, g1, b1);
   }
 
-  private visualBell(): boolean {
+  private _visualBell(): boolean {
     return false;
     // return this.options.bellStyle === 'visual' ||
     //     this.options.bellStyle === 'both';
   }
 
-  private soundBell(): boolean {
+  private _soundBell(): boolean {
     return this.options.bellStyle === 'sound';
     // return this.options.bellStyle === 'sound' ||
     //     this.options.bellStyle === 'both';

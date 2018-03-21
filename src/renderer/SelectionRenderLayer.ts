@@ -3,10 +3,8 @@
  * @license MIT
  */
 
-import { IBuffer, ICharMeasure, ITerminal } from '../Types';
-import { CHAR_DATA_ATTR_INDEX } from '../Buffer';
-import { GridCache } from './GridCache';
-import { FLAGS, IColorSet, IRenderDimensions } from './Types';
+import { ITerminal } from '../Types';
+import { IColorSet, IRenderDimensions } from './Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 
 export class SelectionRenderLayer extends BaseRenderLayer {
@@ -20,8 +18,8 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     };
   }
 
-  public resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void {
-    super.resize(terminal, dim, charSizeChanged);
+  public resize(terminal: ITerminal, dim: IRenderDimensions): void {
+    super.resize(terminal, dim);
     // Resizing the canvas discards the contents of the canvas so clear state
     this._state = {
       start: null,

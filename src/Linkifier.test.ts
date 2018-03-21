@@ -5,7 +5,7 @@
 
 import { assert } from 'chai';
 import { IMouseZoneManager, IMouseZone } from './input/Types';
-import { ILinkMatcher, LineData, ITerminal, ILinkifier, IBuffer, IBufferAccessor, IElementAccessor } from './Types';
+import { ILinkMatcher, LineData, IBufferAccessor, IElementAccessor } from './Types';
 import { Linkifier } from './Linkifier';
 import { MockBuffer } from './utils/TestUtils.test';
 import { CircularList } from './utils/CircularList';
@@ -59,17 +59,6 @@ describe('Linkifier', () => {
     terminal.buffer.lines.push(stringToRow(text));
   }
 
-  function assertLinkifiesEntireRow(uri: string, done: MochaDone): void {
-    addRow(uri);
-    linkifier.linkifyRows();
-    setTimeout(() => {
-      assert.equal(mouseZoneManager.zones[0].x1, 1);
-      assert.equal(mouseZoneManager.zones[0].x2, uri.length + 1);
-      assert.equal(mouseZoneManager.zones[0].y, terminal.buffer.lines.length);
-      done();
-    }, 0);
-  }
-
   function assertLinkifiesRow(rowText: string, linkMatcherRegex: RegExp, links: {x: number, length: number}[], done: MochaDone): void {
     addRow(rowText);
     linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
@@ -99,12 +88,6 @@ describe('Linkifier', () => {
   describe('after attachToDom', () => {
     beforeEach(() => {
       linkifier.attachToDom(mouseZoneManager);
-    });
-
-    describe('http links', () => {
-      it('should allow ~ character in URI path', (done) => {
-        assertLinkifiesEntireRow('http://foo.com/a~b#c~d?e~f', done);
-      });
     });
 
     describe('link matcher', () => {
@@ -200,19 +183,19 @@ describe('Linkifier', () => {
       it('should order the list from highest priority to lowest #1', () => {
         const aId = linkifier.registerLinkMatcher(/a/, () => {}, { priority: 1 });
         const bId = linkifier.registerLinkMatcher(/b/, () => {}, { priority: -1 });
-        assert.deepEqual(linkifier.linkMatchers.map(lm => lm.id), [aId, 0, bId]);
+        assert.deepEqual(linkifier.linkMatchers.map(lm => lm.id), [aId, bId]);
       });
 
       it('should order the list from highest priority to lowest #2', () => {
         const aId = linkifier.registerLinkMatcher(/a/, () => {}, { priority: -1 });
         const bId = linkifier.registerLinkMatcher(/b/, () => {}, { priority: 1 });
-        assert.deepEqual(linkifier.linkMatchers.map(lm => lm.id), [bId, 0, aId]);
+        assert.deepEqual(linkifier.linkMatchers.map(lm => lm.id), [bId, aId]);
       });
 
       it('should order items of equal priority in the order they are added', () => {
         const aId = linkifier.registerLinkMatcher(/a/, () => {}, { priority: 0 });
         const bId = linkifier.registerLinkMatcher(/b/, () => {}, { priority: 0 });
-        assert.deepEqual(linkifier.linkMatchers.map(lm => lm.id), [0, aId, bId]);
+        assert.deepEqual(linkifier.linkMatchers.map(lm => lm.id), [aId, bId]);
       });
     });
   });

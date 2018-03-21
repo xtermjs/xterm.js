@@ -3,11 +3,9 @@
  * @license MIT
  */
 
-import { ILinkHoverEvent, ITerminal, ILinkifierAccessor, IBuffer, ICharMeasure, LinkHoverEventTypes } from '../Types';
-import { CHAR_DATA_ATTR_INDEX } from '../Buffer';
-import { GridCache } from './GridCache';
-import { FLAGS, IColorSet, IRenderDimensions } from './Types';
-import { BaseRenderLayer, INVERTED_DEFAULT_COLOR } from './BaseRenderLayer';
+import { ILinkHoverEvent, ITerminal, ILinkifierAccessor, LinkHoverEventTypes } from '../Types';
+import { IColorSet, IRenderDimensions } from './Types';
+import { BaseRenderLayer } from './BaseRenderLayer';
 
 export class LinkRenderLayer extends BaseRenderLayer {
   private _state: ILinkHoverEvent = null;
@@ -18,8 +16,8 @@ export class LinkRenderLayer extends BaseRenderLayer {
     terminal.linkifier.on(LinkHoverEventTypes.LEAVE, (e: ILinkHoverEvent) => this._onLinkLeave(e));
   }
 
-  public resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void {
-    super.resize(terminal, dim, charSizeChanged);
+  public resize(terminal: ITerminal, dim: IRenderDimensions): void {
+    super.resize(terminal, dim);
     // Resizing the canvas discards the contents of the canvas so clear state
     this._state = null;
   }
