@@ -174,9 +174,11 @@ export interface ICharset {
 }
 
 export interface ILinkHoverEvent {
-  x: number;
-  y: number;
-  length: number;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  cols: number;
 }
 
 export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAccessor, ILinkifierAccessor {

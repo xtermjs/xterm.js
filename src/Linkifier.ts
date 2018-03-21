@@ -4,7 +4,7 @@
  */
 
 import { IMouseZoneManager } from './input/Types';
-import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, IBufferAccessor, ILinkifier, IElementAccessor } from './Types';
+import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, ILinkifier, ITerminal } from './Types';
 import { MouseZone } from './input/MouseZoneManager';
 import { EventEmitter } from './EventEmitter';
 
@@ -27,7 +27,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
   private _rowsToLinkify: {start: number, end: number};
 
   constructor(
-    protected _terminal: IBufferAccessor & IElementAccessor
+    protected _terminal: ITerminal
   ) {
     super();
     this._rowsToLinkify = {
@@ -157,11 +157,32 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @param rowIndex The index of the row to linkify.
    */
   private _linkifyRow(rowIndex: number): void {
-    const absoluteRowIndex = this._terminal.buffer.ydisp + rowIndex;
+    // Ensure the row exists
+    let absoluteRowIndex = this._terminal.buffer.ydisp + rowIndex;
     if (absoluteRowIndex >= this._terminal.buffer.lines.length) {
       return;
     }
-    const text = this._terminal.buffer.translateBufferLineToString(absoluteRowIndex, false);
+
+    if ((<any>this._terminal.buffer.lines.get(absoluteRowIndex)).isWrapped) {
+      // Only attempt to linkify rows that start in the viewport
+      if (rowIndex !== 0) {
+        return;
+      }
+      // If the first row is wrapped, backtrack to find the origin row and linkify that
+      do {
+        rowIndex--;
+        absoluteRowIndex--;
+      } while ((<any>this._terminal.buffer.lines.get(absoluteRowIndex)).isWrapped);
+    }
+
+    // Construct full unwrapped line text
+    let text = this._terminal.buffer.translateBufferLineToString(absoluteRowIndex, false);
+    let currentIndex = absoluteRowIndex + 1;
+    while (currentIndex < this._terminal.buffer.lines.length &&
+        (<any>this._terminal.buffer.lines.get(currentIndex)).isWrapped) {
+      text += this._terminal.buffer.translateBufferLineToString(currentIndex++, false);
+    }
+
     for (let i = 0; i < this._linkMatchers.length; i++) {
       this._doLinkifyRow(rowIndex, text, this._linkMatchers[i]);
     }
@@ -218,10 +239,20 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @param matcher The link matcher for the link.
    */
   private _addLink(x: number, y: number, uri: string, matcher: ILinkMatcher): void {
+    const x1 = x % this._terminal.cols;
+    const y1 = y + Math.floor(x / this._terminal.cols);
+    let x2 = (x1 + uri.length) % this._terminal.cols;
+    let y2 = y1 + Math.floor((x1 + uri.length) / this._terminal.cols);
+    if (x2 === 0) {
+      x2 = this._terminal.cols;
+      y2--;
+    }
+
     this._mouseZoneManager.add(new MouseZone(
-      x + 1,
-      x + 1 + uri.length,
-      y + 1,
+      x1 + 1,
+      y1 + 1,
+      x2 + 1,
+      y2 + 1,
       e => {
         if (matcher.handler) {
           return matcher.handler(e, uri);
@@ -229,17 +260,17 @@ export class Linkifier extends EventEmitter implements ILinkifier {
         window.open(uri, '_blank');
       },
       e => {
-        this.emit(LinkHoverEventTypes.HOVER, <ILinkHoverEvent>{ x, y, length: uri.length});
+        this.emit(LinkHoverEventTypes.HOVER, this._createLinkHoverEvent(x1, y1, x2, y2));
         this._terminal.element.classList.add('xterm-cursor-pointer');
       },
       e => {
-        this.emit(LinkHoverEventTypes.TOOLTIP, <ILinkHoverEvent>{ x, y, length: uri.length});
+        this.emit(LinkHoverEventTypes.TOOLTIP, this._createLinkHoverEvent(x1, y1, x2, y2));
         if (matcher.hoverTooltipCallback) {
           matcher.hoverTooltipCallback(e, uri);
         }
       },
       () => {
-        this.emit(LinkHoverEventTypes.LEAVE, <ILinkHoverEvent>{ x, y, length: uri.length});
+        this.emit(LinkHoverEventTypes.LEAVE, this._createLinkHoverEvent(x1, y1, x2, y2));
         this._terminal.element.classList.remove('xterm-cursor-pointer');
         if (matcher.hoverLeaveCallback) {
           matcher.hoverLeaveCallback();
@@ -252,5 +283,9 @@ export class Linkifier extends EventEmitter implements ILinkifier {
         return true;
       }
     ));
+  }
+
+  private _createLinkHoverEvent(x1: number, y1: number, x2: number, y2: number): ILinkHoverEvent {
+    return { x1, y1, x2, y2, cols: this._terminal.cols };
   }
 }
