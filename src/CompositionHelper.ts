@@ -132,7 +132,7 @@ export class CompositionHelper {
       // fire before the setTimeout executes.
       const currentCompositionPosition = {
         start: this._compositionPosition.start,
-        end: this._compositionPosition.end,
+        end: this._compositionPosition.end
       };
 
       // Since composition* events happen before the changes take place in the textarea on most

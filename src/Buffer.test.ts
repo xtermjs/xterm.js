@@ -188,4 +188,28 @@ describe('Buffer', () => {
       assert.equal(buffer.lines.maxLength, INIT_ROWS / 2);
     });
   });
+
+  describe('addMarker', () => {
+    it('should adjust a marker line when the buffer is trimmed', () => {
+      terminal.options.scrollback = 0;
+      buffer = new Buffer(terminal, true);
+      buffer.fillViewportRows();
+      const marker = buffer.addMarker(buffer.lines.length - 1);
+      assert.equal(marker.line, buffer.lines.length - 1);
+      buffer.lines.emit('trim', 1);
+      assert.equal(marker.line, buffer.lines.length - 2);
+    });
+    it('should dispose of a marker if it is trimmed off the buffer', () => {
+      terminal.options.scrollback = 0;
+      buffer = new Buffer(terminal, true);
+      buffer.fillViewportRows();
+      assert.equal(buffer.markers.length, 0);
+      const marker = buffer.addMarker(0);
+      assert.equal(marker.isDisposed, false);
+      assert.equal(buffer.markers.length, 1);
+      buffer.lines.emit('trim', 1);
+      assert.equal(marker.isDisposed, true);
+      assert.equal(buffer.markers.length, 0);
+    });
+  });
 });

@@ -23,6 +23,7 @@ declare module 'xterm' {
      * Warning: Enabling this option can reduce performances somewhat.
      */
     allowTransparency?: boolean;
+
     /**
      * A data uri of the sound to use for the bell (needs bellStyle = 'sound').
      */
@@ -55,7 +56,7 @@ declare module 'xterm' {
 
     /**
      * Whether to enable the rendering of bold text.
-     * 
+     *
      * @deprecated Use fontWeight and fontWeightBold instead.
      */
     enableBold?: boolean;
@@ -235,6 +236,12 @@ declare module 'xterm' {
     dispose(): void;
   }
 
+  export interface IMarker extends IDisposable {
+    readonly id: number;
+    readonly isDisposed: boolean;
+    readonly line: number;
+  }
+
   export interface ILocalizableStrings {
     blankLine: string;
     promptLabel: string;
@@ -264,6 +271,12 @@ declare module 'xterm' {
      * The number of columns in the terminal's viewport.
      */
     cols: number;
+
+    /**
+     * (EXPERIMENTAL) Get all markers registered against the buffer. If the alt
+     * buffer is active this will always return [].
+     */
+    markers: IMarker[];
 
     /**
      * Natural language strings that can be localized.
@@ -404,6 +417,13 @@ declare module 'xterm' {
     deregisterLinkMatcher(matcherId: number): void;
 
     /**
+     * (EXPERIMENTAL) Adds a marker to the normal buffer and returns it. If the
+     * alt buffer is active, undefined is returned.
+     * @param cursorYOffset The y position offset of the marker from the cursor.
+     */
+    addMarker(cursorYOffset: number): IMarker;
+
+    /**
      * Gets whether the terminal has an active selection.
      */
     hasSelection(): boolean;
@@ -423,6 +443,13 @@ declare module 'xterm' {
      * Selects all text within the terminal.
      */
     selectAll(): void;
+
+    /**
+     * Selects text in the buffer between 2 lines.
+     * @param start The 0-based line index to select from (inclusive).
+     * @param end The 0-based line index to select to (inclusive).
+     */
+    selectLines(start: number, end: number): void;
 
     /**
      * Destroys the terminal and detaches it from the DOM.
@@ -450,6 +477,12 @@ declare module 'xterm' {
      * Scrolls the display of the terminal to the bottom.
      */
     scrollToBottom(): void;
+
+    /**
+     * Scrolls to a line within the buffer.
+     * @param line The 0-based line index to scroll to.
+     */
+    scrollToLine(line: number): void;
 
     /**
      * Clear the entire buffer, making the prompt line the new first line.

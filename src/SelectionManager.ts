@@ -292,6 +292,16 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     this._terminal.emit('selection');
   }
 
+  public selectLines(start: number, end: number): void {
+    this._model.clearSelection();
+    start = Math.max(start, 0);
+    end = Math.min(end, this._terminal.buffer.lines.length - 1);
+    this._model.selectionStart = [0, start];
+    this._model.selectionEnd = [this._terminal.cols, end];
+    this.refresh();
+    this._terminal.emit('selection');
+  }
+
   /**
    * Handle the buffer being trimmed, adjust the selection position.
    * @param amount The amount the buffer is being trimmed.

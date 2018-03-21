@@ -277,7 +277,6 @@ export interface IBufferSet extends IEventEmitter {
 export interface ICircularList<T> extends IEventEmitter {
   length: number;
   maxLength: number;
-  forEach: (callbackfn: (value: T, index: number) => void) => void;
 
   get(index: number): T;
   set(index: number, value: T): void;

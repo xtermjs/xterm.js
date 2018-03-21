@@ -33,7 +33,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
       y: null,
       isFocused: null,
       style: null,
-      width: null,
+      width: null
     };
     this._cursorRenderers = {
       'bar': this._renderBarCursor.bind(this),
@@ -51,7 +51,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
       y: null,
       isFocused: null,
       style: null,
-      width: null,
+      width: null
     };
   }
 
@@ -183,7 +183,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
         y: null,
         isFocused: null,
         style: null,
-        width: null,
+        width: null
       };
     }
   }

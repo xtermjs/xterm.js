@@ -261,7 +261,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       },
       e => {
         this.emit(LinkHoverEventTypes.HOVER, this._createLinkHoverEvent(x1, y1, x2, y2));
-        this._terminal.element.style.cursor = 'pointer';
+        this._terminal.element.classList.add('xterm-cursor-pointer');
       },
       e => {
         this.emit(LinkHoverEventTypes.TOOLTIP, this._createLinkHoverEvent(x1, y1, x2, y2));
@@ -271,7 +271,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       },
       () => {
         this.emit(LinkHoverEventTypes.LEAVE, this._createLinkHoverEvent(x1, y1, x2, y2));
-        this._terminal.element.style.cursor = '';
+        this._terminal.element.classList.remove('xterm-cursor-pointer');
         if (matcher.hoverLeaveCallback) {
           matcher.hoverLeaveCallback();
         }

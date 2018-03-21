@@ -314,6 +314,45 @@ describe('SelectionManager', () => {
     });
   });
 
+  describe('selectLines', () => {
+    it('should select a single line', () => {
+      buffer.lines.length = 3;
+      buffer.lines.set(0, stringToRow('1'));
+      buffer.lines.set(1, stringToRow('2'));
+      buffer.lines.set(2, stringToRow('3'));
+      selectionManager.selectLines(1, 1);
+      assert.deepEqual(selectionManager.model.finalSelectionStart, [0, 1]);
+      assert.deepEqual(selectionManager.model.finalSelectionEnd, [terminal.cols, 1]);
+    });
+    it('should select multiple lines', () => {
+      buffer.lines.length = 5;
+      buffer.lines.set(0, stringToRow('1'));
+      buffer.lines.set(1, stringToRow('2'));
+      buffer.lines.set(2, stringToRow('3'));
+      buffer.lines.set(3, stringToRow('4'));
+      buffer.lines.set(4, stringToRow('5'));
+      selectionManager.selectLines(1, 3);
+      assert.deepEqual(selectionManager.model.finalSelectionStart, [0, 1]);
+      assert.deepEqual(selectionManager.model.finalSelectionEnd, [terminal.cols, 3]);
+    });
+    it('should select the to the start when requesting a negative row', () => {
+      buffer.lines.length = 2;
+      buffer.lines.set(0, stringToRow('1'));
+      buffer.lines.set(1, stringToRow('2'));
+      selectionManager.selectLines(-1, 0);
+      assert.deepEqual(selectionManager.model.finalSelectionStart, [0, 0]);
+      assert.deepEqual(selectionManager.model.finalSelectionEnd, [terminal.cols, 0]);
+    });
+    it('should select the to the end when requesting beyond the final row', () => {
+      buffer.lines.length = 2;
+      buffer.lines.set(0, stringToRow('1'));
+      buffer.lines.set(1, stringToRow('2'));
+      selectionManager.selectLines(1, 2);
+      assert.deepEqual(selectionManager.model.finalSelectionStart, [0, 1]);
+      assert.deepEqual(selectionManager.model.finalSelectionEnd, [terminal.cols, 1]);
+    });
+  });
+
   describe('hasSelection', () => {
     it('should return whether there is a selection', () => {
       selectionManager.model.selectionStart = [0, 0];

@@ -7,9 +7,19 @@ import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../rende
 import { LineData, IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ICircularList, ILinkifier, IMouseHelper, ILinkMatcherOptions, XtermListener } from '../Types';
 import { Buffer } from '../Buffer';
 import * as Browser from '../shared/utils/Browser';
-import { ITheme, IDisposable } from 'xterm';
+import { ITheme, IDisposable, IMarker } from 'xterm';
 
 export class MockTerminal implements ITerminal {
+  markers: IMarker[];
+  addMarker(cursorYOffset: number): IMarker {
+    throw new Error('Method not implemented.');
+  }
+  selectLines(start: number, end: number): void {
+    throw new Error('Method not implemented.');
+  }
+  scrollToLine(line: number): void {
+    throw new Error('Method not implemented.');
+  }
   static string: any;
   getOption(key: any): any {
     throw new Error('Method not implemented.');

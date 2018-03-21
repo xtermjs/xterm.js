@@ -58,15 +58,6 @@ export class CircularList<T> extends EventEmitter implements ICircularList<T> {
     this._length = newLength;
   }
 
-  public get forEach(): (callbackfn: (value: T, index: number) => void) => void {
-    return (callbackfn: (value: T, index: number) => void) => {
-      let length = this.length;
-      for (let i = 0; i < length; i++) {
-        callbackfn(this.get(i), i);
-      }
-    };
-  }
-
   /**
    * Gets the value at an index.
    *
