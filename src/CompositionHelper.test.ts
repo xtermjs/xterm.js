@@ -17,7 +17,7 @@ describe('CompositionHelper', () => {
     compositionView = {
       classList: {
         add: () => {},
-        remove: () => {},
+        remove: () => {}
       },
       getBoundingClientRect: () => {
         return { width: 0 };
