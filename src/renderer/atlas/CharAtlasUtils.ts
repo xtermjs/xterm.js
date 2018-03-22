@@ -31,7 +31,7 @@ export function generateConfig(scaledCharWidth: number, scaledCharHeight: number
 
 export function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean {
   for (let i = 0; i < a.colors.ansi.length; i++) {
-    if (a.colors.ansi[i] !== b.colors.ansi[i]) {
+    if (a.colors.ansi[i].rgba !== b.colors.ansi[i].rgba) {
       return false;
     }
   }

@@ -158,7 +158,7 @@ export class TextRenderLayer extends BaseRenderLayer {
         // Draw background
         if (bg < 256) {
           this._ctx.save();
-          this._ctx.fillStyle = (bg === INVERTED_DEFAULT_COLOR ? this._colors.foreground : this._colors.ansi[bg]);
+          this._ctx.fillStyle = (bg === INVERTED_DEFAULT_COLOR ? this._colors.foreground.css : this._colors.ansi[bg].css);
           this.fillCells(x, y, width, 1);
           this._ctx.restore();
         }
@@ -174,12 +174,12 @@ export class TextRenderLayer extends BaseRenderLayer {
 
         if (flags & FLAGS.UNDERLINE) {
           if (fg === INVERTED_DEFAULT_COLOR) {
-            this._ctx.fillStyle = this._colors.background;
+            this._ctx.fillStyle = this._colors.background.css;
           } else if (fg < 256) {
             // 256 color support
-            this._ctx.fillStyle = this._colors.ansi[fg];
+            this._ctx.fillStyle = this._colors.ansi[fg].css;
           } else {
-            this._ctx.fillStyle = this._colors.foreground;
+            this._ctx.fillStyle = this._colors.foreground.css;
           }
           this.fillBottomLineAtCells(x, y);
         }

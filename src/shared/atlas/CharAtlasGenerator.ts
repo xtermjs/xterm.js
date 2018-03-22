@@ -31,11 +31,11 @@ export function generateCharAtlas(context: Window, canvasFactory: (width: number
   );
   const ctx = canvas.getContext('2d', {alpha: config.allowTransparency});
 
-  ctx.fillStyle = config.colors.background;
+  ctx.fillStyle = config.colors.background.css;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.save();
-  ctx.fillStyle = config.colors.foreground;
+  ctx.fillStyle = config.colors.foreground.css;
   ctx.font = getFont(config.fontWeight, config);
   ctx.textBaseline = 'top';
 
@@ -75,7 +75,7 @@ export function generateCharAtlas(context: Window, canvasFactory: (width: number
       ctx.beginPath();
       ctx.rect(i * cellWidth, y, cellWidth, cellHeight);
       ctx.clip();
-      ctx.fillStyle = config.colors.ansi[colorIndex];
+      ctx.fillStyle = config.colors.ansi[colorIndex].css;
       ctx.fillText(String.fromCharCode(i), i * cellWidth, y);
       ctx.restore();
     }
@@ -100,9 +100,9 @@ export function generateCharAtlas(context: Window, canvasFactory: (width: number
   const charAtlasImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
   // Remove the background color from the image so characters may overlap
-  const r = parseInt(config.colors.background.substr(1, 2), 16);
-  const g = parseInt(config.colors.background.substr(3, 2), 16);
-  const b = parseInt(config.colors.background.substr(5, 2), 16);
+  const r = config.colors.background.rgba >>> 24;
+  const g = config.colors.background.rgba >>> 16 & 0xFF;
+  const b = config.colors.background.rgba >>> 8 & 0xFF;
   clearColor(charAtlasImageData, r, g, b);
 
   return context.createImageBitmap(charAtlasImageData);

@@ -622,7 +622,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     // Create main element container
     this.element = this._document.createElement('div');
-    this.element.dir = 'ltr';   //xterm.css assumes LTR
+    this.element.dir = 'ltr';   // xterm.css assumes LTR
     this.element.classList.add('terminal');
     this.element.classList.add('xterm');
     this.element.setAttribute('tabindex', '0');
@@ -2235,38 +2235,6 @@ function wasMondifierKeyOnlyEvent(ev: KeyboardEvent): boolean {
  * ANSI color code.
  */
 
-// Colors 0-15 + 16-255
-// Much thanks to TooTallNate for writing this.
-const vcolors: number[][] = (function(): number[][] {
-  const result = DEFAULT_ANSI_COLORS.map(c => {
-    c = c.substring(1);
-    return [
-      parseInt(c.substring(0, 2), 16),
-      parseInt(c.substring(2, 4), 16),
-      parseInt(c.substring(4, 6), 16)
-    ];
-  });
-  const r = [0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff];
-
-  // 16-231
-  for (let i = 0; i < 216; i++) {
-    result.push([
-      r[(i / 36) % 6 | 0],
-      r[(i / 6) % 6 | 0],
-      r[i % 6]
-    ]);
-  }
-
-  // 232-255 (grey)
-  let c: number;
-  for (let i = 0; i < 24; i++) {
-    c = 8 + i * 10;
-    result.push([c, c, c]);
-  }
-
-  return result;
-})();
-
 const matchColorCache: {[colorRGBHash: number]: number} = {};
 
 // http://stackoverflow.com/questions/1633828
@@ -2287,17 +2255,18 @@ function matchColor_(r1: number, g1: number, b1: number): number {
   let ldiff = Infinity;
   let li = -1;
   let i = 0;
-  let c: number[];
+  let c: number;
   let r2: number;
   let g2: number;
   let b2: number;
   let diff: number;
 
-  for (; i < vcolors.length; i++) {
-    c = vcolors[i];
-    r2 = c[0];
-    g2 = c[1];
-    b2 = c[2];
+  for (; i < DEFAULT_ANSI_COLORS.length; i++) {
+    c = DEFAULT_ANSI_COLORS[i].rgba;
+    r2 = c >>> 24;
+    g2 = c >>> 16 & 0xFF;
+    b2 = c >>> 8 & 0xFF;
+    // assume that alpha is 0xFF
 
     diff = matchColorDistance(r1, g1, b1, r2, g2, b2);
 
