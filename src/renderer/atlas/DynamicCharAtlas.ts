@@ -37,12 +37,8 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
   private _cacheCanvas: HTMLCanvasElement;
   private _cacheCtx: CanvasRenderingContext2D;
 
-  // A couple temporary canvases that glyphs are drawn to before being transfered to the atlas.
-  //
-  // We'll use the a ctx without alpha when possible, because that will preserve subpixel RGB
-  // anti-aliasing, and we'll fall back to a canvas with alpha when we have to.
+  // A temporary context that glyphs are drawn to before being transfered to the atlas.
   private _tmpCtx: CanvasRenderingContext2D;
-  private _tmpCtxWithAlpha: CanvasRenderingContext2D;
 
   // The number of characters stored in the atlas by width/height
   private _width: number;
@@ -58,16 +54,10 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     // set.
     this._cacheCtx = this._cacheCanvas.getContext('2d', {alpha: true});
 
-    // define a canvas/ctx for drawing glyphs with opaque backgrounds
     const tmpCanvas = document.createElement('canvas');
     tmpCanvas.width = this._config.scaledCharWidth;
     tmpCanvas.height = this._config.scaledCharHeight;
-    this._tmpCtx = tmpCanvas.getContext('2d', {alpha: false});
-    // and define a canvas/ctx for glyphs with transparent backgrounds
-    const tmpCanvasWithAlpha = document.createElement('canvas');
-    tmpCanvasWithAlpha.width = this._config.scaledCharWidth;
-    tmpCanvasWithAlpha.height = this._config.scaledCharHeight;
-    this._tmpCtxWithAlpha = tmpCanvasWithAlpha.getContext('2d', {alpha: true});
+    this._tmpCtx = tmpCanvas.getContext('2d', {alpha: this._config.allowTransparency});
 
     this._width = Math.floor(TEXTURE_WIDTH / this._config.scaledCharWidth);
     this._height = Math.floor(TEXTURE_HEIGHT / this._config.scaledCharHeight);
@@ -154,67 +144,61 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
   private _drawToCache(glyph: IGlyphIdentifier, index: number): IGlyphCacheValue {
 
     // draw the background
-    let backgroundColor = this._config.colors.background;
-    if (glyph.bg === INVERTED_DEFAULT_COLOR) {
+    let backgroundColor;
+    if (this._config.allowTransparency) {
+      // The background color might have some transparency, so we need to render it as fully
+      // transparent in the atlas. Otherwise we'd end up drawing the transparent background twice
+      // around the anti-aliased edges of the glyph, and it would look too dark.
+      backgroundColor = TRANSPARENT_COLOR;
+    } else if (glyph.bg === INVERTED_DEFAULT_COLOR) {
       backgroundColor = this._config.colors.foreground;
     } else if (glyph.bg < 256) {
       backgroundColor = this._config.colors.ansi[glyph.bg];
+    } else {
+      backgroundColor = this._config.colors.background;
     }
 
-    let ctx = this._tmpCtx;
-    let backgroundIsTransparent = false;
-    if ((backgroundColor.rgba & 0xFF) !== 0xFF) {
-      // The background color has some transparency, so we need to render it as fully transparent
-      // in the atlas. Otherwise we'd end up drawing the transparent background twice around the
-      // anti-aliased edges of the glyph, and it would look too dark.
-      //
-      // This has the side-effect of disabling RGB subpixel antialiasing, but most compositors will
-      // disable that anyways on a partially transparent background for similar reasons.
-      backgroundColor = TRANSPARENT_COLOR;
-      ctx = this._tmpCtxWithAlpha;
-      backgroundIsTransparent = true;
-    }
-    ctx.save();
+    this._tmpCtx.save();
 
     // Use a 'copy' composite operation to clear any existing glyph out of _tmpCtxWithAlpha, regardless of
     // transparency in backgroundColor
-    ctx.globalCompositeOperation = 'copy';
-    ctx.fillStyle = backgroundColor.css;
-    ctx.fillRect(0, 0, this._config.scaledCharWidth, this._config.scaledCharHeight);
-    ctx.globalCompositeOperation = 'source-over';
+    this._tmpCtx.globalCompositeOperation = 'copy';
+    this._tmpCtx.fillStyle = backgroundColor.css;
+    this._tmpCtx.fillRect(0, 0, this._config.scaledCharWidth, this._config.scaledCharHeight);
+    this._tmpCtx.globalCompositeOperation = 'source-over';
 
     // draw the foreground/glyph
-    ctx.font =
+    this._tmpCtx.font =
       `${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
     if (glyph.bold) {
-      ctx.font = `bold ${ctx.font}`;
+      this._tmpCtx.font = `bold ${this._tmpCtx.font}`;
     }
-    ctx.textBaseline = 'top';
+    this._tmpCtx.textBaseline = 'top';
 
     if (glyph.fg === INVERTED_DEFAULT_COLOR) {
-      ctx.fillStyle = this._config.colors.background.css;
+      this._tmpCtx.fillStyle = this._config.colors.background.css;
     } else if (glyph.fg < 256) {
       // 256 color support
-      ctx.fillStyle = this._config.colors.ansi[glyph.fg].css;
+      this._tmpCtx.fillStyle = this._config.colors.ansi[glyph.fg].css;
     } else {
-      ctx.fillStyle = this._config.colors.foreground.css;
+      this._tmpCtx.fillStyle = this._config.colors.foreground.css;
     }
 
     // Apply alpha to dim the character
     if (glyph.dim) {
-      ctx.globalAlpha = DIM_OPACITY;
+      this._tmpCtx.globalAlpha = DIM_OPACITY;
     }
     // Draw the character
-    ctx.fillText(glyph.char, 0, 0);
-    ctx.restore();
+    this._tmpCtx.fillText(glyph.char, 0, 0);
+    this._tmpCtx.restore();
 
     // clear the background from the character to avoid issues with drawing over the previous
     // character if it extends past it's bounds
-    const imageData = ctx.getImageData(
+    const imageData = this._tmpCtx.getImageData(
       0, 0, this._config.scaledCharWidth, this._config.scaledCharHeight,
     );
     let isEmpty = false;
-    if (!backgroundIsTransparent) {
+    if (!this._config.allowTransparency) {
       isEmpty = clearColor(imageData, backgroundColor);
     }
 
