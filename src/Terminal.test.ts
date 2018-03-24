@@ -20,12 +20,13 @@ class TestTerminal extends Terminal {
 
 describe('term.js addons', () => {
   let term: TestTerminal;
+  const termOptions = {
+    cols: INIT_COLS,
+    rows: INIT_ROWS
+  };
 
   beforeEach(() => {
-    term = new TestTerminal({
-      cols: INIT_COLS,
-      rows: INIT_ROWS
-    });
+    term = new TestTerminal(termOptions);
     term.refresh = () => {};
     (<any>term).renderer = new MockRenderer();
     term.viewport = new MockViewport();
@@ -41,6 +42,15 @@ describe('term.js addons', () => {
         remove: () => {}
       }
     };
+  });
+
+  it('should not mutate the options parameter', () => {
+    term.setOption('cols', 1000);
+
+    assert.deepEqual(termOptions, {
+      cols: INIT_COLS,
+      rows: INIT_ROWS
+    });
   });
 
   it('should apply addons with Terminal.applyAddon', () => {

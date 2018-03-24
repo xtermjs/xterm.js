@@ -40,6 +40,7 @@ import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './shared/utils/Browser';
 import * as Strings from './Strings';
 import { MouseHelper } from './utils/MouseHelper';
+import { clone } from './utils/Clone';
 import { DEFAULT_BELL_SOUND, SoundManager } from './SoundManager';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { MouseZoneManager } from './input/MouseZoneManager';
@@ -245,7 +246,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     options: ITerminalOptions = {}
   ) {
     super();
-    this.options = options;
+    this.options = clone(options);
     this._setup();
   }
 
