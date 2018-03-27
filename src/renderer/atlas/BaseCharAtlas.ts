@@ -26,6 +26,15 @@ export default abstract class BaseCharAtlas {
   protected _doWarmUp(): void { }
 
   /**
+   * Called when we start drawing a new frame.
+   *
+   * TODO: We rely on this getting called by TextRenderLayer. This should really be called by
+   * Renderer instead, but we need to make Renderer the source-of-truth for the char atlas, instead
+   * of BaseRenderLayer.
+   */
+  public beginFrame(): void { }
+
+  /**
    * May be called before warmUp finishes, however it is okay for the implementation to
    * do nothing and return false in that case.
    *

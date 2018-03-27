@@ -54,6 +54,8 @@ export class TextRenderLayer extends BaseRenderLayer {
       return;
     }
 
+    this._charAtlas.beginFrame();
+
     for (let y = startRow; y <= endRow; y++) {
       const row = y + terminal.buffer.ydisp;
       const line = terminal.buffer.lines.get(row);

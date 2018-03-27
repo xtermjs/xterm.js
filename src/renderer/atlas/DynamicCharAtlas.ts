@@ -19,6 +19,14 @@ const TRANSPARENT_COLOR = {
   rgba: 0,
 }
 
+// Drawing to the cache is expensive: If we have to draw more than this number of glyphs to the
+// cache in a single frame, give up on trying to cache anything else, and try to finish the current
+// frame ASAP.
+//
+// This helps to limit the amount of damage a program can do when it would otherwise thrash the
+// cache.
+const DRAW_TO_CACHE_LIMIT = 100;
+
 interface IGlyphCacheValue {
   index: number;
   isEmpty: boolean;
@@ -43,6 +51,8 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
   // The number of characters stored in the atlas by width/height
   private _width: number;
   private _height: number;
+
+  private _drawToCacheCount: number = 0;
 
   constructor(document: Document, private _config: ICharAtlasConfig) {
     super();
@@ -69,6 +79,10 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     // document.body.appendChild(this._cacheCanvas);
   }
 
+  public beginFrame(): void {
+    this._drawToCacheCount = 0;
+  }
+
   public draw(
     ctx: CanvasRenderingContext2D,
     glyph: IGlyphIdentifier,
@@ -80,7 +94,7 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     if (cacheValue != null) {
       this._drawFromCache(ctx, cacheValue, x, y);
       return true;
-    } else if (this._canCache(glyph)) {
+    } else if (this._canCache(glyph) && this._drawToCacheCount < DRAW_TO_CACHE_LIMIT) {
       let index;
       if (this._cacheMap.size < this._cacheMap.capacity) {
         index = this._cacheMap.size;
@@ -142,6 +156,7 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
   // TODO: We do this (or something similar) in multiple places. We should split this off
   // into a shared function.
   private _drawToCache(glyph: IGlyphIdentifier, index: number): IGlyphCacheValue {
+    this._drawToCacheCount++;
 
     // draw the background
     let backgroundColor;

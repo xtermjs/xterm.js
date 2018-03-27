@@ -20,7 +20,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _scaledCharLeft: number = 0;
   private _scaledCharTop: number = 0;
 
-  private _charAtlas: BaseCharAtlas;
+  protected _charAtlas: BaseCharAtlas;
 
   constructor(
     private _container: HTMLElement,
