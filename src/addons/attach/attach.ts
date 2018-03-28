@@ -42,24 +42,30 @@ export function attach(term: Terminal, socket: WebSocket, bidirectional: boolean
 
   addonTerminal.__getMessage = function(ev: MessageEvent): void {
     let str;
-    if (typeof ev.data === 'object') {
+
+    if (typeof ev.data == 'object') {
       if (!myTextDecoder) {
         myTextDecoder = new TextDecoder();
       }
       if (ev.data instanceof ArrayBuffer) {
-        str = myTextDecoder.decode( ev.data );
-        displayData( str );
+        str = myTextDecoder.decode(ev.data);
+        displayData(str);
       } else {
         let fileReader = new FileReader();
-        fileReader.onload = function() {
-          str = myTextDecoder.decode( this.result );
-          displayData( str );
-        };
-        fileReader.readAsArrayBuffer( ev.data );
+
+        fileReader.addEventListener('load', function() {
+          str = myTextDecoder.decode(this.result);
+          displayData(str);
+        });
+        fileReader.readAsArrayBuffer(ev.data);
       }
-    }    
+    } else if (typeof ev.data == 'string') {
+      displayData(ev.data)
+    } else {
+      throw Error(`Cannot handle "${typeof ev.data}" websocket message.`);
+    }
   };
-  
+
   /**
   * Push data to buffer or write it in the terminal.
   * This is used as a callback for FileReader.onload.
