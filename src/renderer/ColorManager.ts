@@ -87,7 +87,7 @@ export class ColorManager implements IColorManager {
   private _ctx: CanvasRenderingContext2D;
   private _litmusColor: CanvasGradient;
 
-  constructor(document: Document) {
+  constructor(document: Document, public allowTransparency: boolean) {
     const canvas = document.createElement('canvas');
     canvas.width = 1;
     canvas.height = 1;
@@ -112,9 +112,9 @@ export class ColorManager implements IColorManager {
   public setTheme(theme: ITheme): void {
     this.colors.foreground = this._parseColor(theme.foreground, DEFAULT_FOREGROUND);
     this.colors.background = this._parseColor(theme.background, DEFAULT_BACKGROUND);
-    this.colors.cursor = this._parseColor(theme.cursor, DEFAULT_CURSOR);
-    this.colors.cursorAccent = this._parseColor(theme.cursorAccent, DEFAULT_CURSOR_ACCENT);
-    this.colors.selection = this._parseColor(theme.selection, DEFAULT_SELECTION);
+    this.colors.cursor = this._parseColor(theme.cursor, DEFAULT_CURSOR, true);
+    this.colors.cursorAccent = this._parseColor(theme.cursorAccent, DEFAULT_CURSOR_ACCENT, true);
+    this.colors.selection = this._parseColor(theme.selection, DEFAULT_SELECTION, true);
     this.colors.ansi[0] = this._parseColor(theme.black, DEFAULT_ANSI_COLORS[0]);
     this.colors.ansi[1] = this._parseColor(theme.red, DEFAULT_ANSI_COLORS[1]);
     this.colors.ansi[2] = this._parseColor(theme.green, DEFAULT_ANSI_COLORS[2]);
@@ -133,7 +133,11 @@ export class ColorManager implements IColorManager {
     this.colors.ansi[15] = this._parseColor(theme.brightWhite, DEFAULT_ANSI_COLORS[15]);
   }
 
-  private _parseColor(css: string, fallback: IColor): IColor {
+  private _parseColor(
+    css: string,
+    fallback: IColor,
+    allowTransparency: boolean = this.allowTransparency
+  ): IColor {
     if (!css) {
       return fallback;
     }
@@ -151,9 +155,33 @@ export class ColorManager implements IColorManager {
     this._ctx.fillRect(0, 0, 1, 1);
     const data = this._ctx.getImageData(0, 0, 1, 1).data;
 
+    if (!allowTransparency && data[3] !== 0xFF) {
+      // Ideally we'd just ignore the alpha channel, but...
+      //
+      // Browsers may not give back exactly the same RGB values we put in, because most/all
+      // convert the color to a pre-multiplied representation. getImageData converts that back to
+      // a un-premultipled representation, but the precision loss may make the RGB channels unuable
+      // on their own.
+      //
+      // E.g. In Chrome #12345610 turns into #10305010, and in the extreme case, 0xFFFFFF00 turns
+      // into 0x00000000.
+      //
+      // "Note: Due to the lossy nature of converting to and from premultiplied alpha color values,
+      // pixels that have just been set using putImageData() might be returned to an equivalent
+      // getImageData() as different values."
+      // -- https://html.spec.whatwg.org/multipage/canvas.html#pixel-manipulation
+      //
+      // So let's just use the fallback color in this case instead.
+      console.warn(
+        `Color: ${css} is using transparency, but allowTransparency is false. ` +
+        `Using fallback ${fallback.css}.`
+      );
+      return fallback;
+    }
+
     return {
       css,
-      rgba: data[0] << 24 | data[1] << 16 | data[2] << 8 | data[3]
+      rgba: (data[0] << 24 | data[1] << 16 | data[2] << 8 | data[3]) >>> 0
     };
   }
 }

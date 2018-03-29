@@ -29,13 +29,14 @@ export class Renderer extends EventEmitter implements IRenderer {
 
   constructor(private _terminal: ITerminal, theme: ITheme) {
     super();
-    this.colorManager = new ColorManager(document);
+    const allowTransparency = this._terminal.options.allowTransparency;
+    this.colorManager = new ColorManager(document, allowTransparency);
     if (theme) {
       this.colorManager.setTheme(theme);
     }
 
     this._renderLayers = [
-      new TextRenderLayer(this._terminal.screenElement, 0, this.colorManager.colors, this._terminal.options.allowTransparency),
+      new TextRenderLayer(this._terminal.screenElement, 0, this.colorManager.colors, allowTransparency),
       new SelectionRenderLayer(this._terminal.screenElement, 1, this.colorManager.colors),
       new LinkRenderLayer(this._terminal.screenElement, 2, this.colorManager.colors, this._terminal),
       new CursorRenderLayer(this._terminal.screenElement, 3, this.colorManager.colors)
