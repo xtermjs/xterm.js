@@ -17,17 +17,6 @@ describe('ColorManager', () => {
     dom = new jsdom.JSDOM('');
     window = dom.window;
     document = window.document;
-    (<any>window).HTMLCanvasElement.prototype.getContext = () => ({
-      createLinearGradient(): any {
-        return null;
-      },
-
-      fillRect(): void { },
-
-      getImageData(): any {
-        return {data: [0, 0, 0, 0xFF]};
-      }
-    });
     cm = new ColorManager(document, false);
   });
 
@@ -308,6 +297,18 @@ describe('ColorManager', () => {
       assert.equal(cm.colors.background.css, '#0000FF');
       // FG reverts back to default
       assert.equal(cm.colors.foreground.css, '#ffffff');
+    });
+
+    it('should parse rgb colors', () => {
+      cm.setTheme({
+        background: '#123456',
+        foreground: 'rgb(111, 222, 33)'
+      });
+      assert.equal(cm.colors.background.rgba, 0x123456FF);
+      assert.equal(cm.colors.foreground.rgba >>> 24, 111);
+      assert.equal(cm.colors.foreground.rgba >>> 16 & 0xFF, 222);
+      assert.equal(cm.colors.foreground.rgba >>> 8 & 0xFF, 33);
+      assert.equal(cm.colors.foreground.rgba & 0xFF, 0xFF);
     });
   });
 });

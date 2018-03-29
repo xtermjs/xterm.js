@@ -185,7 +185,19 @@ Then open http://0.0.0.0:3000 in a web browser to access the demo.
 
 ### Linux or macOS
 
-First, be sure that a C++ compiler such as GCC-C++ or Clang is installed, then run the following commands in your terminal:
+First, be sure that a C++ compiler such as GCC-C++ or Clang is installed.
+
+Then, depending on your operating system and distribution, run one of the following:
+
+OS | Command
+----- | -----
+OS X | Using [Homebrew](https://brew.sh/):<br/>`brew install pkg-config cairo pango libpng jpeg giflib`<br/><br/>Using [MacPorts](https://www.macports.org/):<br/>`port install pkgconfig cairo pango libpng jpeg giflib`
+Ubuntu | `sudo apt-get install libcairo2-dev libjpeg-dev libpango1.0-dev libgif-dev build-essential g++`
+Fedora | `sudo yum install cairo cairo-devel cairomm-devel libjpeg-turbo-devel pango pango-devel pangomm pangomm-devel giflib-devel`
+
+*This table is borrowed from [the node-canvas documentation](https://github.com/Automattic/node-canvas/blob/master/Readme.md#compiling).*
+
+Then run the following commands in your terminal:
 
 ```
 npm install
@@ -197,7 +209,7 @@ Then open http://0.0.0.0:3000 in a web browser to access the demo.
 
 ### Windows
 
-First, ensure [node-gyp](https://github.com/nodejs/node-gyp) is installed and configured correctly, then run the following commands in your terminal:
+First, [follow the node-canvas setup instructions](https://github.com/Automattic/node-canvas/wiki/Installation---Windows), then run the following commands in your terminal:
 
 ```
 npm install
