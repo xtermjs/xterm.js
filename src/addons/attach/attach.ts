@@ -42,24 +42,44 @@ export function attach(term: Terminal, socket: WebSocket, bidirectional: boolean
 
   addonTerminal.__getMessage = function(ev: MessageEvent): void {
     let str;
-    if (typeof ev.data === 'object') {
-      if (ev.data instanceof ArrayBuffer) {
-          if (!myTextDecoder) {
-            myTextDecoder = new TextDecoder();
-          }
 
-          str = myTextDecoder.decode( ev.data );
-      } else {
-        throw 'TODO: handle Blob?';
+    if (typeof ev.data == 'object') {
+      if (!myTextDecoder) {
+        myTextDecoder = new TextDecoder();
       }
-    }
+      if (ev.data instanceof ArrayBuffer) {
+        str = myTextDecoder.decode(ev.data);
+        displayData(str);
+      } else {
+        let fileReader = new FileReader();
 
-    if (buffered) {
-      addonTerminal.__pushToBuffer(str || ev.data);
+        fileReader.addEventListener('load', function() {
+          str = myTextDecoder.decode(this.result);
+          displayData(str);
+        });
+        fileReader.readAsArrayBuffer(ev.data);
+      }
+    } else if (typeof ev.data == 'string') {
+      displayData(ev.data)
     } else {
-      addonTerminal.write(str || ev.data);
+      throw Error(`Cannot handle "${typeof ev.data}" websocket message.`);
     }
   };
+
+  /**
+  * Push data to buffer or write it in the terminal.
+  * This is used as a callback for FileReader.onload.
+  *
+  * @param str String decoded by FileReader.
+  * @param data The data of the EventMessage.
+  */
+  function displayData(str?: string, data?: string) {
+    if (buffered) {
+      addonTerminal.__pushToBuffer(str || data);
+    } else {
+      addonTerminal.write(str || data);
+    }
+  }
 
   addonTerminal.__sendData = (data: string) => {
     if (socket.readyState !== 1) {
