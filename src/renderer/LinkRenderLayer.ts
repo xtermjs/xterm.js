@@ -39,7 +39,7 @@ export class LinkRenderLayer extends BaseRenderLayer {
   }
 
   private _onLinkHover(e: ILinkHoverEvent): void {
-    this._ctx.fillStyle = this._colors.foreground;
+    this._ctx.fillStyle = this._colors.foreground.css;
     if (e.y1 === e.y2) {
       // Single line link
       this.fillBottomLineAtCells(e.x1, e.y1, e.x2 - e.x1);

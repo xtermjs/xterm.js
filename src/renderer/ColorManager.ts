@@ -3,58 +3,75 @@
  * @license MIT
  */
 
-import { IColorSet, IColorManager } from './Types';
+import { IColorManager } from './Types';
+import { IColor, IColorSet } from '../shared/Types';
 import { ITheme } from 'xterm';
 
-const DEFAULT_FOREGROUND = '#ffffff';
-const DEFAULT_BACKGROUND = '#000000';
-const DEFAULT_CURSOR = '#ffffff';
-const DEFAULT_CURSOR_ACCENT = '#000000';
-const DEFAULT_SELECTION = 'rgba(255, 255, 255, 0.3)';
-export const DEFAULT_ANSI_COLORS = [
-  // dark:
-  '#2e3436',
-  '#cc0000',
-  '#4e9a06',
-  '#c4a000',
-  '#3465a4',
-  '#75507b',
-  '#06989a',
-  '#d3d7cf',
-  // bright:
-  '#555753',
-  '#ef2929',
-  '#8ae234',
-  '#fce94f',
-  '#729fcf',
-  '#ad7fa8',
-  '#34e2e2',
-  '#eeeeec'
-];
+const DEFAULT_FOREGROUND = fromHex('#ffffff');
+const DEFAULT_BACKGROUND = fromHex('#000000');
+const DEFAULT_CURSOR = fromHex('#ffffff');
+const DEFAULT_CURSOR_ACCENT = fromHex('#000000');
+const DEFAULT_SELECTION = {
+  css: 'rgba(255, 255, 255, 0.3)',
+  rgba: 0xFFFFFF77
+};
 
-/**
- * Fills an existing 16 length string with the remaining 240 ANSI colors.
- * @param first16Colors The first 16 ANSI colors.
- */
-function generate256Colors(first16Colors: string[]): string[] {
-  let colors = first16Colors.slice();
+// An IIFE to generate DEFAULT_ANSI_COLORS. Do not mutate DEFAULT_ANSI_COLORS, instead make a copy
+// and mutate that.
+export const DEFAULT_ANSI_COLORS = (() => {
+  const colors = [
+    // dark:
+    fromHex('#2e3436'),
+    fromHex('#cc0000'),
+    fromHex('#4e9a06'),
+    fromHex('#c4a000'),
+    fromHex('#3465a4'),
+    fromHex('#75507b'),
+    fromHex('#06989a'),
+    fromHex('#d3d7cf'),
+    // bright:
+    fromHex('#555753'),
+    fromHex('#ef2929'),
+    fromHex('#8ae234'),
+    fromHex('#fce94f'),
+    fromHex('#729fcf'),
+    fromHex('#ad7fa8'),
+    fromHex('#34e2e2'),
+    fromHex('#eeeeec')
+  ];
 
+  // Fill in the remaining 240 ANSI colors.
   // Generate colors (16-231)
   let v = [0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff];
   for (let i = 0; i < 216; i++) {
-    const r = toPaddedHex(v[(i / 36) % 6 | 0]);
-    const g = toPaddedHex(v[(i / 6) % 6 | 0]);
-    const b = toPaddedHex(v[i % 6]);
-    colors.push(`#${r}${g}${b}`);
+    const r = v[(i / 36) % 6 | 0];
+    const g = v[(i / 6) % 6 | 0];
+    const b = v[i % 6];
+    colors.push({
+      css: `#${toPaddedHex(r)}${toPaddedHex(g)}${toPaddedHex(b)}`,
+      // Use >>> 0 to force a conversion to an unsigned int
+      rgba: ((r << 24) | (g << 16) | (b << 8) | 0xFF) >>> 0
+    });
   }
 
   // Generate greys (232-255)
   for (let i = 0; i < 24; i++) {
-    const c = toPaddedHex(8 + i * 10);
-    colors.push(`#${c}${c}${c}`);
+    const c = 8 + i * 10;
+    const ch = toPaddedHex(c);
+    colors.push({
+      css: `#${ch}${ch}${ch}`,
+      rgba: ((c << 24) | (c << 16) | (c << 8) | 0xFF) >>> 0
+    });
   }
 
   return colors;
+})();
+
+function fromHex(css: string): IColor {
+  return {
+    css,
+    rgba: parseInt(css.slice(1), 16) << 8 | 0xFF
+  };
 }
 
 function toPaddedHex(c: number): string {
@@ -67,17 +84,23 @@ function toPaddedHex(c: number): string {
  */
 export class ColorManager implements IColorManager {
   public colors: IColorSet;
-  private _document: Document;
+  private _ctx: CanvasRenderingContext2D;
+  private _litmusColor: CanvasGradient;
 
-  constructor(document: Document) {
-    this._document = document;
+  constructor(document: Document, public allowTransparency: boolean) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = 1;
+    this._ctx = canvas.getContext('2d');
+    this._ctx.globalCompositeOperation = 'copy';
+    this._litmusColor = this._ctx.createLinearGradient(0, 0, 1, 1);
     this.colors = {
       foreground: DEFAULT_FOREGROUND,
       background: DEFAULT_BACKGROUND,
       cursor: DEFAULT_CURSOR,
       cursorAccent: DEFAULT_CURSOR_ACCENT,
       selection: DEFAULT_SELECTION,
-      ansi: generate256Colors(DEFAULT_ANSI_COLORS)
+      ansi: DEFAULT_ANSI_COLORS.slice()
     };
   }
 
@@ -87,54 +110,78 @@ export class ColorManager implements IColorManager {
    * colors will be used where colors are not defined.
    */
   public setTheme(theme: ITheme): void {
-    this.colors.foreground = this._validateColor(theme.foreground, DEFAULT_FOREGROUND);
-    this.colors.background = this._validateColor(theme.background, DEFAULT_BACKGROUND);
-    this.colors.cursor = this._validateColor(theme.cursor, DEFAULT_CURSOR);
-    this.colors.cursorAccent = this._validateColor(theme.cursorAccent, DEFAULT_CURSOR_ACCENT);
-    this.colors.selection = this._validateColor(theme.selection, DEFAULT_SELECTION);
-    this.colors.ansi[0] = this._validateColor(theme.black, DEFAULT_ANSI_COLORS[0]);
-    this.colors.ansi[1] = this._validateColor(theme.red, DEFAULT_ANSI_COLORS[1]);
-    this.colors.ansi[2] = this._validateColor(theme.green, DEFAULT_ANSI_COLORS[2]);
-    this.colors.ansi[3] = this._validateColor(theme.yellow, DEFAULT_ANSI_COLORS[3]);
-    this.colors.ansi[4] = this._validateColor(theme.blue, DEFAULT_ANSI_COLORS[4]);
-    this.colors.ansi[5] = this._validateColor(theme.magenta, DEFAULT_ANSI_COLORS[5]);
-    this.colors.ansi[6] = this._validateColor(theme.cyan, DEFAULT_ANSI_COLORS[6]);
-    this.colors.ansi[7] = this._validateColor(theme.white, DEFAULT_ANSI_COLORS[7]);
-    this.colors.ansi[8] = this._validateColor(theme.brightBlack, DEFAULT_ANSI_COLORS[8]);
-    this.colors.ansi[9] = this._validateColor(theme.brightRed, DEFAULT_ANSI_COLORS[9]);
-    this.colors.ansi[10] = this._validateColor(theme.brightGreen, DEFAULT_ANSI_COLORS[10]);
-    this.colors.ansi[11] = this._validateColor(theme.brightYellow, DEFAULT_ANSI_COLORS[11]);
-    this.colors.ansi[12] = this._validateColor(theme.brightBlue, DEFAULT_ANSI_COLORS[12]);
-    this.colors.ansi[13] = this._validateColor(theme.brightMagenta, DEFAULT_ANSI_COLORS[13]);
-    this.colors.ansi[14] = this._validateColor(theme.brightCyan, DEFAULT_ANSI_COLORS[14]);
-    this.colors.ansi[15] = this._validateColor(theme.brightWhite, DEFAULT_ANSI_COLORS[15]);
+    this.colors.foreground = this._parseColor(theme.foreground, DEFAULT_FOREGROUND);
+    this.colors.background = this._parseColor(theme.background, DEFAULT_BACKGROUND);
+    this.colors.cursor = this._parseColor(theme.cursor, DEFAULT_CURSOR, true);
+    this.colors.cursorAccent = this._parseColor(theme.cursorAccent, DEFAULT_CURSOR_ACCENT, true);
+    this.colors.selection = this._parseColor(theme.selection, DEFAULT_SELECTION, true);
+    this.colors.ansi[0] = this._parseColor(theme.black, DEFAULT_ANSI_COLORS[0]);
+    this.colors.ansi[1] = this._parseColor(theme.red, DEFAULT_ANSI_COLORS[1]);
+    this.colors.ansi[2] = this._parseColor(theme.green, DEFAULT_ANSI_COLORS[2]);
+    this.colors.ansi[3] = this._parseColor(theme.yellow, DEFAULT_ANSI_COLORS[3]);
+    this.colors.ansi[4] = this._parseColor(theme.blue, DEFAULT_ANSI_COLORS[4]);
+    this.colors.ansi[5] = this._parseColor(theme.magenta, DEFAULT_ANSI_COLORS[5]);
+    this.colors.ansi[6] = this._parseColor(theme.cyan, DEFAULT_ANSI_COLORS[6]);
+    this.colors.ansi[7] = this._parseColor(theme.white, DEFAULT_ANSI_COLORS[7]);
+    this.colors.ansi[8] = this._parseColor(theme.brightBlack, DEFAULT_ANSI_COLORS[8]);
+    this.colors.ansi[9] = this._parseColor(theme.brightRed, DEFAULT_ANSI_COLORS[9]);
+    this.colors.ansi[10] = this._parseColor(theme.brightGreen, DEFAULT_ANSI_COLORS[10]);
+    this.colors.ansi[11] = this._parseColor(theme.brightYellow, DEFAULT_ANSI_COLORS[11]);
+    this.colors.ansi[12] = this._parseColor(theme.brightBlue, DEFAULT_ANSI_COLORS[12]);
+    this.colors.ansi[13] = this._parseColor(theme.brightMagenta, DEFAULT_ANSI_COLORS[13]);
+    this.colors.ansi[14] = this._parseColor(theme.brightCyan, DEFAULT_ANSI_COLORS[14]);
+    this.colors.ansi[15] = this._parseColor(theme.brightWhite, DEFAULT_ANSI_COLORS[15]);
   }
 
-  private _validateColor(color: string, fallback: string): string {
-    if (!color) {
+  private _parseColor(
+    css: string,
+    fallback: IColor,
+    allowTransparency: boolean = this.allowTransparency
+  ): IColor {
+    if (!css) {
       return fallback;
     }
 
-    const isColorValid = this._isColorValid(color);
-
-    if (!isColorValid) {
-      console.warn(`Color: ${color} is invalid using fallback ${fallback}`);
+    // If parsing the value results in failure, then it must be ignored, and the attribute must
+    // retain its previous value.
+    // -- https://html.spec.whatwg.org/multipage/canvas.html#fill-and-stroke-styles
+    this._ctx.fillStyle = this._litmusColor;
+    this._ctx.fillStyle = css;
+    if (typeof this._ctx.fillStyle !== 'string') {
+      console.warn(`Color: ${css} is invalid using fallback ${fallback.css}`);
+      return fallback;
     }
 
-    return isColorValid ? color : fallback;
-  }
+    this._ctx.fillRect(0, 0, 1, 1);
+    const data = this._ctx.getImageData(0, 0, 1, 1).data;
 
-  private _isColorValid(color: string): boolean {
-    const litmus = 'red';
-    const d = this._document.createElement('div');
-    d.style.color = litmus;
-    d.style.color = color;
-
-    // Element's style.color will be reverted to litmus or set to '' if an invalid color is given
-    if (color !== litmus && (d.style.color === litmus || d.style.color === '')) {
-      return false;
+    if (!allowTransparency && data[3] !== 0xFF) {
+      // Ideally we'd just ignore the alpha channel, but...
+      //
+      // Browsers may not give back exactly the same RGB values we put in, because most/all
+      // convert the color to a pre-multiplied representation. getImageData converts that back to
+      // a un-premultipled representation, but the precision loss may make the RGB channels unuable
+      // on their own.
+      //
+      // E.g. In Chrome #12345610 turns into #10305010, and in the extreme case, 0xFFFFFF00 turns
+      // into 0x00000000.
+      //
+      // "Note: Due to the lossy nature of converting to and from premultiplied alpha color values,
+      // pixels that have just been set using putImageData() might be returned to an equivalent
+      // getImageData() as different values."
+      // -- https://html.spec.whatwg.org/multipage/canvas.html#pixel-manipulation
+      //
+      // So let's just use the fallback color in this case instead.
+      console.warn(
+        `Color: ${css} is using transparency, but allowTransparency is false. ` +
+        `Using fallback ${fallback.css}.`
+      );
+      return fallback;
     }
 
-    return true;
+    return {
+      css,
+      rgba: (data[0] << 24 | data[1] << 16 | data[2] << 8 | data[3]) >>> 0
+    };
   }
 }

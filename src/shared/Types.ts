@@ -3,11 +3,16 @@
  * @license MIT
  */
 
+export interface IColor {
+  css: string;
+  rgba: number; // 32-bit int with rgba in each byte
+}
+
 export interface IColorSet {
-  foreground: string;
-  background: string;
-  cursor: string;
-  cursorAccent: string;
-  selection: string;
-  ansi: string[];
+  foreground: IColor;
+  background: IColor;
+  cursor: IColor;
+  cursorAccent: IColor;
+  selection: IColor;
+  ansi: IColor[];
 }

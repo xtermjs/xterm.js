@@ -179,7 +179,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (this._alpha) {
       this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
     } else {
-      this._ctx.fillStyle = this._colors.background;
+      this._ctx.fillStyle = this._colors.background.css;
       this._ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);
     }
   }
@@ -199,7 +199,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
           width * this._scaledCellWidth,
           height * this._scaledCellHeight);
     } else {
-      this._ctx.fillStyle = this._colors.background;
+      this._ctx.fillStyle = this._colors.background.css;
       this._ctx.fillRect(
           x * this._scaledCellWidth,
           y * this._scaledCellHeight,
@@ -311,12 +311,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.textBaseline = 'top';
 
     if (fg === INVERTED_DEFAULT_COLOR) {
-      this._ctx.fillStyle = this._colors.background;
+      this._ctx.fillStyle = this._colors.background.css;
     } else if (fg < 256) {
       // 256 color support
-      this._ctx.fillStyle = this._colors.ansi[fg];
+      this._ctx.fillStyle = this._colors.ansi[fg].css;
     } else {
-      this._ctx.fillStyle = this._colors.foreground;
+      this._ctx.fillStyle = this._colors.foreground.css;
     }
 
     this._clipRow(terminal, y);
