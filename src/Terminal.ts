@@ -1252,6 +1252,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param {string} data The text to write to the terminal.
    */
   public write(data: string): void {
+    // Ignore falsy data values (including the empty string)
+    if (!data) {
+      return;
+    }
+
     this.writeBuffer.push(data);
 
     // Send XOFF to pause the pty process if the write buffer becomes too large so
