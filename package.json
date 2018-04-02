@@ -78,7 +78,7 @@
     "start": "node demo/app",
     "prestart-zmodem": "npm run build",
     "start-zmodem": "node build/addons/zmodem/demo/app",
-    "lint": "tslint src/*.ts src/**/*.ts",
+    "lint": "tslint src/*.ts src/**/*.ts src/addons/**/*.ts",
     "test": "gulp test",
     "build:docs": "jsdoc -c jsdoc.json",
     "tsc": "tsc",
