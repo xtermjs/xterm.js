@@ -43,7 +43,7 @@ export function attach(term: Terminal, socket: WebSocket, bidirectional: boolean
   addonTerminal.__getMessage = function(ev: MessageEvent): void {
     let str;
 
-    if (typeof ev.data == 'object') {
+    if (typeof ev.data === 'object') {
       if (!myTextDecoder) {
         myTextDecoder = new TextDecoder();
       }
@@ -53,14 +53,14 @@ export function attach(term: Terminal, socket: WebSocket, bidirectional: boolean
       } else {
         let fileReader = new FileReader();
 
-        fileReader.addEventListener('load', function() {
+        fileReader.addEventListener('load', () => {
           str = myTextDecoder.decode(this.result);
           displayData(str);
         });
         fileReader.readAsArrayBuffer(ev.data);
       }
-    } else if (typeof ev.data == 'string') {
-      displayData(ev.data)
+    } else if (typeof ev.data === 'string') {
+      displayData(ev.data);
     } else {
       throw Error(`Cannot handle "${typeof ev.data}" websocket message.`);
     }
@@ -73,7 +73,7 @@ export function attach(term: Terminal, socket: WebSocket, bidirectional: boolean
   * @param str String decoded by FileReader.
   * @param data The data of the EventMessage.
   */
-  function displayData(str?: string, data?: string) {
+  function displayData(str?: string, data?: string): void {
     if (buffered) {
       addonTerminal.__pushToBuffer(str || data);
     } else {
