@@ -120,8 +120,6 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   tabStopWidth: 8,
   theme: null,
   rightClickSelectsWord: Browser.isMac
-  // programFeatures: false,
-  // focusKeys: false,
 };
 
 export class Terminal extends EventEmitter implements ITerminal, IInputHandlingTerminal {
