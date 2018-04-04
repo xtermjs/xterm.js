@@ -1,0 +1,5 @@
+{
+  "name": "xterm.webfont",
+  "main": "webfont.js",
+  "private": true
+}
