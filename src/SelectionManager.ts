@@ -180,16 +180,16 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     // Get first row
     const startRowEndCol = start[1] === end[1] ? end[0] : null;
     let result: string[] = [];
-    result.push(this._buffer.translateBufferLineToString(start[1], true, start[0], startRowEndCol));
+    const isNextLineWrapped = end[1] > start[1] && (<any>this._buffer.lines.get(start[1] + 1)).isWrapped;
+    result.push(this._buffer.translateBufferLineToString(start[1], !isNextLineWrapped, start[0], startRowEndCol));
 
     // Get middle rows
     for (let i = start[1] + 1; i <= end[1] - 1; i++) {
       const bufferLine = this._buffer.lines.get(i);
-      const lineText = this._buffer.translateBufferLineToString(i, true);
       if ((<any>bufferLine).isWrapped) {
-        result[result.length - 1] += lineText;
+        result[result.length - 1] += this._buffer.translateBufferLineToString(i, false);
       } else {
-        result.push(lineText);
+        result.push(this._buffer.translateBufferLineToString(i, true));
       }
     }
 
