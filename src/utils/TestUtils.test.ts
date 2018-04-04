@@ -63,6 +63,9 @@ export class MockTerminal implements ITerminal {
   selectAll(): void {
     throw new Error('Method not implemented.');
   }
+  dispose(): void {
+    throw new Error('Method not implemented.');
+  }
   destroy(): void {
     throw new Error('Method not implemented.');
   }
