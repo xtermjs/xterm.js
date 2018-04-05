@@ -7,6 +7,7 @@ var term,
     pid;
 
 Terminal.applyAddon(fit);
+Terminal.applyAddon(attach);
 Terminal.applyAddon(zmodem);
 Terminal.applyAddon(search);
 
