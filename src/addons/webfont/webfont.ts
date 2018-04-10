@@ -12,8 +12,9 @@ export function apply(terminalConstructor: typeof Terminal): void {
     const regular = new FontFaceObserver(this.options.fontFamily).load();
     const bold = new FontFaceObserver(this.options.fontFamily, { weight: 'bold' }).load();
 
-    regular.constructor.all([regular, bold]).then(() => {
+    return regular.constructor.all([regular, bold]).then(() => {
       this.open(element);
+      return this;
     });
   };
 }
