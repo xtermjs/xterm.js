@@ -46,7 +46,6 @@
     "@types/text-encoding": "0.0.32",
     "browserify": "^13.3.0",
     "chai": "3.5.0",
-    "docdash": "0.4.0",
     "express": "4.13.4",
     "express-ws": "2.0.0-rc.1",
     "fs-extra": "^1.0.0",
