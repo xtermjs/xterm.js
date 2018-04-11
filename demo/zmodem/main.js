@@ -6,6 +6,11 @@ var term,
     socket,
     pid;
 
+Terminal.applyAddon(fit);
+Terminal.applyAddon(attach);
+Terminal.applyAddon(zmodem);
+Terminal.applyAddon(search);
+
 var terminalContainer = document.getElementById('terminal-container'),
     actionElements = {
       findNext: document.querySelector('#find-next'),

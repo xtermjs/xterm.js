@@ -76,8 +76,7 @@
   },
   "scripts": {
     "start": "node demo/app",
-    "prestart-zmodem": "npm run build",
-    "start-zmodem": "node build/addons/zmodem/demo/app",
+    "start-zmodem": "node demo/zmodem/app",
     "lint": "tslint src/*.ts src/**/*.ts",
     "test": "gulp test",
     "build:docs": "jsdoc -c jsdoc.json",
