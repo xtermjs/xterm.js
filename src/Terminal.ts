@@ -1927,7 +1927,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     if (x === this.cols && y === this.rows) {
       // Check if we still need to measure the char size (fixes #785).
-      if (!this.charMeasure.width || !this.charMeasure.height) {
+      if (this.charMeasure && (!this.charMeasure.width || !this.charMeasure.height)) {
         this.charMeasure.measure(this.options);
       }
       return;
