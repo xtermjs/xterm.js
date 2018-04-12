@@ -15,6 +15,7 @@ build/
 .vscode/
 .DS_Store
 fixtures/typings-test/*.js
+package-lock.json
 
 # Directories needed for code coverage
 /coverage/
