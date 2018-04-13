@@ -79,11 +79,13 @@
     "start-zmodem": "node demo/zmodem/app",
     "lint": "tslint src/*.ts src/**/*.ts",
     "test": "npm-run-all mocha lint",
+    "test-debug": "node --inspect-brk node_modules/.bin/gulp test",
     "mocha": "gulp test",
     "build:docs": "jsdoc -c jsdoc.json",
     "tsc": "tsc",
     "build": "gulp build",
     "prepublish": "npm run build",
+    "coverage": "gulp mocha-coverage",
     "coveralls": "gulp coveralls",
     "webpack": "gulp webpack",
     "watch": "gulp watch"
