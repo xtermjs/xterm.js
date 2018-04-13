@@ -80,6 +80,7 @@
     "lint": "tslint src/*.ts src/**/*.ts",
     "test": "npm-run-all mocha lint",
     "test-debug": "node --inspect-brk node_modules/.bin/gulp test",
+    "test-suite": "gulp mocha-suite --test",
     "mocha": "gulp test",
     "build:docs": "jsdoc -c jsdoc.json",
     "tsc": "tsc",

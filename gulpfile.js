@@ -163,10 +163,10 @@ gulp.task('mocha-coverage', ['instrument-test'], function () {
 });
 
 /**
- * Run single test file by file name(without file extension). Example of the command:
- * gulp mocha-test --test InputHandler.test
+ * Run single test suite (file) by file name (without file extension). Example of the command:
+ * gulp mocha-suite --test InputHandler.test
  */
-gulp.task('mocha-test', [], function () {
+gulp.task('mocha-suite', [], function () {
   let testName = util.env.test;
   util.log("Run test by Name: " + testName);
   return gulp.src([`${outDir}/${testName}.js`, `${outDir}/**/${testName}.js`], {read: false})
