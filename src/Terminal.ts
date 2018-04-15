@@ -449,8 +449,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       case 'fontFamily':
       case 'fontSize':
         // When the font changes the size of the cells may change which requires a renderer clear
-        this.renderer.clear();
-        this.charMeasure.measure(this.options);
+        if (this.renderer) {
+          this.renderer.clear();
+          this.charMeasure.measure(this.options);
+        }
         break;
       case 'enableBold':
       case 'letterSpacing':
@@ -458,12 +460,16 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       case 'fontWeight':
       case 'fontWeightBold':
         // When the font changes the size of the cells may change which requires a renderer clear
-        this.renderer.clear();
-        this.renderer.onResize(this.cols, this.rows);
-        this.refresh(0, this.rows - 1);
+        if (this.renderer) {
+          this.renderer.clear();
+          this.renderer.onResize(this.cols, this.rows);
+          this.refresh(0, this.rows - 1);
+        }
       case 'scrollback':
         this.buffers.resize(this.cols, this.rows);
-        this.viewport.syncScrollArea();
+        if (this.viewport) {
+          this.viewport.syncScrollArea();
+        }
         break;
       case 'screenReaderMode':
         if (value) {
