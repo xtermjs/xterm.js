@@ -5,7 +5,9 @@
 
 import { DIM_OPACITY, IGlyphIdentifier, INVERTED_DEFAULT_COLOR } from './Types';
 import { ICharAtlasConfig } from '../../shared/atlas/Types';
+import { IColor } from '../../shared/Types';
 import BaseCharAtlas from './BaseCharAtlas';
+import { DEFAULT_ANSI_COLORS } from '../ColorManager';
 import { clearColor } from '../../shared/atlas/CharAtlasGenerator';
 import LRUMap from './LRUMap';
 
@@ -153,28 +155,48 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     );
   }
 
+  private _getColorFromAnsiIndex(idx: number): IColor {
+    if (idx < this._config.colors.ansi.length) {
+      return this._config.colors.ansi[idx];
+    }
+    return DEFAULT_ANSI_COLORS[idx];
+  }
+
+  private _getBackgroundColor(glyph: IGlyphIdentifier): IColor {
+    if (this._config.allowTransparency) {
+      // The background color might have some transparency, so we need to render it as fully
+      // transparent in the atlas. Otherwise we'd end up drawing the transparent background twice
+      // around the anti-aliased edges of the glyph, and it would look too dark.
+      return TRANSPARENT_COLOR;
+    } else if (glyph.bg === INVERTED_DEFAULT_COLOR) {
+      return this._config.colors.foreground;
+    } else if (glyph.bg < 256) {
+      return this._getColorFromAnsiIndex(glyph.bg);
+    } else {
+      return this._config.colors.background;
+    }
+  }
+
+  private _getForegroundColor(glyph: IGlyphIdentifier): IColor {
+    if (glyph.fg === INVERTED_DEFAULT_COLOR) {
+      return this._config.colors.background;
+    } else if (glyph.fg < 256) {
+      // 256 color support
+      return this._getColorFromAnsiIndex(glyph.fg);
+    } else {
+      return this._config.colors.foreground;
+    }
+  }
+
   // TODO: We do this (or something similar) in multiple places. We should split this off
   // into a shared function.
   private _drawToCache(glyph: IGlyphIdentifier, index: number): IGlyphCacheValue {
     this._drawToCacheCount++;
 
-    // draw the background
-    let backgroundColor;
-    if (this._config.allowTransparency) {
-      // The background color might have some transparency, so we need to render it as fully
-      // transparent in the atlas. Otherwise we'd end up drawing the transparent background twice
-      // around the anti-aliased edges of the glyph, and it would look too dark.
-      backgroundColor = TRANSPARENT_COLOR;
-    } else if (glyph.bg === INVERTED_DEFAULT_COLOR) {
-      backgroundColor = this._config.colors.foreground;
-    } else if (glyph.bg < 256) {
-      backgroundColor = this._config.colors.ansi[glyph.bg];
-    } else {
-      backgroundColor = this._config.colors.background;
-    }
-
     this._tmpCtx.save();
 
+    // draw the background
+    const backgroundColor = this._getBackgroundColor(glyph);
     // Use a 'copy' composite operation to clear any existing glyph out of _tmpCtxWithAlpha, regardless of
     // transparency in backgroundColor
     this._tmpCtx.globalCompositeOperation = 'copy';
@@ -190,14 +212,7 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     }
     this._tmpCtx.textBaseline = 'top';
 
-    if (glyph.fg === INVERTED_DEFAULT_COLOR) {
-      this._tmpCtx.fillStyle = this._config.colors.background.css;
-    } else if (glyph.fg < 256) {
-      // 256 color support
-      this._tmpCtx.fillStyle = this._config.colors.ansi[glyph.fg].css;
-    } else {
-      this._tmpCtx.fillStyle = this._config.colors.foreground.css;
-    }
+    this._tmpCtx.fillStyle = this._getForegroundColor(glyph).css;
 
     // Apply alpha to dim the character
     if (glyph.dim) {
