@@ -3,14 +3,12 @@
  * @license MIT
  */
 
-import jsdom = require('jsdom');
 import { assert } from 'chai';
 import { CharMeasure } from './utils/CharMeasure';
-import { CircularList } from './utils/CircularList';
 import { SelectionManager } from './SelectionManager';
 import { SelectionModel } from './SelectionModel';
 import { BufferSet } from './BufferSet';
-import { LineData, CharData, ITerminal, ICircularList, IBuffer } from './Types';
+import { LineData, CharData, ITerminal, IBuffer } from './Types';
 import { MockTerminal } from './utils/TestUtils.test';
 
 class TestMockTerminal extends MockTerminal {
@@ -37,19 +35,11 @@ class TestSelectionManager extends SelectionManager {
 }
 
 describe('SelectionManager', () => {
-  let dom: jsdom.JSDOM;
-  let window: Window;
-  let document: Document;
-
   let terminal: ITerminal;
   let buffer: IBuffer;
-  let rowContainer: HTMLElement;
   let selectionManager: TestSelectionManager;
 
   beforeEach(() => {
-    dom = new jsdom.JSDOM('');
-    window = dom.window;
-    document = window.document;
     terminal = new TestMockTerminal();
     terminal.cols = 80;
     terminal.rows = 2;
@@ -321,6 +311,45 @@ describe('SelectionManager', () => {
       selectionManager.selectAll();
       terminal.buffer.ybase = buffer.lines.length - terminal.rows;
       assert.equal(selectionManager.selectionText, '1\n2\n3\n4\n5');
+    });
+  });
+
+  describe('selectLines', () => {
+    it('should select a single line', () => {
+      buffer.lines.length = 3;
+      buffer.lines.set(0, stringToRow('1'));
+      buffer.lines.set(1, stringToRow('2'));
+      buffer.lines.set(2, stringToRow('3'));
+      selectionManager.selectLines(1, 1);
+      assert.deepEqual(selectionManager.model.finalSelectionStart, [0, 1]);
+      assert.deepEqual(selectionManager.model.finalSelectionEnd, [terminal.cols, 1]);
+    });
+    it('should select multiple lines', () => {
+      buffer.lines.length = 5;
+      buffer.lines.set(0, stringToRow('1'));
+      buffer.lines.set(1, stringToRow('2'));
+      buffer.lines.set(2, stringToRow('3'));
+      buffer.lines.set(3, stringToRow('4'));
+      buffer.lines.set(4, stringToRow('5'));
+      selectionManager.selectLines(1, 3);
+      assert.deepEqual(selectionManager.model.finalSelectionStart, [0, 1]);
+      assert.deepEqual(selectionManager.model.finalSelectionEnd, [terminal.cols, 3]);
+    });
+    it('should select the to the start when requesting a negative row', () => {
+      buffer.lines.length = 2;
+      buffer.lines.set(0, stringToRow('1'));
+      buffer.lines.set(1, stringToRow('2'));
+      selectionManager.selectLines(-1, 0);
+      assert.deepEqual(selectionManager.model.finalSelectionStart, [0, 0]);
+      assert.deepEqual(selectionManager.model.finalSelectionEnd, [terminal.cols, 0]);
+    });
+    it('should select the to the end when requesting beyond the final row', () => {
+      buffer.lines.length = 2;
+      buffer.lines.set(0, stringToRow('1'));
+      buffer.lines.set(1, stringToRow('2'));
+      selectionManager.selectLines(1, 2);
+      assert.deepEqual(selectionManager.model.finalSelectionStart, [0, 1]);
+      assert.deepEqual(selectionManager.model.finalSelectionEnd, [terminal.cols, 1]);
     });
   });
 

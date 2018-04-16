@@ -4,33 +4,9 @@
  */
 
 import { IMouseZoneManager } from './input/Types';
-import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkMatcherValidationCallback, LineData, LinkHoverEventTypes, ILinkMatcherOptions, ITerminal, IBufferAccessor, ILinkifier, IElementAccessor } from './Types';
+import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, ILinkifier, ITerminal } from './Types';
 import { MouseZone } from './input/MouseZoneManager';
 import { EventEmitter } from './EventEmitter';
-
-const protocolClause = '(https?:\\/\\/)';
-const domainCharacterSet = '[\\da-z\\.-]+';
-const negatedDomainCharacterSet = '[^\\da-z\\.-]+';
-const domainBodyClause = '(' + domainCharacterSet + ')';
-const tldClause = '([a-z\\.]{2,6})';
-const ipClause = '((\\d{1,3}\\.){3}\\d{1,3})';
-const localHostClause = '(localhost)';
-const portClause = '(:\\d{1,5})';
-const hostClause = '((' + domainBodyClause + '\\.' + tldClause + ')|' + ipClause + '|' + localHostClause + ')' + portClause + '?';
-const pathClause = '(\\/[\\/\\w\\.\\-%~]*)*';
-const queryStringHashFragmentCharacterSet = '[0-9\\w\\[\\]\\(\\)\\/\\?\\!#@$%&\'*+,:;~\\=\\.\\-]*';
-const queryStringClause = '(\\?' + queryStringHashFragmentCharacterSet + ')?';
-const hashFragmentClause = '(#' + queryStringHashFragmentCharacterSet + ')?';
-const negatedPathCharacterSet = '[^\\/\\w\\.\\-%]+';
-const bodyClause = hostClause + pathClause + queryStringClause + hashFragmentClause;
-const start = '(?:^|' + negatedDomainCharacterSet + ')(';
-const end = ')($|' + negatedPathCharacterSet + ')';
-const strictUrlRegex = new RegExp(start + protocolClause + bodyClause + end);
-
-/**
- * The ID of the built in http(s) link matcher.
- */
-const HYPERTEXT_LINK_MATCHER_ID = 0;
 
 /**
  * The Linkifier applies links to rows shortly after they have been refreshed.
@@ -47,18 +23,17 @@ export class Linkifier extends EventEmitter implements ILinkifier {
 
   private _mouseZoneManager: IMouseZoneManager;
   private _rowsTimeoutId: number;
-  private _nextLinkMatcherId = HYPERTEXT_LINK_MATCHER_ID;
+  private _nextLinkMatcherId = 0;
   private _rowsToLinkify: {start: number, end: number};
 
   constructor(
-    protected _terminal: IBufferAccessor & IElementAccessor
+    protected _terminal: ITerminal
   ) {
     super();
     this._rowsToLinkify = {
       start: null,
       end: null
     };
-    this.registerLinkMatcher(strictUrlRegex, null, { matchIndex: 1 });
   }
 
   /**
@@ -112,23 +87,6 @@ export class Linkifier extends EventEmitter implements ILinkifier {
   }
 
   /**
-   * Attaches a handler for hypertext links, overriding default <a> behavior for
-   * tandard http(s) links.
-   * @param handler The handler to use, this can be cleared with null.
-   */
-  public setHypertextLinkHandler(handler: LinkMatcherHandler): void {
-    this._linkMatchers[HYPERTEXT_LINK_MATCHER_ID].handler = handler;
-  }
-
-  /**
-   * Attaches a validation callback for hypertext links.
-   * @param callback The callback to use, this can be cleared with null.
-   */
-  public setHypertextValidationCallback(callback: LinkMatcherValidationCallback): void {
-    this._linkMatchers[HYPERTEXT_LINK_MATCHER_ID].validationCallback = callback;
-  }
-
-  /**
    * Registers a link matcher, allowing custom link patterns to be matched and
    * handled.
    * @param regex The regular expression to search for. Specifically, this
@@ -139,7 +97,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @return The ID of the new matcher, this can be used to deregister.
    */
   public registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options: ILinkMatcherOptions = {}): number {
-    if (this._nextLinkMatcherId !== HYPERTEXT_LINK_MATCHER_ID && !handler) {
+    if (!handler) {
       throw new Error('handler must be defined');
     }
     const matcher: ILinkMatcher = {
@@ -185,8 +143,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @return Whether a link matcher was found and deregistered.
    */
   public deregisterLinkMatcher(matcherId: number): boolean {
-    // ID 0 is the hypertext link matcher which cannot be deregistered
-    for (let i = 1; i < this._linkMatchers.length; i++) {
+    for (let i = 0; i < this._linkMatchers.length; i++) {
       if (this._linkMatchers[i].id === matcherId) {
         this._linkMatchers.splice(i, 1);
         return true;
@@ -200,11 +157,32 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @param rowIndex The index of the row to linkify.
    */
   private _linkifyRow(rowIndex: number): void {
-    const absoluteRowIndex = this._terminal.buffer.ydisp + rowIndex;
+    // Ensure the row exists
+    let absoluteRowIndex = this._terminal.buffer.ydisp + rowIndex;
     if (absoluteRowIndex >= this._terminal.buffer.lines.length) {
       return;
     }
-    const text = this._terminal.buffer.translateBufferLineToString(absoluteRowIndex, false);
+
+    if ((<any>this._terminal.buffer.lines.get(absoluteRowIndex)).isWrapped) {
+      // Only attempt to linkify rows that start in the viewport
+      if (rowIndex !== 0) {
+        return;
+      }
+      // If the first row is wrapped, backtrack to find the origin row and linkify that
+      do {
+        rowIndex--;
+        absoluteRowIndex--;
+      } while ((<any>this._terminal.buffer.lines.get(absoluteRowIndex)).isWrapped);
+    }
+
+    // Construct full unwrapped line text
+    let text = this._terminal.buffer.translateBufferLineToString(absoluteRowIndex, false);
+    let currentIndex = absoluteRowIndex + 1;
+    while (currentIndex < this._terminal.buffer.lines.length &&
+        (<any>this._terminal.buffer.lines.get(currentIndex)).isWrapped) {
+      text += this._terminal.buffer.translateBufferLineToString(currentIndex++, false);
+    }
+
     for (let i = 0; i < this._linkMatchers.length; i++) {
       this._doLinkifyRow(rowIndex, text, this._linkMatchers[i]);
     }
@@ -220,10 +198,6 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @return The link element(s) that were added.
    */
   private _doLinkifyRow(rowIndex: number, text: string, matcher: ILinkMatcher, offset: number = 0): void {
-    // Iterate over nodes as we want to consider text nodes
-    let result = [];
-    const isHttpLinkMatcher = matcher.id === HYPERTEXT_LINK_MATCHER_ID;
-
     // Find the first match
     let match = text.match(matcher.regex);
     if (!match || match.length === 0) {
@@ -265,10 +239,20 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @param matcher The link matcher for the link.
    */
   private _addLink(x: number, y: number, uri: string, matcher: ILinkMatcher): void {
+    const x1 = x % this._terminal.cols;
+    const y1 = y + Math.floor(x / this._terminal.cols);
+    let x2 = (x1 + uri.length) % this._terminal.cols;
+    let y2 = y1 + Math.floor((x1 + uri.length) / this._terminal.cols);
+    if (x2 === 0) {
+      x2 = this._terminal.cols;
+      y2--;
+    }
+
     this._mouseZoneManager.add(new MouseZone(
-      x + 1,
-      x + 1 + uri.length,
-      y + 1,
+      x1 + 1,
+      y1 + 1,
+      x2 + 1,
+      y2 + 1,
       e => {
         if (matcher.handler) {
           return matcher.handler(e, uri);
@@ -276,18 +260,18 @@ export class Linkifier extends EventEmitter implements ILinkifier {
         window.open(uri, '_blank');
       },
       e => {
-        this.emit(LinkHoverEventTypes.HOVER, <ILinkHoverEvent>{ x, y, length: uri.length});
-        this._terminal.element.style.cursor = 'pointer';
+        this.emit(LinkHoverEventTypes.HOVER, this._createLinkHoverEvent(x1, y1, x2, y2));
+        this._terminal.element.classList.add('xterm-cursor-pointer');
       },
       e => {
-        this.emit(LinkHoverEventTypes.TOOLTIP, <ILinkHoverEvent>{ x, y, length: uri.length});
+        this.emit(LinkHoverEventTypes.TOOLTIP, this._createLinkHoverEvent(x1, y1, x2, y2));
         if (matcher.hoverTooltipCallback) {
           matcher.hoverTooltipCallback(e, uri);
         }
       },
       () => {
-        this.emit(LinkHoverEventTypes.LEAVE, <ILinkHoverEvent>{ x, y, length: uri.length});
-        this._terminal.element.style.cursor = '';
+        this.emit(LinkHoverEventTypes.LEAVE, this._createLinkHoverEvent(x1, y1, x2, y2));
+        this._terminal.element.classList.remove('xterm-cursor-pointer');
         if (matcher.hoverLeaveCallback) {
           matcher.hoverLeaveCallback();
         }
@@ -299,5 +283,9 @@ export class Linkifier extends EventEmitter implements ILinkifier {
         return true;
       }
     ));
+  }
+
+  private _createLinkHoverEvent(x1: number, y1: number, x2: number, y2: number): ILinkHoverEvent {
+    return { x1, y1, x2, y2, cols: this._terminal.cols };
   }
 }

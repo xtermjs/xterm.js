@@ -20,20 +20,21 @@ class TestTerminal extends Terminal {
 
 describe('term.js addons', () => {
   let term: TestTerminal;
+  const termOptions = {
+    cols: INIT_COLS,
+    rows: INIT_ROWS
+  };
 
   beforeEach(() => {
-    term = new TestTerminal({
-      cols: INIT_COLS,
-      rows: INIT_ROWS
-    });
+    term = new TestTerminal(termOptions);
     term.refresh = () => {};
     (<any>term).renderer = new MockRenderer();
     term.viewport = new MockViewport();
-    (<any>term).compositionHelper = new MockCompositionHelper();
+    (<any>term)._compositionHelper = new MockCompositionHelper();
     // Force synchronous writes
     term.write = (data) => {
       term.writeBuffer.push(data);
-      (<any>term).innerWrite();
+      (<any>term)._innerWrite();
     };
     (<any>term).element = {
       classList: {
@@ -41,6 +42,15 @@ describe('term.js addons', () => {
         remove: () => {}
       }
     };
+  });
+
+  it('should not mutate the options parameter', () => {
+    term.setOption('cols', 1000);
+
+    assert.deepEqual(termOptions, {
+      cols: INIT_COLS,
+      rows: INIT_ROWS
+    });
   });
 
   it('should apply addons with Terminal.applyAddon', () => {
@@ -254,6 +264,34 @@ describe('term.js addons', () => {
         assert.equal(term.buffer.ydisp, startYDisp);
         term.scrollToTop();
         term.scrollToBottom();
+        assert.equal(term.buffer.ydisp, startYDisp);
+      });
+    });
+
+    describe('scrollToLine', () => {
+      let startYDisp;
+      beforeEach(() => {
+        for (let i = 0; i < term.rows * 3; i++) {
+          term.writeln('test');
+        }
+        startYDisp = (term.rows * 2) + 1;
+      });
+      it('should scroll to requested line', () => {
+        assert.equal(term.buffer.ydisp, startYDisp);
+        term.scrollToLine(0);
+        assert.equal(term.buffer.ydisp, 0);
+        term.scrollToLine(10);
+        assert.equal(term.buffer.ydisp, 10);
+        term.scrollToLine(startYDisp);
+        assert.equal(term.buffer.ydisp, startYDisp);
+        term.scrollToLine(20);
+        assert.equal(term.buffer.ydisp, 20);
+      });
+      it('should not scroll beyond boundary lines', () => {
+        assert.equal(term.buffer.ydisp, startYDisp);
+        term.scrollToLine(-1);
+        assert.equal(term.buffer.ydisp, 0);
+        term.scrollToLine(startYDisp + 1);
         assert.equal(term.buffer.ydisp, startYDisp);
       });
     });

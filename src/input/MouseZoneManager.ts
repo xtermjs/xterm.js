@@ -59,7 +59,9 @@ export class MouseZoneManager implements IMouseZoneManager {
     // Iterate through zones and clear them out if they're within the range
     for (let i = 0; i < this._zones.length; i++) {
       const zone = this._zones[i];
-      if (zone.y > start && zone.y <= end + 1) {
+      if ((zone.y1 > start && zone.y1 <= end + 1) ||
+          (zone.y2 > start && zone.y2 <= end + 1) ||
+          (zone.y1 < start && zone.y2 > end + 1)) {
         if (this._currentZone && this._currentZone === zone) {
           this._currentZone.leaveCallback();
           this._currentZone = null;
@@ -173,10 +175,22 @@ export class MouseZoneManager implements IMouseZoneManager {
     if (!coords) {
       return null;
     }
+    const x = coords[0];
+    const y = coords[1];
     for (let i = 0; i < this._zones.length; i++) {
       const zone = this._zones[i];
-      if (zone.y === coords[1] && zone.x1 <= coords[0] && zone.x2 > coords[0]) {
-        return zone;
+      if (zone.y1 === zone.y2) {
+        // Single line link
+        if (y === zone.y1 && x >= zone.x1 && x < zone.x2) {
+          return zone;
+        }
+      } else {
+        // Multi-line link
+        if ((y === zone.y1 && x >= zone.x1) ||
+            (y === zone.y2 && x < zone.x2) ||
+            (y > zone.y1 && y < zone.y2)) {
+          return zone;
+        }
       }
     }
     return null;
@@ -186,8 +200,9 @@ export class MouseZoneManager implements IMouseZoneManager {
 export class MouseZone implements IMouseZone {
   constructor(
     public x1: number,
+    public y1: number,
     public x2: number,
-    public y: number,
+    public y2: number,
     public clickCallback: (e: MouseEvent) => any,
     public hoverCallback: (e: MouseEvent) => any,
     public tooltipCallback: (e: MouseEvent) => any,

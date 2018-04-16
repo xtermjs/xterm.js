@@ -4,12 +4,11 @@
  */
 
 import { IRenderLayer, IColorSet, IRenderDimensions } from './Types';
-import { CharData, ITerminal, ITerminalOptions } from '../Types';
-import { acquireCharAtlas, CHAR_ATLAS_CELL_SPACING } from './CharAtlas';
-import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
-
-export const INVERTED_DEFAULT_COLOR = -1;
-const DIM_OPACITY = 0.5;
+import { CharData, ITerminal } from '../Types';
+import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from './atlas/Types';
+import { CHAR_ATLAS_CELL_SPACING } from '../shared/atlas/Types';
+import { acquireCharAtlas } from './atlas/CharAtlas';
+import { CHAR_DATA_CHAR_INDEX } from '../Buffer';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -93,7 +92,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     }
   }
 
-  public resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void {
+  public resize(terminal: ITerminal, dim: IRenderDimensions): void {
     this._scaledCellWidth = dim.scaledCellWidth;
     this._scaledCellHeight = dim.scaledCellHeight;
     this._scaledCharWidth = dim.scaledCharWidth;
@@ -110,9 +109,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       this.clearAll();
     }
 
-    if (charSizeChanged) {
-      this._refreshCharAtlas(terminal, this._colors);
-    }
+    this._refreshCharAtlas(terminal, this._colors);
   }
 
   public abstract reset(terminal: ITerminal): void;
@@ -182,7 +179,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (this._alpha) {
       this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
     } else {
-      this._ctx.fillStyle = this._colors.background;
+      this._ctx.fillStyle = this._colors.background.css;
       this._ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);
     }
   }
@@ -202,7 +199,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
           width * this._scaledCellWidth,
           height * this._scaledCellHeight);
     } else {
-      this._ctx.fillStyle = this._colors.background;
+      this._ctx.fillStyle = this._colors.background.css;
       this._ctx.fillRect(
           x * this._scaledCellWidth,
           y * this._scaledCellHeight,
@@ -314,12 +311,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.textBaseline = 'top';
 
     if (fg === INVERTED_DEFAULT_COLOR) {
-      this._ctx.fillStyle = this._colors.background;
+      this._ctx.fillStyle = this._colors.background.css;
     } else if (fg < 256) {
       // 256 color support
-      this._ctx.fillStyle = this._colors.ansi[fg];
+      this._ctx.fillStyle = this._colors.ansi[fg].css;
     } else {
-      this._ctx.fillStyle = this._colors.foreground;
+      this._ctx.fillStyle = this._colors.foreground.css;
     }
 
     this._clipRow(terminal, y);

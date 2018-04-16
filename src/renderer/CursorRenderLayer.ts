@@ -3,11 +3,10 @@
  * @license MIT
  */
 
-import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
-import { GridCache } from './GridCache';
-import { FLAGS, IColorSet, IRenderDimensions } from './Types';
+import { CHAR_DATA_WIDTH_INDEX } from '../Buffer';
+import { IColorSet, IRenderDimensions } from './Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { CharData, IBuffer, ICharMeasure, ITerminal, ITerminalOptions } from '../Types';
+import { CharData, ITerminal } from '../Types';
 
 interface ICursorState {
   x: number;
@@ -26,7 +25,6 @@ export class CursorRenderLayer extends BaseRenderLayer {
   private _state: ICursorState;
   private _cursorRenderers: {[key: string]: (terminal: ITerminal, x: number, y: number, charData: CharData) => void};
   private _cursorBlinkStateManager: CursorBlinkStateManager;
-  private _isFocused: boolean;
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
     super(container, 'cursor', zIndex, true, colors);
@@ -35,7 +33,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
       y: null,
       isFocused: null,
       style: null,
-      width: null,
+      width: null
     };
     this._cursorRenderers = {
       'bar': this._renderBarCursor.bind(this),
@@ -45,15 +43,15 @@ export class CursorRenderLayer extends BaseRenderLayer {
     // TODO: Consider initial options? Maybe onOptionsChanged should be called at the end of open?
   }
 
-  public resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void {
-    super.resize(terminal, dim, charSizeChanged);
+  public resize(terminal: ITerminal, dim: IRenderDimensions): void {
+    super.resize(terminal, dim);
     // Resizing the canvas discards the contents of the canvas so clear state
     this._state = {
       x: null,
       y: null,
       isFocused: null,
       style: null,
-      width: null,
+      width: null
     };
   }
 
@@ -137,7 +135,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     if (!terminal.isFocused) {
       this._clearCursor();
       this._ctx.save();
-      this._ctx.fillStyle = this._colors.cursor;
+      this._ctx.fillStyle = this._colors.cursor.css;
       this._renderBlurCursor(terminal, terminal.buffer.x, viewportRelativeCursorY, charData);
       this._ctx.restore();
       this._state.x = terminal.buffer.x;
@@ -185,37 +183,37 @@ export class CursorRenderLayer extends BaseRenderLayer {
         y: null,
         isFocused: null,
         style: null,
-        width: null,
+        width: null
       };
     }
   }
 
   private _renderBarCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
     this._ctx.save();
-    this._ctx.fillStyle = this._colors.cursor;
+    this._ctx.fillStyle = this._colors.cursor.css;
     this.fillLeftLineAtCell(x, y);
     this._ctx.restore();
   }
 
   private _renderBlockCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
     this._ctx.save();
-    this._ctx.fillStyle = this._colors.cursor;
+    this._ctx.fillStyle = this._colors.cursor.css;
     this.fillCells(x, y, charData[CHAR_DATA_WIDTH_INDEX], 1);
-    this._ctx.fillStyle = this._colors.cursorAccent;
+    this._ctx.fillStyle = this._colors.cursorAccent.css;
     this.fillCharTrueColor(terminal, charData, x, y);
     this._ctx.restore();
   }
 
   private _renderUnderlineCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
     this._ctx.save();
-    this._ctx.fillStyle = this._colors.cursor;
+    this._ctx.fillStyle = this._colors.cursor.css;
     this.fillBottomLineAtCells(x, y);
     this._ctx.restore();
   }
 
   private _renderBlurCursor(terminal: ITerminal, x: number, y: number, charData: CharData): void {
     this._ctx.save();
-    this._ctx.strokeStyle = this._colors.cursor;
+    this._ctx.strokeStyle = this._colors.cursor.css;
     this.strokeRectAtCell(x, y, charData[CHAR_DATA_WIDTH_INDEX], 1);
     this._ctx.restore();
   }
@@ -237,7 +235,7 @@ class CursorBlinkStateManager {
 
   constructor(
     terminal: ITerminal,
-    private renderCallback: () => void
+    private _renderCallback: () => void
   ) {
     this.isCursorVisible = true;
     if (terminal.isFocused) {
@@ -272,7 +270,7 @@ class CursorBlinkStateManager {
     this.isCursorVisible = true;
     if (!this._animationFrame) {
       this._animationFrame = window.requestAnimationFrame(() => {
-        this.renderCallback();
+        this._renderCallback();
         this._animationFrame = null;
       });
     }
@@ -303,7 +301,7 @@ class CursorBlinkStateManager {
       // Hide the cursor
       this.isCursorVisible = false;
       this._animationFrame = window.requestAnimationFrame(() => {
-        this.renderCallback();
+        this._renderCallback();
         this._animationFrame = null;
       });
 
@@ -322,7 +320,7 @@ class CursorBlinkStateManager {
         // Invert visibility and render
         this.isCursorVisible = !this.isCursorVisible;
         this._animationFrame = window.requestAnimationFrame(() => {
-          this.renderCallback();
+          this._renderCallback();
           this._animationFrame = null;
         });
       }, BLINK_INTERVAL);

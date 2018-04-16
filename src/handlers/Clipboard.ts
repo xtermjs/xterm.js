@@ -18,11 +18,8 @@ declare var window: IWindow;
  * Prepares text to be pasted into the terminal by normalizing the line endings
  * @param text The pasted text that needs processing before inserting into the terminal
  */
-export function prepareTextForTerminal(text: string, isMSWindows: boolean): string {
-  if (isMSWindows) {
-    return text.replace(/\r?\n/g, '\r');
-  }
-  return text;
+export function prepareTextForTerminal(text: string): string {
+  return text.replace(/\r?\n/g, '\r');
 }
 
 /**
@@ -62,7 +59,7 @@ export function pasteHandler(ev: ClipboardEvent, term: ITerminal): void {
   let text: string;
 
   let dispatchPaste = function(text: string): void {
-    text = prepareTextForTerminal(text, term.browser.isMSWindows);
+    text = prepareTextForTerminal(text);
     text = bracketTextForPaste(text, term.bracketedPasteMode);
     term.handler(text);
     term.textarea.value = '';

@@ -7,9 +7,19 @@ import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../rende
 import { LineData, IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ICircularList, ILinkifier, IMouseHelper, ILinkMatcherOptions, XtermListener } from '../Types';
 import { Buffer } from '../Buffer';
 import * as Browser from '../shared/utils/Browser';
-import { ITheme, IDisposable } from 'xterm';
+import { ITheme, IDisposable, IMarker } from 'xterm';
 
 export class MockTerminal implements ITerminal {
+  markers: IMarker[];
+  addMarker(cursorYOffset: number): IMarker {
+    throw new Error('Method not implemented.');
+  }
+  selectLines(start: number, end: number): void {
+    throw new Error('Method not implemented.');
+  }
+  scrollToLine(line: number): void {
+    throw new Error('Method not implemented.');
+  }
   static string: any;
   getOption(key: any): any {
     throw new Error('Method not implemented.');
@@ -269,6 +279,9 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   addDisposableListener(type: string, handler: XtermListener): IDisposable {
     throw new Error('Method not implemented.');
   }
+  tabSet(): void {
+    throw new Error('Method not implemented.');
+  }
 }
 
 export class MockBuffer implements IBuffer {
@@ -276,6 +289,7 @@ export class MockBuffer implements IBuffer {
   lines: ICircularList<[number, string, number, number][]>;
   ydisp: number;
   ybase: number;
+  hasScrollback: boolean;
   y: number;
   x: number;
   tabs: any;
@@ -310,7 +324,7 @@ export class MockRenderer implements IRenderer {
   }
   dimensions: IRenderDimensions;
   setTheme(theme: ITheme): IColorSet { return <IColorSet>{}; }
-  onResize(cols: number, rows: number, didCharSizeChange: boolean): void {}
+  onResize(cols: number, rows: number): void {}
   onCharSizeChanged(): void {}
   onBlur(): void {}
   onFocus(): void {}
@@ -337,6 +351,9 @@ export class MockViewport implements IViewport {
     throw new Error('Method not implemented.');
   }
   syncScrollArea(): void { }
+  getLinesScrolled(ev: WheelEvent): number {
+    throw new Error('Method not implemented.');
+  }
 }
 
 export class MockCompositionHelper implements ICompositionHelper {
