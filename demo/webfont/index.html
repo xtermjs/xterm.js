@@ -1,0 +1,20 @@
+<html>
+  <head>
+    <link href="https://fonts.googleapis.com/css?family=Roboto+Mono:400,700" rel="stylesheet">
+    <link rel="stylesheet" href="../../build/xterm.css" />
+    <script src="../../build/xterm.js"></script>
+    <script src="../../build/addons/webfont/webfont.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fontfaceobserver/2.0.13/fontfaceobserver.standalone.js"></script>
+  </head>
+
+  <body>
+    <div id="term"></div>
+
+    <script>
+      Terminal.applyAddon(webfont)
+      const term = new Terminal({ fontFamily: 'Roboto Mono', lineHeight: 0.9, fontSize: 15 })
+      term.loadWebfontAndOpen(document.getElementById('term'));
+      term.write("Python 2.7.14\r\n \r\nEveryone can modify this shell in real time.\r\nIt's a sandbox that works exactly like a native shell.\r\n\r\n\u001b]0;IPython: home/coderpad\u0007\r\n\u001b[?1l\u001b[6n\u001b[?2004h\u001b[?25l\u001b[0m\u001b[?7l\u001b[0m\u001b[J\u001b[0;38;5;2m>>> \u001b[4D\u001b[4C\u001b[?7h\u001b[0m\u001b[?12l\u001b[?25h\u001b[?25l\u001b[?7l\u001b[0m\r\r\n\r\r\n\r\r\n\r\r\n\r\r\n\r\r\n\r\r\n\r\r\n\r\r\n\r\r\n\r\r\n\r\r\n\u001b[12A\u001b[4C\u001b[?7h\u001b[0m\u001b[?12l\u001b[?25h\u001b]0;IPython: home/coderpad\u0007\u001b[1;36m  File \u001b[1;32m\"/home/coderpad/solution.py\"\u001b[1;36m, line \u001b[1;32m2\u001b[0m\r\n\u001b[1;33m    print 'Hello, World\u001b[0m\r\n\u001b[1;37m                      ^\u001b[0m\r\n\u001b[1;31mSyntaxError\u001b[0m\u001b[1;31m:\u001b[0m EOL while scanning string literal\r\n\r\n\r\n\u001b[?1l\u001b[6n\u001b[?2004h\u001b[?25l\u001b[0m\u001b[?7l\u001b[0m\u001b[J\u001b[0;38;5;2m>>> \u001b[4D\u001b[4C\u001b[?7h\u001b[0m\u001b[?12l\u001b[?25h\u001b[?25l\u001b[?7l\u001b[0m\r\r\n\r\r\n\u001b[2A\u001b[4C\u001b[?7h\u001b[0m\u001b[?12l\u001b[?25h\u001b[?25l\u001b[?7l\u001b[0m\r\r\n\r\r\n\r\r\n\r\r\n\r\r\n\r\r\n\u001b[6A\u001b[4C\u001b[?7h\u001b[0m\u001b[?12l\u001b[?25h\u001b[?25l\u001b[?7l\u001b[?7h\u001b[0m\u001b[?12l\u001b[?25h\u001b[?25l\u001b[?7l\u001b[?7h\u001b[0m\u001b[?12l\u001b[?25h\u001b[?25l\u001b[?7l\u001b[?7h\u001b[0m\u001b[?12l\u001b[?25h\u001b[?25l\u001b[?7l\u001b[?7h\u001b[0m\u001b[?12l\u001b[?25h\u001b[?25l\u001b[?7l\u001b[?7h\u001b[0m\u001b[?12l\u001b[?25h\u001b[?25l\u001b[?7l\u001b[?7h\u001b[0m\u001b[?12l\u001b[?25h\u001b[?25l\u001b[?7l\u001b[?7h\u001b[0m\u001b[?12l\u001b[?25h\u001b[?25l\u001b[?7l\u001b[?7h\u001b[0m\u001b[?12l\u001b[?25h\u001b[?25l\u001b[?7l\u001b[?7h\u001b[0m\u001b[?12l\u001b[?25h\u001b[?25l\u001b[?7l\u001b[?7h\u001b[0m\u001b[?12l\u001b[?25h\u001b[?25l\u001b[?7l\u001b[?7h\u001b[0m\u001b[?12l\u001b[?25h")
+    </script>
+  </body>
+</html>
