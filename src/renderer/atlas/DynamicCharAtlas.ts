@@ -25,7 +25,7 @@ const TRANSPARENT_COLOR = {
 //
 // This helps to limit the amount of damage a program can do when it would otherwise thrash the
 // cache.
-const DRAW_TO_CACHE_LIMIT = 100;
+const FRAME_CACHE_DRAW_LIMIT = 100;
 
 interface IGlyphCacheValue {
   index: number;
@@ -94,7 +94,7 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     if (cacheValue != null) {
       this._drawFromCache(ctx, cacheValue, x, y);
       return true;
-    } else if (this._canCache(glyph) && this._drawToCacheCount < DRAW_TO_CACHE_LIMIT) {
+    } else if (this._canCache(glyph) && this._drawToCacheCount < FRAME_CACHE_DRAW_LIMIT) {
       let index;
       if (this._cacheMap.size < this._cacheMap.capacity) {
         index = this._cacheMap.size;
