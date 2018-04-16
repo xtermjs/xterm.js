@@ -76,6 +76,12 @@ var xterm = new Terminal();  // Instantiate the terminal
 xterm.fit();                 // Use the `fit` method, provided by the `fit` addon
 ```
 
+#### Third party addons
+
+There are also the following third party addons available:
+
+- [xterm-webfont](https://www.npmjs.com/package/xterm-webfont)
+
 ## Browser Support
 
 Since xterm.js is typically implemented as a developer tool, only modern browsers are supported officially. Here is a list of the versions we aim to support:
