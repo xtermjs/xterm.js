@@ -34,7 +34,7 @@ export default class StaticCharAtlas extends BaseCharAtlas {
   }
 
   private _isCached(glyph: IGlyphIdentifier, colorIndex: number): boolean {
-    const isAscii = glyph.char.charCodeAt(0) < 256;
+    const isAscii = glyph.code < 256;
     // A color is basic if it is one of the standard normal or bold weight
     // colors of the characters held in the char atlas. Note that this excludes
     // the normal weight _light_ color characters.
@@ -86,7 +86,7 @@ export default class StaticCharAtlas extends BaseCharAtlas {
 
     ctx.drawImage(
       this._texture,
-      glyph.char.charCodeAt(0) * charAtlasCellWidth,
+      glyph.code * charAtlasCellWidth,
       colorIndex * charAtlasCellHeight,
       charAtlasCellWidth,
       this._config.scaledCharHeight,

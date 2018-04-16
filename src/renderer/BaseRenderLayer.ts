@@ -240,7 +240,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   protected drawChar(terminal: ITerminal, char: string, code: number, width: number, x: number, y: number, fg: number, bg: number, bold: boolean, dim: boolean): void {
     const atlasDidDraw = this._charAtlas && this._charAtlas.draw(
       this._ctx,
-      {char, bg, fg, bold: bold && terminal.options.enableBold, dim},
+      {char, code, bg, fg, bold: bold && terminal.options.enableBold, dim},
       x * this._scaledCellWidth + this._scaledCharLeft,
       y * this._scaledCellHeight + this._scaledCharTop
     );

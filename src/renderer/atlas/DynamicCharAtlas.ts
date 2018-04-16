@@ -121,7 +121,7 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     // to draw overlapping glyphs from the atlas:
     // https://github.com/servo/webrender/issues/464#issuecomment-255632875
     // https://webglfundamentals.org/webgl/lessons/webgl-text-texture.html
-    return glyph.char.charCodeAt(0) < 256;
+    return glyph.code < 256;
   }
 
   private _toCoordinates(index: number): [number, number] {
