@@ -38,11 +38,13 @@ import { Terminal } from 'xterm';
 
 let zmodem;
 
-export interface IZModemOptions {
+export interface IZmodemOptions {
   noTerminalWriteOutsideSession?: boolean;
 }
 
-export function zmodemAttach(term: Terminal, ws: WebSocket, opts: IZModemOptions = {}): void {
+function zmodemAttach(ws: WebSocket, opts: IZmodemOptions = {}): void {
+  var term = this;
+
   const senderFunc = (octets: ArrayLike<number>) => ws.send(new Uint8Array(octets));
 
   let zsentry;
@@ -85,8 +87,8 @@ export function zmodemAttach(term: Terminal, ws: WebSocket, opts: IZModemOptions
 }
 
 export function apply(terminalConstructor: typeof Terminal): void {
-  zmodem = (typeof window === 'object') ? (<any>window).ZModem : {Browser: null};  // Nullify browser for tests
+  zmodem = (typeof window === 'object') ? (<any>window).Zmodem : {Browser: null};  // Nullify browser for tests
 
-  (<any>terminalConstructor.prototype).zmodemAttach = zmodemAttach.bind(this, this);
+  (<any>terminalConstructor.prototype).zmodemAttach = zmodemAttach;
   (<any>terminalConstructor.prototype).zmodemBrowser = zmodem.Browser;
 }
