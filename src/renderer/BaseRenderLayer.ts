@@ -245,7 +245,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   protected drawChar(terminal: ITerminal, char: string, code: number, width: number, x: number, y: number, fg: number, bg: number, bold: boolean, dim: boolean, italic: boolean): void {
     let colorIndex = 0;
     if (fg < 256) {
-      colorIndex = fg + 2;
+      colorIndex = fg + 2 + (bold && terminal.options.enableBold ? 16 : 0);
     } else {
       // If default color and bold
       if (bold && terminal.options.enableBold) {
@@ -273,7 +273,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       if (bold && !terminal.options.enableBold) {
         // Ignore default color as it's not touched above
         if (colorIndex > 1) {
-          colorIndex -= 8;
+          colorIndex -= 16;
         }
       }
 
