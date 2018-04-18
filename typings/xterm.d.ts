@@ -251,7 +251,7 @@ declare module 'xterm' {
   /**
    * The class that represents an xterm.js terminal.
    */
-  export class Terminal implements IEventEmitter {
+  export class Terminal implements IEventEmitter, IDisposable {
     /**
      * The element containing the terminal.
      */
@@ -451,8 +451,16 @@ declare module 'xterm' {
      */
     selectLines(start: number, end: number): void;
 
+    /*
+     * Disposes of the terminal, detaching it from the DOM and removing any
+     * active listeners.
+     */
+    dispose(): void;
+
     /**
      * Destroys the terminal and detaches it from the DOM.
+     *
+     * @deprecated Use dispose() instead.
      */
     destroy(): void;
 

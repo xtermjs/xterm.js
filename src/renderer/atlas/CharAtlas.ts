@@ -26,6 +26,8 @@ let charAtlasCache: ICharAtlasCacheEntry[] = [];
 export function acquireCharAtlas(terminal: ITerminal, colors: IColorSet, scaledCharWidth: number, scaledCharHeight: number): HTMLCanvasElement | Promise<ImageBitmap> {
   const newConfig = generateConfig(scaledCharWidth, scaledCharHeight, terminal, colors);
 
+  // TODO: Currently if a terminal changes configs it will not free the entry reference (until it's disposed)
+
   // Check to see if the terminal already owns this config
   for (let i = 0; i < charAtlasCache.length; i++) {
     const entry = charAtlasCache[i];
@@ -69,4 +71,24 @@ export function acquireCharAtlas(terminal: ITerminal, colors: IColorSet, scaledC
   };
   charAtlasCache.push(newEntry);
   return newEntry.bitmap;
+}
+
+/**
+ * Removes a terminal reference from the cache, allowing its memory to be freed.
+ * @param terminal The terminal to remove.
+ */
+export function removeTerminalFromCache(terminal: ITerminal): void {
+  for (let i = 0; i < charAtlasCache.length; i++) {
+    const index = charAtlasCache[i].ownedBy.indexOf(terminal);
+    if (index !== -1) {
+      if (charAtlasCache[i].ownedBy.length === 1) {
+        // Remove the cache entry if it's the only terminal
+        charAtlasCache.splice(i, 1);
+      } else {
+        // Remove the reference from the cache entry
+        charAtlasCache[i].ownedBy.splice(index, 1);
+      }
+      break;
+    }
+  }
 }
