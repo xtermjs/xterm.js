@@ -122,8 +122,6 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   tabStopWidth: 8,
   theme: null,
   rightClickSelectsWord: Browser.isMac
-  // programFeatures: false,
-  // focusKeys: false,
 };
 
 export class Terminal extends EventEmitter implements ITerminal, IDisposable, IInputHandlingTerminal {
@@ -474,8 +472,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       case 'fontFamily':
       case 'fontSize':
         // When the font changes the size of the cells may change which requires a renderer clear
-        this.renderer.clear();
-        this.charMeasure.measure(this.options);
+        if (this.renderer) {
+          this.renderer.clear();
+          this.charMeasure.measure(this.options);
+        }
         break;
       case 'enableBold':
       case 'letterSpacing':
@@ -483,12 +483,16 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       case 'fontWeight':
       case 'fontWeightBold':
         // When the font changes the size of the cells may change which requires a renderer clear
-        this.renderer.clear();
-        this.renderer.onResize(this.cols, this.rows);
-        this.refresh(0, this.rows - 1);
+        if (this.renderer) {
+          this.renderer.clear();
+          this.renderer.onResize(this.cols, this.rows);
+          this.refresh(0, this.rows - 1);
+        }
       case 'scrollback':
         this.buffers.resize(this.cols, this.rows);
-        this.viewport.syncScrollArea();
+        if (this.viewport) {
+          this.viewport.syncScrollArea();
+        }
         break;
       case 'screenReaderMode':
         if (value) {
@@ -1939,7 +1943,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     if (x === this.cols && y === this.rows) {
       // Check if we still need to measure the char size (fixes #785).
-      if (!this.charMeasure.width || !this.charMeasure.height) {
+      if (this.charMeasure && (!this.charMeasure.width || !this.charMeasure.height)) {
         this.charMeasure.measure(this.options);
       }
       return;
@@ -2181,7 +2185,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this._customKeyEventHandler = customKeyEventHandler;
     this._inputHandler = inputHandler;
     this.refresh(0, this.rows - 1);
-    this.viewport.syncScrollArea();
+    if (this.viewport) {
+      this.viewport.syncScrollArea();
+    }
   }
 
 

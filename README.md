@@ -76,6 +76,12 @@ var xterm = new Terminal();  // Instantiate the terminal
 xterm.fit();                 // Use the `fit` method, provided by the `fit` addon
 ```
 
+#### Third party addons
+
+There are also the following third party addons available:
+
+- [xterm-webfont](https://www.npmjs.com/package/xterm-webfont)
+
 ## Browser Support
 
 Since xterm.js is typically implemented as a developer tool, only modern browsers are supported officially. Here is a list of the versions we aim to support:
@@ -128,6 +134,7 @@ computational environment for Jupyter, supporting interactive data science and s
 - [**Microsoft SQL Operations Studio**](https://github.com/Microsoft/sqlopsstudio): A data management tool that enables working with SQL Server, Azure SQL DB and SQL DW from Windows, macOS and Linux
 - [**FreeMAN**](https://github.com/matthew-matvei/freeman): A free, cross-platform file manager for power users
 - [**Fluent Terminal**](https://github.com/felixse/FluentTerminal): A terminal emulator based on UWP and web technologies.
+- [**Hyper**](https://hyper.is): A terminal built on web technologies
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list.
 
