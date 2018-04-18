@@ -88,6 +88,7 @@ export function removeTerminalFromCache(terminal: ITerminal): void {
         // Remove the reference from the cache entry
         charAtlasCache[i].ownedBy.splice(index, 1);
       }
+      break;
     }
   }
 }
