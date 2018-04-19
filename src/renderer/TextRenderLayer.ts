@@ -50,8 +50,8 @@ export class TextRenderLayer extends BaseRenderLayer {
 
   private _forEachCell(
     terminal: ITerminal,
-    startRow: number,
-    endRow: number,
+    firstRow: number,
+    lastRow: number,
     callback: (
       code: number,
       char: string,
@@ -63,7 +63,7 @@ export class TextRenderLayer extends BaseRenderLayer {
       flags: number
     ) => void
   ): void {
-    for (let y = startRow; y <= endRow; y++) {
+    for (let y = firstRow; y <= lastRow; y++) {
       const row = y + terminal.buffer.ydisp;
       const line = terminal.buffer.lines.get(row);
       for (let x = 0; x < terminal.cols; x++) {
@@ -128,8 +128,8 @@ export class TextRenderLayer extends BaseRenderLayer {
     }
   }
 
-  private _drawBackground(terminal: ITerminal, startRow: number, endRow: number): void {
-    this._forEachCell(terminal, startRow, endRow, (code, char, width, x, y, fg, bg, flags) => {
+  private _drawBackground(terminal: ITerminal, firstRow: number, lastRow: number): void {
+    this._forEachCell(terminal, firstRow, lastRow, (code, char, width, x, y, fg, bg, flags) => {
       // libvte and xterm both draw the background (but not foreground) of invisible characters,
       // so we should too.
       const isDefaultBackground = bg >= 256;
@@ -142,8 +142,8 @@ export class TextRenderLayer extends BaseRenderLayer {
     });
   }
 
-  private _drawForeground(terminal: ITerminal, startRow: number, endRow: number): void {
-    this._forEachCell(terminal, startRow, endRow, (code, char, width, x, y, fg, bg, flags) => {
+  private _drawForeground(terminal: ITerminal, firstRow: number, lastRow: number): void {
+    this._forEachCell(terminal, firstRow, lastRow, (code, char, width, x, y, fg, bg, flags) => {
       if (flags & FLAGS.INVISIBLE) {
         return;
       }
@@ -169,15 +169,15 @@ export class TextRenderLayer extends BaseRenderLayer {
     });
   }
 
-  public onGridChanged(terminal: ITerminal, startRow: number, endRow: number): void {
+  public onGridChanged(terminal: ITerminal, firstRow: number, lastRow: number): void {
     // Resize has not been called yet
     if (this._state.cache.length === 0) {
       return;
     }
 
-    this.clearCells(0, startRow, terminal.cols, endRow - startRow + 1); // endRow is inclusive
-    this._drawBackground(terminal, startRow, endRow);
-    this._drawForeground(terminal, startRow, endRow);
+    this.clearCells(0, firstRow, terminal.cols, lastRow - firstRow + 1);
+    this._drawBackground(terminal, firstRow, lastRow);
+    this._drawForeground(terminal, firstRow, lastRow);
   }
 
   public onOptionsChanged(terminal: ITerminal): void {
