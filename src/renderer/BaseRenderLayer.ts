@@ -248,12 +248,13 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     const isBasicColor = fg < 16;
     const isDefaultColor = fg >= 256;
     const isDefaultBackground = bg >= 256;
+    const drawInBrightColor = (terminal.options.drawBoldTextInBrightColors !== false && bold && fg < 8);
     if (this._charAtlas && isAscii && (isBasicColor || isDefaultColor) && isDefaultBackground && !italic) {
       let colorIndex: number;
       if (isDefaultColor) {
         colorIndex = (bold && terminal.options.enableBold ? 1 : 0);
       } else {
-        colorIndex = 2 + fg + (bold && terminal.options.enableBold ? 16 : 0);
+        colorIndex = 2 + fg + (bold && terminal.options.enableBold ? 16 : 0) + (drawInBrightColor ? 8 : 0);
       }
 
       // ImageBitmap's draw about twice as fast as from a canvas
@@ -275,7 +276,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
           charAtlasCellWidth,
           this._scaledCharHeight);
     } else {
-      this._drawUncachedChar(terminal, char, width, fg, x, y, bold && terminal.options.enableBold, dim, italic);
+      this._drawUncachedChar(terminal, char, width, fg + (drawInBrightColor ? 8 : 0), x, y, bold && terminal.options.enableBold, dim, italic);
     }
     // This draws the atlas (for debugging purposes)
     // this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
