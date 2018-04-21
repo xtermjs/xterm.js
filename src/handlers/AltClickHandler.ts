@@ -28,7 +28,7 @@ export class AltClickHandler {
     this._startCol = this._terminal.buffer.x;
     this._startRow = this._terminal.buffer.y;
 
-    [this._endCol, this._endRow] = this._terminal.mouseHelper.getCoords(
+    let coordinates = this._terminal.mouseHelper.getCoords(
       this._mouseEvent,
       this._terminal.element,
       this._terminal.charMeasure,
@@ -36,7 +36,13 @@ export class AltClickHandler {
       this._terminal.cols,
       this._terminal.rows,
       false
-    ).map((coordinate: number) => {
+    );
+
+    if (!coordinates) {
+      return null;
+    }
+
+    [this._endCol, this._endRow] = coordinates.map((coordinate: number) => {
       return coordinate - 1;
     });
   }
