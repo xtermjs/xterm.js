@@ -22,7 +22,7 @@ export class InputHandler implements IInputHandler {
   constructor(private _terminal: IInputHandlingTerminal) { }
 
   public addChar(char: string, code: number): void {
-    if (char >= ' ') {
+    // if (char >= ' ') {
 
       // make buffer local for faster access
       const buffer = this._terminal.buffer;
@@ -111,7 +111,7 @@ export class InputHandler implements IInputHandler {
         buffer.lines.get(row)[buffer.x] = [this._terminal.curAttr, '', 0, undefined];
         buffer.x++;
       }
-    }
+    // }
   }
 
   /**
