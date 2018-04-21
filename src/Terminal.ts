@@ -32,7 +32,7 @@ import { Viewport } from './Viewport';
 import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './handlers/Clipboard';
 import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
-import { Parser } from './Parser';
+// import { Parser } from './Parser';
 import { Renderer } from './renderer/Renderer';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
@@ -47,6 +47,7 @@ import { MouseZoneManager } from './input/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ScreenDprMonitor } from './utils/ScreenDprMonitor';
 import { ITheme, ILocalizableStrings, IMarker } from 'xterm';
+import { ParserTerminal } from './EscapeSequenceParser';
 
 // reg + shift key mappings for digits and special chars
 const KEYCODE_KEY_MAPPINGS = {
@@ -212,7 +213,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
   private _inputHandler: InputHandler;
   public soundManager: SoundManager;
-  private _parser: Parser;
+  // private _parser: Parser;
+  private _newParser: ParserTerminal;
   public renderer: IRenderer;
   public selectionManager: SelectionManager;
   public linkifier: ILinkifier;
@@ -306,7 +308,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this._userScrolling = false;
 
     this._inputHandler = new InputHandler(this);
-    this._parser = new Parser(this._inputHandler, this);
+    // this._parser = new Parser(this._inputHandler, this);
+    this._newParser = new ParserTerminal(this, this._inputHandler);
     // Reuse renderer if the Terminal is being recreated via a reset call.
     this.renderer = this.renderer || null;
     this.selectionManager = this.selectionManager || null;
@@ -1303,8 +1306,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       // middle of parsing escape sequence in two chunks. For some reason the
       // state of the parser resets to 0 after exiting parser.parse. This change
       // just sets the state back based on the correct return statement.
-      const state = this._parser.parse(data);
-      this._parser.setState(state);
+
+      // const state = this._parser.parse(data);
+      this._newParser.write(data);
+      // this._parser.setState(state);
 
       this.updateRange(this.buffer.y);
       this.refresh(this._refreshStart, this._refreshEnd);
