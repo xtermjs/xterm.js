@@ -22,10 +22,13 @@ export class InputHandler implements IInputHandler {
   constructor(private _terminal: IInputHandlingTerminal) { }
 
   public addChar(char: string, code: number): void {
-    if (char >= ' ') {
+    // if (char >= ' ') {
       // calculate print space
       // expensive call, therefore we save width in line buffer
       const chWidth = wcwidth(code);
+
+      // localize buffer
+      let buffer = this._terminal.buffer;
 
       if (this._terminal.charset && this._terminal.charset[char]) {
         char = this._terminal.charset[char];
@@ -35,42 +38,42 @@ export class InputHandler implements IInputHandler {
         this._terminal.emit('a11y.char', char);
       }
 
-      let row = this._terminal.buffer.y + this._terminal.buffer.ybase;
+      let row = buffer.y + buffer.ybase;
 
       // insert combining char in last cell
       // FIXME: needs handling after cursor jumps
-      if (!chWidth && this._terminal.buffer.x) {
+      if (!chWidth && buffer.x) {
         // dont overflow left
-        if (this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1]) {
-          if (!this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1][CHAR_DATA_WIDTH_INDEX]) {
+        if (buffer.lines.get(row)[buffer.x - 1]) {
+          if (!buffer.lines.get(row)[buffer.x - 1][CHAR_DATA_WIDTH_INDEX]) {
             // found empty cell after fullwidth, need to go 2 cells back
-            if (this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 2]) {
-              this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 2][CHAR_DATA_CHAR_INDEX] += char;
-              this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 2][3] = char.charCodeAt(0);
+            if (buffer.lines.get(row)[buffer.x - 2]) {
+              buffer.lines.get(row)[buffer.x - 2][CHAR_DATA_CHAR_INDEX] += char;
+              buffer.lines.get(row)[buffer.x - 2][3] = char.charCodeAt(0);
             }
           } else {
-            this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1][CHAR_DATA_CHAR_INDEX] += char;
-            this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1][3] = char.charCodeAt(0);
+            buffer.lines.get(row)[buffer.x - 1][CHAR_DATA_CHAR_INDEX] += char;
+            buffer.lines.get(row)[buffer.x - 1][3] = char.charCodeAt(0);
           }
-          this._terminal.updateRange(this._terminal.buffer.y);
+          this._terminal.updateRange(buffer.y);
         }
         return;
       }
 
       // goto next line if ch would overflow
       // TODO: needs a global min terminal width of 2
-      if (this._terminal.buffer.x + chWidth - 1 >= this._terminal.cols) {
+      if (buffer.x + chWidth - 1 >= this._terminal.cols) {
         // autowrap - DECAWM
         if (this._terminal.wraparoundMode) {
-          this._terminal.buffer.x = 0;
-          this._terminal.buffer.y++;
-          if (this._terminal.buffer.y > this._terminal.buffer.scrollBottom) {
-            this._terminal.buffer.y--;
+          buffer.x = 0;
+          buffer.y++;
+          if (buffer.y > buffer.scrollBottom) {
+            buffer.y--;
             this._terminal.scroll(true);
           } else {
             // The line already exists (eg. the initial viewport), mark it as a
             // wrapped line
-            (<any>this._terminal.buffer.lines.get(this._terminal.buffer.y)).isWrapped = true;
+            (<any>buffer.lines.get(buffer.y)).isWrapped = true;
           }
         } else {
           if (chWidth === 2) { // FIXME: check for xterm behavior
@@ -78,7 +81,7 @@ export class InputHandler implements IInputHandler {
           }
         }
       }
-      row = this._terminal.buffer.y + this._terminal.buffer.ybase;
+      row = buffer.y + buffer.ybase;
 
       // insert mode: move characters to right
       if (this._terminal.insertMode) {
@@ -86,28 +89,28 @@ export class InputHandler implements IInputHandler {
         for (let moves = 0; moves < chWidth; ++moves) {
           // remove last cell, if it's width is 0
           // we have to adjust the second last cell as well
-          const removed = this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).pop();
+          const removed = buffer.lines.get(buffer.y + buffer.ybase).pop();
           if (removed[CHAR_DATA_WIDTH_INDEX] === 0
-              && this._terminal.buffer.lines.get(row)[this._terminal.cols - 2]
-              && this._terminal.buffer.lines.get(row)[this._terminal.cols - 2][CHAR_DATA_WIDTH_INDEX] === 2) {
-            this._terminal.buffer.lines.get(row)[this._terminal.cols - 2] = [this._terminal.curAttr, ' ', 1, ' '.charCodeAt(0)];
+              && buffer.lines.get(row)[this._terminal.cols - 2]
+              && buffer.lines.get(row)[this._terminal.cols - 2][CHAR_DATA_WIDTH_INDEX] === 2) {
+            buffer.lines.get(row)[this._terminal.cols - 2] = [this._terminal.curAttr, ' ', 1, ' '.charCodeAt(0)];
           }
 
           // insert empty cell at cursor
-          this._terminal.buffer.lines.get(row).splice(this._terminal.buffer.x, 0, [this._terminal.curAttr, ' ', 1, ' '.charCodeAt(0)]);
+          buffer.lines.get(row).splice(buffer.x, 0, [this._terminal.curAttr, ' ', 1, ' '.charCodeAt(0)]);
         }
       }
 
-      this._terminal.buffer.lines.get(row)[this._terminal.buffer.x] = [this._terminal.curAttr, char, chWidth, char.charCodeAt(0)];
-      this._terminal.buffer.x++;
-      this._terminal.updateRange(this._terminal.buffer.y);
+      buffer.lines.get(row)[buffer.x] = [this._terminal.curAttr, char, chWidth, char.charCodeAt(0)];
+      buffer.x++;
+      this._terminal.updateRange(buffer.y);
 
       // fullwidth char - set next cell width to zero and advance cursor
       if (chWidth === 2) {
-        this._terminal.buffer.lines.get(row)[this._terminal.buffer.x] = [this._terminal.curAttr, '', 0, undefined];
-        this._terminal.buffer.x++;
+        buffer.lines.get(row)[buffer.x] = [this._terminal.curAttr, '', 0, undefined];
+        buffer.x++;
       }
-    }
+    // }
   }
 
   /**
