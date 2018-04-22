@@ -334,7 +334,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     this._inputHandler = new InputHandler(this);
     // this._parser = new Parser(this._inputHandler, this);
-    this._newParser = new ParserTerminal(this, this._inputHandler);
+    this._newParser = new ParserTerminal(this._inputHandler, this);
     // Reuse renderer if the Terminal is being recreated via a reset call.
     this.renderer = this.renderer || null;
     this.selectionManager = this.selectionManager || null;
@@ -1320,7 +1320,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // just sets the state back based on the correct return statement.
 
       // const state = this._parser.parse(data);
-      this._newParser.write(data);
+      this._newParser.parse(data);
       // this._parser.setState(state);
 
       this.updateRange(this.buffer.y);
