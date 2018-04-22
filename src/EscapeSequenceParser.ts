@@ -1,17 +1,62 @@
+import { IInputHandler, IInputHandlingTerminal } from './Types';
+import { CHARSETS, DEFAULT_CHARSET } from './Charsets';
+import { C0 } from './EscapeSequences';
+
+
+// terminal interface for the escape sequence parser
 export interface IParserTerminal {
-    inst_p?: (s: string, start: number, end: number) => void;
-    inst_o?: (s: string) => void;
-    inst_x?: (flag: string) => void;
-    inst_c?: (collected: string, params: number[], flag: string) => void;
-    inst_e?: (collected: string, flag: string) => void;
-    inst_H?: (collected: string, params: number[], flag: string) => void;
-    inst_P?: (dcs: string) => void;
-    inst_U?: () => void;
-    inst_E?: () => void; // TODO: real signature
+    actionPrint?: (data: string, start: number, end: number) => void;
+    actionOSC?: (data: string) => void;
+    actionExecute?: (flag: string) => void;
+    actionCSI?: (collected: string, params: number[], flag: string) => void;
+    actionESC?: (collected: string, flag: string) => void;
+    actionDCSHook?: (collected: string, params: number[], flag: string) => void;
+    actionDCSPrint?: (data: string, start: number, end: number) => void;
+    actionDCSUnhook?: () => void;
+    actionError?: () => void; // FIXME: real signature and error handling
 }
 
 
-export function r(a: number, b: number): number[] {
+// FSM states
+export const enum STATE {
+    GROUND = 0,
+    ESCAPE,
+    ESCAPE_INTERMEDIATE,
+    CSI_ENTRY,
+    CSI_PARAM,
+    CSI_INTERMEDIATE,
+    CSI_IGNORE,
+    SOS_PM_APC_STRING,
+    OSC_STRING,
+    DCS_ENTRY,
+    DCS_PARAM,
+    DCS_IGNORE,
+    DCS_INTERMEDIATE,
+    DCS_PASSTHROUGH
+}
+
+// FSM actions
+export const enum ACTION {
+    ignore = 0,
+    error,
+    print,
+    execute,
+    osc_start,
+    osc_put,
+    osc_end,
+    csi_dispatch,
+    param,
+    collect,
+    esc_dispatch,
+    clear,
+    dcs_hook,
+    dcs_put,
+    dcs_unhook
+}
+
+
+// number range macro
+function r(a: number, b: number): number[] {
     let c = b - a;
     let arr = new Array(c);
     while (c--) {
@@ -21,15 +66,20 @@ export function r(a: number, b: number): number[] {
 }
 
 
+// transition table of the FSM
+// TODO: fallback to array
 export class TransitionTable {
     public table: Uint8Array;
+
     constructor(length: number) {
         this.table = new Uint8Array(length);
     }
+
     add(inp: number, state: number, action: number | null, next: number | null): void {
         this.table[state << 8 | inp] = ((action | 0) << 4) | ((next === undefined) ? state : next);
     }
-    add_list(inps: number[], state: number, action: number | null, next: number | null): void {
+
+    addMany(inps: number[], state: number, action: number | null, next: number | null): void {
         for (let i = 0; i < inps.length; i++) {
             this.add(inps[i], state, action, next);
         }
@@ -37,125 +87,139 @@ export class TransitionTable {
 }
 
 
+// default definitions of printable and executable characters
 let PRINTABLES = r(0x20, 0x7f);
 let EXECUTABLES = r(0x00, 0x18);
 EXECUTABLES.push(0x19);
 EXECUTABLES.concat(r(0x1c, 0x20));
 
+// default transition of the FSM is [error, GROUND]
+let DEFAULT_TRANSITION = ACTION.error << 4 | STATE.GROUND;
 
-export const TRANSITION_TABLE = (function (): TransitionTable {
-    let t: TransitionTable = new TransitionTable(4095);
+// default DEC/ANSI compatible state transition table
+// as defined by https://vt100.net/emu/dec_ansi_parser
+export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
+    let table: TransitionTable = new TransitionTable(4095);
+
+    let states: number[] = r(STATE.GROUND, STATE.DCS_PASSTHROUGH + 1);
+    let state: any;
 
     // table with default transition [any] --> [error, GROUND]
-    for (let state = 0; state < 14; ++state) {
+    for (state in states) {
+        // table lookup is capped at 0xa0 in parse
+        // any higher will be treated by the error action
         for (let code = 0; code < 160; ++code) {
-            t[state << 8 | code] = 16;
+            table[state << 8 | code] = DEFAULT_TRANSITION;
         }
     }
 
     // apply transitions
     // printables
-    t.add_list(PRINTABLES, 0, 2, 0);
+    table.addMany(PRINTABLES, STATE.GROUND, ACTION.print,  STATE.GROUND);
     // global anywhere rules
-    for (let state = 0; state < 14; ++state) {
-        t.add_list([0x18, 0x1a, 0x99, 0x9a], state, 3, 0);
-        t.add_list(r(0x80, 0x90), state, 3, 0);
-        t.add_list(r(0x90, 0x98), state, 3, 0);
-        t.add(0x9c, state, 0, 0);   // ST as terminator
-        t.add(0x1b, state, 11, 1);  // ESC
-        t.add(0x9d, state, 4, 8);   // OSC
-        t.add_list([0x98, 0x9e, 0x9f], state, 0, 7);
-        t.add(0x9b, state, 11, 3);  // CSI
-        t.add(0x90, state, 11, 9);  // DCS
+    for (state in states) {
+        table.addMany([0x18, 0x1a, 0x99, 0x9a], state, ACTION.execute, STATE.GROUND);
+        table.addMany(r(0x80, 0x90), state, ACTION.execute, STATE.GROUND);
+        table.addMany(r(0x90, 0x98), state, ACTION.execute, STATE.GROUND);
+        table.add(0x9c, state, ACTION.ignore, STATE.GROUND);    // ST as terminator
+        table.add(0x1b, state, ACTION.clear, STATE.ESCAPE);     // ESC
+        table.add(0x9d, state, ACTION.osc_start, STATE.OSC_STRING);  // OSC
+        table.addMany([0x98, 0x9e, 0x9f], state, ACTION.ignore, STATE.SOS_PM_APC_STRING);
+        table.add(0x9b, state, ACTION.clear, STATE.CSI_ENTRY);  // CSI
+        table.add(0x90, state, ACTION.clear, STATE.DCS_ENTRY);  // DCS
     }
     // rules for executables and 7f
-    t.add_list(EXECUTABLES, 0, 3, 0);
-    t.add_list(EXECUTABLES, 1, 3, 1);
-    t.add(0x7f, 1, null, 1);
-    t.add_list(EXECUTABLES, 8, null, 8);
-    t.add_list(EXECUTABLES, 3, 3, 3);
-    t.add(0x7f, 3, null, 3);
-    t.add_list(EXECUTABLES, 4, 3, 4);
-    t.add(0x7f, 4, null, 4);
-    t.add_list(EXECUTABLES, 6, 3, 6);
-    t.add_list(EXECUTABLES, 5, 3, 5);
-    t.add(0x7f, 5, null, 5);
-    t.add_list(EXECUTABLES, 2, 3, 2);
-    t.add(0x7f, 2, null, 2);
+    table.addMany(EXECUTABLES, STATE.GROUND, ACTION.execute, STATE.GROUND);
+    table.addMany(EXECUTABLES, STATE.ESCAPE, ACTION.execute, STATE.ESCAPE);
+    table.add(0x7f, STATE.ESCAPE, ACTION.ignore, STATE.ESCAPE);
+    table.addMany(EXECUTABLES, STATE.OSC_STRING, ACTION.ignore, STATE.OSC_STRING);
+    table.addMany(EXECUTABLES, STATE.CSI_ENTRY, ACTION.execute, STATE.CSI_ENTRY);
+    table.add(0x7f, STATE.CSI_ENTRY, ACTION.ignore, STATE.CSI_ENTRY);
+    table.addMany(EXECUTABLES, STATE.CSI_PARAM, ACTION.execute, STATE.CSI_PARAM);
+    table.add(0x7f, STATE.CSI_PARAM, ACTION.ignore, STATE.CSI_PARAM);
+    table.addMany(EXECUTABLES, STATE.CSI_IGNORE, ACTION.execute, STATE.CSI_IGNORE);
+    table.addMany(EXECUTABLES, STATE.CSI_INTERMEDIATE, ACTION.execute, STATE.CSI_INTERMEDIATE);
+    table.add(0x7f, STATE.CSI_INTERMEDIATE, ACTION.ignore, STATE.CSI_INTERMEDIATE);
+    table.addMany(EXECUTABLES, STATE.ESCAPE_INTERMEDIATE, ACTION.execute, STATE.ESCAPE_INTERMEDIATE);
+    table.add(0x7f, STATE.ESCAPE_INTERMEDIATE, ACTION.ignore, STATE.ESCAPE_INTERMEDIATE);
     // osc
-    t.add(0x5d, 1, 4, 8);
-    t.add_list(PRINTABLES, 8, 5, 8);
-    t.add(0x7f, 8, 5, 8);
-    t.add_list([0x9c, 0x1b, 0x18, 0x1a, 0x07], 8, 6, 0);
-    t.add_list(r(0x1c, 0x20), 8, 0, 8);
+    table.add(0x5d, STATE.ESCAPE, ACTION.osc_start, STATE.OSC_STRING);
+    table.addMany(PRINTABLES, STATE.OSC_STRING, ACTION.osc_put, STATE.OSC_STRING);
+    table.add(0x7f, STATE.OSC_STRING, ACTION.osc_put, STATE.OSC_STRING);
+    table.addMany([0x9c, 0x1b, 0x18, 0x1a, 0x07], STATE.OSC_STRING, ACTION.osc_end, STATE.GROUND);
+    table.addMany(r(0x1c, 0x20), STATE.OSC_STRING, ACTION.ignore, STATE.OSC_STRING);
     // sos/pm/apc does nothing
-    t.add_list([0x58, 0x5e, 0x5f], 1, 0, 7);
-    t.add_list(PRINTABLES, 7, null, 7);
-    t.add_list(EXECUTABLES, 7, null, 7);
-    t.add(0x9c, 7, 0, 0);
+    table.addMany([0x58, 0x5e, 0x5f], STATE.ESCAPE, ACTION.ignore, STATE.SOS_PM_APC_STRING);
+    table.addMany(PRINTABLES, STATE.SOS_PM_APC_STRING, ACTION.ignore, STATE.SOS_PM_APC_STRING);
+    table.addMany(EXECUTABLES, STATE.SOS_PM_APC_STRING, ACTION.ignore, STATE.SOS_PM_APC_STRING);
+    table.add(0x9c, STATE.SOS_PM_APC_STRING, ACTION.ignore, STATE.GROUND);
     // csi entries
-    t.add(0x5b, 1, 11, 3);
-    t.add_list(r(0x40, 0x7f), 3, 7, 0);
-    t.add_list(r(0x30, 0x3a), 3, 8, 4);
-    t.add(0x3b, 3, 8, 4);
-    t.add_list([0x3c, 0x3d, 0x3e, 0x3f], 3, 9, 4);
-    t.add_list(r(0x30, 0x3a), 4, 8, 4);
-    t.add(0x3b, 4, 8, 4);
-    t.add_list(r(0x40, 0x7f), 4, 7, 0);
-    t.add_list([0x3a, 0x3c, 0x3d, 0x3e, 0x3f], 4, 0, 6);
-    t.add_list(r(0x20, 0x40), 6, null, 6);
-    t.add(0x7f, 6, null, 6);
-    t.add_list(r(0x40, 0x7f), 6, 0, 0);
-    t.add(0x3a, 3, 0, 6);
-    t.add_list(r(0x20, 0x30), 3, 9, 5);
-    t.add_list(r(0x20, 0x30), 5, 9, 5);
-    t.add_list(r(0x30, 0x40), 5, 0, 6);
-    t.add_list(r(0x40, 0x7f), 5, 7, 0);
-    t.add_list(r(0x20, 0x30), 4, 9, 5);
+    table.add(0x5b, STATE.ESCAPE, ACTION.clear, STATE.CSI_ENTRY);
+    table.addMany(r(0x40, 0x7f), STATE.CSI_ENTRY, ACTION.csi_dispatch, STATE.GROUND);
+    table.addMany(r(0x30, 0x3a), STATE.CSI_ENTRY, ACTION.param, STATE.CSI_PARAM);
+    table.add(0x3b, STATE.CSI_ENTRY, ACTION.param, STATE.CSI_PARAM);
+    table.addMany([0x3c, 0x3d, 0x3e, 0x3f], STATE.CSI_ENTRY, ACTION.collect, STATE.CSI_PARAM);
+    table.addMany(r(0x30, 0x3a), STATE.CSI_PARAM, ACTION.param, STATE.CSI_PARAM);
+    table.add(0x3b, STATE.CSI_PARAM, ACTION.param, STATE.CSI_PARAM);
+    table.addMany(r(0x40, 0x7f), STATE.CSI_PARAM, ACTION.csi_dispatch, STATE.GROUND);
+    table.addMany([0x3a, 0x3c, 0x3d, 0x3e, 0x3f], STATE.CSI_PARAM, ACTION.ignore, STATE.CSI_IGNORE);
+    table.addMany(r(0x20, 0x40), STATE.CSI_IGNORE, null, STATE.CSI_IGNORE);
+    table.add(0x7f, STATE.CSI_IGNORE, null, STATE.CSI_IGNORE);
+    table.addMany(r(0x40, 0x7f), STATE.CSI_IGNORE, ACTION.ignore, STATE.GROUND);
+    table.add(0x3a, STATE.CSI_ENTRY, ACTION.ignore, STATE.CSI_IGNORE);
+    table.addMany(r(0x20, 0x30), STATE.CSI_ENTRY, ACTION.collect, STATE.CSI_INTERMEDIATE);
+    table.addMany(r(0x20, 0x30), STATE.CSI_INTERMEDIATE, ACTION.collect, STATE.CSI_INTERMEDIATE);
+    table.addMany(r(0x30, 0x40), STATE.CSI_INTERMEDIATE, ACTION.ignore, STATE.CSI_IGNORE);
+    table.addMany(r(0x40, 0x7f), STATE.CSI_INTERMEDIATE, ACTION.csi_dispatch, STATE.GROUND);
+    table.addMany(r(0x20, 0x30), STATE.CSI_PARAM, ACTION.collect, STATE.CSI_INTERMEDIATE);
     // esc_intermediate
-    t.add_list(r(0x20, 0x30), 1, 9, 2);
-    t.add_list(r(0x20, 0x30), 2, 9, 2);
-    t.add_list(r(0x30, 0x7f), 2, 10, 0);
-    t.add_list(r(0x30, 0x50), 1, 10, 0);
-    t.add_list([0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x59, 0x5a, 0x5c], 1, 10, 0);
-    t.add_list(r(0x60, 0x7f), 1, 10, 0);
+    table.addMany(r(0x20, 0x30), STATE.ESCAPE, ACTION.collect, STATE.ESCAPE_INTERMEDIATE);
+    table.addMany(r(0x20, 0x30), STATE.ESCAPE_INTERMEDIATE, ACTION.collect, STATE.ESCAPE_INTERMEDIATE);
+    table.addMany(r(0x30, 0x7f), STATE.ESCAPE_INTERMEDIATE, ACTION.esc_dispatch, STATE.GROUND);
+    table.addMany(r(0x30, 0x50), STATE.ESCAPE, ACTION.esc_dispatch, STATE.GROUND);
+    table.addMany(r(0x51, 0x58), STATE.ESCAPE, ACTION.esc_dispatch, STATE.GROUND);
+    table.addMany([0x59, 0x5a, 0x5c], STATE.ESCAPE, ACTION.esc_dispatch, STATE.GROUND);
+    table.addMany(r(0x60, 0x7f), STATE.ESCAPE, ACTION.esc_dispatch, STATE.GROUND);
     // dcs entry
-    t.add(0x50, 1, 11, 9);
-    t.add_list(EXECUTABLES, 9, null, 9);
-    t.add(0x7f, 9, null, 9);
-    t.add_list(r(0x1c, 0x20), 9, null, 9);
-    t.add_list(r(0x20, 0x30), 9, 9, 12);
-    t.add(0x3a, 9, 0, 11);
-    t.add_list(r(0x30, 0x3a), 9, 8, 10);
-    t.add(0x3b, 9, 8, 10);
-    t.add_list([0x3c, 0x3d, 0x3e, 0x3f], 9, 9, 10);
-    t.add_list(EXECUTABLES, 11, null, 11);
-    t.add_list(r(0x20, 0x80), 11, null, 11);
-    t.add_list(r(0x1c, 0x20), 11, null, 11);
-    t.add_list(EXECUTABLES, 10, null, 10);
-    t.add(0x7f, 10, null, 10);
-    t.add_list(r(0x1c, 0x20), 10, null, 10);
-    t.add_list(r(0x30, 0x3a), 10, 8, 10);
-    t.add(0x3b, 10, 8, 10);
-    t.add_list([0x3a, 0x3c, 0x3d, 0x3e, 0x3f], 10, 0, 11);
-    t.add_list(r(0x20, 0x30), 10, 9, 12);
-    t.add_list(EXECUTABLES, 12, null, 12);
-    t.add(0x7f, 12, null, 12);
-    t.add_list(r(0x1c, 0x20), 12, null, 12);
-    t.add_list(r(0x20, 0x30), 12, 9, 12);
-    t.add_list(r(0x30, 0x40), 12, 0, 11);
-    t.add_list(r(0x40, 0x7f), 12, 12, 13);
-    t.add_list(r(0x40, 0x7f), 10, 12, 13);
-    t.add_list(r(0x40, 0x7f), 9, 12, 13);
-    t.add_list(EXECUTABLES, 13, 13, 13);
-    t.add_list(PRINTABLES, 13, 13, 13);
-    t.add(0x7f, 13, null, 13);
-    t.add_list([0x1b, 0x9c], 13, 14, 0);
+    table.add(0x50, STATE.ESCAPE, ACTION.clear, STATE.DCS_ENTRY);
+    table.addMany(EXECUTABLES, STATE.DCS_ENTRY, ACTION.ignore, STATE.DCS_ENTRY);
+    table.add(0x7f, STATE.DCS_ENTRY, ACTION.ignore, STATE.DCS_ENTRY);
+    table.addMany(r(0x1c, 0x20), STATE.DCS_ENTRY, ACTION.ignore, STATE.DCS_ENTRY);
+    table.addMany(r(0x20, 0x30), STATE.DCS_ENTRY, ACTION.collect, STATE.DCS_INTERMEDIATE);
+    table.add(0x3a, STATE.DCS_ENTRY, ACTION.ignore, STATE.DCS_IGNORE);
+    table.addMany(r(0x30, 0x3a), STATE.DCS_ENTRY, ACTION.param, STATE.DCS_PARAM);
+    table.add(0x3b, STATE.DCS_ENTRY, ACTION.param, STATE.DCS_PARAM);
+    table.addMany([0x3c, 0x3d, 0x3e, 0x3f], STATE.DCS_ENTRY, ACTION.collect, STATE.DCS_PARAM);
+    table.addMany(EXECUTABLES, STATE.DCS_IGNORE, ACTION.ignore, STATE.DCS_IGNORE);
+    table.addMany(r(0x20, 0x80), STATE.DCS_IGNORE, ACTION.ignore, STATE.DCS_IGNORE);
+    table.addMany(r(0x1c, 0x20), STATE.DCS_IGNORE, ACTION.ignore, STATE.DCS_IGNORE);
+    table.addMany(EXECUTABLES, STATE.DCS_PARAM, ACTION.ignore, STATE.DCS_PARAM);
+    table.add(0x7f, STATE.DCS_PARAM, ACTION.ignore, STATE.DCS_PARAM);
+    table.addMany(r(0x1c, 0x20), STATE.DCS_PARAM, ACTION.ignore, STATE.DCS_PARAM);
+    table.addMany(r(0x30, 0x3a), STATE.DCS_PARAM, ACTION.param, STATE.DCS_PARAM);
+    table.add(0x3b, STATE.DCS_PARAM, ACTION.param, STATE.DCS_PARAM);
+    table.addMany([0x3a, 0x3c, 0x3d, 0x3e, 0x3f], STATE.DCS_PARAM, ACTION.ignore, STATE.DCS_IGNORE);
+    table.addMany(r(0x20, 0x30), STATE.DCS_PARAM, ACTION.collect, STATE.DCS_INTERMEDIATE);
+    table.addMany(EXECUTABLES, STATE.DCS_INTERMEDIATE, ACTION.ignore, STATE.DCS_INTERMEDIATE);
+    table.add(0x7f, STATE.DCS_INTERMEDIATE, ACTION.ignore, STATE.DCS_INTERMEDIATE);
+    table.addMany(r(0x1c, 0x20), STATE.DCS_INTERMEDIATE, ACTION.ignore, STATE.DCS_INTERMEDIATE);
+    table.addMany(r(0x20, 0x30), STATE.DCS_INTERMEDIATE, ACTION.collect, STATE.DCS_INTERMEDIATE);
+    table.addMany(r(0x30, 0x40), STATE.DCS_INTERMEDIATE, ACTION.ignore, STATE.DCS_IGNORE);
+    table.addMany(r(0x40, 0x7f), STATE.DCS_INTERMEDIATE, ACTION.dcs_hook, STATE.DCS_PASSTHROUGH);
+    table.addMany(r(0x40, 0x7f), STATE.DCS_PARAM, ACTION.dcs_hook, STATE.DCS_PASSTHROUGH);
+    table.addMany(r(0x40, 0x7f), STATE.DCS_ENTRY, ACTION.dcs_hook, STATE.DCS_PASSTHROUGH);
+    table.addMany(EXECUTABLES, STATE.DCS_PASSTHROUGH, ACTION.dcs_put, STATE.DCS_PASSTHROUGH);
+    table.addMany(PRINTABLES, STATE.DCS_PASSTHROUGH, ACTION.dcs_put, STATE.DCS_PASSTHROUGH);
+    table.add(0x7f, STATE.DCS_PASSTHROUGH, ACTION.ignore, STATE.DCS_PASSTHROUGH);
+    table.addMany([0x1b, 0x9c], STATE.DCS_PASSTHROUGH, ACTION.dcs_unhook, STATE.GROUND);
 
-    return t;
+    return table;
 })();
 
-export class AnsiParser {
+
+// default transition table points to global object
+// Q: Copy table to allow custom sequences w'o changing global object?
+export class EscapeSequenceParser {
     public initialState: number;
     public currentState: number;
     public transitions: TransitionTable;
@@ -163,29 +227,34 @@ export class AnsiParser {
     public params: number[];
     public collected: string;
     public term: any;
-    constructor(terminal: IParserTerminal) {
-        this.initialState = 0;
-        this.currentState = this.initialState | 0;
-        this.transitions = new TransitionTable(4095);
-        this.transitions.table.set(TRANSITION_TABLE.table);
+    constructor(
+        terminal?: IParserTerminal | any,
+        transitions: TransitionTable = VT500_TRANSITION_TABLE)
+    {
+        this.initialState = STATE.GROUND;
+        this.currentState = this.initialState;
+        this.transitions = transitions;
         this.osc = '';
         this.params = [0];
         this.collected = '';
         this.term = terminal || {};
-        let instructions = ['inst_p', 'inst_o', 'inst_x', 'inst_c',
-            'inst_e', 'inst_H', 'inst_P', 'inst_U', 'inst_E'];
+        let instructions = [
+            'actionPrint', 'actionOSC', 'actionExecute', 'actionCSI', 'actionESC',
+            'actionDCSHook', 'actionDCSPrint', 'actionDCSUnhook', 'actionError'];
         for (let i = 0; i < instructions.length; ++i) {
             if (!(instructions[i] in this.term)) {
                 this.term[instructions[i]] = function(): void {};
             }
         }
     }
+
     reset(): void {
         this.currentState = this.initialState;
         this.osc = '';
         this.params = [0];
         this.collected = '';
     }
+
     parse(s: string): void {
         let code = 0;
         let transition = 0;
@@ -204,79 +273,81 @@ export class AnsiParser {
         let l = s.length;
         for (let i = 0; i < l; ++i) {
             code = s.charCodeAt(i);
+
             // shortcut for most chars (print action)
-            if (currentState === 0 && (code > 0x1f && code < 0x80)) {
+            if (currentState === STATE.GROUND && (code > 0x1f && code < 0x80)) {
                 printed = (~printed) ? printed : i;
                 continue;
             }
-            if (currentState === 4) {
-                if (code === 0x3b) {
-                    params.push(0);
-                    continue;
-                }
-                if (code > 0x2f && code < 0x39) {
-                    params[params.length - 1] = params[params.length - 1] * 10 + code - 48;
-                    continue;
-                }
+
+            // shortcut for CSI params
+            if (currentState === STATE.CSI_PARAM && (code > 0x2f && code < 0x39)) {
+                params[params.length - 1] = params[params.length - 1] * 10 + code - 48;
+                continue;
             }
-            transition = ((code < 0xa0) ? (table[currentState << 8 | code]) : 16);
+
+            // normal transition & action lookup
+            transition = (code < 0xa0) ? (table[currentState << 8 | code]) : DEFAULT_TRANSITION;
             switch (transition >> 4) {
-                case 2: // print
+                case ACTION.print:
                     printed = (~printed) ? printed : i;
                     break;
-                case 3: // execute
-                    if (printed + 1) {
-                        this.term.inst_p(s, printed, i);
+                case ACTION.execute:
+                    if (~printed) {
+                        this.term.actionPrint(s, printed, i);
                         printed = -1;
                     }
-                    this.term.inst_x(String.fromCharCode(code));
+                    this.term.actionExecute(String.fromCharCode(code));
                     break;
-                case 0: // ignore
-                    // handle leftover print and dcs chars
-                    if (printed + 1) {
-                        this.term.inst_p(s, printed, i);
+                case ACTION.ignore:
+                    // handle leftover print or dcs chars
+                    if (~printed) {
+                        this.term.actionPrint(s, printed, i);
                         printed = -1;
-                    } else if (dcs + 1) {
-                        this.term.inst_P(s.substring(dcs, i));
+                    } else if (~dcs) {
+                        this.term.actionDCSPrint(s, dcs, i);
                         dcs = -1;
                     }
                     break;
-                case 1: // error
-                    // handle unicode chars in write buffers w'o state change
+                case ACTION.error:
+                    // chars higher than 0x9f are handled by this action to
+                    // keep the lookup table small
                     if (code > 0x9f) {
                         switch (currentState) {
-                            case 0: // GROUND -> add char to print string
+                            case STATE.GROUND:          // add char to print string
                                 printed = (~printed) ? printed : i;
                                 break;
-                            case 8: // OSC_STRING -> add char to osc string
+                            case STATE.OSC_STRING:      // add char to osc string
                                 osc += String.fromCharCode(code);
-                                transition |= 8;
+                                transition |= STATE.OSC_STRING;
                                 break;
-                            case 6: // CSI_IGNORE -> ignore char
-                                transition |= 6;
+                            case STATE.CSI_IGNORE:      // ignore char
+                                transition |= STATE.CSI_IGNORE;
                                 break;
-                            case 11: // DCS_IGNORE -> ignore char
-                                transition |= 11;
+                            case STATE.DCS_IGNORE:      // ignore char
+                                transition |= STATE.DCS_IGNORE;
                                 break;
-                            case 13: // DCS_PASSTHROUGH -> add char to dcs
-                                if (!(~dcs)) dcs = i | 0;
-                                transition |= 13;
+                            case STATE.DCS_PASSTHROUGH: // add char to dcs string
+                                dcs = (~dcs) ? dcs : i;
+                                transition |= STATE.DCS_PASSTHROUGH;
                                 break;
-                            default: // real error
+                            default:
                                 error = true;
                         }
-                    } else { // real error
+                    } else {
                         error = true;
                     }
+                    // if we end up here a real error happened
+                    // FIXME: eval and inject return values
                     if (error) {
-                        if (this.term.inst_E(
+                        if (this.term.actionError(
                                 {
-                                    pos: i,                 // position in parse string
-                                    character: String.fromCharCode(code), // wrong character
-                                    state: currentState,   // in state
-                                    print: printed,         // print buffer
-                                    dcs: dcs,               // dcs buffer
-                                    osc: osc,               // osc buffer
+                                    pos: i,                 // position in string
+                                    code: code,             // actual character code
+                                    state: currentState,    // current state
+                                    print: printed,         // print buffer start index
+                                    dcs: dcs,               // dcs buffer start index
+                                    osc: osc,               // osc string buffer
                                     collect: collected,     // collect buffer
                                     params: params          // params buffer
                                 })) {
@@ -285,22 +356,22 @@ export class AnsiParser {
                         error = false;
                     }
                     break;
-                case 7: // csi_dispatch
-                    this.term.inst_c(collected, params, String.fromCharCode(code));
+                case ACTION.csi_dispatch:
+                    this.term.actionCSI(collected, params, String.fromCharCode(code));
                     break;
-                case 8: // param
+                case ACTION.param:
                     if (code === 0x3b) params.push(0);
                     else params[params.length - 1] = params[params.length - 1] * 10 + code - 48;
                     break;
-                case 9: // collect
+                case ACTION.collect:
                     collected += String.fromCharCode(code);
                     break;
-                case 10: // esc_dispatch
-                    this.term.inst_e(collected, String.fromCharCode(code));
+                case ACTION.esc_dispatch:
+                    this.term.actionESC(collected, String.fromCharCode(code));
                     break;
-                case 11: // clear
+                case ACTION.clear:
                     if (~printed) {
-                        this.term.inst_p(s, printed, i);
+                        this.term.actionPrint(s, printed, i);
                         printed = -1;
                     }
                     osc = '';
@@ -308,34 +379,34 @@ export class AnsiParser {
                     collected = '';
                     dcs = -1;
                     break;
-                case 12: // dcs_hook
-                    this.term.inst_H(collected, params, String.fromCharCode(code));
+                case ACTION.dcs_hook:
+                    this.term.actionDCSHook(collected, params, String.fromCharCode(code));
                     break;
-                case 13: // dcs_put
-                    if (!(~dcs)) dcs = i;
+                case ACTION.dcs_put:
+                    dcs = (~dcs) ? dcs : i;
                     break;
-                case 14: // dcs_unhook
-                    if (~dcs) this.term.inst_P(s.substring(dcs, i));
-                    this.term.inst_U();
-                    if (code === 0x1b) transition |= 1;
+                case ACTION.dcs_unhook:
+                    if (~dcs) this.term.actionDCSPrint(s, dcs, i);
+                    this.term.actionDCSUnhook();
+                    if (code === 0x1b) transition |= STATE.ESCAPE;
                     osc = '';
                     params = [0];
                     collected = '';
                     dcs = -1;
                     break;
-                case 4: // osc_start
+                case ACTION.osc_start:
                     if (~printed) {
-                        this.term.inst_p(s, printed, i);
+                        this.term.actionPrint(s, printed, i);
                         printed = -1;
                     }
                     osc = '';
                     break;
-                case 5: // osc_put
+                case ACTION.osc_put:
                     osc += s.charAt(i);
                     break;
-                case 6: // osc_end
-                    if (osc && code !== 0x18 && code !== 0x1a) this.term.inst_o(osc);
-                    if (code === 0x1b) transition |= 1;
+                case ACTION.osc_end:
+                    if (osc && code !== 0x18 && code !== 0x1a) this.term.actionOSC(osc);
+                    if (code === 0x1b) transition |= STATE.ESCAPE;
                     osc = '';
                     params = [0];
                     collected = '';
@@ -346,10 +417,10 @@ export class AnsiParser {
         }
 
         // push leftover pushable buffers to terminal
-        if (!currentState && (printed + 1)) {
-            this.term.inst_p(s, printed, s.length);
-        } else if (currentState === 13 && (dcs + 1)) {
-            this.term.inst_P(s.substring(dcs));
+        if (currentState === STATE.GROUND && ~printed) {
+            this.term.actionPrint(s, printed, s.length);
+        } else if (currentState === STATE.DCS_PASSTHROUGH && ~dcs) {
+            this.term.actionDCSPrint(s, dcs, s.length);
         }
 
         // save non pushable buffers
@@ -363,31 +434,28 @@ export class AnsiParser {
 }
 
 
-
-
-
-import { IInputHandler, IInputHandlingTerminal } from './Types';
-import { CHARSETS, DEFAULT_CHARSET } from './Charsets';
-import { C0 } from './EscapeSequences';
-
 // glue code between AnsiParser and Terminal
+// action methods are the places to call custom sequence handlers
+// Q: Do we need custom handler support for all escape sequences types?
+// Q: Merge class with InputHandler?
 export class ParserTerminal implements IParserTerminal {
-    private _parser: AnsiParser;
+    private _parser: EscapeSequenceParser;
     private _terminal: any;
     private _inputHandler: IInputHandler;
 
-    constructor(_terminal: any, _inputHandler: IInputHandler) {
-        this._parser = new AnsiParser(this);
+    constructor(_inputHandler: IInputHandler, _terminal: any) {
+        this._parser = new EscapeSequenceParser(this);
         this._terminal = _terminal;
         this._inputHandler = _inputHandler;
     }
 
-    write(data: string): void {
+    parse(data: string): void {
         const cursorStartX = this._terminal.buffer.x;
         const cursorStartY = this._terminal.buffer.y;
         if (this._terminal.debug) {
           this._terminal.log('data: ' + data);
         }
+
         // apply leftover surrogate high from last write
         if (this._terminal.surrogate_high) {
           data = this._terminal.surrogate_high + data;
@@ -401,8 +469,7 @@ export class ParserTerminal implements IParserTerminal {
         }
     }
 
-    inst_p(data: string, start: number, end: number): void {
-        // const l = data.length;
+    actionPrint(data: string, start: number, end: number): void {
         let ch;
         let code;
         let low;
@@ -429,14 +496,19 @@ export class ParserTerminal implements IParserTerminal {
         }
     }
 
-    inst_o(data: string): void {
-        let params = data.split(';');
-        switch (parseInt(params[0])) {
+    actionOSC(data: string): void {
+        let idx = data.indexOf(';');
+        let identifier = parseInt(data.substring(0, idx));
+        let content = data.substring(idx + 1);
+
+        // TODO: call custom OSC handler here
+
+        switch (identifier) {
             case 0:
             case 1:
             case 2:
-                if (params[1]) {
-                    this._terminal.title = params[1];
+                if (content) {
+                    this._terminal.title = content;
                     this._terminal.handleTitle(this._terminal.title);
                 }
                 break;
@@ -487,11 +559,13 @@ export class ParserTerminal implements IParserTerminal {
         }
     }
 
-    inst_x(flag: string): void {
+    actionExecute(flag: string): void {
+        // Q: No XON/XOFF handling here - where is it done?
+        // Q: do we need the default fallback to addChar?
         switch (flag) {
             case C0.BEL: return this._inputHandler.bell();
-            case C0.LF: return this._inputHandler.lineFeed();
-            case C0.VT: return this._inputHandler.lineFeed();
+            case C0.LF:
+            case C0.VT:
             case C0.FF: return this._inputHandler.lineFeed();
             case C0.CR: return this._inputHandler.carriageReturn();
             case C0.BS: return this._inputHandler.backspace();
@@ -504,7 +578,7 @@ export class ParserTerminal implements IParserTerminal {
         this._terminal.error('Unknown EXEC flag: %s.', flag);
     }
 
-    inst_c(collected: string, params: number[], flag: string): void {
+    actionCSI(collected: string, params: number[], flag: string): void {
         this._terminal.prefix = collected;
         switch (flag) {
             case '@': return this._inputHandler.insertChars(params);
@@ -524,6 +598,7 @@ export class ParserTerminal implements IParserTerminal {
             case 'P': return this._inputHandler.deleteChars(params);
             case 'S': return this._inputHandler.scrollUp(params);
             case 'T':
+                // Q: Why this condition?
                 if (params.length < 2 && !collected) {
                     return this._inputHandler.scrollDown(params);
                 }
@@ -559,33 +634,26 @@ export class ParserTerminal implements IParserTerminal {
         this._terminal.error('Unknown CSI code: %s %s %s.', collected, params, flag);
     }
 
-    inst_e(collected: string, flag: string): void {
-        let cs;
-
+    actionESC(collected: string, flag: string): void {
         switch (collected) {
             case '':
                 switch (flag) {
                     // case '6':  // Back Index (DECBI), VT420 and up - not supported
                     case '7':  // Save Cursor (DECSC)
-                        this._inputHandler.saveCursor();
-                        return;
+                        return this._inputHandler.saveCursor();
                     case '8':  // Restore Cursor (DECRC)
-                        this._inputHandler.restoreCursor();
-                        return;
+                        return this._inputHandler.restoreCursor();
                     // case '9':  // Forward Index (DECFI), VT420 and up - not supported
                     case 'D':  // Index (IND is 0x84)
-                        this._terminal.index();
-                        return;
+                        return this._terminal.index();
                     case 'E':  // Next Line (NEL is 0x85)
                         this._terminal.buffer.x = 0;
                         this._terminal.index();
                         return;
                     case 'H':  //    ESC H   Tab Set (HTS is 0x88)
-                        (<IInputHandlingTerminal>this._terminal).tabSet();
-                        return;
+                        return (<IInputHandlingTerminal>this._terminal).tabSet();
                     case 'M':  // Reverse Index (RI is 0x8d)
-                        this._terminal.reverseIndex();
-                        return;
+                        return this._terminal.reverseIndex();
                     case 'N':  // Single Shift Select of G2 Character Set ( SS2 is 0x8e) - Is this supported?
                     case 'O':  // Single Shift Select of G3 Character Set ( SS3 is 0x8f)
                         return;
@@ -620,20 +688,15 @@ export class ParserTerminal implements IParserTerminal {
                     // case 'l':  // Memory Lock (per HP terminals). Locks memory above the cursor.
                     // case 'm':  // Memory Unlock (per HP terminals).
                     case 'n':  // Invoke the G2 Character Set as GL (LS2).
-                        this._terminal.setgLevel(2);
-                        return;
+                        return this._terminal.setgLevel(2);
                     case 'o':  // Invoke the G3 Character Set as GL (LS3).
-                        this._terminal.setgLevel(3);
-                        return;
+                        return this._terminal.setgLevel(3);
                     case '|':  // Invoke the G3 Character Set as GR (LS3R).
-                        this._terminal.setgLevel(3);
-                        return;
+                        return this._terminal.setgLevel(3);
                     case '}':  // Invoke the G2 Character Set as GR (LS2R).
-                        this._terminal.setgLevel(2);
-                        return;
+                        return this._terminal.setgLevel(2);
                     case '~':  // Invoke the G1 Character Set as GR (LS1R).
-                        this._terminal.setgLevel(1);
-                        return;
+                        return this._terminal.setgLevel(1);
                 }
             // case ' ':
                 // switch (flag) {
@@ -664,55 +727,59 @@ export class ParserTerminal implements IParserTerminal {
 
             // load character sets
             case '(': // G0 (VT100)
-                cs = CHARSETS[flag];
-                if (!cs) cs = DEFAULT_CHARSET;
-                this._terminal.setgCharset(0, cs);
-                return;
+                return this._terminal.setgCharset(0, CHARSETS[flag] || DEFAULT_CHARSET);
             case ')': // G1 (VT100)
-                cs = CHARSETS[flag];
-                if (!cs) cs = DEFAULT_CHARSET;
-                this._terminal.setgCharset(1, cs);
-                return;
+                return this._terminal.setgCharset(1, CHARSETS[flag] || DEFAULT_CHARSET);
             case '*': // G2 (VT220)
-                cs = CHARSETS[flag];
-                if (!cs) cs = DEFAULT_CHARSET;
-                this._terminal.setgCharset(2, cs);
-                return;
+                return this._terminal.setgCharset(2, CHARSETS[flag] || DEFAULT_CHARSET);
             case '+': // G3 (VT220)
-                cs = CHARSETS[flag];
-                if (!cs) cs = DEFAULT_CHARSET;
-                this._terminal.setgCharset(3, cs);
-                return;
+                return this._terminal.setgCharset(3, CHARSETS[flag] || DEFAULT_CHARSET);
             case '-': // G1 (VT300)
-            cs = CHARSETS[flag];
-                if (!cs) cs = DEFAULT_CHARSET;
-                this._terminal.setgCharset(1, cs);
-                return;
+                return this._terminal.setgCharset(1, CHARSETS[flag] || DEFAULT_CHARSET);
             case '.': // G2 (VT300)
-                if (!cs) cs = DEFAULT_CHARSET;
-                this._terminal.setgCharset(2, cs);
-                return;
+                return this._terminal.setgCharset(2, CHARSETS[flag] || DEFAULT_CHARSET);
             case '/': // G3 (VT300)
-                // not supported - how to deal with this? (original code is not reachable)
+                // not supported - how to deal with this? (Q: original code is not reachable?)
                 return;
             default:
                 this._terminal.error('Unknown ESC control: %s %s.', collected, flag);
         }
     }
 
-    inst_H(collected: string, params: number[], flag: string): void {
+    actionDCSHook(collected: string, params: number[], flag: string): void {
+        // TODO + custom hook
+    }
+
+    actionDCSPrint(data: string): void {
+        // TODO + custom hook
+    }
+
+    actionDCSUnhook(): void {
+        // TODO + custom hook
+    }
+
+    actionError(): void {
         // TODO
     }
 
-    inst_P(dcs: string): void {
+    // custom handler interface
+    // Q: explicit like below or with an event like interface?
+    // tricky part: DCS handler need to be stateful over several
+    //              actionDCSPrint invocations - own base interface/abstract class type?
+
+    registerOSCHandler(): void {
         // TODO
     }
 
-    inst_U(): void {
+    unregisterOSCHandler(): void {
         // TODO
     }
 
-    inst_E(): void {
+    registerDCSHandler(): void {
+        // TODO
+    }
+
+    unregisterDCSHandler(): void {
         // TODO
     }
 }
