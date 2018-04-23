@@ -34,6 +34,7 @@ export class Buffer implements IBuffer {
   public savedY: number;
   public savedX: number;
   public markers: Marker[] = [];
+  public lines: CircularList<LineData>;
 
   /**
    * Create a new Buffer.
@@ -46,10 +47,6 @@ export class Buffer implements IBuffer {
     private _hasScrollback: boolean
   ) {
     this.clear();
-  }
-
-  public get lines(): CircularList<LineData> {
-    return this._lines;
   }
 
   public get hasScrollback(): boolean {
@@ -98,6 +95,7 @@ export class Buffer implements IBuffer {
     this.y = 0;
     this.x = 0;
     this._lines = new CircularList<LineData>(this._getCorrectBufferLength(this._terminal.rows));
+    this.lines = this._lines;
     this.scrollTop = 0;
     this.scrollBottom = this._terminal.rows - 1;
     this.setupTabStops();
