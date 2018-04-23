@@ -39,7 +39,6 @@ export class InputHandler implements IInputHandler {
         this._terminal.emit('a11y.char', char);
       }
 
-      //let row = buffer.y + buffer.ybase;
       let row = buffer.lines.get(buffer.y + buffer.ybase);
 
       // insert combining char in last cell
