@@ -39,22 +39,23 @@ export class InputHandler implements IInputHandler {
         this._terminal.emit('a11y.char', char);
       }
 
-      let row = buffer.y + buffer.ybase;
+      //let row = buffer.y + buffer.ybase;
+      let row = buffer.lines.get(buffer.y + buffer.ybase);
 
       // insert combining char in last cell
       // FIXME: needs handling after cursor jumps
       if (!chWidth && buffer.x) {
         // dont overflow left
-        if (buffer.lines.get(row)[buffer.x - 1]) {
-          if (!buffer.lines.get(row)[buffer.x - 1][CHAR_DATA_WIDTH_INDEX]) {
+        if (row[buffer.x - 1]) {
+          if (!row[buffer.x - 1][CHAR_DATA_WIDTH_INDEX]) {
             // found empty cell after fullwidth, need to go 2 cells back
-            if (buffer.lines.get(row)[buffer.x - 2]) {
-              buffer.lines.get(row)[buffer.x - 2][CHAR_DATA_CHAR_INDEX] += char;
-              buffer.lines.get(row)[buffer.x - 2][3] = char.charCodeAt(0);
+            if (row[buffer.x - 2]) {
+              row[buffer.x - 2][CHAR_DATA_CHAR_INDEX] += char;
+              row[buffer.x - 2][3] = char.charCodeAt(0);
             }
           } else {
-            buffer.lines.get(row)[buffer.x - 1][CHAR_DATA_CHAR_INDEX] += char;
-            buffer.lines.get(row)[buffer.x - 1][3] = char.charCodeAt(0);
+            row[buffer.x - 1][CHAR_DATA_CHAR_INDEX] += char;
+            row[buffer.x - 1][3] = char.charCodeAt(0);
           }
           this._terminal.updateRange(buffer.y);
         }
@@ -82,7 +83,7 @@ export class InputHandler implements IInputHandler {
           }
         }
       }
-      row = buffer.y + buffer.ybase;
+      row = buffer.lines.get(buffer.y + buffer.ybase);
 
       // insert mode: move characters to right
       if (this._terminal.insertMode) {
@@ -92,23 +93,23 @@ export class InputHandler implements IInputHandler {
           // we have to adjust the second last cell as well
           const removed = buffer.lines.get(buffer.y + buffer.ybase).pop();
           if (removed[CHAR_DATA_WIDTH_INDEX] === 0
-              && buffer.lines.get(row)[this._terminal.cols - 2]
-              && buffer.lines.get(row)[this._terminal.cols - 2][CHAR_DATA_WIDTH_INDEX] === 2) {
-            buffer.lines.get(row)[this._terminal.cols - 2] = [this._terminal.curAttr, ' ', 1, ' '.charCodeAt(0)];
+              && row[this._terminal.cols - 2]
+              && row[this._terminal.cols - 2][CHAR_DATA_WIDTH_INDEX] === 2) {
+            row[this._terminal.cols - 2] = [this._terminal.curAttr, ' ', 1, ' '.charCodeAt(0)];
           }
 
           // insert empty cell at cursor
-          buffer.lines.get(row).splice(buffer.x, 0, [this._terminal.curAttr, ' ', 1, ' '.charCodeAt(0)]);
+          row.splice(buffer.x, 0, [this._terminal.curAttr, ' ', 1, ' '.charCodeAt(0)]);
         }
       }
 
-      buffer.lines.get(row)[buffer.x] = [this._terminal.curAttr, char, chWidth, char.charCodeAt(0)];
+      row[buffer.x] = [this._terminal.curAttr, char, chWidth, char.charCodeAt(0)];
       buffer.x++;
       this._terminal.updateRange(buffer.y);
 
       // fullwidth char - set next cell width to zero and advance cursor
       if (chWidth === 2) {
-        buffer.lines.get(row)[buffer.x] = [this._terminal.curAttr, '', 0, undefined];
+        row[buffer.x] = [this._terminal.curAttr, '', 0, undefined];
         buffer.x++;
       }
     }
