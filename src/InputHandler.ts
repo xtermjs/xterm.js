@@ -25,7 +25,7 @@ export class InputHandler implements IInputHandler {
     if (char >= ' ') {
 
       // make buffer local for faster access
-      let buffer = this._terminal.buffer;
+      const buffer = this._terminal.buffer;
 
       // calculate print space
       // expensive call, therefore we save width in line buffer
@@ -128,7 +128,7 @@ export class InputHandler implements IInputHandler {
    */
   public lineFeed(): void {
     // make buffer local for faster access
-    let buffer = this._terminal.buffer;
+    const buffer = this._terminal.buffer;
 
     if (this._terminal.convertEol) {
       buffer.x = 0;
@@ -207,7 +207,7 @@ export class InputHandler implements IInputHandler {
     if (param < 1) param = 1;
 
     // make buffer local for faster access
-    let buffer = this._terminal.buffer;
+    const buffer = this._terminal.buffer;
 
     const row = buffer.y + buffer.ybase;
     let j = buffer.x;
@@ -459,7 +459,7 @@ export class InputHandler implements IInputHandler {
     }
 
     // make buffer local for faster access
-    let buffer = this._terminal.buffer;
+    const buffer = this._terminal.buffer;
 
     let row: number = buffer.y + buffer.ybase;
 
@@ -488,7 +488,7 @@ export class InputHandler implements IInputHandler {
     }
 
     // make buffer local for faster access
-    let buffer = this._terminal.buffer;
+    const buffer = this._terminal.buffer;
 
     const row: number = buffer.y + buffer.ybase;
 
@@ -518,7 +518,7 @@ export class InputHandler implements IInputHandler {
     }
 
     // make buffer local for faster access
-    let buffer = this._terminal.buffer;
+    const buffer = this._terminal.buffer;
 
     const row = buffer.y + buffer.ybase;
     const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32]; // xterm
@@ -537,7 +537,7 @@ export class InputHandler implements IInputHandler {
     let param = params[0] || 1;
 
     // make buffer local for faster access
-    let buffer = this._terminal.buffer;
+    const buffer = this._terminal.buffer;
 
     while (param--) {
       buffer.lines.splice(buffer.ybase + buffer.scrollTop, 1);
@@ -555,7 +555,7 @@ export class InputHandler implements IInputHandler {
     let param = params[0] || 1;
 
     // make buffer local for faster access
-    let buffer = this._terminal.buffer;
+    const buffer = this._terminal.buffer;
 
     while (param--) {
       buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 1);
@@ -577,7 +577,7 @@ export class InputHandler implements IInputHandler {
     }
 
     // make buffer local for faster access
-    let buffer = this._terminal.buffer;
+    const buffer = this._terminal.buffer;
 
     const row = buffer.y + buffer.ybase;
     let j = buffer.x;
@@ -595,7 +595,7 @@ export class InputHandler implements IInputHandler {
     let param = params[0] || 1;
 
     // make buffer local for faster access
-    let buffer = this._terminal.buffer;
+    const buffer = this._terminal.buffer;
 
     while (param--) {
       buffer.x = buffer.prevStop();
@@ -640,7 +640,7 @@ export class InputHandler implements IInputHandler {
     let param = params[0] || 1;
 
     // make buffer local for faster access
-    let buffer = this._terminal.buffer;
+    const buffer = this._terminal.buffer;
 
     const line = buffer.lines.get(buffer.ybase + buffer.y);
     const ch = line[buffer.x - 1] || [this._terminal.defAttr, ' ', 1, 32];
