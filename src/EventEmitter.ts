@@ -6,7 +6,7 @@
 import { XtermListener } from './Types';
 import { IEventEmitter, IDisposable } from 'xterm';
 
-export class EventEmitter implements IEventEmitter {
+export class EventEmitter implements IEventEmitter, IDisposable {
   private _events: {[type: string]: XtermListener[]};
 
   constructor() {
@@ -75,7 +75,7 @@ export class EventEmitter implements IEventEmitter {
     return this._events[type] || [];
   }
 
-  protected destroy(): void {
+  public dispose(): void {
     this._events = {};
   }
 }

@@ -40,7 +40,7 @@ describe('Linkifier', () => {
     terminal = new MockTerminal();
     terminal.cols = 100;
     terminal.buffer = new MockBuffer();
-    terminal.buffer.lines = new CircularList<LineData>(20);
+    (<MockBuffer>terminal.buffer).setLines(new CircularList<LineData>(20));
     terminal.buffer.ydisp = 0;
     linkifier = new TestLinkifier(terminal);
     mouseZoneManager = new TestMouseZoneManager();
