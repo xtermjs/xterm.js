@@ -16,6 +16,43 @@ export interface IParserTerminal {
     actionError?: () => void; // FIXME: real signature and error handling
 }
 
+export interface IParsingState {
+    position: number;           // position in string
+    code: number;               // actual character code
+    currentState: ParserState;  // current state
+    print: number;              // print buffer start index
+    dcs: number;                // dcs buffer start index
+    osc: string;                // osc string buffer
+    collected: string;          // collect buffer
+    params: number[];           // params buffer
+    abort: boolean;             // should abort (default: false)
+}
+
+export interface IDcsHandler {
+    hook(collect: string): void;
+    put(data: string): void;
+    unhook(): void;
+}
+
+export interface IEscapeSequenceParser {
+    reset(): void;
+    parse(data: string): void;
+    registerPrintHandler(callback: (data: string, start: number, end: number) => void): void;
+    registerExecuteHandler(flag: number, callback: () => void): void;
+    registerCsiHandler(flag: number, callback: (params: number[], collect: string) => void): void;
+    registerEscHandler(flag: number, callback: (collect: string) => void): void;
+    registerOscHandler(flag: number, callback: (data: string) => void): void;
+    registerDcsHandler(flag: number, handler: IDcsHandler): void;
+    registerErrorHandler(callback: (state: IParsingState) => IParsingState): void;
+    deregisterPrintHandler(callback: (data: string) => void): void;
+    deregisterExecuteHandler(flag: number, callback: () => void): void;
+    deregisterCsiHandler(flag: number, callback: (params: number[], collect: string) => void): void;
+    deregisterEscHandler(flag: number, callback: (collect: string) => void): void;
+    deregisterOscHandler(flag: number, callback: (data: string) => void): void;
+    deregisterDcsHandler(flag: number, handler: IDcsHandler): void;
+    deregisterErrorHandler(callback: (state: IParsingState) => IParsingState): void;
+}
+
 
 // FSM states
 export const enum ParserState {
@@ -219,7 +256,7 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
 
 // default transition table points to global object
 // Q: Copy table to allow custom sequences w'o changing global object?
-export class EscapeSequenceParser {
+export class EscapeSequenceParser implements IEscapeSequenceParser {
     public initialState: number;
     public currentState: number;
     public transitions: TransitionTable;
@@ -227,6 +264,10 @@ export class EscapeSequenceParser {
     public params: number[];
     public collected: string;
     public term: any;
+
+    private _printHandler: (data: string, start: number, end: number) => void;
+    private _csiHandlers: Function[];
+
     constructor(
         terminal?: IParserTerminal | any,
         transitions: TransitionTable = VT500_TRANSITION_TABLE)
@@ -246,7 +287,31 @@ export class EscapeSequenceParser {
                 this.term[instructions[i]] = function(): void {};
             }
         }
+        this._printHandler = function(): void {};
+
+        this._csiHandlers = [];
+        for (let i=0; i<256; ++i)
+            this._csiHandlers.push(function(): void {});
     }
+
+    registerPrintHandler(callback: (data: string, start: number, end: number) => void): void {
+        this._printHandler = callback;
+    }
+    registerExecuteHandler(flag: number, callback: () => void): void {}
+    registerCsiHandler(flag: number, callback: (params: number[], collect: string) => void): void {
+        this._csiHandlers[flag] = callback;
+    }
+    registerEscHandler(flag: number, callback: (collect: string) => void): void {}
+    registerOscHandler(flag: number, callback: (data: string) => void): void {}
+    registerDcsHandler(flag: number, handler: IDcsHandler): void {}
+    registerErrorHandler(callback: (state: IParsingState) => IParsingState): void {}
+    deregisterPrintHandler(callback: (data: string) => void): void {}
+    deregisterExecuteHandler(flag: number, callback: () => void): void {}
+    deregisterCsiHandler(flag: number, callback: (params: number[], collect: string) => void): void {}
+    deregisterEscHandler(flag: number, callback: (collect: string) => void): void {}
+    deregisterOscHandler(flag: number, callback: (data: string) => void): void {}
+    deregisterDcsHandler(flag: number, handler: IDcsHandler): void {}
+    deregisterErrorHandler(callback: (state: IParsingState) => IParsingState): void {}
 
     reset(): void {
         this.currentState = this.initialState;
@@ -255,7 +320,7 @@ export class EscapeSequenceParser {
         this.collected = '';
     }
 
-    parse(s: string): void {
+    parse(data: string): void {
         let code = 0;
         let transition = 0;
         let error = false;
@@ -270,9 +335,9 @@ export class EscapeSequenceParser {
         let table: Uint8Array = this.transitions.table;
 
         // process input string
-        let l = s.length;
+        let l = data.length;
         for (let i = 0; i < l; ++i) {
-            code = s.charCodeAt(i);
+            code = data.charCodeAt(i);
 
             // shortcut for most chars (print action)
             if (currentState === ParserState.GROUND && (code > 0x1f && code < 0x80)) {
@@ -294,7 +359,7 @@ export class EscapeSequenceParser {
                     break;
                 case ParserAction.EXECUTE:
                     if (~print) {
-                        this.term.actionPrint(s, print, i);
+                        this._printHandler(data, print, i);
                         print = -1;
                     }
                     this.term.actionExecute(String.fromCharCode(code));
@@ -302,10 +367,10 @@ export class EscapeSequenceParser {
                 case ParserAction.IGNORE:
                     // handle leftover print or dcs chars
                     if (~print) {
-                        this.term.actionPrint(s, print, i);
+                        this._printHandler(data, print, i);
                         print = -1;
                     } else if (~dcs) {
-                        this.term.actionDCSPrint(s, dcs, i);
+                        this.term.actionDCSPrint(data, dcs, i);
                         dcs = -1;
                     }
                     break;
@@ -345,11 +410,12 @@ export class EscapeSequenceParser {
                                     position: i,    // position in string
                                     code,           // actual character code
                                     currentState,   // current state
-                                    print,        // print buffer start index
+                                    print,          // print buffer start index
                                     dcs,            // dcs buffer start index
                                     osc,            // osc string buffer
                                     collected,      // collect buffer
-                                    params          // params buffer
+                                    params,         // params buffer
+                                    abort: false    // abort flag
                                 })) {
                             return;
                         }
@@ -357,7 +423,8 @@ export class EscapeSequenceParser {
                     }
                     break;
                 case ParserAction.CSI_DISPATCH:
-                    this.term.actionCSI(collected, params, String.fromCharCode(code));
+                    // this.term.actionCSI(collected, params, String.fromCharCode(code));
+                    this._csiHandlers[code](params, collected);
                     break;
                 case ParserAction.PARAM:
                     if (code === 0x3b) params.push(0);
@@ -371,7 +438,7 @@ export class EscapeSequenceParser {
                     break;
                 case ParserAction.CLEAR:
                     if (~print) {
-                        this.term.actionPrint(s, print, i);
+                        this._printHandler(data, print, i);
                         print = -1;
                     }
                     osc = '';
@@ -386,7 +453,7 @@ export class EscapeSequenceParser {
                     dcs = (~dcs) ? dcs : i;
                     break;
                 case ParserAction.DCS_UNHOOK:
-                    if (~dcs) this.term.actionDCSPrint(s, dcs, i);
+                    if (~dcs) this.term.actionDCSPrint(data, dcs, i);
                     this.term.actionDCSUnhook();
                     if (code === 0x1b) transition |= ParserState.ESCAPE;
                     osc = '';
@@ -396,13 +463,13 @@ export class EscapeSequenceParser {
                     break;
                 case ParserAction.OSC_START:
                     if (~print) {
-                        this.term.actionPrint(s, print, i);
+                        this._printHandler(data, print, i);
                         print = -1;
                     }
                     osc = '';
                     break;
                 case ParserAction.OSC_PUT:
-                    osc += s.charAt(i);
+                    osc += data.charAt(i);
                     break;
                 case ParserAction.OSC_END:
                     if (osc && code !== 0x18 && code !== 0x1a) this.term.actionOSC(osc);
@@ -418,9 +485,9 @@ export class EscapeSequenceParser {
 
         // push leftover pushable buffers to terminal
         if (currentState === ParserState.GROUND && ~print) {
-            this.term.actionPrint(s, print, s.length);
+            this._printHandler(data, print, data.length);
         } else if (currentState === ParserState.DCS_PASSTHROUGH && ~dcs) {
-            this.term.actionDCSPrint(s, dcs, s.length);
+            this.term.actionDCSPrint(data, dcs, data.length);
         }
 
         // save non pushable buffers
@@ -448,6 +515,59 @@ export class ParserTerminal implements IParserTerminal {
         this._parser = new EscapeSequenceParser(this);
         this._terminal = _terminal;
         this._inputHandler = _inputHandler;
+
+        this._parser.registerPrintHandler(this.actionPrint.bind(this));
+        this._parser.registerCsiHandler('@'.charCodeAt(0), this._inputHandler.insertChars.bind(this._inputHandler));
+        this._parser.registerCsiHandler('A'.charCodeAt(0), this._inputHandler.cursorUp.bind(this._inputHandler));
+        this._parser.registerCsiHandler('B'.charCodeAt(0), this._inputHandler.cursorDown.bind(this._inputHandler));
+        this._parser.registerCsiHandler('C'.charCodeAt(0), this._inputHandler.cursorForward.bind(this._inputHandler));
+        this._parser.registerCsiHandler('D'.charCodeAt(0), this._inputHandler.cursorBackward.bind(this._inputHandler));
+        this._parser.registerCsiHandler('E'.charCodeAt(0), this._inputHandler.cursorNextLine.bind(this._inputHandler));
+        this._parser.registerCsiHandler('F'.charCodeAt(0), this._inputHandler.cursorPrecedingLine.bind(this._inputHandler));
+        this._parser.registerCsiHandler('G'.charCodeAt(0), this._inputHandler.cursorCharAbsolute.bind(this._inputHandler));
+        this._parser.registerCsiHandler('H'.charCodeAt(0), this._inputHandler.cursorPosition.bind(this._inputHandler));
+        this._parser.registerCsiHandler('I'.charCodeAt(0), this._inputHandler.cursorForwardTab.bind(this._inputHandler));
+        this._parser.registerCsiHandler('J'.charCodeAt(0), this._inputHandler.eraseInDisplay.bind(this._inputHandler));
+        this._parser.registerCsiHandler('K'.charCodeAt(0), this._inputHandler.eraseInLine.bind(this._inputHandler));
+        this._parser.registerCsiHandler('L'.charCodeAt(0), this._inputHandler.insertLines.bind(this._inputHandler));
+        this._parser.registerCsiHandler('M'.charCodeAt(0), this._inputHandler.deleteLines.bind(this._inputHandler));
+        this._parser.registerCsiHandler('P'.charCodeAt(0), this._inputHandler.deleteChars.bind(this._inputHandler));
+        this._parser.registerCsiHandler('S'.charCodeAt(0), this._inputHandler.scrollUp.bind(this._inputHandler));
+        this._parser.registerCsiHandler('T'.charCodeAt(0),
+            (params, collect) => {
+                if (params.length < 2 && !collect) {
+                    return this._inputHandler.scrollDown(params);
+                }
+            });
+        this._parser.registerCsiHandler('X'.charCodeAt(0), this._inputHandler.eraseChars.bind(this._inputHandler));
+        this._parser.registerCsiHandler('Z'.charCodeAt(0), this._inputHandler.cursorBackwardTab.bind(this._inputHandler));
+        this._parser.registerCsiHandler('`'.charCodeAt(0), this._inputHandler.charPosAbsolute.bind(this._inputHandler));
+        this._parser.registerCsiHandler('a'.charCodeAt(0), this._inputHandler.HPositionRelative.bind(this._inputHandler));
+        this._parser.registerCsiHandler('b'.charCodeAt(0), this._inputHandler.repeatPrecedingCharacter.bind(this._inputHandler));
+        this._parser.registerCsiHandler('c'.charCodeAt(0), this._inputHandler.sendDeviceAttributes.bind(this._inputHandler)); // fix collect
+        this._parser.registerCsiHandler('d'.charCodeAt(0), this._inputHandler.linePosAbsolute.bind(this._inputHandler));
+        this._parser.registerCsiHandler('e'.charCodeAt(0), this._inputHandler.VPositionRelative.bind(this._inputHandler));
+        this._parser.registerCsiHandler('f'.charCodeAt(0), this._inputHandler.HVPosition.bind(this._inputHandler));
+        this._parser.registerCsiHandler('g'.charCodeAt(0), this._inputHandler.tabClear.bind(this._inputHandler));
+        this._parser.registerCsiHandler('h'.charCodeAt(0), this._inputHandler.setMode.bind(this._inputHandler));  // fix collect
+        this._parser.registerCsiHandler('l'.charCodeAt(0), this._inputHandler.resetMode.bind(this._inputHandler)); // fix collect
+        this._parser.registerCsiHandler('m'.charCodeAt(0), this._inputHandler.charAttributes.bind(this._inputHandler));
+        this._parser.registerCsiHandler('n'.charCodeAt(0), this._inputHandler.deviceStatus.bind(this._inputHandler)); // fix collect
+        this._parser.registerCsiHandler('p'.charCodeAt(0),
+            (params, collect) => {
+                if (collect === '!') {
+                    return this._inputHandler.softReset(params);
+                }
+            });
+        this._parser.registerCsiHandler('q'.charCodeAt(0),
+            (params, collect) => {
+                if (collect === ' ') {
+                    return this._inputHandler.setCursorStyle(params);
+                }
+            });
+        this._parser.registerCsiHandler('r'.charCodeAt(0), this._inputHandler.setScrollRegion.bind(this._inputHandler)); // fix collect
+        this._parser.registerCsiHandler('s'.charCodeAt(0), this._inputHandler.saveCursor.bind(this._inputHandler));
+        this._parser.registerCsiHandler('u'.charCodeAt(0), this._inputHandler.restoreCursor.bind(this._inputHandler));
     }
 
     parse(data: string): void {
@@ -669,55 +789,55 @@ export class ParserTerminal implements IParserTerminal {
     actionCSI(collected: string, params: number[], flag: string): void {
         this._terminal.prefix = collected;
         switch (flag) {
-            case '@': return this._inputHandler.insertChars(params);
-            case 'A': return this._inputHandler.cursorUp(params);
-            case 'B': return this._inputHandler.cursorDown(params);
-            case 'C': return this._inputHandler.cursorForward(params);
-            case 'D': return this._inputHandler.cursorBackward(params);
-            case 'E': return this._inputHandler.cursorNextLine(params);
-            case 'F': return this._inputHandler.cursorPrecedingLine(params);
-            case 'G': return this._inputHandler.cursorCharAbsolute(params);
-            case 'H': return this._inputHandler.cursorPosition(params);
-            case 'I': return this._inputHandler.cursorForwardTab(params);
-            case 'J': return this._inputHandler.eraseInDisplay(params);
-            case 'K': return this._inputHandler.eraseInLine(params);
-            case 'L': return this._inputHandler.insertLines(params);
-            case 'M': return this._inputHandler.deleteLines(params);
-            case 'P': return this._inputHandler.deleteChars(params);
-            case 'S': return this._inputHandler.scrollUp(params);
-            case 'T':
-                // Q: Why this condition?
-                if (params.length < 2 && !collected) {
-                    return this._inputHandler.scrollDown(params);
-                }
-                break;
-            case 'X': return this._inputHandler.eraseChars(params);
-            case 'Z': return this._inputHandler.cursorBackwardTab(params);
-            case '`': return this._inputHandler.charPosAbsolute(params);
-            case 'a': return this._inputHandler.HPositionRelative(params);
-            case 'b': return this._inputHandler.repeatPrecedingCharacter(params);
-            case 'c': return this._inputHandler.sendDeviceAttributes(params);
-            case 'd': return this._inputHandler.linePosAbsolute(params);
-            case 'e': return this._inputHandler.VPositionRelative(params);
-            case 'f': return this._inputHandler.HVPosition(params);
-            case 'g': return this._inputHandler.tabClear(params);
-            case 'h': return this._inputHandler.setMode(params);
-            case 'l': return this._inputHandler.resetMode(params);
-            case 'm': return this._inputHandler.charAttributes(params);
-            case 'n': return this._inputHandler.deviceStatus(params);
-            case 'p':
-                if (collected === '!') {
-                    return this._inputHandler.softReset(params);
-                }
-                break;
-            case 'q':
-                if (collected === ' ') {
-                    return this._inputHandler.setCursorStyle(params);
-                }
-                break;
-            case 'r': return this._inputHandler.setScrollRegion(params);
-            case 's': return this._inputHandler.saveCursor(params);
-            case 'u': return this._inputHandler.restoreCursor(params);
+            // case '@': return this._inputHandler.insertChars(params);
+            // case 'A': return this._inputHandler.cursorUp(params);
+            // case 'B': return this._inputHandler.cursorDown(params);
+            // case 'C': return this._inputHandler.cursorForward(params);
+            // case 'D': return this._inputHandler.cursorBackward(params);
+            // case 'E': return this._inputHandler.cursorNextLine(params);
+            // case 'F': return this._inputHandler.cursorPrecedingLine(params);
+            // case 'G': return this._inputHandler.cursorCharAbsolute(params);
+            // case 'H': return this._inputHandler.cursorPosition(params);
+            // case 'I': return this._inputHandler.cursorForwardTab(params);
+            // case 'J': return this._inputHandler.eraseInDisplay(params);
+            // case 'K': return this._inputHandler.eraseInLine(params);
+            // case 'L': return this._inputHandler.insertLines(params);
+            // case 'M': return this._inputHandler.deleteLines(params);
+            // case 'P': return this._inputHandler.deleteChars(params);
+            // case 'S': return this._inputHandler.scrollUp(params);
+            // case 'T':
+            //     // Q: Why this condition?
+            //     if (params.length < 2 && !collected) {
+            //         return this._inputHandler.scrollDown(params);
+            //     }
+            //     break;
+            // case 'X': return this._inputHandler.eraseChars(params);
+            // case 'Z': return this._inputHandler.cursorBackwardTab(params);
+            // case '`': return this._inputHandler.charPosAbsolute(params);
+            // case 'a': return this._inputHandler.HPositionRelative(params);
+            // case 'b': return this._inputHandler.repeatPrecedingCharacter(params);
+            // case 'c': return this._inputHandler.sendDeviceAttributes(params);
+            // case 'd': return this._inputHandler.linePosAbsolute(params);
+            // case 'e': return this._inputHandler.VPositionRelative(params);
+            // case 'f': return this._inputHandler.HVPosition(params);
+            // case 'g': return this._inputHandler.tabClear(params);
+            // case 'h': return this._inputHandler.setMode(params);
+            // case 'l': return this._inputHandler.resetMode(params);
+            // case 'm': return this._inputHandler.charAttributes(params);
+            // case 'n': return this._inputHandler.deviceStatus(params);
+            // case 'p':
+            //     if (collected === '!') {
+            //         return this._inputHandler.softReset(params);
+            //     }
+            //     break;
+            // case 'q':
+            //     if (collected === ' ') {
+            //         return this._inputHandler.setCursorStyle(params);
+            //     }
+            //     break;
+            // case 'r': return this._inputHandler.setScrollRegion(params);
+            // case 's': return this._inputHandler.saveCursor(params);
+            // case 'u': return this._inputHandler.restoreCursor(params);
         }
         this._terminal.error('Unknown CSI code: %s %s %s.', collected, params, flag);
     }
