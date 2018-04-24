@@ -12,9 +12,9 @@ import { IDisposable } from 'xterm';
 
 const MAX_ROWS_TO_READ = 20;
 
-enum BoundaryPosition {
-  Top,
-  Bottom
+const enum BoundaryPosition {
+  TOP,
+  BOTTOM
 }
 
 export class AccessibilityManager implements IDisposable {
@@ -54,8 +54,8 @@ export class AccessibilityManager implements IDisposable {
       this._rowContainer.appendChild(this._rowElements[i]);
     }
 
-    this._topBoundaryFocusListener = e => this._onBoundaryFocus(e, BoundaryPosition.Top);
-    this._bottomBoundaryFocusListener = e => this._onBoundaryFocus(e, BoundaryPosition.Bottom);
+    this._topBoundaryFocusListener = e => this._onBoundaryFocus(e, BoundaryPosition.TOP);
+    this._bottomBoundaryFocusListener = e => this._onBoundaryFocus(e, BoundaryPosition.BOTTOM);
     this._rowElements[0].addEventListener('focus', this._topBoundaryFocusListener);
     this._rowElements[this._rowElements.length - 1].addEventListener('focus', this._bottomBoundaryFocusListener);
 
@@ -101,11 +101,11 @@ export class AccessibilityManager implements IDisposable {
 
   private _onBoundaryFocus(e: FocusEvent, position: BoundaryPosition): void {
     const boundaryElement = <HTMLElement>e.target;
-    const beforeBoundaryElement = this._rowElements[position === BoundaryPosition.Top ? 1 : this._rowElements.length - 2];
+    const beforeBoundaryElement = this._rowElements[position === BoundaryPosition.TOP ? 1 : this._rowElements.length - 2];
 
     // Don't scroll if the buffer top has reached the end in that direction
     const posInSet = boundaryElement.getAttribute('aria-posinset');
-    const lastRowPos = position === BoundaryPosition.Top ? '1' : `${this._terminal.buffer.lines.length}`;
+    const lastRowPos = position === BoundaryPosition.TOP ? '1' : `${this._terminal.buffer.lines.length}`;
     if (posInSet === lastRowPos) {
       return;
     }
@@ -119,7 +119,7 @@ export class AccessibilityManager implements IDisposable {
     // Remove old boundary element from array
     let topBoundaryElement: HTMLElement;
     let bottomBoundaryElement: HTMLElement;
-    if (position === BoundaryPosition.Top) {
+    if (position === BoundaryPosition.TOP) {
       topBoundaryElement = boundaryElement;
       bottomBoundaryElement = this._rowElements.pop()!;
       this._rowContainer.removeChild(bottomBoundaryElement);
@@ -134,7 +134,7 @@ export class AccessibilityManager implements IDisposable {
     bottomBoundaryElement.removeEventListener('focus', this._bottomBoundaryFocusListener);
 
     // Add new element to array/DOM
-    if (position === BoundaryPosition.Top) {
+    if (position === BoundaryPosition.TOP) {
       const newElement = this._createAccessibilityTreeNode();
       this._rowElements.unshift(newElement);
       this._rowContainer.insertAdjacentElement('afterbegin', newElement);
@@ -149,10 +149,10 @@ export class AccessibilityManager implements IDisposable {
     this._rowElements[this._rowElements.length - 1].addEventListener('focus', this._bottomBoundaryFocusListener);
 
     // Scroll up
-    this._terminal.scrollLines(position === BoundaryPosition.Top ? -1 : 1);
+    this._terminal.scrollLines(position === BoundaryPosition.TOP ? -1 : 1);
 
     // Focus new boundary before element
-    this._rowElements[position === BoundaryPosition.Top ? 1 : this._rowElements.length - 2].focus();
+    this._rowElements[position === BoundaryPosition.TOP ? 1 : this._rowElements.length - 2].focus();
 
     // Prevent the standard behavior
     e.preventDefault();

@@ -54,7 +54,7 @@ interface IWordPosition {
 /**
  * A selection mode, this drives how the selection behaves on mouse move.
  */
-enum SelectionMode {
+const enum SelectionMode {
   NORMAL,
   WORD,
   LINE
