@@ -433,7 +433,8 @@ export class EscapeSequenceParser {
     }
 }
 
-
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
+import { wcwidth } from './CharWidth';
 // glue code between AnsiParser and Terminal
 // action methods are the places to call custom sequence handlers
 // Q: Do we need custom handler support for all escape sequences types?
@@ -473,6 +474,7 @@ export class ParserTerminal implements IParserTerminal {
         let ch;
         let code;
         let low;
+        const buffer = this._terminal.buffer;
         for (let i = start; i < end; ++i) {
             ch = data.charAt(i);
             code = data.charCodeAt(i);
@@ -492,7 +494,93 @@ export class ParserTerminal implements IParserTerminal {
             if (0xDC00 <= code && code <= 0xDFFF) {
               continue;
             }
-            this._inputHandler.addChar(ch, code);
+
+            // this._inputHandler.addChar(ch, code);
+
+            // calculate print space
+            // expensive call, therefore we save width in line buffer
+            const chWidth = wcwidth(code);
+
+            if (this._terminal.charset && this._terminal.charset[ch]) {
+                ch = this._terminal.charset[ch];
+            }
+
+            if (this._terminal.options.screenReaderMode) {
+                this._terminal.emit('a11y.char', ch);
+            }
+
+            let row = buffer.y + buffer.ybase;
+
+            // insert combining char in last cell
+            // FIXME: needs handling after cursor jumps
+            if (!chWidth && buffer.x) {
+                // dont overflow left
+                if (buffer.lines.get(row)[buffer.x - 1]) {
+                    if (!buffer.lines.get(row)[buffer.x - 1][CHAR_DATA_WIDTH_INDEX]) {
+                        // found empty cell after fullwidth, need to go 2 cells back
+                        if (buffer.lines.get(row)[buffer.x - 2]) {
+                            buffer.lines.get(row)[buffer.x - 2][CHAR_DATA_CHAR_INDEX] += ch;
+                            buffer.lines.get(row)[buffer.x - 2][3] = ch.charCodeAt(0);
+                        }
+                    } else {
+                        buffer.lines.get(row)[buffer.x - 1][CHAR_DATA_CHAR_INDEX] += ch;
+                        buffer.lines.get(row)[buffer.x - 1][3] = ch.charCodeAt(0);
+                    }
+                    this._terminal.updateRange(buffer.y);
+                }
+                continue;
+            }
+
+            // goto next line if ch would overflow
+            // TODO: needs a global min terminal width of 2
+            if (buffer.x + chWidth - 1 >= this._terminal.cols) {
+                // autowrap - DECAWM
+                if (this._terminal.wraparoundMode) {
+                    buffer.x = 0;
+                    buffer.y++;
+                    if (buffer.y > buffer.scrollBottom) {
+                        buffer.y--;
+                        this._terminal.scroll(true);
+                    } else {
+                        // The line already exists (eg. the initial viewport), mark it as a
+                        // wrapped line
+                        (<any>buffer.lines.get(buffer.y)).isWrapped = true;
+                    }
+                } else {
+                    if (chWidth === 2) { // FIXME: check for xterm behavior
+                        continue;
+                    }
+                }
+            }
+            row = buffer.y + buffer.ybase;
+
+            // insert mode: move characters to right
+            if (this._terminal.insertMode) {
+                // do this twice for a fullwidth char
+                for (let moves = 0; moves < chWidth; ++moves) {
+                    // remove last cell, if it's width is 0
+                    // we have to adjust the second last cell as well
+                    const removed = buffer.lines.get(buffer.y + buffer.ybase).pop();
+                    if (removed[CHAR_DATA_WIDTH_INDEX] === 0
+                        && buffer.lines.get(row)[this._terminal.cols - 2]
+                        && buffer.lines.get(row)[this._terminal.cols - 2][CHAR_DATA_WIDTH_INDEX] === 2) {
+                    buffer.lines.get(row)[this._terminal.cols - 2] = [this._terminal.curAttr, ' ', 1, ' '.charCodeAt(0)];
+                    }
+
+                    // insert empty cell at cursor
+                    buffer.lines.get(row).splice(buffer.x, 0, [this._terminal.curAttr, ' ', 1, ' '.charCodeAt(0)]);
+                }
+            }
+
+            buffer.lines.get(row)[buffer.x] = [this._terminal.curAttr, ch, chWidth, ch.charCodeAt(0)];
+            buffer.x++;
+            this._terminal.updateRange(buffer.y);
+
+            // fullwidth char - set next cell width to zero and advance cursor
+            if (chWidth === 2) {
+                buffer.lines.get(row)[buffer.x] = [this._terminal.curAttr, '', 0, undefined];
+                buffer.x++;
+            }
         }
     }
 
@@ -573,7 +661,7 @@ export class ParserTerminal implements IParserTerminal {
             case C0.SO: return this._inputHandler.shiftOut();
             case C0.SI: return this._inputHandler.shiftIn();
             default:
-                this._inputHandler.addChar(flag, flag.charCodeAt(0));
+                this._inputHandler.addChar(flag, flag.charCodeAt(0));  // TODO: get rid this here
         }
         this._terminal.error('Unknown EXEC flag: %s.', flag);
     }
