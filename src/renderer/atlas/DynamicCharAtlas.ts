@@ -205,8 +205,9 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     this._tmpCtx.globalCompositeOperation = 'source-over';
 
     // draw the foreground/glyph
+    const fontWeight = glyph.bold ? this._config.fontWeightBold : this._config.fontWeight;
     this._tmpCtx.font =
-      `${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
+      `${fontWeight} ${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
     if (glyph.bold) {
       this._tmpCtx.font = `bold ${this._tmpCtx.font}`;
     }
