@@ -73,12 +73,11 @@ export class AltClickHandler {
   private _resetStartingRow(): string {
     if (this._moveToRequestedRow().length === 0) {
       return '';
-    } else {
-      return repeat(this._bufferLine(
-        this._startCol, this._startRow, this._startCol,
-        this._startRow - this._wrappedRowsForRow(this._startRow), false
-      ).length, this._sequence(Direction.Left));
     }
+    return repeat(this._bufferLine(
+      this._startCol, this._startRow, this._startCol,
+      this._startRow - this._wrappedRowsForRow(this._startRow), false
+    ).length, this._sequence(Direction.Left));
   }
 
   /**
@@ -180,9 +179,8 @@ export class AltClickHandler {
       (this._startCol >= this._endCol &&
       startRow < this._endRow)) {  // down/left or same y/left
       return Direction.Right;
-    } else {
-      return Direction.Left;
     }
+    return Direction.Left;
   }
 
   /**
@@ -191,9 +189,8 @@ export class AltClickHandler {
   private _verticalDirection(): Direction {
     if (this._startRow > this._endRow) {
       return Direction.Up;
-    } else {
-      return Direction.Down;
     }
+    return Direction.Down;
   }
 
   /**

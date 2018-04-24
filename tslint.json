@@ -1,4 +1,7 @@
 {
+  "rulesDirectory": [
+    "tslint-consistent-codestyle"
+  ],
   "rules": {
     "array-type": [
       true,
@@ -86,6 +89,10 @@
       "check-type",
       "check-type-operator",
       "check-preblock"
-    ]
+    ],
+
+    "no-else-after-return": {
+      "options": "allow-else-if"
+    }
   }
 }
