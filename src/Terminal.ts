@@ -38,6 +38,7 @@ import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
 import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './shared/utils/Browser';
+import * as Dom from './utils/Dom';
 import * as Strings from './Strings';
 import { MouseHelper } from './utils/MouseHelper';
 import { clone } from './utils/Clone';
@@ -46,7 +47,8 @@ import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { MouseZoneManager } from './input/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ScreenDprMonitor } from './utils/ScreenDprMonitor';
-import { ITheme, ILocalizableStrings, IMarker } from 'xterm';
+import { ITheme, ILocalizableStrings, IMarker, IDisposable } from 'xterm';
+import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 
 // reg + shift key mappings for digits and special chars
 const KEYCODE_KEY_MAPPINGS = {
@@ -121,14 +123,14 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   tabStopWidth: 8,
   theme: null,
   rightClickSelectsWord: Browser.isMac
-  // programFeatures: false,
-  // focusKeys: false,
 };
 
-export class Terminal extends EventEmitter implements ITerminal, IInputHandlingTerminal {
+export class Terminal extends EventEmitter implements ITerminal, IDisposable, IInputHandlingTerminal {
   public textarea: HTMLTextAreaElement;
   public element: HTMLElement;
   public screenElement: HTMLElement;
+
+  private _disposables: IDisposable[];
 
   /**
    * The HTMLElement that the terminal is created in, set by Terminal.open.
@@ -251,7 +253,28 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this._setup();
   }
 
+  public dispose(): void {
+    super.dispose();
+    this._disposables.forEach(d => d.dispose());
+    this._disposables.length = 0;
+    removeTerminalFromCache(this);
+    this.handler = () => {};
+    this.write = () => {};
+    if (this.element && this.element.parentNode) {
+      this.element.parentNode.removeChild(this.element);
+    }
+  }
+
+  /**
+   * @deprecated Use dispose instead.
+   */
+  public destroy(): void {
+    this.dispose();
+  }
+
   private _setup(): void {
+    this._disposables = [];
+
     Object.keys(DEFAULT_OPTIONS).forEach((key) => {
       if (this.options[key] == null) {
         this.options[key] = DEFAULT_OPTIONS[key];
@@ -694,7 +717,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.on('dprchange', () => this.renderer.onWindowResize(window.devicePixelRatio));
     // dprchange should handle this case, we need this as well for browsers that don't support the
     // matchMedia query.
-    window.addEventListener('resize', () => this.renderer.onWindowResize(window.devicePixelRatio));
+    this._disposables.push(Dom.addDisposableListener(window, 'resize', () => this.renderer.onWindowResize(window.devicePixelRatio)));
     this.charMeasure.on('charsizechanged', () => this.renderer.onResize(this.cols, this.rows));
     this.renderer.on('resize', (dimensions) => this.viewport.syncScrollArea());
 
@@ -1085,19 +1108,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       this.viewport.onTouchMove(ev);
       return this.cancel(ev);
     });
-  }
-
-  /**
-   * Destroys the terminal.
-   */
-  public destroy(): void {
-    super.destroy();
-    this.handler = () => {};
-    this.write = () => {};
-    if (this.element && this.element.parentNode) {
-      this.element.parentNode.removeChild(this.element);
-    }
-    // this.emit('close');
   }
 
   /**

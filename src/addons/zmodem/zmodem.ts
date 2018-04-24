@@ -43,8 +43,7 @@ export interface IZmodemOptions {
 }
 
 function zmodemAttach(ws: WebSocket, opts: IZmodemOptions = {}): void {
-  var term = this;
-
+  const term = this;
   const senderFunc = (octets: ArrayLike<number>) => ws.send(new Uint8Array(octets));
 
   let zsentry;

@@ -63,6 +63,9 @@ export class MockTerminal implements ITerminal {
   selectAll(): void {
     throw new Error('Method not implemented.');
   }
+  dispose(): void {
+    throw new Error('Method not implemented.');
+  }
   destroy(): void {
     throw new Error('Method not implemented.');
   }
@@ -305,6 +308,9 @@ export class MockBuffer implements IBuffer {
   }
   prevStop(x?: number): number {
     throw new Error('Method not implemented.');
+  }
+  setLines(lines: ICircularList<[number, string, number, number][]>): void {
+    this.lines = lines;
   }
 }
 
