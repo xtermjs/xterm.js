@@ -18,40 +18,40 @@ export interface IParserTerminal {
 
 
 // FSM states
-export const enum STATE {
+export const enum ParserState {
     GROUND = 0,
-    ESCAPE,
-    ESCAPE_INTERMEDIATE,
-    CSI_ENTRY,
-    CSI_PARAM,
-    CSI_INTERMEDIATE,
-    CSI_IGNORE,
-    SOS_PM_APC_STRING,
-    OSC_STRING,
-    DCS_ENTRY,
-    DCS_PARAM,
-    DCS_IGNORE,
-    DCS_INTERMEDIATE,
-    DCS_PASSTHROUGH
+    ESCAPE = 1,
+    ESCAPE_INTERMEDIATE = 2,
+    CSI_ENTRY = 3,
+    CSI_PARAM = 4,
+    CSI_INTERMEDIATE = 5,
+    CSI_IGNORE = 6,
+    SOS_PM_APC_STRING = 7,
+    OSC_STRING = 8,
+    DCS_ENTRY = 9,
+    DCS_PARAM = 10,
+    DCS_IGNORE = 11,
+    DCS_INTERMEDIATE = 12,
+    DCS_PASSTHROUGH = 13
 }
 
 // FSM actions
-export const enum ACTION {
-    ignore = 0,
-    error,
-    print,
-    execute,
-    osc_start,
-    osc_put,
-    osc_end,
-    csi_dispatch,
-    param,
-    collect,
-    esc_dispatch,
-    clear,
-    dcs_hook,
-    dcs_put,
-    dcs_unhook
+export const enum ParserAction {
+    IGNORE = 0,
+    ERROR = 1,
+    PRINT = 2,
+    EXECUTE = 3,
+    OSC_START = 4,
+    OSC_PUT = 5,
+    OSC_END = 6,
+    CSI_DISPATCH = 7,
+    PARAM = 8,
+    COLLECT = 9,
+    ESC_DISPATCH = 10,
+    CLEAR = 11,
+    DCS_HOOK = 12,
+    DCS_PUT = 13,
+    DCS_UNHOOK = 14
 }
 
 
@@ -94,14 +94,14 @@ EXECUTABLES.push(0x19);
 EXECUTABLES.concat(r(0x1c, 0x20));
 
 // default transition of the FSM is [error, GROUND]
-let DEFAULT_TRANSITION = ACTION.error << 4 | STATE.GROUND;
+let DEFAULT_TRANSITION = ParserAction.ERROR << 4 | ParserState.GROUND;
 
 // default DEC/ANSI compatible state transition table
 // as defined by https://vt100.net/emu/dec_ansi_parser
 export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
     let table: TransitionTable = new TransitionTable(4095);
 
-    let states: number[] = r(STATE.GROUND, STATE.DCS_PASSTHROUGH + 1);
+    let states: number[] = r(ParserState.GROUND, ParserState.DCS_PASSTHROUGH + 1);
     let state: any;
 
     // table with default transition [any] --> [error, GROUND]
@@ -115,103 +115,103 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
 
     // apply transitions
     // printables
-    table.addMany(PRINTABLES, STATE.GROUND, ACTION.print,  STATE.GROUND);
+    table.addMany(PRINTABLES, ParserState.GROUND, ParserAction.PRINT,  ParserState.GROUND);
     // global anywhere rules
     for (state in states) {
-        table.addMany([0x18, 0x1a, 0x99, 0x9a], state, ACTION.execute, STATE.GROUND);
-        table.addMany(r(0x80, 0x90), state, ACTION.execute, STATE.GROUND);
-        table.addMany(r(0x90, 0x98), state, ACTION.execute, STATE.GROUND);
-        table.add(0x9c, state, ACTION.ignore, STATE.GROUND);    // ST as terminator
-        table.add(0x1b, state, ACTION.clear, STATE.ESCAPE);     // ESC
-        table.add(0x9d, state, ACTION.osc_start, STATE.OSC_STRING);  // OSC
-        table.addMany([0x98, 0x9e, 0x9f], state, ACTION.ignore, STATE.SOS_PM_APC_STRING);
-        table.add(0x9b, state, ACTION.clear, STATE.CSI_ENTRY);  // CSI
-        table.add(0x90, state, ACTION.clear, STATE.DCS_ENTRY);  // DCS
+        table.addMany([0x18, 0x1a, 0x99, 0x9a], state, ParserAction.EXECUTE, ParserState.GROUND);
+        table.addMany(r(0x80, 0x90), state, ParserAction.EXECUTE, ParserState.GROUND);
+        table.addMany(r(0x90, 0x98), state, ParserAction.EXECUTE, ParserState.GROUND);
+        table.add(0x9c, state, ParserAction.IGNORE, ParserState.GROUND);    // ST as terminator
+        table.add(0x1b, state, ParserAction.CLEAR, ParserState.ESCAPE);     // ESC
+        table.add(0x9d, state, ParserAction.OSC_START, ParserState.OSC_STRING);  // OSC
+        table.addMany([0x98, 0x9e, 0x9f], state, ParserAction.IGNORE, ParserState.SOS_PM_APC_STRING);
+        table.add(0x9b, state, ParserAction.CLEAR, ParserState.CSI_ENTRY);  // CSI
+        table.add(0x90, state, ParserAction.CLEAR, ParserState.DCS_ENTRY);  // DCS
     }
     // rules for executables and 7f
-    table.addMany(EXECUTABLES, STATE.GROUND, ACTION.execute, STATE.GROUND);
-    table.addMany(EXECUTABLES, STATE.ESCAPE, ACTION.execute, STATE.ESCAPE);
-    table.add(0x7f, STATE.ESCAPE, ACTION.ignore, STATE.ESCAPE);
-    table.addMany(EXECUTABLES, STATE.OSC_STRING, ACTION.ignore, STATE.OSC_STRING);
-    table.addMany(EXECUTABLES, STATE.CSI_ENTRY, ACTION.execute, STATE.CSI_ENTRY);
-    table.add(0x7f, STATE.CSI_ENTRY, ACTION.ignore, STATE.CSI_ENTRY);
-    table.addMany(EXECUTABLES, STATE.CSI_PARAM, ACTION.execute, STATE.CSI_PARAM);
-    table.add(0x7f, STATE.CSI_PARAM, ACTION.ignore, STATE.CSI_PARAM);
-    table.addMany(EXECUTABLES, STATE.CSI_IGNORE, ACTION.execute, STATE.CSI_IGNORE);
-    table.addMany(EXECUTABLES, STATE.CSI_INTERMEDIATE, ACTION.execute, STATE.CSI_INTERMEDIATE);
-    table.add(0x7f, STATE.CSI_INTERMEDIATE, ACTION.ignore, STATE.CSI_INTERMEDIATE);
-    table.addMany(EXECUTABLES, STATE.ESCAPE_INTERMEDIATE, ACTION.execute, STATE.ESCAPE_INTERMEDIATE);
-    table.add(0x7f, STATE.ESCAPE_INTERMEDIATE, ACTION.ignore, STATE.ESCAPE_INTERMEDIATE);
+    table.addMany(EXECUTABLES, ParserState.GROUND, ParserAction.EXECUTE, ParserState.GROUND);
+    table.addMany(EXECUTABLES, ParserState.ESCAPE, ParserAction.EXECUTE, ParserState.ESCAPE);
+    table.add(0x7f, ParserState.ESCAPE, ParserAction.IGNORE, ParserState.ESCAPE);
+    table.addMany(EXECUTABLES, ParserState.OSC_STRING, ParserAction.IGNORE, ParserState.OSC_STRING);
+    table.addMany(EXECUTABLES, ParserState.CSI_ENTRY, ParserAction.EXECUTE, ParserState.CSI_ENTRY);
+    table.add(0x7f, ParserState.CSI_ENTRY, ParserAction.IGNORE, ParserState.CSI_ENTRY);
+    table.addMany(EXECUTABLES, ParserState.CSI_PARAM, ParserAction.EXECUTE, ParserState.CSI_PARAM);
+    table.add(0x7f, ParserState.CSI_PARAM, ParserAction.IGNORE, ParserState.CSI_PARAM);
+    table.addMany(EXECUTABLES, ParserState.CSI_IGNORE, ParserAction.EXECUTE, ParserState.CSI_IGNORE);
+    table.addMany(EXECUTABLES, ParserState.CSI_INTERMEDIATE, ParserAction.EXECUTE, ParserState.CSI_INTERMEDIATE);
+    table.add(0x7f, ParserState.CSI_INTERMEDIATE, ParserAction.IGNORE, ParserState.CSI_INTERMEDIATE);
+    table.addMany(EXECUTABLES, ParserState.ESCAPE_INTERMEDIATE, ParserAction.EXECUTE, ParserState.ESCAPE_INTERMEDIATE);
+    table.add(0x7f, ParserState.ESCAPE_INTERMEDIATE, ParserAction.IGNORE, ParserState.ESCAPE_INTERMEDIATE);
     // osc
-    table.add(0x5d, STATE.ESCAPE, ACTION.osc_start, STATE.OSC_STRING);
-    table.addMany(PRINTABLES, STATE.OSC_STRING, ACTION.osc_put, STATE.OSC_STRING);
-    table.add(0x7f, STATE.OSC_STRING, ACTION.osc_put, STATE.OSC_STRING);
-    table.addMany([0x9c, 0x1b, 0x18, 0x1a, 0x07], STATE.OSC_STRING, ACTION.osc_end, STATE.GROUND);
-    table.addMany(r(0x1c, 0x20), STATE.OSC_STRING, ACTION.ignore, STATE.OSC_STRING);
+    table.add(0x5d, ParserState.ESCAPE, ParserAction.OSC_START, ParserState.OSC_STRING);
+    table.addMany(PRINTABLES, ParserState.OSC_STRING, ParserAction.OSC_PUT, ParserState.OSC_STRING);
+    table.add(0x7f, ParserState.OSC_STRING, ParserAction.OSC_PUT, ParserState.OSC_STRING);
+    table.addMany([0x9c, 0x1b, 0x18, 0x1a, 0x07], ParserState.OSC_STRING, ParserAction.OSC_END, ParserState.GROUND);
+    table.addMany(r(0x1c, 0x20), ParserState.OSC_STRING, ParserAction.IGNORE, ParserState.OSC_STRING);
     // sos/pm/apc does nothing
-    table.addMany([0x58, 0x5e, 0x5f], STATE.ESCAPE, ACTION.ignore, STATE.SOS_PM_APC_STRING);
-    table.addMany(PRINTABLES, STATE.SOS_PM_APC_STRING, ACTION.ignore, STATE.SOS_PM_APC_STRING);
-    table.addMany(EXECUTABLES, STATE.SOS_PM_APC_STRING, ACTION.ignore, STATE.SOS_PM_APC_STRING);
-    table.add(0x9c, STATE.SOS_PM_APC_STRING, ACTION.ignore, STATE.GROUND);
+    table.addMany([0x58, 0x5e, 0x5f], ParserState.ESCAPE, ParserAction.IGNORE, ParserState.SOS_PM_APC_STRING);
+    table.addMany(PRINTABLES, ParserState.SOS_PM_APC_STRING, ParserAction.IGNORE, ParserState.SOS_PM_APC_STRING);
+    table.addMany(EXECUTABLES, ParserState.SOS_PM_APC_STRING, ParserAction.IGNORE, ParserState.SOS_PM_APC_STRING);
+    table.add(0x9c, ParserState.SOS_PM_APC_STRING, ParserAction.IGNORE, ParserState.GROUND);
     // csi entries
-    table.add(0x5b, STATE.ESCAPE, ACTION.clear, STATE.CSI_ENTRY);
-    table.addMany(r(0x40, 0x7f), STATE.CSI_ENTRY, ACTION.csi_dispatch, STATE.GROUND);
-    table.addMany(r(0x30, 0x3a), STATE.CSI_ENTRY, ACTION.param, STATE.CSI_PARAM);
-    table.add(0x3b, STATE.CSI_ENTRY, ACTION.param, STATE.CSI_PARAM);
-    table.addMany([0x3c, 0x3d, 0x3e, 0x3f], STATE.CSI_ENTRY, ACTION.collect, STATE.CSI_PARAM);
-    table.addMany(r(0x30, 0x3a), STATE.CSI_PARAM, ACTION.param, STATE.CSI_PARAM);
-    table.add(0x3b, STATE.CSI_PARAM, ACTION.param, STATE.CSI_PARAM);
-    table.addMany(r(0x40, 0x7f), STATE.CSI_PARAM, ACTION.csi_dispatch, STATE.GROUND);
-    table.addMany([0x3a, 0x3c, 0x3d, 0x3e, 0x3f], STATE.CSI_PARAM, ACTION.ignore, STATE.CSI_IGNORE);
-    table.addMany(r(0x20, 0x40), STATE.CSI_IGNORE, null, STATE.CSI_IGNORE);
-    table.add(0x7f, STATE.CSI_IGNORE, null, STATE.CSI_IGNORE);
-    table.addMany(r(0x40, 0x7f), STATE.CSI_IGNORE, ACTION.ignore, STATE.GROUND);
-    table.add(0x3a, STATE.CSI_ENTRY, ACTION.ignore, STATE.CSI_IGNORE);
-    table.addMany(r(0x20, 0x30), STATE.CSI_ENTRY, ACTION.collect, STATE.CSI_INTERMEDIATE);
-    table.addMany(r(0x20, 0x30), STATE.CSI_INTERMEDIATE, ACTION.collect, STATE.CSI_INTERMEDIATE);
-    table.addMany(r(0x30, 0x40), STATE.CSI_INTERMEDIATE, ACTION.ignore, STATE.CSI_IGNORE);
-    table.addMany(r(0x40, 0x7f), STATE.CSI_INTERMEDIATE, ACTION.csi_dispatch, STATE.GROUND);
-    table.addMany(r(0x20, 0x30), STATE.CSI_PARAM, ACTION.collect, STATE.CSI_INTERMEDIATE);
+    table.add(0x5b, ParserState.ESCAPE, ParserAction.CLEAR, ParserState.CSI_ENTRY);
+    table.addMany(r(0x40, 0x7f), ParserState.CSI_ENTRY, ParserAction.CSI_DISPATCH, ParserState.GROUND);
+    table.addMany(r(0x30, 0x3a), ParserState.CSI_ENTRY, ParserAction.PARAM, ParserState.CSI_PARAM);
+    table.add(0x3b, ParserState.CSI_ENTRY, ParserAction.PARAM, ParserState.CSI_PARAM);
+    table.addMany([0x3c, 0x3d, 0x3e, 0x3f], ParserState.CSI_ENTRY, ParserAction.COLLECT, ParserState.CSI_PARAM);
+    table.addMany(r(0x30, 0x3a), ParserState.CSI_PARAM, ParserAction.PARAM, ParserState.CSI_PARAM);
+    table.add(0x3b, ParserState.CSI_PARAM, ParserAction.PARAM, ParserState.CSI_PARAM);
+    table.addMany(r(0x40, 0x7f), ParserState.CSI_PARAM, ParserAction.CSI_DISPATCH, ParserState.GROUND);
+    table.addMany([0x3a, 0x3c, 0x3d, 0x3e, 0x3f], ParserState.CSI_PARAM, ParserAction.IGNORE, ParserState.CSI_IGNORE);
+    table.addMany(r(0x20, 0x40), ParserState.CSI_IGNORE, null, ParserState.CSI_IGNORE);
+    table.add(0x7f, ParserState.CSI_IGNORE, null, ParserState.CSI_IGNORE);
+    table.addMany(r(0x40, 0x7f), ParserState.CSI_IGNORE, ParserAction.IGNORE, ParserState.GROUND);
+    table.add(0x3a, ParserState.CSI_ENTRY, ParserAction.IGNORE, ParserState.CSI_IGNORE);
+    table.addMany(r(0x20, 0x30), ParserState.CSI_ENTRY, ParserAction.COLLECT, ParserState.CSI_INTERMEDIATE);
+    table.addMany(r(0x20, 0x30), ParserState.CSI_INTERMEDIATE, ParserAction.COLLECT, ParserState.CSI_INTERMEDIATE);
+    table.addMany(r(0x30, 0x40), ParserState.CSI_INTERMEDIATE, ParserAction.IGNORE, ParserState.CSI_IGNORE);
+    table.addMany(r(0x40, 0x7f), ParserState.CSI_INTERMEDIATE, ParserAction.CSI_DISPATCH, ParserState.GROUND);
+    table.addMany(r(0x20, 0x30), ParserState.CSI_PARAM, ParserAction.COLLECT, ParserState.CSI_INTERMEDIATE);
     // esc_intermediate
-    table.addMany(r(0x20, 0x30), STATE.ESCAPE, ACTION.collect, STATE.ESCAPE_INTERMEDIATE);
-    table.addMany(r(0x20, 0x30), STATE.ESCAPE_INTERMEDIATE, ACTION.collect, STATE.ESCAPE_INTERMEDIATE);
-    table.addMany(r(0x30, 0x7f), STATE.ESCAPE_INTERMEDIATE, ACTION.esc_dispatch, STATE.GROUND);
-    table.addMany(r(0x30, 0x50), STATE.ESCAPE, ACTION.esc_dispatch, STATE.GROUND);
-    table.addMany(r(0x51, 0x58), STATE.ESCAPE, ACTION.esc_dispatch, STATE.GROUND);
-    table.addMany([0x59, 0x5a, 0x5c], STATE.ESCAPE, ACTION.esc_dispatch, STATE.GROUND);
-    table.addMany(r(0x60, 0x7f), STATE.ESCAPE, ACTION.esc_dispatch, STATE.GROUND);
+    table.addMany(r(0x20, 0x30), ParserState.ESCAPE, ParserAction.COLLECT, ParserState.ESCAPE_INTERMEDIATE);
+    table.addMany(r(0x20, 0x30), ParserState.ESCAPE_INTERMEDIATE, ParserAction.COLLECT, ParserState.ESCAPE_INTERMEDIATE);
+    table.addMany(r(0x30, 0x7f), ParserState.ESCAPE_INTERMEDIATE, ParserAction.ESC_DISPATCH, ParserState.GROUND);
+    table.addMany(r(0x30, 0x50), ParserState.ESCAPE, ParserAction.ESC_DISPATCH, ParserState.GROUND);
+    table.addMany(r(0x51, 0x58), ParserState.ESCAPE, ParserAction.ESC_DISPATCH, ParserState.GROUND);
+    table.addMany([0x59, 0x5a, 0x5c], ParserState.ESCAPE, ParserAction.ESC_DISPATCH, ParserState.GROUND);
+    table.addMany(r(0x60, 0x7f), ParserState.ESCAPE, ParserAction.ESC_DISPATCH, ParserState.GROUND);
     // dcs entry
-    table.add(0x50, STATE.ESCAPE, ACTION.clear, STATE.DCS_ENTRY);
-    table.addMany(EXECUTABLES, STATE.DCS_ENTRY, ACTION.ignore, STATE.DCS_ENTRY);
-    table.add(0x7f, STATE.DCS_ENTRY, ACTION.ignore, STATE.DCS_ENTRY);
-    table.addMany(r(0x1c, 0x20), STATE.DCS_ENTRY, ACTION.ignore, STATE.DCS_ENTRY);
-    table.addMany(r(0x20, 0x30), STATE.DCS_ENTRY, ACTION.collect, STATE.DCS_INTERMEDIATE);
-    table.add(0x3a, STATE.DCS_ENTRY, ACTION.ignore, STATE.DCS_IGNORE);
-    table.addMany(r(0x30, 0x3a), STATE.DCS_ENTRY, ACTION.param, STATE.DCS_PARAM);
-    table.add(0x3b, STATE.DCS_ENTRY, ACTION.param, STATE.DCS_PARAM);
-    table.addMany([0x3c, 0x3d, 0x3e, 0x3f], STATE.DCS_ENTRY, ACTION.collect, STATE.DCS_PARAM);
-    table.addMany(EXECUTABLES, STATE.DCS_IGNORE, ACTION.ignore, STATE.DCS_IGNORE);
-    table.addMany(r(0x20, 0x80), STATE.DCS_IGNORE, ACTION.ignore, STATE.DCS_IGNORE);
-    table.addMany(r(0x1c, 0x20), STATE.DCS_IGNORE, ACTION.ignore, STATE.DCS_IGNORE);
-    table.addMany(EXECUTABLES, STATE.DCS_PARAM, ACTION.ignore, STATE.DCS_PARAM);
-    table.add(0x7f, STATE.DCS_PARAM, ACTION.ignore, STATE.DCS_PARAM);
-    table.addMany(r(0x1c, 0x20), STATE.DCS_PARAM, ACTION.ignore, STATE.DCS_PARAM);
-    table.addMany(r(0x30, 0x3a), STATE.DCS_PARAM, ACTION.param, STATE.DCS_PARAM);
-    table.add(0x3b, STATE.DCS_PARAM, ACTION.param, STATE.DCS_PARAM);
-    table.addMany([0x3a, 0x3c, 0x3d, 0x3e, 0x3f], STATE.DCS_PARAM, ACTION.ignore, STATE.DCS_IGNORE);
-    table.addMany(r(0x20, 0x30), STATE.DCS_PARAM, ACTION.collect, STATE.DCS_INTERMEDIATE);
-    table.addMany(EXECUTABLES, STATE.DCS_INTERMEDIATE, ACTION.ignore, STATE.DCS_INTERMEDIATE);
-    table.add(0x7f, STATE.DCS_INTERMEDIATE, ACTION.ignore, STATE.DCS_INTERMEDIATE);
-    table.addMany(r(0x1c, 0x20), STATE.DCS_INTERMEDIATE, ACTION.ignore, STATE.DCS_INTERMEDIATE);
-    table.addMany(r(0x20, 0x30), STATE.DCS_INTERMEDIATE, ACTION.collect, STATE.DCS_INTERMEDIATE);
-    table.addMany(r(0x30, 0x40), STATE.DCS_INTERMEDIATE, ACTION.ignore, STATE.DCS_IGNORE);
-    table.addMany(r(0x40, 0x7f), STATE.DCS_INTERMEDIATE, ACTION.dcs_hook, STATE.DCS_PASSTHROUGH);
-    table.addMany(r(0x40, 0x7f), STATE.DCS_PARAM, ACTION.dcs_hook, STATE.DCS_PASSTHROUGH);
-    table.addMany(r(0x40, 0x7f), STATE.DCS_ENTRY, ACTION.dcs_hook, STATE.DCS_PASSTHROUGH);
-    table.addMany(EXECUTABLES, STATE.DCS_PASSTHROUGH, ACTION.dcs_put, STATE.DCS_PASSTHROUGH);
-    table.addMany(PRINTABLES, STATE.DCS_PASSTHROUGH, ACTION.dcs_put, STATE.DCS_PASSTHROUGH);
-    table.add(0x7f, STATE.DCS_PASSTHROUGH, ACTION.ignore, STATE.DCS_PASSTHROUGH);
-    table.addMany([0x1b, 0x9c], STATE.DCS_PASSTHROUGH, ACTION.dcs_unhook, STATE.GROUND);
+    table.add(0x50, ParserState.ESCAPE, ParserAction.CLEAR, ParserState.DCS_ENTRY);
+    table.addMany(EXECUTABLES, ParserState.DCS_ENTRY, ParserAction.IGNORE, ParserState.DCS_ENTRY);
+    table.add(0x7f, ParserState.DCS_ENTRY, ParserAction.IGNORE, ParserState.DCS_ENTRY);
+    table.addMany(r(0x1c, 0x20), ParserState.DCS_ENTRY, ParserAction.IGNORE, ParserState.DCS_ENTRY);
+    table.addMany(r(0x20, 0x30), ParserState.DCS_ENTRY, ParserAction.COLLECT, ParserState.DCS_INTERMEDIATE);
+    table.add(0x3a, ParserState.DCS_ENTRY, ParserAction.IGNORE, ParserState.DCS_IGNORE);
+    table.addMany(r(0x30, 0x3a), ParserState.DCS_ENTRY, ParserAction.PARAM, ParserState.DCS_PARAM);
+    table.add(0x3b, ParserState.DCS_ENTRY, ParserAction.PARAM, ParserState.DCS_PARAM);
+    table.addMany([0x3c, 0x3d, 0x3e, 0x3f], ParserState.DCS_ENTRY, ParserAction.COLLECT, ParserState.DCS_PARAM);
+    table.addMany(EXECUTABLES, ParserState.DCS_IGNORE, ParserAction.IGNORE, ParserState.DCS_IGNORE);
+    table.addMany(r(0x20, 0x80), ParserState.DCS_IGNORE, ParserAction.IGNORE, ParserState.DCS_IGNORE);
+    table.addMany(r(0x1c, 0x20), ParserState.DCS_IGNORE, ParserAction.IGNORE, ParserState.DCS_IGNORE);
+    table.addMany(EXECUTABLES, ParserState.DCS_PARAM, ParserAction.IGNORE, ParserState.DCS_PARAM);
+    table.add(0x7f, ParserState.DCS_PARAM, ParserAction.IGNORE, ParserState.DCS_PARAM);
+    table.addMany(r(0x1c, 0x20), ParserState.DCS_PARAM, ParserAction.IGNORE, ParserState.DCS_PARAM);
+    table.addMany(r(0x30, 0x3a), ParserState.DCS_PARAM, ParserAction.PARAM, ParserState.DCS_PARAM);
+    table.add(0x3b, ParserState.DCS_PARAM, ParserAction.PARAM, ParserState.DCS_PARAM);
+    table.addMany([0x3a, 0x3c, 0x3d, 0x3e, 0x3f], ParserState.DCS_PARAM, ParserAction.IGNORE, ParserState.DCS_IGNORE);
+    table.addMany(r(0x20, 0x30), ParserState.DCS_PARAM, ParserAction.COLLECT, ParserState.DCS_INTERMEDIATE);
+    table.addMany(EXECUTABLES, ParserState.DCS_INTERMEDIATE, ParserAction.IGNORE, ParserState.DCS_INTERMEDIATE);
+    table.add(0x7f, ParserState.DCS_INTERMEDIATE, ParserAction.IGNORE, ParserState.DCS_INTERMEDIATE);
+    table.addMany(r(0x1c, 0x20), ParserState.DCS_INTERMEDIATE, ParserAction.IGNORE, ParserState.DCS_INTERMEDIATE);
+    table.addMany(r(0x20, 0x30), ParserState.DCS_INTERMEDIATE, ParserAction.COLLECT, ParserState.DCS_INTERMEDIATE);
+    table.addMany(r(0x30, 0x40), ParserState.DCS_INTERMEDIATE, ParserAction.IGNORE, ParserState.DCS_IGNORE);
+    table.addMany(r(0x40, 0x7f), ParserState.DCS_INTERMEDIATE, ParserAction.DCS_HOOK, ParserState.DCS_PASSTHROUGH);
+    table.addMany(r(0x40, 0x7f), ParserState.DCS_PARAM, ParserAction.DCS_HOOK, ParserState.DCS_PASSTHROUGH);
+    table.addMany(r(0x40, 0x7f), ParserState.DCS_ENTRY, ParserAction.DCS_HOOK, ParserState.DCS_PASSTHROUGH);
+    table.addMany(EXECUTABLES, ParserState.DCS_PASSTHROUGH, ParserAction.DCS_PUT, ParserState.DCS_PASSTHROUGH);
+    table.addMany(PRINTABLES, ParserState.DCS_PASSTHROUGH, ParserAction.DCS_PUT, ParserState.DCS_PASSTHROUGH);
+    table.add(0x7f, ParserState.DCS_PASSTHROUGH, ParserAction.IGNORE, ParserState.DCS_PASSTHROUGH);
+    table.addMany([0x1b, 0x9c], ParserState.DCS_PASSTHROUGH, ParserAction.DCS_UNHOOK, ParserState.GROUND);
 
     return table;
 })();
@@ -231,7 +231,7 @@ export class EscapeSequenceParser {
         terminal?: IParserTerminal | any,
         transitions: TransitionTable = VT500_TRANSITION_TABLE)
     {
-        this.initialState = STATE.GROUND;
+        this.initialState = ParserState.GROUND;
         this.currentState = this.initialState;
         this.transitions = transitions;
         this.osc = '';
@@ -262,7 +262,7 @@ export class EscapeSequenceParser {
         let currentState = this.currentState;
 
         // local buffers
-        let printed = -1;
+        let print = -1;
         let dcs = -1;
         let osc = this.osc;
         let collected = this.collected;
@@ -275,13 +275,13 @@ export class EscapeSequenceParser {
             code = s.charCodeAt(i);
 
             // shortcut for most chars (print action)
-            if (currentState === STATE.GROUND && (code > 0x1f && code < 0x80)) {
-                printed = (~printed) ? printed : i;
+            if (currentState === ParserState.GROUND && (code > 0x1f && code < 0x80)) {
+                print = (~print) ? print : i;
                 continue;
             }
 
             // shortcut for CSI params
-            if (currentState === STATE.CSI_PARAM && (code > 0x2f && code < 0x39)) {
+            if (currentState === ParserState.CSI_PARAM && (code > 0x2f && code < 0x39)) {
                 params[params.length - 1] = params[params.length - 1] * 10 + code - 48;
                 continue;
             }
@@ -289,47 +289,47 @@ export class EscapeSequenceParser {
             // normal transition & action lookup
             transition = (code < 0xa0) ? (table[currentState << 8 | code]) : DEFAULT_TRANSITION;
             switch (transition >> 4) {
-                case ACTION.print:
-                    printed = (~printed) ? printed : i;
+                case ParserAction.PRINT:
+                    print = (~print) ? print : i;
                     break;
-                case ACTION.execute:
-                    if (~printed) {
-                        this.term.actionPrint(s, printed, i);
-                        printed = -1;
+                case ParserAction.EXECUTE:
+                    if (~print) {
+                        this.term.actionPrint(s, print, i);
+                        print = -1;
                     }
                     this.term.actionExecute(String.fromCharCode(code));
                     break;
-                case ACTION.ignore:
+                case ParserAction.IGNORE:
                     // handle leftover print or dcs chars
-                    if (~printed) {
-                        this.term.actionPrint(s, printed, i);
-                        printed = -1;
+                    if (~print) {
+                        this.term.actionPrint(s, print, i);
+                        print = -1;
                     } else if (~dcs) {
                         this.term.actionDCSPrint(s, dcs, i);
                         dcs = -1;
                     }
                     break;
-                case ACTION.error:
+                case ParserAction.ERROR:
                     // chars higher than 0x9f are handled by this action to
                     // keep the lookup table small
                     if (code > 0x9f) {
                         switch (currentState) {
-                            case STATE.GROUND:          // add char to print string
-                                printed = (~printed) ? printed : i;
+                            case ParserState.GROUND:          // add char to print string
+                                print = (~print) ? print : i;
                                 break;
-                            case STATE.OSC_STRING:      // add char to osc string
+                            case ParserState.OSC_STRING:      // add char to osc string
                                 osc += String.fromCharCode(code);
-                                transition |= STATE.OSC_STRING;
+                                transition |= ParserState.OSC_STRING;
                                 break;
-                            case STATE.CSI_IGNORE:      // ignore char
-                                transition |= STATE.CSI_IGNORE;
+                            case ParserState.CSI_IGNORE:      // ignore char
+                                transition |= ParserState.CSI_IGNORE;
                                 break;
-                            case STATE.DCS_IGNORE:      // ignore char
-                                transition |= STATE.DCS_IGNORE;
+                            case ParserState.DCS_IGNORE:      // ignore char
+                                transition |= ParserState.DCS_IGNORE;
                                 break;
-                            case STATE.DCS_PASSTHROUGH: // add char to dcs string
+                            case ParserState.DCS_PASSTHROUGH: // add char to dcs string
                                 dcs = (~dcs) ? dcs : i;
-                                transition |= STATE.DCS_PASSTHROUGH;
+                                transition |= ParserState.DCS_PASSTHROUGH;
                                 break;
                             default:
                                 error = true;
@@ -342,71 +342,71 @@ export class EscapeSequenceParser {
                     if (error) {
                         if (this.term.actionError(
                                 {
-                                    pos: i,                 // position in string
-                                    code: code,             // actual character code
-                                    state: currentState,    // current state
-                                    print: printed,         // print buffer start index
-                                    dcs: dcs,               // dcs buffer start index
-                                    osc: osc,               // osc string buffer
-                                    collect: collected,     // collect buffer
-                                    params: params          // params buffer
+                                    position: i,    // position in string
+                                    code,           // actual character code
+                                    currentState,   // current state
+                                    print,        // print buffer start index
+                                    dcs,            // dcs buffer start index
+                                    osc,            // osc string buffer
+                                    collected,      // collect buffer
+                                    params          // params buffer
                                 })) {
                             return;
                         }
                         error = false;
                     }
                     break;
-                case ACTION.csi_dispatch:
+                case ParserAction.CSI_DISPATCH:
                     this.term.actionCSI(collected, params, String.fromCharCode(code));
                     break;
-                case ACTION.param:
+                case ParserAction.PARAM:
                     if (code === 0x3b) params.push(0);
                     else params[params.length - 1] = params[params.length - 1] * 10 + code - 48;
                     break;
-                case ACTION.collect:
+                case ParserAction.COLLECT:
                     collected += String.fromCharCode(code);
                     break;
-                case ACTION.esc_dispatch:
+                case ParserAction.ESC_DISPATCH:
                     this.term.actionESC(collected, String.fromCharCode(code));
                     break;
-                case ACTION.clear:
-                    if (~printed) {
-                        this.term.actionPrint(s, printed, i);
-                        printed = -1;
+                case ParserAction.CLEAR:
+                    if (~print) {
+                        this.term.actionPrint(s, print, i);
+                        print = -1;
                     }
                     osc = '';
                     params = [0];
                     collected = '';
                     dcs = -1;
                     break;
-                case ACTION.dcs_hook:
+                case ParserAction.DCS_HOOK:
                     this.term.actionDCSHook(collected, params, String.fromCharCode(code));
                     break;
-                case ACTION.dcs_put:
+                case ParserAction.DCS_PUT:
                     dcs = (~dcs) ? dcs : i;
                     break;
-                case ACTION.dcs_unhook:
+                case ParserAction.DCS_UNHOOK:
                     if (~dcs) this.term.actionDCSPrint(s, dcs, i);
                     this.term.actionDCSUnhook();
-                    if (code === 0x1b) transition |= STATE.ESCAPE;
+                    if (code === 0x1b) transition |= ParserState.ESCAPE;
                     osc = '';
                     params = [0];
                     collected = '';
                     dcs = -1;
                     break;
-                case ACTION.osc_start:
-                    if (~printed) {
-                        this.term.actionPrint(s, printed, i);
-                        printed = -1;
+                case ParserAction.OSC_START:
+                    if (~print) {
+                        this.term.actionPrint(s, print, i);
+                        print = -1;
                     }
                     osc = '';
                     break;
-                case ACTION.osc_put:
+                case ParserAction.OSC_PUT:
                     osc += s.charAt(i);
                     break;
-                case ACTION.osc_end:
+                case ParserAction.OSC_END:
                     if (osc && code !== 0x18 && code !== 0x1a) this.term.actionOSC(osc);
-                    if (code === 0x1b) transition |= STATE.ESCAPE;
+                    if (code === 0x1b) transition |= ParserState.ESCAPE;
                     osc = '';
                     params = [0];
                     collected = '';
@@ -417,9 +417,9 @@ export class EscapeSequenceParser {
         }
 
         // push leftover pushable buffers to terminal
-        if (currentState === STATE.GROUND && ~printed) {
-            this.term.actionPrint(s, printed, s.length);
-        } else if (currentState === STATE.DCS_PASSTHROUGH && ~dcs) {
+        if (currentState === ParserState.GROUND && ~print) {
+            this.term.actionPrint(s, print, s.length);
+        } else if (currentState === ParserState.DCS_PASSTHROUGH && ~dcs) {
             this.term.actionDCSPrint(s, dcs, s.length);
         }
 
