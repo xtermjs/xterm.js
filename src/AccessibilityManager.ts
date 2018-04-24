@@ -12,7 +12,7 @@ import { IDisposable } from 'xterm';
 
 const MAX_ROWS_TO_READ = 20;
 
-enum BoundaryPosition {
+const enum BoundaryPosition {
   TOP,
   BOTTOM
 }

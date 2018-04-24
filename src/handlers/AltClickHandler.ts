@@ -6,7 +6,7 @@
 import { ITerminal, ICircularList, LineData } from '../Types';
 import { C0 } from '../EscapeSequences';
 
-enum Direction {
+const enum Direction {
   UP = 'A',
   DOWN = 'B',
   RIGHT = 'C',

@@ -92,6 +92,9 @@
     "naming-convention": [
       true,
       {"type": "property", "modifiers": ["public", "static", "const"], "format": "UPPER_CASE"}
+    ],
+    "prefer-const-enum": [
+      true
     ]
   }
 }
