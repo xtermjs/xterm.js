@@ -309,6 +309,9 @@ export class MockBuffer implements IBuffer {
   prevStop(x?: number): number {
     throw new Error('Method not implemented.');
   }
+  setLines(lines: ICircularList<[number, string, number, number][]>): void {
+    this.lines = lines;
+  }
 }
 
 export class MockRenderer implements IRenderer {

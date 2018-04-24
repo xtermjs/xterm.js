@@ -248,7 +248,7 @@ export interface ITerminalOptions extends IPublicTerminalOptions {
 }
 
 export interface IBuffer {
-  lines: ICircularList<LineData>;
+  readonly lines: ICircularList<LineData>;
   ydisp: number;
   ybase: number;
   y: number;
