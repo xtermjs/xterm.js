@@ -84,7 +84,7 @@
     "build:docs": "jsdoc -c jsdoc.json",
     "tsc": "tsc",
     "build": "gulp build",
-    "prepublish": "npm run build",
+    "prepublishOnly": "npm run build",
     "coveralls": "gulp coveralls",
     "webpack": "gulp webpack",
     "watch": "gulp watch"
