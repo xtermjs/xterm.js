@@ -26,7 +26,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     private _container: HTMLElement,
     id: string,
     zIndex: number,
-    private _alpha: boolean,
+    protected _alpha: boolean,
     protected _colors: IColorSet
   ) {
     this._canvas = document.createElement('canvas');
