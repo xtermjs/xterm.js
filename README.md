@@ -41,7 +41,7 @@ To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to t
       <script>
       	var term = new Terminal();
         term.open(document.getElementById('terminal'));
-        term.write('Hello from \033[1;3;31mxterm.js\033[0m $ ')
+        term.write('Hello from \u001B[1;3;31mxterm.js\u001B[0m $ ')
       </script>
     </body>
   </html>
