@@ -17,7 +17,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * the costly operation of searching every row multiple times, potentially a
    * huge amount of times.
    */
-  protected static TIME_BEFORE_LINKIFY = 200;
+  protected static readonly TIME_BEFORE_LINKIFY = 200;
 
   protected _linkMatchers: ILinkMatcher[] = [];
 

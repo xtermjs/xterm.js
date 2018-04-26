@@ -622,7 +622,7 @@ export class InputHandler implements IInputHandler {
    *   [columns] (default = [row,col+1]) (HPR)
    * reuse CSI Ps C ?
    */
-  public HPositionRelative(params: number[]): void {
+  public hPositionRelative(params: number[]): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -736,7 +736,7 @@ export class InputHandler implements IInputHandler {
    *   [rows] (default = [row+1,column])
    * reuse CSI Ps B ?
    */
-  public VPositionRelative(params: number[]): void {
+  public vPositionRelative(params: number[]): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -756,7 +756,7 @@ export class InputHandler implements IInputHandler {
    *   Horizontal and Vertical Position [row;column] (default =
    *   [1,1]) (HVP).
    */
-  public HVPosition(params: number[]): void {
+  public hVPosition(params: number[]): void {
     if (params[0] < 1) params[0] = 1;
     if (params[1] < 1) params[1] = 1;
 

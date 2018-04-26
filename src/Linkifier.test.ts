@@ -11,9 +11,9 @@ import { MockBuffer, MockTerminal } from './utils/TestUtils.test';
 import { CircularList } from './utils/CircularList';
 
 class TestLinkifier extends Linkifier {
-  constructor(_terminal: ITerminal) {
-    super(_terminal);
-    Linkifier.TIME_BEFORE_LINKIFY = 0;
+  constructor(terminal: ITerminal) {
+    super(terminal);
+    (<any>Linkifier).TIME_BEFORE_LINKIFY = 0;
   }
 
   public get linkMatchers(): ILinkMatcher[] { return this._linkMatchers; }

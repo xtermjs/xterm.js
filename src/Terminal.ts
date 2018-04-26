@@ -2210,7 +2210,42 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   // TODO: Remove when true color is implemented
   public matchColor(r1: number, g1: number, b1: number): number {
-    return matchColor_(r1, g1, b1);
+    const hash = (r1 << 16) | (g1 << 8) | b1;
+
+    if (matchColorCache[hash] != null) {
+      return matchColorCache[hash];
+    }
+
+    let ldiff = Infinity;
+    let li = -1;
+    let i = 0;
+    let c: number;
+    let r2: number;
+    let g2: number;
+    let b2: number;
+    let diff: number;
+
+    for (; i < DEFAULT_ANSI_COLORS.length; i++) {
+      c = DEFAULT_ANSI_COLORS[i].rgba;
+      r2 = c >>> 24;
+      g2 = c >>> 16 & 0xFF;
+      b2 = c >>> 8 & 0xFF;
+      // assume that alpha is 0xFF
+
+      diff = matchColorDistance(r1, g1, b1, r2, g2, b2);
+
+      if (diff === 0) {
+        li = i;
+        break;
+      }
+
+      if (diff < ldiff) {
+        ldiff = diff;
+        li = i;
+      }
+    }
+
+    return matchColorCache[hash] = li;
   }
 
   private _visualBell(): boolean {
@@ -2265,44 +2300,4 @@ function matchColorDistance(r1: number, g1: number, b1: number, r2: number, g2: 
   return Math.pow(30 * (r1 - r2), 2)
     + Math.pow(59 * (g1 - g2), 2)
     + Math.pow(11 * (b1 - b2), 2);
-}
-
-
-function matchColor_(r1: number, g1: number, b1: number): number {
-  const hash = (r1 << 16) | (g1 << 8) | b1;
-
-  if (matchColorCache[hash] != null) {
-    return matchColorCache[hash];
-  }
-
-  let ldiff = Infinity;
-  let li = -1;
-  let i = 0;
-  let c: number;
-  let r2: number;
-  let g2: number;
-  let b2: number;
-  let diff: number;
-
-  for (; i < DEFAULT_ANSI_COLORS.length; i++) {
-    c = DEFAULT_ANSI_COLORS[i].rgba;
-    r2 = c >>> 24;
-    g2 = c >>> 16 & 0xFF;
-    b2 = c >>> 8 & 0xFF;
-    // assume that alpha is 0xFF
-
-    diff = matchColorDistance(r1, g1, b1, r2, g2, b2);
-
-    if (diff === 0) {
-      li = i;
-      break;
-    }
-
-    if (diff < ldiff) {
-      ldiff = diff;
-      li = i;
-    }
-  }
-
-  return matchColorCache[hash] = li;
 }
