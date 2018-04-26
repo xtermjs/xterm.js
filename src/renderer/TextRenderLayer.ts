@@ -32,7 +32,7 @@ export class TextRenderLayer extends BaseRenderLayer {
     super.resize(terminal, dim);
 
     // Clear the character width cache if the font or width has changed
-    const terminalFont = this._getFont(terminal, false);
+    const terminalFont = this._getFont(terminal, false, false);
     if (this._characterWidth !== dim.scaledCharWidth || this._characterFont !== terminalFont) {
       this._characterWidth = dim.scaledCharWidth;
       this._characterFont = terminalFont;
@@ -164,7 +164,7 @@ export class TextRenderLayer extends BaseRenderLayer {
         terminal, char, code,
         width, x, y,
         fg, bg,
-        !!(flags & FLAGS.BOLD), !!(flags & FLAGS.DIM)
+        !!(flags & FLAGS.BOLD), !!(flags & FLAGS.DIM), !!(flags & FLAGS.ITALIC)
       );
     });
   }
