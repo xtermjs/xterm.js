@@ -128,18 +128,58 @@ export class TextRenderLayer extends BaseRenderLayer {
     }
   }
 
+  /**
+   * Draws the background for a specified range of columns. Tries to batch adjacent cells of the
+   * same color together to reduce draw calls.
+   */
   private _drawBackground(terminal: ITerminal, firstRow: number, lastRow: number): void {
+    const ctx = this._ctx;
+    const cols = terminal.cols;
+    let startX: number = 0;
+    let startY: number = 0;
+    let prevFillStyle: string | null = null;
+
+    ctx.save();
+
     this._forEachCell(terminal, firstRow, lastRow, (code, char, width, x, y, fg, bg, flags) => {
       // libvte and xterm both draw the background (but not foreground) of invisible characters,
       // so we should too.
-      const isDefaultBackground = bg >= 256;
-      if (!isDefaultBackground) {
-        this._ctx.save();
-        this._ctx.fillStyle = (bg === INVERTED_DEFAULT_COLOR ? this._colors.foreground.css : this._colors.ansi[bg].css);
-        this.fillCells(x, y, width, 1);
-        this._ctx.restore();
+      let nextFillStyle = null; // null represents default background color
+      if (bg === INVERTED_DEFAULT_COLOR) {
+        nextFillStyle = this._colors.foreground.css;
+      } else if (bg < 256) {
+        nextFillStyle = this._colors.ansi[bg].css;
       }
+
+      if (prevFillStyle === null) {
+        // This is either the first iteration, or the default background was set. Either way, we
+        // don't need to draw anything.
+        startX = x;
+        startY = y;
+      } if (y !== startY) {
+        // our row changed, draw the previous row
+        ctx.fillStyle = prevFillStyle;
+        this.fillCells(startX, startY, cols - startX, 1);
+        startX = x;
+        startY = y;
+      } else if (prevFillStyle !== nextFillStyle) {
+        // our color changed, draw the previous characters in this row
+        ctx.fillStyle = prevFillStyle;
+        this.fillCells(startX, startY, x - startX, 1);
+        startX = x;
+        startY = y;
+      }
+
+      prevFillStyle = nextFillStyle;
     });
+
+    // flush the last color we encountered
+    if (prevFillStyle !== null) {
+      ctx.fillStyle = prevFillStyle;
+      this.fillCells(startX, startY, cols - startX, 1);
+    }
+
+    ctx.restore();
   }
 
   private _drawForeground(terminal: ITerminal, firstRow: number, lastRow: number): void {
