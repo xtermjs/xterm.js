@@ -23,7 +23,7 @@ export interface IParsingState {
     print: number;              // print buffer start index
     dcs: number;                // dcs buffer start index
     osc: string;                // osc string buffer
-    collected: string;          // collect buffer
+    collect: string;            // collect buffer
     params: number[];           // params buffer
     abort: boolean;             // should abort (default: false)
 }
@@ -41,9 +41,13 @@ export interface ICsiHandler {
 }
 
 export interface IDcsHandler {
-    hook(collect: string): void;
-    put(data: string): void;
+    hook(collect: string, params: number[], flag: string): void;
+    put(data: string, start: number, end: number): void;
     unhook(): void;
+}
+
+export interface IErrorHandler {
+    (state: IParsingState): IParsingState;
 }
 
 export interface IEscapeSequenceParser {
@@ -51,25 +55,25 @@ export interface IEscapeSequenceParser {
     parse(data: string): void;
 
     registerPrintHandler(callback: IPrintHandler): void;
-    deregisterPrintHandler(callback: (data: string) => void): void;
+    deregisterPrintHandler(): void;
 
     registerExecuteHandler(flag: string, callback: IExecuteHandler): void;
-    deregisterExecuteHandler(flag: string, callback: () => void): void;
+    deregisterExecuteHandler(flag: string): void;
 
     registerCsiHandler(flag: string, callback: ICsiHandler): void;
-    deregisterCsiHandler(flag: string, callback: (params: number[], collect: string) => void): void;
+    deregisterCsiHandler(flag: string): void;
 
     registerEscHandler(collect: string, flag: string, callback: (flag: string) => void): void;
-    deregisterEscHandler(collect: string, flag: string, callback: (collect: string) => void): void;
+    deregisterEscHandler(collect: string, flag: string): void;
 
     registerOscHandler(ident: number, callback: (data: string) => void): void;
-    deregisterOscHandler(ident: number, callback: (data: string) => void): void;
+    deregisterOscHandler(ident: number): void;
 
     registerDcsHandler(collect: string, flag: string, handler: IDcsHandler): void;
-    deregisterDcsHandler(collect: string, flag: string, handler: IDcsHandler): void;
+    deregisterDcsHandler(collect: string, flag: string): void;
 
     registerErrorHandler(callback: (state: IParsingState) => IParsingState): void;
-    deregisterErrorHandler(callback: (state: IParsingState) => IParsingState): void;
+    deregisterErrorHandler(): void;
 
     // remove after revamp of InputHandler methods
     registerPrefixHandler(callback: (collect: string) => void): void;
@@ -275,6 +279,12 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
     return table;
 })();
 
+// dummy handler for DCS, does really nothing
+class DcsDummy implements IDcsHandler {
+    hook(collect: string, params: number[], flag: string): void {}
+    put(data: string, start: number, end: number): void {}
+    unhook(): void {}
+}
 
 // default transition table points to global object
 // Q: Copy table to allow custom sequences w'o changing global object?
@@ -282,82 +292,92 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     public initialState: number;
     public currentState: number;
     public transitions: TransitionTable;
-    public osc: string;
-    public params: number[];
-    public collected: string;
-    public term: any;
 
-    private _printHandler: IPrintHandler;
-    private _executeHandlers: any;
-    private _csiHandlers: any;
-    private _escHandlers: any;
-    private _oscHandlers: any;
-    private _dcsHandlers: any;
+    // buffers over several parse calls
+    protected _osc: string;
+    protected _params: number[];
+    protected _collect: string;
+
+    // callback slots
+    protected _printHandler: IPrintHandler;
+    protected _executeHandlers: any;
+    protected _csiHandlers: any;
+    protected _escHandlers: any;
+    protected _oscHandlers: any;
+    protected _dcsHandlers: any;
+    protected _activeDcsHandler: IDcsHandler | null;
+    protected _dummyDcsHandler: IDcsHandler;
+    protected _errorHandler: IErrorHandler;
 
     // FIXME: to be removed
-    private _tempPrefixHandler: any;
+    protected _tempPrefixHandler: any;
 
-    constructor(
-        terminal?: IParserTerminal | any,
-        transitions: TransitionTable = VT500_TRANSITION_TABLE)
-    {
+    constructor(transitions: TransitionTable = VT500_TRANSITION_TABLE) {
         this.initialState = ParserState.GROUND;
         this.currentState = this.initialState;
         this.transitions = transitions;
-        this.osc = '';
-        this.params = [0];
-        this.collected = '';
-        this.term = terminal || {};
-        let instructions = [
-            'actionPrint', 'actionOSC', 'actionExecute', 'actionCSI', 'actionESC',
-            'actionDCSHook', 'actionDCSPrint', 'actionDCSUnhook', 'actionError'];
-        for (let i = 0; i < instructions.length; ++i) {
-            if (!(instructions[i] in this.term)) {
-                this.term[instructions[i]] = function(): void {};
-            }
-        }
+        this._osc = '';
+        this._params = [0];
+        this._collect = '';
         this._printHandler = (data, start, end): void => {};
         this._executeHandlers = Object.create(null);
         this._csiHandlers = Object.create(null);
         this._escHandlers = Object.create(null);
         this._oscHandlers = Object.create(null);
         this._dcsHandlers = Object.create(null);
+        this._activeDcsHandler = null;
+        this._dummyDcsHandler = new DcsDummy;
+        this._errorHandler = (state: IParsingState): IParsingState => state;
     }
 
     registerPrintHandler(callback: IPrintHandler): void {
         this._printHandler = callback;
     }
-    deregisterPrintHandler(callback: (data: string) => void): void {}
+    deregisterPrintHandler(): void {
+        this._printHandler = (data, start, end): void => {};
+    }
 
     registerExecuteHandler(flag: string, callback: IExecuteHandler): void {
         this._executeHandlers[flag.charCodeAt(0)] = callback;
     }
-    deregisterExecuteHandler(flag: string, callback: () => void): void {}
+    deregisterExecuteHandler(flag: string): void {
+        if (this._executeHandlers[flag.charCodeAt(0)]) delete this._executeHandlers[flag.charCodeAt(0)];
+    }
 
     registerCsiHandler(flag: string, callback: ICsiHandler): void {
         this._csiHandlers[flag.charCodeAt(0)] = callback;
     }
-    deregisterCsiHandler(flag: string, callback: (params: number[], collect: string) => void): void {}
+    deregisterCsiHandler(flag: string): void {
+        if (this._csiHandlers[flag.charCodeAt(0)]) delete this._csiHandlers[flag.charCodeAt(0)];
+    }
 
     registerEscHandler(collect: string, flag: string, callback: (collect: string) => void): void {
         this._escHandlers[collect + flag] = callback;
     }
-    deregisterEscHandler(collect: string, flag: string, callback: (collect: string) => void): void {}
+    deregisterEscHandler(collect: string, flag: string): void {
+        if (this._escHandlers[collect + flag]) delete this._escHandlers[collect + flag];
+    }
 
     registerOscHandler(ident: number, callback: (data: string) => void): void {
         this._oscHandlers[ident] = callback;
     }
-    deregisterOscHandler(ident: number, callback: (data: string) => void): void {}
+    deregisterOscHandler(ident: number): void {
+        if (this._oscHandlers[ident]) delete this._oscHandlers[ident];
+    }
 
     registerDcsHandler(collect: string, flag: string, handler: IDcsHandler): void {
         this._dcsHandlers[collect + flag] = handler;
     }
-    deregisterDcsHandler(collect: string, flag: string, handler: IDcsHandler): void {}
-
-    registerErrorHandler(callback: (state: IParsingState) => IParsingState): void {
-
+    deregisterDcsHandler(collect: string, flag: string): void {
+        if (this._dcsHandlers[collect + flag]) delete this._dcsHandlers[collect + flag];
     }
-    deregisterErrorHandler(callback: (state: IParsingState) => IParsingState): void {}
+
+    registerErrorHandler(callback: IErrorHandler): void {
+        this._errorHandler = callback;
+    }
+    deregisterErrorHandler(): void {
+        this._errorHandler = (state: IParsingState): IParsingState => state;
+    }
 
     // FIXME: to be removed
     registerPrefixHandler(callback: (collect: string) => void): void {
@@ -366,9 +386,9 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
 
     reset(): void {
         this.currentState = this.initialState;
-        this.osc = '';
-        this.params = [0];
-        this.collected = '';
+        this._osc = '';
+        this._params = [0];
+        this._collect = '';
     }
 
     parse(data: string): void {
@@ -380,10 +400,12 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
         // local buffers
         let print = -1;
         let dcs = -1;
-        let osc = this.osc;
-        let collected = this.collected;
-        let params = this.params;
+        let osc = this._osc;
+        let collect = this._collect;
+        let params = this._params;
         let table: Uint8Array = this.transitions.table;
+        let dcsHandler: IDcsHandler | null = this._activeDcsHandler;
+        let ident: string = '';
 
         // process input string
         let l = data.length;
@@ -422,7 +444,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
                         this._printHandler(data, print, i);
                         print = -1;
                     } else if (~dcs) {
-                        this.term.actionDCSPrint(data, dcs, i);
+                        dcsHandler.put(data, dcs, i);
                         dcs = -1;
                     }
                     break;
@@ -455,9 +477,8 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
                         error = true;
                     }
                     // if we end up here a real error happened
-                    // FIXME: eval and inject return values
                     if (error) {
-                        if (this.term.actionError(
+                        let inject: IParsingState = this._errorHandler(
                                 {
                                     position: i,    // position in string
                                     code,           // actual character code
@@ -465,31 +486,31 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
                                     print,          // print buffer start index
                                     dcs,            // dcs buffer start index
                                     osc,            // osc string buffer
-                                    collected,      // collect buffer
+                                    collect,      // collect buffer
                                     params,         // params buffer
                                     abort: false    // abort flag
-                                })) {
-                            return;
-                        }
+                                });
+                        if (inject.abort) return;
+                        // FIXME: inject return values
                         error = false;
                     }
                     break;
                 case ParserAction.CSI_DISPATCH:
-                    this._tempPrefixHandler(collected);  // FIXME: to be removed
-                    if (this._csiHandlers[code]) this._csiHandlers[code](params, collected);
-                    else console.log('unhandled CSI %s %s %s', code, params, collected);  // FIXME: set some default action
+                    this._tempPrefixHandler(collect);  // FIXME: to be removed
+                    if (this._csiHandlers[code]) this._csiHandlers[code](params, collect);
+                    else console.log('unhandled CSI %s %s %s', code, params, collect);  // FIXME: set some default action
                     break;
                 case ParserAction.PARAM:
                     if (code === 0x3b) params.push(0);
                     else params[params.length - 1] = params[params.length - 1] * 10 + code - 48;
                     break;
                 case ParserAction.COLLECT:
-                    collected += String.fromCharCode(code);
+                    collect += String.fromCharCode(code);
                     break;
                 case ParserAction.ESC_DISPATCH:
-                    let ident = collected + String.fromCharCode(code);
-                    if (this._escHandlers[ident]) this._escHandlers[ident](params, collected);
-                    else console.log('unhandled ESC %s %s', collected, String.fromCharCode(code));  // FIXME: set some default action
+                    ident = collect + String.fromCharCode(code);
+                    if (this._escHandlers[ident]) this._escHandlers[ident](params, collect);
+                    else console.log('unhandled ESC %s %s', collect, String.fromCharCode(code));  // FIXME: set some default action
                     break;
                 case ParserAction.CLEAR:
                     if (~print) {
@@ -498,22 +519,26 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
                     }
                     osc = '';
                     params = [0];
-                    collected = '';
+                    collect = '';
                     dcs = -1;
                     break;
                 case ParserAction.DCS_HOOK:
-                    this.term.actionDCSHook(collected, params, String.fromCharCode(code));
+                    ident = collect + String.fromCharCode(code);
+                    if (this._dcsHandlers[ident]) dcsHandler = new this._dcsHandlers[ident];
+                    else dcsHandler = this._dummyDcsHandler;
+                    dcsHandler.hook(collect, params, String.fromCharCode(code));
                     break;
                 case ParserAction.DCS_PUT:
                     dcs = (~dcs) ? dcs : i;
                     break;
                 case ParserAction.DCS_UNHOOK:
-                    if (~dcs) this.term.actionDCSPrint(data, dcs, i);
-                    this.term.actionDCSUnhook();
+                    if (~dcs) dcsHandler.put(data, dcs, i);
+                    dcsHandler.unhook();
+                    dcsHandler = null;
                     if (code === 0x1b) transition |= ParserState.ESCAPE;
                     osc = '';
                     params = [0];
-                    collected = '';
+                    collect = '';
                     dcs = -1;
                     break;
                 case ParserAction.OSC_START:
@@ -537,7 +562,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
                     if (code === 0x1b) transition |= ParserState.ESCAPE;
                     osc = '';
                     params = [0];
-                    collected = '';
+                    collect = '';
                     dcs = -1;
                     break;
             }
@@ -548,13 +573,16 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
         if (currentState === ParserState.GROUND && ~print) {
             this._printHandler(data, print, data.length);
         } else if (currentState === ParserState.DCS_PASSTHROUGH && ~dcs) {
-            this.term.actionDCSPrint(data, dcs, data.length);
+            dcsHandler.put(data, dcs, data.length);
         }
 
         // save non pushable buffers
-        this.osc = osc;
-        this.collected = collected;
-        this.params = params;
+        this._osc = osc;
+        this._collect = collect;
+        this._params = params;
+
+        // save active dcs handler reference
+        this._activeDcsHandler = dcsHandler;
 
         // save state
         this.currentState = currentState;
@@ -571,7 +599,7 @@ export class ParserTerminal implements IParserTerminal {
     private _inputHandler: IInputHandler;
 
     constructor(_inputHandler: IInputHandler, _terminal: any) {
-        this._parser = new EscapeSequenceParser(this);
+        this._parser = new EscapeSequenceParser;
         this._terminal = _terminal;
         this._inputHandler = _inputHandler;
 
@@ -733,6 +761,12 @@ export class ParserTerminal implements IParserTerminal {
             this._parser.registerEscHandler('-', flag, () => this._terminal.setgCharset(1, CHARSETS[flag] || DEFAULT_CHARSET));
             this._parser.registerEscHandler('.', flag, () => this._terminal.setgCharset(2, CHARSETS[flag] || DEFAULT_CHARSET));
         }
+
+        // error handler
+        this._parser.registerErrorHandler((state) => {
+            console.log('parsing error:', state);
+            return state;
+        });
     }
 
 
