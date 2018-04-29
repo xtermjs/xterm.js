@@ -4,20 +4,6 @@ import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
 import { wcwidth } from './CharWidth';
 import { InputHandler } from './InputHandler';
 
-
-// terminal interface for the escape sequence parser
-export interface IParserTerminal {
-    print?: (data: string, start: number, end: number) => void;
-    actionOSC?: (data: string) => void;
-    actionExecute?: (flag: string) => void;
-    actionCSI?: (collected: string, params: number[], flag: string) => void;
-    actionESC?: (collected: string, flag: string) => void;
-    actionDCSHook?: (collected: string, params: number[], flag: string) => void;
-    actionDCSPrint?: (data: string, start: number, end: number) => void;
-    actionDCSUnhook?: () => void;
-    actionError?: () => void; // FIXME: real signature and error handling
-}
-
 export interface IParsingState {
     position: number;           // position in string
     code: number;               // actual character code
@@ -69,19 +55,19 @@ export interface IEscapeSequenceParser {
 
     setExecuteHandler(flag: string, callback: IExecuteHandler): void;
     clearExecuteHandler(flag: string): void;
-    setExecuteHandlerFallback(callback: (...params: any[]) => void);
+    setExecuteHandlerFallback(callback: (...params: any[]) => void): void;
 
     setCsiHandler(flag: string, callback: ICsiHandler): void;
     clearCsiHandler(flag: string): void;
-    setCsiHandlerFallback(callback: (...params: any[]) => void);
+    setCsiHandlerFallback(callback: (...params: any[]) => void): void;
 
     setEscHandler(collect: string, flag: string, callback: IEscHandler): void;
     clearEscHandler(collect: string, flag: string): void;
-    setEscHandlerFallback(callback: (...params: any[]) => void);
+    setEscHandlerFallback(callback: (...params: any[]) => void): void;
 
     setOscHandler(ident: number, callback: IOscHandler): void;
     clearOscHandler(ident: number): void;
-    setOscHandlerFallback(callback: (...params: any[]) => void);
+    setOscHandlerFallback(callback: (...params: any[]) => void): void;
 
     setDcsHandler(collect: string, flag: string, handler: IDcsHandler): void;
     clearDcsHandler(collect: string, flag: string): void;
@@ -375,7 +361,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     clearExecuteHandler(flag: string): void {
         if (this._executeHandlers[flag.charCodeAt(0)]) delete this._executeHandlers[flag.charCodeAt(0)];
     }
-    setExecuteHandlerFallback(callback): void {
+    setExecuteHandlerFallback(callback: (...params: any[]) => void): void {
         this._escHandlerFb = callback;
     }
 
@@ -385,7 +371,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     clearCsiHandler(flag: string): void {
         if (this._csiHandlers[flag.charCodeAt(0)]) delete this._csiHandlers[flag.charCodeAt(0)];
     }
-    setCsiHandlerFallback(callback): void {
+    setCsiHandlerFallback(callback: (...params: any[]) => void): void {
         this._csiHandlerFb = callback;
     }
 
@@ -395,7 +381,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     clearEscHandler(collect: string, flag: string): void {
         if (this._escHandlers[collect + flag]) delete this._escHandlers[collect + flag];
     }
-    setEscHandlerFallback(callback): void {
+    setEscHandlerFallback(callback: (...params: any[]) => void): void {
         this._escHandlerFb = callback;
     }
 
@@ -405,7 +391,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     clearOscHandler(ident: number): void {
         if (this._oscHandlers[ident]) delete this._oscHandlers[ident];
     }
-    setOscHandlerFallback(callback): void {
+    setOscHandlerFallback(callback: (...params: any[]) => void): void {
         this._oscHandlerFb = callback;
     }
 
@@ -503,20 +489,20 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
                     // keep the lookup table small
                     if (code > 0x9f) {
                         switch (currentState) {
-                            case ParserState.GROUND:          // add char to print string
+                            case ParserState.GROUND:
                                 print = (~print) ? print : i;
                                 break;
-                            case ParserState.OSC_STRING:      // add char to osc string
+                            case ParserState.OSC_STRING:
                                 osc += String.fromCharCode(code);
                                 transition |= ParserState.OSC_STRING;
                                 break;
-                            case ParserState.CSI_IGNORE:      // ignore char
+                            case ParserState.CSI_IGNORE:
                                 transition |= ParserState.CSI_IGNORE;
                                 break;
-                            case ParserState.DCS_IGNORE:      // ignore char
+                            case ParserState.DCS_IGNORE:
                                 transition |= ParserState.DCS_IGNORE;
                                 break;
-                            case ParserState.DCS_PASSTHROUGH: // add char to dcs string
+                            case ParserState.DCS_PASSTHROUGH:
                                 dcs = (~dcs) ? dcs : i;
                                 transition |= ParserState.DCS_PASSTHROUGH;
                                 break;
@@ -530,15 +516,15 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
                     if (error) {
                         let inject: IParsingState = this._errorHandler(
                                 {
-                                    position: i,    // position in string
-                                    code,           // actual character code
-                                    currentState,   // current state
-                                    print,          // print buffer start index
-                                    dcs,            // dcs buffer start index
-                                    osc,            // osc string buffer
-                                    collect,      // collect buffer
-                                    params,         // params buffer
-                                    abort: false    // abort flag
+                                    position: i,
+                                    code,
+                                    currentState,
+                                    print,
+                                    dcs,
+                                    osc,
+                                    collect,
+                                    params,
+                                    abort: false
                                 });
                         if (inject.abort) return;
                         // FIXME: inject return values
@@ -651,15 +637,12 @@ export class ParserTerminal extends InputHandler {
         this._parser.setCsiHandlerFallback((...params: any[]) => {
             this._terminal.error('Unknown CSI code: ', params);
         });
-
         this._parser.setEscHandlerFallback((...params: any[]) => {
             this._terminal.error('Unknown ESC code: ', params);
         });
-
         this._parser.setExecuteHandlerFallback((...params: any[]) => {
             this._terminal.error('Unknown EXECUTE code: ', params);
         });
-
         this._parser.setOscHandlerFallback((...params: any[]) => {
             this._terminal.error('Unknown OSC code: ', params);
         });
@@ -839,7 +822,7 @@ export class ParserTerminal extends InputHandler {
 
         // apply leftover surrogate high from last write
         if (this._terminal.surrogate_high) {
-          data = this._terminal.surrogate_high + data;
+          data = this._terminal.surrogate_high + data;  // FIXME: avoid string copy --> move to print
           this._terminal.surrogate_high = '';
         }
 
@@ -854,6 +837,7 @@ export class ParserTerminal extends InputHandler {
         let ch;
         let code;
         let low;
+        let chWidth;
         const buffer = this._terminal.buffer;
         for (let i = start; i < end; ++i) {
             ch = data.charAt(i);
@@ -875,11 +859,9 @@ export class ParserTerminal extends InputHandler {
               continue;
             }
 
-            // this.addChar(ch, code);
-
             // calculate print space
             // expensive call, therefore we save width in line buffer
-            const chWidth = wcwidth(code);
+            chWidth = wcwidth(code);
 
             if (this._terminal.charset && this._terminal.charset[ch]) {
                 ch = this._terminal.charset[ch];
