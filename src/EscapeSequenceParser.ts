@@ -1,6 +1,8 @@
-import { IInputHandler, IInputHandlingTerminal } from './Types';
 import { CHARSETS, DEFAULT_CHARSET } from './Charsets';
 import { C0 } from './EscapeSequences';
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
+import { wcwidth } from './CharWidth';
+import { InputHandler } from './InputHandler';
 
 
 // terminal interface for the escape sequence parser
@@ -40,8 +42,16 @@ export interface ICsiHandler {
     (params: number[], collect: string): void;
 }
 
+export interface IEscHandler {
+    (flag: string): void;
+}
+
+export interface IOscHandler {
+    (data: string): void;
+}
+
 export interface IDcsHandler {
-    hook(collect: string, params: number[], flag: string): void;
+    hook(collect: string, params: number[], flag: number): void;
     put(data: string, start: number, end: number): void;
     unhook(): void;
 }
@@ -54,29 +64,34 @@ export interface IEscapeSequenceParser {
     reset(): void;
     parse(data: string): void;
 
-    registerPrintHandler(callback: IPrintHandler): void;
-    deregisterPrintHandler(): void;
+    setPrintHandler(callback: IPrintHandler): void;
+    clearPrintHandler(): void;
 
-    registerExecuteHandler(flag: string, callback: IExecuteHandler): void;
-    deregisterExecuteHandler(flag: string): void;
+    setExecuteHandler(flag: string, callback: IExecuteHandler): void;
+    clearExecuteHandler(flag: string): void;
+    setExecuteHandlerFallback(callback: (...params: any[]) => void);
 
-    registerCsiHandler(flag: string, callback: ICsiHandler): void;
-    deregisterCsiHandler(flag: string): void;
+    setCsiHandler(flag: string, callback: ICsiHandler): void;
+    clearCsiHandler(flag: string): void;
+    setCsiHandlerFallback(callback: (...params: any[]) => void);
 
-    registerEscHandler(collect: string, flag: string, callback: (flag: string) => void): void;
-    deregisterEscHandler(collect: string, flag: string): void;
+    setEscHandler(collect: string, flag: string, callback: IEscHandler): void;
+    clearEscHandler(collect: string, flag: string): void;
+    setEscHandlerFallback(callback: (...params: any[]) => void);
 
-    registerOscHandler(ident: number, callback: (data: string) => void): void;
-    deregisterOscHandler(ident: number): void;
+    setOscHandler(ident: number, callback: IOscHandler): void;
+    clearOscHandler(ident: number): void;
+    setOscHandlerFallback(callback: (...params: any[]) => void);
 
-    registerDcsHandler(collect: string, flag: string, handler: IDcsHandler): void;
-    deregisterDcsHandler(collect: string, flag: string): void;
+    setDcsHandler(collect: string, flag: string, handler: IDcsHandler): void;
+    clearDcsHandler(collect: string, flag: string): void;
+    setDcsHandlerFallback(handler: IDcsHandler): void;
 
-    registerErrorHandler(callback: (state: IParsingState) => IParsingState): void;
-    deregisterErrorHandler(): void;
+    setErrorHandler(callback: IErrorHandler): void;
+    clearErrorHandler(): void;
 
     // remove after revamp of InputHandler methods
-    registerPrefixHandler(callback: (collect: string) => void): void;
+    setPrefixHandler(callback: (collect: string) => void): void;
 }
 
 
@@ -279,9 +294,9 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
     return table;
 })();
 
-// dummy handler for DCS, does really nothing
+// fallback dummy DCS handler, does really nothing
 class DcsDummy implements IDcsHandler {
-    hook(collect: string, params: number[], flag: string): void {}
+    hook(collect: string, params: number[], flag: number): void {}
     put(data: string, start: number, end: number): void {}
     unhook(): void {}
 }
@@ -306,8 +321,16 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     protected _oscHandlers: any;
     protected _dcsHandlers: any;
     protected _activeDcsHandler: IDcsHandler | null;
-    protected _dummyDcsHandler: IDcsHandler;
     protected _errorHandler: IErrorHandler;
+
+    // fallback handlers
+    protected _printHandlerFb: IPrintHandler;
+    protected _executeHandlerFb: (...params: any[]) => void;
+    protected _csiHandlerFb: (...params: any[]) => void;
+    protected _escHandlerFb: (...params: any[]) => void;
+    protected _oscHandlerFb: (...params: any[]) => void;
+    protected _dcsHandlerFb: IDcsHandler;
+    protected _errorHandlerFb: IErrorHandler;
 
     // FIXME: to be removed
     protected _tempPrefixHandler: any;
@@ -319,68 +342,92 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
         this._osc = '';
         this._params = [0];
         this._collect = '';
-        this._printHandler = (data, start, end): void => {};
+
+        // set default fallback handlers
+        this._printHandlerFb = (data, start, end): void => {};
+        this._executeHandlerFb = (...params: any[]): void => {};
+        this._csiHandlerFb = (...params: any[]): void => {};
+        this._escHandlerFb = (...params: any[]): void => {};
+        this._oscHandlerFb = (...params: any[]): void => {};
+        this._dcsHandlerFb = new DcsDummy;
+        this._errorHandlerFb = (state: IParsingState): IParsingState => state;
+
+        this._printHandler = this._printHandlerFb;
         this._executeHandlers = Object.create(null);
         this._csiHandlers = Object.create(null);
         this._escHandlers = Object.create(null);
         this._oscHandlers = Object.create(null);
         this._dcsHandlers = Object.create(null);
         this._activeDcsHandler = null;
-        this._dummyDcsHandler = new DcsDummy;
-        this._errorHandler = (state: IParsingState): IParsingState => state;
+        this._errorHandler = this._errorHandlerFb;
     }
 
-    registerPrintHandler(callback: IPrintHandler): void {
+    setPrintHandler(callback: IPrintHandler): void {
         this._printHandler = callback;
     }
-    deregisterPrintHandler(): void {
-        this._printHandler = (data, start, end): void => {};
+    clearPrintHandler(): void {
+        this._printHandler = this._printHandlerFb;
     }
 
-    registerExecuteHandler(flag: string, callback: IExecuteHandler): void {
+    setExecuteHandler(flag: string, callback: IExecuteHandler): void {
         this._executeHandlers[flag.charCodeAt(0)] = callback;
     }
-    deregisterExecuteHandler(flag: string): void {
+    clearExecuteHandler(flag: string): void {
         if (this._executeHandlers[flag.charCodeAt(0)]) delete this._executeHandlers[flag.charCodeAt(0)];
     }
+    setExecuteHandlerFallback(callback): void {
+        this._escHandlerFb = callback;
+    }
 
-    registerCsiHandler(flag: string, callback: ICsiHandler): void {
+    setCsiHandler(flag: string, callback: ICsiHandler): void {
         this._csiHandlers[flag.charCodeAt(0)] = callback;
     }
-    deregisterCsiHandler(flag: string): void {
+    clearCsiHandler(flag: string): void {
         if (this._csiHandlers[flag.charCodeAt(0)]) delete this._csiHandlers[flag.charCodeAt(0)];
     }
+    setCsiHandlerFallback(callback): void {
+        this._csiHandlerFb = callback;
+    }
 
-    registerEscHandler(collect: string, flag: string, callback: (collect: string) => void): void {
+    setEscHandler(collect: string, flag: string, callback: IEscHandler): void {
         this._escHandlers[collect + flag] = callback;
     }
-    deregisterEscHandler(collect: string, flag: string): void {
+    clearEscHandler(collect: string, flag: string): void {
         if (this._escHandlers[collect + flag]) delete this._escHandlers[collect + flag];
     }
+    setEscHandlerFallback(callback): void {
+        this._escHandlerFb = callback;
+    }
 
-    registerOscHandler(ident: number, callback: (data: string) => void): void {
+    setOscHandler(ident: number, callback: IOscHandler): void {
         this._oscHandlers[ident] = callback;
     }
-    deregisterOscHandler(ident: number): void {
+    clearOscHandler(ident: number): void {
         if (this._oscHandlers[ident]) delete this._oscHandlers[ident];
     }
+    setOscHandlerFallback(callback): void {
+        this._oscHandlerFb = callback;
+    }
 
-    registerDcsHandler(collect: string, flag: string, handler: IDcsHandler): void {
+    setDcsHandler(collect: string, flag: string, handler: IDcsHandler): void {
         this._dcsHandlers[collect + flag] = handler;
     }
-    deregisterDcsHandler(collect: string, flag: string): void {
+    clearDcsHandler(collect: string, flag: string): void {
         if (this._dcsHandlers[collect + flag]) delete this._dcsHandlers[collect + flag];
     }
+    setDcsHandlerFallback(handler: IDcsHandler): void {
+        this._dcsHandlerFb = handler;
+    }
 
-    registerErrorHandler(callback: IErrorHandler): void {
+    setErrorHandler(callback: IErrorHandler): void {
         this._errorHandler = callback;
     }
-    deregisterErrorHandler(): void {
-        this._errorHandler = (state: IParsingState): IParsingState => state;
+    clearErrorHandler(): void {
+        this._errorHandler = this._errorHandlerFb;
     }
 
     // FIXME: to be removed
-    registerPrefixHandler(callback: (collect: string) => void): void {
+    setPrefixHandler(callback: (collect: string) => void): void {
         this._tempPrefixHandler = callback;
     }
 
@@ -436,7 +483,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
                         print = -1;
                     }
                     if (this._executeHandlers[code]) this._executeHandlers[code]();
-                    else console.log('unhandled EXEC %s', code);  // FIXME: set some default action
+                    else this._executeHandlerFb(code);
                     break;
                 case ParserAction.IGNORE:
                     // handle leftover print or dcs chars
@@ -498,7 +545,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
                 case ParserAction.CSI_DISPATCH:
                     this._tempPrefixHandler(collect);  // FIXME: to be removed
                     if (this._csiHandlers[code]) this._csiHandlers[code](params, collect);
-                    else console.log('unhandled CSI %s %s %s', code, params, collect);  // FIXME: set some default action
+                    else this._csiHandlerFb(collect, params, code);
                     break;
                 case ParserAction.PARAM:
                     if (code === 0x3b) params.push(0);
@@ -510,7 +557,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
                 case ParserAction.ESC_DISPATCH:
                     ident = collect + String.fromCharCode(code);
                     if (this._escHandlers[ident]) this._escHandlers[ident](params, collect);
-                    else console.log('unhandled ESC %s %s', collect, String.fromCharCode(code));  // FIXME: set some default action
+                    else this._escHandlerFb(collect, code);
                     break;
                 case ParserAction.CLEAR:
                     if (~print) {
@@ -524,9 +571,9 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
                     break;
                 case ParserAction.DCS_HOOK:
                     ident = collect + String.fromCharCode(code);
-                    if (this._dcsHandlers[ident]) dcsHandler = new this._dcsHandlers[ident];
-                    else dcsHandler = this._dummyDcsHandler;
-                    dcsHandler.hook(collect, params, String.fromCharCode(code));
+                    if (this._dcsHandlers[ident]) dcsHandler = this._dcsHandlers[ident];
+                    else dcsHandler = this._dcsHandlerFb;
+                    dcsHandler.hook(collect, params, code);
                     break;
                 case ParserAction.DCS_PUT:
                     dcs = (~dcs) ? dcs : i;
@@ -557,7 +604,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
                         let identifier = parseInt(osc.substring(0, idx));
                         let content = osc.substring(idx + 1);
                         if (this._oscHandlers[identifier]) this._oscHandlers[identifier](content);
-                        else console.log('unhandled OSC %s %s', identifier, content);  // FIXME: set some default action
+                        else this._oscHandlerFb(identifier, content);
                     }
                     if (code === 0x1b) transition |= ParserState.ESCAPE;
                     osc = '';
@@ -589,98 +636,109 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     }
 }
 
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
-import { wcwidth } from './CharWidth';
 
-// Q: Merge class with InputHandler?
-export class ParserTerminal implements IParserTerminal {
+export class ParserTerminal extends InputHandler {
     private _parser: EscapeSequenceParser;
-    private _terminal: any;
-    private _inputHandler: IInputHandler;
 
-    constructor(_inputHandler: IInputHandler, _terminal: any) {
+    constructor(_terminal: any) {
+        super(_terminal);
         this._parser = new EscapeSequenceParser;
-        this._terminal = _terminal;
-        this._inputHandler = _inputHandler;
+
+        // custom fallback handlers
+        this._parser.setCsiHandlerFallback((...params: any[]) => {
+            this._terminal.error('Unknown CSI code: ', params);
+        });
+
+        this._parser.setEscHandlerFallback((...params: any[]) => {
+            this._terminal.error('Unknown ESC code: ', params);
+        });
+
+        this._parser.setExecuteHandlerFallback((...params: any[]) => {
+            this._terminal.error('Unknown EXECUTE code: ', params);
+        });
+
+        this._parser.setOscHandlerFallback((...params: any[]) => {
+            this._terminal.error('Unknown OSC code: ', params);
+        });
 
         // FIXME: remove temporary fix to get collect to terminal
-        this._parser.registerPrefixHandler((collect: string) => { this._terminal.prefix = collect; });
+        this._parser.setPrefixHandler((collect: string) => { this._terminal.prefix = collect; });
 
         // print handler
-        this._parser.registerPrintHandler(this.print.bind(this));
+        this._parser.setPrintHandler(this.print.bind(this));
 
         // CSI handler
-        this._parser.registerCsiHandler('@', this._inputHandler.insertChars.bind(this._inputHandler));
-        this._parser.registerCsiHandler('A', this._inputHandler.cursorUp.bind(this._inputHandler));
-        this._parser.registerCsiHandler('B', this._inputHandler.cursorDown.bind(this._inputHandler));
-        this._parser.registerCsiHandler('C', this._inputHandler.cursorForward.bind(this._inputHandler));
-        this._parser.registerCsiHandler('D', this._inputHandler.cursorBackward.bind(this._inputHandler));
-        this._parser.registerCsiHandler('E', this._inputHandler.cursorNextLine.bind(this._inputHandler));
-        this._parser.registerCsiHandler('F', this._inputHandler.cursorPrecedingLine.bind(this._inputHandler));
-        this._parser.registerCsiHandler('G', this._inputHandler.cursorCharAbsolute.bind(this._inputHandler));
-        this._parser.registerCsiHandler('H', this._inputHandler.cursorPosition.bind(this._inputHandler));
-        this._parser.registerCsiHandler('I', this._inputHandler.cursorForwardTab.bind(this._inputHandler));
-        this._parser.registerCsiHandler('J', this._inputHandler.eraseInDisplay.bind(this._inputHandler));
-        this._parser.registerCsiHandler('K', this._inputHandler.eraseInLine.bind(this._inputHandler));
-        this._parser.registerCsiHandler('L', this._inputHandler.insertLines.bind(this._inputHandler));
-        this._parser.registerCsiHandler('M', this._inputHandler.deleteLines.bind(this._inputHandler));
-        this._parser.registerCsiHandler('P', this._inputHandler.deleteChars.bind(this._inputHandler));
-        this._parser.registerCsiHandler('S', this._inputHandler.scrollUp.bind(this._inputHandler));
-        this._parser.registerCsiHandler('T',
+        this._parser.setCsiHandler('@', this.insertChars.bind(this));
+        this._parser.setCsiHandler('A', this.cursorUp.bind(this));
+        this._parser.setCsiHandler('B', this.cursorDown.bind(this));
+        this._parser.setCsiHandler('C', this.cursorForward.bind(this));
+        this._parser.setCsiHandler('D', this.cursorBackward.bind(this));
+        this._parser.setCsiHandler('E', this.cursorNextLine.bind(this));
+        this._parser.setCsiHandler('F', this.cursorPrecedingLine.bind(this));
+        this._parser.setCsiHandler('G', this.cursorCharAbsolute.bind(this));
+        this._parser.setCsiHandler('H', this.cursorPosition.bind(this));
+        this._parser.setCsiHandler('I', this.cursorForwardTab.bind(this));
+        this._parser.setCsiHandler('J', this.eraseInDisplay.bind(this));
+        this._parser.setCsiHandler('K', this.eraseInLine.bind(this));
+        this._parser.setCsiHandler('L', this.insertLines.bind(this));
+        this._parser.setCsiHandler('M', this.deleteLines.bind(this));
+        this._parser.setCsiHandler('P', this.deleteChars.bind(this));
+        this._parser.setCsiHandler('S', this.scrollUp.bind(this));
+        this._parser.setCsiHandler('T',
             (params, collect) => {
                 if (params.length < 2 && !collect) {
-                    return this._inputHandler.scrollDown(params);
+                    return this.scrollDown(params);
                 }
             });
-        this._parser.registerCsiHandler('X', this._inputHandler.eraseChars.bind(this._inputHandler));
-        this._parser.registerCsiHandler('Z', this._inputHandler.cursorBackwardTab.bind(this._inputHandler));
-        this._parser.registerCsiHandler('`', this._inputHandler.charPosAbsolute.bind(this._inputHandler));
-        this._parser.registerCsiHandler('a', this._inputHandler.HPositionRelative.bind(this._inputHandler));
-        this._parser.registerCsiHandler('b', this._inputHandler.repeatPrecedingCharacter.bind(this._inputHandler));
-        this._parser.registerCsiHandler('c', this._inputHandler.sendDeviceAttributes.bind(this._inputHandler)); // fix collect
-        this._parser.registerCsiHandler('d', this._inputHandler.linePosAbsolute.bind(this._inputHandler));
-        this._parser.registerCsiHandler('e', this._inputHandler.VPositionRelative.bind(this._inputHandler));
-        this._parser.registerCsiHandler('f', this._inputHandler.HVPosition.bind(this._inputHandler));
-        this._parser.registerCsiHandler('g', this._inputHandler.tabClear.bind(this._inputHandler));
-        this._parser.registerCsiHandler('h', this._inputHandler.setMode.bind(this._inputHandler));  // fix collect
-        this._parser.registerCsiHandler('l', this._inputHandler.resetMode.bind(this._inputHandler)); // fix collect
-        this._parser.registerCsiHandler('m', this._inputHandler.charAttributes.bind(this._inputHandler));
-        this._parser.registerCsiHandler('n', this._inputHandler.deviceStatus.bind(this._inputHandler)); // fix collect
-        this._parser.registerCsiHandler('p',
+        this._parser.setCsiHandler('X', this.eraseChars.bind(this));
+        this._parser.setCsiHandler('Z', this.cursorBackwardTab.bind(this));
+        this._parser.setCsiHandler('`', this.charPosAbsolute.bind(this));
+        this._parser.setCsiHandler('a', this.HPositionRelative.bind(this));
+        this._parser.setCsiHandler('b', this.repeatPrecedingCharacter.bind(this));
+        this._parser.setCsiHandler('c', this.sendDeviceAttributes.bind(this)); // fix collect
+        this._parser.setCsiHandler('d', this.linePosAbsolute.bind(this));
+        this._parser.setCsiHandler('e', this.VPositionRelative.bind(this));
+        this._parser.setCsiHandler('f', this.HVPosition.bind(this));
+        this._parser.setCsiHandler('g', this.tabClear.bind(this));
+        this._parser.setCsiHandler('h', this.setMode.bind(this));  // fix collect
+        this._parser.setCsiHandler('l', this.resetMode.bind(this)); // fix collect
+        this._parser.setCsiHandler('m', this.charAttributes.bind(this));
+        this._parser.setCsiHandler('n', this.deviceStatus.bind(this)); // fix collect
+        this._parser.setCsiHandler('p',
             (params, collect) => {
                 if (collect === '!') {
-                    return this._inputHandler.softReset(params);
+                    return this.softReset(params);
                 }
             });
-        this._parser.registerCsiHandler('q',
+        this._parser.setCsiHandler('q',
             (params, collect) => {
                 if (collect === ' ') {
-                    return this._inputHandler.setCursorStyle(params);
+                    return this.setCursorStyle(params);
                 }
             });
-        this._parser.registerCsiHandler('r', this._inputHandler.setScrollRegion.bind(this._inputHandler)); // fix collect
-        this._parser.registerCsiHandler('s', this._inputHandler.saveCursor.bind(this._inputHandler));
-        this._parser.registerCsiHandler('u', this._inputHandler.restoreCursor.bind(this._inputHandler));
+        this._parser.setCsiHandler('r', this.setScrollRegion.bind(this)); // fix collect
+        this._parser.setCsiHandler('s', this.saveCursor.bind(this));
+        this._parser.setCsiHandler('u', this.restoreCursor.bind(this));
 
         // execute handler
-        this._parser.registerExecuteHandler(C0.BEL, this._inputHandler.bell.bind(this._inputHandler));
-        this._parser.registerExecuteHandler(C0.LF, this._inputHandler.lineFeed.bind(this._inputHandler));
-        this._parser.registerExecuteHandler(C0.VT, this._inputHandler.lineFeed.bind(this._inputHandler));
-        this._parser.registerExecuteHandler(C0.FF, this._inputHandler.lineFeed.bind(this._inputHandler));
-        this._parser.registerExecuteHandler(C0.CR, this._inputHandler.carriageReturn.bind(this._inputHandler));
-        this._parser.registerExecuteHandler(C0.BS, this._inputHandler.backspace.bind(this._inputHandler));
-        this._parser.registerExecuteHandler(C0.HT, this._inputHandler.tab.bind(this._inputHandler));
-        this._parser.registerExecuteHandler(C0.SO, this._inputHandler.shiftOut.bind(this._inputHandler));
-        this._parser.registerExecuteHandler(C0.SI, this._inputHandler.shiftIn.bind(this._inputHandler));
+        this._parser.setExecuteHandler(C0.BEL, this.bell.bind(this));
+        this._parser.setExecuteHandler(C0.LF, this.lineFeed.bind(this));
+        this._parser.setExecuteHandler(C0.VT, this.lineFeed.bind(this));
+        this._parser.setExecuteHandler(C0.FF, this.lineFeed.bind(this));
+        this._parser.setExecuteHandler(C0.CR, this.carriageReturn.bind(this));
+        this._parser.setExecuteHandler(C0.BS, this.backspace.bind(this));
+        this._parser.setExecuteHandler(C0.HT, this.tab.bind(this));
+        this._parser.setExecuteHandler(C0.SO, this.shiftOut.bind(this));
+        this._parser.setExecuteHandler(C0.SI, this.shiftIn.bind(this));
         // FIXME:   What do to with missing? Old code just added those to print, but that's wrong
         //          behavior for most control codes.
 
         // OSC handler
         //   0 - icon name + title
-        this._parser.registerOscHandler(0, this._terminal.handleTitle.bind(this._terminal));
+        this._parser.setOscHandler(0, this._terminal.handleTitle.bind(this._terminal));
         //   1 - icon name
         //   2 - title
-        this._parser.registerOscHandler(2, this._terminal.handleTitle.bind(this._terminal));
+        this._parser.setOscHandler(2, this._terminal.handleTitle.bind(this._terminal));
         //   3 - set property X in the form "prop=value"
         //   4 - Change Color Number
         //   5 - Change Special Color Number
@@ -715,61 +773,59 @@ export class ParserTerminal implements IParserTerminal {
         // 119 - Reset highlight foreground color.
 
         // ESC handlers
-        this._parser.registerEscHandler('', '7', this._inputHandler.saveCursor.bind(this._inputHandler));
-        this._parser.registerEscHandler('', '8', this._inputHandler.restoreCursor.bind(this._inputHandler));
-        this._parser.registerEscHandler('', 'D', this._terminal.index.bind(this._terminal));
-        this._parser.registerEscHandler('', 'E', () => {
+        this._parser.setEscHandler('', '7', this.saveCursor.bind(this));
+        this._parser.setEscHandler('', '8', this.restoreCursor.bind(this));
+        this._parser.setEscHandler('', 'D', this._terminal.index.bind(this._terminal));
+        this._parser.setEscHandler('', 'E', () => {
             this._terminal.buffer.x = 0;
             this._terminal.index();
         });
-        this._parser.registerEscHandler('', 'H', (<IInputHandlingTerminal>this._terminal).tabSet.bind(this._terminal));
-        this._parser.registerEscHandler('', 'M', this._terminal.reverseIndex.bind(this._terminal));
-        this._parser.registerEscHandler('', '=', () => {
+        this._parser.setEscHandler('', 'H', this._terminal.tabSet.bind(this._terminal));
+        this._parser.setEscHandler('', 'M', this._terminal.reverseIndex.bind(this._terminal));
+        this._parser.setEscHandler('', '=', () => {
             this._terminal.log('Serial port requested application keypad.');
             this._terminal.applicationKeypad = true;
             if (this._terminal.viewport) {
                 this._terminal.viewport.syncScrollArea();
             }
         });
-        this._parser.registerEscHandler('', '>', () => {
+        this._parser.setEscHandler('', '>', () => {
             this._terminal.log('Switching back to normal keypad.');
             this._terminal.applicationKeypad = false;
             if (this._terminal.viewport) {
                 this._terminal.viewport.syncScrollArea();
             }
         });
-        this._parser.registerEscHandler('', 'c', this._terminal.reset.bind(this._terminal));
-        this._parser.registerEscHandler('', 'n', () => this._terminal.setgLevel(2));
-        this._parser.registerEscHandler('', 'o', () => this._terminal.setgLevel(3));
-        this._parser.registerEscHandler('', '|', () => this._terminal.setgLevel(3));
-        this._parser.registerEscHandler('', '}', () => this._terminal.setgLevel(2));
-        this._parser.registerEscHandler('', '~', () => this._terminal.setgLevel(1));
+        this._parser.setEscHandler('', 'c', this._terminal.reset.bind(this._terminal));
+        this._parser.setEscHandler('', 'n', () => this._terminal.setgLevel(2));
+        this._parser.setEscHandler('', 'o', () => this._terminal.setgLevel(3));
+        this._parser.setEscHandler('', '|', () => this._terminal.setgLevel(3));
+        this._parser.setEscHandler('', '}', () => this._terminal.setgLevel(2));
+        this._parser.setEscHandler('', '~', () => this._terminal.setgLevel(1));
 
-        this._parser.registerEscHandler('%', '@', () => {
+        this._parser.setEscHandler('%', '@', () => {
             this._terminal.setgLevel(0);
             this._terminal.setgCharset(0, DEFAULT_CHARSET); // US (default)
         });
-        this._parser.registerEscHandler('%', 'G', () => {
+        this._parser.setEscHandler('%', 'G', () => {
             this._terminal.setgLevel(0);
             this._terminal.setgCharset(0, DEFAULT_CHARSET); // US (default)
         });
         for (let flag in CHARSETS) {
-            this._parser.registerEscHandler('(', flag, () => this._terminal.setgCharset(0, CHARSETS[flag] || DEFAULT_CHARSET));
-            this._parser.registerEscHandler(')', flag, () => this._terminal.setgCharset(1, CHARSETS[flag] || DEFAULT_CHARSET));
-            this._parser.registerEscHandler('*', flag, () => this._terminal.setgCharset(2, CHARSETS[flag] || DEFAULT_CHARSET));
-            this._parser.registerEscHandler('+', flag, () => this._terminal.setgCharset(3, CHARSETS[flag] || DEFAULT_CHARSET));
-            this._parser.registerEscHandler('-', flag, () => this._terminal.setgCharset(1, CHARSETS[flag] || DEFAULT_CHARSET));
-            this._parser.registerEscHandler('.', flag, () => this._terminal.setgCharset(2, CHARSETS[flag] || DEFAULT_CHARSET));
+            this._parser.setEscHandler('(', flag, () => this._terminal.setgCharset(0, CHARSETS[flag] || DEFAULT_CHARSET));
+            this._parser.setEscHandler(')', flag, () => this._terminal.setgCharset(1, CHARSETS[flag] || DEFAULT_CHARSET));
+            this._parser.setEscHandler('*', flag, () => this._terminal.setgCharset(2, CHARSETS[flag] || DEFAULT_CHARSET));
+            this._parser.setEscHandler('+', flag, () => this._terminal.setgCharset(3, CHARSETS[flag] || DEFAULT_CHARSET));
+            this._parser.setEscHandler('-', flag, () => this._terminal.setgCharset(1, CHARSETS[flag] || DEFAULT_CHARSET));
+            this._parser.setEscHandler('.', flag, () => this._terminal.setgCharset(2, CHARSETS[flag] || DEFAULT_CHARSET));
         }
 
         // error handler
-        this._parser.registerErrorHandler((state) => {
+        this._parser.setErrorHandler((state) => {
             console.log('parsing error:', state);
             return state;
         });
     }
-
-
 
     parse(data: string): void {
         const cursorStartX = this._terminal.buffer.x;
@@ -816,7 +872,7 @@ export class ParserTerminal implements IParserTerminal {
               continue;
             }
 
-            // this._inputHandler.addChar(ch, code);
+            // this.addChar(ch, code);
 
             // calculate print space
             // expensive call, therefore we save width in line buffer

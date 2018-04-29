@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { CharData, IInputHandler, IInputHandlingTerminal } from './Types';
+import { CharData, IInputHandler } from './Types';
 import { C0 } from './EscapeSequences';
 import { DEFAULT_CHARSET } from './Charsets';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
@@ -19,7 +19,7 @@ import { wcwidth } from './CharWidth';
  * each function's header comment.
  */
 export class InputHandler implements IInputHandler {
-  constructor(private _terminal: IInputHandlingTerminal) { }
+  constructor(protected _terminal: any) { }
 
   public addChar(char: string, code: number): void {
     // if (char >= ' ') {
