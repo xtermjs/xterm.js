@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { CharData, IInputHandler, IInputHandlingTerminal } from './Types';
+import { CharData, IInputHandler } from './Types';
 import { C0 } from './EscapeSequences';
 import { DEFAULT_CHARSET } from './Charsets';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
