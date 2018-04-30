@@ -130,13 +130,13 @@ function r(a: number, b: number): number[] {
 }
 
 
-// transition table of the FSM
-// TODO: fallback to array
 export class TransitionTable {
-    public table: Uint8Array;
+    public table: Uint8Array | number[];
 
     constructor(length: number) {
-        this.table = new Uint8Array(length);
+        this.table = (typeof Uint32Array === 'undefined')
+                     ? new Array(length)
+                     : new Uint32Array(length);
     }
 
     add(inp: number, state: number, action: number | null, next: number | null): void {
@@ -157,8 +157,8 @@ let EXECUTABLES = r(0x00, 0x18);
 EXECUTABLES.push(0x19);
 EXECUTABLES.concat(r(0x1c, 0x20));
 
-// default transition of the FSM is [error, GROUND]
-let DEFAULT_TRANSITION = ParserAction.ERROR << 4 | ParserState.GROUND;
+// default transition is ParserAction.ERROR, ParserState.GROUND
+const DEFAULT_TRANSITION = ParserAction.ERROR << 4 | ParserState.GROUND;
 
 // default DEC/ANSI compatible state transition table
 // as defined by https://vt100.net/emu/dec_ansi_parser
@@ -168,12 +168,12 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
     let states: number[] = r(ParserState.GROUND, ParserState.DCS_PASSTHROUGH + 1);
     let state: any;
 
-    // table with default transition [any] --> [error, GROUND]
+    // table with default transition [any] --> DEFAULT_TRANSITION
     for (state in states) {
         // table lookup is capped at 0xa0 in parse
         // any higher will be treated by the error action
         for (let code = 0; code < 160; ++code) {
-            table[state << 8 | code] = DEFAULT_TRANSITION;
+            table.add(code, state, ParserAction.ERROR, ParserState.GROUND);
         }
     }
 
@@ -292,7 +292,7 @@ class DcsDummy implements IDcsHandler {
 export class EscapeSequenceParser implements IEscapeSequenceParser {
     public initialState: number;
     public currentState: number;
-    public transitions: TransitionTable;
+    readonly transitions: TransitionTable;
 
     // buffers over several parse calls
     protected _osc: string;
@@ -436,7 +436,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
         let osc = this._osc;
         let collect = this._collect;
         let params = this._params;
-        let table: Uint8Array = this.transitions.table;
+        let table: Uint8Array | number[] = this.transitions.table;
         let dcsHandler: IDcsHandler | null = this._activeDcsHandler;
         let ident: string = '';
 
