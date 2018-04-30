@@ -91,7 +91,7 @@ parser.setOscHandlerFallback((...params: any[]) => {
 });
 parser.setDcsHandlerFallback(new DcsTest);
 // FIXME: to be removed
-parser.setPrefixHandler(()=>{});
+parser.setPrefixHandler(() => {});
 
 
 describe('EscapeSequenceParser', function(): void {
