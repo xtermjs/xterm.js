@@ -808,14 +808,15 @@ export class ParserTerminal extends InputHandler {
 
         // error handler
         this._parser.setErrorHandler((state) => {
-            console.log('parsing error:', state);
+            this._terminal.error('Parsing error: ', state);
             return state;
         });
     }
 
     parse(data: string): void {
-        const cursorStartX = this._terminal.buffer.x;
-        const cursorStartY = this._terminal.buffer.y;
+        let buffer = this._terminal.buffer;
+        const cursorStartX = buffer.x;
+        const cursorStartY = buffer.y;
         if (this._terminal.debug) {
           this._terminal.log('data: ' + data);
         }
@@ -828,7 +829,8 @@ export class ParserTerminal extends InputHandler {
 
         this._parser.parse(data);
 
-        if (this._terminal.buffer.x !== cursorStartX || this._terminal.buffer.y !== cursorStartY) {
+        buffer = this._terminal.buffer;
+        if (buffer.x !== cursorStartX || buffer.y !== cursorStartY) {
             this._terminal.emit('cursormove');
         }
     }
