@@ -1,4 +1,5 @@
-import { EscapeSequenceParser, ParserState, IDcsHandler } from './EscapeSequenceParser';
+import { ParserState, IDcsHandler } from './Types';
+import { EscapeSequenceParser } from './EscapeSequenceParser';
 import * as chai from 'chai';
 
 function r(a: number, b: number): string[] {

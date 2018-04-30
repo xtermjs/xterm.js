@@ -227,7 +227,7 @@ export interface ILinkifierAccessor {
 }
 
 export interface IMouseHelper {
-  getCoords(event: {pageX: number, pageY: number}, element: HTMLElement, charMeasure: ICharMeasure, lineHeight: number, colCount: number, rowCount: number, isSelection?: boolean): [number, number];
+  getCoords(event: { pageX: number, pageY: number }, element: HTMLElement, charMeasure: ICharMeasure, lineHeight: number, colCount: number, rowCount: number, isSelection?: boolean): [number, number];
   getRawByteCoords(event: MouseEvent, element: HTMLElement, charMeasure: ICharMeasure, lineHeight: number, colCount: number, rowCount: number): { x: number, y: number };
 }
 
@@ -355,4 +355,174 @@ export interface IBrowser {
 
 export interface ISoundManager {
   playBellSound(): void;
+}
+
+/**
+ * Internal states of EscapeSequenceParser.
+ */
+export const enum ParserState {
+  GROUND = 0,
+  ESCAPE = 1,
+  ESCAPE_INTERMEDIATE = 2,
+  CSI_ENTRY = 3,
+  CSI_PARAM = 4,
+  CSI_INTERMEDIATE = 5,
+  CSI_IGNORE = 6,
+  SOS_PM_APC_STRING = 7,
+  OSC_STRING = 8,
+  DCS_ENTRY = 9,
+  DCS_PARAM = 10,
+  DCS_IGNORE = 11,
+  DCS_INTERMEDIATE = 12,
+  DCS_PASSTHROUGH = 13
+}
+
+/**
+* Internal actions of EscapeSequenceParser.
+*/
+export const enum ParserAction {
+  IGNORE = 0,
+  ERROR = 1,
+  PRINT = 2,
+  EXECUTE = 3,
+  OSC_START = 4,
+  OSC_PUT = 5,
+  OSC_END = 6,
+  CSI_DISPATCH = 7,
+  PARAM = 8,
+  COLLECT = 9,
+  ESC_DISPATCH = 10,
+  CLEAR = 11,
+  DCS_HOOK = 12,
+  DCS_PUT = 13,
+  DCS_UNHOOK = 14
+}
+
+/**
+ * Internal state of EscapeSequenceParser.
+ * Used as argument to the error handler to allow
+ * introspection at runtime on parse errors.
+ * Return it with altered values to recover from
+ * faulty states (not yet supported).
+ * Set `abort` to `true` to abort the current parsing.
+ */
+export interface IParsingState {
+  // position in parse string
+  position: number;
+  // actual character code
+  code: number;
+  // current parser state
+  currentState: ParserState;
+  // print buffer start index (-1 for not set)
+  print: number;
+  // dcs buffer start index (-1 for not set)
+  dcs: number;
+  // osc string buffer
+  osc: string;
+  // collect buffer with intermediate characters
+  collect: string;
+  // params buffer
+  params: number[];
+  // should abort (default: false)
+  abort: boolean;
+}
+
+/**
+* Print handler signature for EscapeSequenceParser.
+* `start` and `end` are the start and end indices of
+* printable characters in `data`.
+*/
+export interface IPrintHandler {
+  (data: string, start: number, end: number): void;
+}
+
+/**
+* Execute handler signature for EscapeSequenceParser.
+*/
+export interface IExecuteHandler {
+  (): void;
+}
+
+/**
+* CSI handler signature for EscapeSequenceParser.
+* `collect` contains the intermediate characters
+* of the escape sequence.
+*/
+export interface ICsiHandler {
+  (params: number[], collect: string): void;
+}
+
+/**
+* ESC handler signature for EscapeSequenceParser.
+* `collect` contains the intermediate characters
+* of the escape sequence. `flag` is the final
+* character as character code.
+*/
+export interface IEscHandler {
+  (collect: string, flag: number): void;
+}
+
+/**
+* OSC handler signature for EscapeSequenceParser.
+* `data` contains all characters right of the first ;
+* example: OSC 123;foo=bar;baz\007 --> 'foo=bar;baz'
+*/
+export interface IOscHandler {
+  (data: string): void;
+}
+
+/**
+* DCS handler signature for EscapeSequenceParser.
+* EscapeSequenceParser handles DCS commands via separate
+* subparsers that get hook/unhooked and can handle
+* arbitrary amount of print data.
+*/
+export interface IDcsHandler {
+  hook(collect: string, params: number[], flag: number): void;
+  put(data: string, start: number, end: number): void;
+  unhook(): void;
+}
+
+/**
+* Error handler signature for EscapeSequenceParser.
+*/
+export interface IErrorHandler {
+  (state: IParsingState): IParsingState;
+}
+
+/**
+* EscapeSequenceParser interface.
+*/
+export interface IEscapeSequenceParser {
+  reset(): void;
+  parse(data: string): void;
+
+  setPrintHandler(callback: IPrintHandler): void;
+  clearPrintHandler(): void;
+
+  setExecuteHandler(flag: string, callback: IExecuteHandler): void;
+  clearExecuteHandler(flag: string): void;
+  setExecuteHandlerFallback(callback: (...params: any[]) => void): void;
+
+  setCsiHandler(flag: string, callback: ICsiHandler): void;
+  clearCsiHandler(flag: string): void;
+  setCsiHandlerFallback(callback: (...params: any[]) => void): void;
+
+  setEscHandler(collect: string, flag: string, callback: IEscHandler): void;
+  clearEscHandler(collect: string, flag: string): void;
+  setEscHandlerFallback(callback: (...params: any[]) => void): void;
+
+  setOscHandler(ident: number, callback: IOscHandler): void;
+  clearOscHandler(ident: number): void;
+  setOscHandlerFallback(callback: (...params: any[]) => void): void;
+
+  setDcsHandler(collect: string, flag: string, handler: IDcsHandler): void;
+  clearDcsHandler(collect: string, flag: string): void;
+  setDcsHandlerFallback(handler: IDcsHandler): void;
+
+  setErrorHandler(callback: IErrorHandler): void;
+  clearErrorHandler(): void;
+
+  // remove after revamp of InputHandler methods
+  setPrefixHandler(callback: (collect: string) => void): void;
 }

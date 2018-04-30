@@ -23,7 +23,10 @@ export class InputHandler implements IInputHandler {
   private _parser: EscapeSequenceParser;
   private _surrogateHigh: string;
 
-  constructor(protected _terminal: any) {
+  constructor(protected _terminal: any) { }
+
+  // FIXME: temp workaround to get tests working again
+  init(): void {
     this._parser = new EscapeSequenceParser;  // FIXME: maybe as ctor argument
     this._surrogateHigh = '';
 
