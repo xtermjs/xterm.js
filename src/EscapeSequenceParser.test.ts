@@ -1,4 +1,4 @@
-import { EscapeSequenceParser, IParserTerminal, ParserState } from './EscapeSequenceParser';
+import { EscapeSequenceParser, ParserState, IDcsHandler } from './EscapeSequenceParser';
 import * as chai from 'chai';
 
 function r(a: number, b: number): string[] {
@@ -10,13 +10,7 @@ function r(a: number, b: number): string[] {
     return arr;
 }
 
-interface ITestTerminal extends IParserTerminal {
-    calls: any[];
-    clear: () => void;
-    compare: (value: any) => void;
-}
-
-let testTerminal: ITestTerminal = {
+let testTerminal: any = {
     calls: [],
     clear: function (): void {
         this.calls = [];
@@ -33,14 +27,14 @@ let testTerminal: ITestTerminal = {
     actionExecute: function (flag: string): void {
         this.calls.push(['exe', flag]);
     },
-    actionCSI: function (collected: string, params: number[], flag: string): void {
-        this.calls.push(['csi', collected, params, flag]);
+    actionCSI: function (collect: string, params: number[], flag: string): void {
+        this.calls.push(['csi', collect, params, flag]);
     },
-    actionESC: function (collected: string, flag: string): void {
-        this.calls.push(['esc', collected, flag]);
+    actionESC: function (collect: string, flag: string): void {
+        this.calls.push(['esc', collect, flag]);
     },
-    actionDCSHook: function (collected: string, params: number[], flag: string): void {
-        this.calls.push(['dcs hook', collected, params, flag]);
+    actionDCSHook: function (collect: string, params: number[], flag: string): void {
+        this.calls.push(['dcs hook', collect, params, flag]);
     },
     actionDCSPrint: function (data: string, start: number, end: number): void {
         this.calls.push(['dcs put', data.substring(start, end)]);
@@ -49,6 +43,18 @@ let testTerminal: ITestTerminal = {
         this.calls.push(['dcs unhook']);
     }
 };
+
+class DcsTest implements IDcsHandler {
+    hook(collect: string, params: number[], flag: number): void {
+        testTerminal.actionDCSHook(collect, params, String.fromCharCode(flag));
+    }
+    put(data: string, start: number, end: number): void {
+        testTerminal.actionDCSPrint(data, start, end);
+    }
+    unhook(): void {
+        testTerminal.actionDCSUnhook();
+    }
+}
 
 let states: number[] = [
     ParserState.GROUND,
@@ -68,54 +74,46 @@ let states: number[] = [
 ];
 let state: any;
 
-let parser = new EscapeSequenceParser(testTerminal);
-parser.registerPrintHandler(testTerminal.print.bind(testTerminal));
+let parser = new EscapeSequenceParser();
+parser.setPrintHandler(testTerminal.print.bind(testTerminal));
+parser.setCsiHandlerFallback((...params: any[]) => {
+    testTerminal.actionCSI(params[0], params[1], String.fromCharCode(params[2]));
+});
+parser.setEscHandlerFallback((...params: any[]) => {
+    testTerminal.actionESC(params[0], String.fromCharCode(params[1]));
+});
+parser.setExecuteHandlerFallback((...params: any[]) => {
+    testTerminal.actionExecute(String.fromCharCode(params[0]));
+});
+parser.setOscHandlerFallback((...params: any[]) => {
+    if (params[0] === -1) testTerminal.actionOSC(params[1]);  // handle error condition silently
+    else testTerminal.actionOSC(params[0] + ';' + params[1]);
+});
+parser.setDcsHandlerFallback(new DcsTest);
+// FIXME: to be removed
+parser.setPrefixHandler(()=>{});
+
 
 describe('EscapeSequenceParser', function(): void {
-
     describe('Parser init and methods', function(): void {
-        it('parser init', function (): void {
-            let p = new EscapeSequenceParser({});
-            chai.expect(p.term).a('object');
-            chai.expect(p.term.actionPrint).a('function');
-            chai.expect(p.term.actionOSC).a('function');
-            chai.expect(p.term.actionExecute).a('function');
-            chai.expect(p.term.actionCSI).a('function');
-            chai.expect(p.term.actionESC).a('function');
-            chai.expect(p.term.actionDCSHook).a('function');
-            chai.expect(p.term.actionDCSPrint).a('function');
-            chai.expect(p.term.actionDCSUnhook).a('function');
-            p.parse('\x1b[31mHello World!');
-        });
-        it('terminal callbacks', function (): void {
-            chai.expect(parser.term).equal(testTerminal);
-            chai.expect(parser.term.actionPrint).equal(testTerminal.print);
-            chai.expect(parser.term.actionOSC).equal(testTerminal.actionOSC);
-            chai.expect(parser.term.actionExecute).equal(testTerminal.actionExecute);
-            chai.expect(parser.term.actionCSI).equal(testTerminal.actionCSI);
-            chai.expect(parser.term.actionESC).equal(testTerminal.actionESC);
-            chai.expect(parser.term.actionDCSHook).equal(testTerminal.actionDCSHook);
-            chai.expect(parser.term.actionDCSPrint).equal(testTerminal.actionDCSPrint);
-            chai.expect(parser.term.actionDCSUnhook).equal(testTerminal.actionDCSUnhook);
-        });
         it('inital states', function (): void {
-            chai.expect(parser.initialState).equal(0);
-            chai.expect(parser.currentState).equal(0);
+            chai.expect(parser.initialState).equal(ParserState.GROUND);
+            chai.expect(parser.currentState).equal(ParserState.GROUND);
             chai.expect(parser.osc).equal('');
             chai.expect(parser.params).eql([0]);
-            chai.expect(parser.collected).equal('');
+            chai.expect(parser.collect).equal('');
         });
         it('reset states', function (): void {
             parser.currentState = 124;
             parser.osc = '#';
             parser.params = [123];
-            parser.collected = '#';
+            parser.collect = '#';
 
             parser.reset();
             chai.expect(parser.currentState).equal(ParserState.GROUND);
             chai.expect(parser.osc).equal('');
             chai.expect(parser.params).eql([0]);
-            chai.expect(parser.collected).equal('');
+            chai.expect(parser.collect).equal('');
         });
     });
 
@@ -182,12 +180,12 @@ describe('EscapeSequenceParser', function(): void {
                 parser.currentState = state;
                 parser.osc = '#';
                 parser.params = [23];
-                parser.collected = '#';
+                parser.collect = '#';
                 parser.parse('\x1b');
                 chai.expect(parser.currentState).equal(ParserState.ESCAPE);
                 chai.expect(parser.osc).equal('');
                 chai.expect(parser.params).eql([0]);
-                chai.expect(parser.collected).equal('');
+                chai.expect(parser.collect).equal('');
                 parser.reset();
             }
         });
@@ -239,7 +237,7 @@ describe('EscapeSequenceParser', function(): void {
                 parser.currentState = ParserState.ESCAPE;
                 parser.parse(collect[i]);
                 chai.expect(parser.currentState).equal(ParserState.ESCAPE_INTERMEDIATE);
-                chai.expect(parser.collected).equal(collect[i]);
+                chai.expect(parser.collect).equal(collect[i]);
                 parser.reset();
             }
         });
@@ -275,7 +273,7 @@ describe('EscapeSequenceParser', function(): void {
                 parser.currentState = ParserState.ESCAPE_INTERMEDIATE;
                 parser.parse(collect[i]);
                 chai.expect(parser.currentState).equal(ParserState.ESCAPE_INTERMEDIATE);
-                chai.expect(parser.collected).equal(collect[i]);
+                chai.expect(parser.collect).equal(collect[i]);
                 parser.reset();
             }
         });
@@ -298,24 +296,24 @@ describe('EscapeSequenceParser', function(): void {
             parser.currentState = ParserState.ESCAPE;
             parser.osc = '#';
             parser.params = [123];
-            parser.collected = '#';
+            parser.collect = '#';
             parser.parse('[');
             chai.expect(parser.currentState).equal(ParserState.CSI_ENTRY);
             chai.expect(parser.osc).equal('');
             chai.expect(parser.params).eql([0]);
-            chai.expect(parser.collected).equal('');
+            chai.expect(parser.collect).equal('');
             parser.reset();
             // C1
             for (state in states) {
                 parser.currentState = state;
                 parser.osc = '#';
                 parser.params = [123];
-                parser.collected = '#';
+                parser.collect = '#';
                 parser.parse('\x9b');
                 chai.expect(parser.currentState).equal(ParserState.CSI_ENTRY);
                 chai.expect(parser.osc).equal('');
                 chai.expect(parser.params).eql([0]);
-                chai.expect(parser.collected).equal('');
+                chai.expect(parser.collect).equal('');
                 parser.reset();
             }
         });
@@ -376,7 +374,7 @@ describe('EscapeSequenceParser', function(): void {
                 parser.currentState = ParserState.CSI_ENTRY;
                 parser.parse(collect[i]);
                 chai.expect(parser.currentState).equal(ParserState.CSI_PARAM);
-                chai.expect(parser.collected).equal(collect[i]);
+                chai.expect(parser.collect).equal(collect[i]);
                 parser.reset();
             }
         });
@@ -441,7 +439,7 @@ describe('EscapeSequenceParser', function(): void {
                 parser.currentState = ParserState.CSI_ENTRY;
                 parser.parse(collect[i]);
                 chai.expect(parser.currentState).equal(ParserState.CSI_INTERMEDIATE);
-                chai.expect(parser.collected).equal(collect[i]);
+                chai.expect(parser.collect).equal(collect[i]);
                 parser.reset();
             }
         });
@@ -452,7 +450,7 @@ describe('EscapeSequenceParser', function(): void {
                 parser.currentState = ParserState.CSI_PARAM;
                 parser.parse(collect[i]);
                 chai.expect(parser.currentState).equal(ParserState.CSI_INTERMEDIATE);
-                chai.expect(parser.collected).equal(collect[i]);
+                chai.expect(parser.collect).equal(collect[i]);
                 parser.reset();
             }
         });
@@ -478,7 +476,7 @@ describe('EscapeSequenceParser', function(): void {
                 parser.currentState = ParserState.CSI_INTERMEDIATE;
                 parser.parse(collect[i]);
                 chai.expect(parser.currentState).equal(ParserState.CSI_INTERMEDIATE);
-                chai.expect(parser.collected).equal(collect[i]);
+                chai.expect(parser.collect).equal(collect[i]);
                 parser.reset();
             }
         });
@@ -695,7 +693,7 @@ describe('EscapeSequenceParser', function(): void {
                 parser.currentState = ParserState.DCS_ENTRY;
                 parser.parse(collect[i]);
                 chai.expect(parser.currentState).equal(ParserState.DCS_PARAM);
-                chai.expect(parser.collected).equal(collect[i]);
+                chai.expect(parser.collect).equal(collect[i]);
                 parser.reset();
             }
         });
@@ -777,7 +775,7 @@ describe('EscapeSequenceParser', function(): void {
                 parser.currentState = ParserState.DCS_ENTRY;
                 parser.parse(collect[i]);
                 chai.expect(parser.currentState).equal(ParserState.DCS_INTERMEDIATE);
-                chai.expect(parser.collected).equal(collect[i]);
+                chai.expect(parser.collect).equal(collect[i]);
                 parser.reset();
             }
         });
@@ -788,7 +786,7 @@ describe('EscapeSequenceParser', function(): void {
                 parser.currentState = ParserState.DCS_PARAM;
                 parser.parse(collect[i]);
                 chai.expect(parser.currentState).equal(ParserState.DCS_INTERMEDIATE);
-                chai.expect(parser.collected).equal(collect[i]);
+                chai.expect(parser.collect).equal(collect[i]);
                 parser.reset();
             }
         });
@@ -812,7 +810,7 @@ describe('EscapeSequenceParser', function(): void {
                 parser.currentState = ParserState.DCS_INTERMEDIATE;
                 parser.parse(collect[i]);
                 chai.expect(parser.currentState).equal(ParserState.DCS_INTERMEDIATE);
-                chai.expect(parser.collected).equal(collect[i]);
+                chai.expect(parser.collect).equal(collect[i]);
                 parser.reset();
             }
         });
@@ -823,7 +821,7 @@ describe('EscapeSequenceParser', function(): void {
                 parser.currentState = ParserState.DCS_INTERMEDIATE;
                 parser.parse('\x20' + chars[i]);
                 chai.expect(parser.currentState).equal(ParserState.DCS_IGNORE);
-                chai.expect(parser.collected).equal('\x20');
+                chai.expect(parser.collect).equal('\x20');
                 parser.reset();
             }
         });
@@ -990,9 +988,9 @@ describe('EscapeSequenceParser', function(): void {
             parser.reset();
             testTerminal.clear();
             parser.currentState = ParserState.DCS_PASSTHROUGH;
-            parser.parse('€öäü');
+            parser.parse('\x901;2;3+$a€öäü');
             chai.expect(parser.currentState).equal(ParserState.DCS_PASSTHROUGH);
-            testTerminal.compare([['dcs put', '€öäü']]);
+            testTerminal.compare([['dcs hook', '+$', [1, 2, 3], 'a'], ['dcs put', '€öäü']]);
             parser.reset();
             testTerminal.clear();
         });
@@ -1007,64 +1005,5 @@ describe('EscapeSequenceParser', function(): void {
             testTerminal.clear();
         });
     });
-
-    /*
-    let errorTerminal1 = function(): void {};
-    errorTerminal1.prototype = testTerminal;
-    let errTerminal1 = new errorTerminal1();
-    errTerminal1.actionError = function(e: any): void {
-        this.calls.push(['error', e]);
-    };
-    let errParser1 = new EscapeSequenceParser(errTerminal1);
-    errParser1.registerPrintHandler(testTerminal.actionPrint.bind(errorTerminal1));
-
-    let errorTerminal2 = function(): void {};
-    errorTerminal2.prototype = testTerminal;
-    let errTerminal2 = new errorTerminal2();
-    errTerminal2.actionError = function(e: any): any {
-        this.calls.push(['error', e]);
-        return true;  // --> abort parsing
-    };
-    let errParser2 = new EscapeSequenceParser(errTerminal2);
-    errParser2.registerPrintHandler(testTerminal.actionPrint.bind(errorTerminal2));
-
-    describe('error tests', function(): void {
-        it('CSI_PARAM unicode error - actionError output w/o abort', function (): void {
-            errParser1.parse('\x1b[<31;5€normal print');
-            errTerminal1.compare([
-                ['error', {
-                    abort: false,
-                    position: 7,
-                    code: '€'.charCodeAt(0),
-                    currentState: 4,
-                    print: -1,
-                    dcs: -1,
-                    osc: '',
-                    collected: '<',
-                    params: [31, 5]}],
-                ['print', 'normal print']
-            ]);
-            parser.reset();
-            testTerminal.clear();
-        });
-        it('CSI_PARAM unicode error - actionError output with abort', function (): void {
-            errParser2.parse('\x1b[<31;5€no print');
-            errTerminal2.compare([
-                ['error', {
-                    abort: false,
-                    position: 7,
-                    code: '€'.charCodeAt(0),
-                    currentState: 4,
-                    print: -1,
-                    dcs: -1,
-                    osc: '',
-                    collected: '<',
-                    params: [31, 5]}]
-            ]);
-            parser.reset();
-            testTerminal.clear();
-        });
-    });
-    */
-
+    // TODO: error conditions, higher order: set/clear of callbacks, custom sequences
 });

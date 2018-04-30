@@ -295,9 +295,9 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     readonly transitions: TransitionTable;
 
     // buffers over several parse calls
-    protected _osc: string;
-    protected _params: number[];
-    protected _collect: string;
+    public osc: string;
+    public params: number[];
+    public collect: string;
 
     // callback slots
     protected _printHandler: IPrintHandler;
@@ -325,9 +325,9 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
         this.initialState = ParserState.GROUND;
         this.currentState = this.initialState;
         this.transitions = transitions;
-        this._osc = '';
-        this._params = [0];
-        this._collect = '';
+        this.osc = '';
+        this.params = [0];
+        this.collect = '';
 
         // set default fallback handlers
         this._printHandlerFb = (data, start, end): void => {};
@@ -362,7 +362,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
         if (this._executeHandlers[flag.charCodeAt(0)]) delete this._executeHandlers[flag.charCodeAt(0)];
     }
     setExecuteHandlerFallback(callback: (...params: any[]) => void): void {
-        this._escHandlerFb = callback;
+        this._executeHandlerFb = callback;
     }
 
     setCsiHandler(flag: string, callback: ICsiHandler): void {
@@ -419,9 +419,9 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
 
     reset(): void {
         this.currentState = this.initialState;
-        this._osc = '';
-        this._params = [0];
-        this._collect = '';
+        this.osc = '';
+        this.params = [0];
+        this.collect = '';
     }
 
     parse(data: string): void {
@@ -433,9 +433,9 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
         // local buffers
         let print = -1;
         let dcs = -1;
-        let osc = this._osc;
-        let collect = this._collect;
-        let params = this._params;
+        let osc = this.osc;
+        let collect = this.collect;
+        let params = this.params;
         let table: Uint8Array | number[] = this.transitions.table;
         let dcsHandler: IDcsHandler | null = this._activeDcsHandler;
         let ident: string = '';
@@ -568,9 +568,11 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
                     dcs = (~dcs) ? dcs : i;
                     break;
                 case ParserAction.DCS_UNHOOK:
-                    if (~dcs) dcsHandler.put(data, dcs, i);
-                    dcsHandler.unhook();
-                    dcsHandler = null;
+                    if (dcsHandler) {
+                        if (~dcs) dcsHandler.put(data, dcs, i);
+                        dcsHandler.unhook();
+                        dcsHandler = null;
+                    }
                     if (code === 0x1b) transition |= ParserState.ESCAPE;
                     osc = '';
                     params = [0];
@@ -590,10 +592,14 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
                 case ParserAction.OSC_END:
                     if (osc && code !== 0x18 && code !== 0x1a) {
                         let idx = osc.indexOf(';');
-                        let identifier = parseInt(osc.substring(0, idx));
-                        let content = osc.substring(idx + 1);
-                        if (this._oscHandlers[identifier]) this._oscHandlers[identifier](content);
-                        else this._oscHandlerFb(identifier, content);
+                        if (idx === -1) {
+                            this._oscHandlerFb(-1, osc);  // this is an error
+                        } else {
+                            let identifier = parseInt(osc.substring(0, idx));
+                            let content = osc.substring(idx + 1);
+                            if (this._oscHandlers[identifier]) this._oscHandlers[identifier](content);
+                            else this._oscHandlerFb(identifier, content);
+                        }
                     }
                     if (code === 0x1b) transition |= ParserState.ESCAPE;
                     osc = '';
@@ -608,14 +614,14 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
         // push leftover pushable buffers to terminal
         if (currentState === ParserState.GROUND && ~print) {
             this._printHandler(data, print, data.length);
-        } else if (currentState === ParserState.DCS_PASSTHROUGH && ~dcs) {
+        } else if (currentState === ParserState.DCS_PASSTHROUGH && ~dcs && dcsHandler) {
             dcsHandler.put(data, dcs, data.length);
         }
 
         // save non pushable buffers
-        this._osc = osc;
-        this._collect = collect;
-        this._params = params;
+        this.osc = osc;
+        this.collect = collect;
+        this.params = params;
 
         // save active dcs handler reference
         this._activeDcsHandler = dcsHandler;
