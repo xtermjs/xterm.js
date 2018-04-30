@@ -29,7 +29,7 @@ export interface ICsiHandler {
 }
 
 export interface IEscHandler {
-    (flag: string): void;
+    (collect: string, flag: number): void;
 }
 
 export interface IOscHandler {
@@ -545,7 +545,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
                     break;
                 case ParserAction.ESC_DISPATCH:
                     ident = collect + String.fromCharCode(code);
-                    if (this._escHandlers[ident]) this._escHandlers[ident](params, collect);
+                    if (this._escHandlers[ident]) this._escHandlers[ident](collect, code);
                     else this._escHandlerFb(collect, code);
                     break;
                 case ParserAction.CLEAR:
