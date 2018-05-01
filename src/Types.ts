@@ -155,6 +155,20 @@ export interface IInputHandler {
   /** CSI r */ setScrollRegion(params?: number[], collect?: string): void;
   /** CSI s */ saveCursor(params?: number[], collect?: string): void;
   /** CSI u */ restoreCursor(params?: number[], collect?: string): void;
+  /** OSC 0
+      OSC 2 */ setTitle(data: string): void;
+  /** ESC E */ nextLine(): void;
+  /** ESC = */ keypadApplicationMode(): void;
+  /** ESC > */ keypadNumericMode(): void;
+  /** ESC % G
+      ESC % @ */ selectDefaultCharset(): void;
+  /** ESC ( C
+   *  ESC ) C
+   *  ESC * C
+   *  ESC + C
+   *  ESC - C
+   *  ESC . C
+   *  ESC / C */ selectCharset(collectAndFlag: string): void;
 }
 
 export interface ILinkMatcher {

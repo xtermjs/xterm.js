@@ -13,6 +13,11 @@ import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
 
 /**
+ * Map collect to glevel. Used in `selectCharset`.
+ */
+const GLEVEL = {'(': 0, ')': 1, '*': 2, '+': 3, '-': 1, '.': 2};
+
+/**
  * The terminal's standard implementation of IInputHandler, this handles all
  * input from the Parser.
  *
@@ -23,11 +28,13 @@ export class InputHandler implements IInputHandler {
   private _parser: EscapeSequenceParser;
   private _surrogateHigh: string;
 
-  constructor(protected _terminal: any) {
+  constructor(private _terminal: any) {
     this._parser = new EscapeSequenceParser;  // FIXME: maybe as ctor argument
     this._surrogateHigh = '';
 
-    // custom fallback handlers
+    /**
+     * custom fallback handlers
+     */
     this._parser.setCsiHandlerFallback((...params: any[]) => {
       this._terminal.error('Unknown CSI code: ', params);
     });
@@ -41,10 +48,14 @@ export class InputHandler implements IInputHandler {
       this._terminal.error('Unknown OSC code: ', params);
     });
 
-    // print handler
+    /**
+     * print handler
+     */
     this._parser.setPrintHandler((data, start, end): void => this.print(data, start, end));
 
-    // CSI handler
+    /**
+     * CSI handler
+     */
     this._parser.setCsiHandler('@', (params, collect) => this.insertChars(params));
     this._parser.setCsiHandler('A', (params, collect) => this.cursorUp(params));
     this._parser.setCsiHandler('B', (params, collect) => this.cursorDown(params));
@@ -82,7 +93,9 @@ export class InputHandler implements IInputHandler {
     this._parser.setCsiHandler('s', (params, collect) => this.saveCursor(params));
     this._parser.setCsiHandler('u', (params, collect) => this.restoreCursor(params));
 
-    // execute handler
+    /**
+     * execute handler
+     */
     this._parser.setExecuteHandler(C0.BEL, () => this.bell());
     this._parser.setExecuteHandler(C0.LF, () => this.lineFeed());
     this._parser.setExecuteHandler(C0.VT, () => this.lineFeed());
@@ -95,12 +108,14 @@ export class InputHandler implements IInputHandler {
     // FIXME:   What do to with missing? Old code just added those to print, but that's wrong
     //          behavior for most control codes.
 
-    // OSC handler
+    /**
+     * OSC handler
+     */
     //   0 - icon name + title
-    this._parser.setOscHandler(0, (data) => this._terminal.handleTitle(data));
+    this._parser.setOscHandler(0, (data) => this.setTitle(data));
     //   1 - icon name
     //   2 - title
-    this._parser.setOscHandler(2, (data) => this._terminal.handleTitle(data));
+    this._parser.setOscHandler(2, (data) => this.setTitle(data));
     //   3 - set property X in the form "prop=value"
     //   4 - Change Color Number
     //   5 - Change Special Color Number
@@ -134,55 +149,38 @@ export class InputHandler implements IInputHandler {
     // 118 - Reset Tektronix cursor color.
     // 119 - Reset highlight foreground color.
 
-    // ESC handlers
-    this._parser.setEscHandler('', '7', () => this.saveCursor([])); // fix args
-    this._parser.setEscHandler('', '8', () => this.restoreCursor([])); // fix args
-    this._parser.setEscHandler('', 'D', () => this._terminal.index());
-    this._parser.setEscHandler('', 'E', () => {
-      this._terminal.buffer.x = 0;
-      this._terminal.index();
-    });
-    this._parser.setEscHandler('', 'H', () => this._terminal.tabSet());
-    this._parser.setEscHandler('', 'M', () => this._terminal.reverseIndex());
-    this._parser.setEscHandler('', '=', () => {
-      this._terminal.log('Serial port requested application keypad.');
-      this._terminal.applicationKeypad = true;
-      if (this._terminal.viewport) {
-        this._terminal.viewport.syncScrollArea();
-      }
-    });
-    this._parser.setEscHandler('', '>', () => {
-      this._terminal.log('Switching back to normal keypad.');
-      this._terminal.applicationKeypad = false;
-      if (this._terminal.viewport) {
-        this._terminal.viewport.syncScrollArea();
-      }
-    });
-    this._parser.setEscHandler('', 'c', () => this._terminal.reset());
-    this._parser.setEscHandler('', 'n', () => this._terminal.setgLevel(2));
-    this._parser.setEscHandler('', 'o', () => this._terminal.setgLevel(3));
-    this._parser.setEscHandler('', '|', () => this._terminal.setgLevel(3));
-    this._parser.setEscHandler('', '}', () => this._terminal.setgLevel(2));
-    this._parser.setEscHandler('', '~', () => this._terminal.setgLevel(1));
-
-    this._parser.setEscHandler('%', '@', () => {
-      this._terminal.setgLevel(0);
-      this._terminal.setgCharset(0, DEFAULT_CHARSET); // US (default)
-    });
-    this._parser.setEscHandler('%', 'G', () => {
-      this._terminal.setgLevel(0);
-      this._terminal.setgCharset(0, DEFAULT_CHARSET); // US (default)
-    });
+    /**
+     * ESC handlers
+     */
+    this._parser.setEscHandler('', '7', () => this.saveCursor([]));
+    this._parser.setEscHandler('', '8', () => this.restoreCursor([]));
+    this._parser.setEscHandler('', 'D', () => this._terminal.index());  // FIXME: move?
+    this._parser.setEscHandler('', 'E', () => this.nextLine());
+    this._parser.setEscHandler('', 'H', () => this._terminal.tabSet());  // FIXME: move?
+    this._parser.setEscHandler('', 'M', () => this._terminal.reverseIndex());  // FIXME: move?
+    this._parser.setEscHandler('', '=', () => this.keypadApplicationMode());
+    this._parser.setEscHandler('', '>', () => this.keypadNumericMode());
+    this._parser.setEscHandler('', 'c', () => this._terminal.reset());  // FIXME: move?
+    this._parser.setEscHandler('', 'n', () => this._terminal.setgLevel(2));  // FIXME: move?
+    this._parser.setEscHandler('', 'o', () => this._terminal.setgLevel(3));  // FIXME: move?
+    this._parser.setEscHandler('', '|', () => this._terminal.setgLevel(3));  // FIXME: move?
+    this._parser.setEscHandler('', '}', () => this._terminal.setgLevel(2));  // FIXME: move?
+    this._parser.setEscHandler('', '~', () => this._terminal.setgLevel(1));  // FIXME: move?
+    this._parser.setEscHandler('%', '@', () => this.selectDefaultCharset());
+    this._parser.setEscHandler('%', 'G', () => this.selectDefaultCharset());
     for (let flag in CHARSETS) {
-      this._parser.setEscHandler('(', flag, () => this._terminal.setgCharset(0, CHARSETS[flag] || DEFAULT_CHARSET));
-      this._parser.setEscHandler(')', flag, () => this._terminal.setgCharset(1, CHARSETS[flag] || DEFAULT_CHARSET));
-      this._parser.setEscHandler('*', flag, () => this._terminal.setgCharset(2, CHARSETS[flag] || DEFAULT_CHARSET));
-      this._parser.setEscHandler('+', flag, () => this._terminal.setgCharset(3, CHARSETS[flag] || DEFAULT_CHARSET));
-      this._parser.setEscHandler('-', flag, () => this._terminal.setgCharset(1, CHARSETS[flag] || DEFAULT_CHARSET));
-      this._parser.setEscHandler('.', flag, () => this._terminal.setgCharset(2, CHARSETS[flag] || DEFAULT_CHARSET));
+      this._parser.setEscHandler('(', flag, () => this.selectCharset('(' + flag));
+      this._parser.setEscHandler(')', flag, () => this.selectCharset(')' + flag));
+      this._parser.setEscHandler('*', flag, () => this.selectCharset('*' + flag));
+      this._parser.setEscHandler('+', flag, () => this.selectCharset('+' + flag));
+      this._parser.setEscHandler('-', flag, () => this.selectCharset('-' + flag));
+      this._parser.setEscHandler('.', flag, () => this.selectCharset('.' + flag));
+      this._parser.setEscHandler('/', flag, () => this.selectCharset('/' + flag)); // FIXME
     }
 
-    // error handler
+    /**
+     * error handler
+     */
     this._parser.setErrorHandler((state) => {
       this._terminal.error('Parsing error: ', state);
       return state;
@@ -1698,6 +1696,7 @@ export class InputHandler implements IInputHandler {
 
   /**
    * CSI s
+   * ESC 7
    *   Save cursor (ANSI.SYS).
    */
   public saveCursor(params: number[], collect?: string): void {
@@ -1708,10 +1707,90 @@ export class InputHandler implements IInputHandler {
 
   /**
    * CSI u
+   * ESC 8
    *   Restore cursor (ANSI.SYS).
    */
   public restoreCursor(params: number[], collect?: string): void {
     this._terminal.buffer.x = this._terminal.buffer.savedX || 0;
     this._terminal.buffer.y = this._terminal.buffer.savedY || 0;
+  }
+
+
+  /**
+   * OSC 0; <data> ST (set icon name + window title)
+   * OSC 2; <data> ST (set icon name)
+   *   Proxy to set window title. Icon name is not supported.
+   */
+  public setTitle(data: string): void {
+    this._terminal.handleTitle(data);
+  }
+
+  /**
+   * ESC E
+   *   DEC mnemonic: NEL (https://vt100.net/docs/vt510-rm/NEL)
+   *   Moves cursor to first position on next line.
+   */
+  public nextLine(): void {
+    this._terminal.buffer.x = 0;
+    this._terminal.index();
+  }
+
+  /**
+   * ESC =
+   *   DEC mnemonic: DECKPAM (https://vt100.net/docs/vt510-rm/DECKPAM.html)
+   *   Enables the numeric keypad to send application sequences to the host.
+   */
+  public keypadApplicationMode(): void {
+    this._terminal.log('Serial port requested application keypad.');
+    this._terminal.applicationKeypad = true;
+    if (this._terminal.viewport) {
+      this._terminal.viewport.syncScrollArea();
+    }
+  }
+
+  /**
+   * ESC >
+   *   DEC mnemonic: DECKPNM (https://vt100.net/docs/vt510-rm/DECKPNM.html)
+   *   Enables the keypad to send numeric characters to the host.
+   */
+  public keypadNumericMode(): void {
+    this._terminal.log('Switching back to normal keypad.');
+    this._terminal.applicationKeypad = false;
+    if (this._terminal.viewport) {
+      this._terminal.viewport.syncScrollArea();
+    }
+  }
+
+  /**
+   * ESC % @
+   * ESC % G
+   *   Select default character set. UTF-8 is not supported (string are unicode anyways)
+   *   therefore ESC % G does the same.
+   */
+  public selectDefaultCharset(): void {
+    this._terminal.setgLevel(0);
+    this._terminal.setgCharset(0, DEFAULT_CHARSET); // US (default)
+  }
+
+  /**
+   * ESC ( C
+   *   Designate G0 Character Set, VT100, ISO 2022.
+   * ESC ) C
+   *   Designate G1 Character Set (ISO 2022, VT100).
+   * ESC * C
+   *   Designate G2 Character Set (ISO 2022, VT220).
+   * ESC + C
+   *   Designate G3 Character Set (ISO 2022, VT220).
+   * ESC - C
+   *   Designate G1 Character Set (VT300).
+   * ESC . C
+   *   Designate G2 Character Set (VT300).
+   * ESC / C
+   *   Designate G3 Character Set (VT300). C = A  -> ISO Latin-1 Supplemental. - Supported?
+   */
+  public selectCharset(collectAndFlag: string): void {
+    if (collectAndFlag.length !== 2) return this.selectDefaultCharset();
+    if (collectAndFlag[0] === '/') return;  // FIXME: Is this supported?
+    this._terminal.setgCharset(GLEVEL[collectAndFlag[0]], CHARSETS[collectAndFlag[1]] || DEFAULT_CHARSET);
   }
 }
