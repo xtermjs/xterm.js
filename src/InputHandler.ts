@@ -1568,6 +1568,9 @@ export class InputHandler implements IInputHandler {
       } else if (p === 1) {
         // bold text
         flags |= FLAGS.BOLD;
+      } else if (p === 3) {
+        // italic text
+        flags |= FLAGS.ITALIC;
       } else if (p === 4) {
         // underlined text
         flags |= FLAGS.UNDERLINE;
