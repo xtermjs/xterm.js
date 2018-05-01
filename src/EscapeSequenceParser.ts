@@ -195,6 +195,11 @@ class DcsDummy implements IDcsHandler {
  * EscapeSequenceParser.
  * This class implements the ANSI/DEC compatible parser described by
  * Paul Williams (https://vt100.net/emu/dec_ansi_parser).
+ * To implement custom ANSI compliant escape sequences it is not needed to
+ * alter this parser, instead consider registering a custom handler.
+ * For non ANSI compliant sequences change the transition table with
+ * the optional `transitions` contructor argument and
+ * reimplement the `parse` method.
  * NOTE: The parameter element notation is currently not supported.
  */
 export class EscapeSequenceParser implements IEscapeSequenceParser {
@@ -207,7 +212,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
   public params: number[];
   public collect: string;
 
-  // callback slots
+  // handler lookup containers
   protected _printHandler: (data: string, start: number, end: number) => void;
   protected _executeHandlers: any;
   protected _csiHandlers: any;
@@ -233,7 +238,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     this.params = [0];
     this.collect = '';
 
-    // set default fallback handlers
+    // set default fallback handlers and handler lookup containers
     this._printHandlerFb = (data, start, end): void => { };
     this._executeHandlerFb = (...params: any[]): void => { };
     this._csiHandlerFb = (...params: any[]): void => { };
@@ -315,20 +320,26 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     this._errorHandler = this._errorHandlerFb;
   }
 
+  /**
+   * Reset the parser.
+   */
   reset(): void {
     this.currentState = this.initialState;
     this.osc = '';
     this.params = [0];
     this.collect = '';
+    this._activeDcsHandler = null;
   }
 
+  /**
+   * Parse string `data`.
+   * @param data
+   */
   parse(data: string): void {
     let code = 0;
     let transition = 0;
     let error = false;
     let currentState = this.currentState;
-
-    // local buffers
     let print = -1;
     let dcs = -1;
     let osc = this.osc;
