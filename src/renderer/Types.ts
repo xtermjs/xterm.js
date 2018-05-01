@@ -16,7 +16,8 @@ export const enum FLAGS {
   BLINK = 4,
   INVERSE = 8,
   INVISIBLE = 16,
-  DIM = 32
+  DIM = 32,
+  ITALIC = 64
 }
 
 export interface IRenderer extends IEventEmitter {
