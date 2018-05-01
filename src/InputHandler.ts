@@ -42,8 +42,7 @@ export class InputHandler implements IInputHandler {
     });
 
     // print handler
-    this._parser.setPrintHandler(
-      (data: string, start: number, end: number): void => this.print(data, start, end));
+    this._parser.setPrintHandler((data, start, end): void => this.print(data, start, end));
 
     // CSI handler
     this._parser.setCsiHandler('@', (params, collect) => this.insertChars(params));
@@ -62,12 +61,7 @@ export class InputHandler implements IInputHandler {
     this._parser.setCsiHandler('M', (params, collect) => this.deleteLines(params));
     this._parser.setCsiHandler('P', (params, collect) => this.deleteChars(params));
     this._parser.setCsiHandler('S', (params, collect) => this.scrollUp(params));
-    this._parser.setCsiHandler('T',
-      (params, collect) => {
-        if (params.length < 2 && !collect) {
-          return this.scrollDown(params);
-        }
-    });
+    this._parser.setCsiHandler('T', (params, collect) => this.scrollDown(params, collect));
     this._parser.setCsiHandler('X', (params, collect) => this.eraseChars(params));
     this._parser.setCsiHandler('Z', (params, collect) => this.cursorBackwardTab(params));
     this._parser.setCsiHandler('`', (params, collect) => this.charPosAbsolute(params));
@@ -82,18 +76,8 @@ export class InputHandler implements IInputHandler {
     this._parser.setCsiHandler('l', (params, collect) => this.resetMode(params, collect));
     this._parser.setCsiHandler('m', (params, collect) => this.charAttributes(params, collect));
     this._parser.setCsiHandler('n', (params, collect) => this.deviceStatus(params, collect));
-    this._parser.setCsiHandler('p',
-      (params, collect) => {
-        if (collect === '!') {
-          return this.softReset(params);
-        }
-      });
-    this._parser.setCsiHandler('q',
-      (params, collect) => {
-        if (collect === ' ') {
-          return this.setCursorStyle(params);
-        }
-      });
+    this._parser.setCsiHandler('p', (params, collect) => this.softReset(params, collect));
+    this._parser.setCsiHandler('q', (params, collect) => this.setCursorStyle(params, collect));
     this._parser.setCsiHandler('r', (params, collect) => this.setScrollRegion(params, collect));
     this._parser.setCsiHandler('s', (params, collect) => this.saveCursor(params));
     this._parser.setCsiHandler('u', (params, collect) => this.restoreCursor(params));
@@ -428,7 +412,7 @@ export class InputHandler implements IInputHandler {
    * CSI Ps @
    * Insert Ps (Blank) Character(s) (default = 1) (ICH).
    */
-  public insertChars(params: number[]): void {
+  public insertChars(params: number[], collect?: string): void {
     let param = params[0];
     if (param < 1) param = 1;
 
@@ -449,7 +433,7 @@ export class InputHandler implements IInputHandler {
    * CSI Ps A
    * Cursor Up Ps Times (default = 1) (CUU).
    */
-  public cursorUp(params: number[]): void {
+  public cursorUp(params: number[], collect?: string): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -464,7 +448,7 @@ export class InputHandler implements IInputHandler {
    * CSI Ps B
    * Cursor Down Ps Times (default = 1) (CUD).
    */
-  public cursorDown(params: number[]): void {
+  public cursorDown(params: number[], collect?: string): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -483,7 +467,7 @@ export class InputHandler implements IInputHandler {
    * CSI Ps C
    * Cursor Forward Ps Times (default = 1) (CUF).
    */
-  public cursorForward(params: number[]): void {
+  public cursorForward(params: number[], collect?: string): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -498,7 +482,7 @@ export class InputHandler implements IInputHandler {
    * CSI Ps D
    * Cursor Backward Ps Times (default = 1) (CUB).
    */
-  public cursorBackward(params: number[]): void {
+  public cursorBackward(params: number[], collect?: string): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -518,7 +502,7 @@ export class InputHandler implements IInputHandler {
    * Cursor Next Line Ps Times (default = 1) (CNL).
    * same as CSI Ps B ?
    */
-  public cursorNextLine(params: number[]): void {
+  public cursorNextLine(params: number[], collect?: string): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -536,7 +520,7 @@ export class InputHandler implements IInputHandler {
    * Cursor Preceding Line Ps Times (default = 1) (CNL).
    * reuse CSI Ps A ?
    */
-  public cursorPrecedingLine(params: number[]): void {
+  public cursorPrecedingLine(params: number[], collect?: string): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -553,7 +537,7 @@ export class InputHandler implements IInputHandler {
    * CSI Ps G
    * Cursor Character Absolute  [column] (default = [row,1]) (CHA).
    */
-  public cursorCharAbsolute(params: number[]): void {
+  public cursorCharAbsolute(params: number[], collect?: string): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -565,7 +549,7 @@ export class InputHandler implements IInputHandler {
    * CSI Ps ; Ps H
    * Cursor Position [row;column] (default = [1,1]) (CUP).
    */
-  public cursorPosition(params: number[]): void {
+  public cursorPosition(params: number[], collect?: string): void {
     let col: number;
     let row: number = params[0] - 1;
 
@@ -595,7 +579,7 @@ export class InputHandler implements IInputHandler {
    * CSI Ps I
    *   Cursor Forward Tabulation Ps tab stops (default = 1) (CHT).
    */
-  public cursorForwardTab(params: number[]): void {
+  public cursorForwardTab(params: number[], collect?: string): void {
     let param = params[0] || 1;
     while (param--) {
       this._terminal.buffer.x = this._terminal.buffer.nextStop();
@@ -614,7 +598,7 @@ export class InputHandler implements IInputHandler {
    *     Ps = 1  -> Selective Erase Above.
    *     Ps = 2  -> Selective Erase All.
    */
-  public eraseInDisplay(params: number[]): void {
+  public eraseInDisplay(params: number[], collect?: string): void {
     let j;
     switch (params[0]) {
       case 0:
@@ -660,7 +644,7 @@ export class InputHandler implements IInputHandler {
    *     Ps = 1  -> Selective Erase to Left.
    *     Ps = 2  -> Selective Erase All.
    */
-  public eraseInLine(params: number[]): void {
+  public eraseInLine(params: number[], collect?: string): void {
     switch (params[0]) {
       case 0:
         this._terminal.eraseRight(this._terminal.buffer.x, this._terminal.buffer.y);
@@ -678,7 +662,7 @@ export class InputHandler implements IInputHandler {
    * CSI Ps L
    * Insert Ps Line(s) (default = 1) (IL).
    */
-  public insertLines(params: number[]): void {
+  public insertLines(params: number[], collect?: string): void {
     let param: number = params[0];
     if (param < 1) {
       param = 1;
@@ -707,7 +691,7 @@ export class InputHandler implements IInputHandler {
    * CSI Ps M
    * Delete Ps Line(s) (default = 1) (DL).
    */
-  public deleteLines(params: number[]): void {
+  public deleteLines(params: number[], collect?: string): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -737,7 +721,7 @@ export class InputHandler implements IInputHandler {
    * CSI Ps P
    * Delete Ps Character(s) (default = 1) (DCH).
    */
-  public deleteChars(params: number[]): void {
+  public deleteChars(params: number[], collect?: string): void {
     let param: number = params[0];
     if (param < 1) {
       param = 1;
@@ -759,7 +743,7 @@ export class InputHandler implements IInputHandler {
   /**
    * CSI Ps S  Scroll up Ps lines (default = 1) (SU).
    */
-  public scrollUp(params: number[]): void {
+  public scrollUp(params: number[], collect?: string): void {
     let param = params[0] || 1;
 
     // make buffer local for faster access
@@ -777,26 +761,28 @@ export class InputHandler implements IInputHandler {
   /**
    * CSI Ps T  Scroll down Ps lines (default = 1) (SD).
    */
-  public scrollDown(params: number[]): void {
-    let param = params[0] || 1;
+  public scrollDown(params: number[], collect?: string): void {
+    if (params.length < 2 && !collect) {
+      let param = params[0] || 1;
 
-    // make buffer local for faster access
-    const buffer = this._terminal.buffer;
+      // make buffer local for faster access
+      const buffer = this._terminal.buffer;
 
-    while (param--) {
-      buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 1);
-      buffer.lines.splice(buffer.ybase + buffer.scrollTop, 0, this._terminal.blankLine());
+      while (param--) {
+        buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 1);
+        buffer.lines.splice(buffer.ybase + buffer.scrollTop, 0, this._terminal.blankLine());
+      }
+      // this.maxRange();
+      this._terminal.updateRange(buffer.scrollTop);
+      this._terminal.updateRange(buffer.scrollBottom);
     }
-    // this.maxRange();
-    this._terminal.updateRange(buffer.scrollTop);
-    this._terminal.updateRange(buffer.scrollBottom);
   }
 
   /**
    * CSI Ps X
    * Erase Ps Character(s) (default = 1) (ECH).
    */
-  public eraseChars(params: number[]): void {
+  public eraseChars(params: number[], collect?: string): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -817,7 +803,7 @@ export class InputHandler implements IInputHandler {
   /**
    * CSI Ps Z  Cursor Backward Tabulation Ps tab stops (default = 1) (CBT).
    */
-  public cursorBackwardTab(params: number[]): void {
+  public cursorBackwardTab(params: number[], collect?: string): void {
     let param = params[0] || 1;
 
     // make buffer local for faster access
@@ -832,7 +818,7 @@ export class InputHandler implements IInputHandler {
    * CSI Pm `  Character Position Absolute
    *   [column] (default = [row,1]) (HPA).
    */
-  public charPosAbsolute(params: number[]): void {
+  public charPosAbsolute(params: number[], collect?: string): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -848,7 +834,7 @@ export class InputHandler implements IInputHandler {
    *   [columns] (default = [row,col+1]) (HPR)
    * reuse CSI Ps C ?
    */
-  public HPositionRelative(params: number[]): void {
+  public HPositionRelative(params: number[], collect?: string): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -862,7 +848,7 @@ export class InputHandler implements IInputHandler {
   /**
    * CSI Ps b  Repeat the preceding graphic character Ps times (REP).
    */
-  public repeatPrecedingCharacter(params: number[]): void {
+  public repeatPrecedingCharacter(params: number[], collect?: string): void {
     let param = params[0] || 1;
 
     // make buffer local for faster access
@@ -946,7 +932,7 @@ export class InputHandler implements IInputHandler {
    * CSI Pm d  Vertical Position Absolute (VPA)
    *   [row] (default = [1,column])
    */
-  public linePosAbsolute(params: number[]): void {
+  public linePosAbsolute(params: number[], collect?: string): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -962,7 +948,7 @@ export class InputHandler implements IInputHandler {
    *   [rows] (default = [row+1,column])
    * reuse CSI Ps B ?
    */
-  public VPositionRelative(params: number[]): void {
+  public VPositionRelative(params: number[], collect?: string): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -982,7 +968,7 @@ export class InputHandler implements IInputHandler {
    *   Horizontal and Vertical Position [row;column] (default =
    *   [1,1]) (HVP).
    */
-  public HVPosition(params: number[]): void {
+  public HVPosition(params: number[], collect?: string): void {
     if (params[0] < 1) params[0] = 1;
     if (params[1] < 1) params[1] = 1;
 
@@ -1005,7 +991,7 @@ export class InputHandler implements IInputHandler {
    *   Ps = 2  -> Clear Stops on Line.
    *   http://vt100.net/annarbor/aaa-ug/section6.html
    */
-  public tabClear(params: number[]): void {
+  public tabClear(params: number[], collect?: string): void {
     let param = params[0];
     if (param <= 0) {
       delete this._terminal.buffer.tabs[this._terminal.buffer.x];
@@ -1644,21 +1630,23 @@ export class InputHandler implements IInputHandler {
    * CSI ! p   Soft terminal reset (DECSTR).
    * http://vt100.net/docs/vt220-rm/table4-10.html
    */
-  public softReset(params: number[]): void {
-    this._terminal.cursorHidden = false;
-    this._terminal.insertMode = false;
-    this._terminal.originMode = false;
-    this._terminal.wraparoundMode = true;  // defaults: xterm - true, vt100 - false
-    this._terminal.applicationKeypad = false; // ?
-    this._terminal.viewport.syncScrollArea();
-    this._terminal.applicationCursor = false;
-    this._terminal.buffer.scrollTop = 0;
-    this._terminal.buffer.scrollBottom = this._terminal.rows - 1;
-    this._terminal.curAttr = this._terminal.defAttr;
-    this._terminal.buffer.x = this._terminal.buffer.y = 0; // ?
-    this._terminal.charset = null;
-    this._terminal.glevel = 0; // ??
-    this._terminal.charsets = [null]; // ??
+  public softReset(params: number[], collect?: string): void {
+    if (collect === '!') {
+      this._terminal.cursorHidden = false;
+      this._terminal.insertMode = false;
+      this._terminal.originMode = false;
+      this._terminal.wraparoundMode = true;  // defaults: xterm - true, vt100 - false
+      this._terminal.applicationKeypad = false; // ?
+      this._terminal.viewport.syncScrollArea();
+      this._terminal.applicationCursor = false;
+      this._terminal.buffer.scrollTop = 0;
+      this._terminal.buffer.scrollBottom = this._terminal.rows - 1;
+      this._terminal.curAttr = this._terminal.defAttr;
+      this._terminal.buffer.x = this._terminal.buffer.y = 0; // ?
+      this._terminal.charset = null;
+      this._terminal.glevel = 0; // ??
+      this._terminal.charsets = [null]; // ??
+    }
   }
 
   /**
@@ -1671,24 +1659,26 @@ export class InputHandler implements IInputHandler {
    *   Ps = 5  -> blinking bar (xterm).
    *   Ps = 6  -> steady bar (xterm).
    */
-  public setCursorStyle(params?: number[]): void {
-    const param = params[0] < 1 ? 1 : params[0];
-    switch (param) {
-      case 1:
-      case 2:
-        this._terminal.setOption('cursorStyle', 'block');
-        break;
-      case 3:
-      case 4:
-        this._terminal.setOption('cursorStyle', 'underline');
-        break;
-      case 5:
-      case 6:
-        this._terminal.setOption('cursorStyle', 'bar');
-        break;
+  public setCursorStyle(params?: number[], collect?: string): void {
+    if (collect === ' ') {
+      const param = params[0] < 1 ? 1 : params[0];
+      switch (param) {
+        case 1:
+        case 2:
+          this._terminal.setOption('cursorStyle', 'block');
+          break;
+        case 3:
+        case 4:
+          this._terminal.setOption('cursorStyle', 'underline');
+          break;
+        case 5:
+        case 6:
+          this._terminal.setOption('cursorStyle', 'bar');
+          break;
+      }
+      const isBlinking = param % 2 === 1;
+      this._terminal.setOption('cursorBlink', isBlinking);
     }
-    const isBlinking = param % 2 === 1;
-    this._terminal.setOption('cursorBlink', isBlinking);
   }
 
   /**
@@ -1710,7 +1700,7 @@ export class InputHandler implements IInputHandler {
    * CSI s
    *   Save cursor (ANSI.SYS).
    */
-  public saveCursor(params: number[]): void {
+  public saveCursor(params: number[], collect?: string): void {
     this._terminal.buffer.savedX = this._terminal.buffer.x;
     this._terminal.buffer.savedY = this._terminal.buffer.y;
   }
@@ -1720,7 +1710,7 @@ export class InputHandler implements IInputHandler {
    * CSI u
    *   Restore cursor (ANSI.SYS).
    */
-  public restoreCursor(params: number[]): void {
+  public restoreCursor(params: number[], collect?: string): void {
     this._terminal.buffer.x = this._terminal.buffer.savedX || 0;
     this._terminal.buffer.y = this._terminal.buffer.savedY || 0;
   }

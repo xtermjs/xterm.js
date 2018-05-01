@@ -29,38 +29,39 @@ describe('InputHandler', () => {
     it('should call Terminal.setOption with correct params', () => {
       let terminal = new MockInputHandlingTerminal();
       let inputHandler = new InputHandler(terminal);
+      const collect = ' ';
 
-      inputHandler.setCursorStyle([0]);
+      inputHandler.setCursorStyle([0], collect);
       assert.equal(terminal.options['cursorStyle'], 'block');
       assert.equal(terminal.options['cursorBlink'], true);
 
       terminal.options = {};
-      inputHandler.setCursorStyle([1]);
+      inputHandler.setCursorStyle([1], collect);
       assert.equal(terminal.options['cursorStyle'], 'block');
       assert.equal(terminal.options['cursorBlink'], true);
 
       terminal.options = {};
-      inputHandler.setCursorStyle([2]);
+      inputHandler.setCursorStyle([2], collect);
       assert.equal(terminal.options['cursorStyle'], 'block');
       assert.equal(terminal.options['cursorBlink'], false);
 
       terminal.options = {};
-      inputHandler.setCursorStyle([3]);
+      inputHandler.setCursorStyle([3], collect);
       assert.equal(terminal.options['cursorStyle'], 'underline');
       assert.equal(terminal.options['cursorBlink'], true);
 
       terminal.options = {};
-      inputHandler.setCursorStyle([4]);
+      inputHandler.setCursorStyle([4], collect);
       assert.equal(terminal.options['cursorStyle'], 'underline');
       assert.equal(terminal.options['cursorBlink'], false);
 
       terminal.options = {};
-      inputHandler.setCursorStyle([5]);
+      inputHandler.setCursorStyle([5], collect);
       assert.equal(terminal.options['cursorStyle'], 'bar');
       assert.equal(terminal.options['cursorBlink'], true);
 
       terminal.options = {};
-      inputHandler.setCursorStyle([6]);
+      inputHandler.setCursorStyle([6], collect);
       assert.equal(terminal.options['cursorStyle'], 'bar');
       assert.equal(terminal.options['cursorBlink'], false);
     });
