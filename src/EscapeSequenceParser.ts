@@ -337,6 +337,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     const table: Uint8Array | number[] = this.transitions.table;
     let dcsHandler: IDcsHandler | null = this._activeDcsHandler;
     let ident: string = '';  // ugly workaround for ESC and DCS lookup keys
+    let callback: Function | null = null;
 
     // process input string
     const l = data.length;
@@ -369,7 +370,8 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
             this._printHandler(data, print, i);
             print = -1;
           }
-          if (this._executeHandlers[code]) this._executeHandlers[code]();
+          callback = this._executeHandlers[code];
+          if (callback) callback();
           else this._executeHandlerFb(code);
           break;
         case ParserAction.IGNORE:
@@ -430,7 +432,8 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
           }
           break;
         case ParserAction.CSI_DISPATCH:
-          if (this._csiHandlers[code]) this._csiHandlers[code](params, collect);
+          callback = this._csiHandlers[code];
+          if (callback) callback(params, collect);
           else this._csiHandlerFb(collect, params, code);
           break;
         case ParserAction.PARAM:
@@ -441,8 +444,8 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
           collect += String.fromCharCode(code);
           break;
         case ParserAction.ESC_DISPATCH:
-          ident = collect + String.fromCharCode(code);
-          if (this._escHandlers[ident]) this._escHandlers[ident](collect, code);
+          callback = this._escHandlers[collect + String.fromCharCode(code)];
+          if (callback) callback(collect, code);
           else this._escHandlerFb(collect, code);
           break;
         case ParserAction.CLEAR:
@@ -457,8 +460,8 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
           break;
         case ParserAction.DCS_HOOK:
           ident = collect + String.fromCharCode(code);
-          if (this._dcsHandlers[ident]) dcsHandler = this._dcsHandlers[ident];
-          else dcsHandler = this._dcsHandlerFb;
+          dcsHandler = this._dcsHandlers[ident];
+          if (!dcsHandler) dcsHandler = this._dcsHandlerFb;
           dcsHandler.hook(collect, params, code);
           break;
         case ParserAction.DCS_PUT:
@@ -494,7 +497,8 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
             } else {
               let identifier = parseInt(osc.substring(0, idx)); // NaN not handled here
               let content = osc.substring(idx + 1);
-              if (this._oscHandlers[identifier]) this._oscHandlers[identifier](content);
+              callback = this._oscHandlers[identifier];
+              if (callback) callback(content);
               else this._oscHandlerFb(identifier, content);
             }
           }
