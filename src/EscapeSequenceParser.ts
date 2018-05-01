@@ -278,11 +278,11 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     this._csiHandlerFb = callback;
   }
 
-  setEscHandler(collect: string, flag: string, callback: (collect: string, flag: number) => void): void {
-    this._escHandlers[collect + flag] = callback;
+  setEscHandler(collectAndFlag: string, callback: () => void): void {
+    this._escHandlers[collectAndFlag] = callback;
   }
-  clearEscHandler(collect: string, flag: string): void {
-    if (this._escHandlers[collect + flag]) delete this._escHandlers[collect + flag];
+  clearEscHandler(collectAndFlag: string): void {
+    if (this._escHandlers[collectAndFlag]) delete this._escHandlers[collectAndFlag];
   }
   setEscHandlerFallback(callback: (...params: any[]) => void): void {
     this._escHandlerFb = callback;
@@ -298,11 +298,11 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     this._oscHandlerFb = callback;
   }
 
-  setDcsHandler(collect: string, flag: string, handler: IDcsHandler): void {
-    this._dcsHandlers[collect + flag] = handler;
+  setDcsHandler(collectAndFlag: string, handler: IDcsHandler): void {
+    this._dcsHandlers[collectAndFlag] = handler;
   }
-  clearDcsHandler(collect: string, flag: string): void {
-    if (this._dcsHandlers[collect + flag]) delete this._dcsHandlers[collect + flag];
+  clearDcsHandler(collectAndFlag: string): void {
+    if (this._dcsHandlers[collectAndFlag]) delete this._dcsHandlers[collectAndFlag];
   }
   setDcsHandlerFallback(handler: IDcsHandler): void {
     this._dcsHandlerFb = handler;
@@ -336,7 +336,6 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     let params = this.params;
     const table: Uint8Array | number[] = this.transitions.table;
     let dcsHandler: IDcsHandler | null = this._activeDcsHandler;
-    let ident: string = '';  // ugly workaround for ESC and DCS lookup keys
     let callback: Function | null = null;
 
     // process input string
@@ -459,8 +458,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
           dcs = -1;
           break;
         case ParserAction.DCS_HOOK:
-          ident = collect + String.fromCharCode(code);
-          dcsHandler = this._dcsHandlers[ident];
+          dcsHandler = this._dcsHandlers[collect + String.fromCharCode(code)];
           if (!dcsHandler) dcsHandler = this._dcsHandlerFb;
           dcsHandler.hook(collect, params, code);
           break;

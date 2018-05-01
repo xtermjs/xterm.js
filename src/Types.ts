@@ -479,16 +479,16 @@ export interface IEscapeSequenceParser {
   clearCsiHandler(flag: string): void;
   setCsiHandlerFallback(callback: (...params: any[]) => void): void;
 
-  setEscHandler(collect: string, flag: string, callback: (collect: string, flag: number) => void): void;
-  clearEscHandler(collect: string, flag: string): void;
+  setEscHandler(collectAndFlag: string, callback: () => void): void;
+  clearEscHandler(collectAndFlag: string): void;
   setEscHandlerFallback(callback: (...params: any[]) => void): void;
 
   setOscHandler(ident: number, callback: (data: string) => void): void;
   clearOscHandler(ident: number): void;
   setOscHandlerFallback(callback: (...params: any[]) => void): void;
 
-  setDcsHandler(collect: string, flag: string, handler: IDcsHandler): void;
-  clearDcsHandler(collect: string, flag: string): void;
+  setDcsHandler(collectAndFlag: string, handler: IDcsHandler): void;
+  clearDcsHandler(collectAndFlag: string): void;
   setDcsHandlerFallback(handler: IDcsHandler): void;
 
   setErrorHandler(callback: (state: IParsingState) => IParsingState): void;

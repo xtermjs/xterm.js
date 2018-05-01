@@ -158,30 +158,30 @@ export class InputHandler implements IInputHandler {
     /**
      * ESC handlers
      */
-    this._parser.setEscHandler('', '7', () => this.saveCursor([]));
-    this._parser.setEscHandler('', '8', () => this.restoreCursor([]));
-    this._parser.setEscHandler('', 'D', () => this.index());
-    this._parser.setEscHandler('', 'E', () => this.nextLine());
-    this._parser.setEscHandler('', 'H', () => this.tabSet());
-    this._parser.setEscHandler('', 'M', () => this.reverseIndex());
-    this._parser.setEscHandler('', '=', () => this.keypadApplicationMode());
-    this._parser.setEscHandler('', '>', () => this.keypadNumericMode());
-    this._parser.setEscHandler('', 'c', () => this.reset());
-    this._parser.setEscHandler('', 'n', () => this.setgLevel(2));
-    this._parser.setEscHandler('', 'o', () => this.setgLevel(3));
-    this._parser.setEscHandler('', '|', () => this.setgLevel(3));
-    this._parser.setEscHandler('', '}', () => this.setgLevel(2));
-    this._parser.setEscHandler('', '~', () => this.setgLevel(1));
-    this._parser.setEscHandler('%', '@', () => this.selectDefaultCharset());
-    this._parser.setEscHandler('%', 'G', () => this.selectDefaultCharset());
+    this._parser.setEscHandler('7', () => this.saveCursor([]));
+    this._parser.setEscHandler('8', () => this.restoreCursor([]));
+    this._parser.setEscHandler('D', () => this.index());
+    this._parser.setEscHandler('E', () => this.nextLine());
+    this._parser.setEscHandler('H', () => this.tabSet());
+    this._parser.setEscHandler('M', () => this.reverseIndex());
+    this._parser.setEscHandler('=', () => this.keypadApplicationMode());
+    this._parser.setEscHandler('>', () => this.keypadNumericMode());
+    this._parser.setEscHandler('c', () => this.reset());
+    this._parser.setEscHandler('n', () => this.setgLevel(2));
+    this._parser.setEscHandler('o', () => this.setgLevel(3));
+    this._parser.setEscHandler('|', () => this.setgLevel(3));
+    this._parser.setEscHandler('}', () => this.setgLevel(2));
+    this._parser.setEscHandler('~', () => this.setgLevel(1));
+    this._parser.setEscHandler('%@', () => this.selectDefaultCharset());
+    this._parser.setEscHandler('%G', () => this.selectDefaultCharset());
     for (let flag in CHARSETS) {
-      this._parser.setEscHandler('(', flag, () => this.selectCharset('(' + flag));
-      this._parser.setEscHandler(')', flag, () => this.selectCharset(')' + flag));
-      this._parser.setEscHandler('*', flag, () => this.selectCharset('*' + flag));
-      this._parser.setEscHandler('+', flag, () => this.selectCharset('+' + flag));
-      this._parser.setEscHandler('-', flag, () => this.selectCharset('-' + flag));
-      this._parser.setEscHandler('.', flag, () => this.selectCharset('.' + flag));
-      this._parser.setEscHandler('/', flag, () => this.selectCharset('/' + flag)); // FIXME: supported?
+      this._parser.setEscHandler('(' + flag, () => this.selectCharset('(' + flag));
+      this._parser.setEscHandler(')' + flag, () => this.selectCharset(')' + flag));
+      this._parser.setEscHandler('*' + flag, () => this.selectCharset('*' + flag));
+      this._parser.setEscHandler('+' + flag, () => this.selectCharset('+' + flag));
+      this._parser.setEscHandler('-' + flag, () => this.selectCharset('-' + flag));
+      this._parser.setEscHandler('.' + flag, () => this.selectCharset('.' + flag));
+      this._parser.setEscHandler('/' + flag, () => this.selectCharset('/' + flag)); // FIXME: supported?
     }
 
     /**
