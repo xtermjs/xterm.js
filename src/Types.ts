@@ -163,12 +163,21 @@ export interface IInputHandler {
   /** ESC % G
       ESC % @ */ selectDefaultCharset(): void;
   /** ESC ( C
-   *  ESC ) C
-   *  ESC * C
-   *  ESC + C
-   *  ESC - C
-   *  ESC . C
-   *  ESC / C */ selectCharset(collectAndFlag: string): void;
+      ESC ) C
+      ESC * C
+      ESC + C
+      ESC - C
+      ESC . C
+      ESC / C */ selectCharset(collectAndFlag: string): void;
+  /** ESC D */ index(): void;
+  /** ESC H */ tabSet(): void;
+  /** ESC M */ reverseIndex(): void;
+  /** ESC c */ reset(): void;
+  /** ESC n
+      ESC o
+      ESC |
+      ESC }
+      ESC ~ */ setgLevel(level: number): void;
 }
 
 export interface ILinkMatcher {

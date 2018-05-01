@@ -5,7 +5,7 @@
  */
 
 import { CharData, IInputHandler } from './Types';
-import { C0 } from './EscapeSequences';
+import { C0, C1 } from './EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from './Charsets';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
 import { FLAGS } from './renderer/Types';
@@ -108,6 +108,11 @@ export class InputHandler implements IInputHandler {
     // FIXME:   What do to with missing? Old code just added those to print, but that's wrong
     //          behavior for most control codes.
 
+    // some C1 control codes - should those be enabled by default?
+    this._parser.setExecuteHandler(C1.IND, () => this.index());
+    this._parser.setExecuteHandler(C1.NEL, () => this.nextLine());
+    this._parser.setExecuteHandler(C1.HTS, () => this.tabSet());
+
     /**
      * OSC handler
      */
@@ -154,18 +159,18 @@ export class InputHandler implements IInputHandler {
      */
     this._parser.setEscHandler('', '7', () => this.saveCursor([]));
     this._parser.setEscHandler('', '8', () => this.restoreCursor([]));
-    this._parser.setEscHandler('', 'D', () => this._terminal.index());  // FIXME: move?
+    this._parser.setEscHandler('', 'D', () => this.index());
     this._parser.setEscHandler('', 'E', () => this.nextLine());
-    this._parser.setEscHandler('', 'H', () => this._terminal.tabSet());  // FIXME: move?
-    this._parser.setEscHandler('', 'M', () => this._terminal.reverseIndex());  // FIXME: move?
+    this._parser.setEscHandler('', 'H', () => this.tabSet());
+    this._parser.setEscHandler('', 'M', () => this.reverseIndex());
     this._parser.setEscHandler('', '=', () => this.keypadApplicationMode());
     this._parser.setEscHandler('', '>', () => this.keypadNumericMode());
-    this._parser.setEscHandler('', 'c', () => this._terminal.reset());  // FIXME: move?
-    this._parser.setEscHandler('', 'n', () => this._terminal.setgLevel(2));  // FIXME: move?
-    this._parser.setEscHandler('', 'o', () => this._terminal.setgLevel(3));  // FIXME: move?
-    this._parser.setEscHandler('', '|', () => this._terminal.setgLevel(3));  // FIXME: move?
-    this._parser.setEscHandler('', '}', () => this._terminal.setgLevel(2));  // FIXME: move?
-    this._parser.setEscHandler('', '~', () => this._terminal.setgLevel(1));  // FIXME: move?
+    this._parser.setEscHandler('', 'c', () => this.reset());
+    this._parser.setEscHandler('', 'n', () => this.setgLevel(2));
+    this._parser.setEscHandler('', 'o', () => this.setgLevel(3));
+    this._parser.setEscHandler('', '|', () => this.setgLevel(3));
+    this._parser.setEscHandler('', '}', () => this.setgLevel(2));
+    this._parser.setEscHandler('', '~', () => this.setgLevel(1));
     this._parser.setEscHandler('%', '@', () => this.selectDefaultCharset());
     this._parser.setEscHandler('%', 'G', () => this.selectDefaultCharset());
     for (let flag in CHARSETS) {
@@ -175,7 +180,7 @@ export class InputHandler implements IInputHandler {
       this._parser.setEscHandler('+', flag, () => this.selectCharset('+' + flag));
       this._parser.setEscHandler('-', flag, () => this.selectCharset('-' + flag));
       this._parser.setEscHandler('.', flag, () => this.selectCharset('.' + flag));
-      this._parser.setEscHandler('/', flag, () => this.selectCharset('/' + flag)); // FIXME
+      this._parser.setEscHandler('/', flag, () => this.selectCharset('/' + flag)); // FIXME: supported?
     }
 
     /**
@@ -1727,12 +1732,13 @@ export class InputHandler implements IInputHandler {
 
   /**
    * ESC E
+   * C1.NEL
    *   DEC mnemonic: NEL (https://vt100.net/docs/vt510-rm/NEL)
    *   Moves cursor to first position on next line.
    */
   public nextLine(): void {
     this._terminal.buffer.x = 0;
-    this._terminal.index();
+    this.index();
   }
 
   /**
@@ -1792,5 +1798,60 @@ export class InputHandler implements IInputHandler {
     if (collectAndFlag.length !== 2) return this.selectDefaultCharset();
     if (collectAndFlag[0] === '/') return;  // FIXME: Is this supported?
     this._terminal.setgCharset(GLEVEL[collectAndFlag[0]], CHARSETS[collectAndFlag[1]] || DEFAULT_CHARSET);
+  }
+
+  /**
+   * ESC D
+   * C1.IND
+   *   DEC mnemonic: IND (https://vt100.net/docs/vt510-rm/IND.html)
+   *   Moves the cursor down one line in the same column.
+   */
+  public index(): void {
+    this._terminal.index();  // FIXME: save to move the implementation from terminal?
+  }
+
+  /**
+   * ESC H
+   * C1.HTS
+   *   DEC mnemonic: HTS (https://vt100.net/docs/vt510-rm/HTS.html)
+   *   Sets a horizontal tab stop at the column position indicated by
+   *   the value of the active column when the terminal receives an HTS.
+   */
+  public tabSet(): void {
+    this._terminal.tabSet();  // FIXME: save to move the implementation from terminal?
+  }
+
+  /**
+   * ESC M
+   * C1.RI
+   *   DEC mnemonic: HTS
+   *   Moves the cursor up one line in the same column. If the cursor is at the top margin,
+   *   the page scrolls down.
+   */
+  public reverseIndex(): void {
+    this._terminal.reverseIndex();  // FIXME: save to move the implementation from terminal?
+  }
+
+  /**
+   * ESC c
+   *   DEC mnemonic: RIS (https://vt100.net/docs/vt510-rm/RIS.html)
+   *   Reset to initial state.
+   */
+  public reset(): void {
+    this._terminal.reset();  // FIXME: save to move the implementation from terminal?
+  }
+
+  /**
+   * ESC n
+   * ESC o
+   * ESC |
+   * ESC }
+   * ESC ~
+   *   DEC mnemonic: LS (https://vt100.net/docs/vt510-rm/LS.html)
+   *   When you use a locking shift, the character set remains in GL or GR until
+   *   you use another locking shift. (partly supported)
+   */
+  public setgLevel(level: number): void {
+    this._terminal.setgLevel(level);  // FIXME: save to move the implementation from terminal?
   }
 }
