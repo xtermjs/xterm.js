@@ -192,7 +192,7 @@ export class InputHandler implements IInputHandler {
     // FIXME:   What do to with missing? Old code just added those to print, but that's wrong
     //          behavior for most control codes.
 
-    // some C1 control codes - should those be enabled by default?
+    // some C1 control codes - FIXME: should those be enabled by default?
     this._parser.setExecuteHandler(C1.IND, () => this.index());
     this._parser.setExecuteHandler(C1.NEL, () => this.nextLine());
     this._parser.setExecuteHandler(C1.HTS, () => this.tabSet());
