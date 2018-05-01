@@ -11,6 +11,30 @@ function r(a: number, b: number): string[] {
     return arr;
 }
 
+class TestEscapeSequenceParser extends EscapeSequenceParser {
+    public get osc(): string {
+        return this._osc;
+    }
+    public set osc(value: string) {
+        this._osc = value;
+    }
+    public get params(): number[] {
+        return this._params;
+    }
+    public set params(value: number[]) {
+        this._params = value;
+    }
+    public get collect(): string {
+        return this._collect;
+    }
+    public set collect(value: string) {
+        this._collect = value;
+    }
+    public mockActiveDcsHandler(): void {
+        this._activeDcsHandler = this._dcsHandlerFb;
+    }
+}
+
 let testTerminal: any = {
     calls: [],
     clear: function (): void {
@@ -75,7 +99,7 @@ let states: number[] = [
 ];
 let state: any;
 
-let parser = new EscapeSequenceParser();
+let parser = new TestEscapeSequenceParser();
 parser.setPrintHandler(testTerminal.print.bind(testTerminal));
 parser.setCsiHandlerFallback((...params: any[]) => {
     testTerminal.actionCSI(params[0], params[1], String.fromCharCode(params[2]));
@@ -872,6 +896,7 @@ describe('EscapeSequenceParser', function(): void {
             puts.concat(r(0x20, 0x7f));
             for (let i = 0; i < puts.length; ++i) {
                 parser.currentState = ParserState.DCS_PASSTHROUGH;
+                parser.mockActiveDcsHandler();
                 parser.parse(puts[i]);
                 chai.expect(parser.currentState).equal(ParserState.DCS_PASSTHROUGH);
                 testTerminal.compare([['dcs put', puts[i]]]);

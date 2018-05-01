@@ -207,10 +207,9 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
   public currentState: number;
 
   // buffers over several parse calls
-  // FIXME: make those protected (needs workaround in tests)
-  public osc: string;
-  public params: number[];
-  public collect: string;
+  protected _osc: string;
+  protected _params: number[];
+  protected _collect: string;
 
   // handler lookup containers
   protected _printHandler: (data: string, start: number, end: number) => void;
@@ -234,9 +233,9 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
   constructor(readonly transitions: TransitionTable = VT500_TRANSITION_TABLE) {
     this.initialState = ParserState.GROUND;
     this.currentState = this.initialState;
-    this.osc = '';
-    this.params = [0];
-    this.collect = '';
+    this._osc = '';
+    this._params = [0];
+    this._collect = '';
 
     // set default fallback handlers and handler lookup containers
     this._printHandlerFb = (data, start, end): void => { };
@@ -325,9 +324,9 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
    */
   reset(): void {
     this.currentState = this.initialState;
-    this.osc = '';
-    this.params = [0];
-    this.collect = '';
+    this._osc = '';
+    this._params = [0];
+    this._collect = '';
     this._activeDcsHandler = null;
   }
 
@@ -342,9 +341,9 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     let currentState = this.currentState;
     let print = -1;
     let dcs = -1;
-    let osc = this.osc;
-    let collect = this.collect;
-    let params = this.params;
+    let osc = this._osc;
+    let collect = this._collect;
+    let params = this._params;
     const table: Uint8Array | number[] = this.transitions.table;
     let dcsHandler: IDcsHandler | null = this._activeDcsHandler;
     let callback: Function | null = null;
@@ -529,9 +528,9 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     }
 
     // save non pushable buffers
-    this.osc = osc;
-    this.collect = collect;
-    this.params = params;
+    this._osc = osc;
+    this._collect = collect;
+    this._params = params;
 
     // save active dcs handler reference
     this._activeDcsHandler = dcsHandler;
