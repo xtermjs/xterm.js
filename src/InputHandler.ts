@@ -23,10 +23,7 @@ export class InputHandler implements IInputHandler {
   private _parser: EscapeSequenceParser;
   private _surrogateHigh: string;
 
-  constructor(protected _terminal: any) { }
-
-  // FIXME: temp workaround to get tests working again
-  init(): void {
+  constructor(protected _terminal: any) {
     this._parser = new EscapeSequenceParser;  // FIXME: maybe as ctor argument
     this._surrogateHigh = '';
 
@@ -44,49 +41,47 @@ export class InputHandler implements IInputHandler {
       this._terminal.error('Unknown OSC code: ', params);
     });
 
-    // FIXME: remove temporary fix to get collect to terminal
-    this._parser.setPrefixHandler((collect: string) => { this._terminal.prefix = collect; });
-
     // print handler
-    this._parser.setPrintHandler(this.print.bind(this));
+    this._parser.setPrintHandler(
+      (data: string, start: number, end: number): void => this.print(data, start, end));
 
     // CSI handler
-    this._parser.setCsiHandler('@', this.insertChars.bind(this));
-    this._parser.setCsiHandler('A', this.cursorUp.bind(this));
-    this._parser.setCsiHandler('B', this.cursorDown.bind(this));
-    this._parser.setCsiHandler('C', this.cursorForward.bind(this));
-    this._parser.setCsiHandler('D', this.cursorBackward.bind(this));
-    this._parser.setCsiHandler('E', this.cursorNextLine.bind(this));
-    this._parser.setCsiHandler('F', this.cursorPrecedingLine.bind(this));
-    this._parser.setCsiHandler('G', this.cursorCharAbsolute.bind(this));
-    this._parser.setCsiHandler('H', this.cursorPosition.bind(this));
-    this._parser.setCsiHandler('I', this.cursorForwardTab.bind(this));
-    this._parser.setCsiHandler('J', this.eraseInDisplay.bind(this));
-    this._parser.setCsiHandler('K', this.eraseInLine.bind(this));
-    this._parser.setCsiHandler('L', this.insertLines.bind(this));
-    this._parser.setCsiHandler('M', this.deleteLines.bind(this));
-    this._parser.setCsiHandler('P', this.deleteChars.bind(this));
-    this._parser.setCsiHandler('S', this.scrollUp.bind(this));
+    this._parser.setCsiHandler('@', (params, collect) => this.insertChars(params));
+    this._parser.setCsiHandler('A', (params, collect) => this.cursorUp(params));
+    this._parser.setCsiHandler('B', (params, collect) => this.cursorDown(params));
+    this._parser.setCsiHandler('C', (params, collect) => this.cursorForward(params));
+    this._parser.setCsiHandler('D', (params, collect) => this.cursorBackward(params));
+    this._parser.setCsiHandler('E', (params, collect) => this.cursorNextLine(params));
+    this._parser.setCsiHandler('F', (params, collect) => this.cursorPrecedingLine(params));
+    this._parser.setCsiHandler('G', (params, collect) => this.cursorCharAbsolute(params));
+    this._parser.setCsiHandler('H', (params, collect) => this.cursorPosition(params));
+    this._parser.setCsiHandler('I', (params, collect) => this.cursorForwardTab(params));
+    this._parser.setCsiHandler('J', (params, collect) => this.eraseInDisplay(params));
+    this._parser.setCsiHandler('K', (params, collect) => this.eraseInLine(params));
+    this._parser.setCsiHandler('L', (params, collect) => this.insertLines(params));
+    this._parser.setCsiHandler('M', (params, collect) => this.deleteLines(params));
+    this._parser.setCsiHandler('P', (params, collect) => this.deleteChars(params));
+    this._parser.setCsiHandler('S', (params, collect) => this.scrollUp(params));
     this._parser.setCsiHandler('T',
       (params, collect) => {
         if (params.length < 2 && !collect) {
           return this.scrollDown(params);
         }
     });
-    this._parser.setCsiHandler('X', this.eraseChars.bind(this));
-    this._parser.setCsiHandler('Z', this.cursorBackwardTab.bind(this));
-    this._parser.setCsiHandler('`', this.charPosAbsolute.bind(this));
-    this._parser.setCsiHandler('a', this.HPositionRelative.bind(this));
-    this._parser.setCsiHandler('b', this.repeatPrecedingCharacter.bind(this));
-    this._parser.setCsiHandler('c', this.sendDeviceAttributes.bind(this)); // fix collect
-    this._parser.setCsiHandler('d', this.linePosAbsolute.bind(this));
-    this._parser.setCsiHandler('e', this.VPositionRelative.bind(this));
-    this._parser.setCsiHandler('f', this.HVPosition.bind(this));
-    this._parser.setCsiHandler('g', this.tabClear.bind(this));
-    this._parser.setCsiHandler('h', this.setMode.bind(this));  // fix collect
-    this._parser.setCsiHandler('l', this.resetMode.bind(this)); // fix collect
-    this._parser.setCsiHandler('m', this.charAttributes.bind(this));
-    this._parser.setCsiHandler('n', this.deviceStatus.bind(this)); // fix collect
+    this._parser.setCsiHandler('X', (params, collect) => this.eraseChars(params));
+    this._parser.setCsiHandler('Z', (params, collect) => this.cursorBackwardTab(params));
+    this._parser.setCsiHandler('`', (params, collect) => this.charPosAbsolute(params));
+    this._parser.setCsiHandler('a', (params, collect) => this.HPositionRelative(params));
+    this._parser.setCsiHandler('b', (params, collect) => this.repeatPrecedingCharacter(params));
+    this._parser.setCsiHandler('c', (params, collect) => this.sendDeviceAttributes(params, collect));
+    this._parser.setCsiHandler('d', (params, collect) => this.linePosAbsolute(params));
+    this._parser.setCsiHandler('e', (params, collect) => this.VPositionRelative(params));
+    this._parser.setCsiHandler('f', (params, collect) => this.HVPosition(params));
+    this._parser.setCsiHandler('g', (params, collect) => this.tabClear(params));
+    this._parser.setCsiHandler('h', (params, collect) => this.setMode(params, collect));
+    this._parser.setCsiHandler('l', (params, collect) => this.resetMode(params, collect));
+    this._parser.setCsiHandler('m', (params, collect) => this.charAttributes(params, collect));
+    this._parser.setCsiHandler('n', (params, collect) => this.deviceStatus(params, collect));
     this._parser.setCsiHandler('p',
       (params, collect) => {
         if (collect === '!') {
@@ -99,29 +94,29 @@ export class InputHandler implements IInputHandler {
           return this.setCursorStyle(params);
         }
       });
-    this._parser.setCsiHandler('r', this.setScrollRegion.bind(this)); // fix collect
-    this._parser.setCsiHandler('s', this.saveCursor.bind(this));
-    this._parser.setCsiHandler('u', this.restoreCursor.bind(this));
+    this._parser.setCsiHandler('r', (params, collect) => this.setScrollRegion(params, collect));
+    this._parser.setCsiHandler('s', (params, collect) => this.saveCursor(params));
+    this._parser.setCsiHandler('u', (params, collect) => this.restoreCursor(params));
 
     // execute handler
-    this._parser.setExecuteHandler(C0.BEL, this.bell.bind(this));
-    this._parser.setExecuteHandler(C0.LF, this.lineFeed.bind(this));
-    this._parser.setExecuteHandler(C0.VT, this.lineFeed.bind(this));
-    this._parser.setExecuteHandler(C0.FF, this.lineFeed.bind(this));
-    this._parser.setExecuteHandler(C0.CR, this.carriageReturn.bind(this));
-    this._parser.setExecuteHandler(C0.BS, this.backspace.bind(this));
-    this._parser.setExecuteHandler(C0.HT, this.tab.bind(this));
-    this._parser.setExecuteHandler(C0.SO, this.shiftOut.bind(this));
-    this._parser.setExecuteHandler(C0.SI, this.shiftIn.bind(this));
+    this._parser.setExecuteHandler(C0.BEL, () => this.bell());
+    this._parser.setExecuteHandler(C0.LF, () => this.lineFeed());
+    this._parser.setExecuteHandler(C0.VT, () => this.lineFeed());
+    this._parser.setExecuteHandler(C0.FF, () => this.lineFeed());
+    this._parser.setExecuteHandler(C0.CR, () => this.carriageReturn());
+    this._parser.setExecuteHandler(C0.BS, () => this.backspace());
+    this._parser.setExecuteHandler(C0.HT, () => this.tab());
+    this._parser.setExecuteHandler(C0.SO, () => this.shiftOut());
+    this._parser.setExecuteHandler(C0.SI, () => this.shiftIn());
     // FIXME:   What do to with missing? Old code just added those to print, but that's wrong
     //          behavior for most control codes.
 
     // OSC handler
     //   0 - icon name + title
-    this._parser.setOscHandler(0, this._terminal.handleTitle.bind(this._terminal));
+    this._parser.setOscHandler(0, (data) => this._terminal.handleTitle(data));
     //   1 - icon name
     //   2 - title
-    this._parser.setOscHandler(2, this._terminal.handleTitle.bind(this._terminal));
+    this._parser.setOscHandler(2, (data) => this._terminal.handleTitle(data));
     //   3 - set property X in the form "prop=value"
     //   4 - Change Color Number
     //   5 - Change Special Color Number
@@ -156,15 +151,15 @@ export class InputHandler implements IInputHandler {
     // 119 - Reset highlight foreground color.
 
     // ESC handlers
-    this._parser.setEscHandler('', '7', this.saveCursor.bind(this));
-    this._parser.setEscHandler('', '8', this.restoreCursor.bind(this));
-    this._parser.setEscHandler('', 'D', this._terminal.index.bind(this._terminal));
+    this._parser.setEscHandler('', '7', () => this.saveCursor([])); // fix args
+    this._parser.setEscHandler('', '8', () => this.restoreCursor([])); // fix args
+    this._parser.setEscHandler('', 'D', () => this._terminal.index());
     this._parser.setEscHandler('', 'E', () => {
       this._terminal.buffer.x = 0;
       this._terminal.index();
     });
-    this._parser.setEscHandler('', 'H', this._terminal.tabSet.bind(this._terminal));
-    this._parser.setEscHandler('', 'M', this._terminal.reverseIndex.bind(this._terminal));
+    this._parser.setEscHandler('', 'H', () => this._terminal.tabSet());
+    this._parser.setEscHandler('', 'M', () => this._terminal.reverseIndex());
     this._parser.setEscHandler('', '=', () => {
       this._terminal.log('Serial port requested application keypad.');
       this._terminal.applicationKeypad = true;
@@ -179,7 +174,7 @@ export class InputHandler implements IInputHandler {
         this._terminal.viewport.syncScrollArea();
       }
     });
-    this._parser.setEscHandler('', 'c', this._terminal.reset.bind(this._terminal));
+    this._parser.setEscHandler('', 'c', () => this._terminal.reset());
     this._parser.setEscHandler('', 'n', () => this._terminal.setgLevel(2));
     this._parser.setEscHandler('', 'o', () => this._terminal.setgLevel(3));
     this._parser.setEscHandler('', '|', () => this._terminal.setgLevel(3));
@@ -918,18 +913,18 @@ export class InputHandler implements IInputHandler {
    *   xterm/charproc.c - line 2012, for more information.
    *   vim responds with ^[[?0c or ^[[?1c after the terminal's response (?)
    */
-  public sendDeviceAttributes(params: number[]): void {
+  public sendDeviceAttributes(params: number[], collect?: string): void {
     if (params[0] > 0) {
       return;
     }
 
-    if (!this._terminal.prefix) {
+    if (!collect) {
       if (this._terminal.is('xterm') || this._terminal.is('rxvt-unicode') || this._terminal.is('screen')) {
         this._terminal.send(C0.ESC + '[?1;2c');
       } else if (this._terminal.is('linux')) {
         this._terminal.send(C0.ESC + '[?6c');
       }
-    } else if (this._terminal.prefix === '>') {
+    } else if (collect === '>') {
       // xterm and urxvt
       // seem to spit this
       // out around ~370 times (?).
@@ -1105,7 +1100,7 @@ export class InputHandler implements IInputHandler {
    * Modes:
    *   http: *vt100.net/docs/vt220-rm/chapter4.html
    */
-  public setMode(params: number[]): void {
+  public setMode(params: number[], collect?: string): void {
     if (params.length > 1) {
       for (let i = 0; i < params.length; i++) {
         this.setMode([params[i]]);
@@ -1114,7 +1109,7 @@ export class InputHandler implements IInputHandler {
       return;
     }
 
-    if (!this._terminal.prefix) {
+    if (!collect) {
       switch (params[0]) {
         case 4:
           this._terminal.insertMode = true;
@@ -1123,7 +1118,7 @@ export class InputHandler implements IInputHandler {
           // this._t.convertEol = true;
           break;
       }
-    } else if (this._terminal.prefix === '?') {
+    } else if (collect === '?') {
       switch (params[0]) {
         case 1:
           this._terminal.applicationCursor = true;
@@ -1299,7 +1294,7 @@ export class InputHandler implements IInputHandler {
    *     Ps = 1 0 6 1  -> Reset keyboard emulation to Sun/PC style.
    *     Ps = 2 0 0 4  -> Reset bracketed paste mode.
    */
-  public resetMode(params: number[]): void {
+  public resetMode(params: number[], collect?: string): void {
     if (params.length > 1) {
       for (let i = 0; i < params.length; i++) {
         this.resetMode([params[i]]);
@@ -1308,7 +1303,7 @@ export class InputHandler implements IInputHandler {
       return;
     }
 
-    if (!this._terminal.prefix) {
+    if (!collect) {
       switch (params[0]) {
         case 4:
           this._terminal.insertMode = false;
@@ -1317,7 +1312,7 @@ export class InputHandler implements IInputHandler {
           // this._t.convertEol = false;
           break;
       }
-    } else if (this._terminal.prefix === '?') {
+    } else if (collect === '?') {
       switch (params[0]) {
         case 1:
           this._terminal.applicationCursor = false;
@@ -1454,7 +1449,7 @@ export class InputHandler implements IInputHandler {
    *     Ps = 4 8  ; 5  ; Ps -> Set background color to the second
    *     Ps.
    */
-  public charAttributes(params: number[]): void {
+  public charAttributes(params: number[], collect?: string): void {
     // Optimize a single SGR0.
     if (params.length === 1 && params[0] === 0) {
       this._terminal.curAttr = this._terminal.defAttr;
@@ -1597,8 +1592,8 @@ export class InputHandler implements IInputHandler {
    *   CSI ? 5 3  n  Locator available, if compiled-in, or
    *   CSI ? 5 0  n  No Locator, if not.
    */
-  public deviceStatus(params: number[]): void {
-    if (!this._terminal.prefix) {
+  public deviceStatus(params: number[], collect?: string): void {
+    if (!collect) {
       switch (params[0]) {
         case 5:
           // status report
@@ -1613,7 +1608,7 @@ export class InputHandler implements IInputHandler {
                     + 'R');
           break;
       }
-    } else if (this._terminal.prefix === '?') {
+    } else if (collect === '?') {
       // modern xterm doesnt seem to
       // respond to any of these except ?6, 6, and 5
       switch (params[0]) {
@@ -1702,8 +1697,8 @@ export class InputHandler implements IInputHandler {
    *   dow) (DECSTBM).
    * CSI ? Pm r
    */
-  public setScrollRegion(params: number[]): void {
-    if (this._terminal.prefix) return;
+  public setScrollRegion(params: number[], collect?: string): void {
+    if (collect) return;
     this._terminal.buffer.scrollTop = (params[0] || 1) - 1;
     this._terminal.buffer.scrollBottom = (params[1] && params[1] <= this._terminal.rows ? params[1] : this._terminal.rows) - 1;
     this._terminal.buffer.x = 0;

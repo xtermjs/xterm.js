@@ -45,7 +45,6 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   bracketedPasteMode: boolean;
   defAttr: number;
   curAttr: number;
-  prefix: string;
   savedCols: number;
   x10Mouse: boolean;
   vt200Mouse: boolean;
@@ -428,50 +427,6 @@ export interface IParsingState {
 }
 
 /**
-* Print handler signature for EscapeSequenceParser.
-* `start` and `end` are the start and end indices of
-* printable characters in `data`.
-*/
-export interface IPrintHandler {
-  (data: string, start: number, end: number): void;
-}
-
-/**
-* Execute handler signature for EscapeSequenceParser.
-*/
-export interface IExecuteHandler {
-  (): void;
-}
-
-/**
-* CSI handler signature for EscapeSequenceParser.
-* `collect` contains the intermediate characters
-* of the escape sequence.
-*/
-export interface ICsiHandler {
-  (params: number[], collect: string): void;
-}
-
-/**
-* ESC handler signature for EscapeSequenceParser.
-* `collect` contains the intermediate characters
-* of the escape sequence. `flag` is the final
-* character as character code.
-*/
-export interface IEscHandler {
-  (collect: string, flag: number): void;
-}
-
-/**
-* OSC handler signature for EscapeSequenceParser.
-* `data` contains all characters right of the first ;
-* example: OSC 123;foo=bar;baz\007 --> 'foo=bar;baz'
-*/
-export interface IOscHandler {
-  (data: string): void;
-}
-
-/**
 * DCS handler signature for EscapeSequenceParser.
 * EscapeSequenceParser handles DCS commands via separate
 * subparsers that get hook/unhooked and can handle
@@ -484,35 +439,28 @@ export interface IDcsHandler {
 }
 
 /**
-* Error handler signature for EscapeSequenceParser.
-*/
-export interface IErrorHandler {
-  (state: IParsingState): IParsingState;
-}
-
-/**
 * EscapeSequenceParser interface.
 */
 export interface IEscapeSequenceParser {
   reset(): void;
   parse(data: string): void;
 
-  setPrintHandler(callback: IPrintHandler): void;
+  setPrintHandler(callback: (data: string, start: number, end: number) => void): void;
   clearPrintHandler(): void;
 
-  setExecuteHandler(flag: string, callback: IExecuteHandler): void;
+  setExecuteHandler(flag: string, callback: () => void): void;
   clearExecuteHandler(flag: string): void;
   setExecuteHandlerFallback(callback: (...params: any[]) => void): void;
 
-  setCsiHandler(flag: string, callback: ICsiHandler): void;
+  setCsiHandler(flag: string, callback: (params: number[], collect: string) => void): void;
   clearCsiHandler(flag: string): void;
   setCsiHandlerFallback(callback: (...params: any[]) => void): void;
 
-  setEscHandler(collect: string, flag: string, callback: IEscHandler): void;
+  setEscHandler(collect: string, flag: string, callback: (collect: string, flag: number) => void): void;
   clearEscHandler(collect: string, flag: string): void;
   setEscHandlerFallback(callback: (...params: any[]) => void): void;
 
-  setOscHandler(ident: number, callback: IOscHandler): void;
+  setOscHandler(ident: number, callback: (data: string) => void): void;
   clearOscHandler(ident: number): void;
   setOscHandlerFallback(callback: (...params: any[]) => void): void;
 
@@ -520,9 +468,6 @@ export interface IEscapeSequenceParser {
   clearDcsHandler(collect: string, flag: string): void;
   setDcsHandlerFallback(handler: IDcsHandler): void;
 
-  setErrorHandler(callback: IErrorHandler): void;
+  setErrorHandler(callback: (state: IParsingState) => IParsingState): void;
   clearErrorHandler(): void;
-
-  // remove after revamp of InputHandler methods
-  setPrefixHandler(callback: (collect: string) => void): void;
 }

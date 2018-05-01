@@ -3,11 +3,7 @@
  * - docs
  * - extend test cases
  */
-import {
-  ParserState, ParserAction, IParsingState, IPrintHandler,
-  IExecuteHandler, ICsiHandler, IEscHandler, IOscHandler,
-  IDcsHandler, IErrorHandler, IEscapeSequenceParser
-} from './Types';
+import { ParserState, ParserAction, IParsingState, IDcsHandler, IEscapeSequenceParser } from './Types';
 
 // number range macro
 function r(a: number, b: number): number[] {
@@ -213,26 +209,23 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
   public collect: string;
 
   // callback slots
-  protected _printHandler: IPrintHandler;
+  protected _printHandler: (data: string, start: number, end: number) => void;
   protected _executeHandlers: any;
   protected _csiHandlers: any;
   protected _escHandlers: any;
   protected _oscHandlers: any;
   protected _dcsHandlers: any;
   protected _activeDcsHandler: IDcsHandler | null;
-  protected _errorHandler: IErrorHandler;
+  protected _errorHandler: (state: IParsingState) => IParsingState;
 
   // fallback handlers
-  protected _printHandlerFb: IPrintHandler;
+  protected _printHandlerFb: (data: string, start: number, end: number) => void;
   protected _executeHandlerFb: (...params: any[]) => void;
   protected _csiHandlerFb: (...params: any[]) => void;
   protected _escHandlerFb: (...params: any[]) => void;
   protected _oscHandlerFb: (...params: any[]) => void;
   protected _dcsHandlerFb: IDcsHandler;
-  protected _errorHandlerFb: IErrorHandler;
-
-  // FIXME: to be removed
-  protected _tempPrefixHandler: any;
+  protected _errorHandlerFb: (state: IParsingState) => IParsingState;
 
   constructor(transitions: TransitionTable = VT500_TRANSITION_TABLE) {
     this.initialState = ParserState.GROUND;
@@ -260,14 +253,14 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     this._errorHandler = this._errorHandlerFb;
   }
 
-  setPrintHandler(callback: IPrintHandler): void {
+  setPrintHandler(callback: (data: string, start: number, end: number) => void): void {
     this._printHandler = callback;
   }
   clearPrintHandler(): void {
     this._printHandler = this._printHandlerFb;
   }
 
-  setExecuteHandler(flag: string, callback: IExecuteHandler): void {
+  setExecuteHandler(flag: string, callback: () => void): void {
     this._executeHandlers[flag.charCodeAt(0)] = callback;
   }
   clearExecuteHandler(flag: string): void {
@@ -277,7 +270,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     this._executeHandlerFb = callback;
   }
 
-  setCsiHandler(flag: string, callback: ICsiHandler): void {
+  setCsiHandler(flag: string, callback: (params: number[], collect: string) => void): void {
     this._csiHandlers[flag.charCodeAt(0)] = callback;
   }
   clearCsiHandler(flag: string): void {
@@ -287,7 +280,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     this._csiHandlerFb = callback;
   }
 
-  setEscHandler(collect: string, flag: string, callback: IEscHandler): void {
+  setEscHandler(collect: string, flag: string, callback: (collect: string, flag: number) => void): void {
     this._escHandlers[collect + flag] = callback;
   }
   clearEscHandler(collect: string, flag: string): void {
@@ -297,7 +290,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     this._escHandlerFb = callback;
   }
 
-  setOscHandler(ident: number, callback: IOscHandler): void {
+  setOscHandler(ident: number, callback: (data: string) => void): void {
     this._oscHandlers[ident] = callback;
   }
   clearOscHandler(ident: number): void {
@@ -317,16 +310,11 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     this._dcsHandlerFb = handler;
   }
 
-  setErrorHandler(callback: IErrorHandler): void {
+  setErrorHandler(callback: (state: IParsingState) => IParsingState): void {
     this._errorHandler = callback;
   }
   clearErrorHandler(): void {
     this._errorHandler = this._errorHandlerFb;
-  }
-
-  // FIXME: to be removed
-  setPrefixHandler(callback: (collect: string) => void): void {
-    this._tempPrefixHandler = callback;
   }
 
   reset(): void {
@@ -397,8 +385,8 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
           }
           break;
         case ParserAction.ERROR:
-          // chars higher than 0x9f are handled by this action to
-          // keep the lookup table small
+          // chars higher than 0x9f are handled by this action
+          // to keep the transition table small
           if (code > 0x9f) {
             switch (currentState) {
               case ParserState.GROUND:
@@ -444,7 +432,6 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
           }
           break;
         case ParserAction.CSI_DISPATCH:
-          this._tempPrefixHandler(collect);  // FIXME: to be removed
           if (this._csiHandlers[code]) this._csiHandlers[code](params, collect);
           else this._csiHandlerFb(collect, params, code);
           break;

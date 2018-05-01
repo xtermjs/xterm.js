@@ -193,8 +193,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   public params: (string | number)[];
   public currentParam: string | number;
-  public prefix: string;
-  public postfix: string;
 
   // user input states
   public writeBuffer: string[];
@@ -318,8 +316,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     this.params = [];
     this.currentParam = 0;
-    this.prefix = '';
-    this.postfix = '';
 
     // user input states
     this.writeBuffer = [];
@@ -330,7 +326,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this._userScrolling = false;
 
     this._inputHandler = new InputHandler(this);
-    this._inputHandler.init();
     // Reuse renderer if the Terminal is being recreated via a reset call.
     this.renderer = this.renderer || null;
     this.selectionManager = this.selectionManager || null;

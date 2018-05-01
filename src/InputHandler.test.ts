@@ -68,14 +68,14 @@ describe('InputHandler', () => {
   describe('setMode', () => {
     it('should toggle Terminal.bracketedPasteMode', () => {
       let terminal = new MockInputHandlingTerminal();
-      terminal.prefix = '?';
+      const collect = '?';
       terminal.bracketedPasteMode = false;
       let inputHandler = new InputHandler(terminal);
       // Set bracketed paste mode
-      inputHandler.setMode([2004]);
+      inputHandler.setMode([2004], collect);
       assert.equal(terminal.bracketedPasteMode, true);
       // Reset bracketed paste mode
-      inputHandler.resetMode([2004]);
+      inputHandler.resetMode([2004], collect);
       assert.equal(terminal.bracketedPasteMode, false);
     });
   });
