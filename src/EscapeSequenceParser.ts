@@ -200,7 +200,6 @@ class DcsDummy implements IDcsHandler {
 export class EscapeSequenceParser implements IEscapeSequenceParser {
   public initialState: number;
   public currentState: number;
-  readonly transitions: TransitionTable;
 
   // buffers over several parse calls
   // FIXME: make those protected (needs workaround in tests)
@@ -227,10 +226,9 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
   protected _dcsHandlerFb: IDcsHandler;
   protected _errorHandlerFb: (state: IParsingState) => IParsingState;
 
-  constructor(transitions: TransitionTable = VT500_TRANSITION_TABLE) {
+  constructor(readonly transitions: TransitionTable = VT500_TRANSITION_TABLE) {
     this.initialState = ParserState.GROUND;
     this.currentState = this.initialState;
-    this.transitions = transitions;
     this.osc = '';
     this.params = [0];
     this.collect = '';

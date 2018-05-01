@@ -25,11 +25,12 @@ const GLEVEL = {'(': 0, ')': 1, '*': 2, '+': 3, '-': 1, '.': 2};
  * each function's header comment.
  */
 export class InputHandler implements IInputHandler {
-  private _parser: EscapeSequenceParser;
   private _surrogateHigh: string;
 
-  constructor(private _terminal: any) {
-    this._parser = new EscapeSequenceParser;  // FIXME: maybe as ctor argument
+  constructor(
+      private _terminal: any,
+      private _parser: EscapeSequenceParser = new EscapeSequenceParser)
+  {
     this._surrogateHigh = '';
 
     /**
