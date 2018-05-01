@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { CharData, IInputHandler } from './Types';
+import { CharData, IInputHandler, IDcsHandler } from './Types';
 import { C0, C1 } from './EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from './Charsets';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
@@ -16,6 +16,89 @@ import { EscapeSequenceParser } from './EscapeSequenceParser';
  * Map collect to glevel. Used in `selectCharset`.
  */
 const GLEVEL = {'(': 0, ')': 1, '*': 2, '+': 3, '-': 1, '.': 2};
+
+
+/**
+ * DCS subparser implementations
+ */
+
+ /**
+  * DCS + q Pt ST (xterm)
+  *   Request Terminfo String
+  *   not supported
+  */
+class RequestTerminfo implements IDcsHandler {
+  private _data: string;
+  constructor(private _terminal: any) { }
+  hook(collect: string, params: number[], flag: number): void {
+    this._data = '';
+  }
+  put(data: string, start: number, end: number): void {
+    this._data += data.substring(start, end);
+  }
+  unhook(): void {
+    // invalid: DCS 0 + r Pt ST
+    this._terminal.send(C0.ESC + 'P0' + '+r' + this._data + C0.ESC + '\\');
+  }
+}
+
+/**
+ * DCS $ q Pt ST
+ *   DECRQSS (https://vt100.net/docs/vt510-rm/DECRQSS.html)
+ *   Request Status String (DECRQSS), VT420 and up.
+ *   Response: DECRPSS (https://vt100.net/docs/vt510-rm/DECRPSS.html)
+ *   FIXME: xterm and DEC flip P0 and P1 to indicate valid requests - which one to go with?
+ */
+class DECRQSS implements IDcsHandler {
+  private _data: string;
+  constructor(private _terminal: any) { }
+  hook(collect: string, params: number[], flag: number): void {
+    // reset data
+    this._data = '';
+  }
+  put(data: string, start: number, end: number): void {
+    this._data += data.substring(start, end);
+  }
+  unhook(): void {
+    switch (this._data) {
+      // valid: DCS 1 $ r Pt ST (xterm)
+      case '"q': // DECSCA
+        return this._terminal.send(C0.ESC + 'P1' + '$r' + '0"q' + C0.ESC + '\\');
+      case '"p': // DECSCL
+        return this._terminal.send(C0.ESC + 'P1' + '$r' + '61"p' + C0.ESC + '\\');
+      case 'r': // DECSTBM
+        let pt = '' + (this._terminal.buffer.scrollTop + 1) +
+                ';' + (this._terminal.buffer.scrollBottom + 1) + 'r';
+        return this._terminal.send(C0.ESC + 'P1' + '$r' + pt + C0.ESC + '\\');
+      case 'm': // SGR
+        // FIXME: report real settings instead of 0m
+        return this._terminal.send(C0.ESC + 'P1' + '$r' + '0m' + C0.ESC + '\\');
+      case ' q': // DECSCUSR
+        const STYLES = {'block': 2, 'underline': 4, 'bar': 6};
+        let style = STYLES[this._terminal.getOption('cursorStyle')];
+        style -= this._terminal.getOption('cursorBlink');
+        return this._terminal.send(C0.ESC + 'P1' + '$r' + style + ' q' + C0.ESC + '\\');
+      default:
+        // invalid: DCS 0 $ r Pt ST (xterm)
+        this._terminal.error('Unknown DCS $q %s', this._data);
+        this._terminal.send(C0.ESC + 'P0' + '$r' + this._data + C0.ESC + '\\');
+    }
+  }
+}
+
+/**
+ * DCS Ps; Ps| Pt ST
+ *   DECUDK (https://vt100.net/docs/vt510-rm/DECUDK.html)
+ *   not supported
+ */
+
+ /**
+  * DCS + p Pt ST (xterm)
+  *   Set Terminfo Data
+  *   not supported
+  */
+
+
 
 /**
  * The terminal's standard implementation of IInputHandler, this handles all
@@ -191,6 +274,12 @@ export class InputHandler implements IInputHandler {
       this._terminal.error('Parsing error: ', state);
       return state;
     });
+
+    /**
+     * DCS handler
+     */
+    this._parser.setDcsHandler('$q', new DECRQSS(this._terminal));
+    this._parser.setDcsHandler('+q', new RequestTerminfo(this._terminal));
   }
 
   public parse(data: string): void {

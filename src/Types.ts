@@ -454,6 +454,8 @@ export interface IParsingState {
 * EscapeSequenceParser handles DCS commands via separate
 * subparsers that get hook/unhooked and can handle
 * arbitrary amount of print data.
+* NOTE: EscapeSequenceParser might call `put` several times,
+* therefore you have to collect `data` until unhook is called.
 */
 export interface IDcsHandler {
   hook(collect: string, params: number[], flag: number): void;
