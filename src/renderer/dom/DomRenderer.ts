@@ -123,10 +123,8 @@ export class DomRenderer extends EventEmitter implements IRenderer {
   public onResize(cols: number, rows: number): void {
     console.log('onResize', arguments);
     this._refreshRowElements(cols, rows);
-    this._updateDimensions();
   }
 
-  // TODO: onCharSizeChanged is no longer called :'(
   public onCharSizeChanged(): void {
     this._updateDimensions();
   }
