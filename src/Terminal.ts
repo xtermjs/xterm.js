@@ -716,7 +716,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // dprchange should handle this case, we need this as well for browsers that don't support the
     // matchMedia query.
     this._disposables.push(Dom.addDisposableListener(window, 'resize', () => this.renderer.onWindowResize(window.devicePixelRatio)));
-    this.charMeasure.on('charsizechanged', () => this.renderer.onResize(this.cols, this.rows));
+    this.charMeasure.on('charsizechanged', () => this.renderer.onCharSizeChanged());
     this.renderer.on('resize', (dimensions) => this.viewport.syncScrollArea());
 
     this.selectionManager = new SelectionManager(this, this.charMeasure);
