@@ -49,6 +49,7 @@ import { AccessibilityManager } from './AccessibilityManager';
 import { ScreenDprMonitor } from './utils/ScreenDprMonitor';
 import { ITheme, ILocalizableStrings, IMarker, IDisposable } from 'xterm';
 import { removeTerminalFromCache } from './renderer/atlas/CharAtlas';
+import { DomRenderer } from './renderer/dom/DomRenderer';
 
 // reg + shift key mappings for digits and special chars
 const KEYCODE_KEY_MAPPINGS = {
@@ -121,7 +122,8 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   allowTransparency: false,
   tabStopWidth: 8,
   theme: null,
-  rightClickSelectsWord: Browser.isMac
+  rightClickSelectsWord: Browser.isMac,
+  rendererType: 'canvas'
 };
 
 export class Terminal extends EventEmitter implements ITerminal, IDisposable, IInputHandlingTerminal {
@@ -703,7 +705,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // Performance: Add viewport and helper elements from the fragment
     this.element.appendChild(fragment);
 
-    this.renderer = new Renderer(this, this.options.theme);
+    if (this.options.rendererType === 'canvas') {
+      this.renderer = new Renderer(this, this.options.theme);
+    } else {
+      this.renderer = new DomRenderer(this, this.options.theme);
+    }
     this.options.theme = null;
     this.viewport = new Viewport(this, this._viewportElement, this._viewportScrollArea, this.charMeasure);
     this.viewport.onThemeChanged(this.renderer.colorManager.colors);

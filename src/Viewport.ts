@@ -64,6 +64,7 @@ export class Viewport implements IViewport {
       const newBufferHeight = Math.round(this._currentRowHeight * this._lastRecordedBufferLength) + (this._lastRecordedViewportHeight - this._terminal.renderer.dimensions.canvasHeight);
       if (this._lastRecordedBufferHeight !== newBufferHeight) {
         this._lastRecordedBufferHeight = newBufferHeight;
+        console.log('set scroll area height to ', this._currentRowHeight, this._lastRecordedBufferLength, this._lastRecordedBufferHeight);
         this._scrollArea.style.height = this._lastRecordedBufferHeight + 'px';
       }
     }
