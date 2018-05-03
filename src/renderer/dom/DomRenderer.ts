@@ -10,20 +10,25 @@ import { EventEmitter } from '../../EventEmitter';
 import { ColorManager } from '../ColorManager';
 import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_ATTR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX } from '../../Buffer';
+import { RenderDebouncer } from '../../utils/RenderDebouncer';
 
 const ROW_CONTAINER_CLASS = 'xterm-rows';
 const BOLD_CLASS = 'xterm-bold';
 const CURSOR_CLASS = 'xterm-cursor';
 const FG_CLASS_PREFIX = 'xterm-fg-';
 const BG_CLASS_PREFIX = 'xterm-bg-';
+const FOCUS_CLASS = 'xterm-focus';
 
+// TODO: Pull into an addon?
 export class DomRenderer extends EventEmitter implements IRenderer {
-  public dimensions: IRenderDimensions;
-  public colorManager: ColorManager;
+  private _renderDebouncer: RenderDebouncer;
 
   private _styleElement: HTMLStyleElement;
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[] = [];
+
+  public dimensions: IRenderDimensions;
+  public colorManager: ColorManager;
 
   // TODO: Theme/ColorManager might be better owned by Terminal not IRenderer to reduce duplication?
   constructor(private _terminal: ITerminal, theme: ITheme | undefined) {
@@ -53,6 +58,8 @@ export class DomRenderer extends EventEmitter implements IRenderer {
     };
     this._updateDimensions();
 
+    this._renderDebouncer = new RenderDebouncer(this._terminal, this._renderRows.bind(this));
+
     this._terminal.screenElement.appendChild(this._rowContainer);
   }
 
@@ -75,12 +82,9 @@ export class DomRenderer extends EventEmitter implements IRenderer {
       element.style.width = `${this.dimensions.canvasWidth}px`;
       element.style.height = `${this._terminal.charMeasure.height}px`;
     });
-
-    console.log('_updateDimensions', this.dimensions);
   }
 
   public setTheme(theme: ITheme | undefined): IColorSet {
-    console.log('setTheme');
     if (theme) {
       this.colorManager.setTheme(theme);
     }
@@ -103,9 +107,13 @@ export class DomRenderer extends EventEmitter implements IRenderer {
         `.xterm span.${BOLD_CLASS} {` +
         ` font-weight: ${this._terminal.options.fontWeightBold};` +
         `}` +
-        `.xterm .${CURSOR_CLASS} {` +
+        `.xterm .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS} {` +
         ` background-color: #fff;` +
         ` color: #000;` +
+        `}` +
+        `.xterm .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS} {` +
+        ` outline: 1px solid #fff;` +
+        ` outline-offset: -1px;` +
         `}`;
     // TODO: Copy canvas renderer behavior for cursor
     this.colorManager.colors.ansi.forEach((c, i) => {
@@ -119,11 +127,10 @@ export class DomRenderer extends EventEmitter implements IRenderer {
   }
 
   public onWindowResize(devicePixelRatio: number): void {
-    console.log('onWindowResize', arguments);
+    this._updateDimensions();
   }
 
   private _refreshRowElements(cols: number, rows: number): void {
-    console.log('resize', cols, rows);
     // Add missing elements
     for (let i = this._rowElements.length; i <= rows; i++) {
       const row = document.createElement('div');
@@ -134,11 +141,9 @@ export class DomRenderer extends EventEmitter implements IRenderer {
     while (this._rowElements.length > rows) {
       this._rowContainer.removeChild(this._rowElements.pop());
     }
-    // console.log('refresh row elements', rows, this._rowElements.length);
   }
 
   public onResize(cols: number, rows: number): void {
-    console.log('onResize', arguments);
     this._refreshRowElements(cols, rows);
   }
 
@@ -147,32 +152,34 @@ export class DomRenderer extends EventEmitter implements IRenderer {
   }
 
   public onBlur(): void {
-    console.log('onBlur', arguments);
+    this._rowContainer.classList.remove(FOCUS_CLASS);
   }
 
   public onFocus(): void {
-    console.log('onFocus', arguments);
+    this._rowContainer.classList.add(FOCUS_CLASS);
   }
 
   public onSelectionChanged(start: [number, number], end: [number, number]): void {
-    console.log('onSelectionChanged', arguments);
+    // TODO: Draw selection
   }
 
   public onCursorMove(): void {
-    console.log('onCursorMove', arguments);
+    // No-op, the cursor is drawn when rows are drawn
   }
 
   public onOptionsChanged(): void {
-    console.log('onOptionsChanged', arguments);
+    // TODO: Handle options changes
   }
 
   public clear(): void {
-    console.log('clear', arguments);
     this._rowElements.forEach(e => e.innerHTML = '');
   }
 
   public refreshRows(start: number, end: number): void {
-    console.log('refreshRows', arguments);
+    this._renderDebouncer.refresh(start, end);
+  }
+
+  private _renderRows(start: number, end: number): void {
     const terminal = this._terminal;
 
     const cursorAbsoluteY = terminal.buffer.ybase + terminal.buffer.y;
@@ -223,6 +230,17 @@ export class DomRenderer extends EventEmitter implements IRenderer {
         }
 
         if (flags & FLAGS.BOLD) {
+          // TODO: Support option that turns bold->bright off
+          // Convert the FG color to the bold variant
+          if (fg < 8) {
+            fg += 8;
+          }
+          charElement.classList.add(BOLD_CLASS);
+        }
+
+        // TODO: Handle italics
+
+        if (flags & FLAGS.BOLD) {
           // Convert the FG color to the bold variant
           if (fg < 8) {
             fg += 8;
@@ -242,5 +260,8 @@ export class DomRenderer extends EventEmitter implements IRenderer {
         rowElement.appendChild(charElement);
       }
     }
+
+    // TODO: Document that IRenderer needs to emit this?
+    this._terminal.emit('refresh', {start, end});
   }
 }
