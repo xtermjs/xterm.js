@@ -90,7 +90,14 @@ export class DomRenderer extends EventEmitter implements IRenderer {
         `}` +
         `.xterm .${ROW_CONTAINER_CLASS} span {` +
         ` display: inline-block;` +
+        ` height: 100%;` +
+        ` vertical-align: top;` +
+        `}` +
+        `.xterm .xterm-cursor {` +
+        ` background-color: #fff;` +
+        ` color: #000;` +
         `}`;
+    // TODO: Copy canvas renderer behavior for cursor
     this.colorManager.colors.ansi.forEach((c, i) => {
       styles +=
           `.xterm .xterm-fg-${i} { color: ${c.css}; }` +
@@ -158,6 +165,8 @@ export class DomRenderer extends EventEmitter implements IRenderer {
     console.log('refreshRows', arguments);
     const terminal = this._terminal;
 
+    const cursorAbsoluteY = terminal.buffer.ybase + terminal.buffer.y;
+
     for (let y = start; y <= end; y++) {
       const rowElement = this._rowElements[y];
       rowElement.innerHTML = '';
@@ -166,7 +175,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
       const line = terminal.buffer.lines.get(row);
       for (let x = 0; x < terminal.cols; x++) {
         const charData = line[x];
-        const code: number = <number>charData[CHAR_DATA_CODE_INDEX];
+        // const code: number = <number>charData[CHAR_DATA_CODE_INDEX];
         const char: string = charData[CHAR_DATA_CHAR_INDEX];
         const attr: number = charData[CHAR_DATA_ATTR_INDEX];
         let width: number = charData[CHAR_DATA_WIDTH_INDEX];
@@ -184,6 +193,10 @@ export class DomRenderer extends EventEmitter implements IRenderer {
         const flags = attr >> 18;
         let bg = attr & 0x1ff;
         let fg = (attr >> 9) & 0x1ff;
+
+        if (row === cursorAbsoluteY && x === this._terminal.buffer.x) {
+          charElement.classList.add('xterm-cursor');
+        }
 
         // If inverse flag is on, the foreground should become the background.
         if (flags & FLAGS.INVERSE) {
