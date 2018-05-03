@@ -12,6 +12,10 @@ import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_ATTR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX } from '../../Buffer';
 
 const ROW_CONTAINER_CLASS = 'xterm-rows';
+const BOLD_CLASS = 'xterm-bold';
+const CURSOR_CLASS = 'xterm-cursor';
+const FG_CLASS_PREFIX = 'xterm-fg-';
+const BG_CLASS_PREFIX = 'xterm-bg-';
 
 export class DomRenderer extends EventEmitter implements IRenderer {
   public dimensions: IRenderDimensions;
@@ -93,15 +97,21 @@ export class DomRenderer extends EventEmitter implements IRenderer {
         ` height: 100%;` +
         ` vertical-align: top;` +
         `}` +
-        `.xterm .xterm-cursor {` +
+        `.xterm span:not(.${BOLD_CLASS}) {` +
+        ` font-weight: ${this._terminal.options.fontWeight};` +
+        `}` +
+        `.xterm span.${BOLD_CLASS} {` +
+        ` font-weight: ${this._terminal.options.fontWeightBold};` +
+        `}` +
+        `.xterm .${CURSOR_CLASS} {` +
         ` background-color: #fff;` +
         ` color: #000;` +
         `}`;
     // TODO: Copy canvas renderer behavior for cursor
     this.colorManager.colors.ansi.forEach((c, i) => {
       styles +=
-          `.xterm .xterm-fg-${i} { color: ${c.css}; }` +
-          `.xterm .xterm-bg-${i} { background-color: ${c.css}; }`;
+          `.xterm .${FG_CLASS_PREFIX}${i} { color: ${c.css}; }` +
+          `.xterm .${BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
     });
     this._styleElement.innerHTML = styles;
     this._terminal.screenElement.appendChild(this._styleElement);
@@ -195,7 +205,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
         let fg = (attr >> 9) & 0x1ff;
 
         if (row === cursorAbsoluteY && x === this._terminal.buffer.x) {
-          charElement.classList.add('xterm-cursor');
+          charElement.classList.add(CURSOR_CLASS);
         }
 
         // If inverse flag is on, the foreground should become the background.
@@ -217,6 +227,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
           if (fg < 8) {
             fg += 8;
           }
+          charElement.classList.add(BOLD_CLASS);
         }
 
         charElement.textContent = char;
