@@ -20,7 +20,6 @@ const BG_CLASS_PREFIX = 'xterm-bg-';
 const FOCUS_CLASS = 'xterm-focus';
 const SELECTION_CLASS = 'xterm-selection';
 
-// TODO: Document that links aren't supported in the DOM renderer
 // TODO: Pull into an addon when TS composite projects allow easier sharing of code (not just
 // interfaces) between core and addons
 export class DomRenderer extends EventEmitter implements IRenderer {
@@ -75,7 +74,6 @@ export class DomRenderer extends EventEmitter implements IRenderer {
     this.dimensions.scaledCharHeight = this._terminal.charMeasure.height * window.devicePixelRatio;
     this.dimensions.scaledCellWidth = this._terminal.charMeasure.width * window.devicePixelRatio;
     this.dimensions.scaledCellHeight = this._terminal.charMeasure.height * window.devicePixelRatio;
-    // TODO: Support line height and letter spacing
     this.dimensions.scaledCharLeft = 0;
     this.dimensions.scaledCharTop = 0;
     this.dimensions.scaledCanvasWidth = this.dimensions.scaledCellWidth * this._terminal.cols;

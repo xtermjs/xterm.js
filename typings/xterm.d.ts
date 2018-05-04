@@ -102,7 +102,16 @@ declare module 'xterm' {
     macOptionIsMeta?: boolean;
 
     /**
-     * The type of renderer to use.
+     * (EXPERIMENTAL) The type of renderer to use, this allows using the
+     * fallback DOM renderer when canvas is too slow for the environment. The
+     * following features do not work when the DOM renderer is used:
+     *
+     * - Links
+     * - Line height
+     * - Letter spacing
+     *
+     * This option is marked as experiemental because it will eventually be
+     * moved to an addon.
      */
     rendererType?: RendererType;
 
