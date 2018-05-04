@@ -113,7 +113,8 @@ declare module 'xterm' {
      * - Cursor style
      *
      * This option is marked as experiemental because it will eventually be
-     * moved to an addon.
+     * moved to an addon. You can only set this option in the constructor (not
+     * setOption).
      */
     rendererType?: RendererType;
 
@@ -528,7 +529,7 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'fontWeight' | 'fontWeightBold'| 'termName'): string;
+    getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'fontWeight' | 'fontWeightBold'| 'rendererType' | 'termName'): string;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
