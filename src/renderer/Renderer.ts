@@ -15,7 +15,6 @@ import { RenderDebouncer } from '../utils/RenderDebouncer';
 import { ScreenDprMonitor } from '../utils/ScreenDprMonitor';
 import { ITheme } from 'xterm';
 
-// TODO: Rename to CanvasRenderer and move this, render layers and atlas into ./src/renderer/canvas
 export class Renderer extends EventEmitter implements IRenderer {
   private _renderDebouncer: RenderDebouncer;
 

@@ -20,9 +20,9 @@ const BG_CLASS_PREFIX = 'xterm-bg-';
 const FOCUS_CLASS = 'xterm-focus';
 const SELECTION_CLASS = 'xterm-selection';
 
-// TODO: Use aria-hidden to prevent screen reader from seeing the rendered elements
 // TODO: Document that links aren't supported in the DOM renderer
-// TODO: Pull into an addon?
+// TODO: Pull into an addon when TS composite projects allow easier sharing of code (not just
+// interfaces) between core and addons
 export class DomRenderer extends EventEmitter implements IRenderer {
   private _renderDebouncer: RenderDebouncer;
 
@@ -34,7 +34,6 @@ export class DomRenderer extends EventEmitter implements IRenderer {
   public dimensions: IRenderDimensions;
   public colorManager: ColorManager;
 
-  // TODO: Theme/ColorManager might be better owned by Terminal not IRenderer to reduce duplication?
   constructor(private _terminal: ITerminal, theme: ITheme | undefined) {
     super();
     const allowTransparency = this._terminal.options.allowTransparency;
@@ -43,11 +42,12 @@ export class DomRenderer extends EventEmitter implements IRenderer {
 
     this._rowContainer = document.createElement('div');
     this._rowContainer.classList.add(ROW_CONTAINER_CLASS);
+    this._rowContainer.setAttribute('aria-hidden', 'true');
     this._refreshRowElements(this._terminal.rows, this._terminal.cols);
     this._selectionContainer = document.createElement('div');
     this._selectionContainer.classList.add(SELECTION_CLASS);
+    this._selectionContainer.setAttribute('aria-hidden', 'true');
 
-    // TODO: Should IRendererDimensions lose canvas-related concepts?
     this.dimensions = {
       scaledCharWidth: null,
       scaledCharHeight: null,
@@ -98,7 +98,6 @@ export class DomRenderer extends EventEmitter implements IRenderer {
       this.colorManager.setTheme(theme);
     }
 
-    // TODO: CSS selectors would need to use some ID otherwise it will affect other terminals
     this._styleElement = document.createElement('style');
     let styles =
         `.xterm .${ROW_CONTAINER_CLASS} {` +
