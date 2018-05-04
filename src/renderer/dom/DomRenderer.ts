@@ -23,10 +23,17 @@ const SELECTION_CLASS = 'xterm-selection';
 
 // TODO: Pull into an addon when TS composite projects allow easier sharing of code (not just
 // interfaces) between core and addons
+
+/**
+ * A fallback renderer for when canvas is slow. This is not meant to be
+ * particularly fast or feature complete, more just stable and usable for when
+ * canvas is not an option.
+ */
 export class DomRenderer extends EventEmitter implements IRenderer {
   private _renderDebouncer: RenderDebouncer;
 
-  private _styleElement: HTMLStyleElement;
+  private _themeStyleElement: HTMLStyleElement;
+  private _dimensionsStyleElement: HTMLStyleElement;
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[] = [];
   private _selectionContainer: HTMLElement;
@@ -89,6 +96,22 @@ export class DomRenderer extends EventEmitter implements IRenderer {
       element.style.height = `${this._terminal.charMeasure.height}px`;
     });
 
+
+    if (!this._dimensionsStyleElement) {
+      this._dimensionsStyleElement = document.createElement('style');
+      this._terminal.screenElement.appendChild(this._dimensionsStyleElement);
+    }
+
+    let styles =
+        `.xterm .${ROW_CONTAINER_CLASS} span {` +
+        ` display: inline-block;` +
+        ` height: 100%;` +
+        ` vertical-align: top;` +
+        ` width: ${this._terminal.charMeasure.width}px` +
+        `}`;
+
+    this._dimensionsStyleElement.innerHTML = styles;
+
     this._selectionContainer.style.height = (<any>this._terminal)._viewportElement.style.height;
   }
 
@@ -97,17 +120,19 @@ export class DomRenderer extends EventEmitter implements IRenderer {
       this.colorManager.setTheme(theme);
     }
 
-    this._styleElement = document.createElement('style');
+    if (!this._themeStyleElement) {
+      this._themeStyleElement = document.createElement('style');
+      this._terminal.screenElement.appendChild(this._themeStyleElement);
+    }
+
+    // Base CSS
     let styles =
         `.xterm .${ROW_CONTAINER_CLASS} {` +
         ` color: ${this.colorManager.colors.foreground.css};` +
         ` background-color: ${this.colorManager.colors.background.css};` +
-        `}` +
-        `.xterm .${ROW_CONTAINER_CLASS} span {` +
-        ` display: inline-block;` +
-        ` height: 100%;` +
-        ` vertical-align: top;` +
-        `}` +
+        `}`;;
+    // Text styles
+    styles +=
         `.xterm span:not(.${BOLD_CLASS}) {` +
         ` font-weight: ${this._terminal.options.fontWeight};` +
         `}` +
@@ -116,21 +141,17 @@ export class DomRenderer extends EventEmitter implements IRenderer {
         `}` +
         `.xterm span.${ITALIC_CLASS} {` +
         ` font-style: italic;` +
-        `}` +
+        `}`;
+    // Cursor
+    styles +=
         `.xterm .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS} {` +
-        ` background-color: #fff;` +
-        ` color: #000;` +
+        ` background-color: ${this.colorManager.colors.cursor.css};` +
+        ` color: ${this.colorManager.colors.cursorAccent.css};` +
         `}` +
         `.xterm .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS} {` +
         ` outline: 1px solid #fff;` +
         ` outline-offset: -1px;` +
         `}`;
-    // TODO: Copy canvas renderer behavior for cursor
-    this.colorManager.colors.ansi.forEach((c, i) => {
-      styles +=
-          `.xterm .${FG_CLASS_PREFIX}${i} { color: ${c.css}; }` +
-          `.xterm .${BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
-    });
     // Selection
     styles +=
         `.terminal .${SELECTION_CLASS} {` +
@@ -144,8 +165,14 @@ export class DomRenderer extends EventEmitter implements IRenderer {
         ` position: absolute;` +
         ` background-color: ${this.colorManager.colors.selection.css};` +
         `}`;
-    this._styleElement.innerHTML = styles;
-    this._terminal.screenElement.appendChild(this._styleElement);
+    // Colors
+    this.colorManager.colors.ansi.forEach((c, i) => {
+      styles +=
+          `.xterm .${FG_CLASS_PREFIX}${i} { color: ${c.css}; }` +
+          `.xterm .${BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
+    });
+
+    this._themeStyleElement.innerHTML = styles;
     return this.colorManager.colors;
   }
 
@@ -281,8 +308,9 @@ export class DomRenderer extends EventEmitter implements IRenderer {
         }
 
         const charElement = document.createElement('span');
-        // TODO: Move standard width to <style>?
-        charElement.style.width = `${terminal.charMeasure.width * width}px`;
+        if (width > 1) {
+          charElement.style.width = `${terminal.charMeasure.width * width}px`;
+        }
 
         const flags = attr >> 18;
         let bg = attr & 0x1ff;

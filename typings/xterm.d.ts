@@ -109,6 +109,8 @@ declare module 'xterm' {
      * - Links
      * - Line height
      * - Letter spacing
+     * - Cursor blink
+     * - Cursor style
      *
      * This option is marked as experiemental because it will eventually be
      * moved to an addon.
