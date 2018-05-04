@@ -241,7 +241,10 @@ export class DomRenderer extends EventEmitter implements IRenderer {
   }
 
   public onOptionsChanged(): void {
-    // TODO: Handle options changes
+    // Force a refresh
+    this._updateDimensions();
+    this.setTheme(undefined);
+    this._terminal.refresh(0, this._terminal.rows - 1);
   }
 
   public clear(): void {
