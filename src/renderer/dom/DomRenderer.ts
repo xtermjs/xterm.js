@@ -18,7 +18,10 @@ const CURSOR_CLASS = 'xterm-cursor';
 const FG_CLASS_PREFIX = 'xterm-fg-';
 const BG_CLASS_PREFIX = 'xterm-bg-';
 const FOCUS_CLASS = 'xterm-focus';
+const SELECTED_CLASS = 'xterm-selected';
 
+// TODO: Use aria-hidden to prevent screen reader from seeing the rendered elements
+// TODO: Document that links aren't supported in the DOM renderer
 // TODO: Pull into an addon?
 export class DomRenderer extends EventEmitter implements IRenderer {
   private _renderDebouncer: RenderDebouncer;
@@ -114,6 +117,16 @@ export class DomRenderer extends EventEmitter implements IRenderer {
         `.xterm .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS} {` +
         ` outline: 1px solid #fff;` +
         ` outline-offset: -1px;` +
+        `}` +
+        `.xterm span.${SELECTED_CLASS}:after {` +
+        ` content: "";` +
+        ` display: block;` +
+        ` left: 0;` +
+        ` right: 0;` +
+        ` top: 0;` +
+        ` bottom: 0;` +
+        ` background-color: #FFF;` +
+        ` opacity: 0.5;` +
         `}`;
     // TODO: Copy canvas renderer behavior for cursor
     this.colorManager.colors.ansi.forEach((c, i) => {
