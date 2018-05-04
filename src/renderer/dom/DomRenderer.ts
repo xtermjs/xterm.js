@@ -96,7 +96,6 @@ export class DomRenderer extends EventEmitter implements IRenderer {
       element.style.height = `${this._terminal.charMeasure.height}px`;
     });
 
-
     if (!this._dimensionsStyleElement) {
       this._dimensionsStyleElement = document.createElement('style');
       this._terminal.screenElement.appendChild(this._dimensionsStyleElement);
@@ -130,7 +129,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
         `.xterm .${ROW_CONTAINER_CLASS} {` +
         ` color: ${this.colorManager.colors.foreground.css};` +
         ` background-color: ${this.colorManager.colors.background.css};` +
-        `}`;;
+        `}`;
     // Text styles
     styles +=
         `.xterm span:not(.${BOLD_CLASS}) {` +
@@ -296,13 +295,11 @@ export class DomRenderer extends EventEmitter implements IRenderer {
       const line = terminal.buffer.lines.get(row);
       for (let x = 0; x < terminal.cols; x++) {
         const charData = line[x];
-        // const code: number = <number>charData[CHAR_DATA_CODE_INDEX];
         const char: string = charData[CHAR_DATA_CHAR_INDEX];
         const attr: number = charData[CHAR_DATA_ATTR_INDEX];
         let width: number = charData[CHAR_DATA_WIDTH_INDEX];
 
-        // The character to the left is a wide character, drawing is owned by
-        // the char at x-1
+        // The character to the left is a wide character, drawing is owned by the char at x-1
         if (width === 0) {
           continue;
         }
@@ -335,7 +332,6 @@ export class DomRenderer extends EventEmitter implements IRenderer {
         }
 
         if (flags & FLAGS.BOLD) {
-          // TODO: Support option that turns bold->bright off
           // Convert the FG color to the bold variant
           if (fg < 8) {
             fg += 8;
@@ -348,11 +344,9 @@ export class DomRenderer extends EventEmitter implements IRenderer {
         }
 
         charElement.textContent = char;
-        // TODO: Make 257 a constant
         if (fg !== 257) {
           charElement.classList.add(`xterm-fg-${fg}`);
         }
-        // TODO: Make 256 a constant
         if (bg !== 256) {
           charElement.classList.add(`xterm-bg-${bg}`);
         }
@@ -360,7 +354,6 @@ export class DomRenderer extends EventEmitter implements IRenderer {
       }
     }
 
-    // TODO: Document that IRenderer needs to emit this?
     this._terminal.emit('refresh', {start, end});
   }
 }
