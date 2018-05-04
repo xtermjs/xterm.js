@@ -14,6 +14,7 @@ import { RenderDebouncer } from '../../utils/RenderDebouncer';
 
 const ROW_CONTAINER_CLASS = 'xterm-rows';
 const BOLD_CLASS = 'xterm-bold';
+const ITALIC_CLASS = 'xterm-italic';
 const CURSOR_CLASS = 'xterm-cursor';
 const FG_CLASS_PREFIX = 'xterm-fg-';
 const BG_CLASS_PREFIX = 'xterm-bg-';
@@ -112,6 +113,9 @@ export class DomRenderer extends EventEmitter implements IRenderer {
         `}` +
         `.xterm span.${BOLD_CLASS} {` +
         ` font-weight: ${this._terminal.options.fontWeightBold};` +
+        `}` +
+        `.xterm span.${ITALIC_CLASS} {` +
+        ` font-style: italic;` +
         `}` +
         `.xterm .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS} {` +
         ` background-color: #fff;` +
@@ -311,14 +315,8 @@ export class DomRenderer extends EventEmitter implements IRenderer {
           charElement.classList.add(BOLD_CLASS);
         }
 
-        // TODO: Handle italics
-
-        if (flags & FLAGS.BOLD) {
-          // Convert the FG color to the bold variant
-          if (fg < 8) {
-            fg += 8;
-          }
-          charElement.classList.add(BOLD_CLASS);
+        if (flags & FLAGS.ITALIC) {
+          charElement.classList.add(ITALIC_CLASS);
         }
 
         charElement.textContent = char;
