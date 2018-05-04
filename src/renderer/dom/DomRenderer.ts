@@ -9,7 +9,7 @@ import { ITheme } from 'xterm';
 import { EventEmitter } from '../../EventEmitter';
 import { ColorManager } from '../ColorManager';
 import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_ATTR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX } from '../../Buffer';
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_ATTR_INDEX, CHAR_DATA_WIDTH_INDEX } from '../../Buffer';
 import { RenderDebouncer } from '../../utils/RenderDebouncer';
 
 const ROW_CONTAINER_CLASS = 'xterm-rows';
@@ -18,7 +18,7 @@ const CURSOR_CLASS = 'xterm-cursor';
 const FG_CLASS_PREFIX = 'xterm-fg-';
 const BG_CLASS_PREFIX = 'xterm-bg-';
 const FOCUS_CLASS = 'xterm-focus';
-const SELECTED_CLASS = 'xterm-selected';
+const SELECTION_CLASS = 'xterm-selection';
 
 // TODO: Use aria-hidden to prevent screen reader from seeing the rendered elements
 // TODO: Document that links aren't supported in the DOM renderer
@@ -29,6 +29,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
   private _styleElement: HTMLStyleElement;
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[] = [];
+  private _selectionContainer: HTMLElement;
 
   public dimensions: IRenderDimensions;
   public colorManager: ColorManager;
@@ -43,6 +44,8 @@ export class DomRenderer extends EventEmitter implements IRenderer {
     this._rowContainer = document.createElement('div');
     this._rowContainer.classList.add(ROW_CONTAINER_CLASS);
     this._refreshRowElements(this._terminal.rows, this._terminal.cols);
+    this._selectionContainer = document.createElement('div');
+    this._selectionContainer.classList.add(SELECTION_CLASS);
 
     // TODO: Should IRendererDimensions lose canvas-related concepts?
     this.dimensions = {
@@ -64,6 +67,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
     this._renderDebouncer = new RenderDebouncer(this._terminal, this._renderRows.bind(this));
 
     this._terminal.screenElement.appendChild(this._rowContainer);
+    this._terminal.screenElement.appendChild(this._selectionContainer);
   }
 
   private _updateDimensions(): void {
@@ -85,6 +89,8 @@ export class DomRenderer extends EventEmitter implements IRenderer {
       element.style.width = `${this.dimensions.canvasWidth}px`;
       element.style.height = `${this._terminal.charMeasure.height}px`;
     });
+
+    this._selectionContainer.style.height = (<any>this._terminal)._viewportElement.style.height;
   }
 
   public setTheme(theme: ITheme | undefined): IColorSet {
@@ -117,16 +123,6 @@ export class DomRenderer extends EventEmitter implements IRenderer {
         `.xterm .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS} {` +
         ` outline: 1px solid #fff;` +
         ` outline-offset: -1px;` +
-        `}` +
-        `.xterm span.${SELECTED_CLASS}:after {` +
-        ` content: "";` +
-        ` display: block;` +
-        ` left: 0;` +
-        ` right: 0;` +
-        ` top: 0;` +
-        ` bottom: 0;` +
-        ` background-color: #FFF;` +
-        ` opacity: 0.5;` +
         `}`;
     // TODO: Copy canvas renderer behavior for cursor
     this.colorManager.colors.ansi.forEach((c, i) => {
@@ -134,6 +130,19 @@ export class DomRenderer extends EventEmitter implements IRenderer {
           `.xterm .${FG_CLASS_PREFIX}${i} { color: ${c.css}; }` +
           `.xterm .${BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
     });
+    // Selection
+    styles +=
+        `.terminal .${SELECTION_CLASS} {` +
+        ` position: absolute;` +
+        ` top: 0;` +
+        ` left: 0;` +
+        ` z-index: 1;` +
+        ` pointer-events: none;` +
+        `}` +
+        `.terminal .${SELECTION_CLASS} div {` +
+        ` position: absolute;` +
+        ` background-color: ${this.colorManager.colors.selection.css};` +
+        `}`;
     this._styleElement.innerHTML = styles;
     this._terminal.screenElement.appendChild(this._styleElement);
     return this.colorManager.colors;
@@ -173,7 +182,58 @@ export class DomRenderer extends EventEmitter implements IRenderer {
   }
 
   public onSelectionChanged(start: [number, number], end: [number, number]): void {
-    // TODO: Draw selection
+    // Remove all selections
+    while (this._selectionContainer.children.length) {
+      this._selectionContainer.removeChild(this._selectionContainer.children[0]);
+    }
+
+    // Selection does not exist
+    if (!start || !end) {
+      return;
+    }
+
+    // Translate from buffer position to viewport position
+    const viewportStartRow = start[1] - this._terminal.buffer.ydisp;
+    const viewportEndRow = end[1] - this._terminal.buffer.ydisp;
+    const viewportCappedStartRow = Math.max(viewportStartRow, 0);
+    const viewportCappedEndRow = Math.min(viewportEndRow, this._terminal.rows - 1);
+
+    // No need to draw the selection
+    if (viewportCappedStartRow >= this._terminal.rows || viewportCappedEndRow < 0) {
+      return;
+    }
+
+    // Create the selections
+    const documentFragment = document.createDocumentFragment();
+    // Draw first row
+    const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
+    const endCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : this._terminal.cols;
+    documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow, startCol, endCol));
+    // Draw middle rows
+    const middleRowsCount = viewportCappedEndRow - viewportCappedStartRow - 1;
+    documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow + 1, 0, this._terminal.cols, middleRowsCount));
+    // Draw final row
+    if (viewportCappedStartRow !== viewportCappedEndRow) {
+      // Only draw viewportEndRow if it's not the same as viewporttartRow
+      const endCol = viewportEndRow === viewportCappedEndRow ? end[0] : this._terminal.cols;
+      documentFragment.appendChild(this._createSelectionElement(viewportCappedEndRow, 0, endCol));
+    }
+    this._selectionContainer.appendChild(documentFragment);
+  }
+
+  /**
+   * Creates a selection element at the specified position.
+   * @param row The row of the selection.
+   * @param colStart The start column.
+   * @param colEnd The end columns.
+   */
+  private _createSelectionElement(row: number, colStart: number, colEnd: number, rowCount: number = 1): HTMLElement {
+    const element = document.createElement('div');
+    element.style.height = `${rowCount * this._terminal.charMeasure.height}px`;
+    element.style.top = `${row * this._terminal.charMeasure.height}px`;
+    element.style.left = `${colStart * this._terminal.charMeasure.width}px`;
+    element.style.width = `${this._terminal.charMeasure.width * (colEnd - colStart)}px`;
+    return element;
   }
 
   public onCursorMove(): void {
