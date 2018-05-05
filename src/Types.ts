@@ -467,7 +467,15 @@ export interface IDcsHandler {
 * EscapeSequenceParser interface.
 */
 export interface IEscapeSequenceParser {
+  /**
+   * Reset the parser to its initial state (handlers are kept).
+   */
   reset(): void;
+
+  /**
+   * Parse string `data`.
+   * @param data The data to parse.
+   */
   parse(data: string): void;
 
   setPrintHandler(callback: (data: string, start: number, end: number) => void): void;

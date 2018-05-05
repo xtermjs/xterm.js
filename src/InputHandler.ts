@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { CharData, IInputHandler, IDcsHandler } from './Types';
+import { CharData, IInputHandler, IDcsHandler, IEscapeSequenceParser } from './Types';
 import { C0, C1 } from './EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from './Charsets';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
@@ -112,7 +112,7 @@ export class InputHandler implements IInputHandler {
 
   constructor(
       private _terminal: any,
-      private _parser: EscapeSequenceParser = new EscapeSequenceParser)
+      private _parser: IEscapeSequenceParser = new EscapeSequenceParser())
   {
     this._surrogateHigh = '';
 

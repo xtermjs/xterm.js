@@ -119,13 +119,13 @@ parser.setOscHandlerFallback((...params: any[]) => {
   if (params[0] === -1) testTerminal.actionOSC(params[1]);  // handle error condition silently
   else testTerminal.actionOSC(params[0] + ';' + params[1]);
 });
-parser.setDcsHandlerFallback(new DcsTest);
+parser.setDcsHandlerFallback(new DcsTest());
 
 
 describe('EscapeSequenceParser', function (): void {
   describe('Parser init and methods', function (): void {
     it('constructor', function(): void {
-      let p: EscapeSequenceParser = new EscapeSequenceParser;
+      let p: EscapeSequenceParser = new EscapeSequenceParser();
       chai.expect(p.transitions).equal(VT500_TRANSITION_TABLE);
       p = new EscapeSequenceParser(VT500_TRANSITION_TABLE);
       chai.expect(p.transitions).equal(VT500_TRANSITION_TABLE);

@@ -5,12 +5,16 @@
 
 import { ParserState, ParserAction, IParsingState, IDcsHandler, IEscapeSequenceParser } from './Types';
 
-// number range macro
-function r(a: number, b: number): number[] {
-  let c = b - a;
+/**
+ * Returns an array fulled with numbers between the low and high parameters (inclusive).
+ * @param low The low number.
+ * @param high The high number.
+ */
+function r(low: number, high: number): number[] {
+  let c = high - low;
   let arr = new Array(c);
   while (c--) {
-    arr[c] = --b;
+    arr[c] = --high;
   }
   return arr;
 }
@@ -243,7 +247,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     this._csiHandlerFb = (...params: any[]): void => { };
     this._escHandlerFb = (...params: any[]): void => { };
     this._oscHandlerFb = (...params: any[]): void => { };
-    this._dcsHandlerFb = new DcsDummy;
+    this._dcsHandlerFb = new DcsDummy();
     this._errorHandlerFb = (state: IParsingState): IParsingState => state;
     this._printHandler = this._printHandlerFb;
     this._executeHandlers = Object.create(null);
@@ -319,9 +323,6 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     this._errorHandler = this._errorHandlerFb;
   }
 
-  /**
-   * Reset the parser.
-   */
   reset(): void {
     this.currentState = this.initialState;
     this._osc = '';
@@ -330,10 +331,6 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     this._activeDcsHandler = null;
   }
 
-  /**
-   * Parse string `data`.
-   * @param data
-   */
   parse(data: string): void {
     let code = 0;
     let transition = 0;
