@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2018 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
 import { ParserState, IDcsHandler, IParsingState } from './Types';
 import { EscapeSequenceParser, TransitionTable, VT500_TRANSITION_TABLE } from './EscapeSequenceParser';
 import * as chai from 'chai';
