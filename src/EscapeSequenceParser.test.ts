@@ -1,5 +1,5 @@
-import { ParserState, IDcsHandler } from './Types';
-import { EscapeSequenceParser } from './EscapeSequenceParser';
+import { ParserState, IDcsHandler, IParsingState } from './Types';
+import { EscapeSequenceParser, TransitionTable, VT500_TRANSITION_TABLE } from './EscapeSequenceParser';
 import * as chai from 'chai';
 
 function r(a: number, b: number): string[] {
@@ -119,6 +119,15 @@ parser.setDcsHandlerFallback(new DcsTest);
 
 describe('EscapeSequenceParser', function (): void {
   describe('Parser init and methods', function (): void {
+    it('constructor', function(): void {
+      let p: EscapeSequenceParser = new EscapeSequenceParser;
+      chai.expect(p.transitions).equal(VT500_TRANSITION_TABLE);
+      p = new EscapeSequenceParser(VT500_TRANSITION_TABLE);
+      chai.expect(p.transitions).equal(VT500_TRANSITION_TABLE);
+      let tansitions: TransitionTable = new TransitionTable(10);
+      p = new EscapeSequenceParser(tansitions);
+      chai.expect(p.transitions).equal(tansitions);
+    });
     it('inital states', function (): void {
       chai.expect(parser.initialState).equal(ParserState.GROUND);
       chai.expect(parser.currentState).equal(ParserState.GROUND);
@@ -1028,5 +1037,148 @@ describe('EscapeSequenceParser', function (): void {
       testTerminal.clear();
     });
   });
-  // TODO: error conditions, higher order: set/clear of callbacks, custom sequences
+
+  describe('set/clear handler', function(): void {
+    const INPUT = '\x1b[1;31mhello \x1b%Gwor\x1bEld!\x1b[0m\r\n$>\x1b]1;foo=bar\x1b\\';
+    let parser2 = null;
+    let print = '';
+    let esc = [];
+    let csi = [];
+    let exe = [];
+    let osc = [];
+    let dcs = [];
+    function clearAccu(): void {
+      print = '';
+      esc = [];
+      csi = [];
+      exe = [];
+      osc = [];
+      dcs = [];
+    }
+    beforeEach(function(): void {
+      parser2 = new TestEscapeSequenceParser();
+      clearAccu();
+    });
+    it('print handler', function(): void {
+      parser2.setPrintHandler(function(data: string, start: number, end: number): void {
+        print += data.substring(start, end);
+      });
+      parser2.parse(INPUT);
+      chai.expect(print).equal('hello world!$>');
+      parser2.clearPrintHandler();
+      parser2.clearPrintHandler(); // should not throw
+      clearAccu();
+      parser2.parse(INPUT);
+      chai.expect(print).equal('');
+    });
+    it('ESC handler', function(): void {
+      parser2.setEscHandler('%G', function (): void {
+        esc.push('%G');
+      });
+      parser2.setEscHandler('E', function (): void {
+        esc.push('E');
+      });
+      parser2.parse(INPUT);
+      chai.expect(esc).eql(['%G', 'E']);
+      parser2.clearEscHandler('%G');
+      parser2.clearEscHandler('%G'); // should not throw
+      clearAccu();
+      parser2.parse(INPUT);
+      chai.expect(esc).eql(['E']);
+      parser2.clearEscHandler('E');
+      clearAccu();
+      parser2.parse(INPUT);
+      chai.expect(esc).eql([]);
+    });
+    it('CSI handler', function(): void {
+      parser2.setCsiHandler('m', function(params: number[], collect: string): void {
+        csi.push(['m', params, collect]);
+      });
+      parser2.parse(INPUT);
+      chai.expect(csi).eql([['m', [1, 31], ''], ['m', [0], '']]);
+      parser2.clearCsiHandler('m');
+      parser2.clearCsiHandler('m'); // should not throw
+      clearAccu();
+      parser2.parse(INPUT);
+      chai.expect(csi).eql([]);
+    });
+    it('EXECUTE handler', function(): void {
+      parser2.setExecuteHandler('\n', function(): void {
+        exe.push('\n');
+      });
+      parser2.setExecuteHandler('\r', function(): void {
+        exe.push('\r');
+      });
+      parser2.parse(INPUT);
+      chai.expect(exe).eql(['\r', '\n']);
+      parser2.clearExecuteHandler('\r');
+      parser2.clearExecuteHandler('\r'); // should not throw
+      clearAccu();
+      parser2.parse(INPUT);
+      chai.expect(exe).eql(['\n']);
+    });
+    it('OSC handler', function(): void {
+      parser2.setOscHandler(1, function(data: string): void {
+        osc.push([1, data]);
+      });
+      parser2.parse(INPUT);
+      chai.expect(osc).eql([[1, 'foo=bar']]);
+      parser2.clearOscHandler(1);
+      parser2.clearOscHandler(1); // should not throw
+      clearAccu();
+      parser2.parse(INPUT);
+      chai.expect(osc).eql([]);
+    });
+    it('DCS handler', function(): void {
+      parser2.setDcsHandler('+p', {
+        hook: function(collect: string, params: number[], flag: number): void {
+          dcs.push(['hook', collect, params, flag]);
+        },
+        put: function(data: string, start: number, end: number): void {
+          dcs.push(['put', data.substring(start, end)]);
+        },
+        unhook: function(): void {
+          dcs.push(['unhook']);
+        }
+      });
+      parser2.parse('\x1bP1;2;3+pabc');
+      parser2.parse(';de\x9c');
+      chai.expect(dcs).eql([
+        ['hook', '+', [1, 2, 3], 'p'.charCodeAt(0)],
+        ['put', 'abc'], ['put', ';de'],
+        ['unhook']
+      ]);
+      parser2.clearDcsHandler('+p');
+      parser2.clearDcsHandler('+p'); // should not throw
+      clearAccu();
+      parser2.parse('\x1bP1;2;3+pabc');
+      parser2.parse(';de\x9c');
+      chai.expect(dcs).eql([]);
+    });
+    it('ERROR handler', function(): void {
+      let errorState: IParsingState = null;
+      parser2.setErrorHandler(function(state: IParsingState): IParsingState {
+        errorState = state;
+        return state;
+      });
+      parser2.parse('\x1b[1;2;€;3m'); // faulty escape sequence
+      chai.expect(errorState).eql({
+        position: 6,
+        code: '€'.charCodeAt(0),
+        currentState: ParserState.CSI_PARAM,
+        print: -1,
+        dcs: -1,
+        osc: '',
+        collect: '',
+        params: [1, 2, 0], // extra zero here
+        abort: false
+      });
+      parser2.clearErrorHandler();
+      parser2.clearErrorHandler(); // should not throw
+      errorState = null;
+      parser2.parse('\x1b[1;2;a;3m');
+      chai.expect(errorState).eql(null);
+    });
+  });
+  // TODO: error conditions
 });
