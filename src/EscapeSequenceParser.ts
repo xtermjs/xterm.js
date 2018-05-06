@@ -28,9 +28,9 @@ export class TransitionTable {
   public table: Uint8Array | number[];
 
   constructor(length: number) {
-    this.table = (typeof Uint32Array === 'undefined')
+    this.table = (typeof Uint8Array === 'undefined')
       ? new Array(length)
-      : new Uint32Array(length);
+      : new Uint8Array(length);
   }
 
   /**
