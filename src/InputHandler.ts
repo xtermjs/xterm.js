@@ -51,14 +51,18 @@ class RequestTerminfo implements IDcsHandler {
  */
 class DECRQSS implements IDcsHandler {
   private _data: string;
+
   constructor(private _terminal: any) { }
+
   hook(collect: string, params: number[], flag: number): void {
     // reset data
     this._data = '';
   }
+
   put(data: string, start: number, end: number): void {
     this._data += data.substring(start, end);
   }
+
   unhook(): void {
     switch (this._data) {
       // valid: DCS 1 $ r Pt ST (xterm)
@@ -71,7 +75,7 @@ class DECRQSS implements IDcsHandler {
                 ';' + (this._terminal.buffer.scrollBottom + 1) + 'r';
         return this._terminal.send(C0.ESC + 'P1' + '$r' + pt + C0.ESC + '\\');
       case 'm': // SGR
-        // FIXME: report real settings instead of 0m
+        // TODO: report real settings instead of 0m
         return this._terminal.send(C0.ESC + 'P1' + '$r' + '0m' + C0.ESC + '\\');
       case ' q': // DECSCUSR
         const STYLES = {'block': 2, 'underline': 4, 'bar': 6};
@@ -189,8 +193,7 @@ export class InputHandler implements IInputHandler {
     this._parser.setExecuteHandler(C0.HT, () => this.tab());
     this._parser.setExecuteHandler(C0.SO, () => this.shiftOut());
     this._parser.setExecuteHandler(C0.SI, () => this.shiftIn());
-    // FIXME:   What do to with missing? Old code just added those to print, but that's wrong
-    //          behavior for most control codes.
+    // FIXME:   What do to with missing? Old code just added those to print.
 
     // some C1 control codes - FIXME: should those be enabled by default?
     this._parser.setExecuteHandler(C1.IND, () => this.index());
@@ -264,7 +267,7 @@ export class InputHandler implements IInputHandler {
       this._parser.setEscHandler('+' + flag, () => this.selectCharset('+' + flag));
       this._parser.setEscHandler('-' + flag, () => this.selectCharset('-' + flag));
       this._parser.setEscHandler('.' + flag, () => this.selectCharset('.' + flag));
-      this._parser.setEscHandler('/' + flag, () => this.selectCharset('/' + flag)); // FIXME: supported?
+      this._parser.setEscHandler('/' + flag, () => this.selectCharset('/' + flag)); // TODO: supported?
     }
 
     /**
@@ -1889,7 +1892,7 @@ export class InputHandler implements IInputHandler {
    */
   public selectCharset(collectAndFlag: string): void {
     if (collectAndFlag.length !== 2) return this.selectDefaultCharset();
-    if (collectAndFlag[0] === '/') return;  // FIXME: Is this supported?
+    if (collectAndFlag[0] === '/') return;  // TODO: Is this supported?
     this._terminal.setgCharset(GLEVEL[collectAndFlag[0]], CHARSETS[collectAndFlag[1]] || DEFAULT_CHARSET);
   }
 
@@ -1900,7 +1903,7 @@ export class InputHandler implements IInputHandler {
    *   Moves the cursor down one line in the same column.
    */
   public index(): void {
-    this._terminal.index();  // FIXME: save to move the implementation from terminal?
+    this._terminal.index();  // TODO: save to move from terminal?
   }
 
   /**
@@ -1911,7 +1914,7 @@ export class InputHandler implements IInputHandler {
    *   the value of the active column when the terminal receives an HTS.
    */
   public tabSet(): void {
-    this._terminal.tabSet();  // FIXME: save to move the implementation from terminal?
+    this._terminal.tabSet();  // TODO: save to move from terminal?
   }
 
   /**
@@ -1922,7 +1925,7 @@ export class InputHandler implements IInputHandler {
    *   the page scrolls down.
    */
   public reverseIndex(): void {
-    this._terminal.reverseIndex();  // FIXME: save to move the implementation from terminal?
+    this._terminal.reverseIndex();  // TODO: save to move from terminal?
   }
 
   /**
@@ -1931,7 +1934,8 @@ export class InputHandler implements IInputHandler {
    *   Reset to initial state.
    */
   public reset(): void {
-    this._terminal.reset();  // FIXME: save to move the implementation from terminal?
+    this._parser.reset();
+    this._terminal.reset();  // TODO: save to move from terminal?
   }
 
   /**
@@ -1945,6 +1949,6 @@ export class InputHandler implements IInputHandler {
    *   you use another locking shift. (partly supported)
    */
   public setgLevel(level: number): void {
-    this._terminal.setgLevel(level);  // FIXME: save to move the implementation from terminal?
+    this._terminal.setgLevel(level);  // TODO: save to move from terminal?
   }
 }

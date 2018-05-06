@@ -205,6 +205,7 @@ class DcsDummy implements IDcsHandler {
  * the optional `transitions` contructor argument and
  * reimplement the `parse` method.
  * NOTE: The parameter element notation is currently not supported.
+ * TODO: implement error recovery hook via error handler return values
  */
 export class EscapeSequenceParser implements IEscapeSequenceParser {
   public initialState: number;
@@ -433,7 +434,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
                 abort: false
               });
             if (inject.abort) return;
-          // FIXME: inject return values
+          // TODO: inject return values
             error = false;
           }
           break;
@@ -500,7 +501,10 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
             if (idx === -1) {
               this._oscHandlerFb(-1, osc);  // this is an error (malformed OSC)
             } else {
-              let identifier = parseInt(osc.substring(0, idx)); // NaN not handled here
+              // Note: NaN is not handled here
+              // either catch it with the fallback handler
+              // or with an explicit NaN OSC handler
+              let identifier = parseInt(osc.substring(0, idx));
               let content = osc.substring(idx + 1);
               callback = this._oscHandlers[identifier];
               if (callback) callback(content);

@@ -422,7 +422,7 @@ export const enum ParserAction {
 
 /**
  * Internal state of EscapeSequenceParser.
- * Used as argument to the error handler to allow
+ * Used as argument of the error handler to allow
  * introspection at runtime on parse errors.
  * Return it with altered values to recover from
  * faulty states (not yet supported).

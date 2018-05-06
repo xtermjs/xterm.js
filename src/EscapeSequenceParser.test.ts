@@ -1239,5 +1239,5 @@ describe('EscapeSequenceParser', function (): void {
       chai.expect(errorState).eql(null);
     });
   });
-  // TODO: error conditions
+  // TODO: error conditions and error recovery (not implemented yet in parser)
 });
