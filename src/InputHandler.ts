@@ -119,17 +119,17 @@ export class InputHandler implements IInputHandler {
     /**
      * custom fallback handlers
      */
-    this._parser.setCsiHandlerFallback((...params: any[]) => {
-      this._terminal.error('Unknown CSI code: ', params);
+    this._parser.setCsiHandlerFallback((collect: string, params: number[], flag: number) => {
+      this._terminal.error('Unknown CSI code: ', collect, params, String.fromCharCode(flag));
     });
-    this._parser.setEscHandlerFallback((...params: any[]) => {
-      this._terminal.error('Unknown ESC code: ', params);
+    this._parser.setEscHandlerFallback((collect: string, flag: number) => {
+      this._terminal.error('Unknown ESC code: ', collect, String.fromCharCode(flag));
     });
-    this._parser.setExecuteHandlerFallback((...params: any[]) => {
-      this._terminal.error('Unknown EXECUTE code: ', params);
+    this._parser.setExecuteHandlerFallback((code: number) => {
+      this._terminal.error('Unknown EXECUTE code: ', code);
     });
-    this._parser.setOscHandlerFallback((...params: any[]) => {
-      this._terminal.error('Unknown OSC code: ', params);
+    this._parser.setOscHandlerFallback((identifier: number, data: string) => {
+      this._terminal.error('Unknown OSC code: ', identifier, data);
     });
 
     /**

@@ -110,18 +110,18 @@ let state: any;
 // parser with Uint8Array based transition table
 let parserUint = new TestEscapeSequenceParser(VT500_TRANSITION_TABLE);
 parserUint.setPrintHandler(testTerminal.print.bind(testTerminal));
-parserUint.setCsiHandlerFallback((...params: any[]) => {
-  testTerminal.actionCSI(params[0], params[1], String.fromCharCode(params[2]));
+parserUint.setCsiHandlerFallback((collect: string, params: number[], flag: number) => {
+  testTerminal.actionCSI(collect, params, String.fromCharCode(flag));
 });
-parserUint.setEscHandlerFallback((...params: any[]) => {
-  testTerminal.actionESC(params[0], String.fromCharCode(params[1]));
+parserUint.setEscHandlerFallback((collect: string, flag: number) => {
+  testTerminal.actionESC(collect, String.fromCharCode(flag));
 });
-parserUint.setExecuteHandlerFallback((...params: any[]) => {
-  testTerminal.actionExecute(String.fromCharCode(params[0]));
+parserUint.setExecuteHandlerFallback((code: number) => {
+  testTerminal.actionExecute(String.fromCharCode(code));
 });
-parserUint.setOscHandlerFallback((...params: any[]) => {
-  if (params[0] === -1) testTerminal.actionOSC(params[1]);  // handle error condition silently
-  else testTerminal.actionOSC(params[0] + ';' + params[1]);
+parserUint.setOscHandlerFallback((identifier: number, data: string) => {
+  if (identifier === -1) testTerminal.actionOSC(data);  // handle error condition silently
+  else testTerminal.actionOSC('' + identifier + ';' + data);
 });
 parserUint.setDcsHandlerFallback(new DcsTest());
 
@@ -135,18 +135,18 @@ for (let i = 0; i < VT500_TRANSITION_TABLE.table.length; ++i) {
 // parser with array based transition table
 let parserArray = new TestEscapeSequenceParser(VT500_TRANSITION_TABLE_ARRAY);
 parserArray.setPrintHandler(testTerminal.print.bind(testTerminal));
-parserArray.setCsiHandlerFallback((...params: any[]) => {
-  testTerminal.actionCSI(params[0], params[1], String.fromCharCode(params[2]));
+parserArray.setCsiHandlerFallback((collect: string, params: number[], flag: number) => {
+  testTerminal.actionCSI(collect, params, String.fromCharCode(flag));
 });
-parserArray.setEscHandlerFallback((...params: any[]) => {
-  testTerminal.actionESC(params[0], String.fromCharCode(params[1]));
+parserArray.setEscHandlerFallback((collect: string, flag: number) => {
+  testTerminal.actionESC(collect, String.fromCharCode(flag));
 });
-parserArray.setExecuteHandlerFallback((...params: any[]) => {
-  testTerminal.actionExecute(String.fromCharCode(params[0]));
+parserArray.setExecuteHandlerFallback((code: number) => {
+  testTerminal.actionExecute(String.fromCharCode(code));
 });
-parserArray.setOscHandlerFallback((...params: any[]) => {
-  if (params[0] === -1) testTerminal.actionOSC(params[1]);  // handle error condition silently
-  else testTerminal.actionOSC(params[0] + ';' + params[1]);
+parserArray.setOscHandlerFallback((identifier: number, data: string) => {
+  if (identifier === -1) testTerminal.actionOSC(data);  // handle error condition silently
+  else testTerminal.actionOSC('' + identifier + ';' + data);
 });
 parserArray.setDcsHandlerFallback(new DcsTest());
 

@@ -227,10 +227,10 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
 
   // fallback handlers
   protected _printHandlerFb: (data: string, start: number, end: number) => void;
-  protected _executeHandlerFb: (...params: any[]) => void;
-  protected _csiHandlerFb: (...params: any[]) => void;
-  protected _escHandlerFb: (...params: any[]) => void;
-  protected _oscHandlerFb: (...params: any[]) => void;
+  protected _executeHandlerFb: (code: number) => void;
+  protected _csiHandlerFb: (collect: string, params: number[], flag: number) => void;
+  protected _escHandlerFb: (collect: string, flag: number) => void;
+  protected _oscHandlerFb: (identifier: number, data: string) => void;
   protected _dcsHandlerFb: IDcsHandler;
   protected _errorHandlerFb: (state: IParsingState) => IParsingState;
 
@@ -243,10 +243,10 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
 
     // set default fallback handlers and handler lookup containers
     this._printHandlerFb = (data, start, end): void => { };
-    this._executeHandlerFb = (...params: any[]): void => { };
-    this._csiHandlerFb = (...params: any[]): void => { };
-    this._escHandlerFb = (...params: any[]): void => { };
-    this._oscHandlerFb = (...params: any[]): void => { };
+    this._executeHandlerFb = (code: number): void => { };
+    this._csiHandlerFb = (collect: string, params: number[], flag: number): void => { };
+    this._escHandlerFb = (collect: string, flag: number): void => { };
+    this._oscHandlerFb = (identifier: number, data: string): void => { };
     this._dcsHandlerFb = new DcsDummy();
     this._errorHandlerFb = (state: IParsingState): IParsingState => state;
     this._printHandler = this._printHandlerFb;
@@ -272,7 +272,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
   clearExecuteHandler(flag: string): void {
     if (this._executeHandlers[flag.charCodeAt(0)]) delete this._executeHandlers[flag.charCodeAt(0)];
   }
-  setExecuteHandlerFallback(callback: (...params: any[]) => void): void {
+  setExecuteHandlerFallback(callback: (code: number) => void): void {
     this._executeHandlerFb = callback;
   }
 
@@ -282,7 +282,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
   clearCsiHandler(flag: string): void {
     if (this._csiHandlers[flag.charCodeAt(0)]) delete this._csiHandlers[flag.charCodeAt(0)];
   }
-  setCsiHandlerFallback(callback: (...params: any[]) => void): void {
+  setCsiHandlerFallback(callback: (collect: string, params: number[], flag: number) => void): void {
     this._csiHandlerFb = callback;
   }
 
@@ -292,7 +292,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
   clearEscHandler(collectAndFlag: string): void {
     if (this._escHandlers[collectAndFlag]) delete this._escHandlers[collectAndFlag];
   }
-  setEscHandlerFallback(callback: (...params: any[]) => void): void {
+  setEscHandlerFallback(callback: (collect: string, flag: number) => void): void {
     this._escHandlerFb = callback;
   }
 
@@ -302,7 +302,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
   clearOscHandler(ident: number): void {
     if (this._oscHandlers[ident]) delete this._oscHandlers[ident];
   }
-  setOscHandlerFallback(callback: (...params: any[]) => void): void {
+  setOscHandlerFallback(callback: (identifier: number, data: string) => void): void {
     this._oscHandlerFb = callback;
   }
 
