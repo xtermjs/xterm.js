@@ -115,7 +115,7 @@ export class InputHandler implements IInputHandler {
   private _surrogateHigh: string;
 
   constructor(
-      private _terminal: any,
+      private _terminal: any, // TODO: reestablish IInputHandlingTerminal here
       private _parser: IEscapeSequenceParser = new EscapeSequenceParser())
   {
     this._surrogateHigh = '';
@@ -1819,7 +1819,7 @@ export class InputHandler implements IInputHandler {
 
   /**
    * OSC 0; <data> ST (set icon name + window title)
-   * OSC 2; <data> ST (set icon name)
+   * OSC 2; <data> ST (set window title)
    *   Proxy to set window title. Icon name is not supported.
    */
   public setTitle(data: string): void {

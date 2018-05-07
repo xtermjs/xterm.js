@@ -6,7 +6,7 @@
 import { ParserState, ParserAction, IParsingState, IDcsHandler, IEscapeSequenceParser } from './Types';
 
 /**
- * Returns an array fulled with numbers between the low and high parameters (inclusive).
+ * Returns an array filled with numbers between the low and high parameters (right exclusive).
  * @param low The low number.
  * @param high The high number.
  */
@@ -34,7 +34,7 @@ export class TransitionTable {
   }
 
   /**
-   * Add a new transition to the transition table.
+   * Add a transition to the transition table.
    * @param code input character code
    * @param state current parser state
    * @param action parser action to be done
@@ -45,7 +45,7 @@ export class TransitionTable {
   }
 
   /**
-   * Add transitions for multiple input characters codes.
+   * Add transitions for multiple input character codes.
    * @param codes input character code array
    * @param state current parser state
    * @param action parser action to be done
@@ -497,6 +497,8 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
           break;
         case ParserAction.OSC_END:
           if (osc && code !== 0x18 && code !== 0x1a) {
+            // NOTE: OSC subparsing is not part of the original parser
+            // we do basic identifier parsing here to offer a jump table for OSC as well
             let idx = osc.indexOf(';');
             if (idx === -1) {
               this._oscHandlerFb(-1, osc);  // this is an error (malformed OSC)

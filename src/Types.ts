@@ -454,8 +454,13 @@ export interface IParsingState {
 * EscapeSequenceParser handles DCS commands via separate
 * subparsers that get hook/unhooked and can handle
 * arbitrary amount of print data.
-* NOTE: EscapeSequenceParser might call `put` several times,
-* therefore you have to collect `data` until unhook is called.
+* On entering a DSC sequence `hook` is called by
+* `EscapeSequenceParser`. Use it to initialize or reset
+* states needed to handle the current DCS sequence.
+* EscapeSequenceParser will call `put` several times if the
+* parsed string got splitted, therefore you might have to collect
+* `data` until `unhook` is called. `unhook` marks the end
+* of the current DCS sequence.
 */
 export interface IDcsHandler {
   hook(collect: string, params: number[], flag: number): void;
