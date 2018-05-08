@@ -97,6 +97,8 @@ const WRITE_BATCH_SIZE = 300;
 const DEFAULT_OPTIONS: ITerminalOptions = {
   cols: 80,
   rows: 24,
+  maxCols: 300,
+  maxRows: 500,
   convertEol: false,
   termName: 'xterm',
   cursorBlink: false,
@@ -1949,8 +1951,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       return;
     }
 
-    if (x < 1) x = 1;
-    if (y < 1) y = 1;
+    x = Math.max(1, Math.min(this.options.maxCols, x));
+    y = Math.max(1, Math.min(this.options.maxRows, y));
 
     this.buffers.resize(x, y);
 

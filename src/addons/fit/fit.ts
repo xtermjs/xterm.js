@@ -23,9 +23,17 @@ export interface IGeometry {
 }
 
 export function proposeGeometry(term: Terminal): IGeometry {
-  if (!term.element.parentElement) {
+  if (!(<any>term).renderer.dimensions.actualCellWidth || !(<any>term).renderer.dimensions.actualCellWidth) {
+    if (!(<any>term).charMeasure.width || !(<any>term).charMeasure.height) {
+      (<any>term).charMeasure.measure((<any>term).options);
+    }
+    (<any>term).renderer._updateDimensions();
+  }
+
+  if (!(<any>term).element.parentElement || !(<any>term).renderer.dimensions.actualCellWidth || !(<any>term).renderer.dimensions.actualCellWidth) {
     return null;
   }
+
   const parentElementStyle = window.getComputedStyle(term.element.parentElement);
   const parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height'));
   const parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')));

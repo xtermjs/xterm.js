@@ -129,6 +129,16 @@ declare module 'xterm' {
      * The color theme of the terminal.
      */
     theme?: ITheme;
+
+    /**
+     * The max number of columns in the terminal.
+     */
+    maxCols?: number;
+
+    /**
+     * The max number of rows in the terminal.
+     */
+    maxRows?: number;
   }
 
   /**
