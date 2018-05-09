@@ -38,20 +38,18 @@ export class AltClickHandler {
       false
     );
 
-    if (!coordinates) {
-      return null;
+    if (coordinates) {
+      [this._endCol, this._endRow] = coordinates.map((coordinate: number) => {
+        return coordinate - 1;
+      });
     }
-
-    [this._endCol, this._endRow] = coordinates.map((coordinate: number) => {
-      return coordinate - 1;
-    });
   }
 
   /**
    * Writes the escape sequences of arrows to the terminal
    */
   public move(): void {
-    if (this._mouseEvent.altKey) {
+    if (this._mouseEvent.altKey && this._endCol !== undefined && this._endRow !== undefined) {
       this._terminal.send(this._arrowSequences());
     }
   }
