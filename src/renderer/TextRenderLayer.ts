@@ -116,13 +116,6 @@ export class TextRenderLayer extends BaseRenderLayer {
           }
         }
 
-        if (flags & FLAGS.BOLD) {
-          // Convert the FG color to the bold variant
-          if (fg < 8) {
-            fg += 8;
-          }
-        }
-
         callback(code, char, width, x, y, fg, bg, flags);
       }
     }
