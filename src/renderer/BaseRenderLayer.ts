@@ -248,7 +248,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     const isBasicColor = fg < 16;
     const isDefaultColor = fg >= 256;
     const isDefaultBackground = bg >= 256;
-    const drawInBrightColor = (terminal.options.drawBoldTextInBrightColors !== false && bold && fg < 8);
+    const drawInBrightColor = (terminal.options.drawBoldTextInBrightColors && bold && fg < 8);
     if (this._charAtlas && isAscii && (isBasicColor || isDefaultColor) && isDefaultBackground && !italic) {
       let colorIndex: number;
       if (isDefaultColor) {
