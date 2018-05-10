@@ -250,6 +250,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     const isDefaultBackground = bg >= 256;
     const drawInBrightColor = (terminal.options.drawBoldTextInBrightColors && bold && fg < 8);
     if (this._charAtlas && isAscii && (isBasicColor || isDefaultColor) && isDefaultBackground && !italic) {
+      this._ctx.save(); // we may set globalAlpha, so we need to be able to restore
       let colorIndex: number;
       if (isDefaultColor) {
         colorIndex = (bold && terminal.options.enableBold ? 1 : 0);
@@ -275,6 +276,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
           y * this._scaledCellHeight + this._scaledCharTop,
           charAtlasCellWidth,
           this._scaledCharHeight);
+      this._ctx.restore();
     } else {
       this._drawUncachedChar(terminal, char, width, fg + (drawInBrightColor ? 8 : 0), x, y, bold && terminal.options.enableBold, dim, italic);
     }
