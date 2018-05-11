@@ -148,6 +148,7 @@ computational environment for Jupyter, supporting interactive data science and s
 - [**FreeMAN**](https://github.com/matthew-matvei/freeman): A free, cross-platform file manager for power users
 - [**Fluent Terminal**](https://github.com/felixse/FluentTerminal): A terminal emulator based on UWP and web technologies.
 - [**Hyper**](https://hyper.is): A terminal built on web technologies
+- [**Diag**](https://diag.ai): A better way to troubleshoot problems faster. Capture, share and reapply troubleshooting knowledge so you can focus on solving problems that matter.
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list.
 
