@@ -41,7 +41,7 @@ To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to t
       <script>
       	var term = new Terminal();
         term.open(document.getElementById('terminal'));
-        term.write('Hello from \033[1;3;31mxterm.js\033[0m $ ')
+        term.write('Hello from \x1B[1;3;31mxterm.js\x1B[0m $ ')
       </script>
     </body>
   </html>
@@ -56,8 +56,6 @@ The proposed way to load xterm.js is via the ES6 module syntax.
 ```javascript
 import { Terminal } from 'xterm';
 ```
-
-*Note: There are currently no typings for addons so you will need to upcast if using TypeScript, eg. `(<any>xterm).fit()`.*
 
 ### Addons
 
@@ -74,6 +72,21 @@ Terminal.applyAddon(fit);
 
 var xterm = new Terminal();  // Instantiate the terminal
 xterm.fit();                 // Use the `fit` method, provided by the `fit` addon
+```
+
+#### Importing Addons in TypeScript
+
+There are currently no typings for addons if they are accessed via extending Terminal prototype, so you will need to upcast if using TypeScript, eg. `(<any>xterm).fit()`.
+
+Alternatively, you can import addon function and enhance the terminal on demand. This would have better typing support and is friendly to treeshaking. E.g.:
+
+```typescript
+import { Terminal } from 'xterm';
+import { fit } from 'xterm/lib/addons/fit/fit';
+const xterm = new Terminal();
+
+// Fit the terminal when necessary:
+fit(xterm);
 ```
 
 #### Third party addons
