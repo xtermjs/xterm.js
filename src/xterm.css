@@ -135,6 +135,10 @@
     cursor: text;
 }
 
+.xterm.xterm-cursor-pointer {
+    cursor: pointer !important;
+}
+
 .xterm .xterm-accessibility,
 .xterm .xterm-message {
     position: absolute;
@@ -152,8 +156,4 @@
     width: 1px;
     height: 1px;
     overflow: hidden;
-}
-
-.xterm-cursor-pointer {
-    cursor: pointer;
 }
