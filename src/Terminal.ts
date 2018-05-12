@@ -1324,7 +1324,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
     if (this.writeBuffer.length > 0) {
       // Allow renderer to catch up before processing the next batch
-      setTimeout(() => this._innerWrite(), 0);
+      this._innerWrite();
     } else {
       this._writeInProgress = false;
     }
