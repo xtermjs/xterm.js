@@ -1290,7 +1290,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // Kick off a write which will write all data in sequence recursively
       this._writeInProgress = true;
       // Kick off an async innerWrite so more writes can come in while processing data
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         this._innerWrite();
       });
     }
@@ -1324,7 +1324,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
     if (this.writeBuffer.length > 0) {
       // Allow renderer to catch up before processing the next batch
-      setTimeout(() => this._innerWrite(), 0);
+      this._innerWrite();
     } else {
       this._writeInProgress = false;
     }
