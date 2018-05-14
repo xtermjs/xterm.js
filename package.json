@@ -46,7 +46,7 @@
   "scripts": {
     "start": "node demo/app",
     "start-zmodem": "node demo/zmodem/app",
-    "lint": "tslint src/*.ts src/**/*.ts src/addons/**/*.ts",
+    "lint": "tslint 'src/**/*.ts'",
     "test": "npm-run-all mocha lint",
     "mocha": "gulp test",
     "build:docs": "jsdoc -c jsdoc.json",

@@ -103,10 +103,9 @@ export function generateCharAtlas(context: Window, canvasFactory: (width: number
     if (canvas instanceof HTMLCanvasElement) {
       // Just return the HTMLCanvas if it's a HTMLCanvasElement
       return canvas;
-    } else {
-      // Transfer to an ImageBitmap is this is an OffscreenCanvas
-      return new Promise(r => r(canvas.transferToImageBitmap()));
     }
+    // Transfer to an ImageBitmap is this is an OffscreenCanvas
+    return new Promise(r => r(canvas.transferToImageBitmap()));
   }
 
   const charAtlasImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
