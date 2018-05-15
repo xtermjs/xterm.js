@@ -17,7 +17,7 @@ export type LineData = CharData[];
 export type LinkMatcherHandler = (event: MouseEvent, uri: string) => void;
 export type LinkMatcherValidationCallback = (uri: string, callback: (isValid: boolean) => void) => void;
 
-export enum LinkHoverEventTypes {
+export const enum LinkHoverEventTypes {
   HOVER = 'linkhover',
   TOOLTIP = 'linktooltip',
   LEAVE = 'linkleave'
@@ -248,7 +248,7 @@ export interface ITerminalOptions extends IPublicTerminalOptions {
 }
 
 export interface IBuffer {
-  lines: ICircularList<LineData>;
+  readonly lines: ICircularList<LineData>;
   ydisp: number;
   ybase: number;
   y: number;

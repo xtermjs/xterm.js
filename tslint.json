@@ -1,4 +1,7 @@
 {
+  "rulesDirectory": [
+    "tslint-consistent-codestyle"
+  ],
   "rules": {
     "array-type": [
       true,
@@ -86,6 +89,17 @@
       "check-type",
       "check-type-operator",
       "check-preblock"
+    ],
+
+    "naming-convention": [
+      true,
+      {"type": "property", "modifiers": ["public", "static", "const"], "format": "UPPER_CASE"}
+    ],
+    "no-else-after-return": {
+      "options": "allow-else-if"
+    },
+    "prefer-const-enum": [
+      true
     ]
   }
 }

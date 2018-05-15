@@ -32,7 +32,7 @@ export class TextRenderLayer extends BaseRenderLayer {
     super.resize(terminal, dim);
 
     // Clear the character width cache if the font or width has changed
-    const terminalFont = this._getFont(terminal, false);
+    const terminalFont = this._getFont(terminal, false, false);
     if (this._characterWidth !== dim.scaledCharWidth || this._characterFont !== terminalFont) {
       this._characterWidth = dim.scaledCharWidth;
       this._characterFont = terminalFont;
@@ -48,21 +48,24 @@ export class TextRenderLayer extends BaseRenderLayer {
     this.clearAll();
   }
 
-  public onGridChanged(terminal: ITerminal, startRow: number, endRow: number): void {
-    // Resize has not been called yet
-    if (this._state.cache.length === 0) {
-      return;
-    }
-
-    for (let y = startRow; y <= endRow; y++) {
+  private _forEachCell(
+    terminal: ITerminal,
+    firstRow: number,
+    lastRow: number,
+    callback: (
+      code: number,
+      char: string,
+      width: number,
+      x: number,
+      y: number,
+      fg: number,
+      bg: number,
+      flags: number
+    ) => void
+  ): void {
+    for (let y = firstRow; y <= lastRow; y++) {
       const row = y + terminal.buffer.ydisp;
       const line = terminal.buffer.lines.get(row);
-
-      this.clearCells(0, y, terminal.cols, 1);
-      // for (let x = 0; x < terminal.cols; x++) {
-      //   this._state.cache[x][y] = null;
-      // }
-
       for (let x = 0; x < terminal.cols; x++) {
         const charData = line[x];
         const code: number = <number>charData[CHAR_DATA_CODE_INDEX];
@@ -73,51 +76,12 @@ export class TextRenderLayer extends BaseRenderLayer {
         // The character to the left is a wide character, drawing is owned by
         // the char at x-1
         if (width === 0) {
-          // this._state.cache[x][y] = null;
-          continue;
-        }
-
-        // If the character is a space and the character to the left is an
-        // overlapping character, skip the character and allow the overlapping
-        // char to take full control over this character's cell.
-        if (code === 32 /*' '*/) {
-          if (x > 0) {
-            const previousChar: CharData = line[x - 1];
-            if (this._isOverlapping(previousChar)) {
-              continue;
-            }
-          }
-        }
-
-        // Skip rendering if the character is identical
-        // const state = this._state.cache[x][y];
-        // if (state && state[CHAR_DATA_CHAR_INDEX] === char && state[CHAR_DATA_ATTR_INDEX] === attr) {
-        //   // Skip render, contents are identical
-        //   this._state.cache[x][y] = charData;
-        //   continue;
-        // }
-
-        // Clear the old character was not a space with the default background
-        // const wasInverted = !!(state && state[CHAR_DATA_ATTR_INDEX] && state[CHAR_DATA_ATTR_INDEX] >> 18 & FLAGS.INVERSE);
-        // if (state && !(state[CHAR_DATA_CODE_INDEX] === 32 /*' '*/ && (state[CHAR_DATA_ATTR_INDEX] & 0x1ff) >= 256 && !wasInverted)) {
-        //   this._clearChar(x, y);
-        // }
-        // this._state.cache[x][y] = charData;
-
-        const flags = attr >> 18;
-        let bg = attr & 0x1ff;
-
-        // Skip rendering if the character is invisible
-        const isDefaultBackground = bg >= 256;
-        const isInvisible = flags & FLAGS.INVISIBLE;
-        const isInverted = flags & FLAGS.INVERSE;
-        if (!code || (code === 32 /*' '*/ && isDefaultBackground && !isInverted) || isInvisible) {
           continue;
         }
 
         // If the character is an overlapping char and the character to the right is a
         // space, take ownership of the cell to the right.
-        if (width !== 0 && this._isOverlapping(charData)) {
+        if (this._isOverlapping(charData)) {
           // If the character is overlapping, we want to force a re-render on every
           // frame. This is specifically to work around the case where two
           // overlaping chars `a` and `b` are adjacent, the cursor is moved to b and a
@@ -135,10 +99,12 @@ export class TextRenderLayer extends BaseRenderLayer {
           }
         }
 
+        const flags = attr >> 18;
+        let bg = attr & 0x1ff;
         let fg = (attr >> 9) & 0x1ff;
 
         // If inverse flag is on, the foreground should become the background.
-        if (isInverted) {
+        if (flags & FLAGS.INVERSE) {
           const temp = bg;
           bg = fg;
           fg = temp;
@@ -150,45 +116,101 @@ export class TextRenderLayer extends BaseRenderLayer {
           }
         }
 
-        // Clear the cell next to this character if it's wide
-        if (width === 2) {
-          // this.clearCells(x + 1, y, 1, 1);
-        }
-
-        // Draw background
-        if (bg < 256) {
-          this._ctx.save();
-          this._ctx.fillStyle = (bg === INVERTED_DEFAULT_COLOR ? this._colors.foreground.css : this._colors.ansi[bg].css);
-          this.fillCells(x, y, width, 1);
-          this._ctx.restore();
-        }
-
-        this._ctx.save();
-        if (flags & FLAGS.BOLD) {
-          this._ctx.font = this._getFont(terminal, true);
-          // Convert the FG color to the bold variant
-          if (fg < 8) {
-            fg += 8;
-          }
-        }
-
-        if (flags & FLAGS.UNDERLINE) {
-          if (fg === INVERTED_DEFAULT_COLOR) {
-            this._ctx.fillStyle = this._colors.background.css;
-          } else if (fg < 256) {
-            // 256 color support
-            this._ctx.fillStyle = this._colors.ansi[fg].css;
-          } else {
-            this._ctx.fillStyle = this._colors.foreground.css;
-          }
-          this.fillBottomLineAtCells(x, y);
-        }
-
-        this.drawChar(terminal, char, code, width, x, y, fg, bg, !!(flags & FLAGS.BOLD), !!(flags & FLAGS.DIM));
-
-        this._ctx.restore();
+        callback(code, char, width, x, y, fg, bg, flags);
       }
     }
+  }
+
+  /**
+   * Draws the background for a specified range of columns. Tries to batch adjacent cells of the
+   * same color together to reduce draw calls.
+   */
+  private _drawBackground(terminal: ITerminal, firstRow: number, lastRow: number): void {
+    const ctx = this._ctx;
+    const cols = terminal.cols;
+    let startX: number = 0;
+    let startY: number = 0;
+    let prevFillStyle: string | null = null;
+
+    ctx.save();
+
+    this._forEachCell(terminal, firstRow, lastRow, (code, char, width, x, y, fg, bg, flags) => {
+      // libvte and xterm both draw the background (but not foreground) of invisible characters,
+      // so we should too.
+      let nextFillStyle = null; // null represents default background color
+      if (bg === INVERTED_DEFAULT_COLOR) {
+        nextFillStyle = this._colors.foreground.css;
+      } else if (bg < 256) {
+        nextFillStyle = this._colors.ansi[bg].css;
+      }
+
+      if (prevFillStyle === null) {
+        // This is either the first iteration, or the default background was set. Either way, we
+        // don't need to draw anything.
+        startX = x;
+        startY = y;
+      } if (y !== startY) {
+        // our row changed, draw the previous row
+        ctx.fillStyle = prevFillStyle;
+        this.fillCells(startX, startY, cols - startX, 1);
+        startX = x;
+        startY = y;
+      } else if (prevFillStyle !== nextFillStyle) {
+        // our color changed, draw the previous characters in this row
+        ctx.fillStyle = prevFillStyle;
+        this.fillCells(startX, startY, x - startX, 1);
+        startX = x;
+        startY = y;
+      }
+
+      prevFillStyle = nextFillStyle;
+    });
+
+    // flush the last color we encountered
+    if (prevFillStyle !== null) {
+      ctx.fillStyle = prevFillStyle;
+      this.fillCells(startX, startY, cols - startX, 1);
+    }
+
+    ctx.restore();
+  }
+
+  private _drawForeground(terminal: ITerminal, firstRow: number, lastRow: number): void {
+    this._forEachCell(terminal, firstRow, lastRow, (code, char, width, x, y, fg, bg, flags) => {
+      if (flags & FLAGS.INVISIBLE) {
+        return;
+      }
+      if (flags & FLAGS.UNDERLINE) {
+        this._ctx.save();
+        if (fg === INVERTED_DEFAULT_COLOR) {
+          this._ctx.fillStyle = this._colors.background.css;
+        } else if (fg < 256) {
+          // 256 color support
+          this._ctx.fillStyle = this._colors.ansi[fg].css;
+        } else {
+          this._ctx.fillStyle = this._colors.foreground.css;
+        }
+        this.fillBottomLineAtCells(x, y);
+        this._ctx.restore();
+      }
+      this.drawChar(
+        terminal, char, code,
+        width, x, y,
+        fg, bg,
+        !!(flags & FLAGS.BOLD), !!(flags & FLAGS.DIM), !!(flags & FLAGS.ITALIC)
+      );
+    });
+  }
+
+  public onGridChanged(terminal: ITerminal, firstRow: number, lastRow: number): void {
+    // Resize has not been called yet
+    if (this._state.cache.length === 0) {
+      return;
+    }
+
+    this.clearCells(0, firstRow, terminal.cols, lastRow - firstRow + 1);
+    this._drawBackground(terminal, firstRow, lastRow);
+    this._drawForeground(terminal, firstRow, lastRow);
   }
 
   public onOptionsChanged(terminal: ITerminal): void {
