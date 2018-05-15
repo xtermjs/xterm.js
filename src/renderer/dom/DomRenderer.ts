@@ -85,8 +85,8 @@ export class DomRenderer extends EventEmitter implements IRenderer {
   private _updateDimensions(): void {
     this.dimensions.scaledCharWidth = this._terminal.charMeasure.width * window.devicePixelRatio;
     this.dimensions.scaledCharHeight = this._terminal.charMeasure.height * window.devicePixelRatio;
-    this.dimensions.scaledCellWidth = this._terminal.charMeasure.width * window.devicePixelRatio;
-    this.dimensions.scaledCellHeight = this._terminal.charMeasure.height * window.devicePixelRatio;
+    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth;
+    this.dimensions.scaledCellHeight = this.dimensions.scaledCharHeight;
     this.dimensions.scaledCharLeft = 0;
     this.dimensions.scaledCharTop = 0;
     this.dimensions.scaledCanvasWidth = this.dimensions.scaledCellWidth * this._terminal.cols;
@@ -117,6 +117,8 @@ export class DomRenderer extends EventEmitter implements IRenderer {
     this._dimensionsStyleElement.innerHTML = styles;
 
     this._selectionContainer.style.height = (<any>this._terminal)._viewportElement.style.height;
+    this._rowContainer.style.width = `${this.dimensions.canvasWidth}px`;
+    this._rowContainer.style.height = `${this.dimensions.canvasHeight}px`;
   }
 
   public setTheme(theme: ITheme | undefined): IColorSet {
@@ -199,6 +201,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
 
   public onResize(cols: number, rows: number): void {
     this._refreshRowElements(cols, rows);
+    this._updateDimensions();
   }
 
   public onCharSizeChanged(): void {
