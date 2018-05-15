@@ -706,10 +706,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // Performance: Add viewport and helper elements from the fragment
     this.element.appendChild(fragment);
 
-    if (this.options.rendererType === 'canvas') {
-      this.renderer = new Renderer(this, this.options.theme);
-    } else {
-      this.renderer = new DomRenderer(this, this.options.theme);
+    switch (this.options.rendererType) {
+      case 'canvas': this.renderer = new Renderer(this, this.options.theme); break;
+      case 'dom': this.renderer = new DomRenderer(this, this.options.theme); break;
+      default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
     }
     this.options.theme = null;
     this.viewport = new Viewport(this, this._viewportElement, this._viewportScrollArea, this.charMeasure);
