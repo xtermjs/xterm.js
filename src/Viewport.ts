@@ -95,6 +95,28 @@ export class Viewport implements IViewport {
   }
 
   /**
+   * Adjusts the viewport's scrollTop and delegates the actual scrolling
+   * to `onScroll`.
+   * @param amount The amount to scroll
+   * @returns a boolean indicating whether the viewport was scrolled
+   */
+  private _scroll(amount: number): boolean {
+    if (amount === 0) {
+      return false;
+    }
+    if (amount < 0) {
+      if (this._viewportElement.scrollTop === 0) {
+        return false;
+      }
+    }
+    else if (this._viewportElement.scrollTop === this._viewportElement.scrollHeight) {
+      return false;
+    }
+    this._viewportElement.scrollTop += amount;
+    return true;
+  }
+
+  /**
    * Handles scroll events on the viewport, calculating the new viewport and requesting the
    * terminal to scroll to it.
    * @param ev The scroll event.
@@ -112,19 +134,12 @@ export class Viewport implements IViewport {
   }
 
   /**
-   * Handles mouse wheel events by adjusting the viewport's scrollTop and delegating the actual
-   * scrolling to `onScroll`, this event needs to be attached manually by the consumer of
-   * `Viewport`.
+   * This event needs to be attached manually by the consumer of `Viewport`.
    * @param ev The mouse wheel event.
    */
-  public onWheel(ev: WheelEvent): void {
+  public onWheel(ev: WheelEvent): boolean {
     const amount = this._getPixelsScrolled(ev);
-    if (amount === 0) {
-      return;
-    }
-    this._viewportElement.scrollTop += amount;
-    // Prevent the page from scrolling when the terminal scrolls
-    ev.preventDefault();
+    return this._scroll(amount);
   }
 
   private _getPixelsScrolled(ev: WheelEvent): number {
@@ -179,13 +194,9 @@ export class Viewport implements IViewport {
    * Handles the touchmove event, scrolling the viewport if the position shifted.
    * @param ev The touch event.
    */
-  public onTouchMove(ev: TouchEvent): void {
-    let deltaY = this._lastTouchY - ev.touches[0].pageY;
+  public onTouchMove(ev: TouchEvent): boolean {
+    const deltaY = this._lastTouchY - ev.touches[0].pageY;
     this._lastTouchY = ev.touches[0].pageY;
-    if (deltaY === 0) {
-      return;
-    }
-    this._viewportElement.scrollTop += deltaY;
-    ev.preventDefault();
+    return this._scroll(deltaY);
   }
 }

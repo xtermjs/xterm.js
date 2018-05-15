@@ -1092,8 +1092,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // the shell for example
     on(el, 'wheel', (ev: WheelEvent) => {
       if (this.mouseEvents) return;
-      this.viewport.onWheel(ev);
-      return this.cancel(ev);
+      if (this.viewport.onWheel(ev)) {
+        return this.cancel(ev);
+      }
     });
 
     on(el, 'touchstart', (ev: TouchEvent) => {
@@ -1104,8 +1105,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     on(el, 'touchmove', (ev: TouchEvent) => {
       if (this.mouseEvents) return;
-      this.viewport.onTouchMove(ev);
-      return this.cancel(ev);
+      if (this.viewport.onTouchMove(ev)) {
+        return this.cancel(ev);
+      }
     });
   }
 
