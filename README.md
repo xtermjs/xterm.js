@@ -57,8 +57,6 @@ The proposed way to load xterm.js is via the ES6 module syntax.
 import { Terminal } from 'xterm';
 ```
 
-*Note: There are currently no typings for addons so you will need to upcast if using TypeScript, eg. `(<any>xterm).fit()`.*
-
 ### Addons
 
 Addons are JavaScript modules that extend the `Terminal` prototype with new methods and attributes to provide additional functionality. There are a handful available in the main repository in the `src/addons` directory and you can even write your own, by using xterm.js' public API.
@@ -74,6 +72,21 @@ Terminal.applyAddon(fit);
 
 var xterm = new Terminal();  // Instantiate the terminal
 xterm.fit();                 // Use the `fit` method, provided by the `fit` addon
+```
+
+#### Importing Addons in TypeScript
+
+There are currently no typings for addons if they are accessed via extending Terminal prototype, so you will need to upcast if using TypeScript, eg. `(<any>xterm).fit()`.
+
+Alternatively, you can import addon function and enhance the terminal on demand. This would have better typing support and is friendly to treeshaking. E.g.:
+
+```typescript
+import { Terminal } from 'xterm';
+import { fit } from 'xterm/lib/addons/fit/fit';
+const xterm = new Terminal();
+
+// Fit the terminal when necessary:
+fit(xterm);
 ```
 
 #### Third party addons
@@ -135,6 +148,7 @@ computational environment for Jupyter, supporting interactive data science and s
 - [**FreeMAN**](https://github.com/matthew-matvei/freeman): A free, cross-platform file manager for power users
 - [**Fluent Terminal**](https://github.com/felixse/FluentTerminal): A terminal emulator based on UWP and web technologies.
 - [**Hyper**](https://hyper.is): A terminal built on web technologies
+- [**Diag**](https://diag.ai): A better way to troubleshoot problems faster. Capture, share and reapply troubleshooting knowledge so you can focus on solving problems that matter.
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list.
 

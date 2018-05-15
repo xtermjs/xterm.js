@@ -60,6 +60,11 @@ declare module 'xterm' {
     disableStdin?: boolean;
 
     /**
+     * Whether to draw bold text in bright colors. The default is true.
+     */
+    drawBoldTextInBrightColors?: boolean;
+
+    /**
      * Whether to enable the rendering of bold text.
      *
      * @deprecated Use fontWeight and fontWeightBold instead.
