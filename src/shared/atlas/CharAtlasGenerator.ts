@@ -27,7 +27,7 @@ export function generateCharAtlas(context: Window, canvasFactory: (width: number
   const cellHeight = config.scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
   const canvas = canvasFactory(
     /*255 ascii chars*/255 * cellWidth,
-    (/*default+default bold*/2 + /*0-15*/16) * cellHeight
+    (/*default+default bold*/2 + /*0-15*/16 + /*0-15 bold*/16) * cellHeight
   );
   const ctx = canvas.getContext('2d', {alpha: config.allowTransparency});
 
@@ -64,11 +64,23 @@ export function generateCharAtlas(context: Window, canvasFactory: (width: number
   // Colors 0-15
   ctx.font = getFont(config.fontWeight, config);
   for (let colorIndex = 0; colorIndex < 16; colorIndex++) {
-    // colors 8-15 are bold
-    if (colorIndex === 8) {
-      ctx.font = getFont(config.fontWeightBold, config);
-    }
     const y = (colorIndex + 2) * cellHeight;
+    // Draw ascii characters
+    for (let i = 0; i < 256; i++) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(i * cellWidth, y, cellWidth, cellHeight);
+      ctx.clip();
+      ctx.fillStyle = config.colors.ansi[colorIndex].css;
+      ctx.fillText(String.fromCharCode(i), i * cellWidth, y);
+      ctx.restore();
+    }
+  }
+
+  // Colors 0-15 bold
+  ctx.font = getFont(config.fontWeightBold, config);
+  for (let colorIndex = 0; colorIndex < 16; colorIndex++) {
+    const y = (colorIndex + 2 + 16) * cellHeight;
     // Draw ascii characters
     for (let i = 0; i < 256; i++) {
       ctx.save();
@@ -91,10 +103,9 @@ export function generateCharAtlas(context: Window, canvasFactory: (width: number
     if (canvas instanceof HTMLCanvasElement) {
       // Just return the HTMLCanvas if it's a HTMLCanvasElement
       return canvas;
-    } else {
-      // Transfer to an ImageBitmap is this is an OffscreenCanvas
-      return new Promise(r => r(canvas.transferToImageBitmap()));
     }
+    // Transfer to an ImageBitmap is this is an OffscreenCanvas
+    return new Promise(r => r(canvas.transferToImageBitmap()));
   }
 
   const charAtlasImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);

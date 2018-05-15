@@ -243,23 +243,21 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param bold Whether the text is bold.
    */
   protected drawChar(terminal: ITerminal, char: string, code: number, width: number, x: number, y: number, fg: number, bg: number, bold: boolean, dim: boolean, italic: boolean): void {
-    let colorIndex = 0;
-    if (fg < 256) {
-      colorIndex = fg + 2;
-    } else {
-      // If default color and bold
-      if (bold && terminal.options.enableBold) {
-        colorIndex = 1;
-      }
-    }
     const isAscii = code < 256;
-    // A color is basic if it is one of the standard normal or bold weight
-    // colors of the characters held in the char atlas. Note that this excludes
-    // the normal weight _light_ color characters.
-    const isBasicColor = (colorIndex > 1 && fg < 16) && (fg < 8 || bold);
+    // A color is basic if it is one of the 4 bit ANSI colors.
+    const isBasicColor = fg < 16;
     const isDefaultColor = fg >= 256;
     const isDefaultBackground = bg >= 256;
+    const drawInBrightColor = (terminal.options.drawBoldTextInBrightColors && bold && fg < 8);
     if (this._charAtlas && isAscii && (isBasicColor || isDefaultColor) && isDefaultBackground && !italic) {
+      this._ctx.save(); // we may set globalAlpha, so we need to be able to restore
+      let colorIndex: number;
+      if (isDefaultColor) {
+        colorIndex = (bold && terminal.options.enableBold ? 1 : 0);
+      } else {
+        colorIndex = 2 + fg + (bold && terminal.options.enableBold ? 16 : 0) + (drawInBrightColor ? 8 : 0);
+      }
+
       // ImageBitmap's draw about twice as fast as from a canvas
       const charAtlasCellWidth = this._scaledCharWidth + CHAR_ATLAS_CELL_SPACING;
       const charAtlasCellHeight = this._scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
@@ -267,14 +265,6 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       // Apply alpha to dim the character
       if (dim) {
         this._ctx.globalAlpha = DIM_OPACITY;
-      }
-
-      // Draw the non-bold version of the same color if bold is not enabled
-      if (bold && !terminal.options.enableBold) {
-        // Ignore default color as it's not touched above
-        if (colorIndex > 1) {
-          colorIndex -= 8;
-        }
       }
 
       this._ctx.drawImage(this._charAtlas,
@@ -286,8 +276,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
           y * this._scaledCellHeight + this._scaledCharTop,
           charAtlasCellWidth,
           this._scaledCharHeight);
+      this._ctx.restore();
     } else {
-      this._drawUncachedChar(terminal, char, width, fg, x, y, bold && terminal.options.enableBold, dim, italic);
+      this._drawUncachedChar(terminal, char, width, fg + (drawInBrightColor ? 8 : 0), x, y, bold && terminal.options.enableBold, dim, italic);
     }
     // This draws the atlas (for debugging purposes)
     // this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);

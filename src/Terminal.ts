@@ -103,6 +103,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   cursorStyle: 'block',
   bellSound: DEFAULT_BELL_SOUND,
   bellStyle: 'none',
+  drawBoldTextInBrightColors: true,
   enableBold: true,
   fontFamily: 'courier-new, courier, monospace',
   fontSize: 15,
