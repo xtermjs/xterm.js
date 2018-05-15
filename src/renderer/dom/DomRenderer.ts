@@ -12,6 +12,7 @@ import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_ATTR_INDEX, CHAR_DATA_WIDTH_INDEX } from '../../Buffer';
 import { RenderDebouncer } from '../../utils/RenderDebouncer';
 
+const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
 const BOLD_CLASS = 'xterm-bold';
 const ITALIC_CLASS = 'xterm-italic';
@@ -20,6 +21,8 @@ const FG_CLASS_PREFIX = 'xterm-fg-';
 const BG_CLASS_PREFIX = 'xterm-bg-';
 const FOCUS_CLASS = 'xterm-focus';
 const SELECTION_CLASS = 'xterm-selection';
+
+let nextTerminalId = 1;
 
 // TODO: Pull into an addon when TS composite projects allow easier sharing of code (not just
 // interfaces) between core and addons
@@ -31,6 +34,7 @@ const SELECTION_CLASS = 'xterm-selection';
  */
 export class DomRenderer extends EventEmitter implements IRenderer {
   private _renderDebouncer: RenderDebouncer;
+  private _terminalClass: number = nextTerminalId++;
 
   private _themeStyleElement: HTMLStyleElement;
   private _dimensionsStyleElement: HTMLStyleElement;
@@ -73,6 +77,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
 
     this._renderDebouncer = new RenderDebouncer(this._terminal, this._renderRows.bind(this));
 
+    this._terminal.element.classList.add(TERMINAL_CLASS_PREFIX + this._terminalClass);
     this._terminal.screenElement.appendChild(this._rowContainer);
     this._terminal.screenElement.appendChild(this._selectionContainer);
   }
@@ -102,7 +107,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
     }
 
     let styles =
-        `.xterm .${ROW_CONTAINER_CLASS} span {` +
+        `${this._terminalSelector} .${ROW_CONTAINER_CLASS} span {` +
         ` display: inline-block;` +
         ` height: 100%;` +
         ` vertical-align: top;` +
@@ -126,49 +131,49 @@ export class DomRenderer extends EventEmitter implements IRenderer {
 
     // Base CSS
     let styles =
-        `.xterm .${ROW_CONTAINER_CLASS} {` +
+        `${this._terminalSelector} .${ROW_CONTAINER_CLASS} {` +
         ` color: ${this.colorManager.colors.foreground.css};` +
         ` background-color: ${this.colorManager.colors.background.css};` +
         `}`;
     // Text styles
     styles +=
-        `.xterm span:not(.${BOLD_CLASS}) {` +
+        `${this._terminalSelector} span:not(.${BOLD_CLASS}) {` +
         ` font-weight: ${this._terminal.options.fontWeight};` +
         `}` +
-        `.xterm span.${BOLD_CLASS} {` +
+        `${this._terminalSelector} span.${BOLD_CLASS} {` +
         ` font-weight: ${this._terminal.options.fontWeightBold};` +
         `}` +
-        `.xterm span.${ITALIC_CLASS} {` +
+        `${this._terminalSelector} span.${ITALIC_CLASS} {` +
         ` font-style: italic;` +
         `}`;
     // Cursor
     styles +=
-        `.xterm .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS} {` +
+        `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS} {` +
         ` background-color: ${this.colorManager.colors.cursor.css};` +
         ` color: ${this.colorManager.colors.cursorAccent.css};` +
         `}` +
-        `.xterm .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS} {` +
+        `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS} {` +
         ` outline: 1px solid #fff;` +
         ` outline-offset: -1px;` +
         `}`;
     // Selection
     styles +=
-        `.terminal .${SELECTION_CLASS} {` +
+        `${this._terminalSelector} .${SELECTION_CLASS} {` +
         ` position: absolute;` +
         ` top: 0;` +
         ` left: 0;` +
         ` z-index: 1;` +
         ` pointer-events: none;` +
         `}` +
-        `.terminal .${SELECTION_CLASS} div {` +
+        `${this._terminalSelector} .${SELECTION_CLASS} div {` +
         ` position: absolute;` +
         ` background-color: ${this.colorManager.colors.selection.css};` +
         `}`;
     // Colors
     this.colorManager.colors.ansi.forEach((c, i) => {
       styles +=
-          `.xterm .${FG_CLASS_PREFIX}${i} { color: ${c.css}; }` +
-          `.xterm .${BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
+          `${this._terminalSelector} .${FG_CLASS_PREFIX}${i} { color: ${c.css}; }` +
+          `${this._terminalSelector} .${BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
     });
 
     this._themeStyleElement.innerHTML = styles;
@@ -355,5 +360,9 @@ export class DomRenderer extends EventEmitter implements IRenderer {
     }
 
     this._terminal.emit('refresh', {start, end});
+  }
+
+  private get _terminalSelector(): string {
+    return `.${TERMINAL_CLASS_PREFIX}${this._terminalClass}`;
   }
 }
