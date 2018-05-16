@@ -35,15 +35,14 @@ export function acquireCharAtlas(terminal: ITerminal, colors: IColorSet, scaledC
     if (ownedByIndex >= 0) {
       if (configEquals(entry.config, newConfig)) {
         return entry.bitmap;
-      } else {
-        // The configs differ, release the terminal from the entry
-        if (entry.ownedBy.length === 1) {
-          charAtlasCache.splice(i, 1);
-        } else {
-          entry.ownedBy.splice(ownedByIndex, 1);
-        }
-        break;
       }
+      // The configs differ, release the terminal from the entry
+      if (entry.ownedBy.length === 1) {
+        charAtlasCache.splice(i, 1);
+      } else {
+        entry.ownedBy.splice(ownedByIndex, 1);
+      }
+      break;
     }
   }
 
