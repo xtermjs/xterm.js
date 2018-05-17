@@ -17,4 +17,3 @@ env:
 notifications:
   email: false
 script: npm run $NPM_COMMAND
-after_success: npm run coveralls

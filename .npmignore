@@ -1,16 +1,48 @@
-node_modules/
-*.swp
-.lock-wscript
-lib/*.test.js
-lib/*.test.js.map
+# Blacklist - exclude everything except npm defaults such as LICENSE, etc
+*
+!*/
+
+# Whitelist - entries to be included must be negated with "!"
+!*.js
+!*.json
+
+# Whitelist - dist/
+!dist/**/*.js
+!dist/**/*.js.map
+
+!dist/**/*.css
+
+# Whitelist - lib/
+!lib/**/*.d.ts
+
+!lib/**/*.js
+!lib/**/*.js.map
+
+!lib/**/*.css
+
+# Whitelist - src/
+!src/**/*.ts
+!src/**/*.d.ts
+
+!src/**/*.js
+!src/**/*.js.map
+
+!src/**/*.css
+
+# Whitelist - typings/
+!typings/*.d.ts
+
+# Blacklist - (normal behavior) these will override any whitelist
+*.test.ts
+*.test.d.ts
+*.test.js
+*.test.js.map
 lib/test/
-Makefile.gyp
-*.Makefile
-*.target.gyp.mk
-*.node
-example/*.log
+
 docs/
-npm-debug.log
 /.idea/
-.env
+.vscode/
 build/
+fixtures/
+coverage/
+demo/
