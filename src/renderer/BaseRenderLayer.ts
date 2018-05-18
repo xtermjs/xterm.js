@@ -214,7 +214,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param color The color of the character.
    */
   protected fillCharTrueColor(terminal: ITerminal, charData: CharData, x: number, y: number): void {
-    this._ctx.font = this._getFont(terminal, false);
+    this._ctx.font = this._getFont(terminal, false, false);
     this._ctx.textBaseline = 'top';
     this._clipRow(terminal, y);
     this._ctx.fillText(
@@ -237,16 +237,18 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * This is used to validate whether a cached image can be used.
    * @param bold Whether the text is bold.
    */
-  protected drawChar(terminal: ITerminal, char: string, code: number, width: number, x: number, y: number, fg: number, bg: number, bold: boolean, dim: boolean): void {
+  protected drawChar(terminal: ITerminal, char: string, code: number, width: number, x: number, y: number, fg: number, bg: number, bold: boolean, dim: boolean, italic: boolean): void {
+    const drawInBrightColor = terminal.options.drawBoldTextInBrightColors && bold && fg < 8;
+    fg += drawInBrightColor ? 8 : 0;
     const atlasDidDraw = this._charAtlas && this._charAtlas.draw(
       this._ctx,
-      {char, code, bg, fg, bold: bold && terminal.options.enableBold, dim},
+      {char, code, bg, fg, bold: bold && terminal.options.enableBold, dim, italic},
       x * this._scaledCellWidth + this._scaledCharLeft,
       y * this._scaledCellHeight + this._scaledCharTop
     );
 
     if (!atlasDidDraw) {
-      this._drawUncachedChar(terminal, char, width, fg, x, y, bold && terminal.options.enableBold, dim);
+      this._drawUncachedChar(terminal, char, width, fg, x, y, bold && terminal.options.enableBold, dim, italic);
     }
   }
 
@@ -261,9 +263,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param x The column to draw at.
    * @param y The row to draw at.
    */
-  private _drawUncachedChar(terminal: ITerminal, char: string, width: number, fg: number, x: number, y: number, bold: boolean, dim: boolean): void {
+  private _drawUncachedChar(terminal: ITerminal, char: string, width: number, fg: number, x: number, y: number, bold: boolean, dim: boolean, italic: boolean): void {
     this._ctx.save();
-    this._ctx.font = this._getFont(terminal, bold);
+    this._ctx.font = this._getFont(terminal, bold, italic);
     this._ctx.textBaseline = 'top';
 
     if (fg === INVERTED_DEFAULT_COLOR) {
@@ -309,10 +311,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param terminal The terminal.
    * @param isBold If we should use the bold fontWeight.
    */
-  protected _getFont(terminal: ITerminal, isBold: boolean): string {
+  protected _getFont(terminal: ITerminal, isBold: boolean, isItalic: boolean): string {
     const fontWeight = isBold ? terminal.options.fontWeightBold : terminal.options.fontWeight;
+    const fontStyle = isItalic ? 'italic' : '';
 
-    return `${fontWeight} ${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
+    return `${fontStyle} ${fontWeight} ${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
   }
 }
 

@@ -6,11 +6,11 @@
 import { ITerminal, ICircularList, LineData } from '../Types';
 import { C0 } from '../EscapeSequences';
 
-enum Direction {
-  Up = 'A',
-  Down = 'B',
-  Right = 'C',
-  Left = 'D'
+const enum Direction {
+  UP = 'A',
+  DOWN = 'B',
+  RIGHT = 'C',
+  LEFT = 'D'
 }
 
 export class AltClickHandler {
@@ -28,7 +28,7 @@ export class AltClickHandler {
     this._startCol = this._terminal.buffer.x;
     this._startRow = this._terminal.buffer.y;
 
-    [this._endCol, this._endRow] = this._terminal.mouseHelper.getCoords(
+    let coordinates = this._terminal.mouseHelper.getCoords(
       this._mouseEvent,
       this._terminal.element,
       this._terminal.charMeasure,
@@ -36,16 +36,20 @@ export class AltClickHandler {
       this._terminal.cols,
       this._terminal.rows,
       false
-    ).map((coordinate: number) => {
-      return coordinate - 1;
-    });
+    );
+
+    if (coordinates) {
+      [this._endCol, this._endRow] = coordinates.map((coordinate: number) => {
+        return coordinate - 1;
+      });
+    }
   }
 
   /**
    * Writes the escape sequences of arrows to the terminal
    */
   public move(): void {
-    if (this._mouseEvent.altKey) {
+    if (this._mouseEvent.altKey && this._endCol !== undefined && this._endRow !== undefined) {
       this._terminal.send(this._arrowSequences());
     }
   }
@@ -73,12 +77,11 @@ export class AltClickHandler {
   private _resetStartingRow(): string {
     if (this._moveToRequestedRow().length === 0) {
       return '';
-    } else {
-      return repeat(this._bufferLine(
-        this._startCol, this._startRow, this._startCol,
-        this._startRow - this._wrappedRowsForRow(this._startRow), false
-      ).length, this._sequence(Direction.Left));
     }
+    return repeat(this._bufferLine(
+      this._startCol, this._startRow, this._startCol,
+      this._startRow - this._wrappedRowsForRow(this._startRow), false
+    ).length, this._sequence(Direction.LEFT));
   }
 
   /**
@@ -110,7 +113,7 @@ export class AltClickHandler {
 
     return repeat(this._bufferLine(
       this._startCol, startRow, this._endCol, endRow,
-      direction === Direction.Right
+      direction === Direction.RIGHT
     ).length, this._sequence(direction));
   }
 
@@ -133,7 +136,7 @@ export class AltClickHandler {
     let endRow = this._endRow - this._wrappedRowsForRow(this._endRow);
 
     for (let i = 0; i < Math.abs(startRow - endRow); i++) {
-      let direction = this._verticalDirection() === Direction.Up ? -1 : 1;
+      let direction = this._verticalDirection() === Direction.UP ? -1 : 1;
 
       if ((<any>this._lines.get(startRow + (direction * i))).isWrapped) {
         wrappedRows++;
@@ -179,10 +182,9 @@ export class AltClickHandler {
       startRow <= this._endRow) || // down/right or same y/right
       (this._startCol >= this._endCol &&
       startRow < this._endRow)) {  // down/left or same y/left
-      return Direction.Right;
-    } else {
-      return Direction.Left;
+      return Direction.RIGHT;
     }
+    return Direction.LEFT;
   }
 
   /**
@@ -190,10 +192,9 @@ export class AltClickHandler {
    */
   private _verticalDirection(): Direction {
     if (this._startRow > this._endRow) {
-      return Direction.Up;
-    } else {
-      return Direction.Down;
+      return Direction.UP;
     }
+    return Direction.DOWN;
   }
 
   /**

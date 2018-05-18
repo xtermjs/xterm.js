@@ -18,8 +18,8 @@ const TEXTURE_HEIGHT = 1024;
 
 const TRANSPARENT_COLOR = {
   css: 'rgba(0, 0, 0, 0)',
-  rgba: 0,
-}
+  rgba: 0
+};
 
 // Drawing to the cache is expensive: If we have to draw more than this number of glyphs to the
 // cache in a single frame, give up on trying to cache anything else, and try to finish the current
@@ -35,7 +35,8 @@ interface IGlyphCacheValue {
 }
 
 function getGlyphCacheKey(glyph: IGlyphIdentifier): string {
-  return `${glyph.bg}_${glyph.fg}_${glyph.bold ? 0 : 1}${glyph.dim ? 0 : 1}${glyph.char}`;
+  const styleFlags = (glyph.bold ? 0 : 4) + (glyph.dim ? 0 : 2) + (glyph.italic ? 0 : 1);
+  return `${glyph.bg}_${glyph.fg}_${styleFlags}${glyph.char}`;
 }
 
 export default class DynamicCharAtlas extends BaseCharAtlas {
@@ -89,7 +90,7 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     ctx: CanvasRenderingContext2D,
     glyph: IGlyphIdentifier,
     x: number,
-    y: number,
+    y: number
   ): boolean {
     const glyphKey = getGlyphCacheKey(glyph);
     const cacheValue = this._cacheMap.get(glyphKey);
@@ -108,9 +109,8 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
       this._cacheMap.set(glyphKey, cacheValue);
       this._drawFromCache(ctx, cacheValue, x, y);
       return true;
-    } else {
-      return false;
     }
+    return false;
   }
 
   private _canCache(glyph: IGlyphIdentifier): boolean {
@@ -151,7 +151,7 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
       x,
       y,
       this._config.scaledCharWidth,
-      this._config.scaledCharHeight,
+      this._config.scaledCharHeight
     );
   }
 
@@ -172,9 +172,8 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
       return this._config.colors.foreground;
     } else if (glyph.bg < 256) {
       return this._getColorFromAnsiIndex(glyph.bg);
-    } else {
-      return this._config.colors.background;
     }
+    return this._config.colors.background;
   }
 
   private _getForegroundColor(glyph: IGlyphIdentifier): IColor {
@@ -183,9 +182,8 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     } else if (glyph.fg < 256) {
       // 256 color support
       return this._getColorFromAnsiIndex(glyph.fg);
-    } else {
-      return this._config.colors.foreground;
     }
+    return this._config.colors.foreground;
   }
 
   // TODO: We do this (or something similar) in multiple places. We should split this off
@@ -206,11 +204,9 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
 
     // draw the foreground/glyph
     const fontWeight = glyph.bold ? this._config.fontWeightBold : this._config.fontWeight;
+    const fontStyle = glyph.italic ? 'italic' : '';
     this._tmpCtx.font =
-      `${fontWeight} ${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
-    if (glyph.bold) {
-      this._tmpCtx.font = `bold ${this._tmpCtx.font}`;
-    }
+      `${fontStyle} ${fontWeight} ${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
     this._tmpCtx.textBaseline = 'top';
 
     this._tmpCtx.fillStyle = this._getForegroundColor(glyph).css;
@@ -226,7 +222,7 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     // clear the background from the character to avoid issues with drawing over the previous
     // character if it extends past it's bounds
     const imageData = this._tmpCtx.getImageData(
-      0, 0, this._config.scaledCharWidth, this._config.scaledCharHeight,
+      0, 0, this._config.scaledCharWidth, this._config.scaledCharHeight
     );
     let isEmpty = false;
     if (!this._config.allowTransparency) {
@@ -240,7 +236,7 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
 
     return {
       index,
-      isEmpty,
+      isEmpty
     };
   }
 }

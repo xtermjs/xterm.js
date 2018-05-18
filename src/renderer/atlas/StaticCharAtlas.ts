@@ -22,33 +22,31 @@ export default class StaticCharAtlas extends BaseCharAtlas {
     return canvas;
   }
 
-  public _doWarmUp() {
+  public _doWarmUp(): void {
     const result = generateStaticCharAtlasTexture(window, this._canvasFactory, this._config);
     if (result instanceof HTMLCanvasElement) {
       this._texture = result;
     } else {
       result.then(texture => {
-        this._texture = texture
+        this._texture = texture;
       });
     }
   }
 
   private _isCached(glyph: IGlyphIdentifier, colorIndex: number): boolean {
     const isAscii = glyph.code < 256;
-    // A color is basic if it is one of the standard normal or bold weight
-    // colors of the characters held in the char atlas. Note that this excludes
-    // the normal weight _light_ color characters.
-    const isBasicColor = (colorIndex > 1 && glyph.fg < 16) && (glyph.fg < 8 || glyph.bold);
+    // A color is basic if it is one of the 4 bit ANSI colors.
+    const isBasicColor = glyph.fg < 16;
     const isDefaultColor = glyph.fg >= 256;
     const isDefaultBackground = glyph.bg >= 256;
-    return isAscii && (isBasicColor || isDefaultColor) && isDefaultBackground;
+    return isAscii && (isBasicColor || isDefaultColor) && isDefaultBackground && !glyph.italic;
   }
 
   public draw(
     ctx: CanvasRenderingContext2D,
     glyph: IGlyphIdentifier,
     x: number,
-    y: number,
+    y: number
   ): boolean {
     // we're not warmed up yet
     if (this._texture == null) {
@@ -57,7 +55,7 @@ export default class StaticCharAtlas extends BaseCharAtlas {
 
     let colorIndex = 0;
     if (glyph.fg < 256) {
-      colorIndex = glyph.fg + 2;
+      colorIndex = 2 + glyph.fg + (glyph.bold ? 16 : 0);
     } else {
       // If default color and bold
       if (glyph.bold) {
@@ -75,14 +73,6 @@ export default class StaticCharAtlas extends BaseCharAtlas {
     if (glyph.dim) {
       ctx.globalAlpha = DIM_OPACITY;
     }
-
-    // Draw the non-bold version of the same color if bold is not enabled
-    /*if (glyph.bold && !terminal.options.enableBold) {
-      // Ignore default color as it's not touched above
-      if (colorIndex > 1) {
-        colorIndex -= 8;
-      }
-    }*/
 
     ctx.drawImage(
       this._texture,

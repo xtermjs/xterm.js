@@ -48,6 +48,6 @@ export default abstract class BaseCharAtlas {
     ctx: CanvasRenderingContext2D,
     glyph: IGlyphIdentifier,
     x: number,
-    y: number,
+    y: number
   ): boolean;
 }

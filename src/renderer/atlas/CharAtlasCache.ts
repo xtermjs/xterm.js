@@ -15,7 +15,7 @@ import StaticCharAtlas from './StaticCharAtlas';
 const charAtlasImplementations = {
   'none': NoneCharAtlas,
   'static': StaticCharAtlas,
-  'dynamic': DynamicCharAtlas,
+  'dynamic': DynamicCharAtlas
 };
 
 interface ICharAtlasCacheEntry {
@@ -38,7 +38,7 @@ export function acquireCharAtlas(
   terminal: ITerminal,
   colors: IColorSet,
   scaledCharWidth: number,
-  scaledCharHeight: number,
+  scaledCharHeight: number
 ): BaseCharAtlas {
   const newConfig = generateConfig(scaledCharWidth, scaledCharHeight, terminal, colors);
 
@@ -51,15 +51,14 @@ export function acquireCharAtlas(
     if (ownedByIndex >= 0) {
       if (configEquals(entry.config, newConfig)) {
         return entry.atlas;
-      } else {
-        // The configs differ, release the terminal from the entry
-        if (entry.ownedBy.length === 1) {
-          charAtlasCache.splice(i, 1);
-        } else {
-          entry.ownedBy.splice(ownedByIndex, 1);
-        }
-        break;
       }
+      // The configs differ, release the terminal from the entry
+      if (entry.ownedBy.length === 1) {
+        charAtlasCache.splice(i, 1);
+      } else {
+        entry.ownedBy.splice(ownedByIndex, 1);
+      }
+      break;
     }
   }
 
@@ -76,10 +75,10 @@ export function acquireCharAtlas(
   const newEntry: ICharAtlasCacheEntry = {
     atlas: new charAtlasImplementations[terminal.options.experimentalCharAtlas](
       document,
-      newConfig,
+      newConfig
     ),
     config: newConfig,
-    ownedBy: [terminal],
+    ownedBy: [terminal]
   };
   charAtlasCache.push(newEntry);
   return newEntry.atlas;

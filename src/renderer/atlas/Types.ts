@@ -13,4 +13,5 @@ export interface IGlyphIdentifier {
   fg: number;
   bold: boolean;
   dim: boolean;
+  italic: boolean;
 }

@@ -4,10 +4,10 @@
  */
 
 interface ILinkedListNode<T> {
-  prev: ILinkedListNode<T>,
-  next: ILinkedListNode<T>,
-  key: string,
-  value: T,
+  prev: ILinkedListNode<T>;
+  next: ILinkedListNode<T>;
+  key: string;
+  value: T;
 }
 
 export default class LRUMap<T> {
@@ -56,14 +56,14 @@ export default class LRUMap<T> {
    * Each empty object only consumes about 60 bytes of memory, so this is pretty cheap, even for
    * large maps.
    */
-  public prealloc(count: number) {
+  public prealloc(count: number): void {
     const nodePool = this._nodePool;
     for (let i = 0; i < count; i++) {
       nodePool.push({
         prev: null,
         next: null,
         key: null,
-        value: null,
+        value: null
       });
     }
   }
@@ -114,7 +114,7 @@ export default class LRUMap<T> {
           prev: null,
           next: null,
           key,
-          value,
+          value
         };
       }
       this._map[key] = node;
