@@ -53,6 +53,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
 
     this._rowContainer = document.createElement('div');
     this._rowContainer.classList.add(ROW_CONTAINER_CLASS);
+    this._rowContainer.style.lineHeight = 'normal';
     this._rowContainer.setAttribute('aria-hidden', 'true');
     this._refreshRowElements(this._terminal.rows, this._terminal.cols);
     this._selectionContainer = document.createElement('div');
