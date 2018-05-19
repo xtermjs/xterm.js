@@ -21,7 +21,7 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { ICharset, IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharData, LineData } from './Types';
+import { ICharset, IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharData, LineData, CharacterJoinerHandler } from './Types';
 import { IMouseZoneManager } from './input/Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
@@ -1369,6 +1369,18 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   public deregisterLinkMatcher(matcherId: number): void {
     if (this.linkifier.deregisterLinkMatcher(matcherId)) {
+      this.refresh(0, this.rows - 1);
+    }
+  }
+
+  public registerCharacterJoiner(handler: CharacterJoinerHandler): number {
+    const joinerId = this.renderer.registerCharacterJoiner(handler);
+    this.refresh(0, this.rows - 1);
+    return joinerId;
+  }
+
+  public deregisterCharacterJoiner(joinerId: number): void {
+    if (this.renderer.deregisterCharacterJoiner(joinerId)) {
       this.refresh(0, this.rows - 1);
     }
   }

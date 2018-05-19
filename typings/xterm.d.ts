@@ -440,6 +440,26 @@ declare module 'xterm' {
     deregisterLinkMatcher(matcherId: number): void;
 
     /**
+     * (EXPERIMENTAL) Registers a character joiner, allowing custom sequences of
+     * characters to be rendered as a single unit. This is useful in particular
+     * for rendering ligatures. NOTE: character joiners are only used by the
+     * canvas renderer.
+     * @param handler The function that determines character joins. It is called
+     * with a string of text that is eligible for joining and returns an array
+     * where each entry is an array containing the start (inclusive) and end
+     * (exclusive) indexes of ranges that should be rendered as a single unit.
+     * @return The ID of the new joiner, this can be used to deregister
+     */
+    registerCharacterJoiner(handler: (text: string) => [number, number][]): number;
+
+    /**
+     * (EXPERIMENTAL) Deregisters the character joiner if one was registered.
+     * NOTE: character joiners are only used by the canvas renderer.
+     * @param joinerId The character joiner's ID (returned after register)
+     */
+    deregisterCharacterJoiner(joinerId: number): void;
+
+    /**
      * (EXPERIMENTAL) Adds a marker to the normal buffer and returns it. If the
      * alt buffer is active, undefined is returned.
      * @param cursorYOffset The y position offset of the marker from the cursor.

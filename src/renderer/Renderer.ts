@@ -7,8 +7,8 @@ import { TextRenderLayer } from './TextRenderLayer';
 import { SelectionRenderLayer } from './SelectionRenderLayer';
 import { CursorRenderLayer } from './CursorRenderLayer';
 import { ColorManager } from './ColorManager';
-import { IRenderLayer, IColorSet, IRenderer, IRenderDimensions } from './Types';
-import { ITerminal } from '../Types';
+import { IRenderLayer, IColorSet, IRenderer, IRenderDimensions, ICharacterJoiner } from './Types';
+import { ITerminal, CharacterJoinerHandler } from '../Types';
 import { LinkRenderLayer } from './LinkRenderLayer';
 import { EventEmitter } from '../EventEmitter';
 import { RenderDebouncer } from '../utils/RenderDebouncer';
@@ -23,6 +23,8 @@ export class Renderer extends EventEmitter implements IRenderer {
   private _screenDprMonitor: ScreenDprMonitor;
   private _isPaused: boolean = false;
   private _needsFullRefresh: boolean = false;
+  private _joiners: ICharacterJoiner[] = [];
+  private _nextJoinerId: number = 0;
 
   public colorManager: ColorManager;
   public dimensions: IRenderDimensions;
@@ -66,7 +68,7 @@ export class Renderer extends EventEmitter implements IRenderer {
     // Detect whether IntersectionObserver is detected and enable renderer pause
     // and resume based on terminal visibility if so
     if ('IntersectionObserver' in window) {
-      const observer = new IntersectionObserver(e => this.onIntersectionChange(e[0]), {threshold: 0});
+      const observer = new IntersectionObserver(e => this.onIntersectionChange(e[0]), { threshold: 0 });
       observer.observe(this._terminal.element);
     }
   }
@@ -186,7 +188,7 @@ export class Renderer extends EventEmitter implements IRenderer {
    */
   private _renderRows(start: number, end: number): void {
     this._renderLayers.forEach(l => l.onGridChanged(this._terminal, start, end));
-    this._terminal.emit('refresh', {start, end});
+    this._terminal.emit('refresh', { start, end });
   }
 
   /**
@@ -247,5 +249,36 @@ export class Renderer extends EventEmitter implements IRenderer {
     // differ.
     this.dimensions.actualCellHeight = this.dimensions.canvasHeight / this._terminal.rows;
     this.dimensions.actualCellWidth = this.dimensions.canvasWidth / this._terminal.cols;
+  }
+
+  public registerCharacterJoiner(handler: CharacterJoinerHandler): number {
+    const joiner: ICharacterJoiner = {
+      id: this._nextJoinerId++,
+      handler: handler
+    };
+
+    this._renderLayers.forEach(l => {
+      if (l.registerCharacterJoiner) {
+        l.registerCharacterJoiner(joiner);
+      }
+    });
+
+    return joiner.id;
+  }
+
+  public deregisterCharacterJoiner(joinerId: number): boolean {
+    for (let i = 0; i < this._joiners.length; i++) {
+      if (this._joiners[i].id === joinerId) {
+        this._joiners.splice(i, 1);
+        this._renderLayers.forEach(l => {
+          if (l.deregisterCharacterJoiner) {
+            l.deregisterCharacterJoiner(joinerId);
+          }
+        });
+        return true;
+      }
+    }
+
+    return false;
   }
 }
