@@ -23,6 +23,10 @@ export class InputHandler implements IInputHandler {
 
   public addChar(char: string, code: number): void {
     if (char >= ' ') {
+
+      // make buffer local for faster access
+      const buffer = this._terminal.buffer;
+
       // calculate print space
       // expensive call, therefore we save width in line buffer
       const chWidth = wcwidth(code);
@@ -35,42 +39,42 @@ export class InputHandler implements IInputHandler {
         this._terminal.emit('a11y.char', char);
       }
 
-      let row = this._terminal.buffer.y + this._terminal.buffer.ybase;
+      let row = buffer.y + buffer.ybase;
 
       // insert combining char in last cell
       // FIXME: needs handling after cursor jumps
-      if (!chWidth && this._terminal.buffer.x) {
+      if (!chWidth && buffer.x) {
         // dont overflow left
-        if (this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1]) {
-          if (!this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1][CHAR_DATA_WIDTH_INDEX]) {
+        if (buffer.lines.get(row)[buffer.x - 1]) {
+          if (!buffer.lines.get(row)[buffer.x - 1][CHAR_DATA_WIDTH_INDEX]) {
             // found empty cell after fullwidth, need to go 2 cells back
-            if (this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 2]) {
-              this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 2][CHAR_DATA_CHAR_INDEX] += char;
-              this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 2][3] = char.charCodeAt(0);
+            if (buffer.lines.get(row)[buffer.x - 2]) {
+              buffer.lines.get(row)[buffer.x - 2][CHAR_DATA_CHAR_INDEX] += char;
+              buffer.lines.get(row)[buffer.x - 2][3] = char.charCodeAt(0);
             }
           } else {
-            this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1][CHAR_DATA_CHAR_INDEX] += char;
-            this._terminal.buffer.lines.get(row)[this._terminal.buffer.x - 1][3] = char.charCodeAt(0);
+            buffer.lines.get(row)[buffer.x - 1][CHAR_DATA_CHAR_INDEX] += char;
+            buffer.lines.get(row)[buffer.x - 1][3] = char.charCodeAt(0);
           }
-          this._terminal.updateRange(this._terminal.buffer.y);
+          this._terminal.updateRange(buffer.y);
         }
         return;
       }
 
       // goto next line if ch would overflow
       // TODO: needs a global min terminal width of 2
-      if (this._terminal.buffer.x + chWidth - 1 >= this._terminal.cols) {
+      if (buffer.x + chWidth - 1 >= this._terminal.cols) {
         // autowrap - DECAWM
         if (this._terminal.wraparoundMode) {
-          this._terminal.buffer.x = 0;
-          this._terminal.buffer.y++;
-          if (this._terminal.buffer.y > this._terminal.buffer.scrollBottom) {
-            this._terminal.buffer.y--;
+          buffer.x = 0;
+          buffer.y++;
+          if (buffer.y > buffer.scrollBottom) {
+            buffer.y--;
             this._terminal.scroll(true);
           } else {
             // The line already exists (eg. the initial viewport), mark it as a
             // wrapped line
-            (<any>this._terminal.buffer.lines.get(this._terminal.buffer.y)).isWrapped = true;
+            (<any>buffer.lines.get(buffer.y)).isWrapped = true;
           }
         } else {
           if (chWidth === 2) { // FIXME: check for xterm behavior
@@ -78,7 +82,7 @@ export class InputHandler implements IInputHandler {
           }
         }
       }
-      row = this._terminal.buffer.y + this._terminal.buffer.ybase;
+      row = buffer.y + buffer.ybase;
 
       // insert mode: move characters to right
       if (this._terminal.insertMode) {
@@ -86,26 +90,26 @@ export class InputHandler implements IInputHandler {
         for (let moves = 0; moves < chWidth; ++moves) {
           // remove last cell, if it's width is 0
           // we have to adjust the second last cell as well
-          const removed = this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).pop();
+          const removed = buffer.lines.get(buffer.y + buffer.ybase).pop();
           if (removed[CHAR_DATA_WIDTH_INDEX] === 0
-              && this._terminal.buffer.lines.get(row)[this._terminal.cols - 2]
-              && this._terminal.buffer.lines.get(row)[this._terminal.cols - 2][CHAR_DATA_WIDTH_INDEX] === 2) {
-            this._terminal.buffer.lines.get(row)[this._terminal.cols - 2] = [this._terminal.curAttr, ' ', 1, ' '.charCodeAt(0)];
+              && buffer.lines.get(row)[this._terminal.cols - 2]
+              && buffer.lines.get(row)[this._terminal.cols - 2][CHAR_DATA_WIDTH_INDEX] === 2) {
+            buffer.lines.get(row)[this._terminal.cols - 2] = [this._terminal.curAttr, ' ', 1, ' '.charCodeAt(0)];
           }
 
           // insert empty cell at cursor
-          this._terminal.buffer.lines.get(row).splice(this._terminal.buffer.x, 0, [this._terminal.curAttr, ' ', 1, ' '.charCodeAt(0)]);
+          buffer.lines.get(row).splice(buffer.x, 0, [this._terminal.curAttr, ' ', 1, ' '.charCodeAt(0)]);
         }
       }
 
-      this._terminal.buffer.lines.get(row)[this._terminal.buffer.x] = [this._terminal.curAttr, char, chWidth, char.charCodeAt(0)];
-      this._terminal.buffer.x++;
-      this._terminal.updateRange(this._terminal.buffer.y);
+      buffer.lines.get(row)[buffer.x] = [this._terminal.curAttr, char, chWidth, char.charCodeAt(0)];
+      buffer.x++;
+      this._terminal.updateRange(buffer.y);
 
       // fullwidth char - set next cell width to zero and advance cursor
       if (chWidth === 2) {
-        this._terminal.buffer.lines.get(row)[this._terminal.buffer.x] = [this._terminal.curAttr, '', 0, undefined];
-        this._terminal.buffer.x++;
+        buffer.lines.get(row)[buffer.x] = [this._terminal.curAttr, '', 0, undefined];
+        buffer.x++;
       }
     }
   }
@@ -123,17 +127,20 @@ export class InputHandler implements IInputHandler {
    * Line Feed or New Line (NL).  (LF  is Ctrl-J).
    */
   public lineFeed(): void {
+    // make buffer local for faster access
+    const buffer = this._terminal.buffer;
+
     if (this._terminal.convertEol) {
-      this._terminal.buffer.x = 0;
+      buffer.x = 0;
     }
-    this._terminal.buffer.y++;
-    if (this._terminal.buffer.y > this._terminal.buffer.scrollBottom) {
-      this._terminal.buffer.y--;
+    buffer.y++;
+    if (buffer.y > buffer.scrollBottom) {
+      buffer.y--;
       this._terminal.scroll();
     }
     // If the end of the line is hit, prevent this action from wrapping around to the next line.
-    if (this._terminal.buffer.x >= this._terminal.cols) {
-      this._terminal.buffer.x--;
+    if (buffer.x >= this._terminal.cols) {
+      buffer.x--;
     }
     /**
      * This event is emitted whenever the terminal outputs a LF or NL.
@@ -199,13 +206,16 @@ export class InputHandler implements IInputHandler {
     let param = params[0];
     if (param < 1) param = 1;
 
-    const row = this._terminal.buffer.y + this._terminal.buffer.ybase;
-    let j = this._terminal.buffer.x;
+    // make buffer local for faster access
+    const buffer = this._terminal.buffer;
+
+    const row = buffer.y + buffer.ybase;
+    let j = buffer.x;
     const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32]; // xterm
 
     while (param-- && j < this._terminal.cols) {
-      this._terminal.buffer.lines.get(row).splice(j++, 0, ch);
-      this._terminal.buffer.lines.get(row).pop();
+      buffer.lines.get(row).splice(j++, 0, ch);
+      buffer.lines.get(row).pop();
     }
   }
 
@@ -447,20 +457,24 @@ export class InputHandler implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
-    let row: number = this._terminal.buffer.y + this._terminal.buffer.ybase;
 
-    let scrollBottomRowsOffset = this._terminal.rows - 1 - this._terminal.buffer.scrollBottom;
-    let scrollBottomAbsolute = this._terminal.rows - 1 + this._terminal.buffer.ybase - scrollBottomRowsOffset + 1;
+    // make buffer local for faster access
+    const buffer = this._terminal.buffer;
+
+    let row: number = buffer.y + buffer.ybase;
+
+    let scrollBottomRowsOffset = this._terminal.rows - 1 - buffer.scrollBottom;
+    let scrollBottomAbsolute = this._terminal.rows - 1 + buffer.ybase - scrollBottomRowsOffset + 1;
     while (param--) {
       // test: echo -e '\e[44m\e[1L\e[0m'
       // blankLine(true) - xterm/linux behavior
-      this._terminal.buffer.lines.splice(scrollBottomAbsolute - 1, 1);
-      this._terminal.buffer.lines.splice(row, 0, this._terminal.blankLine(true));
+      buffer.lines.splice(scrollBottomAbsolute - 1, 1);
+      buffer.lines.splice(row, 0, this._terminal.blankLine(true));
     }
 
     // this.maxRange();
-    this._terminal.updateRange(this._terminal.buffer.y);
-    this._terminal.updateRange(this._terminal.buffer.scrollBottom);
+    this._terminal.updateRange(buffer.y);
+    this._terminal.updateRange(buffer.scrollBottom);
   }
 
   /**
@@ -472,21 +486,25 @@ export class InputHandler implements IInputHandler {
     if (param < 1) {
       param = 1;
     }
-    const row: number = this._terminal.buffer.y + this._terminal.buffer.ybase;
+
+    // make buffer local for faster access
+    const buffer = this._terminal.buffer;
+
+    const row: number = buffer.y + buffer.ybase;
 
     let j: number;
-    j = this._terminal.rows - 1 - this._terminal.buffer.scrollBottom;
-    j = this._terminal.rows - 1 + this._terminal.buffer.ybase - j;
+    j = this._terminal.rows - 1 - buffer.scrollBottom;
+    j = this._terminal.rows - 1 + buffer.ybase - j;
     while (param--) {
       // test: echo -e '\e[44m\e[1M\e[0m'
       // blankLine(true) - xterm/linux behavior
-      this._terminal.buffer.lines.splice(row, 1);
-      this._terminal.buffer.lines.splice(j, 0, this._terminal.blankLine(true));
+      buffer.lines.splice(row, 1);
+      buffer.lines.splice(j, 0, this._terminal.blankLine(true));
     }
 
     // this.maxRange();
-    this._terminal.updateRange(this._terminal.buffer.y);
-    this._terminal.updateRange(this._terminal.buffer.scrollBottom);
+    this._terminal.updateRange(buffer.y);
+    this._terminal.updateRange(buffer.scrollBottom);
   }
 
   /**
@@ -499,14 +517,17 @@ export class InputHandler implements IInputHandler {
       param = 1;
     }
 
-    const row = this._terminal.buffer.y + this._terminal.buffer.ybase;
+    // make buffer local for faster access
+    const buffer = this._terminal.buffer;
+
+    const row = buffer.y + buffer.ybase;
     const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32]; // xterm
 
     while (param--) {
-      this._terminal.buffer.lines.get(row).splice(this._terminal.buffer.x, 1);
-      this._terminal.buffer.lines.get(row).push(ch);
+      buffer.lines.get(row).splice(buffer.x, 1);
+      buffer.lines.get(row).push(ch);
     }
-    this._terminal.updateRange(this._terminal.buffer.y);
+    this._terminal.updateRange(buffer.y);
   }
 
   /**
@@ -514,13 +535,17 @@ export class InputHandler implements IInputHandler {
    */
   public scrollUp(params: number[]): void {
     let param = params[0] || 1;
+
+    // make buffer local for faster access
+    const buffer = this._terminal.buffer;
+
     while (param--) {
-      this._terminal.buffer.lines.splice(this._terminal.buffer.ybase + this._terminal.buffer.scrollTop, 1);
-      this._terminal.buffer.lines.splice(this._terminal.buffer.ybase + this._terminal.buffer.scrollBottom, 0, this._terminal.blankLine());
+      buffer.lines.splice(buffer.ybase + buffer.scrollTop, 1);
+      buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 0, this._terminal.blankLine());
     }
     // this.maxRange();
-    this._terminal.updateRange(this._terminal.buffer.scrollTop);
-    this._terminal.updateRange(this._terminal.buffer.scrollBottom);
+    this._terminal.updateRange(buffer.scrollTop);
+    this._terminal.updateRange(buffer.scrollBottom);
   }
 
   /**
@@ -528,13 +553,17 @@ export class InputHandler implements IInputHandler {
    */
   public scrollDown(params: number[]): void {
     let param = params[0] || 1;
+
+    // make buffer local for faster access
+    const buffer = this._terminal.buffer;
+
     while (param--) {
-      this._terminal.buffer.lines.splice(this._terminal.buffer.ybase + this._terminal.buffer.scrollBottom, 1);
-      this._terminal.buffer.lines.splice(this._terminal.buffer.ybase + this._terminal.buffer.scrollTop, 0, this._terminal.blankLine());
+      buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 1);
+      buffer.lines.splice(buffer.ybase + buffer.scrollTop, 0, this._terminal.blankLine());
     }
     // this.maxRange();
-    this._terminal.updateRange(this._terminal.buffer.scrollTop);
-    this._terminal.updateRange(this._terminal.buffer.scrollBottom);
+    this._terminal.updateRange(buffer.scrollTop);
+    this._terminal.updateRange(buffer.scrollBottom);
   }
 
   /**
@@ -547,12 +576,15 @@ export class InputHandler implements IInputHandler {
       param = 1;
     }
 
-    const row = this._terminal.buffer.y + this._terminal.buffer.ybase;
-    let j = this._terminal.buffer.x;
+    // make buffer local for faster access
+    const buffer = this._terminal.buffer;
+
+    const row = buffer.y + buffer.ybase;
+    let j = buffer.x;
     const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32]; // xterm
 
     while (param-- && j < this._terminal.cols) {
-      this._terminal.buffer.lines.get(row)[j++] = ch;
+      buffer.lines.get(row)[j++] = ch;
     }
   }
 
@@ -561,8 +593,12 @@ export class InputHandler implements IInputHandler {
    */
   public cursorBackwardTab(params: number[]): void {
     let param = params[0] || 1;
+
+    // make buffer local for faster access
+    const buffer = this._terminal.buffer;
+
     while (param--) {
-      this._terminal.buffer.x = this._terminal.buffer.prevStop();
+      buffer.x = buffer.prevStop();
     }
   }
 
@@ -602,11 +638,15 @@ export class InputHandler implements IInputHandler {
    */
   public repeatPrecedingCharacter(params: number[]): void {
     let param = params[0] || 1;
-    const line = this._terminal.buffer.lines.get(this._terminal.buffer.ybase + this._terminal.buffer.y);
-    const ch = line[this._terminal.buffer.x - 1] || [this._terminal.defAttr, ' ', 1, 32];
+
+    // make buffer local for faster access
+    const buffer = this._terminal.buffer;
+
+    const line = buffer.lines.get(buffer.ybase + buffer.y);
+    const ch = line[buffer.x - 1] || [this._terminal.defAttr, ' ', 1, 32];
 
     while (param--) {
-      line[this._terminal.buffer.x++] = ch;
+      line[buffer.x++] = ch;
     }
   }
 
@@ -1223,6 +1263,9 @@ export class InputHandler implements IInputHandler {
       } else if (p === 1) {
         // bold text
         flags |= FLAGS.BOLD;
+      } else if (p === 3) {
+        // italic text
+        flags |= FLAGS.ITALIC;
       } else if (p === 4) {
         // underlined text
         flags |= FLAGS.UNDERLINE;

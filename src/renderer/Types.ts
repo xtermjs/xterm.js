@@ -10,13 +10,14 @@ import { IColorSet } from '../shared/Types';
 /**
  * Flags used to render terminal text properly.
  */
-export enum FLAGS {
+export const enum FLAGS {
   BOLD = 1,
   UNDERLINE = 2,
   BLINK = 4,
   INVERSE = 8,
   INVISIBLE = 16,
-  DIM = 32
+  DIM = 32,
+  ITALIC = 64
 }
 
 export interface IRenderer extends IEventEmitter {

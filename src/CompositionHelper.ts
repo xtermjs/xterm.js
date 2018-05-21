@@ -92,11 +92,10 @@ export class CompositionHelper {
       } else if (ev.keyCode === 16 || ev.keyCode === 17 || ev.keyCode === 18) {
         // Continue composing if the keyCode is a modifier key
         return false;
-      } else {
-        // Finish composition immediately. This is mainly here for the case where enter is
-        // pressed and the handler needs to be triggered before the command is executed.
-        this._finalizeComposition(false);
       }
+      // Finish composition immediately. This is mainly here for the case where enter is
+      // pressed and the handler needs to be triggered before the command is executed.
+      this._finalizeComposition(false);
     }
 
     if (ev.keyCode === 229) {

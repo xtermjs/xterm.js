@@ -55,11 +55,34 @@ declare module 'xterm' {
     disableStdin?: boolean;
 
     /**
+     * Whether to draw bold text in bright colors. The default is true.
+     */
+    drawBoldTextInBrightColors?: boolean;
+
+    /**
      * Whether to enable the rendering of bold text.
      *
      * @deprecated Use fontWeight and fontWeightBold instead.
      */
     enableBold?: boolean;
+
+    /**
+     * What character atlas implementation to use. The character atlas caches drawn characters,
+     * speeding up rendering significantly. However, it can introduce some minor rendering
+     * artifacts.
+     *
+     * - 'none': Don't use an atlas.
+     * - 'static': Generate an atlas when the terminal starts or is reconfigured. This atlas will
+     *   only contain ASCII characters in 16 colors.
+     * - 'dynamic': Generate an atlas using a LRU cache as characters are requested. Limited to
+     *   ASCII characters (for now), but supports 256 colors. For characters covered by the static
+     *   cache, it's slightly slower in comparison, since there's more overhead involved in
+     *   managing the cache.
+     *
+     * Currently defaults to 'static'. This option may be removed in the future. If it is, passed
+     * parameters will be ignored.
+     */
+    experimentalCharAtlas?: 'none' | 'static' | 'dynamic';
 
     /**
      * The font size used to render text.
@@ -251,7 +274,7 @@ declare module 'xterm' {
   /**
    * The class that represents an xterm.js terminal.
    */
-  export class Terminal implements IEventEmitter {
+  export class Terminal implements IEventEmitter, IDisposable {
     /**
      * The element containing the terminal.
      */
@@ -451,8 +474,16 @@ declare module 'xterm' {
      */
     selectLines(start: number, end: number): void;
 
+    /*
+     * Disposes of the terminal, detaching it from the DOM and removing any
+     * active listeners.
+     */
+    dispose(): void;
+
     /**
      * Destroys the terminal and detaches it from the DOM.
+     *
+     * @deprecated Use dispose() instead.
      */
     destroy(): void;
 

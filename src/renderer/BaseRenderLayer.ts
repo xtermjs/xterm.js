@@ -6,8 +6,8 @@
 import { IRenderLayer, IColorSet, IRenderDimensions } from './Types';
 import { CharData, ITerminal } from '../Types';
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from './atlas/Types';
-import { CHAR_ATLAS_CELL_SPACING } from '../shared/atlas/Types';
-import { acquireCharAtlas } from './atlas/CharAtlas';
+import BaseCharAtlas from './atlas/BaseCharAtlas';
+import { acquireCharAtlas } from './atlas/CharAtlasCache';
 import { CHAR_DATA_CHAR_INDEX } from '../Buffer';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
@@ -20,7 +20,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _scaledCharLeft: number = 0;
   private _scaledCharTop: number = 0;
 
-  private _charAtlas: HTMLCanvasElement | ImageBitmap;
+  protected _charAtlas: BaseCharAtlas;
 
   constructor(
     private _container: HTMLElement,
@@ -83,13 +83,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (this._scaledCharWidth <= 0 && this._scaledCharHeight <= 0) {
       return;
     }
-    this._charAtlas = null;
-    const result = acquireCharAtlas(terminal, colorSet, this._scaledCharWidth, this._scaledCharHeight);
-    if (result instanceof HTMLCanvasElement) {
-      this._charAtlas = result;
-    } else {
-      result.then(bitmap => this._charAtlas = bitmap);
-    }
+    this._charAtlas = acquireCharAtlas(terminal, colorSet, this._scaledCharWidth, this._scaledCharHeight);
+    this._charAtlas.warmUp();
   }
 
   public resize(terminal: ITerminal, dim: IRenderDimensions): void {
@@ -219,7 +214,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param color The color of the character.
    */
   protected fillCharTrueColor(terminal: ITerminal, charData: CharData, x: number, y: number): void {
-    this._ctx.font = this._getFont(terminal, false);
+    this._ctx.font = this._getFont(terminal, false, false);
     this._ctx.textBaseline = 'top';
     this._clipRow(terminal, y);
     this._ctx.fillText(
@@ -242,56 +237,19 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * This is used to validate whether a cached image can be used.
    * @param bold Whether the text is bold.
    */
-  protected drawChar(terminal: ITerminal, char: string, code: number, width: number, x: number, y: number, fg: number, bg: number, bold: boolean, dim: boolean): void {
-    let colorIndex = 0;
-    if (fg < 256) {
-      colorIndex = fg + 2;
-    } else {
-      // If default color and bold
-      if (bold && terminal.options.enableBold) {
-        colorIndex = 1;
-      }
+  protected drawChar(terminal: ITerminal, char: string, code: number, width: number, x: number, y: number, fg: number, bg: number, bold: boolean, dim: boolean, italic: boolean): void {
+    const drawInBrightColor = terminal.options.drawBoldTextInBrightColors && bold && fg < 8;
+    fg += drawInBrightColor ? 8 : 0;
+    const atlasDidDraw = this._charAtlas && this._charAtlas.draw(
+      this._ctx,
+      {char, code, bg, fg, bold: bold && terminal.options.enableBold, dim, italic},
+      x * this._scaledCellWidth + this._scaledCharLeft,
+      y * this._scaledCellHeight + this._scaledCharTop
+    );
+
+    if (!atlasDidDraw) {
+      this._drawUncachedChar(terminal, char, width, fg, x, y, bold && terminal.options.enableBold, dim, italic);
     }
-    const isAscii = code < 256;
-    // A color is basic if it is one of the standard normal or bold weight
-    // colors of the characters held in the char atlas. Note that this excludes
-    // the normal weight _light_ color characters.
-    const isBasicColor = (colorIndex > 1 && fg < 16) && (fg < 8 || bold);
-    const isDefaultColor = fg >= 256;
-    const isDefaultBackground = bg >= 256;
-    if (this._charAtlas && isAscii && (isBasicColor || isDefaultColor) && isDefaultBackground) {
-      // ImageBitmap's draw about twice as fast as from a canvas
-      const charAtlasCellWidth = this._scaledCharWidth + CHAR_ATLAS_CELL_SPACING;
-      const charAtlasCellHeight = this._scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
-
-      // Apply alpha to dim the character
-      if (dim) {
-        this._ctx.globalAlpha = DIM_OPACITY;
-      }
-
-      // Draw the non-bold version of the same color if bold is not enabled
-      if (bold && !terminal.options.enableBold) {
-        // Ignore default color as it's not touched above
-        if (colorIndex > 1) {
-          colorIndex -= 8;
-        }
-      }
-
-      this._ctx.drawImage(this._charAtlas,
-          code * charAtlasCellWidth,
-          colorIndex * charAtlasCellHeight,
-          charAtlasCellWidth,
-          this._scaledCharHeight,
-          x * this._scaledCellWidth + this._scaledCharLeft,
-          y * this._scaledCellHeight + this._scaledCharTop,
-          charAtlasCellWidth,
-          this._scaledCharHeight);
-    } else {
-      this._drawUncachedChar(terminal, char, width, fg, x, y, bold && terminal.options.enableBold, dim);
-    }
-    // This draws the atlas (for debugging purposes)
-    // this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
-    // this._ctx.drawImage(this._charAtlas, 0, 0);
   }
 
   /**
@@ -305,9 +263,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param x The column to draw at.
    * @param y The row to draw at.
    */
-  private _drawUncachedChar(terminal: ITerminal, char: string, width: number, fg: number, x: number, y: number, bold: boolean, dim: boolean): void {
+  private _drawUncachedChar(terminal: ITerminal, char: string, width: number, fg: number, x: number, y: number, bold: boolean, dim: boolean, italic: boolean): void {
     this._ctx.save();
-    this._ctx.font = this._getFont(terminal, bold);
+    this._ctx.font = this._getFont(terminal, bold, italic);
     this._ctx.textBaseline = 'top';
 
     if (fg === INVERTED_DEFAULT_COLOR) {
@@ -353,10 +311,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param terminal The terminal.
    * @param isBold If we should use the bold fontWeight.
    */
-  protected _getFont(terminal: ITerminal, isBold: boolean): string {
+  protected _getFont(terminal: ITerminal, isBold: boolean, isItalic: boolean): string {
     const fontWeight = isBold ? terminal.options.fontWeightBold : terminal.options.fontWeight;
+    const fontStyle = isItalic ? 'italic' : '';
 
-    return `${fontWeight} ${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
+    return `${fontStyle} ${fontWeight} ${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
   }
 }
 
