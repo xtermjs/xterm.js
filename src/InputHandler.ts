@@ -321,7 +321,7 @@ export class InputHandler implements IInputHandler {
     let bufferRow: [number, string, number, number][] = buffer.lines.get(buffer.y + buffer.ybase);
 
     this._terminal.updateRange(buffer.y);
-    for (let stringPosition = start; stringPosition < end; ++stringPosition) {
+    for (let stringPosition: number = start; stringPosition < end; ++stringPosition) {
       char = data.charAt(stringPosition);
       code = data.charCodeAt(stringPosition);
 
