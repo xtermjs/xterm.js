@@ -5,6 +5,7 @@
 
 import { FontWeight } from 'xterm';
 import { CHAR_ATLAS_CELL_SPACING, ICharAtlasConfig } from './Types';
+import { IColor } from '../Types';
 import { isFirefox } from '../utils/Browser';
 
 declare const Promise: any;
@@ -20,9 +21,9 @@ export interface IOffscreenCanvas {
  * Generates a char atlas.
  * @param context The window or worker context.
  * @param canvasFactory A function to generate a canvas with a width or height.
- * @param request The config for the new char atlas.
+ * @param config The config for the new char atlas.
  */
-export function generateCharAtlas(context: Window, canvasFactory: (width: number, height: number) => HTMLCanvasElement | IOffscreenCanvas, config: ICharAtlasConfig): HTMLCanvasElement | Promise<ImageBitmap> {
+export function generateStaticCharAtlasTexture(context: Window, canvasFactory: (width: number, height: number) => HTMLCanvasElement | IOffscreenCanvas, config: ICharAtlasConfig): HTMLCanvasElement | Promise<ImageBitmap> {
   const cellWidth = config.scaledCharWidth + CHAR_ATLAS_CELL_SPACING;
   const cellHeight = config.scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
   const canvas = canvasFactory(
@@ -111,25 +112,30 @@ export function generateCharAtlas(context: Window, canvasFactory: (width: number
   const charAtlasImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
   // Remove the background color from the image so characters may overlap
-  const r = config.colors.background.rgba >>> 24;
-  const g = config.colors.background.rgba >>> 16 & 0xFF;
-  const b = config.colors.background.rgba >>> 8 & 0xFF;
-  clearColor(charAtlasImageData, r, g, b);
+  clearColor(charAtlasImageData, config.colors.background);
 
   return context.createImageBitmap(charAtlasImageData);
 }
 
 /**
  * Makes a partiicular rgb color in an ImageData completely transparent.
+ * @returns True if the result is "empty", meaning all pixels are fully transparent.
  */
-function clearColor(imageData: ImageData, r: number, g: number, b: number): void {
+export function clearColor(imageData: ImageData, color: IColor): boolean {
+  let isEmpty = true;
+  const r = color.rgba >>> 24;
+  const g = color.rgba >>> 16 & 0xFF;
+  const b = color.rgba >>> 8 & 0xFF;
   for (let offset = 0; offset < imageData.data.length; offset += 4) {
     if (imageData.data[offset] === r &&
         imageData.data[offset + 1] === g &&
         imageData.data[offset + 2] === b) {
       imageData.data[offset + 3] = 0;
+    } else {
+      isEmpty = false;
     }
   }
+  return isEmpty;
 }
 
 function getFont(fontWeight: FontWeight, config: ICharAtlasConfig): string {
