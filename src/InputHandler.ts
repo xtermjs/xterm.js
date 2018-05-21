@@ -38,7 +38,7 @@ class RequestTerminfo implements IDcsHandler {
   }
   unhook(): void {
     // invalid: DCS 0 + r Pt ST
-    this._terminal.send(C0.ESC + 'P0' + '+r' + this._data + C0.ESC + '\\');
+    this._terminal.send(`${C0.ESC}P0+r${this._data}${C0.ESC}\\`);
   }
 }
 
@@ -66,25 +66,25 @@ class DECRQSS implements IDcsHandler {
     switch (this._data) {
       // valid: DCS 1 $ r Pt ST (xterm)
       case '"q': // DECSCA
-        return this._terminal.send(C0.ESC + 'P1' + '$r' + '0"q' + C0.ESC + '\\');
+        return this._terminal.send(`${C0.ESC}P1$r0"q${C0.ESC}\\`);
       case '"p': // DECSCL
-        return this._terminal.send(C0.ESC + 'P1' + '$r' + '61"p' + C0.ESC + '\\');
+        return this._terminal.send(`${C0.ESC}P1$r61"p${C0.ESC}\\`);
       case 'r': // DECSTBM
         let pt = '' + (this._terminal.buffer.scrollTop + 1) +
                 ';' + (this._terminal.buffer.scrollBottom + 1) + 'r';
-        return this._terminal.send(C0.ESC + 'P1' + '$r' + pt + C0.ESC + '\\');
+        return this._terminal.send(`${C0.ESC}P1$r${pt}${C0.ESC}\\`);
       case 'm': // SGR
         // TODO: report real settings instead of 0m
-        return this._terminal.send(C0.ESC + 'P1' + '$r' + '0m' + C0.ESC + '\\');
+        return this._terminal.send(`${C0.ESC}P1$r0m${C0.ESC}\\`);
       case ' q': // DECSCUSR
         const STYLES = {'block': 2, 'underline': 4, 'bar': 6};
         let style = STYLES[this._terminal.getOption('cursorStyle')];
         style -= this._terminal.getOption('cursorBlink');
-        return this._terminal.send(C0.ESC + 'P1' + '$r' + style + ' q' + C0.ESC + '\\');
+        return this._terminal.send(`${C0.ESC}P1$r${style} q${C0.ESC}\\`);
       default:
         // invalid: DCS 0 $ r Pt ST (xterm)
         this._terminal.error('Unknown DCS $q %s', this._data);
-        this._terminal.send(C0.ESC + 'P0' + '$r' + this._data + C0.ESC + '\\');
+        this._terminal.send(`${C0.ESC}P0$r${this._data}${C0.ESC}\\`);
     }
   }
 }
