@@ -150,6 +150,7 @@ export class Renderer extends EventEmitter implements IRenderer {
   }
 
   public onOptionsChanged(): void {
+    this.colorManager.allowTransparency = this._terminal.options.allowTransparency;
     this._runOperation(l => l.onOptionsChanged(this._terminal));
   }
 
