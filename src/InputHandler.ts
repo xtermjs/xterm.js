@@ -47,7 +47,6 @@ class RequestTerminfo implements IDcsHandler {
  *   DECRQSS (https://vt100.net/docs/vt510-rm/DECRQSS.html)
  *   Request Status String (DECRQSS), VT420 and up.
  *   Response: DECRPSS (https://vt100.net/docs/vt510-rm/DECRPSS.html)
- *   FIXME: xterm and DEC flip P0 and P1 to indicate valid requests - which one to go with?
  */
 class DECRQSS implements IDcsHandler {
   private _data: string;
