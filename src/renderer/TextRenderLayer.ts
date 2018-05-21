@@ -116,13 +116,6 @@ export class TextRenderLayer extends BaseRenderLayer {
           }
         }
 
-        if (flags & FLAGS.BOLD) {
-          // Convert the FG color to the bold variant
-          if (fg < 8) {
-            fg += 8;
-          }
-        }
-
         callback(code, char, width, x, y, fg, bg, flags);
       }
     }
@@ -214,6 +207,8 @@ export class TextRenderLayer extends BaseRenderLayer {
     if (this._state.cache.length === 0) {
       return;
     }
+
+    this._charAtlas.beginFrame();
 
     this.clearCells(0, firstRow, terminal.cols, lastRow - firstRow + 1);
     this._drawBackground(terminal, firstRow, lastRow);
