@@ -4,10 +4,10 @@
  * @license MIT
  */
 
-import { CharData, IInputHandler, IDcsHandler, IEscapeSequenceParser } from './Types';
+import { CharData, IInputHandler, IDcsHandler, IEscapeSequenceParser, IBuffer, ICharset } from './Types';
 import { C0, C1 } from './EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from './Charsets';
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX } from './Buffer';
 import { FLAGS } from './renderer/Types';
 import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
@@ -307,36 +307,36 @@ export class InputHandler implements IInputHandler {
   }
 
   public print(data: string, start: number, end: number): void {
-    let char;
-    let code;
-    let low;
-    let chWidth;
-    const buffer = this._terminal.buffer;
-    const charset = this._terminal.charset;
-    const screenReaderMode = this._terminal.options.screenReaderMode;
-    const cols = this._terminal.cols;
-    const wraparoundMode = this._terminal.wraparoundMode;
-    const insertMode = this._terminal.insertMode;
-    const curAttr = this._terminal.curAttr;
-    let bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
+    let char: string;
+    let code: number;
+    let low: number;
+    let chWidth: number;
+    const buffer: IBuffer = this._terminal.buffer;
+    const charset: ICharset = this._terminal.charset;
+    const screenReaderMode: boolean = this._terminal.options.screenReaderMode;
+    const cols: number = this._terminal.cols;
+    const wraparoundMode: boolean = this._terminal.wraparoundMode;
+    const insertMode: boolean = this._terminal.insertMode;
+    const curAttr: number = this._terminal.curAttr;
+    let bufferRow: [number, string, number, number][] = buffer.lines.get(buffer.y + buffer.ybase);
 
     this._terminal.updateRange(buffer.y);
-    for (let i = start; i < end; ++i) {
-      char = data.charAt(i);
-      code = data.charCodeAt(i);
+    for (let stringPosition = start; stringPosition < end; ++stringPosition) {
+      char = data.charAt(stringPosition);
+      code = data.charCodeAt(stringPosition);
 
       // surrogate pair handling
       if (0xD800 <= code && code <= 0xDBFF) {
         // we got a surrogate high
         // get surrogate low (next 2 bytes)
-        low = data.charCodeAt(i + 1);
+        low = data.charCodeAt(stringPosition + 1);
         if (isNaN(low)) {
           // end of data stream, save surrogate high
           this._surrogateHigh = char;
           continue;
         }
         code = ((code - 0xD800) * 0x400) + (low - 0xDC00) + 0x10000;
-        char += data.charAt(i + 1);
+        char += data.charAt(stringPosition + 1);
       }
       // surrogate low - already handled above
       if (0xDC00 <= code && code <= 0xDFFF) {
@@ -353,7 +353,6 @@ export class InputHandler implements IInputHandler {
         char = charset[char] || char;
       }
 
-      // FIXME: Do we have to trigger this for every single char?
       if (screenReaderMode) {
         this._terminal.emit('a11y.char', char);
       }
@@ -371,11 +370,11 @@ export class InputHandler implements IInputHandler {
             // since an empty cell is only set by fullwidth chars
             if (bufferRow[buffer.x - 2]) {
               bufferRow[buffer.x - 2][CHAR_DATA_CHAR_INDEX] += char;
-              bufferRow[buffer.x - 2][3] = code;
+              bufferRow[buffer.x - 2][CHAR_DATA_CODE_INDEX] = code;
             }
           } else {
             bufferRow[buffer.x - 1][CHAR_DATA_CHAR_INDEX] += char;
-            bufferRow[buffer.x - 1][3] = code;
+            bufferRow[buffer.x - 1][CHAR_DATA_CODE_INDEX] = code;
           }
         }
         continue;
@@ -395,7 +394,6 @@ export class InputHandler implements IInputHandler {
           } else {
             // The line already exists (eg. the initial viewport), mark it as a
             // wrapped line
-            // FIXME: Why is it only buffer.y here?
             (<any>buffer.lines.get(buffer.y)).isWrapped = true;
           }
           // row changed, get it again
@@ -430,7 +428,7 @@ export class InputHandler implements IInputHandler {
         }
       }
 
-      // write current char to buffer
+      // write current char to buffer and advance cursor
       bufferRow[buffer.x++] = [curAttr, char, chWidth, code];
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor
