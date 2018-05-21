@@ -6,8 +6,8 @@
 import { IRenderLayer, IColorSet, IRenderDimensions } from './Types';
 import { CharData, ITerminal } from '../Types';
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from './atlas/Types';
-import { CHAR_ATLAS_CELL_SPACING } from '../shared/atlas/Types';
-import { acquireCharAtlas } from './atlas/CharAtlas';
+import BaseCharAtlas from './atlas/BaseCharAtlas';
+import { acquireCharAtlas } from './atlas/CharAtlasCache';
 import { CHAR_DATA_CHAR_INDEX } from '../Buffer';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
@@ -20,7 +20,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _scaledCharLeft: number = 0;
   private _scaledCharTop: number = 0;
 
-  private _charAtlas: HTMLCanvasElement | ImageBitmap;
+  protected _charAtlas: BaseCharAtlas;
 
   constructor(
     private _container: HTMLElement,
@@ -83,13 +83,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     if (this._scaledCharWidth <= 0 && this._scaledCharHeight <= 0) {
       return;
     }
-    this._charAtlas = null;
-    const result = acquireCharAtlas(terminal, colorSet, this._scaledCharWidth, this._scaledCharHeight);
-    if (result instanceof HTMLCanvasElement) {
-      this._charAtlas = result;
-    } else {
-      result.then(bitmap => this._charAtlas = bitmap);
-    }
+    this._charAtlas = acquireCharAtlas(terminal, colorSet, this._scaledCharWidth, this._scaledCharHeight);
+    this._charAtlas.warmUp();
   }
 
   public resize(terminal: ITerminal, dim: IRenderDimensions): void {
@@ -243,46 +238,18 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param bold Whether the text is bold.
    */
   protected drawChar(terminal: ITerminal, char: string, code: number, width: number, x: number, y: number, fg: number, bg: number, bold: boolean, dim: boolean, italic: boolean): void {
-    const isAscii = code < 256;
-    // A color is basic if it is one of the 4 bit ANSI colors.
-    const isBasicColor = fg < 16;
-    const isDefaultColor = fg >= 256;
-    const isDefaultBackground = bg >= 256;
-    const drawInBrightColor = (terminal.options.drawBoldTextInBrightColors && bold && fg < 8);
-    if (this._charAtlas && isAscii && (isBasicColor || isDefaultColor) && isDefaultBackground && !italic) {
-      this._ctx.save(); // we may set globalAlpha, so we need to be able to restore
-      let colorIndex: number;
-      if (isDefaultColor) {
-        colorIndex = (bold && terminal.options.enableBold ? 1 : 0);
-      } else {
-        colorIndex = 2 + fg + (bold && terminal.options.enableBold ? 16 : 0) + (drawInBrightColor ? 8 : 0);
-      }
+    const drawInBrightColor = terminal.options.drawBoldTextInBrightColors && bold && fg < 8;
+    fg += drawInBrightColor ? 8 : 0;
+    const atlasDidDraw = this._charAtlas && this._charAtlas.draw(
+      this._ctx,
+      {char, code, bg, fg, bold: bold && terminal.options.enableBold, dim, italic},
+      x * this._scaledCellWidth + this._scaledCharLeft,
+      y * this._scaledCellHeight + this._scaledCharTop
+    );
 
-      // ImageBitmap's draw about twice as fast as from a canvas
-      const charAtlasCellWidth = this._scaledCharWidth + CHAR_ATLAS_CELL_SPACING;
-      const charAtlasCellHeight = this._scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
-
-      // Apply alpha to dim the character
-      if (dim) {
-        this._ctx.globalAlpha = DIM_OPACITY;
-      }
-
-      this._ctx.drawImage(this._charAtlas,
-          code * charAtlasCellWidth,
-          colorIndex * charAtlasCellHeight,
-          charAtlasCellWidth,
-          this._scaledCharHeight,
-          x * this._scaledCellWidth + this._scaledCharLeft,
-          y * this._scaledCellHeight + this._scaledCharTop,
-          charAtlasCellWidth,
-          this._scaledCharHeight);
-      this._ctx.restore();
-    } else {
-      this._drawUncachedChar(terminal, char, width, fg + (drawInBrightColor ? 8 : 0), x, y, bold && terminal.options.enableBold, dim, italic);
+    if (!atlasDidDraw) {
+      this._drawUncachedChar(terminal, char, width, fg, x, y, bold && terminal.options.enableBold, dim, italic);
     }
-    // This draws the atlas (for debugging purposes)
-    // this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
-    // this._ctx.drawImage(this._charAtlas, 0, 0);
   }
 
   /**

@@ -2,6 +2,12 @@
   "compilerOptions": {
     "module": "commonjs",
     "target": "es5",
+    "lib": [
+      "DOM",
+      "ES5",
+      "ScriptHost",
+      "ES2015.Promise"
+    ],
     "rootDir": "src",
     "outDir": "lib",
     "sourceMap": true,
