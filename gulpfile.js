@@ -4,11 +4,9 @@
 
 const browserify = require('browserify');
 const buffer = require('vinyl-buffer');
-const coveralls = require('gulp-coveralls');
 const fs = require('fs-extra');
 const gulp = require('gulp');
 const path = require('path');
-const istanbul = require('gulp-istanbul');
 const merge = require('merge-stream');
 const mocha = require('gulp-mocha');
 const sorcery = require('sorcery');
@@ -141,25 +139,10 @@ gulp.task('browserify-addons', ['tsc'], function() {
   return merge(...bundles);
 });
 
-gulp.task('instrument-test', function () {
-  return gulp.src([`${outDir}/**/*.js`])
-    // Covering files
-    .pipe(istanbul())
-    // Force `require` to return covered files
-    .pipe(istanbul.hookRequire());
-});
-
 gulp.task('mocha', function () {
   return gulp.src(TEST_PATHS, {read: false})
       .pipe(mocha())
       .once('error', () => process.exit(1));
-});
-
-gulp.task('mocha-coverage', ['instrument-test'], function () {
-  return gulp.src(TEST_PATHS, {read: false})
-      .pipe(mocha())
-      .once('error', () => process.exit(1))
-      .pipe(istanbul.writeReports());
 });
 
 /**
@@ -201,14 +184,6 @@ gulp.task('webpack', ['build'], function() {
 
 gulp.task('watch', ['webpack'], () => {
   gulp.watch(['./src/*', './src/**/*'], ['webpack']);
-});
-
-/**
- * Submit coverage results to coveralls.io
- */
-gulp.task('coveralls', function () {
-  gulp.src('coverage/**/lcov.info')
-    .pipe(coveralls());
 });
 
 gulp.task('build', ['sorcery', 'sorcery-addons']);
