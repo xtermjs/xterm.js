@@ -48,7 +48,7 @@ import { MouseZoneManager } from './input/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ScreenDprMonitor } from './utils/ScreenDprMonitor';
 import { ITheme, ILocalizableStrings, IMarker, IDisposable } from 'xterm';
-import { removeTerminalFromCache } from './renderer/atlas/CharAtlas';
+import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
 
 // reg + shift key mappings for digits and special chars
@@ -106,6 +106,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   bellStyle: 'none',
   drawBoldTextInBrightColors: true,
   enableBold: true,
+  experimentalCharAtlas: 'static',
   fontFamily: 'courier-new, courier, monospace',
   fontSize: 15,
   fontWeight: 'normal',
@@ -480,6 +481,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
           this.charMeasure.measure(this.options);
         }
         break;
+      case 'experimentalCharAtlas':
       case 'enableBold':
       case 'letterSpacing':
       case 'lineHeight':
