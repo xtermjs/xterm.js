@@ -318,10 +318,10 @@ export class InputHandler implements IInputHandler {
     const wraparoundMode: boolean = this._terminal.wraparoundMode;
     const insertMode: boolean = this._terminal.insertMode;
     const curAttr: number = this._terminal.curAttr;
-    let bufferRow: [number, string, number, number][] = buffer.lines.get(buffer.y + buffer.ybase);
+    let bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
 
     this._terminal.updateRange(buffer.y);
-    for (let stringPosition: number = start; stringPosition < end; ++stringPosition) {
+    for (let stringPosition = start; stringPosition < end; ++stringPosition) {
       char = data.charAt(stringPosition);
       code = data.charCodeAt(stringPosition);
 
