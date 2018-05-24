@@ -509,3 +509,13 @@ export interface IEscapeSequenceParser {
   setErrorHandler(callback: (state: IParsingState) => IParsingState): void;
   clearErrorHandler(): void;
 }
+
+/**
+ * Configure options for wcwidth
+ */
+export interface IwcwidthOptions {
+  nul: 0 | 1 | 2;
+  control: 0 | 1 | 2;
+  ambiguous?: 0 | 1 | 2;
+  custom?: {[key: number]: 0 | 1 | 2};
+}

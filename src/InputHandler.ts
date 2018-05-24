@@ -9,7 +9,7 @@ import { C0, C1 } from './EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from './Charsets';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX } from './Buffer';
 import { FLAGS } from './renderer/Types';
-import { wcwidth } from './CharWidth';
+import { wcwidthFactory } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
 
 /**
@@ -112,6 +112,7 @@ class DECRQSS implements IDcsHandler {
  */
 export class InputHandler implements IInputHandler {
   private _surrogateHigh: string;
+  private _wcwidth: (ucs: number) => number;
 
   constructor(
       private _terminal: any, // TODO: reestablish IInputHandlingTerminal here
@@ -282,6 +283,11 @@ export class InputHandler implements IInputHandler {
      */
     this._parser.setDcsHandler('$q', new DECRQSS(this._terminal));
     this._parser.setDcsHandler('+q', new RequestTerminfo(this._terminal));
+
+    /**
+     * generate default wcwidth
+     */
+    this._wcwidth = wcwidthFactory({nul: 0, control: 0});
   }
 
   public parse(data: string): void {
@@ -345,7 +351,7 @@ export class InputHandler implements IInputHandler {
 
       // calculate print space
       // expensive call, therefore we save width in line buffer
-      chWidth = wcwidth(code);
+      chWidth = this._wcwidth(code);
 
       // get charset replacement character
       // FIXME: Should code be replaced as well?
