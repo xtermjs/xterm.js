@@ -153,6 +153,11 @@ export function wcwidthFactory(opts: IwcwidthOptions): (num: number) => number {
         return control;
       }
 
+      // custom overrrides
+      if (custom && custom[ucs]) {
+        return custom[ucs];
+      }
+
       // binary search for ambiguous characters
       // only done if ambiguous is explicitly set
       if (ambiguous) {
@@ -221,7 +226,7 @@ export function wcwidthFactory(opts: IwcwidthOptions): (num: number) => number {
         let num = 0;
         let pos = CODEPOINTS_PER_ITEM;
         while (pos--) {
-          num = (num << 2) | (custom[CODEPOINTS_PER_ITEM * i + pos] || wcwidthBMP(CODEPOINTS_PER_ITEM * i + pos));
+          num = (num << 2) | wcwidthBMP(CODEPOINTS_PER_ITEM * i + pos);
         }
         table[i] = num;
       }
