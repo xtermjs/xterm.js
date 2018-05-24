@@ -110,6 +110,7 @@ export interface ICompositionHelper {
 export interface IInputHandler {
   parse(data: string): void;
   print(data: string, start: number, end: number): void;
+  setWcwidthOptions(opts: {ambiguous?: 0 | 1 | 2, custom?: {[key: number]: 0 | 1 | 2}}): void;
 
   /** C0 BEL */ bell(): void;
   /** C0 LF */ lineFeed(): void;

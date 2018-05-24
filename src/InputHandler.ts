@@ -9,7 +9,7 @@ import { C0, C1 } from './EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from './Charsets';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX } from './Buffer';
 import { FLAGS } from './renderer/Types';
-import { wcwidthFactory } from './CharWidth';
+import { wcwidthFactory, wcwidthDefault } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
 
 /**
@@ -285,9 +285,17 @@ export class InputHandler implements IInputHandler {
     this._parser.setDcsHandler('+q', new RequestTerminfo(this._terminal));
 
     /**
-     * generate default wcwidth
+     * init wcwidth with default version
      */
-    this._wcwidth = wcwidthFactory({nul: 0, control: 0});
+    this._wcwidth = wcwidthDefault;
+  }
+
+  public setWcwidthOptions(opts: {ambiguous?: 0 | 1 | 2, custom?: {[key: number]: 0 | 1 | 2}}): void {
+    if (opts.ambiguous === undefined && opts.custom === undefined) {
+      this._wcwidth = wcwidthDefault;
+    } else {
+      this._wcwidth = wcwidthFactory({nul: 0, control: 0, ambiguous: opts.ambiguous, custom: opts.custom});
+    }
   }
 
   public parse(data: string): void {

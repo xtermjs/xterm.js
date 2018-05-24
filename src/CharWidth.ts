@@ -255,3 +255,5 @@ export function wcwidthFactory(opts: IwcwidthOptions): (num: number) => number {
       return wcwidthHigh(num);
     };
 }
+
+export const wcwidthDefault = wcwidthFactory({nul: 0, control: 0});
