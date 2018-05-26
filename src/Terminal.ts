@@ -32,7 +32,7 @@ import { Viewport } from './Viewport';
 import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './handlers/Clipboard';
 import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
-import { Parser } from './Parser';
+// import { Parser } from './Parser';
 import { Renderer } from './renderer/Renderer';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
@@ -197,8 +197,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   public params: (string | number)[];
   public currentParam: string | number;
-  public prefix: string;
-  public postfix: string;
 
   // user input states
   public writeBuffer: string[];
@@ -220,7 +218,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   private _inputHandler: InputHandler;
   public soundManager: SoundManager;
-  private _parser: Parser;
   public renderer: IRenderer;
   public selectionManager: SelectionManager;
   public linkifier: ILinkifier;
@@ -323,8 +320,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     this.params = [];
     this.currentParam = 0;
-    this.prefix = '';
-    this.postfix = '';
 
     // user input states
     this.writeBuffer = [];
@@ -335,7 +330,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this._userScrolling = false;
 
     this._inputHandler = new InputHandler(this);
-    this._parser = new Parser(this._inputHandler, this);
     // Reuse renderer if the Terminal is being recreated via a reset call.
     this.renderer = this.renderer || null;
     this.selectionManager = this.selectionManager || null;
@@ -1324,8 +1318,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // middle of parsing escape sequence in two chunks. For some reason the
       // state of the parser resets to 0 after exiting parser.parse. This change
       // just sets the state back based on the correct return statement.
-      const state = this._parser.parse(data);
-      this._parser.setState(state);
+
+      this._inputHandler.parse(data);
 
       this.updateRange(this.buffer.y);
       this.refresh(this._refreshStart, this._refreshEnd);
