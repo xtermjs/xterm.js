@@ -6,7 +6,6 @@
 import { LineData } from '../../Types';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_ATTR_INDEX, CHAR_DATA_WIDTH_INDEX } from '../../Buffer';
 import { FLAGS } from '../Types';
-import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
 
 export const BOLD_CLASS = 'xterm-bold';
 export const ITALIC_CLASS = 'xterm-italic';
@@ -50,11 +49,10 @@ export class DomRendererRowFactory {
         bg = fg;
         fg = temp;
         if (fg === 256) {
-          // TODO: INVERTED_DEFAULT_COLOR should not be in atlas
-          fg = INVERTED_DEFAULT_COLOR;
+          fg = 0;
         }
         if (bg === 257) {
-          bg = INVERTED_DEFAULT_COLOR;
+          bg = 15;
         }
       }
 
