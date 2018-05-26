@@ -43,7 +43,6 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   insertMode: boolean;
   wraparoundMode: boolean;
   bracketedPasteMode: boolean;
-  defAttr: number;
   curAttr: number;
   savedCols: number;
   x10Mouse: boolean;
@@ -213,7 +212,6 @@ export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAcce
   writeBuffer: string[];
   cursorHidden: boolean;
   cursorState: number;
-  defAttr: number;
   options: ITerminalOptions;
   buffer: IBuffer;
   buffers: IBufferSet;

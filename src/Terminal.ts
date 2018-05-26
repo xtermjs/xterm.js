@@ -25,7 +25,7 @@ import { ICharset, IInputHandlingTerminal, IViewport, ICompositionHelper, ITermi
 import { IMouseZoneManager } from './input/Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
-import { Buffer, MAX_BUFFER_SIZE } from './Buffer';
+import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR } from './Buffer';
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './EventEmitter';
 import { Viewport } from './Viewport';
@@ -192,7 +192,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   private _refreshEnd: number;
   public savedCols: number;
 
-  public defAttr: number;
   public curAttr: number;
 
   public params: (string | number)[];
@@ -315,8 +314,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // TODO: Can this be just []?
     this.charsets = [null];
 
-    this.defAttr = (0 << 18) | (257 << 9) | (256 << 0);
-    this.curAttr = (0 << 18) | (257 << 9) | (256 << 0);
+    this.curAttr = DEFAULT_ATTR;
 
     this.params = [];
     this.currentParam = 0;
@@ -360,8 +358,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * back_color_erase feature for xterm.
    */
   public eraseAttr(): number {
-    // if (this.is('screen')) return this.defAttr;
-    return (this.defAttr & ~0x1ff) | (this.curAttr & 0x1ff);
+    // if (this.is('screen')) return DEFAULT_ATTR;
+    return (DEFAULT_ATTR & ~0x1ff) | (this.curAttr & 0x1ff);
   }
 
   /**
@@ -2063,7 +2061,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * set, the terminal's current column count would be used.
    */
   public blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): LineData {
-    const attr = cur ? this.eraseAttr() : this.defAttr;
+    const attr = cur ? this.eraseAttr() : DEFAULT_ATTR;
 
     const ch: CharData = [attr, ' ', 1, 32 /* ' '.charCodeAt(0) */]; // width defaults to 1 halfwidth character
     const line: LineData = [];
@@ -2083,14 +2081,14 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   /**
-   * If cur return the back color xterm feature attribute. Else return defAttr.
+   * If cur return the back color xterm feature attribute. Else return default attribute.
    * @param cur
    */
   public ch(cur?: boolean): CharData {
     if (cur) {
       return [this.eraseAttr(), ' ', 1, 32 /* ' '.charCodeAt(0) */];
     }
-    return [this.defAttr, ' ', 1, 32 /* ' '.charCodeAt(0) */];
+    return [DEFAULT_ATTR, ' ', 1, 32 /* ' '.charCodeAt(0) */];
   }
 
   /**

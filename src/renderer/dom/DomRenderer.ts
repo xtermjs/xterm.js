@@ -3,20 +3,16 @@
  * @license MIT
  */
 
-import { IRenderer, IRenderDimensions, IColorSet, FLAGS } from '../Types';
+import { IRenderer, IRenderDimensions, IColorSet } from '../Types';
 import { ITerminal } from '../../Types';
 import { ITheme } from 'xterm';
 import { EventEmitter } from '../../EventEmitter';
 import { ColorManager } from '../ColorManager';
-import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_ATTR_INDEX, CHAR_DATA_WIDTH_INDEX } from '../../Buffer';
 import { RenderDebouncer } from '../../utils/RenderDebouncer';
+import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, DomRendererRowFactory } from './DomRendererRowFactory';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
-const BOLD_CLASS = 'xterm-bold';
-const ITALIC_CLASS = 'xterm-italic';
-const CURSOR_CLASS = 'xterm-cursor';
 const FG_CLASS_PREFIX = 'xterm-fg-';
 const BG_CLASS_PREFIX = 'xterm-bg-';
 const FOCUS_CLASS = 'xterm-focus';
@@ -34,6 +30,7 @@ let nextTerminalId = 1;
  */
 export class DomRenderer extends EventEmitter implements IRenderer {
   private _renderDebouncer: RenderDebouncer;
+  private _rowFactory: DomRendererRowFactory;
   private _terminalClass: number = nextTerminalId++;
 
   private _themeStyleElement: HTMLStyleElement;
@@ -77,6 +74,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
     this._updateDimensions();
 
     this._renderDebouncer = new RenderDebouncer(this._terminal, this._renderRows.bind(this));
+    this._rowFactory = new DomRendererRowFactory(document);
 
     this._terminal.element.classList.add(TERMINAL_CLASS_PREFIX + this._terminalClass);
     this._terminal.screenElement.appendChild(this._rowContainer);
@@ -297,72 +295,15 @@ export class DomRenderer extends EventEmitter implements IRenderer {
     const terminal = this._terminal;
 
     const cursorAbsoluteY = terminal.buffer.ybase + terminal.buffer.y;
+    const cursorX = this._terminal.buffer.x;
 
     for (let y = start; y <= end; y++) {
       const rowElement = this._rowElements[y];
       rowElement.innerHTML = '';
 
       const row = y + terminal.buffer.ydisp;
-      const line = terminal.buffer.lines.get(row);
-      for (let x = 0; x < terminal.cols; x++) {
-        const charData = line[x];
-        const char: string = charData[CHAR_DATA_CHAR_INDEX];
-        const attr: number = charData[CHAR_DATA_ATTR_INDEX];
-        let width: number = charData[CHAR_DATA_WIDTH_INDEX];
-
-        // The character to the left is a wide character, drawing is owned by the char at x-1
-        if (width === 0) {
-          continue;
-        }
-
-        const charElement = document.createElement('span');
-        if (width > 1) {
-          charElement.style.width = `${terminal.charMeasure.width * width}px`;
-        }
-
-        const flags = attr >> 18;
-        let bg = attr & 0x1ff;
-        let fg = (attr >> 9) & 0x1ff;
-
-        if (row === cursorAbsoluteY && x === this._terminal.buffer.x) {
-          charElement.classList.add(CURSOR_CLASS);
-        }
-
-        // If inverse flag is on, the foreground should become the background.
-        if (flags & FLAGS.INVERSE) {
-          const temp = bg;
-          bg = fg;
-          fg = temp;
-          if (fg === 256) {
-            // TODO: INVERTED_DEFAULT_COLOR should not be in atlas
-            fg = INVERTED_DEFAULT_COLOR;
-          }
-          if (bg === 257) {
-            bg = INVERTED_DEFAULT_COLOR;
-          }
-        }
-
-        if (flags & FLAGS.BOLD) {
-          // Convert the FG color to the bold variant
-          if (fg < 8) {
-            fg += 8;
-          }
-          charElement.classList.add(BOLD_CLASS);
-        }
-
-        if (flags & FLAGS.ITALIC) {
-          charElement.classList.add(ITALIC_CLASS);
-        }
-
-        charElement.textContent = char;
-        if (fg !== 257) {
-          charElement.classList.add(`xterm-fg-${fg}`);
-        }
-        if (bg !== 256) {
-          charElement.classList.add(`xterm-bg-${bg}`);
-        }
-        rowElement.appendChild(charElement);
-      }
+      const lineData = terminal.buffer.lines.get(row);
+      rowElement.appendChild(this._rowFactory.createRow(lineData, row === cursorAbsoluteY, cursorX, terminal.charMeasure.width));
     }
 
     this._terminal.emit('refresh', {start, end});

@@ -107,7 +107,6 @@ export class MockTerminal implements ITerminal {
   children: HTMLElement[];
   cursorHidden: boolean;
   cursorState: number;
-  defAttr: number;
   scrollback: number;
   buffers: IBufferSet;
   buffer: IBuffer;
@@ -182,7 +181,6 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   insertMode: boolean;
   wraparoundMode: boolean;
   bracketedPasteMode: boolean;
-  defAttr: number;
   curAttr: number;
   savedCols: number;
   x10Mouse: boolean;
