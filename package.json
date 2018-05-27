@@ -11,9 +11,9 @@
     "@types/jsdom": "^11.0.1",
     "@types/mocha": "^2.2.33",
     "@types/node": "6.0.108",
-    "@types/text-encoding": "0.0.32",
     "browserify": "^13.3.0",
     "chai": "3.5.0",
+    "concurrently": "^3.5.1",
     "express": "4.13.4",
     "express-ws": "2.0.0-rc.1",
     "fs-extra": "^1.0.0",
@@ -36,7 +36,7 @@
     "sorcery": "^0.10.0",
     "tslint": "^5.9.1",
     "tslint-consistent-codestyle": "^1.13.0",
-    "typescript": "~2.7.1",
+    "typescript": "2.8.3",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.1.0",
     "webpack": "^3.10.0",
@@ -51,10 +51,11 @@
     "mocha": "gulp test",
     "build:docs": "jsdoc -c jsdoc.json",
     "tsc": "tsc",
+    "prebuild": "concurrently --names 'lib,attach,fit,fullscreen,search,terminado,webLinks,winptyCompat,zmodem' 'tsc' 'tsc -p ./src/addons/attach' 'tsc -p ./src/addons/fit' 'tsc -p ./src/addons/fullscreen' 'tsc -p ./src/addons/search' 'tsc -p ./src/addons/terminado' 'tsc -p ./src/addons/webLinks' 'tsc -p ./src/addons/winptyCompat' 'tsc -p ./src/addons/zmodem'",
     "build": "gulp build",
     "prepublish": "npm run build",
     "coveralls": "gulp coveralls",
     "webpack": "gulp webpack",
-    "watch": "gulp watch"
+    "watch": "concurrently --names 'lib,attach,fit,fullscreen,search,terminado,webLinks,winptyCompat,zmodem,demo' 'tsc -w' 'tsc -w -p ./src/addons/attach' 'tsc -w -p ./src/addons/fit' 'tsc -w -p ./src/addons/fullscreen' 'tsc -w -p ./src/addons/search' 'tsc -w -p ./src/addons/terminado' 'tsc -w -p ./src/addons/webLinks' 'tsc -w -p ./src/addons/winptyCompat' 'tsc -w -p ./src/addons/zmodem' 'gulp watch-demo'"
   }
 }

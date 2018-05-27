@@ -6,6 +6,7 @@
     "outDir": "../../../lib/addons/webLinks/",
     "sourceMap": true,
     "removeComments": true,
-    "declaration": true
+    "declaration": true,
+    "preserveWatchOutput": true
   }
 }

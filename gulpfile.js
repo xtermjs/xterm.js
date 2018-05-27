@@ -20,7 +20,6 @@ const webpack = require('webpack-stream');
 
 const buildDir = process.env.BUILD_DIR || 'build';
 const tsProject = ts.createProject('tsconfig.json');
-const srcDir = tsProject.config.compilerOptions.rootDir;
 let outDir = tsProject.config.compilerOptions.outDir;
 
 const addons = fs.readdirSync(`${__dirname}/src/addons`);
@@ -32,57 +31,10 @@ if (path.normalize(outDir).indexOf(__dirname) !== 0) {
 }
 
 /**
- * Compile TypeScript sources to JavaScript files and create a source map file for each TypeScript
- * file compiled.
- */
-gulp.task('tsc', function () {
-  // Remove the ${outDir}/ directory to prevent confusion if files were deleted in ${srcDir}/
-  fs.emptyDirSync(`${outDir}`);
-
-  // Build all TypeScript files (including tests) to ${outDir}/, based on the configuration defined in
-  // `tsconfig.json`.
-  let tsResult = tsProject.src().pipe(sourcemaps.init()).pipe(tsProject());
-  let tsc = merge(
-    tsResult.js.pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''})).pipe(gulp.dest(outDir)),
-    tsResult.dts.pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''})).pipe(gulp.dest(outDir))
-  );
-
-  let addonStreams = addons.map(function(addon) {
-    fs.emptyDirSync(`${outDir}/addons/${addon}`);
-
-    let tsProjectAddon = ts.createProject(`./src/addons/${addon}/tsconfig.json`);
-    let tsResultAddon = tsProjectAddon.src().pipe(sourcemaps.init()).pipe(tsProjectAddon());
-    let tscAddon = merge(
-      tsResultAddon.js
-        .pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''}))
-        .pipe(gulp.dest(`${outDir}/addons/${addon}`)),
-      tsResultAddon.dts
-        .pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''}))
-        .pipe(gulp.dest(`${outDir}/addons/${addon}`))
-    )
-
-    return tscAddon;
-  });
-
-  // Copy all addons from ${srcDir}/ to ${outDir}/
-  let copyAddons = gulp.src([
-    `${srcDir}/addons/**/**`
-  ]).pipe(gulp.dest(`${outDir}/addons`));
-
-  // Copy stylesheets from ${srcDir}/ to ${outDir}/
-  let copyStylesheets = gulp.src(`${srcDir}/**/*.css`).pipe(gulp.dest(outDir));
-
-  // Join all streams into a single array
-  let streams = [tsc].concat(addonStreams).concat([copyAddons, copyStylesheets]);
-
-  return merge.apply(this, streams);
-});
-
-/**
  * Bundle JavaScript files produced by the `tsc` task, into a single file named `xterm.js` with
  * Browserify.
  */
-gulp.task('browserify', ['tsc'], function() {
+gulp.task('browserify', [], function() {
   // Ensure that the build directory exists
   fs.ensureDirSync(buildDir);
 
@@ -108,7 +60,7 @@ gulp.task('browserify', ['tsc'], function() {
   return merge(bundleStream, copyStylesheets);
 });
 
-gulp.task('browserify-addons', ['tsc'], function() {
+gulp.task('browserify-addons', [], function() {
   const bundles = addons.map((addon) => {
     const addonOptions = {
       basedir: `${buildDir}/addons/${addon}`,
@@ -192,8 +144,8 @@ gulp.task('webpack', ['build'], function() {
     .pipe(gulp.dest('demo/dist/'));
 });
 
-gulp.task('watch', ['webpack'], () => {
-  gulp.watch(['./src/*', './src/**/*'], ['webpack']);
+gulp.task('watch-demo', ['webpack'], () => {
+  gulp.watch(['./lib/*', './lib/**/*'], ['webpack']);
 });
 
 /**

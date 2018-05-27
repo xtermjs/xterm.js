@@ -6,6 +6,7 @@
     "outDir": "../../../lib/addons/search/",
     "sourceMap": true,
     "removeComments": true,
-    "declaration": true
+    "declaration": true,
+    "preserveWatchOutput": true
   }
 }

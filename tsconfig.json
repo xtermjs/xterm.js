@@ -12,7 +12,8 @@
     "outDir": "lib",
     "sourceMap": true,
     "removeComments": true,
-    "noUnusedLocals": true
+    "noUnusedLocals": true,
+    "preserveWatchOutput": true
   },
   "include": [
     "src/**/*"
