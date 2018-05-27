@@ -144,8 +144,9 @@ gulp.task('webpack', ['build'], function() {
     .pipe(gulp.dest('demo/dist/'));
 });
 
+
 gulp.task('watch-demo', ['webpack'], () => {
-  gulp.watch(['./lib/*', './lib/**/*'], ['webpack']);
+  gulp.watch(['./demo/*', './lib/**/*'], ['webpack']);
 });
 
 /**
