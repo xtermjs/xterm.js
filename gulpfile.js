@@ -20,6 +20,7 @@ const webpack = require('webpack-stream');
 
 const buildDir = process.env.BUILD_DIR || 'build';
 const tsProject = ts.createProject('tsconfig.json');
+let srcDir = tsProject.config.compilerOptions.rootDir;
 let outDir = tsProject.config.compilerOptions.outDir;
 
 const addons = fs.readdirSync(`${__dirname}/src/addons`);
@@ -30,11 +31,19 @@ if (path.normalize(outDir).indexOf(__dirname) !== 0) {
   outDir = `${__dirname}/${path.normalize(outDir)}`;
 }
 
+gulp.task('css', function() {
+  return gulp.src(`${srcDir}/**/*.css`).pipe(gulp.dest(outDir));
+});
+
+gulp.task('watch-css', function() {
+  return gulp.watch(`${srcDir}/**/*.css`, ['css']);
+});
+
 /**
  * Bundle JavaScript files produced by the `tsc` task, into a single file named `xterm.js` with
  * Browserify.
  */
-gulp.task('browserify', [], function() {
+gulp.task('browserify', function() {
   // Ensure that the build directory exists
   fs.ensureDirSync(buildDir);
 
@@ -60,7 +69,7 @@ gulp.task('browserify', [], function() {
   return merge(bundleStream, copyStylesheets);
 });
 
-gulp.task('browserify-addons', [], function() {
+gulp.task('browserify-addons', function() {
   const bundles = addons.map((addon) => {
     const addonOptions = {
       basedir: `${buildDir}/addons/${addon}`,
