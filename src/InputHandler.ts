@@ -70,7 +70,7 @@ class DECRQSS implements IDcsHandler {
       case '"p': // DECSCL
         return this._terminal.send(`${C0.ESC}P1$r61"p${C0.ESC}\\`);
       case 'r': // DECSTBM
-        let pt = '' + (this._terminal.buffer.scrollTop + 1) +
+        const pt = '' + (this._terminal.buffer.scrollTop + 1) +
                 ';' + (this._terminal.buffer.scrollBottom + 1) + 'r';
         return this._terminal.send(`${C0.ESC}P1$r${pt}${C0.ESC}\\`);
       case 'm': // SGR
@@ -259,7 +259,7 @@ export class InputHandler implements IInputHandler {
     this._parser.setEscHandler('~', () => this.setgLevel(1));
     this._parser.setEscHandler('%@', () => this.selectDefaultCharset());
     this._parser.setEscHandler('%G', () => this.selectDefaultCharset());
-    for (let flag in CHARSETS) {
+    for (const flag in CHARSETS) {
       this._parser.setEscHandler('(' + flag, () => this.selectCharset('(' + flag));
       this._parser.setEscHandler(')' + flag, () => this.selectCharset(')' + flag));
       this._parser.setEscHandler('*' + flag, () => this.selectCharset('*' + flag));
@@ -416,7 +416,7 @@ export class InputHandler implements IInputHandler {
         for (let moves = 0; moves < chWidth; ++moves) {
           // remove last cell
           // if it's width is 0, we have to adjust the second last cell as well
-          let removed = bufferRow.pop();
+          const removed = bufferRow.pop();
           if (removed[CHAR_DATA_WIDTH_INDEX] === 0
               && bufferRow[this._terminal.cols - 2]
               && bufferRow[this._terminal.cols - 2][CHAR_DATA_WIDTH_INDEX] === 2) {
@@ -786,10 +786,10 @@ export class InputHandler implements IInputHandler {
     // make buffer local for faster access
     const buffer = this._terminal.buffer;
 
-    let row: number = buffer.y + buffer.ybase;
+    const row: number = buffer.y + buffer.ybase;
 
-    let scrollBottomRowsOffset = this._terminal.rows - 1 - buffer.scrollBottom;
-    let scrollBottomAbsolute = this._terminal.rows - 1 + buffer.ybase - scrollBottomRowsOffset + 1;
+    const scrollBottomRowsOffset = this._terminal.rows - 1 - buffer.scrollBottom;
+    const scrollBottomAbsolute = this._terminal.rows - 1 + buffer.ybase - scrollBottomRowsOffset + 1;
     while (param--) {
       // test: echo -e '\e[44m\e[1L\e[0m'
       // blankLine(true) - xterm/linux behavior
@@ -1107,7 +1107,7 @@ export class InputHandler implements IInputHandler {
    *   http://vt100.net/annarbor/aaa-ug/section6.html
    */
   public tabClear(params: number[]): void {
-    let param = params[0];
+    const param = params[0];
     if (param <= 0) {
       delete this._terminal.buffer.tabs[this._terminal.buffer.x];
     } else if (param === 3) {

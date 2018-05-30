@@ -827,7 +827,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // ^[[M 3<^[[M@4<^[[M@5<^[[M@6<^[[M@7<^[[M#7<
     function sendMove(ev: MouseEvent): void {
       let button = pressed;
-      let pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
+      const pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
       if (!pos) return;
 
       // buttons marked as motions
@@ -938,7 +938,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         return;
       }
 
-      let data: number[] = [];
+      const data: number[] = [];
 
       encode(data, button);
       encode(data, pos.x);
@@ -1145,7 +1145,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public scroll(isWrapped?: boolean): void {
     const newLine = this.blankLine(undefined, isWrapped);
     const topRow = this.buffer.ybase + this.buffer.scrollTop;
-    let bottomRow = this.buffer.ybase + this.buffer.scrollBottom;
+    const bottomRow = this.buffer.ybase + this.buffer.scrollBottom;
 
     if (this.buffer.scrollTop === 0) {
       // Determine whether the buffer is going to be trimmed after insertion.
