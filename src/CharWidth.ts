@@ -161,7 +161,7 @@ export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: nu
       if (num < 127) {
         return 1;
       }
-      let t = table || init_table();
+      const t = table || init_table();
       if (num < 65536) {
         return t[num >> 4] >> ((num & 15) << 1) & 3;
       }

@@ -101,6 +101,7 @@
     },
     "prefer-const-enum": [
       true
-    ]
+    ],
+    "prefer-const": true
   }
 }

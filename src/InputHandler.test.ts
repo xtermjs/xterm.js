@@ -9,10 +9,10 @@ import { MockInputHandlingTerminal } from './utils/TestUtils.test';
 
 describe('InputHandler', () => {
   describe('save and restore cursor', () => {
-    let terminal = new MockInputHandlingTerminal();
+    const terminal = new MockInputHandlingTerminal();
     terminal.buffer.x = 1;
     terminal.buffer.y = 2;
-    let inputHandler = new InputHandler(terminal);
+    const inputHandler = new InputHandler(terminal);
     // Save cursor position
     inputHandler.saveCursor([]);
     assert.equal(terminal.buffer.x, 1);
@@ -27,8 +27,8 @@ describe('InputHandler', () => {
   });
   describe('setCursorStyle', () => {
     it('should call Terminal.setOption with correct params', () => {
-      let terminal = new MockInputHandlingTerminal();
-      let inputHandler = new InputHandler(terminal);
+      const terminal = new MockInputHandlingTerminal();
+      const inputHandler = new InputHandler(terminal);
       const collect = ' ';
 
       inputHandler.setCursorStyle([0], collect);
@@ -68,10 +68,10 @@ describe('InputHandler', () => {
   });
   describe('setMode', () => {
     it('should toggle Terminal.bracketedPasteMode', () => {
-      let terminal = new MockInputHandlingTerminal();
+      const terminal = new MockInputHandlingTerminal();
       const collect = '?';
       terminal.bracketedPasteMode = false;
-      let inputHandler = new InputHandler(terminal);
+      const inputHandler = new InputHandler(terminal);
       // Set bracketed paste mode
       inputHandler.setMode([2004], collect);
       assert.equal(terminal.bracketedPasteMode, true);

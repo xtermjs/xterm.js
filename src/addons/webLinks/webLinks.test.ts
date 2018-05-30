@@ -34,8 +34,8 @@ describe('webLinks addon', () => {
 
     const row = '  http://foo.com/a~b#c~d?e~f  ';
 
-    let match = row.match(term.regex);
-    let uri = match[term.options.matchIndex];
+    const match = row.match(term.regex);
+    const uri = match[term.options.matchIndex];
 
     assert.equal(uri, 'http://foo.com/a~b#c~d?e~f');
   });

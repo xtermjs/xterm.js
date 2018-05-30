@@ -42,7 +42,7 @@ export const DEFAULT_ANSI_COLORS = (() => {
 
   // Fill in the remaining 240 ANSI colors.
   // Generate colors (16-231)
-  let v = [0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff];
+  const v = [0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff];
   for (let i = 0; i < 216; i++) {
     const r = v[(i / 36) % 6 | 0];
     const g = v[(i / 6) % 6 | 0];
@@ -75,7 +75,7 @@ function fromHex(css: string): IColor {
 }
 
 function toPaddedHex(c: number): string {
-  let s = c.toString(16);
+  const s = c.toString(16);
   return s.length < 2 ? '0' + s : s;
 }
 
