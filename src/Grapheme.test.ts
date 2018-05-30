@@ -34,11 +34,11 @@ const GRAPHEME_REX = /^([0-9A-F]+)(?:\.\.([0-9A-F]+))?\s*;\s*([A-Za-z_]+)/gm;
 let CODEPOINTS = null;
 
 function parseDefinitions(data: string): {[key: number]: number} {
-  let codepoints = Object.create(null);
+  const codepoints = Object.create(null);
   let match = null;
   while (match = GRAPHEME_REX.exec(data)) {
-    let start = parseInt(match[1], 16);
-    let end = parseInt(match[2], 16) || start;
+    const start = parseInt(match[1], 16);
+    const end = parseInt(match[2], 16) || start;
     for (let i = start; i < end + 1; ++i) codepoints[i] = match[3];
   }
   return codepoints;
@@ -61,25 +61,26 @@ function loadUnicodeData(done: Function): void {
 
 describe('grapheme cluster', function (): void {
   before(function(done: Function): void {
+    this.timeout(5000);
     loadUnicodeData(done);
   });
   describe('correct GraphemeData', function(): void {
     it('FIRST', function(): void {
       if (!CODEPOINTS) return;
-      let one = loadFromPackedBMP(FIRST, 0, 12443);
+      const one = loadFromPackedBMP(FIRST, 0, 12443);
       for (let cp = 0; cp < 12443; ++cp) {
-        let fromStore = TYPES[CODEPOINTS[cp]] || 0;
-        let v = (cp & 1) ? one[cp >> 1] >> 4 : one[cp >> 1] & 15;
+        const fromStore = TYPES[CODEPOINTS[cp]] || 0;
+        const v = (cp & 1) ? one[cp >> 1] >> 4 : one[cp >> 1] & 15;
         chai.expect(fromStore).equals(v);
       }
     });
     it('SECOND', function(): void {
       if (!CODEPOINTS) return;
-      let one = loadFromPackedBMP(SECOND, 42606, 65536);
+      const one = loadFromPackedBMP(SECOND, 42606, 65536);
       for (let cp = 42606; cp < 65536; ++cp) {
-        let fromStore = TYPES[CODEPOINTS[cp]] || 0;
-        let idx = cp - 42606;
-        let v = (idx & 1) ? one[idx >> 1] >> 4 : one[idx >> 1] & 15;
+        const fromStore = TYPES[CODEPOINTS[cp]] || 0;
+        const idx = cp - 42606;
+        const v = (idx & 1) ? one[idx >> 1] >> 4 : one[idx >> 1] & 15;
         chai.expect(fromStore).equals(v);
       }
     });

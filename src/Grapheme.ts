@@ -23,10 +23,10 @@ export function loadFromPackedBMP(data: string, start: number, end: number): num
   // load data into lookup table
   let codepointOffset = 0;
   for (let chunkIdx = 0; chunkIdx < lengths.length; ++chunkIdx) {
-    let currentLength = lengths.charCodeAt(chunkIdx);
+    const currentLength = lengths.charCodeAt(chunkIdx);
     for (let chunkPos = 0; chunkPos < currentLength; ++chunkPos) {
-      let tcode = types.charCodeAt(chunkIdx >> 1);
-      let type = (chunkIdx & 1) ? tcode & 15 : tcode >> 4;
+      const tcode = types.charCodeAt(chunkIdx >> 1);
+      const type = (chunkIdx & 1) ? tcode & 15 : tcode >> 4;
       table[(codepointOffset + chunkPos) >> 1] |= ((codepointOffset + chunkPos) & 1) ? type << 4 : type;
     }
       codepointOffset += currentLength;
@@ -65,7 +65,7 @@ export const graphemeType = (function(): (codepoint: number) => Types {
     if (31 < codepoint && codepoint < 127) return Types.OTHER;
     // BMP_LOW: 0 <= codepoint < 12443
     if (codepoint < 12443) {
-      let table = BMP_LOW || ((): number[] | Uint8Array => {
+      const table = BMP_LOW || ((): number[] | Uint8Array => {
         BMP_LOW = loadFromPackedBMP(FIRST, 0, 12443);
         return BMP_LOW;
       })();
@@ -75,7 +75,7 @@ export const graphemeType = (function(): (codepoint: number) => Types {
     if (codepoint < 42606) return Types.OTHER;
     // BMP_HIGH (CJK): 42606 <= codepoint < 65536
     if (codepoint < 65536) {
-      let table = BMP_HIGH || ((): number[] | Uint8Array => {
+      const table = BMP_HIGH || ((): number[] | Uint8Array => {
         BMP_HIGH = loadFromPackedBMP(SECOND, 42606, 65536);
         return BMP_HIGH;
       })();
