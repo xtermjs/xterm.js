@@ -13,8 +13,6 @@
  *          row and truncate its width with the current number of columns).
  */
 
-/// <reference path="../../../typings/xterm.d.ts"/>
-
 import { Terminal } from 'xterm';
 
 export interface IGeometry {
