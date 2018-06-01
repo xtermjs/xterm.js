@@ -15,7 +15,8 @@
     "noUnusedLocals": true
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "typings/xterm.d.ts"
   ],
   "exclude": [
     "src/addons/**/*"
