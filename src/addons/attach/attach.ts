@@ -5,8 +5,6 @@
  * Implements the attach method, that attaches the terminal to a WebSocket stream.
  */
 
-/// <reference path="../../../typings/xterm.d.ts"/>
-
 import { Terminal } from 'xterm';
 import { IAttachAddonTerminal } from './Interfaces';
 
