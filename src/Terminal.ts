@@ -21,6 +21,8 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
+/// <reference path="../typings/xterm.d.ts"/>
+
 import { ICharset, IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharData, LineData } from './Types';
 import { IMouseZoneManager } from './input/Types';
 import { IRenderer } from './renderer/Types';
