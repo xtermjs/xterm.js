@@ -117,7 +117,6 @@ function createTerminal() {
     tabStopWidth: parseInt(optionElements.tabstopwidth.value, 10),
     screenReaderMode: optionElements.screenReaderMode.checked
   });
-  initOptions(term);
   window.term = term;  // Expose `term` to window for debugging purposes
   term.on('resize', function (size) {
     if (!pid) {
@@ -140,8 +139,10 @@ function createTerminal() {
 
   // fit is called within a setTimeout, cols and rows need this.
   setTimeout(function () {
-    colsElement.value = term.cols;
-    rowsElement.value = term.rows;
+    console.log(term.cols, term.getOption('cols'));
+    initOptions(term);
+    // colsElement.value = term.cols;
+    // rowsElement.value = term.rows;
     paddingElement.value = 0;
 
     // Set terminal size again to set the specific dimensions on the demo
@@ -209,15 +210,19 @@ function runFakeTerminal() {
 
 function initOptions(term) {
   var blacklistedOptions = [
+    // Internal only options
     'cancelEvents',
     'convertEol',
     'debug',
     'handler',
     'screenKeys',
     'termName',
-    'useFlowControl'
+    'useFlowControl',
+    // Complex option
+    'theme'
   ];
   var stringOptions = {
+    bellSound: null,
     bellStyle: ['none', 'sound'],
     cursorStyle: ['block', 'underline', 'bar'],
     experimentalCharAtlas: ['none', 'static', 'dynamic'],
@@ -228,14 +233,18 @@ function initOptions(term) {
   var options = Object.keys(term.options);
   var booleanOptions = [];
   var numberOptions = [];
-  options.filter(o => blacklistedOptions.indexOf(o) === -1).forEach(option => {
-    switch (typeof term.getOption(option)) {
+  options.filter(o => blacklistedOptions.indexOf(o) === -1).forEach(o => {
+    switch (typeof term.getOption(o)) {
       case 'boolean':
-        booleanOptions.push(option);
+        booleanOptions.push(o);
         break;
       case 'number':
-        numberOptions.push(option);
+        numberOptions.push(o);
         break;
+      default:
+        if (Object.keys(stringOptions).indexOf(o) === -1) {
+          console.warn(`Unrecognized option: "${o}"`);
+        }
     }
   });
 
@@ -257,4 +266,21 @@ function initOptions(term) {
   const container = document.createElement('div');
   container.innerHTML = html;
   document.body.appendChild(container);
+
+  // Attach listeners
+  // var allOptions = booleanOptions.concat(numberOptions, Object.keys(stringOptions));
+  booleanOptions.forEach(o => {
+    const input = document.getElementById(`opt-${o}`);
+    input.addEventListener('change', () => {
+      console.log('change', o, input.checked);
+      term.setOption(o, input.checked);
+    });
+  });
+  numberOptions.concat(Object.keys(stringOptions)).forEach(o => {
+    const input = document.getElementById(`opt-${o}`);
+    input.addEventListener('change', () => {
+      console.log('change', o, input.value);
+      term.setOption(o, input.value);
+    });
+  });
 }
