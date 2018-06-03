@@ -261,6 +261,7 @@ export interface ICharMeasure {
 
 // TODO: The options that are not in the public API should be reviewed
 export interface ITerminalOptions extends IPublicTerminalOptions {
+  [key: string]: any;
   cancelEvents?: boolean;
   convertEol?: boolean;
   debug?: boolean;
@@ -284,6 +285,7 @@ export interface IBuffer {
   savedX: number;
   isCursorInViewport: boolean;
   translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string;
+  getWrappedRangeForLine(y: number): { first: number, last: number };
   nextStop(x?: number): number;
   prevStop(x?: number): number;
 }

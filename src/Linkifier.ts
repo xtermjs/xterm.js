@@ -199,11 +199,11 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    */
   private _doLinkifyRow(rowIndex: number, text: string, matcher: ILinkMatcher, offset: number = 0): void {
     // Find the first match
-    let match = text.match(matcher.regex);
+    const match = text.match(matcher.regex);
     if (!match || match.length === 0) {
       return;
     }
-    let uri = match[typeof matcher.matchIndex !== 'number' ? 0 : matcher.matchIndex];
+    const uri = match[typeof matcher.matchIndex !== 'number' ? 0 : matcher.matchIndex];
 
     // Get index, match.index is for the outer match which includes negated chars
     const index = text.indexOf(uri);

@@ -6,8 +6,6 @@
  * WebSocket stream.
  */
 
-/// <reference path="../../../typings/xterm.d.ts"/>
-
 import { Terminal } from 'xterm';
 import { ITerminadoAddonTerminal } from './Interfaces';
 

@@ -8,5 +8,9 @@
     "removeComments": true,
     "declaration": true,
     "preserveWatchOutput": true
-  }
+  },
+  "include": [
+    "**/*.ts",
+    "../../../typings/xterm.d.ts"
+  ]
 }

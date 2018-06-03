@@ -44,7 +44,7 @@ export class EventEmitter implements IEventEmitter, IDisposable {
       return;
     }
 
-    let obj = this._events[type];
+    const obj = this._events[type];
     let i = obj.length;
 
     while (i--) {
@@ -65,7 +65,7 @@ export class EventEmitter implements IEventEmitter, IDisposable {
     if (!this._events[type]) {
       return;
     }
-    let obj = this._events[type];
+    const obj = this._events[type];
     for (let i = 0; i < obj.length; i++) {
       obj[i].apply(this, args);
     }
