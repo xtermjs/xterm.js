@@ -267,7 +267,7 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
     throw new Error('Method not implemented.');
   }
   setOption(key: string, value: any): void {
-    this.options[key] = value;
+    (<any>this.options)[key] = value;
   }
   on(type: string, listener: XtermListener): void {
     throw new Error('Method not implemented.');

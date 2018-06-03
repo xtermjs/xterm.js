@@ -14,6 +14,11 @@ import * as pty from 'node-pty';
 import { assert } from 'chai';
 import { Terminal } from './Terminal';
 import { CHAR_DATA_CHAR_INDEX } from './Buffer';
+import { IViewport } from './Types';
+
+class TestTerminal extends Terminal {
+  innerWrite(): void { this._innerWrite(); }
+}
 
 let primitivePty: any;
 
@@ -87,12 +92,12 @@ if (os.platform() !== 'win32') {
 
   /** tests */
   describe('xterm output comparison', () => {
-    let xterm;
+    let xterm: TestTerminal;
 
     beforeEach(() => {
-      xterm = new Terminal({ cols: COLS, rows: ROWS });
+      xterm = new TestTerminal({ cols: COLS, rows: ROWS });
       xterm.refresh = () => {};
-      xterm.viewport = {
+      xterm.viewport = <IViewport>{
         syncScrollArea: () => {}
       };
     });
@@ -125,7 +130,7 @@ if (os.platform() !== 'win32') {
 
               // Perform a synchronous .write(data)
               xterm.writeBuffer.push(fromPty);
-              xterm._innerWrite();
+              xterm.innerWrite();
 
               const fromEmulator = terminalToString(xterm);
               console.log = CONSOLE_LOG;

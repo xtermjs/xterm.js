@@ -11,7 +11,7 @@ interface ILinkedListNode<T> {
 }
 
 export default class LRUMap<T> {
-  private _map = {};
+  private _map: { [key: string]: ILinkedListNode<T> } = {};
   private _head: ILinkedListNode<T> = null;
   private _tail: ILinkedListNode<T> = null;
   private _nodePool: ILinkedListNode<T>[] = [];
