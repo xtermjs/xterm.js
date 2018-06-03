@@ -51,7 +51,7 @@ import { ITheme, ILocalizableStrings, IMarker, IDisposable } from 'xterm';
 import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 
 // reg + shift key mappings for digits and special chars
-const KEYCODE_KEY_MAPPINGS = {
+const KEYCODE_KEY_MAPPINGS: { [key: number]: [string, string]} = {
   // digits 0-9
   48: ['0', ')'],
   49: ['1', '!'],
@@ -1285,7 +1285,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
   }
 
-  private _innerWrite(): void {
+  protected _innerWrite(): void {
     const writeBatch = this.writeBuffer.splice(0, WRITE_BATCH_SIZE);
     while (writeBatch.length > 0) {
       const data = writeBatch.shift();
