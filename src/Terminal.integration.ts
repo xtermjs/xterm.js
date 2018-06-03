@@ -79,23 +79,23 @@ function terminalToString(term: Terminal): string {
 
 // Skip tests on Windows since pty.open isn't supported
 if (os.platform() !== 'win32') {
-  const CONSOLE_LOG = console.log;
+  const consoleLog = console.log;
 
   // expect files need terminal at 80x25!
-  const COLS = 80;
-  const ROWS = 25;
+  const cols = 80;
+  const rows = 25;
 
   /** some helpers for pty interaction */
   // we need a pty in between to get the termios decorations
   // for the basic test cases a raw pty device is enough
-  primitivePty = pty.native.open(COLS, ROWS);
+  primitivePty = pty.native.open(cols, rows);
 
   /** tests */
   describe('xterm output comparison', () => {
     let xterm: TestTerminal;
 
     beforeEach(() => {
-      xterm = new TestTerminal({ cols: COLS, rows: ROWS });
+      xterm = new TestTerminal({ cols: cols, rows: rows });
       xterm.refresh = () => {};
       xterm.viewport = <IViewport>{
         syncScrollArea: () => {}
@@ -133,8 +133,9 @@ if (os.platform() !== 'win32') {
               xterm.innerWrite();
 
               const fromEmulator = terminalToString(xterm);
-              console.log = CONSOLE_LOG;
+              console.log = consoleLog;
               const expected = fs.readFileSync(filename.split('.')[0] + '.text', 'utf8');
+
               // Some of the tests have whitespace on the right of lines, we trim all the linex
               // from xterm.js so ignore this for now at least.
               const expectedRightTrimmed = expected.split('\n').map(l => l.replace(/\s+$/, '')).join('\n');

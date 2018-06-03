@@ -179,7 +179,7 @@ export class AccessibilityManager implements IDisposable {
     this._refreshRowsDimensions();
   }
 
-  public _createAccessibilityTreeNode(): HTMLElement {
+  private _createAccessibilityTreeNode(): HTMLElement {
     const element = document.createElement('div');
     element.setAttribute('role', 'listitem');
     element.tabIndex = -1;
