@@ -43,7 +43,6 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   insertMode: boolean;
   wraparoundMode: boolean;
   bracketedPasteMode: boolean;
-  defAttr: number;
   curAttr: number;
   savedCols: number;
   x10Mouse: boolean;
@@ -213,7 +212,6 @@ export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAcce
   writeBuffer: string[];
   cursorHidden: boolean;
   cursorState: number;
-  defAttr: number;
   options: ITerminalOptions;
   buffer: IBuffer;
   buffers: IBufferSet;
@@ -261,6 +259,7 @@ export interface ICharMeasure {
 
 // TODO: The options that are not in the public API should be reviewed
 export interface ITerminalOptions extends IPublicTerminalOptions {
+  [key: string]: any;
   cancelEvents?: boolean;
   convertEol?: boolean;
   debug?: boolean;
@@ -284,6 +283,7 @@ export interface IBuffer {
   savedX: number;
   isCursorInViewport: boolean;
   translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string;
+  getWrappedRangeForLine(y: number): { first: number, last: number };
   nextStop(x?: number): number;
   prevStop(x?: number): number;
 }

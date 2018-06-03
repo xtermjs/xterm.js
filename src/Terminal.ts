@@ -25,7 +25,7 @@ import { ICharset, IInputHandlingTerminal, IViewport, ICompositionHelper, ITermi
 import { IMouseZoneManager } from './input/Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
-import { Buffer, MAX_BUFFER_SIZE } from './Buffer';
+import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR } from './Buffer';
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './EventEmitter';
 import { Viewport } from './Viewport';
@@ -49,9 +49,10 @@ import { AccessibilityManager } from './AccessibilityManager';
 import { ScreenDprMonitor } from './utils/ScreenDprMonitor';
 import { ITheme, ILocalizableStrings, IMarker, IDisposable } from 'xterm';
 import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
+import { DomRenderer } from './renderer/dom/DomRenderer';
 
 // reg + shift key mappings for digits and special chars
-const KEYCODE_KEY_MAPPINGS = {
+const KEYCODE_KEY_MAPPINGS: { [key: number]: [string, string]} = {
   // digits 0-9
   48: ['0', ')'],
   49: ['1', '!'],
@@ -128,7 +129,8 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   allowTransparency: false,
   tabStopWidth: 8,
   theme: null,
-  rightClickSelectsWord: Browser.isMac
+  rightClickSelectsWord: Browser.isMac,
+  rendererType: 'canvas'
 };
 
 export class Terminal extends EventEmitter implements ITerminal, IDisposable, IInputHandlingTerminal {
@@ -195,7 +197,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   private _refreshEnd: number;
   public savedCols: number;
 
-  public defAttr: number;
   public curAttr: number;
 
   public params: (string | number)[];
@@ -282,8 +283,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       if (this.options[key] == null) {
         this.options[key] = DEFAULT_OPTIONS[key];
       }
-      // TODO: We should move away from duplicate options on the Terminal object
-      this[key] = this.options[key];
     });
 
     // this.context = options.context || window;
@@ -318,8 +317,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // TODO: Can this be just []?
     this.charsets = [null];
 
-    this.defAttr = (0 << 18) | (257 << 9) | (256 << 0);
-    this.curAttr = (0 << 18) | (257 << 9) | (256 << 0);
+    this.curAttr = DEFAULT_ATTR;
 
     this.params = [];
     this.currentParam = 0;
@@ -363,8 +361,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * back_color_erase feature for xterm.
    */
   public eraseAttr(): number {
-    // if (this.is('screen')) return this.defAttr;
-    return (this.defAttr & ~0x1ff) | (this.curAttr & 0x1ff);
+    // if (this.is('screen')) return DEFAULT_ATTR;
+    return (DEFAULT_ATTR & ~0x1ff) | (this.curAttr & 0x1ff);
   }
 
   /**
@@ -389,11 +387,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       throw new Error('No option with key "' + key + '"');
     }
 
-    if (typeof this.options[key] !== 'undefined') {
-      return this.options[key];
-    }
-
-    return this[key];
+    return this.options[key];
   }
 
   /**
@@ -470,7 +464,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         }
         break;
     }
-    this[key] = value;
     this.options[key] = value;
     switch (key) {
       case 'fontFamily':
@@ -569,7 +562,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       }
       copyHandler(event, this, this.selectionManager);
     });
-    const pasteHandlerWrapper = event => pasteHandler(event, this);
+    const pasteHandlerWrapper = (event: ClipboardEvent) => pasteHandler(event, this);
     on(this.textarea, 'paste', pasteHandlerWrapper);
     on(this.element, 'paste', pasteHandlerWrapper);
 
@@ -708,7 +701,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // Performance: Add viewport and helper elements from the fragment
     this.element.appendChild(fragment);
 
-    this.renderer = new Renderer(this, this.options.theme);
+    switch (this.options.rendererType) {
+      case 'canvas': this.renderer = new Renderer(this, this.options.theme); break;
+      case 'dom': this.renderer = new DomRenderer(this, this.options.theme); break;
+      default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
+    }
     this.options.theme = null;
     this.viewport = new Viewport(this, this._viewportElement, this._viewportScrollArea, this.charMeasure);
     this.viewport.onThemeChanged(this.renderer.colorManager.colors);
@@ -721,7 +718,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // dprchange should handle this case, we need this as well for browsers that don't support the
     // matchMedia query.
     this._disposables.push(Dom.addDisposableListener(window, 'resize', () => this.renderer.onWindowResize(window.devicePixelRatio)));
-    this.charMeasure.on('charsizechanged', () => this.renderer.onResize(this.cols, this.rows));
+    this.charMeasure.on('charsizechanged', () => this.renderer.onCharSizeChanged());
     this.renderer.on('resize', (dimensions) => this.viewport.syncScrollArea());
 
     this.selectionManager = new SelectionManager(this, this.charMeasure);
@@ -1300,7 +1297,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
   }
 
-  private _innerWrite(): void {
+  protected _innerWrite(): void {
     const writeBatch = this.writeBuffer.splice(0, WRITE_BATCH_SIZE);
     while (writeBatch.length > 0) {
       const data = writeBatch.shift();
@@ -2065,7 +2062,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * set, the terminal's current column count would be used.
    */
   public blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): LineData {
-    const attr = cur ? this.eraseAttr() : this.defAttr;
+    const attr = cur ? this.eraseAttr() : DEFAULT_ATTR;
 
     const ch: CharData = [attr, ' ', 1, 32 /* ' '.charCodeAt(0) */]; // width defaults to 1 halfwidth character
     const line: LineData = [];
@@ -2085,14 +2082,14 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   /**
-   * If cur return the back color xterm feature attribute. Else return defAttr.
+   * If cur return the back color xterm feature attribute. Else return default attribute.
    * @param cur
    */
   public ch(cur?: boolean): CharData {
     if (cur) {
       return [this.eraseAttr(), ' ', 1, 32 /* ' '.charCodeAt(0) */];
     }
-    return [this.defAttr, ' ', 1, 32 /* ' '.charCodeAt(0) */];
+    return [DEFAULT_ATTR, ' ', 1, 32 /* ' '.charCodeAt(0) */];
   }
 
   /**
