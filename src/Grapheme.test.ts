@@ -3,8 +3,7 @@
  * @license MIT
  */
 
-import { FIRST, SECOND } from './GraphemeData';
-import { loadFromPackedBMP, graphemeType } from './Grapheme';
+import { graphemeType } from './Grapheme';
 import * as chai from 'chai';
 
 const TYPES  = {
@@ -64,41 +63,24 @@ describe('grapheme cluster', function (): void {
     this.timeout(5000);
     loadUnicodeData(done);
   });
-  describe('correct GraphemeData', function(): void {
-    it('FIRST', function(): void {
-      if (!CODEPOINTS) return;
-      const one = loadFromPackedBMP(FIRST, 0, 12443);
-      for (let cp = 0; cp < 12443; ++cp) {
-        const fromStore = TYPES[CODEPOINTS[cp]] || 0;
-        const v = (cp & 1) ? one[cp >> 1] >> 4 : one[cp >> 1] & 15;
-        chai.expect(fromStore).equals(v);
-      }
-    });
-    it('SECOND', function(): void {
-      if (!CODEPOINTS) return;
-      const one = loadFromPackedBMP(SECOND, 42606, 65536);
-      for (let cp = 42606; cp < 65536; ++cp) {
-        const fromStore = TYPES[CODEPOINTS[cp]] || 0;
-        const idx = cp - 42606;
-        const v = (idx & 1) ? one[idx >> 1] >> 4 : one[idx >> 1] & 15;
-        chai.expect(fromStore).equals(v);
-      }
-    });
-    it('THIRD', function(): void {
-      if (!CODEPOINTS) return;
-      // TODO
-    });
-  });
   describe('graphemeType', function(): void {
-    it('BMP', function(): void {
+    it('BMP (0)', function(): void {
       if (!CODEPOINTS) return;
       for (let cp = 0; cp < 65536; ++cp) {
         chai.expect(graphemeType(cp)).equals(TYPES[CODEPOINTS[cp]] || 0);
       }
     });
-    it('HIGH', function(): void {
+    it('SMP (1)', function(): void {
       if (!CODEPOINTS) return;
-      // TODO
+      for (let cp = 65536; cp < 2 * 65536; ++cp) {
+        chai.expect(graphemeType(cp)).equals(TYPES[CODEPOINTS[cp]] || 0);
+      }
+    });
+    it('SSP (14)', function(): void {
+      if (!CODEPOINTS) return;
+      for (let cp = 14 * 65536; cp < 15 * 65536; ++cp) {
+        chai.expect(graphemeType(cp)).equals(TYPES[CODEPOINTS[cp]] || 0);
+      }
     });
   });
 });

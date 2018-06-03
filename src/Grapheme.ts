@@ -2,9 +2,30 @@
  * Copyright (c) 2018 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { FIRST, SECOND } from './GraphemeData';
+import { FIRST, SECOND, THIRD, FOURTH } from './GraphemeData';
 
-export function loadFromPackedBMP(data: string, start: number, end: number): number[] | Uint8Array {
+const enum Types {
+  OTHER = 0,
+  L = 1,
+  V = 2,
+  T = 3,
+  LV = 4,
+  LVT = 5,
+  CR = 6,
+  LF = 7,
+  ZWJ = 8,
+  PREPEND = 9,
+  CONTROL = 10,
+  EXTEND = 11,
+  SPACINGMARK = 12,
+  E_BASE = 13,
+  GLUE_AFTER_ZWJ = 14,
+  E_MODIFIER = 15,
+  E_BASE_GAZ = 16,
+  REGIONAL_INDICATOR = 17
+}
+
+function loadFromPackedBMP(data: string, start: number, end: number): number[] | Uint8Array {
   // decode base64 and split into lengths and types strings
   const raw = (typeof atob === 'undefined')
     // nodejs
@@ -34,35 +55,28 @@ export function loadFromPackedBMP(data: string, start: number, end: number): num
   return table;
 }
 
+function loadFromPackedHIGH(lookupObj: any, data: string, plane: number): void {
+  const raw = (typeof atob === 'undefined')
+    ? new Buffer(data, 'base64').toString('binary')
+    : atob(data);
 
-// NOTE: Types must be identical to bin/create-graphemedata.js#TYPES
-const enum Types {
-  OTHER = 0,
-  L = 1,
-  V = 2,
-  T = 3,
-  LV = 4,
-  LVT = 5,
-  CR = 6,
-  LF = 7,
-  ZWJ = 8,
-  PREPEND = 9,
-  CONTROL = 10,
-  EXTEND = 11,
-  SPACINGMARK = 12,
-  E_BASE = 13,
-  GLUE_AFTER_ZWJ = 14,
-  E_MODIFIER = 15,
-  E_BASE_GAZ = 16,
-  REGIONAL_INDICATOR = 17
+  // data bytes: [codepoint_high, codepoint_low, length, type]
+  for (let i = 0; i < raw.length; i += 4) {
+    let codepoint = (raw.charCodeAt(i) << 8) + raw.charCodeAt(i + 1) + 65536 * plane;
+    let end = raw.charCodeAt(i + 2) + codepoint;
+    let type = raw.charCodeAt(i + 3);
+    for (let cp = codepoint; cp < end; ++cp) lookupObj[cp] = type;
+  }
 }
 
 export const graphemeType = (function(): (codepoint: number) => Types {
   let BMP_LOW = null;
   let BMP_HIGH = null;
+  let HIGH = null;
   return (codepoint: number): Types => {
     // ASCII printable shortcut
     if (31 < codepoint && codepoint < 127) return Types.OTHER;
+
     // BMP_LOW: 0 <= codepoint < 12443
     if (codepoint < 12443) {
       const table = BMP_LOW || ((): number[] | Uint8Array => {
@@ -71,8 +85,10 @@ export const graphemeType = (function(): (codepoint: number) => Types {
       })();
       return (codepoint & 1) ? table[codepoint >> 1] >> 4 : table[codepoint >> 1] & 15;
     }
+
     // always Other: 12443 <= codepoint < 42606
     if (codepoint < 42606) return Types.OTHER;
+
     // BMP_HIGH (CJK): 42606 <= codepoint < 65536
     if (codepoint < 65536) {
       const table = BMP_HIGH || ((): number[] | Uint8Array => {
@@ -82,7 +98,22 @@ export const graphemeType = (function(): (codepoint: number) => Types {
       codepoint -= 42606;
       return (codepoint & 1) ? table[codepoint >> 1] >> 4 : table[codepoint >> 1] & 15;
     }
-    // TODO codepoint > 65536
+
+    // codepoint > 65536
+    // 129502 highest in SMP (Plane 1)
+    // 917504 lowest in SSP (Plane 14)
+    // 921599 highest in SSP
+    if (codepoint < 129503 || (917504 <= codepoint && codepoint < 921600)) {
+      const lookupObj = HIGH || ((): any => {
+        HIGH = Object.create(null);
+        loadFromPackedHIGH(HIGH, THIRD, 1);
+        loadFromPackedHIGH(HIGH, FOURTH, 14);
+        return HIGH;
+      })();
+      return lookupObj[codepoint] || Types.OTHER;
+    }
+
+    // all other codepoints default to Other
     return Types.OTHER;
   };
 })();

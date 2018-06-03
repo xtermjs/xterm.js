@@ -53,12 +53,12 @@ function createPackedBMP(codepoints, start, end) {
             type = t;
             count = 0;
         }
-        count++;
         if (count === 255) {
             lengths.push(count);
             types.push(type);
             count = 0;
         }
+        count++;
     }
     lengths.push(count);
     types.push(type);
@@ -86,6 +86,47 @@ function createPackedBMP(codepoints, start, end) {
     return new Buffer(lengths.concat(finalTypes)).toString('base64');
 }
 
+function createPackedHIGH(codepoints, plane, start, end) {
+    start = start + 65536 * plane;
+    end = end + 65536 * plane;
+    let length = 0;
+    let type = -1;
+    const segments = [];
+    let segmentStart = -1;
+    for (let i = start; i < end; ++i) {
+        let t = parseInt(TYPES[codepoints[i] || 'Other']);
+        if (t !== type) {
+            // end of segment reached
+            // only push non Other segments
+            if (type) segments.push([segmentStart, length, type]);
+            segmentStart = i;
+            length = 0;
+            type = t;
+        }
+        if (length === 255) {
+            if (type) {
+                segments.push([segmentStart, length, type]);
+                segmentStart = i;
+                length = 0;
+            }
+        }
+        length++;
+    }
+    if (type) segments.push([segmentStart, length, type]);
+    segments.shift();
+    console.log(segments);
+    
+    // write to byte typed
+    let final = [];
+    for (let i = 0; i < segments.length; ++i) {
+        final.push(segments[i][0] >> 8);
+        final.push(segments[i][0] & 255);
+        final.push(segments[i][1]);
+        final.push(segments[i][2]);
+    }
+    return new Buffer(final).toString('base64');
+}
+
 
 function createGraphemeDataFile(url, path) {
     require('https').get(url, (resp) => {
@@ -103,8 +144,10 @@ function createGraphemeDataFile(url, path) {
             const first = createPackedBMP(codepoints, 0, 12443);
             // 42606 <= codepoint < 65536
             const second = createPackedBMP(codepoints, 42606, 65536);
-            // codepoint <= 65536
-            const third = ''; //createPackedHIGH(codepoints, 65536, highest);
+            // Supplementary Multilingual Plane (1): 0 <= codepoint < 63966
+            const third = createPackedHIGH(codepoints, 1, 0, 63966);
+            // Supplement­ary Special-purpose Plane (14): 0 <= codepoint < highest + 1
+            const fourth = createPackedHIGH(codepoints, 14, 0, highest + 1);
 
             // write to ts file
             let final = '';
@@ -112,8 +155,10 @@ function createGraphemeDataFile(url, path) {
             final += `export const FIRST: string = '${first}';\n`;
             final += `// SECOND: 42606 <= codepoint < 65536\n`;
             final += `export const SECOND: string = '${second}';\n`;
-            final += `// THIRD: codepoint >= 65536\n`;
+            final += `// THIRD: Supplementary Multilingual Plane (1) 0 <= codepoint < 63966\n`;
             final += `export const THIRD: string = '${third}';\n`;
+            final += `// FOURTH: Supplement­ary Special-purpose Plane (14) 0 <= codepoint <= highest\n`;
+            final += `export const FOURTH: string = '${fourth}';\n`;
             require('fs').writeFileSync(path, final);
         });
     }).on('error', (err) => {
