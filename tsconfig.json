@@ -12,6 +12,7 @@
     "outDir": "lib",
     "sourceMap": true,
     "removeComments": true,
+    "preserveWatchOutput": true,
     "noUnusedLocals": true,
     "noImplicitAny": true
   },
