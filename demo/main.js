@@ -187,19 +187,23 @@ function initOptions(term) {
   });
 
   var html = '';
+  html += '<div class="option-group">';
   booleanOptions.forEach(o => {
-    html += `<div><label><input id="opt-${o}" type="checkbox" ${term.getOption(o) ? 'checked' : ''}/> ${o}</label></div>`;
+    html += `<div class="option"><label><input id="opt-${o}" type="checkbox" ${term.getOption(o) ? 'checked' : ''}/> ${o}</label></div>`;
   });
+  html += '</div><div class="option-group">';
   numberOptions.forEach(o => {
-    html += `<div><label>${o} <input id="opt-${o}" type="number" value="${term.getOption(o)}"/></label></div>`;
+    html += `<div class="option"><label>${o} <input id="opt-${o}" type="number" value="${term.getOption(o)}"/></label></div>`;
   });
+  html += '</div><div class="option-group">';
   Object.keys(stringOptions).forEach(o => {
     if (stringOptions[o]) {
-      html += `<div><label>${o} <select id="opt-${o}">${stringOptions[o].map(v => `<option ${term.getOption(o) === v ? 'selected' : ''}>${v}</option>`).join('')}</select></label></div>`;
+      html += `<div class="option"><label>${o} <select id="opt-${o}">${stringOptions[o].map(v => `<option ${term.getOption(o) === v ? 'selected' : ''}>${v}</option>`).join('')}</select></label></div>`;
     } else {
-      html += `<div><label>${o} <input id="opt-${o}" type="text" value="${term.getOption(o)}"/></label></div>`
+      html += `<div class="option"><label>${o} <input id="opt-${o}" type="text" value="${term.getOption(o)}"/></label></div>`
     }
   });
+  html += '</div>';
 
   var container = document.getElementById('options-container');
   container.innerHTML = html;
