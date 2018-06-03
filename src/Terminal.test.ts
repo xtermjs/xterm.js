@@ -176,7 +176,7 @@ describe('term.js addons', () => {
 
   describe('scroll', () => {
     describe('scrollLines', () => {
-      let startYDisp;
+      let startYDisp: number;
       beforeEach(() => {
         for (let i = 0; i < term.rows * 2; i++) {
           term.writeln('test');
@@ -211,7 +211,7 @@ describe('term.js addons', () => {
     });
 
     describe('scrollPages', () => {
-      let startYDisp;
+      let startYDisp: number;
       beforeEach(() => {
         for (let i = 0; i < term.rows * 3; i++) {
           term.writeln('test');
@@ -248,7 +248,7 @@ describe('term.js addons', () => {
     });
 
     describe('scrollToBottom', () => {
-      let startYDisp;
+      let startYDisp: number;
       beforeEach(() => {
         for (let i = 0; i < term.rows * 3; i++) {
           term.writeln('test');
@@ -269,7 +269,7 @@ describe('term.js addons', () => {
     });
 
     describe('scrollToLine', () => {
-      let startYDisp;
+      let startYDisp: number;
       beforeEach(() => {
         for (let i = 0; i < term.rows * 3; i++) {
           term.writeln('test');
@@ -712,8 +712,8 @@ describe('term.js addons', () => {
   });
 
   describe('Third level shift', () => {
-    let evKeyDown;
-    let evKeyPress;
+    let evKeyDown: any;
+    let evKeyPress: any;
 
     beforeEach(() => {
       term.handler = () => {};

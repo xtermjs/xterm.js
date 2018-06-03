@@ -36,10 +36,10 @@ export function attach(term: Terminal, socket: WebSocket, bidirectional: boolean
     }
   };
 
-  let myTextDecoder;
+  let myTextDecoder: TextDecoder;
 
   addonTerminal.__getMessage = function(ev: MessageEvent): void {
-    let str;
+    let str: string;
 
     if (typeof ev.data === 'object') {
       if (!myTextDecoder) {

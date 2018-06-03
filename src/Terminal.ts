@@ -561,7 +561,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       }
       copyHandler(event, this, this.selectionManager);
     });
-    const pasteHandlerWrapper = event => pasteHandler(event, this);
+    const pasteHandlerWrapper = (event: ClipboardEvent) => pasteHandler(event, this);
     on(this.textarea, 'paste', pasteHandlerWrapper);
     on(this.element, 'paste', pasteHandlerWrapper);
 

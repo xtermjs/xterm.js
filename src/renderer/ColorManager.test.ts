@@ -36,7 +36,7 @@ describe('ColorManager', () => {
       for (const key of Object.keys(cm.colors)) {
         if (key !== 'ansi') {
           // A #rrggbb or rgba(...)
-          assert.ok(cm.colors[key].css.length >= 7);
+          assert.ok((<any>cm.colors)[key].css.length >= 7);
         }
       }
       assert.equal(cm.colors.ansi.length, 256);
