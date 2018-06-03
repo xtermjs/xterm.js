@@ -302,6 +302,9 @@ export class MockBuffer implements IBuffer {
   translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string {
     return Buffer.prototype.translateBufferLineToString.apply(this, arguments);
   }
+  getWrappedRangeForLine(y: number): { first: number; last: number; } {
+    throw new Error('Method not implemented.');
+  }
   nextStop(x?: number): number {
     throw new Error('Method not implemented.');
   }
