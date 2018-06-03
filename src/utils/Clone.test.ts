@@ -39,7 +39,7 @@ describe('clone', () => {
   });
 
   it('should clone null values', () => {
-    const test = {
+    const test: any = {
       a: null
     };
 

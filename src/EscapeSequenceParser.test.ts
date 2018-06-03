@@ -237,7 +237,7 @@ describe('EscapeSequenceParser', function (): void {
           '\x89', '\x8a', '\x8b', '\x8c', '\x8d', '\x8e', '\x8f',
           '\x91', '\x92', '\x93', '\x94', '\x95', '\x96', '\x97', '\x99', '\x9a'
         ];
-        const exceptions = {
+        const exceptions: { [key: number]: { [key: string]: any[] } } = {
           8: { '\x18': [], '\x1a': [] } // simply abort osc state
         };
         parser.reset();
@@ -247,7 +247,7 @@ describe('EscapeSequenceParser', function (): void {
             parser.currentState = state;
             parser.parse(exes[i]);
             chai.expect(parser.currentState).equal(ParserState.GROUND);
-            testTerminal.compare(((exceptions[state]) ? exceptions[state][exes[i]] : 0) || [['exe', exes[i]]]);
+            testTerminal.compare((state in exceptions ? exceptions[state][exes[i]] : 0) || [['exe', exes[i]]]);
             parser.reset();
             testTerminal.clear();
           }
@@ -1099,20 +1099,20 @@ describe('EscapeSequenceParser', function (): void {
 
   describe('set/clear handler', function (): void {
     const INPUT = '\x1b[1;31mhello \x1b%Gwor\x1bEld!\x1b[0m\r\n$>\x1b]1;foo=bar\x1b\\';
-    let parser2 = null;
+    let parser2: TestEscapeSequenceParser = null;
     let print = '';
-    let esc = [];
-    let csi = [];
-    let exe = [];
-    let osc = [];
-    let dcs = [];
+    const esc: string[] = [];
+    const csi: [string, number[], string][] = [];
+    const exe: string[] = [];
+    const osc: [number, string][] = [];
+    const dcs: ([string] | [string, string] | [string, string, number[], number])[] = [];
     function clearAccu(): void {
       print = '';
-      esc = [];
-      csi = [];
-      exe = [];
-      osc = [];
-      dcs = [];
+      esc.length = 0;
+      csi.length = 0;
+      exe.length = 0;
+      osc.length = 0;
+      dcs.length = 0;
     }
     beforeEach(function (): void {
       parser2 = new TestEscapeSequenceParser();

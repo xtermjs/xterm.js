@@ -15,7 +15,7 @@ import { EscapeSequenceParser } from './EscapeSequenceParser';
 /**
  * Map collect to glevel. Used in `selectCharset`.
  */
-const GLEVEL = {'(': 0, ')': 1, '*': 2, '+': 3, '-': 1, '.': 2};
+const GLEVEL: {[key: string]: number} = {'(': 0, ')': 1, '*': 2, '+': 3, '-': 1, '.': 2};
 
 
 /**
@@ -77,7 +77,7 @@ class DECRQSS implements IDcsHandler {
         // TODO: report real settings instead of 0m
         return this._terminal.send(`${C0.ESC}P1$r0m${C0.ESC}\\`);
       case ' q': // DECSCUSR
-        const STYLES = {'block': 2, 'underline': 4, 'bar': 6};
+        const STYLES: {[key: string]: number} = {'block': 2, 'underline': 4, 'bar': 6};
         let style = STYLES[this._terminal.getOption('cursorStyle')];
         style -= this._terminal.getOption('cursorBlink');
         return this._terminal.send(`${C0.ESC}P1$r${style} q${C0.ESC}\\`);
