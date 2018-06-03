@@ -58,7 +58,7 @@ export function pasteHandler(ev: ClipboardEvent, term: ITerminal): void {
 
   let text: string;
 
-  let dispatchPaste = function(text: string): void {
+  const dispatchPaste = function(text: string): void {
     text = prepareTextForTerminal(text);
     text = bracketTextForPaste(text, term.bracketedPasteMode);
     term.handler(text);

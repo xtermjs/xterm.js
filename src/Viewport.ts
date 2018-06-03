@@ -180,7 +180,7 @@ export class Viewport implements IViewport {
    * @param ev The touch event.
    */
   public onTouchMove(ev: TouchEvent): void {
-    let deltaY = this._lastTouchY - ev.touches[0].pageY;
+    const deltaY = this._lastTouchY - ev.touches[0].pageY;
     this._lastTouchY = ev.touches[0].pageY;
     if (deltaY === 0) {
       return;

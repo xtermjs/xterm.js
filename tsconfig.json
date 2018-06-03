@@ -12,10 +12,12 @@
     "outDir": "lib",
     "sourceMap": true,
     "removeComments": true,
-    "noUnusedLocals": true
+    "noUnusedLocals": true,
+    "noImplicitAny": true
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "typings/xterm.d.ts"
   ],
   "exclude": [
     "src/addons/**/*"

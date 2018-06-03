@@ -9,7 +9,7 @@ import { ICharAtlasConfig } from '../../shared/atlas/Types';
 
 export function generateConfig(scaledCharWidth: number, scaledCharHeight: number, terminal: ITerminal, colors: IColorSet): ICharAtlasConfig {
   // null out some fields that don't matter
-  const clonedColors = {
+  const clonedColors = <IColorSet>{
     foreground: colors.foreground,
     background: colors.background,
     cursor: null,

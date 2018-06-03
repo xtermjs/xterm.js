@@ -5,8 +5,6 @@
  * Implements the attach method, that attaches the terminal to a WebSocket stream.
  */
 
-/// <reference path="../../../typings/xterm.d.ts"/>
-
 import { Terminal } from 'xterm';
 import { IAttachAddonTerminal } from './Interfaces';
 
@@ -38,10 +36,11 @@ export function attach(term: Terminal, socket: WebSocket, bidirectional: boolean
     }
   };
 
-  let myTextDecoder;
+  // TODO: This should be typed but there seem to be issues importing the type
+  let myTextDecoder: any;
 
   addonTerminal.__getMessage = function(ev: MessageEvent): void {
-    let str;
+    let str: string;
 
     if (typeof ev.data === 'object') {
       if (!myTextDecoder) {
@@ -51,7 +50,7 @@ export function attach(term: Terminal, socket: WebSocket, bidirectional: boolean
         str = myTextDecoder.decode(ev.data);
         displayData(str);
       } else {
-        let fileReader = new FileReader();
+        const fileReader = new FileReader();
 
         fileReader.addEventListener('load', () => {
           str = myTextDecoder.decode(this.result);

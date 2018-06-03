@@ -31,6 +31,7 @@
       "parameter"
     ],
     "eofline": true,
+    "new-parens": true,
     "no-duplicate-imports": true,
     "no-eval": true,
     "no-internal-module": true,
@@ -100,6 +101,7 @@
     },
     "prefer-const-enum": [
       true
-    ]
+    ],
+    "prefer-const": true
   }
 }
