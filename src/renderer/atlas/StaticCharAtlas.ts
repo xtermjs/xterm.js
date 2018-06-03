@@ -26,7 +26,7 @@ export default class StaticCharAtlas extends BaseCharAtlas {
     return canvas;
   }
 
-  public _doWarmUp(): void {
+  protected _doWarmUp(): void {
     const result = generateStaticCharAtlasTexture(window, this._canvasFactory, this._config);
     if (result instanceof HTMLCanvasElement) {
       this._texture = result;

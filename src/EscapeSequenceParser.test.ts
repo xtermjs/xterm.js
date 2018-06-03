@@ -169,12 +169,12 @@ describe('EscapeSequenceParser', function (): void {
       });
       it('constructor', function (): void {
         let p: EscapeSequenceParser = new EscapeSequenceParser();
-        chai.expect(p.transitions).equal(VT500_TRANSITION_TABLE);
+        chai.expect(p.TRANSITIONS).equal(VT500_TRANSITION_TABLE);
         p = new EscapeSequenceParser(VT500_TRANSITION_TABLE);
-        chai.expect(p.transitions).equal(VT500_TRANSITION_TABLE);
+        chai.expect(p.TRANSITIONS).equal(VT500_TRANSITION_TABLE);
         const tansitions: TransitionTable = new TransitionTable(10);
         p = new EscapeSequenceParser(tansitions);
-        chai.expect(p.transitions).equal(tansitions);
+        chai.expect(p.TRANSITIONS).equal(tansitions);
       });
       it('inital states', function (): void {
         chai.expect(parser.initialState).equal(ParserState.GROUND);

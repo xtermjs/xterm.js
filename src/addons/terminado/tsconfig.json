@@ -6,7 +6,8 @@
     "outDir": "../../../lib/addons/terminado/",
     "sourceMap": true,
     "removeComments": true,
-    "declaration": true
+    "declaration": true,
+    "preserveWatchOutput": true
   },
   "include": [
     "**/*.ts",

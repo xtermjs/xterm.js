@@ -338,9 +338,9 @@ export class Buffer implements IBuffer {
 }
 
 export class Marker extends EventEmitter implements IMarker {
-  private static NEXT_ID = 1;
+  private static _nextId = 1;
 
-  private _id: number = Marker.NEXT_ID++;
+  private _id: number = Marker._nextId++;
   public isDisposed: boolean = false;
   public disposables: IDisposable[] = [];
 
