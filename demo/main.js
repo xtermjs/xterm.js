@@ -157,7 +157,9 @@ function initOptions(term) {
     'termName',
     'useFlowControl',
     // Complex option
-    'theme'
+    'theme',
+    // Only in constructor
+    'rendererType'
   ];
   var stringOptions = {
     bellSound: null,
