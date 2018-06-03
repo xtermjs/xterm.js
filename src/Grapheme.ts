@@ -4,7 +4,7 @@
  */
 import { FIRST, SECOND, THIRD, FOURTH } from './GraphemeData';
 
-const enum Types {
+export const enum Types {
   OTHER = 0,
   L = 1,
   V = 2,
@@ -22,7 +22,8 @@ const enum Types {
   GLUE_AFTER_ZWJ = 14,
   E_MODIFIER = 15,
   E_BASE_GAZ = 16,
-  REGIONAL_INDICATOR = 17
+  REGIONAL_INDICATOR = 17,
+  ILLEGAL = 31
 }
 
 function loadFromPackedBMP(data: string, start: number, end: number): number[] | Uint8Array {
@@ -117,3 +118,98 @@ export const graphemeType = (function(): (codepoint: number) => Types {
     return Types.OTHER;
   };
 })();
+
+export const enum BreakState {
+  FALSE = 32,
+  TRUE = 33,
+  EMOJI_EXTEND = 34, // does not break
+  REGIONAL_SECOND = 35 // does not break
+}
+
+export function canBreak(current: Types | BreakState, previous: Types | BreakState): BreakState {
+  if (previous === Types.OTHER && current === Types.OTHER) {
+    return BreakState.TRUE;
+  }
+  // GB 1     sot 	÷ 	Any
+  // if (previous === -1) --> handled at caller level
+  //   return true;
+  // GB 2     Any 	÷ 	eot
+  // if (current === -1) --> handled at caller level
+  //   return true;
+
+  // GB 3     CR 	× 	LF
+  if (previous === Types.CR && current === Types.LF) {
+    return BreakState.FALSE;
+  }
+
+  // GB 4     (Control | CR | LF) 	÷
+  if (previous === Types.CONTROL || previous === Types.CR || previous === Types.LF) {
+    return BreakState.TRUE;
+  }
+
+  // GB 5     ÷ 	(Control | CR | LF)
+  if (current === Types.CONTROL || current === Types.CR || current === Types.LF) {
+    return BreakState.TRUE;
+  }
+
+  // GB 6     L 	× 	(L | V | LV | LVT)
+  if (previous === Types.L && (current === Types.L || current === Types.V || current === Types.LV || current === Types.LVT)) {
+    return BreakState.FALSE;
+  }
+
+  // GB 7     (LV | V) 	× 	(V | T)
+  if ((previous === Types.LV || previous === Types.V) && (current === Types.V || current === Types.T)) {
+    return BreakState.FALSE;
+  }
+
+  // GB 8     (LVT | T) 	× 	T
+  if ((previous === Types.LVT || previous === Types.T) && current === Types.T) {
+    return BreakState.FALSE;
+  }
+
+  // GB 9     × 	(Extend | ZWJ)
+  if (current === Types.EXTEND || current === Types.ZWJ) {
+    if (previous === Types.E_BASE || previous === Types.E_BASE_GAZ) {
+      return BreakState.EMOJI_EXTEND;
+    }
+    return BreakState.FALSE;
+  }
+
+  // GB 9a    × 	SpacingMark
+  if (current === Types.SPACINGMARK) {
+    return BreakState.FALSE;
+  }
+
+  // GB 9b    Prepend 	×
+  if (previous === Types.PREPEND) {
+    return BreakState.FALSE;
+  }
+
+  // GB 10    (E_Base | EBG) Extend* 	× 	E_Modifier
+  if ((previous === Types.E_BASE || previous === Types.E_BASE_GAZ) && current === Types.E_MODIFIER) {
+    return BreakState.FALSE;
+  }
+
+  if (previous === BreakState.EMOJI_EXTEND && current === Types.E_MODIFIER) {
+    return BreakState.FALSE;
+  }
+
+  // GB 11    ZWJ 	× 	(Glue_After_Zwj | EBG)
+  if (previous === Types.ZWJ && (current === Types.GLUE_AFTER_ZWJ || current === Types.E_BASE_GAZ)) {
+    return BreakState.FALSE;
+  }
+
+  // GB 12    sot (RI RI)* RI 	× 	RI
+  // GB 13    [^RI] (RI RI)* RI 	× 	RI
+  if (previous === Types.REGIONAL_INDICATOR && current === Types.REGIONAL_INDICATOR) {
+    // return BreakState.False;
+    return BreakState.REGIONAL_SECOND;
+  }
+
+  if (previous === BreakState.REGIONAL_SECOND && current === Types.REGIONAL_INDICATOR) {
+    return BreakState.TRUE;
+  }
+
+  // GB 999
+  return BreakState.TRUE;
+}

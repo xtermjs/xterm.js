@@ -3,10 +3,10 @@
  * @license MIT
  */
 
-import { graphemeType } from './Grapheme';
+import { graphemeType, canBreak, BreakState, Types } from './Grapheme';
 import * as chai from 'chai';
 
-const TYPES  = {
+const _TYPES  = {
   Other: 0,
   L: 1,
   V: 2,
@@ -67,20 +67,80 @@ describe('grapheme cluster', function (): void {
     it('BMP (0)', function(): void {
       if (!CODEPOINTS) return;
       for (let cp = 0; cp < 65536; ++cp) {
-        chai.expect(graphemeType(cp)).equals(TYPES[CODEPOINTS[cp]] || 0);
+        chai.expect(graphemeType(cp)).equals(_TYPES[CODEPOINTS[cp]] || 0);
       }
     });
     it('SMP (1)', function(): void {
       if (!CODEPOINTS) return;
       for (let cp = 65536; cp < 2 * 65536; ++cp) {
-        chai.expect(graphemeType(cp)).equals(TYPES[CODEPOINTS[cp]] || 0);
+        chai.expect(graphemeType(cp)).equals(_TYPES[CODEPOINTS[cp]] || 0);
       }
     });
     it('SSP (14)', function(): void {
       if (!CODEPOINTS) return;
       for (let cp = 14 * 65536; cp < 15 * 65536; ++cp) {
-        chai.expect(graphemeType(cp)).equals(TYPES[CODEPOINTS[cp]] || 0);
+        chai.expect(graphemeType(cp)).equals(_TYPES[CODEPOINTS[cp]] || 0);
       }
+    });
+  });
+  describe('break rules', function(): void {
+    it('GB 3', function(): void {
+      chai.expect(canBreak(Types.LF, Types.CR)).equals(BreakState.FALSE);
+    });
+    it('GB 4', function(): void { // TODO: test all states
+      const types = [Types.CONTROL, Types.CR, Types.LF];
+      for (let pos in types) {
+        chai.expect(canBreak(Types.OTHER, types[pos])).equals(BreakState.TRUE);
+      }
+    });
+    it('GB 5', function(): void { // TODO: test all states
+      const types = [Types.CONTROL, Types.CR, Types.LF];
+      for (let pos in types) {
+        chai.expect(canBreak(types[pos], Types.OTHER)).equals(BreakState.TRUE);
+      }
+    });
+    it('GB 6', function(): void {
+      const types = [Types.L, Types.V, Types.LV, Types.LVT];
+      for (let pos in types) {
+        chai.expect(canBreak(types[pos], Types.L)).equals(BreakState.FALSE);
+      }
+    });
+    it('GB 7', function(): void {
+      chai.expect(canBreak(Types.V, Types.LV)).equals(BreakState.FALSE);
+      chai.expect(canBreak(Types.T, Types.LV)).equals(BreakState.FALSE);
+      chai.expect(canBreak(Types.V, Types.V)).equals(BreakState.FALSE);
+      chai.expect(canBreak(Types.T, Types.V)).equals(BreakState.FALSE);
+    });
+    it('GB 8', function(): void {
+      chai.expect(canBreak(Types.T, Types.LVT)).equals(BreakState.FALSE);
+      chai.expect(canBreak(Types.T, Types.T)).equals(BreakState.FALSE);
+    });
+    it('GB 9', function(): void {
+      chai.expect(canBreak(Types.EXTEND, Types.OTHER)).equals(BreakState.FALSE);
+      chai.expect(canBreak(Types.ZWJ, Types.OTHER)).equals(BreakState.FALSE);
+      chai.expect(canBreak(Types.EXTEND, Types.E_BASE)).equals(BreakState.EMOJI_EXTEND);
+      chai.expect(canBreak(Types.ZWJ, Types.E_BASE)).equals(BreakState.EMOJI_EXTEND);  // wrong here?
+      chai.expect(canBreak(Types.EXTEND, Types.E_BASE_GAZ)).equals(BreakState.EMOJI_EXTEND);
+      chai.expect(canBreak(Types.ZWJ, Types.E_BASE_GAZ)).equals(BreakState.EMOJI_EXTEND);  // wrong here?
+    });
+    it('GB 9a', function(): void {
+      chai.expect(canBreak(Types.SPACINGMARK, Types.OTHER)).equals(BreakState.FALSE);
+    });
+    it('GB 9b', function(): void {
+      chai.expect(canBreak(Types.OTHER, Types.PREPEND)).equals(BreakState.FALSE);
+    });
+    it('GB 10', function(): void {
+      chai.expect(canBreak(Types.E_MODIFIER, Types.E_BASE)).equals(BreakState.FALSE);
+      chai.expect(canBreak(Types.E_MODIFIER, Types.E_BASE_GAZ)).equals(BreakState.FALSE);
+      chai.expect(canBreak(Types.E_MODIFIER, BreakState.EMOJI_EXTEND)).equals(BreakState.FALSE);
+    });
+    it('GB 11', function(): void {
+      chai.expect(canBreak(Types.GLUE_AFTER_ZWJ, Types.ZWJ)).equals(BreakState.FALSE);
+      chai.expect(canBreak(Types.E_BASE_GAZ, Types.ZWJ)).equals(BreakState.FALSE);
+    });
+    it('GB 12 & 13', function(): void {
+      chai.expect(canBreak(Types.REGIONAL_INDICATOR, Types.REGIONAL_INDICATOR)).equals(BreakState.REGIONAL_SECOND);
+      chai.expect(canBreak(Types.REGIONAL_INDICATOR, BreakState.REGIONAL_SECOND)).equals(BreakState.TRUE);
     });
   });
 });
