@@ -277,8 +277,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       if (this.options[key] == null) {
         this.options[key] = DEFAULT_OPTIONS[key];
       }
-      // TODO: We should move away from duplicate options on the Terminal object
-      this[key] = this.options[key];
     });
 
     // this.context = options.context || window;
@@ -384,11 +382,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       throw new Error('No option with key "' + key + '"');
     }
 
-    if (typeof this.options[key] !== 'undefined') {
-      return this.options[key];
-    }
-
-    return this[key];
+    return this.options[key];
   }
 
   /**
@@ -462,7 +456,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         }
         break;
     }
-    this[key] = value;
     this.options[key] = value;
     switch (key) {
       case 'fontFamily':
