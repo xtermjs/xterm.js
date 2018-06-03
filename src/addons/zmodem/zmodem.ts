@@ -46,13 +46,13 @@ function zmodemAttach(ws: WebSocket, opts: IZmodemOptions = {}): void {
 
   let zsentry;
 
-  function _shouldWrite(): boolean {
+  function shouldWrite(): boolean {
     return !!zsentry.get_confirmed_session() || !opts.noTerminalWriteOutsideSession;
   }
 
   zsentry = new zmodem.Sentry({
     to_terminal: (octets: ArrayLike<number>) => {
-      if (_shouldWrite()) {
+      if (shouldWrite()) {
         term.write(
           String.fromCharCode.apply(String, octets)
         );
@@ -70,7 +70,7 @@ function zmodemAttach(ws: WebSocket, opts: IZmodemOptions = {}): void {
     // may be specific to xterm.js’s demo, ultimately we
     // should reject anything that isn’t binary.
     if (typeof evt.data === 'string') {
-      if (_shouldWrite()) {
+      if (shouldWrite()) {
         term.write(evt.data);
       }
     }

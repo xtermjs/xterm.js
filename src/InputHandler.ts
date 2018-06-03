@@ -7,7 +7,7 @@
 import { CharData, IInputHandler, IDcsHandler, IEscapeSequenceParser, IBuffer, ICharset } from './Types';
 import { C0, C1 } from './EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from './Charsets';
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX } from './Buffer';
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, DEFAULT_ATTR } from './Buffer';
 import { FLAGS } from './renderer/Types';
 import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
@@ -163,12 +163,12 @@ export class InputHandler implements IInputHandler {
     this._parser.setCsiHandler('X', (params, collect) => this.eraseChars(params));
     this._parser.setCsiHandler('Z', (params, collect) => this.cursorBackwardTab(params));
     this._parser.setCsiHandler('`', (params, collect) => this.charPosAbsolute(params));
-    this._parser.setCsiHandler('a', (params, collect) => this.HPositionRelative(params));
+    this._parser.setCsiHandler('a', (params, collect) => this.hPositionRelative(params));
     this._parser.setCsiHandler('b', (params, collect) => this.repeatPrecedingCharacter(params));
     this._parser.setCsiHandler('c', (params, collect) => this.sendDeviceAttributes(params, collect));
     this._parser.setCsiHandler('d', (params, collect) => this.linePosAbsolute(params));
-    this._parser.setCsiHandler('e', (params, collect) => this.VPositionRelative(params));
-    this._parser.setCsiHandler('f', (params, collect) => this.HVPosition(params));
+    this._parser.setCsiHandler('e', (params, collect) => this.vPositionRelative(params));
+    this._parser.setCsiHandler('f', (params, collect) => this.hVPosition(params));
     this._parser.setCsiHandler('g', (params, collect) => this.tabClear(params));
     this._parser.setCsiHandler('h', (params, collect) => this.setMode(params, collect));
     this._parser.setCsiHandler('l', (params, collect) => this.resetMode(params, collect));
@@ -949,7 +949,7 @@ export class InputHandler implements IInputHandler {
    *   [columns] (default = [row,col+1]) (HPR)
    * reuse CSI Ps C ?
    */
-  public HPositionRelative(params: number[]): void {
+  public hPositionRelative(params: number[]): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -970,7 +970,7 @@ export class InputHandler implements IInputHandler {
     const buffer = this._terminal.buffer;
 
     const line = buffer.lines.get(buffer.ybase + buffer.y);
-    const ch = line[buffer.x - 1] || [this._terminal.defAttr, ' ', 1, 32];
+    const ch = line[buffer.x - 1] || [DEFAULT_ATTR, ' ', 1, 32];
 
     while (param--) {
       line[buffer.x++] = ch;
@@ -1063,7 +1063,7 @@ export class InputHandler implements IInputHandler {
    *   [rows] (default = [row+1,column])
    * reuse CSI Ps B ?
    */
-  public VPositionRelative(params: number[]): void {
+  public vPositionRelative(params: number[]): void {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -1083,7 +1083,7 @@ export class InputHandler implements IInputHandler {
    *   Horizontal and Vertical Position [row;column] (default =
    *   [1,1]) (HVP).
    */
-  public HVPosition(params: number[]): void {
+  public hVPosition(params: number[]): void {
     if (params[0] < 1) params[0] = 1;
     if (params[1] < 1) params[1] = 1;
 
@@ -1553,7 +1553,7 @@ export class InputHandler implements IInputHandler {
   public charAttributes(params: number[]): void {
     // Optimize a single SGR0.
     if (params.length === 1 && params[0] === 0) {
-      this._terminal.curAttr = this._terminal.defAttr;
+      this._terminal.curAttr = DEFAULT_ATTR;
       return;
     }
 
@@ -1581,9 +1581,9 @@ export class InputHandler implements IInputHandler {
         bg = p - 100;
       } else if (p === 0) {
         // default
-        flags = this._terminal.defAttr >> 18;
-        fg = (this._terminal.defAttr >> 9) & 0x1ff;
-        bg = this._terminal.defAttr & 0x1ff;
+        flags = DEFAULT_ATTR >> 18;
+        fg = (DEFAULT_ATTR >> 9) & 0x1ff;
+        bg = DEFAULT_ATTR & 0x1ff;
         // flags = 0;
         // fg = 0x1ff;
         // bg = 0x1ff;
@@ -1627,10 +1627,10 @@ export class InputHandler implements IInputHandler {
         flags &= ~FLAGS.INVISIBLE;
       } else if (p === 39) {
         // reset fg
-        fg = (this._terminal.defAttr >> 9) & 0x1ff;
+        fg = (DEFAULT_ATTR >> 9) & 0x1ff;
       } else if (p === 49) {
         // reset bg
-        bg = this._terminal.defAttr & 0x1ff;
+        bg = DEFAULT_ATTR & 0x1ff;
       } else if (p === 38) {
         // fg color 256
         if (params[i + 1] === 2) {
@@ -1663,8 +1663,8 @@ export class InputHandler implements IInputHandler {
         }
       } else if (p === 100) {
         // reset fg/bg
-        fg = (this._terminal.defAttr >> 9) & 0x1ff;
-        bg = this._terminal.defAttr & 0x1ff;
+        fg = (DEFAULT_ATTR >> 9) & 0x1ff;
+        bg = DEFAULT_ATTR & 0x1ff;
       } else {
         this._terminal.error('Unknown SGR attribute: %d.', p);
       }
@@ -1759,7 +1759,7 @@ export class InputHandler implements IInputHandler {
       this._terminal.applicationCursor = false;
       this._terminal.buffer.scrollTop = 0;
       this._terminal.buffer.scrollBottom = this._terminal.rows - 1;
-      this._terminal.curAttr = this._terminal.defAttr;
+      this._terminal.curAttr = DEFAULT_ATTR;
       this._terminal.buffer.x = this._terminal.buffer.y = 0; // ?
       this._terminal.charset = null;
       this._terminal.glevel = 0; // ??

@@ -8,6 +8,7 @@ import { LineData, CharData, ITerminal, IBuffer } from './Types';
 import { EventEmitter } from './EventEmitter';
 import { IDisposable, IMarker } from 'xterm';
 
+export const DEFAULT_ATTR = (0 << 18) | (257 << 9) | (256 << 0);
 export const CHAR_DATA_ATTR_INDEX = 0;
 export const CHAR_DATA_CHAR_INDEX = 1;
 export const CHAR_DATA_WIDTH_INDEX = 2;
@@ -116,7 +117,7 @@ export class Buffer implements IBuffer {
     if (this.lines.length > 0) {
       // Deal with columns increasing (we don't do anything when columns reduce)
       if (this._terminal.cols < newCols) {
-        const ch: CharData = [this._terminal.defAttr, ' ', 1, 32]; // does xterm use the default attr?
+        const ch: CharData = [DEFAULT_ATTR, ' ', 1, 32]; // does xterm use the default attr?
         for (let i = 0; i < this.lines.length; i++) {
           while (this.lines.get(i).length < newCols) {
             this.lines.get(i).push(ch);
@@ -337,9 +338,9 @@ export class Buffer implements IBuffer {
 }
 
 export class Marker extends EventEmitter implements IMarker {
-  private static NEXT_ID = 1;
+  private static _nextId = 1;
 
-  private _id: number = Marker.NEXT_ID++;
+  private _id: number = Marker._nextId++;
   public isDisposed: boolean = false;
   public disposables: IDisposable[] = [];
 

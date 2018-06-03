@@ -235,7 +235,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
   protected _dcsHandlerFb: IDcsHandler;
   protected _errorHandlerFb: (state: IParsingState) => IParsingState;
 
-  constructor(readonly transitions: TransitionTable = VT500_TRANSITION_TABLE) {
+  constructor(readonly TRANSITIONS: TransitionTable = VT500_TRANSITION_TABLE) {
     this.initialState = ParserState.GROUND;
     this.currentState = this.initialState;
     this._osc = '';
@@ -342,7 +342,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     let osc = this._osc;
     let collect = this._collect;
     let params = this._params;
-    const table: Uint8Array | number[] = this.transitions.table;
+    const table: Uint8Array | number[] = this.TRANSITIONS.table;
     let dcsHandler: IDcsHandler | null = this._activeDcsHandler;
     let callback: Function | null = null;
 

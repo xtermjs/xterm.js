@@ -43,7 +43,6 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   insertMode: boolean;
   wraparoundMode: boolean;
   bracketedPasteMode: boolean;
-  defAttr: number;
   curAttr: number;
   savedCols: number;
   x10Mouse: boolean;
@@ -139,12 +138,12 @@ export interface IInputHandler {
   /** CSI X */ eraseChars(params?: number[]): void;
   /** CSI Z */ cursorBackwardTab(params?: number[]): void;
   /** CSI ` */ charPosAbsolute(params?: number[]): void;
-  /** CSI a */ HPositionRelative(params?: number[]): void;
+  /** CSI a */ hPositionRelative(params?: number[]): void;
   /** CSI b */ repeatPrecedingCharacter(params?: number[]): void;
   /** CSI c */ sendDeviceAttributes(params?: number[], collect?: string): void;
   /** CSI d */ linePosAbsolute(params?: number[]): void;
-  /** CSI e */ VPositionRelative(params?: number[]): void;
-  /** CSI f */ HVPosition(params?: number[]): void;
+  /** CSI e */ vPositionRelative(params?: number[]): void;
+  /** CSI f */ hVPosition(params?: number[]): void;
   /** CSI g */ tabClear(params?: number[]): void;
   /** CSI h */ setMode(params?: number[], collect?: string): void;
   /** CSI l */ resetMode(params?: number[], collect?: string): void;
@@ -213,7 +212,6 @@ export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAcce
   writeBuffer: string[];
   cursorHidden: boolean;
   cursorState: number;
-  defAttr: number;
   options: ITerminalOptions;
   buffer: IBuffer;
   buffers: IBufferSet;
