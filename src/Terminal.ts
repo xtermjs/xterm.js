@@ -95,6 +95,11 @@ const WRITE_BUFFER_PAUSE_THRESHOLD = 5;
  */
 const WRITE_BATCH_SIZE = 300;
 
+/**
+ * The set of options that only have an effect when set in the Terminal constructor.
+ */
+const CONSTRUCTOR_ONLY_OPTIONS = ['cols', 'rows', 'rendererType'];
+
 const DEFAULT_OPTIONS: ITerminalOptions = {
   cols: 80,
   rows: 24,
@@ -393,6 +398,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public setOption(key: string, value: any): void {
     if (!(key in DEFAULT_OPTIONS)) {
       throw new Error('No option with key "' + key + '"');
+    }
+    if (CONSTRUCTOR_ONLY_OPTIONS.indexOf(key) !== -1) {
+      console.error(`Option "${key}" can only be set in the constructor`);
     }
     switch (key) {
       case 'bellStyle':
