@@ -135,7 +135,7 @@ if (os.platform() !== 'win32') {
               const fromEmulator = terminalToString(xterm);
               console.log = consoleLog;
               const expected = fs.readFileSync(filename.split('.')[0] + '.text', 'utf8');
-              
+
               // Some of the tests have whitespace on the right of lines, we trim all the linex
               // from xterm.js so ignore this for now at least.
               const expectedRightTrimmed = expected.split('\n').map(l => l.replace(/\s+$/, '')).join('\n');
