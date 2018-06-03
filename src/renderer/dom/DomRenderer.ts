@@ -105,7 +105,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
       this._terminal.screenElement.appendChild(this._dimensionsStyleElement);
     }
 
-    let styles =
+    const styles =
         `${this._terminalSelector} .${ROW_CONTAINER_CLASS} span {` +
         ` display: inline-block;` +
         ` height: 100%;` +

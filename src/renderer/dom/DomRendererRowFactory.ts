@@ -23,7 +23,7 @@ export class DomRendererRowFactory {
       const charData = lineData[x];
       const char: string = charData[CHAR_DATA_CHAR_INDEX];
       const attr: number = charData[CHAR_DATA_ATTR_INDEX];
-      let width: number = charData[CHAR_DATA_WIDTH_INDEX];
+      const width: number = charData[CHAR_DATA_WIDTH_INDEX];
 
       // The character to the left is a wide character, drawing is owned by the char at x-1
       if (width === 0) {
