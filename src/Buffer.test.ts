@@ -89,8 +89,18 @@ describe('Buffer', () => {
       });
       it('should return a range for the last row', () => {
         buffer.fillViewportRows();
-       (<any> buffer.lines.get(23)).isWrapped = true;
+        (<any> buffer.lines.get(23)).isWrapped = true;
         assert.deepEqual(buffer.getWrappedRangeForLine(buffer.lines.length - 1), { first: 22, last: 23 });
+      });
+      it('should return a range for a row that wraps upward to first row', () => {
+        buffer.fillViewportRows();
+        (<any> buffer.lines.get(1)).isWrapped = true;
+        assert.deepEqual(buffer.getWrappedRangeForLine(1), { first: 0, last: 1 });
+      });
+      it('should return a range for a row that wraps downward to last row', () => {
+        buffer.fillViewportRows();
+        (<any> buffer.lines.get(buffer.lines.length - 1)).isWrapped = true;
+        assert.deepEqual(buffer.getWrappedRangeForLine(buffer.lines.length - 2), { first: 22, last: 23 });
       });
     });
   });

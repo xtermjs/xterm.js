@@ -298,6 +298,16 @@ describe('SelectionManager', () => {
       assert.deepEqual(selectionManager.model.finalSelectionStart, [0, 0]);
       assert.deepEqual(selectionManager.model.finalSelectionEnd, [terminal.cols, 0], 'The actual selection spans the entire column');
     });
+    it('should select the entire wrapped line', () => {
+      buffer.lines.set(0, stringToRow('foo'));
+      const line2 = stringToRow('bar');
+      (<any>line2).isWrapped = true;
+      buffer.lines.set(1, line2);
+      selectionManager.selectLineAt(0);
+      assert.equal(selectionManager.selectionText, 'foobar', 'The selected text is correct');
+      assert.deepEqual(selectionManager.model.finalSelectionStart, [0, 0]);
+      assert.deepEqual(selectionManager.model.finalSelectionEnd, [terminal.cols, 1], 'The actual selection spans the entire column');
+    });
   });
 
   describe('selectAll', () => {

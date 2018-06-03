@@ -267,7 +267,7 @@ export class Buffer implements IBuffer {
       first--;
     }
     // Scan downwards for wrapped lines
-    while (last + 1 < this.lines.length  - 1 && (<any>this.lines.get(last + 1)).isWrapped) {
+    while (last + 1 < this.lines.length && (<any>this.lines.get(last + 1)).isWrapped) {
       last++;
     }
     return { first, last };
