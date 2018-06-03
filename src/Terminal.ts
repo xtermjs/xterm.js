@@ -97,7 +97,7 @@ const WRITE_BATCH_SIZE = 300;
 /**
  * The set of options that only have an effect when set in the Terminal constructor.
  */
-const CONSTRUCTOR_ONLY_OPTIONS = ['cols', 'rows', 'experimentalCharAtlas'];
+const CONSTRUCTOR_ONLY_OPTIONS = ['cols', 'rows'];
 
 const DEFAULT_OPTIONS: ITerminalOptions = {
   cols: 80,

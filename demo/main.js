@@ -139,10 +139,9 @@ function createTerminal() {
 
   // fit is called within a setTimeout, cols and rows need this.
   setTimeout(function () {
-    console.log(term.cols, term.getOption('cols'));
     initOptions(term);
-    // colsElement.value = term.cols;
-    // rowsElement.value = term.rows;
+    document.getElementById(`opt-cols`).value = term.cols;
+    document.getElementById(`opt-rows`).value = term.rows;
     paddingElement.value = 0;
 
     // Set terminal size again to set the specific dimensions on the demo
@@ -280,7 +279,21 @@ function initOptions(term) {
     const input = document.getElementById(`opt-${o}`);
     input.addEventListener('change', () => {
       console.log('change', o, input.value);
-      term.setOption(o, input.value);
+      if (o === 'cols' || o === 'rows') {
+        updateTerminalSize();
+      } else {
+        term.setOption(o, parseInt(input.value, 10));
+      }
     });
   });
+}
+
+function updateTerminalSize() {
+  var cols = parseInt(document.getElementById(`opt-cols`).value, 10);
+  var rows = parseInt(document.getElementById(`opt-rows`).value, 10);
+  var width = (cols * term.renderer.dimensions.actualCellWidth + term.viewport.scrollBarWidth).toString() + 'px';
+  var height = (rows * term.renderer.dimensions.actualCellHeight).toString() + 'px';
+  terminalContainer.style.width = width;
+  terminalContainer.style.height = height;
+  term.fit();
 }
