@@ -260,6 +260,20 @@ export class Buffer implements IBuffer {
     return lineString.substring(startIndex, endIndex);
   }
 
+  public getWrappedRangeForLine(y: number): { first: number, last: number } {
+    let first = y;
+    let last = y;
+    // Scan upwards for wrapped lines
+    while (first > 0 && (<any>this.lines.get(first)).isWrapped) {
+      first--;
+    }
+    // Scan downwards for wrapped lines
+    while (last + 1 < this.lines.length && (<any>this.lines.get(last + 1)).isWrapped) {
+      last++;
+    }
+    return { first, last };
+  }
+
   /**
    * Setup the tab stops.
    * @param i The index to start setting up tab stops from.

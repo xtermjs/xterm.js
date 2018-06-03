@@ -3,8 +3,6 @@
  * @license MIT
  */
 
-/// <reference path="../../../typings/xterm.d.ts"/>
-
 import { Terminal } from 'xterm';
 import { IWinptyCompatAddonTerminal } from './Interfaces';
 

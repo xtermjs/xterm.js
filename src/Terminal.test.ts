@@ -77,13 +77,13 @@ describe('term.js addons', () => {
   });
 
   describe('attachCustomKeyEventHandler', () => {
-    let evKeyDown = <KeyboardEvent>{
+    const evKeyDown = <KeyboardEvent>{
       preventDefault: () => {},
       stopPropagation: () => {},
       type: 'keydown',
       keyCode: 77
     };
-    let evKeyPress = <KeyboardEvent>{
+    const evKeyPress = <KeyboardEvent>{
       preventDefault: () => {},
       stopPropagation: () => {},
       type: 'keypress',
@@ -131,7 +131,7 @@ describe('term.js addons', () => {
 
   describe('clear', () => {
     it('should clear a buffer equal to rows', () => {
-      let promptLine = term.buffer.lines.get(term.buffer.ybase + term.buffer.y);
+      const promptLine = term.buffer.lines.get(term.buffer.ybase + term.buffer.y);
       term.clear();
       assert.equal(term.buffer.y, 0);
       assert.equal(term.buffer.ybase, 0);
@@ -148,7 +148,7 @@ describe('term.js addons', () => {
         term.write('test\n');
       }
 
-      let promptLine = term.buffer.lines.get(term.buffer.ybase + term.buffer.y);
+      const promptLine = term.buffer.lines.get(term.buffer.ybase + term.buffer.y);
       term.clear();
       assert.equal(term.buffer.y, 0);
       assert.equal(term.buffer.ybase, 0);
@@ -160,7 +160,7 @@ describe('term.js addons', () => {
       }
     });
     it('should not break the prompt when cleared twice', () => {
-      let promptLine = term.buffer.lines.get(term.buffer.ybase + term.buffer.y);
+      const promptLine = term.buffer.lines.get(term.buffer.ybase + term.buffer.y);
       term.clear();
       term.clear();
       assert.equal(term.buffer.y, 0);
@@ -176,7 +176,7 @@ describe('term.js addons', () => {
 
   describe('scroll', () => {
     describe('scrollLines', () => {
-      let startYDisp;
+      let startYDisp: number;
       beforeEach(() => {
         for (let i = 0; i < term.rows * 2; i++) {
           term.writeln('test');
@@ -211,7 +211,7 @@ describe('term.js addons', () => {
     });
 
     describe('scrollPages', () => {
-      let startYDisp;
+      let startYDisp: number;
       beforeEach(() => {
         for (let i = 0; i < term.rows * 3; i++) {
           term.writeln('test');
@@ -248,7 +248,7 @@ describe('term.js addons', () => {
     });
 
     describe('scrollToBottom', () => {
-      let startYDisp;
+      let startYDisp: number;
       beforeEach(() => {
         for (let i = 0; i < term.rows * 3; i++) {
           term.writeln('test');
@@ -269,7 +269,7 @@ describe('term.js addons', () => {
     });
 
     describe('scrollToLine', () => {
-      let startYDisp;
+      let startYDisp: number;
       beforeEach(() => {
         for (let i = 0; i < term.rows * 3; i++) {
           term.writeln('test');
@@ -302,7 +302,7 @@ describe('term.js addons', () => {
         (<any>term)._evaluateKeyEscapeSequence = () => {
           return { key: 'a' };
         };
-        let event = <KeyboardEvent>{
+        const event = <KeyboardEvent>{
           type: 'keydown',
           keyCode: 0,
           preventDefault: () => {},
@@ -322,7 +322,7 @@ describe('term.js addons', () => {
         for (let i = 0; i < term.rows * 3; i++) {
           term.writeln('test');
         }
-        let startYDisp = (term.rows * 2) + 1;
+        const startYDisp = (term.rows * 2) + 1;
         term.attachCustomKeyEventHandler(() => {
           return false;
         });
@@ -712,8 +712,8 @@ describe('term.js addons', () => {
   });
 
   describe('Third level shift', () => {
-    let evKeyDown;
-    let evKeyPress;
+    let evKeyDown: any;
+    let evKeyPress: any;
 
     beforeEach(() => {
       term.handler = () => {};
@@ -784,11 +784,11 @@ describe('term.js addons', () => {
       });
 
       it('should emit key with alt + key on keyPress', (done) => {
-        let keys = ['@', '@', '\\', '\\', '|', '|'];
+        const keys = ['@', '@', '\\', '\\', '|', '|'];
 
         term.on('keypress', (key) => {
           if (key) {
-            let index = keys.indexOf(key);
+            const index = keys.indexOf(key);
             assert(index !== -1, 'Emitted wrong key: ' + key);
             keys.splice(index, 1);
           }
@@ -850,11 +850,11 @@ describe('term.js addons', () => {
       });
 
       it('should emit key with alt + ctrl + key on keyPress', (done) => {
-        let keys = ['@', '@', '\\', '\\', '|', '|'];
+        const keys = ['@', '@', '\\', '\\', '|', '|'];
 
         term.on('keypress', (key) => {
           if (key) {
-            let index = keys.indexOf(key);
+            const index = keys.indexOf(key);
             assert(index !== -1, 'Emitted wrong key: ' + key);
             keys.splice(index, 1);
           }
@@ -895,10 +895,10 @@ describe('term.js addons', () => {
   describe('unicode - surrogates', () => {
     it('2 characters per cell', function (): void {
       this.timeout(10000);  // This is needed because istanbul patches code and slows it down
-      let high = String.fromCharCode(0xD800);
+      const high = String.fromCharCode(0xD800);
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
         term.write(high + String.fromCharCode(i));
-        let tchar = term.buffer.lines.get(0)[0];
+        const tchar = term.buffer.lines.get(0)[0];
         expect(tchar[CHAR_DATA_CHAR_INDEX]).eql(high + String.fromCharCode(i));
         expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(2);
         expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(1);
@@ -907,7 +907,7 @@ describe('term.js addons', () => {
       }
     });
     it('2 characters at last cell', () => {
-      let high = String.fromCharCode(0xD800);
+      const high = String.fromCharCode(0xD800);
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
         term.buffer.x = term.cols - 1;
         term.write(high + String.fromCharCode(i));
@@ -918,7 +918,7 @@ describe('term.js addons', () => {
       }
     });
     it('2 characters per cell over line end with autowrap', () => {
-      let high = String.fromCharCode(0xD800);
+      const high = String.fromCharCode(0xD800);
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
         term.buffer.x = term.cols - 1;
         term.wraparoundMode = true;
@@ -931,7 +931,7 @@ describe('term.js addons', () => {
       }
     });
     it('2 characters per cell over line end without autowrap', () => {
-      let high = String.fromCharCode(0xD800);
+      const high = String.fromCharCode(0xD800);
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
         term.buffer.x = term.cols - 1;
         term.wraparoundMode = false;
@@ -944,11 +944,11 @@ describe('term.js addons', () => {
       }
     });
     it('splitted surrogates', () => {
-      let high = String.fromCharCode(0xD800);
+      const high = String.fromCharCode(0xD800);
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
         term.write(high);
         term.write(String.fromCharCode(i));
-        let tchar = term.buffer.lines.get(0)[0];
+        const tchar = term.buffer.lines.get(0)[0];
         expect(tchar[CHAR_DATA_CHAR_INDEX]).eql(high + String.fromCharCode(i));
         expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(2);
         expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(1);
@@ -979,12 +979,12 @@ describe('term.js addons', () => {
       term.wraparoundMode = true;
       term.write(Array(100).join('e\u0301'));
       for (let i = 0; i < term.cols; ++i) {
-        let tchar = term.buffer.lines.get(0)[i];
+        const tchar = term.buffer.lines.get(0)[i];
         expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('e\u0301');
         expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(2);
         expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(1);
       }
-      let tchar = term.buffer.lines.get(1)[0];
+      const tchar = term.buffer.lines.get(1)[0];
       expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('e\u0301');
       expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(2);
       expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(1);
@@ -993,12 +993,12 @@ describe('term.js addons', () => {
       term.wraparoundMode = true;
       term.write(Array(100).join('\uD800\uDC00\u0301'));
       for (let i = 0; i < term.cols; ++i) {
-        let tchar = term.buffer.lines.get(0)[i];
+        const tchar = term.buffer.lines.get(0)[i];
         expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('\uD800\uDC00\u0301');
         expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(3);
         expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(1);
       }
-      let tchar = term.buffer.lines.get(1)[0];
+      const tchar = term.buffer.lines.get(1)[0];
       expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('\uD800\uDC00\u0301');
       expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(3);
       expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(1);
@@ -1021,7 +1021,7 @@ describe('term.js addons', () => {
       term.wraparoundMode = true;
       term.write(Array(50).join('￥'));
       for (let i = 0; i < term.cols; ++i) {
-        let tchar = term.buffer.lines.get(0)[i];
+        const tchar = term.buffer.lines.get(0)[i];
         if (i % 2) {
           expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('');
           expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(0);
@@ -1032,7 +1032,7 @@ describe('term.js addons', () => {
           expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(2);
         }
       }
-      let tchar = term.buffer.lines.get(1)[0];
+      const tchar = term.buffer.lines.get(1)[0];
       expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('￥');
       expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(1);
       expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(2);
@@ -1042,7 +1042,7 @@ describe('term.js addons', () => {
       term.buffer.x = 1;
       term.write(Array(50).join('￥'));
       for (let i = 1; i < term.cols - 1; ++i) {
-        let tchar = term.buffer.lines.get(0)[i];
+        const tchar = term.buffer.lines.get(0)[i];
         if (!(i % 2)) {
           expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('');
           expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(0);
@@ -1067,7 +1067,7 @@ describe('term.js addons', () => {
       term.buffer.x = 1;
       term.write(Array(50).join('￥\u0301'));
       for (let i = 1; i < term.cols - 1; ++i) {
-        let tchar = term.buffer.lines.get(0)[i];
+        const tchar = term.buffer.lines.get(0)[i];
         if (!(i % 2)) {
           expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('');
           expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(0);
@@ -1091,7 +1091,7 @@ describe('term.js addons', () => {
       term.wraparoundMode = true;
       term.write(Array(50).join('￥\u0301'));
       for (let i = 0; i < term.cols; ++i) {
-        let tchar = term.buffer.lines.get(0)[i];
+        const tchar = term.buffer.lines.get(0)[i];
         if (i % 2) {
           expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('');
           expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(0);
@@ -1102,7 +1102,7 @@ describe('term.js addons', () => {
           expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(2);
         }
       }
-      let tchar = term.buffer.lines.get(1)[0];
+      const tchar = term.buffer.lines.get(1)[0];
       expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('￥\u0301');
       expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(2);
       expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(2);
@@ -1112,7 +1112,7 @@ describe('term.js addons', () => {
       term.buffer.x = 1;
       term.write(Array(50).join('\ud843\ude6d\u0301'));
       for (let i = 1; i < term.cols - 1; ++i) {
-        let tchar = term.buffer.lines.get(0)[i];
+        const tchar = term.buffer.lines.get(0)[i];
         if (!(i % 2)) {
           expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('');
           expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(0);
@@ -1136,7 +1136,7 @@ describe('term.js addons', () => {
       term.wraparoundMode = true;
       term.write(Array(50).join('\ud843\ude6d\u0301'));
       for (let i = 0; i < term.cols; ++i) {
-        let tchar = term.buffer.lines.get(0)[i];
+        const tchar = term.buffer.lines.get(0)[i];
         if (i % 2) {
           expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('');
           expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(0);
@@ -1147,7 +1147,7 @@ describe('term.js addons', () => {
           expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(2);
         }
       }
-      let tchar = term.buffer.lines.get(1)[0];
+      const tchar = term.buffer.lines.get(1)[0];
       expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('\ud843\ude6d\u0301');
       expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(3);
       expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(2);

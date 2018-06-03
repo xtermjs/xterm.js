@@ -52,7 +52,7 @@ import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
 
 // reg + shift key mappings for digits and special chars
-const KEYCODE_KEY_MAPPINGS = {
+const KEYCODE_KEY_MAPPINGS: { [key: number]: [string, string]} = {
   // digits 0-9
   48: ['0', ')'],
   49: ['1', '!'],
@@ -278,8 +278,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       if (this.options[key] == null) {
         this.options[key] = DEFAULT_OPTIONS[key];
       }
-      // TODO: We should move away from duplicate options on the Terminal object
-      this[key] = this.options[key];
     });
 
     // this.context = options.context || window;
@@ -384,11 +382,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       throw new Error('No option with key "' + key + '"');
     }
 
-    if (typeof this.options[key] !== 'undefined') {
-      return this.options[key];
-    }
-
-    return this[key];
+    return this.options[key];
   }
 
   /**
@@ -462,7 +456,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         }
         break;
     }
-    this[key] = value;
     this.options[key] = value;
     switch (key) {
       case 'fontFamily':
@@ -561,7 +554,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       }
       copyHandler(event, this, this.selectionManager);
     });
-    const pasteHandlerWrapper = event => pasteHandler(event, this);
+    const pasteHandlerWrapper = (event: ClipboardEvent) => pasteHandler(event, this);
     on(this.textarea, 'paste', pasteHandlerWrapper);
     on(this.element, 'paste', pasteHandlerWrapper);
 
@@ -831,7 +824,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // ^[[M 3<^[[M@4<^[[M@5<^[[M@6<^[[M@7<^[[M#7<
     function sendMove(ev: MouseEvent): void {
       let button = pressed;
-      let pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
+      const pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
       if (!pos) return;
 
       // buttons marked as motions
@@ -942,7 +935,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         return;
       }
 
-      let data: number[] = [];
+      const data: number[] = [];
 
       encode(data, button);
       encode(data, pos.x);
@@ -1149,7 +1142,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public scroll(isWrapped?: boolean): void {
     const newLine = this.blankLine(undefined, isWrapped);
     const topRow = this.buffer.ybase + this.buffer.scrollTop;
-    let bottomRow = this.buffer.ybase + this.buffer.scrollBottom;
+    const bottomRow = this.buffer.ybase + this.buffer.scrollBottom;
 
     if (this.buffer.scrollTop === 0) {
       // Determine whether the buffer is going to be trimmed after insertion.
@@ -1296,7 +1289,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
   }
 
-  private _innerWrite(): void {
+  protected _innerWrite(): void {
     const writeBatch = this.writeBuffer.splice(0, WRITE_BATCH_SIZE);
     while (writeBatch.length > 0) {
       const data = writeBatch.shift();

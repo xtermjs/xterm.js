@@ -106,7 +106,7 @@ export function generateStaticCharAtlasTexture(context: Window, canvasFactory: (
       return canvas;
     }
     // Transfer to an ImageBitmap is this is an OffscreenCanvas
-    return new Promise(r => r(canvas.transferToImageBitmap()));
+    return new Promise((r: (bitmap: ImageBitmap) => void) => r(canvas.transferToImageBitmap()));
   }
 
   const charAtlasImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
