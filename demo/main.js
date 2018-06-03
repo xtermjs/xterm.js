@@ -117,6 +117,7 @@ function createTerminal() {
     tabStopWidth: parseInt(optionElements.tabstopwidth.value, 10),
     screenReaderMode: optionElements.screenReaderMode.checked
   });
+  initOptions(term);
   window.term = term;  // Expose `term` to window for debugging purposes
   term.on('resize', function (size) {
     if (!pid) {
@@ -204,4 +205,56 @@ function runFakeTerminal() {
   term.on('paste', function (data, ev) {
     term.write(data);
   });
+}
+
+function initOptions(term) {
+  var blacklistedOptions = [
+    'cancelEvents',
+    'convertEol',
+    'debug',
+    'handler',
+    'screenKeys',
+    'termName',
+    'useFlowControl'
+  ];
+  var stringOptions = {
+    bellStyle: ['none', 'sound'],
+    cursorStyle: ['block', 'underline', 'bar'],
+    experimentalCharAtlas: ['none', 'static', 'dynamic'],
+    fontFamily: null,
+    fontWeight: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
+    fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900']
+  };
+  var options = Object.keys(term.options);
+  var booleanOptions = [];
+  var numberOptions = [];
+  options.filter(o => blacklistedOptions.indexOf(o) === -1).forEach(option => {
+    switch (typeof term.getOption(option)) {
+      case 'boolean':
+        booleanOptions.push(option);
+        break;
+      case 'number':
+        numberOptions.push(option);
+        break;
+    }
+  });
+
+  var html = '<h1>Options</h1>';
+  booleanOptions.forEach(o => {
+    html += `<div><label><input id="opt-${o}" type="checkbox" ${term.getOption(o) ? 'checked' : ''}/> ${o}</label></div>`;
+  });
+  numberOptions.forEach(o => {
+    html += `<div><label>${o} <input id="opt-${o}" type="number" value="${term.getOption(o)}"/></label></div>`;
+  });
+  Object.keys(stringOptions).forEach(o => {
+    if (stringOptions[o]) {
+      html += `<div><label>${o} <select id="opt-${o}">${stringOptions[o].map(v => `<option ${term.getOption(o) === v ? 'selected' : ''}>${v}</option>`).join('')}</select></label></div>`;
+    } else {
+      html += `<div><label>${o} <input id="opt-${o}" type="text" value="${term.getOption(o)}"/></label></div>`
+    }
+  });
+
+  const container = document.createElement('div');
+  container.innerHTML = html;
+  document.body.appendChild(container);
 }
