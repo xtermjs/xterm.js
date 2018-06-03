@@ -179,7 +179,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
     // Get first row
     const startRowEndCol = start[1] === end[1] ? end[0] : null;
-    let result: string[] = [];
+    const result: string[] = [];
     result.push(this._buffer.translateBufferLineToString(start[1], true, start[0], startRowEndCol));
 
     // Get middle rows
@@ -586,7 +586,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param event The mouseup event.
    */
   private _onMouseUp(event: MouseEvent): void {
-    let timeElapsed = event.timeStamp - this._mouseDownTimeStamp;
+    const timeElapsed = event.timeStamp - this._mouseDownTimeStamp;
 
     this._removeMouseDownListeners();
 
@@ -803,7 +803,9 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param line The line index.
    */
   protected _selectLineAt(line: number): void {
-    this._model.selectionStart = [0, line];
-    this._model.selectionStartLength = this._terminal.cols;
+    const wrappedRange = this._buffer.getWrappedRangeForLine(line);
+    this._model.selectionStart = [0, wrappedRange.first];
+    this._model.selectionEnd = [this._terminal.cols, wrappedRange.last];
+    this._model.selectionStartLength = 0;
   }
 }

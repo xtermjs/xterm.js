@@ -7,5 +7,9 @@
     "sourceMap": true,
     "removeComments": true,
     "declaration": true
-  }
+  },
+  "include": [
+    "**/*.ts",
+    "../../../typings/xterm.d.ts"
+  ]
 }

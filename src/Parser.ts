@@ -232,7 +232,7 @@ export class Parser {
           if (ch in normalStateHandler) {
             normalStateHandler[ch](this, this._inputHandler);
           } else {
-            this._inputHandler.addChar(ch, code);
+            // this._inputHandler.addChar(ch, code);
           }
           break;
         case ParserState.ESCAPED:

@@ -36,7 +36,7 @@ export class CircularList<T> extends EventEmitter implements ICircularList<T> {
 
     // Reconstruct array, starting at index 0. Only transfer values from the
     // indexes 0 to length.
-    let newArray = new Array<T>(newMaxLength);
+    const newArray = new Array<T>(newMaxLength);
     for (let i = 0; i < Math.min(newMaxLength, this.length); i++) {
       newArray[i] = this._array[this._getCyclicIndex(i)];
     }
