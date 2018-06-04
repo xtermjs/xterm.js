@@ -218,7 +218,7 @@ function initOptions(term) {
       term.setOption(o, input.checked);
     });
   });
-  numberOptions.concat(Object.keys(stringOptions)).forEach(o => {
+  numberOptions.forEach(o => {
     var input = document.getElementById(`opt-${o}`);
     input.addEventListener('change', () => {
       console.log('change', o, input.value);
@@ -227,6 +227,13 @@ function initOptions(term) {
       } else {
         term.setOption(o, parseInt(input.value, 10));
       }
+    });
+  });
+  Object.keys(stringOptions).forEach(o => {
+    var input = document.getElementById(`opt-${o}`);
+    input.addEventListener('change', () => {
+      console.log('change', o, input.value);
+      term.setOption(o, input.value);
     });
   });
 }
