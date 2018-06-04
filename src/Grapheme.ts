@@ -3,8 +3,9 @@
  * @license MIT
  */
 import { FIRST, SECOND, THIRD, FOURTH } from './GraphemeData';
+import { wcwidth } from './CharWidth';
 
-export const enum Types {
+export const enum GraphemeTypes {
   OTHER = 0,
   L = 1,
   V = 2,
@@ -70,13 +71,13 @@ function loadFromPackedHIGH(lookupObj: any, data: string, plane: number): void {
   }
 }
 
-export const graphemeType = (function(): (codepoint: number) => Types {
+export const graphemeType = (function(): (codepoint: number) => GraphemeTypes {
   let BMP_LOW = null;
   let BMP_HIGH = null;
   let HIGH = null;
-  return (codepoint: number): Types => {
+  return (codepoint: number): GraphemeTypes => {
     // ASCII printable shortcut
-    if (31 < codepoint && codepoint < 127) return Types.OTHER;
+    if (31 < codepoint && codepoint < 127) return GraphemeTypes.OTHER;
 
     // BMP_LOW: 0 <= codepoint < 12443
     if (codepoint < 12443) {
@@ -88,7 +89,7 @@ export const graphemeType = (function(): (codepoint: number) => Types {
     }
 
     // always Other: 12443 <= codepoint < 42606
-    if (codepoint < 42606) return Types.OTHER;
+    if (codepoint < 42606) return GraphemeTypes.OTHER;
 
     // BMP_HIGH (CJK): 42606 <= codepoint < 65536
     if (codepoint < 65536) {
@@ -111,11 +112,11 @@ export const graphemeType = (function(): (codepoint: number) => Types {
         loadFromPackedHIGH(HIGH, FOURTH, 14);
         return HIGH;
       })();
-      return lookupObj[codepoint] || Types.OTHER;
+      return lookupObj[codepoint] || GraphemeTypes.OTHER;
     }
 
     // all other codepoints default to Other
-    return Types.OTHER;
+    return GraphemeTypes.OTHER;
   };
 })();
 
@@ -123,11 +124,12 @@ export const enum BreakState {
   FALSE = 32,
   TRUE = 33,
   EMOJI_EXTEND = 34, // does not break
-  REGIONAL_SECOND = 35 // does not break
+  REGIONAL_SECOND = 35, // does not break
+  SURROGATE = 36 // does not break
 }
 
-export function canBreak(current: Types | BreakState, previous: Types | BreakState): BreakState {
-  if (previous === Types.OTHER && current === Types.OTHER) {
+export function canBreak(current: GraphemeTypes | BreakState, previous: GraphemeTypes | BreakState): BreakState {
+  if (previous === GraphemeTypes.OTHER && current === GraphemeTypes.OTHER) {
     return BreakState.TRUE;
   }
   // GB 1     sot 	÷ 	Any
@@ -138,78 +140,126 @@ export function canBreak(current: Types | BreakState, previous: Types | BreakSta
   //   return true;
 
   // GB 3     CR 	× 	LF
-  if (previous === Types.CR && current === Types.LF) {
+  if (previous === GraphemeTypes.CR && current === GraphemeTypes.LF) {
     return BreakState.FALSE;
   }
 
   // GB 4     (Control | CR | LF) 	÷
-  if (previous === Types.CONTROL || previous === Types.CR || previous === Types.LF) {
+  if (previous === GraphemeTypes.CONTROL || previous === GraphemeTypes.CR || previous === GraphemeTypes.LF) {
     return BreakState.TRUE;
   }
 
   // GB 5     ÷ 	(Control | CR | LF)
-  if (current === Types.CONTROL || current === Types.CR || current === Types.LF) {
+  if (current === GraphemeTypes.CONTROL || current === GraphemeTypes.CR || current === GraphemeTypes.LF) {
     return BreakState.TRUE;
   }
 
   // GB 6     L 	× 	(L | V | LV | LVT)
-  if (previous === Types.L && (current === Types.L || current === Types.V || current === Types.LV || current === Types.LVT)) {
+  if (previous === GraphemeTypes.L && (current === GraphemeTypes.L || current === GraphemeTypes.V || current === GraphemeTypes.LV || current === GraphemeTypes.LVT)) {
     return BreakState.FALSE;
   }
 
   // GB 7     (LV | V) 	× 	(V | T)
-  if ((previous === Types.LV || previous === Types.V) && (current === Types.V || current === Types.T)) {
+  if ((previous === GraphemeTypes.LV || previous === GraphemeTypes.V) && (current === GraphemeTypes.V || current === GraphemeTypes.T)) {
     return BreakState.FALSE;
   }
 
   // GB 8     (LVT | T) 	× 	T
-  if ((previous === Types.LVT || previous === Types.T) && current === Types.T) {
+  if ((previous === GraphemeTypes.LVT || previous === GraphemeTypes.T) && current === GraphemeTypes.T) {
     return BreakState.FALSE;
   }
 
   // GB 9     × 	(Extend | ZWJ)
-  if (current === Types.EXTEND || current === Types.ZWJ) {
-    if (previous === Types.E_BASE || previous === Types.E_BASE_GAZ) {
+  if (current === GraphemeTypes.EXTEND || current === GraphemeTypes.ZWJ) {
+    if (previous === GraphemeTypes.E_BASE || previous === GraphemeTypes.E_BASE_GAZ) {
       return BreakState.EMOJI_EXTEND;
     }
     return BreakState.FALSE;
   }
 
   // GB 9a    × 	SpacingMark
-  if (current === Types.SPACINGMARK) {
+  if (current === GraphemeTypes.SPACINGMARK) {
     return BreakState.FALSE;
   }
 
   // GB 9b    Prepend 	×
-  if (previous === Types.PREPEND) {
+  if (previous === GraphemeTypes.PREPEND) {
     return BreakState.FALSE;
   }
 
   // GB 10    (E_Base | EBG) Extend* 	× 	E_Modifier
-  if ((previous === Types.E_BASE || previous === Types.E_BASE_GAZ) && current === Types.E_MODIFIER) {
+  if ((previous === GraphemeTypes.E_BASE || previous === GraphemeTypes.E_BASE_GAZ) && current === GraphemeTypes.E_MODIFIER) {
     return BreakState.FALSE;
   }
 
-  if (previous === BreakState.EMOJI_EXTEND && current === Types.E_MODIFIER) {
+  if (previous === BreakState.EMOJI_EXTEND && current === GraphemeTypes.E_MODIFIER) {
     return BreakState.FALSE;
   }
 
   // GB 11    ZWJ 	× 	(Glue_After_Zwj | EBG)
-  if (previous === Types.ZWJ && (current === Types.GLUE_AFTER_ZWJ || current === Types.E_BASE_GAZ)) {
+  if (previous === GraphemeTypes.ZWJ && (current === GraphemeTypes.GLUE_AFTER_ZWJ || current === GraphemeTypes.E_BASE_GAZ)) {
     return BreakState.FALSE;
   }
 
   // GB 12    sot (RI RI)* RI 	× 	RI
   // GB 13    [^RI] (RI RI)* RI 	× 	RI
-  if (previous === Types.REGIONAL_INDICATOR && current === Types.REGIONAL_INDICATOR) {
+  if (previous === GraphemeTypes.REGIONAL_INDICATOR && current === GraphemeTypes.REGIONAL_INDICATOR) {
     // return BreakState.False;
     return BreakState.REGIONAL_SECOND;
   }
 
-  if (previous === BreakState.REGIONAL_SECOND && current === Types.REGIONAL_INDICATOR) {
+  if (previous === BreakState.REGIONAL_SECOND && current === GraphemeTypes.REGIONAL_INDICATOR) {
     return BreakState.TRUE;
   }
 
   // GB 999
   return BreakState.TRUE;
+}
+
+export class GraphemeClusterIterator {
+  public wcwidth: number = 0;
+  private _wcwidth: number = 0;
+  public breakPosition: number = -1;
+  constructor(
+    public data: string,
+    public current: number,
+    public end: number,
+    public lastType: GraphemeTypes | BreakState = GraphemeTypes.CONTROL
+  ) {}
+  public next(): void {
+    this.wcwidth = this._wcwidth;
+    this._wcwidth = 0;
+    for (let i = this.current; i < this.end; ++i) {
+      let code = this.data.charCodeAt(i) | 0;
+      if (0xD800 <= code && code <= 0xDBFF) {
+        i++;
+        let low = this.data.charCodeAt(i);
+        if (isNaN(low)) {
+          this.lastType = BreakState.SURROGATE;
+          this.breakPosition = -1;
+          this.current = this.end;
+          i = this.end;
+          return;
+        }
+        code = ((code - 0xD800) * 0x400) + (low - 0xDC00) + 0x10000;
+      }
+      this._wcwidth += wcwidth(code);
+      let currentType: GraphemeTypes | BreakState = graphemeType(code);
+      let breakState = canBreak(currentType, this.lastType);
+      if (breakState === BreakState.TRUE) {
+        this.breakPosition = (code > 65535) ? i - 1 : i;
+        this.current = i + 1;
+        this.lastType = currentType;
+        return;
+      }
+      if (breakState === BreakState.REGIONAL_SECOND) {
+        this.lastType = BreakState.REGIONAL_SECOND;
+      } else if (breakState === BreakState.EMOJI_EXTEND) {
+        this.lastType = BreakState.EMOJI_EXTEND;
+      }
+    }
+    this.wcwidth = this._wcwidth;
+    this.current = this.end + 1;
+    this.breakPosition = this.end;
+  }
 }

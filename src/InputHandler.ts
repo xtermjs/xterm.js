@@ -11,6 +11,7 @@ import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX } fro
 import { FLAGS } from './renderer/Types';
 import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
+import { GraphemeClusterIterator } from './Grapheme';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -307,6 +308,128 @@ export class InputHandler implements IInputHandler {
   }
 
   public print(data: string, start: number, end: number): void {
+    // let s = '😜🇺🇸👍🇺🇸🇺🇸';
+    // let s = "Z͑ͫ̓ͪ̂ͫ̽͏̴̙̤̞͉͚̯̞̠͍A̴̵̜̰͔ͫ͗͢L̠ͨͧͩ͘G̴̻͈͍͔̹̑͗̎̅͛́Ǫ̵̹̻̝̳͂̌̌͘!͖̬̰̙̗̿̋ͥͥ̂ͣ̐́́͜͞";
+    // let s = "Z͑ͫ̓ͪ̂ͫ̽͏̴̙̤̞͉͚̯̞̠͍A̴̵̜̰͔ͫ͗͢L̠ͨͧͩ͘G̴̻͈͍͔̹̑͗̎̅͛́Ǫ̵̹̻̝̳͂̌̌͘!͖̬̰̙̗̿̋ͥͥ̂ͣ̐́́͜͞";
+    // let s = "עברית";
+    // let s = '😜🇺🇸👍🇺🇸🇺🇸';
+    // let s = "अनुच्छेद";
+    // let s = "🌷🎁💩😜👍🏳️‍🌈";
+    // let s = "뎌쉐";
+
+    /*
+    const test = new GraphemeClusterIterator(s, 0, s.length);
+    let carry = 0;
+    do {
+      test.next();
+      console.log([s.substring(carry, test.breakPosition), test.wcwidth, test.breakPosition]);
+      carry = test.breakPosition;
+    } while (test.current < test.end);
+    */
+
+    const buffer: IBuffer = this._terminal.buffer;
+    const charset: ICharset = this._terminal.charset;
+    const screenReaderMode: boolean = this._terminal.options.screenReaderMode;
+    const cols: number = this._terminal.cols;
+    const wraparoundMode: boolean = this._terminal.wraparoundMode;
+    const insertMode: boolean = this._terminal.insertMode;
+    const curAttr: number = this._terminal.curAttr;
+    let bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
+
+    this._terminal.updateRange(buffer.y);
+
+
+    // FIXME: end + 1 - may lead to errors?
+    const it = new GraphemeClusterIterator(data, start, end + 1);
+    let lastBreak = start;
+    do {
+      it.next();
+
+      if (it.breakPosition === -1) continue;
+      if (lastBreak === it.breakPosition) continue;
+
+      let chWidth = it.wcwidth;
+      let char = (it.breakPosition - lastBreak === 1)
+        ? data.charAt(lastBreak)
+        : data.substring(lastBreak, it.breakPosition);
+      // console.log(char, chWidth);
+      
+      if (charset) {
+        char = charset[char] || char;
+      }
+  
+      if (screenReaderMode) {
+        this._terminal.emit('a11y.char', char);
+      }
+  
+      // goto next line if ch would overflow
+      // TODO: needs a global min terminal width of 2
+      if (buffer.x + chWidth - 1 >= cols) {
+        // autowrap - DECAWM
+        // automatically wraps to the beginning of the next line
+        if (wraparoundMode) {
+          buffer.x = 0;
+          buffer.y++;
+          if (buffer.y > buffer.scrollBottom) {
+            buffer.y--;
+            this._terminal.scroll(true);
+          } else {
+            // The line already exists (eg. the initial viewport), mark it as a
+            // wrapped line
+            (<any>buffer.lines.get(buffer.y)).isWrapped = true;
+          }
+          // row changed, get it again
+          bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
+        } else {
+          if (chWidth === 2) {
+            // FIXME: check for xterm behavior
+            // What to do here? We got a wide char that does not fit into last cell
+            continue;
+          }
+          // FIXME: Do we have to set buffer.x to cols - 1, if not wrapping?
+        }
+      }
+  
+      // insert mode: move characters to right
+      // To achieve insert, we remove cells from the right
+      // and insert empty ones at cursor position
+      if (insertMode) {
+        // do this twice for a fullwidth char
+        for (let moves = 0; moves < chWidth; ++moves) {
+          // remove last cell
+          // if it's width is 0, we have to adjust the second last cell as well
+          let removed = bufferRow.pop();
+          if (removed[CHAR_DATA_WIDTH_INDEX] === 0
+              && bufferRow[this._terminal.cols - 2]
+              && bufferRow[this._terminal.cols - 2][CHAR_DATA_WIDTH_INDEX] === 2) {
+                bufferRow[this._terminal.cols - 2] = [curAttr, ' ', 1, 32  /* ' '.charCodeAt(0) */ ];
+          }
+  
+          // insert empty cell at cursor
+          bufferRow.splice(buffer.x, 0, [curAttr, ' ', 1, 32  /* ' '.charCodeAt(0) */ ]);
+        }
+      }
+  
+      // write current char to buffer and advance cursor
+      // use char cache only for char.length === 1
+      bufferRow[buffer.x++] = [curAttr, char, chWidth, (char.length === 1) ? char.charCodeAt(0) : 65535];
+  
+      // fullwidth char - also set next cell to placeholder stub and advance cursor
+      if (chWidth === 2) {
+        bufferRow[buffer.x++] = [curAttr, '', 0, undefined];
+      }
+
+
+
+      lastBreak = it.breakPosition;
+    } while (it.current < it.end);
+
+    this._terminal.updateRange(buffer.y);
+
+    // this.print_(data, start, end);
+  }
+
+  public print_(data: string, start: number, end: number): void {
     let char: string;
     let code: number;
     let low: number;
@@ -435,6 +558,7 @@ export class InputHandler implements IInputHandler {
       if (chWidth === 2) {
         bufferRow[buffer.x++] = [curAttr, '', 0, undefined];
       }
+
     }
     this._terminal.updateRange(buffer.y);
   }

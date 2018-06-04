@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { graphemeType, canBreak, BreakState, Types } from './Grapheme';
+import { graphemeType, canBreak, BreakState, GraphemeTypes } from './Grapheme';
 import * as chai from 'chai';
 
 const _TYPES  = {
@@ -85,62 +85,62 @@ describe('grapheme cluster', function (): void {
   });
   describe('break rules', function(): void {
     it('GB 3', function(): void {
-      chai.expect(canBreak(Types.LF, Types.CR)).equals(BreakState.FALSE);
+      chai.expect(canBreak(GraphemeTypes.LF, GraphemeTypes.CR)).equals(BreakState.FALSE);
     });
     it('GB 4', function(): void { // TODO: test all states
-      const types = [Types.CONTROL, Types.CR, Types.LF];
+      const types = [GraphemeTypes.CONTROL, GraphemeTypes.CR, GraphemeTypes.LF];
       for (let pos in types) {
-        chai.expect(canBreak(Types.OTHER, types[pos])).equals(BreakState.TRUE);
+        chai.expect(canBreak(GraphemeTypes.OTHER, types[pos])).equals(BreakState.TRUE);
       }
     });
     it('GB 5', function(): void { // TODO: test all states
-      const types = [Types.CONTROL, Types.CR, Types.LF];
+      const types = [GraphemeTypes.CONTROL, GraphemeTypes.CR, GraphemeTypes.LF];
       for (let pos in types) {
-        chai.expect(canBreak(types[pos], Types.OTHER)).equals(BreakState.TRUE);
+        chai.expect(canBreak(types[pos], GraphemeTypes.OTHER)).equals(BreakState.TRUE);
       }
     });
     it('GB 6', function(): void {
-      const types = [Types.L, Types.V, Types.LV, Types.LVT];
+      const types = [GraphemeTypes.L, GraphemeTypes.V, GraphemeTypes.LV, GraphemeTypes.LVT];
       for (let pos in types) {
-        chai.expect(canBreak(types[pos], Types.L)).equals(BreakState.FALSE);
+        chai.expect(canBreak(types[pos], GraphemeTypes.L)).equals(BreakState.FALSE);
       }
     });
     it('GB 7', function(): void {
-      chai.expect(canBreak(Types.V, Types.LV)).equals(BreakState.FALSE);
-      chai.expect(canBreak(Types.T, Types.LV)).equals(BreakState.FALSE);
-      chai.expect(canBreak(Types.V, Types.V)).equals(BreakState.FALSE);
-      chai.expect(canBreak(Types.T, Types.V)).equals(BreakState.FALSE);
+      chai.expect(canBreak(GraphemeTypes.V, GraphemeTypes.LV)).equals(BreakState.FALSE);
+      chai.expect(canBreak(GraphemeTypes.T, GraphemeTypes.LV)).equals(BreakState.FALSE);
+      chai.expect(canBreak(GraphemeTypes.V, GraphemeTypes.V)).equals(BreakState.FALSE);
+      chai.expect(canBreak(GraphemeTypes.T, GraphemeTypes.V)).equals(BreakState.FALSE);
     });
     it('GB 8', function(): void {
-      chai.expect(canBreak(Types.T, Types.LVT)).equals(BreakState.FALSE);
-      chai.expect(canBreak(Types.T, Types.T)).equals(BreakState.FALSE);
+      chai.expect(canBreak(GraphemeTypes.T, GraphemeTypes.LVT)).equals(BreakState.FALSE);
+      chai.expect(canBreak(GraphemeTypes.T, GraphemeTypes.T)).equals(BreakState.FALSE);
     });
     it('GB 9', function(): void {
-      chai.expect(canBreak(Types.EXTEND, Types.OTHER)).equals(BreakState.FALSE);
-      chai.expect(canBreak(Types.ZWJ, Types.OTHER)).equals(BreakState.FALSE);
-      chai.expect(canBreak(Types.EXTEND, Types.E_BASE)).equals(BreakState.EMOJI_EXTEND);
-      chai.expect(canBreak(Types.ZWJ, Types.E_BASE)).equals(BreakState.EMOJI_EXTEND);  // wrong here?
-      chai.expect(canBreak(Types.EXTEND, Types.E_BASE_GAZ)).equals(BreakState.EMOJI_EXTEND);
-      chai.expect(canBreak(Types.ZWJ, Types.E_BASE_GAZ)).equals(BreakState.EMOJI_EXTEND);  // wrong here?
+      chai.expect(canBreak(GraphemeTypes.EXTEND, GraphemeTypes.OTHER)).equals(BreakState.FALSE);
+      chai.expect(canBreak(GraphemeTypes.ZWJ, GraphemeTypes.OTHER)).equals(BreakState.FALSE);
+      chai.expect(canBreak(GraphemeTypes.EXTEND, GraphemeTypes.E_BASE)).equals(BreakState.EMOJI_EXTEND);
+      chai.expect(canBreak(GraphemeTypes.ZWJ, GraphemeTypes.E_BASE)).equals(BreakState.EMOJI_EXTEND);  // wrong here?
+      chai.expect(canBreak(GraphemeTypes.EXTEND, GraphemeTypes.E_BASE_GAZ)).equals(BreakState.EMOJI_EXTEND);
+      chai.expect(canBreak(GraphemeTypes.ZWJ, GraphemeTypes.E_BASE_GAZ)).equals(BreakState.EMOJI_EXTEND);  // wrong here?
     });
     it('GB 9a', function(): void {
-      chai.expect(canBreak(Types.SPACINGMARK, Types.OTHER)).equals(BreakState.FALSE);
+      chai.expect(canBreak(GraphemeTypes.SPACINGMARK, GraphemeTypes.OTHER)).equals(BreakState.FALSE);
     });
     it('GB 9b', function(): void {
-      chai.expect(canBreak(Types.OTHER, Types.PREPEND)).equals(BreakState.FALSE);
+      chai.expect(canBreak(GraphemeTypes.OTHER, GraphemeTypes.PREPEND)).equals(BreakState.FALSE);
     });
     it('GB 10', function(): void {
-      chai.expect(canBreak(Types.E_MODIFIER, Types.E_BASE)).equals(BreakState.FALSE);
-      chai.expect(canBreak(Types.E_MODIFIER, Types.E_BASE_GAZ)).equals(BreakState.FALSE);
-      chai.expect(canBreak(Types.E_MODIFIER, BreakState.EMOJI_EXTEND)).equals(BreakState.FALSE);
+      chai.expect(canBreak(GraphemeTypes.E_MODIFIER, GraphemeTypes.E_BASE)).equals(BreakState.FALSE);
+      chai.expect(canBreak(GraphemeTypes.E_MODIFIER, GraphemeTypes.E_BASE_GAZ)).equals(BreakState.FALSE);
+      chai.expect(canBreak(GraphemeTypes.E_MODIFIER, BreakState.EMOJI_EXTEND)).equals(BreakState.FALSE);
     });
     it('GB 11', function(): void {
-      chai.expect(canBreak(Types.GLUE_AFTER_ZWJ, Types.ZWJ)).equals(BreakState.FALSE);
-      chai.expect(canBreak(Types.E_BASE_GAZ, Types.ZWJ)).equals(BreakState.FALSE);
+      chai.expect(canBreak(GraphemeTypes.GLUE_AFTER_ZWJ, GraphemeTypes.ZWJ)).equals(BreakState.FALSE);
+      chai.expect(canBreak(GraphemeTypes.E_BASE_GAZ, GraphemeTypes.ZWJ)).equals(BreakState.FALSE);
     });
     it('GB 12 & 13', function(): void {
-      chai.expect(canBreak(Types.REGIONAL_INDICATOR, Types.REGIONAL_INDICATOR)).equals(BreakState.REGIONAL_SECOND);
-      chai.expect(canBreak(Types.REGIONAL_INDICATOR, BreakState.REGIONAL_SECOND)).equals(BreakState.TRUE);
+      chai.expect(canBreak(GraphemeTypes.REGIONAL_INDICATOR, GraphemeTypes.REGIONAL_INDICATOR)).equals(BreakState.REGIONAL_SECOND);
+      chai.expect(canBreak(GraphemeTypes.REGIONAL_INDICATOR, BreakState.REGIONAL_SECOND)).equals(BreakState.TRUE);
     });
   });
 });
