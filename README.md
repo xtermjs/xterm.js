@@ -39,7 +39,7 @@ To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to t
     <body>
       <div id="terminal"></div>
       <script>
-      	var term = new Terminal();
+        var term = new Terminal();
         term.open(document.getElementById('terminal'));
         term.write('Hello from \x1B[1;3;31mxterm.js\x1B[0m $ ')
       </script>
@@ -238,7 +238,7 @@ To contribute either code, documentation or issues to xterm.js please read the [
 
 ### Code structure
 
-`src/` is roughly split up into areas of functionality such as `renderer/` that handles all rendering and `utils/` which provides general utility functions. The `shared/` folder contains code that can be used from either the main thread or a web worker thread, all code inside a `shared/` folder should only ever import other code from a `shared/` folder to minimize the amount of code run what launching a web worker.
+`src/` is roughly split up into areas of functionality such as `renderer/` that handles all rendering and `utils/` which provides general utility functions. The `shared/` folder contains code that can be used from either the main thread or a web worker thread, all code inside a `shared/` folder should only ever import other code from a `shared/` folder to minimize the amount of code ran when launching a web worker.
 
 ## License Agreement
 
