@@ -18,7 +18,8 @@ fixtures/typings-test/*.js
 package-lock.json
 
 # Directories needed for code coverage
-/coverage/
+coverage/
+.nyc_output/
 
 # Keep bundled code out of Git
 dist/

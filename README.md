@@ -150,6 +150,8 @@ computational environment for Jupyter, supporting interactive data science and s
 - [**Hyper**](https://hyper.is): A terminal built on web technologies
 - [**Diag**](https://diag.ai): A better way to troubleshoot problems faster. Capture, share and reapply troubleshooting knowledge so you can focus on solving problems that matter.
 - [**GoTTY**](https://github.com/yudai/gotty): A simple command line tool that shares your terminal as a web application based on xterm.js.
+- [**genact**](https://github.com/svenstaro/genact): A nonsense activity generator.
+
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list.
 
@@ -223,6 +225,16 @@ npm run watch  # Run this in its own terminal
 Then open http://127.0.0.1:3000 in a web browser to access the demo.
 
 *Note: Do not use ConEmu, as it seems to break the demo for some reason.*
+
+## Testing
+
+Tests are run using the following npm scripts:
+
+- `npm test`: This will run both unit tests and the linter
+- `npm run test-suite <file>`: This will run all tests within a particular file, &lt;file&gt; is the test file name excluding the extension (eg. "Linkifier.test")
+- `npm run test-debug`: This will run unit tests with `--inspect-brk`, this can then be automatically debugged using [VS Code auto attach](https://code.visualstudio.com/docs/nodejs/nodejs-debugging#_auto-attach-feature) or manually attached to by a debugger
+- `npm run test-coverage`: This will run all unit tests and produce a coverage report
+- `npm run lint`: This will run the linter only
 
 ## Releases
 
