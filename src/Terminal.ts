@@ -2267,12 +2267,12 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
  * Helpers
  */
 
-function globalOn(el: any, type: string, handler: (event: Event) => any, capture?: boolean): void {
+function globalOn(el: any, type: string, handler: (event: Event) => any, capture?: boolean, passive?: boolean): void {
   if (!Array.isArray(el)) {
     el = [el];
   }
   el.forEach((element: HTMLElement) => {
-    element.addEventListener(type, handler, capture || false);
+    element.addEventListener(type, handler, { capture: capture || false, passive: passive || false });
   });
 }
 // TODO: Remove once everything is typed
