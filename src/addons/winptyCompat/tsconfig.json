@@ -6,6 +6,11 @@
     "outDir": "../../../lib/addons/winptyCompat/",
     "sourceMap": true,
     "removeComments": true,
-    "declaration": true
-  }
+    "declaration": true,
+    "preserveWatchOutput": true
+  },
+  "include": [
+    "**/*.ts",
+    "../../../typings/xterm.d.ts"
+  ]
 }

@@ -3,8 +3,6 @@
  * @license MIT
  */
 
-/// <reference path="../../../typings/xterm.d.ts"/>
-
 import { SearchHelper } from './SearchHelper';
 import { Terminal } from 'xterm';
 import { ISearchAddonTerminal } from './Interfaces';

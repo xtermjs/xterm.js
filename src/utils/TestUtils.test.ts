@@ -107,7 +107,6 @@ export class MockTerminal implements ITerminal {
   children: HTMLElement[];
   cursorHidden: boolean;
   cursorState: number;
-  defAttr: number;
   scrollback: number;
   buffers: IBufferSet;
   buffer: IBuffer;
@@ -182,9 +181,7 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   insertMode: boolean;
   wraparoundMode: boolean;
   bracketedPasteMode: boolean;
-  defAttr: number;
   curAttr: number;
-  prefix: string;
   savedCols: number;
   x10Mouse: boolean;
   vt200Mouse: boolean;
@@ -268,7 +265,7 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
     throw new Error('Method not implemented.');
   }
   setOption(key: string, value: any): void {
-    this.options[key] = value;
+    (<any>this.options)[key] = value;
   }
   on(type: string, listener: XtermListener): void {
     throw new Error('Method not implemented.');
@@ -302,6 +299,9 @@ export class MockBuffer implements IBuffer {
   savedX: number;
   translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string {
     return Buffer.prototype.translateBufferLineToString.apply(this, arguments);
+  }
+  getWrappedRangeForLine(y: number): { first: number; last: number; } {
+    throw new Error('Method not implemented.');
   }
   nextStop(x?: number): number {
     throw new Error('Method not implemented.');

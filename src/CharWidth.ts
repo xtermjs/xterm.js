@@ -121,7 +121,7 @@ export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: nu
     }
     const control = opts.control | 0;
     let table: number[] | Uint32Array = null;
-    function init_table(): number[] | Uint32Array {
+    function initTable(): number[] | Uint32Array {
       // lookup table for BMP
       const CODEPOINTS = 65536;  // BMP holds 65536 codepoints
       const BITWIDTH = 2;        // a codepoint can have a width of 0, 1 or 2
@@ -161,7 +161,7 @@ export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: nu
       if (num < 127) {
         return 1;
       }
-      let t = table || init_table();
+      const t = table || initTable();
       if (num < 65536) {
         return t[num >> 4] >> ((num & 15) << 1) & 3;
       }

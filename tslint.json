@@ -31,6 +31,7 @@
       "parameter"
     ],
     "eofline": true,
+    "new-parens": true,
     "no-duplicate-imports": true,
     "no-eval": true,
     "no-internal-module": true,
@@ -93,13 +94,23 @@
 
     "naming-convention": [
       true,
-      {"type": "property", "modifiers": ["public", "static", "const"], "format": "UPPER_CASE"}
+      {"type": "default", "format": "camelCase", "leadingUnderscore": "forbid"},
+      {"type": "type", "format": "PascalCase"},
+      {"type": "class", "format": "PascalCase"},
+      {"type": "property", "modifiers": ["const"], "format": "UPPER_CASE"},
+      {"type": "member", "modifiers": ["protected"], "format": "camelCase", "leadingUnderscore": "allow"},
+      // TODO: Change allow to require when there aren't many PRs out
+      // {"type": "member", "modifiers": ["protected"], "format": "camelCase", "leadingUnderscore": "require"},
+      {"type": "member", "modifiers": ["private"], "format": "camelCase", "leadingUnderscore": "require"},
+      {"type": "variable", "modifiers": ["const"], "format": ["camelCase", "UPPER_CASE"]},
+      {"type": "interface", "prefix": "I"}
     ],
     "no-else-after-return": {
       "options": "allow-else-if"
     },
     "prefer-const-enum": [
       true
-    ]
+    ],
+    "prefer-const": true
   }
 }

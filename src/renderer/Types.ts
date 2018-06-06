@@ -20,6 +20,10 @@ export const enum FLAGS {
   ITALIC = 64
 }
 
+/**
+ * Note that IRenderer implementations should emit the refresh event after
+ * rendering rows to the screen.
+ */
 export interface IRenderer extends IEventEmitter {
   dimensions: IRenderDimensions;
   colorManager: IColorManager;

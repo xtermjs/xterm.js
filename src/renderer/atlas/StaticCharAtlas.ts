@@ -19,10 +19,14 @@ export default class StaticCharAtlas extends BaseCharAtlas {
     const canvas = this._document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
+
+    // This is useful for debugging
+    // document.body.appendChild(canvas);
+
     return canvas;
   }
 
-  public _doWarmUp(): void {
+  protected _doWarmUp(): void {
     const result = generateStaticCharAtlasTexture(window, this._canvasFactory, this._config);
     if (result instanceof HTMLCanvasElement) {
       this._texture = result;
@@ -65,6 +69,9 @@ export default class StaticCharAtlas extends BaseCharAtlas {
     if (!this._isCached(glyph, colorIndex)) {
       return false;
     }
+
+    ctx.save();
+
     // ImageBitmap's draw about twice as fast as from a canvas
     const charAtlasCellWidth = this._config.scaledCharWidth + CHAR_ATLAS_CELL_SPACING;
     const charAtlasCellHeight = this._config.scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
@@ -85,6 +92,8 @@ export default class StaticCharAtlas extends BaseCharAtlas {
       charAtlasCellWidth,
       this._config.scaledCharHeight
     );
+
+    ctx.restore();
 
     return true;
   }

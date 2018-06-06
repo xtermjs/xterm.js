@@ -77,3 +77,74 @@ export namespace C0 {
   /** Delete (Caret = ^?) */
   export const DEL = '\x7f';
 }
+
+/**
+ * C1 control codes
+ * See = https://en.wikipedia.org/wiki/C0_and_C1_control_codes
+ */
+export namespace C1 {
+  /** padding character */
+  export const PAD = '\x80';
+  /** High Octet Preset */
+  export const HOP = '\x81';
+  /** Break Permitted Here */
+  export const BPH = '\x82';
+  /** No Break Here */
+  export const NBH = '\x83';
+  /** Index */
+  export const IND = '\x84';
+  /** Next Line */
+  export const NEL = '\x85';
+  /** Start of Selected Area */
+  export const SSA = '\x86';
+  /** End of Selected Area */
+  export const ESA = '\x87';
+  /** Horizontal Tabulation Set */
+  export const HTS = '\x88';
+  /** Horizontal Tabulation With Justification */
+  export const HTJ = '\x89';
+  /** Vertical Tabulation Set */
+  export const VTS = '\x8a';
+  /** Partial Line Down */
+  export const PLD = '\x8b';
+  /** Partial Line Up */
+  export const PLU = '\x8c';
+  /** Reverse Index */
+  export const RI = '\x8d';
+  /** Single-Shift 2 */
+  export const SS2 = '\x8e';
+  /** Single-Shift 3 */
+  export const SS3 = '\x8f';
+  /** Device Control String */
+  export const DCS = '\x90';
+  /** Private Use 1 */
+  export const PU1 = '\x91';
+  /** Private Use 2 */
+  export const PU2 = '\x92';
+  /** Set Transmit State */
+  export const STS = '\x93';
+  /** Destructive backspace, intended to eliminate ambiguity about meaning of BS. */
+  export const CCH = '\x94';
+  /** Message Waiting */
+  export const MW = '\x95';
+  /** Start of Protected Area */
+  export const SPA = '\x96';
+  /** End of Protected Area */
+  export const EPA = '\x97';
+  /** Start of String */
+  export const SOS = '\x98';
+  /** Single Graphic Character Introducer */
+  export const SGCI = '\x99';
+  /** Single Character Introducer */
+  export const SCI = '\x9a';
+  /** Control Sequence Introducer */
+  export const CSI = '\x9b';
+  /** String Terminator */
+  export const ST = '\x9c';
+  /** Operating System Command */
+  export const OSC = '\x9d';
+  /** Privacy Message */
+  export const PM = '\x9e';
+  /** Application Program Command */
+  export const APC = '\x9f';
+}

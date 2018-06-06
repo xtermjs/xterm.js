@@ -124,12 +124,12 @@ csiStateHandler['T'] = (handler, params, prefix) => {
 csiStateHandler['X'] = (handler, params, prefix) => handler.eraseChars(params);
 csiStateHandler['Z'] = (handler, params, prefix) => handler.cursorBackwardTab(params);
 csiStateHandler['`'] = (handler, params, prefix) => handler.charPosAbsolute(params);
-csiStateHandler['a'] = (handler, params, prefix) => handler.HPositionRelative(params);
+csiStateHandler['a'] = (handler, params, prefix) => handler.hPositionRelative(params);
 csiStateHandler['b'] = (handler, params, prefix) => handler.repeatPrecedingCharacter(params);
 csiStateHandler['c'] = (handler, params, prefix) => handler.sendDeviceAttributes(params);
 csiStateHandler['d'] = (handler, params, prefix) => handler.linePosAbsolute(params);
-csiStateHandler['e'] = (handler, params, prefix) => handler.VPositionRelative(params);
-csiStateHandler['f'] = (handler, params, prefix) => handler.HVPosition(params);
+csiStateHandler['e'] = (handler, params, prefix) => handler.vPositionRelative(params);
+csiStateHandler['f'] = (handler, params, prefix) => handler.hVPosition(params);
 csiStateHandler['g'] = (handler, params, prefix) => handler.tabClear(params);
 csiStateHandler['h'] = (handler, params, prefix) => handler.setMode(params);
 csiStateHandler['l'] = (handler, params, prefix) => handler.resetMode(params);
@@ -232,7 +232,7 @@ export class Parser {
           if (ch in normalStateHandler) {
             normalStateHandler[ch](this, this._inputHandler);
           } else {
-            this._inputHandler.addChar(ch, code);
+            // this._inputHandler.addChar(ch, code);
           }
           break;
         case ParserState.ESCAPED:

@@ -6,7 +6,7 @@
 import { FontWeight } from 'xterm';
 import { CHAR_ATLAS_CELL_SPACING, ICharAtlasConfig } from './Types';
 import { IColor } from '../Types';
-import { isFirefox } from '../utils/Browser';
+import { isFirefox, isSafari } from '../utils/Browser';
 
 declare const Promise: any;
 
@@ -99,14 +99,14 @@ export function generateStaticCharAtlasTexture(context: Window, canvasFactory: (
   // if support is lacking as drawImage works there too. Firefox is also
   // included here as ImageBitmap appears both buggy and has horrible
   // performance (tested on v55).
-  if (!('createImageBitmap' in context) || isFirefox) {
+  if (!('createImageBitmap' in context) || isFirefox || isSafari) {
     // Don't attempt to clear background colors if createImageBitmap is not supported
     if (canvas instanceof HTMLCanvasElement) {
       // Just return the HTMLCanvas if it's a HTMLCanvasElement
       return canvas;
     }
     // Transfer to an ImageBitmap is this is an OffscreenCanvas
-    return new Promise(r => r(canvas.transferToImageBitmap()));
+    return new Promise((r: (bitmap: ImageBitmap) => void) => r(canvas.transferToImageBitmap()));
   }
 
   const charAtlasImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
