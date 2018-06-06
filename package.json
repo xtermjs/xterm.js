@@ -9,7 +9,7 @@
   "devDependencies": {
     "@types/chai": "^3.4.34",
     "@types/glob": "^5.0.35",
-    "@types/jsdom": "^11.0.1",
+    "@types/jsdom": "^11.0.4",
     "@types/mocha": "^2.2.33",
     "@types/node": "6.0.108",
     "browserify": "^13.3.0",
