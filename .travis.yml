@@ -13,7 +13,7 @@ env:
   matrix:
     - NPM_COMMAND=tsc
     - NPM_COMMAND=lint
-    - NPM_COMMAND=test
+    - NPM_COMMAND=test-coverage
 notifications:
   email: false
 script: npm run $NPM_COMMAND

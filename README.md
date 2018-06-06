@@ -226,6 +226,16 @@ Then open http://127.0.0.1:3000 in a web browser to access the demo.
 
 *Note: Do not use ConEmu, as it seems to break the demo for some reason.*
 
+## Testing
+
+Tests are run using the following npm scripts:
+
+- `npm test`: This will run both unit tests and the linter
+- `npm run test-suite <file>`: This will run all tests within a particular file, &lt;file&gt; is the test file name excluding the extension (eg. "Linkifier.test")
+- `npm run test-debug`: This will run unit tests with `--inspect-brk`, this can then be automatically debugged using [VS Code auto attach](https://code.visualstudio.com/docs/nodejs/nodejs-debugging#_auto-attach-feature) or manually attached to by a debugger
+- `npm run test-coverage`: This will run all unit tests and produce a coverage report
+- `npm run lint`: This will run the linter only
+
 ## Releases
 
 Xterm.js follows a monthly release cycle roughly.

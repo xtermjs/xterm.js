@@ -4,11 +4,9 @@
 
 const browserify = require('browserify');
 const buffer = require('vinyl-buffer');
-const coveralls = require('gulp-coveralls');
 const fs = require('fs-extra');
 const gulp = require('gulp');
 const path = require('path');
-const istanbul = require('gulp-istanbul');
 const merge = require('merge-stream');
 const mocha = require('gulp-mocha');
 const sorcery = require('sorcery');
@@ -24,6 +22,13 @@ let srcDir = tsProject.config.compilerOptions.rootDir;
 let outDir = tsProject.config.compilerOptions.outDir;
 
 const addons = fs.readdirSync(`${__dirname}/src/addons`);
+
+const TEST_PATHS = [
+  `${outDir}/*test.js`,
+  `${outDir}/**/*test.js`,
+  `${outDir}/*integration.js`,
+  `${outDir}/**/*integration.js`
+];
 
 // Under some environments like TravisCI, this comes out at absolute which can
 // break the build. This ensures that the outDir is absolute.
@@ -95,37 +100,22 @@ gulp.task('browserify-addons', function() {
   return merge(...bundles);
 });
 
-gulp.task('instrument-test', function () {
-  return gulp.src([`${outDir}/**/*.js`])
-    // Covering files
-    .pipe(istanbul())
-    // Force `require` to return covered files
-    .pipe(istanbul.hookRequire());
-});
-
-gulp.task('mocha', ['instrument-test'], function () {
-  return gulp.src([
-    `${outDir}/*test.js`,
-    `${outDir}/**/*test.js`,
-    `${outDir}/*integration.js`,
-    `${outDir}/**/*integration.js`
-  ], {read: false})
+gulp.task('mocha', function () {
+  return gulp.src(TEST_PATHS, {read: false})
       .pipe(mocha())
-      .once('error', () => process.exit(1))
-      .pipe(istanbul.writeReports());
+      .once('error', () => process.exit(1));
 });
 
 /**
- * Run single test file by file name(without file extension). Example of the command:
- * gulp mocha-test --test InputHandler.test
+ * Run single test suite (file) by file name (without file extension). Example of the command:
+ * gulp mocha-suite --test InputHandler.test
  */
-gulp.task('mocha-test', ['instrument-test'], function () {
+gulp.task('mocha-suite', [], function () {
   let testName = util.env.test;
   util.log("Run test by Name: " + testName);
   return gulp.src([`${outDir}/${testName}.js`, `${outDir}/**/${testName}.js`], {read: false})
          .pipe(mocha())
-         .once('error', () => process.exit(1))
-         .pipe(istanbul.writeReports());
+         .once('error', () => process.exit(1));
 });
 
 /**
@@ -156,14 +146,6 @@ gulp.task('webpack', ['build'], function() {
 
 gulp.task('watch-demo', ['webpack'], () => {
   gulp.watch(['./demo/*', './lib/**/*'], ['webpack']);
-});
-
-/**
- * Submit coverage results to coveralls.io
- */
-gulp.task('coveralls', function () {
-  gulp.src('coverage/**/lcov.info')
-    .pipe(coveralls());
 });
 
 gulp.task('build', ['sorcery', 'sorcery-addons']);
