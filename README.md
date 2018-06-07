@@ -256,6 +256,6 @@ To contribute either code, documentation or issues to xterm.js please read the [
 
 If you contribute code to this project, you are implicitly allowing your code to be distributed under the MIT license. You are also implicitly verifying that all code is your original work.
 
-Copyright (c) 2017-2018, [The xterm.js authors](https://github.com/xtermjs/xterm.js/graphs/contributors) (MIT License)
-Copyright (c) 2014-2017, SourceLair, Private Company ([www.sourcelair.com](https://www.sourcelair.com/home)) (MIT License)
+Copyright (c) 2017-2018, [The xterm.js authors](https://github.com/xtermjs/xterm.js/graphs/contributors) (MIT License)<br>
+Copyright (c) 2014-2017, SourceLair, Private Company ([www.sourcelair.com](https://www.sourcelair.com/home)) (MIT License)<br>
 Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)
