@@ -1039,19 +1039,38 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         return this.cancel(ev);
       }
 
+      // TODO: Seems dangerous to attach event listeners to document, could they be done on element?
+      // TODO: All mouse handling should be pulled into its own file.
+
       // bind events
-      if (this.normalMouse) on(this._document, 'mousemove', sendMove);
+      let moveHandler: (event: MouseEvent) => void;
+      if (this.normalMouse) {
+        moveHandler = (event: MouseEvent) => {
+          // Do nothing if normal mouse mode is on. This can happen if the mouse is held down when the
+          // terminal exits normalMouse mode.
+          if (!this.normalMouse) {
+            return;
+          }
+          sendMove(event);
+        };
+        on(this._document, 'mousemove', moveHandler);
+      }
 
       // x10 compatibility mode can't send button releases
       if (!this.x10Mouse) {
         const handler = (ev: MouseEvent) => {
-          sendButton(ev);
-          // TODO: Seems dangerous calling this on document?
-          if (this.normalMouse) off(this._document, 'mousemove', sendMove);
+          if (this.normalMouse) {
+            sendButton(ev);
+          }
+          if (moveHandler) {
+            // Even though this should only be attached when this.normalMouse is true, holding the
+            // mouse button down when normalMouse changes can happen. Just always try to remove it.
+            off(this._document, 'mousemove', moveHandler);
+            moveHandler = null;
+          }
           off(this._document, 'mouseup', handler);
           return this.cancel(ev);
         };
-        // TODO: Seems dangerous calling this on document?
         on(this._document, 'mouseup', handler);
       }
 
