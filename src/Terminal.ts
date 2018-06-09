@@ -649,7 +649,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     // Create main element container
     this.element = this._document.createElement('div');
-    this.element.dir = 'ltr';   // xterm.css assumes LTR
     this.element.classList.add('terminal');
     this.element.classList.add('xterm');
     this.element.setAttribute('tabindex', '0');

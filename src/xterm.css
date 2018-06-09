@@ -61,12 +61,16 @@
 
 .xterm .xterm-helper-textarea {
     /*
-     * HACK: to fix IE's blinking cursor
-     * Move textarea out of the screen to the far left, so that the cursor is not visible.
+     * This used to fix IE's blinking cursor by moving the textarea
+     * textarea out of the screen to the far left, so that the cursor is not visible.
+     * This is no longer a concern; instead we render the textarea transparent,
+     * with a negative z-index and pointer-events: none.
      */
     position: absolute;
     opacity: 0;
-    left: -9999em;
+    color: transparent;
+    background-color: transparent;
+    pointer-events: none;
     top: 0;
     width: 0;
     height: 0;
@@ -122,7 +126,10 @@
     visibility: hidden;
     position: absolute;
     top: 0;
-    left: -9999em;
+    z-index: -9999;
+    color: transparent;
+    background-color: transparent;
+    opacity: 0;
     line-height: normal;
 }
 
@@ -152,7 +159,10 @@
 
 .xterm .live-region {
     position: absolute;
-    left: -9999px;
+    opacity: 0;
+    z-index: -9999;
+    color: transparent;
+    background-color: transparent;
     width: 1px;
     height: 1px;
     overflow: hidden;
