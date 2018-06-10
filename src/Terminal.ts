@@ -21,7 +21,7 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { ICharset, IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharData, LineData } from './Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharData, LineData } from './Types';
 import { IMouseZoneManager } from './input/Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
@@ -30,7 +30,7 @@ import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './EventEmitter';
 import { Viewport } from './Viewport';
 import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './handlers/Clipboard';
-import { C0 } from './EscapeSequences';
+import { C0 } from './base/data/EscapeSequences';
 import { InputHandler } from './InputHandler';
 // import { Parser } from './Parser';
 import { Renderer } from './renderer/Renderer';
@@ -52,7 +52,7 @@ import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent } from './base/Types';
 import { evaluateKeyboardEvent } from './core/input/Keyboard';
-import { KeyboardResultType } from './core/Types';
+import { KeyboardResultType, ICharset } from './core/Types';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;

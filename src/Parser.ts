@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { C0 } from './EscapeSequences';
+import { C0 } from './base/data/EscapeSequences';
 import { IInputHandler, IInputHandlingTerminal } from './Types';
 import { CHARSETS, DEFAULT_CHARSET } from './core/data/Charsets';
 
