@@ -35,14 +35,14 @@ export class SearchHelper implements ISearchHelper {
 
     let result: ISearchResult;
 
-    let startRow = this._terminal.buffer.ydisp;
-    if (this._terminal.selectionManager.selectionEnd) {
+    let startRow = this._terminal._core.buffer.ydisp;
+    if (this._terminal._core.selectionManager.selectionEnd) {
       // Start from the selection end if there is a selection
-      startRow = this._terminal.selectionManager.selectionEnd[1];
+      startRow = this._terminal._core.selectionManager.selectionEnd[1];
     }
 
     // Search from ydisp + 1 to end
-    for (let y = startRow + 1; y < this._terminal.buffer.ybase + this._terminal.rows; y++) {
+    for (let y = startRow + 1; y < this._terminal._core.buffer.ybase + this._terminal.rows; y++) {
       result = this._findInLine(term, y);
       if (result) {
         break;
@@ -76,10 +76,10 @@ export class SearchHelper implements ISearchHelper {
 
     let result: ISearchResult;
 
-    let startRow = this._terminal.buffer.ydisp;
-    if (this._terminal.selectionManager.selectionStart) {
+    let startRow = this._terminal._core.buffer.ydisp;
+    if (this._terminal._core.selectionManager.selectionStart) {
       // Start from the selection end if there is a selection
-      startRow = this._terminal.selectionManager.selectionStart[1];
+      startRow = this._terminal._core.selectionManager.selectionStart[1];
     }
 
     // Search from ydisp + 1 to end
@@ -92,7 +92,7 @@ export class SearchHelper implements ISearchHelper {
 
     // Search from the top to the current ydisp
     if (!result) {
-      for (let y = this._terminal.buffer.ybase + this._terminal.rows - 1; y > startRow; y--) {
+      for (let y = this._terminal._core.buffer.ybase + this._terminal.rows - 1; y > startRow; y--) {
         result = this._findInLine(term, y);
         if (result) {
           break;
@@ -111,11 +111,11 @@ export class SearchHelper implements ISearchHelper {
    * @return The search result if it was found.
    */
   private _findInLine(term: string, y: number): ISearchResult {
-    const lowerStringLine = this._terminal.buffer.translateBufferLineToString(y, true).toLowerCase();
+    const lowerStringLine = this._terminal._core.buffer.translateBufferLineToString(y, true).toLowerCase();
     const lowerTerm = term.toLowerCase();
     let searchIndex = lowerStringLine.indexOf(lowerTerm);
     if (searchIndex >= 0) {
-      const line = this._terminal.buffer.lines.get(y);
+      const line = this._terminal._core.buffer.lines.get(y);
       for (let i = 0; i < searchIndex; i++) {
         const charData = line[i];
         // Adjust the searchIndex to normalize emoji into single chars
@@ -147,8 +147,8 @@ export class SearchHelper implements ISearchHelper {
     if (!result) {
       return false;
     }
-    this._terminal.selectionManager.setSelection(result.col, result.row, result.term.length);
-    this._terminal.scrollLines(result.row - this._terminal.buffer.ydisp);
+    this._terminal._core.selectionManager.setSelection(result.col, result.row, result.term.length);
+    this._terminal.scrollLines(result.row - this._terminal._core.buffer.ydisp);
     return true;
   }
 }

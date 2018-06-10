@@ -751,9 +751,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * Apply the provided addon on the `Terminal` class.
    * @param addon The addon to apply.
    */
-  public static applyAddon(addon: any): void {
-    addon.apply(Terminal);
-  }
+  // public static applyAddon(addon: any): void {
+  //   addon.apply(Terminal);
+  // }
 
   /**
    * XTerm mouse events
