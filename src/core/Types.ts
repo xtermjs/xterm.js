@@ -15,3 +15,7 @@ export interface IKeyboardResult {
   cancel: boolean;
   key: string | undefined;
 }
+
+export interface ICharset {
+  [key: string]: string;
+}

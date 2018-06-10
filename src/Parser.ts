@@ -6,7 +6,7 @@
 
 import { C0 } from './EscapeSequences';
 import { IInputHandler, IInputHandlingTerminal } from './Types';
-import { CHARSETS, DEFAULT_CHARSET } from './Charsets';
+import { CHARSETS, DEFAULT_CHARSET } from './core/data/Charsets';
 
 const normalStateHandler: {[key: string]: (parser: Parser, handler: IInputHandler) => void} = {};
 normalStateHandler[C0.BEL] = (parser, handler) => handler.bell();

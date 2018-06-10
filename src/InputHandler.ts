@@ -4,9 +4,9 @@
  * @license MIT
  */
 
-import { CharData, IInputHandler, IDcsHandler, IEscapeSequenceParser, IBuffer, ICharset } from './Types';
+import { CharData, IInputHandler, IDcsHandler, IEscapeSequenceParser, IBuffer } from './Types';
 import { C0, C1 } from './EscapeSequences';
-import { CHARSETS, DEFAULT_CHARSET } from './Charsets';
+import { CHARSETS, DEFAULT_CHARSET } from './core/data/Charsets';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, DEFAULT_ATTR } from './Buffer';
 import { FLAGS } from './renderer/Types';
 import { wcwidth } from './CharWidth';

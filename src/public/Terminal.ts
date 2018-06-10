@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2018 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
 import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme } from 'xterm';
 import { ITerminal } from '../Types';
 import { Terminal as TerminalCore } from '../Terminal';

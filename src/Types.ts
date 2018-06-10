@@ -6,6 +6,7 @@
 import { Terminal as PublicTerminal, ITerminalOptions as IPublicTerminalOptions, IEventEmitter } from 'xterm';
 import { IColorSet, IRenderer } from './renderer/Types';
 import { IMouseZoneManager } from './input/Types';
+import { ICharset } from './core/Types';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
@@ -189,10 +190,6 @@ export interface ILinkMatcher {
   validationCallback?: LinkMatcherValidationCallback;
   priority?: number;
   willLinkActivate?: (event: MouseEvent, uri: string) => boolean;
-}
-
-export interface ICharset {
-  [key: string]: string;
 }
 
 export interface ILinkHoverEvent {
