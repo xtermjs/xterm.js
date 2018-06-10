@@ -25,7 +25,7 @@ function testEvaluateKeyboardEvent(partialEvent: {
     ctrlKey: partialEvent.ctrlKey || false,
     shiftKey: partialEvent.shiftKey || false,
     metaKey: partialEvent.metaKey || false,
-    keyCode: partialEvent.keyCode || undefined,
+    keyCode: partialEvent.keyCode !== undefined ? partialEvent.keyCode : undefined,
     key: partialEvent.key || '',
     type: partialEvent.type || ''
   };
@@ -268,6 +268,17 @@ describe('Keyboard', () => {
     it('should return proper sequences for alt+\'', () => {
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: false, keyCode: 222 }).key, '\x1b\'');
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true,  keyCode: 222 }).key, '\x1b"');
+    });
+
+    it('should handle mobile arrow events', () => {
+      assert.equal(testEvaluateKeyboardEvent({ keyCode: 0, key: 'UIKeyInputUpArrow' }).key, '\x1b[A');
+      assert.equal(testEvaluateKeyboardEvent({ keyCode: 0, key: 'UIKeyInputUpArrow' }, { applicationCursorMode: true }).key, '\x1bOA');
+      assert.equal(testEvaluateKeyboardEvent({ keyCode: 0, key: 'UIKeyInputLeftArrow' }).key, '\x1b[D');
+      assert.equal(testEvaluateKeyboardEvent({ keyCode: 0, key: 'UIKeyInputLeftArrow' }, { applicationCursorMode: true }).key, '\x1bOD');
+      assert.equal(testEvaluateKeyboardEvent({ keyCode: 0, key: 'UIKeyInputRightArrow' }).key, '\x1b[C');
+      assert.equal(testEvaluateKeyboardEvent({ keyCode: 0, key: 'UIKeyInputRightArrow' }, { applicationCursorMode: true }).key, '\x1bOC');
+      assert.equal(testEvaluateKeyboardEvent({ keyCode: 0, key: 'UIKeyInputDownArrow' }).key, '\x1b[B');
+      assert.equal(testEvaluateKeyboardEvent({ keyCode: 0, key: 'UIKeyInputDownArrow' }, { applicationCursorMode: true }).key, '\x1bOB');
     });
   });
 });
