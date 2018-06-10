@@ -3,7 +3,11 @@
  * @license MIT
  */
 
-export interface IKeyEvent {
+/**
+ * A keyboard event interface which does not depend on the DOM, KeyboardEvent implicitly extends
+ * this event.
+ */
+export interface IKeyboardEvent {
   altKey: boolean;
   ctrlKey: boolean;
   shiftKey: boolean;

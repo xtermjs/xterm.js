@@ -50,7 +50,7 @@ import { ScreenDprMonitor } from './utils/ScreenDprMonitor';
 import { ITheme, ILocalizableStrings, IMarker, IDisposable } from 'xterm';
 import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
-import { IKeyEvent } from './base/Types';
+import { IKeyboardEvent } from './base/Types';
 
 // reg + shift key mappings for digits and special chars
 const KEYCODE_KEY_MAPPINGS: { [key: number]: [string, string]} = {
@@ -1431,37 +1431,23 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
   }
 
-  private _convertDomKeyEvent(event: KeyboardEvent): IKeyEvent {
-    return {
-      altKey: event.altKey,
-      ctrlKey: event.ctrlKey,
-      shiftKey: event.shiftKey,
-      metaKey: event.metaKey,
-      keyCode: event.keyCode,
-      key: event.key,
-      type: event.type
-    };
-  }
-
   /**
    * Handle a keydown event
    * Key Resources:
    *   - https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
    * @param {KeyboardEvent} ev The keydown event to be handled.
    */
-  protected _keyDown(domEvent: KeyboardEvent): boolean {
-    if (this._customKeyEventHandler && this._customKeyEventHandler(domEvent) === false) {
+  protected _keyDown(event: KeyboardEvent): boolean {
+    if (this._customKeyEventHandler && this._customKeyEventHandler(event) === false) {
       return false;
     }
 
-    if (!this._compositionHelper.keydown(domEvent)) {
+    if (!this._compositionHelper.keydown(event)) {
       if (this.buffer.ybase !== this.buffer.ydisp) {
         this.scrollToBottom();
       }
       return false;
     }
-
-    const event = this._convertDomKeyEvent(domEvent);
 
     const result = this._evaluateKeyEscapeSequence(event);
 
@@ -1473,7 +1459,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     if (result.scrollLines) {
       this.scrollLines(result.scrollLines);
-      return this.cancel(domEvent, true);
+      return this.cancel(event, true);
     }
 
     if (this._isThirdLevelShift(this.browser, event)) {
@@ -1482,22 +1468,22 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     if (result.cancel) {
       // The event is canceled at the end already, is this necessary?
-      this.cancel(domEvent, true);
+      this.cancel(event, true);
     }
 
     if (!result.key) {
       return true;
     }
 
-    this.emit('keydown', domEvent);
-    this.emit('key', result.key, domEvent);
+    this.emit('keydown', event);
+    this.emit('key', result.key, event);
     this.showCursor();
     this.handler(result.key);
 
-    return this.cancel(domEvent, true);
+    return this.cancel(event, true);
   }
 
-  private _isThirdLevelShift(browser: IBrowser, ev: IKeyEvent): boolean {
+  private _isThirdLevelShift(browser: IBrowser, ev: IKeyboardEvent): boolean {
     const thirdLevelKey =
         (browser.isMac && !this.options.macOptionIsMeta && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
         (browser.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
@@ -1517,7 +1503,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * Reference: http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
    * @param ev The keyboard event to be translated to key escape sequence.
    */
-  protected _evaluateKeyEscapeSequence(ev: IKeyEvent): {cancel: boolean, key: string, scrollLines: number} {
+  protected _evaluateKeyEscapeSequence(ev: IKeyboardEvent): {cancel: boolean, key: string, scrollLines: number} {
     const result: {cancel: boolean, key: string, scrollLines: number} = {
       // Whether to cancel event propogation (NOTE: this may not be needed since the event is
       // canceled at the end of keyDown
