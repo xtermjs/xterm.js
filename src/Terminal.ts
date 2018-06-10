@@ -52,6 +52,7 @@ import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent } from './base/Types';
 import { evaluateKeyboardEvent } from './core/input/Keyboard';
+import { KeyboardResultType } from './core/Types';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -1422,7 +1423,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       return false;
     }
 
-    const result = evaluateKeyboardEvent(event);
+    const result = evaluateKeyboardEvent(event, this.applicationCursor, this.browser.isMac, this.options.macOptionIsMeta);
 
     // if (result.key === C0.DC3) { // XOFF
     //   this._writeStopped = true;
@@ -1430,9 +1431,15 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     //   this._writeStopped = false;
     // }
 
-    if (result.scrollLines) {
-      this.scrollLines(result.scrollLines);
+    if (result.type === KeyboardResultType.PAGE_DOWN || result.type === KeyboardResultType.PAGE_UP) {
+      const scrollCount = this.rows - 1;
+      this.scrollLines(result.type === KeyboardResultType.PAGE_UP ? -scrollCount : scrollCount);
       return this.cancel(event, true);
+    }
+
+    if (result.type === KeyboardResultType.SELECT_ALL) {
+      this.selectAll();
+      // TODO: Verify cancel behavior is the same as before
     }
 
     if (this._isThirdLevelShift(this.browser, event)) {

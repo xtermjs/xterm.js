@@ -3,8 +3,15 @@
  * @license MIT
  */
 
+export const enum KeyboardResultType {
+  SEND_KEY,
+  SELECT_ALL,
+  PAGE_UP,
+  PAGE_DOWN
+}
+
 export interface IKeyboardResult {
+  type: KeyboardResultType;
   cancel: boolean;
-  key: string;
-  scrollLines: number;
+  key: string | undefined;
 }

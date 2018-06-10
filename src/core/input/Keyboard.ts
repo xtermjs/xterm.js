@@ -5,7 +5,7 @@
  */
 
 import { IKeyboardEvent } from '../../base/Types';
-import { IKeyboardResult } from '../Types';
+import { IKeyboardResult, KeyboardResultType } from '../Types';
 import { C0 } from '../../EscapeSequences';
 
 // reg + shift key mappings for digits and special chars
@@ -36,42 +36,46 @@ const KEYCODE_KEY_MAPPINGS: { [key: number]: [string, string]} = {
   222: ['\'', '"']
 };
 
-export function evaluateKeyboardEvent(ev: IKeyboardEvent): IKeyboardResult {
+export function evaluateKeyboardEvent(
+  ev: IKeyboardEvent,
+  applicationCursorMode: boolean,
+  isMac: boolean,
+  macOptionIsMeta: boolean
+): IKeyboardResult {
   const result: IKeyboardResult = {
+    type: KeyboardResultType.SEND_KEY,
     // Whether to cancel event propogation (NOTE: this may not be needed since the event is
     // canceled at the end of keyDown
     cancel: false,
     // The new key even to emit
-    key: undefined,
-    // The number of characters to scroll, if this is defined it will cancel the event
-    scrollLines: undefined
+    key: undefined
   };
   const modifiers = (ev.shiftKey ? 1 : 0) | (ev.altKey ? 2 : 0) | (ev.ctrlKey ? 4 : 0) | (ev.metaKey ? 8 : 0);
   switch (ev.keyCode) {
     case 0:
       if (ev.key === 'UIKeyInputUpArrow') {
-        if (this.applicationCursor) {
+        if (applicationCursorMode) {
           result.key = C0.ESC + 'OA';
         } else {
           result.key = C0.ESC + '[A';
         }
       }
       else if (ev.key === 'UIKeyInputLeftArrow') {
-        if (this.applicationCursor) {
+        if (applicationCursorMode) {
           result.key = C0.ESC + 'OD';
         } else {
           result.key = C0.ESC + '[D';
         }
       }
       else if (ev.key === 'UIKeyInputRightArrow') {
-        if (this.applicationCursor) {
+        if (applicationCursorMode) {
           result.key = C0.ESC + 'OC';
         } else {
           result.key = C0.ESC + '[C';
         }
       }
       else if (ev.key === 'UIKeyInputDownArrow') {
-        if (this.applicationCursor) {
+        if (applicationCursorMode) {
           result.key = C0.ESC + 'OB';
         } else {
           result.key = C0.ESC + '[B';
@@ -116,9 +120,9 @@ export function evaluateKeyboardEvent(ev: IKeyboardEvent): IKeyboardResult {
         // http://unix.stackexchange.com/a/108106
         // macOS uses different escape sequences than linux
         if (result.key === C0.ESC + '[1;3D') {
-          result.key = (this.browser.isMac) ? C0.ESC + 'b' : C0.ESC + '[1;5D';
+          result.key = isMac ? C0.ESC + 'b' : C0.ESC + '[1;5D';
         }
-      } else if (this.applicationCursor) {
+      } else if (applicationCursorMode) {
         result.key = C0.ESC + 'OD';
       } else {
         result.key = C0.ESC + '[D';
@@ -132,9 +136,9 @@ export function evaluateKeyboardEvent(ev: IKeyboardEvent): IKeyboardResult {
         // http://unix.stackexchange.com/a/108106
         // macOS uses different escape sequences than linux
         if (result.key === C0.ESC + '[1;3C') {
-          result.key = (this.browser.isMac) ? C0.ESC + 'f' : C0.ESC + '[1;5C';
+          result.key = isMac ? C0.ESC + 'f' : C0.ESC + '[1;5C';
         }
-      } else if (this.applicationCursor) {
+      } else if (applicationCursorMode) {
         result.key = C0.ESC + 'OC';
       } else {
         result.key = C0.ESC + '[C';
@@ -149,7 +153,7 @@ export function evaluateKeyboardEvent(ev: IKeyboardEvent): IKeyboardResult {
         if (result.key === C0.ESC + '[1;3A') {
           result.key = C0.ESC + '[1;5A';
         }
-      } else if (this.applicationCursor) {
+      } else if (applicationCursorMode) {
         result.key = C0.ESC + 'OA';
       } else {
         result.key = C0.ESC + '[A';
@@ -164,7 +168,7 @@ export function evaluateKeyboardEvent(ev: IKeyboardEvent): IKeyboardResult {
         if (result.key === C0.ESC + '[1;3B') {
           result.key = C0.ESC + '[1;5B';
         }
-      } else if (this.applicationCursor) {
+      } else if (applicationCursorMode) {
         result.key = C0.ESC + 'OB';
       } else {
         result.key = C0.ESC + '[B';
@@ -190,7 +194,7 @@ export function evaluateKeyboardEvent(ev: IKeyboardEvent): IKeyboardResult {
       // home
       if (modifiers) {
         result.key = C0.ESC + '[1;' + (modifiers + 1) + 'H';
-      } else if (this.applicationCursor) {
+      } else if (applicationCursorMode) {
         result.key = C0.ESC + 'OH';
       } else {
         result.key = C0.ESC + '[H';
@@ -200,7 +204,7 @@ export function evaluateKeyboardEvent(ev: IKeyboardEvent): IKeyboardResult {
       // end
       if (modifiers) {
         result.key = C0.ESC + '[1;' + (modifiers + 1) + 'F';
-      } else if (this.applicationCursor) {
+      } else if (applicationCursorMode) {
         result.key = C0.ESC + 'OF';
       } else {
         result.key = C0.ESC + '[F';
@@ -209,7 +213,7 @@ export function evaluateKeyboardEvent(ev: IKeyboardEvent): IKeyboardResult {
     case 33:
       // page up
       if (ev.shiftKey) {
-        result.scrollLines = -(this.rows - 1);
+        result.type = KeyboardResultType.PAGE_UP;
       } else {
         result.key = C0.ESC + '[5~';
       }
@@ -217,7 +221,7 @@ export function evaluateKeyboardEvent(ev: IKeyboardEvent): IKeyboardResult {
     case 34:
       // page down
       if (ev.shiftKey) {
-        result.scrollLines = this.rows - 1;
+        result.type = KeyboardResultType.PAGE_DOWN;
       } else {
         result.key = C0.ESC + '[6~';
       }
@@ -331,7 +335,7 @@ export function evaluateKeyboardEvent(ev: IKeyboardEvent): IKeyboardResult {
           // ^] - Operating System Command (OSC)
           result.key = String.fromCharCode(29);
         }
-      } else if ((!this.browser.isMac || this.options.macOptionIsMeta) && ev.altKey && !ev.metaKey) {
+      } else if ((!isMac || macOptionIsMeta) && ev.altKey && !ev.metaKey) {
         // On macOS this is a third level shift when !macOptionIsMeta. Use <Esc> instead.
         const keyMapping = KEYCODE_KEY_MAPPINGS[ev.keyCode];
         const key = keyMapping && keyMapping[!ev.shiftKey ? 0 : 1];
@@ -341,9 +345,10 @@ export function evaluateKeyboardEvent(ev: IKeyboardEvent): IKeyboardResult {
           const keyCode = ev.ctrlKey ? ev.keyCode - 64 : ev.keyCode + 32;
           result.key = C0.ESC + String.fromCharCode(keyCode);
         }
-      } else if (this.browser.isMac && !ev.altKey && !ev.ctrlKey && ev.metaKey) {
+      } else if (isMac && !ev.altKey && !ev.ctrlKey && ev.metaKey) {
         if (ev.keyCode === 65) { // cmd + a
-          this.selectAll();
+          result.type = KeyboardResultType.SELECT_ALL;
+          // TODO: Select all in terminal side
         }
       }
       break;
