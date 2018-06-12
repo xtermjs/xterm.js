@@ -748,14 +748,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   /**
-   * Apply the provided addon on the `Terminal` class.
-   * @param addon The addon to apply.
-   */
-  // public static applyAddon(addon: any): void {
-  //   addon.apply(Terminal);
-  // }
-
-  /**
    * XTerm mouse events
    * http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#Mouse%20Tracking
    * To better understand these
@@ -1439,7 +1431,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     if (result.type === KeyboardResultType.SELECT_ALL) {
       this.selectAll();
-      // TODO: Verify cancel behavior is the same as before
     }
 
     if (this._isThirdLevelShift(this.browser, event)) {

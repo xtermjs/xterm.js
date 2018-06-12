@@ -348,7 +348,6 @@ export function evaluateKeyboardEvent(
       } else if (isMac && !ev.altKey && !ev.ctrlKey && ev.metaKey) {
         if (ev.keyCode === 65) { // cmd + a
           result.type = KeyboardResultType.SELECT_ALL;
-          // TODO: Select all in terminal side
         }
       }
       break;
