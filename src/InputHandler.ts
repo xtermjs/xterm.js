@@ -1834,7 +1834,7 @@ export class InputHandler implements IInputHandler {
   public restoreCursor(params: number[]): void {
     this._terminal.buffer.x = this._terminal.buffer.savedX || 0;
     this._terminal.buffer.y = this._terminal.buffer.savedY || 0;
-    this._terminal.curAttr = this._terminal.savedCurAttr;
+    this._terminal.curAttr = this._terminal.savedCurAttr || 0;
   }
 
 
