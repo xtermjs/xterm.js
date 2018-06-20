@@ -21,7 +21,7 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { ICharset, IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharData, LineData } from './Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharData, LineData } from './Types';
 import { IMouseZoneManager } from './input/Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
@@ -30,7 +30,7 @@ import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './EventEmitter';
 import { Viewport } from './Viewport';
 import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './handlers/Clipboard';
-import { C0 } from './EscapeSequences';
+import { C0 } from './common/data/EscapeSequences';
 import { InputHandler } from './InputHandler';
 // import { Parser } from './Parser';
 import { Renderer } from './renderer/Renderer';
@@ -47,37 +47,12 @@ import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { MouseZoneManager } from './input/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ScreenDprMonitor } from './utils/ScreenDprMonitor';
-import { ITheme, ILocalizableStrings, IMarker, IDisposable } from 'xterm';
+import { ITheme, IMarker, IDisposable } from 'xterm';
 import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
-
-// reg + shift key mappings for digits and special chars
-const KEYCODE_KEY_MAPPINGS: { [key: number]: [string, string]} = {
-  // digits 0-9
-  48: ['0', ')'],
-  49: ['1', '!'],
-  50: ['2', '@'],
-  51: ['3', '#'],
-  52: ['4', '$'],
-  53: ['5', '%'],
-  54: ['6', '^'],
-  55: ['7', '&'],
-  56: ['8', '*'],
-  57: ['9', '('],
-
-  // special chars
-  186: [';', ':'],
-  187: ['=', '+'],
-  188: [',', '<'],
-  189: ['-', '_'],
-  190: ['.', '>'],
-  191: ['/', '?'],
-  192: ['`', '~'],
-  219: ['[', '{'],
-  220: ['\\', '|'],
-  221: [']', '}'],
-  222: ['\'', '"']
-};
+import { IKeyboardEvent } from './common/Types';
+import { evaluateKeyboardEvent } from './core/input/Keyboard';
+import { KeyboardResultType, ICharset } from './core/Types';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -351,10 +326,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   public get buffer(): Buffer {
     return this.buffers.active;
-  }
-
-  public static get strings(): ILocalizableStrings {
-    return Strings;
   }
 
   /**
@@ -770,14 +741,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     if (this.viewport) {
       this.viewport.onThemeChanged(colors);
     }
-  }
-
-  /**
-   * Apply the provided addon on the `Terminal` class.
-   * @param addon The addon to apply.
-   */
-  public static applyAddon(addon: any): void {
-    addon.apply(Terminal);
   }
 
   /**
@@ -1436,19 +1399,19 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    *   - https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
    * @param {KeyboardEvent} ev The keydown event to be handled.
    */
-  protected _keyDown(ev: KeyboardEvent): boolean {
-    if (this._customKeyEventHandler && this._customKeyEventHandler(ev) === false) {
+  protected _keyDown(event: KeyboardEvent): boolean {
+    if (this._customKeyEventHandler && this._customKeyEventHandler(event) === false) {
       return false;
     }
 
-    if (!this._compositionHelper.keydown(ev)) {
+    if (!this._compositionHelper.keydown(event)) {
       if (this.buffer.ybase !== this.buffer.ydisp) {
         this.scrollToBottom();
       }
       return false;
     }
 
-    const result = this._evaluateKeyEscapeSequence(ev);
+    const result = evaluateKeyboardEvent(event, this.applicationCursor, this.browser.isMac, this.options.macOptionIsMeta);
 
     // if (result.key === C0.DC3) { // XOFF
     //   this._writeStopped = true;
@@ -1456,33 +1419,38 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     //   this._writeStopped = false;
     // }
 
-    if (result.scrollLines) {
-      this.scrollLines(result.scrollLines);
-      return this.cancel(ev, true);
+    if (result.type === KeyboardResultType.PAGE_DOWN || result.type === KeyboardResultType.PAGE_UP) {
+      const scrollCount = this.rows - 1;
+      this.scrollLines(result.type === KeyboardResultType.PAGE_UP ? -scrollCount : scrollCount);
+      return this.cancel(event, true);
     }
 
-    if (this._isThirdLevelShift(this.browser, ev)) {
+    if (result.type === KeyboardResultType.SELECT_ALL) {
+      this.selectAll();
+    }
+
+    if (this._isThirdLevelShift(this.browser, event)) {
       return true;
     }
 
     if (result.cancel) {
       // The event is canceled at the end already, is this necessary?
-      this.cancel(ev, true);
+      this.cancel(event, true);
     }
 
     if (!result.key) {
       return true;
     }
 
-    this.emit('keydown', ev);
-    this.emit('key', result.key, ev);
+    this.emit('keydown', event);
+    this.emit('key', result.key, event);
     this.showCursor();
     this.handler(result.key);
 
-    return this.cancel(ev, true);
+    return this.cancel(event, true);
   }
 
-  private _isThirdLevelShift(browser: IBrowser, ev: KeyboardEvent): boolean {
+  private _isThirdLevelShift(browser: IBrowser, ev: IKeyboardEvent): boolean {
     const thirdLevelKey =
         (browser.isMac && !this.options.macOptionIsMeta && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
         (browser.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
@@ -1493,329 +1461,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     // Don't invoke for arrows, pageDown, home, backspace, etc. (on non-keypress events)
     return thirdLevelKey && (!ev.keyCode || ev.keyCode > 47);
-  }
-
-  /**
-   * Returns an object that determines how a KeyboardEvent should be handled. The key of the
-   * returned value is the new key code to pass to the PTY.
-   *
-   * Reference: http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
-   * @param ev The keyboard event to be translated to key escape sequence.
-   */
-  protected _evaluateKeyEscapeSequence(ev: KeyboardEvent): {cancel: boolean, key: string, scrollLines: number} {
-    const result: {cancel: boolean, key: string, scrollLines: number} = {
-      // Whether to cancel event propogation (NOTE: this may not be needed since the event is
-      // canceled at the end of keyDown
-      cancel: false,
-      // The new key even to emit
-      key: undefined,
-      // The number of characters to scroll, if this is defined it will cancel the event
-      scrollLines: undefined
-    };
-    const modifiers = (ev.shiftKey ? 1 : 0) | (ev.altKey ? 2 : 0) | (ev.ctrlKey ? 4 : 0) | (ev.metaKey ? 8 : 0);
-    switch (ev.keyCode) {
-      case 0:
-        if (ev.key === 'UIKeyInputUpArrow') {
-          if (this.applicationCursor) {
-            result.key = C0.ESC + 'OA';
-          } else {
-            result.key = C0.ESC + '[A';
-          }
-        }
-        else if (ev.key === 'UIKeyInputLeftArrow') {
-          if (this.applicationCursor) {
-            result.key = C0.ESC + 'OD';
-          } else {
-            result.key = C0.ESC + '[D';
-          }
-        }
-        else if (ev.key === 'UIKeyInputRightArrow') {
-          if (this.applicationCursor) {
-            result.key = C0.ESC + 'OC';
-          } else {
-            result.key = C0.ESC + '[C';
-          }
-        }
-        else if (ev.key === 'UIKeyInputDownArrow') {
-          if (this.applicationCursor) {
-            result.key = C0.ESC + 'OB';
-          } else {
-            result.key = C0.ESC + '[B';
-          }
-        }
-        break;
-      case 8:
-        // backspace
-        if (ev.shiftKey) {
-          result.key = C0.BS; // ^H
-          break;
-        } else if (ev.altKey) {
-          result.key = C0.ESC + C0.DEL; // \e ^?
-          break;
-        }
-        result.key = C0.DEL; // ^?
-        break;
-      case 9:
-        // tab
-        if (ev.shiftKey) {
-          result.key = C0.ESC + '[Z';
-          break;
-        }
-        result.key = C0.HT;
-        result.cancel = true;
-        break;
-      case 13:
-        // return/enter
-        result.key = C0.CR;
-        result.cancel = true;
-        break;
-      case 27:
-        // escape
-        result.key = C0.ESC;
-        result.cancel = true;
-        break;
-      case 37:
-        // left-arrow
-        if (modifiers) {
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'D';
-          // HACK: Make Alt + left-arrow behave like Ctrl + left-arrow: move one word backwards
-          // http://unix.stackexchange.com/a/108106
-          // macOS uses different escape sequences than linux
-          if (result.key === C0.ESC + '[1;3D') {
-            result.key = (this.browser.isMac) ? C0.ESC + 'b' : C0.ESC + '[1;5D';
-          }
-        } else if (this.applicationCursor) {
-          result.key = C0.ESC + 'OD';
-        } else {
-          result.key = C0.ESC + '[D';
-        }
-        break;
-      case 39:
-        // right-arrow
-        if (modifiers) {
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'C';
-          // HACK: Make Alt + right-arrow behave like Ctrl + right-arrow: move one word forward
-          // http://unix.stackexchange.com/a/108106
-          // macOS uses different escape sequences than linux
-          if (result.key === C0.ESC + '[1;3C') {
-            result.key = (this.browser.isMac) ? C0.ESC + 'f' : C0.ESC + '[1;5C';
-          }
-        } else if (this.applicationCursor) {
-          result.key = C0.ESC + 'OC';
-        } else {
-          result.key = C0.ESC + '[C';
-        }
-        break;
-      case 38:
-        // up-arrow
-        if (modifiers) {
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'A';
-          // HACK: Make Alt + up-arrow behave like Ctrl + up-arrow
-          // http://unix.stackexchange.com/a/108106
-          if (result.key === C0.ESC + '[1;3A') {
-            result.key = C0.ESC + '[1;5A';
-          }
-        } else if (this.applicationCursor) {
-          result.key = C0.ESC + 'OA';
-        } else {
-          result.key = C0.ESC + '[A';
-        }
-        break;
-      case 40:
-        // down-arrow
-        if (modifiers) {
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'B';
-          // HACK: Make Alt + down-arrow behave like Ctrl + down-arrow
-          // http://unix.stackexchange.com/a/108106
-          if (result.key === C0.ESC + '[1;3B') {
-            result.key = C0.ESC + '[1;5B';
-          }
-        } else if (this.applicationCursor) {
-          result.key = C0.ESC + 'OB';
-        } else {
-          result.key = C0.ESC + '[B';
-        }
-        break;
-      case 45:
-        // insert
-        if (!ev.shiftKey && !ev.ctrlKey) {
-          // <Ctrl> or <Shift> + <Insert> are used to
-          // copy-paste on some systems.
-          result.key = C0.ESC + '[2~';
-        }
-        break;
-      case 46:
-        // delete
-        if (modifiers) {
-          result.key = C0.ESC + '[3;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[3~';
-        }
-        break;
-      case 36:
-        // home
-        if (modifiers) {
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'H';
-        } else if (this.applicationCursor) {
-          result.key = C0.ESC + 'OH';
-        } else {
-          result.key = C0.ESC + '[H';
-        }
-        break;
-      case 35:
-        // end
-        if (modifiers) {
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'F';
-        } else if (this.applicationCursor) {
-          result.key = C0.ESC + 'OF';
-        } else {
-          result.key = C0.ESC + '[F';
-        }
-        break;
-      case 33:
-        // page up
-        if (ev.shiftKey) {
-          result.scrollLines = -(this.rows - 1);
-        } else {
-          result.key = C0.ESC + '[5~';
-        }
-        break;
-      case 34:
-        // page down
-        if (ev.shiftKey) {
-          result.scrollLines = this.rows - 1;
-        } else {
-          result.key = C0.ESC + '[6~';
-        }
-        break;
-      case 112:
-        // F1-F12
-        if (modifiers) {
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'P';
-        } else {
-          result.key = C0.ESC + 'OP';
-        }
-        break;
-      case 113:
-        if (modifiers) {
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'Q';
-        } else {
-          result.key = C0.ESC + 'OQ';
-        }
-        break;
-      case 114:
-        if (modifiers) {
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'R';
-        } else {
-          result.key = C0.ESC + 'OR';
-        }
-        break;
-      case 115:
-        if (modifiers) {
-          result.key = C0.ESC + '[1;' + (modifiers + 1) + 'S';
-        } else {
-          result.key = C0.ESC + 'OS';
-        }
-        break;
-      case 116:
-        if (modifiers) {
-          result.key = C0.ESC + '[15;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[15~';
-        }
-        break;
-      case 117:
-        if (modifiers) {
-          result.key = C0.ESC + '[17;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[17~';
-        }
-        break;
-      case 118:
-        if (modifiers) {
-          result.key = C0.ESC + '[18;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[18~';
-        }
-        break;
-      case 119:
-        if (modifiers) {
-          result.key = C0.ESC + '[19;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[19~';
-        }
-        break;
-      case 120:
-        if (modifiers) {
-          result.key = C0.ESC + '[20;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[20~';
-        }
-        break;
-      case 121:
-        if (modifiers) {
-          result.key = C0.ESC + '[21;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[21~';
-        }
-        break;
-      case 122:
-        if (modifiers) {
-          result.key = C0.ESC + '[23;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[23~';
-        }
-        break;
-      case 123:
-        if (modifiers) {
-          result.key = C0.ESC + '[24;' + (modifiers + 1) + '~';
-        } else {
-          result.key = C0.ESC + '[24~';
-        }
-        break;
-      default:
-        // a-z and space
-        if (ev.ctrlKey && !ev.shiftKey && !ev.altKey && !ev.metaKey) {
-          if (ev.keyCode >= 65 && ev.keyCode <= 90) {
-            result.key = String.fromCharCode(ev.keyCode - 64);
-          } else if (ev.keyCode === 32) {
-            // NUL
-            result.key = String.fromCharCode(0);
-          } else if (ev.keyCode >= 51 && ev.keyCode <= 55) {
-            // escape, file sep, group sep, record sep, unit sep
-            result.key = String.fromCharCode(ev.keyCode - 51 + 27);
-          } else if (ev.keyCode === 56) {
-            // delete
-            result.key = String.fromCharCode(127);
-          } else if (ev.keyCode === 219) {
-            // ^[ - Control Sequence Introducer (CSI)
-            result.key = String.fromCharCode(27);
-          } else if (ev.keyCode === 220) {
-            // ^\ - String Terminator (ST)
-            result.key = String.fromCharCode(28);
-          } else if (ev.keyCode === 221) {
-            // ^] - Operating System Command (OSC)
-            result.key = String.fromCharCode(29);
-          }
-        } else if ((!this.browser.isMac || this.options.macOptionIsMeta) && ev.altKey && !ev.metaKey) {
-          // On macOS this is a third level shift when !macOptionIsMeta. Use <Esc> instead.
-          const keyMapping = KEYCODE_KEY_MAPPINGS[ev.keyCode];
-          const key = keyMapping && keyMapping[!ev.shiftKey ? 0 : 1];
-          if (key) {
-            result.key = C0.ESC + key;
-          } else if (ev.keyCode >= 65 && ev.keyCode <= 90) {
-            const keyCode = ev.ctrlKey ? ev.keyCode - 64 : ev.keyCode + 32;
-            result.key = C0.ESC + String.fromCharCode(keyCode);
-          }
-        } else if (this.browser.isMac && !ev.altKey && !ev.ctrlKey && ev.metaKey) {
-          if (ev.keyCode === 65) { // cmd + a
-            this.selectAll();
-          }
-        }
-        break;
-    }
-
-    return result;
   }
 
   /**
