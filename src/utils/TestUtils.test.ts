@@ -182,6 +182,7 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   wraparoundMode: boolean;
   bracketedPasteMode: boolean;
   curAttr: number;
+  savedCurAttr: number;
   savedCols: number;
   x10Mouse: boolean;
   vt200Mouse: boolean;
