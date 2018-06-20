@@ -1822,6 +1822,7 @@ export class InputHandler implements IInputHandler {
   public saveCursor(params: number[]): void {
     this._terminal.buffer.savedX = this._terminal.buffer.x;
     this._terminal.buffer.savedY = this._terminal.buffer.y;
+    this._terminal.savedCurAttr = this._terminal.curAttr;
   }
 
 
@@ -1833,6 +1834,7 @@ export class InputHandler implements IInputHandler {
   public restoreCursor(params: number[]): void {
     this._terminal.buffer.x = this._terminal.buffer.savedX || 0;
     this._terminal.buffer.y = this._terminal.buffer.savedY || 0;
+    this._terminal.curAttr = this._terminal.savedCurAttr;
   }
 
 
