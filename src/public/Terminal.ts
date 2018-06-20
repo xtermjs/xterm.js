@@ -3,9 +3,10 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme } from 'xterm';
+import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings } from 'xterm';
 import { ITerminal } from '../Types';
 import { Terminal as TerminalCore } from '../Terminal';
+import * as Strings from '../Strings';
 
 export class Terminal implements ITerminalApi {
   private _core: ITerminal;
@@ -140,5 +141,8 @@ export class Terminal implements ITerminalApi {
   }
   public static applyAddon(addon: any): void {
     addon.apply(Terminal);
+  }
+  public static get strings(): ILocalizableStrings {
+    return Strings;
   }
 }

@@ -47,7 +47,7 @@ import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { MouseZoneManager } from './input/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ScreenDprMonitor } from './utils/ScreenDprMonitor';
-import { ITheme, ILocalizableStrings, IMarker, IDisposable } from 'xterm';
+import { ITheme, IMarker, IDisposable } from 'xterm';
 import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent } from './common/Types';
@@ -326,10 +326,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   public get buffer(): Buffer {
     return this.buffers.active;
-  }
-
-  public static get strings(): ILocalizableStrings {
-    return Strings;
   }
 
   /**
