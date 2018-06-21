@@ -4,7 +4,7 @@
  */
 
 import { ITerminal, ICircularList, LineData } from '../Types';
-import { C0 } from '../EscapeSequences';
+import { C0 } from '../common/data/EscapeSequences';
 
 const enum Direction {
   UP = 'A',
