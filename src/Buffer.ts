@@ -327,7 +327,7 @@ export class Buffer implements IBuffer {
         marker.dispose();
       }
     }));
-    marker.on('dispose', () => this._removeMarker(marker));
+    marker.register(marker.addDisposableListener('dispose', () => this._removeMarker(marker)));
     return marker;
   }
 
@@ -356,7 +356,8 @@ export class Marker extends EventEmitter implements IMarker {
       return;
     }
     this.isDisposed = true;
-    super.dispose();
+    // Emit before super.dispose such that dispose listeners get a change to react
     this.emit('dispose');
+    super.dispose();
   }
 }
