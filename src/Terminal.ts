@@ -232,6 +232,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   public dispose(): void {
     super.dispose();
+    this._customKeyEventHandler = null;
     removeTerminalFromCache(this);
     this.handler = () => {};
     this.write = () => {};
