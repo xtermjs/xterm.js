@@ -113,8 +113,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public element: HTMLElement;
   public screenElement: HTMLElement;
 
-  private _disposables: IDisposable[];
-
   /**
    * The HTMLElement that the terminal is created in, set by Terminal.open.
    */
@@ -252,8 +250,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   private _setup(): void {
-    this._disposables = [];
-
     Object.keys(DEFAULT_OPTIONS).forEach((key) => {
       if (this.options[key] == null) {
         this.options[key] = DEFAULT_OPTIONS[key];
@@ -688,7 +684,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.on('dprchange', () => this.renderer.onWindowResize(window.devicePixelRatio));
     // dprchange should handle this case, we need this as well for browsers that don't support the
     // matchMedia query.
-    this._disposables.push(Dom.addDisposableDomListener(window, 'resize', () => this.renderer.onWindowResize(window.devicePixelRatio)));
+    this.register(Dom.addDisposableDomListener(window, 'resize', () => this.renderer.onWindowResize(window.devicePixelRatio)));
     this.charMeasure.on('charsizechanged', () => this.renderer.onCharSizeChanged());
     this.renderer.on('resize', (dimensions) => this.viewport.syncScrollArea());
 

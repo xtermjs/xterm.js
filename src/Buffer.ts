@@ -6,7 +6,7 @@
 import { CircularList } from './utils/CircularList';
 import { LineData, CharData, ITerminal, IBuffer } from './Types';
 import { EventEmitter } from './EventEmitter';
-import { IDisposable, IMarker } from 'xterm';
+import { IMarker } from 'xterm';
 
 export const DEFAULT_ATTR = (0 << 18) | (257 << 9) | (256 << 0);
 export const CHAR_DATA_ATTR_INDEX = 0;
@@ -320,7 +320,7 @@ export class Buffer implements IBuffer {
   public addMarker(y: number): Marker {
     const marker = new Marker(y);
     this.markers.push(marker);
-    marker.disposables.push(this.lines.addDisposableListener('trim', amount => {
+    marker.register(this.lines.addDisposableListener('trim', amount => {
       marker.line -= amount;
       // The marker should be disposed when the line is trimmed from the buffer
       if (marker.line < 0) {
@@ -342,7 +342,6 @@ export class Marker extends EventEmitter implements IMarker {
 
   private _id: number = Marker._nextId++;
   public isDisposed: boolean = false;
-  public disposables: IDisposable[] = [];
 
   public get id(): number { return this._id; }
 
@@ -357,8 +356,7 @@ export class Marker extends EventEmitter implements IMarker {
       return;
     }
     this.isDisposed = true;
-    this.disposables.forEach(d => d.dispose());
-    this.disposables.length = 0;
+    super.dispose();
     this.emit('dispose');
   }
 }
