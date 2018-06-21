@@ -5,6 +5,6 @@
  * This file is the entry point for browserify.
  */
 
-import { Terminal } from './Terminal';
+import { Terminal } from './public/Terminal';
 
 module.exports = Terminal;

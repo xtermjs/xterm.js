@@ -5,12 +5,15 @@
 
 import { Terminal } from 'xterm';
 
-export interface ISearchAddonTerminal extends Terminal {
-  __searchHelper?: ISearchHelper;
-
-  // TODO: Reuse ITerminal from core
+// TODO: Don't rely on this private API
+export interface ITerminalCore {
   buffer: any;
   selectionManager: any;
+}
+
+export interface ISearchAddonTerminal extends Terminal {
+  __searchHelper?: ISearchHelper;
+  _core: ITerminalCore;
 }
 
 export interface ISearchHelper {
