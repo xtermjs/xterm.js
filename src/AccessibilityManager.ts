@@ -7,7 +7,7 @@ import * as Strings from './Strings';
 import { ITerminal, IBuffer } from './Types';
 import { isMac } from './shared/utils/Browser';
 import { RenderDebouncer } from './utils/RenderDebouncer';
-import { addDisposableListener } from './utils/Dom';
+import { addDisposableListener } from './ui/Lifecycle';
 import { IDisposable } from 'xterm';
 
 const MAX_ROWS_TO_READ = 20;

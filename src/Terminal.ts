@@ -38,7 +38,7 @@ import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
 import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './shared/utils/Browser';
-import * as Dom from './utils/Dom';
+import * as Dom from './ui/Lifecycle';
 import * as Strings from './Strings';
 import { MouseHelper } from './utils/MouseHelper';
 import { clone } from './utils/Clone';
