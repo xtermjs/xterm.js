@@ -33,6 +33,8 @@ function setPadding() {
   term.fit();
 }
 
+createTerminal();
+
 addDomListener(paddingElement, 'change', setPadding);
 
 addDomListener(actionElements.findNext, 'keypress', function (e) {
@@ -47,8 +49,6 @@ addDomListener(actionElements.findPrevious, 'keypress', function (e) {
     term.findPrevious(actionElements.findPrevious.value);
   }
 });
-
-createTerminal();
 
 function createTerminal() {
   // Clean terminal
@@ -76,11 +76,14 @@ function createTerminal() {
   term.fit();
   term.focus();
 
-  document.getElementById('dispose').addEventListener('click', () => {
+  const buttonHandler = () => {
     term.dispose();
     term = null;
     window.term = null;
-  });
+    socket = null;
+    document.getElementById('dispose').removeEventListener('click', buttonHandler);
+  };
+  document.getElementById('dispose').addEventListener('click', buttonHandler);
 
   // fit is called within a setTimeout, cols and rows need this.
   setTimeout(function () {
@@ -130,7 +133,7 @@ function runFakeTerminal() {
   term.writeln('');
   term.prompt();
 
-  term.on('key', function (key, ev) {
+  term._core.register(term.addDisposableListener('key', function (key, ev) {
     var printable = (
       !ev.altKey && !ev.altGraphKey && !ev.ctrlKey && !ev.metaKey
     );
@@ -145,11 +148,11 @@ function runFakeTerminal() {
     } else if (printable) {
       term.write(key);
     }
-  });
+  }));
 
-  term.on('paste', function (data, ev) {
+  term._core,register(term.addDisposableListener('paste', function (data, ev) {
     term.write(data);
-  });
+  }));
 }
 
 function initOptions(term) {

@@ -468,7 +468,7 @@ export interface IDcsHandler {
 /**
 * EscapeSequenceParser interface.
 */
-export interface IEscapeSequenceParser {
+export interface IEscapeSequenceParser extends IDisposable {
   /**
    * Reset the parser to its initial state (handlers are kept).
    */

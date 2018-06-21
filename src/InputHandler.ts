@@ -12,6 +12,7 @@ import { FLAGS } from './renderer/Types';
 import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
 import { ICharset } from './core/Types';
+import { Disposable } from './common/Lifecycle';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -111,13 +112,17 @@ class DECRQSS implements IDcsHandler {
  * Refer to http://invisible-island.net/xterm/ctlseqs/ctlseqs.html to understand
  * each function's header comment.
  */
-export class InputHandler implements IInputHandler {
+export class InputHandler extends Disposable implements IInputHandler {
   private _surrogateHigh: string;
 
   constructor(
       private _terminal: any, // TODO: reestablish IInputHandlingTerminal here
       private _parser: IEscapeSequenceParser = new EscapeSequenceParser())
   {
+    super();
+
+    this.register(this._parser);
+
     this._surrogateHigh = '';
 
     /**
@@ -283,6 +288,11 @@ export class InputHandler implements IInputHandler {
      */
     this._parser.setDcsHandler('$q', new DECRQSS(this._terminal));
     this._parser.setDcsHandler('+q', new RequestTerminfo(this._terminal));
+  }
+
+  public dispose(): void {
+    super.dispose();
+    this._terminal = null;
   }
 
   public parse(data: string): void {

@@ -90,7 +90,7 @@ export function attach(term: Terminal, socket: WebSocket, bidirectional: boolean
   addonTerminal._core.register(addSocketListener(socket, 'message', addonTerminal.__getMessage));
 
   if (bidirectional) {
-    addonTerminal.on('data', addonTerminal.__sendData);
+    addonTerminal._core.register(addonTerminal.addDisposableListener('data', addonTerminal.__sendData));
   }
 
   addonTerminal._core.register(addSocketListener(socket, 'close', () => detach(addonTerminal, socket)));
