@@ -17,9 +17,16 @@ export class DomRendererRowFactory {
   ) {
   }
 
-  public createRow(lineData: LineData, isCursorRow: boolean, cursorX: number, cellWidth: number): DocumentFragment {
+  public createRow(lineData: LineData, isCursorRow: boolean, cursorX: number, cellWidth: number, cols: number): DocumentFragment {
     const fragment = this._document.createDocumentFragment();
+    let colCount = 0;
+
     for (let x = 0; x < lineData.length; x++) {
+      // Don't allow any buffer to the right to be displayed
+      if (colCount >= cols) {
+        continue;
+      }
+
       const charData = lineData[x];
       const char: string = charData[CHAR_DATA_CHAR_INDEX];
       const attr: number = charData[CHAR_DATA_ATTR_INDEX];
@@ -76,6 +83,7 @@ export class DomRendererRowFactory {
         charElement.classList.add(`xterm-bg-${bg}`);
       }
       fragment.appendChild(charElement);
+      colCount += width;
     }
     return fragment;
   }
