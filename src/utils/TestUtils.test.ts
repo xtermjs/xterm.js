@@ -315,6 +315,9 @@ export class MockBuffer implements IBuffer {
 }
 
 export class MockRenderer implements IRenderer {
+  dispose(): void {
+    throw new Error('Method not implemented.');
+  }
   colorManager: IColorManager;
   on(type: string, listener: XtermListener): void {
     throw new Error('Method not implemented.');

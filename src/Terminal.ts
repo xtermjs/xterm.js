@@ -611,6 +611,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     this._screenDprMonitor = new ScreenDprMonitor();
     this._screenDprMonitor.setListener(() => this.emit('dprchange', window.devicePixelRatio));
+    this.register(this._screenDprMonitor);
 
     // Create main element container
     this.element = this._document.createElement('div');
@@ -671,6 +672,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       case 'dom': this.renderer = new DomRenderer(this, this.options.theme); break;
       default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
     }
+    this.register(this.renderer);
     this.options.theme = null;
     this.viewport = new Viewport(this, this._viewportElement, this._viewportScrollArea, this.charMeasure);
     this.viewport.onThemeChanged(this.renderer.colorManager.colors);
