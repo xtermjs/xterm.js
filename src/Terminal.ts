@@ -173,6 +173,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public savedCols: number;
 
   public curAttr: number;
+  public savedCurAttr: number;
 
   public params: (string | number)[];
   public currentParam: string | number;
