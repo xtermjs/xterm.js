@@ -446,6 +446,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
           this.charMeasure.measure(this.options);
         }
         break;
+      case 'drawBoldTextInBrightColors':
       case 'experimentalCharAtlas':
       case 'enableBold':
       case 'letterSpacing':
