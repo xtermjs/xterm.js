@@ -232,8 +232,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   public dispose(): void {
     super.dispose();
-    this._disposables.forEach(d => d.dispose());
-    this._disposables.length = 0;
     removeTerminalFromCache(this);
     this.handler = () => {};
     this.write = () => {};

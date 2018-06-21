@@ -79,6 +79,7 @@ export class EventEmitter extends Disposable implements IEventEmitter, IDisposab
   }
 
   public dispose(): void {
+    super.dispose();
     this._events = {};
   }
 }
