@@ -7,7 +7,7 @@ import * as Strings from './Strings';
 import { ITerminal, IBuffer } from './Types';
 import { isMac } from './shared/utils/Browser';
 import { RenderDebouncer } from './utils/RenderDebouncer';
-import { addDisposableListener } from './ui/Lifecycle';
+import { addDisposableDomListener } from './ui/Lifecycle';
 import { IDisposable } from 'xterm';
 
 const MAX_ROWS_TO_READ = 20;
@@ -89,7 +89,7 @@ export class AccessibilityManager implements IDisposable {
     this._disposables.push(this._terminal.renderer.addDisposableListener('resize', () => this._refreshRowsDimensions()));
     // This shouldn't be needed on modern browsers but is present in case the
     // media query that drives the dprchange event isn't supported
-    this._disposables.push(addDisposableListener(window, 'resize', () => this._refreshRowsDimensions()));
+    this._disposables.push(addDisposableDomListener(window, 'resize', () => this._refreshRowsDimensions()));
   }
 
   public dispose(): void {
