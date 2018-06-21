@@ -76,6 +76,12 @@ function createTerminal() {
   term.fit();
   term.focus();
 
+  document.getElementById('dispose').addEventListener('click', () => {
+    term.dispose();
+    term = null;
+    window.term = null;
+  });
+
   // fit is called within a setTimeout, cols and rows need this.
   setTimeout(function () {
     initOptions(term);
