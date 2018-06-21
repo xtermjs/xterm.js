@@ -219,14 +219,14 @@ function initOptions(term) {
   // Attach listeners
   booleanOptions.forEach(o => {
     var input = document.getElementById(`opt-${o}`);
-    input.addEventListener('change', () => {
+    addDomListener(input, 'change', () => {
       console.log('change', o, input.checked);
       term.setOption(o, input.checked);
     });
   });
   numberOptions.forEach(o => {
     var input = document.getElementById(`opt-${o}`);
-    input.addEventListener('change', () => {
+    addDomListener(input, 'change', () => {
       console.log('change', o, input.value);
       if (o === 'cols' || o === 'rows') {
         updateTerminalSize();
@@ -237,11 +237,16 @@ function initOptions(term) {
   });
   Object.keys(stringOptions).forEach(o => {
     var input = document.getElementById(`opt-${o}`);
-    input.addEventListener('change', () => {
+    addDomListener(input, 'change', () => {
       console.log('change', o, input.value);
       term.setOption(o, input.value);
     });
   });
+}
+
+function addDomListener(element, type, handler) {
+  element.addEventListener(type, handler);
+  term._core.register({ dispose: () => element.removeEventListener(type, handler) });
 }
 
 function updateTerminalSize() {

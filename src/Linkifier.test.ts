@@ -21,6 +21,8 @@ class TestLinkifier extends Linkifier {
 }
 
 class TestMouseZoneManager implements IMouseZoneManager {
+  dispose(): void {
+  }
   public clears: number = 0;
   public zones: IMouseZone[] = [];
   add(zone: IMouseZone): void {

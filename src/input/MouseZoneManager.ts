@@ -5,6 +5,8 @@
 
 import { ITerminal } from '../Types';
 import { IMouseZoneManager, IMouseZone } from './Types';
+import { Disposable } from '../common/Lifecycle';
+import { addDisposableDomListener } from '../ui/Lifecycle';
 
 const HOVER_DURATION = 500;
 
@@ -16,7 +18,7 @@ const HOVER_DURATION = 500;
  * needed to support was single-line links which never overlap. Improvements can
  * be made in the future.
  */
-export class MouseZoneManager implements IMouseZoneManager {
+export class MouseZoneManager extends Disposable implements IMouseZoneManager {
   private _zones: IMouseZone[] = [];
 
   private _areZonesActive: boolean = false;
@@ -30,11 +32,18 @@ export class MouseZoneManager implements IMouseZoneManager {
   constructor(
     private _terminal: ITerminal
   ) {
-    this._terminal.element.addEventListener('mousedown', e => this._onMouseDown(e));
+    super();
+
+    this.register(addDisposableDomListener(this._terminal.element, 'mousedown', e => this._onMouseDown(e)));
 
     // These events are expensive, only listen to it when mouse zones are active
     this._mouseMoveListener = e => this._onMouseMove(e);
     this._clickListener = e => this._onClick(e);
+  }
+
+  public dispose(): void {
+    super.dispose();
+    this._deactivate();
   }
 
   public add(zone: IMouseZone): void {

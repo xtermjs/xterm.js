@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal as PublicTerminal, ITerminalOptions as IPublicTerminalOptions, IEventEmitter } from 'xterm';
+import { Terminal as PublicTerminal, ITerminalOptions as IPublicTerminalOptions, IEventEmitter, IDisposable } from 'xterm';
 import { IColorSet, IRenderer } from './renderer/Types';
 import { IMouseZoneManager } from './input/Types';
 import { ICharset } from './core/Types';
@@ -86,7 +86,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   tabSet(): void;
 }
 
-export interface IViewport {
+export interface IViewport extends IDisposable {
   scrollBarWidth: number;
   syncScrollArea(): void;
   getLinesScrolled(ev: WheelEvent): number;
