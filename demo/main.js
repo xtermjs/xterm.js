@@ -170,7 +170,7 @@ function initOptions(term) {
     fontWeight: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900']
   };
-  var options = Object.keys(term.options);
+  var options = Object.keys(term._core.options);
   var booleanOptions = [];
   var numberOptions = [];
   options.filter(o => blacklistedOptions.indexOf(o) === -1).forEach(o => {
@@ -241,8 +241,8 @@ function initOptions(term) {
 function updateTerminalSize() {
   var cols = parseInt(document.getElementById(`opt-cols`).value, 10);
   var rows = parseInt(document.getElementById(`opt-rows`).value, 10);
-  var width = (cols * term.renderer.dimensions.actualCellWidth + term.viewport.scrollBarWidth).toString() + 'px';
-  var height = (rows * term.renderer.dimensions.actualCellHeight).toString() + 'px';
+  var width = (cols * term._core.renderer.dimensions.actualCellWidth + term._core.viewport.scrollBarWidth).toString() + 'px';
+  var height = (rows * term._core.renderer.dimensions.actualCellHeight).toString() + 'px';
   terminalContainer.style.width = width;
   terminalContainer.style.height = height;
   term.fit();

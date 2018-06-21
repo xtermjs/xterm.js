@@ -4,9 +4,9 @@
  * @license MIT
  */
 
-import { C0 } from './EscapeSequences';
+import { C0 } from './common/data/EscapeSequences';
 import { IInputHandler, IInputHandlingTerminal } from './Types';
-import { CHARSETS, DEFAULT_CHARSET } from './Charsets';
+import { CHARSETS, DEFAULT_CHARSET } from './core/data/Charsets';
 
 const normalStateHandler: {[key: string]: (parser: Parser, handler: IInputHandler) => void} = {};
 normalStateHandler[C0.BEL] = (parser, handler) => handler.bell();
