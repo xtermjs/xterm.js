@@ -116,6 +116,11 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     this._activeSelectionMode = SelectionMode.NORMAL;
   }
 
+  public dispose(): void {
+    super.dispose();
+    this._removeMouseDownListeners();
+  }
+
   private get _buffer(): IBuffer {
     return this._terminal.buffers.active;
   }

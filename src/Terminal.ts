@@ -1004,19 +1004,23 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // be kept aroud if Terminal.dispose is fired when the mouse is down
 
       // bind events
-      if (this.normalMouse) on(this._document, 'mousemove', sendMove);
+      if (this.normalMouse) {
+        this._document.addEventListener('mousemove', sendMove);
+      }
 
       // x10 compatibility mode can't send button releases
       if (!this.x10Mouse) {
         const handler = (ev: MouseEvent) => {
           sendButton(ev);
           // TODO: Seems dangerous calling this on document?
-          if (this.normalMouse) off(this._document, 'mousemove', sendMove);
-          off(this._document, 'mouseup', handler);
+          if (this.normalMouse) {
+            this._document.removeEventListener('mousemove', sendMove);
+          }
+          this._document.removeEventListener('mouseup', handler);
           return this.cancel(ev);
         };
         // TODO: Seems dangerous calling this on document?
-        on(this._document, 'mouseup', handler);
+        this._document.addEventListener('mouseup', handler);
       }
 
       return this.cancel(ev);
@@ -1912,21 +1916,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 /**
  * Helpers
  */
-
-function globalOn(el: any, type: string, handler: (event: Event) => any, capture?: boolean, passive?: boolean): void {
-  if (!Array.isArray(el)) {
-    el = [el];
-  }
-  el.forEach((element: HTMLElement) => {
-    element.addEventListener(type, handler, { capture: capture || false, passive: passive || false });
-  });
-}
-// TODO: Remove once everything is typed
-const on = globalOn;
-
-function off(el: any, type: string, handler: (event: Event) => any, capture: boolean = false): void {
-  el.removeEventListener(type, handler, capture);
-}
 
 function wasMondifierKeyOnlyEvent(ev: KeyboardEvent): boolean {
   return ev.keyCode === 16 || // Shift

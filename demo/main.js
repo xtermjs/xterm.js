@@ -33,15 +33,15 @@ function setPadding() {
   term.fit();
 }
 
-paddingElement.addEventListener('change', setPadding);
+addDomListener(paddingElement, 'change', setPadding);
 
-actionElements.findNext.addEventListener('keypress', function (e) {
+addDomListener(actionElements.findNext, 'keypress', function (e) {
   if (e.key === "Enter") {
     e.preventDefault();
     term.findNext(actionElements.findNext.value);
   }
 });
-actionElements.findPrevious.addEventListener('keypress', function (e) {
+addDomListener(actionElements.findPrevious, 'keypress', function (e) {
   if (e.key === "Enter") {
     e.preventDefault();
     term.findPrevious(actionElements.findPrevious.value);
