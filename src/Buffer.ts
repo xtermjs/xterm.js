@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { CircularList } from './utils/CircularList';
+import { CircularList } from './common/CircularList';
 import { LineData, CharData, ITerminal, IBuffer } from './Types';
 import { EventEmitter } from './EventEmitter';
 import { IMarker } from 'xterm';
