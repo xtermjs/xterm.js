@@ -46,7 +46,7 @@ import { DEFAULT_BELL_SOUND, SoundManager } from './SoundManager';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { MouseZoneManager } from './ui/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
-import { ScreenDprMonitor } from './utils/ScreenDprMonitor';
+import { ScreenDprMonitor } from './ui/ScreenDprMonitor';
 import { ITheme, IMarker, IDisposable } from 'xterm';
 import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';

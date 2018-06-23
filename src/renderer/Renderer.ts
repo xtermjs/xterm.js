@@ -11,8 +11,8 @@ import { IRenderLayer, IColorSet, IRenderer, IRenderDimensions } from './Types';
 import { ITerminal } from '../Types';
 import { LinkRenderLayer } from './LinkRenderLayer';
 import { EventEmitter } from '../EventEmitter';
-import { RenderDebouncer } from '../utils/RenderDebouncer';
-import { ScreenDprMonitor } from '../utils/ScreenDprMonitor';
+import { RenderDebouncer } from '../ui/RenderDebouncer';
+import { ScreenDprMonitor } from '../ui/ScreenDprMonitor';
 import { ITheme } from 'xterm';
 
 export class Renderer extends EventEmitter implements IRenderer {

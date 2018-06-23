@@ -6,7 +6,7 @@
 import * as Strings from './Strings';
 import { ITerminal, IBuffer } from './Types';
 import { isMac } from './shared/utils/Browser';
-import { RenderDebouncer } from './utils/RenderDebouncer';
+import { RenderDebouncer } from './ui/RenderDebouncer';
 import { addDisposableDomListener } from './ui/Lifecycle';
 import { Disposable } from './common/Lifecycle';
 
