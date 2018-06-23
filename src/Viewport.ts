@@ -5,7 +5,7 @@
 
 import { IColorSet } from './renderer/Types';
 import { ITerminal, IViewport } from './Types';
-import { CharMeasure } from './utils/CharMeasure';
+import { CharMeasure } from './ui/CharMeasure';
 import { Disposable } from './common/Lifecycle';
 import { addDisposableDomListener } from './ui/Lifecycle';
 

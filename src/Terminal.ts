@@ -36,7 +36,7 @@ import { InputHandler } from './InputHandler';
 import { Renderer } from './renderer/Renderer';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
-import { CharMeasure } from './utils/CharMeasure';
+import { CharMeasure } from './ui/CharMeasure';
 import * as Browser from './shared/utils/Browser';
 import { addDisposableDomListener } from './ui/Lifecycle';
 import * as Strings from './Strings';
