@@ -6,7 +6,7 @@
 import { ITerminal } from '../Types';
 import { IMouseZoneManager, IMouseZone } from './Types';
 import { Disposable } from '../common/Lifecycle';
-import { addDisposableDomListener } from '../ui/Lifecycle';
+import { addDisposableDomListener } from './Lifecycle';
 
 const HOVER_DURATION = 500;
 

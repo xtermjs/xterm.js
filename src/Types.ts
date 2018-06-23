@@ -5,7 +5,7 @@
 
 import { Terminal as PublicTerminal, ITerminalOptions as IPublicTerminalOptions, IEventEmitter, IDisposable } from 'xterm';
 import { IColorSet, IRenderer } from './renderer/Types';
-import { IMouseZoneManager } from './input/Types';
+import { IMouseZoneManager } from './ui/Types';
 import { ICharset } from './core/Types';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;

@@ -22,7 +22,7 @@
  */
 
 import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharData, LineData } from './Types';
-import { IMouseZoneManager } from './input/Types';
+import { IMouseZoneManager } from './ui/Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
 import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR } from './Buffer';
@@ -44,7 +44,7 @@ import { MouseHelper } from './utils/MouseHelper';
 import { clone } from './utils/Clone';
 import { DEFAULT_BELL_SOUND, SoundManager } from './SoundManager';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
-import { MouseZoneManager } from './input/MouseZoneManager';
+import { MouseZoneManager } from './ui/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ScreenDprMonitor } from './utils/ScreenDprMonitor';
 import { ITheme, IMarker, IDisposable } from 'xterm';
