@@ -34,8 +34,8 @@ class RequestTerminfo implements IDcsHandler {
   hook(collect: string, params: number[], flag: number): void {
     this._data = '';
   }
-  put(data: string, start: number, end: number): void {
-    this._data += data.substring(start, end);
+  put(data: Uint16Array, start: number, end: number): void {
+    // this._data += data.substring(start, end);
   }
   unhook(): void {
     // invalid: DCS 0 + r Pt ST
@@ -59,8 +59,8 @@ class DECRQSS implements IDcsHandler {
     this._data = '';
   }
 
-  put(data: string, start: number, end: number): void {
-    this._data += data.substring(start, end);
+  put(data: Uint16Array, start: number, end: number): void {
+    // this._data += data.substring(start, end);
   }
 
   unhook(): void {
@@ -113,12 +113,14 @@ class DECRQSS implements IDcsHandler {
  */
 export class InputHandler implements IInputHandler {
   private _surrogateHigh: string;
+  private _buffer: Uint16Array;
 
   constructor(
       private _terminal: any, // TODO: reestablish IInputHandlingTerminal here
       private _parser: IEscapeSequenceParser = new EscapeSequenceParser())
   {
     this._surrogateHigh = '';
+    this._buffer = new Uint16Array(1000);
 
     /**
      * custom fallback handlers
@@ -299,7 +301,9 @@ export class InputHandler implements IInputHandler {
       this._surrogateHigh = '';
     }
 
-    this._parser.parse(data);
+    if (data.length > this._buffer.length) this._buffer = new Uint16Array(data.length);
+    for (let i = 0; i < data.length; ++i) this._buffer[i] = data.charCodeAt(i);
+    this._parser.parse(this._buffer, data.length);
 
     buffer = this._terminal.buffer;
     if (buffer.x !== cursorStartX || buffer.y !== cursorStartY) {
@@ -307,7 +311,7 @@ export class InputHandler implements IInputHandler {
     }
   }
 
-  public print(data: string, start: number, end: number): void {
+  public print(data: Uint16Array, start: number, end: number): void {
     // let char: string;
     let code: number;
     let low: number;
@@ -324,13 +328,13 @@ export class InputHandler implements IInputHandler {
     this._terminal.updateRange(buffer.y);
     for (let stringPosition = start; stringPosition < end; ++stringPosition) {
       // char = data.charAt(stringPosition);
-      code = data.charCodeAt(stringPosition);
+      code = data[stringPosition];
 
       // surrogate pair handling
       if (0xD800 <= code && code <= 0xDBFF) {
         // we got a surrogate high
         // get surrogate low (next 2 bytes)
-        low = data.charCodeAt(stringPosition + 1);
+        low = data[stringPosition + 1];
         if (isNaN(low)) {
           // end of data stream, save surrogate high
           // this._surrogateHigh = char;
