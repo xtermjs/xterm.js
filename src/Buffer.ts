@@ -117,10 +117,11 @@ export class Buffer implements IBuffer {
     if (this.lines.length > 0) {
       // Deal with columns increasing (we don't do anything when columns reduce)
       if (this._terminal.cols < newCols) {
-        const ch: CharData = [DEFAULT_ATTR, ' ', 1, 32]; // does xterm use the default attr?
+        const ch: CharData = [this._terminal.attributeAtlas.getSlot({flags: DEFAULT_ATTR, foreground: 0, background: 0}), ' ', 1, 32]; // does xterm use the default attr?
         for (let i = 0; i < this.lines.length; i++) {
           while (this.lines.get(i).length < newCols) {
             this.lines.get(i).push(ch);
+            this._terminal.attributeAtlas.ref(ch[0]);
           }
         }
       }
