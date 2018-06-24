@@ -1648,7 +1648,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     if (!line) {
       return;
     }
-    const ch: CharData = [this.eraseAttr(), ' ', 32 /* ' '.charCodeAt(0) */]; // xterm
+    const ch: CharData = [this.eraseAttr(), ' ']; // xterm
     for (; x < this.cols; x++) {
       line[x] = ch;
     }
@@ -1665,7 +1665,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     if (!line) {
       return;
     }
-    const ch: CharData = [this.eraseAttr(), ' ', 32 /* ' '.charCodeAt(0) */]; // xterm
+    const ch: CharData = [this.eraseAttr(), ' ']; // xterm
     x++;
     while (x--) {
       line[x] = ch;
@@ -1711,7 +1711,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): LineData {
     const attr = cur ? this.eraseAttr() : DEFAULT_ATTR;
 
-    const ch: CharData = [attr, ' ', 32 /* ' '.charCodeAt(0) */]; // width defaults to 1 halfwidth character
+    const ch: CharData = [attr, ' ']; // width defaults to 1 halfwidth character
     const line: LineData = [];
 
     // TODO: It is not ideal that this is a property on an array, a buffer line
@@ -1734,9 +1734,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   public ch(cur?: boolean): CharData {
     if (cur) {
-      return [this.eraseAttr(), ' ', 32 /* ' '.charCodeAt(0) */];
+      return [this.eraseAttr(), ' '];
     }
-    return [DEFAULT_ATTR, ' ', 32 /* ' '.charCodeAt(0) */];
+    return [DEFAULT_ATTR, ' '];
   }
 
   /**
