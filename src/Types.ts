@@ -7,12 +7,13 @@ import { Terminal as PublicTerminal, ITerminalOptions as IPublicTerminalOptions,
 import { IColorSet, IRenderer } from './renderer/Types';
 import { IMouseZoneManager } from './input/Types';
 import { ICharset } from './core/Types';
+import { CellStorage } from './CellStorage';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
 export type XtermListener = (...args: any[]) => void;
 
-export type CharData = [number, string, number, number];
+export type CharData = [number, number, number, number];
 export type LineData = CharData[];
 
 export type LinkMatcherHandler = (event: MouseEvent, uri: string) => void;
@@ -217,6 +218,7 @@ export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAcce
   viewport: IViewport;
   bracketedPasteMode: boolean;
   applicationCursor: boolean;
+  cellStorage: CellStorage;
 
   /**
    * Emit the 'data' event and populate the given data.

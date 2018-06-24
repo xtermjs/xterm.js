@@ -10,7 +10,7 @@ import { IDisposable, IMarker } from 'xterm';
 
 export const DEFAULT_ATTR = (0 << 18) | (257 << 9) | (256 << 0);
 export const CHAR_DATA_ATTR_INDEX = 0;
-export const CHAR_DATA_CHAR_INDEX = 1;
+// export const CHAR_DATA_CHAR_INDEX = 1;
 export const CHAR_DATA_WIDTH_INDEX = 2;
 export const CHAR_DATA_CODE_INDEX = 3;
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
@@ -117,7 +117,7 @@ export class Buffer implements IBuffer {
     if (this.lines.length > 0) {
       // Deal with columns increasing (we don't do anything when columns reduce)
       if (this._terminal.cols < newCols) {
-        const ch: CharData = [DEFAULT_ATTR, ' ', 1, 32]; // does xterm use the default attr?
+        const ch: CharData = [DEFAULT_ATTR, 32, 1, 32]; // does xterm use the default attr?
         for (let i = 0; i < this.lines.length; i++) {
           while (this.lines.get(i).length < newCols) {
             this.lines.get(i).push(ch);
@@ -220,7 +220,7 @@ export class Buffer implements IBuffer {
 
     for (let i = 0; i < line.length; i++) {
       const char = line[i];
-      lineString += char[CHAR_DATA_CHAR_INDEX];
+      lineString += String.fromCharCode(char[1]);
       // Adjust start and end cols for wide characters if they affect their
       // column indexes
       if (char[CHAR_DATA_WIDTH_INDEX] === 0) {
@@ -233,6 +233,7 @@ export class Buffer implements IBuffer {
       } else {
         // Adjust the columns to take glyphs that are represented by multiple
         // code points into account.
+        /*
         if (char[CHAR_DATA_CHAR_INDEX].length > 1) {
           if (startCol > i) {
             startIndex += char[CHAR_DATA_CHAR_INDEX].length - 1;
@@ -241,6 +242,7 @@ export class Buffer implements IBuffer {
             endIndex += char[CHAR_DATA_CHAR_INDEX].length - 1;
           }
         }
+        */
       }
     }
 

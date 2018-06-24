@@ -8,7 +8,6 @@ import { CharData, ITerminal } from '../Types';
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from './atlas/Types';
 import BaseCharAtlas from './atlas/BaseCharAtlas';
 import { acquireCharAtlas } from './atlas/CharAtlasCache';
-import { CHAR_DATA_CHAR_INDEX } from '../Buffer';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -218,7 +217,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.textBaseline = 'top';
     this._clipRow(terminal, y);
     this._ctx.fillText(
-        charData[CHAR_DATA_CHAR_INDEX],
+        terminal.cellStorage.getString(charData[1]),
         x * this._scaledCellWidth + this._scaledCharLeft,
         y * this._scaledCellHeight + this._scaledCharTop);
   }
