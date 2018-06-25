@@ -30,7 +30,7 @@
     "jsdoc": "3.4.3",
     "jsdom": "^11.11.0",
     "merge-stream": "^1.0.1",
-    "node-pty": "^0.7.2",
+    "node-pty": "0.7.6",
     "nodemon": "1.10.2",
     "npm-run-all": "^4.1.2",
     "nyc": "^11.8.0",

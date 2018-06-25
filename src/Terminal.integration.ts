@@ -88,7 +88,7 @@ if (os.platform() !== 'win32') {
   /** some helpers for pty interaction */
   // we need a pty in between to get the termios decorations
   // for the basic test cases a raw pty device is enough
-  primitivePty = pty.native.open(cols, rows);
+  primitivePty = (<any>pty).native.open(cols, rows);
 
   /** tests */
   describe('xterm output comparison', () => {
