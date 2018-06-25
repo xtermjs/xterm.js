@@ -150,7 +150,7 @@ function runFakeTerminal() {
     }
   }));
 
-  term._core,register(term.addDisposableListener('paste', function (data, ev) {
+  term._core.register(term.addDisposableListener('paste', function (data, ev) {
     term.write(data);
   }));
 }
