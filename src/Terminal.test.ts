@@ -120,6 +120,14 @@ describe('term.js addons', () => {
     });
   });
 
+  describe('reset', () => {
+    it('should not affect cursorState', () => {
+      term.cursorState = 1;
+      term.reset();
+      assert.equal(term.cursorState, 1);
+    });
+  });
+
   describe('clear', () => {
     it('should clear a buffer equal to rows', () => {
       const promptLine = term.buffer.lines.get(term.buffer.ybase + term.buffer.y);
