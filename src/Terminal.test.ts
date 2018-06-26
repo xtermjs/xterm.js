@@ -125,6 +125,9 @@ describe('term.js addons', () => {
       term.cursorState = 1;
       term.reset();
       assert.equal(term.cursorState, 1);
+      term.cursorState = 0;
+      term.reset();
+      assert.equal(term.cursorState, 0);
     });
   });
 
