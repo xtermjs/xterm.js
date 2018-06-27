@@ -7,6 +7,7 @@ import { Terminal as PublicTerminal, ITerminalOptions as IPublicTerminalOptions,
 import { IColorSet, IRenderer } from './renderer/Types';
 import { IMouseZoneManager } from './input/Types';
 import { ICharset } from './core/Types';
+import { TextAttributeAtlas } from './AttributeAtlas';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
@@ -229,6 +230,7 @@ export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAcce
   log(text: string): void;
   showCursor(): void;
   blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): LineData;
+  attributeAtlas: TextAttributeAtlas;
 }
 
 export interface IBufferAccessor {

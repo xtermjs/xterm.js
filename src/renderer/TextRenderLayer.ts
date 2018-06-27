@@ -9,6 +9,7 @@ import { CharData, ITerminal } from '../Types';
 import { INVERTED_DEFAULT_COLOR } from './atlas/Types';
 import { GridCache } from './GridCache';
 import { BaseRenderLayer } from './BaseRenderLayer';
+import { AtlasEntry } from '../AttributeAtlas';
 
 /**
  * This CharData looks like a null character, which will forc a clear and render
@@ -70,7 +71,8 @@ export class TextRenderLayer extends BaseRenderLayer {
         const charData = line[x];
         const code: number = <number>charData[CHAR_DATA_CODE_INDEX];
         const char: string = charData[CHAR_DATA_CHAR_INDEX];
-        const attr: number = charData[CHAR_DATA_ATTR_INDEX];
+        let attr: number = charData[CHAR_DATA_ATTR_INDEX];
+        attr = terminal.attributeAtlas.data[attr + AtlasEntry.FLAGS];
         let width: number = charData[CHAR_DATA_WIDTH_INDEX];
 
         // The character to the left is a wide character, drawing is owned by

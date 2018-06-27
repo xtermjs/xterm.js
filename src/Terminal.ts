@@ -53,6 +53,7 @@ import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent } from './common/Types';
 import { evaluateKeyboardEvent } from './core/input/Keyboard';
 import { KeyboardResultType, ICharset } from './core/Types';
+import { TextAttributeAtlas, AtlasEntry } from './AttributeAtlas';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -212,6 +213,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   public cols: number;
   public rows: number;
+  public attributeAtlas: TextAttributeAtlas;
 
   /**
    * Creates a new `Terminal` object.
@@ -294,6 +296,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.charsets = [null];
 
     this.curAttr = DEFAULT_ATTR;
+    this.attributeAtlas = new TextAttributeAtlas(2);
+    this.curAttr = this.attributeAtlas.getSlot({flags: this.curAttr, foreground: 0, background: 0});
+    this.attributeAtlas.ref(this.curAttr);
 
     this.params = [];
     this.currentParam = 0;
@@ -334,7 +339,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   public eraseAttr(): number {
     // if (this.is('screen')) return DEFAULT_ATTR;
-    return (DEFAULT_ATTR & ~0x1ff) | (this.curAttr & 0x1ff);
+    // return (DEFAULT_ATTR & ~0x1ff) | (this.curAttr & 0x1ff);
+
+    const flags = (DEFAULT_ATTR & ~0x1ff) | (this.attributeAtlas.data[this.curAttr + AtlasEntry.FLAGS] & 0x1ff);
+    return this.attributeAtlas.getSlot({flags: flags, foreground: 0, background: 0});
   }
 
   /**
@@ -1648,9 +1656,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     if (!line) {
       return;
     }
-    const ch: CharData = [this.eraseAttr(), ' ', 1, 32 /* ' '.charCodeAt(0) */]; // xterm
+    const eraseAttr = this.eraseAttr();
+    const ch: CharData = [eraseAttr, ' ', 1, 32 /* ' '.charCodeAt(0) */]; // xterm
     for (; x < this.cols; x++) {
       line[x] = ch;
+      this.attributeAtlas.ref(eraseAttr);
     }
     this.updateRange(y);
   }
@@ -1665,10 +1675,12 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     if (!line) {
       return;
     }
-    const ch: CharData = [this.eraseAttr(), ' ', 1, 32 /* ' '.charCodeAt(0) */]; // xterm
+    const eraseAttr = this.eraseAttr();
+    const ch: CharData = [eraseAttr, ' ', 1, 32 /* ' '.charCodeAt(0) */]; // xterm
     x++;
     while (x--) {
       line[x] = ch;
+      this.attributeAtlas.ref(eraseAttr);
     }
     this.updateRange(y);
   }
@@ -1709,7 +1721,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * set, the terminal's current column count would be used.
    */
   public blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): LineData {
-    const attr = cur ? this.eraseAttr() : DEFAULT_ATTR;
+    const attr = cur ? this.eraseAttr() : this.attributeAtlas.getSlot({flags: DEFAULT_ATTR, foreground: 0, background: 0});
 
     const ch: CharData = [attr, ' ', 1, 32 /* ' '.charCodeAt(0) */]; // width defaults to 1 halfwidth character
     const line: LineData = [];
@@ -1723,6 +1735,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     cols = cols || this.cols;
     for (let i = 0; i < cols; i++) {
       line[i] = ch;
+      this.attributeAtlas.ref(attr);
     }
 
     return line;

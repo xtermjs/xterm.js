@@ -12,6 +12,7 @@ import { FLAGS } from './renderer/Types';
 import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
 import { ICharset } from './core/Types';
+import { AtlasEntry } from './AttributeAtlas';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -320,6 +321,7 @@ export class InputHandler implements IInputHandler {
     const insertMode: boolean = this._terminal.insertMode;
     const curAttr: number = this._terminal.curAttr;
     let bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
+    const attributeAtlas = this._terminal.attributeAtlas;
 
     this._terminal.updateRange(buffer.y);
     for (let stringPosition = start; stringPosition < end; ++stringPosition) {
@@ -421,20 +423,28 @@ export class InputHandler implements IInputHandler {
           if (removed[CHAR_DATA_WIDTH_INDEX] === 0
               && bufferRow[this._terminal.cols - 2]
               && bufferRow[this._terminal.cols - 2][CHAR_DATA_WIDTH_INDEX] === 2) {
+                attributeAtlas.unref(bufferRow[this._terminal.cols - 2][0]);
                 bufferRow[this._terminal.cols - 2] = [curAttr, ' ', 1, 32  /* ' '.charCodeAt(0) */ ];
+                attributeAtlas.ref(curAttr);
           }
 
           // insert empty cell at cursor
+          attributeAtlas.unref(bufferRow[buffer.x][0]);
           bufferRow.splice(buffer.x, 0, [curAttr, ' ', 1, 32  /* ' '.charCodeAt(0) */ ]);
+          attributeAtlas.ref(curAttr);
         }
       }
 
       // write current char to buffer and advance cursor
+      attributeAtlas.unref(bufferRow[buffer.x][0]);
       bufferRow[buffer.x++] = [curAttr, char, chWidth, code];
+      attributeAtlas.ref(curAttr);
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor
       if (chWidth === 2) {
+        attributeAtlas.unref(bufferRow[buffer.x][0]);
         bufferRow[buffer.x++] = [curAttr, '', 0, undefined];
+        attributeAtlas.ref(curAttr);
       }
     }
     this._terminal.updateRange(buffer.y);
@@ -1554,14 +1564,20 @@ export class InputHandler implements IInputHandler {
   public charAttributes(params: number[]): void {
     // Optimize a single SGR0.
     if (params.length === 1 && params[0] === 0) {
-      this._terminal.curAttr = DEFAULT_ATTR;
+      // this._terminal.curAttr = DEFAULT_ATTR;
+      this._terminal.curAttr = this._terminal.attributeAtlas.getSlot({
+        flags: DEFAULT_ATTR,
+        foreground: 0,
+        background: 0
+      });
       return;
     }
 
     const l = params.length;
-    let flags = this._terminal.curAttr >> 18;
-    let fg = (this._terminal.curAttr >> 9) & 0x1ff;
-    let bg = this._terminal.curAttr & 0x1ff;
+    const fflags = this._terminal.attributeAtlas.data[this._terminal.curAttr + AtlasEntry.FLAGS];
+    let flags = fflags >> 18;
+    let fg = (fflags >> 9) & 0x1ff;
+    let bg = fflags & 0x1ff;
     let p;
 
     for (let i = 0; i < l; i++) {
@@ -1671,7 +1687,12 @@ export class InputHandler implements IInputHandler {
       }
     }
 
-    this._terminal.curAttr = (flags << 18) | (fg << 9) | bg;
+    // this._terminal.curAttr = (flags << 18) | (fg << 9) | bg;
+    this._terminal.curAttr = this._terminal.attributeAtlas.getSlot({
+      flags: (flags << 18) | (fg << 9) | bg,
+      foreground: 0,
+      background: 0
+    });
   }
 
   /**
@@ -1760,7 +1781,11 @@ export class InputHandler implements IInputHandler {
       this._terminal.applicationCursor = false;
       this._terminal.buffer.scrollTop = 0;
       this._terminal.buffer.scrollBottom = this._terminal.rows - 1;
-      this._terminal.curAttr = DEFAULT_ATTR;
+      this._terminal.curAttr = this._terminal.attributeAtlas.getSlot({
+        flags: DEFAULT_ATTR,
+        foreground: 0,
+        background: 0
+      });
       this._terminal.buffer.x = this._terminal.buffer.y = 0; // ?
       this._terminal.charset = null;
       this._terminal.glevel = 0; // ??
@@ -1835,7 +1860,11 @@ export class InputHandler implements IInputHandler {
   public restoreCursor(params: number[]): void {
     this._terminal.buffer.x = this._terminal.buffer.savedX || 0;
     this._terminal.buffer.y = this._terminal.buffer.savedY || 0;
-    this._terminal.curAttr = this._terminal.savedCurAttr || DEFAULT_ATTR;
+    this._terminal.curAttr = this._terminal.savedCurAttr || this._terminal.attributeAtlas.getSlot({
+      flags: DEFAULT_ATTR,
+      foreground: 0,
+      background: 0
+    });
   }
 
 
