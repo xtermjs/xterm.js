@@ -191,7 +191,7 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
  */
 class DcsDummy implements IDcsHandler {
   hook(collect: string, params: number[], flag: number): void { }
-  put(data: string, start: number, end: number): void { }
+  put(data: Uint16Array, start: number, end: number): void { }
   unhook(): void { }
 }
 
@@ -217,7 +217,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
   protected _collect: string;
 
   // handler lookup containers
-  protected _printHandler: (data: string, start: number, end: number) => void;
+  protected _printHandler: (data: Uint16Array, start: number, end: number) => void;
   protected _executeHandlers: any;
   protected _csiHandlers: any;
   protected _escHandlers: any;
@@ -227,7 +227,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
   protected _errorHandler: (state: IParsingState) => IParsingState;
 
   // fallback handlers
-  protected _printHandlerFb: (data: string, start: number, end: number) => void;
+  protected _printHandlerFb: (data: Uint16Array, start: number, end: number) => void;
   protected _executeHandlerFb: (code: number) => void;
   protected _csiHandlerFb: (collect: string, params: number[], flag: number) => void;
   protected _escHandlerFb: (collect: string, flag: number) => void;
@@ -260,7 +260,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     this._errorHandler = this._errorHandlerFb;
   }
 
-  setPrintHandler(callback: (data: string, start: number, end: number) => void): void {
+  setPrintHandler(callback: (data: Uint16Array, start: number, end: number) => void): void {
     this._printHandler = callback;
   }
   clearPrintHandler(): void {
@@ -332,7 +332,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     this._activeDcsHandler = null;
   }
 
-  parse(data: string): void {
+  parse(data: Uint16Array, length: number): void {
     let code = 0;
     let transition = 0;
     let error = false;
@@ -347,15 +347,14 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     let callback: Function | null = null;
 
     // process input string
-    const l = data.length;
-    for (let i = 0; i < l; ++i) {
-      code = data.charCodeAt(i);
+    for (let i = 0; i < length; ++i) {
+      code = data[i];
 
       // shortcut for most chars (print action)
       if (currentState === ParserState.GROUND && code > 0x1f && code < 0x80) {
         print = (~print) ? print : i;
-        do code = data.charCodeAt(++i);
-        while (i < l && code > 0x1f && code < 0x80);
+        do code = data[++i];
+        while (i < length && code > 0x1f && code < 0x80);
         i--;
         continue;
       }
@@ -493,7 +492,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
           osc = '';
           break;
         case ParserAction.OSC_PUT:
-          osc += data.charAt(i);
+          osc += data[i];
           break;
         case ParserAction.OSC_END:
           if (osc && code !== 0x18 && code !== 0x1a) {
@@ -525,9 +524,9 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
 
     // push leftover pushable buffers to terminal
     if (currentState === ParserState.GROUND && ~print) {
-      this._printHandler(data, print, data.length);
+      this._printHandler(data, print, length);
     } else if (currentState === ParserState.DCS_PASSTHROUGH && ~dcs && dcsHandler) {
-      dcsHandler.put(data, dcs, data.length);
+      dcsHandler.put(data, dcs, length);
     }
 
     // save non pushable buffers

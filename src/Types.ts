@@ -7,12 +7,13 @@ import { Terminal as PublicTerminal, ITerminalOptions as IPublicTerminalOptions,
 import { IColorSet, IRenderer } from './renderer/Types';
 import { IMouseZoneManager } from './input/Types';
 import { ICharset } from './core/Types';
+import { CellStorage } from './CellStorage';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
 export type XtermListener = (...args: any[]) => void;
 
-export type CharData = [number, string, number, number];
+export type CharData = [number, number, number, number];
 export type LineData = CharData[];
 
 export type LinkMatcherHandler = (event: MouseEvent, uri: string) => void;
@@ -109,7 +110,7 @@ export interface ICompositionHelper {
  */
 export interface IInputHandler {
   parse(data: string): void;
-  print(data: string, start: number, end: number): void;
+  print(data: Uint16Array, start: number, end: number): void;
 
   /** C0 BEL */ bell(): void;
   /** C0 LF */ lineFeed(): void;
@@ -217,6 +218,7 @@ export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAcce
   viewport: IViewport;
   bracketedPasteMode: boolean;
   applicationCursor: boolean;
+  cellStorage: CellStorage;
 
   /**
    * Emit the 'data' event and populate the given data.
@@ -461,7 +463,7 @@ export interface IParsingState {
 */
 export interface IDcsHandler {
   hook(collect: string, params: number[], flag: number): void;
-  put(data: string, start: number, end: number): void;
+  put(data: Uint16Array, start: number, end: number): void;
   unhook(): void;
 }
 
@@ -478,9 +480,9 @@ export interface IEscapeSequenceParser {
    * Parse string `data`.
    * @param data The data to parse.
    */
-  parse(data: string): void;
+  parse(data: Uint16Array, length: number): void;
 
-  setPrintHandler(callback: (data: string, start: number, end: number) => void): void;
+  setPrintHandler(callback: (data: Uint16Array, start: number, end: number) => void): void;
   clearPrintHandler(): void;
 
   setExecuteHandler(flag: string, callback: () => void): void;

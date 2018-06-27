@@ -53,6 +53,7 @@ import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent } from './common/Types';
 import { evaluateKeyboardEvent } from './core/input/Keyboard';
 import { KeyboardResultType, ICharset } from './core/Types';
+import { CellStorage } from './CellStorage';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -174,6 +175,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   public curAttr: number;
   public savedCurAttr: number;
+  public cellStorage: CellStorage;
 
   public params: (string | number)[];
   public currentParam: string | number;
@@ -294,6 +296,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.charsets = [null];
 
     this.curAttr = DEFAULT_ATTR;
+    this.cellStorage = new CellStorage(4);
 
     this.params = [];
     this.currentParam = 0;
@@ -1648,7 +1651,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     if (!line) {
       return;
     }
-    const ch: CharData = [this.eraseAttr(), ' ', 1, 32 /* ' '.charCodeAt(0) */]; // xterm
+    const ch: CharData = [this.eraseAttr(), 32, 1, 32 /* ' '.charCodeAt(0) */]; // xterm
     for (; x < this.cols; x++) {
       line[x] = ch;
     }
@@ -1665,7 +1668,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     if (!line) {
       return;
     }
-    const ch: CharData = [this.eraseAttr(), ' ', 1, 32 /* ' '.charCodeAt(0) */]; // xterm
+    const ch: CharData = [this.eraseAttr(), 32, 1, 32 /* ' '.charCodeAt(0) */]; // xterm
     x++;
     while (x--) {
       line[x] = ch;
@@ -1711,7 +1714,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): LineData {
     const attr = cur ? this.eraseAttr() : DEFAULT_ATTR;
 
-    const ch: CharData = [attr, ' ', 1, 32 /* ' '.charCodeAt(0) */]; // width defaults to 1 halfwidth character
+    const ch: CharData = [attr, 32, 1, 32 /* ' '.charCodeAt(0) */]; // width defaults to 1 halfwidth character
     const line: LineData = [];
 
     // TODO: It is not ideal that this is a property on an array, a buffer line
@@ -1734,9 +1737,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   public ch(cur?: boolean): CharData {
     if (cur) {
-      return [this.eraseAttr(), ' ', 1, 32 /* ' '.charCodeAt(0) */];
+      return [this.eraseAttr(), 32, 1, 32 /* ' '.charCodeAt(0) */];
     }
-    return [DEFAULT_ATTR, ' ', 1, 32 /* ' '.charCodeAt(0) */];
+    return [DEFAULT_ATTR, 32, 1, 32 /* ' '.charCodeAt(0) */];
   }
 
   /**

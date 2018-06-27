@@ -7,7 +7,7 @@
 import { CharData, IInputHandler, IDcsHandler, IEscapeSequenceParser, IBuffer } from './Types';
 import { C0, C1 } from './common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from './core/data/Charsets';
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, DEFAULT_ATTR } from './Buffer';
+import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, DEFAULT_ATTR } from './Buffer';
 import { FLAGS } from './renderer/Types';
 import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
@@ -34,8 +34,8 @@ class RequestTerminfo implements IDcsHandler {
   hook(collect: string, params: number[], flag: number): void {
     this._data = '';
   }
-  put(data: string, start: number, end: number): void {
-    this._data += data.substring(start, end);
+  put(data: Uint16Array, start: number, end: number): void {
+    // this._data += data.substring(start, end);
   }
   unhook(): void {
     // invalid: DCS 0 + r Pt ST
@@ -59,8 +59,8 @@ class DECRQSS implements IDcsHandler {
     this._data = '';
   }
 
-  put(data: string, start: number, end: number): void {
-    this._data += data.substring(start, end);
+  put(data: Uint16Array, start: number, end: number): void {
+    // this._data += data.substring(start, end);
   }
 
   unhook(): void {
@@ -113,12 +113,14 @@ class DECRQSS implements IDcsHandler {
  */
 export class InputHandler implements IInputHandler {
   private _surrogateHigh: string;
+  private _buffer: Uint16Array;
 
   constructor(
       private _terminal: any, // TODO: reestablish IInputHandlingTerminal here
       private _parser: IEscapeSequenceParser = new EscapeSequenceParser())
   {
     this._surrogateHigh = '';
+    this._buffer = new Uint16Array(1000);
 
     /**
      * custom fallback handlers
@@ -299,7 +301,9 @@ export class InputHandler implements IInputHandler {
       this._surrogateHigh = '';
     }
 
-    this._parser.parse(data);
+    if (data.length > this._buffer.length) this._buffer = new Uint16Array(data.length);
+    for (let i = 0; i < data.length; ++i) this._buffer[i] = data.charCodeAt(i);
+    this._parser.parse(this._buffer, data.length);
 
     buffer = this._terminal.buffer;
     if (buffer.x !== cursorStartX || buffer.y !== cursorStartY) {
@@ -307,8 +311,8 @@ export class InputHandler implements IInputHandler {
     }
   }
 
-  public print(data: string, start: number, end: number): void {
-    let char: string;
+  public print(data: Uint16Array, start: number, end: number): void {
+    // let char: string;
     let code: number;
     let low: number;
     let chWidth: number;
@@ -323,21 +327,21 @@ export class InputHandler implements IInputHandler {
 
     this._terminal.updateRange(buffer.y);
     for (let stringPosition = start; stringPosition < end; ++stringPosition) {
-      char = data.charAt(stringPosition);
-      code = data.charCodeAt(stringPosition);
+      // char = data.charAt(stringPosition);
+      code = data[stringPosition];
 
       // surrogate pair handling
       if (0xD800 <= code && code <= 0xDBFF) {
         // we got a surrogate high
         // get surrogate low (next 2 bytes)
-        low = data.charCodeAt(stringPosition + 1);
+        low = data[stringPosition + 1];
         if (isNaN(low)) {
           // end of data stream, save surrogate high
-          this._surrogateHigh = char;
+          // this._surrogateHigh = char;
           continue;
         }
         code = ((code - 0xD800) * 0x400) + (low - 0xDC00) + 0x10000;
-        char += data.charAt(stringPosition + 1);
+        // char += data.charAt(stringPosition + 1);
       }
       // surrogate low - already handled above
       if (0xDC00 <= code && code <= 0xDFFF) {
@@ -351,11 +355,11 @@ export class InputHandler implements IInputHandler {
       // get charset replacement character
       // FIXME: Should code be replaced as well?
       if (charset) {
-        char = charset[char] || char;
+        // char = charset[char] || char;
       }
 
       if (screenReaderMode) {
-        this._terminal.emit('a11y.char', char);
+        // this._terminal.emit('a11y.char', char);
       }
 
       // insert combining char at last cursor position
@@ -370,11 +374,11 @@ export class InputHandler implements IInputHandler {
             // it is save to step 2 cells back here
             // since an empty cell is only set by fullwidth chars
             if (bufferRow[buffer.x - 2]) {
-              bufferRow[buffer.x - 2][CHAR_DATA_CHAR_INDEX] += char;
+              // bufferRow[buffer.x - 2][CHAR_DATA_CHAR_INDEX] += char;
               bufferRow[buffer.x - 2][CHAR_DATA_CODE_INDEX] = code;
             }
           } else {
-            bufferRow[buffer.x - 1][CHAR_DATA_CHAR_INDEX] += char;
+            // bufferRow[buffer.x - 1][CHAR_DATA_CHAR_INDEX] += char;
             bufferRow[buffer.x - 1][CHAR_DATA_CODE_INDEX] = code;
           }
         }
@@ -421,20 +425,20 @@ export class InputHandler implements IInputHandler {
           if (removed[CHAR_DATA_WIDTH_INDEX] === 0
               && bufferRow[this._terminal.cols - 2]
               && bufferRow[this._terminal.cols - 2][CHAR_DATA_WIDTH_INDEX] === 2) {
-                bufferRow[this._terminal.cols - 2] = [curAttr, ' ', 1, 32  /* ' '.charCodeAt(0) */ ];
+                bufferRow[this._terminal.cols - 2] = [curAttr, 32, 1, 32  /* ' '.charCodeAt(0) */ ];
           }
 
           // insert empty cell at cursor
-          bufferRow.splice(buffer.x, 0, [curAttr, ' ', 1, 32  /* ' '.charCodeAt(0) */ ]);
+          bufferRow.splice(buffer.x, 0, [curAttr, 32, 1, 32  /* ' '.charCodeAt(0) */ ]);
         }
       }
 
       // write current char to buffer and advance cursor
-      bufferRow[buffer.x++] = [curAttr, char, chWidth, code];
+      bufferRow[buffer.x++] = [curAttr, code, chWidth, code];
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor
       if (chWidth === 2) {
-        bufferRow[buffer.x++] = [curAttr, '', 0, undefined];
+        bufferRow[buffer.x++] = [curAttr, 0, 0, undefined];
       }
     }
     this._terminal.updateRange(buffer.y);
@@ -537,7 +541,7 @@ export class InputHandler implements IInputHandler {
 
     const row = buffer.y + buffer.ybase;
     let j = buffer.x;
-    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32]; // xterm
+    const ch: CharData = [this._terminal.eraseAttr(), 32, 1, 32]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       buffer.lines.get(row).splice(j++, 0, ch);
@@ -847,7 +851,7 @@ export class InputHandler implements IInputHandler {
     const buffer = this._terminal.buffer;
 
     const row = buffer.y + buffer.ybase;
-    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32]; // xterm
+    const ch: CharData = [this._terminal.eraseAttr(), 32, 1, 32]; // xterm
 
     while (param--) {
       buffer.lines.get(row).splice(buffer.x, 1);
@@ -909,7 +913,7 @@ export class InputHandler implements IInputHandler {
 
     const row = buffer.y + buffer.ybase;
     let j = buffer.x;
-    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32]; // xterm
+    const ch: CharData = [this._terminal.eraseAttr(), 32, 1, 32]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       buffer.lines.get(row)[j++] = ch;
