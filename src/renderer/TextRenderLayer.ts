@@ -3,12 +3,13 @@
  * @license MIT
  */
 
-import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from '../Buffer';
+import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
 import { FLAGS, IColorSet, IRenderDimensions } from './Types';
 import { CharData, ITerminal } from '../Types';
 import { INVERTED_DEFAULT_COLOR } from './atlas/Types';
 import { GridCache } from './GridCache';
 import { BaseRenderLayer } from './BaseRenderLayer';
+import { wcwidth } from '../CharWidth';
 
 /**
  * This CharData looks like a null character, which will forc a clear and render
@@ -68,10 +69,10 @@ export class TextRenderLayer extends BaseRenderLayer {
       const line = terminal.buffer.lines.get(row);
       for (let x = 0; x < terminal.cols; x++) {
         const charData = line[x];
-        const code: number = <number>charData[CHAR_DATA_CODE_INDEX];
+        const code: number = <number>charData[CHAR_DATA_CHAR_INDEX].charCodeAt(0);
         const char: string = charData[CHAR_DATA_CHAR_INDEX];
         const attr: number = charData[CHAR_DATA_ATTR_INDEX];
-        let width: number = charData[CHAR_DATA_WIDTH_INDEX];
+        let width: number = wcwidth(code); // charData[CHAR_DATA_WIDTH_INDEX];
 
         // The character to the left is a wide character, drawing is owned by
         // the char at x-1
@@ -81,7 +82,7 @@ export class TextRenderLayer extends BaseRenderLayer {
 
         // If the character is an overlapping char and the character to the right is a
         // space, take ownership of the cell to the right.
-        if (this._isOverlapping(charData)) {
+        if (this._isOverlapping(charData, width)) {
           // If the character is overlapping, we want to force a re-render on every
           // frame. This is specifically to work around the case where two
           // overlaping chars `a` and `b` are adjacent, the cursor is moved to b and a
@@ -89,7 +90,7 @@ export class TextRenderLayer extends BaseRenderLayer {
           // get removed, and `a` would not re-render because it thinks it's
           // already in the correct state.
           // this._state.cache[x][y] = OVERLAP_OWNED_CHAR_DATA;
-          if (x < line.length - 1 && line[x + 1][CHAR_DATA_CODE_INDEX] === 32 /*' '*/) {
+          if (x < line.length - 1 && line[x + 1][CHAR_DATA_CHAR_INDEX].charCodeAt(0) === 32 /*' '*/) {
             width = 2;
             // this._clearChar(x + 1, y);
             // The overlapping char's char data will force a clear and render when the
@@ -224,15 +225,15 @@ export class TextRenderLayer extends BaseRenderLayer {
   /**
    * Whether a character is overlapping to the next cell.
    */
-  private _isOverlapping(charData: CharData): boolean {
+  private _isOverlapping(charData: CharData, width: number): boolean {
     // Only single cell characters can be overlapping, rendering issues can
     // occur without this check
-    if (charData[CHAR_DATA_WIDTH_INDEX] !== 1) {
+    if (width !== 1) {
       return false;
     }
 
     // We assume that any ascii character will not overlap
-    const code = charData[CHAR_DATA_CODE_INDEX];
+    const code = charData[CHAR_DATA_CHAR_INDEX].charCodeAt(0);
     if (code < 256) {
       return false;
     }

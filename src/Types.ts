@@ -12,7 +12,7 @@ export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
 export type XtermListener = (...args: any[]) => void;
 
-export type CharData = [number, string, number, number];
+export type CharData = [number, string];
 export type LineData = CharData[];
 
 export type LinkMatcherHandler = (event: MouseEvent, uri: string) => void;

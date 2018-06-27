@@ -7,7 +7,7 @@
 import { CharData, IInputHandler, IDcsHandler, IEscapeSequenceParser, IBuffer } from './Types';
 import { C0, C1 } from './common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from './core/data/Charsets';
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, DEFAULT_ATTR } from './Buffer';
+import { CHAR_DATA_CHAR_INDEX, DEFAULT_ATTR } from './Buffer';
 import { FLAGS } from './renderer/Types';
 import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
@@ -365,17 +365,17 @@ export class InputHandler implements IInputHandler {
       // therefore we can test for buffer.x to avoid overflow left
       if (!chWidth && buffer.x) {
         if (bufferRow[buffer.x - 1]) {
-          if (!bufferRow[buffer.x - 1][CHAR_DATA_WIDTH_INDEX]) {
+          if (!wcwidth(bufferRow[buffer.x - 1][CHAR_DATA_CHAR_INDEX].charCodeAt(0))) {
             // found empty cell after fullwidth, need to go 2 cells back
             // it is save to step 2 cells back here
             // since an empty cell is only set by fullwidth chars
             if (bufferRow[buffer.x - 2]) {
               bufferRow[buffer.x - 2][CHAR_DATA_CHAR_INDEX] += char;
-              bufferRow[buffer.x - 2][CHAR_DATA_CODE_INDEX] = code;
+              // bufferRow[buffer.x - 2][CHAR_DATA_CODE_INDEX] = code;
             }
           } else {
             bufferRow[buffer.x - 1][CHAR_DATA_CHAR_INDEX] += char;
-            bufferRow[buffer.x - 1][CHAR_DATA_CODE_INDEX] = code;
+            // bufferRow[buffer.x - 1][CHAR_DATA_CODE_INDEX] = code;
           }
         }
         continue;
@@ -418,23 +418,23 @@ export class InputHandler implements IInputHandler {
           // remove last cell
           // if it's width is 0, we have to adjust the second last cell as well
           const removed = bufferRow.pop();
-          if (removed[CHAR_DATA_WIDTH_INDEX] === 0
+          if (wcwidth(removed[CHAR_DATA_CHAR_INDEX].charCodeAt(0)) === 0
               && bufferRow[this._terminal.cols - 2]
-              && bufferRow[this._terminal.cols - 2][CHAR_DATA_WIDTH_INDEX] === 2) {
-                bufferRow[this._terminal.cols - 2] = [curAttr, ' ', 1, 32  /* ' '.charCodeAt(0) */ ];
+              && wcwidth(bufferRow[this._terminal.cols - 2][CHAR_DATA_CHAR_INDEX].charCodeAt(0)) === 2) {
+                bufferRow[this._terminal.cols - 2] = [curAttr, ' '];
           }
 
           // insert empty cell at cursor
-          bufferRow.splice(buffer.x, 0, [curAttr, ' ', 1, 32  /* ' '.charCodeAt(0) */ ]);
+          bufferRow.splice(buffer.x, 0, [curAttr, ' ']);
         }
       }
 
       // write current char to buffer and advance cursor
-      bufferRow[buffer.x++] = [curAttr, char, chWidth, code];
+      bufferRow[buffer.x++] = [curAttr, char];
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor
       if (chWidth === 2) {
-        bufferRow[buffer.x++] = [curAttr, '', 0, undefined];
+        bufferRow[buffer.x++] = [curAttr, ''];
       }
     }
     this._terminal.updateRange(buffer.y);
@@ -537,7 +537,7 @@ export class InputHandler implements IInputHandler {
 
     const row = buffer.y + buffer.ybase;
     let j = buffer.x;
-    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32]; // xterm
+    const ch: CharData = [this._terminal.eraseAttr(), ' ']; // xterm
 
     while (param-- && j < this._terminal.cols) {
       buffer.lines.get(row).splice(j++, 0, ch);
@@ -847,7 +847,7 @@ export class InputHandler implements IInputHandler {
     const buffer = this._terminal.buffer;
 
     const row = buffer.y + buffer.ybase;
-    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32]; // xterm
+    const ch: CharData = [this._terminal.eraseAttr(), ' ']; // xterm
 
     while (param--) {
       buffer.lines.get(row).splice(buffer.x, 1);
@@ -909,7 +909,7 @@ export class InputHandler implements IInputHandler {
 
     const row = buffer.y + buffer.ybase;
     let j = buffer.x;
-    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32]; // xterm
+    const ch: CharData = [this._terminal.eraseAttr(), ' ']; // xterm
 
     while (param-- && j < this._terminal.cols) {
       buffer.lines.get(row)[j++] = ch;

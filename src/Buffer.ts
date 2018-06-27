@@ -7,12 +7,13 @@ import { CircularList } from './utils/CircularList';
 import { LineData, CharData, ITerminal, IBuffer } from './Types';
 import { EventEmitter } from './EventEmitter';
 import { IDisposable, IMarker } from 'xterm';
+import { wcwidth } from './CharWidth';
 
 export const DEFAULT_ATTR = (0 << 18) | (257 << 9) | (256 << 0);
 export const CHAR_DATA_ATTR_INDEX = 0;
 export const CHAR_DATA_CHAR_INDEX = 1;
-export const CHAR_DATA_WIDTH_INDEX = 2;
-export const CHAR_DATA_CODE_INDEX = 3;
+// export const CHAR_DATA_WIDTH_INDEX = 2;
+// export const CHAR_DATA_CODE_INDEX = 2;
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 
 /**
@@ -117,7 +118,7 @@ export class Buffer implements IBuffer {
     if (this.lines.length > 0) {
       // Deal with columns increasing (we don't do anything when columns reduce)
       if (this._terminal.cols < newCols) {
-        const ch: CharData = [DEFAULT_ATTR, ' ', 1, 32]; // does xterm use the default attr?
+        const ch: CharData = [DEFAULT_ATTR, ' ']; // does xterm use the default attr?
         for (let i = 0; i < this.lines.length; i++) {
           while (this.lines.get(i).length < newCols) {
             this.lines.get(i).push(ch);
@@ -223,7 +224,7 @@ export class Buffer implements IBuffer {
       lineString += char[CHAR_DATA_CHAR_INDEX];
       // Adjust start and end cols for wide characters if they affect their
       // column indexes
-      if (char[CHAR_DATA_WIDTH_INDEX] === 0) {
+      if (wcwidth(char[CHAR_DATA_CHAR_INDEX].charCodeAt(0)) === 0) {
         if (startCol >= i) {
           startIndex--;
         }
