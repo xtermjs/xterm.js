@@ -376,7 +376,11 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param event The mouse event.
    */
   public shouldForceSelection(event: MouseEvent): boolean {
-    return Browser.isMac ? event.altKey : event.shiftKey;
+    if (Browser.isMac) {
+      return event.altKey && this._terminal.options.macOptionClickForcesSelection;
+    }
+
+    return event.shiftKey;
   }
 
   /**
