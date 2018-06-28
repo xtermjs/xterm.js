@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { IMouseZoneManager } from './input/Types';
+import { IMouseZoneManager } from './ui/Types';
 import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, ILinkifier, ITerminal } from './Types';
-import { MouseZone } from './input/MouseZoneManager';
+import { MouseZone } from './ui/MouseZoneManager';
 import { EventEmitter } from './EventEmitter';
 
 /**

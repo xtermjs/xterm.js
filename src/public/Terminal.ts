@@ -45,7 +45,7 @@ export class Terminal implements ITerminalApi {
     this._core.emit(type, data);
   }
   public addDisposableListener(type: string, handler: (...args: any[]) => void): IDisposable {
-    return this.addDisposableListener(type, handler);
+    return this._core.addDisposableListener(type, handler);
   }
   public resize(columns: number, rows: number): void {
     this._core.resize(columns, rows);

@@ -6,7 +6,7 @@
 import { assert } from 'chai';
 import { ITerminal } from './Types';
 import { Buffer } from './Buffer';
-import { CircularList } from './utils/CircularList';
+import { CircularList } from './common/CircularList';
 import { MockTerminal } from './utils/TestUtils.test';
 
 const INIT_COLS = 80;
