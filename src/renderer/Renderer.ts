@@ -141,8 +141,8 @@ export class Renderer extends EventEmitter implements IRenderer {
     this._runOperation(l => l.onFocus(this._terminal));
   }
 
-  public onSelectionChanged(start: [number, number], end: [number, number]): void {
-    this._runOperation(l => l.onSelectionChanged(this._terminal, start, end));
+  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean = false): void {
+    this._runOperation(l => l.onSelectionChanged(this._terminal, start, end, columnSelectMode));
   }
 
   public onCursorMove(): void {

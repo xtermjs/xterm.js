@@ -54,10 +54,11 @@ interface IWordPosition {
 /**
  * A selection mode, this drives how the selection behaves on mouse move.
  */
-const enum SelectionMode {
+export const enum SelectionMode {
   NORMAL,
   WORD,
-  LINE
+  LINE,
+  COLUMN
 }
 
 /**
@@ -80,7 +81,12 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   /**
    * The current selection mode.
    */
-  private _activeSelectionMode: SelectionMode;
+  protected _activeSelectionMode: SelectionMode;
+
+  /**
+   * The modifier keys required to trigger block select mode with left click + drag
+   */
+  private _columnSelectRequiredModifiers: string[];
 
   /**
    * A setInterval timer that is active while the mouse is down whose callback
@@ -114,6 +120,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
     this._model = new SelectionModel(_terminal);
     this._activeSelectionMode = SelectionMode.NORMAL;
+    this._columnSelectRequiredModifiers = this._initColumnSelectModifierKeys();
   }
 
   private get _buffer(): IBuffer {
@@ -177,30 +184,41 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
       return '';
     }
 
-    // Get first row
-    const startRowEndCol = start[1] === end[1] ? end[0] : null;
     const result: string[] = [];
-    result.push(this._buffer.translateBufferLineToString(start[1], true, start[0], startRowEndCol));
 
-    // Get middle rows
-    for (let i = start[1] + 1; i <= end[1] - 1; i++) {
-      const bufferLine = this._buffer.lines.get(i);
-      const lineText = this._buffer.translateBufferLineToString(i, true);
-      if ((<any>bufferLine).isWrapped) {
-        result[result.length - 1] += lineText;
-      } else {
-        result.push(lineText);
+    if (this._activeSelectionMode === SelectionMode.COLUMN) {
+      // Ignore zero width selections
+      if (start[0] !== end[0]) {
+        for (let i = start[1]; i <= end[1]; i++) {
+          const lineText = this._buffer.translateBufferLineToString(i, true, start[0], end[0]);
+          result.push(lineText);
+        }
       }
-    }
+    } else {
+      // Get first row
+      const startRowEndCol = start[1] === end[1] ? end[0] : null;
+      result.push(this._buffer.translateBufferLineToString(start[1], true, start[0], startRowEndCol));
 
-    // Get final row
-    if (start[1] !== end[1]) {
-      const bufferLine = this._buffer.lines.get(end[1]);
-      const lineText = this._buffer.translateBufferLineToString(end[1], true, 0, end[0]);
-      if ((<any>bufferLine).isWrapped) {
-        result[result.length - 1] += lineText;
-      } else {
-        result.push(lineText);
+      // Get middle rows
+      for (let i = start[1] + 1; i <= end[1] - 1; i++) {
+        const bufferLine = this._buffer.lines.get(i);
+        const lineText = this._buffer.translateBufferLineToString(i, true);
+        if ((<any>bufferLine).isWrapped) {
+          result[result.length - 1] += lineText;
+        } else {
+          result.push(lineText);
+        }
+      }
+
+      // Get final row
+      if (start[1] !== end[1]) {
+        const bufferLine = this._buffer.lines.get(end[1]);
+        const lineText = this._buffer.translateBufferLineToString(end[1], true, 0, end[0]);
+        if ((<any>bufferLine).isWrapped) {
+          result[result.length - 1] += lineText;
+        } else {
+          result.push(lineText);
+        }
       }
     }
 
@@ -249,7 +267,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    */
   private _refresh(): void {
     this._refreshAnimationFrame = null;
-    this.emit('refresh', { start: this._model.finalSelectionStart, end: this._model.finalSelectionEnd });
+    this.emit('refresh', { start: this._model.finalSelectionStart, end: this._model.finalSelectionEnd, columnSelectMode: this._activeSelectionMode === SelectionMode.COLUMN });
   }
 
   /**
@@ -398,7 +416,11 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
       this._onIncrementalClick(event);
     } else {
       if (event.detail === 1) {
-        this._onSingleClick(event);
+        if (this.isColumnSelectMode(event)) {
+          this._onColumnSelectSingleClick(event);
+        } else {
+          this._onSingleClick(event);
+        }
       } else if (event.detail === 2) {
         this._onDoubleClick(event);
       } else if (event.detail === 3) {
@@ -500,6 +522,40 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
       this._activeSelectionMode = SelectionMode.LINE;
       this._selectLineAt(coords[1]);
     }
+  }
+
+  /**
+   * Configures the modifier key for enabling column selection mode
+   */
+  private _initColumnSelectModifierKeys(): string[] {
+    if (this._terminal.browser.isMac) {
+      return ['altKey'];
+    }
+
+    // Linux and Windows
+    return ['shiftKey'];
+  }
+
+  /**
+   * Begin a block selection
+   */
+  private _onColumnSelectSingleClick(event: MouseEvent): void {
+    this._onSingleClick(event); // Perform all the normal setup actions
+    this._activeSelectionMode = SelectionMode.COLUMN;
+  }
+
+  /**
+   * Checks if all required key modifiers are pressed in order to enable block
+   * select mode
+   * @param event the mouse click event
+   */
+  public isColumnSelectMode(event: KeyboardEvent | MouseEvent): boolean {
+    for (let i = 0; i < this._columnSelectRequiredModifiers.length; i++) {
+      if (!(<any>event)[this._columnSelectRequiredModifiers[i]]) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /**

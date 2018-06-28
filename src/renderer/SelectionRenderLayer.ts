@@ -37,7 +37,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     }
   }
 
-  public onSelectionChanged(terminal: ITerminal, start: [number, number], end: [number, number]): void {
+  public onSelectionChanged(terminal: ITerminal, start: [number, number], end: [number, number], columnSelectMode: boolean): void {
     // Selection has not changed
     if (this._state.start === start || this._state.end === end) {
       return;
@@ -62,21 +62,30 @@ export class SelectionRenderLayer extends BaseRenderLayer {
       return;
     }
 
-    // Draw first row
-    const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
-    const startRowEndCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : terminal.cols;
     this._ctx.fillStyle = this._colors.selection.css;
-    this.fillCells(startCol, viewportCappedStartRow, startRowEndCol - startCol, 1);
 
-    // Draw middle rows
-    const middleRowsCount = Math.max(viewportCappedEndRow - viewportCappedStartRow - 1, 0);
-    this.fillCells(0, viewportCappedStartRow + 1, terminal.cols, middleRowsCount);
+    if (columnSelectMode) {
+      const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
+      const width = end[0] - startCol;
+      const height = viewportCappedEndRow - viewportCappedStartRow + 1;
+      this.fillCells(startCol, viewportCappedStartRow, width, height);
 
-    // Draw final row
-    if (viewportCappedStartRow !== viewportCappedEndRow) {
-      // Only draw viewportEndRow if it's not the same as viewportStartRow
-      const endCol = viewportEndRow === viewportCappedEndRow ? end[0] : terminal.cols;
-      this.fillCells(0, viewportCappedEndRow, endCol, 1);
+    } else {
+      // Draw first row
+      const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
+      const startRowEndCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : terminal.cols;
+      this.fillCells(startCol, viewportCappedStartRow, startRowEndCol - startCol, 1);
+
+      // Draw middle rows
+      const middleRowsCount = Math.max(viewportCappedEndRow - viewportCappedStartRow - 1, 0);
+      this.fillCells(0, viewportCappedStartRow + 1, terminal.cols, middleRowsCount);
+
+      // Draw final row
+      if (viewportCappedStartRow !== viewportCappedEndRow) {
+        // Only draw viewportEndRow if it's not the same as viewportStartRow
+        const endCol = viewportEndRow === viewportCappedEndRow ? end[0] : terminal.cols;
+        this.fillCells(0, viewportCappedEndRow, endCol, 1);
+      }
     }
 
     // Save state for next render
