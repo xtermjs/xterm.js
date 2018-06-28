@@ -12,18 +12,22 @@ describe('InputHandler', () => {
     const terminal = new MockInputHandlingTerminal();
     terminal.buffer.x = 1;
     terminal.buffer.y = 2;
+    terminal.curAttr = 3;
     const inputHandler = new InputHandler(terminal);
     // Save cursor position
     inputHandler.saveCursor([]);
     assert.equal(terminal.buffer.x, 1);
     assert.equal(terminal.buffer.y, 2);
+    assert.equal(terminal.curAttr, 3);
     // Change cursor position
     terminal.buffer.x = 10;
     terminal.buffer.y = 20;
+    terminal.curAttr = 30;
     // Restore cursor position
     inputHandler.restoreCursor([]);
     assert.equal(terminal.buffer.x, 1);
     assert.equal(terminal.buffer.y, 2);
+    assert.equal(terminal.curAttr, 3);
   });
   describe('setCursorStyle', () => {
     it('should call Terminal.setOption with correct params', () => {

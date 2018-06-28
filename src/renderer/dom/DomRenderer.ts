@@ -303,7 +303,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
 
       const row = y + terminal.buffer.ydisp;
       const lineData = terminal.buffer.lines.get(row);
-      rowElement.appendChild(this._rowFactory.createRow(lineData, row === cursorAbsoluteY, cursorX, terminal.charMeasure.width));
+      rowElement.appendChild(this._rowFactory.createRow(lineData, row === cursorAbsoluteY, cursorX, terminal.charMeasure.width, terminal.cols));
     }
 
     this._terminal.emit('refresh', {start, end});
