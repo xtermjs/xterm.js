@@ -1830,9 +1830,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.options.cols = this.cols;
     const customKeyEventHandler = this._customKeyEventHandler;
     const inputHandler = this._inputHandler;
+    const cursorState = this.cursorState;
     this._setup();
     this._customKeyEventHandler = customKeyEventHandler;
     this._inputHandler = inputHandler;
+    this.cursorState = cursorState;
     this.refresh(0, this.rows - 1);
     if (this.viewport) {
       this.viewport.syncScrollArea();
