@@ -316,6 +316,9 @@ export class MockBuffer implements IBuffer {
 }
 
 export class MockRenderer implements IRenderer {
+  dispose(): void {
+    throw new Error('Method not implemented.');
+  }
   colorManager: IColorManager;
   on(type: string, listener: XtermListener): void {
     throw new Error('Method not implemented.');
@@ -344,6 +347,9 @@ export class MockRenderer implements IRenderer {
 }
 
 export class MockViewport implements IViewport {
+  dispose(): void {
+    throw new Error('Method not implemented.');
+  }
   scrollBarWidth: number = 0;
   onThemeChanged(colors: IColorSet): void {
     throw new Error('Method not implemented.');

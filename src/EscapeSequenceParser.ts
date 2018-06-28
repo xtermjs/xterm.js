@@ -4,6 +4,7 @@
  */
 
 import { ParserState, ParserAction, IParsingState, IDcsHandler, IEscapeSequenceParser } from './Types';
+import { Disposable } from './common/Lifecycle';
 
 /**
  * Returns an array filled with numbers between the low and high parameters (right exclusive).
@@ -207,7 +208,7 @@ class DcsDummy implements IDcsHandler {
  * NOTE: The parameter element notation is currently not supported.
  * TODO: implement error recovery hook via error handler return values
  */
-export class EscapeSequenceParser implements IEscapeSequenceParser {
+export class EscapeSequenceParser extends Disposable implements IEscapeSequenceParser {
   public initialState: number;
   public currentState: number;
 
@@ -236,6 +237,8 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
   protected _errorHandlerFb: (state: IParsingState) => IParsingState;
 
   constructor(readonly TRANSITIONS: TransitionTable = VT500_TRANSITION_TABLE) {
+    super();
+
     this.initialState = ParserState.GROUND;
     this.currentState = this.initialState;
     this._osc = '';
@@ -258,6 +261,24 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     this._dcsHandlers = Object.create(null);
     this._activeDcsHandler = null;
     this._errorHandler = this._errorHandlerFb;
+  }
+
+  public dispose(): void {
+    this._printHandlerFb = null;
+    this._executeHandlerFb = null;
+    this._csiHandlerFb = null;
+    this._escHandlerFb = null;
+    this._oscHandlerFb = null;
+    this._dcsHandlerFb = null;
+    this._errorHandlerFb = null;
+    this._printHandler = null;
+    this._executeHandlers = null;
+    this._csiHandlers = null;
+    this._escHandlers = null;
+    this._oscHandlers = null;
+    this._dcsHandlers = null;
+    this._activeDcsHandler = null;
+    this._errorHandler = null;
   }
 
   setPrintHandler(callback: (data: string, start: number, end: number) => void): void {
