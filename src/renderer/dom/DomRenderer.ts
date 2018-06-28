@@ -8,7 +8,7 @@ import { ITerminal } from '../../Types';
 import { ITheme } from 'xterm';
 import { EventEmitter } from '../../EventEmitter';
 import { ColorManager } from '../ColorManager';
-import { RenderDebouncer } from '../../utils/RenderDebouncer';
+import { RenderDebouncer } from '../../ui/RenderDebouncer';
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, DomRendererRowFactory } from './DomRendererRowFactory';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';

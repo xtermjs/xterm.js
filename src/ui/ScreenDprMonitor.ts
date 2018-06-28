@@ -3,6 +3,8 @@
  * @license MIT
  */
 
+import { Disposable } from '../common/Lifecycle';
+
 export type ScreenDprListener = (newDevicePixelRatio?: number, oldDevicePixelRatio?: number) => void;
 
 /**
@@ -15,7 +17,7 @@ export type ScreenDprListener = (newDevicePixelRatio?: number, oldDevicePixelRat
  * The listener should fire on both window zoom changes and switching to a
  * monitor with a different DPI.
  */
-export class ScreenDprMonitor {
+export class ScreenDprMonitor extends Disposable {
   private _currentDevicePixelRatio: number;
   private _outerListener: MediaQueryListListener;
   private _listener: ScreenDprListener;
@@ -31,6 +33,11 @@ export class ScreenDprMonitor {
       this._updateDpr();
     };
     this._updateDpr();
+  }
+
+  public dispose(): void {
+    super.dispose();
+    this.clearListener();
   }
 
   private _updateDpr(): void {
