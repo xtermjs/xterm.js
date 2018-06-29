@@ -425,9 +425,9 @@ describe('SelectionManager', () => {
       // TODO the case this is testing works for me in the demo webapp,
       // but doing it programmatically fails.
       buffer.lines.length = 3;
-      buffer.lines.set(0, stringToRow('a'));
-      buffer.lines.set(1, stringToRow('😁'));
-      buffer.lines.set(2, stringToRow('c'));
+      buffer.lines.set(0, stringToRow('a '));
+      buffer.lines.set(1, stringArrayToRow(['😁', ' ']));
+      buffer.lines.set(2, stringToRow('c '));
 
       selectionManager.selectionMode = SelectionMode.COLUMN;
       selectionManager.model.selectionStart = [0, 0];
