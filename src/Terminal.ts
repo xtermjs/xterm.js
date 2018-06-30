@@ -98,6 +98,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   screenReaderMode: false,
   debug: false,
   macOptionIsMeta: false,
+  macOptionClickForcesSelection: false,
   cancelEvents: false,
   disableStdin: false,
   useFlowControl: false,
@@ -586,6 +587,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       if (!wasMondifierKeyOnlyEvent(ev)) {
         this.focus();
       }
+
+      self._keyUp(ev);
     }, true));
 
     this.register(addDisposableDomListener(this.textarea, 'keydown', (ev: KeyboardEvent) => this._keyDown(ev), true));
@@ -696,7 +699,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     this.selectionManager = new SelectionManager(this, this.charMeasure);
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this.selectionManager.onMouseDown(e)));
-    this.register(this.selectionManager.addDisposableListener('refresh', data => this.renderer.onSelectionChanged(data.start, data.end)));
+    this.register(this.selectionManager.addDisposableListener('refresh', data => this.renderer.onSelectionChanged(data.start, data.end, data.columnSelectMode)));
     this.register(this.selectionManager.addDisposableListener('newselection', text => {
       // If there's a new selection, put it into the textarea, focus and select it
       // in order to register it as a selection on the OS. This event is fired
@@ -1106,6 +1109,17 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   /**
+   * Change the cursor style for different selection modes
+   */
+  public updateCursorStyle(ev: KeyboardEvent): void {
+    if (this.selectionManager && this.selectionManager.shouldColumnSelect(ev)) {
+      this.element.classList.add('xterm-cursor-crosshair');
+    } else {
+      this.element.classList.remove('xterm-cursor-crosshair');
+    }
+  }
+
+  /**
    * Display the cursor element
    */
   public showCursor(): void {
@@ -1422,6 +1436,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     const result = evaluateKeyboardEvent(event, this.applicationCursor, this.browser.isMac, this.options.macOptionIsMeta);
 
+    this.updateCursorStyle(event);
+
     // if (result.key === C0.DC3) { // XOFF
     //   this._writeStopped = true;
     // } else if (result.key === C0.DC1) { // XON
@@ -1491,6 +1507,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     if (this.glevel === g) {
       this.charset = charset;
     }
+  }
+
+  protected _keyUp(ev: KeyboardEvent): void {
+    this.updateCursorStyle(ev);
   }
 
   /**

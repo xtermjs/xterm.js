@@ -227,7 +227,7 @@ export class Buffer implements IBuffer {
         if (startCol >= i) {
           startIndex--;
         }
-        if (endCol >= i) {
+        if (endCol > i) {
           endIndex--;
         }
       } else {
