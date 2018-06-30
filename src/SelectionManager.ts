@@ -186,7 +186,6 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     const result: string[] = [];
 
     if (this._activeSelectionMode === SelectionMode.COLUMN) {
-
       // Ignore zero width selections
       if (start[0] === end[0]) {
         return '';
@@ -196,7 +195,6 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
         const lineText = this._buffer.translateBufferLineToString(i, true, start[0], end[0]);
         result.push(lineText);
       }
-
     } else {
       // Get first row
       const startRowEndCol = start[1] === end[1] ? end[0] : null;
@@ -427,11 +425,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
       this._onIncrementalClick(event);
     } else {
       if (event.detail === 1) {
-        if (this.shouldColumnSelect(event)) {
-          this._onColumnSelectSingleClick(event);
-        } else {
-          this._onSingleClick(event);
-        }
+        this._onSingleClick(event);
       } else if (event.detail === 2) {
         this._onDoubleClick(event);
       } else if (event.detail === 3) {
@@ -482,7 +476,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   private _onSingleClick(event: MouseEvent): void {
     this._model.selectionStartLength = 0;
     this._model.isSelectAllActive = false;
-    this._activeSelectionMode = SelectionMode.NORMAL;
+    this._activeSelectionMode = this.shouldColumnSelect(event) ? SelectionMode.COLUMN : SelectionMode.NORMAL;
 
     // Initialize the new selection
     this._model.selectionStart = this._getMouseBufferCoords(event);
@@ -533,14 +527,6 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
       this._activeSelectionMode = SelectionMode.LINE;
       this._selectLineAt(coords[1]);
     }
-  }
-
-  /**
-   * Begin a column selection
-   */
-  private _onColumnSelectSingleClick(event: MouseEvent): void {
-    this._onSingleClick(event); // Perform all the normal setup actions
-    this._activeSelectionMode = SelectionMode.COLUMN;
   }
 
   /**

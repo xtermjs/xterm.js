@@ -1509,9 +1509,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
   }
 
-  protected _keyUp(ev: KeyboardEvent): boolean {
+  protected _keyUp(ev: KeyboardEvent): void {
     this.updateCursorStyle(ev);
-    return true;
   }
 
   /**
