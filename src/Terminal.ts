@@ -1112,7 +1112,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * Change the cursor style for different selection modes
    */
   public updateCursorStyle(ev: KeyboardEvent): void {
-    if (this.selectionManager.isColumnSelectMode(ev)) {
+    if (this.selectionManager && this.selectionManager.shouldColumnSelect(ev)) {
       this.element.classList.add('xterm-cursor-crosshair');
     } else {
       this.element.classList.remove('xterm-cursor-crosshair');

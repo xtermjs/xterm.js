@@ -140,7 +140,7 @@
 }
 
 .xterm.xterm-cursor-crosshair {
-    /* Block selection mode */
+    /* Column selection mode */
     cursor: crosshair;
 }
 

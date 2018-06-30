@@ -84,11 +84,6 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   protected _activeSelectionMode: SelectionMode;
 
   /**
-   * The modifier keys required to trigger block select mode with left click + drag
-   */
-  private _columnSelectRequiredModifiers: string[];
-
-  /**
    * A setInterval timer that is active while the mouse is down whose callback
    * scrolls the viewport when necessary.
    */
@@ -120,7 +115,6 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
     this._model = new SelectionModel(_terminal);
     this._activeSelectionMode = SelectionMode.NORMAL;
-    this._columnSelectRequiredModifiers = this._initColumnSelectModifierKeys();
   }
 
   public dispose(): void {
@@ -192,13 +186,17 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     const result: string[] = [];
 
     if (this._activeSelectionMode === SelectionMode.COLUMN) {
+
       // Ignore zero width selections
-      if (start[0] !== end[0]) {
-        for (let i = start[1]; i <= end[1]; i++) {
-          const lineText = this._buffer.translateBufferLineToString(i, true, start[0], end[0]);
-          result.push(lineText);
-        }
+      if (start[0] === end[0]) {
+        return '';
       }
+
+      for (let i = start[1]; i <= end[1]; i++) {
+        const lineText = this._buffer.translateBufferLineToString(i, true, start[0], end[0]);
+        result.push(lineText);
+      }
+
     } else {
       // Get first row
       const startRowEndCol = start[1] === end[1] ? end[0] : null;
@@ -272,7 +270,11 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    */
   private _refresh(): void {
     this._refreshAnimationFrame = null;
-    this.emit('refresh', { start: this._model.finalSelectionStart, end: this._model.finalSelectionEnd, columnSelectMode: this._activeSelectionMode === SelectionMode.COLUMN });
+    this.emit('refresh', {
+      start: this._model.finalSelectionStart,
+      end: this._model.finalSelectionEnd,
+      columnSelectMode: this._activeSelectionMode === SelectionMode.COLUMN
+    });
   }
 
   /**
@@ -425,7 +427,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
       this._onIncrementalClick(event);
     } else {
       if (event.detail === 1) {
-        if (this.isColumnSelectMode(event)) {
+        if (this.shouldColumnSelect(event)) {
           this._onColumnSelectSingleClick(event);
         } else {
           this._onSingleClick(event);
@@ -534,19 +536,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   }
 
   /**
-   * Configures the modifier key for enabling column selection mode
-   */
-  private _initColumnSelectModifierKeys(): string[] {
-    if (this._terminal.browser.isMac) {
-      return ['altKey'];
-    }
-
-    // Linux and Windows
-    return ['shiftKey'];
-  }
-
-  /**
-   * Begin a block selection
+   * Begin a column selection
    */
   private _onColumnSelectSingleClick(event: MouseEvent): void {
     this._onSingleClick(event); // Perform all the normal setup actions
@@ -554,17 +544,11 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   }
 
   /**
-   * Checks if all required key modifiers are pressed in order to enable block
-   * select mode
-   * @param event the mouse click event
+   * Returns whether the selection manager should operate in column select mode
+   * @param event the mouse or keyboard event
    */
-  public isColumnSelectMode(event: KeyboardEvent | MouseEvent): boolean {
-    for (let i = 0; i < this._columnSelectRequiredModifiers.length; i++) {
-      if (!(<any>event)[this._columnSelectRequiredModifiers[i]]) {
-        return false;
-      }
-    }
-    return true;
+  public shouldColumnSelect(event: KeyboardEvent | MouseEvent): boolean {
+    return event.altKey && !this._terminal.options.macOptionClickForcesSelection;
   }
 
   /**

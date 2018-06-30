@@ -571,7 +571,7 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'columnSelectModifiers' | 'colors'): string[];
+    getOption(key: 'colors'): string[];
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
