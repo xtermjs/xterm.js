@@ -548,7 +548,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param event the mouse or keyboard event
    */
   public shouldColumnSelect(event: KeyboardEvent | MouseEvent): boolean {
-    return event.altKey && !this._terminal.options.macOptionClickForcesSelection;
+    return event.altKey && !(Browser.isMac && this._terminal.options.macOptionClickForcesSelection);
   }
 
   /**
