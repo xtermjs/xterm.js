@@ -8,13 +8,14 @@ import { IColorSet, IRenderDimensions } from './Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 
 export class SelectionRenderLayer extends BaseRenderLayer {
-  private _state: {start: [number, number], end: [number, number]};
+  private _state: { start: [number, number], end: [number, number], columnSelectMode?: boolean };
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
     super(container, 'selection', zIndex, true, colors);
     this._state = {
       start: null,
-      end: null
+      end: null,
+      columnSelectMode: null
     };
   }
 
@@ -23,7 +24,8 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     // Resizing the canvas discards the contents of the canvas so clear state
     this._state = {
       start: null,
-      end: null
+      end: null,
+      columnSelectMode: null
     };
   }
 
@@ -31,7 +33,8 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     if (this._state.start && this._state.end) {
       this._state = {
         start: null,
-        end: null
+        end: null,
+        columnSelectMode: null
       };
       this.clearAll();
     }
@@ -39,7 +42,9 @@ export class SelectionRenderLayer extends BaseRenderLayer {
 
   public onSelectionChanged(terminal: ITerminal, start: [number, number], end: [number, number], columnSelectMode: boolean): void {
     // Selection has not changed
-    if (this._state.start === start || this._state.end === end) {
+    if (this._areCoordinatesEqual(start, this._state.start) &&
+      this._areCoordinatesEqual(end, this._state.end) &&
+      columnSelectMode === this._state.columnSelectMode) {
       return;
     }
 
@@ -91,5 +96,14 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     // Save state for next render
     this._state.start = [start[0], start[1]];
     this._state.end = [end[0], end[1]];
+    this._state.columnSelectMode = columnSelectMode;
+  }
+
+  private _areCoordinatesEqual(coord1: [number, number], coord2: [number, number]): boolean {
+    if (!coord1 || !coord2) {
+      return false;
+    }
+
+    return coord1[0] === coord2[0] && coord1[1] === coord2[1];
   }
 }
