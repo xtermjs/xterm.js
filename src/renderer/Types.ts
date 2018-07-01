@@ -35,7 +35,7 @@ export interface IRenderer extends IEventEmitter, IDisposable {
   onCharSizeChanged(): void;
   onBlur(): void;
   onFocus(): void;
-  onSelectionChanged(start: [number, number], end: [number, number]): void;
+  onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void;
   onCursorMove(): void;
   onOptionsChanged(): void;
   clear(): void;
@@ -99,7 +99,7 @@ export interface IRenderLayer {
   /**
    * Calls when the selection changes.
    */
-  onSelectionChanged(terminal: ITerminal, start: [number, number], end: [number, number]): void;
+  onSelectionChanged(terminal: ITerminal, start: [number, number], end: [number, number], columnSelectMode: boolean): void;
 
   /**
    * Resize the render layer.
