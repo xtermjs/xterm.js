@@ -42,9 +42,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
 
   public onSelectionChanged(terminal: ITerminal, start: [number, number], end: [number, number], columnSelectMode: boolean): void {
     // Selection has not changed
-    if (this._areCoordinatesEqual(start, this._state.start) &&
-      this._areCoordinatesEqual(end, this._state.end) &&
-      columnSelectMode === this._state.columnSelectMode) {
+    if (!this._didStateChange(start, end, columnSelectMode)) {
       return;
     }
 
@@ -97,6 +95,12 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     this._state.start = [start[0], start[1]];
     this._state.end = [end[0], end[1]];
     this._state.columnSelectMode = columnSelectMode;
+  }
+
+  private _didStateChange(start: [number, number], end: [number, number], columnSelectMode: boolean): boolean {
+    return !this._areCoordinatesEqual(start, this._state.start) ||
+      !this._areCoordinatesEqual(end, this._state.end) ||
+      columnSelectMode !== this._state.columnSelectMode;
   }
 
   private _areCoordinatesEqual(coord1: [number, number], coord2: [number, number]): boolean {
