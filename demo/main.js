@@ -50,6 +50,23 @@ addDomListener(actionElements.findPrevious, 'keypress', function (e) {
   }
 });
 
+const disposeRecreateButtonHandler = () => {
+  // If the terminal exists dispose of it, otherwise recreate it
+  if (term) {
+    term.dispose();
+    term = null;
+    window.term = null;
+    socket = null;
+    document.getElementById('dispose').innerHTML = 'Recreate Terminal';
+  }
+  else {
+    createTerminal();
+    document.getElementById('dispose').innerHTML = 'Dispose terminal';
+  }
+};
+
+document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
+
 function createTerminal() {
   // Clean terminal
   while (terminalContainer.children.length) {
@@ -75,15 +92,6 @@ function createTerminal() {
   term.webLinksInit();
   term.fit();
   term.focus();
-
-  const buttonHandler = () => {
-    term.dispose();
-    term = null;
-    window.term = null;
-    socket = null;
-    document.getElementById('dispose').removeEventListener('click', buttonHandler);
-  };
-  document.getElementById('dispose').addEventListener('click', buttonHandler);
 
   // fit is called within a setTimeout, cols and rows need this.
   setTimeout(function () {
