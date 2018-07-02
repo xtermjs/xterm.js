@@ -4,8 +4,8 @@
  */
 
 import { assert } from 'chai';
-import { CharMeasure } from './utils/CharMeasure';
-import { SelectionManager } from './SelectionManager';
+import { CharMeasure } from './ui/CharMeasure';
+import { SelectionManager, SelectionMode } from './SelectionManager';
 import { SelectionModel } from './SelectionModel';
 import { BufferSet } from './BufferSet';
 import { LineData, CharData, ITerminal, IBuffer } from './Types';
@@ -24,6 +24,8 @@ class TestSelectionManager extends SelectionManager {
   }
 
   public get model(): SelectionModel { return this._model; }
+
+  public set selectionMode(mode: SelectionMode) { this._activeSelectionMode = mode; }
 
   public selectLineAt(line: number): void { this._selectLineAt(line); }
   public selectWordAt(coords: [number, number]): void { this._selectWordAt(coords, true); }
@@ -378,4 +380,61 @@ describe('SelectionManager', () => {
       assert.equal(selectionManager.hasSelection, true);
     });
   });
+
+  describe('column selection', () => {
+    it('should select a column of text', () => {
+      buffer.lines.length = 3;
+      buffer.lines.set(0, stringToRow('abcdefghij'));
+      buffer.lines.set(1, stringToRow('klmnopqrst'));
+      buffer.lines.set(2, stringToRow('uvwxyz'));
+
+      selectionManager.selectionMode = SelectionMode.COLUMN;
+      selectionManager.model.selectionStart = [2, 0];
+      selectionManager.model.selectionEnd = [4, 2];
+
+      assert.equal(selectionManager.selectionText, 'cd\nmn\nwx');
+    });
+
+    it('should select a column of text without chopping up double width characters', () => {
+      buffer.lines.length = 3;
+      buffer.lines.set(0, stringToRow('a'));
+      buffer.lines.set(1, stringToRow('語'));
+      buffer.lines.set(2, stringToRow('b'));
+
+      selectionManager.selectionMode = SelectionMode.COLUMN;
+      selectionManager.model.selectionStart = [0, 0];
+      selectionManager.model.selectionEnd = [1, 2];
+
+      assert.equal(selectionManager.selectionText, 'a\n語\nb');
+    });
+
+    it('should select a column of text with single character emojis', () => {
+      buffer.lines.length = 3;
+      buffer.lines.set(0, stringToRow('a'));
+      buffer.lines.set(1, stringToRow('☃'));
+      buffer.lines.set(2, stringToRow('c'));
+
+      selectionManager.selectionMode = SelectionMode.COLUMN;
+      selectionManager.model.selectionStart = [0, 0];
+      selectionManager.model.selectionEnd = [1, 2];
+
+      assert.equal(selectionManager.selectionText, 'a\n☃\nc');
+    });
+
+    it('should select a column of text with double character emojis', () => {
+      // TODO the case this is testing works for me in the demo webapp,
+      // but doing it programmatically fails.
+      buffer.lines.length = 3;
+      buffer.lines.set(0, stringToRow('a '));
+      buffer.lines.set(1, stringArrayToRow(['😁', ' ']));
+      buffer.lines.set(2, stringToRow('c '));
+
+      selectionManager.selectionMode = SelectionMode.COLUMN;
+      selectionManager.model.selectionStart = [0, 0];
+      selectionManager.model.selectionEnd = [1, 2];
+
+      assert.equal(selectionManager.selectionText, 'a\n😁\nc');
+    });
+  });
 });
+

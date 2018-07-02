@@ -11,8 +11,8 @@ import { IRenderLayer, IColorSet, IRenderer, IRenderDimensions } from './Types';
 import { ITerminal } from '../Types';
 import { LinkRenderLayer } from './LinkRenderLayer';
 import { EventEmitter } from '../EventEmitter';
-import { RenderDebouncer } from '../utils/RenderDebouncer';
-import { ScreenDprMonitor } from '../utils/ScreenDprMonitor';
+import { RenderDebouncer } from '../ui/RenderDebouncer';
+import { ScreenDprMonitor } from '../ui/ScreenDprMonitor';
 import { ITheme } from 'xterm';
 
 export class Renderer extends EventEmitter implements IRenderer {
@@ -62,12 +62,14 @@ export class Renderer extends EventEmitter implements IRenderer {
     this._renderDebouncer = new RenderDebouncer(this._terminal, this._renderRows.bind(this));
     this._screenDprMonitor = new ScreenDprMonitor();
     this._screenDprMonitor.setListener(() => this.onWindowResize(window.devicePixelRatio));
+    this.register(this._screenDprMonitor);
 
     // Detect whether IntersectionObserver is detected and enable renderer pause
     // and resume based on terminal visibility if so
     if ('IntersectionObserver' in window) {
       const observer = new IntersectionObserver(e => this.onIntersectionChange(e[0]), {threshold: 0});
       observer.observe(this._terminal.element);
+      this.register({ dispose: () => observer.disconnect() });
     }
   }
 
@@ -141,8 +143,8 @@ export class Renderer extends EventEmitter implements IRenderer {
     this._runOperation(l => l.onFocus(this._terminal));
   }
 
-  public onSelectionChanged(start: [number, number], end: [number, number]): void {
-    this._runOperation(l => l.onSelectionChanged(this._terminal, start, end));
+  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean = false): void {
+    this._runOperation(l => l.onSelectionChanged(this._terminal, start, end, columnSelectMode));
   }
 
   public onCursorMove(): void {

@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { Terminal as PublicTerminal, ITerminalOptions as IPublicTerminalOptions, IEventEmitter } from 'xterm';
+import { Terminal as PublicTerminal, ITerminalOptions as IPublicTerminalOptions, IEventEmitter, IDisposable } from 'xterm';
 import { IColorSet, IRenderer } from './renderer/Types';
-import { IMouseZoneManager } from './input/Types';
+import { IMouseZoneManager } from './ui/Types';
 import { ICharset } from './core/Types';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
@@ -86,7 +86,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   tabSet(): void;
 }
 
-export interface IViewport {
+export interface IViewport extends IDisposable {
   scrollBarWidth: number;
   syncScrollArea(): void;
   getLinesScrolled(ev: WheelEvent): number;
@@ -468,7 +468,7 @@ export interface IDcsHandler {
 /**
 * EscapeSequenceParser interface.
 */
-export interface IEscapeSequenceParser {
+export interface IEscapeSequenceParser extends IDisposable {
   /**
    * Reset the parser to its initial state (handlers are kept).
    */

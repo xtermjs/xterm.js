@@ -8,7 +8,7 @@ import { ITerminal } from '../../Types';
 import { ITheme } from 'xterm';
 import { EventEmitter } from '../../EventEmitter';
 import { ColorManager } from '../ColorManager';
-import { RenderDebouncer } from '../../utils/RenderDebouncer';
+import { RenderDebouncer } from '../../ui/RenderDebouncer';
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, DomRendererRowFactory } from './DomRendererRowFactory';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
@@ -217,7 +217,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
     this._rowContainer.classList.add(FOCUS_CLASS);
   }
 
-  public onSelectionChanged(start: [number, number], end: [number, number]): void {
+  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
     // Remove all selections
     while (this._selectionContainer.children.length) {
       this._selectionContainer.removeChild(this._selectionContainer.children[0]);
@@ -241,18 +241,25 @@ export class DomRenderer extends EventEmitter implements IRenderer {
 
     // Create the selections
     const documentFragment = document.createDocumentFragment();
-    // Draw first row
     const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
-    const endCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : this._terminal.cols;
-    documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow, startCol, endCol));
-    // Draw middle rows
-    const middleRowsCount = viewportCappedEndRow - viewportCappedStartRow - 1;
-    documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow + 1, 0, this._terminal.cols, middleRowsCount));
-    // Draw final row
-    if (viewportCappedStartRow !== viewportCappedEndRow) {
-      // Only draw viewportEndRow if it's not the same as viewporttartRow
-      const endCol = viewportEndRow === viewportCappedEndRow ? end[0] : this._terminal.cols;
-      documentFragment.appendChild(this._createSelectionElement(viewportCappedEndRow, 0, endCol));
+
+    if (columnSelectMode) {
+      documentFragment.appendChild(
+        this._createSelectionElement(viewportCappedStartRow, startCol, end[0], viewportCappedEndRow - viewportStartRow + 1)
+      );
+    } else {
+      // Draw first row
+      const endCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : this._terminal.cols;
+      documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow, startCol, endCol));
+      // Draw middle rows
+      const middleRowsCount = viewportCappedEndRow - viewportCappedStartRow - 1;
+      documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow + 1, 0, this._terminal.cols, middleRowsCount));
+      // Draw final row
+      if (viewportCappedStartRow !== viewportCappedEndRow) {
+        // Only draw viewportEndRow if it's not the same as viewporttartRow
+        const endCol = viewportEndRow === viewportCappedEndRow ? end[0] : this._terminal.cols;
+        documentFragment.appendChild(this._createSelectionElement(viewportCappedEndRow, 0, endCol));
+      }
     }
     this._selectionContainer.appendChild(documentFragment);
   }
@@ -303,7 +310,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
 
       const row = y + terminal.buffer.ydisp;
       const lineData = terminal.buffer.lines.get(row);
-      rowElement.appendChild(this._rowFactory.createRow(lineData, row === cursorAbsoluteY, cursorX, terminal.charMeasure.width));
+      rowElement.appendChild(this._rowFactory.createRow(lineData, row === cursorAbsoluteY, cursorX, terminal.charMeasure.width, terminal.cols));
     }
 
     this._terminal.emit('refresh', {start, end});

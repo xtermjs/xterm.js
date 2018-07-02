@@ -33,22 +33,24 @@ function setPadding() {
   term.fit();
 }
 
-paddingElement.addEventListener('change', setPadding);
-
-actionElements.findNext.addEventListener('keypress', function (e) {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    term.findNext(actionElements.findNext.value);
-  }
-});
-actionElements.findPrevious.addEventListener('keypress', function (e) {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    term.findPrevious(actionElements.findPrevious.value);
-  }
-});
-
 createTerminal();
+
+const disposeRecreateButtonHandler = () => {
+  // If the terminal exists dispose of it, otherwise recreate it
+  if (term) {
+    term.dispose();
+    term = null;
+    window.term = null;
+    socket = null;
+    document.getElementById('dispose').innerHTML = 'Recreate Terminal';
+  }
+  else {
+    createTerminal();
+    document.getElementById('dispose').innerHTML = 'Dispose terminal';
+  }
+};
+
+document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
 
 function createTerminal() {
   // Clean terminal
@@ -75,6 +77,21 @@ function createTerminal() {
   term.webLinksInit();
   term.fit();
   term.focus();
+
+  addDomListener(paddingElement, 'change', setPadding);
+
+  addDomListener(actionElements.findNext, 'keypress', function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      term.findNext(actionElements.findNext.value);
+    }
+  });
+  addDomListener(actionElements.findPrevious, 'keypress', function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      term.findPrevious(actionElements.findPrevious.value);
+    }
+  });
 
   // fit is called within a setTimeout, cols and rows need this.
   setTimeout(function () {
@@ -124,7 +141,7 @@ function runFakeTerminal() {
   term.writeln('');
   term.prompt();
 
-  term.on('key', function (key, ev) {
+  term._core.register(term.addDisposableListener('key', function (key, ev) {
     var printable = (
       !ev.altKey && !ev.altGraphKey && !ev.ctrlKey && !ev.metaKey
     );
@@ -139,11 +156,11 @@ function runFakeTerminal() {
     } else if (printable) {
       term.write(key);
     }
-  });
+  }));
 
-  term.on('paste', function (data, ev) {
+  term._core.register(term.addDisposableListener('paste', function (data, ev) {
     term.write(data);
-  });
+  }));
 }
 
 function initOptions(term) {
@@ -213,14 +230,14 @@ function initOptions(term) {
   // Attach listeners
   booleanOptions.forEach(o => {
     var input = document.getElementById(`opt-${o}`);
-    input.addEventListener('change', () => {
+    addDomListener(input, 'change', () => {
       console.log('change', o, input.checked);
       term.setOption(o, input.checked);
     });
   });
   numberOptions.forEach(o => {
     var input = document.getElementById(`opt-${o}`);
-    input.addEventListener('change', () => {
+    addDomListener(input, 'change', () => {
       console.log('change', o, input.value);
       if (o === 'cols' || o === 'rows') {
         updateTerminalSize();
@@ -231,11 +248,16 @@ function initOptions(term) {
   });
   Object.keys(stringOptions).forEach(o => {
     var input = document.getElementById(`opt-${o}`);
-    input.addEventListener('change', () => {
+    addDomListener(input, 'change', () => {
       console.log('change', o, input.value);
       term.setOption(o, input.value);
     });
   });
+}
+
+function addDomListener(element, type, handler) {
+  element.addEventListener(type, handler);
+  term._core.register({ dispose: () => element.removeEventListener(type, handler) });
 }
 
 function updateTerminalSize() {

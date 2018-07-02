@@ -6,7 +6,7 @@
 import { assert } from 'chai';
 import { ITerminal } from './Types';
 import { Buffer } from './Buffer';
-import { CircularList } from './utils/CircularList';
+import { CircularList } from './common/CircularList';
 import { MockTerminal } from './utils/TestUtils.test';
 
 const INIT_COLS = 80;
@@ -267,6 +267,83 @@ describe('Buffer', () => {
       buffer.lines.emit('trim', 1);
       assert.equal(marker.isDisposed, true);
       assert.equal(buffer.markers.length, 0);
+    });
+  });
+
+  describe ('translateBufferLineToString', () => {
+    it('should handle selecting a section of ascii text', () => {
+      buffer.lines.set(0, [
+        [ null, 'a', 1, 'a'.charCodeAt(0)],
+        [ null, 'b', 1, 'b'.charCodeAt(0)],
+        [ null, 'c', 1, 'c'.charCodeAt(0)],
+        [ null, 'd', 1, 'd'.charCodeAt(0)]
+      ]);
+
+      const str = buffer.translateBufferLineToString(0, true, 0, 2);
+      assert.equal(str, 'ab');
+    });
+
+    it('should handle a cut-off double width character by including it', () => {
+      buffer.lines.set(0, [
+        [ null, '語', 2, 35486 ],
+        [ null, '', 0, null],
+        [ null, 'a', 1, 'a'.charCodeAt(0)]
+      ]);
+
+      const str1 = buffer.translateBufferLineToString(0, true, 0, 1);
+      assert.equal(str1, '語');
+    });
+
+    it('should handle a zero width character in the middle of the string by not including it', () => {
+      buffer.lines.set(0, [
+        [ null, '語', 2, '語'.charCodeAt(0) ],
+        [ null, '', 0, null],
+        [ null, 'a', 1, 'a'.charCodeAt(0)]
+      ]);
+
+      const str0 = buffer.translateBufferLineToString(0, true, 0, 1);
+      assert.equal(str0, '語');
+
+      const str1 = buffer.translateBufferLineToString(0, true, 0, 2);
+      assert.equal(str1, '語');
+
+      const str2 = buffer.translateBufferLineToString(0, true, 0, 3);
+      assert.equal(str2, '語a');
+    });
+
+    it('should handle single width emojis', () => {
+      buffer.lines.set(0, [
+        [ null, '😁', 1, '😁'.charCodeAt(0) ],
+        [ null, 'a', 1, 'a'.charCodeAt(0)]
+      ]);
+
+      const str1 = buffer.translateBufferLineToString(0, true, 0, 1);
+      assert.equal(str1, '😁');
+
+      const str2 = buffer.translateBufferLineToString(0, true, 0, 2);
+      assert.equal(str2, '😁a');
+    });
+
+    it('should handle double width emojis', () => {
+      buffer.lines.set(0, [
+        [ null, '😁', 2, '😁'.charCodeAt(0) ],
+        [ null, '', 0, null]
+      ]);
+
+      const str1 = buffer.translateBufferLineToString(0, true, 0, 1);
+      assert.equal(str1, '😁');
+
+      const str2 = buffer.translateBufferLineToString(0, true, 0, 2);
+      assert.equal(str2, '😁');
+
+      buffer.lines.set(0, [
+        [ null, '😁', 2, '😁'.charCodeAt(0) ],
+        [ null, '', 0, null],
+        [ null, 'a', 1, 'a'.charCodeAt(0)]
+      ]);
+
+      const str3 = buffer.translateBufferLineToString(0, true, 0, 3);
+      assert.equal(str3, '😁a');
     });
   });
 });

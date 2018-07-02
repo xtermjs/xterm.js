@@ -10,7 +10,7 @@ import { IDisposable } from 'xterm';
  * @param type The event type.
  * @param handler The handler for the listener.
  */
-export function addDisposableListener(
+export function addDisposableDomListener(
   node: Element | Window | Document,
   type: string,
   handler: (e: any) => void,

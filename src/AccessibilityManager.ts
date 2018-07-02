@@ -6,9 +6,9 @@
 import * as Strings from './Strings';
 import { ITerminal, IBuffer } from './Types';
 import { isMac } from './shared/utils/Browser';
-import { RenderDebouncer } from './utils/RenderDebouncer';
-import { addDisposableListener } from './utils/Dom';
-import { IDisposable } from 'xterm';
+import { RenderDebouncer } from './ui/RenderDebouncer';
+import { addDisposableDomListener } from './ui/Lifecycle';
+import { Disposable } from './common/Lifecycle';
 
 const MAX_ROWS_TO_READ = 20;
 
@@ -17,7 +17,7 @@ const enum BoundaryPosition {
   BOTTOM
 }
 
-export class AccessibilityManager implements IDisposable {
+export class AccessibilityManager extends Disposable {
   private _accessibilityTreeRoot: HTMLElement;
   private _rowContainer: HTMLElement;
   private _rowElements: HTMLElement[];
@@ -28,8 +28,6 @@ export class AccessibilityManager implements IDisposable {
 
   private _topBoundaryFocusListener: (e: FocusEvent) => void;
   private _bottomBoundaryFocusListener: (e: FocusEvent) => void;
-
-  private _disposables: IDisposable[] = [];
 
   /**
    * This queue has a character pushed to it for keys that are pressed, if the
@@ -43,6 +41,7 @@ export class AccessibilityManager implements IDisposable {
   private _charsToConsume: string[] = [];
 
   constructor(private _terminal: ITerminal) {
+    super();
     this._accessibilityTreeRoot = document.createElement('div');
     this._accessibilityTreeRoot.classList.add('xterm-accessibility');
 
@@ -72,29 +71,28 @@ export class AccessibilityManager implements IDisposable {
 
     this._terminal.element.insertAdjacentElement('afterbegin', this._accessibilityTreeRoot);
 
-    this._disposables.push(this._renderRowsDebouncer);
-    this._disposables.push(this._terminal.addDisposableListener('resize', data => this._onResize(data.cols, data.rows)));
-    this._disposables.push(this._terminal.addDisposableListener('refresh', data => this._refreshRows(data.start, data.end)));
-    this._disposables.push(this._terminal.addDisposableListener('scroll', data => this._refreshRows()));
+    this.register(this._renderRowsDebouncer);
+    this.register(this._terminal.addDisposableListener('resize', data => this._onResize(data.cols, data.rows)));
+    this.register(this._terminal.addDisposableListener('refresh', data => this._refreshRows(data.start, data.end)));
+    this.register(this._terminal.addDisposableListener('scroll', data => this._refreshRows()));
     // Line feed is an issue as the prompt won't be read out after a command is run
-    this._disposables.push(this._terminal.addDisposableListener('a11y.char', (char) => this._onChar(char)));
-    this._disposables.push(this._terminal.addDisposableListener('linefeed', () => this._onChar('\n')));
-    this._disposables.push(this._terminal.addDisposableListener('a11y.tab', spaceCount => this._onTab(spaceCount)));
-    this._disposables.push(this._terminal.addDisposableListener('key', keyChar => this._onKey(keyChar)));
-    this._disposables.push(this._terminal.addDisposableListener('blur', () => this._clearLiveRegion()));
+    this.register(this._terminal.addDisposableListener('a11y.char', (char) => this._onChar(char)));
+    this.register(this._terminal.addDisposableListener('linefeed', () => this._onChar('\n')));
+    this.register(this._terminal.addDisposableListener('a11y.tab', spaceCount => this._onTab(spaceCount)));
+    this.register(this._terminal.addDisposableListener('key', keyChar => this._onKey(keyChar)));
+    this.register(this._terminal.addDisposableListener('blur', () => this._clearLiveRegion()));
     // TODO: Maybe renderer should fire an event on terminal when the characters change and that
     //       should be listened to instead? That would mean that the order of events are always
     //       guarenteed
-    this._disposables.push(this._terminal.addDisposableListener('dprchange', () => this._refreshRowsDimensions()));
-    this._disposables.push(this._terminal.renderer.addDisposableListener('resize', () => this._refreshRowsDimensions()));
+    this.register(this._terminal.addDisposableListener('dprchange', () => this._refreshRowsDimensions()));
+    this.register(this._terminal.renderer.addDisposableListener('resize', () => this._refreshRowsDimensions()));
     // This shouldn't be needed on modern browsers but is present in case the
     // media query that drives the dprchange event isn't supported
-    this._disposables.push(addDisposableListener(window, 'resize', () => this._refreshRowsDimensions()));
+    this.register(addDisposableDomListener(window, 'resize', () => this._refreshRowsDimensions()));
   }
 
   public dispose(): void {
-    this._disposables.forEach(d => d.dispose());
-    this._disposables.length = 0;
+    super.dispose();
     this._terminal.element.removeChild(this._accessibilityTreeRoot);
     this._rowElements.length = 0;
   }
