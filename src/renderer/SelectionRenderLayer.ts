@@ -8,7 +8,7 @@ import { IColorSet, IRenderDimensions } from './Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 
 export class SelectionRenderLayer extends BaseRenderLayer {
-  private _state: { start: [number, number], end: [number, number], columnSelectMode?: boolean };
+  private _state: { start: [number, number], end: [number, number], columnSelectMode: boolean };
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
     super(container, 'selection', zIndex, true, colors);
@@ -72,7 +72,6 @@ export class SelectionRenderLayer extends BaseRenderLayer {
       const width = end[0] - startCol;
       const height = viewportCappedEndRow - viewportCappedStartRow + 1;
       this.fillCells(startCol, viewportCappedStartRow, width, height);
-
     } else {
       // Draw first row
       const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
