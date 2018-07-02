@@ -35,20 +35,22 @@ function setPadding() {
 
 createTerminal();
 
-addDomListener(paddingElement, 'change', setPadding);
+const disposeRecreateButtonHandler = () => {
+  // If the terminal exists dispose of it, otherwise recreate it
+  if (term) {
+    term.dispose();
+    term = null;
+    window.term = null;
+    socket = null;
+    document.getElementById('dispose').innerHTML = 'Recreate Terminal';
+  }
+  else {
+    createTerminal();
+    document.getElementById('dispose').innerHTML = 'Dispose terminal';
+  }
+};
 
-addDomListener(actionElements.findNext, 'keypress', function (e) {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    term.findNext(actionElements.findNext.value);
-  }
-});
-addDomListener(actionElements.findPrevious, 'keypress', function (e) {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    term.findPrevious(actionElements.findPrevious.value);
-  }
-});
+document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
 
 function createTerminal() {
   // Clean terminal
@@ -76,14 +78,20 @@ function createTerminal() {
   term.fit();
   term.focus();
 
-  const buttonHandler = () => {
-    term.dispose();
-    term = null;
-    window.term = null;
-    socket = null;
-    document.getElementById('dispose').removeEventListener('click', buttonHandler);
-  };
-  document.getElementById('dispose').addEventListener('click', buttonHandler);
+  addDomListener(paddingElement, 'change', setPadding);
+
+  addDomListener(actionElements.findNext, 'keypress', function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      term.findNext(actionElements.findNext.value);
+    }
+  });
+  addDomListener(actionElements.findPrevious, 'keypress', function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      term.findPrevious(actionElements.findPrevious.value);
+    }
+  });
 
   // fit is called within a setTimeout, cols and rows need this.
   setTimeout(function () {
