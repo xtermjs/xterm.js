@@ -1007,28 +1007,39 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         return this.cancel(ev);
       }
 
-      // TODO: these event listeners should be managed by the disposable, the Terminal reference may
-      // be kept aroud if Terminal.dispose is fired when the mouse is down
+      // TODO: All mouse handling should be pulled into its own file.
 
       // bind events
+      let moveHandler: (event: MouseEvent) => void;
       if (this.normalMouse) {
-        this._document.addEventListener('mousemove', sendMove);
+        moveHandler = (event: MouseEvent) => {
+          // Do nothing if normal mouse mode is on. This can happen if the mouse is held down when the
+          // terminal exits normalMouse mode.
+          if (!this.normalMouse) {
+            return;
+          }
+          sendMove(event);
+        };
+        // TODO: these event listeners should be managed by the disposable, the Terminal reference may
+        // be kept aroud if Terminal.dispose is fired when the mouse is down
+        this._document.addEventListener('mousemove', moveHandler);
       }
 
       // x10 compatibility mode can't send button releases
-      if (!this.x10Mouse) {
-        const handler = (ev: MouseEvent) => {
+      const handler = (ev: MouseEvent) => {
+        if (this.normalMouse && !this.x10Mouse) {
           sendButton(ev);
-          // TODO: Seems dangerous calling this on document?
-          if (this.normalMouse) {
-            this._document.removeEventListener('mousemove', sendMove);
-          }
-          this._document.removeEventListener('mouseup', handler);
-          return this.cancel(ev);
-        };
-        // TODO: Seems dangerous calling this on document?
-        this._document.addEventListener('mouseup', handler);
-      }
+        }
+        if (moveHandler) {
+          // Even though this should only be attached when this.normalMouse is true, holding the
+          // mouse button down when normalMouse changes can happen. Just always try to remove it.
+          this._document.removeEventListener('mousemove', moveHandler);
+          moveHandler = null;
+        }
+        this._document.removeEventListener('mouseup', handler);
+        return this.cancel(ev);
+      };
+      this._document.addEventListener('mouseup', handler);
 
       return this.cancel(ev);
     }));
