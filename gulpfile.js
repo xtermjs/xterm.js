@@ -4,11 +4,9 @@
 
 const browserify = require('browserify');
 const buffer = require('vinyl-buffer');
-const coveralls = require('gulp-coveralls');
 const fs = require('fs-extra');
 const gulp = require('gulp');
 const path = require('path');
-const istanbul = require('gulp-istanbul');
 const merge = require('merge-stream');
 const mocha = require('gulp-mocha');
 const sorcery = require('sorcery');
@@ -20,10 +18,17 @@ const webpack = require('webpack-stream');
 
 const buildDir = process.env.BUILD_DIR || 'build';
 const tsProject = ts.createProject('tsconfig.json');
-const srcDir = tsProject.config.compilerOptions.rootDir;
+let srcDir = tsProject.config.compilerOptions.rootDir;
 let outDir = tsProject.config.compilerOptions.outDir;
 
 const addons = fs.readdirSync(`${__dirname}/src/addons`);
+
+const TEST_PATHS = [
+  `${outDir}/*test.js`,
+  `${outDir}/**/*test.js`,
+  `${outDir}/*integration.js`,
+  `${outDir}/**/*integration.js`
+];
 
 // Under some environments like TravisCI, this comes out at absolute which can
 // break the build. This ensures that the outDir is absolute.
@@ -31,58 +36,19 @@ if (path.normalize(outDir).indexOf(__dirname) !== 0) {
   outDir = `${__dirname}/${path.normalize(outDir)}`;
 }
 
-/**
- * Compile TypeScript sources to JavaScript files and create a source map file for each TypeScript
- * file compiled.
- */
-gulp.task('tsc', function () {
-  // Remove the ${outDir}/ directory to prevent confusion if files were deleted in ${srcDir}/
-  fs.emptyDirSync(`${outDir}`);
+gulp.task('css', function() {
+  return gulp.src(`${srcDir}/**/*.css`).pipe(gulp.dest(outDir));
+});
 
-  // Build all TypeScript files (including tests) to ${outDir}/, based on the configuration defined in
-  // `tsconfig.json`.
-  let tsResult = tsProject.src().pipe(sourcemaps.init()).pipe(tsProject());
-  let tsc = merge(
-    tsResult.js.pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''})).pipe(gulp.dest(outDir)),
-    tsResult.dts.pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''})).pipe(gulp.dest(outDir))
-  );
-
-  let addonStreams = addons.map(function(addon) {
-    fs.emptyDirSync(`${outDir}/addons/${addon}`);
-
-    let tsProjectAddon = ts.createProject(`./src/addons/${addon}/tsconfig.json`);
-    let tsResultAddon = tsProjectAddon.src().pipe(sourcemaps.init()).pipe(tsProjectAddon());
-    let tscAddon = merge(
-      tsResultAddon.js
-        .pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''}))
-        .pipe(gulp.dest(`${outDir}/addons/${addon}`)),
-      tsResultAddon.dts
-        .pipe(sourcemaps.write('.', {includeContent: false, sourceRoot: ''}))
-        .pipe(gulp.dest(`${outDir}/addons/${addon}`))
-    )
-
-    return tscAddon;
-  });
-
-  // Copy all addons from ${srcDir}/ to ${outDir}/
-  let copyAddons = gulp.src([
-    `${srcDir}/addons/**/**`
-  ]).pipe(gulp.dest(`${outDir}/addons`));
-
-  // Copy stylesheets from ${srcDir}/ to ${outDir}/
-  let copyStylesheets = gulp.src(`${srcDir}/**/*.css`).pipe(gulp.dest(outDir));
-
-  // Join all streams into a single array
-  let streams = [tsc].concat(addonStreams).concat([copyAddons, copyStylesheets]);
-
-  return merge.apply(this, streams);
+gulp.task('watch-css', function() {
+  return gulp.watch(`${srcDir}/**/*.css`, ['css']);
 });
 
 /**
  * Bundle JavaScript files produced by the `tsc` task, into a single file named `xterm.js` with
  * Browserify.
  */
-gulp.task('browserify', ['tsc'], function() {
+gulp.task('browserify', function() {
   // Ensure that the build directory exists
   fs.ensureDirSync(buildDir);
 
@@ -108,7 +74,7 @@ gulp.task('browserify', ['tsc'], function() {
   return merge(bundleStream, copyStylesheets);
 });
 
-gulp.task('browserify-addons', ['tsc'], function() {
+gulp.task('browserify-addons', function() {
   const bundles = addons.map((addon) => {
     const addonOptions = {
       basedir: `${buildDir}/addons/${addon}`,
@@ -134,37 +100,22 @@ gulp.task('browserify-addons', ['tsc'], function() {
   return merge(...bundles);
 });
 
-gulp.task('instrument-test', function () {
-  return gulp.src([`${outDir}/**/*.js`])
-    // Covering files
-    .pipe(istanbul())
-    // Force `require` to return covered files
-    .pipe(istanbul.hookRequire());
-});
-
-gulp.task('mocha', ['instrument-test'], function () {
-  return gulp.src([
-    `${outDir}/*test.js`,
-    `${outDir}/**/*test.js`,
-    `${outDir}/*integration.js`,
-    `${outDir}/**/*integration.js`
-  ], {read: false})
+gulp.task('mocha', function () {
+  return gulp.src(TEST_PATHS, {read: false})
       .pipe(mocha())
-      .once('error', () => process.exit(1))
-      .pipe(istanbul.writeReports());
+      .once('error', () => process.exit(1));
 });
 
 /**
- * Run single test file by file name(without file extension). Example of the command:
- * gulp mocha-test --test InputHandler.test
+ * Run single test suite (file) by file name (without file extension). Example of the command:
+ * gulp mocha-suite --test InputHandler.test
  */
-gulp.task('mocha-test', ['instrument-test'], function () {
+gulp.task('mocha-suite', [], function () {
   let testName = util.env.test;
   util.log("Run test by Name: " + testName);
   return gulp.src([`${outDir}/${testName}.js`, `${outDir}/**/${testName}.js`], {read: false})
          .pipe(mocha())
-         .once('error', () => process.exit(1))
-         .pipe(istanbul.writeReports());
+         .once('error', () => process.exit(1));
 });
 
 /**
@@ -192,16 +143,9 @@ gulp.task('webpack', ['build'], function() {
     .pipe(gulp.dest('demo/dist/'));
 });
 
-gulp.task('watch', ['webpack'], () => {
-  gulp.watch(['./src/*', './src/**/*'], ['webpack']);
-});
 
-/**
- * Submit coverage results to coveralls.io
- */
-gulp.task('coveralls', function () {
-  gulp.src('coverage/**/lcov.info')
-    .pipe(coveralls());
+gulp.task('watch-demo', ['webpack'], () => {
+  gulp.watch(['./demo/*', './lib/**/*'], ['webpack']);
 });
 
 gulp.task('build', ['sorcery', 'sorcery-addons']);

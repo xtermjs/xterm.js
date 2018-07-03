@@ -3,9 +3,10 @@
  * @license MIT
  */
 
-import { Terminal as PublicTerminal, ITerminalOptions as IPublicTerminalOptions, IEventEmitter } from 'xterm';
+import { Terminal as PublicTerminal, ITerminalOptions as IPublicTerminalOptions, IEventEmitter, IDisposable } from 'xterm';
 import { IColorSet, IRenderer } from './renderer/Types';
-import { IMouseZoneManager } from './input/Types';
+import { IMouseZoneManager } from './ui/Types';
+import { ICharset } from './core/Types';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
@@ -45,7 +46,6 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   insertMode: boolean;
   wraparoundMode: boolean;
   bracketedPasteMode: boolean;
-  defAttr: number;
   curAttr: number;
   savedCols: number;
   x10Mouse: boolean;
@@ -88,7 +88,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   tabSet(): void;
 }
 
-export interface IViewport {
+export interface IViewport extends IDisposable {
   scrollBarWidth: number;
   syncScrollArea(): void;
   getLinesScrolled(ev: WheelEvent): number;
@@ -141,12 +141,12 @@ export interface IInputHandler {
   /** CSI X */ eraseChars(params?: number[]): void;
   /** CSI Z */ cursorBackwardTab(params?: number[]): void;
   /** CSI ` */ charPosAbsolute(params?: number[]): void;
-  /** CSI a */ HPositionRelative(params?: number[]): void;
+  /** CSI a */ hPositionRelative(params?: number[]): void;
   /** CSI b */ repeatPrecedingCharacter(params?: number[]): void;
   /** CSI c */ sendDeviceAttributes(params?: number[], collect?: string): void;
   /** CSI d */ linePosAbsolute(params?: number[]): void;
-  /** CSI e */ VPositionRelative(params?: number[]): void;
-  /** CSI f */ HVPosition(params?: number[]): void;
+  /** CSI e */ vPositionRelative(params?: number[]): void;
+  /** CSI f */ hVPosition(params?: number[]): void;
   /** CSI g */ tabClear(params?: number[]): void;
   /** CSI h */ setMode(params?: number[], collect?: string): void;
   /** CSI l */ resetMode(params?: number[], collect?: string): void;
@@ -194,10 +194,6 @@ export interface ILinkMatcher {
   willLinkActivate?: (event: MouseEvent, uri: string) => boolean;
 }
 
-export interface ICharset {
-  [key: string]: string;
-}
-
 export interface ILinkHoverEvent {
   x1: number;
   y1: number;
@@ -215,7 +211,6 @@ export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAcce
   writeBuffer: string[];
   cursorHidden: boolean;
   cursorState: number;
-  defAttr: number;
   options: ITerminalOptions;
   buffer: IBuffer;
   buffers: IBufferSet;
@@ -263,6 +258,7 @@ export interface ICharMeasure {
 
 // TODO: The options that are not in the public API should be reviewed
 export interface ITerminalOptions extends IPublicTerminalOptions {
+  [key: string]: any;
   cancelEvents?: boolean;
   convertEol?: boolean;
   debug?: boolean;
@@ -286,6 +282,7 @@ export interface IBuffer {
   savedX: number;
   isCursorInViewport: boolean;
   translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string;
+  getWrappedRangeForLine(y: number): { first: number, last: number };
   nextStop(x?: number): number;
   prevStop(x?: number): number;
 }
@@ -473,7 +470,7 @@ export interface IDcsHandler {
 /**
 * EscapeSequenceParser interface.
 */
-export interface IEscapeSequenceParser {
+export interface IEscapeSequenceParser extends IDisposable {
   /**
    * Reset the parser to its initial state (handlers are kept).
    */

@@ -3,7 +3,9 @@
  * @license MIT
  */
 
-export interface IMouseZoneManager {
+import { IDisposable } from 'xterm';
+
+export interface IMouseZoneManager extends IDisposable {
   add(zone: IMouseZone): void;
   clearAll(start?: number, end?: number): void;
 }

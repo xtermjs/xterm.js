@@ -8,13 +8,14 @@ import { IColorSet, IRenderDimensions } from './Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 
 export class SelectionRenderLayer extends BaseRenderLayer {
-  private _state: {start: [number, number], end: [number, number]};
+  private _state: { start: [number, number], end: [number, number], columnSelectMode: boolean };
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
     super(container, 'selection', zIndex, true, colors);
     this._state = {
       start: null,
-      end: null
+      end: null,
+      columnSelectMode: null
     };
   }
 
@@ -23,7 +24,8 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     // Resizing the canvas discards the contents of the canvas so clear state
     this._state = {
       start: null,
-      end: null
+      end: null,
+      columnSelectMode: null
     };
   }
 
@@ -31,15 +33,16 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     if (this._state.start && this._state.end) {
       this._state = {
         start: null,
-        end: null
+        end: null,
+        columnSelectMode: null
       };
       this.clearAll();
     }
   }
 
-  public onSelectionChanged(terminal: ITerminal, start: [number, number], end: [number, number]): void {
+  public onSelectionChanged(terminal: ITerminal, start: [number, number], end: [number, number], columnSelectMode: boolean): void {
     // Selection has not changed
-    if (this._state.start === start || this._state.end === end) {
+    if (!this._didStateChange(start, end, columnSelectMode)) {
       return;
     }
 
@@ -62,25 +65,48 @@ export class SelectionRenderLayer extends BaseRenderLayer {
       return;
     }
 
-    // Draw first row
-    const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
-    const startRowEndCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : terminal.cols;
     this._ctx.fillStyle = this._colors.selection.css;
-    this.fillCells(startCol, viewportCappedStartRow, startRowEndCol - startCol, 1);
 
-    // Draw middle rows
-    const middleRowsCount = Math.max(viewportCappedEndRow - viewportCappedStartRow - 1, 0);
-    this.fillCells(0, viewportCappedStartRow + 1, terminal.cols, middleRowsCount);
+    if (columnSelectMode) {
+      const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
+      const width = end[0] - startCol;
+      const height = viewportCappedEndRow - viewportCappedStartRow + 1;
+      this.fillCells(startCol, viewportCappedStartRow, width, height);
+    } else {
+      // Draw first row
+      const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
+      const startRowEndCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : terminal.cols;
+      this.fillCells(startCol, viewportCappedStartRow, startRowEndCol - startCol, 1);
 
-    // Draw final row
-    if (viewportCappedStartRow !== viewportCappedEndRow) {
-      // Only draw viewportEndRow if it's not the same as viewportStartRow
-      const endCol = viewportEndRow === viewportCappedEndRow ? end[0] : terminal.cols;
-      this.fillCells(0, viewportCappedEndRow, endCol, 1);
+      // Draw middle rows
+      const middleRowsCount = Math.max(viewportCappedEndRow - viewportCappedStartRow - 1, 0);
+      this.fillCells(0, viewportCappedStartRow + 1, terminal.cols, middleRowsCount);
+
+      // Draw final row
+      if (viewportCappedStartRow !== viewportCappedEndRow) {
+        // Only draw viewportEndRow if it's not the same as viewportStartRow
+        const endCol = viewportEndRow === viewportCappedEndRow ? end[0] : terminal.cols;
+        this.fillCells(0, viewportCappedEndRow, endCol, 1);
+      }
     }
 
     // Save state for next render
     this._state.start = [start[0], start[1]];
     this._state.end = [end[0], end[1]];
+    this._state.columnSelectMode = columnSelectMode;
+  }
+
+  private _didStateChange(start: [number, number], end: [number, number], columnSelectMode: boolean): boolean {
+    return !this._areCoordinatesEqual(start, this._state.start) ||
+      !this._areCoordinatesEqual(end, this._state.end) ||
+      columnSelectMode !== this._state.columnSelectMode;
+  }
+
+  private _areCoordinatesEqual(coord1: [number, number], coord2: [number, number]): boolean {
+    if (!coord1 || !coord2) {
+      return false;
+    }
+
+    return coord1[0] === coord2[0] && coord1[1] === coord2[1];
   }
 }

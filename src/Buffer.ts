@@ -3,11 +3,12 @@
  * @license MIT
  */
 
-import { CircularList } from './utils/CircularList';
+import { CircularList } from './common/CircularList';
 import { LineData, CharData, ITerminal, IBuffer } from './Types';
 import { EventEmitter } from './EventEmitter';
-import { IDisposable, IMarker } from 'xterm';
+import { IMarker } from 'xterm';
 
+export const DEFAULT_ATTR = (0 << 18) | (257 << 9) | (256 << 0);
 export const CHAR_DATA_ATTR_INDEX = 0;
 export const CHAR_DATA_CHAR_INDEX = 1;
 export const CHAR_DATA_WIDTH_INDEX = 2;
@@ -116,7 +117,7 @@ export class Buffer implements IBuffer {
     if (this.lines.length > 0) {
       // Deal with columns increasing (we don't do anything when columns reduce)
       if (this._terminal.cols < newCols) {
-        const ch: CharData = [this._terminal.defAttr, ' ', 1, 32]; // does xterm use the default attr?
+        const ch: CharData = [DEFAULT_ATTR, ' ', 1, 32]; // does xterm use the default attr?
         for (let i = 0; i < this.lines.length; i++) {
           while (this.lines.get(i).length < newCols) {
             this.lines.get(i).push(ch);
@@ -226,7 +227,7 @@ export class Buffer implements IBuffer {
         if (startCol >= i) {
           startIndex--;
         }
-        if (endCol >= i) {
+        if (endCol > i) {
           endIndex--;
         }
       } else {
@@ -257,6 +258,20 @@ export class Buffer implements IBuffer {
     }
 
     return lineString.substring(startIndex, endIndex);
+  }
+
+  public getWrappedRangeForLine(y: number): { first: number, last: number } {
+    let first = y;
+    let last = y;
+    // Scan upwards for wrapped lines
+    while (first > 0 && (<any>this.lines.get(first)).isWrapped) {
+      first--;
+    }
+    // Scan downwards for wrapped lines
+    while (last + 1 < this.lines.length && (<any>this.lines.get(last + 1)).isWrapped) {
+      last++;
+    }
+    return { first, last };
   }
 
   /**
@@ -305,14 +320,14 @@ export class Buffer implements IBuffer {
   public addMarker(y: number): Marker {
     const marker = new Marker(y);
     this.markers.push(marker);
-    marker.disposables.push(this.lines.addDisposableListener('trim', amount => {
+    marker.register(this.lines.addDisposableListener('trim', amount => {
       marker.line -= amount;
       // The marker should be disposed when the line is trimmed from the buffer
       if (marker.line < 0) {
         marker.dispose();
       }
     }));
-    marker.on('dispose', () => this._removeMarker(marker));
+    marker.register(marker.addDisposableListener('dispose', () => this._removeMarker(marker)));
     return marker;
   }
 
@@ -323,11 +338,10 @@ export class Buffer implements IBuffer {
 }
 
 export class Marker extends EventEmitter implements IMarker {
-  private static NEXT_ID = 1;
+  private static _nextId = 1;
 
-  private _id: number = Marker.NEXT_ID++;
+  private _id: number = Marker._nextId++;
   public isDisposed: boolean = false;
-  public disposables: IDisposable[] = [];
 
   public get id(): number { return this._id; }
 
@@ -342,8 +356,8 @@ export class Marker extends EventEmitter implements IMarker {
       return;
     }
     this.isDisposed = true;
-    this.disposables.forEach(d => d.dispose());
-    this.disposables.length = 0;
+    // Emit before super.dispose such that dispose listeners get a change to react
     this.emit('dispose');
+    super.dispose();
   }
 }

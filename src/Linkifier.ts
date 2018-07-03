@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { IMouseZoneManager } from './input/Types';
+import { IMouseZoneManager } from './ui/Types';
 import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, ILinkifier, ITerminal } from './Types';
-import { MouseZone } from './input/MouseZoneManager';
+import { MouseZone } from './ui/MouseZoneManager';
 import { EventEmitter } from './EventEmitter';
 
 /**
@@ -17,7 +17,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * the costly operation of searching every row multiple times, potentially a
    * huge amount of times.
    */
-  protected static TIME_BEFORE_LINKIFY = 200;
+  protected static readonly TIME_BEFORE_LINKIFY = 200;
 
   protected _linkMatchers: ILinkMatcher[] = [];
 

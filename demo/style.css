@@ -14,3 +14,19 @@ h1 {
     margin: 0 auto;
     padding: 2px;
 }
+
+p {
+    font-size: 0.9em;
+    font-style: italic
+}
+
+#option-container {
+    display: flex;
+    justify-content: center;
+}
+
+.option-group {
+    display: inline-block;
+    padding-left: 20px;
+    vertical-align: top;
+}
