@@ -5,7 +5,9 @@
 
 import { IColorSet } from './renderer/Types';
 import { ITerminal, IViewport } from './Types';
-import { CharMeasure } from './utils/CharMeasure';
+import { CharMeasure } from './ui/CharMeasure';
+import { Disposable } from './common/Lifecycle';
+import { addDisposableDomListener } from './ui/Lifecycle';
 
 const FALLBACK_SCROLL_BAR_WIDTH = 15;
 
@@ -13,7 +15,7 @@ const FALLBACK_SCROLL_BAR_WIDTH = 15;
  * Represents the viewport of a terminal, the visible area within the larger buffer of output.
  * Logic for the virtual scroll bar is included in this object.
  */
-export class Viewport implements IViewport {
+export class Viewport extends Disposable implements IViewport {
   public scrollBarWidth: number = 0;
   private _currentRowHeight: number = 0;
   private _lastRecordedBufferLength: number = 0;
@@ -39,11 +41,13 @@ export class Viewport implements IViewport {
     private _scrollArea: HTMLElement,
     private _charMeasure: CharMeasure
   ) {
+    super();
+
     // Measure the width of the scrollbar. If it is 0 we can assume it's an OSX overlay scrollbar.
     // Unfortunately the overlay scrollbar would be hidden underneath the screen element in that case,
     // therefore we account for a standard amount to make it visible
     this.scrollBarWidth = (this._viewportElement.offsetWidth - this._scrollArea.offsetWidth) || FALLBACK_SCROLL_BAR_WIDTH;
-    this._viewportElement.addEventListener('scroll', this._onScroll.bind(this));
+    this.register(addDisposableDomListener(this._viewportElement, 'scroll', this._onScroll.bind(this)));
 
     // Perform this async to ensure the CharMeasure is ready.
     setTimeout(() => this.syncScrollArea(), 0);
@@ -180,7 +184,7 @@ export class Viewport implements IViewport {
    * @param ev The touch event.
    */
   public onTouchMove(ev: TouchEvent): void {
-    let deltaY = this._lastTouchY - ev.touches[0].pageY;
+    const deltaY = this._lastTouchY - ev.touches[0].pageY;
     this._lastTouchY = ev.touches[0].pageY;
     if (deltaY === 0) {
       return;

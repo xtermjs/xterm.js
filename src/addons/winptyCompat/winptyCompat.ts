@@ -3,8 +3,6 @@
  * @license MIT
  */
 
-/// <reference path="../../../typings/xterm.d.ts"/>
-
 import { Terminal } from 'xterm';
 import { IWinptyCompatAddonTerminal } from './Interfaces';
 
@@ -28,11 +26,11 @@ export function winptyCompatInit(terminal: Terminal): void {
   // Windows when text reaches the end of the terminal it's likely going to be
   // wrapped.
   addonTerminal.on('linefeed', () => {
-    const line = addonTerminal.buffer.lines.get(addonTerminal.buffer.ybase + addonTerminal.buffer.y - 1);
+    const line = addonTerminal._core.buffer.lines.get(addonTerminal._core.buffer.ybase + addonTerminal._core.buffer.y - 1);
     const lastChar = line[addonTerminal.cols - 1];
 
     if (lastChar[3] !== 32 /* ' ' */) {
-      const nextLine = addonTerminal.buffer.lines.get(addonTerminal.buffer.ybase + addonTerminal.buffer.y);
+      const nextLine = addonTerminal._core.buffer.lines.get(addonTerminal._core.buffer.ybase + addonTerminal._core.buffer.y);
       (<any>nextLine).isWrapped = true;
     }
   });

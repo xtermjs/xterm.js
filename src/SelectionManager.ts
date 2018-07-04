@@ -6,7 +6,7 @@
 import { ITerminal, ISelectionManager, IBuffer, CharData, XtermListener } from './Types';
 import { MouseHelper } from './utils/MouseHelper';
 import * as Browser from './shared/utils/Browser';
-import { CharMeasure } from './utils/CharMeasure';
+import { CharMeasure } from './ui/CharMeasure';
 import { EventEmitter } from './EventEmitter';
 import { SelectionModel } from './SelectionModel';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from './Buffer';
@@ -54,10 +54,11 @@ interface IWordPosition {
 /**
  * A selection mode, this drives how the selection behaves on mouse move.
  */
-const enum SelectionMode {
+export const enum SelectionMode {
   NORMAL,
   WORD,
-  LINE
+  LINE,
+  COLUMN
 }
 
 /**
@@ -80,7 +81,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   /**
    * The current selection mode.
    */
-  private _activeSelectionMode: SelectionMode;
+  protected _activeSelectionMode: SelectionMode;
 
   /**
    * A setInterval timer that is active while the mouse is down whose callback
@@ -114,6 +115,11 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
     this._model = new SelectionModel(_terminal);
     this._activeSelectionMode = SelectionMode.NORMAL;
+  }
+
+  public dispose(): void {
+    super.dispose();
+    this._removeMouseDownListeners();
   }
 
   private get _buffer(): IBuffer {
@@ -177,30 +183,43 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
       return '';
     }
 
-    // Get first row
-    const startRowEndCol = start[1] === end[1] ? end[0] : null;
-    let result: string[] = [];
-    result.push(this._buffer.translateBufferLineToString(start[1], true, start[0], startRowEndCol));
+    const result: string[] = [];
 
-    // Get middle rows
-    for (let i = start[1] + 1; i <= end[1] - 1; i++) {
-      const bufferLine = this._buffer.lines.get(i);
-      const lineText = this._buffer.translateBufferLineToString(i, true);
-      if ((<any>bufferLine).isWrapped) {
-        result[result.length - 1] += lineText;
-      } else {
+    if (this._activeSelectionMode === SelectionMode.COLUMN) {
+      // Ignore zero width selections
+      if (start[0] === end[0]) {
+        return '';
+      }
+
+      for (let i = start[1]; i <= end[1]; i++) {
+        const lineText = this._buffer.translateBufferLineToString(i, true, start[0], end[0]);
         result.push(lineText);
       }
-    }
+    } else {
+      // Get first row
+      const startRowEndCol = start[1] === end[1] ? end[0] : null;
+      result.push(this._buffer.translateBufferLineToString(start[1], true, start[0], startRowEndCol));
 
-    // Get final row
-    if (start[1] !== end[1]) {
-      const bufferLine = this._buffer.lines.get(end[1]);
-      const lineText = this._buffer.translateBufferLineToString(end[1], true, 0, end[0]);
-      if ((<any>bufferLine).isWrapped) {
-        result[result.length - 1] += lineText;
-      } else {
-        result.push(lineText);
+      // Get middle rows
+      for (let i = start[1] + 1; i <= end[1] - 1; i++) {
+        const bufferLine = this._buffer.lines.get(i);
+        const lineText = this._buffer.translateBufferLineToString(i, true);
+        if ((<any>bufferLine).isWrapped) {
+          result[result.length - 1] += lineText;
+        } else {
+          result.push(lineText);
+        }
+      }
+
+      // Get final row
+      if (start[1] !== end[1]) {
+        const bufferLine = this._buffer.lines.get(end[1]);
+        const lineText = this._buffer.translateBufferLineToString(end[1], true, 0, end[0]);
+        if ((<any>bufferLine).isWrapped) {
+          result[result.length - 1] += lineText;
+        } else {
+          result.push(lineText);
+        }
       }
     }
 
@@ -249,7 +268,11 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    */
   private _refresh(): void {
     this._refreshAnimationFrame = null;
-    this.emit('refresh', { start: this._model.finalSelectionStart, end: this._model.finalSelectionEnd });
+    this.emit('refresh', {
+      start: this._model.finalSelectionStart,
+      end: this._model.finalSelectionEnd,
+      columnSelectMode: this._activeSelectionMode === SelectionMode.COLUMN
+    });
   }
 
   /**
@@ -358,7 +381,11 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param event The mouse event.
    */
   public shouldForceSelection(event: MouseEvent): boolean {
-    return Browser.isMac ? event.altKey : event.shiftKey;
+    if (Browser.isMac) {
+      return event.altKey && this._terminal.options.macOptionClickForcesSelection;
+    }
+
+    return event.shiftKey;
   }
 
   /**
@@ -449,7 +476,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   private _onSingleClick(event: MouseEvent): void {
     this._model.selectionStartLength = 0;
     this._model.isSelectAllActive = false;
-    this._activeSelectionMode = SelectionMode.NORMAL;
+    this._activeSelectionMode = this.shouldColumnSelect(event) ? SelectionMode.COLUMN : SelectionMode.NORMAL;
 
     // Initialize the new selection
     this._model.selectionStart = this._getMouseBufferCoords(event);
@@ -500,6 +527,14 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
       this._activeSelectionMode = SelectionMode.LINE;
       this._selectLineAt(coords[1]);
     }
+  }
+
+  /**
+   * Returns whether the selection manager should operate in column select mode
+   * @param event the mouse or keyboard event
+   */
+  public shouldColumnSelect(event: KeyboardEvent | MouseEvent): boolean {
+    return event.altKey && !(Browser.isMac && this._terminal.options.macOptionClickForcesSelection);
   }
 
   /**
@@ -586,7 +621,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param event The mouseup event.
    */
   private _onMouseUp(event: MouseEvent): void {
-    let timeElapsed = event.timeStamp - this._mouseDownTimeStamp;
+    const timeElapsed = event.timeStamp - this._mouseDownTimeStamp;
 
     this._removeMouseDownListeners();
 
@@ -803,7 +838,9 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param line The line index.
    */
   protected _selectLineAt(line: number): void {
-    this._model.selectionStart = [0, line];
-    this._model.selectionStartLength = this._terminal.cols;
+    const wrappedRange = this._buffer.getWrappedRangeForLine(line);
+    this._model.selectionStart = [0, wrappedRange.first];
+    this._model.selectionEnd = [this._terminal.cols, wrappedRange.last];
+    this._model.selectionStartLength = 0;
   }
 }

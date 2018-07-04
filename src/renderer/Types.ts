@@ -4,7 +4,7 @@
  */
 
 import { ITerminal } from '../Types';
-import { IEventEmitter, ITheme } from 'xterm';
+import { IEventEmitter, ITheme, IDisposable } from 'xterm';
 import { IColorSet } from '../shared/Types';
 
 /**
@@ -20,17 +20,22 @@ export const enum FLAGS {
   ITALIC = 64
 }
 
-export interface IRenderer extends IEventEmitter {
+/**
+ * Note that IRenderer implementations should emit the refresh event after
+ * rendering rows to the screen.
+ */
+export interface IRenderer extends IEventEmitter, IDisposable {
   dimensions: IRenderDimensions;
   colorManager: IColorManager;
 
+  dispose(): void;
   setTheme(theme: ITheme): IColorSet;
   onWindowResize(devicePixelRatio: number): void;
   onResize(cols: number, rows: number): void;
   onCharSizeChanged(): void;
   onBlur(): void;
   onFocus(): void;
-  onSelectionChanged(start: [number, number], end: [number, number]): void;
+  onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void;
   onCursorMove(): void;
   onOptionsChanged(): void;
   clear(): void;
@@ -94,7 +99,7 @@ export interface IRenderLayer {
   /**
    * Calls when the selection changes.
    */
-  onSelectionChanged(terminal: ITerminal, start: [number, number], end: [number, number]): void;
+  onSelectionChanged(terminal: ITerminal, start: [number, number], end: [number, number], columnSelectMode: boolean): void;
 
   /**
    * Resize the render layer.

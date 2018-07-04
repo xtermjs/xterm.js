@@ -4,6 +4,7 @@
  */
 
 import { ParserState, ParserAction, IParsingState, IDcsHandler, IEscapeSequenceParser } from './Types';
+import { Disposable } from './common/Lifecycle';
 
 /**
  * Returns an array filled with numbers between the low and high parameters (right exclusive).
@@ -12,7 +13,7 @@ import { ParserState, ParserAction, IParsingState, IDcsHandler, IEscapeSequenceP
  */
 function r(low: number, high: number): number[] {
   let c = high - low;
-  let arr = new Array(c);
+  const arr = new Array(c);
   while (c--) {
     arr[c] = --high;
   }
@@ -62,8 +63,8 @@ export class TransitionTable {
 /**
  * Default definitions for the VT500_TRANSITION_TABLE.
  */
-let PRINTABLES = r(0x20, 0x7f);
-let EXECUTABLES = r(0x00, 0x18);
+const PRINTABLES = r(0x20, 0x7f);
+const EXECUTABLES = r(0x00, 0x18);
 EXECUTABLES.push(0x19);
 EXECUTABLES.concat(r(0x1c, 0x20));
 const DEFAULT_TRANSITION = ParserAction.ERROR << 4 | ParserState.GROUND;
@@ -73,9 +74,9 @@ const DEFAULT_TRANSITION = ParserAction.ERROR << 4 | ParserState.GROUND;
  * Taken from https://vt100.net/emu/dec_ansi_parser.
  */
 export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
-  let table: TransitionTable = new TransitionTable(4095);
+  const table: TransitionTable = new TransitionTable(4095);
 
-  let states: number[] = r(ParserState.GROUND, ParserState.DCS_PASSTHROUGH + 1);
+  const states: number[] = r(ParserState.GROUND, ParserState.DCS_PASSTHROUGH + 1);
   let state: any;
 
   // table with default transition [any] --> DEFAULT_TRANSITION
@@ -207,7 +208,7 @@ class DcsDummy implements IDcsHandler {
  * NOTE: The parameter element notation is currently not supported.
  * TODO: implement error recovery hook via error handler return values
  */
-export class EscapeSequenceParser implements IEscapeSequenceParser {
+export class EscapeSequenceParser extends Disposable implements IEscapeSequenceParser {
   public initialState: number;
   public currentState: number;
 
@@ -235,7 +236,9 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
   protected _dcsHandlerFb: IDcsHandler;
   protected _errorHandlerFb: (state: IParsingState) => IParsingState;
 
-  constructor(readonly transitions: TransitionTable = VT500_TRANSITION_TABLE) {
+  constructor(readonly TRANSITIONS: TransitionTable = VT500_TRANSITION_TABLE) {
+    super();
+
     this.initialState = ParserState.GROUND;
     this.currentState = this.initialState;
     this._osc = '';
@@ -258,6 +261,24 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     this._dcsHandlers = Object.create(null);
     this._activeDcsHandler = null;
     this._errorHandler = this._errorHandlerFb;
+  }
+
+  public dispose(): void {
+    this._printHandlerFb = null;
+    this._executeHandlerFb = null;
+    this._csiHandlerFb = null;
+    this._escHandlerFb = null;
+    this._oscHandlerFb = null;
+    this._dcsHandlerFb = null;
+    this._errorHandlerFb = null;
+    this._printHandler = null;
+    this._executeHandlers = null;
+    this._csiHandlers = null;
+    this._escHandlers = null;
+    this._oscHandlers = null;
+    this._dcsHandlers = null;
+    this._activeDcsHandler = null;
+    this._errorHandler = null;
   }
 
   setPrintHandler(callback: (data: string, start: number, end: number) => void): void {
@@ -342,7 +363,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
     let osc = this._osc;
     let collect = this._collect;
     let params = this._params;
-    const table: Uint8Array | number[] = this.transitions.table;
+    const table: Uint8Array | number[] = this.TRANSITIONS.table;
     let dcsHandler: IDcsHandler | null = this._activeDcsHandler;
     let callback: Function | null = null;
 
@@ -421,7 +442,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
           }
           // if we end up here a real error happened
           if (error) {
-            let inject: IParsingState = this._errorHandler(
+            const inject: IParsingState = this._errorHandler(
               {
                 position: i,
                 code,
@@ -499,15 +520,15 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
           if (osc && code !== 0x18 && code !== 0x1a) {
             // NOTE: OSC subparsing is not part of the original parser
             // we do basic identifier parsing here to offer a jump table for OSC as well
-            let idx = osc.indexOf(';');
+            const idx = osc.indexOf(';');
             if (idx === -1) {
               this._oscHandlerFb(-1, osc);  // this is an error (malformed OSC)
             } else {
               // Note: NaN is not handled here
               // either catch it with the fallback handler
               // or with an explicit NaN OSC handler
-              let identifier = parseInt(osc.substring(0, idx));
-              let content = osc.substring(idx + 1);
+              const identifier = parseInt(osc.substring(0, idx));
+              const content = osc.substring(idx + 1);
               callback = this._oscHandlers[identifier];
               if (callback) callback(content);
               else this._oscHandlerFb(identifier, content);

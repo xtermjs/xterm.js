@@ -1,6 +1,6 @@
 # [![xterm.js logo](logo-full.png)](https://xtermjs.org)
 
-[![xterm.js build status](https://api.travis-ci.org/xtermjs/xterm.js.svg)](https://travis-ci.org/xtermjs/xterm.js) [![Coverage Status](https://coveralls.io/repos/github/xtermjs/xterm.js/badge.svg?branch=master)](https://coveralls.io/github/xtermjs/xterm.js?branch=master) [![Gitter](https://badges.gitter.im/sourcelair/xterm.js.svg)](https://gitter.im/sourcelair/xterm.js?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![jsDelivr Hits](https://data.jsdelivr.com/v1/package/npm/xterm/badge?style=rounded)](https://www.jsdelivr.com/package/npm/xterm)
+[![Travis CI build status](https://api.travis-ci.org/xtermjs/xterm.js.svg)](https://travis-ci.org/xtermjs/xterm.js) [![VSTS Build status](https://xtermjs.visualstudio.com/_apis/public/build/definitions/3e323cf7-5760-460d-af64-ee5675baf366/1/badge)](https://xtermjs.visualstudio.com/xterm.js/_build/index?definitionId=1) [![Coverage Status](https://coveralls.io/repos/github/xtermjs/xterm.js/badge.svg?branch=master)](https://coveralls.io/github/xtermjs/xterm.js?branch=master) [![Gitter](https://badges.gitter.im/sourcelair/xterm.js.svg)](https://gitter.im/sourcelair/xterm.js?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![jsDelivr Hits](https://data.jsdelivr.com/v1/package/npm/xterm/badge?style=rounded)](https://www.jsdelivr.com/package/npm/xterm)
 
 Xterm.js is a terminal front-end component written in JavaScript that works in the browser.
 
@@ -39,7 +39,7 @@ To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to t
     <body>
       <div id="terminal"></div>
       <script>
-      	var term = new Terminal();
+        var term = new Terminal();
         term.open(document.getElementById('terminal'));
         term.write('Hello from \x1B[1;3;31mxterm.js\x1B[0m $ ')
       </script>
@@ -149,8 +149,12 @@ computational environment for Jupyter, supporting interactive data science and s
 - [**Fluent Terminal**](https://github.com/felixse/FluentTerminal): A terminal emulator based on UWP and web technologies.
 - [**Hyper**](https://hyper.is): A terminal built on web technologies
 - [**Diag**](https://diag.ai): A better way to troubleshoot problems faster. Capture, share and reapply troubleshooting knowledge so you can focus on solving problems that matter.
+- [**GoTTY**](https://github.com/yudai/gotty): A simple command line tool that shares your terminal as a web application based on xterm.js.
+- [**genact**](https://github.com/svenstaro/genact): A nonsense activity generator.
+- [**cPanel & WHM**](https://cpanel.com): The hosting platform of choice.
+- [**Nutanix**](https://github.com/nutanix): Nutanix Enterprise Cloud uses xterm in the webssh functionality within Nutanix Calm, and is also looking to move our old noserial (termjs) functionality to xterm.js
 
-Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list.
+Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list. Note: Please add any new contributions to the end of the list only.
 
 ## Demo
 
@@ -223,6 +227,16 @@ Then open http://127.0.0.1:3000 in a web browser to access the demo.
 
 *Note: Do not use ConEmu, as it seems to break the demo for some reason.*
 
+## Testing
+
+Tests are run using the following npm scripts:
+
+- `npm test`: This will run both unit tests and the linter
+- `npm run test-suite <file>`: This will run all tests within a particular file, &lt;file&gt; is the test file name excluding the extension (eg. "Linkifier.test")
+- `npm run test-debug`: This will run unit tests with `--inspect-brk`, this can then be automatically debugged using [VS Code auto attach](https://code.visualstudio.com/docs/nodejs/nodejs-debugging#_auto-attach-feature) or manually attached to by a debugger
+- `npm run test-coverage`: This will run all unit tests and produce a coverage report
+- `npm run lint`: This will run the linter only
+
 ## Releases
 
 Xterm.js follows a monthly release cycle roughly.
@@ -237,12 +251,12 @@ To contribute either code, documentation or issues to xterm.js please read the [
 
 ### Code structure
 
-`src/` is roughly split up into areas of functionality such as `renderer/` that handles all rendering and `utils/` which provides general utility functions. The `shared/` folder contains code that can be used from either the main thread or a web worker thread, all code inside a `shared/` folder should only ever import other code from a `shared/` folder to minimize the amount of code run what launching a web worker.
+`src/` is roughly split up into areas of functionality such as `renderer/` that handles all rendering and `utils/` which provides general utility functions. The `shared/` folder contains code that can be used from either the main thread or a web worker thread, all code inside a `shared/` folder should only ever import other code from a `shared/` folder to minimize the amount of code ran when launching a web worker.
 
 ## License Agreement
 
 If you contribute code to this project, you are implicitly allowing your code to be distributed under the MIT license. You are also implicitly verifying that all code is your original work.
 
-Copyright (c) 2017-2018, [The xterm.js authors](https://github.com/xtermjs/xterm.js/graphs/contributors) (MIT License)
-Copyright (c) 2014-2017, SourceLair, Private Company ([www.sourcelair.com](https://www.sourcelair.com/home)) (MIT License)
+Copyright (c) 2017-2018, [The xterm.js authors](https://github.com/xtermjs/xterm.js/graphs/contributors) (MIT License)<br>
+Copyright (c) 2014-2017, SourceLair, Private Company ([www.sourcelair.com](https://www.sourcelair.com/home)) (MIT License)<br>
 Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)

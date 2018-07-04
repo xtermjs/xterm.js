@@ -5,11 +5,13 @@
 
 import { XtermListener } from './Types';
 import { IEventEmitter, IDisposable } from 'xterm';
+import { Disposable } from './common/Lifecycle';
 
-export class EventEmitter implements IEventEmitter, IDisposable {
+export class EventEmitter extends Disposable implements IEventEmitter, IDisposable {
   private _events: {[type: string]: XtermListener[]};
 
   constructor() {
+    super();
     // Restore the previous events if available, this will happen if the
     // constructor is called multiple times on the same object (terminal reset).
     this._events = this._events || {};
@@ -26,6 +28,7 @@ export class EventEmitter implements IEventEmitter, IDisposable {
    * @param handler The handler for the listener.
    */
   public addDisposableListener(type: string, handler: XtermListener): IDisposable {
+    // TODO: Rename addDisposableEventListener to more easily disambiguate from Dom listener
     this.on(type, handler);
     return {
       dispose: () => {
@@ -44,7 +47,7 @@ export class EventEmitter implements IEventEmitter, IDisposable {
       return;
     }
 
-    let obj = this._events[type];
+    const obj = this._events[type];
     let i = obj.length;
 
     while (i--) {
@@ -65,7 +68,7 @@ export class EventEmitter implements IEventEmitter, IDisposable {
     if (!this._events[type]) {
       return;
     }
-    let obj = this._events[type];
+    const obj = this._events[type];
     for (let i = 0; i < obj.length; i++) {
       obj[i].apply(this, args);
     }
@@ -76,6 +79,7 @@ export class EventEmitter implements IEventEmitter, IDisposable {
   }
 
   public dispose(): void {
+    super.dispose();
     this._events = {};
   }
 }

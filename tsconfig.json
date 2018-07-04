@@ -3,19 +3,22 @@
     "module": "commonjs",
     "target": "es5",
     "lib": [
-      "DOM",
-      "ES5",
-      "ScriptHost",
-      "ES2015.Promise"
+      "dom",
+      "es5",
+      "scripthost",
+      "es2015.promise"
     ],
     "rootDir": "src",
     "outDir": "lib",
     "sourceMap": true,
     "removeComments": true,
-    "noUnusedLocals": true
+    "preserveWatchOutput": true,
+    "noUnusedLocals": true,
+    "noImplicitAny": true
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "typings/xterm.d.ts"
   ],
   "exclude": [
     "src/addons/**/*"

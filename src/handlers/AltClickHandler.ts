@@ -4,7 +4,7 @@
  */
 
 import { ITerminal, ICircularList, LineData } from '../Types';
-import { C0 } from '../EscapeSequences';
+import { C0 } from '../common/data/EscapeSequences';
 
 const enum Direction {
   UP = 'A',
@@ -28,7 +28,7 @@ export class AltClickHandler {
     this._startCol = this._terminal.buffer.x;
     this._startRow = this._terminal.buffer.y;
 
-    let coordinates = this._terminal.mouseHelper.getCoords(
+    const coordinates = this._terminal.mouseHelper.getCoords(
       this._mouseEvent,
       this._terminal.element,
       this._terminal.charMeasure,
@@ -89,10 +89,10 @@ export class AltClickHandler {
    * ignoring wrapped rows
    */
   private _moveToRequestedRow(): string {
-    let startRow = this._startRow - this._wrappedRowsForRow(this._startRow);
-    let endRow = this._endRow - this._wrappedRowsForRow(this._endRow);
+    const startRow = this._startRow - this._wrappedRowsForRow(this._startRow);
+    const endRow = this._endRow - this._wrappedRowsForRow(this._endRow);
 
-    let rowsToMove = Math.abs(startRow - endRow) - this._wrappedRowsCount();
+    const rowsToMove = Math.abs(startRow - endRow) - this._wrappedRowsCount();
 
     return repeat(rowsToMove, this._sequence(this._verticalDirection()));
   }
@@ -108,8 +108,8 @@ export class AltClickHandler {
       startRow = this._startRow;
     }
 
-    let endRow = this._endRow;
-    let direction = this._horizontalDirection();
+    const endRow = this._endRow;
+    const direction = this._horizontalDirection();
 
     return repeat(this._bufferLine(
       this._startCol, startRow, this._endCol, endRow,
@@ -118,7 +118,7 @@ export class AltClickHandler {
   }
 
   private _moveHorizontallyOnly(): string {
-    let direction = this._horizontalDirection();
+    const direction = this._horizontalDirection();
     return repeat(Math.abs(this._startCol - this._endCol), this._sequence(direction));
   }
 
@@ -132,11 +132,11 @@ export class AltClickHandler {
    */
   private _wrappedRowsCount(): number {
     let wrappedRows = 0;
-    let startRow = this._startRow - this._wrappedRowsForRow(this._startRow);
-    let endRow = this._endRow - this._wrappedRowsForRow(this._endRow);
+    const startRow = this._startRow - this._wrappedRowsForRow(this._startRow);
+    const endRow = this._endRow - this._wrappedRowsForRow(this._endRow);
 
     for (let i = 0; i < Math.abs(startRow - endRow); i++) {
-      let direction = this._verticalDirection() === Direction.UP ? -1 : 1;
+      const direction = this._verticalDirection() === Direction.UP ? -1 : 1;
 
       if ((<any>this._lines.get(startRow + (direction * i))).isWrapped) {
         wrappedRows++;

@@ -13,8 +13,6 @@
  *          row and truncate its width with the current number of columns).
  */
 
-/// <reference path="../../../typings/xterm.d.ts"/>
-
 import { Terminal } from 'xterm';
 
 export interface IGeometry {
@@ -39,10 +37,10 @@ export function proposeGeometry(term: Terminal): IGeometry {
   const elementPaddingVer = elementPadding.top + elementPadding.bottom;
   const elementPaddingHor = elementPadding.right + elementPadding.left;
   const availableHeight = parentElementHeight - elementPaddingVer;
-  const availableWidth = parentElementWidth - elementPaddingHor - (<any>term).viewport.scrollBarWidth;
+  const availableWidth = parentElementWidth - elementPaddingHor - (<any>term)._core.viewport.scrollBarWidth;
   const geometry = {
-    cols: Math.floor(availableWidth / (<any>term).renderer.dimensions.actualCellWidth),
-    rows: Math.floor(availableHeight / (<any>term).renderer.dimensions.actualCellHeight)
+    cols: Math.floor(availableWidth / (<any>term)._core.renderer.dimensions.actualCellWidth),
+    rows: Math.floor(availableHeight / (<any>term)._core.renderer.dimensions.actualCellHeight)
   };
   return geometry;
 }
@@ -52,7 +50,7 @@ export function fit(term: Terminal): void {
   if (geometry) {
     // Force a full render
     if (term.rows !== geometry.rows || term.cols !== geometry.cols) {
-      (<any>term).renderer.clear();
+      (<any>term)._core.renderer.clear();
       term.resize(geometry.cols, geometry.rows);
     }
   }

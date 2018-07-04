@@ -208,7 +208,9 @@ export class TextRenderLayer extends BaseRenderLayer {
       return;
     }
 
-    this._charAtlas.beginFrame();
+    if (this._charAtlas) {
+      this._charAtlas.beginFrame();
+    }
 
     this.clearCells(0, firstRow, terminal.cols, lastRow - firstRow + 1);
     this._drawBackground(terminal, firstRow, lastRow);

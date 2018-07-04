@@ -14,6 +14,11 @@ declare module 'xterm' {
   export type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
 
   /**
+   * A string representing a renderer type.
+   */
+  export type RendererType = 'dom' | 'canvas';
+
+  /**
    * An object containing start up options for the terminal.
    */
   export interface ITerminalOptions {
@@ -118,6 +123,32 @@ declare module 'xterm' {
      * Whether to treat option as the meta key.
      */
     macOptionIsMeta?: boolean;
+
+    /**
+     * Whether holding a modifier key will force normal selection behavior,
+     * regardless of whether the terminal is in mouse events mode. This will
+     * also prevent mouse events from being emitted by the terminal. For example,
+     * this allows you to use xterm.js' regular selection inside tmux with
+     * mouse mode enabled.
+     */
+    macOptionClickForcesSelection?: boolean;
+
+    /**
+     * (EXPERIMENTAL) The type of renderer to use, this allows using the
+     * fallback DOM renderer when canvas is too slow for the environment. The
+     * following features do not work when the DOM renderer is used:
+     *
+     * - Links
+     * - Line height
+     * - Letter spacing
+     * - Cursor blink
+     * - Cursor style
+     *
+     * This option is marked as experiemental because it will eventually be
+     * moved to an addon. You can only set this option in the constructor (not
+     * setOption).
+     */
+    rendererType?: RendererType;
 
     /**
      * Whether to select the word under the cursor on right click, this is
@@ -530,7 +561,7 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'fontWeight' | 'fontWeightBold'| 'termName'): string;
+    getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'fontWeight' | 'fontWeightBold'| 'rendererType' | 'termName'): string;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
