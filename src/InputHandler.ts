@@ -316,6 +316,7 @@ export class InputHandler implements IInputHandler {
     let code: number;
     let low: number;
     let chWidth: number;
+    let pString: number;
     const buffer: IBuffer = this._terminal.buffer;
     const charset: ICharset = this._terminal.charset;
     const screenReaderMode: boolean = this._terminal.options.screenReaderMode;
@@ -375,10 +376,12 @@ export class InputHandler implements IInputHandler {
             // since an empty cell is only set by fullwidth chars
             if (bufferRow[buffer.x - 2]) {
               // bufferRow[buffer.x - 2][CHAR_DATA_CHAR_INDEX] += char;
+              bufferRow[buffer.x - 2][1] = this._terminal.cellStorage.concat(bufferRow[buffer.x - 2][1], code);
               bufferRow[buffer.x - 2][CHAR_DATA_CODE_INDEX] = code;
             }
           } else {
             // bufferRow[buffer.x - 1][CHAR_DATA_CHAR_INDEX] += char;
+            bufferRow[buffer.x - 1][1] = this._terminal.cellStorage.concat(bufferRow[buffer.x - 1][1], code);
             bufferRow[buffer.x - 1][CHAR_DATA_CODE_INDEX] = code;
           }
         }
