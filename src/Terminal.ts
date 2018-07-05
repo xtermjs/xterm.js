@@ -53,7 +53,7 @@ import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent } from './common/Types';
 import { evaluateKeyboardEvent } from './core/input/Keyboard';
 import { KeyboardResultType, ICharset } from './core/Types';
-import { CellStorage } from './CellStorage';
+import { StringStorage } from './StringStorage';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -175,7 +175,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   public curAttr: number;
   public savedCurAttr: number;
-  public cellStorage: CellStorage;
+  public cellStorage: StringStorage;
 
   public params: (string | number)[];
   public currentParam: string | number;
@@ -296,7 +296,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.charsets = [null];
 
     this.curAttr = DEFAULT_ATTR;
-    this.cellStorage = new CellStorage(4);
+    this.cellStorage = new StringStorage(4);
 
     this.params = [];
     this.currentParam = 0;

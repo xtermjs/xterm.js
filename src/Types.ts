@@ -7,7 +7,7 @@ import { Terminal as PublicTerminal, ITerminalOptions as IPublicTerminalOptions,
 import { IColorSet, IRenderer } from './renderer/Types';
 import { IMouseZoneManager } from './input/Types';
 import { ICharset } from './core/Types';
-import { CellStorage } from './CellStorage';
+import { StringStorage } from './StringStorage';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
@@ -218,7 +218,7 @@ export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAcce
   viewport: IViewport;
   bracketedPasteMode: boolean;
   applicationCursor: boolean;
-  cellStorage: CellStorage;
+  cellStorage: StringStorage;
 
   /**
    * Emit the 'data' event and populate the given data.
