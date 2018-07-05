@@ -325,6 +325,7 @@ export class InputHandler implements IInputHandler {
     const insertMode: boolean = this._terminal.insertMode;
     const curAttr: number = this._terminal.curAttr;
     let bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
+    let newRow = this._terminal.tb.get((buffer.y + buffer.ybase < 1000) ? buffer.y + buffer.ybase : 999);
 
     this._terminal.updateRange(buffer.y);
     for (let stringPosition = start; stringPosition < end; ++stringPosition) {
@@ -406,6 +407,7 @@ export class InputHandler implements IInputHandler {
           }
           // row changed, get it again
           bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
+          newRow = this._terminal.tb.get((buffer.y + buffer.ybase < 1000) ? buffer.y + buffer.ybase : 999);
         } else {
           if (chWidth === 2) {
             // FIXME: check for xterm behavior
@@ -438,6 +440,7 @@ export class InputHandler implements IInputHandler {
 
       // write current char to buffer and advance cursor
       bufferRow[buffer.x++] = [curAttr, code, chWidth, code];
+      newRow.set(buffer.x - 1, curAttr, code);
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor
       if (chWidth === 2) {
