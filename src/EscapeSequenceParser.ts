@@ -375,8 +375,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
       // shortcut for most chars (print action)
       if (currentState === ParserState.GROUND && code > 0x1f && code < 0x80) {
         print = (~print) ? print : i;
-        do code = data.charCodeAt(++i);
-        while (i < l && code > 0x1f && code < 0x80);
+        while (++i < l && data.charCodeAt(i) > 0x1f && data.charCodeAt(i) < 0x80) {}
         i--;
         continue;
       }
