@@ -353,8 +353,7 @@ export class EscapeSequenceParser implements IEscapeSequenceParser {
       // shortcut for most chars (print action)
       if (currentState === ParserState.GROUND && code > 0x1f && code < 0x80) {
         print = (~print) ? print : i;
-        do code = data[++i];
-        while (i < length && code > 0x1f && code < 0x80);
+        while (++i < length && data[i] > 0x1f && data[i] < 0x80) {}
         i--;
         continue;
       }
