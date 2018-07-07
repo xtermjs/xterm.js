@@ -166,6 +166,7 @@ export class StringStorage {
    * @param idx 
    */
   public getString(idx: number): string {
+    if (!idx) return '';
     if (idx > 0) {
       if (idx < 65536) return String.fromCharCode(idx);
       idx -= 0x10000;

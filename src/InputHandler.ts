@@ -441,6 +441,11 @@ export class InputHandler implements IInputHandler {
       // write current char to buffer and advance cursor
       bufferRow[buffer.x++] = [curAttr, code, chWidth, code];
       newRow.set(buffer.x - 1, curAttr, code);
+      this._terminal.tbw.set(
+        buffer.x - 1,
+        (buffer.y + buffer.ybase < 1000) ? buffer.y + buffer.ybase : 999,
+        curAttr,
+        code);
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor
       if (chWidth === 2) {

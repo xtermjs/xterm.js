@@ -54,7 +54,7 @@ import { IKeyboardEvent } from './common/Types';
 import { evaluateKeyboardEvent } from './core/input/Keyboard';
 import { KeyboardResultType, ICharset } from './core/Types';
 import { StringStorage } from './StringStorage';
-import { LineBuffer, TerminalBuffer } from './TypedBuffer';
+import { LineBuffer, TerminalBuffer, TerminalBufferWhole } from './TypedBuffer';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -185,6 +185,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public writeBuffer: string[];
   private _writeInProgress: boolean;
   public tb: TerminalBuffer;
+  public tbw: TerminalBufferWhole;
 
   /**
    * Whether _xterm.js_ sent XOFF in order to catch up with the pty process.
@@ -300,6 +301,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.curAttr = DEFAULT_ATTR;
     this.cellStorage = new StringStorage(4);
     this.tb = new TerminalBuffer(87, 1000, this.cellStorage);
+    this.tbw = new TerminalBufferWhole(87, 1000, this.cellStorage);
 
     this.params = [];
     this.currentParam = 0;
