@@ -68,9 +68,15 @@ export class TextRenderLayer extends BaseRenderLayer {
       const line = terminal.buffer.lines.get(row);
       for (let x = 0; x < terminal.cols; x++) {
         const charData = line[x];
-        const code: number = <number>charData[CHAR_DATA_CODE_INDEX];
-        const char: string = terminal.cellStorage.getString(charData[1]);
-        const attr: number = charData[CHAR_DATA_ATTR_INDEX];
+        // const code: number = <number>charData[CHAR_DATA_CODE_INDEX];
+        // const char: string = terminal.cellStorage.getString(charData[1]);
+        // const attr: number = charData[CHAR_DATA_ATTR_INDEX];
+
+        const idx = terminal.tbw.getDataIndex(x, row);
+        const code: number = terminal.tbw.data[idx + 1];
+        const char: string = terminal.cellStorage.getString(terminal.tbw.data[idx + 1]);
+        const attr: number = terminal.tbw.data[idx];
+
         let width: number = charData[CHAR_DATA_WIDTH_INDEX];
 
         // The character to the left is a wide character, drawing is owned by

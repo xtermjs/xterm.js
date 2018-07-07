@@ -8,6 +8,7 @@ import { IColorSet, IRenderer } from './renderer/Types';
 import { IMouseZoneManager } from './input/Types';
 import { ICharset } from './core/Types';
 import { StringStorage } from './StringStorage';
+import { TerminalBuffer } from './TypedBuffer';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
@@ -219,6 +220,7 @@ export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAcce
   bracketedPasteMode: boolean;
   applicationCursor: boolean;
   cellStorage: StringStorage;
+  tbw: TerminalBuffer;
 
   /**
    * Emit the 'data' event and populate the given data.

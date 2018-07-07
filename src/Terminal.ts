@@ -54,7 +54,7 @@ import { IKeyboardEvent } from './common/Types';
 import { evaluateKeyboardEvent } from './core/input/Keyboard';
 import { KeyboardResultType, ICharset } from './core/Types';
 import { StringStorage } from './StringStorage';
-import { LineBuffer, TerminalBuffer, TerminalBufferWhole } from './TypedBuffer';
+import { TerminalBuffer } from './TypedBuffer';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -184,8 +184,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   // user input states
   public writeBuffer: string[];
   private _writeInProgress: boolean;
-  public tb: TerminalBuffer;
-  public tbw: TerminalBufferWhole;
+  public tbw: TerminalBuffer;
 
   /**
    * Whether _xterm.js_ sent XOFF in order to catch up with the pty process.
@@ -300,8 +299,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     this.curAttr = DEFAULT_ATTR;
     this.cellStorage = new StringStorage(4);
-    this.tb = new TerminalBuffer(87, 1000, this.cellStorage);
-    this.tbw = new TerminalBufferWhole(87, 1000, this.cellStorage);
+    this.tbw = new TerminalBuffer(87, 1025, this.cellStorage);
 
     this.params = [];
     this.currentParam = 0;
@@ -1132,6 +1130,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // Insert the line using the fastest method
       if (bottomRow === this.buffer.lines.length - 1) {
         this.buffer.lines.push(newLine);
+        this.tbw.advanceRowIndex(1);
+        this.tbw.clearRow(0, this.eraseAttr(), 32, true);
       } else {
         this.buffer.lines.splice(bottomRow + 1, 0, newLine);
       }
