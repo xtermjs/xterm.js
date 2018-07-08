@@ -4,12 +4,11 @@
  */
 
 import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from '../Buffer';
-import { FLAGS, IColorSet, IRenderDimensions, ICharacterJoiner } from './Types';
+import { FLAGS, IColorSet, IRenderDimensions, ICharacterJoinerRegistry } from './Types';
 import { CharData, ITerminal } from '../Types';
 import { INVERTED_DEFAULT_COLOR } from './atlas/Types';
 import { GridCache } from './GridCache';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { merge } from '../utils/MergeRanges';
 
 /**
  * This CharData looks like a null character, which will forc a clear and render
@@ -23,11 +22,12 @@ export class TextRenderLayer extends BaseRenderLayer {
   private _characterWidth: number;
   private _characterFont: string;
   private _characterOverlapCache: { [key: string]: boolean } = {};
-  private _joiners: ICharacterJoiner[] = [];
+  private _characterJoinerRegistry: ICharacterJoinerRegistry;
 
-  constructor(container: HTMLElement, zIndex: number, colors: IColorSet, alpha: boolean) {
+  constructor(container: HTMLElement, zIndex: number, colors: IColorSet, characterJoinerRegistry: ICharacterJoinerRegistry, alpha: boolean) {
     super(container, 'text', zIndex, alpha, colors);
     this._state = new GridCache<CharData>();
+    this._characterJoinerRegistry = characterJoinerRegistry;
   }
 
   public resize(terminal: ITerminal, dim: IRenderDimensions): void {
@@ -54,10 +54,10 @@ export class TextRenderLayer extends BaseRenderLayer {
     terminal: ITerminal,
     firstRow: number,
     lastRow: number,
-    foreground: boolean,
+    joinerRegistry: ICharacterJoinerRegistry | null,
     callback: (
       code: number,
-      char: string,
+      chars: string,
       width: number,
       x: number,
       y: number,
@@ -69,14 +69,20 @@ export class TextRenderLayer extends BaseRenderLayer {
     for (let y = firstRow; y <= lastRow; y++) {
       const row = y + terminal.buffer.ydisp;
       const line = terminal.buffer.lines.get(row);
-      let index = 0;
-      const joinedRanges = foreground ? this._getJoinedCharacters(terminal, row) : [];
+      const joinedRanges = joinerRegistry ? joinerRegistry.getJoinedCharacters(row) : [];
       for (let x = 0; x < terminal.cols; x++) {
-        let charData = line[x];
-        const code: number = <number>charData[CHAR_DATA_CODE_INDEX];
-        let char: string = charData[CHAR_DATA_CHAR_INDEX];
+        const charData = line[x];
+        let code: number = <number>charData[CHAR_DATA_CODE_INDEX];
+
+        // Can either represent character(s) for a single cell or multiple cells
+        // if indicated by a character joiner.
+        let chars: string = charData[CHAR_DATA_CHAR_INDEX];
         const attr: number = charData[CHAR_DATA_ATTR_INDEX];
         let width: number = charData[CHAR_DATA_WIDTH_INDEX];
+
+        // If true, indicates that the current character(s) to draw were joined.
+        let isJoined = false;
+        let lastCharX = x;
 
         // The character to the left is a wide character, drawing is owned by
         // the char at x-1
@@ -84,44 +90,33 @@ export class TextRenderLayer extends BaseRenderLayer {
           continue;
         }
 
-        // Just in case we ended up in the middle of a range, lop off any
-        // ranges that have already passed
-        while (joinedRanges.length > 0 && joinedRanges[0][0] < x) {
-          joinedRanges.shift();
-        }
-
         // Process any joined character ranges as needed. Because of how the
         // ranges are produced, we know that they are valid for the characters
         // and attributes of our input.
-        let lastCharX = x;
         if (joinedRanges.length > 0 && x === joinedRanges[0][0]) {
+          isJoined = true;
           const range = joinedRanges.shift();
 
-          // We need to start the searching at the next character
-          lastCharX++;
-          index++;
+          // We already know the exact start and end column of the joined range,
+          // so we get the string and width representing it directly
+          chars = terminal.buffer.translateBufferLineToString(
+            row,
+            true,
+            range[0],
+            range[1]
+          );
+          width = range[1] - range[0];
+          code = Infinity;
 
-          // Build up the string
-          for (; lastCharX < terminal.cols && index < range[1]; lastCharX++) {
-            charData = line[lastCharX];
-            if (charData[CHAR_DATA_WIDTH_INDEX] !== 0) {
-              char += charData[CHAR_DATA_CHAR_INDEX];
-              index++;
-            }
-          }
-
-          // Update our data accordingly. We use the width of the last character
-          // for the rest of the checks and decrement our column/index so that
-          // they align with the last character matched rather than the next
-          // character in the sequence.
-          width = charData[CHAR_DATA_WIDTH_INDEX];
-          lastCharX--;
-          index--;
+          // Skip over the cells occupied by this range in the loop
+          lastCharX = range[1] - 1;
         }
 
-        // If the character is an overlapping char and the character to the right is a
-        // space, take ownership of the cell to the right.
-        if (this._isOverlapping(charData)) {
+        // If the character is an overlapping char and the character to the
+        // right is a space, take ownership of the cell to the right. We skip
+        // this check for joined characters because their rendering likely won't
+        // yield the same result as rendering the last character individually.
+        if (!isJoined && this._isOverlapping(charData)) {
           // If the character is overlapping, we want to force a re-render on every
           // frame. This is specifically to work around the case where two
           // overlaping chars `a` and `b` are adjacent, the cursor is moved to b and a
@@ -157,9 +152,9 @@ export class TextRenderLayer extends BaseRenderLayer {
         }
 
         callback(
-          char.length === 1 ? code : Infinity,
-          char,
-          char.length + width - 1,
+          code,
+          chars,
+          width,
           x,
           y,
           fg,
@@ -168,7 +163,6 @@ export class TextRenderLayer extends BaseRenderLayer {
         );
 
         x = lastCharX;
-        index++;
       }
     }
   }
@@ -186,7 +180,7 @@ export class TextRenderLayer extends BaseRenderLayer {
 
     ctx.save();
 
-    this._forEachCell(terminal, firstRow, lastRow, false, (code, char, width, x, y, fg, bg, flags) => {
+    this._forEachCell(terminal, firstRow, lastRow, null, (code, chars, width, x, y, fg, bg, flags) => {
       // libvte and xterm both draw the background (but not foreground) of invisible characters,
       // so we should too.
       let nextFillStyle = null; // null represents default background color
@@ -228,7 +222,7 @@ export class TextRenderLayer extends BaseRenderLayer {
   }
 
   private _drawForeground(terminal: ITerminal, firstRow: number, lastRow: number): void {
-    this._forEachCell(terminal, firstRow, lastRow, true, (code, char, width, x, y, fg, bg, flags) => {
+    this._forEachCell(terminal, firstRow, lastRow, this._characterJoinerRegistry, (code, chars, width, x, y, fg, bg, flags) => {
       if (flags & FLAGS.INVISIBLE) {
         return;
       }
@@ -245,8 +239,8 @@ export class TextRenderLayer extends BaseRenderLayer {
         this.fillBottomLineAtCells(x, y, width);
         this._ctx.restore();
       }
-      this.drawChar(
-        terminal, char, code,
+      this.drawChars(
+        terminal, chars, code,
         width, x, y,
         fg, bg,
         !!(flags & FLAGS.BOLD), !!(flags & FLAGS.DIM), !!(flags & FLAGS.ITALIC)
@@ -271,19 +265,6 @@ export class TextRenderLayer extends BaseRenderLayer {
 
   public onOptionsChanged(terminal: ITerminal): void {
     this.setTransparency(terminal, terminal.options.allowTransparency);
-  }
-
-  public registerCharacterJoiner(joiner: ICharacterJoiner): void {
-    this._joiners.push(joiner);
-  }
-
-  public deregisterCharacterJoiner(joinerId: number): void {
-    for (let i = 0; i < this._joiners.length; i++) {
-      if (this._joiners[i].id === joinerId) {
-        this._joiners.splice(i, 1);
-        return;
-      }
-    }
   }
 
   /**
@@ -323,78 +304,6 @@ export class TextRenderLayer extends BaseRenderLayer {
     // Cache and return
     this._characterOverlapCache[char] = overlaps;
     return overlaps;
-  }
-
-  private _getJoinedCharacters(terminal: ITerminal, row: number): [number, number][] {
-    if (this._joiners.length === 0) {
-      return [];
-    }
-
-    const line = terminal.buffer.lines.get(row);
-    if (line.length === 0) {
-      return [];
-    }
-
-    const ranges: [number, number][] = [];
-    const lineStr = terminal.buffer.translateBufferLineToString(row, true);
-
-    let currentIndex = 0;
-    let rangeStartIndex = 0;
-    let rangeAttr = line[0][CHAR_DATA_ATTR_INDEX] >> 9;
-    for (let x = 0; x < terminal.cols; x++) {
-      const charData = line[x];
-      const width = charData[CHAR_DATA_WIDTH_INDEX];
-      const attr = charData[CHAR_DATA_ATTR_INDEX] >> 9;
-
-      if (width === 0) {
-        // If this character is of width 0, skip it
-        continue;
-      }
-
-      // End of range
-      if (attr !== rangeAttr) {
-        // If we ended up with a sequence of more than one character, look for
-        // ranges to join
-        if (currentIndex - rangeStartIndex > 1) {
-          const subRanges = this._getSubRanges(lineStr, rangeStartIndex, currentIndex);
-          for (let i = 0; i < subRanges.length; i++) {
-            ranges.push(subRanges[i]);
-          }
-        }
-
-        // Reset our markers for a new range
-        rangeStartIndex = x;
-        rangeAttr = attr;
-      }
-
-      currentIndex++;
-    }
-
-    // Process any trailing ranges
-    if (currentIndex - rangeStartIndex > 1) {
-      const subRanges = this._getSubRanges(lineStr, rangeStartIndex, currentIndex);
-      for (let i = 0; i < subRanges.length; i++) {
-        ranges.push(subRanges[i]);
-      }
-    }
-
-    return ranges;
-  }
-
-  private _getSubRanges(line: string, startIndex: number, endIndex: number): [number, number][] {
-    const text = line.substring(startIndex, endIndex);
-    // At this point we already know that there is at least one joiner so
-    // we can just pull its value and assign it directly rather than
-    // merging it into an empty array, which incurs unnecessary writes.
-    const subRanges: [number, number][] = this._joiners[0].handler(text);
-    for (let i = 1; i < this._joiners.length; i++) {
-      // We merge any overlapping ranges across the different joiners
-      const joinerSubRanges = this._joiners[i].handler(text);
-      for (let j = 0; j < joinerSubRanges.length; j++) {
-        merge(subRanges, joinerSubRanges[j]);
-      }
-    }
-    return subRanges.map<[number, number]>(range => [range[0] + startIndex, range[1] + endIndex]);
   }
 
   /**

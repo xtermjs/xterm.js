@@ -128,3 +128,9 @@ export interface ICharacterJoiner {
   id: number;
   handler: CharacterJoinerHandler;
 }
+
+export interface ICharacterJoinerRegistry {
+  registerCharacterJoiner(handler: (text: string) => [number, number][]): number;
+  deregisterCharacterJoiner(joinerId: number): boolean;
+  getJoinedCharacters(row: number): [number, number][];
+}

@@ -7,13 +7,14 @@ import { TextRenderLayer } from './TextRenderLayer';
 import { SelectionRenderLayer } from './SelectionRenderLayer';
 import { CursorRenderLayer } from './CursorRenderLayer';
 import { ColorManager } from './ColorManager';
-import { IRenderLayer, IColorSet, IRenderer, IRenderDimensions, ICharacterJoiner } from './Types';
+import { IRenderLayer, IColorSet, IRenderer, IRenderDimensions, ICharacterJoinerRegistry } from './Types';
 import { ITerminal, CharacterJoinerHandler } from '../Types';
 import { LinkRenderLayer } from './LinkRenderLayer';
 import { EventEmitter } from '../EventEmitter';
 import { RenderDebouncer } from '../ui/RenderDebouncer';
 import { ScreenDprMonitor } from '../ui/ScreenDprMonitor';
 import { ITheme } from 'xterm';
+import { CharacterJoinerRegistry } from '../renderer/CharacterJoinerRegistry';
 
 export class Renderer extends EventEmitter implements IRenderer {
   private _renderDebouncer: RenderDebouncer;
@@ -23,8 +24,7 @@ export class Renderer extends EventEmitter implements IRenderer {
   private _screenDprMonitor: ScreenDprMonitor;
   private _isPaused: boolean = false;
   private _needsFullRefresh: boolean = false;
-  private _joiners: ICharacterJoiner[] = [];
-  private _nextJoinerId: number = 0;
+  private _characterJoinerRegistry: ICharacterJoinerRegistry;
 
   public colorManager: ColorManager;
   public dimensions: IRenderDimensions;
@@ -33,12 +33,13 @@ export class Renderer extends EventEmitter implements IRenderer {
     super();
     const allowTransparency = this._terminal.options.allowTransparency;
     this.colorManager = new ColorManager(document, allowTransparency);
+    this._characterJoinerRegistry = new CharacterJoinerRegistry(_terminal);
     if (theme) {
       this.colorManager.setTheme(theme);
     }
 
     this._renderLayers = [
-      new TextRenderLayer(this._terminal.screenElement, 0, this.colorManager.colors, allowTransparency),
+      new TextRenderLayer(this._terminal.screenElement, 0, this.colorManager.colors, this._characterJoinerRegistry, allowTransparency),
       new SelectionRenderLayer(this._terminal.screenElement, 1, this.colorManager.colors),
       new LinkRenderLayer(this._terminal.screenElement, 2, this.colorManager.colors, this._terminal),
       new CursorRenderLayer(this._terminal.screenElement, 3, this.colorManager.colors)
@@ -254,33 +255,10 @@ export class Renderer extends EventEmitter implements IRenderer {
   }
 
   public registerCharacterJoiner(handler: CharacterJoinerHandler): number {
-    const joiner: ICharacterJoiner = {
-      id: this._nextJoinerId++,
-      handler: handler
-    };
-
-    this._renderLayers.forEach(l => {
-      if (l.registerCharacterJoiner) {
-        l.registerCharacterJoiner(joiner);
-      }
-    });
-
-    return joiner.id;
+    return this._characterJoinerRegistry.registerCharacterJoiner(handler);
   }
 
   public deregisterCharacterJoiner(joinerId: number): boolean {
-    for (let i = 0; i < this._joiners.length; i++) {
-      if (this._joiners[i].id === joinerId) {
-        this._joiners.splice(i, 1);
-        this._renderLayers.forEach(l => {
-          if (l.deregisterCharacterJoiner) {
-            l.deregisterCharacterJoiner(joinerId);
-          }
-        });
-        return true;
-      }
-    }
-
-    return false;
+    return this._characterJoinerRegistry.deregisterCharacterJoiner(joinerId);
   }
 }
