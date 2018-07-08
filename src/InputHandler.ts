@@ -440,7 +440,8 @@ export class InputHandler implements IInputHandler {
       }
 
       // write current char to buffer and advance cursor
-      bufferRow[buffer.x++] = [curAttr, code, chWidth, code];
+      // bufferRow[buffer.x++] = [curAttr, code, chWidth, code];
+      buffer.x++;
       this._terminal.tbw.set(buffer.x - 1, rowNum, curAttr, code, true);
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor

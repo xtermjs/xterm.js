@@ -26,7 +26,7 @@ const enum ResizeMode {
 export class TerminalBuffer {
   public data: Int32Array | number[];
   private _lineWraps: Uint32Array | number[];
-  private _lineLengths: Uint32Array | number[];
+  // private _lineLengths: Uint32Array | number[];
   private _startIndex: number;
   constructor(
     public cols: number,
@@ -40,13 +40,13 @@ export class TerminalBuffer {
       this._lineWraps = [];
       const wrapSize = (rows >> 5) + 1;
       for (let i = 0; i < wrapSize ; ++i) this._lineWraps.push(0);
-      this._lineLengths = [];
-      const lengthSize = (rows >> 1) + 1
-      for (let i = 0; i < lengthSize; ++i) this._lineLengths.push(0);
+      // this._lineLengths = [];
+      // const lengthSize = (rows >> 1) + 1
+      // for (let i = 0; i < lengthSize; ++i) this._lineLengths.push(0);
     } else {
       this.data = new Int32Array(CELL_DATA_WIDTH * cols * rows);
       this._lineWraps = new Uint32Array((rows >> 5) + 1);
-      this._lineLengths = new Uint32Array((rows >> 1) + 1);
+      // this._lineLengths = new Uint32Array((rows >> 1) + 1);
     }
     this._startIndex = 0;
   }
@@ -75,19 +75,19 @@ export class TerminalBuffer {
     if (value) this._lineWraps[row >> 5] |= 1 << (row & 31);
     else this._lineWraps[row >> 5] &= ~(1 << (row & 31));
   }
-  public getLength(row: number): number {
-    row = this.getRealRowIndex(row);
-    return this._lineLengths[row >> 1] >> ((row & 1) << 4) & 65535;
-  }
-  public setLength(row: number, value: number): void {
-    row = this.getRealRowIndex(row);
-    this._lineLengths[row >> 1] &= ~(65535 << ((row & 1) << 4));
-    this._lineLengths[row >> 1] |= (value & 65535) << ((row & 1) << 4);
-  }
-  public setLengthIfGreater(row: number, value: number): void {
-    row = this.getRealRowIndex(row);
-    if (this.getLength(row) < value) this.setLength(row, value);
-  }
+  // public getLength(row: number): number {
+  //   row = this.getRealRowIndex(row);
+  //   return this._lineLengths[row >> 1] >> ((row & 1) << 4) & 65535;
+  // }
+  // public setLength(row: number, value: number): void {
+  //   row = this.getRealRowIndex(row);
+  //   this._lineLengths[row >> 1] &= ~(65535 << ((row & 1) << 4));
+  //   this._lineLengths[row >> 1] |= (value & 65535) << ((row & 1) << 4);
+  // }
+  // public setLengthIfGreater(row: number, value: number): void {
+  //   row = this.getRealRowIndex(row);
+  //   if (this.getLength(row) < value) this.setLength(row, value);
+  // }
   public get(col: number, row: number): number[] {
     row = this.getRealRowIndex(row);
     let p = CELL_DATA_WIDTH * (this.cols * row + col);
@@ -102,7 +102,7 @@ export class TerminalBuffer {
     this.data[p++] = attr;
     this._cs.free(this.data[p]);
     this.data[p] = data;
-    if (adjustLength) this.setLengthIfGreater(row, col);
+    // if (adjustLength) this.setLengthIfGreater(row, col);
   }
   public clear(col: number, row: number, attr: number, data: number, adjustLength: boolean): void {
     row = this.getRealRowIndex(row);
@@ -110,7 +110,7 @@ export class TerminalBuffer {
     this.data[p++] = attr;
     this._cs.free(this.data[p]);
     this.data[p] = data;
-    if (adjustLength && row && this.getLength(row) === col) this.setLength(col, row - 1);
+    // if (adjustLength && row && this.getLength(row) === col) this.setLength(col, row - 1);
   }
   public clearRow(row: number, attr: number, data: number, adjustLength: boolean): void {
     row = this.getRealRowIndex(row);
@@ -120,7 +120,7 @@ export class TerminalBuffer {
       this._cs.free(this.data[i + CELL_DATA]);
       this.data[i + CELL_DATA] = data;
     }
-    if (adjustLength) this.setLength(row, 0);
+    // if (adjustLength) this.setLength(row, 0);
   }
   public clearInRow(
     row: number, startCol: number, endCol: number,
@@ -134,7 +134,7 @@ export class TerminalBuffer {
       this._cs.free(this.data[i + CELL_DATA]);
       this.data[i + CELL_DATA] = data;
     }
-    if (adjustLength) this.setLength(row, 0);
+    // if (adjustLength) this.setLength(row, 0);
   }
   public getRowString(row: number, start: number, end: number): string {
     // TODO: set 0 as empty, missing args: rtrim: boolean, fillChar: string
