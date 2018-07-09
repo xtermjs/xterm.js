@@ -156,102 +156,15 @@ computational environment for Jupyter, supporting interactive data science and s
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list. Note: Please add any new contributions to the end of the list only.
 
-## Demo
-
-Xterm.js ships with a barebones demo implementation, designed for the development and evaluation of the library only. Exposing the demo to the public as is would introduce security risks for the host.
-
-Below you can find instructions on how to run the demo on different platforms.
-
-### SourceLair
-
-SourceLair will run the demo and builder in parallel automatically. Just make sure to choose the "Node.js" project type, when cloning the xterm.js repo (or just use this shortcut; https://lair.io/xtermjs/xtermjs).
-
-Then open your project's [Public URL](https://help.sourcelair.com/projects/the-public-url/) to access the demo.
-
-### Docker
-
-First, make sure you have Docker Engine 1.13.0 (or newer) and Docker Compose 1.10.0 (or newer).
-
-Xterm.js [provides a pre-built Docker image](https://hub.docker.com/r/xtermjs/xterm.js/) to help run the demo easily (Git tags are built as [tagged Docker images](https://hub.docker.com/r/xtermjs/xterm.js/tags/) too).
-
-To run the just demo (with no editing access). run the following command in your terminal:
-
-```
-docker run -p 3000:3000 xtermjs/xterm.js
-```
-
-Then open http://0.0.0.0:3000 in a web browser to access the demo.
-
-To run the demo and builder in parallel, run the following command in your terminal:
-
-```
-docker-compose up
-```
-
-Then open http://0.0.0.0:3000 in a web browser to access the demo. If you prefer a different port than `3000` to access the xterm.js demo, then set the `XTERMJS_PORT` environment variable to the desired port.
-
-### Foreman (or other Procfile runner)
-
-First, be sure that a C++ compiler such as GCC-C++ or Clang is installed, then run the following commands in your terminal:
-
-```
-npm install
-foreman start  # Replace foreman with "honcho", "forego" etc. depending on your runner
-```
-
-Then open http://0.0.0.0:3000 in a web browser to access the demo.
-
-### Linux or macOS
-
-First, be sure that a C++ compiler such as GCC-C++ or Clang is installed, then run the following commands in your terminal:
-
-```
-npm install
-npm start      # Run this in its own terminal
-npm run watch  # Run this in its own terminal
-```
-
-Then open http://0.0.0.0:3000 in a web browser to access the demo.
-
-### Windows
-
-First, ensure [node-gyp](https://github.com/nodejs/node-gyp) is installed and configured correctly, then run the following commands in your terminal:
-
-```
-npm install
-npm start      # Run this in its own terminal
-npm run watch  # Run this in its own terminal
-```
-
-Then open http://127.0.0.1:3000 in a web browser to access the demo.
-
-*Note: Do not use ConEmu, as it seems to break the demo for some reason.*
-
-## Testing
-
-Tests are run using the following npm scripts:
-
-- `npm test`: This will run both unit tests and the linter
-- `npm run test-suite <file>`: This will run all tests within a particular file, &lt;file&gt; is the test file name excluding the extension (eg. "Linkifier.test")
-- `npm run test-debug`: This will run unit tests with `--inspect-brk`, this can then be automatically debugged using [VS Code auto attach](https://code.visualstudio.com/docs/nodejs/nodejs-debugging#_auto-attach-feature) or manually attached to by a debugger
-- `npm run test-coverage`: This will run all unit tests and produce a coverage report
-- `npm run lint`: This will run the linter only
-
 ## Releases
 
 Xterm.js follows a monthly release cycle roughly.
 
 The existing releases are available at this GitHub repo's [Releases](https://github.com/sourcelair/xterm.js/releases), while the roadmap is available as [Milestones](https://github.com/sourcelair/xterm.js/milestones).
 
-## Development and Contribution
+## Contributing
 
-Xterm.js is maintained by [SourceLair](https://www.sourcelair.com/) and a few external contributors, but we would love to receive contributions from everyone!
-
-To contribute either code, documentation or issues to xterm.js please read the [Contributing document](CONTRIBUTING.md) beforehand. The development of xterm.js does not require any special tool. All you need is an editor that supports JavaScript/TypeScript and a browser. You will need Node.js installed locally to get all the features working in the demo.
-
-### Code structure
-
-`src/` is roughly split up into areas of functionality such as `renderer/` that handles all rendering and `utils/` which provides general utility functions. The `shared/` folder contains code that can be used from either the main thread or a web worker thread, all code inside a `shared/` folder should only ever import other code from a `shared/` folder to minimize the amount of code ran when launching a web worker.
+You can read the [guide on the wiki](https://github.com/xtermjs/xterm.js/wiki/Contributing) to learn how to contribute and setup xterm.js for development.
 
 ## License Agreement
 
