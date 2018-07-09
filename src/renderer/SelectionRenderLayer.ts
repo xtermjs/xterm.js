@@ -7,42 +7,46 @@ import { ITerminal } from '../Types';
 import { IColorSet, IRenderDimensions } from './Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 
+interface ISelectionState {
+  start: [number, number];
+  end: [number, number];
+  columnSelectMode: boolean;
+  ydisp: number;
+}
+
 export class SelectionRenderLayer extends BaseRenderLayer {
-  private _state: { start: [number, number], end: [number, number], columnSelectMode: boolean };
+  private _state: ISelectionState;
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet) {
     super(container, 'selection', zIndex, true, colors);
+    this._clearState();
+  }
+
+  private _clearState(): void {
     this._state = {
       start: null,
       end: null,
-      columnSelectMode: null
+      columnSelectMode: null,
+      ydisp: null
     };
   }
 
   public resize(terminal: ITerminal, dim: IRenderDimensions): void {
     super.resize(terminal, dim);
     // Resizing the canvas discards the contents of the canvas so clear state
-    this._state = {
-      start: null,
-      end: null,
-      columnSelectMode: null
-    };
+    this._clearState();
   }
 
   public reset(terminal: ITerminal): void {
     if (this._state.start && this._state.end) {
-      this._state = {
-        start: null,
-        end: null,
-        columnSelectMode: null
-      };
+      this._clearState();
       this.clearAll();
     }
   }
 
   public onSelectionChanged(terminal: ITerminal, start: [number, number], end: [number, number], columnSelectMode: boolean): void {
     // Selection has not changed
-    if (!this._didStateChange(start, end, columnSelectMode)) {
+    if (!this._didStateChange(start, end, columnSelectMode, terminal.buffer.ydisp)) {
       return;
     }
 
@@ -94,12 +98,14 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     this._state.start = [start[0], start[1]];
     this._state.end = [end[0], end[1]];
     this._state.columnSelectMode = columnSelectMode;
+    this._state.ydisp = terminal.buffer.ydisp;
   }
 
-  private _didStateChange(start: [number, number], end: [number, number], columnSelectMode: boolean): boolean {
+  private _didStateChange(start: [number, number], end: [number, number], columnSelectMode: boolean, ydisp: number): boolean {
     return !this._areCoordinatesEqual(start, this._state.start) ||
       !this._areCoordinatesEqual(end, this._state.end) ||
-      columnSelectMode !== this._state.columnSelectMode;
+      columnSelectMode !== this._state.columnSelectMode ||
+      ydisp !== this._state.ydisp;
   }
 
   private _areCoordinatesEqual(coord1: [number, number], coord2: [number, number]): boolean {

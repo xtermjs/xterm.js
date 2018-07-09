@@ -32,7 +32,6 @@ import { Viewport } from './Viewport';
 import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './handlers/Clipboard';
 import { C0 } from './common/data/EscapeSequences';
 import { InputHandler } from './InputHandler';
-// import { Parser } from './Parser';
 import { Renderer } from './renderer/Renderer';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
@@ -584,7 +583,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }, true));
 
     this.register(addDisposableDomListener(this.element, 'keyup', (ev: KeyboardEvent) => {
-      if (!wasMondifierKeyOnlyEvent(ev)) {
+      if (!wasModifierKeyOnlyEvent(ev)) {
         this.focus();
       }
 
@@ -1966,7 +1965,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
  * Helpers
  */
 
-function wasMondifierKeyOnlyEvent(ev: KeyboardEvent): boolean {
+function wasModifierKeyOnlyEvent(ev: KeyboardEvent): boolean {
   return ev.keyCode === 16 || // Shift
     ev.keyCode === 17 || // Ctrl
     ev.keyCode === 18; // Alt
