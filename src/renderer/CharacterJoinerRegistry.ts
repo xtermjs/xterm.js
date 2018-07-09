@@ -6,10 +6,8 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
 
   private _characterJoiners: ICharacterJoiner[] = [];
   private _nextCharacterJoinerId: number = 0;
-  private _terminal: ITerminal;
 
-  constructor(terminal: ITerminal) {
-    this._terminal = terminal;
+  constructor(private _terminal: ITerminal) {
   }
 
   public registerCharacterJoiner(handler: (text: string) => [number, number][]): number {
