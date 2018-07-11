@@ -65,6 +65,12 @@ export class Terminal implements ITerminalApi {
   public deregisterLinkMatcher(matcherId: number): void {
     this._core.deregisterLinkMatcher(matcherId);
   }
+  public registerCharacterJoiner(handler: (text: string) => [number, number][]): number {
+    return this._core.registerCharacterJoiner(handler);
+  }
+  public deregisterCharacterJoiner(joinerId: number): void {
+    this._core.deregisterCharacterJoiner(joinerId);
+  }
   public addMarker(cursorYOffset: number): IMarker {
     return this._core.addMarker(cursorYOffset);
   }

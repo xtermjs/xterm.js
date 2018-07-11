@@ -36,7 +36,7 @@ interface IGlyphCacheValue {
 
 function getGlyphCacheKey(glyph: IGlyphIdentifier): string {
   const styleFlags = (glyph.bold ? 0 : 4) + (glyph.dim ? 0 : 2) + (glyph.italic ? 0 : 1);
-  return `${glyph.bg}_${glyph.fg}_${styleFlags}${glyph.char}`;
+  return `${glyph.bg}_${glyph.fg}_${styleFlags}${glyph.chars}`;
 }
 
 export default class DynamicCharAtlas extends BaseCharAtlas {
@@ -216,7 +216,7 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
       this._tmpCtx.globalAlpha = DIM_OPACITY;
     }
     // Draw the character
-    this._tmpCtx.fillText(glyph.char, 0, 0);
+    this._tmpCtx.fillText(glyph.chars, 0, 0);
     this._tmpCtx.restore();
 
     // clear the background from the character to avoid issues with drawing over the previous

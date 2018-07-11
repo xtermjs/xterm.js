@@ -18,6 +18,8 @@ export type LineData = CharData[];
 export type LinkMatcherHandler = (event: MouseEvent, uri: string) => void;
 export type LinkMatcherValidationCallback = (uri: string, callback: (isValid: boolean) => void) => void;
 
+export type CharacterJoinerHandler = (text: string) => [number, number][];
+
 export const enum LinkHoverEventTypes {
   HOVER = 'linkhover',
   TOOLTIP = 'linktooltip',

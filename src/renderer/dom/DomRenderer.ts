@@ -4,7 +4,7 @@
  */
 
 import { IRenderer, IRenderDimensions, IColorSet } from '../Types';
-import { ITerminal } from '../../Types';
+import { ITerminal, CharacterJoinerHandler } from '../../Types';
 import { ITheme } from 'xterm';
 import { EventEmitter } from '../../EventEmitter';
 import { ColorManager } from '../ColorManager';
@@ -319,4 +319,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
   private get _terminalSelector(): string {
     return `.${TERMINAL_CLASS_PREFIX}${this._terminalClass}`;
   }
+
+  public registerCharacterJoiner(handler: CharacterJoinerHandler): number { return -1; }
+  public deregisterCharacterJoiner(joinerId: number): boolean { return false; }
 }
