@@ -153,6 +153,7 @@ computational environment for Jupyter, supporting interactive data science and s
 - [**genact**](https://github.com/svenstaro/genact): A nonsense activity generator.
 - [**cPanel & WHM**](https://cpanel.com): The hosting platform of choice.
 - [**Nutanix**](https://github.com/nutanix): Nutanix Enterprise Cloud uses xterm in the webssh functionality within Nutanix Calm, and is also looking to move our old noserial (termjs) functionality to xterm.js
+- [**SSH Web Client**](https://github.com/roke22/PHP-SSH2-Web-Client): SSH Web Client with PHP.
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list. Note: Please add any new contributions to the end of the list only.
 
