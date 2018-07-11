@@ -50,7 +50,3 @@ By contributing code to xterm.js you
    holder has explicitly granted the right to use it like this,
    through a compatible open source license or through a direct
    agreement with you.)
-
-### Third party dependencies
-
-We prefer to not include any non-dev third party dependencies in order to keep our code minimal, performant and secure. If you plan on adding a dependency on a third party library it's a good idea to discuss the need in an issue with the maintainers first.

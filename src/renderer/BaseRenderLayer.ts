@@ -224,12 +224,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   }
 
   /**
-   * Draws a character at a cell. If possible this will draw using the character
-   * atlas to reduce draw time.
+   * Draws one or more characters at a cell. If possible this will draw using
+   * the character atlas to reduce draw time.
    * @param terminal The terminal.
-   * @param char The character.
+   * @param chars The character or characters.
    * @param code The character code.
-   * @param width The width of the character.
+   * @param width The width of the characters.
    * @param x The column to draw at.
    * @param y The row to draw at.
    * @param fg The foreground color, in the format stored within the attributes.
@@ -237,33 +237,33 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * This is used to validate whether a cached image can be used.
    * @param bold Whether the text is bold.
    */
-  protected drawChar(terminal: ITerminal, char: string, code: number, width: number, x: number, y: number, fg: number, bg: number, bold: boolean, dim: boolean, italic: boolean): void {
+  protected drawChars(terminal: ITerminal, chars: string, code: number, width: number, x: number, y: number, fg: number, bg: number, bold: boolean, dim: boolean, italic: boolean): void {
     const drawInBrightColor = terminal.options.drawBoldTextInBrightColors && bold && fg < 8;
     fg += drawInBrightColor ? 8 : 0;
     const atlasDidDraw = this._charAtlas && this._charAtlas.draw(
       this._ctx,
-      {char, code, bg, fg, bold: bold && terminal.options.enableBold, dim, italic},
+      {chars, code, bg, fg, bold: bold && terminal.options.enableBold, dim, italic},
       x * this._scaledCellWidth + this._scaledCharLeft,
       y * this._scaledCellHeight + this._scaledCharTop
     );
 
     if (!atlasDidDraw) {
-      this._drawUncachedChar(terminal, char, width, fg, x, y, bold && terminal.options.enableBold, dim, italic);
+      this._drawUncachedChars(terminal, chars, width, fg, x, y, bold && terminal.options.enableBold, dim, italic);
     }
   }
 
   /**
-   * Draws a character at a cell. The character will be clipped to
-   * ensure that it fits with the cell, including the cell to the right if it's
-   * a wide character.
+   * Draws one or more characters at one or more cells. The character(s) will be
+   * clipped to ensure that they fit with the cell(s), including the cell to the
+   * right if the last character is a wide character.
    * @param terminal The terminal.
-   * @param char The character.
+   * @param chars The character.
    * @param width The width of the character.
    * @param fg The foreground color, in the format stored within the attributes.
    * @param x The column to draw at.
    * @param y The row to draw at.
    */
-  private _drawUncachedChar(terminal: ITerminal, char: string, width: number, fg: number, x: number, y: number, bold: boolean, dim: boolean, italic: boolean): void {
+  private _drawUncachedChars(terminal: ITerminal, chars: string, width: number, fg: number, x: number, y: number, bold: boolean, dim: boolean, italic: boolean): void {
     this._ctx.save();
     this._ctx.font = this._getFont(terminal, bold, italic);
     this._ctx.textBaseline = 'top';
@@ -285,7 +285,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     }
     // Draw the character
     this._ctx.fillText(
-        char,
+        chars,
         x * this._scaledCellWidth + this._scaledCharLeft,
         y * this._scaledCellHeight + this._scaledCharTop);
     this._ctx.restore();

@@ -4,7 +4,7 @@
  */
 
 import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../renderer/Types';
-import { LineData, IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ICircularList, ILinkifier, IMouseHelper, ILinkMatcherOptions, XtermListener } from '../Types';
+import { LineData, IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ICircularList, ILinkifier, IMouseHelper, ILinkMatcherOptions, XtermListener, CharacterJoinerHandler } from '../Types';
 import { Buffer } from '../Buffer';
 import * as Browser from '../shared/utils/Browser';
 import { ITheme, IDisposable, IMarker } from 'xterm';
@@ -156,6 +156,8 @@ export class MockTerminal implements ITerminal {
     }
     return line;
   }
+  registerCharacterJoiner(handler: CharacterJoinerHandler): number { return 0; }
+  deregisterCharacterJoiner(joinerId: number): void { }
 }
 
 export class MockCharMeasure implements ICharMeasure {
@@ -344,6 +346,8 @@ export class MockRenderer implements IRenderer {
   onWindowResize(devicePixelRatio: number): void {}
   clear(): void {}
   refreshRows(start: number, end: number): void {}
+  registerCharacterJoiner(handler: CharacterJoinerHandler): number { return 0; }
+  deregisterCharacterJoiner(): boolean { return true; }
 }
 
 export class MockViewport implements IViewport {

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminal } from '../Types';
+import { ITerminal, CharacterJoinerHandler } from '../Types';
 import { IEventEmitter, ITheme, IDisposable } from 'xterm';
 import { IColorSet } from '../shared/Types';
 
@@ -40,6 +40,8 @@ export interface IRenderer extends IEventEmitter, IDisposable {
   onOptionsChanged(): void;
   clear(): void;
   refreshRows(start: number, end: number): void;
+  registerCharacterJoiner(handler: CharacterJoinerHandler): number;
+  deregisterCharacterJoiner(joinerId: number): boolean;
 }
 
 export interface IColorManager {
@@ -102,6 +104,16 @@ export interface IRenderLayer {
   onSelectionChanged(terminal: ITerminal, start: [number, number], end: [number, number], columnSelectMode: boolean): void;
 
   /**
+   * Registers a handler to join characters to render as a group
+   */
+  registerCharacterJoiner?(joiner: ICharacterJoiner): void;
+
+  /**
+   * Deregisters the specified character joiner handler
+   */
+  deregisterCharacterJoiner?(joinerId: number): void;
+
+  /**
    * Resize the render layer.
    */
   resize(terminal: ITerminal, dim: IRenderDimensions): void;
@@ -110,4 +122,15 @@ export interface IRenderLayer {
    * Clear the state of the render layer.
    */
   reset(terminal: ITerminal): void;
+}
+
+export interface ICharacterJoiner {
+  id: number;
+  handler: CharacterJoinerHandler;
+}
+
+export interface ICharacterJoinerRegistry {
+  registerCharacterJoiner(handler: (text: string) => [number, number][]): number;
+  deregisterCharacterJoiner(joinerId: number): boolean;
+  getJoinedCharacters(row: number): [number, number][];
 }
