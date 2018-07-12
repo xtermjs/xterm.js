@@ -359,9 +359,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       chWidth = wcwidth(code);
 
       // get charset replacement character
-      // FIXME: Should code be replaced as well?
       if (charset) {
         char = charset[char] || char;
+        code = char.charCodeAt(0);
       }
 
       if (screenReaderMode) {
