@@ -7,6 +7,7 @@ import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILink
 import { ITerminal } from '../Types';
 import { Terminal as TerminalCore } from '../Terminal';
 import * as Strings from '../Strings';
+import { EventEmitter } from '../EventEmitter';
 
 export class Terminal implements ITerminalApi {
   private _core: ITerminal;
@@ -41,8 +42,8 @@ export class Terminal implements ITerminalApi {
   public off(type: string, listener: (...args: any[]) => void): void {
     this._core.off(type, listener);
   }
-  public emit(type: string, data?: any): void {
-    this._core.emit(type, data);
+  public emit(type: string, ...args: any[]): void {
+    EventEmitter.prototype.emit.apply(this._core, [type, ...args]);
   }
   public addDisposableListener(type: string, handler: (...args: any[]) => void): IDisposable {
     return this._core.addDisposableListener(type, handler);
