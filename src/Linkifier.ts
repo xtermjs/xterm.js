@@ -169,10 +169,18 @@ export class Linkifier extends EventEmitter implements ILinkifier {
         return;
       }
       // If the first row is wrapped, backtrack to find the origin row and linkify that
+      let line = (<any>this._terminal.buffer.lines.get(absoluteRowIndex));
+
       do {
         rowIndex--;
         absoluteRowIndex--;
-      } while ((<any>this._terminal.buffer.lines.get(absoluteRowIndex)).isWrapped);
+        line = (<any>this._terminal.buffer.lines.get(absoluteRowIndex));
+
+        if (!line) {
+          return;
+        }
+
+      } while (line.isWrapped);
     }
 
     // Construct full unwrapped line text
