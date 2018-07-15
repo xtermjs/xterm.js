@@ -177,7 +177,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
         line = (<any>this._terminal.buffer.lines.get(absoluteRowIndex));
 
         if (!line) {
-          return;
+          break;
         }
 
       } while (line.isWrapped);
