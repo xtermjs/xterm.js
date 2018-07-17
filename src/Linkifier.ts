@@ -4,7 +4,7 @@
  */
 
 import { IMouseZoneManager } from './ui/Types';
-import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, ILinkifier, ITerminal } from './Types';
+import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, ILinkifier, ITerminal, LineData } from './Types';
 import { MouseZone } from './ui/MouseZoneManager';
 import { EventEmitter } from './EventEmitter';
 
@@ -169,10 +169,18 @@ export class Linkifier extends EventEmitter implements ILinkifier {
         return;
       }
       // If the first row is wrapped, backtrack to find the origin row and linkify that
+      let line: LineData;
+
       do {
         rowIndex--;
         absoluteRowIndex--;
-      } while ((<any>this._terminal.buffer.lines.get(absoluteRowIndex)).isWrapped);
+        line = this._terminal.buffer.lines.get(absoluteRowIndex);
+
+        if (!line) {
+          break;
+        }
+
+      } while ((<any>line).isWrapped);
     }
 
     // Construct full unwrapped line text
