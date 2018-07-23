@@ -193,6 +193,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   // Store if user went browsing history in scrollback
   private _userScrolling: boolean;
+  private _isDisposed: boolean = false;
 
   private _inputHandler: InputHandler;
   public soundManager: SoundManager;
@@ -232,6 +233,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   public dispose(): void {
+    this._isDisposed = true;
     super.dispose();
     this._customKeyEventHandler = null;
     removeTerminalFromCache(this);
@@ -1266,6 +1268,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * @param {string} data The text to write to the terminal.
    */
   public write(data: string): void {
+    // Ensure the terminal isn't disposed
+    if (this._isDisposed) {
+      return;
+    }
+
     // Ignore falsy data values (including the empty string)
     if (!data) {
       return;
@@ -1294,6 +1301,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   protected _innerWrite(): void {
+    // Ensure the terminal isn't disposed
+    if (this._isDisposed) {
+      this.writeBuffer = [];
+    }
+
     const writeBatch = this.writeBuffer.splice(0, WRITE_BATCH_SIZE);
     while (writeBatch.length > 0) {
       const data = writeBatch.shift();
