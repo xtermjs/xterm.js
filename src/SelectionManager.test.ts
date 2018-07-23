@@ -55,13 +55,13 @@ describe('SelectionManager', () => {
   function stringToRow(text: string): LineData {
     const result: LineData = [];
     for (let i = 0; i < text.length; i++) {
-      result.push([0, text.charAt(i), 1, text.charCodeAt(i)]);
+      result.push([0, text.charAt(i), 1, text.charCodeAt(i), undefined]);
     }
     return result;
   }
 
   function stringArrayToRow(chars: string[]): LineData {
-    return chars.map(c => <CharData>[0, c, 1, c.charCodeAt(0)]);
+    return chars.map(c => <CharData>[0, c, 1, c.charCodeAt(0), undefined]);
   }
 
   describe('_selectWordAt', () => {
@@ -98,21 +98,21 @@ describe('SelectionManager', () => {
     it('should expand selection for wide characters', () => {
       // Wide characters use a special format
       buffer.lines.set(0, [
-        [null, '中', 2, '中'.charCodeAt(0)],
-        [null, '', 0, null],
-        [null, '文', 2, '文'.charCodeAt(0)],
-        [null, '', 0, null],
-        [null, ' ', 1, ' '.charCodeAt(0)],
-        [null, 'a', 1, 'a'.charCodeAt(0)],
-        [null, '中', 2, '中'.charCodeAt(0)],
-        [null, '', 0, null],
-        [null, '文', 2, '文'.charCodeAt(0)],
-        [null, '', 0, ''.charCodeAt(0)],
-        [null, 'b', 1, 'b'.charCodeAt(0)],
-        [null, ' ', 1, ' '.charCodeAt(0)],
-        [null, 'f', 1, 'f'.charCodeAt(0)],
-        [null, 'o', 1, 'o'.charCodeAt(0)],
-        [null, 'o', 1, 'o'.charCodeAt(0)]
+        [null, '中', 2, '中'.charCodeAt(0), undefined],
+        [null, '', 0, null, undefined],
+        [null, '文', 2, '文'.charCodeAt(0), undefined],
+        [null, '', 0, null, undefined],
+        [null, ' ', 1, ' '.charCodeAt(0), undefined],
+        [null, 'a', 1, 'a'.charCodeAt(0), undefined],
+        [null, '中', 2, '中'.charCodeAt(0), undefined],
+        [null, '', 0, null, undefined],
+        [null, '文', 2, '文'.charCodeAt(0), undefined],
+        [null, '', 0, ''.charCodeAt(0), undefined],
+        [null, 'b', 1, 'b'.charCodeAt(0), undefined],
+        [null, ' ', 1, ' '.charCodeAt(0), undefined],
+        [null, 'f', 1, 'f'.charCodeAt(0), undefined],
+        [null, 'o', 1, 'o'.charCodeAt(0), undefined],
+        [null, 'o', 1, 'o'.charCodeAt(0), undefined]
       ]);
       // Ensure wide characters take up 2 columns
       selectionManager.selectWordAt([0, 0]);

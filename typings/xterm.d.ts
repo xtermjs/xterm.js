@@ -274,6 +274,11 @@ declare module 'xterm' {
      * mouse event will continue propagation (eg. double click to select word).
      */
     willLinkActivate?: (event: MouseEvent, uri: string) => boolean;
+    /** 
+     * A flag that causes the Linkifier to match data URLs instead of text in the
+     * terminal.
+     */
+    matchDataUrls?: boolean
   }
 
   export interface IEventEmitter {

@@ -7,13 +7,13 @@
 import { CharData, IInputHandler, IDcsHandler, IEscapeSequenceParser, IBuffer } from './Types';
 import { C0, C1 } from './common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from './core/data/Charsets';
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, DEFAULT_ATTR } from './Buffer';
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, DEFAULT_ATTR, CHAR_DATA_RENDERABLE_INDEX } from './Buffer';
 import { FLAGS } from './renderer/Types';
 import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
 import { ICharset } from './core/Types';
 import { Disposable } from './common/Lifecycle';
-
+import { Base64Image, ImageCell } from './Base64Image' 
 /**
  * Map collect to glevel. Used in `selectCharset`.
  */
@@ -246,6 +246,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     // 118 - Reset Tektronix cursor color.
     // 119 - Reset highlight foreground color.
 
+    // 1337 - Display image
+    this._parser.setOscHandler(1337, (data) => this.displayImage(data));
+
     /**
      * ESC handlers
      */
@@ -382,10 +385,12 @@ export class InputHandler extends Disposable implements IInputHandler {
             if (bufferRow[buffer.x - 2]) {
               bufferRow[buffer.x - 2][CHAR_DATA_CHAR_INDEX] += char;
               bufferRow[buffer.x - 2][CHAR_DATA_CODE_INDEX] = code;
+              bufferRow[buffer.x - 2][CHAR_DATA_RENDERABLE_INDEX] = undefined;
             }
           } else {
             bufferRow[buffer.x - 1][CHAR_DATA_CHAR_INDEX] += char;
             bufferRow[buffer.x - 1][CHAR_DATA_CODE_INDEX] = code;
+            bufferRow[buffer.x - 1][CHAR_DATA_RENDERABLE_INDEX] = undefined;
           }
         }
         continue;
@@ -431,20 +436,20 @@ export class InputHandler extends Disposable implements IInputHandler {
           if (removed[CHAR_DATA_WIDTH_INDEX] === 0
               && bufferRow[this._terminal.cols - 2]
               && bufferRow[this._terminal.cols - 2][CHAR_DATA_WIDTH_INDEX] === 2) {
-                bufferRow[this._terminal.cols - 2] = [curAttr, ' ', 1, 32  /* ' '.charCodeAt(0) */ ];
+                bufferRow[this._terminal.cols - 2] = [curAttr, ' ', 1, 32  /* ' '.charCodeAt(0) */, undefined ];
           }
 
           // insert empty cell at cursor
-          bufferRow.splice(buffer.x, 0, [curAttr, ' ', 1, 32  /* ' '.charCodeAt(0) */ ]);
+          bufferRow.splice(buffer.x, 0, [curAttr, ' ', 1, 32  /* ' '.charCodeAt(0) */, undefined ]);
         }
       }
 
       // write current char to buffer and advance cursor
-      bufferRow[buffer.x++] = [curAttr, char, chWidth, code];
+      bufferRow[buffer.x++] = [curAttr, char, chWidth, code, undefined];
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor
       if (chWidth === 2) {
-        bufferRow[buffer.x++] = [curAttr, '', 0, undefined];
+        bufferRow[buffer.x++] = [curAttr, '', 0, undefined, undefined];
       }
     }
     this._terminal.updateRange(buffer.y);
@@ -547,7 +552,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     const row = buffer.y + buffer.ybase;
     let j = buffer.x;
-    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32]; // xterm
+    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32, undefined]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       buffer.lines.get(row).splice(j++, 0, ch);
@@ -857,7 +862,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const buffer = this._terminal.buffer;
 
     const row = buffer.y + buffer.ybase;
-    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32]; // xterm
+    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32, undefined]; // xterm
 
     while (param--) {
       buffer.lines.get(row).splice(buffer.x, 1);
@@ -919,7 +924,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     const row = buffer.y + buffer.ybase;
     let j = buffer.x;
-    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32]; // xterm
+    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32, undefined]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       buffer.lines.get(row)[j++] = ch;
@@ -1856,6 +1861,82 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public setTitle(data: string): void {
     this._terminal.handleTitle(data);
+  }
+
+  /**
+   * OSC 1337; File = [optional arguments] : base-64 encoded file contents ^G
+   * The optional arguments are formatted as key=value with a semicolon between each key-value pair.
+   * name	  	                base-64 encoded filename. Defaults to "Unnamed file".
+   * size	  	                File size in bytes. Optional; this is only used by the progress indicator.
+   * width	                	Width to render. See notes below.
+   * height	  	              Height to render. See notes below.
+   * preserveAspectRatio	  	If set to 0, then the image's inherent aspect ratio will not be respected; otherwise,
+   *                          it will fill the specified width and height as much as possible without stretching. Defaults to 1.
+   * inline	  	              If set to 1, the file will be displayed inline. Otherwise, it will be downloaded with no visual representation 
+   *                          in the terminal session. Defaults to 0.
+   * 
+   * The width and height are given as a number followed by a unit, or the word "auto".
+   *
+   * N: N character cells.
+   * Npx: N pixels.
+   * N%: N percent of the session's width or height.
+   * auto: The image's inherent size will be used to determine an appropriate dimension.
+   */
+
+  public displayImage(data: string): void {
+    let b64img = new Base64Image(data)
+    if (!b64img.valid) {
+      return
+    }
+
+    let [width, height, nrows, ncols]  = b64img.calculateDimensions(this._terminal.renderer.dimensions)
+
+    let termX = this._terminal.buffer.x
+    let termY = this._terminal.buffer.y + this._terminal.buffer.ybase
+   
+    for (var i = 0; i < (nrows-1); i++) {
+      this.index() // TODO does this overwrite everything?
+    }
+    this._terminal.buffer.x = termX + ncols
+
+    let img = new Image()
+    let dataUrl = b64img.dataUrl()
+    img.src = dataUrl
+
+    let emptyImage = new ImageData(this._terminal.renderer.dimensions.scaledCellWidth,
+                                   this._terminal.renderer.dimensions.scaledCellHeight)
+
+    for (var y = termY; y < termY+nrows; y++) {
+
+      const line = this._terminal.buffer.lines.get(y);
+
+      for (var x=termX; x < Math.min(this._terminal.cols, termX+ncols); x++) {
+        let cell = new ImageCell(emptyImage, dataUrl)
+        line[x] = [this._terminal.eraseAttr(), ' ', 1, 32, cell];
+      }
+    }
+    
+    img.onload = () => {
+      let imageData = b64img.getImageData(img, width, height, nrows, ncols, this._terminal.renderer.dimensions)
+
+      for (var y = termY; y < termY+nrows; y++) {
+
+        const line = this._terminal.buffer.lines.get(y);
+        let imgs = imageData[y-termY]
+
+        for (var x=termX; x < Math.min(this._terminal.cols, termX+ncols); x++) {
+          let renderable = line[x][CHAR_DATA_RENDERABLE_INDEX]
+          if (renderable && renderable.dataUrl() == dataUrl) {
+            let imgdata = imgs[x-termX]
+            let cell = new ImageCell(imgdata, dataUrl)
+            line[x] = [this._terminal.eraseAttr(), ' ', 1, 32, cell];
+          }
+        }
+
+      }
+      this._terminal.refresh(termY, termY+nrows);
+    }
+
   }
 
   /**

@@ -4,7 +4,7 @@
  */
 
 import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../renderer/Types';
-import { LineData, IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ICircularList, ILinkifier, IMouseHelper, ILinkMatcherOptions, XtermListener, CharacterJoinerHandler } from '../Types';
+import { LineData, IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ICircularList, ILinkifier, IMouseHelper, ILinkMatcherOptions, XtermListener, CharacterJoinerHandler, IRenderable } from '../Types';
 import { Buffer } from '../Buffer';
 import * as Browser from '../shared/utils/Browser';
 import { ITheme, IDisposable, IMarker } from 'xterm';
@@ -152,7 +152,7 @@ export class MockTerminal implements ITerminal {
     const line: LineData = [];
     cols = cols || this.cols;
     for (let i = 0; i < cols; i++) {
-      line.push([0, ' ', 1, 32]);
+      line.push([0, ' ', 1, 32, undefined]);
     }
     return line;
   }
@@ -231,7 +231,7 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   eraseLeft(x: number, y: number): void {
     throw new Error('Method not implemented.');
   }
-  blankLine(cur?: boolean, isWrapped?: boolean): [number, string, number, number][] {
+  blankLine(cur?: boolean, isWrapped?: boolean): [number, string, number, number, IRenderable|undefined][] {
     throw new Error('Method not implemented.');
   }
   prevStop(x?: number): number {
@@ -289,7 +289,7 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
 
 export class MockBuffer implements IBuffer {
   isCursorInViewport: boolean;
-  lines: ICircularList<[number, string, number, number][]>;
+  lines: ICircularList<[number, string, number, number, IRenderable | undefined][]>;
   ydisp: number;
   ybase: number;
   hasScrollback: boolean;
@@ -312,7 +312,7 @@ export class MockBuffer implements IBuffer {
   prevStop(x?: number): number {
     throw new Error('Method not implemented.');
   }
-  setLines(lines: ICircularList<[number, string, number, number][]>): void {
+  setLines(lines: ICircularList<[number, string, number, number, IRenderable|undefined][]>): void {
     this.lines = lines;
   }
 }

@@ -4,6 +4,7 @@ import * as fit from '../build/addons/fit/fit';
 import * as fullscreen from '../build/addons/fullscreen/fullscreen';
 import * as search from '../build/addons/search/search';
 import * as webLinks from '../build/addons/webLinks/webLinks';
+import * as imageLinks from '../build/addons/imageLinks/imageLinks';
 import * as winptyCompat from '../build/addons/winptyCompat/winptyCompat';
 
 
@@ -12,6 +13,7 @@ Terminal.applyAddon(fit);
 Terminal.applyAddon(fullscreen);
 Terminal.applyAddon(search);
 Terminal.applyAddon(webLinks);
+Terminal.applyAddon(imageLinks);
 Terminal.applyAddon(winptyCompat);
 
 
@@ -75,6 +77,7 @@ function createTerminal() {
   term.open(terminalContainer);
   term.winptyCompatInit();
   term.webLinksInit();
+  term.imageLinksInit();
   term.fit();
   term.focus();
 

@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+      "module": "commonjs",
+      "target": "es5",
+      "rootDir": ".",
+      "outDir": "../../../lib/addons/imageLinks/",
+      "sourceMap": true,
+      "removeComments": true,
+      "declaration": true,
+      "preserveWatchOutput": true
+    },
+    "include": [
+      "**/*.ts",
+      "../../../typings/xterm.d.ts"
+    ]
+  }
+  

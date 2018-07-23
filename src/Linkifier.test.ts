@@ -51,7 +51,7 @@ describe('Linkifier', () => {
   function stringToRow(text: string): LineData {
     const result: LineData = [];
     for (let i = 0; i < text.length; i++) {
-      result.push([0, text.charAt(i), 1, text.charCodeAt(i)]);
+      result.push([0, text.charAt(i), 1, text.charCodeAt(i), undefined]);
     }
     return result;
   }

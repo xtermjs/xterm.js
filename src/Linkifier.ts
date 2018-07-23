@@ -7,6 +7,8 @@ import { IMouseZoneManager } from './ui/Types';
 import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, ILinkifier, ITerminal, LineData } from './Types';
 import { MouseZone } from './ui/MouseZoneManager';
 import { EventEmitter } from './EventEmitter';
+import {IRenderable} from './Types'
+import { CHAR_DATA_RENDERABLE_INDEX } from './Buffer';
 
 /**
  * The Linkifier applies links to rows shortly after they have been refreshed.
@@ -109,7 +111,8 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       hoverTooltipCallback: options.tooltipCallback,
       hoverLeaveCallback: options.leaveCallback,
       willLinkActivate: options.willLinkActivate,
-      priority: options.priority || 0
+      priority: options.priority || 0,
+      matchDataUrls: options.matchDataUrls
     };
     this._addLinkMatcherToList(matcher);
     return matcher.id;
@@ -192,7 +195,16 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     }
 
     for (let i = 0; i < this._linkMatchers.length; i++) {
-      this._doLinkifyRow(rowIndex, text, this._linkMatchers[i]);
+      let linkMatcher = this._linkMatchers[i]
+      if (linkMatcher.matchDataUrls) {
+        let line = this._terminal.buffer.lines.get(rowIndex);
+        for (var ix = 0; ix < line.length; ix++) {
+          let cell = line[ix]
+          this._doLinkifyCell(rowIndex, ix, cell, linkMatcher);
+        }
+      } else {
+        this._doLinkifyRow(rowIndex, text, linkMatcher);
+      }
     }
   }
 
@@ -224,11 +236,11 @@ export class Linkifier extends EventEmitter implements ILinkifier {
           return;
         }
         if (isValid) {
-          this._addLink(offset + index, rowIndex, uri, matcher);
+          this._addLink(offset + index, rowIndex, uri, matcher, true);
         }
       });
     } else {
-      this._addLink(offset + index, rowIndex, uri, matcher);
+      this._addLink(offset + index, rowIndex, uri, matcher, true);
     }
 
     // Recursively check for links in the rest of the text
@@ -239,6 +251,40 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     }
   }
 
+  
+  /**
+   * Linkifies a cell given a specific handler.
+   * @param rowIndex The row index to linkify.
+   * @param colIndex The col index to linkify.
+   * @param cell The cell of the row 
+   * @param matcher The link matcher for this line.
+   * @param offset The how much of the row has already been linkified.
+   */
+  private _doLinkifyCell(rowIndex: number, colIndex:number, cell: [number, string, number, number, IRenderable], matcher: ILinkMatcher): void {
+    if (!cell[CHAR_DATA_RENDERABLE_INDEX]) {
+      return
+    }
+    let dataUrl = cell[CHAR_DATA_RENDERABLE_INDEX].dataUrl()
+    if (!dataUrl.match(matcher.regex)) {
+      return
+    }
+    
+    // Ensure the link is valid before registering
+    if (matcher.validationCallback) {
+      matcher.validationCallback(dataUrl, isValid => {
+        // Discard link if the line has already changed
+        if (this._rowsTimeoutId) {
+          return;
+        }
+        if (isValid) {
+          this._addLink(colIndex, rowIndex, dataUrl, matcher, false);
+        }
+      });
+    } else {
+      this._addLink(colIndex, rowIndex, dataUrl, matcher, false);
+    }
+  }
+
   /**
    * Registers a link to the mouse zone manager.
    * @param x The column the link starts.
@@ -246,11 +292,16 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @param uri The URI of the link.
    * @param matcher The link matcher for the link.
    */
-  private _addLink(x: number, y: number, uri: string, matcher: ILinkMatcher): void {
+  private _addLink(x: number, y: number, uri: string, matcher: ILinkMatcher, isText: boolean): void {
     const x1 = x % this._terminal.cols;
     const y1 = y + Math.floor(x / this._terminal.cols);
     let x2 = (x1 + uri.length) % this._terminal.cols;
     let y2 = y1 + Math.floor((x1 + uri.length) / this._terminal.cols);
+
+    if (!isText) {
+      x2 = (x1 + 1) % this._terminal.cols;
+      y2 = y1 + Math.floor((x1 + 1) / this._terminal.cols);
+    }
     if (x2 === 0) {
       x2 = this._terminal.cols;
       y2--;
@@ -268,17 +319,17 @@ export class Linkifier extends EventEmitter implements ILinkifier {
         window.open(uri, '_blank');
       },
       e => {
-        this.emit(LinkHoverEventTypes.HOVER, this._createLinkHoverEvent(x1, y1, x2, y2));
+        this.emit(LinkHoverEventTypes.HOVER, this._createLinkHoverEvent(x1, y1, x2, y2, isText));
         this._terminal.element.classList.add('xterm-cursor-pointer');
       },
       e => {
-        this.emit(LinkHoverEventTypes.TOOLTIP, this._createLinkHoverEvent(x1, y1, x2, y2));
+        this.emit(LinkHoverEventTypes.TOOLTIP, this._createLinkHoverEvent(x1, y1, x2, y2, isText));
         if (matcher.hoverTooltipCallback) {
           matcher.hoverTooltipCallback(e, uri);
         }
       },
       () => {
-        this.emit(LinkHoverEventTypes.LEAVE, this._createLinkHoverEvent(x1, y1, x2, y2));
+        this.emit(LinkHoverEventTypes.LEAVE, this._createLinkHoverEvent(x1, y1, x2, y2, isText));
         this._terminal.element.classList.remove('xterm-cursor-pointer');
         if (matcher.hoverLeaveCallback) {
           matcher.hoverLeaveCallback();
@@ -293,7 +344,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     ));
   }
 
-  private _createLinkHoverEvent(x1: number, y1: number, x2: number, y2: number): ILinkHoverEvent {
-    return { x1, y1, x2, y2, cols: this._terminal.cols };
+  private _createLinkHoverEvent(x1: number, y1: number, x2: number, y2: number, isText: boolean): ILinkHoverEvent {
+    return { x1, y1, x2, y2, cols: this._terminal.cols, isText: isText};
   }
 }

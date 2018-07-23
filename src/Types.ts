@@ -12,7 +12,13 @@ export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
 export type XtermListener = (...args: any[]) => void;
 
-export type CharData = [number, string, number, number];
+export interface IRenderable {
+  dataUrl(): string|undefined;
+  drawBackground(ctx: CanvasRenderingContext2D, x: number, y: number, scaledCellWidth: number, scaledCellHeight: number): void;
+  drawForeground(ctx: CanvasRenderingContext2D, x: number, y: number, scaledCellWidth: number, scaledCellHeight: number): void;
+}
+
+export type CharData = [number, string, number, number, IRenderable|undefined];
 export type LineData = CharData[];
 
 export type LinkMatcherHandler = (event: MouseEvent, uri: string) => void;
@@ -192,6 +198,7 @@ export interface ILinkMatcher {
   validationCallback?: LinkMatcherValidationCallback;
   priority?: number;
   willLinkActivate?: (event: MouseEvent, uri: string) => boolean;
+  matchDataUrls?: boolean
 }
 
 export interface ILinkHoverEvent {
@@ -200,6 +207,7 @@ export interface ILinkHoverEvent {
   x2: number;
   y2: number;
   cols: number;
+  isText: boolean;
 }
 
 export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAccessor, ILinkifierAccessor {
@@ -360,6 +368,11 @@ export interface ILinkMatcherOptions {
    * mouse event will continue propagation (eg. double click to select word).
    */
   willLinkActivate?: (event: MouseEvent, uri: string) => boolean;
+  /** 
+   * A flag that causes the Linkifier to match data URLs instead of text in the
+   * terminal.
+   */
+  matchDataUrls?: boolean
 }
 
 export interface IBrowser {
@@ -508,3 +521,4 @@ export interface IEscapeSequenceParser extends IDisposable {
   setErrorHandler(callback: (state: IParsingState) => IParsingState): void;
   clearErrorHandler(): void;
 }
+

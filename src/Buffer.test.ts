@@ -273,10 +273,10 @@ describe('Buffer', () => {
   describe ('translateBufferLineToString', () => {
     it('should handle selecting a section of ascii text', () => {
       buffer.lines.set(0, [
-        [ null, 'a', 1, 'a'.charCodeAt(0)],
-        [ null, 'b', 1, 'b'.charCodeAt(0)],
-        [ null, 'c', 1, 'c'.charCodeAt(0)],
-        [ null, 'd', 1, 'd'.charCodeAt(0)]
+        [ null, 'a', 1, 'a'.charCodeAt(0), undefined],
+        [ null, 'b', 1, 'b'.charCodeAt(0), undefined],
+        [ null, 'c', 1, 'c'.charCodeAt(0), undefined],
+        [ null, 'd', 1, 'd'.charCodeAt(0), undefined]
       ]);
 
       const str = buffer.translateBufferLineToString(0, true, 0, 2);
@@ -285,9 +285,9 @@ describe('Buffer', () => {
 
     it('should handle a cut-off double width character by including it', () => {
       buffer.lines.set(0, [
-        [ null, '語', 2, 35486 ],
-        [ null, '', 0, null],
-        [ null, 'a', 1, 'a'.charCodeAt(0)]
+        [ null, '語', 2, 35486, undefined],
+        [ null, '', 0, null, undefined],
+        [ null, 'a', 1, 'a'.charCodeAt(0), undefined]
       ]);
 
       const str1 = buffer.translateBufferLineToString(0, true, 0, 1);
@@ -296,9 +296,9 @@ describe('Buffer', () => {
 
     it('should handle a zero width character in the middle of the string by not including it', () => {
       buffer.lines.set(0, [
-        [ null, '語', 2, '語'.charCodeAt(0) ],
-        [ null, '', 0, null],
-        [ null, 'a', 1, 'a'.charCodeAt(0)]
+        [ null, '語', 2, '語'.charCodeAt(0), undefined ],
+        [ null, '', 0, null, undefined],
+        [ null, 'a', 1, 'a'.charCodeAt(0), undefined]
       ]);
 
       const str0 = buffer.translateBufferLineToString(0, true, 0, 1);
@@ -313,8 +313,8 @@ describe('Buffer', () => {
 
     it('should handle single width emojis', () => {
       buffer.lines.set(0, [
-        [ null, '😁', 1, '😁'.charCodeAt(0) ],
-        [ null, 'a', 1, 'a'.charCodeAt(0)]
+        [ null, '😁', 1, '😁'.charCodeAt(0), undefined],
+        [ null, 'a', 1, 'a'.charCodeAt(0), undefined]
       ]);
 
       const str1 = buffer.translateBufferLineToString(0, true, 0, 1);
@@ -326,8 +326,8 @@ describe('Buffer', () => {
 
     it('should handle double width emojis', () => {
       buffer.lines.set(0, [
-        [ null, '😁', 2, '😁'.charCodeAt(0) ],
-        [ null, '', 0, null]
+        [ null, '😁', 2, '😁'.charCodeAt(0), undefined],
+        [ null, '', 0, null, undefined]
       ]);
 
       const str1 = buffer.translateBufferLineToString(0, true, 0, 1);
@@ -337,9 +337,9 @@ describe('Buffer', () => {
       assert.equal(str2, '😁');
 
       buffer.lines.set(0, [
-        [ null, '😁', 2, '😁'.charCodeAt(0) ],
-        [ null, '', 0, null],
-        [ null, 'a', 1, 'a'.charCodeAt(0)]
+        [ null, '😁', 2, '😁'.charCodeAt(0), undefined],
+        [ null, '', 0, null, undefined],
+        [ null, 'a', 1, 'a'.charCodeAt(0), undefined]
       ]);
 
       const str3 = buffer.translateBufferLineToString(0, true, 0, 3);

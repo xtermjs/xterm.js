@@ -23,11 +23,11 @@ describe('CharacterJoinerRegistry', () => {
     lines.set(5, [...lineData('a', 0x11111111), ...lineData(' -> b -> c -> '), ...lineData('d', 0x22222222)]);
     lines.set(6, [
       ...lineData('wi'),
-      [0, '￥', 2, '￥'.charCodeAt(0)],
-      [0, '', 0, null],
+      [0, '￥', 2, '￥'.charCodeAt(0), undefined],
+      [0, '', 0, null, undefined],
       ...lineData('deemo'),
-      [0, '\xf0\x9f\x98\x81', 1, 128513],
-      [0, ' ', 1, ' '.charCodeAt(0)],
+      [0, '\xf0\x9f\x98\x81', 1, 128513, undefined],
+      [0, ' ', 1, ' '.charCodeAt(0), undefined],
       ...lineData('jiabc')
     ]);
     (<MockBuffer>terminal.buffer).setLines(lines);
@@ -258,7 +258,7 @@ describe('CharacterJoinerRegistry', () => {
 });
 
 function lineData(line: string, attr: number = 0): LineData {
-  return line.split('').map<CharData>(char => [attr, char, 1, char.charCodeAt(0)]);
+  return line.split('').map<CharData>(char => [attr, char, 1, char.charCodeAt(0), undefined]);
 }
 
 function substringJoiner(substring: string): (sequence: string) => [number, number][] {

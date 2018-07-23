@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from '../Buffer';
+import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_RENDERABLE_INDEX } from '../Buffer';
 import { FLAGS, IColorSet, IRenderDimensions, ICharacterJoinerRegistry } from './Types';
-import { CharData, ITerminal } from '../Types';
+import { CharData, ITerminal, IRenderable } from '../Types';
 import { INVERTED_DEFAULT_COLOR } from './atlas/Types';
 import { GridCache } from './GridCache';
 import { BaseRenderLayer } from './BaseRenderLayer';
@@ -59,6 +59,7 @@ export class TextRenderLayer extends BaseRenderLayer {
       code: number,
       chars: string,
       width: number,
+      renderable: IRenderable|undefined,
       x: number,
       y: number,
       fg: number,
@@ -79,6 +80,7 @@ export class TextRenderLayer extends BaseRenderLayer {
         let chars: string = charData[CHAR_DATA_CHAR_INDEX];
         const attr: number = charData[CHAR_DATA_ATTR_INDEX];
         let width: number = charData[CHAR_DATA_WIDTH_INDEX];
+        let renderable: IRenderable = charData[CHAR_DATA_RENDERABLE_INDEX];
 
         // If true, indicates that the current character(s) to draw were joined.
         let isJoined = false;
@@ -155,6 +157,7 @@ export class TextRenderLayer extends BaseRenderLayer {
           code,
           chars,
           width,
+          renderable,
           x,
           y,
           fg,
@@ -180,16 +183,23 @@ export class TextRenderLayer extends BaseRenderLayer {
 
     ctx.save();
 
-    this._forEachCell(terminal, firstRow, lastRow, null, (code, chars, width, x, y, fg, bg, flags) => {
+    this._forEachCell(terminal, firstRow, lastRow, null, (code, chars, width, renderable, x, y, fg, bg, flags) => {
       // libvte and xterm both draw the background (but not foreground) of invisible characters,
       // so we should too.
       let nextFillStyle = null; // null represents default background color
+
+      if (renderable != null) {
+        prevFillStyle = null
+        this.drawRenderableBackground(renderable, x, y);
+        return
+      }
+
       if (bg === INVERTED_DEFAULT_COLOR) {
         nextFillStyle = this._colors.foreground.css;
       } else if (bg < 256) {
         nextFillStyle = this._colors.ansi[bg].css;
       }
-
+      
       if (prevFillStyle === null) {
         // This is either the first iteration, or the default background was set. Either way, we
         // don't need to draw anything.
@@ -222,10 +232,16 @@ export class TextRenderLayer extends BaseRenderLayer {
   }
 
   private _drawForeground(terminal: ITerminal, firstRow: number, lastRow: number): void {
-    this._forEachCell(terminal, firstRow, lastRow, this._characterJoinerRegistry, (code, chars, width, x, y, fg, bg, flags) => {
+    this._forEachCell(terminal, firstRow, lastRow, this._characterJoinerRegistry, (code, chars, width, renderable, x, y, fg, bg, flags) => {
       if (flags & FLAGS.INVISIBLE) {
         return;
       }
+      
+      if (renderable != null) {
+        this.drawRenderableForeground(renderable, x, y);
+        return
+      }
+
       if (flags & FLAGS.UNDERLINE) {
         this._ctx.save();
         if (fg === INVERTED_DEFAULT_COLOR) {

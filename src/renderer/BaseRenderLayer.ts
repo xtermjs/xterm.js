@@ -4,7 +4,7 @@
  */
 
 import { IRenderLayer, IColorSet, IRenderDimensions } from './Types';
-import { CharData, ITerminal } from '../Types';
+import { CharData, ITerminal, IRenderable } from '../Types';
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from './atlas/Types';
 import BaseCharAtlas from './atlas/BaseCharAtlas';
 import { acquireCharAtlas } from './atlas/CharAtlasCache';
@@ -122,6 +122,17 @@ export abstract class BaseRenderLayer implements IRenderLayer {
         y * this._scaledCellHeight,
         width * this._scaledCellWidth,
         height * this._scaledCellHeight);
+  }
+
+  /**
+   * TODO doc
+   */
+  protected drawRenderableBackground(renderable: IRenderable, x: number, y: number): void {
+    renderable.drawBackground(this._ctx, x, y, this._scaledCellWidth, this._scaledCellHeight)
+  }
+
+  protected drawRenderableForeground(renderable: IRenderable, x: number, y: number): void {
+    renderable.drawBackground(this._ctx, x, y, this._scaledCellWidth, this._scaledCellHeight)
   }
 
   /**

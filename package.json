@@ -55,11 +55,11 @@
     "mocha": "gulp test",
     "build:docs": "jsdoc -c jsdoc.json",
     "tsc": "tsc",
-    "prebuild": "concurrently --kill-others-on-fail --names \"lib,attach,fit,fullscreen,search,terminado,webLinks,winptyCompat,zmodem,css\" \"tsc\" \"tsc -p ./src/addons/attach\" \"tsc -p ./src/addons/fit\" \"tsc -p ./src/addons/fullscreen\" \"tsc -p ./src/addons/search\" \"tsc -p ./src/addons/terminado\" \"tsc -p ./src/addons/webLinks\" \"tsc -p ./src/addons/winptyCompat\" \"tsc -p ./src/addons/zmodem\" \"gulp css\"",
+    "prebuild": "concurrently --kill-others-on-fail --names \"lib,attach,fit,fullscreen,search,terminado,webLinks,imageLinks,winptyCompat,zmodem,css\" \"tsc\" \"tsc -p ./src/addons/attach\" \"tsc -p ./src/addons/fit\" \"tsc -p ./src/addons/fullscreen\" \"tsc -p ./src/addons/search\" \"tsc -p ./src/addons/terminado\" \"tsc -p ./src/addons/webLinks\" \"tsc -p ./src/addons/imageLinks\" \"tsc -p ./src/addons/winptyCompat\" \"tsc -p ./src/addons/zmodem\" \"gulp css\"",
     "build": "gulp build",
     "prepublish": "npm run build",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "webpack": "gulp webpack",
-    "watch": "concurrently --kill-others-on-fail --names \"lib,attach,fit,fullscreen,search,terminado,webLinks,winptyCompat,zmodem,css\" \"tsc -w\" \"tsc -w -p ./src/addons/attach\" \"tsc -w -p ./src/addons/fit\" \"tsc -w -p ./src/addons/fullscreen\" \"tsc -w -p ./src/addons/search\" \"tsc -w -p ./src/addons/terminado\" \"tsc -w -p ./src/addons/webLinks\" \"tsc -w -p ./src/addons/winptyCompat\" \"tsc -w -p ./src/addons/zmodem\" \"gulp watch-css\""
+    "watch": "concurrently --kill-others-on-fail --names \"lib,attach,fit,fullscreen,search,terminado,webLinks,imageLinks,winptyCompat,zmodem,css\" \"tsc -w\" \"tsc -w -p ./src/addons/attach\" \"tsc -w -p ./src/addons/fit\" \"tsc -w -p ./src/addons/fullscreen\" \"tsc -w -p ./src/addons/search\" \"tsc -w -p ./src/addons/terminado\" \"tsc -w -p ./src/addons/webLinks\" \"tsc -p ./src/addons/imageLinks\" \"tsc -w -p ./src/addons/winptyCompat\" \"tsc -w -p ./src/addons/zmodem\" \"gulp watch-css\""
   }
 }

@@ -1,0 +1,5 @@
+{
+  "name": "xterm.imagelinks",
+  "main": "imageLinks.js",
+  "private": true
+}
