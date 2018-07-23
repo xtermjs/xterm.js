@@ -4,10 +4,9 @@
  */
 
 import { IMouseZoneManager } from './ui/Types';
-import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, ILinkifier, ITerminal, LineData } from './Types';
+import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, ILinkifier, ITerminal, LineData, IRenderable } from './Types';
 import { MouseZone } from './ui/MouseZoneManager';
 import { EventEmitter } from './EventEmitter';
-import {IRenderable} from './Types'
 import { CHAR_DATA_RENDERABLE_INDEX } from './Buffer';
 
 /**
@@ -195,11 +194,11 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     }
 
     for (let i = 0; i < this._linkMatchers.length; i++) {
-      let linkMatcher = this._linkMatchers[i]
+      const linkMatcher = this._linkMatchers[i];
       if (linkMatcher.matchDataUrls) {
-        let line = this._terminal.buffer.lines.get(rowIndex);
-        for (var ix = 0; ix < line.length; ix++) {
-          let cell = line[ix]
+        const line = this._terminal.buffer.lines.get(rowIndex);
+        for (let ix = 0; ix < line.length; ix++) {
+          const cell = line[ix];
           this._doLinkifyCell(rowIndex, ix, cell, linkMatcher);
         }
       } else {
@@ -251,24 +250,24 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     }
   }
 
-  
+
   /**
    * Linkifies a cell given a specific handler.
    * @param rowIndex The row index to linkify.
    * @param colIndex The col index to linkify.
-   * @param cell The cell of the row 
+   * @param cell The cell of the row
    * @param matcher The link matcher for this line.
    * @param offset The how much of the row has already been linkified.
    */
-  private _doLinkifyCell(rowIndex: number, colIndex:number, cell: [number, string, number, number, IRenderable], matcher: ILinkMatcher): void {
+  private _doLinkifyCell(rowIndex: number, colIndex: number, cell: [number, string, number, number, IRenderable], matcher: ILinkMatcher): void {
     if (!cell[CHAR_DATA_RENDERABLE_INDEX]) {
-      return
+      return;
     }
-    let dataUrl = cell[CHAR_DATA_RENDERABLE_INDEX].dataUrl()
+    const dataUrl = cell[CHAR_DATA_RENDERABLE_INDEX].dataUrl();
     if (!dataUrl.match(matcher.regex)) {
-      return
+      return;
     }
-    
+
     // Ensure the link is valid before registering
     if (matcher.validationCallback) {
       matcher.validationCallback(dataUrl, isValid => {

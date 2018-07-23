@@ -13,7 +13,7 @@ import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
 import { ICharset } from './core/Types';
 import { Disposable } from './common/Lifecycle';
-import { Base64Image, ImageCell } from './Base64Image' 
+import { Base64Image, ImageCell } from './Base64Image';
 /**
  * Map collect to glevel. Used in `selectCharset`.
  */
@@ -1872,9 +1872,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * height	  	              Height to render. See notes below.
    * preserveAspectRatio	  	If set to 0, then the image's inherent aspect ratio will not be respected; otherwise,
    *                          it will fill the specified width and height as much as possible without stretching. Defaults to 1.
-   * inline	  	              If set to 1, the file will be displayed inline. Otherwise, it will be downloaded with no visual representation 
+   * inline	  	              If set to 1, the file will be displayed inline. Otherwise, it will be downloaded with no visual representation
    *                          in the terminal session. Defaults to 0.
-   * 
+   *
    * The width and height are given as a number followed by a unit, or the word "auto".
    *
    * N: N character cells.
@@ -1884,58 +1884,58 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
 
   public displayImage(data: string): void {
-    let b64img = new Base64Image(data)
+    const b64img = new Base64Image(data);
     if (!b64img.valid) {
-      return
+      return;
     }
 
-    let [width, height, nrows, ncols]  = b64img.calculateDimensions(this._terminal.renderer.dimensions)
+    const [width, height, nrows, ncols]  = b64img.calculateDimensions(this._terminal.renderer.dimensions);
 
-    let termX = this._terminal.buffer.x
-    let termY = this._terminal.buffer.y + this._terminal.buffer.ybase
-   
-    for (var i = 0; i < (nrows-1); i++) {
-      this.index() // TODO does this overwrite everything?
+    const termX = this._terminal.buffer.x;
+    const termY = this._terminal.buffer.y + this._terminal.buffer.ybase;
+
+    for (let i = 0; i < (nrows - 1); i++) {
+      this.index(); // TODO does this overwrite everything?
     }
-    this._terminal.buffer.x = termX + ncols
+    this._terminal.buffer.x = termX + ncols;
 
-    let img = new Image()
-    let dataUrl = b64img.dataUrl()
-    img.src = dataUrl
+    const img = new Image();
+    const dataUrl = b64img.dataUrl();
+    img.src = dataUrl;
 
-    let emptyImage = new ImageData(this._terminal.renderer.dimensions.scaledCellWidth,
-                                   this._terminal.renderer.dimensions.scaledCellHeight)
+    const emptyImage = new ImageData(this._terminal.renderer.dimensions.scaledCellWidth,
+                                     this._terminal.renderer.dimensions.scaledCellHeight);
 
-    for (var y = termY; y < termY+nrows; y++) {
+    for (let y = termY; y < termY + nrows; y++) {
 
       const line = this._terminal.buffer.lines.get(y);
 
-      for (var x=termX; x < Math.min(this._terminal.cols, termX+ncols); x++) {
-        let cell = new ImageCell(emptyImage, dataUrl)
+      for (let x = termX; x < Math.min(this._terminal.cols, termX + ncols); x++) {
+        const cell = new ImageCell(emptyImage, dataUrl);
         line[x] = [this._terminal.eraseAttr(), ' ', 1, 32, cell];
       }
     }
-    
-    img.onload = () => {
-      let imageData = b64img.getImageData(img, width, height, nrows, ncols, this._terminal.renderer.dimensions)
 
-      for (var y = termY; y < termY+nrows; y++) {
+    img.onload = () => {
+      const imageData = b64img.getImageData(img, width, height, nrows, ncols, this._terminal.renderer.dimensions);
+
+      for (let y = termY; y < termY + nrows; y++) {
 
         const line = this._terminal.buffer.lines.get(y);
-        let imgs = imageData[y-termY]
+        const imgs = imageData[y - termY];
 
-        for (var x=termX; x < Math.min(this._terminal.cols, termX+ncols); x++) {
-          let renderable = line[x][CHAR_DATA_RENDERABLE_INDEX]
-          if (renderable && renderable.dataUrl() == dataUrl) {
-            let imgdata = imgs[x-termX]
-            let cell = new ImageCell(imgdata, dataUrl)
+        for (let x = termX; x < Math.min(this._terminal.cols, termX + ncols); x++) {
+          const renderable = line[x][CHAR_DATA_RENDERABLE_INDEX];
+          if (renderable && renderable.dataUrl() === dataUrl) {
+            const imgdata = imgs[x - termX];
+            const cell = new ImageCell(imgdata, dataUrl);
             line[x] = [this._terminal.eraseAttr(), ' ', 1, 32, cell];
           }
         }
 
       }
-      this._terminal.refresh(termY, termY+nrows);
-    }
+      this._terminal.refresh(termY, termY + nrows);
+    };
 
   }
 

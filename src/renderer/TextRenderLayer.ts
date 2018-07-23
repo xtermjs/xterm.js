@@ -59,7 +59,7 @@ export class TextRenderLayer extends BaseRenderLayer {
       code: number,
       chars: string,
       width: number,
-      renderable: IRenderable|undefined,
+      renderable: IRenderable | undefined,
       x: number,
       y: number,
       fg: number,
@@ -80,7 +80,7 @@ export class TextRenderLayer extends BaseRenderLayer {
         let chars: string = charData[CHAR_DATA_CHAR_INDEX];
         const attr: number = charData[CHAR_DATA_ATTR_INDEX];
         let width: number = charData[CHAR_DATA_WIDTH_INDEX];
-        let renderable: IRenderable = charData[CHAR_DATA_RENDERABLE_INDEX];
+        const renderable: IRenderable = charData[CHAR_DATA_RENDERABLE_INDEX];
 
         // If true, indicates that the current character(s) to draw were joined.
         let isJoined = false;
@@ -189,9 +189,9 @@ export class TextRenderLayer extends BaseRenderLayer {
       let nextFillStyle = null; // null represents default background color
 
       if (renderable != null) {
-        prevFillStyle = null
+        prevFillStyle = null;
         this.drawRenderableBackground(renderable, x, y);
-        return
+        return;
       }
 
       if (bg === INVERTED_DEFAULT_COLOR) {
@@ -199,7 +199,7 @@ export class TextRenderLayer extends BaseRenderLayer {
       } else if (bg < 256) {
         nextFillStyle = this._colors.ansi[bg].css;
       }
-      
+
       if (prevFillStyle === null) {
         // This is either the first iteration, or the default background was set. Either way, we
         // don't need to draw anything.
@@ -236,10 +236,10 @@ export class TextRenderLayer extends BaseRenderLayer {
       if (flags & FLAGS.INVISIBLE) {
         return;
       }
-      
+
       if (renderable != null) {
         this.drawRenderableForeground(renderable, x, y);
-        return
+        return;
       }
 
       if (flags & FLAGS.UNDERLINE) {

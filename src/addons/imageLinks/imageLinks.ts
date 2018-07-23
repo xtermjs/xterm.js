@@ -6,12 +6,12 @@
 import { Terminal, ILinkMatcherOptions } from 'xterm';
 
 function handleLink(event: MouseEvent, uri: string): void {
-  var userAgent = navigator.userAgent.toLowerCase();
+  const userAgent = navigator.userAgent.toLowerCase();
   if (userAgent.indexOf(' electron/') > -1) {
     window.open(uri, '_blank');
   } else {
-    var win = window.open()
-    win.document.body.innerHTML = "<img src='" + uri + "'>"
+    const win = window.open();
+    win.document.body.innerHTML = '<img src=\'' + uri + '\'>';
   }
 }
 
@@ -24,7 +24,7 @@ function handleLink(event: MouseEvent, uri: string): void {
 export function imageLinksInit(term: Terminal, handler: (event: MouseEvent, uri: string) => void = handleLink, options: ILinkMatcherOptions = {}): void {
   options.matchIndex = 1;
   options.matchDataUrls = true;
-  term.registerLinkMatcher(new RegExp("^data:image\\/(png|jpeg);"), handler, options);
+  term.registerLinkMatcher(new RegExp('^data:image\\/(png|jpeg);'), handler, options);
 }
 
 export function apply(terminalConstructor: typeof Terminal): void {

@@ -231,7 +231,7 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   eraseLeft(x: number, y: number): void {
     throw new Error('Method not implemented.');
   }
-  blankLine(cur?: boolean, isWrapped?: boolean): [number, string, number, number, IRenderable|undefined][] {
+  blankLine(cur?: boolean, isWrapped?: boolean): [number, string, number, number, IRenderable | undefined][] {
     throw new Error('Method not implemented.');
   }
   prevStop(x?: number): number {
@@ -312,7 +312,7 @@ export class MockBuffer implements IBuffer {
   prevStop(x?: number): number {
     throw new Error('Method not implemented.');
   }
-  setLines(lines: ICircularList<[number, string, number, number, IRenderable|undefined][]>): void {
+  setLines(lines: ICircularList<[number, string, number, number, IRenderable | undefined][]>): void {
     this.lines = lines;
   }
 }

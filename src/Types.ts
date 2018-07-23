@@ -13,12 +13,12 @@ export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 export type XtermListener = (...args: any[]) => void;
 
 export interface IRenderable {
-  dataUrl(): string|undefined;
+  dataUrl(): string | undefined;
   drawBackground(ctx: CanvasRenderingContext2D, x: number, y: number, scaledCellWidth: number, scaledCellHeight: number): void;
   drawForeground(ctx: CanvasRenderingContext2D, x: number, y: number, scaledCellWidth: number, scaledCellHeight: number): void;
 }
 
-export type CharData = [number, string, number, number, IRenderable|undefined];
+export type CharData = [number, string, number, number, IRenderable | undefined];
 export type LineData = CharData[];
 
 export type LinkMatcherHandler = (event: MouseEvent, uri: string) => void;
@@ -198,7 +198,7 @@ export interface ILinkMatcher {
   validationCallback?: LinkMatcherValidationCallback;
   priority?: number;
   willLinkActivate?: (event: MouseEvent, uri: string) => boolean;
-  matchDataUrls?: boolean
+  matchDataUrls?: boolean;
 }
 
 export interface ILinkHoverEvent {
@@ -368,11 +368,11 @@ export interface ILinkMatcherOptions {
    * mouse event will continue propagation (eg. double click to select word).
    */
   willLinkActivate?: (event: MouseEvent, uri: string) => boolean;
-  /** 
+  /**
    * A flag that causes the Linkifier to match data URLs instead of text in the
    * terminal.
    */
-  matchDataUrls?: boolean
+  matchDataUrls?: boolean;
 }
 
 export interface IBrowser {

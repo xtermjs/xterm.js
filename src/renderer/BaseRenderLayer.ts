@@ -128,11 +128,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * TODO doc
    */
   protected drawRenderableBackground(renderable: IRenderable, x: number, y: number): void {
-    renderable.drawBackground(this._ctx, x, y, this._scaledCellWidth, this._scaledCellHeight)
+    renderable.drawBackground(this._ctx, x, y, this._scaledCellWidth, this._scaledCellHeight);
   }
 
   protected drawRenderableForeground(renderable: IRenderable, x: number, y: number): void {
-    renderable.drawBackground(this._ctx, x, y, this._scaledCellWidth, this._scaledCellHeight)
+    renderable.drawBackground(this._ctx, x, y, this._scaledCellWidth, this._scaledCellHeight);
   }
 
   /**
