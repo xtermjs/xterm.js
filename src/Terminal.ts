@@ -85,7 +85,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   bellStyle: 'none',
   drawBoldTextInBrightColors: true,
   enableBold: true,
-  experimentalCharAtlas: 'static',
+  experimentalCharAtlas: 'dynamic',
   fontFamily: 'courier-new, courier, monospace',
   fontSize: 15,
   fontWeight: 'normal',

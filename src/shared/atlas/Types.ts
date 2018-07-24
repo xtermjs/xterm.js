@@ -9,7 +9,7 @@ import { IColorSet } from '../Types';
 export const CHAR_ATLAS_CELL_SPACING = 1;
 
 export interface ICharAtlasConfig {
-  type: 'none' | 'static' | 'dynamic';
+  type: 'none' | 'dynamic';
   devicePixelRatio: number;
   fontSize: number;
   fontFamily: string;

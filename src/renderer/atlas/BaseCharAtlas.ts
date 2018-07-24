@@ -4,6 +4,7 @@
  */
 
 import { IGlyphIdentifier } from './Types';
+import { IColor } from '../../shared/Types';
 
 export default abstract class BaseCharAtlas {
   private _didWarmUp: boolean = false;
@@ -50,4 +51,25 @@ export default abstract class BaseCharAtlas {
     x: number,
     y: number
   ): boolean;
+}
+
+/**
+ * Makes a partiicular rgb color in an ImageData completely transparent.
+ * @returns True if the result is "empty", meaning all pixels are fully transparent.
+ */
+export function clearColor(imageData: ImageData, color: IColor): boolean {
+  let isEmpty = true;
+  const r = color.rgba >>> 24;
+  const g = color.rgba >>> 16 & 0xFF;
+  const b = color.rgba >>> 8 & 0xFF;
+  for (let offset = 0; offset < imageData.data.length; offset += 4) {
+    if (imageData.data[offset] === r &&
+        imageData.data[offset + 1] === g &&
+        imageData.data[offset + 2] === b) {
+      imageData.data[offset + 3] = 0;
+    } else {
+      isEmpty = false;
+    }
+  }
+  return isEmpty;
 }

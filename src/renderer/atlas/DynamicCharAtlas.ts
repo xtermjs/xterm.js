@@ -6,9 +6,8 @@
 import { DIM_OPACITY, IGlyphIdentifier, INVERTED_DEFAULT_COLOR } from './Types';
 import { ICharAtlasConfig } from '../../shared/atlas/Types';
 import { IColor } from '../../shared/Types';
-import BaseCharAtlas from './BaseCharAtlas';
+import BaseCharAtlas, { clearColor } from './BaseCharAtlas';
 import { DEFAULT_ANSI_COLORS } from '../ColorManager';
-import { clearColor } from '../../shared/atlas/CharAtlasGenerator';
 import LRUMap from './LRUMap';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
