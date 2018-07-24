@@ -1712,15 +1712,13 @@ export class InputHandler extends Disposable implements IInputHandler {
       switch (params[0]) {
         case 5:
           // status report
-          this._terminal.send(C0.ESC + '[0n');
+          this._terminal.emit('data', `${C0.ESC}[0n`);
           break;
         case 6:
           // cursor position
-          this._terminal.send(C0.ESC + '['
-                    + (this._terminal.buffer.y + 1)
-                    + ';'
-                    + (this._terminal.buffer.x + 1)
-                    + 'R');
+          const y = this._terminal.buffer.y + 1;
+          const x = this._terminal.buffer.x + 1;
+          this._terminal.emit('data', `${C0.ESC}[${y};${x}R`);
           break;
       }
     } else if (collect === '?') {
@@ -1729,11 +1727,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       switch (params[0]) {
         case 6:
           // cursor position
-          this._terminal.send(C0.ESC + '[?'
-                    + (this._terminal.buffer.y + 1)
-                    + ';'
-                    + (this._terminal.buffer.x + 1)
-                    + 'R');
+          const y = this._terminal.buffer.y + 1;
+          const x = this._terminal.buffer.x + 1;
+          this._terminal.emit('data', `${C0.ESC}[?${y};${x}R`);
           break;
         case 15:
           // no printer
