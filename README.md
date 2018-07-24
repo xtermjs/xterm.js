@@ -95,6 +95,12 @@ There are also the following third party addons available:
 
 - [xterm-webfont](https://www.npmjs.com/package/xterm-webfont)
 
+## API
+
+The full API for xterm.js is contained within the [TypeScript declaration file](https://github.com/xtermjs/xterm.js/blob/master/typings/xterm.d.ts), use the branch/tag picker in GitHub (`w`) to navigate to the correct version of the API.
+
+Note that some APIs are marked *experimental*, these are added so we can experiment with new ideas without committing to support it like a normal semver API. Note that these APIs can change radically between versions so be sure to read release notes if you plan on using experimental APIs.
+
 ## Browser Support
 
 Since xterm.js is typically implemented as a developer tool, only modern browsers are supported officially. Here is a list of the versions we aim to support:
