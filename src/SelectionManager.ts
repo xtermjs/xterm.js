@@ -831,7 +831,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   protected _selectWordAt(coords: [number, number], allowWhitespaceOnlySelection: boolean): void {
     const wordPosition = this._getWordAt(coords, allowWhitespaceOnlySelection);
     if (wordPosition) {
-      // Adjust negative start values
+      // Adjust negative start value
       while (wordPosition.start < 0) {
         wordPosition.start += this._terminal.cols;
         coords[1]--;
@@ -848,7 +848,21 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   private _selectToWordAt(coords: [number, number]): void {
     const wordPosition = this._getWordAt(coords, true);
     if (wordPosition) {
-      this._model.selectionEnd = [this._model.areSelectionValuesReversed() ? wordPosition.start : (wordPosition.start + wordPosition.length), coords[1]];
+      let endRow = coords[1];
+
+      // Adjust negative start value
+      while (wordPosition.start < 0) {
+        wordPosition.start += this._terminal.cols;
+        endRow--;
+      }
+
+      // Adjust wrapped length value
+      while (wordPosition.start + wordPosition.length > this._terminal.cols) {
+        wordPosition.length -= this._terminal.cols;
+        endRow++;
+      }
+
+      this._model.selectionEnd = [this._model.areSelectionValuesReversed() ? wordPosition.start : (wordPosition.start + wordPosition.length), endRow];
     }
   }
 
