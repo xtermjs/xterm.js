@@ -451,8 +451,10 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * Removes the listeners that are registered when mousedown is triggered.
    */
   private _removeMouseDownListeners(): void {
-    this._terminal.element.ownerDocument.removeEventListener('mousemove', this._mouseMoveListener);
-    this._terminal.element.ownerDocument.removeEventListener('mouseup', this._mouseUpListener);
+    if (this._terminal.element.ownerDocument) {
+      this._terminal.element.ownerDocument.removeEventListener('mousemove', this._mouseMoveListener);
+      this._terminal.element.ownerDocument.removeEventListener('mouseup', this._mouseUpListener);
+    }
     clearInterval(this._dragScrollIntervalTimer);
     this._dragScrollIntervalTimer = null;
   }
