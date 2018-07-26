@@ -77,7 +77,7 @@ export class SelectionModel {
     }
 
     // Use the selection start if the end doesn't exist or they're reversed
-    if (!this.selectionEnd) {
+    if (!this.selectionEnd || this.areSelectionValuesReversed()) {
       const startPlusLength = this.selectionStart[0] + this.selectionStartLength;
       if (startPlusLength > this._terminal.cols) {
         return [startPlusLength % this._terminal.cols, this.selectionStart[1] + Math.floor(startPlusLength / this._terminal.cols)];

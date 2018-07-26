@@ -856,13 +856,16 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
         endRow--;
       }
 
-      // Adjust wrapped length value
-      while (wordPosition.start + wordPosition.length > this._terminal.cols) {
-        wordPosition.length -= this._terminal.cols;
-        endRow++;
+      // Adjust wrapped length value, this only needs to happen when values are reversed as in that
+      // case we're interested in the start of the word, not the end
+      if (!this._model.areSelectionValuesReversed()) {
+        while (wordPosition.start + wordPosition.length > this._terminal.cols) {
+          wordPosition.length -= this._terminal.cols;
+          endRow++;
+        }
       }
 
-      this._model.selectionEnd = [this._model.areSelectionValuesReversed() ? wordPosition.start : (wordPosition.start + wordPosition.length), endRow];
+      this._model.selectionEnd = [this._model.areSelectionValuesReversed() ? wordPosition.start : wordPosition.start + wordPosition.length, endRow];
     }
   }
 
