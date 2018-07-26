@@ -57,6 +57,12 @@ The proposed way to load xterm.js is via the ES6 module syntax.
 import { Terminal } from 'xterm';
 ```
 
+### API
+
+The full API for xterm.js is contained within the [TypeScript declaration file](https://github.com/xtermjs/xterm.js/blob/master/typings/xterm.d.ts), use the branch/tag picker in GitHub (`w`) to navigate to the correct version of the API.
+
+Note that some APIs are marked *experimental*, these are added so we can experiment with new ideas without committing to support it like a normal semver API. Note that these APIs can change radically between versions so be sure to read release notes if you plan on using experimental APIs.
+
 ### Addons
 
 Addons are JavaScript modules that extend the `Terminal` prototype with new methods and attributes to provide additional functionality. There are a handful available in the main repository in the `src/addons` directory and you can even write your own, by using xterm.js' public API.
