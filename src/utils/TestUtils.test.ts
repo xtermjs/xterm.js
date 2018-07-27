@@ -84,9 +84,6 @@ export class MockTerminal implements ITerminal {
   write(data: string): void {
     throw new Error('Method not implemented.');
   }
-  send(data: string): void {
-    throw new Error('Method not implemented.');
-  }
   bracketedPasteMode: boolean;
   mouseHelper: IMouseHelper;
   renderer: IRenderer;
@@ -238,9 +235,6 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
     throw new Error('Method not implemented.');
   }
   is(term: string): boolean {
-    throw new Error('Method not implemented.');
-  }
-  send(data: string): void {
     throw new Error('Method not implemented.');
   }
   setgCharset(g: number, charset: { [key: string]: string; }): void {

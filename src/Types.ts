@@ -75,7 +75,6 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   eraseLeft(x: number, y: number): void;
   blankLine(cur?: boolean, isWrapped?: boolean): LineData;
   is(term: string): boolean;
-  send(data: string): void;
   setgCharset(g: number, charset: ICharset): void;
   resize(x: number, y: number): void;
   log(text: string, data?: any): void;
@@ -225,7 +224,6 @@ export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAcce
    * @param data The data to populate in the event.
    */
   handler(data: string): void;
-  send(data: string): void;
   scrollLines(disp: number, suppressScrollEvent?: boolean): void;
   cancel(ev: Event, force?: boolean): boolean | void;
   log(text: string): void;

@@ -135,7 +135,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public cursorHidden: boolean;
   public convertEol: boolean;
 
-  private _sendDataQueue: string;
   private _customKeyEventHandler: CustomKeyEventHandler;
 
   // modes
@@ -270,7 +269,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     this.cursorState = 0;
     this.cursorHidden = false;
-    this._sendDataQueue = '';
     this._customKeyEventHandler = null;
 
     // modes
@@ -486,7 +484,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   private _onTextAreaFocus(): void {
     if (this.sendFocus) {
-      this.send(C0.ESC + '[I');
+      this.handler(C0.ESC + '[I');
     }
     this.element.classList.add('focus');
     this.showCursor();
@@ -510,7 +508,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.textarea.value = '';
     this.refresh(this.buffer.y, this.buffer.y);
     if (this.sendFocus) {
-      this.send(C0.ESC + '[O');
+      this.handler(C0.ESC + '[O');
     }
     this.element.classList.remove('focus');
     this.emit('blur');
@@ -860,7 +858,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         else if (button === 3) return;
         else data += '0';
         data += '~[' + pos.x + ',' + pos.y + ']\r';
-        self.send(data);
+        self.handler(data);
         return;
       }
 
@@ -873,7 +871,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         else if (button === 1) button = 4;
         else if (button === 2) button = 6;
         else if (button === 3) button = 3;
-        self.send(C0.ESC + '['
+        self.handler(C0.ESC + '['
                   + button
                   + ';'
                   + (button === 3 ? 4 : 0)
@@ -893,14 +891,14 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         pos.y -= 32;
         pos.x++;
         pos.y++;
-        self.send(C0.ESC + '[' + button + ';' + pos.x + ';' + pos.y + 'M');
+        self.handler(C0.ESC + '[' + button + ';' + pos.x + ';' + pos.y + 'M');
         return;
       }
 
       if (self.sgrMouse) {
         pos.x -= 32;
         pos.y -= 32;
-        self.send(C0.ESC + '[<'
+        self.handler(C0.ESC + '[<'
                   + (((button & 3) === 3 ? button & ~3 : button) - 32)
                   + ';'
                   + pos.x
@@ -916,7 +914,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       encode(data, pos.x);
       encode(data, pos.y);
 
-      self.send(C0.ESC + '[M' + String.fromCharCode.apply(String, data));
+      self.handler(C0.ESC + '[M' + String.fromCharCode.apply(String, data));
     }
 
     function getButton(ev: MouseEvent): number {
@@ -1065,7 +1063,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
           for (let i = 0; i < Math.abs(amount); i++) {
             data += sequence;
           }
-          this.send(data);
+          this.handler(data);
         }
         return;
       }
@@ -1279,7 +1277,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     if (this.options.useFlowControl && !this._xoffSentToCatchUp && this.writeBuffer.length >= WRITE_BUFFER_PAUSE_THRESHOLD) {
       // XOFF - stop pty pipe
       // XON will be triggered by emulator before processing data chunk
-      this.send(C0.DC3);
+      this.handler(C0.DC3);
       this._xoffSentToCatchUp = true;
     }
 
@@ -1301,7 +1299,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // If XOFF was sent in order to catch up with the pty process, resume it if
       // the writeBuffer is empty to allow more data to come in.
       if (this._xoffSentToCatchUp && writeBatch.length === 0 && this.writeBuffer.length === 0) {
-        this.send(C0.DC1);
+        this.handler(C0.DC1);
         this._xoffSentToCatchUp = false;
       }
 
@@ -1574,21 +1572,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.handler(key);
 
     return true;
-  }
-
-  /**
-   * Send data for handling to the terminal
-   * @param {string} data
-   */
-  public send(data: string): void {
-    if (!this._sendDataQueue) {
-      setTimeout(() => {
-        this.handler(this._sendDataQueue);
-        this._sendDataQueue = '';
-      }, 1);
-    }
-
-    this._sendDataQueue += data;
   }
 
   /**
