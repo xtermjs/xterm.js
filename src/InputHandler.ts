@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { CharData, IInputHandler, IDcsHandler, IEscapeSequenceParser, IBuffer } from './Types';
+import { CharData, IInputHandler, IDcsHandler, IEscapeSequenceParser, IBuffer, IInputHandlingTerminal } from './Types';
 import { C0, C1 } from './common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from './core/data/Charsets';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, DEFAULT_ATTR } from './Buffer';
@@ -116,7 +116,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _surrogateHigh: string;
 
   constructor(
-      private _terminal: any, // TODO: reestablish IInputHandlingTerminal here
+      private _terminal: IInputHandlingTerminal,
       private _parser: IEscapeSequenceParser = new EscapeSequenceParser())
   {
     super();
@@ -129,16 +129,16 @@ export class InputHandler extends Disposable implements IInputHandler {
      * custom fallback handlers
      */
     this._parser.setCsiHandlerFallback((collect: string, params: number[], flag: number) => {
-      this._terminal.error('Unknown CSI code: ', collect, params, String.fromCharCode(flag));
+      this._terminal.error('Unknown CSI code: ', { collect, params, flag: String.fromCharCode(flag) });
     });
     this._parser.setEscHandlerFallback((collect: string, flag: number) => {
-      this._terminal.error('Unknown ESC code: ', collect, String.fromCharCode(flag));
+      this._terminal.error('Unknown ESC code: ', { collect, flag: String.fromCharCode(flag) });
     });
     this._parser.setExecuteHandlerFallback((code: number) => {
-      this._terminal.error('Unknown EXECUTE code: ', code);
+      this._terminal.error('Unknown EXECUTE code: ', { code });
     });
     this._parser.setOscHandlerFallback((identifier: number, data: string) => {
-      this._terminal.error('Unknown OSC code: ', identifier, data);
+      this._terminal.error('Unknown OSC code: ', { identifier, data });
     });
 
     /**
@@ -299,7 +299,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     let buffer = this._terminal.buffer;
     const cursorStartX = buffer.x;
     const cursorStartY = buffer.y;
-    if (this._terminal.debug) {
+
+    // TODO: Consolidate debug/logging #1560
+    if ((<any>this._terminal).debug) {
       this._terminal.log('data: ' + data);
     }
 

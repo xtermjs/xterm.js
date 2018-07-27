@@ -47,6 +47,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   wraparoundMode: boolean;
   bracketedPasteMode: boolean;
   curAttr: number;
+  savedCurAttr: number;
   savedCols: number;
   x10Mouse: boolean;
   vt200Mouse: boolean;
@@ -85,6 +86,10 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   error(text: string, data?: any): void;
   setOption(key: string, value: any): void;
   tabSet(): void;
+  handler(data: string): void;
+  handleTitle(title: string): void;
+  index(): void;
+  reverseIndex(): void;
 }
 
 export interface IViewport extends IDisposable {

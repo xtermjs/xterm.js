@@ -279,6 +279,18 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   tabSet(): void {
     throw new Error('Method not implemented.');
   }
+  handler(data: string): void {
+    throw new Error('Method not implemented.');
+  }
+  handleTitle(title: string): void {
+    throw new Error('Method not implemented.');
+  }
+  index(): void {
+    throw new Error('Method not implemented.');
+  }
+  reverseIndex(): void {
+    throw new Error('Method not implemented.');
+  }
 }
 
 export class MockBuffer implements IBuffer {
