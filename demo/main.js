@@ -174,9 +174,7 @@ function initOptions(term) {
     'termName',
     'useFlowControl',
     // Complex option
-    'theme',
-    // Only in constructor
-    'rendererType'
+    'theme'
   ];
   var stringOptions = {
     bellSound: null,
@@ -185,7 +183,8 @@ function initOptions(term) {
     experimentalCharAtlas: ['none', 'static', 'dynamic'],
     fontFamily: null,
     fontWeight: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
-    fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900']
+    fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
+    rendererType: ['dom', 'canvas']
   };
   var options = Object.keys(term._core.options);
   var booleanOptions = [];

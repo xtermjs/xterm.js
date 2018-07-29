@@ -76,6 +76,11 @@ export class Renderer extends EventEmitter implements IRenderer {
     }
   }
 
+  public dispose(): void {
+    super.dispose();
+    this._renderLayers.forEach(l => l.dispose());
+  }
+
   public onIntersectionChange(entry: IntersectionObserverEntry): void {
     this._isPaused = entry.intersectionRatio === 0;
     if (!this._isPaused && this._needsFullRefresh) {
