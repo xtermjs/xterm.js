@@ -7,7 +7,7 @@ import jsdom = require('jsdom');
 import { assert } from 'chai';
 import { DomRendererRowFactory } from './DomRendererRowFactory';
 import { LineData } from '../../Types';
-import { DEFAULT_ATTR } from '../../Buffer';
+import { DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from '../../Buffer';
 import { FLAGS } from '../Types';
 
 describe('DomRendererRowFactory', () => {
@@ -149,7 +149,7 @@ describe('DomRendererRowFactory', () => {
   function createEmptyLineData(cols: number): LineData {
     const lineData: LineData = [];
     for (let i = 0; i < cols; i++) {
-      lineData.push([DEFAULT_ATTR, ' ', 1, 32 /* ' '.charCodeAt(0) */]);
+      lineData.push([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
     }
     return lineData;
   }
