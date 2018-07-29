@@ -207,6 +207,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public mouseHelper: MouseHelper;
   private _accessibilityManager: AccessibilityManager;
   private _screenDprMonitor: ScreenDprMonitor;
+  private _theme: ITheme;
 
   public cols: number;
   public rows: number;
@@ -471,6 +472,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         }
         this._setupRenderer();
         this.renderer.onCharSizeChanged();
+        if (this._theme) {
+          this.renderer.setTheme(this._theme);
+        }
         break;
       case 'scrollback':
         this.buffers.resize(this.cols, this.rows);
@@ -754,14 +758,16 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       case 'dom': this.renderer = new DomRenderer(this, this.options.theme); break;
       default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
     }
+    this._theme = this.options.theme;
     this.register(this.renderer);
   }
 
   /**
    * Sets the theme on the renderer. The renderer must have been initialized.
-   * @param theme The theme to ste.
+   * @param theme The theme to set.
    */
   private _setTheme(theme: ITheme): void {
+    this._theme = theme;
     const colors = this.renderer.setTheme(theme);
     if (this.viewport) {
       this.viewport.onThemeChanged(colors);
