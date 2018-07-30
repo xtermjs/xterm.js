@@ -416,6 +416,13 @@ declare module 'xterm' {
      */
     off(type: 'blur' | 'focus' | 'linefeed' | 'selection' | 'data' | 'key' | 'keypress' | 'keydown' | 'refresh' | 'resize' | 'scroll' | 'title' | string, listener: (...args: any[]) => void): void;
 
+    /**
+     * Emits an event on the terminal.
+     * @param type The type of event
+     * @param data data associated with the event.
+     * @deprecated This is being removed from the API with no replacement, see
+     * issue #1505.
+     */
     emit(type: string, data?: any): void;
 
     addDisposableListener(type: string, handler: (...args: any[]) => void): IDisposable;
@@ -474,7 +481,7 @@ declare module 'xterm' {
      * (EXPERIMENTAL) Registers a character joiner, allowing custom sequences of
      * characters to be rendered as a single unit. This is useful in particular
      * for rendering ligatures and graphemes, among other things.
-     * 
+     *
      * Each registered character joiner is called with a string of text
      * representing a portion of a line in the terminal that can be rendered as
      * a single unit. The joiner must return a sorted array, where each entry is
@@ -483,16 +490,16 @@ declare module 'xterm' {
      * a single unit. When multiple joiners are provided, the results of each
      * are collected. If there are any overlapping substrings between them, they
      * are combined into one larger unit that is drawn together.
-     * 
+     *
      * All character joiners that are registered get called every time a line is
      * rendered in the terminal, so it is essential for the handler function to
      * run as quickly as possible to avoid slowdowns when rendering. Similarly,
      * joiners should strive to return the smallest possible substrings to
      * render together, since they aren't drawn as optimally as individual
      * characters.
-     * 
+     *
      * NOTE: character joiners are only used by the canvas renderer.
-     * 
+     *
      * @param handler The function that determines character joins. It is called
      * with a string of text that is eligible for joining and returns an array
      * where each entry is an array containing the start (inclusive) and end
