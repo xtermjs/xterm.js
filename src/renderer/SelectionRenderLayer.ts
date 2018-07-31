@@ -72,7 +72,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     this._ctx.fillStyle = this._colors.selection.css;
 
     if (columnSelectMode) {
-      const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
+      const startCol = start[0];
       const width = end[0] - startCol;
       const height = viewportCappedEndRow - viewportCappedStartRow + 1;
       this.fillCells(startCol, viewportCappedStartRow, width, height);
