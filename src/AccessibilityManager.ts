@@ -72,7 +72,7 @@ export class AccessibilityManager extends Disposable {
     this._terminal.element.insertAdjacentElement('afterbegin', this._accessibilityTreeRoot);
 
     this.register(this._renderRowsDebouncer);
-    this.register(this._terminal.addDisposableListener('resize', data => this._onResize(data.cols, data.rows)));
+    this.register(this._terminal.addDisposableListener('resize', data => this._onResize(data.rows)));
     this.register(this._terminal.addDisposableListener('refresh', data => this._refreshRows(data.start, data.end)));
     this.register(this._terminal.addDisposableListener('scroll', data => this._refreshRows()));
     // Line feed is an issue as the prompt won't be read out after a command is run
@@ -157,7 +157,7 @@ export class AccessibilityManager extends Disposable {
     e.stopImmediatePropagation();
   }
 
-  private _onResize(cols: number, rows: number): void {
+  private _onResize(rows: number): void {
     // Remove bottom boundary listener
     this._rowElements[this._rowElements.length - 1].removeEventListener('focus', this._bottomBoundaryFocusListener);
 
@@ -258,6 +258,9 @@ export class AccessibilityManager extends Disposable {
   private _refreshRowsDimensions(): void {
     if (!this._terminal.renderer.dimensions.actualCellHeight) {
       return;
+    }
+    if (this._rowElements.length !== this._terminal.rows) {
+      this._onResize(this._terminal.rows);
     }
     for (let i = 0; i < this._terminal.rows; i++) {
       this._refreshRowDimensions(this._rowElements[i]);
