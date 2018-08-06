@@ -296,6 +296,11 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   public parse(data: string): void {
+    // Ensure the terminal is not disposed
+    if (!this._terminal) {
+      return;
+    }
+
     let buffer = this._terminal.buffer;
     const cursorStartX = buffer.x;
     const cursorStartY = buffer.y;
