@@ -47,6 +47,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   wraparoundMode: boolean;
   bracketedPasteMode: boolean;
   curAttr: number;
+  savedCurAttr: number;
   savedCols: number;
   x10Mouse: boolean;
   vt200Mouse: boolean;
@@ -75,7 +76,6 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   eraseLeft(x: number, y: number): void;
   blankLine(cur?: boolean, isWrapped?: boolean): LineData;
   is(term: string): boolean;
-  send(data: string): void;
   setgCharset(g: number, charset: ICharset): void;
   resize(x: number, y: number): void;
   log(text: string, data?: any): void;
@@ -86,6 +86,10 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   error(text: string, data?: any): void;
   setOption(key: string, value: any): void;
   tabSet(): void;
+  handler(data: string): void;
+  handleTitle(title: string): void;
+  index(): void;
+  reverseIndex(): void;
 }
 
 export interface IViewport extends IDisposable {
@@ -225,7 +229,6 @@ export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAcce
    * @param data The data to populate in the event.
    */
   handler(data: string): void;
-  send(data: string): void;
   scrollLines(disp: number, suppressScrollEvent?: boolean): void;
   cancel(ev: Event, force?: boolean): boolean | void;
   log(text: string): void;

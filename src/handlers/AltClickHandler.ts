@@ -50,7 +50,7 @@ export class AltClickHandler {
    */
   public move(): void {
     if (this._mouseEvent.altKey && this._endCol !== undefined && this._endRow !== undefined) {
-      this._terminal.send(this._arrowSequences());
+      this._terminal.handler(this._arrowSequences());
     }
   }
 
