@@ -193,7 +193,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   // Store if user went browsing history in scrollback
   private _userScrolling: boolean;
-  private _isDisposed: boolean = false;
 
   private _inputHandler: InputHandler;
   public soundManager: SoundManager;
@@ -234,7 +233,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   public dispose(): void {
-    this._isDisposed = true;
     super.dispose();
     this._customKeyEventHandler = null;
     removeTerminalFromCache(this);
