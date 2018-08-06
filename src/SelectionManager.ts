@@ -576,11 +576,14 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     this._dragScrollAmount = this._getMouseEventScrollAmount(event);
 
     // If the cursor was above or below the viewport, make sure it's at the
-    // start or end of the viewport respectively.
-    if (this._dragScrollAmount > 0) {
-      this._model.selectionEnd[0] = this._terminal.cols;
-    } else if (this._dragScrollAmount < 0) {
-      this._model.selectionEnd[0] = 0;
+    // start or end of the viewport respectively. This should only happen when
+    // NOT in column select mode.
+    if (this._activeSelectionMode !== SelectionMode.COLUMN) {
+      if (this._dragScrollAmount > 0) {
+        this._model.selectionEnd[0] = this._terminal.cols;
+      } else if (this._dragScrollAmount < 0) {
+        this._model.selectionEnd[0] = 0;
+      }
     }
 
     // If the character is a wide character include the cell to the right in the
@@ -609,10 +612,19 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     if (this._dragScrollAmount) {
       this._terminal.scrollLines(this._dragScrollAmount, false);
       // Re-evaluate selection
+      // If the cursor was above or below the viewport, make sure it's at the
+      // start or end of the viewport respectively. This should only happen when
+      // NOT in column select mode.
       if (this._dragScrollAmount > 0) {
-        this._model.selectionEnd = [this._terminal.cols - 1, Math.min(this._terminal.buffer.ydisp + this._terminal.rows, this._terminal.buffer.lines.length - 1)];
+        if (this._activeSelectionMode !== SelectionMode.COLUMN) {
+          this._model.selectionEnd[0] = this._terminal.cols;
+        }
+        this._model.selectionEnd[1] = Math.min(this._terminal.buffer.ydisp + this._terminal.rows, this._terminal.buffer.lines.length - 1);
       } else {
-        this._model.selectionEnd = [0, this._terminal.buffer.ydisp];
+        if (this._activeSelectionMode !== SelectionMode.COLUMN) {
+          this._model.selectionEnd[0] = 0;
+        }
+        this._model.selectionEnd[1] = this._terminal.buffer.ydisp;
       }
       this.refresh();
     }

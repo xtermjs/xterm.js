@@ -250,14 +250,14 @@ export class DomRenderer extends EventEmitter implements IRenderer {
 
     // Create the selections
     const documentFragment = document.createDocumentFragment();
-    const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
 
     if (columnSelectMode) {
       documentFragment.appendChild(
-        this._createSelectionElement(viewportCappedStartRow, startCol, end[0], viewportCappedEndRow - viewportStartRow + 1)
+        this._createSelectionElement(viewportCappedStartRow, start[0], end[0], viewportCappedEndRow - viewportCappedStartRow + 1)
       );
     } else {
       // Draw first row
+      const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
       const endCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : this._terminal.cols;
       documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow, startCol, endCol));
       // Draw middle rows
