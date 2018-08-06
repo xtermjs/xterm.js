@@ -1293,6 +1293,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * @param data The text to write to the terminal.
    */
   public write(data: string): void {
+    // Ensure the terminal isn't disposed
+    if (this._isDisposed) {
+      return;
+    }
+
     // Ignore falsy data values (including the empty string)
     if (!data) {
       return;
@@ -1321,6 +1326,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   protected _innerWrite(): void {
+    // Ensure the terminal isn't disposed
+    if (this._isDisposed) {
+      this.writeBuffer = [];
+    }
+
     const writeBatch = this.writeBuffer.splice(0, WRITE_BATCH_SIZE);
     while (writeBatch.length > 0) {
       const data = writeBatch.shift();
