@@ -1,6 +1,9 @@
 # [![xterm.js logo](logo-full.png)](https://xtermjs.org)
 
-[![Travis CI build status](https://api.travis-ci.org/xtermjs/xterm.js.svg)](https://travis-ci.org/xtermjs/xterm.js) [![VSTS Build status](https://xtermjs.visualstudio.com/_apis/public/build/definitions/3e323cf7-5760-460d-af64-ee5675baf366/1/badge)](https://xtermjs.visualstudio.com/xterm.js/_build/index?definitionId=1) [![Coverage Status](https://coveralls.io/repos/github/xtermjs/xterm.js/badge.svg?branch=master)](https://coveralls.io/github/xtermjs/xterm.js?branch=master) [![Gitter](https://badges.gitter.im/sourcelair/xterm.js.svg)](https://gitter.im/sourcelair/xterm.js?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![jsDelivr Hits](https://data.jsdelivr.com/v1/package/npm/xterm/badge?style=rounded)](https://www.jsdelivr.com/package/npm/xterm)
+[![VSTS Build status](https://xtermjs.visualstudio.com/_apis/public/build/definitions/3e323cf7-5760-460d-af64-ee5675baf366/1/badge)](https://xtermjs.visualstudio.com/xterm.js/_build/index?definitionId=1)
+[![Coverage Status](https://coveralls.io/repos/github/xtermjs/xterm.js/badge.svg?branch=master)](https://coveralls.io/github/xtermjs/xterm.js?branch=master)
+[![Gitter](https://badges.gitter.im/sourcelair/xterm.js.svg)](https://gitter.im/sourcelair/xterm.js?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![jsDelivr Hits](https://data.jsdelivr.com/v1/package/npm/xterm/badge?style=rounded)](https://www.jsdelivr.com/package/npm/xterm)
 
 Xterm.js is a terminal front-end component written in JavaScript that works in the browser.
 
@@ -80,6 +83,8 @@ var xterm = new Terminal();  // Instantiate the terminal
 xterm.fit();                 // Use the `fit` method, provided by the `fit` addon
 ```
 
+You will also need to include the addon's CSS file if it has one in the folder.
+
 #### Importing Addons in TypeScript
 
 There are currently no typings for addons if they are accessed via extending Terminal prototype, so you will need to upcast if using TypeScript, eg. `(<any>xterm).fit()`.
@@ -112,6 +117,10 @@ Since xterm.js is typically implemented as a developer tool, only modern browser
 - IE11
 
 Xterm.js works seamlessly in Electron apps and may even work on earlier versions of the browsers but these are the browsers we strive to keep working.
+
+## API
+
+The current full API documentation is available in the [TypeScript declaration file on the repository](https://github.com/xtermjs/xterm.js/blob/master/typings/xterm.d.ts), switch the tag (press `w` when viewing the file) to point at the specific version tag you're using.
 
 ## Real-world uses
 Xterm.js is used in several world-class applications to provide great terminal experiences.

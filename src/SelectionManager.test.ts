@@ -183,6 +183,42 @@ describe('SelectionManager', () => {
       selectionManager.selectWordAt([15, 0]);
       assert.equal(selectionManager.selectionText, 'ij"');
     });
+    it('should expand upwards or downards for wrapped lines', () => {
+      buffer.lines.set(0, stringToRow('                                                                             foo'));
+      buffer.lines.set(1, stringToRow('bar                                                                             '));
+      (<any>buffer.lines.get(1)).isWrapped = true;
+      selectionManager.selectWordAt([1, 1]);
+      assert.equal(selectionManager.selectionText, 'foobar');
+      selectionManager.model.clearSelection();
+      selectionManager.selectWordAt([78, 0]);
+      assert.equal(selectionManager.selectionText, 'foobar');
+    });
+    it('should expand both upwards and downwards for word wrapped over many lines', () => {
+      const expectedText = 'fooaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccbar';
+      buffer.lines.set(0, stringToRow('                                                                             foo'));
+      buffer.lines.set(1, stringToRow('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'));
+      buffer.lines.set(2, stringToRow('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'));
+      buffer.lines.set(3, stringToRow('cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'));
+      buffer.lines.set(4, stringToRow('bar                                                                             '));
+      (<any>buffer.lines.get(1)).isWrapped = true;
+      (<any>buffer.lines.get(2)).isWrapped = true;
+      (<any>buffer.lines.get(3)).isWrapped = true;
+      (<any>buffer.lines.get(4)).isWrapped = true;
+      selectionManager.selectWordAt([78, 0]);
+      assert.equal(selectionManager.selectionText, expectedText);
+      selectionManager.model.clearSelection();
+      selectionManager.selectWordAt([40, 1]);
+      assert.equal(selectionManager.selectionText, expectedText);
+      selectionManager.model.clearSelection();
+      selectionManager.selectWordAt([40, 2]);
+      assert.equal(selectionManager.selectionText, expectedText);
+      selectionManager.model.clearSelection();
+      selectionManager.selectWordAt([40, 3]);
+      assert.equal(selectionManager.selectionText, expectedText);
+      selectionManager.model.clearSelection();
+      selectionManager.selectWordAt([1, 4]);
+      assert.equal(selectionManager.selectionText, expectedText);
+    });
     describe('emoji', () => {
       it('should treat a single emoji as a word when wrapped in spaces', () => {
         buffer.lines.set(0, stringToRow(' ⚽ a')); // The a is here to prevent the space being trimmed in selectionText

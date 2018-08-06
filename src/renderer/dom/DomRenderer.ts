@@ -81,6 +81,15 @@ export class DomRenderer extends EventEmitter implements IRenderer {
     this._terminal.screenElement.appendChild(this._selectionContainer);
   }
 
+  public dispose(): void {
+    this._terminal.element.classList.remove(TERMINAL_CLASS_PREFIX + this._terminalClass);
+    this._terminal.screenElement.removeChild(this._rowContainer);
+    this._terminal.screenElement.removeChild(this._selectionContainer);
+    this._terminal.screenElement.removeChild(this._themeStyleElement);
+    this._terminal.screenElement.removeChild(this._dimensionsStyleElement);
+    super.dispose();
+  }
+
   private _updateDimensions(): void {
     this.dimensions.scaledCharWidth = this._terminal.charMeasure.width * window.devicePixelRatio;
     this.dimensions.scaledCharHeight = this._terminal.charMeasure.height * window.devicePixelRatio;
