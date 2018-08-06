@@ -15,6 +15,10 @@ export const CHAR_DATA_WIDTH_INDEX = 2;
 export const CHAR_DATA_CODE_INDEX = 3;
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 
+export const NULL_CELL_CHAR = ' ';
+export const NULL_CELL_WIDTH = 1;
+export const NULL_CELL_CODE = 32;
+
 /**
  * This class represents a terminal buffer (an internal state of the terminal), where the
  * following information is stored (in high-level):
@@ -117,7 +121,7 @@ export class Buffer implements IBuffer {
     if (this.lines.length > 0) {
       // Deal with columns increasing (we don't do anything when columns reduce)
       if (this._terminal.cols < newCols) {
-        const ch: CharData = [DEFAULT_ATTR, ' ', 1, 32]; // does xterm use the default attr?
+        const ch: CharData = [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // does xterm use the default attr?
         for (let i = 0; i < this.lines.length; i++) {
           while (this.lines.get(i).length < newCols) {
             this.lines.get(i).push(ch);

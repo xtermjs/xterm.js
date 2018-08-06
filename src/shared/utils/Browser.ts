@@ -22,8 +22,8 @@ export const isLinux = platform.indexOf('Linux') >= 0;
 
 /**
  * Return if the given array contains the given element
- * @param {Array} array The array to search for the given element.
- * @param {Object} el The element to look for into the array
+ * @param arr The array to search for the given element.
+ * @param el The element to look for into the array
  */
 function contains(arr: any[], el: any): boolean {
   return arr.indexOf(el) >= 0;

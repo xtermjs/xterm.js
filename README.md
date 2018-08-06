@@ -1,6 +1,9 @@
 # [![xterm.js logo](logo-full.png)](https://xtermjs.org)
 
-[![Travis CI build status](https://api.travis-ci.org/xtermjs/xterm.js.svg)](https://travis-ci.org/xtermjs/xterm.js) [![VSTS Build status](https://xtermjs.visualstudio.com/_apis/public/build/definitions/3e323cf7-5760-460d-af64-ee5675baf366/1/badge)](https://xtermjs.visualstudio.com/xterm.js/_build/index?definitionId=1) [![Coverage Status](https://coveralls.io/repos/github/xtermjs/xterm.js/badge.svg?branch=master)](https://coveralls.io/github/xtermjs/xterm.js?branch=master) [![Gitter](https://badges.gitter.im/sourcelair/xterm.js.svg)](https://gitter.im/sourcelair/xterm.js?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![jsDelivr Hits](https://data.jsdelivr.com/v1/package/npm/xterm/badge?style=rounded)](https://www.jsdelivr.com/package/npm/xterm)
+[![VSTS Build status](https://xtermjs.visualstudio.com/_apis/public/build/definitions/3e323cf7-5760-460d-af64-ee5675baf366/1/badge)](https://xtermjs.visualstudio.com/xterm.js/_build/index?definitionId=1)
+[![Coverage Status](https://coveralls.io/repos/github/xtermjs/xterm.js/badge.svg?branch=master)](https://coveralls.io/github/xtermjs/xterm.js?branch=master)
+[![Gitter](https://badges.gitter.im/sourcelair/xterm.js.svg)](https://gitter.im/sourcelair/xterm.js?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![jsDelivr Hits](https://data.jsdelivr.com/v1/package/npm/xterm/badge?style=rounded)](https://www.jsdelivr.com/package/npm/xterm)
 
 Xterm.js is a terminal front-end component written in JavaScript that works in the browser.
 
@@ -57,6 +60,12 @@ The proposed way to load xterm.js is via the ES6 module syntax.
 import { Terminal } from 'xterm';
 ```
 
+### API
+
+The full API for xterm.js is contained within the [TypeScript declaration file](https://github.com/xtermjs/xterm.js/blob/master/typings/xterm.d.ts), use the branch/tag picker in GitHub (`w`) to navigate to the correct version of the API.
+
+Note that some APIs are marked *experimental*, these are added so we can experiment with new ideas without committing to support it like a normal semver API. Note that these APIs can change radically between versions so be sure to read release notes if you plan on using experimental APIs.
+
 ### Addons
 
 Addons are JavaScript modules that extend the `Terminal` prototype with new methods and attributes to provide additional functionality. There are a handful available in the main repository in the `src/addons` directory and you can even write your own, by using xterm.js' public API.
@@ -73,6 +82,8 @@ Terminal.applyAddon(fit);
 var xterm = new Terminal();  // Instantiate the terminal
 xterm.fit();                 // Use the `fit` method, provided by the `fit` addon
 ```
+
+You will also need to include the addon's CSS file if it has one in the folder.
 
 #### Importing Addons in TypeScript
 
@@ -106,6 +117,10 @@ Since xterm.js is typically implemented as a developer tool, only modern browser
 - IE11
 
 Xterm.js works seamlessly in Electron apps and may even work on earlier versions of the browsers but these are the browsers we strive to keep working.
+
+## API
+
+The current full API documentation is available in the [TypeScript declaration file on the repository](https://github.com/xtermjs/xterm.js/blob/master/typings/xterm.d.ts), switch the tag (press `w` when viewing the file) to point at the specific version tag you're using.
 
 ## Real-world uses
 Xterm.js is used in several world-class applications to provide great terminal experiences.
@@ -154,6 +169,8 @@ computational environment for Jupyter, supporting interactive data science and s
 - [**cPanel & WHM**](https://cpanel.com): The hosting platform of choice.
 - [**Nutanix**](https://github.com/nutanix): Nutanix Enterprise Cloud uses xterm in the webssh functionality within Nutanix Calm, and is also looking to move our old noserial (termjs) functionality to xterm.js
 - [**SSH Web Client**](https://github.com/roke22/PHP-SSH2-Web-Client): SSH Web Client with PHP.
+
+[And much more...](https://github.com/xtermjs/xterm.js/network/dependents)
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list. Note: Please add any new contributions to the end of the list only.
 

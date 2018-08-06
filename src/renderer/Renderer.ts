@@ -76,6 +76,11 @@ export class Renderer extends EventEmitter implements IRenderer {
     }
   }
 
+  public dispose(): void {
+    super.dispose();
+    this._renderLayers.forEach(l => l.dispose());
+  }
+
   public onIntersectionChange(entry: IntersectionObserverEntry): void {
     this._isPaused = entry.intersectionRatio === 0;
     if (!this._isPaused && this._needsFullRefresh) {
@@ -174,8 +179,8 @@ export class Renderer extends EventEmitter implements IRenderer {
   /**
    * Queues a refresh between two rows (inclusive), to be done on next animation
    * frame.
-   * @param {number} start The start row.
-   * @param {number} end The end row.
+   * @param start The start row.
+   * @param end The end row.
    */
   public refreshRows(start: number, end: number): void {
     if (this._isPaused) {

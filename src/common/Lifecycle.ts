@@ -30,4 +30,16 @@ export abstract class Disposable implements IDisposable {
   public register<T extends IDisposable>(d: T): void {
     this._disposables.push(d);
   }
+
+  /**
+   * Unregisters a disposable object if it has been registered, if not do
+   * nothing.
+   * @param d The disposable to unregister.
+   */
+  public unregister<T extends IDisposable>(d: T): void {
+    const index = this._disposables.indexOf(d);
+    if (index !== -1) {
+      this._disposables.splice(index, 1);
+    }
+  }
 }

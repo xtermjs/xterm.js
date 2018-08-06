@@ -61,7 +61,7 @@ export class CompositionHelper {
 
   /**
    * Handles the compositionupdate event, updating the composition view.
-   * @param {CompositionEvent} ev The event.
+   * @param ev The event.
    */
   public compositionupdate(ev: CompositionEvent): void {
     this._compositionView.textContent = ev.data;

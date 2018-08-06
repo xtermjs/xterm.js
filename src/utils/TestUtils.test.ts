@@ -5,7 +5,7 @@
 
 import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../renderer/Types';
 import { LineData, IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ICircularList, ILinkifier, IMouseHelper, ILinkMatcherOptions, XtermListener, CharacterJoinerHandler } from '../Types';
-import { Buffer } from '../Buffer';
+import { Buffer, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from '../Buffer';
 import * as Browser from '../shared/utils/Browser';
 import { ITheme, IDisposable, IMarker } from 'xterm';
 
@@ -152,7 +152,7 @@ export class MockTerminal implements ITerminal {
     const line: LineData = [];
     cols = cols || this.cols;
     for (let i = 0; i < cols; i++) {
-      line.push([0, ' ', 1, 32]);
+      line.push([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
     }
     return line;
   }
