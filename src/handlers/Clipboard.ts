@@ -35,7 +35,7 @@ export function bracketTextForPaste(text: string, bracketedPasteMode: boolean): 
 
 /**
  * Binds copy functionality to the given terminal.
- * @param {ClipboardEvent} ev The original copy event to be handled
+ * @param ev The original copy event to be handled
  */
 export function copyHandler(ev: ClipboardEvent, term: ITerminal, selectionManager: ISelectionManager): void {
   if (term.browser.isMSIE) {
@@ -50,8 +50,8 @@ export function copyHandler(ev: ClipboardEvent, term: ITerminal, selectionManage
 
 /**
  * Redirect the clipboard's data to the terminal's input handler.
- * @param {ClipboardEvent} ev The original paste event to be handled
- * @param {Terminal} term The terminal on which to apply the handled paste event
+ * @param ev The original paste event to be handled
+ * @param term The terminal on which to apply the handled paste event
  */
 export function pasteHandler(ev: ClipboardEvent, term: ITerminal): void {
   ev.stopPropagation();

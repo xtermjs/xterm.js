@@ -7,7 +7,7 @@
 import { CharData, IInputHandler, IDcsHandler, IEscapeSequenceParser, IBuffer, IInputHandlingTerminal } from './Types';
 import { C0, C1 } from './common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from './core/data/Charsets';
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, DEFAULT_ATTR } from './Buffer';
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from './Buffer';
 import { FLAGS } from './renderer/Types';
 import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
@@ -296,6 +296,11 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   public parse(data: string): void {
+    // Ensure the terminal is not disposed
+    if (!this._terminal) {
+      return;
+    }
+
     let buffer = this._terminal.buffer;
     const cursorStartX = buffer.x;
     const cursorStartY = buffer.y;
@@ -433,11 +438,11 @@ export class InputHandler extends Disposable implements IInputHandler {
           if (removed[CHAR_DATA_WIDTH_INDEX] === 0
               && bufferRow[this._terminal.cols - 2]
               && bufferRow[this._terminal.cols - 2][CHAR_DATA_WIDTH_INDEX] === 2) {
-                bufferRow[this._terminal.cols - 2] = [curAttr, ' ', 1, 32  /* ' '.charCodeAt(0) */ ];
+                bufferRow[this._terminal.cols - 2] = [curAttr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
           }
 
           // insert empty cell at cursor
-          bufferRow.splice(buffer.x, 0, [curAttr, ' ', 1, 32  /* ' '.charCodeAt(0) */ ]);
+          bufferRow.splice(buffer.x, 0, [curAttr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
         }
       }
 
@@ -549,7 +554,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     const row = buffer.y + buffer.ybase;
     let j = buffer.x;
-    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32]; // xterm
+    const ch: CharData = [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       buffer.lines.get(row).splice(j++, 0, ch);
@@ -859,7 +864,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const buffer = this._terminal.buffer;
 
     const row = buffer.y + buffer.ybase;
-    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32]; // xterm
+    const ch: CharData = [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // xterm
 
     while (param--) {
       buffer.lines.get(row).splice(buffer.x, 1);
@@ -921,7 +926,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     const row = buffer.y + buffer.ybase;
     let j = buffer.x;
-    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32]; // xterm
+    const ch: CharData = [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       buffer.lines.get(row)[j++] = ch;
@@ -983,7 +988,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const buffer = this._terminal.buffer;
 
     const line = buffer.lines.get(buffer.ybase + buffer.y);
-    const ch = line[buffer.x - 1] || [DEFAULT_ATTR, ' ', 1, 32];
+    const ch = line[buffer.x - 1] || [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
 
     while (param--) {
       line[buffer.x++] = ch;

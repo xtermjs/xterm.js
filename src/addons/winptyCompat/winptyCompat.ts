@@ -6,6 +6,9 @@
 import { Terminal } from 'xterm';
 import { IWinptyCompatAddonTerminal } from './Interfaces';
 
+const CHAR_DATA_CODE_INDEX = 3;
+const NULL_CELL_CODE = 32;
+
 export function winptyCompatInit(terminal: Terminal): void {
   const addonTerminal = <IWinptyCompatAddonTerminal>terminal;
 
@@ -29,7 +32,7 @@ export function winptyCompatInit(terminal: Terminal): void {
     const line = addonTerminal._core.buffer.lines.get(addonTerminal._core.buffer.ybase + addonTerminal._core.buffer.y - 1);
     const lastChar = line[addonTerminal.cols - 1];
 
-    if (lastChar[3] !== 32 /* ' ' */) {
+    if (lastChar[CHAR_DATA_CODE_INDEX] !== NULL_CELL_CODE) {
       const nextLine = addonTerminal._core.buffer.lines.get(addonTerminal._core.buffer.ybase + addonTerminal._core.buffer.y);
       (<any>nextLine).isWrapped = true;
     }

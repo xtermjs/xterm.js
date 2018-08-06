@@ -66,7 +66,7 @@ export interface IRenderDimensions {
   actualCellHeight: number;
 }
 
-export interface IRenderLayer {
+export interface IRenderLayer extends IDisposable {
   /**
    * Called when the terminal loses focus.
    */

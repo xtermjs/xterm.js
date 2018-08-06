@@ -11,6 +11,7 @@ import { IDisposable } from 'xterm';
  */
 export abstract class Disposable implements IDisposable {
   protected _disposables: IDisposable[] = [];
+  protected _isDisposed: boolean = false;
 
   constructor() {
   }
@@ -19,6 +20,7 @@ export abstract class Disposable implements IDisposable {
    * Disposes the object, triggering the `dispose` method on all registered IDisposables.
    */
   public dispose(): void {
+    this._isDisposed = true;
     this._disposables.forEach(d => d.dispose());
     this._disposables.length = 0;
   }
@@ -29,5 +31,17 @@ export abstract class Disposable implements IDisposable {
    */
   public register<T extends IDisposable>(d: T): void {
     this._disposables.push(d);
+  }
+
+  /**
+   * Unregisters a disposable object if it has been registered, if not do
+   * nothing.
+   * @param d The disposable to unregister.
+   */
+  public unregister<T extends IDisposable>(d: T): void {
+    const index = this._disposables.indexOf(d);
+    if (index !== -1) {
+      this._disposables.splice(index, 1);
+    }
   }
 }

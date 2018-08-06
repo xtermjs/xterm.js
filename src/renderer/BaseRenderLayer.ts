@@ -36,6 +36,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._container.appendChild(this._canvas);
   }
 
+  public dispose(): void {
+    this._container.removeChild(this._canvas);
+  }
+
   private _initCanvas(): void {
     this._ctx = this._canvas.getContext('2d', {alpha: this._alpha});
     // Draw the background if this is an opaque layer
