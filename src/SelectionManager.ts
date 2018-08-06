@@ -9,7 +9,7 @@ import * as Browser from './shared/utils/Browser';
 import { CharMeasure } from './ui/CharMeasure';
 import { EventEmitter } from './EventEmitter';
 import { SelectionModel } from './SelectionModel';
-import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from './Buffer';
+import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_CODE_INDEX } from './Buffer';
 import { AltClickHandler } from './handlers/AltClickHandler';
 
 /**
@@ -451,8 +451,10 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * Removes the listeners that are registered when mousedown is triggered.
    */
   private _removeMouseDownListeners(): void {
-    this._terminal.element.ownerDocument.removeEventListener('mousemove', this._mouseMoveListener);
-    this._terminal.element.ownerDocument.removeEventListener('mouseup', this._mouseUpListener);
+    if (this._terminal.element.ownerDocument) {
+      this._terminal.element.ownerDocument.removeEventListener('mousemove', this._mouseMoveListener);
+      this._terminal.element.ownerDocument.removeEventListener('mouseup', this._mouseUpListener);
+    }
     clearInterval(this._dragScrollIntervalTimer);
     this._dragScrollIntervalTimer = null;
   }
@@ -677,7 +679,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * Gets positional information for the word at the coordinated specified.
    * @param coords The coordinates to get the word at.
    */
-  private _getWordAt(coords: [number, number], allowWhitespaceOnlySelection: boolean): IWordPosition {
+  private _getWordAt(coords: [number, number], allowWhitespaceOnlySelection: boolean, followWrappedLinesAbove: boolean = true, followWrappedLinesBelow: boolean = true): IWordPosition {
     // Ensure coords are within viewport (eg. not within scroll bar)
     if (coords[0] >= this._terminal.cols) {
       return null;
@@ -772,7 +774,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
     // Calculate the start _column_, converting the the string indexes back to
     // column coordinates.
-    const start =
+    let start =
         startIndex // The index of the selection's start char in the line string
         + charOffset // The difference between the initial char's column and index
         - leftWideCharCount // The number of wide chars left of the initial char
@@ -780,7 +782,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
     // Calculate the length in _columns_, converting the the string indexes back
     // to column coordinates.
-    const length = Math.min(this._terminal.cols, // Disallow lengths larger than the terminal cols
+    let length = Math.min(this._terminal.cols, // Disallow lengths larger than the terminal cols
         endIndex // The index of the selection's end char in the line string
         - startIndex // The index of the selection's start char in the line string
         + leftWideCharCount // The number of wide chars left of the initial char
@@ -790,6 +792,34 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
     if (!allowWhitespaceOnlySelection && line.slice(startIndex, endIndex).trim() === '') {
       return null;
+    }
+
+    // Recurse upwards if the line is wrapped and the word wraps to the above line
+    if (followWrappedLinesAbove) {
+      if (start === 0 && bufferLine[0][CHAR_DATA_CODE_INDEX] !== 32 /*' '*/) {
+        const previousBufferLine = this._buffer.lines.get(coords[1] - 1);
+        if (previousBufferLine && (<any>bufferLine).isWrapped && previousBufferLine[this._terminal.cols - 1][CHAR_DATA_CODE_INDEX] !== 32 /*' '*/) {
+          const previousLineWordPosition = this._getWordAt([this._terminal.cols - 1, coords[1] - 1], false, true, false);
+          if (previousLineWordPosition) {
+            const offset = this._terminal.cols - previousLineWordPosition.start;
+            start -= offset;
+            length += offset;
+          }
+        }
+      }
+    }
+
+    // Recurse downwards if the line is wrapped and the word wraps to the next line
+    if (followWrappedLinesBelow) {
+      if (start + length === this._terminal.cols && bufferLine[this._terminal.cols - 1][CHAR_DATA_CODE_INDEX] !== 32 /*' '*/) {
+        const nextBufferLine = this._buffer.lines.get(coords[1] + 1);
+        if (nextBufferLine && (<any>nextBufferLine).isWrapped && nextBufferLine[0][CHAR_DATA_CODE_INDEX] !== 32 /*' '*/) {
+          const nextLineWordPosition = this._getWordAt([0, coords[1] + 1], false, false, true);
+          if (nextLineWordPosition) {
+            length += nextLineWordPosition.length;
+          }
+        }
+      }
     }
 
     return { start, length };
@@ -803,6 +833,11 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   protected _selectWordAt(coords: [number, number], allowWhitespaceOnlySelection: boolean): void {
     const wordPosition = this._getWordAt(coords, allowWhitespaceOnlySelection);
     if (wordPosition) {
+      // Adjust negative start value
+      while (wordPosition.start < 0) {
+        wordPosition.start += this._terminal.cols;
+        coords[1]--;
+      }
       this._model.selectionStart = [wordPosition.start, coords[1]];
       this._model.selectionStartLength = wordPosition.length;
     }
@@ -815,7 +850,24 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   private _selectToWordAt(coords: [number, number]): void {
     const wordPosition = this._getWordAt(coords, true);
     if (wordPosition) {
-      this._model.selectionEnd = [this._model.areSelectionValuesReversed() ? wordPosition.start : (wordPosition.start + wordPosition.length), coords[1]];
+      let endRow = coords[1];
+
+      // Adjust negative start value
+      while (wordPosition.start < 0) {
+        wordPosition.start += this._terminal.cols;
+        endRow--;
+      }
+
+      // Adjust wrapped length value, this only needs to happen when values are reversed as in that
+      // case we're interested in the start of the word, not the end
+      if (!this._model.areSelectionValuesReversed()) {
+        while (wordPosition.start + wordPosition.length > this._terminal.cols) {
+          wordPosition.length -= this._terminal.cols;
+          endRow++;
+        }
+      }
+
+      this._model.selectionEnd = [this._model.areSelectionValuesReversed() ? wordPosition.start : wordPosition.start + wordPosition.length, endRow];
     }
   }
 

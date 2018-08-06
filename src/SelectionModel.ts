@@ -76,9 +76,13 @@ export class SelectionModel {
       return null;
     }
 
-    // Use the selection start if the end doesn't exist or they're reversed
+    // Use the selection start + length if the end doesn't exist or they're reversed
     if (!this.selectionEnd || this.areSelectionValuesReversed()) {
-      return [this.selectionStart[0] + this.selectionStartLength, this.selectionStart[1]];
+      const startPlusLength = this.selectionStart[0] + this.selectionStartLength;
+      if (startPlusLength > this._terminal.cols) {
+        return [startPlusLength % this._terminal.cols, this.selectionStart[1] + Math.floor(startPlusLength / this._terminal.cols)];
+      }
+      return [startPlusLength, this.selectionStart[1]];
     }
 
     // Ensure the the word/line is selected after a double/triple click
