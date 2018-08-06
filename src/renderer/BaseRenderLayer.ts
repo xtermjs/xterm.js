@@ -242,7 +242,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param bold Whether the text is bold.
    */
   protected drawChars(terminal: ITerminal, chars: string, code: number, width: number, x: number, y: number, fg: number, bg: number, bold: boolean, dim: boolean, italic: boolean): void {
-    const drawInBrightColor = terminal.options.drawBoldTextInBrightColors && bold && fg < 8;
+    const drawInBrightColor = terminal.options.drawBoldTextInBrightColors && bold && fg < 8 && fg !== INVERTED_DEFAULT_COLOR;
+
     fg += drawInBrightColor ? 8 : 0;
     const atlasDidDraw = this._charAtlas && this._charAtlas.draw(
       this._ctx,
