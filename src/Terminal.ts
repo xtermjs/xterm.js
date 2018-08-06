@@ -72,7 +72,7 @@ const WRITE_BATCH_SIZE = 300;
 /**
  * The set of options that only have an effect when set in the Terminal constructor.
  */
-const CONSTRUCTOR_ONLY_OPTIONS = ['cols', 'rows', 'rendererType'];
+const CONSTRUCTOR_ONLY_OPTIONS = ['cols', 'rows'];
 
 const DEFAULT_OPTIONS: ITerminalOptions = {
   cols: 80,
@@ -207,6 +207,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public mouseHelper: MouseHelper;
   private _accessibilityManager: AccessibilityManager;
   private _screenDprMonitor: ScreenDprMonitor;
+  private _theme: ITheme;
 
   public cols: number;
   public rows: number;
@@ -370,6 +371,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     if (CONSTRUCTOR_ONLY_OPTIONS.indexOf(key) !== -1) {
       console.error(`Option "${key}" can only be set in the constructor`);
     }
+    if (this.options[key] === value) {
+      return;
+    }
     switch (key) {
       case 'bellStyle':
         if (!value) {
@@ -396,6 +400,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
           console.warn(`${key} cannot be less than 1, value: ${value}`);
           return;
         }
+      case 'rendererType':
+        if (!value) {
+          value = 'canvas';
+        }
+        break;
       case 'tabStopWidth':
         if (value < 1) {
           console.warn(`${key} cannot be less than 1, value: ${value}`);
@@ -455,6 +464,18 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
           this.renderer.onResize(this.cols, this.rows);
           this.refresh(0, this.rows - 1);
         }
+      case 'rendererType':
+        if (this.renderer) {
+          this.unregister(this.renderer);
+          this.renderer.dispose();
+          this.renderer = null;
+        }
+        this._setupRenderer();
+        this.renderer.onCharSizeChanged();
+        if (this._theme) {
+          this.renderer.setTheme(this._theme);
+        }
+        break;
       case 'scrollback':
         this.buffers.resize(this.cols, this.rows);
         if (this.viewport) {
@@ -674,12 +695,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // Performance: Add viewport and helper elements from the fragment
     this.element.appendChild(fragment);
 
-    switch (this.options.rendererType) {
-      case 'canvas': this.renderer = new Renderer(this, this.options.theme); break;
-      case 'dom': this.renderer = new DomRenderer(this, this.options.theme); break;
-      default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
-    }
-    this.register(this.renderer);
+    this._setupRenderer();
+    this._theme = this.options.theme;
     this.options.theme = null;
     this.viewport = new Viewport(this, this._viewportElement, this._viewportScrollArea, this.charMeasure);
     this.viewport.onThemeChanged(this.renderer.colorManager.colors);
@@ -736,11 +753,21 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   }
 
+  private _setupRenderer(): void {
+    switch (this.options.rendererType) {
+      case 'canvas': this.renderer = new Renderer(this, this.options.theme); break;
+      case 'dom': this.renderer = new DomRenderer(this, this.options.theme); break;
+      default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
+    }
+    this.register(this.renderer);
+  }
+
   /**
    * Sets the theme on the renderer. The renderer must have been initialized.
-   * @param theme The theme to ste.
+   * @param theme The theme to set.
    */
   private _setTheme(theme: ITheme): void {
+    this._theme = theme;
     const colors = this.renderer.setTheme(theme);
     if (this.viewport) {
       this.viewport.onThemeChanged(colors);
