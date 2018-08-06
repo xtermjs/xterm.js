@@ -617,7 +617,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
       // NOT in column select mode.
       if (this._dragScrollAmount > 0) {
         if (this._activeSelectionMode !== SelectionMode.COLUMN) {
-          this._model.selectionEnd[0] = this._terminal.cols - 1;
+          this._model.selectionEnd[0] = this._terminal.cols;
         }
         this._model.selectionEnd[1] = Math.min(this._terminal.buffer.ydisp + this._terminal.rows, this._terminal.buffer.lines.length - 1);
       } else {
