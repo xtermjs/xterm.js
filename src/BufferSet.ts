@@ -18,7 +18,7 @@ export class BufferSet extends EventEmitter implements IBufferSet {
 
   /**
    * Create a new BufferSet for the given terminal.
-   * @param {Terminal} terminal - The terminal the BufferSet will belong to
+   * @param _terminal - The terminal the BufferSet will belong to
    */
   constructor(private _terminal: ITerminal) {
     super();
@@ -35,7 +35,6 @@ export class BufferSet extends EventEmitter implements IBufferSet {
 
   /**
    * Returns the alt Buffer of the BufferSet
-   * @returns {Buffer}
    */
   public get alt(): Buffer {
     return this._alt;
@@ -43,7 +42,6 @@ export class BufferSet extends EventEmitter implements IBufferSet {
 
   /**
    * Returns the normal Buffer of the BufferSet
-   * @returns {Buffer}
    */
   public get active(): Buffer {
     return this._activeBuffer;
@@ -51,7 +49,6 @@ export class BufferSet extends EventEmitter implements IBufferSet {
 
   /**
    * Returns the currently active Buffer of the BufferSet
-   * @returns {Buffer}
    */
   public get normal(): Buffer {
     return this._normal;
