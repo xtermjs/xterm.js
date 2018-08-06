@@ -83,6 +83,8 @@ var xterm = new Terminal();  // Instantiate the terminal
 xterm.fit();                 // Use the `fit` method, provided by the `fit` addon
 ```
 
+You will also need to include the addon's CSS file if it has one in the folder.
+
 #### Importing Addons in TypeScript
 
 There are currently no typings for addons if they are accessed via extending Terminal prototype, so you will need to upcast if using TypeScript, eg. `(<any>xterm).fit()`.
@@ -115,6 +117,10 @@ Since xterm.js is typically implemented as a developer tool, only modern browser
 - IE11
 
 Xterm.js works seamlessly in Electron apps and may even work on earlier versions of the browsers but these are the browsers we strive to keep working.
+
+## API
+
+The current full API documentation is available in the [TypeScript declaration file on the repository](https://github.com/xtermjs/xterm.js/blob/master/typings/xterm.d.ts), switch the tag (press `w` when viewing the file) to point at the specific version tag you're using.
 
 ## Real-world uses
 Xterm.js is used in several world-class applications to provide great terminal experiences.
