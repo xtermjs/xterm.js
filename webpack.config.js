@@ -6,5 +6,14 @@ module.exports = {
     path: path.resolve(__dirname, 'demo/dist'),
     filename: 'bundle.js'
   },
-  devtool: 'source-map'
+  devtool: 'source-map',
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        use: ["source-map-loader"],
+        enforce: "pre"
+      }
+    ]
+  }
 };
