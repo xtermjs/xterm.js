@@ -381,6 +381,10 @@ export interface ISoundManager {
   playBellSound(): void;
 }
 
+export interface IMouseEventsHandler {
+  bindMouse(): void;
+}
+
 /**
  * Internal states of EscapeSequenceParser.
  */
