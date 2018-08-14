@@ -1631,6 +1631,9 @@ export class InputHandler extends Disposable implements IInputHandler {
         // not bold nor faint
         flags &= ~FLAGS.BOLD;
         flags &= ~FLAGS.DIM;
+      } else if (p === 23) {
+        // not italic
+        flags &= ~FLAGS.ITALIC;
       } else if (p === 24) {
         // not underlined
         flags &= ~FLAGS.UNDERLINE;
