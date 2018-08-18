@@ -53,7 +53,7 @@ export function attach(term: Terminal, socket: WebSocket, bidirectional: boolean
         const fileReader = new FileReader();
 
         fileReader.addEventListener('load', () => {
-          str = myTextDecoder.decode(this.result);
+          str = myTextDecoder.decode(fileReader.result);
           displayData(str);
         });
         fileReader.readAsArrayBuffer(ev.data);
