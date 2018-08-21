@@ -22,11 +22,16 @@ export class RenderDebouncer implements IDisposable {
     }
   }
 
-  public refresh(rowStart?: number, rowEnd?: number): void {
+  public refresh(rowStart: number, rowEnd: number): void {
+    // Get the min/max row start/end for the arg values
     rowStart = rowStart || 0;
     rowEnd = rowEnd || this._terminal.rows - 1;
-    this._rowStart = this._rowStart !== undefined ? Math.min(this._rowStart, rowStart) : rowStart;
-    this._rowEnd = this._rowEnd !== undefined ? Math.max(this._rowEnd, rowEnd) : rowEnd;
+    // Check whether the row start/end values have already been set
+    const isRowStartSet = this._rowStart !== undefined && this._rowStart !== null;
+    const isRowEndSet = this._rowEnd !== undefined && this._rowEnd !== null;
+    // Set the properties to the updated values
+    this._rowStart = isRowStartSet ? Math.min(this._rowStart, rowStart) : rowStart;
+    this._rowEnd = isRowEndSet ? Math.max(this._rowEnd, rowEnd) : rowEnd;
 
     if (this._animationFrame) {
       return;
