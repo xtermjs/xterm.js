@@ -163,7 +163,5 @@ describe('typings', () => {
     const fixtureDir = path.join(__dirname, '..', 'fixtures', 'typings-test');
     const result = cp.spawnSync(tsc, { cwd: fixtureDir });
     assert.equal(result.status, 0, `build did not succeed:\nstdout: ${result.stdout.toString()}\nstderr: ${result.stderr.toString()}\n`);
-    // Clean up
-    fs.unlinkSync(path.join(fixtureDir, 'typings-test.js'));
   });
 });
