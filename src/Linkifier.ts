@@ -7,6 +7,7 @@ import { IMouseZoneManager } from './ui/Types';
 import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, ILinkifier, ITerminal, LineData } from './Types';
 import { MouseZone } from './ui/MouseZoneManager';
 import { EventEmitter } from './EventEmitter';
+import { CHAR_DATA_ATTR_INDEX } from './Buffer';
 
 /**
  * The Linkifier applies links to rows shortly after they have been refreshed.
@@ -24,7 +25,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
   private _mouseZoneManager: IMouseZoneManager;
   private _rowsTimeoutId: number;
   private _nextLinkMatcherId = 0;
-  private _rowsToLinkify: {start: number, end: number};
+  private _rowsToLinkify: { start: number, end: number };
 
   constructor(
     protected _terminal: ITerminal
@@ -187,7 +188,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     let text = this._terminal.buffer.translateBufferLineToString(absoluteRowIndex, false);
     let currentIndex = absoluteRowIndex + 1;
     while (currentIndex < this._terminal.buffer.lines.length &&
-        (<any>this._terminal.buffer.lines.get(currentIndex)).isWrapped) {
+      (<any>this._terminal.buffer.lines.get(currentIndex)).isWrapped) {
       text += this._terminal.buffer.translateBufferLineToString(currentIndex++, false);
     }
 
@@ -216,6 +217,12 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     // Get index, match.index is for the outer match which includes negated chars
     const index = text.indexOf(uri);
 
+    // Get cell color
+    const line = this._terminal.buffer.lines.get(this._terminal.buffer.ydisp + rowIndex);
+    const char = line[index];
+    const attr: number = char[CHAR_DATA_ATTR_INDEX];
+    const fg = (attr >> 9) & 0x1ff;
+
     // Ensure the link is valid before registering
     if (matcher.validationCallback) {
       matcher.validationCallback(uri, isValid => {
@@ -224,11 +231,11 @@ export class Linkifier extends EventEmitter implements ILinkifier {
           return;
         }
         if (isValid) {
-          this._addLink(offset + index, rowIndex, uri, matcher);
+          this._addLink(offset + index, rowIndex, uri, matcher, fg);
         }
       });
     } else {
-      this._addLink(offset + index, rowIndex, uri, matcher);
+      this._addLink(offset + index, rowIndex, uri, matcher, fg);
     }
 
     // Recursively check for links in the rest of the text
@@ -245,8 +252,9 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @param y The row the link is on.
    * @param uri The URI of the link.
    * @param matcher The link matcher for the link.
+   * @param fg The link color for hover event.
    */
-  private _addLink(x: number, y: number, uri: string, matcher: ILinkMatcher): void {
+  private _addLink(x: number, y: number, uri: string, matcher: ILinkMatcher, fg: number): void {
     const x1 = x % this._terminal.cols;
     const y1 = y + Math.floor(x / this._terminal.cols);
     let x2 = (x1 + uri.length) % this._terminal.cols;
@@ -268,17 +276,17 @@ export class Linkifier extends EventEmitter implements ILinkifier {
         window.open(uri, '_blank');
       },
       e => {
-        this.emit(LinkHoverEventTypes.HOVER, this._createLinkHoverEvent(x1, y1, x2, y2));
+        this.emit(LinkHoverEventTypes.HOVER, this._createLinkHoverEvent(x1, y1, x2, y2, fg));
         this._terminal.element.classList.add('xterm-cursor-pointer');
       },
       e => {
-        this.emit(LinkHoverEventTypes.TOOLTIP, this._createLinkHoverEvent(x1, y1, x2, y2));
+        this.emit(LinkHoverEventTypes.TOOLTIP, this._createLinkHoverEvent(x1, y1, x2, y2, fg));
         if (matcher.hoverTooltipCallback) {
           matcher.hoverTooltipCallback(e, uri);
         }
       },
       () => {
-        this.emit(LinkHoverEventTypes.LEAVE, this._createLinkHoverEvent(x1, y1, x2, y2));
+        this.emit(LinkHoverEventTypes.LEAVE, this._createLinkHoverEvent(x1, y1, x2, y2, fg));
         this._terminal.element.classList.remove('xterm-cursor-pointer');
         if (matcher.hoverLeaveCallback) {
           matcher.hoverLeaveCallback();
@@ -293,7 +301,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     ));
   }
 
-  private _createLinkHoverEvent(x1: number, y1: number, x2: number, y2: number): ILinkHoverEvent {
-    return { x1, y1, x2, y2, cols: this._terminal.cols };
+  private _createLinkHoverEvent(x1: number, y1: number, x2: number, y2: number, fg: number): ILinkHoverEvent {
+    return { x1, y1, x2, y2, cols: this._terminal.cols, fg };
   }
 }
