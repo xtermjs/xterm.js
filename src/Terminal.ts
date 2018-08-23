@@ -251,7 +251,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   private _setup(): void {
     Object.keys(DEFAULT_OPTIONS).forEach((key) => {
-      if (this.options[key] == null) {
+      if (this.options[key] === null || this.options[key] === undefined) {
         this.options[key] = DEFAULT_OPTIONS[key];
       }
     });
@@ -960,9 +960,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // 1, and 2 - with 64 added
       switch ((<any>ev).overrideType || ev.type) {
         case 'mousedown':
-          button = ev.button != null
+          button = ev.button !== null && ev.button !== undefined
             ? +ev.button
-          : ev.which != null
+          : ev.which !== null && ev.which !== undefined
             ? ev.which - 1
           : null;
 
@@ -1587,7 +1587,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     if (ev.charCode) {
       key = ev.charCode;
-    } else if (ev.which == null) {
+    } else if (ev.which === null || ev.which === undefined) {
       key = ev.keyCode;
     } else if (ev.which !== 0 && ev.charCode !== 0) {
       key = ev.which;
@@ -1932,7 +1932,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public matchColor(r1: number, g1: number, b1: number): number {
     const hash = (r1 << 16) | (g1 << 8) | b1;
 
-    if (matchColorCache[hash] != null) {
+    if (matchColorCache[hash] !== null && matchColorCache[hash] !== undefined) {
       return matchColorCache[hash];
     }
 

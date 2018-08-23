@@ -53,7 +53,7 @@ export default class StaticCharAtlas extends BaseCharAtlas {
     y: number
   ): boolean {
     // we're not warmed up yet
-    if (this._texture == null) {
+    if (this._texture === null || this._texture === undefined) {
       return false;
     }
 
