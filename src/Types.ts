@@ -204,6 +204,7 @@ export interface ILinkHoverEvent {
   x2: number;
   y2: number;
   cols: number;
+  fg: number;
 }
 
 export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAccessor, ILinkifierAccessor {
