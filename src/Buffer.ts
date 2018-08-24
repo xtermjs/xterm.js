@@ -283,7 +283,7 @@ export class Buffer implements IBuffer {
    * @param i The index to start setting up tab stops from.
    */
   public setupTabStops(i?: number): void {
-    if (i != null) {
+    if (i !== null && i !== undefined) {
       if (!this.tabs[i]) {
         i = this.prevStop(i);
       }
@@ -302,7 +302,7 @@ export class Buffer implements IBuffer {
    * @param x The position to move the cursor to the previous tab stop.
    */
   public prevStop(x?: number): number {
-    if (x == null) {
+    if (x === null || x === undefined) {
       x = this.x;
     }
     while (!this.tabs[--x] && x > 0);
@@ -314,7 +314,7 @@ export class Buffer implements IBuffer {
    * @param x The position to move the cursor one tab stop forward.
    */
   public nextStop(x?: number): number {
-    if (x == null) {
+    if (x === null || x === undefined) {
       x = this.x;
     }
     while (!this.tabs[++x] && x < this._terminal.cols);
