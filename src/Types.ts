@@ -235,6 +235,7 @@ export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAcce
   log(text: string): void;
   showCursor(): void;
   blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): LineData;
+  updateCursorStyle(ev?: KeyboardEvent): void;
 }
 
 export interface IBufferAccessor {
