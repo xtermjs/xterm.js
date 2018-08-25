@@ -11,6 +11,7 @@ import { EventEmitter } from './EventEmitter';
 import { SelectionModel } from './SelectionModel';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_CODE_INDEX } from './Buffer';
 import { AltClickHandler } from './handlers/AltClickHandler';
+import { TerminalLine } from './TerminalLine';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -204,7 +205,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
       for (let i = start[1] + 1; i <= end[1] - 1; i++) {
         const bufferLine = this._buffer.lines.get(i);
         const lineText = this._buffer.translateBufferLineToString(i, true);
-        if ((<any>bufferLine).isWrapped) {
+        if (bufferLine.isWrapped) {
           result[result.length - 1] += lineText;
         } else {
           result.push(lineText);
@@ -215,7 +216,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
       if (start[1] !== end[1]) {
         const bufferLine = this._buffer.lines.get(end[1]);
         const lineText = this._buffer.translateBufferLineToString(end[1], true, 0, end[0]);
-        if ((<any>bufferLine).isWrapped) {
+        if (bufferLine.isWrapped) {
           result[result.length - 1] += lineText;
         } else {
           result.push(lineText);
@@ -500,7 +501,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
     // If the mouse is over the second half of a wide character, adjust the
     // selection to cover the whole character
-    const char = line[this._model.selectionStart[0]];
+    const char = line.get(this._model.selectionStart[0]);
     if (char[CHAR_DATA_WIDTH_INDEX] === 0) {
       this._model.selectionStart[0]++;
     }
@@ -590,7 +591,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     // selection. Note that selections at the very end of the line will never
     // have a character.
     if (this._model.selectionEnd[1] < this._buffer.lines.length) {
-      const char = this._buffer.lines.get(this._model.selectionEnd[1])[this._model.selectionEnd[0]];
+      const char = this._buffer.lines.get(this._model.selectionEnd[1]).get(this._model.selectionEnd[0]);
       if (char && char[CHAR_DATA_WIDTH_INDEX] === 0) {
         this._model.selectionEnd[0]++;
       }
@@ -661,10 +662,10 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * latter takes into account wide characters.
    * @param coords The coordinates to find the 2 index for.
    */
-  private _convertViewportColToCharacterIndex(bufferLine: any, coords: [number, number]): number {
+  private _convertViewportColToCharacterIndex(bufferLine: TerminalLine, coords: [number, number]): number {
     let charIndex = coords[0];
     for (let i = 0; coords[0] >= i; i++) {
-      const char = bufferLine[i];
+      const char = bufferLine.get(i);
       if (char[CHAR_DATA_WIDTH_INDEX] === 0) {
         // Wide characters aren't included in the line string so decrement the
         // index so the index is back on the wide character.
@@ -733,24 +734,24 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
       // Consider the initial position, skip it and increment the wide char
       // variable
-      if (bufferLine[startCol][CHAR_DATA_WIDTH_INDEX] === 0) {
+      if (bufferLine.get(startCol)[CHAR_DATA_WIDTH_INDEX] === 0) {
         leftWideCharCount++;
         startCol--;
       }
-      if (bufferLine[endCol][CHAR_DATA_WIDTH_INDEX] === 2) {
+      if (bufferLine.get(endCol)[CHAR_DATA_WIDTH_INDEX] === 2) {
         rightWideCharCount++;
         endCol++;
       }
 
       // Adjust the end index for characters whose length are > 1 (emojis)
-      if (bufferLine[endCol][CHAR_DATA_CHAR_INDEX].length > 1) {
-        rightLongCharOffset += bufferLine[endCol][CHAR_DATA_CHAR_INDEX].length - 1;
-        endIndex += bufferLine[endCol][CHAR_DATA_CHAR_INDEX].length - 1;
+      if (bufferLine.get(endCol)[CHAR_DATA_CHAR_INDEX].length > 1) {
+        rightLongCharOffset += bufferLine.get(endCol)[CHAR_DATA_CHAR_INDEX].length - 1;
+        endIndex += bufferLine.get(endCol)[CHAR_DATA_CHAR_INDEX].length - 1;
       }
 
       // Expand the string in both directions until a space is hit
-      while (startCol > 0 && startIndex > 0 && !this._isCharWordSeparator(bufferLine[startCol - 1])) {
-        const char = bufferLine[startCol - 1];
+      while (startCol > 0 && startIndex > 0 && !this._isCharWordSeparator(bufferLine.get(startCol - 1))) {
+        const char = bufferLine.get(startCol - 1);
         if (char[CHAR_DATA_WIDTH_INDEX] === 0) {
           // If the next character is a wide char, record it and skip the column
           leftWideCharCount++;
@@ -764,8 +765,8 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
         startIndex--;
         startCol--;
       }
-      while (endCol < bufferLine.length && endIndex + 1 < line.length && !this._isCharWordSeparator(bufferLine[endCol + 1])) {
-        const char = bufferLine[endCol + 1];
+      while (endCol < bufferLine.length && endIndex + 1 < line.length && !this._isCharWordSeparator(bufferLine.get(endCol + 1))) {
+        const char = bufferLine.get(endCol + 1);
         if (char[CHAR_DATA_WIDTH_INDEX] === 2) {
           // If the next character is a wide char, record it and skip the column
           rightWideCharCount++;
@@ -808,9 +809,9 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
     // Recurse upwards if the line is wrapped and the word wraps to the above line
     if (followWrappedLinesAbove) {
-      if (start === 0 && bufferLine[0][CHAR_DATA_CODE_INDEX] !== 32 /*' '*/) {
+      if (start === 0 && bufferLine.get(0)[CHAR_DATA_CODE_INDEX] !== 32 /*' '*/) {
         const previousBufferLine = this._buffer.lines.get(coords[1] - 1);
-        if (previousBufferLine && (<any>bufferLine).isWrapped && previousBufferLine[this._terminal.cols - 1][CHAR_DATA_CODE_INDEX] !== 32 /*' '*/) {
+        if (previousBufferLine && (<any>bufferLine).isWrapped && previousBufferLine.get(this._terminal.cols - 1)[CHAR_DATA_CODE_INDEX] !== 32 /*' '*/) {
           const previousLineWordPosition = this._getWordAt([this._terminal.cols - 1, coords[1] - 1], false, true, false);
           if (previousLineWordPosition) {
             const offset = this._terminal.cols - previousLineWordPosition.start;
@@ -823,9 +824,9 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
     // Recurse downwards if the line is wrapped and the word wraps to the next line
     if (followWrappedLinesBelow) {
-      if (start + length === this._terminal.cols && bufferLine[this._terminal.cols - 1][CHAR_DATA_CODE_INDEX] !== 32 /*' '*/) {
+      if (start + length === this._terminal.cols && bufferLine.get(this._terminal.cols - 1)[CHAR_DATA_CODE_INDEX] !== 32 /*' '*/) {
         const nextBufferLine = this._buffer.lines.get(coords[1] + 1);
-        if (nextBufferLine && (<any>nextBufferLine).isWrapped && nextBufferLine[0][CHAR_DATA_CODE_INDEX] !== 32 /*' '*/) {
+        if (nextBufferLine && (<any>nextBufferLine).isWrapped && nextBufferLine.get(0)[CHAR_DATA_CODE_INDEX] !== 32 /*' '*/) {
           const nextLineWordPosition = this._getWordAt([0, coords[1] + 1], false, false, true);
           if (nextLineWordPosition) {
             length += nextLineWordPosition.length;

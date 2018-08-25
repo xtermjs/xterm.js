@@ -10,6 +10,7 @@ import { SelectionModel } from './SelectionModel';
 import { BufferSet } from './BufferSet';
 import { LineData, CharData, ITerminal, IBuffer } from './Types';
 import { MockTerminal } from './utils/TestUtils.test';
+import { TerminalLine } from './TerminalLine';
 
 class TestMockTerminal extends MockTerminal {
   emit(event: string, data: any): void {}
@@ -52,16 +53,18 @@ describe('SelectionManager', () => {
     selectionManager = new TestSelectionManager(terminal, null);
   });
 
-  function stringToRow(text: string): LineData {
-    const result: LineData = [];
+  function stringToRow(text: string): TerminalLine {
+    const result = new TerminalLine();
     for (let i = 0; i < text.length; i++) {
       result.push([0, text.charAt(i), 1, text.charCodeAt(i)]);
     }
     return result;
   }
 
-  function stringArrayToRow(chars: string[]): LineData {
-    return chars.map(c => <CharData>[0, c, 1, c.charCodeAt(0)]);
+  function stringArrayToRow(chars: string[]): TerminalLine {
+    const line = new TerminalLine();
+    chars.map(c => line.push([0, c, 1, c.charCodeAt(0)]));
+    return line;
   }
 
   describe('_selectWordAt', () => {
@@ -97,7 +100,8 @@ describe('SelectionManager', () => {
     });
     it('should expand selection for wide characters', () => {
       // Wide characters use a special format
-      buffer.lines.set(0, [
+      const line = new TerminalLine();
+      const data: [number, string, number, number][] = [
         [null, '中', 2, '中'.charCodeAt(0)],
         [null, '', 0, null],
         [null, '文', 2, '文'.charCodeAt(0)],
@@ -113,7 +117,9 @@ describe('SelectionManager', () => {
         [null, 'f', 1, 'f'.charCodeAt(0)],
         [null, 'o', 1, 'o'.charCodeAt(0)],
         [null, 'o', 1, 'o'.charCodeAt(0)]
-      ]);
+      ];
+      for (let i = 0; i < data.length; ++i) line.push(data[i]);
+      buffer.lines.set(0, line);
       // Ensure wide characters take up 2 columns
       selectionManager.selectWordAt([0, 0]);
       assert.equal(selectionManager.selectionText, '中文');

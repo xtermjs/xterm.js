@@ -7,6 +7,7 @@ import { CircularList } from './common/CircularList';
 import { LineData, CharData, ITerminal, IBuffer } from './Types';
 import { EventEmitter } from './EventEmitter';
 import { IMarker } from 'xterm';
+import { TerminalLine } from './TerminalLine';
 
 export const DEFAULT_ATTR = (0 << 18) | (257 << 9) | (256 << 0);
 export const CHAR_DATA_ATTR_INDEX = 0;
@@ -27,7 +28,7 @@ export const NULL_CELL_CODE = 32;
  *   - scroll position
  */
 export class Buffer implements IBuffer {
-  public lines: CircularList<LineData>;
+  public lines: CircularList<TerminalLine>;
   public ydisp: number;
   public ybase: number;
   public y: number;
@@ -97,7 +98,7 @@ export class Buffer implements IBuffer {
     this.ybase = 0;
     this.y = 0;
     this.x = 0;
-    this.lines = new CircularList<LineData>(this._getCorrectBufferLength(this._terminal.rows));
+    this.lines = new CircularList<TerminalLine>(this._getCorrectBufferLength(this._terminal.rows));
     this.scrollTop = 0;
     this.scrollBottom = this._terminal.rows - 1;
     this.setupTabStops();
@@ -223,7 +224,7 @@ export class Buffer implements IBuffer {
     let endIndex = endCol;
 
     for (let i = 0; i < line.length; i++) {
-      const char = line[i];
+      const char = line.get(i);
       lineString += char[CHAR_DATA_CHAR_INDEX];
       // Adjust start and end cols for wide characters if they affect their
       // column indexes

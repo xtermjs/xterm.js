@@ -7,6 +7,7 @@ import { IMouseZoneManager } from './ui/Types';
 import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, ILinkifier, ITerminal, LineData } from './Types';
 import { MouseZone } from './ui/MouseZoneManager';
 import { EventEmitter } from './EventEmitter';
+import { TerminalLine } from './TerminalLine';
 import { CHAR_DATA_ATTR_INDEX } from './Buffer';
 
 /**
@@ -170,7 +171,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
         return;
       }
       // If the first row is wrapped, backtrack to find the origin row and linkify that
-      let line: LineData;
+      let line: TerminalLine;
 
       do {
         rowIndex--;
@@ -219,7 +220,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
 
     // Get cell color
     const line = this._terminal.buffer.lines.get(this._terminal.buffer.ydisp + rowIndex);
-    const char = line[index];
+    const char = line.get(index);
     const attr: number = char[CHAR_DATA_ATTR_INDEX];
     const fg = (attr >> 9) & 0x1ff;
 

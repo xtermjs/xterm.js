@@ -8,6 +8,7 @@ import { ITerminal } from './Types';
 import { Buffer } from './Buffer';
 import { CircularList } from './common/CircularList';
 import { MockTerminal } from './utils/TestUtils.test';
+import { TerminalLine } from './TerminalLine';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
@@ -36,13 +37,13 @@ describe('Buffer', () => {
 
   describe('fillViewportRows', () => {
     it('should fill the buffer with blank lines based on the size of the viewport', () => {
-      const blankLineChar = terminal.blankLine()[0];
+      const blankLineChar = terminal.blankLine().get(0);
       buffer.fillViewportRows();
       assert.equal(buffer.lines.length, INIT_ROWS);
       for (let y = 0; y < INIT_ROWS; y++) {
         assert.equal(buffer.lines.get(y).length, INIT_COLS);
         for (let x = 0; x < INIT_COLS; x++) {
-          assert.deepEqual(buffer.lines.get(y)[x], blankLineChar);
+          assert.deepEqual(buffer.lines.get(y).get(x), blankLineChar);
         }
       }
     });
@@ -154,11 +155,11 @@ describe('Buffer', () => {
           assert.equal(buffer.lines.maxLength, INIT_ROWS);
           buffer.y = INIT_ROWS - 1;
           buffer.fillViewportRows();
-          buffer.lines.get(5)[0][1] = 'a';
-          buffer.lines.get(INIT_ROWS - 1)[0][1] = 'b';
+          buffer.lines.get(5).get(0)[1] = 'a';
+          buffer.lines.get(INIT_ROWS - 1).get(0)[1] = 'b';
           buffer.resize(INIT_COLS, INIT_ROWS - 5);
-          assert.equal(buffer.lines.get(0)[0][1], 'a');
-          assert.equal(buffer.lines.get(INIT_ROWS - 1 - 5)[0][1], 'b');
+          assert.equal(buffer.lines.get(0).get(0)[1], 'a');
+          assert.equal(buffer.lines.get(INIT_ROWS - 1 - 5).get(0)[1], 'b');
         });
       });
     });
@@ -272,34 +273,43 @@ describe('Buffer', () => {
 
   describe ('translateBufferLineToString', () => {
     it('should handle selecting a section of ascii text', () => {
-      buffer.lines.set(0, [
+      const line = new TerminalLine();
+      const data: [number, string, number, number][] = [
         [ null, 'a', 1, 'a'.charCodeAt(0)],
         [ null, 'b', 1, 'b'.charCodeAt(0)],
         [ null, 'c', 1, 'c'.charCodeAt(0)],
         [ null, 'd', 1, 'd'.charCodeAt(0)]
-      ]);
+      ];
+      for (let i = 0; i < data.length; ++i) line.push(data[i]);
+      buffer.lines.set(0, line);
 
       const str = buffer.translateBufferLineToString(0, true, 0, 2);
       assert.equal(str, 'ab');
     });
 
     it('should handle a cut-off double width character by including it', () => {
-      buffer.lines.set(0, [
+      const line = new TerminalLine();
+      const data: [number, string, number, number][] = [
         [ null, '語', 2, 35486 ],
         [ null, '', 0, null],
         [ null, 'a', 1, 'a'.charCodeAt(0)]
-      ]);
+      ];
+      for (let i = 0; i < data.length; ++i) line.push(data[i]);
+      buffer.lines.set(0, line);
 
       const str1 = buffer.translateBufferLineToString(0, true, 0, 1);
       assert.equal(str1, '語');
     });
 
     it('should handle a zero width character in the middle of the string by not including it', () => {
-      buffer.lines.set(0, [
+      const line = new TerminalLine();
+      const data: [number, string, number, number][] = [
         [ null, '語', 2, '語'.charCodeAt(0) ],
         [ null, '', 0, null],
         [ null, 'a', 1, 'a'.charCodeAt(0)]
-      ]);
+      ];
+      for (let i = 0; i < data.length; ++i) line.push(data[i]);
+      buffer.lines.set(0, line);
 
       const str0 = buffer.translateBufferLineToString(0, true, 0, 1);
       assert.equal(str0, '語');
@@ -312,10 +322,13 @@ describe('Buffer', () => {
     });
 
     it('should handle single width emojis', () => {
-      buffer.lines.set(0, [
+      const line = new TerminalLine();
+      const data: [number, string, number, number][] = [
         [ null, '😁', 1, '😁'.charCodeAt(0) ],
         [ null, 'a', 1, 'a'.charCodeAt(0)]
-      ]);
+      ];
+      for (let i = 0; i < data.length; ++i) line.push(data[i]);
+      buffer.lines.set(0, line);
 
       const str1 = buffer.translateBufferLineToString(0, true, 0, 1);
       assert.equal(str1, '😁');
@@ -325,10 +338,13 @@ describe('Buffer', () => {
     });
 
     it('should handle double width emojis', () => {
-      buffer.lines.set(0, [
+      const line = new TerminalLine();
+      let data: [number, string, number, number][] = [
         [ null, '😁', 2, '😁'.charCodeAt(0) ],
         [ null, '', 0, null]
-      ]);
+      ];
+      for (let i = 0; i < data.length; ++i) line.push(data[i]);
+      buffer.lines.set(0, line);
 
       const str1 = buffer.translateBufferLineToString(0, true, 0, 1);
       assert.equal(str1, '😁');
@@ -336,11 +352,14 @@ describe('Buffer', () => {
       const str2 = buffer.translateBufferLineToString(0, true, 0, 2);
       assert.equal(str2, '😁');
 
-      buffer.lines.set(0, [
+      const line2 = new TerminalLine();
+      data = [
         [ null, '😁', 2, '😁'.charCodeAt(0) ],
         [ null, '', 0, null],
         [ null, 'a', 1, 'a'.charCodeAt(0)]
-      ]);
+      ];
+      for (let i = 0; i < data.length; ++i) line2.push(data[i]);
+      buffer.lines.set(0, line2);
 
       const str3 = buffer.translateBufferLineToString(0, true, 0, 3);
       assert.equal(str3, '😁a');

@@ -7,6 +7,7 @@ import { Terminal as PublicTerminal, ITerminalOptions as IPublicTerminalOptions,
 import { IColorSet, IRenderer } from './renderer/Types';
 import { IMouseZoneManager } from './ui/Types';
 import { ICharset } from './core/Types';
+import { TerminalLine } from './TerminalLine';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
@@ -74,7 +75,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   eraseRight(x: number, y: number): void;
   eraseLine(y: number): void;
   eraseLeft(x: number, y: number): void;
-  blankLine(cur?: boolean, isWrapped?: boolean): LineData;
+  blankLine(cur?: boolean, isWrapped?: boolean): TerminalLine;
   is(term: string): boolean;
   setgCharset(g: number, charset: ICharset): void;
   resize(x: number, y: number): void;
@@ -234,7 +235,7 @@ export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAcce
   cancel(ev: Event, force?: boolean): boolean | void;
   log(text: string): void;
   showCursor(): void;
-  blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): LineData;
+  blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): TerminalLine;
 }
 
 export interface IBufferAccessor {
@@ -273,7 +274,7 @@ export interface ITerminalOptions extends IPublicTerminalOptions {
 }
 
 export interface IBuffer {
-  readonly lines: ICircularList<LineData>;
+  readonly lines: ICircularList<TerminalLine>;
   ydisp: number;
   ybase: number;
   y: number;
