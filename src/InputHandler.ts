@@ -381,18 +381,20 @@ export class InputHandler extends Disposable implements IInputHandler {
       // since they always follow a cell consuming char
       // therefore we can test for buffer.x to avoid overflow left
       if (!chWidth && buffer.x) {
-        if (bufferRow[buffer.x - 1]) {
-          if (!bufferRow[buffer.x - 1][CHAR_DATA_WIDTH_INDEX]) {
+        const chMinusOne = bufferRow.get(buffer.x - 1);
+        if (chMinusOne) {
+          if (!chMinusOne[CHAR_DATA_WIDTH_INDEX]) {
             // found empty cell after fullwidth, need to go 2 cells back
             // it is save to step 2 cells back here
             // since an empty cell is only set by fullwidth chars
-            if (bufferRow[buffer.x - 2]) {
-              bufferRow[buffer.x - 2][CHAR_DATA_CHAR_INDEX] += char;
-              bufferRow[buffer.x - 2][CHAR_DATA_CODE_INDEX] = code;
+            const chMinusTwo = bufferRow.get(buffer.x - 2);
+            if (chMinusTwo) {
+              chMinusTwo[CHAR_DATA_CHAR_INDEX] += char;
+              chMinusTwo[CHAR_DATA_CODE_INDEX] = code;
             }
           } else {
-            bufferRow[buffer.x - 1][CHAR_DATA_CHAR_INDEX] += char;
-            bufferRow[buffer.x - 1][CHAR_DATA_CODE_INDEX] = code;
+            chMinusOne[CHAR_DATA_CHAR_INDEX] += char;
+            chMinusOne[CHAR_DATA_CODE_INDEX] = code;
           }
         }
         continue;
@@ -412,7 +414,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           } else {
             // The line already exists (eg. the initial viewport), mark it as a
             // wrapped line
-            (<any>buffer.lines.get(buffer.y)).isWrapped = true;
+            buffer.lines.get(buffer.y).isWrapped = true;
           }
           // row changed, get it again
           bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
@@ -435,10 +437,11 @@ export class InputHandler extends Disposable implements IInputHandler {
           // remove last cell
           // if it's width is 0, we have to adjust the second last cell as well
           const removed = bufferRow.pop();
+          const chMinusTwo = bufferRow.get(buffer.x - 2);
           if (removed[CHAR_DATA_WIDTH_INDEX] === 0
-              && bufferRow[this._terminal.cols - 2]
-              && bufferRow[this._terminal.cols - 2][CHAR_DATA_WIDTH_INDEX] === 2) {
-                bufferRow[this._terminal.cols - 2] = [curAttr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
+              && chMinusTwo
+              && chMinusTwo[CHAR_DATA_WIDTH_INDEX] === 2) {
+                bufferRow.set(this._terminal.cols - 2, [curAttr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
           }
 
           // insert empty cell at cursor
@@ -447,11 +450,11 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
 
       // write current char to buffer and advance cursor
-      bufferRow[buffer.x++] = [curAttr, char, chWidth, code];
+      bufferRow.set(buffer.x++, [curAttr, char, chWidth, code]);
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor
       if (chWidth === 2) {
-        bufferRow[buffer.x++] = [curAttr, '', 0, undefined];
+        bufferRow.set(buffer.x++, [curAttr, '', 0, undefined]);
       }
     }
     this._terminal.updateRange(buffer.y);
@@ -929,7 +932,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const ch: CharData = [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // xterm
 
     while (param-- && j < this._terminal.cols) {
-      buffer.lines.get(row)[j++] = ch;
+      buffer.lines.get(row).set(j++, ch);
     }
   }
 
@@ -988,10 +991,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     const buffer = this._terminal.buffer;
 
     const line = buffer.lines.get(buffer.ybase + buffer.y);
-    const ch = line[buffer.x - 1] || [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
+    const ch = line.get(buffer.x - 1) || [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
 
     while (param--) {
-      line[buffer.x++] = ch;
+      line.set(buffer.x++, ch);
     }
   }
 

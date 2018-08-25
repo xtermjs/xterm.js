@@ -7,6 +7,7 @@ import { IMouseZoneManager } from './ui/Types';
 import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, ILinkifier, ITerminal, LineData } from './Types';
 import { MouseZone } from './ui/MouseZoneManager';
 import { EventEmitter } from './EventEmitter';
+import { TerminalLine } from './TerminalLine';
 
 /**
  * The Linkifier applies links to rows shortly after they have been refreshed.
@@ -169,7 +170,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
         return;
       }
       // If the first row is wrapped, backtrack to find the origin row and linkify that
-      let line: LineData;
+      let line: TerminalLine;
 
       do {
         rowIndex--;

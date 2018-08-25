@@ -1,6 +1,7 @@
 import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
 import { ITerminal, LineData } from '../Types';
 import { ICharacterJoinerRegistry, ICharacterJoiner } from './Types';
+import { TerminalLine } from '../TerminalLine';
 
 export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
 
@@ -51,10 +52,10 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
     let rangeStartColumn = 0;
     let currentStringIndex = 0;
     let rangeStartStringIndex = 0;
-    let rangeAttr = line[0][CHAR_DATA_ATTR_INDEX] >> 9;
+    let rangeAttr = line.get(0)[CHAR_DATA_ATTR_INDEX] >> 9;
 
     for (let x = 0; x < this._terminal.cols; x++) {
-      const charData = line[x];
+      const charData = line.get(x);
       const chars = charData[CHAR_DATA_CHAR_INDEX];
       const width = charData[CHAR_DATA_WIDTH_INDEX];
       const attr = charData[CHAR_DATA_ATTR_INDEX] >> 9;
@@ -115,7 +116,7 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
    * @param startIndex Start position of the range to search in the string (inclusive)
    * @param endIndex End position of the range to search in the string (exclusive)
    */
-  private _getJoinedRanges(line: string, startIndex: number, endIndex: number, lineData: LineData, startCol: number): [number, number][] {
+  private _getJoinedRanges(line: string, startIndex: number, endIndex: number, lineData: TerminalLine, startCol: number): [number, number][] {
     const text = line.substring(startIndex, endIndex);
     // At this point we already know that there is at least one joiner so
     // we can just pull its value and assign it directly rather than
@@ -140,7 +141,7 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
    * @param line Cell data for the relevant line in the terminal
    * @param startCol Offset within the line to start from
    */
-  private _stringRangesToCellRanges(ranges: [number, number][], line: LineData, startCol: number): void {
+  private _stringRangesToCellRanges(ranges: [number, number][], line: TerminalLine, startCol: number): void {
     let currentRangeIndex = 0;
     let currentRangeStarted = false;
     let currentStringIndex = 0;
@@ -152,7 +153,7 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
     }
 
     for (let x = startCol; x < this._terminal.cols; x++) {
-      const charData = line[x];
+      const charData = line.get(x);
       const width = charData[CHAR_DATA_WIDTH_INDEX];
       const length = charData[CHAR_DATA_CHAR_INDEX].length;
 

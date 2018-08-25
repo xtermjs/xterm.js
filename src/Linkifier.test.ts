@@ -9,6 +9,7 @@ import { ILinkMatcher, LineData, ITerminal } from './Types';
 import { Linkifier } from './Linkifier';
 import { MockBuffer, MockTerminal } from './utils/TestUtils.test';
 import { CircularList } from './common/CircularList';
+import { TerminalLine } from './TerminalLine';
 
 class TestLinkifier extends Linkifier {
   constructor(terminal: ITerminal) {
@@ -42,14 +43,14 @@ describe('Linkifier', () => {
     terminal = new MockTerminal();
     terminal.cols = 100;
     terminal.buffer = new MockBuffer();
-    (<MockBuffer>terminal.buffer).setLines(new CircularList<LineData>(20));
+    (<MockBuffer>terminal.buffer).setLines(new CircularList<TerminalLine>(20));
     terminal.buffer.ydisp = 0;
     linkifier = new TestLinkifier(terminal);
     mouseZoneManager = new TestMouseZoneManager();
   });
 
-  function stringToRow(text: string): LineData {
-    const result: LineData = [];
+  function stringToRow(text: string): TerminalLine {
+    const result = new TerminalLine();
     for (let i = 0; i < text.length; i++) {
       result.push([0, text.charAt(i), 1, text.charCodeAt(i)]);
     }

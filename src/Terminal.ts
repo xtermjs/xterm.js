@@ -52,6 +52,7 @@ import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent } from './common/Types';
 import { evaluateKeyboardEvent } from './core/input/Keyboard';
 import { KeyboardResultType, ICharset } from './core/Types';
+import { TerminalLine } from './TerminalLine';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -1719,7 +1720,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
     const ch: CharData = [this.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // xterm
     for (; x < this.cols; x++) {
-      line[x] = ch;
+      line.set(x, ch);
     }
     this.updateRange(y);
   }
@@ -1737,7 +1738,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     const ch: CharData = [this.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // xterm
     x++;
     while (x--) {
-      line[x] = ch;
+      line.set(x, ch);
     }
     this.updateRange(y);
   }
@@ -1777,21 +1778,21 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * @param cols The number of columns in the terminal, if this is not
    * set, the terminal's current column count would be used.
    */
-  public blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): LineData {
+  public blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): TerminalLine {
     const attr = cur ? this.eraseAttr() : DEFAULT_ATTR;
 
     const ch: CharData = [attr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // width defaults to 1 halfwidth character
-    const line: LineData = [];
+    const line = new TerminalLine();
 
     // TODO: It is not ideal that this is a property on an array, a buffer line
     // class should be added that will hold this data and other useful functions.
     if (isWrapped) {
-      (<any>line).isWrapped = isWrapped;
+      line.isWrapped = isWrapped;
     }
 
     cols = cols || this.cols;
     for (let i = 0; i < cols; i++) {
-      line[i] = ch;
+      line.set(i, ch);
     }
 
     return line;

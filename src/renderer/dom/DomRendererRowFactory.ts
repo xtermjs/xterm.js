@@ -6,6 +6,7 @@
 import { LineData } from '../../Types';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_ATTR_INDEX, CHAR_DATA_WIDTH_INDEX } from '../../Buffer';
 import { FLAGS } from '../Types';
+import { TerminalLine } from '../../TerminalLine';
 
 export const BOLD_CLASS = 'xterm-bold';
 export const ITALIC_CLASS = 'xterm-italic';
@@ -17,7 +18,7 @@ export class DomRendererRowFactory {
   ) {
   }
 
-  public createRow(lineData: LineData, isCursorRow: boolean, cursorX: number, cellWidth: number, cols: number): DocumentFragment {
+  public createRow(lineData: TerminalLine, isCursorRow: boolean, cursorX: number, cellWidth: number, cols: number): DocumentFragment {
     const fragment = this._document.createDocumentFragment();
     let colCount = 0;
 
@@ -27,7 +28,7 @@ export class DomRendererRowFactory {
         continue;
       }
 
-      const charData = lineData[x];
+      const charData = lineData.get(x);
       const char: string = charData[CHAR_DATA_CHAR_INDEX];
       const attr: number = charData[CHAR_DATA_ATTR_INDEX];
       const width: number = charData[CHAR_DATA_WIDTH_INDEX];
