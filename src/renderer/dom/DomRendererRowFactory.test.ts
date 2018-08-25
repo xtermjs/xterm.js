@@ -6,7 +6,6 @@
 import jsdom = require('jsdom');
 import { assert } from 'chai';
 import { DomRendererRowFactory } from './DomRendererRowFactory';
-import { LineData } from '../../Types';
 import { DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from '../../Buffer';
 import { FLAGS } from '../Types';
 import { TerminalLine } from '../../TerminalLine';

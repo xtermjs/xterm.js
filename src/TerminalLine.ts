@@ -16,7 +16,7 @@ export class TerminalLine {
     // throw Error when something tries to do number index access
     // TODO: remove when done with transition
     for (let i = 0; i < 100; ++i) {
-      Object.defineProperty(this, i, {
+      Object.defineProperty(this, i.toString(), {
         get: () => {
           throw new Error('get per index access is disabled');
         },

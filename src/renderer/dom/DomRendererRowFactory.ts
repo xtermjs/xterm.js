@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { LineData } from '../../Types';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_ATTR_INDEX, CHAR_DATA_WIDTH_INDEX } from '../../Buffer';
 import { FLAGS } from '../Types';
 import { TerminalLine } from '../../TerminalLine';

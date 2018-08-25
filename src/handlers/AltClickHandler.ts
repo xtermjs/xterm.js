@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminal, ICircularList, LineData } from '../Types';
+import { ITerminal, ICircularList } from '../Types';
 import { C0 } from '../common/data/EscapeSequences';
 import { TerminalLine } from '../TerminalLine';
 

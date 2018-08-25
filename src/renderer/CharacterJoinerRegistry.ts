@@ -1,5 +1,5 @@
 import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
-import { ITerminal, LineData } from '../Types';
+import { ITerminal } from '../Types';
 import { ICharacterJoinerRegistry, ICharacterJoiner } from './Types';
 import { TerminalLine } from '../TerminalLine';
 

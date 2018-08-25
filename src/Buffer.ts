@@ -4,7 +4,7 @@
  */
 
 import { CircularList } from './common/CircularList';
-import { LineData, CharData, ITerminal, IBuffer } from './Types';
+import { CharData, ITerminal, IBuffer } from './Types';
 import { EventEmitter } from './EventEmitter';
 import { IMarker } from 'xterm';
 import { TerminalLine } from './TerminalLine';
