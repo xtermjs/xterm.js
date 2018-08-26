@@ -1713,6 +1713,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * @param x The column from which to start erasing to the end of the line.
    * @param y The line in which to operate.
    */
+  // FIXME: decide whether to remove from Terminal
   public eraseRight(x: number, y: number): void {
     const line = this.buffer.lines.get(this.buffer.ybase + y);
     if (!line) return;
@@ -1725,6 +1726,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * @param x The column from which to start erasing to the start of the line.
    * @param y The line in which to operate.
    */
+  // FIXME: decide whether to remove from Terminal
   public eraseLeft(x: number, y: number): void {
     const line = this.buffer.lines.get(this.buffer.ybase + y);
     if (!line) return;
@@ -1756,6 +1758,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * Erase all content in the given line
    * @param y The line to erase all of its contents.
    */
+  // FIXME: decide whether to remove from Terminal
   public eraseLine(y: number): void {
     this.eraseRight(0, y);
   }

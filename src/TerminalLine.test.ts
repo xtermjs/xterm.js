@@ -50,4 +50,41 @@ describe('TerminalLine', function(): void {
     chai.expect(ch[CHAR_DATA_WIDTH_INDEX]).equals(NULL_CELL_WIDTH);
     chai.expect(ch[CHAR_DATA_CODE_INDEX]).equals(NULL_CELL_CODE);
   });
+  it('insertCells', function(): void {
+    const line = new TerminalLine();
+    const data: CharData[] = [
+      [1, 'a', 0, 0],
+      [2, 'b', 0, 0],
+      [3, 'c', 0, 0]
+    ];
+    for (let i = 0; i < data.length; ++i) line.push(data[i]);
+    line.insertCells(1, 3, [4, 'd', 0, 0]);
+    chai.expect(line.toArray()).eql([[1, 'a', 0, 0], [4, 'd', 0, 0], [4, 'd', 0, 0]]);
+  });
+  it('deleteCells', function(): void {
+    const line = new TerminalLine();
+    const data: CharData[] = [
+      [1, 'a', 0, 0],
+      [2, 'b', 0, 0],
+      [3, 'c', 0, 0],
+      [4, 'd', 0, 0],
+      [5, 'e', 0, 0]
+    ];
+    for (let i = 0; i < data.length; ++i) line.push(data[i]);
+    line.deleteCells(1, 2, [6, 'f', 0, 0]);
+    chai.expect(line.toArray()).eql([[1, 'a', 0, 0], [4, 'd', 0, 0], [5, 'e', 0, 0], [6, 'f', 0, 0], [6, 'f', 0, 0]]);
+  });
+  it('replaceCells', function(): void {
+    const line = new TerminalLine();
+    const data: CharData[] = [
+      [1, 'a', 0, 0],
+      [2, 'b', 0, 0],
+      [3, 'c', 0, 0],
+      [4, 'd', 0, 0],
+      [5, 'e', 0, 0]
+    ];
+    for (let i = 0; i < data.length; ++i) line.push(data[i]);
+    line.replaceCells(2, 4, [6, 'f', 0, 0]);
+    chai.expect(line.toArray()).eql([[1, 'a', 0, 0], [2, 'b', 0, 0], [6, 'f', 0, 0], [6, 'f', 0, 0], [5, 'e', 0, 0]]);
+  });
 });
