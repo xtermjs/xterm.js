@@ -75,7 +75,6 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   eraseRight(x: number, y: number): void;
   eraseLine(y: number): void;
   eraseLeft(x: number, y: number): void;
-  blankLine(cur?: boolean, isWrapped?: boolean): TerminalLine;
   is(term: string): boolean;
   setgCharset(g: number, charset: ICharset): void;
   resize(x: number, y: number): void;
@@ -235,7 +234,6 @@ export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAcce
   cancel(ev: Event, force?: boolean): boolean | void;
   log(text: string): void;
   showCursor(): void;
-  blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): TerminalLine;
 }
 
 export interface IBufferAccessor {

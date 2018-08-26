@@ -146,9 +146,6 @@ export class MockTerminal implements ITerminal {
   refresh(start: number, end: number): void {
     throw new Error('Method not implemented.');
   }
-  blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): TerminalLine {
-    return TerminalLine.blankLine(this.cols, 0);
-  }
   registerCharacterJoiner(handler: CharacterJoinerHandler): number { return 0; }
   deregisterCharacterJoiner(joinerId: number): void { }
 }
@@ -222,9 +219,6 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
     throw new Error('Method not implemented.');
   }
   eraseLeft(x: number, y: number): void {
-    throw new Error('Method not implemented.');
-  }
-  blankLine(cur?: boolean, isWrapped?: boolean): TerminalLine {
     throw new Error('Method not implemented.');
   }
   prevStop(x?: number): number {

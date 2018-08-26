@@ -1772,18 +1772,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   /**
-   * Return the data array of a blank line
-   * @param cur First bunch of data for each "blank" character.
-   * @param isWrapped Whether the new line is wrapped from the previous line.
-   * @param cols The number of columns in the terminal, if this is not
-   * set, the terminal's current column count would be used.
-   */
-  // FIXME: can this be removed after transition to TerminalLine.blankLine?
-  public blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): TerminalLine {
-    return TerminalLine.blankLine(cols || this.cols, cur ? this.eraseAttr() : DEFAULT_ATTR, isWrapped);
-  }
-
-  /**
    * If cur return the back color xterm feature attribute. Else return default attribute.
    * @param cur
    */
