@@ -165,7 +165,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       return;
     }
 
-    if ((<any>this._terminal.buffer.lines.get(absoluteRowIndex)).isWrapped) {
+    if (this._terminal.buffer.lines.get(absoluteRowIndex).isWrapped) {
       // Only attempt to linkify rows that start in the viewport
       if (rowIndex !== 0) {
         return;
@@ -182,14 +182,14 @@ export class Linkifier extends EventEmitter implements ILinkifier {
           break;
         }
 
-      } while ((<any>line).isWrapped);
+      } while (line.isWrapped);
     }
 
     // Construct full unwrapped line text
     let text = this._terminal.buffer.translateBufferLineToString(absoluteRowIndex, false);
     let currentIndex = absoluteRowIndex + 1;
     while (currentIndex < this._terminal.buffer.lines.length &&
-      (<any>this._terminal.buffer.lines.get(currentIndex)).isWrapped) {
+      this._terminal.buffer.lines.get(currentIndex).isWrapped) {
       text += this._terminal.buffer.translateBufferLineToString(currentIndex++, false);
     }
 

@@ -192,7 +192,7 @@ describe('SelectionManager', () => {
     it('should expand upwards or downards for wrapped lines', () => {
       buffer.lines.set(0, stringToRow('                                                                             foo'));
       buffer.lines.set(1, stringToRow('bar                                                                             '));
-      (<any>buffer.lines.get(1)).isWrapped = true;
+      buffer.lines.get(1).isWrapped = true;
       selectionManager.selectWordAt([1, 1]);
       assert.equal(selectionManager.selectionText, 'foobar');
       selectionManager.model.clearSelection();
@@ -206,10 +206,10 @@ describe('SelectionManager', () => {
       buffer.lines.set(2, stringToRow('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'));
       buffer.lines.set(3, stringToRow('cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'));
       buffer.lines.set(4, stringToRow('bar                                                                             '));
-      (<any>buffer.lines.get(1)).isWrapped = true;
-      (<any>buffer.lines.get(2)).isWrapped = true;
-      (<any>buffer.lines.get(3)).isWrapped = true;
-      (<any>buffer.lines.get(4)).isWrapped = true;
+      buffer.lines.get(1).isWrapped = true;
+      buffer.lines.get(2).isWrapped = true;
+      buffer.lines.get(3).isWrapped = true;
+      buffer.lines.get(4).isWrapped = true;
       selectionManager.selectWordAt([78, 0]);
       assert.equal(selectionManager.selectionText, expectedText);
       selectionManager.model.clearSelection();
@@ -345,7 +345,7 @@ describe('SelectionManager', () => {
     it('should select the entire wrapped line', () => {
       buffer.lines.set(0, stringToRow('foo'));
       const line2 = stringToRow('bar');
-      (<any>line2).isWrapped = true;
+      line2.isWrapped = true;
       buffer.lines.set(1, line2);
       selectionManager.selectLineAt(0);
       assert.equal(selectionManager.selectionText, 'foobar', 'The selected text is correct');

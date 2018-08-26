@@ -139,7 +139,7 @@ export class AltClickHandler {
     for (let i = 0; i < Math.abs(startRow - endRow); i++) {
       const direction = this._verticalDirection() === Direction.UP ? -1 : 1;
 
-      if ((<any>this._lines.get(startRow + (direction * i))).isWrapped) {
+      if (this._lines.get(startRow + (direction * i)).isWrapped) {
         wrappedRows++;
       }
     }
@@ -153,12 +153,12 @@ export class AltClickHandler {
    */
   private _wrappedRowsForRow(currentRow: number): number {
     let rowCount = 0;
-    let lineWraps = (<any>this._lines.get(currentRow)).isWrapped;
+    let lineWraps = this._lines.get(currentRow).isWrapped;
 
     while (lineWraps && currentRow >= 0 && currentRow < this._terminal.rows) {
       rowCount++;
       currentRow--;
-      lineWraps = (<any>this._lines.get(currentRow)).isWrapped;
+      lineWraps = this._lines.get(currentRow).isWrapped;
     }
 
     return rowCount;

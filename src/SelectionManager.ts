@@ -811,7 +811,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     if (followWrappedLinesAbove) {
       if (start === 0 && bufferLine.get(0)[CHAR_DATA_CODE_INDEX] !== 32 /*' '*/) {
         const previousBufferLine = this._buffer.lines.get(coords[1] - 1);
-        if (previousBufferLine && (<any>bufferLine).isWrapped && previousBufferLine.get(this._terminal.cols - 1)[CHAR_DATA_CODE_INDEX] !== 32 /*' '*/) {
+        if (previousBufferLine && bufferLine.isWrapped && previousBufferLine.get(this._terminal.cols - 1)[CHAR_DATA_CODE_INDEX] !== 32 /*' '*/) {
           const previousLineWordPosition = this._getWordAt([this._terminal.cols - 1, coords[1] - 1], false, true, false);
           if (previousLineWordPosition) {
             const offset = this._terminal.cols - previousLineWordPosition.start;
@@ -826,7 +826,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     if (followWrappedLinesBelow) {
       if (start + length === this._terminal.cols && bufferLine.get(this._terminal.cols - 1)[CHAR_DATA_CODE_INDEX] !== 32 /*' '*/) {
         const nextBufferLine = this._buffer.lines.get(coords[1] + 1);
-        if (nextBufferLine && (<any>nextBufferLine).isWrapped && nextBufferLine.get(0)[CHAR_DATA_CODE_INDEX] !== 32 /*' '*/) {
+        if (nextBufferLine && nextBufferLine.isWrapped && nextBufferLine.get(0)[CHAR_DATA_CODE_INDEX] !== 32 /*' '*/) {
           const nextLineWordPosition = this._getWordAt([0, coords[1] + 1], false, false, true);
           if (nextLineWordPosition) {
             length += nextLineWordPosition.length;

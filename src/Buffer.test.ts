@@ -67,40 +67,40 @@ describe('Buffer', () => {
     describe('wrapped', () => {
       it('should return a range for the first row', () => {
         buffer.fillViewportRows();
-        (<any> buffer.lines.get(1)).isWrapped = true;
+        buffer.lines.get(1).isWrapped = true;
         assert.deepEqual(buffer.getWrappedRangeForLine(0), { first: 0, last: 1 });
       });
       it('should return a range for a middle row wrapping upwards', () => {
         buffer.fillViewportRows();
-        (<any> buffer.lines.get(12)).isWrapped = true;
+        buffer.lines.get(12).isWrapped = true;
         assert.deepEqual(buffer.getWrappedRangeForLine(12), { first: 11, last: 12 });
       });
       it('should return a range for a middle row wrapping downwards', () => {
         buffer.fillViewportRows();
-        (<any> buffer.lines.get(13)).isWrapped = true;
+        buffer.lines.get(13).isWrapped = true;
         assert.deepEqual(buffer.getWrappedRangeForLine(12), { first: 12, last: 13 });
       });
       it('should return a range for a middle row wrapping both ways', () => {
         buffer.fillViewportRows();
-        (<any> buffer.lines.get(11)).isWrapped = true;
-        (<any> buffer.lines.get(12)).isWrapped = true;
-        (<any> buffer.lines.get(13)).isWrapped = true;
-        (<any> buffer.lines.get(14)).isWrapped = true;
+        buffer.lines.get(11).isWrapped = true;
+        buffer.lines.get(12).isWrapped = true;
+        buffer.lines.get(13).isWrapped = true;
+        buffer.lines.get(14).isWrapped = true;
         assert.deepEqual(buffer.getWrappedRangeForLine(12), { first: 10, last: 14 });
       });
       it('should return a range for the last row', () => {
         buffer.fillViewportRows();
-        (<any> buffer.lines.get(23)).isWrapped = true;
+        buffer.lines.get(23).isWrapped = true;
         assert.deepEqual(buffer.getWrappedRangeForLine(buffer.lines.length - 1), { first: 22, last: 23 });
       });
       it('should return a range for a row that wraps upward to first row', () => {
         buffer.fillViewportRows();
-        (<any> buffer.lines.get(1)).isWrapped = true;
+        buffer.lines.get(1).isWrapped = true;
         assert.deepEqual(buffer.getWrappedRangeForLine(1), { first: 0, last: 1 });
       });
       it('should return a range for a row that wraps downward to last row', () => {
         buffer.fillViewportRows();
-        (<any> buffer.lines.get(buffer.lines.length - 1)).isWrapped = true;
+        buffer.lines.get(buffer.lines.length - 1).isWrapped = true;
         assert.deepEqual(buffer.getWrappedRangeForLine(buffer.lines.length - 2), { first: 22, last: 23 });
       });
     });

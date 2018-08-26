@@ -269,11 +269,11 @@ export class Buffer implements IBuffer {
     let first = y;
     let last = y;
     // Scan upwards for wrapped lines
-    while (first > 0 && (<any>this.lines.get(first)).isWrapped) {
+    while (first > 0 && this.lines.get(first).isWrapped) {
       first--;
     }
     // Scan downwards for wrapped lines
-    while (last + 1 < this.lines.length && (<any>this.lines.get(last + 1)).isWrapped) {
+    while (last + 1 < this.lines.length && this.lines.get(last + 1).isWrapped) {
       last++;
     }
     return { first, last };

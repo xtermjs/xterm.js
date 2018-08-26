@@ -34,7 +34,7 @@ export function winptyCompatInit(terminal: Terminal): void {
 
     if (lastChar[CHAR_DATA_CODE_INDEX] !== NULL_CELL_CODE) {
       const nextLine = addonTerminal._core.buffer.lines.get(addonTerminal._core.buffer.ybase + addonTerminal._core.buffer.y);
-      (<any>nextLine).isWrapped = true;
+      nextLine.isWrapped = true;
     }
   });
 }
