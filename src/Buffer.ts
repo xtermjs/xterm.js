@@ -85,7 +85,7 @@ export class Buffer implements IBuffer {
     if (this.lines.length === 0) {
       let i = this._terminal.rows;
       while (i--) {
-        this.lines.push(this._terminal.blankLine());
+        this.lines.push(TerminalLine.blankLine(this._terminal.cols, DEFAULT_ATTR));
       }
     }
   }
@@ -147,7 +147,7 @@ export class Buffer implements IBuffer {
             } else {
               // Add a blank line if there is no buffer left at the top to scroll to, or if there
               // are blank lines after the cursor
-              this.lines.push(this._terminal.blankLine(undefined, undefined, newCols));
+              this.lines.push(TerminalLine.blankLine(newCols, DEFAULT_ATTR));
             }
           }
         }

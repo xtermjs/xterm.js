@@ -5,7 +5,7 @@
 
 import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../renderer/Types';
 import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ICircularList, ILinkifier, IMouseHelper, ILinkMatcherOptions, XtermListener, CharacterJoinerHandler } from '../Types';
-import { Buffer, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from '../Buffer';
+import { Buffer } from '../Buffer';
 import * as Browser from '../shared/utils/Browser';
 import { ITheme, IDisposable, IMarker } from 'xterm';
 import { TerminalLine } from '../TerminalLine';
@@ -147,12 +147,7 @@ export class MockTerminal implements ITerminal {
     throw new Error('Method not implemented.');
   }
   blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): TerminalLine {
-    const line = new TerminalLine();
-    cols = cols || this.cols;
-    for (let i = 0; i < cols; i++) {
-      line.push([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
-    }
-    return line;
+    return TerminalLine.blankLine(this.cols, 0);
   }
   registerCharacterJoiner(handler: CharacterJoinerHandler): number { return 0; }
   deregisterCharacterJoiner(joinerId: number): void { }

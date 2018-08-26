@@ -5,7 +5,7 @@
 
 import { assert } from 'chai';
 import { ITerminal } from './Types';
-import { Buffer } from './Buffer';
+import { Buffer, DEFAULT_ATTR } from './Buffer';
 import { CircularList } from './common/CircularList';
 import { MockTerminal } from './utils/TestUtils.test';
 import { TerminalLine } from './TerminalLine';
@@ -37,7 +37,7 @@ describe('Buffer', () => {
 
   describe('fillViewportRows', () => {
     it('should fill the buffer with blank lines based on the size of the viewport', () => {
-      const blankLineChar = terminal.blankLine().get(0);
+      const blankLineChar = TerminalLine.blankLine(terminal.cols, DEFAULT_ATTR).get(0);
       buffer.fillViewportRows();
       assert.equal(buffer.lines.length, INIT_ROWS);
       for (let y = 0; y < INIT_ROWS; y++) {
@@ -180,7 +180,7 @@ describe('Buffer', () => {
           buffer.fillViewportRows();
           // Create 10 extra blank lines
           for (let i = 0; i < 10; i++) {
-            buffer.lines.push(terminal.blankLine());
+            buffer.lines.push(TerminalLine.blankLine(terminal.cols, DEFAULT_ATTR));
           }
           // Set cursor to the bottom of the buffer
           buffer.y = INIT_ROWS - 1;
@@ -200,7 +200,7 @@ describe('Buffer', () => {
           buffer.fillViewportRows();
           // Create 10 extra blank lines
           for (let i = 0; i < 10; i++) {
-            buffer.lines.push(terminal.blankLine());
+            buffer.lines.push(TerminalLine.blankLine(terminal.cols, DEFAULT_ATTR));
           }
           // Set cursor to the bottom of the buffer
           buffer.y = INIT_ROWS - 1;

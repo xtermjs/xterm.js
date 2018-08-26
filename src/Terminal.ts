@@ -1170,7 +1170,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * @param isWrapped Whether the new line is wrapped from the previous line.
    */
   public scroll(isWrapped?: boolean): void {
-    const newLine = this.blankLine(undefined, isWrapped);
+    const newLine = TerminalLine.blankLine(this.cols, DEFAULT_ATTR, isWrapped);
     const topRow = this.buffer.ybase + this.buffer.scrollTop;
     const bottomRow = this.buffer.ybase + this.buffer.scrollBottom;
 
@@ -1757,7 +1757,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.buffer.ybase = 0;
     this.buffer.y = 0;
     for (let i = 1; i < this.rows; i++) {
-      this.buffer.lines.push(this.blankLine());
+      this.buffer.lines.push(TerminalLine.blankLine(this.cols, DEFAULT_ATTR));
     }
     this.refresh(0, this.rows - 1);
     this.emit('scroll', this.buffer.ydisp);
@@ -1778,24 +1778,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * @param cols The number of columns in the terminal, if this is not
    * set, the terminal's current column count would be used.
    */
+  // FIXME: can this be removed after transition to TerminalLine.blankLine?
   public blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): TerminalLine {
-    const attr = cur ? this.eraseAttr() : DEFAULT_ATTR;
-
-    const ch: CharData = [attr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // width defaults to 1 halfwidth character
-    const line = new TerminalLine();
-
-    // TODO: It is not ideal that this is a property on an array, a buffer line
-    // class should be added that will hold this data and other useful functions.
-    if (isWrapped) {
-      line.isWrapped = isWrapped;
-    }
-
-    cols = cols || this.cols;
-    for (let i = 0; i < cols; i++) {
-      line.set(i, ch);
-    }
-
-    return line;
+    return TerminalLine.blankLine(cols || this.cols, cur ? this.eraseAttr() : DEFAULT_ATTR, isWrapped);
   }
 
   /**
@@ -1884,7 +1869,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // blankLine(true) is xterm/linux behavior
       const scrollRegionHeight = this.buffer.scrollBottom - this.buffer.scrollTop;
       this.buffer.lines.shiftElements(this.buffer.y + this.buffer.ybase, scrollRegionHeight, 1);
-      this.buffer.lines.set(this.buffer.y + this.buffer.ybase, this.blankLine(true));
+      this.buffer.lines.set(this.buffer.y + this.buffer.ybase, TerminalLine.blankLine(this.cols, this.eraseAttr()));
       this.updateRange(this.buffer.scrollTop);
       this.updateRange(this.buffer.scrollBottom);
     } else {

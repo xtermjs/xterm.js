@@ -3,8 +3,26 @@
  * @license MIT
  */
 import { CharData } from './Types';
+import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from './Buffer';
 
+/**
+ * Class representing a terminal line.
+ * Currently the class is a thin proxy to `CharData[]`.
+ * Once the storages are in place it will proxy access to
+ * typed array based line data.
+ * TODO: move typical line actions in `InputHandler` and `Terminal` here:
+ *    - create blank line
+ *    - insert cells
+ *    - remove cells
+ */
 export class TerminalLine {
+  static blankLine(cols: number, attr: number, isWrapped?: boolean): TerminalLine {
+    const ch: CharData = [attr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
+    const line = new TerminalLine();
+    if (isWrapped) line.isWrapped = true;
+    for (let i = 0; i < cols; i++) line.push(ch);
+    return line;
+  }
   private _data: CharData[];
   public isWrapped = false;
   length: number;
@@ -15,6 +33,7 @@ export class TerminalLine {
     // for debugging purpose:
     // throw Error when something tries to do number index access
     // TODO: remove when done with transition
+    /*
     for (let i = 0; i < 100; ++i) {
       Object.defineProperty(this, i.toString(), {
         get: () => {
@@ -25,6 +44,7 @@ export class TerminalLine {
         }
       });
     }
+    */
 
   }
   get(index: number): CharData {
