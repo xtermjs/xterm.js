@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017 The xterm.js authors. All rights reserved.
+ * Copyright (c) 2018 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 import { CharData } from './Types';
@@ -11,25 +11,28 @@ import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from './Buffer';
  * Once the storages are in place it will proxy access to
  * typed array based line data.
  * TODO: move typical line actions in `InputHandler` and `Terminal` here:
- *    - create blank line
+ *    - create blank line - done
  *    - insert cells
  *    - remove cells
+ *    - maybe Buffer.translateBufferLineToString
  */
 export class TerminalLine {
+  static defaultCell: CharData = [0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
   static blankLine(cols: number, attr: number, isWrapped?: boolean): TerminalLine {
     const ch: CharData = [attr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
-    const line = new TerminalLine();
-    if (isWrapped) line.isWrapped = true;
-    for (let i = 0; i < cols; i++) line.push(ch);
-    return line;
+    return new TerminalLine(cols, ch, isWrapped);
   }
   private _data: CharData[];
   public isWrapped = false;
   length: number;
-  constructor() {
+  constructor(cols?: number, ch?: CharData, isWrapped?: boolean) {
     this._data = [];
     this.length = this._data.length;
-
+    if (cols) {
+      if (!ch) ch = TerminalLine.defaultCell;
+      for (let i = 0; i < cols; i++) this.push(ch);  // Note: the ctor ch is not cloned
+    }
+    if (isWrapped) this.isWrapped = true;
     // for debugging purpose:
     // throw Error when something tries to do number index access
     // TODO: remove when done with transition
@@ -45,7 +48,6 @@ export class TerminalLine {
       });
     }
     */
-
   }
   get(index: number): CharData {
     return this._data[index];
@@ -74,5 +76,8 @@ export class TerminalLine {
   /** to be called when a line gets removed */
   release(): void {
     // TODO: unref here
+  }
+  toArray(): CharData[] {
+    return this._data;
   }
 }
