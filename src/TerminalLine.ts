@@ -12,9 +12,12 @@ import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from './Buffer';
  * typed array based line data.
  * TODO: move typical line actions in `InputHandler` and `Terminal` here:
  *    - create blank line - done
- *    - insert cells
- *    - remove cells
+ *    - insert cells - done
+ *    - remove cells - done
  *    - maybe Buffer.translateBufferLineToString
+ * 
+ * next steps towards typed array:
+ *    - replace all external push/pop/splice accesses
  */
 export class TerminalLine {
   static defaultCell: CharData = [0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
@@ -79,5 +82,23 @@ export class TerminalLine {
   }
   toArray(): CharData[] {
     return this._data;
+  }
+  /** insert n cells ch at pos, right cells are lost (stable length)  */
+  insertCells(pos: number, n: number, ch: CharData): void {
+    while (n--) {
+      this.splice(pos, 0, ch);
+      this.pop();
+    }
+  }
+  /** delete n cells at pos, right side is filled with fill (stable length) */
+  deleteCells(pos: number, n: number, fill: CharData): void {
+    while (n--) {
+      this.splice(pos, 1);
+      this.push(fill);
+    }
+  }
+  /** replace cells from pos to pos + n - 1 with fill */
+  replaceCells(start: number, end: number, fill: CharData): void {
+    while (start < end  && start < this.length) this.set(start++, fill);  // Note: fill is not cloned
   }
 }

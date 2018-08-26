@@ -1715,13 +1715,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   public eraseRight(x: number, y: number): void {
     const line = this.buffer.lines.get(this.buffer.ybase + y);
-    if (!line) {
-      return;
-    }
-    const ch: CharData = [this.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // xterm
-    for (; x < this.cols; x++) {
-      line.set(x, ch);
-    }
+    if (!line) return;
+    line.replaceCells(x, this.cols, [this.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
     this.updateRange(y);
   }
 
@@ -1732,14 +1727,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   public eraseLeft(x: number, y: number): void {
     const line = this.buffer.lines.get(this.buffer.ybase + y);
-    if (!line) {
-      return;
-    }
-    const ch: CharData = [this.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // xterm
-    x++;
-    while (x--) {
-      line.set(x, ch);
-    }
+    if (!line) return;
+    line.replaceCells(0, x + 1, [this.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
     this.updateRange(y);
   }
 

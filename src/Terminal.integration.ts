@@ -105,6 +105,7 @@ if (os.platform() !== 'win32') {
     // omit stack trace for escape sequence files
     Error.stackTraceLimit = 0;
     const files = glob.sync('**/escape_sequence_files/*.in', { cwd: path.join(__dirname, '..')});
+    // for (let i = 0; i < files.length; ++i) console.debug(i, files[i]);
     // only successful tests for now
     const skip = [
       10, 16, 17, 19, 32, 33, 34, 35, 36, 39,
