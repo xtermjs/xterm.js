@@ -30,7 +30,7 @@ export function winptyCompatInit(terminal: Terminal): void {
   // wrapped.
   addonTerminal.on('linefeed', () => {
     const line = addonTerminal._core.buffer.lines.get(addonTerminal._core.buffer.ybase + addonTerminal._core.buffer.y - 1);
-    const lastChar = line[addonTerminal.cols - 1];
+    const lastChar = line.get(addonTerminal.cols - 1);
 
     if (lastChar[CHAR_DATA_CODE_INDEX] !== NULL_CELL_CODE) {
       const nextLine = addonTerminal._core.buffer.lines.get(addonTerminal._core.buffer.ybase + addonTerminal._core.buffer.y);
