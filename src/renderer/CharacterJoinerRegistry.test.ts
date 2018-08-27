@@ -260,16 +260,13 @@ describe('CharacterJoinerRegistry', () => {
   });
 });
 
-interface IPartialLineData {
-  [0]: string;
-  [1]?: number;
-}
+type IPartialLineData = ([string] | [string, number]);
 
 function lineData(data: IPartialLineData[]): TerminalLine {
   const tline = new TerminalLine();
   for (let i = 0; i < data.length; ++i) {
     const line = data[i][0];
-    const attr = data[i][1] || 0;
+    const attr = <number>(data[i][1] || 0);
     line.split('').map(char => tline.push([attr, char, 1, char.charCodeAt(0)]));
   }
   return tline;

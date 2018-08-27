@@ -95,7 +95,7 @@ export class TerminalLine {
       this.push(fill);
     }
   }
-  
+
   /** replace cells from pos to pos + n - 1 with fill */
   public replaceCells(start: number, end: number, fill: CharData): void {
     while (start < end  && start < this.length) this.set(start++, fill);  // Note: fill is not cloned
