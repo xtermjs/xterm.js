@@ -155,6 +155,7 @@ export class MockTerminal implements ITerminal {
   }
   registerCharacterJoiner(handler: CharacterJoinerHandler): number { return 0; }
   deregisterCharacterJoiner(joinerId: number): void { }
+  updateCursorStyle(ev?: KeyboardEvent): void { }
 }
 
 export class MockCharMeasure implements ICharMeasure {

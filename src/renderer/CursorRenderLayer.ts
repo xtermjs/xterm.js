@@ -75,6 +75,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     if (this._cursorBlinkStateManager) {
       this._cursorBlinkStateManager.resume(terminal);
     } else {
+      terminal.updateCursorStyle();
       terminal.refresh(terminal.buffer.y, terminal.buffer.y);
     }
   }
