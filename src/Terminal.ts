@@ -503,10 +503,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   /**
    * Binds the desired focus behavior on a given terminal object.
    */
-  private _onTextAreaFocus(): void {
+  private _onTextAreaFocus(ev: KeyboardEvent): void {
     if (this.sendFocus) {
       this.handler(C0.ESC + '[I');
     }
+    this.updateCursorStyle(ev);
     this.element.classList.add('focus');
     this.showCursor();
     this.emit('focus');
@@ -679,7 +680,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.textarea.setAttribute('autocapitalize', 'off');
     this.textarea.setAttribute('spellcheck', 'false');
     this.textarea.tabIndex = 0;
-    this.register(addDisposableDomListener(this.textarea, 'focus', () => this._onTextAreaFocus()));
+    this.register(addDisposableDomListener(this.textarea, 'focus', (ev: KeyboardEvent) => this._onTextAreaFocus(ev)));
     this.register(addDisposableDomListener(this.textarea, 'blur', () => this._onTextAreaBlur()));
     this._helperContainer.appendChild(this.textarea);
 
