@@ -116,6 +116,7 @@ export interface ICompositionHelper {
 export interface IInputHandler {
   parse(data: string): void;
   print(data: string, start: number, end: number): void;
+  setWcwidthOptions(opts: {ambiguous?: 0 | 1 | 2, custom?: {[key: number]: 0 | 1 | 2}}): void;
 
   /** C0 BEL */ bell(): void;
   /** C0 LF */ lineFeed(): void;
@@ -511,4 +512,14 @@ export interface IEscapeSequenceParser extends IDisposable {
 
   setErrorHandler(callback: (state: IParsingState) => IParsingState): void;
   clearErrorHandler(): void;
+}
+
+/**
+ * Configure options for wcwidth
+ */
+export interface IwcwidthOptions {
+  nul: 0 | 1 | 2;
+  control: 0 | 1 | 2;
+  ambiguous?: 0 | 1 | 2;
+  custom?: {[key: number]: 0 | 1 | 2};
 }

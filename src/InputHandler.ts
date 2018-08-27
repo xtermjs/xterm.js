@@ -9,7 +9,7 @@ import { C0, C1 } from './common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from './core/data/Charsets';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from './Buffer';
 import { FLAGS } from './renderer/Types';
-import { wcwidth } from './CharWidth';
+import { wcwidthFactory, wcwidthDefault } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
 import { ICharset } from './core/Types';
 import { Disposable } from './common/Lifecycle';
@@ -114,6 +114,7 @@ class DECRQSS implements IDcsHandler {
  */
 export class InputHandler extends Disposable implements IInputHandler {
   private _surrogateHigh: string;
+  private _wcwidth: (ucs: number) => number;
 
   constructor(
       private _terminal: IInputHandlingTerminal,
@@ -288,6 +289,19 @@ export class InputHandler extends Disposable implements IInputHandler {
      */
     this._parser.setDcsHandler('$q', new DECRQSS(this._terminal));
     this._parser.setDcsHandler('+q', new RequestTerminfo(this._terminal));
+
+    /**
+     * init wcwidth with default version
+     */
+    this._wcwidth = wcwidthDefault;
+  }
+
+  public setWcwidthOptions(opts: {ambiguous?: 0 | 1 | 2, custom?: {[key: number]: 0 | 1 | 2}}): void {
+    if (opts.ambiguous === undefined && opts.custom === undefined) {
+      this._wcwidth = wcwidthDefault;
+    } else {
+      this._wcwidth = wcwidthFactory({nul: 0, control: 0, ambiguous: opts.ambiguous, custom: opts.custom});
+    }
   }
 
   public dispose(): void {
@@ -363,7 +377,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
       // calculate print space
       // expensive call, therefore we save width in line buffer
-      chWidth = wcwidth(code);
+      chWidth = this._wcwidth(code);
 
       // get charset replacement character
       if (charset) {
