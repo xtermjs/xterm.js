@@ -28,7 +28,8 @@ export class TerminalLine {
   }
   private _data: CharData[];
   public isWrapped = false;
-  length: number;
+  public length: number;
+
   constructor(cols?: number, ch?: CharData, isWrapped?: boolean) {
     this._data = [];
     this.length = this._data.length;
@@ -38,56 +39,65 @@ export class TerminalLine {
     }
     if (isWrapped) this.isWrapped = true;
   }
-  get(index: number): CharData {
+
+  public get(index: number): CharData {
     return this._data[index];
   }
-  set(index: number, data: CharData): void {
+
+  public set(index: number, data: CharData): void {
     this._data[index] = data;
     // TODO: unref old, ref new
   }
+
   // to be removed for typed array
-  pop(): CharData | undefined  {
+  public pop(): CharData | undefined  {
     // TODO: unref here, change CharData to [typeof Attributes, ...]
     const data = this._data.pop();
     this.length = this._data.length;
     return data;
   }
+
   // to be removed for typed array
-  push(data: CharData): void {
+  public push(data: CharData): void {
     this._data.push(data);
     this.length = this._data.length;
     // TODO: ref here
   }
+
   // to be removed for typed array
-  splice(start: number, deleteCount: number, ...items: CharData[]): CharData[] {
+  public splice(start: number, deleteCount: number, ...items: CharData[]): CharData[] {
     const removed = this._data.splice(start, deleteCount, ...items);
     this.length = this._data.length;
     // TODO: ref new, unref old
     return removed;
   }
+
   /** to be called when a line gets removed */
-  release(): void {
+  public release(): void {
     // TODO: unref here
   }
-  toArray(): CharData[] {
+  public toArray(): CharData[] {
     return this._data;
   }
+
   /** insert n cells ch at pos, right cells are lost (stable length)  */
-  insertCells(pos: number, n: number, ch: CharData): void {
+  public insertCells(pos: number, n: number, ch: CharData): void {
     while (n--) {
       this.splice(pos, 0, ch);
       this.pop();
     }
   }
+
   /** delete n cells at pos, right side is filled with fill (stable length) */
-  deleteCells(pos: number, n: number, fill: CharData): void {
+  public deleteCells(pos: number, n: number, fill: CharData): void {
     while (n--) {
       this.splice(pos, 1);
       this.push(fill);
     }
   }
+  
   /** replace cells from pos to pos + n - 1 with fill */
-  replaceCells(start: number, end: number, fill: CharData): void {
+  public replaceCells(start: number, end: number, fill: CharData): void {
     while (start < end  && start < this.length) this.set(start++, fill);  // Note: fill is not cloned
   }
 }
