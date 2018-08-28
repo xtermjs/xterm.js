@@ -274,13 +274,10 @@ describe('Buffer', () => {
   describe ('translateBufferLineToString', () => {
     it('should handle selecting a section of ascii text', () => {
       const line = new TerminalLine();
-      const data: [number, string, number, number][] = [
-        [ null, 'a', 1, 'a'.charCodeAt(0)],
-        [ null, 'b', 1, 'b'.charCodeAt(0)],
-        [ null, 'c', 1, 'c'.charCodeAt(0)],
-        [ null, 'd', 1, 'd'.charCodeAt(0)]
-      ];
-      for (let i = 0; i < data.length; ++i) line.push(data[i]);
+      line.push([ null, 'a', 1, 'a'.charCodeAt(0)]);
+      line.push([ null, 'b', 1, 'b'.charCodeAt(0)]);
+      line.push([ null, 'c', 1, 'c'.charCodeAt(0)]);
+      line.push([ null, 'd', 1, 'd'.charCodeAt(0)]);
       buffer.lines.set(0, line);
 
       const str = buffer.translateBufferLineToString(0, true, 0, 2);
@@ -289,12 +286,9 @@ describe('Buffer', () => {
 
     it('should handle a cut-off double width character by including it', () => {
       const line = new TerminalLine();
-      const data: [number, string, number, number][] = [
-        [ null, '語', 2, 35486 ],
-        [ null, '', 0, null],
-        [ null, 'a', 1, 'a'.charCodeAt(0)]
-      ];
-      for (let i = 0; i < data.length; ++i) line.push(data[i]);
+      line.push([ null, '語', 2, 35486 ]);
+      line.push([ null, '', 0, null]);
+      line.push([ null, 'a', 1, 'a'.charCodeAt(0)]);
       buffer.lines.set(0, line);
 
       const str1 = buffer.translateBufferLineToString(0, true, 0, 1);
@@ -303,12 +297,9 @@ describe('Buffer', () => {
 
     it('should handle a zero width character in the middle of the string by not including it', () => {
       const line = new TerminalLine();
-      const data: [number, string, number, number][] = [
-        [ null, '語', 2, '語'.charCodeAt(0) ],
-        [ null, '', 0, null],
-        [ null, 'a', 1, 'a'.charCodeAt(0)]
-      ];
-      for (let i = 0; i < data.length; ++i) line.push(data[i]);
+      line.push([ null, '語', 2, '語'.charCodeAt(0) ]);
+      line.push([ null, '', 0, null]);
+      line.push([ null, 'a', 1, 'a'.charCodeAt(0)]);
       buffer.lines.set(0, line);
 
       const str0 = buffer.translateBufferLineToString(0, true, 0, 1);
@@ -323,11 +314,8 @@ describe('Buffer', () => {
 
     it('should handle single width emojis', () => {
       const line = new TerminalLine();
-      const data: [number, string, number, number][] = [
-        [ null, '😁', 1, '😁'.charCodeAt(0) ],
-        [ null, 'a', 1, 'a'.charCodeAt(0)]
-      ];
-      for (let i = 0; i < data.length; ++i) line.push(data[i]);
+      line.push([ null, '😁', 1, '😁'.charCodeAt(0) ]);
+      line.push([ null, 'a', 1, 'a'.charCodeAt(0)]);
       buffer.lines.set(0, line);
 
       const str1 = buffer.translateBufferLineToString(0, true, 0, 1);
@@ -339,11 +327,8 @@ describe('Buffer', () => {
 
     it('should handle double width emojis', () => {
       const line = new TerminalLine();
-      let data: [number, string, number, number][] = [
-        [ null, '😁', 2, '😁'.charCodeAt(0) ],
-        [ null, '', 0, null]
-      ];
-      for (let i = 0; i < data.length; ++i) line.push(data[i]);
+      line.push([ null, '😁', 2, '😁'.charCodeAt(0) ]);
+      line.push([ null, '', 0, null]);
       buffer.lines.set(0, line);
 
       const str1 = buffer.translateBufferLineToString(0, true, 0, 1);
@@ -353,12 +338,9 @@ describe('Buffer', () => {
       assert.equal(str2, '😁');
 
       const line2 = new TerminalLine();
-      data = [
-        [ null, '😁', 2, '😁'.charCodeAt(0) ],
-        [ null, '', 0, null],
-        [ null, 'a', 1, 'a'.charCodeAt(0)]
-      ];
-      for (let i = 0; i < data.length; ++i) line2.push(data[i]);
+      line2.push([ null, '😁', 2, '😁'.charCodeAt(0) ]);
+      line2.push([ null, '', 0, null]);
+      line2.push([ null, 'a', 1, 'a'.charCodeAt(0)]);
       buffer.lines.set(0, line2);
 
       const str3 = buffer.translateBufferLineToString(0, true, 0, 3);
