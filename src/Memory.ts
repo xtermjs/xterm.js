@@ -109,25 +109,53 @@ abstract class Memory implements IMemory {
   }
   /** install typed array type if needed */
   registerAccess(acc: AccessType): void {
-    if (acc & AccessType.UINT8 && !this[AccessType.UINT8]) this[AccessType.UINT8] = new Uint8Array(this.data.buffer);
-    if (acc & AccessType.UINT16 && !this[AccessType.UINT16]) this[AccessType.UINT16] = new Uint16Array(this.data.buffer);
-    if (acc & AccessType.UINT32 && !this[AccessType.UINT32]) this[AccessType.UINT32] = this.data;
-    if (acc & AccessType.INT8 && !this[AccessType.INT8]) this[AccessType.INT8] = new Int8Array(this.data.buffer);
-    if (acc & AccessType.INT16 && !this[AccessType.INT16]) this[AccessType.INT16] = new Int16Array(this.data.buffer);
-    if (acc & AccessType.INT32 && !this[AccessType.INT32]) this[AccessType.INT32] = new Int32Array(this.data.buffer);
-    if (acc & AccessType.FLOAT32 && !this[AccessType.FLOAT32]) this[AccessType.FLOAT32] = new Float32Array(this.data.buffer);
+    if (acc & AccessType.UINT8 && !this[AccessType.UINT8]) {
+      this[AccessType.UINT8] = new Uint8Array(this.data.buffer);
+    }
+    if (acc & AccessType.UINT16 && !this[AccessType.UINT16]) {
+      this[AccessType.UINT16] = new Uint16Array(this.data.buffer);
+    }
+    if (acc & AccessType.UINT32 && !this[AccessType.UINT32]) {
+      this[AccessType.UINT32] = this.data;
+    }
+    if (acc & AccessType.INT8 && !this[AccessType.INT8]) {
+      this[AccessType.INT8] = new Int8Array(this.data.buffer);
+    }
+    if (acc & AccessType.INT16 && !this[AccessType.INT16]) {
+      this[AccessType.INT16] = new Int16Array(this.data.buffer);
+    }
+    if (acc & AccessType.INT32 && !this[AccessType.INT32]) {
+      this[AccessType.INT32] = new Int32Array(this.data.buffer);
+    }
+    if (acc & AccessType.FLOAT32 && !this[AccessType.FLOAT32]) {
+      this[AccessType.FLOAT32] = new Float32Array(this.data.buffer);
+    }
     this.registeredAccessTypes |= acc;
   }
   /** updates typed arrays, should be called after resize */
   updateAccess(): void {
     const acc = this.registeredAccessTypes;
-    if (acc & AccessType.UINT8) this[AccessType.UINT8] = new Uint8Array(this.data.buffer);
-    if (acc & AccessType.UINT16) this[AccessType.UINT16] = new Uint16Array(this.data.buffer);
-    if (acc & AccessType.UINT32) this[AccessType.UINT32] = this.data;
-    if (acc & AccessType.INT8) this[AccessType.INT8] = new Int8Array(this.data.buffer);
-    if (acc & AccessType.INT16) this[AccessType.INT16] = new Int16Array(this.data.buffer);
-    if (acc & AccessType.INT32) this[AccessType.INT32] = new Int32Array(this.data.buffer);
-    if (acc & AccessType.FLOAT32) this[AccessType.FLOAT32] = new Float32Array(this.data.buffer);
+    if (acc & AccessType.UINT8) {
+      this[AccessType.UINT8] = new Uint8Array(this.data.buffer);
+    }
+    if (acc & AccessType.UINT16) {
+      this[AccessType.UINT16] = new Uint16Array(this.data.buffer);
+    }
+    if (acc & AccessType.UINT32) {
+      this[AccessType.UINT32] = this.data;
+    }
+    if (acc & AccessType.INT8) {
+      this[AccessType.INT8] = new Int8Array(this.data.buffer);
+    }
+    if (acc & AccessType.INT16) {
+      this[AccessType.INT16] = new Int16Array(this.data.buffer);
+    }
+    if (acc & AccessType.INT32) {
+      this[AccessType.INT32] = new Int32Array(this.data.buffer);
+    }
+    if (acc & AccessType.FLOAT32) {
+      this[AccessType.FLOAT32] = new Float32Array(this.data.buffer);
+    }
   }
 }
 
@@ -156,15 +184,21 @@ export class StackMemory extends Memory {
     this.data = new Uint32Array((this.initialBytes + this.RESERVED_BYTES) >>> 2);
     this.clear();
   }
-  alloc(bytes: number): Address {
+  public alloc(bytes: number): Address {
     if (!bytes) return 0;
     const address = this.sp;
     this.sp += align4(bytes) >>> 2;
     if (this.data.length <= this.sp) {
       let newSize = this.data.length << 1;
-      while (newSize < this.sp) newSize <<= 1;
-      if (newSize > (this.maxBytes >>> 2)) newSize = this.maxBytes >>> 2;
-      if ((newSize - address) << 2 < bytes) throw new Error('out of memory');
+      while (newSize < this.sp) {
+        newSize <<= 1;
+      }
+      if (newSize > (this.maxBytes >>> 2)) {
+        newSize = this.maxBytes >>> 2;
+      }
+      if ((newSize - address) << 2 < bytes) {
+        throw new Error('out of memory');
+      }
       const data = new Uint32Array(newSize);
       data.set(this.data);
       this.data = data;
@@ -172,10 +206,10 @@ export class StackMemory extends Memory {
     }
     return address << 2;
   }
-  free(address: Address): void {
+  public free(address: Address): void {
     if (address && address >>> 2 < this.sp) this.sp = address >>> 2;
   }
-  clear(): void {
+  public clear(): void {
     this.sp = this.RESERVED_BYTES >>> 2;
   }
 }
@@ -209,7 +243,7 @@ export class PoolMemory extends Memory {
     this.data = new Uint32Array((this.initialBytes + this.RESERVED_BYTES) >>> 2);
     this.clear();
   }
-  alloc(bytes: number): Address {
+  public alloc(bytes: number): Address {
     if (!bytes) return 0;
     if (align4(bytes) > this.blockSize) throw new Error('blockSize exceeded');
     if (!this.head) {
@@ -229,13 +263,13 @@ export class PoolMemory extends Memory {
     this.head = this.data[address];
     return address << 2;
   }
-  free(address: Address): void {
+  public free(address: Address): void {
     if (address) {
       this.data[address >>> 2] = this.head;
       this.head = address >>> 2;
     }
   }
-  clear(): void {
+  public clear(): void {
     this.head = this.RESERVED_BYTES >>> 2;
     for (let i = this.head; i < this.data.length; i += this.entrySize) this.data[i] = i + this.entrySize;
     this.data[this.data.length - this.entrySize] = 0;
@@ -308,39 +342,39 @@ export class SeglistMemory extends Memory {
     this.heads = [];
     this.clear();
   }
-  getFromHead(v: number): number {
+  public getFromHead(v: number): number {
     return this._toHeadIndex(v - 1);
   }
-  setToHead(v: number): number {
+  public setToHead(v: number): number {
     return (v >= 256) ? 7 : this._toHeadIndex(v) - 1;
   }
-  isTaken(block: Address): number {
+  public isTaken(block: Address): number {
     if (!block) return 1;
     return this.data[block + SL.SIZE] & 1;
   }
-  realNext(block: Address): Address {
+  public realNext(block: Address): Address {
     const next = block + (this.data[block + SL.SIZE] & ~1) + SL.HEADER_SIZE;
     return (next < this.data.length) ? next : 0;
   }
-  realPrev(block: Address): Address {
+  public realPrev(block: Address): Address {
     const prev = block - (this.data[block + SL.PREV_SIZE] & ~1) - SL.HEADER_SIZE;
     return (prev > 3) ? prev : 0;
   }
-  removeFromList(block: Address, hIdx: number): void {
+  public removeFromList(block: Address, hIdx: number): void {
     const prev = this.data[block + SL.PREV_LINKED];
     const next = this.data[block + SL.NEXT_LINKED];
     if (next) this.data[next + SL.PREV_LINKED] = prev;
     if (prev) this.data[prev + SL.NEXT_LINKED] = next;
     if (this.heads[hIdx] === block) this.heads[hIdx] = next;
   }
-  insertToList(block: Address, hIdx: number): void {
+  public insertToList(block: Address, hIdx: number): void {
     const next = this.heads[hIdx];
     this.data[block + SL.PREV_LINKED] = 0;
     this.data[block + SL.NEXT_LINKED] = next;
     if (next) this.data[next + SL.PREV_LINKED] = block;
     this.heads[hIdx] = block;
   }
-  splitBlock(block: Address, size: number): void {
+  public splitBlock(block: Address, size: number): void {
     const newBlockSize = this.data[block + SL.SIZE] - size - SL.HEADER_SIZE;
     const next = this.realNext(block);
     if (next) this.data[next + SL.PREV_SIZE] = newBlockSize;
@@ -351,7 +385,7 @@ export class SeglistMemory extends Memory {
     this.data[block + SL.SIZE] = size;
     if (block === this.last) this.last = newBlock;
   }
-  leftCoalesce(prev: Address, size: number): void {
+  public leftCoalesce(prev: Address, size: number): void {
     const oldhIdx = this.setToHead(this.data[prev + SL.SIZE]);
     this.data[prev + SL.SIZE] += size;
     const newhIdx = this.setToHead(this.data[prev + SL.SIZE]);
@@ -360,7 +394,7 @@ export class SeglistMemory extends Memory {
       this.insertToList(prev, newhIdx);
     }
   }
-  alloc(bytes: number): Address {
+  public alloc(bytes: number): Address {
     if (!bytes) return 0;
     const size = align8(bytes) >>> 2;
     let block = 0;
@@ -406,7 +440,7 @@ export class SeglistMemory extends Memory {
     this.data[block + SL.SIZE] |= 1;
     return (block + SL.DATA) << 2;
   }
-  free(address: Address): void {
+  public free(address: Address): void {
     if (!address) return;
     const block = (address >>> 2) - SL.DATA;
     this.data[block + SL.SIZE] &= ~1;
@@ -429,7 +463,7 @@ export class SeglistMemory extends Memory {
       this.insertToList(block, this.setToHead(this.data[block + SL.SIZE]));
     }
   }
-  clear(): void {
+  public clear(): void {
     this.heads = [];
     for (let i = 0; i < this.SEGLIST_SIZE; ++i) this.heads.push(0);
     const start = this.RESERVED_BYTES >>> 2;
@@ -529,7 +563,6 @@ export namespace ctypes {
     getBytes(): Uint8Array;
     setBytes(value: Uint8Array): void;
     address: Address;
-    // _accessAddress: Address;
   }
 
   // pointer interface
@@ -567,8 +600,8 @@ export namespace ctypes {
     static fromAddress<T extends CType>(accessor: Memory, address: Address): T {
       return new (this as ICTypeConstructor<T>)(accessor, null, address);
     }
-    accessType: AccessType;
-    address: Address;
+    public accessType: AccessType;
+    public address: Address;
     protected _accessAddress: Address;
     protected _bytearray: Uint8Array;
     constructor(public memory: IMemory, value?: any | null, address?: Address) {
@@ -577,13 +610,13 @@ export namespace ctypes {
       memory.registerAccess(this.accessType);
       this.setValue(value);
     }
-    setAddress(address: Address): void {
+    public setAddress(address: Address): void {
       this.address = address;
       this._accessAddress = (this.accessType & AccessBits.BIT32)
         ? this.address >> 2
         : (this.accessType & AccessBits.BIT16) ? this.address >> 1 : this.address;
     }
-    getBytes(): Uint32Array {
+    public getBytes(): Uint32Array {
       if (this._bytearray) return this._bytearray;
       this.memory.registerAccess(AccessType.UINT8);
       this._bytearray = this.memory[AccessType.UINT8].subarray(
@@ -591,7 +624,7 @@ export namespace ctypes {
         this.address + (this.constructor as typeof CType).bytes);
       return this._bytearray;
     }
-    setBytes(value: Uint8Array): void {
+    public setBytes(value: Uint8Array): void {
       this.memory.registerAccess(AccessType.UINT8);
       this.memory[AccessType.UINT8].set(value, this.address);
     }
@@ -604,10 +637,10 @@ export namespace ctypes {
    * Numerical types.
    */
   export abstract class NumberType extends CType implements ICType {
-    getValue(): number {
+    public getValue(): number {
       return this.memory[this.accessType][this._accessAddress];
     }
-    setValue(value: number | NumberType): void {
+    public setValue(value: number | NumberType): void {
       if (value === null || value === undefined) return;
       if (value instanceof NumberType) {
         this.memory[this.accessType][this._accessAddress] = value.memory[value.accessType][value._accessAddress];
@@ -615,15 +648,33 @@ export namespace ctypes {
         this.memory[this.accessType][this._accessAddress] = value;
       }
     }
-    get value(): number { return this.memory[this.accessType][this._accessAddress]; }
-    set value(value: number) { this.memory[this.accessType][this._accessAddress] = value; }
-    inc(): void { this.memory[this.accessType][this._accessAddress]++; }
-    dec(): void { this.memory[this.accessType][this._accessAddress]--; }
-    iadd(value: NumberType): void { this.memory[this.accessType][this._accessAddress] += value.memory[value.accessType][value._accessAddress]; }
-    isub(value: NumberType): void { this.memory[this.accessType][this._accessAddress] -= value.memory[value.accessType][value._accessAddress]; }
-    imul(value: NumberType): void { this.memory[this.accessType][this._accessAddress] *= value.memory[value.accessType][value._accessAddress]; }
-    idiv(value: NumberType): void { this.memory[this.accessType][this._accessAddress] /= value.memory[value.accessType][value._accessAddress]; }
-    imod(value: NumberType): void { this.memory[this.accessType][this._accessAddress] %= value.memory[value.accessType][value._accessAddress]; }
+    get value(): number {
+      return this.memory[this.accessType][this._accessAddress];
+    }
+    set value(value: number) {
+      this.memory[this.accessType][this._accessAddress] = value;
+    }
+    public inc(): void {
+      this.memory[this.accessType][this._accessAddress]++;
+    }
+    public dec(): void {
+      this.memory[this.accessType][this._accessAddress]--;
+    }
+    public iadd(value: NumberType): void {
+      this.memory[this.accessType][this._accessAddress] += value.memory[value.accessType][value._accessAddress];
+    }
+    public isub(value: NumberType): void {
+      this.memory[this.accessType][this._accessAddress] -= value.memory[value.accessType][value._accessAddress];
+    }
+    public imul(value: NumberType): void {
+      this.memory[this.accessType][this._accessAddress] *= value.memory[value.accessType][value._accessAddress];
+    }
+    public idiv(value: NumberType): void {
+      this.memory[this.accessType][this._accessAddress] /= value.memory[value.accessType][value._accessAddress];
+    }
+    public imod(value: NumberType): void {
+      this.memory[this.accessType][this._accessAddress] %= value.memory[value.accessType][value._accessAddress];
+    }
   }
   export class Uint8 extends NumberType {
     static typename = 'Uint8';
@@ -665,10 +716,10 @@ export namespace ctypes {
    * Character types.
    */
   export class CharType extends CType implements ICType {
-    getValue(): string {
+    public getValue(): string {
       return String.fromCharCode(this.memory[this.accessType][this._accessAddress]);
     }
-    setValue(value: string | CharType): void {
+    public setValue(value: string | CharType): void {
       if (value === null || value === undefined) return;
       if (value instanceof CharType) {
         this.memory[this.accessType][this._accessAddress] = value.memory[value.accessType][value._accessAddress];
@@ -696,13 +747,13 @@ export namespace ctypes {
 
   /**
    * Pointer types.
-   * A call `Pointer<ctype>(ctype)` creates the `ctype*` pointer constructor.
+   * A call `pointer<ctype>(ctype)` creates the `ctype*` pointer constructor.
    * Casting is done by `.cast<new_ctype>(new_ctype)`.
    * Pointers follow the `IPointer<ctype>` interface to get proper type checks.
    * Double pointers can be created by several `Pointer` invocations.
    * Example:
-   *   let P_Char = Pointer<Char>(Char);              // ctor for pointer type char*
-   *   let PP_Char = Pointer<IPointer<Char>>(P_Char); // ctor for pointer type char**
+   *   let P_Char = pointer<Char>(Char);              // ctor for pointer type char*
+   *   let PP_Char = pointer<IPointer<Char>>(P_Char); // ctor for pointer type char**
    *   let c = new Char(stack, '!');
    *   let p = new PChar(stack, c.address);           // creates pointer to c
    *   let pp = new PP_Char(stack, p.address);        // double pointer to c
@@ -716,20 +767,22 @@ export namespace ctypes {
     static bytes = 4;
     static accessType = AccessType.UINT32;
     static type: null = null;
-    deref(): never {
+    public deref(): never {
       throw new Error('trying to deref void pointer');
     }
-    cast<T extends CType>(type: ICTypeConstructor<T>): IPointer<T> {
-      if (type === null) return new VoidPointer(this.memory, this.value, this.address);
+    public cast<T extends CType>(type: ICTypeConstructor<T>): IPointer<T> {
+      if (type === null) {
+        return this;
+      }
       return new (pointer<T>(type))(this.memory, this.value, this.address);
     }
-    inc(): never {
+    public inc(): never {
       throw new Error('arithmetic on void pointer');
     }
-    dec(): never {
+    public dec(): never {
       throw new Error('arithmetic on void pointer');
     }
-    add(value: number): never {
+    public add(value: number): never {
       throw new Error('arithmetic on void pointer');
     }
   }
@@ -739,42 +792,52 @@ export namespace ctypes {
 
   // Pointer type factory function.
   export function pointer<T extends CType>(type: ICTypeConstructor<T> | null): IVoidPointerConstructor | IPointerConstructor<T> {
-    if (!type === null) return VoidPointer;
-    if (registeredPointerTypes[type.typename]) return registeredPointerTypes[type.typename];
+    if (!type === null) {
+      return VoidPointer;
+    }
+    if (registeredPointerTypes[type.typename]) {
+      return registeredPointerTypes[type.typename];
+    }
 
     class TypedPointer extends NumberType implements IPointer<T> {
       static typename = type.typename + '*';
       static type = type;
       static bytes = 4;
       static accessType = AccessType.UINT32;
-      deref(): T {
-        if (!this.value) throw new Error('trying to deref NULL pointer');
+      public deref(): T {
+        if (!this.value) {
+          throw new Error('trying to deref NULL pointer');
+        }
         return new type(this.memory, null, this.value);
       }
-      cast<U extends CType>(type: ICTypeConstructor<U> | null): IPointer<U> {
-        if (type === null) return new VoidPointer(this.memory, this.value, this.address);
+      public cast<U extends CType>(type: ICTypeConstructor<U> | null): IPointer<U> {
+        if (type === null) {
+          return new VoidPointer(this.memory, this.value, this.address);
+        }
         return new (pointer<U>(type))(this.memory, this.value, this.address);
       }
-      inc(): void {
+      public inc(): void {
         this.value += type.bytes;
       }
-      dec(): void {
+      public dec(): void {
         this.value -= type.bytes;
       }
-      add(value: number): void {
+      public add(value: number): void {
         this.value += value * type.bytes;
       }
     }
 
-    if (!registeredPointerTypes[type.typename]) registeredPointerTypes[type.typename] = TypedPointer;
+    if (!registeredPointerTypes[type.typename]) {
+      registeredPointerTypes[type.typename] = TypedPointer;
+    }
     return registeredPointerTypes[type.typename];
   }
 
   /**
    * Array types.
-   * A call `Array<ctype>(ctype, 10)` creates the `ctype[10]` array constructor.
+   * A call `array<ctype>(ctype, 10)` creates the `ctype[10]` array constructor.
    * Example usage:
-   *   let Uint8_10 = Array<Uint8>(Uint8, 10);
+   *   let Uint8_10 = array<Uint8>(Uint8, 10);
    *   let array = new Uint8_10(stack, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
    */
   // we need this array base class to get something in the prototype chain
@@ -794,7 +857,9 @@ export namespace ctypes {
   // Array type factory function.
   export function array<T extends CType>(type: ICTypeConstructor<T>, length: number): ICArrayConstructor<T> {
     const typename = `${type.typename}[${length}]`;
-    if (registeredArrayTypes[typename]) return registeredArrayTypes[typename];
+    if (registeredArrayTypes[typename]) {
+      return registeredArrayTypes[typename];
+    }
 
     class CArray extends CArrayBase {
       static typename = typename;
@@ -802,19 +867,19 @@ export namespace ctypes {
       static bytes = type.bytes * length;
       static accessType = type.accessType;
       static size = length;
-      length: number;
+      public length: number;
       constructor(memory: Memory, value?: any, address?: Address) {
         super(memory, null, address);
         this.length = length;
         this.setValue(value);
       }
-      get value(): any[] | CArrayBase | any {
+      public get value(): any[] | CArrayBase | any {
         return this.getValue();
       }
-      set value(value: any[] | CArrayBase | any) {
+      public set value(value: any[] | CArrayBase | any) {
         this.setValue(value);
       }
-      getValue(): any[] {
+      public getValue(): any[] {
         const res = [];
         const obj = new type(this.memory, null, this.address);
         let p = this.address;
@@ -824,7 +889,7 @@ export namespace ctypes {
         }
         return res;
       }
-      setValue(value: any): void {
+      public setValue(value: any): void {
         if (value === null || value === undefined) return;
         const corrThis = (this.accessType & AccessBits.BIT32) ? 2 : (this.accessType & AccessBits.BIT16) ? 1 : 0;
         const end = (this.length < value.length) ? this.length : value.length;
@@ -849,7 +914,9 @@ export namespace ctypes {
             const pThis = this.address >> corrThis;
             const pValue = value.address >> corrThis;
             const slots = (type.bytes * end) >> corrThis;
-            for (let i = 0; i < slots; ++i) this.memory[access][pThis + i] = value.memory[access][pValue + i];
+            for (let i = 0; i < slots; ++i) {
+              this.memory[access][pThis + i] = value.memory[access][pValue + i];
+            }
             return;
           }
         }
@@ -872,16 +939,18 @@ export namespace ctypes {
           obj.setAddress(p);
           obj.setValue(v);
           p += type.bytes;
-          if (p >= pend) break;
+          if (p >= pend) {
+            break;
+          }
         }
       }
-      get(index: number): any {
+      public get(index: number): any {
         return new type(this.memory, null, this.address + type.bytes * (index % this.length)).getValue();
       }
-      set(index: number, value: any): void {
+      public set(index: number, value: any): void {
         new type(this.memory, null, this.address + type.bytes * (index % this.length)).setValue(value);
       }
-      reverse(): void {
+      public reverse(): void {
         const corr = (this.accessType & AccessBits.BIT32) ? 2 : (this.accessType & AccessBits.BIT16) ? 1 : 0;
         const slotLength = type.bytes >> corr;
         for (let i = 0; i < this.length >> 1; ++i) {
@@ -896,7 +965,9 @@ export namespace ctypes {
       }
     }
 
-    if (!registeredArrayTypes[typename]) registeredArrayTypes[typename] = CArray;
+    if (!registeredArrayTypes[typename]) {
+      registeredArrayTypes[typename] = CArray;
+    }
     return registeredArrayTypes[typename];
   }
 
@@ -934,36 +1005,49 @@ export namespace ctypes {
    *   byte usage [X            X            XX            XXXX          XXXX        ] = 12 bytes
    */
   export abstract class Structure extends CType implements IStructure {
-    fields: { [index: string]: ICType };
+    public fields: { [index: string]: ICType };
     static fields: [string, ICTypeConstructor<any>][] = [];
     private static _accessors: AccessType = 0;
     private static _aligments: { [index: string]: number[] } | null = null;
     private static _bytes: number;
     static get accessType(): any {
-      if (this._accessors) return this._accessors;
-      for (let i = 0; i < this.fields.length; ++i) this._accessors |= this.fields[i][1].accessType;
+      if (!this._accessors) {
+        for (let i = 0; i < this.fields.length; ++i) {
+          this._accessors |= this.fields[i][1].accessType;
+        }
+      }
       return this._accessors;
     }
     static get alignments(): { [index: string]: number[] } {
-      if (this._aligments) this._aligments;
-      this._aligments = {};
-      let p = 0;
-      for (let i = 0; i < this.fields.length; ++i) {
-        const byteSize = this.fields[i][1].bytes;
-        const acc = this.fields[i][1].accessType;
-        if (acc & AccessBits.BIT32 && p & 3) p = ((p >> 2) + 1) << 2; // TODO: use align function
-        else if (acc & AccessBits.BIT16 && p & 1) p++;
-        this._aligments[this.fields[i][0]] = [p, byteSize];
-        p += byteSize;
+      if (!this._aligments) {
+        this._aligments = {};
+        let p = 0;
+        for (let i = 0; i < this.fields.length; ++i) {
+          const byteSize = this.fields[i][1].bytes;
+          const acc = this.fields[i][1].accessType;
+          if (acc & AccessBits.BIT32 && p & 3) {
+            p = ((p >> 2) + 1) << 2; // TODO: use align function
+          }
+          else if (acc & AccessBits.BIT16 && p & 1) {
+            p++;
+          }
+          this._aligments[this.fields[i][0]] = [p, byteSize];
+          p += byteSize;
+        }
       }
       return this._aligments;
     }
     static get bytes(): number {
-      if (this._bytes) this._bytes;
-      const lastMemberAlign = this.alignments[this.fields[this.fields.length - 1][0]];
-      this._bytes = lastMemberAlign[0] + lastMemberAlign[1];
-      if (this.accessType & AccessBits.BIT32 && this._bytes & 3) this._bytes = ((this._bytes >> 2) + 1) << 2;
-      else if (this.accessType & AccessBits.BIT16 && this._bytes & 1) this._bytes++;
+      if (!this._bytes) {
+        const lastMemberAlign = this.alignments[this.fields[this.fields.length - 1][0]];
+        this._bytes = lastMemberAlign[0] + lastMemberAlign[1];
+        if (this.accessType & AccessBits.BIT32 && this._bytes & 3) {
+          this._bytes = ((this._bytes >> 2) + 1) << 2;
+        }
+        else if (this.accessType & AccessBits.BIT16 && this._bytes & 1) {
+          this._bytes++;
+        }
+      }
       return this._bytes;
     }
     constructor(memory: IMemory, value?: any, address?: Address) {
@@ -976,19 +1060,23 @@ export namespace ctypes {
       }
       this.setValue(value);
     }
-    get value(): any {
+    public get value(): any {
       return this.getValue();
     }
-    set value(value: any) {
+    public set value(value: any) {
       this.setValue(value);
     }
-    getValue(): any {
+    public getValue(): any {
       const res: { [index: string]: any } = {};
-      for (const el in this.fields) res[el] = this.fields[el].getValue();
+      for (const el in this.fields) {
+        res[el] = this.fields[el].getValue();
+      }
       return res;
     }
-    setValue(value: any): void {
-      if (value === null || value === undefined) return;
+    public setValue(value: any): void {
+      if (value === null || value === undefined) {
+        return;
+      }
       if (value && this.constructor === value.constructor) {
         const corr = (this.accessType & AccessBits.BIT32) ? 2 : (this.accessType & AccessBits.BIT16) ? 1 : 0;
         const access = (this.accessType & AccessBits.BIT32)
@@ -997,18 +1085,28 @@ export namespace ctypes {
         const pThis = this.address >> corr;
         const pValue = value._address >> corr;
         const slots = (this.constructor as IStructureConstructor<any>).bytes >> corr;
-        for (let i = 0; i < slots; ++i) this.memory[access][pThis + i] = value.memory[access][pValue + i];
+        for (let i = 0; i < slots; ++i) {
+          this.memory[access][pThis + i] = value.memory[access][pValue + i];
+        }
         return;
       }
-      if (value instanceof Structure) value = value.fields;
-      for (const el in this.fields) if (value[el] !== undefined) this.fields[el].setValue(value[el]);
+      if (value instanceof Structure) {
+        value = value.fields;
+      }
+      for (const el in this.fields) {
+        if (value[el] !== undefined) {
+          this.fields[el].setValue(value[el]);
+        }
+      }
     }
-    setAddress(address: Address): void {
+    public setAddress(address: Address): void {
       super.setAddress(address);
       if (!this.fields) return;
       const fields = (this.constructor as IStructureConstructor<any>).fields;
       const alignments = (this.constructor as IStructureConstructor<any>).alignments;
-      for (let i = 0; i < fields.length; ++i) this.fields[fields[i][0]].setAddress(this.address + alignments[fields[i][0]][0]);
+      for (let i = 0; i < fields.length; ++i) {
+        this.fields[fields[i][0]].setAddress(this.address + alignments[fields[i][0]][0]);
+      }
     }
   }
 
