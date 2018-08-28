@@ -749,20 +749,26 @@ export class InputHandler extends Disposable implements IInputHandler {
         j = this._terminal.buffer.y;
         this._terminal.updateRange(j);
         this._eraseInBufferLine(j++, this._terminal.buffer.x, this._terminal.cols);
-        for (; j < this._terminal.rows; j++) this._eraseInBufferLine(j, 0, this._terminal.cols);
+        for (; j < this._terminal.rows; j++) {
+          this._eraseInBufferLine(j, 0, this._terminal.cols);
+        }
         this._terminal.updateRange(j);
         break;
       case 1:
         j = this._terminal.buffer.y;
         this._terminal.updateRange(j);
         this._eraseInBufferLine(j, 0, this._terminal.buffer.x + 1);
-        while (j--) this._eraseInBufferLine(j, 0, this._terminal.cols);
+        while (j--) {
+          this._eraseInBufferLine(j, 0, this._terminal.cols);
+        }
         this._terminal.updateRange(0);
         break;
       case 2:
         j = this._terminal.rows;
         this._terminal.updateRange(j - 1);
-        while (j--) this._eraseInBufferLine(j, 0, this._terminal.cols);
+        while (j--) {
+          this._eraseInBufferLine(j, 0, this._terminal.cols);
+        }
         this._terminal.updateRange(0);
         break;
       case 3:

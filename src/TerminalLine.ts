@@ -34,10 +34,16 @@ export class TerminalLine {
     this._data = [];
     this.length = this._data.length;
     if (cols) {
-      if (!ch) ch = TerminalLine.defaultCell;
-      for (let i = 0; i < cols; i++) this.push(ch);  // Note: the ctor ch is not cloned
+      if (!ch) {
+        ch = TerminalLine.defaultCell;
+      }
+      for (let i = 0; i < cols; i++) {
+        this.push(ch);  // Note: the ctor ch is not cloned
+      }
     }
-    if (isWrapped) this.isWrapped = true;
+    if (isWrapped) {
+      this.isWrapped = true;
+    }
   }
 
   public get(index: number): CharData {
@@ -98,6 +104,8 @@ export class TerminalLine {
 
   /** replace cells from pos to pos + n - 1 with fill */
   public replaceCells(start: number, end: number, fill: CharData): void {
-    while (start < end  && start < this.length) this.set(start++, fill);  // Note: fill is not cloned
+    while (start < end  && start < this.length) {
+      this.set(start++, fill);  // Note: fill is not cloned
+    }
   }
 }
