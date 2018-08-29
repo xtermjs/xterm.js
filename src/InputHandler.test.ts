@@ -102,7 +102,7 @@ describe('InputHandler', () => {
       return result;
     }
 
-    it('insertChars', function() {
+    it('insertChars', function(): void {
       const term = new Terminal();
       const inputHandler = new InputHandler(term);
 
@@ -110,10 +110,10 @@ describe('InputHandler', () => {
       function insertChars(params: number[]): void {
         let param = params[0];
         if (param < 1) param = 1;
-    
+
         // make buffer local for faster access
         const buffer = term.buffer;
-    
+
         const row = buffer.y + buffer.ybase;
         let j = buffer.x;
         const ch: CharData = [term.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // xterm
@@ -124,57 +124,57 @@ describe('InputHandler', () => {
       }
 
       // insert some data in first and second line
-      inputHandler.parse(Array(term.cols - 9).join("a"));
+      inputHandler.parse(Array(term.cols - 9).join('a'));
       inputHandler.parse('1234567890');
-      inputHandler.parse(Array(term.cols - 9).join("a"));
+      inputHandler.parse(Array(term.cols - 9).join('a'));
       inputHandler.parse('1234567890');
       const line1: TerminalLine = term.buffer.lines.get(0); // line for old variant
       const line2: TerminalLine = term.buffer.lines.get(1); // line for new variant
-      expect(lineContent(line1)).equals(Array(term.cols - 9).join("a") + '1234567890');
-      expect(lineContent(line2)).equals(Array(term.cols - 9).join("a") + '1234567890');
-      
+      expect(lineContent(line1)).equals(Array(term.cols - 9).join('a') + '1234567890');
+      expect(lineContent(line2)).equals(Array(term.cols - 9).join('a') + '1234567890');
+
       // insert one char from params = [0]
       term.buffer.y = 0;
       term.buffer.x = 70;
       insertChars([0]);
-      expect(lineContent(line1)).equals(Array(term.cols - 9).join("a") + ' 123456789');
+      expect(lineContent(line1)).equals(Array(term.cols - 9).join('a') + ' 123456789');
       term.buffer.y = 1;
       term.buffer.x = 70;
       inputHandler.insertChars([0]);
-      expect(lineContent(line2)).equals(Array(term.cols - 9).join("a") + ' 123456789');
+      expect(lineContent(line2)).equals(Array(term.cols - 9).join('a') + ' 123456789');
       expect(lineContent(line2)).equals(lineContent(line1));
 
       // insert one char from params = [1]
       term.buffer.y = 0;
       term.buffer.x = 70;
       insertChars([1]);
-      expect(lineContent(line1)).equals(Array(term.cols - 9).join("a") + '  12345678');
+      expect(lineContent(line1)).equals(Array(term.cols - 9).join('a') + '  12345678');
       term.buffer.y = 1;
       term.buffer.x = 70;
       inputHandler.insertChars([1]);
-      expect(lineContent(line2)).equals(Array(term.cols - 9).join("a") + '  12345678');
+      expect(lineContent(line2)).equals(Array(term.cols - 9).join('a') + '  12345678');
       expect(lineContent(line2)).equals(lineContent(line1));
 
       // insert two chars from params = [2]
       term.buffer.y = 0;
       term.buffer.x = 70;
       insertChars([2]);
-      expect(lineContent(line1)).equals(Array(term.cols - 9).join("a") + '    123456');
+      expect(lineContent(line1)).equals(Array(term.cols - 9).join('a') + '    123456');
       term.buffer.y = 1;
       term.buffer.x = 70;
       inputHandler.insertChars([2]);
-      expect(lineContent(line2)).equals(Array(term.cols - 9).join("a") + '    123456');
+      expect(lineContent(line2)).equals(Array(term.cols - 9).join('a') + '    123456');
       expect(lineContent(line2)).equals(lineContent(line1));
 
       // insert 10 chars from params = [10]
       term.buffer.y = 0;
       term.buffer.x = 70;
       insertChars([10]);
-      expect(lineContent(line1)).equals(Array(term.cols - 9).join("a") + '          ');
+      expect(lineContent(line1)).equals(Array(term.cols - 9).join('a') + '          ');
       term.buffer.y = 1;
       term.buffer.x = 70;
       inputHandler.insertChars([10]);
-      expect(lineContent(line2)).equals(Array(term.cols - 9).join("a") + '          ');
+      expect(lineContent(line2)).equals(Array(term.cols - 9).join('a') + '          ');
       expect(lineContent(line2)).equals(lineContent(line1));
     });
     it('deleteChars', function(): void {
@@ -187,10 +187,10 @@ describe('InputHandler', () => {
         if (param < 1) {
           param = 1;
         }
-    
+
         // make buffer local for faster access
         const buffer = term.buffer;
-    
+
         const row = buffer.y + buffer.ybase;
         const ch: CharData = [term.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // xterm
         while (param--) {
@@ -201,57 +201,57 @@ describe('InputHandler', () => {
       }
 
       // insert some data in first and second line
-      inputHandler.parse(Array(term.cols - 9).join("a"));
+      inputHandler.parse(Array(term.cols - 9).join('a'));
       inputHandler.parse('1234567890');
-      inputHandler.parse(Array(term.cols - 9).join("a"));
+      inputHandler.parse(Array(term.cols - 9).join('a'));
       inputHandler.parse('1234567890');
       const line1: TerminalLine = term.buffer.lines.get(0); // line for old variant
       const line2: TerminalLine = term.buffer.lines.get(1); // line for new variant
-      expect(lineContent(line1)).equals(Array(term.cols - 9).join("a") + '1234567890');
-      expect(lineContent(line2)).equals(Array(term.cols - 9).join("a") + '1234567890');
+      expect(lineContent(line1)).equals(Array(term.cols - 9).join('a') + '1234567890');
+      expect(lineContent(line2)).equals(Array(term.cols - 9).join('a') + '1234567890');
 
       // delete one char from params = [0]
       term.buffer.y = 0;
       term.buffer.x = 70;
       deleteChars([0]);
-      expect(lineContent(line1)).equals(Array(term.cols - 9).join("a") + '234567890 ');
+      expect(lineContent(line1)).equals(Array(term.cols - 9).join('a') + '234567890 ');
       term.buffer.y = 1;
       term.buffer.x = 70;
       inputHandler.deleteChars([0]);
-      expect(lineContent(line2)).equals(Array(term.cols - 9).join("a") + '234567890 ');
+      expect(lineContent(line2)).equals(Array(term.cols - 9).join('a') + '234567890 ');
       expect(lineContent(line2)).equals(lineContent(line1));
 
       // insert one char from params = [1]
       term.buffer.y = 0;
       term.buffer.x = 70;
       deleteChars([1]);
-      expect(lineContent(line1)).equals(Array(term.cols - 9).join("a") + '34567890  ');
+      expect(lineContent(line1)).equals(Array(term.cols - 9).join('a') + '34567890  ');
       term.buffer.y = 1;
       term.buffer.x = 70;
       inputHandler.deleteChars([1]);
-      expect(lineContent(line2)).equals(Array(term.cols - 9).join("a") + '34567890  ');
+      expect(lineContent(line2)).equals(Array(term.cols - 9).join('a') + '34567890  ');
       expect(lineContent(line2)).equals(lineContent(line1));
 
       // insert two chars from params = [2]
       term.buffer.y = 0;
       term.buffer.x = 70;
       deleteChars([2]);
-      expect(lineContent(line1)).equals(Array(term.cols - 9).join("a") + '567890    ');
+      expect(lineContent(line1)).equals(Array(term.cols - 9).join('a') + '567890    ');
       term.buffer.y = 1;
       term.buffer.x = 70;
       inputHandler.deleteChars([2]);
-      expect(lineContent(line2)).equals(Array(term.cols - 9).join("a") + '567890    ');
+      expect(lineContent(line2)).equals(Array(term.cols - 9).join('a') + '567890    ');
       expect(lineContent(line2)).equals(lineContent(line1));
 
       // insert 10 chars from params = [10]
       term.buffer.y = 0;
       term.buffer.x = 70;
       deleteChars([10]);
-      expect(lineContent(line1)).equals(Array(term.cols - 9).join("a") + '          ');
+      expect(lineContent(line1)).equals(Array(term.cols - 9).join('a') + '          ');
       term.buffer.y = 1;
       term.buffer.x = 70;
       inputHandler.deleteChars([10]);
-      expect(lineContent(line2)).equals(Array(term.cols - 9).join("a") + '          ');
+      expect(lineContent(line2)).equals(Array(term.cols - 9).join('a') + '          ');
       expect(lineContent(line2)).equals(lineContent(line1));
     });
     it('eraseInLine', function(): void {
@@ -273,42 +273,42 @@ describe('InputHandler', () => {
       }
 
       // fill 6 lines to test 3 different states
-      inputHandler.parse(Array(term.cols + 1).join("a"));
-      inputHandler.parse(Array(term.cols + 1).join("a"));
-      inputHandler.parse(Array(term.cols + 1).join("a"));
-      inputHandler.parse(Array(term.cols + 1).join("a"));
-      inputHandler.parse(Array(term.cols + 1).join("a"));
-      inputHandler.parse(Array(term.cols + 1).join("a"));
+      inputHandler.parse(Array(term.cols + 1).join('a'));
+      inputHandler.parse(Array(term.cols + 1).join('a'));
+      inputHandler.parse(Array(term.cols + 1).join('a'));
+      inputHandler.parse(Array(term.cols + 1).join('a'));
+      inputHandler.parse(Array(term.cols + 1).join('a'));
+      inputHandler.parse(Array(term.cols + 1).join('a'));
 
       // params[0] - right erase
       term.buffer.y = 0;
       term.buffer.x = 70;
       eraseInLine([0]);
-      expect(lineContent(term.buffer.lines.get(0))).equals(Array(71).join("a") + '          ');
+      expect(lineContent(term.buffer.lines.get(0))).equals(Array(71).join('a') + '          ');
       term.buffer.y = 1;
       term.buffer.x = 70;
       inputHandler.eraseInLine([0]);
-      expect(lineContent(term.buffer.lines.get(1))).equals(Array(71).join("a") + '          ');
+      expect(lineContent(term.buffer.lines.get(1))).equals(Array(71).join('a') + '          ');
 
       // params[1] - left erase
       term.buffer.y = 2;
       term.buffer.x = 70;
       eraseInLine([1]);
-      expect(lineContent(term.buffer.lines.get(2))).equals(Array(71).join(" ") + ' aaaaaaaaa');
+      expect(lineContent(term.buffer.lines.get(2))).equals(Array(71).join(' ') + ' aaaaaaaaa');
       term.buffer.y = 3;
       term.buffer.x = 70;
       inputHandler.eraseInLine([1]);
-      expect(lineContent(term.buffer.lines.get(3))).equals(Array(71).join(" ") + ' aaaaaaaaa');
+      expect(lineContent(term.buffer.lines.get(3))).equals(Array(71).join(' ') + ' aaaaaaaaa');
 
       // params[1] - left erase
       term.buffer.y = 4;
       term.buffer.x = 70;
       eraseInLine([2]);
-      expect(lineContent(term.buffer.lines.get(4))).equals(Array(term.cols + 1).join(" "));
+      expect(lineContent(term.buffer.lines.get(4))).equals(Array(term.cols + 1).join(' '));
       term.buffer.y = 5;
       term.buffer.x = 70;
       inputHandler.eraseInLine([2]);
-      expect(lineContent(term.buffer.lines.get(5))).equals(Array(term.cols + 1).join(" "));
+      expect(lineContent(term.buffer.lines.get(5))).equals(Array(term.cols + 1).join(' '));
 
     });
     it('eraseInDisplay', function(): void {
@@ -353,10 +353,10 @@ describe('InputHandler', () => {
       }
 
       // fill display with a's
-      for (let i = 0; i < termOld.rows; ++i) inputHandlerOld.parse(Array(termOld.cols + 1).join("a"));
-      for (let i = 0; i < termNew.rows; ++i) inputHandlerNew.parse(Array(termOld.cols + 1).join("a"));
+      for (let i = 0; i < termOld.rows; ++i) inputHandlerOld.parse(Array(termOld.cols + 1).join('a'));
+      for (let i = 0; i < termNew.rows; ++i) inputHandlerNew.parse(Array(termOld.cols + 1).join('a'));
       const data = [];
-      for (let i = 0; i < termOld.rows; ++i) data.push(Array(termOld.cols + 1).join("a"));
+      for (let i = 0; i < termOld.rows; ++i) data.push(Array(termOld.cols + 1).join('a'));
       expect(termContent(termOld)).eql(data);
       expect(termContent(termOld)).eql(termContent(termNew));
 
@@ -374,8 +374,8 @@ describe('InputHandler', () => {
       termOld.buffer.x = 0;
       termNew.buffer.y = 0;
       termNew.buffer.x = 0;
-      for (let i = 0; i < termOld.rows; ++i) inputHandlerOld.parse(Array(termOld.cols + 1).join("a"));
-      for (let i = 0; i < termNew.rows; ++i) inputHandlerNew.parse(Array(termOld.cols + 1).join("a"));
+      for (let i = 0; i < termOld.rows; ++i) inputHandlerOld.parse(Array(termOld.cols + 1).join('a'));
+      for (let i = 0; i < termNew.rows; ++i) inputHandlerNew.parse(Array(termOld.cols + 1).join('a'));
 
       // params [1] - left and above
       termOld.buffer.y = 5;
@@ -391,8 +391,8 @@ describe('InputHandler', () => {
       termOld.buffer.x = 0;
       termNew.buffer.y = 0;
       termNew.buffer.x = 0;
-      for (let i = 0; i < termOld.rows; ++i) inputHandlerOld.parse(Array(termOld.cols + 1).join("a"));
-      for (let i = 0; i < termNew.rows; ++i) inputHandlerNew.parse(Array(termOld.cols + 1).join("a"));
+      for (let i = 0; i < termOld.rows; ++i) inputHandlerOld.parse(Array(termOld.cols + 1).join('a'));
+      for (let i = 0; i < termNew.rows; ++i) inputHandlerNew.parse(Array(termOld.cols + 1).join('a'));
 
       // params [2] - whole screen
       termOld.buffer.y = 5;
