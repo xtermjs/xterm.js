@@ -169,6 +169,7 @@ computational environment for Jupyter, supporting interactive data science and s
 - [**cPanel & WHM**](https://cpanel.com): The hosting platform of choice.
 - [**Nutanix**](https://github.com/nutanix): Nutanix Enterprise Cloud uses xterm in the webssh functionality within Nutanix Calm, and is also looking to move our old noserial (termjs) functionality to xterm.js
 - [**SSH Web Client**](https://github.com/roke22/PHP-SSH2-Web-Client): SSH Web Client with PHP.
+- [**Shellvault**](https://www.shellvault.io): The cloud-based SSH terminal you can access from anywhere.
 
 [And much more...](https://github.com/xtermjs/xterm.js/network/dependents)
 

@@ -94,7 +94,7 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
   ): boolean {
     const glyphKey = getGlyphCacheKey(glyph);
     const cacheValue = this._cacheMap.get(glyphKey);
-    if (cacheValue != null) {
+    if (cacheValue !== null && cacheValue !== undefined) {
       this._drawFromCache(ctx, cacheValue, x, y);
       return true;
     } else if (this._canCache(glyph) && this._drawToCacheCount < FRAME_CACHE_DRAW_LIMIT) {

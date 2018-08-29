@@ -11,7 +11,7 @@ export class MouseHelper {
 
   public static getCoordsRelativeToElement(event: {pageX: number, pageY: number}, element: HTMLElement): [number, number] {
     // Ignore browsers that don't support MouseEvent.pageX
-    if (event.pageX == null) {
+    if (event.pageX === null || event.pageX === undefined) {
       return null;
     }
 

@@ -111,6 +111,7 @@
     "prefer-const-enum": [
       true
     ],
-    "prefer-const": true
+    "prefer-const": true,
+    "triple-equals": true
   }
 }
