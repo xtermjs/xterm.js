@@ -5,8 +5,6 @@
 import { CharData, IBufferLine } from './Types';
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from './Buffer';
 
-export const DEFAULT_CELL: CharData = [0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
-
 /**
  * Class representing a terminal line.
  */
@@ -24,7 +22,7 @@ export class BufferLine implements IBufferLine {
     this.length = this._data.length;
     if (cols) {
       if (!ch) {
-        ch = [DEFAULT_CELL[0], DEFAULT_CELL[1], DEFAULT_CELL[2], DEFAULT_CELL[3]];
+        ch = [0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
       }
       for (let i = 0; i < cols; i++) {
         this.push(ch);  // Note: the ctor ch is not cloned (resembles old behavior)

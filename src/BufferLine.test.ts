@@ -3,7 +3,7 @@
  * @license MIT
  */
 import * as chai from 'chai';
-import { BufferLine, DEFAULT_CELL } from './BufferLine';
+import { BufferLine } from './BufferLine';
 import { CharData, IBufferLine } from './Types';
 import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, CHAR_DATA_ATTR_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX } from './Buffer';
 
@@ -22,11 +22,11 @@ describe('BufferLine', function(): void {
     chai.expect(line.isWrapped).equals(false);
     line = new TestBufferLine(10);
     chai.expect(line.length).equals(10);
-    chai.expect(line.pop()).eql(DEFAULT_CELL);
+    chai.expect(line.pop()).eql([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
     chai.expect(line.isWrapped).equals(false);
     line = new TestBufferLine(10, null, true);
     chai.expect(line.length).equals(10);
-    chai.expect(line.pop()).eql(DEFAULT_CELL);
+    chai.expect(line.pop()).eql([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
     chai.expect(line.isWrapped).equals(true);
     line = new TestBufferLine(10, [123, 'a', 456, 789], true);
     chai.expect(line.length).equals(10);
@@ -93,26 +93,5 @@ describe('BufferLine', function(): void {
     for (let i = 0; i < data.length; ++i) line.push(data[i]);
     line.replaceCells(2, 4, [6, 'f', 0, 0]);
     chai.expect(line.toArray()).eql([[1, 'a', 0, 0], [2, 'b', 0, 0], [6, 'f', 0, 0], [6, 'f', 0, 0], [5, 'e', 0, 0]]);
-  });
-  it('DEFAULT_CELL is not affected by cell writes', function(): void {
-    // get default values:
-    const attr = DEFAULT_CELL[CHAR_DATA_ATTR_INDEX];
-    const char = DEFAULT_CELL[CHAR_DATA_CHAR_INDEX];
-    const width = DEFAULT_CELL[CHAR_DATA_WIDTH_INDEX];
-    const code = DEFAULT_CELL[CHAR_DATA_CODE_INDEX];
-    // create a line with DEFAULT_CELL
-    const line = new TestBufferLine(3);
-    // alter first cell only
-    const first = line.get(0);
-    // this is bad - never edit a cell after a get!!!! (needs to be fixed in InputHandler.print)
-    // Note this is currently granted in the codebase by the way
-    // a blankLine was/is created - all cells point to the same
-    // CharData object
-    // we test here, that this unique blankLine object is not
-    // pointing to the DEFAULT_CELL object
-    first[CHAR_DATA_ATTR_INDEX] = 123456789;
-    chai.expect(line.toArray()).eql([[123456789, char, width, code], [123456789, char, width, code], [123456789, char, width, code]]);
-    chai.expect(DEFAULT_CELL[CHAR_DATA_ATTR_INDEX]).equals(attr);
-    chai.expect(DEFAULT_CELL[CHAR_DATA_ATTR_INDEX]).not.equals(123456789);
   });
 });
