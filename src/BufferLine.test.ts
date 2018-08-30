@@ -94,4 +94,25 @@ describe('BufferLine', function(): void {
     line.replaceCells(2, 4, [6, 'f', 0, 0]);
     chai.expect(line.toArray()).eql([[1, 'a', 0, 0], [2, 'b', 0, 0], [6, 'f', 0, 0], [6, 'f', 0, 0], [5, 'e', 0, 0]]);
   });
+  it('DEFAULT_CELL is not affected by cell writes', function(): void {
+    // get default values:
+    const attr = DEFAULT_CELL[CHAR_DATA_ATTR_INDEX];
+    const char = DEFAULT_CELL[CHAR_DATA_CHAR_INDEX];
+    const width = DEFAULT_CELL[CHAR_DATA_WIDTH_INDEX];
+    const code = DEFAULT_CELL[CHAR_DATA_CODE_INDEX];
+    // create a line with DEFAULT_CELL
+    const line = new TestBufferLine(3);
+    // alter first cell only
+    const first = line.get(0);
+    // this is bad - never edit a cell after a get!!!! (needs to be fixed in InputHandler.print)
+    // Note this is currently granted in the codebase by the way
+    // a blankLine was/is created - all cells point to the same
+    // CharData object
+    // we test here, that this unique blankLine object is not
+    // pointing to the DEFAULT_CELL object
+    first[CHAR_DATA_ATTR_INDEX] = 123456789;
+    chai.expect(line.toArray()).eql([[123456789, char, width, code], [123456789, char, width, code], [123456789, char, width, code]]);
+    chai.expect(DEFAULT_CELL[CHAR_DATA_ATTR_INDEX]).equals(attr);
+    chai.expect(DEFAULT_CELL[CHAR_DATA_ATTR_INDEX]).not.equals(123456789);
+  });
 });

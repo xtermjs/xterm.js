@@ -24,10 +24,10 @@ export class BufferLine implements IBufferLine {
     this.length = this._data.length;
     if (cols) {
       if (!ch) {
-        ch = DEFAULT_CELL;
+        ch = [DEFAULT_CELL[0], DEFAULT_CELL[1], DEFAULT_CELL[2], DEFAULT_CELL[3]];
       }
       for (let i = 0; i < cols; i++) {
-        this.push(ch);  // Note: the ctor ch is not cloned
+        this.push(ch);  // Note: the ctor ch is not cloned (resembles old behavior)
       }
     }
     if (isWrapped) {
@@ -79,7 +79,7 @@ export class BufferLine implements IBufferLine {
   /** replace cells from pos to pos + n - 1 with fill */
   public replaceCells(start: number, end: number, fill: CharData): void {
     while (start < end  && start < this.length) {
-      this.set(start++, fill);  // Note: fill is not cloned
+      this.set(start++, fill);  // Note: fill is not cloned (resembles old behavior)
     }
   }
 }
