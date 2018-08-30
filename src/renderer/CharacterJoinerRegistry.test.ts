@@ -5,7 +5,8 @@ import { CircularList } from '../common/CircularList';
 
 import { ICharacterJoinerRegistry } from './Types';
 import { CharacterJoinerRegistry } from './CharacterJoinerRegistry';
-import { TerminalLine } from '../TerminalLine';
+import { BufferLine } from '../TerminalLine';
+import { IBufferLine } from '../Types';
 
 describe('CharacterJoinerRegistry', () => {
   let registry: ICharacterJoinerRegistry;
@@ -14,13 +15,13 @@ describe('CharacterJoinerRegistry', () => {
     const terminal = new MockTerminal();
     terminal.cols = 16;
     terminal.buffer = new MockBuffer();
-    const lines = new CircularList<TerminalLine>(7);
+    const lines = new CircularList<IBufferLine>(7);
     lines.set(0, lineData([['a -> b -> c -> d']]));
     lines.set(1, lineData([['a -> b => c -> d']]));
     lines.set(2, lineData([['a -> b -', 0xFFFFFFFF], ['> c -> d', 0]]));
 
     lines.set(3, lineData([['no joined ranges']]));
-    lines.set(4, new TerminalLine());
+    lines.set(4, new BufferLine());
     lines.set(5, lineData([['a', 0x11111111], [' -> b -> c -> '], ['d', 0x22222222]]));
     const line6 = lineData([['wi']]);
     line6.push([0, '￥', 2, '￥'.charCodeAt(0)]);
@@ -262,8 +263,8 @@ describe('CharacterJoinerRegistry', () => {
 
 type IPartialLineData = ([string] | [string, number]);
 
-function lineData(data: IPartialLineData[]): TerminalLine {
-  const tline = new TerminalLine();
+function lineData(data: IPartialLineData[]): IBufferLine {
+  const tline = new BufferLine();
   for (let i = 0; i < data.length; ++i) {
     const line = data[i][0];
     const attr = <number>(data[i][1] || 0);

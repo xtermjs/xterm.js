@@ -8,7 +8,7 @@ import { ITerminal } from './Types';
 import { Buffer, DEFAULT_ATTR } from './Buffer';
 import { CircularList } from './common/CircularList';
 import { MockTerminal } from './utils/TestUtils.test';
-import { TerminalLine } from './TerminalLine';
+import { BufferLine } from './TerminalLine';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
@@ -37,7 +37,7 @@ describe('Buffer', () => {
 
   describe('fillViewportRows', () => {
     it('should fill the buffer with blank lines based on the size of the viewport', () => {
-      const blankLineChar = TerminalLine.blankLine(terminal.cols, DEFAULT_ATTR).get(0);
+      const blankLineChar = BufferLine.blankLine(terminal.cols, DEFAULT_ATTR).get(0);
       buffer.fillViewportRows();
       assert.equal(buffer.lines.length, INIT_ROWS);
       for (let y = 0; y < INIT_ROWS; y++) {
@@ -180,7 +180,7 @@ describe('Buffer', () => {
           buffer.fillViewportRows();
           // Create 10 extra blank lines
           for (let i = 0; i < 10; i++) {
-            buffer.lines.push(TerminalLine.blankLine(terminal.cols, DEFAULT_ATTR));
+            buffer.lines.push(BufferLine.blankLine(terminal.cols, DEFAULT_ATTR));
           }
           // Set cursor to the bottom of the buffer
           buffer.y = INIT_ROWS - 1;
@@ -200,7 +200,7 @@ describe('Buffer', () => {
           buffer.fillViewportRows();
           // Create 10 extra blank lines
           for (let i = 0; i < 10; i++) {
-            buffer.lines.push(TerminalLine.blankLine(terminal.cols, DEFAULT_ATTR));
+            buffer.lines.push(BufferLine.blankLine(terminal.cols, DEFAULT_ATTR));
           }
           // Set cursor to the bottom of the buffer
           buffer.y = INIT_ROWS - 1;
@@ -273,7 +273,7 @@ describe('Buffer', () => {
 
   describe ('translateBufferLineToString', () => {
     it('should handle selecting a section of ascii text', () => {
-      const line = new TerminalLine();
+      const line = new BufferLine();
       line.push([ null, 'a', 1, 'a'.charCodeAt(0)]);
       line.push([ null, 'b', 1, 'b'.charCodeAt(0)]);
       line.push([ null, 'c', 1, 'c'.charCodeAt(0)]);
@@ -285,7 +285,7 @@ describe('Buffer', () => {
     });
 
     it('should handle a cut-off double width character by including it', () => {
-      const line = new TerminalLine();
+      const line = new BufferLine();
       line.push([ null, '語', 2, 35486 ]);
       line.push([ null, '', 0, null]);
       line.push([ null, 'a', 1, 'a'.charCodeAt(0)]);
@@ -296,7 +296,7 @@ describe('Buffer', () => {
     });
 
     it('should handle a zero width character in the middle of the string by not including it', () => {
-      const line = new TerminalLine();
+      const line = new BufferLine();
       line.push([ null, '語', 2, '語'.charCodeAt(0) ]);
       line.push([ null, '', 0, null]);
       line.push([ null, 'a', 1, 'a'.charCodeAt(0)]);
@@ -313,7 +313,7 @@ describe('Buffer', () => {
     });
 
     it('should handle single width emojis', () => {
-      const line = new TerminalLine();
+      const line = new BufferLine();
       line.push([ null, '😁', 1, '😁'.charCodeAt(0) ]);
       line.push([ null, 'a', 1, 'a'.charCodeAt(0)]);
       buffer.lines.set(0, line);
@@ -326,7 +326,7 @@ describe('Buffer', () => {
     });
 
     it('should handle double width emojis', () => {
-      const line = new TerminalLine();
+      const line = new BufferLine();
       line.push([ null, '😁', 2, '😁'.charCodeAt(0) ]);
       line.push([ null, '', 0, null]);
       buffer.lines.set(0, line);
@@ -337,7 +337,7 @@ describe('Buffer', () => {
       const str2 = buffer.translateBufferLineToString(0, true, 0, 2);
       assert.equal(str2, '😁');
 
-      const line2 = new TerminalLine();
+      const line2 = new BufferLine();
       line2.push([ null, '😁', 2, '😁'.charCodeAt(0) ]);
       line2.push([ null, '', 0, null]);
       line2.push([ null, 'a', 1, 'a'.charCodeAt(0)]);

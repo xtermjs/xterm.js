@@ -4,10 +4,10 @@
  */
 
 import { CircularList } from './common/CircularList';
-import { CharData, ITerminal, IBuffer } from './Types';
+import { CharData, ITerminal, IBuffer, IBufferLine } from './Types';
 import { EventEmitter } from './EventEmitter';
 import { IMarker } from 'xterm';
-import { TerminalLine } from './TerminalLine';
+import { BufferLine } from './TerminalLine';
 
 export const DEFAULT_ATTR = (0 << 18) | (257 << 9) | (256 << 0);
 export const CHAR_DATA_ATTR_INDEX = 0;
@@ -28,7 +28,7 @@ export const NULL_CELL_CODE = 32;
  *   - scroll position
  */
 export class Buffer implements IBuffer {
-  public lines: CircularList<TerminalLine>;
+  public lines: CircularList<IBufferLine>;
   public ydisp: number;
   public ybase: number;
   public y: number;
@@ -85,7 +85,7 @@ export class Buffer implements IBuffer {
     if (this.lines.length === 0) {
       let i = this._terminal.rows;
       while (i--) {
-        this.lines.push(TerminalLine.blankLine(this._terminal.cols, DEFAULT_ATTR));
+        this.lines.push(BufferLine.blankLine(this._terminal.cols, DEFAULT_ATTR));
       }
     }
   }
@@ -98,7 +98,7 @@ export class Buffer implements IBuffer {
     this.ybase = 0;
     this.y = 0;
     this.x = 0;
-    this.lines = new CircularList<TerminalLine>(this._getCorrectBufferLength(this._terminal.rows));
+    this.lines = new CircularList<IBufferLine>(this._getCorrectBufferLength(this._terminal.rows));
     this.scrollTop = 0;
     this.scrollBottom = this._terminal.rows - 1;
     this.setupTabStops();
@@ -147,7 +147,7 @@ export class Buffer implements IBuffer {
             } else {
               // Add a blank line if there is no buffer left at the top to scroll to, or if there
               // are blank lines after the cursor
-              this.lines.push(TerminalLine.blankLine(newCols, DEFAULT_ATTR));
+              this.lines.push(BufferLine.blankLine(newCols, DEFAULT_ATTR));
             }
           }
         }

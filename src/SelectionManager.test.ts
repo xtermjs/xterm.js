@@ -8,9 +8,9 @@ import { CharMeasure } from './ui/CharMeasure';
 import { SelectionManager, SelectionMode } from './SelectionManager';
 import { SelectionModel } from './SelectionModel';
 import { BufferSet } from './BufferSet';
-import { ITerminal, IBuffer } from './Types';
+import { ITerminal, IBuffer, IBufferLine } from './Types';
 import { MockTerminal } from './utils/TestUtils.test';
-import { TerminalLine } from './TerminalLine';
+import { BufferLine } from './TerminalLine';
 
 class TestMockTerminal extends MockTerminal {
   emit(event: string, data: any): void {}
@@ -53,16 +53,16 @@ describe('SelectionManager', () => {
     selectionManager = new TestSelectionManager(terminal, null);
   });
 
-  function stringToRow(text: string): TerminalLine {
-    const result = new TerminalLine();
+  function stringToRow(text: string): IBufferLine {
+    const result = new BufferLine();
     for (let i = 0; i < text.length; i++) {
       result.push([0, text.charAt(i), 1, text.charCodeAt(i)]);
     }
     return result;
   }
 
-  function stringArrayToRow(chars: string[]): TerminalLine {
-    const line = new TerminalLine();
+  function stringArrayToRow(chars: string[]): IBufferLine {
+    const line = new BufferLine();
     chars.map(c => line.push([0, c, 1, c.charCodeAt(0)]));
     return line;
   }
@@ -100,7 +100,7 @@ describe('SelectionManager', () => {
     });
     it('should expand selection for wide characters', () => {
       // Wide characters use a special format
-      const line = new TerminalLine();
+      const line = new BufferLine();
       const data: [number, string, number, number][] = [
         [null, '中', 2, '中'.charCodeAt(0)],
         [null, '', 0, null],

@@ -7,8 +7,8 @@ import { assert, expect } from 'chai';
 import { InputHandler } from './InputHandler';
 import { MockInputHandlingTerminal } from './utils/TestUtils.test';
 import { NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, CHAR_DATA_CHAR_INDEX } from './Buffer';
-import { TerminalLine } from './TerminalLine';
 import { Terminal } from './Terminal';
+import { IBufferLine } from './Types';
 
 describe('InputHandler', () => {
   describe('save and restore cursor', () => {
@@ -90,7 +90,7 @@ describe('InputHandler', () => {
   describe('regression tests', function(): void {
     type CharData = [number, string, number, number];
 
-    function lineContent(line: TerminalLine): string {
+    function lineContent(line: IBufferLine): string {
       let content = '';
       for (let i = 0; i < line.length; ++i) content += line.get(i)[CHAR_DATA_CHAR_INDEX];
       return content;
@@ -128,8 +128,8 @@ describe('InputHandler', () => {
       inputHandler.parse('1234567890');
       inputHandler.parse(Array(term.cols - 9).join('a'));
       inputHandler.parse('1234567890');
-      const line1: TerminalLine = term.buffer.lines.get(0); // line for old variant
-      const line2: TerminalLine = term.buffer.lines.get(1); // line for new variant
+      const line1: IBufferLine = term.buffer.lines.get(0); // line for old variant
+      const line2: IBufferLine = term.buffer.lines.get(1); // line for new variant
       expect(lineContent(line1)).equals(Array(term.cols - 9).join('a') + '1234567890');
       expect(lineContent(line2)).equals(Array(term.cols - 9).join('a') + '1234567890');
 
@@ -205,8 +205,8 @@ describe('InputHandler', () => {
       inputHandler.parse('1234567890');
       inputHandler.parse(Array(term.cols - 9).join('a'));
       inputHandler.parse('1234567890');
-      const line1: TerminalLine = term.buffer.lines.get(0); // line for old variant
-      const line2: TerminalLine = term.buffer.lines.get(1); // line for new variant
+      const line1: IBufferLine = term.buffer.lines.get(0); // line for old variant
+      const line2: IBufferLine = term.buffer.lines.get(1); // line for new variant
       expect(lineContent(line1)).equals(Array(term.cols - 9).join('a') + '1234567890');
       expect(lineContent(line2)).equals(Array(term.cols - 9).join('a') + '1234567890');
 

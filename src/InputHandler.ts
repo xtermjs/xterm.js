@@ -13,7 +13,7 @@ import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
 import { ICharset } from './core/Types';
 import { Disposable } from './common/Lifecycle';
-import { TerminalLine } from './TerminalLine';
+import { BufferLine } from './TerminalLine';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -832,7 +832,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       // test: echo -e '\e[44m\e[1L\e[0m'
       // blankLine(true) - xterm/linux behavior
       buffer.lines.splice(scrollBottomAbsolute - 1, 1);
-      buffer.lines.splice(row, 0, TerminalLine.blankLine(this._terminal.cols, this._terminal.eraseAttr()));
+      buffer.lines.splice(row, 0, BufferLine.blankLine(this._terminal.cols, this._terminal.eraseAttr()));
     }
 
     // this.maxRange();
@@ -862,7 +862,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       // test: echo -e '\e[44m\e[1M\e[0m'
       // blankLine(true) - xterm/linux behavior
       buffer.lines.splice(row, 1);
-      buffer.lines.splice(j, 0, TerminalLine.blankLine(this._terminal.cols, this._terminal.eraseAttr()));
+      buffer.lines.splice(j, 0, BufferLine.blankLine(this._terminal.cols, this._terminal.eraseAttr()));
     }
 
     // this.maxRange();
@@ -894,7 +894,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     while (param--) {
       buffer.lines.splice(buffer.ybase + buffer.scrollTop, 1);
-      buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 0, TerminalLine.blankLine(this._terminal.cols, DEFAULT_ATTR));
+      buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 0, BufferLine.blankLine(this._terminal.cols, DEFAULT_ATTR));
     }
     // this.maxRange();
     this._terminal.updateRange(buffer.scrollTop);
@@ -913,7 +913,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
       while (param--) {
         buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 1);
-        buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 0, TerminalLine.blankLine(this._terminal.cols, DEFAULT_ATTR));
+        buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 0, BufferLine.blankLine(this._terminal.cols, DEFAULT_ATTR));
       }
       // this.maxRange();
       this._terminal.updateRange(buffer.scrollTop);

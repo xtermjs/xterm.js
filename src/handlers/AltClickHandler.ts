@@ -3,9 +3,8 @@
  * @license MIT
  */
 
-import { ITerminal, ICircularList } from '../Types';
+import { ITerminal, ICircularList, IBufferLine } from '../Types';
 import { C0 } from '../common/data/EscapeSequences';
-import { TerminalLine } from '../TerminalLine';
 
 const enum Direction {
   UP = 'A',
@@ -19,7 +18,7 @@ export class AltClickHandler {
   private _startCol: number;
   private _endRow: number;
   private _endCol: number;
-  private _lines: ICircularList<TerminalLine>;
+  private _lines: ICircularList<IBufferLine>;
 
   constructor(
     private _mouseEvent: MouseEvent,

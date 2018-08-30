@@ -52,7 +52,7 @@ import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent } from './common/Types';
 import { evaluateKeyboardEvent } from './core/input/Keyboard';
 import { KeyboardResultType, ICharset } from './core/Types';
-import { TerminalLine } from './TerminalLine';
+import { BufferLine } from './TerminalLine';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -1171,7 +1171,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * @param isWrapped Whether the new line is wrapped from the previous line.
    */
   public scroll(isWrapped?: boolean): void {
-    const newLine = TerminalLine.blankLine(this.cols, DEFAULT_ATTR, isWrapped);
+    const newLine = BufferLine.blankLine(this.cols, DEFAULT_ATTR, isWrapped);
     const topRow = this.buffer.ybase + this.buffer.scrollTop;
     const bottomRow = this.buffer.ybase + this.buffer.scrollBottom;
 
@@ -1753,7 +1753,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.buffer.ybase = 0;
     this.buffer.y = 0;
     for (let i = 1; i < this.rows; i++) {
-      this.buffer.lines.push(TerminalLine.blankLine(this.cols, DEFAULT_ATTR));
+      this.buffer.lines.push(BufferLine.blankLine(this.cols, DEFAULT_ATTR));
     }
     this.refresh(0, this.rows - 1);
     this.emit('scroll', this.buffer.ydisp);
@@ -1854,7 +1854,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // blankLine(true) is xterm/linux behavior
       const scrollRegionHeight = this.buffer.scrollBottom - this.buffer.scrollTop;
       this.buffer.lines.shiftElements(this.buffer.y + this.buffer.ybase, scrollRegionHeight, 1);
-      this.buffer.lines.set(this.buffer.y + this.buffer.ybase, TerminalLine.blankLine(this.cols, this.eraseAttr()));
+      this.buffer.lines.set(this.buffer.y + this.buffer.ybase, BufferLine.blankLine(this.cols, this.eraseAttr()));
       this.updateRange(this.buffer.scrollTop);
       this.updateRange(this.buffer.scrollBottom);
     } else {

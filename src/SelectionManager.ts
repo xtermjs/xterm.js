@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminal, ISelectionManager, IBuffer, CharData, XtermListener } from './Types';
+import { ITerminal, ISelectionManager, IBuffer, CharData, XtermListener, IBufferLine } from './Types';
 import { MouseHelper } from './utils/MouseHelper';
 import * as Browser from './shared/utils/Browser';
 import { CharMeasure } from './ui/CharMeasure';
@@ -11,7 +11,6 @@ import { EventEmitter } from './EventEmitter';
 import { SelectionModel } from './SelectionModel';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_CODE_INDEX } from './Buffer';
 import { AltClickHandler } from './handlers/AltClickHandler';
-import { TerminalLine } from './TerminalLine';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -662,7 +661,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * latter takes into account wide characters.
    * @param coords The coordinates to find the 2 index for.
    */
-  private _convertViewportColToCharacterIndex(bufferLine: TerminalLine, coords: [number, number]): number {
+  private _convertViewportColToCharacterIndex(bufferLine: IBufferLine, coords: [number, number]): number {
     let charIndex = coords[0];
     for (let i = 0; coords[0] >= i; i++) {
       const char = bufferLine.get(i);

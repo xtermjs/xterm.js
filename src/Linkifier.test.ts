@@ -5,11 +5,11 @@
 
 import { assert } from 'chai';
 import { IMouseZoneManager, IMouseZone } from './ui/Types';
-import { ILinkMatcher, ITerminal } from './Types';
+import { ILinkMatcher, ITerminal, IBufferLine } from './Types';
 import { Linkifier } from './Linkifier';
 import { MockBuffer, MockTerminal } from './utils/TestUtils.test';
 import { CircularList } from './common/CircularList';
-import { TerminalLine } from './TerminalLine';
+import { BufferLine } from './TerminalLine';
 
 class TestLinkifier extends Linkifier {
   constructor(terminal: ITerminal) {
@@ -43,14 +43,14 @@ describe('Linkifier', () => {
     terminal = new MockTerminal();
     terminal.cols = 100;
     terminal.buffer = new MockBuffer();
-    (<MockBuffer>terminal.buffer).setLines(new CircularList<TerminalLine>(20));
+    (<MockBuffer>terminal.buffer).setLines(new CircularList<IBufferLine>(20));
     terminal.buffer.ydisp = 0;
     linkifier = new TestLinkifier(terminal);
     mouseZoneManager = new TestMouseZoneManager();
   });
 
-  function stringToRow(text: string): TerminalLine {
-    const result = new TerminalLine();
+  function stringToRow(text: string): IBufferLine {
+    const result = new BufferLine();
     for (let i = 0; i < text.length; i++) {
       result.push([0, text.charAt(i), 1, text.charCodeAt(i)]);
     }

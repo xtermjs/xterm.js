@@ -7,7 +7,6 @@ import { Terminal as PublicTerminal, ITerminalOptions as IPublicTerminalOptions,
 import { IColorSet, IRenderer } from './renderer/Types';
 import { IMouseZoneManager } from './ui/Types';
 import { ICharset } from './core/Types';
-import { TerminalLine } from './TerminalLine';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
@@ -272,7 +271,7 @@ export interface ITerminalOptions extends IPublicTerminalOptions {
 }
 
 export interface IBuffer {
-  readonly lines: ICircularList<TerminalLine>;
+  readonly lines: ICircularList<IBufferLine>;
   ydisp: number;
   ybase: number;
   y: number;
@@ -510,4 +509,20 @@ export interface IEscapeSequenceParser extends IDisposable {
 
   setErrorHandler(callback: (state: IParsingState) => IParsingState): void;
   clearErrorHandler(): void;
+}
+
+/**
+ * Interface for a line in the terminal buffer.
+ */
+export interface IBufferLine {
+  length: number;
+  isWrapped: boolean;
+  get(index: number): CharData;
+  set(index: number, value: CharData): void;
+  pop(): CharData | undefined;
+  push(data: CharData): void;
+  splice(start: number, deleteCount: number, ...items: CharData[]): CharData[];
+  insertCells(pos: number, n: number, ch: CharData): void;
+  deleteCells(pos: number, n: number, fill: CharData): void;
+  replaceCells(start: number, end: number, fill: CharData): void;
 }

@@ -7,7 +7,7 @@ import { assert, expect } from 'chai';
 import { Terminal } from './Terminal';
 import { MockViewport, MockCompositionHelper, MockRenderer } from './utils/TestUtils.test';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, DEFAULT_ATTR } from './Buffer';
-import { TerminalLine } from './TerminalLine';
+import { BufferLine } from './TerminalLine';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
@@ -142,7 +142,7 @@ describe('term.js addons', () => {
       assert.equal(term.buffer.lines.length, term.rows);
       assert.deepEqual(term.buffer.lines.get(0), promptLine);
       for (let i = 1; i < term.rows; i++) {
-        assert.deepEqual(term.buffer.lines.get(i), TerminalLine.blankLine(term.cols, DEFAULT_ATTR));
+        assert.deepEqual(term.buffer.lines.get(i), BufferLine.blankLine(term.cols, DEFAULT_ATTR));
       }
     });
     it('should clear a buffer larger than rows', () => {
@@ -159,7 +159,7 @@ describe('term.js addons', () => {
       assert.equal(term.buffer.lines.length, term.rows);
       assert.deepEqual(term.buffer.lines.get(0), promptLine);
       for (let i = 1; i < term.rows; i++) {
-        assert.deepEqual(term.buffer.lines.get(i), TerminalLine.blankLine(term.cols, DEFAULT_ATTR));
+        assert.deepEqual(term.buffer.lines.get(i), BufferLine.blankLine(term.cols, DEFAULT_ATTR));
       }
     });
     it('should not break the prompt when cleared twice', () => {
@@ -172,7 +172,7 @@ describe('term.js addons', () => {
       assert.equal(term.buffer.lines.length, term.rows);
       assert.deepEqual(term.buffer.lines.get(0), promptLine);
       for (let i = 1; i < term.rows; i++) {
-        assert.deepEqual(term.buffer.lines.get(i), TerminalLine.blankLine(term.cols, DEFAULT_ATTR));
+        assert.deepEqual(term.buffer.lines.get(i), BufferLine.blankLine(term.cols, DEFAULT_ATTR));
       }
     });
   });

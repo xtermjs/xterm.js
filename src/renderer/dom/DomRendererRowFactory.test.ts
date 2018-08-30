@@ -8,12 +8,13 @@ import { assert } from 'chai';
 import { DomRendererRowFactory } from './DomRendererRowFactory';
 import { DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from '../../Buffer';
 import { FLAGS } from '../Types';
-import { TerminalLine } from '../../TerminalLine';
+import { BufferLine } from '../../TerminalLine';
+import { IBufferLine } from '../../Types';
 
 describe('DomRendererRowFactory', () => {
   let dom: jsdom.JSDOM;
   let rowFactory: DomRendererRowFactory;
-  let lineData: TerminalLine;
+  let lineData: IBufferLine;
 
   beforeEach(() => {
     dom = new jsdom.JSDOM('');
@@ -146,8 +147,8 @@ describe('DomRendererRowFactory', () => {
     return element.innerHTML;
   }
 
-  function createEmptyLineData(cols: number): TerminalLine {
-    const lineData = new TerminalLine();
+  function createEmptyLineData(cols: number): IBufferLine {
+    const lineData = new BufferLine();
     for (let i = 0; i < cols; i++) {
       lineData.push([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
     }

@@ -4,11 +4,10 @@
  */
 
 import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../renderer/Types';
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ICircularList, ILinkifier, IMouseHelper, ILinkMatcherOptions, XtermListener, CharacterJoinerHandler } from '../Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ICircularList, ILinkifier, IMouseHelper, ILinkMatcherOptions, XtermListener, CharacterJoinerHandler, IBufferLine } from '../Types';
 import { Buffer } from '../Buffer';
 import * as Browser from '../shared/utils/Browser';
 import { ITheme, IDisposable, IMarker } from 'xterm';
-import { TerminalLine } from '../TerminalLine';
 
 export class MockTerminal implements ITerminal {
   markers: IMarker[];
@@ -285,7 +284,7 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
 
 export class MockBuffer implements IBuffer {
   isCursorInViewport: boolean;
-  lines: ICircularList<TerminalLine>;
+  lines: ICircularList<IBufferLine>;
   ydisp: number;
   ybase: number;
   hasScrollback: boolean;
@@ -308,7 +307,7 @@ export class MockBuffer implements IBuffer {
   prevStop(x?: number): number {
     throw new Error('Method not implemented.');
   }
-  setLines(lines: ICircularList<TerminalLine>): void {
+  setLines(lines: ICircularList<IBufferLine>): void {
     this.lines = lines;
   }
 }
