@@ -10,6 +10,95 @@ import { NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, CHAR_DATA_CHAR_INDEX }
 import { Terminal } from './Terminal';
 import { IBufferLine } from './Types';
 
+// TODO: This and the sections related to this object in associated tests can be
+// removed safely after InputHandler refactors are finished
+class OldInputHandler extends InputHandler {
+  public eraseInLine(params: number[]): void {
+    switch (params[0]) {
+      case 0:
+        this.eraseRight(this._terminal.buffer.x, this._terminal.buffer.y);
+        break;
+      case 1:
+        this.eraseLeft(this._terminal.buffer.x, this._terminal.buffer.y);
+        break;
+      case 2:
+        this.eraseLine(this._terminal.buffer.y);
+        break;
+    }
+  }
+
+  public eraseInDisplay(params: number[]): void {
+    let j;
+    switch (params[0]) {
+      case 0:
+        this.eraseRight(this._terminal.buffer.x, this._terminal.buffer.y);
+        j = this._terminal.buffer.y + 1;
+        for (; j < this._terminal.rows; j++) {
+          this.eraseLine(j);
+        }
+        break;
+      case 1:
+        this.eraseLeft(this._terminal.buffer.x, this._terminal.buffer.y);
+        j = this._terminal.buffer.y;
+        while (j--) {
+          this.eraseLine(j);
+        }
+        break;
+      case 2:
+        j = this._terminal.rows;
+        while (j--) this.eraseLine(j);
+        break;
+      case 3:
+        // Clear scrollback (everything not in viewport)
+        const scrollBackSize = this._terminal.buffer.lines.length - this._terminal.rows;
+        if (scrollBackSize > 0) {
+          this._terminal.buffer.lines.trimStart(scrollBackSize);
+          this._terminal.buffer.ybase = Math.max(this._terminal.buffer.ybase - scrollBackSize, 0);
+          this._terminal.buffer.ydisp = Math.max(this._terminal.buffer.ydisp - scrollBackSize, 0);
+          // Force a scroll event to refresh viewport
+          this._terminal.emit('scroll', 0);
+        }
+        break;
+    }
+  }
+
+  /**
+   * Erase in the identified line everything from "x" to the end of the line (right).
+   * @param x The column from which to start erasing to the end of the line.
+   * @param y The line in which to operate.
+   */
+  public eraseRight(x: number, y: number): void {
+    const line = this._terminal.buffer.lines.get(this._terminal.buffer.ybase + y);
+    if (!line) {
+      return;
+    }
+    line.replaceCells(x, this._terminal.cols, [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+    this._terminal.updateRange(y);
+  }
+
+  /**
+   * Erase in the identified line everything from "x" to the start of the line (left).
+   * @param x The column from which to start erasing to the start of the line.
+   * @param y The line in which to operate.
+   */
+  public eraseLeft(x: number, y: number): void {
+    const line = this._terminal.buffer.lines.get(this._terminal.buffer.ybase + y);
+    if (!line) {
+      return;
+    }
+    line.replaceCells(0, x + 1, [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+    this._terminal.updateRange(y);
+  }
+
+  /**
+   * Erase all content in the given line
+   * @param y The line to erase all of its contents.
+   */
+  public eraseLine(y: number): void {
+    this.eraseRight(0, y);
+  }
+}
+
 describe('InputHandler', () => {
   describe('save and restore cursor', () => {
     const terminal = new MockInputHandlingTerminal();
@@ -257,20 +346,7 @@ describe('InputHandler', () => {
     it('eraseInLine', function(): void {
       const term = new Terminal();
       const inputHandler = new InputHandler(term);
-
-      function eraseInLine(params: number[]): void {
-        switch (params[0]) {
-          case 0:
-            inputHandler.eraseRight(term.buffer.x, term.buffer.y);
-            break;
-          case 1:
-            inputHandler.eraseLeft(term.buffer.x, term.buffer.y);
-            break;
-          case 2:
-            inputHandler.eraseLine(term.buffer.y);
-            break;
-        }
-      }
+      const oldInputHandler = new OldInputHandler(term);
 
       // fill 6 lines to test 3 different states
       inputHandler.parse(Array(term.cols + 1).join('a'));
@@ -283,7 +359,7 @@ describe('InputHandler', () => {
       // params[0] - right erase
       term.buffer.y = 0;
       term.buffer.x = 70;
-      eraseInLine([0]);
+      oldInputHandler.eraseInLine([0]);
       expect(lineContent(term.buffer.lines.get(0))).equals(Array(71).join('a') + '          ');
       term.buffer.y = 1;
       term.buffer.x = 70;
@@ -293,7 +369,7 @@ describe('InputHandler', () => {
       // params[1] - left erase
       term.buffer.y = 2;
       term.buffer.x = 70;
-      eraseInLine([1]);
+      oldInputHandler.eraseInLine([1]);
       expect(lineContent(term.buffer.lines.get(2))).equals(Array(71).join(' ') + ' aaaaaaaaa');
       term.buffer.y = 3;
       term.buffer.x = 70;
@@ -303,7 +379,7 @@ describe('InputHandler', () => {
       // params[1] - left erase
       term.buffer.y = 4;
       term.buffer.x = 70;
-      eraseInLine([2]);
+      oldInputHandler.eraseInLine([2]);
       expect(lineContent(term.buffer.lines.get(4))).equals(Array(term.cols + 1).join(' '));
       term.buffer.y = 5;
       term.buffer.x = 70;
@@ -313,44 +389,9 @@ describe('InputHandler', () => {
     });
     it('eraseInDisplay', function(): void {
       const termOld = new Terminal();
-      const inputHandlerOld = new InputHandler(termOld);
+      const inputHandlerOld = new OldInputHandler(termOld);
       const termNew = new Terminal();
       const inputHandlerNew = new InputHandler(termNew);
-
-      function eraseInDisplay(params: number[]): void {
-        let j;
-        switch (params[0]) {
-          case 0:
-            inputHandlerOld.eraseRight(termOld.buffer.x, termOld.buffer.y);
-            j = termOld.buffer.y + 1;
-            for (; j < termOld.rows; j++) {
-              inputHandlerOld.eraseLine(j);
-            }
-            break;
-          case 1:
-            inputHandlerOld.eraseLeft(termOld.buffer.x, termOld.buffer.y);
-            j = termOld.buffer.y;
-            while (j--) {
-              inputHandlerOld.eraseLine(j);
-            }
-            break;
-          case 2:
-            j = termOld.rows;
-            while (j--) inputHandlerOld.eraseLine(j);
-            break;
-          case 3:
-            // Clear scrollback (everything not in viewport)
-            const scrollBackSize = termOld.buffer.lines.length - termOld.rows;
-            if (scrollBackSize > 0) {
-              termOld.buffer.lines.trimStart(scrollBackSize);
-              termOld.buffer.ybase = Math.max(termOld.buffer.ybase - scrollBackSize, 0);
-              termOld.buffer.ydisp = Math.max(termOld.buffer.ydisp - scrollBackSize, 0);
-              // Force a scroll event to refresh viewport
-              termOld.emit('scroll', 0);
-            }
-            break;
-        }
-      }
 
       // fill display with a's
       for (let i = 0; i < termOld.rows; ++i) inputHandlerOld.parse(Array(termOld.cols + 1).join('a'));
@@ -363,7 +404,7 @@ describe('InputHandler', () => {
       // params [0] - right and below erase
       termOld.buffer.y = 5;
       termOld.buffer.x = 40;
-      eraseInDisplay([0]);
+      inputHandlerOld.eraseInDisplay([0]);
       termNew.buffer.y = 5;
       termNew.buffer.x = 40;
       inputHandlerNew.eraseInDisplay([0]);
@@ -380,7 +421,7 @@ describe('InputHandler', () => {
       // params [1] - left and above
       termOld.buffer.y = 5;
       termOld.buffer.x = 40;
-      eraseInDisplay([1]);
+      inputHandlerOld.eraseInDisplay([1]);
       termNew.buffer.y = 5;
       termNew.buffer.x = 40;
       inputHandlerNew.eraseInDisplay([1]);
@@ -397,7 +438,7 @@ describe('InputHandler', () => {
       // params [2] - whole screen
       termOld.buffer.y = 5;
       termOld.buffer.x = 40;
-      eraseInDisplay([2]);
+      inputHandlerOld.eraseInDisplay([2]);
       termNew.buffer.y = 5;
       termNew.buffer.x = 40;
       inputHandlerNew.eraseInDisplay([2]);

@@ -112,9 +112,6 @@ export interface ICompositionHelper {
 export interface IInputHandler {
   parse(data: string): void;
   print(data: string, start: number, end: number): void;
-  eraseRight(x: number, y: number): void;
-  eraseLine(y: number): void;
-  eraseLeft(x: number, y: number): void;
 
   /** C0 BEL */ bell(): void;
   /** C0 LF */ lineFeed(): void;
