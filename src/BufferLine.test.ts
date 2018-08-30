@@ -3,7 +3,7 @@
  * @license MIT
  */
 import * as chai from 'chai';
-import { BufferLine } from './BufferLine';
+import { BufferLine, DEFAULT_CELL } from './BufferLine';
 import { CharData, IBufferLine } from './Types';
 import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, CHAR_DATA_ATTR_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX } from './Buffer';
 
@@ -22,11 +22,11 @@ describe('BufferLine', function(): void {
     chai.expect(line.isWrapped).equals(false);
     line = new TestBufferLine(10);
     chai.expect(line.length).equals(10);
-    chai.expect(line.pop()).eql(TestBufferLine.defaultCell);
+    chai.expect(line.pop()).eql(DEFAULT_CELL);
     chai.expect(line.isWrapped).equals(false);
     line = new TestBufferLine(10, null, true);
     chai.expect(line.length).equals(10);
-    chai.expect(line.pop()).eql(TestBufferLine.defaultCell);
+    chai.expect(line.pop()).eql(DEFAULT_CELL);
     chai.expect(line.isWrapped).equals(true);
     line = new TestBufferLine(10, [123, 'a', 456, 789], true);
     chai.expect(line.length).equals(10);
