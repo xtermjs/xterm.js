@@ -7,7 +7,7 @@ import { assert, expect } from 'chai';
 import { Terminal } from './Terminal';
 import { MockViewport, MockCompositionHelper, MockRenderer } from './utils/TestUtils.test';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, DEFAULT_ATTR } from './Buffer';
-import { BufferLine } from './TerminalLine';
+import { BufferLine } from './BufferLine';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;

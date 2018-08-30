@@ -13,7 +13,7 @@ import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
 import { ICharset } from './core/Types';
 import { Disposable } from './common/Lifecycle';
-import { BufferLine } from './TerminalLine';
+import { BufferLine } from './BufferLine';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.

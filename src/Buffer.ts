@@ -7,7 +7,7 @@ import { CircularList } from './common/CircularList';
 import { CharData, ITerminal, IBuffer, IBufferLine } from './Types';
 import { EventEmitter } from './EventEmitter';
 import { IMarker } from 'xterm';
-import { BufferLine } from './TerminalLine';
+import { BufferLine } from './BufferLine';
 
 export const DEFAULT_ATTR = (0 << 18) | (257 << 9) | (256 << 0);
 export const CHAR_DATA_ATTR_INDEX = 0;

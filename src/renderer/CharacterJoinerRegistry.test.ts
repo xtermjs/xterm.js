@@ -5,7 +5,7 @@ import { CircularList } from '../common/CircularList';
 
 import { ICharacterJoinerRegistry } from './Types';
 import { CharacterJoinerRegistry } from './CharacterJoinerRegistry';
-import { BufferLine } from '../TerminalLine';
+import { BufferLine } from '../BufferLine';
 import { IBufferLine } from '../Types';
 
 describe('CharacterJoinerRegistry', () => {

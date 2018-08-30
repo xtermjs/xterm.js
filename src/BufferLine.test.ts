@@ -3,7 +3,7 @@
  * @license MIT
  */
 import * as chai from 'chai';
-import { BufferLine } from './TerminalLine';
+import { BufferLine } from './BufferLine';
 import { CharData, IBufferLine } from './Types';
 import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, CHAR_DATA_ATTR_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX } from './Buffer';
 

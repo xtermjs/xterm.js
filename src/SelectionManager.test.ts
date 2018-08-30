@@ -10,7 +10,7 @@ import { SelectionModel } from './SelectionModel';
 import { BufferSet } from './BufferSet';
 import { ITerminal, IBuffer, IBufferLine } from './Types';
 import { MockTerminal } from './utils/TestUtils.test';
-import { BufferLine } from './TerminalLine';
+import { BufferLine } from './BufferLine';
 
 class TestMockTerminal extends MockTerminal {
   emit(event: string, data: any): void {}
