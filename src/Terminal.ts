@@ -1710,36 +1710,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   /**
-   * Erase in the identified line everything from "x" to the end of the line (right).
-   * @param x The column from which to start erasing to the end of the line.
-   * @param y The line in which to operate.
-   */
-  // FIXME: decide whether to remove from Terminal
-  public eraseRight(x: number, y: number): void {
-    const line = this.buffer.lines.get(this.buffer.ybase + y);
-    if (!line) {
-      return;
-    }
-    line.replaceCells(x, this.cols, [this.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
-    this.updateRange(y);
-  }
-
-  /**
-   * Erase in the identified line everything from "x" to the start of the line (left).
-   * @param x The column from which to start erasing to the start of the line.
-   * @param y The line in which to operate.
-   */
-  // FIXME: decide whether to remove from Terminal
-  public eraseLeft(x: number, y: number): void {
-    const line = this.buffer.lines.get(this.buffer.ybase + y);
-    if (!line) {
-      return;
-    }
-    line.replaceCells(0, x + 1, [this.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
-    this.updateRange(y);
-  }
-
-  /**
    * Clear the entire buffer, making the prompt line the new first line.
    */
   public clear(): void {
@@ -1757,15 +1727,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
     this.refresh(0, this.rows - 1);
     this.emit('scroll', this.buffer.ydisp);
-  }
-
-  /**
-   * Erase all content in the given line
-   * @param y The line to erase all of its contents.
-   */
-  // FIXME: decide whether to remove from Terminal
-  public eraseLine(y: number): void {
-    this.eraseRight(0, y);
   }
 
   /**

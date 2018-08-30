@@ -1986,4 +1986,67 @@ export class InputHandler extends Disposable implements IInputHandler {
   public setgLevel(level: number): void {
     this._terminal.setgLevel(level);  // TODO: save to move from terminal?
   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /**
+   * Erase in the identified line everything from "x" to the end of the line (right).
+   * @param x The column from which to start erasing to the end of the line.
+   * @param y The line in which to operate.
+   */
+  // FIXME: decide whether to remove from Terminal
+  public eraseRight(x: number, y: number): void {
+    const line = this._terminal.buffer.lines.get(this._terminal.buffer.ybase + y);
+    if (!line) {
+      return;
+    }
+    line.replaceCells(x, this._terminal.cols, [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+    this._terminal.updateRange(y);
+  }
+
+  /**
+   * Erase in the identified line everything from "x" to the start of the line (left).
+   * @param x The column from which to start erasing to the start of the line.
+   * @param y The line in which to operate.
+   */
+  // FIXME: decide whether to remove from Terminal
+  public eraseLeft(x: number, y: number): void {
+    const line = this._terminal.buffer.lines.get(this._terminal.buffer.ybase + y);
+    if (!line) {
+      return;
+    }
+    line.replaceCells(0, x + 1, [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+    this._terminal.updateRange(y);
+  }
+
+    /**
+   * Erase all content in the given line
+   * @param y The line to erase all of its contents.
+   */
+  // FIXME: decide whether to remove from Terminal
+  public eraseLine(y: number): void {
+    this.eraseRight(0, y);
+  }
 }

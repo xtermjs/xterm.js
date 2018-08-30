@@ -71,9 +71,6 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   scroll(isWrapped?: boolean): void;
   setgLevel(g: number): void;
   eraseAttr(): number;
-  eraseRight(x: number, y: number): void;
-  eraseLine(y: number): void;
-  eraseLeft(x: number, y: number): void;
   is(term: string): boolean;
   setgCharset(g: number, charset: ICharset): void;
   resize(x: number, y: number): void;
@@ -115,6 +112,9 @@ export interface ICompositionHelper {
 export interface IInputHandler {
   parse(data: string): void;
   print(data: string, start: number, end: number): void;
+  eraseRight(x: number, y: number): void;
+  eraseLine(y: number): void;
+  eraseLeft(x: number, y: number): void;
 
   /** C0 BEL */ bell(): void;
   /** C0 LF */ lineFeed(): void;

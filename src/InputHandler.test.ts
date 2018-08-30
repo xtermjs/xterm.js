@@ -261,13 +261,13 @@ describe('InputHandler', () => {
       function eraseInLine(params: number[]): void {
         switch (params[0]) {
           case 0:
-            term.eraseRight(term.buffer.x, term.buffer.y);
+            inputHandler.eraseRight(term.buffer.x, term.buffer.y);
             break;
           case 1:
-            term.eraseLeft(term.buffer.x, term.buffer.y);
+            inputHandler.eraseLeft(term.buffer.x, term.buffer.y);
             break;
           case 2:
-            term.eraseLine(term.buffer.y);
+            inputHandler.eraseLine(term.buffer.y);
             break;
         }
       }
@@ -321,22 +321,22 @@ describe('InputHandler', () => {
         let j;
         switch (params[0]) {
           case 0:
-          termOld.eraseRight(termOld.buffer.x, termOld.buffer.y);
+            inputHandlerOld.eraseRight(termOld.buffer.x, termOld.buffer.y);
             j = termOld.buffer.y + 1;
             for (; j < termOld.rows; j++) {
-              termOld.eraseLine(j);
+              inputHandlerOld.eraseLine(j);
             }
             break;
           case 1:
-            termOld.eraseLeft(termOld.buffer.x, termOld.buffer.y);
+            inputHandlerOld.eraseLeft(termOld.buffer.x, termOld.buffer.y);
             j = termOld.buffer.y;
             while (j--) {
-              termOld.eraseLine(j);
+              inputHandlerOld.eraseLine(j);
             }
             break;
           case 2:
             j = termOld.rows;
-            while (j--) termOld.eraseLine(j);
+            while (j--) inputHandlerOld.eraseLine(j);
             break;
           case 3:
             // Clear scrollback (everything not in viewport)
