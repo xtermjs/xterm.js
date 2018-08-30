@@ -5,6 +5,8 @@
 import { CharData } from './Types';
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from './Buffer';
 
+export const defaultCell: CharData = [0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
+
 /**
  * Class representing a terminal line.
  * Currently the class is a thin proxy to `CharData[]`.
@@ -21,11 +23,11 @@ import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from './Buffer';
  *        - implement typed array alternative once string is removed from CharData
  */
 export class TerminalLine {
-  static defaultCell: CharData = [0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
-  static blankLine(cols: number, attr: number, isWrapped?: boolean): TerminalLine {
+  public static blankLine(cols: number, attr: number, isWrapped?: boolean): TerminalLine {
     const ch: CharData = [attr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
     return new TerminalLine(cols, ch, isWrapped);
   }
+
   private _data: CharData[];
   public isWrapped = false;
   public length: number;
@@ -35,7 +37,7 @@ export class TerminalLine {
     this.length = this._data.length;
     if (cols) {
       if (!ch) {
-        ch = TerminalLine.defaultCell;
+        ch = defaultCell;
       }
       for (let i = 0; i < cols; i++) {
         this.push(ch);  // Note: the ctor ch is not cloned
@@ -82,6 +84,7 @@ export class TerminalLine {
   public release(): void {
     // TODO: unref here
   }
+
   public toArray(): CharData[] {
     return this._data;
   }
