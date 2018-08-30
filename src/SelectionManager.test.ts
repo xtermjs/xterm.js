@@ -8,8 +8,9 @@ import { CharMeasure } from './ui/CharMeasure';
 import { SelectionManager, SelectionMode } from './SelectionManager';
 import { SelectionModel } from './SelectionModel';
 import { BufferSet } from './BufferSet';
-import { LineData, CharData, ITerminal, IBuffer } from './Types';
+import { ITerminal, IBuffer, IBufferLine } from './Types';
 import { MockTerminal } from './utils/TestUtils.test';
+import { BufferLine } from './BufferLine';
 
 class TestMockTerminal extends MockTerminal {
   emit(event: string, data: any): void {}
@@ -52,16 +53,18 @@ describe('SelectionManager', () => {
     selectionManager = new TestSelectionManager(terminal, null);
   });
 
-  function stringToRow(text: string): LineData {
-    const result: LineData = [];
+  function stringToRow(text: string): IBufferLine {
+    const result = new BufferLine();
     for (let i = 0; i < text.length; i++) {
       result.push([0, text.charAt(i), 1, text.charCodeAt(i)]);
     }
     return result;
   }
 
-  function stringArrayToRow(chars: string[]): LineData {
-    return chars.map(c => <CharData>[0, c, 1, c.charCodeAt(0)]);
+  function stringArrayToRow(chars: string[]): IBufferLine {
+    const line = new BufferLine();
+    chars.map(c => line.push([0, c, 1, c.charCodeAt(0)]));
+    return line;
   }
 
   describe('_selectWordAt', () => {
@@ -97,7 +100,8 @@ describe('SelectionManager', () => {
     });
     it('should expand selection for wide characters', () => {
       // Wide characters use a special format
-      buffer.lines.set(0, [
+      const line = new BufferLine();
+      const data: [number, string, number, number][] = [
         [null, '中', 2, '中'.charCodeAt(0)],
         [null, '', 0, null],
         [null, '文', 2, '文'.charCodeAt(0)],
@@ -113,7 +117,9 @@ describe('SelectionManager', () => {
         [null, 'f', 1, 'f'.charCodeAt(0)],
         [null, 'o', 1, 'o'.charCodeAt(0)],
         [null, 'o', 1, 'o'.charCodeAt(0)]
-      ]);
+      ];
+      for (let i = 0; i < data.length; ++i) line.push(data[i]);
+      buffer.lines.set(0, line);
       // Ensure wide characters take up 2 columns
       selectionManager.selectWordAt([0, 0]);
       assert.equal(selectionManager.selectionText, '中文');
@@ -186,7 +192,7 @@ describe('SelectionManager', () => {
     it('should expand upwards or downards for wrapped lines', () => {
       buffer.lines.set(0, stringToRow('                                                                             foo'));
       buffer.lines.set(1, stringToRow('bar                                                                             '));
-      (<any>buffer.lines.get(1)).isWrapped = true;
+      buffer.lines.get(1).isWrapped = true;
       selectionManager.selectWordAt([1, 1]);
       assert.equal(selectionManager.selectionText, 'foobar');
       selectionManager.model.clearSelection();
@@ -200,10 +206,10 @@ describe('SelectionManager', () => {
       buffer.lines.set(2, stringToRow('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'));
       buffer.lines.set(3, stringToRow('cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'));
       buffer.lines.set(4, stringToRow('bar                                                                             '));
-      (<any>buffer.lines.get(1)).isWrapped = true;
-      (<any>buffer.lines.get(2)).isWrapped = true;
-      (<any>buffer.lines.get(3)).isWrapped = true;
-      (<any>buffer.lines.get(4)).isWrapped = true;
+      buffer.lines.get(1).isWrapped = true;
+      buffer.lines.get(2).isWrapped = true;
+      buffer.lines.get(3).isWrapped = true;
+      buffer.lines.get(4).isWrapped = true;
       selectionManager.selectWordAt([78, 0]);
       assert.equal(selectionManager.selectionText, expectedText);
       selectionManager.model.clearSelection();
@@ -339,7 +345,7 @@ describe('SelectionManager', () => {
     it('should select the entire wrapped line', () => {
       buffer.lines.set(0, stringToRow('foo'));
       const line2 = stringToRow('bar');
-      (<any>line2).isWrapped = true;
+      line2.isWrapped = true;
       buffer.lines.set(1, line2);
       selectionManager.selectLineAt(0);
       assert.equal(selectionManager.selectionText, 'foobar', 'The selected text is correct');

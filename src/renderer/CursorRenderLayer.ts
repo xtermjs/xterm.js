@@ -127,7 +127,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
       return;
     }
 
-    const charData = terminal.buffer.lines.get(cursorY)[terminal.buffer.x];
+    const charData = terminal.buffer.lines.get(cursorY).get(terminal.buffer.x);
     if (!charData) {
       return;
     }

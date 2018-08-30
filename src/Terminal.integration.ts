@@ -67,7 +67,7 @@ function terminalToString(term: Terminal): string {
   for (let line = term.buffer.ybase; line < term.buffer.ybase + term.rows; line++) {
     lineText = '';
     for (let cell = 0; cell < term.cols; ++cell) {
-      lineText += term.buffer.lines.get(line)[cell][CHAR_DATA_CHAR_INDEX];
+      lineText += term.buffer.lines.get(line).get(cell)[CHAR_DATA_CHAR_INDEX];
     }
     // rtrim empty cells as xterm does
     lineText = lineText.replace(/\s+$/, '');
@@ -105,6 +105,7 @@ if (os.platform() !== 'win32') {
     // omit stack trace for escape sequence files
     Error.stackTraceLimit = 0;
     const files = glob.sync('**/escape_sequence_files/*.in', { cwd: path.join(__dirname, '..')});
+    // for (let i = 0; i < files.length; ++i) console.debug(i, files[i]);
     // only successful tests for now
     const skip = [
       10, 16, 17, 19, 32, 33, 34, 35, 36, 39,

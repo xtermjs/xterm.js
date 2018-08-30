@@ -71,10 +71,6 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   scroll(isWrapped?: boolean): void;
   setgLevel(g: number): void;
   eraseAttr(): number;
-  eraseRight(x: number, y: number): void;
-  eraseLine(y: number): void;
-  eraseLeft(x: number, y: number): void;
-  blankLine(cur?: boolean, isWrapped?: boolean): LineData;
   is(term: string): boolean;
   setgCharset(g: number, charset: ICharset): void;
   resize(x: number, y: number): void;
@@ -234,7 +230,6 @@ export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAcce
   cancel(ev: Event, force?: boolean): boolean | void;
   log(text: string): void;
   showCursor(): void;
-  blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): LineData;
 }
 
 export interface IBufferAccessor {
@@ -273,7 +268,7 @@ export interface ITerminalOptions extends IPublicTerminalOptions {
 }
 
 export interface IBuffer {
-  readonly lines: ICircularList<LineData>;
+  readonly lines: ICircularList<IBufferLine>;
   ydisp: number;
   ybase: number;
   y: number;
@@ -511,4 +506,20 @@ export interface IEscapeSequenceParser extends IDisposable {
 
   setErrorHandler(callback: (state: IParsingState) => IParsingState): void;
   clearErrorHandler(): void;
+}
+
+/**
+ * Interface for a line in the terminal buffer.
+ */
+export interface IBufferLine {
+  length: number;
+  isWrapped: boolean;
+  get(index: number): CharData;
+  set(index: number, value: CharData): void;
+  pop(): CharData | undefined;
+  push(data: CharData): void;
+  splice(start: number, deleteCount: number, ...items: CharData[]): CharData[];
+  insertCells(pos: number, n: number, ch: CharData): void;
+  deleteCells(pos: number, n: number, fill: CharData): void;
+  replaceCells(start: number, end: number, fill: CharData): void;
 }
