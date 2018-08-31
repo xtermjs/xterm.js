@@ -10,6 +10,7 @@ import { NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, CHAR_DATA_CHAR_INDEX }
 import { Terminal } from './Terminal';
 import { IBufferLine } from './Types';
 
+
 // TODO: This and the sections related to this object in associated tests can be
 // removed safely after InputHandler refactors are finished
 class OldInputHandler extends InputHandler {
@@ -444,5 +445,34 @@ describe('InputHandler', () => {
       inputHandlerNew.eraseInDisplay([2]);
       expect(termContent(termNew)).eql(termContent(termOld));
     });
+  });
+  it('convertEol setting', function(): void {
+    // not converting
+    let s = '';
+    const termNotConverting = new Terminal({cols: 15, rows: 10});
+    (termNotConverting as any)._inputHandler.parse('Hello\nWorld');
+    for (let i = 0; i < termNotConverting.cols; ++i) {
+      s += termNotConverting.buffer.lines.get(0).get(i)[CHAR_DATA_CHAR_INDEX];
+    }
+    expect(s).equals('Hello          ');
+    s = '';
+    for (let i = 0; i < termNotConverting.cols; ++i) {
+      s += termNotConverting.buffer.lines.get(1).get(i)[CHAR_DATA_CHAR_INDEX];
+    }
+    expect(s).equals('     World     ');
+
+    // converting
+    s = '';
+    const termConverting = new Terminal({cols: 15, rows: 10, convertEol: true});
+    (termConverting as any)._inputHandler.parse('Hello\nWorld');
+    for (let i = 0; i < termConverting.cols; ++i) {
+      s += termConverting.buffer.lines.get(0).get(i)[CHAR_DATA_CHAR_INDEX];
+    }
+    expect(s).equals('Hello          ');
+    s = '';
+    for (let i = 0; i < termConverting.cols; ++i) {
+      s += termConverting.buffer.lines.get(1).get(i)[CHAR_DATA_CHAR_INDEX];
+    }
+    expect(s).equals('World          ');
   });
 });
