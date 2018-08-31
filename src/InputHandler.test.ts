@@ -97,6 +97,36 @@ class OldInputHandler extends InputHandler {
   public eraseLine(y: number): void {
     this.eraseRight(0, y);
   }
+
+  public insertChars(params: number[]): void {
+    let param = params[0];
+    if (param < 1) param = 1;
+
+    // make buffer local for faster access
+    const buffer = this._terminal.buffer;
+
+    const row = buffer.y + buffer.ybase;
+    let j = buffer.x;
+    while (param-- && j < this._terminal.cols) {
+      buffer.lines.get(row).insertCells(j++, 1, [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+    }
+  }
+
+  public deleteChars(params: number[]): void {
+    let param: number = params[0];
+    if (param < 1) {
+      param = 1;
+    }
+
+    // make buffer local for faster access
+    const buffer = this._terminal.buffer;
+
+    const row = buffer.y + buffer.ybase;
+    while (param--) {
+      buffer.lines.get(row).deleteCells(buffer.x, 1, [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+    }
+    this._terminal.updateRange(buffer.y);
+  }
 }
 
 describe('InputHandler', () => {
@@ -177,8 +207,6 @@ describe('InputHandler', () => {
     });
   });
   describe('regression tests', function(): void {
-    type CharData = [number, string, number, number];
-
     function lineContent(line: IBufferLine): string {
       let content = '';
       for (let i = 0; i < line.length; ++i) content += line.get(i)[CHAR_DATA_CHAR_INDEX];
@@ -194,23 +222,7 @@ describe('InputHandler', () => {
     it('insertChars', function(): void {
       const term = new Terminal();
       const inputHandler = new InputHandler(term);
-
-      // old variant of the method
-      function insertChars(params: number[]): void {
-        let param = params[0];
-        if (param < 1) param = 1;
-
-        // make buffer local for faster access
-        const buffer = term.buffer;
-
-        const row = buffer.y + buffer.ybase;
-        let j = buffer.x;
-        const ch: CharData = [term.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // xterm
-        while (param-- && j < term.cols) {
-          buffer.lines.get(row).splice(j++, 0, ch);
-          buffer.lines.get(row).pop();
-        }
-      }
+      const oldInputHandler = new OldInputHandler(term);
 
       // insert some data in first and second line
       inputHandler.parse(Array(term.cols - 9).join('a'));
@@ -225,7 +237,7 @@ describe('InputHandler', () => {
       // insert one char from params = [0]
       term.buffer.y = 0;
       term.buffer.x = 70;
-      insertChars([0]);
+      oldInputHandler.insertChars([0]);
       expect(lineContent(line1)).equals(Array(term.cols - 9).join('a') + ' 123456789');
       term.buffer.y = 1;
       term.buffer.x = 70;
@@ -236,7 +248,7 @@ describe('InputHandler', () => {
       // insert one char from params = [1]
       term.buffer.y = 0;
       term.buffer.x = 70;
-      insertChars([1]);
+      oldInputHandler.insertChars([1]);
       expect(lineContent(line1)).equals(Array(term.cols - 9).join('a') + '  12345678');
       term.buffer.y = 1;
       term.buffer.x = 70;
@@ -247,7 +259,7 @@ describe('InputHandler', () => {
       // insert two chars from params = [2]
       term.buffer.y = 0;
       term.buffer.x = 70;
-      insertChars([2]);
+      oldInputHandler.insertChars([2]);
       expect(lineContent(line1)).equals(Array(term.cols - 9).join('a') + '    123456');
       term.buffer.y = 1;
       term.buffer.x = 70;
@@ -258,7 +270,7 @@ describe('InputHandler', () => {
       // insert 10 chars from params = [10]
       term.buffer.y = 0;
       term.buffer.x = 70;
-      insertChars([10]);
+      oldInputHandler.insertChars([10]);
       expect(lineContent(line1)).equals(Array(term.cols - 9).join('a') + '          ');
       term.buffer.y = 1;
       term.buffer.x = 70;
@@ -269,25 +281,7 @@ describe('InputHandler', () => {
     it('deleteChars', function(): void {
       const term = new Terminal();
       const inputHandler = new InputHandler(term);
-
-      // old variant of the method
-      function deleteChars(params: number[]): void {
-        let param: number = params[0];
-        if (param < 1) {
-          param = 1;
-        }
-
-        // make buffer local for faster access
-        const buffer = term.buffer;
-
-        const row = buffer.y + buffer.ybase;
-        const ch: CharData = [term.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // xterm
-        while (param--) {
-          buffer.lines.get(row).splice(buffer.x, 1);
-          buffer.lines.get(row).push(ch);
-        }
-        term.updateRange(buffer.y);
-      }
+      const oldInputHandler = new OldInputHandler(term);
 
       // insert some data in first and second line
       inputHandler.parse(Array(term.cols - 9).join('a'));
@@ -302,7 +296,7 @@ describe('InputHandler', () => {
       // delete one char from params = [0]
       term.buffer.y = 0;
       term.buffer.x = 70;
-      deleteChars([0]);
+      oldInputHandler.deleteChars([0]);
       expect(lineContent(line1)).equals(Array(term.cols - 9).join('a') + '234567890 ');
       term.buffer.y = 1;
       term.buffer.x = 70;
@@ -313,7 +307,7 @@ describe('InputHandler', () => {
       // insert one char from params = [1]
       term.buffer.y = 0;
       term.buffer.x = 70;
-      deleteChars([1]);
+      oldInputHandler.deleteChars([1]);
       expect(lineContent(line1)).equals(Array(term.cols - 9).join('a') + '34567890  ');
       term.buffer.y = 1;
       term.buffer.x = 70;
@@ -324,7 +318,7 @@ describe('InputHandler', () => {
       // insert two chars from params = [2]
       term.buffer.y = 0;
       term.buffer.x = 70;
-      deleteChars([2]);
+      oldInputHandler.deleteChars([2]);
       expect(lineContent(line1)).equals(Array(term.cols - 9).join('a') + '567890    ');
       term.buffer.y = 1;
       term.buffer.x = 70;
@@ -335,7 +329,7 @@ describe('InputHandler', () => {
       // insert 10 chars from params = [10]
       term.buffer.y = 0;
       term.buffer.x = 70;
-      deleteChars([10]);
+      oldInputHandler.deleteChars([10]);
       expect(lineContent(line1)).equals(Array(term.cols - 9).join('a') + '          ');
       term.buffer.y = 1;
       term.buffer.x = 70;

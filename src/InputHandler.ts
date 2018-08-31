@@ -392,10 +392,12 @@ export class InputHandler extends Disposable implements IInputHandler {
             if (chMinusTwo) {
               chMinusTwo[CHAR_DATA_CHAR_INDEX] += char;
               chMinusTwo[CHAR_DATA_CODE_INDEX] = code;
+              bufferRow.set(buffer.x - 2, chMinusTwo); // must be set explicitly now
             }
           } else {
             chMinusOne[CHAR_DATA_CHAR_INDEX] += char;
             chMinusOne[CHAR_DATA_CODE_INDEX] = code;
+            bufferRow.set(buffer.x - 1, chMinusOne); // must be set explicitly now
           }
         }
         continue;
@@ -403,6 +405,9 @@ export class InputHandler extends Disposable implements IInputHandler {
 
       // goto next line if ch would overflow
       // TODO: needs a global min terminal width of 2
+      // FIXME: additionally ensure chWidth fits into a line
+      //   -->  maybe forbid cols<xy at higher level as it would
+      //        introduce a bad runtime penalty here
       if (buffer.x + chWidth - 1 >= cols) {
         // autowrap - DECAWM
         // automatically wraps to the beginning of the next line
@@ -430,23 +435,15 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
 
       // insert mode: move characters to right
-      // To achieve insert, we remove cells from the right
-      // and insert empty ones at cursor position
       if (insertMode) {
-        // do this twice for a fullwidth char
-        for (let moves = 0; moves < chWidth; ++moves) {
-          // remove last cell
-          // if it's width is 0, we have to adjust the second last cell as well
-          const removed = bufferRow.pop();
-          const chMinusTwo = bufferRow.get(buffer.x - 2);
-          if (removed[CHAR_DATA_WIDTH_INDEX] === 0
-              && chMinusTwo
-              && chMinusTwo[CHAR_DATA_WIDTH_INDEX] === 2) {
-                bufferRow.set(this._terminal.cols - 2, [curAttr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
-          }
-
-          // insert empty cell at cursor
-          bufferRow.splice(buffer.x, 0, [curAttr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+        // right shift cells according to the width
+        bufferRow.insertCells(buffer.x, chWidth, [curAttr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+        // test last cell - since the last cell has only room for
+        // a halfwidth char any fullwidth shifted there is lost
+        // and will be set to eraseChar
+        const lastCell = bufferRow.get(cols - 1);
+        if (lastCell[CHAR_DATA_WIDTH_INDEX] === 2) {
+          bufferRow.set(cols - 1, [curAttr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
         }
       }
 
@@ -454,7 +451,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       bufferRow.set(buffer.x++, [curAttr, char, chWidth, code]);
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor
-      if (chWidth === 2) {
+      // for graphemes bigger than fullwidth we can simply loop to zero
+      // we already made sure above, that buffer.x + chWidth will not overflow right
+      while (--chWidth) {
         bufferRow.set(buffer.x++, [curAttr, '', 0, undefined]);
       }
     }
