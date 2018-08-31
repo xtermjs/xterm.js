@@ -155,8 +155,12 @@ describe('Buffer', () => {
           assert.equal(buffer.lines.maxLength, INIT_ROWS);
           buffer.y = INIT_ROWS - 1;
           buffer.fillViewportRows();
-          buffer.lines.get(5).get(0)[1] = 'a';
-          buffer.lines.get(INIT_ROWS - 1).get(0)[1] = 'b';
+          let chData = buffer.lines.get(5).get(0);
+          chData[1] = 'a';
+          buffer.lines.get(5).set(0, chData);
+          chData = buffer.lines.get(INIT_ROWS - 1).get(0);
+          chData[1] = 'b';
+          buffer.lines.get(INIT_ROWS - 1).set(0, chData);
           buffer.resize(INIT_COLS, INIT_ROWS - 5);
           assert.equal(buffer.lines.get(0).get(0)[1], 'a');
           assert.equal(buffer.lines.get(INIT_ROWS - 1 - 5).get(0)[1], 'b');
