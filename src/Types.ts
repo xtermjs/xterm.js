@@ -516,10 +516,11 @@ export interface IBufferLine {
   isWrapped: boolean;
   get(index: number): CharData;
   set(index: number, value: CharData): void;
-  pop(): CharData | undefined;
-  push(data: CharData): void;
-  splice(start: number, deleteCount: number, ...items: CharData[]): CharData[];
+  // pop(): CharData | undefined;
+  // push(data: CharData): void;
+  // splice(start: number, deleteCount: number, ...items: CharData[]): CharData[];
   insertCells(pos: number, n: number, ch: CharData): void;
   deleteCells(pos: number, n: number, fill: CharData): void;
   replaceCells(start: number, end: number, fill: CharData): void;
+  resize(cols: number, fill: CharData, shrink?: boolean): void;
 }

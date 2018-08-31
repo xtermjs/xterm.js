@@ -25,7 +25,7 @@ export class BufferLine implements IBufferLine {
         ch = [0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
       }
       for (let i = 0; i < cols; i++) {
-        this.push(ch);  // Note: the ctor ch is not cloned (resembles old behavior)
+        this._push(ch);  // Note: the ctor ch is not cloned (resembles old behavior)
       }
     }
     if (isWrapped) {
@@ -41,18 +41,31 @@ export class BufferLine implements IBufferLine {
     this._data[index] = data;
   }
 
-  public pop(): CharData | undefined  {
+  /**
+   * @deprecated
+   */
+  private _pop(): CharData | undefined  {
     const data = this._data.pop();
     this.length = this._data.length;
     return data;
   }
 
-  public push(data: CharData): void {
+  /**
+   * @deprecated
+   * @param data
+   */
+  private _push(data: CharData): void {
     this._data.push(data);
     this.length = this._data.length;
   }
 
-  public splice(start: number, deleteCount: number, ...items: CharData[]): CharData[] {
+  /**
+   * @deprecated
+   * @param start
+   * @param deleteCount
+   * @param items
+   */
+  private _splice(start: number, deleteCount: number, ...items: CharData[]): CharData[] {
     const removed = this._data.splice(start, deleteCount, ...items);
     this.length = this._data.length;
     return removed;
@@ -61,16 +74,16 @@ export class BufferLine implements IBufferLine {
   /** insert n cells ch at pos, right cells are lost (stable length)  */
   public insertCells(pos: number, n: number, ch: CharData): void {
     while (n--) {
-      this.splice(pos, 0, ch);
-      this.pop();
+      this._splice(pos, 0, ch);
+      this._pop();
     }
   }
 
   /** delete n cells at pos, right side is filled with fill (stable length) */
   public deleteCells(pos: number, n: number, fill: CharData): void {
     while (n--) {
-      this.splice(pos, 1);
-      this.push(fill);
+      this._splice(pos, 1);
+      this._push(fill);
     }
   }
 
@@ -79,5 +92,18 @@ export class BufferLine implements IBufferLine {
     while (start < end  && start < this.length) {
       this.set(start++, fill);  // Note: fill is not cloned (resembles old behavior)
     }
+  }
+
+  /** resize line to cols filling new cells with fill */
+  public resize(cols: number, fill: CharData, shrink: boolean = false): void {
+    if (shrink) {
+      while (this._data.length > cols) {
+        this._data.pop();
+      }
+    }
+    while (this._data.length < cols) {
+      this._data.push(fill);
+    }
+    this.length = cols;
   }
 }
