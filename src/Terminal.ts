@@ -494,6 +494,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         }
         break;
       case 'tabStopWidth': this.buffers.setupTabStops(); break;
+      case 'convertEol': this.convertEol = value; break;
     }
     // Inform renderer of changes
     if (this.renderer) {
