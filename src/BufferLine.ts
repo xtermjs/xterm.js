@@ -33,42 +33,29 @@ export class BufferLineOld implements IBufferLine {
     }
   }
 
-  public get(index: number): CharData {
-    return this._data[index];
-  }
-
-  public set(index: number, data: CharData): void {
-    this._data[index] = data;
-  }
-
-  /**
-   * @deprecated
-   */
   private _pop(): CharData | undefined  {
     const data = this._data.pop();
     this.length = this._data.length;
     return data;
   }
 
-  /**
-   * @deprecated
-   * @param data
-   */
   private _push(data: CharData): void {
     this._data.push(data);
     this.length = this._data.length;
   }
 
-  /**
-   * @deprecated
-   * @param start
-   * @param deleteCount
-   * @param items
-   */
   private _splice(start: number, deleteCount: number, ...items: CharData[]): CharData[] {
     const removed = this._data.splice(start, deleteCount, ...items);
     this.length = this._data.length;
     return removed;
+  }
+
+  public get(index: number): CharData {
+    return this._data[index];
+  }
+
+  public set(index: number, data: CharData): void {
+    this._data[index] = data;
   }
 
   /** insert n cells ch at pos, right cells are lost (stable length)  */
