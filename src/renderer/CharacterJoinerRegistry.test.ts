@@ -21,7 +21,7 @@ describe('CharacterJoinerRegistry', () => {
     lines.set(2, lineData([['a -> b -', 0xFFFFFFFF], ['> c -> d', 0]]));
 
     lines.set(3, lineData([['no joined ranges']]));
-    lines.set(4, new BufferLine());
+    lines.set(4, new BufferLine(0));
     lines.set(5, lineData([['a', 0x11111111], [' -> b -> c -> '], ['d', 0x22222222]]));
     const line6 = lineData([['wi']]);
     line6.resize(line6.length + 1, [0, '￥', 2, '￥'.charCodeAt(0)]);

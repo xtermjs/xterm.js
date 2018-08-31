@@ -20,7 +20,7 @@ class TestBufferLine extends BufferLine {
 
 describe('BufferLine', function(): void {
   it('ctor', function(): void {
-    let line: IBufferLine = new TestBufferLine();
+    let line: IBufferLine = new TestBufferLine(0);
     chai.expect(line.length).equals(0);
     chai.expect(line.isWrapped).equals(false);
     line = new TestBufferLine(10);

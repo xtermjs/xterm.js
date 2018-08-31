@@ -17,7 +17,7 @@ export class BufferLineOld implements IBufferLine {
   public isWrapped = false;
   public length: number;
 
-  constructor(cols?: number, ch?: CharData, isWrapped?: boolean) {
+  constructor(cols: number, ch?: CharData, isWrapped?: boolean) {
     this._data = [];
     this.length = this._data.length;
     if (cols) {
@@ -111,7 +111,7 @@ export class BufferLine implements IBufferLine {
   protected _combined: {[index: number]: string} = {};
   public length: number;
 
-  constructor(cols?: number, ch?: CharData, public isWrapped: boolean = false) {
+  constructor(cols: number, ch?: CharData, public isWrapped: boolean = false) {
     this.length = cols || 0;
     if (cols) {
       if (!ch) {
