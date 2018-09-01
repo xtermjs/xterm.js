@@ -100,7 +100,6 @@ const enum Cell {
   SIZE = 3
 }
 
-
 /**
  * Typed array based bufferline implementation.
  * Note:  Unlike the JS variant the access to the data
@@ -211,7 +210,7 @@ export class BufferLine implements IBufferLine {
     } else if (shrink) {
       if (cols) {
         const data = new Uint32Array(cols * Cell.SIZE);
-        data.set(this._data.subarray(0, this.length));
+        data.set(this._data.subarray(0, cols * Cell.SIZE));
         this._data = data;
       } else {
         this._data = null;
