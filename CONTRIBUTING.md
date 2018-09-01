@@ -23,7 +23,7 @@ opening an issue, read these pointers.
 - Mention precisely what went wrong. What did you expect to happen? What happened instead? Describe the
   exact steps a maintainer has to take to make the problem occur.
 
-- If the problem can not be reproduced in the [demo of xterm.js](README.md#demo), please provide an HTML document that demonstrates the problem.
+- If the problem can not be reproduced in the [demo of xterm.js](https://github.com/xtermjs/xterm.js/wiki/Contributing#running-the-demo), please provide an HTML document that demonstrates the problem.
 
 - Be polite. Issues with an indignant or belligerent tone tend to be moved to the
   bottom of the pile.
@@ -33,6 +33,7 @@ opening an issue, read these pointers.
 - Make sure you have a [GitHub account](https://github.com/join)
 - Fork [xterm.js](https://github.com/sourcelair/xterm.js/)
   ([how to fork a repo](https://help.github.com/articles/fork-a-repo))
+- Get the [xterm.js demo](https://github.com/xtermjs/xterm.js/wiki/Contributing#running-the-demo) running
 - Make your changes
 - If your changes are easy to test or likely to regress, add tests. Tests go into `test`, directory.
 - Follow the general code style of the rest of the project (see below).
