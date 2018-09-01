@@ -21,7 +21,7 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharData, LineData, CharacterJoinerHandler } from './Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharData, CharacterJoinerHandler } from './Types';
 import { IMouseZoneManager } from './ui/Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
@@ -52,6 +52,7 @@ import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent } from './common/Types';
 import { evaluateKeyboardEvent } from './core/input/Keyboard';
 import { KeyboardResultType, ICharset } from './core/Types';
+import { BufferLine } from './BufferLine';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -503,10 +504,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   /**
    * Binds the desired focus behavior on a given terminal object.
    */
-  private _onTextAreaFocus(): void {
+  private _onTextAreaFocus(ev: KeyboardEvent): void {
     if (this.sendFocus) {
       this.handler(C0.ESC + '[I');
     }
+    this.updateCursorStyle(ev);
     this.element.classList.add('focus');
     this.showCursor();
     this.emit('focus');
@@ -679,7 +681,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.textarea.setAttribute('autocapitalize', 'off');
     this.textarea.setAttribute('spellcheck', 'false');
     this.textarea.tabIndex = 0;
-    this.register(addDisposableDomListener(this.textarea, 'focus', () => this._onTextAreaFocus()));
+    this.register(addDisposableDomListener(this.textarea, 'focus', (ev: KeyboardEvent) => this._onTextAreaFocus(ev)));
     this.register(addDisposableDomListener(this.textarea, 'blur', () => this._onTextAreaBlur()));
     this._helperContainer.appendChild(this.textarea);
 
@@ -1169,7 +1171,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * @param isWrapped Whether the new line is wrapped from the previous line.
    */
   public scroll(isWrapped?: boolean): void {
-    const newLine = this.blankLine(undefined, isWrapped);
+    const newLine = BufferLine.blankLine(this.cols, DEFAULT_ATTR, isWrapped);
     const topRow = this.buffer.ybase + this.buffer.scrollTop;
     const bottomRow = this.buffer.ybase + this.buffer.scrollBottom;
 
@@ -1708,41 +1710,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   /**
-   * Erase in the identified line everything from "x" to the end of the line (right).
-   * @param x The column from which to start erasing to the end of the line.
-   * @param y The line in which to operate.
-   */
-  public eraseRight(x: number, y: number): void {
-    const line = this.buffer.lines.get(this.buffer.ybase + y);
-    if (!line) {
-      return;
-    }
-    const ch: CharData = [this.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // xterm
-    for (; x < this.cols; x++) {
-      line[x] = ch;
-    }
-    this.updateRange(y);
-  }
-
-  /**
-   * Erase in the identified line everything from "x" to the start of the line (left).
-   * @param x The column from which to start erasing to the start of the line.
-   * @param y The line in which to operate.
-   */
-  public eraseLeft(x: number, y: number): void {
-    const line = this.buffer.lines.get(this.buffer.ybase + y);
-    if (!line) {
-      return;
-    }
-    const ch: CharData = [this.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // xterm
-    x++;
-    while (x--) {
-      line[x] = ch;
-    }
-    this.updateRange(y);
-  }
-
-  /**
    * Clear the entire buffer, making the prompt line the new first line.
    */
   public clear(): void {
@@ -1756,45 +1723,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.buffer.ybase = 0;
     this.buffer.y = 0;
     for (let i = 1; i < this.rows; i++) {
-      this.buffer.lines.push(this.blankLine());
+      this.buffer.lines.push(BufferLine.blankLine(this.cols, DEFAULT_ATTR));
     }
     this.refresh(0, this.rows - 1);
     this.emit('scroll', this.buffer.ydisp);
-  }
-
-  /**
-   * Erase all content in the given line
-   * @param y The line to erase all of its contents.
-   */
-  public eraseLine(y: number): void {
-    this.eraseRight(0, y);
-  }
-
-  /**
-   * Return the data array of a blank line
-   * @param cur First bunch of data for each "blank" character.
-   * @param isWrapped Whether the new line is wrapped from the previous line.
-   * @param cols The number of columns in the terminal, if this is not
-   * set, the terminal's current column count would be used.
-   */
-  public blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): LineData {
-    const attr = cur ? this.eraseAttr() : DEFAULT_ATTR;
-
-    const ch: CharData = [attr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // width defaults to 1 halfwidth character
-    const line: LineData = [];
-
-    // TODO: It is not ideal that this is a property on an array, a buffer line
-    // class should be added that will hold this data and other useful functions.
-    if (isWrapped) {
-      (<any>line).isWrapped = isWrapped;
-    }
-
-    cols = cols || this.cols;
-    for (let i = 0; i < cols; i++) {
-      line[i] = ch;
-    }
-
-    return line;
   }
 
   /**
@@ -1883,7 +1815,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // blankLine(true) is xterm/linux behavior
       const scrollRegionHeight = this.buffer.scrollBottom - this.buffer.scrollTop;
       this.buffer.lines.shiftElements(this.buffer.y + this.buffer.ybase, scrollRegionHeight, 1);
-      this.buffer.lines.set(this.buffer.y + this.buffer.ybase, this.blankLine(true));
+      this.buffer.lines.set(this.buffer.y + this.buffer.ybase, BufferLine.blankLine(this.cols, this.eraseAttr()));
       this.updateRange(this.buffer.scrollTop);
       this.updateRange(this.buffer.scrollBottom);
     } else {

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminal, ICircularList, LineData } from '../Types';
+import { ITerminal, ICircularList, IBufferLine } from '../Types';
 import { C0 } from '../common/data/EscapeSequences';
 
 const enum Direction {
@@ -18,7 +18,7 @@ export class AltClickHandler {
   private _startCol: number;
   private _endRow: number;
   private _endCol: number;
-  private _lines: ICircularList<LineData>;
+  private _lines: ICircularList<IBufferLine>;
 
   constructor(
     private _mouseEvent: MouseEvent,
@@ -138,7 +138,7 @@ export class AltClickHandler {
     for (let i = 0; i < Math.abs(startRow - endRow); i++) {
       const direction = this._verticalDirection() === Direction.UP ? -1 : 1;
 
-      if ((<any>this._lines.get(startRow + (direction * i))).isWrapped) {
+      if (this._lines.get(startRow + (direction * i)).isWrapped) {
         wrappedRows++;
       }
     }
@@ -152,12 +152,12 @@ export class AltClickHandler {
    */
   private _wrappedRowsForRow(currentRow: number): number {
     let rowCount = 0;
-    let lineWraps = (<any>this._lines.get(currentRow)).isWrapped;
+    let lineWraps = this._lines.get(currentRow).isWrapped;
 
     while (lineWraps && currentRow >= 0 && currentRow < this._terminal.rows) {
       rowCount++;
       currentRow--;
-      lineWraps = (<any>this._lines.get(currentRow)).isWrapped;
+      lineWraps = this._lines.get(currentRow).isWrapped;
     }
 
     return rowCount;

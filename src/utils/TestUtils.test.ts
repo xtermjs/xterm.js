@@ -4,8 +4,8 @@
  */
 
 import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../renderer/Types';
-import { LineData, IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ICircularList, ILinkifier, IMouseHelper, ILinkMatcherOptions, XtermListener, CharacterJoinerHandler } from '../Types';
-import { Buffer, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from '../Buffer';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ICircularList, ILinkifier, IMouseHelper, ILinkMatcherOptions, XtermListener, CharacterJoinerHandler, IBufferLine } from '../Types';
+import { Buffer } from '../Buffer';
 import * as Browser from '../shared/utils/Browser';
 import { ITheme, IDisposable, IMarker } from 'xterm';
 
@@ -145,14 +145,6 @@ export class MockTerminal implements ITerminal {
   refresh(start: number, end: number): void {
     throw new Error('Method not implemented.');
   }
-  blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): LineData {
-    const line: LineData = [];
-    cols = cols || this.cols;
-    for (let i = 0; i < cols; i++) {
-      line.push([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
-    }
-    return line;
-  }
   registerCharacterJoiner(handler: CharacterJoinerHandler): number { return 0; }
   deregisterCharacterJoiner(joinerId: number): void { }
 }
@@ -228,9 +220,6 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   eraseLeft(x: number, y: number): void {
     throw new Error('Method not implemented.');
   }
-  blankLine(cur?: boolean, isWrapped?: boolean): [number, string, number, number][] {
-    throw new Error('Method not implemented.');
-  }
   prevStop(x?: number): number {
     throw new Error('Method not implemented.');
   }
@@ -295,7 +284,7 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
 
 export class MockBuffer implements IBuffer {
   isCursorInViewport: boolean;
-  lines: ICircularList<[number, string, number, number][]>;
+  lines: ICircularList<IBufferLine>;
   ydisp: number;
   ybase: number;
   hasScrollback: boolean;
@@ -318,7 +307,7 @@ export class MockBuffer implements IBuffer {
   prevStop(x?: number): number {
     throw new Error('Method not implemented.');
   }
-  setLines(lines: ICircularList<[number, string, number, number][]>): void {
+  setLines(lines: ICircularList<IBufferLine>): void {
     this.lines = lines;
   }
 }

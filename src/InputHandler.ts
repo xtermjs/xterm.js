@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { CharData, IInputHandler, IDcsHandler, IEscapeSequenceParser, IBuffer, IInputHandlingTerminal } from './Types';
+import { IInputHandler, IDcsHandler, IEscapeSequenceParser, IBuffer, IInputHandlingTerminal } from './Types';
 import { C0, C1 } from './common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from './core/data/Charsets';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from './Buffer';
@@ -13,6 +13,7 @@ import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
 import { ICharset } from './core/Types';
 import { Disposable } from './common/Lifecycle';
+import { BufferLine } from './BufferLine';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -116,7 +117,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _surrogateHigh: string;
 
   constructor(
-      private _terminal: IInputHandlingTerminal,
+      protected _terminal: IInputHandlingTerminal,
       private _parser: IEscapeSequenceParser = new EscapeSequenceParser())
   {
     super();
@@ -381,18 +382,20 @@ export class InputHandler extends Disposable implements IInputHandler {
       // since they always follow a cell consuming char
       // therefore we can test for buffer.x to avoid overflow left
       if (!chWidth && buffer.x) {
-        if (bufferRow[buffer.x - 1]) {
-          if (!bufferRow[buffer.x - 1][CHAR_DATA_WIDTH_INDEX]) {
+        const chMinusOne = bufferRow.get(buffer.x - 1);
+        if (chMinusOne) {
+          if (!chMinusOne[CHAR_DATA_WIDTH_INDEX]) {
             // found empty cell after fullwidth, need to go 2 cells back
             // it is save to step 2 cells back here
             // since an empty cell is only set by fullwidth chars
-            if (bufferRow[buffer.x - 2]) {
-              bufferRow[buffer.x - 2][CHAR_DATA_CHAR_INDEX] += char;
-              bufferRow[buffer.x - 2][CHAR_DATA_CODE_INDEX] = code;
+            const chMinusTwo = bufferRow.get(buffer.x - 2);
+            if (chMinusTwo) {
+              chMinusTwo[CHAR_DATA_CHAR_INDEX] += char;
+              chMinusTwo[CHAR_DATA_CODE_INDEX] = code;
             }
           } else {
-            bufferRow[buffer.x - 1][CHAR_DATA_CHAR_INDEX] += char;
-            bufferRow[buffer.x - 1][CHAR_DATA_CODE_INDEX] = code;
+            chMinusOne[CHAR_DATA_CHAR_INDEX] += char;
+            chMinusOne[CHAR_DATA_CODE_INDEX] = code;
           }
         }
         continue;
@@ -412,7 +415,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           } else {
             // The line already exists (eg. the initial viewport), mark it as a
             // wrapped line
-            (<any>buffer.lines.get(buffer.y)).isWrapped = true;
+            buffer.lines.get(buffer.y).isWrapped = true;
           }
           // row changed, get it again
           bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
@@ -435,10 +438,11 @@ export class InputHandler extends Disposable implements IInputHandler {
           // remove last cell
           // if it's width is 0, we have to adjust the second last cell as well
           const removed = bufferRow.pop();
+          const chMinusTwo = bufferRow.get(buffer.x - 2);
           if (removed[CHAR_DATA_WIDTH_INDEX] === 0
-              && bufferRow[this._terminal.cols - 2]
-              && bufferRow[this._terminal.cols - 2][CHAR_DATA_WIDTH_INDEX] === 2) {
-                bufferRow[this._terminal.cols - 2] = [curAttr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
+              && chMinusTwo
+              && chMinusTwo[CHAR_DATA_WIDTH_INDEX] === 2) {
+                bufferRow.set(this._terminal.cols - 2, [curAttr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
           }
 
           // insert empty cell at cursor
@@ -447,11 +451,11 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
 
       // write current char to buffer and advance cursor
-      bufferRow[buffer.x++] = [curAttr, char, chWidth, code];
+      bufferRow.set(buffer.x++, [curAttr, char, chWidth, code]);
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor
       if (chWidth === 2) {
-        bufferRow[buffer.x++] = [curAttr, '', 0, undefined];
+        bufferRow.set(buffer.x++, [curAttr, '', 0, undefined]);
       }
     }
     this._terminal.updateRange(buffer.y);
@@ -546,20 +550,12 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Insert Ps (Blank) Character(s) (default = 1) (ICH).
    */
   public insertChars(params: number[]): void {
-    let param = params[0];
-    if (param < 1) param = 1;
-
-    // make buffer local for faster access
-    const buffer = this._terminal.buffer;
-
-    const row = buffer.y + buffer.ybase;
-    let j = buffer.x;
-    const ch: CharData = [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // xterm
-
-    while (param-- && j < this._terminal.cols) {
-      buffer.lines.get(row).splice(j++, 0, ch);
-      buffer.lines.get(row).pop();
-    }
+    this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).insertCells(
+      this._terminal.buffer.x,
+      params[0] || 1,
+      [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
+    );
+    this._terminal.updateRange(this._terminal.buffer.y);
   }
 
   /**
@@ -720,6 +716,21 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
+   * Helper method to erase cells in a terminal row.
+   * The cell gets replaced with the eraseChar of the terminal.
+   * @param y row index
+   * @param start first cell index to be erased
+   * @param end   end - 1 is last erased cell
+   */
+  private _eraseInBufferLine(y: number, start: number, end: number): void {
+    this._terminal.buffer.lines.get(this._terminal.buffer.ybase + y).replaceCells(
+      start,
+      end,
+      [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
+    );
+  }
+
+  /**
    * CSI Ps J  Erase in Display (ED).
    *     Ps = 0  -> Erase Below (default).
    *     Ps = 1  -> Erase Above.
@@ -735,22 +746,30 @@ export class InputHandler extends Disposable implements IInputHandler {
     let j;
     switch (params[0]) {
       case 0:
-        this._terminal.eraseRight(this._terminal.buffer.x, this._terminal.buffer.y);
-        j = this._terminal.buffer.y + 1;
+        j = this._terminal.buffer.y;
+        this._terminal.updateRange(j);
+        this._eraseInBufferLine(j++, this._terminal.buffer.x, this._terminal.cols);
         for (; j < this._terminal.rows; j++) {
-          this._terminal.eraseLine(j);
+          this._eraseInBufferLine(j, 0, this._terminal.cols);
         }
+        this._terminal.updateRange(j);
         break;
       case 1:
-        this._terminal.eraseLeft(this._terminal.buffer.x, this._terminal.buffer.y);
         j = this._terminal.buffer.y;
+        this._terminal.updateRange(j);
+        this._eraseInBufferLine(j, 0, this._terminal.buffer.x + 1);
         while (j--) {
-          this._terminal.eraseLine(j);
+          this._eraseInBufferLine(j, 0, this._terminal.cols);
         }
+        this._terminal.updateRange(0);
         break;
       case 2:
         j = this._terminal.rows;
-        while (j--) this._terminal.eraseLine(j);
+        this._terminal.updateRange(j - 1);
+        while (j--) {
+          this._eraseInBufferLine(j, 0, this._terminal.cols);
+        }
+        this._terminal.updateRange(0);
         break;
       case 3:
         // Clear scrollback (everything not in viewport)
@@ -780,15 +799,16 @@ export class InputHandler extends Disposable implements IInputHandler {
   public eraseInLine(params: number[]): void {
     switch (params[0]) {
       case 0:
-        this._terminal.eraseRight(this._terminal.buffer.x, this._terminal.buffer.y);
+        this._eraseInBufferLine(this._terminal.buffer.y, this._terminal.buffer.x, this._terminal.cols);
         break;
       case 1:
-        this._terminal.eraseLeft(this._terminal.buffer.x, this._terminal.buffer.y);
+        this._eraseInBufferLine(this._terminal.buffer.y, 0, this._terminal.buffer.x + 1);
         break;
       case 2:
-        this._terminal.eraseLine(this._terminal.buffer.y);
+        this._eraseInBufferLine(this._terminal.buffer.y, 0, this._terminal.cols);
         break;
     }
+    this._terminal.updateRange(this._terminal.buffer.y);
   }
 
   /**
@@ -812,7 +832,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       // test: echo -e '\e[44m\e[1L\e[0m'
       // blankLine(true) - xterm/linux behavior
       buffer.lines.splice(scrollBottomAbsolute - 1, 1);
-      buffer.lines.splice(row, 0, this._terminal.blankLine(true));
+      buffer.lines.splice(row, 0, BufferLine.blankLine(this._terminal.cols, this._terminal.eraseAttr()));
     }
 
     // this.maxRange();
@@ -842,7 +862,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       // test: echo -e '\e[44m\e[1M\e[0m'
       // blankLine(true) - xterm/linux behavior
       buffer.lines.splice(row, 1);
-      buffer.lines.splice(j, 0, this._terminal.blankLine(true));
+      buffer.lines.splice(j, 0, BufferLine.blankLine(this._terminal.cols, this._terminal.eraseAttr()));
     }
 
     // this.maxRange();
@@ -855,22 +875,12 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Delete Ps Character(s) (default = 1) (DCH).
    */
   public deleteChars(params: number[]): void {
-    let param: number = params[0];
-    if (param < 1) {
-      param = 1;
-    }
-
-    // make buffer local for faster access
-    const buffer = this._terminal.buffer;
-
-    const row = buffer.y + buffer.ybase;
-    const ch: CharData = [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // xterm
-
-    while (param--) {
-      buffer.lines.get(row).splice(buffer.x, 1);
-      buffer.lines.get(row).push(ch);
-    }
-    this._terminal.updateRange(buffer.y);
+    this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).deleteCells(
+      this._terminal.buffer.x,
+      params[0] || 1,
+      [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
+    );
+    this._terminal.updateRange(this._terminal.buffer.y);
   }
 
   /**
@@ -884,7 +894,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     while (param--) {
       buffer.lines.splice(buffer.ybase + buffer.scrollTop, 1);
-      buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 0, this._terminal.blankLine());
+      buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 0, BufferLine.blankLine(this._terminal.cols, DEFAULT_ATTR));
     }
     // this.maxRange();
     this._terminal.updateRange(buffer.scrollTop);
@@ -903,7 +913,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
       while (param--) {
         buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 1);
-        buffer.lines.splice(buffer.ybase + buffer.scrollTop, 0, this._terminal.blankLine());
+        buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 0, BufferLine.blankLine(this._terminal.cols, DEFAULT_ATTR));
       }
       // this.maxRange();
       this._terminal.updateRange(buffer.scrollTop);
@@ -916,21 +926,11 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Erase Ps Character(s) (default = 1) (ECH).
    */
   public eraseChars(params: number[]): void {
-    let param = params[0];
-    if (param < 1) {
-      param = 1;
-    }
-
-    // make buffer local for faster access
-    const buffer = this._terminal.buffer;
-
-    const row = buffer.y + buffer.ybase;
-    let j = buffer.x;
-    const ch: CharData = [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // xterm
-
-    while (param-- && j < this._terminal.cols) {
-      buffer.lines.get(row)[j++] = ch;
-    }
+    this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).replaceCells(
+      this._terminal.buffer.x,
+      this._terminal.buffer.x + (params[0] || 1),
+      [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
+    );
   }
 
   /**
@@ -982,17 +982,14 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps b  Repeat the preceding graphic character Ps times (REP).
    */
   public repeatPrecedingCharacter(params: number[]): void {
-    let param = params[0] || 1;
-
     // make buffer local for faster access
     const buffer = this._terminal.buffer;
-
     const line = buffer.lines.get(buffer.ybase + buffer.y);
-    const ch = line[buffer.x - 1] || [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
-
-    while (param--) {
-      line[buffer.x++] = ch;
-    }
+    line.replaceCells(buffer.x,
+      buffer.x + (params[0] || 1),
+      line.get(buffer.x - 1) || [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
+    );
+    // FIXME: no updateRange here?
   }
 
   /**
