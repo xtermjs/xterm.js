@@ -1,4 +1,13 @@
-import * as Terminal from '../build/xterm';
+/**
+ * Copyright (c) 2018 The xterm.js authors. All rights reserved.
+ * @license MIT
+ *
+ * This file is the entry point for browserify.
+ */
+
+/// <reference path="../typings/xterm.d.ts"/>
+
+import { Terminal } from '../lib/public/Terminal';
 import * as attach from '../build/addons/attach/attach';
 import * as fit from '../build/addons/fit/fit';
 import * as fullscreen from '../build/addons/fullscreen/fullscreen';
@@ -6,12 +15,15 @@ import * as search from '../build/addons/search/search';
 import * as webLinks from '../build/addons/webLinks/webLinks';
 import * as winptyCompat from '../build/addons/winptyCompat/winptyCompat';
 
+// Pulling in the module's types relies on the <reference> above, it's looks a
+// little weird here as we're importing "this" module
+import { Terminal as TerminalType } from 'xterm';
+
 export interface IWindowWithTerminal extends Window {
   // TODO: Type me
-  term: any;
+  term: TerminalType;
 }
 declare let window: IWindowWithTerminal;
-
 
 Terminal.applyAddon(attach);
 Terminal.applyAddon(fit);
@@ -166,7 +178,7 @@ function runFakeTerminal(): void {
   }));
 }
 
-function initOptions(term: any): void {
+function initOptions(term: TerminalType): void {
   const blacklistedOptions = [
     // Internal only options
     'cancelEvents',
@@ -189,7 +201,7 @@ function initOptions(term: any): void {
     fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     rendererType: ['dom', 'canvas']
   };
-  const options = Object.keys(term._core.options);
+  const options = Object.keys((<any>term)._core.options);
   const booleanOptions = [];
   const numberOptions = [];
   options.filter(o => blacklistedOptions.indexOf(o) === -1).forEach(o => {

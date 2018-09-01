@@ -5,4 +5,8 @@
     "rootDir": ".",
     "sourceMap": true
   },
+  "include": [
+    "client.ts",
+    "../typings/xterm.d.ts"
+  ]
 }
