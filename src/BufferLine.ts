@@ -100,6 +100,20 @@ const enum Cell {
   SIZE = 3
 }
 
+
+/**
+ * Typed array based bufferline implementation.
+ * Note:  Unlike the JS variant the access to the data
+ *        via set/get is always a copy action.
+ *        Sloppy ref style coding will not work anymore:
+ *           line = new BufferLine(10);
+ *           char = line.get(0);        // char is a copy
+ *           char[some_index] = 123;    // will not update the line
+ *           line.set(0, ch);           // do this to update line data
+ * TODO:
+ *    - provide getData/setData to directly access the data
+ *    - clear/reset method
+ */
 export class BufferLine implements IBufferLine {
   static blankLine(cols: number, attr: number, isWrapped?: boolean): IBufferLine {
     const ch: CharData = [attr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
