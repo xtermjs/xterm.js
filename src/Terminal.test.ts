@@ -6,7 +6,8 @@
 import { assert, expect } from 'chai';
 import { Terminal } from './Terminal';
 import { MockViewport, MockCompositionHelper, MockRenderer } from './utils/TestUtils.test';
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, DEFAULT_ATTR } from './Buffer';
+import { BufferLine } from './BufferLine';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
@@ -141,7 +142,7 @@ describe('term.js addons', () => {
       assert.equal(term.buffer.lines.length, term.rows);
       assert.deepEqual(term.buffer.lines.get(0), promptLine);
       for (let i = 1; i < term.rows; i++) {
-        assert.deepEqual(term.buffer.lines.get(i), term.blankLine());
+        assert.deepEqual(term.buffer.lines.get(i), BufferLine.blankLine(term.cols, DEFAULT_ATTR));
       }
     });
     it('should clear a buffer larger than rows', () => {
@@ -158,7 +159,7 @@ describe('term.js addons', () => {
       assert.equal(term.buffer.lines.length, term.rows);
       assert.deepEqual(term.buffer.lines.get(0), promptLine);
       for (let i = 1; i < term.rows; i++) {
-        assert.deepEqual(term.buffer.lines.get(i), term.blankLine());
+        assert.deepEqual(term.buffer.lines.get(i), BufferLine.blankLine(term.cols, DEFAULT_ATTR));
       }
     });
     it('should not break the prompt when cleared twice', () => {
@@ -171,7 +172,7 @@ describe('term.js addons', () => {
       assert.equal(term.buffer.lines.length, term.rows);
       assert.deepEqual(term.buffer.lines.get(0), promptLine);
       for (let i = 1; i < term.rows; i++) {
-        assert.deepEqual(term.buffer.lines.get(i), term.blankLine());
+        assert.deepEqual(term.buffer.lines.get(i), BufferLine.blankLine(term.cols, DEFAULT_ATTR));
       }
     });
   });
@@ -337,62 +338,62 @@ describe('term.js addons', () => {
     describe('scroll() function', () => {
       describe('when scrollback > 0', () => {
         it('should create a new line and scroll', () => {
-          term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX] = 'a';
-          term.buffer.lines.get(INIT_ROWS - 1)[0][CHAR_DATA_CHAR_INDEX] = 'b';
+          term.buffer.lines.get(0).get(0)[CHAR_DATA_CHAR_INDEX] = 'a';
+          term.buffer.lines.get(INIT_ROWS - 1).get(0)[CHAR_DATA_CHAR_INDEX] = 'b';
           term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
           term.scroll();
           assert.equal(term.buffer.lines.length, INIT_ROWS + 1);
-          assert.equal(term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX], 'a');
-          assert.equal(term.buffer.lines.get(INIT_ROWS - 1)[0][CHAR_DATA_CHAR_INDEX], 'b');
-          assert.equal(term.buffer.lines.get(INIT_ROWS)[0][CHAR_DATA_CHAR_INDEX], ' ');
+          assert.equal(term.buffer.lines.get(0).get(0)[CHAR_DATA_CHAR_INDEX], 'a');
+          assert.equal(term.buffer.lines.get(INIT_ROWS - 1).get(0)[CHAR_DATA_CHAR_INDEX], 'b');
+          assert.equal(term.buffer.lines.get(INIT_ROWS).get(0)[CHAR_DATA_CHAR_INDEX], ' ');
         });
 
         it('should properly scroll inside a scroll region (scrollTop set)', () => {
-          term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX] = 'a';
-          term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX] = 'b';
-          term.buffer.lines.get(2)[0][CHAR_DATA_CHAR_INDEX] = 'c';
+          term.buffer.lines.get(0).get(0)[CHAR_DATA_CHAR_INDEX] = 'a';
+          term.buffer.lines.get(1).get(0)[CHAR_DATA_CHAR_INDEX] = 'b';
+          term.buffer.lines.get(2).get(0)[CHAR_DATA_CHAR_INDEX] = 'c';
           term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
           term.buffer.scrollTop = 1;
           term.scroll();
           assert.equal(term.buffer.lines.length, INIT_ROWS);
-          assert.equal(term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX], 'a');
-          assert.equal(term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX], 'c');
+          assert.equal(term.buffer.lines.get(0).get(0)[CHAR_DATA_CHAR_INDEX], 'a');
+          assert.equal(term.buffer.lines.get(1).get(0)[CHAR_DATA_CHAR_INDEX], 'c');
         });
 
         it('should properly scroll inside a scroll region (scrollBottom set)', () => {
-          term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX] = 'a';
-          term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX] = 'b';
-          term.buffer.lines.get(2)[0][CHAR_DATA_CHAR_INDEX] = 'c';
-          term.buffer.lines.get(3)[0][CHAR_DATA_CHAR_INDEX] = 'd';
-          term.buffer.lines.get(4)[0][CHAR_DATA_CHAR_INDEX] = 'e';
+          term.buffer.lines.get(0).get(0)[CHAR_DATA_CHAR_INDEX] = 'a';
+          term.buffer.lines.get(1).get(0)[CHAR_DATA_CHAR_INDEX] = 'b';
+          term.buffer.lines.get(2).get(0)[CHAR_DATA_CHAR_INDEX] = 'c';
+          term.buffer.lines.get(3).get(0)[CHAR_DATA_CHAR_INDEX] = 'd';
+          term.buffer.lines.get(4).get(0)[CHAR_DATA_CHAR_INDEX] = 'e';
           term.buffer.y = 3;
           term.buffer.scrollBottom = 3;
           term.scroll();
           assert.equal(term.buffer.lines.length, INIT_ROWS + 1);
-          assert.equal(term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX], 'a', '\'a\' should be pushed to the scrollback');
-          assert.equal(term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX], 'b');
-          assert.equal(term.buffer.lines.get(2)[0][CHAR_DATA_CHAR_INDEX], 'c');
-          assert.equal(term.buffer.lines.get(3)[0][CHAR_DATA_CHAR_INDEX], 'd');
-          assert.equal(term.buffer.lines.get(4)[0][CHAR_DATA_CHAR_INDEX], ' ', 'a blank line should be added at scrollBottom\'s index');
-          assert.equal(term.buffer.lines.get(5)[0][CHAR_DATA_CHAR_INDEX], 'e');
+          assert.equal(term.buffer.lines.get(0).get(0)[CHAR_DATA_CHAR_INDEX], 'a', '\'a\' should be pushed to the scrollback');
+          assert.equal(term.buffer.lines.get(1).get(0)[CHAR_DATA_CHAR_INDEX], 'b');
+          assert.equal(term.buffer.lines.get(2).get(0)[CHAR_DATA_CHAR_INDEX], 'c');
+          assert.equal(term.buffer.lines.get(3).get(0)[CHAR_DATA_CHAR_INDEX], 'd');
+          assert.equal(term.buffer.lines.get(4).get(0)[CHAR_DATA_CHAR_INDEX], ' ', 'a blank line should be added at scrollBottom\'s index');
+          assert.equal(term.buffer.lines.get(5).get(0)[CHAR_DATA_CHAR_INDEX], 'e');
         });
 
         it('should properly scroll inside a scroll region (scrollTop and scrollBottom set)', () => {
-          term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX] = 'a';
-          term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX] = 'b';
-          term.buffer.lines.get(2)[0][CHAR_DATA_CHAR_INDEX] = 'c';
-          term.buffer.lines.get(3)[0][CHAR_DATA_CHAR_INDEX] = 'd';
-          term.buffer.lines.get(4)[0][CHAR_DATA_CHAR_INDEX] = 'e';
+          term.buffer.lines.get(0).get(0)[CHAR_DATA_CHAR_INDEX] = 'a';
+          term.buffer.lines.get(1).get(0)[CHAR_DATA_CHAR_INDEX] = 'b';
+          term.buffer.lines.get(2).get(0)[CHAR_DATA_CHAR_INDEX] = 'c';
+          term.buffer.lines.get(3).get(0)[CHAR_DATA_CHAR_INDEX] = 'd';
+          term.buffer.lines.get(4).get(0)[CHAR_DATA_CHAR_INDEX] = 'e';
           term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
           term.buffer.scrollTop = 1;
           term.buffer.scrollBottom = 3;
           term.scroll();
           assert.equal(term.buffer.lines.length, INIT_ROWS);
-          assert.equal(term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX], 'a');
-          assert.equal(term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX], 'c', '\'b\' should be removed from the buffer');
-          assert.equal(term.buffer.lines.get(2)[0][CHAR_DATA_CHAR_INDEX], 'd');
-          assert.equal(term.buffer.lines.get(3)[0][CHAR_DATA_CHAR_INDEX], ' ', 'a blank line should be added at scrollBottom\'s index');
-          assert.equal(term.buffer.lines.get(4)[0][CHAR_DATA_CHAR_INDEX], 'e');
+          assert.equal(term.buffer.lines.get(0).get(0)[CHAR_DATA_CHAR_INDEX], 'a');
+          assert.equal(term.buffer.lines.get(1).get(0)[CHAR_DATA_CHAR_INDEX], 'c', '\'b\' should be removed from the buffer');
+          assert.equal(term.buffer.lines.get(2).get(0)[CHAR_DATA_CHAR_INDEX], 'd');
+          assert.equal(term.buffer.lines.get(3).get(0)[CHAR_DATA_CHAR_INDEX], ' ', 'a blank line should be added at scrollBottom\'s index');
+          assert.equal(term.buffer.lines.get(4).get(0)[CHAR_DATA_CHAR_INDEX], 'e');
         });
       });
 
@@ -403,65 +404,65 @@ describe('term.js addons', () => {
         });
 
         it('should create a new line and shift everything up', () => {
-          term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX] = 'a';
-          term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX] = 'b';
-          term.buffer.lines.get(INIT_ROWS - 1)[0][CHAR_DATA_CHAR_INDEX] = 'c';
+          term.buffer.lines.get(0).get(0)[CHAR_DATA_CHAR_INDEX] = 'a';
+          term.buffer.lines.get(1).get(0)[CHAR_DATA_CHAR_INDEX] = 'b';
+          term.buffer.lines.get(INIT_ROWS - 1).get(0)[CHAR_DATA_CHAR_INDEX] = 'c';
           term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
           assert.equal(term.buffer.lines.length, INIT_ROWS);
           term.scroll();
           assert.equal(term.buffer.lines.length, INIT_ROWS);
           // 'a' gets pushed out of buffer
-          assert.equal(term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX], 'b');
-          assert.equal(term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX], ' ');
-          assert.equal(term.buffer.lines.get(INIT_ROWS - 2)[0][CHAR_DATA_CHAR_INDEX], 'c');
-          assert.equal(term.buffer.lines.get(INIT_ROWS - 1)[0][CHAR_DATA_CHAR_INDEX], ' ');
+          assert.equal(term.buffer.lines.get(0).get(0)[CHAR_DATA_CHAR_INDEX], 'b');
+          assert.equal(term.buffer.lines.get(1).get(0)[CHAR_DATA_CHAR_INDEX], ' ');
+          assert.equal(term.buffer.lines.get(INIT_ROWS - 2).get(0)[CHAR_DATA_CHAR_INDEX], 'c');
+          assert.equal(term.buffer.lines.get(INIT_ROWS - 1).get(0)[CHAR_DATA_CHAR_INDEX], ' ');
         });
 
         it('should properly scroll inside a scroll region (scrollTop set)', () => {
-          term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX] = 'a';
-          term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX] = 'b';
-          term.buffer.lines.get(2)[0][CHAR_DATA_CHAR_INDEX] = 'c';
+          term.buffer.lines.get(0).get(0)[CHAR_DATA_CHAR_INDEX] = 'a';
+          term.buffer.lines.get(1).get(0)[CHAR_DATA_CHAR_INDEX] = 'b';
+          term.buffer.lines.get(2).get(0)[CHAR_DATA_CHAR_INDEX] = 'c';
           term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
           term.buffer.scrollTop = 1;
           term.scroll();
           assert.equal(term.buffer.lines.length, INIT_ROWS);
-          assert.equal(term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX], 'a');
-          assert.equal(term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX], 'c');
+          assert.equal(term.buffer.lines.get(0).get(0)[CHAR_DATA_CHAR_INDEX], 'a');
+          assert.equal(term.buffer.lines.get(1).get(0)[CHAR_DATA_CHAR_INDEX], 'c');
         });
 
         it('should properly scroll inside a scroll region (scrollBottom set)', () => {
-          term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX] = 'a';
-          term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX] = 'b';
-          term.buffer.lines.get(2)[0][CHAR_DATA_CHAR_INDEX] = 'c';
-          term.buffer.lines.get(3)[0][CHAR_DATA_CHAR_INDEX] = 'd';
-          term.buffer.lines.get(4)[0][CHAR_DATA_CHAR_INDEX] = 'e';
+          term.buffer.lines.get(0).get(0)[CHAR_DATA_CHAR_INDEX] = 'a';
+          term.buffer.lines.get(1).get(0)[CHAR_DATA_CHAR_INDEX] = 'b';
+          term.buffer.lines.get(2).get(0)[CHAR_DATA_CHAR_INDEX] = 'c';
+          term.buffer.lines.get(3).get(0)[CHAR_DATA_CHAR_INDEX] = 'd';
+          term.buffer.lines.get(4).get(0)[CHAR_DATA_CHAR_INDEX] = 'e';
           term.buffer.y = 3;
           term.buffer.scrollBottom = 3;
           term.scroll();
           assert.equal(term.buffer.lines.length, INIT_ROWS);
-          assert.equal(term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX], 'b');
-          assert.equal(term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX], 'c');
-          assert.equal(term.buffer.lines.get(2)[0][CHAR_DATA_CHAR_INDEX], 'd');
-          assert.equal(term.buffer.lines.get(3)[0][CHAR_DATA_CHAR_INDEX], ' ', 'a blank line should be added at scrollBottom\'s index');
-          assert.equal(term.buffer.lines.get(4)[0][CHAR_DATA_CHAR_INDEX], 'e');
+          assert.equal(term.buffer.lines.get(0).get(0)[CHAR_DATA_CHAR_INDEX], 'b');
+          assert.equal(term.buffer.lines.get(1).get(0)[CHAR_DATA_CHAR_INDEX], 'c');
+          assert.equal(term.buffer.lines.get(2).get(0)[CHAR_DATA_CHAR_INDEX], 'd');
+          assert.equal(term.buffer.lines.get(3).get(0)[CHAR_DATA_CHAR_INDEX], ' ', 'a blank line should be added at scrollBottom\'s index');
+          assert.equal(term.buffer.lines.get(4).get(0)[CHAR_DATA_CHAR_INDEX], 'e');
         });
 
         it('should properly scroll inside a scroll region (scrollTop and scrollBottom set)', () => {
-          term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX] = 'a';
-          term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX] = 'b';
-          term.buffer.lines.get(2)[0][CHAR_DATA_CHAR_INDEX] = 'c';
-          term.buffer.lines.get(3)[0][CHAR_DATA_CHAR_INDEX] = 'd';
-          term.buffer.lines.get(4)[0][CHAR_DATA_CHAR_INDEX] = 'e';
+          term.buffer.lines.get(0).get(0)[CHAR_DATA_CHAR_INDEX] = 'a';
+          term.buffer.lines.get(1).get(0)[CHAR_DATA_CHAR_INDEX] = 'b';
+          term.buffer.lines.get(2).get(0)[CHAR_DATA_CHAR_INDEX] = 'c';
+          term.buffer.lines.get(3).get(0)[CHAR_DATA_CHAR_INDEX] = 'd';
+          term.buffer.lines.get(4).get(0)[CHAR_DATA_CHAR_INDEX] = 'e';
           term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
           term.buffer.scrollTop = 1;
           term.buffer.scrollBottom = 3;
           term.scroll();
           assert.equal(term.buffer.lines.length, INIT_ROWS);
-          assert.equal(term.buffer.lines.get(0)[0][CHAR_DATA_CHAR_INDEX], 'a');
-          assert.equal(term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX], 'c', '\'b\' should be removed from the buffer');
-          assert.equal(term.buffer.lines.get(2)[0][CHAR_DATA_CHAR_INDEX], 'd');
-          assert.equal(term.buffer.lines.get(3)[0][CHAR_DATA_CHAR_INDEX], ' ', 'a blank line should be added at scrollBottom\'s index');
-          assert.equal(term.buffer.lines.get(4)[0][CHAR_DATA_CHAR_INDEX], 'e');
+          assert.equal(term.buffer.lines.get(0).get(0)[CHAR_DATA_CHAR_INDEX], 'a');
+          assert.equal(term.buffer.lines.get(1).get(0)[CHAR_DATA_CHAR_INDEX], 'c', '\'b\' should be removed from the buffer');
+          assert.equal(term.buffer.lines.get(2).get(0)[CHAR_DATA_CHAR_INDEX], 'd');
+          assert.equal(term.buffer.lines.get(3).get(0)[CHAR_DATA_CHAR_INDEX], ' ', 'a blank line should be added at scrollBottom\'s index');
+          assert.equal(term.buffer.lines.get(4).get(0)[CHAR_DATA_CHAR_INDEX], 'e');
         });
       });
     });
@@ -654,11 +655,11 @@ describe('term.js addons', () => {
       const high = String.fromCharCode(0xD800);
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
         term.write(high + String.fromCharCode(i));
-        const tchar = term.buffer.lines.get(0)[0];
+        const tchar = term.buffer.lines.get(0).get(0);
         expect(tchar[CHAR_DATA_CHAR_INDEX]).eql(high + String.fromCharCode(i));
         expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(2);
         expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(1);
-        expect(term.buffer.lines.get(0)[1][CHAR_DATA_CHAR_INDEX]).eql(' ');
+        expect(term.buffer.lines.get(0).get(1)[CHAR_DATA_CHAR_INDEX]).eql(' ');
         term.reset();
       }
     });
@@ -667,9 +668,9 @@ describe('term.js addons', () => {
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
         term.buffer.x = term.cols - 1;
         term.write(high + String.fromCharCode(i));
-        expect(term.buffer.lines.get(0)[term.buffer.x - 1][CHAR_DATA_CHAR_INDEX]).eql(high + String.fromCharCode(i));
-        expect(term.buffer.lines.get(0)[term.buffer.x - 1][CHAR_DATA_CHAR_INDEX].length).eql(2);
-        expect(term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX]).eql(' ');
+        expect(term.buffer.lines.get(0).get(term.buffer.x - 1)[CHAR_DATA_CHAR_INDEX]).eql(high + String.fromCharCode(i));
+        expect(term.buffer.lines.get(0).get(term.buffer.x - 1)[CHAR_DATA_CHAR_INDEX].length).eql(2);
+        expect(term.buffer.lines.get(1).get(0)[CHAR_DATA_CHAR_INDEX]).eql(' ');
         term.reset();
       }
     });
@@ -679,10 +680,10 @@ describe('term.js addons', () => {
         term.buffer.x = term.cols - 1;
         term.wraparoundMode = true;
         term.write('a' + high + String.fromCharCode(i));
-        expect(term.buffer.lines.get(0)[term.cols - 1][CHAR_DATA_CHAR_INDEX]).eql('a');
-        expect(term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX]).eql(high + String.fromCharCode(i));
-        expect(term.buffer.lines.get(1)[0][CHAR_DATA_CHAR_INDEX].length).eql(2);
-        expect(term.buffer.lines.get(1)[1][CHAR_DATA_CHAR_INDEX]).eql(' ');
+        expect(term.buffer.lines.get(0).get(term.cols - 1)[CHAR_DATA_CHAR_INDEX]).eql('a');
+        expect(term.buffer.lines.get(1).get(0)[CHAR_DATA_CHAR_INDEX]).eql(high + String.fromCharCode(i));
+        expect(term.buffer.lines.get(1).get(0)[CHAR_DATA_CHAR_INDEX].length).eql(2);
+        expect(term.buffer.lines.get(1).get(1)[CHAR_DATA_CHAR_INDEX]).eql(' ');
         term.reset();
       }
     });
@@ -693,9 +694,9 @@ describe('term.js addons', () => {
         term.wraparoundMode = false;
         term.write('a' + high + String.fromCharCode(i));
         // auto wraparound mode should cut off the rest of the line
-        expect(term.buffer.lines.get(0)[term.cols - 1][CHAR_DATA_CHAR_INDEX]).eql('a');
-        expect(term.buffer.lines.get(0)[term.cols - 1][CHAR_DATA_CHAR_INDEX].length).eql(1);
-        expect(term.buffer.lines.get(1)[1][CHAR_DATA_CHAR_INDEX]).eql(' ');
+        expect(term.buffer.lines.get(0).get(term.cols - 1)[CHAR_DATA_CHAR_INDEX]).eql('a');
+        expect(term.buffer.lines.get(0).get(term.cols - 1)[CHAR_DATA_CHAR_INDEX].length).eql(1);
+        expect(term.buffer.lines.get(1).get(1)[CHAR_DATA_CHAR_INDEX]).eql(' ');
         term.reset();
       }
     });
@@ -704,11 +705,11 @@ describe('term.js addons', () => {
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
         term.write(high);
         term.write(String.fromCharCode(i));
-        const tchar = term.buffer.lines.get(0)[0];
+        const tchar = term.buffer.lines.get(0).get(0);
         expect(tchar[CHAR_DATA_CHAR_INDEX]).eql(high + String.fromCharCode(i));
         expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(2);
         expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(1);
-        expect(term.buffer.lines.get(0)[1][CHAR_DATA_CHAR_INDEX]).eql(' ');
+        expect(term.buffer.lines.get(0).get(1)[CHAR_DATA_CHAR_INDEX]).eql(' ');
         term.reset();
       }
     });
@@ -717,30 +718,30 @@ describe('term.js addons', () => {
   describe('unicode - combining characters', () => {
     it('café', () => {
       term.write('cafe\u0301');
-      expect(term.buffer.lines.get(0)[3][CHAR_DATA_CHAR_INDEX]).eql('e\u0301');
-      expect(term.buffer.lines.get(0)[3][CHAR_DATA_CHAR_INDEX].length).eql(2);
-      expect(term.buffer.lines.get(0)[3][CHAR_DATA_WIDTH_INDEX]).eql(1);
+      expect(term.buffer.lines.get(0).get(3)[CHAR_DATA_CHAR_INDEX]).eql('e\u0301');
+      expect(term.buffer.lines.get(0).get(3)[CHAR_DATA_CHAR_INDEX].length).eql(2);
+      expect(term.buffer.lines.get(0).get(3)[CHAR_DATA_WIDTH_INDEX]).eql(1);
     });
     it('café - end of line', () => {
       term.buffer.x = term.cols - 1 - 3;
       term.write('cafe\u0301');
-      expect(term.buffer.lines.get(0)[term.cols - 1][CHAR_DATA_CHAR_INDEX]).eql('e\u0301');
-      expect(term.buffer.lines.get(0)[term.cols - 1][CHAR_DATA_CHAR_INDEX].length).eql(2);
-      expect(term.buffer.lines.get(0)[term.cols - 1][CHAR_DATA_WIDTH_INDEX]).eql(1);
-      expect(term.buffer.lines.get(0)[1][CHAR_DATA_CHAR_INDEX]).eql(' ');
-      expect(term.buffer.lines.get(0)[1][CHAR_DATA_CHAR_INDEX].length).eql(1);
-      expect(term.buffer.lines.get(0)[1][CHAR_DATA_WIDTH_INDEX]).eql(1);
+      expect(term.buffer.lines.get(0).get(term.cols - 1)[CHAR_DATA_CHAR_INDEX]).eql('e\u0301');
+      expect(term.buffer.lines.get(0).get(term.cols - 1)[CHAR_DATA_CHAR_INDEX].length).eql(2);
+      expect(term.buffer.lines.get(0).get(term.cols - 1)[CHAR_DATA_WIDTH_INDEX]).eql(1);
+      expect(term.buffer.lines.get(0).get(1)[CHAR_DATA_CHAR_INDEX]).eql(' ');
+      expect(term.buffer.lines.get(0).get(1)[CHAR_DATA_CHAR_INDEX].length).eql(1);
+      expect(term.buffer.lines.get(0).get(1)[CHAR_DATA_WIDTH_INDEX]).eql(1);
     });
     it('multiple combined é', () => {
       term.wraparoundMode = true;
       term.write(Array(100).join('e\u0301'));
       for (let i = 0; i < term.cols; ++i) {
-        const tchar = term.buffer.lines.get(0)[i];
+        const tchar = term.buffer.lines.get(0).get(i);
         expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('e\u0301');
         expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(2);
         expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(1);
       }
-      const tchar = term.buffer.lines.get(1)[0];
+      const tchar = term.buffer.lines.get(1).get(0);
       expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('e\u0301');
       expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(2);
       expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(1);
@@ -749,12 +750,12 @@ describe('term.js addons', () => {
       term.wraparoundMode = true;
       term.write(Array(100).join('\uD800\uDC00\u0301'));
       for (let i = 0; i < term.cols; ++i) {
-        const tchar = term.buffer.lines.get(0)[i];
+        const tchar = term.buffer.lines.get(0).get(i);
         expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('\uD800\uDC00\u0301');
         expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(3);
         expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(1);
       }
-      const tchar = term.buffer.lines.get(1)[0];
+      const tchar = term.buffer.lines.get(1).get(0);
       expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('\uD800\uDC00\u0301');
       expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(3);
       expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(1);
@@ -777,7 +778,7 @@ describe('term.js addons', () => {
       term.wraparoundMode = true;
       term.write(Array(50).join('￥'));
       for (let i = 0; i < term.cols; ++i) {
-        const tchar = term.buffer.lines.get(0)[i];
+        const tchar = term.buffer.lines.get(0).get(i);
         if (i % 2) {
           expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('');
           expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(0);
@@ -788,7 +789,7 @@ describe('term.js addons', () => {
           expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(2);
         }
       }
-      const tchar = term.buffer.lines.get(1)[0];
+      const tchar = term.buffer.lines.get(1).get(0);
       expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('￥');
       expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(1);
       expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(2);
@@ -798,7 +799,7 @@ describe('term.js addons', () => {
       term.buffer.x = 1;
       term.write(Array(50).join('￥'));
       for (let i = 1; i < term.cols - 1; ++i) {
-        const tchar = term.buffer.lines.get(0)[i];
+        const tchar = term.buffer.lines.get(0).get(i);
         if (!(i % 2)) {
           expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('');
           expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(0);
@@ -809,11 +810,11 @@ describe('term.js addons', () => {
           expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(2);
         }
       }
-      let tchar = term.buffer.lines.get(0)[term.cols - 1];
+      let tchar = term.buffer.lines.get(0).get(term.cols - 1);
       expect(tchar[CHAR_DATA_CHAR_INDEX]).eql(' ');
       expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(1);
       expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(1);
-      tchar = term.buffer.lines.get(1)[0];
+      tchar = term.buffer.lines.get(1).get(0);
       expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('￥');
       expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(1);
       expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(2);
@@ -823,7 +824,7 @@ describe('term.js addons', () => {
       term.buffer.x = 1;
       term.write(Array(50).join('￥\u0301'));
       for (let i = 1; i < term.cols - 1; ++i) {
-        const tchar = term.buffer.lines.get(0)[i];
+        const tchar = term.buffer.lines.get(0).get(i);
         if (!(i % 2)) {
           expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('');
           expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(0);
@@ -834,11 +835,11 @@ describe('term.js addons', () => {
           expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(2);
         }
       }
-      let tchar = term.buffer.lines.get(0)[term.cols - 1];
+      let tchar = term.buffer.lines.get(0).get(term.cols - 1);
       expect(tchar[CHAR_DATA_CHAR_INDEX]).eql(' ');
       expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(1);
       expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(1);
-      tchar = term.buffer.lines.get(1)[0];
+      tchar = term.buffer.lines.get(1).get(0);
       expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('￥\u0301');
       expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(2);
       expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(2);
@@ -847,7 +848,7 @@ describe('term.js addons', () => {
       term.wraparoundMode = true;
       term.write(Array(50).join('￥\u0301'));
       for (let i = 0; i < term.cols; ++i) {
-        const tchar = term.buffer.lines.get(0)[i];
+        const tchar = term.buffer.lines.get(0).get(i);
         if (i % 2) {
           expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('');
           expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(0);
@@ -858,7 +859,7 @@ describe('term.js addons', () => {
           expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(2);
         }
       }
-      const tchar = term.buffer.lines.get(1)[0];
+      const tchar = term.buffer.lines.get(1).get(0);
       expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('￥\u0301');
       expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(2);
       expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(2);
@@ -868,7 +869,7 @@ describe('term.js addons', () => {
       term.buffer.x = 1;
       term.write(Array(50).join('\ud843\ude6d\u0301'));
       for (let i = 1; i < term.cols - 1; ++i) {
-        const tchar = term.buffer.lines.get(0)[i];
+        const tchar = term.buffer.lines.get(0).get(i);
         if (!(i % 2)) {
           expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('');
           expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(0);
@@ -879,11 +880,11 @@ describe('term.js addons', () => {
           expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(2);
         }
       }
-      let tchar = term.buffer.lines.get(0)[term.cols - 1];
+      let tchar = term.buffer.lines.get(0).get(term.cols - 1);
       expect(tchar[CHAR_DATA_CHAR_INDEX]).eql(' ');
       expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(1);
       expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(1);
-      tchar = term.buffer.lines.get(1)[0];
+      tchar = term.buffer.lines.get(1).get(0);
       expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('\ud843\ude6d\u0301');
       expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(3);
       expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(2);
@@ -892,7 +893,7 @@ describe('term.js addons', () => {
       term.wraparoundMode = true;
       term.write(Array(50).join('\ud843\ude6d\u0301'));
       for (let i = 0; i < term.cols; ++i) {
-        const tchar = term.buffer.lines.get(0)[i];
+        const tchar = term.buffer.lines.get(0).get(i);
         if (i % 2) {
           expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('');
           expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(0);
@@ -903,7 +904,7 @@ describe('term.js addons', () => {
           expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(2);
         }
       }
-      const tchar = term.buffer.lines.get(1)[0];
+      const tchar = term.buffer.lines.get(1).get(0);
       expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('\ud843\ude6d\u0301');
       expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(3);
       expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(2);
@@ -918,10 +919,10 @@ describe('term.js addons', () => {
       term.insertMode = true;
       term.write('abcde');
       expect(term.buffer.lines.get(0).length).eql(term.cols);
-      expect(term.buffer.lines.get(0)[10][CHAR_DATA_CHAR_INDEX]).eql('a');
-      expect(term.buffer.lines.get(0)[14][CHAR_DATA_CHAR_INDEX]).eql('e');
-      expect(term.buffer.lines.get(0)[15][CHAR_DATA_CHAR_INDEX]).eql('0');
-      expect(term.buffer.lines.get(0)[79][CHAR_DATA_CHAR_INDEX]).eql('4');
+      expect(term.buffer.lines.get(0).get(10)[CHAR_DATA_CHAR_INDEX]).eql('a');
+      expect(term.buffer.lines.get(0).get(14)[CHAR_DATA_CHAR_INDEX]).eql('e');
+      expect(term.buffer.lines.get(0).get(15)[CHAR_DATA_CHAR_INDEX]).eql('0');
+      expect(term.buffer.lines.get(0).get(79)[CHAR_DATA_CHAR_INDEX]).eql('4');
     });
     it('fullwidth - insert', () => {
       term.write(Array(9).join('0123456789').slice(-80));
@@ -930,11 +931,11 @@ describe('term.js addons', () => {
       term.insertMode = true;
       term.write('￥￥￥');
       expect(term.buffer.lines.get(0).length).eql(term.cols);
-      expect(term.buffer.lines.get(0)[10][CHAR_DATA_CHAR_INDEX]).eql('￥');
-      expect(term.buffer.lines.get(0)[11][CHAR_DATA_CHAR_INDEX]).eql('');
-      expect(term.buffer.lines.get(0)[14][CHAR_DATA_CHAR_INDEX]).eql('￥');
-      expect(term.buffer.lines.get(0)[15][CHAR_DATA_CHAR_INDEX]).eql('');
-      expect(term.buffer.lines.get(0)[79][CHAR_DATA_CHAR_INDEX]).eql('3');
+      expect(term.buffer.lines.get(0).get(10)[CHAR_DATA_CHAR_INDEX]).eql('￥');
+      expect(term.buffer.lines.get(0).get(11)[CHAR_DATA_CHAR_INDEX]).eql('');
+      expect(term.buffer.lines.get(0).get(14)[CHAR_DATA_CHAR_INDEX]).eql('￥');
+      expect(term.buffer.lines.get(0).get(15)[CHAR_DATA_CHAR_INDEX]).eql('');
+      expect(term.buffer.lines.get(0).get(79)[CHAR_DATA_CHAR_INDEX]).eql('3');
     });
     it('fullwidth - right border', () => {
       term.write(Array(41).join('￥'));
@@ -943,14 +944,14 @@ describe('term.js addons', () => {
       term.insertMode = true;
       term.write('a');
       expect(term.buffer.lines.get(0).length).eql(term.cols);
-      expect(term.buffer.lines.get(0)[10][CHAR_DATA_CHAR_INDEX]).eql('a');
-      expect(term.buffer.lines.get(0)[11][CHAR_DATA_CHAR_INDEX]).eql('￥');
-      expect(term.buffer.lines.get(0)[79][CHAR_DATA_CHAR_INDEX]).eql(' ');  // fullwidth char got replaced
+      expect(term.buffer.lines.get(0).get(10)[CHAR_DATA_CHAR_INDEX]).eql('a');
+      expect(term.buffer.lines.get(0).get(11)[CHAR_DATA_CHAR_INDEX]).eql('￥');
+      expect(term.buffer.lines.get(0).get(79)[CHAR_DATA_CHAR_INDEX]).eql(' ');  // fullwidth char got replaced
       term.write('b');
       expect(term.buffer.lines.get(0).length).eql(term.cols);
-      expect(term.buffer.lines.get(0)[11][CHAR_DATA_CHAR_INDEX]).eql('b');
-      expect(term.buffer.lines.get(0)[12][CHAR_DATA_CHAR_INDEX]).eql('￥');
-      expect(term.buffer.lines.get(0)[79][CHAR_DATA_CHAR_INDEX]).eql('');  // empty cell after fullwidth
+      expect(term.buffer.lines.get(0).get(11)[CHAR_DATA_CHAR_INDEX]).eql('b');
+      expect(term.buffer.lines.get(0).get(12)[CHAR_DATA_CHAR_INDEX]).eql('￥');
+      expect(term.buffer.lines.get(0).get(79)[CHAR_DATA_CHAR_INDEX]).eql('');  // empty cell after fullwidth
     });
   });
 });

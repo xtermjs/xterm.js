@@ -1,11 +1,12 @@
 import { assert } from 'chai';
 
-import { LineData, CharData } from '../Types';
 import { MockTerminal, MockBuffer } from '../utils/TestUtils.test';
 import { CircularList } from '../common/CircularList';
 
 import { ICharacterJoinerRegistry } from './Types';
 import { CharacterJoinerRegistry } from './CharacterJoinerRegistry';
+import { BufferLine } from '../BufferLine';
+import { IBufferLine } from '../Types';
 
 describe('CharacterJoinerRegistry', () => {
   let registry: ICharacterJoinerRegistry;
@@ -14,22 +15,25 @@ describe('CharacterJoinerRegistry', () => {
     const terminal = new MockTerminal();
     terminal.cols = 16;
     terminal.buffer = new MockBuffer();
-    const lines = new CircularList<LineData>(7);
-    lines.set(0, lineData('a -> b -> c -> d'));
-    lines.set(1, lineData('a -> b => c -> d'));
-    lines.set(2, [...lineData('a -> b -', 0xFFFFFFFF), ...lineData('> c -> d', 0)]);
-    lines.set(3, lineData('no joined ranges'));
-    lines.set(4, []);
-    lines.set(5, [...lineData('a', 0x11111111), ...lineData(' -> b -> c -> '), ...lineData('d', 0x22222222)]);
-    lines.set(6, [
-      ...lineData('wi'),
-      [0, '￥', 2, '￥'.charCodeAt(0)],
-      [0, '', 0, null],
-      ...lineData('deemo'),
-      [0, '\xf0\x9f\x98\x81', 1, 128513],
-      [0, ' ', 1, ' '.charCodeAt(0)],
-      ...lineData('jiabc')
-    ]);
+    const lines = new CircularList<IBufferLine>(7);
+    lines.set(0, lineData([['a -> b -> c -> d']]));
+    lines.set(1, lineData([['a -> b => c -> d']]));
+    lines.set(2, lineData([['a -> b -', 0xFFFFFFFF], ['> c -> d', 0]]));
+
+    lines.set(3, lineData([['no joined ranges']]));
+    lines.set(4, new BufferLine());
+    lines.set(5, lineData([['a', 0x11111111], [' -> b -> c -> '], ['d', 0x22222222]]));
+    const line6 = lineData([['wi']]);
+    line6.push([0, '￥', 2, '￥'.charCodeAt(0)]);
+    line6.push([0, '', 0, null]);
+    let sub = lineData([['deemo']]);
+    for (let i = 0; i < sub.length; ++i) line6.push(sub.get(i));
+    line6.push([0, '\xf0\x9f\x98\x81', 1, 128513]);
+    line6.push([0, ' ', 1, ' '.charCodeAt(0)]);
+    sub = lineData([['jiabc']]);
+    for (let i = 0; i < sub.length; ++i) line6.push(sub.get(i));
+    lines.set(6, line6);
+
     (<MockBuffer>terminal.buffer).setLines(lines);
     terminal.buffer.ydisp = 0;
     registry = new CharacterJoinerRegistry(terminal);
@@ -257,8 +261,16 @@ describe('CharacterJoinerRegistry', () => {
   });
 });
 
-function lineData(line: string, attr: number = 0): LineData {
-  return line.split('').map<CharData>(char => [attr, char, 1, char.charCodeAt(0)]);
+type IPartialLineData = ([string] | [string, number]);
+
+function lineData(data: IPartialLineData[]): IBufferLine {
+  const tline = new BufferLine();
+  for (let i = 0; i < data.length; ++i) {
+    const line = data[i][0];
+    const attr = <number>(data[i][1] || 0);
+    line.split('').map(char => tline.push([attr, char, 1, char.charCodeAt(0)]));
+  }
+  return tline;
 }
 
 function substringJoiner(substring: string): (sequence: string) => [number, number][] {

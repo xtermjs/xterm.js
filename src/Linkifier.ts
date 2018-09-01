@@ -4,7 +4,7 @@
  */
 
 import { IMouseZoneManager } from './ui/Types';
-import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, ILinkifier, ITerminal, LineData } from './Types';
+import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, ILinkifier, ITerminal, IBufferLine } from './Types';
 import { MouseZone } from './ui/MouseZoneManager';
 import { EventEmitter } from './EventEmitter';
 import { CHAR_DATA_ATTR_INDEX } from './Buffer';
@@ -164,13 +164,13 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       return;
     }
 
-    if ((<any>this._terminal.buffer.lines.get(absoluteRowIndex)).isWrapped) {
+    if (this._terminal.buffer.lines.get(absoluteRowIndex).isWrapped) {
       // Only attempt to linkify rows that start in the viewport
       if (rowIndex !== 0) {
         return;
       }
       // If the first row is wrapped, backtrack to find the origin row and linkify that
-      let line: LineData;
+      let line: IBufferLine;
 
       do {
         rowIndex--;
@@ -181,14 +181,14 @@ export class Linkifier extends EventEmitter implements ILinkifier {
           break;
         }
 
-      } while ((<any>line).isWrapped);
+      } while (line.isWrapped);
     }
 
     // Construct full unwrapped line text
     let text = this._terminal.buffer.translateBufferLineToString(absoluteRowIndex, false);
     let currentIndex = absoluteRowIndex + 1;
     while (currentIndex < this._terminal.buffer.lines.length &&
-      (<any>this._terminal.buffer.lines.get(currentIndex)).isWrapped) {
+      this._terminal.buffer.lines.get(currentIndex).isWrapped) {
       text += this._terminal.buffer.translateBufferLineToString(currentIndex++, false);
     }
 
@@ -219,7 +219,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
 
     // Get cell color
     const line = this._terminal.buffer.lines.get(this._terminal.buffer.ydisp + rowIndex);
-    const char = line[index];
+    const char = line.get(index);
     const attr: number = char[CHAR_DATA_ATTR_INDEX];
     const fg = (attr >> 9) & 0x1ff;
 

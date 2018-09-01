@@ -71,7 +71,7 @@ export class TextRenderLayer extends BaseRenderLayer {
       const line = terminal.buffer.lines.get(row);
       const joinedRanges = joinerRegistry ? joinerRegistry.getJoinedCharacters(row) : [];
       for (let x = 0; x < terminal.cols; x++) {
-        const charData = line[x];
+        const charData = line.get(x);
         let code: number = <number>charData[CHAR_DATA_CODE_INDEX];
 
         // Can either represent character(s) for a single cell or multiple cells
@@ -124,7 +124,7 @@ export class TextRenderLayer extends BaseRenderLayer {
           // get removed, and `a` would not re-render because it thinks it's
           // already in the correct state.
           // this._state.cache[x][y] = OVERLAP_OWNED_CHAR_DATA;
-          if (lastCharX < line.length - 1 && line[lastCharX + 1][CHAR_DATA_CODE_INDEX] === NULL_CELL_CODE) {
+          if (lastCharX < line.length - 1 && line.get(lastCharX + 1)[CHAR_DATA_CODE_INDEX] === NULL_CELL_CODE) {
             width = 2;
             // this._clearChar(x + 1, y);
             // The overlapping char's char data will force a clear and render when the
