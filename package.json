@@ -49,7 +49,7 @@
     "zmodem.js": "^0.1.5"
   },
   "scripts": {
-    "start": "concurrently --kill-others-on-fail --names \"demo,server\" \"gulp watch-demo\" \"node demo/app\"",
+    "start": "node demo/start",
     "start-zmodem": "node demo/zmodem/app",
     "lint": "tslint 'src/**/*.ts'",
     "test": "npm-run-all mocha lint",
