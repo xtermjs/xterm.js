@@ -20,7 +20,6 @@ import * as winptyCompat from '../build/addons/winptyCompat/winptyCompat';
 import { Terminal as TerminalType } from 'xterm';
 
 export interface IWindowWithTerminal extends Window {
-  // TODO: Type me
   term: TerminalType;
 }
 declare let window: IWindowWithTerminal;
