@@ -117,7 +117,7 @@ export class SearchHelper implements ISearchHelper {
     if (searchIndex >= 0) {
       const line = this._terminal._core.buffer.lines.get(y);
       for (let i = 0; i < searchIndex; i++) {
-        const charData = line[i];
+        const charData = line.get(i);
         // Adjust the searchIndex to normalize emoji into single chars
         const char = charData[1/*CHAR_DATA_CHAR_INDEX*/];
         if (char.length > 1) {
