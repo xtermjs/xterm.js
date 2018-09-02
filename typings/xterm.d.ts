@@ -435,6 +435,12 @@ declare module 'xterm' {
      */
     emit(type: string, data?: any): void;
 
+    /**
+     * Adds an event listener to the Terminal, returning an IDisposable that can
+     * be used to conveniently remove the event listener.
+     * @param type The type of event.
+     * @param handler The event handler.
+     */
     addDisposableListener(type: string, handler: (...args: any[]) => void): IDisposable;
 
     /**
