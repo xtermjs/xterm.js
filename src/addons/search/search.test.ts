@@ -21,6 +21,9 @@ class MockTerminal {
   get core(): any {
     return this._core;
   }
+  pushWriteData(): void {
+    this._core._innerWrite();
+  }
 }
 
 describe('search addon', function(): void {
@@ -30,24 +33,17 @@ describe('search addon', function(): void {
       assert.equal(typeof (<any>MockTerminalPlain).prototype.findNext, 'function');
       assert.equal(typeof (<any>MockTerminalPlain).prototype.findPrevious, 'function');
     });
-    });
-  it('Searchhelper - should find correct position', function(done: () => void): void {
+  });
+  it('Searchhelper - should find correct position', function(): void {
     search.apply(<any>MockTerminal);
     const term = new MockTerminal({cols: 20, rows: 3});
     term.core.write('Hello World\r\ntest\n123....hello');
-    setTimeout(() => {
-      const hello0 = (term.searchHelper as any)._findInLine('Hello', 0);
-      const hello1 = (term.searchHelper as any)._findInLine('Hello', 1);
-      const hello2 = (term.searchHelper as any)._findInLine('Hello', 2);
-      expect(hello0).eql({col: 0, row: 0, term: 'Hello'});
-      expect(hello1).eql(undefined);
-      expect(hello2).eql({col: 11, row: 2, term: 'Hello'});
-      done();
-    }, 100);
+    term.pushWriteData();
+    const hello0 = (term.searchHelper as any)._findInLine('Hello', 0);
+    const hello1 = (term.searchHelper as any)._findInLine('Hello', 1);
+    const hello2 = (term.searchHelper as any)._findInLine('Hello', 2);
+    expect(hello0).eql({col: 0, row: 0, term: 'Hello'});
+    expect(hello1).eql(undefined);
+    expect(hello2).eql({col: 11, row: 2, term: 'Hello'});
   });
-  // selection stuff not testable - depends on window
-  // the plugin is imho to high level and does more than searching
-  // maybe separate into:
-  //    - a search addon  - get positions for a term
-  //    - a mark addon    - highlight positions in output
 });
