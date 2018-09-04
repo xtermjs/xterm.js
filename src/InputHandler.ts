@@ -477,7 +477,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     // make buffer local for faster access
     const buffer = this._terminal.buffer;
 
-    if (this._terminal.convertEol) {
+    if (this._terminal.options.convertEol) {
       buffer.x = 0;
     }
     buffer.y++;

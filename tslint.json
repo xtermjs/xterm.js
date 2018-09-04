@@ -59,10 +59,7 @@
         "esSpecCompliant": true
       }
     ],
-    "triple-equals": [
-      true,
-      "allow-null-check"
-    ],
+    "triple-equals": true,
     "typedef-whitespace": [
       true,
       {
@@ -111,7 +108,6 @@
     "prefer-const-enum": [
       true
     ],
-    "prefer-const": true,
-    "triple-equals": true
+    "prefer-const": true
   }
 }
