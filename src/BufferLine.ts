@@ -2,16 +2,16 @@
  * Copyright (c) 2018 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { CharData, IBufferLine, IBufferLineConstructor } from './Types';
+import { CharData, IBufferLine } from './Types';
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from './Buffer';
 
 /**
  * Class representing a terminal line.
  */
-export class BufferLineJsArray implements IBufferLine {
+export class BufferLine implements IBufferLine {
   static blankLine(cols: number, attr: number, isWrapped?: boolean): IBufferLine {
     const ch: CharData = [attr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
-    return new BufferLineJsArray(cols, ch, isWrapped);
+    return new BufferLine(cols, ch, isWrapped);
   }
   protected _data: CharData[];
   public isWrapped = false;
@@ -108,7 +108,7 @@ export class BufferLineJsArray implements IBufferLine {
   }
 
   public clone(): IBufferLine {
-    const newLine = new BufferLineJsArray(0);
+    const newLine = new BufferLine(0);
     newLine.makeCopyOf(this);
     return newLine;
   }
@@ -279,12 +279,3 @@ export class BufferLineTypedArray implements IBufferLine {
     return newLine;
   }
 }
-
-/**
- * implementation switch
- * needed to test the different implementation throughout the
- * whole code base and tests
- * FIXME: remove once we are settled with one
- */
-export const BufferLine = BufferLineJsArray;
-// export const BufferLine: IBufferLineConstructor = BufferLineTypedArray;

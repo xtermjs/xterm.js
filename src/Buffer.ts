@@ -7,7 +7,7 @@ import { CircularList } from './common/CircularList';
 import { CharData, ITerminal, IBuffer, IBufferLine, IBufferLineConstructor } from './Types';
 import { EventEmitter } from './EventEmitter';
 import { IMarker } from 'xterm';
-import { BufferLine, BufferLineJsArray, BufferLineTypedArray } from './BufferLine';
+import { BufferLine, BufferLineTypedArray } from './BufferLine';
 
 export const DEFAULT_ATTR = (0 << 18) | (257 << 9) | (256 << 0);
 export const CHAR_DATA_ATTR_INDEX = 0;
@@ -55,16 +55,10 @@ export class Buffer implements IBuffer {
   }
 
   public setBufferLineFactory(type: string): void {
-    if (type === 'JsArray') {
-      if (this._bufferLineConstructor === BufferLineJsArray) {
-        return;
-      }
-      this._bufferLineConstructor = BufferLineJsArray;
+    if (type === 'JsArray' && this._bufferLineConstructor !== BufferLine) {
+      this._bufferLineConstructor = BufferLine;
       this._recreateLines();
-    } else if (type === 'TypedArray') {
-      if (this._bufferLineConstructor === BufferLineTypedArray) {
-        return;
-      }
+    } else if (type === 'TypedArray' && this._bufferLineConstructor !== BufferLineTypedArray) {
       this._bufferLineConstructor = BufferLineTypedArray;
       this._recreateLines();
     } else {
