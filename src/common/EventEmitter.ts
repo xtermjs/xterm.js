@@ -30,14 +30,15 @@ export class EventEmitter extends Disposable implements IEventEmitter, IDisposab
   public addDisposableListener(type: string, handler: XtermListener): IDisposable {
     // TODO: Rename addDisposableEventListener to more easily disambiguate from Dom listener
     this.on(type, handler);
+    let disposed = false;
     return {
       dispose: () => {
-        if (!handler) {
+        if (disposed) {
           // Already disposed
           return;
         }
         this.off(type, handler);
-        handler = null;
+        disposed = true;
       }
     };
   }

@@ -25,10 +25,10 @@ export interface ICircularList<T> extends IEventEmitter {
   length: number;
   maxLength: number;
 
-  get(index: number): T;
+  get(index: number): T | undefined;
   set(index: number, value: T): void;
   push(value: T): void;
-  pop(): T;
+  pop(): T | undefined;
   splice(start: number, deleteCount: number, ...items: T[]): void;
   trimStart(count: number): void;
   shiftElements(start: number, count: number, offset: number): void;
