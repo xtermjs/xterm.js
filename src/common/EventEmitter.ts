@@ -5,7 +5,7 @@
 
 import { XtermListener } from './Types';
 import { IEventEmitter, IDisposable } from 'xterm';
-import { Disposable } from './common/Lifecycle';
+import { Disposable } from './Lifecycle';
 
 export class EventEmitter extends Disposable implements IEventEmitter, IDisposable {
   private _events: {[type: string]: XtermListener[]};
