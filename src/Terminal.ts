@@ -134,7 +134,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   // TODO: This can be changed to an enum or boolean, 0 and 1 seem to be the only options
   public cursorState: number;
   public cursorHidden: boolean;
-  public convertEol: boolean;
 
   private _customKeyEventHandler: CustomKeyEventHandler;
 
