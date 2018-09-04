@@ -2,16 +2,16 @@
  * Copyright (c) 2018 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { CharData, IBufferLine } from './Types';
+import { CharData, IBufferLine, IBufferLineConstructor } from './Types';
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from './Buffer';
 
 /**
  * Class representing a terminal line.
  */
-export class BufferLineOld implements IBufferLine {
+export class BufferLineJsArray implements IBufferLine {
   static blankLine(cols: number, attr: number, isWrapped?: boolean): IBufferLine {
     const ch: CharData = [attr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
-    return new BufferLineOld(cols, ch, isWrapped);
+    return new BufferLineJsArray(cols, ch, isWrapped);
   }
   protected _data: CharData[];
   public isWrapped = false;
@@ -108,7 +108,7 @@ export class BufferLineOld implements IBufferLine {
   }
 
   public clone(): IBufferLine {
-    const newLine = new BufferLineOld(0);
+    const newLine = new BufferLineJsArray(0);
     newLine.makeCopyOf(this);
     return newLine;
   }
@@ -133,10 +133,10 @@ const enum Cell {
  * TODO:
  *    - provide getData/setData to directly access the data
  */
-export class BufferLine implements IBufferLine {
+export class BufferLineTypedArray implements IBufferLine {
   static blankLine(cols: number, attr: number, isWrapped?: boolean): IBufferLine {
     const ch: CharData = [attr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
-    return new BufferLine(cols, ch, isWrapped);
+    return new BufferLineTypedArray(cols, ch, isWrapped);
   }
   protected _data: Uint32Array | null = null;
   protected _combined: {[index: number]: string} = {};
@@ -241,10 +241,6 @@ export class BufferLine implements IBufferLine {
     this.length = cols;
   }
 
-  /**
-   * new methods...
-   */
-
   /** fill a line with fillCharData */
   public fill(fillCharData: CharData): void {
     this._combined = {};
@@ -254,7 +250,7 @@ export class BufferLine implements IBufferLine {
   }
 
   /** alter to a full copy of line  */
-  public makeCopyOf(line: BufferLine): void {
+  public makeCopyOf(line: BufferLineTypedArray): void {
     if (this.length !== line.length) {
       this._data = new Uint32Array(line._data);
     } else {
@@ -271,7 +267,7 @@ export class BufferLine implements IBufferLine {
 
   /** create a new clone */
   public clone(): IBufferLine {
-    const newLine = new BufferLine(0);
+    const newLine = new BufferLineTypedArray(0);
     // creation of new typed array from another is actually pretty slow :(
     // still faster than copying values one by one
     newLine._data = new Uint32Array(this._data);
@@ -283,3 +279,12 @@ export class BufferLine implements IBufferLine {
     return newLine;
   }
 }
+
+/**
+ * implementation switch
+ * needed to test the different implementation throughout the
+ * whole code base and tests
+ * FIXME: remove once we are settled with one
+ */
+export const BufferLine = BufferLineJsArray;
+// export const BufferLine: IBufferLineConstructor = BufferLineTypedArray;

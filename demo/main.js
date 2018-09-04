@@ -184,7 +184,8 @@ function initOptions(term) {
     fontFamily: null,
     fontWeight: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
-    rendererType: ['dom', 'canvas']
+    rendererType: ['dom', 'canvas'],
+    bufferLineConstructor: ['JsArray', 'TypedArray']
   };
   var options = Object.keys(term._core.options);
   var booleanOptions = [];

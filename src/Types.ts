@@ -264,6 +264,7 @@ export interface ITerminalOptions extends IPublicTerminalOptions {
   screenKeys?: boolean;
   termName?: string;
   useFlowControl?: boolean;
+  bufferLineConstructor?: string;
 }
 
 export interface IBuffer {
@@ -522,4 +523,9 @@ export interface IBufferLine {
   fill(fillCharData: CharData): void;
   makeCopyOf(line: IBufferLine): void;
   clone(): IBufferLine;
+}
+
+export interface IBufferLineConstructor {
+  new(cols: number, fillCharData?: CharData, isWrapped?: boolean): IBufferLine;
+  blankLine(cols: number, attr: number, isWrapped?: boolean): IBufferLine;
 }
