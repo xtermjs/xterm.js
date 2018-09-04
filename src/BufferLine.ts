@@ -91,6 +91,27 @@ export class BufferLineOld implements IBufferLine {
     }
     this.length = cols;
   }
+
+  public fill(fillCharData: CharData): void {
+    for (let i = 0; i < this.length; ++i) {
+      this.set(i, fillCharData);
+    }
+  }
+
+  public makeCopyOf(line: IBufferLine): void {
+    this._data = [];
+    for (let i = 0; i < line.length; ++i) {
+      this.set(i, line.get(i));
+    }
+    this.length = line.length;
+    this.isWrapped = line.isWrapped;
+  }
+
+  public clone(): IBufferLine {
+    const newLine = new BufferLineOld(0);
+    newLine.makeCopyOf(this);
+    return newLine;
+  }
 }
 
 const enum Cell {
@@ -111,7 +132,6 @@ const enum Cell {
  *           line.set(0, ch);           // do this to update line data
  * TODO:
  *    - provide getData/setData to directly access the data
- *    - clear/reset method
  */
 export class BufferLine implements IBufferLine {
   static blankLine(cols: number, attr: number, isWrapped?: boolean): IBufferLine {
@@ -141,7 +161,9 @@ export class BufferLine implements IBufferLine {
         ? this._combined[index]
         : (stringData) ? String.fromCharCode(stringData) : '',
       this._data[index * Cell.SIZE + Cell.WIDTH],
-      stringData & ~0x80000000
+      (stringData & 0x80000000)
+        ? this._combined[index].charCodeAt(this._combined[index].length - 1)
+        : stringData
     ];
   }
 
@@ -217,5 +239,47 @@ export class BufferLine implements IBufferLine {
       }
     }
     this.length = cols;
+  }
+
+  /**
+   * new methods...
+   */
+
+  /** fill a line with fillCharData */
+  public fill(fillCharData: CharData): void {
+    this._combined = {};
+    for (let i = 0; i < this.length; ++i) {
+      this.set(i, fillCharData);
+    }
+  }
+
+  /** alter to a full copy of line  */
+  public makeCopyOf(line: BufferLine): void {
+    if (this.length !== line.length) {
+      this._data = new Uint32Array(line._data);
+    } else {
+      // use high speed copy if lengths are equal
+      this._data.set(line._data);
+    }
+    this.length = line.length;
+    this._combined = {};
+    for (const el in line._combined) {
+      this._combined[el] = line._combined[el];
+    }
+    this.isWrapped = line.isWrapped;
+  }
+
+  /** create a new clone */
+  public clone(): IBufferLine {
+    const newLine = new BufferLine(0);
+    // creation of new typed array from another is actually pretty slow :(
+    // still faster than copying values one by one
+    newLine._data = new Uint32Array(this._data);
+    newLine.length = this.length;
+    for (const el in this._combined) {
+      newLine._combined[el] = this._combined[el];
+    }
+    newLine.isWrapped = this.isWrapped;
+    return newLine;
   }
 }

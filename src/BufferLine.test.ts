@@ -90,4 +90,57 @@ describe('BufferLine', function(): void {
       [5, 'e', 0, 'e'.charCodeAt(0)]
     ]);
   });
+  it('fill', function(): void {
+    const line = new TestBufferLine(5);
+    line.set(0, [1, 'a', 0, 'a'.charCodeAt(0)]);
+    line.set(1, [2, 'b', 0, 'b'.charCodeAt(0)]);
+    line.set(2, [3, 'c', 0, 'c'.charCodeAt(0)]);
+    line.set(3, [4, 'd', 0, 'd'.charCodeAt(0)]);
+    line.set(4, [5, 'e', 0, 'e'.charCodeAt(0)]);
+    line.fill([123, 'z', 0, 'z'.charCodeAt(0)]);
+    chai.expect(line.toArray()).eql([
+      [123, 'z', 0, 'z'.charCodeAt(0)],
+      [123, 'z', 0, 'z'.charCodeAt(0)],
+      [123, 'z', 0, 'z'.charCodeAt(0)],
+      [123, 'z', 0, 'z'.charCodeAt(0)],
+      [123, 'z', 0, 'z'.charCodeAt(0)]
+    ]);
+  });
+  it('clone', function(): void {
+    const line = new TestBufferLine(5, null, true);
+    line.set(0, [1, 'a', 0, 'a'.charCodeAt(0)]);
+    line.set(1, [2, 'b', 0, 'b'.charCodeAt(0)]);
+    line.set(2, [3, 'c', 0, 'c'.charCodeAt(0)]);
+    line.set(3, [4, 'd', 0, 'd'.charCodeAt(0)]);
+    line.set(4, [5, 'e', 0, 'e'.charCodeAt(0)]);
+    const line2 = line.clone();
+    chai.expect(TestBufferLine.prototype.toArray.apply(line2)).eql(line.toArray());
+    chai.expect(line2.length).equals(line.length);
+    chai.expect(line2.isWrapped).equals(line.isWrapped);
+  });
+  it('makeCopyOf', function(): void {
+    const line = new TestBufferLine(5);
+    line.set(0, [1, 'a', 0, 'a'.charCodeAt(0)]);
+    line.set(1, [2, 'b', 0, 'b'.charCodeAt(0)]);
+    line.set(2, [3, 'c', 0, 'c'.charCodeAt(0)]);
+    line.set(3, [4, 'd', 0, 'd'.charCodeAt(0)]);
+    line.set(4, [5, 'e', 0, 'e'.charCodeAt(0)]);
+    const line2 = new TestBufferLine(5, [1, 'a', 0, 'a'.charCodeAt(0)], true);
+    line2.makeCopyOf(line);
+    chai.expect(line2.toArray()).eql(line.toArray());
+    chai.expect(line2.length).equals(line.length);
+    chai.expect(line2.isWrapped).equals(line.isWrapped);
+  });
+  it('should support combining chars', function(): void {
+    // CHAR_DATA_CODE_INDEX resembles current behavior in InputHandler.print
+    // --> set code to the last charCodeAt value of the string
+    // Note: needs to be fixed once the string pointer is in place
+    const line = new TestBufferLine(2, [1, 'e\u0301', 0, '\u0301'.charCodeAt(0)]);
+    chai.expect(line.toArray()).eql([[1, 'e\u0301', 0, '\u0301'.charCodeAt(0)], [1, 'e\u0301', 0, '\u0301'.charCodeAt(0)]]);
+    const line2 = new TestBufferLine(5, [1, 'a', 0, '\u0301'.charCodeAt(0)], true);
+    line2.makeCopyOf(line);
+    chai.expect(line2.toArray()).eql(line.toArray());
+    const line3 = line.clone();
+    chai.expect(TestBufferLine.prototype.toArray.apply(line3)).eql(line.toArray());
+  });
 });
