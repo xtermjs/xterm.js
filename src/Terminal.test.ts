@@ -86,22 +86,32 @@ describe('term.js addons', () => {
     });
 
     describe(`keypress (including 'key' event)`, () => {
-      it('should receive a string and event object', () => {
+      it('should receive a string and event object', (done) => {
+        let steps = 0;
+
+        const finish = () => {
+          if ((++steps) === 2) {
+            done();
+          }
+        };
+
         const evKeyPress = <KeyboardEvent>{
           preventDefault: () => { },
           stopPropagation: () => { },
           type: 'keypress',
-          keyCode: 77
+          keyCode: 13
         };
 
         term.on('keypress', (key, event) => {
           assert.equal(typeof key, 'string');
           expect(event).to.be.an.instanceof(Object);
+          finish();
         });
 
         term.on('key', (key, event) => {
           assert.equal(typeof key, 'string');
           expect(event).to.be.an.instanceof(Object);
+          finish();
         });
 
         term.keyPress(evKeyPress);
@@ -109,22 +119,31 @@ describe('term.js addons', () => {
     });
 
     describe(`keydown (including 'key' event)`, () => {
-      it('should receive a string and event object', () => {
+      it(`should receive an event object for 'keydown' and a string and event object for 'key'`, (done) => {
+        let steps = 0;
+
+        const finish = () => {
+          if ((++steps) === 2) {
+            done();
+          }
+        };
+
         const evKeyDown = <KeyboardEvent>{
           preventDefault: () => { },
           stopPropagation: () => { },
           type: 'keydown',
-          keyCode: 77
+          keyCode: 13
         };
 
-        term.on('keydown', (key, event) => {
-          assert.equal(typeof key, 'string');
+        term.on('keydown', (event) => {
           expect(event).to.be.an.instanceof(Object);
+          finish();
         });
 
         term.on('key', (key, event) => {
           assert.equal(typeof key, 'string');
           expect(event).to.be.an.instanceof(Object);
+          finish();
         });
 
         term.keyDown(evKeyDown);
@@ -132,41 +151,49 @@ describe('term.js addons', () => {
     });
 
     describe('refresh', () => {
-      it('should receive an object: {start: number, end: number}', () => {
+      it('should receive an object: {start: number, end: number}', (done) => {
         term.on('refresh', (data) => {
           expect(data).to.have.keys(['start', 'end']);
           assert.equal(typeof data.start, 'number');
           assert.equal(typeof data.end, 'number');
+          done();
         });
+
         term.refresh(0, term.rows - 1);
       });
     });
 
     describe('resize', () => {
-      it('should receive an object: {cols: number, rows: number}', () => {
+      it('should receive an object: {cols: number, rows: number}', (done) => {
         term.on('resize', (data) => {
           expect(data).to.have.keys(['cols', 'rows']);
           assert.equal(typeof data.cols, 'number');
           assert.equal(typeof data.rows, 'number');
+          done();
         });
+
         term.resize(1, 1);
       });
     });
 
     describe('scroll', () => {
-      it('should receive a number', () => {
+      it('should receive a number', (done) => {
         term.on('scroll', (ydisp) => {
           assert.equal(typeof ydisp, 'number');
+          done();
         });
+
         term.scroll();
       });
     });
 
     describe('title', () => {
-      it('should receive a string', () => {
+      it('should receive a string', (done) => {
         term.on('title', (title) => {
           assert.equal(typeof title, 'string');
+          done();
         });
+
         term.handleTitle('title');
       });
     });
