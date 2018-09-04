@@ -28,6 +28,9 @@ export class Viewport extends Disposable implements IViewport {
   // quick fix and could have a more robust solution in place that reset the value when needed.
   private _wheelPartialScroll: number = 0;
 
+  private _refreshAnimationFrame: number | null = null;
+  private _ignoreNextScrollEvent: boolean = false;
+
   /**
    * Creates a new Viewport.
    * @param _terminal The terminal this viewport belongs to.
@@ -62,6 +65,12 @@ export class Viewport extends Disposable implements IViewport {
    * necessary.
    */
   private _refresh(): void {
+    if (this._refreshAnimationFrame === null) {
+      this._refreshAnimationFrame = requestAnimationFrame(() => this._innerRefresh());
+    }
+  }
+
+  private _innerRefresh(): void {
     if (this._charMeasure.height > 0) {
       this._currentRowHeight = this._terminal.renderer.dimensions.scaledCellHeight / window.devicePixelRatio;
       this._lastRecordedViewportHeight = this._viewportElement.offsetHeight;
@@ -71,6 +80,17 @@ export class Viewport extends Disposable implements IViewport {
         this._scrollArea.style.height = this._lastRecordedBufferHeight + 'px';
       }
     }
+
+    // Sync scrollTop
+    const scrollTop = this._terminal.buffer.ydisp * this._currentRowHeight;
+    if (this._viewportElement.scrollTop !== scrollTop) {
+      // Ignore the next scroll event which will be triggered by setting the scrollTop as we do not
+      // want this event to scroll the terminal
+      this._ignoreNextScrollEvent = true;
+      this._viewportElement.scrollTop = scrollTop;
+    }
+
+    this._refreshAnimationFrame = null;
   }
 
   /**
@@ -90,12 +110,6 @@ export class Viewport extends Disposable implements IViewport {
         this._refresh();
       }
     }
-
-    // Sync scrollTop
-    const scrollTop = this._terminal.buffer.ydisp * this._currentRowHeight;
-    if (this._viewportElement.scrollTop !== scrollTop) {
-      this._viewportElement.scrollTop = scrollTop;
-    }
   }
 
   /**
@@ -109,6 +123,13 @@ export class Viewport extends Disposable implements IViewport {
     if (!this._viewportElement.offsetParent) {
       return;
     }
+
+    // Ignore the event if it was flagged to ignore (when the source of the event is from Viewport)
+    if (this._ignoreNextScrollEvent) {
+      this._ignoreNextScrollEvent = false;
+      return;
+    }
+
 
     const newRow = Math.round(this._viewportElement.scrollTop / this._currentRowHeight);
     const diff = newRow - this._terminal.buffer.ydisp;

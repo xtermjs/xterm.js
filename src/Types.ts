@@ -66,7 +66,6 @@ export interface IInputHandlingTerminal extends IEventEmitter {
 
   bell(): void;
   focus(): void;
-  convertEol: boolean;
   updateRange(y: number): void;
   scroll(isWrapped?: boolean): void;
   setgLevel(g: number): void;
