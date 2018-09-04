@@ -38,7 +38,7 @@
     "source-map-loader": "^0.2.3",
     "tslint": "^5.9.1",
     "tslint-consistent-codestyle": "^1.13.0",
-    "typescript": "2.8.3",
+    "typescript": "3.0",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.1.0",
     "webpack": "^3.10.0",
