@@ -284,6 +284,7 @@ export interface IBuffer {
   getWrappedRangeForLine(y: number): { first: number, last: number };
   nextStop(x?: number): number;
   prevStop(x?: number): number;
+  getBlankLine(attr: number, isWrapped?: boolean): IBufferLine;
 }
 
 export interface IBufferSet extends IEventEmitter {
@@ -527,5 +528,4 @@ export interface IBufferLine {
 
 export interface IBufferLineConstructor {
   new(cols: number, fillCharData?: CharData, isWrapped?: boolean): IBufferLine;
-  blankLine(cols: number, attr: number, isWrapped?: boolean): IBufferLine;
 }

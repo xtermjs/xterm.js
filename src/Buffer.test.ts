@@ -37,7 +37,7 @@ describe('Buffer', () => {
 
   describe('fillViewportRows', () => {
     it('should fill the buffer with blank lines based on the size of the viewport', () => {
-      const blankLineChar = BufferLine.blankLine(terminal.cols, DEFAULT_ATTR).get(0);
+      const blankLineChar = buffer.getBlankLine(DEFAULT_ATTR).get(0);
       buffer.fillViewportRows();
       assert.equal(buffer.lines.length, INIT_ROWS);
       for (let y = 0; y < INIT_ROWS; y++) {
@@ -184,7 +184,7 @@ describe('Buffer', () => {
           buffer.fillViewportRows();
           // Create 10 extra blank lines
           for (let i = 0; i < 10; i++) {
-            buffer.lines.push(BufferLine.blankLine(terminal.cols, DEFAULT_ATTR));
+            buffer.lines.push(buffer.getBlankLine(DEFAULT_ATTR));
           }
           // Set cursor to the bottom of the buffer
           buffer.y = INIT_ROWS - 1;
@@ -204,7 +204,7 @@ describe('Buffer', () => {
           buffer.fillViewportRows();
           // Create 10 extra blank lines
           for (let i = 0; i < 10; i++) {
-            buffer.lines.push(BufferLine.blankLine(terminal.cols, DEFAULT_ATTR));
+            buffer.lines.push(buffer.getBlankLine(DEFAULT_ATTR));
           }
           // Set cursor to the bottom of the buffer
           buffer.y = INIT_ROWS - 1;

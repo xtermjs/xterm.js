@@ -5,7 +5,7 @@
 import * as chai from 'chai';
 import { BufferLine } from './BufferLine';
 import { CharData, IBufferLine } from './Types';
-import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, CHAR_DATA_ATTR_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX } from './Buffer';
+import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from './Buffer';
 
 
 class TestBufferLine extends BufferLine {
@@ -35,16 +35,6 @@ describe('BufferLine', function(): void {
     chai.expect(line.length).equals(10);
     chai.expect(line.get(0)).eql([123, 'a', 456, 'a'.charCodeAt(0)]);
     chai.expect(line.isWrapped).equals(true);
-  });
-  it('TerminalLine.blankLine', function(): void {
-    const line = TestBufferLine.blankLine(5, 123);
-    chai.expect(line.length).equals(5);
-    chai.expect(line.isWrapped).equals(false);
-    const ch = line.get(0);
-    chai.expect(ch[CHAR_DATA_ATTR_INDEX]).equals(123);
-    chai.expect(ch[CHAR_DATA_CHAR_INDEX]).equals(NULL_CELL_CHAR);
-    chai.expect(ch[CHAR_DATA_WIDTH_INDEX]).equals(NULL_CELL_WIDTH);
-    chai.expect(ch[CHAR_DATA_CODE_INDEX]).equals(NULL_CELL_CODE);
   });
   it('insertCells', function(): void {
     const line = new TestBufferLine(3);

@@ -78,8 +78,9 @@ export class Buffer implements IBuffer {
     }
   }
 
-  public getBlankLine(cols: number, attr: number, isWrapped?: boolean): IBufferLine {
-    return this._bufferLineConstructor.blankLine(cols, attr, isWrapped);
+  public getBlankLine(attr: number, isWrapped?: boolean): IBufferLine {
+    const fillCharData: CharData = [attr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
+    return new this._bufferLineConstructor(this._terminal.cols, fillCharData, isWrapped);
   }
 
   public get hasScrollback(): boolean {
@@ -114,7 +115,7 @@ export class Buffer implements IBuffer {
     if (this.lines.length === 0) {
       let i = this._terminal.rows;
       while (i--) {
-        this.lines.push(BufferLine.blankLine(this._terminal.cols, DEFAULT_ATTR));
+        this.lines.push(this.getBlankLine(DEFAULT_ATTR));
       }
     }
   }
@@ -175,7 +176,8 @@ export class Buffer implements IBuffer {
             } else {
               // Add a blank line if there is no buffer left at the top to scroll to, or if there
               // are blank lines after the cursor
-              this.lines.push(BufferLine.blankLine(newCols, DEFAULT_ATTR));
+              const fillCharData: CharData = [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
+              this.lines.push(new this._bufferLineConstructor(newCols, fillCharData));
             }
           }
         }

@@ -9,10 +9,6 @@ import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from './Buffer';
  * Class representing a terminal line.
  */
 export class BufferLine implements IBufferLine {
-  static blankLine(cols: number, attr: number, isWrapped?: boolean): IBufferLine {
-    const ch: CharData = [attr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
-    return new BufferLine(cols, ch, isWrapped);
-  }
   protected _data: CharData[];
   public isWrapped = false;
   public length: number;
@@ -134,10 +130,6 @@ const enum Cell {
  *    - provide getData/setData to directly access the data
  */
 export class BufferLineTypedArray implements IBufferLine {
-  static blankLine(cols: number, attr: number, isWrapped?: boolean): IBufferLine {
-    const ch: CharData = [attr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
-    return new BufferLineTypedArray(cols, ch, isWrapped);
-  }
   protected _data: Uint32Array | null = null;
   protected _combined: {[index: number]: string} = {};
   public length: number;

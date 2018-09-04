@@ -4,10 +4,11 @@
  */
 
 import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../renderer/Types';
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ICircularList, ILinkifier, IMouseHelper, ILinkMatcherOptions, XtermListener, CharacterJoinerHandler, IBufferLine } from '../Types';
-import { Buffer } from '../Buffer';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ICircularList, ILinkifier, IMouseHelper, ILinkMatcherOptions, XtermListener, CharacterJoinerHandler, IBufferLine, CharData } from '../Types';
+import { Buffer, NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH } from '../Buffer';
 import * as Browser from '../shared/utils/Browser';
 import { ITheme, IDisposable, IMarker } from 'xterm';
+import { BufferLine } from '../BufferLine';
 
 export class MockTerminal implements ITerminal {
   markers: IMarker[];
@@ -309,6 +310,10 @@ export class MockBuffer implements IBuffer {
   }
   setLines(lines: ICircularList<IBufferLine>): void {
     this.lines = lines;
+  }
+  getBlankLine(attr: number, isWrapped: boolean = false): IBufferLine {
+    const fillCharData: CharData = [attr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
+    return new BufferLine(80, fillCharData, isWrapped);
   }
 }
 

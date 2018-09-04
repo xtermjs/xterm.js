@@ -1174,7 +1174,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * @param isWrapped Whether the new line is wrapped from the previous line.
    */
   public scroll(isWrapped?: boolean): void {
-    const newLine = this.buffer.getBlankLine(this.cols, DEFAULT_ATTR, isWrapped);
+    const newLine = this.buffer.getBlankLine(DEFAULT_ATTR, isWrapped);
     const topRow = this.buffer.ybase + this.buffer.scrollTop;
     const bottomRow = this.buffer.ybase + this.buffer.scrollBottom;
 
@@ -1726,7 +1726,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.buffer.ybase = 0;
     this.buffer.y = 0;
     for (let i = 1; i < this.rows; i++) {
-      this.buffer.lines.push(this.buffer.getBlankLine(this.cols, DEFAULT_ATTR));
+      this.buffer.lines.push(this.buffer.getBlankLine(DEFAULT_ATTR));
     }
     this.refresh(0, this.rows - 1);
     this.emit('scroll', this.buffer.ydisp);
@@ -1818,7 +1818,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // blankLine(true) is xterm/linux behavior
       const scrollRegionHeight = this.buffer.scrollBottom - this.buffer.scrollTop;
       this.buffer.lines.shiftElements(this.buffer.y + this.buffer.ybase, scrollRegionHeight, 1);
-      this.buffer.lines.set(this.buffer.y + this.buffer.ybase, this.buffer.getBlankLine(this.cols, this.eraseAttr()));
+      this.buffer.lines.set(this.buffer.y + this.buffer.ybase, this.buffer.getBlankLine(this.eraseAttr()));
       this.updateRange(this.buffer.scrollTop);
       this.updateRange(this.buffer.scrollBottom);
     } else {
