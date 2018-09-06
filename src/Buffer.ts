@@ -266,7 +266,7 @@ export class Buffer implements IBuffer {
   }
 
   /**
-   * Translates a buffer line to a string, with optional start and end columns.
+   * Translates a buffer line to a string, including subsequent lines if they are wraps.
    * Wide characters will count as two columns in the resulting string. This
    * function is useful for getting the actual text underneath the raw selection
    * position.
