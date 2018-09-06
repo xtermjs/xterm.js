@@ -5,11 +5,14 @@
 
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_ATTR_INDEX, CHAR_DATA_WIDTH_INDEX } from '../../Buffer';
 import { FLAGS } from '../Types';
-import { IBufferLine } from '../../Types';
+import { IBufferLine, ICursorOptions } from '../../Types';
 
 export const BOLD_CLASS = 'xterm-bold';
 export const ITALIC_CLASS = 'xterm-italic';
 export const CURSOR_CLASS = 'xterm-cursor';
+export const CURSOR_STYLE_BLOCK_CLASS = 'xterm-cursor-block';
+export const CURSOR_STYLE_BAR_CLASS = 'xterm-cursor-bar';
+export const CURSOR_STYLE_UNDERLINE_CLASS = 'xterm-cursor-underline';
 
 export class DomRendererRowFactory {
   constructor(
@@ -17,7 +20,7 @@ export class DomRendererRowFactory {
   ) {
   }
 
-  public createRow(lineData: IBufferLine, isCursorRow: boolean, cursorX: number, cellWidth: number, cols: number): DocumentFragment {
+  public createRow(lineData: IBufferLine, cursorOptions: ICursorOptions, cursorX: number, cellWidth: number, cols: number): DocumentFragment {
     const fragment = this._document.createDocumentFragment();
     let colCount = 0;
 
@@ -46,8 +49,20 @@ export class DomRendererRowFactory {
       let bg = attr & 0x1ff;
       let fg = (attr >> 9) & 0x1ff;
 
-      if (isCursorRow && x === cursorX) {
+      if (cursorOptions.isCursorRow && x === cursorX) {
         charElement.classList.add(CURSOR_CLASS);
+
+        switch (cursorOptions.cursorStyle) {
+          case 'block':
+            charElement.classList.add(CURSOR_STYLE_BLOCK_CLASS);
+            break;
+          case 'bar':
+            charElement.classList.add(CURSOR_STYLE_BAR_CLASS);
+            break;
+          case 'underline':
+            charElement.classList.add(CURSOR_STYLE_UNDERLINE_CLASS);
+            break;
+        }
       }
 
       // If inverse flag is on, the foreground should become the background.
