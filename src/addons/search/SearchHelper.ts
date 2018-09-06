@@ -107,7 +107,7 @@ export class SearchHelper implements ISearchHelper {
    * @return The search result if it was found.
    */
   protected _findInLine(term: string, y: number, searchOptions: ISearchOptions = {}): ISearchResult {
-    const lowerStringLine = this._terminal._core.buffer.translateBufferLineToString(y, true).toLowerCase();
+    const lowerStringLine = this._terminal._core.buffer.translateBufferLineToStringWithWrap(y, true).toLowerCase();
     const lowerTerm = term.toLowerCase();
     let searchIndex = -1;
     if (searchOptions.regex) {

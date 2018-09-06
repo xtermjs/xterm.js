@@ -265,6 +265,33 @@ export class Buffer implements IBuffer {
     return lineString.substring(startIndex, endIndex);
   }
 
+  /**
+   * Translates a buffer line to a string, with optional start and end columns.
+   * Wide characters will count as two columns in the resulting string. This
+   * function is useful for getting the actual text underneath the raw selection
+   * position.
+   * @param line The line being translated.
+   * @param trimRight Whether to trim whitespace to the right.
+   */
+  public translateBufferLineToStringWithWrap(lineIndex: number, trimRight: boolean): string {
+    // Get full line
+    let lineString = '';
+    let lineWrapsToNext = true;
+    if (this.lines.get(lineIndex).isWrapped) {
+      // This terminal line is a continuation of the previous line.
+      return '';
+    }
+
+    do {
+      lineString += this.translateBufferLineToString(lineIndex, true);
+      lineIndex++;
+      const nextLine = this.lines.get(lineIndex);
+      lineWrapsToNext = nextLine ? this.lines.get(lineIndex).isWrapped : false;
+    } while (lineWrapsToNext);
+
+    return lineString;
+  }
+
   public getWrappedRangeForLine(y: number): { first: number, last: number } {
     let first = y;
     let last = y;

@@ -40,45 +40,57 @@ describe('search addon', function(): void {
       assert.equal(typeof (<any>MockTerminalPlain).prototype.findPrevious, 'function');
     });
   });
-  it('Searchhelper - should find correct position', function(): void {
-    search.apply(<any>MockTerminal);
-    const term = new MockTerminal({cols: 20, rows: 3});
-    term.core.write('Hello World\r\ntest\n123....hello');
-    term.pushWriteData();
-    const hello0 = term.searchHelper.findInLine('Hello', 0);
-    const hello1 = term.searchHelper.findInLine('Hello', 1);
-    const hello2 = term.searchHelper.findInLine('Hello', 2);
-    expect(hello0).eql({col: 0, row: 0, term: 'Hello'});
-    expect(hello1).eql(undefined);
-    expect(hello2).eql({col: 11, row: 2, term: 'Hello'});
-  });
-  it('should respect search regex', function(): void {
-    search.apply(<any>MockTerminal);
-    const term = new MockTerminal({cols: 10, rows: 4});
-    term.core.write('abcdefghijklmnopqrstuvwxyz\r\n~/dev  ');
-    /*
-      abcdefghij
-      klmnopqrst
-      uvwxyz
-      ~/dev
-    */
-    term.pushWriteData();
-    const searchOptions = {
-      regex: true,
-      wholeWord: false,
-      caseSensitive: false
-    };
-    const hello0 = term.searchHelper.findInLine('dee*', 0, searchOptions);
-    term.searchHelper.findInLine('jkk*', 0, searchOptions);
-    term.searchHelper.findInLine('mnn*', 1, searchOptions);
-    const tilda0 = term.searchHelper.findInLine('^~', 3, searchOptions);
-    const tilda1 = term.searchHelper.findInLine('^[~]', 3, searchOptions);
-    const tilda2 = term.searchHelper.findInLine('^\\~', 3, searchOptions);
-    expect(hello0).eql({col: 3, row: 0, term: 'de'});
-    // TODO: uncomment this test when line wrap search is checked in expect(hello1).eql({col: 9, row: 0, term: 'jk'});
-    // TODO: uncomment this test when line wrap search is checked in expect(hello2).eql(undefined);
-    expect(tilda0).eql({col: 0, row: 3, term: '~'});
-    expect(tilda1).eql({col: 0, row: 3, term: '~'});
-    expect(tilda2).eql({col: 0, row: 3, term: '~'});
+  describe('find', () => {
+    it('Searchhelper - should find correct position', function(): void {
+      search.apply(<any>MockTerminal);
+      const term = new MockTerminal({cols: 20, rows: 3});
+      term.core.write('Hello World\r\ntest\n123....hello');
+      term.pushWriteData();
+      const hello0 = term.searchHelper.findInLine('Hello', 0);
+      const hello1 = term.searchHelper.findInLine('Hello', 1);
+      const hello2 = term.searchHelper.findInLine('Hello', 2);
+      expect(hello0).eql({col: 0, row: 0, term: 'Hello'});
+      expect(hello1).eql(undefined);
+      expect(hello2).eql({col: 11, row: 2, term: 'Hello'});
+    });
+    it('should find search term accross line wrap', function(): void {
+      search.apply(<any>MockTerminal);
+      const term = new MockTerminal({cols: 10, rows: 2});
+      term.core.write('texttextHellotext');
+      term.pushWriteData();
+      const hello0 = (term.searchHelper as any)._findInLine('Hello', 0);
+      const hello1 = (term.searchHelper as any)._findInLine('Hello', 1);
+      expect(hello0).eql({col: 8, row: 0, term: 'Hello'});
+      expect(hello1).eql(undefined);
+    });
+    it('should respect search regex', function(): void {
+      search.apply(<any>MockTerminal);
+      const term = new MockTerminal({cols: 10, rows: 4});
+      term.core.write('abcdefghijklmnopqrstuvwxyz\r\n~/dev  ');
+      /*
+        abcdefghij
+        klmnopqrst
+        uvwxyz
+        ~/dev
+      */
+      term.pushWriteData();
+      const searchOptions = {
+        regex: true,
+        wholeWord: false,
+        caseSensitive: false
+      };
+      const hello0 = term.searchHelper.findInLine('dee*', 0, searchOptions);
+      const hello1 = term.searchHelper.findInLine('jkk*', 0, searchOptions);
+      const hello2 = term.searchHelper.findInLine('mnn*', 1, searchOptions);
+      const tilda0 = term.searchHelper.findInLine('^~', 3, searchOptions);
+      const tilda1 = term.searchHelper.findInLine('^[~]', 3, searchOptions);
+      const tilda2 = term.searchHelper.findInLine('^\\~', 3, searchOptions);
+      expect(hello0).eql({col: 3, row: 0, term: 'de'});
+      expect(hello1).eql({col: 9, row: 0, term: 'jk'});
+      expect(hello2).eql(undefined);
+      expect(tilda0).eql({col: 0, row: 3, term: '~'});
+      expect(tilda1).eql({col: 0, row: 3, term: '~'});
+      expect(tilda2).eql({col: 0, row: 3, term: '~'});
+    });
   });
 });
