@@ -55,13 +55,19 @@ describe('search addon', function(): void {
     });
     it('should find search term accross line wrap', function(): void {
       search.apply(<any>MockTerminal);
-      const term = new MockTerminal({cols: 10, rows: 2});
-      term.core.write('texttextHellotext');
+      const term = new MockTerminal({cols: 10, rows: 5});
+      term.core.write('texttextHellotext\r\n');
+      term.core.write('texttexttextHellotext');
       term.pushWriteData();
+
       const hello0 = (term.searchHelper as any)._findInLine('Hello', 0);
       const hello1 = (term.searchHelper as any)._findInLine('Hello', 1);
+      const hello2 = (term.searchHelper as any)._findInLine('Hello', 2);
+      const hello3 = (term.searchHelper as any)._findInLine('Hello', 3);
       expect(hello0).eql({col: 8, row: 0, term: 'Hello'});
       expect(hello1).eql(undefined);
+      expect(hello2).eql(undefined);
+      expect(hello3).eql({col: 2, row: 3, term: 'Hello'});
     });
     it('should respect search regex', function(): void {
       search.apply(<any>MockTerminal);

@@ -120,8 +120,9 @@ export class SearchHelper implements ISearchHelper {
     } else {
       searchIndex = lowerStringLine.indexOf(lowerTerm);
     }
-    if (searchIndex >= 0) {
-      const line = this._terminal._core.buffer.lines.get(y);
+
+    const line = this._terminal._core.buffer.lines.get(y);
+    if ((searchIndex >= 0) && (searchIndex < line.length)) {
       for (let i = 0; i < searchIndex; i++) {
         const charData = line.get(i);
         // Adjust the searchIndex to normalize emoji into single chars

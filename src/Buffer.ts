@@ -274,13 +274,8 @@ export class Buffer implements IBuffer {
    * @param trimRight Whether to trim whitespace to the right.
    */
   public translateBufferLineToStringWithWrap(lineIndex: number, trimRight: boolean): string {
-    // Get full line
     let lineString = '';
-    let lineWrapsToNext = true;
-    if (this.lines.get(lineIndex).isWrapped) {
-      // This terminal line is a continuation of the previous line.
-      return '';
-    }
+    let lineWrapsToNext: boolean;
 
     do {
       lineString += this.translateBufferLineToString(lineIndex, true);
