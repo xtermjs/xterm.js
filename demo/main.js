@@ -83,13 +83,23 @@ function createTerminal() {
   addDomListener(actionElements.findNext, 'keypress', function (e) {
     if (e.key === "Enter") {
       e.preventDefault();
-      term.findNext(actionElements.findNext.value, document.getElementById('regex').checked);
+      let searchOptions = {
+        regex: document.getElementById('regex').checked,
+        wholeWord: false,
+        caseSensitive: false
+      };
+      term.findNext(actionElements.findNext.value, searchOptions);
     }
   });
   addDomListener(actionElements.findPrevious, 'keypress', function (e) {
     if (e.key === "Enter") {
       e.preventDefault();
-      term.findPrevious(actionElements.findPrevious.value, document.getElementById('regex').checked);
+      let searchOptions = {
+        regex: document.getElementById('regex').checked,
+        wholeWord: false,
+        caseSensitive: false
+      };
+      term.findPrevious(actionElements.findPrevious.value, searchOptions);
     }
   });
 

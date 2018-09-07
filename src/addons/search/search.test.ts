@@ -48,19 +48,31 @@ describe('search addon', function(): void {
   });
   it('should respect search regex', function(): void {
     search.apply(<any>MockTerminal);
-    const term = new MockTerminal({cols: 10, rows: 3});
-    term.core.write('abcdefghijklmnopqrstuvwxyz');
+    const term = new MockTerminal({cols: 10, rows: 4});
+    term.core.write('abcdefghijklmnopqrstuvwxyz\r\n~/dev  ');
     /*
       abcdefghij
       klmnopqrst
       uvwxyz
+      ~/dev
     */
     term.pushWriteData();
-    const hello0 = (term.searchHelper as any)._findInLine('dee*', 0, true);
-    const hello1 = (term.searchHelper as any)._findInLine('jkk*', 0, true);
-    const hello2 = (term.searchHelper as any)._findInLine('mnn*', 1, true);
-    expect(hello0).eql({col: 3, row: 0, term: 'dee*'});
-    // TODO: uncomment this test when line wrap search is checked in expect(hello1).eql({col: 9, row: 0, term: 'jkk*'});
+    const searchOptions = {
+      regex: true,
+      wholeWord: false,
+      caseSensitive: false
+    };
+    const hello0 = (term.searchHelper as any)._findInLine('dee*', 0, searchOptions);
+    const hello1 = (term.searchHelper as any)._findInLine('jkk*', 0, searchOptions);
+    const hello2 = (term.searchHelper as any)._findInLine('mnn*', 1, searchOptions);
+    const tilda0 = (term.searchHelper as any)._findInLine('^~', 3, searchOptions);
+    const tilda1 = (term.searchHelper as any)._findInLine('^[~]', 3, searchOptions);
+    const tilda2 = (term.searchHelper as any)._findInLine('^\\~', 3, searchOptions);
+    expect(hello0).eql({col: 3, row: 0, term: 'de'});
+    // TODO: uncomment this test when line wrap search is checked in expect(hello1).eql({col: 9, row: 0, term: 'jk'});
     // TODO: uncomment this test when line wrap search is checked in expect(hello2).eql(undefined);
+    expect(tilda0).eql({col: 0, row: 3, term: '~'});
+    expect(tilda1).eql({col: 0, row: 3, term: '~'});
+    expect(tilda2).eql({col: 0, row: 3, term: '~'});
   });
 });
