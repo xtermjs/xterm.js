@@ -13,10 +13,19 @@ class MockTerminalPlain {}
 
 class MockTerminal {
   private _core: any;
+<<<<<<< HEAD
   public searchHelper: TestSearchHelper;
   constructor(options: any) {
     this._core = new (require('../../../lib/Terminal').Terminal)(options);
     this.searchHelper = new TestSearchHelper(this as any);
+=======
+  public searchHelper: ISearchHelper;
+  public cols: number;
+  constructor(options: any) {
+    this._core = new (require('../../../lib/Terminal').Terminal)(options);
+    this.searchHelper = new SearchHelper(this as any);
+    this.cols = options.cols;
+>>>>>>> Fixed issues around searching lines twice and considering a wrapped line both it's own line and part of the previous line.
   }
   get core(): any {
     return this._core;
@@ -66,8 +75,8 @@ describe('search addon', function(): void {
       const hello3 = (term.searchHelper as any)._findInLine('Hello', 3);
       expect(hello0).eql({col: 8, row: 0, term: 'Hello'});
       expect(hello1).eql(undefined);
-      expect(hello2).eql(undefined);
-      expect(hello3).eql({col: 2, row: 3, term: 'Hello'});
+      expect(hello2).eql({col: 2, row: 3, term: 'Hello'});
+      expect(hello3).eql(undefined);
     });
     it('should respect search regex', function(): void {
       search.apply(<any>MockTerminal);

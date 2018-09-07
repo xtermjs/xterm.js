@@ -100,15 +100,20 @@ export class SearchHelper implements ISearchHelper {
   }
 
   /**
-   * Searches a line for a search term.
-   * @param term The search term.
+   * Searches a line for a search term. Takes the provided terminal line and searches the text line, which may contain
+   * subsequent terminal lines if the text is wrapped. If the provided line number is part of a wrapped text line that
+   * started on an earlier line then it is skipped since it will be properly searched when the terminal line that the
+   * text starts on is searched.
+   * @param term Tne search term.
    * @param y The line to search.
    * @param searchOptions Search options.
    * @return The search result if it was found.
    */
   protected _findInLine(term: string, y: number, searchOptions: ISearchOptions = {}): ISearchResult {
-    const lowerStringLine = this._terminal._core.buffer.translateBufferLineToStringWithWrap(y, true).toLowerCase();
-    const lowerTerm = term.toLowerCase();
+    if (this._terminal._core.buffer.lines.get(y).isWrapped) {
+      return;
+    }
+    const lowerStringLine = this.translateBufferLineToStringWithWrap(y, true).toLowerCase();    const lowerTerm = term.toLowerCase();
     let searchIndex = -1;
     if (searchOptions.regex) {
       const searchRegex = RegExp(lowerTerm, 'g');
@@ -121,8 +126,14 @@ export class SearchHelper implements ISearchHelper {
       searchIndex = lowerStringLine.indexOf(lowerTerm);
     }
 
-    const line = this._terminal._core.buffer.lines.get(y);
-    if ((searchIndex >= 0) && (searchIndex < line.length)) {
+    if (searchIndex >= 0) {
+      // Adjust the row number and search index if needed since a "line" of text can span multiple rows
+      if (searchIndex >= this._terminal.cols) {
+        y += Math.floor(searchIndex / this._terminal.cols);
+        searchIndex = searchIndex % this._terminal.cols;
+      }
+      const line = this._terminal._core.buffer.lines.get(y);
+
       for (let i = 0; i < searchIndex; i++) {
         const charData = line.get(i);
         // Adjust the searchIndex to normalize emoji into single chars
@@ -143,6 +154,28 @@ export class SearchHelper implements ISearchHelper {
         row: y
       };
     }
+  }
+
+  /**
+   * Translates a buffer line to a string, including subsequent lines if they are wraps.
+   * Wide characters will count as two columns in the resulting string. This
+   * function is useful for getting the actual text underneath the raw selection
+   * position.
+   * @param line The line being translated.
+   * @param trimRight Whether to trim whitespace to the right.
+   */
+  public translateBufferLineToStringWithWrap(lineIndex: number, trimRight: boolean): string {
+    let lineString = '';
+    let lineWrapsToNext: boolean;
+
+    do {
+      lineString += this._terminal._core.buffer.translateBufferLineToString(lineIndex, true);
+      lineIndex++;
+      const nextLine = this._terminal._core.buffer.lines.get(lineIndex);
+      lineWrapsToNext = nextLine ? this._terminal._core.buffer.lines.get(lineIndex).isWrapped : false;
+    } while (lineWrapsToNext);
+
+    return lineString;
   }
 
   /**
