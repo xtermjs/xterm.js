@@ -46,4 +46,21 @@ describe('search addon', function(): void {
     expect(hello1).eql(undefined);
     expect(hello2).eql({col: 11, row: 2, term: 'Hello'});
   });
+  it('should respect search regex', function(): void {
+    search.apply(<any>MockTerminal);
+    const term = new MockTerminal({cols: 10, rows: 3});
+    term.core.write('abcdefghijklmnopqrstuvwxyz');
+    /*
+      abcdefghij
+      klmnopqrst
+      uvwxyz
+    */
+    term.pushWriteData();
+    const hello0 = (term.searchHelper as any)._findInLine('dee*', 0, true);
+    const hello1 = (term.searchHelper as any)._findInLine('jkk*', 0, true);
+    const hello2 = (term.searchHelper as any)._findInLine('mnn*', 1, true);
+    expect(hello0).eql({col: 3, row: 0, term: 'dee*'});
+    // TODO: uncomment this test when line wrap search is checked in expect(hello1).eql({col: 9, row: 0, term: 'jkk*'});
+    // TODO: uncomment this test when line wrap search is checked in expect(hello2).eql(undefined);
+  });
 });
