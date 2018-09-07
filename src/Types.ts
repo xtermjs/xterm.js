@@ -522,11 +522,3 @@ export interface IBufferLine {
   deleteCells(pos: number, n: number, fill: CharData): void;
   replaceCells(start: number, end: number, fill: CharData): void;
 }
-
-/**
- * Interface for cursor options in the cursor line of the terminal buffer.
- */
-export interface ICursorOptions {
-  isCursorRow: boolean;
-  cursorStyle?: string;
-}
