@@ -68,15 +68,24 @@ describe('search addon', function(): void {
       term.core.write('texttextHellotext\r\n');
       term.core.write('texttexttextHellotext');
       term.pushWriteData();
+      /*
+        texttextHe
+        llotext
+        texttextte
+        xtHellotex
+        t
+      */
 
       const hello0 = (term.searchHelper as any)._findInLine('Hello', 0);
       const hello1 = (term.searchHelper as any)._findInLine('Hello', 1);
       const hello2 = (term.searchHelper as any)._findInLine('Hello', 2);
       const hello3 = (term.searchHelper as any)._findInLine('Hello', 3);
+      const llo = (term.searchHelper as any)._findInLine('llo', 1);
       expect(hello0).eql({col: 8, row: 0, term: 'Hello'});
       expect(hello1).eql(undefined);
       expect(hello2).eql({col: 2, row: 3, term: 'Hello'});
       expect(hello3).eql(undefined);
+      expect(llo).eql(undefined);
     });
     it('should respect search regex', function(): void {
       search.apply(<any>MockTerminal);
