@@ -83,13 +83,13 @@ function createTerminal() {
   addDomListener(actionElements.findNext, 'keypress', function (e) {
     if (e.key === "Enter") {
       e.preventDefault();
-      term.findNext(actionElements.findNext.value);
+      term.findNext(actionElements.findNext.value, document.getElementById('regex').checked);
     }
   });
   addDomListener(actionElements.findPrevious, 'keypress', function (e) {
     if (e.key === "Enter") {
       e.preventDefault();
-      term.findPrevious(actionElements.findPrevious.value);
+      term.findPrevious(actionElements.findPrevious.value, document.getElementById('regex').checked);
     }
   });
 

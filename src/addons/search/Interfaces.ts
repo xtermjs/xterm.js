@@ -17,6 +17,6 @@ export interface ISearchAddonTerminal extends Terminal {
 }
 
 export interface ISearchHelper {
-  findNext(term: string): boolean;
-  findPrevious(term: string): boolean;
+  findNext(term: string, regex: boolean): boolean;
+  findPrevious(term: string, regex: boolean): boolean;
 }

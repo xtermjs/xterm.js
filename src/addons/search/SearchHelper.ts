@@ -26,9 +26,10 @@ export class SearchHelper implements ISearchHelper {
    * Find the next instance of the term, then scroll to and select it. If it
    * doesn't exist, do nothing.
    * @param term Tne search term.
+   * @param regex Should use regular expressions
    * @return Whether a result was found.
    */
-  public findNext(term: string): boolean {
+  public findNext(term: string, regex: boolean = false): boolean {
     if (!term || term.length === 0) {
       return false;
     }
@@ -43,7 +44,7 @@ export class SearchHelper implements ISearchHelper {
 
     // Search from ydisp + 1 to end
     for (let y = startRow + 1; y < this._terminal._core.buffer.ybase + this._terminal.rows; y++) {
-      result = this._findInLine(term, y);
+      result = this._findInLine(term, y, regex);
       if (result) {
         break;
       }
@@ -52,7 +53,7 @@ export class SearchHelper implements ISearchHelper {
     // Search from the top to the current ydisp
     if (!result) {
       for (let y = 0; y < startRow; y++) {
-        result = this._findInLine(term, y);
+        result = this._findInLine(term, y, regex);
         if (result) {
           break;
         }
@@ -67,9 +68,10 @@ export class SearchHelper implements ISearchHelper {
    * Find the previous instance of the term, then scroll to and select it. If it
    * doesn't exist, do nothing.
    * @param term Tne search term.
+   * @param regex Should use regular expressions
    * @return Whether a result was found.
    */
-  public findPrevious(term: string): boolean {
+  public findPrevious(term: string, regex: boolean = false): boolean {
     if (!term || term.length === 0) {
       return false;
     }
@@ -84,7 +86,7 @@ export class SearchHelper implements ISearchHelper {
 
     // Search from ydisp + 1 to end
     for (let y = startRow - 1; y >= 0; y--) {
-      result = this._findInLine(term, y);
+      result = this._findInLine(term, y, regex);
       if (result) {
         break;
       }
@@ -93,7 +95,7 @@ export class SearchHelper implements ISearchHelper {
     // Search from the top to the current ydisp
     if (!result) {
       for (let y = this._terminal._core.buffer.ybase + this._terminal.rows - 1; y > startRow; y--) {
-        result = this._findInLine(term, y);
+        result = this._findInLine(term, y, regex);
         if (result) {
           break;
         }
@@ -108,12 +110,22 @@ export class SearchHelper implements ISearchHelper {
    * Searches a line for a search term.
    * @param term Tne search term.
    * @param y The line to search.
+   * @param regex Should use regular expressions
    * @return The search result if it was found.
    */
-  private _findInLine(term: string, y: number): ISearchResult {
+  private _findInLine(term: string, y: number, regex: boolean): ISearchResult {
     const lowerStringLine = this._terminal._core.buffer.translateBufferLineToString(y, true).toLowerCase();
     const lowerTerm = term.toLowerCase();
-    let searchIndex = lowerStringLine.indexOf(lowerTerm);
+    let searchIndex = -1;
+    if (regex) {
+      const searchRegex = RegExp(lowerTerm, 'g');
+      const foundTerm = searchRegex.exec(lowerStringLine);
+      if (foundTerm) {
+        searchIndex = searchRegex.lastIndex - foundTerm[0].length;
+      }
+    } else {
+      searchIndex = lowerStringLine.indexOf(lowerTerm);
+    }
     if (searchIndex >= 0) {
       const line = this._terminal._core.buffer.lines.get(y);
       for (let i = 0; i < searchIndex; i++) {
