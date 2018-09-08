@@ -26,7 +26,7 @@ describe('term.js addons', () => {
 
   beforeEach(() => {
     term = new TestTerminal(termOptions);
-    term.refresh = () => {};
+    term.refresh = () => { };
     (<any>term).renderer = new MockRenderer();
     term.viewport = new MockViewport();
     (<any>term)._compositionHelper = new MockCompositionHelper();
@@ -37,8 +37,8 @@ describe('term.js addons', () => {
     };
     (<any>term).element = {
       classList: {
-        toggle: () => {},
-        remove: () => {}
+        toggle: () => { },
+        remove: () => { }
       }
     };
   });
@@ -68,24 +68,142 @@ describe('term.js addons', () => {
     });
   });
 
+  describe('on', () => {
+    beforeEach(() => {
+      term.on('key', () => { });
+      term.on('keypress', () => { });
+      term.on('keydown', () => { });
+    });
+
+    describe('data', () => {
+      it('should emit a data event', (done) => {
+        term.on('data', () => {
+          done();
+        });
+
+        term.handler('fake');
+      });
+    });
+
+    describe(`keypress (including 'key' event)`, () => {
+      it('should receive a string and event object', (done) => {
+        let steps = 0;
+
+        const finish = () => {
+          if ((++steps) === 2) {
+            done();
+          }
+        };
+
+        const evKeyPress = <KeyboardEvent>{
+          preventDefault: () => { },
+          stopPropagation: () => { },
+          type: 'keypress',
+          keyCode: 13
+        };
+
+        term.on('keypress', (key, event) => {
+          assert.equal(typeof key, 'string');
+          expect(event).to.be.an.instanceof(Object);
+          finish();
+        });
+
+        term.on('key', (key, event) => {
+          assert.equal(typeof key, 'string');
+          expect(event).to.be.an.instanceof(Object);
+          finish();
+        });
+
+        term.keyPress(evKeyPress);
+      });
+    });
+
+    describe(`keydown (including 'key' event)`, () => {
+      it(`should receive an event object for 'keydown' and a string and event object for 'key'`, (done) => {
+        let steps = 0;
+
+        const finish = () => {
+          if ((++steps) === 2) {
+            done();
+          }
+        };
+
+        const evKeyDown = <KeyboardEvent>{
+          preventDefault: () => { },
+          stopPropagation: () => { },
+          type: 'keydown',
+          keyCode: 13
+        };
+
+        term.on('keydown', (event) => {
+          expect(event).to.be.an.instanceof(Object);
+          finish();
+        });
+
+        term.on('key', (key, event) => {
+          assert.equal(typeof key, 'string');
+          expect(event).to.be.an.instanceof(Object);
+          finish();
+        });
+
+        term.keyDown(evKeyDown);
+      });
+    });
+
+    describe('resize', () => {
+      it('should receive an object: {cols: number, rows: number}', (done) => {
+        term.on('resize', (data) => {
+          expect(data).to.have.keys(['cols', 'rows']);
+          assert.equal(typeof data.cols, 'number');
+          assert.equal(typeof data.rows, 'number');
+          done();
+        });
+
+        term.resize(1, 1);
+      });
+    });
+
+    describe('scroll', () => {
+      it('should receive a number', (done) => {
+        term.on('scroll', (ydisp) => {
+          assert.equal(typeof ydisp, 'number');
+          done();
+        });
+
+        term.scroll();
+      });
+    });
+
+    describe('title', () => {
+      it('should receive a string', (done) => {
+        term.on('title', (title) => {
+          assert.equal(typeof title, 'string');
+          done();
+        });
+
+        term.handleTitle('title');
+      });
+    });
+  });
+
   describe('attachCustomKeyEventHandler', () => {
     const evKeyDown = <KeyboardEvent>{
-      preventDefault: () => {},
-      stopPropagation: () => {},
+      preventDefault: () => { },
+      stopPropagation: () => { },
       type: 'keydown',
       keyCode: 77
     };
     const evKeyPress = <KeyboardEvent>{
-      preventDefault: () => {},
-      stopPropagation: () => {},
+      preventDefault: () => { },
+      stopPropagation: () => { },
       type: 'keypress',
       keyCode: 77
     };
 
     beforeEach(() => {
-      term.handler = () => {};
-      term.showCursor = () => {};
-      term.clearSelection = () => {};
+      term.handler = () => { };
+      term.showCursor = () => { };
+      term.clearSelection = () => { };
     });
 
     it('should process the keydown/keypress event based on what the handler returns', () => {
@@ -305,8 +423,8 @@ describe('term.js addons', () => {
           type: 'keydown',
           key: 'a',
           keyCode: 65,
-          preventDefault: () => {},
-          stopPropagation: () => {}
+          preventDefault: () => { },
+          stopPropagation: () => { }
         };
 
         term.buffer.ydisp = 0;
@@ -473,9 +591,9 @@ describe('term.js addons', () => {
     let evKeyPress: any;
 
     beforeEach(() => {
-      term.handler = () => {};
-      term.showCursor = () => {};
-      term.clearSelection = () => {};
+      term.handler = () => { };
+      term.showCursor = () => { };
+      term.clearSelection = () => { };
       // term.compositionHelper = {
       //   isComposing: false,
       //   keydown: {
@@ -485,15 +603,15 @@ describe('term.js addons', () => {
       //   }
       // };
       evKeyDown = {
-        preventDefault: () => {},
-        stopPropagation: () => {},
+        preventDefault: () => { },
+        stopPropagation: () => { },
         type: 'keydown',
         altKey: null,
         keyCode: null
       };
       evKeyPress = {
-        preventDefault: () => {},
-        stopPropagation: () => {},
+        preventDefault: () => { },
+        stopPropagation: () => { },
         type: 'keypress',
         altKey: null,
         charCode: null,
