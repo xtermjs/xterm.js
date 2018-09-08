@@ -3,15 +3,15 @@
  * @license MIT
  */
 
-import { EventEmitter } from '../EventEmitter';
-import { ICircularList } from '../Types';
+import { EventEmitter } from './EventEmitter';
+import { ICircularList } from './Types';
 
 /**
  * Represents a circular list; a list with a maximum size that wraps around when push is called,
  * overriding values at the start of the list.
  */
 export class CircularList<T> extends EventEmitter implements ICircularList<T> {
-  protected _array: T[];
+  protected _array: (T | undefined)[];
   private _startIndex: number;
   private _length: number;
 
@@ -36,7 +36,7 @@ export class CircularList<T> extends EventEmitter implements ICircularList<T> {
 
     // Reconstruct array, starting at index 0. Only transfer values from the
     // indexes 0 to length.
-    const newArray = new Array<T>(newMaxLength);
+    const newArray = new Array<T | undefined>(newMaxLength);
     for (let i = 0; i < Math.min(newMaxLength, this.length); i++) {
       newArray[i] = this._array[this._getCyclicIndex(i)];
     }
@@ -66,7 +66,7 @@ export class CircularList<T> extends EventEmitter implements ICircularList<T> {
    * @param index The index of the value to get.
    * @return The value corresponding to the index.
    */
-  public get(index: number): T {
+  public get(index: number): T | undefined {
     return this._array[this._getCyclicIndex(index)];
   }
 
@@ -78,7 +78,7 @@ export class CircularList<T> extends EventEmitter implements ICircularList<T> {
    * @param index The index to set.
    * @param value The value to set.
    */
-  public set(index: number, value: T): void {
+  public set(index: number, value: T | undefined): void {
     this._array[this._getCyclicIndex(index)] = value;
   }
 
@@ -104,7 +104,7 @@ export class CircularList<T> extends EventEmitter implements ICircularList<T> {
    * Removes and returns the last value on the list.
    * @return The popped value.
    */
-  public pop(): T {
+  public pop(): T | undefined {
     return this._array[this._getCyclicIndex(this._length-- - 1)];
   }
 

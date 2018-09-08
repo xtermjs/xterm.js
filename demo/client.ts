@@ -1,4 +1,13 @@
-import * as Terminal from '../build/xterm';
+/**
+ * Copyright (c) 2018 The xterm.js authors. All rights reserved.
+ * @license MIT
+ *
+ * This file is the entry point for browserify.
+ */
+
+/// <reference path="../typings/xterm.d.ts"/>
+
+import { Terminal } from '../lib/public/Terminal';
 import * as attach from '../build/addons/attach/attach';
 import * as fit from '../build/addons/fit/fit';
 import * as fullscreen from '../build/addons/fullscreen/fullscreen';
@@ -6,6 +15,14 @@ import * as search from '../build/addons/search/search';
 import * as webLinks from '../build/addons/webLinks/webLinks';
 import * as winptyCompat from '../build/addons/winptyCompat/winptyCompat';
 
+// Pulling in the module's types relies on the <reference> above, it's looks a
+// little weird here as we're importing "this" module
+import { Terminal as TerminalType } from 'xterm';
+
+export interface IWindowWithTerminal extends Window {
+  term: TerminalType;
+}
+declare let window: IWindowWithTerminal;
 
 Terminal.applyAddon(attach);
 Terminal.applyAddon(fit);
@@ -15,20 +32,20 @@ Terminal.applyAddon(webLinks);
 Terminal.applyAddon(winptyCompat);
 
 
-var term,
-    protocol,
-    socketURL,
-    socket,
-    pid;
+let term;
+let protocol;
+let socketURL;
+let socket;
+let pid;
 
-var terminalContainer = document.getElementById('terminal-container'),
-    actionElements = {
-      findNext: document.querySelector('#find-next'),
-      findPrevious: document.querySelector('#find-previous')
-    },
-    paddingElement = document.getElementById('padding');
+const terminalContainer = document.getElementById('terminal-container');
+const actionElements = {
+  findNext: <HTMLInputElement>document.querySelector('#find-next'),
+  findPrevious: <HTMLInputElement>document.querySelector('#find-previous')
+};
+const paddingElement = <HTMLInputElement>document.getElementById('padding');
 
-function setPadding() {
+function setPadding(): void {
   term.element.style.padding = parseInt(paddingElement.value, 10).toString() + 'px';
   term.fit();
 }
@@ -52,20 +69,20 @@ const disposeRecreateButtonHandler = () => {
 
 document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
 
-function createTerminal() {
+function createTerminal(): void {
   // Clean terminal
   while (terminalContainer.children.length) {
     terminalContainer.removeChild(terminalContainer.children[0]);
   }
   term = new Terminal({});
   window.term = term;  // Expose `term` to window for debugging purposes
-  term.on('resize', function (size) {
+  term.on('resize', (size: { cols: number, rows: number }) => {
     if (!pid) {
       return;
     }
-    var cols = size.cols,
-        rows = size.rows,
-        url = '/terminals/' + pid + '/size?cols=' + cols + '&rows=' + rows;
+    const cols = size.cols;
+    const rows = size.rows;
+    const url = '/terminals/' + pid + '/size?cols=' + cols + '&rows=' + rows;
 
     fetch(url, {method: 'POST'});
   });
@@ -80,32 +97,42 @@ function createTerminal() {
 
   addDomListener(paddingElement, 'change', setPadding);
 
-  addDomListener(actionElements.findNext, 'keypress', function (e) {
-    if (e.key === "Enter") {
+  addDomListener(actionElements.findNext, 'keypress', (e) => {
+    if (e.key === 'Enter') {
       e.preventDefault();
-      term.findNext(actionElements.findNext.value);
+      let searchOptions = {
+        regex: (document.getElementById('regex') as HTMLInputElement).checked,
+        wholeWord: false,
+        caseSensitive: false
+      };
+      term.findNext(actionElements.findNext.value, searchOptions);
     }
   });
-  addDomListener(actionElements.findPrevious, 'keypress', function (e) {
-    if (e.key === "Enter") {
+  addDomListener(actionElements.findPrevious, 'keypress', (e) => {
+    if (e.key === 'Enter') {
       e.preventDefault();
-      term.findPrevious(actionElements.findPrevious.value);
+      let searchOptions = {
+        regex: (document.getElementById('regex') as HTMLInputElement).checked,
+        wholeWord: false,
+        caseSensitive: false
+      };
+      term.findPrevious(actionElements.findPrevious.value, searchOptions);
     }
   });
 
   // fit is called within a setTimeout, cols and rows need this.
-  setTimeout(function () {
+  setTimeout(() => {
     initOptions(term);
-    document.getElementById(`opt-cols`).value = term.cols;
-    document.getElementById(`opt-rows`).value = term.rows;
-    paddingElement.value = 0;
+    // TODO: Clean this up, opt-cols/rows doesn't exist anymore
+    (<HTMLInputElement>document.getElementById(`opt-cols`)).value = term.cols;
+    (<HTMLInputElement>document.getElementById(`opt-rows`)).value = term.rows;
+    paddingElement.value = '0';
 
     // Set terminal size again to set the specific dimensions on the demo
     updateTerminalSize();
 
-    fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, {method: 'POST'}).then(function (res) {
-
-      res.text().then(function (processId) {
+    fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, {method: 'POST'}).then((res) => {
+      res.text().then((processId) => {
         pid = processId;
         socketURL += processId;
         socket = new WebSocket(socketURL);
@@ -117,22 +144,21 @@ function createTerminal() {
   }, 0);
 }
 
-function runRealTerminal() {
+function runRealTerminal(): void {
   term.attach(socket);
   term._initialized = true;
 }
 
-function runFakeTerminal() {
+// TODO: Maybe fake terminal should be removed? Not sure it's useful anymore
+function runFakeTerminal(): void {
   if (term._initialized) {
     return;
   }
 
   term._initialized = true;
 
-  var shellprompt = '$ ';
-
-  term.prompt = function () {
-    term.write('\r\n' + shellprompt);
+  term.prompt = () => {
+    term.write('\r\n$ ');
   };
 
   term.writeln('Welcome to xterm.js');
@@ -141,14 +167,12 @@ function runFakeTerminal() {
   term.writeln('');
   term.prompt();
 
-  term._core.register(term.addDisposableListener('key', function (key, ev) {
-    var printable = (
-      !ev.altKey && !ev.altGraphKey && !ev.ctrlKey && !ev.metaKey
-    );
+  term._core.register(term.addDisposableListener('key', (key, ev) => {
+    const printable = !ev.altKey && !ev.altGraphKey && !ev.ctrlKey && !ev.metaKey;
 
-    if (ev.keyCode == 13) {
+    if (ev.keyCode === 13) {
       term.prompt();
-    } else if (ev.keyCode == 8) {
+    } else if (ev.keyCode === 8) {
      // Do not delete the prompt
       if (term.x > 2) {
         term.write('\b \b');
@@ -158,13 +182,13 @@ function runFakeTerminal() {
     }
   }));
 
-  term._core.register(term.addDisposableListener('paste', function (data, ev) {
+  term._core.register(term.addDisposableListener('paste', (data, ev) => {
     term.write(data);
   }));
 }
 
-function initOptions(term) {
-  var blacklistedOptions = [
+function initOptions(term: TerminalType): void {
+  const blacklistedOptions = [
     // Internal only options
     'cancelEvents',
     'convertEol',
@@ -176,7 +200,7 @@ function initOptions(term) {
     // Complex option
     'theme'
   ];
-  var stringOptions = {
+  const stringOptions = {
     bellSound: null,
     bellStyle: ['none', 'sound'],
     cursorStyle: ['block', 'underline', 'bar'],
@@ -186,9 +210,9 @@ function initOptions(term) {
     fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     rendererType: ['dom', 'canvas']
   };
-  var options = Object.keys(term._core.options);
-  var booleanOptions = [];
-  var numberOptions = [];
+  const options = Object.keys((<any>term)._core.options);
+  const booleanOptions = [];
+  const numberOptions = [];
   options.filter(o => blacklistedOptions.indexOf(o) === -1).forEach(o => {
     switch (typeof term.getOption(o)) {
       case 'boolean':
@@ -204,7 +228,7 @@ function initOptions(term) {
     }
   });
 
-  var html = '';
+  let html = '';
   html += '<div class="option-group">';
   booleanOptions.forEach(o => {
     html += `<div class="option"><label><input id="opt-${o}" type="checkbox" ${term.getOption(o) ? 'checked' : ''}/> ${o}</label></div>`;
@@ -218,24 +242,24 @@ function initOptions(term) {
     if (stringOptions[o]) {
       html += `<div class="option"><label>${o} <select id="opt-${o}">${stringOptions[o].map(v => `<option ${term.getOption(o) === v ? 'selected' : ''}>${v}</option>`).join('')}</select></label></div>`;
     } else {
-      html += `<div class="option"><label>${o} <input id="opt-${o}" type="text" value="${term.getOption(o)}"/></label></div>`
+      html += `<div class="option"><label>${o} <input id="opt-${o}" type="text" value="${term.getOption(o)}"/></label></div>`;
     }
   });
   html += '</div>';
 
-  var container = document.getElementById('options-container');
+  const container = document.getElementById('options-container');
   container.innerHTML = html;
 
   // Attach listeners
   booleanOptions.forEach(o => {
-    var input = document.getElementById(`opt-${o}`);
+    const input = <HTMLInputElement>document.getElementById(`opt-${o}`);
     addDomListener(input, 'change', () => {
       console.log('change', o, input.checked);
       term.setOption(o, input.checked);
     });
   });
   numberOptions.forEach(o => {
-    var input = document.getElementById(`opt-${o}`);
+    const input = <HTMLInputElement>document.getElementById(`opt-${o}`);
     addDomListener(input, 'change', () => {
       console.log('change', o, input.value);
       if (o === 'cols' || o === 'rows') {
@@ -246,7 +270,7 @@ function initOptions(term) {
     });
   });
   Object.keys(stringOptions).forEach(o => {
-    var input = document.getElementById(`opt-${o}`);
+    const input = <HTMLInputElement>document.getElementById(`opt-${o}`);
     addDomListener(input, 'change', () => {
       console.log('change', o, input.value);
       term.setOption(o, input.value);
@@ -254,16 +278,16 @@ function initOptions(term) {
   });
 }
 
-function addDomListener(element, type, handler) {
+function addDomListener(element: HTMLElement, type: string, handler: (...args: any[]) => any): void {
   element.addEventListener(type, handler);
   term._core.register({ dispose: () => element.removeEventListener(type, handler) });
 }
 
-function updateTerminalSize() {
-  var cols = parseInt(document.getElementById(`opt-cols`).value, 10);
-  var rows = parseInt(document.getElementById(`opt-rows`).value, 10);
-  var width = (cols * term._core.renderer.dimensions.actualCellWidth + term._core.viewport.scrollBarWidth).toString() + 'px';
-  var height = (rows * term._core.renderer.dimensions.actualCellHeight).toString() + 'px';
+function updateTerminalSize(): void {
+  const cols = parseInt((<HTMLInputElement>document.getElementById(`opt-cols`)).value, 10);
+  const rows = parseInt((<HTMLInputElement>document.getElementById(`opt-rows`)).value, 10);
+  const width = (cols * term._core.renderer.dimensions.actualCellWidth + term._core.viewport.scrollBarWidth).toString() + 'px';
+  const height = (rows * term._core.renderer.dimensions.actualCellHeight).toString() + 'px';
   terminalContainer.style.width = width;
   terminalContainer.style.height = height;
   term.fit();

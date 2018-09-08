@@ -7,10 +7,9 @@ import { Terminal as PublicTerminal, ITerminalOptions as IPublicTerminalOptions,
 import { IColorSet, IRenderer } from './renderer/Types';
 import { IMouseZoneManager } from './ui/Types';
 import { ICharset } from './core/Types';
+import { ICircularList } from './common/Types';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
-
-export type XtermListener = (...args: any[]) => void;
 
 export type CharData = [number, string, number, number];
 export type LineData = CharData[];
@@ -292,19 +291,6 @@ export interface IBufferSet extends IEventEmitter {
 
   activateNormalBuffer(): void;
   activateAltBuffer(): void;
-}
-
-export interface ICircularList<T> extends IEventEmitter {
-  length: number;
-  maxLength: number;
-
-  get(index: number): T;
-  set(index: number, value: T): void;
-  push(value: T): void;
-  pop(): T;
-  splice(start: number, deleteCount: number, ...items: T[]): void;
-  trimStart(count: number): void;
-  shiftElements(start: number, count: number, offset: number): void;
 }
 
 export interface ISelectionManager {
