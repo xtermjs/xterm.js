@@ -5,7 +5,7 @@
 
 import { ITerminal, IBufferSet } from './Types';
 import { Buffer } from './Buffer';
-import { EventEmitter } from './EventEmitter';
+import { EventEmitter } from './common/EventEmitter';
 
 /**
  * The BufferSet represents the set of two buffers used by xterm terminals (normal and alt) and

@@ -5,7 +5,7 @@
 
 import { CircularList } from './common/CircularList';
 import { CharData, ITerminal, IBuffer, IBufferLine } from './Types';
-import { EventEmitter } from './EventEmitter';
+import { EventEmitter } from './common/EventEmitter';
 import { IMarker } from 'xterm';
 import { BufferLine } from './BufferLine';
 

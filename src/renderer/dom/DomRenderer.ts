@@ -6,7 +6,7 @@
 import { IRenderer, IRenderDimensions, IColorSet } from '../Types';
 import { ITerminal, CharacterJoinerHandler } from '../../Types';
 import { ITheme } from 'xterm';
-import { EventEmitter } from '../../EventEmitter';
+import { EventEmitter } from '../../common/EventEmitter';
 import { ColorManager } from '../ColorManager';
 import { RenderDebouncer } from '../../ui/RenderDebouncer';
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from './DomRendererRowFactory';
