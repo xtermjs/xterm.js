@@ -508,7 +508,7 @@ export interface IBufferLine {
   replaceCells(start: number, end: number, fill: CharData): void;
   resize(cols: number, fill: CharData, shrink?: boolean): void;
   fill(fillCharData: CharData): void;
-  makeCopyOf(line: IBufferLine): void;
+  copyFrom(line: IBufferLine): void;
   clone(): IBufferLine;
 }
 

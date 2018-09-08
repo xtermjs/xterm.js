@@ -108,7 +108,7 @@ describe('BufferLine', function(): void {
     chai.expect(line2.length).equals(line.length);
     chai.expect(line2.isWrapped).equals(line.isWrapped);
   });
-  it('makeCopyOf', function(): void {
+  it('copyFrom', function(): void {
     const line = new TestBufferLine(5);
     line.set(0, [1, 'a', 0, 'a'.charCodeAt(0)]);
     line.set(1, [2, 'b', 0, 'b'.charCodeAt(0)]);
@@ -116,7 +116,7 @@ describe('BufferLine', function(): void {
     line.set(3, [4, 'd', 0, 'd'.charCodeAt(0)]);
     line.set(4, [5, 'e', 0, 'e'.charCodeAt(0)]);
     const line2 = new TestBufferLine(5, [1, 'a', 0, 'a'.charCodeAt(0)], true);
-    line2.makeCopyOf(line);
+    line2.copyFrom(line);
     chai.expect(line2.toArray()).eql(line.toArray());
     chai.expect(line2.length).equals(line.length);
     chai.expect(line2.isWrapped).equals(line.isWrapped);
@@ -128,7 +128,7 @@ describe('BufferLine', function(): void {
     const line = new TestBufferLine(2, [1, 'e\u0301', 0, '\u0301'.charCodeAt(0)]);
     chai.expect(line.toArray()).eql([[1, 'e\u0301', 0, '\u0301'.charCodeAt(0)], [1, 'e\u0301', 0, '\u0301'.charCodeAt(0)]]);
     const line2 = new TestBufferLine(5, [1, 'a', 0, '\u0301'.charCodeAt(0)], true);
-    line2.makeCopyOf(line);
+    line2.copyFrom(line);
     chai.expect(line2.toArray()).eql(line.toArray());
     const line3 = line.clone();
     chai.expect(TestBufferLine.prototype.toArray.apply(line3)).eql(line.toArray());
