@@ -3,13 +3,7 @@
  * @license MIT
  */
 
-import { ISearchHelper, ISearchAddonTerminal, ISearchOptions } from './Interfaces';
-
-interface ISearchResult {
-  term: string;
-  col: number;
-  row: number;
-}
+import { ISearchHelper, ISearchAddonTerminal, ISearchOptions, ISearchResult } from './Interfaces';
 
 /**
  * A class that knows how to search the terminal and how to display the results.
@@ -28,7 +22,7 @@ export class SearchHelper implements ISearchHelper {
    * @param searchOptions Search options.
    * @return Whether a result was found.
    */
-  public findNext(term: string, searchOptions: ISearchOptions): boolean {
+  public findNext(term: string, searchOptions?: ISearchOptions): boolean {
     if (!term || term.length === 0) {
       return false;
     }
@@ -70,7 +64,7 @@ export class SearchHelper implements ISearchHelper {
    * @param searchOptions Search options.
    * @return Whether a result was found.
    */
-  public findPrevious(term: string, searchOptions: ISearchOptions): boolean {
+  public findPrevious(term: string, searchOptions?: ISearchOptions): boolean {
     if (!term || term.length === 0) {
       return false;
     }
@@ -112,7 +106,7 @@ export class SearchHelper implements ISearchHelper {
    * @param searchOptions Search options.
    * @return The search result if it was found.
    */
-  private _findInLine(term: string, y: number, searchOptions: ISearchOptions = {regex: false, wholeWord: false, caseSensitive: false}): ISearchResult {
+  protected _findInLine(term: string, y: number, searchOptions: ISearchOptions = {}): ISearchResult {
     const lowerStringLine = this._terminal._core.buffer.translateBufferLineToString(y, true).toLowerCase();
     const lowerTerm = term.toLowerCase();
     let searchIndex = -1;

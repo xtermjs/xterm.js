@@ -22,7 +22,13 @@ export interface ISearchHelper {
 }
 
 export interface ISearchOptions {
-  regex: boolean;
-  wholeWord: boolean;
-  caseSensitive: boolean;
+  regex?: boolean;
+  wholeWord?: boolean;
+  caseSensitive?: boolean;
+}
+
+export interface ISearchResult {
+  term: string;
+  col: number;
+  row: number;
 }

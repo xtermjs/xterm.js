@@ -14,7 +14,7 @@ import { ISearchAddonTerminal, ISearchOptions } from './Interfaces';
  * @param searchOptions Search options
  * @return Whether a result was found.
  */
-export function findNext(terminal: Terminal, term: string, searchOptions: ISearchOptions = {regex: false, wholeWord: false, caseSensitive: false}): boolean {
+export function findNext(terminal: Terminal, term: string, searchOptions: ISearchOptions = {}): boolean {
   const addonTerminal = <ISearchAddonTerminal>terminal;
   if (!addonTerminal.__searchHelper) {
     addonTerminal.__searchHelper = new SearchHelper(addonTerminal);
@@ -29,7 +29,7 @@ export function findNext(terminal: Terminal, term: string, searchOptions: ISearc
  * @param searchOptions Search options
  * @return Whether a result was found.
  */
-export function findPrevious(terminal: Terminal, term: string, searchOptions: ISearchOptions = {regex: false, wholeWord: false, caseSensitive: false}): boolean {
+export function findPrevious(terminal: Terminal, term: string, searchOptions: ISearchOptions): boolean {
   const addonTerminal = <ISearchAddonTerminal>terminal;
   if (!addonTerminal.__searchHelper) {
     addonTerminal.__searchHelper = new SearchHelper(addonTerminal);
