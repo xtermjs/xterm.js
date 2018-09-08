@@ -55,14 +55,16 @@ export class Buffer implements IBuffer {
   }
 
   public setBufferLineFactory(type: string): void {
-    if (type === 'JsArray' && this._bufferLineConstructor !== BufferLine) {
-      this._bufferLineConstructor = BufferLine;
-      this._recreateLines();
-    } else if (type === 'TypedArray' && this._bufferLineConstructor !== BufferLineTypedArray) {
-      this._bufferLineConstructor = BufferLineTypedArray;
-      this._recreateLines();
+    if (type === 'TypedArray') {
+      if (this._bufferLineConstructor !== BufferLineTypedArray) {
+        this._bufferLineConstructor = BufferLineTypedArray;
+        this._recreateLines();
+      }
     } else {
-      this._bufferLineConstructor = BufferLine;
+      if (this._bufferLineConstructor !== BufferLine) {
+        this._bufferLineConstructor = BufferLine;
+        this._recreateLines();
+      }
     }
   }
 
