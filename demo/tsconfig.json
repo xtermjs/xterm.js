@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es5",
+    "rootDir": ".",
+    "sourceMap": true
+  },
+  "include": [
+    "client.ts",
+    "../typings/xterm.d.ts"
+  ]
+}

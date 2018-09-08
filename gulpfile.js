@@ -14,7 +14,6 @@ const source = require('vinyl-source-stream');
 const sourcemaps = require('gulp-sourcemaps');
 const ts = require('gulp-typescript');
 const util = require('gulp-util');
-const webpack = require('webpack-stream');
 
 const buildDir = process.env.BUILD_DIR || 'build';
 const tsProject = ts.createProject('tsconfig.json');
@@ -135,17 +134,6 @@ gulp.task('sorcery-addons', ['browserify-addons'], function () {
     chain.apply();
     chain.writeSync();
   })
-});
-
-gulp.task('webpack', ['build'], function() {
-  return gulp.src('demo/main.js')
-    .pipe(webpack(require('./webpack.config.js')))
-    .pipe(gulp.dest('demo/dist/'));
-});
-
-
-gulp.task('watch-demo', ['webpack'], () => {
-  gulp.watch(['./demo/*', './lib/**/*'], ['webpack']);
 });
 
 gulp.task('build', ['sorcery', 'sorcery-addons']);
