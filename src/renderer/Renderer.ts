@@ -10,7 +10,7 @@ import { ColorManager } from './ColorManager';
 import { IRenderLayer, IColorSet, IRenderer, IRenderDimensions, ICharacterJoinerRegistry } from './Types';
 import { ITerminal, CharacterJoinerHandler } from '../Types';
 import { LinkRenderLayer } from './LinkRenderLayer';
-import { EventEmitter } from '../EventEmitter';
+import { EventEmitter } from '../common/EventEmitter';
 import { RenderDebouncer } from '../ui/RenderDebouncer';
 import { ScreenDprMonitor } from '../ui/ScreenDprMonitor';
 import { ITheme } from 'xterm';

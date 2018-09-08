@@ -27,7 +27,7 @@ import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
 import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from './Buffer';
 import { CompositionHelper } from './CompositionHelper';
-import { EventEmitter } from './EventEmitter';
+import { EventEmitter } from './common/EventEmitter';
 import { Viewport } from './Viewport';
 import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './handlers/Clipboard';
 import { C0 } from './common/data/EscapeSequences';

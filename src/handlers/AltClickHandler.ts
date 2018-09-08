@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { ITerminal, ICircularList, IBufferLine } from '../Types';
+import { ITerminal, IBufferLine } from '../Types';
+import { ICircularList } from '../common/Types';
 import { C0 } from '../common/data/EscapeSequences';
 
 const enum Direction {

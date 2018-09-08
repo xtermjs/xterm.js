@@ -6,7 +6,7 @@
 import { IMouseZoneManager } from './ui/Types';
 import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, ILinkifier, ITerminal, IBufferLine } from './Types';
 import { MouseZone } from './ui/MouseZoneManager';
-import { EventEmitter } from './EventEmitter';
+import { EventEmitter } from './common/EventEmitter';
 import { CHAR_DATA_ATTR_INDEX } from './Buffer';
 
 /**

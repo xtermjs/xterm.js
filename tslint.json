@@ -39,6 +39,7 @@
     "one-variable-per-declaration": true,
     "no-unsafe-finally": true,
     "no-var-keyword": true,
+    "prefer-const": true,
     "quotemark": [
       true,
       "single"
@@ -107,7 +108,6 @@
     },
     "prefer-const-enum": [
       true
-    ],
-    "prefer-const": true
+    ]
   }
 }

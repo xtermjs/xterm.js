@@ -3,6 +3,10 @@
  * @license MIT
  */
 
+import { IEventEmitter } from 'xterm';
+
+export type XtermListener = (...args: any[]) => void;
+
 /**
  * A keyboard event interface which does not depend on the DOM, KeyboardEvent implicitly extends
  * this event.
@@ -15,4 +19,17 @@ export interface IKeyboardEvent {
   keyCode: number;
   key: string;
   type: string;
+}
+
+export interface ICircularList<T> extends IEventEmitter {
+  length: number;
+  maxLength: number;
+
+  get(index: number): T | undefined;
+  set(index: number, value: T): void;
+  push(value: T): void;
+  pop(): T | undefined;
+  splice(start: number, deleteCount: number, ...items: T[]): void;
+  trimStart(count: number): void;
+  shiftElements(start: number, count: number, offset: number): void;
 }

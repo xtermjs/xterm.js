@@ -4,7 +4,7 @@
  */
 
 import { ICharMeasure, ITerminalOptions } from '../Types';
-import { EventEmitter } from '../EventEmitter';
+import { EventEmitter } from '../common/EventEmitter';
 
 /**
  * Utility class that measures the size of a character. Measurements are done in

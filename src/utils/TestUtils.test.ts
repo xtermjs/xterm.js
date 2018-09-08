@@ -4,8 +4,9 @@
  */
 
 import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../renderer/Types';
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ICircularList, ILinkifier, IMouseHelper, ILinkMatcherOptions, XtermListener, CharacterJoinerHandler, IBufferLine, CharData } from '../Types';
-import { Buffer, NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH } from '../Buffer';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferLine, CharData } from '../Types';
+import { ICircularList, XtermListener } from '../common/Types';
+import { Buffer, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from '../Buffer';
 import * as Browser from '../shared/utils/Browser';
 import { ITheme, IDisposable, IMarker } from 'xterm';
 import { BufferLine } from '../BufferLine';
