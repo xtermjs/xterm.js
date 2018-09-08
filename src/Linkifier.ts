@@ -220,8 +220,11 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     // Get cell color
     const line = this._terminal.buffer.lines.get(this._terminal.buffer.ydisp + rowIndex);
     const char = line.get(index);
-    const attr: number = char[CHAR_DATA_ATTR_INDEX];
-    const fg = (attr >> 9) & 0x1ff;
+    let fg: number | undefined;
+    if (char) {
+      const attr: number = char[CHAR_DATA_ATTR_INDEX];
+      fg = (attr >> 9) & 0x1ff;
+    }
 
     // Ensure the link is valid before registering
     if (matcher.validationCallback) {
