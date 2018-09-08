@@ -101,7 +101,7 @@ function createTerminal(): void {
     if (e.key === 'Enter') {
       e.preventDefault();
       let searchOptions = {
-        regex: document.getElementById('regex').checked,
+        regex: (document.getElementById('regex') as HTMLInputElement).checked,
         wholeWord: false,
         caseSensitive: false
       };
@@ -112,7 +112,7 @@ function createTerminal(): void {
     if (e.key === 'Enter') {
       e.preventDefault();
       let searchOptions = {
-        regex: document.getElementById('regex').checked,
+        regex: (document.getElementById('regex') as HTMLInputElement).checked,
         wholeWord: false,
         caseSensitive: false
       };
