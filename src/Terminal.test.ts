@@ -150,19 +150,6 @@ describe('term.js addons', () => {
       });
     });
 
-    describe('refresh', () => {
-      it('should receive an object: {start: number, end: number}', (done) => {
-        term.on('refresh', (data) => {
-          expect(data).to.have.keys(['start', 'end']);
-          assert.equal(typeof data.start, 'number');
-          assert.equal(typeof data.end, 'number');
-          done();
-        });
-
-        term.refresh(0, term.rows - 1);
-      });
-    });
-
     describe('resize', () => {
       it('should receive an object: {cols: number, rows: number}', (done) => {
         term.on('resize', (data) => {
