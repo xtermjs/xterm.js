@@ -3,13 +3,7 @@
  * @license MIT
  */
 
-import { ISearchHelper, ISearchAddonTerminal } from './Interfaces';
-
-interface ISearchResult {
-  term: string;
-  col: number;
-  row: number;
-}
+import { ISearchHelper, ISearchAddonTerminal, ISearchOptions, ISearchResult } from './Interfaces';
 
 /**
  * A class that knows how to search the terminal and how to display the results.
@@ -19,16 +13,16 @@ export class SearchHelper implements ISearchHelper {
     // TODO: Search for multiple instances on 1 line
     // TODO: Don't use the actual selection, instead use a "find selection" so multiple instances can be highlighted
     // TODO: Highlight other instances in the viewport
-    // TODO: Support regex, case sensitivity, etc.
   }
 
   /**
    * Find the next instance of the term, then scroll to and select it. If it
    * doesn't exist, do nothing.
    * @param term Tne search term.
+   * @param searchOptions Search options.
    * @return Whether a result was found.
    */
-  public findNext(term: string): boolean {
+  public findNext(term: string, searchOptions?: ISearchOptions): boolean {
     if (!term || term.length === 0) {
       return false;
     }
@@ -43,7 +37,7 @@ export class SearchHelper implements ISearchHelper {
 
     // Search from ydisp + 1 to end
     for (let y = startRow + 1; y < this._terminal._core.buffer.ybase + this._terminal.rows; y++) {
-      result = this._findInLine(term, y);
+      result = this._findInLine(term, y, searchOptions);
       if (result) {
         break;
       }
@@ -52,7 +46,7 @@ export class SearchHelper implements ISearchHelper {
     // Search from the top to the current ydisp
     if (!result) {
       for (let y = 0; y < startRow; y++) {
-        result = this._findInLine(term, y);
+        result = this._findInLine(term, y, searchOptions);
         if (result) {
           break;
         }
@@ -67,9 +61,10 @@ export class SearchHelper implements ISearchHelper {
    * Find the previous instance of the term, then scroll to and select it. If it
    * doesn't exist, do nothing.
    * @param term Tne search term.
+   * @param searchOptions Search options.
    * @return Whether a result was found.
    */
-  public findPrevious(term: string): boolean {
+  public findPrevious(term: string, searchOptions?: ISearchOptions): boolean {
     if (!term || term.length === 0) {
       return false;
     }
@@ -84,7 +79,7 @@ export class SearchHelper implements ISearchHelper {
 
     // Search from ydisp + 1 to end
     for (let y = startRow - 1; y >= 0; y--) {
-      result = this._findInLine(term, y);
+      result = this._findInLine(term, y, searchOptions);
       if (result) {
         break;
       }
@@ -93,7 +88,7 @@ export class SearchHelper implements ISearchHelper {
     // Search from the top to the current ydisp
     if (!result) {
       for (let y = this._terminal._core.buffer.ybase + this._terminal.rows - 1; y > startRow; y--) {
-        result = this._findInLine(term, y);
+        result = this._findInLine(term, y, searchOptions);
         if (result) {
           break;
         }
@@ -106,14 +101,25 @@ export class SearchHelper implements ISearchHelper {
 
   /**
    * Searches a line for a search term.
-   * @param term Tne search term.
+   * @param term The search term.
    * @param y The line to search.
+   * @param searchOptions Search options.
    * @return The search result if it was found.
    */
-  private _findInLine(term: string, y: number): ISearchResult {
+  protected _findInLine(term: string, y: number, searchOptions: ISearchOptions = {}): ISearchResult {
     const lowerStringLine = this._terminal._core.buffer.translateBufferLineToString(y, true).toLowerCase();
     const lowerTerm = term.toLowerCase();
-    let searchIndex = lowerStringLine.indexOf(lowerTerm);
+    let searchIndex = -1;
+    if (searchOptions.regex) {
+      const searchRegex = RegExp(lowerTerm, 'g');
+      const foundTerm = searchRegex.exec(lowerStringLine);
+      if (foundTerm) {
+        searchIndex = searchRegex.lastIndex - foundTerm[0].length;
+        term = foundTerm[0];
+      }
+    } else {
+      searchIndex = lowerStringLine.indexOf(lowerTerm);
+    }
     if (searchIndex >= 0) {
       const line = this._terminal._core.buffer.lines.get(y);
       for (let i = 0; i < searchIndex; i++) {
