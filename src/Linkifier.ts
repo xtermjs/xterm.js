@@ -4,7 +4,7 @@
  */
 
 import { IMouseZoneManager } from './ui/Types';
-import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, ILinkifier, ITerminal, IBufferLine } from './Types';
+import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, ILinkifier, ITerminal } from './Types';
 import { MouseZone } from './ui/MouseZoneManager';
 import { EventEmitter } from './common/EventEmitter';
 import { CHAR_DATA_ATTR_INDEX } from './Buffer';
@@ -159,11 +159,10 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    */
   private _linkifyRow(rowIndex: number): void {
     // Ensure the row exists
-    let absoluteRowIndex = this._terminal.buffer.ydisp + rowIndex;
+    const absoluteRowIndex = this._terminal.buffer.ydisp + rowIndex;
     if (absoluteRowIndex >= this._terminal.buffer.lines.length) {
       return;
     }
-    
     const unwrappedLinesIterator = this._terminal.buffer.contents(false, absoluteRowIndex, absoluteRowIndex + 1);
     while (unwrappedLinesIterator.hasNext()) {
       for (let i = 0; i < this._linkMatchers.length; i++) {

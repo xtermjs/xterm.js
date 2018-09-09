@@ -6,7 +6,7 @@
 import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../renderer/Types';
 import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferLine, IBufferStringIterator } from '../Types';
 import { ICircularList, XtermListener } from '../common/Types';
-import { Buffer, BufferStringIterator } from '../Buffer';
+import { Buffer } from '../Buffer';
 import * as Browser from '../shared/utils/Browser';
 import { ITheme, IDisposable, IMarker } from 'xterm';
 
