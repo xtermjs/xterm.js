@@ -194,6 +194,26 @@ export class Buffer implements IBuffer {
     this.scrollBottom = newRows - 1;
   }
 
+  public stringIndexToBufferIndex(lineIndex: number, stringIndex: number): number[] {
+    if (!stringIndex) {
+      return [lineIndex, 0];
+    }
+    while (stringIndex) {
+      let line = this.lines.get(lineIndex);
+      if (!line) {
+        [-1, -1];
+      }
+      for (let i = 0; i < line.length; ++i) {
+        stringIndex -= line.get(i)[CHAR_DATA_CHAR_INDEX].length;
+        if (stringIndex < 0) {
+          return [lineIndex, i];
+        }
+      }
+      lineIndex++;
+    }
+    return [lineIndex, 0];
+  }
+
   /**
    * Translates a buffer line to a string, with optional start and end columns.
    * Wide characters will count as two columns in the resulting string. This

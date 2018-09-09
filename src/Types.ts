@@ -282,6 +282,7 @@ export interface IBuffer {
   getWrappedRangeForLine(y: number): { first: number, last: number };
   nextStop(x?: number): number;
   prevStop(x?: number): number;
+  stringIndexToBufferIndex(lineIndex: number, stringIndex: number): number[];
 }
 
 export interface IBufferSet extends IEventEmitter {
