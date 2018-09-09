@@ -50,7 +50,7 @@
   "scripts": {
     "start": "node demo/start",
     "start-zmodem": "node demo/zmodem/app",
-    "lint": "tslint 'src/**/*.ts'",
+    "lint": "tslint 'src/**/*.ts' './demo/**/*.ts'",
     "test": "npm-run-all mocha lint",
     "test-debug": "node --inspect-brk node_modules/.bin/gulp test",
     "test-suite": "gulp mocha-suite --test",
