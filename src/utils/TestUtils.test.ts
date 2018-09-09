@@ -4,7 +4,7 @@
  */
 
 import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../renderer/Types';
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferLine } from '../Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferLine, IBufferStringIterator } from '../Types';
 import { ICircularList, XtermListener } from '../common/Types';
 import { Buffer } from '../Buffer';
 import * as Browser from '../shared/utils/Browser';
@@ -310,6 +310,12 @@ export class MockBuffer implements IBuffer {
   }
   setLines(lines: ICircularList<IBufferLine>): void {
     this.lines = lines;
+  }
+  stringIndexToBufferIndex(lineIndex: number, stringIndex: number): number[] {
+    throw new Error('Method not implemented.');
+  }
+  contents(trimRight: boolean, startIndex?: number, endIndex?: number): IBufferStringIterator {
+    throw new Error('Method not implemented.');
   }
 }
 
