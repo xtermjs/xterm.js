@@ -63,6 +63,7 @@
     "prepublish": "npm run build",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "webpack": "gulp webpack",
-    "watch": "concurrently --kill-others-on-fail --names \"lib,attach,fit,fullscreen,search,terminado,webLinks,winptyCompat,zmodem,css\" \"tsc -w\" \"tsc -w -p ./src/addons/attach\" \"tsc -w -p ./src/addons/fit\" \"tsc -w -p ./src/addons/fullscreen\" \"tsc -w -p ./src/addons/search\" \"tsc -w -p ./src/addons/terminado\" \"tsc -w -p ./src/addons/webLinks\" \"tsc -w -p ./src/addons/winptyCompat\" \"tsc -w -p ./src/addons/zmodem\" \"gulp watch-css\""
+    "watch": "concurrently --kill-others-on-fail --names \"lib,css\" \"tsc -w\" \"gulp watch-css\"",
+    "watch-addons": "concurrently --kill-others-on-fail --names \"attach,fit,fullscreen,search,terminado,webLinks,winptyCompat,zmodem\" \"tsc -w -p ./src/addons/attach\" \"tsc -w -p ./src/addons/fit\" \"tsc -w -p ./src/addons/fullscreen\" \"tsc -w -p ./src/addons/search\" \"tsc -w -p ./src/addons/terminado\" \"tsc -w -p ./src/addons/webLinks\" \"tsc -w -p ./src/addons/winptyCompat\" \"tsc -w -p ./src/addons/zmodem\""
   }
 }
