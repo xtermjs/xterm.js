@@ -19,6 +19,9 @@ export type LinkMatcherValidationCallback = (uri: string, callback: (isValid: bo
 
 export type CharacterJoinerHandler = (text: string) => [number, number][];
 
+// BufferIndex denotes a position in the buffer: [rowIndex, colIndex]
+export type BufferIndex = [number, number];
+
 export const enum LinkHoverEventTypes {
   HOVER = 'linkhover',
   TOOLTIP = 'linktooltip',
@@ -265,6 +268,12 @@ export interface ITerminalOptions extends IPublicTerminalOptions {
   useFlowControl?: boolean;
 }
 
+export interface IBufferStringIterator {
+  hasNext(): boolean;
+  next(withRanges: boolean): string | [{first: number, last: number}, string];
+  toArray(): string[];
+}
+
 export interface IBuffer {
   readonly lines: ICircularList<IBufferLine>;
   ydisp: number;
@@ -283,6 +292,7 @@ export interface IBuffer {
   nextStop(x?: number): number;
   prevStop(x?: number): number;
   stringIndexToBufferIndex(lineIndex: number, stringIndex: number): number[];
+  contents(trimRight: boolean, startIndex?: number, endIndex?: number): IBufferStringIterator;
 }
 
 export interface IBufferSet extends IEventEmitter {
