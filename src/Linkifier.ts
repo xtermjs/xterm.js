@@ -163,86 +163,49 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     if (absoluteRowIndex >= this._terminal.buffer.lines.length) {
       return;
     }
-
-    if (this._terminal.buffer.lines.get(absoluteRowIndex).isWrapped) {
-      // Only attempt to linkify rows that start in the viewport
-      if (rowIndex !== 0) {
-        return;
+    
+    const unwrappedLinesIterator = this._terminal.buffer.contents(false, absoluteRowIndex, absoluteRowIndex + 1);
+    while (unwrappedLinesIterator.hasNext()) {
+      for (let i = 0; i < this._linkMatchers.length; i++) {
+        const lineData: any = unwrappedLinesIterator.next(true);
+        this._doLinkifyRow(lineData[0].first, lineData[1], this._linkMatchers[i]);
       }
-      // If the first row is wrapped, backtrack to find the origin row and linkify that
-      let line: IBufferLine;
-
-      do {
-        rowIndex--;
-        absoluteRowIndex--;
-        line = this._terminal.buffer.lines.get(absoluteRowIndex);
-
-        if (!line) {
-          break;
-        }
-
-      } while (line.isWrapped);
-    }
-
-    // Construct full unwrapped line text
-    let text = this._terminal.buffer.translateBufferLineToString(absoluteRowIndex, false);
-    let currentIndex = absoluteRowIndex + 1;
-    while (currentIndex < this._terminal.buffer.lines.length &&
-      this._terminal.buffer.lines.get(currentIndex).isWrapped) {
-      text += this._terminal.buffer.translateBufferLineToString(currentIndex++, false);
-    }
-
-    for (let i = 0; i < this._linkMatchers.length; i++) {
-      this._doLinkifyRow(rowIndex, text, this._linkMatchers[i]);
     }
   }
 
   /**
    * Linkifies a row given a specific handler.
-   * @param rowIndex The row index to linkify.
-   * @param text The text of the row (excludes text in the row that's already
-   * linkified).
+   * @param rowIndex The row index to linkify (absolute index).
+   * @param text string content of the unwrapped row.
    * @param matcher The link matcher for this line.
-   * @param offset The how much of the row has already been linkified.
-   * @return The link element(s) that were added.
    */
-  private _doLinkifyRow(rowIndex: number, text: string, matcher: ILinkMatcher, offset: number = 0): void {
-    // Find the first match
-    const match = text.match(matcher.regex);
-    if (!match || match.length === 0) {
-      return;
-    }
-    const uri = match[typeof matcher.matchIndex !== 'number' ? 0 : matcher.matchIndex];
+  private _doLinkifyRow(rowIndex: number, text: string, matcher: ILinkMatcher): void {
+    const rex = new RegExp(matcher.regex.source, matcher.regex.flags + 'g');
+    let match;
+    let stringIndex = -1;
+    while ((match = rex.exec(text)) !== null) {
+      const uri = match[typeof matcher.matchIndex !== 'number' ? 0 : matcher.matchIndex];
+      stringIndex = text.indexOf(uri, stringIndex + 1);
+      rex.lastIndex = stringIndex + uri.length;
+      const bufferIndex = this._terminal.buffer.stringIndexToBufferIndex(rowIndex, stringIndex);
+      const line = this._terminal.buffer.lines.get(bufferIndex[0]);
+      const char = line.get(bufferIndex[1]);
+      const attr: number = char[CHAR_DATA_ATTR_INDEX];
+      const fg = (attr >> 9) & 0x1ff;
 
-    // Get index, match.index is for the outer match which includes negated chars
-    const index = text.indexOf(uri);
-
-    // Get cell color
-    const line = this._terminal.buffer.lines.get(this._terminal.buffer.ydisp + rowIndex);
-    const char = line.get(index);
-    const attr: number = char[CHAR_DATA_ATTR_INDEX];
-    const fg = (attr >> 9) & 0x1ff;
-
-    // Ensure the link is valid before registering
-    if (matcher.validationCallback) {
-      matcher.validationCallback(uri, isValid => {
-        // Discard link if the line has already changed
-        if (this._rowsTimeoutId) {
-          return;
-        }
-        if (isValid) {
-          this._addLink(offset + index, rowIndex, uri, matcher, fg);
-        }
-      });
-    } else {
-      this._addLink(offset + index, rowIndex, uri, matcher, fg);
-    }
-
-    // Recursively check for links in the rest of the text
-    const remainingStartIndex = index + uri.length;
-    const remainingText = text.substr(remainingStartIndex);
-    if (remainingText.length > 0) {
-      this._doLinkifyRow(rowIndex, remainingText, matcher, offset + remainingStartIndex);
+      if (matcher.validationCallback) {
+        matcher.validationCallback(uri, isValid => {
+          // Discard link if the line has already changed
+          if (this._rowsTimeoutId) {
+            return;
+          }
+          if (isValid) {
+            this._addLink(bufferIndex[1], bufferIndex[0] - this._terminal.buffer.ydisp, uri, matcher, fg);
+          }
+        });
+      } else {
+        this._addLink(bufferIndex[1], bufferIndex[0] - this._terminal.buffer.ydisp, uri, matcher, fg);
+      }
     }
   }
 
