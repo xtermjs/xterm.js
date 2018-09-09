@@ -100,7 +100,7 @@ function createTerminal(): void {
   addDomListener(actionElements.findNext, 'keypress', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      let searchOptions = {
+      const searchOptions = {
         regex: (document.getElementById('regex') as HTMLInputElement).checked,
         wholeWord: false,
         caseSensitive: false
@@ -111,7 +111,7 @@ function createTerminal(): void {
   addDomListener(actionElements.findPrevious, 'keypress', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      let searchOptions = {
+      const searchOptions = {
         regex: (document.getElementById('regex') as HTMLInputElement).checked,
         wholeWord: false,
         caseSensitive: false
