@@ -263,7 +263,6 @@ export interface ITerminalOptions extends IPublicTerminalOptions {
   screenKeys?: boolean;
   termName?: string;
   useFlowControl?: boolean;
-  bufferLineConstructor?: string;
 }
 
 export interface IBuffer {

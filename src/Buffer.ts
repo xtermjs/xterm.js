@@ -126,7 +126,7 @@ export class Buffer implements IBuffer {
    * Clears the buffer to it's initial state, discarding all previous data.
    */
   public clear(): void {
-    this.setBufferLineFactory(this._terminal.options.bufferLineConstructor);
+    this.setBufferLineFactory(this._terminal.options.experimentalBufferLineConstructor);
     this.ydisp = 0;
     this.ybase = 0;
     this.y = 0;

@@ -106,7 +106,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   theme: null,
   rightClickSelectsWord: Browser.isMac,
   rendererType: 'canvas',
-  bufferLineConstructor: 'JsArray'
+  experimentalBufferLineImpl: 'JsArray'
 };
 
 export class Terminal extends EventEmitter implements ITerminal, IDisposable, IInputHandlingTerminal {
@@ -493,7 +493,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         }
         break;
       case 'tabStopWidth': this.buffers.setupTabStops(); break;
-      case 'bufferLineConstructor':
+      case 'experimentalBufferLineImpl':
         this.buffers.normal.setBufferLineFactory(value);
         this.buffers.alt.setBufferLineFactory(value);
         break;
