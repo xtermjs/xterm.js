@@ -13,19 +13,12 @@ class MockTerminalPlain {}
 
 class MockTerminal {
   private _core: any;
-<<<<<<< HEAD
   public searchHelper: TestSearchHelper;
-  constructor(options: any) {
-    this._core = new (require('../../../lib/Terminal').Terminal)(options);
-    this.searchHelper = new TestSearchHelper(this as any);
-=======
-  public searchHelper: ISearchHelper;
   public cols: number;
   constructor(options: any) {
     this._core = new (require('../../../lib/Terminal').Terminal)(options);
-    this.searchHelper = new SearchHelper(this as any);
+    this.searchHelper = new TestSearchHelper(this as any);
     this.cols = options.cols;
->>>>>>> Fixed issues around searching lines twice and considering a wrapped line both it's own line and part of the previous line.
   }
   get core(): any {
     return this._core;

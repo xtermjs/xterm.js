@@ -113,7 +113,8 @@ export class SearchHelper implements ISearchHelper {
     if (this._terminal._core.buffer.lines.get(y).isWrapped) {
       return;
     }
-    const lowerStringLine = this.translateBufferLineToStringWithWrap(y, true).toLowerCase();    const lowerTerm = term.toLowerCase();
+    const lowerStringLine = this.translateBufferLineToStringWithWrap(y, true).toLowerCase();
+    const lowerTerm = term.toLowerCase();
     let searchIndex = -1;
     if (searchOptions.regex) {
       const searchRegex = RegExp(lowerTerm, 'g');
