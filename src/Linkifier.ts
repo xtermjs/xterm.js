@@ -191,8 +191,11 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       const bufferIndex = this._terminal.buffer.stringIndexToBufferIndex(rowIndex, stringIndex);
       const line = this._terminal.buffer.lines.get(bufferIndex[0]);
       const char = line.get(bufferIndex[1]);
-      const attr: number = char[CHAR_DATA_ATTR_INDEX];
-      const fg = (attr >> 9) & 0x1ff;
+      let fg: number | undefined;
+      if (char) {
+        const attr: number = char[CHAR_DATA_ATTR_INDEX];
+        fg = (attr >> 9) & 0x1ff;
+      }
 
       if (matcher.validationCallback) {
         matcher.validationCallback(uri, isValid => {
