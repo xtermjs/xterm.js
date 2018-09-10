@@ -117,7 +117,7 @@ export class SearchHelper implements ISearchHelper {
     const stringLine = this.translateBufferLineToStringWithWrap(y, true);
     const searchStringLine = searchOptions.caseSensitive ? stringLine : stringLine.toLowerCase();
     const searchTerm = searchOptions.caseSensitive ? term : term.toLowerCase();
-    let searchIndex = searchStringLine.indexOf(searchTerm);
+    let searchIndex = -1;
 
     if (searchOptions.regex) {
       const searchRegex = RegExp(searchTerm, 'g');
