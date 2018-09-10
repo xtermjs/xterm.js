@@ -122,9 +122,14 @@ describe('search addon', () => {
       const term = new MockTerminal({cols: 20, rows: 4});
       term.core.write('Hello World\r\n123....hello\r\nmoreTestHello');
       term.pushWriteData();
-      const hello0 = (term.searchHelper as any)._findInLine('Hello', 0, true);
-      const hello1 = (term.searchHelper as any)._findInLine('Hello', 1, true);
-      const hello2 = (term.searchHelper as any)._findInLine('Hello', 2, true);
+      const searchOptions = {
+        regex: false,
+        wholeWord: false,
+        caseSensitive: true
+      };
+      const hello0 = (term.searchHelper as any)._findInLine('Hello', 0, searchOptions);
+      const hello1 = (term.searchHelper as any)._findInLine('Hello', 1, searchOptions);
+      const hello2 = (term.searchHelper as any)._findInLine('Hello', 2, searchOptions);
       expect(hello0).eql({col: 0, row: 0, term: 'Hello'});
       expect(hello1).eql(undefined);
       expect(hello2).eql({col: 8, row: 2, term: 'Hello'});
