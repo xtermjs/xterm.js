@@ -80,9 +80,22 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    */
   private _linkifyRows(): void {
     this._rowsTimeoutId = null;
-    for (let i = this._rowsToLinkify.start; i <= this._rowsToLinkify.end; i++) {
-      this._linkifyRow(i);
+
+    const absoluteRowIndexStart = this._terminal.buffer.ydisp + this._rowsToLinkify.start;
+    if (absoluteRowIndexStart >= this._terminal.buffer.lines.length) {
+      return;
     }
+
+    // iterate over the range of unwrapped content strings within start..end
+    // _doLinkifyRow gets full unwrapped lines with the start row as buffer offset for every matcher
+    const linesIterator = this._terminal.buffer.contents(false, absoluteRowIndexStart, this._terminal.buffer.ydisp + this._rowsToLinkify.end + 1);
+    while (linesIterator.hasNext()) {
+      for (let i = 0; i < this._linkMatchers.length; i++) {
+        const lineData: any = linesIterator.next(true);
+        this._doLinkifyRow(lineData[0].first, lineData[1], this._linkMatchers[i]);
+      }
+    }
+
     this._rowsToLinkify.start = null;
     this._rowsToLinkify.end = null;
   }
@@ -154,38 +167,27 @@ export class Linkifier extends EventEmitter implements ILinkifier {
   }
 
   /**
-   * Linkifies a row.
-   * @param rowIndex The index of the row to linkify.
-   */
-  private _linkifyRow(rowIndex: number): void {
-    // Ensure the row exists
-    const absoluteRowIndex = this._terminal.buffer.ydisp + rowIndex;
-    if (absoluteRowIndex >= this._terminal.buffer.lines.length) {
-      return;
-    }
-    const unwrappedLinesIterator = this._terminal.buffer.contents(false, absoluteRowIndex, absoluteRowIndex + 1);
-    while (unwrappedLinesIterator.hasNext()) {
-      for (let i = 0; i < this._linkMatchers.length; i++) {
-        const lineData: any = unwrappedLinesIterator.next(true);
-        this._doLinkifyRow(lineData[0].first, lineData[1], this._linkMatchers[i]);
-      }
-    }
-  }
-
-  /**
    * Linkifies a row given a specific handler.
    * @param rowIndex The row index to linkify (absolute index).
    * @param text string content of the unwrapped row.
    * @param matcher The link matcher for this line.
    */
   private _doLinkifyRow(rowIndex: number, text: string, matcher: ILinkMatcher): void {
+    // clone regex do a global search on text
     const rex = new RegExp(matcher.regex.source, matcher.regex.flags + 'g');
     let match;
     let stringIndex = -1;
     while ((match = rex.exec(text)) !== null) {
       const uri = match[typeof matcher.matchIndex !== 'number' ? 0 : matcher.matchIndex];
+
+      // due to complex regexes we cannot use match.index directly
+      // instead we search the position of the match group in text again TODO: Can this be avoided?
+      // also correct regex and string search offsets for the next loop run
       stringIndex = text.indexOf(uri, stringIndex + 1);
       rex.lastIndex = stringIndex + uri.length;
+
+      // get the buffer index as [absolute row, col] for the match
+      // load the attrs at that pos and underline
       const bufferIndex = this._terminal.buffer.stringIndexToBufferIndex(rowIndex, stringIndex);
       const line = this._terminal.buffer.lines.get(bufferIndex[0]);
       const char = line.get(bufferIndex[1]);
