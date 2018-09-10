@@ -8,6 +8,7 @@ import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes,
 import { MouseZone } from './ui/MouseZoneManager';
 import { EventEmitter } from './common/EventEmitter';
 import { CHAR_DATA_ATTR_INDEX } from './Buffer';
+import { stringWidth } from './CharWidth';
 
 /**
  * The Linkifier applies links to rows shortly after they have been refreshed.
@@ -222,14 +223,16 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @param fg The link color for hover event.
    */
   private _addLink(x: number, y: number, uri: string, matcher: ILinkMatcher, fg: number): void {
+    const length = stringWidth(uri);
     const x1 = x % this._terminal.cols;
     const y1 = y + Math.floor(x / this._terminal.cols);
-    let x2 = (x1 + uri.length) % this._terminal.cols;
-    let y2 = y1 + Math.floor((x1 + uri.length) / this._terminal.cols);
+    let x2 = (x1 + length) % this._terminal.cols;
+    let y2 = y1 + Math.floor((x1 + length) / this._terminal.cols);
     if (x2 === 0) {
       x2 = this._terminal.cols;
       y2--;
     }
+
 
     this._mouseZoneManager.add(new MouseZone(
       x1 + 1,

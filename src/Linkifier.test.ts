@@ -271,35 +271,69 @@ describe('Linkifier', () => {
       }, 0);
     }
 
-    it('combining before - match within one line', function(done: () => void): void {
-      assertLinkifiesInTerminal('e\u0301e\u0301e\u0301 foo', /foo/, [{x1: 4, x2: 7, y1: 0, y2: 0}], done);
+    describe('unicode before the match', function(): void {
+      it('combining - match within one line', function(done: () => void): void {
+        assertLinkifiesInTerminal('e\u0301e\u0301e\u0301 foo', /foo/, [{x1: 4, x2: 7, y1: 0, y2: 0}], done);
+      });
+      it('combining - match over two lines', function(done: () => void): void {
+        assertLinkifiesInTerminal('e\u0301e\u0301e\u0301     foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
+      });
+      it('surrogate - match within one line', function(done: () => void): void {
+        assertLinkifiesInTerminal('𝄞𝄞𝄞 foo', /foo/, [{x1: 4, x2: 7, y1: 0, y2: 0}], done);
+      });
+      it('surrogate - match over two lines', function(done: () => void): void {
+        assertLinkifiesInTerminal('𝄞𝄞𝄞     foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
+      });
+      it('combining surrogate - match within one line', function(done: () => void): void {
+        assertLinkifiesInTerminal('𓂀\u0301𓂀\u0301𓂀\u0301 foo', /foo/, [{x1: 4, x2: 7, y1: 0, y2: 0}], done);
+      });
+      it('combining surrogate - match over two lines', function(done: () => void): void {
+        assertLinkifiesInTerminal('𓂀\u0301𓂀\u0301𓂀\u0301     foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
+      });
+      it('fullwidth - match within one line', function(done: () => void): void {
+        assertLinkifiesInTerminal('１２ foo', /foo/, [{x1: 5, x2: 8, y1: 0, y2: 0}], done);
+      });
+      it('fullwidth - match over two lines', function(done: () => void): void {
+        assertLinkifiesInTerminal('１２    foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
+      });
+      it('combining fullwidth - match within one line', function(done: () => void): void {
+        assertLinkifiesInTerminal('￥\u0301￥\u0301 foo', /foo/, [{x1: 5, x2: 8, y1: 0, y2: 0}], done);
+      });
+      it('combining fullwidth - match over two lines', function(done: () => void): void {
+        assertLinkifiesInTerminal('￥\u0301￥\u0301    foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
+      });
     });
-    it('combining before - match over two lines', function(done: () => void): void {
-      assertLinkifiesInTerminal('e\u0301e\u0301e\u0301     foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
-    });
-    it('surrogate before - match within one line', function(done: () => void): void {
-      assertLinkifiesInTerminal('𝄞𝄞𝄞 foo', /foo/, [{x1: 4, x2: 7, y1: 0, y2: 0}], done);
-    });
-    it('surrogate before - match over two lines', function(done: () => void): void {
-      assertLinkifiesInTerminal('𝄞𝄞𝄞     foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
-    });
-    it('combining surrogate before - match within one line', function(done: () => void): void {
-      assertLinkifiesInTerminal('𓂀\u0301𓂀\u0301𓂀\u0301 foo', /foo/, [{x1: 4, x2: 7, y1: 0, y2: 0}], done);
-    });
-    it('combining surrogate before - match over two lines', function(done: () => void): void {
-      assertLinkifiesInTerminal('𓂀\u0301𓂀\u0301𓂀\u0301     foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
-    });
-    it('fullwidth before - match within one line', function(done: () => void): void {
-      assertLinkifiesInTerminal('１２ foo', /foo/, [{x1: 5, x2: 8, y1: 0, y2: 0}], done);
-    });
-    it('fullwidth before - match over two lines', function(done: () => void): void {
-      assertLinkifiesInTerminal('１２    foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
-    });
-    it('combining fullwidth before - match within one line', function(done: () => void): void {
-      assertLinkifiesInTerminal('￥\u0301￥\u0301 foo', /foo/, [{x1: 5, x2: 8, y1: 0, y2: 0}], done);
-    });
-    it('combining fullwidth before - match over two lines', function(done: () => void): void {
-      assertLinkifiesInTerminal('￥\u0301￥\u0301    foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
+    describe('unicode within the match', function(): void {
+      it('combining - match within one line', function(done: () => void): void {
+        assertLinkifiesInTerminal('test cafe\u0301', /cafe\u0301/, [{x1: 5, x2: 9, y1: 0, y2: 0}], done);
+      });
+      it('combining - match over two lines', function(done: () => void): void {
+        assertLinkifiesInTerminal('testtest cafe\u0301', /cafe\u0301/, [{x1: 9, x2: 3, y1: 0, y2: 1}], done);
+      });
+      it('surrogate - match within one line', function(done: () => void): void {
+        assertLinkifiesInTerminal('test a𝄞b', /a𝄞b/, [{x1: 5, x2: 8, y1: 0, y2: 0}], done);
+      });
+      it('surrogate - match over two lines', function(done: () => void): void {
+        assertLinkifiesInTerminal('testtest a𝄞b', /a𝄞b/, [{x1: 9, x2: 2, y1: 0, y2: 1}], done);
+      });
+      it('combining surrogate - match within one line', function(done: () => void): void {
+        assertLinkifiesInTerminal('test a𓂀\u0301b', /a𓂀\u0301b/, [{x1: 5, x2: 8, y1: 0, y2: 0}], done);
+      });
+      it('combining surrogate - match over two lines', function(done: () => void): void {
+        assertLinkifiesInTerminal('testtest a𓂀\u0301b', /a𓂀\u0301b/, [{x1: 9, x2: 2, y1: 0, y2: 1}], done);
+      });
+      it('fullwidth - match within one line', function(done: () => void): void {
+        assertLinkifiesInTerminal('test a１b', /a１b/, [{x1: 5, x2: 9, y1: 0, y2: 0}], done);
+      });
+      it('fullwidth - match over two lines', function(done: () => void): void {
+        assertLinkifiesInTerminal('testtest a１b', /a１b/, [{x1: 9, x2: 3, y1: 0, y2: 1}], done);
+      });
+      it('combining fullwidth - match within one line', function(done: () => void): void {
+        assertLinkifiesInTerminal('test a￥\u0301b', /a￥\u0301b/, [{x1: 5, x2: 9, y1: 0, y2: 0}], done);
+      });
+      it('combining fullwidth - match over two lines', function(done: () => void): void {
+        assertLinkifiesInTerminal('testtest a￥\u0301b', /a￥\u0301b/, [{x1: 9, x2: 3, y1: 0, y2: 1}], done);
+      });
     });
   });
 });
