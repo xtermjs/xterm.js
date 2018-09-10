@@ -34,7 +34,7 @@ class TestSearchHelper extends SearchHelper {
   }
 }
 
-describe('search addon', function(): void {
+describe('search addon', () => {
   describe('apply', () => {
     it('should register findNext and findPrevious', () => {
       search.apply(<any>MockTerminalPlain);
@@ -43,7 +43,7 @@ describe('search addon', function(): void {
     });
   });
   describe('find', () => {
-    it('Searchhelper - should find correct position', function(): void {
+    it('Searchhelper - should find correct position', () => {
       search.apply(<any>MockTerminal);
       const term = new MockTerminal({cols: 20, rows: 3});
       term.core.write('Hello World\r\ntest\n123....hello');
@@ -55,7 +55,7 @@ describe('search addon', function(): void {
       expect(hello1).eql(undefined);
       expect(hello2).eql({col: 11, row: 2, term: 'Hello'});
     });
-    it('should find search term accross line wrap', function(): void {
+    it('should find search term accross line wrap', () => {
       search.apply(<any>MockTerminal);
       const term = new MockTerminal({cols: 10, rows: 5});
       term.core.write('texttextHellotext\r\n');
@@ -80,7 +80,7 @@ describe('search addon', function(): void {
       expect(hello3).eql(undefined);
       expect(llo).eql(undefined);
     });
-    it('should respect search regex', function(): void {
+    it('should respect search regex', () => {
       search.apply(<any>MockTerminal);
       const term = new MockTerminal({cols: 10, rows: 4});
       term.core.write('abcdefghijklmnopqrstuvwxyz\r\n~/dev  ');
@@ -108,6 +108,14 @@ describe('search addon', function(): void {
       expect(tilda0).eql({col: 0, row: 3, term: '~'});
       expect(tilda1).eql({col: 0, row: 3, term: '~'});
       expect(tilda2).eql({col: 0, row: 3, term: '~'});
+    });
+    it('should not select empty lines', () => {
+      search.apply(<any>MockTerminal);
+      const term = new MockTerminal({cols: 20, rows: 3});
+      term.core.write('    ');
+      term.pushWriteData();
+      const line = term.searchHelper.findInLine('^.*$', 0, { regex: true });
+      expect(line).eql(undefined);
     });
   });
 });

@@ -119,7 +119,7 @@ export class SearchHelper implements ISearchHelper {
     if (searchOptions.regex) {
       const searchRegex = RegExp(lowerTerm, 'g');
       const foundTerm = searchRegex.exec(lowerStringLine);
-      if (foundTerm) {
+      if (foundTerm && foundTerm[0].length > 0) {
         searchIndex = searchRegex.lastIndex - foundTerm[0].length;
         term = foundTerm[0];
       }
