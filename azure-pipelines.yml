@@ -13,8 +13,7 @@ jobs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
   - script: |
-      curl -sLO https://github.com/yarnpkg/yarn/releases/download/v1.10.0/yarn_1.10.0_all.deb
-      sudo dpkg -i yarn_1.10.0_all.deb
+      curl -o- -L https://yarnpkg.com/install.sh | bash
     displayName: 'Install yarn'
   - script: |
       yarn
