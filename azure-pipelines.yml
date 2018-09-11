@@ -13,10 +13,8 @@ jobs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
   - script: |
-      curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
-      echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
-      sudo apt-get update && sudo apt-get install yarn
-      sudo apt-get install --no-install-recommends yarn
+      curl -sLO https://github.com/yarnpkg/yarn/releases/download/v1.10.0/yarn_1.10.0_all.deb
+      sudo dpkg -i yarn_1.10.0_all.deb
     displayName: 'Install yarn'
   - script: |
       yarn install
