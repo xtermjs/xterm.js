@@ -3,16 +3,69 @@
 # Add steps that analyze code, save build artifacts, deploy, and more:
 # https://docs.microsoft.com/vsts/pipelines/languages/javascript
 
-pool:
-  vmImage: 'Ubuntu 16.04'
+jobs:
+- job: Linux
+  pool:
+    vmImage: 'ubuntu-16.04'
+  steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '8.x'
+    displayName: 'Install Node.js'
+  - script: |
+      yarn install
+    displayName: 'Install yarn dependencies'
+  - script: |
+      yarn tsc
+    displayName: 'Build'
+  - script: |
+      yarn mocha
+    displayName: 'Test'
+  - script: |
+      yarn lint
+    displayName: 'Lint'
+  - script: |
+      yarn test-coverage
+    displayName: 'Generate and publish coverage'
 
-steps:
-- task: NodeTool@0
-  inputs:
-    versionSpec: '8.x'
-  displayName: 'Install Node.js'
+- job: macOS
+  pool:
+    vmImage: 'xcode9-macos10.13'
+  steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '8.x'
+    displayName: 'Install Node.js'
+  - script: |
+      yarn install
+    displayName: 'Install yarn dependencies'
+  - script: |
+      yarn tsc
+    displayName: 'Build'
+  - script: |
+      yarn mocha
+    displayName: 'Test'
+  - script: |
+      yarn lint
+    displayName: 'Lint'
 
-- script: |
-    npm install
-    npm run build
-  displayName: 'npm install and build'
+- job: Windows
+  pool:
+    vmImage: 'vs2017-win2016'
+  steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '8.x'
+    displayName: 'Install Node.js'
+  - script: |
+      yarn install
+    displayName: 'Install yarn dependencies'
+  - script: |
+      yarn tsc
+    displayName: 'Build'
+  - script: |
+      yarn mocha
+    displayName: 'Test'
+  - script: |
+      yarn lint
+    displayName: 'Lint'
