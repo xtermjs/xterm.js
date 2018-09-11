@@ -14,8 +14,7 @@ jobs:
     displayName: 'Install Node.js'
   - script: |
       curl -o- -L https://yarnpkg.com/install.sh | bash
-      echo 'PATH'
-      echo $PATH
+      ln -s $HOME/.yarn/bin/yarn /usr/bin/yarn
     displayName: 'Install yarn'
   - script: |
       yarn
