@@ -59,14 +59,15 @@ describe('search addon', () => {
       search.apply(<any>MockTerminal);
       const term = new MockTerminal({cols: 10, rows: 5});
       term.core.write('texttextHellotext\r\n');
-      term.core.write('texttexttextHellotext');
+      term.core.write('texttexttextHellotext         goodbye');
       term.pushWriteData();
       /*
         texttextHe
         llotext
         texttextte
         xtHellotex
-        t
+        t         (these spaces included intentionally)
+        goodbye
       */
 
       const hello0 = (term.searchHelper as any)._findInLine('Hello', 0);
@@ -74,11 +75,13 @@ describe('search addon', () => {
       const hello2 = (term.searchHelper as any)._findInLine('Hello', 2);
       const hello3 = (term.searchHelper as any)._findInLine('Hello', 3);
       const llo = (term.searchHelper as any)._findInLine('llo', 1);
+      const goodbye = (term.searchHelper as any)._findInLine('goodbye', 2);
       expect(hello0).eql({col: 8, row: 0, term: 'Hello'});
       expect(hello1).eql(undefined);
       expect(hello2).eql({col: 2, row: 3, term: 'Hello'});
       expect(hello3).eql(undefined);
       expect(llo).eql(undefined);
+      expect(goodbye).eql({col: 0, row: 5, term: 'goodbye'});
     });
     it('should respect search regex', () => {
       search.apply(<any>MockTerminal);

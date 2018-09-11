@@ -170,7 +170,7 @@ export class SearchHelper implements ISearchHelper {
     let lineWrapsToNext: boolean;
 
     do {
-      const nextLine = this._terminal._core.buffer.lines.get(lineIndex);
+      const nextLine = this._terminal._core.buffer.lines.get(lineIndex + 1);
       lineWrapsToNext = nextLine ? nextLine.isWrapped : false;
       lineString += this._terminal._core.buffer.translateBufferLineToString(lineIndex, !lineWrapsToNext && trimRight);
       lineIndex++;
