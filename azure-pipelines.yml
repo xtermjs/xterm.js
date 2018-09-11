@@ -17,11 +17,8 @@ jobs:
       sudo dpkg -i yarn_1.10.0_all.deb
     displayName: 'Install yarn'
   - script: |
-      yarn install
-    displayName: 'Install npm dependencies'
-  - script: |
-      yarn tsc
-    displayName: 'Build'
+      yarn
+    displayName: 'Install dependencies and build'
   - script: |
       yarn mocha
     displayName: 'Test'
@@ -41,11 +38,8 @@ jobs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
   - script: |
-      yarn install
-    displayName: 'Install yarn dependencies'
-  - script: |
-      yarn tsc
-    displayName: 'Build'
+      yarn
+    displayName: 'Install dependencies and build'
   - script: |
       yarn mocha
     displayName: 'Test'
@@ -62,11 +56,8 @@ jobs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
   - script: |
-      yarn install
-    displayName: 'Install yarn dependencies'
-  - script: |
-      yarn tsc
-    displayName: 'Build'
+      yarn
+    displayName: 'Install dependencies and build'
   - script: |
       yarn mocha
     displayName: 'Test'
