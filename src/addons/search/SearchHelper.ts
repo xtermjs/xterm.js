@@ -113,18 +113,21 @@ export class SearchHelper implements ISearchHelper {
     if (this._terminal._core.buffer.lines.get(y).isWrapped) {
       return;
     }
-    const lowerStringLine = this.translateBufferLineToStringWithWrap(y, true).toLowerCase();
-    const lowerTerm = term.toLowerCase();
+
+    const stringLine = this.translateBufferLineToStringWithWrap(y, true);
+    const searchStringLine = searchOptions.caseSensitive ? stringLine : stringLine.toLowerCase();
+    const searchTerm = searchOptions.caseSensitive ? term : term.toLowerCase();
     let searchIndex = -1;
+
     if (searchOptions.regex) {
-      const searchRegex = RegExp(lowerTerm, 'g');
-      const foundTerm = searchRegex.exec(lowerStringLine);
+      const searchRegex = RegExp(searchTerm, 'g');
+      const foundTerm = searchRegex.exec(searchStringLine);
       if (foundTerm && foundTerm[0].length > 0) {
         searchIndex = searchRegex.lastIndex - foundTerm[0].length;
         term = foundTerm[0];
       }
     } else {
-      searchIndex = lowerStringLine.indexOf(lowerTerm);
+      searchIndex = searchStringLine.indexOf(searchTerm);
     }
 
     if (searchIndex >= 0) {
