@@ -89,6 +89,8 @@ export class Linkifier extends EventEmitter implements ILinkifier {
 
     // iterate over the range of unwrapped content strings within start..end
     // _doLinkifyRow gets full unwrapped lines with the start row as buffer offset for every matcher
+    // for wrapped content over several rows the iterator might return rows outside the viewport
+    // we skip those later in _doLinkifyRow
     const linesIterator = this._terminal.buffer.contents(false, absoluteRowIndexStart, this._terminal.buffer.ydisp + this._rowsToLinkify.end + 1);
     while (linesIterator.hasNext()) {
       for (let i = 0; i < this._linkMatchers.length; i++) {
@@ -174,7 +176,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @param matcher The link matcher for this line.
    */
   private _doLinkifyRow(rowIndex: number, text: string, matcher: ILinkMatcher): void {
-    // clone regex do a global search on text
+    // clone regex to do a global search on text
     const rex = new RegExp(matcher.regex.source, matcher.regex.flags + 'g');
     let match;
     let stringIndex = -1;
@@ -188,8 +190,16 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       rex.lastIndex = stringIndex + uri.length;
 
       // get the buffer index as [absolute row, col] for the match
-      // load the attrs at that pos and underline
       const bufferIndex = this._terminal.buffer.stringIndexToBufferIndex(rowIndex, stringIndex);
+
+      // skip rows outside of the viewport
+      if (bufferIndex[0] - this._terminal.buffer.ydisp < 0) {
+        continue;
+      }
+      if (bufferIndex[0] - this._terminal.buffer.ydisp > this._terminal.rows) {
+        break;
+      }
+
       const line = this._terminal.buffer.lines.get(bufferIndex[0]);
       const char = line.get(bufferIndex[1]);
       let fg: number | undefined;
