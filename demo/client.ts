@@ -103,7 +103,7 @@ function createTerminal(): void {
       const searchOptions = {
         regex: (document.getElementById('regex') as HTMLInputElement).checked,
         wholeWord: false,
-        caseSensitive: false
+        caseSensitive: (document.getElementById('case-sensitive') as HTMLInputElement).checked
       };
       term.findNext(actionElements.findNext.value, searchOptions);
     }
@@ -114,7 +114,7 @@ function createTerminal(): void {
       const searchOptions = {
         regex: (document.getElementById('regex') as HTMLInputElement).checked,
         wholeWord: false,
-        caseSensitive: false
+        caseSensitive: (document.getElementById('case-sensitive') as HTMLInputElement).checked
       };
       term.findPrevious(actionElements.findPrevious.value, searchOptions);
     }
