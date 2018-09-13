@@ -1,6 +1,6 @@
 # [![xterm.js logo](logo-full.png)](https://xtermjs.org)
 
-[![Build Status](https://xtermjs.visualstudio.com/xterm.js/_apis/build/status/xtermjs.xterm.js)](https://xtermjs.visualstudio.com/xterm.js/_build/latest?definitionId=3)
+[![Build Status](https://dev.azure.com/xtermjs/xterm.js/_apis/build/status/xtermjs.xterm.js)](https://dev.azure.com/xtermjs/xterm.js/_build/latest?definitionId=3)
 [![Coverage Status](https://coveralls.io/repos/github/xtermjs/xterm.js/badge.svg?branch=master)](https://coveralls.io/github/xtermjs/xterm.js?branch=master)
 [![Gitter](https://badges.gitter.im/sourcelair/xterm.js.svg)](https://gitter.im/sourcelair/xterm.js?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![jsDelivr Hits](https://data.jsdelivr.com/v1/package/npm/xterm/badge?style=rounded)](https://www.jsdelivr.com/package/npm/xterm)
