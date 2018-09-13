@@ -93,8 +93,8 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     // we skip those later in _doLinkifyRow
     const linesIterator = this._terminal.buffer.contents(false, absoluteRowIndexStart, this._terminal.buffer.ydisp + this._rowsToLinkify.end + 1);
     while (linesIterator.hasNext()) {
+      const lineData: any = linesIterator.next(true);
       for (let i = 0; i < this._linkMatchers.length; i++) {
-        const lineData: any = linesIterator.next(true);
         this._doLinkifyRow(lineData[0].first, lineData[1], this._linkMatchers[i]);
       }
     }
@@ -182,6 +182,12 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     let stringIndex = -1;
     while ((match = rex.exec(text)) !== null) {
       const uri = match[typeof matcher.matchIndex !== 'number' ? 0 : matcher.matchIndex];
+      if (!uri) {
+        // something matched but does not comply with the given matchIndex
+        // since this is most likely a bug the regex itself we simply do nothing here
+        // TODO: should this be logged for debugging?
+        break;
+      }
 
       // due to complex regexes we cannot use match.index directly
       // instead we search the position of the match group in text again TODO: Can this be avoided?
