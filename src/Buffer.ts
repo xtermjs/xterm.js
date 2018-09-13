@@ -194,6 +194,18 @@ export class Buffer implements IBuffer {
     this.scrollBottom = newRows - 1;
   }
 
+  /**
+   * Translates a string index back to a BufferIndex.
+   * To get the correct buffer position the string must start at `startCol` 0
+   * (default in translateBufferLineToString).
+   * The method also works on wrapped line strings given rows were not trimmed.
+   * The method operates on the CharData width attribute, there are no
+   * additional content or boundary checks. Therefore the string and the buffer
+   * should not be altered in between.
+   * @param lineIndex line index the string was retrieved from
+   * @param stringIndex index within the string
+   * @param startCol column offset the string was retrieved from
+   */
   public stringIndexToBufferIndex(lineIndex: number, stringIndex: number): BufferIndex {
     if (!stringIndex) {
       return [lineIndex, 0];
