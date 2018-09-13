@@ -489,5 +489,22 @@ describe('Buffer', () => {
       const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, stringIndex);
       assert(terminal.buffer.lines.get(bufferIndex[0]).get(bufferIndex[1])[CHAR_DATA_CHAR_INDEX], '😃');
     });
+    it('multiline fullwidth chars with offset 1 (currently tests for broken behavior)', function(): void {
+      const input = 'a１２３４５６７８９０１２３４５６７８９０';
+      // the 'a' at the beginning moves all fullwidth chars one to the right
+      // now the end of the line contains a dangling empty cell since
+      // the next fullwidth char has to wrap early
+      // the dangling last cell is wrongly added in the string
+      // --> fixable after resolving #1685
+      terminal.write(input);
+      // TODO: reenable after fix
+      // const s = terminal.buffer.contents(true).toArray()[0];
+      // assert.equal(input, s);
+      for (let i = 10; i < input.length; ++i) {
+        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i + 1); // TODO: remove +1 after fix
+        const j = (i - 0) << 1;
+        assert.deepEqual([(j / terminal.cols) | 0, j % terminal.cols], bufferIndex);
+      }
+    });
   });
 });

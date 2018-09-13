@@ -202,6 +202,7 @@ export class Buffer implements IBuffer {
    * The method operates on the CharData width attribute, there are no
    * additional content or boundary checks. Therefore the string and the buffer
    * should not be altered in between.
+   * TODO: respect trim flag after fixing #1685
    * @param lineIndex line index the string was retrieved from
    * @param stringIndex index within the string
    * @param startCol column offset the string was retrieved from
@@ -419,6 +420,7 @@ export class BufferStringIterator implements IBufferStringIterator {
     const range = this._buffer.getWrappedRangeForLine(this._current);
     let result = '';
     for (let i = range.first; i <= range.last; ++i) {
+      // TODO: always apply trimRight after fixing #1685 
       result += this._buffer.translateBufferLineToString(i, (this._trimRight) ? i === range.last : false);
     }
     this._current = range.last;
