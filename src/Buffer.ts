@@ -420,7 +420,7 @@ export class BufferStringIterator implements IBufferStringIterator {
     const range = this._buffer.getWrappedRangeForLine(this._current);
     let result = '';
     for (let i = range.first; i <= range.last; ++i) {
-      // TODO: always apply trimRight after fixing #1685 
+      // TODO: always apply trimRight after fixing #1685
       result += this._buffer.translateBufferLineToString(i, (this._trimRight) ? i === range.last : false);
     }
     this._current = range.last;
