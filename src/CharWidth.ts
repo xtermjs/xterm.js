@@ -172,9 +172,8 @@ export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: nu
 
 /**
  * Get the terminal cell width for a string.
- * @param s
  */
-export function stringWidth(s: string): number {
+export function getStringCellWidth(s: string): number {
   let result = 0;
   for (let i = 0; i < s.length; ++i) {
     let code = s.charCodeAt(i);

@@ -8,7 +8,7 @@ import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes,
 import { MouseZone } from './ui/MouseZoneManager';
 import { EventEmitter } from './common/EventEmitter';
 import { CHAR_DATA_ATTR_INDEX } from './Buffer';
-import { stringWidth } from './CharWidth';
+import { getStringCellWidth } from './CharWidth';
 
 /**
  * The Linkifier applies links to rows shortly after they have been refreshed.
@@ -82,12 +82,13 @@ export class Linkifier extends EventEmitter implements ILinkifier {
   private _linkifyRows(): void {
     this._rowsTimeoutId = null;
 
+    // Ensure the row exists
     const absoluteRowIndexStart = this._terminal.buffer.ydisp + this._rowsToLinkify.start;
     if (absoluteRowIndexStart >= this._terminal.buffer.lines.length) {
       return;
     }
 
-    // iterate over the range of unwrapped content strings within start..end
+    // iterate over the range of unwrapped content strings within start..end (excluding)
     // _doLinkifyRow gets full unwrapped lines with the start row as buffer offset for every matcher
     // for wrapped content over several rows the iterator might return rows outside the viewport
     // we skip those later in _doLinkifyRow
@@ -189,8 +190,9 @@ export class Linkifier extends EventEmitter implements ILinkifier {
         break;
       }
 
-      // due to complex regexes we cannot use match.index directly
-      // instead we search the position of the match group in text again TODO: Can this be avoided?
+      // Get index, match.index is for the outer match which includes negated chars
+      // therefore we cannot use match.index directly, instead we search the position
+      // of the match group in text again
       // also correct regex and string search offsets for the next loop run
       stringIndex = text.indexOf(uri, stringIndex + 1);
       rex.lastIndex = stringIndex + uri.length;
@@ -239,11 +241,11 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @param fg The link color for hover event.
    */
   private _addLink(x: number, y: number, uri: string, matcher: ILinkMatcher, fg: number): void {
-    const length = stringWidth(uri);
+    const width = getStringCellWidth(uri);
     const x1 = x % this._terminal.cols;
     const y1 = y + Math.floor(x / this._terminal.cols);
-    let x2 = (x1 + length) % this._terminal.cols;
-    let y2 = y1 + Math.floor((x1 + length) / this._terminal.cols);
+    let x2 = (x1 + width) % this._terminal.cols;
+    let y2 = y1 + Math.floor((x1 + width) / this._terminal.cols);
     if (x2 === 0) {
       x2 = this._terminal.cols;
       y2--;
