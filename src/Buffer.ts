@@ -410,7 +410,7 @@ export class Marker extends EventEmitter implements IMarker {
  * It will never read/return string data beyond `startIndex - startOverscan`
  * or `endIndex + endOverscan`. Therefore the first and last line might be truncated.
  * It is possible to always get the full string for the first and last line as well
- * by setting the overscan values to the actual buffer length, but not recommended
+ * by setting the overscan values to the actual buffer length. This not recommended
  * since it might return the whole buffer within a single string in a worst case scenario.
  */
 export class BufferStringIterator implements IBufferStringIterator {
