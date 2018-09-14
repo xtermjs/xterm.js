@@ -374,7 +374,7 @@ export class Buffer implements IBuffer {
     this.markers.splice(this.markers.indexOf(marker), 1);
   }
 
-  public contents(trimRight: boolean, startIndex?: number, endIndex?: number): IBufferStringIterator {
+  public iterator(trimRight: boolean, startIndex?: number, endIndex?: number): IBufferStringIterator {
     return new BufferStringIterator(this, trimRight, startIndex, endIndex);
   }
 }

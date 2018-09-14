@@ -296,7 +296,7 @@ export interface IBuffer {
   nextStop(x?: number): number;
   prevStop(x?: number): number;
   stringIndexToBufferIndex(lineIndex: number, stringIndex: number): number[];
-  contents(trimRight: boolean, startIndex?: number, endIndex?: number): IBufferStringIterator;
+  iterator(trimRight: boolean, startIndex?: number, endIndex?: number): IBufferStringIterator;
 }
 
 export interface IBufferSet extends IEventEmitter {

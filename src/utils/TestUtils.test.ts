@@ -322,8 +322,8 @@ export class MockBuffer implements IBuffer {
   stringIndexToBufferIndex(lineIndex: number, stringIndex: number): number[] {
     return Buffer.prototype.stringIndexToBufferIndex.apply(this, arguments);
   }
-  contents(trimRight: boolean, startIndex?: number, endIndex?: number): IBufferStringIterator {
-    return Buffer.prototype.contents.apply(this, arguments);
+  iterator(trimRight: boolean, startIndex?: number, endIndex?: number): IBufferStringIterator {
+    return Buffer.prototype.iterator.apply(this, arguments);
   }
 }
 
