@@ -408,14 +408,17 @@ export class BufferStringIterator implements IBufferStringIterator {
   private _start: number;
   private _end: number;
   private _current: number;
+
   constructor (private _buffer: IBuffer, private _trimRight: boolean, startIndex?: number, endIndex?: number) {
     this._start = startIndex || 0;
     this._end = endIndex || this._buffer.lines.length;
     this._current = this._start;
   }
+
   public hasNext(): boolean {
     return this._current < this._end;
   }
+
   public next(withRanges: boolean = false): string | [{first: number, last: number}, string] {
     const range = this._buffer.getWrappedRangeForLine(this._current);
     let result = '';
@@ -423,12 +426,12 @@ export class BufferStringIterator implements IBufferStringIterator {
       // TODO: always apply trimRight after fixing #1685
       result += this._buffer.translateBufferLineToString(i, (this._trimRight) ? i === range.last : false);
     }
-    this._current = range.last;
-    this._current++;
+    this._current = range.last + 1;
     return (withRanges) ? [range, result] : result;
   }
-  toArray(): string[] {
-    const result: string[] = [];
+
+  public toArray(): string[] {
+    const result = [];
     while (this.hasNext()) {
       result.push(this.next() as string);
     }
