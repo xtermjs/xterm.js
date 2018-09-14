@@ -138,11 +138,12 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     return code < 256;
   }
 
-  private _toCoordinates(index: number): [number, number] {
-    return [
-      (index % this._width) * this._config.scaledCharWidth,
-      Math.floor(index / this._width) * this._config.scaledCharHeight
-    ];
+  private _toCoordinateX(index: number): number {
+    return (index % this._width) * this._config.scaledCharWidth;
+  }
+
+  private _toCoordinateY(index: number): number {
+    return Math.floor(index / this._width) * this._config.scaledCharHeight;
   }
 
   private _drawFromCache(
@@ -155,7 +156,8 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     if (cacheValue.isEmpty) {
       return;
     }
-    const [cacheX, cacheY] = this._toCoordinates(cacheValue.index);
+    const cacheX = this._toCoordinateX(cacheValue.index);
+    const cacheY = this._toCoordinateY(cacheValue.index);
     ctx.drawImage(
       this._cacheCanvas,
       cacheX,
@@ -252,7 +254,8 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     }
 
     // copy the data from imageData to _cacheCanvas
-    const [x, y] = this._toCoordinates(index);
+    const x = this._toCoordinateX(index);
+    const y = this._toCoordinateY(index);
     // putImageData doesn't do any blending, so it will overwrite any existing cache entry for us
     this._cacheCtx.putImageData(imageData, x, y);
 
