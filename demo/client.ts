@@ -8,12 +8,12 @@
 /// <reference path="../typings/xterm.d.ts"/>
 
 import { Terminal } from '../lib/public/Terminal';
-import * as attach from '../build/addons/attach/attach';
-import * as fit from '../build/addons/fit/fit';
-import * as fullscreen from '../build/addons/fullscreen/fullscreen';
-import * as search from '../build/addons/search/search';
-import * as webLinks from '../build/addons/webLinks/webLinks';
-import * as winptyCompat from '../build/addons/winptyCompat/winptyCompat';
+import * as attach from '../lib/addons/attach/attach';
+import * as fit from '../lib/addons/fit/fit';
+import * as fullscreen from '../lib/addons/fullscreen/fullscreen';
+import * as search from '../lib/addons/search/search';
+import * as webLinks from '../lib/addons/webLinks/webLinks';
+import * as winptyCompat from '../lib/addons/winptyCompat/winptyCompat';
 
 // Pulling in the module's types relies on the <reference> above, it's looks a
 // little weird here as we're importing "this" module
@@ -100,10 +100,10 @@ function createTerminal(): void {
   addDomListener(actionElements.findNext, 'keypress', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      let searchOptions = {
+      const searchOptions = {
         regex: (document.getElementById('regex') as HTMLInputElement).checked,
         wholeWord: false,
-        caseSensitive: false
+        caseSensitive: (document.getElementById('case-sensitive') as HTMLInputElement).checked
       };
       term.findNext(actionElements.findNext.value, searchOptions);
     }
@@ -111,10 +111,10 @@ function createTerminal(): void {
   addDomListener(actionElements.findPrevious, 'keypress', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      let searchOptions = {
+      const searchOptions = {
         regex: (document.getElementById('regex') as HTMLInputElement).checked,
         wholeWord: false,
-        caseSensitive: false
+        caseSensitive: (document.getElementById('case-sensitive') as HTMLInputElement).checked
       };
       term.findPrevious(actionElements.findPrevious.value, searchOptions);
     }
