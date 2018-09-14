@@ -106,6 +106,11 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     x: number,
     y: number
   ): boolean {
+    // Space is always an empty cell, special case this as it's so common
+    if (code === 32) {
+      return true;
+    }
+
     const glyphKey = getGlyphCacheKey(code, fg, bg, bold, dim, italic);
     const cacheValue = this._cacheMap.get(glyphKey);
     if (cacheValue !== null && cacheValue !== undefined) {
