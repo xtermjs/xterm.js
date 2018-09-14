@@ -4,6 +4,7 @@
  */
 
 import { ISearchHelper, ISearchAddonTerminal, ISearchOptions, ISearchResult } from './Interfaces';
+const nonWordCharacters = ' ~!@#$%^&*()_+`-=[]{}|\;:"\',./<>?';
 
 /**
  * A class that knows how to search the terminal and how to display the results.
@@ -100,6 +101,17 @@ export class SearchHelper implements ISearchHelper {
   }
 
   /**
+   * A found substring is a whole word if it doesn't have an alphanumeric character directly adjacent to it.
+   * @param searchIndex starting indext of the potential whole word substring
+   * @param line entire string in which the potential whole word was found
+   * @param term the substring that starts at searchIndex
+   */
+  private _isWholeWord(searchIndex: number, line: string, term: string): boolean {
+    return (((searchIndex === 0) || (nonWordCharacters.indexOf(line[searchIndex - 1]) !== -1)) &&
+         (((searchIndex + term.length) === line.length) || (nonWordCharacters.indexOf(line[searchIndex + term.length]) !== -1)));
+  }
+
+  /**
    * Searches a line for a search term. Takes the provided terminal line and searches the text line, which may contain
    * subsequent terminal lines if the text is wrapped. If the provided line number is part of a wrapped text line that
    * started on an earlier line then it is skipped since it will be properly searched when the terminal line that the
@@ -136,6 +148,10 @@ export class SearchHelper implements ISearchHelper {
         y += Math.floor(searchIndex / this._terminal.cols);
         searchIndex = searchIndex % this._terminal.cols;
       }
+      if (searchOptions.wholeWord && !this._isWholeWord(searchIndex, searchStringLine, term)) {
+        return;
+      }
+
       const line = this._terminal._core.buffer.lines.get(y);
 
       for (let i = 0; i < searchIndex; i++) {
