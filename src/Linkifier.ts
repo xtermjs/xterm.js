@@ -21,6 +21,12 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    */
   protected static readonly TIME_BEFORE_LINKIFY = 200;
 
+  /**
+   * Limit of the unwrapping line expansion (overscan) at the top and bottom
+   * of the actual viewport.
+   */
+  protected static readonly OVERSCAN_LIMIT = 5;
+
   protected _linkMatchers: ILinkMatcher[] = [];
 
   private _mouseZoneManager: IMouseZoneManager;
@@ -88,11 +94,17 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       return;
     }
 
-    // iterate over the range of unwrapped content strings within start..end (excluding)
-    // _doLinkifyRow gets full unwrapped lines with the start row as buffer offset for every matcher
-    // for wrapped content over several rows the iterator might return rows outside the viewport
-    // we skip those later in _doLinkifyRow
-    const iterator = this._terminal.buffer.iterator(false, absoluteRowIndexStart, this._terminal.buffer.ydisp + this._rowsToLinkify.end + 1);
+    // Iterate over the range of unwrapped content strings within start..end (excluding).
+    // _doLinkifyRow gets full unwrapped lines with the start row as buffer offset for every matcher.
+    // The unwrapping is needed to also match content that got wrapped at the right side.
+    // To avoid a worst case szenario where the whole buffer contains just a single unwrapped string
+    // we limit this line expansion beyond the actual viewport to -5 and +5 real buffer lines (overscan).
+    // This comes with the tradeoff that match longer than 5 buffer lines will not match anymore at the
+    // viewport borders.
+    const iterator = this._terminal.buffer.iterator(
+      false, absoluteRowIndexStart, this._terminal.buffer.ydisp + this._rowsToLinkify.end + 1,
+      Linkifier.OVERSCAN_LIMIT, Linkifier.OVERSCAN_LIMIT);
+    console.log('linkify rows', absoluteRowIndexStart, this._terminal.buffer.ydisp + this._rowsToLinkify.end + 1);
     while (iterator.hasNext()) {
       const lineData: IBufferStringIteratorResult = iterator.next();
       for (let i = 0; i < this._linkMatchers.length; i++) {
@@ -204,14 +216,6 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       // get the buffer index as [absolute row, col] for the match
       const bufferIndex = this._terminal.buffer.stringIndexToBufferIndex(rowIndex, stringIndex);
 
-      // skip rows outside of the viewport
-      if (bufferIndex[0] - this._terminal.buffer.ydisp < 0) {
-        continue;
-      }
-      if (bufferIndex[0] - this._terminal.buffer.ydisp > this._terminal.rows) {
-        break;
-      }
-
       const line = this._terminal.buffer.lines.get(bufferIndex[0]);
       const char = line.get(bufferIndex[1]);
       let fg: number | undefined;
@@ -254,6 +258,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       x2 = this._terminal.cols;
       y2--;
     }
+    console.log(x1, y1, x2, y2);
 
     this._mouseZoneManager.add(new MouseZone(
       x1 + 1,
