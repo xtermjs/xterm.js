@@ -4,11 +4,19 @@
  */
 
 import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../renderer/Types';
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferLine } from '../Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferLine, IBufferStringIterator } from '../Types';
 import { ICircularList, XtermListener } from '../common/Types';
 import { Buffer } from '../Buffer';
 import * as Browser from '../shared/utils/Browser';
 import { ITheme, IDisposable, IMarker } from 'xterm';
+import { Terminal } from '../Terminal';
+
+export class TestTerminal extends Terminal {
+  writeSync(data: string): void {
+    this.writeBuffer.push(data);
+    this._innerWrite();
+  }
+}
 
 export class MockTerminal implements ITerminal {
   markers: IMarker[];
@@ -300,7 +308,7 @@ export class MockBuffer implements IBuffer {
     return Buffer.prototype.translateBufferLineToString.apply(this, arguments);
   }
   getWrappedRangeForLine(y: number): { first: number; last: number; } {
-    throw new Error('Method not implemented.');
+    return Buffer.prototype.getWrappedRangeForLine.apply(this, arguments);
   }
   nextStop(x?: number): number {
     throw new Error('Method not implemented.');
@@ -310,6 +318,12 @@ export class MockBuffer implements IBuffer {
   }
   setLines(lines: ICircularList<IBufferLine>): void {
     this.lines = lines;
+  }
+  stringIndexToBufferIndex(lineIndex: number, stringIndex: number): number[] {
+    return Buffer.prototype.stringIndexToBufferIndex.apply(this, arguments);
+  }
+  iterator(trimRight: boolean, startIndex?: number, endIndex?: number): IBufferStringIterator {
+    return Buffer.prototype.iterator.apply(this, arguments);
   }
 }
 
