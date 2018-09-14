@@ -23,9 +23,9 @@ export class Linkifier extends EventEmitter implements ILinkifier {
 
   /**
    * Limit of the unwrapping line expansion (overscan) at the top and bottom
-   * of the actual viewport.
+   * of the actual viewport in ASCII characters.
    */
-  protected static readonly OVERSCAN_LIMIT = 5;
+  protected static readonly OVERSCAN_CHAR_LIMIT = 2000;
 
   protected _linkMatchers: ILinkMatcher[] = [];
 
@@ -96,15 +96,16 @@ export class Linkifier extends EventEmitter implements ILinkifier {
 
     // Iterate over the range of unwrapped content strings within start..end (excluding).
     // _doLinkifyRow gets full unwrapped lines with the start row as buffer offset for every matcher.
-    // The unwrapping is needed to also match content that got wrapped at the right side.
+    // The unwrapping is needed to also match content that got wrapped across several buffer lines.
     // To avoid a worst case szenario where the whole buffer contains just a single unwrapped string
-    // we limit this line expansion beyond the actual viewport to -5 and +5 real buffer lines (overscan).
-    // This comes with the tradeoff that match longer than 5 buffer lines will not match anymore at the
-    // viewport borders.
+    // we limit this line expansion beyond the actual viewport to +OVERSCAN_CHAR_LIMIT chars (overscan)
+    // at the top and the bottom.
+    // This comes with the tradeoff that matches longer than OVERSCAN_CHAR_LIMIT chars will not match
+    // anymore at the viewport borders.
+    const overscanLineLimit = Math.ceil(Linkifier.OVERSCAN_CHAR_LIMIT / this._terminal.cols);
     const iterator = this._terminal.buffer.iterator(
       false, absoluteRowIndexStart, this._terminal.buffer.ydisp + this._rowsToLinkify.end + 1,
-      Linkifier.OVERSCAN_LIMIT, Linkifier.OVERSCAN_LIMIT);
-    console.log('linkify rows', absoluteRowIndexStart, this._terminal.buffer.ydisp + this._rowsToLinkify.end + 1);
+      overscanLineLimit, overscanLineLimit);
     while (iterator.hasNext()) {
       const lineData: IBufferStringIteratorResult = iterator.next();
       for (let i = 0; i < this._linkMatchers.length; i++) {
