@@ -14,6 +14,13 @@ import { Terminal } from './Terminal';
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
 
+class TestTerminal extends Terminal {
+  writeSync(data: string): void {
+    this.writeBuffer.push(data);
+    this._innerWrite();
+  }
+}
+
 describe('Buffer', () => {
   let terminal: ITerminal;
   let buffer: Buffer;
@@ -349,17 +356,13 @@ describe('Buffer', () => {
     });
   });
   describe('stringIndexToBufferIndex', function(): void {
+    let terminal: TestTerminal;
     beforeEach(function(): void {
-      terminal = new Terminal({rows: 5, cols: 10});
-      const oldWrite: any = terminal.write.bind(terminal);
-      terminal.write = (s: string): void => {
-        oldWrite(s);
-        (terminal as any)._innerWrite();
-      };
+      terminal = new TestTerminal({rows: 5, cols: 10});
     });
     it('multiline ascii', function(): void {
       const input = 'This is ASCII text spanning multiple lines.';
-      terminal.write(input);
+      terminal.writeSync(input);
       const s = terminal.buffer.contents(true).toArray()[0];
       assert.equal(input, s);
       for (let i = 0; i < input.length; ++i) {
@@ -369,7 +372,7 @@ describe('Buffer', () => {
     });
     it('combining e\u0301 in a sentence', function(): void {
       const input = 'Sitting in the cafe\u0301 drinking coffee.';
-      terminal.write(input);
+      terminal.writeSync(input);
       const s = terminal.buffer.contents(true).toArray()[0];
       assert.equal(input, s);
       for (let i = 0; i < 19; ++i) {
@@ -388,7 +391,7 @@ describe('Buffer', () => {
     });
     it('multiline combining e\u0301', function(): void {
       const input = 'e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301';
-      terminal.write(input);
+      terminal.writeSync(input);
       const s = terminal.buffer.contents(true).toArray()[0];
       assert.equal(input, s);
       // every buffer cell index contains 2 string indices
@@ -399,7 +402,7 @@ describe('Buffer', () => {
     });
     it('surrogate char in a sentence', function(): void {
       const input = 'The 𝄞 is a clef widely used in modern notation.';
-      terminal.write(input);
+      terminal.writeSync(input);
       const s = terminal.buffer.contents(true).toArray()[0];
       assert.equal(input, s);
       for (let i = 0; i < 5; ++i) {
@@ -418,7 +421,7 @@ describe('Buffer', () => {
     });
     it('multiline surrogate char', function(): void {
       const input = '𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞';
-      terminal.write(input);
+      terminal.writeSync(input);
       const s = terminal.buffer.contents(true).toArray()[0];
       assert.equal(input, s);
       // every buffer cell index contains 2 string indices
@@ -430,7 +433,7 @@ describe('Buffer', () => {
     it('surrogate char with combining', function(): void {
       // eye of Ra with acute accent - string length of 3
       const input = '𓂀\u0301 - the eye hiroglyph with an acute accent.';
-      terminal.write(input);
+      terminal.writeSync(input);
       const s = terminal.buffer.contents(true).toArray()[0];
       assert.equal(input, s);
       // index 0..2 should map to 0
@@ -443,7 +446,7 @@ describe('Buffer', () => {
     });
     it('multiline surrogate with combining', function(): void {
       const input = '𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301';
-      terminal.write(input);
+      terminal.writeSync(input);
       const s = terminal.buffer.contents(true).toArray()[0];
       assert.equal(input, s);
       // every buffer cell index contains 3 string indices
@@ -454,7 +457,7 @@ describe('Buffer', () => {
     });
     it('fullwidth chars', function(): void {
       const input = 'These １２３ are some fat numbers.';
-      terminal.write(input);
+      terminal.writeSync(input);
       const s = terminal.buffer.contents(true).toArray()[0];
       assert.equal(input, s);
       for (let i = 0; i < 6; ++i) {
@@ -472,7 +475,7 @@ describe('Buffer', () => {
     });
     it('multiline fullwidth chars', function(): void {
       const input = '１２３４５６７８９０１２３４５６７８９０';
-      terminal.write(input);
+      terminal.writeSync(input);
       const s = terminal.buffer.contents(true).toArray()[0];
       assert.equal(input, s);
       for (let i = 9; i < input.length; ++i) {
@@ -482,7 +485,7 @@ describe('Buffer', () => {
     });
     it('fullwidth combining with emoji - match emoji cell', function(): void {
       const input = 'Lots of ￥\u0301 make me 😃.';
-      terminal.write(input);
+      terminal.writeSync(input);
       const s = terminal.buffer.contents(true).toArray()[0];
       assert.equal(input, s);
       const stringIndex = s.match(/😃/).index;
@@ -496,7 +499,7 @@ describe('Buffer', () => {
       // the next fullwidth char has to wrap early
       // the dangling last cell is wrongly added in the string
       // --> fixable after resolving #1685
-      terminal.write(input);
+      terminal.writeSync(input);
       // TODO: reenable after fix
       // const s = terminal.buffer.contents(true).toArray()[0];
       // assert.equal(input, s);
