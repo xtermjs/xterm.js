@@ -199,7 +199,7 @@ export class Buffer implements IBuffer {
    * To get the correct buffer position the string must start at `startCol` 0
    * (default in translateBufferLineToString).
    * The method also works on wrapped line strings given rows were not trimmed.
-   * The method operates on the CharData width attribute, there are no
+   * The method operates on the CharData string length, there are no
    * additional content or boundary checks. Therefore the string and the buffer
    * should not be altered in between.
    * TODO: respect trim flag after fixing #1685
@@ -208,9 +208,6 @@ export class Buffer implements IBuffer {
    * @param startCol column offset the string was retrieved from
    */
   public stringIndexToBufferIndex(lineIndex: number, stringIndex: number): BufferIndex {
-    if (!stringIndex) {
-      return [lineIndex, 0];
-    }
     while (stringIndex) {
       const line = this.lines.get(lineIndex);
       if (!line) {
