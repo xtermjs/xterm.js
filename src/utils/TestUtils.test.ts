@@ -87,6 +87,9 @@ export class MockTerminal implements ITerminal {
   scrollToBottom(): void {
     throw new Error('Method not implemented.');
   }
+  syncScrollArea(force?: boolean): void {
+    throw new Error('Method not implemented.');
+  }
   clear(): void {
     throw new Error('Method not implemented.');
   }

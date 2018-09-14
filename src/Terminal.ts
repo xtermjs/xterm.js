@@ -1287,6 +1287,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
   }
 
+  public syncScrollArea(force?: boolean): void {
+    this.viewport.syncScrollArea(force);
+  }
+
   /**
    * Writes text to the terminal.
    * @param data The text to write to the terminal.

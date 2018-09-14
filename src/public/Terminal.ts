@@ -110,6 +110,9 @@ export class Terminal implements ITerminalApi {
   public scrollToLine(line: number): void {
     this._core.scrollToLine(line);
   }
+  public syncScrollArea(force?: boolean): void {
+    this._core.syncScrollArea(force);
+  }
   public clear(): void {
     this._core.clear();
   }

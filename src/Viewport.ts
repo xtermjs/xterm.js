@@ -96,7 +96,7 @@ export class Viewport extends Disposable implements IViewport {
   /**
    * Updates dimensions and synchronizes the scroll area if necessary.
    */
-  public syncScrollArea(): void {
+  public syncScrollArea(force?: boolean): void {
     if (this._lastRecordedBufferLength !== this._terminal.buffer.lines.length) {
       // If buffer height changed
       this._lastRecordedBufferLength = this._terminal.buffer.lines.length;
@@ -104,11 +104,11 @@ export class Viewport extends Disposable implements IViewport {
     } else if (this._lastRecordedViewportHeight !== (<any>this._terminal).renderer.dimensions.canvasHeight) {
       // If viewport height changed
       this._refresh();
-    } else {
+    } else if (this._terminal.renderer.dimensions.scaledCellHeight / window.devicePixelRatio !== this._currentRowHeight) {
       // If size has changed, refresh viewport
-      if (this._terminal.renderer.dimensions.scaledCellHeight / window.devicePixelRatio !== this._currentRowHeight) {
-        this._refresh();
-      }
+      this._refresh();
+    } else if (force) {
+      this._refresh();
     }
   }
 

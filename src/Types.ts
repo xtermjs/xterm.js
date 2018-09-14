@@ -91,7 +91,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
 
 export interface IViewport extends IDisposable {
   scrollBarWidth: number;
-  syncScrollArea(): void;
+  syncScrollArea(force?: boolean): void;
   getLinesScrolled(ev: WheelEvent): number;
   onWheel(ev: WheelEvent): void;
   onTouchStart(ev: TouchEvent): void;
