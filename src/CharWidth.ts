@@ -169,3 +169,25 @@ export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: nu
       return wcwidthHigh(num);
     };
 })({nul: 0, control: 0});  // configurable options
+
+/**
+ * Get the terminal cell width for a string.
+ */
+export function getStringCellWidth(s: string): number {
+  let result = 0;
+  for (let i = 0; i < s.length; ++i) {
+    let code = s.charCodeAt(i);
+    if (0xD800 <= code && code <= 0xDBFF) {
+      const low = s.charCodeAt(i + 1);
+      if (isNaN(low)) {
+        return result;
+      }
+      code = ((code - 0xD800) * 0x400) + (low - 0xDC00) + 0x10000;
+    }
+    if (0xDC00 <= code && code <= 0xDFFF) {
+      continue;
+    }
+    result += wcwidth(code);
+  }
+  return result;
+}
