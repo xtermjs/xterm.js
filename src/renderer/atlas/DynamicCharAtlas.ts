@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { DIM_OPACITY, IGlyphIdentifier, INVERTED_DEFAULT_COLOR } from './Types';
+import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from './Types';
 import { ICharAtlasConfig } from '../../shared/atlas/Types';
 import { IColor } from '../../shared/Types';
 import BaseCharAtlas from './BaseCharAtlas';
@@ -34,9 +34,9 @@ interface IGlyphCacheValue {
   isEmpty: boolean;
 }
 
-function getGlyphCacheKey(glyph: IGlyphIdentifier): string {
-  const styleFlags = (glyph.bold ? 0 : 4) + (glyph.dim ? 0 : 2) + (glyph.italic ? 0 : 1);
-  return `${glyph.bg}_${glyph.fg}_${styleFlags}${glyph.chars}`;
+function getGlyphCacheKey(chars: string, fg: number, bg: number, bold: boolean, dim: boolean, italic: boolean): string {
+  const styleFlags = (bold ? 0 : 4) + (dim ? 0 : 2) + (italic ? 0 : 1);
+  return `${bg}_${fg}_${styleFlags}${chars}`;
 }
 
 export default class DynamicCharAtlas extends BaseCharAtlas {
@@ -88,16 +88,22 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
 
   public draw(
     ctx: CanvasRenderingContext2D,
-    glyph: IGlyphIdentifier,
+    chars: string,
+    code: number,
+    bg: number,
+    fg: number,
+    bold: boolean,
+    dim: boolean,
+    italic: boolean,
     x: number,
     y: number
   ): boolean {
-    const glyphKey = getGlyphCacheKey(glyph);
+    const glyphKey = getGlyphCacheKey(chars, fg, bg, bold, dim, italic);
     const cacheValue = this._cacheMap.get(glyphKey);
     if (cacheValue !== null && cacheValue !== undefined) {
       this._drawFromCache(ctx, cacheValue, x, y);
       return true;
-    } else if (this._canCache(glyph) && this._drawToCacheCount < FRAME_CACHE_DRAW_LIMIT) {
+    } else if (this._canCache(code) && this._drawToCacheCount < FRAME_CACHE_DRAW_LIMIT) {
       let index;
       if (this._cacheMap.size < this._cacheMap.capacity) {
         index = this._cacheMap.size;
@@ -105,7 +111,7 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
         // we're out of space, so our call to set will delete this item
         index = this._cacheMap.peek().index;
       }
-      const cacheValue = this._drawToCache(glyph, index);
+      const cacheValue = this._drawToCache(chars, bg, fg, bold, dim, italic, index);
       this._cacheMap.set(glyphKey, cacheValue);
       this._drawFromCache(ctx, cacheValue, x, y);
       return true;
@@ -113,7 +119,7 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     return false;
   }
 
-  private _canCache(glyph: IGlyphIdentifier): boolean {
+  private _canCache(code: number): boolean {
     // Only cache ascii and extended characters for now, to be safe. In the future, we could do
     // something more complicated to determine the expected width of a character.
     //
@@ -121,7 +127,7 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     // to draw overlapping glyphs from the atlas:
     // https://github.com/servo/webrender/issues/464#issuecomment-255632875
     // https://webglfundamentals.org/webgl/lessons/webgl-text-texture.html
-    return glyph.code < 256;
+    return code < 256;
   }
 
   private _toCoordinates(index: number): [number, number] {
@@ -162,39 +168,47 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     return DEFAULT_ANSI_COLORS[idx];
   }
 
-  private _getBackgroundColor(glyph: IGlyphIdentifier): IColor {
+  private _getBackgroundColor(bg: number): IColor {
     if (this._config.allowTransparency) {
       // The background color might have some transparency, so we need to render it as fully
       // transparent in the atlas. Otherwise we'd end up drawing the transparent background twice
       // around the anti-aliased edges of the glyph, and it would look too dark.
       return TRANSPARENT_COLOR;
-    } else if (glyph.bg === INVERTED_DEFAULT_COLOR) {
+    } else if (bg === INVERTED_DEFAULT_COLOR) {
       return this._config.colors.foreground;
-    } else if (glyph.bg < 256) {
-      return this._getColorFromAnsiIndex(glyph.bg);
+    } else if (bg < 256) {
+      return this._getColorFromAnsiIndex(bg);
     }
     return this._config.colors.background;
   }
 
-  private _getForegroundColor(glyph: IGlyphIdentifier): IColor {
-    if (glyph.fg === INVERTED_DEFAULT_COLOR) {
+  private _getForegroundColor(fg: number): IColor {
+    if (fg === INVERTED_DEFAULT_COLOR) {
       return this._config.colors.background;
-    } else if (glyph.fg < 256) {
+    } else if (fg < 256) {
       // 256 color support
-      return this._getColorFromAnsiIndex(glyph.fg);
+      return this._getColorFromAnsiIndex(fg);
     }
     return this._config.colors.foreground;
   }
 
   // TODO: We do this (or something similar) in multiple places. We should split this off
   // into a shared function.
-  private _drawToCache(glyph: IGlyphIdentifier, index: number): IGlyphCacheValue {
+  private _drawToCache(
+    chars: string,
+    bg: number,
+    fg: number,
+    bold: boolean,
+    dim: boolean,
+    italic: boolean,
+    index: number
+  ): IGlyphCacheValue {
     this._drawToCacheCount++;
 
     this._tmpCtx.save();
 
     // draw the background
-    const backgroundColor = this._getBackgroundColor(glyph);
+    const backgroundColor = this._getBackgroundColor(bg);
     // Use a 'copy' composite operation to clear any existing glyph out of _tmpCtxWithAlpha, regardless of
     // transparency in backgroundColor
     this._tmpCtx.globalCompositeOperation = 'copy';
@@ -203,20 +217,20 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     this._tmpCtx.globalCompositeOperation = 'source-over';
 
     // draw the foreground/glyph
-    const fontWeight = glyph.bold ? this._config.fontWeightBold : this._config.fontWeight;
-    const fontStyle = glyph.italic ? 'italic' : '';
+    const fontWeight = bold ? this._config.fontWeightBold : this._config.fontWeight;
+    const fontStyle = italic ? 'italic' : '';
     this._tmpCtx.font =
       `${fontStyle} ${fontWeight} ${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
     this._tmpCtx.textBaseline = 'top';
 
-    this._tmpCtx.fillStyle = this._getForegroundColor(glyph).css;
+    this._tmpCtx.fillStyle = this._getForegroundColor(fg).css;
 
     // Apply alpha to dim the character
-    if (glyph.dim) {
+    if (dim) {
       this._tmpCtx.globalAlpha = DIM_OPACITY;
     }
     // Draw the character
-    this._tmpCtx.fillText(glyph.chars, 0, 0);
+    this._tmpCtx.fillText(chars, 0, 0);
     this._tmpCtx.restore();
 
     // clear the background from the character to avoid issues with drawing over the previous
