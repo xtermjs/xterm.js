@@ -9,6 +9,14 @@ import { ICircularList, XtermListener } from '../common/Types';
 import { Buffer } from '../Buffer';
 import * as Browser from '../shared/utils/Browser';
 import { ITheme, IDisposable, IMarker } from 'xterm';
+import { Terminal } from '../Terminal';
+
+export class TestTerminal extends Terminal {
+  writeSync(data: string): void {
+    this.writeBuffer.push(data);
+    this._innerWrite();
+  }
+}
 
 export class MockTerminal implements ITerminal {
   markers: IMarker[];

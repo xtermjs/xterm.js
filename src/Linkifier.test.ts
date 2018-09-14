@@ -7,10 +7,9 @@ import { assert } from 'chai';
 import { IMouseZoneManager, IMouseZone } from './ui/Types';
 import { ILinkMatcher, ITerminal, IBufferLine } from './Types';
 import { Linkifier } from './Linkifier';
-import { MockBuffer, MockTerminal } from './utils/TestUtils.test';
+import { MockBuffer, MockTerminal, TestTerminal } from './utils/TestUtils.test';
 import { CircularList } from './common/CircularList';
 import { BufferLine } from './BufferLine';
-import { Terminal } from './Terminal';
 
 class TestLinkifier extends Linkifier {
   constructor(terminal: ITerminal) {
@@ -239,23 +238,20 @@ describe('Linkifier', () => {
       });
     });
   });
-  describe('unicode handling', function(): void {
+  describe('unicode handling', () => {
+    let terminal: TestTerminal;
+
     // other than the tests above unicode testing needs the full terminal instance
     // to get the special handling of fullwidth, surrogate and combining chars in the input handler
-    beforeEach(function(): void {
-      terminal = new Terminal({cols: 10, rows: 5});
-      const oldWrite: any = terminal.write.bind(terminal);
-      terminal.write = (s: string): void => {
-        oldWrite(s);
-        (terminal as any)._innerWrite();
-      };
+    beforeEach(() => {
+      terminal = new TestTerminal({cols: 10, rows: 5});
       linkifier = new TestLinkifier(terminal);
       mouseZoneManager = new TestMouseZoneManager();
       linkifier.attachToDom(mouseZoneManager);
     });
 
     function assertLinkifiesInTerminal(rowText: string, linkMatcherRegex: RegExp, links: {x1: number, y1: number, x2: number, y2: number}[], done: MochaDone): void {
-      terminal.write(rowText);
+      terminal.writeSync(rowText);
       linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
       linkifier.linkifyRows();
       // Allow linkify to happen
@@ -271,7 +267,7 @@ describe('Linkifier', () => {
       }, 0);
     }
 
-    describe('unicode before the match', function(): void {
+    describe('unicode before the match', () => {
       it('combining - match within one line', function(done: () => void): void {
         assertLinkifiesInTerminal('e\u0301e\u0301e\u0301 foo', /foo/, [{x1: 4, x2: 7, y1: 0, y2: 0}], done);
       });
@@ -303,7 +299,7 @@ describe('Linkifier', () => {
         assertLinkifiesInTerminal('￥\u0301￥\u0301    foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
       });
     });
-    describe('unicode within the match', function(): void {
+    describe('unicode within the match', () => {
       it('combining - match within one line', function(done: () => void): void {
         assertLinkifiesInTerminal('test cafe\u0301', /cafe\u0301/, [{x1: 5, x2: 9, y1: 0, y2: 0}], done);
       });

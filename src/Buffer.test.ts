@@ -7,19 +7,11 @@ import { assert } from 'chai';
 import { ITerminal } from './Types';
 import { Buffer, DEFAULT_ATTR, CHAR_DATA_CHAR_INDEX } from './Buffer';
 import { CircularList } from './common/CircularList';
-import { MockTerminal } from './utils/TestUtils.test';
+import { MockTerminal, TestTerminal } from './utils/TestUtils.test';
 import { BufferLine } from './BufferLine';
-import { Terminal } from './Terminal';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
-
-class TestTerminal extends Terminal {
-  writeSync(data: string): void {
-    this.writeBuffer.push(data);
-    this._innerWrite();
-  }
-}
 
 describe('Buffer', () => {
   let terminal: ITerminal;
@@ -355,12 +347,14 @@ describe('Buffer', () => {
       assert.equal(str3, '😁a');
     });
   });
-  describe('stringIndexToBufferIndex', function(): void {
+  describe('stringIndexToBufferIndex', () => {
     let terminal: TestTerminal;
-    beforeEach(function(): void {
+
+    beforeEach(() => {
       terminal = new TestTerminal({rows: 5, cols: 10});
     });
-    it('multiline ascii', function(): void {
+
+    it('multiline ascii', () => {
       const input = 'This is ASCII text spanning multiple lines.';
       terminal.writeSync(input);
       const s = terminal.buffer.contents(true).toArray()[0];
@@ -370,7 +364,8 @@ describe('Buffer', () => {
         assert.deepEqual([(i / terminal.cols) | 0, i % terminal.cols], bufferIndex);
       }
     });
-    it('combining e\u0301 in a sentence', function(): void {
+
+    it('combining e\u0301 in a sentence', () => {
       const input = 'Sitting in the cafe\u0301 drinking coffee.';
       terminal.writeSync(input);
       const s = terminal.buffer.contents(true).toArray()[0];
@@ -389,7 +384,8 @@ describe('Buffer', () => {
         assert.deepEqual([((i - 1) / terminal.cols) | 0, (i - 1) % terminal.cols], bufferIndex);
       }
     });
-    it('multiline combining e\u0301', function(): void {
+
+    it('multiline combining e\u0301', () => {
       const input = 'e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301';
       terminal.writeSync(input);
       const s = terminal.buffer.contents(true).toArray()[0];
@@ -400,7 +396,8 @@ describe('Buffer', () => {
         assert.deepEqual([((i >> 1) / terminal.cols) | 0, (i >> 1) % terminal.cols], bufferIndex);
       }
     });
-    it('surrogate char in a sentence', function(): void {
+
+    it('surrogate char in a sentence', () => {
       const input = 'The 𝄞 is a clef widely used in modern notation.';
       terminal.writeSync(input);
       const s = terminal.buffer.contents(true).toArray()[0];
@@ -419,7 +416,8 @@ describe('Buffer', () => {
         assert.deepEqual([((i - 1) / terminal.cols) | 0, (i - 1) % terminal.cols], bufferIndex);
       }
     });
-    it('multiline surrogate char', function(): void {
+
+    it('multiline surrogate char', () => {
       const input = '𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞';
       terminal.writeSync(input);
       const s = terminal.buffer.contents(true).toArray()[0];
@@ -430,7 +428,8 @@ describe('Buffer', () => {
         assert.deepEqual([((i >> 1) / terminal.cols) | 0, (i >> 1) % terminal.cols], bufferIndex);
       }
     });
-    it('surrogate char with combining', function(): void {
+
+    it('surrogate char with combining', () => {
       // eye of Ra with acute accent - string length of 3
       const input = '𓂀\u0301 - the eye hiroglyph with an acute accent.';
       terminal.writeSync(input);
@@ -444,7 +443,8 @@ describe('Buffer', () => {
         assert.deepEqual([((i - 2) / terminal.cols) | 0, (i - 2) % terminal.cols], bufferIndex);
       }
     });
-    it('multiline surrogate with combining', function(): void {
+
+    it('multiline surrogate with combining', () => {
       const input = '𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301';
       terminal.writeSync(input);
       const s = terminal.buffer.contents(true).toArray()[0];
@@ -455,7 +455,8 @@ describe('Buffer', () => {
         assert.deepEqual([(((i / 3) | 0) / terminal.cols) | 0, ((i / 3) | 0) % terminal.cols], bufferIndex);
       }
     });
-    it('fullwidth chars', function(): void {
+
+    it('fullwidth chars', () => {
       const input = 'These １２３ are some fat numbers.';
       terminal.writeSync(input);
       const s = terminal.buffer.contents(true).toArray()[0];
@@ -473,7 +474,8 @@ describe('Buffer', () => {
         assert.deepEqual([((i + 3) / terminal.cols) | 0, (i + 3) % terminal.cols], bufferIndex);
       }
     });
-    it('multiline fullwidth chars', function(): void {
+
+    it('multiline fullwidth chars', () => {
       const input = '１２３４５６７８９０１２３４５６７８９０';
       terminal.writeSync(input);
       const s = terminal.buffer.contents(true).toArray()[0];
@@ -483,7 +485,8 @@ describe('Buffer', () => {
         assert.deepEqual([((i << 1) / terminal.cols) | 0, (i << 1) % terminal.cols], bufferIndex);
       }
     });
-    it('fullwidth combining with emoji - match emoji cell', function(): void {
+
+    it('fullwidth combining with emoji - match emoji cell', () => {
       const input = 'Lots of ￥\u0301 make me 😃.';
       terminal.writeSync(input);
       const s = terminal.buffer.contents(true).toArray()[0];
@@ -492,7 +495,8 @@ describe('Buffer', () => {
       const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, stringIndex);
       assert(terminal.buffer.lines.get(bufferIndex[0]).get(bufferIndex[1])[CHAR_DATA_CHAR_INDEX], '😃');
     });
-    it('multiline fullwidth chars with offset 1 (currently tests for broken behavior)', function(): void {
+
+    it('multiline fullwidth chars with offset 1 (currently tests for broken behavior)', () => {
       const input = 'a１２３４５６７８９０１２３４５６７８９０';
       // the 'a' at the beginning moves all fullwidth chars one to the right
       // now the end of the line contains a dangling empty cell since

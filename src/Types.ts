@@ -271,6 +271,7 @@ export interface ITerminalOptions extends IPublicTerminalOptions {
 export interface IBufferStringIterator {
   hasNext(): boolean;
   next(withRanges: boolean): string | [{first: number, last: number}, string];
+  toArray(): string[];
 }
 
 export interface IBuffer {
