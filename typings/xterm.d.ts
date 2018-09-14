@@ -603,6 +603,12 @@ declare module 'xterm' {
     scrollToLine(line: number): void;
 
     /**
+     * Syncs the scroll area of the underlying viewport
+     * @param line force a refresh.
+     */
+    syncScrollArea(force?: boolean): void;
+
+    /**
      * Clear the entire buffer, making the prompt line the new first line.
      */
     clear(): void;
