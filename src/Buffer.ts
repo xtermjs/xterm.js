@@ -405,18 +405,19 @@ export class Marker extends EventEmitter implements IMarker {
 }
 
 export class BufferStringIterator implements IBufferStringIterator {
-  private _start: number;
-  private _end: number;
   private _current: number;
 
-  constructor (private _buffer: IBuffer, private _trimRight: boolean, startIndex?: number, endIndex?: number) {
-    this._start = startIndex || 0;
-    this._end = endIndex || this._buffer.lines.length;
-    this._current = this._start;
+  constructor (
+    private _buffer: IBuffer,
+    private _trimRight: boolean,
+    private _startIndex: number = 0,
+    private _endIndex: number = _buffer.lines.length)
+  {
+    this._current = this._startIndex;
   }
 
   public hasNext(): boolean {
-    return this._current < this._end;
+    return this._current < this._endIndex;
   }
 
   public next(): IBufferStringIteratorResult {
