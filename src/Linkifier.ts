@@ -186,7 +186,11 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       if (!uri) {
         // something matched but does not comply with the given matchIndex
         // since this is most likely a bug the regex itself we simply do nothing here
-        // TODO: should this be logged for debugging?
+        // DEBUG: print match and throw
+        if ((<any>this._terminal).debug) {
+          console.log({match, matcher});
+          throw new Error('match found without corresponding matchIndex');
+        }
         break;
       }
 
