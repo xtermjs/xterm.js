@@ -70,12 +70,12 @@ describe('search addon', () => {
         goodbye
       */
 
-      const hello0 = (term.searchHelper as any)._findInLine('Hello', 0);
-      const hello1 = (term.searchHelper as any)._findInLine('Hello', 1);
-      const hello2 = (term.searchHelper as any)._findInLine('Hello', 2);
-      const hello3 = (term.searchHelper as any)._findInLine('Hello', 3);
-      const llo = (term.searchHelper as any)._findInLine('llo', 1);
-      const goodbye = (term.searchHelper as any)._findInLine('goodbye', 2);
+      const hello0 = term.searchHelper.findInLine('Hello', 0);
+      const hello1 = term.searchHelper.findInLine('Hello', 1);
+      const hello2 = term.searchHelper.findInLine('Hello', 2);
+      const hello3 = term.searchHelper.findInLine('Hello', 3);
+      const llo = term.searchHelper.findInLine('llo', 1);
+      const goodbye = term.searchHelper.findInLine('goodbye', 2);
       expect(hello0).eql({col: 8, row: 0, term: 'Hello'});
       expect(hello1).eql(undefined);
       expect(hello2).eql({col: 2, row: 3, term: 'Hello'});
@@ -130,9 +130,9 @@ describe('search addon', () => {
         wholeWord: false,
         caseSensitive: true
       };
-      const hello0 = (term.searchHelper as any)._findInLine('Hello', 0, searchOptions);
-      const hello1 = (term.searchHelper as any)._findInLine('Hello', 1, searchOptions);
-      const hello2 = (term.searchHelper as any)._findInLine('Hello', 2, searchOptions);
+      const hello0 = term.searchHelper.findInLine('Hello', 0, searchOptions);
+      const hello1 = term.searchHelper.findInLine('Hello', 1, searchOptions);
+      const hello2 = term.searchHelper.findInLine('Hello', 2, searchOptions);
       expect(hello0).eql({col: 0, row: 0, term: 'Hello'});
       expect(hello1).eql(undefined);
       expect(hello2).eql({col: 8, row: 2, term: 'Hello'});
@@ -153,14 +153,96 @@ describe('search addon', () => {
         wholeWord: false,
         caseSensitive: true
       };
-      const hello0 = (term.searchHelper as any)._findInLine('Hello', 0, searchOptions);
-      const hello1 = (term.searchHelper as any)._findInLine('Hello$', 0, searchOptions);
-      const hello2 = (term.searchHelper as any)._findInLine('Hello', 1, searchOptions);
-      const hello3 = (term.searchHelper as any)._findInLine('Hello$', 1, searchOptions);
+      const hello0 = term.searchHelper.findInLine('Hello', 0, searchOptions);
+      const hello1 = term.searchHelper.findInLine('Hello$', 0, searchOptions);
+      const hello2 = term.searchHelper.findInLine('Hello', 1, searchOptions);
+      const hello3 = term.searchHelper.findInLine('Hello$', 1, searchOptions);
       expect(hello0).eql(undefined);
       expect(hello1).eql(undefined);
       expect(hello2).eql({col: 0, row: 1, term: 'Hello'});
       expect(hello3).eql({col: 5, row: 1, term: 'Hello'});
+    });
+    it('should respect whole-word search option', function(): void {
+      search.apply(<any>MockTerminal);
+      const term = new MockTerminal({cols: 20, rows: 5});
+      term.core.write('Hello World\r\nWorld Hello\r\nWorldHelloWorld\r\nHelloWorld\r\nWorldHello');
+      term.pushWriteData();
+      const searchOptions = {
+        regex: false,
+        wholeWord: true,
+        caseSensitive: false
+      };
+      const hello0 = term.searchHelper.findInLine('Hello', 0, searchOptions);
+      const hello1 = term.searchHelper.findInLine('Hello', 1, searchOptions);
+      const hello2 = term.searchHelper.findInLine('Hello', 2, searchOptions);
+      const hello3 = term.searchHelper.findInLine('Hello', 3, searchOptions);
+      const hello4 = term.searchHelper.findInLine('Hello', 4, searchOptions);
+      expect(hello0).eql({col: 0, row: 0, term: 'Hello'});
+      expect(hello1).eql({col: 6, row: 1, term: 'Hello'});
+      expect(hello2).eql(undefined);
+      expect(hello3).eql(undefined);
+      expect(hello4).eql(undefined);
+    });
+    it('should respect whole-word + case sensitive search options', function(): void {
+      search.apply(<any>MockTerminal);
+      const term = new MockTerminal({cols: 20, rows: 5});
+      term.core.write('Hello World\r\nHelloWorld');
+      term.pushWriteData();
+      const searchOptions = {
+        regex: false,
+        wholeWord: true,
+        caseSensitive: true
+      };
+      const hello0 = term.searchHelper.findInLine('Hello', 0, searchOptions);
+      const hello1 = term.searchHelper.findInLine('hello', 0, searchOptions);
+      const hello2 = term.searchHelper.findInLine('Hello', 1, searchOptions);
+      const hello3 = term.searchHelper.findInLine('hello', 1, searchOptions);
+      expect(hello0).eql({col: 0, row: 0, term: 'Hello'});
+      expect(hello1).eql(undefined);
+      expect(hello2).eql(undefined);
+      expect(hello3).eql(undefined);
+    });
+    it('should respect whole-word + regex search options', function(): void {
+      search.apply(<any>MockTerminal);
+      const term = new MockTerminal({cols: 20, rows: 5});
+      term.core.write('Hello World Hello\r\nHelloWorldHello');
+      term.pushWriteData();
+      const searchOptions = {
+        regex: true,
+        wholeWord: true,
+        caseSensitive: false
+      };
+      const hello0 = term.searchHelper.findInLine('Hello', 0, searchOptions);
+      const hello1 = term.searchHelper.findInLine('Hello$', 0, searchOptions);
+      const hello2 = term.searchHelper.findInLine('Hello', 1, searchOptions);
+      const hello3 = term.searchHelper.findInLine('Hello$', 1, searchOptions);
+      expect(hello0).eql({col: 0, row: 0, term: 'hello'});
+      expect(hello1).eql({col: 12, row: 0, term: 'hello'});
+      expect(hello2).eql(undefined);
+      expect(hello3).eql(undefined);
+    });
+    it('should respect all search options', function(): void {
+      search.apply(<any>MockTerminal);
+      const term = new MockTerminal({cols: 20, rows: 5});
+      term.core.write('Hello World Hello\r\nHelloWorldHello');
+      term.pushWriteData();
+      const searchOptions = {
+        regex: true,
+        wholeWord: true,
+        caseSensitive: true
+      };
+      const hello0 = term.searchHelper.findInLine('Hello', 0, searchOptions);
+      const hello1 = term.searchHelper.findInLine('Hello$', 0, searchOptions);
+      const hello2 = term.searchHelper.findInLine('hello', 0, searchOptions);
+      const hello3 = term.searchHelper.findInLine('hello$', 0, searchOptions);
+      const hello4 = term.searchHelper.findInLine('hello', 1, searchOptions);
+      const hello5 = term.searchHelper.findInLine('hello$', 1, searchOptions);
+      expect(hello0).eql({col: 0, row: 0, term: 'Hello'});
+      expect(hello1).eql({col: 12, row: 0, term: 'Hello'});
+      expect(hello2).eql(undefined);
+      expect(hello3).eql(undefined);
+      expect(hello4).eql(undefined);
+      expect(hello5).eql(undefined);
     });
   });
 });

@@ -144,19 +144,14 @@ declare module 'xterm' {
     macOptionClickForcesSelection?: boolean;
 
     /**
-     * (EXPERIMENTAL) The type of renderer to use, this allows using the
-     * fallback DOM renderer when canvas is too slow for the environment. The
-     * following features do not work when the DOM renderer is used:
+     * The type of renderer to use, this allows using the fallback DOM renderer
+     * when canvas is too slow for the environment. The following features do
+     * not work when the DOM renderer is used:
      *
-     * - Links
+     * - Link underlines
      * - Line height
      * - Letter spacing
      * - Cursor blink
-     * - Cursor style
-     *
-     * This option is marked as experiemental because it will eventually be
-     * moved to an addon. You can only set this option in the constructor (not
-     * setOption).
      */
     rendererType?: RendererType;
 
