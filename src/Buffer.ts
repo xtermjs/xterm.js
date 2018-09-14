@@ -4,7 +4,7 @@
  */
 
 import { CircularList } from './common/CircularList';
-import { CharData, ITerminal, IBuffer, IBufferLine } from './Types';
+import { CharData, ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult } from './Types';
 import { EventEmitter } from './common/EventEmitter';
 import { IMarker } from 'xterm';
 import { BufferLine } from './BufferLine';
@@ -195,6 +195,36 @@ export class Buffer implements IBuffer {
   }
 
   /**
+   * Translates a string index back to a BufferIndex.
+   * To get the correct buffer position the string must start at `startCol` 0
+   * (default in translateBufferLineToString).
+   * The method also works on wrapped line strings given rows were not trimmed.
+   * The method operates on the CharData string length, there are no
+   * additional content or boundary checks. Therefore the string and the buffer
+   * should not be altered in between.
+   * TODO: respect trim flag after fixing #1685
+   * @param lineIndex line index the string was retrieved from
+   * @param stringIndex index within the string
+   * @param startCol column offset the string was retrieved from
+   */
+  public stringIndexToBufferIndex(lineIndex: number, stringIndex: number): BufferIndex {
+    while (stringIndex) {
+      const line = this.lines.get(lineIndex);
+      if (!line) {
+        [-1, -1];
+      }
+      for (let i = 0; i < line.length; ++i) {
+        stringIndex -= line.get(i)[CHAR_DATA_CHAR_INDEX].length;
+        if (stringIndex < 0) {
+          return [lineIndex, i];
+        }
+      }
+      lineIndex++;
+    }
+    return [lineIndex, 0];
+  }
+
+  /**
    * Translates a buffer line to a string, with optional start and end columns.
    * Wide characters will count as two columns in the resulting string. This
    * function is useful for getting the actual text underneath the raw selection
@@ -340,6 +370,10 @@ export class Buffer implements IBuffer {
     // TODO: This could probably be optimized by relying on sort order and trimming the array using .length
     this.markers.splice(this.markers.indexOf(marker), 1);
   }
+
+  public iterator(trimRight: boolean, startIndex?: number, endIndex?: number): IBufferStringIterator {
+    return new BufferStringIterator(this, trimRight, startIndex, endIndex);
+  }
 }
 
 export class Marker extends EventEmitter implements IMarker {
@@ -364,5 +398,33 @@ export class Marker extends EventEmitter implements IMarker {
     // Emit before super.dispose such that dispose listeners get a change to react
     this.emit('dispose');
     super.dispose();
+  }
+}
+
+export class BufferStringIterator implements IBufferStringIterator {
+  private _current: number;
+
+  constructor (
+    private _buffer: IBuffer,
+    private _trimRight: boolean,
+    private _startIndex: number = 0,
+    private _endIndex: number = _buffer.lines.length
+  ) {
+    this._current = this._startIndex;
+  }
+
+  public hasNext(): boolean {
+    return this._current < this._endIndex;
+  }
+
+  public next(): IBufferStringIteratorResult {
+    const range = this._buffer.getWrappedRangeForLine(this._current);
+    let result = '';
+    for (let i = range.first; i <= range.last; ++i) {
+      // TODO: always apply trimRight after fixing #1685
+      result += this._buffer.translateBufferLineToString(i, (this._trimRight) ? i === range.last : false);
+    }
+    this._current = range.last + 1;
+    return {range: range, content: result};
   }
 }

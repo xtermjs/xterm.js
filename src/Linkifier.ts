@@ -4,10 +4,11 @@
  */
 
 import { IMouseZoneManager } from './ui/Types';
-import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, ILinkifier, ITerminal, IBufferLine } from './Types';
+import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, ILinkifier, ITerminal, IBufferStringIteratorResult } from './Types';
 import { MouseZone } from './ui/MouseZoneManager';
 import { EventEmitter } from './common/EventEmitter';
 import { CHAR_DATA_ATTR_INDEX } from './Buffer';
+import { getStringCellWidth } from './CharWidth';
 
 /**
  * The Linkifier applies links to rows shortly after they have been refreshed.
@@ -80,9 +81,25 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    */
   private _linkifyRows(): void {
     this._rowsTimeoutId = null;
-    for (let i = this._rowsToLinkify.start; i <= this._rowsToLinkify.end; i++) {
-      this._linkifyRow(i);
+
+    // Ensure the row exists
+    const absoluteRowIndexStart = this._terminal.buffer.ydisp + this._rowsToLinkify.start;
+    if (absoluteRowIndexStart >= this._terminal.buffer.lines.length) {
+      return;
     }
+
+    // iterate over the range of unwrapped content strings within start..end (excluding)
+    // _doLinkifyRow gets full unwrapped lines with the start row as buffer offset for every matcher
+    // for wrapped content over several rows the iterator might return rows outside the viewport
+    // we skip those later in _doLinkifyRow
+    const iterator = this._terminal.buffer.iterator(false, absoluteRowIndexStart, this._terminal.buffer.ydisp + this._rowsToLinkify.end + 1);
+    while (iterator.hasNext()) {
+      const lineData: IBufferStringIteratorResult = iterator.next();
+      for (let i = 0; i < this._linkMatchers.length; i++) {
+        this._doLinkifyRow(lineData.range.first, lineData.content, this._linkMatchers[i]);
+      }
+    }
+
     this._rowsToLinkify.start = null;
     this._rowsToLinkify.end = null;
   }
@@ -154,98 +171,68 @@ export class Linkifier extends EventEmitter implements ILinkifier {
   }
 
   /**
-   * Linkifies a row.
-   * @param rowIndex The index of the row to linkify.
-   */
-  private _linkifyRow(rowIndex: number): void {
-    // Ensure the row exists
-    let absoluteRowIndex = this._terminal.buffer.ydisp + rowIndex;
-    if (absoluteRowIndex >= this._terminal.buffer.lines.length) {
-      return;
-    }
-
-    if (this._terminal.buffer.lines.get(absoluteRowIndex).isWrapped) {
-      // Only attempt to linkify rows that start in the viewport
-      if (rowIndex !== 0) {
-        return;
-      }
-      // If the first row is wrapped, backtrack to find the origin row and linkify that
-      let line: IBufferLine;
-
-      do {
-        rowIndex--;
-        absoluteRowIndex--;
-        line = this._terminal.buffer.lines.get(absoluteRowIndex);
-
-        if (!line) {
-          break;
-        }
-
-      } while (line.isWrapped);
-    }
-
-    // Construct full unwrapped line text
-    let text = this._terminal.buffer.translateBufferLineToString(absoluteRowIndex, false);
-    let currentIndex = absoluteRowIndex + 1;
-    while (currentIndex < this._terminal.buffer.lines.length &&
-      this._terminal.buffer.lines.get(currentIndex).isWrapped) {
-      text += this._terminal.buffer.translateBufferLineToString(currentIndex++, false);
-    }
-
-    for (let i = 0; i < this._linkMatchers.length; i++) {
-      this._doLinkifyRow(rowIndex, text, this._linkMatchers[i]);
-    }
-  }
-
-  /**
    * Linkifies a row given a specific handler.
-   * @param rowIndex The row index to linkify.
-   * @param text The text of the row (excludes text in the row that's already
-   * linkified).
+   * @param rowIndex The row index to linkify (absolute index).
+   * @param text string content of the unwrapped row.
    * @param matcher The link matcher for this line.
-   * @param offset The how much of the row has already been linkified.
-   * @return The link element(s) that were added.
    */
-  private _doLinkifyRow(rowIndex: number, text: string, matcher: ILinkMatcher, offset: number = 0): void {
-    // Find the first match
-    const match = text.match(matcher.regex);
-    if (!match || match.length === 0) {
-      return;
-    }
-    const uri = match[typeof matcher.matchIndex !== 'number' ? 0 : matcher.matchIndex];
-
-    // Get index, match.index is for the outer match which includes negated chars
-    const index = text.indexOf(uri);
-
-    // Get cell color
-    const line = this._terminal.buffer.lines.get(this._terminal.buffer.ydisp + rowIndex);
-    const char = line.get(index);
-    let fg: number | undefined;
-    if (char) {
-      const attr: number = char[CHAR_DATA_ATTR_INDEX];
-      fg = (attr >> 9) & 0x1ff;
-    }
-
-    // Ensure the link is valid before registering
-    if (matcher.validationCallback) {
-      matcher.validationCallback(uri, isValid => {
-        // Discard link if the line has already changed
-        if (this._rowsTimeoutId) {
-          return;
+  private _doLinkifyRow(rowIndex: number, text: string, matcher: ILinkMatcher): void {
+    // clone regex to do a global search on text
+    const rex = new RegExp(matcher.regex.source, matcher.regex.flags + 'g');
+    let match;
+    let stringIndex = -1;
+    while ((match = rex.exec(text)) !== null) {
+      const uri = match[typeof matcher.matchIndex !== 'number' ? 0 : matcher.matchIndex];
+      if (!uri) {
+        // something matched but does not comply with the given matchIndex
+        // since this is most likely a bug the regex itself we simply do nothing here
+        // DEBUG: print match and throw
+        if ((<any>this._terminal).debug) {
+          console.log({match, matcher});
+          throw new Error('match found without corresponding matchIndex');
         }
-        if (isValid) {
-          this._addLink(offset + index, rowIndex, uri, matcher, fg);
-        }
-      });
-    } else {
-      this._addLink(offset + index, rowIndex, uri, matcher, fg);
-    }
+        break;
+      }
 
-    // Recursively check for links in the rest of the text
-    const remainingStartIndex = index + uri.length;
-    const remainingText = text.substr(remainingStartIndex);
-    if (remainingText.length > 0) {
-      this._doLinkifyRow(rowIndex, remainingText, matcher, offset + remainingStartIndex);
+      // Get index, match.index is for the outer match which includes negated chars
+      // therefore we cannot use match.index directly, instead we search the position
+      // of the match group in text again
+      // also correct regex and string search offsets for the next loop run
+      stringIndex = text.indexOf(uri, stringIndex + 1);
+      rex.lastIndex = stringIndex + uri.length;
+
+      // get the buffer index as [absolute row, col] for the match
+      const bufferIndex = this._terminal.buffer.stringIndexToBufferIndex(rowIndex, stringIndex);
+
+      // skip rows outside of the viewport
+      if (bufferIndex[0] - this._terminal.buffer.ydisp < 0) {
+        continue;
+      }
+      if (bufferIndex[0] - this._terminal.buffer.ydisp > this._terminal.rows) {
+        break;
+      }
+
+      const line = this._terminal.buffer.lines.get(bufferIndex[0]);
+      const char = line.get(bufferIndex[1]);
+      let fg: number | undefined;
+      if (char) {
+        const attr: number = char[CHAR_DATA_ATTR_INDEX];
+        fg = (attr >> 9) & 0x1ff;
+      }
+
+      if (matcher.validationCallback) {
+        matcher.validationCallback(uri, isValid => {
+          // Discard link if the line has already changed
+          if (this._rowsTimeoutId) {
+            return;
+          }
+          if (isValid) {
+            this._addLink(bufferIndex[1], bufferIndex[0] - this._terminal.buffer.ydisp, uri, matcher, fg);
+          }
+        });
+      } else {
+        this._addLink(bufferIndex[1], bufferIndex[0] - this._terminal.buffer.ydisp, uri, matcher, fg);
+      }
     }
   }
 
@@ -258,10 +245,11 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @param fg The link color for hover event.
    */
   private _addLink(x: number, y: number, uri: string, matcher: ILinkMatcher, fg: number): void {
+    const width = getStringCellWidth(uri);
     const x1 = x % this._terminal.cols;
     const y1 = y + Math.floor(x / this._terminal.cols);
-    let x2 = (x1 + uri.length) % this._terminal.cols;
-    let y2 = y1 + Math.floor((x1 + uri.length) / this._terminal.cols);
+    let x2 = (x1 + width) % this._terminal.cols;
+    let y2 = y1 + Math.floor((x1 + width) / this._terminal.cols);
     if (x2 === 0) {
       x2 = this._terminal.cols;
       y2--;
