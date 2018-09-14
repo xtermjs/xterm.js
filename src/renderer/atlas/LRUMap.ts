@@ -6,12 +6,12 @@
 interface ILinkedListNode<T> {
   prev: ILinkedListNode<T>;
   next: ILinkedListNode<T>;
-  key: string;
+  key: number;
   value: T;
 }
 
 export default class LRUMap<T> {
-  private _map: { [key: string]: ILinkedListNode<T> } = {};
+  private _map: { [key: number]: ILinkedListNode<T> } = {};
   private _head: ILinkedListNode<T> = null;
   private _tail: ILinkedListNode<T> = null;
   private _nodePool: ILinkedListNode<T>[] = [];
@@ -68,7 +68,7 @@ export default class LRUMap<T> {
     }
   }
 
-  public get(key: string): T | null {
+  public get(key: number): T | null {
     // This is unsafe: We're assuming our keyspace doesn't overlap with Object.prototype. However,
     // it's faster than calling hasOwnProperty, and in our case, it would never overlap.
     const node = this._map[key];
@@ -85,7 +85,7 @@ export default class LRUMap<T> {
     return head === null ? null : head.value;
   }
 
-  public set(key: string, value: T): void {
+  public set(key: number, value: T): void {
     // This is unsafe: See note above.
     let node = this._map[key];
     if (node !== undefined) {

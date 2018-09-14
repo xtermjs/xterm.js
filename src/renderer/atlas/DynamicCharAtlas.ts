@@ -34,9 +34,17 @@ interface IGlyphCacheValue {
   isEmpty: boolean;
 }
 
-function getGlyphCacheKey(chars: string, fg: number, bg: number, bold: boolean, dim: boolean, italic: boolean): string {
-  const styleFlags = (bold ? 0 : 4) + (dim ? 0 : 2) + (italic ? 0 : 1);
-  return `${bg}_${fg}_${styleFlags}${chars}`;
+function getGlyphCacheKey(code: number, fg: number, bg: number, bold: boolean, dim: boolean, italic: boolean): number {
+  // Note that this only returns a valid key when code < 256
+  // Layout:
+  // 0b00000000000000000000000000000001: italic (1)
+  // 0b00000000000000000000000000000010: dim (1)
+  // 0b00000000000000000000000000000100: bold (1)
+  // 0b00000000000000000000111111111000: fg (9)
+  // 0b00000000000111111111000000000000: bg (9)
+  // 0b00011111111000000000000000000000: code (8)
+  // 0b11100000000000000000000000000000: unused (3)
+  return code << 21 | bg << 12 | fg << 3 | (bold ? 0 : 4) + (dim ? 0 : 2) + (italic ? 0 : 1);
 }
 
 export default class DynamicCharAtlas extends BaseCharAtlas {
@@ -98,7 +106,7 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     x: number,
     y: number
   ): boolean {
-    const glyphKey = getGlyphCacheKey(chars, fg, bg, bold, dim, italic);
+    const glyphKey = getGlyphCacheKey(code, fg, bg, bold, dim, italic);
     const cacheValue = this._cacheMap.get(glyphKey);
     if (cacheValue !== null && cacheValue !== undefined) {
       this._drawFromCache(ctx, cacheValue, x, y);
