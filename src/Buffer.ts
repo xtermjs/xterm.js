@@ -408,8 +408,8 @@ export class BufferStringIterator implements IBufferStringIterator {
     private _buffer: IBuffer,
     private _trimRight: boolean,
     private _startIndex: number = 0,
-    private _endIndex: number = _buffer.lines.length)
-  {
+    private _endIndex: number = _buffer.lines.length
+  ) {
     this._current = this._startIndex;
   }
 

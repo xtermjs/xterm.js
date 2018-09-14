@@ -255,7 +255,6 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       y2--;
     }
 
-
     this._mouseZoneManager.add(new MouseZone(
       x1 + 1,
       y1 + 1,
