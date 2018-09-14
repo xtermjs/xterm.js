@@ -4,7 +4,7 @@
  */
 
 import { CircularList } from './common/CircularList';
-import { CharData, ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIterator } from './Types';
+import { CharData, ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult } from './Types';
 import { EventEmitter } from './common/EventEmitter';
 import { IMarker } from 'xterm';
 import { BufferLine } from './BufferLine';
@@ -419,7 +419,7 @@ export class BufferStringIterator implements IBufferStringIterator {
     return this._current < this._end;
   }
 
-  public next(withRanges: boolean = false): string | [{first: number, last: number}, string] {
+  public next(): IBufferStringIteratorResult {
     const range = this._buffer.getWrappedRangeForLine(this._current);
     let result = '';
     for (let i = range.first; i <= range.last; ++i) {
@@ -427,14 +427,6 @@ export class BufferStringIterator implements IBufferStringIterator {
       result += this._buffer.translateBufferLineToString(i, (this._trimRight) ? i === range.last : false);
     }
     this._current = range.last + 1;
-    return (withRanges) ? [range, result] : result;
-  }
-
-  public toArray(): string[] {
-    const result = [];
-    while (this.hasNext()) {
-      result.push(this.next() as string);
-    }
-    return result;
+    return {range: range, content: result};
   }
 }

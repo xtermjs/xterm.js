@@ -268,10 +268,14 @@ export interface ITerminalOptions extends IPublicTerminalOptions {
   useFlowControl?: boolean;
 }
 
+export interface IBufferStringIteratorResult {
+  range: {first: number, last: number};
+  content: string;
+}
+
 export interface IBufferStringIterator {
   hasNext(): boolean;
-  next(withRanges: boolean): string | [{first: number, last: number}, string];
-  toArray(): string[];
+  next(): IBufferStringIteratorResult;
 }
 
 export interface IBuffer {

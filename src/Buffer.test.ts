@@ -357,7 +357,7 @@ describe('Buffer', () => {
     it('multiline ascii', () => {
       const input = 'This is ASCII text spanning multiple lines.';
       terminal.writeSync(input);
-      const s = terminal.buffer.contents(true).toArray()[0];
+      const s = terminal.buffer.contents(true).next().content;
       assert.equal(input, s);
       for (let i = 0; i < input.length; ++i) {
         const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
@@ -368,7 +368,7 @@ describe('Buffer', () => {
     it('combining e\u0301 in a sentence', () => {
       const input = 'Sitting in the cafe\u0301 drinking coffee.';
       terminal.writeSync(input);
-      const s = terminal.buffer.contents(true).toArray()[0];
+      const s = terminal.buffer.contents(true).next().content;
       assert.equal(input, s);
       for (let i = 0; i < 19; ++i) {
         const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
@@ -388,7 +388,7 @@ describe('Buffer', () => {
     it('multiline combining e\u0301', () => {
       const input = 'e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301';
       terminal.writeSync(input);
-      const s = terminal.buffer.contents(true).toArray()[0];
+      const s = terminal.buffer.contents(true).next().content;
       assert.equal(input, s);
       // every buffer cell index contains 2 string indices
       for (let i = 0; i < input.length; ++i) {
@@ -400,7 +400,7 @@ describe('Buffer', () => {
     it('surrogate char in a sentence', () => {
       const input = 'The 𝄞 is a clef widely used in modern notation.';
       terminal.writeSync(input);
-      const s = terminal.buffer.contents(true).toArray()[0];
+      const s = terminal.buffer.contents(true).next().content;
       assert.equal(input, s);
       for (let i = 0; i < 5; ++i) {
         const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
@@ -420,7 +420,7 @@ describe('Buffer', () => {
     it('multiline surrogate char', () => {
       const input = '𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞';
       terminal.writeSync(input);
-      const s = terminal.buffer.contents(true).toArray()[0];
+      const s = terminal.buffer.contents(true).next().content;
       assert.equal(input, s);
       // every buffer cell index contains 2 string indices
       for (let i = 0; i < input.length; ++i) {
@@ -433,7 +433,7 @@ describe('Buffer', () => {
       // eye of Ra with acute accent - string length of 3
       const input = '𓂀\u0301 - the eye hiroglyph with an acute accent.';
       terminal.writeSync(input);
-      const s = terminal.buffer.contents(true).toArray()[0];
+      const s = terminal.buffer.contents(true).next().content;
       assert.equal(input, s);
       // index 0..2 should map to 0
       assert.deepEqual([0, 0], terminal.buffer.stringIndexToBufferIndex(0, 1));
@@ -447,7 +447,7 @@ describe('Buffer', () => {
     it('multiline surrogate with combining', () => {
       const input = '𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301';
       terminal.writeSync(input);
-      const s = terminal.buffer.contents(true).toArray()[0];
+      const s = terminal.buffer.contents(true).next().content;
       assert.equal(input, s);
       // every buffer cell index contains 3 string indices
       for (let i = 0; i < input.length; ++i) {
@@ -459,7 +459,7 @@ describe('Buffer', () => {
     it('fullwidth chars', () => {
       const input = 'These １２３ are some fat numbers.';
       terminal.writeSync(input);
-      const s = terminal.buffer.contents(true).toArray()[0];
+      const s = terminal.buffer.contents(true).next().content;
       assert.equal(input, s);
       for (let i = 0; i < 6; ++i) {
         const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
@@ -478,7 +478,7 @@ describe('Buffer', () => {
     it('multiline fullwidth chars', () => {
       const input = '１２３４５６７８９０１２３４５６７８９０';
       terminal.writeSync(input);
-      const s = terminal.buffer.contents(true).toArray()[0];
+      const s = terminal.buffer.contents(true).next().content;
       assert.equal(input, s);
       for (let i = 9; i < input.length; ++i) {
         const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
@@ -489,7 +489,7 @@ describe('Buffer', () => {
     it('fullwidth combining with emoji - match emoji cell', () => {
       const input = 'Lots of ￥\u0301 make me 😃.';
       terminal.writeSync(input);
-      const s = terminal.buffer.contents(true).toArray()[0];
+      const s = terminal.buffer.contents(true).next().content;
       assert.equal(input, s);
       const stringIndex = s.match(/😃/).index;
       const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, stringIndex);
