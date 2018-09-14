@@ -29,9 +29,14 @@ const TRANSPARENT_COLOR = {
 // cache.
 const FRAME_CACHE_DRAW_LIMIT = 100;
 
+const GLYPH_BITMAP_COMMIT_DELAY = 100;
+
+const GLYPH_BITMAP_COMMIT_LIMIT = 100;
+
 interface IGlyphCacheValue {
   index: number;
   isEmpty: boolean;
+  inBitmap: boolean;
 }
 
 function getGlyphCacheKey(code: number, fg: number, bg: number, bold: boolean, dim: boolean, italic: boolean): number {
@@ -64,6 +69,11 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
   private _height: number;
 
   private _drawToCacheCount: number = 0;
+
+  private _glyphsWaitingOnBitmap: Uint32Array = new Uint32Array(GLYPH_BITMAP_COMMIT_LIMIT);
+  private _glyphsWaitingOnBitmapCount: number = 0;
+  private _bitmapCommitTimeout: number | null = null;
+  private _bitmap: ImageBitmap | null = null;
 
   constructor(document: Document, private _config: ICharAtlasConfig) {
     super();
@@ -124,7 +134,7 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
         // we're out of space, so our call to set will delete this item
         index = this._cacheMap.peek().index;
       }
-      const cacheValue = this._drawToCache(chars, bg, fg, bold, dim, italic, index);
+      const cacheValue = this._drawToCache(chars, code, bg, fg, bold, dim, italic, index);
       this._cacheMap.set(glyphKey, cacheValue);
       this._drawFromCache(ctx, cacheValue, x, y);
       return true;
@@ -164,7 +174,7 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     const cacheX = this._toCoordinateX(cacheValue.index);
     const cacheY = this._toCoordinateY(cacheValue.index);
     ctx.drawImage(
-      this._cacheCanvas,
+      cacheValue.inBitmap ? this._bitmap : this._cacheCanvas,
       cacheX,
       cacheY,
       this._config.scaledCharWidth,
@@ -211,6 +221,7 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
   // into a shared function.
   private _drawToCache(
     chars: string,
+    code: number,
     bg: number,
     fg: number,
     bold: boolean,
@@ -264,9 +275,47 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     // putImageData doesn't do any blending, so it will overwrite any existing cache entry for us
     this._cacheCtx.putImageData(imageData, x, y);
 
+    this._glyphsWaitingOnBitmap[this._glyphsWaitingOnBitmapCount++] = getGlyphCacheKey(code, fg, bg, bold, dim, italic);
+    this._queueGenerateBitmap();
+
     return {
       index,
-      isEmpty
+      isEmpty,
+      inBitmap: false
     };
+  }
+
+  private _queueGenerateBitmap(): void {
+    // Check if it's already queued
+    if (this._bitmapCommitTimeout !== null) {
+      return;
+    }
+
+    this._bitmapCommitTimeout = window.setTimeout(() => this._generateBitmap(), GLYPH_BITMAP_COMMIT_DELAY);
+  }
+
+  private _generateBitmap(): void {
+    const countAtGeneration = this._glyphsWaitingOnBitmapCount;
+    // TODO: Fallback when createImageBitmap not supported
+    window.createImageBitmap(this._cacheCanvas).then(bitmap => {
+      // Set bitmap
+      this._bitmap = bitmap;
+
+      // Mark all new glyphs as in bitmap
+      for (let i = 0; i < countAtGeneration; i++) {
+        const key = this._glyphsWaitingOnBitmap[i];
+        this._cacheMap.get(key).inBitmap = true;
+        this._glyphsWaitingOnBitmap[i] = 0;
+      }
+
+      // Fix up any glyphs that were added since image bitmap was created
+      if (countAtGeneration > this._glyphsWaitingOnBitmapCount) {
+        // TODO: Verify this
+        // TODO: Use 2 arrays to speed up set?
+        this._glyphsWaitingOnBitmap.set(this._glyphsWaitingOnBitmap.subarray(countAtGeneration, this._glyphsWaitingOnBitmapCount - countAtGeneration), 0);
+      }
+      this._glyphsWaitingOnBitmapCount -= countAtGeneration;
+    });
+    this._bitmapCommitTimeout = null;
   }
 }
