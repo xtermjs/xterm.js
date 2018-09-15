@@ -25,10 +25,6 @@ jobs:
   - script: |
       yarn lint
     displayName: 'Lint'
-  - script: |
-      yarn test-coverage
-      yarn coveralls
-    displayName: 'Generate and publish coverage'
 
 - job: macOS
   pool:
@@ -47,6 +43,10 @@ jobs:
   - script: |
       yarn lint
     displayName: 'Lint'
+  - script: |
+      yarn test-coverage
+      yarn coveralls
+    displayName: 'Generate and publish coverage'
 
 - job: Windows
   pool:
