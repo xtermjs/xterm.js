@@ -30,9 +30,21 @@ const TRANSPARENT_COLOR = {
 // cache.
 const FRAME_CACHE_DRAW_LIMIT = 100;
 
+/**
+ * The number of milliseconds to wait before generating the ImageBitmap, this is to debounce/batch
+ * the operation as window.createImageBitmap is asynchronous.
+ */
 const GLYPH_BITMAP_COMMIT_DELAY = 100;
 
-const GLYPH_BITMAP_COMMIT_LIMIT = 100;
+/**
+ * The initial size of the queue used to track glyphs waiting on bitmap generation.
+ */
+const GLYPHS_WAITING_ON_BITMAP_QUEUE_INITIAL_SIZE = 100;
+
+/**
+ * When the limit of the bitmap queue is reached, the queue increases by this factor.
+ */
+const GLYPHS_WAITING_ON_BITMAP_QUEUE_INCREMENT_FACTOR = 2;
 
 interface IGlyphCacheValue {
   index: number;
@@ -71,9 +83,16 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
 
   private _drawToCacheCount: number = 0;
 
-  private _glyphsWaitingOnBitmap: Uint32Array = new Uint32Array(GLYPH_BITMAP_COMMIT_LIMIT);
+  // An array of glyph keys that are waiting on the bitmap to be generated.
+  private _glyphsWaitingOnBitmapQueue: Uint32Array = new Uint32Array(GLYPHS_WAITING_ON_BITMAP_QUEUE_INITIAL_SIZE);
+
+  // The number of glyphs keys waiting on the bitmap to be generated.
   private _glyphsWaitingOnBitmapCount: number = 0;
+
+  // The timeout that is used to batch bitmap generation so it's not requested for every new glyph.
   private _bitmapCommitTimeout: number | null = null;
+
+  // The bitmap to draw from, this is much faster on other browsers than others.
   private _bitmap: ImageBitmap | null = null;
 
   constructor(document: Document, private _config: ICharAtlasConfig) {
@@ -276,8 +295,8 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     // putImageData doesn't do any blending, so it will overwrite any existing cache entry for us
     this._cacheCtx.putImageData(imageData, x, y);
 
-    this._glyphsWaitingOnBitmap[this._glyphsWaitingOnBitmapCount++] = getGlyphCacheKey(code, fg, bg, bold, dim, italic);
-    this._queueGenerateBitmap();
+    // Add the glyph and queue it to the bitmap (if the browser supports it)
+    this._addGlyphToBitmap(code, fg, bg, bold, dim, italic);
 
     return {
       index,
@@ -286,7 +305,14 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     };
   }
 
-  private _queueGenerateBitmap(): void {
+  private _addGlyphToBitmap(
+    code: number,
+    bg: number,
+    fg: number,
+    bold: boolean,
+    dim: boolean,
+    italic: boolean
+  ): void {
     // Support is patchy for createImageBitmap at the moment, pass a canvas back
     // if support is lacking as drawImage works there too. Firefox is also
     // included here as ImageBitmap appears both buggy and has horrible
@@ -295,12 +321,24 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
       return;
     }
 
-    // Check if it's already queued
+    // Add the glyph to the queue, increasing the size of it if needed
+    if (this._glyphsWaitingOnBitmapCount >= this._glyphsWaitingOnBitmapQueue.length) {
+      this._expandGlyphWaitingOnBitmapQueue();
+    }
+    this._glyphsWaitingOnBitmapQueue[this._glyphsWaitingOnBitmapCount++] = getGlyphCacheKey(code, fg, bg, bold, dim, italic);
+
+    // Check if bitmap generation timeout already exists
     if (this._bitmapCommitTimeout !== null) {
       return;
     }
 
     this._bitmapCommitTimeout = window.setTimeout(() => this._generateBitmap(), GLYPH_BITMAP_COMMIT_DELAY);
+  }
+
+  private _expandGlyphWaitingOnBitmapQueue(): void {
+    const newQueue = new Uint32Array(this._glyphsWaitingOnBitmapQueue.length * GLYPHS_WAITING_ON_BITMAP_QUEUE_INCREMENT_FACTOR);
+    newQueue.set(this._glyphsWaitingOnBitmapQueue, 0);
+    this._glyphsWaitingOnBitmapQueue = newQueue;
   }
 
   private _generateBitmap(): void {
@@ -311,16 +349,14 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
 
       // Mark all new glyphs as in bitmap
       for (let i = 0; i < countAtGeneration; i++) {
-        const key = this._glyphsWaitingOnBitmap[i];
+        const key = this._glyphsWaitingOnBitmapQueue[i];
         this._cacheMap.get(key).inBitmap = true;
-        this._glyphsWaitingOnBitmap[i] = 0;
+        this._glyphsWaitingOnBitmapQueue[i] = 0;
       }
 
       // Fix up any glyphs that were added since image bitmap was created
       if (countAtGeneration > this._glyphsWaitingOnBitmapCount) {
-        // TODO: Verify this
-        // TODO: Use 2 arrays to speed up set?
-        this._glyphsWaitingOnBitmap.set(this._glyphsWaitingOnBitmap.subarray(countAtGeneration, this._glyphsWaitingOnBitmapCount - countAtGeneration), 0);
+        this._glyphsWaitingOnBitmapQueue.set(this._glyphsWaitingOnBitmapQueue.subarray(countAtGeneration, this._glyphsWaitingOnBitmapCount - countAtGeneration), 0);
       }
       this._glyphsWaitingOnBitmapCount -= countAtGeneration;
     });
