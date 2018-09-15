@@ -45,6 +45,7 @@ jobs:
     displayName: 'Lint'
   - script: |
       yarn test-coverage
+      export COVERALLS_GIT_BRANCH=$BUILD_SOURCEBRANCH
       yarn coveralls
     displayName: 'Generate and publish coverage'
 
