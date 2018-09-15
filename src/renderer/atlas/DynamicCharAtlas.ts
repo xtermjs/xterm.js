@@ -10,6 +10,7 @@ import BaseCharAtlas from './BaseCharAtlas';
 import { DEFAULT_ANSI_COLORS } from '../ColorManager';
 import { clearColor } from '../../shared/atlas/CharAtlasGenerator';
 import LRUMap from './LRUMap';
+import { isFirefox, isSafari } from '../../shared/utils/Browser';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.
@@ -286,6 +287,14 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
   }
 
   private _queueGenerateBitmap(): void {
+    // Support is patchy for createImageBitmap at the moment, pass a canvas back
+    // if support is lacking as drawImage works there too. Firefox is also
+    // included here as ImageBitmap appears both buggy and has horrible
+    // performance (tested on v55).
+    if (!('createImageBitmap' in context) || isFirefox || isSafari) {
+      return;
+    }
+
     // Check if it's already queued
     if (this._bitmapCommitTimeout !== null) {
       return;
@@ -296,7 +305,6 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
 
   private _generateBitmap(): void {
     const countAtGeneration = this._glyphsWaitingOnBitmapCount;
-    // TODO: Fallback when createImageBitmap not supported
     window.createImageBitmap(this._cacheCanvas).then(bitmap => {
       // Set bitmap
       this._bitmap = bitmap;
