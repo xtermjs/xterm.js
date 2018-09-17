@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { DIM_OPACITY } from './Types';
+import { DIM_OPACITY, IGlyphIdentifier } from './Types';
 import { CHAR_ATLAS_CELL_SPACING, ICharAtlasConfig } from '../../shared/atlas/Types';
 import { generateStaticCharAtlasTexture } from '../../shared/atlas/CharAtlasGenerator';
 import BaseCharAtlas from './BaseCharAtlas';
@@ -37,24 +37,18 @@ export default class StaticCharAtlas extends BaseCharAtlas {
     }
   }
 
-  private _isCached(code: number, fg: number, bg: number, italic: boolean): boolean {
-    const isAscii = code < 256;
+  private _isCached(glyph: IGlyphIdentifier, colorIndex: number): boolean {
+    const isAscii = glyph.code < 256;
     // A color is basic if it is one of the 4 bit ANSI colors.
-    const isBasicColor = fg < 16;
-    const isDefaultColor = fg >= 256;
-    const isDefaultBackground = bg >= 256;
-    return isAscii && (isBasicColor || isDefaultColor) && isDefaultBackground && !italic;
+    const isBasicColor = glyph.fg < 16;
+    const isDefaultColor = glyph.fg >= 256;
+    const isDefaultBackground = glyph.bg >= 256;
+    return isAscii && (isBasicColor || isDefaultColor) && isDefaultBackground && !glyph.italic;
   }
 
   public draw(
     ctx: CanvasRenderingContext2D,
-    chars: string,
-    code: number,
-    bg: number,
-    fg: number,
-    bold: boolean,
-    dim: boolean,
-    italic: boolean,
+    glyph: IGlyphIdentifier,
     x: number,
     y: number
   ): boolean {
@@ -64,15 +58,15 @@ export default class StaticCharAtlas extends BaseCharAtlas {
     }
 
     let colorIndex = 0;
-    if (fg < 256) {
-      colorIndex = 2 + fg + (bold ? 16 : 0);
+    if (glyph.fg < 256) {
+      colorIndex = 2 + glyph.fg + (glyph.bold ? 16 : 0);
     } else {
       // If default color and bold
-      if (bold) {
+      if (glyph.bold) {
         colorIndex = 1;
       }
     }
-    if (!this._isCached(code, fg, bg, italic)) {
+    if (!this._isCached(glyph, colorIndex)) {
       return false;
     }
 
@@ -83,13 +77,13 @@ export default class StaticCharAtlas extends BaseCharAtlas {
     const charAtlasCellHeight = this._config.scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
 
     // Apply alpha to dim the character
-    if (dim) {
+    if (glyph.dim) {
       ctx.globalAlpha = DIM_OPACITY;
     }
 
     ctx.drawImage(
       this._texture,
-      code * charAtlasCellWidth,
+      glyph.code * charAtlasCellWidth,
       colorIndex * charAtlasCellHeight,
       charAtlasCellWidth,
       this._config.scaledCharHeight,

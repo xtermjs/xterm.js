@@ -5,6 +5,7 @@
  * A dummy CharAtlas implementation that always fails to draw characters.
  */
 
+import { IGlyphIdentifier } from './Types';
 import { ICharAtlasConfig } from '../../shared/atlas/Types';
 import BaseCharAtlas from './BaseCharAtlas';
 
@@ -15,13 +16,7 @@ export default class NoneCharAtlas extends BaseCharAtlas {
 
   public draw(
     ctx: CanvasRenderingContext2D,
-    chars: string,
-    code: number,
-    bg: number,
-    fg: number,
-    bold: boolean,
-    dim: boolean,
-    italic: boolean,
+    glyph: IGlyphIdentifier,
     x: number,
     y: number
   ): boolean {
