@@ -295,7 +295,7 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     // if support is lacking as drawImage works there too. Firefox is also
     // included here as ImageBitmap appears both buggy and has horrible
     // performance (tested on v55).
-    if (!('createImageBitmap' in context) || isFirefox || isSafari) {
+    if (!('createImageBitmap' in window) || isFirefox || isSafari) {
       return;
     }
 
