@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "lib": [
+      "es5"
+    ],
+    "rootDir": ".",
+    "noEmit": true,
+    "strict": true,
+    "types": [
+      "../../node_modules/@types/mocha",
+      "../../"
+    ]
+  },
+  "include": [
+    "./**/*"
+  ]
+}
