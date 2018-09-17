@@ -335,7 +335,11 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
       // Mark all new glyphs as in bitmap
       for (let i = 0; i < countAtGeneration; i++) {
         const key = this._glyphsWaitingOnBitmapQueue[i];
-        this._cacheMap.get(key).inBitmap = true;
+        const value = this._cacheMap.peekValue(key);
+        // If the value has already been evicted, do nothing
+        if (value) {
+          value.inBitmap = true;
+        }
         this._glyphsWaitingOnBitmapQueue[i] = 0;
       }
 

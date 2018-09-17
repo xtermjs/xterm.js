@@ -80,6 +80,17 @@ export default class LRUMap<T> {
     return null;
   }
 
+  /**
+   * Gets a value from a key without marking it as the most recently used item.
+   */
+  public peekValue(key: number): T | null {
+    const node = this._map[key];
+    if (node !== undefined) {
+      return node.value;
+    }
+    return null;
+  }
+
   public peek(): T | null {
     const head = this._head;
     return head === null ? null : head.value;
