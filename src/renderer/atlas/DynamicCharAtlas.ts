@@ -120,6 +120,13 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     // document.body.appendChild(this._cacheCanvas);
   }
 
+  public dispose(): void {
+    if (this._bitmapCommitTimeout !== null) {
+      window.clearTimeout(this._bitmapCommitTimeout);
+      this._bitmapCommitTimeout = null;
+    }
+  }
+
   public beginFrame(): void {
     this._drawToCacheCount = 0;
   }
