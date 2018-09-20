@@ -90,7 +90,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     }
 
     // Invalidate bad end row values (if a resize happened)
-    const absoluteRowIndexEnd = Math.min(buffer.ydisp + this._rowsToLinkify.end + 1, buffer.ydisp + this._terminal.rows);
+    const absoluteRowIndexEnd = buffer.ydisp + Math.min(this._rowsToLinkify.end, this._terminal.rows) + 1;
 
     // iterate over the range of unwrapped content strings within start..end (excluding)
     // _doLinkifyRow gets full unwrapped lines with the start row as buffer offset for every matcher

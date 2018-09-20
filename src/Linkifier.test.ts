@@ -42,6 +42,7 @@ describe('Linkifier', () => {
   beforeEach(() => {
     terminal = new MockTerminal();
     terminal.cols = 100;
+    terminal.rows = 10;
     terminal.buffer = new MockBuffer();
     (<MockBuffer>terminal.buffer).setLines(new CircularList<IBufferLine>(20));
     terminal.buffer.ydisp = 0;
@@ -64,6 +65,7 @@ describe('Linkifier', () => {
   function assertLinkifiesRow(rowText: string, linkMatcherRegex: RegExp, links: {x: number, length: number}[], done: MochaDone): void {
     addRow(rowText);
     linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
+    terminal.rows = terminal.buffer.lines.length - 1;
     linkifier.linkifyRows();
     // Allow linkify to happen
     setTimeout(() => {
