@@ -4,12 +4,13 @@
  */
 
 import { IRenderer, IRenderDimensions, IColorSet } from '../Types';
-import { ITerminal, CharacterJoinerHandler } from '../../Types';
+import { ILinkHoverEvent, ITerminal, CharacterJoinerHandler, LinkHoverEventTypes } from '../../Types';
 import { ITheme } from 'xterm';
 import { EventEmitter } from '../../common/EventEmitter';
 import { ColorManager } from '../ColorManager';
 import { RenderDebouncer } from '../../ui/RenderDebouncer';
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from './DomRendererRowFactory';
+import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
@@ -79,6 +80,9 @@ export class DomRenderer extends EventEmitter implements IRenderer {
     this._terminal.element.classList.add(TERMINAL_CLASS_PREFIX + this._terminalClass);
     this._terminal.screenElement.appendChild(this._rowContainer);
     this._terminal.screenElement.appendChild(this._selectionContainer);
+
+    this._terminal.linkifier.on(LinkHoverEventTypes.HOVER, (e: ILinkHoverEvent) => this._onLinkHover(e));
+    this._terminal.linkifier.on(LinkHoverEventTypes.LEAVE, (e: ILinkHoverEvent) => this._onLinkLeave(e));
   }
 
   public dispose(): void {
@@ -116,6 +120,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
 
     const styles =
         `${this._terminalSelector} .${ROW_CONTAINER_CLASS} span {` +
+        ` box-sizing: border-box;` +
         ` display: inline-block;` +
         ` height: 100%;` +
         ` vertical-align: top;` +
@@ -338,4 +343,48 @@ export class DomRenderer extends EventEmitter implements IRenderer {
 
   public registerCharacterJoiner(handler: CharacterJoinerHandler): number { return -1; }
   public deregisterCharacterJoiner(joinerId: number): boolean { return false; }
+
+  private _onLinkHover(e: ILinkHoverEvent): void {
+    let color = this.colorManager.colors.foreground.css;
+
+    if (e.fg === INVERTED_DEFAULT_COLOR) {
+      color = this.colorManager.colors.background.css;
+    } else if (e.fg < 256) {
+      // 256 color support
+      color = this.colorManager.colors.ansi[e.fg].css;
+    }
+
+    this._setBorderBottomAtCells(e.x1, e.x2, e.y1, e.y2, e.cols, `1px solid ${color}`);
+  }
+
+  private _onLinkLeave(e: ILinkHoverEvent): void {
+    this._setBorderBottomAtCells(e.x1, e.x2, e.y1, e.y2, e.cols, null);
+  }
+
+  private _setBorderBottomAtCells(x1: number, x2: number, y1: number, y2: number, cols: number, value?: string) {
+    if (y1 === y2) {
+      // Single line link
+      for (let x = x1; x < x2; x++) {
+        let span = (<HTMLElement>this._rowElements[y1].children[x]);
+        span.style.borderBottom = value;
+      }
+    } else {
+      // Multi-line link
+      for (let x = x1; x < cols - x1; x++) {
+        let span = (<HTMLElement>this._rowElements[y1].children[x]);
+        span.style.borderBottom = value;
+      }
+      for (let y = y1 + 1; y < y2 - 1; y++) {
+        for (let x = 0; x < cols; x++) {
+          let span = (<HTMLElement>this._rowElements[y].children[x]);
+          span.style.borderBottom = value;
+        }
+      }
+      for (let x = 0; x < x2; x++) {
+        let span = (<HTMLElement>this._rowElements[y2].children[x]);
+        span.style.borderBottom = value;
+      }
+    }
+  }
+
 }
