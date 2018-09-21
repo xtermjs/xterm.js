@@ -10,7 +10,6 @@ import { EventEmitter } from '../../common/EventEmitter';
 import { ColorManager } from '../ColorManager';
 import { RenderDebouncer } from '../../ui/RenderDebouncer';
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from './DomRendererRowFactory';
-import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
@@ -120,7 +119,6 @@ export class DomRenderer extends EventEmitter implements IRenderer {
 
     const styles =
         `${this._terminalSelector} .${ROW_CONTAINER_CLASS} span {` +
-        ` box-sizing: border-box;` +
         ` display: inline-block;` +
         ` height: 100%;` +
         ` vertical-align: top;` +
@@ -345,27 +343,21 @@ export class DomRenderer extends EventEmitter implements IRenderer {
   public deregisterCharacterJoiner(joinerId: number): boolean { return false; }
 
   private _onLinkHover(e: ILinkHoverEvent): void {
-    let color = this.colorManager.colors.foreground.css;
-
-    if (e.fg === INVERTED_DEFAULT_COLOR) {
-      color = this.colorManager.colors.background.css;
-    } else if (e.fg < 256) {
-      // 256 color support
-      color = this.colorManager.colors.ansi[e.fg].css;
-    }
-
-    this._setBorderBottomAtCells(e.x1, e.x2, e.y1, e.y2, e.cols, `1px solid ${color}`);
+    this._setCellUnderline(e.x1, e.x2, e.y1, e.y2, e.cols, true);
   }
 
   private _onLinkLeave(e: ILinkHoverEvent): void {
-    this._setBorderBottomAtCells(e.x1, e.x2, e.y1, e.y2, e.cols, null);
+    this._setCellUnderline(e.x1, e.x2, e.y1, e.y2, e.cols, false);
   }
 
-  private _setBorderBottomAtCells(x: number, x2: number, y: number, y2: number, cols: number, value?: string) {
-    for (; x != x2 || y != y2; x = ++x % cols, y += +(x === 0)) {
-      let span = (<HTMLElement>this._rowElements[y].children[x]);
-      span.style.borderBottom = value;
+  private _setCellUnderline(x: number, x2: number, y: number, y2: number, cols: number, enabled: boolean): void {
+    while (x !== x2 || y !== y2) {
+      const span = <HTMLElement>this._rowElements[y].children[x];
+      span.style.textDecoration = enabled ? 'underline' : 'none';
+      x = (x + 1) % cols;
+      if (x === 0) {
+        y++;
+      }
     }
   }
-
 }
