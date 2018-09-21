@@ -361,29 +361,10 @@ export class DomRenderer extends EventEmitter implements IRenderer {
     this._setBorderBottomAtCells(e.x1, e.x2, e.y1, e.y2, e.cols, null);
   }
 
-  private _setBorderBottomAtCells(x1: number, x2: number, y1: number, y2: number, cols: number, value?: string) {
-    if (y1 === y2) {
-      // Single line link
-      for (let x = x1; x < x2; x++) {
-        let span = (<HTMLElement>this._rowElements[y1].children[x]);
-        span.style.borderBottom = value;
-      }
-    } else {
-      // Multi-line link
-      for (let x = x1; x < cols - x1; x++) {
-        let span = (<HTMLElement>this._rowElements[y1].children[x]);
-        span.style.borderBottom = value;
-      }
-      for (let y = y1 + 1; y < y2 - 1; y++) {
-        for (let x = 0; x < cols; x++) {
-          let span = (<HTMLElement>this._rowElements[y].children[x]);
-          span.style.borderBottom = value;
-        }
-      }
-      for (let x = 0; x < x2; x++) {
-        let span = (<HTMLElement>this._rowElements[y2].children[x]);
-        span.style.borderBottom = value;
-      }
+  private _setBorderBottomAtCells(x: number, x2: number, y: number, y2: number, cols: number, value?: string) {
+    for (; x != x2 || y != y2; x = ++x % cols, y += +(x === 0)) {
+      let span = (<HTMLElement>this._rowElements[y].children[x]);
+      span.style.borderBottom = value;
     }
   }
 
