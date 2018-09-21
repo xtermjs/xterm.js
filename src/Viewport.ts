@@ -22,6 +22,7 @@ export class Viewport extends Disposable implements IViewport {
   private _lastRecordedViewportHeight: number = 0;
   private _lastRecordedBufferHeight: number = 0;
   private _lastTouchY: number;
+  private _lastScrollTop: number = 0;
 
   // Stores a partial line amount when scrolling, this is used to keep track of how much of a line
   // is scrolled so we can "scroll" over partial lines and feel natural on touchpads. This is a
@@ -97,18 +98,36 @@ export class Viewport extends Disposable implements IViewport {
    * Updates dimensions and synchronizes the scroll area if necessary.
    */
   public syncScrollArea(): void {
+    // If buffer height changed
     if (this._lastRecordedBufferLength !== this._terminal.buffer.lines.length) {
-      // If buffer height changed
       this._lastRecordedBufferLength = this._terminal.buffer.lines.length;
       this._refresh();
-    } else if (this._lastRecordedViewportHeight !== (<any>this._terminal).renderer.dimensions.canvasHeight) {
-      // If viewport height changed
+      return;
+    }
+
+    // If viewport height changed
+    if (this._lastRecordedViewportHeight !== (<any>this._terminal).renderer.dimensions.canvasHeight) {
       this._refresh();
-    } else {
-      // If size has changed, refresh viewport
-      if (this._terminal.renderer.dimensions.scaledCellHeight / window.devicePixelRatio !== this._currentRowHeight) {
-        this._refresh();
-      }
+      return;
+    }
+
+    // If the buffer position doesn't match last scroll top
+    const newScrollTop = this._terminal.buffer.ydisp * this._currentRowHeight;
+    if (this._lastScrollTop !== newScrollTop) {
+      this._refresh();
+      return;
+    }
+
+    // If element's scroll top changed, this can happen when hiding the element
+    if (this._lastScrollTop !== this._viewportElement.scrollTop) {
+      this._refresh();
+      return;
+    }
+
+    // If row height changed
+    if (this._terminal.renderer.dimensions.scaledCellHeight / window.devicePixelRatio !== this._currentRowHeight) {
+      this._refresh();
+      return;
     }
   }
 
@@ -118,6 +137,9 @@ export class Viewport extends Disposable implements IViewport {
    * @param ev The scroll event.
    */
   private _onScroll(ev: Event): void {
+    // Record current scroll top position
+    this._lastScrollTop = this._viewportElement.scrollTop;
+
     // Don't attempt to scroll if the element is not visible, otherwise scrollTop will be corrupt
     // which causes the terminal to scroll the buffer to the top
     if (!this._viewportElement.offsetParent) {
@@ -130,8 +152,7 @@ export class Viewport extends Disposable implements IViewport {
       return;
     }
 
-
-    const newRow = Math.round(this._viewportElement.scrollTop / this._currentRowHeight);
+    const newRow = Math.round(this._lastScrollTop / this._currentRowHeight);
     const diff = newRow - this._terminal.buffer.ydisp;
     this._terminal.scrollLines(diff, true);
   }
