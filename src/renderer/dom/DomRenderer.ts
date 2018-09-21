@@ -4,7 +4,7 @@
  */
 
 import { IRenderer, IRenderDimensions, IColorSet } from '../Types';
-import { ITerminal, CharacterJoinerHandler } from '../../Types';
+import { ILinkHoverEvent, ITerminal, CharacterJoinerHandler, LinkHoverEventTypes } from '../../Types';
 import { ITheme } from 'xterm';
 import { EventEmitter } from '../../common/EventEmitter';
 import { ColorManager } from '../ColorManager';
@@ -79,6 +79,9 @@ export class DomRenderer extends EventEmitter implements IRenderer {
     this._terminal.element.classList.add(TERMINAL_CLASS_PREFIX + this._terminalClass);
     this._terminal.screenElement.appendChild(this._rowContainer);
     this._terminal.screenElement.appendChild(this._selectionContainer);
+
+    this._terminal.linkifier.on(LinkHoverEventTypes.HOVER, (e: ILinkHoverEvent) => this._onLinkHover(e));
+    this._terminal.linkifier.on(LinkHoverEventTypes.LEAVE, (e: ILinkHoverEvent) => this._onLinkLeave(e));
   }
 
   public dispose(): void {
@@ -338,4 +341,23 @@ export class DomRenderer extends EventEmitter implements IRenderer {
 
   public registerCharacterJoiner(handler: CharacterJoinerHandler): number { return -1; }
   public deregisterCharacterJoiner(joinerId: number): boolean { return false; }
+
+  private _onLinkHover(e: ILinkHoverEvent): void {
+    this._setCellUnderline(e.x1, e.x2, e.y1, e.y2, e.cols, true);
+  }
+
+  private _onLinkLeave(e: ILinkHoverEvent): void {
+    this._setCellUnderline(e.x1, e.x2, e.y1, e.y2, e.cols, false);
+  }
+
+  private _setCellUnderline(x: number, x2: number, y: number, y2: number, cols: number, enabled: boolean): void {
+    while (x !== x2 || y !== y2) {
+      const span = <HTMLElement>this._rowElements[y].children[x];
+      span.style.textDecoration = enabled ? 'underline' : 'none';
+      x = (x + 1) % cols;
+      if (x === 0) {
+        y++;
+      }
+    }
+  }
 }
