@@ -87,12 +87,16 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    */
   private _linkifyRows(): void {
     this._rowsTimeoutId = null;
+    const buffer = this._terminal.buffer;
 
-    // Ensure the row exists
-    const absoluteRowIndexStart = this._terminal.buffer.ydisp + this._rowsToLinkify.start;
-    if (absoluteRowIndexStart >= this._terminal.buffer.lines.length) {
+    // Ensure the start row exists
+    const absoluteRowIndexStart = buffer.ydisp + this._rowsToLinkify.start;
+    if (absoluteRowIndexStart >= buffer.lines.length) {
       return;
     }
+
+    // Invalidate bad end row values (if a resize happened)
+    const absoluteRowIndexEnd = buffer.ydisp + Math.min(this._rowsToLinkify.end, this._terminal.rows) + 1;
 
     // Iterate over the range of unwrapped content strings within start..end (excluding).
     // _doLinkifyRow gets full unwrapped lines with the start row as buffer offset for every matcher.
@@ -104,8 +108,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     // anymore at the viewport borders.
     const overscanLineLimit = Math.ceil(Linkifier.OVERSCAN_CHAR_LIMIT / this._terminal.cols);
     const iterator = this._terminal.buffer.iterator(
-      false, absoluteRowIndexStart, this._terminal.buffer.ydisp + this._rowsToLinkify.end + 1,
-      overscanLineLimit, overscanLineLimit);
+      false, absoluteRowIndexStart, absoluteRowIndexEnd, overscanLineLimit, overscanLineLimit);
     while (iterator.hasNext()) {
       const lineData: IBufferStringIteratorResult = iterator.next();
       for (let i = 0; i < this._linkMatchers.length; i++) {
