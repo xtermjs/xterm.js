@@ -424,6 +424,12 @@ export class BufferStringIterator implements IBufferStringIterator {
     private _startOverscan: number = 0,
     private _endOverscan: number = 0
   ) {
+    if (this._startIndex < 0) {
+      this._startIndex = 0;
+    }
+    if (this._endIndex > this._buffer.lines.length) {
+      this._endIndex = this._buffer.lines.length;
+    }
     this._current = this._startIndex;
   }
 
@@ -433,12 +439,16 @@ export class BufferStringIterator implements IBufferStringIterator {
 
   public next(): IBufferStringIteratorResult {
     const range = this._buffer.getWrappedRangeForLine(this._current);
+    // limit search window to overscan value at both borders
     if (range.first < this._startIndex - this._startOverscan) {
       range.first = this._startIndex - this._startOverscan;
     }
     if (range.last > this._endIndex + this._endOverscan) {
       range.last = this._endIndex + this._endOverscan;
     }
+    // limit to current buffer length
+    range.first = Math.max(range.first, 0);
+    range.last = Math.min(range.last, this._buffer.lines.length);
     let result = '';
     for (let i = range.first; i <= range.last; ++i) {
       // TODO: always apply trimRight after fixing #1685

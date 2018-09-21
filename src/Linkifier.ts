@@ -262,7 +262,6 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       x2 = this._terminal.cols;
       y2--;
     }
-    console.log(x1, y1, x2, y2);
 
     this._mouseZoneManager.add(new MouseZone(
       x1 + 1,
