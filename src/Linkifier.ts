@@ -81,18 +81,22 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    */
   private _linkifyRows(): void {
     this._rowsTimeoutId = null;
+    const buffer = this._terminal.buffer;
 
-    // Ensure the row exists
-    const absoluteRowIndexStart = this._terminal.buffer.ydisp + this._rowsToLinkify.start;
-    if (absoluteRowIndexStart >= this._terminal.buffer.lines.length) {
+    // Ensure the start row exists
+    const absoluteRowIndexStart = buffer.ydisp + this._rowsToLinkify.start;
+    if (absoluteRowIndexStart >= buffer.lines.length) {
       return;
     }
+
+    // Invalidate bad end row values (if a resize happened)
+    const absoluteRowIndexEnd = buffer.ydisp + Math.min(this._rowsToLinkify.end, this._terminal.rows) + 1;
 
     // iterate over the range of unwrapped content strings within start..end (excluding)
     // _doLinkifyRow gets full unwrapped lines with the start row as buffer offset for every matcher
     // for wrapped content over several rows the iterator might return rows outside the viewport
     // we skip those later in _doLinkifyRow
-    const iterator = this._terminal.buffer.iterator(false, absoluteRowIndexStart, this._terminal.buffer.ydisp + this._rowsToLinkify.end + 1);
+    const iterator = buffer.iterator(false, absoluteRowIndexStart, absoluteRowIndexEnd);
     while (iterator.hasNext()) {
       const lineData: IBufferStringIteratorResult = iterator.next();
       for (let i = 0; i < this._linkMatchers.length; i++) {
