@@ -25,9 +25,6 @@ jobs:
   - script: |
       yarn lint
     displayName: 'Lint'
-  - script: |
-      yarn test-coverage
-    displayName: 'Generate and publish coverage'
 
 - job: macOS
   pool:
@@ -46,6 +43,11 @@ jobs:
   - script: |
       yarn lint
     displayName: 'Lint'
+  - script: |
+      yarn test-coverage
+      export COVERALLS_GIT_BRANCH=$BUILD_SOURCEBRANCH
+      yarn coveralls
+    displayName: 'Generate and publish coverage'
 
 - job: Windows
   pool:
