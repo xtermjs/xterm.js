@@ -76,9 +76,6 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
   // An array of glyph keys that are waiting on the bitmap to be generated.
   private _glyphsWaitingOnBitmapQueue: IGlyphCacheValue[] = [];
 
-  // The number of glyphs keys waiting on the bitmap to be generated.
-  private _glyphsWaitingOnBitmapCount: number = 0;
-
   // The timeout that is used to batch bitmap generation so it's not requested for every new glyph.
   private _bitmapCommitTimeout: number | null = null;
 
@@ -299,7 +296,6 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
 
     // Add the glyph to the queue
     this._glyphsWaitingOnBitmapQueue.push(cacheValue);
-    this._glyphsWaitingOnBitmapCount++;
 
     // Check if bitmap generation timeout already exists
     if (this._bitmapCommitTimeout !== null) {
@@ -310,7 +306,7 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
   }
 
   private _generateBitmap(): void {
-    let countAtGeneration = this._glyphsWaitingOnBitmapCount;
+    let countAtGeneration = this._glyphsWaitingOnBitmapQueue.length;
     window.createImageBitmap(this._cacheCanvas).then(bitmap => {
       // Set bitmap
       this._bitmap = bitmap;
@@ -318,11 +314,10 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
       // Mark all new glyphs as in bitmap, excluding glyphs that came in after
       // the bitmap was requested
       while (countAtGeneration-- > 0) {
-        const value = this._glyphsWaitingOnBitmapQueue[0];
-        // If the value has already been evicted, do nothing
-        if (value) {
-          value.inBitmap = true;
-        }
+        const value = this._glyphsWaitingOnBitmapQueue.shift();
+        // It doesn't matter if the value was already evicted, it will be
+        // released from memory after this block if so.
+        value.inBitmap = true;
       }
     });
     this._bitmapCommitTimeout = null;
