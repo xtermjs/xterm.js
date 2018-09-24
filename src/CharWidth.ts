@@ -4,6 +4,8 @@
  */
 
 export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: number) => number {
+    // This table was generated using https://github.com/jquast/wcwidth/blob/master/setup.py
+    // Must be kept up to date with https://www.unicode.org/Public/UNIDATA/EastAsianWidth.txt
     // Generated: 2018-09-24T16:45:44.483077
     // Source: DerivedGeneralCategory-11.0.0.txt
     // Date:  2018-02-21, 05:34:04 GMT
@@ -321,6 +323,8 @@ export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: nu
       [0xe0100, 0xe01ef]   // Variation Selector-17   ..Variation Selector-256
     ];
 
+    // This table was generated using https://github.com/jquast/wcwidth/blob/master/setup.py
+    // Must be kept up to date with https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt
     // Generated: 2018-09-24T16:45:44.464578
     // Source: EastAsianWidth-11.0.0.txt
     // Date:  2018-05-14, 09:41:59 GMT [KW, LI]

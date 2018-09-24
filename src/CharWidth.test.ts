@@ -80,7 +80,7 @@ describe('getStringCellWidth', function(): void {
     terminal.writeSync(input);
     const s = terminal.buffer.iterator(true).next().content;
     assert.equal(input, s);
-    assert.equal(getStringCellWidth(s), 2 * input.length);
+    assert.equal(getStringCellWidth(s), 12);
   });
   // TODO: multiline tests once #1685 is resolved
 });
