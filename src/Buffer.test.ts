@@ -508,7 +508,7 @@ describe('Buffer', () => {
       // const s = terminal.buffer.contents(true).toArray()[0];
       // assert.equal(input, s);
       for (let i = 10; i < input.length; ++i) {
-        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
+        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i); // TODO: remove +1 after fix
         const j = (i - 0) << 1;
         assert.deepEqual([(j / terminal.cols) | 0, j % terminal.cols], bufferIndex);
       }
