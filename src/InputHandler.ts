@@ -407,6 +407,9 @@ export class InputHandler extends Disposable implements IInputHandler {
         // autowrap - DECAWM
         // automatically wraps to the beginning of the next line
         if (wraparoundMode) {
+          if (buffer.x === cols - 1) {
+            bufferRow.set(buffer.x, [curAttr, '', 0, undefined]);
+          }
           buffer.x = 0;
           buffer.y++;
           if (buffer.y > buffer.scrollBottom) {
