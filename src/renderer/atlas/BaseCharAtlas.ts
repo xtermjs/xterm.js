@@ -4,9 +4,12 @@
  */
 
 import { IGlyphIdentifier } from './Types';
+import { IDisposable } from 'xterm';
 
-export default abstract class BaseCharAtlas {
+export default abstract class BaseCharAtlas implements IDisposable {
   private _didWarmUp: boolean = false;
+
+  public dispose(): void { }
 
   /**
    * Perform any work needed to warm the cache before it can be used. May be called multiple times.
