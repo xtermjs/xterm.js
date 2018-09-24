@@ -929,9 +929,9 @@ describe('term.js addons', () => {
         }
       }
       let tchar = term.buffer.lines.get(0).get(term.cols - 1);
-      expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('');
-      expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(0);
-      expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(0);
+      expect(tchar[CHAR_DATA_CHAR_INDEX]).eql(' ');
+      expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(1);
+      expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(1);
       tchar = term.buffer.lines.get(1).get(0);
       expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('￥');
       expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(1);
@@ -954,9 +954,9 @@ describe('term.js addons', () => {
         }
       }
       let tchar = term.buffer.lines.get(0).get(term.cols - 1);
-      expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('');
-      expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(0);
-      expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(0);
+      expect(tchar[CHAR_DATA_CHAR_INDEX]).eql(' ');
+      expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(1);
+      expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(1);
       tchar = term.buffer.lines.get(1).get(0);
       expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('￥\u0301');
       expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(2);
@@ -999,9 +999,9 @@ describe('term.js addons', () => {
         }
       }
       let tchar = term.buffer.lines.get(0).get(term.cols - 1);
-      expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('');
-      expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(0);
-      expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(0);
+      expect(tchar[CHAR_DATA_CHAR_INDEX]).eql(' ');
+      expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(1);
+      expect(tchar[CHAR_DATA_WIDTH_INDEX]).eql(1);
       tchar = term.buffer.lines.get(1).get(0);
       expect(tchar[CHAR_DATA_CHAR_INDEX]).eql('\ud843\ude6d\u0301');
       expect(tchar[CHAR_DATA_CHAR_INDEX].length).eql(3);
