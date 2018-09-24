@@ -5,7 +5,7 @@
 
 import { IRenderLayer, IColorSet, IRenderDimensions } from './Types';
 import { CharData, ITerminal } from '../Types';
-import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from './atlas/Types';
+import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, IGlyphIdentifier } from './atlas/Types';
 import BaseCharAtlas from './atlas/BaseCharAtlas';
 import { acquireCharAtlas } from './atlas/CharAtlasCache';
 import { CHAR_DATA_CHAR_INDEX } from '../Buffer';
@@ -21,6 +21,19 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _scaledCharTop: number = 0;
 
   protected _charAtlas: BaseCharAtlas;
+
+  /**
+   * An object that's reused when drawing glyphs in order to reduce GC.
+   */
+  private _currentGlyphIdentifier: IGlyphIdentifier = {
+    chars: '',
+    code: 0,
+    bg: 0,
+    fg: 0,
+    bold: false,
+    dim: false,
+    italic: false
+  };
 
   constructor(
     private _container: HTMLElement,
@@ -38,6 +51,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
   public dispose(): void {
     this._container.removeChild(this._canvas);
+    this._charAtlas.dispose();
   }
 
   private _initCanvas(): void {
@@ -245,9 +259,16 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     const drawInBrightColor = terminal.options.drawBoldTextInBrightColors && bold && fg < 8 && fg !== INVERTED_DEFAULT_COLOR;
 
     fg += drawInBrightColor ? 8 : 0;
+    this._currentGlyphIdentifier.chars = chars;
+    this._currentGlyphIdentifier.code = code;
+    this._currentGlyphIdentifier.bg = bg;
+    this._currentGlyphIdentifier.fg = fg;
+    this._currentGlyphIdentifier.bold = bold && terminal.options.enableBold;
+    this._currentGlyphIdentifier.dim = dim;
+    this._currentGlyphIdentifier.italic = italic;
     const atlasDidDraw = this._charAtlas && this._charAtlas.draw(
       this._ctx,
-      {chars, code, bg, fg, bold: bold && terminal.options.enableBold, dim, italic},
+      this._currentGlyphIdentifier,
       x * this._scaledCellWidth + this._scaledCharLeft,
       y * this._scaledCellHeight + this._scaledCharTop
     );

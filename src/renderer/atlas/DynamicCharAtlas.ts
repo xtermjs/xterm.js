@@ -10,6 +10,7 @@ import BaseCharAtlas from './BaseCharAtlas';
 import { DEFAULT_ANSI_COLORS } from '../ColorManager';
 import { clearColor } from '../../shared/atlas/CharAtlasGenerator';
 import LRUMap from './LRUMap';
+import { isFirefox, isSafari } from '../../shared/utils/Browser';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.
@@ -29,14 +30,29 @@ const TRANSPARENT_COLOR = {
 // cache.
 const FRAME_CACHE_DRAW_LIMIT = 100;
 
+/**
+ * The number of milliseconds to wait before generating the ImageBitmap, this is to debounce/batch
+ * the operation as window.createImageBitmap is asynchronous.
+ */
+const GLYPH_BITMAP_COMMIT_DELAY = 100;
+
 interface IGlyphCacheValue {
   index: number;
   isEmpty: boolean;
+  inBitmap: boolean;
 }
 
-function getGlyphCacheKey(glyph: IGlyphIdentifier): string {
-  const styleFlags = (glyph.bold ? 0 : 4) + (glyph.dim ? 0 : 2) + (glyph.italic ? 0 : 1);
-  return `${glyph.bg}_${glyph.fg}_${styleFlags}${glyph.chars}`;
+function getGlyphCacheKey(glyph: IGlyphIdentifier): number {
+  // Note that this only returns a valid key when code < 256
+  // Layout:
+  // 0b00000000000000000000000000000001: italic (1)
+  // 0b00000000000000000000000000000010: dim (1)
+  // 0b00000000000000000000000000000100: bold (1)
+  // 0b00000000000000000000111111111000: fg (9)
+  // 0b00000000000111111111000000000000: bg (9)
+  // 0b00011111111000000000000000000000: code (8)
+  // 0b11100000000000000000000000000000: unused (3)
+  return glyph.code << 21 | glyph.bg << 12 | glyph.fg << 3 | (glyph.bold ? 0 : 4) + (glyph.dim ? 0 : 2) + (glyph.italic ? 0 : 1);
 }
 
 export default class DynamicCharAtlas extends BaseCharAtlas {
@@ -56,6 +72,15 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
   private _height: number;
 
   private _drawToCacheCount: number = 0;
+
+  // An array of glyph keys that are waiting on the bitmap to be generated.
+  private _glyphsWaitingOnBitmap: IGlyphCacheValue[] = [];
+
+  // The timeout that is used to batch bitmap generation so it's not requested for every new glyph.
+  private _bitmapCommitTimeout: number | null = null;
+
+  // The bitmap to draw from, this is much faster on other browsers than others.
+  private _bitmap: ImageBitmap | null = null;
 
   constructor(document: Document, private _config: ICharAtlasConfig) {
     super();
@@ -82,6 +107,13 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     // document.body.appendChild(this._cacheCanvas);
   }
 
+  public dispose(): void {
+    if (this._bitmapCommitTimeout !== null) {
+      window.clearTimeout(this._bitmapCommitTimeout);
+      this._bitmapCommitTimeout = null;
+    }
+  }
+
   public beginFrame(): void {
     this._drawToCacheCount = 0;
   }
@@ -92,6 +124,11 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     x: number,
     y: number
   ): boolean {
+    // Space is always an empty cell, special case this as it's so common
+    if (glyph.code === 32) {
+      return true;
+    }
+
     const glyphKey = getGlyphCacheKey(glyph);
     const cacheValue = this._cacheMap.get(glyphKey);
     if (cacheValue !== null && cacheValue !== undefined) {
@@ -124,11 +161,12 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     return glyph.code < 256;
   }
 
-  private _toCoordinates(index: number): [number, number] {
-    return [
-      (index % this._width) * this._config.scaledCharWidth,
-      Math.floor(index / this._width) * this._config.scaledCharHeight
-    ];
+  private _toCoordinateX(index: number): number {
+    return (index % this._width) * this._config.scaledCharWidth;
+  }
+
+  private _toCoordinateY(index: number): number {
+    return Math.floor(index / this._width) * this._config.scaledCharHeight;
   }
 
   private _drawFromCache(
@@ -141,9 +179,10 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     if (cacheValue.isEmpty) {
       return;
     }
-    const [cacheX, cacheY] = this._toCoordinates(cacheValue.index);
+    const cacheX = this._toCoordinateX(cacheValue.index);
+    const cacheY = this._toCoordinateY(cacheValue.index);
     ctx.drawImage(
-      this._cacheCanvas,
+      cacheValue.inBitmap ? this._bitmap : this._cacheCanvas,
       cacheX,
       cacheY,
       this._config.scaledCharWidth,
@@ -230,13 +269,58 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     }
 
     // copy the data from imageData to _cacheCanvas
-    const [x, y] = this._toCoordinates(index);
+    const x = this._toCoordinateX(index);
+    const y = this._toCoordinateY(index);
     // putImageData doesn't do any blending, so it will overwrite any existing cache entry for us
     this._cacheCtx.putImageData(imageData, x, y);
 
-    return {
+    // Add the glyph and queue it to the bitmap (if the browser supports it)
+    const cacheValue = {
       index,
-      isEmpty
+      isEmpty,
+      inBitmap: false
     };
+    this._addGlyphToBitmap(cacheValue);
+
+    return cacheValue;
+  }
+
+  private _addGlyphToBitmap(cacheValue: IGlyphCacheValue): void {
+    // Support is patchy for createImageBitmap at the moment, pass a canvas back
+    // if support is lacking as drawImage works there too. Firefox is also
+    // included here as ImageBitmap appears both buggy and has horrible
+    // performance (tested on v55).
+    if (!('createImageBitmap' in window) || isFirefox || isSafari) {
+      return;
+    }
+
+    // Add the glyph to the queue
+    this._glyphsWaitingOnBitmap.push(cacheValue);
+
+    // Check if bitmap generation timeout already exists
+    if (this._bitmapCommitTimeout !== null) {
+      return;
+    }
+
+    this._bitmapCommitTimeout = window.setTimeout(() => this._generateBitmap(), GLYPH_BITMAP_COMMIT_DELAY);
+  }
+
+  private _generateBitmap(): void {
+    const glyphsMovingToBitmap = this._glyphsWaitingOnBitmap;
+    this._glyphsWaitingOnBitmap = [];
+    window.createImageBitmap(this._cacheCanvas).then(bitmap => {
+      // Set bitmap
+      this._bitmap = bitmap;
+
+      // Mark all new glyphs as in bitmap, excluding glyphs that came in after
+      // the bitmap was requested
+      for (let i = 0; i < glyphsMovingToBitmap.length; i++) {
+        const value = glyphsMovingToBitmap[i];
+        // It doesn't matter if the value was already evicted, it will be
+        // released from memory after this block if so.
+        value.inBitmap = true;
+      }
+    });
+    this._bitmapCommitTimeout = null;
   }
 }
