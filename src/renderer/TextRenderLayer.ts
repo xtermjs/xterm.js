@@ -11,7 +11,7 @@ import { GridCache } from './GridCache';
 import { BaseRenderLayer } from './BaseRenderLayer';
 
 /**
- * This CharData looks like a null character, which will forc a clear and render
+ * This CharData looks like a null character, which will force a clear and render
  * when the character changes (a regular space ' ' character may not as it's
  * drawn state is a cleared cell).
  */

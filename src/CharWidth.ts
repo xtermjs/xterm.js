@@ -6,6 +6,7 @@
 export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: number) => number {
     // extracted from https://www.cl.cam.ac.uk/%7Emgk25/ucs/wcwidth.c
     // combining characters
+    // this map should be kept in sync with http://www.unicode.org/Public/UNIDATA/EastAsianWidth.txt
     const COMBINING_BMP = [
       [0x0300, 0x036F], [0x0483, 0x0486], [0x0488, 0x0489],
       [0x0591, 0x05BD], [0x05BF, 0x05BF], [0x05C1, 0x05C2],
@@ -57,6 +58,71 @@ export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: nu
       [0x1D173, 0x1D182], [0x1D185, 0x1D18B], [0x1D1AA, 0x1D1AD],
       [0x1D242, 0x1D244], [0xE0001, 0xE0001], [0xE0020, 0xE007F],
       [0xE0100, 0xE01EF]
+    ];
+
+    const WIDE_HIGH = [
+      [0x16FE0, 0x16FE1], //   # Lm     [2] TANGUT ITERATION MARK..NUSHU ITERATION MARK
+      [0x17000, 0x187F1], //   # Lo  [6130] TANGUT IDEOGRAPH-17000..TANGUT IDEOGRAPH-187F1
+      [0x18800, 0x18AF2], //   # Lo   [755] TANGUT COMPONENT-001..TANGUT COMPONENT-755
+      [0x1B000, 0x1B0FF], //   # Lo   [256] KATAKANA LETTER ARCHAIC E..HENTAIGANA LETTER RE-2
+      [0x1B100, 0x1B11E], //   # Lo    [31] HENTAIGANA LETTER RE-3..HENTAIGANA LETTER N-MU-MO-2
+      [0x1B170, 0x1B2FB], //   # Lo   [396] NUSHU CHARACTER-1B170..NUSHU CHARACTER-1B2FB[0x1F004],          //   # So         MAHJONG TILE RED DRAGON
+      [0x1F0CF],          //   # So         PLAYING CARD BLACK JOKER
+      [0x1F18E],          //   # So         NEGATIVE SQUARED AB
+      [0x1F191, 0x1F19A], //   # So    [10] SQUARED CL..SQUARED VS
+      [0x1F200, 0x1F202], //   # So     [3] SQUARE HIRAGANA HOKA..SQUARED KATAKANA SA
+      [0x1F210, 0x1F23B], //   # So    [44] SQUARED CJK UNIFIED IDEOGRAPH-624B..SQUARED CJK UNIFIED IDEOGRAPH-914D
+      [0x1F240, 0x1F248], //   # So     [9] TORTOISE SHELL BRACKETED CJK UNIFIED IDEOGRAPH-672C..TORTOISE SHELL BRACKETED CJK UNIFIED IDEOGRAPH-6557
+      [0x1F250, 0x1F251], //   # So     [2] CIRCLED IDEOGRAPH ADVANTAGE..CIRCLED IDEOGRAPH ACCEPT
+      [0x1F260, 0x1F265], //   # So     [6] ROUNDED SYMBOL FOR FU..ROUNDED SYMBOL FOR CAI
+      [0x1F300, 0x1F320], //   # So    [33] CYCLONE..SHOOTING STAR
+      [0x1F32D, 0x1F335], //   # So     [9] HOT DOG..CACTUS
+      [0x1F337, 0x1F37C], //   # So    [70] TULIP..BABY BOTTLE
+      [0x1F37E, 0x1F393], //   # So    [22] BOTTLE WITH POPPING CORK..GRADUATION CAP
+      [0x1F3A0, 0x1F3CA], //   # So    [43] CAROUSEL HORSE..SWIMMER
+      [0x1F3CF, 0x1F3D3], //   # So     [5] CRICKET BAT AND BALL..TABLE TENNIS PADDLE AND BALL
+      [0x1F3E0, 0x1F3F0], //   # So    [17] HOUSE BUILDING..EUROPEAN CASTLE
+      [0x1F3F4],          //   # So         WAVING BLACK FLAG
+      [0x1F3F8, 0x1F3FA], //   # So     [3] BADMINTON RACQUET AND SHUTTLECOCK..AMPHORA
+      [0x1F3FB, 0x1F3FF], //   # Sk     [5] EMOJI MODIFIER FITZPATRICK TYPE-1-2..EMOJI MODIFIER FITZPATRICK TYPE-6
+      [0x1F400, 0x1F43E], //   # So    [63] RAT..PAW PRINTS
+      [0x1F440],          //   # So         EYES
+      [0x1F442, 0x1F4FC], //   # So   [187] EAR..VIDEOCASSETTE
+      [0x1F4FF, 0x1F53D], //   # So    [63] PRAYER BEADS..DOWN-POINTING SMALL RED TRIANGLE
+      [0x1F54B, 0x1F54E], //   # So     [4] KAABA..MENORAH WITH NINE BRANCHES
+      [0x1F550, 0x1F567], //   # So    [24] CLOCK FACE ONE OCLOCK..CLOCK FACE TWELVE-THIRTY
+      [0x1F57A],          //   # So         MAN DANCING
+      [0x1F595, 0x1F596], //   # So     [2] REVERSED HAND WITH MIDDLE FINGER EXTENDED..RAISED HAND WITH PART BETWEEN MIDDLE AND RING FINGERS
+      [0x1F5A4],          //   # So         BLACK HEART
+      [0x1F5FB, 0x1F5FF], //   # So     [5] MOUNT FUJI..MOYAI
+      [0x1F600, 0x1F64F], //   # So    [80] GRINNING FACE..PERSON WITH FOLDED HANDS
+      [0x1F680, 0x1F6C5], //   # So    [70] ROCKET..LEFT LUGGAGE
+      [0x1F6CC],          //   # So         SLEEPING ACCOMMODATION
+      [0x1F6D0, 0x1F6D2], //   # So     [3] PLACE OF WORSHIP..SHOPPING TROLLEY
+      [0x1F6EB, 0x1F6EC], //   # So     [2] AIRPLANE DEPARTURE..AIRPLANE ARRIVING
+      [0x1F6F4, 0x1F6F9], //   # So     [6] SCOOTER..SKATEBOARD
+      [0x1F910, 0x1F93E], //   # So    [47] ZIPPER-MOUTH FACE..HANDBALL
+      [0x1F940, 0x1F970], //   # So    [49] WILTED FLOWER..SMILING FACE WITH SMILING EYES AND THREE HEARTS
+      [0x1F973, 0x1F976], //   # So     [4] FACE WITH PARTY HORN AND PARTY HAT..FREEZING FACE
+      [0x1F97A],          //   # So         FACE WITH PLEADING EYES
+      [0x1F97C, 0x1F9A2], //   # So    [39] LAB COAT..SWAN
+      [0x1F9B0, 0x1F9B9], //   # So    [10] EMOJI COMPONENT RED HAIR..SUPERVILLAIN
+      [0x1F9C0, 0x1F9C2], //   # So     [3] CHEESE WEDGE..SALT SHAKER
+      [0x1F9D0, 0x1F9FF], //   # So    [48] FACE WITH MONOCLE..NAZAR AMULET
+      [0x20000, 0x2A6D6], //   # Lo [42711] CJK UNIFIED IDEOGRAPH-20000..CJK UNIFIED IDEOGRAPH-2A6D6
+      [0x2A6D7, 0x2A6FF], //   # Cn    [41] <reserved-2A6D7>..<reserved-2A6FF>
+      [0x2A700, 0x2B734], //   # Lo  [4149] CJK UNIFIED IDEOGRAPH-2A700..CJK UNIFIED IDEOGRAPH-2B734
+      [0x2B735, 0x2B73F], //   # Cn    [11] <reserved-2B735>..<reserved-2B73F>
+      [0x2B740, 0x2B81D], //   # Lo   [222] CJK UNIFIED IDEOGRAPH-2B740..CJK UNIFIED IDEOGRAPH-2B81D
+      [0x2B81E, 0x2B81F], //   # Cn     [2] <reserved-2B81E>..<reserved-2B81F>
+      [0x2B820, 0x2CEA1], //   # Lo  [5762] CJK UNIFIED IDEOGRAPH-2B820..CJK UNIFIED IDEOGRAPH-2CEA1
+      [0x2CEA2, 0x2CEAF], //   # Cn    [14] <reserved-2CEA2>..<reserved-2CEAF>
+      [0x2CEB0, 0x2EBE0], //   # Lo  [7473] CJK UNIFIED IDEOGRAPH-2CEB0..CJK UNIFIED IDEOGRAPH-2EBE0
+      [0x2EBE1, 0x2F7FF], //   # Cn  [3103] <reserved-2EBE1>..<reserved-2F7FF>
+      [0x2F800, 0x2FA1D], //   # Lo   [542] CJK COMPATIBILITY IDEOGRAPH-2F800..CJK COMPATIBILITY IDEOGRAPH-2FA1D
+      [0x2FA1E, 0x2FA1F], //   # Cn     [2] <reserved-2FA1E>..<reserved-2FA1F>
+      [0x2FA20, 0x2FFFD], //   # Cn  [1502] <reserved-2FA20>..<reserved-2FFFD>
+      [0x30000, 0x3FFFD]  //   # Cn [65534] <reserved-30000>..<reserved-3FFFD>
     ];
     // binary search
     function bisearch(ucs: number, data: number[][]): boolean {
@@ -114,6 +180,11 @@ export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: nu
       if (bisearch(ucs, COMBINING_HIGH)) {
         return 0;
       }
+
+      if (bisearch(ucs, WIDE_HIGH)) {
+        return 2;
+      }
+
       if ((ucs >= 0x20000 && ucs <= 0x2fffd) || (ucs >= 0x30000 && ucs <= 0x3fffd)) {
         return 2;
       }
@@ -161,6 +232,7 @@ export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: nu
       if (num < 127) {
         return 1;
       }
+      if (num === 0x1F600) return 2;
       const t = table || initTable();
       if (num < 65536) {
         return t[num >> 4] >> ((num & 15) << 1) & 3;

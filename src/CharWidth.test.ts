@@ -75,5 +75,12 @@ describe('getStringCellWidth', function(): void {
     assert.equal(input, s);
     assert.equal(getStringCellWidth(s), sumWidths(terminal.buffer, 0, 1, '#'));
   });
+  it('wide emojis', function(): void {
+    const input = '😀😀';
+    terminal.writeSync(input);
+    const s = terminal.buffer.iterator(true).next().content;
+    assert.equal(input, s);
+    assert.equal(getStringCellWidth(s), 4);
+  });
   // TODO: multiline tests once #1685 is resolved
 });
