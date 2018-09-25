@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-export const wcwidth = (function(opts: {nul: number, control: number, legacy: boolean}): (ucs: number) => number {
+const wcwidthWithOptions = (function(opts: {nul: number, control: number, legacy: boolean}): (ucs: number) => number {
     // This table was generated using https://github.com/jquast/wcwidth/blob/master/setup.py
     // Must be kept up to date with https://www.unicode.org/Public/UNIDATA/EastAsianWidth.txt
     // Generated: 2018-09-24T16:45:44.483077
@@ -612,7 +612,11 @@ export const wcwidth = (function(opts: {nul: number, control: number, legacy: bo
       // do a full search for high codepoints
       return wcwidthHigh(num);
     };
-})({nul: 0, control: 0, legacy: false});  // configurable options
+});
+
+export const wcwidth = wcwidthWithOptions({nul: 0, control: 0, legacy: false}); // Unicode v11
+
+export const wcwidthLegacy = wcwidthWithOptions({nul: 0, control: 0, legacy: true}); // Unicode v5.2
 
 /**
  * Get the terminal cell width for a string.
