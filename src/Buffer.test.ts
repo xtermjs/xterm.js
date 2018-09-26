@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { assert } from 'chai';
+import { assert, expect } from 'chai';
 import { ITerminal } from './Types';
 import { Buffer, DEFAULT_ATTR, CHAR_DATA_CHAR_INDEX } from './Buffer';
 import { CircularList } from './common/CircularList';
@@ -512,6 +512,37 @@ describe('Buffer', () => {
         const j = (i - 0) << 1;
         assert.deepEqual([(j / terminal.cols) | 0, j % terminal.cols], bufferIndex);
       }
+    });
+  });
+  describe('BufferStringIterator', function(): void {
+    it('iterator does not ovrflow buffer limits', function(): void {
+      const terminal = new TestTerminal({rows: 5, cols: 10, scrollback: 5});
+      const data = [
+        'aaaaaaaaaa',
+        'aaaaaaaaa\n',
+        'aaaaaaaaaa',
+        'aaaaaaaaa\n',
+        'aaaaaaaaaa',
+        'aaaaaaaaaa',
+        'aaaaaaaaaa',
+        'aaaaaaaaa\n',
+        'aaaaaaaaaa',
+        'aaaaaaaaaa'
+      ];
+      terminal.writeSync(data.join(''));
+      // brute force test with insane values
+      expect(() => {
+        for (let overscan = 0; overscan < 20; ++overscan) {
+          for (let start = -10; start < 20; ++start) {
+            for (let end = -10; end < 20; ++end) {
+              const it = terminal.buffer.iterator(false, start, end, overscan, overscan);
+              while (it.hasNext()) {
+                it.next();
+              }
+            }
+          }
+        }
+      }).to.not.throw();
     });
   });
 });
