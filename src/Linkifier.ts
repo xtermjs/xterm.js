@@ -104,7 +104,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     // _doLinkifyRow gets full unwrapped lines with the start row as buffer offset
     // for every matcher.
     // The unwrapping is needed to also match content that got wrapped across
-    // several buffer lines. To avoid a worst case szenario where the whole buffer
+    // several buffer lines. To avoid a worst case scenario where the whole buffer
     // contains just a single unwrapped string we limit this line expansion beyond
     // the viewport to +OVERSCAN_CHAR_LIMIT chars (overscan) at top and bottom.
     // This comes with the tradeoff that matches longer than OVERSCAN_CHAR_LIMIT
