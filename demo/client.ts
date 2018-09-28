@@ -208,7 +208,8 @@ function initOptions(term: TerminalType): void {
     fontFamily: null,
     fontWeight: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
-    rendererType: ['dom', 'canvas']
+    rendererType: ['dom', 'canvas'],
+    unicodeVersion: (term as any)._core.unicodeProvider.registeredVersions()
   };
   const options = Object.keys((<any>term)._core.options);
   const booleanOptions = [];
@@ -219,7 +220,9 @@ function initOptions(term: TerminalType): void {
         booleanOptions.push(o);
         break;
       case 'number':
-        numberOptions.push(o);
+        if (o !== 'unicodeVersion') {
+          numberOptions.push(o);
+        }
         break;
       default:
         if (Object.keys(stringOptions).indexOf(o) === -1) {

@@ -487,7 +487,7 @@ describe('Buffer', () => {
     });
 
     it('fullwidth combining with emoji - match emoji cell', () => {
-      const input = 'Lots of ￥\u0301 make me 😃.';
+      const input = 'Lots of ￥\u0301 make me very 😃.';
       terminal.writeSync(input);
       const s = terminal.buffer.iterator(true).next().content;
       assert.equal(input, s);

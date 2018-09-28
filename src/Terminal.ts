@@ -53,6 +53,7 @@ import { IKeyboardEvent } from './common/Types';
 import { evaluateKeyboardEvent } from './core/input/Keyboard';
 import { KeyboardResultType, ICharset } from './core/Types';
 import { BufferLine } from './BufferLine';
+import { UnicodeProvider } from './UnicodeProvider';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -106,7 +107,8 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   tabStopWidth: 8,
   theme: null,
   rightClickSelectsWord: Browser.isMac,
-  rendererType: 'canvas'
+  rendererType: 'canvas',
+  unicodeVersion: 11
 };
 
 export class Terminal extends EventEmitter implements ITerminal, IDisposable, IInputHandlingTerminal {
@@ -194,6 +196,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   private _userScrolling: boolean;
 
   private _inputHandler: InputHandler;
+  public unicodeProvider: UnicodeProvider;
   public soundManager: SoundManager;
   public renderer: IRenderer;
   public selectionManager: SelectionManager;
@@ -300,6 +303,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // this._writeStopped = false;
     this._userScrolling = false;
 
+    this.unicodeProvider = new UnicodeProvider();
     this._inputHandler = new InputHandler(this);
     this.register(this._inputHandler);
     // Reuse renderer if the Terminal is being recreated via a reset call.
@@ -493,6 +497,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         }
         break;
       case 'tabStopWidth': this.buffers.setupTabStops(); break;
+      case 'unicodeVersion': this.unicodeProvider.setActiveVersion(parseFloat(value)); break;
     }
     // Inform renderer of changes
     if (this.renderer) {

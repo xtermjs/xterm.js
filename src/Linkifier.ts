@@ -8,7 +8,6 @@ import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes,
 import { MouseZone } from './ui/MouseZoneManager';
 import { EventEmitter } from './common/EventEmitter';
 import { CHAR_DATA_ATTR_INDEX } from './Buffer';
-import { getStringCellWidth } from './CharWidth';
 
 /**
  * The Linkifier applies links to rows shortly after they have been refreshed.
@@ -256,7 +255,10 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @param fg The link color for hover event.
    */
   private _addLink(x: number, y: number, uri: string, matcher: ILinkMatcher, fg: number): void {
-    const width = getStringCellWidth(uri);
+    // FIXME: to make runtime changes of the unicode version possible
+    //        this may not rely on getStringCellWidth anymore
+    //        instead sum widths saved in the buffer
+    const width = (this._terminal as any).unicodeProvider.getStringCellWidth(uri);
     const x1 = x % this._terminal.cols;
     const y1 = y + Math.floor(x / this._terminal.cols);
     let x2 = (x1 + width) % this._terminal.cols;

@@ -87,6 +87,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   handleTitle(title: string): void;
   index(): void;
   reverseIndex(): void;
+  unicodeProvider: IUnicodeProvider;
 }
 
 export interface IViewport extends IDisposable {
@@ -522,4 +523,21 @@ export interface IBufferLine {
   insertCells(pos: number, n: number, ch: CharData): void;
   deleteCells(pos: number, n: number, fill: CharData): void;
   replaceCells(start: number, end: number, fill: CharData): void;
+}
+
+/**
+ * Interface for unicode version implementations.
+ */
+export interface IUnicodeImplementation {
+  version: number;
+  wcwidth(ucs: number): number;
+}
+
+export interface IUnicodeProvider {
+  onRegister(callback: (version: number, provider: IUnicodeProvider) => void): void;
+  registeredVersions(): number[];
+  getActiveVersion(): number;
+  setActiveVersion(version: number, mode?: 'exact' | 'closest' | 'next' | 'previous'): number;
+  wcwidth(ucs: number): number;
+  getStringCellWidth(s: string): number;
 }

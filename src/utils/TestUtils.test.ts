@@ -4,12 +4,13 @@
  */
 
 import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../renderer/Types';
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferLine, IBufferStringIterator } from '../Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferLine, IBufferStringIterator, IUnicodeProvider } from '../Types';
 import { ICircularList, XtermListener } from '../common/Types';
 import { Buffer } from '../Buffer';
 import * as Browser from '../shared/utils/Browser';
 import { ITheme, IDisposable, IMarker } from 'xterm';
 import { Terminal } from '../Terminal';
+import { UnicodeProvider } from '../UnicodeProvider';
 
 export class TestTerminal extends Terminal {
   writeSync(data: string): void {
@@ -156,6 +157,7 @@ export class MockTerminal implements ITerminal {
   }
   registerCharacterJoiner(handler: CharacterJoinerHandler): number { return 0; }
   deregisterCharacterJoiner(joinerId: number): void { }
+  unicodeProvider: IUnicodeProvider = new UnicodeProvider();
 }
 
 export class MockCharMeasure implements ICharMeasure {
@@ -197,6 +199,7 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   buffer: IBuffer = new MockBuffer();
   viewport: IViewport;
   selectionManager: ISelectionManager;
+  unicodeProvider: IUnicodeProvider;
   focus(): void {
     throw new Error('Method not implemented.');
   }
