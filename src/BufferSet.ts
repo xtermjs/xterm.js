@@ -61,6 +61,8 @@ export class BufferSet extends EventEmitter implements IBufferSet {
     if (this._activeBuffer === this._normal) {
       return;
     }
+    this._normal.x = this._alt.x;
+    this._normal.y = this._alt.y;
     // The alt buffer should always be cleared when we switch to the normal
     // buffer. This frees up memory since the alt buffer should always be new
     // when activated.
@@ -82,6 +84,8 @@ export class BufferSet extends EventEmitter implements IBufferSet {
     // Since the alt buffer is always cleared when the normal buffer is
     // activated, we want to fill it when switching to it.
     this._alt.fillViewportRows();
+    this._alt.x = this._normal.x;
+    this._alt.y = this._normal.y;
     this._activeBuffer = this._alt;
     this.emit('activate', {
       activeBuffer: this._alt,

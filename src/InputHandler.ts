@@ -1280,7 +1280,9 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 66:
           this._terminal.log('Serial port requested application keypad.');
           this._terminal.applicationKeypad = true;
-          this._terminal.viewport.syncScrollArea();
+          if (this._terminal.viewport) {
+            this._terminal.viewport.syncScrollArea();
+          }
           break;
         case 9: // X10 Mouse
           // no release, no motion, no wheel, no modifiers.
@@ -1329,14 +1331,19 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 25: // show cursor
           this._terminal.cursorHidden = false;
           break;
+        case 1048: // alt screen cursor
+          this.saveCursor(params);
+          break;
         case 1049: // alt screen buffer cursor
-          // TODO: Not sure if we need to save/restore after switching the buffer
-          // this.saveCursor(params);
+          this.saveCursor(params);
           // FALL-THROUGH
         case 47: // alt screen buffer
         case 1047: // alt screen buffer
           this._terminal.buffers.activateAltBuffer();
-          this._terminal.viewport.syncScrollArea();
+          this._terminal.refresh(0, this._terminal.rows - 1);
+          if (this._terminal.viewport) {
+            this._terminal.viewport.syncScrollArea();
+          }
           this._terminal.showCursor();
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
@@ -1469,7 +1476,9 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 66:
           this._terminal.log('Switching back to normal keypad.');
           this._terminal.applicationKeypad = false;
-          this._terminal.viewport.syncScrollArea();
+          if (this._terminal.viewport) {
+            this._terminal.viewport.syncScrollArea();
+          }
           break;
         case 9: // X10 Mouse
         case 1000: // vt200 mouse
@@ -1497,18 +1506,22 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 25: // hide cursor
           this._terminal.cursorHidden = true;
           break;
+        case 1048: // alt screen cursor
+          this.restoreCursor(params);
+          break;
         case 1049: // alt screen buffer cursor
            // FALL-THROUGH
         case 47: // normal screen buffer
         case 1047: // normal screen buffer - clearing it first
           // Ensure the selection manager has the correct buffer
           this._terminal.buffers.activateNormalBuffer();
-          // TODO: Not sure if we need to save/restore after switching the buffer
-          // if (params[0] === 1049) {
-          //   this.restoreCursor(params);
-          // }
+          if (params[0] === 1049) {
+            this.restoreCursor(params);
+          }
           this._terminal.refresh(0, this._terminal.rows - 1);
-          this._terminal.viewport.syncScrollArea();
+          if (this._terminal.viewport) {
+            this._terminal.viewport.syncScrollArea();
+          }
           this._terminal.showCursor();
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
@@ -1787,7 +1800,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._terminal.originMode = false;
       this._terminal.wraparoundMode = true;  // defaults: xterm - true, vt100 - false
       this._terminal.applicationKeypad = false; // ?
-      this._terminal.viewport.syncScrollArea();
+      if (this._terminal.viewport) {
+        this._terminal.viewport.syncScrollArea();
+      }
       this._terminal.applicationCursor = false;
       this._terminal.buffer.scrollTop = 0;
       this._terminal.buffer.scrollBottom = this._terminal.rows - 1;
