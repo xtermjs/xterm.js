@@ -32,7 +32,7 @@ export class MouseHelper {
       y += element.scrollTop;
       element = <HTMLElement>element.parentElement;
     }
-    return [x, y];
+    return [x, y + 1];
   }
 
   /**
@@ -59,8 +59,8 @@ export class MouseHelper {
       return null;
     }
 
-    coords[0] = Math.ceil((coords[0] + (isSelection ? this._renderer.dimensions.actualCellWidth / 2 : 0)) / this._renderer.dimensions.actualCellWidth);
-    coords[1] = Math.ceil(coords[1] / this._renderer.dimensions.actualCellHeight);
+    coords[0] = Math.floor((coords[0] + (isSelection ? this._renderer.dimensions.actualCellWidth / 2 : 0)) / this._renderer.dimensions.actualCellWidth) + 1;
+    coords[1] = Math.floor(coords[1] / this._renderer.dimensions.actualCellHeight) + 1;
 
     // Ensure coordinates are within the terminal viewport. Note that selections
     // need an addition point of precision to cover the end point (as characters
