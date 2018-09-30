@@ -38,6 +38,7 @@ export class Buffer implements IBuffer {
   public tabs: any;
   public savedY: number;
   public savedX: number;
+  public savedCurAttr: number;
   public markers: Marker[] = [];
   private _bufferLineConstructor: IBufferLineConstructor;
 

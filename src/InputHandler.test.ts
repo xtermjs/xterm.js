@@ -551,5 +551,15 @@ describe('InputHandler', () => {
       // Text color of 'TEST' should be default
       expect(term.buffer.lines.get(0).get(0)[CHAR_DATA_ATTR_INDEX]).to.equal(DEFAULT_ATTR);
     });
+    it('should handle DECSET/DECRST 1049 - maintains saved cursor for alt buffer', () => {
+      handler.parse('\x1b[?1049h\r\n\x1b[31m\x1b[s\x1b[?1049lTEST');
+      expect(lineContent(term.buffer.lines.get(0))).to.equal('TEST' + Array(term.cols - 3).join(' '));
+      // Text color of 'TEST' should be default
+      expect(term.buffer.lines.get(0).get(0)[CHAR_DATA_ATTR_INDEX]).to.equal(DEFAULT_ATTR);
+      handler.parse('\x1b[?1049h\x1b[uTEST');
+      expect(lineContent(term.buffer.lines.get(1))).to.equal('TEST' + Array(term.cols - 3).join(' '));
+      // Text color of 'TEST' should be red
+      expect((term.buffer.lines.get(1).get(0)[CHAR_DATA_ATTR_INDEX] >> 9) & 0x1ff).to.equal(1);
+    });
   });
 });
