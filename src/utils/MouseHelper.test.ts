@@ -49,13 +49,14 @@ describe('MouseHelper.getCoords', () => {
 
   it('should return the cell that was clicked', () => {
     let coords: [number, number];
-    coords = mouseHelper.getCoords({ pageX: CHAR_WIDTH / 2, pageY: CHAR_HEIGHT / 2 }, document.createElement('div'), charMeasure, 1, 10, 10);
+    const element = document.createElement('div');
+    coords = mouseHelper.getCoords({ pageX: CHAR_WIDTH / 2, pageY: CHAR_HEIGHT / 2 }, element, charMeasure, 1, 10, 10);
     assert.deepEqual(coords, [1, 1]);
-    coords = mouseHelper.getCoords({ pageX: CHAR_WIDTH, pageY: CHAR_HEIGHT }, document.createElement('div'), charMeasure, 1, 10, 10);
+    coords = mouseHelper.getCoords({ pageX: CHAR_WIDTH - 1, pageY: CHAR_HEIGHT - 1 }, element, charMeasure, 1, 10, 10);
     assert.deepEqual(coords, [1, 1]);
-    coords = mouseHelper.getCoords({ pageX: CHAR_WIDTH, pageY: CHAR_HEIGHT + 1 }, document.createElement('div'), charMeasure, 1, 10, 10);
+    coords = mouseHelper.getCoords({ pageX: CHAR_WIDTH - 1, pageY: CHAR_HEIGHT }, element, charMeasure, 1, 10, 10);
     assert.deepEqual(coords, [1, 2]);
-    coords = mouseHelper.getCoords({ pageX: CHAR_WIDTH + 1, pageY: CHAR_HEIGHT }, document.createElement('div'), charMeasure, 1, 10, 10);
+    coords = mouseHelper.getCoords({ pageX: CHAR_WIDTH, pageY: CHAR_HEIGHT - 1 }, element, charMeasure, 1, 10, 10);
     assert.deepEqual(coords, [2, 1]);
   });
 
