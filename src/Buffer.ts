@@ -371,8 +371,8 @@ export class Buffer implements IBuffer {
     this.markers.splice(this.markers.indexOf(marker), 1);
   }
 
-  public iterator(trimRight: boolean, startIndex?: number, endIndex?: number): IBufferStringIterator {
-    return new BufferStringIterator(this, trimRight, startIndex, endIndex);
+  public iterator(trimRight: boolean, startIndex?: number, endIndex?: number, startOverscan?: number, endOverscan?: number): IBufferStringIterator {
+    return new BufferStringIterator(this, trimRight, startIndex, endIndex, startOverscan, endOverscan);
   }
 }
 
@@ -401,6 +401,18 @@ export class Marker extends EventEmitter implements IMarker {
   }
 }
 
+/**
+ * Iterator to get unwrapped content strings from the buffer.
+ * The iterator returns at least the string data between the borders
+ * `startIndex` and `endIndex` (exclusive) and will expand the lines
+ * by `startOverscan` to the top and by `endOverscan` to the bottom,
+ * if no new line was found in between.
+ * It will never read/return string data beyond `startIndex - startOverscan`
+ * or `endIndex + endOverscan`. Therefore the first and last line might be truncated.
+ * It is possible to always get the full string for the first and last line as well
+ * by setting the overscan values to the actual buffer length. This not recommended
+ * since it might return the whole buffer within a single string in a worst case scenario.
+ */
 export class BufferStringIterator implements IBufferStringIterator {
   private _current: number;
 
@@ -408,8 +420,16 @@ export class BufferStringIterator implements IBufferStringIterator {
     private _buffer: IBuffer,
     private _trimRight: boolean,
     private _startIndex: number = 0,
-    private _endIndex: number = _buffer.lines.length
+    private _endIndex: number = _buffer.lines.length,
+    private _startOverscan: number = 0,
+    private _endOverscan: number = 0
   ) {
+    if (this._startIndex < 0) {
+      this._startIndex = 0;
+    }
+    if (this._endIndex > this._buffer.lines.length) {
+      this._endIndex = this._buffer.lines.length;
+    }
     this._current = this._startIndex;
   }
 
@@ -419,6 +439,16 @@ export class BufferStringIterator implements IBufferStringIterator {
 
   public next(): IBufferStringIteratorResult {
     const range = this._buffer.getWrappedRangeForLine(this._current);
+    // limit search window to overscan value at both borders
+    if (range.first < this._startIndex - this._startOverscan) {
+      range.first = this._startIndex - this._startOverscan;
+    }
+    if (range.last > this._endIndex + this._endOverscan) {
+      range.last = this._endIndex + this._endOverscan;
+    }
+    // limit to current buffer length
+    range.first = Math.max(range.first, 0);
+    range.last = Math.min(range.last, this._buffer.lines.length);
     let result = '';
     for (let i = range.first; i <= range.last; ++i) {
       // TODO: always apply trimRight after fixing #1685
