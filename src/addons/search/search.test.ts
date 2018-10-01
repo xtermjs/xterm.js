@@ -82,6 +82,9 @@ describe('search addon', () => {
       expect(hello3).eql(undefined);
       expect(llo).eql(undefined);
       expect(goodbye).eql({col: 0, row: 5, term: 'goodbye'});
+      term.core.resize(9, 5);
+      const hello0Resize = term.searchHelper.findInLine('Hello', 0);
+      expect(hello0Resize).eql({col: 8, row: 0, term: 'Hello'});
     });
     it('should respect search regex', () => {
       search.apply(<any>MockTerminal);

@@ -731,6 +731,21 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
+   * Helper method to reset cells in a terminal row.
+   * The cell gets replaced with the eraseChar of the terminal and the isWrapped property is set to false.
+   * @param y row index
+   */
+  private _resetBufferLine(y: number): void {
+    const line = this._terminal.buffer.lines.get(this._terminal.buffer.ybase + y);
+    line.replaceCells(
+      0,
+      this._terminal.cols,
+      [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
+    );
+    line.isWrapped = false;
+  }
+
+  /**
    * CSI Ps J  Erase in Display (ED).
    *     Ps = 0  -> Erase Below (default).
    *     Ps = 1  -> Erase Above.
@@ -750,7 +765,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._terminal.updateRange(j);
         this._eraseInBufferLine(j++, this._terminal.buffer.x, this._terminal.cols);
         for (; j < this._terminal.rows; j++) {
-          this._eraseInBufferLine(j, 0, this._terminal.cols);
+          this._resetBufferLine(j);
         }
         this._terminal.updateRange(j);
         break;
@@ -759,7 +774,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._terminal.updateRange(j);
         this._eraseInBufferLine(j, 0, this._terminal.buffer.x + 1);
         while (j--) {
-          this._eraseInBufferLine(j, 0, this._terminal.cols);
+          this._resetBufferLine(j);
         }
         this._terminal.updateRange(0);
         break;
@@ -767,7 +782,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         j = this._terminal.rows;
         this._terminal.updateRange(j - 1);
         while (j--) {
-          this._eraseInBufferLine(j, 0, this._terminal.cols);
+          this._resetBufferLine(j);
         }
         this._terminal.updateRange(0);
         break;
