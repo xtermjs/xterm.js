@@ -77,13 +77,13 @@ export class BufferSet extends EventEmitter implements IBufferSet {
   /**
    * Sets the alt Buffer of the BufferSet as its currently active Buffer
    */
-  public activateAltBuffer(): void {
+  public activateAltBuffer(fillAttr?: number): void {
     if (this._activeBuffer === this._alt) {
       return;
     }
     // Since the alt buffer is always cleared when the normal buffer is
     // activated, we want to fill it when switching to it.
-    this._alt.fillViewportRows();
+    this._alt.fillViewportRows(fillAttr);
     this._alt.x = this._normal.x;
     this._alt.y = this._normal.y;
     this._activeBuffer = this._alt;

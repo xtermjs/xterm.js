@@ -114,11 +114,14 @@ export class Buffer implements IBuffer {
   /**
    * Fills the buffer's viewport with blank lines.
    */
-  public fillViewportRows(): void {
+  public fillViewportRows(fillAttr?: number): void {
     if (this.lines.length === 0) {
+      if (fillAttr === undefined) {
+        fillAttr = DEFAULT_ATTR;
+      }
       let i = this._terminal.rows;
       while (i--) {
-        this.lines.push(this.getBlankLine(DEFAULT_ATTR));
+        this.lines.push(this.getBlankLine(fillAttr));
       }
     }
   }

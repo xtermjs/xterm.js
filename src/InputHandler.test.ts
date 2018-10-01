@@ -561,5 +561,10 @@ describe('InputHandler', () => {
       // Text color of 'TEST' should be red
       expect((term.buffer.lines.get(1).get(0)[CHAR_DATA_ATTR_INDEX] >> 9) & 0x1ff).to.equal(1);
     });
+    it('should handle DECSET/DECRST 1049 - clears alt buffer with erase attributes', () => {
+      handler.parse('\x1b[42m\x1b[?1049h');
+      // Buffer should be filled with green background
+      expect(term.buffer.lines.get(20).get(10)[CHAR_DATA_ATTR_INDEX] & 0x1ff).to.equal(2);
+    });
   });
 });

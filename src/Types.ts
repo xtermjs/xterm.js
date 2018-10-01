@@ -306,7 +306,7 @@ export interface IBufferSet extends IEventEmitter {
   active: IBuffer;
 
   activateNormalBuffer(): void;
-  activateAltBuffer(): void;
+  activateAltBuffer(fillAttr?: number): void;
 }
 
 export interface ISelectionManager {

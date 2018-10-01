@@ -1339,7 +1339,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           // FALL-THROUGH
         case 47: // alt screen buffer
         case 1047: // alt screen buffer
-          this._terminal.buffers.activateAltBuffer();
+          this._terminal.buffers.activateAltBuffer(this._terminal.eraseAttr());
           this._terminal.refresh(0, this._terminal.rows - 1);
           if (this._terminal.viewport) {
             this._terminal.viewport.syncScrollArea();
