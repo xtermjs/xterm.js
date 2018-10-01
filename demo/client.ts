@@ -149,7 +149,6 @@ function runRealTerminal(): void {
   term._initialized = true;
 }
 
-// TODO: Maybe fake terminal should be removed? Not sure it's useful anymore
 function runFakeTerminal(): void {
   if (term._initialized) {
     return;
