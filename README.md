@@ -1,9 +1,24 @@
-# [![xterm.js logo](logo-full.png)](https://xtermjs.org)
+<h1 align="center">
+	<a href="https://xtermjs.org">
+		<img src="logo-full.png" alt="xterm.js logo">
+	</a>
+</h1>
+	
+<p align="center">
+	<a href="https://dev.azure.com/xtermjs/xterm.js/_build/latest?definitionId=3">
+		<img src="https://dev.azure.com/xtermjs/xterm.js/_apis/build/status/xtermjs.xterm.js" alt="Build Status">
+	</a>
+	<a href="https://coveralls.io/github/xtermjs/xterm.js?branch=master">
+		<img src="https://coveralls.io/repos/github/xtermjs/xterm.js/badge.svg?branch=master" alt="Coverage Status">
+	</a>
+	<a href="https://gitter.im/sourcelair/xterm.js?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge">
+		<img src="https://badges.gitter.im/sourcelair/xterm.js.svg" alt="Gitter">
+	</a>
+	<a href="https://www.jsdelivr.com/package/npm/xterm">
+		<img src="https://data.jsdelivr.com/v1/package/npm/xterm/badge?style=rounded" alt="jsDelivr Hits">
+	</a>
+</p>
 
-[![Build Status](https://dev.azure.com/xtermjs/xterm.js/_apis/build/status/xtermjs.xterm.js)](https://dev.azure.com/xtermjs/xterm.js/_build/latest?definitionId=3)
-[![Coverage Status](https://coveralls.io/repos/github/xtermjs/xterm.js/badge.svg?branch=master)](https://coveralls.io/github/xtermjs/xterm.js?branch=master)
-[![Gitter](https://badges.gitter.im/sourcelair/xterm.js.svg)](https://gitter.im/sourcelair/xterm.js?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
-[![jsDelivr Hits](https://data.jsdelivr.com/v1/package/npm/xterm/badge?style=rounded)](https://www.jsdelivr.com/package/npm/xterm)
 
 Xterm.js is a terminal front-end component written in JavaScript that works in the browser.
 
