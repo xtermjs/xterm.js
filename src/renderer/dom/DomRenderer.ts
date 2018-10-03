@@ -148,7 +148,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
         ` color: ${this.colorManager.colors.foreground.css};` +
         ` background-color: ${this.colorManager.colors.background.css};` +
         ` font-family: ${this._terminal.getOption('fontFamily')};` +
-        ` font-size: ${this._terminal.getOption('fontSize')}px;` +
+        ` font-size: ${this._terminal.getOption('fontSize')}pt;` +
         `}`;
     // Text styles
     styles +=

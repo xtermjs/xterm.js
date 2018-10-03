@@ -39,7 +39,7 @@ export class CharMeasure extends EventEmitter implements ICharMeasure {
 
   public measure(options: ITerminalOptions): void {
   this._measureElement.style.fontFamily = options.fontFamily;
-    this._measureElement.style.fontSize = `${options.fontSize}px`;
+    this._measureElement.style.fontSize = `${options.fontSize}pt`;
     const geometry = this._measureElement.getBoundingClientRect();
     // The element is likely currently display:none, we should retain the
     // previous value.

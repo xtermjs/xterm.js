@@ -139,5 +139,5 @@ export function clearColor(imageData: ImageData, color: IColor): boolean {
 }
 
 function getFont(fontWeight: FontWeight, config: ICharAtlasConfig): string {
-  return `${fontWeight} ${config.fontSize * config.devicePixelRatio}px ${config.fontFamily}`;
+  return `${fontWeight} ${config.fontSize * config.devicePixelRatio}pt ${config.fontFamily}`;
 }
