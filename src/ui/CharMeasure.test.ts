@@ -21,7 +21,7 @@ describe('CharMeasure', () => {
     document = window.document;
     container = document.createElement('div');
     document.body.appendChild(container);
-    charMeasure = new CharMeasure(document, container);
+    charMeasure = new CharMeasure(document, container, container);
   });
 
   describe('measure', () => {

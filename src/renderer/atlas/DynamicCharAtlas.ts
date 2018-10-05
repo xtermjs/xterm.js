@@ -244,8 +244,15 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     // draw the foreground/glyph
     const fontWeight = glyph.bold ? this._config.fontWeightBold : this._config.fontWeight;
     const fontStyle = glyph.italic ? 'italic' : '';
-    this._tmpCtx.font =
-      `${fontStyle} ${fontWeight} ${this._config.fontSize * this._config.devicePixelRatio}pt ${this._config.fontFamily}`;
+
+    if (typeof this._config.fontSize === 'string') {
+      this._tmpCtx.font =
+        `${fontStyle} ${fontWeight} ${this._config.fontSize} ${this._config.fontFamily}`;
+    } else {
+      this._tmpCtx.font =
+        `${fontStyle} ${fontWeight} ${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
+    }
+
     this._tmpCtx.textBaseline = 'top';
 
     this._tmpCtx.fillStyle = this._getForegroundColor(glyph).css;

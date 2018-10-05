@@ -341,7 +341,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     const fontWeight = isBold ? terminal.options.fontWeightBold : terminal.options.fontWeight;
     const fontStyle = isItalic ? 'italic' : '';
 
-    return `${fontStyle} ${fontWeight} ${terminal.options.fontSize * window.devicePixelRatio}pt ${terminal.options.fontFamily}`;
+    if (terminal.options.fontSize === null) {
+      return `${fontStyle} ${fontWeight} ${terminal.element.style.fontSize} ${terminal.options.fontFamily}`;
+    } else {
+      return `${fontStyle} ${fontWeight} ${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
+    }
   }
 }
 

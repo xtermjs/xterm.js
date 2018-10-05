@@ -102,7 +102,7 @@ declare module 'xterm' {
     /**
      * The font size used to render text.
      */
-    fontSize?: number;
+    fontSize?: number | null;
 
     /**
      * The font family used to render text.
@@ -631,12 +631,17 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'cols' | 'fontSize' | 'letterSpacing' | 'lineHeight' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
+    getOption(key: 'cols' | 'letterSpacing' | 'lineHeight' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
     getOption(key: 'handler'): (data: string) => void;
+    /**
+     * Retrieves an option's value from the terminal.
+     * @param key The option key.
+     */
+    getOption(key: 'fontSize'): number | null;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
@@ -684,7 +689,13 @@ declare module 'xterm' {
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: 'fontSize' | 'letterSpacing' | 'lineHeight' | 'tabStopWidth' | 'scrollback', value: number): void;
+    setOption(key: 'letterSpacing' | 'lineHeight' | 'tabStopWidth' | 'scrollback', value: number): void;
+    /**
+     * Sets an option on the terminal.
+     * @param key The option key.
+     * @param value The option value.
+     */
+    setOption(key: 'fontSize', value: number | null): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.

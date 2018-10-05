@@ -15,10 +15,11 @@ export class CharMeasure extends EventEmitter implements ICharMeasure {
   private _document: Document;
   private _parentElement: HTMLElement;
   private _measureElement: HTMLElement;
+  private _containerElement: HTMLElement;
   private _width: number;
   private _height: number;
 
-  constructor(document: Document, parentElement: HTMLElement) {
+  constructor(document: Document, parentElement: HTMLElement, containerElement: HTMLElement) {
     super();
     this._document = document;
     this._parentElement = parentElement;
@@ -27,6 +28,7 @@ export class CharMeasure extends EventEmitter implements ICharMeasure {
     this._measureElement.textContent = 'W';
     this._measureElement.setAttribute('aria-hidden', 'true');
     this._parentElement.appendChild(this._measureElement);
+    this._containerElement = containerElement;
   }
 
   public get width(): number {
@@ -39,7 +41,11 @@ export class CharMeasure extends EventEmitter implements ICharMeasure {
 
   public measure(options: ITerminalOptions): void {
   this._measureElement.style.fontFamily = options.fontFamily;
-    this._measureElement.style.fontSize = `${options.fontSize}pt`;
+    if (options.fontSize === null) {
+      this._measureElement.style.fontSize = window.getComputedStyle(this._containerElement).fontSize;
+    } else {
+      this._measureElement.style.fontSize = `${options.fontSize}px`;
+    }
     const geometry = this._measureElement.getBoundingClientRect();
     // The element is likely currently display:none, we should retain the
     // previous value.

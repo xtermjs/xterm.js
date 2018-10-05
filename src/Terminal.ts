@@ -251,7 +251,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   private _setup(): void {
     Object.keys(DEFAULT_OPTIONS).forEach((key) => {
-      if (this.options[key] === null || this.options[key] === undefined) {
+      if (key === 'fontSize' && this.options[key] === null) {
+        return;
+      } else if (this.options[key] === null || this.options[key] === undefined) {
         this.options[key] = DEFAULT_OPTIONS[key];
       }
     });
@@ -689,7 +691,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this._compositionHelper = new CompositionHelper(this.textarea, this._compositionView, this);
     this._helperContainer.appendChild(this._compositionView);
 
-    this.charMeasure = new CharMeasure(document, this._helperContainer);
+    this.charMeasure = new CharMeasure(document, this._helperContainer, this.element);
 
     // Performance: Add viewport and helper elements from the fragment
     this.element.appendChild(fragment);

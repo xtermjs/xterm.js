@@ -142,14 +142,23 @@ export class DomRenderer extends EventEmitter implements IRenderer {
       this._terminal.screenElement.appendChild(this._themeStyleElement);
     }
 
+    let fontSize = this._terminal.getOption('fontSize');
+    let fontSizeStyle: string;
+    if (typeof fontSize === null) {
+      fontSizeStyle = this._terminal.element.style.fontSize;
+    } else {
+      fontSizeStyle = `${fontSize}px`
+    }
+
     // Base CSS
     let styles =
         `${this._terminalSelector} .${ROW_CONTAINER_CLASS} {` +
         ` color: ${this.colorManager.colors.foreground.css};` +
         ` background-color: ${this.colorManager.colors.background.css};` +
         ` font-family: ${this._terminal.getOption('fontFamily')};` +
-        ` font-size: ${this._terminal.getOption('fontSize')}pt;` +
+        ` font-size: ${fontSizeStyle};` +
         `}`;
+    
     // Text styles
     styles +=
         `${this._terminalSelector} span:not(.${BOLD_CLASS}) {` +

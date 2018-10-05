@@ -19,13 +19,14 @@ export function generateConfig(scaledCharWidth: number, scaledCharHeight: number
     // dynamic character atlas.
     ansi: colors.ansi.slice(0, 16)
   };
+  let termStyle = window.getComputedStyle(terminal.element);
   return {
     type: terminal.options.experimentalCharAtlas,
     devicePixelRatio: window.devicePixelRatio,
     scaledCharWidth,
     scaledCharHeight,
     fontFamily: terminal.options.fontFamily,
-    fontSize: terminal.options.fontSize,
+    fontSize: terminal.options.fontSize || termStyle.fontSize,
     fontWeight: terminal.options.fontWeight,
     fontWeightBold: terminal.options.fontWeightBold,
     allowTransparency: terminal.options.allowTransparency,

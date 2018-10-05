@@ -119,8 +119,9 @@ export class Terminal implements ITerminalApi {
   public getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'fontWeight' | 'fontWeightBold' | 'rendererType' | 'termName'): string;
   public getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell'): boolean;
   public getOption(key: 'colors'): string[];
-  public getOption(key: 'cols' | 'fontSize' | 'letterSpacing' | 'lineHeight' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
+  public getOption(key: 'cols' | 'letterSpacing' | 'lineHeight' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
   public getOption(key: 'handler'): (data: string) => void;
+  public getOption(key: 'fontSize'): number | null;
   public getOption(key: string): any;
   public getOption(key: any): any {
     return this._core.getOption(key);
@@ -131,10 +132,11 @@ export class Terminal implements ITerminalApi {
   public setOption(key: 'cursorStyle', value: 'block' | 'underline' | 'bar'): void;
   public setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell', value: boolean): void;
   public setOption(key: 'colors', value: string[]): void;
-  public setOption(key: 'fontSize' | 'letterSpacing' | 'lineHeight' | 'tabStopWidth' | 'scrollback', value: number): void;
+  public setOption(key: 'letterSpacing' | 'lineHeight' | 'tabStopWidth' | 'scrollback', value: number): void;
   public setOption(key: 'handler', value: (data: string) => void): void;
   public setOption(key: 'theme', value: ITheme): void;
   public setOption(key: 'cols' | 'rows', value: number): void;
+  public setOption(key: 'fontSize', value: number | null): void;
   public setOption(key: string, value: any): void;
   public setOption(key: any, value: any): void {
     this._core.setOption(key, value);

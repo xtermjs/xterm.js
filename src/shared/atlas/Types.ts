@@ -11,7 +11,7 @@ export const CHAR_ATLAS_CELL_SPACING = 1;
 export interface ICharAtlasConfig {
   type: 'none' | 'static' | 'dynamic';
   devicePixelRatio: number;
-  fontSize: number;
+  fontSize: number | string;
   fontFamily: string;
   fontWeight: FontWeight;
   fontWeightBold: FontWeight;
