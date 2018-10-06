@@ -8,7 +8,6 @@ import * as search from './search';
 import { SearchHelper } from './SearchHelper';
 import { ISearchOptions, ISearchResult } from './Interfaces';
 
-
 class MockTerminalPlain {}
 
 class MockTerminal {
@@ -16,7 +15,7 @@ class MockTerminal {
   public searchHelper: TestSearchHelper;
   public cols: number;
   constructor(options: any) {
-    this._core = new (require('../../../lib/Terminal').Terminal)(options);
+    this._core = new (require('../../../lib/Terminal')).Terminal(options);
     this.searchHelper = new TestSearchHelper(this as any);
     this.cols = options.cols;
   }
