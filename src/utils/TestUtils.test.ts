@@ -319,6 +319,9 @@ export class MockBuffer implements IBuffer {
   setLines(lines: ICircularList<IBufferLine>): void {
     this.lines = lines;
   }
+  getBlankLine(attr: number, isWrapped?: boolean): IBufferLine {
+    return Buffer.prototype.getBlankLine.apply(this, arguments);
+  }
   stringIndexToBufferIndex(lineIndex: number, stringIndex: number): number[] {
     return Buffer.prototype.stringIndexToBufferIndex.apply(this, arguments);
   }

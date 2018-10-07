@@ -54,16 +54,16 @@ describe('SelectionManager', () => {
   });
 
   function stringToRow(text: string): IBufferLine {
-    const result = new BufferLine();
+    const result = new BufferLine(text.length);
     for (let i = 0; i < text.length; i++) {
-      result.push([0, text.charAt(i), 1, text.charCodeAt(i)]);
+      result.set(i, [0, text.charAt(i), 1, text.charCodeAt(i)]);
     }
     return result;
   }
 
   function stringArrayToRow(chars: string[]): IBufferLine {
-    const line = new BufferLine();
-    chars.map(c => line.push([0, c, 1, c.charCodeAt(0)]));
+    const line = new BufferLine(chars.length);
+    chars.map((c, idx) => line.set(idx, [0, c, 1, c.charCodeAt(0)]));
     return line;
   }
 
@@ -100,7 +100,6 @@ describe('SelectionManager', () => {
     });
     it('should expand selection for wide characters', () => {
       // Wide characters use a special format
-      const line = new BufferLine();
       const data: [number, string, number, number][] = [
         [null, '中', 2, '中'.charCodeAt(0)],
         [null, '', 0, null],
@@ -118,7 +117,8 @@ describe('SelectionManager', () => {
         [null, 'o', 1, 'o'.charCodeAt(0)],
         [null, 'o', 1, 'o'.charCodeAt(0)]
       ];
-      for (let i = 0; i < data.length; ++i) line.push(data[i]);
+      const line = new BufferLine(data.length);
+      for (let i = 0; i < data.length; ++i) line.set(i, data[i]);
       buffer.lines.set(0, line);
       // Ensure wide characters take up 2 columns
       selectionManager.selectWordAt([0, 0]);
