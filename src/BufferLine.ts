@@ -110,11 +110,14 @@ export class BufferLine implements IBufferLine {
   }
 }
 
+/** typed array slots taken by one cell */
+const CELL_SIZE = 3;
+
+/** cell member indices */
 const enum Cell {
   FLAGS = 0,
   STRING = 1,
-  WIDTH = 2,
-  SIZE = 3
+  WIDTH = 2
 }
 
 /**
@@ -138,7 +141,7 @@ export class BufferLineTypedArray implements IBufferLine {
     if (!fillCharData) {
       fillCharData = [0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
     }
-    this._data = new Uint32Array(cols * Cell.SIZE);
+    this._data = new Uint32Array(cols * CELL_SIZE);
     for (let i = 0; i < cols; ++i) {
       this.set(i, fillCharData);
     }
@@ -146,13 +149,13 @@ export class BufferLineTypedArray implements IBufferLine {
   }
 
   public get(index: number): CharData {
-    const stringData = this._data[index * Cell.SIZE + Cell.STRING];
+    const stringData = this._data[index * CELL_SIZE + Cell.STRING];
     return [
-      this._data[index * Cell.SIZE + Cell.FLAGS],
+      this._data[index * CELL_SIZE + Cell.FLAGS],
       (stringData & 0x80000000)
         ? this._combined[index]
         : (stringData) ? String.fromCharCode(stringData) : '',
-      this._data[index * Cell.SIZE + Cell.WIDTH],
+      this._data[index * CELL_SIZE + Cell.WIDTH],
       (stringData & 0x80000000)
         ? this._combined[index].charCodeAt(this._combined[index].length - 1)
         : stringData
@@ -160,14 +163,14 @@ export class BufferLineTypedArray implements IBufferLine {
   }
 
   public set(index: number, value: CharData): void {
-    this._data[index * Cell.SIZE + Cell.FLAGS] = value[0];
+    this._data[index * CELL_SIZE + Cell.FLAGS] = value[0];
     if (value[1].length > 1) {
       this._combined[index] = value[1];
-      this._data[index * Cell.SIZE + Cell.STRING] = index | 0x80000000;
+      this._data[index * CELL_SIZE + Cell.STRING] = index | 0x80000000;
     } else {
-      this._data[index * Cell.SIZE + Cell.STRING] = value[1].charCodeAt(0);
+      this._data[index * CELL_SIZE + Cell.STRING] = value[1].charCodeAt(0);
     }
-    this._data[index * Cell.SIZE + Cell.WIDTH] = value[2];
+    this._data[index * CELL_SIZE + Cell.WIDTH] = value[2];
   }
 
   public insertCells(pos: number, n: number, fillCharData: CharData): void {
@@ -213,7 +216,7 @@ export class BufferLineTypedArray implements IBufferLine {
       return;
     }
     if (cols > this.length) {
-      const data = new Uint32Array(cols * Cell.SIZE);
+      const data = new Uint32Array(cols * CELL_SIZE);
       if (this._data) {
         data.set(this._data);
       }
@@ -223,8 +226,8 @@ export class BufferLineTypedArray implements IBufferLine {
       }
     } else if (shrink) {
       if (cols) {
-        const data = new Uint32Array(cols * Cell.SIZE);
-        data.set(this._data.subarray(0, cols * Cell.SIZE));
+        const data = new Uint32Array(cols * CELL_SIZE);
+        data.set(this._data.subarray(0, cols * CELL_SIZE));
         this._data = data;
       } else {
         this._data = null;
