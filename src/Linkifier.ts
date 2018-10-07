@@ -21,6 +21,13 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    */
   protected static readonly TIME_BEFORE_LINKIFY = 200;
 
+  /**
+   * Limit of the unwrapping line expansion (overscan) at the top and bottom
+   * of the actual viewport in ASCII characters.
+   * A limit of 2000 should match most sane urls.
+   */
+  protected static readonly OVERSCAN_CHAR_LIMIT = 2000;
+
   protected _linkMatchers: ILinkMatcher[] = [];
 
   private _mouseZoneManager: IMouseZoneManager;
@@ -92,11 +99,19 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     // Invalidate bad end row values (if a resize happened)
     const absoluteRowIndexEnd = buffer.ydisp + Math.min(this._rowsToLinkify.end, this._terminal.rows) + 1;
 
-    // iterate over the range of unwrapped content strings within start..end (excluding)
-    // _doLinkifyRow gets full unwrapped lines with the start row as buffer offset for every matcher
-    // for wrapped content over several rows the iterator might return rows outside the viewport
-    // we skip those later in _doLinkifyRow
-    const iterator = buffer.iterator(false, absoluteRowIndexStart, absoluteRowIndexEnd);
+    // Iterate over the range of unwrapped content strings within start..end
+    // (excluding).
+    // _doLinkifyRow gets full unwrapped lines with the start row as buffer offset
+    // for every matcher.
+    // The unwrapping is needed to also match content that got wrapped across
+    // several buffer lines. To avoid a worst case scenario where the whole buffer
+    // contains just a single unwrapped string we limit this line expansion beyond
+    // the viewport to +OVERSCAN_CHAR_LIMIT chars (overscan) at top and bottom.
+    // This comes with the tradeoff that matches longer than OVERSCAN_CHAR_LIMIT
+    // chars will not match anymore at the viewport borders.
+    const overscanLineLimit = Math.ceil(Linkifier.OVERSCAN_CHAR_LIMIT / this._terminal.cols);
+    const iterator = this._terminal.buffer.iterator(
+      false, absoluteRowIndexStart, absoluteRowIndexEnd, overscanLineLimit, overscanLineLimit);
     while (iterator.hasNext()) {
       const lineData: IBufferStringIteratorResult = iterator.next();
       for (let i = 0; i < this._linkMatchers.length; i++) {
@@ -207,14 +222,6 @@ export class Linkifier extends EventEmitter implements ILinkifier {
 
       // get the buffer index as [absolute row, col] for the match
       const bufferIndex = this._terminal.buffer.stringIndexToBufferIndex(rowIndex, stringIndex);
-
-      // skip rows outside of the viewport
-      if (bufferIndex[0] - this._terminal.buffer.ydisp < 0) {
-        continue;
-      }
-      if (bufferIndex[0] - this._terminal.buffer.ydisp > this._terminal.rows) {
-        break;
-      }
 
       const line = this._terminal.buffer.lines.get(bufferIndex[0]);
       const char = line.get(bufferIndex[1]);

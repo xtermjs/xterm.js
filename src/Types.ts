@@ -297,7 +297,7 @@ export interface IBuffer {
   prevStop(x?: number): number;
   getBlankLine(attr: number, isWrapped?: boolean): IBufferLine;
   stringIndexToBufferIndex(lineIndex: number, stringIndex: number): number[];
-  iterator(trimRight: boolean, startIndex?: number, endIndex?: number): IBufferStringIterator;
+  iterator(trimRight: boolean, startIndex?: number, endIndex?: number, startOverscan?: number, endOverscan?: number): IBufferStringIterator;
 }
 
 export interface IBufferSet extends IEventEmitter {

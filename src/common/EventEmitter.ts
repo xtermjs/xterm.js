@@ -14,7 +14,7 @@ export class EventEmitter extends Disposable implements IEventEmitter, IDisposab
     super();
     // Restore the previous events if available, this will happen if the
     // constructor is called multiple times on the same object (terminal reset).
-    this._events = this._events || {};
+    this._events = (<any>this)._events || {};
   }
 
   public on(type: string, listener: XtermListener): void {
