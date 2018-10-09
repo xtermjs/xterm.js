@@ -21,7 +21,7 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharData, CharacterJoinerHandler } from './Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharData, CharacterJoinerHandler, IBufferLine } from './Types';
 import { IMouseZoneManager } from './ui/Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
@@ -1174,7 +1174,14 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * @param isWrapped Whether the new line is wrapped from the previous line.
    */
   public scroll(isWrapped?: boolean): void {
-    const newLine = this.buffer.getBlankLine(DEFAULT_ATTR, isWrapped);
+    // TODO: make blank a member
+    let blank: IBufferLine = (this as any)._blank;
+    if (!blank || blank.length !== this.cols) {
+      blank = this.buffer.getBlankLine(DEFAULT_ATTR, isWrapped);
+      (this as any)._blank = blank;
+    }
+    blank.isWrapped = !!(isWrapped);
+
     const topRow = this.buffer.ybase + this.buffer.scrollTop;
     const bottomRow = this.buffer.ybase + this.buffer.scrollBottom;
 
@@ -1184,9 +1191,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
       // Insert the line using the fastest method
       if (bottomRow === this.buffer.lines.length - 1) {
-        this.buffer.lines.push(newLine);
+        (this.buffer.lines as any).pushRecycling((line: IBufferLine | undefined) => (line) ? line.copyFrom(blank) : blank.clone());
       } else {
-        this.buffer.lines.splice(bottomRow + 1, 0, newLine);
+        this.buffer.lines.splice(bottomRow + 1, 0, blank.clone());
       }
 
       // Only adjust ybase and ydisp when the buffer is not trimmed
@@ -1208,7 +1215,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // scrollback, instead we can just shift them in-place.
       const scrollRegionHeight = bottomRow - topRow + 1/*as it's zero-based*/;
       this.buffer.lines.shiftElements(topRow + 1, scrollRegionHeight - 1, -1);
-      this.buffer.lines.set(bottomRow, newLine);
+      this.buffer.lines.set(bottomRow, blank.clone());
     }
 
     // Move the viewport to the bottom of the buffer unless the user is
