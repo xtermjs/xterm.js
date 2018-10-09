@@ -6,6 +6,7 @@
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_ATTR_INDEX, CHAR_DATA_WIDTH_INDEX } from '../../Buffer';
 import { FLAGS } from '../Types';
 import { IBufferLine } from '../../Types';
+import { DEFAULT_COLOR } from '../atlas/Types';
 
 export const BOLD_CLASS = 'xterm-bold';
 export const ITALIC_CLASS = 'xterm-italic';
@@ -70,10 +71,10 @@ export class DomRendererRowFactory {
         const temp = bg;
         bg = fg;
         fg = temp;
-        if (fg === 256) {
+        if (fg === DEFAULT_COLOR) {
           fg = 0;
         }
-        if (bg === 257) {
+        if (bg === DEFAULT_COLOR) {
           bg = 15;
         }
       }
@@ -91,10 +92,10 @@ export class DomRendererRowFactory {
       }
 
       charElement.textContent = char;
-      if (fg !== 257) {
+      if (fg < DEFAULT_COLOR) {
         charElement.classList.add(`xterm-fg-${fg}`);
       }
-      if (bg !== 256) {
+      if (bg < DEFAULT_COLOR) {
         charElement.classList.add(`xterm-bg-${bg}`);
       }
       fragment.appendChild(charElement);

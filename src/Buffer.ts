@@ -8,8 +8,9 @@ import { CharData, ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIt
 import { EventEmitter } from './common/EventEmitter';
 import { IMarker } from 'xterm';
 import { BufferLine, BufferLineTypedArray } from './BufferLine';
+import { DEFAULT_COLOR } from './renderer/atlas/Types';
 
-export const DEFAULT_ATTR = (0 << 18) | (257 << 9) | (256 << 0);
+export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
 export const CHAR_DATA_ATTR_INDEX = 0;
 export const CHAR_DATA_CHAR_INDEX = 1;
 export const CHAR_DATA_WIDTH_INDEX = 2;
