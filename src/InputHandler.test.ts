@@ -469,4 +469,11 @@ describe('InputHandler', () => {
     }
     expect(s).equals('World          ');
   });
+  describe('print', () => {
+    it('should not cause an infinite loop (regression test)', () => {
+      const term = new Terminal();
+      const inputHandler = new InputHandler(term);
+      inputHandler.print(String.fromCharCode(0x200B), 0, 1);
+    });
+  });
 });

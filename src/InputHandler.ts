@@ -452,8 +452,10 @@ export class InputHandler extends Disposable implements IInputHandler {
       // fullwidth char - also set next cell to placeholder stub and advance cursor
       // for graphemes bigger than fullwidth we can simply loop to zero
       // we already made sure above, that buffer.x + chWidth will not overflow right
-      while (--chWidth) {
-        bufferRow.set(buffer.x++, [curAttr, '', 0, undefined]);
+      if (chWidth > 0) {
+        while (--chWidth) {
+          bufferRow.set(buffer.x++, [curAttr, '', 0, undefined]);
+        }
       }
     }
     this._terminal.updateRange(buffer.y);
