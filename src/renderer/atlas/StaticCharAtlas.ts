@@ -41,7 +41,7 @@ export default class StaticCharAtlas extends BaseCharAtlas {
     const isAscii = glyph.code < 256;
     // A color is basic if it is one of the 4 bit ANSI colors.
     const isBasicColor = glyph.fg < 16;
-    const isDefaultColor = glyph.fg >= 256;
+    const isDefaultColor = glyph.fg === 256;
     const isDefaultBackground = glyph.bg >= 256;
     return isAscii && (isBasicColor || isDefaultColor) && isDefaultBackground && !glyph.italic;
   }
@@ -60,7 +60,7 @@ export default class StaticCharAtlas extends BaseCharAtlas {
     let colorIndex = 0;
     if (glyph.fg < 256) {
       colorIndex = 2 + glyph.fg + (glyph.bold ? 16 : 0);
-    } else {
+    } else if (glyph.fg === 256) {
       // If default color and bold
       if (glyph.bold) {
         colorIndex = 1;
