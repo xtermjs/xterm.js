@@ -133,4 +133,31 @@ describe('BufferLine', function(): void {
     const line3 = line.clone();
     chai.expect(TestBufferLine.prototype.toArray.apply(line3)).eql(line.toArray());
   });
+  it('resize enlarge', function(): void {
+    const line = new TestBufferLine(5, [1, 'a', 0, 'a'.charCodeAt(0)], false);
+    line.resize(10, [1, 'a', 0, 'a'.charCodeAt(0)]);
+    chai.expect(line.toArray()).eql(Array(10).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
+  });
+  it('resize shrink(true)', function(): void {
+    const line = new TestBufferLine(10, [1, 'a', 0, 'a'.charCodeAt(0)], false);
+    line.resize(5, [1, 'a', 0, 'a'.charCodeAt(0)], true);
+    chai.expect(line.toArray()).eql(Array(5).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
+  });
+  it('resize shrink(false)', function(): void {
+    const line = new TestBufferLine(10, [1, 'a', 0, 'a'.charCodeAt(0)], false);
+    line.resize(5, [1, 'a', 0, 'a'.charCodeAt(0)], false);
+    chai.expect(line.toArray()).eql(Array(5).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
+  });
+  it('resize shrink(false) + shrink(false)', function(): void {
+    const line = new TestBufferLine(20, [1, 'a', 0, 'a'.charCodeAt(0)], false);
+    line.resize(10, [1, 'a', 0, 'a'.charCodeAt(0)], false);
+    line.resize(5, [1, 'a', 0, 'a'.charCodeAt(0)], false);
+    chai.expect(line.toArray()).eql(Array(5).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
+  });
+  it('resize shrink(false) + enlarge', function(): void {
+    const line = new TestBufferLine(20, [1, 'a', 0, 'a'.charCodeAt(0)], false);
+    line.resize(10, [1, 'a', 0, 'a'.charCodeAt(0)], false);
+    line.resize(15, [1, 'a', 0, 'a'.charCodeAt(0)]);
+    chai.expect(line.toArray()).eql(Array(15).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
+  });
 });

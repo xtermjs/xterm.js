@@ -218,7 +218,11 @@ export class BufferLineTypedArray implements IBufferLine {
     if (cols > this.length) {
       const data = new Uint32Array(cols * CELL_SIZE);
       if (this._data) {
-        data.set(this._data);
+        if (cols * CELL_SIZE < this._data.length) {
+          data.set(this._data.subarray(0, cols * CELL_SIZE));
+        } else {
+          data.set(this._data);
+        }
       }
       this._data = data;
       for (let i = this.length; i < cols; ++i) {
