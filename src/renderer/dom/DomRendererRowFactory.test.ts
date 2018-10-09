@@ -117,7 +117,7 @@ describe('DomRendererRowFactory', () => {
         lineData.set(0, [(FLAGS.INVERSE << 18) | (DEFAULT_ATTR << 9) | (1 << 0), 'a', 1, 'a'.charCodeAt(0)]);
         const fragment = rowFactory.createRow(lineData, false, undefined, 0, 5, 20);
         assert.equal(getFragmentHtml(fragment),
-          '<span class="xterm-fg-1 xterm-bg-15">a</span>' +
+          '<span class="xterm-fg-1 xterm-bg-257">a</span>' +
           '<span> </span>'
         );
       });
@@ -126,7 +126,7 @@ describe('DomRendererRowFactory', () => {
         lineData.set(0, [(FLAGS.INVERSE << 18) | (1 << 9) | (DEFAULT_COLOR << 0), 'a', 1, 'a'.charCodeAt(0)]);
         const fragment = rowFactory.createRow(lineData, false, undefined, 0, 5, 20);
         assert.equal(getFragmentHtml(fragment),
-          '<span class="xterm-fg-0 xterm-bg-1">a</span>' +
+          '<span class="xterm-fg-257 xterm-bg-1">a</span>' +
           '<span> </span>'
         );
       });
