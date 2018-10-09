@@ -10,6 +10,7 @@ import { EventEmitter } from '../../common/EventEmitter';
 import { ColorManager } from '../ColorManager';
 import { RenderDebouncer } from '../../ui/RenderDebouncer';
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from './DomRendererRowFactory';
+import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
@@ -196,6 +197,9 @@ export class DomRenderer extends EventEmitter implements IRenderer {
           `${this._terminalSelector} .${FG_CLASS_PREFIX}${i} { color: ${c.css}; }` +
           `${this._terminalSelector} .${BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
     });
+    styles +=
+        `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { color: ${this.colorManager.colors.background.css}; }` +
+        `${this._terminalSelector} .${BG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { background-color: ${this.colorManager.colors.foreground.css}; }`;
 
     this._themeStyleElement.innerHTML = styles;
     return this.colorManager.colors;
