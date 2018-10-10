@@ -722,12 +722,16 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param start first cell index to be erased
    * @param end   end - 1 is last erased cell
    */
-  private _eraseInBufferLine(y: number, start: number, end: number): void {
-    this._terminal.buffer.lines.get(this._terminal.buffer.ybase + y).replaceCells(
+  private _eraseInBufferLine(y: number, start: number, end: number, clearWrap: boolean = false): void {
+    const line = this._terminal.buffer.lines.get(this._terminal.buffer.ybase + y);
+    line.replaceCells(
       start,
       end,
       [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
     );
+    if (clearWrap) {
+      line.isWrapped = false;
+    }
   }
 
   /**
@@ -736,13 +740,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param y row index
    */
   private _resetBufferLine(y: number): void {
-    const line = this._terminal.buffer.lines.get(this._terminal.buffer.ybase + y);
-    line.replaceCells(
-      0,
-      this._terminal.cols,
-      [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
-    );
-    line.isWrapped = false;
+    this._eraseInBufferLine(y, 0, this._terminal.cols, true);
   }
 
   /**
@@ -763,7 +761,11 @@ export class InputHandler extends Disposable implements IInputHandler {
       case 0:
         j = this._terminal.buffer.y;
         this._terminal.updateRange(j);
-        this._eraseInBufferLine(j++, this._terminal.buffer.x, this._terminal.cols);
+        if (this._terminal.buffer.x !== 0) {
+          this._eraseInBufferLine(j++, this._terminal.buffer.x, this._terminal.cols);
+        } else {
+          this._resetBufferLine(j++);
+        }
         for (; j < this._terminal.rows; j++) {
           this._resetBufferLine(j);
         }
