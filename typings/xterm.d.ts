@@ -112,6 +112,8 @@ declare module 'xterm' {
      */
     experimentalBufferLineImpl?: 'JsArray' | 'TypedArray';
 
+    experimentalPushRecycling?: boolean;
+
     /**
      * The font size used to render text.
      */

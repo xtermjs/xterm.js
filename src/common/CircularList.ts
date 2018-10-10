@@ -105,7 +105,7 @@ export class CircularList<T> extends EventEmitter implements ICircularList<T> {
    * The callback gets the value at the current position to be overwritten.
    * Return the new value from the callback.
    */
-  public pushRecycling(callback: (el: T | undefined) => T): void {
+  public pushRecycling(callback: (item: T | undefined) => T): void {
     this._array[this._getCyclicIndex(this._length)] = callback(this._array[this._getCyclicIndex(this._length)]);
     if (this._length === this._maxLength) {
       this._startIndex++;
