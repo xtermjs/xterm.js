@@ -1,7 +1,7 @@
 {
   "name": "xterm",
   "description": "Full xterm terminal, in your browser",
-  "version": "3.7.0",
+  "version": "3.8.0",
   "main": "lib/public/Terminal.js",
   "types": "typings/xterm.d.ts",
   "repository": "https://github.com/xtermjs/xterm.js",
@@ -50,6 +50,7 @@
     "start": "node demo/start",
     "start-zmodem": "node demo/zmodem/app",
     "lint": "tslint 'src/**/*.ts' './demo/**/*.ts'",
+    "pretest": "npm run layering",
     "test": "npm run mocha",
     "posttest": "npm run lint",
     "test-debug": "node --inspect-brk node_modules/.bin/gulp test",
@@ -64,6 +65,7 @@
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "webpack": "gulp webpack",
     "watch": "concurrently --kill-others-on-fail --names \"lib,css\" \"tsc -w\" \"gulp watch-css\"",
-    "watch-addons": "concurrently --kill-others-on-fail --names \"attach,fit,fullscreen,search,terminado,webLinks,winptyCompat,zmodem\" \"tsc -w -p ./src/addons/attach\" \"tsc -w -p ./src/addons/fit\" \"tsc -w -p ./src/addons/fullscreen\" \"tsc -w -p ./src/addons/search\" \"tsc -w -p ./src/addons/terminado\" \"tsc -w -p ./src/addons/webLinks\" \"tsc -w -p ./src/addons/winptyCompat\" \"tsc -w -p ./src/addons/zmodem\""
+    "watch-addons": "concurrently --kill-others-on-fail --names \"attach,fit,fullscreen,search,terminado,webLinks,winptyCompat,zmodem\" \"tsc -w -p ./src/addons/attach\" \"tsc -w -p ./src/addons/fit\" \"tsc -w -p ./src/addons/fullscreen\" \"tsc -w -p ./src/addons/search\" \"tsc -w -p ./src/addons/terminado\" \"tsc -w -p ./src/addons/webLinks\" \"tsc -w -p ./src/addons/winptyCompat\" \"tsc -w -p ./src/addons/zmodem\"",
+    "layering": "concurrently --kill-others-on-fail --names \"common,core\" \"tsc -p ./src/common\" \"tsc -p ./src/core\""
   }
 }

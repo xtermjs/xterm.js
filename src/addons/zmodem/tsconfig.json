@@ -3,18 +3,20 @@
     "module": "commonjs",
     "target": "es5",
     "lib": [
-      "dom",
-      "es6",
+      "es5"
     ],
     "rootDir": ".",
     "outDir": "../../../lib/addons/zmodem/",
     "sourceMap": true,
     "removeComments": true,
     "declaration": true,
-    "preserveWatchOutput": true
+    "preserveWatchOutput": true,
+    "types": [
+      "../../node_modules/@types/mocha",
+      "../.."
+    ]
   },
   "include": [
-    "**/*.ts",
-    "../../../typings/xterm.d.ts"
+    "**/*.ts"
   ]
 }

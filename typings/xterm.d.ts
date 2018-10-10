@@ -7,6 +7,8 @@
  * to be stable and consumed by external programs.
  */
 
+/// <reference lib="dom"/>
+
 declare module 'xterm' {
   /**
    * A string representing text font weight.
