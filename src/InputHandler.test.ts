@@ -461,7 +461,7 @@ describe('InputHandler', () => {
       expect(termNew.buffer.lines.get(2).isWrapped).false;
 
       // reset and add a wrapped line
-       termNew.buffer.y = 0;
+      termNew.buffer.y = 0;
       termNew.buffer.x = 0;
       inputHandlerNew.parse(Array(termNew.cols + 1).join('a')); // line 0
       inputHandlerNew.parse(Array(termNew.cols + 10).join('a')); // line 1 and 2
