@@ -4,7 +4,7 @@
  */
 
 import { ISearchHelper, ISearchAddonTerminal, ISearchOptions, ISearchResult } from './Interfaces';
-const nonWordCharacters = ' ~!@#$%^&*()_+`-=[]{}|\;:"\',./<>?';
+const nonWordCharacters = ' ~!@#$%^&*()+`-=[]{}|\;:"\',./<>?';
 
 /**
  * A class that knows how to search the terminal and how to display the results.

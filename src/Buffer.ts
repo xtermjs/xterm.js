@@ -4,10 +4,10 @@
  */
 
 import { CircularList } from './common/CircularList';
-import { CharData, ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult } from './Types';
+import { CharData, ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult, IBufferLineConstructor } from './Types';
 import { EventEmitter } from './common/EventEmitter';
 import { IMarker } from 'xterm';
-import { BufferLine } from './BufferLine';
+import { BufferLine, BufferLineTypedArray } from './BufferLine';
 
 export const DEFAULT_ATTR = (0 << 18) | (257 << 9) | (256 << 0);
 export const CHAR_DATA_ATTR_INDEX = 0;
@@ -39,6 +39,7 @@ export class Buffer implements IBuffer {
   public savedY: number;
   public savedX: number;
   public markers: Marker[] = [];
+  private _bufferLineConstructor: IBufferLineConstructor;
 
   /**
    * Create a new Buffer.
@@ -51,6 +52,37 @@ export class Buffer implements IBuffer {
     private _hasScrollback: boolean
   ) {
     this.clear();
+  }
+
+  public setBufferLineFactory(type: string): void {
+    if (type === 'TypedArray') {
+      if (this._bufferLineConstructor !== BufferLineTypedArray) {
+        this._bufferLineConstructor = BufferLineTypedArray;
+        this._recreateLines();
+      }
+    } else {
+      if (this._bufferLineConstructor !== BufferLine) {
+        this._bufferLineConstructor = BufferLine;
+        this._recreateLines();
+      }
+    }
+  }
+
+  private _recreateLines(): void {
+    if (!this.lines) return;
+    for (let i = 0; i < this.lines.length; ++i) {
+      const oldLine = this.lines.get(i);
+      const newLine = new this._bufferLineConstructor(oldLine.length);
+      for (let j = 0; j < oldLine.length; ++j) {
+        newLine.set(j, oldLine.get(j));
+      }
+      this.lines.set(i, newLine);
+    }
+  }
+
+  public getBlankLine(attr: number, isWrapped?: boolean): IBufferLine {
+    const fillCharData: CharData = [attr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
+    return new this._bufferLineConstructor(this._terminal.cols, fillCharData, isWrapped);
   }
 
   public get hasScrollback(): boolean {
@@ -85,7 +117,7 @@ export class Buffer implements IBuffer {
     if (this.lines.length === 0) {
       let i = this._terminal.rows;
       while (i--) {
-        this.lines.push(BufferLine.blankLine(this._terminal.cols, DEFAULT_ATTR));
+        this.lines.push(this.getBlankLine(DEFAULT_ATTR));
       }
     }
   }
@@ -94,6 +126,7 @@ export class Buffer implements IBuffer {
    * Clears the buffer to it's initial state, discarding all previous data.
    */
   public clear(): void {
+    this.setBufferLineFactory(this._terminal.options.experimentalBufferLineImpl);
     this.ydisp = 0;
     this.ybase = 0;
     this.y = 0;
@@ -124,9 +157,7 @@ export class Buffer implements IBuffer {
       if (this._terminal.cols < newCols) {
         const ch: CharData = [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // does xterm use the default attr?
         for (let i = 0; i < this.lines.length; i++) {
-          while (this.lines.get(i).length < newCols) {
-            this.lines.get(i).push(ch);
-          }
+          this.lines.get(i).resize(newCols, ch);
         }
       }
 
@@ -147,7 +178,8 @@ export class Buffer implements IBuffer {
             } else {
               // Add a blank line if there is no buffer left at the top to scroll to, or if there
               // are blank lines after the cursor
-              this.lines.push(BufferLine.blankLine(newCols, DEFAULT_ATTR));
+              const fillCharData: CharData = [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
+              this.lines.push(new this._bufferLineConstructor(newCols, fillCharData));
             }
           }
         }

@@ -102,6 +102,17 @@ declare module 'xterm' {
     experimentalCharAtlas?: 'none' | 'static' | 'dynamic';
 
     /**
+     * (EXPERIMENTAL) Defines which implementation to use for buffer lines.
+     *
+     * - 'JsArray': The default/stable implementation.
+     * - 'TypedArray': The new experimental implementation based on TypedArrays that is expected to
+     *   significantly boost performance and memory consumption. Use at your own risk.
+     *
+     * This option will be removed in the future.
+     */
+    experimentalBufferLineImpl?: 'JsArray' | 'TypedArray';
+
+    /**
      * The font size used to render text.
      */
     fontSize?: number;
