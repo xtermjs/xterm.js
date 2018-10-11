@@ -761,11 +761,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       case 0:
         j = this._terminal.buffer.y;
         this._terminal.updateRange(j);
-        if (this._terminal.buffer.x !== 0) {
-          this._eraseInBufferLine(j++, this._terminal.buffer.x, this._terminal.cols);
-        } else {
-          this._resetBufferLine(j++);
-        }
+        this._eraseInBufferLine(j++, this._terminal.buffer.x, this._terminal.cols, this._terminal.buffer.x === 0);
         for (; j < this._terminal.rows; j++) {
           this._resetBufferLine(j);
         }
@@ -774,7 +770,12 @@ export class InputHandler extends Disposable implements IInputHandler {
       case 1:
         j = this._terminal.buffer.y;
         this._terminal.updateRange(j);
-        this._eraseInBufferLine(j, 0, this._terminal.buffer.x + 1);
+        // Deleted front part of line and everything before. This line will no longer be wrapped.
+        this._eraseInBufferLine(j, 0, this._terminal.buffer.x + 1, true);
+        if (this._terminal.buffer.x + 1 >= this._terminal.cols) {
+          // Deleted entire previous line. This next line can no longer be wrapped.
+          this._terminal.buffer.lines.get(j + 1).isWrapped = false;
+        }
         while (j--) {
           this._resetBufferLine(j);
         }
