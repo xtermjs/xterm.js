@@ -44,6 +44,7 @@
     "vinyl-source-stream": "^1.1.0",
     "webpack": "^4.17.1",
     "webpack-cli": "^3.1.0",
+    "xterm-benchmark": "file:../xterm-benchmark",
     "zmodem.js": "^0.1.5"
   },
   "scripts": {
