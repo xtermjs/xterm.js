@@ -205,6 +205,7 @@ export class SearchHelper implements ISearchHelper {
    */
   private _selectResult(result: ISearchResult): boolean {
     if (!result) {
+      this._terminal.clearSelection();
       return false;
     }
     this._terminal._core.selectionManager.setSelection(result.col, result.row, result.term.length);
