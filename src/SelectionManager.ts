@@ -642,6 +642,9 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
     if (this.selectionText.length <= 1 && timeElapsed < ALT_CLICK_MOVE_CURSOR_TIME) {
       (new AltClickHandler(event, this._terminal)).move();
+      if (this.selectionText.length  === 0) {
+        this.clearSelection();
+      }
     } else if (this.hasSelection) {
       this._terminal.emit('selection');
     }
