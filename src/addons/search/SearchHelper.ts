@@ -19,7 +19,7 @@ export class SearchHelper implements ISearchHelper {
   /**
    * Find the next instance of the term, then scroll to and select it. If it
    * doesn't exist, do nothing.
-   * @param term Tne search term.
+   * @param term The search term.
    * @param searchOptions Search options.
    * @return Whether a result was found.
    */
@@ -63,7 +63,7 @@ export class SearchHelper implements ISearchHelper {
   /**
    * Find the previous instance of the term, then scroll to and select it. If it
    * doesn't exist, do nothing.
-   * @param term Tne search term.
+   * @param term The search term.
    * @param searchOptions Search options.
    * @return Whether a result was found.
    */
@@ -120,7 +120,7 @@ export class SearchHelper implements ISearchHelper {
    * subsequent terminal lines if the text is wrapped. If the provided line number is part of a wrapped text line that
    * started on an earlier line then it is skipped since it will be properly searched when the terminal line that the
    * text starts on is searched.
-   * @param term Tne search term.
+   * @param term The search term.
    * @param y The line to search.
    * @param searchOptions Search options.
    * @return The search result if it was found.
