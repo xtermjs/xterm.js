@@ -10,7 +10,7 @@ import { ISearchAddonTerminal, ISearchOptions } from './Interfaces';
 /**
  * Find the next instance of the term, then scroll to and select it. If it
  * doesn't exist, do nothing.
- * @param term Tne search term.
+ * @param term The search term.
  * @param searchOptions Search options
  * @return Whether a result was found.
  */
@@ -25,7 +25,7 @@ export function findNext(terminal: Terminal, term: string, searchOptions: ISearc
 /**
  * Find the previous instance of the term, then scroll to and select it. If it
  * doesn't exist, do nothing.
- * @param term Tne search term.
+ * @param term The search term.
  * @param searchOptions Search options
  * @return Whether a result was found.
  */
