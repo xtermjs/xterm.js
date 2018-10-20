@@ -112,7 +112,7 @@ export class SearchHelper implements ISearchHelper {
    */
   private _isWholeWord(searchIndex: number, line: string, term: string): boolean {
     return (((searchIndex === 0) || (nonWordCharacters.indexOf(line[searchIndex - 1]) !== -1)) &&
-      (((searchIndex + term.length) === line.length) || (nonWordCharacters.indexOf(line[searchIndex + term.length]) !== -1)));
+        (((searchIndex + term.length) === line.length) || (nonWordCharacters.indexOf(line[searchIndex + term.length]) !== -1)));
   }
 
   /**
