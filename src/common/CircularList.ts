@@ -118,6 +118,15 @@ export class CircularList<T> extends EventEmitter implements ICircularList<T> {
     }
   }
 
+  public trimAndRecycle(): T | undefined {
+    this._startIndex++;
+    if (this._startIndex === this._maxLength) {
+      this._startIndex = 0;
+    }
+    this.emit('trim', 1);
+    return this._array[this._getCyclicIndex(this._length - 1)];
+  }
+
   /**
    * Removes and returns the last value on the list.
    * @return The popped value.
@@ -154,10 +163,10 @@ export class CircularList<T> extends EventEmitter implements ICircularList<T> {
       }
 
       // Adjust length as needed
-      if (this._length + items.length > this.maxLength) {
-        const countToTrim = (this._length + items.length) - this.maxLength;
+      if (this._length + items.length > this._maxLength) {
+        const countToTrim = (this._length + items.length) - this._maxLength;
         this._startIndex += countToTrim;
-        this._length = this.maxLength;
+        this._length = this._maxLength;
         this.emit('trim', countToTrim);
       } else {
         this._length += items.length;
@@ -196,7 +205,7 @@ export class CircularList<T> extends EventEmitter implements ICircularList<T> {
       const expandListBy = (start + count + offset) - this._length;
       if (expandListBy > 0) {
         this._length += expandListBy;
-        while (this._length > this.maxLength) {
+        while (this._length > this._maxLength) {
           this._length--;
           this._startIndex++;
           this.emit('trim', 1);
@@ -216,6 +225,6 @@ export class CircularList<T> extends EventEmitter implements ICircularList<T> {
    * @returns The cyclic index.
    */
   private _getCyclicIndex(index: number): number {
-    return (this._startIndex + index) % this.maxLength;
+    return (this._startIndex + index) % this._maxLength;
   }
 }

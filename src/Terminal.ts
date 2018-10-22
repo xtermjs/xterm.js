@@ -1202,7 +1202,12 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // Insert the line using the fastest method
       if (bottomRow === this.buffer.lines.length - 1) {
         if (useRecycling) {
-          this.buffer.lines.pushRecycling((item) => (item) ? item.copyFrom(newLine) : newLine.clone());
+          // this.buffer.lines.pushRecycling((item) => (item) ? item.copyFrom(newLine) : newLine.clone());
+          if (willBufferBeTrimmed) {
+            (this.buffer.lines as any).trimAndRecycle().copyFrom(newLine);
+          } else {
+            this.buffer.lines.push(newLine.clone());
+          }
         } else {
           this.buffer.lines.push(newLine);
         }
