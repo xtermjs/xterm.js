@@ -119,10 +119,7 @@ export class CircularList<T> extends EventEmitter implements ICircularList<T> {
   }
 
   public trimAndRecycle(): T | undefined {
-    this._startIndex++;
-    if (this._startIndex === this._maxLength) {
-      this._startIndex = 0;
-    }
+    this._startIndex = ++this._startIndex % this._maxLength;
     this.emit('trim', 1);
     return this._array[this._getCyclicIndex(this._length - 1)];
   }
