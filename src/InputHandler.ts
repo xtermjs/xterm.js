@@ -24,26 +24,6 @@ const GLEVEL: {[key: string]: number} = {'(': 0, ')': 1, '*': 2, '+': 3, '-': 1,
  * DCS subparser implementations
  */
 
- /**
-  * DCS + q Pt ST (xterm)
-  *   Request Terminfo String
-  *   not supported
-  */
-class RequestTerminfo implements IDcsHandler {
-  private _data: string;
-  constructor(private _terminal: any) { }
-  hook(collect: string, params: number[], flag: number): void {
-    this._data = '';
-  }
-  put(data: string, start: number, end: number): void {
-    this._data += data.substring(start, end);
-  }
-  unhook(): void {
-    // invalid: DCS 0 + r Pt ST
-    this._terminal.handler(`${C0.ESC}P0+r${this._data}${C0.ESC}\\`);
-  }
-}
-
 /**
  * DCS $ q Pt ST
  *   DECRQSS (https://vt100.net/docs/vt510-rm/DECRQSS.html)
@@ -86,7 +66,7 @@ class DECRQSS implements IDcsHandler {
       default:
         // invalid: DCS 0 $ r Pt ST (xterm)
         this._terminal.error('Unknown DCS $q %s', this._data);
-        this._terminal.handler(`${C0.ESC}P0$r${this._data}${C0.ESC}\\`);
+        this._terminal.handler(`${C0.ESC}P0$r${C0.ESC}\\`);
     }
   }
 }
@@ -287,7 +267,6 @@ export class InputHandler extends Disposable implements IInputHandler {
      * DCS handler
      */
     this._parser.setDcsHandler('$q', new DECRQSS(this._terminal));
-    this._parser.setDcsHandler('+q', new RequestTerminfo(this._terminal));
   }
 
   public dispose(): void {
