@@ -342,7 +342,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   public get isFocused(): boolean {
-    return document.activeElement === this.textarea;
+    return document.activeElement === this.textarea && document.hasFocus();
   }
 
   /**
