@@ -241,8 +241,8 @@ export class Linkifier extends EventEmitter implements ILinkifier {
         endIndex[1] = 0;
       }
       // adjust end index to visible line length
-      if (endIndex[1] >= this._terminal.cols) {
-        endIndex[1] = this._terminal.cols - 1;
+      if (endIndex[1] > this._terminal.cols) {
+        endIndex[1] = this._terminal.cols;
       }
       const visibleLength = (endIndex[0] - bufferIndex[0]) * this._terminal.cols - bufferIndex[1] + endIndex[1];
 
