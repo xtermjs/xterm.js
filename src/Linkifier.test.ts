@@ -5,11 +5,10 @@
 
 import { assert } from 'chai';
 import { IMouseZoneManager, IMouseZone } from './ui/Types';
-import { ILinkMatcher, ITerminal, IBufferLine } from './Types';
+import { ILinkMatcher, ITerminal } from './Types';
 import { Linkifier } from './Linkifier';
-import { MockBuffer, MockTerminal, TestTerminal } from './utils/TestUtils.test';
-import { CircularList } from './common/CircularList';
-import { BufferLine } from './BufferLine';
+import { TestTerminal } from './utils/TestUtils.test';
+import { getStringCellWidth } from './CharWidth';
 
 class TestLinkifier extends Linkifier {
   constructor(terminal: ITerminal) {
@@ -35,37 +34,20 @@ class TestMouseZoneManager implements IMouseZoneManager {
 }
 
 describe('Linkifier', () => {
-  let terminal: ITerminal;
+  let terminal: TestTerminal;
   let linkifier: TestLinkifier;
   let mouseZoneManager: TestMouseZoneManager;
 
   beforeEach(() => {
-    terminal = new MockTerminal();
-    terminal.cols = 100;
-    terminal.rows = 10;
-    terminal.buffer = new MockBuffer();
-    (<MockBuffer>terminal.buffer).setLines(new CircularList<IBufferLine>(20));
-    terminal.buffer.ydisp = 0;
+    terminal = new TestTerminal({cols: 100, rows: 10});
     linkifier = new TestLinkifier(terminal);
     mouseZoneManager = new TestMouseZoneManager();
+    linkifier.attachToDom(mouseZoneManager);
   });
 
-  function stringToRow(text: string): IBufferLine {
-    const result = new BufferLine(text.length);
-    for (let i = 0; i < text.length; i++) {
-      result.set(i, [0, text.charAt(i), 1, text.charCodeAt(i)]);
-    }
-    return result;
-  }
-
-  function addRow(text: string): void {
-    terminal.buffer.lines.push(stringToRow(text));
-  }
-
-  function assertLinkifiesRow(rowText: string, linkMatcherRegex: RegExp, links: {x: number, length: number}[], done: MochaDone): void {
-    addRow(rowText);
+  function assertLinkifiesInTerminalRow(rowText: string, linkMatcherRegex: RegExp, links: {x: number, length: number}[], done: MochaDone): void {
+    terminal.writeSync(rowText);
     linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
-    terminal.rows = terminal.buffer.lines.length - 1;
     linkifier.linkifyRows();
     // Allow linkify to happen
     setTimeout(() => {
@@ -73,25 +55,8 @@ describe('Linkifier', () => {
       links.forEach((l, i) => {
         assert.equal(mouseZoneManager.zones[i].x1, l.x + 1);
         assert.equal(mouseZoneManager.zones[i].x2, l.x + l.length + 1);
-        assert.equal(mouseZoneManager.zones[i].y1, terminal.buffer.lines.length);
-        assert.equal(mouseZoneManager.zones[i].y2, terminal.buffer.lines.length);
-      });
-      done();
-    }, 0);
-  }
-
-  function assertLinkifiesMultiLineLink(rowText: string, linkMatcherRegex: RegExp, links: {x1: number, y1: number, x2: number, y2: number}[], done: MochaDone): void {
-    addRow(rowText);
-    linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
-    linkifier.linkifyRows();
-    // Allow linkify to happen
-    setTimeout(() => {
-      assert.equal(mouseZoneManager.zones.length, links.length);
-      links.forEach((l, i) => {
-        assert.equal(mouseZoneManager.zones[i].x1, l.x1 + 1);
-        assert.equal(mouseZoneManager.zones[i].x2, l.x2 + 1);
-        assert.equal(mouseZoneManager.zones[i].y1, l.y1 + 1);
-        assert.equal(mouseZoneManager.zones[i].y2, l.y2 + 1);
+        assert.equal(mouseZoneManager.zones[i].y1, 1);
+        assert.equal(mouseZoneManager.zones[i].y2, 1);
       });
       done();
     }, 0);
@@ -114,55 +79,76 @@ describe('Linkifier', () => {
 
     describe('link matcher', () => {
       it('should match a single link', done => {
-        assertLinkifiesRow('foo', /foo/, [{x: 0, length: 3}], done);
+        assertLinkifiesInTerminalRow('foo', /foo/, [{x: 0, length: 3}], done);
       });
       it('should match a single link at the start of a text node', done => {
-        assertLinkifiesRow('foo bar', /foo/, [{x: 0, length: 3}], done);
+        assertLinkifiesInTerminalRow('foo bar', /foo/, [{x: 0, length: 3}], done);
       });
       it('should match a single link in the middle of a text node', done => {
-        assertLinkifiesRow('foo bar baz', /bar/, [{x: 4, length: 3}], done);
+        assertLinkifiesInTerminalRow('foo bar baz', /bar/, [{x: 4, length: 3}], done);
       });
       it('should match a single link at the end of a text node', done => {
-        assertLinkifiesRow('foo bar', /bar/, [{x: 4, length: 3}], done);
+        assertLinkifiesInTerminalRow('foo bar', /bar/, [{x: 4, length: 3}], done);
       });
       it('should match a link after a link at the start of a text node', done => {
-        assertLinkifiesRow('foo bar', /foo|bar/, [{x: 0, length: 3}, {x: 4, length: 3}], done);
+        assertLinkifiesInTerminalRow('foo bar', /foo|bar/, [{x: 0, length: 3}, {x: 4, length: 3}], done);
       });
       it('should match a link after a link in the middle of a text node', done => {
-        assertLinkifiesRow('foo bar baz', /bar|baz/, [{x: 4, length: 3}, {x: 8, length: 3}], done);
+        assertLinkifiesInTerminalRow('foo bar baz', /bar|baz/, [{x: 4, length: 3}, {x: 8, length: 3}], done);
       });
       it('should match a link immediately after a link at the end of a text node', done => {
-        assertLinkifiesRow('foo barbaz', /bar|baz/, [{x: 4, length: 3}, {x: 7, length: 3}], done);
+        assertLinkifiesInTerminalRow('foo barbaz', /bar|baz/, [{x: 4, length: 3}, {x: 7, length: 3}], done);
       });
       it('should not duplicate text after a unicode character (wrapped in a span)', done => {
         // This is a regression test for an issue that came about when using
         // an oh-my-zsh theme that added the large blue diamond unicode
         // character (U+1F537) which caused the path to be duplicated. See #642.
-        assertLinkifiesRow('echo \'🔷foo\'', /foo/, [{x: 8, length: 3}], done);
+        const charWidth = getStringCellWidth('🔷'); // FIXME: make unicode version dependent
+        assertLinkifiesInTerminalRow('echo \'🔷foo\'', /foo/, [{x: 6 + charWidth, length: 3}], done);
       });
       describe('multi-line links', () => {
+        let terminal: TestTerminal;
+        beforeEach(() => {
+          terminal = new TestTerminal({cols: 4, rows: 10});
+          linkifier = new TestLinkifier(terminal);
+          mouseZoneManager = new TestMouseZoneManager();
+          linkifier.attachToDom(mouseZoneManager);
+        });
+
+        function assertLinkifiesInTerminal(rowText: string, linkMatcherRegex: RegExp, links: {x1: number, y1: number, x2: number, y2: number}[], done: MochaDone): void {
+          terminal.writeSync(rowText);
+          linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
+          linkifier.linkifyRows();
+          // Allow linkify to happen
+          setTimeout(() => {
+            assert.equal(mouseZoneManager.zones.length, links.length);
+            links.forEach((l, i) => {
+              assert.equal(mouseZoneManager.zones[i].x1, l.x1 + 1);
+              assert.equal(mouseZoneManager.zones[i].x2, l.x2 + 1);
+              assert.equal(mouseZoneManager.zones[i].y1, l.y1 + 1);
+              assert.equal(mouseZoneManager.zones[i].y2, l.y2 + 1);
+            });
+            done();
+          }, 0);
+        }
         it('should match links that start on line 1/2 of a wrapped line and end on the last character of line 1/2', done => {
-          terminal.cols = 4;
-          assertLinkifiesMultiLineLink('12345', /1234/, [{x1: 0, x2: 4, y1: 0, y2: 0}], done);
+          assertLinkifiesInTerminal('12345', /1234/, [{x1: 0, x2: 4, y1: 0, y2: 0}], done);
         });
         it('should match links that start on line 1/2 of a wrapped line and wrap to line 2/2', done => {
-          terminal.cols = 4;
-          assertLinkifiesMultiLineLink('12345', /12345/, [{x1: 0, x2: 1, y1: 0, y2: 1}], done);
+          assertLinkifiesInTerminal('12345', /12345/, [{x1: 0, x2: 1, y1: 0, y2: 1}], done);
         });
         it('should match links that start and end on line 2/2 of a wrapped line', done => {
-          terminal.cols = 4;
-          assertLinkifiesMultiLineLink('12345678', /5678/, [{x1: 0, x2: 4, y1: 1, y2: 1}], done);
+          assertLinkifiesInTerminal('12345678', /5678/, [{x1: 0, x2: 4, y1: 1, y2: 1}], done);
         });
         it('should match links that start on line 2/3 of a wrapped line and wrap to line 3/3', done => {
-          terminal.cols = 4;
-          assertLinkifiesMultiLineLink('123456789', /56789/, [{x1: 0, x2: 1, y1: 1, y2: 2}], done);
+          assertLinkifiesInTerminal('123456789', /56789/, [{x1: 0, x2: 1, y1: 1, y2: 2}], done);
         });
       });
     });
 
     describe('validationCallback', () => {
       it('should enable link if true', done => {
-        addRow('test');
+        terminal.writeSync('test');
         linkifier.registerLinkMatcher(/test/, () => done(), {
           validationCallback: (url, cb) => {
             assert.equal(mouseZoneManager.zones.length, 0);
@@ -180,7 +166,7 @@ describe('Linkifier', () => {
       });
 
       it('should validate the uri, not the row', done => {
-        addRow('abc test abc');
+        terminal.writeSync('abc test abc');
         linkifier.registerLinkMatcher(/test/, () => done(), {
           validationCallback: (uri, cb) => {
             assert.equal(uri, 'test');
@@ -191,7 +177,7 @@ describe('Linkifier', () => {
       });
 
       it('should disable link if false', done => {
-        addRow('test');
+        terminal.writeSync('test');
         linkifier.registerLinkMatcher(/test/, () => assert.fail(), {
           validationCallback: (url, cb) => {
             assert.equal(mouseZoneManager.zones.length, 0);
@@ -205,7 +191,7 @@ describe('Linkifier', () => {
       });
 
       it('should trigger for multiple link matches on one row', done => {
-        addRow('test test');
+        terminal.writeSync('test test');
         let count = 0;
         linkifier.registerLinkMatcher(/test/, () => assert.fail(), {
           validationCallback: (url, cb) => {

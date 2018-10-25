@@ -7,8 +7,7 @@ import { IMouseZoneManager } from './ui/Types';
 import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, ILinkifier, ITerminal, IBufferStringIteratorResult } from './Types';
 import { MouseZone } from './ui/MouseZoneManager';
 import { EventEmitter } from './common/EventEmitter';
-import { CHAR_DATA_ATTR_INDEX } from './Buffer';
-import { getStringCellWidth } from './CharWidth';
+import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
 
 /**
  * The Linkifier applies links to rows shortly after they have been refreshed.
@@ -222,6 +221,30 @@ export class Linkifier extends EventEmitter implements ILinkifier {
 
       // get the buffer index as [absolute row, col] for the match
       const bufferIndex = this._terminal.buffer.stringIndexToBufferIndex(rowIndex, stringIndex);
+      // calculate buffer index of uri end
+      // we cannot directly use uri.length here since stringIndexToBufferIndex would
+      // skip empty cells and stop at the next cell with real content
+      // instead we fetch the index of the last char in uri and advance to the next cell
+      const endIndex = this._terminal.buffer.stringIndexToBufferIndex(rowIndex, stringIndex + uri.length - 1);
+
+      // adjust start index to visible line length
+      if (bufferIndex[1] >= this._terminal.cols) {
+        bufferIndex[0]++;
+        bufferIndex[1] = 0;
+      }
+      // advance endIndex to next cell:
+      //    add actual length of the last char to x_offset
+      //    wrap to next buffer line if we overflow
+      endIndex[1] += this._terminal.buffer.lines.get(endIndex[0]).get(endIndex[1])[CHAR_DATA_WIDTH_INDEX];
+      if (endIndex[1] >= this._terminal.buffer.lines.get(endIndex[0]).length) {
+        endIndex[0]++;
+        endIndex[1] = 0;
+      }
+      // adjust end index to visible line length
+      if (endIndex[1] >= this._terminal.cols) {
+        endIndex[1] = this._terminal.cols - 1;
+      }
+      const visibleLength = (endIndex[0] - bufferIndex[0]) * this._terminal.cols - bufferIndex[1] + endIndex[1];
 
       const line = this._terminal.buffer.lines.get(bufferIndex[0]);
       const char = line.get(bufferIndex[1]);
@@ -238,11 +261,11 @@ export class Linkifier extends EventEmitter implements ILinkifier {
             return;
           }
           if (isValid) {
-            this._addLink(bufferIndex[1], bufferIndex[0] - this._terminal.buffer.ydisp, uri, matcher, fg);
+            this._addLink(bufferIndex[1], bufferIndex[0] - this._terminal.buffer.ydisp, uri, visibleLength, matcher, fg);
           }
         });
       } else {
-        this._addLink(bufferIndex[1], bufferIndex[0] - this._terminal.buffer.ydisp, uri, matcher, fg);
+        this._addLink(bufferIndex[1], bufferIndex[0] - this._terminal.buffer.ydisp, uri, visibleLength, matcher, fg);
       }
     }
   }
@@ -255,8 +278,8 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @param matcher The link matcher for the link.
    * @param fg The link color for hover event.
    */
-  private _addLink(x: number, y: number, uri: string, matcher: ILinkMatcher, fg: number): void {
-    const width = getStringCellWidth(uri);
+  private _addLink(x: number, y: number, uri: string, length: number, matcher: ILinkMatcher, fg: number): void {
+    const width = length;
     const x1 = x % this._terminal.cols;
     const y1 = y + Math.floor(x / this._terminal.cols);
     let x2 = (x1 + width) % this._terminal.cols;
