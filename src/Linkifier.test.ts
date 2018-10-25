@@ -45,7 +45,7 @@ describe('Linkifier', () => {
     linkifier.attachToDom(mouseZoneManager);
   });
 
-  function assertLinkifiesInTerminalRow(rowText: string, linkMatcherRegex: RegExp, links: {x: number, length: number}[], done: MochaDone): void {
+  function assertLinkifiesInTerminalRow(terminal: TestTerminal, rowText: string, linkMatcherRegex: RegExp, links: {x: number, length: number}[], done: MochaDone): void {
     terminal.writeSync(rowText);
     linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
     linkifier.linkifyRows();
@@ -57,6 +57,23 @@ describe('Linkifier', () => {
         assert.equal(mouseZoneManager.zones[i].x2, l.x + l.length + 1);
         assert.equal(mouseZoneManager.zones[i].y1, 1);
         assert.equal(mouseZoneManager.zones[i].y2, 1);
+      });
+      done();
+    }, 0);
+  }
+
+  function assertLinkifiesInTerminal(terminal: TestTerminal, rowText: string, linkMatcherRegex: RegExp, links: {x1: number, y1: number, x2: number, y2: number}[], done: MochaDone): void {
+    terminal.writeSync(rowText);
+    linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
+    linkifier.linkifyRows();
+    // Allow linkify to happen
+    setTimeout(() => {
+      assert.equal(mouseZoneManager.zones.length, links.length);
+      links.forEach((l, i) => {
+        assert.equal(mouseZoneManager.zones[i].x1, l.x1 + 1);
+        assert.equal(mouseZoneManager.zones[i].x2, l.x2 + 1);
+        assert.equal(mouseZoneManager.zones[i].y1, l.y1 + 1);
+        assert.equal(mouseZoneManager.zones[i].y2, l.y2 + 1);
       });
       done();
     }, 0);
@@ -79,32 +96,32 @@ describe('Linkifier', () => {
 
     describe('link matcher', () => {
       it('should match a single link', done => {
-        assertLinkifiesInTerminalRow('foo', /foo/, [{x: 0, length: 3}], done);
+        assertLinkifiesInTerminalRow(terminal, 'foo', /foo/, [{x: 0, length: 3}], done);
       });
       it('should match a single link at the start of a text node', done => {
-        assertLinkifiesInTerminalRow('foo bar', /foo/, [{x: 0, length: 3}], done);
+        assertLinkifiesInTerminalRow(terminal, 'foo bar', /foo/, [{x: 0, length: 3}], done);
       });
       it('should match a single link in the middle of a text node', done => {
-        assertLinkifiesInTerminalRow('foo bar baz', /bar/, [{x: 4, length: 3}], done);
+        assertLinkifiesInTerminalRow(terminal, 'foo bar baz', /bar/, [{x: 4, length: 3}], done);
       });
       it('should match a single link at the end of a text node', done => {
-        assertLinkifiesInTerminalRow('foo bar', /bar/, [{x: 4, length: 3}], done);
+        assertLinkifiesInTerminalRow(terminal, 'foo bar', /bar/, [{x: 4, length: 3}], done);
       });
       it('should match a link after a link at the start of a text node', done => {
-        assertLinkifiesInTerminalRow('foo bar', /foo|bar/, [{x: 0, length: 3}, {x: 4, length: 3}], done);
+        assertLinkifiesInTerminalRow(terminal, 'foo bar', /foo|bar/, [{x: 0, length: 3}, {x: 4, length: 3}], done);
       });
       it('should match a link after a link in the middle of a text node', done => {
-        assertLinkifiesInTerminalRow('foo bar baz', /bar|baz/, [{x: 4, length: 3}, {x: 8, length: 3}], done);
+        assertLinkifiesInTerminalRow(terminal, 'foo bar baz', /bar|baz/, [{x: 4, length: 3}, {x: 8, length: 3}], done);
       });
       it('should match a link immediately after a link at the end of a text node', done => {
-        assertLinkifiesInTerminalRow('foo barbaz', /bar|baz/, [{x: 4, length: 3}, {x: 7, length: 3}], done);
+        assertLinkifiesInTerminalRow(terminal, 'foo barbaz', /bar|baz/, [{x: 4, length: 3}, {x: 7, length: 3}], done);
       });
       it('should not duplicate text after a unicode character (wrapped in a span)', done => {
         // This is a regression test for an issue that came about when using
         // an oh-my-zsh theme that added the large blue diamond unicode
         // character (U+1F537) which caused the path to be duplicated. See #642.
         const charWidth = getStringCellWidth('🔷'); // FIXME: make unicode version dependent
-        assertLinkifiesInTerminalRow('echo \'🔷foo\'', /foo/, [{x: 6 + charWidth, length: 3}], done);
+        assertLinkifiesInTerminalRow(terminal, 'echo \'🔷foo\'', /foo/, [{x: 6 + charWidth, length: 3}], done);
       });
       describe('multi-line links', () => {
         let terminal: TestTerminal;
@@ -115,33 +132,17 @@ describe('Linkifier', () => {
           linkifier.attachToDom(mouseZoneManager);
         });
 
-        function assertLinkifiesInTerminal(rowText: string, linkMatcherRegex: RegExp, links: {x1: number, y1: number, x2: number, y2: number}[], done: MochaDone): void {
-          terminal.writeSync(rowText);
-          linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
-          linkifier.linkifyRows();
-          // Allow linkify to happen
-          setTimeout(() => {
-            assert.equal(mouseZoneManager.zones.length, links.length);
-            links.forEach((l, i) => {
-              assert.equal(mouseZoneManager.zones[i].x1, l.x1 + 1);
-              assert.equal(mouseZoneManager.zones[i].x2, l.x2 + 1);
-              assert.equal(mouseZoneManager.zones[i].y1, l.y1 + 1);
-              assert.equal(mouseZoneManager.zones[i].y2, l.y2 + 1);
-            });
-            done();
-          }, 0);
-        }
         it('should match links that start on line 1/2 of a wrapped line and end on the last character of line 1/2', done => {
-          assertLinkifiesInTerminal('12345', /1234/, [{x1: 0, x2: 4, y1: 0, y2: 0}], done);
+          assertLinkifiesInTerminal(terminal, '12345', /1234/, [{x1: 0, x2: 4, y1: 0, y2: 0}], done);
         });
         it('should match links that start on line 1/2 of a wrapped line and wrap to line 2/2', done => {
-          assertLinkifiesInTerminal('12345', /12345/, [{x1: 0, x2: 1, y1: 0, y2: 1}], done);
+          assertLinkifiesInTerminal(terminal, '12345', /12345/, [{x1: 0, x2: 1, y1: 0, y2: 1}], done);
         });
         it('should match links that start and end on line 2/2 of a wrapped line', done => {
-          assertLinkifiesInTerminal('12345678', /5678/, [{x1: 0, x2: 4, y1: 1, y2: 1}], done);
+          assertLinkifiesInTerminal(terminal, '12345678', /5678/, [{x1: 0, x2: 4, y1: 1, y2: 1}], done);
         });
         it('should match links that start on line 2/3 of a wrapped line and wrap to line 3/3', done => {
-          assertLinkifiesInTerminal('123456789', /56789/, [{x1: 0, x2: 1, y1: 1, y2: 2}], done);
+          assertLinkifiesInTerminal(terminal, '123456789', /56789/, [{x1: 0, x2: 1, y1: 1, y2: 2}], done);
         });
       });
     });
@@ -229,8 +230,6 @@ describe('Linkifier', () => {
   describe('unicode handling', () => {
     let terminal: TestTerminal;
 
-    // other than the tests above unicode testing needs the full terminal instance
-    // to get the special handling of fullwidth, surrogate and combining chars in the input handler
     beforeEach(() => {
       terminal = new TestTerminal({cols: 10, rows: 5});
       linkifier = new TestLinkifier(terminal);
@@ -238,85 +237,68 @@ describe('Linkifier', () => {
       linkifier.attachToDom(mouseZoneManager);
     });
 
-    function assertLinkifiesInTerminal(rowText: string, linkMatcherRegex: RegExp, links: {x1: number, y1: number, x2: number, y2: number}[], done: MochaDone): void {
-      terminal.writeSync(rowText);
-      linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
-      linkifier.linkifyRows();
-      // Allow linkify to happen
-      setTimeout(() => {
-        assert.equal(mouseZoneManager.zones.length, links.length);
-        links.forEach((l, i) => {
-          assert.equal(mouseZoneManager.zones[i].x1, l.x1 + 1);
-          assert.equal(mouseZoneManager.zones[i].x2, l.x2 + 1);
-          assert.equal(mouseZoneManager.zones[i].y1, l.y1 + 1);
-          assert.equal(mouseZoneManager.zones[i].y2, l.y2 + 1);
-        });
-        done();
-      }, 0);
-    }
-
     describe('unicode before the match', () => {
       it('combining - match within one line', function(done: () => void): void {
-        assertLinkifiesInTerminal('e\u0301e\u0301e\u0301 foo', /foo/, [{x1: 4, x2: 7, y1: 0, y2: 0}], done);
+        assertLinkifiesInTerminal(terminal, 'e\u0301e\u0301e\u0301 foo', /foo/, [{x1: 4, x2: 7, y1: 0, y2: 0}], done);
       });
       it('combining - match over two lines', function(done: () => void): void {
-        assertLinkifiesInTerminal('e\u0301e\u0301e\u0301     foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
+        assertLinkifiesInTerminal(terminal, 'e\u0301e\u0301e\u0301     foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
       });
       it('surrogate - match within one line', function(done: () => void): void {
-        assertLinkifiesInTerminal('𝄞𝄞𝄞 foo', /foo/, [{x1: 4, x2: 7, y1: 0, y2: 0}], done);
+        assertLinkifiesInTerminal(terminal, '𝄞𝄞𝄞 foo', /foo/, [{x1: 4, x2: 7, y1: 0, y2: 0}], done);
       });
       it('surrogate - match over two lines', function(done: () => void): void {
-        assertLinkifiesInTerminal('𝄞𝄞𝄞     foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
+        assertLinkifiesInTerminal(terminal, '𝄞𝄞𝄞     foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
       });
       it('combining surrogate - match within one line', function(done: () => void): void {
-        assertLinkifiesInTerminal('𓂀\u0301𓂀\u0301𓂀\u0301 foo', /foo/, [{x1: 4, x2: 7, y1: 0, y2: 0}], done);
+        assertLinkifiesInTerminal(terminal, '𓂀\u0301𓂀\u0301𓂀\u0301 foo', /foo/, [{x1: 4, x2: 7, y1: 0, y2: 0}], done);
       });
       it('combining surrogate - match over two lines', function(done: () => void): void {
-        assertLinkifiesInTerminal('𓂀\u0301𓂀\u0301𓂀\u0301     foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
+        assertLinkifiesInTerminal(terminal, '𓂀\u0301𓂀\u0301𓂀\u0301     foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
       });
       it('fullwidth - match within one line', function(done: () => void): void {
-        assertLinkifiesInTerminal('１２ foo', /foo/, [{x1: 5, x2: 8, y1: 0, y2: 0}], done);
+        assertLinkifiesInTerminal(terminal, '１２ foo', /foo/, [{x1: 5, x2: 8, y1: 0, y2: 0}], done);
       });
       it('fullwidth - match over two lines', function(done: () => void): void {
-        assertLinkifiesInTerminal('１２    foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
+        assertLinkifiesInTerminal(terminal, '１２    foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
       });
       it('combining fullwidth - match within one line', function(done: () => void): void {
-        assertLinkifiesInTerminal('￥\u0301￥\u0301 foo', /foo/, [{x1: 5, x2: 8, y1: 0, y2: 0}], done);
+        assertLinkifiesInTerminal(terminal, '￥\u0301￥\u0301 foo', /foo/, [{x1: 5, x2: 8, y1: 0, y2: 0}], done);
       });
       it('combining fullwidth - match over two lines', function(done: () => void): void {
-        assertLinkifiesInTerminal('￥\u0301￥\u0301    foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
+        assertLinkifiesInTerminal(terminal, '￥\u0301￥\u0301    foo', /foo/, [{x1: 8, x2: 1, y1: 0, y2: 1}], done);
       });
     });
     describe('unicode within the match', () => {
       it('combining - match within one line', function(done: () => void): void {
-        assertLinkifiesInTerminal('test cafe\u0301', /cafe\u0301/, [{x1: 5, x2: 9, y1: 0, y2: 0}], done);
+        assertLinkifiesInTerminal(terminal, 'test cafe\u0301', /cafe\u0301/, [{x1: 5, x2: 9, y1: 0, y2: 0}], done);
       });
       it('combining - match over two lines', function(done: () => void): void {
-        assertLinkifiesInTerminal('testtest cafe\u0301', /cafe\u0301/, [{x1: 9, x2: 3, y1: 0, y2: 1}], done);
+        assertLinkifiesInTerminal(terminal, 'testtest cafe\u0301', /cafe\u0301/, [{x1: 9, x2: 3, y1: 0, y2: 1}], done);
       });
       it('surrogate - match within one line', function(done: () => void): void {
-        assertLinkifiesInTerminal('test a𝄞b', /a𝄞b/, [{x1: 5, x2: 8, y1: 0, y2: 0}], done);
+        assertLinkifiesInTerminal(terminal, 'test a𝄞b', /a𝄞b/, [{x1: 5, x2: 8, y1: 0, y2: 0}], done);
       });
       it('surrogate - match over two lines', function(done: () => void): void {
-        assertLinkifiesInTerminal('testtest a𝄞b', /a𝄞b/, [{x1: 9, x2: 2, y1: 0, y2: 1}], done);
+        assertLinkifiesInTerminal(terminal, 'testtest a𝄞b', /a𝄞b/, [{x1: 9, x2: 2, y1: 0, y2: 1}], done);
       });
       it('combining surrogate - match within one line', function(done: () => void): void {
-        assertLinkifiesInTerminal('test a𓂀\u0301b', /a𓂀\u0301b/, [{x1: 5, x2: 8, y1: 0, y2: 0}], done);
+        assertLinkifiesInTerminal(terminal, 'test a𓂀\u0301b', /a𓂀\u0301b/, [{x1: 5, x2: 8, y1: 0, y2: 0}], done);
       });
       it('combining surrogate - match over two lines', function(done: () => void): void {
-        assertLinkifiesInTerminal('testtest a𓂀\u0301b', /a𓂀\u0301b/, [{x1: 9, x2: 2, y1: 0, y2: 1}], done);
+        assertLinkifiesInTerminal(terminal, 'testtest a𓂀\u0301b', /a𓂀\u0301b/, [{x1: 9, x2: 2, y1: 0, y2: 1}], done);
       });
       it('fullwidth - match within one line', function(done: () => void): void {
-        assertLinkifiesInTerminal('test a１b', /a１b/, [{x1: 5, x2: 9, y1: 0, y2: 0}], done);
+        assertLinkifiesInTerminal(terminal, 'test a１b', /a１b/, [{x1: 5, x2: 9, y1: 0, y2: 0}], done);
       });
       it('fullwidth - match over two lines', function(done: () => void): void {
-        assertLinkifiesInTerminal('testtest a１b', /a１b/, [{x1: 9, x2: 3, y1: 0, y2: 1}], done);
+        assertLinkifiesInTerminal(terminal, 'testtest a１b', /a１b/, [{x1: 9, x2: 3, y1: 0, y2: 1}], done);
       });
       it('combining fullwidth - match within one line', function(done: () => void): void {
-        assertLinkifiesInTerminal('test a￥\u0301b', /a￥\u0301b/, [{x1: 5, x2: 9, y1: 0, y2: 0}], done);
+        assertLinkifiesInTerminal(terminal, 'test a￥\u0301b', /a￥\u0301b/, [{x1: 5, x2: 9, y1: 0, y2: 0}], done);
       });
       it('combining fullwidth - match over two lines', function(done: () => void): void {
-        assertLinkifiesInTerminal('testtest a￥\u0301b', /a￥\u0301b/, [{x1: 9, x2: 3, y1: 0, y2: 1}], done);
+        assertLinkifiesInTerminal(terminal, 'testtest a￥\u0301b', /a￥\u0301b/, [{x1: 9, x2: 3, y1: 0, y2: 1}], done);
       });
     });
   });
