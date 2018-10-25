@@ -32,11 +32,35 @@ describe('webLinks addon', () => {
     const term = new MockTerminal();
     webLinks.webLinksInit(<any>term);
 
-    const row = '  http://foo.com/a~b#c~d?e~f:  ';
+    const row = '  http://foo.com/a~b#c~d?e~f  ';
 
     const match = row.match(term.regex);
     const uri = match[term.options.matchIndex];
 
-    assert.equal(uri, 'http://foo.com/a~b#c~d?e~f:');
+    assert.equal(uri, 'http://foo.com/a~b#c~d?e~f');
+  });
+
+  it('should allow : character in URI path', () => {
+    const term = new MockTerminal();
+    webLinks.webLinksInit(<any>term);
+
+    const row = '  http://foo.com/colon:test  ';
+
+    const match = row.match(term.regex);
+    const uri = match[term.options.matchIndex];
+
+    assert.equal(uri, 'http://foo.com/colon:test');
+  });
+
+  it('should not allow : character at the end of a URI path', () => {
+    const term = new MockTerminal();
+    webLinks.webLinksInit(<any>term);
+
+    const row = '  http://foo.com/colon:test:  ';
+
+    const match = row.match(term.regex);
+    const uri = match[term.options.matchIndex];
+
+    assert.equal(uri, 'http://foo.com/colon:test');
   });
 });
