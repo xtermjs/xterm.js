@@ -208,7 +208,7 @@ function initOptions(term: TerminalType): void {
     fontWeight: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     rendererType: ['dom', 'canvas'],
-    unicodeVersion: (term as any)._core.unicodeProvider.registeredVersions(),
+    unicodeVersion: (term as any)._core.unicodeProvider.getRegisteredVersions(),
     experimentalBufferLineImpl: ['JsArray', 'TypedArray']
   };
   const options = Object.keys((<any>term)._core.options);
