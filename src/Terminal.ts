@@ -304,6 +304,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this._userScrolling = false;
 
     this.unicodeProvider = new UnicodeProvider();
+    this.register(this.unicodeProvider);
     this._inputHandler = new InputHandler(this);
     this.register(this._inputHandler);
     // Reuse renderer if the Terminal is being recreated via a reset call.

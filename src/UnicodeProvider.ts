@@ -5,6 +5,9 @@
 import { IUnicodeImplementation, IUnicodeProvider } from './Types';
 import { v6 } from './unicode/v6';
 import { v11 } from './unicode/v11';
+import { Disposable } from './common/Lifecycle';
+
+type RegisterCallback = [(version: number, provider: UnicodeProvider) => void, (version: number) => void];
 
 /**
  * Class to provide access to different unicode version implementations.
@@ -17,21 +20,32 @@ import { v11 } from './unicode/v11';
  * different unicode settings active while still referring to the
  * same underlying implementations.
  */
-export class UnicodeProvider implements IUnicodeProvider {
-  static versions: {[key: string]: IUnicodeImplementation} = {};
+export class UnicodeProvider extends Disposable implements IUnicodeProvider {
+  public static versions: {[key: string]: IUnicodeImplementation} = {};
   private static _registerCallbacks: ((version: number) => void)[] = [];
 
-  static onRegister(callback: (version: number) => void): void {
+  public static addRegisterListener(callback: (version: number) => void): void {
     UnicodeProvider._registerCallbacks.push(callback);
+  }
+
+  public static removeRegisterListener(callback: (version: number) => void): void {
+    const pos = UnicodeProvider._registerCallbacks.indexOf(callback);
+    if (pos !== -1) {
+      UnicodeProvider._registerCallbacks.splice(pos, 1);
+    }
+  }
+
+  public static removeAllRegisterListener(): void {
+    UnicodeProvider._registerCallbacks = [];
   }
 
   /**
    * Register an unicode implementation.
    * Possible entry point for unicode addons.
-   * In conjuction with `onRegister` it can be used
-   * to load implementations lazy.
+   * In conjuction with `addRegisterListener` it can be used
+   * to load and use implementations lazy.
    */
-  static registerVersion(impl: IUnicodeImplementation): void {
+  public static registerVersion(impl: IUnicodeImplementation): void {
     if (UnicodeProvider.versions[impl.version]) {
       throw new Error(`unicode version "${impl.version}" already registered`);
     }
@@ -39,16 +53,24 @@ export class UnicodeProvider implements IUnicodeProvider {
     UnicodeProvider._registerCallbacks.forEach(cb => cb(impl.version));
   }
 
-  static registeredVersions(): number[] {
+  public static getRegisteredVersions(): number[] {
     return Object.getOwnPropertyNames(UnicodeProvider.versions).map(parseFloat).sort((a, b) => a - b);
   }
 
   private _version: number;
+  private _registerCallbacks: RegisterCallback[] = [];
   public wcwidth: (ucs: number) => number;
 
   // defaults to the highest available version
-  constructor(version: number = 20) {
+  constructor(version: number = 200) {
+    super();
     this.setActiveVersion(version);
+  }
+
+  public dispose(): void {
+    this._registerCallbacks.forEach(el => UnicodeProvider.removeRegisterListener(el[1]));
+    this._registerCallbacks = null;
+    this.wcwidth = null;
   }
 
   /**
@@ -56,14 +78,33 @@ export class UnicodeProvider implements IUnicodeProvider {
    * Gets the newly registered version and
    * the `UnicodeProvider` instance as arguments.
    */
-  public onRegister(callback: (version: number, provider: UnicodeProvider) => void): void {
-    UnicodeProvider.onRegister((version) => callback(version, this));
+  public addRegisterListener(callback: (version: number, provider: UnicodeProvider) => void): void {
+    const func: (version: number) => void = (version) => callback(version, this);
+    this._registerCallbacks.push([callback, func]);
+    UnicodeProvider.addRegisterListener(func);
+  }
+
+  /**
+   * Remove register listener.
+   */
+  public removeRegisterListener(callback: (version: number, provider: UnicodeProvider) => void): void {
+    let pos = -1;
+    for (let i = 0; i < this._registerCallbacks.length; ++i) {
+      if (this._registerCallbacks[i][0] === callback) {
+        pos = i;
+        break;
+      }
+    }
+    if (pos !== -1) {
+      UnicodeProvider.removeRegisterListener(this._registerCallbacks[pos][1]);
+      this._registerCallbacks.splice(pos, 1);
+    }
   }
 
   /**
    * Get a list of currently registered unicode versions.
    */
-  public registeredVersions(): number[] {
+  public getRegisteredVersions(): number[] {
     return Object.getOwnPropertyNames(UnicodeProvider.versions).map(parseFloat).sort((a, b) => a - b);
   }
 
@@ -82,14 +123,14 @@ export class UnicodeProvider implements IUnicodeProvider {
    * Returns the activated version number.
    */
   public setActiveVersion(version: number, mode?: 'exact' | 'closest' | 'next' | 'previous'): number {
-    if (!this.registeredVersions().length) {
+    if (!this.getRegisteredVersions().length) {
       throw new Error('no unicode versions registered');
     }
 
     // find closest matching version
     // Although not quite correct for typical versioning schemes 5.9 is treated closer to 6.0 than to 5.7.
     // Typically we will not ship subversions so this approximation should be close enough.
-    const versions = this.registeredVersions();
+    const versions = this.getRegisteredVersions();
     const distances = versions.map(el => Math.abs(version - el));
     const closestIndex = distances.reduce((iMin, x, i, arr) => x < arr[iMin] ? i : iMin, 0);
     let newVersion = versions[closestIndex];

@@ -540,8 +540,8 @@ export interface IUnicodeImplementation {
 }
 
 export interface IUnicodeProvider {
-  onRegister(callback: (version: number, provider: IUnicodeProvider) => void): void;
-  registeredVersions(): number[];
+  addRegisterListener(callback: (version: number, provider: IUnicodeProvider) => void): void;
+  getRegisteredVersions(): number[];
   getActiveVersion(): number;
   setActiveVersion(version: number, mode?: 'exact' | 'closest' | 'next' | 'previous'): number;
   wcwidth(ucs: number): number;
