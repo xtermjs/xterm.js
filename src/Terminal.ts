@@ -346,7 +346,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   public get isFocused(): boolean {
-    return document.activeElement === this.textarea;
+    return document.activeElement === this.textarea && document.hasFocus();
   }
 
   /**
@@ -1179,6 +1179,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * @param isWrapped Whether the new line is wrapped from the previous line.
    */
   public scroll(isWrapped?: boolean): void {
+<<<<<<< HEAD
     let newLine: IBufferLine;
     const useRecycling = this.options.experimentalPushRecycling;
     if (useRecycling) {
@@ -1192,6 +1193,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       newLine = this.buffer.getBlankLine(DEFAULT_ATTR, isWrapped);
     }
 
+=======
+    const newLine = this.buffer.getBlankLine(this.eraseAttr(), isWrapped);
+>>>>>>> master
     const topRow = this.buffer.ybase + this.buffer.scrollTop;
     const bottomRow = this.buffer.ybase + this.buffer.scrollBottom;
 
