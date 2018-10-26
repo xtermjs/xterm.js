@@ -110,7 +110,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     // chars will not match anymore at the viewport borders.
     const overscanLineLimit = Math.ceil(Linkifier.OVERSCAN_CHAR_LIMIT / this._terminal.cols);
     const iterator = this._terminal.buffer.iterator(
-      false, absoluteRowIndexStart, absoluteRowIndexEnd, overscanLineLimit, overscanLineLimit);
+      true, absoluteRowIndexStart, absoluteRowIndexEnd, overscanLineLimit, overscanLineLimit);
     while (iterator.hasNext()) {
       const lineData: IBufferStringIteratorResult = iterator.next();
       for (let i = 0; i < this._linkMatchers.length; i++) {
@@ -244,7 +244,17 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       if (endIndex[1] > this._terminal.cols) {
         endIndex[1] = this._terminal.cols;
       }
-      const visibleLength = (endIndex[0] - bufferIndex[0]) * this._terminal.cols - bufferIndex[1] + endIndex[1];
+      let visibleLength = (endIndex[0] - bufferIndex[0]) * this._terminal.cols - bufferIndex[1] + endIndex[1];
+
+      // patch the visible length by reappending the trimmed content length within terminal.cols
+      for (let i = bufferIndex[0]; i < endIndex[0]; ++i) {
+        const line = this._terminal.buffer.lines.get(i);
+        if (!line) {
+          break;
+        }
+        visibleLength += this._terminal.buffer.translateBufferLineToString(i, false).length
+                          - this._terminal.buffer.translateBufferLineToString(i, true).length;
+      }
 
       const line = this._terminal.buffer.lines.get(bufferIndex[0]);
       const char = line.get(bufferIndex[1]);

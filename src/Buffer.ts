@@ -155,10 +155,7 @@ export class Buffer implements IBuffer {
     if (this.lines.length > 0) {
       // Deal with columns increasing (we don't do anything when columns reduce)
       if (this._terminal.cols < newCols) {
-        // const ch: CharData = [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // does xterm use the default attr?
-        // lines that are already in the buffer need to get enlarged with empty char
-        // otherwise translateBufferLineToString will report wrong content
-        const ch: CharData = [DEFAULT_ATTR, '', 0, undefined];
+        const ch: CharData = [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // does xterm use the default attr?
         for (let i = 0; i < this.lines.length; i++) {
           this.lines.get(i).resize(newCols, ch);
         }
@@ -485,7 +482,8 @@ export class BufferStringIterator implements IBufferStringIterator {
     range.last = Math.min(range.last, this._buffer.lines.length);
     let result = '';
     for (let i = range.first; i <= range.last; ++i) {
-      result += this._buffer.translateBufferLineToString(i, (this._trimRight) ? i === range.last : false);
+      // result += this._buffer.translateBufferLineToString(i, (this._trimRight) ? i === range.last : false);
+      result += this._buffer.translateBufferLineToString(i, this._trimRight);
     }
     this._current = range.last + 1;
     return {range: range, content: result};
