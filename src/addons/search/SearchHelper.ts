@@ -19,7 +19,7 @@ export class SearchHelper implements ISearchHelper {
   /**
    * Find the next instance of the term, then scroll to and select it. If it
    * doesn't exist, do nothing.
-   * @param term Tne search term.
+   * @param term The search term.
    * @param searchOptions Search options.
    * @return Whether a result was found.
    */
@@ -33,7 +33,9 @@ export class SearchHelper implements ISearchHelper {
     let startRow = this._terminal._core.buffer.ydisp;
     if (this._terminal._core.selectionManager.selectionEnd) {
       // Start from the selection end if there is a selection
-      startRow = this._terminal._core.selectionManager.selectionEnd[1];
+      if (this._terminal.getSelection().length !== 0) {
+        startRow = this._terminal._core.selectionManager.selectionEnd[1];
+      }
     }
 
     // Search from ydisp + 1 to end
@@ -61,7 +63,7 @@ export class SearchHelper implements ISearchHelper {
   /**
    * Find the previous instance of the term, then scroll to and select it. If it
    * doesn't exist, do nothing.
-   * @param term Tne search term.
+   * @param term The search term.
    * @param searchOptions Search options.
    * @return Whether a result was found.
    */
@@ -75,7 +77,9 @@ export class SearchHelper implements ISearchHelper {
     let startRow = this._terminal._core.buffer.ydisp;
     if (this._terminal._core.selectionManager.selectionStart) {
       // Start from the selection end if there is a selection
-      startRow = this._terminal._core.selectionManager.selectionStart[1];
+      if (this._terminal.getSelection().length !== 0) {
+        startRow = this._terminal._core.selectionManager.selectionStart[1];
+      }
     }
 
     // Search from ydisp + 1 to end
@@ -108,7 +112,7 @@ export class SearchHelper implements ISearchHelper {
    */
   private _isWholeWord(searchIndex: number, line: string, term: string): boolean {
     return (((searchIndex === 0) || (nonWordCharacters.indexOf(line[searchIndex - 1]) !== -1)) &&
-         (((searchIndex + term.length) === line.length) || (nonWordCharacters.indexOf(line[searchIndex + term.length]) !== -1)));
+        (((searchIndex + term.length) === line.length) || (nonWordCharacters.indexOf(line[searchIndex + term.length]) !== -1)));
   }
 
   /**
@@ -116,7 +120,7 @@ export class SearchHelper implements ISearchHelper {
    * subsequent terminal lines if the text is wrapped. If the provided line number is part of a wrapped text line that
    * started on an earlier line then it is skipped since it will be properly searched when the terminal line that the
    * text starts on is searched.
-   * @param term Tne search term.
+   * @param term The search term.
    * @param y The line to search.
    * @param searchOptions Search options.
    * @return The search result if it was found.
@@ -191,7 +195,7 @@ export class SearchHelper implements ISearchHelper {
     do {
       const nextLine = this._terminal._core.buffer.lines.get(lineIndex + 1);
       lineWrapsToNext = nextLine ? nextLine.isWrapped : false;
-      lineString += this._terminal._core.buffer.translateBufferLineToString(lineIndex, !lineWrapsToNext && trimRight);
+      lineString += this._terminal._core.buffer.translateBufferLineToString(lineIndex, !lineWrapsToNext && trimRight).substring(0, this._terminal.cols);
       lineIndex++;
     } while (lineWrapsToNext);
 
@@ -205,6 +209,7 @@ export class SearchHelper implements ISearchHelper {
    */
   private _selectResult(result: ISearchResult): boolean {
     if (!result) {
+      this._terminal.clearSelection();
       return false;
     }
     this._terminal._core.selectionManager.setSelection(result.col, result.row, result.term.length);
