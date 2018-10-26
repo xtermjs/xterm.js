@@ -484,7 +484,6 @@ export class BufferStringIterator implements IBufferStringIterator {
     range.last = Math.min(range.last, this._buffer.lines.length);
     let result = '';
     for (let i = range.first; i <= range.last; ++i) {
-      // result += this._buffer.translateBufferLineToString(i, (this._trimRight) ? i === range.last : false);
       result += this._buffer.translateBufferLineToString(i, this._trimRight);
     }
     this._current = range.last + 1;
