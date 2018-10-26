@@ -257,4 +257,20 @@ describe('CircularList', () => {
       assert.equal(list.get(3), 4);
     });
   });
+  describe('trimAndRecycle', function(): void {
+    it('should return correct element', function(): void {
+      const list = new CircularList<number[]>(5);
+      list.push([0]);
+      list.push([1]);
+      list.push([2]);
+      list.push([3]);
+      list.push([4]);
+      assert.equal(list.trimAndRecycle()[0], 0);
+      assert.equal(list.trimAndRecycle()[0], 1);
+      assert.equal(list.trimAndRecycle()[0], 2);
+      assert.equal(list.trimAndRecycle()[0], 3);
+      assert.equal(list.trimAndRecycle()[0], 4);
+      assert.equal(list.trimAndRecycle()[0], 0);
+    });
+  });
 });

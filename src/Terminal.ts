@@ -25,7 +25,7 @@ import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions
 import { IMouseZoneManager } from './ui/Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
-import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from './Buffer';
+import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, CHAR_DATA_ATTR_INDEX } from './Buffer';
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './common/EventEmitter';
 import { Viewport } from './Viewport';
@@ -1179,23 +1179,19 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * @param isWrapped Whether the new line is wrapped from the previous line.
    */
   public scroll(isWrapped?: boolean): void {
-<<<<<<< HEAD
     let newLine: IBufferLine;
     const useRecycling = this.options.experimentalPushRecycling;
     if (useRecycling) {
       newLine = this._blankLine;
-      if (!newLine || newLine.length !== this.cols) {
-        newLine = this.buffer.getBlankLine(DEFAULT_ATTR, isWrapped);
+      if (!newLine || newLine.length !== this.cols || newLine.get(0)[CHAR_DATA_ATTR_INDEX] !== this.eraseAttr()) {
+        newLine = this.buffer.getBlankLine(this.eraseAttr(), isWrapped);
         this._blankLine = newLine;
       }
       newLine.isWrapped = !!(isWrapped);
     } else {
-      newLine = this.buffer.getBlankLine(DEFAULT_ATTR, isWrapped);
+      newLine = this.buffer.getBlankLine(this.eraseAttr(), isWrapped);
     }
 
-=======
-    const newLine = this.buffer.getBlankLine(this.eraseAttr(), isWrapped);
->>>>>>> master
     const topRow = this.buffer.ybase + this.buffer.scrollTop;
     const bottomRow = this.buffer.ybase + this.buffer.scrollBottom;
 
@@ -1206,9 +1202,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // Insert the line using the fastest method
       if (bottomRow === this.buffer.lines.length - 1) {
         if (useRecycling) {
-          // this.buffer.lines.pushRecycling((item) => (item) ? item.copyFrom(newLine) : newLine.clone());
           if (willBufferBeTrimmed) {
-            (this.buffer.lines as any).trimAndRecycle().copyFrom(newLine);
+            // Warning: Never call .trimAndRecycle() without the
+            //          willBufferBeTrimmed guard!
+            this.buffer.lines.trimAndRecycle().copyFrom(newLine);
           } else {
             this.buffer.lines.push(newLine.clone());
           }
