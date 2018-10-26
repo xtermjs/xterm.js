@@ -390,14 +390,6 @@ export class InputHandler extends Disposable implements IInputHandler {
         // autowrap - DECAWM
         // automatically wraps to the beginning of the next line
         if (wraparoundMode) {
-          // nullify all cells behind
-          // we iterate here to line.length which can be bigger
-          // after shrinking than cols to get correct offset handling
-          // in Buffer.stringIndexToBufferIndex, also partially fixes
-          // trimming in Buffer.translateBufferLineToString
-          for (let i = buffer.x; i < bufferRow.length; ++i) {
-            bufferRow.set(buffer.x++, [curAttr, '', 0, undefined]);
-          }
           buffer.x = 0;
           buffer.y++;
           if (buffer.y > buffer.scrollBottom) {

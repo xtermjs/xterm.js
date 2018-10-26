@@ -238,13 +238,14 @@ export class Buffer implements IBuffer {
    * @param stringIndex index within the string
    * @param startCol column offset the string was retrieved from
    */
-  public stringIndexToBufferIndex(lineIndex: number, stringIndex: number): BufferIndex {
+  public stringIndexToBufferIndex(lineIndex: number, stringIndex: number, trimRight: boolean = false): BufferIndex {
     while (stringIndex) {
       const line = this.lines.get(lineIndex);
       if (!line) {
         [-1, -1];
       }
-      for (let i = 0; i < line.length; ++i) {
+      const length = (trimRight) ? line.getTrimmedLength() : line.length;
+      for (let i = 0; i < length; ++i) {
         stringIndex -= line.get(i)[CHAR_DATA_CHAR_INDEX].length;
         if (stringIndex < 0) {
           return [lineIndex, i];
@@ -312,6 +313,7 @@ export class Buffer implements IBuffer {
 
     // Calculate the final end col by trimming whitespace on the right of the
     // line if needed.
+    // TODO: use Bufferline.getTrimmedLength here?
     if (trimRight) {
       const rightWhitespaceIndex = lineString.search(/\s+$/);
       if (rightWhitespaceIndex !== -1) {

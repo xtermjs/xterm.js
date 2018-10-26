@@ -296,7 +296,7 @@ export interface IBuffer {
   nextStop(x?: number): number;
   prevStop(x?: number): number;
   getBlankLine(attr: number, isWrapped?: boolean): IBufferLine;
-  stringIndexToBufferIndex(lineIndex: number, stringIndex: number): number[];
+  stringIndexToBufferIndex(lineIndex: number, stringIndex: number, trimRight?: boolean): number[];
   iterator(trimRight: boolean, startIndex?: number, endIndex?: number, startOverscan?: number, endOverscan?: number): IBufferStringIterator;
 }
 
@@ -524,6 +524,7 @@ export interface IBufferLine {
   fill(fillCharData: CharData): void;
   copyFrom(line: IBufferLine): void;
   clone(): IBufferLine;
+  getTrimmedLength(): number;
 }
 
 export interface IBufferLineConstructor {

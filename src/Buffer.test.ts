@@ -502,18 +502,19 @@ describe('Buffer', () => {
       assert(terminal.buffer.lines.get(bufferIndex[0]).get(bufferIndex[1])[CHAR_DATA_CHAR_INDEX], '😃');
     });
 
-    it('multiline fullwidth chars with offset 1 - tests for old faulty behavior', () => {
+    it('multiline fullwidth chars with offset 1 (currently tests for broken behavior)', () => {
       const input = 'a１２３４５６７８９０１２３４５６７８９０';
       // the 'a' at the beginning moves all fullwidth chars one to the right
       // now the end of the line contains a dangling empty cell since
       // the next fullwidth char has to wrap early
-      // old behavior: the dangling last cell is wrongly added in the string
-      // also see #1685, fixed in #1769
+      // the dangling last cell is wrongly added in the string
+      // --> fixable after resolving #1685
       terminal.writeSync(input);
-      const s = terminal.buffer.iterator(true).next().content;
-      assert.equal(input, s);
+      // TODO: reenable after fix
+      // const s = terminal.buffer.contents(true).toArray()[0];
+      // assert.equal(input, s);
       for (let i = 10; i < input.length; ++i) {
-        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
+        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i + 1); // TODO: remove +1 after fix
         const j = (i - 0) << 1;
         assert.deepEqual([(j / terminal.cols) | 0, j % terminal.cols], bufferIndex);
       }

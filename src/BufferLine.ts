@@ -3,7 +3,7 @@
  * @license MIT
  */
 import { CharData, IBufferLine } from './Types';
-import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from './Buffer';
+import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, CHAR_DATA_CHAR_INDEX } from './Buffer';
 
 /**
  * Class representing a terminal line.
@@ -107,6 +107,16 @@ export class BufferLine implements IBufferLine {
     const newLine = new BufferLine(0);
     newLine.copyFrom(this);
     return newLine;
+  }
+
+  public getTrimmedLength(): number {
+    for (let i = this.length - 1; i >= 0; --i) {
+      const s = this.get(i)[CHAR_DATA_CHAR_INDEX];
+      if (s !== ' ') {
+        return i + 1;
+      }
+    }
+    return 0;
   }
 }
 
@@ -278,5 +288,15 @@ export class BufferLineTypedArray implements IBufferLine {
     }
     newLine.isWrapped = this.isWrapped;
     return newLine;
+  }
+
+  public getTrimmedLength(): number {
+    for (let i = this.length - 1; i >= 0; --i) {
+      const s = this._data[i * CELL_SIZE + Cell.STRING];
+      if (s !== 32) {  // 32 ==> ' '.charCodeAt(0)
+        return i + 1;
+      }
+    }
+    return 0;
   }
 }

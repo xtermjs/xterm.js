@@ -220,12 +220,12 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       rex.lastIndex = stringIndex + uri.length;
 
       // get the buffer index as [absolute row, col] for the match
-      const bufferIndex = this._terminal.buffer.stringIndexToBufferIndex(rowIndex, stringIndex);
+      const bufferIndex = this._terminal.buffer.stringIndexToBufferIndex(rowIndex, stringIndex, true);
       // calculate buffer index of uri end
       // we cannot directly use uri.length here since stringIndexToBufferIndex would
       // skip empty cells and stop at the next cell with real content
       // instead we fetch the index of the last char in uri and advance to the next cell
-      const endIndex = this._terminal.buffer.stringIndexToBufferIndex(rowIndex, stringIndex + uri.length - 1);
+      const endIndex = this._terminal.buffer.stringIndexToBufferIndex(rowIndex, stringIndex + uri.length - 1, true);
 
       // adjust start index to visible line length
       if (bufferIndex[1] >= this._terminal.cols) {
@@ -244,17 +244,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       if (endIndex[1] > this._terminal.cols) {
         endIndex[1] = this._terminal.cols;
       }
-      let visibleLength = (endIndex[0] - bufferIndex[0]) * this._terminal.cols - bufferIndex[1] + endIndex[1];
-
-      // patch the visible length by reappending the trimmed content length within terminal.cols
-      for (let i = bufferIndex[0]; i < endIndex[0]; ++i) {
-        const line = this._terminal.buffer.lines.get(i);
-        if (!line) {
-          break;
-        }
-        visibleLength += this._terminal.buffer.translateBufferLineToString(i, false).length
-                          - this._terminal.buffer.translateBufferLineToString(i, true).length;
-      }
+      const visibleLength = (endIndex[0] - bufferIndex[0]) * this._terminal.cols - bufferIndex[1] + endIndex[1];
 
       const line = this._terminal.buffer.lines.get(bufferIndex[0]);
       const char = line.get(bufferIndex[1]);
