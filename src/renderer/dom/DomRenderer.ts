@@ -352,7 +352,11 @@ export class DomRenderer extends EventEmitter implements IRenderer {
 
   private _setCellUnderline(x: number, x2: number, y: number, y2: number, cols: number, enabled: boolean): void {
     while (x !== x2 || y !== y2) {
-      const span = <HTMLElement>this._rowElements[y].children[x];
+      const row = this._rowElements[y];
+      if (!row) {
+        return;
+      }
+      const span = <HTMLElement>row.children[x];
       span.style.textDecoration = enabled ? 'underline' : 'none';
       x = (x + 1) % cols;
       if (x === 0) {

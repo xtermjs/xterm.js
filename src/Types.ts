@@ -296,6 +296,7 @@ export interface IBuffer {
   getWrappedRangeForLine(y: number): { first: number, last: number };
   nextStop(x?: number): number;
   prevStop(x?: number): number;
+  getBlankLine(attr: number, isWrapped?: boolean): IBufferLine;
   stringIndexToBufferIndex(lineIndex: number, stringIndex: number): number[];
   iterator(trimRight: boolean, startIndex?: number, endIndex?: number, startOverscan?: number, endOverscan?: number): IBufferStringIterator;
 }
@@ -517,12 +518,17 @@ export interface IBufferLine {
   isWrapped: boolean;
   get(index: number): CharData;
   set(index: number, value: CharData): void;
-  pop(): CharData | undefined;
-  push(data: CharData): void;
-  splice(start: number, deleteCount: number, ...items: CharData[]): CharData[];
   insertCells(pos: number, n: number, ch: CharData): void;
   deleteCells(pos: number, n: number, fill: CharData): void;
   replaceCells(start: number, end: number, fill: CharData): void;
+  resize(cols: number, fill: CharData, shrink?: boolean): void;
+  fill(fillCharData: CharData): void;
+  copyFrom(line: IBufferLine): void;
+  clone(): IBufferLine;
+}
+
+export interface IBufferLineConstructor {
+  new(cols: number, fillCharData?: CharData, isWrapped?: boolean): IBufferLine;
 }
 
 /**

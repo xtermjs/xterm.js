@@ -52,7 +52,6 @@ import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent } from './common/Types';
 import { evaluateKeyboardEvent } from './core/input/Keyboard';
 import { KeyboardResultType, ICharset } from './core/Types';
-import { BufferLine } from './BufferLine';
 import { UnicodeProvider } from './UnicodeProvider';
 
 // Let it work inside Node.js for automated testing purposes.
@@ -108,7 +107,8 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   theme: null,
   rightClickSelectsWord: Browser.isMac,
   rendererType: 'canvas',
-  unicodeVersion: 11
+  unicodeVersion: 11,
+  experimentalBufferLineImpl: 'JsArray'
 };
 
 export class Terminal extends EventEmitter implements ITerminal, IDisposable, IInputHandlingTerminal {
@@ -346,7 +346,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   public get isFocused(): boolean {
-    return document.activeElement === this.textarea;
+    return document.activeElement === this.textarea && document.hasFocus();
   }
 
   /**
@@ -498,6 +498,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         break;
       case 'tabStopWidth': this.buffers.setupTabStops(); break;
       case 'unicodeVersion': this.unicodeProvider.setActiveVersion(parseFloat(value)); break;
+      case 'experimentalBufferLineImpl':
+        this.buffers.normal.setBufferLineFactory(value);
+        this.buffers.alt.setBufferLineFactory(value);
+        break;
     }
     // Inform renderer of changes
     if (this.renderer) {
@@ -1175,7 +1179,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * @param isWrapped Whether the new line is wrapped from the previous line.
    */
   public scroll(isWrapped?: boolean): void {
-    const newLine = BufferLine.blankLine(this.cols, DEFAULT_ATTR, isWrapped);
+    const newLine = this.buffer.getBlankLine(this.eraseAttr(), isWrapped);
     const topRow = this.buffer.ybase + this.buffer.scrollTop;
     const bottomRow = this.buffer.ybase + this.buffer.scrollBottom;
 
@@ -1727,7 +1731,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.buffer.ybase = 0;
     this.buffer.y = 0;
     for (let i = 1; i < this.rows; i++) {
-      this.buffer.lines.push(BufferLine.blankLine(this.cols, DEFAULT_ATTR));
+      this.buffer.lines.push(this.buffer.getBlankLine(DEFAULT_ATTR));
     }
     this.refresh(0, this.rows - 1);
     this.emit('scroll', this.buffer.ydisp);
@@ -1819,7 +1823,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // blankLine(true) is xterm/linux behavior
       const scrollRegionHeight = this.buffer.scrollBottom - this.buffer.scrollTop;
       this.buffer.lines.shiftElements(this.buffer.y + this.buffer.ybase, scrollRegionHeight, 1);
-      this.buffer.lines.set(this.buffer.y + this.buffer.ybase, BufferLine.blankLine(this.cols, this.eraseAttr()));
+      this.buffer.lines.set(this.buffer.y + this.buffer.ybase, this.buffer.getBlankLine(this.eraseAttr()));
       this.updateRange(this.buffer.scrollTop);
       this.updateRange(this.buffer.scrollBottom);
     } else {

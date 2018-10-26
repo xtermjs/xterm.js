@@ -10,12 +10,12 @@ import { ICharset } from '../Types';
  * to be represented within the terminal with only 8-bit encoding. See ISO 2022
  * for a discussion on character sets. Only VT100 character sets are supported.
  */
-export const CHARSETS: { [key: string]: ICharset } = {};
+export const CHARSETS: { [key: string]: ICharset | null } = {};
 
 /**
  * The default character set, US.
  */
-export const DEFAULT_CHARSET: ICharset = CHARSETS['B'];
+export const DEFAULT_CHARSET: ICharset | null = CHARSETS['B'];
 
 /**
  * DEC Special Character and Line Drawing Set.
