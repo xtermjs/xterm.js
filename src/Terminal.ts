@@ -1154,9 +1154,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   public updateCursorStyle(ev: KeyboardEvent): void {
     if (this.selectionManager && this.selectionManager.shouldColumnSelect(ev)) {
-      this.element.classList.add('xterm-cursor-crosshair');
+      this.element.classList.add('column-select');
     } else {
-      this.element.classList.remove('xterm-cursor-crosshair');
+      this.element.classList.remove('column-select');
     }
   }
 
