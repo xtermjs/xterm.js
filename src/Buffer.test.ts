@@ -519,6 +519,26 @@ describe('Buffer', () => {
         assert.deepEqual([(j / terminal.cols) | 0, j % terminal.cols], bufferIndex);
       }
     });
+    it('should point to correct trimmed .translateBufferLineToString', function(): void {
+      terminal.writeSync([
+        'abc',              // #1
+        '１２３４５',         // #2
+        '￥cafe\u0301￥'     // #3
+      ].join('\r\n'));
+      let content = '';
+      for (let i = 0; i < 3; ++i) {
+        const s = terminal.buffer.translateBufferLineToString(i, true);
+        content += s;
+        const endIndex = terminal.buffer.stringIndexToBufferIndex(i, s.length - 1, true);
+        const endChar = terminal.buffer.lines.get(i).get(endIndex[1])[CHAR_DATA_CHAR_INDEX];
+        assert.equal(s[s.length - 1], endChar);
+        // with trim active the next stop after s should be [i + 1, 0]
+        assert.deepEqual(terminal.buffer.stringIndexToBufferIndex(i, s.length, true), [i + 1, 0]);
+      }
+      const lastIndex = terminal.buffer.stringIndexToBufferIndex(0, content.length - 1, true);
+      const lastChar = terminal.buffer.lines.get(lastIndex[0]).get(lastIndex[1])[CHAR_DATA_CHAR_INDEX];
+      assert.equal(content[content.length - 1], lastChar);
+    });
   });
   describe('BufferStringIterator', function(): void {
     it('iterator does not ovrflow buffer limits', function(): void {

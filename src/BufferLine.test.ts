@@ -200,4 +200,17 @@ describe('BufferLine', function(): void {
       chai.expect(line.toArray()).eql(Array(7).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
     });
   });
+  it('getTrimmedLength', function(): void {
+    // Note: trim is currently hardcoded to SP
+    const line = new TestBufferLine(10, [1, 'a', 0, 'a'.charCodeAt(0)], false);
+    chai.expect(line.getTrimmedLength()).equals(10);
+    line.replaceCells(8, 10, [0, ' ', 1, 32]);
+    chai.expect(line.getTrimmedLength()).equals(8);
+    line.replaceCells(2, 4, [0, ' ', 1, 32]);
+    chai.expect(line.getTrimmedLength()).equals(8);
+    line.replaceCells(4, 8, [0, ' ', 1, 32]);
+    chai.expect(line.getTrimmedLength()).equals(2);
+    line.replaceCells(0, 4, [0, ' ', 1, 32]);
+    chai.expect(line.getTrimmedLength()).equals(0);
+  });
 });

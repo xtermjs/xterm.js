@@ -111,8 +111,7 @@ export class BufferLine implements IBufferLine {
 
   public getTrimmedLength(): number {
     for (let i = this.length - 1; i >= 0; --i) {
-      const s = this.get(i)[CHAR_DATA_CHAR_INDEX];
-      if (s !== ' ') {
+      if (this.get(i)[CHAR_DATA_CHAR_INDEX] !== ' ') {
         return i + 1;
       }
     }
@@ -292,8 +291,7 @@ export class BufferLineTypedArray implements IBufferLine {
 
   public getTrimmedLength(): number {
     for (let i = this.length - 1; i >= 0; --i) {
-      const s = this._data[i * CELL_SIZE + Cell.STRING];
-      if (s !== 32) {  // 32 ==> ' '.charCodeAt(0)
+      if (this._data[i * CELL_SIZE + Cell.STRING] !== 32) {  // 32 ==> ' '.charCodeAt(0)
         return i + 1;
       }
     }

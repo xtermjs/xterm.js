@@ -234,15 +234,20 @@ export class Buffer implements IBuffer {
    * The method operates on the CharData string length, there are no
    * additional content or boundary checks. Therefore the string and the buffer
    * should not be altered in between.
+   * Note: Trimmed cells will be skipped until the next cell with real content.
+   * Thus it is not possible to get the end of a trimmed string with string.length
+   * directly. Instead use the last char index and add the char's width to the
+   * index.
    * @param lineIndex line index the string was retrieved from
    * @param stringIndex index within the string
    * @param startCol column offset the string was retrieved from
+   * @param trimRight whether to trim spaces from right, defaults to false
    */
   public stringIndexToBufferIndex(lineIndex: number, stringIndex: number, trimRight: boolean = false): BufferIndex {
     while (stringIndex) {
       const line = this.lines.get(lineIndex);
       if (!line) {
-        [-1, -1];
+        return [-1, -1];
       }
       const length = (trimRight) ? line.getTrimmedLength() : line.length;
       for (let i = 0; i < length; ++i) {
