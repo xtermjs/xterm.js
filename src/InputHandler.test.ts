@@ -438,6 +438,36 @@ describe('InputHandler', () => {
       termNew.buffer.x = 40;
       inputHandlerNew.eraseInDisplay([2]);
       expect(termContent(termNew)).eql(termContent(termOld));
+
+      // reset and add a wrapped line
+      termNew.buffer.y = 0;
+      termNew.buffer.x = 0;
+      inputHandlerNew.parse(Array(termNew.cols + 1).join('a')); // line 0
+      inputHandlerNew.parse(Array(termNew.cols + 10).join('a')); // line 1 and 2
+      for (let i = 3; i < termOld.rows; ++i) inputHandlerNew.parse(Array(termNew.cols + 1).join('a'));
+
+      // params[1] left and above with wrap
+      // confirm precondition that line 2 is wrapped
+      expect(termNew.buffer.lines.get(2).isWrapped).true;
+      termNew.buffer.y = 2;
+      termNew.buffer.x = 40;
+      inputHandlerNew.eraseInDisplay([1]);
+      expect(termNew.buffer.lines.get(2).isWrapped).false;
+
+      // reset and add a wrapped line
+      termNew.buffer.y = 0;
+      termNew.buffer.x = 0;
+      inputHandlerNew.parse(Array(termNew.cols + 1).join('a')); // line 0
+      inputHandlerNew.parse(Array(termNew.cols + 10).join('a')); // line 1 and 2
+      for (let i = 3; i < termOld.rows; ++i) inputHandlerNew.parse(Array(termNew.cols + 1).join('a'));
+
+      // params[1] left and above with wrap
+      // confirm precondition that line 2 is wrapped
+      expect(termNew.buffer.lines.get(2).isWrapped).true;
+      termNew.buffer.y = 1;
+      termNew.buffer.x = 90; // Cursor is beyond last column
+      inputHandlerNew.eraseInDisplay([1]);
+      expect(termNew.buffer.lines.get(2).isWrapped).false;
     });
   });
   it('convertEol setting', function(): void {
