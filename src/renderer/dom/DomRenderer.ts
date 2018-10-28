@@ -131,6 +131,8 @@ export class DomRenderer extends EventEmitter implements IRenderer {
     this._selectionContainer.style.height = (<any>this._terminal)._viewportElement.style.height;
     this._rowContainer.style.width = `${this.dimensions.canvasWidth}px`;
     this._rowContainer.style.height = `${this.dimensions.canvasHeight}px`;
+    this._terminal.screenElement.style.width = '';
+    this._terminal.screenElement.style.height = '';
   }
 
   public setTheme(theme: ITheme | undefined): IColorSet {
