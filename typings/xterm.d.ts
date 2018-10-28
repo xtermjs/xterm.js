@@ -161,7 +161,6 @@ declare module 'xterm' {
      * when canvas is too slow for the environment. The following features do
      * not work when the DOM renderer is used:
      *
-     * - Line height
      * - Letter spacing
      * - Cursor blink
      */
