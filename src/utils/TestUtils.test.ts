@@ -121,7 +121,7 @@ export class MockTerminal implements ITerminal {
   handler(data: string): void {
     throw new Error('Method not implemented.');
   }
-  on(event: string, callback: () => void): void {
+  on(event: string, callback: (...args: any[]) => void): void {
     throw new Error('Method not implemented.');
   }
   off(type: string, listener: XtermListener): void {
