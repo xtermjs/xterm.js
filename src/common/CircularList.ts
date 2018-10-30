@@ -90,10 +90,7 @@ export class CircularList<T> extends EventEmitter implements ICircularList<T> {
   public push(value: T): void {
     this._array[this._getCyclicIndex(this._length)] = value;
     if (this._length === this._maxLength) {
-      this._startIndex++;
-      if (this._startIndex === this._maxLength) {
-        this._startIndex = 0;
-      }
+      this._startIndex = ++this._startIndex % this._maxLength;
       this.emit('trim', 1);
     } else {
       this._length++;
@@ -101,18 +98,11 @@ export class CircularList<T> extends EventEmitter implements ICircularList<T> {
   }
 
   /**
-   * Recycling trim.
-   * This is used to recycle buffer lines in Terminal.scroll when
-   * the list is at maxLength as a push replacement.
-   * Returns the old line as new one to be recycled.
-   * Note: There are no bound checks for performance reasons,
-   * the method is a special optimization for Terminal.scroll,
-   * do not use it anywhere else.
+   * Whether a push would trim.
+   * True when the ringbuffer is full.
    */
-  public trimAndRecycle(): T | undefined {
-    this._startIndex = ++this._startIndex % this._maxLength;
-    this.emit('trim', 1);
-    return this._array[this._getCyclicIndex(this._length - 1)];
+  public pushWouldTrim(): boolean {
+    return this._length === this._maxLength;
   }
 
   /**

@@ -107,7 +107,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   rightClickSelectsWord: Browser.isMac,
   rendererType: 'canvas',
   experimentalBufferLineImpl: 'JsArray',
-  experimentalPushRecycling: false
+  experimentalBufferLineRecycling: false
 };
 
 export class Terminal extends EventEmitter implements ITerminal, IDisposable, IInputHandlingTerminal {
@@ -1179,16 +1179,16 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * Scroll the terminal down 1 row, creating a blank line.
    * @param isWrapped Whether the new line is wrapped from the previous line.
    */
-  public scroll(isWrapped?: boolean): void {
+  public scroll(isWrapped: boolean = false): void {
     let newLine: IBufferLine;
-    const useRecycling = this.options.experimentalPushRecycling;
+    const useRecycling = this.options.experimentalBufferLineRecycling;
     if (useRecycling) {
       newLine = this._blankLine;
       if (!newLine || newLine.length !== this.cols || newLine.get(0)[CHAR_DATA_ATTR_INDEX] !== this.eraseAttr()) {
         newLine = this.buffer.getBlankLine(this.eraseAttr(), isWrapped);
         this._blankLine = newLine;
       }
-      newLine.isWrapped = !!(isWrapped);
+      newLine.isWrapped = isWrapped;
     } else {
       newLine = this.buffer.getBlankLine(this.eraseAttr(), isWrapped);
     }
@@ -1198,15 +1198,17 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     if (this.buffer.scrollTop === 0) {
       // Determine whether the buffer is going to be trimmed after insertion.
-      const willBufferBeTrimmed = this.buffer.lines.length === this.buffer.lines.maxLength;
+      const willBufferBeTrimmed = this.buffer.lines.pushWouldTrim();
 
       // Insert the line using the fastest method
       if (bottomRow === this.buffer.lines.length - 1) {
         if (useRecycling) {
           if (willBufferBeTrimmed) {
-            // Warning: Never call .trimAndRecycle() without the
-            //          willBufferBeTrimmed guard!
-            this.buffer.lines.trimAndRecycle().copyFrom(newLine);
+            // push would trim the oldest line in the ringbuffer
+            // therefore we can recycle it here as the new line
+            const recycled = this.buffer.lines.get(0);
+            recycled.copyFrom(newLine);
+            this.buffer.lines.push(recycled);
           } else {
             this.buffer.lines.push(newLine.clone());
           }

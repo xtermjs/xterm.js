@@ -94,11 +94,10 @@ export class BufferLine implements IBufferLine {
     }
   }
 
-  public copyFrom(line: BufferLine): IBufferLine {
+  public copyFrom(line: BufferLine): void {
     this._data = line._data.slice(0);
     this.length = line.length;
     this.isWrapped = line.isWrapped;
-    return this;
   }
 
   public clone(): IBufferLine {
@@ -249,7 +248,7 @@ export class BufferLineTypedArray implements IBufferLine {
   }
 
   /** alter to a full copy of line  */
-  public copyFrom(line: BufferLineTypedArray): IBufferLine {
+  public copyFrom(line: BufferLineTypedArray): void {
     if (this.length !== line.length) {
       this._data = new Uint32Array(line._data);
     } else {
@@ -262,7 +261,6 @@ export class BufferLineTypedArray implements IBufferLine {
       this._combined[el] = line._combined[el];
     }
     this.isWrapped = line.isWrapped;
-    return this;
   }
 
   /** create a new clone */
