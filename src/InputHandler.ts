@@ -722,12 +722,25 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param start first cell index to be erased
    * @param end   end - 1 is last erased cell
    */
-  private _eraseInBufferLine(y: number, start: number, end: number): void {
-    this._terminal.buffer.lines.get(this._terminal.buffer.ybase + y).replaceCells(
+  private _eraseInBufferLine(y: number, start: number, end: number, clearWrap: boolean = false): void {
+    const line = this._terminal.buffer.lines.get(this._terminal.buffer.ybase + y);
+    line.replaceCells(
       start,
       end,
       [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
     );
+    if (clearWrap) {
+      line.isWrapped = false;
+    }
+  }
+
+  /**
+   * Helper method to reset cells in a terminal row.
+   * The cell gets replaced with the eraseChar of the terminal and the isWrapped property is set to false.
+   * @param y row index
+   */
+  private _resetBufferLine(y: number): void {
+    this._eraseInBufferLine(y, 0, this._terminal.cols, true);
   }
 
   /**
@@ -748,18 +761,23 @@ export class InputHandler extends Disposable implements IInputHandler {
       case 0:
         j = this._terminal.buffer.y;
         this._terminal.updateRange(j);
-        this._eraseInBufferLine(j++, this._terminal.buffer.x, this._terminal.cols);
+        this._eraseInBufferLine(j++, this._terminal.buffer.x, this._terminal.cols, this._terminal.buffer.x === 0);
         for (; j < this._terminal.rows; j++) {
-          this._eraseInBufferLine(j, 0, this._terminal.cols);
+          this._resetBufferLine(j);
         }
         this._terminal.updateRange(j);
         break;
       case 1:
         j = this._terminal.buffer.y;
         this._terminal.updateRange(j);
-        this._eraseInBufferLine(j, 0, this._terminal.buffer.x + 1);
+        // Deleted front part of line and everything before. This line will no longer be wrapped.
+        this._eraseInBufferLine(j, 0, this._terminal.buffer.x + 1, true);
+        if (this._terminal.buffer.x + 1 >= this._terminal.cols) {
+          // Deleted entire previous line. This next line can no longer be wrapped.
+          this._terminal.buffer.lines.get(j + 1).isWrapped = false;
+        }
         while (j--) {
-          this._eraseInBufferLine(j, 0, this._terminal.cols);
+          this._resetBufferLine(j);
         }
         this._terminal.updateRange(0);
         break;
@@ -767,7 +785,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         j = this._terminal.rows;
         this._terminal.updateRange(j - 1);
         while (j--) {
-          this._eraseInBufferLine(j, 0, this._terminal.cols);
+          this._resetBufferLine(j);
         }
         this._terminal.updateRange(0);
         break;
