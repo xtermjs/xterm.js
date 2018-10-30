@@ -9,6 +9,10 @@ import { IRenderer } from '../renderer/Types';
 export class MouseHelper {
   constructor(private _renderer: IRenderer) {}
 
+  public setRenderer(renderer: IRenderer): void {
+    this._renderer = renderer;
+  }
+
   public static getCoordsRelativeToElement(event: {pageX: number, pageY: number}, element: HTMLElement): [number, number] {
     // Ignore browsers that don't support MouseEvent.pageX
     if (event.pageX === null || event.pageX === undefined) {
