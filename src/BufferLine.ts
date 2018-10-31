@@ -304,7 +304,7 @@ export class BufferLineTypedArray implements IBufferLine {
   public getTrimmedLength(): number {
     for (let i = this.length - 1; i >= 0; --i) {
       if (this._data[i * CELL_SIZE + Cell.STRING] !== 0) {  // 0 ==> ''.charCodeAt(0) ==> NaN ==> 0
-        return i + 1;
+        return i + this._data[i * CELL_SIZE + Cell.WIDTH] - 1;
       }
     }
     return 0;
