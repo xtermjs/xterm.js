@@ -90,6 +90,11 @@ export class TextRenderLayer extends BaseRenderLayer {
           continue;
         }
 
+        // Simply skip empty cells...
+        if (!chars) {
+          continue;
+        }
+
         // Process any joined character ranges as needed. Because of how the
         // ranges are produced, we know that they are valid for the characters
         // and attributes of our input.
