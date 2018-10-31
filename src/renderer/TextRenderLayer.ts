@@ -72,11 +72,11 @@ export class TextRenderLayer extends BaseRenderLayer {
       const joinedRanges = joinerRegistry ? joinerRegistry.getJoinedCharacters(row) : [];
       for (let x = 0; x < terminal.cols; x++) {
         const charData = line.get(x);
-        let code: number = <number>charData[CHAR_DATA_CODE_INDEX];
+        let code: number = <number>charData[CHAR_DATA_CODE_INDEX] || 32;
 
         // Can either represent character(s) for a single cell or multiple cells
         // if indicated by a character joiner.
-        let chars: string = charData[CHAR_DATA_CHAR_INDEX];
+        let chars: string = charData[CHAR_DATA_CHAR_INDEX] || ' ';
         const attr: number = charData[CHAR_DATA_ATTR_INDEX];
         let width: number = charData[CHAR_DATA_WIDTH_INDEX];
 
@@ -87,11 +87,6 @@ export class TextRenderLayer extends BaseRenderLayer {
         // The character to the left is a wide character, drawing is owned by
         // the char at x-1
         if (width === 0) {
-          continue;
-        }
-
-        // Simply skip empty cells...
-        if (!chars) {
           continue;
         }
 
