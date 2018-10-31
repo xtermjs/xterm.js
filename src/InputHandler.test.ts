@@ -210,7 +210,7 @@ describe('InputHandler', () => {
   describe('regression tests', function(): void {
     function lineContent(line: IBufferLine): string {
       let content = '';
-      for (let i = 0; i < line.length; ++i) content += line.get(i)[CHAR_DATA_CHAR_INDEX];
+      for (let i = 0; i < line.length; ++i) content += line.get(i)[CHAR_DATA_CHAR_INDEX] || ' ';
       return content;
     }
 
@@ -476,12 +476,12 @@ describe('InputHandler', () => {
     const termNotConverting = new Terminal({cols: 15, rows: 10});
     (termNotConverting as any)._inputHandler.parse('Hello\nWorld');
     for (let i = 0; i < termNotConverting.cols; ++i) {
-      s += termNotConverting.buffer.lines.get(0).get(i)[CHAR_DATA_CHAR_INDEX];
+      s += termNotConverting.buffer.lines.get(0).get(i)[CHAR_DATA_CHAR_INDEX] || ' ';
     }
     expect(s).equals('Hello          ');
     s = '';
     for (let i = 0; i < termNotConverting.cols; ++i) {
-      s += termNotConverting.buffer.lines.get(1).get(i)[CHAR_DATA_CHAR_INDEX];
+      s += termNotConverting.buffer.lines.get(1).get(i)[CHAR_DATA_CHAR_INDEX] || ' ';
     }
     expect(s).equals('     World     ');
 
@@ -490,12 +490,12 @@ describe('InputHandler', () => {
     const termConverting = new Terminal({cols: 15, rows: 10, convertEol: true});
     (termConverting as any)._inputHandler.parse('Hello\nWorld');
     for (let i = 0; i < termConverting.cols; ++i) {
-      s += termConverting.buffer.lines.get(0).get(i)[CHAR_DATA_CHAR_INDEX];
+      s += termConverting.buffer.lines.get(0).get(i)[CHAR_DATA_CHAR_INDEX] || ' ';
     }
     expect(s).equals('Hello          ');
     s = '';
     for (let i = 0; i < termConverting.cols; ++i) {
-      s += termConverting.buffer.lines.get(1).get(i)[CHAR_DATA_CHAR_INDEX];
+      s += termConverting.buffer.lines.get(1).get(i)[CHAR_DATA_CHAR_INDEX] || ' ';
     }
     expect(s).equals('World          ');
   });
