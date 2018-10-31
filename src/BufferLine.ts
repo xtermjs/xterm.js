@@ -3,7 +3,7 @@
  * @license MIT
  */
 import { CharData, IBufferLine } from './Types';
-import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from './Buffer';
+import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
 
 /**
  * Class representing a terminal line.
@@ -107,6 +107,27 @@ export class BufferLine implements IBufferLine {
     const newLine = new BufferLine(0);
     newLine.copyFrom(this);
     return newLine;
+  }
+
+  public getTrimmedLength(): number {
+    for (let i = this.length - 1; i >= 0; --i) {
+      const ch = this.get(i);
+      if (ch[CHAR_DATA_CHAR_INDEX] !== '') {
+        return i + ch[CHAR_DATA_WIDTH_INDEX] - 1;
+      }
+    }
+    return 0;
+  }
+
+  public translateToString(trimRight: boolean = false, startCol: number = 0, endCol: number = null): string {
+    let length = endCol || this.length;
+    if (trimRight)
+      length = Math.min(length, this.getTrimmedLength());
+    let result = '';
+    for (let i = startCol; i < length; ++i) {
+      result += this.get(i)[CHAR_DATA_CHAR_INDEX] || ' ';
+    }
+    return result;
   }
 }
 
@@ -278,5 +299,26 @@ export class BufferLineTypedArray implements IBufferLine {
     }
     newLine.isWrapped = this.isWrapped;
     return newLine;
+  }
+
+  public getTrimmedLength(): number {
+    for (let i = this.length - 1; i >= 0; --i) {
+      if (this._data[i * CELL_SIZE + Cell.STRING] !== 0) {  // 0 ==> ''.charCodeAt(0) ==> NaN ==> 0
+        return i + 1;
+      }
+    }
+    return 0;
+  }
+
+  public translateToString(trimRight: boolean = false, startCol: number = 0, endCol: number = null): string {
+    let length = endCol || this.length;
+    if (trimRight)
+      length = Math.min(length, this.getTrimmedLength());
+    let result = '';
+    for (let i = startCol; i < length; ++i) {
+      const stringData = this._data[i * CELL_SIZE + Cell.STRING];
+      result += (stringData & 0x80000000) ? this._combined[i] : (stringData) ? String.fromCharCode(stringData) : ' ';
+    }
+    return result;
   }
 }

@@ -16,9 +16,13 @@ export const CHAR_DATA_WIDTH_INDEX = 2;
 export const CHAR_DATA_CODE_INDEX = 3;
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 
-export const NULL_CELL_CHAR = ' ';
-export const NULL_CELL_WIDTH = 1;
-export const NULL_CELL_CODE = 32;
+// export const NULL_CELL_CHAR = ' ';
+// export const NULL_CELL_WIDTH = 1;
+// export const NULL_CELL_CODE = 32;
+
+export const NULL_CELL_CHAR = '';
+export const NULL_CELL_WIDTH = 0;
+export const NULL_CELL_CODE = 0;
 
 /**
  * This class represents a terminal buffer (an internal state of the terminal), where the
@@ -273,6 +277,7 @@ export class Buffer implements IBuffer {
     if (!line) {
       return '';
     }
+    return line.translateToString(trimRight, startCol, endCol);
 
     // Initialize column and index values. Column values represent the actual
     // cell column, indexes represent the index in the string. Indexes are
