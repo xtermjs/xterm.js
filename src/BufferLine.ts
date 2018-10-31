@@ -124,8 +124,9 @@ export class BufferLine implements IBufferLine {
     if (trimRight)
       length = Math.min(length, this.getTrimmedLength());
     let result = '';
-    for (let i = startCol; i < length; ++i) {
-      result += this.get(i)[CHAR_DATA_CHAR_INDEX] || ' ';
+    while (startCol < endCol) {
+      result += this.get(startCol)[CHAR_DATA_CHAR_INDEX] || ' ';
+      startCol += this.get(startCol)[CHAR_DATA_WIDTH_INDEX] || 1;
     }
     return result;
   }
@@ -315,9 +316,10 @@ export class BufferLineTypedArray implements IBufferLine {
     if (trimRight)
       length = Math.min(length, this.getTrimmedLength());
     let result = '';
-    for (let i = startCol; i < length; ++i) {
-      const stringData = this._data[i * CELL_SIZE + Cell.STRING];
-      result += (stringData & 0x80000000) ? this._combined[i] : (stringData) ? String.fromCharCode(stringData) : ' ';
+    while (startCol < endCol) {
+      const stringData = this._data[startCol * CELL_SIZE + Cell.STRING];
+      result += (stringData & 0x80000000) ? this._combined[startCol] : (stringData) ? String.fromCharCode(stringData) : ' ';
+      startCol += this._data[startCol * CELL_SIZE + Cell.WIDTH] || 1;
     }
     return result;
   }
