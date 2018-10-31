@@ -31,7 +31,7 @@ export class DomRendererRowFactory {
       }
 
       const charData = lineData.get(x);
-      const char: string = charData[CHAR_DATA_CHAR_INDEX];
+      const char: string = charData[CHAR_DATA_CHAR_INDEX] || ' ';
       const attr: number = charData[CHAR_DATA_ATTR_INDEX];
       const width: number = charData[CHAR_DATA_WIDTH_INDEX];
 
