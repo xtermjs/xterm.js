@@ -21,7 +21,7 @@ export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 // export const NULL_CELL_CODE = 32;
 
 export const NULL_CELL_CHAR = '';
-export const NULL_CELL_WIDTH = 0;
+export const NULL_CELL_WIDTH = 1;
 export const NULL_CELL_CODE = 0;
 
 /**
@@ -488,8 +488,7 @@ export class BufferStringIterator implements IBufferStringIterator {
     range.last = Math.min(range.last, this._buffer.lines.length);
     let result = '';
     for (let i = range.first; i <= range.last; ++i) {
-      // TODO: always apply trimRight after fixing #1685
-      result += this._buffer.translateBufferLineToString(i, (this._trimRight) ? i === range.last : false);
+      result += this._buffer.translateBufferLineToString(i, this._trimRight);
     }
     this._current = range.last + 1;
     return {range: range, content: result};

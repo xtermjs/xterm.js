@@ -113,7 +113,7 @@ export class BufferLine implements IBufferLine {
     for (let i = this.length - 1; i >= 0; --i) {
       const ch = this.get(i);
       if (ch[CHAR_DATA_CHAR_INDEX] !== '') {
-        return i + ch[CHAR_DATA_WIDTH_INDEX] - 1;
+        return i + ch[CHAR_DATA_WIDTH_INDEX];
       }
     }
     return 0;
@@ -124,7 +124,7 @@ export class BufferLine implements IBufferLine {
     if (trimRight)
       length = Math.min(length, this.getTrimmedLength());
     let result = '';
-    while (startCol < endCol) {
+    while (startCol < length) {
       result += this.get(startCol)[CHAR_DATA_CHAR_INDEX] || ' ';
       startCol += this.get(startCol)[CHAR_DATA_WIDTH_INDEX] || 1;
     }
@@ -305,7 +305,7 @@ export class BufferLineTypedArray implements IBufferLine {
   public getTrimmedLength(): number {
     for (let i = this.length - 1; i >= 0; --i) {
       if (this._data[i * CELL_SIZE + Cell.STRING] !== 0) {  // 0 ==> ''.charCodeAt(0) ==> NaN ==> 0
-        return i + this._data[i * CELL_SIZE + Cell.WIDTH] - 1;
+        return i + this._data[i * CELL_SIZE + Cell.WIDTH];
       }
     }
     return 0;
@@ -316,7 +316,7 @@ export class BufferLineTypedArray implements IBufferLine {
     if (trimRight)
       length = Math.min(length, this.getTrimmedLength());
     let result = '';
-    while (startCol < endCol) {
+    while (startCol < length) {
       const stringData = this._data[startCol * CELL_SIZE + Cell.STRING];
       result += (stringData & 0x80000000) ? this._combined[startCol] : (stringData) ? String.fromCharCode(stringData) : ' ';
       startCol += this._data[startCol * CELL_SIZE + Cell.WIDTH] || 1;
