@@ -1198,17 +1198,13 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     if (this.buffer.scrollTop === 0) {
       // Determine whether the buffer is going to be trimmed after insertion.
-      const willBufferBeTrimmed = this.buffer.lines.pushWouldTrim();
+      const willBufferBeTrimmed = this.buffer.lines.isFull();
 
       // Insert the line using the fastest method
       if (bottomRow === this.buffer.lines.length - 1) {
         if (useRecycling) {
           if (willBufferBeTrimmed) {
-            // push would trim the oldest line in the ringbuffer
-            // therefore we can recycle it here as the new line
-            const recycled = this.buffer.lines.get(0);
-            recycled.copyFrom(newLine);
-            this.buffer.lines.push(recycled);
+            this.buffer.lines.recycle().copyFrom(newLine);
           } else {
             this.buffer.lines.push(newLine.clone());
           }

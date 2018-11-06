@@ -28,7 +28,8 @@ export interface ICircularList<T> extends IEventEmitter {
   get(index: number): T | undefined;
   set(index: number, value: T): void;
   push(value: T): void;
-  pushWouldTrim(): boolean;
+  recycle(): T | undefined;
+  isFull(): boolean;
   pop(): T | undefined;
   splice(start: number, deleteCount: number, ...items: T[]): void;
   trimStart(count: number): void;

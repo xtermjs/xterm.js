@@ -98,10 +98,24 @@ export class CircularList<T> extends EventEmitter implements ICircularList<T> {
   }
 
   /**
-   * Whether a push would trim.
-   * True when the ringbuffer is full.
+   * Advance ringbuffer index and return current element for recycling.
+   * Note: If the ringbuffer is not full this method will return undefined,
+   * Either precheck with isFull() or handle the undefined return value accordingly.
    */
-  public pushWouldTrim(): boolean {
+  public recycle(): T | undefined {
+    if (this._length === this._maxLength) {
+      this._startIndex = ++this._startIndex % this._maxLength;
+      this.emit('trim', 1);
+    } else {
+      this._length++;
+    }
+    return this._array[this._getCyclicIndex(this._length - 1)];
+  }
+
+  /**
+   * Ringbuffer is at max length.
+   */
+  public isFull(): boolean {
     return this._length === this._maxLength;
   }
 
