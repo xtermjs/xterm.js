@@ -335,7 +335,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const wraparoundMode: boolean = this._terminal.wraparoundMode;
     const insertMode: boolean = this._terminal.insertMode;
     const curAttr: number = this._terminal.curAttr;
-    const wcwidth = this._terminal.unicodeProvider.wcwidth;
+    const wcwidth = this._terminal.unicodeManager.wcwidth;
     let bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
 
     this._terminal.updateRange(buffer.y);
@@ -363,7 +363,6 @@ export class InputHandler extends Disposable implements IInputHandler {
 
       // calculate print space
       // expensive call, therefore we save width in line buffer
-      // chWidth = wcwidth(code);
       chWidth = wcwidth(code);
 
       // get charset replacement character

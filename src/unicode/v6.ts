@@ -2,9 +2,9 @@
  * Copyright (c) 2018 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { IUnicodeImplementation } from '../Types';
+import { IUnicodeVersionProvider } from '../Types';
 
-export const v6: IUnicodeImplementation = {
+export const v6: IUnicodeVersionProvider = {
   version: 6,
   wcwidth: (function(opts: {nul: number, control: number}): (ucs: number) => number {
     // extracted from https://www.cl.cam.ac.uk/%7Emgk25/ucs/wcwidth.c

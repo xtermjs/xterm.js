@@ -255,7 +255,8 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @param fg The link color for hover event.
    */
   private _addLink(x: number, y: number, uri: string, matcher: ILinkMatcher, fg: number): void {
-    const width = (this._terminal as any).unicodeProvider.getStringCellWidth(uri);
+    // FIXME: to support unicode version runtime switch replace this by endIndex calculation
+    const width = this._terminal.unicodeManager.getStringCellWidth(uri);
     const x1 = x % this._terminal.cols;
     const y1 = y + Math.floor(x / this._terminal.cols);
     let x2 = (x1 + width) % this._terminal.cols;

@@ -199,6 +199,12 @@ declare module 'xterm' {
      * The color theme of the terminal.
      */
     theme?: ITheme;
+
+    /**
+     * Set the unicode version.
+     * Defaults to the highest available version.
+     */
+    unicodeVersion?: string | number;
   }
 
   /**

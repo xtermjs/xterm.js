@@ -87,7 +87,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   handleTitle(title: string): void;
   index(): void;
   reverseIndex(): void;
-  unicodeProvider: IUnicodeProvider;
+  unicodeManager: IUnicodeVersionManager;
 }
 
 export interface IViewport extends IDisposable {
@@ -222,6 +222,7 @@ export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAcce
   viewport: IViewport;
   bracketedPasteMode: boolean;
   applicationCursor: boolean;
+  unicodeManager: IUnicodeVersionManager;
 
   /**
    * Emit the 'data' event and populate the given data.
@@ -534,16 +535,15 @@ export interface IBufferLineConstructor {
 /**
  * Interface for unicode version implementations.
  */
-export interface IUnicodeImplementation {
+export interface IUnicodeVersionProvider {
   version: number;
   wcwidth(ucs: number): number;
 }
 
-export interface IUnicodeProvider {
-  addRegisterListener(callback: (version: number, provider: IUnicodeProvider) => void): void;
-  getRegisteredVersions(): number[];
-  getActiveVersion(): number;
-  setActiveVersion(version: number, mode?: 'exact' | 'closest' | 'next' | 'previous'): number;
+export interface IUnicodeVersionManager {
+  addRegisterListener(callback: (version: number, provider: IUnicodeVersionManager) => void): void;
+  registeredVersions: number[];
+  activeVersion: number;
   wcwidth(ucs: number): number;
   getStringCellWidth(s: string): number;
 }
