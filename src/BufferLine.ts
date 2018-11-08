@@ -143,6 +143,9 @@ const enum Cell {
   WIDTH = 2
 }
 
+/** single vs. combined char distinction */
+const COMBINED = 0x80000000;
+
 /**
  * Typed array based bufferline implementation.
  * Note:  Unlike the JS variant the access to the data
@@ -177,11 +180,11 @@ export class BufferLineTypedArray implements IBufferLine {
     const stringData = this._data[index * CELL_SIZE + Cell.STRING];
     return [
       this._data[index * CELL_SIZE + Cell.FLAGS],
-      (stringData & 0x80000000)
+      (stringData & COMBINED)
         ? this._combined[index]
         : (stringData) ? String.fromCharCode(stringData) : '',
       this._data[index * CELL_SIZE + Cell.WIDTH],
-      (stringData & 0x80000000)
+      (stringData & COMBINED)
         ? this._combined[index].charCodeAt(this._combined[index].length - 1)
         : stringData
     ];
@@ -191,7 +194,7 @@ export class BufferLineTypedArray implements IBufferLine {
     this._data[index * CELL_SIZE + Cell.FLAGS] = value[0];
     if (value[1].length > 1) {
       this._combined[index] = value[1];
-      this._data[index * CELL_SIZE + Cell.STRING] = index | 0x80000000;
+      this._data[index * CELL_SIZE + Cell.STRING] = index | COMBINED;
     } else {
       this._data[index * CELL_SIZE + Cell.STRING] = value[1].charCodeAt(0);
     }
@@ -320,7 +323,7 @@ export class BufferLineTypedArray implements IBufferLine {
     let result = '';
     while (startCol < length) {
       const stringData = this._data[startCol * CELL_SIZE + Cell.STRING];
-      result += (stringData & 0x80000000) ? this._combined[startCol] : (stringData) ? String.fromCharCode(stringData) : ' ';
+      result += (stringData & COMBINED) ? this._combined[startCol] : (stringData) ? String.fromCharCode(stringData) : ' ';
       startCol += this._data[startCol * CELL_SIZE + Cell.WIDTH] || 1;
     }
     return result;

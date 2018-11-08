@@ -271,65 +271,11 @@ export class Buffer implements IBuffer {
    * @param endCol The column to end at.
    */
   public translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol: number = 0, endCol: number = null): string {
-    // Get full line
-    let lineString = '';
     const line = this.lines.get(lineIndex);
     if (!line) {
       return '';
     }
     return line.translateToString(trimRight, startCol, endCol);
-
-    // Initialize column and index values. Column values represent the actual
-    // cell column, indexes represent the index in the string. Indexes are
-    // needed here because some chars are 0 characters long (eg. after wide
-    // chars) and some chars are longer than 1 characters long (eg. emojis).
-    let startIndex = startCol;
-    // Only set endCol to the line length when it is null. 0 is a valid column.
-    if (endCol === null) {
-      endCol = line.length;
-    }
-    let endIndex = endCol;
-
-    for (let i = 0; i < line.length; i++) {
-      const char = line.get(i);
-      lineString += char[CHAR_DATA_CHAR_INDEX];
-      // Adjust start and end cols for wide characters if they affect their
-      // column indexes
-      if (char[CHAR_DATA_WIDTH_INDEX] === 0) {
-        if (startCol >= i) {
-          startIndex--;
-        }
-        if (endCol > i) {
-          endIndex--;
-        }
-      } else {
-        // Adjust the columns to take glyphs that are represented by multiple
-        // code points into account.
-        if (char[CHAR_DATA_CHAR_INDEX].length > 1) {
-          if (startCol > i) {
-            startIndex += char[CHAR_DATA_CHAR_INDEX].length - 1;
-          }
-          if (endCol > i) {
-            endIndex += char[CHAR_DATA_CHAR_INDEX].length - 1;
-          }
-        }
-      }
-    }
-
-    // Calculate the final end col by trimming whitespace on the right of the
-    // line if needed.
-    if (trimRight) {
-      const rightWhitespaceIndex = lineString.search(/\s+$/);
-      if (rightWhitespaceIndex !== -1) {
-        endIndex = Math.min(endIndex, rightWhitespaceIndex);
-      }
-      // Return the empty string if only trimmed whitespace is selected
-      if (endIndex <= startIndex) {
-        return '';
-      }
-    }
-
-    return lineString.substring(startIndex, endIndex);
   }
 
   public getWrappedRangeForLine(y: number): { first: number, last: number } {
