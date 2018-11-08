@@ -478,6 +478,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         if (this._theme) {
           this.renderer.setTheme(this._theme);
         }
+        this.mouseHelper.setRenderer(this.renderer);
         break;
       case 'scrollback':
         this.buffers.resize(this.cols, this.rows);
