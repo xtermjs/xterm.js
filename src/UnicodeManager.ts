@@ -40,10 +40,10 @@ export class UnicodeVersionManager extends Disposable implements IUnicodeVersion
   }
 
   /**
-   * Register an unicode implementation.
+   * Register an unicode version.
    * Possible entry point for unicode addons.
    * In conjuction with `addRegisterListener` it can be used
-   * to load and use implementations lazy.
+   * to load and use versions lazy.
    */
   public static registerVersion(impl: IUnicodeVersionProvider): void {
     if (UnicodeVersionManager.versions[impl.version]) {
@@ -79,7 +79,7 @@ export class UnicodeVersionManager extends Disposable implements IUnicodeVersion
    * Gets the newly registered version and
    * the `UnicodeProvider` instance as arguments.
    */
-  public addRegisterListener(callback: (version: number, provider: UnicodeVersionManager) => void): void {
+  public addRegisterListener(callback: (version: number, manager: IUnicodeVersionManager) => void): void {
     const func: (version: number) => void = (version) => callback(version, this);
     this._registerCallbacks.push([callback, func]);
     UnicodeVersionManager.addRegisterListener(func);
@@ -88,7 +88,7 @@ export class UnicodeVersionManager extends Disposable implements IUnicodeVersion
   /**
    * Remove register listener.
    */
-  public removeRegisterListener(callback: (version: number, provider: UnicodeVersionManager) => void): void {
+  public removeRegisterListener(callback: (version: number, manager: IUnicodeVersionManager) => void): void {
     let pos = -1;
     for (let i = 0; i < this._registerCallbacks.length; ++i) {
       if (this._registerCallbacks[i][0] === callback) {
@@ -123,7 +123,6 @@ export class UnicodeVersionManager extends Disposable implements IUnicodeVersion
     if (!this.registeredVersions.length || !UnicodeVersionManager.versions[version]) {
       throw new Error(`unicode version "${version}" not registered`);
     }
-
     // swap wcwidth impl
     this.wcwidth = UnicodeVersionManager.versions[version].wcwidth;
     this._version = version;

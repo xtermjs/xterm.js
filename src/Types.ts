@@ -541,7 +541,8 @@ export interface IUnicodeVersionProvider {
 }
 
 export interface IUnicodeVersionManager {
-  addRegisterListener(callback: (version: number, provider: IUnicodeVersionManager) => void): void;
+  addRegisterListener(callback: (version: number, manager: IUnicodeVersionManager) => void): void;
+  removeRegisterListener(callback: (version: number, provider: IUnicodeVersionManager) => void): void;
   registeredVersions: number[];
   activeVersion: number;
   wcwidth(ucs: number): number;
