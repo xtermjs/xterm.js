@@ -290,8 +290,9 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     }
 
     return (coords[1] > start[1] && coords[1] < end[1]) ||
-        (start[1] === end[1] && coords[1] === start[1] && coords[0] > start[0] && coords[0] < end[0]) ||
-        (start[1] < end[1] && coords[1] === end[1] && coords[0] < end[0]);
+        (start[1] === end[1] && coords[1] === start[1] && coords[0] >= start[0] && coords[0] < end[0]) ||
+        (start[1] < end[1] && coords[1] === end[1] && coords[0] < end[0]) ||
+        (start[1] < end[1] && coords[1] === start[1] && coords[0] >= start[0]);
   }
 
   /**
