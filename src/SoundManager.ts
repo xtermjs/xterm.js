@@ -14,7 +14,7 @@ export const DEFAULT_BELL_SOUND = 'data:audio/wav;base64,UklGRigBAABXQVZFZm10IBA
 export class SoundManager implements ISoundManager {
   private static _audioContext: AudioContext;
 
-  static get audioContext(): AudioContext {
+  static get audioContext(): AudioContext | null {
     if (!SoundManager._audioContext) {
       const audioContextCtor: typeof AudioContext = (<any>window).AudioContext || (<any>window).webkitAudioContext;
       if (!audioContextCtor) {
@@ -27,19 +27,20 @@ export class SoundManager implements ISoundManager {
   }
 
   constructor(
-    private _terminal: ITerminal
+    private _terminal: ITerminal,
+    private _audioContext?: AudioContext
   ) {
   }
 
   public playBellSound(): void {
-    const context = SoundManager.audioContext;
-    if (!context) {
+    const ctx = this._audioContext || SoundManager.audioContext;
+    if (!ctx) {
       return;
     }
-    const bellAudioSource = context.createBufferSource();
-    context.decodeAudioData(this._base64ToArrayBuffer(this._removeMimeType(this._terminal.options.bellSound)), (buffer) => {
+    const bellAudioSource = ctx.createBufferSource();
+    ctx.decodeAudioData(this._base64ToArrayBuffer(this._removeMimeType(this._terminal.options.bellSound)), (buffer) => {
       bellAudioSource.buffer = buffer;
-      bellAudioSource.connect(context.destination);
+      bellAudioSource.connect(ctx.destination);
       bellAudioSource.start(0);
     });
   }
