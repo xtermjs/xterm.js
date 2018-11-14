@@ -13,7 +13,7 @@ export const DEFAULT_BELL_SOUND = 'data:audio/wav;base64,UklGRigBAABXQVZFZm10IBA
 
 export class SoundManager implements ISoundManager {
   private static _audioContext: AudioContext;
-  
+
   static get audioContext(): AudioContext {
     if (!SoundManager._audioContext) {
       const audioContextCtor: typeof AudioContext = (<any>window).AudioContext || (<any>window).webkitAudioContext;
