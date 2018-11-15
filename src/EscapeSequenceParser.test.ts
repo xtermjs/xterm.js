@@ -369,7 +369,8 @@ describe('EscapeSequenceParser', function (): void {
           parser.currentState = ParserState.ESCAPE_INTERMEDIATE;
           parser.parse(collect[i]);
           chai.expect(parser.currentState).equal(ParserState.GROUND);
-          testTerminal.compare([['esc', '', collect[i]]]);
+          // '\x5c' --> ESC + \ (7bit ST) parser does not expose this as it already got handled
+          testTerminal.compare((collect[i] === '\x5c') ? [] : [['esc', '', collect[i]]]);
           parser.reset();
           testTerminal.clear();
         }
@@ -1051,6 +1052,13 @@ describe('EscapeSequenceParser', function (): void {
           ['csi', '<', [0, 0], 'c']
         ], null);
       });
+      it('7bit ST should be swallowed', function(): void {
+        test('abc\x9d123tzf\x1b\\defg', [
+          ['print', 'abc'],
+          ['osc', '123tzf'],
+          ['print', 'defg']
+        ], null);
+      });
     });
   });
 
@@ -1089,7 +1097,7 @@ describe('EscapeSequenceParser', function (): void {
       parser.reset();
       testTerminal.clear();
       parser.currentState = ParserState.GROUND;
-      parser.parse('\x1e');
+      parser.parse('\x9c');
       chai.expect(parser.currentState).equal(ParserState.GROUND);
       testTerminal.compare([]);
       parser.reset();

@@ -123,16 +123,14 @@ export class DomRenderer extends EventEmitter implements IRenderer {
         ` display: inline-block;` +
         ` height: 100%;` +
         ` vertical-align: top;` +
-        ` width: ${this._terminal.charMeasure.width}px` +
+        ` width: ${this.dimensions.actualCellWidth}px` +
         `}`;
 
     this._dimensionsStyleElement.innerHTML = styles;
 
     this._selectionContainer.style.height = (<any>this._terminal)._viewportElement.style.height;
-    this._rowContainer.style.width = `${this.dimensions.canvasWidth}px`;
-    this._rowContainer.style.height = `${this.dimensions.canvasHeight}px`;
-    this._terminal.screenElement.style.width = '';
-    this._terminal.screenElement.style.height = '';
+    this._terminal.screenElement.style.width = `${this.dimensions.canvasWidth}px`;
+    this._terminal.screenElement.style.height = `${this.dimensions.canvasHeight}px`;
   }
 
   public setTheme(theme: ITheme | undefined): IColorSet {
