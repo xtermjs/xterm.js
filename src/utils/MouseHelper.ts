@@ -13,29 +13,10 @@ export class MouseHelper {
     this._renderer = renderer;
   }
 
-  public static getCoordsRelativeToElement(event: {pageX: number, pageY: number}, element: HTMLElement): [number, number] {
-    // Ignore browsers that don't support MouseEvent.pageX
-    if (event.pageX === null || event.pageX === undefined) {
-      return null;
-    }
-
-    const originalElement = element;
-    let x = event.pageX;
-    let y = event.pageY;
-
-    // Converts the coordinates from being relative to the document to being
-    // relative to the terminal.
-    while (element) {
-      x -= element.offsetLeft;
-      y -= element.offsetTop;
-      element = <HTMLElement>element.offsetParent;
-    }
-    element = originalElement;
-    while (element && element !== element.ownerDocument.body) {
-      x += element.scrollLeft;
-      y += element.scrollTop;
-      element = <HTMLElement>element.parentElement;
-    }
+  public static getCoordsRelativeToElement(event: {target: HTMLElement, clientX: number, clientY: number}, element: HTMLElement): [number, number] {
+    let rect = event.target.getBoundingClientRect();
+    let x = event.clientX - rect.left;
+    let y = event.clientY - rect.top;
     return [x, y];
   }
 
