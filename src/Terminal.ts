@@ -991,7 +991,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
           : 65;
           break;
         case 'wheel':
-          button = (<WheelEvent>ev).wheelDeltaY > 0
+          button = (<WheelEvent>ev).deltaY < 0
             ? 64
           : 65;
           break;
