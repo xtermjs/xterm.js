@@ -13,7 +13,7 @@ export class MouseHelper {
     this._renderer = renderer;
   }
 
-  public static getCoordsRelativeToElement(event: {target: HTMLElement, clientX: number, clientY: number}, element: HTMLElement): [number, number] {
+  public static getCoordsRelativeToElement(event: {target: EventTarget, clientX: number, clientY: number}, element: HTMLElement): [number, number] {
     let rect = event.target.getBoundingClientRect();
     let x = event.clientX - rect.left;
     let y = event.clientY - rect.top;
