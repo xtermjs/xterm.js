@@ -311,6 +311,7 @@ export interface IBufferSet extends IEventEmitter {
 
 export interface ISelectionManager {
   selectionText: string;
+  hasSelection: boolean;
   selectionStart: [number, number];
   selectionEnd: [number, number];
 

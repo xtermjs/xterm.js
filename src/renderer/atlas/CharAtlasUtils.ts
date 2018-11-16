@@ -7,7 +7,7 @@ import { ITerminal } from '../../Types';
 import { IColorSet } from '../Types';
 import { ICharAtlasConfig } from '../../shared/atlas/Types';
 
-export function generateConfig(scaledCharWidth: number, scaledCharHeight: number, terminal: ITerminal, colors: IColorSet): ICharAtlasConfig {
+export function generateConfig(scaledCharWidth: number, scaledCharHeight: number, terminal: ITerminal, colors: IColorSet, devicePixelRatio: number = window.devicePixelRatio): ICharAtlasConfig {
   // null out some fields that don't matter
   const clonedColors = <IColorSet>{
     foreground: colors.foreground,
@@ -21,7 +21,7 @@ export function generateConfig(scaledCharWidth: number, scaledCharHeight: number
   };
   return {
     type: terminal.options.experimentalCharAtlas,
-    devicePixelRatio: window.devicePixelRatio,
+    devicePixelRatio,
     scaledCharWidth,
     scaledCharHeight,
     fontFamily: terminal.options.fontFamily,

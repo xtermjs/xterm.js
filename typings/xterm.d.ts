@@ -18,7 +18,7 @@ declare module 'xterm' {
   /**
    * A string representing a renderer type.
    */
-  export type RendererType = 'dom' | 'canvas';
+  export type RendererType = 'dom' | 'canvas' | 'webgl';
 
   /**
    * An object containing start up options for the terminal.
@@ -99,7 +99,7 @@ declare module 'xterm' {
      * Currently defaults to 'static'. This option may be removed in the future. If it is, passed
      * parameters will be ignored.
      */
-    experimentalCharAtlas?: 'none' | 'static' | 'dynamic';
+    experimentalCharAtlas?: 'none' | 'static' | 'dynamic' | 'webgl';
 
     /**
      * (EXPERIMENTAL) Defines which implementation to use for buffer lines.
@@ -213,7 +213,7 @@ declare module 'xterm' {
     cursor?: string,
     /** The accent color of the cursor (used as the foreground color for a block cursor) */
     cursorAccent?: string,
-    /** The selection color (can be transparent) */
+    /** The selection background color (can be transparent) */
     selection?: string,
     /** ANSI black (eg. `\x1b[30m`) */
     black?: string,

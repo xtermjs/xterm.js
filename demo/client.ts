@@ -203,11 +203,11 @@ function initOptions(term: TerminalType): void {
     bellSound: null,
     bellStyle: ['none', 'sound'],
     cursorStyle: ['block', 'underline', 'bar'],
-    experimentalCharAtlas: ['none', 'static', 'dynamic'],
+    experimentalCharAtlas: ['none', 'static', 'dynamic', 'webgl'],
     fontFamily: null,
     fontWeight: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
-    rendererType: ['dom', 'canvas'],
+    rendererType: ['dom', 'canvas', 'webgl'],
     experimentalBufferLineImpl: ['JsArray', 'TypedArray']
   };
   const options = Object.keys((<any>term)._core.options);
@@ -235,7 +235,7 @@ function initOptions(term: TerminalType): void {
   });
   html += '</div><div class="option-group">';
   numberOptions.forEach(o => {
-    html += `<div class="option"><label>${o} <input id="opt-${o}" type="number" value="${term.getOption(o)}"/></label></div>`;
+    html += `<div class="option"><label>${o} <input id="opt-${o}" type="number" value="${term.getOption(o)}" step="${o === 'lineHeight' ? '0.1' : '1'}"/></label></div>`;
   });
   html += '</div><div class="option-group">';
   Object.keys(stringOptions).forEach(o => {
@@ -265,7 +265,7 @@ function initOptions(term: TerminalType): void {
       if (o === 'cols' || o === 'rows') {
         updateTerminalSize();
       } else {
-        term.setOption(o, parseInt(input.value, 10));
+        term.setOption(o, o === 'lineHeight' ? parseFloat(input.value) : parseInt(input.value, 10));
       }
     });
   });
