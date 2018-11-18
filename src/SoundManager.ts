@@ -21,7 +21,7 @@ export class SoundManager implements ISoundManager {
         console.warn('Web Audio API is not supported by this browser. Consider upgrading to the latest version');
         return null;
       }
-      this._audioContext = new audioContextCtor();
+      SoundManager._audioContext = new audioContextCtor();
     }
     return SoundManager._audioContext;
   }
