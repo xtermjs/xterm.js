@@ -27,13 +27,12 @@ export class SoundManager implements ISoundManager {
   }
 
   constructor(
-    private _terminal: ITerminal,
-    private _audioContext?: AudioContext
+    private _terminal: ITerminal
   ) {
   }
 
   public playBellSound(): void {
-    const ctx = this._audioContext || SoundManager.audioContext;
+    const ctx = SoundManager.audioContext;
     if (!ctx) {
       return;
     }
