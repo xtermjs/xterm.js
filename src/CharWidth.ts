@@ -78,38 +78,6 @@ export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: nu
       }
       return false;
     }
-    function wcwidthBMP(ucs: number): number {
-      // test for 8-bit control characters
-      if (ucs === 0) {
-        return opts.nul;
-      }
-      if (ucs < 32 || (ucs >= 0x7f && ucs < 0xa0)) {
-        return opts.control;
-      }
-      // binary search in table of non-spacing characters
-      if (bisearch(ucs, COMBINING_BMP)) {
-        return 0;
-      }
-      // if we arrive here, ucs is not a combining or C0/C1 control character
-      if (isWideBMP(ucs)) {
-        return 2;
-      }
-      return 1;
-    }
-    function isWideBMP(ucs: number): boolean {
-      return (
-        ucs >= 0x1100 && (
-        ucs <= 0x115f ||                // Hangul Jamo init. consonants
-        ucs === 0x2329 ||
-        ucs === 0x232a ||
-        (ucs >= 0x2e80 && ucs <= 0xa4cf && ucs !== 0x303f) ||  // CJK..Yi
-        (ucs >= 0xac00 && ucs <= 0xd7a3) ||    // Hangul Syllables
-        (ucs >= 0xf900 && ucs <= 0xfaff) ||    // CJK Compat Ideographs
-        (ucs >= 0xfe10 && ucs <= 0xfe19) ||    // Vertical forms
-        (ucs >= 0xfe30 && ucs <= 0xfe6f) ||    // CJK Compat Forms
-        (ucs >= 0xff00 && ucs <= 0xff60) ||    // Fullwidth Forms
-        (ucs >= 0xffe0 && ucs <= 0xffe6)));
-    }
     function wcwidthHigh(ucs: number): 0 | 1 | 2 {
       if (bisearch(ucs, COMBINING_HIGH)) {
         return 0;
@@ -129,22 +97,30 @@ export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: nu
     // control chars
     table.subarray(1, 32).fill(opts.control);
     table.subarray(0x7f, 0xa0).fill(opts.control);
-    // combining 0
-    for (let r = 0; r < COMBINING_BMP.length; ++r) {
-      table.subarray(COMBINING_BMP[r][0], COMBINING_BMP[r][1]).fill(0);
-    }
+
+    // apply wide char rules first
     // wide chars
     table.subarray(0x1100, 0x1160).fill(2);
     table[0x2329] = 2;
     table[0x232a] = 2;
     table.subarray(0x2e80, 0xa4d0).fill(2);
-    table[0x303f] = 1;  // wrongly added before
+    table[0x303f] = 1;  // wrongly in last line
+
     table.subarray(0xac00, 0xd7a4).fill(2);
     table.subarray(0xf900, 0xfb00).fill(2);
     table.subarray(0xfe10, 0xfe1a).fill(2);
     table.subarray(0xfe30, 0xfe70).fill(2);
     table.subarray(0xff00, 0xff61).fill(2);
     table.subarray(0xffe0, 0xffe7).fill(2);
+
+    // apply combining last to ensure we overwrite
+    // wrongly wide set chars:
+    //    the original algo evals combining first and falls
+    //    through to wide check so we simply do here the opposite
+    // combining 0
+    for (let r = 0; r < COMBINING_BMP.length; ++r) {
+      table.subarray(COMBINING_BMP[r][0], COMBINING_BMP[r][1] + 1).fill(0);
+    }
 
     return function (num: number): number {
       if (num < 32) {
