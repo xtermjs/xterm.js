@@ -113,7 +113,7 @@ class DECRQSS implements IDcsHandler {
  * each function's header comment.
  */
 export class InputHandler extends Disposable implements IInputHandler {
-  private _surrogateHigh: string;
+  private _surrogateFirst: string;
 
   constructor(
       protected _terminal: IInputHandlingTerminal,
@@ -123,7 +123,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     this.register(this._parser);
 
-    this._surrogateHigh = '';
+    this._surrogateFirst = '';
 
     /**
      * custom fallback handlers
@@ -311,9 +311,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
 
     // apply leftover surrogate high from last write
-    if (this._surrogateHigh) {
-      data = this._surrogateHigh + data;
-      this._surrogateHigh = '';
+    if (this._surrogateFirst) {
+      data = this._surrogateFirst + data;
+      this._surrogateFirst = '';
     }
 
     this._parser.parse(data);
@@ -327,7 +327,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   public print(data: string, start: number, end: number): void {
     let char: string;
     let code: number;
-    let low: number;
+    let second: number;
     let chWidth: number;
     const buffer: IBuffer = this._terminal.buffer;
     const charset: ICharset = this._terminal.charset;
@@ -345,20 +345,25 @@ export class InputHandler extends Disposable implements IInputHandler {
 
       // surrogate pair handling
       if (0xD800 <= code && code <= 0xDBFF) {
-        // we got a surrogate high
-        // get surrogate low (next 2 bytes)
-        low = data.charCodeAt(stringPosition + 1);
-        if (isNaN(low)) {
-          // end of data stream, save surrogate high
-          this._surrogateHigh = char;
+        if (++stringPosition >= end) {
+          // end of input:
+          // handle pairs as true UTF-16 and wait for the second part
+          // since we expect the input comming from a stream there is
+          // a small chance that the surrogate pair got split
+          // therefore we dont process the first char here, instead
+          // it gets added as first char to the next processed chunk
+          this._surrogateFirst = char;
           continue;
         }
-        code = ((code - 0xD800) * 0x400) + (low - 0xDC00) + 0x10000;
-        char += data.charAt(stringPosition + 1);
-      }
-      // surrogate low - already handled above
-      if (0xDC00 <= code && code <= 0xDFFF) {
-        continue;
+        second = data.charCodeAt(stringPosition);
+        // if the second part is in surrogate pair range create the high codepoint
+        // otherwise fall back to UCS-2 behavior (handle codepoints independently)
+        if (0xDC00 <= second && second <= 0xDFFF) {
+          code = (code - 0xD800) * 0x400 + second - 0xDC00 + 0x10000;
+          char += data.charAt(stringPosition);
+        } else {
+          stringPosition--;
+        }
       }
 
       // calculate print space

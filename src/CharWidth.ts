@@ -120,50 +120,41 @@ export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: nu
       return 1;
     }
     const control = opts.control | 0;
-    let table: number[] | Uint32Array = null;
-    function initTable(): number[] | Uint32Array {
-      // lookup table for BMP
-      const CODEPOINTS = 65536;  // BMP holds 65536 codepoints
-      const BITWIDTH = 2;        // a codepoint can have a width of 0, 1 or 2
-      const ITEMSIZE = 32;       // using uint32_t
-      const CONTAINERSIZE = CODEPOINTS * BITWIDTH / ITEMSIZE;
-      const CODEPOINTS_PER_ITEM = ITEMSIZE / BITWIDTH;
-      table = (typeof Uint32Array === 'undefined')
-        ? new Array(CONTAINERSIZE)
-        : new Uint32Array(CONTAINERSIZE);
-      for (let i = 0; i < CONTAINERSIZE; ++i) {
-        let num = 0;
-        let pos = CODEPOINTS_PER_ITEM;
-        while (pos--) {
-          num = (num << 2) | wcwidthBMP(CODEPOINTS_PER_ITEM * i + pos);
-        }
-        table[i] = num;
-      }
-      return table;
+
+    // create lookup table for BMP plane
+    // TODO: make callable/configurable from UnicodeManager
+    const table = new Uint8Array(65536);
+    table.fill(1);
+    table[0] = opts.nul;
+    // control chars
+    table.subarray(1, 32).fill(opts.control);
+    table.subarray(0x7f, 0xa0).fill(opts.control);
+    // combining 0
+    for (let r = 0; r < COMBINING_BMP.length; ++r) {
+      table.subarray(COMBINING_BMP[r][0], COMBINING_BMP[r][1]).fill(0);
     }
-    // get width from lookup table
-    //   position in container   : num / CODEPOINTS_PER_ITEM
-    //     ==> n = table[Math.floor(num / 16)]
-    //     ==> n = table[num >> 4]
-    //   16 codepoints per number:       FFEEDDCCBBAA99887766554433221100
-    //   position in number      : (num % CODEPOINTS_PER_ITEM) * BITWIDTH
-    //     ==> m = (n % 16) * 2
-    //     ==> m = (num & 15) << 1
-    //   right shift to position m
-    //     ==> n = n >> m     e.g. m=12  000000000000FFEEDDCCBBAA99887766
-    //   we are only interested in 2 LSBs, cut off higher bits
-    //     ==> n = n & 3      e.g.       000000000000000000000000000000XX
+    // wide chars
+    table.subarray(0x1100, 0x1160).fill(2);
+    table[0x2329] = 2;
+    table[0x232a] = 2;
+    table.subarray(0x2e80, 0xa4d0).fill(2);
+    table[0x303f] = 1;  // wrongly added before
+    table.subarray(0xac00, 0xd7a4).fill(2);
+    table.subarray(0xf900, 0xfb00).fill(2);
+    table.subarray(0xfe10, 0xfe1a).fill(2);
+    table.subarray(0xfe30, 0xfe70).fill(2);
+    table.subarray(0xff00, 0xff61).fill(2);
+    table.subarray(0xffe0, 0xffe7).fill(2);
+
     return function (num: number): number {
-      num = num | 0;  // get asm.js like optimization under V8
       if (num < 32) {
         return control | 0;
       }
       if (num < 127) {
         return 1;
       }
-      const t = table || initTable();
       if (num < 65536) {
-        return t[num >> 4] >> ((num & 15) << 1) & 3;
+        return table[num];
       }
       // do a full search for high codepoints
       return wcwidthHigh(num);
@@ -175,17 +166,27 @@ export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: nu
  */
 export function getStringCellWidth(s: string): number {
   let result = 0;
-  for (let i = 0; i < s.length; ++i) {
+  const length = s.length;
+  for (let i = 0; i < length; ++i) {
     let code = s.charCodeAt(i);
+    // surrogate pair first
     if (0xD800 <= code && code <= 0xDBFF) {
-      const low = s.charCodeAt(i + 1);
-      if (isNaN(low)) {
-        return result;
+      if (++i >= length) {
+        // this should not happen with strings retrieved from
+        // Buffer.translateToString as it converts from UTF-32
+        // and therefore always should contain the second part
+        // for any other string we still have to handle it somehow:
+        // simply treat the lonely surrogate first as a single char (UCS-2 behavior)
+        return result + wcwidth(code);
       }
-      code = ((code - 0xD800) * 0x400) + (low - 0xDC00) + 0x10000;
-    }
-    if (0xDC00 <= code && code <= 0xDFFF) {
-      continue;
+      const second = s.charCodeAt(i);
+      // convert surrogate pair to high codepoint only for valid second part (UTF-16)
+      // otherwise treat them independently (UCS-2 behavior)
+      if (0xDC00 <= second && second <= 0xDFFF) {
+        code = (code - 0xD800) * 0x400 + second - 0xDC00 + 0x10000;
+      } else {
+        result += wcwidth(second);
+      }
     }
     result += wcwidth(code);
   }
