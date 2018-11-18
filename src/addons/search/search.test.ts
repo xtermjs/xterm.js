@@ -8,7 +8,6 @@ import * as search from './search';
 import { SearchHelper } from './SearchHelper';
 import { ISearchOptions, ISearchResult } from './Interfaces';
 
-
 class MockTerminalPlain {}
 
 class MockTerminal {
@@ -16,7 +15,7 @@ class MockTerminal {
   public searchHelper: TestSearchHelper;
   public cols: number;
   constructor(options: any) {
-    this._core = new (require('../../../lib/Terminal').Terminal)(options);
+    this._core = new (require('../../../lib/Terminal')).Terminal(options);
     this.searchHelper = new TestSearchHelper(this as any);
     this.cols = options.cols;
   }
@@ -82,6 +81,9 @@ describe('search addon', () => {
       expect(hello3).eql(undefined);
       expect(llo).eql(undefined);
       expect(goodbye).eql({col: 0, row: 5, term: 'goodbye'});
+      term.core.resize(9, 5);
+      const hello0Resize = term.searchHelper.findInLine('Hello', 0);
+      expect(hello0Resize).eql({col: 8, row: 0, term: 'Hello'});
     });
     it('should respect search regex', () => {
       search.apply(<any>MockTerminal);

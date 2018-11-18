@@ -121,7 +121,7 @@ export class MockTerminal implements ITerminal {
   handler(data: string): void {
     throw new Error('Method not implemented.');
   }
-  on(event: string, callback: () => void): void {
+  on(event: string, callback: (...args: any[]) => void): void {
     throw new Error('Method not implemented.');
   }
   off(type: string, listener: XtermListener): void {
@@ -318,6 +318,9 @@ export class MockBuffer implements IBuffer {
   }
   setLines(lines: ICircularList<IBufferLine>): void {
     this.lines = lines;
+  }
+  getBlankLine(attr: number, isWrapped?: boolean): IBufferLine {
+    return Buffer.prototype.getBlankLine.apply(this, arguments);
   }
   stringIndexToBufferIndex(lineIndex: number, stringIndex: number): number[] {
     return Buffer.prototype.stringIndexToBufferIndex.apply(this, arguments);

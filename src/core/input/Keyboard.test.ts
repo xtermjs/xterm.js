@@ -2,6 +2,7 @@
 import { assert } from 'chai';
 import { evaluateKeyboardEvent } from './Keyboard';
 import { IKeyboardResult } from '../Types';
+import { IKeyboardEvent } from '../../common/Types';
 
 /**
  * A helper function for testing which allows passing in a partial event and defaults will be filled
@@ -20,12 +21,12 @@ function testEvaluateKeyboardEvent(partialEvent: {
   isMac?: boolean;
   macOptionIsMeta?: boolean;
 } = {}): IKeyboardResult {
-  const event = {
+  const event: IKeyboardEvent = {
     altKey: partialEvent.altKey || false,
     ctrlKey: partialEvent.ctrlKey || false,
     shiftKey: partialEvent.shiftKey || false,
     metaKey: partialEvent.metaKey || false,
-    keyCode: partialEvent.keyCode !== undefined ? partialEvent.keyCode : undefined,
+    keyCode: partialEvent.keyCode !== undefined ? partialEvent.keyCode : 0,
     key: partialEvent.key || '',
     type: partialEvent.type || ''
   };

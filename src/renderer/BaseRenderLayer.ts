@@ -51,7 +51,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
   public dispose(): void {
     this._container.removeChild(this._canvas);
-    this._charAtlas.dispose();
+    if (this._charAtlas) {
+      this._charAtlas.dispose();
+    }
   }
 
   private _initCanvas(): void {

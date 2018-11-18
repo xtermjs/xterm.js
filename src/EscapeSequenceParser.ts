@@ -66,7 +66,7 @@ export class TransitionTable {
 const PRINTABLES = r(0x20, 0x7f);
 const EXECUTABLES = r(0x00, 0x18);
 EXECUTABLES.push(0x19);
-EXECUTABLES.concat(r(0x1c, 0x20));
+EXECUTABLES.push.apply(EXECUTABLES, r(0x1c, 0x20));
 const DEFAULT_TRANSITION = ParserAction.ERROR << 4 | ParserState.GROUND;
 
 /**
@@ -261,6 +261,9 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._dcsHandlers = Object.create(null);
     this._activeDcsHandler = null;
     this._errorHandler = this._errorHandlerFb;
+
+    // swallow 7bit ST (ESC+\)
+    this.setEscHandler('\\', () => {});
   }
 
   public dispose(): void {

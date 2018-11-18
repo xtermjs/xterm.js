@@ -129,12 +129,17 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
       return true;
     }
 
+    // Exit early for uncachable glyphs
+    if (!this._canCache(glyph)) {
+      return false;
+    }
+
     const glyphKey = getGlyphCacheKey(glyph);
     const cacheValue = this._cacheMap.get(glyphKey);
     if (cacheValue !== null && cacheValue !== undefined) {
       this._drawFromCache(ctx, cacheValue, x, y);
       return true;
-    } else if (this._canCache(glyph) && this._drawToCacheCount < FRAME_CACHE_DRAW_LIMIT) {
+    } else if (this._drawToCacheCount < FRAME_CACHE_DRAW_LIMIT) {
       let index;
       if (this._cacheMap.size < this._cacheMap.capacity) {
         index = this._cacheMap.size;
