@@ -30,6 +30,7 @@ class TestSelectionManager extends SelectionManager {
 
   public selectLineAt(line: number): void { this._selectLineAt(line); }
   public selectWordAt(coords: [number, number]): void { this._selectWordAt(coords, true); }
+  public areCoordsInSelection(coords: [number, number], start: [number, number], end: [number, number]): boolean { return this._areCoordsInSelection(coords, start, end); }
 
   // Disable DOM interaction
   public enable(): void {}
@@ -476,6 +477,18 @@ describe('SelectionManager', () => {
       selectionManager.model.selectionEnd = [1, 2];
 
       assert.equal(selectionManager.selectionText, 'a\n😁\nc');
+    });
+  });
+
+  describe('_areCoordsInSelection', () => {
+    it('should return whether coords are in the selection', () => {
+      assert.isFalse(selectionManager.areCoordsInSelection([0, 0], [2, 0], [2, 1]));
+      assert.isFalse(selectionManager.areCoordsInSelection([1, 0], [2, 0], [2, 1]));
+      assert.isTrue(selectionManager.areCoordsInSelection([2, 0], [2, 0], [2, 1]));
+      assert.isTrue(selectionManager.areCoordsInSelection([10, 0], [2, 0], [2, 1]));
+      assert.isTrue(selectionManager.areCoordsInSelection([0, 1], [2, 0], [2, 1]));
+      assert.isTrue(selectionManager.areCoordsInSelection([1, 1], [2, 0], [2, 1]));
+      assert.isFalse(selectionManager.areCoordsInSelection([2, 1], [2, 0], [2, 1]));
     });
   });
 });

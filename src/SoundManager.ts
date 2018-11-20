@@ -12,7 +12,19 @@ import { ITerminal, ISoundManager } from './Types';
 export const DEFAULT_BELL_SOUND = 'data:audio/wav;base64,UklGRigBAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQBAADpAFgCwAMlBZoG/wdmCcoKRAypDQ8PbRDBEQQTOxRtFYcWlBePGIUZXhoiG88bcBz7HHIdzh0WHlMeZx51HmkeUx4WHs8dah0AHXwc3hs9G4saxRnyGBIYGBcQFv8U4RPAEoYRQBACD70NWwwHC6gJOwjWBloF7gOBAhABkf8b/qv8R/ve+Xf4Ife79W/0JfPZ8Z/wde9N7ijtE+wU6xvqM+lb6H7nw+YX5mrlxuQz5Mzje+Ma49fioeKD4nXiYeJy4pHitOL04j/jn+MN5IPkFOWs5U3mDefM55/ogOl36m7rdOyE7abuyu8D8Unyj/Pg9D/2qfcb+Yn6/vuK/Qj/lAAlAg==';
 
 export class SoundManager implements ISoundManager {
-  private _audioContext: AudioContext;
+  private static _audioContext: AudioContext;
+
+  static get audioContext(): AudioContext | null {
+    if (!SoundManager._audioContext) {
+      const audioContextCtor: typeof AudioContext = (<any>window).AudioContext || (<any>window).webkitAudioContext;
+      if (!audioContextCtor) {
+        console.warn('Web Audio API is not supported by this browser. Consider upgrading to the latest version');
+        return null;
+      }
+      SoundManager._audioContext = new audioContextCtor();
+    }
+    return SoundManager._audioContext;
+  }
 
   constructor(
     private _terminal: ITerminal
@@ -20,22 +32,16 @@ export class SoundManager implements ISoundManager {
   }
 
   public playBellSound(): void {
-    const audioContextCtor: typeof AudioContext = (<any>window).AudioContext || (<any>window).webkitAudioContext;
-    if (!this._audioContext && audioContextCtor) {
-      this._audioContext = new audioContextCtor();
+    const ctx = SoundManager.audioContext;
+    if (!ctx) {
+      return;
     }
-
-    if (this._audioContext) {
-      const bellAudioSource = this._audioContext.createBufferSource();
-      const context = this._audioContext;
-      this._audioContext.decodeAudioData(this._base64ToArrayBuffer(this._removeMimeType(this._terminal.options.bellSound)), (buffer) => {
-        bellAudioSource.buffer = buffer;
-        bellAudioSource.connect(context.destination);
-        bellAudioSource.start(0);
-      });
-    } else {
-      console.warn('Sorry, but the Web Audio API is not supported by your browser. Please, consider upgrading to the latest version');
-    }
+    const bellAudioSource = ctx.createBufferSource();
+    ctx.decodeAudioData(this._base64ToArrayBuffer(this._removeMimeType(this._terminal.options.bellSound)), (buffer) => {
+      bellAudioSource.buffer = buffer;
+      bellAudioSource.connect(ctx.destination);
+      bellAudioSource.start(0);
+    });
   }
 
   private _base64ToArrayBuffer(base64: string): ArrayBuffer {
