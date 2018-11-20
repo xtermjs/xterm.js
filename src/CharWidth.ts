@@ -1,3 +1,5 @@
+import { fill } from './core/TypedArrayUtils';
+
 /**
  * Copyright (c) 2016 The xterm.js authors. All rights reserved.
  * @license MIT
@@ -91,26 +93,26 @@ export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: nu
 
     // create lookup table for BMP plane
     const table = new Uint8Array(65536);
-    table.fill(1);
+    fill(table, 1);
     table[0] = opts.nul;
     // control chars
-    table.subarray(1, 32).fill(opts.control);
-    table.subarray(0x7f, 0xa0).fill(opts.control);
+    fill(table, opts.control, 1, 32);
+    fill(table, opts.control, 0x7f, 0xa0);
 
     // apply wide char rules first
     // wide chars
-    table.subarray(0x1100, 0x1160).fill(2);
+    fill(table, 2, 0x1100, 0x1160);
     table[0x2329] = 2;
     table[0x232a] = 2;
-    table.subarray(0x2e80, 0xa4d0).fill(2);
+    fill(table, 2, 0x2e80, 0xa4d0);
     table[0x303f] = 1;  // wrongly in last line
 
-    table.subarray(0xac00, 0xd7a4).fill(2);
-    table.subarray(0xf900, 0xfb00).fill(2);
-    table.subarray(0xfe10, 0xfe1a).fill(2);
-    table.subarray(0xfe30, 0xfe70).fill(2);
-    table.subarray(0xff00, 0xff61).fill(2);
-    table.subarray(0xffe0, 0xffe7).fill(2);
+    fill(table, 2, 0xac00, 0xd7a4);
+    fill(table, 2, 0xf900, 0xfb00);
+    fill(table, 2, 0xfe10, 0xfe1a);
+    fill(table, 2, 0xfe30, 0xfe70);
+    fill(table, 2, 0xff00, 0xff61);
+    fill(table, 2, 0xffe0, 0xffe7);
 
     // apply combining last to ensure we overwrite
     // wrongly wide set chars:
@@ -118,7 +120,7 @@ export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: nu
     //    through to wide check so we simply do here the opposite
     // combining 0
     for (let r = 0; r < COMBINING_BMP.length; ++r) {
-      table.subarray(COMBINING_BMP[r][0], COMBINING_BMP[r][1] + 1).fill(0);
+      fill(table, 0, COMBINING_BMP[r][0], COMBINING_BMP[r][1] + 1);
     }
 
     return function (num: number): number {
