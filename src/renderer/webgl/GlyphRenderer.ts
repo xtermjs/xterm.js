@@ -162,13 +162,13 @@ export class GlyphRenderer {
     this._updateCell(this._vertices.attributes, x, y, code, attr, bg, fg, chars);
   }
 
-  private _updateCell(array: Float32Array, x: number, y: number, code: number, attr: number, bg: number, fg: number, chars?: string): void {
+  private _updateCell(array: Float32Array, x: number, y: number, code: number | undefined, attr: number, bg: number, fg: number, chars?: string): void {
     const terminal = this._terminal;
 
     const i = ((y * terminal.cols) + x) * INDICES_PER_CELL;
 
     // Exit early if this is a null/space character
-    if (code === NULL_CELL_CODE) {
+    if (code === NULL_CELL_CODE || code === undefined/* This is used for the right side of wide chars */) {
       array.fill(0, i, i + INDICES_PER_CELL - 1);
       return;
     }
