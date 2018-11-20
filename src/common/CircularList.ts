@@ -99,17 +99,16 @@ export class CircularList<T> extends EventEmitter implements ICircularList<T> {
 
   /**
    * Advance ringbuffer index and return current element for recycling.
-   * Note: If the ringbuffer is not full this method will return undefined,
-   * Either precheck with isFull() or handle the undefined return value accordingly.
+   * Note: The buffer must be full for this method to work.
+   * @throws When the buffer is not full.
    */
-  public recycle(): T | undefined {
-    if (this._length === this._maxLength) {
-      this._startIndex = ++this._startIndex % this._maxLength;
-      this.emit('trim', 1);
-    } else {
-      this._length++;
+  public recycle(): T {
+    if (this._length !== this._maxLength) {
+      throw new Error('Can only recycle when the buffer is full');
     }
-    return this._array[this._getCyclicIndex(this._length - 1)];
+    this._startIndex = ++this._startIndex % this._maxLength;
+    this.emit('trim', 1);
+    return this._array[this._getCyclicIndex(this._length - 1)]!;
   }
 
   /**
