@@ -113,13 +113,6 @@ declare module 'xterm' {
     experimentalBufferLineImpl?: 'JsArray' | 'TypedArray';
 
     /**
-     * (EXPERIMENTAL) Enable recycling of buffer lines.
-     * 
-     * This option will be removed in the future.
-     */
-    experimentalBufferLineRecycling?: boolean;
-
-    /**
      * The font size used to render text.
      */
     fontSize?: number;

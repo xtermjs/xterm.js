@@ -114,7 +114,7 @@ export class CircularList<T> extends EventEmitter implements ICircularList<T> {
   /**
    * Ringbuffer is at max length.
    */
-  public isFull(): boolean {
+  public get isFull(): boolean {
     return this._length === this._maxLength;
   }
 

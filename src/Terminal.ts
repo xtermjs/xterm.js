@@ -106,8 +106,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   theme: null,
   rightClickSelectsWord: Browser.isMac,
   rendererType: 'canvas',
-  experimentalBufferLineImpl: 'JsArray',
-  experimentalBufferLineRecycling: false
+  experimentalBufferLineImpl: 'JsArray'
 };
 
 export class Terminal extends EventEmitter implements ITerminal, IDisposable, IInputHandlingTerminal {
@@ -1181,7 +1180,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   public scroll(isWrapped: boolean = false): void {
     let newLine: IBufferLine;
-    const useRecycling = this.options.experimentalBufferLineRecycling;
+    const useRecycling = this.options.experimentalBufferLineImpl === 'TypedArray';
     if (useRecycling) {
       newLine = this._blankLine;
       if (!newLine || newLine.length !== this.cols || newLine.get(0)[CHAR_DATA_ATTR_INDEX] !== this.eraseAttr()) {
@@ -1198,7 +1197,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     if (this.buffer.scrollTop === 0) {
       // Determine whether the buffer is going to be trimmed after insertion.
-      const willBufferBeTrimmed = this.buffer.lines.isFull();
+      const willBufferBeTrimmed = this.buffer.lines.isFull;
 
       // Insert the line using the fastest method
       if (bottomRow === this.buffer.lines.length - 1) {
