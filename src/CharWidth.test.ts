@@ -78,8 +78,8 @@ describe('getStringCellWidth', function(): void {
   // TODO: multiline tests once #1685 is resolved
 });
 
-describe('wcwidth regression', function(): void {
-  // TODO: remove with one of the next releases
+it('wcwidth should match all values from the old implementation', function(): void {
+  // old implementation
   const wcwidthOld = (function(opts: {nul: number, control: number}): (ucs: number) => number {
     // extracted from https://www.cl.cam.ac.uk/%7Emgk25/ucs/wcwidth.c
     // combining characters
@@ -247,9 +247,8 @@ describe('wcwidth regression', function(): void {
     };
   })({nul: 0, control: 0}); // configurable options
 
-  it('equality of old and new impl', function(): void {
-    for (let i = 0; i < 65536; ++i) {
-      assert.equal(wcwidth(i), wcwidthOld(i), `mismatch for i: ${i}`);
-    }
-  });
+  // test full BMP range old vs new implmenetation
+  for (let i = 0; i < 65536; ++i) {
+    assert.equal(wcwidth(i), wcwidthOld(i), `mismatch for i: ${i}`);
+  }
 });

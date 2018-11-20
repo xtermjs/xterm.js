@@ -90,7 +90,6 @@ export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: nu
     const control = opts.control | 0;
 
     // create lookup table for BMP plane
-    // TODO: make callable/configurable from UnicodeManager
     const table = new Uint8Array(65536);
     table.fill(1);
     table[0] = opts.nul;

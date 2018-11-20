@@ -327,7 +327,6 @@ export class InputHandler extends Disposable implements IInputHandler {
   public print(data: string, start: number, end: number): void {
     let char: string;
     let code: number;
-    let second: number;
     let chWidth: number;
     const buffer: IBuffer = this._terminal.buffer;
     const charset: ICharset = this._terminal.charset;
@@ -355,7 +354,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._surrogateFirst = char;
           continue;
         }
-        second = data.charCodeAt(stringPosition);
+        const second = data.charCodeAt(stringPosition);
         // if the second part is in surrogate pair range create the high codepoint
         // otherwise fall back to UCS-2 behavior (handle codepoints independently)
         if (0xDC00 <= second && second <= 0xDFFF) {
