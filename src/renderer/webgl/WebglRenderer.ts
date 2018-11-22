@@ -50,6 +50,9 @@ export class WebglRenderer extends EventEmitter implements IRenderer {
     super();
     const allowTransparency = this._terminal.options.allowTransparency;
     this.colorManager = new ColorManager(document, allowTransparency);
+    if (theme) {
+      this.colorManager.setTheme(theme);
+    }
 
     this._renderLayers = [
       new LinkRenderLayer(this._terminal.screenElement, 2, this.colorManager.colors, this._terminal),
