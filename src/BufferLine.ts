@@ -94,11 +94,8 @@ export class BufferLine implements IBufferLine {
     }
   }
 
-  public copyFrom(line: IBufferLine): void {
-    this._data = [];
-    for (let i = 0; i < line.length; ++i) {
-      this._push(line.get(i));
-    }
+  public copyFrom(line: BufferLine): void {
+    this._data = line._data.slice(0);
     this.length = line.length;
     this.isWrapped = line.isWrapped;
   }
