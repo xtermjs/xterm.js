@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_ATTR_INDEX, CHAR_DATA_WIDTH_INDEX } from '../../Buffer';
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_ATTR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, NULL_CELL_CODE } from '../../Buffer';
 import { FLAGS } from '../Types';
 import { IBufferLine } from '../../Types';
 
@@ -23,17 +23,28 @@ export class DomRendererRowFactory {
   public createRow(lineData: IBufferLine, isCursorRow: boolean, cursorStyle: string | undefined, cursorX: number, cellWidth: number, cols: number): DocumentFragment {
     const fragment = this._document.createDocumentFragment();
     let colCount = 0;
+    let nonNullCellFound = false;
 
-    for (let x = 0; x < lineData.length; x++) {
+    for (let x = lineData.length - 1; x >= 0; x--) {
       // Don't allow any buffer to the right to be displayed
       if (colCount >= cols) {
         continue;
       }
 
       const charData = lineData.get(x);
-      const char: string = charData[CHAR_DATA_CHAR_INDEX];
-      const attr: number = charData[CHAR_DATA_ATTR_INDEX];
-      const width: number = charData[CHAR_DATA_WIDTH_INDEX];
+
+      if (!nonNullCellFound) {
+        const code = charData[CHAR_DATA_CODE_INDEX];
+        if (code === NULL_CELL_CODE && !(isCursorRow && x === cursorX)) {
+          continue;
+        } else {
+          nonNullCellFound = true;
+        }
+      }
+
+      const char = charData[CHAR_DATA_CHAR_INDEX];
+      const attr = charData[CHAR_DATA_ATTR_INDEX];
+      const width = charData[CHAR_DATA_WIDTH_INDEX];
 
       // The character to the left is a wide character, drawing is owned by the char at x-1
       if (width === 0) {
@@ -97,7 +108,11 @@ export class DomRendererRowFactory {
       if (bg !== 256) {
         charElement.classList.add(`xterm-bg-${bg}`);
       }
-      fragment.appendChild(charElement);
+      if (fragment.childNodes.length === 0) {
+        fragment.appendChild(charElement);
+      } else {
+        fragment.insertBefore(charElement, fragment.firstChild);
+      }
       colCount += width;
     }
     return fragment;
