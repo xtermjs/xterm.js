@@ -22,26 +22,29 @@ export class DomRendererRowFactory {
 
   public createRow(lineData: IBufferLine, isCursorRow: boolean, cursorStyle: string | undefined, cursorX: number, cellWidth: number, cols: number): DocumentFragment {
     const fragment = this._document.createDocumentFragment();
-    let colCount = 0;
-    let nonNullCellFound = false;
 
-    for (let x = lineData.length - 1; x >= 0; x--) {
+    // Find the line length first, this prevents the need to output a bunch of
+    // empty cells at the end. This cannot easily be integrated into the main
+    // loop below because of the colCount feature (which can be removed after we
+    // properly support reflow and disallow data to go beyond the right-side of
+    // the viewport).
+    let lineLength = 0;
+    for (let x = 0; x < lineData.length; x++) {
+      const charData = lineData.get(x);
+      const code = charData[CHAR_DATA_CODE_INDEX];
+      if (code !== NULL_CELL_CODE || (isCursorRow && x === cursorX)) {
+        lineLength = x + 1;
+      }
+    }
+
+    let colCount = 0;
+    for (let x = 0; x < lineLength; x++) {
       // Don't allow any buffer to the right to be displayed
       if (colCount >= cols) {
         continue;
       }
 
       const charData = lineData.get(x);
-
-      if (!nonNullCellFound) {
-        const code = charData[CHAR_DATA_CODE_INDEX];
-        if (code === NULL_CELL_CODE && !(isCursorRow && x === cursorX)) {
-          continue;
-        } else {
-          nonNullCellFound = true;
-        }
-      }
-
       const char = charData[CHAR_DATA_CHAR_INDEX];
       const attr = charData[CHAR_DATA_ATTR_INDEX];
       const width = charData[CHAR_DATA_WIDTH_INDEX];
@@ -108,11 +111,7 @@ export class DomRendererRowFactory {
       if (bg !== 256) {
         charElement.classList.add(`xterm-bg-${bg}`);
       }
-      if (fragment.childNodes.length === 0) {
-        fragment.appendChild(charElement);
-      } else {
-        fragment.insertBefore(charElement, fragment.firstChild);
-      }
+      fragment.appendChild(charElement);
       colCount += width;
     }
     return fragment;
