@@ -11,7 +11,7 @@ import { Terminal } from 'xterm';
  * @param fullscreen Toggle fullscreen on (true) or off (false)
  */
 export function toggleFullScreen(term: Terminal, fullscreen: boolean): void {
-  let fn: Function;
+  let fn: (...tokens: string[]) => void;
 
   if (typeof fullscreen === 'undefined') {
     fn = (term.element.classList.contains('fullscreen')) ?
