@@ -34,7 +34,7 @@ import { Terminal } from 'xterm';
  *  via `detach()` and a re-`attach()`.)
  */
 
-let zmodem;
+let zmodem: any;
 
 export interface IZmodemOptions {
   noTerminalWriteOutsideSession?: boolean;
@@ -44,7 +44,7 @@ function zmodemAttach(ws: WebSocket, opts: IZmodemOptions = {}): void {
   const term = this;
   const senderFunc = (octets: ArrayLike<number>) => ws.send(new Uint8Array(octets));
 
-  let zsentry;
+  let zsentry: any;
 
   function shouldWrite(): boolean {
     return !!zsentry.get_confirmed_session() || !opts.noTerminalWriteOutsideSession;
