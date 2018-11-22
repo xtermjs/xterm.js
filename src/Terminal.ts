@@ -473,6 +473,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         if (this._theme) {
           this.renderer.setTheme(this._theme);
         }
+        this.mouseHelper.setRenderer(this.renderer);
         break;
       case 'scrollback':
         this.buffers.resize(this.cols, this.rows);
@@ -984,7 +985,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
           : 65;
           break;
         case 'wheel':
-          button = (<WheelEvent>ev).wheelDeltaY > 0
+          button = (<WheelEvent>ev).deltaY < 0
             ? 64
           : 65;
           break;
