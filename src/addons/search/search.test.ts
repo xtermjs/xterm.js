@@ -2,6 +2,7 @@
  * Copyright (c) 2018 The xterm.js authors. All rights reserved.
  * @license MIT
  */
+declare var require: any;
 
 import { assert, expect } from 'chai';
 import * as search from './search';
