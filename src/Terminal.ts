@@ -21,11 +21,11 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharData, CharacterJoinerHandler } from './Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharData, CharacterJoinerHandler, IBufferLine } from './Types';
 import { IMouseZoneManager } from './ui/Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
-import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from './Buffer';
+import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, CHAR_DATA_ATTR_INDEX } from './Buffer';
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './common/EventEmitter';
 import { Viewport } from './Viewport';
@@ -208,6 +208,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   private _accessibilityManager: AccessibilityManager;
   private _screenDprMonitor: ScreenDprMonitor;
   private _theme: ITheme;
+
+  // bufferline to clone/copy from for new blank lines
+  private _blankLine: IBufferLine = null;
 
   public cols: number;
   public rows: number;
@@ -499,6 +502,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       case 'experimentalBufferLineImpl':
         this.buffers.normal.setBufferLineFactory(value);
         this.buffers.alt.setBufferLineFactory(value);
+        this._blankLine = null;
         break;
     }
     // Inform renderer of changes
@@ -1177,20 +1181,40 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * Scroll the terminal down 1 row, creating a blank line.
    * @param isWrapped Whether the new line is wrapped from the previous line.
    */
-  public scroll(isWrapped?: boolean): void {
-    const newLine = this.buffer.getBlankLine(this.eraseAttr(), isWrapped);
+  public scroll(isWrapped: boolean = false): void {
+    let newLine: IBufferLine;
+    const useRecycling = this.options.experimentalBufferLineImpl === 'TypedArray';
+    if (useRecycling) {
+      newLine = this._blankLine;
+      if (!newLine || newLine.length !== this.cols || newLine.get(0)[CHAR_DATA_ATTR_INDEX] !== this.eraseAttr()) {
+        newLine = this.buffer.getBlankLine(this.eraseAttr(), isWrapped);
+        this._blankLine = newLine;
+      }
+      newLine.isWrapped = isWrapped;
+    } else {
+      newLine = this.buffer.getBlankLine(this.eraseAttr(), isWrapped);
+    }
+
     const topRow = this.buffer.ybase + this.buffer.scrollTop;
     const bottomRow = this.buffer.ybase + this.buffer.scrollBottom;
 
     if (this.buffer.scrollTop === 0) {
       // Determine whether the buffer is going to be trimmed after insertion.
-      const willBufferBeTrimmed = this.buffer.lines.length === this.buffer.lines.maxLength;
+      const willBufferBeTrimmed = this.buffer.lines.isFull;
 
       // Insert the line using the fastest method
       if (bottomRow === this.buffer.lines.length - 1) {
-        this.buffer.lines.push(newLine);
+        if (useRecycling) {
+          if (willBufferBeTrimmed) {
+            this.buffer.lines.recycle().copyFrom(newLine);
+          } else {
+            this.buffer.lines.push(newLine.clone());
+          }
+        } else {
+          this.buffer.lines.push(newLine);
+        }
       } else {
-        this.buffer.lines.splice(bottomRow + 1, 0, newLine);
+        this.buffer.lines.splice(bottomRow + 1, 0, (useRecycling) ? newLine.clone() : newLine);
       }
 
       // Only adjust ybase and ydisp when the buffer is not trimmed
@@ -1212,7 +1236,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // scrollback, instead we can just shift them in-place.
       const scrollRegionHeight = bottomRow - topRow + 1/*as it's zero-based*/;
       this.buffer.lines.shiftElements(topRow + 1, scrollRegionHeight - 1, -1);
-      this.buffer.lines.set(bottomRow, newLine);
+      this.buffer.lines.set(bottomRow, (useRecycling) ? newLine.clone() : newLine);
     }
 
     // Move the viewport to the bottom of the buffer unless the user is
