@@ -111,6 +111,8 @@ export class DomRenderer extends EventEmitter implements IRenderer {
       element.style.width = `${this.dimensions.canvasWidth}px`;
       element.style.height = `${this.dimensions.actualCellHeight}px`;
       element.style.lineHeight = `${this.dimensions.actualCellHeight}px`;
+      // Make sure rows don't overflow onto following row
+      element.style.overflow = 'hidden';
     });
 
     if (!this._dimensionsStyleElement) {
@@ -330,7 +332,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
       const row = y + terminal.buffer.ydisp;
       const lineData = terminal.buffer.lines.get(row);
       const cursorStyle = terminal.options.cursorStyle;
-      rowElement.appendChild(this._rowFactory.createRow(lineData, row === cursorAbsoluteY, cursorStyle, cursorX, terminal.charMeasure.width, terminal.cols));
+      rowElement.appendChild(this._rowFactory.createRow(lineData, row === cursorAbsoluteY, cursorStyle, cursorX, this.dimensions.actualCellWidth, terminal.cols));
     }
 
     this._terminal.emit('refresh', {start, end});
