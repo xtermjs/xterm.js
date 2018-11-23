@@ -11,17 +11,18 @@ import { Terminal } from 'xterm';
  * @param fullscreen Toggle fullscreen on (true) or off (false)
  */
 export function toggleFullScreen(term: Terminal, fullscreen: boolean): void {
-  let fn: string;
+  let fn: (...tokens: string[]) => void;
 
   if (typeof fullscreen === 'undefined') {
-    fn = (term.element.classList.contains('fullscreen')) ? 'remove' : 'add';
+    fn = (term.element.classList.contains('fullscreen')) ?
+      term.element.classList.remove : term.element.classList.add;
   } else if (!fullscreen) {
-    fn = 'remove';
+    fn = term.element.classList.remove;
   } else {
-    fn = 'add';
+    fn = term.element.classList.add;
   }
 
-  term.element.classList[fn]('fullscreen');
+  fn('fullscreen');
 }
 
 export function apply(terminalConstructor: typeof Terminal): void {
