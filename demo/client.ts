@@ -149,7 +149,6 @@ function runRealTerminal(): void {
   term._initialized = true;
 }
 
-// TODO: Maybe fake terminal should be removed? Not sure it's useful anymore
 function runFakeTerminal(): void {
   if (term._initialized) {
     return;
@@ -208,7 +207,8 @@ function initOptions(term: TerminalType): void {
     fontFamily: null,
     fontWeight: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
-    rendererType: ['dom', 'canvas']
+    rendererType: ['dom', 'canvas'],
+    experimentalBufferLineImpl: ['JsArray', 'TypedArray']
   };
   const options = Object.keys((<any>term)._core.options);
   const booleanOptions = [];

@@ -21,17 +21,21 @@ describe('CharacterJoinerRegistry', () => {
     lines.set(2, lineData([['a -> b -', 0xFFFFFFFF], ['> c -> d', 0]]));
 
     lines.set(3, lineData([['no joined ranges']]));
-    lines.set(4, new BufferLine());
+    lines.set(4, new BufferLine(0));
     lines.set(5, lineData([['a', 0x11111111], [' -> b -> c -> '], ['d', 0x22222222]]));
     const line6 = lineData([['wi']]);
-    line6.push([0, '￥', 2, '￥'.charCodeAt(0)]);
-    line6.push([0, '', 0, null]);
+    line6.resize(line6.length + 1, [0, '￥', 2, '￥'.charCodeAt(0)]);
+    line6.resize(line6.length + 1, [0, '', 0, null]);
     let sub = lineData([['deemo']]);
-    for (let i = 0; i < sub.length; ++i) line6.push(sub.get(i));
-    line6.push([0, '\xf0\x9f\x98\x81', 1, 128513]);
-    line6.push([0, ' ', 1, ' '.charCodeAt(0)]);
+    let oldSize = line6.length;
+    line6.resize(oldSize + sub.length, [0, '', 0, 0]);
+    for (let i = 0; i < sub.length; ++i) line6.set(i + oldSize, sub.get(i));
+    line6.resize(line6.length + 1, [0, '\xf0\x9f\x98\x81', 1, 128513]);
+    line6.resize(line6.length + 1, [0, ' ', 1, ' '.charCodeAt(0)]);
     sub = lineData([['jiabc']]);
-    for (let i = 0; i < sub.length; ++i) line6.push(sub.get(i));
+    oldSize = line6.length;
+    line6.resize(oldSize + sub.length, [0, '', 0, 0]);
+    for (let i = 0; i < sub.length; ++i) line6.set(i + oldSize, sub.get(i));
     lines.set(6, line6);
 
     (<MockBuffer>terminal.buffer).setLines(lines);
@@ -264,11 +268,13 @@ describe('CharacterJoinerRegistry', () => {
 type IPartialLineData = ([string] | [string, number]);
 
 function lineData(data: IPartialLineData[]): IBufferLine {
-  const tline = new BufferLine();
+  const tline = new BufferLine(0);
   for (let i = 0; i < data.length; ++i) {
     const line = data[i][0];
     const attr = <number>(data[i][1] || 0);
-    line.split('').map(char => tline.push([attr, char, 1, char.charCodeAt(0)]));
+    const offset = tline.length;
+    tline.resize(tline.length + line.split('').length, [0, '', 0, 0]);
+    line.split('').map((char, idx) => tline.set(idx + offset, [attr, char, 1, char.charCodeAt(0)]));
   }
   return tline;
 }

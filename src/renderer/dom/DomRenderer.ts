@@ -94,22 +94,25 @@ export class DomRenderer extends EventEmitter implements IRenderer {
   }
 
   private _updateDimensions(): void {
-    this.dimensions.scaledCharWidth = this._terminal.charMeasure.width * window.devicePixelRatio;
-    this.dimensions.scaledCharHeight = this._terminal.charMeasure.height * window.devicePixelRatio;
-    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth;
-    this.dimensions.scaledCellHeight = this.dimensions.scaledCharHeight;
+    this.dimensions.scaledCharWidth = Math.floor(this._terminal.charMeasure.width * window.devicePixelRatio);
+    this.dimensions.scaledCharHeight = Math.ceil(this._terminal.charMeasure.height * window.devicePixelRatio);
+    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._terminal.options.letterSpacing);
+    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._terminal.options.lineHeight);
     this.dimensions.scaledCharLeft = 0;
     this.dimensions.scaledCharTop = 0;
     this.dimensions.scaledCanvasWidth = this.dimensions.scaledCellWidth * this._terminal.cols;
     this.dimensions.scaledCanvasHeight = this.dimensions.scaledCellHeight * this._terminal.rows;
-    this.dimensions.canvasWidth = this._terminal.charMeasure.width * this._terminal.cols;
-    this.dimensions.canvasHeight = this._terminal.charMeasure.height * this._terminal.rows;
-    this.dimensions.actualCellWidth = this._terminal.charMeasure.width;
-    this.dimensions.actualCellHeight = this._terminal.charMeasure.height;
+    this.dimensions.canvasWidth = Math.round(this.dimensions.scaledCanvasWidth / window.devicePixelRatio);
+    this.dimensions.canvasHeight = Math.round(this.dimensions.scaledCanvasHeight / window.devicePixelRatio);
+    this.dimensions.actualCellWidth = this.dimensions.canvasWidth / this._terminal.cols;
+    this.dimensions.actualCellHeight = this.dimensions.canvasHeight / this._terminal.rows;
 
     this._rowElements.forEach(element => {
       element.style.width = `${this.dimensions.canvasWidth}px`;
-      element.style.height = `${this._terminal.charMeasure.height}px`;
+      element.style.height = `${this.dimensions.actualCellHeight}px`;
+      element.style.lineHeight = `${this.dimensions.actualCellHeight}px`;
+      // Make sure rows don't overflow onto following row
+      element.style.overflow = 'hidden';
     });
 
     if (!this._dimensionsStyleElement) {
@@ -122,14 +125,14 @@ export class DomRenderer extends EventEmitter implements IRenderer {
         ` display: inline-block;` +
         ` height: 100%;` +
         ` vertical-align: top;` +
-        ` width: ${this._terminal.charMeasure.width}px` +
+        ` width: ${this.dimensions.actualCellWidth}px` +
         `}`;
 
     this._dimensionsStyleElement.innerHTML = styles;
 
     this._selectionContainer.style.height = (<any>this._terminal)._viewportElement.style.height;
-    this._rowContainer.style.width = `${this.dimensions.canvasWidth}px`;
-    this._rowContainer.style.height = `${this.dimensions.canvasHeight}px`;
+    this._terminal.screenElement.style.width = `${this.dimensions.canvasWidth}px`;
+    this._terminal.screenElement.style.height = `${this.dimensions.canvasHeight}px`;
   }
 
   public setTheme(theme: ITheme | undefined): IColorSet {
@@ -290,10 +293,10 @@ export class DomRenderer extends EventEmitter implements IRenderer {
    */
   private _createSelectionElement(row: number, colStart: number, colEnd: number, rowCount: number = 1): HTMLElement {
     const element = document.createElement('div');
-    element.style.height = `${rowCount * this._terminal.charMeasure.height}px`;
-    element.style.top = `${row * this._terminal.charMeasure.height}px`;
-    element.style.left = `${colStart * this._terminal.charMeasure.width}px`;
-    element.style.width = `${this._terminal.charMeasure.width * (colEnd - colStart)}px`;
+    element.style.height = `${rowCount * this.dimensions.actualCellHeight}px`;
+    element.style.top = `${row * this.dimensions.actualCellHeight}px`;
+    element.style.left = `${colStart * this.dimensions.actualCellWidth}px`;
+    element.style.width = `${this.dimensions.actualCellWidth * (colEnd - colStart)}px`;
     return element;
   }
 
@@ -329,7 +332,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
       const row = y + terminal.buffer.ydisp;
       const lineData = terminal.buffer.lines.get(row);
       const cursorStyle = terminal.options.cursorStyle;
-      rowElement.appendChild(this._rowFactory.createRow(lineData, row === cursorAbsoluteY, cursorStyle, cursorX, terminal.charMeasure.width, terminal.cols));
+      rowElement.appendChild(this._rowFactory.createRow(lineData, row === cursorAbsoluteY, cursorStyle, cursorX, this.dimensions.actualCellWidth, terminal.cols));
     }
 
     this._terminal.emit('refresh', {start, end});
@@ -352,7 +355,11 @@ export class DomRenderer extends EventEmitter implements IRenderer {
 
   private _setCellUnderline(x: number, x2: number, y: number, y2: number, cols: number, enabled: boolean): void {
     while (x !== x2 || y !== y2) {
-      const span = <HTMLElement>this._rowElements[y].children[x];
+      const row = this._rowElements[y];
+      if (!row) {
+        return;
+      }
+      const span = <HTMLElement>row.children[x];
       span.style.textDecoration = enabled ? 'underline' : 'none';
       x = (x + 1) % cols;
       if (x === 0) {

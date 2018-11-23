@@ -13,7 +13,6 @@ import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
 import { ICharset } from './core/Types';
 import { Disposable } from './common/Lifecycle';
-import { BufferLine } from './BufferLine';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -114,7 +113,7 @@ class DECRQSS implements IDcsHandler {
  * each function's header comment.
  */
 export class InputHandler extends Disposable implements IInputHandler {
-  private _surrogateHigh: string;
+  private _surrogateFirst: string;
 
   constructor(
       protected _terminal: IInputHandlingTerminal,
@@ -124,7 +123,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     this.register(this._parser);
 
-    this._surrogateHigh = '';
+    this._surrogateFirst = '';
 
     /**
      * custom fallback handlers
@@ -312,9 +311,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
 
     // apply leftover surrogate high from last write
-    if (this._surrogateHigh) {
-      data = this._surrogateHigh + data;
-      this._surrogateHigh = '';
+    if (this._surrogateFirst) {
+      data = this._surrogateFirst + data;
+      this._surrogateFirst = '';
     }
 
     this._parser.parse(data);
@@ -328,7 +327,6 @@ export class InputHandler extends Disposable implements IInputHandler {
   public print(data: string, start: number, end: number): void {
     let char: string;
     let code: number;
-    let low: number;
     let chWidth: number;
     const buffer: IBuffer = this._terminal.buffer;
     const charset: ICharset = this._terminal.charset;
@@ -346,20 +344,25 @@ export class InputHandler extends Disposable implements IInputHandler {
 
       // surrogate pair handling
       if (0xD800 <= code && code <= 0xDBFF) {
-        // we got a surrogate high
-        // get surrogate low (next 2 bytes)
-        low = data.charCodeAt(stringPosition + 1);
-        if (isNaN(low)) {
-          // end of data stream, save surrogate high
-          this._surrogateHigh = char;
+        if (++stringPosition >= end) {
+          // end of input:
+          // handle pairs as true UTF-16 and wait for the second part
+          // since we expect the input comming from a stream there is
+          // a small chance that the surrogate pair got split
+          // therefore we dont process the first char here, instead
+          // it gets added as first char to the next processed chunk
+          this._surrogateFirst = char;
           continue;
         }
-        code = ((code - 0xD800) * 0x400) + (low - 0xDC00) + 0x10000;
-        char += data.charAt(stringPosition + 1);
-      }
-      // surrogate low - already handled above
-      if (0xDC00 <= code && code <= 0xDFFF) {
-        continue;
+        const second = data.charCodeAt(stringPosition);
+        // if the second part is in surrogate pair range create the high codepoint
+        // otherwise fall back to UCS-2 behavior (handle codepoints independently)
+        if (0xDC00 <= second && second <= 0xDFFF) {
+          code = (code - 0xD800) * 0x400 + second - 0xDC00 + 0x10000;
+          char += data.charAt(stringPosition);
+        } else {
+          stringPosition--;
+        }
       }
 
       // calculate print space
@@ -392,10 +395,12 @@ export class InputHandler extends Disposable implements IInputHandler {
             if (chMinusTwo) {
               chMinusTwo[CHAR_DATA_CHAR_INDEX] += char;
               chMinusTwo[CHAR_DATA_CODE_INDEX] = code;
+              bufferRow.set(buffer.x - 2, chMinusTwo); // must be set explicitly now
             }
           } else {
             chMinusOne[CHAR_DATA_CHAR_INDEX] += char;
             chMinusOne[CHAR_DATA_CODE_INDEX] = code;
+            bufferRow.set(buffer.x - 1, chMinusOne); // must be set explicitly now
           }
         }
         continue;
@@ -403,6 +408,9 @@ export class InputHandler extends Disposable implements IInputHandler {
 
       // goto next line if ch would overflow
       // TODO: needs a global min terminal width of 2
+      // FIXME: additionally ensure chWidth fits into a line
+      //   -->  maybe forbid cols<xy at higher level as it would
+      //        introduce a bad runtime penalty here
       if (buffer.x + chWidth - 1 >= cols) {
         // autowrap - DECAWM
         // automatically wraps to the beginning of the next line
@@ -430,23 +438,15 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
 
       // insert mode: move characters to right
-      // To achieve insert, we remove cells from the right
-      // and insert empty ones at cursor position
       if (insertMode) {
-        // do this twice for a fullwidth char
-        for (let moves = 0; moves < chWidth; ++moves) {
-          // remove last cell
-          // if it's width is 0, we have to adjust the second last cell as well
-          const removed = bufferRow.pop();
-          const chMinusTwo = bufferRow.get(buffer.x - 2);
-          if (removed[CHAR_DATA_WIDTH_INDEX] === 0
-              && chMinusTwo
-              && chMinusTwo[CHAR_DATA_WIDTH_INDEX] === 2) {
-                bufferRow.set(this._terminal.cols - 2, [curAttr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
-          }
-
-          // insert empty cell at cursor
-          bufferRow.splice(buffer.x, 0, [curAttr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+        // right shift cells according to the width
+        bufferRow.insertCells(buffer.x, chWidth, [curAttr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+        // test last cell - since the last cell has only room for
+        // a halfwidth char any fullwidth shifted there is lost
+        // and will be set to eraseChar
+        const lastCell = bufferRow.get(cols - 1);
+        if (lastCell[CHAR_DATA_WIDTH_INDEX] === 2) {
+          bufferRow.set(cols - 1, [curAttr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
         }
       }
 
@@ -454,8 +454,12 @@ export class InputHandler extends Disposable implements IInputHandler {
       bufferRow.set(buffer.x++, [curAttr, char, chWidth, code]);
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor
-      if (chWidth === 2) {
-        bufferRow.set(buffer.x++, [curAttr, '', 0, undefined]);
+      // for graphemes bigger than fullwidth we can simply loop to zero
+      // we already made sure above, that buffer.x + chWidth will not overflow right
+      if (chWidth > 0) {
+        while (--chWidth) {
+          bufferRow.set(buffer.x++, [curAttr, '', 0, undefined]);
+        }
       }
     }
     this._terminal.updateRange(buffer.y);
@@ -722,12 +726,25 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @param start first cell index to be erased
    * @param end   end - 1 is last erased cell
    */
-  private _eraseInBufferLine(y: number, start: number, end: number): void {
-    this._terminal.buffer.lines.get(this._terminal.buffer.ybase + y).replaceCells(
+  private _eraseInBufferLine(y: number, start: number, end: number, clearWrap: boolean = false): void {
+    const line = this._terminal.buffer.lines.get(this._terminal.buffer.ybase + y);
+    line.replaceCells(
       start,
       end,
       [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
     );
+    if (clearWrap) {
+      line.isWrapped = false;
+    }
+  }
+
+  /**
+   * Helper method to reset cells in a terminal row.
+   * The cell gets replaced with the eraseChar of the terminal and the isWrapped property is set to false.
+   * @param y row index
+   */
+  private _resetBufferLine(y: number): void {
+    this._eraseInBufferLine(y, 0, this._terminal.cols, true);
   }
 
   /**
@@ -748,18 +765,23 @@ export class InputHandler extends Disposable implements IInputHandler {
       case 0:
         j = this._terminal.buffer.y;
         this._terminal.updateRange(j);
-        this._eraseInBufferLine(j++, this._terminal.buffer.x, this._terminal.cols);
+        this._eraseInBufferLine(j++, this._terminal.buffer.x, this._terminal.cols, this._terminal.buffer.x === 0);
         for (; j < this._terminal.rows; j++) {
-          this._eraseInBufferLine(j, 0, this._terminal.cols);
+          this._resetBufferLine(j);
         }
         this._terminal.updateRange(j);
         break;
       case 1:
         j = this._terminal.buffer.y;
         this._terminal.updateRange(j);
-        this._eraseInBufferLine(j, 0, this._terminal.buffer.x + 1);
+        // Deleted front part of line and everything before. This line will no longer be wrapped.
+        this._eraseInBufferLine(j, 0, this._terminal.buffer.x + 1, true);
+        if (this._terminal.buffer.x + 1 >= this._terminal.cols) {
+          // Deleted entire previous line. This next line can no longer be wrapped.
+          this._terminal.buffer.lines.get(j + 1).isWrapped = false;
+        }
         while (j--) {
-          this._eraseInBufferLine(j, 0, this._terminal.cols);
+          this._resetBufferLine(j);
         }
         this._terminal.updateRange(0);
         break;
@@ -767,7 +789,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         j = this._terminal.rows;
         this._terminal.updateRange(j - 1);
         while (j--) {
-          this._eraseInBufferLine(j, 0, this._terminal.cols);
+          this._resetBufferLine(j);
         }
         this._terminal.updateRange(0);
         break;
@@ -832,7 +854,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       // test: echo -e '\e[44m\e[1L\e[0m'
       // blankLine(true) - xterm/linux behavior
       buffer.lines.splice(scrollBottomAbsolute - 1, 1);
-      buffer.lines.splice(row, 0, BufferLine.blankLine(this._terminal.cols, this._terminal.eraseAttr()));
+      buffer.lines.splice(row, 0, buffer.getBlankLine(this._terminal.eraseAttr()));
     }
 
     // this.maxRange();
@@ -862,7 +884,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       // test: echo -e '\e[44m\e[1M\e[0m'
       // blankLine(true) - xterm/linux behavior
       buffer.lines.splice(row, 1);
-      buffer.lines.splice(j, 0, BufferLine.blankLine(this._terminal.cols, this._terminal.eraseAttr()));
+      buffer.lines.splice(j, 0, buffer.getBlankLine(this._terminal.eraseAttr()));
     }
 
     // this.maxRange();
@@ -894,7 +916,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     while (param--) {
       buffer.lines.splice(buffer.ybase + buffer.scrollTop, 1);
-      buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 0, BufferLine.blankLine(this._terminal.cols, DEFAULT_ATTR));
+      buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 0, buffer.getBlankLine(DEFAULT_ATTR));
     }
     // this.maxRange();
     this._terminal.updateRange(buffer.scrollTop);
@@ -913,7 +935,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
       while (param--) {
         buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 1);
-        buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 0, BufferLine.blankLine(this._terminal.cols, DEFAULT_ATTR));
+        buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 0, buffer.getBlankLine(DEFAULT_ATTR));
       }
       // this.maxRange();
       this._terminal.updateRange(buffer.scrollTop);

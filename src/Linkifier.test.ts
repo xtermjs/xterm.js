@@ -51,9 +51,9 @@ describe('Linkifier', () => {
   });
 
   function stringToRow(text: string): IBufferLine {
-    const result = new BufferLine();
+    const result = new BufferLine(text.length);
     for (let i = 0; i < text.length; i++) {
-      result.push([0, text.charAt(i), 1, text.charCodeAt(i)]);
+      result.set(i, [0, text.charAt(i), 1, text.charCodeAt(i)]);
     }
     return result;
   }
