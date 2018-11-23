@@ -29,18 +29,26 @@ const GLEVEL: {[key: string]: number} = {'(': 0, ')': 1, '*': 2, '+': 3, '-': 1,
   *   Request Terminfo String
   *   not supported
   */
-class RequestTerminfo implements IDcsHandler {
-  private _data: string;
+ class RequestTerminfo implements IDcsHandler {
+  private _data: Uint16Array = new Uint16Array(0);
   constructor(private _terminal: any) { }
   hook(collect: string, params: number[], flag: number): void {
-    this._data = '';
   }
-  put(data: string, start: number, end: number): void {
-    this._data += data.substring(start, end);
+  put(data: Uint16Array, start: number, end: number): void {
+    const tmp = new Uint16Array(this._data.length + end - start);
+    tmp.set(this._data);
+    tmp.set(data.subarray(start, end), this._data.length);
+    this._data = data;
   }
   unhook(): void {
+    let data = '';
+    for (let i = 0; i < this._data.length; ++i) {
+      data += String.fromCharCode(this._data[i]);
+    }
+    this._data = new Uint16Array(0); // dont hold memory longer than needed
     // invalid: DCS 0 + r Pt ST
-    this._terminal.handler(`${C0.ESC}P0+r${this._data}${C0.ESC}\\`);
+    this._terminal.handler(`${C0.ESC}P0+r${data}${C0.ESC}\\`);
+    this._data = new Uint16Array(0);
   }
 }
 
@@ -51,21 +59,27 @@ class RequestTerminfo implements IDcsHandler {
  *   Response: DECRPSS (https://vt100.net/docs/vt510-rm/DECRPSS.html)
  */
 class DECRQSS implements IDcsHandler {
-  private _data: string;
+  private _data: Uint16Array = new Uint16Array(0);
 
   constructor(private _terminal: any) { }
 
   hook(collect: string, params: number[], flag: number): void {
-    // reset data
-    this._data = '';
   }
 
-  put(data: string, start: number, end: number): void {
-    this._data += data.substring(start, end);
+  put(data: Uint16Array, start: number, end: number): void {
+    const tmp = new Uint16Array(this._data.length + end - start);
+    tmp.set(this._data);
+    tmp.set(data.subarray(start, end), this._data.length);
+    this._data = data;
   }
 
   unhook(): void {
-    switch (this._data) {
+    let data = '';
+    for (let i = 0; i < this._data.length; ++i) {
+      data += String.fromCharCode(this._data[i]);
+    }
+    this._data = new Uint16Array(0); // dont hold memory longer than needed
+    switch (data) {
       // valid: DCS 1 $ r Pt ST (xterm)
       case '"q': // DECSCA
         return this._terminal.handler(`${C0.ESC}P1$r0"q${C0.ESC}\\`);
@@ -85,8 +99,8 @@ class DECRQSS implements IDcsHandler {
         return this._terminal.handler(`${C0.ESC}P1$r${style} q${C0.ESC}\\`);
       default:
         // invalid: DCS 0 $ r Pt ST (xterm)
-        this._terminal.error('Unknown DCS $q %s', this._data);
-        this._terminal.handler(`${C0.ESC}P0$r${this._data}${C0.ESC}\\`);
+        this._terminal.error('Unknown DCS $q %s', data);
+        this._terminal.handler(`${C0.ESC}P0$r${data}${C0.ESC}\\`);
     }
   }
 }
@@ -97,11 +111,11 @@ class DECRQSS implements IDcsHandler {
  *   not supported
  */
 
- /**
-  * DCS + p Pt ST (xterm)
-  *   Set Terminfo Data
-  *   not supported
-  */
+/**
+ * DCS + p Pt ST (xterm)
+ *   Set Terminfo Data
+ *   not supported
+ */
 
 
 
@@ -114,6 +128,7 @@ class DECRQSS implements IDcsHandler {
  */
 export class InputHandler extends Disposable implements IInputHandler {
   private _surrogateFirst: string;
+  private _parseBuffer: Uint16Array = new Uint16Array(4096);
 
   constructor(
       protected _terminal: IInputHandlingTerminal,
@@ -316,7 +331,13 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._surrogateFirst = '';
     }
 
-    this._parser.parse(data);
+    if (this._parseBuffer.length < data.length) {
+      this._parseBuffer = new Uint16Array(data.length);
+    }
+    for (let i = 0; i < data.length; ++i) {
+      this._parseBuffer[i] = data.charCodeAt(i);
+    }
+    this._parser.parse(this._parseBuffer, data.length);
 
     buffer = this._terminal.buffer;
     if (buffer.x !== cursorStartX || buffer.y !== cursorStartY) {
@@ -324,9 +345,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
   }
 
-  public print(data: string, start: number, end: number): void {
-    let char: string;
+  public print(data: Uint16Array, start: number, end: number): void {
     let code: number;
+    let char: string;
     let chWidth: number;
     const buffer: IBuffer = this._terminal.buffer;
     const charset: ICharset = this._terminal.charset;
@@ -338,30 +359,30 @@ export class InputHandler extends Disposable implements IInputHandler {
     let bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
 
     this._terminal.updateRange(buffer.y);
-    for (let stringPosition = start; stringPosition < end; ++stringPosition) {
-      char = data.charAt(stringPosition);
-      code = data.charCodeAt(stringPosition);
+    for (let pos = start; pos < end; ++pos) {
+      code = data[pos];
+      char = String.fromCharCode(code);
 
       // surrogate pair handling
       if (0xD800 <= code && code <= 0xDBFF) {
-        if (++stringPosition >= end) {
+        if (++pos >= end) {
           // end of input:
           // handle pairs as true UTF-16 and wait for the second part
           // since we expect the input comming from a stream there is
           // a small chance that the surrogate pair got split
           // therefore we dont process the first char here, instead
           // it gets added as first char to the next processed chunk
-          this._surrogateFirst = char;
+          this._surrogateFirst = String.fromCharCode(code);
           continue;
         }
-        const second = data.charCodeAt(stringPosition);
+        const second = data[pos];
         // if the second part is in surrogate pair range create the high codepoint
         // otherwise fall back to UCS-2 behavior (handle codepoints independently)
         if (0xDC00 <= second && second <= 0xDFFF) {
           code = (code - 0xD800) * 0x400 + second - 0xDC00 + 0x10000;
-          char += data.charAt(stringPosition);
+          char += String.fromCharCode(second);
         } else {
-          stringPosition--;
+          pos--;
         }
       }
 
@@ -370,9 +391,14 @@ export class InputHandler extends Disposable implements IInputHandler {
       chWidth = wcwidth(code);
 
       // get charset replacement character
-      if (charset) {
-        char = charset[char] || char;
-        code = char.charCodeAt(0);
+      // charset are only defined for ASCII, therefore we only
+      // search for an replacement char if code < 127
+      if (code < 127 && charset) {
+        const ch = charset[char];
+        if (ch) {
+          code = ch.charCodeAt(0);
+          char = ch;
+        }
       }
 
       if (screenReaderMode) {
