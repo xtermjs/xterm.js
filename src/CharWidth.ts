@@ -1,9 +1,9 @@
-import { fill } from './core/TypedArrayUtils';
-
 /**
  * Copyright (c) 2016 The xterm.js authors. All rights reserved.
  * @license MIT
  */
+
+import { fill } from './core/TypedArrayUtils';
 
 export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: number) => number {
   // extracted from https://www.cl.cam.ac.uk/%7Emgk25/ucs/wcwidth.c
