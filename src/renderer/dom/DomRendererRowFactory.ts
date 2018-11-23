@@ -29,7 +29,7 @@ export class DomRendererRowFactory {
     // properly support reflow and disallow data to go beyond the right-side of
     // the viewport).
     let lineLength = 0;
-    for (let x = lineData.length - 1; x >= 0; x--) {
+    for (let x = Math.min(lineData.length, cols) - 1; x >= 0; x--) {
       const charData = lineData.get(x);
       const code = charData[CHAR_DATA_CODE_INDEX];
       if (code !== NULL_CELL_CODE || (isCursorRow && x === cursorX)) {
@@ -38,13 +38,7 @@ export class DomRendererRowFactory {
       }
     }
 
-    let colCount = 0;
     for (let x = 0; x < lineLength; x++) {
-      // Don't allow any buffer to the right to be displayed
-      if (colCount >= cols) {
-        continue;
-      }
-
       const charData = lineData.get(x);
       const char = charData[CHAR_DATA_CHAR_INDEX];
       const attr = charData[CHAR_DATA_ATTR_INDEX];
@@ -113,7 +107,6 @@ export class DomRendererRowFactory {
         charElement.classList.add(`xterm-bg-${bg}`);
       }
       fragment.appendChild(charElement);
-      colCount += width;
     }
     return fragment;
   }
