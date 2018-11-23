@@ -289,9 +289,14 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
       return false;
     }
 
+    return this._areCoordsInSelection(coords, start, end);
+  }
+
+  protected _areCoordsInSelection(coords: [number, number], start: [number, number], end: [number, number]): boolean {
     return (coords[1] > start[1] && coords[1] < end[1]) ||
-        (start[1] === end[1] && coords[1] === start[1] && coords[0] > start[0] && coords[0] < end[0]) ||
-        (start[1] < end[1] && coords[1] === end[1] && coords[0] < end[0]);
+        (start[1] === end[1] && coords[1] === start[1] && coords[0] >= start[0] && coords[0] < end[0]) ||
+        (start[1] < end[1] && coords[1] === end[1] && coords[0] < end[0]) ||
+        (start[1] < end[1] && coords[1] === start[1] && coords[0] >= start[0]);
   }
 
   /**
@@ -342,7 +347,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param event The mouse event.
    */
   private _getMouseBufferCoords(event: MouseEvent): [number, number] {
-    const coords = this._terminal.mouseHelper.getCoords(event, this._terminal.screenElement, this._charMeasure, this._terminal.options.lineHeight, this._terminal.cols, this._terminal.rows, true);
+    const coords = this._terminal.mouseHelper.getCoords(event, this._terminal.screenElement, this._charMeasure, this._terminal.cols, this._terminal.rows, true);
     if (!coords) {
       return null;
     }

@@ -6,7 +6,7 @@
 import { assert, expect } from 'chai';
 import { InputHandler } from './InputHandler';
 import { MockInputHandlingTerminal } from './utils/TestUtils.test';
-import { NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, CHAR_DATA_CHAR_INDEX } from './Buffer';
+import { NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, CHAR_DATA_CHAR_INDEX, CHAR_DATA_ATTR_INDEX, DEFAULT_ATTR } from './Buffer';
 import { Terminal } from './Terminal';
 import { IBufferLine } from './Types';
 
@@ -504,6 +504,67 @@ describe('InputHandler', () => {
       const term = new Terminal();
       const inputHandler = new InputHandler(term);
       inputHandler.print(String.fromCharCode(0x200B), 0, 1);
+    });
+  });
+
+  describe('alt screen', () => {
+    let term: Terminal;
+    let handler: InputHandler;
+
+    function lineContent(line: IBufferLine): string {
+      let content = '';
+      for (let i = 0; i < line.length; ++i) content += line.get(i)[CHAR_DATA_CHAR_INDEX];
+      return content;
+    }
+
+    beforeEach(() => {
+      term = new Terminal();
+      handler = new InputHandler(term);
+    });
+    it('should handle DECSET/DECRST 47 (alt screen buffer)', () => {
+      handler.parse('\x1b[?47h\r\n\x1b[31mJUNK\x1b[?47lTEST');
+      expect(lineContent(term.buffer.lines.get(0))).to.equal(Array(term.cols + 1).join(' '));
+      expect(lineContent(term.buffer.lines.get(1))).to.equal('    TEST' + Array(term.cols - 7).join(' '));
+      // Text color of 'TEST' should be red
+      expect((term.buffer.lines.get(1).get(4)[CHAR_DATA_ATTR_INDEX] >> 9) & 0x1ff).to.equal(1);
+    });
+    it('should handle DECSET/DECRST 1047 (alt screen buffer)', () => {
+      handler.parse('\x1b[?1047h\r\n\x1b[31mJUNK\x1b[?1047lTEST');
+      expect(lineContent(term.buffer.lines.get(0))).to.equal(Array(term.cols + 1).join(' '));
+      expect(lineContent(term.buffer.lines.get(1))).to.equal('    TEST' + Array(term.cols - 7).join(' '));
+      // Text color of 'TEST' should be red
+      expect((term.buffer.lines.get(1).get(4)[CHAR_DATA_ATTR_INDEX] >> 9) & 0x1ff).to.equal(1);
+    });
+    it('should handle DECSET/DECRST 1048 (alt screen cursor)', () => {
+      handler.parse('\x1b[?1048h\r\n\x1b[31mJUNK\x1b[?1048lTEST');
+      expect(lineContent(term.buffer.lines.get(0))).to.equal('TEST' + Array(term.cols - 3).join(' '));
+      expect(lineContent(term.buffer.lines.get(1))).to.equal('JUNK' + Array(term.cols - 3).join(' '));
+      // Text color of 'TEST' should be default
+      expect(term.buffer.lines.get(0).get(0)[CHAR_DATA_ATTR_INDEX]).to.equal(DEFAULT_ATTR);
+      // Text color of 'JUNK' should be red
+      expect((term.buffer.lines.get(1).get(0)[CHAR_DATA_ATTR_INDEX] >> 9) & 0x1ff).to.equal(1);
+    });
+    it('should handle DECSET/DECRST 1049 (alt screen buffer+cursor)', () => {
+      handler.parse('\x1b[?1049h\r\n\x1b[31mJUNK\x1b[?1049lTEST');
+      expect(lineContent(term.buffer.lines.get(0))).to.equal('TEST' + Array(term.cols - 3).join(' '));
+      expect(lineContent(term.buffer.lines.get(1))).to.equal(Array(term.cols + 1).join(' '));
+      // Text color of 'TEST' should be default
+      expect(term.buffer.lines.get(0).get(0)[CHAR_DATA_ATTR_INDEX]).to.equal(DEFAULT_ATTR);
+    });
+    it('should handle DECSET/DECRST 1049 - maintains saved cursor for alt buffer', () => {
+      handler.parse('\x1b[?1049h\r\n\x1b[31m\x1b[s\x1b[?1049lTEST');
+      expect(lineContent(term.buffer.lines.get(0))).to.equal('TEST' + Array(term.cols - 3).join(' '));
+      // Text color of 'TEST' should be default
+      expect(term.buffer.lines.get(0).get(0)[CHAR_DATA_ATTR_INDEX]).to.equal(DEFAULT_ATTR);
+      handler.parse('\x1b[?1049h\x1b[uTEST');
+      expect(lineContent(term.buffer.lines.get(1))).to.equal('TEST' + Array(term.cols - 3).join(' '));
+      // Text color of 'TEST' should be red
+      expect((term.buffer.lines.get(1).get(0)[CHAR_DATA_ATTR_INDEX] >> 9) & 0x1ff).to.equal(1);
+    });
+    it('should handle DECSET/DECRST 1049 - clears alt buffer with erase attributes', () => {
+      handler.parse('\x1b[42m\x1b[?1049h');
+      // Buffer should be filled with green background
+      expect(term.buffer.lines.get(20).get(10)[CHAR_DATA_ATTR_INDEX] & 0x1ff).to.equal(2);
     });
   });
 });
