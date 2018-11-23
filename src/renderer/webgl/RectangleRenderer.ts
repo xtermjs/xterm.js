@@ -9,6 +9,7 @@ import { createProgram, expandFloat32Array, PROJECTION_MATRIX } from './WebglUti
 import { IColor } from '../../shared/Types';
 import { IRenderModel, IWebGLVertexArrayObject, IWebGL2RenderingContext, ISelectionRenderModel } from './Types';
 import { RENDER_INVERTED_DEFAULT_COLOR } from './RenderModel';
+import { fill } from '../../core/TypedArrayUtils';
 
 const enum VertexAttribLocations {
   POSITION = 0,
@@ -173,7 +174,7 @@ export class RectangleRenderer {
     const terminal = this._terminal;
 
     if (!model.hasSelection) {
-      this._vertices.selection.fill(0, 0);
+      fill(this._vertices.selection, 0, 0);
       return;
     }
 
@@ -190,7 +191,7 @@ export class RectangleRenderer {
         height * this._dimensions.scaledCellHeight,
         this._selectionFloat
       );
-      this._vertices.selection.fill(0, INDICES_PER_RECTANGLE);
+      fill(this._vertices.selection, 0, INDICES_PER_RECTANGLE);
     } else {
       // Draw first row
       const startCol = model.viewportStartRow === model.viewportCappedStartRow ? model.startCol : 0;
@@ -231,7 +232,7 @@ export class RectangleRenderer {
           this._selectionFloat
         );
       } else {
-        this._vertices.selection.fill(0, INDICES_PER_RECTANGLE * 2);
+        fill(this._vertices.selection, 0, INDICES_PER_RECTANGLE * 2);
       }
     }
   }

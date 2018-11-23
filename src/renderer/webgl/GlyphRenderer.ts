@@ -11,6 +11,7 @@ import WebglCharAtlas from './WebglCharAtlas';
 import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel, IRasterizedGlyph } from './Types';
 import { INDICIES_PER_CELL } from './WebglRenderer';
 import { COMBINED_CHAR_BIT_MASK } from './RenderModel';
+import { fill } from '../../core/TypedArrayUtils';
 
 interface IVertices {
   attributes: Float32Array;
@@ -169,7 +170,7 @@ export class GlyphRenderer {
 
     // Exit early if this is a null/space character
     if (code === NULL_CELL_CODE || code === undefined/* This is used for the right side of wide chars */) {
-      array.fill(0, i, i + INDICES_PER_CELL - 1);
+      fill(array, 0, i, i + INDICES_PER_CELL - 1);
       return;
     }
 
@@ -182,7 +183,7 @@ export class GlyphRenderer {
 
     // Fill empty if no glyph was found
     if (!rasterizedGlyph) {
-      array.fill(0, i, i + INDICES_PER_CELL - 1);
+      fill(array, 0, i, i + INDICES_PER_CELL - 1);
       return;
     }
 
@@ -203,7 +204,7 @@ export class GlyphRenderer {
   public updateLineEnd(x: number, y: number): void {
     // Clears all cells to the right of the line end
     const i = (y * this._terminal.cols + x + 1) * INDICES_PER_CELL;
-    this._vertices.attributes.fill(0, i, i + (this._terminal.cols - this._lineLengths[y]) * INDICES_PER_CELL - 1);
+    fill(this._vertices.attributes, 0, i, i + (this._terminal.cols - this._lineLengths[y]) * INDICES_PER_CELL - 1);
   }
 
   public updateSelection(model: IRenderModel, columnSelectMode: boolean): void {

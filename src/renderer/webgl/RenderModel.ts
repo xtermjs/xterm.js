@@ -4,6 +4,7 @@
  */
 
 import { IRenderModel, ISelectionRenderModel } from './Types';
+import { fill } from '../../core/TypedArrayUtils';
 
 export const RENDER_MODEL_INDICIES_PER_CELL = 4;
 
@@ -42,8 +43,8 @@ export class RenderModel implements IRenderModel {
   }
 
   public clear(): void {
-    this.cells.fill(0, 0);
-    this.lineLengths.fill(0, 0);
+    fill(this.cells, 0, 0);
+    fill(this.lineLengths, 0, 0);
     this.clearSelection();
   }
 
