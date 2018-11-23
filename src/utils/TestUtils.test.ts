@@ -182,7 +182,6 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   wraparoundMode: boolean;
   bracketedPasteMode: boolean;
   curAttr: number;
-  savedCurAttr: number;
   savedCols: number;
   x10Mouse: boolean;
   vt200Mouse: boolean;
@@ -304,6 +303,7 @@ export class MockBuffer implements IBuffer {
   scrollTop: number;
   savedY: number;
   savedX: number;
+  savedCurAttr: number;
   translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string {
     return Buffer.prototype.translateBufferLineToString.apply(this, arguments);
   }
