@@ -24,10 +24,12 @@ export interface IKeyboardEvent {
 export interface ICircularList<T> extends IEventEmitter {
   length: number;
   maxLength: number;
+  isFull: boolean;
 
   get(index: number): T | undefined;
   set(index: number, value: T): void;
   push(value: T): void;
+  recycle(): T | undefined;
   pop(): T | undefined;
   splice(start: number, deleteCount: number, ...items: T[]): void;
   trimStart(count: number): void;
