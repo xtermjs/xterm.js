@@ -11,7 +11,7 @@ import WebglCharAtlas from './WebglCharAtlas';
 import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel, IRasterizedGlyph } from './Types';
 import { INDICIES_PER_CELL } from './WebglRenderer';
 import { COMBINED_CHAR_BIT_MASK } from './RenderModel';
-import { fill } from '../../core/TypedArrayUtils';
+import { fill, slice } from '../../core/TypedArrayUtils';
 
 interface IVertices {
   attributes: Float32Array;
@@ -210,7 +210,7 @@ export class GlyphRenderer {
   public updateSelection(model: IRenderModel, columnSelectMode: boolean): void {
     const terminal = this._terminal;
 
-    this._vertices.selectionAttributes = this._vertices.attributes.slice(0);
+    this._vertices.selectionAttributes = slice(this._vertices.attributes, 0);
 
     // TODO: Make fg and bg configurable, currently since the buffer doesn't
     // support truecolor the char atlas cannot store it.
