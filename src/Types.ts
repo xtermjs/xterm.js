@@ -246,8 +246,8 @@ export interface ILinkifierAccessor {
 }
 
 export interface IMouseHelper {
-  getCoords(event: { pageX: number, pageY: number }, element: HTMLElement, charMeasure: ICharMeasure, lineHeight: number, colCount: number, rowCount: number, isSelection?: boolean): [number, number];
-  getRawByteCoords(event: MouseEvent, element: HTMLElement, charMeasure: ICharMeasure, lineHeight: number, colCount: number, rowCount: number): { x: number, y: number };
+  getCoords(event: { pageX: number, pageY: number }, element: HTMLElement, charMeasure: ICharMeasure, colCount: number, rowCount: number, isSelection?: boolean): [number, number];
+  getRawByteCoords(event: MouseEvent, element: HTMLElement, charMeasure: ICharMeasure, colCount: number, rowCount: number): { x: number, y: number };
 }
 
 export interface ICharMeasure {
