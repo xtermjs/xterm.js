@@ -29,11 +29,12 @@ export class DomRendererRowFactory {
     // properly support reflow and disallow data to go beyond the right-side of
     // the viewport).
     let lineLength = 0;
-    for (let x = 0; x < lineData.length; x++) {
+    for (let x = lineData.length - 1; x >= 0; x--) {
       const charData = lineData.get(x);
       const code = charData[CHAR_DATA_CODE_INDEX];
       if (code !== NULL_CELL_CODE || (isCursorRow && x === cursorX)) {
         lineLength = x + 1;
+        break;
       }
     }
 
