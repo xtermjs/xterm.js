@@ -30,7 +30,8 @@ opening an issue, read these pointers.
 
 ## Contributing code
 
-- Make sure you have a [GitHub account](https://github.com/join)
+You can find issues to work on by looking at the [help wanted](https://github.com/xtermjs/xterm.js/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) or [good first issue](https://github.com/xtermjs/xterm.js/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) issues. It's a good idea to comment on the issue saying that you're taking it, just in case someone else comes along and you duplicate work. Once you have your issue, here are the steps to contribute:
+
 - Fork [xterm.js](https://github.com/sourcelair/xterm.js/)
   ([how to fork a repo](https://help.github.com/articles/fork-a-repo))
 - Get the [xterm.js demo](https://github.com/xtermjs/xterm.js/wiki/Contributing#running-the-demo) running

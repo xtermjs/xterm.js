@@ -77,15 +77,15 @@ export class BufferLine implements IBufferLine {
 
   /** resize line to cols filling new cells with fill */
   public resize(cols: number, fillCharData: CharData, shrink: boolean = false): void {
+    while (this._data.length < cols) {
+      this._data.push(fillCharData);
+    }
     if (shrink) {
       while (this._data.length > cols) {
         this._data.pop();
       }
     }
-    while (this._data.length < cols) {
-      this._data.push(fillCharData);
-    }
-    this.length = cols;
+    this.length = this._data.length;
   }
 
   public fill(fillCharData: CharData): void {
@@ -94,11 +94,8 @@ export class BufferLine implements IBufferLine {
     }
   }
 
-  public copyFrom(line: IBufferLine): void {
-    this._data = [];
-    for (let i = 0; i < line.length; ++i) {
-      this._push(line.get(i));
-    }
+  public copyFrom(line: BufferLine): void {
+    this._data = line._data.slice(0);
     this.length = line.length;
     this.isWrapped = line.isWrapped;
   }
@@ -141,11 +138,13 @@ export class BufferLineTypedArray implements IBufferLine {
     if (!fillCharData) {
       fillCharData = [0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
     }
-    this._data = new Uint32Array(cols * CELL_SIZE);
-    for (let i = 0; i < cols; ++i) {
-      this.set(i, fillCharData);
+    if (cols) {
+      this._data = new Uint32Array(cols * CELL_SIZE);
+      for (let i = 0; i < cols; ++i) {
+        this.set(i, fillCharData);
+      }
     }
-    this.length = cols || 0;
+    this.length = cols;
   }
 
   public get(index: number): CharData {
@@ -212,12 +211,12 @@ export class BufferLineTypedArray implements IBufferLine {
   }
 
   public resize(cols: number, fillCharData: CharData, shrink: boolean = false): void {
-    if (cols === this.length) {
+    if (cols === this.length || (!shrink && cols < this.length)) {
       return;
     }
     if (cols > this.length) {
       const data = new Uint32Array(cols * CELL_SIZE);
-      if (this._data) {
+      if (this.length) {
         if (cols * CELL_SIZE < this._data.length) {
           data.set(this._data.subarray(0, cols * CELL_SIZE));
         } else {

@@ -58,9 +58,25 @@ app.ws('/terminals/:pid', function (ws, req) {
   console.log('Connected to terminal ' + term.pid);
   ws.send(logs[term.pid]);
 
+  function buffer(socket, timeout) {
+    let s = '';
+    let sender = null;
+    return (data) => {
+      s += data;
+      if (!sender) {
+        sender = setTimeout(() => {
+          socket.send(s);
+          s = '';
+          sender = null;
+        }, timeout);
+      }
+    };
+  }
+  const send = buffer(ws, 5);
+
   term.on('data', function(data) {
     try {
-      ws.send(data);
+      send(data);
     } catch (ex) {
       // The WebSocket is not open, ignore
     }
