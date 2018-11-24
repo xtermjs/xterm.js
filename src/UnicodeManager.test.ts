@@ -8,11 +8,13 @@ import { IUnicodeVersionProvider } from './Types';
 
 const VERSION_DUMMY1: IUnicodeVersionProvider = {
   version: 15,
-  wcwidth: (n: number) => n
+  wcwidth: (n: number) => n,
+  init: () => {}
 };
 const VERSION_DUMMY2: IUnicodeVersionProvider = {
   version: 17,
-  wcwidth: (n: number) => n
+  wcwidth: (n: number) => n,
+  init: () => {}
 };
 
 describe('UnicodeProvider', function(): void {

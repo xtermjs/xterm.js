@@ -220,7 +220,7 @@ function initOptions(term: TerminalType): void {
         booleanOptions.push(o);
         break;
       case 'number':
-          numberOptions.push(o);
+        numberOptions.push(o);
         break;
       default:
         if (Object.keys(stringOptions).indexOf(o) === -1) {
