@@ -9,7 +9,7 @@ import { createProgram, expandFloat32Array, PROJECTION_MATRIX } from './WebglUti
 import { IColor } from '../../shared/Types';
 import { IRenderModel, IWebGLVertexArrayObject, IWebGL2RenderingContext, ISelectionRenderModel } from './Types';
 import { RENDER_INVERTED_DEFAULT_COLOR } from './RenderModel';
-import { fill } from '../../core/TypedArrayUtils';
+import { fill } from '../../common/TypedArrayUtils';
 
 const enum VertexAttribLocations {
   POSITION = 0,
