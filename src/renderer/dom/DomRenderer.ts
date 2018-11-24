@@ -10,6 +10,7 @@ import { EventEmitter } from '../../common/EventEmitter';
 import { ColorManager } from '../ColorManager';
 import { RenderDebouncer } from '../../ui/RenderDebouncer';
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from './DomRendererRowFactory';
+import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
@@ -111,6 +112,8 @@ export class DomRenderer extends EventEmitter implements IRenderer {
       element.style.width = `${this.dimensions.canvasWidth}px`;
       element.style.height = `${this.dimensions.actualCellHeight}px`;
       element.style.lineHeight = `${this.dimensions.actualCellHeight}px`;
+      // Make sure rows don't overflow onto following row
+      element.style.overflow = 'hidden';
     });
 
     if (!this._dimensionsStyleElement) {
@@ -197,6 +200,9 @@ export class DomRenderer extends EventEmitter implements IRenderer {
           `${this._terminalSelector} .${FG_CLASS_PREFIX}${i} { color: ${c.css}; }` +
           `${this._terminalSelector} .${BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
     });
+    styles +=
+        `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { color: ${this.colorManager.colors.background.css}; }` +
+        `${this._terminalSelector} .${BG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { background-color: ${this.colorManager.colors.foreground.css}; }`;
 
     this._themeStyleElement.innerHTML = styles;
     return this.colorManager.colors;
@@ -330,7 +336,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
       const row = y + terminal.buffer.ydisp;
       const lineData = terminal.buffer.lines.get(row);
       const cursorStyle = terminal.options.cursorStyle;
-      rowElement.appendChild(this._rowFactory.createRow(lineData, row === cursorAbsoluteY, cursorStyle, cursorX, terminal.charMeasure.width, terminal.cols));
+      rowElement.appendChild(this._rowFactory.createRow(lineData, row === cursorAbsoluteY, cursorStyle, cursorX, this.dimensions.actualCellWidth, terminal.cols));
     }
 
     this._terminal.emit('refresh', {start, end});

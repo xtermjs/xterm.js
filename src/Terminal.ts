@@ -171,7 +171,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public savedCols: number;
 
   public curAttr: number;
-  public savedCurAttr: number;
 
   public params: (string | number)[];
   public currentParam: string | number;
@@ -811,7 +810,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       button = getButton(ev);
 
       // get mouse coordinates
-      pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
+      pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.charMeasure, self.cols, self.rows);
       if (!pos) return;
 
       sendEvent(button, pos);
@@ -837,7 +836,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // ^[[M 3<^[[M@4<^[[M@5<^[[M@6<^[[M@7<^[[M#7<
     function sendMove(ev: MouseEvent): void {
       let button = pressed;
-      const pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
+      const pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.charMeasure, self.cols, self.rows);
       if (!pos) return;
 
       // buttons marked as motions

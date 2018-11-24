@@ -49,7 +49,6 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   wraparoundMode: boolean;
   bracketedPasteMode: boolean;
   curAttr: number;
-  savedCurAttr: number;
   savedCols: number;
   x10Mouse: boolean;
   vt200Mouse: boolean;
@@ -246,8 +245,8 @@ export interface ILinkifierAccessor {
 }
 
 export interface IMouseHelper {
-  getCoords(event: { pageX: number, pageY: number }, element: HTMLElement, charMeasure: ICharMeasure, lineHeight: number, colCount: number, rowCount: number, isSelection?: boolean): [number, number];
-  getRawByteCoords(event: MouseEvent, element: HTMLElement, charMeasure: ICharMeasure, lineHeight: number, colCount: number, rowCount: number): { x: number, y: number };
+  getCoords(event: { pageX: number, pageY: number }, element: HTMLElement, charMeasure: ICharMeasure, colCount: number, rowCount: number, isSelection?: boolean): [number, number];
+  getRawByteCoords(event: MouseEvent, element: HTMLElement, charMeasure: ICharMeasure, colCount: number, rowCount: number): { x: number, y: number };
 }
 
 export interface ICharMeasure {
@@ -290,6 +289,7 @@ export interface IBuffer {
   hasScrollback: boolean;
   savedY: number;
   savedX: number;
+  savedCurAttr: number;
   isCursorInViewport: boolean;
   translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string;
   getWrappedRangeForLine(y: number): { first: number, last: number };
@@ -306,7 +306,7 @@ export interface IBufferSet extends IEventEmitter {
   active: IBuffer;
 
   activateNormalBuffer(): void;
-  activateAltBuffer(): void;
+  activateAltBuffer(fillAttr?: number): void;
 }
 
 export interface ISelectionManager {

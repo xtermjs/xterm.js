@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-export const INVERTED_DEFAULT_COLOR = -1;
+export const DEFAULT_COLOR = 256;
+export const INVERTED_DEFAULT_COLOR = 257;
 export const DIM_OPACITY = 0.5;
 
 export interface IGlyphIdentifier {
