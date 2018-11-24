@@ -5,10 +5,11 @@
 
 import { IRenderLayer, IColorSet, IRenderDimensions } from './Types';
 import { CharData, ITerminal } from '../Types';
-import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, IGlyphIdentifier, DEFAULT_COLOR } from './atlas/Types';
+import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, IGlyphIdentifier } from './atlas/Types';
 import BaseCharAtlas from './atlas/BaseCharAtlas';
 import { acquireCharAtlas } from './atlas/CharAtlasCache';
 import { CHAR_DATA_CHAR_INDEX } from '../Buffer';
+import { is256Color } from './atlas/CharAtlasUtils';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -298,7 +299,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
     if (fg === INVERTED_DEFAULT_COLOR) {
       this._ctx.fillStyle = this._colors.background.css;
-    } else if (fg < DEFAULT_COLOR) {
+    } else if (is256Color(fg)) {
       // 256 color support
       this._ctx.fillStyle = this._colors.ansi[fg].css;
     } else {
