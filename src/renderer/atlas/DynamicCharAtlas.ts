@@ -42,7 +42,7 @@ interface IGlyphCacheValue {
   inBitmap: boolean;
 }
 
-function getGlyphCacheKey(glyph: IGlyphIdentifier): number {
+export function getGlyphCacheKey(glyph: IGlyphIdentifier): number {
   // Note that this only returns a valid key when code < 256
   // Layout:
   // 0b00000000000000000000000000000001: italic (1)

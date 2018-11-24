@@ -6,6 +6,7 @@
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_ATTR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, NULL_CELL_CODE } from '../../Buffer';
 import { FLAGS } from '../Types';
 import { IBufferLine } from '../../Types';
+import { DEFAULT_COLOR, INVERTED_DEFAULT_COLOR } from '../atlas/Types';
 
 export const BOLD_CLASS = 'xterm-bold';
 export const ITALIC_CLASS = 'xterm-italic';
@@ -79,16 +80,17 @@ export class DomRendererRowFactory {
         const temp = bg;
         bg = fg;
         fg = temp;
-        if (fg === 256) {
-          fg = 0;
+        if (fg === DEFAULT_COLOR) {
+          fg = INVERTED_DEFAULT_COLOR;
         }
-        if (bg === 257) {
-          bg = 15;
+        if (bg === DEFAULT_COLOR) {
+          bg = INVERTED_DEFAULT_COLOR;
         }
       }
 
       if (flags & FLAGS.BOLD) {
-        // Convert the FG color to the bold variant
+        // Convert the FG color to the bold variant. This should not happen when
+        // the fg is the inverse default color as there is no bold variant.
         if (fg < 8) {
           fg += 8;
         }
@@ -100,10 +102,10 @@ export class DomRendererRowFactory {
       }
 
       charElement.textContent = char;
-      if (fg !== 257) {
+      if (fg !== DEFAULT_COLOR) {
         charElement.classList.add(`xterm-fg-${fg}`);
       }
-      if (bg !== 256) {
+      if (bg !== DEFAULT_COLOR) {
         charElement.classList.add(`xterm-bg-${bg}`);
       }
       fragment.appendChild(charElement);

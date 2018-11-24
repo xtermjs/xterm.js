@@ -10,6 +10,7 @@ import { DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from '.
 import { FLAGS } from '../Types';
 import { BufferLine } from '../../BufferLine';
 import { IBufferLine } from '../../Types';
+import { DEFAULT_COLOR } from '../atlas/Types';
 
 describe('DomRendererRowFactory', () => {
   let dom: jsdom.JSDOM;
@@ -76,7 +77,7 @@ describe('DomRendererRowFactory', () => {
       });
 
       it('should add classes for 256 foreground colors', () => {
-        const defaultAttrNoFgColor = (0 << 9) | (256 << 0);
+        const defaultAttrNoFgColor = (0 << 9) | (DEFAULT_COLOR << 0);
         for (let i = 0; i < 256; i++) {
           lineData.set(0, [defaultAttrNoFgColor | (i << 9), 'a', 1, 'a'.charCodeAt(0)]);
           const fragment = rowFactory.createRow(lineData, false, undefined, 0, 5, 20);
@@ -87,7 +88,7 @@ describe('DomRendererRowFactory', () => {
       });
 
       it('should add classes for 256 background colors', () => {
-        const defaultAttrNoBgColor = (257 << 9) | (0 << 0);
+        const defaultAttrNoBgColor = (DEFAULT_ATTR << 9) | (0 << 0);
         for (let i = 0; i < 256; i++) {
           lineData.set(0, [defaultAttrNoBgColor | (i << 0), 'a', 1, 'a'.charCodeAt(0)]);
           const fragment = rowFactory.createRow(lineData, false, undefined, 0, 5, 20);
@@ -106,24 +107,24 @@ describe('DomRendererRowFactory', () => {
       });
 
       it('should correctly invert default fg color', () => {
-        lineData.set(0, [(FLAGS.INVERSE << 18) | (257 << 9) | (1 << 0), 'a', 1, 'a'.charCodeAt(0)]);
+        lineData.set(0, [(FLAGS.INVERSE << 18) | (DEFAULT_ATTR << 9) | (1 << 0), 'a', 1, 'a'.charCodeAt(0)]);
         const fragment = rowFactory.createRow(lineData, false, undefined, 0, 5, 20);
         assert.equal(getFragmentHtml(fragment),
-          '<span class="xterm-fg-1 xterm-bg-15">a</span>'
+          '<span class="xterm-fg-1 xterm-bg-257">a</span>'
         );
       });
 
       it('should correctly invert default bg color', () => {
-        lineData.set(0, [(FLAGS.INVERSE << 18) | (1 << 9) | (256 << 0), 'a', 1, 'a'.charCodeAt(0)]);
+        lineData.set(0, [(FLAGS.INVERSE << 18) | (1 << 9) | (DEFAULT_COLOR << 0), 'a', 1, 'a'.charCodeAt(0)]);
         const fragment = rowFactory.createRow(lineData, false, undefined, 0, 5, 20);
         assert.equal(getFragmentHtml(fragment),
-          '<span class="xterm-fg-0 xterm-bg-1">a</span>'
+          '<span class="xterm-fg-257 xterm-bg-1">a</span>'
         );
       });
 
       it('should turn bold fg text bright', () => {
         for (let i = 0; i < 8; i++) {
-          lineData.set(0, [(FLAGS.BOLD << 18) | (i << 9) | (256 << 0), 'a', 1, 'a'.charCodeAt(0)]);
+          lineData.set(0, [(FLAGS.BOLD << 18) | (i << 9) | (DEFAULT_COLOR << 0), 'a', 1, 'a'.charCodeAt(0)]);
           const fragment = rowFactory.createRow(lineData, false, undefined, 0, 5, 20);
           assert.equal(getFragmentHtml(fragment),
             `<span class="xterm-bold xterm-fg-${i + 8}">a</span>`
