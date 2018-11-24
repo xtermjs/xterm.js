@@ -123,7 +123,8 @@ export class UnicodeVersionManager extends Disposable implements IUnicodeVersion
     if (!this.registeredVersions.length || !UnicodeVersionManager.versions[version]) {
       throw new Error(`unicode version "${version}" not registered`);
     }
-    // swap wcwidth impl
+    // init lookup table and swap wcwidth impl
+    UnicodeVersionManager.versions[version].init();
     this.wcwidth = UnicodeVersionManager.versions[version].wcwidth;
     this._version = version;
   }

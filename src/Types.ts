@@ -537,6 +537,7 @@ export interface IBufferLineConstructor {
  */
 export interface IUnicodeVersionProvider {
   version: number;
+  init(): void;
   wcwidth(ucs: number): number;
 }
 
