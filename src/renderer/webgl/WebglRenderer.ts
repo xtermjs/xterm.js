@@ -18,8 +18,8 @@ import { ScreenDprMonitor } from '../../ui/ScreenDprMonitor';
 import { RectangleRenderer } from './RectangleRenderer';
 import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX } from '../../Buffer';
 import { IWebGL2RenderingContext } from './Types';
-import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
-import { RenderModel, RENDER_INVERTED_DEFAULT_COLOR, COMBINED_CHAR_BIT_MASK } from './RenderModel';
+import { INVERTED_DEFAULT_COLOR, DEFAULT_COLOR } from '../atlas/Types';
+import { RenderModel, COMBINED_CHAR_BIT_MASK } from './RenderModel';
 
 export const INDICIES_PER_CELL = 4;
 
@@ -302,11 +302,11 @@ export class WebglRenderer extends EventEmitter implements IRenderer {
           const temp = bg;
           bg = fg;
           fg = temp;
-          if (fg === 256) {
-            fg = RENDER_INVERTED_DEFAULT_COLOR;
+          if (fg === DEFAULT_COLOR) {
+            fg = INVERTED_DEFAULT_COLOR;
           }
-          if (bg === 257) {
-            bg = RENDER_INVERTED_DEFAULT_COLOR;
+          if (bg === DEFAULT_COLOR) {
+            bg = INVERTED_DEFAULT_COLOR;
           }
         }
         const drawInBrightColor = terminal.options.drawBoldTextInBrightColors && !!(flags & FLAGS.BOLD) && fg < 8 && fg !== INVERTED_DEFAULT_COLOR;

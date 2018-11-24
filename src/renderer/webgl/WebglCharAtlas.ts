@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { DIM_OPACITY, IGlyphIdentifier } from '../atlas/Types';
+import { DIM_OPACITY, IGlyphIdentifier, INVERTED_DEFAULT_COLOR, DEFAULT_COLOR } from '../atlas/Types';
 import { ICharAtlasConfig } from '../../shared/atlas/Types';
 import { IColor } from '../../shared/Types';
 import BaseCharAtlas from '../atlas/BaseCharAtlas';
@@ -12,7 +12,7 @@ import { clearColor } from '../../shared/atlas/CharAtlasGenerator';
 import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from './Types';
 import { DEFAULT_ATTR } from '../../Buffer';
 import { FLAGS } from '../Types';
-import { RENDER_INVERTED_DEFAULT_COLOR } from './RenderModel';
+import { is256Color } from '../atlas/CharAtlasUtils';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.
@@ -97,7 +97,7 @@ export default class WebglCharAtlas extends BaseCharAtlas {
   protected _doWarmUp(): void {
     // Pre-fill with ASCII 33-126
     for (let i = 33; i < 126; i++) {
-      const rasterizedGlyph = this._drawToCache(i, DEFAULT_ATTR, 256, 257, true);
+      const rasterizedGlyph = this._drawToCache(i, DEFAULT_ATTR, DEFAULT_COLOR, DEFAULT_COLOR, true);
       this._cacheMap[i] = {
         [DEFAULT_ATTR]: rasterizedGlyph
       };
@@ -175,19 +175,18 @@ export default class WebglCharAtlas extends BaseCharAtlas {
       // transparent in the atlas. Otherwise we'd end up drawing the transparent background twice
       // around the anti-aliased edges of the glyph, and it would look too dark.
       return TRANSPARENT_COLOR;
-    } else if (bg === RENDER_INVERTED_DEFAULT_COLOR) {
+    } else if (bg === INVERTED_DEFAULT_COLOR) {
       return this._config.colors.foreground;
-    } else if (bg < 256) {
+    } else if (is256Color(bg)) {
       return this._getColorFromAnsiIndex(bg);
     }
     return this._config.colors.background;
   }
 
   private _getForegroundColor(fg: number): IColor {
-    if (fg === RENDER_INVERTED_DEFAULT_COLOR) {
+    if (fg === INVERTED_DEFAULT_COLOR) {
       return this._config.colors.background;
-    } else if (fg < 256) {
-      // 256 color support
+    } else if (is256Color(fg)) {
       return this._getColorFromAnsiIndex(fg);
     }
     return this._config.colors.foreground;

@@ -8,8 +8,9 @@ import { IColorManager, IRenderDimensions } from '../Types';
 import { createProgram, expandFloat32Array, PROJECTION_MATRIX } from './WebglUtils';
 import { IColor } from '../../shared/Types';
 import { IRenderModel, IWebGLVertexArrayObject, IWebGL2RenderingContext, ISelectionRenderModel } from './Types';
-import { RENDER_INVERTED_DEFAULT_COLOR } from './RenderModel';
 import { fill } from '../../common/TypedArrayUtils';
+import { INVERTED_DEFAULT_COLOR, DEFAULT_COLOR } from '../atlas/Types';
+import { is256Color } from '../atlas/CharAtlasUtils';
 
 const enum VertexAttribLocations {
   POSITION = 0,
@@ -243,16 +244,15 @@ export class RectangleRenderer {
 
     let rectangleCount = 1;
 
-    const DEFAULT_BACKGROUND_COLOR = 256;
     for (let y = 0; y < terminal.rows; y++) {
       let currentStartX = -1;
-      let currentBg = DEFAULT_BACKGROUND_COLOR;
+      let currentBg = DEFAULT_COLOR;
       for (let x = 0; x < terminal.cols; x++) {
         const modelIndex = ((y * terminal.cols) + x) * 4;
         const bg = model.cells[modelIndex + 2];
         if (bg !== currentBg) {
           // A rectangle needs to be drawn if going from non-default to another color
-          if (currentBg !== DEFAULT_BACKGROUND_COLOR) {
+          if (currentBg !== DEFAULT_COLOR) {
             const offset = rectangleCount++ * INDICES_PER_RECTANGLE;
             this._updateRectangle(vertices, offset, currentBg, currentStartX, x, y);
           }
@@ -261,7 +261,7 @@ export class RectangleRenderer {
         }
       }
       // Finish rectangle if it's still going
-      if (currentBg !== DEFAULT_BACKGROUND_COLOR) {
+      if (currentBg !== DEFAULT_COLOR) {
         const offset = rectangleCount++ * INDICES_PER_RECTANGLE;
         this._updateRectangle(vertices, offset, currentBg, currentStartX, terminal.cols, y);
       }
@@ -271,9 +271,9 @@ export class RectangleRenderer {
 
   private _updateRectangle(vertices: IVertices, offset: number, bg: number, startX: number, endX: number, y: number): void {
     let color: IColor | null = null;
-    if (bg === RENDER_INVERTED_DEFAULT_COLOR) {
+    if (bg === INVERTED_DEFAULT_COLOR) {
       color = this._colorManager.colors.foreground;
-    } else if (bg < 256) {
+    } else if (is256Color(bg)) {
       color = this._colorManager.colors.ansi[bg];
     }
     if (vertices.attributes.length < offset + 4) {
