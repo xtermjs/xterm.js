@@ -5,8 +5,7 @@
 
 import { ITerminal } from '../../Types';
 import { IColorSet } from '../Types';
-import { ICharAtlasConfig } from '../../shared/atlas/Types';
-import { DEFAULT_COLOR } from './Types';
+import { DEFAULT_COLOR, ICharAtlasConfig } from './Types';
 
 export function generateConfig(scaledCharWidth: number, scaledCharHeight: number, terminal: ITerminal, colors: IColorSet): ICharAtlasConfig {
   // null out some fields that don't matter

@@ -5,7 +5,6 @@
 
 import { ITerminal, CharacterJoinerHandler } from '../Types';
 import { IEventEmitter, ITheme, IDisposable } from 'xterm';
-import { IColorSet } from '../shared/Types';
 
 /**
  * Flags used to render terminal text properly.
@@ -47,9 +46,6 @@ export interface IRenderer extends IEventEmitter, IDisposable {
 export interface IColorManager {
   colors: IColorSet;
 }
-
-// TODO: We should probably rewrite the imports for IColorSet, but there's a lot of them
-export { IColorSet };
 
 export interface IRenderDimensions {
   scaledCharWidth: number;
@@ -133,4 +129,18 @@ export interface ICharacterJoinerRegistry {
   registerCharacterJoiner(handler: (text: string) => [number, number][]): number;
   deregisterCharacterJoiner(joinerId: number): boolean;
   getJoinedCharacters(row: number): [number, number][];
+}
+
+export interface IColor {
+  css: string;
+  rgba: number; // 32-bit int with rgba in each byte
+}
+
+export interface IColorSet {
+  foreground: IColor;
+  background: IColor;
+  cursor: IColor;
+  cursorAccent: IColor;
+  selection: IColor;
+  ansi: IColor[];
 }
