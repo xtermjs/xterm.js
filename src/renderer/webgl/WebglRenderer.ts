@@ -16,7 +16,7 @@ import { acquireCharAtlas } from '../atlas/CharAtlasCache';
 import WebglCharAtlas from './WebglCharAtlas';
 import { ScreenDprMonitor } from '../../ui/ScreenDprMonitor';
 import { RectangleRenderer } from './RectangleRenderer';
-import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX } from '../../Buffer';
+import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX, NULL_CELL_CODE } from '../../Buffer';
 import { IWebGL2RenderingContext } from './Types';
 import { INVERTED_DEFAULT_COLOR, DEFAULT_COLOR } from '../atlas/Types';
 import { RenderModel, COMBINED_CHAR_BIT_MASK } from './RenderModel';
@@ -267,7 +267,7 @@ export class WebglRenderer extends EventEmitter implements IRenderer {
 
     // Render
     this._rectangleRenderer.render();
-    this._glyphRenderer.render(this._model.selection.hasSelection);
+    this._glyphRenderer.render(this._model, this._model.selection.hasSelection);
 
     // Emit event
     this._terminal.emit('refresh', { start, end });
@@ -286,6 +286,10 @@ export class WebglRenderer extends EventEmitter implements IRenderer {
         let code = charData[CHAR_DATA_CODE_INDEX];
         const attr = charData[CHAR_DATA_ATTR_INDEX];
         const i = ((y * terminal.cols) + x) * INDICIES_PER_CELL;
+
+        if (code !== NULL_CELL_CODE) {
+          this._model.lineLengths[y] = x + 1;
+        }
 
         // Nothing has changed, no updates needed
         if (this._model.cells[i] === code && this._model.cells[i + 1] === attr) {

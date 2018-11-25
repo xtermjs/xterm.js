@@ -15,8 +15,14 @@ import { fill, slice } from '../../common/TypedArrayUtils';
 
 interface IVertices {
   attributes: Float32Array;
+  /**
+   * These buffers are the ones used to bind to WebGL, the reason there are
+   * multiple is to allow double buffering to work as you cannot modify the
+   * buffer while it's being used by the GPU. Having multiple lets us start
+   * working on the next frame.
+   */
+  attributesBuffers: Float32Array[];
   selectionAttributes: Float32Array;
-  cellPosition: Float32Array;
   count: number;
 }
 
@@ -61,8 +67,9 @@ void main() {
   outColor = texture(u_texture, v_texcoord);
 }`;
 
-const INDICES_PER_CELL = 8;
+const INDICES_PER_CELL = 10;
 const BYTES_PER_CELL = INDICES_PER_CELL * Float32Array.BYTES_PER_ELEMENT;
+const CELL_POSITION_INDICES = 2;
 
 export class GlyphRenderer {
   private _atlas: WebglCharAtlas;
@@ -74,14 +81,16 @@ export class GlyphRenderer {
   private _textureLocation: WebGLUniformLocation;
   private _atlasTexture: WebGLTexture;
   private _attributesBuffer: WebGLBuffer;
-  private _cellPositionBuffer: WebGLBuffer;
+  private _activeBuffer: number = 0;
 
-  private _lineLengths: Int16Array = new Int16Array(0);
   private _vertices: IVertices = {
     count: 0,
     attributes: new Float32Array(0),
-    selectionAttributes: new Float32Array(0),
-    cellPosition: new Float32Array(0)
+    attributesBuffers: [
+      new Float32Array(0),
+      new Float32Array(0)
+    ],
+    selectionAttributes: new Float32Array(0)
   };
 
   constructor(
@@ -117,13 +126,6 @@ export class GlyphRenderer {
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, elementIndicesBuffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, unitQuadElementIndices, gl.STATIC_DRAW);
 
-    // Setup a_cellpos, this is separate as it rarely changed
-    this._cellPositionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, this._cellPositionBuffer);
-    gl.enableVertexAttribArray(VertexAttribLocations.CELL_POSITION);
-    gl.vertexAttribPointer(VertexAttribLocations.CELL_POSITION, 2, gl.FLOAT, false, 0, 0);
-    gl.vertexAttribDivisor(VertexAttribLocations.CELL_POSITION, 1);
-
     // Setup attributes
     this._attributesBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, this._attributesBuffer);
@@ -139,6 +141,9 @@ export class GlyphRenderer {
     gl.enableVertexAttribArray(VertexAttribLocations.TEXSIZE);
     gl.vertexAttribPointer(VertexAttribLocations.TEXSIZE, 2, gl.FLOAT, false, BYTES_PER_CELL, 6 * Float32Array.BYTES_PER_ELEMENT);
     gl.vertexAttribDivisor(VertexAttribLocations.TEXSIZE, 1);
+    gl.enableVertexAttribArray(VertexAttribLocations.CELL_POSITION);
+    gl.vertexAttribPointer(VertexAttribLocations.CELL_POSITION, 2, gl.FLOAT, false, BYTES_PER_CELL, 8 * Float32Array.BYTES_PER_ELEMENT);
+    gl.vertexAttribDivisor(VertexAttribLocations.CELL_POSITION, 1);
 
     // Setup empty texture atlas
     this._atlasTexture = gl.createTexture();
@@ -166,11 +171,11 @@ export class GlyphRenderer {
   private _updateCell(array: Float32Array, x: number, y: number, code: number | undefined, attr: number, bg: number, fg: number, chars?: string): void {
     const terminal = this._terminal;
 
-    const i = ((y * terminal.cols) + x) * INDICES_PER_CELL;
+    const i = (y * terminal.cols + x) * INDICES_PER_CELL;
 
     // Exit early if this is a null/space character
     if (code === NULL_CELL_CODE || code === undefined/* This is used for the right side of wide chars */) {
-      fill(array, 0, i, i + INDICES_PER_CELL - 1);
+      fill(array, 0, i, i + INDICES_PER_CELL - 1 - CELL_POSITION_INDICES);
       return;
     }
 
@@ -183,7 +188,7 @@ export class GlyphRenderer {
 
     // Fill empty if no glyph was found
     if (!rasterizedGlyph) {
-      fill(array, 0, i, i + INDICES_PER_CELL - 1);
+      fill(array, 0, i, i + INDICES_PER_CELL - 1 - CELL_POSITION_INDICES);
       return;
     }
 
@@ -199,12 +204,7 @@ export class GlyphRenderer {
     // a_texsize
     array[i + 6] = rasterizedGlyph.sizeClipSpace.x;
     array[i + 7] = rasterizedGlyph.sizeClipSpace.y;
-  }
-
-  public updateLineEnd(x: number, y: number): void {
-    // Clears all cells to the right of the line end
-    const i = (y * this._terminal.cols + x + 1) * INDICES_PER_CELL;
-    fill(this._vertices.attributes, 0, i, i + (this._terminal.cols - this._lineLengths[y]) * INDICES_PER_CELL - 1);
+    // a_cellpos only changes on resize
   }
 
   public updateSelection(model: IRenderModel, columnSelectMode: boolean): void {
@@ -279,15 +279,16 @@ export class GlyphRenderer {
     if (this._vertices.count !== newCount) {
       this._vertices.count = newCount;
       this._vertices.attributes = new Float32Array(newCount);
-      this._lineLengths = new Int16Array(terminal.rows);
-
-      this._vertices.cellPosition = new Float32Array(terminal.cols * terminal.rows * 2);
+      for (let i = 0; i < this._vertices.attributesBuffers.length; i++) {
+        this._vertices.attributesBuffers[i] = new Float32Array(newCount);
+      }
 
       let i = 0;
       for (let y = 0; y < terminal.rows; y++) {
         for (let x = 0; x < terminal.cols; x++) {
-          this._vertices.cellPosition[i++] = x / terminal.cols;
-          this._vertices.cellPosition[i++] = y / terminal.rows;
+          i += 8;
+          this._vertices.attributes[i++] = x / terminal.cols;
+          this._vertices.attributes[i++] = y / terminal.rows;
         }
       }
     }
@@ -296,7 +297,7 @@ export class GlyphRenderer {
   public onThemeChanged(): void {
   }
 
-  public render(isSelectionVisible: boolean): void {
+  public render(renderModel: IRenderModel, isSelectionVisible: boolean): void {
     if (!this._atlas) {
       return;
     }
@@ -306,10 +307,18 @@ export class GlyphRenderer {
     gl.useProgram(this._program);
     gl.bindVertexArray(this._vertexArrayObject);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, this._cellPositionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, this._vertices.cellPosition, gl.STATIC_DRAW);
+    this._activeBuffer = (this._activeBuffer + 1) % 2;
+    this._vertices.attributesBuffers[this._activeBuffer];
+    let bufferLength = 0;
+    for (let y = 0; y < renderModel.lineLengths.length; y++) {
+      const si = y * this._terminal.cols * INDICES_PER_CELL;
+      const sub = (isSelectionVisible ? this._vertices.selectionAttributes : this._vertices.attributes).subarray(si, si + renderModel.lineLengths[y] * INDICES_PER_CELL);
+      this._vertices.attributesBuffers[this._activeBuffer].set(sub, bufferLength);
+      bufferLength += sub.length;
+    }
     gl.bindBuffer(gl.ARRAY_BUFFER, this._attributesBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, isSelectionVisible ? this._vertices.selectionAttributes : this._vertices.attributes, gl.DYNAMIC_DRAW);
+    const buffer = this._vertices.attributesBuffers[this._activeBuffer].subarray(0, bufferLength);
+    gl.bufferData(gl.ARRAY_BUFFER, buffer, gl.STREAM_DRAW);
 
     // Bind the texture atlas if it's changed
     if (this._atlas.hasCanvasChanged) {
@@ -326,7 +335,7 @@ export class GlyphRenderer {
     gl.uniform2f(this._resolutionLocation, gl.canvas.width, gl.canvas.height);
 
     // Draw the viewport
-    gl.drawElementsInstanced(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0, this._vertices.count / INDICES_PER_CELL);
+    gl.drawElementsInstanced(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0, buffer.length / INDICES_PER_CELL);
   }
 
   public setAtlas(atlas: WebglCharAtlas): void {
