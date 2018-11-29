@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { assert, expect } from 'chai';
+import { assert } from 'chai';
 
 import * as winptyCompat from './winptyCompat';
 

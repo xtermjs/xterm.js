@@ -48,4 +48,30 @@ describe('BufferSet', () => {
       assert.equal(bufferSet.active, bufferSet.alt);
     });
   });
+
+  describe('cursor handling when swapping buffers', () => {
+    beforeEach(() => {
+      bufferSet.normal.x = 0;
+      bufferSet.normal.y = 0;
+      bufferSet.alt.x = 0;
+      bufferSet.alt.y = 0;
+    });
+
+    it('should keep the cursor stationary when activating alt buffer', () => {
+      bufferSet.activateNormalBuffer();
+      bufferSet.active.x = 30;
+      bufferSet.active.y = 10;
+      bufferSet.activateAltBuffer();
+      assert.equal(bufferSet.active.x, 30);
+      assert.equal(bufferSet.active.y, 10);
+    });
+    it('should keep the cursor stationary when activating normal buffer', () => {
+      bufferSet.activateAltBuffer();
+      bufferSet.active.x = 30;
+      bufferSet.active.y = 10;
+      bufferSet.activateNormalBuffer();
+      assert.equal(bufferSet.active.x, 30);
+      assert.equal(bufferSet.active.y, 10);
+    });
+  });
 });

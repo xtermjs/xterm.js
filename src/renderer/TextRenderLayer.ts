@@ -6,9 +6,10 @@
 import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, NULL_CELL_CODE } from '../Buffer';
 import { FLAGS, IColorSet, IRenderDimensions, ICharacterJoinerRegistry } from './Types';
 import { CharData, ITerminal } from '../Types';
-import { INVERTED_DEFAULT_COLOR } from './atlas/Types';
+import { INVERTED_DEFAULT_COLOR, DEFAULT_COLOR } from './atlas/Types';
 import { GridCache } from './GridCache';
 import { BaseRenderLayer } from './BaseRenderLayer';
+import { is256Color } from './atlas/CharAtlasUtils';
 
 /**
  * This CharData looks like a null character, which will forc a clear and render
@@ -143,10 +144,10 @@ export class TextRenderLayer extends BaseRenderLayer {
           const temp = bg;
           bg = fg;
           fg = temp;
-          if (fg === 256) {
+          if (fg === DEFAULT_COLOR) {
             fg = INVERTED_DEFAULT_COLOR;
           }
-          if (bg === 257) {
+          if (bg === DEFAULT_COLOR) {
             bg = INVERTED_DEFAULT_COLOR;
           }
         }
@@ -186,7 +187,7 @@ export class TextRenderLayer extends BaseRenderLayer {
       let nextFillStyle = null; // null represents default background color
       if (bg === INVERTED_DEFAULT_COLOR) {
         nextFillStyle = this._colors.foreground.css;
-      } else if (bg < 256) {
+      } else if (is256Color(bg)) {
         nextFillStyle = this._colors.ansi[bg].css;
       }
 
@@ -230,7 +231,7 @@ export class TextRenderLayer extends BaseRenderLayer {
         this._ctx.save();
         if (fg === INVERTED_DEFAULT_COLOR) {
           this._ctx.fillStyle = this._colors.background.css;
-        } else if (fg < 256) {
+        } else if (is256Color(fg)) {
           // 256 color support
           this._ctx.fillStyle = this._colors.ansi[fg].css;
         } else {
