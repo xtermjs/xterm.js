@@ -59,6 +59,7 @@ class DECRQSS implements IDcsHandler {
   constructor(private _terminal: any) { }
 
   hook(collect: string, params: number[], flag: number): void {
+    this._data = new Uint16Array(0);
   }
 
   put(data: Uint16Array, start: number, end: number): void {
