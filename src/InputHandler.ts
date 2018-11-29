@@ -13,6 +13,7 @@ import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
 import { ICharset } from './core/Types';
 import { Disposable } from './common/Lifecycle';
+import { concat, utf16ToString } from './common/TypedArrayUtils';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -33,22 +34,16 @@ const GLEVEL: {[key: string]: number} = {'(': 0, ')': 1, '*': 2, '+': 3, '-': 1,
   private _data: Uint16Array = new Uint16Array(0);
   constructor(private _terminal: any) { }
   hook(collect: string, params: number[], flag: number): void {
+    this._data = new Uint16Array(0);
   }
   put(data: Uint16Array, start: number, end: number): void {
-    const tmp = new Uint16Array(this._data.length + end - start);
-    tmp.set(this._data);
-    tmp.set(data.subarray(start, end), this._data.length);
-    this._data = data;
+    this._data = concat(this._data, data.subarray(start, end));
   }
   unhook(): void {
-    let data = '';
-    for (let i = 0; i < this._data.length; ++i) {
-      data += String.fromCharCode(this._data[i]);
-    }
-    this._data = new Uint16Array(0); // dont hold memory longer than needed
+    const data = utf16ToString(this._data);
+    this._data = new Uint16Array(0);
     // invalid: DCS 0 + r Pt ST
     this._terminal.handler(`${C0.ESC}P0+r${data}${C0.ESC}\\`);
-    this._data = new Uint16Array(0);
   }
 }
 
@@ -67,18 +62,12 @@ class DECRQSS implements IDcsHandler {
   }
 
   put(data: Uint16Array, start: number, end: number): void {
-    const tmp = new Uint16Array(this._data.length + end - start);
-    tmp.set(this._data);
-    tmp.set(data.subarray(start, end), this._data.length);
-    this._data = data;
+    this._data = concat(this._data, data.subarray(start, end));
   }
 
   unhook(): void {
-    let data = '';
-    for (let i = 0; i < this._data.length; ++i) {
-      data += String.fromCharCode(this._data[i]);
-    }
-    this._data = new Uint16Array(0); // dont hold memory longer than needed
+    const data = utf16ToString(this._data);
+    this._data = new Uint16Array(0);
     switch (data) {
       // valid: DCS 1 $ r Pt ST (xterm)
       case '"q': // DECSCA
