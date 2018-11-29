@@ -17,13 +17,13 @@ export const CHAR_DATA_WIDTH_INDEX = 2;
 export const CHAR_DATA_CODE_INDEX = 3;
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 
-// export const NULL_CELL_CHAR = ' ';
-// export const NULL_CELL_WIDTH = 1;
-// export const NULL_CELL_CODE = 32;
-
 export const NULL_CELL_CHAR = '';
 export const NULL_CELL_WIDTH = 1;
 export const NULL_CELL_CODE = 0;
+
+export const WHITESPACE_CELL_CHAR = ' ';
+export const WHITESPACE_CELL_WIDTH = 1;
+export const WHITESPACE_CELL_CODE = 32;
 
 /**
  * This class represents a terminal buffer (an internal state of the terminal), where the

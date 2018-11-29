@@ -3,7 +3,7 @@
  * @license MIT
  */
 import { CharData, IBufferLine } from './Types';
-import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
+import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, WHITESPACE_CELL_CHAR } from './Buffer';
 
 /**
  * Class representing a terminal line.
@@ -123,7 +123,7 @@ export class BufferLine implements IBufferLine {
     }
     let result = '';
     while (startCol < length) {
-      result += this.get(startCol)[CHAR_DATA_CHAR_INDEX] || ' ';
+      result += this.get(startCol)[CHAR_DATA_CHAR_INDEX] || WHITESPACE_CELL_CHAR;
       startCol += this.get(startCol)[CHAR_DATA_WIDTH_INDEX] || 1;
     }
     return result;
@@ -141,7 +141,7 @@ const enum Cell {
 }
 
 /** single vs. combined char distinction */
-const COMBINED = 0x80000000;
+const IS_COMBINED_BIT_MASK = 0x80000000;
 
 /**
  * Typed array based bufferline implementation.
@@ -177,11 +177,11 @@ export class BufferLineTypedArray implements IBufferLine {
     const stringData = this._data[index * CELL_SIZE + Cell.STRING];
     return [
       this._data[index * CELL_SIZE + Cell.FLAGS],
-      (stringData & COMBINED)
+      (stringData & IS_COMBINED_BIT_MASK)
         ? this._combined[index]
         : (stringData) ? String.fromCharCode(stringData) : '',
       this._data[index * CELL_SIZE + Cell.WIDTH],
-      (stringData & COMBINED)
+      (stringData & IS_COMBINED_BIT_MASK)
         ? this._combined[index].charCodeAt(this._combined[index].length - 1)
         : stringData
     ];
@@ -191,7 +191,7 @@ export class BufferLineTypedArray implements IBufferLine {
     this._data[index * CELL_SIZE + Cell.FLAGS] = value[0];
     if (value[1].length > 1) {
       this._combined[index] = value[1];
-      this._data[index * CELL_SIZE + Cell.STRING] = index | COMBINED;
+      this._data[index * CELL_SIZE + Cell.STRING] = index | IS_COMBINED_BIT_MASK;
     } else {
       this._data[index * CELL_SIZE + Cell.STRING] = value[1].charCodeAt(0);
     }
@@ -320,7 +320,7 @@ export class BufferLineTypedArray implements IBufferLine {
     let result = '';
     while (startCol < length) {
       const stringData = this._data[startCol * CELL_SIZE + Cell.STRING];
-      result += (stringData & COMBINED) ? this._combined[startCol] : (stringData) ? String.fromCharCode(stringData) : ' ';
+      result += (stringData & IS_COMBINED_BIT_MASK) ? this._combined[startCol] : (stringData) ? String.fromCharCode(stringData) : WHITESPACE_CELL_CHAR;
       startCol += this._data[startCol * CELL_SIZE + Cell.WIDTH] || 1;
     }
     return result;

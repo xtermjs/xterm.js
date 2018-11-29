@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_ATTR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, NULL_CELL_CODE } from '../../Buffer';
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_ATTR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, NULL_CELL_CODE, WHITESPACE_CELL_CHAR } from '../../Buffer';
 import { FLAGS } from '../Types';
 import { IBufferLine } from '../../Types';
 import { DEFAULT_COLOR, INVERTED_DEFAULT_COLOR } from '../atlas/Types';
@@ -41,7 +41,7 @@ export class DomRendererRowFactory {
 
     for (let x = 0; x < lineLength; x++) {
       const charData = lineData.get(x);
-      const char: string = charData[CHAR_DATA_CHAR_INDEX] || ' ';
+      const char: string = charData[CHAR_DATA_CHAR_INDEX] || WHITESPACE_CELL_CHAR;
       const attr: number = charData[CHAR_DATA_ATTR_INDEX];
       const width: number = charData[CHAR_DATA_WIDTH_INDEX];
 
