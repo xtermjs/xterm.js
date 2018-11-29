@@ -19,7 +19,7 @@ export type ScreenDprListener = (newDevicePixelRatio?: number, oldDevicePixelRat
  */
 export class ScreenDprMonitor extends Disposable {
   private _currentDevicePixelRatio: number;
-  private _outerListener: MediaQueryListListener;
+  private _outerListener: (this: MediaQueryList, ev: MediaQueryListEvent) => any;
   private _listener: ScreenDprListener;
   private _resolutionMediaMatchList: MediaQueryList;
 
