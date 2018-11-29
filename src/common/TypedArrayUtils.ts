@@ -57,9 +57,5 @@ export function concat<T extends TypedArray>(a: T, b: T): T {
  * the conversion will fail.
  */
 export function utf16ToString<T extends TypedArray>(data: T): string {
-  let s = '';
-  for (let i = 0; i < data.length; ++i) {
-    s += String.fromCharCode(data[i]);
-  }
-  return s;
+  return String.fromCharCode.apply(null, data);
 }
