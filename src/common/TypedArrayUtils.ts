@@ -59,7 +59,7 @@ export function sliceFallback<T extends TypedArray>(array: T, start: number = 0,
   }
   start = Math.min(start, end);
 
-  const result: T = new (<any>array).__proto__.constructor(end - start);
+  const result: T = new (array.constructor as any)(end - start);
   for (let i = 0; i < end - start; ++i) {
     result[i] = array[i + start];
   }
