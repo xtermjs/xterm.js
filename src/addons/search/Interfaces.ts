@@ -25,10 +25,13 @@ export interface ISearchOptions {
   regex?: boolean;
   wholeWord?: boolean;
   caseSensitive?: boolean;
+  reverseSearch?: boolean;
 }
 
-export interface ISearchResult {
-  term: string;
+export interface ISearchIndex {
   col: number;
   row: number;
+}
+export interface ISearchResult extends ISearchIndex {
+  term: string;
 }
