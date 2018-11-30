@@ -29,14 +29,14 @@ import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH,
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './common/EventEmitter';
 import { Viewport } from './Viewport';
-import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './handlers/Clipboard';
+import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './ui/Clipboard';
 import { C0 } from './common/data/EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Renderer } from './renderer/Renderer';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
 import { CharMeasure } from './ui/CharMeasure';
-import * as Browser from './shared/utils/Browser';
+import * as Browser from './core/Platform';
 import { addDisposableDomListener } from './ui/Lifecycle';
 import * as Strings from './Strings';
 import { MouseHelper } from './utils/MouseHelper';
@@ -1157,9 +1157,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   public updateCursorStyle(ev: KeyboardEvent): void {
     if (this.selectionManager && this.selectionManager.shouldColumnSelect(ev)) {
-      this.element.classList.add('xterm-cursor-crosshair');
+      this.element.classList.add('column-select');
     } else {
-      this.element.classList.remove('xterm-cursor-crosshair');
+      this.element.classList.remove('column-select');
     }
   }
 
