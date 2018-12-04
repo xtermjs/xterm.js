@@ -7,7 +7,8 @@ import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from './Buffer';
 
 /**
  * Class representing a terminal line.
- * @deprecated
+ * 
+ * @deprecated to be removed with one of the next releases
  */
 export class BufferLineJSArray implements IBufferLine {
   protected _data: CharData[];
@@ -120,15 +121,6 @@ const enum Cell {
 
 /**
  * Typed array based bufferline implementation.
- * Note:  Unlike the JS variant the access to the data
- *        via set/get is always a copy action.
- *        Sloppy ref style coding will not work anymore:
- *           line = new BufferLine(10);
- *           char = line.get(0);        // char is a copy
- *           char[some_index] = 123;    // will not update the line
- *           line.set(0, ch);           // do this to update line data
- * TODO:
- *    - provide getData/setData to directly access the data
  */
 export class BufferLine implements IBufferLine {
   protected _data: Uint32Array | null = null;
