@@ -106,7 +106,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   theme: null,
   rightClickSelectsWord: Browser.isMac,
   rendererType: 'canvas',
-  experimentalBufferLineImpl: 'JsArray'
+  experimentalBufferLineImpl: 'TypedArray'
 };
 
 export class Terminal extends EventEmitter implements ITerminal, IDisposable, IInputHandlingTerminal {
@@ -1179,7 +1179,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   public scroll(isWrapped: boolean = false): void {
     let newLine: IBufferLine;
-    const useRecycling = this.options.experimentalBufferLineImpl === 'TypedArray';
+    const useRecycling = this.options.experimentalBufferLineImpl !== 'JsArray';
     if (useRecycling) {
       newLine = this._blankLine;
       if (!newLine || newLine.length !== this.cols || newLine.get(0)[CHAR_DATA_ATTR_INDEX] !== this.eraseAttr()) {
