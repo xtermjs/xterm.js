@@ -7,8 +7,9 @@ import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from './Buffer';
 
 /**
  * Class representing a terminal line.
+ * @deprecated
  */
-export class BufferLine implements IBufferLine {
+export class BufferLineJSArray implements IBufferLine {
   protected _data: CharData[];
   public isWrapped = false;
   public length: number;
@@ -94,14 +95,14 @@ export class BufferLine implements IBufferLine {
     }
   }
 
-  public copyFrom(line: BufferLine): void {
+  public copyFrom(line: BufferLineJSArray): void {
     this._data = line._data.slice(0);
     this.length = line.length;
     this.isWrapped = line.isWrapped;
   }
 
   public clone(): IBufferLine {
-    const newLine = new BufferLine(0);
+    const newLine = new BufferLineJSArray(0);
     newLine.copyFrom(this);
     return newLine;
   }
@@ -129,7 +130,7 @@ const enum Cell {
  * TODO:
  *    - provide getData/setData to directly access the data
  */
-export class BufferLineTypedArray implements IBufferLine {
+export class BufferLine implements IBufferLine {
   protected _data: Uint32Array | null = null;
   protected _combined: {[index: number]: string} = {};
   public length: number;
@@ -248,7 +249,7 @@ export class BufferLineTypedArray implements IBufferLine {
   }
 
   /** alter to a full copy of line  */
-  public copyFrom(line: BufferLineTypedArray): void {
+  public copyFrom(line: BufferLine): void {
     if (this.length !== line.length) {
       this._data = new Uint32Array(line._data);
     } else {
@@ -265,7 +266,7 @@ export class BufferLineTypedArray implements IBufferLine {
 
   /** create a new clone */
   public clone(): IBufferLine {
-    const newLine = new BufferLineTypedArray(0);
+    const newLine = new BufferLine(0);
     // creation of new typed array from another is actually pretty slow :(
     // still faster than copying values one by one
     newLine._data = new Uint32Array(this._data);
