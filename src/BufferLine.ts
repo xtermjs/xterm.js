@@ -7,7 +7,7 @@ import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from './Buffer';
 
 /**
  * Class representing a terminal line.
- * 
+ *
  * @deprecated to be removed with one of the next releases
  */
 export class BufferLineJSArray implements IBufferLine {
