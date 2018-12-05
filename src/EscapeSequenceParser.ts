@@ -304,7 +304,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   private _removeHandler(array: any[], callback: any): void {
     if (array) {
       for (let i = array.length; --i >= 0; ) {
-        if (array[i] == callback) {
+        if (array[i] === callback) {
           array.splice(i, 1);
             return;
         }
@@ -313,18 +313,19 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   }
 
   addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): void {
-    let index = flag.charCodeAt(0);
+    const index = flag.charCodeAt(0);
     let array = this._csiHandlers[index];
     if (! array) { this._csiHandlers[index] = array = new Array(); }
     array.push(callback);
   }
 
   removeCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): void {
-    let index = flag.charCodeAt(0);
-    let array = this._csiHandlers[index];
+    const index = flag.charCodeAt(0);
+    const array = this._csiHandlers[index];
     this._removeHandler(array, callback);
-    if (array && array.length == 0)
+    if (array && array.length === 0) {
       delete this._csiHandlers[index];
+    }
   }
   /* deprecated */
   setCsiHandler(flag: string, callback: (params: number[], collect: string) => void): void {
@@ -357,10 +358,11 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     array.push(callback);
   }
   removeOscHandler(ident: number, callback: (data: string) => boolean): void {
-    let array = this._oscHandlers[ident];
+    const array = this._oscHandlers[ident];
     this._removeHandler(array, callback);
-    if (array && array.length == 0)
+    if (array && array.length === 0) {
       delete this._oscHandlers[ident];
+    }
   }
   /* deprecated */
   setOscHandler(ident: number, callback: (data: string) => void): void {
@@ -513,8 +515,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           if (cHandler) {
             for (let i = cHandler.length; ;) {
               if (--i < 0) { cHandler = null; break; }
-              if ((cHandler[i])(params, collect))
-                break;
+              if ((cHandler[i])(params, collect)) { break; }
             }
           }
           if (! cHandler) this._csiHandlerFb(collect, params, code);
@@ -588,8 +589,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
               if (oHandler) {
                 for (let i = oHandler.length; ;) {
                   if (--i < 0) { oHandler = null; break; }
-                  if ((oHandler[i])(content))
-                    break;
+                  if ((oHandler[i])(content)) { break; }
                 }
               }
               if (! oHandler) this._oscHandlerFb(identifier, content);
