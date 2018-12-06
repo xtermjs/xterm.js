@@ -33,7 +33,7 @@ export class MouseHelper {
    * apply an offset to the x value such that the left half of the cell will
    * select that cell and the right half will select the next cell.
    */
-  public getCoords(event: {pageX: number, pageY: number}, element: HTMLElement, charMeasure: ICharMeasure, lineHeight: number, colCount: number, rowCount: number, isSelection?: boolean): [number, number] {
+  public getCoords(event: {target: EventTarget, pageX: number, pageY: number}, element: HTMLElement, charMeasure: ICharMeasure, lineHeight: number, colCount: number, rowCount: number, isSelection?: boolean): [number, number] {
     // Coordinates cannot be measured if charMeasure has not been initialized
     if (!charMeasure.width || !charMeasure.height) {
       return null;
