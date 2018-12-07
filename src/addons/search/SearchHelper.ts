@@ -5,7 +5,6 @@
 
 import { ISearchHelper, ISearchAddonTerminal, ISearchOptions, ISearchResult, ISearchIndex } from './Interfaces';
 const nonWordCharacters = ' ~!@#$%^&*()+`-=[]{}|\;:"\',./<>?';
-
 /**
  * A class that knows how to search the terminal and how to display the results.
  */
@@ -74,9 +73,7 @@ export class SearchHelper implements ISearchHelper {
     if (!term || term.length === 0) {
       return false;
     }
-
-    searchOptions.reverseSearch = true;
-
+    const isReverseSearch = true;
     let result: ISearchResult;
     let startRow = this._terminal._core.buffer.ydisp;
     let startCol: number = this._terminal._core.buffer.lines.get(startRow).length;
@@ -91,7 +88,7 @@ export class SearchHelper implements ISearchHelper {
 
     // Search from ydisp + 1 to end
     for (let y = startRow; y >= 0; y--) {
-      result = this._findInLine(term, {row: y, col: startCol}, searchOptions);
+      result = this._findInLine(term, {row: y, col: startCol}, searchOptions, isReverseSearch);
       if (result) {
         break;
       }
@@ -103,7 +100,7 @@ export class SearchHelper implements ISearchHelper {
       const searchFrom = this._terminal._core.buffer.ybase + this._terminal.rows - 1;
       for (let y = searchFrom; y > startRow; y--) {
         startCol = this._terminal._core.buffer.lines.get(y).length;
-        result = this._findInLine(term, {row: y, col: startCol}, searchOptions);
+        result = this._findInLine(term, {row: y, col: startCol}, searchOptions, isReverseSearch);
         if (result) {
           break;
         }
@@ -135,7 +132,7 @@ export class SearchHelper implements ISearchHelper {
    * @param searchOptions Search options.
    * @return The search result if it was found.
    */
-  protected _findInLine(term: string, searchIndex: ISearchIndex, searchOptions: ISearchOptions = {}): ISearchResult {
+  protected _findInLine(term: string, searchIndex: ISearchIndex, searchOptions: ISearchOptions = {}, isReverseSearch: boolean = false): ISearchResult {
     if (this._terminal._core.buffer.lines.get(searchIndex.row).isWrapped) {
       return;
     }
@@ -148,7 +145,7 @@ export class SearchHelper implements ISearchHelper {
     if (searchOptions.regex) {
       const searchRegex = RegExp(searchTerm, 'g');
       let foundTerm: RegExpExecArray;
-      if (searchOptions.reverseSearch) {
+      if (isReverseSearch) {
         while (foundTerm = searchRegex.exec(searchStringLine.slice(0, searchIndex.col))) {
           resultIndex = searchRegex.lastIndex - foundTerm[0].length;
           term = foundTerm[0];
@@ -162,7 +159,7 @@ export class SearchHelper implements ISearchHelper {
         }
       }
     } else {
-      if (searchOptions.reverseSearch) {
+      if (isReverseSearch) {
         resultIndex = searchStringLine.lastIndexOf(searchTerm, searchIndex.col - searchTerm.length);
       } else {
         resultIndex = searchStringLine.indexOf(searchTerm, searchIndex.col);
