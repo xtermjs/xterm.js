@@ -114,6 +114,7 @@ class DECRQSS implements IDcsHandler {
  */
 export class InputHandler extends Disposable implements IInputHandler {
   private _surrogateFirst: string;
+  private _charCache: { [s: number]: string };
 
   constructor(
       protected _terminal: IInputHandlingTerminal,
@@ -288,6 +289,12 @@ export class InputHandler extends Disposable implements IInputHandler {
      */
     this._parser.setDcsHandler('$q', new DECRQSS(this._terminal));
     this._parser.setDcsHandler('+q', new RequestTerminfo(this._terminal));
+
+    /**
+     * This cache prevents a new string from being generated every time getChar
+     * is called in print. Reduces GC pressure when printing lots of data
+     */
+    this._charCache = {};
   }
 
   public dispose(): void {
@@ -339,8 +346,12 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     this._terminal.updateRange(buffer.y);
     for (let stringPosition = start; stringPosition < end; ++stringPosition) {
-      char = data.charAt(stringPosition);
       code = data.charCodeAt(stringPosition);
+      char = this._charCache[code];
+      if (char === undefined) {
+        char = data.charAt(stringPosition);
+        this._charCache[code] = char;
+      }
 
       // surrogate pair handling
       if (0xD800 <= code && code <= 0xDBFF) {
