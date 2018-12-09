@@ -3,21 +3,19 @@
  * @license MIT
  */
 
-import { ICharMeasure } from '../Types';
+import { ICharMeasure, IMouseHelper } from '../Types';
 import { IRenderer } from '../renderer/Types';
 
-export class MouseHelper {
+export class MouseHelper implements IMouseHelper {
   constructor(private _renderer: IRenderer) {}
 
   public setRenderer(renderer: IRenderer): void {
     this._renderer = renderer;
   }
 
-  public static getCoordsRelativeToElement(event: {target: EventTarget, clientX: number, clientY: number}, element: HTMLElement): [number, number] {
-    let rect = event.target.getBoundingClientRect();
-    let x = event.clientX - rect.left;
-    let y = event.clientY - rect.top;
-    return [x, y];
+  public static getCoordsRelativeToElement(event: {clientX: number, clientY: number}, element: HTMLElement): [number, number] {
+    const rect = element.getBoundingClientRect();
+    return [event.clientX - rect.left, event.clientY - rect.top];
   }
 
   /**
@@ -33,7 +31,7 @@ export class MouseHelper {
    * apply an offset to the x value such that the left half of the cell will
    * select that cell and the right half will select the next cell.
    */
-  public getCoords(event: {target: EventTarget, pageX: number, pageY: number}, element: HTMLElement, charMeasure: ICharMeasure, lineHeight: number, colCount: number, rowCount: number, isSelection?: boolean): [number, number] {
+  public getCoords(event: {clientX: number, clientY: number}, element: HTMLElement, charMeasure: ICharMeasure, lineHeight: number, colCount: number, rowCount: number, isSelection?: boolean): [number, number] {
     // Coordinates cannot be measured if charMeasure has not been initialized
     if (!charMeasure.width || !charMeasure.height) {
       return null;
