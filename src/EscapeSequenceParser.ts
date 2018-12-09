@@ -439,7 +439,11 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
       }
 
       // normal transition & action lookup
-      transition = (code < 0xa0) ? (table[currentState << 8 | code]) : DEFAULT_TRANSITION;
+      transition = (code < 0xa0
+        ? (table[currentState << 8 | code])
+        : currentState === ParserState.OSC_STRING
+        ? (ParserAction.OSC_PUT << 4) | ParserState.OSC_STRING
+        : DEFAULT_TRANSITION);
       switch (transition >> 4) {
         case ParserAction.PRINT:
           print = (~print) ? print : i;
@@ -470,10 +474,6 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
             switch (currentState) {
               case ParserState.GROUND:
                 print = (~print) ? print : i;
-                break;
-              case ParserState.OSC_STRING:
-                osc += String.fromCharCode(code);
-                transition |= ParserState.OSC_STRING;
                 break;
               case ParserState.CSI_IGNORE:
                 transition |= ParserState.CSI_IGNORE;
@@ -570,7 +570,16 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           osc = '';
           break;
         case ParserAction.OSC_PUT:
-          osc += data.charAt(i);
+          for (let j = i + 1; ; j++) {
+            if (j >= l
+                || ((code = data.charCodeAt(j)) <= 0x9f
+                    && (table[ParserState.OSC_STRING << 8 | code] >> 4
+                        !== ParserAction.OSC_PUT))) {
+              osc += data.substring(i, j);
+              i = j - 1;
+              break;
+            }
+          }
           break;
         case ParserAction.OSC_END:
           if (osc && code !== 0x18 && code !== 0x1a) {
