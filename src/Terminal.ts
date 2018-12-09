@@ -1360,13 +1360,13 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       this.writeBuffer = [];
     }
 
-    const time = Date.now();
+    const startTime = Date.now();
     while (this.writeBuffer.length > 0) {
       const data = this.writeBuffer.shift();
 
       // If XOFF was sent in order to catch up with the pty process, resume it if
       // the writeBuffer is empty to allow more data to come in.
-      if (this._xoffSentToCatchUp && this.writeBuffer.length === 0 && this.writeBuffer.length === 0) {
+      if (this._xoffSentToCatchUp && this.writeBuffer.length === 0) {
         this.handler(C0.DC1);
         this._xoffSentToCatchUp = false;
       }
@@ -1385,7 +1385,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       this.updateRange(this.buffer.y);
       this.refresh(this._refreshStart, this._refreshEnd);
 
-      if (Date.now() - time >= WRITE_TIMEOUT_MS) {
+      if (Date.now() - startTime >= WRITE_TIMEOUT_MS) {
         break;
       }
     }
