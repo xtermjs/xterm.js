@@ -40,10 +40,9 @@ export function acquireCharAtlas(
   terminal: ITerminal,
   colors: IColorSet,
   scaledCharWidth: number,
-  scaledCharHeight: number,
-  devicePixelRatio?: number
+  scaledCharHeight: number
 ): BaseCharAtlas {
-  const newConfig = generateConfig(scaledCharWidth, scaledCharHeight, terminal, colors, devicePixelRatio);
+  const newConfig = generateConfig(scaledCharWidth, scaledCharHeight, terminal, colors);
 
   // TODO: Currently if a terminal changes configs it will not free the entry reference (until it's disposed)
 

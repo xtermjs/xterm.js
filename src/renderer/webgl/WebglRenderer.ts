@@ -173,7 +173,7 @@ export class WebglRenderer extends EventEmitter implements IRenderer {
     this._glyphRenderer.setDimensions(this.dimensions);
     this._glyphRenderer.onResize();
 
-    this._refreshCharAtlas(devicePixelRatio);
+    this._refreshCharAtlas();
     this._refreshViewport();
 
     this.emit('resize', {
@@ -219,12 +219,12 @@ export class WebglRenderer extends EventEmitter implements IRenderer {
    * @param terminal The terminal.
    * @param colorSet The color set to use for the char atlas.
    */
-  private _refreshCharAtlas(devicePixelRatio: number = window.devicePixelRatio): void {
+  private _refreshCharAtlas(): void {
     if (this.dimensions.scaledCharWidth <= 0 && this.dimensions.scaledCharHeight <= 0) {
       return;
     }
 
-    const atlas = acquireCharAtlas(this._terminal, this.colorManager.colors, this.dimensions.scaledCharWidth, this.dimensions.scaledCharHeight, devicePixelRatio);
+    const atlas = acquireCharAtlas(this._terminal, this.colorManager.colors, this.dimensions.scaledCharWidth, this.dimensions.scaledCharHeight);
     if (!('getRasterizedGlyph' in atlas)) {
       throw new Error('The webgl renderer only works with the webgl char atlas');
     }
