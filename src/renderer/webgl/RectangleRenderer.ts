@@ -4,9 +4,8 @@
  */
 
 import { ITerminal } from '../../Types';
-import { IColorManager, IRenderDimensions } from '../Types';
+import { IColorManager, IRenderDimensions, IColor } from '../Types';
 import { createProgram, expandFloat32Array, PROJECTION_MATRIX } from './WebglUtils';
-import { IColor } from '../../shared/Types';
 import { IRenderModel, IWebGLVertexArrayObject, IWebGL2RenderingContext, ISelectionRenderModel } from './Types';
 import { fill } from '../../common/TypedArrayUtils';
 import { INVERTED_DEFAULT_COLOR, DEFAULT_COLOR } from '../atlas/Types';

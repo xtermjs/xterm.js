@@ -4,18 +4,9 @@
  */
 
 import { FontWeight } from 'xterm';
-import { CHAR_ATLAS_CELL_SPACING, ICharAtlasConfig } from './Types';
+import { isFirefox, isSafari } from '../../core/Platform';
 import { IColor } from '../Types';
-import { isFirefox, isSafari } from '../utils/Browser';
-
-declare const Promise: any;
-
-export interface IOffscreenCanvas {
-  width: number;
-  height: number;
-  getContext(type: '2d', config?: Canvas2DContextAttributes): CanvasRenderingContext2D;
-  transferToImageBitmap(): ImageBitmap;
-}
+import { ICharAtlasConfig, CHAR_ATLAS_CELL_SPACING } from './Types';
 
 /**
  * Generates a char atlas.
@@ -23,7 +14,7 @@ export interface IOffscreenCanvas {
  * @param canvasFactory A function to generate a canvas with a width or height.
  * @param config The config for the new char atlas.
  */
-export function generateStaticCharAtlasTexture(context: Window, canvasFactory: (width: number, height: number) => HTMLCanvasElement | IOffscreenCanvas, config: ICharAtlasConfig): HTMLCanvasElement | Promise<ImageBitmap> {
+export function generateStaticCharAtlasTexture(context: Window, canvasFactory: (width: number, height: number) => HTMLCanvasElement, config: ICharAtlasConfig): HTMLCanvasElement | Promise<ImageBitmap> {
   const cellWidth = config.scaledCharWidth + CHAR_ATLAS_CELL_SPACING;
   const cellHeight = config.scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
   const canvas = canvasFactory(
@@ -101,12 +92,7 @@ export function generateStaticCharAtlasTexture(context: Window, canvasFactory: (
   // performance (tested on v55).
   if (!('createImageBitmap' in context) || isFirefox || isSafari) {
     // Don't attempt to clear background colors if createImageBitmap is not supported
-    if (canvas instanceof HTMLCanvasElement) {
-      // Just return the HTMLCanvas if it's a HTMLCanvasElement
-      return canvas;
-    }
-    // Transfer to an ImageBitmap is this is an OffscreenCanvas
-    return new Promise((r: (bitmap: ImageBitmap) => void) => r(canvas.transferToImageBitmap()));
+    return canvas;
   }
 
   const charAtlasImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);

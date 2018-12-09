@@ -5,13 +5,13 @@
 
 import { ITerminal } from '../../Types';
 import { IColorSet } from '../Types';
-import { ICharAtlasConfig } from '../../shared/atlas/Types';
 import { generateConfig, configEquals } from './CharAtlasUtils';
 import BaseCharAtlas from './BaseCharAtlas';
 import DynamicCharAtlas from './DynamicCharAtlas';
 import NoneCharAtlas from './NoneCharAtlas';
 import StaticCharAtlas from './StaticCharAtlas';
 import WebglCharAtlas from '../webgl/WebglCharAtlas';
+import { ICharAtlasConfig } from './Types';
 
 const charAtlasImplementations = {
   'none': NoneCharAtlas,

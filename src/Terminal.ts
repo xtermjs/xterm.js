@@ -29,14 +29,14 @@ import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH,
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './common/EventEmitter';
 import { Viewport } from './Viewport';
-import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './handlers/Clipboard';
+import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './ui/Clipboard';
 import { C0 } from './common/data/EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Renderer } from './renderer/Renderer';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
 import { CharMeasure } from './ui/CharMeasure';
-import * as Browser from './shared/utils/Browser';
+import * as Browser from './core/Platform';
 import { addDisposableDomListener } from './ui/Lifecycle';
 import * as Strings from './Strings';
 import { MouseHelper } from './utils/MouseHelper';
@@ -107,7 +107,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   theme: null,
   rightClickSelectsWord: Browser.isMac,
   rendererType: 'canvas',
-  experimentalBufferLineImpl: 'JsArray'
+  experimentalBufferLineImpl: 'TypedArray'
 };
 
 export class Terminal extends EventEmitter implements ITerminal, IDisposable, IInputHandlingTerminal {
@@ -1182,7 +1182,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   public scroll(isWrapped: boolean = false): void {
     let newLine: IBufferLine;
-    const useRecycling = this.options.experimentalBufferLineImpl === 'TypedArray';
+    const useRecycling = this.options.experimentalBufferLineImpl !== 'JsArray';
     if (useRecycling) {
       newLine = this._blankLine;
       if (!newLine || newLine.length !== this.cols || newLine.get(0)[CHAR_DATA_ATTR_INDEX] !== this.eraseAttr()) {

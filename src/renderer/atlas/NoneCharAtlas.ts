@@ -5,8 +5,7 @@
  * A dummy CharAtlas implementation that always fails to draw characters.
  */
 
-import { IGlyphIdentifier } from './Types';
-import { ICharAtlasConfig } from '../../shared/atlas/Types';
+import { IGlyphIdentifier, ICharAtlasConfig } from './Types';
 import BaseCharAtlas from './BaseCharAtlas';
 
 export default class NoneCharAtlas extends BaseCharAtlas {

@@ -3,9 +3,8 @@
  * @license MIT
  */
 
-import { DIM_OPACITY, IGlyphIdentifier, DEFAULT_COLOR } from './Types';
-import { CHAR_ATLAS_CELL_SPACING, ICharAtlasConfig } from '../../shared/atlas/Types';
-import { generateStaticCharAtlasTexture } from '../../shared/atlas/CharAtlasGenerator';
+import { DIM_OPACITY, IGlyphIdentifier, DEFAULT_COLOR, ICharAtlasConfig, CHAR_ATLAS_CELL_SPACING } from './Types';
+import { generateStaticCharAtlasTexture } from './CharAtlasGenerator';
 import BaseCharAtlas from './BaseCharAtlas';
 import { is256Color } from './CharAtlasUtils';
 
