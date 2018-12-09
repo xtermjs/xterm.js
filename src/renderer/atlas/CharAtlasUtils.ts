@@ -5,7 +5,7 @@
 
 import { ITerminal } from '../../Types';
 import { IColorSet } from '../Types';
-import { ICharAtlasConfig } from '../../shared/atlas/Types';
+import { DEFAULT_COLOR, ICharAtlasConfig } from './Types';
 
 export function generateConfig(scaledCharWidth: number, scaledCharHeight: number, terminal: ITerminal, colors: IColorSet): ICharAtlasConfig {
   // null out some fields that don't matter
@@ -50,4 +50,8 @@ export function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean 
       a.scaledCharHeight === b.scaledCharHeight &&
       a.colors.foreground === b.colors.foreground &&
       a.colors.background === b.colors.background;
+}
+
+export function is256Color(colorCode: number): boolean {
+  return colorCode < DEFAULT_COLOR;
 }

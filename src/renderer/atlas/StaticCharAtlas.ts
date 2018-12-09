@@ -3,10 +3,10 @@
  * @license MIT
  */
 
-import { DIM_OPACITY, IGlyphIdentifier } from './Types';
-import { CHAR_ATLAS_CELL_SPACING, ICharAtlasConfig } from '../../shared/atlas/Types';
-import { generateStaticCharAtlasTexture } from '../../shared/atlas/CharAtlasGenerator';
+import { DIM_OPACITY, IGlyphIdentifier, DEFAULT_COLOR, ICharAtlasConfig, CHAR_ATLAS_CELL_SPACING } from './Types';
+import { generateStaticCharAtlasTexture } from './CharAtlasGenerator';
 import BaseCharAtlas from './BaseCharAtlas';
+import { is256Color } from './CharAtlasUtils';
 
 export default class StaticCharAtlas extends BaseCharAtlas {
   private _texture: HTMLCanvasElement | ImageBitmap;
@@ -41,8 +41,8 @@ export default class StaticCharAtlas extends BaseCharAtlas {
     const isAscii = glyph.code < 256;
     // A color is basic if it is one of the 4 bit ANSI colors.
     const isBasicColor = glyph.fg < 16;
-    const isDefaultColor = glyph.fg >= 256;
-    const isDefaultBackground = glyph.bg >= 256;
+    const isDefaultColor = glyph.fg === DEFAULT_COLOR;
+    const isDefaultBackground = glyph.bg === DEFAULT_COLOR;
     return isAscii && (isBasicColor || isDefaultColor) && isDefaultBackground && !glyph.italic;
   }
 
@@ -58,9 +58,9 @@ export default class StaticCharAtlas extends BaseCharAtlas {
     }
 
     let colorIndex = 0;
-    if (glyph.fg < 256) {
+    if (is256Color(glyph.fg)) {
       colorIndex = 2 + glyph.fg + (glyph.bold ? 16 : 0);
-    } else {
+    } else if (glyph.fg === DEFAULT_COLOR) {
       // If default color and bold
       if (glyph.bold) {
         colorIndex = 1;

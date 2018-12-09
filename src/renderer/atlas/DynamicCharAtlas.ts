@@ -3,14 +3,13 @@
  * @license MIT
  */
 
-import { DIM_OPACITY, IGlyphIdentifier, INVERTED_DEFAULT_COLOR } from './Types';
-import { ICharAtlasConfig } from '../../shared/atlas/Types';
-import { IColor } from '../../shared/Types';
+import { DIM_OPACITY, IGlyphIdentifier, INVERTED_DEFAULT_COLOR, ICharAtlasConfig } from './Types';
 import BaseCharAtlas from './BaseCharAtlas';
 import { DEFAULT_ANSI_COLORS } from '../ColorManager';
-import { clearColor } from '../../shared/atlas/CharAtlasGenerator';
+import { clearColor } from './CharAtlasGenerator';
 import LRUMap from './LRUMap';
-import { isFirefox, isSafari } from '../../shared/utils/Browser';
+import { isFirefox, isSafari } from '../../core/Platform';
+import { IColor } from '../Types';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.
@@ -42,7 +41,7 @@ interface IGlyphCacheValue {
   inBitmap: boolean;
 }
 
-function getGlyphCacheKey(glyph: IGlyphIdentifier): number {
+export function getGlyphCacheKey(glyph: IGlyphIdentifier): number {
   // Note that this only returns a valid key when code < 256
   // Layout:
   // 0b00000000000000000000000000000001: italic (1)
