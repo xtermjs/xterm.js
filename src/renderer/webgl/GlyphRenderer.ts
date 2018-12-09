@@ -55,7 +55,7 @@ void main() {
 }`;
 
 const fragmentShaderSource = `#version 300 es
-precision mediump float;
+precision lowp float;
 
 in vec2 v_texcoord;
 
