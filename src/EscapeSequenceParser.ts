@@ -83,7 +83,7 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
   // table with default transition
   for (state in states) {
     // NOTE: table lookup is capped at 0xa0 in parse to keep the table small
-    for (let code = 0; code < 160; ++code) {
+    for (let code = 0; code <= NON_ASCII_PRINTABLE; ++code) {
       table.add(code, state, ParserAction.ERROR, ParserState.GROUND);
     }
   }
