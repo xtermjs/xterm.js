@@ -233,7 +233,7 @@ function initOptions(term: TerminalType): void {
   });
   html += '</div><div class="option-group">';
   numberOptions.forEach(o => {
-    html += `<div class="option"><label>${o} <input id="opt-${o}" type="number" value="${term.getOption(o)}"/></label></div>`;
+    html += `<div class="option"><label>${o} <input id="opt-${o}" type="number" value="${term.getOption(o)}" step="${o === 'lineHeight' ? '0.1' : '1'}"/></label></div>`;
   });
   html += '</div><div class="option-group">';
   Object.keys(stringOptions).forEach(o => {
@@ -263,7 +263,7 @@ function initOptions(term: TerminalType): void {
       if (o === 'cols' || o === 'rows') {
         updateTerminalSize();
       } else {
-        term.setOption(o, parseInt(input.value, 10));
+        term.setOption(o, o === 'lineHeight' ? parseFloat(input.value) : parseInt(input.value, 10));
       }
     });
   });
