@@ -24,29 +24,34 @@ export class SearchHelper implements ISearchHelper {
    * @return Whether a result was found.
    */
   public findNext(term: string, searchOptions?: ISearchOptions): boolean {
+    const selectionManager = this._terminal._core.selectionManager;
+    const {incremental} = searchOptions;
+    let result: ISearchResult;
+
     if (!term || term.length === 0) {
+      selectionManager.clearSelection();
       return false;
     }
 
-    let result: ISearchResult;
-
     let startRow = this._terminal._core.buffer.ydisp;
-    if (this._terminal._core.selectionManager.selectionEnd) {
+
+    if (selectionManager.selectionEnd) {
       // Start from the selection end if there is a selection
+      // For incremental search, use existing row
       if (this._terminal.getSelection().length !== 0) {
-        startRow = this._terminal._core.selectionManager.selectionEnd[1];
+        startRow = incremental ? selectionManager.selectionStart[1] : selectionManager.selectionEnd[1];
       }
     }
 
-    // Search from ydisp + 1 to end
-    for (let y = startRow + 1; y < this._terminal._core.buffer.ybase + this._terminal.rows; y++) {
+    // Search from startRow to end
+    for (let y = incremental ? startRow: startRow + 1; y < this._terminal._core.buffer.ybase + this._terminal.rows; y++) {
       result = this._findInLine(term, y, searchOptions);
       if (result) {
         break;
       }
     }
 
-    // Search from the top to the current ydisp
+    // Search from the top to the startRow
     if (!result) {
       for (let y = 0; y < startRow; y++) {
         result = this._findInLine(term, y, searchOptions);
@@ -68,29 +73,33 @@ export class SearchHelper implements ISearchHelper {
    * @return Whether a result was found.
    */
   public findPrevious(term: string, searchOptions?: ISearchOptions): boolean {
+    const selectionManager = this._terminal._core.selectionManager;
+    const {incremental} = searchOptions;
+    let result: ISearchResult;
+
     if (!term || term.length === 0) {
+      selectionManager.clearSelection();
       return false;
     }
 
-    let result: ISearchResult;
-
     let startRow = this._terminal._core.buffer.ydisp;
-    if (this._terminal._core.selectionManager.selectionStart) {
-      // Start from the selection end if there is a selection
+
+    if (selectionManager.selectionStart) {
+      // Start from the selection start if there is a selection
       if (this._terminal.getSelection().length !== 0) {
-        startRow = this._terminal._core.selectionManager.selectionStart[1];
+        startRow = selectionManager.selectionStart[1];
       }
     }
 
-    // Search from ydisp + 1 to end
-    for (let y = startRow - 1; y >= 0; y--) {
+    // Search from startRow to top
+    for (let y = incremental ? startRow : startRow - 1; y >= 0; y--) {
       result = this._findInLine(term, y, searchOptions);
       if (result) {
         break;
       }
     }
 
-    // Search from the top to the current ydisp
+    // Search from the bottom to startRow
     if (!result) {
       for (let y = this._terminal._core.buffer.ybase + this._terminal.rows - 1; y > startRow; y--) {
         result = this._findInLine(term, y, searchOptions);
