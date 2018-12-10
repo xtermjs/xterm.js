@@ -67,7 +67,8 @@ const PRINTABLES = r(0x20, 0x7f);
 const EXECUTABLES = r(0x00, 0x18);
 EXECUTABLES.push(0x19);
 EXECUTABLES.push.apply(EXECUTABLES, r(0x1c, 0x20));
-const DEFAULT_TRANSITION = ParserAction.ERROR << 4 | ParserState.GROUND;
+// Pseudo-character placeholder for printable non-ascii characters.
+const NON_ASCII_PRINTABLE = 0xA0;
 
 /**
  * VT500 compatible transition table.
@@ -79,7 +80,7 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
   const states: number[] = r(ParserState.GROUND, ParserState.DCS_PASSTHROUGH + 1);
   let state: any;
 
-  // table with default transition [any] --> DEFAULT_TRANSITION
+  // table with default transition
   for (state in states) {
     // NOTE: table lookup is capped at 0xa0 in parse to keep the table small
     for (let code = 0; code < 160; ++code) {
@@ -184,6 +185,7 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
   table.addMany(PRINTABLES, ParserState.DCS_PASSTHROUGH, ParserAction.DCS_PUT, ParserState.DCS_PASSTHROUGH);
   table.add(0x7f, ParserState.DCS_PASSTHROUGH, ParserAction.IGNORE, ParserState.DCS_PASSTHROUGH);
   table.addMany([0x1b, 0x9c], ParserState.DCS_PASSTHROUGH, ParserAction.DCS_UNHOOK, ParserState.GROUND);
+  table.add(NON_ASCII_PRINTABLE, ParserState.OSC_STRING, ParserAction.OSC_PUT, ParserState.OSC_STRING);
   return table;
 })();
 
@@ -391,11 +393,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
       }
 
       // normal transition & action lookup
-      transition = (code < 0xa0
-        ? (table[currentState << 8 | code])
-        : currentState === ParserState.OSC_STRING
-        ? (ParserAction.OSC_PUT << 4) | ParserState.OSC_STRING
-        : DEFAULT_TRANSITION);
+      transition = table[currentState << 8 | (code < 0xa0 ? code : NON_ASCII_PRINTABLE)];
       switch (transition >> 4) {
         case ParserAction.PRINT:
           print = (~print) ? print : i;
@@ -519,9 +517,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
         case ParserAction.OSC_PUT:
           for (let j = i + 1; ; j++) {
             if (j >= l
-                || ((code = data.charCodeAt(j)) <= 0x9f
-                    && (table[ParserState.OSC_STRING << 8 | code] >> 4
-                        !== ParserAction.OSC_PUT))) {
+                || (code = data.charCodeAt(j)) < 0x20
+                || (code > 0x7f && code <= 0x9f)) {
               osc += data.substring(i, j);
               i = j - 1;
               break;
