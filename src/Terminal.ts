@@ -464,6 +464,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
           this.renderer.onResize(this.cols, this.rows);
           this.refresh(0, this.rows - 1);
         }
+        break;
       case 'rendererType':
         if (this.renderer) {
           this.unregister(this.renderer);
