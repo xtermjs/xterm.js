@@ -55,7 +55,7 @@ function getSearchOptions(): ISearchOptions {
   return {
     regex: (document.getElementById('regex') as HTMLInputElement).checked,
     wholeWord: (document.getElementById('whole-word') as HTMLInputElement).checked,
-    caseSensitive: (document.getElementById('case-sensitive') as HTMLInputElement).checked,
+    caseSensitive: (document.getElementById('case-sensitive') as HTMLInputElement).checked
   };
 }
 

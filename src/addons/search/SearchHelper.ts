@@ -4,16 +4,24 @@
  */
 
 import { ISearchHelper, ISearchAddonTerminal, ISearchOptions, ISearchResult } from './Interfaces';
-const nonWordCharacters = ' ~!@#$%^&*()+`-=[]{}|\;:"\',./<>?';
+
+const NON_WORD_CHARACTERS = ' ~!@#$%^&*()+`-=[]{}|\;:"\',./<>?';
+const LINES_CACHE_TIME_TO_LIVE = 15 * 1000; // 15 secs
 
 /**
  * A class that knows how to search the terminal and how to display the results.
  */
 export class SearchHelper implements ISearchHelper {
+  /**
+   * translateBufferLineToStringWithWrap is a fairly expensive call.
+   * We memoize the calls into an array that has a time based ttl.
+   * _linesCache is also invalidated when the terminal cursor moves.
+   */
+  private _linesCache: string[] = null;
+  private _linesCacheTimeoutId = 0;
+
   constructor(private _terminal: ISearchAddonTerminal) {
-    // TODO: Search for multiple instances on 1 line
-    // TODO: Don't use the actual selection, instead use a "find selection" so multiple instances can be highlighted
-    // TODO: Highlight other instances in the viewport
+    this._destroyLinesCache = this._destroyLinesCache.bind(this);
   }
 
   /**
@@ -43,8 +51,10 @@ export class SearchHelper implements ISearchHelper {
       }
     }
 
+    this._initLinesCache();
+
     // Search from startRow to end
-    for (let y = incremental ? startRow: startRow + 1; y < this._terminal._core.buffer.ybase + this._terminal.rows; y++) {
+    for (let y = incremental ? startRow : startRow + 1; y < this._terminal._core.buffer.ybase + this._terminal.rows; y++) {
       result = this._findInLine(term, y, searchOptions);
       if (result) {
         break;
@@ -91,6 +101,8 @@ export class SearchHelper implements ISearchHelper {
       }
     }
 
+    this._initLinesCache();
+
     // Search from startRow to top
     for (let y = incremental ? startRow : startRow - 1; y >= 0; y--) {
       result = this._findInLine(term, y, searchOptions);
@@ -114,14 +126,36 @@ export class SearchHelper implements ISearchHelper {
   }
 
   /**
+   * Sets up a line cache with a ttl
+   */
+  private _initLinesCache(): void {
+    if (!this._linesCache) {
+      this._linesCache = new Array(this._terminal._core.buffer.length);
+      this._terminal.on('cursormove', this._destroyLinesCache);
+    }
+
+    window.clearTimeout(this._linesCacheTimeoutId);
+    this._linesCacheTimeoutId = window.setTimeout(() => this._destroyLinesCache(), LINES_CACHE_TIME_TO_LIVE);
+  }
+
+  private _destroyLinesCache(): void {
+    this._linesCache = null;
+    this._terminal.off('cursormove', this._destroyLinesCache);
+    if (this._linesCacheTimeoutId) {
+      window.clearTimeout(this._linesCacheTimeoutId);
+      this._linesCacheTimeoutId = 0;
+    }
+  }
+
+  /**
    * A found substring is a whole word if it doesn't have an alphanumeric character directly adjacent to it.
    * @param searchIndex starting indext of the potential whole word substring
    * @param line entire string in which the potential whole word was found
    * @param term the substring that starts at searchIndex
    */
   private _isWholeWord(searchIndex: number, line: string, term: string): boolean {
-    return (((searchIndex === 0) || (nonWordCharacters.indexOf(line[searchIndex - 1]) !== -1)) &&
-        (((searchIndex + term.length) === line.length) || (nonWordCharacters.indexOf(line[searchIndex + term.length]) !== -1)));
+    return (((searchIndex === 0) || (NON_WORD_CHARACTERS.indexOf(line[searchIndex - 1]) !== -1)) &&
+        (((searchIndex + term.length) === line.length) || (NON_WORD_CHARACTERS.indexOf(line[searchIndex + term.length]) !== -1)));
   }
 
   /**
@@ -139,7 +173,12 @@ export class SearchHelper implements ISearchHelper {
       return;
     }
 
-    const stringLine = this.translateBufferLineToStringWithWrap(y, true);
+    let stringLine = this._linesCache[y];
+    if (stringLine === void 0) {
+      stringLine = this.translateBufferLineToStringWithWrap(y, true);
+      this._linesCache[y] = stringLine;
+    }
+
     const searchStringLine = searchOptions.caseSensitive ? stringLine : stringLine.toLowerCase();
     const searchTerm = searchOptions.caseSensitive ? term : term.toLowerCase();
     let searchIndex = -1;
