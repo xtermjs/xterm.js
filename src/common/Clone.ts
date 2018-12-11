@@ -6,7 +6,7 @@
 /*
  * A simple utility for cloning values
  */
-export const clone = <T>(val: T, depth: number = 5): T => {
+export function clone<T>(val: T, depth: number = 5): T | null {
   if (typeof val !== 'object') {
     return val;
   }
@@ -25,4 +25,4 @@ export const clone = <T>(val: T, depth: number = 5): T => {
   }
 
   return clonedObject as T;
-};
+}
