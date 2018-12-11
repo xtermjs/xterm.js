@@ -48,6 +48,7 @@
   },
   "scripts": {
     "start": "node demo/start",
+    "start-debug": "node --inspect-brk demo/start",
     "start-zmodem": "node demo/zmodem/app",
     "lint": "tslint 'src/**/*.ts' './demo/**/*.ts'",
     "pretest": "npm run layering",

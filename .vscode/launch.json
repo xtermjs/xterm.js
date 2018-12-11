@@ -22,12 +22,23 @@
     {
       "type": "chrome",
       "request": "launch",
-      "name": "Demo",
+      "name": "Demo Client",
       "url": "http://0.0.0.0:3000",
       "windows": {
         "url": "http://127.0.0.1:3000"
       },
       "webRoot": "${workspaceFolder}/"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Demo Server",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "start-debug"
+      ],
+      "port": 9229
     }
   ]
 }
