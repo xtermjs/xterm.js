@@ -35,7 +35,7 @@
     "nodemon": "1.10.2",
     "nyc": "^11.8.0",
     "sorcery": "^0.10.0",
-    "source-map-loader": "^0.2.3",
+    "source-map-loader": "^0.2.4",
     "ts-loader": "^4.5.0",
     "tslint": "^5.9.1",
     "tslint-consistent-codestyle": "^1.13.0",

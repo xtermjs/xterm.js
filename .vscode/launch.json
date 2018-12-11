@@ -18,6 +18,16 @@
       "sourceMaps": true,
       "outFiles": [ "${workspaceRoot}/lib/**/*.js" ],
       "internalConsoleOptions": "openOnSessionStart"
+    },
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Demo",
+      "url": "http://0.0.0.0:3000",
+      "windows": {
+        "url": "http://127.0.0.1:3000"
+      },
+      "webRoot": "${workspaceFolder}/"
     }
   ]
 }
