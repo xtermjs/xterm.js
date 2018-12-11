@@ -173,10 +173,12 @@ export class SearchHelper implements ISearchHelper {
       return;
     }
 
-    let stringLine = this._linesCache[y];
+    let stringLine = this._linesCache ? this._linesCache[y] : void 0;
     if (stringLine === void 0) {
       stringLine = this.translateBufferLineToStringWithWrap(y, true);
-      this._linesCache[y] = stringLine;
+      if (this._linesCache) {
+        this._linesCache[y] = stringLine;
+      }
     }
 
     const searchStringLine = searchOptions.caseSensitive ? stringLine : stringLine.toLowerCase();
