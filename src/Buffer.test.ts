@@ -7,7 +7,7 @@ import { assert, expect } from 'chai';
 import { ITerminal } from './Types';
 import { Buffer, DEFAULT_ATTR, CHAR_DATA_CHAR_INDEX } from './Buffer';
 import { CircularList } from './common/CircularList';
-import { MockTerminal, TestTerminal } from './utils/TestUtils.test';
+import { MockTerminal, TestTerminal } from './ui/TestUtils.test';
 import { BufferLine } from './BufferLine';
 
 const INIT_COLS = 80;

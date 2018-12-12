@@ -7,7 +7,7 @@ import { CircularList } from './common/CircularList';
 import { CharData, ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult, IBufferLineConstructor } from './Types';
 import { EventEmitter } from './common/EventEmitter';
 import { IMarker } from 'xterm';
-import { BufferLine, BufferLineTypedArray } from './BufferLine';
+import { BufferLine, BufferLineJSArray } from './BufferLine';
 import { DEFAULT_COLOR } from './renderer/atlas/Types';
 
 export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
@@ -61,9 +61,9 @@ export class Buffer implements IBuffer {
   }
 
   public setBufferLineFactory(type: string): void {
-    if (type === 'TypedArray') {
-      if (this._bufferLineConstructor !== BufferLineTypedArray) {
-        this._bufferLineConstructor = BufferLineTypedArray;
+    if (type === 'JsArray') {
+      if (this._bufferLineConstructor !== BufferLineJSArray) {
+        this._bufferLineConstructor = BufferLineJSArray;
         this._recreateLines();
       }
     } else {

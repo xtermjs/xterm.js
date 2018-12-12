@@ -5,12 +5,12 @@
 
 import { ITerminal } from '../../Types';
 import { IColorSet } from '../Types';
-import { ICharAtlasConfig } from '../../shared/atlas/Types';
 import { generateConfig, configEquals } from './CharAtlasUtils';
 import BaseCharAtlas from './BaseCharAtlas';
 import DynamicCharAtlas from './DynamicCharAtlas';
 import NoneCharAtlas from './NoneCharAtlas';
 import StaticCharAtlas from './StaticCharAtlas';
+import { ICharAtlasConfig } from './Types';
 
 const charAtlasImplementations = {
   'none': NoneCharAtlas,
@@ -42,8 +42,6 @@ export function acquireCharAtlas(
 ): BaseCharAtlas {
   const newConfig = generateConfig(scaledCharWidth, scaledCharHeight, terminal, colors);
 
-  // TODO: Currently if a terminal changes configs it will not free the entry reference (until it's disposed)
-
   // Check to see if the terminal already owns this config
   for (let i = 0; i < charAtlasCache.length; i++) {
     const entry = charAtlasCache[i];
@@ -54,6 +52,7 @@ export function acquireCharAtlas(
       }
       // The configs differ, release the terminal from the entry
       if (entry.ownedBy.length === 1) {
+        entry.atlas.dispose();
         charAtlasCache.splice(i, 1);
       } else {
         entry.ownedBy.splice(ownedByIndex, 1);
@@ -94,6 +93,7 @@ export function removeTerminalFromCache(terminal: ITerminal): void {
     if (index !== -1) {
       if (charAtlasCache[i].ownedBy.length === 1) {
         // Remove the cache entry if it's the only terminal
+        charAtlasCache[i].atlas.dispose();
         charAtlasCache.splice(i, 1);
       } else {
         // Remove the reference from the cache entry

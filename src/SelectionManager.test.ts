@@ -9,7 +9,7 @@ import { SelectionManager, SelectionMode } from './SelectionManager';
 import { SelectionModel } from './SelectionModel';
 import { BufferSet } from './BufferSet';
 import { ITerminal, IBuffer, IBufferLine } from './Types';
-import { MockTerminal } from './utils/TestUtils.test';
+import { MockTerminal } from './ui/TestUtils.test';
 import { BufferLine } from './BufferLine';
 
 class TestMockTerminal extends MockTerminal {
