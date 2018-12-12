@@ -303,39 +303,9 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._executeHandlerFb = callback;
   }
 
-  private _removeHandler(array: any[], callback: any): void {
-    if (array) {
-      for (let i = array.length; --i >= 0; ) {
-        if (array[i] == callback) {
-          array.splice(i, 1);
-            return;
-        }
-      }
-    }
-  }
-
-  addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): void {
-    let index = flag.charCodeAt(0);
-    let array = this._csiHandlers[index];
-    if (! array) { this._csiHandlers[index] = array = new Array(); }
-    array.push(callback);
-  }
-
-  removeCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): void {
-    let index = flag.charCodeAt(0);
-    let array = this._csiHandlers[index];
-    this._removeHandler(array, callback);
-    if (array && array.length == 0)
-      delete this._csiHandlers[index];
-  }
-  /* deprecated */
   setCsiHandler(flag: string, callback: (params: number[], collect: string) => void): void {
-    this.clearCsiHandler(flag);
-    this.addCsiHandler(flag, (params: number[], collect: string): boolean => {
-        callback(params, collect); return true;
-    });
+    this._csiHandlers[flag.charCodeAt(0)] = callback;
   }
-  /* deprecated */
   clearCsiHandler(flag: string): void {
     if (this._csiHandlers[flag.charCodeAt(0)]) delete this._csiHandlers[flag.charCodeAt(0)];
   }
@@ -353,25 +323,9 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._escHandlerFb = callback;
   }
 
-  addOscHandler(ident: number, callback: (data: string) => boolean): void {
-    let array = this._oscHandlers[ident];
-    if (! array) { this._oscHandlers[ident] = array = new Array(); }
-    array.push(callback);
-  }
-  removeOscHandler(ident: number, callback: (data: string) => boolean): void {
-    let array = this._oscHandlers[ident];
-    this._removeHandler(array, callback);
-    if (array && array.length == 0)
-      delete this._oscHandlers[ident];
-  }
-  /* deprecated */
   setOscHandler(ident: number, callback: (data: string) => void): void {
-    this.clearOscHandler(ident);
-    this.addOscHandler(ident, (data: string): boolean => {
-      callback(data); return true;
-    });
+    this._oscHandlers[ident] = callback;
   }
-  /* deprecated */
   clearOscHandler(ident: number): void {
     if (this._oscHandlers[ident]) delete this._oscHandlers[ident];
   }
@@ -507,15 +461,9 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           }
           break;
         case ParserAction.CSI_DISPATCH:
-          let cHandler = this._csiHandlers[code];
-          if (cHandler) {
-            for (let i = cHandler.length; ;) {
-              if (--i < 0) { cHandler = null; break; }
-              if ((cHandler[i])(params, collect))
-                break;
-            }
-          }
-          if (! cHandler) this._csiHandlerFb(collect, params, code);
+          callback = this._csiHandlers[code];
+          if (callback) callback(params, collect);
+          else this._csiHandlerFb(collect, params, code);
           break;
         case ParserAction.PARAM:
           if (code === 0x3b) params.push(0);
@@ -590,15 +538,9 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
               // or with an explicit NaN OSC handler
               const identifier = parseInt(osc.substring(0, idx));
               const content = osc.substring(idx + 1);
-              let oHandler = this._oscHandlers[identifier];
-              if (oHandler) {
-                for (let i = oHandler.length; ;) {
-                  if (--i < 0) { oHandler = null; break; }
-                  if ((oHandler[i])(content))
-                    break;
-                }
-              }
-              if (! oHandler) this._oscHandlerFb(identifier, content);
+              callback = this._oscHandlers[identifier];
+              if (callback) callback(content);
+              else this._oscHandlerFb(identifier, content);
             }
           }
           if (code === 0x1b) transition |= ParserState.ESCAPE;

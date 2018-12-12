@@ -182,16 +182,6 @@ export interface IInputHandler {
       ESC ~ */ setgLevel(level: number): void;
 }
 
-/*
- * An InputHandler for VT-style terminals
- */
-export interface IVtInputHandler extends IInputHandler {
-  addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): void;
-  removeCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): void;
-  addOscHandler(ident: number, callback: (data: string) => boolean): void;
-  removeOscHandler(ident: number, callback: (data: string) => boolean): void;
-}
-
 export interface ILinkMatcher {
   id: number;
   regex: RegExp;
@@ -502,10 +492,6 @@ export interface IEscapeSequenceParser extends IDisposable {
   setCsiHandler(flag: string, callback: (params: number[], collect: string) => void): void;
   clearCsiHandler(flag: string): void;
   setCsiHandlerFallback(callback: (collect: string, params: number[], flag: number) => void): void;
-  addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): void;
-  removeCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): void;
-  addOscHandler(ident: number, callback: (data: string) => boolean): void;
-  removeOscHandler(ident: number, callback: (data: string) => boolean): void;
 
   setEscHandler(collectAndFlag: string, callback: () => void): void;
   clearEscHandler(collectAndFlag: string): void;
