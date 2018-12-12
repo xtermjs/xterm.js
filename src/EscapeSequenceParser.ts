@@ -4,6 +4,7 @@
  */
 
 import { ParserState, ParserAction, IParsingState, IDcsHandler, IEscapeSequenceParser } from './Types';
+import { IDisposable } from 'xterm';
 import { Disposable } from './common/Lifecycle';
 
 /**
@@ -41,7 +42,7 @@ export class TransitionTable {
    * @param action parser action to be done
    * @param next next parser state
    */
-  add(code: number, state: number, action: number | null, next: number | null): void {
+  add(code: number, state: number, action: number | null, next: number | null):  void {
     this.table[state << 8 | code] = ((action | 0) << 4) | ((next === undefined) ? state : next);
   }
 
@@ -303,6 +304,32 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._executeHandlerFb = callback;
   }
 
+  addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable {
+    const index = flag.charCodeAt(0);
+    const oldHead = this._csiHandlers[index];
+    const newHead = Object.assign(
+      (params: number[], collect: string): void => {
+        if (callback(params, collect)) { }
+        else if (newHead.nextHandler) { newHead.nextHandler(params, collect); }
+        else { this._csiHandlerFb(collect, params, index); }
+      },
+      { nextHandler: oldHead,
+        dispose(): void {
+          let previous = null; let cur = this._csiHandlers[index];
+          for (; cur && cur.nextHandler;
+                 previous = cur, cur = cur.nextHandler) {
+            if (cur === newHead) {
+              if (previous) { previous.nextHandler = cur.nextHandler; }
+              else { this._csiHandlers[index] = cur.nextHandler; }
+              break;
+            }
+          }
+        }
+      });
+    this._csiHandlers[index] = newHead;
+    return newHead;
+  }
+
   setCsiHandler(flag: string, callback: (params: number[], collect: string) => void): void {
     this._csiHandlers[flag.charCodeAt(0)] = callback;
   }
@@ -323,6 +350,30 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._escHandlerFb = callback;
   }
 
+  addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
+    const oldHead = this._oscHandlers[ident];
+    const newHead = Object.assign(
+      (data: string): void => {
+        if (callback(data)) { }
+        else if (newHead.nextHandler) { newHead.nextHandler(data); }
+        else { this._oscHandlerFb(ident, data); }
+      },
+      { nextHandler: oldHead,
+        dispose(): void {
+          let previous = null; let cur = this._oscHandlers[ident];
+          for (; cur && cur.nextHandler;
+                 previous = cur, cur = cur.nextHandler) {
+            if (cur === newHead) {
+              if (previous) { previous.nextHandler = cur.nextHandler; }
+              else { this._oscHandlers[ident] = cur.nextHandler; }
+              break;
+            }
+          }
+        }
+      });
+    this._oscHandlers[ident] = newHead;
+    return newHead;
+  }
   setOscHandler(ident: number, callback: (data: string) => void): void {
     this._oscHandlers[ident] = callback;
   }

@@ -4,7 +4,7 @@
  */
 
 import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings } from 'xterm';
-import { ITerminal } from '../Types';
+import { ITerminal, IInputHandler } from '../Types';
 import { Terminal as TerminalCore } from '../Terminal';
 import * as Strings from '../Strings';
 
@@ -15,6 +15,9 @@ export class Terminal implements ITerminalApi {
     this._core = new TerminalCore(options);
   }
 
+  public get inputHandler(): IInputHandler {
+    return (this._core as TerminalCore).inputHandler;
+  }
   public get element(): HTMLElement { return this._core.element; }
   public get textarea(): HTMLTextAreaElement { return this._core.textarea; }
   public get rows(): number { return this._core.rows; }
