@@ -101,7 +101,7 @@ describe('clone', () => {
     test.a.b.c.d.e.f = 'bar';
 
     // The values at a greater depth then 5 should not be cloned
-    assert.equal(cloned.a.b.c.d.e.f, 'bar');
+    assert.equal((cloned as any).a.b.c.d.e.f, 'bar');
   });
 
   it('should allow an optional maximum depth to be set', () => {
@@ -118,7 +118,7 @@ describe('clone', () => {
     test.a.b.c = 'bar';
 
     // The values at a greater depth then 2 should not be cloned
-    assert.equal(cloned.a.b.c, 'bar');
+    assert.equal((cloned as any).a.b.c, 'bar');
   });
 
   it('should not throw when cloning a recursive reference', () => {
