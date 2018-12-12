@@ -39,8 +39,7 @@ import { CharMeasure } from './ui/CharMeasure';
 import * as Browser from './core/Platform';
 import { addDisposableDomListener } from './ui/Lifecycle';
 import * as Strings from './Strings';
-import { MouseHelper } from './utils/MouseHelper';
-import { clone } from './utils/Clone';
+import { MouseHelper } from './ui/MouseHelper';
 import { DEFAULT_BELL_SOUND, SoundManager } from './SoundManager';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { MouseZoneManager } from './ui/MouseZoneManager';
@@ -52,6 +51,7 @@ import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent } from './common/Types';
 import { evaluateKeyboardEvent } from './core/input/Keyboard';
 import { KeyboardResultType, ICharset } from './core/Types';
+import { clone } from './common/Clone';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -466,6 +466,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
           this.renderer.onResize(this.cols, this.rows);
           this.refresh(0, this.rows - 1);
         }
+        break;
       case 'rendererType':
         if (this.renderer) {
           this.unregister(this.renderer);

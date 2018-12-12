@@ -5,7 +5,7 @@
 
 import { assert, expect } from 'chai';
 import { InputHandler } from './InputHandler';
-import { MockInputHandlingTerminal } from './utils/TestUtils.test';
+import { MockInputHandlingTerminal } from './ui/TestUtils.test';
 import { NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, CHAR_DATA_CHAR_INDEX, CHAR_DATA_ATTR_INDEX, DEFAULT_ATTR } from './Buffer';
 import { Terminal } from './Terminal';
 import { IBufferLine } from './Types';
