@@ -307,25 +307,26 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable {
     const index = flag.charCodeAt(0);
     const oldHead = this._csiHandlers[index];
-    const newHead = Object.assign(
+    const parser = this;
+    const newHead =
       (params: number[], collect: string): void => {
-        if (callback(params, collect)) { }
-        else if (newHead.nextHandler) { newHead.nextHandler(params, collect); }
-        else { this._csiHandlerFb(collect, params, index); }
-      },
-      { nextHandler: oldHead,
-        dispose(): void {
-          let previous = null; let cur = this._csiHandlers[index];
+        if (! callback(params, collect)) {
+          if (newHead.nextHandler) { newHead.nextHandler(params, collect); }
+          else { this._csiHandlerFb(collect, params, index); }
+        }
+      };
+    newHead.nextHandler = oldHead;
+    newHead.dispose = function (): void {
+          let previous = null; let cur = parser._csiHandlers[index];
           for (; cur && cur.nextHandler;
                  previous = cur, cur = cur.nextHandler) {
             if (cur === newHead) {
               if (previous) { previous.nextHandler = cur.nextHandler; }
-              else { this._csiHandlers[index] = cur.nextHandler; }
+              else { parser._csiHandlers[index] = cur.nextHandler; }
               break;
             }
           }
-        }
-      });
+      };
     this._csiHandlers[index] = newHead;
     return newHead;
   }
@@ -352,25 +353,27 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
 
   addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
     const oldHead = this._oscHandlers[ident];
-    const newHead = Object.assign(
+    const parser = this;
+    const newHead =
       (data: string): void => {
-        if (callback(data)) { }
-        else if (newHead.nextHandler) { newHead.nextHandler(data); }
-        else { this._oscHandlerFb(ident, data); }
-      },
-      { nextHandler: oldHead,
-        dispose(): void {
-          let previous = null; let cur = this._oscHandlers[ident];
+        if (! callback(data)) {
+          if (newHead.nextHandler) { newHead.nextHandler(data); }
+          else { this._oscHandlerFb(ident, data); }
+        }
+      };
+    newHead.nextHandler = oldHead;
+    newHead.dispose =
+        function (): void {
+          let previous = null; let cur = parser._oscHandlers[ident];
           for (; cur && cur.nextHandler;
                  previous = cur, cur = cur.nextHandler) {
             if (cur === newHead) {
               if (previous) { previous.nextHandler = cur.nextHandler; }
-              else { this._oscHandlers[ident] = cur.nextHandler; }
+              else { parser._oscHandlers[ident] = cur.nextHandler; }
               break;
             }
           }
-        }
-      });
+      };
     this._oscHandlers[ident] = newHead;
     return newHead;
   }
