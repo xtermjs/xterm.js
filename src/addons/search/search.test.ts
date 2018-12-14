@@ -116,11 +116,8 @@ describe('search addon', () => {
       expect(tilda2).eql({col: 0, row: 3, term: '~'});
     });
     it('should not select empty lines', () => {
-      // with addition of a real null char printing spaces is not considered empty anymore
       search.apply(<any>MockTerminal);
       const term = new MockTerminal({cols: 20, rows: 3});
-      // with addition of a null char printing spaces is not considered empty anymore
-      // therefore we write nothing here
       const line = term.searchHelper.findInLine('^.*$', 0, { regex: true });
       expect(line).eql(undefined);
     });
