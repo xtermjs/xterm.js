@@ -12,11 +12,11 @@
     "declaration": true,
     "preserveWatchOutput": true,
     "types": [
-      "../../node_modules/@types/mocha",
-      "../.."
+      "../../node_modules/@types/mocha"
     ]
   },
   "include": [
-    "**/*.ts"
+    "**/*.ts",
+    "../../../typings/xterm.d.ts"
   ]
 }

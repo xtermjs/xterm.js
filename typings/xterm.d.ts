@@ -108,7 +108,7 @@ declare module 'xterm' {
      * - 'TypedArray': The new experimental implementation based on TypedArrays that is expected to
      *   significantly boost performance and memory consumption. Use at your own risk.
      *
-     * This option will be removed in the future.
+     * @deprecated This option will be removed in the future.
      */
     experimentalBufferLineImpl?: 'JsArray' | 'TypedArray';
 

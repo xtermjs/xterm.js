@@ -17,9 +17,6 @@ CURRENT_PACKAGE_JSON_VERSION=$(cat package.json \
 export BUILD_DIR=dist
 npm run build
 
-# Update AUTHORS file
-sh bin/generate-authors
-
 # Update version in package.json
 sed -i "s/\"version\": \"$CURRENT_PACKAGE_JSON_VERSION\"/\"version\": \"$NEW_VERSION\"/g" package.json
 
