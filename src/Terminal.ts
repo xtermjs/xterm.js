@@ -21,7 +21,7 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { IInputHandlingTerminal, IInputHandler, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharData, CharacterJoinerHandler, IBufferLine } from './Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharData, CharacterJoinerHandler, IBufferLine } from './Types';
 import { IMouseZoneManager } from './ui/Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
@@ -1287,10 +1287,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.refresh(0, this.rows - 1);
   }
 
-  public get inputHandler(): IInputHandler {
-    return this._inputHandler;
-  }
-
   /**
    * Scroll the display of the terminal by a number of pages.
    * @param pageCount The number of pages to scroll (negative scrolls up).
@@ -1415,6 +1411,15 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   public attachCustomKeyEventHandler(customKeyEventHandler: CustomKeyEventHandler): void {
     this._customKeyEventHandler = customKeyEventHandler;
+  }
+
+  /** Add handler for CSI escape sequence. See xterm.d.ts for details. */
+  public addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable {
+    return this._inputHandler.addCsiHandler(flag, callback);
+  }
+  /** Add handler for OSC escape sequence. See xterm.d.ts for details. */
+  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
+    return this._inputHandler.addOscHandler(ident, callback);
   }
 
   /**

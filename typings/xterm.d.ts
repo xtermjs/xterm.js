@@ -482,6 +482,31 @@ declare module 'xterm' {
     attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void;
 
     /**
+     * (EXPERIMENTAL) Adds a handler for CSI escape sequences.
+     * @param flag The flag should be one-character string, which specifies
+     *   the final character (e.g "m" for SGR) of the CSI sequence.
+     * @param callback The function to handle the escape sequence.
+     *   The callback is called with the numerical params,
+     *   as well as the special characters (e.g. "$" for DECSCPP).
+     *   Return true if the sequence was handled; false if we should
+     *   try a previous handler (set by addCsiHandler or setCsiHandler).
+     *   The most recently-added handler is tried first.
+     * @return An IDisposable you can call to remove this handler.
+     */
+    addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable;
+
+    /**
+     * (EXPERIMENTAL) Adds a handler for OSC escape sequences.
+     * @param ident The number (first parameter) of the sequence.
+     * @param callback The function to handle the escape sequence.
+     *   The callback is called with OSC data string.
+     *   Return true if the sequence was handled; false if we should
+     *   try a previous handler (set by addOscHandler or setOscHandler).
+     *   The most recently-added handler is tried first.
+     * @return An IDisposable you can call to remove this handler.
+     */
+    addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
+    /**
      * (EXPERIMENTAL) Registers a link matcher, allowing custom link patterns to
      * be matched and handled.
      * @param regex The regular expression to search for, specifically this
