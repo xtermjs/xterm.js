@@ -7,6 +7,10 @@ import { ParserState, ParserAction, IParsingState, IDcsHandler, IEscapeSequenceP
 import { IDisposable } from 'xterm';
 import { Disposable } from './common/Lifecycle';
 
+interface IHandlerLink extends IDisposable {
+  nextHandler: IHandlerLink | null;
+}
+
 /**
  * Returns an array filled with numbers between the low and high parameters (right exclusive).
  * @param low The low number.
@@ -304,31 +308,36 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._executeHandlerFb = callback;
   }
 
-  addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable {
-    const index = flag.charCodeAt(0);
-    const oldHead = this._csiHandlers[index];
-    const parser = this;
-    const newHead =
-      (params: number[], collect: string): void => {
-        if (! callback(params, collect)) {
-          if (newHead.nextHandler) { newHead.nextHandler(params, collect); }
-          else { this._csiHandlerFb(collect, params, index); }
-        }
-      };
-    newHead.nextHandler = oldHead;
+  private _linkHandler(handlers: object[], index: number, newCallback: object): IDisposable {
+    const newHead: any = newCallback;
+    newHead.nextHandler = handlers[index] as IHandlerLink;
     newHead.dispose = function (): void {
-          let previous = null; let cur = parser._csiHandlers[index];
+          let previous = null;
+          let cur = handlers[index] as IHandlerLink;
           for (; cur && cur.nextHandler;
                  previous = cur, cur = cur.nextHandler) {
             if (cur === newHead) {
               if (previous) { previous.nextHandler = cur.nextHandler; }
-              else { parser._csiHandlers[index] = cur.nextHandler; }
+              else { handlers[index] = cur.nextHandler; }
               break;
             }
           }
       };
-    this._csiHandlers[index] = newHead;
+    handlers[index] = newHead;
     return newHead;
+  }
+
+  addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable {
+    const index = flag.charCodeAt(0);
+    const newHead =
+      (params: number[], collect: string): void => {
+        if (! callback(params, collect)) {
+          const next = (newHead as unknown as IHandlerLink).nextHandler;
+          if (next) { (next as any)(params, collect); }
+          else { this._csiHandlerFb(collect, params, index); }
+        }
+      };
+    return this._linkHandler(this._csiHandlers, index, newHead);
   }
 
   setCsiHandler(flag: string, callback: (params: number[], collect: string) => void): void {
@@ -352,30 +361,15 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   }
 
   addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
-    const oldHead = this._oscHandlers[ident];
-    const parser = this;
     const newHead =
       (data: string): void => {
         if (! callback(data)) {
-          if (newHead.nextHandler) { newHead.nextHandler(data); }
+          const next = (newHead as unknown as IHandlerLink).nextHandler;
+          if (next) { (next as any)(data); }
           else { this._oscHandlerFb(ident, data); }
         }
       };
-    newHead.nextHandler = oldHead;
-    newHead.dispose =
-        function (): void {
-          let previous = null; let cur = parser._oscHandlers[ident];
-          for (; cur && cur.nextHandler;
-                 previous = cur, cur = cur.nextHandler) {
-            if (cur === newHead) {
-              if (previous) { previous.nextHandler = cur.nextHandler; }
-              else { parser._oscHandlers[ident] = cur.nextHandler; }
-              break;
-            }
-          }
-      };
-    this._oscHandlers[ident] = newHead;
-    return newHead;
+    return this._linkHandler(this._oscHandlers, ident, newHead);
   }
   setOscHandler(ident: number, callback: (data: string) => void): void {
     this._oscHandlers[ident] = callback;
