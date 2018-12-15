@@ -24,6 +24,26 @@ const GLEVEL: {[key: string]: number} = {'(': 0, ')': 1, '*': 2, '+': 3, '-': 1,
  * DCS subparser implementations
  */
 
+ /**
+  * DCS + q Pt ST (xterm)
+  *   Request Terminfo String
+  *   not supported
+  */
+class RequestTerminfo implements IDcsHandler {
+  private _data: string;
+  constructor(private _terminal: any) { }
+  hook(collect: string, params: number[], flag: number): void {
+    this._data = '';
+  }
+  put(data: string, start: number, end: number): void {
+    this._data += data.substring(start, end);
+  }
+  unhook(): void {
+    // invalid: DCS 0 + r Pt ST
+    this._terminal.handler(`${C0.ESC}P0+r${this._data}${C0.ESC}\\`);
+  }
+}
+
 /**
  * DCS $ q Pt ST
  *   DECRQSS (https://vt100.net/docs/vt510-rm/DECRQSS.html)
@@ -66,7 +86,7 @@ class DECRQSS implements IDcsHandler {
       default:
         // invalid: DCS 0 $ r Pt ST (xterm)
         this._terminal.error('Unknown DCS $q %s', this._data);
-        this._terminal.handler(`${C0.ESC}P0$r${C0.ESC}\\`);
+        this._terminal.handler(`${C0.ESC}P0$r${this._data}${C0.ESC}\\`);
     }
   }
 }
@@ -93,7 +113,7 @@ class DECRQSS implements IDcsHandler {
  * each function's header comment.
  */
 export class InputHandler extends Disposable implements IInputHandler {
-  private _surrogateHigh: string;
+  private _surrogateFirst: string;
 
   constructor(
       protected _terminal: IInputHandlingTerminal,
@@ -103,7 +123,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     this.register(this._parser);
 
-    this._surrogateHigh = '';
+    this._surrogateFirst = '';
 
     /**
      * custom fallback handlers
@@ -267,6 +287,7 @@ export class InputHandler extends Disposable implements IInputHandler {
      * DCS handler
      */
     this._parser.setDcsHandler('$q', new DECRQSS(this._terminal));
+    this._parser.setDcsHandler('+q', new RequestTerminfo(this._terminal));
   }
 
   public dispose(): void {
@@ -290,9 +311,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
 
     // apply leftover surrogate high from last write
-    if (this._surrogateHigh) {
-      data = this._surrogateHigh + data;
-      this._surrogateHigh = '';
+    if (this._surrogateFirst) {
+      data = this._surrogateFirst + data;
+      this._surrogateFirst = '';
     }
 
     this._parser.parse(data);
@@ -306,7 +327,6 @@ export class InputHandler extends Disposable implements IInputHandler {
   public print(data: string, start: number, end: number): void {
     let char: string;
     let code: number;
-    let low: number;
     let chWidth: number;
     const buffer: IBuffer = this._terminal.buffer;
     const charset: ICharset = this._terminal.charset;
@@ -324,20 +344,25 @@ export class InputHandler extends Disposable implements IInputHandler {
 
       // surrogate pair handling
       if (0xD800 <= code && code <= 0xDBFF) {
-        // we got a surrogate high
-        // get surrogate low (next 2 bytes)
-        low = data.charCodeAt(stringPosition + 1);
-        if (isNaN(low)) {
-          // end of data stream, save surrogate high
-          this._surrogateHigh = char;
+        if (++stringPosition >= end) {
+          // end of input:
+          // handle pairs as true UTF-16 and wait for the second part
+          // since we expect the input comming from a stream there is
+          // a small chance that the surrogate pair got split
+          // therefore we dont process the first char here, instead
+          // it gets added as first char to the next processed chunk
+          this._surrogateFirst = char;
           continue;
         }
-        code = ((code - 0xD800) * 0x400) + (low - 0xDC00) + 0x10000;
-        char += data.charAt(stringPosition + 1);
-      }
-      // surrogate low - already handled above
-      if (0xDC00 <= code && code <= 0xDFFF) {
-        continue;
+        const second = data.charCodeAt(stringPosition);
+        // if the second part is in surrogate pair range create the high codepoint
+        // otherwise fall back to UCS-2 behavior (handle codepoints independently)
+        if (0xDC00 <= second && second <= 0xDFFF) {
+          code = (code - 0xD800) * 0x400 + second - 0xDC00 + 0x10000;
+          char += data.charAt(stringPosition);
+        } else {
+          stringPosition--;
+        }
       }
 
       // calculate print space
@@ -1262,7 +1287,9 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 66:
           this._terminal.log('Serial port requested application keypad.');
           this._terminal.applicationKeypad = true;
-          this._terminal.viewport.syncScrollArea();
+          if (this._terminal.viewport) {
+            this._terminal.viewport.syncScrollArea();
+          }
           break;
         case 9: // X10 Mouse
           // no release, no motion, no wheel, no modifiers.
@@ -1311,14 +1338,19 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 25: // show cursor
           this._terminal.cursorHidden = false;
           break;
+        case 1048: // alt screen cursor
+          this.saveCursor(params);
+          break;
         case 1049: // alt screen buffer cursor
-          // TODO: Not sure if we need to save/restore after switching the buffer
-          // this.saveCursor(params);
+          this.saveCursor(params);
           // FALL-THROUGH
         case 47: // alt screen buffer
         case 1047: // alt screen buffer
-          this._terminal.buffers.activateAltBuffer();
-          this._terminal.viewport.syncScrollArea();
+          this._terminal.buffers.activateAltBuffer(this._terminal.eraseAttr());
+          this._terminal.refresh(0, this._terminal.rows - 1);
+          if (this._terminal.viewport) {
+            this._terminal.viewport.syncScrollArea();
+          }
           this._terminal.showCursor();
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
@@ -1451,7 +1483,9 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 66:
           this._terminal.log('Switching back to normal keypad.');
           this._terminal.applicationKeypad = false;
-          this._terminal.viewport.syncScrollArea();
+          if (this._terminal.viewport) {
+            this._terminal.viewport.syncScrollArea();
+          }
           break;
         case 9: // X10 Mouse
         case 1000: // vt200 mouse
@@ -1479,18 +1513,22 @@ export class InputHandler extends Disposable implements IInputHandler {
         case 25: // hide cursor
           this._terminal.cursorHidden = true;
           break;
+        case 1048: // alt screen cursor
+          this.restoreCursor(params);
+          break;
         case 1049: // alt screen buffer cursor
            // FALL-THROUGH
         case 47: // normal screen buffer
         case 1047: // normal screen buffer - clearing it first
           // Ensure the selection manager has the correct buffer
           this._terminal.buffers.activateNormalBuffer();
-          // TODO: Not sure if we need to save/restore after switching the buffer
-          // if (params[0] === 1049) {
-          //   this.restoreCursor(params);
-          // }
+          if (params[0] === 1049) {
+            this.restoreCursor(params);
+          }
           this._terminal.refresh(0, this._terminal.rows - 1);
-          this._terminal.viewport.syncScrollArea();
+          if (this._terminal.viewport) {
+            this._terminal.viewport.syncScrollArea();
+          }
           this._terminal.showCursor();
           break;
         case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
@@ -1769,7 +1807,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._terminal.originMode = false;
       this._terminal.wraparoundMode = true;  // defaults: xterm - true, vt100 - false
       this._terminal.applicationKeypad = false; // ?
-      this._terminal.viewport.syncScrollArea();
+      if (this._terminal.viewport) {
+        this._terminal.viewport.syncScrollArea();
+      }
       this._terminal.applicationCursor = false;
       this._terminal.buffer.scrollTop = 0;
       this._terminal.buffer.scrollBottom = this._terminal.rows - 1;
@@ -1836,7 +1876,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   public saveCursor(params: number[]): void {
     this._terminal.buffer.savedX = this._terminal.buffer.x;
     this._terminal.buffer.savedY = this._terminal.buffer.y;
-    this._terminal.savedCurAttr = this._terminal.curAttr;
+    this._terminal.buffer.savedCurAttr = this._terminal.curAttr;
   }
 
 
@@ -1848,7 +1888,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   public restoreCursor(params: number[]): void {
     this._terminal.buffer.x = this._terminal.buffer.savedX || 0;
     this._terminal.buffer.y = this._terminal.buffer.savedY || 0;
-    this._terminal.curAttr = this._terminal.savedCurAttr || DEFAULT_ATTR;
+    this._terminal.curAttr = this._terminal.buffer.savedCurAttr || DEFAULT_ATTR;
   }
 
 

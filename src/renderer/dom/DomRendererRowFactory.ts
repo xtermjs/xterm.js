@@ -3,9 +3,10 @@
  * @license MIT
  */
 
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_ATTR_INDEX, CHAR_DATA_WIDTH_INDEX } from '../../Buffer';
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_ATTR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, NULL_CELL_CODE, WHITESPACE_CELL_CHAR } from '../../Buffer';
 import { FLAGS } from '../Types';
 import { IBufferLine } from '../../Types';
+import { DEFAULT_COLOR, INVERTED_DEFAULT_COLOR } from '../atlas/Types';
 
 export const BOLD_CLASS = 'xterm-bold';
 export const ITALIC_CLASS = 'xterm-italic';
@@ -22,18 +23,27 @@ export class DomRendererRowFactory {
 
   public createRow(lineData: IBufferLine, isCursorRow: boolean, cursorStyle: string | undefined, cursorX: number, cellWidth: number, cols: number): DocumentFragment {
     const fragment = this._document.createDocumentFragment();
-    let colCount = 0;
 
-    for (let x = 0; x < lineData.length; x++) {
-      // Don't allow any buffer to the right to be displayed
-      if (colCount >= cols) {
-        continue;
-      }
-
+    // Find the line length first, this prevents the need to output a bunch of
+    // empty cells at the end. This cannot easily be integrated into the main
+    // loop below because of the colCount feature (which can be removed after we
+    // properly support reflow and disallow data to go beyond the right-side of
+    // the viewport).
+    let lineLength = 0;
+    for (let x = Math.min(lineData.length, cols) - 1; x >= 0; x--) {
       const charData = lineData.get(x);
-      const char: string = charData[CHAR_DATA_CHAR_INDEX];
-      const attr: number = charData[CHAR_DATA_ATTR_INDEX];
-      const width: number = charData[CHAR_DATA_WIDTH_INDEX];
+      const code = charData[CHAR_DATA_CODE_INDEX];
+      if (code !== NULL_CELL_CODE || (isCursorRow && x === cursorX)) {
+        lineLength = x + 1;
+        break;
+      }
+    }
+
+    for (let x = 0; x < lineLength; x++) {
+      const charData = lineData.get(x);
+      const char = charData[CHAR_DATA_CHAR_INDEX] || WHITESPACE_CELL_CHAR;
+      const attr = charData[CHAR_DATA_ATTR_INDEX];
+      const width = charData[CHAR_DATA_WIDTH_INDEX];
 
       // The character to the left is a wide character, drawing is owned by the char at x-1
       if (width === 0) {
@@ -70,16 +80,17 @@ export class DomRendererRowFactory {
         const temp = bg;
         bg = fg;
         fg = temp;
-        if (fg === 256) {
-          fg = 0;
+        if (fg === DEFAULT_COLOR) {
+          fg = INVERTED_DEFAULT_COLOR;
         }
-        if (bg === 257) {
-          bg = 15;
+        if (bg === DEFAULT_COLOR) {
+          bg = INVERTED_DEFAULT_COLOR;
         }
       }
 
       if (flags & FLAGS.BOLD) {
-        // Convert the FG color to the bold variant
+        // Convert the FG color to the bold variant. This should not happen when
+        // the fg is the inverse default color as there is no bold variant.
         if (fg < 8) {
           fg += 8;
         }
@@ -91,14 +102,13 @@ export class DomRendererRowFactory {
       }
 
       charElement.textContent = char;
-      if (fg !== 257) {
+      if (fg !== DEFAULT_COLOR) {
         charElement.classList.add(`xterm-fg-${fg}`);
       }
-      if (bg !== 256) {
+      if (bg !== DEFAULT_COLOR) {
         charElement.classList.add(`xterm-bg-${bg}`);
       }
       fragment.appendChild(charElement);
-      colCount += width;
     }
     return fragment;
   }

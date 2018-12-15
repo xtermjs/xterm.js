@@ -7,6 +7,7 @@ import { ILinkHoverEvent, ITerminal, ILinkifierAccessor, LinkHoverEventTypes } f
 import { IColorSet, IRenderDimensions } from './Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { INVERTED_DEFAULT_COLOR } from './atlas/Types';
+import { is256Color } from './atlas/CharAtlasUtils';
 
 export class LinkRenderLayer extends BaseRenderLayer {
   private _state: ILinkHoverEvent = null;
@@ -42,7 +43,7 @@ export class LinkRenderLayer extends BaseRenderLayer {
   private _onLinkHover(e: ILinkHoverEvent): void {
     if (e.fg === INVERTED_DEFAULT_COLOR) {
       this._ctx.fillStyle = this._colors.background.css;
-    } else if (e.fg < 256) {
+    } else if (is256Color(e.fg)) {
       // 256 color support
       this._ctx.fillStyle = this._colors.ansi[e.fg].css;
     } else {

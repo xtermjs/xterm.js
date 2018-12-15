@@ -7,18 +7,23 @@ import { CircularList } from './common/CircularList';
 import { CharData, ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult, IBufferLineConstructor } from './Types';
 import { EventEmitter } from './common/EventEmitter';
 import { IMarker } from 'xterm';
-import { BufferLine, BufferLineTypedArray } from './BufferLine';
+import { BufferLine, BufferLineJSArray } from './BufferLine';
+import { DEFAULT_COLOR } from './renderer/atlas/Types';
 
-export const DEFAULT_ATTR = (0 << 18) | (257 << 9) | (256 << 0);
+export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
 export const CHAR_DATA_ATTR_INDEX = 0;
 export const CHAR_DATA_CHAR_INDEX = 1;
 export const CHAR_DATA_WIDTH_INDEX = 2;
 export const CHAR_DATA_CODE_INDEX = 3;
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 
-export const NULL_CELL_CHAR = ' ';
+export const NULL_CELL_CHAR = '';
 export const NULL_CELL_WIDTH = 1;
-export const NULL_CELL_CODE = 32;
+export const NULL_CELL_CODE = 0;
+
+export const WHITESPACE_CELL_CHAR = ' ';
+export const WHITESPACE_CELL_WIDTH = 1;
+export const WHITESPACE_CELL_CODE = 32;
 
 /**
  * This class represents a terminal buffer (an internal state of the terminal), where the
@@ -38,6 +43,7 @@ export class Buffer implements IBuffer {
   public tabs: any;
   public savedY: number;
   public savedX: number;
+  public savedCurAttr: number;
   public markers: Marker[] = [];
   private _bufferLineConstructor: IBufferLineConstructor;
 
@@ -55,9 +61,9 @@ export class Buffer implements IBuffer {
   }
 
   public setBufferLineFactory(type: string): void {
-    if (type === 'TypedArray') {
-      if (this._bufferLineConstructor !== BufferLineTypedArray) {
-        this._bufferLineConstructor = BufferLineTypedArray;
+    if (type === 'JsArray') {
+      if (this._bufferLineConstructor !== BufferLineJSArray) {
+        this._bufferLineConstructor = BufferLineJSArray;
         this._recreateLines();
       }
     } else {
@@ -113,11 +119,14 @@ export class Buffer implements IBuffer {
   /**
    * Fills the buffer's viewport with blank lines.
    */
-  public fillViewportRows(): void {
+  public fillViewportRows(fillAttr?: number): void {
     if (this.lines.length === 0) {
+      if (fillAttr === undefined) {
+        fillAttr = DEFAULT_ATTR;
+      }
       let i = this._terminal.rows;
       while (i--) {
-        this.lines.push(this.getBlankLine(DEFAULT_ATTR));
+        this.lines.push(this.getBlankLine(fillAttr));
       }
     }
   }
@@ -273,65 +282,11 @@ export class Buffer implements IBuffer {
    * @param endCol The column to end at.
    */
   public translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol: number = 0, endCol: number = null): string {
-    // Get full line
-    let lineString = '';
     const line = this.lines.get(lineIndex);
     if (!line) {
       return '';
     }
-
-    // Initialize column and index values. Column values represent the actual
-    // cell column, indexes represent the index in the string. Indexes are
-    // needed here because some chars are 0 characters long (eg. after wide
-    // chars) and some chars are longer than 1 characters long (eg. emojis).
-    let startIndex = startCol;
-    // Only set endCol to the line length when it is null. 0 is a valid column.
-    if (endCol === null) {
-      endCol = line.length;
-    }
-    let endIndex = endCol;
-
-    for (let i = 0; i < line.length; i++) {
-      const char = line.get(i);
-      lineString += char[CHAR_DATA_CHAR_INDEX];
-      // Adjust start and end cols for wide characters if they affect their
-      // column indexes
-      if (char[CHAR_DATA_WIDTH_INDEX] === 0) {
-        if (startCol >= i) {
-          startIndex--;
-        }
-        if (endCol > i) {
-          endIndex--;
-        }
-      } else {
-        // Adjust the columns to take glyphs that are represented by multiple
-        // code points into account.
-        if (char[CHAR_DATA_CHAR_INDEX].length > 1) {
-          if (startCol > i) {
-            startIndex += char[CHAR_DATA_CHAR_INDEX].length - 1;
-          }
-          if (endCol > i) {
-            endIndex += char[CHAR_DATA_CHAR_INDEX].length - 1;
-          }
-        }
-      }
-    }
-
-    // Calculate the final end col by trimming whitespace on the right of the
-    // line if needed.
-    // TODO: use Bufferline.getTrimmedLength here?
-    if (trimRight) {
-      const rightWhitespaceIndex = lineString.search(/\s+$/);
-      if (rightWhitespaceIndex !== -1) {
-        endIndex = Math.min(endIndex, rightWhitespaceIndex);
-      }
-      // Return the empty string if only trimmed whitespace is selected
-      if (endIndex <= startIndex) {
-        return '';
-      }
-    }
-
-    return lineString.substring(startIndex, endIndex);
+    return line.translateToString(trimRight, startCol, endCol);
   }
 
   public getWrappedRangeForLine(y: number): { first: number, last: number } {

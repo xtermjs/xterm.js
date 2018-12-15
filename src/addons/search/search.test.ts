@@ -2,6 +2,7 @@
  * Copyright (c) 2018 The xterm.js authors. All rights reserved.
  * @license MIT
  */
+declare var require: any;
 
 import { assert, expect } from 'chai';
 import * as search from './search';
@@ -117,8 +118,6 @@ describe('search addon', () => {
     it('should not select empty lines', () => {
       search.apply(<any>MockTerminal);
       const term = new MockTerminal({cols: 20, rows: 3});
-      term.core.write('    ');
-      term.pushWriteData();
       const line = term.searchHelper.findInLine('^.*$', 0, { regex: true });
       expect(line).eql(undefined);
     });

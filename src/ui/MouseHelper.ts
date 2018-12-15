@@ -3,40 +3,19 @@
  * @license MIT
  */
 
-import { ICharMeasure } from '../Types';
+import { ICharMeasure, IMouseHelper } from '../Types';
 import { IRenderer } from '../renderer/Types';
 
-export class MouseHelper {
+export class MouseHelper implements IMouseHelper {
   constructor(private _renderer: IRenderer) {}
 
   public setRenderer(renderer: IRenderer): void {
     this._renderer = renderer;
   }
 
-  public static getCoordsRelativeToElement(event: {pageX: number, pageY: number}, element: HTMLElement): [number, number] {
-    // Ignore browsers that don't support MouseEvent.pageX
-    if (event.pageX === null || event.pageX === undefined) {
-      return null;
-    }
-
-    const originalElement = element;
-    let x = event.pageX;
-    let y = event.pageY;
-
-    // Converts the coordinates from being relative to the document to being
-    // relative to the terminal.
-    while (element) {
-      x -= element.offsetLeft;
-      y -= element.offsetTop;
-      element = <HTMLElement>element.offsetParent;
-    }
-    element = originalElement;
-    while (element && element !== element.ownerDocument.body) {
-      x += element.scrollLeft;
-      y += element.scrollTop;
-      element = <HTMLElement>element.parentElement;
-    }
-    return [x, y];
+  public static getCoordsRelativeToElement(event: {clientX: number, clientY: number}, element: HTMLElement): [number, number] {
+    const rect = element.getBoundingClientRect();
+    return [event.clientX - rect.left, event.clientY - rect.top];
   }
 
   /**
@@ -52,7 +31,7 @@ export class MouseHelper {
    * apply an offset to the x value such that the left half of the cell will
    * select that cell and the right half will select the next cell.
    */
-  public getCoords(event: {pageX: number, pageY: number}, element: HTMLElement, charMeasure: ICharMeasure, lineHeight: number, colCount: number, rowCount: number, isSelection?: boolean): [number, number] {
+  public getCoords(event: {clientX: number, clientY: number}, element: HTMLElement, charMeasure: ICharMeasure, colCount: number, rowCount: number, isSelection?: boolean): [number, number] {
     // Coordinates cannot be measured if charMeasure has not been initialized
     if (!charMeasure.width || !charMeasure.height) {
       return null;
@@ -85,8 +64,8 @@ export class MouseHelper {
    * @param colCount The number of columns in the terminal.
    * @param rowCount The number of rows in the terminal.
    */
-  public getRawByteCoords(event: MouseEvent, element: HTMLElement, charMeasure: ICharMeasure, lineHeight: number, colCount: number, rowCount: number): { x: number, y: number } {
-    const coords = this.getCoords(event, element, charMeasure, lineHeight, colCount, rowCount);
+  public getRawByteCoords(event: MouseEvent, element: HTMLElement, charMeasure: ICharMeasure, colCount: number, rowCount: number): { x: number, y: number } {
+    const coords = this.getCoords(event, element, charMeasure, colCount, rowCount);
     let x = coords[0];
     let y = coords[1];
 

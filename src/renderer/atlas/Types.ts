@@ -3,8 +3,14 @@
  * @license MIT
  */
 
-export const INVERTED_DEFAULT_COLOR = -1;
+import { FontWeight } from 'xterm';
+import { IColorSet } from '../Types';
+
+export const DEFAULT_COLOR = 256;
+export const INVERTED_DEFAULT_COLOR = 257;
 export const DIM_OPACITY = 0.5;
+
+export const CHAR_ATLAS_CELL_SPACING = 1;
 
 export interface IGlyphIdentifier {
   chars: string;
@@ -14,4 +20,17 @@ export interface IGlyphIdentifier {
   bold: boolean;
   dim: boolean;
   italic: boolean;
+}
+
+export interface ICharAtlasConfig {
+  type: 'none' | 'static' | 'dynamic';
+  devicePixelRatio: number;
+  fontSize: number;
+  fontFamily: string;
+  fontWeight: FontWeight;
+  fontWeightBold: FontWeight;
+  scaledCharWidth: number;
+  scaledCharHeight: number;
+  allowTransparency: boolean;
+  colors: IColorSet;
 }

@@ -7,8 +7,8 @@ import { assert } from 'chai';
 import { IMouseZoneManager, IMouseZone } from './ui/Types';
 import { ILinkMatcher, ITerminal } from './Types';
 import { Linkifier } from './Linkifier';
-import { TestTerminal } from './utils/TestUtils.test';
 import { getStringCellWidth } from './CharWidth';
+import { TestTerminal } from './ui/TestUtils.test';
 
 class TestLinkifier extends Linkifier {
   constructor(terminal: ITerminal) {

@@ -21,26 +21,25 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharData, CharacterJoinerHandler } from './Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharData, CharacterJoinerHandler, IBufferLine } from './Types';
 import { IMouseZoneManager } from './ui/Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
-import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from './Buffer';
+import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, CHAR_DATA_ATTR_INDEX } from './Buffer';
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './common/EventEmitter';
 import { Viewport } from './Viewport';
-import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './handlers/Clipboard';
+import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './ui/Clipboard';
 import { C0 } from './common/data/EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Renderer } from './renderer/Renderer';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
 import { CharMeasure } from './ui/CharMeasure';
-import * as Browser from './shared/utils/Browser';
+import * as Browser from './core/Platform';
 import { addDisposableDomListener } from './ui/Lifecycle';
 import * as Strings from './Strings';
-import { MouseHelper } from './utils/MouseHelper';
-import { clone } from './utils/Clone';
+import { MouseHelper } from './ui/MouseHelper';
 import { DEFAULT_BELL_SOUND, SoundManager } from './SoundManager';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { MouseZoneManager } from './ui/MouseZoneManager';
@@ -52,6 +51,7 @@ import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent } from './common/Types';
 import { evaluateKeyboardEvent } from './core/input/Keyboard';
 import { KeyboardResultType, ICharset } from './core/Types';
+import { clone } from './common/Clone';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -106,7 +106,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   theme: null,
   rightClickSelectsWord: Browser.isMac,
   rendererType: 'canvas',
-  experimentalBufferLineImpl: 'JsArray'
+  experimentalBufferLineImpl: 'TypedArray'
 };
 
 export class Terminal extends EventEmitter implements ITerminal, IDisposable, IInputHandlingTerminal {
@@ -170,7 +170,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public savedCols: number;
 
   public curAttr: number;
-  public savedCurAttr: number;
 
   public params: (string | number)[];
   public currentParam: string | number;
@@ -207,6 +206,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   private _accessibilityManager: AccessibilityManager;
   private _screenDprMonitor: ScreenDprMonitor;
   private _theme: ITheme;
+
+  // bufferline to clone/copy from for new blank lines
+  private _blankLine: IBufferLine = null;
 
   public cols: number;
   public rows: number;
@@ -462,6 +464,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
           this.renderer.onResize(this.cols, this.rows);
           this.refresh(0, this.rows - 1);
         }
+        break;
       case 'rendererType':
         if (this.renderer) {
           this.unregister(this.renderer);
@@ -497,6 +500,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       case 'experimentalBufferLineImpl':
         this.buffers.normal.setBufferLineFactory(value);
         this.buffers.alt.setBufferLineFactory(value);
+        this._blankLine = null;
         break;
     }
     // Inform renderer of changes
@@ -804,7 +808,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       button = getButton(ev);
 
       // get mouse coordinates
-      pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
+      pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.charMeasure, self.cols, self.rows);
       if (!pos) return;
 
       sendEvent(button, pos);
@@ -830,7 +834,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // ^[[M 3<^[[M@4<^[[M@5<^[[M@6<^[[M@7<^[[M#7<
     function sendMove(ev: MouseEvent): void {
       let button = pressed;
-      const pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.charMeasure, self.options.lineHeight, self.cols, self.rows);
+      const pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.charMeasure, self.cols, self.rows);
       if (!pos) return;
 
       // buttons marked as motions
@@ -985,7 +989,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
           : 65;
           break;
         case 'wheel':
-          button = (<WheelEvent>ev).wheelDeltaY > 0
+          button = (<WheelEvent>ev).deltaY < 0
             ? 64
           : 65;
           break;
@@ -1154,9 +1158,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   public updateCursorStyle(ev: KeyboardEvent): void {
     if (this.selectionManager && this.selectionManager.shouldColumnSelect(ev)) {
-      this.element.classList.add('xterm-cursor-crosshair');
+      this.element.classList.add('column-select');
     } else {
-      this.element.classList.remove('xterm-cursor-crosshair');
+      this.element.classList.remove('column-select');
     }
   }
 
@@ -1174,20 +1178,40 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * Scroll the terminal down 1 row, creating a blank line.
    * @param isWrapped Whether the new line is wrapped from the previous line.
    */
-  public scroll(isWrapped?: boolean): void {
-    const newLine = this.buffer.getBlankLine(this.eraseAttr(), isWrapped);
+  public scroll(isWrapped: boolean = false): void {
+    let newLine: IBufferLine;
+    const useRecycling = this.options.experimentalBufferLineImpl !== 'JsArray';
+    if (useRecycling) {
+      newLine = this._blankLine;
+      if (!newLine || newLine.length !== this.cols || newLine.get(0)[CHAR_DATA_ATTR_INDEX] !== this.eraseAttr()) {
+        newLine = this.buffer.getBlankLine(this.eraseAttr(), isWrapped);
+        this._blankLine = newLine;
+      }
+      newLine.isWrapped = isWrapped;
+    } else {
+      newLine = this.buffer.getBlankLine(this.eraseAttr(), isWrapped);
+    }
+
     const topRow = this.buffer.ybase + this.buffer.scrollTop;
     const bottomRow = this.buffer.ybase + this.buffer.scrollBottom;
 
     if (this.buffer.scrollTop === 0) {
       // Determine whether the buffer is going to be trimmed after insertion.
-      const willBufferBeTrimmed = this.buffer.lines.length === this.buffer.lines.maxLength;
+      const willBufferBeTrimmed = this.buffer.lines.isFull;
 
       // Insert the line using the fastest method
       if (bottomRow === this.buffer.lines.length - 1) {
-        this.buffer.lines.push(newLine);
+        if (useRecycling) {
+          if (willBufferBeTrimmed) {
+            this.buffer.lines.recycle().copyFrom(newLine);
+          } else {
+            this.buffer.lines.push(newLine.clone());
+          }
+        } else {
+          this.buffer.lines.push(newLine);
+        }
       } else {
-        this.buffer.lines.splice(bottomRow + 1, 0, newLine);
+        this.buffer.lines.splice(bottomRow + 1, 0, (useRecycling) ? newLine.clone() : newLine);
       }
 
       // Only adjust ybase and ydisp when the buffer is not trimmed
@@ -1209,7 +1233,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // scrollback, instead we can just shift them in-place.
       const scrollRegionHeight = bottomRow - topRow + 1/*as it's zero-based*/;
       this.buffer.lines.shiftElements(topRow + 1, scrollRegionHeight - 1, -1);
-      this.buffer.lines.set(bottomRow, newLine);
+      this.buffer.lines.set(bottomRow, (useRecycling) ? newLine.clone() : newLine);
     }
 
     // Move the viewport to the bottom of the buffer unless the user is
