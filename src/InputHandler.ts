@@ -415,8 +415,9 @@ export class InputHandler extends Disposable implements IInputHandler {
         // autowrap - DECAWM
         // automatically wraps to the beginning of the next line
         if (wraparoundMode) {
+          // nullify leftover cells to the right (happens only for wide chars)
           for (let i = buffer.x;  i < bufferRow.length; ++i) {
-            bufferRow.set(i, [curAttr, '', 0, undefined]);
+            bufferRow.set(i, [curAttr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
           }
           buffer.x = 0;
           buffer.y++;
