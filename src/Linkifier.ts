@@ -110,7 +110,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     // chars will not match anymore at the viewport borders.
     const overscanLineLimit = Math.ceil(Linkifier.OVERSCAN_CHAR_LIMIT / this._terminal.cols);
     const iterator = this._terminal.buffer.iterator(
-      false, absoluteRowIndexStart, absoluteRowIndexEnd, overscanLineLimit, overscanLineLimit);
+      true, absoluteRowIndexStart, absoluteRowIndexEnd, overscanLineLimit, overscanLineLimit);
     while (iterator.hasNext()) {
       const lineData: IBufferStringIteratorResult = iterator.next();
       for (let i = 0; i < this._linkMatchers.length; i++) {
@@ -220,12 +220,12 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       rex.lastIndex = stringIndex + uri.length;
 
       // get the buffer index as [absolute row, col] for the match
-      const bufferIndex = this._terminal.buffer.stringIndexToBufferIndex(rowIndex, stringIndex, false);
+      const bufferIndex = this._terminal.buffer.stringIndexToBufferIndex(rowIndex, stringIndex, true);
       // calculate buffer index of uri end
       // we cannot directly use uri.length here since stringIndexToBufferIndex would
       // skip empty cells and stop at the next cell with real content
       // instead we fetch the index of the last char in uri and advance to the next cell
-      const endIndex = this._terminal.buffer.stringIndexToBufferIndex(rowIndex, stringIndex + uri.length - 1, false);
+      const endIndex = this._terminal.buffer.stringIndexToBufferIndex(rowIndex, stringIndex + uri.length - 1, true);
 
       // adjust start index to visible line length
       if (bufferIndex[1] >= this._terminal.cols) {
