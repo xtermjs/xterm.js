@@ -254,7 +254,9 @@ export class Linkifier extends EventEmitter implements ILinkifier {
         endIndex[1] = this._terminal.cols;
       }
       const visibleLength = (endIndex[0] - bufferIndex[0]) * this._terminal.cols - bufferIndex[1] + endIndex[1];
-      console.log(uri);
+      if (visibleLength < 1) {
+        continue;
+      }
 
       const line = this._terminal.buffer.lines.get(bufferIndex[0]);
       const char = line.get(bufferIndex[1]);
