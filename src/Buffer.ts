@@ -252,7 +252,7 @@ export class Buffer implements IBuffer {
     while (stringIndex) {
       const line = this.lines.get(lineIndex);
       if (!line) {
-        [-1, -1];
+        return [-1, -1];
       }
       for (let i = 0; i < line.length; ++i) {
         stringIndex -= line.get(i)[CHAR_DATA_CHAR_INDEX].length;
