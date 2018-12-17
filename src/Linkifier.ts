@@ -218,14 +218,23 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       // also correct regex and string search offsets for the next loop run
       stringIndex = text.indexOf(uri, stringIndex + 1);
       rex.lastIndex = stringIndex + uri.length;
+      if (stringIndex < -1) {
+        break;
+      }
 
       // get the buffer index as [absolute row, col] for the match
       const bufferIndex = this._terminal.buffer.stringIndexToBufferIndex(rowIndex, stringIndex, true);
+      if (bufferIndex[0] < 0) {
+        break;
+      }
       // calculate buffer index of uri end
       // we cannot directly use uri.length here since stringIndexToBufferIndex would
       // skip empty cells and stop at the next cell with real content
       // instead we fetch the index of the last char in uri and advance to the next cell
       const endIndex = this._terminal.buffer.stringIndexToBufferIndex(rowIndex, stringIndex + uri.length - 1, true);
+      if (endIndex[0] < 0) {
+        break;
+      }
 
       // adjust start index to visible line length
       if (bufferIndex[1] >= this._terminal.cols) {
