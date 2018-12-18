@@ -541,7 +541,7 @@ describe('Buffer', () => {
             ? input[i]
             : (i % 3 === 1)
               ? input.substr(i, 2)
-              : input.substr(i-1, 2),
+              : input.substr(i - 1, 2),
           terminal.buffer.lines.get(bufferIndex[0]).get(bufferIndex[1])[CHAR_DATA_CHAR_INDEX]);
       }
     });
