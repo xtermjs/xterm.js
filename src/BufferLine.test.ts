@@ -5,7 +5,7 @@
 import * as chai from 'chai';
 import { BufferLine } from './BufferLine';
 import { CharData, IBufferLine } from './Types';
-import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from './Buffer';
+import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR } from './Buffer';
 
 
 class TestBufferLine extends BufferLine {
@@ -198,6 +198,132 @@ describe('BufferLine', function(): void {
       chai.expect(line.toArray()).eql(Array(10).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
       line.resize(7, [1, 'a', 0, 'a'.charCodeAt(0)], true);
       chai.expect(line.toArray()).eql(Array(7).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
+    });
+  });
+  describe('getTrimLength', function(): void {
+    it('empty line', function(): void {
+      const line = new TestBufferLine(10, [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE], false);
+      chai.expect(line.getTrimmedLength()).equal(0);
+    });
+    it('ASCII', function(): void {
+      const line = new TestBufferLine(10, [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE], false);
+      line.set(0, [1, 'a', 1, 'a'.charCodeAt(0)]);
+      line.set(2, [1, 'a', 1, 'a'.charCodeAt(0)]);
+      chai.expect(line.getTrimmedLength()).equal(3);
+    });
+    it('surrogate', function(): void {
+      const line = new TestBufferLine(10, [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE], false);
+      line.set(0, [1, 'a', 1, 'a'.charCodeAt(0)]);
+      line.set(2, [1, '𝄞', 1, '𝄞'.charCodeAt(0)]);
+      chai.expect(line.getTrimmedLength()).equal(3);
+    });
+    it('combining', function(): void {
+      const line = new TestBufferLine(10, [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE], false);
+      line.set(0, [1, 'a', 1, 'a'.charCodeAt(0)]);
+      line.set(2, [1, 'e\u0301', 1, '\u0301'.charCodeAt(0)]);
+      chai.expect(line.getTrimmedLength()).equal(3);
+    });
+    it('fullwidth', function(): void {
+      const line = new TestBufferLine(10, [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE], false);
+      line.set(0, [1, 'a', 1, 'a'.charCodeAt(0)]);
+      line.set(2, [1, '１', 2, '１'.charCodeAt(0)]);
+      line.set(3, [0, '', 0, undefined]);
+      chai.expect(line.getTrimmedLength()).equal(4); // also counts null cell after fullwidth
+    });
+  });
+  describe('translateToString with and w\'o trimming', function(): void {
+    it('empty line', function(): void {
+      const line = new TestBufferLine(10, [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE], false);
+      chai.expect(line.translateToString(false)).equal('          ');
+      chai.expect(line.translateToString(true)).equal('');
+    });
+    it('ASCII', function(): void {
+      const line = new TestBufferLine(10, [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE], false);
+      line.set(0, [1, 'a', 1, 'a'.charCodeAt(0)]);
+      line.set(2, [1, 'a', 1, 'a'.charCodeAt(0)]);
+      line.set(4, [1, 'a', 1, 'a'.charCodeAt(0)]);
+      line.set(5, [1, 'a', 1, 'a'.charCodeAt(0)]);
+      chai.expect(line.translateToString(false)).equal('a a aa    ');
+      chai.expect(line.translateToString(true)).equal('a a aa');
+      chai.expect(line.translateToString(false, 0, 5)).equal('a a a');
+      chai.expect(line.translateToString(false, 0, 4)).equal('a a ');
+      chai.expect(line.translateToString(false, 0, 3)).equal('a a');
+      chai.expect(line.translateToString(true, 0, 5)).equal('a a a');
+      chai.expect(line.translateToString(true, 0, 4)).equal('a a ');
+      chai.expect(line.translateToString(true, 0, 3)).equal('a a');
+
+    });
+    it('surrogate', function(): void {
+      const line = new TestBufferLine(10, [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE], false);
+      line.set(0, [1, 'a', 1, 'a'.charCodeAt(0)]);
+      line.set(2, [1, '𝄞', 1, '𝄞'.charCodeAt(0)]);
+      line.set(4, [1, '𝄞', 1, '𝄞'.charCodeAt(0)]);
+      line.set(5, [1, '𝄞', 1, '𝄞'.charCodeAt(0)]);
+      chai.expect(line.translateToString(false)).equal('a 𝄞 𝄞𝄞    ');
+      chai.expect(line.translateToString(true)).equal('a 𝄞 𝄞𝄞');
+      chai.expect(line.translateToString(false, 0, 5)).equal('a 𝄞 𝄞');
+      chai.expect(line.translateToString(false, 0, 4)).equal('a 𝄞 ');
+      chai.expect(line.translateToString(false, 0, 3)).equal('a 𝄞');
+      chai.expect(line.translateToString(true, 0, 5)).equal('a 𝄞 𝄞');
+      chai.expect(line.translateToString(true, 0, 4)).equal('a 𝄞 ');
+      chai.expect(line.translateToString(true, 0, 3)).equal('a 𝄞');
+    });
+    it('combining', function(): void {
+      const line = new TestBufferLine(10, [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE], false);
+      line.set(0, [1, 'a', 1, 'a'.charCodeAt(0)]);
+      line.set(2, [1, 'e\u0301', 1, '\u0301'.charCodeAt(0)]);
+      line.set(4, [1, 'e\u0301', 1, '\u0301'.charCodeAt(0)]);
+      line.set(5, [1, 'e\u0301', 1, '\u0301'.charCodeAt(0)]);
+      chai.expect(line.translateToString(false)).equal('a e\u0301 e\u0301e\u0301    ');
+      chai.expect(line.translateToString(true)).equal('a e\u0301 e\u0301e\u0301');
+      chai.expect(line.translateToString(false, 0, 5)).equal('a e\u0301 e\u0301');
+      chai.expect(line.translateToString(false, 0, 4)).equal('a e\u0301 ');
+      chai.expect(line.translateToString(false, 0, 3)).equal('a e\u0301');
+      chai.expect(line.translateToString(true, 0, 5)).equal('a e\u0301 e\u0301');
+      chai.expect(line.translateToString(true, 0, 4)).equal('a e\u0301 ');
+      chai.expect(line.translateToString(true, 0, 3)).equal('a e\u0301');
+    });
+    it('fullwidth', function(): void {
+      const line = new TestBufferLine(10, [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE], false);
+      line.set(0, [1, 'a', 1, 'a'.charCodeAt(0)]);
+      line.set(2, [1, '１', 2, '１'.charCodeAt(0)]);
+      line.set(3, [0, '', 0, undefined]);
+      line.set(5, [1, '１', 2, '１'.charCodeAt(0)]);
+      line.set(6, [0, '', 0, undefined]);
+      line.set(7, [1, '１', 2, '１'.charCodeAt(0)]);
+      line.set(8, [0, '', 0, undefined]);
+      chai.expect(line.translateToString(false)).equal('a １ １１ ');
+      chai.expect(line.translateToString(true)).equal('a １ １１');
+      chai.expect(line.translateToString(false, 0, 7)).equal('a １ １');
+      chai.expect(line.translateToString(false, 0, 6)).equal('a １ １');
+      chai.expect(line.translateToString(false, 0, 5)).equal('a １ ');
+      chai.expect(line.translateToString(false, 0, 4)).equal('a １');
+      chai.expect(line.translateToString(false, 0, 3)).equal('a １');
+      chai.expect(line.translateToString(false, 0, 2)).equal('a ');
+      chai.expect(line.translateToString(true, 0, 7)).equal('a １ １');
+      chai.expect(line.translateToString(true, 0, 6)).equal('a １ １');
+      chai.expect(line.translateToString(true, 0, 5)).equal('a １ ');
+      chai.expect(line.translateToString(true, 0, 4)).equal('a １');
+      chai.expect(line.translateToString(true, 0, 3)).equal('a １');
+      chai.expect(line.translateToString(true, 0, 2)).equal('a ');
+    });
+    it('space at end', function(): void {
+      const line = new TestBufferLine(10, [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE], false);
+      line.set(0, [1, 'a', 1, 'a'.charCodeAt(0)]);
+      line.set(2, [1, 'a', 1, 'a'.charCodeAt(0)]);
+      line.set(4, [1, 'a', 1, 'a'.charCodeAt(0)]);
+      line.set(5, [1, 'a', 1, 'a'.charCodeAt(0)]);
+      line.set(6, [1, ' ', 1, ' '.charCodeAt(0)]);
+      chai.expect(line.translateToString(false)).equal('a a aa    ');
+      chai.expect(line.translateToString(true)).equal('a a aa ');
+    });
+    it('should always return some sane value', function(): void {
+      // sanity check - broken line with invalid out of bound null width cells
+      // this can atm happen with deleting/inserting chars in inputhandler by "breaking"
+      // fullwidth pairs --> needs to be fixed after settling BufferLine impl
+      const line = new TestBufferLine(10, [DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE], false);
+      chai.expect(line.translateToString(false)).equal('          ');
+      chai.expect(line.translateToString(true)).equal('');
     });
   });
 });
