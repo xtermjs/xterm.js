@@ -349,6 +349,8 @@ export function evaluateKeyboardEvent(
         if (ev.keyCode === 65) { // cmd + a
           result.type = KeyboardResultType.SELECT_ALL;
         }
+      } else if (ev.key && !ev.ctrlKey && !ev.altKey && !ev.metaKey && ev.key !== 'Shift') {
+        result.key = ev.key;
       }
       break;
   }
