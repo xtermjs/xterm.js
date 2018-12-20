@@ -289,6 +289,7 @@ describe('Keyboard', () => {
 
     it('should handle uppercase letters', () => {
       assert.equal(testEvaluateKeyboardEvent({ shiftKey: true, keyCode: 65, key: 'A' }).key, 'A');
+      assert.equal(testEvaluateKeyboardEvent({ shiftKey: true, keyCode: 49, key: '!' }).key, '!');
     });
 
   });
