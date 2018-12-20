@@ -1318,6 +1318,14 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
   }
 
+  public writeBytes(data: Uint8Array): void {
+    console.log(data);
+    // this._inputHandler.parse(data);
+    this.updateRange(this.buffer.y);
+    this.refresh(this._refreshStart, this._refreshEnd);
+    return;
+  }
+
   /**
    * Writes text to the terminal.
    * @param data The text to write to the terminal.

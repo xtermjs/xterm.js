@@ -22,63 +22,14 @@ export function attach(term: Terminal, socket: WebSocket, bidirectional: boolean
   bidirectional = (typeof bidirectional === 'undefined') ? true : bidirectional;
   addonTerminal.__socket = socket;
 
-  addonTerminal.__flushBuffer = () => {
-    addonTerminal.write(addonTerminal.__attachSocketBuffer);
-    addonTerminal.__attachSocketBuffer = null;
-  };
-
-  addonTerminal.__pushToBuffer = (data: string) => {
-    if (addonTerminal.__attachSocketBuffer) {
-      addonTerminal.__attachSocketBuffer += data;
-    } else {
-      addonTerminal.__attachSocketBuffer = data;
-      setTimeout(addonTerminal.__flushBuffer, 10);
-    }
-  };
-
-  // TODO: This should be typed but there seem to be issues importing the type
-  let myTextDecoder: any;
-
   addonTerminal.__getMessage = function(ev: MessageEvent): void {
-    let str: string;
-
-    if (typeof ev.data === 'object') {
-      if (!myTextDecoder) {
-        myTextDecoder = new TextDecoder();
+    if (ev.data instanceof ArrayBuffer) {
+      if (!ev.data.byteLength) {
+        return;
       }
-      if (ev.data instanceof ArrayBuffer) {
-        str = myTextDecoder.decode(ev.data);
-        displayData(str);
-      } else {
-        const fileReader = new FileReader();
-
-        fileReader.addEventListener('load', () => {
-          str = myTextDecoder.decode(fileReader.result);
-          displayData(str);
-        });
-        fileReader.readAsArrayBuffer(ev.data);
-      }
-    } else if (typeof ev.data === 'string') {
-      displayData(ev.data);
-    } else {
-      throw Error(`Cannot handle "${typeof ev.data}" websocket message.`);
+      addonTerminal.writeBytes(new Uint8Array(ev.data));
     }
   };
-
-  /**
-  * Push data to buffer or write it in the terminal.
-  * This is used as a callback for FileReader.onload.
-  *
-  * @param str String decoded by FileReader.
-  * @param data The data of the EventMessage.
-  */
-  function displayData(str?: string, data?: string): void {
-    if (buffered) {
-      addonTerminal.__pushToBuffer(str || data);
-    } else {
-      addonTerminal.write(str || data);
-    }
-  }
 
   addonTerminal.__sendData = (data: string) => {
     if (socket.readyState !== 1) {

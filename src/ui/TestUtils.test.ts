@@ -93,6 +93,9 @@ export class MockTerminal implements ITerminal {
   write(data: string): void {
     throw new Error('Method not implemented.');
   }
+  writeBytes(data: Uint8Array): void {
+    throw new Error('Method not implemented.');
+  }
   bracketedPasteMode: boolean;
   mouseHelper: IMouseHelper;
   renderer: IRenderer;

@@ -623,6 +623,7 @@ declare module 'xterm' {
      * @param data The text to write to the terminal.
      */
     write(data: string): void;
+    writeBytes(data: Uint8Array): void;
 
     /**
      * Retrieves an option's value from the terminal.
