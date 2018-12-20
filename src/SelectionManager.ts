@@ -5,7 +5,7 @@
 
 import { ITerminal, ISelectionManager, IBuffer, CharData, IBufferLine } from './Types';
 import { XtermListener } from './common/Types';
-import { MouseHelper } from './utils/MouseHelper';
+import { MouseHelper } from './ui/MouseHelper';
 import * as Browser from './core/Platform';
 import { CharMeasure } from './ui/CharMeasure';
 import { EventEmitter } from './common/EventEmitter';
@@ -198,7 +198,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
       }
     } else {
       // Get first row
-      const startRowEndCol = start[1] === end[1] ? end[0] : null;
+      const startRowEndCol = start[1] === end[1] ? end[0] : undefined;
       result.push(this._buffer.translateBufferLineToString(start[1], true, start[0], startRowEndCol));
 
       // Get middle rows
