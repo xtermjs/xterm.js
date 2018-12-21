@@ -349,7 +349,8 @@ export function evaluateKeyboardEvent(
         if (ev.keyCode === 65) { // cmd + a
           result.type = KeyboardResultType.SELECT_ALL;
         }
-      } else if (ev.key && !ev.ctrlKey && !ev.altKey && !ev.metaKey && ev.keyCode >= 48) {
+      } else if (ev.key && !ev.ctrlKey && !ev.altKey && !ev.metaKey && ev.keyCode >= 48
+        && ev.keyCode !== 144 && ev.keyCode !== 145) { // Include only keys that that result in a character; don't include num lock and scroll lock
         result.key = ev.key;
       }
       break;
