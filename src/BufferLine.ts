@@ -131,72 +131,31 @@ export class BufferLineJSArray implements IBufferLine {
   }
 }
 
-/**
- * buffer memory layout:
- * 
- *   |             uint32_t             |        uint32_t         |        uint32_t         |
- *   |             `content`            |          `FG`           |          `BG`           |
- *   | wcwidth(2) comb(1) codepoint(21) | flags(8) R(8) G(8) B(8) | flags(8) R(8) G(8) B(8) |
- */
-
-/** typed array slots taken by one cell */
-const CELL_SIZE = 3;
 
 /**
- * Cell member indices.
- * 
- * Direct access:
- *    `content = data[column * CELL_SIZE + Cell.CONTENT];`
- *    `fg = data[column * CELL_SIZE + Cell.FG];`
- *    `bg = data[column * CELL_SIZE + Cell.BG];`
+ *   |              uint16_t               |              uint16_t               |
+ *   | attr pointer(13) comb(1) wcwidth(2) |          BMP codepoint(16)          |
+ *   |                                  uint32_t                                 |
+ *   |                                   cell                                    |
  */
+
+
+const CELL_SIZE_16 = 1;
+
 const enum Cell {
-  CONTENT = 0,
-  FG = 1, // currently simply holds the known attrs
-  BG = 2  // unused
+  codepointMask = 0xFFFF,
+  isCombined = 0x40000,
+  widthMask = 0x30000,
+  widthShift = 16,
+  attrMask = 0xFFF80000,
+  attrShift = 19
 }
 
-/**
- * Bitmasks and helper for accessing data in `content`.
- */
-const enum Content {
-  /**
-   * bit 1..21    codepoint, max allowed in UTF32 is 0x10FFFF (21 bits taken)
-   *              read:   `codepoint = content & Content.codepointMask;`
-   *              write:  `content |= codepoint & Content.codepointMask;`
-   *                      shortcut if precondition condition `codepoint < 0x10FFFF` is met:
-   *                      `content |= codepoint;`
-   */
-  codepointMask = 0x1FFFFF,
-
-  /**
-   * bit 22       flag indication whether a cell contains combined content
-   *              read:   `isCombined = content & Content.isCombined;`
-   *              set:    `content |= Content.isCombined;`
-   *              clear:  `content &= ~Content.isCombined;`
-   */
-  isCombined = 0x200000,  // 1 << 21
-
-  /**
-   * bit 23..24   wcwidth value of cell, takes 2 bits (ranges from 0..2)
-   *              read:   `width = (content & Content.widthMask) >> Content.widthShift;`
-   *                      `hasWidth = content & Content.widthMask;`
-   *                      as long as wcwidth is highest value in DWORD:
-   *                      `width = content >> Content.widthShift;`
-   *              write:  `content |= (width << Content.widthShift) & Content.widthMask;`
-   *                      shortcut if precondition condition `0 <= width <= 3` is met:
-   *                      `content |= width << Content.widthShift;`
-   */
-  widthMask = 0xC00000,   // 3 << 22
-  widthShift = 22
-}
-
-/**
- * Typed array based bufferline implementation.
- */
 export class BufferLine implements IBufferLine {
   protected _data: Uint32Array | null = null;
   protected _combined: {[index: number]: string} = {};
+  protected _attrs: number[] = [];
+  protected _attrIndex: number = 0;
   public length: number;
 
   constructor(cols: number, fillCharData?: CharData, public isWrapped: boolean = false) {
@@ -204,7 +163,8 @@ export class BufferLine implements IBufferLine {
       fillCharData = [0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
     }
     if (cols) {
-      this._data = new Uint32Array(cols * CELL_SIZE);
+      this._data = new Uint32Array(cols * CELL_SIZE_16);
+      this._attrs.push(fillCharData[CHAR_DATA_ATTR_INDEX]);
       for (let i = 0; i < cols; ++i) {
         this.set(i, fillCharData);
       }
@@ -213,28 +173,36 @@ export class BufferLine implements IBufferLine {
   }
 
   public get(index: number): CharData {
-    const content = this._data[index * CELL_SIZE + Cell.CONTENT];
-    const cp = content & Content.codepointMask;
+    const content = this._data[index];
+    const cp = content & Cell.codepointMask;
     return [
-      this._data[index * CELL_SIZE + Cell.FG],
-      (content & Content.isCombined)
+      this._attrs[content >> Cell.attrShift],
+      (content & Cell.isCombined)
         ? this._combined[index]
         : (cp) ? String.fromCharCode(cp) : '',
-      content >> Content.widthShift,
-      (content & Content.isCombined)
+        (content & Cell.widthMask) >> Cell.widthShift,
+        (content & Cell.isCombined)
         ? this._combined[index].charCodeAt(this._combined[index].length - 1)
         : cp
     ];
   }
 
-  public set(index: number, value: CharData): void {
-    this._data[index * CELL_SIZE + Cell.FG] = value[CHAR_DATA_ATTR_INDEX];
-    if (value[CHAR_DATA_CHAR_INDEX].length > 1) {
-      this._combined[index] = value[1];
-      this._data[index * CELL_SIZE + Cell.CONTENT] = index | Content.isCombined | (value[CHAR_DATA_WIDTH_INDEX] << Content.widthShift);
-    } else {
-      this._data[index * CELL_SIZE + Cell.CONTENT] = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0) | (value[CHAR_DATA_WIDTH_INDEX] << Content.widthShift);
+  public insertAttr(attr: number): number {
+    let attrIndex = this._attrs.indexOf(attr);
+    if (attrIndex === -1) {
+      this._attrs.push(attr);
+      attrIndex = this._attrs.length - 1;
     }
+    return attrIndex;
+  }
+
+  private _toCellValue(value: CharData): number {
+    let result = (value[CHAR_DATA_CHAR_INDEX].length > 1) ? Cell.isCombined : value[CHAR_DATA_CHAR_INDEX].charCodeAt(0);
+    return this.insertAttr(value[CHAR_DATA_ATTR_INDEX]) << Cell.attrShift | value[CHAR_DATA_WIDTH_INDEX] << Cell.widthShift | result;
+  }
+
+  public set(index: number, value: CharData): void {
+    this._data[index] = this._toCellValue(value);
   }
 
   public insertCells(pos: number, n: number, fillCharData: CharData): void {
@@ -280,10 +248,10 @@ export class BufferLine implements IBufferLine {
       return;
     }
     if (cols > this.length) {
-      const data = new Uint32Array(cols * CELL_SIZE);
+      const data = new Uint32Array(cols);
       if (this.length) {
-        if (cols * CELL_SIZE < this._data.length) {
-          data.set(this._data.subarray(0, cols * CELL_SIZE));
+        if (cols < this._data.length) {
+          data.set(this._data.subarray(0, cols));
         } else {
           data.set(this._data);
         }
@@ -294,8 +262,8 @@ export class BufferLine implements IBufferLine {
       }
     } else if (shrink) {
       if (cols) {
-        const data = new Uint32Array(cols * CELL_SIZE);
-        data.set(this._data.subarray(0, cols * CELL_SIZE));
+        const data = new Uint32Array(cols);
+        data.set(this._data.subarray(0, cols));
         this._data = data;
       } else {
         this._data = null;
@@ -342,8 +310,8 @@ export class BufferLine implements IBufferLine {
 
   public getTrimmedLength(): number {
     for (let i = this.length - 1; i >= 0; --i) {
-      if ((this._data[i * CELL_SIZE + Cell.CONTENT] & Content.codepointMask) !== 0) {
-        return i + (this._data[i * CELL_SIZE + Cell.CONTENT] >> Content.widthShift);
+      if ((this._data[i] & Cell.codepointMask) !== 0) {
+        return i + ((this._data[i] & Cell.widthMask) >> Cell.widthShift);
       }
     }
     return 0;
@@ -355,11 +323,12 @@ export class BufferLine implements IBufferLine {
     }
     let result = '';
     while (startCol < endCol) {
-      const content = this._data[startCol * CELL_SIZE + Cell.CONTENT];
-      const cp = content & Content.codepointMask;
-      result += (content & Content.isCombined) ? this._combined[startCol] : (cp) ? String.fromCharCode(cp) : WHITESPACE_CELL_CHAR;
-      startCol += (content >> Content.widthShift) || 1; // always advance by 1
+      const content = this._data[startCol];
+      const cp = content & Cell.codepointMask;
+      result += (content & Cell.isCombined) ? this._combined[startCol] : (cp) ? String.fromCharCode(cp) : WHITESPACE_CELL_CHAR;
+      startCol += ((content & Cell.widthMask) >> Cell.widthShift) || 1; // always advance by 1
     }
     return result;
   }
 }
+

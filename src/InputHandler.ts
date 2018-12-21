@@ -14,6 +14,7 @@ import { EscapeSequenceParser } from './EscapeSequenceParser';
 import { ICharset } from './core/Types';
 import { Disposable } from './common/Lifecycle';
 import { Utf8Decoder } from 'textdecode';
+import { BufferLine } from './BufferLine';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -366,10 +367,14 @@ export class InputHandler extends Disposable implements IInputHandler {
     const curAttr: number = this._terminal.curAttr;
     let bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
 
+    let attrIndex = (bufferRow as BufferLine).insertAttr(curAttr);
+
     this._terminal.updateRange(buffer.y);
     for (let stringPosition = start; stringPosition < end; ++stringPosition) {
-      // char = data.charAt(stringPosition);
       code = data[stringPosition];
+      if (code > 0xFFFF) {
+        continue;
+      }
 
       // calculate print space
       // expensive call, therefore we save width in line buffer
@@ -435,6 +440,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           }
           // row changed, get it again
           bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
+          attrIndex = (bufferRow as BufferLine).insertAttr(curAttr);
         } else {
           if (chWidth === 2) {
             // FIXME: check for xterm behavior
@@ -459,20 +465,22 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
 
       // write current char to buffer and advance cursor
-      // bufferRow.set(buffer.x++, [curAttr, String.fromCodePoint(code), chWidth, code]);
-      (bufferRow as any)._data[buffer.x * 3] = code | (chWidth << 22);
-      (bufferRow as any)._data[buffer.x * 3 + 1] = curAttr;
-      buffer.x++;
+      //bufferRow.set(buffer.x++, [curAttr, String.fromCodePoint(code), chWidth, code]);
+      //(bufferRow as any)._data[buffer.x * 3] = code | (chWidth << 22);
+      //(bufferRow as any)._data[buffer.x * 3 + 1] = curAttr;
+      //buffer.x++;
+      (bufferRow as any)._data[buffer.x++] = code | chWidth << 16 | attrIndex << 19; 
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor
       // for graphemes bigger than fullwidth we can simply loop to zero
       // we already made sure above, that buffer.x + chWidth will not overflow right
       if (chWidth > 0) {
         while (--chWidth) {
-          // bufferRow.set(buffer.x++, [curAttr, '', 0, undefined]);
-          (bufferRow as any)._data[buffer.x * 3] = 0;
-          (bufferRow as any)._data[buffer.x * 3 + 1] = curAttr;
-          buffer.x++;
+          //bufferRow.set(buffer.x++, [curAttr, '', 0, undefined]);
+          //(bufferRow as any)._data[buffer.x * 3] = 0;
+          //(bufferRow as any)._data[buffer.x * 3 + 1] = curAttr;
+          //buffer.x++;
+          (bufferRow as any)._data[buffer.x++] = attrIndex << 19;
         }
       }
     }
