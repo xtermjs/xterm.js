@@ -14,6 +14,7 @@ import * as fullscreen from '../lib/addons/fullscreen/fullscreen';
 import * as search from '../lib/addons/search/search';
 import * as webLinks from '../lib/addons/webLinks/webLinks';
 import * as winptyCompat from '../lib/addons/winptyCompat/winptyCompat';
+import { ISearchOptions } from '../lib/addons/search/Interfaces';
 
 // Pulling in the module's types relies on the <reference> above, it's looks a
 // little weird here as we're importing "this" module
@@ -48,6 +49,14 @@ const paddingElement = <HTMLInputElement>document.getElementById('padding');
 function setPadding(): void {
   term.element.style.padding = parseInt(paddingElement.value, 10).toString() + 'px';
   term.fit();
+}
+
+function getSearchOptions(): ISearchOptions {
+  return {
+    regex: (document.getElementById('regex') as HTMLInputElement).checked,
+    wholeWord: (document.getElementById('whole-word') as HTMLInputElement).checked,
+    caseSensitive: (document.getElementById('case-sensitive') as HTMLInputElement).checked
+  };
 }
 
 createTerminal();
@@ -97,27 +106,16 @@ function createTerminal(): void {
 
   addDomListener(paddingElement, 'change', setPadding);
 
-  addDomListener(actionElements.findNext, 'keypress', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const searchOptions = {
-        regex: (document.getElementById('regex') as HTMLInputElement).checked,
-        wholeWord: (document.getElementById('whole-word') as HTMLInputElement).checked,
-        caseSensitive: (document.getElementById('case-sensitive') as HTMLInputElement).checked
-      };
-      term.findNext(actionElements.findNext.value, searchOptions);
-    }
+  addDomListener(actionElements.findNext, 'keyup', (e) => {
+    const searchOptions = getSearchOptions();
+    searchOptions.incremental = e.key !== `Enter`;
+    term.findNext(actionElements.findNext.value, searchOptions);
   });
-  addDomListener(actionElements.findPrevious, 'keypress', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const searchOptions = {
-        regex: (document.getElementById('regex') as HTMLInputElement).checked,
-        wholeWord: (document.getElementById('whole-word') as HTMLInputElement).checked,
-        caseSensitive: (document.getElementById('case-sensitive') as HTMLInputElement).checked
-      };
-      term.findPrevious(actionElements.findPrevious.value, searchOptions);
-    }
+
+  addDomListener(actionElements.findPrevious, 'keyup', (e) => {
+    const searchOptions = getSearchOptions();
+    searchOptions.incremental = e.key !== `Enter`;
+    term.findPrevious(actionElements.findPrevious.value, searchOptions);
   });
 
   // fit is called within a setTimeout, cols and rows need this.

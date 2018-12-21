@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, NULL_CELL_CODE } from '../Buffer';
+import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from '../Buffer';
 import { FLAGS, IColorSet, IRenderDimensions, ICharacterJoinerRegistry } from './Types';
 import { CharData, ITerminal } from '../Types';
 import { INVERTED_DEFAULT_COLOR, DEFAULT_COLOR } from './atlas/Types';
@@ -73,11 +73,11 @@ export class TextRenderLayer extends BaseRenderLayer {
       const joinedRanges = joinerRegistry ? joinerRegistry.getJoinedCharacters(row) : [];
       for (let x = 0; x < terminal.cols; x++) {
         const charData = line.get(x);
-        let code: number = <number>charData[CHAR_DATA_CODE_INDEX];
+        let code: number = <number>charData[CHAR_DATA_CODE_INDEX] || WHITESPACE_CELL_CODE;
 
         // Can either represent character(s) for a single cell or multiple cells
         // if indicated by a character joiner.
-        let chars: string = charData[CHAR_DATA_CHAR_INDEX];
+        let chars: string = charData[CHAR_DATA_CHAR_INDEX] || WHITESPACE_CELL_CHAR;
         const attr: number = charData[CHAR_DATA_ATTR_INDEX];
         let width: number = charData[CHAR_DATA_WIDTH_INDEX];
 

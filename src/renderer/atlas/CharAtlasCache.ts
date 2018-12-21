@@ -44,8 +44,6 @@ export function acquireCharAtlas(
 ): BaseCharAtlas {
   const newConfig = generateConfig(scaledCharWidth, scaledCharHeight, terminal, colors);
 
-  // TODO: Currently if a terminal changes configs it will not free the entry reference (until it's disposed)
-
   // Check to see if the terminal already owns this config
   for (let i = 0; i < charAtlasCache.length; i++) {
     const entry = charAtlasCache[i];
