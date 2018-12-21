@@ -459,10 +459,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
 
       // write current char to buffer and advance cursor
-      // bufferRow.set(buffer.x++, [curAttr, char, chWidth, code]);
-      (bufferRow as any)._data[buffer.x * 3] = curAttr;
-      (bufferRow as any)._data[buffer.x * 3 + 1] = code;
-      (bufferRow as any)._data[buffer.x * 3 + 2] = chWidth;
+      // bufferRow.set(buffer.x++, [curAttr, String.fromCodePoint(code), chWidth, code]);
+      (bufferRow as any)._data[buffer.x * 3] = code | (chWidth << 22);
+      (bufferRow as any)._data[buffer.x * 3 + 1] = curAttr;
       buffer.x++;
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor
@@ -471,9 +470,8 @@ export class InputHandler extends Disposable implements IInputHandler {
       if (chWidth > 0) {
         while (--chWidth) {
           // bufferRow.set(buffer.x++, [curAttr, '', 0, undefined]);
-          (bufferRow as any)._data[buffer.x * 3] = curAttr;
-          (bufferRow as any)._data[buffer.x * 3 + 1] = 0;
-          (bufferRow as any)._data[buffer.x * 3 + 2] = 0;
+          (bufferRow as any)._data[buffer.x * 3] = 0;
+          (bufferRow as any)._data[buffer.x * 3 + 1] = curAttr;
           buffer.x++;
         }
       }

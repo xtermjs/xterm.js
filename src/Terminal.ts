@@ -86,7 +86,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   bellStyle: 'none',
   drawBoldTextInBrightColors: true,
   enableBold: true,
-  experimentalCharAtlas: 'static',
+  experimentalCharAtlas: 'webgl',
   fontFamily: 'courier-new, courier, monospace',
   fontSize: 15,
   fontWeight: 'normal',
@@ -106,7 +106,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   tabStopWidth: 8,
   theme: null,
   rightClickSelectsWord: Browser.isMac,
-  rendererType: 'canvas',
+  rendererType: 'webgl',
   experimentalBufferLineImpl: 'TypedArray'
 };
 
