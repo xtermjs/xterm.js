@@ -13,6 +13,7 @@ import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
 import { ICharset } from './core/Types';
 import { Disposable } from './common/Lifecycle';
+import { Utf8Decoder } from 'textdecode';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -35,8 +36,8 @@ class RequestTerminfo implements IDcsHandler {
   hook(collect: string, params: number[], flag: number): void {
     this._data = '';
   }
-  put(data: string, start: number, end: number): void {
-    this._data += data.substring(start, end);
+  put(data: Uint32Array, start: number, end: number): void {
+    // this._data += data.substring(start, end);
   }
   unhook(): void {
     // invalid: DCS 0 + r Pt ST
@@ -60,8 +61,8 @@ class DECRQSS implements IDcsHandler {
     this._data = '';
   }
 
-  put(data: string, start: number, end: number): void {
-    this._data += data.substring(start, end);
+  put(data: Uint32Array, start: number, end: number): void {
+    // this._data += data.substring(start, end);
   }
 
   unhook(): void {
@@ -114,6 +115,8 @@ class DECRQSS implements IDcsHandler {
  */
 export class InputHandler extends Disposable implements IInputHandler {
   private _surrogateFirst: string;
+  private _buffer: Uint32Array = new Uint32Array(1024);
+  private _utf8Decoder: Utf8Decoder = new Utf8Decoder();
 
   constructor(
       protected _terminal: IInputHandlingTerminal,
@@ -316,7 +319,8 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._surrogateFirst = '';
     }
 
-    this._parser.parse(data);
+    // FIXME: use Utf16Decoder here
+    // this._parser.parse(data);
 
     buffer = this._terminal.buffer;
     if (buffer.x !== cursorStartX || buffer.y !== cursorStartY) {
@@ -324,8 +328,33 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
   }
 
-  public print(data: string, start: number, end: number): void {
-    let char: string;
+  public parseBytes(data: Uint8Array): void {
+    // Ensure the terminal is not disposed
+    if (!this._terminal) {
+      return;
+    }
+
+    let buffer = this._terminal.buffer;
+    const cursorStartX = buffer.x;
+    const cursorStartY = buffer.y;
+
+    // TODO: Consolidate debug/logging #1560
+    if ((<any>this._terminal).debug) {
+      this._terminal.log('data: ' + data);
+    }
+
+    if (data.byteLength > this._buffer.length) {
+      this._buffer = new Uint32Array(data.length);
+    }
+    this._parser.parse(this._buffer, this._utf8Decoder.decode(data, this._buffer));
+
+    buffer = this._terminal.buffer;
+    if (buffer.x !== cursorStartX || buffer.y !== cursorStartY) {
+      this._terminal.emit('cursormove');
+    }
+  }
+
+  public print(data: Uint32Array, start: number, end: number): void {
     let code: number;
     let chWidth: number;
     const buffer: IBuffer = this._terminal.buffer;
@@ -339,31 +368,8 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     this._terminal.updateRange(buffer.y);
     for (let stringPosition = start; stringPosition < end; ++stringPosition) {
-      char = data.charAt(stringPosition);
-      code = data.charCodeAt(stringPosition);
-
-      // surrogate pair handling
-      if (0xD800 <= code && code <= 0xDBFF) {
-        if (++stringPosition >= end) {
-          // end of input:
-          // handle pairs as true UTF-16 and wait for the second part
-          // since we expect the input comming from a stream there is
-          // a small chance that the surrogate pair got split
-          // therefore we dont process the first char here, instead
-          // it gets added as first char to the next processed chunk
-          this._surrogateFirst = char;
-          continue;
-        }
-        const second = data.charCodeAt(stringPosition);
-        // if the second part is in surrogate pair range create the high codepoint
-        // otherwise fall back to UCS-2 behavior (handle codepoints independently)
-        if (0xDC00 <= second && second <= 0xDFFF) {
-          code = (code - 0xD800) * 0x400 + second - 0xDC00 + 0x10000;
-          char += data.charAt(stringPosition);
-        } else {
-          stringPosition--;
-        }
-      }
+      // char = data.charAt(stringPosition);
+      code = data[stringPosition];
 
       // calculate print space
       // expensive call, therefore we save width in line buffer
@@ -371,12 +377,14 @@ export class InputHandler extends Disposable implements IInputHandler {
 
       // get charset replacement character
       if (charset) {
-        char = charset[char] || char;
-        code = char.charCodeAt(0);
+        let ch = String.fromCharCode(code);
+        if (charset[ch]) {
+          code = charset[ch].charCodeAt(0);
+        }
       }
 
       if (screenReaderMode) {
-        this._terminal.emit('a11y.char', char);
+        this._terminal.emit('a11y.char', String.fromCharCode(code));
       }
 
       // insert combining char at last cursor position
@@ -393,12 +401,12 @@ export class InputHandler extends Disposable implements IInputHandler {
             // since an empty cell is only set by fullwidth chars
             const chMinusTwo = bufferRow.get(buffer.x - 2);
             if (chMinusTwo) {
-              chMinusTwo[CHAR_DATA_CHAR_INDEX] += char;
+              chMinusTwo[CHAR_DATA_CHAR_INDEX] += String.fromCodePoint(code);
               chMinusTwo[CHAR_DATA_CODE_INDEX] = code;
               bufferRow.set(buffer.x - 2, chMinusTwo); // must be set explicitly now
             }
           } else {
-            chMinusOne[CHAR_DATA_CHAR_INDEX] += char;
+            chMinusOne[CHAR_DATA_CHAR_INDEX] += String.fromCodePoint(code);
             chMinusOne[CHAR_DATA_CODE_INDEX] = code;
             bufferRow.set(buffer.x - 1, chMinusOne); // must be set explicitly now
           }
@@ -451,14 +459,22 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
 
       // write current char to buffer and advance cursor
-      bufferRow.set(buffer.x++, [curAttr, char, chWidth, code]);
+      // bufferRow.set(buffer.x++, [curAttr, char, chWidth, code]);
+      (bufferRow as any)._data[buffer.x * 3] = curAttr;
+      (bufferRow as any)._data[buffer.x * 3 + 1] = code;
+      (bufferRow as any)._data[buffer.x * 3 + 2] = chWidth;
+      buffer.x++;
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor
       // for graphemes bigger than fullwidth we can simply loop to zero
       // we already made sure above, that buffer.x + chWidth will not overflow right
       if (chWidth > 0) {
         while (--chWidth) {
-          bufferRow.set(buffer.x++, [curAttr, '', 0, undefined]);
+          // bufferRow.set(buffer.x++, [curAttr, '', 0, undefined]);
+          (bufferRow as any)._data[buffer.x * 3] = curAttr;
+          (bufferRow as any)._data[buffer.x * 3 + 1] = 0;
+          (bufferRow as any)._data[buffer.x * 3 + 2] = 0;
+          buffer.x++;
         }
       }
     }

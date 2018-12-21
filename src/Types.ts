@@ -111,7 +111,8 @@ export interface ICompositionHelper {
  */
 export interface IInputHandler {
   parse(data: string): void;
-  print(data: string, start: number, end: number): void;
+  parseBytes(data: Uint8Array): void;
+  print(data: Uint32Array, start: number, end: number): void;
 
   /** C0 BEL */ bell(): void;
   /** C0 LF */ lineFeed(): void;
@@ -464,7 +465,7 @@ export interface IParsingState {
 */
 export interface IDcsHandler {
   hook(collect: string, params: number[], flag: number): void;
-  put(data: string, start: number, end: number): void;
+  put(data: Uint32Array, start: number, end: number): void;
   unhook(): void;
 }
 
@@ -481,9 +482,9 @@ export interface IEscapeSequenceParser extends IDisposable {
    * Parse string `data`.
    * @param data The data to parse.
    */
-  parse(data: string): void;
+  parse(data: Uint32Array, length: number): void;
 
-  setPrintHandler(callback: (data: string, start: number, end: number) => void): void;
+  setPrintHandler(callback: (data: Uint32Array, start: number, end: number) => void): void;
   clearPrintHandler(): void;
 
   setExecuteHandler(flag: string, callback: () => void): void;

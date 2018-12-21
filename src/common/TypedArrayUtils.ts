@@ -65,3 +65,14 @@ export function sliceFallback<T extends TypedArray>(array: T, start: number = 0,
   }
   return result;
 }
+
+ export function concat<T extends TypedArray>(a: T, b: T): T {
+  const result = new (a.constructor as any)(a.length + b.length);
+  result.set(a);
+  result.set(b, a.length);
+  return result;
+}
+
+export function utf32ToString<T extends TypedArray>(data: T): string {
+  return String.fromCodePoint.apply(null, data);
+}

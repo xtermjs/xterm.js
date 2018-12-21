@@ -5,6 +5,7 @@
 
 import { ParserState, ParserAction, IParsingState, IDcsHandler, IEscapeSequenceParser } from './Types';
 import { Disposable } from './common/Lifecycle';
+import { utf32ToString } from './common/TypedArrayUtils';
 
 /**
  * Returns an array filled with numbers between the low and high parameters (right exclusive).
@@ -194,7 +195,7 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
  */
 class DcsDummy implements IDcsHandler {
   hook(collect: string, params: number[], flag: number): void { }
-  put(data: string, start: number, end: number): void { }
+  put(data: Uint32Array, start: number, end: number): void { }
   unhook(): void { }
 }
 
@@ -220,7 +221,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   protected _collect: string;
 
   // handler lookup containers
-  protected _printHandler: (data: string, start: number, end: number) => void;
+  protected _printHandler: (data: Uint32Array, start: number, end: number) => void;
   protected _executeHandlers: any;
   protected _csiHandlers: any;
   protected _escHandlers: any;
@@ -230,7 +231,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   protected _errorHandler: (state: IParsingState) => IParsingState;
 
   // fallback handlers
-  protected _printHandlerFb: (data: string, start: number, end: number) => void;
+  protected _printHandlerFb: (data: Uint32Array, start: number, end: number) => void;
   protected _executeHandlerFb: (code: number) => void;
   protected _csiHandlerFb: (collect: string, params: number[], flag: number) => void;
   protected _escHandlerFb: (collect: string, flag: number) => void;
@@ -286,7 +287,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._errorHandler = null;
   }
 
-  setPrintHandler(callback: (data: string, start: number, end: number) => void): void {
+  setPrintHandler(callback: (data: Uint32Array, start: number, end: number) => void): void {
     this._printHandler = callback;
   }
   clearPrintHandler(): void {
@@ -358,7 +359,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._activeDcsHandler = null;
   }
 
-  parse(data: string): void {
+  parse(data: Uint32Array, length: number): void {
     let code = 0;
     let transition = 0;
     let error = false;
@@ -373,15 +374,14 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     let callback: Function | null = null;
 
     // process input string
-    const l = data.length;
-    for (let i = 0; i < l; ++i) {
-      code = data.charCodeAt(i);
+    for (let i = 0; i < length; ++i) {
+      code = data[i];
 
       // shortcut for most chars (print action)
       if (currentState === ParserState.GROUND && code > 0x1f && code < 0x80) {
         print = (~print) ? print : i;
         do i++;
-        while (i < l && data.charCodeAt(i) > 0x1f && data.charCodeAt(i) < 0x80);
+        while (i < length && data[i] > 0x1f && data[i] < 0x80);
         i--;
         continue;
       }
@@ -516,10 +516,10 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           break;
         case ParserAction.OSC_PUT:
           for (let j = i + 1; ; j++) {
-            if (j >= l
-                || (code = data.charCodeAt(j)) < 0x20
+            if (j >= length
+                || (code = data[j]) < 0x20
                 || (code > 0x7f && code <= 0x9f)) {
-              osc += data.substring(i, j);
+              osc += utf32ToString(data.subarray(i, j));
               i = j - 1;
               break;
             }
@@ -555,9 +555,9 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
 
     // push leftover pushable buffers to terminal
     if (currentState === ParserState.GROUND && ~print) {
-      this._printHandler(data, print, data.length);
+      this._printHandler(data, print, length);
     } else if (currentState === ParserState.DCS_PASSTHROUGH && ~dcs && dcsHandler) {
-      dcsHandler.put(data, dcs, data.length);
+      dcsHandler.put(data, dcs, length);
     }
 
     // save non pushable buffers
