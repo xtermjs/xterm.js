@@ -76,3 +76,7 @@ export function sliceFallback<T extends TypedArray>(array: T, start: number = 0,
 export function utf32ToString<T extends TypedArray>(data: T): string {
   return String.fromCodePoint.apply(null, data);
 }
+
+export function utf16ToString<T extends TypedArray>(data: T): string {
+  return String.fromCharCode.apply(null, data);
+}

@@ -5,7 +5,7 @@
 
 import { ParserState, ParserAction, IParsingState, IDcsHandler, IEscapeSequenceParser } from './Types';
 import { Disposable } from './common/Lifecycle';
-import { utf32ToString } from './common/TypedArrayUtils';
+import { utf16ToString } from './common/TypedArrayUtils';
 
 /**
  * Returns an array filled with numbers between the low and high parameters (right exclusive).
@@ -195,7 +195,7 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
  */
 class DcsDummy implements IDcsHandler {
   hook(collect: string, params: number[], flag: number): void { }
-  put(data: Uint32Array, start: number, end: number): void { }
+  put(data: Uint16Array, start: number, end: number): void { }
   unhook(): void { }
 }
 
@@ -221,7 +221,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   protected _collect: string;
 
   // handler lookup containers
-  protected _printHandler: (data: Uint32Array, start: number, end: number) => void;
+  protected _printHandler: (data: Uint16Array, start: number, end: number) => void;
   protected _executeHandlers: any;
   protected _csiHandlers: any;
   protected _escHandlers: any;
@@ -231,7 +231,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   protected _errorHandler: (state: IParsingState) => IParsingState;
 
   // fallback handlers
-  protected _printHandlerFb: (data: Uint32Array, start: number, end: number) => void;
+  protected _printHandlerFb: (data: Uint16Array, start: number, end: number) => void;
   protected _executeHandlerFb: (code: number) => void;
   protected _csiHandlerFb: (collect: string, params: number[], flag: number) => void;
   protected _escHandlerFb: (collect: string, flag: number) => void;
@@ -287,7 +287,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._errorHandler = null;
   }
 
-  setPrintHandler(callback: (data: Uint32Array, start: number, end: number) => void): void {
+  setPrintHandler(callback: (data: Uint16Array, start: number, end: number) => void): void {
     this._printHandler = callback;
   }
   clearPrintHandler(): void {
@@ -359,7 +359,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._activeDcsHandler = null;
   }
 
-  parse(data: Uint32Array, length: number): void {
+  parse(data: Uint16Array, length: number): void {
     let code = 0;
     let transition = 0;
     let error = false;
@@ -519,7 +519,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
             if (j >= length
                 || (code = data[j]) < 0x20
                 || (code > 0x7f && code <= 0x9f)) {
-              osc += utf32ToString(data.subarray(i, j));
+              osc += utf16ToString(data.subarray(i, j));
               i = j - 1;
               break;
             }

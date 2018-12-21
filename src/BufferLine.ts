@@ -293,6 +293,7 @@ export class BufferLine implements IBufferLine {
     for (const el in line._combined) {
       this._combined[el] = line._combined[el];
     }
+    this._attrs = line._attrs.slice(0);
     this.isWrapped = line.isWrapped;
   }
 
@@ -304,6 +305,7 @@ export class BufferLine implements IBufferLine {
     for (const el in this._combined) {
       newLine._combined[el] = this._combined[el];
     }
+    newLine._attrs = this._attrs.slice(0);
     newLine.isWrapped = this.isWrapped;
     return newLine;
   }
