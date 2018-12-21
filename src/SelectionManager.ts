@@ -198,7 +198,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
       }
     } else {
       // Get first row
-      const startRowEndCol = start[1] === end[1] ? end[0] : null;
+      const startRowEndCol = start[1] === end[1] ? end[0] : undefined;
       result.push(this._buffer.translateBufferLineToString(start[1], true, start[0], startRowEndCol));
 
       // Get middle rows

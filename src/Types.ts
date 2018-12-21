@@ -526,6 +526,8 @@ export interface IBufferLine {
   fill(fillCharData: CharData): void;
   copyFrom(line: IBufferLine): void;
   clone(): IBufferLine;
+  getTrimmedLength(): number;
+  translateToString(trimRight?: boolean, startCol?: number, endCol?: number): string;
 }
 
 export interface IBufferLineConstructor {
