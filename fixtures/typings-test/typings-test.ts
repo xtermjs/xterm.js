@@ -4,7 +4,7 @@
 
 /// <reference path="../../typings/xterm.d.ts" />
 
-import { Terminal, IDisposable } from 'xterm';
+import { Terminal } from 'xterm';
 
 namespace constructor {
   {
@@ -119,12 +119,6 @@ namespace methods_core {
     const t: Terminal = new Terminal();
     t.attachCustomKeyEventHandler((e: KeyboardEvent) => true);
     t.attachCustomKeyEventHandler((e: KeyboardEvent) => false);
-    const d1: IDisposable = t.addCsiHandler("x",
-       (params: number[], collect: string): boolean => params[0]===1);
-    d1.dispose();
-    const d2: IDisposable = t.addOscHandler(199,
-       (data: string): boolean => true);
-    d2.dispose();
   }
   namespace options {
     {

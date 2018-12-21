@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { IInputHandler, IDcsHandler, IEscapeSequenceParser, IBuffer, IInputHandlingTerminal } from './Types';
+import { IVtInputHandler, IDcsHandler, IEscapeSequenceParser, IBuffer, IInputHandlingTerminal } from './Types';
 import { C0, C1 } from './common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from './core/data/Charsets';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from './Buffer';
@@ -113,7 +113,7 @@ class DECRQSS implements IDcsHandler {
  * Refer to http://invisible-island.net/xterm/ctlseqs/ctlseqs.html to understand
  * each function's header comment.
  */
-export class InputHandler extends Disposable implements IInputHandler {
+export class InputHandler extends Disposable implements IVtInputHandler {
   private _surrogateFirst: string;
 
   constructor(

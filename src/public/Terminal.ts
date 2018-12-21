@@ -4,7 +4,7 @@
  */
 
 import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings } from 'xterm';
-import { ITerminal } from '../Types';
+import { ITerminal, IInputHandler } from '../Types';
 import { Terminal as TerminalCore } from '../Terminal';
 import * as Strings from '../Strings';
 
@@ -15,6 +15,9 @@ export class Terminal implements ITerminalApi {
     this._core = new TerminalCore(options);
   }
 
+  public get inputHandler(): IInputHandler {
+    return (this._core as TerminalCore).inputHandler;
+  }
   public get element(): HTMLElement { return this._core.element; }
   public get textarea(): HTMLTextAreaElement { return this._core.textarea; }
   public get rows(): number { return this._core.rows; }
@@ -58,12 +61,6 @@ export class Terminal implements ITerminalApi {
   }
   public attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void {
     this._core.attachCustomKeyEventHandler(customKeyEventHandler);
-  }
-  public addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable {
-    return this._core.addCsiHandler(flag, callback);
-  }
-  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
-    return this._core.addOscHandler(ident, callback);
   }
   public registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): number {
     return this._core.registerLinkMatcher(regex, handler, options);

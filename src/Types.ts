@@ -182,6 +182,14 @@ export interface IInputHandler {
       ESC ~ */ setgLevel(level: number): void;
 }
 
+/*
+ * An InputHandler for VT-style terminals
+ */
+export interface IVtInputHandler extends IInputHandler {
+  addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable;
+  addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
+}
+
 export interface ILinkMatcher {
   id: number;
   regex: RegExp;

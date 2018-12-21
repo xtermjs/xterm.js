@@ -54,12 +54,6 @@ export class MockTerminal implements ITerminal {
   attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void {
     throw new Error('Method not implemented.');
   }
-  addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable {
-      throw new Error('Method not implemented.');
-  }
-  addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
-      throw new Error('Method not implemented.');
-  }
   registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => boolean | void, options?: ILinkMatcherOptions): number {
     throw new Error('Method not implemented.');
   }
