@@ -196,13 +196,15 @@ export class BufferLine implements IBufferLine {
     return attrIndex;
   }
 
-  private _toCellValue(value: CharData): number {
-    let result = (value[CHAR_DATA_CHAR_INDEX].length > 1) ? Cell.isCombined : value[CHAR_DATA_CHAR_INDEX].charCodeAt(0);
-    return this.insertAttr(value[CHAR_DATA_ATTR_INDEX]) << Cell.attrShift | value[CHAR_DATA_WIDTH_INDEX] << Cell.widthShift | result;
-  }
-
   public set(index: number, value: CharData): void {
-    this._data[index] = this._toCellValue(value);
+    let cell = this.insertAttr(value[CHAR_DATA_ATTR_INDEX]) << Cell.attrShift | value[CHAR_DATA_WIDTH_INDEX] << Cell.widthShift;
+    if (value[CHAR_DATA_CHAR_INDEX].length > 1) {
+      this._combined[index] = value[CHAR_DATA_CHAR_INDEX];
+      cell |= Cell.isCombined | index;
+    } else {
+      cell |= value[CHAR_DATA_CHAR_INDEX].charCodeAt(0);
+    }
+    this._data[index] = cell;
   }
 
   public insertCells(pos: number, n: number, fillCharData: CharData): void {

@@ -374,29 +374,11 @@ export class InputHandler extends Disposable implements IInputHandler {
       code = data[stringPosition];
 
       // surrogate pair handling
-      if (0xD800 <= code && code <= 0xDBFF) {
-        if (++stringPosition >= end) {
-          // end of input:
-          // handle pairs as true UTF-16 and wait for the second part
-          // since we expect the input comming from a stream there is
-          // a small chance that the surrogate pair got split
-          // therefore we dont process the first char here, instead
-          // it gets added as first char to the next processed chunk
-          this._surrogateFirst = String.fromCharCode(code);
-          continue;
-        }
-        const second = data[stringPosition];
-        // if the second part is in surrogate pair range create the high codepoint
-        // otherwise fall back to UCS-2 behavior (handle codepoints independently)
-        if (0xDC00 <= second && second <= 0xDFFF) {
-          code = (code - 0xD800) * 0x400 + second - 0xDC00 + 0x10000;
-        } else {
-          stringPosition--;
-        }
+      if (0xD800 <= code && code <= 0xDBFF && ++stringPosition < end) {
+        code = (code - 0xD800) * 0x400 + data[stringPosition] - 0xDC00 + 0x10000;
       }
 
       // calculate print space
-      // expensive call, therefore we save width in line buffer
       chWidth = wcwidth(code);
 
       // get charset replacement character
