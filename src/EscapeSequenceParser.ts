@@ -283,8 +283,17 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._errorHandlerFb = null;
     this._printHandler = null;
     this._executeHandlers = null;
-    this._csiHandlers = null;
     this._escHandlers = null;
+    let handlers;
+    while ((handlers = this._csiHandlers) && handlers.dispose !== undefined) {
+        handlers.dispose();
+        if (handlers === this._csiHandlers) { break; } // sanity check
+    }
+    this._csiHandlers = null;
+    while ((handlers = this._oscHandlers) && handlers.dispose !== undefined) {
+        handlers.dispose();
+        if (handlers === this._oscHandlers) { break; } // sanity check
+    }
     this._oscHandlers = null;
     this._dcsHandlers = null;
     this._activeDcsHandler = null;
@@ -319,6 +328,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
             if (cur === newHead) {
               if (previous) { previous.nextHandler = cur.nextHandler; }
               else { handlers[index] = cur.nextHandler; }
+              cur.nextHandler = null;
+              handlers = null; newCallback = null; // just in case
               break;
             }
           }
