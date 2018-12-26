@@ -49,8 +49,7 @@ export class SearchHelper implements ISearchHelper {
       // For incremental search, use existing row
       if (this._terminal.getSelection().length !== 0) {
         startRow = incremental ? selectionManager.selectionStart[1] : selectionManager.selectionEnd[1];
-        // TODO: Fix for incremental
-        startCol = this._terminal._core.selectionManager.selectionEnd[0];
+        startCol = incremental ? selectionManager.selectionStart[0] : selectionManager.selectionEnd[0];
       }
     }
 
