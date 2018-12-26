@@ -52,24 +52,27 @@ export class SearchHelper implements ISearchHelper {
         startCol = incremental ? selectionManager.selectionStart[0] : selectionManager.selectionEnd[0];
       }
     }
-    console.log(`Start from ${startCol},${startRow}`);
 
     this._initLinesCache();
 
-    // Search from startRow to end
-    for (let y = startRow; y < this._terminal._core.buffer.ybase + this._terminal.rows; y++) {
-      result = this._findInLine(term, { row: y, col: startCol }, searchOptions);
-      if (result) {
-        break;
+    // Search startRow
+    result = this._findInLine(term, { row: startRow, col: startCol }, searchOptions);
+
+    // Search from startRow + 1 to end
+    if (!result) {
+      for (let y = startRow + 1; y < this._terminal._core.buffer.ybase + this._terminal.rows; y++) {
+        result = this._findInLine(term, { row: y, col: 0 }, searchOptions);
+        if (result) {
+          break;
+        }
       }
-      startCol = 0;
     }
 
-    // Search from the top to the startRow
+    // Search from the top to the startRow (search the whole startRow again in
+    // case startCol > 0)
     if (!result) {
-      for (let y = 0; y < startRow; y++) {
-        startCol = 0;
-        result = this._findInLine(term, {row: y, col: startCol}, searchOptions);
+      for (let y = 0; y <= startRow; y++) {
+        result = this._findInLine(term, {row: y, col: 0}, searchOptions);
         if (result) {
           break;
         }
@@ -89,7 +92,6 @@ export class SearchHelper implements ISearchHelper {
    */
   public findPrevious(term: string, searchOptions?: ISearchOptions): boolean {
     const selectionManager = this._terminal._core.selectionManager;
-    const {incremental} = searchOptions;
     let result: ISearchResult;
 
     if (!term || term.length === 0) {
@@ -111,21 +113,31 @@ export class SearchHelper implements ISearchHelper {
 
     this._initLinesCache();
 
-    // Search from startRow to top
-    for (let y = startRow; y >= 0; y--) {
-      result = this._findInLine(term, {row: y, col: startCol}, searchOptions, isReverseSearch);
-      if (result) {
-        break;
+    // Search startRow
+    result = this._findInLine(term, { row: startRow, col: startCol }, searchOptions, isReverseSearch);
+
+    // Search from startRow - 1 to top
+    if (!result) {
+      for (let y = startRow - 1; y >= 0; y--) {
+        result = this._findInLine(term, {
+          row: y,
+          col: this._terminal._core.buffer.lines.get(y).length
+        }, searchOptions, isReverseSearch);
+        if (result) {
+          break;
+        }
       }
-      startCol = y > 0 ? this._terminal._core.buffer.lines.get(y - 1).length : 0;
     }
 
-    // Search from the bottom to startRow
+    // Search from the bottom to startRow (search the whole startRow again in
+    // case startCol > 0)
     if (!result) {
       const searchFrom = this._terminal._core.buffer.ybase + this._terminal.rows - 1;
-      for (let y = searchFrom; y > startRow; y--) {
-        startCol = this._terminal._core.buffer.lines.get(y).length;
-        result = this._findInLine(term, {row: y, col: startCol}, searchOptions, isReverseSearch);
+      for (let y = searchFrom; y >= startRow; y--) {
+        result = this._findInLine(term, {
+          row: y,
+          col: this._terminal._core.buffer.lines.get(y).length
+        }, searchOptions, isReverseSearch);
         if (result) {
           break;
         }
@@ -217,7 +229,6 @@ export class SearchHelper implements ISearchHelper {
         resultIndex = searchStringLine.lastIndexOf(searchTerm, searchIndex.col - searchTerm.length);
       } else {
         resultIndex = searchStringLine.indexOf(searchTerm, searchIndex.col);
-        console.log('resultIndex', resultIndex);
       }
     }
 
