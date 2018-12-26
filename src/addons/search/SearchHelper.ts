@@ -52,11 +52,12 @@ export class SearchHelper implements ISearchHelper {
         startCol = incremental ? selectionManager.selectionStart[0] : selectionManager.selectionEnd[0];
       }
     }
+    console.log(`Start from ${startCol},${startRow}`);
 
     this._initLinesCache();
 
     // Search from startRow to end
-    for (let y = incremental ? startRow : startRow + 1; y < this._terminal._core.buffer.ybase + this._terminal.rows; y++) {
+    for (let y = startRow; y < this._terminal._core.buffer.ybase + this._terminal.rows; y++) {
       result = this._findInLine(term, { row: y, col: startCol }, searchOptions);
       if (result) {
         break;
@@ -111,7 +112,7 @@ export class SearchHelper implements ISearchHelper {
     this._initLinesCache();
 
     // Search from startRow to top
-    for (let y = incremental ? startRow : startRow - 1; y >= 0; y--) {
+    for (let y = startRow; y >= 0; y--) {
       result = this._findInLine(term, {row: y, col: startCol}, searchOptions, isReverseSearch);
       if (result) {
         break;
@@ -216,6 +217,7 @@ export class SearchHelper implements ISearchHelper {
         resultIndex = searchStringLine.lastIndexOf(searchTerm, searchIndex.col - searchTerm.length);
       } else {
         resultIndex = searchStringLine.indexOf(searchTerm, searchIndex.col);
+        console.log('resultIndex', resultIndex);
       }
     }
 
