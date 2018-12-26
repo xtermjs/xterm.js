@@ -7,10 +7,6 @@ import { ParserState, ParserAction, IParsingState, IDcsHandler, IEscapeSequenceP
 import { IDisposable } from 'xterm';
 import { Disposable } from './common/Lifecycle';
 
-interface IHandlerLink extends IDisposable {
-  nextHandler: IHandlerLink | null;
-}
-
 interface IHandlerCollection<T> {
   [key: string]: T[];
 }
@@ -494,8 +490,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
         case ParserAction.CSI_DISPATCH:
           // Trigger CSI Handler
           const handlers = this._csiHandlers[code];
-          let j: number;
-          for (j = handlers.length - 1; j >= 0; j--) {
+          let j = handlers ? handlers.length - 1 : -1;
+          for (; j >= 0; j--) {
             if (handlers[j](params, collect)) {
               break;
             }
@@ -579,8 +575,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
               const content = osc.substring(idx + 1);
               // Trigger OSC Handler
               const handlers = this._oscHandlers[identifier];
-              let j: number;
-              for (j = handlers.length - 1; j >= 0; j--) {
+              let j = handlers ? handlers.length - 1 : -1;
+              for (; j >= 0; j--) {
                 if (handlers[j](content)) {
                   break;
                 }
