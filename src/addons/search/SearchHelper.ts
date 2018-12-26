@@ -4,15 +4,24 @@
  */
 
 import { ISearchHelper, ISearchAddonTerminal, ISearchOptions, ISearchResult, ISearchIndex } from './Interfaces';
-const nonWordCharacters = ' ~!@#$%^&*()+`-=[]{}|\;:"\',./<>?';
+
+const NON_WORD_CHARACTERS = ' ~!@#$%^&*()+`-=[]{}|\;:"\',./<>?';
+const LINES_CACHE_TIME_TO_LIVE = 15 * 1000; // 15 secs
+
 /**
  * A class that knows how to search the terminal and how to display the results.
  */
 export class SearchHelper implements ISearchHelper {
+  /**
+   * translateBufferLineToStringWithWrap is a fairly expensive call.
+   * We memoize the calls into an array that has a time based ttl.
+   * _linesCache is also invalidated when the terminal cursor moves.
+   */
+  private _linesCache: string[] = null;
+  private _linesCacheTimeoutId = 0;
+
   constructor(private _terminal: ISearchAddonTerminal) {
-    // TODO: Search for multiple instances on 1 line
-    // TODO: Don't use the actual selection, instead use a "find selection" so multiple instances can be highlighted
-    // TODO: Highlight other instances in the viewport
+    this._destroyLinesCache = this._destroyLinesCache.bind(this);
   }
 
   /**
@@ -23,31 +32,40 @@ export class SearchHelper implements ISearchHelper {
    * @return Whether a result was found.
    */
   public findNext(term: string, searchOptions?: ISearchOptions): boolean {
+    const selectionManager = this._terminal._core.selectionManager;
+    const {incremental} = searchOptions;
+    let result: ISearchResult;
+
     if (!term || term.length === 0) {
+      selectionManager.clearSelection();
       return false;
     }
 
-    let result: ISearchResult;
-    let startRow = this._terminal._core.buffer.ydisp;
     let startCol: number = 0;
-    if (this._terminal._core.selectionManager.selectionEnd) {
+    let startRow = this._terminal._core.buffer.ydisp;
+
+    if (selectionManager.selectionEnd) {
       // Start from the selection end if there is a selection
+      // For incremental search, use existing row
       if (this._terminal.getSelection().length !== 0) {
-        startRow = this._terminal._core.selectionManager.selectionEnd[1];
+        startRow = incremental ? selectionManager.selectionStart[1] : selectionManager.selectionEnd[1];
+        // TODO: Fix for incremental
         startCol = this._terminal._core.selectionManager.selectionEnd[0];
       }
     }
 
-    // Search from ydisp + 1 to end
-    for (let y = startRow; y < this._terminal._core.buffer.ybase + this._terminal.rows; y++) {
-      result = this._findInLine(term, {row: y, col: startCol}, searchOptions);
+    this._initLinesCache();
+
+    // Search from startRow to end
+    for (let y = incremental ? startRow : startRow + 1; y < this._terminal._core.buffer.ybase + this._terminal.rows; y++) {
+      result = this._findInLine(term, { row: y, col: startCol }, searchOptions);
       if (result) {
         break;
       }
       startCol = 0;
     }
 
-    // Search from the top to the current ydisp
+    // Search from the top to the startRow
     if (!result) {
       for (let y = 0; y < startRow; y++) {
         startCol = 0;
@@ -70,24 +88,31 @@ export class SearchHelper implements ISearchHelper {
    * @return Whether a result was found.
    */
   public findPrevious(term: string, searchOptions?: ISearchOptions): boolean {
+    const selectionManager = this._terminal._core.selectionManager;
+    const {incremental} = searchOptions;
+    let result: ISearchResult;
+
     if (!term || term.length === 0) {
+      selectionManager.clearSelection();
       return false;
     }
+
     const isReverseSearch = true;
-    let result: ISearchResult;
     let startRow = this._terminal._core.buffer.ydisp;
     let startCol: number = this._terminal._core.buffer.lines.get(startRow).length;
 
-    if (this._terminal._core.selectionManager.selectionStart) {
-      // Start from the selection end if there is a selection
+    if (selectionManager.selectionStart) {
+      // Start from the selection start if there is a selection
       if (this._terminal.getSelection().length !== 0) {
-        startRow = this._terminal._core.selectionManager.selectionStart[1];
-        startCol = this._terminal._core.selectionManager.selectionStart[0];
+        startRow = selectionManager.selectionStart[1];
+        startCol = selectionManager.selectionStart[0];
       }
     }
 
-    // Search from ydisp + 1 to end
-    for (let y = startRow; y >= 0; y--) {
+    this._initLinesCache();
+
+    // Search from startRow to top
+    for (let y = incremental ? startRow : startRow - 1; y >= 0; y--) {
       result = this._findInLine(term, {row: y, col: startCol}, searchOptions, isReverseSearch);
       if (result) {
         break;
@@ -95,7 +120,7 @@ export class SearchHelper implements ISearchHelper {
       startCol = y > 0 ? this._terminal._core.buffer.lines.get(y - 1).length : 0;
     }
 
-    // Search from the top to the current ydisp
+    // Search from the bottom to startRow
     if (!result) {
       const searchFrom = this._terminal._core.buffer.ybase + this._terminal.rows - 1;
       for (let y = searchFrom; y > startRow; y--) {
@@ -112,14 +137,36 @@ export class SearchHelper implements ISearchHelper {
   }
 
   /**
+   * Sets up a line cache with a ttl
+   */
+  private _initLinesCache(): void {
+    if (!this._linesCache) {
+      this._linesCache = new Array(this._terminal._core.buffer.length);
+      this._terminal.on('cursormove', this._destroyLinesCache);
+    }
+
+    window.clearTimeout(this._linesCacheTimeoutId);
+    this._linesCacheTimeoutId = window.setTimeout(() => this._destroyLinesCache(), LINES_CACHE_TIME_TO_LIVE);
+  }
+
+  private _destroyLinesCache(): void {
+    this._linesCache = null;
+    this._terminal.off('cursormove', this._destroyLinesCache);
+    if (this._linesCacheTimeoutId) {
+      window.clearTimeout(this._linesCacheTimeoutId);
+      this._linesCacheTimeoutId = 0;
+    }
+  }
+
+  /**
    * A found substring is a whole word if it doesn't have an alphanumeric character directly adjacent to it.
    * @param searchIndex starting indext of the potential whole word substring
    * @param line entire string in which the potential whole word was found
    * @param term the substring that starts at searchIndex
    */
   private _isWholeWord(searchIndex: number, line: string, term: string): boolean {
-    return (((searchIndex === 0) || (nonWordCharacters.indexOf(line[searchIndex - 1]) !== -1)) &&
-        (((searchIndex + term.length) === line.length) || (nonWordCharacters.indexOf(line[searchIndex + term.length]) !== -1)));
+    return (((searchIndex === 0) || (NON_WORD_CHARACTERS.indexOf(line[searchIndex - 1]) !== -1)) &&
+        (((searchIndex + term.length) === line.length) || (NON_WORD_CHARACTERS.indexOf(line[searchIndex + term.length]) !== -1)));
   }
 
   /**
@@ -137,7 +184,14 @@ export class SearchHelper implements ISearchHelper {
       return;
     }
 
-    const stringLine = this.translateBufferLineToStringWithWrap(searchIndex.row, true);
+    let stringLine = this._linesCache ? this._linesCache[searchIndex.row] : void 0;
+    if (stringLine === void 0) {
+      stringLine = this.translateBufferLineToStringWithWrap(searchIndex.row, true);
+      if (this._linesCache) {
+        this._linesCache[searchIndex.row] = stringLine;
+      }
+    }
+
     const searchTerm = searchOptions.caseSensitive ? term : term.toLowerCase();
     const searchStringLine = searchOptions.caseSensitive ? stringLine : stringLine.toLowerCase();
 
