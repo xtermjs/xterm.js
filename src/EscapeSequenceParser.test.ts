@@ -1216,6 +1216,15 @@ describe('EscapeSequenceParser', function (): void {
         parser2.parse('\x1b[0m');
         chai.expect(order).eql([3, 2, 1]);
       });
+      it('Dispose', () => {
+        const csiCustom: [string, number[], string][] = [];
+        parser2.setCsiHandler('m', (params, collect) => csi.push(['m', params, collect]));
+        const customHandler = parser2.addCsiHandler('m', (params, collect) => { csiCustom.push(['m', params, collect]); return true; });
+        customHandler.dispose();
+        parser2.parse(INPUT);
+        chai.expect(csi).eql([['m', [1, 31], ''], ['m', [0], '']]);
+        chai.expect(csiCustom).eql([], 'Should not use custom handler as it was disposed');
+      });
     });
     it('EXECUTE handler', function (): void {
       parser2.setExecuteHandler('\n', function (): void {
@@ -1290,6 +1299,15 @@ describe('EscapeSequenceParser', function (): void {
         parser2.addOscHandler(1, () => { order.push(3); return false; });
         parser2.parse('\x1b]1;foo=bar\x1b\\');
         chai.expect(order).eql([3, 2, 1]);
+      });
+      it('Dispose', () => {
+        const oscCustom: [number, string][] = [];
+        parser2.setOscHandler(1, data => osc.push([1, data]));
+        const customHandler = parser2.addOscHandler(1, data => { oscCustom.push([1, data]); return true; });
+        customHandler.dispose();
+        parser2.parse(INPUT);
+        chai.expect(osc).eql([[1, 'foo=bar']]);
+        chai.expect(oscCustom).eql([], 'Should not use custom handler as it was disposed');
       });
     });
     it('DCS handler', function (): void {
