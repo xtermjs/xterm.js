@@ -32,11 +32,8 @@ export interface ISearchOptions {
   incremental?: boolean;
 }
 
-export interface ISearchIndex {
+export interface ISearchResult {
+  term: string;
   col: number;
   row: number;
-}
-
-export interface ISearchResult extends ISearchIndex {
-  term: string;
 }

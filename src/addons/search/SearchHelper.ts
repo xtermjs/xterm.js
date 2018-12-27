@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ISearchHelper, ISearchAddonTerminal, ISearchOptions, ISearchResult, ISearchIndex } from './Interfaces';
+import { ISearchHelper, ISearchAddonTerminal, ISearchOptions, ISearchResult } from './Interfaces';
 
 const NON_WORD_CHARACTERS = ' ~!@#$%^&*()+`-=[]{}|\;:"\',./<>?';
 const LINES_CACHE_TIME_TO_LIVE = 15 * 1000; // 15 secs
@@ -56,12 +56,12 @@ export class SearchHelper implements ISearchHelper {
     this._initLinesCache();
 
     // Search startRow
-    result = this._findInLine(term, { row: startRow, col: startCol }, searchOptions);
+    result = this._findInLine(term, startRow, startCol, searchOptions);
 
     // Search from startRow + 1 to end
     if (!result) {
       for (let y = startRow + 1; y < this._terminal._core.buffer.ybase + this._terminal.rows; y++) {
-        result = this._findInLine(term, { row: y, col: 0 }, searchOptions);
+        result = this._findInLine(term, y, 0, searchOptions);
         if (result) {
           break;
         }
@@ -72,7 +72,7 @@ export class SearchHelper implements ISearchHelper {
     // case startCol > 0)
     if (!result) {
       for (let y = 0; y <= startRow; y++) {
-        result = this._findInLine(term, {row: y, col: 0}, searchOptions);
+        result = this._findInLine(term, y, 0, searchOptions);
         if (result) {
           break;
         }
@@ -114,15 +114,12 @@ export class SearchHelper implements ISearchHelper {
     this._initLinesCache();
 
     // Search startRow
-    result = this._findInLine(term, { row: startRow, col: startCol }, searchOptions, isReverseSearch);
+    result = this._findInLine(term, startRow, startCol, searchOptions, isReverseSearch);
 
     // Search from startRow - 1 to top
     if (!result) {
       for (let y = startRow - 1; y >= 0; y--) {
-        result = this._findInLine(term, {
-          row: y,
-          col: this._terminal._core.buffer.lines.get(y).length
-        }, searchOptions, isReverseSearch);
+        result = this._findInLine(term, y, this._terminal._core.buffer.lines.get(y).length, searchOptions, isReverseSearch);
         if (result) {
           break;
         }
@@ -134,10 +131,7 @@ export class SearchHelper implements ISearchHelper {
     if (!result) {
       const searchFrom = this._terminal._core.buffer.ybase + this._terminal.rows - 1;
       for (let y = searchFrom; y >= startRow; y--) {
-        result = this._findInLine(term, {
-          row: y,
-          col: this._terminal._core.buffer.lines.get(y).length
-        }, searchOptions, isReverseSearch);
+        result = this._findInLine(term, y, this._terminal._core.buffer.lines.get(y).length, searchOptions, isReverseSearch);
         if (result) {
           break;
         }
@@ -187,20 +181,21 @@ export class SearchHelper implements ISearchHelper {
    * started on an earlier line then it is skipped since it will be properly searched when the terminal line that the
    * text starts on is searched.
    * @param term The search term.
-   * @param y The line to search.
+   * @param row The line to  start the search from.
+   * @param col The column to start the search from.
    * @param searchOptions Search options.
    * @return The search result if it was found.
    */
-  protected _findInLine(term: string, searchIndex: ISearchIndex, searchOptions: ISearchOptions = {}, isReverseSearch: boolean = false): ISearchResult {
-    if (this._terminal._core.buffer.lines.get(searchIndex.row).isWrapped) {
+  protected _findInLine(term: string, row: number, col: number, searchOptions: ISearchOptions = {}, isReverseSearch: boolean = false): ISearchResult {
+    if (this._terminal._core.buffer.lines.get(row).isWrapped) {
       return;
     }
 
-    let stringLine = this._linesCache ? this._linesCache[searchIndex.row] : void 0;
+    let stringLine = this._linesCache ? this._linesCache[row] : void 0;
     if (stringLine === void 0) {
-      stringLine = this.translateBufferLineToStringWithWrap(searchIndex.row, true);
+      stringLine = this.translateBufferLineToStringWithWrap(row, true);
       if (this._linesCache) {
-        this._linesCache[searchIndex.row] = stringLine;
+        this._linesCache[row] = stringLine;
       }
     }
 
@@ -212,37 +207,37 @@ export class SearchHelper implements ISearchHelper {
       const searchRegex = RegExp(searchTerm, 'g');
       let foundTerm: RegExpExecArray;
       if (isReverseSearch) {
-        while (foundTerm = searchRegex.exec(searchStringLine.slice(0, searchIndex.col))) {
+        while (foundTerm = searchRegex.exec(searchStringLine.slice(0, col))) {
           resultIndex = searchRegex.lastIndex - foundTerm[0].length;
           term = foundTerm[0];
           searchRegex.lastIndex -= (term.length - 1);
         }
       } else {
-        foundTerm = searchRegex.exec(searchStringLine.slice(searchIndex.col));
+        foundTerm = searchRegex.exec(searchStringLine.slice(col));
         if (foundTerm && foundTerm[0].length > 0) {
-          resultIndex = searchIndex.col + (searchRegex.lastIndex - foundTerm[0].length);
+          resultIndex = col + (searchRegex.lastIndex - foundTerm[0].length);
           term = foundTerm[0];
         }
       }
     } else {
       if (isReverseSearch) {
-        resultIndex = searchStringLine.lastIndexOf(searchTerm, searchIndex.col - searchTerm.length);
+        resultIndex = searchStringLine.lastIndexOf(searchTerm, col - searchTerm.length);
       } else {
-        resultIndex = searchStringLine.indexOf(searchTerm, searchIndex.col);
+        resultIndex = searchStringLine.indexOf(searchTerm, col);
       }
     }
 
     if (resultIndex >= 0) {
       // Adjust the row number and search index if needed since a "line" of text can span multiple rows
       if (resultIndex >= this._terminal.cols) {
-        searchIndex.row += Math.floor(resultIndex / this._terminal.cols);
+        row += Math.floor(resultIndex / this._terminal.cols);
         resultIndex = resultIndex % this._terminal.cols;
       }
       if (searchOptions.wholeWord && !this._isWholeWord(resultIndex, searchStringLine, term)) {
         return;
       }
 
-      const line = this._terminal._core.buffer.lines.get(searchIndex.row);
+      const line = this._terminal._core.buffer.lines.get(row);
 
       for (let i = 0; i < resultIndex; i++) {
         const charData = line.get(i);
@@ -261,7 +256,7 @@ export class SearchHelper implements ISearchHelper {
       return {
         term,
         col: resultIndex,
-        row: searchIndex.row
+        row
       };
     }
   }

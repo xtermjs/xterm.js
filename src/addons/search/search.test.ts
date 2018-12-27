@@ -7,7 +7,7 @@ declare var require: any;
 import { assert, expect } from 'chai';
 import * as search from './search';
 import { SearchHelper } from './SearchHelper';
-import { ISearchOptions, ISearchResult, ISearchIndex } from './Interfaces';
+import { ISearchOptions, ISearchResult } from './Interfaces';
 
 class MockTerminalPlain {}
 
@@ -30,10 +30,10 @@ class MockTerminal {
 
 class TestSearchHelper extends SearchHelper {
   public findInLine(term: string, rowNumber: number, searchOptions?: ISearchOptions): ISearchResult {
-    return this._findInLine(term, {row: rowNumber, col: 0}, searchOptions);
+    return this._findInLine(term, rowNumber, 0, searchOptions);
   }
-  public findFromIndex(term: string, searchIndex: ISearchIndex, searchOptions?: ISearchOptions, isReverseSearch?: boolean): ISearchResult {
-    return this._findInLine(term, searchIndex, searchOptions, isReverseSearch);
+  public findFromIndex(term: string, row: number, col: number, searchOptions?: ISearchOptions, isReverseSearch?: boolean): ISearchResult {
+    return this._findInLine(term, row, col, searchOptions, isReverseSearch);
   }
 }
 
@@ -258,11 +258,11 @@ describe('search addon', () => {
         wholeWord: false,
         caseSensitive: false
       };
-      const find0 = term.searchHelper.findFromIndex('hello', {row: 0, col: 0}, searchOptions);
-      const find1 = term.searchHelper.findFromIndex('hello', {row: 0, col: find0.col + find0.term.length}, searchOptions);
-      const find2 = term.searchHelper.findFromIndex('aaaa', {row: 1, col: 0}, searchOptions);
-      const find3 = term.searchHelper.findFromIndex('aaaa', {row: 1, col: find2.col + find2.term.length}, searchOptions);
-      const find4 = term.searchHelper.findFromIndex('aaaa', {row: 1, col: find3.col + find3.term.length}, searchOptions);
+      const find0 = term.searchHelper.findFromIndex('hello', 0, 0, searchOptions);
+      const find1 = term.searchHelper.findFromIndex('hello', 0, find0.col + find0.term.length, searchOptions);
+      const find2 = term.searchHelper.findFromIndex('aaaa', 1, 0, searchOptions);
+      const find3 = term.searchHelper.findFromIndex('aaaa', 1, find2.col + find2.term.length, searchOptions);
+      const find4 = term.searchHelper.findFromIndex('aaaa', 1, find3.col + find3.term.length, searchOptions);
       expect(find0).eql({col: 0, row: 0, term: 'hello'});
       expect(find1).eql({col: 9, row: 0, term: 'hello'});
       expect(find2).eql({col: 0, row: 1, term: 'aaaa'});
@@ -280,10 +280,10 @@ describe('search addon', () => {
         caseSensitive: false
       };
       const isReverseSearch = true;
-      const find0 = term.searchHelper.findFromIndex('is', {row: 0, col: 16}, searchOptions, isReverseSearch);
-      const find1 = term.searchHelper.findFromIndex('is', {row: 0, col: find0.col}, searchOptions, isReverseSearch);
-      const find2 = term.searchHelper.findFromIndex('it', {row: 0, col: 16}, searchOptions, isReverseSearch);
-      const find3 = term.searchHelper.findFromIndex('it', {row: 0, col: find2.col}, searchOptions, isReverseSearch);
+      const find0 = term.searchHelper.findFromIndex('is', 0, 16, searchOptions, isReverseSearch);
+      const find1 = term.searchHelper.findFromIndex('is', 0, find0.col, searchOptions, isReverseSearch);
+      const find2 = term.searchHelper.findFromIndex('it', 0, 16, searchOptions, isReverseSearch);
+      const find3 = term.searchHelper.findFromIndex('it', 0, find2.col, searchOptions, isReverseSearch);
       expect(find0).eql({col: 14, row: 0, term: 'is'});
       expect(find1).eql({col: 3, row: 0, term: 'is'});
       expect(find2).eql({col: 11, row: 0, term: 'it'});
@@ -300,10 +300,10 @@ describe('search addon', () => {
         caseSensitive: true
       };
       const isReverseSearch = true;
-      const find0 = term.searchHelper.findFromIndex('[A-Z]{3}', {row: 0, col: 16}, searchOptions, isReverseSearch);
-      const find1 = term.searchHelper.findFromIndex('[A-Z]{3}', {row: 0, col: find0.col}, searchOptions, isReverseSearch);
-      const find2 = term.searchHelper.findFromIndex('[A-Z]{3}', {row: 0, col: find1.col}, searchOptions, isReverseSearch);
-      const find3 = term.searchHelper.findFromIndex('[A-Z]{3}', {row: 0, col: find2.col}, searchOptions, isReverseSearch);
+      const find0 = term.searchHelper.findFromIndex('[A-Z]{3}', 0, 16, searchOptions, isReverseSearch);
+      const find1 = term.searchHelper.findFromIndex('[A-Z]{3}', 0, find0.col, searchOptions, isReverseSearch);
+      const find2 = term.searchHelper.findFromIndex('[A-Z]{3}', 0, find1.col, searchOptions, isReverseSearch);
+      const find3 = term.searchHelper.findFromIndex('[A-Z]{3}', 0, find2.col, searchOptions, isReverseSearch);
       expect(find0).eql({col: 13, row: 0, term: 'ABC'});
       expect(find1).eql({col: 10, row: 0, term: 'ABC'});
       expect(find2).eql({col: 3, row: 0, term: 'ABC'});
