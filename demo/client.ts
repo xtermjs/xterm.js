@@ -113,9 +113,9 @@ function createTerminal(): void {
   });
 
   addDomListener(actionElements.findPrevious, 'keyup', (e) => {
-    const searchOptions = getSearchOptions();
-    searchOptions.incremental = e.key !== `Enter`;
-    term.findPrevious(actionElements.findPrevious.value, searchOptions);
+    if (e.key === `Enter`) {
+      term.findPrevious(actionElements.findPrevious.value, getSearchOptions());
+    }
   });
 
   // fit is called within a setTimeout, cols and rows need this.
