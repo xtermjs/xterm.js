@@ -316,9 +316,15 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     if (this._csiHandlers[index] === undefined) {
       this._csiHandlers[index] = [];
     }
-    this._csiHandlers[index].push(callback);
+    const handlerList = this._csiHandlers[index];
+    handlerList.push(callback);
     return {
-      dispose: () => this._csiHandlers[index].splice(this._csiHandlers[index].indexOf(callback))
+      dispose: () => {
+        const handlerIndex = handlerList.indexOf(callback);
+        if (handlerIndex !== -1) {
+          handlerList.splice(handlerIndex);
+        }
+      }
     };
   }
   setCsiHandler(flag: string, callback: (params: number[], collect: string) => void): void {
@@ -345,9 +351,15 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     if (this._oscHandlers[ident] === undefined) {
       this._oscHandlers[ident] = [];
     }
-    this._oscHandlers[ident].push(callback);
+    const handlerList =  this._oscHandlers[ident];
+    handlerList.push(callback);
     return {
-      dispose: () => this._oscHandlers[ident].splice(this._oscHandlers[ident].indexOf(callback))
+      dispose: () => {
+        const handlerIndex = handlerList.indexOf(callback);
+        if (handlerIndex !== -1) {
+          handlerList.splice(handlerIndex);
+        }
+      }
     };
   }
   setOscHandler(ident: number, callback: (data: string) => void): void {
