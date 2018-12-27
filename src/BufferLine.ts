@@ -118,13 +118,12 @@ export class BufferLineJSArray implements IBufferLine {
     return 0;
   }
 
-  public translateToString(trimRight: boolean = false, startCol: number = 0, endCol: number = null): string {
-    let length = endCol || this.length;
+  public translateToString(trimRight: boolean = false, startCol: number = 0, endCol: number = this.length): string {
     if (trimRight) {
-      length = Math.min(length, this.getTrimmedLength());
+      endCol = Math.min(endCol, this.getTrimmedLength());
     }
     let result = '';
-    while (startCol < length) {
+    while (startCol < endCol) {
       result += this.get(startCol)[CHAR_DATA_CHAR_INDEX] || WHITESPACE_CELL_CHAR;
       startCol += this.get(startCol)[CHAR_DATA_WIDTH_INDEX] || 1;
     }
@@ -305,13 +304,12 @@ export class BufferLine implements IBufferLine {
     return 0;
   }
 
-  public translateToString(trimRight: boolean = false, startCol: number = 0, endCol: number = null): string {
-    let length = endCol || this.length;
+  public translateToString(trimRight: boolean = false, startCol: number = 0, endCol: number = this.length): string {
     if (trimRight) {
-      length = Math.min(length, this.getTrimmedLength());
+      endCol = Math.min(endCol, this.getTrimmedLength());
     }
     let result = '';
-    while (startCol < length) {
+    while (startCol < endCol) {
       const stringData = this._data[startCol * CELL_SIZE + Cell.STRING];
       result += (stringData & IS_COMBINED_BIT_MASK) ? this._combined[startCol] : (stringData) ? String.fromCharCode(stringData) : WHITESPACE_CELL_CHAR;
       startCol += this._data[startCol * CELL_SIZE + Cell.WIDTH] || 1;

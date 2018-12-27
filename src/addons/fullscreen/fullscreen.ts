@@ -22,6 +22,7 @@ export function toggleFullScreen(term: Terminal, fullscreen: boolean): void {
     fn = term.element.classList.add;
   }
 
+  fn = fn.bind(term.element.classList);
   fn('fullscreen');
 }
 

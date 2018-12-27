@@ -275,7 +275,7 @@ export class Buffer implements IBuffer {
    * @param startCol The column to start at.
    * @param endCol The column to end at.
    */
-  public translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol: number = 0, endCol: number = null): string {
+  public translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol: number = 0, endCol?: number): string {
     const line = this.lines.get(lineIndex);
     if (!line) {
       return '';
