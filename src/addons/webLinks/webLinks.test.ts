@@ -63,4 +63,28 @@ describe('webLinks addon', () => {
 
     assert.equal(uri, 'http://foo.com/colon:test');
   });
+
+  it('should not allow " character at the end of a URI enclosed with ""', () => {
+    const term = new MockTerminal();
+    webLinks.webLinksInit(<any>term);
+
+    const row = '"http://foo.com/"';
+
+    const match = row.match(term.regex);
+    const uri = match[term.options.matchIndex];
+
+    assert.equal(uri, 'http://foo.com/');
+  });
+
+  it('should not allow \' character at the end of a URI enclosed with \'\'', () => {
+    const term = new MockTerminal();
+    webLinks.webLinksInit(<any>term);
+
+    const row = '\'http://foo.com/\'';
+
+    const match = row.match(term.regex);
+    const uri = match[term.options.matchIndex];
+
+    assert.equal(uri, 'http://foo.com/');
+  });
 });

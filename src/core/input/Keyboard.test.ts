@@ -281,5 +281,16 @@ describe('Keyboard', () => {
       assert.equal(testEvaluateKeyboardEvent({ keyCode: 0, key: 'UIKeyInputDownArrow' }).key, '\x1b[B');
       assert.equal(testEvaluateKeyboardEvent({ keyCode: 0, key: 'UIKeyInputDownArrow' }, { applicationCursorMode: true }).key, '\x1bOB');
     });
+
+    it('should handle lowercase letters', () => {
+      assert.equal(testEvaluateKeyboardEvent({ keyCode: 65, key: 'a' }).key, 'a');
+      assert.equal(testEvaluateKeyboardEvent({ keyCode: 189, key: '-' }).key, '-');
+    });
+
+    it('should handle uppercase letters', () => {
+      assert.equal(testEvaluateKeyboardEvent({ shiftKey: true, keyCode: 65, key: 'A' }).key, 'A');
+      assert.equal(testEvaluateKeyboardEvent({ shiftKey: true, keyCode: 49, key: '!' }).key, '!');
+    });
+
   });
 });

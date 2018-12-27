@@ -2,23 +2,20 @@
 
 [![Build Status](https://dev.azure.com/xtermjs/xterm.js/_apis/build/status/xtermjs.xterm.js)](https://dev.azure.com/xtermjs/xterm.js/_build/latest?definitionId=3)
 [![Coverage Status](https://coveralls.io/repos/github/xtermjs/xterm.js/badge.svg?branch=master)](https://coveralls.io/github/xtermjs/xterm.js?branch=master)
-[![Gitter](https://badges.gitter.im/sourcelair/xterm.js.svg)](https://gitter.im/sourcelair/xterm.js?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
-[![jsDelivr Hits](https://data.jsdelivr.com/v1/package/npm/xterm/badge?style=rounded)](https://www.jsdelivr.com/package/npm/xterm)
 
-Xterm.js is a terminal front-end component written in JavaScript that works in the browser.
-
-It enables applications to provide fully featured terminals to their users and create great development experiences.
+Xterm.js is a front-end component written in TypeScript that lets applications bring fully-featured terminals to their users in the browser. It's used by popular projects such as VS Code, Hyper and Theia.
 
 ## Features
-- **Text-based application support**: Use xterm.js to work with applications like `bash`, `git` etc.
-- **Curses-based application support**: Use xterm.js to work with applications like `vim`, `tmux` etc.
-- **Mouse events support**: Xterm.js captures mouse events like click and scroll and passes them to the terminal's back-end controlling process
-- **CJK (Chinese, Japanese, Korean) character support**: Xterm.js renders CJK characters seamlessly
-- **IME support**: Insert international (including CJK) characters using IME input with your keyboard
-- **Self-contained library**: Xterm.js works on its own. It does not require any external libraries like jQuery or React to work
-- **Modular, event-based API**: Lets you build addons and themes with ease
+
+- **Terminal apps just work**: Xterm.js works with most terminal apps such as `bash`, `vim` and `tmux`, this includes support for curses-based apps and mouse event support
+- **Perfomant**: Xterm.js is *really* fast, it even includes a GPU-accelerated renderer
+- **Rich unicode support**: Supports CJK, emojis and IMEs
+- **Self-contained**: Requires zero dependencies to work
+- **Accessible**: Screen reader support can be turned on using the `screenReaderMode` option
+- **And much more**: Links, theming, addons, well documented API, etc.
 
 ## What xterm.js is not
+
 - Xterm.js is not a terminal application that you can download and use on your computer
 - Xterm.js is not `bash`. Xterm.js can be connected to processes like `bash` and let you interact with them (provide input, receive output)
 
@@ -30,7 +27,7 @@ First you need to install the module, we ship exclusively through [npm](https://
 npm install xterm
 ```
 
-To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to the head of your html page. Then create a `<div id="terminal"></div>` onto which xterm can attach itself.
+To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to the head of your html page. Then create a `<div id="terminal"></div>` onto which xterm can attach itself. Finally instantiate the `Terminal` object and then call the `open` function with the DOM object of the `div`.
 
 ```html
 <!doctype html>
@@ -50,32 +47,23 @@ To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to t
   </html>
 ```
 
-Finally instantiate the `Terminal` object and then call the `open` function with the DOM object of the `div`.
-
 ### Importing
 
-The proposed way to load xterm.js is via the ES6 module syntax.
+The recommended way to load xterm.js is via the ES6 module syntax:
 
 ```javascript
 import { Terminal } from 'xterm';
 ```
 
-### API
-
-The full API for xterm.js is contained within the [TypeScript declaration file](https://github.com/xtermjs/xterm.js/blob/master/typings/xterm.d.ts), use the branch/tag picker in GitHub (`w`) to navigate to the correct version of the API.
-
-Note that some APIs are marked *experimental*, these are added so we can experiment with new ideas without committing to support it like a normal semver API. Note that these APIs can change radically between versions so be sure to read release notes if you plan on using experimental APIs.
-
 ### Addons
 
-Addons are JavaScript modules that extend the `Terminal` prototype with new methods and attributes to provide additional functionality. There are a handful available in the main repository in the `src/addons` directory and you can even write your own, by using xterm.js' public API.
+Addons are JavaScript modules that extend the `Terminal` prototype with new methods and attributes to provide additional functionality. There are a handful available in the main repository in the `src/addons` directory and you can even write your own by using the [public API](https://github.com/xtermjs/xterm.js/blob/master/typings/xterm.d.ts).
 
 To use an addon, just import the JavaScript module and pass it to `Terminal`'s `applyAddon` method:
 
 ```javascript
-import { Terminal } from xterm;
+import { Terminal } from 'xterm';
 import * as fit from 'xterm/lib/addons/fit/fit';
-
 
 Terminal.applyAddon(fit);
 
@@ -87,24 +75,15 @@ You will also need to include the addon's CSS file if it has one in the folder.
 
 #### Importing Addons in TypeScript
 
-There are currently no typings for addons if they are accessed via extending Terminal prototype, so you will need to upcast if using TypeScript, eg. `(<any>xterm).fit()`.
-
-Alternatively, you can import addon function and enhance the terminal on demand. This would have better typing support and is friendly to treeshaking. E.g.:
+There are currently no typings for addons if they are accessed via extending Terminal prototype, so you will need to upcast if using TypeScript, eg. `(xterm as any).fit()`. Alternatively, you can import the addon function and enhance the terminal on demand. This has better typing support and is friendly to treeshaking.
 
 ```typescript
 import { Terminal } from 'xterm';
 import { fit } from 'xterm/lib/addons/fit/fit';
 const xterm = new Terminal();
 
-// Fit the terminal when necessary:
-fit(xterm);
+fit(xterm);  // Fit the terminal when necessary
 ```
-
-#### Third party addons
-
-There are also the following third party addons available:
-
-- [xterm-webfont](https://www.npmjs.com/package/xterm-webfont)
 
 ## Browser Support
 
@@ -116,11 +95,13 @@ Since xterm.js is typically implemented as a developer tool, only modern browser
 - Safari latest
 - IE11
 
-Xterm.js works seamlessly in Electron apps and may even work on earlier versions of the browsers but these are the browsers we strive to keep working.
+Xterm.js works seamlessly in [Electron](https://electronjs.org/) apps and may even work on earlier versions of the browsers, these are the versions we strive to keep working.
 
 ## API
 
-The current full API documentation is available in the [TypeScript declaration file on the repository](https://github.com/xtermjs/xterm.js/blob/master/typings/xterm.d.ts), switch the tag (press `w` when viewing the file) to point at the specific version tag you're using.
+The full API for xterm.js is contained within the [TypeScript declaration file](https://github.com/xtermjs/xterm.js/blob/master/typings/xterm.d.ts), use the branch/tag picker in GitHub (`w`) to navigate to the correct version of the API.
+
+Note that some APIs are marked *experimental*, these are added to enable experimentation with new ideas without committing to support it like a normal [semver](https://semver.org/) API. Note that these APIs can change radically between versions so be sure to read release notes if you plan on using experimental APIs.
 
 ## Real-world uses
 Xterm.js is used in several world-class applications to provide great terminal experiences.
@@ -182,7 +163,7 @@ Do you use xterm.js in your application as well? Please [open a Pull Request](ht
 
 Xterm.js follows a monthly release cycle roughly.
 
-The existing releases are available at this GitHub repo's [Releases](https://github.com/sourcelair/xterm.js/releases), while the roadmap is available as [Milestones](https://github.com/sourcelair/xterm.js/milestones).
+All current and past releases are available on this repo's [Releases page](https://github.com/sourcelair/xterm.js/releases), while a rough roadmap is available by looking through [Milestones](https://github.com/sourcelair/xterm.js/milestones).
 
 ## Contributing
 
