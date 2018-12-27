@@ -25,6 +25,11 @@ export interface ISearchOptions {
   regex?: boolean;
   wholeWord?: boolean;
   caseSensitive?: boolean;
+  /**
+   * Use this when you want the selection to expand if it still matches as the
+   * user types. Note that this only affects findNext.
+   */
+  incremental?: boolean;
 }
 
 export interface ISearchResult {

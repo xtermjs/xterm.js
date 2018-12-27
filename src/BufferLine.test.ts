@@ -325,5 +325,10 @@ describe('BufferLine', function(): void {
       chai.expect(line.translateToString(false)).equal('          ');
       chai.expect(line.translateToString(true)).equal('');
     });
+    it('should work with endCol=0', () => {
+      const line = new TestBufferLine(10, [DEFAULT_ATTR, NULL_CELL_CHAR, 0, NULL_CELL_CODE], false);
+      line.set(0, [1, 'a', 1, 'a'.charCodeAt(0)]);
+      chai.expect(line.translateToString(true, 0, 0)).equal('');
+    });
   });
 });
