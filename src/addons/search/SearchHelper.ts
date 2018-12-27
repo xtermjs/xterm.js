@@ -207,6 +207,7 @@ export class SearchHelper implements ISearchHelper {
       const searchRegex = RegExp(searchTerm, 'g');
       let foundTerm: RegExpExecArray;
       if (isReverseSearch) {
+        // This loop will get the resultIndex of the _last_ regex match in the range 0..col
         while (foundTerm = searchRegex.exec(searchStringLine.slice(0, col))) {
           resultIndex = searchRegex.lastIndex - foundTerm[0].length;
           term = foundTerm[0];
