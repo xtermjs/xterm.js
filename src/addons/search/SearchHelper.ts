@@ -41,6 +41,7 @@ export class SearchHelper implements ISearchHelper {
       return false;
     }
 
+    let startCol: number = 0;
     let startRow = this._terminal._core.buffer.ydisp;
 
     if (selectionManager.selectionEnd) {
@@ -48,23 +49,30 @@ export class SearchHelper implements ISearchHelper {
       // For incremental search, use existing row
       if (this._terminal.getSelection().length !== 0) {
         startRow = incremental ? selectionManager.selectionStart[1] : selectionManager.selectionEnd[1];
+        startCol = incremental ? selectionManager.selectionStart[0] : selectionManager.selectionEnd[0];
       }
     }
 
     this._initLinesCache();
 
-    // Search from startRow to end
-    for (let y = incremental ? startRow : startRow + 1; y < this._terminal._core.buffer.ybase + this._terminal.rows; y++) {
-      result = this._findInLine(term, y, searchOptions);
-      if (result) {
-        break;
+    // Search startRow
+    result = this._findInLine(term, startRow, startCol, searchOptions);
+
+    // Search from startRow + 1 to end
+    if (!result) {
+      for (let y = startRow + 1; y < this._terminal._core.buffer.ybase + this._terminal.rows; y++) {
+        result = this._findInLine(term, y, 0, searchOptions);
+        if (result) {
+          break;
+        }
       }
     }
 
-    // Search from the top to the startRow
+    // Search from the top to the startRow (search the whole startRow again in
+    // case startCol > 0)
     if (!result) {
-      for (let y = 0; y < startRow; y++) {
-        result = this._findInLine(term, y, searchOptions);
+      for (let y = 0; y <= startRow; y++) {
+        result = this._findInLine(term, y, 0, searchOptions);
         if (result) {
           break;
         }
@@ -84,7 +92,6 @@ export class SearchHelper implements ISearchHelper {
    */
   public findPrevious(term: string, searchOptions?: ISearchOptions): boolean {
     const selectionManager = this._terminal._core.selectionManager;
-    const {incremental} = searchOptions;
     let result: ISearchResult;
 
     if (!term || term.length === 0) {
@@ -92,29 +99,39 @@ export class SearchHelper implements ISearchHelper {
       return false;
     }
 
+    const isReverseSearch = true;
     let startRow = this._terminal._core.buffer.ydisp;
+    let startCol: number = this._terminal._core.buffer.lines.get(startRow).length;
 
     if (selectionManager.selectionStart) {
       // Start from the selection start if there is a selection
       if (this._terminal.getSelection().length !== 0) {
         startRow = selectionManager.selectionStart[1];
+        startCol = selectionManager.selectionStart[0];
       }
     }
 
     this._initLinesCache();
 
-    // Search from startRow to top
-    for (let y = incremental ? startRow : startRow - 1; y >= 0; y--) {
-      result = this._findInLine(term, y, searchOptions);
-      if (result) {
-        break;
+    // Search startRow
+    result = this._findInLine(term, startRow, startCol, searchOptions, isReverseSearch);
+
+    // Search from startRow - 1 to top
+    if (!result) {
+      for (let y = startRow - 1; y >= 0; y--) {
+        result = this._findInLine(term, y, this._terminal._core.buffer.lines.get(y).length, searchOptions, isReverseSearch);
+        if (result) {
+          break;
+        }
       }
     }
 
-    // Search from the bottom to startRow
+    // Search from the bottom to startRow (search the whole startRow again in
+    // case startCol > 0)
     if (!result) {
-      for (let y = this._terminal._core.buffer.ybase + this._terminal.rows - 1; y > startRow; y--) {
-        result = this._findInLine(term, y, searchOptions);
+      const searchFrom = this._terminal._core.buffer.ybase + this._terminal.rows - 1;
+      for (let y = searchFrom; y >= startRow; y--) {
+        result = this._findInLine(term, y, this._terminal._core.buffer.lines.get(y).length, searchOptions, isReverseSearch);
         if (result) {
           break;
         }
@@ -164,72 +181,86 @@ export class SearchHelper implements ISearchHelper {
    * started on an earlier line then it is skipped since it will be properly searched when the terminal line that the
    * text starts on is searched.
    * @param term The search term.
-   * @param y The line to search.
+   * @param row The line to  start the search from.
+   * @param col The column to start the search from.
    * @param searchOptions Search options.
    * @return The search result if it was found.
    */
-  protected _findInLine(term: string, y: number, searchOptions: ISearchOptions = {}): ISearchResult {
-    if (this._terminal._core.buffer.lines.get(y).isWrapped) {
+  protected _findInLine(term: string, row: number, col: number, searchOptions: ISearchOptions = {}, isReverseSearch: boolean = false): ISearchResult {
+    if (this._terminal._core.buffer.lines.get(row).isWrapped) {
       return;
     }
 
-    let stringLine = this._linesCache ? this._linesCache[y] : void 0;
+    let stringLine = this._linesCache ? this._linesCache[row] : void 0;
     if (stringLine === void 0) {
-      stringLine = this.translateBufferLineToStringWithWrap(y, true);
+      stringLine = this.translateBufferLineToStringWithWrap(row, true);
       if (this._linesCache) {
-        this._linesCache[y] = stringLine;
+        this._linesCache[row] = stringLine;
       }
     }
 
-    const searchStringLine = searchOptions.caseSensitive ? stringLine : stringLine.toLowerCase();
     const searchTerm = searchOptions.caseSensitive ? term : term.toLowerCase();
-    let searchIndex = -1;
+    const searchStringLine = searchOptions.caseSensitive ? stringLine : stringLine.toLowerCase();
 
+    let resultIndex = -1;
     if (searchOptions.regex) {
       const searchRegex = RegExp(searchTerm, 'g');
-      const foundTerm = searchRegex.exec(searchStringLine);
-      if (foundTerm && foundTerm[0].length > 0) {
-        searchIndex = searchRegex.lastIndex - foundTerm[0].length;
-        term = foundTerm[0];
+      let foundTerm: RegExpExecArray;
+      if (isReverseSearch) {
+        // This loop will get the resultIndex of the _last_ regex match in the range 0..col
+        while (foundTerm = searchRegex.exec(searchStringLine.slice(0, col))) {
+          resultIndex = searchRegex.lastIndex - foundTerm[0].length;
+          term = foundTerm[0];
+          searchRegex.lastIndex -= (term.length - 1);
+        }
+      } else {
+        foundTerm = searchRegex.exec(searchStringLine.slice(col));
+        if (foundTerm && foundTerm[0].length > 0) {
+          resultIndex = col + (searchRegex.lastIndex - foundTerm[0].length);
+          term = foundTerm[0];
+        }
       }
     } else {
-      searchIndex = searchStringLine.indexOf(searchTerm);
+      if (isReverseSearch) {
+        resultIndex = searchStringLine.lastIndexOf(searchTerm, col - searchTerm.length);
+      } else {
+        resultIndex = searchStringLine.indexOf(searchTerm, col);
+      }
     }
 
-    if (searchIndex >= 0) {
+    if (resultIndex >= 0) {
       // Adjust the row number and search index if needed since a "line" of text can span multiple rows
-      if (searchIndex >= this._terminal.cols) {
-        y += Math.floor(searchIndex / this._terminal.cols);
-        searchIndex = searchIndex % this._terminal.cols;
+      if (resultIndex >= this._terminal.cols) {
+        row += Math.floor(resultIndex / this._terminal.cols);
+        resultIndex = resultIndex % this._terminal.cols;
       }
-      if (searchOptions.wholeWord && !this._isWholeWord(searchIndex, searchStringLine, term)) {
+      if (searchOptions.wholeWord && !this._isWholeWord(resultIndex, searchStringLine, term)) {
         return;
       }
 
-      const line = this._terminal._core.buffer.lines.get(y);
+      const line = this._terminal._core.buffer.lines.get(row);
 
-      for (let i = 0; i < searchIndex; i++) {
+      for (let i = 0; i < resultIndex; i++) {
         const charData = line.get(i);
         // Adjust the searchIndex to normalize emoji into single chars
         const char = charData[1/*CHAR_DATA_CHAR_INDEX*/];
         if (char.length > 1) {
-          searchIndex -= char.length - 1;
+          resultIndex -= char.length - 1;
         }
         // Adjust the searchIndex for empty characters following wide unicode
         // chars (eg. CJK)
         const charWidth = charData[2/*CHAR_DATA_WIDTH_INDEX*/];
         if (charWidth === 0) {
-          searchIndex++;
+          resultIndex++;
         }
       }
       return {
         term,
-        col: searchIndex,
-        row: y
+        col: resultIndex,
+        row
       };
     }
   }
-
   /**
    * Translates a buffer line to a string, including subsequent lines if they are wraps.
    * Wide characters will count as two columns in the resulting string. This
