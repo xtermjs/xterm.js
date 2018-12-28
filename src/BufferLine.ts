@@ -228,8 +228,8 @@ export class BufferLine implements IBufferLine {
     }
   }
 
-  public resize(cols: number, fillCharData: CharData, shrink: boolean = false): void {
-    if (cols === this.length || (!shrink && cols < this.length)) {
+  public resize(cols: number, fillCharData: CharData): void {
+    if (cols === this.length) {
       return;
     }
     if (cols > this.length) {
@@ -245,7 +245,7 @@ export class BufferLine implements IBufferLine {
       for (let i = this.length; i < cols; ++i) {
         this.set(i, fillCharData);
       }
-    } else if (shrink) {
+    } else {
       if (cols) {
         const data = new Uint32Array(cols * CELL_SIZE);
         data.set(this._data.subarray(0, cols * CELL_SIZE));

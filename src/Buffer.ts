@@ -292,21 +292,12 @@ export class Buffer implements IBuffer {
     }
 
     // Clear out remaining cells or fragments could remain
-    // TODO: @jerch can this be a const?
+    // TODO: @jerch can fillCharData be a const?
     const fillCharData: CharData = [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
     wrappedLines[destLineIndex].replaceCells(destCol, newCols, fillCharData);
 
-    // Work backwards and remove any rows at the end that only contain null cells
-    let countToRemove = 0;
-    for (let i = wrappedLines.length - 1; i > 0; i--) {
-      if (wrappedLines[i].getTrimmedLength() === 0) {
-        countToRemove++;
-      } else {
-        break;
-      }
-    }
-
     // Remove rows and adjust cursor
+    const countToRemove = wrappedLines.length - destLineIndex - 1;
     if (countToRemove > 0) {
       this.lines.splice(y + wrappedLines.length - countToRemove, countToRemove);
       let removing = countToRemove;
