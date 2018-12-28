@@ -133,11 +133,6 @@ export default class WebglCharAtlas extends BaseCharAtlas {
    * Gets the glyphs texture coords, drawing the texture if it's not already
    */
   public getRasterizedGlyph(code: number, attr: number, bg: number, fg: number, enableBold: boolean): IRasterizedGlyph {
-    // Space is always an empty cell, special case this as it's so common
-    if (code === 32) {
-      return;
-    }
-
     let rasterizedGlyphSet = this._cacheMap[code];
     if (!rasterizedGlyphSet) {
       rasterizedGlyphSet = {};

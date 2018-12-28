@@ -6,7 +6,7 @@
 import { createProgram, PROJECTION_MATRIX } from './WebglUtils';
 import { IRenderDimensions } from '../Types';
 import { ITerminal, IBufferLine } from '../../Types';
-import { NULL_CELL_CODE, CHAR_DATA_CHAR_INDEX } from '../../Buffer';
+import { NULL_CELL_CODE, CHAR_DATA_CHAR_INDEX, WHITESPACE_CELL_CODE } from '../../Buffer';
 import WebglCharAtlas from './WebglCharAtlas';
 import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel, IRasterizedGlyph } from './Types';
 import { INDICIES_PER_CELL } from './WebglRenderer';
@@ -174,7 +174,7 @@ export class GlyphRenderer {
     const i = (y * terminal.cols + x) * INDICES_PER_CELL;
 
     // Exit early if this is a null/space character
-    if (code === NULL_CELL_CODE || code === undefined/* This is used for the right side of wide chars */) {
+    if (code === NULL_CELL_CODE || code === WHITESPACE_CELL_CODE || code === undefined/* This is used for the right side of wide chars */) {
       fill(array, 0, i, i + INDICES_PER_CELL - 1 - CELL_POSITION_INDICES);
       return;
     }
@@ -232,7 +232,7 @@ export class GlyphRenderer {
 
       // Draw middle rows
       const middleRowsCount = Math.max(model.selection.viewportCappedEndRow - model.selection.viewportCappedStartRow - 1, 0);
-      for (let y = (model.selection.viewportCappedStartRow + 1); y <= model.selection.viewportCappedStartRow + middleRowsCount; y++) {
+      for (let y = model.selection.viewportCappedStartRow + 1; y <= model.selection.viewportCappedStartRow + middleRowsCount; y++) {
         this._updateSelectionRange(0, startRowEndCol, y, model, bg, fg);
       }
 
