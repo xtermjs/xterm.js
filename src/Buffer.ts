@@ -356,8 +356,6 @@ export class Buffer implements IBuffer {
     const linesNeeded = Math.ceil(cellsNeeded / newCols);
     const linesToAdd = linesNeeded - wrappedLines.length;
     const trimmedLines = Math.max(0, this.lines.length - this.lines.maxLength + linesToAdd);
-    console.log('linesToAdd', linesToAdd);
-    console.log('trimmedLines', trimmedLines);
 
     // Add the new lines
     const newLines: BufferLine[] = [];
@@ -393,7 +391,7 @@ export class Buffer implements IBuffer {
     }
 
     // Adjust viewport as needed
-    let viewportAdjustments = linesToAdd;
+    let viewportAdjustments = linesToAdd - trimmedLines;
     while (viewportAdjustments-- > 0) {
       if (this.ybase === 0) {
         if (this.y < this._terminal.rows - 1) {
@@ -411,9 +409,6 @@ export class Buffer implements IBuffer {
         }
       }
     }
-
-    // TODO: Adjust viewport if needed (remove rows on end if ybase === 0? etc.
-    // TODO: Handle list trimming
 
     return wrappedLines.length - 1 - linesToAdd + trimmedLines;
   }
