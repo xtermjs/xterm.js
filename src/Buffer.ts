@@ -234,7 +234,7 @@ export class Buffer implements IBuffer {
 
     this.scrollBottom = newRows - 1;
 
-    if (this._terminal.options.experimentalBufferLineImpl === 'TypedArray') {
+    if (this.hasScrollback && this._terminal.options.experimentalBufferLineImpl === 'TypedArray') {
       this._reflow(newCols);
 
       // Trim the end of the line off if cols shrunk
