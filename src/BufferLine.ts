@@ -304,12 +304,19 @@ export class BufferLine implements IBufferLine {
     return 0;
   }
 
-  public copyCellsFrom(src: BufferLine, srcCol: number, destCol: number, length: number): void {
-    console.log('  copyCellsFrom', srcCol, destCol, length);
+  public copyCellsFrom(src: BufferLine, srcCol: number, destCol: number, length: number, applyInReverse: boolean): void {
     const srcData = src._data;
-    for (let cell = 0; cell < length; cell++) {
-      for (let i = 0; i < CELL_SIZE; i++) {
-        this._data[(destCol + cell) * CELL_SIZE + i] = srcData[(srcCol + cell) * CELL_SIZE + i];
+    if (applyInReverse) {
+      for (let cell = length - 1; cell >= 0; cell--) {
+        for (let i = 0; i < CELL_SIZE; i++) {
+          this._data[(destCol + cell) * CELL_SIZE + i] = srcData[(srcCol + cell) * CELL_SIZE + i];
+        }
+      }
+    } else {
+      for (let cell = 0; cell < length; cell++) {
+        for (let i = 0; i < CELL_SIZE; i++) {
+          this._data[(destCol + cell) * CELL_SIZE + i] = srcData[(srcCol + cell) * CELL_SIZE + i];
+        }
       }
     }
   }

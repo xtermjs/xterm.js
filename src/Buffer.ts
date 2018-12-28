@@ -235,81 +235,185 @@ export class Buffer implements IBuffer {
     this.scrollBottom = newRows - 1;
 
     if (this._terminal.options.experimentalBufferLineImpl === 'TypedArray') {
-      this._reflow(newCols, newRows);
+      this._reflow(newCols);
     }
   }
 
-  private _reflow(newCols: number, newRows: number): void {
+  private _reflow(newCols: number): void {
     if (this._terminal.cols === newCols) {
       return;
     }
 
     // Iterate through rows, ignore the last one as it cannot be wrapped
     for (let y = 0; y < this.lines.length - 1; y++) {
-      // Check if this row is wrapped
-      let i = y;
-      let nextLine = this.lines.get(++i) as BufferLine;
-      if (!nextLine.isWrapped) {
-        continue;
-      }
-
-      // Check how many lines it's wrapped for
-      const wrappedLines: BufferLine[] = [this.lines.get(y) as BufferLine];
-      while (nextLine.isWrapped) {
-        wrappedLines.push(nextLine);
-        nextLine = this.lines.get(++i) as BufferLine;
-      }
-
       if (newCols > this._terminal.cols) {
-        let destLineIndex = 0;
-        let destCol = this._terminal.cols;
-        let srcLineIndex = 1;
-        let srcCol = 0;
-        while (srcLineIndex < wrappedLines.length) {
-          const srcRemainingCells = this._terminal.cols - srcCol;
-          const destRemainingCells = newCols - destCol;
-          const cellsToCopy = Math.min(srcRemainingCells, destRemainingCells);
-          wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[srcLineIndex], srcCol, destCol, cellsToCopy);
-          destCol += cellsToCopy;
-          if (destCol === newCols) {
-            destLineIndex++;
-            destCol = 0;
-          }
-          srcCol += cellsToCopy;
-          if (srcCol === this._terminal.cols) {
-            srcLineIndex++;
-            srcCol = 0;
-          }
-        }
-
-        // Work backwards and remove any rows at the end that only contain null cells
-        let countToRemove = 0;
-        for (let i = wrappedLines.length - 1; i > 0; i--) {
-          if (wrappedLines[i].getTrimmedLength() === 0) {
-            countToRemove++;
-          } else {
-            break;
-          }
-        }
-
-        // Remove rows and adjust cursor
-        if (countToRemove > 0) {
-          this.lines.splice(y + wrappedLines.length - countToRemove, countToRemove);
-          while (countToRemove-- > 0) {
-            if (this.ybase === 0) {
-              this.y--;
-            } else {
-              if (this.ydisp === this.ybase) {
-                this.ydisp--;
-              }
-              this.ybase--;
-            }
-          }
-        }
+        y += this._reflowLarger(y, newCols);
       } else {
-
+        y += this._reflowSmaller(y, newCols);
       }
     }
+  }
+
+  private _reflowLarger(y: number, newCols: number): number {
+    // Check if this row is wrapped
+    let i = y;
+    let nextLine = this.lines.get(++i) as BufferLine;
+    if (!nextLine.isWrapped) {
+      return 0;
+    }
+
+    // Check how many lines it's wrapped for
+    const wrappedLines: BufferLine[] = [this.lines.get(y) as BufferLine];
+    while (nextLine.isWrapped) {
+      wrappedLines.push(nextLine);
+      nextLine = this.lines.get(++i) as BufferLine;
+    }
+
+    // Copy buffer data to new locations
+    let destLineIndex = 0;
+    let destCol = this._terminal.cols;
+    let srcLineIndex = 1;
+    let srcCol = 0;
+    while (srcLineIndex < wrappedLines.length) {
+      const srcRemainingCells = this._terminal.cols - srcCol;
+      const destRemainingCells = newCols - destCol;
+      const cellsToCopy = Math.min(srcRemainingCells, destRemainingCells);
+      wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[srcLineIndex], srcCol, destCol, cellsToCopy, false);
+      destCol += cellsToCopy;
+      if (destCol === newCols) {
+        destLineIndex++;
+        destCol = 0;
+      }
+      srcCol += cellsToCopy;
+      if (srcCol === this._terminal.cols) {
+        srcLineIndex++;
+        srcCol = 0;
+      }
+    }
+
+    // Clear out remaining cells or fragments could remain
+    // TODO: @jerch can this be a const?
+    const fillCharData: CharData = [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
+    wrappedLines[destLineIndex].replaceCells(destCol, newCols, fillCharData);
+
+    // Work backwards and remove any rows at the end that only contain null cells
+    let countToRemove = 0;
+    for (let i = wrappedLines.length - 1; i > 0; i--) {
+      if (wrappedLines[i].getTrimmedLength() === 0) {
+        countToRemove++;
+      } else {
+        break;
+      }
+    }
+
+    // Remove rows and adjust cursor
+    if (countToRemove > 0) {
+      this.lines.splice(y + wrappedLines.length - countToRemove, countToRemove);
+      let removing = countToRemove;
+      while (removing-- > 0) {
+        if (this.ybase === 0) {
+          this.y--;
+          // Add an extra row at the bottom of the viewport
+          this.lines.push(new this._bufferLineConstructor(newCols, fillCharData));
+        } else {
+          if (this.ydisp === this.ybase) {
+            this.ydisp--;
+          }
+          this.ybase--;
+        }
+      }
+    }
+    // TODO: Handle list trimming
+
+    return wrappedLines.length - countToRemove - 1;
+  }
+
+  private _reflowSmaller(y: number, newCols: number): number {
+    // Check whether this line is a problem
+    const line = this.lines.get(y) as BufferLine;
+    if (line.getTrimmedLength() <= newCols) {
+      return 0;
+    }
+
+    // TODO: How is the cursor x handled if it's wrapped? Do something special when the cursor is this line?
+
+
+    // Gather wrapped lines if it's wrapped
+    let lineIndex = y;
+    let nextLine = this.lines.get(++lineIndex) as BufferLine;
+    const wrappedLines: BufferLine[] = [line];
+    while (nextLine.isWrapped) {
+      wrappedLines.push(nextLine);
+      nextLine = this.lines.get(++lineIndex) as BufferLine;
+    }
+
+    // Determine how many lines need to be inserted at the end, based on the trimmed length of
+    // the last wrapped line
+    if (wrappedLines[wrappedLines.length - 1].getTrimmedLength() === undefined) {
+      debugger;
+    }
+    const lastLineLength = wrappedLines[wrappedLines.length - 1].getTrimmedLength();
+    const cellsNeeded = (wrappedLines.length - 1) * this._terminal.cols + lastLineLength;
+    const linesNeeded = Math.ceil(cellsNeeded / newCols);
+    const linesToAdd = linesNeeded - wrappedLines.length;
+
+    // Add the new lines
+    const newLines: BufferLine[] = [];
+    for (let i = 0; i < linesToAdd; i++) {
+      // TODO: Remove any!
+      const newLine = this.getBlankLine((this._terminal as any).eraseAttr(), true) as BufferLine;
+      newLines.push(newLine);
+    }
+    this.lines.splice(y + wrappedLines.length, 0, ...newLines);
+    wrappedLines.push(...newLines);
+
+    // Copy buffer data to new locations, this needs to happen backwards to do in-place
+    let destLineIndex = Math.floor(cellsNeeded / newCols);
+    let destCol = cellsNeeded % newCols;
+    if (destCol === 0) {
+      destLineIndex--;
+      destCol = newCols;
+    }
+    let srcLineIndex = wrappedLines.length - linesToAdd - 1;
+    let srcCol = lastLineLength;
+    while (srcLineIndex >= 0) { // Don't need to copy any from the first line
+      const cellsToCopy = Math.min(srcCol, destCol);
+      wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[srcLineIndex], srcCol - cellsToCopy, destCol - cellsToCopy, cellsToCopy, true);
+      destCol -= cellsToCopy;
+      if (destCol === 0) {
+        destLineIndex--;
+        destCol = newCols;
+      }
+      srcCol -= cellsToCopy;
+      if (srcCol === 0) {
+        srcLineIndex--;
+        srcCol = this._terminal.cols;
+      }
+    }
+
+    // Adjust viewport as needed
+    let viewportAdjustments = linesToAdd;
+    while (viewportAdjustments-- > 0) {
+      if (this.ybase === 0) {
+        if (this.y < this._terminal.rows) {
+          this.y++;
+          this.lines.pop();
+        } else {
+          this.ybase++;
+          this.ydisp++;
+        }
+      } else {
+        if (this.ybase === this.ydisp) {
+          this.ybase++;
+          this.ydisp++;
+        }
+      }
+    }
+
+    // TODO: Adjust viewport if needed (remove rows on end if ybase === 0? etc.
+    // TODO: Handle list trimming
+
+    return wrappedLines.length - 1;
   }
 
   /**
@@ -339,10 +443,9 @@ export class Buffer implements IBuffer {
       }
       lineIndex++;
     }
-    return [lineIndex, 0];
   }
 
-  /**
+  /**    // TODO: Handle list trimming
    * Translates a buffer line to a string, with optional start and end columns.
    * Wide characters will count as two columns in the resulting string. This
    * function is useful for getting the actual text underneath the raw selection
