@@ -440,9 +440,10 @@ export class Buffer implements IBuffer {
       }
       lineIndex++;
     }
+    return [lineIndex, 0];
   }
 
-  /**    // TODO: Handle list trimming
+  /**
    * Translates a buffer line to a string, with optional start and end columns.
    * Wide characters will count as two columns in the resulting string. This
    * function is useful for getting the actual text underneath the raw selection
