@@ -233,6 +233,121 @@ describe('Buffer', () => {
         }
       });
     });
+
+    describe('reflow', () => {
+      beforeEach(() => {
+        terminal.eraseAttr = () => DEFAULT_ATTR;
+        // Needed until the setting is removed
+        terminal.options.experimentalBufferLineImpl = 'TypedArray';
+      });
+      it('should not wrap empty lines', () => {
+        buffer.fillViewportRows();
+        assert.equal(buffer.lines.length, INIT_ROWS);
+        buffer.resize(INIT_COLS - 5, INIT_ROWS);
+        assert.equal(buffer.lines.length, INIT_ROWS);
+      });
+      it('should shrink row length', () => {
+        buffer.fillViewportRows();
+        buffer.resize(5, 10);
+        assert.equal(buffer.lines.length, 10);
+        assert.equal(buffer.lines.get(0).length, 5);
+        assert.equal(buffer.lines.get(1).length, 5);
+        assert.equal(buffer.lines.get(2).length, 5);
+        assert.equal(buffer.lines.get(3).length, 5);
+        assert.equal(buffer.lines.get(4).length, 5);
+        assert.equal(buffer.lines.get(5).length, 5);
+        assert.equal(buffer.lines.get(6).length, 5);
+        assert.equal(buffer.lines.get(7).length, 5);
+        assert.equal(buffer.lines.get(8).length, 5);
+        assert.equal(buffer.lines.get(9).length, 5);
+      });
+      it('should wrap and unwrap lines', () => {
+        buffer.fillViewportRows();
+        buffer.resize(5, 10);
+        terminal.cols = 5;
+        const firstLine = buffer.lines.get(0);
+        for (let i = 0; i < 5; i++) {
+          const code = 'a'.charCodeAt(0) + i;
+          const char = String.fromCharCode(code);
+          firstLine.set(i, [null, char, 1, code]);
+        }
+        assert.equal(buffer.lines.get(0).length, 5);
+        assert.equal(buffer.lines.get(0).translateToString(), 'abcde');
+        buffer.resize(1, 10);
+        terminal.cols = 1;
+        assert.equal(buffer.lines.length, 10);
+        assert.equal(buffer.lines.get(0).translateToString(), 'a');
+        assert.equal(buffer.lines.get(1).translateToString(), 'b');
+        assert.equal(buffer.lines.get(2).translateToString(), 'c');
+        assert.equal(buffer.lines.get(3).translateToString(), 'd');
+        assert.equal(buffer.lines.get(4).translateToString(), 'e');
+        assert.equal(buffer.lines.get(5).translateToString(), ' ');
+        assert.equal(buffer.lines.get(6).translateToString(), ' ');
+        assert.equal(buffer.lines.get(7).translateToString(), ' ');
+        assert.equal(buffer.lines.get(8).translateToString(), ' ');
+        assert.equal(buffer.lines.get(9).translateToString(), ' ');
+        buffer.resize(5, 10);
+        terminal.cols = 5;
+        assert.equal(buffer.lines.length, 10);
+        assert.equal(buffer.lines.get(0).translateToString(), 'abcde');
+        assert.equal(buffer.lines.get(1).translateToString(), '     ');
+        assert.equal(buffer.lines.get(2).translateToString(), '     ');
+        assert.equal(buffer.lines.get(3).translateToString(), '     ');
+        assert.equal(buffer.lines.get(4).translateToString(), '     ');
+        assert.equal(buffer.lines.get(5).translateToString(), '     ');
+        assert.equal(buffer.lines.get(6).translateToString(), '     ');
+        assert.equal(buffer.lines.get(7).translateToString(), '     ');
+        assert.equal(buffer.lines.get(8).translateToString(), '     ');
+        assert.equal(buffer.lines.get(9).translateToString(), '     ');
+      });
+      it('should discard parts of wrapped lines that go out of the scrollback', () => {
+        buffer.fillViewportRows();
+        terminal.options.scrollback = 1;
+        buffer.resize(10, 5);
+        terminal.cols = 10;
+        terminal.rows = 5;
+        const lastLine = buffer.lines.get(4);
+        for (let i = 0; i < 10; i++) {
+          const code = 'a'.charCodeAt(0) + i;
+          const char = String.fromCharCode(code);
+          lastLine.set(i, [null, char, 1, code]);
+        }
+        assert.equal(buffer.lines.length, 5);
+        buffer.y = 4;
+        buffer.resize(2, 5);
+        terminal.cols = 2;
+        assert.equal(buffer.y, 4);
+        assert.equal(buffer.ybase, 1);
+        assert.equal(buffer.lines.length, 6);
+        assert.equal(buffer.lines.get(0).translateToString(), '  ');
+        assert.equal(buffer.lines.get(1).translateToString(), 'ab');
+        assert.equal(buffer.lines.get(2).translateToString(), 'cd');
+        assert.equal(buffer.lines.get(3).translateToString(), 'ef');
+        assert.equal(buffer.lines.get(4).translateToString(), 'gh');
+        assert.equal(buffer.lines.get(5).translateToString(), 'ij');
+        buffer.resize(1, 5);
+        terminal.cols = 1;
+        assert.equal(buffer.y, 4);
+        assert.equal(buffer.ybase, 1);
+        assert.equal(buffer.lines.length, 6);
+        assert.equal(buffer.lines.get(0).translateToString(), 'e');
+        assert.equal(buffer.lines.get(1).translateToString(), 'f');
+        assert.equal(buffer.lines.get(2).translateToString(), 'g');
+        assert.equal(buffer.lines.get(3).translateToString(), 'h');
+        assert.equal(buffer.lines.get(4).translateToString(), 'i');
+        assert.equal(buffer.lines.get(5).translateToString(), 'j');
+        buffer.resize(10, 5);
+        terminal.cols = 10;
+        assert.equal(buffer.y, 0);
+        assert.equal(buffer.ybase, 0);
+        assert.equal(buffer.lines.length, 5);
+        assert.equal(buffer.lines.get(0).translateToString(), 'efghij    ');
+        assert.equal(buffer.lines.get(1).translateToString(), '          ');
+        assert.equal(buffer.lines.get(2).translateToString(), '          ');
+        assert.equal(buffer.lines.get(3).translateToString(), '          ');
+        assert.equal(buffer.lines.get(4).translateToString(), '          ');
+      });
+    });
   });
 
   describe('buffer marked to have no scrollback', () => {

@@ -164,9 +164,9 @@ export class Buffer implements IBuffer {
     if (this.lines.length > 0) {
       // Deal with columns increasing (reducing needs to happen after reflow)
       if (this._terminal.cols < newCols) {
-        const ch: CharData = [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // does xterm use the default attr?
+        const fillCharData: CharData = [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
         for (let i = 0; i < this.lines.length; i++) {
-          this.lines.get(i).resize(newCols, ch);
+          this.lines.get(i).resize(newCols, fillCharData);
         }
       }
 
@@ -237,9 +237,11 @@ export class Buffer implements IBuffer {
     if (this._terminal.options.experimentalBufferLineImpl === 'TypedArray') {
       this._reflow(newCols);
 
+      // Trim the end of the line off if cols shrunk
       if (this._terminal.cols > newCols) {
+        const fillCharData: CharData = [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
         for (let i = 0; i < this.lines.length; i++) {
-          this.lines.get(i).resize(newCols, null);
+          this.lines.get(i).resize(newCols, fillCharData);
         }
       }
     }
@@ -273,7 +275,7 @@ export class Buffer implements IBuffer {
 
     // Check how many lines it's wrapped for
     const wrappedLines: BufferLine[] = [this.lines.get(y) as BufferLine];
-    while (nextLine.isWrapped) {
+    while (nextLine.isWrapped && i < this.lines.length) {
       wrappedLines.push(nextLine);
       nextLine = this.lines.get(++i) as BufferLine;
     }
@@ -361,7 +363,13 @@ export class Buffer implements IBuffer {
     const cellsNeeded = (wrappedLines.length - 1) * this._terminal.cols + lastLineLength;
     const linesNeeded = Math.ceil(cellsNeeded / newCols);
     const linesToAdd = linesNeeded - wrappedLines.length;
-    const trimmedLines = Math.max(0, this.lines.length - this.lines.maxLength + linesToAdd);
+    let trimmedLines: number;
+    if (this.ybase === 0 && this.y !== this.lines.length - 1) {
+      // If the top section of the buffer is not yet filled
+      trimmedLines = Math.max(0, this.y - this.lines.maxLength + linesToAdd);
+    } else {
+      trimmedLines = Math.max(0, this.lines.length - this.lines.maxLength + linesToAdd);
+    }
 
     // Add the new lines
     const newLines: BufferLine[] = [];
