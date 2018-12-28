@@ -355,6 +355,9 @@ export class Buffer implements IBuffer {
     const cellsNeeded = (wrappedLines.length - 1) * this._terminal.cols + lastLineLength;
     const linesNeeded = Math.ceil(cellsNeeded / newCols);
     const linesToAdd = linesNeeded - wrappedLines.length;
+    const trimmedLines = Math.max(0, this.lines.length - this.lines.maxLength + linesToAdd);
+    console.log('linesToAdd', linesToAdd);
+    console.log('trimmedLines', trimmedLines);
 
     // Add the new lines
     const newLines: BufferLine[] = [];
@@ -374,7 +377,7 @@ export class Buffer implements IBuffer {
     }
     let srcLineIndex = wrappedLines.length - linesToAdd - 1;
     let srcCol = lastLineLength;
-    while (srcLineIndex >= 0) { // Don't need to copy any from the first line
+    while (srcLineIndex >= 0) {
       const cellsToCopy = Math.min(srcCol, destCol);
       wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[srcLineIndex], srcCol - cellsToCopy, destCol - cellsToCopy, cellsToCopy, true);
       destCol -= cellsToCopy;
@@ -393,11 +396,12 @@ export class Buffer implements IBuffer {
     let viewportAdjustments = linesToAdd;
     while (viewportAdjustments-- > 0) {
       if (this.ybase === 0) {
-        if (this.y < this._terminal.rows) {
+        if (this.y < this._terminal.rows - 1) {
           this.y++;
           this.lines.pop();
         } else {
           this.ybase++;
+          // TODO: Use this? if (this._terminal._userScrolling) {
           this.ydisp++;
         }
       } else {
@@ -411,7 +415,7 @@ export class Buffer implements IBuffer {
     // TODO: Adjust viewport if needed (remove rows on end if ybase === 0? etc.
     // TODO: Handle list trimming
 
-    return wrappedLines.length - 1 - linesToAdd;
+    return wrappedLines.length - 1 - linesToAdd + trimmedLines;
   }
 
   /**
