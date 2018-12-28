@@ -307,18 +307,28 @@ export class GlyphRenderer {
     gl.useProgram(this._program);
     gl.bindVertexArray(this._vertexArrayObject);
 
+    // Alternate buffers each frame as the active buffer gets locked while it's in use by the GPU
     this._activeBuffer = (this._activeBuffer + 1) % 2;
-    this._vertices.attributesBuffers[this._activeBuffer];
+    const activeBuffer = this._vertices.attributesBuffers[this._activeBuffer];
+
+    // Copy data for each cell of each line up to its line length (the last non-whitespace cell)
+    // from the attributes buffer into activeBuffer, which is the one that gets bound to the GPU.
+    // The reasons for this are as follows:
+    // - So the active buffer can be alternated so we don't get blocked on rendering finishing
+    // - To copy either the normal attributes buffer or the selection attributes buffer when there
+    //   is a selection
+    // - So we don't send vertices for all the line-ending whitespace to the GPU
     let bufferLength = 0;
     for (let y = 0; y < renderModel.lineLengths.length; y++) {
       const si = y * this._terminal.cols * INDICES_PER_CELL;
       const sub = (isSelectionVisible ? this._vertices.selectionAttributes : this._vertices.attributes).subarray(si, si + renderModel.lineLengths[y] * INDICES_PER_CELL);
-      this._vertices.attributesBuffers[this._activeBuffer].set(sub, bufferLength);
+      activeBuffer.set(sub, bufferLength);
       bufferLength += sub.length;
     }
+
+    // Bind the attributes buffer
     gl.bindBuffer(gl.ARRAY_BUFFER, this._attributesBuffer);
-    const buffer = this._vertices.attributesBuffers[this._activeBuffer].subarray(0, bufferLength);
-    gl.bufferData(gl.ARRAY_BUFFER, buffer, gl.STREAM_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, activeBuffer.subarray(0, bufferLength), gl.STREAM_DRAW);
 
     // Bind the texture atlas if it's changed
     if (this._atlas.hasCanvasChanged) {
