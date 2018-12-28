@@ -233,6 +233,83 @@ export class Buffer implements IBuffer {
     }
 
     this.scrollBottom = newRows - 1;
+
+    if (this._terminal.options.experimentalBufferLineImpl === 'TypedArray') {
+      this._reflow(newCols, newRows);
+    }
+  }
+
+  private _reflow(newCols: number, newRows: number): void {
+    if (this._terminal.cols === newCols) {
+      return;
+    }
+
+    // Iterate through rows, ignore the last one as it cannot be wrapped
+    for (let y = 0; y < this.lines.length - 1; y++) {
+      // Check if this row is wrapped
+      let i = y;
+      let nextLine = this.lines.get(++i) as BufferLine;
+      if (!nextLine.isWrapped) {
+        continue;
+      }
+
+      // Check how many lines it's wrapped for
+      const wrappedLines: BufferLine[] = [this.lines.get(y) as BufferLine];
+      while (nextLine.isWrapped) {
+        wrappedLines.push(nextLine);
+        nextLine = this.lines.get(++i) as BufferLine;
+      }
+
+      if (newCols > this._terminal.cols) {
+        let destLineIndex = 0;
+        let destCol = this._terminal.cols;
+        let srcLineIndex = 1;
+        let srcCol = 0;
+        while (srcLineIndex < wrappedLines.length) {
+          const srcRemainingCells = this._terminal.cols - srcCol;
+          const destRemainingCells = newCols - destCol;
+          const cellsToCopy = Math.min(srcRemainingCells, destRemainingCells);
+          wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[srcLineIndex], srcCol, destCol, cellsToCopy);
+          destCol += cellsToCopy;
+          if (destCol === newCols) {
+            destLineIndex++;
+            destCol = 0;
+          }
+          srcCol += cellsToCopy;
+          if (srcCol === this._terminal.cols) {
+            srcLineIndex++;
+            srcCol = 0;
+          }
+        }
+
+        // Work backwards and remove any rows at the end that only contain null cells
+        let countToRemove = 0;
+        for (let i = wrappedLines.length - 1; i > 0; i--) {
+          if (wrappedLines[i].getTrimmedLength() === 0) {
+            countToRemove++;
+          } else {
+            break;
+          }
+        }
+
+        // Remove rows and adjust cursor
+        if (countToRemove > 0) {
+          this.lines.splice(y + wrappedLines.length - countToRemove, countToRemove);
+          while (countToRemove-- > 0) {
+            if (this.ybase === 0) {
+              this.y--;
+            } else {
+              if (this.ydisp === this.ybase) {
+                this.ydisp--;
+              }
+              this.ybase--;
+            }
+          }
+        }
+      } else {
+
+      }
+    }
   }
 
   /**

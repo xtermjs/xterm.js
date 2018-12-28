@@ -304,6 +304,16 @@ export class BufferLine implements IBufferLine {
     return 0;
   }
 
+  public copyCellsFrom(src: BufferLine, srcCol: number, destCol: number, length: number): void {
+    console.log('  copyCellsFrom', srcCol, destCol, length);
+    const srcData = src._data;
+    for (let cell = 0; cell < length; cell++) {
+      for (let i = 0; i < CELL_SIZE; i++) {
+        this._data[(destCol + cell) * CELL_SIZE + i] = srcData[(srcCol + cell) * CELL_SIZE + i];
+      }
+    }
+  }
+
   public translateToString(trimRight: boolean = false, startCol: number = 0, endCol: number = this.length): string {
     if (trimRight) {
       endCol = Math.min(endCol, this.getTrimmedLength());
