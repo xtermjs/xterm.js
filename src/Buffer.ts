@@ -300,8 +300,8 @@ export class Buffer implements IBuffer {
     const countToRemove = wrappedLines.length - destLineIndex - 1;
     if (countToRemove > 0) {
       this.lines.splice(y + wrappedLines.length - countToRemove, countToRemove);
-      let removing = countToRemove;
-      while (removing-- > 0) {
+      let viewportAdjustments = countToRemove;
+      while (viewportAdjustments-- > 0) {
         if (this.ybase === 0) {
           this.y--;
           // Add an extra row at the bottom of the viewport
@@ -314,7 +314,6 @@ export class Buffer implements IBuffer {
         }
       }
     }
-    // TODO: Handle list trimming
 
     return wrappedLines.length - countToRemove - 1;
   }
@@ -325,9 +324,6 @@ export class Buffer implements IBuffer {
     if (line.getTrimmedLength() <= newCols) {
       return 0;
     }
-
-    // TODO: How is the cursor x handled if it's wrapped? Do something special when the cursor is this line?
-
 
     // Gather wrapped lines if it's wrapped
     let lineIndex = y;
@@ -340,9 +336,6 @@ export class Buffer implements IBuffer {
 
     // Determine how many lines need to be inserted at the end, based on the trimmed length of
     // the last wrapped line
-    if (wrappedLines[wrappedLines.length - 1].getTrimmedLength() === undefined) {
-      debugger;
-    }
     const lastLineLength = wrappedLines[wrappedLines.length - 1].getTrimmedLength();
     const cellsNeeded = (wrappedLines.length - 1) * this._terminal.cols + lastLineLength;
     const linesNeeded = Math.ceil(cellsNeeded / newCols);
@@ -351,8 +344,7 @@ export class Buffer implements IBuffer {
     // Add the new lines
     const newLines: BufferLine[] = [];
     for (let i = 0; i < linesToAdd; i++) {
-      // TODO: Remove any!
-      const newLine = this.getBlankLine((this._terminal as any).eraseAttr(), true) as BufferLine;
+      const newLine = this.getBlankLine(this._terminal.eraseAttr(), true) as BufferLine;
       newLines.push(newLine);
     }
     this.lines.splice(y + wrappedLines.length, 0, ...newLines);
