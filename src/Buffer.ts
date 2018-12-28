@@ -245,11 +245,14 @@ export class Buffer implements IBuffer {
     }
 
     // Iterate through rows, ignore the last one as it cannot be wrapped
-    for (let y = 0; y < this.lines.length - 1; y++) {
-      if (newCols > this._terminal.cols) {
+    if (newCols > this._terminal.cols) {
+      for (let y = 0; y < this.lines.length - 1; y++) {
         y += this._reflowLarger(y, newCols);
-      } else {
-        y += this._reflowSmaller(y, newCols);
+      }
+    } else {
+      // Go backwards as many lines may be trimmed and this will avoid considering them
+      for (let y = this.lines.length - 1; y >= 0; y--) {
+        y -= this._reflowSmaller(y, newCols);
       }
     }
   }
@@ -296,8 +299,16 @@ export class Buffer implements IBuffer {
     const fillCharData: CharData = [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
     wrappedLines[destLineIndex].replaceCells(destCol, newCols, fillCharData);
 
-    // Remove rows and adjust cursor
-    const countToRemove = wrappedLines.length - destLineIndex - 1;
+    // Work backwards and remove any rows at the end that only contain null cells
+    let countToRemove = 0;
+    for (let i = wrappedLines.length - 1; i > 0; i--) {
+      if (i > destLineIndex || wrappedLines[i].getTrimmedLength() === 0) {
+        countToRemove++;
+      } else {
+        break;
+      }
+    }
+
     if (countToRemove > 0) {
       this.lines.splice(y + wrappedLines.length - countToRemove, countToRemove);
       let viewportAdjustments = countToRemove;
@@ -320,18 +331,22 @@ export class Buffer implements IBuffer {
 
   private _reflowSmaller(y: number, newCols: number): number {
     // Check whether this line is a problem
-    const line = this.lines.get(y) as BufferLine;
-    if (line.getTrimmedLength() <= newCols) {
+    let nextLine = this.lines.get(y) as BufferLine;
+    if (!nextLine.isWrapped && nextLine.getTrimmedLength() <= newCols) {
       return 0;
     }
 
-    // Gather wrapped lines if it's wrapped
-    let lineIndex = y;
-    let nextLine = this.lines.get(++lineIndex) as BufferLine;
-    const wrappedLines: BufferLine[] = [line];
-    while (nextLine.isWrapped) {
-      wrappedLines.push(nextLine);
-      nextLine = this.lines.get(++lineIndex) as BufferLine;
+    // Gather wrapped lines and adjust y to be the starting line
+    const wrappedLines: BufferLine[] = [nextLine];
+    if (nextLine.isWrapped) {
+      while (true) {
+        nextLine = this.lines.get(--y) as BufferLine;
+        // TODO: unshift is expensive
+        wrappedLines.unshift(nextLine);
+        if (!nextLine.isWrapped || y === 0) {
+          break;
+        }
+      }
     }
 
     // Determine how many lines need to be inserted at the end, based on the trimmed length of
@@ -396,7 +411,7 @@ export class Buffer implements IBuffer {
     // TODO: Adjust viewport if needed (remove rows on end if ybase === 0? etc.
     // TODO: Handle list trimming
 
-    return wrappedLines.length - 1;
+    return wrappedLines.length - 1 - linesToAdd;
   }
 
   /**
