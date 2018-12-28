@@ -162,7 +162,7 @@ export class Buffer implements IBuffer {
     // The following adjustments should only happen if the buffer has been
     // initialized/filled.
     if (this.lines.length > 0) {
-      // Deal with columns increasing (we don't do anything when columns reduce)
+      // Deal with columns increasing (reducing needs to happen after reflow)
       if (this._terminal.cols < newCols) {
         const ch: CharData = [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // does xterm use the default attr?
         for (let i = 0; i < this.lines.length; i++) {
@@ -236,6 +236,12 @@ export class Buffer implements IBuffer {
 
     if (this._terminal.options.experimentalBufferLineImpl === 'TypedArray') {
       this._reflow(newCols);
+
+      if (this._terminal.cols > newCols) {
+        for (let i = 0; i < this.lines.length; i++) {
+          this.lines.get(i).resize(newCols, null);
+        }
+      }
     }
   }
 
