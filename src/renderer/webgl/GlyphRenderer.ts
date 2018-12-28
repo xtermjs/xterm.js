@@ -286,9 +286,9 @@ export class GlyphRenderer {
       let i = 0;
       for (let y = 0; y < terminal.rows; y++) {
         for (let x = 0; x < terminal.cols; x++) {
-          i += 8;
-          this._vertices.attributes[i++] = x / terminal.cols;
-          this._vertices.attributes[i++] = y / terminal.rows;
+          this._vertices.attributes[i + 8] = x / terminal.cols;
+          this._vertices.attributes[i + 9] = y / terminal.rows;
+          i += INDICES_PER_CELL;
         }
       }
     }
