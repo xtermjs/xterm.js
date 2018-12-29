@@ -259,7 +259,6 @@ describe('Buffer', () => {
       it('should wrap and unwrap lines', () => {
         buffer.fillViewportRows();
         buffer.resize(5, 10);
-        terminal.cols = 5;
         const firstLine = buffer.lines.get(0);
         for (let i = 0; i < 5; i++) {
           const code = 'a'.charCodeAt(0) + i;
@@ -269,7 +268,6 @@ describe('Buffer', () => {
         assert.equal(buffer.lines.get(0).length, 5);
         assert.equal(buffer.lines.get(0).translateToString(), 'abcde');
         buffer.resize(1, 10);
-        terminal.cols = 1;
         assert.equal(buffer.lines.length, 10);
         assert.equal(buffer.lines.get(0).translateToString(), 'a');
         assert.equal(buffer.lines.get(1).translateToString(), 'b');
@@ -282,7 +280,6 @@ describe('Buffer', () => {
         assert.equal(buffer.lines.get(8).translateToString(), ' ');
         assert.equal(buffer.lines.get(9).translateToString(), ' ');
         buffer.resize(5, 10);
-        terminal.cols = 5;
         assert.equal(buffer.lines.length, 10);
         assert.equal(buffer.lines.get(0).translateToString(), 'abcde');
         assert.equal(buffer.lines.get(1).translateToString(), '     ');
@@ -299,8 +296,6 @@ describe('Buffer', () => {
         buffer.fillViewportRows();
         terminal.options.scrollback = 1;
         buffer.resize(10, 5);
-        terminal.cols = 10;
-        terminal.rows = 5;
         const lastLine = buffer.lines.get(4);
         for (let i = 0; i < 10; i++) {
           const code = 'a'.charCodeAt(0) + i;
@@ -310,7 +305,6 @@ describe('Buffer', () => {
         assert.equal(buffer.lines.length, 5);
         buffer.y = 4;
         buffer.resize(2, 5);
-        terminal.cols = 2;
         assert.equal(buffer.y, 4);
         assert.equal(buffer.ybase, 1);
         assert.equal(buffer.lines.length, 6);
@@ -321,7 +315,6 @@ describe('Buffer', () => {
         assert.equal(buffer.lines.get(4).translateToString(), 'gh');
         assert.equal(buffer.lines.get(5).translateToString(), 'ij');
         buffer.resize(1, 5);
-        terminal.cols = 1;
         assert.equal(buffer.y, 4);
         assert.equal(buffer.ybase, 1);
         assert.equal(buffer.lines.length, 6);
@@ -332,7 +325,6 @@ describe('Buffer', () => {
         assert.equal(buffer.lines.get(4).translateToString(), 'i');
         assert.equal(buffer.lines.get(5).translateToString(), 'j');
         buffer.resize(10, 5);
-        terminal.cols = 10;
         assert.equal(buffer.y, 0);
         assert.equal(buffer.ybase, 0);
         assert.equal(buffer.lines.length, 5);

@@ -46,6 +46,8 @@ export class Buffer implements IBuffer {
   public savedCurAttr: number;
   public markers: Marker[] = [];
   private _bufferLineConstructor: IBufferLineConstructor;
+  private _cols: number;
+  private _rows: number;
 
   /**
    * Create a new Buffer.
@@ -57,6 +59,8 @@ export class Buffer implements IBuffer {
     private _terminal: ITerminal,
     private _hasScrollback: boolean
   ) {
+    this._cols = this._terminal.cols;
+    this._rows = this._terminal.rows;
     this.clear();
   }
 
@@ -88,17 +92,17 @@ export class Buffer implements IBuffer {
 
   public getBlankLine(attr: number, isWrapped?: boolean): IBufferLine {
     const fillCharData: CharData = [attr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
-    return new this._bufferLineConstructor(this._terminal.cols, fillCharData, isWrapped);
+    return new this._bufferLineConstructor(this._cols, fillCharData, isWrapped);
   }
 
   public get hasScrollback(): boolean {
-    return this._hasScrollback && this.lines.maxLength > this._terminal.rows;
+    return this._hasScrollback && this.lines.maxLength > this._rows;
   }
 
   public get isCursorInViewport(): boolean {
     const absoluteY = this.ybase + this.y;
     const relativeY = absoluteY - this.ydisp;
-    return (relativeY >= 0 && relativeY < this._terminal.rows);
+    return (relativeY >= 0 && relativeY < this._rows);
   }
 
   /**
@@ -124,7 +128,7 @@ export class Buffer implements IBuffer {
       if (fillAttr === undefined) {
         fillAttr = DEFAULT_ATTR;
       }
-      let i = this._terminal.rows;
+      let i = this._rows;
       while (i--) {
         this.lines.push(this.getBlankLine(fillAttr));
       }
@@ -140,9 +144,9 @@ export class Buffer implements IBuffer {
     this.ybase = 0;
     this.y = 0;
     this.x = 0;
-    this.lines = new CircularList<IBufferLine>(this._getCorrectBufferLength(this._terminal.rows));
+    this.lines = new CircularList<IBufferLine>(this._getCorrectBufferLength(this._rows));
     this.scrollTop = 0;
-    this.scrollBottom = this._terminal.rows - 1;
+    this.scrollBottom = this._rows - 1;
     this.setupTabStops();
   }
 
@@ -163,7 +167,7 @@ export class Buffer implements IBuffer {
     // initialized/filled.
     if (this.lines.length > 0) {
       // Deal with columns increasing (reducing needs to happen after reflow)
-      if (this._terminal.cols < newCols) {
+      if (this._cols < newCols) {
         const fillCharData: CharData = [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
         for (let i = 0; i < this.lines.length; i++) {
           this.lines.get(i).resize(newCols, fillCharData);
@@ -172,8 +176,8 @@ export class Buffer implements IBuffer {
 
       // Resize rows in both directions as needed
       let addToY = 0;
-      if (this._terminal.rows < newRows) {
-        for (let y = this._terminal.rows; y < newRows; y++) {
+      if (this._rows < newRows) {
+        for (let y = this._rows; y < newRows; y++) {
           if (this.lines.length < newRows + this.ybase) {
             if (this.ybase > 0 && this.lines.length <= this.ybase + this.y + addToY + 1) {
               // There is room above the buffer and there are no empty elements below the line,
@@ -192,8 +196,8 @@ export class Buffer implements IBuffer {
             }
           }
         }
-      } else { // (this._terminal.rows >= newRows)
-        for (let y = this._terminal.rows; y > newRows; y--) {
+      } else { // (this._rows >= newRows)
+        for (let y = this._rows; y > newRows; y--) {
           if (this.lines.length > newRows + this.ybase) {
             if (this.lines.length > this.ybase + this.y + 1) {
               // The line is a blank line below the cursor, remove it
@@ -238,22 +242,25 @@ export class Buffer implements IBuffer {
       this._reflow(newCols);
 
       // Trim the end of the line off if cols shrunk
-      if (this._terminal.cols > newCols) {
+      if (this._cols > newCols) {
         const fillCharData: CharData = [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
         for (let i = 0; i < this.lines.length; i++) {
           this.lines.get(i).resize(newCols, fillCharData);
         }
       }
     }
+
+    this._cols = newCols;
+    this._rows = newRows;
   }
 
   private _reflow(newCols: number): void {
-    if (this._terminal.cols === newCols) {
+    if (this._cols === newCols) {
       return;
     }
 
     // Iterate through rows, ignore the last one as it cannot be wrapped
-    if (newCols > this._terminal.cols) {
+    if (newCols > this._cols) {
       for (let y = 0; y < this.lines.length - 1; y++) {
         y += this._reflowLarger(y, newCols);
       }
@@ -282,11 +289,11 @@ export class Buffer implements IBuffer {
 
     // Copy buffer data to new locations
     let destLineIndex = 0;
-    let destCol = this._terminal.cols;
+    let destCol = this._cols;
     let srcLineIndex = 1;
     let srcCol = 0;
     while (srcLineIndex < wrappedLines.length) {
-      const srcRemainingCells = this._terminal.cols - srcCol;
+      const srcRemainingCells = this._cols - srcCol;
       const destRemainingCells = newCols - destCol;
       const cellsToCopy = Math.min(srcRemainingCells, destRemainingCells);
       wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[srcLineIndex], srcCol, destCol, cellsToCopy, false);
@@ -296,7 +303,7 @@ export class Buffer implements IBuffer {
         destCol = 0;
       }
       srcCol += cellsToCopy;
-      if (srcCol === this._terminal.cols) {
+      if (srcCol === this._cols) {
         srcLineIndex++;
         srcCol = 0;
       }
@@ -360,7 +367,7 @@ export class Buffer implements IBuffer {
     // Determine how many lines need to be inserted at the end, based on the trimmed length of
     // the last wrapped line
     const lastLineLength = wrappedLines[wrappedLines.length - 1].getTrimmedLength();
-    const cellsNeeded = (wrappedLines.length - 1) * this._terminal.cols + lastLineLength;
+    const cellsNeeded = (wrappedLines.length - 1) * this._cols + lastLineLength;
     const linesNeeded = Math.ceil(cellsNeeded / newCols);
     const linesToAdd = linesNeeded - wrappedLines.length;
     let trimmedLines: number;
@@ -400,7 +407,7 @@ export class Buffer implements IBuffer {
       srcCol -= cellsToCopy;
       if (srcCol === 0) {
         srcLineIndex--;
-        srcCol = this._terminal.cols;
+        srcCol = this._cols;
       }
     }
 
@@ -408,12 +415,11 @@ export class Buffer implements IBuffer {
     let viewportAdjustments = linesToAdd - trimmedLines;
     while (viewportAdjustments-- > 0) {
       if (this.ybase === 0) {
-        if (this.y < this._terminal.rows - 1) {
+        if (this.y < this._rows - 1) {
           this.y++;
           this.lines.pop();
         } else {
           this.ybase++;
-          // TODO: Use this? if (this._terminal._userScrolling) {
           this.ydisp++;
         }
       } else {
@@ -503,7 +509,7 @@ export class Buffer implements IBuffer {
       i = 0;
     }
 
-    for (; i < this._terminal.cols; i += this._terminal.options.tabStopWidth) {
+    for (; i < this._cols; i += this._terminal.options.tabStopWidth) {
       this.tabs[i] = true;
     }
   }
@@ -517,7 +523,7 @@ export class Buffer implements IBuffer {
       x = this.x;
     }
     while (!this.tabs[--x] && x > 0);
-    return x >= this._terminal.cols ? this._terminal.cols - 1 : x < 0 ? 0 : x;
+    return x >= this._cols ? this._cols - 1 : x < 0 ? 0 : x;
   }
 
   /**
@@ -528,8 +534,8 @@ export class Buffer implements IBuffer {
     if (x === null || x === undefined) {
       x = this.x;
     }
-    while (!this.tabs[++x] && x < this._terminal.cols);
-    return x >= this._terminal.cols ? this._terminal.cols - 1 : x < 0 ? 0 : x;
+    while (!this.tabs[++x] && x < this._cols);
+    return x >= this._cols ? this._cols - 1 : x < 0 ? 0 : x;
   }
 
   public addMarker(y: number): Marker {
