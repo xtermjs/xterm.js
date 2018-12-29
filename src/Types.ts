@@ -230,7 +230,6 @@ export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAcce
   cancel(ev: Event, force?: boolean): boolean | void;
   log(text: string): void;
   showCursor(): void;
-  eraseAttr(): number;
 }
 
 export interface IBufferAccessor {

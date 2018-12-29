@@ -108,12 +108,12 @@ describe('Buffer', () => {
 
   describe('resize', () => {
     describe('column size is reduced', () => {
-      it('should not trim the data in the buffer', () => {
+      it('should trim the data in the buffer', () => {
         buffer.fillViewportRows();
         buffer.resize(INIT_COLS / 2, INIT_ROWS);
         assert.equal(buffer.lines.length, INIT_ROWS);
         for (let i = 0; i < INIT_ROWS; i++) {
-          assert.equal(buffer.lines.get(i).length, INIT_COLS);
+          assert.equal(buffer.lines.get(i).length, INIT_COLS / 2);
         }
       });
     });
@@ -235,11 +235,6 @@ describe('Buffer', () => {
     });
 
     describe('reflow', () => {
-      beforeEach(() => {
-        terminal.eraseAttr = () => DEFAULT_ATTR;
-        // Needed until the setting is removed
-        terminal.options.experimentalBufferLineImpl = 'TypedArray';
-      });
       it('should not wrap empty lines', () => {
         buffer.fillViewportRows();
         assert.equal(buffer.lines.length, INIT_ROWS);

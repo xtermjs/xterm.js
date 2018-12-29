@@ -234,7 +234,7 @@ export class Buffer implements IBuffer {
 
     this.scrollBottom = newRows - 1;
 
-    if (this.hasScrollback && this._terminal.options.experimentalBufferLineImpl === 'TypedArray') {
+    if (this.hasScrollback && this._bufferLineConstructor === BufferLine) {
       this._reflow(newCols);
 
       // Trim the end of the line off if cols shrunk
@@ -374,7 +374,7 @@ export class Buffer implements IBuffer {
     // Add the new lines
     const newLines: BufferLine[] = [];
     for (let i = 0; i < linesToAdd; i++) {
-      const newLine = this.getBlankLine(this._terminal.eraseAttr(), true) as BufferLine;
+      const newLine = this.getBlankLine(DEFAULT_ATTR, true) as BufferLine;
       newLines.push(newLine);
     }
     this.lines.splice(y + wrappedLines.length, 0, ...newLines);
