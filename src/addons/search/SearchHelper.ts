@@ -101,7 +101,7 @@ export class SearchHelper implements ISearchHelper {
 
     const isReverseSearch = true;
     let startRow = this._terminal._core.buffer.ydisp;
-    let startCol: number = this._terminal._core.buffer.lines.get(startRow).length;
+    let startCol: number = this._terminal.cols;
 
     if (selectionManager.selectionStart) {
       // Start from the selection start if there is a selection
@@ -119,7 +119,7 @@ export class SearchHelper implements ISearchHelper {
     // Search from startRow - 1 to top
     if (!result) {
       for (let y = startRow - 1; y >= 0; y--) {
-        result = this._findInLine(term, y, this._terminal._core.buffer.lines.get(y).length, searchOptions, isReverseSearch);
+        result = this._findInLine(term, y, this._terminal.cols, searchOptions, isReverseSearch);
         if (result) {
           break;
         }
@@ -131,7 +131,7 @@ export class SearchHelper implements ISearchHelper {
     if (!result) {
       const searchFrom = this._terminal._core.buffer.ybase + this._terminal.rows - 1;
       for (let y = searchFrom; y >= startRow; y--) {
-        result = this._findInLine(term, y, this._terminal._core.buffer.lines.get(y).length, searchOptions, isReverseSearch);
+        result = this._findInLine(term, y, this._terminal.cols, searchOptions, isReverseSearch);
         if (result) {
           break;
         }
@@ -187,9 +187,6 @@ export class SearchHelper implements ISearchHelper {
    * @return The search result if it was found.
    */
   protected _findInLine(term: string, row: number, col: number, searchOptions: ISearchOptions = {}, isReverseSearch: boolean = false): ISearchResult {
-    if (this._terminal._core.buffer.lines.get(row).isWrapped) {
-      return;
-    }
 
     let stringLine = this._linesCache ? this._linesCache[row] : void 0;
     if (stringLine === void 0) {
@@ -222,7 +219,12 @@ export class SearchHelper implements ISearchHelper {
       }
     } else {
       if (isReverseSearch) {
-        if (col - searchTerm.length >= 0) {
+        // If the given row has no selection (col is equal to row length),
+        // lastIndexOf needs to scan at the end of the searchStringLine
+        if (col === this._terminal.cols) {
+          resultIndex = searchStringLine.lastIndexOf(searchTerm, col - 1);
+        }
+        else if (col - searchTerm.length >= 0) {
           resultIndex = searchStringLine.lastIndexOf(searchTerm, col - searchTerm.length);
         }
       } else {
