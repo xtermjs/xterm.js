@@ -265,10 +265,7 @@ export class Buffer implements IBuffer {
         y += this._reflowLarger(y, newCols);
       }
     } else {
-      // Go backwards as many lines may be trimmed and this will avoid considering them
-      for (let y = this.lines.length - 1; y >= 0; y--) {
-        y -= this._reflowSmaller(y, newCols);
-      }
+      this._reflowSmaller(newCols);
     }
   }
 
@@ -344,93 +341,173 @@ export class Buffer implements IBuffer {
     return wrappedLines.length - countToRemove - 1;
   }
 
-  private _reflowSmaller(y: number, newCols: number): number {
-    // Check whether this line is a problem
-    let nextLine = this.lines.get(y) as BufferLine;
-    if (!nextLine.isWrapped && nextLine.getTrimmedLength() <= newCols) {
-      return 0;
-    }
+  private _reflowSmaller(newCols: number): void {
+    // Gather all BufferLines that need to be inserted into the Buffer here so that they can be
+    // batched up and only committed once
+    const toInsert = [];
+    let countToInsert = 0;
+    // Go backwards as many lines may be trimmed and this will avoid considering them
+    for (let y = this.lines.length - 1; y >= 0; y--) {
+      // Check whether this line is a problem
+      let nextLine = this.lines.get(y) as BufferLine;
+      if (!nextLine.isWrapped && nextLine.getTrimmedLength() <= newCols) {
+        continue;
+      }
 
-    // Gather wrapped lines and adjust y to be the starting line
-    const wrappedLines: BufferLine[] = [nextLine];
-    if (nextLine.isWrapped) {
-      while (true) {
+      // Gather wrapped lines and adjust y to be the starting line
+      const wrappedLines: BufferLine[] = [nextLine];
+      while (nextLine.isWrapped && y > 0) {
         nextLine = this.lines.get(--y) as BufferLine;
         // TODO: unshift is expensive
         wrappedLines.unshift(nextLine);
-        if (!nextLine.isWrapped || y === 0) {
-          break;
-        }
       }
-    }
 
-    // Determine how many lines need to be inserted at the end, based on the trimmed length of
-    // the last wrapped line
-    const lastLineLength = wrappedLines[wrappedLines.length - 1].getTrimmedLength();
-    const cellsNeeded = (wrappedLines.length - 1) * this._cols + lastLineLength;
-    const linesNeeded = Math.ceil(cellsNeeded / newCols);
-    const linesToAdd = linesNeeded - wrappedLines.length;
-    let trimmedLines: number;
-    if (this.ybase === 0 && this.y !== this.lines.length - 1) {
-      // If the top section of the buffer is not yet filled
-      trimmedLines = Math.max(0, this.y - this.lines.maxLength + linesToAdd);
-    } else {
-      trimmedLines = Math.max(0, this.lines.length - this.lines.maxLength + linesToAdd);
-    }
+      // Determine how many lines need to be inserted at the end, based on the trimmed length of
+      // the last wrapped line
+      const lastLineLength = wrappedLines[wrappedLines.length - 1].getTrimmedLength();
+      const cellsNeeded = (wrappedLines.length - 1) * this._cols + lastLineLength;
+      const linesNeeded = Math.ceil(cellsNeeded / newCols);
+      const linesToAdd = linesNeeded - wrappedLines.length;
+      let trimmedLines: number;
+      if (this.ybase === 0 && this.y !== this.lines.length - 1) {
+        // If the top section of the buffer is not yet filled
+        trimmedLines = Math.max(0, this.y - this.lines.maxLength + linesToAdd);
+      } else {
+        trimmedLines = Math.max(0, this.lines.length - this.lines.maxLength + linesToAdd);
+      }
 
-    // Add the new lines
-    const newLines: BufferLine[] = [];
-    for (let i = 0; i < linesToAdd; i++) {
-      const newLine = this.getBlankLine(DEFAULT_ATTR, true) as BufferLine;
-      newLines.push(newLine);
-    }
-    this.lines.splice(y + wrappedLines.length, 0, ...newLines);
-    wrappedLines.push(...newLines);
+      // Add the new lines
+      const newLines: BufferLine[] = [];
+      for (let i = 0; i < linesToAdd; i++) {
+        const newLine = this.getBlankLine(DEFAULT_ATTR, true) as BufferLine;
+        newLines.push(newLine);
+      }
+      if (newLines.length > 0) {
+        toInsert.push({
+          // countToInsert here gets the actual index, taking into account other inserted items.
+          // using this we can iterate through the list forwards
+          start: y + wrappedLines.length + countToInsert,
+          newLines
+        });
+        countToInsert += newLines.length;
+      }
+      // this.lines.splice(y + wrappedLines.length, 0, ...newLines);
+      wrappedLines.push(...newLines);
 
-    // Copy buffer data to new locations, this needs to happen backwards to do in-place
-    let destLineIndex = Math.floor(cellsNeeded / newCols);
-    let destCol = cellsNeeded % newCols;
-    if (destCol === 0) {
-      destLineIndex--;
-      destCol = newCols;
-    }
-    let srcLineIndex = wrappedLines.length - linesToAdd - 1;
-    let srcCol = lastLineLength;
-    while (srcLineIndex >= 0) {
-      const cellsToCopy = Math.min(srcCol, destCol);
-      wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[srcLineIndex], srcCol - cellsToCopy, destCol - cellsToCopy, cellsToCopy, true);
-      destCol -= cellsToCopy;
+      // Copy buffer data to new locations, this needs to happen backwards to do in-place
+      let destLineIndex = Math.floor(cellsNeeded / newCols);
+      let destCol = cellsNeeded % newCols;
       if (destCol === 0) {
         destLineIndex--;
         destCol = newCols;
       }
-      srcCol -= cellsToCopy;
-      if (srcCol === 0) {
-        srcLineIndex--;
-        srcCol = this._cols;
+      let srcLineIndex = wrappedLines.length - linesToAdd - 1;
+      let srcCol = lastLineLength;
+      while (srcLineIndex >= 0) {
+        const cellsToCopy = Math.min(srcCol, destCol);
+        wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[srcLineIndex], srcCol - cellsToCopy, destCol - cellsToCopy, cellsToCopy, true);
+        destCol -= cellsToCopy;
+        if (destCol === 0) {
+          destLineIndex--;
+          destCol = newCols;
+        }
+        srcCol -= cellsToCopy;
+        if (srcCol === 0) {
+          srcLineIndex--;
+          srcCol = this._cols;
+        }
       }
-    }
 
-    // Adjust viewport as needed
-    let viewportAdjustments = linesToAdd - trimmedLines;
-    while (viewportAdjustments-- > 0) {
-      if (this.ybase === 0) {
-        if (this.y < this._rows - 1) {
-          this.y++;
-          this.lines.pop();
+      // Adjust viewport as needed
+      let viewportAdjustments = linesToAdd - trimmedLines;
+      while (viewportAdjustments-- > 0) {
+        if (this.ybase === 0) {
+          if (this.y < this._rows - 1) {
+            this.y++;
+            this.lines.pop();
+          } else {
+            this.ybase++;
+            this.ydisp++;
+          }
         } else {
-          this.ybase++;
-          this.ydisp++;
-        }
-      } else {
-        if (this.ybase === this.ydisp) {
-          this.ybase++;
-          this.ydisp++;
+          if (this.ybase === this.ydisp) {
+            this.ybase++;
+            this.ydisp++;
+          }
         }
       }
+
+      // y -= wrappedLines.length - 1 /*- linesToAdd*/ /*+ trimmedLines */;
     }
 
-    return wrappedLines.length - 1 - linesToAdd + trimmedLines;
+    // Record original lines so they don't get overridden when we rearrange the list
+    const originalLines: BufferLine[] = [];
+    for (let i = 0; i < this.lines.length; i++) {
+      originalLines.push(this.lines.get(i) as BufferLine);
+    }
+    // if (toInsert.length) {
+    //   let insertIndex = toInsert.length - 1;
+    //   let nextToInsert = toInsert[insertIndex];
+    //   let originalLineIndex = 0;
+    //   for (let i = 0; i < Math.min(this.lines.maxLength - 1, this.lines.length + countToInsert); i++) {
+    //     if (nextToInsert && nextToInsert.start === i) {
+    //       this.lines.set(i, nextToInsert.newLines.shift());
+    //       if (nextToInsert.newLines.length === 0) {
+    //         nextToInsert = toInsert[--insertIndex];
+    //       }
+    //     } else {
+    //       this.lines.set(i, originalLines[originalLineIndex++]);
+    //     }
+    //   }
+    // }
+
+    if (toInsert.length > 0) {
+      let nextToInsertIndex = 0;
+      let nextToInsert = toInsert[nextToInsertIndex];
+      let originalLineIndex = originalLines.length - 1;
+      const originalLinesLength = this.lines.length;
+      this.lines.length = Math.min(this.lines.maxLength, this.lines.length + countToInsert);
+      // let countToBeInserted = countToInsert;
+      let countInsertedSoFar = 0;
+      for (let i = Math.min(this.lines.maxLength - 1, originalLinesLength + countToInsert - 1); i >= 0; i--) {
+        if (nextToInsert && nextToInsert.start > originalLineIndex + countInsertedSoFar) {
+          for (let nextI = nextToInsert.newLines.length - 1; nextI >= 0; nextI--) {
+            this.lines.set(i--, nextToInsert.newLines[nextI]);
+          }
+          i++; // Don't skip for the first row
+          // this.lines.set(i, nextToInsert.newLines.pop());
+          countInsertedSoFar += nextToInsert.newLines.length;
+          // countToBeInserted--;
+          // if (nextToInsert.newLines.length === 0) {
+            nextToInsert = toInsert[++nextToInsertIndex];
+          // }
+
+
+
+          // this.lines.set(i, nextToInsert.newLines.pop());
+          // countInsertedSoFar++;
+          // // countToBeInserted--;
+          // if (nextToInsert.newLines.length === 0) {
+          //   nextToInsert = toInsert[++nextToInsertIndex];
+          // }
+        } else {
+          this.lines.set(i, originalLines[originalLineIndex--]);
+        }
+      }
+      // TODO: Throw trim event
+  }
+
+    // let offset = 0;
+    // const listener = (countToTrim: number) => {
+    //   offset -= countToTrim;
+    // };
+    // this.lines.on('trim', listener);
+    // toInsert.forEach(value => {
+    //   console.log('Insert at ', value.start + offset, value.newLines);
+    //   this.lines.splice(value.start + offset, 0, ...value.newLines);
+    //   // offset -= value.start;
+    // });
+    // this.lines.off('trim', listener);
   }
 
   /**
