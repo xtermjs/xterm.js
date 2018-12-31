@@ -9,6 +9,10 @@ import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR } from '.
 
 
 class TestBufferLine extends BufferLine {
+  public get combined(): {[index: number]: string} {
+    return this._combined;
+  }
+
   public toArray(): CharData[] {
     const result = [];
     for (let i = 0; i < this.length; ++i) {
@@ -153,6 +157,15 @@ describe('BufferLine', function(): void {
       const line = new TestBufferLine(10, [1, 'a', 0, 'a'.charCodeAt(0)], false);
       line.resize(0, [1, 'a', 0, 'a'.charCodeAt(0)]);
       chai.expect(line.toArray()).eql(Array(0).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
+    });
+    it('should remove combining data', () => {
+      const line = new TestBufferLine(10, [1, 'a', 0, 'a'.charCodeAt(0)], false);
+      line.set(9, [ null, '😁', 1, '😁'.charCodeAt(0) ]);
+      chai.expect(line.translateToString()).eql('aaaaaaaaa😁');
+      chai.expect(Object.keys(line.combined).length).eql(1);
+      line.resize(5, [1, 'a', 0, 'a'.charCodeAt(0)]);
+      chai.expect(line.translateToString()).eql('aaaaa');
+      chai.expect(Object.keys(line.combined).length).eql(0);
     });
   });
   describe('getTrimLength', function(): void {

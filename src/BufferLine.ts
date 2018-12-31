@@ -250,8 +250,17 @@ export class BufferLine implements IBufferLine {
         const data = new Uint32Array(cols * CELL_SIZE);
         data.set(this._data.subarray(0, cols * CELL_SIZE));
         this._data = data;
+        // Remove any cut off combined data
+        const keys = Object.keys(this._combined);
+        for (let i = 0; i < keys.length; i++) {
+          const key = parseInt(keys[i], 10);
+          if (key >= cols) {
+            delete this._combined[key];
+          }
+        }
       } else {
         this._data = null;
+        this._combined = {};
       }
     }
     this.length = cols;
