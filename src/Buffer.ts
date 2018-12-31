@@ -280,7 +280,7 @@ export class Buffer implements IBuffer {
 
       // Check how many lines it's wrapped for
       const wrappedLines: BufferLine[] = [this.lines.get(y) as BufferLine];
-      while (nextLine.isWrapped && i < this.lines.length) {
+      while (i < this.lines.length && nextLine.isWrapped) {
         wrappedLines.push(nextLine);
         nextLine = this.lines.get(++i) as BufferLine;
       }
@@ -325,7 +325,7 @@ export class Buffer implements IBuffer {
         toRemove.push(countToRemove);
       }
 
-      y += wrappedLines.length - countToRemove - 1;
+      y += wrappedLines.length - 1;
     }
 
     if (toRemove.length > 0) {
@@ -346,16 +346,15 @@ export class Buffer implements IBuffer {
         }
       }
 
-      // TODO: THis and the next loop could be improved, only gather the new layout lines, not the original lines
       // Record original lines so they don't get overridden when we rearrange the list
-      const originalLines: BufferLine[] = [];
-      for (let i = 0; i < this.lines.length; i++) {
-        originalLines.push(this.lines.get(i) as BufferLine);
+      const newLayoutLines: BufferLine[] = [];
+      for (let i = 0; i < newLayout.length; i++) {
+        newLayoutLines.push(this.lines.get(newLayout[i]) as BufferLine);
       }
 
       // Rearrange the list
-      for (let i = 0; i < newLayout.length; i++) {
-        this.lines.set(i, originalLines[newLayout[i]]);
+      for (let i = 0; i < newLayoutLines.length; i++) {
+        this.lines.set(i, newLayoutLines[i]);
       }
       this.lines.length = newLayout.length;
 

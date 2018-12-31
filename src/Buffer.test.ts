@@ -334,6 +334,49 @@ describe('Buffer', () => {
         assert.equal(buffer.lines.get(3).translateToString(), '          ');
         assert.equal(buffer.lines.get(4).translateToString(), '          ');
       });
+      it('should remove the correct amount of rows when reflowing larger', () => {
+        // This is a regression test to ensure that successive wrapped lines that are getting
+        // 3+ lines removed on a reflow actually remove the right lines
+        buffer.fillViewportRows();
+        buffer.resize(10, 10);
+        const firstLine = buffer.lines.get(0);
+        const secondLine = buffer.lines.get(1);
+        for (let i = 0; i < 10; i++) {
+          const code = 'a'.charCodeAt(0) + i;
+          const char = String.fromCharCode(code);
+          firstLine.set(i, [null, char, 1, code]);
+        }
+        for (let i = 0; i < 10; i++) {
+          const code = '0'.charCodeAt(0) + i;
+          const char = String.fromCharCode(code);
+          secondLine.set(i, [null, char, 1, code]);
+        }
+        assert.equal(buffer.lines.length, 10);
+        assert.equal(buffer.lines.get(0).translateToString(), 'abcdefghij');
+        assert.equal(buffer.lines.get(1).translateToString(), '0123456789');
+        for (let i = 2; i < 10; i++) {
+          assert.equal(buffer.lines.get(i).translateToString(), '          ');
+        }
+        buffer.resize(2, 10);
+        assert.equal(buffer.ybase, 0);
+        assert.equal(buffer.lines.length, 10);
+        assert.equal(buffer.lines.get(0).translateToString(), 'ab');
+        assert.equal(buffer.lines.get(1).translateToString(), 'cd');
+        assert.equal(buffer.lines.get(2).translateToString(), 'ef');
+        assert.equal(buffer.lines.get(3).translateToString(), 'gh');
+        assert.equal(buffer.lines.get(4).translateToString(), 'ij');
+        assert.equal(buffer.lines.get(5).translateToString(), '01');
+        assert.equal(buffer.lines.get(6).translateToString(), '23');
+        assert.equal(buffer.lines.get(7).translateToString(), '45');
+        assert.equal(buffer.lines.get(8).translateToString(), '67');
+        assert.equal(buffer.lines.get(9).translateToString(), '89');
+        buffer.resize(10, 10);
+        assert.equal(buffer.lines.get(0).translateToString(), 'abcdefghij');
+        assert.equal(buffer.lines.get(1).translateToString(), '0123456789');
+        for (let i = 2; i < 10; i++) {
+          assert.equal(buffer.lines.get(i).translateToString(), '          ');
+        }
+      });
     });
   });
 
