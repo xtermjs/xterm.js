@@ -19,9 +19,6 @@ export class TestTerminal extends Terminal {
 }
 
 export class MockTerminal implements ITerminal {
-  eraseAttr(): number {
-    throw new Error('Method not implemented.');
-  }
   markers: IMarker[];
   addMarker(cursorYOffset: number): IMarker {
     throw new Error('Method not implemented.');
