@@ -470,9 +470,9 @@ export class Buffer implements IBuffer {
           }
         } else {
           if (this.ybase === this.ydisp) {
-            this.ybase++;
             this.ydisp++;
           }
+          this.ybase++;
         }
       }
     }

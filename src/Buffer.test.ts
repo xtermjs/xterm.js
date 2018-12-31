@@ -510,6 +510,399 @@ describe('Buffer', () => {
         assert.equal(secondMarker.line, 1, 'second marker should be restored');
         assert.equal(thirdMarker.line, 2, 'third marker should be restored');
       });
+
+      describe('reflowLarger cases', () => {
+        beforeEach(() => {
+          // Setup buffer state:
+          // 'ab'
+          // 'cd' (wrapped)
+          // 'ef'
+          // 'gh' (wrapped)
+          // 'ij'
+          // 'kl' (wrapped)
+          // '  '
+          // '  '
+          // '  '
+          // '  '
+          buffer.fillViewportRows();
+          buffer.resize(2, 10);
+          buffer.lines.get(0).set(0, [null, 'a', 1, 'a'.charCodeAt(0)]);
+          buffer.lines.get(0).set(1, [null, 'b', 1, 'b'.charCodeAt(0)]);
+          buffer.lines.get(1).set(0, [null, 'c', 1, 'c'.charCodeAt(0)]);
+          buffer.lines.get(1).set(1, [null, 'd', 1, 'd'.charCodeAt(0)]);
+          buffer.lines.get(1).isWrapped = true;
+          buffer.lines.get(2).set(0, [null, 'e', 1, 'e'.charCodeAt(0)]);
+          buffer.lines.get(2).set(1, [null, 'f', 1, 'f'.charCodeAt(0)]);
+          buffer.lines.get(3).set(0, [null, 'g', 1, 'g'.charCodeAt(0)]);
+          buffer.lines.get(3).set(1, [null, 'h', 1, 'h'.charCodeAt(0)]);
+          buffer.lines.get(3).isWrapped = true;
+          buffer.lines.get(4).set(0, [null, 'i', 1, 'i'.charCodeAt(0)]);
+          buffer.lines.get(4).set(1, [null, 'j', 1, 'j'.charCodeAt(0)]);
+          buffer.lines.get(5).set(0, [null, 'k', 1, 'k'.charCodeAt(0)]);
+          buffer.lines.get(5).set(1, [null, 'l', 1, 'l'.charCodeAt(0)]);
+          buffer.lines.get(5).isWrapped = true;
+        });
+        describe('viewport not yet filled', () => {
+          it('should move the cursor up and add empty lines', () => {
+            buffer.y = 6;
+            buffer.resize(4, 10);
+            assert.equal(buffer.y, 3);
+            assert.equal(buffer.ydisp, 0);
+            assert.equal(buffer.ybase, 0);
+            assert.equal(buffer.lines.length, 10);
+            assert.equal(buffer.lines.get(0).translateToString(), 'abcd');
+            assert.equal(buffer.lines.get(1).translateToString(), 'efgh');
+            assert.equal(buffer.lines.get(2).translateToString(), 'ijkl');
+            for (let i = 3; i < 10; i++) {
+              assert.equal(buffer.lines.get(i).translateToString(), '    ');
+            }
+            const wrappedLines: number[] = [];
+            for (let i = 0; i < buffer.lines.length; i++) {
+              assert.equal(buffer.lines.get(i).isWrapped, wrappedLines.indexOf(i) !== -1, `line ${i} isWrapped must equal ${wrappedLines.indexOf(i) !== -1}`);
+            }
+          });
+        });
+        describe('viewport filled, scrollback remaining', () => {
+          beforeEach(() => {
+            buffer.y = 9;
+          });
+          describe('ybase === 0', () => {
+            it('should move the cursor up and add empty lines', () => {
+              buffer.resize(4, 10);
+              assert.equal(buffer.y, 6);
+              assert.equal(buffer.ydisp, 0);
+              assert.equal(buffer.ybase, 0);
+              assert.equal(buffer.lines.length, 10);
+              assert.equal(buffer.lines.get(0).translateToString(), 'abcd');
+              assert.equal(buffer.lines.get(1).translateToString(), 'efgh');
+              assert.equal(buffer.lines.get(2).translateToString(), 'ijkl');
+              for (let i = 3; i < 10; i++) {
+                assert.equal(buffer.lines.get(i).translateToString(), '    ');
+              }
+              const wrappedLines: number[] = [];
+              for (let i = 0; i < buffer.lines.length; i++) {
+                assert.equal(buffer.lines.get(i).isWrapped, wrappedLines.indexOf(i) !== -1, `line ${i} isWrapped must equal ${wrappedLines.indexOf(i) !== -1}`);
+              }
+            });
+          });
+          describe('ybase !== 0', () => {
+            beforeEach(() => {
+              // Add 10 empty rows to start
+              for (let i = 0; i < 10; i++) {
+                buffer.lines.splice(0, 0, buffer.getBlankLine(DEFAULT_ATTR));
+              }
+              buffer.ybase = 10;
+            });
+            describe('&& ydisp === ybase', () => {
+              it('should adjust the viewport and keep ydisp = ybase', () => {
+                buffer.ydisp = 10;
+                buffer.resize(4, 10);
+                assert.equal(buffer.y, 9);
+                assert.equal(buffer.ydisp, 7);
+                assert.equal(buffer.ybase, 7);
+                assert.equal(buffer.lines.length, 17);
+                for (let i = 0; i < 10; i++) {
+                  assert.equal(buffer.lines.get(i).translateToString(), '    ');
+                }
+                assert.equal(buffer.lines.get(10).translateToString(), 'abcd');
+                assert.equal(buffer.lines.get(11).translateToString(), 'efgh');
+                assert.equal(buffer.lines.get(12).translateToString(), 'ijkl');
+                for (let i = 13; i < 17; i++) {
+                  assert.equal(buffer.lines.get(i).translateToString(), '    ');
+                }
+                const wrappedLines: number[] = [];
+                for (let i = 0; i < buffer.lines.length; i++) {
+                  assert.equal(buffer.lines.get(i).isWrapped, wrappedLines.indexOf(i) !== -1, `line ${i} isWrapped must equal ${wrappedLines.indexOf(i) !== -1}`);
+                }
+              });
+            });
+            describe('&& ydisp !== ybase', () => {
+              it('should keep ydisp at the same value', () => {
+                buffer.ydisp = 5;
+                buffer.resize(4, 10);
+                assert.equal(buffer.y, 9);
+                assert.equal(buffer.ydisp, 5);
+                assert.equal(buffer.ybase, 7);
+                assert.equal(buffer.lines.length, 17);
+                for (let i = 0; i < 10; i++) {
+                  assert.equal(buffer.lines.get(i).translateToString(), '    ');
+                }
+                assert.equal(buffer.lines.get(10).translateToString(), 'abcd');
+                assert.equal(buffer.lines.get(11).translateToString(), 'efgh');
+                assert.equal(buffer.lines.get(12).translateToString(), 'ijkl');
+                for (let i = 13; i < 17; i++) {
+                  assert.equal(buffer.lines.get(i).translateToString(), '    ');
+                }
+                const wrappedLines: number[] = [];
+                for (let i = 0; i < buffer.lines.length; i++) {
+                  assert.equal(buffer.lines.get(i).isWrapped, wrappedLines.indexOf(i) !== -1, `line ${i} isWrapped must equal ${wrappedLines.indexOf(i) !== -1}`);
+                }
+              });
+            });
+          });
+        });
+        describe('viewport filled, no scrollback remaining', () => {
+          // ybase === 0 doesn't make sense here as scrollback=0 isn't really supported
+          describe('ybase !== 0', () => {
+            beforeEach(() => {
+              terminal.options.scrollback = 10;
+              // Add 10 empty rows to start
+              for (let i = 0; i < 10; i++) {
+                buffer.lines.splice(0, 0, buffer.getBlankLine(DEFAULT_ATTR));
+              }
+              buffer.y = 9;
+              buffer.ybase = 10;
+            });
+            describe('&& ydisp === ybase', () => {
+              it('should trim lines and keep ydisp = ybase', () => {
+                buffer.ydisp = 10;
+                buffer.resize(4, 10);
+                assert.equal(buffer.y, 9);
+                assert.equal(buffer.ydisp, 7);
+                assert.equal(buffer.ybase, 7);
+                assert.equal(buffer.lines.length, 17);
+                for (let i = 0; i < 10; i++) {
+                  assert.equal(buffer.lines.get(i).translateToString(), '    ');
+                }
+                assert.equal(buffer.lines.get(10).translateToString(), 'abcd');
+                assert.equal(buffer.lines.get(11).translateToString(), 'efgh');
+                assert.equal(buffer.lines.get(12).translateToString(), 'ijkl');
+                for (let i = 13; i < 17; i++) {
+                  assert.equal(buffer.lines.get(i).translateToString(), '    ');
+                }
+                const wrappedLines: number[] = [];
+                for (let i = 0; i < buffer.lines.length; i++) {
+                  assert.equal(buffer.lines.get(i).isWrapped, wrappedLines.indexOf(i) !== -1, `line ${i} isWrapped must equal ${wrappedLines.indexOf(i) !== -1}`);
+                }
+              });
+            });
+            describe('&& ydisp !== ybase', () => {
+              it('should trim lines and not change ydisp', () => {
+                buffer.ydisp = 5;
+                buffer.resize(4, 10);
+                assert.equal(buffer.y, 9);
+                assert.equal(buffer.ydisp, 5);
+                assert.equal(buffer.ybase, 7);
+                assert.equal(buffer.lines.length, 17);
+                for (let i = 0; i < 10; i++) {
+                  assert.equal(buffer.lines.get(i).translateToString(), '    ');
+                }
+                assert.equal(buffer.lines.get(10).translateToString(), 'abcd');
+                assert.equal(buffer.lines.get(11).translateToString(), 'efgh');
+                assert.equal(buffer.lines.get(12).translateToString(), 'ijkl');
+                for (let i = 13; i < 17; i++) {
+                  assert.equal(buffer.lines.get(i).translateToString(), '    ');
+                }
+                const wrappedLines: number[] = [];
+                for (let i = 0; i < buffer.lines.length; i++) {
+                  assert.equal(buffer.lines.get(i).isWrapped, wrappedLines.indexOf(i) !== -1, `line ${i} isWrapped must equal ${wrappedLines.indexOf(i) !== -1}`);
+                }
+              });
+            });
+          });
+        });
+      });
+      describe('reflowSmaller cases', () => {
+        beforeEach(() => {
+          // Setup buffer state:
+          // 'abcd'
+          // 'efgh' (wrapped)
+          // 'ijkl'
+          // '    '
+          // '    '
+          // '    '
+          // '    '
+          // '    '
+          // '    '
+          // '    '
+          buffer.fillViewportRows();
+          buffer.resize(4, 10);
+          buffer.lines.get(0).set(0, [null, 'a', 1, 'a'.charCodeAt(0)]);
+          buffer.lines.get(0).set(1, [null, 'b', 1, 'b'.charCodeAt(0)]);
+          buffer.lines.get(0).set(2, [null, 'c', 1, 'c'.charCodeAt(0)]);
+          buffer.lines.get(0).set(3, [null, 'd', 1, 'd'.charCodeAt(0)]);
+          buffer.lines.get(1).set(0, [null, 'e', 1, 'e'.charCodeAt(0)]);
+          buffer.lines.get(1).set(1, [null, 'f', 1, 'f'.charCodeAt(0)]);
+          buffer.lines.get(1).set(2, [null, 'g', 1, 'g'.charCodeAt(0)]);
+          buffer.lines.get(1).set(3, [null, 'h', 1, 'h'.charCodeAt(0)]);
+          buffer.lines.get(2).set(0, [null, 'i', 1, 'i'.charCodeAt(0)]);
+          buffer.lines.get(2).set(1, [null, 'j', 1, 'j'.charCodeAt(0)]);
+          buffer.lines.get(2).set(2, [null, 'k', 1, 'k'.charCodeAt(0)]);
+          buffer.lines.get(2).set(3, [null, 'l', 1, 'l'.charCodeAt(0)]);
+        });
+        describe('viewport not yet filled', () => {
+          it('should move the cursor down', () => {
+            buffer.y = 3;
+            buffer.resize(2, 10);
+            assert.equal(buffer.y, 6);
+            assert.equal(buffer.ydisp, 0);
+            assert.equal(buffer.ybase, 0);
+            assert.equal(buffer.lines.length, 10);
+            assert.equal(buffer.lines.get(0).translateToString(), 'ab');
+            assert.equal(buffer.lines.get(1).translateToString(), 'cd');
+            assert.equal(buffer.lines.get(2).translateToString(), 'ef');
+            assert.equal(buffer.lines.get(3).translateToString(), 'gh');
+            assert.equal(buffer.lines.get(4).translateToString(), 'ij');
+            assert.equal(buffer.lines.get(5).translateToString(), 'kl');
+            for (let i = 6; i < 10; i++) {
+              assert.equal(buffer.lines.get(i).translateToString(), '  ');
+            }
+            const wrappedLines = [1, 3, 5];
+            for (let i = 0; i < buffer.lines.length; i++) {
+              assert.equal(buffer.lines.get(i).isWrapped, wrappedLines.indexOf(i) !== -1, `line ${i} isWrapped must equal ${wrappedLines.indexOf(i) !== -1}`);
+            }
+          });
+        });
+        describe('viewport filled, scrollback remaining', () => {
+          beforeEach(() => {
+            buffer.y = 9;
+          });
+          describe('ybase === 0', () => {
+            it('should trim the top', () => {
+              buffer.resize(2, 10);
+              assert.equal(buffer.y, 9);
+              assert.equal(buffer.ydisp, 3);
+              assert.equal(buffer.ybase, 3);
+              assert.equal(buffer.lines.length, 13);
+              assert.equal(buffer.lines.get(0).translateToString(), 'ab');
+              assert.equal(buffer.lines.get(1).translateToString(), 'cd');
+              assert.equal(buffer.lines.get(2).translateToString(), 'ef');
+              assert.equal(buffer.lines.get(3).translateToString(), 'gh');
+              assert.equal(buffer.lines.get(4).translateToString(), 'ij');
+              assert.equal(buffer.lines.get(5).translateToString(), 'kl');
+              for (let i = 6; i < 13; i++) {
+                assert.equal(buffer.lines.get(i).translateToString(), '  ');
+              }
+              const wrappedLines = [1, 3, 5];
+              for (let i = 0; i < buffer.lines.length; i++) {
+                assert.equal(buffer.lines.get(i).isWrapped, wrappedLines.indexOf(i) !== -1, `line ${i} isWrapped must equal ${wrappedLines.indexOf(i) !== -1}`);
+              }
+            });
+          });
+          describe('ybase !== 0', () => {
+            beforeEach(() => {
+              // Add 10 empty rows to start
+              for (let i = 0; i < 10; i++) {
+                buffer.lines.splice(0, 0, buffer.getBlankLine(DEFAULT_ATTR));
+              }
+              buffer.ybase = 10;
+            });
+            describe('&& ydisp === ybase', () => {
+              it('should adjust the viewport and keep ydisp = ybase', () => {
+                buffer.ydisp = 10;
+                buffer.resize(2, 10);
+                assert.equal(buffer.ydisp, 13);
+                assert.equal(buffer.ybase, 13);
+                assert.equal(buffer.lines.length, 23);
+                for (let i = 0; i < 10; i++) {
+                  assert.equal(buffer.lines.get(i).translateToString(), '  ');
+                }
+                assert.equal(buffer.lines.get(10).translateToString(), 'ab');
+                assert.equal(buffer.lines.get(11).translateToString(), 'cd');
+                assert.equal(buffer.lines.get(12).translateToString(), 'ef');
+                assert.equal(buffer.lines.get(13).translateToString(), 'gh');
+                assert.equal(buffer.lines.get(14).translateToString(), 'ij');
+                assert.equal(buffer.lines.get(15).translateToString(), 'kl');
+                for (let i = 16; i < 23; i++) {
+                  assert.equal(buffer.lines.get(i).translateToString(), '  ');
+                }
+                const wrappedLines = [11, 13, 15];
+                for (let i = 0; i < buffer.lines.length; i++) {
+                  assert.equal(buffer.lines.get(i).isWrapped, wrappedLines.indexOf(i) !== -1, `line ${i} isWrapped must equal ${wrappedLines.indexOf(i) !== -1}`);
+                }
+              });
+            });
+            describe('&& ydisp !== ybase', () => {
+              it('should keep ydisp at the same value', () => {
+                buffer.ydisp = 5;
+                buffer.resize(2, 10);
+                assert.equal(buffer.ydisp, 5);
+                assert.equal(buffer.ybase, 13);
+                assert.equal(buffer.lines.length, 23);
+                for (let i = 0; i < 10; i++) {
+                  assert.equal(buffer.lines.get(i).translateToString(), '  ');
+                }
+                assert.equal(buffer.lines.get(10).translateToString(), 'ab');
+                assert.equal(buffer.lines.get(11).translateToString(), 'cd');
+                assert.equal(buffer.lines.get(12).translateToString(), 'ef');
+                assert.equal(buffer.lines.get(13).translateToString(), 'gh');
+                assert.equal(buffer.lines.get(14).translateToString(), 'ij');
+                assert.equal(buffer.lines.get(15).translateToString(), 'kl');
+                for (let i = 16; i < 23; i++) {
+                  assert.equal(buffer.lines.get(i).translateToString(), '  ');
+                }
+                const wrappedLines = [11, 13, 15];
+                for (let i = 0; i < buffer.lines.length; i++) {
+                  assert.equal(buffer.lines.get(i).isWrapped, wrappedLines.indexOf(i) !== -1, `line ${i} isWrapped must equal ${wrappedLines.indexOf(i) !== -1}`);
+                }
+              });
+            });
+          });
+        });
+        describe('viewport filled, no scrollback remaining', () => {
+          // ybase === 0 doesn't make sense here as scrollback=0 isn't really supported
+          describe('ybase !== 0', () => {
+            beforeEach(() => {
+              terminal.options.scrollback = 10;
+              // Add 10 empty rows to start
+              for (let i = 0; i < 10; i++) {
+                buffer.lines.splice(0, 0, buffer.getBlankLine(DEFAULT_ATTR));
+              }
+              buffer.ybase = 10;
+            });
+            describe('&& ydisp === ybase', () => {
+              it('should trim lines and keep ydisp = ybase', () => {
+                buffer.ydisp = 10;
+                buffer.resize(2, 10);
+                assert.equal(buffer.ydisp, 10);
+                assert.equal(buffer.ybase, 10);
+                assert.equal(buffer.lines.length, 20);
+                for (let i = 0; i < 7; i++) {
+                  assert.equal(buffer.lines.get(i).translateToString(), '  ');
+                }
+                assert.equal(buffer.lines.get(7).translateToString(), 'ab');
+                assert.equal(buffer.lines.get(8).translateToString(), 'cd');
+                assert.equal(buffer.lines.get(9).translateToString(), 'ef');
+                assert.equal(buffer.lines.get(10).translateToString(), 'gh');
+                assert.equal(buffer.lines.get(11).translateToString(), 'ij');
+                assert.equal(buffer.lines.get(12).translateToString(), 'kl');
+                for (let i = 13; i < 20; i++) {
+                  assert.equal(buffer.lines.get(i).translateToString(), '  ');
+                }
+                const wrappedLines = [8, 10, 12];
+                for (let i = 0; i < buffer.lines.length; i++) {
+                  assert.equal(buffer.lines.get(i).isWrapped, wrappedLines.indexOf(i) !== -1, `line ${i} isWrapped must equal ${wrappedLines.indexOf(i) !== -1}`);
+                }
+              });
+            });
+            describe('&& ydisp !== ybase', () => {
+              it('should trim lines and not change ydisp', () => {
+                buffer.ydisp = 5;
+                buffer.resize(2, 10);
+                assert.equal(buffer.ydisp, 5);
+                assert.equal(buffer.ybase, 10);
+                assert.equal(buffer.lines.length, 20);
+                for (let i = 0; i < 7; i++) {
+                  assert.equal(buffer.lines.get(i).translateToString(), '  ');
+                }
+                assert.equal(buffer.lines.get(7).translateToString(), 'ab');
+                assert.equal(buffer.lines.get(8).translateToString(), 'cd');
+                assert.equal(buffer.lines.get(9).translateToString(), 'ef');
+                assert.equal(buffer.lines.get(10).translateToString(), 'gh');
+                assert.equal(buffer.lines.get(11).translateToString(), 'ij');
+                assert.equal(buffer.lines.get(12).translateToString(), 'kl');
+                for (let i = 13; i < 20; i++) {
+                  assert.equal(buffer.lines.get(i).translateToString(), '  ');
+                }
+                const wrappedLines = [8, 10, 12];
+                for (let i = 0; i < buffer.lines.length; i++) {
+                  assert.equal(buffer.lines.get(i).isWrapped, wrappedLines.indexOf(i) !== -1, `line ${i} isWrapped must equal ${wrappedLines.indexOf(i) !== -1}`);
+                }
+              });
+            });
+          });
+        });
+      });
     });
   });
 
