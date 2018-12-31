@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { CircularList } from './common/CircularList';
+import { CircularList, IInsertEvent, IDeleteEvent } from './common/CircularList';
 import { CharData, ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult, IBufferLineConstructor } from './Types';
 import { EventEmitter } from './common/EventEmitter';
 import { IMarker } from 'xterm';
@@ -238,7 +238,7 @@ export class Buffer implements IBuffer {
 
     this.scrollBottom = newRows - 1;
 
-    if (this.hasScrollback && this._bufferLineConstructor === BufferLine) {
+    if (this._hasScrollback && this._bufferLineConstructor === BufferLine) {
       this._reflow(newCols);
 
       // Trim the end of the line off if cols shrunk
@@ -338,6 +338,13 @@ export class Buffer implements IBuffer {
       for (let i = 0; i < this.lines.length; i++) {
         if (nextToRemoveStart === i) {
           const countToRemove = toRemove[++nextToRemoveIndex];
+
+          // Tell markers that there was a deletion
+          this.lines.emit('delete', {
+            index: i - countRemovedSoFar,
+            amount: countToRemove
+          } as IDeleteEvent);
+
           i += countToRemove - 1;
           countRemovedSoFar += countToRemove;
           nextToRemoveStart = toRemove[++nextToRemoveIndex];
@@ -474,6 +481,10 @@ export class Buffer implements IBuffer {
     // than earlier so that it's a single O(n) pass through the buffer, instead of O(n^2) from many
     // costly calls to CircularList.splice.
     if (toInsert.length > 0) {
+      // Record buffer insert events and then play them back backwards so that the indexes are
+      // correct
+      const insertEvents: IInsertEvent[] = [];
+
       // Record original lines so they don't get overridden when we rearrange the list
       const originalLines: BufferLine[] = [];
       for (let i = 0; i < this.lines.length; i++) {
@@ -492,14 +503,32 @@ export class Buffer implements IBuffer {
           for (let nextI = nextToInsert.newLines.length - 1; nextI >= 0; nextI--) {
             this.lines.set(i--, nextToInsert.newLines[nextI]);
           }
-          i++; // Don't skip for the first row
+          i++;
+
+          // Create insert events for later
+          insertEvents.push({
+            index: originalLineIndex + 1,
+            amount: nextToInsert.newLines.length
+          } as IInsertEvent);
+
           countInsertedSoFar += nextToInsert.newLines.length;
           nextToInsert = toInsert[++nextToInsertIndex];
         } else {
           this.lines.set(i, originalLines[originalLineIndex--]);
         }
       }
-      // TODO: Throw trim event
+
+      // Update markers
+      let insertCountEmitted = 0;
+      for (let i = insertEvents.length - 1; i >= 0; i--) {
+        insertEvents[i].index += insertCountEmitted;
+        this.lines.emit('insert', insertEvents[i]);
+        insertCountEmitted += insertEvents[i].amount;
+      }
+      const amountToTrim = Math.max(0, originalLinesLength + countToInsert - this.lines.maxLength);
+      if (amountToTrim > 0) {
+        this.lines.emitMayRemoveListeners('trim', amountToTrim);
+      }
     }
   }
 
@@ -618,12 +647,27 @@ export class Buffer implements IBuffer {
         marker.dispose();
       }
     }));
+    marker.register(this.lines.addDisposableListener('insert', (event: IInsertEvent) => {
+      if (marker.line >= event.index) {
+        marker.line += event.amount;
+      }
+    }));
+    marker.register(this.lines.addDisposableListener('delete', (event: IDeleteEvent) => {
+      // Delete the marker if it's within the range
+      if (marker.line >= event.index && marker.line < event.index + event.amount) {
+        marker.dispose();
+      }
+
+      // Shift the marker if it's after the deleted range
+      if (marker.line > event.index) {
+        marker.line -= event.amount;
+      }
+    }));
     marker.register(marker.addDisposableListener('dispose', () => this._removeMarker(marker)));
     return marker;
   }
 
   private _removeMarker(marker: Marker): void {
-    // TODO: This could probably be optimized by relying on sort order and trimming the array using .length
     this.markers.splice(this.markers.indexOf(marker), 1);
   }
 

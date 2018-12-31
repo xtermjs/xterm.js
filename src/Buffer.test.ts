@@ -392,6 +392,124 @@ describe('Buffer', () => {
         assert.equal(buffer.lines.get(0).translateToString(), 'ab');
         assert.equal(buffer.lines.get(1).translateToString(), 'c😁');
       });
+      it('should adjust markers when reflowing', () => {
+        buffer.fillViewportRows();
+        buffer.resize(10, 15);
+        for (let i = 0; i < 10; i++) {
+          const code = 'a'.charCodeAt(0) + i;
+          const char = String.fromCharCode(code);
+          buffer.lines.get(0).set(i, [null, char, 1, code]);
+        }
+        for (let i = 0; i < 10; i++) {
+          const code = '0'.charCodeAt(0) + i;
+          const char = String.fromCharCode(code);
+          buffer.lines.get(1).set(i, [null, char, 1, code]);
+        }
+        for (let i = 0; i < 10; i++) {
+          const code = 'k'.charCodeAt(0) + i;
+          const char = String.fromCharCode(code);
+          buffer.lines.get(2).set(i, [null, char, 1, code]);
+        }
+        // Buffer:
+        // abcdefghij
+        // 0123456789
+        // abcdefghij
+        const firstMarker = buffer.addMarker(0);
+        const secondMarker = buffer.addMarker(1);
+        const thirdMarker = buffer.addMarker(2);
+        assert.equal(buffer.lines.get(0).translateToString(), 'abcdefghij');
+        assert.equal(buffer.lines.get(1).translateToString(), '0123456789');
+        assert.equal(buffer.lines.get(2).translateToString(), 'klmnopqrst');
+        assert.equal(firstMarker.line, 0);
+        assert.equal(secondMarker.line, 1);
+        assert.equal(thirdMarker.line, 2);
+        buffer.resize(2, 15);
+        assert.equal(buffer.lines.get(0).translateToString(), 'ab');
+        assert.equal(buffer.lines.get(1).translateToString(), 'cd');
+        assert.equal(buffer.lines.get(2).translateToString(), 'ef');
+        assert.equal(buffer.lines.get(3).translateToString(), 'gh');
+        assert.equal(buffer.lines.get(4).translateToString(), 'ij');
+        assert.equal(buffer.lines.get(5).translateToString(), '01');
+        assert.equal(buffer.lines.get(6).translateToString(), '23');
+        assert.equal(buffer.lines.get(7).translateToString(), '45');
+        assert.equal(buffer.lines.get(8).translateToString(), '67');
+        assert.equal(buffer.lines.get(9).translateToString(), '89');
+        assert.equal(buffer.lines.get(10).translateToString(), 'kl');
+        assert.equal(buffer.lines.get(11).translateToString(), 'mn');
+        assert.equal(buffer.lines.get(12).translateToString(), 'op');
+        assert.equal(buffer.lines.get(13).translateToString(), 'qr');
+        assert.equal(buffer.lines.get(14).translateToString(), 'st');
+        assert.equal(firstMarker.line, 0, 'first marker should remain unchanged');
+        assert.equal(secondMarker.line, 5, 'second marker should be shifted since the first line wrapped');
+        assert.equal(thirdMarker.line, 10, 'third marker should be shifted since the first and second lines wrapped');
+        buffer.resize(10, 15);
+        assert.equal(buffer.lines.get(0).translateToString(), 'abcdefghij');
+        assert.equal(buffer.lines.get(1).translateToString(), '0123456789');
+        assert.equal(buffer.lines.get(2).translateToString(), 'klmnopqrst');
+        assert.equal(firstMarker.line, 0, 'first marker should remain unchanged');
+        assert.equal(secondMarker.line, 1, 'second marker should be restored to it\'s original line');
+        assert.equal(thirdMarker.line, 2, 'third marker should be restored to it\'s original line');
+        assert.equal(firstMarker.isDisposed, false);
+        assert.equal(secondMarker.isDisposed, false);
+        assert.equal(thirdMarker.isDisposed, false);
+      });
+      it('should dispose markers whose rows are trimmed during a reflow', () => {
+        buffer.fillViewportRows();
+        terminal.options.scrollback = 1;
+        buffer.resize(10, 10);
+        for (let i = 0; i < 10; i++) {
+          const code = 'a'.charCodeAt(0) + i;
+          const char = String.fromCharCode(code);
+          buffer.lines.get(0).set(i, [null, char, 1, code]);
+        }
+        for (let i = 0; i < 10; i++) {
+          const code = '0'.charCodeAt(0) + i;
+          const char = String.fromCharCode(code);
+          buffer.lines.get(1).set(i, [null, char, 1, code]);
+        }
+        for (let i = 0; i < 10; i++) {
+          const code = 'k'.charCodeAt(0) + i;
+          const char = String.fromCharCode(code);
+          buffer.lines.get(2).set(i, [null, char, 1, code]);
+        }
+        // Buffer:
+        // abcdefghij
+        // 0123456789
+        // abcdefghij
+        const firstMarker = buffer.addMarker(0);
+        const secondMarker = buffer.addMarker(1);
+        const thirdMarker = buffer.addMarker(2);
+        buffer.y = 2;
+        assert.equal(buffer.lines.get(0).translateToString(), 'abcdefghij');
+        assert.equal(buffer.lines.get(1).translateToString(), '0123456789');
+        assert.equal(buffer.lines.get(2).translateToString(), 'klmnopqrst');
+        assert.equal(firstMarker.line, 0);
+        assert.equal(secondMarker.line, 1);
+        assert.equal(thirdMarker.line, 2);
+        buffer.resize(2, 10);
+        assert.equal(buffer.lines.get(0).translateToString(), 'ij');
+        assert.equal(buffer.lines.get(1).translateToString(), '01');
+        assert.equal(buffer.lines.get(2).translateToString(), '23');
+        assert.equal(buffer.lines.get(3).translateToString(), '45');
+        assert.equal(buffer.lines.get(4).translateToString(), '67');
+        assert.equal(buffer.lines.get(5).translateToString(), '89');
+        assert.equal(buffer.lines.get(6).translateToString(), 'kl');
+        assert.equal(buffer.lines.get(7).translateToString(), 'mn');
+        assert.equal(buffer.lines.get(8).translateToString(), 'op');
+        assert.equal(buffer.lines.get(9).translateToString(), 'qr');
+        assert.equal(buffer.lines.get(10).translateToString(), 'st');
+        assert.equal(secondMarker.line, 1, 'second marker should remain the same as it was shifted 4 and trimmed 4');
+        assert.equal(thirdMarker.line, 6, 'third marker should be shifted since the first and second lines wrapped');
+        assert.equal(firstMarker.isDisposed, true, 'first marker was trimmed');
+        assert.equal(secondMarker.isDisposed, false);
+        assert.equal(thirdMarker.isDisposed, false);
+        buffer.resize(10, 10);
+        assert.equal(buffer.lines.get(0).translateToString(), 'ij        ');
+        assert.equal(buffer.lines.get(1).translateToString(), '0123456789');
+        assert.equal(buffer.lines.get(2).translateToString(), 'klmnopqrst');
+        assert.equal(secondMarker.line, 1, 'second marker should be restored');
+        assert.equal(thirdMarker.line, 2, 'third marker should be restored');
+      });
     });
   });
 

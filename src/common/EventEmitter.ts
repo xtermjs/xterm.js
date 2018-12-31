@@ -75,6 +75,19 @@ export class EventEmitter extends Disposable implements IEventEmitter, IDisposab
     }
   }
 
+  public emitMayRemoveListeners(type: string, ...args: any[]): void {
+    if (!this._events[type]) {
+      return;
+    }
+    const obj = this._events[type];
+    let length = obj.length;
+    for (let i = 0; i < obj.length; i++) {
+      obj[i].apply(this, args);
+      i -= length - obj.length;
+      length = obj.length;
+    }
+  }
+
   public listeners(type: string): XtermListener[] {
     return this._events[type] || [];
   }
