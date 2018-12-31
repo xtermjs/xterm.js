@@ -267,6 +267,9 @@ export class Buffer implements IBuffer {
   }
 
   private _reflowLarger(newCols: number): void {
+    // Gather all BufferLines that need to be removed from the Buffer here so that they can be
+    // batched up and only committed once
+    const toRemove: number[] = [];
     for (let y = 0; y < this.lines.length - 1; y++) {
       // Check if this row is wrapped
       let i = y;
@@ -318,23 +321,58 @@ export class Buffer implements IBuffer {
       }
 
       if (countToRemove > 0) {
-        this.lines.splice(y + wrappedLines.length - countToRemove, countToRemove);
-        let viewportAdjustments = countToRemove;
-        while (viewportAdjustments-- > 0) {
-          if (this.ybase === 0) {
-            this.y--;
-            // Add an extra row at the bottom of the viewport
-            this.lines.push(new this._bufferLineConstructor(newCols, FILL_CHAR_DATA));
-          } else {
-            if (this.ydisp === this.ybase) {
-              this.ydisp--;
-            }
-            this.ybase--;
-          }
-        }
+        toRemove.push(y + wrappedLines.length - countToRemove); // index
+        toRemove.push(countToRemove);
       }
 
       y += wrappedLines.length - countToRemove - 1;
+    }
+
+    if (toRemove.length > 0) {
+      // First iterate through the list and get the actual indexes to use for rows
+      const newLayout: number[] = [];
+
+      let nextToRemoveIndex = 0;
+      let nextToRemoveStart = toRemove[nextToRemoveIndex];
+      let countRemovedSoFar = 0;
+      for (let i = 0; i < this.lines.length; i++) {
+        if (nextToRemoveStart === i) {
+          const countToRemove = toRemove[++nextToRemoveIndex];
+          i += countToRemove - 1;
+          countRemovedSoFar += countToRemove;
+          nextToRemoveStart = toRemove[++nextToRemoveIndex];
+        } else {
+          newLayout.push(i);
+        }
+      }
+
+      // TODO: THis and the next loop could be improved, only gather the new layout lines, not the original lines
+      // Record original lines so they don't get overridden when we rearrange the list
+      const originalLines: BufferLine[] = [];
+      for (let i = 0; i < this.lines.length; i++) {
+        originalLines.push(this.lines.get(i) as BufferLine);
+      }
+
+      // Rearrange the list
+      for (let i = 0; i < newLayout.length; i++) {
+        this.lines.set(i, originalLines[newLayout[i]]);
+      }
+      this.lines.length = newLayout.length;
+
+      // Adjust viewport based on number of items removed
+      let viewportAdjustments = countRemovedSoFar;
+      while (viewportAdjustments-- > 0) {
+        if (this.ybase === 0) {
+          this.y--;
+          // Add an extra row at the bottom of the viewport
+          this.lines.push(new this._bufferLineConstructor(newCols, FILL_CHAR_DATA));
+        } else {
+          if (this.ydisp === this.ybase) {
+            this.ydisp--;
+          }
+          this.ybase--;
+        }
+      }
     }
   }
 
@@ -433,20 +471,20 @@ export class Buffer implements IBuffer {
       }
     }
 
-    // Record original lines so they don't get overridden when we rearrange the list
-    const originalLines: BufferLine[] = [];
-    for (let i = 0; i < this.lines.length; i++) {
-      originalLines.push(this.lines.get(i) as BufferLine);
-    }
-
     // Rearrange lines in the buffer if there are any insertions, this is done at the end rather
     // than earlier so that it's a single O(n) pass through the buffer, instead of O(n^2) from many
     // costly calls to CircularList.splice.
     if (toInsert.length > 0) {
+      // Record original lines so they don't get overridden when we rearrange the list
+      const originalLines: BufferLine[] = [];
+      for (let i = 0; i < this.lines.length; i++) {
+        originalLines.push(this.lines.get(i) as BufferLine);
+      }
+      const originalLinesLength = this.lines.length;
+
+      let originalLineIndex = originalLinesLength - 1;
       let nextToInsertIndex = 0;
       let nextToInsert = toInsert[nextToInsertIndex];
-      let originalLineIndex = originalLines.length - 1;
-      const originalLinesLength = this.lines.length;
       this.lines.length = Math.min(this.lines.maxLength, this.lines.length + countToInsert);
       let countInsertedSoFar = 0;
       for (let i = Math.min(this.lines.maxLength - 1, originalLinesLength + countToInsert - 1); i >= 0; i--) {
