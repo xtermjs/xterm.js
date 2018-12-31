@@ -25,6 +25,8 @@ export const WHITESPACE_CELL_CHAR = ' ';
 export const WHITESPACE_CELL_WIDTH = 1;
 export const WHITESPACE_CELL_CODE = 32;
 
+const FILL_CHAR_DATA: CharData = [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
+
 /**
  * This class represents a terminal buffer (an internal state of the terminal), where the
  * following information is stored (in high-level):
@@ -168,9 +170,8 @@ export class Buffer implements IBuffer {
     if (this.lines.length > 0) {
       // Deal with columns increasing (reducing needs to happen after reflow)
       if (this._cols < newCols) {
-        const fillCharData: CharData = [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
         for (let i = 0; i < this.lines.length; i++) {
-          this.lines.get(i).resize(newCols, fillCharData);
+          this.lines.get(i).resize(newCols, FILL_CHAR_DATA);
         }
       }
 
@@ -191,8 +192,7 @@ export class Buffer implements IBuffer {
             } else {
               // Add a blank line if there is no buffer left at the top to scroll to, or if there
               // are blank lines after the cursor
-              const fillCharData: CharData = [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
-              this.lines.push(new this._bufferLineConstructor(newCols, fillCharData));
+              this.lines.push(new this._bufferLineConstructor(newCols, FILL_CHAR_DATA));
             }
           }
         }
@@ -243,9 +243,8 @@ export class Buffer implements IBuffer {
 
       // Trim the end of the line off if cols shrunk
       if (this._cols > newCols) {
-        const fillCharData: CharData = [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
         for (let i = 0; i < this.lines.length; i++) {
-          this.lines.get(i).resize(newCols, fillCharData);
+          this.lines.get(i).resize(newCols, FILL_CHAR_DATA);
         }
       }
     }
@@ -306,10 +305,8 @@ export class Buffer implements IBuffer {
       }
     }
 
-    // Clear out remaining cells or fragments could remain
-    // TODO: @jerch can fillCharData be a const?
-    const fillCharData: CharData = [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
-    wrappedLines[destLineIndex].replaceCells(destCol, newCols, fillCharData);
+    // Clear out remaining cells or fragments could remain;
+    wrappedLines[destLineIndex].replaceCells(destCol, newCols, FILL_CHAR_DATA);
 
     // Work backwards and remove any rows at the end that only contain null cells
     let countToRemove = 0;
@@ -328,7 +325,7 @@ export class Buffer implements IBuffer {
         if (this.ybase === 0) {
           this.y--;
           // Add an extra row at the bottom of the viewport
-          this.lines.push(new this._bufferLineConstructor(newCols, fillCharData));
+          this.lines.push(new this._bufferLineConstructor(newCols, FILL_CHAR_DATA));
         } else {
           if (this.ydisp === this.ybase) {
             this.ydisp--;
@@ -358,7 +355,6 @@ export class Buffer implements IBuffer {
       const wrappedLines: BufferLine[] = [nextLine];
       while (nextLine.isWrapped && y > 0) {
         nextLine = this.lines.get(--y) as BufferLine;
-        // TODO: unshift is expensive
         wrappedLines.unshift(nextLine);
       }
 
@@ -391,7 +387,6 @@ export class Buffer implements IBuffer {
         });
         countToInsert += newLines.length;
       }
-      // this.lines.splice(y + wrappedLines.length, 0, ...newLines);
       wrappedLines.push(...newLines);
 
       // Copy buffer data to new locations, this needs to happen backwards to do in-place
@@ -436,8 +431,6 @@ export class Buffer implements IBuffer {
           }
         }
       }
-
-      // y -= wrappedLines.length - 1 /*- linesToAdd*/ /*+ trimmedLines */;
     }
 
     // Record original lines so they don't get overridden when we rearrange the list
@@ -445,69 +438,32 @@ export class Buffer implements IBuffer {
     for (let i = 0; i < this.lines.length; i++) {
       originalLines.push(this.lines.get(i) as BufferLine);
     }
-    // if (toInsert.length) {
-    //   let insertIndex = toInsert.length - 1;
-    //   let nextToInsert = toInsert[insertIndex];
-    //   let originalLineIndex = 0;
-    //   for (let i = 0; i < Math.min(this.lines.maxLength - 1, this.lines.length + countToInsert); i++) {
-    //     if (nextToInsert && nextToInsert.start === i) {
-    //       this.lines.set(i, nextToInsert.newLines.shift());
-    //       if (nextToInsert.newLines.length === 0) {
-    //         nextToInsert = toInsert[--insertIndex];
-    //       }
-    //     } else {
-    //       this.lines.set(i, originalLines[originalLineIndex++]);
-    //     }
-    //   }
-    // }
 
+    // Rearrange lines in the buffer if there are any insertions, this is done at the end rather
+    // than earlier so that it's a single O(n) pass through the buffer, instead of O(n^2) from many
+    // costly calls to CircularList.splice.
     if (toInsert.length > 0) {
       let nextToInsertIndex = 0;
       let nextToInsert = toInsert[nextToInsertIndex];
       let originalLineIndex = originalLines.length - 1;
       const originalLinesLength = this.lines.length;
       this.lines.length = Math.min(this.lines.maxLength, this.lines.length + countToInsert);
-      // let countToBeInserted = countToInsert;
       let countInsertedSoFar = 0;
       for (let i = Math.min(this.lines.maxLength - 1, originalLinesLength + countToInsert - 1); i >= 0; i--) {
         if (nextToInsert && nextToInsert.start > originalLineIndex + countInsertedSoFar) {
+          // Insert extra lines here, adjusting i as needed
           for (let nextI = nextToInsert.newLines.length - 1; nextI >= 0; nextI--) {
             this.lines.set(i--, nextToInsert.newLines[nextI]);
           }
           i++; // Don't skip for the first row
-          // this.lines.set(i, nextToInsert.newLines.pop());
           countInsertedSoFar += nextToInsert.newLines.length;
-          // countToBeInserted--;
-          // if (nextToInsert.newLines.length === 0) {
-            nextToInsert = toInsert[++nextToInsertIndex];
-          // }
-
-
-
-          // this.lines.set(i, nextToInsert.newLines.pop());
-          // countInsertedSoFar++;
-          // // countToBeInserted--;
-          // if (nextToInsert.newLines.length === 0) {
-          //   nextToInsert = toInsert[++nextToInsertIndex];
-          // }
+          nextToInsert = toInsert[++nextToInsertIndex];
         } else {
           this.lines.set(i, originalLines[originalLineIndex--]);
         }
       }
       // TODO: Throw trim event
-  }
-
-    // let offset = 0;
-    // const listener = (countToTrim: number) => {
-    //   offset -= countToTrim;
-    // };
-    // this.lines.on('trim', listener);
-    // toInsert.forEach(value => {
-    //   console.log('Insert at ', value.start + offset, value.newLines);
-    //   this.lines.splice(value.start + offset, 0, ...value.newLines);
-    //   // offset -= value.start;
-    // });
-    // this.lines.off('trim', listener);
+    }
   }
 
   /**
