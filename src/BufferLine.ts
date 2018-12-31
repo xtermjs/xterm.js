@@ -319,6 +319,15 @@ export class BufferLine implements IBufferLine {
         }
       }
     }
+
+    // Move any combined data over as needed
+    const srcCombinedKeys = Object.keys(src._combined);
+    for (let i = 0; i < srcCombinedKeys.length; i++) {
+      const key = parseInt(srcCombinedKeys[i], 10);
+      if (key >= srcCol) {
+        this._combined[key - srcCol + destCol] = src._combined[key];
+      }
+    }
   }
 
   public translateToString(trimRight: boolean = false, startCol: number = 0, endCol: number = this.length): string {

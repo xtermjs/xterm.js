@@ -377,6 +377,21 @@ describe('Buffer', () => {
           assert.equal(buffer.lines.get(i).translateToString(), '          ');
         }
       });
+      it('should transfer combined char data over to reflowed lines', () => {
+        buffer.fillViewportRows();
+        buffer.resize(4, 2);
+        const firstLine = buffer.lines.get(0);
+        firstLine.set(0, [ null, 'a', 1, 'a'.charCodeAt(0) ]);
+        firstLine.set(1, [ null, 'b', 1, 'b'.charCodeAt(0) ]);
+        firstLine.set(2, [ null, 'c', 1, 'c'.charCodeAt(0) ]);
+        firstLine.set(3, [ null, '😁', 1, '😁'.charCodeAt(0) ]);
+        assert.equal(buffer.lines.length, 2);
+        assert.equal(buffer.lines.get(0).translateToString(), 'abc😁');
+        assert.equal(buffer.lines.get(1).translateToString(), '    ');
+        buffer.resize(2, 2);
+        assert.equal(buffer.lines.get(0).translateToString(), 'ab');
+        assert.equal(buffer.lines.get(1).translateToString(), 'c😁');
+      });
     });
   });
 
