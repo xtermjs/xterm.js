@@ -260,82 +260,82 @@ export class Buffer implements IBuffer {
 
     // Iterate through rows, ignore the last one as it cannot be wrapped
     if (newCols > this._cols) {
-      for (let y = 0; y < this.lines.length - 1; y++) {
-        y += this._reflowLarger(y, newCols);
-      }
+      this._reflowLarger(newCols);
     } else {
       this._reflowSmaller(newCols);
     }
   }
 
-  private _reflowLarger(y: number, newCols: number): number {
-    // Check if this row is wrapped
-    let i = y;
-    let nextLine = this.lines.get(++i) as BufferLine;
-    if (!nextLine.isWrapped) {
-      return 0;
-    }
-
-    // Check how many lines it's wrapped for
-    const wrappedLines: BufferLine[] = [this.lines.get(y) as BufferLine];
-    while (nextLine.isWrapped && i < this.lines.length) {
-      wrappedLines.push(nextLine);
-      nextLine = this.lines.get(++i) as BufferLine;
-    }
-
-    // Copy buffer data to new locations
-    let destLineIndex = 0;
-    let destCol = this._cols;
-    let srcLineIndex = 1;
-    let srcCol = 0;
-    while (srcLineIndex < wrappedLines.length) {
-      const srcRemainingCells = this._cols - srcCol;
-      const destRemainingCells = newCols - destCol;
-      const cellsToCopy = Math.min(srcRemainingCells, destRemainingCells);
-      wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[srcLineIndex], srcCol, destCol, cellsToCopy, false);
-      destCol += cellsToCopy;
-      if (destCol === newCols) {
-        destLineIndex++;
-        destCol = 0;
+  private _reflowLarger(newCols: number): void {
+    for (let y = 0; y < this.lines.length - 1; y++) {
+      // Check if this row is wrapped
+      let i = y;
+      let nextLine = this.lines.get(++i) as BufferLine;
+      if (!nextLine.isWrapped) {
+        continue;
       }
-      srcCol += cellsToCopy;
-      if (srcCol === this._cols) {
-        srcLineIndex++;
-        srcCol = 0;
+
+      // Check how many lines it's wrapped for
+      const wrappedLines: BufferLine[] = [this.lines.get(y) as BufferLine];
+      while (nextLine.isWrapped && i < this.lines.length) {
+        wrappedLines.push(nextLine);
+        nextLine = this.lines.get(++i) as BufferLine;
       }
-    }
 
-    // Clear out remaining cells or fragments could remain;
-    wrappedLines[destLineIndex].replaceCells(destCol, newCols, FILL_CHAR_DATA);
-
-    // Work backwards and remove any rows at the end that only contain null cells
-    let countToRemove = 0;
-    for (let i = wrappedLines.length - 1; i > 0; i--) {
-      if (i > destLineIndex || wrappedLines[i].getTrimmedLength() === 0) {
-        countToRemove++;
-      } else {
-        break;
-      }
-    }
-
-    if (countToRemove > 0) {
-      this.lines.splice(y + wrappedLines.length - countToRemove, countToRemove);
-      let viewportAdjustments = countToRemove;
-      while (viewportAdjustments-- > 0) {
-        if (this.ybase === 0) {
-          this.y--;
-          // Add an extra row at the bottom of the viewport
-          this.lines.push(new this._bufferLineConstructor(newCols, FILL_CHAR_DATA));
-        } else {
-          if (this.ydisp === this.ybase) {
-            this.ydisp--;
-          }
-          this.ybase--;
+      // Copy buffer data to new locations
+      let destLineIndex = 0;
+      let destCol = this._cols;
+      let srcLineIndex = 1;
+      let srcCol = 0;
+      while (srcLineIndex < wrappedLines.length) {
+        const srcRemainingCells = this._cols - srcCol;
+        const destRemainingCells = newCols - destCol;
+        const cellsToCopy = Math.min(srcRemainingCells, destRemainingCells);
+        wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[srcLineIndex], srcCol, destCol, cellsToCopy, false);
+        destCol += cellsToCopy;
+        if (destCol === newCols) {
+          destLineIndex++;
+          destCol = 0;
+        }
+        srcCol += cellsToCopy;
+        if (srcCol === this._cols) {
+          srcLineIndex++;
+          srcCol = 0;
         }
       }
-    }
 
-    return wrappedLines.length - countToRemove - 1;
+      // Clear out remaining cells or fragments could remain;
+      wrappedLines[destLineIndex].replaceCells(destCol, newCols, FILL_CHAR_DATA);
+
+      // Work backwards and remove any rows at the end that only contain null cells
+      let countToRemove = 0;
+      for (let i = wrappedLines.length - 1; i > 0; i--) {
+        if (i > destLineIndex || wrappedLines[i].getTrimmedLength() === 0) {
+          countToRemove++;
+        } else {
+          break;
+        }
+      }
+
+      if (countToRemove > 0) {
+        this.lines.splice(y + wrappedLines.length - countToRemove, countToRemove);
+        let viewportAdjustments = countToRemove;
+        while (viewportAdjustments-- > 0) {
+          if (this.ybase === 0) {
+            this.y--;
+            // Add an extra row at the bottom of the viewport
+            this.lines.push(new this._bufferLineConstructor(newCols, FILL_CHAR_DATA));
+          } else {
+            if (this.ydisp === this.ybase) {
+              this.ydisp--;
+            }
+            this.ybase--;
+          }
+        }
+      }
+
+      y += wrappedLines.length - countToRemove - 1;
+    }
   }
 
   private _reflowSmaller(newCols: number): void {
