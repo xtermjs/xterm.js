@@ -19,8 +19,8 @@ describe('Buffer', () => {
 
   beforeEach(() => {
     terminal = new MockTerminal();
-    terminal.cols = INIT_COLS;
-    terminal.rows = INIT_ROWS;
+    (terminal as any).cols = INIT_COLS;
+    (terminal as any).rows = INIT_ROWS;
     terminal.options.scrollback = 1000;
     buffer = new Buffer(terminal, true);
   });

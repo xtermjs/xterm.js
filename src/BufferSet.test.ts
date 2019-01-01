@@ -15,8 +15,8 @@ describe('BufferSet', () => {
 
   beforeEach(() => {
     terminal = new MockTerminal();
-    terminal.cols = 80;
-    terminal.rows = 24;
+    (terminal as any).cols = 80;
+    (terminal as any).rows = 24;
     terminal.options.scrollback = 1000;
     bufferSet = new BufferSet(terminal);
   });

@@ -325,28 +325,32 @@ declare module 'xterm' {
     /**
      * The element containing the terminal.
      */
-    element: HTMLElement;
+    readonly element: HTMLElement;
 
     /**
      * The textarea that accepts input for the terminal.
      */
-    textarea: HTMLTextAreaElement;
+    readonly textarea: HTMLTextAreaElement;
 
     /**
-     * The number of rows in the terminal's viewport.
+     * The number of rows in the terminal's viewport. Use
+     * `ITerminalOptions.rows` to set this in the constructor and
+     * `Terminal.resize` for when the terminal exists.
      */
-    rows: number;
+    readonly rows: number;
 
     /**
-     * The number of columns in the terminal's viewport.
+     * The number of columns in the terminal's viewport. Use
+     * `ITerminalOptions.cols` to set this in the constructor and
+     * `Terminal.resize` for when the terminal exists.
      */
-    cols: number;
+    readonly cols: number;
 
     /**
      * (EXPERIMENTAL) Get all markers registered against the buffer. If the alt
      * buffer is active this will always return [].
      */
-    markers: IMarker[];
+    readonly markers: IMarker[];
 
     /**
      * Natural language strings that can be localized.
