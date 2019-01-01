@@ -1413,6 +1413,15 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this._customKeyEventHandler = customKeyEventHandler;
   }
 
+  /** Add handler for CSI escape sequence. See xterm.d.ts for details. */
+  public addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable {
+    return this._inputHandler.addCsiHandler(flag, callback);
+  }
+  /** Add handler for OSC escape sequence. See xterm.d.ts for details. */
+  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
+    return this._inputHandler.addOscHandler(ident, callback);
+  }
+
   /**
    * Registers a link matcher, allowing custom link patterns to be matched and
    * handled.

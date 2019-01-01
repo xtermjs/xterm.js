@@ -59,6 +59,12 @@ export class Terminal implements ITerminalApi {
   public attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void {
     this._core.attachCustomKeyEventHandler(customKeyEventHandler);
   }
+  public addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable {
+    return this._core.addCsiHandler(flag, callback);
+  }
+  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
+    return this._core.addOscHandler(ident, callback);
+  }
   public registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): number {
     return this._core.registerLinkMatcher(regex, handler, options);
   }
