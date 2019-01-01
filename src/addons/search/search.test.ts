@@ -29,8 +29,11 @@ class MockTerminal {
 }
 
 class TestSearchHelper extends SearchHelper {
-  public findInLine(term: string, y: number, searchOptions?: ISearchOptions): ISearchResult {
-    return this._findInLine(term, y, searchOptions);
+  public findInLine(term: string, rowNumber: number, searchOptions?: ISearchOptions): ISearchResult {
+    return this._findInLine(term, rowNumber, 0, searchOptions);
+  }
+  public findFromIndex(term: string, row: number, col: number, searchOptions?: ISearchOptions, isReverseSearch?: boolean): ISearchResult {
+    return this._findInLine(term, row, col, searchOptions, isReverseSearch);
   }
 }
 
@@ -244,6 +247,67 @@ describe('search addon', () => {
       expect(hello3).eql(undefined);
       expect(hello4).eql(undefined);
       expect(hello5).eql(undefined);
+    });
+    it('should find multiple matches in line', function(): void {
+      search.apply(<any>MockTerminal);
+      const term = new MockTerminal({cols: 20, rows: 5});
+      term.core.write('helloooo helloooo\r\naaaAAaaAAA');
+      term.pushWriteData();
+      const searchOptions = {
+        regex: false,
+        wholeWord: false,
+        caseSensitive: false
+      };
+      const find0 = term.searchHelper.findFromIndex('hello', 0, 0, searchOptions);
+      const find1 = term.searchHelper.findFromIndex('hello', 0, find0.col + find0.term.length, searchOptions);
+      const find2 = term.searchHelper.findFromIndex('aaaa', 1, 0, searchOptions);
+      const find3 = term.searchHelper.findFromIndex('aaaa', 1, find2.col + find2.term.length, searchOptions);
+      const find4 = term.searchHelper.findFromIndex('aaaa', 1, find3.col + find3.term.length, searchOptions);
+      expect(find0).eql({col: 0, row: 0, term: 'hello'});
+      expect(find1).eql({col: 9, row: 0, term: 'hello'});
+      expect(find2).eql({col: 0, row: 1, term: 'aaaa'});
+      expect(find3).eql({col: 4, row: 1, term: 'aaaa'});
+      expect(find4).eql(undefined);
+    });
+    it('should find multiple matches in line - reverse search', function(): void {
+      search.apply(<any>MockTerminal);
+      const term = new MockTerminal({cols: 20, rows: 5});
+      term.core.write('it is what it is');
+      term.pushWriteData();
+      const searchOptions = {
+        regex: false,
+        wholeWord: false,
+        caseSensitive: false
+      };
+      const isReverseSearch = true;
+      const find0 = term.searchHelper.findFromIndex('is', 0, 16, searchOptions, isReverseSearch);
+      const find1 = term.searchHelper.findFromIndex('is', 0, find0.col, searchOptions, isReverseSearch);
+      const find2 = term.searchHelper.findFromIndex('it', 0, 16, searchOptions, isReverseSearch);
+      const find3 = term.searchHelper.findFromIndex('it', 0, find2.col, searchOptions, isReverseSearch);
+      expect(find0).eql({col: 14, row: 0, term: 'is'});
+      expect(find1).eql({col: 3, row: 0, term: 'is'});
+      expect(find2).eql({col: 11, row: 0, term: 'it'});
+      expect(find3).eql({col: 0, row: 0, term: 'it'});
+    });
+    it('should find multiple matches in line - reverse search with regex', function(): void {
+      search.apply(<any>MockTerminal);
+      const term = new MockTerminal({cols: 20, rows: 5});
+      term.core.write('zzzABCzzzzABCABC');
+      term.pushWriteData();
+      const searchOptions = {
+        regex: true,
+        wholeWord: false,
+        caseSensitive: true
+      };
+      const isReverseSearch = true;
+      const find0 = term.searchHelper.findFromIndex('[A-Z]{3}', 0, 16, searchOptions, isReverseSearch);
+      const find1 = term.searchHelper.findFromIndex('[A-Z]{3}', 0, find0.col, searchOptions, isReverseSearch);
+      const find2 = term.searchHelper.findFromIndex('[A-Z]{3}', 0, find1.col, searchOptions, isReverseSearch);
+      const find3 = term.searchHelper.findFromIndex('[A-Z]{3}', 0, find2.col, searchOptions, isReverseSearch);
+      expect(find0).eql({col: 13, row: 0, term: 'ABC'});
+      expect(find1).eql({col: 10, row: 0, term: 'ABC'});
+      expect(find2).eql({col: 3, row: 0, term: 'ABC'});
+      expect(find3).eql(undefined);
     });
   });
 });
