@@ -322,7 +322,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
       dispose: () => {
         const handlerIndex = handlerList.indexOf(callback);
         if (handlerIndex !== -1) {
-          handlerList.splice(handlerIndex);
+          handlerList.splice(handlerIndex, 1);
         }
       }
     };
@@ -357,7 +357,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
       dispose: () => {
         const handlerIndex = handlerList.indexOf(callback);
         if (handlerIndex !== -1) {
-          handlerList.splice(handlerIndex);
+          handlerList.splice(handlerIndex, 1);
         }
       }
     };
