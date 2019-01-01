@@ -364,9 +364,11 @@ export class DomRenderer extends EventEmitter implements IRenderer {
         return;
       }
       const span = <HTMLElement>row.children[x];
-      span.style.textDecoration = enabled ? 'underline' : 'none';
-      x = (x + 1) % cols;
-      if (x === 0) {
+      if (span) {
+        span.style.textDecoration = enabled ? 'underline' : 'none';
+      }
+      if (++x >= cols) {
+        x = 0;
         y++;
       }
     }
