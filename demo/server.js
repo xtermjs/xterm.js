@@ -1,100 +1,106 @@
 var express = require('express');
-var app = express();
-var expressWs = require('express-ws')(app);
+var expressWs = require('express-ws');
 var os = require('os');
 var pty = require('node-pty');
 
-var terminals = {},
-    logs = {};
+function startServer() {
+  var app = express();
+  expressWs(app);
 
-app.use('/build', express.static(__dirname + '/../build'));
+  var terminals = {},
+      logs = {};
 
-app.get('/', function(req, res){
-  res.sendFile(__dirname + '/index.html');
-});
+  app.use('/build', express.static(__dirname + '/../build'));
 
-app.get('/style.css', function(req, res){
-  res.sendFile(__dirname + '/style.css');
-});
-
-app.get('/dist/client-bundle.js', function(req, res){
-  res.sendFile(__dirname + '/dist/client-bundle.js');
-});
-
-app.post('/terminals', function (req, res) {
-  var cols = parseInt(req.query.cols),
-      rows = parseInt(req.query.rows),
-      term = pty.spawn(process.platform === 'win32' ? 'cmd.exe' : 'bash', [], {
-        name: 'xterm-color',
-        cols: cols || 80,
-        rows: rows || 24,
-        cwd: process.env.PWD,
-        env: process.env
-      });
-
-  console.log('Created terminal with PID: ' + term.pid);
-  terminals[term.pid] = term;
-  logs[term.pid] = '';
-  term.on('data', function(data) {
-    logs[term.pid] += data;
+  app.get('/', function(req, res){
+    res.sendFile(__dirname + '/index.html');
   });
-  res.send(term.pid.toString());
-  res.end();
-});
 
-app.post('/terminals/:pid/size', function (req, res) {
-  var pid = parseInt(req.params.pid),
-      cols = parseInt(req.query.cols),
-      rows = parseInt(req.query.rows),
-      term = terminals[pid];
+  app.get('/style.css', function(req, res){
+    res.sendFile(__dirname + '/style.css');
+  });
 
-  term.resize(cols, rows);
-  console.log('Resized terminal ' + pid + ' to ' + cols + ' cols and ' + rows + ' rows.');
-  res.end();
-});
+  app.get('/dist/client-bundle.js', function(req, res){
+    res.sendFile(__dirname + '/dist/client-bundle.js');
+  });
 
-app.ws('/terminals/:pid', function (ws, req) {
-  var term = terminals[parseInt(req.params.pid)];
-  console.log('Connected to terminal ' + term.pid);
-  ws.send(logs[term.pid]);
+  app.post('/terminals', function (req, res) {
+    var cols = parseInt(req.query.cols),
+        rows = parseInt(req.query.rows),
+        term = pty.spawn(process.platform === 'win32' ? 'cmd.exe' : 'bash', [], {
+          name: 'xterm-color',
+          cols: cols || 80,
+          rows: rows || 24,
+          cwd: process.env.PWD,
+          env: process.env
+        });
 
-  function buffer(socket, timeout) {
-    let s = '';
-    let sender = null;
-    return (data) => {
-      s += data;
-      if (!sender) {
-        sender = setTimeout(() => {
-          socket.send(s);
-          s = '';
-          sender = null;
-        }, timeout);
-      }
-    };
-  }
-  const send = buffer(ws, 5);
+    console.log('Created terminal with PID: ' + term.pid);
+    terminals[term.pid] = term;
+    logs[term.pid] = '';
+    term.on('data', function(data) {
+      logs[term.pid] += data;
+    });
+    res.send(term.pid.toString());
+    res.end();
+  });
 
-  term.on('data', function(data) {
-    try {
-      send(data);
-    } catch (ex) {
-      // The WebSocket is not open, ignore
+  app.post('/terminals/:pid/size', function (req, res) {
+    var pid = parseInt(req.params.pid),
+        cols = parseInt(req.query.cols),
+        rows = parseInt(req.query.rows),
+        term = terminals[pid];
+
+    term.resize(cols, rows);
+    console.log('Resized terminal ' + pid + ' to ' + cols + ' cols and ' + rows + ' rows.');
+    res.end();
+  });
+
+  app.ws('/terminals/:pid', function (ws, req) {
+    var term = terminals[parseInt(req.params.pid)];
+    console.log('Connected to terminal ' + term.pid);
+    ws.send(logs[term.pid]);
+
+    function buffer(socket, timeout) {
+      let s = '';
+      let sender = null;
+      return (data) => {
+        s += data;
+        if (!sender) {
+          sender = setTimeout(() => {
+            socket.send(s);
+            s = '';
+            sender = null;
+          }, timeout);
+        }
+      };
     }
-  });
-  ws.on('message', function(msg) {
-    term.write(msg);
-  });
-  ws.on('close', function () {
-    term.kill();
-    console.log('Closed terminal ' + term.pid);
-    // Clean things up
-    delete terminals[term.pid];
-    delete logs[term.pid];
-  });
-});
+    const send = buffer(ws, 5);
 
-var port = process.env.PORT || 3000,
-    host = os.platform() === 'win32' ? '127.0.0.1' : '0.0.0.0';
+    term.on('data', function(data) {
+      try {
+        send(data);
+      } catch (ex) {
+        // The WebSocket is not open, ignore
+      }
+    });
+    ws.on('message', function(msg) {
+      term.write(msg);
+    });
+    ws.on('close', function () {
+      term.kill();
+      console.log('Closed terminal ' + term.pid);
+      // Clean things up
+      delete terminals[term.pid];
+      delete logs[term.pid];
+    });
+  });
 
-console.log('App listening to http://' + host + ':' + port);
-app.listen(port, host);
+  var port = process.env.PORT || 3000,
+      host = os.platform() === 'win32' ? '127.0.0.1' : '0.0.0.0';
+
+  console.log('App listening to http://' + host + ':' + port);
+  app.listen(port, host);
+}
+
+module.exports = startServer;

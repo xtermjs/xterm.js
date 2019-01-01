@@ -25,7 +25,10 @@ export interface ISearchOptions {
   regex?: boolean;
   wholeWord?: boolean;
   caseSensitive?: boolean;
-  /** Assume caller implements 'search as you type' where findNext gets called when search input changes */
+  /**
+   * Use this when you want the selection to expand if it still matches as the
+   * user types. Note that this only affects findNext.
+   */
   incremental?: boolean;
 }
 
