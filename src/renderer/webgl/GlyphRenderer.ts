@@ -345,7 +345,7 @@ export class GlyphRenderer {
     gl.uniform2f(this._resolutionLocation, gl.canvas.width, gl.canvas.height);
 
     // Draw the viewport
-    gl.drawElementsInstanced(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0, buffer.length / INDICES_PER_CELL);
+    gl.drawElementsInstanced(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0, bufferLength / INDICES_PER_CELL);
   }
 
   public setAtlas(atlas: WebglCharAtlas): void {
