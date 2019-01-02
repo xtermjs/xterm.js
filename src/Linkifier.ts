@@ -219,9 +219,17 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       // also correct regex and string search offsets for the next loop run
       stringIndex = text.indexOf(uri, stringIndex + 1);
       rex.lastIndex = stringIndex + uri.length;
+      if (stringIndex < 0) {
+        // invalid stringIndex (should not have happened)
+        break;
+      }
 
       // get the buffer index as [absolute row, col] for the match
       const bufferIndex = this._terminal.buffer.stringIndexToBufferIndex(rowIndex, stringIndex);
+      if (bufferIndex[0] < 0) {
+        // invalid bufferIndex (should not have happened)
+        break;
+      }
 
       const line = this._terminal.buffer.lines.get(bufferIndex[0]);
       const char = line.get(bufferIndex[1]);

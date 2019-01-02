@@ -492,6 +492,8 @@ export interface IEscapeSequenceParser extends IDisposable {
   setCsiHandler(flag: string, callback: (params: number[], collect: string) => void): void;
   clearCsiHandler(flag: string): void;
   setCsiHandlerFallback(callback: (collect: string, params: number[], flag: number) => void): void;
+  addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable;
+  addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
 
   setEscHandler(collectAndFlag: string, callback: () => void): void;
   clearEscHandler(collectAndFlag: string): void;

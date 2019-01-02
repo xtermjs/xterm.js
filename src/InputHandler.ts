@@ -12,6 +12,7 @@ import { FLAGS } from './renderer/Types';
 import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
 import { ICharset } from './core/Types';
+import { IDisposable } from 'xterm';
 import { Disposable } from './common/Lifecycle';
 import { concat, utf16ToString } from './common/TypedArrayUtils';
 
@@ -479,6 +480,13 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
     }
     this._terminal.updateRange(buffer.y);
+  }
+
+  addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable {
+    return this._parser.addCsiHandler(flag, callback);
+  }
+  addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
+    return this._parser.addOscHandler(ident, callback);
   }
 
   /**

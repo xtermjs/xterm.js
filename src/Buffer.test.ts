@@ -355,7 +355,7 @@ describe('Buffer', () => {
     let terminal: TestTerminal;
 
     beforeEach(() => {
-      terminal = new TestTerminal({rows: 5, cols: 10});
+      terminal = new TestTerminal({rows: 5, cols: 10, scrollback: 5});
     });
 
     it('multiline ascii', () => {
@@ -516,9 +516,38 @@ describe('Buffer', () => {
         assert.deepEqual([(j / terminal.cols) | 0, j % terminal.cols], bufferIndex);
       }
     });
+
+    it('test fully wrapped buffer up to last char', () => {
+      const input = Array(6).join('1234567890');
+      terminal.writeSync(input);
+      const s = terminal.buffer.iterator(true).next().content;
+      assert.equal(input, s);
+      for (let i = 0; i < input.length; ++i) {
+        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
+        assert.equal(input[i], terminal.buffer.lines.get(bufferIndex[0]).get(bufferIndex[1])[CHAR_DATA_CHAR_INDEX]);
+      }
+    });
+
+    it('test fully wrapped buffer up to last char with full width odd', () => {
+      const input = 'a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301'
+                    + 'a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301';
+      terminal.writeSync(input);
+      const s = terminal.buffer.iterator(true).next().content;
+      assert.equal(input, s);
+      for (let i = 0; i < input.length; ++i) {
+        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
+        assert.equal(
+          (!(i % 3))
+            ? input[i]
+            : (i % 3 === 1)
+              ? input.substr(i, 2)
+              : input.substr(i - 1, 2),
+          terminal.buffer.lines.get(bufferIndex[0]).get(bufferIndex[1])[CHAR_DATA_CHAR_INDEX]);
+      }
+    });
   });
   describe('BufferStringIterator', function(): void {
-    it('iterator does not ovrflow buffer limits', function(): void {
+    it('iterator does not overflow buffer limits', function(): void {
       const terminal = new TestTerminal({rows: 5, cols: 10, scrollback: 5});
       const data = [
         'aaaaaaaaaa',
