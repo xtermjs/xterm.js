@@ -23,9 +23,10 @@ packageJsonRaw = packageJsonRaw.replace(/("version": ")3.10.0(")/, `$1${nextVers
 fs.writeFileSync(packageJsonFile, packageJsonRaw);
 
 // Publish
-cp.spawnSync('npm', ['publish', '--tag', tag], {
+const result = cp.spawn('npm', ['publish', '--tag', tag], {
   stdio: 'inherit'
 });
+result.on('exit', code => process.exit(code));
 
 function getNextVersion(tag) {
   if (!/^[0-9]+\.[0-9]+\.[0-9]+$/.exec(packageJson.version)) {
