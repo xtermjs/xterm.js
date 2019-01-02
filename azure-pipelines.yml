@@ -72,16 +72,23 @@ jobs:
   - Linux
   - macOS
   - Windows
+  #condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
   pool:
-    vmImage: 'xcode9-macos10.13'
+    vmImage: 'ubuntu-16.04'
   steps:
   - task: NodeTool@0
     inputs:
       versionSpec: '8.x'
     displayName: 'Install Node.js'
+  - task: geeklearningio.gl-vsts-tasks-yarn.yarn-installer-task.YarnInstaller@2
+    inputs:
+      versionSpec: "1.9.4"
+    displayName: 'Install Yarn'
   - script: |
       yarn
     displayName: 'Install dependencies and build'
   - script: |
-      echo 'success'
-    displayName: 'Test'
+      node ./bin/publish.js
+    env:
+      NPM_AUTH_TOKEN: $(NPM_AUTH_TOKEN)
+    displayName: 'Publish to npm'
