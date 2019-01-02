@@ -6,6 +6,7 @@
 import { ParserState, IDcsHandler, IParsingState } from './Types';
 import { EscapeSequenceParser, TransitionTable, VT500_TRANSITION_TABLE } from './EscapeSequenceParser';
 import * as chai from 'chai';
+import { StringToUtf32, stringFromCodePoint } from './core/input/TextDecoder';
 
 function r(a: number, b: number): string[] {
   let c = b - a;
@@ -50,10 +51,10 @@ const testTerminal: any = {
   compare: function (value: any): void {
     chai.expect(this.calls.slice()).eql(value); // weird bug w'o slicing here
   },
-  print: function (data: Uint16Array, start: number, end: number): void {
+  print: function (data: Uint32Array, start: number, end: number): void {
     let s = '';
     for (let i = start; i < end; ++i) {
-      s += String.fromCharCode(data[i]);
+      s += stringFromCodePoint(data[i]);
     }
     this.calls.push(['print', s]);
   },
@@ -72,10 +73,10 @@ const testTerminal: any = {
   actionDCSHook: function (collect: string, params: number[], flag: string): void {
     this.calls.push(['dcs hook', collect, params, flag]);
   },
-  actionDCSPrint: function (data: Uint16Array, start: number, end: number): void {
+  actionDCSPrint: function (data: Uint32Array, start: number, end: number): void {
     let s = '';
     for (let i = start; i < end; ++i) {
-      s += String.fromCharCode(data[i]);
+      s += stringFromCodePoint(data[i]);
     }
     this.calls.push(['dcs put', s]);
   },
@@ -89,7 +90,7 @@ class DcsTest implements IDcsHandler {
   hook(collect: string, params: number[], flag: number): void {
     testTerminal.actionDCSHook(collect, params, String.fromCharCode(flag));
   }
-  put(data: Uint16Array, start: number, end: number): void {
+  put(data: Uint32Array, start: number, end: number): void {
     testTerminal.actionDCSPrint(data, start, end);
   }
   unhook(): void {
@@ -165,11 +166,9 @@ interface IRun {
 
 // translate string based parse calls into typed array based
 function parse(parser: TestEscapeSequenceParser, data: string): void {
-  const container = new Uint16Array(data.length);
-  for (let i = 0; i < data.length; ++i) {
-    container[i] = data.charCodeAt(i);
-  }
-  parser.parse(container, data.length);
+  const container = new Uint32Array(data.length);
+  const decoder = new StringToUtf32();
+  parser.parse(container, decoder.decode(data, container));
 }
 
 describe('EscapeSequenceParser', function (): void {
@@ -1143,9 +1142,9 @@ describe('EscapeSequenceParser', function (): void {
       clearAccu();
     });
     it('print handler', function (): void {
-      parser2.setPrintHandler(function (data: Uint16Array, start: number, end: number): void {
+      parser2.setPrintHandler(function (data: Uint32Array, start: number, end: number): void {
         for (let i = start; i < end; ++i) {
-          print += String.fromCharCode(data[i]);
+          print += stringFromCodePoint(data[i]);
         }
       });
       parse(parser2, INPUT);
@@ -1353,10 +1352,10 @@ describe('EscapeSequenceParser', function (): void {
         hook: function (collect: string, params: number[], flag: number): void {
           dcs.push(['hook', collect, params, flag]);
         },
-        put: function (data: Uint16Array, start: number, end: number): void {
+        put: function (data: Uint32Array, start: number, end: number): void {
           let s = '';
           for (let i = start; i < end; ++i) {
-            s += String.fromCharCode(data[i]);
+            s += stringFromCodePoint(data[i]);
           }
           dcs.push(['put', s]);
         },

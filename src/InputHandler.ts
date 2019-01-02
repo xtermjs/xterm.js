@@ -14,7 +14,8 @@ import { EscapeSequenceParser } from './EscapeSequenceParser';
 import { ICharset } from './core/Types';
 import { IDisposable } from 'xterm';
 import { Disposable } from './common/Lifecycle';
-import { concat, utf16ToString } from './common/TypedArrayUtils';
+import { concat, utf32ToString } from './common/TypedArrayUtils';
+import { StringToUtf32, stringFromCodePoint } from './core/input/TextDecoder';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -32,17 +33,17 @@ const GLEVEL: {[key: string]: number} = {'(': 0, ')': 1, '*': 2, '+': 3, '-': 1,
   *   not supported
   */
  class RequestTerminfo implements IDcsHandler {
-  private _data: Uint16Array = new Uint16Array(0);
+  private _data: Uint32Array = new Uint32Array(0);
   constructor(private _terminal: any) { }
   hook(collect: string, params: number[], flag: number): void {
-    this._data = new Uint16Array(0);
+    this._data = new Uint32Array(0);
   }
-  put(data: Uint16Array, start: number, end: number): void {
+  put(data: Uint32Array, start: number, end: number): void {
     this._data = concat(this._data, data.subarray(start, end));
   }
   unhook(): void {
-    const data = utf16ToString(this._data);
-    this._data = new Uint16Array(0);
+    const data = utf32ToString(this._data);
+    this._data = new Uint32Array(0);
     // invalid: DCS 0 + r Pt ST
     this._terminal.handler(`${C0.ESC}P0+r${data}${C0.ESC}\\`);
   }
@@ -55,21 +56,21 @@ const GLEVEL: {[key: string]: number} = {'(': 0, ')': 1, '*': 2, '+': 3, '-': 1,
  *   Response: DECRPSS (https://vt100.net/docs/vt510-rm/DECRPSS.html)
  */
 class DECRQSS implements IDcsHandler {
-  private _data: Uint16Array = new Uint16Array(0);
+  private _data: Uint32Array = new Uint32Array(0);
 
   constructor(private _terminal: any) { }
 
   hook(collect: string, params: number[], flag: number): void {
-    this._data = new Uint16Array(0);
+    this._data = new Uint32Array(0);
   }
 
-  put(data: Uint16Array, start: number, end: number): void {
+  put(data: Uint32Array, start: number, end: number): void {
     this._data = concat(this._data, data.subarray(start, end));
   }
 
   unhook(): void {
-    const data = utf16ToString(this._data);
-    this._data = new Uint16Array(0);
+    const data = utf32ToString(this._data);
+    this._data = new Uint32Array(0);
     switch (data) {
       // valid: DCS 1 $ r Pt ST (xterm)
       case '"q': // DECSCA
@@ -118,8 +119,8 @@ class DECRQSS implements IDcsHandler {
  * each function's header comment.
  */
 export class InputHandler extends Disposable implements IInputHandler {
-  private _surrogateFirst: string;
-  private _parseBuffer: Uint16Array = new Uint16Array(4096);
+  private _parseBuffer: Uint32Array = new Uint32Array(4096);
+  private _stringDecoder: StringToUtf32 = new StringToUtf32();
 
   constructor(
       protected _terminal: IInputHandlingTerminal,
@@ -128,8 +129,6 @@ export class InputHandler extends Disposable implements IInputHandler {
     super();
 
     this.register(this._parser);
-
-    this._surrogateFirst = '';
 
     /**
      * custom fallback handlers
@@ -316,19 +315,13 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._terminal.log('data: ' + data);
     }
 
-    // apply leftover surrogate high from last write
-    if (this._surrogateFirst) {
-      data = this._surrogateFirst + data;
-      this._surrogateFirst = '';
-    }
-
     if (this._parseBuffer.length < data.length) {
-      this._parseBuffer = new Uint16Array(data.length);
+      this._parseBuffer = new Uint32Array(data.length);
     }
     for (let i = 0; i < data.length; ++i) {
       this._parseBuffer[i] = data.charCodeAt(i);
     }
-    this._parser.parse(this._parseBuffer, data.length);
+    this._parser.parse(this._parseBuffer, this._stringDecoder.decode(data, this._parseBuffer));
 
     buffer = this._terminal.buffer;
     if (buffer.x !== cursorStartX || buffer.y !== cursorStartY) {
@@ -336,7 +329,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
   }
 
-  public print(data: Uint16Array, start: number, end: number): void {
+  public print(data: Uint32Array, start: number, end: number): void {
     let code: number;
     let char: string;
     let chWidth: number;
@@ -352,30 +345,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._terminal.updateRange(buffer.y);
     for (let pos = start; pos < end; ++pos) {
       code = data[pos];
-      char = String.fromCharCode(code);
-
-      // surrogate pair handling
-      if (0xD800 <= code && code <= 0xDBFF) {
-        if (++pos >= end) {
-          // end of input:
-          // handle pairs as true UTF-16 and wait for the second part
-          // since we expect the input comming from a stream there is
-          // a small chance that the surrogate pair got split
-          // therefore we dont process the first char here, instead
-          // it gets added as first char to the next processed chunk
-          this._surrogateFirst = String.fromCharCode(code);
-          continue;
-        }
-        const second = data[pos];
-        // if the second part is in surrogate pair range create the high codepoint
-        // otherwise fall back to UCS-2 behavior (handle codepoints independently)
-        if (0xDC00 <= second && second <= 0xDFFF) {
-          code = (code - 0xD800) * 0x400 + second - 0xDC00 + 0x10000;
-          char += String.fromCharCode(second);
-        } else {
-          pos--;
-        }
-      }
+      char = stringFromCodePoint(code);
 
       // calculate print space
       // expensive call, therefore we save width in line buffer

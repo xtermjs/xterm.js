@@ -3,7 +3,7 @@
  * @license MIT
  */
 import { assert } from 'chai';
-import { fillFallback, concat, utf16ToString } from './TypedArrayUtils';
+import { fillFallback, concat, utf32ToString } from './TypedArrayUtils';
 
 type TypedArray = Uint8Array | Uint16Array | Uint32Array | Uint8ClampedArray
   | Int8Array | Int16Array | Int32Array
@@ -100,6 +100,6 @@ describe('typed array convenience functions', () => {
     for (let i = 0; i < s.length; ++i) {
       data[i] = s.charCodeAt(i);
     }
-    assert.equal(utf16ToString(data), s);
+    assert.equal(utf32ToString(data), s);
   });
 });

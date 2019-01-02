@@ -337,7 +337,7 @@ describe('InputHandler', () => {
     it('should not cause an infinite loop (regression test)', () => {
       const term = new Terminal();
       const inputHandler = new InputHandler(term);
-      const container = new Uint16Array(10);
+      const container = new Uint32Array(10);
       container[0] = 0x200B;
       inputHandler.print(container, 0, 1);
     });

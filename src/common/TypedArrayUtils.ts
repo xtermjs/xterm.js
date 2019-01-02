@@ -1,3 +1,5 @@
+import { stringFromCodePoint } from '../core/input/TextDecoder';
+
 /**
  * Copyright (c) 2018 The xterm.js authors. All rights reserved.
  * @license MIT
@@ -51,11 +53,18 @@ export function concat<T extends TypedArray>(a: T, b: T): T {
 }
 
 /**
- * Convert UTF16 char codes into JS string.
+ * Convert UTF32 char codes into JS string.
  * Note the typed array is not limited to Uint16Array, make sure to align
  * the values to 0-65535 integer for other typed array types, otherwise
  * the conversion will fail.
  */
-export function utf16ToString<T extends TypedArray>(data: T): string {
-  return String.fromCharCode.apply(null, data);
+export function utf32ToString<T extends TypedArray>(data: T): string {
+  if ((String as any).fromCodePoint) {
+    return (String as any).fromCodePoint.apply(null, data);
+  }
+  let result = '';
+  for (let i = 0; i < data.length; ++i) {
+    result += stringFromCodePoint(data[i]);
+  }
+  return result;
 }
