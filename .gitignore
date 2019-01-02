@@ -23,3 +23,7 @@ coverage/
 # Keep bundled code out of Git
 dist/
 demo/dist/
+
+# dont pullin other files from .vscode than launch.json
+.vscode/
+!.vscode/launch.json
