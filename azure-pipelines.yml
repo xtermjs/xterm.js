@@ -66,3 +66,22 @@ jobs:
   - script: |
       yarn lint
     displayName: 'Lint'
+
+- job: Release
+  dependsOn:
+  - Linux
+  - macOS
+  - Windows
+  pool:
+    vmImage: 'xcode9-macos10.13'
+  steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '8.x'
+    displayName: 'Install Node.js'
+  - script: |
+      yarn
+    displayName: 'Install dependencies and build'
+  - script: |
+      echo 'success'
+    displayName: 'Test'
