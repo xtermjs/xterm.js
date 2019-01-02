@@ -1192,7 +1192,7 @@ describe('EscapeSequenceParser', function (): void {
         const csiCustom: [string, number[], string][] = [];
         parser2.setCsiHandler('m', (params, collect) => csi.push(['m', params, collect]));
         parser2.addCsiHandler('m', (params, collect) => { csiCustom.push(['m', params, collect]); return true; });
-        parser2.parse(INPUT);
+        parse(parser2, INPUT);
         chai.expect(csi).eql([], 'Should not fallback to original handler');
         chai.expect(csiCustom).eql([['m', [1, 31], ''], ['m', [0], '']]);
       });
@@ -1200,7 +1200,7 @@ describe('EscapeSequenceParser', function (): void {
         const csiCustom: [string, number[], string][] = [];
         parser2.setCsiHandler('m', (params, collect) => csi.push(['m', params, collect]));
         parser2.addCsiHandler('m', (params, collect) => { csiCustom.push(['m', params, collect]); return false; });
-        parser2.parse(INPUT);
+        parse(parser2, INPUT);
         chai.expect(csi).eql([['m', [1, 31], ''], ['m', [0], '']], 'Should fallback to original handler');
         chai.expect(csiCustom).eql([['m', [1, 31], ''], ['m', [0], '']]);
       });
@@ -1210,7 +1210,7 @@ describe('EscapeSequenceParser', function (): void {
         parser2.setCsiHandler('m', (params, collect) => csi.push(['m', params, collect]));
         parser2.addCsiHandler('m', (params, collect) => { csiCustom.push(['m', params, collect]); return true; });
         parser2.addCsiHandler('m', (params, collect) => { csiCustom2.push(['m', params, collect]); return false; });
-        parser2.parse(INPUT);
+        parse(parser2, INPUT);
         chai.expect(csi).eql([], 'Should not fallback to original handler');
         chai.expect(csiCustom).eql([['m', [1, 31], ''], ['m', [0], '']]);
         chai.expect(csiCustom2).eql([['m', [1, 31], ''], ['m', [0], '']]);
@@ -1221,7 +1221,7 @@ describe('EscapeSequenceParser', function (): void {
         parser2.setCsiHandler('m', (params, collect) => csi.push(['m', params, collect]));
         parser2.addCsiHandler('m', (params, collect) => { csiCustom.push(['m', params, collect]); return true; });
         parser2.addCsiHandler('m', (params, collect) => { csiCustom2.push(['m', params, collect]); return true; });
-        parser2.parse(INPUT);
+        parse(parser2, INPUT);
         chai.expect(csi).eql([], 'Should not fallback to original handler');
         chai.expect(csiCustom).eql([], 'Should not fallback once');
         chai.expect(csiCustom2).eql([['m', [1, 31], ''], ['m', [0], '']]);
@@ -1231,15 +1231,15 @@ describe('EscapeSequenceParser', function (): void {
         parser2.setCsiHandler('m', () => order.push(1));
         parser2.addCsiHandler('m', () => { order.push(2); return false; });
         parser2.addCsiHandler('m', () => { order.push(3); return false; });
-        parser2.parse('\x1b[0m');
-        chai.expect(order).eql([3, 2, 1]);
+        parse(parser2, INPUT);
+        chai.expect(order).eql([3, 2, 1, 3, 2, 1]);
       });
       it('Dispose should work', () => {
         const csiCustom: [string, number[], string][] = [];
         parser2.setCsiHandler('m', (params, collect) => csi.push(['m', params, collect]));
         const customHandler = parser2.addCsiHandler('m', (params, collect) => { csiCustom.push(['m', params, collect]); return true; });
         customHandler.dispose();
-        parser2.parse(INPUT);
+        parse(parser2, INPUT);
         chai.expect(csi).eql([['m', [1, 31], ''], ['m', [0], '']]);
         chai.expect(csiCustom).eql([], 'Should not use custom handler as it was disposed');
       });
@@ -1249,7 +1249,7 @@ describe('EscapeSequenceParser', function (): void {
         const customHandler = parser2.addCsiHandler('m', (params, collect) => { csiCustom.push(['m', params, collect]); return true; });
         customHandler.dispose();
         customHandler.dispose();
-        parser2.parse(INPUT);
+        parse(parser2, INPUT);
         chai.expect(csi).eql([['m', [1, 31], ''], ['m', [0], '']]);
         chai.expect(csiCustom).eql([], 'Should not use custom handler as it was disposed');
       });
@@ -1286,7 +1286,7 @@ describe('EscapeSequenceParser', function (): void {
         const oscCustom: [number, string][] = [];
         parser2.setOscHandler(1, data => osc.push([1, data]));
         parser2.addOscHandler(1, data => { oscCustom.push([1, data]); return true; });
-        parser2.parse(INPUT);
+        parse(parser2, INPUT);
         chai.expect(osc).eql([], 'Should not fallback to original handler');
         chai.expect(oscCustom).eql([[1, 'foo=bar']]);
       });
@@ -1294,7 +1294,7 @@ describe('EscapeSequenceParser', function (): void {
         const oscCustom: [number, string][] = [];
         parser2.setOscHandler(1, data => osc.push([1, data]));
         parser2.addOscHandler(1, data => { oscCustom.push([1, data]); return false; });
-        parser2.parse(INPUT);
+        parse(parser2, INPUT);
         chai.expect(osc).eql([[1, 'foo=bar']], 'Should fallback to original handler');
         chai.expect(oscCustom).eql([[1, 'foo=bar']]);
       });
@@ -1304,7 +1304,7 @@ describe('EscapeSequenceParser', function (): void {
         parser2.setOscHandler(1, data => osc.push([1, data]));
         parser2.addOscHandler(1, data => { oscCustom.push([1, data]); return true; });
         parser2.addOscHandler(1, data => { oscCustom2.push([1, data]); return false; });
-        parser2.parse(INPUT);
+        parse(parser2, INPUT);
         chai.expect(osc).eql([], 'Should not fallback to original handler');
         chai.expect(oscCustom).eql([[1, 'foo=bar']]);
         chai.expect(oscCustom2).eql([[1, 'foo=bar']]);
@@ -1315,7 +1315,7 @@ describe('EscapeSequenceParser', function (): void {
         parser2.setOscHandler(1, data => osc.push([1, data]));
         parser2.addOscHandler(1, data => { oscCustom.push([1, data]); return true; });
         parser2.addOscHandler(1, data => { oscCustom2.push([1, data]); return true; });
-        parser2.parse(INPUT);
+        parse(parser2, INPUT);
         chai.expect(osc).eql([], 'Should not fallback to original handler');
         chai.expect(oscCustom).eql([], 'Should not fallback once');
         chai.expect(oscCustom2).eql([[1, 'foo=bar']]);
@@ -1325,7 +1325,7 @@ describe('EscapeSequenceParser', function (): void {
         parser2.setOscHandler(1, () => order.push(1));
         parser2.addOscHandler(1, () => { order.push(2); return false; });
         parser2.addOscHandler(1, () => { order.push(3); return false; });
-        parser2.parse('\x1b]1;foo=bar\x1b\\');
+        parse(parser2, '\x1b]1;foo=bar\x1b\\');
         chai.expect(order).eql([3, 2, 1]);
       });
       it('Dispose should work', () => {
@@ -1333,7 +1333,7 @@ describe('EscapeSequenceParser', function (): void {
         parser2.setOscHandler(1, data => osc.push([1, data]));
         const customHandler = parser2.addOscHandler(1, data => { oscCustom.push([1, data]); return true; });
         customHandler.dispose();
-        parser2.parse(INPUT);
+        parse(parser2, INPUT);
         chai.expect(osc).eql([[1, 'foo=bar']]);
         chai.expect(oscCustom).eql([], 'Should not use custom handler as it was disposed');
       });
@@ -1343,7 +1343,7 @@ describe('EscapeSequenceParser', function (): void {
         const customHandler = parser2.addOscHandler(1, data => { oscCustom.push([1, data]); return true; });
         customHandler.dispose();
         customHandler.dispose();
-        parser2.parse(INPUT);
+        parse(parser2, INPUT);
         chai.expect(osc).eql([[1, 'foo=bar']]);
         chai.expect(oscCustom).eql([], 'Should not use custom handler as it was disposed');
       });
