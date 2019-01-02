@@ -68,10 +68,10 @@ jobs:
     displayName: 'Lint'
 
 - job: Release
-  dependsOn:
-  - Linux
-  - macOS
-  - Windows
+  # dependsOn:
+  # - Linux
+  # - macOS
+  # - Windows
   #condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
   pool:
     vmImage: 'ubuntu-16.04'
@@ -88,6 +88,7 @@ jobs:
       yarn
     displayName: 'Install dependencies and build'
   - script: |
+      echo $NPM_AUTH_TOKEN
       node ./bin/publish.js
     env:
       NPM_AUTH_TOKEN: $(NPM_AUTH_TOKEN)
