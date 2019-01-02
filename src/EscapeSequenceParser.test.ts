@@ -1231,8 +1231,8 @@ describe('EscapeSequenceParser', function (): void {
         parser2.setCsiHandler('m', () => order.push(1));
         parser2.addCsiHandler('m', () => { order.push(2); return false; });
         parser2.addCsiHandler('m', () => { order.push(3); return false; });
-        parse(parser2, INPUT);
-        chai.expect(order).eql([3, 2, 1, 3, 2, 1]);
+        parse(parser2, '\x1b[0m');
+        chai.expect(order).eql([3, 2, 1]);
       });
       it('Dispose should work', () => {
         const csiCustom: [string, number[], string][] = [];
