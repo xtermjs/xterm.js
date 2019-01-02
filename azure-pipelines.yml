@@ -88,8 +88,8 @@ jobs:
       yarn
     displayName: 'Install dependencies and build'
   - script: |
-      echo $NPM_AUTH_TOKEN
+      echo $MAPPED_NPM_AUTH_TOKEN
       node ./bin/publish.js
     env:
-      NPM_AUTH_TOKEN: $(NPM_AUTH_TOKEN)
+      MAPPED_NPM_AUTH_TOKEN: $(NPM_AUTH_TOKEN)
     displayName: 'Publish to npm'
