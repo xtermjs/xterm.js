@@ -250,7 +250,7 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     const fontStyle = glyph.italic ? 'italic' : '';
     this._tmpCtx.font =
       `${fontStyle} ${fontWeight} ${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
-    this._tmpCtx.textBaseline = 'top';
+    this._tmpCtx.textBaseline = 'middle';
 
     this._tmpCtx.fillStyle = this._getForegroundColor(glyph).css;
 
@@ -259,7 +259,7 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
       this._tmpCtx.globalAlpha = DIM_OPACITY;
     }
     // Draw the character
-    this._tmpCtx.fillText(glyph.chars, 0, 0);
+    this._tmpCtx.fillText(glyph.chars, 0, this._config.scaledCharHeight / 2);
     this._tmpCtx.restore();
 
     // clear the background from the character to avoid issues with drawing over the previous
