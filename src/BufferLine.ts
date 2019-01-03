@@ -105,7 +105,7 @@ export class BufferLine implements IBufferLine {
       this._data[index * CELL_SIZE + Cell.FG],
       (content & Content.IS_COMBINED)
         ? this._combined[index]
-        : (cp) ? String.fromCharCode(cp) : '',
+        : (cp) ? stringFromCodePoint(cp) : '',
       content >> Content.WIDTH_SHIFT,
       (content & Content.IS_COMBINED)
         ? this._combined[index].charCodeAt(this._combined[index].length - 1)

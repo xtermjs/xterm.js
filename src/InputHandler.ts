@@ -435,14 +435,14 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
 
       // write current char to buffer and advance cursor
-      bufferRow.set(buffer.x++, [curAttr, stringFromCodePoint(code), chWidth, code]);
+      bufferRow.setDataFromCodePoint(buffer.x++, code, chWidth, curAttr, 0);
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor
       // for graphemes bigger than fullwidth we can simply loop to zero
       // we already made sure above, that buffer.x + chWidth will not overflow right
       if (chWidth > 0) {
         while (--chWidth) {
-          bufferRow.set(buffer.x++, [curAttr, '', 0, undefined]);
+          bufferRow.setDataFromCodePoint(buffer.x++, 0, 0, curAttr, 0);
         }
       }
     }
