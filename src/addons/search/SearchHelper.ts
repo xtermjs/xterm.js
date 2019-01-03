@@ -55,28 +55,25 @@ export class SearchHelper implements ISearchHelper {
 
     this._initLinesCache();
 
+    // A row that has isWrapped = false
+    let findingRow = startRow;
+    // index of beginning column that _findInLine need to scan.
+    let cumulativeCols = startCol;
+    // If startRow is wrapped row, scan for unwrapped row above.
+    // So we can start matching on wrapped line from long unwrapped line.
+    while (this._terminal._core.buffer.lines.get(findingRow).isWrapped) {
+      findingRow--;
+      cumulativeCols += this._terminal.cols;
+    }
+
     // Search startRow
-    result = this._findInLine(term, startRow, startCol, searchOptions);
+    result = this._findInLine(term, findingRow, cumulativeCols, searchOptions);
 
     // Search from startRow + 1 to end
     if (!result) {
-      // A row that has isWrapped = false
-      let findingRow = startRow;
-      // index of beginning column that _findInLine need to scan.
-      let cumulativeCols = startCol;
-      // If startRow is wrapped row, scan for unwrapped row above.
-      // So we can start matching on wrapped line from long unwrapped line.
-      while (this._terminal._core.buffer.lines.get(findingRow).isWrapped) {
-        findingRow--;
-        cumulativeCols += this._terminal.cols;
-      }
 
       for (let y = startRow + 1; y < this._terminal._core.buffer.ybase + this._terminal.rows; y++) {
-        // Run _findInLine at unwrapped row, scan for cumulativeCols columns
-        result = this._findInLine(term, findingRow, cumulativeCols, searchOptions);
-        if (result) {
-          break;
-        }
+
         // If the current line is wrapped line, increase index of column to ignore the previous scan
         // Otherwise, reset beginning column index to zero with set new unwrapped line index
         if (this._terminal._core.buffer.lines.get(y).isWrapped) {
@@ -84,6 +81,12 @@ export class SearchHelper implements ISearchHelper {
         } else {
           cumulativeCols = 0;
           findingRow = y;
+        }
+
+        // Run _findInLine at unwrapped row, scan for cumulativeCols columns
+        result = this._findInLine(term, findingRow, cumulativeCols, searchOptions);
+        if (result) {
+          break;
         }
       }
     }
