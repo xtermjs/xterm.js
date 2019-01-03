@@ -4,10 +4,10 @@
  */
 
 import { CircularList } from './common/CircularList';
-import { CharData, ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult, IBufferLineConstructor } from './Types';
+import { CharData, ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult } from './Types';
 import { EventEmitter } from './common/EventEmitter';
 import { IMarker } from 'xterm';
-import { BufferLine, BufferLineJSArray } from './BufferLine';
+import { BufferLine } from './BufferLine';
 import { DEFAULT_COLOR } from './renderer/atlas/Types';
 
 export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
@@ -45,7 +45,6 @@ export class Buffer implements IBuffer {
   public savedX: number;
   public savedCurAttr: number;
   public markers: Marker[] = [];
-  private _bufferLineConstructor: IBufferLineConstructor;
 
   /**
    * Create a new Buffer.
@@ -60,35 +59,9 @@ export class Buffer implements IBuffer {
     this.clear();
   }
 
-  public setBufferLineFactory(type: string): void {
-    if (type === 'JsArray') {
-      if (this._bufferLineConstructor !== BufferLineJSArray) {
-        this._bufferLineConstructor = BufferLineJSArray;
-        this._recreateLines();
-      }
-    } else {
-      if (this._bufferLineConstructor !== BufferLine) {
-        this._bufferLineConstructor = BufferLine;
-        this._recreateLines();
-      }
-    }
-  }
-
-  private _recreateLines(): void {
-    if (!this.lines) return;
-    for (let i = 0; i < this.lines.length; ++i) {
-      const oldLine = this.lines.get(i);
-      const newLine = new this._bufferLineConstructor(oldLine.length);
-      for (let j = 0; j < oldLine.length; ++j) {
-        newLine.set(j, oldLine.get(j));
-      }
-      this.lines.set(i, newLine);
-    }
-  }
-
   public getBlankLine(attr: number, isWrapped?: boolean): IBufferLine {
     const fillCharData: CharData = [attr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
-    return new this._bufferLineConstructor(this._terminal.cols, fillCharData, isWrapped);
+    return new BufferLine(this._terminal.cols, fillCharData, isWrapped);
   }
 
   public get hasScrollback(): boolean {
@@ -135,7 +108,6 @@ export class Buffer implements IBuffer {
    * Clears the buffer to it's initial state, discarding all previous data.
    */
   public clear(): void {
-    this.setBufferLineFactory(this._terminal.options.experimentalBufferLineImpl);
     this.ydisp = 0;
     this.ybase = 0;
     this.y = 0;
@@ -188,7 +160,7 @@ export class Buffer implements IBuffer {
               // Add a blank line if there is no buffer left at the top to scroll to, or if there
               // are blank lines after the cursor
               const fillCharData: CharData = [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
-              this.lines.push(new this._bufferLineConstructor(newCols, fillCharData));
+              this.lines.push(new BufferLine(newCols, fillCharData));
             }
           }
         }
