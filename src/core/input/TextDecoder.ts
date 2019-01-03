@@ -76,9 +76,6 @@ export class StringToUtf32 {
  * Polyfill - Convert UTF32 codepoint into JS string.
  */
 export function stringFromCodePoint(codePoint: number): string {
-  if ((String as any).fromCodePoint) {
-    return (String as any).fromCodePoint(codePoint);
-  }
   if (codePoint > 0xFFFF) {
     codePoint -= 0x10000;
     return String.fromCharCode((codePoint >> 10) + 0xD800) + String.fromCharCode((codePoint % 0x400) + 0xDC00);
