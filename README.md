@@ -1,5 +1,7 @@
 # [![xterm.js logo](logo-full.png)](https://xtermjs.org)
 
+[![npm version](https://badgen.net/npm/v/xterm)](https://www.npmjs.com/package/xterm)
+[![downloads](https://badgen.net/npm/dm/xterm)](https://www.npmjs.com/package/xterm)
 [![Build Status](https://dev.azure.com/xtermjs/xterm.js/_apis/build/status/xtermjs.xterm.js)](https://dev.azure.com/xtermjs/xterm.js/_build/latest?definitionId=3)
 [![Coverage Status](https://coveralls.io/repos/github/xtermjs/xterm.js/badge.svg?branch=master)](https://coveralls.io/github/xtermjs/xterm.js?branch=master)
 
