@@ -236,12 +236,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   protected fillCharTrueColor(terminal: ITerminal, charData: CharData, x: number, y: number): void {
     this._ctx.font = this._getFont(terminal, false, false);
-    this._ctx.textBaseline = 'top';
+    this._ctx.textBaseline = 'middle';
     this._clipRow(terminal, y);
     this._ctx.fillText(
         charData[CHAR_DATA_CHAR_INDEX],
         x * this._scaledCellWidth + this._scaledCharLeft,
-        y * this._scaledCellHeight + this._scaledCharTop);
+        (y + 0.5) * this._scaledCellHeight + this._scaledCharTop);
   }
 
   /**
@@ -295,7 +295,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _drawUncachedChars(terminal: ITerminal, chars: string, width: number, fg: number, x: number, y: number, bold: boolean, dim: boolean, italic: boolean): void {
     this._ctx.save();
     this._ctx.font = this._getFont(terminal, bold, italic);
-    this._ctx.textBaseline = 'top';
+    this._ctx.textBaseline = 'middle';
 
     if (fg === INVERTED_DEFAULT_COLOR) {
       this._ctx.fillStyle = this._colors.background.css;
@@ -316,7 +316,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.fillText(
         chars,
         x * this._scaledCellWidth + this._scaledCharLeft,
-        y * this._scaledCellHeight + this._scaledCharTop);
+        (y + 0.5) * this._scaledCellHeight + this._scaledCharTop);
     this._ctx.restore();
   }
 
