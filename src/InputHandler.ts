@@ -331,7 +331,6 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   public print(data: Uint32Array, start: number, end: number): void {
     let code: number;
-    let char: string;
     let chWidth: number;
     const buffer: IBuffer = this._terminal.buffer;
     const charset: ICharset = this._terminal.charset;
@@ -345,7 +344,6 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._terminal.updateRange(buffer.y);
     for (let pos = start; pos < end; ++pos) {
       code = data[pos];
-      char = stringFromCodePoint(code);
 
       // calculate print space
       // expensive call, therefore we save width in line buffer
@@ -355,15 +353,14 @@ export class InputHandler extends Disposable implements IInputHandler {
       // charset are only defined for ASCII, therefore we only
       // search for an replacement char if code < 127
       if (code < 127 && charset) {
-        const ch = charset[char];
+        const ch = charset[String.fromCharCode(code)];
         if (ch) {
           code = ch.charCodeAt(0);
-          char = ch;
         }
       }
 
       if (screenReaderMode) {
-        this._terminal.emit('a11y.char', char);
+        this._terminal.emit('a11y.char', stringFromCodePoint(code));
       }
 
       // insert combining char at last cursor position
@@ -380,12 +377,12 @@ export class InputHandler extends Disposable implements IInputHandler {
             // since an empty cell is only set by fullwidth chars
             const chMinusTwo = bufferRow.get(buffer.x - 2);
             if (chMinusTwo) {
-              chMinusTwo[CHAR_DATA_CHAR_INDEX] += char;
+              chMinusTwo[CHAR_DATA_CHAR_INDEX] += stringFromCodePoint(code);
               chMinusTwo[CHAR_DATA_CODE_INDEX] = code;
               bufferRow.set(buffer.x - 2, chMinusTwo); // must be set explicitly now
             }
           } else {
-            chMinusOne[CHAR_DATA_CHAR_INDEX] += char;
+            chMinusOne[CHAR_DATA_CHAR_INDEX] += stringFromCodePoint(code);
             chMinusOne[CHAR_DATA_CODE_INDEX] = code;
             bufferRow.set(buffer.x - 1, chMinusOne); // must be set explicitly now
           }
@@ -438,7 +435,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
 
       // write current char to buffer and advance cursor
-      bufferRow.set(buffer.x++, [curAttr, char, chWidth, code]);
+      bufferRow.set(buffer.x++, [curAttr, stringFromCodePoint(code), chWidth, code]);
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor
       // for graphemes bigger than fullwidth we can simply loop to zero

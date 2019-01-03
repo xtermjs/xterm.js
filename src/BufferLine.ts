@@ -248,6 +248,59 @@ export class BufferLine implements IBufferLine {
     }
   }
 
+  /**
+   * Set cell data from input handler.
+   * Since the input handler see the incoming chars as UTF32 codepoints,
+   * it gets an optimized access method.
+   */
+  public setDataFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number): void {
+    this._data[index * CELL_SIZE + Cell.CONTENT] = codePoint | (width << Content.WIDTH_SHIFT);
+    this._data[index * CELL_SIZE + Cell.FG] = fg;
+    this._data[index * CELL_SIZE + Cell.BG] = bg;
+  }
+
+  /**
+   * Add a char to a cell from input handler.
+   * During input stage combining chars with a width of 0 follow and stack
+   * onto a leading char. Since we already set the attrs
+   * by the previous `setDataFromCodePoint` call, we can omit it here.
+   */
+  public addCharToCell(index: number, codePoint: number): void {
+    let content = this._data[index * CELL_SIZE + Cell.CONTENT];
+    if (content & Content.IS_COMBINED) {
+      // we already have a combined string, simply add
+      this._combined[index] += stringFromCodePoint(codePoint);
+    } else {
+      if (content & Content.CODEPOINT_MASK) {
+        // normal case for combining chars:
+        //  - move current leading char + new one into combined string
+        //  - set codepoint in cell buffer to index
+        //  - set combined flag
+        this._combined[index] = stringFromCodePoint(content & Content.CODEPOINT_MASK) + stringFromCodePoint(codePoint);
+        content &= ~Content.CODEPOINT_MASK;
+        content |= index | Content.IS_COMBINED;
+      } else {
+        // should not happen - we actually have no data in the cell yet
+        // simply set the data in the cell buffer with a width of 1
+        content = codePoint | (1 << Content.WIDTH_SHIFT);
+      }
+      this._data[index * CELL_SIZE + Cell.CONTENT] = content;
+    }
+  }
+
+  /**
+   * Set data from another buffer cell.
+   * Useful for basic in buffer copy action.
+   */
+  public setDataFromCellData(index: number, content: number, fg: number, bg: number, combined?: string): void {
+    this._data[index * CELL_SIZE + Cell.CONTENT] = content;
+    this._data[index * CELL_SIZE + Cell.FG] = fg;
+    this._data[index * CELL_SIZE + Cell.BG] = bg;
+    if (content & Content.IS_COMBINED && combined) {
+      this._combined[index] = combined;
+    }
+  }
+
   public insertCells(pos: number, n: number, fillCharData: CharData): void {
     pos %= this.length;
     if (n < this.length - pos) {

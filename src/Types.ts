@@ -519,6 +519,9 @@ export interface IBufferLine {
   isWrapped: boolean;
   get(index: number): CharData;
   set(index: number, value: CharData): void;
+  setDataFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number): void;
+  addCharToCell(index: number, codePoint: number): void;
+  setDataFromCellData(index: number, content: number, fg: number, bg: number, combined?: string): void;
   insertCells(pos: number, n: number, ch: CharData): void;
   deleteCells(pos: number, n: number, fill: CharData): void;
   replaceCells(start: number, end: number, fill: CharData): void;
