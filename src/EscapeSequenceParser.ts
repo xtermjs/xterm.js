@@ -567,7 +567,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
             if (j >= length
                 || (code = data[j]) < 0x20
                 || (code > 0x7f && code <= 0x9f)) {
-              osc += utf32ToString(data.subarray(i, j));
+              osc += utf32ToString(data, i, j);
               i = j - 1;
               break;
             }
