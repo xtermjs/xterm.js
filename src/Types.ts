@@ -511,6 +511,19 @@ export interface IEscapeSequenceParser extends IDisposable {
   clearErrorHandler(): void;
 }
 
+/** Cell data */
+export interface ICellData {
+  content: number;
+  fg: number;
+  bg: number;
+  combinedData: string;
+  combined: number;
+  width: number;
+  chars: string;
+  code: number;
+  setFromCharData(value: CharData): void;
+}
+
 /**
  * Interface for a line in the terminal buffer.
  */
@@ -519,9 +532,10 @@ export interface IBufferLine {
   isWrapped: boolean;
   get(index: number): CharData;
   set(index: number, value: CharData): void;
+  loadCell(index: number, cell: ICellData): ICellData;
+  setCell(index: number, cell: ICellData): void;
   setDataFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number): void;
   addCharToCell(index: number, codePoint: number): void;
-  setDataFromCellData(index: number, content: number, fg: number, bg: number, combined?: string): void;
   insertCells(pos: number, n: number, ch: CharData): void;
   deleteCells(pos: number, n: number, fill: CharData): void;
   replaceCells(start: number, end: number, fill: CharData): void;

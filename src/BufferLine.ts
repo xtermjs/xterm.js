@@ -2,7 +2,7 @@
  * Copyright (c) 2018 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { CharData, IBufferLine } from './Types';
+import { CharData, IBufferLine, ICellData } from './Types';
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, WHITESPACE_CELL_CHAR, CHAR_DATA_ATTR_INDEX } from './Buffer';
 import { stringFromCodePoint } from './core/input/TextDecoder';
 
@@ -76,7 +76,7 @@ export const enum Content {
   WIDTH_SHIFT = 22
 }
 
-export class CellData {
+export class CellData implements ICellData {
   public content: number = 0;
   public fg: number = 0;
   public bg: number = 0;
@@ -93,6 +93,31 @@ export class CellData {
   public get code(): number {
     return ((this.combined) ? this.combinedData.charCodeAt(this.combinedData.length - 1) : this.content & Content.CODEPOINT_MASK);
   }
+  public setFromCharData(value: CharData): void {
+    this.fg = value[CHAR_DATA_ATTR_INDEX];
+    this.bg = 0;
+    let combined = false;
+    if (value[CHAR_DATA_CHAR_INDEX].length > 2) {
+      combined = true;
+    } else if (value[CHAR_DATA_CHAR_INDEX].length === 2) {
+      const code = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0);
+      if (0xD800 <= code && code <= 0xDBFF) {
+        const second = value[CHAR_DATA_CHAR_INDEX].charCodeAt(1);
+        if (0xDC00 <= second && second <= 0xDFFF) {
+          this.content = ((code - 0xD800) * 0x400 + second - 0xDC00 + 0x10000) | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
+        } else {
+          combined = true;
+        }
+      }
+      combined = true;
+    } else {
+      this.content = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0) | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
+    }
+    if (combined) {
+      this.combinedData = value[CHAR_DATA_CHAR_INDEX];
+      this.content = Content.IS_COMBINED | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
+    }
+  }
 }
 
 /**
@@ -101,16 +126,15 @@ export class CellData {
 export class BufferLine implements IBufferLine {
   protected _data: Uint32Array | null = null;
   protected _combined: {[index: number]: string} = {};
+  protected _cell: CellData = new CellData();
   public length: number;
 
   constructor(cols: number, fillCharData?: CharData, public isWrapped: boolean = false) {
-    if (!fillCharData) {
-      fillCharData = [0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
-    }
     if (cols) {
       this._data = new Uint32Array(cols * CELL_SIZE);
+      this._cell.setFromCharData(fillCharData || [0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
       for (let i = 0; i < cols; ++i) {
-        this.set(i, fillCharData);
+        this.setCell(i, this._cell);
       }
     }
     this.length = cols;
@@ -141,7 +165,7 @@ export class BufferLine implements IBufferLine {
     }
   }
 
-  public loadCell(index: number, cell: CellData): CellData {
+  public loadCell(index: number, cell: ICellData): ICellData {
     cell.content = this._data[index * CELL_SIZE + Cell.CONTENT];
     cell.fg = this._data[index * CELL_SIZE + Cell.FG];
     cell.bg = this._data[index * CELL_SIZE + Cell.BG];
@@ -151,7 +175,7 @@ export class BufferLine implements IBufferLine {
     return cell;
   }
 
-  public setCell(index: number, cell: CellData): void {
+  public setCell(index: number, cell: ICellData): void {
     if (cell.content & Content.IS_COMBINED) {
       this._combined[index] = cell.combinedData;
       // we also need to clear and set codepoint to index
@@ -203,31 +227,20 @@ export class BufferLine implements IBufferLine {
     }
   }
 
-  /**
-   * Set data from another buffer cell.
-   * Useful for basic in buffer copy action.
-   */
-  public setDataFromCellData(index: number, content: number, fg: number, bg: number, combined?: string): void {
-    this._data[index * CELL_SIZE + Cell.CONTENT] = content;
-    this._data[index * CELL_SIZE + Cell.FG] = fg;
-    this._data[index * CELL_SIZE + Cell.BG] = bg;
-    if (content & Content.IS_COMBINED && combined) {
-      this._combined[index] = combined;
-    }
-  }
-
   public insertCells(pos: number, n: number, fillCharData: CharData): void {
     pos %= this.length;
     if (n < this.length - pos) {
       for (let i = this.length - pos - n - 1; i >= 0; --i) {
-        this.set(pos + n + i, this.get(pos + i));
+        this.setCell(pos + n + i, this.loadCell(pos + i, this._cell));
       }
+      this._cell.setFromCharData(fillCharData);
       for (let i = 0; i < n; ++i) {
-        this.set(pos + i, fillCharData);
+        this.setCell(pos + i, this._cell);
       }
     } else {
+      this._cell.setFromCharData(fillCharData);
       for (let i = pos; i < this.length; ++i) {
-        this.set(i, fillCharData);
+        this.setCell(i, this._cell);
       }
     }
   }
@@ -236,21 +249,24 @@ export class BufferLine implements IBufferLine {
     pos %= this.length;
     if (n < this.length - pos) {
       for (let i = 0; i < this.length - pos - n; ++i) {
-        this.set(pos + i, this.get(pos + n + i));
+        this.setCell(pos + i, this.loadCell(pos + n + i, this._cell));
       }
+      this._cell.setFromCharData(fillCharData);
       for (let i = this.length - n; i < this.length; ++i) {
-        this.set(i, fillCharData);
+        this.setCell(i, this._cell);
       }
     } else {
+      this._cell.setFromCharData(fillCharData);
       for (let i = pos; i < this.length; ++i) {
-        this.set(i, fillCharData);
+        this.setCell(i, this._cell);
       }
     }
   }
 
   public replaceCells(start: number, end: number, fillCharData: CharData): void {
+    this._cell.setFromCharData(fillCharData);
     while (start < end  && start < this.length) {
-      this.set(start++, fillCharData);
+      this.setCell(start++, this._cell);
     }
   }
 
@@ -268,8 +284,9 @@ export class BufferLine implements IBufferLine {
         }
       }
       this._data = data;
+      this._cell.setFromCharData(fillCharData);
       for (let i = this.length; i < cols; ++i) {
-        this.set(i, fillCharData);
+        this.setCell(i, this._cell);
       }
     } else if (shrink) {
       if (cols) {
@@ -286,8 +303,9 @@ export class BufferLine implements IBufferLine {
   /** fill a line with fillCharData */
   public fill(fillCharData: CharData): void {
     this._combined = {};
+    this._cell.setFromCharData(fillCharData);
     for (let i = 0; i < this.length; ++i) {
-      this.set(i, fillCharData);
+      this.setCell(i, this._cell);
     }
   }
 

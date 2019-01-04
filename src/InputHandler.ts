@@ -7,7 +7,7 @@
 import { IInputHandler, IDcsHandler, IEscapeSequenceParser, IBuffer, IInputHandlingTerminal } from './Types';
 import { C0, C1 } from './common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from './core/data/Charsets';
-import { CHAR_DATA_WIDTH_INDEX, DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from './Buffer';
+import { DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from './Buffer';
 import { FLAGS } from './renderer/Types';
 import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
@@ -16,6 +16,7 @@ import { IDisposable } from 'xterm';
 import { Disposable } from './common/Lifecycle';
 import { concat, utf32ToString } from './common/TypedArrayUtils';
 import { StringToUtf32, stringFromCodePoint } from './core/input/TextDecoder';
+import { CellData } from './BufferLine';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -121,6 +122,7 @@ class DECRQSS implements IDcsHandler {
 export class InputHandler extends Disposable implements IInputHandler {
   private _parseBuffer: Uint32Array = new Uint32Array(4096);
   private _stringDecoder: StringToUtf32 = new StringToUtf32();
+  private _cell: CellData = new CellData();
 
   constructor(
       protected _terminal: IInputHandlingTerminal,
@@ -369,8 +371,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       // since they always follow a cell consuming char
       // therefore we can test for buffer.x to avoid overflow left
       if (!chWidth && buffer.x) {
-        const chMinusOne = bufferRow.get(buffer.x - 1);
-        if (!chMinusOne[CHAR_DATA_WIDTH_INDEX]) {
+        if (!bufferRow.loadCell(buffer.x - 1, this._cell).width) {
           // found empty cell after fullwidth, need to go 2 cells back
           // it is save to step 2 cells back here
           // since an empty cell is only set by fullwidth chars
@@ -419,8 +420,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         // test last cell - since the last cell has only room for
         // a halfwidth char any fullwidth shifted there is lost
         // and will be set to eraseChar
-        const lastCell = bufferRow.get(cols - 1);
-        if (lastCell[CHAR_DATA_WIDTH_INDEX] === 2) {
+        if (bufferRow.loadCell(cols - 1, this._cell).width === 2) {
           bufferRow.setDataFromCodePoint(cols - 1, NULL_CELL_CODE, NULL_CELL_WIDTH, curAttr, 0);
         }
       }
