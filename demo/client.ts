@@ -8,11 +8,12 @@
 /// <reference path="../typings/xterm.d.ts"/>
 
 import { Terminal } from '../lib/public/Terminal';
-import * as attach from '../lib/addons/attach/attach';
+import { AttachAddon } from 'xterm-addon-attach';
+import { WebLinksAddon } from 'xterm-addon-web-links';
+
 import * as fit from '../lib/addons/fit/fit';
 import * as fullscreen from '../lib/addons/fullscreen/fullscreen';
 import * as search from '../lib/addons/search/search';
-import * as webLinks from '../lib/addons/webLinks/webLinks';
 import * as winptyCompat from '../lib/addons/winptyCompat/winptyCompat';
 import { ISearchOptions } from '../lib/addons/search/Interfaces';
 
@@ -25,15 +26,14 @@ export interface IWindowWithTerminal extends Window {
 }
 declare let window: IWindowWithTerminal;
 
-Terminal.applyAddon(attach);
 Terminal.applyAddon(fit);
 Terminal.applyAddon(fullscreen);
 Terminal.applyAddon(search);
-// Terminal.applyAddon(webLinks);
 Terminal.applyAddon(winptyCompat);
 
 
 let term;
+let attachAddon: AttachAddon;
 let protocol;
 let socketURL;
 let socket;
@@ -84,7 +84,12 @@ function createTerminal(): void {
     terminalContainer.removeChild(terminalContainer.children[0]);
   }
   term = new Terminal({});
-  (term as TerminalType).loadAddon(webLinks.WebLinksAddon).init();
+
+  // Load addons
+  const typedTerm = term as TerminalType;
+  typedTerm.loadAddon(WebLinksAddon).init();
+  attachAddon = typedTerm.loadAddon(AttachAddon);
+
   window.term = term;  // Expose `term` to window for debugging purposes
   term.on('resize', (size: { cols: number, rows: number }) => {
     if (!pid) {
@@ -144,7 +149,7 @@ function createTerminal(): void {
 }
 
 function runRealTerminal(): void {
-  term.attach(socket);
+  attachAddon.attach(socket);
   term._initialized = true;
 }
 

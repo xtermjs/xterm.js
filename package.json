@@ -43,6 +43,8 @@
     "vinyl-source-stream": "^1.1.0",
     "webpack": "^4.17.1",
     "webpack-cli": "^3.1.0",
+    "xterm-addon-attach": "0.1.0-beta4",
+    "xterm-addon-web-links": "0.1.0-beta3",
     "zmodem.js": "^0.1.5"
   },
   "scripts": {
@@ -58,12 +60,12 @@
     "test-coverage": "nyc -x gulpfile.js -x '**/*test*' npm run mocha",
     "mocha": "gulp test",
     "tsc": "tsc",
-    "prebuild": "concurrently --kill-others-on-fail --names \"lib,attach,fit,fullscreen,search,terminado,webLinks,winptyCompat,zmodem,css\" \"tsc\" \"tsc -p ./src/addons/attach\" \"tsc -p ./src/addons/fit\" \"tsc -p ./src/addons/fullscreen\" \"tsc -p ./src/addons/search\" \"tsc -p ./src/addons/terminado\" \"tsc -p ./src/addons/webLinks\" \"tsc -p ./src/addons/winptyCompat\" \"tsc -p ./src/addons/zmodem\" \"gulp css\"",
+    "prebuild": "concurrently --kill-others-on-fail --names \"lib,fit,fullscreen,search,terminado,winptyCompat,zmodem,css\" \"tsc\" \"tsc -p ./src/addons/fit\" \"tsc -p ./src/addons/fullscreen\" \"tsc -p ./src/addons/search\" \"tsc -p ./src/addons/terminado\" \"tsc -p ./src/addons/winptyCompat\" \"tsc -p ./src/addons/zmodem\" \"gulp css\"",
     "build": "gulp build",
     "prepublish": "npm run build",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "watch": "concurrently --kill-others-on-fail --names \"lib,css\" \"tsc -w\" \"gulp watch-css\"",
-    "watch-addons": "concurrently --kill-others-on-fail --names \"attach,fit,fullscreen,search,terminado,webLinks,winptyCompat,zmodem\" \"tsc -w -p ./src/addons/attach\" \"tsc -w -p ./src/addons/fit\" \"tsc -w -p ./src/addons/fullscreen\" \"tsc -w -p ./src/addons/search\" \"tsc -w -p ./src/addons/terminado\" \"tsc -w -p ./src/addons/webLinks\" \"tsc -w -p ./src/addons/winptyCompat\" \"tsc -w -p ./src/addons/zmodem\"",
+    "watch-addons": "concurrently --kill-others-on-fail --names \"fit,fullscreen,search,terminado,winptyCompat,zmodem\" \"tsc -w -p ./src/addons/fit\" \"tsc -w -p ./src/addons/fullscreen\" \"tsc -w -p ./src/addons/search\" \"tsc -w -p ./src/addons/terminado\" \"tsc -w -p ./src/addons/winptyCompat\" \"tsc -w -p ./src/addons/zmodem\"",
     "layering": "concurrently --kill-others-on-fail --names \"common,core\" \"tsc -p ./src/common\" \"tsc -p ./src/core\""
   }
 }
