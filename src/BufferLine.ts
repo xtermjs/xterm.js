@@ -176,6 +176,47 @@ export class BufferLine implements IBufferLine {
     }
   }
 
+  /**
+   * primitive getters
+   * use these when only one value is needed, otherwise use `loadCell`
+   */
+  public getWidth(index: number): number {
+    return this._data[index * CELL_SIZE + Cell.CONTENT] >> Content.WIDTH_SHIFT;
+  }
+  public hasWidth(index: number): number {
+    return this._data[index * CELL_SIZE + Cell.CONTENT] & Content.WIDTH_MASK;
+  }
+  public getFG(index: number): number {
+    return this._data[index * CELL_SIZE + Cell.FG];
+  }
+  public getBG(index: number): number {
+    return this._data[index * CELL_SIZE + Cell.BG];
+  }
+  public hasContent(index: number): number {
+    return this._data[index * CELL_SIZE + Cell.CONTENT] & Content.HAS_CONTENT;
+  }
+  public getCodePoint(index: number): number {
+    // returns either the single codepoint or the last charCode in combined
+    const content = this._data[index * CELL_SIZE + Cell.CONTENT];
+    if (content & Content.IS_COMBINED) {
+      return this._combined[index].charCodeAt(this._combined[index].length - 1);
+    }
+    return content & Content.CODEPOINT_MASK;
+  }
+  public isCombined(index: number): number {
+    return this._data[index * CELL_SIZE + Cell.CONTENT] & Content.IS_COMBINED;
+  }
+  public getString(index: number): string {
+    const content = this._data[index * CELL_SIZE + Cell.CONTENT];
+    if (content & Content.IS_COMBINED) {
+      return this._combined[index];
+    }
+    if (content & Content.CODEPOINT_MASK) {
+      return stringFromCodePoint(content & Content.CODEPOINT_MASK);
+    }
+    return ''; // return empty string for empty cells
+  }
+
   public loadCell(index: number, cell: ICellData): ICellData {
     cell.content = this._data[index * CELL_SIZE + Cell.CONTENT];
     cell.fg = this._data[index * CELL_SIZE + Cell.FG];
