@@ -320,9 +320,6 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (this._parseBuffer.length < data.length) {
       this._parseBuffer = new Uint32Array(data.length);
     }
-    for (let i = 0; i < data.length; ++i) {
-      this._parseBuffer[i] = data.charCodeAt(i);
-    }
     this._parser.parse(this._parseBuffer, this._stringDecoder.decode(data, this._parseBuffer));
 
     buffer = this._terminal.buffer;
