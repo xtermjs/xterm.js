@@ -45,13 +45,14 @@ import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { MouseZoneManager } from './ui/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ScreenDprMonitor } from './ui/ScreenDprMonitor';
-import { ITheme, IMarker, IDisposable } from 'xterm';
+import { ITheme, IMarker, IDisposable, ITerminalAddon, ITerminalAddonConstructor } from 'xterm';
 import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent } from './common/Types';
 import { evaluateKeyboardEvent } from './core/input/Keyboard';
 import { KeyboardResultType, ICharset } from './core/Types';
 import { clone } from './common/Clone';
+import { AddonManager } from './ui/AddonManager';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -203,6 +204,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   private _mouseZoneManager: IMouseZoneManager;
   public mouseHelper: MouseHelper;
   private _accessibilityManager: AccessibilityManager;
+  private _addonManager: AddonManager;
   private _screenDprMonitor: ScreenDprMonitor;
   private _theme: ITheme;
 
@@ -309,6 +311,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.linkifier = this.linkifier || new Linkifier(this);
     this._mouseZoneManager = this._mouseZoneManager || null;
     this.soundManager = this.soundManager || new SoundManager(this);
+    this._addonManager = this._addonManager || new AddonManager();
 
     // Create the terminal's buffers and set the current buffer
     this.buffers = new BufferSet(this);
@@ -1932,6 +1935,18 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     return this.options.bellStyle === 'sound';
     // return this.options.bellStyle === 'sound' ||
     //     this.options.bellStyle === 'both';
+  }
+
+  public loadAddon<T extends ITerminalAddon>(addonConstructor: ITerminalAddonConstructor<T>): T {
+    return this._addonManager.loadAddon(this, addonConstructor);
+  }
+
+  public disposeAddon<T extends ITerminalAddon>(addonConstructor: ITerminalAddonConstructor<T>): void {
+    this._addonManager.disposeAddon(addonConstructor);
+  }
+
+  public getAddon<T extends ITerminalAddon>(addonConstructor: ITerminalAddonConstructor<T>): T {
+    return this._addonManager.getAddon(addonConstructor);
   }
 }
 

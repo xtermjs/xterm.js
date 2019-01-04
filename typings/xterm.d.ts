@@ -753,5 +753,28 @@ declare module 'xterm' {
      * @param addon The addon to apply.
      */
     static applyAddon(addon: any): void;
+
+    loadAddon<T extends ITerminalAddon>(addonConstructor: ITerminalAddonConstructor<T>): T;
+    disposeAddon<T extends ITerminalAddon>(addonConstructor: ITerminalAddonConstructor<T>): void;
+    getAddon<T extends ITerminalAddon>(addonConstructor: ITerminalAddonConstructor<T>): T;
+  }
+
+  export interface ITerminalAddonConstructor<T extends ITerminalAddon> {
+    new(terminal: Terminal): T;
+  }
+
+  export interface ITerminalAddon {
+    /**
+     * This property declares all addon dependencies that must be intialized
+     * before this addon can be constructed. For addons with no dependencies
+     * just don't include this property.
+     */
+    // readonly DEPENDENCIES?: ITerminalAddonConstructor<ITerminalAddon>[];
+
+    /**
+     * This function includes anything that needs to happen to clean up when
+     * the addon is being disposed.
+     */
+    dispose(): void;
   }
 }

@@ -8,7 +8,7 @@ import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuff
 import { ICircularList, XtermListener } from '../common/Types';
 import { Buffer } from '../Buffer';
 import * as Browser from '../core/Platform';
-import { ITheme, IDisposable, IMarker } from 'xterm';
+import { ITheme, IDisposable, IMarker, ITerminalAddon, ITerminalAddonConstructor } from 'xterm';
 import { Terminal } from '../Terminal';
 
 export class TestTerminal extends Terminal {
@@ -19,6 +19,15 @@ export class TestTerminal extends Terminal {
 }
 
 export class MockTerminal implements ITerminal {
+  loadAddon<T extends ITerminalAddon>(addonConstructor: ITerminalAddonConstructor<T>): T {
+    throw new Error('Method not implemented.');
+  }
+  disposeAddon<T extends ITerminalAddon>(addonConstructor: ITerminalAddonConstructor<T>): void {
+    throw new Error('Method not implemented.');
+  }
+  getAddon<T extends ITerminalAddon>(addonConstructor: ITerminalAddonConstructor<T>): T {
+    throw new Error('Method not implemented.');
+  }
   markers: IMarker[];
   addMarker(cursorYOffset: number): IMarker {
     throw new Error('Method not implemented.');

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, ILinkMatcherOptions } from 'xterm';
+import { Terminal, ILinkMatcherOptions, ITerminalAddon } from 'xterm';
 
 const protocolClause = '(https?:\\/\\/)';
 const domainCharacterSet = '[\\da-z\\.-]+';
@@ -35,12 +35,30 @@ function handleLink(event: MouseEvent, uri: string): void {
  * @param options Custom options to use, matchIndex will always be ignored.
  */
 export function webLinksInit(term: Terminal, handler: (event: MouseEvent, uri: string) => void = handleLink, options: ILinkMatcherOptions = {}): void {
+  // TODO: Remove this
   options.matchIndex = 1;
   term.registerLinkMatcher(strictUrlRegex, handler, options);
 }
 
 export function apply(terminalConstructor: typeof Terminal): void {
+  // TODO: Remove this
   (<any>terminalConstructor.prototype).webLinksInit = function (handler?: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): void {
     webLinksInit(this, handler, options);
   };
+}
+
+export class WebLinksAddon implements ITerminalAddon {
+  private _linkMatcherId: number;
+
+  constructor(private _terminal: Terminal) {
+  }
+
+  public init(handler: (event: MouseEvent, uri: string) => void = handleLink, options: ILinkMatcherOptions = {}): void {
+    options.matchIndex = 1;
+    this._linkMatcherId = this._terminal.registerLinkMatcher(strictUrlRegex, handler, options);
+  }
+
+  public dispose(): void {
+    this._terminal.deregisterLinkMatcher(this._linkMatcherId);
+  }
 }
