@@ -7,8 +7,8 @@ import { IMouseZoneManager } from './ui/Types';
 import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, ILinkifier, ITerminal, IBufferStringIteratorResult } from './Types';
 import { MouseZone } from './ui/MouseZoneManager';
 import { EventEmitter } from './common/EventEmitter';
-import { CHAR_DATA_ATTR_INDEX } from './Buffer';
 import { getStringCellWidth } from './CharWidth';
+import { CellData } from './BufferLine';
 
 /**
  * The Linkifier applies links to rows shortly after they have been refreshed.
@@ -34,6 +34,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
   private _rowsTimeoutId: number;
   private _nextLinkMatcherId = 0;
   private _rowsToLinkify: { start: number, end: number };
+  private _cell: CellData = new CellData();
 
   constructor(
     protected _terminal: ITerminal
@@ -232,11 +233,10 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       }
 
       const line = this._terminal.buffer.lines.get(bufferIndex[0]);
-      const char = line.get(bufferIndex[1]);
+      line.loadCell(bufferIndex[1], this._cell);
       let fg: number | undefined;
-      if (char) {
-        const attr: number = char[CHAR_DATA_ATTR_INDEX];
-        fg = (attr >> 9) & 0x1ff;
+      if (this._cell.fg) {
+        fg = (this._cell.fg >> 9) & 0x1ff;
       }
 
       if (matcher.validationCallback) {
