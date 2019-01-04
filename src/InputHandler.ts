@@ -350,7 +350,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       chWidth = wcwidth(code);
 
       // get charset replacement character
-      // charset are only defined for ASCII, therefore we only
+      // charset is only defined for ASCII, therefore we only
       // search for an replacement char if code < 127
       if (code < 127 && charset) {
         const ch = charset[String.fromCharCode(code)];
@@ -370,22 +370,13 @@ export class InputHandler extends Disposable implements IInputHandler {
       // therefore we can test for buffer.x to avoid overflow left
       if (!chWidth && buffer.x) {
         const chMinusOne = bufferRow.get(buffer.x - 1);
-        if (chMinusOne) {
-          if (!chMinusOne[CHAR_DATA_WIDTH_INDEX]) {
-            // found empty cell after fullwidth, need to go 2 cells back
-            // it is save to step 2 cells back here
-            // since an empty cell is only set by fullwidth chars
-            const chMinusTwo = bufferRow.get(buffer.x - 2);
-            if (chMinusTwo) {
-              chMinusTwo[CHAR_DATA_CHAR_INDEX] += stringFromCodePoint(code);
-              chMinusTwo[CHAR_DATA_CODE_INDEX] = code;
-              bufferRow.set(buffer.x - 2, chMinusTwo); // must be set explicitly now
-            }
-          } else {
-            chMinusOne[CHAR_DATA_CHAR_INDEX] += stringFromCodePoint(code);
-            chMinusOne[CHAR_DATA_CODE_INDEX] = code;
-            bufferRow.set(buffer.x - 1, chMinusOne); // must be set explicitly now
-          }
+        if (!chMinusOne[CHAR_DATA_WIDTH_INDEX]) {
+          // found empty cell after fullwidth, need to go 2 cells back
+          // it is save to step 2 cells back here
+          // since an empty cell is only set by fullwidth chars
+          bufferRow.addCharToCell(buffer.x - 2, code);
+        } else {
+          bufferRow.addCharToCell(buffer.x - 1, code);
         }
         continue;
       }
@@ -430,7 +421,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         // and will be set to eraseChar
         const lastCell = bufferRow.get(cols - 1);
         if (lastCell[CHAR_DATA_WIDTH_INDEX] === 2) {
-          bufferRow.set(cols - 1, [curAttr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+          bufferRow.setDataFromCodePoint(cols - 1, NULL_CELL_CODE, NULL_CELL_WIDTH, curAttr, 0);
         }
       }
 
