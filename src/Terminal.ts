@@ -52,6 +52,7 @@ import { IKeyboardEvent } from './common/Types';
 import { evaluateKeyboardEvent } from './core/input/Keyboard';
 import { KeyboardResultType, ICharset } from './core/Types';
 import { clone } from './common/Clone';
+import { isEmoji } from './Emoji';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -591,6 +592,14 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   private _bindKeys(): void {
     const self = this;
+
+    this.register(addDisposableDomListener(this.element, 'input', function (ev: InputEvent): void {
+      if (document.activeElement !== this) {
+        return;
+      }
+      self._onInput(ev);
+    }, true));
+
     this.register(addDisposableDomListener(this.element, 'keydown', function (ev: KeyboardEvent): void {
       if (document.activeElement !== this) {
         return;
@@ -613,6 +622,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       self._keyUp(ev);
     }, true));
 
+    this.register(addDisposableDomListener(this.textarea, 'input', (ev: InputEvent) => this._onInput(ev), true));
     this.register(addDisposableDomListener(this.textarea, 'keydown', (ev: KeyboardEvent) => this._keyDown(ev), true));
     this.register(addDisposableDomListener(this.textarea, 'keypress', (ev: KeyboardEvent) => this._keyPress(ev), true));
     this.register(addDisposableDomListener(this.textarea, 'compositionstart', () => this._compositionHelper.compositionstart()));
@@ -1494,6 +1504,13 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public selectLines(start: number, end: number): void {
     if (this.selectionManager) {
       this.selectionManager.selectLines(start, end);
+    }
+  }
+
+  protected _onInput(event: InputEvent) {
+    if (isEmoji(event.data)) {
+      this.showCursor();
+      this.handler(event.data);
     }
   }
 

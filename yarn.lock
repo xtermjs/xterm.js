@@ -26,6 +26,11 @@
   resolved "https://registry.yarnpkg.com/@types/chai/-/chai-3.5.2.tgz#c11cd2817d3a401b7ba0f5a420f35c56139b1c1e"
   integrity sha1-wRzSgX06QBt7oPWkIPNcVhObHB4=
 
+"@types/dom-inputevent@^1.0.3":
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/@types/dom-inputevent/-/dom-inputevent-1.0.3.tgz#7831e0628a98a04bbac450c95220ded6e04a1f84"
+  integrity sha512-xuBw5JB6s3JGRv1w4O1Gz5Ryr7Y3GJbEHtrGNpuQAkrw3YR3IYEYbDPTaCPWf33tcXoeRwSYbkaHt4zE6xe14w==
+
 "@types/events@*":
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/@types/events/-/events-1.2.0.tgz#81a6731ce4df43619e5c8c945383b3e62a89ea86"

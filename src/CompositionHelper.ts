@@ -4,6 +4,7 @@
  */
 
 import { ITerminal } from './Types';
+import { isEmoji } from './Emoji';
 
 interface IPosition {
   start: number;
@@ -125,7 +126,7 @@ export class CompositionHelper {
       // Cancel any delayed composition send requests and send the input immediately.
       this._isSendingComposition = false;
       const input = this._textarea.value.substring(this._compositionPosition.start, this._compositionPosition.end);
-      this._terminal.handler(input);
+      this._handler(input);
     } else {
       // Make a deep copy of the composition position here as a new compositionstart event may
       // fire before the setTimeout executes.
@@ -157,9 +158,15 @@ export class CompositionHelper {
             // (eg. 2) after a composition character.
             input = this._textarea.value.substring(currentCompositionPosition.start);
           }
-          this._terminal.handler(input);
+          this._handler(input);
         }
       }, 0);
+    }
+  }
+
+  private _handler(str: string): void {
+    if (!isEmoji(str)) {
+      this._terminal.handler(str);
     }
   }
 
@@ -177,7 +184,7 @@ export class CompositionHelper {
         const newValue = this._textarea.value;
         const diff = newValue.replace(oldValue, '');
         if (diff.length > 0) {
-          this._terminal.handler(diff);
+          this._handler(diff);
         }
       }
     }, 0);
@@ -190,10 +197,6 @@ export class CompositionHelper {
    *   necessary as the IME events across browsers are not consistently triggered.
    */
   public updateCompositionElements(dontRecurse?: boolean): void {
-    if (!this._isComposing) {
-      return;
-    }
-
     if (this._terminal.buffer.isCursorInViewport) {
       const cellHeight = Math.ceil(this._terminal.charMeasure.height * this._terminal.options.lineHeight);
       const cursorTop = this._terminal.buffer.y * cellHeight;
@@ -206,11 +209,13 @@ export class CompositionHelper {
       // Sync the textarea to the exact position of the composition view so the IME knows where the
       // text is.
       const compositionViewBounds = this._compositionView.getBoundingClientRect();
+      const width = Math.max(compositionViewBounds.width, this._terminal.charMeasure.width);
+      const height = Math.max(compositionViewBounds.height, this._terminal.charMeasure.height);
       this._textarea.style.left = cursorLeft + 'px';
       this._textarea.style.top = cursorTop + 'px';
-      this._textarea.style.width = compositionViewBounds.width + 'px';
-      this._textarea.style.height = compositionViewBounds.height + 'px';
-      this._textarea.style.lineHeight = compositionViewBounds.height + 'px';
+      this._textarea.style.width = width + 'px';
+      this._textarea.style.height = height + 'px';
+      this._textarea.style.lineHeight = height + 'px';
     }
 
     if (!dontRecurse) {
