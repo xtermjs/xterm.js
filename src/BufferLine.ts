@@ -7,7 +7,6 @@ import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, CHAR_DATA_CHAR_INDEX, 
 import { stringFromCodePoint } from './core/input/TextDecoder';
 
 
-
 /**
  * buffer memory layout:
  *
@@ -37,7 +36,7 @@ const enum Cell {
 /**
  * Bitmasks and helper for accessing data in `content`.
  */
-const enum Content {
+export const enum Content {
   /**
    * bit 1..21    codepoint, max allowed in UTF32 is 0x10FFFF (21 bits taken)
    *              read:   `codepoint = content & Content.codepointMask;`
@@ -75,6 +74,25 @@ const enum Content {
    */
   WIDTH_MASK = 0xC00000,   // 3 << 22
   WIDTH_SHIFT = 22
+}
+
+export class CellData {
+  public content: number = 0;
+  public fg: number = 0;
+  public bg: number = 0;
+  public combinedData: string = '';
+  public get combined(): number {
+    return this.content & Content.IS_COMBINED;
+  }
+  public get width(): number {
+    return this.content >> Content.WIDTH_SHIFT;
+  }
+  public get chars(): string {
+    return (this.content & Content.IS_COMBINED) ? this.combinedData : stringFromCodePoint(this.content & Content.CODEPOINT_MASK);
+  }
+  public get code(): number {
+    return ((this.combined) ? this.combinedData.charCodeAt(this.combinedData.length - 1) : this.content & Content.CODEPOINT_MASK);
+  }
 }
 
 /**
@@ -121,6 +139,28 @@ export class BufferLine implements IBufferLine {
     } else {
       this._data[index * CELL_SIZE + Cell.CONTENT] = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0) | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
     }
+  }
+
+  public loadCell(index: number, cell: CellData): CellData {
+    cell.content = this._data[index * CELL_SIZE + Cell.CONTENT];
+    cell.fg = this._data[index * CELL_SIZE + Cell.FG];
+    cell.bg = this._data[index * CELL_SIZE + Cell.BG];
+    if (cell.content & Content.IS_COMBINED) {
+      cell.combinedData = this._combined[index];
+    }
+    return cell;
+  }
+
+  public setCell(index: number, cell: CellData): void {
+    if (cell.content & Content.IS_COMBINED) {
+      this._combined[index] = cell.combinedData;
+      // we also need to clear and set codepoint to index
+      cell.content &= ~Content.CODEPOINT_MASK;
+      cell.content |= index;
+    }
+    this._data[index * CELL_SIZE + Cell.CONTENT] = cell.content;
+    this._data[index * CELL_SIZE + Cell.FG] = cell.fg;
+    this._data[index * CELL_SIZE + Cell.BG] = cell.bg;
   }
 
   /**

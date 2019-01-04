@@ -3,13 +3,14 @@
  * @license MIT
  */
 
-import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from '../Buffer';
+import { CHAR_DATA_CODE_INDEX, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from '../Buffer';
 import { FLAGS, IColorSet, IRenderDimensions, ICharacterJoinerRegistry } from './Types';
 import { CharData, ITerminal } from '../Types';
 import { INVERTED_DEFAULT_COLOR, DEFAULT_COLOR } from './atlas/Types';
 import { GridCache } from './GridCache';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { is256Color } from './atlas/CharAtlasUtils';
+import { CellData } from '../BufferLine';
 
 /**
  * This CharData looks like a null character, which will forc a clear and render
@@ -24,6 +25,7 @@ export class TextRenderLayer extends BaseRenderLayer {
   private _characterFont: string;
   private _characterOverlapCache: { [key: string]: boolean } = {};
   private _characterJoinerRegistry: ICharacterJoinerRegistry;
+  private _cell = new CellData();
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet, characterJoinerRegistry: ICharacterJoinerRegistry, alpha: boolean) {
     super(container, 'text', zIndex, alpha, colors);
@@ -72,14 +74,14 @@ export class TextRenderLayer extends BaseRenderLayer {
       const line = terminal.buffer.lines.get(row);
       const joinedRanges = joinerRegistry ? joinerRegistry.getJoinedCharacters(row) : [];
       for (let x = 0; x < terminal.cols; x++) {
-        const charData = line.get(x);
-        let code: number = <number>charData[CHAR_DATA_CODE_INDEX] || WHITESPACE_CELL_CODE;
+        (line as any).loadCell(x, this._cell);
+        let code: number = this._cell.code || WHITESPACE_CELL_CODE;
 
         // Can either represent character(s) for a single cell or multiple cells
         // if indicated by a character joiner.
-        let chars: string = charData[CHAR_DATA_CHAR_INDEX] || WHITESPACE_CELL_CHAR;
-        const attr: number = charData[CHAR_DATA_ATTR_INDEX];
-        let width: number = charData[CHAR_DATA_WIDTH_INDEX];
+        let chars = this._cell.chars || WHITESPACE_CELL_CHAR;
+        const attr = this._cell.fg;
+        let width = this._cell.width;
 
         // If true, indicates that the current character(s) to draw were joined.
         let isJoined = false;
@@ -117,7 +119,7 @@ export class TextRenderLayer extends BaseRenderLayer {
         // right is a space, take ownership of the cell to the right. We skip
         // this check for joined characters because their rendering likely won't
         // yield the same result as rendering the last character individually.
-        if (!isJoined && this._isOverlapping(charData)) {
+        if (!isJoined && this._isOverlapping(chars, width, code)) {
           // If the character is overlapping, we want to force a re-render on every
           // frame. This is specifically to work around the case where two
           // overlaping chars `a` and `b` are adjacent, the cursor is moved to b and a
@@ -271,21 +273,19 @@ export class TextRenderLayer extends BaseRenderLayer {
   /**
    * Whether a character is overlapping to the next cell.
    */
-  private _isOverlapping(charData: CharData): boolean {
+  private _isOverlapping(char: string, width: number, code: number): boolean {
     // Only single cell characters can be overlapping, rendering issues can
     // occur without this check
-    if (charData[CHAR_DATA_WIDTH_INDEX] !== 1) {
+    if (width !== 1) {
       return false;
     }
 
     // We assume that any ascii character will not overlap
-    const code = charData[CHAR_DATA_CODE_INDEX];
     if (code < 256) {
       return false;
     }
 
     // Deliver from cache if available
-    const char = charData[CHAR_DATA_CHAR_INDEX];
     if (this._characterOverlapCache.hasOwnProperty(char)) {
       return this._characterOverlapCache[char];
     }
