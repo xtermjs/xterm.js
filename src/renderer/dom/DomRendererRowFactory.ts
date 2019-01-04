@@ -3,10 +3,11 @@
  * @license MIT
  */
 
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_ATTR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, NULL_CELL_CODE, WHITESPACE_CELL_CHAR } from '../../Buffer';
+import {  NULL_CELL_CODE, WHITESPACE_CELL_CHAR } from '../../Buffer';
 import { FLAGS } from '../Types';
 import { IBufferLine } from '../../Types';
 import { DEFAULT_COLOR, INVERTED_DEFAULT_COLOR } from '../atlas/Types';
+import { CellData } from '../../BufferLine';
 
 export const BOLD_CLASS = 'xterm-bold';
 export const ITALIC_CLASS = 'xterm-italic';
@@ -16,6 +17,7 @@ export const CURSOR_STYLE_BAR_CLASS = 'xterm-cursor-bar';
 export const CURSOR_STYLE_UNDERLINE_CLASS = 'xterm-cursor-underline';
 
 export class DomRendererRowFactory {
+  private _cell: CellData = new CellData();
   constructor(
     private _document: Document
   ) {
@@ -31,19 +33,16 @@ export class DomRendererRowFactory {
     // the viewport).
     let lineLength = 0;
     for (let x = Math.min(lineData.length, cols) - 1; x >= 0; x--) {
-      const charData = lineData.get(x);
-      const code = charData[CHAR_DATA_CODE_INDEX];
-      if (code !== NULL_CELL_CODE || (isCursorRow && x === cursorX)) {
+      if (lineData.loadCell(x, this._cell).code !== NULL_CELL_CODE || (isCursorRow && x === cursorX)) {
         lineLength = x + 1;
         break;
       }
     }
 
     for (let x = 0; x < lineLength; x++) {
-      const charData = lineData.get(x);
-      const char = charData[CHAR_DATA_CHAR_INDEX] || WHITESPACE_CELL_CHAR;
-      const attr = charData[CHAR_DATA_ATTR_INDEX];
-      const width = charData[CHAR_DATA_WIDTH_INDEX];
+      lineData.loadCell(x, this._cell);
+      const attr = this._cell.fg;
+      const width = this._cell.width;
 
       // The character to the left is a wide character, drawing is owned by the char at x-1
       if (width === 0) {
@@ -101,7 +100,7 @@ export class DomRendererRowFactory {
         charElement.classList.add(ITALIC_CLASS);
       }
 
-      charElement.textContent = char;
+      charElement.textContent = this._cell.chars || WHITESPACE_CELL_CHAR;
       if (fg !== DEFAULT_COLOR) {
         charElement.classList.add(`xterm-fg-${fg}`);
       }

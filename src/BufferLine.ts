@@ -77,6 +77,11 @@ export const enum Content {
 }
 
 export class CellData implements ICellData {
+  public static fromCharData(value: CharData): CellData {
+    const obj = new CellData();
+    obj.setFromCharData(value);
+    return obj;
+  }
   public content: number = 0;
   public fg: number = 0;
   public bg: number = 0;
@@ -88,7 +93,13 @@ export class CellData implements ICellData {
     return this.content >> Content.WIDTH_SHIFT;
   }
   public get chars(): string {
-    return (this.content & Content.IS_COMBINED) ? this.combinedData : stringFromCodePoint(this.content & Content.CODEPOINT_MASK);
+    if (this.content & Content.IS_COMBINED) {
+      return this.combinedData;
+    }
+    if (this.content & Content.CODEPOINT_MASK) {
+      return stringFromCodePoint(this.content & Content.CODEPOINT_MASK);
+    }
+    return '';
   }
   public get code(): number {
     return ((this.combined) ? this.combinedData.charCodeAt(this.combinedData.length - 1) : this.content & Content.CODEPOINT_MASK);
