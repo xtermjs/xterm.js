@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { CHAR_DATA_CODE_INDEX, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from '../Buffer';
+import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from '../Buffer';
 import { FLAGS, IColorSet, IRenderDimensions, ICharacterJoinerRegistry } from './Types';
 import { CharData, ITerminal } from '../Types';
 import { INVERTED_DEFAULT_COLOR, DEFAULT_COLOR } from './atlas/Types';

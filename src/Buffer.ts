@@ -227,7 +227,7 @@ export class Buffer implements IBuffer {
         return [-1, -1];
       }
       for (let i = 0; i < line.length; ++i) {
-        stringIndex -= line.get(i)[CHAR_DATA_CHAR_INDEX].length;
+        stringIndex -= line.getString(i).length;
         if (stringIndex < 0) {
           return [lineIndex, i];
         }

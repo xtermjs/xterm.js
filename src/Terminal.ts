@@ -25,7 +25,7 @@ import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions
 import { IMouseZoneManager } from './ui/Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
-import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, CHAR_DATA_ATTR_INDEX } from './Buffer';
+import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from './Buffer';
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './common/EventEmitter';
 import { Viewport } from './Viewport';
@@ -1175,7 +1175,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public scroll(isWrapped: boolean = false): void {
     let newLine: IBufferLine;
     newLine = this._blankLine;
-    if (!newLine || newLine.length !== this.cols || newLine.get(0)[CHAR_DATA_ATTR_INDEX] !== this.eraseAttr()) {
+    if (!newLine || newLine.length !== this.cols || newLine.getFG(0) !== this.eraseAttr()) {
       newLine = this.buffer.getBlankLine(this.eraseAttr(), isWrapped);
       this._blankLine = newLine;
     }

@@ -1,11 +1,12 @@
-import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
 import { ITerminal, IBufferLine } from '../Types';
 import { ICharacterJoinerRegistry, ICharacterJoiner } from './Types';
+import { CellData } from '../BufferLine';
 
 export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
 
   private _characterJoiners: ICharacterJoiner[] = [];
   private _nextCharacterJoinerId: number = 0;
+  private _cell: CellData = new CellData();
 
   constructor(private _terminal: ITerminal) {
   }
@@ -51,13 +52,13 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
     let rangeStartColumn = 0;
     let currentStringIndex = 0;
     let rangeStartStringIndex = 0;
-    let rangeAttr = line.get(0)[CHAR_DATA_ATTR_INDEX] >> 9;
+    let rangeAttr = line.getFG(0) >> 9;
 
     for (let x = 0; x < this._terminal.cols; x++) {
-      const charData = line.get(x);
-      const chars = charData[CHAR_DATA_CHAR_INDEX];
-      const width = charData[CHAR_DATA_WIDTH_INDEX];
-      const attr = charData[CHAR_DATA_ATTR_INDEX] >> 9;
+      line.loadCell(x, this._cell);
+      const chars = this._cell.chars;
+      const width = this._cell.width;
+      const attr = this._cell.fg >> 9;
 
       if (width === 0) {
         // If this character is of width 0, skip it.
@@ -152,9 +153,8 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
     }
 
     for (let x = startCol; x < this._terminal.cols; x++) {
-      const charData = line.get(x);
-      const width = charData[CHAR_DATA_WIDTH_INDEX];
-      const length = charData[CHAR_DATA_CHAR_INDEX].length;
+      const width = line.getWidth(x);
+      const length = line.getString(x).length;
 
       // We skip zero-width characters when creating the string to join the text
       // so we do the same here
