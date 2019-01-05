@@ -21,6 +21,15 @@ export interface IKeyboardEvent {
   type: string;
 }
 
+/**
+ * There's a @types/dom-inputevent but at the moment it's outdated and missing
+ * some properties (e.g. inputType). So in the meantime we're using this instead
+ */
+export interface IInputEvent {
+  readonly data?: string;
+  readonly inputType?: string;
+}
+
 export interface ICircularList<T> extends IEventEmitter {
   length: number;
   maxLength: number;

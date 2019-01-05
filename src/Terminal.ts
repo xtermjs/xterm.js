@@ -48,7 +48,7 @@ import { ScreenDprMonitor } from './ui/ScreenDprMonitor';
 import { ITheme, IMarker, IDisposable } from 'xterm';
 import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
-import { IKeyboardEvent } from './common/Types';
+import { IKeyboardEvent, IInputEvent } from './common/Types';
 import { evaluateKeyboardEvent } from './core/input/Keyboard';
 import { KeyboardResultType, ICharset } from './core/Types';
 import { clone } from './common/Clone';
@@ -593,7 +593,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   private _bindKeys(): void {
     const self = this;
 
-    this.register(addDisposableDomListener(this.element, 'input', function (ev: InputEvent): void {
+    this.register(addDisposableDomListener(this.element, 'input', function (ev: IInputEvent): void {
       if (document.activeElement !== this) {
         return;
       }
@@ -622,7 +622,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       self._keyUp(ev);
     }, true));
 
-    this.register(addDisposableDomListener(this.textarea, 'input', (ev: InputEvent) => this._onInput(ev), true));
+    this.register(addDisposableDomListener(this.textarea, 'input', (ev: IInputEvent) => this._onInput(ev), true));
     this.register(addDisposableDomListener(this.textarea, 'keydown', (ev: KeyboardEvent) => this._keyDown(ev), true));
     this.register(addDisposableDomListener(this.textarea, 'keypress', (ev: KeyboardEvent) => this._keyPress(ev), true));
     this.register(addDisposableDomListener(this.textarea, 'compositionstart', () => this._compositionHelper.compositionstart()));
@@ -1507,7 +1507,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
   }
 
-  protected _onInput(event: InputEvent) {
+  protected _onInput(event: IInputEvent) {
     if (event.inputType === 'insertText' && isEmoji(event.data)) {
       this.showCursor();
       this.handler(event.data);
