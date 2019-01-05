@@ -1508,7 +1508,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   protected _onInput(event: InputEvent) {
-    if (isEmoji(event.data)) {
+    if (event.inputType === 'insertText' && isEmoji(event.data)) {
       this.showCursor();
       this.handler(event.data);
     }

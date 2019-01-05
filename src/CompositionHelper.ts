@@ -4,7 +4,6 @@
  */
 
 import { ITerminal } from './Types';
-import { isEmoji } from './Emoji';
 
 interface IPosition {
   start: number;
@@ -126,7 +125,7 @@ export class CompositionHelper {
       // Cancel any delayed composition send requests and send the input immediately.
       this._isSendingComposition = false;
       const input = this._textarea.value.substring(this._compositionPosition.start, this._compositionPosition.end);
-      this._handler(input);
+      this._terminal.handler(input);
     } else {
       // Make a deep copy of the composition position here as a new compositionstart event may
       // fire before the setTimeout executes.
@@ -158,15 +157,9 @@ export class CompositionHelper {
             // (eg. 2) after a composition character.
             input = this._textarea.value.substring(currentCompositionPosition.start);
           }
-          this._handler(input);
+          this._terminal.handler(input);
         }
       }, 0);
-    }
-  }
-
-  private _handler(str: string): void {
-    if (!isEmoji(str)) {
-      this._terminal.handler(str);
     }
   }
 
@@ -184,7 +177,7 @@ export class CompositionHelper {
         const newValue = this._textarea.value;
         const diff = newValue.replace(oldValue, '');
         if (diff.length > 0) {
-          this._handler(diff);
+          this._terminal.handler(diff);
         }
       }
     }, 0);
