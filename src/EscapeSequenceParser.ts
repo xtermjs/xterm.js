@@ -4,7 +4,15 @@
  */
 
 import { ParserState, ParserAction, IParsingState, IDcsHandler, IEscapeSequenceParser } from './Types';
+import { IDisposable } from 'xterm';
 import { Disposable } from './common/Lifecycle';
+
+interface IHandlerCollection<T> {
+  [key: string]: T[];
+}
+
+type CsiHandler = (params: number[], collect: string) => boolean | void;
+type OscHandler = (data: string) => boolean | void;
 
 /**
  * Returns an array filled with numbers between the low and high parameters (right exclusive).
@@ -222,9 +230,9 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   // handler lookup containers
   protected _printHandler: (data: string, start: number, end: number) => void;
   protected _executeHandlers: any;
-  protected _csiHandlers: any;
+  protected _csiHandlers: IHandlerCollection<CsiHandler>;
   protected _escHandlers: any;
-  protected _oscHandlers: any;
+  protected _oscHandlers: IHandlerCollection<OscHandler>;
   protected _dcsHandlers: any;
   protected _activeDcsHandler: IDcsHandler | null;
   protected _errorHandler: (state: IParsingState) => IParsingState;
@@ -278,8 +286,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._errorHandlerFb = null;
     this._printHandler = null;
     this._executeHandlers = null;
-    this._csiHandlers = null;
     this._escHandlers = null;
+    this._csiHandlers = null;
     this._oscHandlers = null;
     this._dcsHandlers = null;
     this._activeDcsHandler = null;
@@ -303,8 +311,24 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._executeHandlerFb = callback;
   }
 
+  addCsiHandler(flag: string, callback: CsiHandler): IDisposable {
+    const index = flag.charCodeAt(0);
+    if (this._csiHandlers[index] === undefined) {
+      this._csiHandlers[index] = [];
+    }
+    const handlerList = this._csiHandlers[index];
+    handlerList.push(callback);
+    return {
+      dispose: () => {
+        const handlerIndex = handlerList.indexOf(callback);
+        if (handlerIndex !== -1) {
+          handlerList.splice(handlerIndex, 1);
+        }
+      }
+    };
+  }
   setCsiHandler(flag: string, callback: (params: number[], collect: string) => void): void {
-    this._csiHandlers[flag.charCodeAt(0)] = callback;
+    this._csiHandlers[flag.charCodeAt(0)] = [callback];
   }
   clearCsiHandler(flag: string): void {
     if (this._csiHandlers[flag.charCodeAt(0)]) delete this._csiHandlers[flag.charCodeAt(0)];
@@ -323,8 +347,23 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._escHandlerFb = callback;
   }
 
+  addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
+    if (this._oscHandlers[ident] === undefined) {
+      this._oscHandlers[ident] = [];
+    }
+    const handlerList =  this._oscHandlers[ident];
+    handlerList.push(callback);
+    return {
+      dispose: () => {
+        const handlerIndex = handlerList.indexOf(callback);
+        if (handlerIndex !== -1) {
+          handlerList.splice(handlerIndex, 1);
+        }
+      }
+    };
+  }
   setOscHandler(ident: number, callback: (data: string) => void): void {
-    this._oscHandlers[ident] = callback;
+    this._oscHandlers[ident] = [callback];
   }
   clearOscHandler(ident: number): void {
     if (this._oscHandlers[ident]) delete this._oscHandlers[ident];
@@ -461,9 +500,17 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           }
           break;
         case ParserAction.CSI_DISPATCH:
-          callback = this._csiHandlers[code];
-          if (callback) callback(params, collect);
-          else this._csiHandlerFb(collect, params, code);
+          // Trigger CSI Handler
+          const handlers = this._csiHandlers[code];
+          let j = handlers ? handlers.length - 1 : -1;
+          for (; j >= 0; j--) {
+            if (handlers[j](params, collect)) {
+              break;
+            }
+          }
+          if (j < 0) {
+            this._csiHandlerFb(collect, params, code);
+          }
           break;
         case ParserAction.PARAM:
           if (code === 0x3b) params.push(0);
@@ -538,9 +585,17 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
               // or with an explicit NaN OSC handler
               const identifier = parseInt(osc.substring(0, idx));
               const content = osc.substring(idx + 1);
-              callback = this._oscHandlers[identifier];
-              if (callback) callback(content);
-              else this._oscHandlerFb(identifier, content);
+              // Trigger OSC Handler
+              const handlers = this._oscHandlers[identifier];
+              let j = handlers ? handlers.length - 1 : -1;
+              for (; j >= 0; j--) {
+                if (handlers[j](content)) {
+                  break;
+                }
+              }
+              if (j < 0) {
+                this._oscHandlerFb(identifier, content);
+              }
             }
           }
           if (code === 0x1b) transition |= ParserState.ESCAPE;
