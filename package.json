@@ -8,6 +8,7 @@
   "license": "MIT",
   "devDependencies": {
     "@types/chai": "^3.4.34",
+    "@types/dom-inputevent": "^1.0.3",
     "@types/glob": "^5.0.35",
     "@types/jsdom": "11.0.1",
     "@types/mocha": "^2.2.33",
@@ -65,8 +66,5 @@
     "watch": "concurrently --kill-others-on-fail --names \"lib,css\" \"tsc -w\" \"gulp watch-css\"",
     "watch-addons": "concurrently --kill-others-on-fail --names \"attach,fit,fullscreen,search,terminado,webLinks,winptyCompat,zmodem\" \"tsc -w -p ./src/addons/attach\" \"tsc -w -p ./src/addons/fit\" \"tsc -w -p ./src/addons/fullscreen\" \"tsc -w -p ./src/addons/search\" \"tsc -w -p ./src/addons/terminado\" \"tsc -w -p ./src/addons/webLinks\" \"tsc -w -p ./src/addons/winptyCompat\" \"tsc -w -p ./src/addons/zmodem\"",
     "layering": "concurrently --kill-others-on-fail --names \"common,core\" \"tsc -p ./src/common\" \"tsc -p ./src/core\""
-  },
-  "dependencies": {
-    "@types/dom-inputevent": "^1.0.3"
   }
 }
