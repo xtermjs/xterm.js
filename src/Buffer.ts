@@ -210,7 +210,7 @@ export class Buffer implements IBuffer {
 
     this.scrollBottom = newRows - 1;
 
-    if (this._hasScrollback && this._bufferLineConstructor === BufferLine) {
+    if (this._hasScrollback) {
       this._reflow(newCols);
 
       // Trim the end of the line off if cols shrunk
@@ -343,7 +343,7 @@ export class Buffer implements IBuffer {
         if (this.ybase === 0) {
           this.y--;
           // Add an extra row at the bottom of the viewport
-          this.lines.push(new this._bufferLineConstructor(newCols, FILL_CHAR_DATA));
+          this.lines.push(new BufferLine(newCols, FILL_CHAR_DATA));
         } else {
           if (this.ydisp === this.ybase) {
             this.ydisp--;
