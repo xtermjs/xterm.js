@@ -44,7 +44,7 @@ export function evaluateKeyboardEvent(
 ): IKeyboardResult {
   const result: IKeyboardResult = {
     type: KeyboardResultType.SEND_KEY,
-    // Whether to cancel event propogation (NOTE: this may not be needed since the event is
+    // Whether to cancel event propagation (NOTE: this may not be needed since the event is
     // canceled at the end of keyDown
     cancel: false,
     // The new key even to emit
