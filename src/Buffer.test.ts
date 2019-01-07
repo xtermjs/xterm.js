@@ -511,7 +511,7 @@ describe('Buffer', () => {
       const s = terminal.buffer.iterator(true).next().content;
       assert.equal(input, s);
       for (let i = 10; i < input.length; ++i) {
-        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
+        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i, true);
         const j = (i - 0) << 1;
         assert.deepEqual([(j / terminal.cols) | 0, j % terminal.cols], bufferIndex);
       }
@@ -523,7 +523,7 @@ describe('Buffer', () => {
       const s = terminal.buffer.iterator(true).next().content;
       assert.equal(input, s);
       for (let i = 0; i < input.length; ++i) {
-        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
+        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i, true);
         assert.equal(input[i], terminal.buffer.lines.get(bufferIndex[0]).get(bufferIndex[1])[CHAR_DATA_CHAR_INDEX]);
       }
     });
@@ -535,7 +535,7 @@ describe('Buffer', () => {
       const s = terminal.buffer.iterator(true).next().content;
       assert.equal(input, s);
       for (let i = 0; i < input.length; ++i) {
-        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
+        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i, true);
         assert.equal(
           (!(i % 3))
             ? input[i]
