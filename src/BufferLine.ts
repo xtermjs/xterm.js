@@ -25,6 +25,8 @@ const IS_COMBINED_BIT_MASK = 0x80000000;
 export class BufferLine implements IBufferLine {
   protected _data: Uint32Array | null = null;
   protected _combined: {[index: number]: string} = {};
+  protected _cachedTrimmedLength: number = -1;
+  protected _cachedTrimmedString: string = null;
   public length: number;
 
   constructor(cols: number, fillCharData?: CharData, public isWrapped: boolean = false) {
@@ -79,6 +81,7 @@ export class BufferLine implements IBufferLine {
         this.set(i, fillCharData);
       }
     }
+    this.invalidateCache();
   }
 
   public deleteCells(pos: number, n: number, fillCharData: CharData): void {
@@ -95,12 +98,14 @@ export class BufferLine implements IBufferLine {
         this.set(i, fillCharData);
       }
     }
+    this.invalidateCache();
   }
 
   public replaceCells(start: number, end: number, fillCharData: CharData): void {
     while (start < end  && start < this.length) {
       this.set(start++, fillCharData);
     }
+    this.invalidateCache();
   }
 
   public resize(cols: number, fillCharData: CharData, shrink: boolean = false): void {
@@ -130,6 +135,7 @@ export class BufferLine implements IBufferLine {
       }
     }
     this.length = cols;
+    this.invalidateCache();
   }
 
   /** fill a line with fillCharData */
@@ -138,6 +144,7 @@ export class BufferLine implements IBufferLine {
     for (let i = 0; i < this.length; ++i) {
       this.set(i, fillCharData);
     }
+    this.invalidateCache();
   }
 
   /** alter to a full copy of line  */
@@ -154,6 +161,7 @@ export class BufferLine implements IBufferLine {
       this._combined[el] = line._combined[el];
     }
     this.isWrapped = line.isWrapped;
+    this.invalidateCache();
   }
 
   /** create a new clone */
@@ -171,16 +179,24 @@ export class BufferLine implements IBufferLine {
   }
 
   public getTrimmedLength(): number {
+    if (this._cachedTrimmedLength !== -1) {
+      return this._cachedTrimmedLength;
+    }
     for (let i = this.length - 1; i >= 0; --i) {
       if (this._data[i * CELL_SIZE + Cell.STRING] !== 0) {  // 0 ==> ''.charCodeAt(0) ==> NaN ==> 0
-        return i + this._data[i * CELL_SIZE + Cell.WIDTH];
+        this._cachedTrimmedLength = i + this._data[i * CELL_SIZE + Cell.WIDTH];
+        return this._cachedTrimmedLength;
       }
     }
-    return 0;
+    this._cachedTrimmedLength = 0;
+    return this._cachedTrimmedLength;
   }
 
   public translateToString(trimRight: boolean = false, startCol: number = 0, endCol: number = this.length): string {
     if (trimRight) {
+      if (startCol === 0 && this._cachedTrimmedString) {
+        return this._cachedTrimmedString;
+      }
       endCol = Math.min(endCol, this.getTrimmedLength());
     }
     let result = '';
@@ -189,6 +205,14 @@ export class BufferLine implements IBufferLine {
       result += (stringData & IS_COMBINED_BIT_MASK) ? this._combined[startCol] : (stringData) ? String.fromCharCode(stringData) : WHITESPACE_CELL_CHAR;
       startCol += this._data[startCol * CELL_SIZE + Cell.WIDTH] || 1;
     }
+    if (startCol === 0 && trimRight) {
+      this._cachedTrimmedString = result;
+    }
     return result;
+  }
+
+  public invalidateCache(): void {
+    this._cachedTrimmedLength = -1;
+    this._cachedTrimmedString = null;
   }
 }

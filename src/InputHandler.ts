@@ -337,6 +337,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const insertMode: boolean = this._terminal.insertMode;
     const curAttr: number = this._terminal.curAttr;
     let bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
+    bufferRow.invalidateCache();
 
     this._terminal.updateRange(buffer.y);
     for (let stringPosition = start; stringPosition < end; ++stringPosition) {
@@ -428,6 +429,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           }
           // row changed, get it again
           bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
+          bufferRow.invalidateCache();
         } else {
           if (chWidth === 2) {
             // FIXME: check for xterm behavior

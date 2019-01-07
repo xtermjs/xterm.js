@@ -528,4 +528,5 @@ export interface IBufferLine {
   clone(): IBufferLine;
   getTrimmedLength(): number;
   translateToString(trimRight?: boolean, startCol?: number, endCol?: number): string;
+  invalidateCache(): void;
 }
