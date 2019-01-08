@@ -199,13 +199,14 @@ export class BufferLine implements IBufferLine {
       }
       endCol = Math.min(endCol, this.getTrimmedLength());
     }
+    const start = startCol;
     let result = '';
     while (startCol < endCol) {
       const stringData = this._data[startCol * CELL_SIZE + Cell.STRING];
       result += (stringData & IS_COMBINED_BIT_MASK) ? this._combined[startCol] : (stringData) ? String.fromCharCode(stringData) : WHITESPACE_CELL_CHAR;
       startCol += this._data[startCol * CELL_SIZE + Cell.WIDTH] || 1;
     }
-    if (startCol === 0 && trimRight) {
+    if (start === 0 && trimRight) {
       this._cachedTrimmedString = result;
     }
     return result;
