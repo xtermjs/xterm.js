@@ -45,6 +45,7 @@ export interface IRenderer extends IEventEmitter, IDisposable {
 
 export interface IColorManager {
   colors: IColorSet;
+  getLuminance(color: IColor): number;
 }
 
 export interface IRenderDimensions {

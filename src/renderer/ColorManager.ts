@@ -103,6 +103,14 @@ export class ColorManager implements IColorManager {
     };
   }
 
+  // Coefficients taken from: https://www.w3.org/TR/AERT/#color-contrast
+  public getLuminance(color: IColor) : number {
+    const r = color.rgba >> 24 & 0xff;
+    const g = color.rgba >> 16 & 0xff;
+    const b = color.rgba >> 8 & 0xff;
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  }
+
   /**
    * Sets the terminal's theme.
    * @param theme The  theme to use. If a partial theme is provided then default
@@ -113,7 +121,15 @@ export class ColorManager implements IColorManager {
     this.colors.background = this._parseColor(theme.background, DEFAULT_BACKGROUND);
     this.colors.cursor = this._parseColor(theme.cursor, DEFAULT_CURSOR, true);
     this.colors.cursorAccent = this._parseColor(theme.cursorAccent, DEFAULT_CURSOR_ACCENT, true);
-    this.colors.selection = this._parseColor(theme.selection, DEFAULT_SELECTION, true);
+
+    // HACK: while webgl renderer adds support for selection colors
+    // this.colors.selection = this._parseColor(theme.selection, DEFAULT_SELECTION, true);
+    if (this.getLuminance(this.colors.background) > 0.5) {
+      this.colors.selection = this._parseColor('#000', DEFAULT_SELECTION, true);
+    } else {
+      this.colors.selection = this._parseColor('#fff', DEFAULT_SELECTION, true);
+    }
+
     this.colors.ansi[0] = this._parseColor(theme.black, DEFAULT_ANSI_COLORS[0]);
     this.colors.ansi[1] = this._parseColor(theme.red, DEFAULT_ANSI_COLORS[1]);
     this.colors.ansi[2] = this._parseColor(theme.green, DEFAULT_ANSI_COLORS[2]);
