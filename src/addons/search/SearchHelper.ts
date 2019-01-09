@@ -76,15 +76,7 @@ export class SearchHelper implements ISearchHelper {
 
         // If the current line is wrapped line, increase index of column to ignore the previous scan
         // Otherwise, reset beginning column index to zero with set new unwrapped line index
-        if (this._terminal._core.buffer.lines.get(y).isWrapped) {
-          cumulativeCols += this._terminal.cols;
-        } else {
-          cumulativeCols = 0;
-          findingRow = y;
-        }
-
-        // Run _findInLine at unwrapped row, scan for cumulativeCols columns
-        result = this._findInLine(term, findingRow, cumulativeCols, searchOptions);
+        result = this._findInLine(term, y, 0, searchOptions);
         if (result) {
           break;
         }
@@ -94,22 +86,10 @@ export class SearchHelper implements ISearchHelper {
     // Search from the top to the startRow (search the whole startRow again in
     // case startCol > 0)
     if (!result) {
-      // Assume that The first line is always unwrapped line
-      let findingRow = 0;
-      // Scan at beginning of the line
-      let cumulativeCols = 0;
-      for (let y = 0; y <= startRow; y++) {
-        result = this._findInLine(term, findingRow, cumulativeCols, searchOptions);
+      for (let y = 0; y < findingRow; y++) {
+        result = this._findInLine(term, y, 0, searchOptions);
         if (result) {
           break;
-        }
-        // If the current line is wrapped line, increase index of beginning column
-        // So we ignore the previous scan
-        if (this._terminal._core.buffer.lines.get(y).isWrapped) {
-          cumulativeCols += this._terminal.cols;
-        } else {
-          cumulativeCols = 0;
-          findingRow = y;
         }
       }
     }
