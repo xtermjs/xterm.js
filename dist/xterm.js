@@ -1,4 +1,4 @@
-(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.Terminal = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.Terminal = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CHARSETS = {};
@@ -1558,9 +1558,9 @@ var Linkifier = (function () {
         this._replaceNode(targetNode, leftTextNode, newNode, rightTextNode);
         return 1;
     };
+    Linkifier.TIME_BEFORE_LINKIFY = 200;
     return Linkifier;
 }());
-Linkifier.TIME_BEFORE_LINKIFY = 200;
 exports.Linkifier = Linkifier;
 
 
@@ -1950,38 +1950,32 @@ var Parser = (function () {
                             case '':
                                 break;
                             case '$q':
-                                pt = this._terminal.currentParam;
-                                valid = false;
-                                switch (pt) {
+                                switch (this._terminal.currentParam) {
                                     case '"q':
-                                        pt = '0"q';
+                                        this._terminal.send(EscapeSequences_1.C0.ESC + "P1$r0\"q" + EscapeSequences_1.C0.ESC + "\\");
                                         break;
                                     case '"p':
-                                        pt = '61"p';
+                                        this._terminal.send(EscapeSequences_1.C0.ESC + "P1$r61\"p" + EscapeSequences_1.C0.ESC + "\\");
                                         break;
                                     case 'r':
-                                        pt = ''
+                                        var pt = ''
                                             + (this._terminal.scrollTop + 1)
                                             + ';'
                                             + (this._terminal.scrollBottom + 1)
                                             + 'r';
+                                        this._terminal.send(EscapeSequences_1.C0.ESC + "P1$r" + pt + EscapeSequences_1.C0.ESC + "\\");
                                         break;
                                     case 'm':
-                                        pt = '0m';
+                                        this._terminal.send(EscapeSequences_1.C0.ESC + "P1$r0m" + EscapeSequences_1.C0.ESC + "\\");
                                         break;
                                     default:
                                         this._terminal.error('Unknown DCS Pt: %s.', pt);
-                                        pt = '';
                                         break;
                                 }
-                                this._terminal.send(EscapeSequences_1.C0.ESC + 'P' + +valid + '$r' + pt + EscapeSequences_1.C0.ESC + '\\');
                                 break;
                             case '+p':
                                 break;
                             case '+q':
-                                pt = this._terminal.currentParam;
-                                valid = false;
-                                this._terminal.send(EscapeSequences_1.C0.ESC + 'P' + +valid + '+r' + pt + EscapeSequences_1.C0.ESC + '\\');
                                 break;
                             default:
                                 this._terminal.error('Unknown DCS prefix: %s.', this._terminal.prefix);
@@ -2048,7 +2042,6 @@ exports.Parser = Parser;
 },{"./Charsets":1,"./EscapeSequences":3}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var DomElementObjectPool_1 = require("./utils/DomElementObjectPool");
 var MAX_REFRESH_FRAME_SKIP = 5;
 var FLAGS;
 (function (FLAGS) {
@@ -2327,489 +2320,6 @@ function checkBoldBroken(terminal) {
 
 },{"./utils/DomElementObjectPool":16}],9:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-var Mouse = require("./utils/Mouse");
-var Browser = require("./utils/Browser");
-var EventEmitter_1 = require("./EventEmitter");
-var SelectionModel_1 = require("./SelectionModel");
-var DRAG_SCROLL_MAX_THRESHOLD = 50;
-var DRAG_SCROLL_MAX_SPEED = 15;
-var DRAG_SCROLL_INTERVAL = 50;
-var CLEAR_MOUSE_DOWN_TIME = 400;
-var CLEAR_MOUSE_DISTANCE = 10;
-var WORD_SEPARATORS = ' ()[]{}\'"';
-var LINE_DATA_CHAR_INDEX = 1;
-var LINE_DATA_WIDTH_INDEX = 2;
-var NON_BREAKING_SPACE_CHAR = String.fromCharCode(160);
-var ALL_NON_BREAKING_SPACE_REGEX = new RegExp(NON_BREAKING_SPACE_CHAR, 'g');
-var SelectionMode;
-(function (SelectionMode) {
-    SelectionMode[SelectionMode["NORMAL"] = 0] = "NORMAL";
-    SelectionMode[SelectionMode["WORD"] = 1] = "WORD";
-    SelectionMode[SelectionMode["LINE"] = 2] = "LINE";
-})(SelectionMode || (SelectionMode = {}));
-var SelectionManager = (function (_super) {
-    __extends(SelectionManager, _super);
-    function SelectionManager(_terminal, _buffer, _rowContainer, _charMeasure) {
-        var _this = _super.call(this) || this;
-        _this._terminal = _terminal;
-        _this._buffer = _buffer;
-        _this._rowContainer = _rowContainer;
-        _this._charMeasure = _charMeasure;
-        _this._initListeners();
-        _this.enable();
-        _this._model = new SelectionModel_1.SelectionModel(_terminal);
-        _this._lastMouseDownTime = 0;
-        _this._activeSelectionMode = SelectionMode.NORMAL;
-        return _this;
-    }
-    SelectionManager.prototype._initListeners = function () {
-        var _this = this;
-        this._bufferTrimListener = function (amount) { return _this._onTrim(amount); };
-        this._mouseMoveListener = function (event) { return _this._onMouseMove(event); };
-        this._mouseDownListener = function (event) { return _this._onMouseDown(event); };
-        this._mouseUpListener = function (event) { return _this._onMouseUp(event); };
-    };
-    SelectionManager.prototype.disable = function () {
-        this.clearSelection();
-        this._buffer.off('trim', this._bufferTrimListener);
-        this._rowContainer.removeEventListener('mousedown', this._mouseDownListener);
-    };
-    SelectionManager.prototype.enable = function () {
-        this._buffer.on('trim', this._bufferTrimListener);
-        this._rowContainer.addEventListener('mousedown', this._mouseDownListener);
-    };
-    SelectionManager.prototype.setBuffer = function (buffer) {
-        this._buffer = buffer;
-        this.clearSelection();
-    };
-    Object.defineProperty(SelectionManager.prototype, "hasSelection", {
-        get: function () {
-            var start = this._model.finalSelectionStart;
-            var end = this._model.finalSelectionEnd;
-            if (!start || !end) {
-                return false;
-            }
-            return start[0] !== end[0] || start[1] !== end[1];
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(SelectionManager.prototype, "selectionText", {
-        get: function () {
-            var start = this._model.finalSelectionStart;
-            var end = this._model.finalSelectionEnd;
-            if (!start || !end) {
-                return '';
-            }
-            var startRowEndCol = start[1] === end[1] ? end[0] : null;
-            var result = [];
-            result.push(this._translateBufferLineToString(this._buffer.get(start[1]), true, start[0], startRowEndCol));
-            for (var i = start[1] + 1; i <= end[1] - 1; i++) {
-                var bufferLine = this._buffer.get(i);
-                var lineText = this._translateBufferLineToString(bufferLine, true);
-                if (bufferLine.isWrapped) {
-                    result[result.length - 1] += lineText;
-                }
-                else {
-                    result.push(lineText);
-                }
-            }
-            if (start[1] !== end[1]) {
-                var bufferLine = this._buffer.get(end[1]);
-                var lineText = this._translateBufferLineToString(bufferLine, true, 0, end[0]);
-                if (bufferLine.isWrapped) {
-                    result[result.length - 1] += lineText;
-                }
-                else {
-                    result.push(lineText);
-                }
-            }
-            var formattedResult = result.map(function (line) {
-                return line.replace(ALL_NON_BREAKING_SPACE_REGEX, ' ');
-            }).join(Browser.isMSWindows ? '\r\n' : '\n');
-            return formattedResult;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    SelectionManager.prototype.clearSelection = function () {
-        this._model.clearSelection();
-        this._removeMouseDownListeners();
-        this.refresh();
-    };
-    SelectionManager.prototype._translateBufferLineToString = function (line, trimRight, startCol, endCol) {
-        if (startCol === void 0) { startCol = 0; }
-        if (endCol === void 0) { endCol = null; }
-        var lineString = '';
-        var widthAdjustedStartCol = startCol;
-        var widthAdjustedEndCol = endCol;
-        for (var i = 0; i < line.length; i++) {
-            var char = line[i];
-            lineString += char[LINE_DATA_CHAR_INDEX];
-            if (char[LINE_DATA_WIDTH_INDEX] === 0) {
-                if (startCol >= i) {
-                    widthAdjustedStartCol--;
-                }
-                if (endCol >= i) {
-                    widthAdjustedEndCol--;
-                }
-            }
-        }
-        var finalEndCol = widthAdjustedEndCol || line.length;
-        if (trimRight) {
-            var rightWhitespaceIndex = lineString.search(/\s+$/);
-            if (rightWhitespaceIndex !== -1) {
-                finalEndCol = Math.min(finalEndCol, rightWhitespaceIndex);
-            }
-            if (finalEndCol <= widthAdjustedStartCol) {
-                return '';
-            }
-        }
-        return lineString.substring(widthAdjustedStartCol, finalEndCol);
-    };
-    SelectionManager.prototype.refresh = function (isNewSelection) {
-        var _this = this;
-        if (!this._refreshAnimationFrame) {
-            this._refreshAnimationFrame = window.requestAnimationFrame(function () { return _this._refresh(); });
-        }
-        if (Browser.isLinux && isNewSelection) {
-            var selectionText = this.selectionText;
-            if (selectionText.length) {
-                this.emit('newselection', this.selectionText);
-            }
-        }
-    };
-    SelectionManager.prototype._refresh = function () {
-        this._refreshAnimationFrame = null;
-        this.emit('refresh', { start: this._model.finalSelectionStart, end: this._model.finalSelectionEnd });
-    };
-    SelectionManager.prototype.selectAll = function () {
-        this._model.isSelectAllActive = true;
-        this.refresh();
-    };
-    SelectionManager.prototype._onTrim = function (amount) {
-        var needsRefresh = this._model.onTrim(amount);
-        if (needsRefresh) {
-            this.refresh();
-        }
-    };
-    SelectionManager.prototype._getMouseBufferCoords = function (event) {
-        var coords = Mouse.getCoords(event, this._rowContainer, this._charMeasure, this._terminal.cols, this._terminal.rows, true);
-        coords[0]--;
-        coords[1]--;
-        coords[1] += this._terminal.ydisp;
-        return coords;
-    };
-    SelectionManager.prototype._getMouseEventScrollAmount = function (event) {
-        var offset = Mouse.getCoordsRelativeToElement(event, this._rowContainer)[1];
-        var terminalHeight = this._terminal.rows * this._charMeasure.height;
-        if (offset >= 0 && offset <= terminalHeight) {
-            return 0;
-        }
-        if (offset > terminalHeight) {
-            offset -= terminalHeight;
-        }
-        offset = Math.min(Math.max(offset, -DRAG_SCROLL_MAX_THRESHOLD), DRAG_SCROLL_MAX_THRESHOLD);
-        offset /= DRAG_SCROLL_MAX_THRESHOLD;
-        return (offset / Math.abs(offset)) + Math.round(offset * (DRAG_SCROLL_MAX_SPEED - 1));
-    };
-    SelectionManager.prototype._onMouseDown = function (event) {
-        if (event.button !== 0) {
-            return;
-        }
-        event.preventDefault();
-        this._dragScrollAmount = 0;
-        this._setMouseClickCount(event);
-        if (event.shiftKey) {
-            this._onShiftClick(event);
-        }
-        else {
-            if (this._clickCount === 1) {
-                this._onSingleClick(event);
-            }
-            else if (this._clickCount === 2) {
-                this._onDoubleClick(event);
-            }
-            else if (this._clickCount === 3) {
-                this._onTripleClick(event);
-            }
-        }
-        this._addMouseDownListeners();
-        this.refresh(true);
-    };
-    SelectionManager.prototype._addMouseDownListeners = function () {
-        var _this = this;
-        this._rowContainer.ownerDocument.addEventListener('mousemove', this._mouseMoveListener);
-        this._rowContainer.ownerDocument.addEventListener('mouseup', this._mouseUpListener);
-        this._dragScrollIntervalTimer = setInterval(function () { return _this._dragScroll(); }, DRAG_SCROLL_INTERVAL);
-    };
-    SelectionManager.prototype._removeMouseDownListeners = function () {
-        this._rowContainer.ownerDocument.removeEventListener('mousemove', this._mouseMoveListener);
-        this._rowContainer.ownerDocument.removeEventListener('mouseup', this._mouseUpListener);
-        clearInterval(this._dragScrollIntervalTimer);
-        this._dragScrollIntervalTimer = null;
-    };
-    SelectionManager.prototype._onShiftClick = function (event) {
-        if (this._model.selectionStart) {
-            this._model.selectionEnd = this._getMouseBufferCoords(event);
-        }
-    };
-    SelectionManager.prototype._onSingleClick = function (event) {
-        this._model.selectionStartLength = 0;
-        this._model.isSelectAllActive = false;
-        this._activeSelectionMode = SelectionMode.NORMAL;
-        this._model.selectionStart = this._getMouseBufferCoords(event);
-        if (this._model.selectionStart) {
-            this._model.selectionEnd = null;
-            var char = this._buffer.get(this._model.selectionStart[1])[this._model.selectionStart[0]];
-            if (char[LINE_DATA_WIDTH_INDEX] === 0) {
-                this._model.selectionStart[0]++;
-            }
-        }
-    };
-    SelectionManager.prototype._onDoubleClick = function (event) {
-        var coords = this._getMouseBufferCoords(event);
-        if (coords) {
-            this._activeSelectionMode = SelectionMode.WORD;
-            this._selectWordAt(coords);
-        }
-    };
-    SelectionManager.prototype._onTripleClick = function (event) {
-        var coords = this._getMouseBufferCoords(event);
-        if (coords) {
-            this._activeSelectionMode = SelectionMode.LINE;
-            this._selectLineAt(coords[1]);
-        }
-    };
-    SelectionManager.prototype._setMouseClickCount = function (event) {
-        var currentTime = (new Date()).getTime();
-        if (currentTime - this._lastMouseDownTime > CLEAR_MOUSE_DOWN_TIME || this._distanceFromLastMousePosition(event) > CLEAR_MOUSE_DISTANCE) {
-            this._clickCount = 0;
-        }
-        this._lastMouseDownTime = currentTime;
-        this._lastMousePosition = [event.pageX, event.pageY];
-        this._clickCount++;
-    };
-    SelectionManager.prototype._distanceFromLastMousePosition = function (event) {
-        var result = Math.max(Math.abs(this._lastMousePosition[0] - event.pageX), Math.abs(this._lastMousePosition[1] - event.pageY));
-        return result;
-    };
-    SelectionManager.prototype._onMouseMove = function (event) {
-        var previousSelectionEnd = this._model.selectionEnd ? [this._model.selectionEnd[0], this._model.selectionEnd[1]] : null;
-        this._model.selectionEnd = this._getMouseBufferCoords(event);
-        if (this._activeSelectionMode === SelectionMode.LINE) {
-            if (this._model.selectionEnd[1] < this._model.selectionStart[1]) {
-                this._model.selectionEnd[0] = 0;
-            }
-            else {
-                this._model.selectionEnd[0] = this._terminal.cols;
-            }
-        }
-        else if (this._activeSelectionMode === SelectionMode.WORD) {
-            this._selectToWordAt(this._model.selectionEnd);
-        }
-        this._dragScrollAmount = this._getMouseEventScrollAmount(event);
-        if (this._dragScrollAmount > 0) {
-            this._model.selectionEnd[0] = this._terminal.cols - 1;
-        }
-        else if (this._dragScrollAmount < 0) {
-            this._model.selectionEnd[0] = 0;
-        }
-        if (this._model.selectionEnd[1] < this._buffer.length) {
-            var char = this._buffer.get(this._model.selectionEnd[1])[this._model.selectionEnd[0]];
-            if (char && char[2] === 0) {
-                this._model.selectionEnd[0]++;
-            }
-        }
-        if (!previousSelectionEnd ||
-            previousSelectionEnd[0] !== this._model.selectionEnd[0] ||
-            previousSelectionEnd[1] !== this._model.selectionEnd[1]) {
-            this.refresh(true);
-        }
-    };
-    SelectionManager.prototype._dragScroll = function () {
-        if (this._dragScrollAmount) {
-            this._terminal.scrollDisp(this._dragScrollAmount, false);
-            if (this._dragScrollAmount > 0) {
-                this._model.selectionEnd = [this._terminal.cols - 1, this._terminal.ydisp + this._terminal.rows];
-            }
-            else {
-                this._model.selectionEnd = [0, this._terminal.ydisp];
-            }
-            this.refresh();
-        }
-    };
-    SelectionManager.prototype._onMouseUp = function (event) {
-        this._removeMouseDownListeners();
-    };
-    SelectionManager.prototype._convertViewportColToCharacterIndex = function (bufferLine, coords) {
-        var charIndex = coords[0];
-        for (var i = 0; coords[0] >= i; i++) {
-            var char = bufferLine[i];
-            if (char[LINE_DATA_WIDTH_INDEX] === 0) {
-                charIndex--;
-            }
-        }
-        return charIndex;
-    };
-    SelectionManager.prototype._getWordAt = function (coords) {
-        var bufferLine = this._buffer.get(coords[1]);
-        var line = this._translateBufferLineToString(bufferLine, false);
-        var endIndex = this._convertViewportColToCharacterIndex(bufferLine, coords);
-        var startIndex = endIndex;
-        var charOffset = coords[0] - startIndex;
-        var leftWideCharCount = 0;
-        var rightWideCharCount = 0;
-        if (line.charAt(startIndex) === ' ') {
-            while (startIndex > 0 && line.charAt(startIndex - 1) === ' ') {
-                startIndex--;
-            }
-            while (endIndex < line.length && line.charAt(endIndex + 1) === ' ') {
-                endIndex++;
-            }
-        }
-        else {
-            var startCol = coords[0];
-            var endCol = coords[0];
-            if (bufferLine[startCol][LINE_DATA_WIDTH_INDEX] === 0) {
-                leftWideCharCount++;
-                startCol--;
-            }
-            if (bufferLine[endCol][LINE_DATA_WIDTH_INDEX] === 2) {
-                rightWideCharCount++;
-                endCol++;
-            }
-            while (startIndex > 0 && !this._isCharWordSeparator(line.charAt(startIndex - 1))) {
-                if (bufferLine[startCol - 1][LINE_DATA_WIDTH_INDEX] === 0) {
-                    leftWideCharCount++;
-                    startCol--;
-                }
-                startIndex--;
-                startCol--;
-            }
-            while (endIndex + 1 < line.length && !this._isCharWordSeparator(line.charAt(endIndex + 1))) {
-                if (bufferLine[endCol + 1][LINE_DATA_WIDTH_INDEX] === 2) {
-                    rightWideCharCount++;
-                    endCol++;
-                }
-                endIndex++;
-                endCol++;
-            }
-        }
-        var start = startIndex + charOffset - leftWideCharCount;
-        var length = Math.min(endIndex - startIndex + leftWideCharCount + rightWideCharCount + 1, this._terminal.cols);
-        return { start: start, length: length };
-    };
-    SelectionManager.prototype._selectWordAt = function (coords) {
-        var wordPosition = this._getWordAt(coords);
-        this._model.selectionStart = [wordPosition.start, coords[1]];
-        this._model.selectionStartLength = wordPosition.length;
-    };
-    SelectionManager.prototype._selectToWordAt = function (coords) {
-        var wordPosition = this._getWordAt(coords);
-        this._model.selectionEnd = [this._model.areSelectionValuesReversed() ? wordPosition.start : (wordPosition.start + wordPosition.length), coords[1]];
-    };
-    SelectionManager.prototype._isCharWordSeparator = function (char) {
-        return WORD_SEPARATORS.indexOf(char) >= 0;
-    };
-    SelectionManager.prototype._selectLineAt = function (line) {
-        this._model.selectionStart = [0, line];
-        this._model.selectionStartLength = this._terminal.cols;
-    };
-    return SelectionManager;
-}(EventEmitter_1.EventEmitter));
-exports.SelectionManager = SelectionManager;
-
-
-
-},{"./EventEmitter":4,"./SelectionModel":10,"./utils/Browser":13,"./utils/Mouse":18}],10:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var SelectionModel = (function () {
-    function SelectionModel(_terminal) {
-        this._terminal = _terminal;
-        this.clearSelection();
-    }
-    SelectionModel.prototype.clearSelection = function () {
-        this.selectionStart = null;
-        this.selectionEnd = null;
-        this.isSelectAllActive = false;
-        this.selectionStartLength = 0;
-    };
-    Object.defineProperty(SelectionModel.prototype, "finalSelectionStart", {
-        get: function () {
-            if (this.isSelectAllActive) {
-                return [0, 0];
-            }
-            if (!this.selectionEnd || !this.selectionStart) {
-                return this.selectionStart;
-            }
-            return this.areSelectionValuesReversed() ? this.selectionEnd : this.selectionStart;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(SelectionModel.prototype, "finalSelectionEnd", {
-        get: function () {
-            if (this.isSelectAllActive) {
-                return [this._terminal.cols, this._terminal.ybase + this._terminal.rows - 1];
-            }
-            if (!this.selectionStart) {
-                return null;
-            }
-            if (!this.selectionEnd || this.areSelectionValuesReversed()) {
-                return [this.selectionStart[0] + this.selectionStartLength, this.selectionStart[1]];
-            }
-            if (this.selectionStartLength) {
-                if (this.selectionEnd[1] === this.selectionStart[1]) {
-                    return [Math.max(this.selectionStart[0] + this.selectionStartLength, this.selectionEnd[0]), this.selectionEnd[1]];
-                }
-            }
-            return this.selectionEnd;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    SelectionModel.prototype.areSelectionValuesReversed = function () {
-        var start = this.selectionStart;
-        var end = this.selectionEnd;
-        return start[1] > end[1] || (start[1] === end[1] && start[0] > end[0]);
-    };
-    SelectionModel.prototype.onTrim = function (amount) {
-        if (this.selectionStart) {
-            this.selectionStart[1] -= amount;
-        }
-        if (this.selectionEnd) {
-            this.selectionEnd[1] -= amount;
-        }
-        if (this.selectionEnd && this.selectionEnd[1] < 0) {
-            this.clearSelection();
-            return true;
-        }
-        if (this.selectionStart && this.selectionStart[1] < 0) {
-            this.selectionStart[1] = 0;
-        }
-        return false;
-    };
-    return SelectionModel;
-}());
-exports.SelectionModel = SelectionModel;
-
-
-
-},{}],11:[function(require,module,exports){
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Viewport = (function () {
     function Viewport(terminal, viewportElement, scrollArea, charMeasure) {
@@ -2904,11 +2414,12 @@ exports.Viewport = Viewport;
 },{}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-function prepareTextForTerminal(text, isMSWindows) {
-    if (isMSWindows) {
-        return text.replace(/\r?\n/g, '\r');
-    }
-    return text;
+function prepareTextForClipboard(text) {
+    var space = String.fromCharCode(32), nonBreakingSpace = String.fromCharCode(160), allNonBreakingSpaces = new RegExp(nonBreakingSpace, 'g'), processedText = text.split('\n').map(function (line) {
+        var processedLine = line.replace(/\s+$/g, '').replace(allNonBreakingSpaces, space);
+        return processedLine;
+    }).join('\n');
+    return processedText;
 }
 exports.prepareTextForTerminal = prepareTextForTerminal;
 function copyHandler(ev, term, selectionManager) {
@@ -3060,20 +2571,8 @@ exports.CharMeasure = CharMeasure;
 
 },{"../EventEmitter.js":4}],15:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
-var EventEmitter_1 = require("../EventEmitter");
-var CircularList = (function (_super) {
-    __extends(CircularList, _super);
+var CircularList = (function () {
     function CircularList(maxLength) {
         var _this = _super.call(this) || this;
         _this._array = new Array(maxLength);
@@ -3224,53 +2723,6 @@ exports.CircularList = CircularList;
 
 
 },{"../EventEmitter":4}],16:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var DomElementObjectPool = (function () {
-    function DomElementObjectPool(type) {
-        this.type = type;
-        this._type = type;
-        this._pool = [];
-        this._inUse = {};
-    }
-    DomElementObjectPool.prototype.acquire = function () {
-        var element;
-        if (this._pool.length === 0) {
-            element = this._createNew();
-        }
-        else {
-            element = this._pool.pop();
-        }
-        this._inUse[element.getAttribute(DomElementObjectPool.OBJECT_ID_ATTRIBUTE)] = element;
-        return element;
-    };
-    DomElementObjectPool.prototype.release = function (element) {
-        if (!this._inUse[element.getAttribute(DomElementObjectPool.OBJECT_ID_ATTRIBUTE)]) {
-            throw new Error('Could not release an element not yet acquired');
-        }
-        delete this._inUse[element.getAttribute(DomElementObjectPool.OBJECT_ID_ATTRIBUTE)];
-        this._cleanElement(element);
-        this._pool.push(element);
-    };
-    DomElementObjectPool.prototype._createNew = function () {
-        var element = document.createElement(this._type);
-        var id = DomElementObjectPool._objectCount++;
-        element.setAttribute(DomElementObjectPool.OBJECT_ID_ATTRIBUTE, id.toString(10));
-        return element;
-    };
-    DomElementObjectPool.prototype._cleanElement = function (element) {
-        element.className = '';
-        element.innerHTML = '';
-    };
-    return DomElementObjectPool;
-}());
-DomElementObjectPool.OBJECT_ID_ATTRIBUTE = 'data-obj-id';
-DomElementObjectPool._objectCount = 0;
-exports.DomElementObjectPool = DomElementObjectPool;
-
-
-
-},{}],17:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function contains(arr, el) {

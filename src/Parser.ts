@@ -482,41 +482,38 @@ export class Parser {
               // Request Status String (DECRQSS).
               // test: echo -e '\eP$q"p\e\\'
               case '$q':
-                pt = this._terminal.currentParam;
-                valid = false;
 
-                switch (pt) {
+                switch (this._terminal.currentParam) {
                   // DECSCA
                   case '"q':
-                    pt = '0"q';
+                    this._terminal.send(`${C0.ESC}P1$r0"q${C0.ESC}\\`);
                     break;
 
                   // DECSCL
                   case '"p':
-                    pt = '61"p';
+                    this._terminal.send(`${C0.ESC}P1$r61"p${C0.ESC}\\`);
                     break;
 
                   // DECSTBM
                   case 'r':
-                    pt = ''
+                    let pt = ''
                       + (this._terminal.scrollTop + 1)
                       + ';'
                       + (this._terminal.scrollBottom + 1)
                       + 'r';
+                    this._terminal.send(`${C0.ESC}P1$r${pt}${C0.ESC}\\`);
                     break;
 
                   // SGR
                   case 'm':
-                    pt = '0m';
+                    this._terminal.send(`${C0.ESC}P1$r0m${C0.ESC}\\`);
                     break;
 
                   default:
                     this._terminal.error('Unknown DCS Pt: %s.', pt);
-                    pt = '';
                     break;
                 }
 
-                this._terminal.send(C0.ESC + 'P' + +valid + '$r' + pt + C0.ESC + '\\');
                 break;
 
               // Set Termcap/Terminfo Data (xterm, experimental).
@@ -528,10 +525,7 @@ export class Parser {
               // This can cause a small glitch in vim.
               // test: echo -ne '\eP+q6b64\e\\'
               case '+q':
-                pt = this._terminal.currentParam;
-                valid = false;
-
-                this._terminal.send(C0.ESC + 'P' + +valid + '+r' + pt + C0.ESC + '\\');
+                // do nothing
                 break;
 
               default:
