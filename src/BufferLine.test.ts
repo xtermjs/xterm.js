@@ -158,14 +158,17 @@ describe('BufferLine', function(): void {
       line.resize(0, [1, 'a', 0, 'a'.charCodeAt(0)]);
       chai.expect(line.toArray()).eql(Array(0).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
     });
-    it('should remove combining data', () => {
+    it('should remove combining data on replaced cells after shrinking then enlarging', () => {
       const line = new TestBufferLine(10, [1, 'a', 0, 'a'.charCodeAt(0)], false);
+      line.set(2, [ null, '😁', 1, '😁'.charCodeAt(0) ]);
       line.set(9, [ null, '😁', 1, '😁'.charCodeAt(0) ]);
-      chai.expect(line.translateToString()).eql('aaaaaaaaa😁');
-      chai.expect(Object.keys(line.combined).length).eql(1);
+      chai.expect(line.translateToString()).eql('aa😁aaaaaa😁');
+      chai.expect(Object.keys(line.combined).length).eql(2);
       line.resize(5, [1, 'a', 0, 'a'.charCodeAt(0)]);
-      chai.expect(line.translateToString()).eql('aaaaa');
-      chai.expect(Object.keys(line.combined).length).eql(0);
+      chai.expect(line.translateToString()).eql('aa😁aa');
+      line.resize(10, [1, 'a', 0, 'a'.charCodeAt(0)]);
+      chai.expect(line.translateToString()).eql('aa😁aaaaaaa');
+      chai.expect(Object.keys(line.combined).length).eql(1);
     });
   });
   describe('getTrimLength', function(): void {
