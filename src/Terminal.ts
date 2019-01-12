@@ -1391,7 +1391,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * processed by the terminal and what keys should not.
    * @param customKeyEventHandler The custom KeyboardEvent handler to attach.
    * This is a function that takes a KeyboardEvent, allowing consumers to stop
-   * propogation and/or prevent the default action. The function returns whether
+   * propagation and/or prevent the default action. The function returns whether
    * the event should be processed by xterm.js.
    */
   public attachCustomKeyEventHandler(customKeyEventHandler: CustomKeyEventHandler): void {

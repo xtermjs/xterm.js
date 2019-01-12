@@ -552,7 +552,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    */
   private _onMouseMove(event: MouseEvent): void {
     // If the mousemove listener is active it means that a selection is
-    // currently being made, we should stop propogation to prevent mouse events
+    // currently being made, we should stop propagation to prevent mouse events
     // to be sent to the pty.
     event.stopImmediatePropagation();
 
