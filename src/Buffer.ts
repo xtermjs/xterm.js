@@ -4,10 +4,10 @@
  */
 
 import { CircularList } from './common/CircularList';
-import { CharData, ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult } from './Types';
+import { CharData, ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult, ICellData } from './Types';
 import { EventEmitter } from './common/EventEmitter';
 import { IMarker } from 'xterm';
-import { BufferLine } from './BufferLine';
+import { BufferLine, CellData } from './BufferLine';
 import { DEFAULT_COLOR } from './renderer/atlas/Types';
 
 export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
@@ -45,6 +45,8 @@ export class Buffer implements IBuffer {
   public savedX: number;
   public savedCurAttr: number;
   public markers: Marker[] = [];
+  private _nullCell: ICellData = CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+  private _whitespaceCell: ICellData = CellData.fromCharData([0, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE]);
 
   /**
    * Create a new Buffer.
@@ -57,6 +59,18 @@ export class Buffer implements IBuffer {
     private _hasScrollback: boolean
   ) {
     this.clear();
+  }
+
+  public getNullCell(fg: number = 0, bg: number = 0): ICellData {
+    this._nullCell.fg = fg;
+    this._nullCell.bg = bg;
+    return this._nullCell;
+  }
+
+  public getWhitespaceCell(fg: number = 0, bg: number = 0): ICellData {
+    this._whitespaceCell.fg = fg;
+    this._whitespaceCell.bg = bg;
+    return this._whitespaceCell;
   }
 
   public getBlankLine(attr: number, isWrapped?: boolean): IBufferLine {

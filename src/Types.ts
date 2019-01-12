@@ -298,6 +298,8 @@ export interface IBuffer {
   getBlankLine(attr: number, isWrapped?: boolean): IBufferLine;
   stringIndexToBufferIndex(lineIndex: number, stringIndex: number): number[];
   iterator(trimRight: boolean, startIndex?: number, endIndex?: number, startOverscan?: number, endOverscan?: number): IBufferStringIterator;
+  getNullCell(fg?: number, bg?: number): ICellData;
+  getWhitespaceCell(fg?: number, bg?: number): ICellData;
 }
 
 export interface IBufferSet extends IEventEmitter {

@@ -519,13 +519,10 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Insert Ps (Blank) Character(s) (default = 1) (ICH).
    */
   public insertChars(params: number[]): void {
-    this._cell.content = 0;
-    this._cell.fg = this._terminal.eraseAttr();
-    this._cell.bg = 0;
     this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).insertCells(
       this._terminal.buffer.x,
       params[0] || 1,
-      this._cell
+      this._terminal.buffer.getNullCell(this._terminal.eraseAttr())
     );
     this._terminal.updateRange(this._terminal.buffer.y);
   }
