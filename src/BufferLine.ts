@@ -76,22 +76,35 @@ export const enum Content {
   WIDTH_SHIFT = 22
 }
 
+/**
+ * CellData - represents a single Cell in the terminal buffer.
+ */
 export class CellData implements ICellData {
+
+  /** Helper to create CellData from CharData. */
   public static fromCharData(value: CharData): CellData {
     const obj = new CellData();
     obj.setFromCharData(value);
     return obj;
   }
+
+  /** Primitives from terminal buffer. */
   public content: number = 0;
   public fg: number = 0;
   public bg: number = 0;
   public combinedData: string = '';
+
+  /** Whether cell contains a combined string. */
   public get combined(): number {
     return this.content & Content.IS_COMBINED;
   }
+
+  /** Width of the cell. */
   public get width(): number {
     return this.content >> Content.WIDTH_SHIFT;
   }
+
+  /** JS string of the content. */
   public get chars(): string {
     if (this.content & Content.IS_COMBINED) {
       return this.combinedData;
@@ -101,9 +114,13 @@ export class CellData implements ICellData {
     }
     return '';
   }
+
+  /** Codepoint of cell (or last charCode of combined string) */
   public get code(): number {
     return ((this.combined) ? this.combinedData.charCodeAt(this.combinedData.length - 1) : this.content & Content.CODEPOINT_MASK);
   }
+
+  /** Set data from CharData */
   public setFromCharData(value: CharData): void {
     this.fg = value[CHAR_DATA_ATTR_INDEX];
     this.bg = 0;
@@ -129,10 +146,13 @@ export class CellData implements ICellData {
       this.content = Content.IS_COMBINED | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
     }
   }
+
+  /** Get data as CharData. */
   public get asCharData(): CharData {
     return [this.fg, this.chars, this.width, this.code];
   }
 }
+
 
 /**
  * Typed array based bufferline implementation.
@@ -193,18 +213,23 @@ export class BufferLine implements IBufferLine {
   public getWidth(index: number): number {
     return this._data[index * CELL_SIZE + Cell.CONTENT] >> Content.WIDTH_SHIFT;
   }
+
   public hasWidth(index: number): number {
     return this._data[index * CELL_SIZE + Cell.CONTENT] & Content.WIDTH_MASK;
   }
+
   public getFG(index: number): number {
     return this._data[index * CELL_SIZE + Cell.FG];
   }
+
   public getBG(index: number): number {
     return this._data[index * CELL_SIZE + Cell.BG];
   }
+
   public hasContent(index: number): number {
     return this._data[index * CELL_SIZE + Cell.CONTENT] & Content.HAS_CONTENT;
   }
+
   public getCodePoint(index: number): number {
     // returns either the single codepoint or the last charCode in combined
     const content = this._data[index * CELL_SIZE + Cell.CONTENT];
@@ -213,9 +238,11 @@ export class BufferLine implements IBufferLine {
     }
     return content & Content.CODEPOINT_MASK;
   }
+
   public isCombined(index: number): number {
     return this._data[index * CELL_SIZE + Cell.CONTENT] & Content.IS_COMBINED;
   }
+
   public getString(index: number): string {
     const content = this._data[index * CELL_SIZE + Cell.CONTENT];
     if (content & Content.IS_COMBINED) {
@@ -227,6 +254,9 @@ export class BufferLine implements IBufferLine {
     return ''; // return empty string for empty cells
   }
 
+  /**
+   * Load data at `index` into `cell`.
+   */
   public loadCell(index: number, cell: ICellData): ICellData {
     cell.content = this._data[index * CELL_SIZE + Cell.CONTENT];
     cell.fg = this._data[index * CELL_SIZE + Cell.FG];
@@ -237,6 +267,9 @@ export class BufferLine implements IBufferLine {
     return cell;
   }
 
+  /**
+   * Set data at `index` to `cell`.
+   */
   public setCell(index: number, cell: ICellData): void {
     if (cell.content & Content.IS_COMBINED) {
       this._combined[index] = cell.combinedData;
