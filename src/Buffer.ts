@@ -4,7 +4,7 @@
  */
 
 import { CircularList } from './common/CircularList';
-import { CharData, ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult, ICellData } from './Types';
+import { ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult, ICellData } from './Types';
 import { EventEmitter } from './common/EventEmitter';
 import { IMarker } from 'xterm';
 import { BufferLine, CellData } from './BufferLine';
@@ -74,8 +74,7 @@ export class Buffer implements IBuffer {
   }
 
   public getBlankLine(attr: number, isWrapped?: boolean): IBufferLine {
-    const fillCharData: CharData = [attr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
-    return new BufferLine(this._terminal.cols, fillCharData, isWrapped);
+    return new BufferLine(this._terminal.cols, this.getNullCell(attr), isWrapped);
   }
 
   public get hasScrollback(): boolean {
@@ -173,8 +172,7 @@ export class Buffer implements IBuffer {
             } else {
               // Add a blank line if there is no buffer left at the top to scroll to, or if there
               // are blank lines after the cursor
-              const fillCharData: CharData = [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
-              this.lines.push(new BufferLine(newCols, fillCharData));
+              this.lines.push(new BufferLine(newCols, this.getNullCell(DEFAULT_ATTR)));
             }
           }
         }

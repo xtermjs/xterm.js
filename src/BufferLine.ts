@@ -139,10 +139,10 @@ export class BufferLine implements IBufferLine {
   protected _combined: {[index: number]: string} = {};
   public length: number;
 
-  constructor(cols: number, fillCharData?: CharData, public isWrapped: boolean = false) {
+  constructor(cols: number, fillCellData?: ICellData, public isWrapped: boolean = false) {
     if (cols) {
       this._data = new Uint32Array(cols * CELL_SIZE);
-      const cell = CellData.fromCharData(fillCharData || [0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+      const cell = fillCellData || CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
       for (let i = 0; i < cols; ++i) {
         this.setCell(i, cell);
       }
