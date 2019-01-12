@@ -129,6 +129,9 @@ export class CellData implements ICellData {
       this.content = Content.IS_COMBINED | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
     }
   }
+  public get asCharData(): CharData {
+    return [this.fg, this.chars, this.width, this.code];
+  }
 }
 
 /**
@@ -150,6 +153,10 @@ export class BufferLine implements IBufferLine {
     this.length = cols;
   }
 
+  /**
+   * Get cell data CharData.
+   * @deprecated
+   */
   public get(index: number): CharData {
     const content = this._data[index * CELL_SIZE + Cell.CONTENT];
     const cp = content & Content.CODEPOINT_MASK;

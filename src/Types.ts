@@ -524,6 +524,7 @@ export interface ICellData {
   chars: string;
   code: number;
   setFromCharData(value: CharData): void;
+  asCharData: CharData;
 }
 
 /**

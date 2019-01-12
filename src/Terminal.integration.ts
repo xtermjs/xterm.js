@@ -13,8 +13,9 @@ import * as path from 'path';
 import * as pty from 'node-pty';
 import { assert } from 'chai';
 import { Terminal } from './Terminal';
-import { CHAR_DATA_CHAR_INDEX, WHITESPACE_CELL_CHAR } from './Buffer';
+import { WHITESPACE_CELL_CHAR } from './Buffer';
 import { IViewport } from './Types';
+import { CellData } from './BufferLine';
 
 class TestTerminal extends Terminal {
   innerWrite(): void { this._innerWrite(); }
@@ -67,7 +68,7 @@ function terminalToString(term: Terminal): string {
   for (let line = term.buffer.ybase; line < term.buffer.ybase + term.rows; line++) {
     lineText = '';
     for (let cell = 0; cell < term.cols; ++cell) {
-      lineText += term.buffer.lines.get(line).get(cell)[CHAR_DATA_CHAR_INDEX] || WHITESPACE_CELL_CHAR;
+      lineText += term.buffer.lines.get(line).loadCell(cell, new CellData()).chars || WHITESPACE_CELL_CHAR;
     }
     // rtrim empty cells as xterm does
     lineText = lineText.replace(/\s+$/, '');

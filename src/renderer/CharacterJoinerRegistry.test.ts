@@ -29,13 +29,13 @@ describe('CharacterJoinerRegistry', () => {
     let sub = lineData([['deemo']]);
     let oldSize = line6.length;
     line6.resize(oldSize + sub.length, CellData.fromCharData([0, '', 0, 0]));
-    for (let i = 0; i < sub.length; ++i) line6.setCell(i + oldSize, CellData.fromCharData(sub.get(i)));
+    for (let i = 0; i < sub.length; ++i) line6.setCell(i + oldSize, sub.loadCell(i, new CellData()));
     line6.resize(line6.length + 1, CellData.fromCharData([0, '\xf0\x9f\x98\x81', 1, 128513]));
     line6.resize(line6.length + 1, CellData.fromCharData([0, ' ', 1, ' '.charCodeAt(0)]));
     sub = lineData([['jiabc']]);
     oldSize = line6.length;
     line6.resize(oldSize + sub.length, CellData.fromCharData([0, '', 0, 0]));
-    for (let i = 0; i < sub.length; ++i) line6.setCell(i + oldSize, CellData.fromCharData(sub.get(i)));
+    for (let i = 0; i < sub.length; ++i) line6.setCell(i + oldSize, sub.loadCell(i, new CellData()));
     lines.set(6, line6);
 
     (<MockBuffer>terminal.buffer).setLines(lines);

@@ -12,7 +12,7 @@ class TestBufferLine extends BufferLine {
   public toArray(): CharData[] {
     const result = [];
     for (let i = 0; i < this.length; ++i) {
-      result.push(this.get(i));
+      result.push(this.loadCell(i, new CellData()).asCharData);
     }
     return result;
   }
@@ -25,15 +25,15 @@ describe('BufferLine', function(): void {
     chai.expect(line.isWrapped).equals(false);
     line = new TestBufferLine(10);
     chai.expect(line.length).equals(10);
-    chai.expect(line.get(0)).eql([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+    chai.expect(line.loadCell(0, new CellData()).asCharData).eql([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
     chai.expect(line.isWrapped).equals(false);
     line = new TestBufferLine(10, null, true);
     chai.expect(line.length).equals(10);
-    chai.expect(line.get(0)).eql([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+    chai.expect(line.loadCell(0, new CellData()).asCharData).eql([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
     chai.expect(line.isWrapped).equals(true);
     line = new TestBufferLine(10, CellData.fromCharData([123, 'a', 456, 'a'.charCodeAt(0)]), true);
     chai.expect(line.length).equals(10);
-    chai.expect(line.get(0)).eql([123, 'a', 456, 'a'.charCodeAt(0)]);
+    chai.expect(line.loadCell(0, new CellData()).asCharData).eql([123, 'a', 456, 'a'.charCodeAt(0)]);
     chai.expect(line.isWrapped).equals(true);
   });
   it('insertCells', function(): void {
