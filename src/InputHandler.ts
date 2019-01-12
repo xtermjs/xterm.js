@@ -396,7 +396,10 @@ export class InputHandler extends Disposable implements IInputHandler {
       // insert mode: move characters to right
       if (insertMode) {
         // right shift cells according to the width
-        bufferRow.insertCells(buffer.x, chWidth, [curAttr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+        this._cell.fg = curAttr;
+        this._cell.bg = 0;
+        this._cell.content = 0;
+        bufferRow.insertCells(buffer.x, chWidth, this._cell);
         // test last cell - since the last cell has only room for
         // a halfwidth char any fullwidth shifted there is lost
         // and will be set to eraseChar
@@ -516,10 +519,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Insert Ps (Blank) Character(s) (default = 1) (ICH).
    */
   public insertChars(params: number[]): void {
+    this._cell.content = 0;
+    this._cell.fg = this._terminal.eraseAttr();
+    this._cell.bg = 0;
     this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).insertCells(
       this._terminal.buffer.x,
       params[0] || 1,
-      [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
+      this._cell
     );
     this._terminal.updateRange(this._terminal.buffer.y);
   }

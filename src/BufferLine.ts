@@ -279,20 +279,18 @@ export class BufferLine implements IBufferLine {
     }
   }
 
-  public insertCells(pos: number, n: number, fillCharData: CharData): void {
+  public insertCells(pos: number, n: number, fillCellData: ICellData): void {
     pos %= this.length;
     if (n < this.length - pos) {
       for (let i = this.length - pos - n - 1; i >= 0; --i) {
         this.setCell(pos + n + i, this.loadCell(pos + i, this._cell));
       }
-      this._cell.setFromCharData(fillCharData);
       for (let i = 0; i < n; ++i) {
-        this.setCell(pos + i, this._cell);
+        this.setCell(pos + i, fillCellData);
       }
     } else {
-      this._cell.setFromCharData(fillCharData);
       for (let i = pos; i < this.length; ++i) {
-        this.setCell(i, this._cell);
+        this.setCell(i, fillCellData);
       }
     }
   }

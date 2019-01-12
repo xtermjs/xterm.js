@@ -3,7 +3,7 @@
  * @license MIT
  */
 import * as chai from 'chai';
-import { BufferLine } from './BufferLine';
+import { BufferLine, CellData } from './BufferLine';
 import { CharData, IBufferLine } from './Types';
 import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR } from './Buffer';
 
@@ -41,7 +41,7 @@ describe('BufferLine', function(): void {
     line.set(0, [1, 'a', 0, 'a'.charCodeAt(0)]);
     line.set(1, [2, 'b', 0, 'b'.charCodeAt(0)]);
     line.set(2, [3, 'c', 0, 'c'.charCodeAt(0)]);
-    line.insertCells(1, 3, [4, 'd', 0, 'd'.charCodeAt(0)]);
+    line.insertCells(1, 3, CellData.fromCharData([4, 'd', 0, 'd'.charCodeAt(0)]));
     chai.expect(line.toArray()).eql([
       [1, 'a', 0, 'a'.charCodeAt(0)],
       [4, 'd', 0, 'd'.charCodeAt(0)],
