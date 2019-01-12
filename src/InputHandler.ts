@@ -396,13 +396,10 @@ export class InputHandler extends Disposable implements IInputHandler {
       // insert mode: move characters to right
       if (insertMode) {
         // right shift cells according to the width
-        this._cell.fg = curAttr;
-        this._cell.bg = 0;
-        this._cell.content = 0;
-        bufferRow.insertCells(buffer.x, chWidth, this._cell);
+        bufferRow.insertCells(buffer.x, chWidth, buffer.getNullCell(curAttr));
         // test last cell - since the last cell has only room for
         // a halfwidth char any fullwidth shifted there is lost
-        // and will be set to eraseChar
+        // and will be set to empty cell
         if (bufferRow.loadCell(cols - 1, this._cell).width === 2) {
           bufferRow.setDataFromCodePoint(cols - 1, NULL_CELL_CODE, NULL_CELL_WIDTH, curAttr, 0);
         }
@@ -416,6 +413,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       // we already made sure above, that buffer.x + chWidth will not overflow right
       if (chWidth > 0) {
         while (--chWidth) {
+          // other than a regular empty cell a cell following a wide char has no width
           bufferRow.setDataFromCodePoint(buffer.x++, 0, 0, curAttr, 0);
         }
       }
