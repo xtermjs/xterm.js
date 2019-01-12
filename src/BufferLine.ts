@@ -165,6 +165,10 @@ export class BufferLine implements IBufferLine {
     ];
   }
 
+  /**
+   * Set cell data from CharData.
+   * @deprecated
+   */
   public set(index: number, value: CharData): void {
     this._data[index * CELL_SIZE + Cell.FG] = value[CHAR_DATA_ATTR_INDEX];
     if (value[CHAR_DATA_CHAR_INDEX].length > 1) {

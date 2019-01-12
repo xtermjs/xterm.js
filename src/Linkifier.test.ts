@@ -9,7 +9,7 @@ import { ILinkMatcher, ITerminal, IBufferLine } from './Types';
 import { Linkifier } from './Linkifier';
 import { MockBuffer, MockTerminal, TestTerminal } from './ui/TestUtils.test';
 import { CircularList } from './common/CircularList';
-import { BufferLine } from './BufferLine';
+import { BufferLine, CellData } from './BufferLine';
 
 class TestLinkifier extends Linkifier {
   constructor(terminal: ITerminal) {
@@ -53,7 +53,7 @@ describe('Linkifier', () => {
   function stringToRow(text: string): IBufferLine {
     const result = new BufferLine(text.length);
     for (let i = 0; i < text.length; i++) {
-      result.set(i, [0, text.charAt(i), 1, text.charCodeAt(i)]);
+      result.setCell(i, CellData.fromCharData([0, text.charAt(i), 1, text.charCodeAt(i)]));
     }
     return result;
   }

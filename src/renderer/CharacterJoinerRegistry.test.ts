@@ -29,13 +29,13 @@ describe('CharacterJoinerRegistry', () => {
     let sub = lineData([['deemo']]);
     let oldSize = line6.length;
     line6.resize(oldSize + sub.length, CellData.fromCharData([0, '', 0, 0]));
-    for (let i = 0; i < sub.length; ++i) line6.set(i + oldSize, sub.get(i));
+    for (let i = 0; i < sub.length; ++i) line6.setCell(i + oldSize, CellData.fromCharData(sub.get(i)));
     line6.resize(line6.length + 1, CellData.fromCharData([0, '\xf0\x9f\x98\x81', 1, 128513]));
     line6.resize(line6.length + 1, CellData.fromCharData([0, ' ', 1, ' '.charCodeAt(0)]));
     sub = lineData([['jiabc']]);
     oldSize = line6.length;
     line6.resize(oldSize + sub.length, CellData.fromCharData([0, '', 0, 0]));
-    for (let i = 0; i < sub.length; ++i) line6.set(i + oldSize, sub.get(i));
+    for (let i = 0; i < sub.length; ++i) line6.setCell(i + oldSize, CellData.fromCharData(sub.get(i)));
     lines.set(6, line6);
 
     (<MockBuffer>terminal.buffer).setLines(lines);
@@ -274,7 +274,7 @@ function lineData(data: IPartialLineData[]): IBufferLine {
     const attr = <number>(data[i][1] || 0);
     const offset = tline.length;
     tline.resize(tline.length + line.split('').length, CellData.fromCharData([0, '', 0, 0]));
-    line.split('').map((char, idx) => tline.set(idx + offset, [attr, char, 1, char.charCodeAt(0)]));
+    line.split('').map((char, idx) => tline.setCell(idx + offset, CellData.fromCharData([attr, char, 1, char.charCodeAt(0)])));
   }
   return tline;
 }

@@ -8,7 +8,7 @@ import { ITerminal } from './Types';
 import { Buffer, DEFAULT_ATTR, CHAR_DATA_CHAR_INDEX } from './Buffer';
 import { CircularList } from './common/CircularList';
 import { MockTerminal, TestTerminal } from './ui/TestUtils.test';
-import { BufferLine } from './BufferLine';
+import { BufferLine, CellData } from './BufferLine';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
@@ -157,10 +157,10 @@ describe('Buffer', () => {
           buffer.fillViewportRows();
           let chData = buffer.lines.get(5).get(0);
           chData[1] = 'a';
-          buffer.lines.get(5).set(0, chData);
+          buffer.lines.get(5).setCell(0, CellData.fromCharData(chData));
           chData = buffer.lines.get(INIT_ROWS - 1).get(0);
           chData[1] = 'b';
-          buffer.lines.get(INIT_ROWS - 1).set(0, chData);
+          buffer.lines.get(INIT_ROWS - 1).setCell(0, CellData.fromCharData(chData));
           buffer.resize(INIT_COLS, INIT_ROWS - 5);
           assert.equal(buffer.lines.get(0).get(0)[1], 'a');
           assert.equal(buffer.lines.get(INIT_ROWS - 1 - 5).get(0)[1], 'b');
@@ -278,10 +278,10 @@ describe('Buffer', () => {
   describe ('translateBufferLineToString', () => {
     it('should handle selecting a section of ascii text', () => {
       const line = new BufferLine(4);
-      line.set(0, [ null, 'a', 1, 'a'.charCodeAt(0)]);
-      line.set(1, [ null, 'b', 1, 'b'.charCodeAt(0)]);
-      line.set(2, [ null, 'c', 1, 'c'.charCodeAt(0)]);
-      line.set(3, [ null, 'd', 1, 'd'.charCodeAt(0)]);
+      line.setCell(0, CellData.fromCharData([ null, 'a', 1, 'a'.charCodeAt(0)]));
+      line.setCell(1, CellData.fromCharData([ null, 'b', 1, 'b'.charCodeAt(0)]));
+      line.setCell(2, CellData.fromCharData([ null, 'c', 1, 'c'.charCodeAt(0)]));
+      line.setCell(3, CellData.fromCharData([ null, 'd', 1, 'd'.charCodeAt(0)]));
       buffer.lines.set(0, line);
 
       const str = buffer.translateBufferLineToString(0, true, 0, 2);
@@ -290,9 +290,9 @@ describe('Buffer', () => {
 
     it('should handle a cut-off double width character by including it', () => {
       const line = new BufferLine(3);
-      line.set(0, [ null, '語', 2, 35486 ]);
-      line.set(1, [ null, '', 0, null]);
-      line.set(2, [ null, 'a', 1, 'a'.charCodeAt(0)]);
+      line.setCell(0, CellData.fromCharData([ null, '語', 2, 35486 ]));
+      line.setCell(1, CellData.fromCharData([ null, '', 0, null]));
+      line.setCell(2, CellData.fromCharData([ null, 'a', 1, 'a'.charCodeAt(0)]));
       buffer.lines.set(0, line);
 
       const str1 = buffer.translateBufferLineToString(0, true, 0, 1);
@@ -301,9 +301,9 @@ describe('Buffer', () => {
 
     it('should handle a zero width character in the middle of the string by not including it', () => {
       const line = new BufferLine(3);
-      line.set(0, [ null, '語', 2, '語'.charCodeAt(0) ]);
-      line.set(1, [ null, '', 0, null]);
-      line.set(2, [ null, 'a', 1, 'a'.charCodeAt(0)]);
+      line.setCell(0, CellData.fromCharData([ null, '語', 2, '語'.charCodeAt(0) ]));
+      line.setCell(1, CellData.fromCharData([ null, '', 0, null]));
+      line.setCell(2, CellData.fromCharData([ null, 'a', 1, 'a'.charCodeAt(0)]));
       buffer.lines.set(0, line);
 
       const str0 = buffer.translateBufferLineToString(0, true, 0, 1);
@@ -318,8 +318,8 @@ describe('Buffer', () => {
 
     it('should handle single width emojis', () => {
       const line = new BufferLine(2);
-      line.set(0, [ null, '😁', 1, '😁'.charCodeAt(0) ]);
-      line.set(1, [ null, 'a', 1, 'a'.charCodeAt(0)]);
+      line.setCell(0, CellData.fromCharData([ null, '😁', 1, '😁'.charCodeAt(0) ]));
+      line.setCell(1, CellData.fromCharData([ null, 'a', 1, 'a'.charCodeAt(0)]));
       buffer.lines.set(0, line);
 
       const str1 = buffer.translateBufferLineToString(0, true, 0, 1);
@@ -331,8 +331,8 @@ describe('Buffer', () => {
 
     it('should handle double width emojis', () => {
       const line = new BufferLine(2);
-      line.set(0, [ null, '😁', 2, '😁'.charCodeAt(0) ]);
-      line.set(1, [ null, '', 0, null]);
+      line.setCell(0, CellData.fromCharData([ null, '😁', 2, '😁'.charCodeAt(0) ]));
+      line.setCell(1, CellData.fromCharData([ null, '', 0, null]));
       buffer.lines.set(0, line);
 
       const str1 = buffer.translateBufferLineToString(0, true, 0, 1);
@@ -342,9 +342,9 @@ describe('Buffer', () => {
       assert.equal(str2, '😁');
 
       const line2 = new BufferLine(3);
-      line2.set(0, [ null, '😁', 2, '😁'.charCodeAt(0) ]);
-      line2.set(1, [ null, '', 0, null]);
-      line2.set(2, [ null, 'a', 1, 'a'.charCodeAt(0)]);
+      line2.setCell(0, CellData.fromCharData([ null, '😁', 2, '😁'.charCodeAt(0) ]));
+      line2.setCell(1, CellData.fromCharData([ null, '', 0, null]));
+      line2.setCell(2, CellData.fromCharData([ null, 'a', 1, 'a'.charCodeAt(0)]));
       buffer.lines.set(0, line2);
 
       const str3 = buffer.translateBufferLineToString(0, true, 0, 3);
