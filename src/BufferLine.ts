@@ -78,6 +78,8 @@ export const enum Content {
 
 /**
  * CellData - represents a single Cell in the terminal buffer.
+ *
+ * TODO: attr getter
  */
 export class CellData implements ICellData {
 
@@ -136,8 +138,9 @@ export class CellData implements ICellData {
         } else {
           combined = true;
         }
+      } else {
+        combined = true;
       }
-      combined = true;
     } else {
       this.content = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0) | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
     }

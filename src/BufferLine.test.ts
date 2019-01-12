@@ -3,7 +3,7 @@
  * @license MIT
  */
 import * as chai from 'chai';
-import { BufferLine, CellData } from './BufferLine';
+import { BufferLine, CellData, Content } from './BufferLine';
 import { CharData, IBufferLine } from './Types';
 import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR } from './Buffer';
 
@@ -17,6 +17,32 @@ class TestBufferLine extends BufferLine {
     return result;
   }
 }
+
+describe('CellData', () => {
+  it('CharData <--> CellData equality', () => {
+    const cell = new CellData();
+    // ASCII
+    cell.setFromCharData([123, 'a', 1, 'a'.charCodeAt(0)]);
+    chai.assert.deepEqual(cell.asCharData, [123, 'a', 1, 'a'.charCodeAt(0)]);
+    chai.assert.equal(cell.combined, 0);
+    // combining
+    cell.setFromCharData([123, 'e\u0301', 1, '\u0301'.charCodeAt(0)]);
+    chai.assert.deepEqual(cell.asCharData, [123, 'e\u0301', 1, '\u0301'.charCodeAt(0)]);
+    chai.assert.equal(cell.combined, Content.IS_COMBINED);
+    // surrogate
+    cell.setFromCharData([123, '𝄞', 1, 0x1D11E]);
+    chai.assert.deepEqual(cell.asCharData, [123, '𝄞', 1, 0x1D11E]);
+    chai.assert.equal(cell.combined, 0);
+    // surrogate + combining
+    cell.setFromCharData([123, '𓂀\u0301', 1, '𓂀\u0301'.charCodeAt(2)]);
+    chai.assert.deepEqual(cell.asCharData, [123, '𓂀\u0301', 1, '𓂀\u0301'.charCodeAt(2)]);
+    chai.assert.equal(cell.combined, Content.IS_COMBINED);
+    // wide char
+    cell.setFromCharData([123, '１', 2, '１'.charCodeAt(0)]);
+    chai.assert.deepEqual(cell.asCharData, [123, '１', 2, '１'.charCodeAt(0)]);
+    chai.assert.equal(cell.combined, 0);
+  });
+});
 
 describe('BufferLine', function(): void {
   it('ctor', function(): void {
