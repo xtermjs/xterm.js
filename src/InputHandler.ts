@@ -865,7 +865,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).deleteCells(
       this._terminal.buffer.x,
       params[0] || 1,
-      [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
+      this._terminal.buffer.getNullCell(this._terminal.eraseAttr())
     );
     this._terminal.updateRange(this._terminal.buffer.y);
   }
