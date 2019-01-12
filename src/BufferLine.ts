@@ -311,10 +311,9 @@ export class BufferLine implements IBufferLine {
     }
   }
 
-  public replaceCells(start: number, end: number, fillCharData: CharData): void {
-    this._cell.setFromCharData(fillCharData);
+  public replaceCells(start: number, end: number, fillCellData: ICellData): void {
     while (start < end  && start < this.length) {
-      this.setCell(start++, this._cell);
+      this.setCell(start++, fillCellData);
     }
   }
 

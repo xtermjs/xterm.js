@@ -540,7 +540,7 @@ export interface IBufferLine {
   addCharToCell(index: number, codePoint: number): void;
   insertCells(pos: number, n: number, ch: ICellData): void;
   deleteCells(pos: number, n: number, fill: ICellData): void;
-  replaceCells(start: number, end: number, fill: CharData): void;
+  replaceCells(start: number, end: number, fill: ICellData): void;
   resize(cols: number, fill: CharData, shrink?: boolean): void;
   fill(fillCharData: CharData): void;
   copyFrom(line: IBufferLine): void;

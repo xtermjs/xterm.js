@@ -7,7 +7,7 @@
 import { IInputHandler, IDcsHandler, IEscapeSequenceParser, IBuffer, IInputHandlingTerminal } from './Types';
 import { C0, C1 } from './common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from './core/data/Charsets';
-import { DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from './Buffer';
+import { DEFAULT_ATTR, NULL_CELL_WIDTH, NULL_CELL_CODE } from './Buffer';
 import { FLAGS } from './renderer/Types';
 import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
@@ -696,7 +696,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     line.replaceCells(
       start,
       end,
-      [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
+      this._terminal.buffer.getNullCell(this._terminal.eraseAttr())
     );
     if (clearWrap) {
       line.isWrapped = false;
@@ -916,7 +916,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).replaceCells(
       this._terminal.buffer.x,
       this._terminal.buffer.x + (params[0] || 1),
-      [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
+      this._terminal.buffer.getNullCell(this._terminal.eraseAttr())
     );
   }
 
@@ -972,9 +972,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     // make buffer local for faster access
     const buffer = this._terminal.buffer;
     const line = buffer.lines.get(buffer.ybase + buffer.y);
+    line.loadCell(buffer.x - 1, this._cell);
     line.replaceCells(buffer.x,
       buffer.x + (params[0] || 1),
-      line.get(buffer.x - 1) || [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
+      (this._cell.content !== undefined) ? this._cell : buffer.getNullCell(DEFAULT_ATTR)
     );
     // FIXME: no updateRange here?
   }

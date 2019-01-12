@@ -71,7 +71,7 @@ describe('BufferLine', function(): void {
     line.set(2, [3, 'c', 0, 'c'.charCodeAt(0)]);
     line.set(3, [4, 'd', 0, 'd'.charCodeAt(0)]);
     line.set(4, [5, 'e', 0, 'e'.charCodeAt(0)]);
-    line.replaceCells(2, 4, [6, 'f', 0, 'f'.charCodeAt(0)]);
+    line.replaceCells(2, 4, CellData.fromCharData([6, 'f', 0, 'f'.charCodeAt(0)]));
     chai.expect(line.toArray()).eql([
       [1, 'a', 0, 'a'.charCodeAt(0)],
       [2, 'b', 0, 'b'.charCodeAt(0)],
