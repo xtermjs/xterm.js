@@ -529,7 +529,3 @@ export interface IBufferLine {
   getTrimmedLength(): number;
   translateToString(trimRight?: boolean, startCol?: number, endCol?: number): string;
 }
-
-export interface IBufferLineConstructor {
-  new(cols: number, fillCharData?: CharData, isWrapped?: boolean): IBufferLine;
-}

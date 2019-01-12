@@ -102,17 +102,6 @@ declare module 'xterm' {
     experimentalCharAtlas?: 'none' | 'static' | 'dynamic';
 
     /**
-     * (EXPERIMENTAL) Defines which implementation to use for buffer lines.
-     *
-     * - 'JsArray': The default/stable implementation.
-     * - 'TypedArray': The new experimental implementation based on TypedArrays that is expected to
-     *   significantly boost performance and memory consumption. Use at your own risk.
-     *
-     * @deprecated This option will be removed in the future.
-     */
-    experimentalBufferLineImpl?: 'JsArray' | 'TypedArray';
-
-    /**
      * The font size used to render text.
      */
     fontSize?: number;
@@ -476,7 +465,7 @@ declare module 'xterm' {
      * should be processed by the terminal and what keys should not.
      * @param customKeyEventHandler The custom KeyboardEvent handler to attach.
      * This is a function that takes a KeyboardEvent, allowing consumers to stop
-     * propogation and/or prevent the default action. The function returns
+     * propagation and/or prevent the default action. The function returns
      * whether the event should be processed by xterm.js.
      */
     attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void;
