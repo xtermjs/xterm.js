@@ -541,8 +541,8 @@ export interface IBufferLine {
   insertCells(pos: number, n: number, ch: ICellData): void;
   deleteCells(pos: number, n: number, fill: ICellData): void;
   replaceCells(start: number, end: number, fill: ICellData): void;
-  resize(cols: number, fill: CharData, shrink?: boolean): void;
-  fill(fillCharData: CharData): void;
+  resize(cols: number, fill: ICellData, shrink?: boolean): void;
+  fill(fillCellData: ICellData): void;
   copyFrom(line: IBufferLine): void;
   clone(): IBufferLine;
   getTrimmedLength(): number;

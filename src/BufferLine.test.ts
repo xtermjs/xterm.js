@@ -87,7 +87,7 @@ describe('BufferLine', function(): void {
     line.set(2, [3, 'c', 0, 'c'.charCodeAt(0)]);
     line.set(3, [4, 'd', 0, 'd'.charCodeAt(0)]);
     line.set(4, [5, 'e', 0, 'e'.charCodeAt(0)]);
-    line.fill([123, 'z', 0, 'z'.charCodeAt(0)]);
+    line.fill(CellData.fromCharData([123, 'z', 0, 'z'.charCodeAt(0)]));
     chai.expect(line.toArray()).eql([
       [123, 'z', 0, 'z'.charCodeAt(0)],
       [123, 'z', 0, 'z'.charCodeAt(0)],
@@ -136,67 +136,67 @@ describe('BufferLine', function(): void {
   describe('resize', function(): void {
     it('enlarge(false)', function(): void {
       const line = new TestBufferLine(5, [1, 'a', 0, 'a'.charCodeAt(0)], false);
-      line.resize(10, [1, 'a', 0, 'a'.charCodeAt(0)]);
+      line.resize(10, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
       chai.expect(line.toArray()).eql(Array(10).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
     });
     it('enlarge(true)', function(): void {
       const line = new TestBufferLine(5, [1, 'a', 0, 'a'.charCodeAt(0)], false);
-      line.resize(10, [1, 'a', 0, 'a'.charCodeAt(0)], true);
+      line.resize(10, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), true);
       chai.expect(line.toArray()).eql(Array(10).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
     });
     it('shrink(true) - should apply new size', function(): void {
       const line = new TestBufferLine(10, [1, 'a', 0, 'a'.charCodeAt(0)], false);
-      line.resize(5, [1, 'a', 0, 'a'.charCodeAt(0)], true);
+      line.resize(5, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), true);
       chai.expect(line.toArray()).eql(Array(5).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
     });
     it('shrink(false) - should not apply new size', function(): void {
       const line = new TestBufferLine(10, [1, 'a', 0, 'a'.charCodeAt(0)], false);
-      line.resize(5, [1, 'a', 0, 'a'.charCodeAt(0)], false);
+      line.resize(5, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), false);
       chai.expect(line.toArray()).eql(Array(10).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
     });
     it('shrink(false) + shrink(false) - should not apply new size', function(): void {
       const line = new TestBufferLine(20, [1, 'a', 0, 'a'.charCodeAt(0)], false);
-      line.resize(10, [1, 'a', 0, 'a'.charCodeAt(0)], false);
-      line.resize(5, [1, 'a', 0, 'a'.charCodeAt(0)], false);
+      line.resize(10, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), false);
+      line.resize(5, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), false);
       chai.expect(line.toArray()).eql(Array(20).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
     });
     it('shrink(false) + enlarge(false) to smaller than before', function(): void {
       const line = new TestBufferLine(20, [1, 'a', 0, 'a'.charCodeAt(0)], false);
-      line.resize(10, [1, 'a', 0, 'a'.charCodeAt(0)], false);
-      line.resize(15, [1, 'a', 0, 'a'.charCodeAt(0)]);
+      line.resize(10, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), false);
+      line.resize(15, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
       chai.expect(line.toArray()).eql(Array(20).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
     });
     it('shrink(false) + enlarge(false) to bigger than before', function(): void {
       const line = new TestBufferLine(20, [1, 'a', 0, 'a'.charCodeAt(0)], false);
-      line.resize(10, [1, 'a', 0, 'a'.charCodeAt(0)], false);
-      line.resize(25, [1, 'a', 0, 'a'.charCodeAt(0)]);
+      line.resize(10, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), false);
+      line.resize(25, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
       chai.expect(line.toArray()).eql(Array(25).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
     });
     it('shrink(false) + resize shrink=true should enforce shrinking', function(): void {
       const line = new TestBufferLine(20, [1, 'a', 0, 'a'.charCodeAt(0)], false);
-      line.resize(10, [1, 'a', 0, 'a'.charCodeAt(0)], false);
-      line.resize(10, [1, 'a', 0, 'a'.charCodeAt(0)], true);
+      line.resize(10, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), false);
+      line.resize(10, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), true);
       chai.expect(line.toArray()).eql(Array(10).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
     });
     it('enlarge from 0 length', function(): void {
       const line = new TestBufferLine(0, [1, 'a', 0, 'a'.charCodeAt(0)], false);
-      line.resize(10, [1, 'a', 0, 'a'.charCodeAt(0)], false);
+      line.resize(10, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), false);
       chai.expect(line.toArray()).eql(Array(10).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
     });
     it('shrink to 0 length', function(): void {
       const line = new TestBufferLine(10, [1, 'a', 0, 'a'.charCodeAt(0)], false);
-      line.resize(0, [1, 'a', 0, 'a'.charCodeAt(0)], true);
+      line.resize(0, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), true);
       chai.expect(line.toArray()).eql(Array(0).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
     });
     it('shrink(false) to 0 and enlarge to different sizes', function(): void {
       const line = new TestBufferLine(10, [1, 'a', 0, 'a'.charCodeAt(0)], false);
-      line.resize(0, [1, 'a', 0, 'a'.charCodeAt(0)], false);
+      line.resize(0, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), false);
       chai.expect(line.toArray()).eql(Array(10).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
-      line.resize(5, [1, 'a', 0, 'a'.charCodeAt(0)], false);
+      line.resize(5, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), false);
       chai.expect(line.toArray()).eql(Array(10).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
-      line.resize(7, [1, 'a', 0, 'a'.charCodeAt(0)], false);
+      line.resize(7, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), false);
       chai.expect(line.toArray()).eql(Array(10).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
-      line.resize(7, [1, 'a', 0, 'a'.charCodeAt(0)], true);
+      line.resize(7, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), true);
       chai.expect(line.toArray()).eql(Array(7).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
     });
   });

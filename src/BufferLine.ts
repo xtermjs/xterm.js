@@ -137,15 +137,14 @@ export class CellData implements ICellData {
 export class BufferLine implements IBufferLine {
   protected _data: Uint32Array | null = null;
   protected _combined: {[index: number]: string} = {};
-  protected _cell: CellData = new CellData();
   public length: number;
 
   constructor(cols: number, fillCharData?: CharData, public isWrapped: boolean = false) {
     if (cols) {
       this._data = new Uint32Array(cols * CELL_SIZE);
-      this._cell.setFromCharData(fillCharData || [0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+      const cell = CellData.fromCharData(fillCharData || [0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
       for (let i = 0; i < cols; ++i) {
-        this.setCell(i, this._cell);
+        this.setCell(i, cell);
       }
     }
     this.length = cols;
@@ -282,8 +281,9 @@ export class BufferLine implements IBufferLine {
   public insertCells(pos: number, n: number, fillCellData: ICellData): void {
     pos %= this.length;
     if (n < this.length - pos) {
+      const cell = new CellData();
       for (let i = this.length - pos - n - 1; i >= 0; --i) {
-        this.setCell(pos + n + i, this.loadCell(pos + i, this._cell));
+        this.setCell(pos + n + i, this.loadCell(pos + i, cell));
       }
       for (let i = 0; i < n; ++i) {
         this.setCell(pos + i, fillCellData);
@@ -298,8 +298,9 @@ export class BufferLine implements IBufferLine {
   public deleteCells(pos: number, n: number, fillCellData: ICellData): void {
     pos %= this.length;
     if (n < this.length - pos) {
+      const cell = new CellData();
       for (let i = 0; i < this.length - pos - n; ++i) {
-        this.setCell(pos + i, this.loadCell(pos + n + i, this._cell));
+        this.setCell(pos + i, this.loadCell(pos + n + i, cell));
       }
       for (let i = this.length - n; i < this.length; ++i) {
         this.setCell(i, fillCellData);
@@ -317,7 +318,7 @@ export class BufferLine implements IBufferLine {
     }
   }
 
-  public resize(cols: number, fillCharData: CharData, shrink: boolean = false): void {
+  public resize(cols: number, fillCellData: ICellData, shrink: boolean = false): void {
     if (cols === this.length || (!shrink && cols < this.length)) {
       return;
     }
@@ -331,9 +332,8 @@ export class BufferLine implements IBufferLine {
         }
       }
       this._data = data;
-      this._cell.setFromCharData(fillCharData);
       for (let i = this.length; i < cols; ++i) {
-        this.setCell(i, this._cell);
+        this.setCell(i, fillCellData);
       }
     } else if (shrink) {
       if (cols) {
@@ -348,11 +348,10 @@ export class BufferLine implements IBufferLine {
   }
 
   /** fill a line with fillCharData */
-  public fill(fillCharData: CharData): void {
+  public fill(fillCellData: ICellData): void {
     this._combined = {};
-    this._cell.setFromCharData(fillCharData);
     for (let i = 0; i < this.length; ++i) {
-      this.setCell(i, this._cell);
+      this.setCell(i, fillCellData);
     }
   }
 

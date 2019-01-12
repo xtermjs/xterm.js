@@ -150,9 +150,9 @@ export class Buffer implements IBuffer {
     if (this.lines.length > 0) {
       // Deal with columns increasing (we don't do anything when columns reduce)
       if (this._terminal.cols < newCols) {
-        const ch: CharData = [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // does xterm use the default attr?
+        const cell = this.getNullCell(DEFAULT_ATTR);  // does xterm use the default attr?
         for (let i = 0; i < this.lines.length; i++) {
-          this.lines.get(i).resize(newCols, ch);
+          this.lines.get(i).resize(newCols, cell);
         }
       }
 

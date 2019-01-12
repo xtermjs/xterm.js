@@ -5,7 +5,7 @@ import { CircularList } from '../common/CircularList';
 
 import { ICharacterJoinerRegistry } from './Types';
 import { CharacterJoinerRegistry } from './CharacterJoinerRegistry';
-import { BufferLine } from '../BufferLine';
+import { BufferLine, CellData } from '../BufferLine';
 import { IBufferLine } from '../Types';
 
 describe('CharacterJoinerRegistry', () => {
@@ -24,17 +24,17 @@ describe('CharacterJoinerRegistry', () => {
     lines.set(4, new BufferLine(0));
     lines.set(5, lineData([['a', 0x11111111], [' -> b -> c -> '], ['d', 0x22222222]]));
     const line6 = lineData([['wi']]);
-    line6.resize(line6.length + 1, [0, '￥', 2, '￥'.charCodeAt(0)]);
-    line6.resize(line6.length + 1, [0, '', 0, null]);
+    line6.resize(line6.length + 1, CellData.fromCharData([0, '￥', 2, '￥'.charCodeAt(0)]));
+    line6.resize(line6.length + 1, CellData.fromCharData([0, '', 0, null]));
     let sub = lineData([['deemo']]);
     let oldSize = line6.length;
-    line6.resize(oldSize + sub.length, [0, '', 0, 0]);
+    line6.resize(oldSize + sub.length, CellData.fromCharData([0, '', 0, 0]));
     for (let i = 0; i < sub.length; ++i) line6.set(i + oldSize, sub.get(i));
-    line6.resize(line6.length + 1, [0, '\xf0\x9f\x98\x81', 1, 128513]);
-    line6.resize(line6.length + 1, [0, ' ', 1, ' '.charCodeAt(0)]);
+    line6.resize(line6.length + 1, CellData.fromCharData([0, '\xf0\x9f\x98\x81', 1, 128513]));
+    line6.resize(line6.length + 1, CellData.fromCharData([0, ' ', 1, ' '.charCodeAt(0)]));
     sub = lineData([['jiabc']]);
     oldSize = line6.length;
-    line6.resize(oldSize + sub.length, [0, '', 0, 0]);
+    line6.resize(oldSize + sub.length, CellData.fromCharData([0, '', 0, 0]));
     for (let i = 0; i < sub.length; ++i) line6.set(i + oldSize, sub.get(i));
     lines.set(6, line6);
 
@@ -273,7 +273,7 @@ function lineData(data: IPartialLineData[]): IBufferLine {
     const line = data[i][0];
     const attr = <number>(data[i][1] || 0);
     const offset = tline.length;
-    tline.resize(tline.length + line.split('').length, [0, '', 0, 0]);
+    tline.resize(tline.length + line.split('').length, CellData.fromCharData([0, '', 0, 0]));
     line.split('').map((char, idx) => tline.set(idx + offset, [attr, char, 1, char.charCodeAt(0)]));
   }
   return tline;
