@@ -113,7 +113,7 @@ describe('DomRendererRowFactory', () => {
         lineData.setCell(0, cell);
         const fragment = rowFactory.createRow(lineData, false, undefined, 0, 5, 20);
         assert.equal(getFragmentHtml(fragment),
-          '<span class="xterm-fg-1 xterm-bg-2">a</span>'
+          '<span class="xterm-bg-2 xterm-fg-1">a</span>'
         );
       });
 
@@ -124,7 +124,7 @@ describe('DomRendererRowFactory', () => {
         lineData.setCell(0, cell);
         const fragment = rowFactory.createRow(lineData, false, undefined, 0, 5, 20);
         assert.equal(getFragmentHtml(fragment),
-          '<span class="xterm-fg-1 xterm-bg-257">a</span>'
+          '<span class="xterm-bg-257 xterm-fg-1">a</span>'
         );
       });
 
@@ -134,7 +134,7 @@ describe('DomRendererRowFactory', () => {
         lineData.setCell(0, cell);
         const fragment = rowFactory.createRow(lineData, false, undefined, 0, 5, 20);
         assert.equal(getFragmentHtml(fragment),
-          '<span class="xterm-fg-257 xterm-bg-1">a</span>'
+          '<span class="xterm-bg-1 xterm-fg-257">a</span>'
         );
       });
 

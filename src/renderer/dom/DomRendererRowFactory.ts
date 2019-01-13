@@ -4,9 +4,8 @@
  */
 
 import {  NULL_CELL_CODE, WHITESPACE_CELL_CHAR } from '../../Buffer';
-import { FLAGS } from '../Types';
 import { IBufferLine } from '../../Types';
-import { DEFAULT_COLOR, INVERTED_DEFAULT_COLOR } from '../atlas/Types';
+import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
 import { CellData } from '../../BufferLine';
 
 export const BOLD_CLASS = 'xterm-bold';
@@ -53,10 +52,6 @@ export class DomRendererRowFactory {
         charElement.style.width = `${cellWidth * width}px`;
       }
 
-      const flags = this._cell.getOldFlags();
-      let bg = this._cell.getOldBgColor();
-      let fg = this._cell.getOldFgColor();
-
       if (isCursorRow && x === cursorX) {
         charElement.classList.add(CURSOR_CLASS);
 
@@ -73,39 +68,44 @@ export class DomRendererRowFactory {
         }
       }
 
-      // If inverse flag is on, the foreground should become the background.
-      if (flags & FLAGS.INVERSE) {
-        const temp = bg;
-        bg = fg;
-        fg = temp;
-        if (fg === DEFAULT_COLOR) {
-          fg = INVERTED_DEFAULT_COLOR;
-        }
-        if (bg === DEFAULT_COLOR) {
-          bg = INVERTED_DEFAULT_COLOR;
-        }
-      }
-
-      if (flags & FLAGS.BOLD) {
-        // Convert the FG color to the bold variant. This should not happen when
-        // the fg is the inverse default color as there is no bold variant.
-        if (fg < 8) {
-          fg += 8;
-        }
+      if (this._cell.isBold()) {
         charElement.classList.add(BOLD_CLASS);
       }
 
-      if (flags & FLAGS.ITALIC) {
+      if (this._cell.isItalic()) {
         charElement.classList.add(ITALIC_CLASS);
       }
 
       charElement.textContent = this._cell.chars || WHITESPACE_CELL_CHAR;
-      if (fg !== DEFAULT_COLOR) {
-        charElement.classList.add(`xterm-fg-${fg}`);
+
+      const swapColor = !!this._cell.isInverse();
+
+      // fg
+      if (this._cell.isFgRGB()) {
+        let style = charElement.getAttribute('style') || '';
+        style += `${swapColor ? 'background-' : ''}color: rgb(${(this._cell.getFgColor(true) as number[]).join(',')});`;
+        charElement.setAttribute('style', style);
+      } else if (this._cell.isFgPalette()) {
+        let fg = this._cell.getFgColor() as number;
+        if (this._cell.isBold() && fg < 8 && !swapColor) {
+          fg += 8;
+        }
+        charElement.classList.add(`xterm-${swapColor ? 'b' : 'f'}g-${fg}`);
+      } else if (swapColor) {
+        charElement.classList.add(`xterm-bg-${INVERTED_DEFAULT_COLOR}`);
       }
-      if (bg !== DEFAULT_COLOR) {
-        charElement.classList.add(`xterm-bg-${bg}`);
+
+      // bg
+      if (this._cell.isBgRGB()) {
+        let style = charElement.getAttribute('style') || '';
+        style += `${swapColor ? '' : 'background-'}color: rgb(${(this._cell.getBgColor(true) as number[]).join(',')});`;
+        charElement.setAttribute('style', style);
+      } else if (this._cell.isBgPalette()) {
+        charElement.classList.add(`xterm-${swapColor ? 'f' : 'b'}g-${this._cell.getBgColor()}`);
+      } else if (swapColor) {
+        charElement.classList.add(`xterm-fg-${INVERTED_DEFAULT_COLOR}`);
       }
+
       fragment.appendChild(charElement);
     }
     return fragment;
