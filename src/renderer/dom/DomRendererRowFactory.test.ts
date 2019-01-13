@@ -6,11 +6,9 @@
 import jsdom = require('jsdom');
 import { assert } from 'chai';
 import { DomRendererRowFactory } from './DomRendererRowFactory';
-import { DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from '../../Buffer';
-import { FLAGS } from '../Types';
-import { BufferLine, CellData } from '../../BufferLine';
+import { DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, DEFAULT_ATTR_DATA } from '../../Buffer';
+import { BufferLine, CellData, FgFlags, BgFlags, Attributes } from '../../BufferLine';
 import { IBufferLine } from '../../Types';
-import { DEFAULT_COLOR } from '../atlas/Types';
 
 describe('DomRendererRowFactory', () => {
   let dom: jsdom.JSDOM;
@@ -61,7 +59,9 @@ describe('DomRendererRowFactory', () => {
 
     describe('attributes', () => {
       it('should add class for bold', () => {
-        lineData.setCell(0, CellData.fromCharData([DEFAULT_ATTR | (FLAGS.BOLD << 18), 'a', 1, 'a'.charCodeAt(0)]));
+        const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
+        cell.fg = DEFAULT_ATTR_DATA.fg | FgFlags.BOLD;
+        lineData.setCell(0, cell);
         const fragment = rowFactory.createRow(lineData, false, undefined, 0, 5, 20);
         assert.equal(getFragmentHtml(fragment),
           '<span class="xterm-bold">a</span>'
@@ -69,7 +69,9 @@ describe('DomRendererRowFactory', () => {
       });
 
       it('should add class for italic', () => {
-        lineData.setCell(0, CellData.fromCharData([DEFAULT_ATTR | (FLAGS.ITALIC << 18), 'a', 1, 'a'.charCodeAt(0)]));
+        const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
+        cell.bg = DEFAULT_ATTR_DATA.bg | BgFlags.ITALIC;
+        lineData.setCell(0, cell);
         const fragment = rowFactory.createRow(lineData, false, undefined, 0, 5, 20);
         assert.equal(getFragmentHtml(fragment),
           '<span class="xterm-italic">a</span>'
@@ -77,9 +79,12 @@ describe('DomRendererRowFactory', () => {
       });
 
       it('should add classes for 256 foreground colors', () => {
-        const defaultAttrNoFgColor = (0 << 9) | (DEFAULT_COLOR << 0);
+        const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
+        cell.fg |= Attributes.CM_P256;
         for (let i = 0; i < 256; i++) {
-          lineData.setCell(0, CellData.fromCharData([defaultAttrNoFgColor | (i << 9), 'a', 1, 'a'.charCodeAt(0)]));
+          cell.fg &= ~Attributes.PCOLOR_MASK;
+          cell.fg |= i;
+          lineData.setCell(0, cell);
           const fragment = rowFactory.createRow(lineData, false, undefined, 0, 5, 20);
           assert.equal(getFragmentHtml(fragment),
             `<span class="xterm-fg-${i}">a</span>`
@@ -88,9 +93,12 @@ describe('DomRendererRowFactory', () => {
       });
 
       it('should add classes for 256 background colors', () => {
-        const defaultAttrNoBgColor = (DEFAULT_ATTR << 9) | (0 << 0);
+        const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
+        cell.bg |= Attributes.CM_P256;
         for (let i = 0; i < 256; i++) {
-          lineData.setCell(0, CellData.fromCharData([defaultAttrNoBgColor | (i << 0), 'a', 1, 'a'.charCodeAt(0)]));
+          cell.bg &= ~Attributes.PCOLOR_MASK;
+          cell.bg |= i;
+          lineData.setCell(0, cell);
           const fragment = rowFactory.createRow(lineData, false, undefined, 0, 5, 20);
           assert.equal(getFragmentHtml(fragment),
             `<span class="xterm-bg-${i}">a</span>`
@@ -99,7 +107,10 @@ describe('DomRendererRowFactory', () => {
       });
 
       it('should correctly invert colors', () => {
-        lineData.setCell(0, CellData.fromCharData([(FLAGS.INVERSE << 18) | (2 << 9) | (1 << 0), 'a', 1, 'a'.charCodeAt(0)]));
+        const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
+        cell.fg |= Attributes.CM_P16 | 2 | FgFlags.INVERSE;
+        cell.bg |= Attributes.CM_P16 | 1;
+        lineData.setCell(0, cell);
         const fragment = rowFactory.createRow(lineData, false, undefined, 0, 5, 20);
         assert.equal(getFragmentHtml(fragment),
           '<span class="xterm-fg-1 xterm-bg-2">a</span>'
@@ -107,7 +118,10 @@ describe('DomRendererRowFactory', () => {
       });
 
       it('should correctly invert default fg color', () => {
-        lineData.setCell(0, CellData.fromCharData([(FLAGS.INVERSE << 18) | (DEFAULT_ATTR << 9) | (1 << 0), 'a', 1, 'a'.charCodeAt(0)]));
+        const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
+        cell.fg |= FgFlags.INVERSE;
+        cell.bg |= Attributes.CM_P16 | 1;
+        lineData.setCell(0, cell);
         const fragment = rowFactory.createRow(lineData, false, undefined, 0, 5, 20);
         assert.equal(getFragmentHtml(fragment),
           '<span class="xterm-fg-1 xterm-bg-257">a</span>'
@@ -115,7 +129,9 @@ describe('DomRendererRowFactory', () => {
       });
 
       it('should correctly invert default bg color', () => {
-        lineData.setCell(0, CellData.fromCharData([(FLAGS.INVERSE << 18) | (1 << 9) | (DEFAULT_COLOR << 0), 'a', 1, 'a'.charCodeAt(0)]));
+        const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
+        cell.fg |= Attributes.CM_P16 | 1 | FgFlags.INVERSE;
+        lineData.setCell(0, cell);
         const fragment = rowFactory.createRow(lineData, false, undefined, 0, 5, 20);
         assert.equal(getFragmentHtml(fragment),
           '<span class="xterm-fg-257 xterm-bg-1">a</span>'
@@ -123,8 +139,12 @@ describe('DomRendererRowFactory', () => {
       });
 
       it('should turn bold fg text bright', () => {
+        const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
+        cell.fg |= FgFlags.BOLD | Attributes.CM_P16;
         for (let i = 0; i < 8; i++) {
-          lineData.setCell(0, CellData.fromCharData([(FLAGS.BOLD << 18) | (i << 9) | (DEFAULT_COLOR << 0), 'a', 1, 'a'.charCodeAt(0)]));
+          cell.fg &= ~Attributes.PCOLOR_MASK;
+          cell.fg |= i;
+          lineData.setCell(0, cell);
           const fragment = rowFactory.createRow(lineData, false, undefined, 0, 5, 20);
           assert.equal(getFragmentHtml(fragment),
             `<span class="xterm-bold xterm-fg-${i + 8}">a</span>`

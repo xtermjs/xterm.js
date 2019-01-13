@@ -41,7 +41,6 @@ export class DomRendererRowFactory {
 
     for (let x = 0; x < lineLength; x++) {
       lineData.loadCell(x, this._cell);
-      const attr = this._cell.fg;
       const width = this._cell.width;
 
       // The character to the left is a wide character, drawing is owned by the char at x-1
@@ -54,9 +53,9 @@ export class DomRendererRowFactory {
         charElement.style.width = `${cellWidth * width}px`;
       }
 
-      const flags = attr >> 18;
-      let bg = attr & 0x1ff;
-      let fg = (attr >> 9) & 0x1ff;
+      const flags = this._cell.getOldFlags();
+      let bg = this._cell.getOldBgColor();
+      let fg = this._cell.getOldFgColor();
 
       if (isCursorRow && x === cursorX) {
         charElement.classList.add(CURSOR_CLASS);

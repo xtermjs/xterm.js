@@ -4,13 +4,16 @@
  */
 
 import { CircularList } from './common/CircularList';
-import { ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult, ICellData } from './Types';
+import { ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult, ICellData, IAttributeData } from './Types';
 import { EventEmitter } from './common/EventEmitter';
 import { IMarker } from 'xterm';
-import { BufferLine, CellData } from './BufferLine';
+import { BufferLine, CellData, AttributeData } from './BufferLine';
 import { DEFAULT_COLOR } from './renderer/atlas/Types';
 
 export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
+
+export const DEFAULT_ATTR_DATA = new AttributeData();
+
 export const CHAR_DATA_ATTR_INDEX = 0;
 export const CHAR_DATA_CHAR_INDEX = 1;
 export const CHAR_DATA_WIDTH_INDEX = 2;
@@ -43,7 +46,7 @@ export class Buffer implements IBuffer {
   public tabs: any;
   public savedY: number;
   public savedX: number;
-  public savedCurAttr: number;
+  public savedCurAttrData = DEFAULT_ATTR_DATA.clone();
   public markers: Marker[] = [];
   private _nullCell: ICellData = CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
   private _whitespaceCell: ICellData = CellData.fromCharData([0, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE]);
@@ -61,19 +64,29 @@ export class Buffer implements IBuffer {
     this.clear();
   }
 
-  public getNullCell(fg: number = 0, bg: number = 0): ICellData {
-    this._nullCell.fg = fg;
-    this._nullCell.bg = bg;
+  public getNullCell(attr?: IAttributeData): ICellData {
+    if (attr) {
+      this._nullCell.fg = attr.fg;
+      this._nullCell.bg = attr.bg;
+    } else {
+      this._nullCell.fg = 0;
+      this._nullCell.bg = 0;
+    }
     return this._nullCell;
   }
 
-  public getWhitespaceCell(fg: number = 0, bg: number = 0): ICellData {
-    this._whitespaceCell.fg = fg;
-    this._whitespaceCell.bg = bg;
+  public getWhitespaceCell(attr?: IAttributeData): ICellData {
+    if (attr) {
+      this._whitespaceCell.fg = attr.fg;
+      this._whitespaceCell.bg = attr.bg;
+    } else {
+      this._whitespaceCell.fg = 0;
+      this._whitespaceCell.bg = 0;
+    }
     return this._whitespaceCell;
   }
 
-  public getBlankLine(attr: number, isWrapped?: boolean): IBufferLine {
+  public getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine {
     return new BufferLine(this._terminal.cols, this.getNullCell(attr), isWrapped);
   }
 
@@ -105,10 +118,10 @@ export class Buffer implements IBuffer {
   /**
    * Fills the buffer's viewport with blank lines.
    */
-  public fillViewportRows(fillAttr?: number): void {
+  public fillViewportRows(fillAttr?: IAttributeData): void {
     if (this.lines.length === 0) {
       if (fillAttr === undefined) {
-        fillAttr = DEFAULT_ATTR;
+        fillAttr = DEFAULT_ATTR_DATA;
       }
       let i = this._terminal.rows;
       while (i--) {
@@ -149,7 +162,7 @@ export class Buffer implements IBuffer {
     if (this.lines.length > 0) {
       // Deal with columns increasing (we don't do anything when columns reduce)
       if (this._terminal.cols < newCols) {
-        const cell = this.getNullCell(DEFAULT_ATTR);  // does xterm use the default attr?
+        const cell = this.getNullCell(DEFAULT_ATTR_DATA);  // does xterm use the default attr?
         for (let i = 0; i < this.lines.length; i++) {
           this.lines.get(i).resize(newCols, cell);
         }
@@ -172,7 +185,7 @@ export class Buffer implements IBuffer {
             } else {
               // Add a blank line if there is no buffer left at the top to scroll to, or if there
               // are blank lines after the cursor
-              this.lines.push(new BufferLine(newCols, this.getNullCell(DEFAULT_ATTR)));
+              this.lines.push(new BufferLine(newCols, this.getNullCell(DEFAULT_ATTR_DATA)));
             }
           }
         }

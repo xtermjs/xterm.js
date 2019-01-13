@@ -2,10 +2,66 @@
  * Copyright (c) 2018 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { CharData, IBufferLine, ICellData } from './Types';
+import { CharData, IBufferLine, ICellData, IColorRGB, IAttributeData } from './Types';
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, WHITESPACE_CELL_CHAR, CHAR_DATA_ATTR_INDEX } from './Buffer';
 import { stringFromCodePoint } from './core/input/TextDecoder';
+import { FLAGS } from './renderer/Types';
+import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 
+
+/**
+ * TODO:
+ * The below color-related code can be removed when true color is implemented.
+ * It's only purpose is to match true color requests with the closest matching
+ * ANSI color code.
+ */
+const matchColorCache: {[colorRGBHash: number]: number} = {};
+
+// http://stackoverflow.com/questions/1633828
+function matchColorDistance(r1: number, g1: number, b1: number, r2: number, g2: number, b2: number): number {
+  return Math.pow(30 * (r1 - r2), 2)
+    + Math.pow(59 * (g1 - g2), 2)
+    + Math.pow(11 * (b1 - b2), 2);
+}
+
+function matchColor(r1: number, g1: number, b1: number): number {
+  const hash = (r1 << 16) | (g1 << 8) | b1;
+
+  if (matchColorCache[hash] !== null && matchColorCache[hash] !== undefined) {
+    return matchColorCache[hash];
+  }
+
+  let ldiff = Infinity;
+  let li = -1;
+  let i = 0;
+  let c: number;
+  let r2: number;
+  let g2: number;
+  let b2: number;
+  let diff: number;
+
+  for (; i < DEFAULT_ANSI_COLORS.length; i++) {
+    c = DEFAULT_ANSI_COLORS[i].rgba;
+    r2 = c >>> 24;
+    g2 = c >>> 16 & 0xFF;
+    b2 = c >>> 8 & 0xFF;
+    // assume that alpha is 0xFF
+
+    diff = matchColorDistance(r1, g1, b1, r2, g2, b2);
+
+    if (diff === 0) {
+      li = i;
+      break;
+    }
+
+    if (diff < ldiff) {
+      ldiff = diff;
+      li = i;
+    }
+  }
+
+  return matchColorCache[hash] = li;
+}
 
 /**
  * buffer memory layout:
@@ -76,12 +132,188 @@ export const enum Content {
   WIDTH_SHIFT = 22
 }
 
+export enum Attributes {
+  /**
+   * bit 1..8     blue in RGB, color in P256 and P16
+   */
+  BLUE_MASK = 0xFF,
+  BLUE_SHIFT = 0,
+  PCOLOR_MASK = 0xFF,
+  PCOLOR_SHIFT = 0,
+
+  /**
+   * bit 9..16    green in RGB
+   */
+  GREEN_MASK = 0xFF00,
+  GREEN_SHIFT = 8,
+
+  /**
+   * bit 17..24   red in RGB
+   */
+  RED_MASK = 0xFF0000,
+  RED_SHIFT = 16,
+
+  /**
+   * bit 25..26   color mode: DEFAULT (0) | P16 (1) | P256 (2) | RGB (3)
+   */
+  CM_MASK = 0x3000000,
+  CM_DEFAULT = 0,
+  CM_P16 = 0x1000000,
+  CM_P256 = 0x2000000,
+  CM_RGB = 0x3000000,
+
+  /**
+   * bit 1..24  RGB room
+   */
+  RGB_MASK = 0xFFFFFF
+}
+
+export enum FgFlags {
+  /**
+   * bit 27..31 (32th bit unused)
+   */
+  INVERSE = 0x4000000,
+  BOLD = 0x8000000,
+  UNDERLINE = 0x10000000,
+  BLINK = 0x20000000,
+  INVISIBLE = 0x40000000
+}
+
+export enum BgFlags {
+  /**
+   * bit 27..32 (upper 4 unused)
+   */
+  ITALIC = 0x4000000,
+  DIM = 0x8000000
+}
+
+export class AttributeData implements IAttributeData {
+  static toRGB(value: number): IColorRGB {
+    return [
+      value >>> Attributes.RED_SHIFT & 255,
+      value >>> Attributes.GREEN_SHIFT & 255,
+      value & 255
+    ];
+  }
+  static fromRGB(value: IColorRGB): number {
+    return (value[0] & 255) << Attributes.RED_SHIFT | (value[1] & 255) << Attributes.GREEN_SHIFT | value[2] & 255;
+  }
+
+  public clone(): IAttributeData {
+    const newObj = new AttributeData();
+    newObj.fg = this.fg;
+    newObj.bg = this.bg;
+    return newObj;
+  }
+
+  // data
+  public fg: number = 0;
+  public bg: number = 0;
+
+  // flags
+  public isInverse(): number   { return this.fg & FgFlags.INVERSE; }
+  public isBold(): number      { return this.fg & FgFlags.BOLD; }
+  public isUnderline(): number { return this.fg & FgFlags.UNDERLINE; }
+  public isBlink(): number     { return this.fg & FgFlags.BLINK; }
+  public isInvisible(): number { return this.fg & FgFlags.INVISIBLE; }
+  public isItalic(): number    { return this.bg & BgFlags.ITALIC; }
+  public isDim(): number       { return this.bg & BgFlags.DIM; }
+
+  // color modes
+  public getColormodeFg(): number { return this.fg & Attributes.CM_MASK; }
+  public getColormodeBg(): number { return this.bg & Attributes.CM_MASK; }
+  public isFgRGB(): boolean       { return (this.fg & Attributes.CM_MASK) === Attributes.CM_RGB; }
+  public isBgRGB(): boolean       { return (this.bg & Attributes.CM_MASK) === Attributes.CM_RGB; }
+  public isFgPalette(): boolean   { return (this.fg & Attributes.CM_MASK) === Attributes.CM_P16 || (this.fg & Attributes.CM_MASK) === Attributes.CM_P256; }
+  public isBgPalette(): boolean   { return (this.bg & Attributes.CM_MASK) === Attributes.CM_P16 || (this.bg & Attributes.CM_MASK) === Attributes.CM_P256; }
+  public isFgDefault(): boolean   { return (this.fg & Attributes.CM_MASK) === 0; }
+  public isBgDefault(): boolean   { return (this.bg & Attributes.CM_MASK) === 0; }
+
+  // colors
+  public getFgColor(channels: boolean = false): number | IColorRGB {
+    switch (this.fg & Attributes.CM_MASK) {
+      case Attributes.CM_P16:
+      case Attributes.CM_P256:  return this.fg & Attributes.PCOLOR_MASK;
+      case Attributes.CM_RGB:   return (channels) ? AttributeData.toRGB(this.fg & Attributes.RGB_MASK) : this.fg & Attributes.RGB_MASK;
+      default:                  return -1;  // CM_DEFAULT defaults to -1
+    }
+  }
+  public getBgColor(channels: boolean = false): number | IColorRGB {
+    switch (this.bg & Attributes.CM_MASK) {
+      case Attributes.CM_P16:
+      case Attributes.CM_P256:  return this.bg & Attributes.PCOLOR_MASK;
+      case Attributes.CM_RGB:   return (channels) ? AttributeData.toRGB(this.bg & Attributes.RGB_MASK) : this.bg & Attributes.RGB_MASK;
+      default:                  return -1;  // CM_DEFAULT defaults to -1
+    }
+  }
+
+  public getOldFlags(): number {
+    let flags = 0;
+    if (this.isBold()) {
+      flags |= FLAGS.BOLD;
+    }
+    if (this.isUnderline()) {
+      flags |= FLAGS.UNDERLINE;
+    }
+    if (this.isBlink()) {
+      flags |= FLAGS.BLINK;
+    }
+    if (this.isDim()) {
+      flags |= FLAGS.DIM;
+    }
+    if (this.isInvisible()) {
+      flags |= FLAGS.INVISIBLE;
+    }
+    if (this.isInverse()) {
+      flags |= FLAGS.INVERSE;
+    }
+    if (this.isItalic()) {
+      flags |= FLAGS.ITALIC;
+    }
+    return flags;
+  }
+  public getOldFgColor(): number {
+    let color = this.getFgColor() as number;
+    if (color === -1) {
+      return 256;
+    }
+    if (this.isFgRGB()) {
+      color = matchColor(
+        (this.fg & Attributes.RED_MASK) >> Attributes.RED_SHIFT,
+        (this.fg & Attributes.GREEN_MASK) >> Attributes.GREEN_SHIFT,
+        (this.fg & Attributes.BLUE_MASK) >> Attributes.BLUE_SHIFT
+      );
+      if (color === -1) {
+        color = 256;
+      }
+    }
+    return color;
+  }
+  public getOldBgColor(): number {
+    let color = this.getBgColor() as number;
+    if (color === -1) {
+      return 256;
+    }
+    if (this.isBgRGB()) {
+      color = matchColor(
+        (this.bg & Attributes.RED_MASK) >> Attributes.RED_SHIFT,
+        (this.bg & Attributes.GREEN_MASK) >> Attributes.GREEN_SHIFT,
+        (this.bg & Attributes.BLUE_MASK) >> Attributes.BLUE_SHIFT
+      );
+      if (color === -1) {
+        color = 256;
+      }
+    }
+    return color;
+  }
+}
+
 /**
  * CellData - represents a single Cell in the terminal buffer.
  *
  * TODO: attr getter
  */
-export class CellData implements ICellData {
+export class CellData extends AttributeData implements ICellData {
 
   /** Helper to create CellData from CharData. */
   public static fromCharData(value: CharData): CellData {
@@ -97,7 +329,7 @@ export class CellData implements ICellData {
   public combinedData: string = '';
 
   /** Whether cell contains a combined string. */
-  public get combined(): number {
+  public get isCombined(): number {
     return this.content & Content.IS_COMBINED;
   }
 
@@ -119,7 +351,7 @@ export class CellData implements ICellData {
 
   /** Codepoint of cell (or last charCode of combined string) */
   public get code(): number {
-    return ((this.combined) ? this.combinedData.charCodeAt(this.combinedData.length - 1) : this.content & Content.CODEPOINT_MASK);
+    return ((this.isCombined) ? this.combinedData.charCodeAt(this.combinedData.length - 1) : this.content & Content.CODEPOINT_MASK);
   }
 
   /** Set data from CharData */

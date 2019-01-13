@@ -80,7 +80,6 @@ export class TextRenderLayer extends BaseRenderLayer {
         // Can either represent character(s) for a single cell or multiple cells
         // if indicated by a character joiner.
         let chars = this._cell.chars || WHITESPACE_CELL_CHAR;
-        const attr = this._cell.fg;
         let width = this._cell.width;
 
         // If true, indicates that the current character(s) to draw were joined.
@@ -137,9 +136,9 @@ export class TextRenderLayer extends BaseRenderLayer {
           }
         }
 
-        const flags = attr >> 18;
-        let bg = attr & 0x1ff;
-        let fg = (attr >> 9) & 0x1ff;
+        const flags = this._cell.getOldFlags();
+        let bg = this._cell.getOldBgColor();
+        let fg = this._cell.getOldFgColor();
 
         // If inverse flag is on, the foreground should become the background.
         if (flags & FLAGS.INVERSE) {
