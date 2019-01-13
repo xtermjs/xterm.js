@@ -447,53 +447,53 @@ describe('InputHandler', () => {
       assert.equal(!!term.curAttrData.isInvisible(), false);
     });
     it('colormode palette 16', () => {
-      assert.equal(term.curAttrData.getColormodeFg(), 0); // DEFAULT
-      assert.equal(term.curAttrData.getColormodeBg(), 0); // DEFAULT
+      assert.equal(term.curAttrData.getFgColormode(), 0); // DEFAULT
+      assert.equal(term.curAttrData.getBgColormode(), 0); // DEFAULT
       // lower 8 colors
       for (let i = 0; i < 8; ++i) {
         term.writeSync(`\x1b[${i + 30};${i + 40}m`);
-        assert.equal(term.curAttrData.getColormodeFg(), Attributes.CM_P16);
+        assert.equal(term.curAttrData.getFgColormode(), Attributes.CM_P16);
         assert.equal(term.curAttrData.getFgColor(), i);
-        assert.equal(term.curAttrData.getColormodeBg(), Attributes.CM_P16);
+        assert.equal(term.curAttrData.getBgColormode(), Attributes.CM_P16);
         assert.equal(term.curAttrData.getBgColor(), i);
       }
       // reset to DEFAULT
       term.writeSync(`\x1b[39;49m`);
-      assert.equal(term.curAttrData.getColormodeFg(), 0);
-      assert.equal(term.curAttrData.getColormodeBg(), 0);
+      assert.equal(term.curAttrData.getFgColormode(), 0);
+      assert.equal(term.curAttrData.getBgColormode(), 0);
     });
     it('colormode palette 256', () => {
-      assert.equal(term.curAttrData.getColormodeFg(), 0); // DEFAULT
-      assert.equal(term.curAttrData.getColormodeBg(), 0); // DEFAULT
+      assert.equal(term.curAttrData.getFgColormode(), 0); // DEFAULT
+      assert.equal(term.curAttrData.getBgColormode(), 0); // DEFAULT
       // lower 8 colors
       for (let i = 0; i < 256; ++i) {
         term.writeSync(`\x1b[38;5;${i};48;5;${i}m`);
-        assert.equal(term.curAttrData.getColormodeFg(), Attributes.CM_P256);
+        assert.equal(term.curAttrData.getFgColormode(), Attributes.CM_P256);
         assert.equal(term.curAttrData.getFgColor(), i);
-        assert.equal(term.curAttrData.getColormodeBg(), Attributes.CM_P256);
+        assert.equal(term.curAttrData.getBgColormode(), Attributes.CM_P256);
         assert.equal(term.curAttrData.getBgColor(), i);
       }
       // reset to DEFAULT
       term.writeSync(`\x1b[39;49m`);
-      assert.equal(term.curAttrData.getColormodeFg(), 0);
+      assert.equal(term.curAttrData.getFgColormode(), 0);
       assert.equal(term.curAttrData.getFgColor(), -1);
-      assert.equal(term.curAttrData.getColormodeBg(), 0);
+      assert.equal(term.curAttrData.getBgColormode(), 0);
       assert.equal(term.curAttrData.getBgColor(), -1);
     });
     it('colormode RGB', () => {
-      assert.equal(term.curAttrData.getColormodeFg(), 0); // DEFAULT
-      assert.equal(term.curAttrData.getColormodeBg(), 0); // DEFAULT
+      assert.equal(term.curAttrData.getFgColormode(), 0); // DEFAULT
+      assert.equal(term.curAttrData.getBgColormode(), 0); // DEFAULT
       term.writeSync(`\x1b[38;2;1;2;3;48;2;4;5;6m`);
-      assert.equal(term.curAttrData.getColormodeFg(), Attributes.CM_RGB);
+      assert.equal(term.curAttrData.getFgColormode(), Attributes.CM_RGB);
       assert.equal(term.curAttrData.getFgColor(), 1 << 16 | 2 << 8 | 3);
       assert.deepEqual(term.curAttrData.getFgColor(true), [1, 2, 3]);
-      assert.equal(term.curAttrData.getColormodeBg(), Attributes.CM_RGB);
+      assert.equal(term.curAttrData.getBgColormode(), Attributes.CM_RGB);
       assert.deepEqual(term.curAttrData.getBgColor(true), [4, 5, 6]);
       // reset to DEFAULT
       term.writeSync(`\x1b[39;49m`);
-      assert.equal(term.curAttrData.getColormodeFg(), 0);
+      assert.equal(term.curAttrData.getFgColormode(), 0);
       assert.equal(term.curAttrData.getFgColor(), -1);
-      assert.equal(term.curAttrData.getColormodeBg(), 0);
+      assert.equal(term.curAttrData.getBgColormode(), 0);
       assert.equal(term.curAttrData.getBgColor(), -1);
     });
     it('should zero missing RGB values', () => {
