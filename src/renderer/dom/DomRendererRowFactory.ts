@@ -6,7 +6,7 @@
 import {  NULL_CELL_CODE, WHITESPACE_CELL_CHAR } from '../../Buffer';
 import { IBufferLine } from '../../Types';
 import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
-import { CellData } from '../../BufferLine';
+import { CellData, AttributeData } from '../../BufferLine';
 
 export const BOLD_CLASS = 'xterm-bold';
 export const ITALIC_CLASS = 'xterm-italic';
@@ -78,15 +78,15 @@ export class DomRendererRowFactory {
 
       charElement.textContent = this._cell.chars || WHITESPACE_CELL_CHAR;
 
-      const swapColor = !!this._cell.isInverse();
+      const swapColor = this._cell.isInverse();
 
       // fg
       if (this._cell.isFgRGB()) {
         let style = charElement.getAttribute('style') || '';
-        style += `${swapColor ? 'background-' : ''}color:rgb(${(this._cell.getFgColor(true) as number[]).join(',')});`;
+        style += `${swapColor ? 'background-' : ''}color:rgb(${(AttributeData.toColorRGB(this._cell.getFgColor())).join(',')});`;
         charElement.setAttribute('style', style);
       } else if (this._cell.isFgPalette()) {
-        let fg = this._cell.getFgColor() as number;
+        let fg = this._cell.getFgColor();
         if (this._cell.isBold() && fg < 8 && !swapColor) {
           fg += 8;
         }
@@ -98,7 +98,7 @@ export class DomRendererRowFactory {
       // bg
       if (this._cell.isBgRGB()) {
         let style = charElement.getAttribute('style') || '';
-        style += `${swapColor ? '' : 'background-'}color:rgb(${(this._cell.getBgColor(true) as number[]).join(',')});`;
+        style += `${swapColor ? '' : 'background-'}color:rgb(${(AttributeData.toColorRGB(this._cell.getBgColor())).join(',')});`;
         charElement.setAttribute('style', style);
       } else if (this._cell.isBgPalette()) {
         charElement.classList.add(`xterm-${swapColor ? 'f' : 'b'}g-${this._cell.getBgColor()}`);

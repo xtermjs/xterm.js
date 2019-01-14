@@ -14,7 +14,7 @@ import { IDisposable } from 'xterm';
 import { Disposable } from './common/Lifecycle';
 import { concat, utf32ToString } from './common/TypedArrayUtils';
 import { StringToUtf32, stringFromCodePoint } from './core/input/TextDecoder';
-import { CellData, Attributes, FgFlags, BgFlags } from './BufferLine';
+import { CellData, Attributes, FgFlags, BgFlags, AttributeData } from './BufferLine';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -1651,9 +1651,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           i += 2;
           attr.fg |= Attributes.CM_RGB;
           attr.fg &= ~Attributes.RGB_MASK;
-          attr.fg |= (params[i] & 0xFF) << Attributes.RED_SHIFT;
-          attr.fg |= (params[i + 1] & 0xFF) << Attributes.GREEN_SHIFT;
-          attr.fg |= (params[i + 2] & 0xFF) << Attributes.BLUE_SHIFT;
+          attr.fg |= AttributeData.fromColorRGB([params[i], params[i + 1], params[i + 2]]);
           i += 2;
         } else if (params[i + 1] === 5) {
           i += 2;
@@ -1667,9 +1665,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           i += 2;
           attr.bg |= Attributes.CM_RGB;
           attr.bg &= ~Attributes.RGB_MASK;
-          attr.bg |= (params[i] & 0xFF) << Attributes.RED_SHIFT;
-          attr.bg |= (params[i + 1] & 0xFF) << Attributes.GREEN_SHIFT;
-          attr.bg |= (params[i + 2] & 0xFF) << Attributes.BLUE_SHIFT;
+          attr.bg |= AttributeData.fromColorRGB([params[i], params[i + 1], params[i + 2]]);
           i += 2;
         } else if (params[i + 1] === 5) {
           i += 2;

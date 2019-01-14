@@ -9,7 +9,7 @@ import { MockInputHandlingTerminal, TestTerminal } from './ui/TestUtils.test';
 import { DEFAULT_ATTR_DATA } from './Buffer';
 import { Terminal } from './Terminal';
 import { IBufferLine } from './Types';
-import { CellData, Attributes } from './BufferLine';
+import { CellData, Attributes, AttributeData } from './BufferLine';
 
 describe('InputHandler', () => {
   describe('save and restore cursor', () => {
@@ -486,9 +486,9 @@ describe('InputHandler', () => {
       term.writeSync(`\x1b[38;2;1;2;3;48;2;4;5;6m`);
       assert.equal(term.curAttrData.getFgColormode(), Attributes.CM_RGB);
       assert.equal(term.curAttrData.getFgColor(), 1 << 16 | 2 << 8 | 3);
-      assert.deepEqual(term.curAttrData.getFgColor(true), [1, 2, 3]);
+      assert.deepEqual(AttributeData.toColorRGB(term.curAttrData.getFgColor()), [1, 2, 3]);
       assert.equal(term.curAttrData.getBgColormode(), Attributes.CM_RGB);
-      assert.deepEqual(term.curAttrData.getBgColor(true), [4, 5, 6]);
+      assert.deepEqual(AttributeData.toColorRGB(term.curAttrData.getBgColor()), [4, 5, 6]);
       // reset to DEFAULT
       term.writeSync(`\x1b[39;49m`);
       assert.equal(term.curAttrData.getFgColormode(), 0);
@@ -499,7 +499,7 @@ describe('InputHandler', () => {
     it('should zero missing RGB values', () => {
       term.writeSync(`\x1b[38;2;1;2;3m`);
       term.writeSync(`\x1b[38;2;5m`);
-      assert.deepEqual(term.curAttrData.getFgColor(true), [5, 0, 0]);
+      assert.deepEqual(AttributeData.toColorRGB(term.curAttrData.getFgColor()), [5, 0, 0]);
     });
   });
 });

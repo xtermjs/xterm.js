@@ -542,8 +542,8 @@ export interface IAttributeData {
   isBgDefault(): boolean;
 
   // colors
-  getFgColor(channels?: boolean): number | IColorRGB;
-  getBgColor(channels?: boolean): number | IColorRGB;
+  getFgColor(): number;
+  getBgColor(): number;
 
   // shim for old API
   getOldFlags(): number;

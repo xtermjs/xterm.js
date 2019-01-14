@@ -188,14 +188,14 @@ export enum BgFlags {
 }
 
 export class AttributeData implements IAttributeData {
-  static toRGB(value: number): IColorRGB {
+  static toColorRGB(value: number): IColorRGB {
     return [
       value >>> Attributes.RED_SHIFT & 255,
       value >>> Attributes.GREEN_SHIFT & 255,
       value & 255
     ];
   }
-  static fromRGB(value: IColorRGB): number {
+  static fromColorRGB(value: IColorRGB): number {
     return (value[0] & 255) << Attributes.RED_SHIFT | (value[1] & 255) << Attributes.GREEN_SHIFT | value[2] & 255;
   }
 
@@ -230,19 +230,19 @@ export class AttributeData implements IAttributeData {
   public isBgDefault(): boolean   { return (this.bg & Attributes.CM_MASK) === 0; }
 
   // colors
-  public getFgColor(channels: boolean = false): number | IColorRGB {
+  public getFgColor(): number {
     switch (this.fg & Attributes.CM_MASK) {
       case Attributes.CM_P16:
       case Attributes.CM_P256:  return this.fg & Attributes.PCOLOR_MASK;
-      case Attributes.CM_RGB:   return (channels) ? AttributeData.toRGB(this.fg & Attributes.RGB_MASK) : this.fg & Attributes.RGB_MASK;
+      case Attributes.CM_RGB:   return this.fg & Attributes.RGB_MASK;
       default:                  return -1;  // CM_DEFAULT defaults to -1
     }
   }
-  public getBgColor(channels: boolean = false): number | IColorRGB {
+  public getBgColor(): number {
     switch (this.bg & Attributes.CM_MASK) {
       case Attributes.CM_P16:
       case Attributes.CM_P256:  return this.bg & Attributes.PCOLOR_MASK;
-      case Attributes.CM_RGB:   return (channels) ? AttributeData.toRGB(this.bg & Attributes.RGB_MASK) : this.bg & Attributes.RGB_MASK;
+      case Attributes.CM_RGB:   return this.bg & Attributes.RGB_MASK;
       default:                  return -1;  // CM_DEFAULT defaults to -1
     }
   }
@@ -273,7 +273,7 @@ export class AttributeData implements IAttributeData {
     return flags;
   }
   public getOldFgColor(): number {
-    let color = this.getFgColor() as number;
+    let color = this.getFgColor();
     if (color === -1) {
       return 256;
     }
@@ -290,7 +290,7 @@ export class AttributeData implements IAttributeData {
     return color;
   }
   public getOldBgColor(): number {
-    let color = this.getBgColor() as number;
+    let color = this.getBgColor();
     if (color === -1) {
       return 256;
     }
