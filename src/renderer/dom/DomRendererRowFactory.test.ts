@@ -151,6 +151,28 @@ describe('DomRendererRowFactory', () => {
           );
         }
       });
+
+      it('should set style attribute for RBG', () => {
+        const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
+        cell.fg |= Attributes.CM_RGB | 1 << 16 | 2 << 8 | 3;
+        cell.bg |= Attributes.CM_RGB | 4 << 16 | 5 << 8 | 6;
+        lineData.setCell(0, cell);
+        const fragment = rowFactory.createRow(lineData, false, undefined, 0, 5, 20);
+        assert.equal(getFragmentHtml(fragment),
+          '<span style="color:rgb(1,2,3);background-color:rgb(4,5,6);">a</span>'
+        );
+      });
+
+      it('should correctly invert RGB colors', () => {
+        const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
+        cell.fg |= Attributes.CM_RGB | 1 << 16 | 2 << 8 | 3 | FgFlags.INVERSE;
+        cell.bg |= Attributes.CM_RGB | 4 << 16 | 5 << 8 | 6;
+        lineData.setCell(0, cell);
+        const fragment = rowFactory.createRow(lineData, false, undefined, 0, 5, 20);
+        assert.equal(getFragmentHtml(fragment),
+          '<span style="background-color:rgb(1,2,3);color:rgb(4,5,6);">a</span>'
+        );
+      });
     });
   });
 

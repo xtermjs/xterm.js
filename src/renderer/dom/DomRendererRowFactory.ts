@@ -83,7 +83,7 @@ export class DomRendererRowFactory {
       // fg
       if (this._cell.isFgRGB()) {
         let style = charElement.getAttribute('style') || '';
-        style += `${swapColor ? 'background-' : ''}color: rgb(${(this._cell.getFgColor(true) as number[]).join(',')});`;
+        style += `${swapColor ? 'background-' : ''}color:rgb(${(this._cell.getFgColor(true) as number[]).join(',')});`;
         charElement.setAttribute('style', style);
       } else if (this._cell.isFgPalette()) {
         let fg = this._cell.getFgColor() as number;
@@ -98,7 +98,7 @@ export class DomRendererRowFactory {
       // bg
       if (this._cell.isBgRGB()) {
         let style = charElement.getAttribute('style') || '';
-        style += `${swapColor ? '' : 'background-'}color: rgb(${(this._cell.getBgColor(true) as number[]).join(',')});`;
+        style += `${swapColor ? '' : 'background-'}color:rgb(${(this._cell.getBgColor(true) as number[]).join(',')});`;
         charElement.setAttribute('style', style);
       } else if (this._cell.isBgPalette()) {
         charElement.classList.add(`xterm-${swapColor ? 'f' : 'b'}g-${this._cell.getBgColor()}`);
