@@ -82,7 +82,8 @@ export class WebglRenderer extends EventEmitter implements IRenderer {
     this._renderDebouncer = new RenderDebouncer(this._terminal, this._renderRows.bind(this));
 
     this._canvas = document.createElement('canvas');
-    this._gl = this._canvas.getContext('webgl2') as IWebGL2RenderingContext;
+    const contextAttributes = { antialias: false, depth: false };
+    this._gl = this._canvas.getContext('webgl2', contextAttributes) as IWebGL2RenderingContext;
     if (!this._gl) {
         throw new Error('WebGL2 not supported');
     }
