@@ -9,7 +9,7 @@ import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, IGlyphIdentifier } from './atlas/T
 import BaseCharAtlas from './atlas/BaseCharAtlas';
 import { acquireCharAtlas } from './atlas/CharAtlasCache';
 import { is256Color } from './atlas/CharAtlasUtils';
-import { CellData } from '../BufferLine';
+import { CellData, AttributeData } from '../BufferLine';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -258,8 +258,13 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * This is used to validate whether a cached image can be used.
    * @param bold Whether the text is bold.
    */
-  protected drawChars(terminal: ITerminal, chars: string, code: number, width: number, x: number, y: number, fg: number, bg: number, bold: boolean, dim: boolean, italic: boolean): void {
+  protected drawChars(terminal: ITerminal, chars: string, code: number, width: number, x: number, y: number, fg: number, bg: number, bold: boolean, dim: boolean, italic: boolean, cell: CellData): void {
     const drawInBrightColor = terminal.options.drawBoldTextInBrightColors && bold && fg < 8 && fg !== INVERTED_DEFAULT_COLOR;
+
+    if (cell.isFgRGB()) {
+      this._drawUncachedChars(terminal, chars, width, fg, x, y, bold && terminal.options.enableBold, dim, italic, cell);
+      return;
+    }
 
     fg += drawInBrightColor ? 8 : 0;
     this._currentGlyphIdentifier.chars = chars;
@@ -292,7 +297,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param x The column to draw at.
    * @param y The row to draw at.
    */
-  private _drawUncachedChars(terminal: ITerminal, chars: string, width: number, fg: number, x: number, y: number, bold: boolean, dim: boolean, italic: boolean): void {
+  private _drawUncachedChars(terminal: ITerminal, chars: string, width: number, fg: number, x: number, y: number, bold: boolean, dim: boolean, italic: boolean, cell?: CellData): void {
     this._ctx.save();
     this._ctx.font = this._getFont(terminal, bold, italic);
     this._ctx.textBaseline = 'middle';
@@ -302,6 +307,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     } else if (is256Color(fg)) {
       // 256 color support
       this._ctx.fillStyle = this._colors.ansi[fg].css;
+      if (cell && cell.isFgRGB()) {
+        this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
+      }
     } else {
       this._ctx.fillStyle = this._colors.foreground.css;
     }

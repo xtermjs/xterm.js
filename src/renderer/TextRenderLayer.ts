@@ -10,7 +10,7 @@ import { INVERTED_DEFAULT_COLOR, DEFAULT_COLOR } from './atlas/Types';
 import { GridCache } from './GridCache';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { is256Color } from './atlas/CharAtlasUtils';
-import { CellData } from '../BufferLine';
+import { CellData, AttributeData } from '../BufferLine';
 
 /**
  * This CharData looks like a null character, which will forc a clear and render
@@ -126,7 +126,7 @@ export class TextRenderLayer extends BaseRenderLayer {
           // get removed, and `a` would not re-render because it thinks it's
           // already in the correct state.
           // this._state.cache[x][y] = OVERLAP_OWNED_CHAR_DATA;
-          if (lastCharX < line.length - 1 && line.loadCell(lastCharX + 1, this._cell).code === NULL_CELL_CODE) {
+          if (lastCharX < line.length - 1 && line.getCodePoint(lastCharX + 1) === NULL_CELL_CODE) {
             width = 2;
             // this._clearChar(x + 1, y);
             // The overlapping char's char data will force a clear and render when the
@@ -189,7 +189,12 @@ export class TextRenderLayer extends BaseRenderLayer {
       if (bg === INVERTED_DEFAULT_COLOR) {
         nextFillStyle = this._colors.foreground.css;
       } else if (is256Color(bg)) {
-        nextFillStyle = this._colors.ansi[bg].css;
+        if (this._cell.isBgRGB()) {
+          console.log(`rgb(${AttributeData.toColorRGB(this._cell.getBgColor()).join(',')})`);
+          nextFillStyle = `rgb(${AttributeData.toColorRGB(this._cell.getBgColor()).join(',')})`;
+        } else {
+          nextFillStyle = this._colors.ansi[bg].css;
+        }
       }
 
       if (prevFillStyle === null) {
@@ -245,7 +250,8 @@ export class TextRenderLayer extends BaseRenderLayer {
         terminal, chars, code,
         width, x, y,
         fg, bg,
-        !!(flags & FLAGS.BOLD), !!(flags & FLAGS.DIM), !!(flags & FLAGS.ITALIC)
+        !!(flags & FLAGS.BOLD), !!(flags & FLAGS.DIM), !!(flags & FLAGS.ITALIC),
+        this._cell
       );
     });
   }
