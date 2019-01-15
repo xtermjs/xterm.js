@@ -190,7 +190,6 @@ export class TextRenderLayer extends BaseRenderLayer {
         nextFillStyle = this._colors.foreground.css;
       } else if (is256Color(bg)) {
         if (this._cell.isBgRGB()) {
-          console.log(`rgb(${AttributeData.toColorRGB(this._cell.getBgColor()).join(',')})`);
           nextFillStyle = `rgb(${AttributeData.toColorRGB(this._cell.getBgColor()).join(',')})`;
         } else {
           nextFillStyle = this._colors.ansi[bg].css;
