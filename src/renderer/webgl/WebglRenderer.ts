@@ -104,6 +104,7 @@ export class WebglRenderer extends EventEmitter implements IRenderer {
   public dispose(): void {
     this._renderLayers.forEach(l => l.dispose());
     this._terminal.screenElement.removeChild(this._canvas);
+    super.dispose();
   }
 
   public onIntersectionChange(entry: IntersectionObserverEntry): void {
