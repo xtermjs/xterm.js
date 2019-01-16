@@ -1,6 +1,7 @@
 import { ITerminal, IBufferLine } from '../Types';
 import { ICharacterJoinerRegistry, ICharacterJoiner } from './Types';
 import { CellData } from '../BufferLine';
+import { WHITESPACE_CELL_CHAR } from '../Buffer';
 
 export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
 
@@ -43,7 +44,7 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
     }
 
     const ranges: [number, number][] = [];
-    const lineStr = this._terminal.buffer.translateBufferLineToString(row, true);
+    const lineStr = line.translateToString(true);
 
     // Because some cells can be represented by multiple javascript characters,
     // we track the cell and the string indexes separately. This allows us to
@@ -52,21 +53,19 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
     let rangeStartColumn = 0;
     let currentStringIndex = 0;
     let rangeStartStringIndex = 0;
-    let rangeAttr = line.getFG(0) >> 9;
+    let rangeAttrFG = line.getFG(0);
+    let rangeAttrBG = line.getBG(0);
 
-    for (let x = 0; x < this._terminal.cols; x++) {
+    for (let x = 0; x < line.getTrimmedLength(); x++) {
       line.loadCell(x, this._cell);
-      const chars = this._cell.chars;
-      const width = this._cell.width;
-      const attr = this._cell.fg >> 9;
 
-      if (width === 0) {
+      if (this._cell.width === 0) {
         // If this character is of width 0, skip it.
         continue;
       }
 
       // End of range
-      if (attr !== rangeAttr) {
+      if (this._cell.fg !== rangeAttrFG || this._cell.bg !== rangeAttrBG) {
         // If we ended up with a sequence of more than one character,
         // look for ranges to join.
         if (x - rangeStartColumn > 1) {
@@ -85,10 +84,11 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
         // Reset our markers for a new range.
         rangeStartColumn = x;
         rangeStartStringIndex = currentStringIndex;
-        rangeAttr = attr;
+        rangeAttrFG = this._cell.fg;
+        rangeAttrBG = this._cell.bg;
       }
 
-      currentStringIndex += chars.length;
+      currentStringIndex += this._cell.chars.length || WHITESPACE_CELL_CHAR.length;
     }
 
     // Process any trailing ranges.
@@ -154,7 +154,7 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
 
     for (let x = startCol; x < this._terminal.cols; x++) {
       const width = line.getWidth(x);
-      const length = line.getString(x).length;
+      const length = line.getString(x).length || WHITESPACE_CELL_CHAR.length;
 
       // We skip zero-width characters when creating the string to join the text
       // so we do the same here
