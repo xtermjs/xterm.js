@@ -52,6 +52,7 @@ import { IKeyboardEvent } from './common/Types';
 import { evaluateKeyboardEvent } from './core/input/Keyboard';
 import { KeyboardResultType, ICharset } from './core/Types';
 import { clone } from './common/Clone';
+import { registerRtlCharacterJoiners } from './Unicode';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -752,7 +753,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // Listen for mouse events and translate
     // them into terminal mouse protocols.
     this.bindMouse();
-
   }
 
   private _setupRenderer(): void {
@@ -762,6 +762,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
     }
     this.register(this.renderer);
+    registerRtlCharacterJoiners(this);
   }
 
   /**
