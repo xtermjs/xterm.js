@@ -47,5 +47,5 @@ function createUnicodeRangeJoiner(rangeStart: number, rangeEnd: number): (text: 
       result.push([start, start + length + 1]);
     }
     return result;
-  }
+  };
 }
