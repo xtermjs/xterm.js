@@ -357,14 +357,14 @@ describe('InputHandler', () => {
       expect(term.buffer.translateBufferLineToString(0, true)).to.equal('');
       expect(term.buffer.translateBufferLineToString(1, true)).to.equal('    TEST');
       // Text color of 'TEST' should be red
-      expect((term.buffer.lines.get(1).loadCell(4, new CellData()).getOldFgColor())).to.equal(1);
+      expect((term.buffer.lines.get(1).loadCell(4, new CellData()).getFgColor())).to.equal(1);
     });
     it('should handle DECSET/DECRST 1047 (alt screen buffer)', () => {
       handler.parse('\x1b[?1047h\r\n\x1b[31mJUNK\x1b[?1047lTEST');
       expect(term.buffer.translateBufferLineToString(0, true)).to.equal('');
       expect(term.buffer.translateBufferLineToString(1, true)).to.equal('    TEST');
       // Text color of 'TEST' should be red
-      expect((term.buffer.lines.get(1).loadCell(4, new CellData()).getOldFgColor())).to.equal(1);
+      expect((term.buffer.lines.get(1).loadCell(4, new CellData()).getFgColor())).to.equal(1);
     });
     it('should handle DECSET/DECRST 1048 (alt screen cursor)', () => {
       handler.parse('\x1b[?1048h\r\n\x1b[31mJUNK\x1b[?1048lTEST');
@@ -373,7 +373,7 @@ describe('InputHandler', () => {
       // Text color of 'TEST' should be default
       expect(term.buffer.lines.get(0).loadCell(0, new CellData()).fg).to.equal(DEFAULT_ATTR_DATA.fg);
       // Text color of 'JUNK' should be red
-      expect((term.buffer.lines.get(1).loadCell(0, new CellData()).getOldFgColor())).to.equal(1);
+      expect((term.buffer.lines.get(1).loadCell(0, new CellData()).getFgColor())).to.equal(1);
     });
     it('should handle DECSET/DECRST 1049 (alt screen buffer+cursor)', () => {
       handler.parse('\x1b[?1049h\r\n\x1b[31mJUNK\x1b[?1049lTEST');
@@ -390,12 +390,12 @@ describe('InputHandler', () => {
       handler.parse('\x1b[?1049h\x1b[uTEST');
       expect(term.buffer.translateBufferLineToString(1, true)).to.equal('TEST');
       // Text color of 'TEST' should be red
-      expect((term.buffer.lines.get(1).loadCell(0, new CellData()).getOldFgColor())).to.equal(1);
+      expect((term.buffer.lines.get(1).loadCell(0, new CellData()).getFgColor())).to.equal(1);
     });
     it('should handle DECSET/DECRST 1049 - clears alt buffer with erase attributes', () => {
       handler.parse('\x1b[42m\x1b[?1049h');
       // Buffer should be filled with green background
-      expect(term.buffer.lines.get(20).loadCell(10, new CellData()).getOldBgColor()).to.equal(2);
+      expect(term.buffer.lines.get(20).loadCell(10, new CellData()).getBgColor()).to.equal(2);
     });
   });
 

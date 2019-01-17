@@ -544,11 +544,6 @@ export interface IAttributeData {
   // colors
   getFgColor(): number;
   getBgColor(): number;
-
-  // shim for old API
-  getOldFlags(): number;
-  getOldFgColor(): number;
-  getOldBgColor(): number;
 }
 
 /** Cell data */

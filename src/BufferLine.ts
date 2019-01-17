@@ -5,63 +5,7 @@
 import { CharData, IBufferLine, ICellData, IColorRGB, IAttributeData } from './Types';
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, WHITESPACE_CELL_CHAR, CHAR_DATA_ATTR_INDEX } from './Buffer';
 import { stringFromCodePoint } from './core/input/TextDecoder';
-import { FLAGS } from './renderer/Types';
-import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 
-
-/**
- * TODO:
- * The below color-related code can be removed when true color is implemented.
- * It's only purpose is to match true color requests with the closest matching
- * ANSI color code.
- */
-const matchColorCache: {[colorRGBHash: number]: number} = {};
-
-// http://stackoverflow.com/questions/1633828
-function matchColorDistance(r1: number, g1: number, b1: number, r2: number, g2: number, b2: number): number {
-  return Math.pow(30 * (r1 - r2), 2)
-    + Math.pow(59 * (g1 - g2), 2)
-    + Math.pow(11 * (b1 - b2), 2);
-}
-
-function matchColor(r1: number, g1: number, b1: number): number {
-  const hash = (r1 << 16) | (g1 << 8) | b1;
-
-  if (matchColorCache[hash] !== null && matchColorCache[hash] !== undefined) {
-    return matchColorCache[hash];
-  }
-
-  let ldiff = Infinity;
-  let li = -1;
-  let i = 0;
-  let c: number;
-  let r2: number;
-  let g2: number;
-  let b2: number;
-  let diff: number;
-
-  for (; i < DEFAULT_ANSI_COLORS.length; i++) {
-    c = DEFAULT_ANSI_COLORS[i].rgba;
-    r2 = c >>> 24;
-    g2 = c >>> 16 & 0xFF;
-    b2 = c >>> 8 & 0xFF;
-    // assume that alpha is 0xFF
-
-    diff = matchColorDistance(r1, g1, b1, r2, g2, b2);
-
-    if (diff === 0) {
-      li = i;
-      break;
-    }
-
-    if (diff < ldiff) {
-      ldiff = diff;
-      li = i;
-    }
-  }
-
-  return matchColorCache[hash] = li;
-}
 
 /**
  * buffer memory layout:
@@ -245,66 +189,6 @@ export class AttributeData implements IAttributeData {
       case Attributes.CM_RGB:   return this.bg & Attributes.RGB_MASK;
       default:                  return -1;  // CM_DEFAULT defaults to -1
     }
-  }
-
-  public getOldFlags(): number {
-    let flags = 0;
-    if (this.isBold()) {
-      flags |= FLAGS.BOLD;
-    }
-    if (this.isUnderline()) {
-      flags |= FLAGS.UNDERLINE;
-    }
-    if (this.isBlink()) {
-      flags |= FLAGS.BLINK;
-    }
-    if (this.isDim()) {
-      flags |= FLAGS.DIM;
-    }
-    if (this.isInvisible()) {
-      flags |= FLAGS.INVISIBLE;
-    }
-    if (this.isInverse()) {
-      flags |= FLAGS.INVERSE;
-    }
-    if (this.isItalic()) {
-      flags |= FLAGS.ITALIC;
-    }
-    return flags;
-  }
-  public getOldFgColor(): number {
-    let color = this.getFgColor();
-    if (color === -1) {
-      return 256;
-    }
-    if (this.isFgRGB()) {
-      color = matchColor(
-        (this.fg & Attributes.RED_MASK) >> Attributes.RED_SHIFT,
-        (this.fg & Attributes.GREEN_MASK) >> Attributes.GREEN_SHIFT,
-        (this.fg & Attributes.BLUE_MASK) >> Attributes.BLUE_SHIFT
-      );
-      if (color === -1) {
-        color = 256;
-      }
-    }
-    return color;
-  }
-  public getOldBgColor(): number {
-    let color = this.getBgColor();
-    if (color === -1) {
-      return 256;
-    }
-    if (this.isBgRGB()) {
-      color = matchColor(
-        (this.bg & Attributes.RED_MASK) >> Attributes.RED_SHIFT,
-        (this.bg & Attributes.GREEN_MASK) >> Attributes.GREEN_SHIFT,
-        (this.bg & Attributes.BLUE_MASK) >> Attributes.BLUE_SHIFT
-      );
-      if (color === -1) {
-        color = 256;
-      }
-    }
-    return color;
   }
 }
 
