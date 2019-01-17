@@ -32,7 +32,7 @@ export function createUnicodeRangeJoiner(rangeStart: number, rangeEnd: number): 
     const result: [number, number][] = [];
     for (let i = 0; i < text.length; i++) {
       const code = text.charCodeAt(i);
-      if (code >= rangeStart && code <= rangeEnd) {
+      if (code >= rangeStart && code <= rangeEnd || code === 32) {
         // Add to range
         if (start === -1) {
           start = i;
