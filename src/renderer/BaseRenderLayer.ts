@@ -261,7 +261,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   protected drawChars(terminal: ITerminal, cell: ICellData, x: number, y: number): void {
 
     // skip cache right away if we draw in RGB
-    if (cell.isFgRGB() || (cell.isInverse() && cell.isBgRGB())) {
+    if (cell.isFgRGB() || cell.isBgRGB()) {
       this._drawUncachedChars(terminal, cell, x, y);
       return;
     }
