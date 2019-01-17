@@ -6,7 +6,7 @@
 import { IDisposable } from 'xterm';
 
 /**
- * Adds a disposabe listener to a node in the DOM, returning the disposable.
+ * Adds a disposable listener to a node in the DOM, returning the disposable.
  * @param type The event type.
  * @param handler The handler for the listener.
  */

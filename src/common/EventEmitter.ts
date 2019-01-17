@@ -23,7 +23,7 @@ export class EventEmitter extends Disposable implements IEventEmitter, IDisposab
   }
 
   /**
-   * Adds a disposabe listener to the EventEmitter, returning the disposable.
+   * Adds a disposable listener to the EventEmitter, returning the disposable.
    * @param type The event type.
    * @param handler The handler for the listener.
    */
