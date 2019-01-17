@@ -25,7 +25,7 @@ export function registerRtlCharacterJoiners(terminal: Terminal): void {
   terminal.registerCharacterJoiner(createUnicodeRangeJoiner(0x1EE00, 0x1EEFF));
 }
 
-function createUnicodeRangeJoiner(rangeStart: number, rangeEnd: number): (text: string) => [number, number][] {
+export function createUnicodeRangeJoiner(rangeStart: number, rangeEnd: number): (text: string) => [number, number][] {
   return (text: string) => {
     let start = -1;
     let length = 0;
@@ -33,18 +33,23 @@ function createUnicodeRangeJoiner(rangeStart: number, rangeEnd: number): (text: 
     for (let i = 0; i < text.length; i++) {
       const code = text.charCodeAt(i);
       if (code >= rangeStart && code <= rangeEnd) {
+        // Add to range
         if (start === -1) {
           start = i;
         }
         length++;
-      } else if (length > 1) {
-        result.push([start, start + length + 1]);
+      } else {
+        if (length > 1) {
+          // Finish range
+          result.push([start, start + length]);
+        }
+        // Clear a single match
         start = -1;
         length = 0;
       }
     }
     if (length > 0) {
-      result.push([start, start + length + 1]);
+      result.push([start, start + length]);
     }
     return result;
   };
