@@ -89,7 +89,7 @@ export class WebglRenderer extends EventEmitter implements IRenderer {
     this._terminal.screenElement.appendChild(this._canvas);
 
     this._rectangleRenderer = new RectangleRenderer(this._terminal, this.colorManager, this._gl, this.dimensions);
-    this._glyphRenderer = new GlyphRenderer(this._terminal, this._gl, this.dimensions);
+    this._glyphRenderer = new GlyphRenderer(this._terminal, this.colorManager, this._gl, this.dimensions);
 
     // Detect whether IntersectionObserver is detected and enable renderer pause
     // and resume based on terminal visibility if so
