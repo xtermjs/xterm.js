@@ -4,7 +4,7 @@
  */
 
 import { createProgram, PROJECTION_MATRIX } from './WebglUtils';
-import { IRenderDimensions } from '../Types';
+import { IColorManager, IRenderDimensions } from '../Types';
 import { ITerminal, IBufferLine } from '../../Types';
 import { NULL_CELL_CODE, CHAR_DATA_CHAR_INDEX, WHITESPACE_CELL_CODE } from '../../Buffer';
 import WebglCharAtlas from './WebglCharAtlas';
@@ -95,6 +95,7 @@ export class GlyphRenderer {
 
   constructor(
     private _terminal: ITerminal,
+    private _colorManager: IColorManager,
     private _gl: IWebGL2RenderingContext,
     private _dimensions: IRenderDimensions
   ) {
@@ -214,8 +215,9 @@ export class GlyphRenderer {
 
     // TODO: Make fg and bg configurable, currently since the buffer doesn't
     // support truecolor the char atlas cannot store it.
-    const fg = 0;
-    const bg = 7;
+    const lumi = this._colorManager.getLuminance(this._colorManager.colors.background)
+    const fg = lumi > 0.5 ? 7 : 0;
+    const bg = lumi > 0.5 ? 0 : 7;
 
     if (columnSelectMode) {
       const startCol = model.selection.startCol;
