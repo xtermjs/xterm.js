@@ -42,6 +42,11 @@ export function attach(term: Terminal, socket: WebSocket, bidirectional: boolean
   addonTerminal.__getMessage = function(ev: MessageEvent): void {
     let str: string;
 
+    if (ev.data instanceof ArrayBuffer) {
+      addonTerminal.writeUtf8(new Uint8Array(ev.data));
+      return;
+    }
+
     if (typeof ev.data === 'object') {
       if (!myTextDecoder) {
         myTextDecoder = new TextDecoder();

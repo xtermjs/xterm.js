@@ -32,7 +32,8 @@ function startServer() {
           cols: cols || 80,
           rows: rows || 24,
           cwd: process.env.PWD,
-          env: process.env
+          env: process.env,
+          encoding: null
         });
 
     console.log('Created terminal with PID: ' + term.pid);
@@ -62,20 +63,20 @@ function startServer() {
     ws.send(logs[term.pid]);
 
     function buffer(socket, timeout) {
-      let s = '';
+      let buffer = [];
       let sender = null;
       return (data) => {
-        s += data;
+        buffer.push(data);
         if (!sender) {
           sender = setTimeout(() => {
-            socket.send(s);
-            s = '';
+            socket.send(Buffer.concat(buffer));
+            buffer = [];
             sender = null;
           }, timeout);
         }
       };
     }
-    const send = buffer(ws, 5);
+  const send = buffer(ws, 5);
 
     term.on('data', function(data) {
       try {
