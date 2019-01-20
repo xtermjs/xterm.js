@@ -111,6 +111,7 @@ export interface ICompositionHelper {
  */
 export interface IInputHandler {
   parse(data: string): void;
+  parseUtf8(data: Uint8Array): void;
   print(data: Uint32Array, start: number, end: number): void;
 
   /** C0 BEL */ bell(): void;

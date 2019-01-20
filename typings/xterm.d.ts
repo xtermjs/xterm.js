@@ -637,6 +637,12 @@ declare module 'xterm' {
     write(data: string): void;
 
     /**
+     * Writes UTF8 data to the terminal.
+     * @param data The data to write to the terminal.
+     */
+    writeUtf8(data: Uint8Array): void;
+
+    /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */

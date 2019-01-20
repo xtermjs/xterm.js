@@ -1302,6 +1302,23 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   /**
+   * Writes utf8 data to the terminal.
+   * TODO: This currently does no flow control.
+   */
+  public writeUtf8(data: Uint8Array): void {
+    if (this._isDisposed) {
+      return;
+    }
+    this._refreshStart = this.buffer.y;
+    this._refreshEnd = this.buffer.y;
+
+    this._inputHandler.parseUtf8(data);
+
+    this.updateRange(this.buffer.y);
+    this.refresh(this._refreshStart, this._refreshEnd);
+  }
+
+  /**
    * Writes text to the terminal.
    * @param data The text to write to the terminal.
    */

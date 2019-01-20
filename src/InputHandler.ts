@@ -15,7 +15,7 @@ import { ICharset } from './core/Types';
 import { IDisposable } from 'xterm';
 import { Disposable } from './common/Lifecycle';
 import { concat, utf32ToString } from './common/TypedArrayUtils';
-import { StringToUtf32, stringFromCodePoint } from './core/input/TextDecoder';
+import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from './core/input/TextDecoder';
 import { CellData } from './BufferLine';
 
 /**
@@ -104,8 +104,9 @@ class DECRQSS implements IDcsHandler {
  * each function's header comment.
  */
 export class InputHandler extends Disposable implements IInputHandler {
-  private _parseBuffer: Uint32Array = new Uint32Array(4096);
-  private _stringDecoder: StringToUtf32 = new StringToUtf32();
+  private _parseBuffer = new Uint32Array(4096);
+  private _stringDecoder = new StringToUtf32();
+  private _utf8Decoder = new Utf8ToUtf32();
   private _cell: CellData = new CellData();
 
   constructor(
@@ -304,6 +305,32 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._parseBuffer = new Uint32Array(data.length);
     }
     this._parser.parse(this._parseBuffer, this._stringDecoder.decode(data, this._parseBuffer));
+
+    buffer = this._terminal.buffer;
+    if (buffer.x !== cursorStartX || buffer.y !== cursorStartY) {
+      this._terminal.emit('cursormove');
+    }
+  }
+
+  public parseUtf8(data: Uint8Array): void {
+    // Ensure the terminal is not disposed
+    if (!this._terminal) {
+      return;
+    }
+
+    let buffer = this._terminal.buffer;
+    const cursorStartX = buffer.x;
+    const cursorStartY = buffer.y;
+
+    // TODO: Consolidate debug/logging #1560
+    if ((<any>this._terminal).debug) {
+      this._terminal.log('data: ' + data);
+    }
+
+    if (this._parseBuffer.length < data.length) {
+      this._parseBuffer = new Uint32Array(data.length);
+    }
+    this._parser.parse(this._parseBuffer, this._utf8Decoder.decode(data, this._parseBuffer));
 
     buffer = this._terminal.buffer;
     if (buffer.x !== cursorStartX || buffer.y !== cursorStartY) {
