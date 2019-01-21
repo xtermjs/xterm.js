@@ -54,6 +54,10 @@ export class BufferLine implements IBufferLine {
     ];
   }
 
+  public getWidth(index: number): number {
+    return this._data[index * CELL_SIZE + Cell.WIDTH];
+  }
+
   public set(index: number, value: CharData): void {
     this._data[index * CELL_SIZE + Cell.FLAGS] = value[0];
     if (value[1].length > 1) {

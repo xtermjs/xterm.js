@@ -510,6 +510,43 @@ describe('Buffer', () => {
         assert.equal(secondMarker.line, 1, 'second marker should be restored');
         assert.equal(thirdMarker.line, 2, 'third marker should be restored');
       });
+      it('should wrap wide characters correctly when reflowing larger', () => {
+        buffer.fillViewportRows();
+        buffer.resize(12, 10);
+        for (let i = 0; i < 12; i += 4) {
+          buffer.lines.get(0).set(i, [null, '汉', 2, '汉'.charCodeAt(0)]);
+          buffer.lines.get(1).set(i, [null, '汉', 2, '汉'.charCodeAt(0)]);
+        }
+        for (let i = 2; i < 12; i += 4) {
+          buffer.lines.get(0).set(i, [null, '语', 2, '语'.charCodeAt(0)]);
+          buffer.lines.get(1).set(i, [null, '语', 2, '语'.charCodeAt(0)]);
+        }
+        for (let i = 1; i < 12; i += 2) {
+          buffer.lines.get(0).set(i, [null, '', 0, undefined]);
+          buffer.lines.get(1).set(i, [null, '', 0, undefined]);
+        }
+        buffer.lines.get(1).isWrapped = true;
+        // Buffer:
+        // 汉语汉语汉语 (wrapped)
+        // 汉语汉语汉语
+        assert.equal(buffer.lines.get(0).translateToString(true), '汉语汉语汉语');
+        assert.equal(buffer.lines.get(1).translateToString(true), '汉语汉语汉语');
+        buffer.resize(13, 10);
+        assert.equal(buffer.ybase, 0);
+        assert.equal(buffer.lines.length, 10);
+        assert.equal(buffer.lines.get(0).translateToString(true), '汉语汉语汉语');
+        assert.equal(buffer.lines.get(0).translateToString(false), '汉语汉语汉语 ');
+        assert.equal(buffer.lines.get(1).translateToString(true), '汉语汉语汉语');
+        assert.equal(buffer.lines.get(1).translateToString(false), '汉语汉语汉语 ');
+        buffer.resize(14, 10);
+        assert.equal(buffer.lines.get(0).translateToString(true), '汉语汉语汉语汉');
+        assert.equal(buffer.lines.get(0).translateToString(false), '汉语汉语汉语汉');
+        assert.equal(buffer.lines.get(1).translateToString(true), '语汉语汉语');
+        assert.equal(buffer.lines.get(1).translateToString(false), '语汉语汉语    ');
+      });
+      it('should wrap wide characters correctly when reflowing smaller', () => {
+        // TODO: ..
+      });
 
       describe('reflowLarger cases', () => {
         beforeEach(() => {

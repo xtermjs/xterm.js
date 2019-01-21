@@ -259,23 +259,35 @@ export class Buffer implements IBuffer {
 
       // Copy buffer data to new locations
       let destLineIndex = 0;
-      let destCol = this._cols;
+      let destCol = wrappedLines[destLineIndex].getTrimmedLength();
       let srcLineIndex = 1;
       let srcCol = 0;
       while (srcLineIndex < wrappedLines.length) {
-        const srcRemainingCells = this._cols - srcCol;
+        const srcTrimmedTineLength = wrappedLines[srcLineIndex].getTrimmedLength();
+        const srcRemainingCells = srcTrimmedTineLength - srcCol;
         const destRemainingCells = newCols - destCol;
         const cellsToCopy = Math.min(srcRemainingCells, destRemainingCells);
+
         wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[srcLineIndex], srcCol, destCol, cellsToCopy, false);
+
         destCol += cellsToCopy;
         if (destCol === newCols) {
           destLineIndex++;
           destCol = 0;
         }
         srcCol += cellsToCopy;
-        if (srcCol === this._cols) {
+        if (srcCol === srcTrimmedTineLength) {
           srcLineIndex++;
           srcCol = 0;
+        }
+
+        // Make sure the last cell isn't wide, if it is copy it to the current dest
+        if (destCol === 0) {
+          if (wrappedLines[destLineIndex - 1].getWidth(newCols - 1) === 2) {
+            wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[destLineIndex - 1], newCols - 1, destCol++, 1, false);
+            // Null out the end of the last row
+            wrappedLines[destLineIndex - 1].set(newCols - 1, FILL_CHAR_DATA);
+          }
         }
       }
 
