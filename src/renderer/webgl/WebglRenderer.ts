@@ -52,6 +52,7 @@ export class WebglRenderer extends EventEmitter implements IRenderer {
     this.colorManager = new ColorManager(document, allowTransparency);
     if (theme) {
       this.colorManager.setTheme(theme);
+      this.colorManager.applyWebglSelectionColorHack();
     }
 
     this._renderLayers = [
