@@ -733,6 +733,12 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this.selectionManager.refresh()));
 
     this.mouseHelper = new MouseHelper(this.renderer);
+    // apply mouse event classes set by escape codes before terminal was attached
+    if (this.mouseEvents) {
+      this.element.classList.add('enable-mouse-events');
+    } else {
+      this.element.classList.remove('enable-mouse-events');
+    }
 
     if (this.options.screenReaderMode) {
       // Note that this must be done *after* the renderer is created in order to
