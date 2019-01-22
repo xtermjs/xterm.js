@@ -7,7 +7,7 @@
  * to be stable and consumed by external programs.
  */
 
-/// <reference lib="dom"/>
+// <reference lib="dom"/>
 
 declare module 'xterm' {
   /**
