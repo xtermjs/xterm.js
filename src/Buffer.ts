@@ -9,6 +9,7 @@ import { EventEmitter } from './common/EventEmitter';
 import { IMarker } from 'xterm';
 import { BufferLine } from './BufferLine';
 import { DEFAULT_COLOR } from './renderer/atlas/Types';
+import { reflowSmallerGetLinesNeeded, reflowSmallerGetNewLineLengths } from './BufferReflow';
 
 export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
 export const CHAR_DATA_ATTR_INDEX = 0;
@@ -386,11 +387,17 @@ export class Buffer implements IBuffer {
         wrappedLines.unshift(nextLine);
       }
 
-      // Determine how many lines need to be inserted at the end, based on the trimmed length of
-      // the last wrapped line
+
+
       const lastLineLength = wrappedLines[wrappedLines.length - 1].getTrimmedLength();
       const cellsNeeded = (wrappedLines.length - 1) * this._cols + lastLineLength;
-      const linesNeeded = Math.ceil(cellsNeeded / newCols);
+      // const linesNeeded = reflowSmallerGetLinesNeeded(wrappedLines, this._cols, newCols);
+      const destLineLengths = reflowSmallerGetNewLineLengths(wrappedLines, this._cols, newCols);
+      console.log(destLineLengths);
+      const linesNeeded = destLineLengths.length;
+
+
+
       const linesToAdd = linesNeeded - wrappedLines.length;
       let trimmedLines: number;
       if (this.ybase === 0 && this.y !== this.lines.length - 1) {
@@ -418,8 +425,8 @@ export class Buffer implements IBuffer {
       wrappedLines.push(...newLines);
 
       // Copy buffer data to new locations, this needs to happen backwards to do in-place
-      let destLineIndex = Math.floor(cellsNeeded / newCols);
-      let destCol = cellsNeeded % newCols;
+      let destLineIndex = destLineLengths.length - 1; // Math.floor(cellsNeeded / newCols);
+      let destCol = destLineLengths[destLineIndex]; // cellsNeeded % newCols;
       if (destCol === 0) {
         destLineIndex--;
         destCol = newCols;
@@ -432,12 +439,13 @@ export class Buffer implements IBuffer {
         destCol -= cellsToCopy;
         if (destCol === 0) {
           destLineIndex--;
-          destCol = newCols;
+          destCol = destLineLengths[destLineIndex];
         }
         srcCol -= cellsToCopy;
         if (srcCol === 0) {
           srcLineIndex--;
-          srcCol = this._cols;
+          // TODO: srcCol shoudl take trimmed length into account
+          srcCol = wrappedLines[Math.max(srcLineIndex, 0)].getTrimmedLength(); // this._cols;
         }
       }
 
@@ -515,6 +523,8 @@ export class Buffer implements IBuffer {
       }
     }
   }
+
+  // private _reflowSmallerGetLinesNeeded()
 
   /**
    * Translates a string index back to a BufferIndex.
