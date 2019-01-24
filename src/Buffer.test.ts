@@ -579,6 +579,20 @@ describe('Buffer', () => {
         assert.equal(buffer.lines.get(0).translateToString(true), '汉语汉语');
         assert.equal(buffer.lines.get(1).translateToString(true), '汉语汉语');
         assert.equal(buffer.lines.get(2).translateToString(true), '汉语汉语');
+        buffer.resize(8, 10);
+        assert.equal(buffer.lines.get(0).translateToString(true), '汉语汉语');
+        assert.equal(buffer.lines.get(1).translateToString(true), '汉语汉语');
+        assert.equal(buffer.lines.get(2).translateToString(true), '汉语汉语');
+        buffer.resize(7, 10);
+        assert.equal(buffer.lines.get(0).translateToString(true), '汉语汉');
+        assert.equal(buffer.lines.get(1).translateToString(true), '语汉语');
+        assert.equal(buffer.lines.get(2).translateToString(true), '汉语汉');
+        assert.equal(buffer.lines.get(3).translateToString(true), '语汉语');
+        buffer.resize(6, 10);
+        assert.equal(buffer.lines.get(0).translateToString(true), '汉语汉');
+        assert.equal(buffer.lines.get(1).translateToString(true), '语汉语');
+        assert.equal(buffer.lines.get(2).translateToString(true), '汉语汉');
+        assert.equal(buffer.lines.get(3).translateToString(true), '语汉语');
       });
 
       describe('reflowLarger cases', () => {

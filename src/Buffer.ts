@@ -9,7 +9,7 @@ import { EventEmitter } from './common/EventEmitter';
 import { IMarker } from 'xterm';
 import { BufferLine } from './BufferLine';
 import { DEFAULT_COLOR } from './renderer/atlas/Types';
-import { reflowSmallerGetLinesNeeded, reflowSmallerGetNewLineLengths } from './BufferReflow';
+import { reflowSmallerGetNewLineLengths } from './BufferReflow';
 
 export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
 export const CHAR_DATA_ATTR_INDEX = 0;
@@ -387,18 +387,9 @@ export class Buffer implements IBuffer {
         wrappedLines.unshift(nextLine);
       }
 
-
-
       const lastLineLength = wrappedLines[wrappedLines.length - 1].getTrimmedLength();
-      const cellsNeeded = (wrappedLines.length - 1) * this._cols + lastLineLength;
-      // const linesNeeded = reflowSmallerGetLinesNeeded(wrappedLines, this._cols, newCols);
       const destLineLengths = reflowSmallerGetNewLineLengths(wrappedLines, this._cols, newCols);
-      console.log(destLineLengths);
-      const linesNeeded = destLineLengths.length;
-
-
-
-      const linesToAdd = linesNeeded - wrappedLines.length;
+      const linesToAdd = destLineLengths.length - wrappedLines.length;
       let trimmedLines: number;
       if (this.ybase === 0 && this.y !== this.lines.length - 1) {
         // If the top section of the buffer is not yet filled
