@@ -8,6 +8,11 @@ import { CircularList, IDeleteEvent } from './common/CircularList';
 import { IBufferLine } from './Types';
 import { FILL_CHAR_DATA } from './Buffer';
 
+export interface INewLayoutResult {
+  layout: number[];
+  countRemoved: number;
+}
+
 export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, newCols: number): number[] {
   // Gather all BufferLines that need to be removed from the Buffer here so that they can be
   // batched up and only committed once
@@ -85,7 +90,8 @@ export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, n
   return toRemove;
 }
 
-export function reflowLargerCreateNewLayout(lines: CircularList<IBufferLine>, toRemove: number[], newLayout: number[]): number {
+export function reflowLargerCreateNewLayout(lines: CircularList<IBufferLine>, toRemove: number[]): INewLayoutResult {
+  const layout: number[] = [];
   // First iterate through the list and get the actual indexes to use for rows
   let nextToRemoveIndex = 0;
   let nextToRemoveStart = toRemove[nextToRemoveIndex];
@@ -104,10 +110,13 @@ export function reflowLargerCreateNewLayout(lines: CircularList<IBufferLine>, to
       countRemovedSoFar += countToRemove;
       nextToRemoveStart = toRemove[++nextToRemoveIndex];
     } else {
-      newLayout.push(i);
+      layout.push(i);
     }
   }
-  return countRemovedSoFar;
+  return {
+    layout,
+    countRemoved: countRemovedSoFar
+  };
 }
 
 export function reflowLargerApplyNewLayout(lines: CircularList<IBufferLine>, newLayout: number[]): void {

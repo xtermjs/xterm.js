@@ -242,10 +242,9 @@ export class Buffer implements IBuffer {
   private _reflowLarger(newCols: number): void {
     const toRemove: number[] = reflowLargerGetLinesToRemove(this.lines, newCols);
     if (toRemove.length > 0) {
-      const newLayout: number[] = [];
-      const countRemoved = reflowLargerCreateNewLayout(this.lines, toRemove, newLayout);
-      reflowLargerApplyNewLayout(this.lines, newLayout);
-      this._reflowLargerAdjustViewport(newCols, countRemoved);
+      const newLayoutResult = reflowLargerCreateNewLayout(this.lines, toRemove);
+      reflowLargerApplyNewLayout(this.lines, newLayoutResult.layout);
+      this._reflowLargerAdjustViewport(newCols, newLayoutResult.countRemoved);
     }
   }
 
