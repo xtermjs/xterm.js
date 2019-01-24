@@ -5,6 +5,7 @@
 import { assert } from 'chai';
 import { BufferLine } from './BufferLine';
 import { reflowSmallerGetNewLineLengths } from './BufferReflow';
+import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from './Buffer';
 
 describe('BufferReflow', () => {
   describe('reflowSmallerGetNewLineLengths', () => {
@@ -75,6 +76,18 @@ describe('BufferReflow', () => {
       assert.deepEqual(reflowSmallerGetNewLineLengths([line1, line2], 6, 4), [3, 4, 4, 1], 'lines: a汉, 语ba, 汉语, b');
       assert.deepEqual(reflowSmallerGetNewLineLengths([line1, line2], 6, 3), [3, 3, 3, 3], 'lines: a汉, 语b, a汉, 语b');
       assert.deepEqual(reflowSmallerGetNewLineLengths([line1, line2], 6, 2), [1, 2, 2, 2, 2, 2, 1], 'lines: a, 汉, 语, ba, 汉, 语, b');
+    });
+    it('should work on lines ending in null space', () => {
+      const line = new BufferLine(5);
+      line.set(0, [null, '汉', 2, '汉'.charCodeAt(0)]);
+      line.set(1, [null, '', 0, undefined]);
+      line.set(2, [null, '语', 2, '语'.charCodeAt(0)]);
+      line.set(3, [null, '', 0, undefined]);
+      line.set(4, [null, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+      assert.equal(line.translateToString(true), '汉语');
+      assert.equal(line.translateToString(false), '汉语 ');
+      assert.deepEqual(reflowSmallerGetNewLineLengths([line], 4, 3), [2, 2], 'line: 汉, 语');
+      assert.deepEqual(reflowSmallerGetNewLineLengths([line], 4, 2), [2, 2], 'line: 汉, 语');
     });
   });
 });

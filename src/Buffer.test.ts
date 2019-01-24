@@ -568,8 +568,8 @@ describe('Buffer', () => {
         buffer.resize(11, 10);
         assert.equal(buffer.ybase, 0);
         assert.equal(buffer.lines.length, 10);
-        assert.equal(buffer.lines.get(0).translateToString(true), '汉语汉语汉', '1');
-        assert.equal(buffer.lines.get(1).translateToString(true), '语汉语汉语', '2');
+        assert.equal(buffer.lines.get(0).translateToString(true), '汉语汉语汉');
+        assert.equal(buffer.lines.get(1).translateToString(true), '语汉语汉语');
         assert.equal(buffer.lines.get(2).translateToString(true), '汉语');
         buffer.resize(10, 10);
         assert.equal(buffer.lines.get(0).translateToString(true), '汉语汉语汉');

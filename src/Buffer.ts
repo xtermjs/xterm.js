@@ -429,7 +429,7 @@ export class Buffer implements IBuffer {
       let destCol = destLineLengths[destLineIndex]; // cellsNeeded % newCols;
       if (destCol === 0) {
         destLineIndex--;
-        destCol = newCols;
+        destCol = destLineLengths[destLineIndex];
       }
       let srcLineIndex = wrappedLines.length - linesToAdd - 1;
       let srcCol = lastLineLength;
@@ -446,6 +446,13 @@ export class Buffer implements IBuffer {
           srcLineIndex--;
           // TODO: srcCol shoudl take trimmed length into account
           srcCol = wrappedLines[Math.max(srcLineIndex, 0)].getTrimmedLength(); // this._cols;
+        }
+      }
+
+      // Null out the end of the line ends if a wide character wrapped to the following line
+      for (let i = 0; i < wrappedLines.length; i++) {
+        if (destLineLengths[i] < newCols) {
+          wrappedLines[i].set(destLineLengths[i], FILL_CHAR_DATA);
         }
       }
 

@@ -80,21 +80,22 @@ export function reflowSmallerGetNewLineLengths(wrappedLines: BufferLine[], oldCo
 
   // Use srcCol and srcLine to find the new wrapping point, use that to get the cellsAvailable and
   // linesNeeded
-  let srcCol = -1;
+  let srcCol = 0;
   let srcLine = 0;
   let cellsAvailable = 0;
   while (cellsAvailable < cellsNeeded) {
-    srcCol += newCols;
-    if (srcCol >= oldCols) {
-      srcCol -= oldCols;
-      srcLine++;
-    }
-    if (srcLine >= wrappedLines.length) {
+    if (cellsNeeded - cellsAvailable < newCols) {
       // Add the final line and exit the loop
       newLineLengths.push(cellsNeeded - cellsAvailable);
       break;
     }
-    const endsWithWide = wrappedLines[srcLine].getWidth(srcCol) === 2;
+    srcCol += newCols;
+    const oldTrimmedLength = wrappedLines[srcLine].getTrimmedLength();
+    if (srcCol > oldTrimmedLength) {
+      srcCol -= oldTrimmedLength;
+      srcLine++;
+    }
+    const endsWithWide = wrappedLines[srcLine].getWidth(srcCol - 1) === 2;
     if (endsWithWide) {
       srcCol--;
     }
