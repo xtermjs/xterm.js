@@ -4,11 +4,13 @@
  */
 
 import { BufferLine } from './BufferLine';
-import { CircularList } from './common/CircularList';
+import { CircularList, IDeleteEvent } from './common/CircularList';
 import { IBufferLine } from './Types';
 import { FILL_CHAR_DATA } from './Buffer';
 
 export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, newCols: number): number[] {
+  // Gather all BufferLines that need to be removed from the Buffer here so that they can be
+  // batched up and only committed once
   const toRemove: number[] = [];
 
   for (let y = 0; y < lines.length - 1; y++) {
@@ -81,6 +83,45 @@ export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, n
     y += wrappedLines.length - 1;
   }
   return toRemove;
+}
+
+export function reflowLargerCreateNewLayout(lines: CircularList<IBufferLine>, toRemove: number[], newLayout: number[]): number {
+  // First iterate through the list and get the actual indexes to use for rows
+  let nextToRemoveIndex = 0;
+  let nextToRemoveStart = toRemove[nextToRemoveIndex];
+  let countRemovedSoFar = 0;
+  for (let i = 0; i < lines.length; i++) {
+    if (nextToRemoveStart === i) {
+      const countToRemove = toRemove[++nextToRemoveIndex];
+
+      // Tell markers that there was a deletion
+      lines.emit('delete', {
+        index: i - countRemovedSoFar,
+        amount: countToRemove
+      } as IDeleteEvent);
+
+      i += countToRemove - 1;
+      countRemovedSoFar += countToRemove;
+      nextToRemoveStart = toRemove[++nextToRemoveIndex];
+    } else {
+      newLayout.push(i);
+    }
+  }
+  return countRemovedSoFar;
+}
+
+export function reflowLargerApplyNewLayout(lines: CircularList<IBufferLine>, newLayout: number[]): void {
+  // Record original lines so they don't get overridden when we rearrange the list
+  const newLayoutLines: BufferLine[] = [];
+  for (let i = 0; i < newLayout.length; i++) {
+    newLayoutLines.push(lines.get(newLayout[i]) as BufferLine);
+  }
+
+  // Rearrange the list
+  for (let i = 0; i < newLayoutLines.length; i++) {
+    lines.set(i, newLayoutLines[i]);
+  }
+  lines.length = newLayout.length;
 }
 
 /**

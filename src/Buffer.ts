@@ -9,7 +9,7 @@ import { EventEmitter } from './common/EventEmitter';
 import { IMarker } from 'xterm';
 import { BufferLine } from './BufferLine';
 import { DEFAULT_COLOR } from './renderer/atlas/Types';
-import { reflowSmallerGetNewLineLengths, reflowLargerGetLinesToRemove } from './BufferReflow';
+import { reflowSmallerGetNewLineLengths, reflowLargerGetLinesToRemove, reflowLargerCreateNewLayout, reflowLargerApplyNewLayout } from './BufferReflow';
 
 export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
 export const CHAR_DATA_ATTR_INDEX = 0;
@@ -240,62 +240,28 @@ export class Buffer implements IBuffer {
   }
 
   private _reflowLarger(newCols: number): void {
-    // TODO: Can toRemove be pulled out into BufferReflow?
-
-    // Gather all BufferLines that need to be removed from the Buffer here so that they can be
-    // batched up and only committed once
     const toRemove: number[] = reflowLargerGetLinesToRemove(this.lines, newCols);
-
     if (toRemove.length > 0) {
-      // First iterate through the list and get the actual indexes to use for rows
       const newLayout: number[] = [];
+      const countRemoved = reflowLargerCreateNewLayout(this.lines, toRemove, newLayout);
+      reflowLargerApplyNewLayout(this.lines, newLayout);
+      this._reflowLargerAdjustViewport(newCols, countRemoved);
+    }
+  }
 
-      let nextToRemoveIndex = 0;
-      let nextToRemoveStart = toRemove[nextToRemoveIndex];
-      let countRemovedSoFar = 0;
-      for (let i = 0; i < this.lines.length; i++) {
-        if (nextToRemoveStart === i) {
-          const countToRemove = toRemove[++nextToRemoveIndex];
-
-          // Tell markers that there was a deletion
-          this.lines.emit('delete', {
-            index: i - countRemovedSoFar,
-            amount: countToRemove
-          } as IDeleteEvent);
-
-          i += countToRemove - 1;
-          countRemovedSoFar += countToRemove;
-          nextToRemoveStart = toRemove[++nextToRemoveIndex];
-        } else {
-          newLayout.push(i);
+  private _reflowLargerAdjustViewport(newCols: number, countRemoved: number): void {
+    // Adjust viewport based on number of items removed
+    let viewportAdjustments = countRemoved;
+    while (viewportAdjustments-- > 0) {
+      if (this.ybase === 0) {
+        this.y--;
+        // Add an extra row at the bottom of the viewport
+        this.lines.push(new BufferLine(newCols, FILL_CHAR_DATA));
+      } else {
+        if (this.ydisp === this.ybase) {
+          this.ydisp--;
         }
-      }
-
-      // Record original lines so they don't get overridden when we rearrange the list
-      const newLayoutLines: BufferLine[] = [];
-      for (let i = 0; i < newLayout.length; i++) {
-        newLayoutLines.push(this.lines.get(newLayout[i]) as BufferLine);
-      }
-
-      // Rearrange the list
-      for (let i = 0; i < newLayoutLines.length; i++) {
-        this.lines.set(i, newLayoutLines[i]);
-      }
-      this.lines.length = newLayout.length;
-
-      // Adjust viewport based on number of items removed
-      let viewportAdjustments = countRemovedSoFar;
-      while (viewportAdjustments-- > 0) {
-        if (this.ybase === 0) {
-          this.y--;
-          // Add an extra row at the bottom of the viewport
-          this.lines.push(new BufferLine(newCols, FILL_CHAR_DATA));
-        } else {
-          if (this.ydisp === this.ybase) {
-            this.ydisp--;
-          }
-          this.ybase--;
-        }
+        this.ybase--;
       }
     }
   }
