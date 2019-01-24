@@ -4,6 +4,84 @@
  */
 
 import { BufferLine } from './BufferLine';
+import { CircularList } from './common/CircularList';
+import { IBufferLine } from './Types';
+import { FILL_CHAR_DATA } from './Buffer';
+
+export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, newCols: number): number[] {
+  const toRemove: number[] = [];
+
+  for (let y = 0; y < lines.length - 1; y++) {
+    // Check if this row is wrapped
+    let i = y;
+    let nextLine = lines.get(++i) as BufferLine;
+    if (!nextLine.isWrapped) {
+      continue;
+    }
+
+    // Check how many lines it's wrapped for
+    const wrappedLines: BufferLine[] = [lines.get(y) as BufferLine];
+    while (i < lines.length && nextLine.isWrapped) {
+      wrappedLines.push(nextLine);
+      nextLine = lines.get(++i) as BufferLine;
+    }
+
+    // Copy buffer data to new locations
+    let destLineIndex = 0;
+    let destCol = wrappedLines[destLineIndex].getTrimmedLength();
+    let srcLineIndex = 1;
+    let srcCol = 0;
+    while (srcLineIndex < wrappedLines.length) {
+      const srcTrimmedTineLength = wrappedLines[srcLineIndex].getTrimmedLength();
+      const srcRemainingCells = srcTrimmedTineLength - srcCol;
+      const destRemainingCells = newCols - destCol;
+      const cellsToCopy = Math.min(srcRemainingCells, destRemainingCells);
+
+      wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[srcLineIndex], srcCol, destCol, cellsToCopy, false);
+
+      destCol += cellsToCopy;
+      if (destCol === newCols) {
+        destLineIndex++;
+        destCol = 0;
+      }
+      srcCol += cellsToCopy;
+      if (srcCol === srcTrimmedTineLength) {
+        srcLineIndex++;
+        srcCol = 0;
+      }
+
+      // Make sure the last cell isn't wide, if it is copy it to the current dest
+      if (destCol === 0) {
+        if (wrappedLines[destLineIndex - 1].getWidth(newCols - 1) === 2) {
+          wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[destLineIndex - 1], newCols - 1, destCol++, 1, false);
+          // Null out the end of the last row
+          wrappedLines[destLineIndex - 1].set(newCols - 1, FILL_CHAR_DATA);
+        }
+      }
+    }
+
+    // Clear out remaining cells or fragments could remain;
+    wrappedLines[destLineIndex].replaceCells(destCol, newCols, FILL_CHAR_DATA);
+
+    // Work backwards and remove any rows at the end that only contain null cells
+    let countToRemove = 0;
+    for (let i = wrappedLines.length - 1; i > 0; i--) {
+      if (i > destLineIndex || wrappedLines[i].getTrimmedLength() === 0) {
+        countToRemove++;
+      } else {
+        break;
+      }
+    }
+
+    if (countToRemove > 0) {
+      toRemove.push(y + wrappedLines.length - countToRemove); // index
+      toRemove.push(countToRemove);
+    }
+
+    y += wrappedLines.length - 1;
+  }
+  return toRemove;
+}
 
 /**
  * Gets the new line lengths for a given wrapped line. The purpose of this function it to pre-
