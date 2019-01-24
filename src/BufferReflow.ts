@@ -13,6 +13,12 @@ export interface INewLayoutResult {
   countRemoved: number;
 }
 
+/**
+ * Evaluates and returns indexes to be removed after a reflow larger occurs. Lines will be removed
+ * when a wrapped line unwraps.
+ * @param lines The buffer lines.
+ * @param newCols The columns after resize.
+ */
 export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, newCols: number): number[] {
   // Gather all BufferLines that need to be removed from the Buffer here so that they can be
   // batched up and only committed once
@@ -90,6 +96,11 @@ export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, n
   return toRemove;
 }
 
+/**
+ * Creates and return the new layout for lines given an array of indexes to be removed.
+ * @param lines The buffer lines.
+ * @param toRemove The indexes to remove.
+ */
 export function reflowLargerCreateNewLayout(lines: CircularList<IBufferLine>, toRemove: number[]): INewLayoutResult {
   const layout: number[] = [];
   // First iterate through the list and get the actual indexes to use for rows
@@ -119,6 +130,12 @@ export function reflowLargerCreateNewLayout(lines: CircularList<IBufferLine>, to
   };
 }
 
+/**
+ * Applies a new layout to the buffer. This essentially does the same as many splice calls but it's
+ * done all at once in a single iteration through the list since splice is very expensive.
+ * @param lines The buffer lines.
+ * @param newLayout The new layout to apply.
+ */
 export function reflowLargerApplyNewLayout(lines: CircularList<IBufferLine>, newLayout: number[]): void {
   // Record original lines so they don't get overridden when we rearrange the list
   const newLayoutLines: BufferLine[] = [];
