@@ -2,6 +2,7 @@
  * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
  */
+import { TypedArray } from '../../common/Types';
 
 /**
  * StringToUtf32 - decodes UTF16 sequences into UTF32 codepoints.
@@ -73,15 +74,31 @@ export class StringToUtf32 {
 }
 
 /**
- * Polyfill - Convert UTF32 codepoint into JS string.
+ * Convert UTF32 codepoint into JS string.
  */
 export function stringFromCodePoint(codePoint: number): string {
-  if ((String as any).fromCodePoint) {
-    return (String as any).fromCodePoint(codePoint);
-  }
   if (codePoint > 0xFFFF) {
     codePoint -= 0x10000;
     return String.fromCharCode((codePoint >> 10) + 0xD800) + String.fromCharCode((codePoint % 0x400) + 0xDC00);
   }
   return String.fromCharCode(codePoint);
+}
+
+/**
+ * Convert UTF32 char codes into JS string.
+ * Basically the same as `stringFromCodePoint` but for multiple codepoints
+ * in a loop (which is a lot faster).
+ */
+export function utf32ToString<T extends TypedArray>(data: T, start: number = 0, end: number = data.length): string {
+  let result = '';
+  let cp;
+  for (let i = start; i < end; ++i) {
+    if ((cp = data[i]) > 0xFFFF) {
+      cp -= 0x10000;
+      result += String.fromCharCode((cp >> 10) + 0xD800) + String.fromCharCode((cp % 0x400) + 0xDC00);
+    } else {
+      result += String.fromCharCode(cp);
+    }
+  }
+  return result;
 }

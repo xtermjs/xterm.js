@@ -14,8 +14,8 @@ import { EscapeSequenceParser } from './EscapeSequenceParser';
 import { ICharset } from './core/Types';
 import { IDisposable } from 'xterm';
 import { Disposable } from './common/Lifecycle';
-import { concat, utf32ToString } from './common/TypedArrayUtils';
-import { StringToUtf32, stringFromCodePoint } from './core/input/TextDecoder';
+import { concat } from './common/TypedArrayUtils';
+import { StringToUtf32, stringFromCodePoint, utf32ToString } from './core/input/TextDecoder';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
