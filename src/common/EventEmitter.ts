@@ -23,7 +23,7 @@ export class EventEmitter extends Disposable implements IEventEmitter, IDisposab
   }
 
   /**
-   * Adds a disposabe listener to the EventEmitter, returning the disposable.
+   * Adds a disposable listener to the EventEmitter, returning the disposable.
    * @param type The event type.
    * @param handler The handler for the listener.
    */
@@ -72,6 +72,19 @@ export class EventEmitter extends Disposable implements IEventEmitter, IDisposab
     const obj = this._events[type];
     for (let i = 0; i < obj.length; i++) {
       obj[i].apply(this, args);
+    }
+  }
+
+  public emitMayRemoveListeners(type: string, ...args: any[]): void {
+    if (!this._events[type]) {
+      return;
+    }
+    const obj = this._events[type];
+    let length = obj.length;
+    for (let i = 0; i < obj.length; i++) {
+      obj[i].apply(this, args);
+      i -= length - obj.length;
+      length = obj.length;
     }
   }
 

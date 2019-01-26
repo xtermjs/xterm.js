@@ -492,6 +492,8 @@ export interface IEscapeSequenceParser extends IDisposable {
   setCsiHandler(flag: string, callback: (params: number[], collect: string) => void): void;
   clearCsiHandler(flag: string): void;
   setCsiHandlerFallback(callback: (collect: string, params: number[], flag: number) => void): void;
+  addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable;
+  addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
 
   setEscHandler(collectAndFlag: string, callback: () => void): void;
   clearEscHandler(collectAndFlag: string): void;
@@ -520,14 +522,10 @@ export interface IBufferLine {
   insertCells(pos: number, n: number, ch: CharData): void;
   deleteCells(pos: number, n: number, fill: CharData): void;
   replaceCells(start: number, end: number, fill: CharData): void;
-  resize(cols: number, fill: CharData, shrink?: boolean): void;
+  resize(cols: number, fill: CharData): void;
   fill(fillCharData: CharData): void;
   copyFrom(line: IBufferLine): void;
   clone(): IBufferLine;
   getTrimmedLength(): number;
   translateToString(trimRight?: boolean, startCol?: number, endCol?: number): string;
-}
-
-export interface IBufferLineConstructor {
-  new(cols: number, fillCharData?: CharData, isWrapped?: boolean): IBufferLine;
 }
