@@ -215,7 +215,7 @@ export class GlyphRenderer {
 
     // TODO: Make fg and bg configurable, currently since the buffer doesn't
     // support truecolor the char atlas cannot store it.
-    const lumi = this._colorManager.getLuminance(this._colorManager.colors.background)
+    const lumi = this._colorManager.getLuminance(this._colorManager.colors.background);
     const fg = lumi > 0.5 ? 7 : 0;
     const bg = lumi > 0.5 ? 0 : 7;
 
