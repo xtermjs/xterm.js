@@ -222,7 +222,9 @@ export class SearchHelper implements ISearchHelper {
       }
     } else {
       if (isReverseSearch) {
-        resultIndex = searchStringLine.lastIndexOf(searchTerm, col - searchTerm.length);
+        if (col - searchTerm.length >= 0) {
+          resultIndex = searchStringLine.lastIndexOf(searchTerm, col - searchTerm.length);
+        }
       } else {
         resultIndex = searchStringLine.indexOf(searchTerm, col);
       }

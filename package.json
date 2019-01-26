@@ -1,7 +1,7 @@
 {
   "name": "xterm",
   "description": "Full xterm terminal, in your browser",
-  "version": "3.9.0",
+  "version": "3.10.0",
   "main": "lib/public/Terminal.js",
   "types": "typings/xterm.d.ts",
   "repository": "https://github.com/xtermjs/xterm.js",
@@ -34,7 +34,7 @@
     "nodemon": "1.10.2",
     "nyc": "^11.8.0",
     "sorcery": "^0.10.0",
-    "source-map-loader": "^0.2.3",
+    "source-map-loader": "^0.2.4",
     "ts-loader": "^4.5.0",
     "tslint": "^5.9.1",
     "tslint-consistent-codestyle": "^1.13.0",
@@ -47,6 +47,7 @@
   },
   "scripts": {
     "start": "node demo/start",
+    "start-debug": "node --inspect-brk demo/start",
     "start-zmodem": "node demo/zmodem/app",
     "lint": "tslint 'src/**/*.ts' './demo/**/*.ts'",
     "pretest": "npm run layering",

@@ -71,6 +71,9 @@ const WRITE_BUFFER_PAUSE_THRESHOLD = 5;
  */
 const WRITE_TIMEOUT_MS = 12;
 
+const MINIMUM_COLS = 2; // Less than 2 can mess with wide chars
+const MINIMUM_ROWS = 1;
+
 /**
  * The set of options that only have an effect when set in the Terminal constructor.
  */
@@ -107,8 +110,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   tabStopWidth: 8,
   theme: null,
   rightClickSelectsWord: Browser.isMac,
-  rendererType: 'canvas',
-  experimentalBufferLineImpl: 'TypedArray'
+  rendererType: 'canvas'
 };
 
 export class Terminal extends EventEmitter implements ITerminal, IDisposable, IInputHandlingTerminal {
@@ -265,8 +267,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // TODO: WHy not document.body?
     this._parent = document ? document.body : null;
 
-    this.cols = this.options.cols;
-    this.rows = this.options.rows;
+    this.cols = Math.max(this.options.cols, MINIMUM_COLS);
+    this.rows = Math.max(this.options.rows, MINIMUM_ROWS);
 
     if (this.options.handler) {
       this.on('data', this.options.handler);
@@ -499,11 +501,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         }
         break;
       case 'tabStopWidth': this.buffers.setupTabStops(); break;
-      case 'experimentalBufferLineImpl':
-        this.buffers.normal.setBufferLineFactory(value);
-        this.buffers.alt.setBufferLineFactory(value);
-        this._blankLine = null;
-        break;
     }
     // Inform renderer of changes
     if (this.renderer) {
@@ -741,6 +738,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this.selectionManager.refresh()));
 
     this.mouseHelper = new MouseHelper(this.renderer);
+    // apply mouse event classes set by escape codes before terminal was attached
+    this.element.classList.toggle('enable-mouse-events', this.mouseEvents);
 
     if (this.options.screenReaderMode) {
       // Note that this must be done *after* the renderer is created in order to
@@ -1182,17 +1181,12 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   public scroll(isWrapped: boolean = false): void {
     let newLine: IBufferLine;
-    const useRecycling = this.options.experimentalBufferLineImpl !== 'JsArray';
-    if (useRecycling) {
-      newLine = this._blankLine;
-      if (!newLine || newLine.length !== this.cols || newLine.get(0)[CHAR_DATA_ATTR_INDEX] !== this.eraseAttr()) {
-        newLine = this.buffer.getBlankLine(this.eraseAttr(), isWrapped);
-        this._blankLine = newLine;
-      }
-      newLine.isWrapped = isWrapped;
-    } else {
+    newLine = this._blankLine;
+    if (!newLine || newLine.length !== this.cols || newLine.get(0)[CHAR_DATA_ATTR_INDEX] !== this.eraseAttr()) {
       newLine = this.buffer.getBlankLine(this.eraseAttr(), isWrapped);
+      this._blankLine = newLine;
     }
+    newLine.isWrapped = isWrapped;
 
     const topRow = this.buffer.ybase + this.buffer.scrollTop;
     const bottomRow = this.buffer.ybase + this.buffer.scrollBottom;
@@ -1203,17 +1197,13 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
       // Insert the line using the fastest method
       if (bottomRow === this.buffer.lines.length - 1) {
-        if (useRecycling) {
-          if (willBufferBeTrimmed) {
-            this.buffer.lines.recycle().copyFrom(newLine);
-          } else {
-            this.buffer.lines.push(newLine.clone());
-          }
+        if (willBufferBeTrimmed) {
+          this.buffer.lines.recycle().copyFrom(newLine);
         } else {
-          this.buffer.lines.push(newLine);
+          this.buffer.lines.push(newLine.clone());
         }
       } else {
-        this.buffer.lines.splice(bottomRow + 1, 0, (useRecycling) ? newLine.clone() : newLine);
+        this.buffer.lines.splice(bottomRow + 1, 0, newLine.clone());
       }
 
       // Only adjust ybase and ydisp when the buffer is not trimmed
@@ -1235,7 +1225,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // scrollback, instead we can just shift them in-place.
       const scrollRegionHeight = bottomRow - topRow + 1/*as it's zero-based*/;
       this.buffer.lines.shiftElements(topRow + 1, scrollRegionHeight - 1, -1);
-      this.buffer.lines.set(bottomRow, (useRecycling) ? newLine.clone() : newLine);
+      this.buffer.lines.set(bottomRow, newLine.clone());
     }
 
     // Move the viewport to the bottom of the buffer unless the user is
@@ -1412,11 +1402,20 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * processed by the terminal and what keys should not.
    * @param customKeyEventHandler The custom KeyboardEvent handler to attach.
    * This is a function that takes a KeyboardEvent, allowing consumers to stop
-   * propogation and/or prevent the default action. The function returns whether
+   * propagation and/or prevent the default action. The function returns whether
    * the event should be processed by xterm.js.
    */
   public attachCustomKeyEventHandler(customKeyEventHandler: CustomKeyEventHandler): void {
     this._customKeyEventHandler = customKeyEventHandler;
+  }
+
+  /** Add handler for CSI escape sequence. See xterm.d.ts for details. */
+  public addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable {
+    return this._inputHandler.addCsiHandler(flag, callback);
+  }
+  /** Add handler for OSC escape sequence. See xterm.d.ts for details. */
+  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
+    return this._inputHandler.addOscHandler(ident, callback);
   }
 
   /**
@@ -1703,8 +1702,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       return;
     }
 
-    if (x < 1) x = 1;
-    if (y < 1) y = 1;
+    if (x < MINIMUM_COLS) x = MINIMUM_COLS;
+    if (y < MINIMUM_ROWS) y = MINIMUM_ROWS;
 
     this.buffers.resize(x, y);
 

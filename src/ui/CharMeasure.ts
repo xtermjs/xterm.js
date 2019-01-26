@@ -38,7 +38,7 @@ export class CharMeasure extends EventEmitter implements ICharMeasure {
   }
 
   public measure(options: ITerminalOptions): void {
-  this._measureElement.style.fontFamily = options.fontFamily;
+    this._measureElement.style.fontFamily = options.fontFamily;
     this._measureElement.style.fontSize = `${options.fontSize}px`;
     const geometry = this._measureElement.getBoundingClientRect();
     // The element is likely currently display:none, we should retain the
@@ -46,9 +46,10 @@ export class CharMeasure extends EventEmitter implements ICharMeasure {
     if (geometry.width === 0 || geometry.height === 0) {
       return;
     }
-    if (this._width !== geometry.width || this._height !== geometry.height) {
+    const adjustedHeight = Math.ceil(geometry.height);
+    if (this._width !== geometry.width || this._height !== adjustedHeight) {
       this._width = geometry.width;
-      this._height = Math.ceil(geometry.height);
+      this._height = adjustedHeight;
       this.emit('charsizechanged');
     }
   }
