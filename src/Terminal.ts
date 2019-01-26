@@ -70,6 +70,9 @@ const WRITE_BUFFER_PAUSE_THRESHOLD = 5;
  */
 const WRITE_BATCH_SIZE = 300;
 
+const MINIMUM_COLS = 2; // Less than 2 can mess with wide chars
+const MINIMUM_ROWS = 1;
+
 /**
  * The set of options that only have an effect when set in the Terminal constructor.
  */
@@ -263,8 +266,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // TODO: WHy not document.body?
     this._parent = document ? document.body : null;
 
-    this.cols = this.options.cols;
-    this.rows = this.options.rows;
+    this.cols = Math.max(this.options.cols, MINIMUM_COLS);
+    this.rows = Math.max(this.options.rows, MINIMUM_ROWS);
 
     if (this.options.handler) {
       this.on('data', this.options.handler);
@@ -734,6 +737,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this.selectionManager.refresh()));
 
     this.mouseHelper = new MouseHelper(this.renderer);
+    // apply mouse event classes set by escape codes before terminal was attached
+    this.element.classList.toggle('enable-mouse-events', this.mouseEvents);
 
     if (this.options.screenReaderMode) {
       // Note that this must be done *after* the renderer is created in order to
@@ -1693,8 +1698,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       return;
     }
 
-    if (x < 1) x = 1;
-    if (y < 1) y = 1;
+    if (x < MINIMUM_COLS) x = MINIMUM_COLS;
+    if (y < MINIMUM_ROWS) y = MINIMUM_ROWS;
 
     this.buffers.resize(x, y);
 
