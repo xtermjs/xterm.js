@@ -54,6 +54,10 @@ export class BufferLine implements IBufferLine {
     ];
   }
 
+  public getWidth(index: number): number {
+    return this._data[index * CELL_SIZE + Cell.WIDTH];
+  }
+
   public set(index: number, value: CharData): void {
     this._data[index * CELL_SIZE + Cell.FLAGS] = value[0];
     if (value[1].length > 1) {
@@ -103,8 +107,8 @@ export class BufferLine implements IBufferLine {
     }
   }
 
-  public resize(cols: number, fillCharData: CharData, shrink: boolean = false): void {
-    if (cols === this.length || (!shrink && cols < this.length)) {
+  public resize(cols: number, fillCharData: CharData): void {
+    if (cols === this.length) {
       return;
     }
     if (cols > this.length) {
@@ -120,13 +124,22 @@ export class BufferLine implements IBufferLine {
       for (let i = this.length; i < cols; ++i) {
         this.set(i, fillCharData);
       }
-    } else if (shrink) {
+    } else {
       if (cols) {
         const data = new Uint32Array(cols * CELL_SIZE);
         data.set(this._data.subarray(0, cols * CELL_SIZE));
         this._data = data;
+        // Remove any cut off combined data
+        const keys = Object.keys(this._combined);
+        for (let i = 0; i < keys.length; i++) {
+          const key = parseInt(keys[i], 10);
+          if (key >= cols) {
+            delete this._combined[key];
+          }
+        }
       } else {
         this._data = null;
+        this._combined = {};
       }
     }
     this.length = cols;
@@ -177,6 +190,32 @@ export class BufferLine implements IBufferLine {
       }
     }
     return 0;
+  }
+
+  public copyCellsFrom(src: BufferLine, srcCol: number, destCol: number, length: number, applyInReverse: boolean): void {
+    const srcData = src._data;
+    if (applyInReverse) {
+      for (let cell = length - 1; cell >= 0; cell--) {
+        for (let i = 0; i < CELL_SIZE; i++) {
+          this._data[(destCol + cell) * CELL_SIZE + i] = srcData[(srcCol + cell) * CELL_SIZE + i];
+        }
+      }
+    } else {
+      for (let cell = 0; cell < length; cell++) {
+        for (let i = 0; i < CELL_SIZE; i++) {
+          this._data[(destCol + cell) * CELL_SIZE + i] = srcData[(srcCol + cell) * CELL_SIZE + i];
+        }
+      }
+    }
+
+    // Move any combined data over as needed
+    const srcCombinedKeys = Object.keys(src._combined);
+    for (let i = 0; i < srcCombinedKeys.length; i++) {
+      const key = parseInt(srcCombinedKeys[i], 10);
+      if (key >= srcCol) {
+        this._combined[key - srcCol + destCol] = src._combined[key];
+      }
+    }
   }
 
   public translateToString(trimRight: boolean = false, startCol: number = 0, endCol: number = this.length): string {

@@ -6,6 +6,16 @@
 import { EventEmitter } from './EventEmitter';
 import { ICircularList } from './Types';
 
+export interface IInsertEvent {
+  index: number;
+  amount: number;
+}
+
+export interface IDeleteEvent {
+  index: number;
+  amount: number;
+}
+
 /**
  * Represents a circular list; a list with a maximum size that wraps around when push is called,
  * overriding values at the start of the list.
@@ -91,7 +101,7 @@ export class CircularList<T> extends EventEmitter implements ICircularList<T> {
     this._array[this._getCyclicIndex(this._length)] = value;
     if (this._length === this._maxLength) {
       this._startIndex = ++this._startIndex % this._maxLength;
-      this.emit('trim', 1);
+      this.emitMayRemoveListeners('trim', 1);
     } else {
       this._length++;
     }
@@ -107,7 +117,7 @@ export class CircularList<T> extends EventEmitter implements ICircularList<T> {
       throw new Error('Can only recycle when the buffer is full');
     }
     this._startIndex = ++this._startIndex % this._maxLength;
-    this.emit('trim', 1);
+    this.emitMayRemoveListeners('trim', 1);
     return this._array[this._getCyclicIndex(this._length - 1)]!;
   }
 
@@ -157,7 +167,7 @@ export class CircularList<T> extends EventEmitter implements ICircularList<T> {
       const countToTrim = (this._length + items.length) - this._maxLength;
       this._startIndex += countToTrim;
       this._length = this._maxLength;
-      this.emit('trim', countToTrim);
+      this.emitMayRemoveListeners('trim', countToTrim);
     } else {
       this._length += items.length;
     }
@@ -173,7 +183,7 @@ export class CircularList<T> extends EventEmitter implements ICircularList<T> {
     }
     this._startIndex += count;
     this._length -= count;
-    this.emit('trim', count);
+    this.emitMayRemoveListeners('trim', count);
   }
 
   public shiftElements(start: number, count: number, offset: number): void {
@@ -197,7 +207,7 @@ export class CircularList<T> extends EventEmitter implements ICircularList<T> {
         while (this._length > this._maxLength) {
           this._length--;
           this._startIndex++;
-          this.emit('trim', 1);
+          this.emitMayRemoveListeners('trim', 1);
         }
       }
     } else {
