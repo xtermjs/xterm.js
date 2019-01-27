@@ -2,7 +2,6 @@
  * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { TypedArray } from '../../common/Types';
 
 /**
  * StringToUtf32 - decodes UTF16 sequences into UTF32 codepoints.
@@ -78,6 +77,7 @@ export class StringToUtf32 {
  */
 export function stringFromCodePoint(codePoint: number): string {
   if (codePoint > 0xFFFF) {
+    // UTF32 to UTF16 conversion (see comments in utf32ToString)
     codePoint -= 0x10000;
     return String.fromCharCode((codePoint >> 10) + 0xD800) + String.fromCharCode((codePoint % 0x400) + 0xDC00);
   }
@@ -89,15 +89,20 @@ export function stringFromCodePoint(codePoint: number): string {
  * Basically the same as `stringFromCodePoint` but for multiple codepoints
  * in a loop (which is a lot faster).
  */
-export function utf32ToString<T extends TypedArray>(data: T, start: number = 0, end: number = data.length): string {
+export function utf32ToString(data: Uint32Array, start: number = 0, end: number = data.length): string {
   let result = '';
-  let cp;
   for (let i = start; i < end; ++i) {
-    if ((cp = data[i]) > 0xFFFF) {
-      cp -= 0x10000;
-      result += String.fromCharCode((cp >> 10) + 0xD800) + String.fromCharCode((cp % 0x400) + 0xDC00);
+    let codepoint = data[i];
+    if (codepoint > 0xFFFF) {
+      // JS string are encoded as UTF16, thus a non BMP codepoint gets converted into a surrogate pair
+      // conversion rules:
+      //  - subtract 0x10000 from code point, leaving a 20 bit number
+      //  - add high 10 bits to 0xD800  --> first surrogate
+      //  - add low 10 bits to 0xDC00   --> second surrogate
+      codepoint -= 0x10000;
+      result += String.fromCharCode((codepoint >> 10) + 0xD800) + String.fromCharCode((codepoint % 0x400) + 0xDC00);
     } else {
-      result += String.fromCharCode(cp);
+      result += String.fromCharCode(codepoint);
     }
   }
   return result;
