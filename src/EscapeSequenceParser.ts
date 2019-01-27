@@ -6,7 +6,7 @@
 import { ParserState, ParserAction, IParsingState, IDcsHandler, IEscapeSequenceParser } from './Types';
 import { IDisposable } from 'xterm';
 import { Disposable } from './common/Lifecycle';
-import { utf32ToString } from './common/TypedArrayUtils';
+import { utf32ToString } from './core/input/TextDecoder';
 
 interface IHandlerCollection<T> {
   [key: string]: T[];

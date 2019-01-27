@@ -3,7 +3,7 @@
  * @license MIT
  */
 import { assert } from 'chai';
-import { fillFallback, concat, utf32ToString } from './TypedArrayUtils';
+import { fillFallback, concat } from './TypedArrayUtils';
 
 type TypedArray = Uint8Array | Uint16Array | Uint32Array | Uint8ClampedArray
   | Int8Array | Int16Array | Int32Array
@@ -93,13 +93,5 @@ describe('typed array convenience functions', () => {
     const b = new Uint8Array([6, 7, 8, 9, 0]);
     const merged = concat(a, b);
     deepEquals(merged, new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 0]));
-  });
-  it('utf16ToString', () => {
-    const s = 'abcdefg';
-    const data = new Uint16Array(s.length);
-    for (let i = 0; i < s.length; ++i) {
-      data[i] = s.charCodeAt(i);
-    }
-    assert.equal(utf32ToString(data), s);
   });
 });
