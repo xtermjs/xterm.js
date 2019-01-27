@@ -60,7 +60,7 @@ export const enum Content {
    *              whether a cell contains anything
    *              read:   `isEmtpy = !(content & Content.hasContent)`
    */
-  HAS_CONTENT = 0x2FFFFF,
+  HAS_CONTENT = 0x3FFFFF,
 
   /**
    * bit 23..24   wcwidth value of cell, takes 2 bits (ranges from 0..2)
