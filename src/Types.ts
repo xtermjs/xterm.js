@@ -237,7 +237,7 @@ export interface IBufferAccessor {
 }
 
 export interface IElementAccessor {
-  element: HTMLElement;
+  readonly element: HTMLElement;
 }
 
 export interface ILinkifierAccessor {
