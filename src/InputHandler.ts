@@ -25,26 +25,6 @@ const GLEVEL: {[key: string]: number} = {'(': 0, ')': 1, '*': 2, '+': 3, '-': 1,
  * DCS subparser implementations
  */
 
- /**
-  * DCS + q Pt ST (xterm)
-  *   Request Terminfo String
-  *   not supported
-  */
-class RequestTerminfo implements IDcsHandler {
-  private _data: string;
-  constructor(private _terminal: any) { }
-  hook(collect: string, params: number[], flag: number): void {
-    this._data = '';
-  }
-  put(data: string, start: number, end: number): void {
-    this._data += data.substring(start, end);
-  }
-  unhook(): void {
-    // invalid: DCS 0 + r Pt ST
-    this._terminal.handler(`${C0.ESC}P0+r${this._data}${C0.ESC}\\`);
-  }
-}
-
 /**
  * DCS $ q Pt ST
  *   DECRQSS (https://vt100.net/docs/vt510-rm/DECRQSS.html)
@@ -87,7 +67,7 @@ class DECRQSS implements IDcsHandler {
       default:
         // invalid: DCS 0 $ r Pt ST (xterm)
         this._terminal.error('Unknown DCS $q %s', this._data);
-        this._terminal.handler(`${C0.ESC}P0$r${this._data}${C0.ESC}\\`);
+        this._terminal.handler(`${C0.ESC}P0$r${C0.ESC}\\`);
     }
   }
 }
@@ -288,7 +268,6 @@ export class InputHandler extends Disposable implements IInputHandler {
      * DCS handler
      */
     this._parser.setDcsHandler('$q', new DECRQSS(this._terminal));
-    this._parser.setDcsHandler('+q', new RequestTerminfo(this._terminal));
   }
 
   public dispose(): void {
@@ -1312,7 +1291,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._terminal.vt200Mouse = params[0] === 1000;
           this._terminal.normalMouse = params[0] > 1000;
           this._terminal.mouseEvents = true;
-          this._terminal.element.classList.add('enable-mouse-events');
+          if (this._terminal.element) {
+            this._terminal.element.classList.add('enable-mouse-events');
+          }
           this._terminal.selectionManager.disable();
           this._terminal.log('Binding to mouse events.');
           break;
@@ -1500,7 +1481,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._terminal.vt200Mouse = false;
           this._terminal.normalMouse = false;
           this._terminal.mouseEvents = false;
-          this._terminal.element.classList.remove('enable-mouse-events');
+          if (this._terminal.element) {
+            this._terminal.element.classList.remove('enable-mouse-events');
+          }
           this._terminal.selectionManager.enable();
           break;
         case 1004: // send focusin/focusout events
