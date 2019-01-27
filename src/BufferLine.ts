@@ -122,7 +122,9 @@ export class CellData implements ICellData {
    * of the last char in string to be in line with code in CharData.
    * */
   public get code(): number {
-    return ((this.combined) ? this.combinedData.charCodeAt(this.combinedData.length - 1) : this.content & Content.CODEPOINT_MASK);
+    return (this.combined)
+      ? this.combinedData.charCodeAt(this.combinedData.length - 1)
+      : this.content & Content.CODEPOINT_MASK;
   }
 
   /** Set data from CharData */
