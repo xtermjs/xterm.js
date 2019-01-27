@@ -2,7 +2,11 @@
  * Copyright (c) 2018 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { TypedArray } from './Types';
+
+export type TypedArray = Uint8Array | Uint16Array | Uint32Array | Uint8ClampedArray
+  | Int8Array | Int16Array | Int32Array
+  | Float32Array | Float64Array;
+
 
 /**
  * polyfill for TypedArray.fill
