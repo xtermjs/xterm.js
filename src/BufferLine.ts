@@ -78,8 +78,6 @@ export const enum Content {
 
 /**
  * CellData - represents a single Cell in the terminal buffer.
- *
- * TODO: attr getter
  */
 export class CellData implements ICellData {
 
@@ -117,7 +115,12 @@ export class CellData implements ICellData {
     return '';
   }
 
-  /** Codepoint of cell (or last charCode of combined string) */
+  /**
+   * Codepoint of cell
+   * Note this returns the UTF32 codepoint of single chars,
+   * if content is a combined string it returns the codepoint
+   * of the last char in string to be in line with code in CharData.
+   * */
   public get code(): number {
     return ((this.combined) ? this.combinedData.charCodeAt(this.combinedData.length - 1) : this.content & Content.CODEPOINT_MASK);
   }
@@ -127,10 +130,14 @@ export class CellData implements ICellData {
     this.fg = value[CHAR_DATA_ATTR_INDEX];
     this.bg = 0;
     let combined = false;
+
+    // surrogates and combined strings need special treatment
     if (value[CHAR_DATA_CHAR_INDEX].length > 2) {
       combined = true;
     } else if (value[CHAR_DATA_CHAR_INDEX].length === 2) {
       const code = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0);
+      // if the 2-char string is a surrogate create single codepoint
+      // everything else is combined
       if (0xD800 <= code && code <= 0xDBFF) {
         const second = value[CHAR_DATA_CHAR_INDEX].charCodeAt(1);
         if (0xDC00 <= second && second <= 0xDFFF) {
@@ -217,24 +224,36 @@ export class BufferLine implements IBufferLine {
     return this._data[index * CELL_SIZE + Cell.CONTENT] >> Content.WIDTH_SHIFT;
   }
 
+  /** Test whether content has width. */
   public hasWidth(index: number): number {
     return this._data[index * CELL_SIZE + Cell.CONTENT] & Content.WIDTH_MASK;
   }
 
+  /** Get FG cell component. */
   public getFG(index: number): number {
     return this._data[index * CELL_SIZE + Cell.FG];
   }
 
+  /** Get BG cell component. */
   public getBG(index: number): number {
     return this._data[index * CELL_SIZE + Cell.BG];
   }
 
+  /**
+   * Test whether contains any chars.
+   * Basically an empty has no content, but other cells might differ in FG/BG
+   * from real empty cells.
+   * */
   public hasContent(index: number): number {
     return this._data[index * CELL_SIZE + Cell.CONTENT] & Content.HAS_CONTENT;
   }
 
+  /**
+   * Get codepoint of the cell.
+   * To be in line with `code` in CharData this either returns
+   * a single UTF32 codepoint or the last codepoint of a combined string.
+   */
   public getCodePoint(index: number): number {
-    // returns either the single codepoint or the last charCode in combined
     const content = this._data[index * CELL_SIZE + Cell.CONTENT];
     if (content & Content.IS_COMBINED) {
       return this._combined[index].charCodeAt(this._combined[index].length - 1);
@@ -242,10 +261,12 @@ export class BufferLine implements IBufferLine {
     return content & Content.CODEPOINT_MASK;
   }
 
+  /** Test whether the cell contains a combined string. */
   public isCombined(index: number): number {
     return this._data[index * CELL_SIZE + Cell.CONTENT] & Content.IS_COMBINED;
   }
 
+  /** Returns the string content of the cell. */
   public getString(index: number): string {
     const content = this._data[index * CELL_SIZE + Cell.CONTENT];
     if (content & Content.IS_COMBINED) {
@@ -254,7 +275,8 @@ export class BufferLine implements IBufferLine {
     if (content & Content.CODEPOINT_MASK) {
       return stringFromCodePoint(content & Content.CODEPOINT_MASK);
     }
-    return ''; // return empty string for empty cells
+    // return empty string for empty cells
+    return '';
   }
 
   /**
@@ -276,9 +298,6 @@ export class BufferLine implements IBufferLine {
   public setCell(index: number, cell: ICellData): void {
     if (cell.content & Content.IS_COMBINED) {
       this._combined[index] = cell.combinedData;
-      // we also need to clear and set codepoint to index
-      cell.content &= ~Content.CODEPOINT_MASK;
-      cell.content |= index;
     }
     this._data[index * CELL_SIZE + Cell.CONTENT] = cell.content;
     this._data[index * CELL_SIZE + Cell.FG] = cell.fg;
