@@ -111,7 +111,7 @@ export interface ICompositionHelper {
  */
 export interface IInputHandler {
   parse(data: string): void;
-  print(data: string, start: number, end: number): void;
+  print(data: Uint32Array, start: number, end: number): void;
 
   /** C0 BEL */ bell(): void;
   /** C0 LF */ lineFeed(): void;
@@ -237,7 +237,7 @@ export interface IBufferAccessor {
 }
 
 export interface IElementAccessor {
-  element: HTMLElement;
+  readonly element: HTMLElement;
 }
 
 export interface ILinkifierAccessor {
@@ -452,18 +452,26 @@ export interface IParsingState {
 * DCS handler signature for EscapeSequenceParser.
 * EscapeSequenceParser handles DCS commands via separate
 * subparsers that get hook/unhooked and can handle
-* arbitrary amount of print data.
+* arbitrary amount of data.
+*
 * On entering a DSC sequence `hook` is called by
 * `EscapeSequenceParser`. Use it to initialize or reset
 * states needed to handle the current DCS sequence.
+* Note: A DCS parser is only instantiated once, therefore
+* you cannot rely on the ctor to reinitialize state.
+*
 * EscapeSequenceParser will call `put` several times if the
-* parsed string got splitted, therefore you might have to collect
-* `data` until `unhook` is called. `unhook` marks the end
-* of the current DCS sequence.
+* parsed data got split, therefore you might have to collect
+* `data` until `unhook` is called.
+* Note: `data` is borrowed, if you cannot process the data
+* in chunks you have to copy it, doing otherwise will lead to
+* data losses or corruption.
+*
+* `unhook` marks the end of the current DCS sequence.
 */
 export interface IDcsHandler {
   hook(collect: string, params: number[], flag: number): void;
-  put(data: string, start: number, end: number): void;
+  put(data: Uint32Array, start: number, end: number): void;
   unhook(): void;
 }
 
@@ -480,9 +488,9 @@ export interface IEscapeSequenceParser extends IDisposable {
    * Parse string `data`.
    * @param data The data to parse.
    */
-  parse(data: string): void;
+  parse(data: Uint32Array, length: number): void;
 
-  setPrintHandler(callback: (data: string, start: number, end: number) => void): void;
+  setPrintHandler(callback: (data: Uint32Array, start: number, end: number) => void): void;
   clearPrintHandler(): void;
 
   setExecuteHandler(flag: string, callback: () => void): void;
@@ -522,7 +530,7 @@ export interface IBufferLine {
   insertCells(pos: number, n: number, ch: CharData): void;
   deleteCells(pos: number, n: number, fill: CharData): void;
   replaceCells(start: number, end: number, fill: CharData): void;
-  resize(cols: number, fill: CharData, shrink?: boolean): void;
+  resize(cols: number, fill: CharData): void;
   fill(fillCharData: CharData): void;
   copyFrom(line: IBufferLine): void;
   clone(): IBufferLine;

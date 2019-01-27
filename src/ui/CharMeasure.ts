@@ -46,9 +46,10 @@ export class CharMeasure extends EventEmitter implements ICharMeasure {
     if (geometry.width === 0 || geometry.height === 0) {
       return;
     }
-    if (this._width !== geometry.width || this._height !== geometry.height) {
+    const adjustedHeight = Math.ceil(geometry.height);
+    if (this._width !== geometry.width || this._height !== adjustedHeight) {
       this._width = geometry.width;
-      this._height = Math.ceil(geometry.height);
+      this._height = adjustedHeight;
       this.emit('charsizechanged');
     }
   }

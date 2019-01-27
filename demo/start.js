@@ -5,7 +5,6 @@
  * This file is the entry point for browserify.
  */
 
-const cp = require('child_process');
 const path = require('path');
 const webpack = require('webpack');
 const startServer = require('./server.js');
