@@ -18,9 +18,8 @@ console.log(`Publishing version: ${nextVersion}`);
 
 // Set the version in package.json
 const packageJsonFile = path.resolve(__dirname, '..', 'package.json');
-let packageJsonRaw = fs.readFileSync(packageJsonFile).toString();
-packageJsonRaw = packageJsonRaw.replace(/("version": ")[0-9]+\.[0-9]+\.[0-9]+(")/, `$1${nextVersion}$2`);
-fs.writeFileSync(packageJsonFile, packageJsonRaw);
+packageJson.version = nextVersion;
+fs.writeFileSync(packageJsonFile, JSON.stringify(packageJson, null, 2));
 
 // Publish
 const result = cp.spawn('npm', ['publish', '--tag', tag], {
