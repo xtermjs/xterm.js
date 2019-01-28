@@ -527,7 +527,7 @@ export interface ICellData {
   fg: number;
   bg: number;
   combinedData: string;
-  combined: number;
+  isCombined: number;
   width: number;
   chars: string;
   code: number;
@@ -545,8 +545,8 @@ export interface IBufferLine {
   set(index: number, value: CharData): void;
   loadCell(index: number, cell: ICellData): ICellData;
   setCell(index: number, cell: ICellData): void;
-  setDataFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number): void;
-  addCharToCell(index: number, codePoint: number): void;
+  setCellFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number): void;
+  addCodepointToCell(index: number, codePoint: number): void;
   insertCells(pos: number, n: number, ch: ICellData): void;
   deleteCells(pos: number, n: number, fill: ICellData): void;
   replaceCells(start: number, end: number, fill: ICellData): void;

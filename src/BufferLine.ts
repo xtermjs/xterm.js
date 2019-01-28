@@ -95,7 +95,7 @@ export class CellData implements ICellData {
   public combinedData: string = '';
 
   /** Whether cell contains a combined string. */
-  public get combined(): number {
+  public get isCombined(): number {
     return this.content & Content.IS_COMBINED;
   }
 
@@ -122,7 +122,7 @@ export class CellData implements ICellData {
    * of the last char in string to be in line with code in CharData.
    * */
   public get code(): number {
-    return (this.combined)
+    return (this.isCombined)
       ? this.combinedData.charCodeAt(this.combinedData.length - 1)
       : this.content & Content.CODEPOINT_MASK;
   }
@@ -168,6 +168,18 @@ export class CellData implements ICellData {
 
 /**
  * Typed array based bufferline implementation.
+ *
+ * There are 2 ways to insert data into the cell buffer:
+ * - `setCellFromCodepoint` + `addCodepointToCell`
+ *   Use these for data that is already UTF32.
+ *   Used during normal input in `InputHandler` for faster buffer access.
+ * - `setCell`
+ *   This method takes a CellData object and stores the data in the buffer.
+ *   Use `CellData.fromCharData` to create the CellData object (e.g. from JS string).
+ *
+ * To retrieve data from the buffer use either one of the primitive methods
+ * (if only one particular value is needed) or `loadCell`. For `loadCell` in a loop
+ * memory allocs / GC pressure can be greatly reduced by reusing the CellData object.
  */
 export class BufferLine implements IBufferLine {
   protected _data: Uint32Array | null = null;
@@ -311,19 +323,19 @@ export class BufferLine implements IBufferLine {
    * Since the input handler see the incoming chars as UTF32 codepoints,
    * it gets an optimized access method.
    */
-  public setDataFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number): void {
+  public setCellFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number): void {
     this._data[index * CELL_SIZE + Cell.CONTENT] = codePoint | (width << Content.WIDTH_SHIFT);
     this._data[index * CELL_SIZE + Cell.FG] = fg;
     this._data[index * CELL_SIZE + Cell.BG] = bg;
   }
 
   /**
-   * Add a char to a cell from input handler.
+   * Add a codepoint to a cell from input handler.
    * During input stage combining chars with a width of 0 follow and stack
    * onto a leading char. Since we already set the attrs
    * by the previous `setDataFromCodePoint` call, we can omit it here.
    */
-  public addCharToCell(index: number, codePoint: number): void {
+  public addCodepointToCell(index: number, codePoint: number): void {
     let content = this._data[index * CELL_SIZE + Cell.CONTENT];
     if (content & Content.IS_COMBINED) {
       // we already have a combined string, simply add
@@ -332,11 +344,10 @@ export class BufferLine implements IBufferLine {
       if (content & Content.CODEPOINT_MASK) {
         // normal case for combining chars:
         //  - move current leading char + new one into combined string
-        //  - set codepoint in cell buffer to index
         //  - set combined flag
         this._combined[index] = stringFromCodePoint(content & Content.CODEPOINT_MASK) + stringFromCodePoint(codePoint);
-        content &= ~Content.CODEPOINT_MASK;
-        content |= index | Content.IS_COMBINED;
+        content &= ~Content.CODEPOINT_MASK; // set codepoint in buffer to 0
+        content |= Content.IS_COMBINED;
       } else {
         // should not happen - we actually have no data in the cell yet
         // simply set the data in the cell buffer with a width of 1
