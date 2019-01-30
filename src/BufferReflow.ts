@@ -3,10 +3,10 @@
  * @license MIT
  */
 
+import { FILL_CHAR_DATA } from './Buffer';
 import { BufferLine } from './BufferLine';
 import { CircularList, IDeleteEvent } from './common/CircularList';
 import { IBufferLine } from './Types';
-import { FILL_CHAR_DATA } from './Buffer';
 
 export interface INewLayoutResult {
   layout: number[];
@@ -19,7 +19,7 @@ export interface INewLayoutResult {
  * @param lines The buffer lines.
  * @param newCols The columns after resize.
  */
-export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, newCols: number): number[] {
+export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, newCols: number, bufferAbsoluteY: number): number[] {
   // Gather all BufferLines that need to be removed from the Buffer here so that they can be
   // batched up and only committed once
   const toRemove: number[] = [];
@@ -37,6 +37,13 @@ export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, n
     while (i < lines.length && nextLine.isWrapped) {
       wrappedLines.push(nextLine);
       nextLine = lines.get(++i) as BufferLine;
+    }
+
+    // If these lines contain the cursor don't touch them, the program will handle fixing up wrapped
+    // lines with the cursor
+    if (bufferAbsoluteY >= y && bufferAbsoluteY < i) {
+      y += wrappedLines.length - 1;
+      continue;
     }
 
     // Copy buffer data to new locations
@@ -64,7 +71,7 @@ export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, n
       }
 
       // Make sure the last cell isn't wide, if it is copy it to the current dest
-      if (destCol === 0) {
+      if (destCol === 0 && destLineIndex !== 0) {
         if (wrappedLines[destLineIndex - 1].getWidth(newCols - 1) === 2) {
           wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[destLineIndex - 1], newCols - 1, destCol++, 1, false);
           // Null out the end of the last row
@@ -166,7 +173,6 @@ export function reflowLargerApplyNewLayout(lines: CircularList<IBufferLine>, new
  */
 export function reflowSmallerGetNewLineLengths(wrappedLines: BufferLine[], oldCols: number, newCols: number): number[] {
   const newLineLengths: number[] = [];
-
   const cellsNeeded = wrappedLines.map(l => l.getTrimmedLength()).reduce((p, c) => p + c);
 
   // Use srcCol and srcLine to find the new wrapping point, use that to get the cellsAvailable and
