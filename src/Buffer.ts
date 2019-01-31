@@ -8,8 +8,9 @@ import { ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIterator, IB
 import { EventEmitter } from './common/EventEmitter';
 import { IMarker } from 'xterm';
 import { BufferLine, CellData } from './BufferLine';
+import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths } from './BufferReflow';
 import { DEFAULT_COLOR } from './renderer/atlas/Types';
-import { reflowSmallerGetNewLineLengths, reflowLargerGetLinesToRemove, reflowLargerCreateNewLayout, reflowLargerApplyNewLayout } from './BufferReflow';
+
 
 export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
 export const CHAR_DATA_ATTR_INDEX = 0;
@@ -236,7 +237,7 @@ export class Buffer implements IBuffer {
     this.scrollBottom = newRows - 1;
 
     if (this._hasScrollback) {
-      this._reflow(newCols);
+      this._reflow(newCols, newRows);
 
       // Trim the end of the line off if cols shrunk
       if (this._cols > newCols) {
@@ -250,7 +251,7 @@ export class Buffer implements IBuffer {
     this._rows = newRows;
   }
 
-  private _reflow(newCols: number): void {
+  private _reflow(newCols: number, newRows: number): void {
     if (this._cols === newCols) {
       return;
     }
@@ -259,12 +260,12 @@ export class Buffer implements IBuffer {
     if (newCols > this._cols) {
       this._reflowLarger(newCols);
     } else {
-      this._reflowSmaller(newCols);
+      this._reflowSmaller(newCols, newRows);
     }
   }
 
   private _reflowLarger(newCols: number): void {
-    const toRemove: number[] = reflowLargerGetLinesToRemove(this.lines, newCols);
+    const toRemove: number[] = reflowLargerGetLinesToRemove(this.lines, newCols, this.ybase + this.y);
     if (toRemove.length > 0) {
       const newLayoutResult = reflowLargerCreateNewLayout(this.lines, toRemove);
       reflowLargerApplyNewLayout(this.lines, newLayoutResult.layout);
@@ -278,9 +279,13 @@ export class Buffer implements IBuffer {
     let viewportAdjustments = countRemoved;
     while (viewportAdjustments-- > 0) {
       if (this.ybase === 0) {
-        this.y--;
-        // Add an extra row at the bottom of the viewport
-        this.lines.push(new BufferLine(newCols, nullCell));
+        if (this.y > 0) {
+          this.y--;
+        }
+        if (this.lines.length < this._rows) {
+          // Add an extra row at the bottom of the viewport
+          this.lines.push(new BufferLine(newCols, nullCell));
+        }
       } else {
         if (this.ydisp === this.ybase) {
           this.ydisp--;
@@ -290,7 +295,7 @@ export class Buffer implements IBuffer {
     }
   }
 
-  private _reflowSmaller(newCols: number): void {
+  private _reflowSmaller(newCols: number, newRows: number): void {
     const nullCell = this.getNullCell(DEFAULT_ATTR);
     // Gather all BufferLines that need to be inserted into the Buffer here so that they can be
     // batched up and only committed once
@@ -309,6 +314,13 @@ export class Buffer implements IBuffer {
       while (nextLine.isWrapped && y > 0) {
         nextLine = this.lines.get(--y) as BufferLine;
         wrappedLines.unshift(nextLine);
+      }
+
+      // If these lines contain the cursor don't touch them, the program will handle fixing up
+      // wrapped lines with the cursor
+      const absoluteY = this.ybase + this.y;
+      if (absoluteY >= y && absoluteY < y + wrappedLines.length) {
+        continue;
       }
 
       const lastLineLength = wrappedLines[wrappedLines.length - 1].getTrimmedLength();
@@ -383,10 +395,13 @@ export class Buffer implements IBuffer {
             this.ydisp++;
           }
         } else {
-          if (this.ybase === this.ydisp) {
-            this.ydisp++;
+          // Ensure ybase does not exceed its maximum value
+          if (this.ybase < Math.min(this.lines.maxLength, this.lines.length + countToInsert) - newRows) {
+            if (this.ybase === this.ydisp) {
+              this.ydisp++;
+            }
+            this.ybase++;
           }
-          this.ybase++;
         }
       }
     }
