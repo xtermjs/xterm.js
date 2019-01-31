@@ -45,8 +45,8 @@ describe('SelectionManager', () => {
 
   beforeEach(() => {
     terminal = new TestMockTerminal();
-    terminal.cols = 80;
-    terminal.rows = 2;
+    (terminal as any).cols = 80;
+    (terminal as any).rows = 2;
     terminal.options.scrollback = 100;
     terminal.buffers = new BufferSet(terminal);
     terminal.buffer = terminal.buffers.active;

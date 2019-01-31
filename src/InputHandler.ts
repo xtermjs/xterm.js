@@ -12,8 +12,8 @@ import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
 import { IDisposable } from 'xterm';
 import { Disposable } from './common/Lifecycle';
-import { concat, utf32ToString } from './common/TypedArrayUtils';
-import { StringToUtf32, stringFromCodePoint } from './core/input/TextDecoder';
+import { concat } from './common/TypedArrayUtils';
+import { StringToUtf32, stringFromCodePoint, utf32ToString } from './core/input/TextDecoder';
 import { CellData, Attributes, FgFlags, BgFlags, AttributeData } from './BufferLine';
 
 /**
@@ -353,9 +353,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           // found empty cell after fullwidth, need to go 2 cells back
           // it is save to step 2 cells back here
           // since an empty cell is only set by fullwidth chars
-          bufferRow.addCharToCell(buffer.x - 2, code);
+          bufferRow.addCodepointToCell(buffer.x - 2, code);
         } else {
-          bufferRow.addCharToCell(buffer.x - 1, code);
+          bufferRow.addCodepointToCell(buffer.x - 1, code);
         }
         continue;
       }
@@ -399,12 +399,12 @@ export class InputHandler extends Disposable implements IInputHandler {
         // a halfwidth char any fullwidth shifted there is lost
         // and will be set to empty cell
         if (bufferRow.loadCell(cols - 1, this._cell).width === 2) {
-          bufferRow.setDataFromCodePoint(cols - 1, NULL_CELL_CODE, NULL_CELL_WIDTH, curAttr.fg, curAttr.bg);
+          bufferRow.setCellFromCodePoint(cols - 1, NULL_CELL_CODE, NULL_CELL_WIDTH, curAttr.fg, curAttr.bg);
         }
       }
 
       // write current char to buffer and advance cursor
-      bufferRow.setDataFromCodePoint(buffer.x++, code, chWidth, curAttr.fg, curAttr.bg);
+      bufferRow.setCellFromCodePoint(buffer.x++, code, chWidth, curAttr.fg, curAttr.bg);
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor
       // for graphemes bigger than fullwidth we can simply loop to zero
@@ -412,7 +412,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       if (chWidth > 0) {
         while (--chWidth) {
           // other than a regular empty cell a cell following a wide char has no width
-          bufferRow.setDataFromCodePoint(buffer.x++, 0, 0, curAttr.fg, curAttr.bg);
+          bufferRow.setCellFromCodePoint(buffer.x++, 0, 0, curAttr.fg, curAttr.bg);
         }
       }
     }

@@ -3,9 +3,10 @@
  * @license MIT
  */
 
-type TypedArray = Uint8Array | Uint16Array | Uint32Array | Uint8ClampedArray
+export type TypedArray = Uint8Array | Uint16Array | Uint32Array | Uint8ClampedArray
   | Int8Array | Int16Array | Int32Array
   | Float32Array | Float64Array;
+
 
 /**
  * polyfill for TypedArray.fill
@@ -47,22 +48,5 @@ export function concat<T extends TypedArray>(a: T, b: T): T {
   const result = new (a.constructor as any)(a.length + b.length);
   result.set(a);
   result.set(b, a.length);
-  return result;
-}
-
-/**
- * Convert UTF32 char codes into JS string.
- */
-export function utf32ToString<T extends TypedArray>(data: T, start: number = 0, end: number = data.length): string {
-  let result = '';
-  let cp;
-  for (let i = start; i < end; ++i) {
-    if ((cp = data[i]) > 0xFFFF) {
-      cp -= 0x10000;
-      result += String.fromCharCode((cp >> 10) + 0xD800) + String.fromCharCode((cp % 0x400) + 0xDC00);
-    } else {
-      result += String.fromCharCode(cp);
-    }
-  }
   return result;
 }
