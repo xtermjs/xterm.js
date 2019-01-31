@@ -443,7 +443,9 @@ declare module 'xterm' {
     addDisposableListener(type: string, handler: (...args: any[]) => void): IDisposable;
 
     /**
-     * Resizes the terminal.
+     * Resizes the terminal. It's best practice to debounce calls to resize,
+     * this will help ensure that the pty can respond to the resize event
+     * before another one occurs.
      * @param x The number of columns to resize to.
      * @param y The number of rows to resize to.
      */
