@@ -1312,6 +1312,13 @@ describe('Buffer', () => {
           terminal.buffer.lines.get(bufferIndex[0]).get(bufferIndex[1])[CHAR_DATA_CHAR_INDEX]);
       }
     });
+
+    it('should handle \t in lines correctly', () => {
+      const input = '\thttps://google.de';
+      terminal.writeSync(input);
+      const s = terminal.buffer.iterator(true).next().content;
+      assert.equal(s, Array(terminal.getOption('tabStopWidth') + 1).join(' ') + 'https://google.de');
+    });
   });
   describe('BufferStringIterator', function(): void {
     it('iterator does not overflow buffer limits', function(): void {

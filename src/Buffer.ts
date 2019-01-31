@@ -458,7 +458,9 @@ export class Buffer implements IBuffer {
       const length = (trimRight) ? line.getTrimmedLength() : line.length;
       for (let i = 0; i < length; ++i) {
         if (line.get(i)[CHAR_DATA_WIDTH_INDEX]) {
-          stringIndex -= line.get(i)[CHAR_DATA_CHAR_INDEX].length || 1; // WHITESPACE_CELL_CHAR.length
+          // empty cells report a string length of 0, but get replaced
+          // with a whitespace in translateToString, thus replace with 1
+          stringIndex -= line.get(i)[CHAR_DATA_CHAR_INDEX].length || 1;
         }
         if (stringIndex < 0) {
           return [lineIndex, i];
