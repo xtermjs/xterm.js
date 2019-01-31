@@ -19,8 +19,8 @@ describe('Buffer', () => {
 
   beforeEach(() => {
     terminal = new MockTerminal();
-    terminal.cols = INIT_COLS;
-    terminal.rows = INIT_ROWS;
+    (terminal as any).cols = INIT_COLS;
+    (terminal as any).rows = INIT_ROWS;
     terminal.options.scrollback = 1000;
     buffer = new Buffer(terminal, true);
   });
@@ -265,6 +265,7 @@ describe('Buffer', () => {
           const char = String.fromCharCode(code);
           firstLine.set(i, [null, char, 1, code]);
         }
+        buffer.y = 1;
         assert.equal(buffer.lines.get(0).length, 5);
         assert.equal(buffer.lines.get(0).translateToString(), 'abcde');
         buffer.resize(1, 10);
@@ -296,7 +297,7 @@ describe('Buffer', () => {
         buffer.fillViewportRows();
         terminal.options.scrollback = 1;
         buffer.resize(10, 5);
-        const lastLine = buffer.lines.get(4);
+        const lastLine = buffer.lines.get(3);
         for (let i = 0; i < 10; i++) {
           const code = 'a'.charCodeAt(0) + i;
           const char = String.fromCharCode(code);
@@ -308,27 +309,27 @@ describe('Buffer', () => {
         assert.equal(buffer.y, 4);
         assert.equal(buffer.ybase, 1);
         assert.equal(buffer.lines.length, 6);
-        assert.equal(buffer.lines.get(0).translateToString(), '  ');
-        assert.equal(buffer.lines.get(1).translateToString(), 'ab');
-        assert.equal(buffer.lines.get(2).translateToString(), 'cd');
-        assert.equal(buffer.lines.get(3).translateToString(), 'ef');
-        assert.equal(buffer.lines.get(4).translateToString(), 'gh');
-        assert.equal(buffer.lines.get(5).translateToString(), 'ij');
+        assert.equal(buffer.lines.get(0).translateToString(), 'ab');
+        assert.equal(buffer.lines.get(1).translateToString(), 'cd');
+        assert.equal(buffer.lines.get(2).translateToString(), 'ef');
+        assert.equal(buffer.lines.get(3).translateToString(), 'gh');
+        assert.equal(buffer.lines.get(4).translateToString(), 'ij');
+        assert.equal(buffer.lines.get(5).translateToString(), '  ');
         buffer.resize(1, 5);
         assert.equal(buffer.y, 4);
         assert.equal(buffer.ybase, 1);
         assert.equal(buffer.lines.length, 6);
-        assert.equal(buffer.lines.get(0).translateToString(), 'e');
-        assert.equal(buffer.lines.get(1).translateToString(), 'f');
-        assert.equal(buffer.lines.get(2).translateToString(), 'g');
-        assert.equal(buffer.lines.get(3).translateToString(), 'h');
-        assert.equal(buffer.lines.get(4).translateToString(), 'i');
-        assert.equal(buffer.lines.get(5).translateToString(), 'j');
+        assert.equal(buffer.lines.get(0).translateToString(), 'f');
+        assert.equal(buffer.lines.get(1).translateToString(), 'g');
+        assert.equal(buffer.lines.get(2).translateToString(), 'h');
+        assert.equal(buffer.lines.get(3).translateToString(), 'i');
+        assert.equal(buffer.lines.get(4).translateToString(), 'j');
+        assert.equal(buffer.lines.get(5).translateToString(), ' ');
         buffer.resize(10, 5);
-        assert.equal(buffer.y, 0);
+        assert.equal(buffer.y, 1);
         assert.equal(buffer.ybase, 0);
         assert.equal(buffer.lines.length, 5);
-        assert.equal(buffer.lines.get(0).translateToString(), 'efghij    ');
+        assert.equal(buffer.lines.get(0).translateToString(), 'fghij     ');
         assert.equal(buffer.lines.get(1).translateToString(), '          ');
         assert.equal(buffer.lines.get(2).translateToString(), '          ');
         assert.equal(buffer.lines.get(3).translateToString(), '          ');
@@ -339,6 +340,7 @@ describe('Buffer', () => {
         // 3+ lines removed on a reflow actually remove the right lines
         buffer.fillViewportRows();
         buffer.resize(10, 10);
+        buffer.y = 2;
         const firstLine = buffer.lines.get(0);
         const secondLine = buffer.lines.get(1);
         for (let i = 0; i < 10; i++) {
@@ -358,8 +360,8 @@ describe('Buffer', () => {
           assert.equal(buffer.lines.get(i).translateToString(), '          ');
         }
         buffer.resize(2, 10);
-        assert.equal(buffer.ybase, 0);
-        assert.equal(buffer.lines.length, 10);
+        assert.equal(buffer.ybase, 1);
+        assert.equal(buffer.lines.length, 11);
         assert.equal(buffer.lines.get(0).translateToString(), 'ab');
         assert.equal(buffer.lines.get(1).translateToString(), 'cd');
         assert.equal(buffer.lines.get(2).translateToString(), 'ef');
@@ -370,7 +372,10 @@ describe('Buffer', () => {
         assert.equal(buffer.lines.get(7).translateToString(), '45');
         assert.equal(buffer.lines.get(8).translateToString(), '67');
         assert.equal(buffer.lines.get(9).translateToString(), '89');
+        assert.equal(buffer.lines.get(10).translateToString(), '  ');
         buffer.resize(10, 10);
+        assert.equal(buffer.ybase, 0);
+        assert.equal(buffer.lines.length, 10);
         assert.equal(buffer.lines.get(0).translateToString(), 'abcdefghij');
         assert.equal(buffer.lines.get(1).translateToString(), '0123456789');
         for (let i = 2; i < 10; i++) {
@@ -379,22 +384,23 @@ describe('Buffer', () => {
       });
       it('should transfer combined char data over to reflowed lines', () => {
         buffer.fillViewportRows();
-        buffer.resize(4, 2);
+        buffer.resize(4, 3);
+        buffer.y = 2;
         const firstLine = buffer.lines.get(0);
         firstLine.set(0, [ null, 'a', 1, 'a'.charCodeAt(0) ]);
         firstLine.set(1, [ null, 'b', 1, 'b'.charCodeAt(0) ]);
         firstLine.set(2, [ null, 'c', 1, 'c'.charCodeAt(0) ]);
         firstLine.set(3, [ null, '😁', 1, '😁'.charCodeAt(0) ]);
-        assert.equal(buffer.lines.length, 2);
+        assert.equal(buffer.lines.length, 3);
         assert.equal(buffer.lines.get(0).translateToString(), 'abc😁');
         assert.equal(buffer.lines.get(1).translateToString(), '    ');
-        buffer.resize(2, 2);
+        buffer.resize(2, 3);
         assert.equal(buffer.lines.get(0).translateToString(), 'ab');
         assert.equal(buffer.lines.get(1).translateToString(), 'c😁');
       });
       it('should adjust markers when reflowing', () => {
         buffer.fillViewportRows();
-        buffer.resize(10, 15);
+        buffer.resize(10, 16);
         for (let i = 0; i < 10; i++) {
           const code = 'a'.charCodeAt(0) + i;
           const char = String.fromCharCode(code);
@@ -410,6 +416,7 @@ describe('Buffer', () => {
           const char = String.fromCharCode(code);
           buffer.lines.get(2).set(i, [null, char, 1, code]);
         }
+        buffer.y = 3;
         // Buffer:
         // abcdefghij
         // 0123456789
@@ -423,7 +430,7 @@ describe('Buffer', () => {
         assert.equal(firstMarker.line, 0);
         assert.equal(secondMarker.line, 1);
         assert.equal(thirdMarker.line, 2);
-        buffer.resize(2, 15);
+        buffer.resize(2, 16);
         assert.equal(buffer.lines.get(0).translateToString(), 'ab');
         assert.equal(buffer.lines.get(1).translateToString(), 'cd');
         assert.equal(buffer.lines.get(2).translateToString(), 'ef');
@@ -442,7 +449,7 @@ describe('Buffer', () => {
         assert.equal(firstMarker.line, 0, 'first marker should remain unchanged');
         assert.equal(secondMarker.line, 5, 'second marker should be shifted since the first line wrapped');
         assert.equal(thirdMarker.line, 10, 'third marker should be shifted since the first and second lines wrapped');
-        buffer.resize(10, 15);
+        buffer.resize(10, 16);
         assert.equal(buffer.lines.get(0).translateToString(), 'abcdefghij');
         assert.equal(buffer.lines.get(1).translateToString(), '0123456789');
         assert.equal(buffer.lines.get(2).translateToString(), 'klmnopqrst');
@@ -456,7 +463,7 @@ describe('Buffer', () => {
       it('should dispose markers whose rows are trimmed during a reflow', () => {
         buffer.fillViewportRows();
         terminal.options.scrollback = 1;
-        buffer.resize(10, 10);
+        buffer.resize(10, 11);
         for (let i = 0; i < 10; i++) {
           const code = 'a'.charCodeAt(0) + i;
           const char = String.fromCharCode(code);
@@ -472,6 +479,7 @@ describe('Buffer', () => {
           const char = String.fromCharCode(code);
           buffer.lines.get(2).set(i, [null, char, 1, code]);
         }
+        buffer.y = 10;
         // Buffer:
         // abcdefghij
         // 0123456789
@@ -479,14 +487,14 @@ describe('Buffer', () => {
         const firstMarker = buffer.addMarker(0);
         const secondMarker = buffer.addMarker(1);
         const thirdMarker = buffer.addMarker(2);
-        buffer.y = 2;
+        buffer.y = 3;
         assert.equal(buffer.lines.get(0).translateToString(), 'abcdefghij');
         assert.equal(buffer.lines.get(1).translateToString(), '0123456789');
         assert.equal(buffer.lines.get(2).translateToString(), 'klmnopqrst');
         assert.equal(firstMarker.line, 0);
         assert.equal(secondMarker.line, 1);
         assert.equal(thirdMarker.line, 2);
-        buffer.resize(2, 10);
+        buffer.resize(2, 11);
         assert.equal(buffer.lines.get(0).translateToString(), 'ij');
         assert.equal(buffer.lines.get(1).translateToString(), '01');
         assert.equal(buffer.lines.get(2).translateToString(), '23');
@@ -503,7 +511,7 @@ describe('Buffer', () => {
         assert.equal(firstMarker.isDisposed, true, 'first marker was trimmed');
         assert.equal(secondMarker.isDisposed, false);
         assert.equal(thirdMarker.isDisposed, false);
-        buffer.resize(10, 10);
+        buffer.resize(10, 11);
         assert.equal(buffer.lines.get(0).translateToString(), 'ij        ');
         assert.equal(buffer.lines.get(1).translateToString(), '0123456789');
         assert.equal(buffer.lines.get(2).translateToString(), 'klmnopqrst');
@@ -513,6 +521,7 @@ describe('Buffer', () => {
       it('should wrap wide characters correctly when reflowing larger', () => {
         buffer.fillViewportRows();
         buffer.resize(12, 10);
+        buffer.y = 2;
         for (let i = 0; i < 12; i += 4) {
           buffer.lines.get(0).set(i, [null, '汉', 2, '汉'.charCodeAt(0)]);
           buffer.lines.get(1).set(i, [null, '汉', 2, '汉'.charCodeAt(0)]);
@@ -547,6 +556,7 @@ describe('Buffer', () => {
       it('should wrap wide characters correctly when reflowing smaller', () => {
         buffer.fillViewportRows();
         buffer.resize(12, 10);
+        buffer.y = 2;
         for (let i = 0; i < 12; i += 4) {
           buffer.lines.get(0).set(i, [null, '汉', 2, '汉'.charCodeAt(0)]);
           buffer.lines.get(1).set(i, [null, '汉', 2, '汉'.charCodeAt(0)]);
@@ -937,6 +947,7 @@ describe('Buffer', () => {
             describe('&& ydisp === ybase', () => {
               it('should trim lines and keep ydisp = ybase', () => {
                 buffer.ydisp = 10;
+                buffer.y = 13;
                 buffer.resize(2, 10);
                 assert.equal(buffer.ydisp, 10);
                 assert.equal(buffer.ybase, 10);
@@ -962,6 +973,7 @@ describe('Buffer', () => {
             describe('&& ydisp !== ybase', () => {
               it('should trim lines and not change ydisp', () => {
                 buffer.ydisp = 5;
+                buffer.y = 13;
                 buffer.resize(2, 10);
                 assert.equal(buffer.ydisp, 5);
                 assert.equal(buffer.ybase, 10);
@@ -1266,7 +1278,7 @@ describe('Buffer', () => {
       const s = terminal.buffer.iterator(true).next().content;
       assert.equal(input, s);
       for (let i = 10; i < input.length; ++i) {
-        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
+        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i, true);
         const j = (i - 0) << 1;
         assert.deepEqual([(j / terminal.cols) | 0, j % terminal.cols], bufferIndex);
       }
@@ -1278,7 +1290,7 @@ describe('Buffer', () => {
       const s = terminal.buffer.iterator(true).next().content;
       assert.equal(input, s);
       for (let i = 0; i < input.length; ++i) {
-        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
+        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i, true);
         assert.equal(input[i], terminal.buffer.lines.get(bufferIndex[0]).get(bufferIndex[1])[CHAR_DATA_CHAR_INDEX]);
       }
     });
@@ -1290,7 +1302,7 @@ describe('Buffer', () => {
       const s = terminal.buffer.iterator(true).next().content;
       assert.equal(input, s);
       for (let i = 0; i < input.length; ++i) {
-        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i);
+        const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i, true);
         assert.equal(
           (!(i % 3))
             ? input[i]
@@ -1299,6 +1311,13 @@ describe('Buffer', () => {
               : input.substr(i - 1, 2),
           terminal.buffer.lines.get(bufferIndex[0]).get(bufferIndex[1])[CHAR_DATA_CHAR_INDEX]);
       }
+    });
+
+    it('should handle \t in lines correctly', () => {
+      const input = '\thttps://google.de';
+      terminal.writeSync(input);
+      const s = terminal.buffer.iterator(true).next().content;
+      assert.equal(s, Array(terminal.getOption('tabStopWidth') + 1).join(' ') + 'https://google.de');
     });
   });
   describe('BufferStringIterator', function(): void {
