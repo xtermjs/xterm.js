@@ -4,9 +4,8 @@
  */
 
 import { assert } from 'chai';
-import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from './TextDecoder';
+import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32, utf32ToString } from './TextDecoder';
 import { encode } from 'utf8';
-
 
 // convert UTF32 codepoints to string
 function toString(data: Uint32Array, length: number): string {
@@ -43,157 +42,181 @@ const TEST_STRINGS = [
 ];
 
 
-describe('StringToUtf32 decoder', () => {
-  describe('full codepoint test', () => {
-    it('0..65535', () => {
-      const decoder = new StringToUtf32();
-      const target = new Uint32Array(5);
-      for (let i = 0; i < 65536; ++i) {
-        // skip surrogate pairs
-        if (i >= 0xD800 && i <= 0xDFFF) {
-          continue;
-        }
-        const length = decoder.decode(String.fromCharCode(i), target);
-        assert.equal(length, 1);
-        assert.equal(target[0], i);
-        assert.equal(toString(target, length), String.fromCharCode(i));
-        decoder.clear();
-      }
-    });
-    it('65536..0x10FFFF (surrogates)', function(): void {
-      this.timeout(20000);
-      const decoder = new StringToUtf32();
-      const target = new Uint32Array(5);
-      for (let i = 65536; i < 0x10FFFF; ++i) {
-        const codePoint = i - 0x10000;
-        const s = String.fromCharCode((codePoint >> 10) + 0xD800) + String.fromCharCode((codePoint % 0x400) + 0xDC00);
-        const length = decoder.decode(s, target);
-        assert.equal(length, 1);
-        assert.equal(target[0], i);
-        assert.equal(toString(target, length), s);
-        decoder.clear();
-      }
-    });
-  });
-  it('test strings', () => {
-    const decoder = new StringToUtf32();
-    const target = new Uint32Array(500);
-    for (let i = 0; i < TEST_STRINGS.length; ++i) {
-      const length = decoder.decode(TEST_STRINGS[i], target);
-      assert.equal(toString(target, length), TEST_STRINGS[i]);
-      decoder.clear();
+describe('text encodings', () => {
+  it('stringFromCodePoint/utf32ToString', () => {
+    const s = 'abcdefg';
+    const data = new Uint32Array(s.length);
+    for (let i = 0; i < s.length; ++i) {
+      data[i] = s.charCodeAt(i);
+      assert.equal(stringFromCodePoint(data[i]), s[i]);
     }
+    assert.equal(utf32ToString(data), s);
   });
-  describe('stream handling', () => {
-    it('surrogates mixed advance by 1', () => {
-      const decoder = new StringToUtf32();
-      const target = new Uint32Array(5);
-      const input = 'Ä€𝄞Ö𝄞€Ü𝄞€';
-      let decoded = '';
-      for (let i = 0; i < input.length; ++i) {
-        const written = decoder.decode(input[i], target);
-        decoded += toString(target, written);
-      }
-      assert(decoded, 'Ä€𝄞Ö𝄞€Ü𝄞€');
-    });
-  });
-});
 
-describe('Utf8ToUtf32 decoder', () => {
-  describe('full codepoint test', () => {
-    it('0..65535 (1/2/3 byte sequences)', () => {
-      const decoder = new Utf8ToUtf32();
-      const target = new Uint32Array(5);
-      for (let i = 0; i < 65536; ++i) {
-        // skip surrogate pairs
-        if (i >= 0xD800 && i <= 0xDFFF) {
-          continue;
+  describe('StringToUtf32 decoder', () => {
+    describe('full codepoint test', () => {
+      it('0..65535', () => {
+        const decoder = new StringToUtf32();
+        const target = new Uint32Array(5);
+        for (let i = 0; i < 65536; ++i) {
+          // skip surrogate pairs
+          if (i >= 0xD800 && i <= 0xDFFF) {
+            continue;
+          }
+          const length = decoder.decode(String.fromCharCode(i), target);
+          assert.equal(length, 1);
+          assert.equal(target[0], i);
+          assert.equal(utf32ToString(target, 0, length), String.fromCharCode(i));
+          decoder.clear();
         }
-        const utf8Data = fromByteString(encode(String.fromCharCode(i)));
-        const length = decoder.decode(utf8Data, target);
-        assert.equal(length, 1);
-        assert.equal(toString(target, length), String.fromCharCode(i));
+      });
+
+      it('65536..0x10FFFF (surrogates)', function (): void {
+        this.timeout(20000);
+        const decoder = new StringToUtf32();
+        const target = new Uint32Array(5);
+        for (let i = 65536; i < 0x10FFFF; ++i) {
+          const codePoint = i - 0x10000;
+          const s = String.fromCharCode((codePoint >> 10) + 0xD800) + String.fromCharCode((codePoint % 0x400) + 0xDC00);
+          const length = decoder.decode(s, target);
+          assert.equal(length, 1);
+          assert.equal(target[0], i);
+          assert.equal(utf32ToString(target, 0, length), s);
+          decoder.clear();
+        }
+      });
+    });
+
+    it('test strings', () => {
+      const decoder = new StringToUtf32();
+      const target = new Uint32Array(500);
+      for (let i = 0; i < TEST_STRINGS.length; ++i) {
+        const length = decoder.decode(TEST_STRINGS[i], target);
+        assert.equal(toString(target, length), TEST_STRINGS[i]);
         decoder.clear();
       }
     });
-    it('65536..0x10FFFF (4 byte sequences)', function(): void {
-      this.timeout(20000);
+
+    describe('stream handling', () => {
+      it('surrogates mixed advance by 1', () => {
+        const decoder = new StringToUtf32();
+        const target = new Uint32Array(5);
+        const input = 'Ä€𝄞Ö𝄞€Ü𝄞€';
+        let decoded = '';
+        for (let i = 0; i < input.length; ++i) {
+          const written = decoder.decode(input[i], target);
+          decoded += toString(target, written);
+        }
+        assert(decoded, 'Ä€𝄞Ö𝄞€Ü𝄞€');
+      });
+    });
+
+  });
+
+  describe('Utf8ToUtf32 decoder', () => {
+    describe('full codepoint test', () => {
+
+      it('0..65535 (1/2/3 byte sequences)', () => {
+        const decoder = new Utf8ToUtf32();
+        const target = new Uint32Array(5);
+        for (let i = 0; i < 65536; ++i) {
+          // skip surrogate pairs
+          if (i >= 0xD800 && i <= 0xDFFF) {
+            continue;
+          }
+          const utf8Data = fromByteString(encode(String.fromCharCode(i)));
+          const length = decoder.decode(utf8Data, target);
+          assert.equal(length, 1);
+          assert.equal(toString(target, length), String.fromCharCode(i));
+          decoder.clear();
+        }
+      });
+
+      it('65536..0x10FFFF (4 byte sequences)', function (): void {
+        this.timeout(20000);
+        const decoder = new Utf8ToUtf32();
+        const target = new Uint32Array(5);
+        for (let i = 65536; i < 0x10FFFF; ++i) {
+          const utf8Data = fromByteString(encode(stringFromCodePoint(i)));
+          const length = decoder.decode(utf8Data, target);
+          assert.equal(length, 1);
+          assert.equal(target[0], i);
+          decoder.clear();
+        }
+      });
+    });
+
+    it('test strings', () => {
       const decoder = new Utf8ToUtf32();
-      const target = new Uint32Array(5);
-      for (let i = 65536; i < 0x10FFFF; ++i) {
-        const utf8Data = fromByteString(encode(stringFromCodePoint(i)));
+      const target = new Uint32Array(500);
+      for (let i = 0; i < TEST_STRINGS.length; ++i) {
+        const utf8Data = fromByteString(encode(TEST_STRINGS[i]));
         const length = decoder.decode(utf8Data, target);
-        assert.equal(length, 1);
-        assert.equal(target[0], i);
+        assert.equal(toString(target, length), TEST_STRINGS[i]);
         decoder.clear();
       }
     });
-  });
-  it('test strings', () => {
-    const decoder = new Utf8ToUtf32();
-    const target = new Uint32Array(500);
-    for (let i = 0; i < TEST_STRINGS.length; ++i) {
-      const utf8Data = fromByteString(encode(TEST_STRINGS[i]));
-      const length = decoder.decode(utf8Data, target);
-      assert.equal(toString(target, length), TEST_STRINGS[i]);
-      decoder.clear();
-    }
-  });
-  describe('stream handling', () => {
-    it('2 byte sequences - advance by 1', () => {
-      const decoder = new Utf8ToUtf32();
-      const target = new Uint32Array(5);
-      const utf8Data = fromByteString('\xc3\x84\xc3\x96\xc3\x9c\xc3\x9f\xc3\xb6\xc3\xa4\xc3\xbc');
-      let decoded = '';
-      for (let i = 0; i < utf8Data.length; ++i) {
-        const written = decoder.decode(utf8Data.slice(i, i + 1), target);
-        decoded += toString(target, written);
-      }
-      assert(decoded, 'ÄÖÜßöäü');
-    });
-    it('2/3 byte sequences - advance by 1', () => {
-      const decoder = new Utf8ToUtf32();
-      const target = new Uint32Array(5);
-      const utf8Data = fromByteString('\xc3\x84\xe2\x82\xac\xc3\x96\xe2\x82\xac\xc3\x9c\xe2\x82\xac\xc3\x9f\xe2\x82\xac\xc3\xb6\xe2\x82\xac\xc3\xa4\xe2\x82\xac\xc3\xbc');
-      let decoded = '';
-      for (let i = 0; i < utf8Data.length; ++i) {
-        const written = decoder.decode(utf8Data.slice(i, i + 1), target);
-        decoded += toString(target, written);
-      }
-      assert(decoded, 'Ä€Ö€Ü€ß€ö€ä€ü');
-    });
-    it('2/3/4 byte sequences - advance by 1', () => {
-      const decoder = new Utf8ToUtf32();
-      const target = new Uint32Array(5);
-      const utf8Data = fromByteString('\xc3\x84\xe2\x82\xac\xf0\x9d\x84\x9e\xc3\x96\xf0\x9d\x84\x9e\xe2\x82\xac\xc3\x9c\xf0\x9d\x84\x9e\xe2\x82\xac');
-      let decoded = '';
-      for (let i = 0; i < utf8Data.length; ++i) {
-        const written = decoder.decode(utf8Data.slice(i, i + 1), target);
-        decoded += toString(target, written);
-      }
-      assert(decoded, 'Ä€𝄞Ö𝄞€Ü𝄞€');
-    });
-    it('2/3/4 byte sequences - advance by 2', () => {
-      const decoder = new Utf8ToUtf32();
-      const target = new Uint32Array(5);
-      const utf8Data = fromByteString('\xc3\x84\xe2\x82\xac\xf0\x9d\x84\x9e\xc3\x96\xf0\x9d\x84\x9e\xe2\x82\xac\xc3\x9c\xf0\x9d\x84\x9e\xe2\x82\xac');
-      let decoded = '';
-      for (let i = 0; i < utf8Data.length; i += 2) {
-        const written = decoder.decode(utf8Data.slice(i, i + 2), target);
-        decoded += toString(target, written);
-      }
-      assert(decoded, 'Ä€𝄞Ö𝄞€Ü𝄞€');
-    });
-    it('2/3/4 byte sequences - advance by 3', () => {
-      const decoder = new Utf8ToUtf32();
-      const target = new Uint32Array(5);
-      const utf8Data = fromByteString('\xc3\x84\xe2\x82\xac\xf0\x9d\x84\x9e\xc3\x96\xf0\x9d\x84\x9e\xe2\x82\xac\xc3\x9c\xf0\x9d\x84\x9e\xe2\x82\xac');
-      let decoded = '';
-      for (let i = 0; i < utf8Data.length; i += 3) {
-        const written = decoder.decode(utf8Data.slice(i, i + 3), target);
-        decoded += toString(target, written);
-      }
-      assert(decoded, 'Ä€𝄞Ö𝄞€Ü𝄞€');
+
+    describe('stream handling', () => {
+      it('2 byte sequences - advance by 1', () => {
+        const decoder = new Utf8ToUtf32();
+        const target = new Uint32Array(5);
+        const utf8Data = fromByteString('\xc3\x84\xc3\x96\xc3\x9c\xc3\x9f\xc3\xb6\xc3\xa4\xc3\xbc');
+        let decoded = '';
+        for (let i = 0; i < utf8Data.length; ++i) {
+          const written = decoder.decode(utf8Data.slice(i, i + 1), target);
+          decoded += toString(target, written);
+        }
+        assert(decoded, 'ÄÖÜßöäü');
+      });
+
+      it('2/3 byte sequences - advance by 1', () => {
+        const decoder = new Utf8ToUtf32();
+        const target = new Uint32Array(5);
+        const utf8Data = fromByteString('\xc3\x84\xe2\x82\xac\xc3\x96\xe2\x82\xac\xc3\x9c\xe2\x82\xac\xc3\x9f\xe2\x82\xac\xc3\xb6\xe2\x82\xac\xc3\xa4\xe2\x82\xac\xc3\xbc');
+        let decoded = '';
+        for (let i = 0; i < utf8Data.length; ++i) {
+          const written = decoder.decode(utf8Data.slice(i, i + 1), target);
+          decoded += toString(target, written);
+        }
+        assert(decoded, 'Ä€Ö€Ü€ß€ö€ä€ü');
+      });
+
+      it('2/3/4 byte sequences - advance by 1', () => {
+        const decoder = new Utf8ToUtf32();
+        const target = new Uint32Array(5);
+        const utf8Data = fromByteString('\xc3\x84\xe2\x82\xac\xf0\x9d\x84\x9e\xc3\x96\xf0\x9d\x84\x9e\xe2\x82\xac\xc3\x9c\xf0\x9d\x84\x9e\xe2\x82\xac');
+        let decoded = '';
+        for (let i = 0; i < utf8Data.length; ++i) {
+          const written = decoder.decode(utf8Data.slice(i, i + 1), target);
+          decoded += toString(target, written);
+        }
+        assert(decoded, 'Ä€𝄞Ö𝄞€Ü𝄞€');
+      });
+
+      it('2/3/4 byte sequences - advance by 2', () => {
+        const decoder = new Utf8ToUtf32();
+        const target = new Uint32Array(5);
+        const utf8Data = fromByteString('\xc3\x84\xe2\x82\xac\xf0\x9d\x84\x9e\xc3\x96\xf0\x9d\x84\x9e\xe2\x82\xac\xc3\x9c\xf0\x9d\x84\x9e\xe2\x82\xac');
+        let decoded = '';
+        for (let i = 0; i < utf8Data.length; i += 2) {
+          const written = decoder.decode(utf8Data.slice(i, i + 2), target);
+          decoded += toString(target, written);
+        }
+        assert(decoded, 'Ä€𝄞Ö𝄞€Ü𝄞€');
+      });
+
+      it('2/3/4 byte sequences - advance by 3', () => {
+        const decoder = new Utf8ToUtf32();
+        const target = new Uint32Array(5);
+        const utf8Data = fromByteString('\xc3\x84\xe2\x82\xac\xf0\x9d\x84\x9e\xc3\x96\xf0\x9d\x84\x9e\xe2\x82\xac\xc3\x9c\xf0\x9d\x84\x9e\xe2\x82\xac');
+        let decoded = '';
+        for (let i = 0; i < utf8Data.length; i += 3) {
+          const written = decoder.decode(utf8Data.slice(i, i + 3), target);
+          decoded += toString(target, written);
+        }
+        assert(decoded, 'Ä€𝄞Ö𝄞€Ü𝄞€');
+      });
     });
   });
 });
