@@ -449,14 +449,19 @@ export class Buffer implements IBuffer {
    * @param stringIndex index within the string
    * @param startCol column offset the string was retrieved from
    */
-  public stringIndexToBufferIndex(lineIndex: number, stringIndex: number): BufferIndex {
+  public stringIndexToBufferIndex(lineIndex: number, stringIndex: number, trimRight: boolean = false): BufferIndex {
     while (stringIndex) {
       const line = this.lines.get(lineIndex);
       if (!line) {
         return [-1, -1];
       }
-      for (let i = 0; i < line.length; ++i) {
-        stringIndex -= line.get(i)[CHAR_DATA_CHAR_INDEX].length;
+      const length = (trimRight) ? line.getTrimmedLength() : line.length;
+      for (let i = 0; i < length; ++i) {
+        if (line.get(i)[CHAR_DATA_WIDTH_INDEX]) {
+          // empty cells report a string length of 0, but get replaced
+          // with a whitespace in translateToString, thus replace with 1
+          stringIndex -= line.get(i)[CHAR_DATA_CHAR_INDEX].length || 1;
+        }
         if (stringIndex < 0) {
           return [lineIndex, i];
         }
