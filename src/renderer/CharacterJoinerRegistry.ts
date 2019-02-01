@@ -56,8 +56,8 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
 
     for (let x = 0; x < this._terminal.cols; x++) {
       line.loadCell(x, this._cell);
-      const chars = this._cell.chars;
-      const width = this._cell.width;
+      const chars = this._cell.getChars();
+      const width = this._cell.getWidth();
       const attr = this._cell.fg >> 9;
 
       if (width === 0) {

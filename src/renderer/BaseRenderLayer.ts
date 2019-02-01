@@ -239,7 +239,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.textBaseline = 'middle';
     this._clipRow(terminal, y);
     this._ctx.fillText(
-        cell.chars,
+        cell.getChars(),
         x * this._scaledCellWidth + this._scaledCharLeft,
         (y + 0.5) * this._scaledCellHeight + this._scaledCharTop);
   }
