@@ -113,73 +113,73 @@ export interface IInputHandler {
   parse(data: string): void;
   print(data: Uint32Array, start: number, end: number): void;
 
-  /** C0 BEL */ bell(): void;
-  /** C0 LF */ lineFeed(): void;
-  /** C0 CR */ carriageReturn(): void;
-  /** C0 BS */ backspace(): void;
-  /** C0 HT */ tab(): void;
-  /** C0 SO */ shiftOut(): void;
-  /** C0 SI */ shiftIn(): void;
+  /** C0 BEL */ bell(): boolean;
+  /** C0 LF */ lineFeed(): boolean;
+  /** C0 CR */ carriageReturn(): boolean;
+  /** C0 BS */ backspace(): boolean;
+  /** C0 HT */ tab(): boolean;
+  /** C0 SO */ shiftOut(): boolean;
+  /** C0 SI */ shiftIn(): boolean;
 
-  /** CSI @ */ insertChars(params?: number[]): void;
-  /** CSI A */ cursorUp(params?: number[]): void;
-  /** CSI B */ cursorDown(params?: number[]): void;
-  /** CSI C */ cursorForward(params?: number[]): void;
-  /** CSI D */ cursorBackward(params?: number[]): void;
-  /** CSI E */ cursorNextLine(params?: number[]): void;
-  /** CSI F */ cursorPrecedingLine(params?: number[]): void;
-  /** CSI G */ cursorCharAbsolute(params?: number[]): void;
-  /** CSI H */ cursorPosition(params?: number[]): void;
-  /** CSI I */ cursorForwardTab(params?: number[]): void;
-  /** CSI J */ eraseInDisplay(params?: number[]): void;
-  /** CSI K */ eraseInLine(params?: number[]): void;
-  /** CSI L */ insertLines(params?: number[]): void;
-  /** CSI M */ deleteLines(params?: number[]): void;
-  /** CSI P */ deleteChars(params?: number[]): void;
-  /** CSI S */ scrollUp(params?: number[]): void;
-  /** CSI T */ scrollDown(params?: number[], collect?: string): void;
-  /** CSI X */ eraseChars(params?: number[]): void;
-  /** CSI Z */ cursorBackwardTab(params?: number[]): void;
-  /** CSI ` */ charPosAbsolute(params?: number[]): void;
-  /** CSI a */ hPositionRelative(params?: number[]): void;
-  /** CSI b */ repeatPrecedingCharacter(params?: number[]): void;
-  /** CSI c */ sendDeviceAttributes(params?: number[], collect?: string): void;
-  /** CSI d */ linePosAbsolute(params?: number[]): void;
-  /** CSI e */ vPositionRelative(params?: number[]): void;
-  /** CSI f */ hVPosition(params?: number[]): void;
-  /** CSI g */ tabClear(params?: number[]): void;
-  /** CSI h */ setMode(params?: number[], collect?: string): void;
-  /** CSI l */ resetMode(params?: number[], collect?: string): void;
-  /** CSI m */ charAttributes(params?: number[]): void;
-  /** CSI n */ deviceStatus(params?: number[], collect?: string): void;
-  /** CSI p */ softReset(params?: number[], collect?: string): void;
-  /** CSI q */ setCursorStyle(params?: number[], collect?: string): void;
-  /** CSI r */ setScrollRegion(params?: number[], collect?: string): void;
-  /** CSI s */ saveCursor(params?: number[]): void;
-  /** CSI u */ restoreCursor(params?: number[]): void;
+  /** CSI @ */ insertChars(params?: number[]): boolean;
+  /** CSI A */ cursorUp(params?: number[]): boolean;
+  /** CSI B */ cursorDown(params?: number[]): boolean;
+  /** CSI C */ cursorForward(params?: number[]): boolean;
+  /** CSI D */ cursorBackward(params?: number[]): boolean;
+  /** CSI E */ cursorNextLine(params?: number[]): boolean;
+  /** CSI F */ cursorPrecedingLine(params?: number[]): boolean;
+  /** CSI G */ cursorCharAbsolute(params?: number[]): boolean;
+  /** CSI H */ cursorPosition(params?: number[]): boolean;
+  /** CSI I */ cursorForwardTab(params?: number[]): boolean;
+  /** CSI J */ eraseInDisplay(params?: number[]): boolean;
+  /** CSI K */ eraseInLine(params?: number[]): boolean;
+  /** CSI L */ insertLines(params?: number[]): boolean;
+  /** CSI M */ deleteLines(params?: number[]): boolean;
+  /** CSI P */ deleteChars(params?: number[]): boolean;
+  /** CSI S */ scrollUp(params?: number[]): boolean;
+  /** CSI T */ scrollDown(params?: number[], collect?: string): boolean;
+  /** CSI X */ eraseChars(params?: number[]): boolean;
+  /** CSI Z */ cursorBackwardTab(params?: number[]): boolean;
+  /** CSI ` */ charPosAbsolute(params?: number[]): boolean;
+  /** CSI a */ hPositionRelative(params?: number[]): boolean;
+  /** CSI b */ repeatPrecedingCharacter(params?: number[]): boolean;
+  /** CSI c */ sendDeviceAttributes(params?: number[], collect?: string): boolean;
+  /** CSI d */ linePosAbsolute(params?: number[]): boolean;
+  /** CSI e */ vPositionRelative(params?: number[]): boolean;
+  /** CSI f */ hVPosition(params?: number[]): boolean;
+  /** CSI g */ tabClear(params?: number[]): boolean;
+  /** CSI h */ setMode(params?: number[], collect?: string): boolean;
+  /** CSI l */ resetMode(params?: number[], collect?: string): boolean;
+  /** CSI m */ charAttributes(params?: number[]): boolean;
+  /** CSI n */ deviceStatus(params?: number[], collect?: string): boolean;
+  /** CSI p */ softReset(params?: number[], collect?: string): boolean;
+  /** CSI q */ setCursorStyle(params?: number[], collect?: string): boolean;
+  /** CSI r */ setScrollRegion(params?: number[], collect?: string): boolean;
+  /** CSI s */ saveCursor(params?: number[]): boolean;
+  /** CSI u */ restoreCursor(params?: number[]): boolean;
   /** OSC 0
-      OSC 2 */ setTitle(data: string): void;
-  /** ESC E */ nextLine(): void;
-  /** ESC = */ keypadApplicationMode(): void;
-  /** ESC > */ keypadNumericMode(): void;
+      OSC 2 */ setTitle(data: string): boolean;
+  /** ESC E */ nextLine(): boolean;
+  /** ESC = */ keypadApplicationMode(): boolean;
+  /** ESC > */ keypadNumericMode(): boolean;
   /** ESC % G
-      ESC % @ */ selectDefaultCharset(): void;
+      ESC % @ */ selectDefaultCharset(): boolean;
   /** ESC ( C
       ESC ) C
       ESC * C
       ESC + C
       ESC - C
       ESC . C
-      ESC / C */ selectCharset(collectAndFlag: string): void;
-  /** ESC D */ index(): void;
-  /** ESC H */ tabSet(): void;
-  /** ESC M */ reverseIndex(): void;
-  /** ESC c */ reset(): void;
+      ESC / C */ selectCharset(collectAndFlag: string): boolean;
+  /** ESC D */ index(): boolean;
+  /** ESC H */ tabSet(): boolean;
+  /** ESC M */ reverseIndex(): boolean;
+  /** ESC c */ reset(): boolean;
   /** ESC n
       ESC o
       ESC |
       ESC }
-      ESC ~ */ setgLevel(level: number): void;
+      ESC ~ */ setgLevel(level: number): boolean;
 }
 
 export interface ILinkMatcher {

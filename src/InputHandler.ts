@@ -446,15 +446,16 @@ export class InputHandler extends Disposable implements IInputHandler {
    * BEL
    * Bell (Ctrl-G).
    */
-  public bell(): void {
+  public bell(): boolean {
     this._terminal.bell();
+    return true;
   }
 
   /**
    * LF
    * Line Feed or New Line (NL).  (LF  is Ctrl-J).
    */
-  public lineFeed(): void {
+  public lineFeed(): boolean {
     // make buffer local for faster access
     const buffer = this._terminal.buffer;
 
@@ -476,36 +477,40 @@ export class InputHandler extends Disposable implements IInputHandler {
      * @event linefeed
      */
     this._terminal.emit('linefeed');
+    return true;
   }
 
   /**
    * CR
    * Carriage Return (Ctrl-M).
    */
-  public carriageReturn(): void {
+  public carriageReturn(): boolean {
     this._terminal.buffer.x = 0;
+    return true;
   }
 
   /**
    * BS
    * Backspace (Ctrl-H).
    */
-  public backspace(): void {
+  public backspace(): boolean {
     if (this._terminal.buffer.x > 0) {
       this._terminal.buffer.x--;
     }
+    return true;
   }
 
   /**
    * TAB
    * Horizontal Tab (HT) (Ctrl-I).
    */
-  public tab(): void {
+  public tab(): boolean {
     const originalX = this._terminal.buffer.x;
     this._terminal.buffer.x = this._terminal.buffer.nextStop();
     if (this._terminal.options.screenReaderMode) {
       this._terminal.emit('a11y.tab', this._terminal.buffer.x - originalX);
     }
+    return true;
   }
 
   /**
@@ -513,8 +518,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Shift Out (Ctrl-N) -> Switch to Alternate Character Set.  This invokes the
    * G1 character set.
    */
-  public shiftOut(): void {
+  public shiftOut(): boolean {
     this._terminal.setgLevel(1);
+    return true;
   }
 
   /**
@@ -522,28 +528,30 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Shift In (Ctrl-O) -> Switch to Standard Character Set.  This invokes the G0
    * character set (the default).
    */
-  public shiftIn(): void {
+  public shiftIn(): boolean {
     this._terminal.setgLevel(0);
+    return true;
   }
 
   /**
    * CSI Ps @
    * Insert Ps (Blank) Character(s) (default = 1) (ICH).
    */
-  public insertChars(params: number[]): void {
+  public insertChars(params: number[]): boolean {
     this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).insertCells(
       this._terminal.buffer.x,
       params[0] || 1,
       [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
     );
     this._terminal.updateRange(this._terminal.buffer.y);
+    return true;
   }
 
   /**
    * CSI Ps A
    * Cursor Up Ps Times (default = 1) (CUU).
    */
-  public cursorUp(params: number[]): void {
+  public cursorUp(params: number[]): boolean {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -552,13 +560,14 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (this._terminal.buffer.y < 0) {
       this._terminal.buffer.y = 0;
     }
+    return true;
   }
 
   /**
    * CSI Ps B
    * Cursor Down Ps Times (default = 1) (CUD).
    */
-  public cursorDown(params: number[]): void {
+  public cursorDown(params: number[]): boolean {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -571,13 +580,14 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (this._terminal.buffer.x >= this._terminal.cols) {
       this._terminal.buffer.x--;
     }
+    return true;
   }
 
   /**
    * CSI Ps C
    * Cursor Forward Ps Times (default = 1) (CUF).
    */
-  public cursorForward(params: number[]): void {
+  public cursorForward(params: number[]): boolean {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -586,13 +596,14 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (this._terminal.buffer.x >= this._terminal.cols) {
       this._terminal.buffer.x = this._terminal.cols - 1;
     }
+    return true;
   }
 
   /**
    * CSI Ps D
    * Cursor Backward Ps Times (default = 1) (CUB).
    */
-  public cursorBackward(params: number[]): void {
+  public cursorBackward(params: number[]): boolean {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -605,6 +616,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (this._terminal.buffer.x < 0) {
       this._terminal.buffer.x = 0;
     }
+    return true;
   }
 
   /**
@@ -612,7 +624,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Cursor Next Line Ps Times (default = 1) (CNL).
    * same as CSI Ps B ?
    */
-  public cursorNextLine(params: number[]): void {
+  public cursorNextLine(params: number[]): boolean {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -622,6 +634,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._terminal.buffer.y = this._terminal.rows - 1;
     }
     this._terminal.buffer.x = 0;
+    return true;
   }
 
 
@@ -630,7 +643,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Cursor Preceding Line Ps Times (default = 1) (CNL).
    * reuse CSI Ps A ?
    */
-  public cursorPrecedingLine(params: number[]): void {
+  public cursorPrecedingLine(params: number[]): boolean {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -640,6 +653,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._terminal.buffer.y = 0;
     }
     this._terminal.buffer.x = 0;
+    return true;
   }
 
 
@@ -647,19 +661,20 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps G
    * Cursor Character Absolute  [column] (default = [row,1]) (CHA).
    */
-  public cursorCharAbsolute(params: number[]): void {
+  public cursorCharAbsolute(params: number[]): boolean {
     let param = params[0];
     if (param < 1) {
       param = 1;
     }
     this._terminal.buffer.x = param - 1;
+    return true;
   }
 
   /**
    * CSI Ps ; Ps H
    * Cursor Position [row;column] (default = [1,1]) (CUP).
    */
-  public cursorPosition(params: number[]): void {
+  public cursorPosition(params: number[]): boolean {
     let col: number;
     let row: number = params[0] - 1;
 
@@ -683,17 +698,19 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     this._terminal.buffer.x = col;
     this._terminal.buffer.y = row;
+    return true;
   }
 
   /**
    * CSI Ps I
    *   Cursor Forward Tabulation Ps tab stops (default = 1) (CHT).
    */
-  public cursorForwardTab(params: number[]): void {
+  public cursorForwardTab(params: number[]): boolean {
     let param = params[0] || 1;
     while (param--) {
       this._terminal.buffer.x = this._terminal.buffer.nextStop();
     }
+    return true;
   }
 
   /**
@@ -736,7 +753,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps = 1  -> Selective Erase Above.
    *     Ps = 2  -> Selective Erase All.
    */
-  public eraseInDisplay(params: number[]): void {
+  public eraseInDisplay(params: number[]): boolean {
     let j;
     switch (params[0]) {
       case 0:
@@ -782,6 +799,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         }
         break;
     }
+    return true;
   }
 
   /**
@@ -795,7 +813,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps = 1  -> Selective Erase to Left.
    *     Ps = 2  -> Selective Erase All.
    */
-  public eraseInLine(params: number[]): void {
+  public eraseInLine(params: number[]): boolean {
     switch (params[0]) {
       case 0:
         this._eraseInBufferLine(this._terminal.buffer.y, this._terminal.buffer.x, this._terminal.cols);
@@ -808,13 +826,14 @@ export class InputHandler extends Disposable implements IInputHandler {
         break;
     }
     this._terminal.updateRange(this._terminal.buffer.y);
+    return true;
   }
 
   /**
    * CSI Ps L
    * Insert Ps Line(s) (default = 1) (IL).
    */
-  public insertLines(params: number[]): void {
+  public insertLines(params: number[]): boolean {
     let param: number = params[0];
     if (param < 1) {
       param = 1;
@@ -837,13 +856,14 @@ export class InputHandler extends Disposable implements IInputHandler {
     // this.maxRange();
     this._terminal.updateRange(buffer.y);
     this._terminal.updateRange(buffer.scrollBottom);
+    return true;
   }
 
   /**
    * CSI Ps M
    * Delete Ps Line(s) (default = 1) (DL).
    */
-  public deleteLines(params: number[]): void {
+  public deleteLines(params: number[]): boolean {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -867,25 +887,27 @@ export class InputHandler extends Disposable implements IInputHandler {
     // this.maxRange();
     this._terminal.updateRange(buffer.y);
     this._terminal.updateRange(buffer.scrollBottom);
+    return true;
   }
 
   /**
    * CSI Ps P
    * Delete Ps Character(s) (default = 1) (DCH).
    */
-  public deleteChars(params: number[]): void {
+  public deleteChars(params: number[]): boolean {
     this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).deleteCells(
       this._terminal.buffer.x,
       params[0] || 1,
       [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
     );
     this._terminal.updateRange(this._terminal.buffer.y);
+    return true;
   }
 
   /**
    * CSI Ps S  Scroll up Ps lines (default = 1) (SU).
    */
-  public scrollUp(params: number[]): void {
+  public scrollUp(params: number[]): boolean {
     let param = params[0] || 1;
 
     // make buffer local for faster access
@@ -898,12 +920,13 @@ export class InputHandler extends Disposable implements IInputHandler {
     // this.maxRange();
     this._terminal.updateRange(buffer.scrollTop);
     this._terminal.updateRange(buffer.scrollBottom);
+    return true;
   }
 
   /**
    * CSI Ps T  Scroll down Ps lines (default = 1) (SD).
    */
-  public scrollDown(params: number[], collect?: string): void {
+  public scrollDown(params: number[], collect?: string): boolean {
     if (params.length < 2 && !collect) {
       let param = params[0] || 1;
 
@@ -918,24 +941,26 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._terminal.updateRange(buffer.scrollTop);
       this._terminal.updateRange(buffer.scrollBottom);
     }
+    return true;
   }
 
   /**
    * CSI Ps X
    * Erase Ps Character(s) (default = 1) (ECH).
    */
-  public eraseChars(params: number[]): void {
+  public eraseChars(params: number[]): boolean {
     this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).replaceCells(
       this._terminal.buffer.x,
       this._terminal.buffer.x + (params[0] || 1),
       [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
     );
+    return true;
   }
 
   /**
    * CSI Ps Z  Cursor Backward Tabulation Ps tab stops (default = 1) (CBT).
    */
-  public cursorBackwardTab(params: number[]): void {
+  public cursorBackwardTab(params: number[]): boolean {
     let param = params[0] || 1;
 
     // make buffer local for faster access
@@ -944,13 +969,14 @@ export class InputHandler extends Disposable implements IInputHandler {
     while (param--) {
       buffer.x = buffer.prevStop();
     }
+    return true;
   }
 
   /**
    * CSI Pm `  Character Position Absolute
    *   [column] (default = [row,1]) (HPA).
    */
-  public charPosAbsolute(params: number[]): void {
+  public charPosAbsolute(params: number[]): boolean {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -959,6 +985,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (this._terminal.buffer.x >= this._terminal.cols) {
       this._terminal.buffer.x = this._terminal.cols - 1;
     }
+    return true;
   }
 
   /**
@@ -966,7 +993,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   [columns] (default = [row,col+1]) (HPR)
    * reuse CSI Ps C ?
    */
-  public hPositionRelative(params: number[]): void {
+  public hPositionRelative(params: number[]): boolean {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -975,12 +1002,13 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (this._terminal.buffer.x >= this._terminal.cols) {
       this._terminal.buffer.x = this._terminal.cols - 1;
     }
+    return true;
   }
 
   /**
    * CSI Ps b  Repeat the preceding graphic character Ps times (REP).
    */
-  public repeatPrecedingCharacter(params: number[]): void {
+  public repeatPrecedingCharacter(params: number[]): boolean {
     // make buffer local for faster access
     const buffer = this._terminal.buffer;
     const line = buffer.lines.get(buffer.ybase + buffer.y);
@@ -989,6 +1017,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.get(buffer.x - 1) || [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
     );
     // FIXME: no updateRange here?
+    return true;
   }
 
   /**
@@ -1028,9 +1057,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   xterm/charproc.c - line 2012, for more information.
    *   vim responds with ^[[?0c or ^[[?1c after the terminal's response (?)
    */
-  public sendDeviceAttributes(params: number[], collect?: string): void {
+  public sendDeviceAttributes(params: number[], collect?: string): boolean {
     if (params[0] > 0) {
-      return;
+      return true;
     }
 
     if (!collect) {
@@ -1055,13 +1084,14 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._terminal.handler(C0.ESC + '[>83;40003;0c');
       }
     }
+    return true;
   }
 
   /**
    * CSI Pm d  Vertical Position Absolute (VPA)
    *   [row] (default = [1,column])
    */
-  public linePosAbsolute(params: number[]): void {
+  public linePosAbsolute(params: number[]): boolean {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -1070,6 +1100,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (this._terminal.buffer.y >= this._terminal.rows) {
       this._terminal.buffer.y = this._terminal.rows - 1;
     }
+    return true;
   }
 
   /**
@@ -1077,7 +1108,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   [rows] (default = [row+1,column])
    * reuse CSI Ps B ?
    */
-  public vPositionRelative(params: number[]): void {
+  public vPositionRelative(params: number[]): boolean {
     let param = params[0];
     if (param < 1) {
       param = 1;
@@ -1090,6 +1121,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (this._terminal.buffer.x >= this._terminal.cols) {
       this._terminal.buffer.x--;
     }
+    return true;
   }
 
   /**
@@ -1097,7 +1129,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Horizontal and Vertical Position [row;column] (default =
    *   [1,1]) (HVP).
    */
-  public hVPosition(params: number[]): void {
+  public hVPosition(params: number[]): boolean {
     if (params[0] < 1) params[0] = 1;
     if (params[1] < 1) params[1] = 1;
 
@@ -1110,6 +1142,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (this._terminal.buffer.x >= this._terminal.cols) {
       this._terminal.buffer.x = this._terminal.cols - 1;
     }
+    return true;
   }
 
   /**
@@ -1120,13 +1153,14 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Ps = 2  -> Clear Stops on Line.
    *   http://vt100.net/annarbor/aaa-ug/section6.html
    */
-  public tabClear(params: number[]): void {
+  public tabClear(params: number[]): boolean {
     const param = params[0];
     if (param <= 0) {
       delete this._terminal.buffer.tabs[this._terminal.buffer.x];
     } else if (param === 3) {
       this._terminal.buffer.tabs = {};
     }
+    return true;
   }
 
   /**
@@ -1215,13 +1249,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Modes:
    *   http: *vt100.net/docs/vt220-rm/chapter4.html
    */
-  public setMode(params: number[], collect?: string): void {
+  public setMode(params: number[], collect?: string): boolean {
     if (params.length > 1) {
       for (let i = 0; i < params.length; i++) {
         this.setMode([params[i]]);
       }
 
-      return;
+      return true;
     }
 
     if (!collect) {
@@ -1334,6 +1368,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
       }
     }
+    return true;
   }
 
   /**
@@ -1418,13 +1453,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps = 1 0 6 1  -> Reset keyboard emulation to Sun/PC style.
    *     Ps = 2 0 0 4  -> Reset bracketed paste mode.
    */
-  public resetMode(params: number[], collect?: string): void {
+  public resetMode(params: number[], collect?: string): boolean {
     if (params.length > 1) {
       for (let i = 0; i < params.length; i++) {
         this.resetMode([params[i]]);
       }
 
-      return;
+      return true;
     }
 
     if (!collect) {
@@ -1514,6 +1549,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
       }
     }
+    return true;
   }
 
   /**
@@ -1581,11 +1617,11 @@ export class InputHandler extends Disposable implements IInputHandler {
    *     Ps = 4 8  ; 5  ; Ps -> Set background color to the second
    *     Ps.
    */
-  public charAttributes(params: number[]): void {
+  public charAttributes(params: number[]): boolean {
     // Optimize a single SGR0.
     if (params.length === 1 && params[0] === 0) {
       this._terminal.curAttr = DEFAULT_ATTR;
-      return;
+      return true;
     }
 
     const l = params.length;
@@ -1705,6 +1741,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
 
     this._terminal.curAttr = (flags << 18) | (fg << 9) | bg;
+
+    return true;
   }
 
   /**
@@ -1730,7 +1768,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   CSI ? 5 3  n  Locator available, if compiled-in, or
    *   CSI ? 5 0  n  No Locator, if not.
    */
-  public deviceStatus(params: number[], collect?: string): void {
+  public deviceStatus(params: number[], collect?: string): boolean {
     if (!collect) {
       switch (params[0]) {
         case 5:
@@ -1772,13 +1810,14 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
       }
     }
+    return true;
   }
 
   /**
    * CSI ! p   Soft terminal reset (DECSTR).
    * http://vt100.net/docs/vt220-rm/table4-10.html
    */
-  public softReset(params: number[], collect?: string): void {
+  public softReset(params: number[], collect?: string): boolean {
     if (collect === '!') {
       this._terminal.cursorHidden = false;
       this._terminal.insertMode = false;
@@ -1797,6 +1836,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._terminal.glevel = 0; // ??
       this._terminal.charsets = [null]; // ??
     }
+    return true;
   }
 
   /**
@@ -1809,7 +1849,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Ps = 5  -> blinking bar (xterm).
    *   Ps = 6  -> steady bar (xterm).
    */
-  public setCursorStyle(params?: number[], collect?: string): void {
+  public setCursorStyle(params?: number[], collect?: string): boolean {
     if (collect === ' ') {
       const param = params[0] < 1 ? 1 : params[0];
       switch (param) {
@@ -1829,6 +1869,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       const isBlinking = param % 2 === 1;
       this._terminal.setOption('cursorBlink', isBlinking);
     }
+    return true;
   }
 
   /**
@@ -1837,12 +1878,15 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   dow) (DECSTBM).
    * CSI ? Pm r
    */
-  public setScrollRegion(params: number[], collect?: string): void {
-    if (collect) return;
+  public setScrollRegion(params: number[], collect?: string): boolean {
+    if (collect) {
+      return true;
+    }
     this._terminal.buffer.scrollTop = (params[0] || 1) - 1;
     this._terminal.buffer.scrollBottom = (params[1] && params[1] <= this._terminal.rows ? params[1] : this._terminal.rows) - 1;
     this._terminal.buffer.x = 0;
     this._terminal.buffer.y = 0;
+    return true;
   }
 
 
@@ -1851,10 +1895,11 @@ export class InputHandler extends Disposable implements IInputHandler {
    * ESC 7
    *   Save cursor (ANSI.SYS).
    */
-  public saveCursor(params: number[]): void {
+  public saveCursor(params: number[]): boolean {
     this._terminal.buffer.savedX = this._terminal.buffer.x;
     this._terminal.buffer.savedY = this._terminal.buffer.y;
     this._terminal.buffer.savedCurAttr = this._terminal.curAttr;
+    return true;
   }
 
 
@@ -1863,10 +1908,11 @@ export class InputHandler extends Disposable implements IInputHandler {
    * ESC 8
    *   Restore cursor (ANSI.SYS).
    */
-  public restoreCursor(params: number[]): void {
+  public restoreCursor(params: number[]): boolean {
     this._terminal.buffer.x = this._terminal.buffer.savedX || 0;
     this._terminal.buffer.y = this._terminal.buffer.savedY || 0;
     this._terminal.curAttr = this._terminal.buffer.savedCurAttr || DEFAULT_ATTR;
+    return true;
   }
 
 
@@ -1875,8 +1921,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * OSC 2; <data> ST (set window title)
    *   Proxy to set window title. Icon name is not supported.
    */
-  public setTitle(data: string): void {
+  public setTitle(data: string): boolean {
     this._terminal.handleTitle(data);
+    return true;
   }
 
   /**
@@ -1885,9 +1932,10 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   DEC mnemonic: NEL (https://vt100.net/docs/vt510-rm/NEL)
    *   Moves cursor to first position on next line.
    */
-  public nextLine(): void {
+  public nextLine(): boolean {
     this._terminal.buffer.x = 0;
     this.index();
+    return true;
   }
 
   /**
@@ -1895,12 +1943,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   DEC mnemonic: DECKPAM (https://vt100.net/docs/vt510-rm/DECKPAM.html)
    *   Enables the numeric keypad to send application sequences to the host.
    */
-  public keypadApplicationMode(): void {
+  public keypadApplicationMode(): boolean {
     this._terminal.log('Serial port requested application keypad.');
     this._terminal.applicationKeypad = true;
     if (this._terminal.viewport) {
       this._terminal.viewport.syncScrollArea();
     }
+    return true;
   }
 
   /**
@@ -1908,12 +1957,13 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   DEC mnemonic: DECKPNM (https://vt100.net/docs/vt510-rm/DECKPNM.html)
    *   Enables the keypad to send numeric characters to the host.
    */
-  public keypadNumericMode(): void {
+  public keypadNumericMode(): boolean {
     this._terminal.log('Switching back to normal keypad.');
     this._terminal.applicationKeypad = false;
     if (this._terminal.viewport) {
       this._terminal.viewport.syncScrollArea();
     }
+    return true;
   }
 
   /**
@@ -1922,9 +1972,10 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Select default character set. UTF-8 is not supported (string are unicode anyways)
    *   therefore ESC % G does the same.
    */
-  public selectDefaultCharset(): void {
+  public selectDefaultCharset(): boolean {
     this._terminal.setgLevel(0);
     this._terminal.setgCharset(0, DEFAULT_CHARSET); // US (default)
+    return true;
   }
 
   /**
@@ -1943,10 +1994,15 @@ export class InputHandler extends Disposable implements IInputHandler {
    * ESC / C
    *   Designate G3 Character Set (VT300). C = A  -> ISO Latin-1 Supplemental. - Supported?
    */
-  public selectCharset(collectAndFlag: string): void {
-    if (collectAndFlag.length !== 2) return this.selectDefaultCharset();
-    if (collectAndFlag[0] === '/') return;  // TODO: Is this supported?
+  public selectCharset(collectAndFlag: string): boolean {
+    if (collectAndFlag.length !== 2) {
+      return this.selectDefaultCharset();
+    }
+    if (collectAndFlag[0] === '/') {
+      return true;  // TODO: Is this supported?
+    }
     this._terminal.setgCharset(GLEVEL[collectAndFlag[0]], CHARSETS[collectAndFlag[1]] || DEFAULT_CHARSET);
+    return true;
   }
 
   /**
@@ -1955,8 +2011,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   DEC mnemonic: IND (https://vt100.net/docs/vt510-rm/IND.html)
    *   Moves the cursor down one line in the same column.
    */
-  public index(): void {
+  public index(): boolean {
     this._terminal.index();  // TODO: save to move from terminal?
+    return true;
   }
 
   /**
@@ -1966,8 +2023,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Sets a horizontal tab stop at the column position indicated by
    *   the value of the active column when the terminal receives an HTS.
    */
-  public tabSet(): void {
+  public tabSet(): boolean {
     this._terminal.tabSet();  // TODO: save to move from terminal?
+    return true;
   }
 
   /**
@@ -1977,8 +2035,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Moves the cursor up one line in the same column. If the cursor is at the top margin,
    *   the page scrolls down.
    */
-  public reverseIndex(): void {
+  public reverseIndex(): boolean {
     this._terminal.reverseIndex();  // TODO: save to move from terminal?
+    return true;
   }
 
   /**
@@ -1986,9 +2045,10 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   DEC mnemonic: RIS (https://vt100.net/docs/vt510-rm/RIS.html)
    *   Reset to initial state.
    */
-  public reset(): void {
+  public reset(): boolean {
     this._parser.reset();
     this._terminal.reset();  // TODO: save to move from terminal?
+    return true;
   }
 
   /**
@@ -2001,7 +2061,8 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   When you use a locking shift, the character set remains in GL or GR until
    *   you use another locking shift. (partly supported)
    */
-  public setgLevel(level: number): void {
+  public setgLevel(level: number): boolean {
     this._terminal.setgLevel(level);  // TODO: save to move from terminal?
+    return true;
   }
 }
