@@ -76,7 +76,7 @@ export class TextRenderLayer extends BaseRenderLayer {
 
         // The character to the left is a wide character, drawing is owned by
         // the char at x-1
-        if (cell.width === 0) {
+        if (cell.getWidth() === 0) {
           continue;
         }
 
@@ -223,7 +223,7 @@ export class TextRenderLayer extends BaseRenderLayer {
           this._ctx.fillStyle = this._colors.ansi[cell.getFgColor()].css;
         }
 
-        this.fillBottomLineAtCells(x, y, cell.width);
+        this.fillBottomLineAtCells(x, y, cell.getWidth());
         this._ctx.restore();
       }
       this.drawChars(terminal, cell, x, y);
@@ -255,18 +255,20 @@ export class TextRenderLayer extends BaseRenderLayer {
   private _isOverlapping(cell: ICellData): boolean {
     // Only single cell characters can be overlapping, rendering issues can
     // occur without this check
-    if (cell.width !== 1) {
+    if (cell.getWidth() !== 1) {
       return false;
     }
 
     // We assume that any ascii character will not overlap
-    if (cell.code < 256) {
+    if (cell.getCode() < 256) {
       return false;
     }
 
+    const chars = cell.getChars();
+
     // Deliver from cache if available
-    if (this._characterOverlapCache.hasOwnProperty(cell.chars)) {
-      return this._characterOverlapCache[cell.chars];
+    if (this._characterOverlapCache.hasOwnProperty(chars)) {
+      return this._characterOverlapCache[chars];
     }
 
     // Setup the font
@@ -276,13 +278,13 @@ export class TextRenderLayer extends BaseRenderLayer {
     // Measure the width of the character, but Math.floor it
     // because that is what the renderer does when it calculates
     // the character dimensions we are comparing against
-    const overlaps = Math.floor(this._ctx.measureText(cell.chars).width) > this._characterWidth;
+    const overlaps = Math.floor(this._ctx.measureText(chars).width) > this._characterWidth;
 
     // Restore the original context
     this._ctx.restore();
 
     // Cache and return
-    this._characterOverlapCache[cell.chars] = overlaps;
+    this._characterOverlapCache[chars] = overlaps;
     return overlaps;
   }
 

@@ -59,7 +59,7 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
     for (let x = 0; x < line.getTrimmedLength(); x++) {
       line.loadCell(x, this._cell);
 
-      if (this._cell.width === 0) {
+      if (this._cell.getWidth() === 0) {
         // If this character is of width 0, skip it.
         continue;
       }
@@ -88,7 +88,7 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
         rangeAttrBG = this._cell.bg;
       }
 
-      currentStringIndex += this._cell.chars.length || WHITESPACE_CELL_CHAR.length;
+      currentStringIndex += this._cell.getChars().length || WHITESPACE_CELL_CHAR.length;
     }
 
     // Process any trailing ranges.

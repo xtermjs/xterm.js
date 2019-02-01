@@ -461,9 +461,9 @@ describe('term.js addons', () => {
           term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
           term.scroll();
           assert.equal(term.buffer.lines.length, INIT_ROWS + 1);
-          assert.equal(term.buffer.lines.get(0).loadCell(0, new CellData()).chars, 'a');
-          assert.equal(term.buffer.lines.get(INIT_ROWS - 1).loadCell(0, new CellData()).chars, 'b');
-          assert.equal(term.buffer.lines.get(INIT_ROWS).loadCell(0, new CellData()).chars, '');
+          assert.equal(term.buffer.lines.get(0).loadCell(0, new CellData()).getChars(), 'a');
+          assert.equal(term.buffer.lines.get(INIT_ROWS - 1).loadCell(0, new CellData()).getChars(), 'b');
+          assert.equal(term.buffer.lines.get(INIT_ROWS).loadCell(0, new CellData()).getChars(), '');
         });
 
         it('should properly scroll inside a scroll region (scrollTop set)', () => {
@@ -474,8 +474,8 @@ describe('term.js addons', () => {
           term.buffer.scrollTop = 1;
           term.scroll();
           assert.equal(term.buffer.lines.length, INIT_ROWS);
-          assert.equal(term.buffer.lines.get(0).loadCell(0, new CellData()).chars, 'a');
-          assert.equal(term.buffer.lines.get(1).loadCell(0, new CellData()).chars, 'c');
+          assert.equal(term.buffer.lines.get(0).loadCell(0, new CellData()).getChars(), 'a');
+          assert.equal(term.buffer.lines.get(1).loadCell(0, new CellData()).getChars(), 'c');
         });
 
         it('should properly scroll inside a scroll region (scrollBottom set)', () => {
@@ -488,12 +488,12 @@ describe('term.js addons', () => {
           term.buffer.scrollBottom = 3;
           term.scroll();
           assert.equal(term.buffer.lines.length, INIT_ROWS + 1);
-          assert.equal(term.buffer.lines.get(0).loadCell(0, new CellData()).chars, 'a', '\'a\' should be pushed to the scrollback');
-          assert.equal(term.buffer.lines.get(1).loadCell(0, new CellData()).chars, 'b');
-          assert.equal(term.buffer.lines.get(2).loadCell(0, new CellData()).chars, 'c');
-          assert.equal(term.buffer.lines.get(3).loadCell(0, new CellData()).chars, 'd');
-          assert.equal(term.buffer.lines.get(4).loadCell(0, new CellData()).chars, '', 'a blank line should be added at scrollBottom\'s index');
-          assert.equal(term.buffer.lines.get(5).loadCell(0, new CellData()).chars, 'e');
+          assert.equal(term.buffer.lines.get(0).loadCell(0, new CellData()).getChars(), 'a', '\'a\' should be pushed to the scrollback');
+          assert.equal(term.buffer.lines.get(1).loadCell(0, new CellData()).getChars(), 'b');
+          assert.equal(term.buffer.lines.get(2).loadCell(0, new CellData()).getChars(), 'c');
+          assert.equal(term.buffer.lines.get(3).loadCell(0, new CellData()).getChars(), 'd');
+          assert.equal(term.buffer.lines.get(4).loadCell(0, new CellData()).getChars(), '', 'a blank line should be added at scrollBottom\'s index');
+          assert.equal(term.buffer.lines.get(5).loadCell(0, new CellData()).getChars(), 'e');
         });
 
         it('should properly scroll inside a scroll region (scrollTop and scrollBottom set)', () => {
@@ -507,11 +507,11 @@ describe('term.js addons', () => {
           term.buffer.scrollBottom = 3;
           term.scroll();
           assert.equal(term.buffer.lines.length, INIT_ROWS);
-          assert.equal(term.buffer.lines.get(0).loadCell(0, new CellData()).chars, 'a');
-          assert.equal(term.buffer.lines.get(1).loadCell(0, new CellData()).chars, 'c', '\'b\' should be removed from the buffer');
-          assert.equal(term.buffer.lines.get(2).loadCell(0, new CellData()).chars, 'd');
-          assert.equal(term.buffer.lines.get(3).loadCell(0, new CellData()).chars, '', 'a blank line should be added at scrollBottom\'s index');
-          assert.equal(term.buffer.lines.get(4).loadCell(0, new CellData()).chars, 'e');
+          assert.equal(term.buffer.lines.get(0).loadCell(0, new CellData()).getChars(), 'a');
+          assert.equal(term.buffer.lines.get(1).loadCell(0, new CellData()).getChars(), 'c', '\'b\' should be removed from the buffer');
+          assert.equal(term.buffer.lines.get(2).loadCell(0, new CellData()).getChars(), 'd');
+          assert.equal(term.buffer.lines.get(3).loadCell(0, new CellData()).getChars(), '', 'a blank line should be added at scrollBottom\'s index');
+          assert.equal(term.buffer.lines.get(4).loadCell(0, new CellData()).getChars(), 'e');
         });
       });
 
@@ -530,10 +530,10 @@ describe('term.js addons', () => {
           term.scroll();
           assert.equal(term.buffer.lines.length, INIT_ROWS);
           // 'a' gets pushed out of buffer
-          assert.equal(term.buffer.lines.get(0).loadCell(0, new CellData()).chars, 'b');
-          assert.equal(term.buffer.lines.get(1).loadCell(0, new CellData()).chars, '');
-          assert.equal(term.buffer.lines.get(INIT_ROWS - 2).loadCell(0, new CellData()).chars, 'c');
-          assert.equal(term.buffer.lines.get(INIT_ROWS - 1).loadCell(0, new CellData()).chars, '');
+          assert.equal(term.buffer.lines.get(0).loadCell(0, new CellData()).getChars(), 'b');
+          assert.equal(term.buffer.lines.get(1).loadCell(0, new CellData()).getChars(), '');
+          assert.equal(term.buffer.lines.get(INIT_ROWS - 2).loadCell(0, new CellData()).getChars(), 'c');
+          assert.equal(term.buffer.lines.get(INIT_ROWS - 1).loadCell(0, new CellData()).getChars(), '');
         });
 
         it('should properly scroll inside a scroll region (scrollTop set)', () => {
@@ -544,8 +544,8 @@ describe('term.js addons', () => {
           term.buffer.scrollTop = 1;
           term.scroll();
           assert.equal(term.buffer.lines.length, INIT_ROWS);
-          assert.equal(term.buffer.lines.get(0).loadCell(0, new CellData()).chars, 'a');
-          assert.equal(term.buffer.lines.get(1).loadCell(0, new CellData()).chars, 'c');
+          assert.equal(term.buffer.lines.get(0).loadCell(0, new CellData()).getChars(), 'a');
+          assert.equal(term.buffer.lines.get(1).loadCell(0, new CellData()).getChars(), 'c');
         });
 
         it('should properly scroll inside a scroll region (scrollBottom set)', () => {
@@ -558,11 +558,11 @@ describe('term.js addons', () => {
           term.buffer.scrollBottom = 3;
           term.scroll();
           assert.equal(term.buffer.lines.length, INIT_ROWS);
-          assert.equal(term.buffer.lines.get(0).loadCell(0, new CellData()).chars, 'b');
-          assert.equal(term.buffer.lines.get(1).loadCell(0, new CellData()).chars, 'c');
-          assert.equal(term.buffer.lines.get(2).loadCell(0, new CellData()).chars, 'd');
-          assert.equal(term.buffer.lines.get(3).loadCell(0, new CellData()).chars, '', 'a blank line should be added at scrollBottom\'s index');
-          assert.equal(term.buffer.lines.get(4).loadCell(0, new CellData()).chars, 'e');
+          assert.equal(term.buffer.lines.get(0).loadCell(0, new CellData()).getChars(), 'b');
+          assert.equal(term.buffer.lines.get(1).loadCell(0, new CellData()).getChars(), 'c');
+          assert.equal(term.buffer.lines.get(2).loadCell(0, new CellData()).getChars(), 'd');
+          assert.equal(term.buffer.lines.get(3).loadCell(0, new CellData()).getChars(), '', 'a blank line should be added at scrollBottom\'s index');
+          assert.equal(term.buffer.lines.get(4).loadCell(0, new CellData()).getChars(), 'e');
         });
 
         it('should properly scroll inside a scroll region (scrollTop and scrollBottom set)', () => {
@@ -576,11 +576,11 @@ describe('term.js addons', () => {
           term.buffer.scrollBottom = 3;
           term.scroll();
           assert.equal(term.buffer.lines.length, INIT_ROWS);
-          assert.equal(term.buffer.lines.get(0).loadCell(0, new CellData()).chars, 'a');
-          assert.equal(term.buffer.lines.get(1).loadCell(0, new CellData()).chars, 'c', '\'b\' should be removed from the buffer');
-          assert.equal(term.buffer.lines.get(2).loadCell(0, new CellData()).chars, 'd');
-          assert.equal(term.buffer.lines.get(3).loadCell(0, new CellData()).chars, '', 'a blank line should be added at scrollBottom\'s index');
-          assert.equal(term.buffer.lines.get(4).loadCell(0, new CellData()).chars, 'e');
+          assert.equal(term.buffer.lines.get(0).loadCell(0, new CellData()).getChars(), 'a');
+          assert.equal(term.buffer.lines.get(1).loadCell(0, new CellData()).getChars(), 'c', '\'b\' should be removed from the buffer');
+          assert.equal(term.buffer.lines.get(2).loadCell(0, new CellData()).getChars(), 'd');
+          assert.equal(term.buffer.lines.get(3).loadCell(0, new CellData()).getChars(), '', 'a blank line should be added at scrollBottom\'s index');
+          assert.equal(term.buffer.lines.get(4).loadCell(0, new CellData()).getChars(), 'e');
         });
       });
     });
@@ -775,10 +775,10 @@ describe('term.js addons', () => {
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
         term.write(high + String.fromCharCode(i));
         const tchar = term.buffer.lines.get(0).loadCell(0, cell);
-        expect(tchar.chars).eql(high + String.fromCharCode(i));
-        expect(tchar.chars.length).eql(2);
-        expect(tchar.width).eql(1);
-        expect(term.buffer.lines.get(0).loadCell(1, cell).chars).eql('');
+        expect(tchar.getChars()).eql(high + String.fromCharCode(i));
+        expect(tchar.getChars().length).eql(2);
+        expect(tchar.getWidth()).eql(1);
+        expect(term.buffer.lines.get(0).loadCell(1, cell).getChars()).eql('');
         term.reset();
       }
     });
@@ -788,9 +788,9 @@ describe('term.js addons', () => {
       for (let i = 0xDC00; i <= 0xDCFF; ++i) {
         term.buffer.x = term.cols - 1;
         term.write(high + String.fromCharCode(i));
-        expect(term.buffer.lines.get(0).loadCell(term.buffer.x - 1, cell).chars).eql(high + String.fromCharCode(i));
-        expect(term.buffer.lines.get(0).loadCell(term.buffer.x - 1, cell).chars.length).eql(2);
-        expect(term.buffer.lines.get(1).loadCell(0, cell).chars).eql('');
+        expect(term.buffer.lines.get(0).loadCell(term.buffer.x - 1, cell).getChars()).eql(high + String.fromCharCode(i));
+        expect(term.buffer.lines.get(0).loadCell(term.buffer.x - 1, cell).getChars().length).eql(2);
+        expect(term.buffer.lines.get(1).loadCell(0, cell).getChars()).eql('');
         term.reset();
       }
     });
@@ -801,10 +801,10 @@ describe('term.js addons', () => {
         term.buffer.x = term.cols - 1;
         term.wraparoundMode = true;
         term.write('a' + high + String.fromCharCode(i));
-        expect(term.buffer.lines.get(0).loadCell(term.cols - 1, cell).chars).eql('a');
-        expect(term.buffer.lines.get(1).loadCell(0, cell).chars).eql(high + String.fromCharCode(i));
-        expect(term.buffer.lines.get(1).loadCell(0, cell).chars.length).eql(2);
-        expect(term.buffer.lines.get(1).loadCell(1, cell).chars).eql('');
+        expect(term.buffer.lines.get(0).loadCell(term.cols - 1, cell).getChars()).eql('a');
+        expect(term.buffer.lines.get(1).loadCell(0, cell).getChars()).eql(high + String.fromCharCode(i));
+        expect(term.buffer.lines.get(1).loadCell(0, cell).getChars().length).eql(2);
+        expect(term.buffer.lines.get(1).loadCell(1, cell).getChars()).eql('');
         term.reset();
       }
     });
@@ -816,9 +816,9 @@ describe('term.js addons', () => {
         term.wraparoundMode = false;
         term.write('a' + high + String.fromCharCode(i));
         // auto wraparound mode should cut off the rest of the line
-        expect(term.buffer.lines.get(0).loadCell(term.cols - 1, cell).chars).eql('a');
-        expect(term.buffer.lines.get(0).loadCell(term.cols - 1, cell).chars.length).eql(1);
-        expect(term.buffer.lines.get(1).loadCell(1, cell).chars).eql('');
+        expect(term.buffer.lines.get(0).loadCell(term.cols - 1, cell).getChars()).eql('a');
+        expect(term.buffer.lines.get(0).loadCell(term.cols - 1, cell).getChars().length).eql(1);
+        expect(term.buffer.lines.get(1).loadCell(1, cell).getChars()).eql('');
         term.reset();
       }
     });
@@ -829,10 +829,10 @@ describe('term.js addons', () => {
         term.write(high);
         term.write(String.fromCharCode(i));
         const tchar = term.buffer.lines.get(0).loadCell(0, cell);
-        expect(tchar.chars).eql(high + String.fromCharCode(i));
-        expect(tchar.chars.length).eql(2);
-        expect(tchar.width).eql(1);
-        expect(term.buffer.lines.get(0).loadCell(1, cell).chars).eql('');
+        expect(tchar.getChars()).eql(high + String.fromCharCode(i));
+        expect(tchar.getChars().length).eql(2);
+        expect(tchar.getWidth()).eql(1);
+        expect(term.buffer.lines.get(0).loadCell(1, cell).getChars()).eql('');
         term.reset();
       }
     });
@@ -843,49 +843,49 @@ describe('term.js addons', () => {
     it('café', () => {
       term.write('cafe\u0301');
       term.buffer.lines.get(0).loadCell(3, cell);
-      expect(cell.chars).eql('e\u0301');
-      expect(cell.chars.length).eql(2);
-      expect(cell.width).eql(1);
+      expect(cell.getChars()).eql('e\u0301');
+      expect(cell.getChars().length).eql(2);
+      expect(cell.getWidth()).eql(1);
     });
     it('café - end of line', () => {
       term.buffer.x = term.cols - 1 - 3;
       term.write('cafe\u0301');
       term.buffer.lines.get(0).loadCell(term.cols - 1, cell);
-      expect(cell.chars).eql('e\u0301');
-      expect(cell.chars.length).eql(2);
-      expect(cell.width).eql(1);
+      expect(cell.getChars()).eql('e\u0301');
+      expect(cell.getChars().length).eql(2);
+      expect(cell.getWidth()).eql(1);
       term.buffer.lines.get(0).loadCell(1, cell);
-      expect(cell.chars).eql('');
-      expect(cell.chars.length).eql(0);
-      expect(cell.width).eql(1);
+      expect(cell.getChars()).eql('');
+      expect(cell.getChars().length).eql(0);
+      expect(cell.getWidth()).eql(1);
     });
     it('multiple combined é', () => {
       term.wraparoundMode = true;
       term.write(Array(100).join('e\u0301'));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0).loadCell(i, cell);
-        expect(cell.chars).eql('e\u0301');
-        expect(cell.chars.length).eql(2);
-        expect(cell.width).eql(1);
+        expect(cell.getChars()).eql('e\u0301');
+        expect(cell.getChars().length).eql(2);
+        expect(cell.getWidth()).eql(1);
       }
       term.buffer.lines.get(1).loadCell(0, cell);
-      expect(cell.chars).eql('e\u0301');
-      expect(cell.chars.length).eql(2);
-      expect(cell.width).eql(1);
+      expect(cell.getChars()).eql('e\u0301');
+      expect(cell.getChars().length).eql(2);
+      expect(cell.getWidth()).eql(1);
     });
     it('multiple surrogate with combined', () => {
       term.wraparoundMode = true;
       term.write(Array(100).join('\uD800\uDC00\u0301'));
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0).loadCell(i, cell);
-        expect(cell.chars).eql('\uD800\uDC00\u0301');
-        expect(cell.chars.length).eql(3);
-        expect(cell.width).eql(1);
+        expect(cell.getChars()).eql('\uD800\uDC00\u0301');
+        expect(cell.getChars().length).eql(3);
+        expect(cell.getWidth()).eql(1);
       }
       term.buffer.lines.get(1).loadCell(0, cell);
-      expect(cell.chars).eql('\uD800\uDC00\u0301');
-      expect(cell.chars.length).eql(3);
-      expect(cell.width).eql(1);
+      expect(cell.getChars()).eql('\uD800\uDC00\u0301');
+      expect(cell.getChars().length).eql(3);
+      expect(cell.getWidth()).eql(1);
     });
   });
 
@@ -908,19 +908,19 @@ describe('term.js addons', () => {
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0).loadCell(i, cell);
         if (i % 2) {
-          expect(cell.chars).eql('');
-          expect(cell.chars.length).eql(0);
-          expect(cell.width).eql(0);
+          expect(cell.getChars()).eql('');
+          expect(cell.getChars().length).eql(0);
+          expect(cell.getWidth()).eql(0);
         } else {
-          expect(cell.chars).eql('￥');
-          expect(cell.chars.length).eql(1);
-          expect(cell.width).eql(2);
+          expect(cell.getChars()).eql('￥');
+          expect(cell.getChars().length).eql(1);
+          expect(cell.getWidth()).eql(2);
         }
       }
       term.buffer.lines.get(1).loadCell(0, cell);
-      expect(cell.chars).eql('￥');
-      expect(cell.chars.length).eql(1);
-      expect(cell.width).eql(2);
+      expect(cell.getChars()).eql('￥');
+      expect(cell.getChars().length).eql(1);
+      expect(cell.getWidth()).eql(2);
     });
     it('line of ￥ odd', () => {
       term.wraparoundMode = true;
@@ -929,23 +929,23 @@ describe('term.js addons', () => {
       for (let i = 1; i < term.cols - 1; ++i) {
         term.buffer.lines.get(0).loadCell(i, cell);
         if (!(i % 2)) {
-          expect(cell.chars).eql('');
-          expect(cell.chars.length).eql(0);
-          expect(cell.width).eql(0);
+          expect(cell.getChars()).eql('');
+          expect(cell.getChars().length).eql(0);
+          expect(cell.getWidth()).eql(0);
         } else {
-          expect(cell.chars).eql('￥');
-          expect(cell.chars.length).eql(1);
-          expect(cell.width).eql(2);
+          expect(cell.getChars()).eql('￥');
+          expect(cell.getChars().length).eql(1);
+          expect(cell.getWidth()).eql(2);
         }
       }
       term.buffer.lines.get(0).loadCell(term.cols - 1, cell);
-      expect(cell.chars).eql('');
-      expect(cell.chars.length).eql(0);
-      expect(cell.width).eql(1);
+      expect(cell.getChars()).eql('');
+      expect(cell.getChars().length).eql(0);
+      expect(cell.getWidth()).eql(1);
       term.buffer.lines.get(1).loadCell(0, cell);
-      expect(cell.chars).eql('￥');
-      expect(cell.chars.length).eql(1);
-      expect(cell.width).eql(2);
+      expect(cell.getChars()).eql('￥');
+      expect(cell.getChars().length).eql(1);
+      expect(cell.getWidth()).eql(2);
     });
     it('line of ￥ with combining odd', () => {
       term.wraparoundMode = true;
@@ -954,23 +954,23 @@ describe('term.js addons', () => {
       for (let i = 1; i < term.cols - 1; ++i) {
         term.buffer.lines.get(0).loadCell(i, cell);
         if (!(i % 2)) {
-          expect(cell.chars).eql('');
-          expect(cell.chars.length).eql(0);
-          expect(cell.width).eql(0);
+          expect(cell.getChars()).eql('');
+          expect(cell.getChars().length).eql(0);
+          expect(cell.getWidth()).eql(0);
         } else {
-          expect(cell.chars).eql('￥\u0301');
-          expect(cell.chars.length).eql(2);
-          expect(cell.width).eql(2);
+          expect(cell.getChars()).eql('￥\u0301');
+          expect(cell.getChars().length).eql(2);
+          expect(cell.getWidth()).eql(2);
         }
       }
       term.buffer.lines.get(0).loadCell(term.cols - 1, cell);
-      expect(cell.chars).eql('');
-      expect(cell.chars.length).eql(0);
-      expect(cell.width).eql(1);
+      expect(cell.getChars()).eql('');
+      expect(cell.getChars().length).eql(0);
+      expect(cell.getWidth()).eql(1);
       term.buffer.lines.get(1).loadCell(0, cell);
-      expect(cell.chars).eql('￥\u0301');
-      expect(cell.chars.length).eql(2);
-      expect(cell.width).eql(2);
+      expect(cell.getChars()).eql('￥\u0301');
+      expect(cell.getChars().length).eql(2);
+      expect(cell.getWidth()).eql(2);
     });
     it('line of ￥ with combining even', () => {
       term.wraparoundMode = true;
@@ -978,19 +978,19 @@ describe('term.js addons', () => {
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0).loadCell(i, cell);
         if (i % 2) {
-          expect(cell.chars).eql('');
-          expect(cell.chars.length).eql(0);
-          expect(cell.width).eql(0);
+          expect(cell.getChars()).eql('');
+          expect(cell.getChars().length).eql(0);
+          expect(cell.getWidth()).eql(0);
         } else {
-          expect(cell.chars).eql('￥\u0301');
-          expect(cell.chars.length).eql(2);
-          expect(cell.width).eql(2);
+          expect(cell.getChars()).eql('￥\u0301');
+          expect(cell.getChars().length).eql(2);
+          expect(cell.getWidth()).eql(2);
         }
       }
       term.buffer.lines.get(1).loadCell(0, cell);
-      expect(cell.chars).eql('￥\u0301');
-      expect(cell.chars.length).eql(2);
-      expect(cell.width).eql(2);
+      expect(cell.getChars()).eql('￥\u0301');
+      expect(cell.getChars().length).eql(2);
+      expect(cell.getWidth()).eql(2);
     });
     it('line of surrogate fullwidth with combining odd', () => {
       term.wraparoundMode = true;
@@ -999,23 +999,23 @@ describe('term.js addons', () => {
       for (let i = 1; i < term.cols - 1; ++i) {
         term.buffer.lines.get(0).loadCell(i, cell);
         if (!(i % 2)) {
-          expect(cell.chars).eql('');
-          expect(cell.chars.length).eql(0);
-          expect(cell.width).eql(0);
+          expect(cell.getChars()).eql('');
+          expect(cell.getChars().length).eql(0);
+          expect(cell.getWidth()).eql(0);
         } else {
-          expect(cell.chars).eql('\ud843\ude6d\u0301');
-          expect(cell.chars.length).eql(3);
-          expect(cell.width).eql(2);
+          expect(cell.getChars()).eql('\ud843\ude6d\u0301');
+          expect(cell.getChars().length).eql(3);
+          expect(cell.getWidth()).eql(2);
         }
       }
       term.buffer.lines.get(0).loadCell(term.cols - 1, cell);
-      expect(cell.chars).eql('');
-      expect(cell.chars.length).eql(0);
-      expect(cell.width).eql(1);
+      expect(cell.getChars()).eql('');
+      expect(cell.getChars().length).eql(0);
+      expect(cell.getWidth()).eql(1);
       term.buffer.lines.get(1).loadCell(0, cell);
-      expect(cell.chars).eql('\ud843\ude6d\u0301');
-      expect(cell.chars.length).eql(3);
-      expect(cell.width).eql(2);
+      expect(cell.getChars()).eql('\ud843\ude6d\u0301');
+      expect(cell.getChars().length).eql(3);
+      expect(cell.getWidth()).eql(2);
     });
     it('line of surrogate fullwidth with combining even', () => {
       term.wraparoundMode = true;
@@ -1023,19 +1023,19 @@ describe('term.js addons', () => {
       for (let i = 0; i < term.cols; ++i) {
         term.buffer.lines.get(0).loadCell(i, cell);
         if (i % 2) {
-          expect(cell.chars).eql('');
-          expect(cell.chars.length).eql(0);
-          expect(cell.width).eql(0);
+          expect(cell.getChars()).eql('');
+          expect(cell.getChars().length).eql(0);
+          expect(cell.getWidth()).eql(0);
         } else {
-          expect(cell.chars).eql('\ud843\ude6d\u0301');
-          expect(cell.chars.length).eql(3);
-          expect(cell.width).eql(2);
+          expect(cell.getChars()).eql('\ud843\ude6d\u0301');
+          expect(cell.getChars().length).eql(3);
+          expect(cell.getWidth()).eql(2);
         }
       }
       term.buffer.lines.get(1).loadCell(0, cell);
-      expect(cell.chars).eql('\ud843\ude6d\u0301');
-      expect(cell.chars.length).eql(3);
-      expect(cell.width).eql(2);
+      expect(cell.getChars()).eql('\ud843\ude6d\u0301');
+      expect(cell.getChars().length).eql(3);
+      expect(cell.getWidth()).eql(2);
     });
   });
 
@@ -1048,10 +1048,10 @@ describe('term.js addons', () => {
       term.insertMode = true;
       term.write('abcde');
       expect(term.buffer.lines.get(0).length).eql(term.cols);
-      expect(term.buffer.lines.get(0).loadCell(10, cell).chars).eql('a');
-      expect(term.buffer.lines.get(0).loadCell(14, cell).chars).eql('e');
-      expect(term.buffer.lines.get(0).loadCell(15, cell).chars).eql('0');
-      expect(term.buffer.lines.get(0).loadCell(79, cell).chars).eql('4');
+      expect(term.buffer.lines.get(0).loadCell(10, cell).getChars()).eql('a');
+      expect(term.buffer.lines.get(0).loadCell(14, cell).getChars()).eql('e');
+      expect(term.buffer.lines.get(0).loadCell(15, cell).getChars()).eql('0');
+      expect(term.buffer.lines.get(0).loadCell(79, cell).getChars()).eql('4');
     });
     it('fullwidth - insert', () => {
       term.write(Array(9).join('0123456789').slice(-80));
@@ -1060,11 +1060,11 @@ describe('term.js addons', () => {
       term.insertMode = true;
       term.write('￥￥￥');
       expect(term.buffer.lines.get(0).length).eql(term.cols);
-      expect(term.buffer.lines.get(0).loadCell(10, cell).chars).eql('￥');
-      expect(term.buffer.lines.get(0).loadCell(11, cell).chars).eql('');
-      expect(term.buffer.lines.get(0).loadCell(14, cell).chars).eql('￥');
-      expect(term.buffer.lines.get(0).loadCell(15, cell).chars).eql('');
-      expect(term.buffer.lines.get(0).loadCell(79, cell).chars).eql('3');
+      expect(term.buffer.lines.get(0).loadCell(10, cell).getChars()).eql('￥');
+      expect(term.buffer.lines.get(0).loadCell(11, cell).getChars()).eql('');
+      expect(term.buffer.lines.get(0).loadCell(14, cell).getChars()).eql('￥');
+      expect(term.buffer.lines.get(0).loadCell(15, cell).getChars()).eql('');
+      expect(term.buffer.lines.get(0).loadCell(79, cell).getChars()).eql('3');
     });
     it('fullwidth - right border', () => {
       term.write(Array(41).join('￥'));
@@ -1073,14 +1073,14 @@ describe('term.js addons', () => {
       term.insertMode = true;
       term.write('a');
       expect(term.buffer.lines.get(0).length).eql(term.cols);
-      expect(term.buffer.lines.get(0).loadCell(10, cell).chars).eql('a');
-      expect(term.buffer.lines.get(0).loadCell(11, cell).chars).eql('￥');
-      expect(term.buffer.lines.get(0).loadCell(79, cell).chars).eql('');  // fullwidth char got replaced
+      expect(term.buffer.lines.get(0).loadCell(10, cell).getChars()).eql('a');
+      expect(term.buffer.lines.get(0).loadCell(11, cell).getChars()).eql('￥');
+      expect(term.buffer.lines.get(0).loadCell(79, cell).getChars()).eql('');  // fullwidth char got replaced
       term.write('b');
       expect(term.buffer.lines.get(0).length).eql(term.cols);
-      expect(term.buffer.lines.get(0).loadCell(11, cell).chars).eql('b');
-      expect(term.buffer.lines.get(0).loadCell(12, cell).chars).eql('￥');
-      expect(term.buffer.lines.get(0).loadCell(79, cell).chars).eql('');  // empty cell after fullwidth
+      expect(term.buffer.lines.get(0).loadCell(11, cell).getChars()).eql('b');
+      expect(term.buffer.lines.get(0).loadCell(12, cell).getChars()).eql('￥');
+      expect(term.buffer.lines.get(0).loadCell(79, cell).getChars()).eql('');  // empty cell after fullwidth
     });
   });
 });

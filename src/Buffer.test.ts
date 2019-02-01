@@ -37,13 +37,13 @@ describe('Buffer', () => {
 
   describe('fillViewportRows', () => {
     it('should fill the buffer with blank lines based on the size of the viewport', () => {
-      const blankLineChar = buffer.getBlankLine(DEFAULT_ATTR_DATA).loadCell(0, new CellData()).asCharData;
+      const blankLineChar = buffer.getBlankLine(DEFAULT_ATTR_DATA).loadCell(0, new CellData()).getAsCharData();
       buffer.fillViewportRows();
       assert.equal(buffer.lines.length, INIT_ROWS);
       for (let y = 0; y < INIT_ROWS; y++) {
         assert.equal(buffer.lines.get(y).length, INIT_COLS);
         for (let x = 0; x < INIT_COLS; x++) {
-          assert.deepEqual(buffer.lines.get(y).loadCell(x, new CellData()).asCharData, blankLineChar);
+          assert.deepEqual(buffer.lines.get(y).loadCell(x, new CellData()).getAsCharData(), blankLineChar);
         }
       }
     });
@@ -155,15 +155,15 @@ describe('Buffer', () => {
           assert.equal(buffer.lines.maxLength, INIT_ROWS);
           buffer.y = INIT_ROWS - 1;
           buffer.fillViewportRows();
-          let chData = buffer.lines.get(5).loadCell(0, new CellData()).asCharData;
+          let chData = buffer.lines.get(5).loadCell(0, new CellData()).getAsCharData();
           chData[1] = 'a';
           buffer.lines.get(5).setCell(0, CellData.fromCharData(chData));
-          chData = buffer.lines.get(INIT_ROWS - 1).loadCell(0, new CellData()).asCharData;
+          chData = buffer.lines.get(INIT_ROWS - 1).loadCell(0, new CellData()).getAsCharData();
           chData[1] = 'b';
           buffer.lines.get(INIT_ROWS - 1).setCell(0, CellData.fromCharData(chData));
           buffer.resize(INIT_COLS, INIT_ROWS - 5);
-          assert.equal(buffer.lines.get(0).loadCell(0, new CellData()).asCharData[1], 'a');
-          assert.equal(buffer.lines.get(INIT_ROWS - 1 - 5).loadCell(0, new CellData()).asCharData[1], 'b');
+          assert.equal(buffer.lines.get(0).loadCell(0, new CellData()).getAsCharData()[1], 'a');
+          assert.equal(buffer.lines.get(INIT_ROWS - 1 - 5).loadCell(0, new CellData()).getAsCharData()[1], 'b');
         });
       });
     });
@@ -1264,7 +1264,7 @@ describe('Buffer', () => {
       assert.equal(input, s);
       const stringIndex = s.match(/😃/).index;
       const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, stringIndex);
-      assert(terminal.buffer.lines.get(bufferIndex[0]).loadCell(bufferIndex[1], new CellData()).chars, '😃');
+      assert(terminal.buffer.lines.get(bufferIndex[0]).loadCell(bufferIndex[1], new CellData()).getChars(), '😃');
     });
 
     it('multiline fullwidth chars with offset 1 (currently tests for broken behavior)', () => {
@@ -1291,7 +1291,7 @@ describe('Buffer', () => {
       assert.equal(input, s);
       for (let i = 0; i < input.length; ++i) {
         const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i, true);
-        assert.equal(input[i], terminal.buffer.lines.get(bufferIndex[0]).loadCell(bufferIndex[1], new CellData()).chars);
+        assert.equal(input[i], terminal.buffer.lines.get(bufferIndex[0]).loadCell(bufferIndex[1], new CellData()).getChars());
       }
     });
 
@@ -1309,7 +1309,7 @@ describe('Buffer', () => {
             : (i % 3 === 1)
               ? input.substr(i, 2)
               : input.substr(i - 1, 2),
-          terminal.buffer.lines.get(bufferIndex[0]).loadCell(bufferIndex[1], new CellData()).chars);
+          terminal.buffer.lines.get(bufferIndex[0]).loadCell(bufferIndex[1], new CellData()).getChars());
       }
     });
 

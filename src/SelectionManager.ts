@@ -669,8 +669,8 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   private _convertViewportColToCharacterIndex(bufferLine: IBufferLine, coords: [number, number]): number {
     let charIndex = coords[0];
     for (let i = 0; coords[0] >= i; i++) {
-      const length = bufferLine.loadCell(i, this._cell).chars.length;
-      if (this._cell.width === 0) {
+      const length = bufferLine.loadCell(i, this._cell).getChars().length;
+      if (this._cell.getWidth() === 0) {
         // Wide characters aren't included in the line string so decrement the
         // index so the index is back on the wide character.
         charIndex--;
@@ -757,8 +757,8 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
       // Expand the string in both directions until a space is hit
       while (startCol > 0 && startIndex > 0 && !this._isCharWordSeparator(bufferLine.loadCell(startCol - 1, this._cell))) {
         bufferLine.loadCell(startCol - 1, this._cell);
-        const length = this._cell.chars.length;
-        if (this._cell.width === 0) {
+        const length = this._cell.getChars().length;
+        if (this._cell.getWidth() === 0) {
           // If the next character is a wide char, record it and skip the column
           leftWideCharCount++;
           startCol--;
@@ -773,8 +773,8 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
       }
       while (endCol < bufferLine.length && endIndex + 1 < line.length && !this._isCharWordSeparator(bufferLine.loadCell(endCol + 1, this._cell))) {
         bufferLine.loadCell(endCol + 1, this._cell);
-        const length = this._cell.chars.length;
-        if (this._cell.width === 2) {
+        const length = this._cell.getChars().length;
+        if (this._cell.getWidth() === 2) {
           // If the next character is a wide char, record it and skip the column
           rightWideCharCount++;
           endCol++;
@@ -899,10 +899,10 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   private _isCharWordSeparator(cell: CellData): boolean {
     // Zero width characters are never separators as they are always to the
     // right of wide characters
-    if (cell.width === 0) {
+    if (cell.getWidth() === 0) {
       return false;
     }
-    return WORD_SEPARATORS.indexOf(cell.chars) >= 0;
+    return WORD_SEPARATORS.indexOf(cell.getChars()) >= 0;
   }
 
   /**

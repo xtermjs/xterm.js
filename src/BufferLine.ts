@@ -211,17 +211,17 @@ export class CellData extends AttributeData implements ICellData {
   public combinedData: string = '';
 
   /** Whether cell contains a combined string. */
-  public get isCombined(): number {
+  public isCombined(): number {
     return this.content & Content.IS_COMBINED;
   }
 
   /** Width of the cell. */
-  public get width(): number {
+  public getWidth(): number {
     return this.content >> Content.WIDTH_SHIFT;
   }
 
   /** JS string of the content. */
-  public get chars(): string {
+  public getChars(): string {
     if (this.content & Content.IS_COMBINED) {
       return this.combinedData;
     }
@@ -237,8 +237,8 @@ export class CellData extends AttributeData implements ICellData {
    * if content is a combined string it returns the codepoint
    * of the last char in string to be in line with code in CharData.
    * */
-  public get code(): number {
-    return (this.isCombined)
+  public getCode(): number {
+    return (this.isCombined())
       ? this.combinedData.charCodeAt(this.combinedData.length - 1)
       : this.content & Content.CODEPOINT_MASK;
   }
@@ -276,8 +276,8 @@ export class CellData extends AttributeData implements ICellData {
   }
 
   /** Get data as CharData. */
-  public get asCharData(): CharData {
-    return [this.fg, this.chars, this.width, this.code];
+  public getAsCharData(): CharData {
+    return [this.fg, this.getChars(), this.getWidth(), this.getCode()];
   }
 }
 

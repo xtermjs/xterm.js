@@ -239,7 +239,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.textBaseline = 'middle';
     this._clipRow(terminal, y);
     this._ctx.fillText(
-        cell.chars,
+        cell.getChars(),
         x * this._scaledCellWidth + this._scaledCharLeft,
         (y + 0.5) * this._scaledCellHeight + this._scaledCharTop);
   }
@@ -279,8 +279,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     const drawInBrightColor = terminal.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8 && fg !== INVERTED_DEFAULT_COLOR;
 
     fg += drawInBrightColor ? 8 : 0;
-    this._currentGlyphIdentifier.chars = cell.chars || WHITESPACE_CELL_CHAR;
-    this._currentGlyphIdentifier.code = cell.code || WHITESPACE_CELL_CODE;
+    this._currentGlyphIdentifier.chars = cell.getChars() || WHITESPACE_CELL_CHAR;
+    this._currentGlyphIdentifier.code = cell.getCode() || WHITESPACE_CELL_CODE;
     this._currentGlyphIdentifier.bg = bg;
     this._currentGlyphIdentifier.fg = fg;
     this._currentGlyphIdentifier.bold = cell.isBold() && terminal.options.enableBold;
@@ -336,7 +336,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     }
     // Draw the character
     this._ctx.fillText(
-        cell.chars,
+        cell.getChars(),
         x * this._scaledCellWidth + this._scaledCharLeft,
         (y + 0.5) * this._scaledCellHeight + this._scaledCharTop);
     this._ctx.restore();

@@ -558,12 +558,12 @@ export interface IAttributeData {
 export interface ICellData extends IAttributeData {
   content: number;
   combinedData: string;
-  isCombined: number;
-  width: number;
-  chars: string;
-  code: number;
+  isCombined(): number;
+  getWidth(): number;
+  getChars(): string;
+  getCode(): number;
   setFromCharData(value: CharData): void;
-  asCharData: CharData;
+  getAsCharData(): CharData;
 }
 
 /**
