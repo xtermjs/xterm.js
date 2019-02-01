@@ -1602,7 +1602,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if(p == 40) {
         // reset to default black
         bg = DEFAULT_ATTR && 0x1ff;
-      } else if (p >= 40 && p <= 47) {
+      } else if (p >= 41 && p <= 47) {
         // bg color 8
         bg = p - 40;
       } else if (p >= 90 && p <= 97) {
