@@ -1,9 +1,13 @@
 /**
+ * Copyright (c) 2017 The xterm.js authors. All rights reserved.
  * @license MIT
  */
+
 import { assert } from 'chai';
-import { ITerminal } from './Interfaces';
+import { ITerminal } from './Types';
 import { SelectionModel } from './SelectionModel';
+import { BufferSet } from './BufferSet';
+import { MockTerminal } from './ui/TestUtils.test';
 
 class TestSelectionModel extends SelectionModel {
   constructor(
@@ -14,14 +18,17 @@ class TestSelectionModel extends SelectionModel {
 }
 
 describe('SelectionManager', () => {
-  let window: Window;
-  let document: Document;
-
   let terminal: ITerminal;
   let model: TestSelectionModel;
 
   beforeEach(() => {
-    terminal = <any>{ cols: 80, rows: 2, ybase: 0 };
+    terminal = new MockTerminal();
+    (terminal as any).cols = 80;
+    (terminal as any).rows = 2;
+    terminal.options.scrollback = 10;
+    terminal.buffers = new BufferSet(terminal);
+    terminal.buffer = terminal.buffers.active;
+
     model = new TestSelectionModel(terminal);
   });
 
@@ -120,6 +127,11 @@ describe('SelectionManager', () => {
       model.selectionStartLength = 2;
       model.selectionEnd = [3, 2];
       assert.deepEqual(model.finalSelectionEnd, [4, 2]);
+    });
+    it('should return the end on a different row when start + length overflows onto a following row', () => {
+      model.selectionStart = [78, 2];
+      model.selectionStartLength = 4;
+      assert.deepEqual(model.finalSelectionEnd, [2, 3]);
     });
     it('should return selection end if selection end is after selection start + length', () => {
       model.selectionStart = [2, 2];

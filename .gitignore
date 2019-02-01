@@ -12,7 +12,14 @@ npm-debug.log
 /.idea/
 .env
 build/
-.vscode/
+.DS_Store
+fixtures/typings-test/*.js
+package-lock.json
 
 # Directories needed for code coverage
-/coverage/
+coverage/
+.nyc_output/
+
+# Keep bundled code out of Git
+dist/
+demo/dist/

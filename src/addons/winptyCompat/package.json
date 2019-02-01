@@ -1,0 +1,5 @@
+{
+  "name": "xterm.winptycompat",
+  "main": "winptyCompat.js",
+  "private": true
+}

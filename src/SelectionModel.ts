@@ -1,8 +1,9 @@
 /**
+ * Copyright (c) 2017 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 
-import { ITerminal } from './Interfaces';
+import { ITerminal } from './Types';
 
 /**
  * Represents a selection within the buffer. This model only cares about column
@@ -68,16 +69,20 @@ export class SelectionModel {
    */
   public get finalSelectionEnd(): [number, number] {
     if (this.isSelectAllActive) {
-      return [this._terminal.cols, this._terminal.ybase + this._terminal.rows - 1];
+      return [this._terminal.cols, this._terminal.buffer.ybase + this._terminal.rows - 1];
     }
 
     if (!this.selectionStart) {
       return null;
     }
 
-    // Use the selection start if the end doesn't exist or they're reversed
+    // Use the selection start + length if the end doesn't exist or they're reversed
     if (!this.selectionEnd || this.areSelectionValuesReversed()) {
-      return [this.selectionStart[0] + this.selectionStartLength, this.selectionStart[1]];
+      const startPlusLength = this.selectionStart[0] + this.selectionStartLength;
+      if (startPlusLength > this._terminal.cols) {
+        return [startPlusLength % this._terminal.cols, this.selectionStart[1] + Math.floor(startPlusLength / this._terminal.cols)];
+      }
+      return [startPlusLength, this.selectionStart[1]];
     }
 
     // Ensure the the word/line is selected after a double/triple click
@@ -96,6 +101,9 @@ export class SelectionModel {
   public areSelectionValuesReversed(): boolean {
     const start = this.selectionStart;
     const end = this.selectionEnd;
+    if (!start || !end) {
+      return false;
+    }
     return start[1] > end[1] || (start[1] === end[1] && start[0] > end[0]);
   }
 

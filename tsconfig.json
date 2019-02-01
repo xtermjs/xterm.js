@@ -2,14 +2,24 @@
   "compilerOptions": {
     "module": "commonjs",
     "target": "es5",
+    "lib": [
+      "dom",
+      "es5",
+      "es6",
+      "scripthost",
+      "es2015.promise"
+    ],
     "rootDir": "src",
-    "allowJs": true,
     "outDir": "lib",
     "sourceMap": true,
-    "removeComments": true
+    "removeComments": true,
+    "preserveWatchOutput": true,
+    "noUnusedLocals": true,
+    "noImplicitAny": true
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "typings/xterm.d.ts"
   ],
   "exclude": [
     "src/addons/**/*"

@@ -1,0 +1,68 @@
+# Node.js
+# Build a general Node.js application with npm.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/vsts/pipelines/languages/javascript
+
+jobs:
+- job: Linux
+  pool:
+    vmImage: 'ubuntu-16.04'
+  steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '8.x'
+    displayName: 'Install Node.js'
+  - task: geeklearningio.gl-vsts-tasks-yarn.yarn-installer-task.YarnInstaller@2
+    inputs:
+      versionSpec: "1.9.4"
+    displayName: 'Install Yarn'
+  - script: |
+      yarn
+    displayName: 'Install dependencies and build'
+  - script: |
+      yarn mocha
+    displayName: 'Test'
+  - script: |
+      yarn lint
+    displayName: 'Lint'
+
+- job: macOS
+  pool:
+    vmImage: 'xcode9-macos10.13'
+  steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '8.x'
+    displayName: 'Install Node.js'
+  - script: |
+      yarn
+    displayName: 'Install dependencies and build'
+  - script: |
+      yarn mocha
+    displayName: 'Test'
+  - script: |
+      yarn lint
+    displayName: 'Lint'
+  - script: |
+      yarn test-coverage
+      export COVERALLS_GIT_BRANCH=$BUILD_SOURCEBRANCH
+      yarn coveralls
+    displayName: 'Generate and publish coverage'
+
+- job: Windows
+  pool:
+    vmImage: 'vs2017-win2016'
+  steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '8.x'
+    displayName: 'Install Node.js'
+  - script: |
+      yarn
+    displayName: 'Install dependencies and build'
+  - script: |
+      yarn mocha
+    displayName: 'Test'
+  - script: |
+      yarn lint
+    displayName: 'Lint'

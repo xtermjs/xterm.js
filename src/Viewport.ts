@@ -1,91 +1,133 @@
 /**
+ * Copyright (c) 2016 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 
-import { ITerminal } from './Interfaces';
-import { CharMeasure } from './utils/CharMeasure';
+import { IColorSet } from './renderer/Types';
+import { ITerminal, IViewport } from './Types';
+import { CharMeasure } from './ui/CharMeasure';
+import { Disposable } from './common/Lifecycle';
+import { addDisposableDomListener } from './ui/Lifecycle';
+
+const FALLBACK_SCROLL_BAR_WIDTH = 15;
 
 /**
  * Represents the viewport of a terminal, the visible area within the larger buffer of output.
  * Logic for the virtual scroll bar is included in this object.
  */
-export class Viewport {
-  private currentRowHeight: number;
-  private lastRecordedBufferLength: number;
-  private lastRecordedViewportHeight: number;
-  private lastTouchY: number;
+export class Viewport extends Disposable implements IViewport {
+  public scrollBarWidth: number = 0;
+  private _currentRowHeight: number = 0;
+  private _lastRecordedBufferLength: number = 0;
+  private _lastRecordedViewportHeight: number = 0;
+  private _lastRecordedBufferHeight: number = 0;
+  private _lastTouchY: number;
+  private _lastScrollTop: number = 0;
+
+  // Stores a partial line amount when scrolling, this is used to keep track of how much of a line
+  // is scrolled so we can "scroll" over partial lines and feel natural on touchpads. This is a
+  // quick fix and could have a more robust solution in place that reset the value when needed.
+  private _wheelPartialScroll: number = 0;
+
+  private _refreshAnimationFrame: number | null = null;
+  private _ignoreNextScrollEvent: boolean = false;
 
   /**
    * Creates a new Viewport.
-   * @param terminal The terminal this viewport belongs to.
-   * @param viewportElement The DOM element acting as the viewport.
-   * @param scrollArea The DOM element acting as the scroll area.
-   * @param charMeasureElement A DOM element used to measure the character size of. the terminal.
+   * @param _terminal The terminal this viewport belongs to.
+   * @param _viewportElement The DOM element acting as the viewport.
+   * @param _scrollArea The DOM element acting as the scroll area.
+   * @param _charMeasure A DOM element used to measure the character size of. the terminal.
    */
   constructor(
-    private terminal: ITerminal,
-    private viewportElement: HTMLElement,
-    private scrollArea: HTMLElement,
-    private charMeasure: CharMeasure
+    private _terminal: ITerminal,
+    private _viewportElement: HTMLElement,
+    private _scrollArea: HTMLElement,
+    private _charMeasure: CharMeasure
   ) {
-    this.currentRowHeight = 0;
-    this.lastRecordedBufferLength = 0;
-    this.lastRecordedViewportHeight = 0;
+    super();
 
-    this.terminal.on('scroll', this.syncScrollArea.bind(this));
-    this.terminal.on('resize', this.syncScrollArea.bind(this));
-    this.viewportElement.addEventListener('scroll', this.onScroll.bind(this));
+    // Measure the width of the scrollbar. If it is 0 we can assume it's an OSX overlay scrollbar.
+    // Unfortunately the overlay scrollbar would be hidden underneath the screen element in that case,
+    // therefore we account for a standard amount to make it visible
+    this.scrollBarWidth = (this._viewportElement.offsetWidth - this._scrollArea.offsetWidth) || FALLBACK_SCROLL_BAR_WIDTH;
+    this.register(addDisposableDomListener(this._viewportElement, 'scroll', this._onScroll.bind(this)));
 
     // Perform this async to ensure the CharMeasure is ready.
     setTimeout(() => this.syncScrollArea(), 0);
   }
 
+  public onThemeChanged(colors: IColorSet): void {
+    this._viewportElement.style.backgroundColor = colors.background.css;
+  }
+
   /**
    * Refreshes row height, setting line-height, viewport height and scroll area height if
    * necessary.
-   * @param charSize A character size measurement bounding rect object, if it doesn't exist it will
-   *   be created.
    */
-  private refresh(): void {
-    if (this.charMeasure.height > 0) {
-      const rowHeightChanged = this.charMeasure.height !== this.currentRowHeight;
-      if (rowHeightChanged) {
-        this.currentRowHeight = this.charMeasure.height;
-        this.viewportElement.style.lineHeight = this.charMeasure.height + 'px';
-        this.terminal.rowContainer.style.lineHeight = this.charMeasure.height + 'px';
-      }
-      const viewportHeightChanged = this.lastRecordedViewportHeight !== this.terminal.rows;
-      if (rowHeightChanged || viewportHeightChanged) {
-        this.lastRecordedViewportHeight = this.terminal.rows;
-        this.viewportElement.style.height = this.charMeasure.height * this.terminal.rows + 'px';
-        this.terminal.selectionContainer.style.height = this.viewportElement.style.height;
-      }
-      this.scrollArea.style.height = (this.charMeasure.height * this.lastRecordedBufferLength) + 'px';
+  private _refresh(): void {
+    if (this._refreshAnimationFrame === null) {
+      this._refreshAnimationFrame = requestAnimationFrame(() => this._innerRefresh());
     }
+  }
+
+  private _innerRefresh(): void {
+    if (this._charMeasure.height > 0) {
+      this._currentRowHeight = this._terminal.renderer.dimensions.scaledCellHeight / window.devicePixelRatio;
+      this._lastRecordedViewportHeight = this._viewportElement.offsetHeight;
+      const newBufferHeight = Math.round(this._currentRowHeight * this._lastRecordedBufferLength) + (this._lastRecordedViewportHeight - this._terminal.renderer.dimensions.canvasHeight);
+      if (this._lastRecordedBufferHeight !== newBufferHeight) {
+        this._lastRecordedBufferHeight = newBufferHeight;
+        this._scrollArea.style.height = this._lastRecordedBufferHeight + 'px';
+      }
+    }
+
+    // Sync scrollTop
+    const scrollTop = this._terminal.buffer.ydisp * this._currentRowHeight;
+    if (this._viewportElement.scrollTop !== scrollTop) {
+      // Ignore the next scroll event which will be triggered by setting the scrollTop as we do not
+      // want this event to scroll the terminal
+      this._ignoreNextScrollEvent = true;
+      this._viewportElement.scrollTop = scrollTop;
+    }
+
+    this._refreshAnimationFrame = null;
   }
 
   /**
    * Updates dimensions and synchronizes the scroll area if necessary.
    */
   public syncScrollArea(): void {
-    if (this.lastRecordedBufferLength !== this.terminal.lines.length) {
-      // If buffer height changed
-      this.lastRecordedBufferLength = this.terminal.lines.length;
-      this.refresh();
-    } else if (this.lastRecordedViewportHeight !== this.terminal.rows) {
-      // If viewport height changed
-      this.refresh();
-    } else {
-      // If size has changed, refresh viewport
-      if (this.charMeasure.height !== this.currentRowHeight) {
-        this.refresh();
-      }
+    // If buffer height changed
+    if (this._lastRecordedBufferLength !== this._terminal.buffer.lines.length) {
+      this._lastRecordedBufferLength = this._terminal.buffer.lines.length;
+      this._refresh();
+      return;
     }
 
-    // Sync scrollTop
-    const scrollTop = this.terminal.ydisp * this.currentRowHeight;
-    if (this.viewportElement.scrollTop !== scrollTop) {
-      this.viewportElement.scrollTop = scrollTop;
+    // If viewport height changed
+    if (this._lastRecordedViewportHeight !== (<any>this._terminal).renderer.dimensions.canvasHeight) {
+      this._refresh();
+      return;
+    }
+
+    // If the buffer position doesn't match last scroll top
+    const newScrollTop = this._terminal.buffer.ydisp * this._currentRowHeight;
+    if (this._lastScrollTop !== newScrollTop) {
+      this._refresh();
+      return;
+    }
+
+    // If element's scroll top changed, this can happen when hiding the element
+    if (this._lastScrollTop !== this._viewportElement.scrollTop) {
+      this._refresh();
+      return;
+    }
+
+    // If row height changed
+    if (this._terminal.renderer.dimensions.scaledCellHeight / window.devicePixelRatio !== this._currentRowHeight) {
+      this._refresh();
+      return;
     }
   }
 
@@ -94,10 +136,25 @@ export class Viewport {
    * terminal to scroll to it.
    * @param ev The scroll event.
    */
-  private onScroll(ev: Event) {
-    const newRow = Math.round(this.viewportElement.scrollTop / this.currentRowHeight);
-    const diff = newRow - this.terminal.ydisp;
-    this.terminal.scrollDisp(diff, true);
+  private _onScroll(ev: Event): void {
+    // Record current scroll top position
+    this._lastScrollTop = this._viewportElement.scrollTop;
+
+    // Don't attempt to scroll if the element is not visible, otherwise scrollTop will be corrupt
+    // which causes the terminal to scroll the buffer to the top
+    if (!this._viewportElement.offsetParent) {
+      return;
+    }
+
+    // Ignore the event if it was flagged to ignore (when the source of the event is from Viewport)
+    if (this._ignoreNextScrollEvent) {
+      this._ignoreNextScrollEvent = false;
+      return;
+    }
+
+    const newRow = Math.round(this._lastScrollTop / this._currentRowHeight);
+    const diff = newRow - this._terminal.buffer.ydisp;
+    this._terminal.scrollLines(diff, true);
   }
 
   /**
@@ -106,42 +163,75 @@ export class Viewport {
    * `Viewport`.
    * @param ev The mouse wheel event.
    */
-  public onWheel(ev: WheelEvent) {
-    if (ev.deltaY === 0) {
-      // Do nothing if it's not a vertical scroll event
+  public onWheel(ev: WheelEvent): void {
+    const amount = this._getPixelsScrolled(ev);
+    if (amount === 0) {
       return;
     }
-    // Fallback to WheelEvent.DOM_DELTA_PIXEL
-    let multiplier = 1;
-    if (ev.deltaMode === WheelEvent.DOM_DELTA_LINE) {
-      multiplier = this.currentRowHeight;
-    } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
-      multiplier = this.currentRowHeight * this.terminal.rows;
-    }
-    this.viewportElement.scrollTop += ev.deltaY * multiplier;
+    this._viewportElement.scrollTop += amount;
     // Prevent the page from scrolling when the terminal scrolls
     ev.preventDefault();
-  };
+  }
+
+  private _getPixelsScrolled(ev: WheelEvent): number {
+    // Do nothing if it's not a vertical scroll event
+    if (ev.deltaY === 0) {
+      return 0;
+    }
+
+    // Fallback to WheelEvent.DOM_DELTA_PIXEL
+    let amount = ev.deltaY;
+    if (ev.deltaMode === WheelEvent.DOM_DELTA_LINE) {
+      amount *= this._currentRowHeight;
+    } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+      amount *= this._currentRowHeight * this._terminal.rows;
+    }
+    return amount;
+  }
+
+  /**
+   * Gets the number of pixels scrolled by the mouse event taking into account what type of delta
+   * is being used.
+   * @param ev The mouse wheel event.
+   */
+  public getLinesScrolled(ev: WheelEvent): number {
+    // Do nothing if it's not a vertical scroll event
+    if (ev.deltaY === 0) {
+      return 0;
+    }
+
+    // Fallback to WheelEvent.DOM_DELTA_LINE
+    let amount = ev.deltaY;
+    if (ev.deltaMode === WheelEvent.DOM_DELTA_PIXEL) {
+      amount /= this._currentRowHeight + 0.0; // Prevent integer division
+      this._wheelPartialScroll += amount;
+      amount = Math.floor(Math.abs(this._wheelPartialScroll)) * (this._wheelPartialScroll > 0 ? 1 : -1);
+      this._wheelPartialScroll %= 1;
+    } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+      amount *= this._terminal.rows;
+    }
+    return amount;
+  }
 
   /**
    * Handles the touchstart event, recording the touch occurred.
    * @param ev The touch event.
    */
-  public onTouchStart(ev: TouchEvent) {
-    this.lastTouchY = ev.touches[0].pageY;
-  };
+  public onTouchStart(ev: TouchEvent): void {
+    this._lastTouchY = ev.touches[0].pageY;
+  }
 
   /**
    * Handles the touchmove event, scrolling the viewport if the position shifted.
    * @param ev The touch event.
    */
-  public onTouchMove(ev: TouchEvent) {
-    let deltaY = this.lastTouchY - ev.touches[0].pageY;
-    this.lastTouchY = ev.touches[0].pageY;
+  public onTouchMove(ev: TouchEvent): void {
+    const deltaY = this._lastTouchY - ev.touches[0].pageY;
+    this._lastTouchY = ev.touches[0].pageY;
     if (deltaY === 0) {
       return;
     }
-    this.viewportElement.scrollTop += deltaY;
+    this._viewportElement.scrollTop += deltaY;
     ev.preventDefault();
-  };
+  }
 }
