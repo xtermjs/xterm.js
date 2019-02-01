@@ -85,26 +85,32 @@ export function pasteHandler(ev: ClipboardEvent, term: ITerminal): void {
  * @param ev The original right click event to be handled.
  * @param textarea The terminal's textarea.
  */
-export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLTextAreaElement): void {
-  // Bring textarea at the cursor position
-  textarea.style.position = 'fixed';
-  textarea.style.width = '20px';
-  textarea.style.height = '20px';
-  textarea.style.left = (ev.clientX - 10) + 'px';
-  textarea.style.top = (ev.clientY - 10) + 'px';
-  textarea.style.zIndex = '1000';
+export function moveTextAreaUnderMouseCursor(ev: MouseEvent, term: ITerminal): void {
 
-  textarea.focus();
+  // Calculate textarea position relative to the screen element
+  const pos = term.screenElement.getBoundingClientRect();
+  const left = ev.clientX - pos.left - 10;
+  const top = ev.clientY - pos.top - 10;
+
+  // Bring textarea at the cursor position
+  term.textarea.style.position = 'absolute';
+  term.textarea.style.width = '20px';
+  term.textarea.style.height = '20px';
+  term.textarea.style.left = `${left}px`;
+  term.textarea.style.top = `${top}px`;
+  term.textarea.style.zIndex = '1000';
+
+  term.textarea.focus();
 
   // Reset the terminal textarea's styling
   // Timeout needs to be long enough for click event to be handled.
   setTimeout(() => {
-    textarea.style.position = null;
-    textarea.style.width = null;
-    textarea.style.height = null;
-    textarea.style.left = null;
-    textarea.style.top = null;
-    textarea.style.zIndex = null;
+    term.textarea.style.position = null;
+    term.textarea.style.width = null;
+    term.textarea.style.height = null;
+    term.textarea.style.left = null;
+    term.textarea.style.top = null;
+    term.textarea.style.zIndex = null;
   }, 200);
 }
 
@@ -115,14 +121,14 @@ export function moveTextAreaUnderMouseCursor(ev: MouseEvent, textarea: HTMLTextA
  * @param selectionManager The terminal's selection manager.
  * @param shouldSelectWord If true and there is no selection the current word will be selected
  */
-export function rightClickHandler(ev: MouseEvent, textarea: HTMLTextAreaElement, selectionManager: ISelectionManager, shouldSelectWord: boolean): void {
-  moveTextAreaUnderMouseCursor(ev, textarea);
+export function rightClickHandler(ev: MouseEvent, term: ITerminal, selectionManager: ISelectionManager, shouldSelectWord: boolean): void {
+  moveTextAreaUnderMouseCursor(ev, term);
 
   if (shouldSelectWord && !selectionManager.isClickInSelection(ev)) {
     selectionManager.selectWordAtCursor(ev);
   }
 
   // Get textarea ready to copy from the context menu
-  textarea.value = selectionManager.selectionText;
-  textarea.select();
+  term.textarea.value = selectionManager.selectionText;
+  term.textarea.select();
 }
