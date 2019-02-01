@@ -378,7 +378,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       // since they always follow a cell consuming char
       // therefore we can test for buffer.x to avoid overflow left
       if (!chWidth && buffer.x) {
-        if (!bufferRow.loadCell(buffer.x - 1, this._cell).width) {
+        if (!bufferRow.loadCell(buffer.x - 1, this._cell).getWidth()) {
           // found empty cell after fullwidth, need to go 2 cells back
           // it is save to step 2 cells back here
           // since an empty cell is only set by fullwidth chars
@@ -427,7 +427,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         // test last cell - since the last cell has only room for
         // a halfwidth char any fullwidth shifted there is lost
         // and will be set to empty cell
-        if (bufferRow.loadCell(cols - 1, this._cell).width === 2) {
+        if (bufferRow.loadCell(cols - 1, this._cell).getWidth() === 2) {
           bufferRow.setCellFromCodePoint(cols - 1, NULL_CELL_CODE, NULL_CELL_WIDTH, curAttr, 0);
         }
       }

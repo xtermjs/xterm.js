@@ -23,7 +23,7 @@ describe('getStringCellWidth', function(): void {
     for (let i = start; i < end; ++i) {
       const line = buffer.lines.get(i);
       for (let j = 0; j < line.length; ++j) { // TODO: change to trimBorder with multiline
-        const ch = line.loadCell(j, new CellData()).asCharData;
+        const ch = line.loadCell(j, new CellData()).getAsCharData();
         result += ch[CHAR_DATA_WIDTH_INDEX];
         // return on sentinel
         if (ch[CHAR_DATA_CHAR_INDEX] === sentinel) {

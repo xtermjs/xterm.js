@@ -68,7 +68,7 @@ function terminalToString(term: Terminal): string {
   for (let line = term.buffer.ybase; line < term.buffer.ybase + term.rows; line++) {
     lineText = '';
     for (let cell = 0; cell < term.cols; ++cell) {
-      lineText += term.buffer.lines.get(line).loadCell(cell, new CellData()).chars || WHITESPACE_CELL_CHAR;
+      lineText += term.buffer.lines.get(line).loadCell(cell, new CellData()).getChars() || WHITESPACE_CELL_CHAR;
     }
     // rtrim empty cells as xterm does
     lineText = lineText.replace(/\s+$/, '');

@@ -528,12 +528,12 @@ export interface ICellData {
   fg: number;
   bg: number;
   combinedData: string;
-  isCombined: number;
-  width: number;
-  chars: string;
-  code: number;
+  isCombined(): number;
+  getWidth(): number;
+  getChars(): string;
+  getCode(): number;
   setFromCharData(value: CharData): void;
-  asCharData: CharData;
+  getAsCharData(): CharData;
 }
 
 /**

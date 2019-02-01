@@ -143,7 +143,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
       this._state.y = viewportRelativeCursorY;
       this._state.isFocused = false;
       this._state.style = terminal.options.cursorStyle;
-      this._state.width = this._cell.width;
+      this._state.width = this._cell.getWidth();
       return;
     }
 
@@ -159,7 +159,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
           this._state.y === viewportRelativeCursorY &&
           this._state.isFocused === terminal.isFocused &&
           this._state.style === terminal.options.cursorStyle &&
-          this._state.width === this._cell.width) {
+          this._state.width === this._cell.getWidth()) {
         return;
       }
       this._clearCursor();
@@ -173,7 +173,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     this._state.y = viewportRelativeCursorY;
     this._state.isFocused = false;
     this._state.style = terminal.options.cursorStyle;
-    this._state.width = this._cell.width;
+    this._state.width = this._cell.getWidth();
   }
 
   private _clearCursor(): void {
@@ -199,7 +199,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
   private _renderBlockCursor(terminal: ITerminal, x: number, y: number, cell: ICellData): void {
     this._ctx.save();
     this._ctx.fillStyle = this._colors.cursor.css;
-    this.fillCells(x, y, cell.width, 1);
+    this.fillCells(x, y, cell.getWidth(), 1);
     this._ctx.fillStyle = this._colors.cursorAccent.css;
     this.fillCharTrueColor(terminal, cell, x, y);
     this._ctx.restore();
@@ -215,7 +215,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
   private _renderBlurCursor(terminal: ITerminal, x: number, y: number, cell: ICellData): void {
     this._ctx.save();
     this._ctx.strokeStyle = this._colors.cursor.css;
-    this.strokeRectAtCell(x, y, cell.width, 1);
+    this.strokeRectAtCell(x, y, cell.getWidth(), 1);
     this._ctx.restore();
   }
 }

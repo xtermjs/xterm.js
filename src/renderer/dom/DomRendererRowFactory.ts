@@ -33,7 +33,7 @@ export class DomRendererRowFactory {
     // the viewport).
     let lineLength = 0;
     for (let x = Math.min(lineData.length, cols) - 1; x >= 0; x--) {
-      if (lineData.loadCell(x, this._cell).code !== NULL_CELL_CODE || (isCursorRow && x === cursorX)) {
+      if (lineData.loadCell(x, this._cell).getCode() !== NULL_CELL_CODE || (isCursorRow && x === cursorX)) {
         lineLength = x + 1;
         break;
       }
@@ -42,7 +42,7 @@ export class DomRendererRowFactory {
     for (let x = 0; x < lineLength; x++) {
       lineData.loadCell(x, this._cell);
       const attr = this._cell.fg;
-      const width = this._cell.width;
+      const width = this._cell.getWidth();
 
       // The character to the left is a wide character, drawing is owned by the char at x-1
       if (width === 0) {
@@ -100,7 +100,7 @@ export class DomRendererRowFactory {
         charElement.classList.add(ITALIC_CLASS);
       }
 
-      charElement.textContent = this._cell.chars || WHITESPACE_CELL_CHAR;
+      charElement.textContent = this._cell.getChars() || WHITESPACE_CELL_CHAR;
       if (fg !== DEFAULT_COLOR) {
         charElement.classList.add(`xterm-fg-${fg}`);
       }
