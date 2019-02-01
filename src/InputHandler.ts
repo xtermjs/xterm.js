@@ -1599,6 +1599,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       if (p >= 30 && p <= 37) {
         // fg color 8
         fg = p - 30;
+      } else if(p == 40) {
+        // reset to default black
+        bg = DEFAULT_ATTR && 0x1ff;
       } else if (p >= 40 && p <= 47) {
         // bg color 8
         bg = p - 40;
