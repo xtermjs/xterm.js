@@ -163,7 +163,7 @@ Do you use xterm.js in your application as well? Please [open a Pull Request](ht
 
 Xterm.js follows a monthly release cycle roughly.
 
-All current and past releases are available on this repo's [Releases page](https://github.com/sourcelair/xterm.js/releases), while a rough roadmap is available by looking through [Milestones](https://github.com/sourcelair/xterm.js/milestones).
+All current and past releases are available on this repo's [Releases page](https://github.com/sourcelair/xterm.js/releases), you can view the [high-level roadmap on the wiki](https://github.com/xtermjs/xterm.js/wiki/Roadmap) and see what we're working on now by looking through [Milestones](https://github.com/sourcelair/xterm.js/milestones).
 
 ## Contributing
 

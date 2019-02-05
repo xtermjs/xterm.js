@@ -55,6 +55,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
 
     // Selection does not exist
     if (!start || !end) {
+      this._clearState();
       return;
     }
 
