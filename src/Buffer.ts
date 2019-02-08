@@ -360,7 +360,7 @@ export class Buffer implements IBuffer {
       let viewportAdjustments = linesToAdd - trimmedLines;
       while (viewportAdjustments-- > 0) {
         if (this.ybase === 0) {
-          if (this.y < this._rows - 1) {
+          if (this.y < newRows - 1) {
             this.y++;
             this.lines.pop();
           } else {
