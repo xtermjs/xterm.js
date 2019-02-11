@@ -204,6 +204,7 @@ export class CompositionHelper {
       this._compositionView.style.height = cellHeight + 'px';
       this._compositionView.style.lineHeight = cellHeight + 'px';
       this._compositionView.style.fontFamily = this._terminal.options.fontFamily;
+      this._compositionView.style.fontSize = this._terminal.options.fontSize + 'px';
       // Sync the textarea to the exact position of the composition view so the IME knows where the
       // text is.
       const compositionViewBounds = this._compositionView.getBoundingClientRect();
