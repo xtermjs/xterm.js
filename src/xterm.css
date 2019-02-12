@@ -112,9 +112,9 @@
     top: 0;
 }
 
-.xterm .xterm-scroll-area {
+/*.xterm .xterm-scroll-area {
     visibility: hidden;
-}
+}*/
 
 .xterm-char-measure-element {
     display: inline-block;

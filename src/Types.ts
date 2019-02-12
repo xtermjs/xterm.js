@@ -525,6 +525,7 @@ export interface IEscapeSequenceParser extends IDisposable {
 export interface IBufferLine {
   length: number;
   isWrapped: boolean;
+  insetElements: IElementInset[] | null;
   get(index: number): CharData;
   set(index: number, value: CharData): void;
   insertCells(pos: number, n: number, ch: CharData): void;
@@ -536,4 +537,10 @@ export interface IBufferLine {
   clone(): IBufferLine;
   getTrimmedLength(): number;
   translateToString(trimRight?: boolean, startCol?: number, endCol?: number): string;
+}
+
+export interface IElementInset {
+    element: HTMLElement;
+    wrapper: HTMLElement;
+    owner: IBufferLine;
 }

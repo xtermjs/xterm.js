@@ -1368,7 +1368,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // middle of parsing escape sequence in two chunks. For some reason the
       // state of the parser resets to 0 after exiting parser.parse. This change
       // just sets the state back based on the correct return statement.
-
       this._inputHandler.parse(data);
 
       this.updateRange(this.buffer.y);
