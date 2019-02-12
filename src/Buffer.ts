@@ -3,13 +3,13 @@
  * @license MIT
  */
 
-import { IMarker } from 'xterm';
+import { IMarker, IDisposable } from 'xterm';
 import { BufferLine } from './BufferLine';
 import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths } from './BufferReflow';
 import { CircularList, IDeleteEvent, IInsertEvent } from './common/CircularList';
 import { EventEmitter } from './common/EventEmitter';
 import { DEFAULT_COLOR } from './renderer/atlas/Types';
-import { BufferIndex, CharData, IBuffer, IBufferLine, IBufferStringIterator, IBufferStringIteratorResult, ITerminal } from './Types';
+import { BufferIndex, CharData, IBuffer, IBufferLine, IBufferStringIterator, IBufferStringIteratorResult, ITerminal, IElementInset } from './Types';
 
 export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
 export const CHAR_DATA_ATTR_INDEX = 0;
@@ -665,4 +665,34 @@ export class BufferStringIterator implements IBufferStringIterator {
     this._current = range.last + 1;
     return {range: range, content: result};
   }
+}
+
+export class ElementInset implements IElementInset, IDisposable {
+    element: HTMLElement;
+    wrapper: HTMLElement;
+    owner: IBufferLine;
+    marker: Marker;
+    constructor(private _terminal: any, element: HTMLElement) {
+        this.element = element;
+        const wrapper = document.createElement('div');
+        wrapper.classList.add('inset-wrapper');
+        wrapper.setAttribute('style', 'position: absolute; z-index: 1');
+        wrapper.appendChild(element);
+        this.wrapper = wrapper;
+    }
+    put(line: number, owner: IBufferLine) {
+        this._terminal._viewportScrollArea.appendChild(this.wrapper);
+        this.owner = owner;
+        const cheight = this._terminal.renderer.dimensions.actualCellHeight;
+        this.wrapper.style.top = (line * cheight) + 'px';
+        if (owner.insetElements === null) {
+            owner.insetElements = [this];
+        } else {
+            owner.insetElements.push(this);
+        }
+        this.marker = this._terminal.addMarker(line);
+    }
+    public dispose(): void {
+        // super.dispose();
+    }
 }

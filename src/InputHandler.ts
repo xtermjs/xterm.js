@@ -4,10 +4,11 @@
  * @license MIT
  */
 
+import { SixelImage } from './sixel-image';
 import { IInputHandler, IDcsHandler, IEscapeSequenceParser, IBuffer, IInputHandlingTerminal } from './Types';
 import { C0, C1 } from './common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from './core/data/Charsets';
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from './Buffer';
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, ElementInset } from './Buffer';
 import { FLAGS } from './renderer/Types';
 import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
@@ -39,7 +40,7 @@ class DECRQSS implements IDcsHandler {
   constructor(private _terminal: any) { }
 
   hook(collect: string, params: number[], flag: number): void {
-    this._data = new Uint32Array(0);
+    this._data = new Uint32Array(0); // REDUNDANT?
   }
 
   put(data: Uint32Array, start: number, end: number): void {
@@ -73,6 +74,52 @@ class DECRQSS implements IDcsHandler {
         this._terminal.handler(`${C0.ESC}P0$r${C0.ESC}\\`);
     }
   }
+}
+
+class SIXEL implements IDcsHandler {
+  private _data: Uint32Array = new Uint32Array(0);
+  constructor(private _terminal: any) { }
+  hook(collect: string, params: number[], flag: number): void {
+    this._data = new Uint32Array(0);
+  }
+  put(data: Uint32Array, start: number, end: number): void {
+    this._data = concat(this._data, data.subarray(start, end));
+  }
+  unhook(): void {
+    const six = new SixelImage();
+    six.write(this._data);
+
+    const w = six.width;
+    const h = six.height;
+    const canvas = document.createElement('canvas');
+    canvas.setAttribute('width', String(w));
+    canvas.setAttribute('height', String(h));
+    const ctx = canvas.getContext('2d');
+    const idata = ctx.createImageData(w, h);
+    six.toImageData(idata.data, w, h);
+    ctx.putImageData(idata, 0, 0);
+
+    const image = new Image(w, h);
+    image.src = canvas.toDataURL();
+    const inset = new ElementInset(this._terminal, image);
+    const buffer = this._terminal.buffer;
+    const celly = buffer.y + buffer.ybase;
+    const line = buffer.lines.get(celly);
+    inset.put(celly, line);
+    let ydelta;
+    const cheight = this._terminal.renderer.dimensions.actualCellHeight;
+    if (true) {
+      this._terminal.buffer.x = 0;
+      ydelta = Math.ceil(h / cheight);
+    } else {
+      this._terminal.buffer.x +=
+        Math.ceil(w / this._terminal.charMeasure.width);
+      ydelta = Math.ceil(h / cheight) - 1;
+    }
+    while (--ydelta >= 0) {
+      this._terminal._inputHandler.lineFeed();
+    }
+ }
 }
 
 /**
@@ -276,6 +323,7 @@ export class InputHandler extends Disposable implements IInputHandler {
      * DCS handler
      */
     this._parser.setDcsHandler('$q', new DECRQSS(this._terminal));
+    this._parser.setDcsHandler('q', new SIXEL(this._terminal));
   }
 
   public dispose(): void {

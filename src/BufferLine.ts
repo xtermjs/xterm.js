@@ -3,7 +3,7 @@
  * @license MIT
  */
 import { CharData, IBufferLine } from './Types';
-import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, WHITESPACE_CELL_CHAR } from './Buffer';
+import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, WHITESPACE_CELL_CHAR, ElementInset } from './Buffer';
 
 
 /** typed array slots taken by one cell */
@@ -26,6 +26,7 @@ export class BufferLine implements IBufferLine {
   protected _data: Uint32Array | null = null;
   protected _combined: {[index: number]: string} = {};
   public length: number;
+  insetElements: ElementInset[] | null = null;
 
   constructor(cols: number, fillCharData?: CharData, public isWrapped: boolean = false) {
     if (!fillCharData) {
