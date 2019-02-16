@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IMarker, IDisposable } from 'xterm';
+import { IMarker } from 'xterm';
 import { BufferLine } from './BufferLine';
 import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths } from './BufferReflow';
 import { CircularList, IDeleteEvent, IInsertEvent } from './common/CircularList';
@@ -667,12 +667,13 @@ export class BufferStringIterator implements IBufferStringIterator {
   }
 }
 
-export class ElementInset implements IElementInset, IDisposable {
+export class ElementInset extends EventEmitter implements IElementInset {
     element: HTMLElement;
     wrapper: HTMLElement;
     owner: IBufferLine;
     marker: Marker;
     constructor(private _terminal: any, element: HTMLElement) {
+        super();
         this.element = element;
         const wrapper = document.createElement('div');
         wrapper.classList.add('inset-wrapper');
@@ -681,6 +682,30 @@ export class ElementInset implements IElementInset, IDisposable {
         this.wrapper = wrapper;
     }
     put(line: number, owner: IBufferLine) {
+        this.register(this._terminal.buffer.lines.addDisposableListener('trim',
+            (amount: number) => {
+            line -= amount;
+            if (line < 0) {
+              this.dispose();
+            }
+            else {
+                this.wrapper.style.top = (line * cheight) + 'px';
+            }
+        }));
+        this.register(this._terminal.buffer.lines.addDisposableListener('delete',
+            (event: IDeleteEvent) => {
+            if (event.index <= line) {
+                line -= event.amount;
+                this.wrapper.style.top = (line * cheight) + 'px';
+            }
+        }));
+        this.register(this._terminal.buffer.lines.addDisposableListener('insert',
+            (event: IInsertEvent) => {
+            if (event.index <= line) {
+                line += event.amount;
+                this.wrapper.style.top = (line * cheight) + 'px';
+            }
+        }));
         this._terminal._viewportScrollArea.appendChild(this.wrapper);
         this.owner = owner;
         const cheight = this._terminal.renderer.dimensions.actualCellHeight;
@@ -693,6 +718,10 @@ export class ElementInset implements IElementInset, IDisposable {
         this.marker = this._terminal.addMarker(line);
     }
     public dispose(): void {
-        // super.dispose();
+        super.dispose();
+        const wrapper = this.wrapper;
+        if (wrapper && wrapper.parentNode)
+          wrapper.parentNode.removeChild(wrapper);
+        this.wrapper = null;
     }
 }
