@@ -4,7 +4,8 @@
  */
 
 import { ITerminal, ISelectionManager, IBuffer, CharData, IBufferLine } from './Types';
-import { XtermListener } from './common/Types';
+import { XtermListener } from './common/Types'; // deprecated
+import { IMoveEvent } from './common/CircularList';
 import { MouseHelper } from './ui/MouseHelper';
 import * as Browser from './core/Platform';
 import { CharMeasure } from './ui/CharMeasure';
@@ -102,7 +103,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
   private _mouseMoveListener: EventListener;
   private _mouseUpListener: EventListener;
-  private _trimListener: XtermListener;
+  private _moveListener: XtermListener;
 
   private _mouseDownTimeStamp: number;
 
@@ -133,13 +134,13 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   private _initListeners(): void {
     this._mouseMoveListener = event => this._onMouseMove(<MouseEvent>event);
     this._mouseUpListener = event => this._onMouseUp(<MouseEvent>event);
-    this._trimListener = (amount: number) => this._onTrim(amount);
+    this._moveListener = (event: IMoveEvent) => this._onMove(event);
 
     this.initBuffersListeners();
   }
 
   public initBuffersListeners(): void {
-    this._terminal.buffer.lines.on('trim', this._trimListener);
+    this._terminal.buffer.lines.on('move', this._moveListener);
     this._terminal.buffers.on('activate', e => this._onBufferActivate(e));
   }
 
@@ -335,8 +336,8 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * Handle the buffer being trimmed, adjust the selection position.
    * @param amount The amount the buffer is being trimmed.
    */
-  private _onTrim(amount: number): void {
-    const needsRefresh = this._model.onTrim(amount);
+  private _onMove(event: IMoveEvent): void {
+    const needsRefresh = this._model.onMove(event);
     if (needsRefresh) {
       this.refresh();
     }
@@ -658,8 +659,8 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     // reverseIndex) and delete in a splice is only ever used when the same
     // number of elements was just added. Given this is could actually be
     // beneficial to leave the selection as is for these cases.
-    e.inactiveBuffer.lines.off('trim', this._trimListener);
-    e.activeBuffer.lines.on('trim', this._trimListener);
+    e.inactiveBuffer.lines.off('move', this._moveListener);
+    e.activeBuffer.lines.on('move', this._moveListener);
   }
 
   /**

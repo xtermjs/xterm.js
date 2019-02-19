@@ -6,7 +6,7 @@
 import { IMarker } from 'xterm';
 import { BufferLine } from './BufferLine';
 import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths } from './BufferReflow';
-import { CircularList, IDeleteEvent, IInsertEvent } from './common/CircularList';
+import { CircularList, IMoveEvent } from './common/CircularList';
 import { EventEmitter } from './common/EventEmitter';
 import { DEFAULT_COLOR } from './renderer/atlas/Types';
 import { BufferIndex, CharData, IBuffer, IBufferLine, IBufferStringIterator, IBufferStringIteratorResult, ITerminal } from './Types';
@@ -385,7 +385,7 @@ export class Buffer implements IBuffer {
     if (toInsert.length > 0) {
       // Record buffer insert events and then play them back backwards so that the indexes are
       // correct
-      const insertEvents: IInsertEvent[] = [];
+      const insertEvents: IMoveEvent[] = [];
 
       // Record original lines so they don't get overridden when we rearrange the list
       const originalLines: BufferLine[] = [];
@@ -409,9 +409,9 @@ export class Buffer implements IBuffer {
 
           // Create insert events for later
           insertEvents.push({
-            index: originalLineIndex + 1,
-            amount: nextToInsert.newLines.length
-          } as IInsertEvent);
+            start: originalLineIndex + 1,
+            amount: - nextToInsert.newLines.length
+          } as IMoveEvent);
 
           countInsertedSoFar += nextToInsert.newLines.length;
           nextToInsert = toInsert[++nextToInsertIndex];
@@ -423,13 +423,14 @@ export class Buffer implements IBuffer {
       // Update markers
       let insertCountEmitted = 0;
       for (let i = insertEvents.length - 1; i >= 0; i--) {
-        insertEvents[i].index += insertCountEmitted;
-        this.lines.emit('insert', insertEvents[i]);
+        insertEvents[i].start += insertCountEmitted;
+        this.lines.emit('move', insertEvents[i]);
         insertCountEmitted += insertEvents[i].amount;
       }
       const amountToTrim = Math.max(0, originalLinesLength + countToInsert - this.lines.maxLength);
       if (amountToTrim > 0) {
-        this.lines.emitMayRemoveListeners('trim', amountToTrim);
+        this.lines.emitMayRemoveListeners('trim', amountToTrim); // deprecated
+        this.lines.emitMayRemoveListeners('move', { start: 0, amount: amountToTrim});
       }
     }
   }
@@ -549,29 +550,14 @@ export class Buffer implements IBuffer {
   public addMarker(y: number): Marker {
     const marker = new Marker(y);
     this.markers.push(marker);
-    marker.register(this.lines.addDisposableListener('trim', amount => {
-      marker.line -= amount;
-      // The marker should be disposed when the line is trimmed from the buffer
-      if (marker.line < 0) {
-        marker.dispose();
-      }
-    }));
-    marker.register(this.lines.addDisposableListener('insert', (event: IInsertEvent) => {
-      if (marker.line >= event.index) {
-        marker.line += event.amount;
-      }
-    }));
-    marker.register(this.lines.addDisposableListener('delete', (event: IDeleteEvent) => {
-      // Delete the marker if it's within the range
-      if (marker.line >= event.index && marker.line < event.index + event.amount) {
-        marker.dispose();
-      }
-
-      // Shift the marker if it's after the deleted range
-      if (marker.line > event.index) {
+    marker.register(this.lines.addDisposableListener('move', (event: IMoveEvent) => {
+      if (marker.line >= event.start && (! event.end || marker.line < event.end)) {
         marker.line -= event.amount;
-      }
-    }));
+        if (marker.line < event.start ||
+            (event.end && marker.line >= event.end)) {
+          marker.dispose();
+        }
+    }}));
     marker.register(marker.addDisposableListener('dispose', () => this._removeMarker(marker)));
     return marker;
   }

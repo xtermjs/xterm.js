@@ -34,4 +34,5 @@ export interface ICircularList<T> extends IEventEmitter {
   splice(start: number, deleteCount: number, ...items: T[]): void;
   trimStart(count: number): void;
   shiftElements(start: number, count: number, offset: number): void;
+  emitMayRemoveListeners(type: string, ...args: any[]): void;
 }
