@@ -315,6 +315,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     // Create the terminal's buffers and set the current buffer
     this.buffers = new BufferSet(this);
+    this.buffers.on('activate', (arg) => {
+         this._viewportScrollArea.style.display = arg.alt ? "none" : "";
+    });
     if (this.selectionManager) {
       this.selectionManager.clearSelection();
       this.selectionManager.initBuffersListeners();

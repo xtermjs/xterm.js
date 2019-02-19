@@ -69,6 +69,7 @@ export class BufferSet extends EventEmitter implements IBufferSet {
     this._alt.clear();
     this._activeBuffer = this._normal;
     this.emit('activate', {
+      alt: false,
       activeBuffer: this._normal,
       inactiveBuffer: this._alt
     });
@@ -88,6 +89,7 @@ export class BufferSet extends EventEmitter implements IBufferSet {
     this._alt.y = this._normal.y;
     this._activeBuffer = this._alt;
     this.emit('activate', {
+      alt: true,
       activeBuffer: this._alt,
       inactiveBuffer: this._normal
     });
