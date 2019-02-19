@@ -279,9 +279,13 @@ export interface IBufferStringIterator {
 
 export interface IBuffer {
   readonly lines: ICircularList<IBufferLine>;
+  // row number of top visible line (i.e. number of scrolled-out lines)
   ydisp: number;
+  // row number of home position (line 0 when cursor adressing)
   ybase: number;
+  // current row number of cursor, relative to home position
   y: number;
+  // current column number of cursor
   x: number;
   tabs: any;
   scrollBottom: number;
