@@ -1712,7 +1712,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
 
     this.refresh(0, this.rows - 1);
-    this.emit('resize', {cols: x, rows: y});
+    const screen = this.screenElement;
+    this.emit('resize', {cols: x, rows: y,
+                         width: screen.clientWidth,
+                         height: screen.clientHeight});
   }
 
   /**
