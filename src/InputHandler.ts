@@ -86,11 +86,16 @@ class SIXEL implements IDcsHandler {
     this._data = concat(this._data, data.subarray(start, end));
   }
   unhook(): void {
+    const buffer = this._terminal.buffer;
     const six = new SixelImage();
     six.write(this._data);
 
     const w = six.width;
     const h = six.height;
+    const cheight = this._terminal.renderer.dimensions.actualCellHeight;
+    let ydelta = Math.ceil(h / cheight);
+    this._terminal._inputHandler.eraseInDisplay([0]);
+    // FIXME better to call .eraseInLine ydelta times - needs to emit 'move'
     const canvas = document.createElement('canvas');
     canvas.setAttribute('width', String(w));
     canvas.setAttribute('height', String(h));
@@ -102,24 +107,20 @@ class SIXEL implements IDcsHandler {
     const image = new Image(w, h);
     image.src = canvas.toDataURL();
     const inset = new ElementInset(this._terminal, image);
-    const buffer = this._terminal.buffer;
     const celly = buffer.y + buffer.ybase;
     const line = buffer.lines.get(celly);
-    inset.put(celly, line);
-    let ydelta;
-    const cheight = this._terminal.renderer.dimensions.actualCellHeight;
+    inset.put(celly, this._terminal.buffer.x, line);
     if (true) {
       this._terminal.buffer.x = 0;
-      ydelta = Math.ceil(h / cheight);
     } else {
       this._terminal.buffer.x +=
         Math.ceil(w / this._terminal.charMeasure.width);
-      ydelta = Math.ceil(h / cheight) - 1;
+      ydelta--;
     }
     while (--ydelta >= 0) {
       this._terminal._inputHandler.lineFeed();
     }
- }
+  }
 }
 
 /**
@@ -790,6 +791,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       case 0:
         j = this._terminal.buffer.y;
         this._terminal.updateRange(j);
+        this._terminal.buffer.lines.emitMayRemoveListeners('move', { start: j + this._terminal.buffer.ybase, amount: this._terminal.rows - j });
         this._eraseInBufferLine(j++, this._terminal.buffer.x, this._terminal.cols, this._terminal.buffer.x === 0);
         for (; j < this._terminal.rows; j++) {
           this._resetBufferLine(j);
@@ -812,6 +814,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         break;
       case 2:
         j = this._terminal.rows;
+        this._terminal.buffer.lines.emitMayRemoveListeners('move', { start: this._terminal.buffer.ybase, amount: j });
         this._terminal.updateRange(j - 1);
         while (j--) {
           this._resetBufferLine(j);
@@ -827,6 +830,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._terminal.buffer.ydisp = Math.max(this._terminal.buffer.ydisp - scrollBackSize, 0);
           // Force a scroll event to refresh viewport
           this._terminal.emit('scroll', 0);
+          this._terminal.buffer.lines.emit('move', { start: 0, end: scrollBackSize, amount: scrollBackSize });
         }
         break;
     }

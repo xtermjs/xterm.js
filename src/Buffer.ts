@@ -654,60 +654,51 @@ export class BufferStringIterator implements IBufferStringIterator {
 }
 
 export class ElementInset extends EventEmitter implements IElementInset {
-    element: HTMLElement;
-    wrapper: HTMLElement;
-    owner: IBufferLine;
-    marker: Marker;
-    constructor(private _terminal: any, element: HTMLElement) {
-        super();
-        this.element = element;
-        const wrapper = document.createElement('div');
-        wrapper.classList.add('inset-wrapper');
-        wrapper.setAttribute('style', 'position: absolute; z-index: 1');
-        wrapper.appendChild(element);
-        this.wrapper = wrapper;
-    }
-    put(line: number, owner: IBufferLine) {
-        this.register(this._terminal.buffer.lines.addDisposableListener('trim',
-            (amount: number) => {
-            line -= amount;
-            if (line < 0) {
-              this.dispose();
-            }
-            else {
-                this.wrapper.style.top = (line * cheight) + 'px';
-            }
-        }));
-        this.register(this._terminal.buffer.lines.addDisposableListener('delete',
-            (event: IDeleteEvent) => {
-            if (event.index <= line) {
-                line -= event.amount;
-                this.wrapper.style.top = (line * cheight) + 'px';
-            }
-        }));
-        this.register(this._terminal.buffer.lines.addDisposableListener('insert',
-            (event: IInsertEvent) => {
-            if (event.index <= line) {
-                line += event.amount;
-                this.wrapper.style.top = (line * cheight) + 'px';
-            }
-        }));
-        this._terminal._viewportScrollArea.appendChild(this.wrapper);
-        this.owner = owner;
-        const cheight = this._terminal.renderer.dimensions.actualCellHeight;
-        this.wrapper.style.top = (line * cheight) + 'px';
-        if (owner.insetElements === null) {
-            owner.insetElements = [this];
+  element: HTMLElement;
+  wrapper: HTMLElement;
+  owner: IBufferLine;
+  marker: Marker;
+
+  constructor(private _terminal: any, element: HTMLElement) {
+    super();
+    this.element = element;
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('inset-wrapper');
+    wrapper.setAttribute('style', 'position: absolute; z-index: 1');
+    wrapper.appendChild(element);
+    this.wrapper = wrapper;
+  }
+  put(line: number, column: number, owner: IBufferLine) {
+    const cheight = this._terminal.renderer.dimensions.actualCellHeight;
+    const cwidth = this._terminal.renderer.dimensions.actualCellWidth;
+    this.wrapper.style.left = (column * cwidth) + 'px';
+    this.wrapper.style.top = (line * cheight) + 'px';
+    this._terminal._viewportScrollArea.appendChild(this.wrapper);
+    this.register(this._terminal.buffer.lines.addDisposableListener('move',
+      (event: IMoveEvent) => {
+      if (line >= event.start && (event.end === undefined || line < event.end)) {
+        line -= event.amount;
+        if (line < event.start ||
+            (event.end !== undefined && line >= event.end)) {
+          this.dispose();
         } else {
-            owner.insetElements.push(this);
+          this.wrapper.style.top = (line * cheight) + 'px';
         }
-        this.marker = this._terminal.addMarker(line);
+    }}));
+    this.owner = owner;
+    if (owner.insetElements === null) {
+      owner.insetElements = [this];
+    } else {
+      owner.insetElements.push(this);
     }
-    public dispose(): void {
-        super.dispose();
-        const wrapper = this.wrapper;
-        if (wrapper && wrapper.parentNode)
-          wrapper.parentNode.removeChild(wrapper);
-        this.wrapper = null;
+    this.marker = this._terminal.addMarker(line);
+  }
+  public dispose(): void {
+    super.dispose();
+    const wrapper = this.wrapper;
+    if (wrapper && wrapper.parentNode) {
+      wrapper.parentNode.removeChild(wrapper);
     }
+    this.wrapper = null;
+  }
 }
