@@ -63,21 +63,21 @@ describe('SelectionManager', () => {
     });
   });
 
-  describe('onTrim', () => {
+  describe('onMove', () => {
     it('should trim a portion of the selection when a part of it is trimmed', () => {
       model.selectionStart = [0, 0];
       model.selectionEnd = [10, 2];
-      model.onTrim(1);
+      model.onMove({start: 0, amount: 1});
       assert.deepEqual(model.finalSelectionStart, [0, 0]);
       assert.deepEqual(model.finalSelectionEnd, [10, 1]);
-      model.onTrim(1);
+      model.onMove({start: 0, amount: 1});
       assert.deepEqual(model.finalSelectionStart, [0, 0]);
       assert.deepEqual(model.finalSelectionEnd, [10, 0]);
     });
     it('should clear selection when it is trimmed in its entirety', () => {
       model.selectionStart = [0, 0];
       model.selectionEnd = [10, 0];
-      model.onTrim(1);
+      model.onMove({start: 0, amount: 1});
       assert.deepEqual(model.finalSelectionStart, null);
       assert.deepEqual(model.finalSelectionEnd, null);
     });

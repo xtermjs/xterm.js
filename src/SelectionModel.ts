@@ -4,6 +4,7 @@
  */
 
 import { ITerminal } from './Types';
+import { IMoveEvent } from './common/CircularList';
 
 /**
  * Represents a selection within the buffer. This model only cares about column
@@ -112,13 +113,15 @@ export class SelectionModel {
    * @param amount The amount the buffer is being trimmed.
    * @return Whether a refresh is necessary.
    */
-  public onTrim(amount: number): boolean {
+  public onMove(event: IMoveEvent): boolean {
     // Adjust the selection position based on the trimmed amount.
-    if (this.selectionStart) {
-      this.selectionStart[1] -= amount;
+    if (this.selectionStart && this.selectionStart[1] >= event.start
+        && (! event.end || this.selectionStart[1] < event.end)) {
+      this.selectionStart[1] -= event.amount;
     }
-    if (this.selectionEnd) {
-      this.selectionEnd[1] -= amount;
+    if (this.selectionEnd && this.selectionEnd[1] >= event.start
+        && (! event.end || this.selectionEnd[1] < event.end)) {
+      this.selectionEnd[1] -= event.amount;
     }
 
     // The selection has moved off the buffer, clear it.

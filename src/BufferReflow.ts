@@ -5,7 +5,7 @@
 
 import { FILL_CHAR_DATA } from './Buffer';
 import { BufferLine } from './BufferLine';
-import { CircularList, IDeleteEvent } from './common/CircularList';
+import { CircularList, IMoveEvent } from './common/CircularList';
 import { IBufferLine } from './Types';
 
 export interface INewLayoutResult {
@@ -119,10 +119,10 @@ export function reflowLargerCreateNewLayout(lines: CircularList<IBufferLine>, to
       const countToRemove = toRemove[++nextToRemoveIndex];
 
       // Tell markers that there was a deletion
-      lines.emit('delete', {
-        index: i - countRemovedSoFar,
+      lines.emit('move', {
+        start: i - countRemovedSoFar,
         amount: countToRemove
-      } as IDeleteEvent);
+      } as IMoveEvent);
 
       i += countToRemove - 1;
       countRemovedSoFar += countToRemove;
