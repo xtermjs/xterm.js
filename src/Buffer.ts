@@ -211,7 +211,7 @@ export class Buffer implements IBuffer {
 
     this.scrollBottom = newRows - 1;
 
-    if (this._hasScrollback) {
+    if (this._isReflowEnabled) {
       this._reflow(newCols, newRows);
 
       // Trim the end of the line off if cols shrunk
@@ -224,6 +224,10 @@ export class Buffer implements IBuffer {
 
     this._cols = newCols;
     this._rows = newRows;
+  }
+
+  private get _isReflowEnabled(): boolean {
+    return this._hasScrollback && !(this._terminal as any).isWinptyCompatEnabled;
   }
 
   private _reflow(newCols: number, newRows: number): void {
