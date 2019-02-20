@@ -154,6 +154,7 @@ computational environment for Jupyter, supporting interactive data science and s
 - [**Juno**](http://junolab.org/): A flexible Julia IDE, based on Atom.
 - [**webssh**](https://github.com/huashengdun/webssh): Web based ssh client.
 - [**info-beamer hosted**](https://info-beamer.com): Uses Xterm.js to manage digital signage devices from the web dashboard.
+- [**Jumpserver**](https://github.com/jumpserver/luna): Jumpserver Luna project, Jumpserver is a bastion server project, Luna use xterm.js for web terminal emulation. 
 
 [And much more...](https://github.com/xtermjs/xterm.js/network/dependents)
 
