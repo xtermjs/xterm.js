@@ -138,6 +138,40 @@ export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: nu
   };
 })({nul: 0, control: 0});  // configurable options
 
+// from another emoji fix https://github.com/xtermjs/xterm.js/pull/1890/files
+// This function returns whether the first code point of the provided string is
+// within a range that contains emoji. Some of the codepoints in these ranges
+// are unassigned so this test is an approximation to the real thing.
+// Ranges taken from:
+//   https://stackoverflow.com/questions/30757193/
+// For a complete list of all assigned codepoints, go to:
+//   https://unicode.org/Public/emoji/11.0/emoji-data.txt
+export function isEmoji(str: string): boolean {
+  if (str.codePointAt === undefined) {
+    return false;
+  }
+  const codePoint = str.codePointAt(0);
+  // Short circuit for the most common case (i.e. non-emoji characters)
+  if (codePoint < 8400) {
+    return false;
+  }
+  if ((codePoint >= 0x1F600 && codePoint <= 0x1F64F) || // Emoticons
+      (codePoint >= 0x1F300 && codePoint <= 0x1F5FF) || // Misc Symbols and Pictographs
+      (codePoint >= 0x1F680 && codePoint <= 0x1F6FF) || // Transport and Map
+      (codePoint >= 0x1F1E6 && codePoint <= 0x1F1FF) || // Regional country flags
+      (codePoint >= 0x2600 && codePoint <= 0x26FF) ||   // Misc symbols
+      (codePoint >= 0x2700 && codePoint <= 0x27BF) ||   // Dingbats
+      (codePoint >= 0xFE00 && codePoint <= 0xFE0F) ||   // Variation Selectors
+      (codePoint >= 0x1F900 && codePoint <= 0x1F9FF) || // Supplemental Symbols and Pictographs
+      (codePoint >= 127000 && codePoint <= 127600) ||   // Various asian characters
+      (codePoint >= 65024 && codePoint <= 65039) ||     // Variation selector
+      (codePoint >= 9100 && codePoint <= 9300) ||       // Misc items
+      (codePoint >= 8400 && codePoint <= 8447)) {       // Combining Diacritical Marks for Symbols
+    return true;
+  }
+  return false;
+}
+
 /**
  * Get the terminal cell width for a string.
  */
@@ -145,27 +179,33 @@ export function getStringCellWidth(s: string): number {
   let result = 0;
   const length = s.length;
   for (let i = 0; i < length; ++i) {
-    let code = s.charCodeAt(i);
-    // surrogate pair first
-    if (0xD800 <= code && code <= 0xDBFF) {
-      if (++i >= length) {
-        // this should not happen with strings retrieved from
-        // Buffer.translateToString as it converts from UTF-32
-        // and therefore always should contain the second part
-        // for any other string we still have to handle it somehow:
-        // simply treat the lonely surrogate first as a single char (UCS-2 behavior)
-        return result + wcwidth(code);
+    if (i + 1 <= length && isEmoji(s[i] + s[i + 1])) {
+      result += (s[i] + s[++i]).length;
+      // console.log(result, s[i] + s[++i], '*');
+    } else {
+      let code = s.charCodeAt(i);
+      // surrogate pair first
+      if (0xD800 <= code && code <= 0xDBFF) {
+        if (++i >= length) {
+          // this should not happen with strings retrieved from
+          // Buffer.translateToString as it converts from UTF-32
+          // and therefore always should contain the second part
+          // for any other string we still have to handle it somehow:
+          // simply treat the lonely surrogate first as a single char (UCS-2 behavior)
+          // console.log(result + wcwidth(code), code, '-');
+          return result + wcwidth(code);
+        }
+        const second = s.charCodeAt(i);
+        // convert surrogate pair to high codepoint only for valid second part (UTF-16)
+        // otherwise treat them independently (UCS-2 behavior)
+        if (0xDC00 <= second && second <= 0xDFFF) {
+          code = (code - 0xD800) * 0x400 + second - 0xDC00 + 0x10000;
+        } else {
+          result += wcwidth(second);
+        }
       }
-      const second = s.charCodeAt(i);
-      // convert surrogate pair to high codepoint only for valid second part (UTF-16)
-      // otherwise treat them independently (UCS-2 behavior)
-      if (0xDC00 <= second && second <= 0xDFFF) {
-        code = (code - 0xD800) * 0x400 + second - 0xDC00 + 0x10000;
-      } else {
-        result += wcwidth(second);
-      }
+      result += wcwidth(code);
     }
-    result += wcwidth(code);
   }
   return result;
 }

@@ -76,6 +76,20 @@ describe('getStringCellWidth', function(): void {
     assert.equal(getStringCellWidth(s), sumWidths(terminal.buffer, 0, 1, '#'));
   });
   // TODO: multiline tests once #1685 is resolved
+  it('emojis', function(): void {
+    const input = '😁😁😁😁😁😁#';
+    terminal.writeSync(input);
+    const s = terminal.buffer.iterator(true).next().content;
+    assert.equal(input, s);
+    assert.equal(getStringCellWidth(s), sumWidths(terminal.buffer, 0, 1, '#'));
+  });
+  it('emojis with combining chars', function(): void {
+    const input = 'e\u0301e\u0301😁😁😁😁😁😁#';
+    terminal.writeSync(input);
+    const s = terminal.buffer.iterator(true).next().content;
+    assert.equal(input, s);
+    assert.equal(getStringCellWidth(s), sumWidths(terminal.buffer, 0, 1, '#'));
+  });
 });
 
 it('wcwidth should match all values from the old implementation', function(): void {

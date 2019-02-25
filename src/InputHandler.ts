@@ -9,7 +9,7 @@ import { C0, C1 } from './common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from './core/data/Charsets';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from './Buffer';
 import { FLAGS } from './renderer/Types';
-import { wcwidth } from './CharWidth';
+import { getStringCellWidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
 import { ICharset } from './core/Types';
 import { IDisposable } from 'xterm';
@@ -332,7 +332,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
       // calculate print space
       // expensive call, therefore we save width in line buffer
-      chWidth = wcwidth(code);
+      chWidth = getStringCellWidth(char);
 
       // get charset replacement character
       // charset are only defined for ASCII, therefore we only
@@ -491,6 +491,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Backspace (Ctrl-H).
    */
   public backspace(): void {
+    // console.log('←', this._terminal.buffer);
     if (this._terminal.buffer.x > 0) {
       this._terminal.buffer.x--;
     }
