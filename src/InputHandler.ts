@@ -1284,7 +1284,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           if (this._terminal.element) {
             this._terminal.element.classList.add('enable-mouse-events');
           }
-          this._terminal.selectionManager.disable();
+          if (this._terminal.selectionManager) {
+            this._terminal.selectionManager.disable();
+          }
           this._terminal.log('Binding to mouse events.');
           break;
         case 1004: // send focusin/focusout events
@@ -1474,7 +1476,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           if (this._terminal.element) {
             this._terminal.element.classList.remove('enable-mouse-events');
           }
-          this._terminal.selectionManager.enable();
+          if (this._terminal.selectionManager) {
+            this._terminal.selectionManager.enable();
+          }
           break;
         case 1004: // send focusin/focusout events
           this._terminal.sendFocus = false;
