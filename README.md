@@ -106,17 +106,17 @@ Note that some APIs are marked *experimental*, these are added to enable experim
 ## Real-world uses
 Xterm.js is used in several world-class applications to provide great terminal experiences.
 
-- [**SourceLair**](https://www.sourcelair.com/): In-browser IDE that provides its users with fully-featured Linux terminals based on `xterm.js`.
-- [**Microsoft Visual Studio Code**](http://code.visualstudio.com/): Modern, versatile and powerful open source code editor that provides an integrated terminal based on `xterm.js`.
-- [**ttyd**](https://github.com/tsl0922/ttyd): A command-line tool for sharing terminal over the web, with fully-featured terminal emulation based on `xterm.js`.
+- [**SourceLair**](https://www.sourcelair.com/): In-browser IDE that provides its users with fully-featured Linux terminals based on xterm.js.
+- [**Microsoft Visual Studio Code**](http://code.visualstudio.com/): Modern, versatile and powerful open source code editor that provides an integrated terminal based on xterm.js.
+- [**ttyd**](https://github.com/tsl0922/ttyd): A command-line tool for sharing terminal over the web, with fully-featured terminal emulation based on xterm.js.
 - [**Katacoda**](https://www.katacoda.com/): Katacoda is an Interactive Learning Platform for software developers, covering the latest Cloud Native technologies.
 - [**Eclipse Che**](http://www.eclipse.org/che): Developer workspace server, cloud IDE, and Eclipse next-generation IDE.
 - [**Codenvy**](http://www.codenvy.com): Cloud workspaces for development teams.
-- [**CoderPad**](https://coderpad.io): Online interviewing platform for programmers. Run code in many programming languages, with results displayed by `xterm.js`.
-- [**WebSSH2**](https://github.com/billchurch/WebSSH2): A web based SSH2 client using `xterm.js`, socket.io, and ssh2.
+- [**CoderPad**](https://coderpad.io): Online interviewing platform for programmers. Run code in many programming languages, with results displayed by xterm.js.
+- [**WebSSH2**](https://github.com/billchurch/WebSSH2): A web based SSH2 client using xterm.js, socket.io, and ssh2.
 - [**Spyder Terminal**](https://github.com/spyder-ide/spyder-terminal): A full fledged system terminal embedded on Spyder IDE.
 - [**Cloud Commander**](https://cloudcmd.io "Cloud Commander"): Orthodox web file manager with console and editor.
-- [**Codevolve**](https://www.codevolve.com "Codevolve"): Online platform for interactive coding and web development courses. Live container-backed terminal uses `xterm.js`.
+- [**Codevolve**](https://www.codevolve.com "Codevolve"): Online platform for interactive coding and web development courses. Live container-backed terminal uses xterm.js.
 - [**RStudio**](https://www.rstudio.com/products/RStudio "RStudio"): RStudio is an integrated development environment (IDE) for R.
 - [**Terminal for Atom**](https://github.com/jsmecham/atom-terminal-tab): A simple terminal for the Atom text editor.
 - [**Eclipse Orion**](https://orionhub.org): A modern, open source software development environment that runs in the cloud. Code, deploy and run in the cloud.
@@ -124,11 +124,11 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**Hexlet**](https://en.hexlet.io): Practical programming courses (JavaScript, PHP, Unix, databases, functional programming). A steady path from the first line of code to the first job.
 - [**Selenoid UI**](https://github.com/aerokube/selenoid-ui): Simple UI for the scallable golang implementation of Selenium Hub named Selenoid. We use XTerm for streaming logs over websockets from docker containers.
 - [**Portainer**](https://portainer.io): Simple management UI for Docker.
-- [**SSHy**](https://github.com/stuicey/SSHy): HTML5 Based SSHv2 Web Client with E2E encryption utilising `xterm.js`, SJCL & websockets.
+- [**SSHy**](https://github.com/stuicey/SSHy): HTML5 Based SSHv2 Web Client with E2E encryption utilising xterm.js, SJCL & websockets.
 - [**JupyterLab**](https://github.com/jupyterlab/jupyterlab): An extensible computational environment for Jupyter, supporting interactive data science and scientific computing across all programming languages.
 - [**Theia**](https://github.com/theia-ide/theia): Theia is a cloud & desktop IDE framework implemented in TypeScript.
 - [**Opshell**](https://github.com/ricktbaker/opshell) Ops Helper tool to make life easier working with AWS instances across multiple organizations.
-- [**Proxmox VE**](https://www.proxmox.com/en/proxmox-ve): Proxmox VE is a complete open-source platform for enterprise virtualization. It uses `xterm.js` for container terminals and the host shell.
+- [**Proxmox VE**](https://www.proxmox.com/en/proxmox-ve): Proxmox VE is a complete open-source platform for enterprise virtualization. It uses xterm.js for container terminals and the host shell.
 - [**Script Runner**](https://github.com/ioquatix/script-runner): Run scripts (or a shell) in Atom.
 - [**Whack Whack Terminal**](https://github.com/Microsoft/WhackWhackTerminal): Terminal emulator for Visual Studio 2017.
 - [**VTerm**](https://github.com/vterm/vterm): Extensible terminal emulator based on Electron and React.
@@ -144,16 +144,16 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**Fluent Terminal**](https://github.com/felixse/FluentTerminal): A terminal emulator based on UWP and web technologies.
 - [**Hyper**](https://hyper.is): A terminal built on web technologies.
 - [**Diag**](https://diag.ai): A better way to troubleshoot problems faster. Capture, share and reapply troubleshooting knowledge so you can focus on solving problems that matter.
-- [**GoTTY**](https://github.com/yudai/gotty): A simple command line tool that shares your terminal as a web application based on `xterm.js`.
+- [**GoTTY**](https://github.com/yudai/gotty): A simple command line tool that shares your terminal as a web application based on xterm.js.
 - [**genact**](https://github.com/svenstaro/genact): A nonsense activity generator.
 - [**cPanel & WHM**](https://cpanel.com): The hosting platform of choice.
-- [**Nutanix**](https://github.com/nutanix): Nutanix Enterprise Cloud uses xterm in the webssh functionality within Nutanix Calm, and is also looking to move our old noserial (termjs) functionality to `xterm.js`.
+- [**Nutanix**](https://github.com/nutanix): Nutanix Enterprise Cloud uses xterm in the webssh functionality within Nutanix Calm, and is also looking to move our old noserial (termjs) functionality to xterm.js.
 - [**SSH Web Client**](https://github.com/roke22/PHP-SSH2-Web-Client): SSH Web Client with PHP.
 - [**Shellvault**](https://www.shellvault.io): The cloud-based SSH terminal you can access from anywhere.
 - [**Juno**](http://junolab.org/): A flexible Julia IDE, based on Atom.
 - [**webssh**](https://github.com/huashengdun/webssh): Web based ssh client.
-- [**info-beamer hosted**](https://info-beamer.com): Uses `xterm.js` to manage digital signage devices from the web dashboard.
-- [**Jumpserver**](https://github.com/jumpserver/luna): Jumpserver Luna project, Jumpserver is a bastion server project, Luna use `xterm.js` for web terminal emulation.
+- [**info-beamer hosted**](https://info-beamer.com): Uses xterm.js to manage digital signage devices from the web dashboard.
+- [**Jumpserver**](https://github.com/jumpserver/luna): Jumpserver Luna project, Jumpserver is a bastion server project, Luna use xterm.js for web terminal emulation.
 
 [And much more...](https://github.com/xtermjs/xterm.js/network/dependents)
 
