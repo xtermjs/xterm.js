@@ -661,14 +661,17 @@ export class ElementInset extends EventEmitter implements IElementInset {
 
   constructor(private _terminal: any, element: HTMLElement) {
     super();
-    this.element = element;
     const wrapper = document.createElement('div');
     wrapper.classList.add('inset-wrapper');
     wrapper.setAttribute('style', 'position: absolute; z-index: 1');
-    wrapper.appendChild(element);
+    if (element !== null) {
+        this.element = element;
+        wrapper.appendChild(element);
+     }
     this.wrapper = wrapper;
   }
-  put(line: number, column: number, owner: IBufferLine) {
+  put(line: number, column: number,
+      owner: IBufferLine = this._terminal.buffer.lines.get(line)) {
     const cheight = this._terminal.renderer.dimensions.actualCellHeight;
     const cwidth = this._terminal.renderer.dimensions.actualCellWidth;
     this.wrapper.style.left = (column * cwidth) + 'px';
@@ -692,6 +695,20 @@ export class ElementInset extends EventEmitter implements IElementInset {
       owner.insetElements.push(this);
     }
     this.marker = this._terminal.addMarker(line);
+  }
+  public updatePosition(height: number, width: number = -1): void {
+    const terminal = this._terminal;
+    const cheight = terminal.renderer.dimensions.actualCellHeight;
+    let ydelta = Math.ceil(height / cheight);
+    if (true || width <= 0) {
+      terminal.buffer.x = 0;
+    } else {
+      terminal.buffer.x += Math.ceil(width / terminal.charMeasure.width);
+      ydelta--;
+    }
+    while (--ydelta >= 0) {
+      terminal._inputHandler.lineFeed();
+    }
   }
   public dispose(): void {
     super.dispose();

@@ -92,10 +92,7 @@ class SIXEL implements IDcsHandler {
 
     const w = six.width;
     const h = six.height;
-    const cheight = this._terminal.renderer.dimensions.actualCellHeight;
-    let ydelta = Math.ceil(h / cheight);
     this._terminal._inputHandler.eraseInDisplay([0]);
-    // FIXME better to call .eraseInLine ydelta times - needs to emit 'move'
     const canvas = document.createElement('canvas');
     canvas.setAttribute('width', String(w));
     canvas.setAttribute('height', String(h));
@@ -108,18 +105,8 @@ class SIXEL implements IDcsHandler {
     image.src = canvas.toDataURL();
     const inset = new ElementInset(this._terminal, image);
     const celly = buffer.y + buffer.ybase;
-    const line = buffer.lines.get(celly);
-    inset.put(celly, this._terminal.buffer.x, line);
-    if (true) {
-      this._terminal.buffer.x = 0;
-    } else {
-      this._terminal.buffer.x +=
-        Math.ceil(w / this._terminal.charMeasure.width);
-      ydelta--;
-    }
-    while (--ydelta >= 0) {
-      this._terminal._inputHandler.lineFeed();
-    }
+    inset.put(celly, this._terminal.buffer.x);
+    inset.updatePosition(h, w);
   }
 }
 
@@ -249,7 +236,6 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.setOscHandler(0, (data) => this.setTitle(data));
     //   1 - icon name
     //   2 - title
-    this._parser.setOscHandler(2, (data) => this.setTitle(data));
     //   3 - set property X in the form "prop=value"
     //   4 - Change Color Number
     //   5 - Change Special Color Number
@@ -269,6 +255,18 @@ export class InputHandler extends Disposable implements IInputHandler {
     //  50 - Set Font to Pt.
     //  51 - reserved for Emacs shell.
     //  52 - Manipulate Selection Data.
+    this._parser.setOscHandler(72, (data) => {
+        function scrub(htmlText: string) {
+            return htmlText; // FIXME
+        }
+        let terminal: any = this._terminal; // FIXME
+        const buffer = this._terminal.buffer;
+        const inset = new ElementInset(this._terminal, null);
+        inset.wrapper.insertAdjacentHTML("beforeend", scrub(data));
+        const celly = buffer.y + buffer.ybase;
+        inset.put(celly, terminal.buffer.x);
+        inset.updatePosition(inset.wrapper.clientHeight);
+    });
     // 104 ; c - Reset Color Number c.
     // 105 ; c - Reset Special Color Number c.
     // 106 ; c; f - Enable/disable Special Color Number c.
