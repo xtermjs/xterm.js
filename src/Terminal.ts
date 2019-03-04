@@ -857,9 +857,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         if (ch > 2047) {
           data.push(2047);
           return;
-        } else {
-          data.push(ch);
         }
+        data.push(ch);
       }
     }
 
