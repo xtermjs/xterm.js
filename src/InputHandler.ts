@@ -14,6 +14,8 @@ import { EscapeSequenceParser } from './EscapeSequenceParser';
 import { ICharset } from './core/Types';
 import { IDisposable } from 'xterm';
 import { Disposable } from './common/Lifecycle';
+import { concat } from './common/TypedArrayUtils';
+import { StringToUtf32, stringFromCodePoint, utf32ToString } from './core/input/TextDecoder';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -32,21 +34,22 @@ const GLEVEL: {[key: string]: number} = {'(': 0, ')': 1, '*': 2, '+': 3, '-': 1,
  *   Response: DECRPSS (https://vt100.net/docs/vt510-rm/DECRPSS.html)
  */
 class DECRQSS implements IDcsHandler {
-  private _data: string;
+  private _data: Uint32Array = new Uint32Array(0);
 
   constructor(private _terminal: any) { }
 
   hook(collect: string, params: number[], flag: number): void {
-    // reset data
-    this._data = '';
+    this._data = new Uint32Array(0);
   }
 
-  put(data: string, start: number, end: number): void {
-    this._data += data.substring(start, end);
+  put(data: Uint32Array, start: number, end: number): void {
+    this._data = concat(this._data, data.subarray(start, end));
   }
 
   unhook(): void {
-    switch (this._data) {
+    const data = utf32ToString(this._data);
+    this._data = new Uint32Array(0);
+    switch (data) {
       // valid: DCS 1 $ r Pt ST (xterm)
       case '"q': // DECSCA
         return this._terminal.handler(`${C0.ESC}P1$r0"q${C0.ESC}\\`);
@@ -66,7 +69,7 @@ class DECRQSS implements IDcsHandler {
         return this._terminal.handler(`${C0.ESC}P1$r${style} q${C0.ESC}\\`);
       default:
         // invalid: DCS 0 $ r Pt ST (xterm)
-        this._terminal.error('Unknown DCS $q %s', this._data);
+        this._terminal.error('Unknown DCS $q %s', data);
         this._terminal.handler(`${C0.ESC}P0$r${C0.ESC}\\`);
     }
   }
@@ -78,11 +81,17 @@ class DECRQSS implements IDcsHandler {
  *   not supported
  */
 
- /**
-  * DCS + p Pt ST (xterm)
-  *   Set Terminfo Data
-  *   not supported
-  */
+/**
+ * DCS + q Pt ST (xterm)
+ *   Request Terminfo String
+ *   not implemented
+ */
+
+/**
+ * DCS + p Pt ST (xterm)
+ *   Set Terminfo Data
+ *   not supported
+ */
 
 
 
@@ -94,7 +103,8 @@ class DECRQSS implements IDcsHandler {
  * each function's header comment.
  */
 export class InputHandler extends Disposable implements IInputHandler {
-  private _surrogateFirst: string;
+  private _parseBuffer: Uint32Array = new Uint32Array(4096);
+  private _stringDecoder: StringToUtf32 = new StringToUtf32();
 
   constructor(
       protected _terminal: IInputHandlingTerminal,
@@ -103,8 +113,6 @@ export class InputHandler extends Disposable implements IInputHandler {
     super();
 
     this.register(this._parser);
-
-    this._surrogateFirst = '';
 
     /**
      * custom fallback handlers
@@ -290,13 +298,13 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._terminal.log('data: ' + data);
     }
 
-    // apply leftover surrogate high from last write
-    if (this._surrogateFirst) {
-      data = this._surrogateFirst + data;
-      this._surrogateFirst = '';
+    if (this._parseBuffer.length < data.length) {
+      this._parseBuffer = new Uint32Array(data.length);
     }
-
-    this._parser.parse(data);
+    for (let i = 0; i < data.length; ++i) {
+      this._parseBuffer[i] = data.charCodeAt(i);
+    }
+    this._parser.parse(this._parseBuffer, this._stringDecoder.decode(data, this._parseBuffer));
 
     buffer = this._terminal.buffer;
     if (buffer.x !== cursorStartX || buffer.y !== cursorStartY) {
@@ -304,9 +312,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
   }
 
-  public print(data: string, start: number, end: number): void {
-    let char: string;
+  public print(data: Uint32Array, start: number, end: number): void {
     let code: number;
+    let char: string;
     let chWidth: number;
     const buffer: IBuffer = this._terminal.buffer;
     const charset: ICharset = this._terminal.charset;
@@ -318,41 +326,23 @@ export class InputHandler extends Disposable implements IInputHandler {
     let bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
 
     this._terminal.updateRange(buffer.y);
-    for (let stringPosition = start; stringPosition < end; ++stringPosition) {
-      char = data.charAt(stringPosition);
-      code = data.charCodeAt(stringPosition);
-
-      // surrogate pair handling
-      if (0xD800 <= code && code <= 0xDBFF) {
-        if (++stringPosition >= end) {
-          // end of input:
-          // handle pairs as true UTF-16 and wait for the second part
-          // since we expect the input comming from a stream there is
-          // a small chance that the surrogate pair got split
-          // therefore we dont process the first char here, instead
-          // it gets added as first char to the next processed chunk
-          this._surrogateFirst = char;
-          continue;
-        }
-        const second = data.charCodeAt(stringPosition);
-        // if the second part is in surrogate pair range create the high codepoint
-        // otherwise fall back to UCS-2 behavior (handle codepoints independently)
-        if (0xDC00 <= second && second <= 0xDFFF) {
-          code = (code - 0xD800) * 0x400 + second - 0xDC00 + 0x10000;
-          char += data.charAt(stringPosition);
-        } else {
-          stringPosition--;
-        }
-      }
+    for (let pos = start; pos < end; ++pos) {
+      code = data[pos];
+      char = stringFromCodePoint(code);
 
       // calculate print space
       // expensive call, therefore we save width in line buffer
       chWidth = wcwidth(code);
 
       // get charset replacement character
-      if (charset) {
-        char = charset[char] || char;
-        code = char.charCodeAt(0);
+      // charset are only defined for ASCII, therefore we only
+      // search for an replacement char if code < 127
+      if (code < 127 && charset) {
+        const ch = charset[char];
+        if (ch) {
+          code = ch.charCodeAt(0);
+          char = ch;
+        }
       }
 
       if (screenReaderMode) {
@@ -1294,7 +1284,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           if (this._terminal.element) {
             this._terminal.element.classList.add('enable-mouse-events');
           }
-          this._terminal.selectionManager.disable();
+          if (this._terminal.selectionManager) {
+            this._terminal.selectionManager.disable();
+          }
           this._terminal.log('Binding to mouse events.');
           break;
         case 1004: // send focusin/focusout events
@@ -1484,7 +1476,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           if (this._terminal.element) {
             this._terminal.element.classList.remove('enable-mouse-events');
           }
-          this._terminal.selectionManager.enable();
+          if (this._terminal.selectionManager) {
+            this._terminal.selectionManager.enable();
+          }
           break;
         case 1004: // send focusin/focusout events
           this._terminal.sendFocus = false;

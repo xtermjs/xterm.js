@@ -70,7 +70,7 @@ export class Renderer extends EventEmitter implements IRenderer {
     // Detect whether IntersectionObserver is detected and enable renderer pause
     // and resume based on terminal visibility if so
     if ('IntersectionObserver' in window) {
-      const observer = new IntersectionObserver(e => this.onIntersectionChange(e[0]), { threshold: 0 });
+      const observer = new IntersectionObserver(e => this.onIntersectionChange(e[e.length - 1]), { threshold: 0 });
       observer.observe(this._terminal.element);
       this.register({ dispose: () => observer.disconnect() });
     }
