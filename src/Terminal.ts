@@ -567,12 +567,12 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // Firefox doesn't appear to fire the contextmenu event on right click
       this.register(addDisposableDomListener(this.element, 'mousedown', (event: MouseEvent) => {
         if (event.button === 2) {
-          rightClickHandler(event, this.textarea, this.selectionManager, this.options.rightClickSelectsWord);
+          rightClickHandler(event, this, this.selectionManager, this.options.rightClickSelectsWord);
         }
       }));
     } else {
       this.register(addDisposableDomListener(this.element, 'contextmenu', (event: MouseEvent) => {
-        rightClickHandler(event, this.textarea, this.selectionManager, this.options.rightClickSelectsWord);
+        rightClickHandler(event, this, this.selectionManager, this.options.rightClickSelectsWord);
       }));
     }
 
@@ -584,7 +584,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // that the regular click event doesn't fire for the middle mouse button.
       this.register(addDisposableDomListener(this.element, 'auxclick', (event: MouseEvent) => {
         if (event.button === 1) {
-          moveTextAreaUnderMouseCursor(event, this.textarea);
+          moveTextAreaUnderMouseCursor(event, this);
         }
       }));
     }
@@ -739,6 +739,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.mouseHelper = new MouseHelper(this.renderer);
     // apply mouse event classes set by escape codes before terminal was attached
     this.element.classList.toggle('enable-mouse-events', this.mouseEvents);
+    if (this.mouseEvents) {
+      this.selectionManager.disable();
+    } else {
+      this.selectionManager.enable();
+    }
 
     if (this.options.screenReaderMode) {
       // Note that this must be done *after* the renderer is created in order to
