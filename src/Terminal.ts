@@ -739,9 +739,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // apply mouse event classes set by escape codes before terminal was attached
     this.element.classList.toggle('enable-mouse-events', this.mouseEvents);
     if (this.mouseEvents) {
-      this.selectionManager.disable()
+      this.selectionManager.disable();
     } else {
-      this.selectionManager.enable()
+      this.selectionManager.enable();
     }
 
     if (this.options.screenReaderMode) {
