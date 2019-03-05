@@ -1350,19 +1350,20 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
   }
 
-  protected _innerWrite(): void {
+  protected _innerWrite(bufferOffset: number = 0): void {
     // Ensure the terminal isn't disposed
     if (this._isDisposed) {
       this.writeBuffer = [];
     }
 
     const startTime = Date.now();
-    while (this.writeBuffer.length > 0) {
-      const data = this.writeBuffer.shift();
+    while (this.writeBuffer.length > bufferOffset) {
+      const data = this.writeBuffer[bufferOffset];
+      bufferOffset++;
 
       // If XOFF was sent in order to catch up with the pty process, resume it if
-      // the writeBuffer is empty to allow more data to come in.
-      if (this._xoffSentToCatchUp && this.writeBuffer.length === 0) {
+      // we reached the end of the writeBuffer to allow more data to come in.
+      if (this._xoffSentToCatchUp && this.writeBuffer.length === bufferOffset) {
         this.handler(C0.DC1);
         this._xoffSentToCatchUp = false;
       }
@@ -1385,11 +1386,12 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         break;
       }
     }
-    if (this.writeBuffer.length > 0) {
+    if (this.writeBuffer.length > bufferOffset) {
       // Allow renderer to catch up before processing the next batch
-      setTimeout(() => this._innerWrite(), 0);
+      setTimeout(() => this._innerWrite(bufferOffset), 0);
     } else {
       this._writeInProgress = false;
+      this.writeBuffer = [];
     }
   }
 
