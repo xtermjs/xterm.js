@@ -36,6 +36,13 @@ function handleLink(event: MouseEvent, uri: string): void {
  */
 export function webLinksInit(term: Terminal, handler: (event: MouseEvent, uri: string) => void = handleLink, options: ILinkMatcherOptions = {}): void {
   options.matchIndex = 1;
+
+  handler = (event, uri) => {
+    if (!term.hasSelection()) {
+      window.open(uri, '_blank');
+    }
+  };
+
   term.registerLinkMatcher(strictUrlRegex, handler, options);
 }
 
