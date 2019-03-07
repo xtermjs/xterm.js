@@ -23,6 +23,7 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
 
   private _areZonesActive: boolean = false;
   private _mouseMoveListener: (e: MouseEvent) => any;
+  private _mouseLeaveListener: (e: MouseEvent) => any;
   private _clickListener: (e: MouseEvent) => any;
 
   private _tooltipTimeout: number = null;
@@ -38,6 +39,7 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
 
     // These events are expensive, only listen to it when mouse zones are active
     this._mouseMoveListener = e => this._onMouseMove(e);
+    this._mouseLeaveListener = e => this._onMouseLeave(e);
     this._clickListener = e => this._onClick(e);
   }
 
@@ -89,6 +91,7 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
     if (!this._areZonesActive) {
       this._areZonesActive = true;
       this._terminal.element.addEventListener('mousemove', this._mouseMoveListener);
+      this._terminal.element.addEventListener('mouseleave', this._mouseLeaveListener);
       this._terminal.element.addEventListener('click', this._clickListener);
     }
   }
@@ -97,6 +100,7 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
     if (this._areZonesActive) {
       this._areZonesActive = false;
       this._terminal.element.removeEventListener('mousemove', this._mouseMoveListener);
+      this._terminal.element.removeEventListener('mouseleave', this._mouseLeaveListener);
       this._terminal.element.removeEventListener('click', this._clickListener);
     }
   }
@@ -165,6 +169,18 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
       if (zone.willLinkActivate(e)) {
         e.preventDefault();
         e.stopImmediatePropagation();
+      }
+    }
+  }
+
+  private _onMouseLeave(e: MouseEvent): void {
+    // Fire the hover end callback and cancel any existing timer if the mouse
+    // leaves the terminal element
+    if (this._currentZone) {
+      this._currentZone.leaveCallback();
+      this._currentZone = null;
+      if (this._tooltipTimeout) {
+        clearTimeout(this._tooltipTimeout);
       }
     }
   }
