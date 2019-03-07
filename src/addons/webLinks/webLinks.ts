@@ -24,9 +24,7 @@ const start = '(?:^|' + negatedDomainCharacterSet + ')(';
 const end = ')($|' + negatedPathCharacterSet + ')';
 const strictUrlRegex = new RegExp(start + protocolClause + bodyClause + end);
 
-function handleLink(event: MouseEvent, uri: string): void {
-  window.open(uri, '_blank');
-}
+let handleLink:  (event: MouseEvent, uri: string) => void;
 
 /**
  * Initialize the web links addon, registering the link matcher.
@@ -37,17 +35,17 @@ function handleLink(event: MouseEvent, uri: string): void {
 export function webLinksInit(term: Terminal, handler: (event: MouseEvent, uri: string) => void = handleLink, options: ILinkMatcherOptions = {}): void {
   options.matchIndex = 1;
 
-  handler = (event, uri) => {
-    if (!term.hasSelection()) {
-      window.open(uri, '_blank');
-    }
-  };
-
   term.registerLinkMatcher(strictUrlRegex, handler, options);
 }
 
 export function apply(terminalConstructor: typeof Terminal): void {
   (<any>terminalConstructor.prototype).webLinksInit = function (handler?: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): void {
+    handleLink = (event, uri) => {
+      if (!this.hasSelection()) {
+        window.open(uri, '_blank');
+      }
+    };
+
     webLinksInit(this, handler, options);
   };
 }
