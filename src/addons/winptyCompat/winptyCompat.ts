@@ -19,6 +19,8 @@ export function winptyCompatInit(terminal: Terminal): void {
     return;
   }
 
+  (addonTerminal._core as any).isWinptyCompatEnabled = true;
+
   // Winpty does not support wraparound mode which means that lines will never
   // be marked as wrapped. This causes issues for things like copying a line
   // retaining the wrapped new line characters or if consumers are listening
