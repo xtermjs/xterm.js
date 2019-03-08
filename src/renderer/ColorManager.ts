@@ -140,15 +140,6 @@ export class ColorManager implements IColorManager {
     this.colors.ansi[15] = this._parseColor(theme.brightWhite, DEFAULT_ANSI_COLORS[15]);
   }
 
-  public applyWebglSelectionColorHack() {
-    // HACK: while webgl renderer adds support for selection colors
-    if (this.getLuminance(this.colors.background) > 0.5) {
-      this.colors.selection = this._parseColor('#000', DEFAULT_SELECTION, true);
-    } else {
-      this.colors.selection = this._parseColor('#fff', DEFAULT_SELECTION, true);
-    }
-  }
-
   private _parseColor(
     css: string,
     fallback: IColor,
