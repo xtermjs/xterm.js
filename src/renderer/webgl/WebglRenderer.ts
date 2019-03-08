@@ -109,7 +109,7 @@ export class WebglRenderer extends EventEmitter implements IRenderer {
   }
 
   private _applyBgLuminanceBasedSelection(): void {
-    // HACK: While webgl renderer adds support for selection colors
+    // HACK: This is needed until webgl renderer adds support for selection colors
     if (this.colorManager.getLuminance(this.colorManager.colors.background) > 0.5) {
       this.colorManager.colors.selection = { css: '#000', rgba: 255 };
     } else {
