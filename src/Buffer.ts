@@ -3,13 +3,13 @@
  * @license MIT
  */
 
-import { CircularList, IInsertEvent, IDeleteEvent } from './common/CircularList';
-import { CharData, ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult } from './Types';
-import { EventEmitter } from './common/EventEmitter';
 import { IMarker } from 'xterm';
 import { BufferLine } from './BufferLine';
+import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths } from './BufferReflow';
+import { CircularList, IDeleteEvent, IInsertEvent } from './common/CircularList';
+import { EventEmitter } from './common/EventEmitter';
 import { DEFAULT_COLOR } from './renderer/atlas/Types';
-import { reflowSmallerGetNewLineLengths, reflowLargerGetLinesToRemove, reflowLargerCreateNewLayout, reflowLargerApplyNewLayout } from './BufferReflow';
+import { BufferIndex, CharData, IBuffer, IBufferLine, IBufferStringIterator, IBufferStringIteratorResult, ITerminal } from './Types';
 
 export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
 export const CHAR_DATA_ATTR_INDEX = 0;
@@ -211,8 +211,8 @@ export class Buffer implements IBuffer {
 
     this.scrollBottom = newRows - 1;
 
-    if (this._hasScrollback) {
-      this._reflow(newCols);
+    if (this._isReflowEnabled) {
+      this._reflow(newCols, newRows);
 
       // Trim the end of the line off if cols shrunk
       if (this._cols > newCols) {
@@ -226,36 +226,44 @@ export class Buffer implements IBuffer {
     this._rows = newRows;
   }
 
-  private _reflow(newCols: number): void {
+  private get _isReflowEnabled(): boolean {
+    return this._hasScrollback && !(this._terminal as any).isWinptyCompatEnabled;
+  }
+
+  private _reflow(newCols: number, newRows: number): void {
     if (this._cols === newCols) {
       return;
     }
 
     // Iterate through rows, ignore the last one as it cannot be wrapped
     if (newCols > this._cols) {
-      this._reflowLarger(newCols);
+      this._reflowLarger(newCols, newRows);
     } else {
-      this._reflowSmaller(newCols);
+      this._reflowSmaller(newCols, newRows);
     }
   }
 
-  private _reflowLarger(newCols: number): void {
-    const toRemove: number[] = reflowLargerGetLinesToRemove(this.lines, newCols);
+  private _reflowLarger(newCols: number, newRows: number): void {
+    const toRemove: number[] = reflowLargerGetLinesToRemove(this.lines, newCols, this.ybase + this.y);
     if (toRemove.length > 0) {
       const newLayoutResult = reflowLargerCreateNewLayout(this.lines, toRemove);
       reflowLargerApplyNewLayout(this.lines, newLayoutResult.layout);
-      this._reflowLargerAdjustViewport(newCols, newLayoutResult.countRemoved);
+      this._reflowLargerAdjustViewport(newCols, newRows, newLayoutResult.countRemoved);
     }
   }
 
-  private _reflowLargerAdjustViewport(newCols: number, countRemoved: number): void {
+  private _reflowLargerAdjustViewport(newCols: number, newRows: number, countRemoved: number): void {
     // Adjust viewport based on number of items removed
     let viewportAdjustments = countRemoved;
     while (viewportAdjustments-- > 0) {
       if (this.ybase === 0) {
-        this.y--;
-        // Add an extra row at the bottom of the viewport
-        this.lines.push(new BufferLine(newCols, FILL_CHAR_DATA));
+        if (this.y > 0) {
+          this.y--;
+        }
+        if (this.lines.length < newRows) {
+          // Add an extra row at the bottom of the viewport
+          this.lines.push(new BufferLine(newCols, FILL_CHAR_DATA));
+        }
       } else {
         if (this.ydisp === this.ybase) {
           this.ydisp--;
@@ -265,7 +273,7 @@ export class Buffer implements IBuffer {
     }
   }
 
-  private _reflowSmaller(newCols: number): void {
+  private _reflowSmaller(newCols: number, newRows: number): void {
     // Gather all BufferLines that need to be inserted into the Buffer here so that they can be
     // batched up and only committed once
     const toInsert = [];
@@ -283,6 +291,13 @@ export class Buffer implements IBuffer {
       while (nextLine.isWrapped && y > 0) {
         nextLine = this.lines.get(--y) as BufferLine;
         wrappedLines.unshift(nextLine);
+      }
+
+      // If these lines contain the cursor don't touch them, the program will handle fixing up
+      // wrapped lines with the cursor
+      const absoluteY = this.ybase + this.y;
+      if (absoluteY >= y && absoluteY < y + wrappedLines.length) {
+        continue;
       }
 
       const lastLineLength = wrappedLines[wrappedLines.length - 1].getTrimmedLength();
@@ -349,7 +364,7 @@ export class Buffer implements IBuffer {
       let viewportAdjustments = linesToAdd - trimmedLines;
       while (viewportAdjustments-- > 0) {
         if (this.ybase === 0) {
-          if (this.y < this._rows - 1) {
+          if (this.y < newRows - 1) {
             this.y++;
             this.lines.pop();
           } else {
@@ -357,10 +372,13 @@ export class Buffer implements IBuffer {
             this.ydisp++;
           }
         } else {
-          if (this.ybase === this.ydisp) {
-            this.ydisp++;
+          // Ensure ybase does not exceed its maximum value
+          if (this.ybase < Math.min(this.lines.maxLength, this.lines.length + countToInsert) - newRows) {
+            if (this.ybase === this.ydisp) {
+              this.ydisp++;
+            }
+            this.ybase++;
           }
-          this.ybase++;
         }
       }
     }
@@ -435,14 +453,19 @@ export class Buffer implements IBuffer {
    * @param stringIndex index within the string
    * @param startCol column offset the string was retrieved from
    */
-  public stringIndexToBufferIndex(lineIndex: number, stringIndex: number): BufferIndex {
+  public stringIndexToBufferIndex(lineIndex: number, stringIndex: number, trimRight: boolean = false): BufferIndex {
     while (stringIndex) {
       const line = this.lines.get(lineIndex);
       if (!line) {
         return [-1, -1];
       }
-      for (let i = 0; i < line.length; ++i) {
-        stringIndex -= line.get(i)[CHAR_DATA_CHAR_INDEX].length;
+      const length = (trimRight) ? line.getTrimmedLength() : line.length;
+      for (let i = 0; i < length; ++i) {
+        if (line.get(i)[CHAR_DATA_WIDTH_INDEX]) {
+          // empty cells report a string length of 0, but get replaced
+          // with a whitespace in translateToString, thus replace with 1
+          stringIndex -= line.get(i)[CHAR_DATA_CHAR_INDEX].length || 1;
+        }
         if (stringIndex < 0) {
           return [lineIndex, i];
         }
