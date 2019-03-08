@@ -104,7 +104,7 @@ export class ColorManager implements IColorManager {
   }
 
   // Coefficients taken from: https://www.w3.org/TR/AERT/#color-contrast
-  public getLuminance(color: IColor) : number {
+  public getLuminance(color: IColor): number {
     const r = color.rgba >> 24 & 0xff;
     const g = color.rgba >> 16 & 0xff;
     const b = color.rgba >> 8 & 0xff;

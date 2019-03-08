@@ -3,21 +3,20 @@
  * @license MIT
  */
 import { assert } from 'chai';
-import { fillFallback, sliceFallback } from './TypedArrayUtils';
+import { fillFallback, sliceFallback, concat } from './TypedArrayUtils';
 
 type TypedArray = Uint8Array | Uint16Array | Uint32Array | Uint8ClampedArray
   | Int8Array | Int16Array | Int32Array
   | Float32Array | Float64Array;
 
-describe('polyfill conformance tests', function(): void {
-
-  function deepEquals(a: TypedArray, b: TypedArray): void {
-    assert.equal(a.length, b.length);
-    for (let i = 0; i < a.length; ++i) {
-      assert.equal(a[i], b[i]);
-    }
+function deepEquals(a: TypedArray, b: TypedArray): void {
+  assert.equal(a.length, b.length);
+  for (let i = 0; i < a.length; ++i) {
+    assert.equal(a[i], b[i]);
   }
+}
 
+describe('polyfill conformance tests', function(): void {
   describe('TypedArray.fill', function(): void {
     it('should work with all typed array types', function(): void {
       const u81 = new Uint8Array(5);
@@ -188,5 +187,14 @@ describe('polyfill conformance tests', function(): void {
       deepEquals(sliceFallback(arr, 4, 8), arr.slice(4, 8));
       deepEquals(sliceFallback(arr, 5, 8), arr.slice(5, 8));
     });
+  });
+});
+
+describe('typed array convenience functions', () => {
+  it('concat', () => {
+    const a = new Uint8Array([1, 2, 3, 4, 5]);
+    const b = new Uint8Array([6, 7, 8, 9, 0]);
+    const merged = concat(a, b);
+    deepEquals(merged, new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 0]));
   });
 });

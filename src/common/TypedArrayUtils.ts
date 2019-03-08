@@ -3,15 +3,15 @@
  * @license MIT
  */
 
+export type TypedArray = Uint8Array | Uint16Array | Uint32Array | Uint8ClampedArray
+  | Int8Array | Int16Array | Int32Array
+  | Float32Array | Float64Array;
+
+
 /**
  * polyfill for TypedArray.fill
  * This is needed to support .fill in all safari versions and IE 11.
  */
-
-type TypedArray = Uint8Array | Uint16Array | Uint32Array | Uint8ClampedArray
-  | Int8Array | Int16Array | Int32Array
-  | Float32Array | Float64Array;
-
 export function fill<T extends TypedArray>(array: T, value: number, start?: number, end?: number): T {
   // all modern engines that support .fill
   if (array.fill) {
@@ -63,5 +63,16 @@ export function sliceFallback<T extends TypedArray>(array: T, start: number = 0,
   for (let i = 0; i < end - start; ++i) {
     result[i] = array[i + start];
   }
+  return result;
+}
+
+/**
+ * Concat two typed arrays `a` and `b`.
+ * Returns a new typed array.
+ */
+export function concat<T extends TypedArray>(a: T, b: T): T {
+  const result = new (a.constructor as any)(a.length + b.length);
+  result.set(a);
+  result.set(b, a.length);
   return result;
 }
