@@ -121,15 +121,7 @@ export class ColorManager implements IColorManager {
     this.colors.background = this._parseColor(theme.background, DEFAULT_BACKGROUND);
     this.colors.cursor = this._parseColor(theme.cursor, DEFAULT_CURSOR, true);
     this.colors.cursorAccent = this._parseColor(theme.cursorAccent, DEFAULT_CURSOR_ACCENT, true);
-
-    // HACK: while webgl renderer adds support for selection colors
-    // this.colors.selection = this._parseColor(theme.selection, DEFAULT_SELECTION, true);
-    if (this.getLuminance(this.colors.background) > 0.5) {
-      this.colors.selection = this._parseColor('#000', DEFAULT_SELECTION, true);
-    } else {
-      this.colors.selection = this._parseColor('#fff', DEFAULT_SELECTION, true);
-    }
-
+    this.colors.selection = this._parseColor(theme.selection, DEFAULT_SELECTION, true);
     this.colors.ansi[0] = this._parseColor(theme.black, DEFAULT_ANSI_COLORS[0]);
     this.colors.ansi[1] = this._parseColor(theme.red, DEFAULT_ANSI_COLORS[1]);
     this.colors.ansi[2] = this._parseColor(theme.green, DEFAULT_ANSI_COLORS[2]);

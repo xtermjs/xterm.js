@@ -52,6 +52,7 @@ export class WebglRenderer extends EventEmitter implements IRenderer {
     this.colorManager = new ColorManager(document, allowTransparency);
     if (theme) {
       this.colorManager.setTheme(theme);
+      this._applyBgLuminanceBasedSelection();
     }
 
     this._renderLayers = [
@@ -107,6 +108,15 @@ export class WebglRenderer extends EventEmitter implements IRenderer {
     super.dispose();
   }
 
+  private _applyBgLuminanceBasedSelection(): void {
+    // HACK: This is needed until webgl renderer adds support for selection colors
+    if (this.colorManager.getLuminance(this.colorManager.colors.background) > 0.5) {
+      this.colorManager.colors.selection = { css: '#000', rgba: 255 };
+    } else {
+      this.colorManager.colors.selection = { css: '#fff', rgba: 4294967295 };
+    }
+  }
+
   public onIntersectionChange(entry: IntersectionObserverEntry): void {
     this._isPaused = entry.intersectionRatio === 0;
     if (!this._isPaused && this._needsFullRefresh) {
@@ -127,6 +137,7 @@ export class WebglRenderer extends EventEmitter implements IRenderer {
   public setTheme(theme: ITheme | undefined): IColorSet {
     if (theme) {
       this.colorManager.setTheme(theme);
+      this._applyBgLuminanceBasedSelection();
     }
 
     // Clear layers and force a full render
