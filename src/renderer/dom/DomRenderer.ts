@@ -75,7 +75,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
     this._updateDimensions();
 
     this._renderDebouncer = new RenderDebouncer(this._terminal, this._renderRows.bind(this));
-    this._rowFactory = new DomRendererRowFactory(_terminal, document);
+    this._rowFactory = new DomRendererRowFactory(_terminal.options, document);
 
     this._terminal.element.classList.add(TERMINAL_CLASS_PREFIX + this._terminalClass);
     this._terminal.screenElement.appendChild(this._rowContainer);
