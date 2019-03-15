@@ -115,7 +115,7 @@ export class SearchHelper implements ISearchHelper {
     }
 
     const isReverseSearch = true;
-    let startRow = this._terminal._core.buffer.ydisp;
+    let startRow = this._terminal.rows-1;
     let startCol: number = this._terminal.cols;
 
     if (selectionManager.selectionStart) {
