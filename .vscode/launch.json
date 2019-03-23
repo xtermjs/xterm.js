@@ -38,7 +38,11 @@
         "run",
         "start-debug"
       ],
-      "port": 9229
+      "port": 9229,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "App listening to (http://.*?:[0-9]+)"
+      }
     }
   ]
 }
