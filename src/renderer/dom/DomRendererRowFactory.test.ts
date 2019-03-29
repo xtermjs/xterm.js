@@ -9,17 +9,22 @@ import { DomRendererRowFactory } from './DomRendererRowFactory';
 import { DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from '../../Buffer';
 import { FLAGS } from '../Types';
 import { BufferLine } from '../../BufferLine';
-import { IBufferLine } from '../../Types';
+import { IBufferLine, ITerminalOptions } from '../../Types';
 import { DEFAULT_COLOR } from '../atlas/Types';
 
 describe('DomRendererRowFactory', () => {
   let dom: jsdom.JSDOM;
+  const options: ITerminalOptions = {};
   let rowFactory: DomRendererRowFactory;
   let lineData: IBufferLine;
 
   beforeEach(() => {
     dom = new jsdom.JSDOM('');
-    rowFactory = new DomRendererRowFactory(dom.window.document);
+
+    options.enableBold = true;
+    options.drawBoldTextInBrightColors = true;
+
+    rowFactory = new DomRendererRowFactory(options, dom.window.document);
     lineData = createEmptyLineData(2);
   });
 

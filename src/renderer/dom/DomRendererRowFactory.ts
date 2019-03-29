@@ -5,7 +5,7 @@
 
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_ATTR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, NULL_CELL_CODE, WHITESPACE_CELL_CHAR } from '../../Buffer';
 import { FLAGS } from '../Types';
-import { IBufferLine } from '../../Types';
+import { IBufferLine, ITerminalOptions } from '../../Types';
 import { DEFAULT_COLOR, INVERTED_DEFAULT_COLOR } from '../atlas/Types';
 
 export const BOLD_CLASS = 'xterm-bold';
@@ -18,6 +18,7 @@ export const CURSOR_STYLE_UNDERLINE_CLASS = 'xterm-cursor-underline';
 
 export class DomRendererRowFactory {
   constructor(
+    private _terminalOptions: ITerminalOptions,
     private _document: Document
   ) {
   }
@@ -93,10 +94,10 @@ export class DomRendererRowFactory {
         }
       }
 
-      if (flags & FLAGS.BOLD) {
+      if (flags & FLAGS.BOLD && this._terminalOptions.enableBold) {
         // Convert the FG color to the bold variant. This should not happen when
         // the fg is the inverse default color as there is no bold variant.
-        if (fg < 8) {
+        if (fg < 8 && this._terminalOptions.drawBoldTextInBrightColors) {
           fg += 8;
         }
         charElement.classList.add(BOLD_CLASS);
