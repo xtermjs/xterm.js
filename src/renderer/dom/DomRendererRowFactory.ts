@@ -11,6 +11,7 @@ import { DEFAULT_COLOR, INVERTED_DEFAULT_COLOR } from '../atlas/Types';
 export const BOLD_CLASS = 'xterm-bold';
 export const ITALIC_CLASS = 'xterm-italic';
 export const CURSOR_CLASS = 'xterm-cursor';
+export const CURSOR_BLINK_CLASS = 'xterm-cursor-blink';
 export const CURSOR_STYLE_BLOCK_CLASS = 'xterm-cursor-block';
 export const CURSOR_STYLE_BAR_CLASS = 'xterm-cursor-bar';
 export const CURSOR_STYLE_UNDERLINE_CLASS = 'xterm-cursor-underline';
@@ -21,7 +22,7 @@ export class DomRendererRowFactory {
   ) {
   }
 
-  public createRow(lineData: IBufferLine, isCursorRow: boolean, cursorStyle: string | undefined, cursorX: number, cellWidth: number, cols: number): DocumentFragment {
+  public createRow(lineData: IBufferLine, isCursorRow: boolean, cursorStyle: string | undefined, cursorX: number, cursorBlink: boolean, cellWidth: number, cols: number): DocumentFragment {
     const fragment = this._document.createDocumentFragment();
 
     // Find the line length first, this prevents the need to output a bunch of
@@ -61,6 +62,10 @@ export class DomRendererRowFactory {
 
       if (isCursorRow && x === cursorX) {
         charElement.classList.add(CURSOR_CLASS);
+
+        if (cursorBlink) {
+          charElement.classList.add(CURSOR_BLINK_CLASS);
+        }
 
         switch (cursorStyle) {
           case 'bar':
