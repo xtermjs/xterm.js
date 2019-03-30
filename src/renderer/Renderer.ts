@@ -85,6 +85,7 @@ export class Renderer extends EventEmitter implements IRenderer {
     this._isPaused = entry.intersectionRatio === 0;
     if (!this._isPaused && this._needsFullRefresh) {
       this._terminal.refresh(0, this._terminal.rows - 1);
+      this._needsFullRefresh = false;
     }
   }
 

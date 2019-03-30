@@ -30,7 +30,10 @@ Terminal.applyAddon(fit);
 Terminal.applyAddon(fullscreen);
 Terminal.applyAddon(search);
 Terminal.applyAddon(webLinks);
-Terminal.applyAddon(winptyCompat);
+const isWindows = ['Windows', 'Win16', 'Win32', 'WinCE'].indexOf(navigator.platform) >= 0;
+if (isWindows) {
+  Terminal.applyAddon(winptyCompat);
+}
 
 
 let term;
