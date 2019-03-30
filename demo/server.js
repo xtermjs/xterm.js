@@ -11,6 +11,7 @@ function startServer() {
       logs = {};
 
   app.use('/build', express.static(__dirname + '/../build'));
+  app.use('/src', express.static(__dirname + '/../src'));
 
   app.get('/', function(req, res){
     res.sendFile(__dirname + '/index.html');
