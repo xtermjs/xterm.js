@@ -9,7 +9,7 @@ import { ITheme } from 'xterm';
 import { EventEmitter } from '../../common/EventEmitter';
 import { ColorManager } from '../ColorManager';
 import { RenderDebouncer } from '../../ui/RenderDebouncer';
-import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from './DomRendererRowFactory';
+import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from './DomRendererRowFactory';
 import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
@@ -75,7 +75,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
     this._updateDimensions();
 
     this._renderDebouncer = new RenderDebouncer(this._terminal, this._renderRows.bind(this));
-    this._rowFactory = new DomRendererRowFactory(document);
+    this._rowFactory = new DomRendererRowFactory(_terminal.options, document);
 
     this._terminal.element.classList.add(TERMINAL_CLASS_PREFIX + this._terminalClass);
     this._terminal.screenElement.appendChild(this._rowContainer);
@@ -165,11 +165,21 @@ export class DomRenderer extends EventEmitter implements IRenderer {
         `${this._terminalSelector} span.${ITALIC_CLASS} {` +
         ` font-style: italic;` +
         `}`;
+    // Blink animation
+    styles +=
+        `@keyframes blink {` +
+        ` 0 % { opacity: 1.0; }` +
+        ` 50% { opacity: 0.0; }` +
+        ` 100 % { opacity: 1.0; }` +
+        `}`;
     // Cursor
     styles +=
         `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS} {` +
         ` outline: 1px solid ${this.colorManager.colors.cursor.css};` +
         ` outline-offset: -1px;` +
+        `}` +
+        `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_BLINK_CLASS} {` +
+        ` animation: blink 1s step-end infinite;` +
         `}` +
         `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
         ` background-color: ${this.colorManager.colors.cursor.css};` +
@@ -328,6 +338,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
 
     const cursorAbsoluteY = terminal.buffer.ybase + terminal.buffer.y;
     const cursorX = this._terminal.buffer.x;
+    const cursorBlink = this._terminal.options.cursorBlink;
 
     for (let y = start; y <= end; y++) {
       const rowElement = this._rowElements[y];
@@ -336,7 +347,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
       const row = y + terminal.buffer.ydisp;
       const lineData = terminal.buffer.lines.get(row);
       const cursorStyle = terminal.options.cursorStyle;
-      rowElement.appendChild(this._rowFactory.createRow(lineData, row === cursorAbsoluteY, cursorStyle, cursorX, this.dimensions.actualCellWidth, terminal.cols));
+      rowElement.appendChild(this._rowFactory.createRow(lineData, row === cursorAbsoluteY, cursorStyle, cursorX, cursorBlink, this.dimensions.actualCellWidth, terminal.cols));
     }
 
     this._terminal.emit('refresh', {start, end});
