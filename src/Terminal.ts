@@ -64,10 +64,12 @@ const document = (typeof window !== 'undefined') ? window.document : null;
 const WRITE_BUFFER_PAUSE_THRESHOLD = 5;
 
 /**
- * The number of writes to perform in a single batch before allowing the
- * renderer to catch up with a 0ms setTimeout.
+ * The max number of ms to spend on writes before allowing the renderer to
+ * catch up with a 0ms setTimeout. A value of < 33 to keep us close to
+ * 30fps, and a value of < 16 to try to run at 60fps. Of course, the real FPS
+ * depends on the time it takes for the renderer to draw the frame.
  */
-const WRITE_BATCH_SIZE = 300;
+const WRITE_TIMEOUT_MS = 12;
 
 const MINIMUM_COLS = 2; // Less than 2 can mess with wide chars
 const MINIMUM_ROWS = 1;
@@ -341,7 +343,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   public focus(): void {
     if (this.textarea) {
-      this.textarea.focus();
+      this.textarea.focus({ preventScroll: true });
     }
   }
 
@@ -859,17 +861,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         if (ch > 127) ch = 127;
         data.push(ch);
       } else {
-        if (ch === 2047) {
-          data.push(0);
+        if (ch > 2047) {
+          data.push(2047);
           return;
         }
-        if (ch < 127) {
-          data.push(ch);
-        } else {
-          if (ch > 2047) ch = 2047;
-          data.push(0xC0 | (ch >> 6));
-          data.push(0x80 | (ch & 0x3F));
-        }
+        data.push(ch);
       }
     }
 
@@ -1348,19 +1344,20 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
   }
 
-  protected _innerWrite(): void {
+  protected _innerWrite(bufferOffset: number = 0): void {
     // Ensure the terminal isn't disposed
     if (this._isDisposed) {
       this.writeBuffer = [];
     }
 
-    const writeBatch = this.writeBuffer.splice(0, WRITE_BATCH_SIZE);
-    while (writeBatch.length > 0) {
-      const data = writeBatch.shift();
+    const startTime = Date.now();
+    while (this.writeBuffer.length > bufferOffset) {
+      const data = this.writeBuffer[bufferOffset];
+      bufferOffset++;
 
       // If XOFF was sent in order to catch up with the pty process, resume it if
-      // the writeBuffer is empty to allow more data to come in.
-      if (this._xoffSentToCatchUp && writeBatch.length === 0 && this.writeBuffer.length === 0) {
+      // we reached the end of the writeBuffer to allow more data to come in.
+      if (this._xoffSentToCatchUp && this.writeBuffer.length === bufferOffset) {
         this.handler(C0.DC1);
         this._xoffSentToCatchUp = false;
       }
@@ -1378,12 +1375,17 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
       this.updateRange(this.buffer.y);
       this.refresh(this._refreshStart, this._refreshEnd);
+
+      if (Date.now() - startTime >= WRITE_TIMEOUT_MS) {
+        break;
+      }
     }
-    if (this.writeBuffer.length > 0) {
+    if (this.writeBuffer.length > bufferOffset) {
       // Allow renderer to catch up before processing the next batch
-      setTimeout(() => this._innerWrite(), 0);
+      setTimeout(() => this._innerWrite(bufferOffset), 0);
     } else {
       this._writeInProgress = false;
+      this.writeBuffer = [];
     }
   }
 

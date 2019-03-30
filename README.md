@@ -136,7 +136,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**Kubebox**](https://github.com/astefanutti/kubebox): Terminal console for Kubernetes clusters.
 - [**Azure Cloud Shell**](https://shell.azure.com): Azure Cloud Shell is a Microsoft-managed admin machine built on Azure, for Azure.
 - [**atom-xterm**](https://atom.io/packages/atom-xterm): Atom plugin for providing terminals inside your Atom workspace.
-- [**rtty**](https://github.com/zhaojh329/rtty): A reverse proxy WebTTY. It is composed of the client and the server.
+- [**rtty**](https://github.com/zhaojh329/rtty): Access your terminals from anywhere via the web.
 - [**Pisth**](https://github.com/ColdGrub1384/Pisth): An SFTP and SSH client for iOS.
 - [**abstruse**](https://github.com/bleenco/abstruse): Abstruse CI is a continuous integration platform based on Node.JS and Docker.
 - [**Azure Data Studio**](https://github.com/Microsoft/azuredatastudio): A data management tool that enables working with SQL Server, Azure SQL DB and SQL DW from Windows, macOS and Linux.
@@ -154,6 +154,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**webssh**](https://github.com/huashengdun/webssh): Web based ssh client.
 - [**info-beamer hosted**](https://info-beamer.com): Uses xterm.js to manage digital signage devices from the web dashboard.
 - [**Jumpserver**](https://github.com/jumpserver/luna): Jumpserver Luna project, Jumpserver is a bastion server project, Luna use xterm.js for web terminal emulation.
+- [**LxdMosaic**](https://github.com/turtle0x1/LxdMosaic): Uses xterm.js to give terminal access to containers through LXD
 
 [And much more...](https://github.com/xtermjs/xterm.js/network/dependents)
 

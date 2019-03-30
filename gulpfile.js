@@ -16,9 +16,9 @@ const ts = require('gulp-typescript');
 const util = require('gulp-util');
 
 const buildDir = process.env.BUILD_DIR || 'build';
-const tsProject = ts.createProject('tsconfig.json');
-let srcDir = tsProject.config.compilerOptions.rootDir;
-let outDir = tsProject.config.compilerOptions.outDir;
+const tsProject = ts.createProject('src/tsconfig.json');
+let srcDir = './src';
+let outDir = './lib';
 
 const addons = fs.readdirSync(`${__dirname}/src/addons`);
 
@@ -61,7 +61,7 @@ gulp.task('browserify', function() {
   };
   let bundleStream = browserify(browserifyOptions)
         .bundle()
-        .pipe(source('xterm.js'))
+        .pipe(source(`xterm.js`))
         .pipe(buffer())
         .pipe(sourcemaps.init({loadMaps: true, sourceRoot: '..'}))
         .pipe(sourcemaps.write('./'))
@@ -136,6 +136,6 @@ gulp.task('sorcery-addons', ['browserify-addons'], function () {
   })
 });
 
-gulp.task('build', ['sorcery', 'sorcery-addons']);
+gulp.task('build', ['css', 'sorcery', 'sorcery-addons']);
 gulp.task('test', ['mocha']);
 gulp.task('default', ['build']);
