@@ -13,12 +13,6 @@ const WHITESPACE_CELL_CODE = 32;
 export function winptyCompatInit(terminal: Terminal): void {
   const addonTerminal = <IWinptyCompatAddonTerminal>terminal;
 
-  // Don't do anything when the platform is not Windows
-  const isWindows = ['Windows', 'Win16', 'Win32', 'WinCE'].indexOf(navigator.platform) >= 0;
-  if (!isWindows) {
-    return;
-  }
-
   (addonTerminal._core as any).isWinptyCompatEnabled = true;
 
   // Winpty does not support wraparound mode which means that lines will never
