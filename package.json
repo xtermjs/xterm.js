@@ -60,6 +60,6 @@
     "build": "gulp build",
     "prepublish": "npm run build",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
-    "watch": "tsc -b -w ./src/tsconfig.all.json"
+    "watch": "tsc -b -w ./src/tsconfig.all.json --preserveWatchOutput"
   }
 }
