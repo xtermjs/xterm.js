@@ -29,7 +29,7 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
   private _tooltipTimeout: number = null;
   private _currentZone: IMouseZone = null;
   private _lastHoverCoords: [number, number] = [null, null];
-  private _initialSelectionLenght: number;
+  private _initialSelectionLength: number;
 
   constructor(
     private _terminal: ITerminal
@@ -160,7 +160,7 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
   private _onMouseDown(e: MouseEvent): void {
     // Store current terminal selection length, to check if we're performing
     // a selection operation
-    this._initialSelectionLenght = this._terminal.getSelection().length;
+    this._initialSelectionLength = this._terminal.getSelection().length;
 
     // Ignore the event if there are no zones active
     if (!this._areZonesActive) {
@@ -196,7 +196,7 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
     const zone = this._findZoneEventAt(e);
     const currentSelectionLength = this._terminal.getSelection().length;
 
-    if (zone  && currentSelectionLength === this._initialSelectionLenght) {
+    if (zone && currentSelectionLength === this._initialSelectionLength) {
       zone.clickCallback(e);
       e.preventDefault();
       e.stopImmediatePropagation();
