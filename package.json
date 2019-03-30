@@ -15,7 +15,6 @@
     "@types/webpack": "^4.4.11",
     "browserify": "^13.3.0",
     "chai": "3.5.0",
-    "concurrently": "^3.5.1",
     "coveralls": "^3.0.1",
     "express": "4.13.4",
     "express-ws": "2.0.0-rc.1",
