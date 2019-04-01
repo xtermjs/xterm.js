@@ -10,8 +10,7 @@
     "outDir": "../../../lib/addons/attach/",
     "sourceMap": true,
     "removeComments": true,
-    "declaration": true,
-    "preserveWatchOutput": true
+    "declaration": true
   },
   "include": [
     "**/*.ts",
