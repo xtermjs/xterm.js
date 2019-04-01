@@ -4,7 +4,7 @@
     "outDir": "../../lib"
   },
   "include": [
-    "./**/*"
+    "./**/*", "../common/Platform.ts"
   ],
   "references": [
     { "path": "../common" }

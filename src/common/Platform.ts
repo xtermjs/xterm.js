@@ -3,6 +3,13 @@
  * @license MIT
  */
 
+interface INavigator {
+  userAgent: string;
+  language: string;
+  platform: string;
+}
+declare const navigator: INavigator;
+
 const isNode = (typeof navigator === 'undefined') ? true : false;
 const userAgent = (isNode) ? 'node' : navigator.userAgent;
 const platform = (isNode) ? 'node' : navigator.platform;
