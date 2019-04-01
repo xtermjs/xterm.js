@@ -6,7 +6,7 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
 
   private _characterJoiners: ICharacterJoiner[] = [];
   private _nextCharacterJoinerId: number = 0;
-  private _cell: CellData = new CellData();
+  private _workCell: CellData = new CellData();
 
   constructor(private _terminal: ITerminal) {
   }
@@ -52,13 +52,13 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
     let rangeStartColumn = 0;
     let currentStringIndex = 0;
     let rangeStartStringIndex = 0;
-    let rangeAttr = line.getFG(0) >> 9;
+    let rangeAttr = line.getFg(0) >> 9;
 
     for (let x = 0; x < this._terminal.cols; x++) {
-      line.loadCell(x, this._cell);
-      const chars = this._cell.getChars();
-      const width = this._cell.getWidth();
-      const attr = this._cell.fg >> 9;
+      line.loadCell(x, this._workCell);
+      const chars = this._workCell.getChars();
+      const width = this._workCell.getWidth();
+      const attr = this._workCell.fg >> 9;
 
       if (width === 0) {
         // If this character is of width 0, skip it.

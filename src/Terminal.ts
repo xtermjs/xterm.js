@@ -1181,7 +1181,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public scroll(isWrapped: boolean = false): void {
     let newLine: IBufferLine;
     newLine = this._blankLine;
-    if (!newLine || newLine.length !== this.cols || newLine.getFG(0) !== this.eraseAttr()) {
+    if (!newLine || newLine.length !== this.cols || newLine.getFg(0) !== this.eraseAttr()) {
       newLine = this.buffer.getBlankLine(this.eraseAttr(), isWrapped);
       this._blankLine = newLine;
     }

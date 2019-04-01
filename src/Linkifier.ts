@@ -231,7 +231,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       }
 
       const line = this._terminal.buffer.lines.get(bufferIndex[0]);
-      const attr = line.getFG(bufferIndex[1]);
+      const attr = line.getFg(bufferIndex[1]);
       let fg: number | undefined;
       if (attr) {
         fg = (attr >> 9) & 0x1ff;

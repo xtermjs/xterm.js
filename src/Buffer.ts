@@ -29,7 +29,7 @@ export const NULL_CELL_WIDTH = 1;
 export const NULL_CELL_CODE = 0;
 
 /**
- * Whilespace cell.
+ * Whitespace cell.
  * This is meant as a replacement for empty cells when needed
  * during rendering lines to preserve correct aligment.
  */

@@ -25,7 +25,7 @@ export class TextRenderLayer extends BaseRenderLayer {
   private _characterFont: string;
   private _characterOverlapCache: { [key: string]: boolean } = {};
   private _characterJoinerRegistry: ICharacterJoinerRegistry;
-  private _cell = new CellData();
+  private _workCell = new CellData();
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet, characterJoinerRegistry: ICharacterJoinerRegistry, alpha: boolean) {
     super(container, 'text', zIndex, alpha, colors);
@@ -74,14 +74,14 @@ export class TextRenderLayer extends BaseRenderLayer {
       const line = terminal.buffer.lines.get(row);
       const joinedRanges = joinerRegistry ? joinerRegistry.getJoinedCharacters(row) : [];
       for (let x = 0; x < terminal.cols; x++) {
-        (line as any).loadCell(x, this._cell);
-        let code: number = this._cell.getCode() || WHITESPACE_CELL_CODE;
+        line.loadCell(x, this._workCell);
+        let code: number = this._workCell.getCode() || WHITESPACE_CELL_CODE;
 
         // Can either represent character(s) for a single cell or multiple cells
         // if indicated by a character joiner.
-        let chars = this._cell.getChars() || WHITESPACE_CELL_CHAR;
-        const attr = this._cell.fg;
-        let width = this._cell.getWidth();
+        let chars = this._workCell.getChars() || WHITESPACE_CELL_CHAR;
+        const attr = this._workCell.fg;
+        let width = this._workCell.getWidth();
 
         // If true, indicates that the current character(s) to draw were joined.
         let isJoined = false;
@@ -127,7 +127,7 @@ export class TextRenderLayer extends BaseRenderLayer {
           // get removed, and `a` would not re-render because it thinks it's
           // already in the correct state.
           // this._state.cache[x][y] = OVERLAP_OWNED_CHAR_DATA;
-          if (lastCharX < line.length - 1 && line.loadCell(lastCharX + 1, this._cell).getCode() === NULL_CELL_CODE) {
+          if (lastCharX < line.length - 1 && line.loadCell(lastCharX + 1, this._workCell).getCode() === NULL_CELL_CODE) {
             width = 2;
             // this._clearChar(x + 1, y);
             // The overlapping char's char data will force a clear and render when the
