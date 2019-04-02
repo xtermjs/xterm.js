@@ -16,6 +16,7 @@ export class Terminal implements ITerminalApi {
     this._core = new TerminalCore(options);
   }
 
+  public get onCursorMove(): IEvent<void> { return this._core.onCursorMove; }
   public get onLineFeed(): IEvent<void> { return this._core.onLineFeed; }
   public get onSelectionChange(): IEvent<void> { return this._core.onSelectionChange; }
   public get onInput(): IEvent<string> { return this._core.onInput; }

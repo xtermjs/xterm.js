@@ -218,6 +218,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public cols: number;
   public rows: number;
 
+  private _onCursorMove = new EventEmitter2<void>();
+  public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
   private _onLineFeed = new EventEmitter2<void>();
   public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
   private _onSelectionChange = new EventEmitter2<void>();
@@ -255,6 +257,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this._setup();
 
     // TODO: Replace EventEmitter with EventEmitter2 internally
+    this.on('cursormove', () => this._onCursorMove.fire());
     this.on('linefeed', () => this._onLineFeed.fire());
     this.on('selection', () => this._onSelectionChange.fire());
     this.on('data', e => this._onInput.fire(e));

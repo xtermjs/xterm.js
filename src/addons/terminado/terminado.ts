@@ -59,9 +59,9 @@ export function terminadoAttach(term: Terminal, socket: WebSocket, bidirectional
   socket.addEventListener('message', addonTerminal.__getMessage);
 
   if (bidirectional) {
-    addonTerminal.on('data', addonTerminal.__sendData);
+    addonTerminal.onInput(addonTerminal.__sendData);
   }
-  addonTerminal.on('resize', addonTerminal.__setSize);
+  addonTerminal.onResize(addonTerminal.__setSize);
 
   socket.addEventListener('close', () => terminadoDetach(addonTerminal, socket));
   socket.addEventListener('error', () => terminadoDetach(addonTerminal, socket));

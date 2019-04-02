@@ -8,7 +8,7 @@ import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuff
 import { ICircularList, XtermListener } from '../common/Types';
 import { Buffer } from '../Buffer';
 import * as Browser from '../core/Platform';
-import { ITheme, IDisposable, IMarker } from 'xterm';
+import { ITheme, IDisposable, IMarker, IEvent } from 'xterm';
 import { Terminal } from '../Terminal';
 
 export class TestTerminal extends Terminal {
@@ -19,6 +19,15 @@ export class TestTerminal extends Terminal {
 }
 
 export class MockTerminal implements ITerminal {
+  onCursorMove: IEvent<void>;
+  onLineFeed: IEvent<void>;
+  onSelectionChange: IEvent<void>;
+  onInput: IEvent<string>;
+  onTitleChange: IEvent<string>;
+  onScroll: IEvent<number>;
+  onKey: IEvent<{ key: string; domEvent: KeyboardEvent; }>;
+  onRender: IEvent<{ start: number; end: number; }>;
+  onResize: IEvent<{ cols: number; rows: number; }>;
   markers: IMarker[];
   addMarker(cursorYOffset: number): IMarker {
     throw new Error('Method not implemented.');

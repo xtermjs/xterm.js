@@ -362,6 +362,12 @@ declare module 'xterm' {
     constructor(options?: ITerminalOptions);
 
     /**
+     * Adds an event listener for the cursor moves.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onCursorMove: IEvent<void>;
+
+    /**
      * Adds an event listener for when a line feed is added.
      * @returns an `IDisposable` to stop listening.
      */

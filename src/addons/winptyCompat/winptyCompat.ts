@@ -25,7 +25,7 @@ export function winptyCompatInit(terminal: Terminal): void {
   // space. This is certainly not without its problems, but generally on
   // Windows when text reaches the end of the terminal it's likely going to be
   // wrapped.
-  addonTerminal.on('linefeed', () => {
+  addonTerminal.onLineFeed(() => {
     const line = addonTerminal._core.buffer.lines.get(addonTerminal._core.buffer.ybase + addonTerminal._core.buffer.y - 1);
     const lastChar = line.get(addonTerminal.cols - 1);
 
