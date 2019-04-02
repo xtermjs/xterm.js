@@ -52,6 +52,7 @@ import { IKeyboardEvent } from './common/Types';
 import { evaluateKeyboardEvent } from './core/input/Keyboard';
 import { KeyboardResultType, ICharset } from './core/Types';
 import { clone } from './common/Clone';
+import { EventEmitter2, IEvent } from './common/EventEmitter2';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -217,6 +218,23 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public cols: number;
   public rows: number;
 
+  private _onLineFeed = new EventEmitter2<void>();
+  public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
+  private _onSelectionChange = new EventEmitter2<void>();
+  public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
+  private _onInput = new EventEmitter2<string>();
+  public get onInput(): IEvent<string> { return this._onInput.event; }
+  private _onTitleChange = new EventEmitter2<string>();
+  public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
+  private _onScroll = new EventEmitter2<number>();
+  public get onScroll(): IEvent<number> { return this._onScroll.event; }
+  private _onKey = new EventEmitter2<{ key: string, domEvent: KeyboardEvent }>();
+  public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._onKey.event; }
+  private _onRender = new EventEmitter2<{ start: number, end: number }>();
+  public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
+  private _onResize = new EventEmitter2<{ cols: number, rows: number }>();
+  public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
+
   /**
    * Creates a new `Terminal` object.
    *
@@ -235,6 +253,16 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     super();
     this.options = clone(options);
     this._setup();
+
+    // TODO: Replace EventEmitter with EventEmitter2 internally
+    this.on('linefeed', () => this._onLineFeed.fire());
+    this.on('selection', () => this._onSelectionChange.fire());
+    this.on('data', e => this._onInput.fire(e));
+    this.on('title', e => this._onTitleChange.fire(e));
+    this.on('scroll', e => this._onScroll.fire(e));
+    this.on('key', e => this._onKey.fire(e));
+    this.on('refresh', e => this._onRender.fire(e));
+    this.on('resize', e => this._onResize.fire(e));
   }
 
   public dispose(): void {
