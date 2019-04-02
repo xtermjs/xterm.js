@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { CircularList, IInsertEvent, IDeleteEvent } from './common/CircularList';
+import { CircularList, IInsertEvent } from './common/CircularList';
 import { ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult, ICellData } from './Types';
 import { EventEmitter } from './common/EventEmitter';
 import { IMarker } from 'xterm';
@@ -442,7 +442,7 @@ export class Buffer implements IBuffer {
           insertEvents.push({
             index: originalLineIndex + 1,
             amount: nextToInsert.newLines.length
-          } as IInsertEvent);
+          });
 
           countInsertedSoFar += nextToInsert.newLines.length;
           nextToInsert = toInsert[++nextToInsertIndex];
@@ -455,12 +455,12 @@ export class Buffer implements IBuffer {
       let insertCountEmitted = 0;
       for (let i = insertEvents.length - 1; i >= 0; i--) {
         insertEvents[i].index += insertCountEmitted;
-        this.lines.emit('insert', insertEvents[i]);
+        this.lines.onInsertEmitter.fire(insertEvents[i]);
         insertCountEmitted += insertEvents[i].amount;
       }
       const amountToTrim = Math.max(0, originalLinesLength + countToInsert - this.lines.maxLength);
       if (amountToTrim > 0) {
-        this.lines.emitMayRemoveListeners('trim', amountToTrim);
+        this.lines.onTrimEmitter.fire(amountToTrim);
       }
     }
   }
@@ -580,19 +580,19 @@ export class Buffer implements IBuffer {
   public addMarker(y: number): Marker {
     const marker = new Marker(y);
     this.markers.push(marker);
-    marker.register(this.lines.addDisposableListener('trim', amount => {
+    marker.register(this.lines.onTrim(amount => {
       marker.line -= amount;
       // The marker should be disposed when the line is trimmed from the buffer
       if (marker.line < 0) {
         marker.dispose();
       }
     }));
-    marker.register(this.lines.addDisposableListener('insert', (event: IInsertEvent) => {
+    marker.register(this.lines.onInsert(event => {
       if (marker.line >= event.index) {
         marker.line += event.amount;
       }
     }));
-    marker.register(this.lines.addDisposableListener('delete', (event: IDeleteEvent) => {
+    marker.register(this.lines.onDelete(event => {
       // Delete the marker if it's within the range
       if (marker.line >= event.index && marker.line < event.index + event.amount) {
         marker.dispose();

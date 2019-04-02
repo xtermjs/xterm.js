@@ -4,7 +4,6 @@
  */
 
 import { ITerminal, ISelectionManager, IBuffer, IBufferLine } from './Types';
-import { XtermListener } from './common/Types';
 import { MouseHelper } from './ui/MouseHelper';
 import * as Browser from './core/Platform';
 import { CharMeasure } from './ui/CharMeasure';
@@ -12,6 +11,7 @@ import { EventEmitter } from './common/EventEmitter';
 import { SelectionModel } from './SelectionModel';
 import { AltClickHandler } from './handlers/AltClickHandler';
 import { CellData } from './BufferLine';
+import { IDisposable } from 'xterm';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -102,7 +102,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
   private _mouseMoveListener: EventListener;
   private _mouseUpListener: EventListener;
-  private _trimListener: XtermListener;
+  private _trimListener: IDisposable;
   private _workCell: CellData = new CellData();
 
   private _mouseDownTimeStamp: number;
@@ -134,13 +134,12 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   private _initListeners(): void {
     this._mouseMoveListener = event => this._onMouseMove(<MouseEvent>event);
     this._mouseUpListener = event => this._onMouseUp(<MouseEvent>event);
-    this._trimListener = (amount: number) => this._onTrim(amount);
 
     this.initBuffersListeners();
   }
 
   public initBuffersListeners(): void {
-    this._terminal.buffer.lines.on('trim', this._trimListener);
+    this._trimListener = this._terminal.buffer.lines.onTrim(amount => this._onTrim(amount));
     this._terminal.buffers.on('activate', e => this._onBufferActivate(e));
   }
 
@@ -337,6 +336,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param amount The amount the buffer is being trimmed.
    */
   private _onTrim(amount: number): void {
+    console.log('onTrim', amount);
     const needsRefresh = this._model.onTrim(amount);
     if (needsRefresh) {
       this.refresh();
@@ -657,8 +657,10 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     // reverseIndex) and delete in a splice is only ever used when the same
     // number of elements was just added. Given this is could actually be
     // beneficial to leave the selection as is for these cases.
-    e.inactiveBuffer.lines.off('trim', this._trimListener);
-    e.activeBuffer.lines.on('trim', this._trimListener);
+    if (this._trimListener) {
+      this._trimListener.dispose();
+    }
+    this._trimListener = e.activeBuffer.lines.onTrim(amount => this._onTrim(amount));
   }
 
   /**
