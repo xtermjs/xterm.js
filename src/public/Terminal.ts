@@ -7,7 +7,7 @@ import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILink
 import { ITerminal } from '../Types';
 import { Terminal as TerminalCore } from '../Terminal';
 import * as Strings from '../Strings';
-import { IEvent } from '../../lib/common/EventEmitter2';
+import { IEvent } from '../common/EventEmitter2';
 
 export class Terminal implements ITerminalApi {
   private _core: ITerminal;

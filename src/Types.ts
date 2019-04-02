@@ -8,7 +8,7 @@ import { IColorSet, IRenderer } from './renderer/Types';
 import { IMouseZoneManager } from './ui/Types';
 import { ICharset } from './core/Types';
 import { ICircularList } from './common/Types';
-import { IEvent } from '../lib/common/EventEmitter2';
+import { IEvent } from './common/EventEmitter2';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
