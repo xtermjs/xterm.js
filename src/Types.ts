@@ -253,6 +253,9 @@ export interface IMouseHelper {
 export interface ICharMeasure {
   width: number;
   height: number;
+
+  onCharSizeChanged: IEvent<void>;
+
   measure(options: ITerminalOptions): void;
 }
 

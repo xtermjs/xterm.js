@@ -174,6 +174,7 @@ export class MockTerminal implements ITerminal {
 }
 
 export class MockCharMeasure implements ICharMeasure {
+  onCharSizeChanged: IEvent<void>;
   width: number;
   height: number;
   measure(options: ITerminalOptions): void {
