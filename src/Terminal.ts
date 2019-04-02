@@ -52,6 +52,7 @@ import { IKeyboardEvent } from './common/Types';
 import { evaluateKeyboardEvent } from './core/input/Keyboard';
 import { KeyboardResultType, ICharset } from './core/Types';
 import { clone } from './common/Clone';
+import { applyWindowsMode } from './WindowsMode';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -110,7 +111,8 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   tabStopWidth: 8,
   theme: null,
   rightClickSelectsWord: Browser.isMac,
-  rendererType: 'canvas'
+  rendererType: 'canvas',
+  windowsMode: false
 };
 
 export class Terminal extends EventEmitter implements ITerminal, IDisposable, IInputHandlingTerminal {
@@ -210,6 +212,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   private _accessibilityManager: AccessibilityManager;
   private _screenDprMonitor: ScreenDprMonitor;
   private _theme: ITheme;
+  private _windowsMode: IDisposable | undefined;
 
   // bufferline to clone/copy from for new blank lines
   private _blankLine: IBufferLine = null;
@@ -239,6 +242,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   public dispose(): void {
     super.dispose();
+    if (this._windowsMode) {
+      this._windowsMode.dispose();
+      this._windowsMode = undefined;
+    }
     this._customKeyEventHandler = null;
     removeTerminalFromCache(this);
     this.handler = () => {};
@@ -320,6 +327,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     if (this.selectionManager) {
       this.selectionManager.clearSelection();
       this.selectionManager.initBuffersListeners();
+    }
+
+    if (this.options.windowsMode) {
+      this._windowsMode = applyWindowsMode(this);
     }
   }
 
@@ -501,6 +512,18 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         }
         break;
       case 'tabStopWidth': this.buffers.setupTabStops(); break;
+      case 'windowsMode':
+        if (value) {
+          if (!this._windowsMode) {
+            this._windowsMode = applyWindowsMode(this);
+          }
+        } else {
+          if (this._windowsMode) {
+            this._windowsMode.dispose();
+            this._windowsMode = undefined;
+          }
+        }
+        break;
     }
     // Inform renderer of changes
     if (this.renderer) {
