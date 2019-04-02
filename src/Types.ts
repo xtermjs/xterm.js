@@ -298,6 +298,8 @@ export interface IBuffer {
   getBlankLine(attr: number, isWrapped?: boolean): IBufferLine;
   stringIndexToBufferIndex(lineIndex: number, stringIndex: number): number[];
   iterator(trimRight: boolean, startIndex?: number, endIndex?: number, startOverscan?: number, endOverscan?: number): IBufferStringIterator;
+  getNullCell(fg?: number, bg?: number): ICellData;
+  getWhitespaceCell(fg?: number, bg?: number): ICellData;
 }
 
 export interface IBufferSet extends IEventEmitter {
@@ -519,6 +521,20 @@ export interface IEscapeSequenceParser extends IDisposable {
   clearErrorHandler(): void;
 }
 
+/** Cell data */
+export interface ICellData {
+  content: number;
+  fg: number;
+  bg: number;
+  combinedData: string;
+  isCombined(): number;
+  getWidth(): number;
+  getChars(): string;
+  getCode(): number;
+  setFromCharData(value: CharData): void;
+  getAsCharData(): CharData;
+}
+
 /**
  * Interface for a line in the terminal buffer.
  */
@@ -527,13 +543,27 @@ export interface IBufferLine {
   isWrapped: boolean;
   get(index: number): CharData;
   set(index: number, value: CharData): void;
-  insertCells(pos: number, n: number, ch: CharData): void;
-  deleteCells(pos: number, n: number, fill: CharData): void;
-  replaceCells(start: number, end: number, fill: CharData): void;
-  resize(cols: number, fill: CharData): void;
-  fill(fillCharData: CharData): void;
+  loadCell(index: number, cell: ICellData): ICellData;
+  setCell(index: number, cell: ICellData): void;
+  setCellFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number): void;
+  addCodepointToCell(index: number, codePoint: number): void;
+  insertCells(pos: number, n: number, ch: ICellData): void;
+  deleteCells(pos: number, n: number, fill: ICellData): void;
+  replaceCells(start: number, end: number, fill: ICellData): void;
+  resize(cols: number, fill: ICellData): void;
+  fill(fillCellData: ICellData): void;
   copyFrom(line: IBufferLine): void;
   clone(): IBufferLine;
   getTrimmedLength(): number;
   translateToString(trimRight?: boolean, startCol?: number, endCol?: number): string;
+
+  /* direct access to cell attrs */
+  getWidth(index: number): number;
+  hasWidth(index: number): number;
+  getFg(index: number): number;
+  getBg(index: number): number;
+  hasContent(index: number): number;
+  getCodePoint(index: number): number;
+  isCombined(index: number): number;
+  getString(index: number): string;
 }
