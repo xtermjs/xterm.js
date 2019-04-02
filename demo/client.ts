@@ -30,7 +30,10 @@ Terminal.applyAddon(fit);
 Terminal.applyAddon(fullscreen);
 Terminal.applyAddon(search);
 Terminal.applyAddon(webLinks);
-Terminal.applyAddon(winptyCompat);
+const isWindows = ['Windows', 'Win16', 'Win32', 'WinCE'].indexOf(navigator.platform) >= 0;
+if (isWindows) {
+  Terminal.applyAddon(winptyCompat);
+}
 
 
 let term;
@@ -99,7 +102,9 @@ function createTerminal(): void {
   socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
 
   term.open(terminalContainer);
-  term.winptyCompatInit();
+  if (isWindows) {
+    term.winptyCompatInit();
+  }
   term.webLinksInit();
   term.fit();
   term.focus();

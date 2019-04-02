@@ -3,25 +3,30 @@
  * @license MIT
  */
 
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_ATTR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, NULL_CELL_CODE, WHITESPACE_CELL_CHAR } from '../../Buffer';
+import {  NULL_CELL_CODE, WHITESPACE_CELL_CHAR } from '../../Buffer';
 import { FLAGS } from '../Types';
-import { IBufferLine } from '../../Types';
+import { IBufferLine, ITerminalOptions } from '../../Types';
 import { DEFAULT_COLOR, INVERTED_DEFAULT_COLOR } from '../atlas/Types';
+import { CellData } from '../../BufferLine';
 
 export const BOLD_CLASS = 'xterm-bold';
 export const ITALIC_CLASS = 'xterm-italic';
 export const CURSOR_CLASS = 'xterm-cursor';
+export const CURSOR_BLINK_CLASS = 'xterm-cursor-blink';
 export const CURSOR_STYLE_BLOCK_CLASS = 'xterm-cursor-block';
 export const CURSOR_STYLE_BAR_CLASS = 'xterm-cursor-bar';
 export const CURSOR_STYLE_UNDERLINE_CLASS = 'xterm-cursor-underline';
 
 export class DomRendererRowFactory {
+  private _workCell: CellData = new CellData();
+
   constructor(
+    private _terminalOptions: ITerminalOptions,
     private _document: Document
   ) {
   }
 
-  public createRow(lineData: IBufferLine, isCursorRow: boolean, cursorStyle: string | undefined, cursorX: number, cellWidth: number, cols: number): DocumentFragment {
+  public createRow(lineData: IBufferLine, isCursorRow: boolean, cursorStyle: string | undefined, cursorX: number, cursorBlink: boolean, cellWidth: number, cols: number): DocumentFragment {
     const fragment = this._document.createDocumentFragment();
 
     // Find the line length first, this prevents the need to output a bunch of
@@ -31,19 +36,16 @@ export class DomRendererRowFactory {
     // the viewport).
     let lineLength = 0;
     for (let x = Math.min(lineData.length, cols) - 1; x >= 0; x--) {
-      const charData = lineData.get(x);
-      const code = charData[CHAR_DATA_CODE_INDEX];
-      if (code !== NULL_CELL_CODE || (isCursorRow && x === cursorX)) {
+      if (lineData.loadCell(x, this._workCell).getCode() !== NULL_CELL_CODE || (isCursorRow && x === cursorX)) {
         lineLength = x + 1;
         break;
       }
     }
 
     for (let x = 0; x < lineLength; x++) {
-      const charData = lineData.get(x);
-      const char = charData[CHAR_DATA_CHAR_INDEX] || WHITESPACE_CELL_CHAR;
-      const attr = charData[CHAR_DATA_ATTR_INDEX];
-      const width = charData[CHAR_DATA_WIDTH_INDEX];
+      lineData.loadCell(x, this._workCell);
+      const attr = this._workCell.fg;
+      const width = this._workCell.getWidth();
 
       // The character to the left is a wide character, drawing is owned by the char at x-1
       if (width === 0) {
@@ -61,6 +63,10 @@ export class DomRendererRowFactory {
 
       if (isCursorRow && x === cursorX) {
         charElement.classList.add(CURSOR_CLASS);
+
+        if (cursorBlink) {
+          charElement.classList.add(CURSOR_BLINK_CLASS);
+        }
 
         switch (cursorStyle) {
           case 'bar':
@@ -88,10 +94,10 @@ export class DomRendererRowFactory {
         }
       }
 
-      if (flags & FLAGS.BOLD) {
+      if (flags & FLAGS.BOLD && this._terminalOptions.enableBold) {
         // Convert the FG color to the bold variant. This should not happen when
         // the fg is the inverse default color as there is no bold variant.
-        if (fg < 8) {
+        if (fg < 8 && this._terminalOptions.drawBoldTextInBrightColors) {
           fg += 8;
         }
         charElement.classList.add(BOLD_CLASS);
@@ -101,7 +107,7 @@ export class DomRendererRowFactory {
         charElement.classList.add(ITALIC_CLASS);
       }
 
-      charElement.textContent = char;
+      charElement.textContent = this._workCell.getChars() || WHITESPACE_CELL_CHAR;
       if (fg !== DEFAULT_COLOR) {
         charElement.classList.add(`xterm-fg-${fg}`);
       }

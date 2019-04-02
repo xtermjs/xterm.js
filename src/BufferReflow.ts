@@ -3,10 +3,10 @@
  * @license MIT
  */
 
-import { FILL_CHAR_DATA } from './Buffer';
-import { BufferLine } from './BufferLine';
+import { BufferLine, CellData } from './BufferLine';
 import { CircularList, IDeleteEvent } from './common/CircularList';
 import { IBufferLine } from './Types';
+import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR } from './Buffer';
 
 export interface INewLayoutResult {
   layout: number[];
@@ -20,6 +20,7 @@ export interface INewLayoutResult {
  * @param newCols The columns after resize.
  */
 export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, newCols: number, bufferAbsoluteY: number): number[] {
+  const nullCell = CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
   // Gather all BufferLines that need to be removed from the Buffer here so that they can be
   // batched up and only committed once
   const toRemove: number[] = [];
@@ -75,13 +76,13 @@ export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, n
         if (wrappedLines[destLineIndex - 1].getWidth(newCols - 1) === 2) {
           wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[destLineIndex - 1], newCols - 1, destCol++, 1, false);
           // Null out the end of the last row
-          wrappedLines[destLineIndex - 1].set(newCols - 1, FILL_CHAR_DATA);
+          wrappedLines[destLineIndex - 1].setCell(newCols - 1, nullCell);
         }
       }
     }
 
     // Clear out remaining cells or fragments could remain;
-    wrappedLines[destLineIndex].replaceCells(destCol, newCols, FILL_CHAR_DATA);
+    wrappedLines[destLineIndex].replaceCells(destCol, newCols, nullCell);
 
     // Work backwards and remove any rows at the end that only contain null cells
     let countToRemove = 0;
