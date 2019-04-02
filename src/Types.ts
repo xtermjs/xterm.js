@@ -8,6 +8,7 @@ import { IColorSet, IRenderer } from './renderer/Types';
 import { IMouseZoneManager } from './ui/Types';
 import { ICharset } from './core/Types';
 import { ICircularList } from './common/Types';
+import { IEvent } from '../lib/common/EventEmitter2';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
@@ -302,10 +303,12 @@ export interface IBuffer {
   getWhitespaceCell(fg?: number, bg?: number): ICellData;
 }
 
-export interface IBufferSet extends IEventEmitter {
+export interface IBufferSet {
   alt: IBuffer;
   normal: IBuffer;
   active: IBuffer;
+
+  onBufferActivate: IEvent<{ activeBuffer: IBuffer, inactiveBuffer: IBuffer }>;
 
   activateNormalBuffer(): void;
   activateAltBuffer(fillAttr?: number): void;

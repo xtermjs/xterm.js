@@ -140,7 +140,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
   public initBuffersListeners(): void {
     this._trimListener = this._terminal.buffer.lines.onTrim(amount => this._onTrim(amount));
-    this._terminal.buffers.on('activate', e => this._onBufferActivate(e));
+    this._terminal.buffers.onBufferActivate(e => this._onBufferActivate(e));
   }
 
   /**
@@ -336,7 +336,6 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    * @param amount The amount the buffer is being trimmed.
    */
   private _onTrim(amount: number): void {
-    console.log('onTrim', amount);
     const needsRefresh = this._model.onTrim(amount);
     if (needsRefresh) {
       this.refresh();
