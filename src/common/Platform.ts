@@ -8,6 +8,9 @@ interface INavigator {
   language: string;
   platform: string;
 }
+
+// We're declaring a navigator global here as we expect it in all runtimes (node and browser), but
+// we want this module to live in common.
 declare const navigator: INavigator;
 
 const isNode = (typeof navigator === 'undefined') ? true : false;

@@ -6,7 +6,5 @@
       "../../node_modules/@types/mocha"
     ]
   },
-  "include": [
-    "./**/*"
-  ]
+  "include": [ "./**/*" ]
 }
