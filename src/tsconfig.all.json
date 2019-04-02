@@ -9,8 +9,6 @@
     { "path": "./addons/search" },
     { "path": "./addons/terminado" },
     { "path": "./addons/webLinks" },
-    { "path": "./addons/winptyCompat" },
     { "path": "./addons/zmodem" }
   ]
 }
-  
