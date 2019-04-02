@@ -8,7 +8,7 @@ import { IColorSet, IRenderDimensions, ICharacterJoinerRegistry } from './Types'
 import { CharData, ITerminal, ICellData } from '../Types';
 import { GridCache } from './GridCache';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { CellData, AttributeData, Content } from '../BufferLine';
+import { CellData, AttributeData, ContentMasks, WIDTH_MASK_SHIFT } from '../BufferLine';
 
 /**
  * This CharData looks like a null character, which will forc a clear and render
@@ -23,7 +23,7 @@ export class TextRenderLayer extends BaseRenderLayer {
   private _characterFont: string;
   private _characterOverlapCache: { [key: string]: boolean } = {};
   private _characterJoinerRegistry: ICharacterJoinerRegistry;
-  private _cell = new CellData();
+  private _workCell = new CellData();
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet, characterJoinerRegistry: ICharacterJoinerRegistry, alpha: boolean) {
     super(container, 'text', zIndex, alpha, colors);
@@ -67,8 +67,8 @@ export class TextRenderLayer extends BaseRenderLayer {
       const line = terminal.buffer.lines.get(row);
       const joinedRanges = joinerRegistry ? joinerRegistry.getJoinedCharacters(row) : [];
       for (let x = 0; x < terminal.cols; x++) {
-        line.loadCell(x, this._cell);
-        let cell = this._cell;
+        line.loadCell(x, this._workCell);
+        let cell = this._workCell;
 
         // If true, indicates that the current character(s) to draw were joined.
         let isJoined = false;
@@ -96,8 +96,8 @@ export class TextRenderLayer extends BaseRenderLayer {
             0xFFFFFF
           ]);
           // hacky: patch attrs
-          cell.fg = this._cell.fg;
-          cell.bg = this._cell.bg;
+          cell.fg = this._workCell.fg;
+          cell.bg = this._workCell.bg;
 
           // Skip over the cells occupied by this range in the loop
           lastCharX = range[1] - 1;
@@ -117,8 +117,8 @@ export class TextRenderLayer extends BaseRenderLayer {
           // this._state.cache[x][y] = OVERLAP_OWNED_CHAR_DATA;
           if (lastCharX < line.length - 1 && line.getCodePoint(lastCharX + 1) === NULL_CELL_CODE) {
             // patch width to 2
-            cell.content &= ~Content.WIDTH_MASK;
-            cell.content |= 2 << Content.WIDTH_SHIFT;
+            cell.content &= ~ContentMasks.WIDTH;
+            cell.content |= 2 << WIDTH_MASK_SHIFT;
             // this._clearChar(x + 1, y);
             // The overlapping char's char data will force a clear and render when the
             // overlapping char is no longer to the left of the character and also when

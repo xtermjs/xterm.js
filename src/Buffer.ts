@@ -32,7 +32,7 @@ export const NULL_CELL_WIDTH = 1;
 export const NULL_CELL_CODE = 0;
 
 /**
- * Whilespace cell.
+ * Whitespace cell.
  * This is meant as a replacement for empty cells when needed
  * during rendering lines to preserve correct aligment.
  */
@@ -249,7 +249,7 @@ export class Buffer implements IBuffer {
 
     this.scrollBottom = newRows - 1;
 
-    if (this._hasScrollback) {
+    if (this._isReflowEnabled) {
       this._reflow(newCols, newRows);
 
       // Trim the end of the line off if cols shrunk
@@ -264,6 +264,10 @@ export class Buffer implements IBuffer {
     this._rows = newRows;
   }
 
+  private get _isReflowEnabled(): boolean {
+    return this._hasScrollback && !(this._terminal as any).isWinptyCompatEnabled;
+  }
+
   private _reflow(newCols: number, newRows: number): void {
     if (this._cols === newCols) {
       return;
@@ -271,22 +275,22 @@ export class Buffer implements IBuffer {
 
     // Iterate through rows, ignore the last one as it cannot be wrapped
     if (newCols > this._cols) {
-      this._reflowLarger(newCols);
+      this._reflowLarger(newCols, newRows);
     } else {
       this._reflowSmaller(newCols, newRows);
     }
   }
 
-  private _reflowLarger(newCols: number): void {
+  private _reflowLarger(newCols: number, newRows: number): void {
     const toRemove: number[] = reflowLargerGetLinesToRemove(this.lines, newCols, this.ybase + this.y, this.getNullCell(DEFAULT_ATTR_DATA));
     if (toRemove.length > 0) {
       const newLayoutResult = reflowLargerCreateNewLayout(this.lines, toRemove);
       reflowLargerApplyNewLayout(this.lines, newLayoutResult.layout);
-      this._reflowLargerAdjustViewport(newCols, newLayoutResult.countRemoved);
+      this._reflowLargerAdjustViewport(newCols, newRows, newLayoutResult.countRemoved);
     }
   }
 
-  private _reflowLargerAdjustViewport(newCols: number, countRemoved: number): void {
+  private _reflowLargerAdjustViewport(newCols: number, newRows: number, countRemoved: number): void {
     const nullCell = this.getNullCell(DEFAULT_ATTR_DATA);
     // Adjust viewport based on number of items removed
     let viewportAdjustments = countRemoved;
@@ -295,7 +299,7 @@ export class Buffer implements IBuffer {
         if (this.y > 0) {
           this.y--;
         }
-        if (this.lines.length < this._rows) {
+        if (this.lines.length < newRows) {
           // Add an extra row at the bottom of the viewport
           this.lines.push(new BufferLine(newCols, nullCell));
         }
@@ -400,7 +404,7 @@ export class Buffer implements IBuffer {
       let viewportAdjustments = linesToAdd - trimmedLines;
       while (viewportAdjustments-- > 0) {
         if (this.ybase === 0) {
-          if (this.y < this._rows - 1) {
+          if (this.y < newRows - 1) {
             this.y++;
             this.lines.pop();
           } else {

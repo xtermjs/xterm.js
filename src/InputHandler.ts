@@ -104,7 +104,7 @@ class DECRQSS implements IDcsHandler {
 export class InputHandler extends Disposable implements IInputHandler {
   private _parseBuffer: Uint32Array = new Uint32Array(4096);
   private _stringDecoder: StringToUtf32 = new StringToUtf32();
-  private _cell: CellData = new CellData();
+  private _workCell: CellData = new CellData();
 
   constructor(
       protected _terminal: IInputHandlingTerminal,
@@ -968,10 +968,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     // make buffer local for faster access
     const buffer = this._terminal.buffer;
     const line = buffer.lines.get(buffer.ybase + buffer.y);
-    line.loadCell(buffer.x - 1, this._cell);
+    line.loadCell(buffer.x - 1, this._workCell);
     line.replaceCells(buffer.x,
       buffer.x + (params[0] || 1),
-      (this._cell.content !== undefined) ? this._cell : buffer.getNullCell(DEFAULT_ATTR_DATA)
+      (this._workCell.content !== undefined) ? this._workCell : buffer.getNullCell(DEFAULT_ATTR_DATA)
     );
     // FIXME: no updateRange here?
   }
@@ -1269,7 +1269,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           if (this._terminal.element) {
             this._terminal.element.classList.add('enable-mouse-events');
           }
-          this._terminal.selectionManager.disable();
+          if (this._terminal.selectionManager) {
+            this._terminal.selectionManager.disable();
+          }
           this._terminal.log('Binding to mouse events.');
           break;
         case 1004: // send focusin/focusout events
@@ -1459,7 +1461,9 @@ export class InputHandler extends Disposable implements IInputHandler {
           if (this._terminal.element) {
             this._terminal.element.classList.remove('enable-mouse-events');
           }
-          this._terminal.selectionManager.enable();
+          if (this._terminal.selectionManager) {
+            this._terminal.selectionManager.enable();
+          }
           break;
         case 1004: // send focusin/focusout events
           this._terminal.sendFocus = false;

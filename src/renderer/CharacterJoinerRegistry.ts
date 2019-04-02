@@ -7,7 +7,7 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
 
   private _characterJoiners: ICharacterJoiner[] = [];
   private _nextCharacterJoinerId: number = 0;
-  private _cell: CellData = new CellData();
+  private _workCell: CellData = new CellData();
 
   constructor(private _terminal: ITerminal) {
   }
@@ -53,19 +53,19 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
     let rangeStartColumn = 0;
     let currentStringIndex = 0;
     let rangeStartStringIndex = 0;
-    let rangeAttrFG = line.getFG(0);
-    let rangeAttrBG = line.getBG(0);
+    let rangeAttrFG = line.getFg(0);
+    let rangeAttrBG = line.getBg(0);
 
     for (let x = 0; x < line.getTrimmedLength(); x++) {
-      line.loadCell(x, this._cell);
+      line.loadCell(x, this._workCell);
 
-      if (this._cell.getWidth() === 0) {
+      if (this._workCell.getWidth() === 0) {
         // If this character is of width 0, skip it.
         continue;
       }
 
       // End of range
-      if (this._cell.fg !== rangeAttrFG || this._cell.bg !== rangeAttrBG) {
+      if (this._workCell.fg !== rangeAttrFG || this._workCell.bg !== rangeAttrBG) {
         // If we ended up with a sequence of more than one character,
         // look for ranges to join.
         if (x - rangeStartColumn > 1) {
@@ -84,11 +84,11 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
         // Reset our markers for a new range.
         rangeStartColumn = x;
         rangeStartStringIndex = currentStringIndex;
-        rangeAttrFG = this._cell.fg;
-        rangeAttrBG = this._cell.bg;
+        rangeAttrFG = this._workCell.fg;
+        rangeAttrBG = this._workCell.bg;
       }
 
-      currentStringIndex += this._cell.getChars().length || WHITESPACE_CELL_CHAR.length;
+      currentStringIndex += this._workCell.getChars().length || WHITESPACE_CELL_CHAR.length;
     }
 
     // Process any trailing ranges.

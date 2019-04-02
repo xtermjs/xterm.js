@@ -591,8 +591,8 @@ export interface IBufferLine {
   /* direct access to cell attrs */
   getWidth(index: number): number;
   hasWidth(index: number): number;
-  getFG(index: number): number;
-  getBG(index: number): number;
+  getFg(index: number): number;
+  getBg(index: number): number;
   hasContent(index: number): number;
   getCodePoint(index: number): number;
   isCombined(index: number): number;

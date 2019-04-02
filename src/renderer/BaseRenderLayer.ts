@@ -241,7 +241,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.fillText(
         cell.getChars(),
         x * this._scaledCellWidth + this._scaledCharLeft,
-        (y + 0.5) * this._scaledCellHeight + this._scaledCharTop);
+        y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight / 2);
   }
 
   /**
@@ -342,7 +342,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.fillText(
         cell.getChars(),
         x * this._scaledCellWidth + this._scaledCharLeft,
-        (y + 0.5) * this._scaledCellHeight + this._scaledCharTop);
+        y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight / 2);
     this._ctx.restore();
   }
 

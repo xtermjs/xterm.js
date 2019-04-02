@@ -4,25 +4,28 @@
  */
 
 import {  NULL_CELL_CODE, WHITESPACE_CELL_CHAR } from '../../Buffer';
-import { IBufferLine } from '../../Types';
+import { IBufferLine, ITerminalOptions } from '../../Types';
 import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
 import { CellData, AttributeData } from '../../BufferLine';
 
 export const BOLD_CLASS = 'xterm-bold';
 export const ITALIC_CLASS = 'xterm-italic';
 export const CURSOR_CLASS = 'xterm-cursor';
+export const CURSOR_BLINK_CLASS = 'xterm-cursor-blink';
 export const CURSOR_STYLE_BLOCK_CLASS = 'xterm-cursor-block';
 export const CURSOR_STYLE_BAR_CLASS = 'xterm-cursor-bar';
 export const CURSOR_STYLE_UNDERLINE_CLASS = 'xterm-cursor-underline';
 
 export class DomRendererRowFactory {
-  private _cell: CellData = new CellData();
+  private _workCell: CellData = new CellData();
+
   constructor(
+    private _terminalOptions: ITerminalOptions,
     private _document: Document
   ) {
   }
 
-  public createRow(lineData: IBufferLine, isCursorRow: boolean, cursorStyle: string | undefined, cursorX: number, cellWidth: number, cols: number): DocumentFragment {
+  public createRow(lineData: IBufferLine, isCursorRow: boolean, cursorStyle: string | undefined, cursorX: number, cursorBlink: boolean, cellWidth: number, cols: number): DocumentFragment {
     const fragment = this._document.createDocumentFragment();
 
     // Find the line length first, this prevents the need to output a bunch of
@@ -32,15 +35,15 @@ export class DomRendererRowFactory {
     // the viewport).
     let lineLength = 0;
     for (let x = Math.min(lineData.length, cols) - 1; x >= 0; x--) {
-      if (lineData.loadCell(x, this._cell).getCode() !== NULL_CELL_CODE || (isCursorRow && x === cursorX)) {
+      if (lineData.loadCell(x, this._workCell).getCode() !== NULL_CELL_CODE || (isCursorRow && x === cursorX)) {
         lineLength = x + 1;
         break;
       }
     }
 
     for (let x = 0; x < lineLength; x++) {
-      lineData.loadCell(x, this._cell);
-      const width = this._cell.getWidth();
+      lineData.loadCell(x, this._workCell);
+      const width = this._workCell.getWidth();
 
       // The character to the left is a wide character, drawing is owned by the char at x-1
       if (width === 0) {
@@ -55,6 +58,10 @@ export class DomRendererRowFactory {
       if (isCursorRow && x === cursorX) {
         charElement.classList.add(CURSOR_CLASS);
 
+        if (cursorBlink) {
+          charElement.classList.add(CURSOR_BLINK_CLASS);
+        }
+
         switch (cursorStyle) {
           case 'bar':
             charElement.classList.add(CURSOR_STYLE_BAR_CLASS);
@@ -68,26 +75,27 @@ export class DomRendererRowFactory {
         }
       }
 
-      if (this._cell.isBold()) {
+      if (this._workCell.isBold() && this._terminalOptions.enableBold) {
         charElement.classList.add(BOLD_CLASS);
       }
 
-      if (this._cell.isItalic()) {
+      if (this._workCell.isItalic()) {
         charElement.classList.add(ITALIC_CLASS);
       }
 
-      charElement.textContent = this._cell.getChars() || WHITESPACE_CELL_CHAR;
+      charElement.textContent = this._workCell.getChars() || WHITESPACE_CELL_CHAR;
 
-      const swapColor = this._cell.isInverse();
+      const swapColor = this._workCell.isInverse();
 
       // fg
-      if (this._cell.isFgRGB()) {
+      if (this._workCell.isFgRGB()) {
         let style = charElement.getAttribute('style') || '';
-        style += `${swapColor ? 'background-' : ''}color:rgb(${(AttributeData.toColorRGB(this._cell.getFgColor())).join(',')});`;
+        style += `${swapColor ? 'background-' : ''}color:rgb(${(AttributeData.toColorRGB(this._workCell.getFgColor())).join(',')});`;
         charElement.setAttribute('style', style);
-      } else if (this._cell.isFgPalette()) {
-        let fg = this._cell.getFgColor();
-        if (this._cell.isBold() && fg < 8 && !swapColor) {
+      } else if (this._workCell.isFgPalette()) {
+        let fg = this._workCell.getFgColor();
+        if (this._workCell.isBold() && fg < 8 && !swapColor &&
+            this._terminalOptions.enableBold && this._terminalOptions.drawBoldTextInBrightColors) {
           fg += 8;
         }
         charElement.classList.add(`xterm-${swapColor ? 'b' : 'f'}g-${fg}`);
@@ -96,12 +104,12 @@ export class DomRendererRowFactory {
       }
 
       // bg
-      if (this._cell.isBgRGB()) {
+      if (this._workCell.isBgRGB()) {
         let style = charElement.getAttribute('style') || '';
-        style += `${swapColor ? '' : 'background-'}color:rgb(${(AttributeData.toColorRGB(this._cell.getBgColor())).join(',')});`;
+        style += `${swapColor ? '' : 'background-'}color:rgb(${(AttributeData.toColorRGB(this._workCell.getBgColor())).join(',')});`;
         charElement.setAttribute('style', style);
-      } else if (this._cell.isBgPalette()) {
-        charElement.classList.add(`xterm-${swapColor ? 'f' : 'b'}g-${this._cell.getBgColor()}`);
+      } else if (this._workCell.isBgPalette()) {
+        charElement.classList.add(`xterm-${swapColor ? 'f' : 'b'}g-${this._workCell.getBgColor()}`);
       } else if (swapColor) {
         charElement.classList.add(`xterm-fg-${INVERTED_DEFAULT_COLOR}`);
       }
