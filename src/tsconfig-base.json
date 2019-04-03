@@ -8,8 +8,6 @@
     "removeComments": true,
     "pretty": true,
 
-    "incremental": true,
-
-    "skipLibCheck": true
+    "incremental": true
   }
 }
