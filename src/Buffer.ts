@@ -265,7 +265,7 @@ export class Buffer implements IBuffer {
   }
 
   private get _isReflowEnabled(): boolean {
-    return this._hasScrollback && !(this._terminal as any).isWinptyCompatEnabled;
+    return this._hasScrollback && !this._terminal.options.windowsMode;
   }
 
   private _reflow(newCols: number, newRows: number): void {
