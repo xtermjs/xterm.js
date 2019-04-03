@@ -898,7 +898,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
       while (param--) {
         buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 1);
-        buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 0, buffer.getBlankLine(DEFAULT_ATTR));
+        buffer.lines.splice(buffer.ybase + buffer.scrollTop, 0, buffer.getBlankLine(DEFAULT_ATTR));
       }
       // this.maxRange();
       this._terminal.updateRange(buffer.scrollTop);
