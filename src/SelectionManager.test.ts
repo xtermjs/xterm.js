@@ -10,7 +10,7 @@ import { SelectionModel } from './SelectionModel';
 import { BufferSet } from './BufferSet';
 import { ITerminal, IBuffer, IBufferLine } from './Types';
 import { MockTerminal } from './ui/TestUtils.test';
-import { BufferLine } from './BufferLine';
+import { BufferLine, CellData } from './BufferLine';
 
 class TestMockTerminal extends MockTerminal {
   emit(event: string, data: any): void {}
@@ -45,8 +45,8 @@ describe('SelectionManager', () => {
 
   beforeEach(() => {
     terminal = new TestMockTerminal();
-    terminal.cols = 80;
-    terminal.rows = 2;
+    (terminal as any).cols = 80;
+    (terminal as any).rows = 2;
     terminal.options.scrollback = 100;
     terminal.buffers = new BufferSet(terminal);
     terminal.buffer = terminal.buffers.active;
@@ -57,14 +57,14 @@ describe('SelectionManager', () => {
   function stringToRow(text: string): IBufferLine {
     const result = new BufferLine(text.length);
     for (let i = 0; i < text.length; i++) {
-      result.set(i, [0, text.charAt(i), 1, text.charCodeAt(i)]);
+      result.setCell(i, CellData.fromCharData([0, text.charAt(i), 1, text.charCodeAt(i)]));
     }
     return result;
   }
 
   function stringArrayToRow(chars: string[]): IBufferLine {
     const line = new BufferLine(chars.length);
-    chars.map((c, idx) => line.set(idx, [0, c, 1, c.charCodeAt(0)]));
+    chars.map((c, idx) => line.setCell(idx, CellData.fromCharData([0, c, 1, c.charCodeAt(0)])));
     return line;
   }
 
@@ -119,7 +119,7 @@ describe('SelectionManager', () => {
         [null, 'o', 1, 'o'.charCodeAt(0)]
       ];
       const line = new BufferLine(data.length);
-      for (let i = 0; i < data.length; ++i) line.set(i, data[i]);
+      for (let i = 0; i < data.length; ++i) line.setCell(i, CellData.fromCharData(data[i]));
       buffer.lines.set(0, line);
       // Ensure wide characters take up 2 columns
       selectionManager.selectWordAt([0, 0]);

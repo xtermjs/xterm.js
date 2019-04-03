@@ -6,9 +6,10 @@
 import { assert, expect } from 'chai';
 import { InputHandler } from './InputHandler';
 import { MockInputHandlingTerminal } from './ui/TestUtils.test';
-import { CHAR_DATA_ATTR_INDEX, DEFAULT_ATTR } from './Buffer';
+import { DEFAULT_ATTR } from './Buffer';
 import { Terminal } from './Terminal';
 import { IBufferLine } from './Types';
+import { CellData } from './BufferLine';
 
 describe('InputHandler', () => {
   describe('save and restore cursor', () => {
@@ -337,7 +338,9 @@ describe('InputHandler', () => {
     it('should not cause an infinite loop (regression test)', () => {
       const term = new Terminal();
       const inputHandler = new InputHandler(term);
-      inputHandler.print(String.fromCharCode(0x200B), 0, 1);
+      const container = new Uint32Array(10);
+      container[0] = 0x200B;
+      inputHandler.print(container, 0, 1);
     });
   });
 
@@ -354,45 +357,45 @@ describe('InputHandler', () => {
       expect(term.buffer.translateBufferLineToString(0, true)).to.equal('');
       expect(term.buffer.translateBufferLineToString(1, true)).to.equal('    TEST');
       // Text color of 'TEST' should be red
-      expect((term.buffer.lines.get(1).get(4)[CHAR_DATA_ATTR_INDEX] >> 9) & 0x1ff).to.equal(1);
+      expect((term.buffer.lines.get(1).loadCell(4, new CellData()).fg >> 9) & 0x1ff).to.equal(1);
     });
     it('should handle DECSET/DECRST 1047 (alt screen buffer)', () => {
       handler.parse('\x1b[?1047h\r\n\x1b[31mJUNK\x1b[?1047lTEST');
       expect(term.buffer.translateBufferLineToString(0, true)).to.equal('');
       expect(term.buffer.translateBufferLineToString(1, true)).to.equal('    TEST');
       // Text color of 'TEST' should be red
-      expect((term.buffer.lines.get(1).get(4)[CHAR_DATA_ATTR_INDEX] >> 9) & 0x1ff).to.equal(1);
+      expect((term.buffer.lines.get(1).loadCell(4, new CellData()).fg >> 9) & 0x1ff).to.equal(1);
     });
     it('should handle DECSET/DECRST 1048 (alt screen cursor)', () => {
       handler.parse('\x1b[?1048h\r\n\x1b[31mJUNK\x1b[?1048lTEST');
       expect(term.buffer.translateBufferLineToString(0, true)).to.equal('TEST');
       expect(term.buffer.translateBufferLineToString(1, true)).to.equal('JUNK');
       // Text color of 'TEST' should be default
-      expect(term.buffer.lines.get(0).get(0)[CHAR_DATA_ATTR_INDEX]).to.equal(DEFAULT_ATTR);
+      expect(term.buffer.lines.get(0).loadCell(0, new CellData()).fg).to.equal(DEFAULT_ATTR);
       // Text color of 'JUNK' should be red
-      expect((term.buffer.lines.get(1).get(0)[CHAR_DATA_ATTR_INDEX] >> 9) & 0x1ff).to.equal(1);
+      expect((term.buffer.lines.get(1).loadCell(0, new CellData()).fg >> 9) & 0x1ff).to.equal(1);
     });
     it('should handle DECSET/DECRST 1049 (alt screen buffer+cursor)', () => {
       handler.parse('\x1b[?1049h\r\n\x1b[31mJUNK\x1b[?1049lTEST');
       expect(term.buffer.translateBufferLineToString(0, true)).to.equal('TEST');
       expect(term.buffer.translateBufferLineToString(1, true)).to.equal('');
       // Text color of 'TEST' should be default
-      expect(term.buffer.lines.get(0).get(0)[CHAR_DATA_ATTR_INDEX]).to.equal(DEFAULT_ATTR);
+      expect(term.buffer.lines.get(0).loadCell(0, new CellData()).fg).to.equal(DEFAULT_ATTR);
     });
     it('should handle DECSET/DECRST 1049 - maintains saved cursor for alt buffer', () => {
       handler.parse('\x1b[?1049h\r\n\x1b[31m\x1b[s\x1b[?1049lTEST');
       expect(term.buffer.translateBufferLineToString(0, true)).to.equal('TEST');
       // Text color of 'TEST' should be default
-      expect(term.buffer.lines.get(0).get(0)[CHAR_DATA_ATTR_INDEX]).to.equal(DEFAULT_ATTR);
+      expect(term.buffer.lines.get(0).loadCell(0, new CellData()).fg).to.equal(DEFAULT_ATTR);
       handler.parse('\x1b[?1049h\x1b[uTEST');
       expect(term.buffer.translateBufferLineToString(1, true)).to.equal('TEST');
       // Text color of 'TEST' should be red
-      expect((term.buffer.lines.get(1).get(0)[CHAR_DATA_ATTR_INDEX] >> 9) & 0x1ff).to.equal(1);
+      expect((term.buffer.lines.get(1).loadCell(0, new CellData()).fg >> 9) & 0x1ff).to.equal(1);
     });
     it('should handle DECSET/DECRST 1049 - clears alt buffer with erase attributes', () => {
       handler.parse('\x1b[42m\x1b[?1049h');
       // Buffer should be filled with green background
-      expect(term.buffer.lines.get(20).get(10)[CHAR_DATA_ATTR_INDEX] & 0x1ff).to.equal(2);
+      expect(term.buffer.lines.get(20).loadCell(10, new CellData()).fg & 0x1ff).to.equal(2);
     });
   });
 });

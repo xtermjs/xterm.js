@@ -4,12 +4,12 @@
  */
 
 import { IRenderLayer, IColorSet, IRenderDimensions } from './Types';
-import { CharData, ITerminal } from '../Types';
+import { ITerminal } from '../Types';
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, IGlyphIdentifier } from './atlas/Types';
 import BaseCharAtlas from './atlas/BaseCharAtlas';
 import { acquireCharAtlas } from './atlas/CharAtlasCache';
-import { CHAR_DATA_CHAR_INDEX } from '../Buffer';
 import { is256Color } from './atlas/CharAtlasUtils';
+import { CellData } from '../BufferLine';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -229,19 +229,19 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * ensure that it fits with the cell, including the cell to the right if it's
    * a wide character. This uses the existing fillStyle on the context.
    * @param terminal The terminal.
-   * @param charData The char data for the character to draw.
+   * @param cell The cell data for the character to draw.
    * @param x The column to draw at.
    * @param y The row to draw at.
    * @param color The color of the character.
    */
-  protected fillCharTrueColor(terminal: ITerminal, charData: CharData, x: number, y: number): void {
+  protected fillCharTrueColor(terminal: ITerminal, cell: CellData, x: number, y: number): void {
     this._ctx.font = this._getFont(terminal, false, false);
     this._ctx.textBaseline = 'middle';
     this._clipRow(terminal, y);
     this._ctx.fillText(
-        charData[CHAR_DATA_CHAR_INDEX],
+        cell.getChars(),
         x * this._scaledCellWidth + this._scaledCharLeft,
-        (y + 0.5) * this._scaledCellHeight + this._scaledCharTop);
+        y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight / 2);
   }
 
   /**
@@ -316,7 +316,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.fillText(
         chars,
         x * this._scaledCellWidth + this._scaledCharLeft,
-        (y + 0.5) * this._scaledCellHeight + this._scaledCharTop);
+        y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight / 2);
     this._ctx.restore();
   }
 

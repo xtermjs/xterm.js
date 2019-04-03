@@ -7,7 +7,6 @@ import { IMouseZoneManager } from './ui/Types';
 import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, ILinkifier, ITerminal, IBufferStringIteratorResult } from './Types';
 import { MouseZone } from './ui/MouseZoneManager';
 import { EventEmitter } from './common/EventEmitter';
-import { CHAR_DATA_ATTR_INDEX } from './Buffer';
 import { getStringCellWidth } from './CharWidth';
 
 /**
@@ -232,10 +231,9 @@ export class Linkifier extends EventEmitter implements ILinkifier {
       }
 
       const line = this._terminal.buffer.lines.get(bufferIndex[0]);
-      const char = line.get(bufferIndex[1]);
+      const attr = line.getFg(bufferIndex[1]);
       let fg: number | undefined;
-      if (char) {
-        const attr: number = char[CHAR_DATA_ATTR_INDEX];
+      if (attr) {
         fg = (attr >> 9) & 0x1ff;
       }
 

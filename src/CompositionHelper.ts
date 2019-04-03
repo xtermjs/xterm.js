@@ -111,17 +111,17 @@ export class CompositionHelper {
   /**
    * Finalizes the composition, resuming regular input actions. This is called when a composition
    * is ending.
-   * @param waitForPropogation Whether to wait for events to propogate before sending
+   * @param waitForPropagation Whether to wait for events to propagate before sending
    *   the input. This should be false if a non-composition keystroke is entered before the
-   *   compositionend event is triggered, such as enter, so that the composition is send before
+   *   compositionend event is triggered, such as enter, so that the composition is sent before
    *   the command is executed.
    */
-  private _finalizeComposition(waitForPropogation: boolean): void {
+  private _finalizeComposition(waitForPropagation: boolean): void {
     this._compositionView.classList.remove('active');
     this._isComposing = false;
     this._clearTextareaPosition();
 
-    if (!waitForPropogation) {
+    if (!waitForPropagation) {
       // Cancel any delayed composition send requests and send the input immediately.
       this._isSendingComposition = false;
       const input = this._textarea.value.substring(this._compositionPosition.start, this._compositionPosition.end);
@@ -136,8 +136,8 @@ export class CompositionHelper {
 
       // Since composition* events happen before the changes take place in the textarea on most
       // browsers, use a setTimeout with 0ms time to allow the native compositionend event to
-      // complete. This ensures the correct character is retrieved, this solution was used
-      // because:
+      // complete. This ensures the correct character is retrieved.
+      // This solution was used because:
       // - The compositionend event's data property is unreliable, at least on Chromium
       // - The last compositionupdate event's data property does not always accurately describe
       //   the character, a counter example being Korean where an ending consonsant can move to
@@ -203,6 +203,8 @@ export class CompositionHelper {
       this._compositionView.style.top = cursorTop + 'px';
       this._compositionView.style.height = cellHeight + 'px';
       this._compositionView.style.lineHeight = cellHeight + 'px';
+      this._compositionView.style.fontFamily = this._terminal.options.fontFamily;
+      this._compositionView.style.fontSize = this._terminal.options.fontSize + 'px';
       // Sync the textarea to the exact position of the composition view so the IME knows where the
       // text is.
       const compositionViewBounds = this._compositionView.getBoundingClientRect();

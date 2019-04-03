@@ -25,7 +25,7 @@ import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions
 import { IMouseZoneManager } from './ui/Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
-import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, CHAR_DATA_ATTR_INDEX } from './Buffer';
+import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from './Buffer';
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './common/EventEmitter';
 import { Viewport } from './Viewport';
@@ -65,10 +65,15 @@ const document = (typeof window !== 'undefined') ? window.document : null;
 const WRITE_BUFFER_PAUSE_THRESHOLD = 5;
 
 /**
- * The number of writes to perform in a single batch before allowing the
- * renderer to catch up with a 0ms setTimeout.
+ * The max number of ms to spend on writes before allowing the renderer to
+ * catch up with a 0ms setTimeout. A value of < 33 to keep us close to
+ * 30fps, and a value of < 16 to try to run at 60fps. Of course, the real FPS
+ * depends on the time it takes for the renderer to draw the frame.
  */
-const WRITE_BATCH_SIZE = 300;
+const WRITE_TIMEOUT_MS = 12;
+
+const MINIMUM_COLS = 2; // Less than 2 can mess with wide chars
+const MINIMUM_ROWS = 1;
 
 /**
  * The set of options that only have an effect when set in the Terminal constructor.
@@ -264,8 +269,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // TODO: WHy not document.body?
     this._parent = document ? document.body : null;
 
-    this.cols = this.options.cols;
-    this.rows = this.options.rows;
+    this.cols = Math.max(this.options.cols, MINIMUM_COLS);
+    this.rows = Math.max(this.options.rows, MINIMUM_ROWS);
 
     if (this.options.handler) {
       this.on('data', this.options.handler);
@@ -341,7 +346,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   public focus(): void {
     if (this.textarea) {
-      this.textarea.focus();
+      this.textarea.focus({ preventScroll: true });
     }
   }
 
@@ -566,12 +571,12 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // Firefox doesn't appear to fire the contextmenu event on right click
       this.register(addDisposableDomListener(this.element, 'mousedown', (event: MouseEvent) => {
         if (event.button === 2) {
-          rightClickHandler(event, this.textarea, this.selectionManager, this.options.rightClickSelectsWord);
+          rightClickHandler(event, this, this.selectionManager, this.options.rightClickSelectsWord);
         }
       }));
     } else {
       this.register(addDisposableDomListener(this.element, 'contextmenu', (event: MouseEvent) => {
-        rightClickHandler(event, this.textarea, this.selectionManager, this.options.rightClickSelectsWord);
+        rightClickHandler(event, this, this.selectionManager, this.options.rightClickSelectsWord);
       }));
     }
 
@@ -583,7 +588,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // that the regular click event doesn't fire for the middle mouse button.
       this.register(addDisposableDomListener(this.element, 'auxclick', (event: MouseEvent) => {
         if (event.button === 1) {
-          moveTextAreaUnderMouseCursor(event, this.textarea);
+          moveTextAreaUnderMouseCursor(event, this);
         }
       }));
     }
@@ -736,6 +741,13 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this.selectionManager.refresh()));
 
     this.mouseHelper = new MouseHelper(this.renderer);
+    // apply mouse event classes set by escape codes before terminal was attached
+    this.element.classList.toggle('enable-mouse-events', this.mouseEvents);
+    if (this.mouseEvents) {
+      this.selectionManager.disable();
+    } else {
+      this.selectionManager.enable();
+    }
 
     if (this.options.screenReaderMode) {
       // Note that this must be done *after* the renderer is created in order to
@@ -852,17 +864,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         if (ch > 127) ch = 127;
         data.push(ch);
       } else {
-        if (ch === 2047) {
-          data.push(0);
+        if (ch > 2047) {
+          data.push(2047);
           return;
         }
-        if (ch < 127) {
-          data.push(ch);
-        } else {
-          if (ch > 2047) ch = 2047;
-          data.push(0xC0 | (ch >> 6));
-          data.push(0x80 | (ch & 0x3F));
-        }
+        data.push(ch);
       }
     }
 
@@ -1178,7 +1184,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public scroll(isWrapped: boolean = false): void {
     let newLine: IBufferLine;
     newLine = this._blankLine;
-    if (!newLine || newLine.length !== this.cols || newLine.get(0)[CHAR_DATA_ATTR_INDEX] !== this.eraseAttr()) {
+    if (!newLine || newLine.length !== this.cols || newLine.getFg(0) !== this.eraseAttr()) {
       newLine = this.buffer.getBlankLine(this.eraseAttr(), isWrapped);
       this._blankLine = newLine;
     }
@@ -1341,19 +1347,20 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
   }
 
-  protected _innerWrite(): void {
+  protected _innerWrite(bufferOffset: number = 0): void {
     // Ensure the terminal isn't disposed
     if (this._isDisposed) {
       this.writeBuffer = [];
     }
 
-    const writeBatch = this.writeBuffer.splice(0, WRITE_BATCH_SIZE);
-    while (writeBatch.length > 0) {
-      const data = writeBatch.shift();
+    const startTime = Date.now();
+    while (this.writeBuffer.length > bufferOffset) {
+      const data = this.writeBuffer[bufferOffset];
+      bufferOffset++;
 
       // If XOFF was sent in order to catch up with the pty process, resume it if
-      // the writeBuffer is empty to allow more data to come in.
-      if (this._xoffSentToCatchUp && writeBatch.length === 0 && this.writeBuffer.length === 0) {
+      // we reached the end of the writeBuffer to allow more data to come in.
+      if (this._xoffSentToCatchUp && this.writeBuffer.length === bufferOffset) {
         this.handler(C0.DC1);
         this._xoffSentToCatchUp = false;
       }
@@ -1371,12 +1378,17 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
       this.updateRange(this.buffer.y);
       this.refresh(this._refreshStart, this._refreshEnd);
+
+      if (Date.now() - startTime >= WRITE_TIMEOUT_MS) {
+        break;
+      }
     }
-    if (this.writeBuffer.length > 0) {
+    if (this.writeBuffer.length > bufferOffset) {
       // Allow renderer to catch up before processing the next batch
-      setTimeout(() => this._innerWrite(), 0);
+      setTimeout(() => this._innerWrite(bufferOffset), 0);
     } else {
       this._writeInProgress = false;
+      this.writeBuffer = [];
     }
   }
 
@@ -1394,7 +1406,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * processed by the terminal and what keys should not.
    * @param customKeyEventHandler The custom KeyboardEvent handler to attach.
    * This is a function that takes a KeyboardEvent, allowing consumers to stop
-   * propogation and/or prevent the default action. The function returns whether
+   * propagation and/or prevent the default action. The function returns whether
    * the event should be processed by xterm.js.
    */
   public attachCustomKeyEventHandler(customKeyEventHandler: CustomKeyEventHandler): void {
@@ -1694,8 +1706,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       return;
     }
 
-    if (x < 1) x = 1;
-    if (y < 1) y = 1;
+    if (x < MINIMUM_COLS) x = MINIMUM_COLS;
+    if (y < MINIMUM_ROWS) y = MINIMUM_ROWS;
 
     this.buffers.resize(x, y);
 

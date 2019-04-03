@@ -9,7 +9,7 @@ import { ILinkMatcher, ITerminal, IBufferLine } from './Types';
 import { Linkifier } from './Linkifier';
 import { MockBuffer, MockTerminal, TestTerminal } from './ui/TestUtils.test';
 import { CircularList } from './common/CircularList';
-import { BufferLine } from './BufferLine';
+import { BufferLine, CellData } from './BufferLine';
 
 class TestLinkifier extends Linkifier {
   constructor(terminal: ITerminal) {
@@ -41,8 +41,8 @@ describe('Linkifier', () => {
 
   beforeEach(() => {
     terminal = new MockTerminal();
-    terminal.cols = 100;
-    terminal.rows = 10;
+    (terminal as any).cols = 100;
+    (terminal as any).rows = 10;
     terminal.buffer = new MockBuffer();
     (<MockBuffer>terminal.buffer).setLines(new CircularList<IBufferLine>(20));
     terminal.buffer.ydisp = 0;
@@ -53,7 +53,7 @@ describe('Linkifier', () => {
   function stringToRow(text: string): IBufferLine {
     const result = new BufferLine(text.length);
     for (let i = 0; i < text.length; i++) {
-      result.set(i, [0, text.charAt(i), 1, text.charCodeAt(i)]);
+      result.setCell(i, CellData.fromCharData([0, text.charAt(i), 1, text.charCodeAt(i)]));
     }
     return result;
   }
@@ -65,7 +65,7 @@ describe('Linkifier', () => {
   function assertLinkifiesRow(rowText: string, linkMatcherRegex: RegExp, links: {x: number, length: number}[], done: MochaDone): void {
     addRow(rowText);
     linkifier.registerLinkMatcher(linkMatcherRegex, () => {});
-    terminal.rows = terminal.buffer.lines.length - 1;
+    (terminal as any).rows = terminal.buffer.lines.length - 1;
     linkifier.linkifyRows();
     // Allow linkify to happen
     setTimeout(() => {
@@ -142,19 +142,19 @@ describe('Linkifier', () => {
       });
       describe('multi-line links', () => {
         it('should match links that start on line 1/2 of a wrapped line and end on the last character of line 1/2', done => {
-          terminal.cols = 4;
+          (terminal as any).cols = 4;
           assertLinkifiesMultiLineLink('12345', /1234/, [{x1: 0, x2: 4, y1: 0, y2: 0}], done);
         });
         it('should match links that start on line 1/2 of a wrapped line and wrap to line 2/2', done => {
-          terminal.cols = 4;
+          (terminal as any).cols = 4;
           assertLinkifiesMultiLineLink('12345', /12345/, [{x1: 0, x2: 1, y1: 0, y2: 1}], done);
         });
         it('should match links that start and end on line 2/2 of a wrapped line', done => {
-          terminal.cols = 4;
+          (terminal as any).cols = 4;
           assertLinkifiesMultiLineLink('12345678', /5678/, [{x1: 0, x2: 4, y1: 1, y2: 1}], done);
         });
         it('should match links that start on line 2/3 of a wrapped line and wrap to line 3/3', done => {
-          terminal.cols = 4;
+          (terminal as any).cols = 4;
           assertLinkifiesMultiLineLink('123456789', /56789/, [{x1: 0, x2: 1, y1: 1, y2: 2}], done);
         });
       });
