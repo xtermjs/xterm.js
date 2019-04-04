@@ -3,9 +3,19 @@
  * @license MIT
  */
 
-import { IEventEmitter } from 'xterm';
 import { IEvent, EventEmitter2 } from './EventEmitter2';
 import { IDeleteEvent, IInsertEvent } from './CircularList';
+
+export interface IDisposable {
+  dispose(): void;
+}
+
+export interface IEventEmitter {
+  on(type: string, listener: (...args: any[]) => void): void;
+  off(type: string, listener: (...args: any[]) => void): void;
+  emit(type: string, data?: any): void;
+  addDisposableListener(type: string, handler: (...args: any[]) => void): IDisposable;
+}
 
 export type XtermListener = (...args: any[]) => void;
 

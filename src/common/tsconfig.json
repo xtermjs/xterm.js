@@ -1,9 +1,10 @@
 {
   "extends": "../tsconfig-library-base",
   "compilerOptions": {
-    "outDir": "../../lib"
+    "outDir": "../../lib",
+    "types": [
+      "../../node_modules/@types/mocha"
+    ]
   },
-  "include": [
-    "./**/*"
-  ]
+  "include": [ "./**/*" ]
 }

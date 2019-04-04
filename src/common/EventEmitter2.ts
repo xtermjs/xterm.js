@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IDisposable } from 'xterm';
+import { IDisposable } from './Types';
 
 type Listener<T> = (e: T) => void;
 
