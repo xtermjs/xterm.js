@@ -180,10 +180,6 @@ function runFakeTerminal(): void {
       term.write(e.key);
     }
   });
-
-  term._core.register(term.addDisposableListener('paste', (data, ev) => {
-    term.write(data);
-  }));
 }
 
 function initOptions(term: TerminalType): void {
