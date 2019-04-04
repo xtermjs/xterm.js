@@ -5,14 +5,16 @@
 
 import { IDisposable } from './Types';
 
-type Listener<T> = (e: T) => void;
+interface IListener<T> {
+  (e: T): void;
+}
 
 export interface IEvent<T> {
   (listener: (e: T) => any): IDisposable;
 }
 
 export class EventEmitter2<T> {
-  private _listeners: Listener<T>[] = [];
+  private _listeners: IListener<T>[] = [];
   private _event?: IEvent<T>;
 
   public get event(): IEvent<T> {
@@ -36,7 +38,7 @@ export class EventEmitter2<T> {
   }
 
   public fire(data: T): void {
-    const queue: Listener<T>[] = [];
+    const queue: IListener<T>[] = [];
     for (let i = 0; i < this._listeners.length; i++) {
       queue.push(this._listeners[i]);
     }
