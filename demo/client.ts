@@ -86,7 +86,7 @@ function createTerminal(): void {
     windowsMode: isWindows
   } as ITerminalOptions);
   window.term = term;  // Expose `term` to window for debugging purposes
-  term.on('resize', (size: { cols: number, rows: number }) => {
+  term.onResize((size: { cols: number, rows: number }) => {
     if (!pid) {
       return;
     }
