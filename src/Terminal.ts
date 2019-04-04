@@ -266,9 +266,12 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.on('data', e => this._onInput.fire(e));
     this.on('title', e => this._onTitleChange.fire(e));
     this.on('scroll', e => this._onScroll.fire(e));
-    this.on('key', e => this._onKey.fire(e));
     this.on('refresh', e => this._onRender.fire(e));
     this.on('resize', e => this._onResize.fire(e));
+
+    // TODO: Remove these in v4
+    // Fire old style events from new emitters
+    this.onKey(e => this.emit('key', e.key, e.domEvent));
   }
 
   public dispose(): void {
@@ -1615,7 +1618,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
 
     this.emit('keydown', event);
-    this.emit('key', result.key, event);
+    this._onKey.fire({ key: result.key, domEvent: event });
     this.showCursor();
     this.handler(result.key);
 
@@ -1694,7 +1697,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     key = String.fromCharCode(key);
 
     this.emit('keypress', key, ev);
-    this.emit('key', key, ev);
+    this._onKey.fire({ key, domEvent: ev });
     this.showCursor();
     this.handler(key);
 
