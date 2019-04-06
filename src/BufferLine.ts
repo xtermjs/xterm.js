@@ -77,7 +77,7 @@ export const enum Content {
 }
 
 
-export enum Attributes {
+export const enum Attributes {
   /**
    * bit 1..8     blue in RGB, color in P256 and P16
    */
@@ -113,7 +113,7 @@ export enum Attributes {
   RGB_MASK = 0xFFFFFF
 }
 
-export enum FgFlags {
+export const enum FgFlags {
   /**
    * bit 27..31 (32th bit unused)
    */
@@ -124,7 +124,7 @@ export enum FgFlags {
   INVISIBLE = 0x40000000
 }
 
-export enum BgFlags {
+export const enum BgFlags {
   /**
    * bit 27..32 (upper 4 unused)
    */
