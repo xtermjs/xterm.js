@@ -540,8 +540,8 @@ export interface IAttributeData {
   isDim(): number;
 
   // color modes
-  getFgColormode(): number;
-  getBgColormode(): number;
+  getFgColorMode(): number;
+  getBgColorMode(): number;
   isFgRGB(): boolean;
   isBgRGB(): boolean;
   isFgPalette(): boolean;

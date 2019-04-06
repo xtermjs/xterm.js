@@ -165,8 +165,8 @@ export class AttributeData implements IAttributeData {
   public isDim(): number       { return this.bg & BgFlags.DIM; }
 
   // color modes
-  public getFgColormode(): number { return this.fg & Attributes.CM_MASK; }
-  public getBgColormode(): number { return this.bg & Attributes.CM_MASK; }
+  public getFgColorMode(): number { return this.fg & Attributes.CM_MASK; }
+  public getBgColorMode(): number { return this.bg & Attributes.CM_MASK; }
   public isFgRGB(): boolean       { return (this.fg & Attributes.CM_MASK) === Attributes.CM_RGB; }
   public isBgRGB(): boolean       { return (this.bg & Attributes.CM_MASK) === Attributes.CM_RGB; }
   public isFgPalette(): boolean   { return (this.fg & Attributes.CM_MASK) === Attributes.CM_P16 || (this.fg & Attributes.CM_MASK) === Attributes.CM_P256; }
