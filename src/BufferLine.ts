@@ -36,7 +36,7 @@ const enum Cell {
 /**
  * Bitmasks for accessing data in `content`.
  */
-export const enum ContentMasks {
+export const enum Content {
   /**
    * bit 1..21    codepoint, max allowed in UTF32 is 0x10FFFF (21 bits taken)
    *              read:   `codepoint = content & Content.codepointMask;`
@@ -44,7 +44,7 @@ export const enum ContentMasks {
    *                      shortcut if precondition `codepoint <= 0x10FFFF` is met:
    *                      `content |= codepoint;`
    */
-  CODEPOINT = 0x1FFFFF,
+  CODEPOINT_MASK = 0x1FFFFF,
 
   /**
    * bit 22       flag indication whether a cell contains combined content
@@ -52,7 +52,7 @@ export const enum ContentMasks {
    *              set:    `content |= Content.isCombined;`
    *              clear:  `content &= ~Content.isCombined;`
    */
-  IS_COMBINED = 0x200000,  // 1 << 21
+  IS_COMBINED_MASK = 0x200000,  // 1 << 21
 
   /**
    * bit 1..22    mask to check whether a cell contains any string data
@@ -60,7 +60,7 @@ export const enum ContentMasks {
    *              whether a cell contains anything
    *              read:   `isEmtpy = !(content & Content.hasContent)`
    */
-  HAS_CONTENT = 0x3FFFFF,
+  HAS_CONTENT_MASK = 0x3FFFFF,
 
   /**
    * bit 23..24   wcwidth value of cell, takes 2 bits (ranges from 0..2)
@@ -72,10 +72,10 @@ export const enum ContentMasks {
    *                      shortcut if precondition `0 <= width <= 3` is met:
    *                      `content |= width << Content.widthShift;`
    */
-  WIDTH = 0xC00000    // 3 << 22
+  WIDTH_MASK = 0xC00000,   // 3 << 22
+  WIDTH_SHIFT = 22
 }
 
-export const WIDTH_MASK_SHIFT = 22;
 
 export enum Attributes {
   /**
@@ -213,21 +213,21 @@ export class CellData extends AttributeData implements ICellData {
 
   /** Whether cell contains a combined string. */
   public isCombined(): number {
-    return this.content & ContentMasks.IS_COMBINED;
+    return this.content & Content.IS_COMBINED_MASK;
   }
 
   /** Width of the cell. */
   public getWidth(): number {
-    return this.content >> WIDTH_MASK_SHIFT;
+    return this.content >> Content.WIDTH_SHIFT;
   }
 
   /** JS string of the content. */
   public getChars(): string {
-    if (this.content & ContentMasks.IS_COMBINED) {
+    if (this.content & Content.IS_COMBINED_MASK) {
       return this.combinedData;
     }
-    if (this.content & ContentMasks.CODEPOINT) {
-      return stringFromCodePoint(this.content & ContentMasks.CODEPOINT);
+    if (this.content & Content.CODEPOINT_MASK) {
+      return stringFromCodePoint(this.content & Content.CODEPOINT_MASK);
     }
     return '';
   }
@@ -241,7 +241,7 @@ export class CellData extends AttributeData implements ICellData {
   public getCode(): number {
     return (this.isCombined())
       ? this.combinedData.charCodeAt(this.combinedData.length - 1)
-      : this.content & ContentMasks.CODEPOINT;
+      : this.content & Content.CODEPOINT_MASK;
   }
 
   /** Set data from CharData */
@@ -260,7 +260,7 @@ export class CellData extends AttributeData implements ICellData {
       if (0xD800 <= code && code <= 0xDBFF) {
         const second = value[CHAR_DATA_CHAR_INDEX].charCodeAt(1);
         if (0xDC00 <= second && second <= 0xDFFF) {
-          this.content = ((code - 0xD800) * 0x400 + second - 0xDC00 + 0x10000) | (value[CHAR_DATA_WIDTH_INDEX] << WIDTH_MASK_SHIFT);
+          this.content = ((code - 0xD800) * 0x400 + second - 0xDC00 + 0x10000) | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
         } else {
           combined = true;
         }
@@ -268,11 +268,11 @@ export class CellData extends AttributeData implements ICellData {
         combined = true;
       }
     } else {
-      this.content = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0) | (value[CHAR_DATA_WIDTH_INDEX] << WIDTH_MASK_SHIFT);
+      this.content = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0) | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
     }
     if (combined) {
       this.combinedData = value[CHAR_DATA_CHAR_INDEX];
-      this.content = ContentMasks.IS_COMBINED | (value[CHAR_DATA_WIDTH_INDEX] << WIDTH_MASK_SHIFT);
+      this.content = Content.IS_COMBINED_MASK | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
     }
   }
 
@@ -320,14 +320,14 @@ export class BufferLine implements IBufferLine {
    */
   public get(index: number): CharData {
     const content = this._data[index * CELL_SIZE + Cell.CONTENT];
-    const cp = content & ContentMasks.CODEPOINT;
+    const cp = content & Content.CODEPOINT_MASK;
     return [
       this._data[index * CELL_SIZE + Cell.FG],
-      (content & ContentMasks.IS_COMBINED)
+      (content & Content.IS_COMBINED_MASK)
         ? this._combined[index]
         : (cp) ? stringFromCodePoint(cp) : '',
-      content >> WIDTH_MASK_SHIFT,
-      (content & ContentMasks.IS_COMBINED)
+      content >> Content.WIDTH_SHIFT,
+      (content & Content.IS_COMBINED_MASK)
         ? this._combined[index].charCodeAt(this._combined[index].length - 1)
         : cp
     ];
@@ -341,9 +341,9 @@ export class BufferLine implements IBufferLine {
     this._data[index * CELL_SIZE + Cell.FG] = value[CHAR_DATA_ATTR_INDEX];
     if (value[CHAR_DATA_CHAR_INDEX].length > 1) {
       this._combined[index] = value[1];
-      this._data[index * CELL_SIZE + Cell.CONTENT] = index | ContentMasks.IS_COMBINED | (value[CHAR_DATA_WIDTH_INDEX] << WIDTH_MASK_SHIFT);
+      this._data[index * CELL_SIZE + Cell.CONTENT] = index | Content.IS_COMBINED_MASK | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
     } else {
-      this._data[index * CELL_SIZE + Cell.CONTENT] = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0) | (value[CHAR_DATA_WIDTH_INDEX] << WIDTH_MASK_SHIFT);
+      this._data[index * CELL_SIZE + Cell.CONTENT] = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0) | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
     }
   }
 
@@ -352,12 +352,12 @@ export class BufferLine implements IBufferLine {
    * use these when only one value is needed, otherwise use `loadCell`
    */
   public getWidth(index: number): number {
-    return this._data[index * CELL_SIZE + Cell.CONTENT] >> WIDTH_MASK_SHIFT;
+    return this._data[index * CELL_SIZE + Cell.CONTENT] >> Content.WIDTH_SHIFT;
   }
 
   /** Test whether content has width. */
   public hasWidth(index: number): number {
-    return this._data[index * CELL_SIZE + Cell.CONTENT] & ContentMasks.WIDTH;
+    return this._data[index * CELL_SIZE + Cell.CONTENT] & Content.WIDTH_MASK;
   }
 
   /** Get FG cell component. */
@@ -376,7 +376,7 @@ export class BufferLine implements IBufferLine {
    * from real empty cells.
    * */
   public hasContent(index: number): number {
-    return this._data[index * CELL_SIZE + Cell.CONTENT] & ContentMasks.HAS_CONTENT;
+    return this._data[index * CELL_SIZE + Cell.CONTENT] & Content.HAS_CONTENT_MASK;
   }
 
   /**
@@ -386,25 +386,25 @@ export class BufferLine implements IBufferLine {
    */
   public getCodePoint(index: number): number {
     const content = this._data[index * CELL_SIZE + Cell.CONTENT];
-    if (content & ContentMasks.IS_COMBINED) {
+    if (content & Content.IS_COMBINED_MASK) {
       return this._combined[index].charCodeAt(this._combined[index].length - 1);
     }
-    return content & ContentMasks.CODEPOINT;
+    return content & Content.CODEPOINT_MASK;
   }
 
   /** Test whether the cell contains a combined string. */
   public isCombined(index: number): number {
-    return this._data[index * CELL_SIZE + Cell.CONTENT] & ContentMasks.IS_COMBINED;
+    return this._data[index * CELL_SIZE + Cell.CONTENT] & Content.IS_COMBINED_MASK;
   }
 
   /** Returns the string content of the cell. */
   public getString(index: number): string {
     const content = this._data[index * CELL_SIZE + Cell.CONTENT];
-    if (content & ContentMasks.IS_COMBINED) {
+    if (content & Content.IS_COMBINED_MASK) {
       return this._combined[index];
     }
-    if (content & ContentMasks.CODEPOINT) {
-      return stringFromCodePoint(content & ContentMasks.CODEPOINT);
+    if (content & Content.CODEPOINT_MASK) {
+      return stringFromCodePoint(content & Content.CODEPOINT_MASK);
     }
     // return empty string for empty cells
     return '';
@@ -419,7 +419,7 @@ export class BufferLine implements IBufferLine {
     cell.content = this._data[startIndex + Cell.CONTENT];
     cell.fg = this._data[startIndex + Cell.FG];
     cell.bg = this._data[startIndex + Cell.BG];
-    if (cell.content & ContentMasks.IS_COMBINED) {
+    if (cell.content & Content.IS_COMBINED_MASK) {
       cell.combinedData = this._combined[index];
     }
     return cell;
@@ -429,7 +429,7 @@ export class BufferLine implements IBufferLine {
    * Set data at `index` to `cell`.
    */
   public setCell(index: number, cell: ICellData): void {
-    if (cell.content & ContentMasks.IS_COMBINED) {
+    if (cell.content & Content.IS_COMBINED_MASK) {
       this._combined[index] = cell.combinedData;
     }
     this._data[index * CELL_SIZE + Cell.CONTENT] = cell.content;
@@ -443,7 +443,7 @@ export class BufferLine implements IBufferLine {
    * it gets an optimized access method.
    */
   public setCellFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number): void {
-    this._data[index * CELL_SIZE + Cell.CONTENT] = codePoint | (width << WIDTH_MASK_SHIFT);
+    this._data[index * CELL_SIZE + Cell.CONTENT] = codePoint | (width << Content.WIDTH_SHIFT);
     this._data[index * CELL_SIZE + Cell.FG] = fg;
     this._data[index * CELL_SIZE + Cell.BG] = bg;
   }
@@ -456,21 +456,21 @@ export class BufferLine implements IBufferLine {
    */
   public addCodepointToCell(index: number, codePoint: number): void {
     let content = this._data[index * CELL_SIZE + Cell.CONTENT];
-    if (content & ContentMasks.IS_COMBINED) {
+    if (content & Content.IS_COMBINED_MASK) {
       // we already have a combined string, simply add
       this._combined[index] += stringFromCodePoint(codePoint);
     } else {
-      if (content & ContentMasks.CODEPOINT) {
+      if (content & Content.CODEPOINT_MASK) {
         // normal case for combining chars:
         //  - move current leading char + new one into combined string
         //  - set combined flag
-        this._combined[index] = stringFromCodePoint(content & ContentMasks.CODEPOINT) + stringFromCodePoint(codePoint);
-        content &= ~ContentMasks.CODEPOINT; // set codepoint in buffer to 0
-        content |= ContentMasks.IS_COMBINED;
+        this._combined[index] = stringFromCodePoint(content & Content.CODEPOINT_MASK) + stringFromCodePoint(codePoint);
+        content &= ~Content.CODEPOINT_MASK; // set codepoint in buffer to 0
+        content |= Content.IS_COMBINED_MASK;
       } else {
         // should not happen - we actually have no data in the cell yet
         // simply set the data in the cell buffer with a width of 1
-        content = codePoint | (1 << WIDTH_MASK_SHIFT);
+        content = codePoint | (1 << Content.WIDTH_SHIFT);
       }
       this._data[index * CELL_SIZE + Cell.CONTENT] = content;
     }
@@ -592,8 +592,8 @@ export class BufferLine implements IBufferLine {
 
   public getTrimmedLength(): number {
     for (let i = this.length - 1; i >= 0; --i) {
-      if ((this._data[i * CELL_SIZE + Cell.CONTENT] & ContentMasks.HAS_CONTENT)) {
-        return i + (this._data[i * CELL_SIZE + Cell.CONTENT] >> WIDTH_MASK_SHIFT);
+      if ((this._data[i * CELL_SIZE + Cell.CONTENT] & Content.HAS_CONTENT_MASK)) {
+        return i + (this._data[i * CELL_SIZE + Cell.CONTENT] >> Content.WIDTH_SHIFT);
       }
     }
     return 0;
@@ -632,9 +632,9 @@ export class BufferLine implements IBufferLine {
     let result = '';
     while (startCol < endCol) {
       const content = this._data[startCol * CELL_SIZE + Cell.CONTENT];
-      const cp = content & ContentMasks.CODEPOINT;
-      result += (content & ContentMasks.IS_COMBINED) ? this._combined[startCol] : (cp) ? stringFromCodePoint(cp) : WHITESPACE_CELL_CHAR;
-      startCol += (content >> WIDTH_MASK_SHIFT) || 1; // always advance by 1
+      const cp = content & Content.CODEPOINT_MASK;
+      result += (content & Content.IS_COMBINED_MASK) ? this._combined[startCol] : (cp) ? stringFromCodePoint(cp) : WHITESPACE_CELL_CHAR;
+      startCol += (content >> Content.WIDTH_SHIFT) || 1; // always advance by 1
     }
     return result;
   }

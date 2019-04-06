@@ -8,7 +8,7 @@ import { IColorSet, IRenderDimensions, ICharacterJoinerRegistry } from './Types'
 import { CharData, ITerminal, ICellData } from '../Types';
 import { GridCache } from './GridCache';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { CellData, AttributeData, ContentMasks, WIDTH_MASK_SHIFT } from '../BufferLine';
+import { CellData, AttributeData, Content } from '../BufferLine';
 
 /**
  * This CharData looks like a null character, which will forc a clear and render
@@ -117,8 +117,8 @@ export class TextRenderLayer extends BaseRenderLayer {
           // this._state.cache[x][y] = OVERLAP_OWNED_CHAR_DATA;
           if (lastCharX < line.length - 1 && line.getCodePoint(lastCharX + 1) === NULL_CELL_CODE) {
             // patch width to 2
-            cell.content &= ~ContentMasks.WIDTH;
-            cell.content |= 2 << WIDTH_MASK_SHIFT;
+            cell.content &= ~Content.WIDTH_MASK;
+            cell.content |= 2 << Content.WIDTH_SHIFT;
             // this._clearChar(x + 1, y);
             // The overlapping char's char data will force a clear and render when the
             // overlapping char is no longer to the left of the character and also when
