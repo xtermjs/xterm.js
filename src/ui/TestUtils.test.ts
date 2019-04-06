@@ -4,10 +4,10 @@
  */
 
 import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../renderer/Types';
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferLine, IBufferStringIterator } from '../Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferLine, IBufferStringIterator, ICellData } from '../Types';
 import { ICircularList, XtermListener } from '../common/Types';
 import { Buffer } from '../Buffer';
-import * as Browser from '../core/Platform';
+import * as Browser from '../common/Platform';
 import { ITheme, IDisposable, IMarker } from 'xterm';
 import { Terminal } from '../Terminal';
 
@@ -333,6 +333,12 @@ export class MockBuffer implements IBuffer {
   }
   iterator(trimRight: boolean, startIndex?: number, endIndex?: number): IBufferStringIterator {
     return Buffer.prototype.iterator.apply(this, arguments);
+  }
+  getNullCell(fg: number = 0, bg: number = 0): ICellData {
+    throw new Error('Method not implemented.');
+  }
+  getWhitespaceCell(fg: number = 0, bg: number = 0): ICellData {
+    throw new Error('Method not implemented.');
   }
 }
 

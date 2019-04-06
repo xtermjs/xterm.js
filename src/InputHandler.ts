@@ -7,7 +7,7 @@
 import { IInputHandler, IDcsHandler, IEscapeSequenceParser, IBuffer, IInputHandlingTerminal } from './Types';
 import { C0, C1 } from './common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from './core/data/Charsets';
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from './Buffer';
+import { DEFAULT_ATTR, NULL_CELL_WIDTH, NULL_CELL_CODE } from './Buffer';
 import { FLAGS } from './renderer/Types';
 import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
@@ -16,6 +16,7 @@ import { IDisposable } from 'xterm';
 import { Disposable } from './common/Lifecycle';
 import { concat } from './common/TypedArrayUtils';
 import { StringToUtf32, stringFromCodePoint, utf32ToString } from './core/input/TextDecoder';
+import { CellData } from './BufferLine';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -105,6 +106,7 @@ class DECRQSS implements IDcsHandler {
 export class InputHandler extends Disposable implements IInputHandler {
   private _parseBuffer: Uint32Array = new Uint32Array(4096);
   private _stringDecoder: StringToUtf32 = new StringToUtf32();
+  private _workCell: CellData = new CellData();
 
   constructor(
       protected _terminal: IInputHandlingTerminal,
@@ -301,9 +303,6 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (this._parseBuffer.length < data.length) {
       this._parseBuffer = new Uint32Array(data.length);
     }
-    for (let i = 0; i < data.length; ++i) {
-      this._parseBuffer[i] = data.charCodeAt(i);
-    }
     this._parser.parse(this._parseBuffer, this._stringDecoder.decode(data, this._parseBuffer));
 
     buffer = this._terminal.buffer;
@@ -314,7 +313,6 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   public print(data: Uint32Array, start: number, end: number): void {
     let code: number;
-    let char: string;
     let chWidth: number;
     const buffer: IBuffer = this._terminal.buffer;
     const charset: ICharset = this._terminal.charset;
@@ -328,25 +326,23 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._terminal.updateRange(buffer.y);
     for (let pos = start; pos < end; ++pos) {
       code = data[pos];
-      char = stringFromCodePoint(code);
 
       // calculate print space
       // expensive call, therefore we save width in line buffer
       chWidth = wcwidth(code);
 
       // get charset replacement character
-      // charset are only defined for ASCII, therefore we only
+      // charset is only defined for ASCII, therefore we only
       // search for an replacement char if code < 127
       if (code < 127 && charset) {
-        const ch = charset[char];
+        const ch = charset[String.fromCharCode(code)];
         if (ch) {
           code = ch.charCodeAt(0);
-          char = ch;
         }
       }
 
       if (screenReaderMode) {
-        this._terminal.emit('a11y.char', char);
+        this._terminal.emit('a11y.char', stringFromCodePoint(code));
       }
 
       // insert combining char at last cursor position
@@ -355,23 +351,13 @@ export class InputHandler extends Disposable implements IInputHandler {
       // since they always follow a cell consuming char
       // therefore we can test for buffer.x to avoid overflow left
       if (!chWidth && buffer.x) {
-        const chMinusOne = bufferRow.get(buffer.x - 1);
-        if (chMinusOne) {
-          if (!chMinusOne[CHAR_DATA_WIDTH_INDEX]) {
-            // found empty cell after fullwidth, need to go 2 cells back
-            // it is save to step 2 cells back here
-            // since an empty cell is only set by fullwidth chars
-            const chMinusTwo = bufferRow.get(buffer.x - 2);
-            if (chMinusTwo) {
-              chMinusTwo[CHAR_DATA_CHAR_INDEX] += char;
-              chMinusTwo[CHAR_DATA_CODE_INDEX] = code;
-              bufferRow.set(buffer.x - 2, chMinusTwo); // must be set explicitly now
-            }
-          } else {
-            chMinusOne[CHAR_DATA_CHAR_INDEX] += char;
-            chMinusOne[CHAR_DATA_CODE_INDEX] = code;
-            bufferRow.set(buffer.x - 1, chMinusOne); // must be set explicitly now
-          }
+        if (!bufferRow.getWidth(buffer.x - 1)) {
+          // found empty cell after fullwidth, need to go 2 cells back
+          // it is save to step 2 cells back here
+          // since an empty cell is only set by fullwidth chars
+          bufferRow.addCodepointToCell(buffer.x - 2, code);
+        } else {
+          bufferRow.addCodepointToCell(buffer.x - 1, code);
         }
         continue;
       }
@@ -410,25 +396,25 @@ export class InputHandler extends Disposable implements IInputHandler {
       // insert mode: move characters to right
       if (insertMode) {
         // right shift cells according to the width
-        bufferRow.insertCells(buffer.x, chWidth, [curAttr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+        bufferRow.insertCells(buffer.x, chWidth, buffer.getNullCell(curAttr));
         // test last cell - since the last cell has only room for
         // a halfwidth char any fullwidth shifted there is lost
-        // and will be set to eraseChar
-        const lastCell = bufferRow.get(cols - 1);
-        if (lastCell[CHAR_DATA_WIDTH_INDEX] === 2) {
-          bufferRow.set(cols - 1, [curAttr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+        // and will be set to empty cell
+        if (bufferRow.getWidth(cols - 1) === 2) {
+          bufferRow.setCellFromCodePoint(cols - 1, NULL_CELL_CODE, NULL_CELL_WIDTH, curAttr, 0);
         }
       }
 
       // write current char to buffer and advance cursor
-      bufferRow.set(buffer.x++, [curAttr, char, chWidth, code]);
+      bufferRow.setCellFromCodePoint(buffer.x++, code, chWidth, curAttr, 0);
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor
       // for graphemes bigger than fullwidth we can simply loop to zero
       // we already made sure above, that buffer.x + chWidth will not overflow right
       if (chWidth > 0) {
         while (--chWidth) {
-          bufferRow.set(buffer.x++, [curAttr, '', 0, undefined]);
+          // other than a regular empty cell a cell following a wide char has no width
+          bufferRow.setCellFromCodePoint(buffer.x++, 0, 0, curAttr, 0);
         }
       }
     }
@@ -548,7 +534,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).insertCells(
       this._terminal.buffer.x,
       params[0] || 1,
-      [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
+      this._terminal.buffer.getNullCell(this._terminal.eraseAttr())
     );
     this._terminal.updateRange(this._terminal.buffer.y);
     return true;
@@ -732,7 +718,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     line.replaceCells(
       start,
       end,
-      [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
+      this._terminal.buffer.getNullCell(this._terminal.eraseAttr())
     );
     if (clearWrap) {
       line.isWrapped = false;
@@ -905,7 +891,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).deleteCells(
       this._terminal.buffer.x,
       params[0] || 1,
-      [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
+      this._terminal.buffer.getNullCell(this._terminal.eraseAttr())
     );
     this._terminal.updateRange(this._terminal.buffer.y);
     return true;
@@ -942,7 +928,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
       while (param--) {
         buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 1);
-        buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 0, buffer.getBlankLine(DEFAULT_ATTR));
+        buffer.lines.splice(buffer.ybase + buffer.scrollTop, 0, buffer.getBlankLine(DEFAULT_ATTR));
       }
       // this.maxRange();
       this._terminal.updateRange(buffer.scrollTop);
@@ -959,7 +945,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).replaceCells(
       this._terminal.buffer.x,
       this._terminal.buffer.x + (params[0] || 1),
-      [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
+      this._terminal.buffer.getNullCell(this._terminal.eraseAttr())
     );
     return true;
   }
@@ -1019,9 +1005,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     // make buffer local for faster access
     const buffer = this._terminal.buffer;
     const line = buffer.lines.get(buffer.ybase + buffer.y);
+    line.loadCell(buffer.x - 1, this._workCell);
     line.replaceCells(buffer.x,
       buffer.x + (params[0] || 1),
-      line.get(buffer.x - 1) || [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
+      (this._workCell.content !== undefined) ? this._workCell : buffer.getNullCell(DEFAULT_ATTR)
     );
     // FIXME: no updateRange here?
     return true;

@@ -11,7 +11,7 @@
     ],
     "rootDir": ".",
     "outDir": "../lib",
-    
+
     "noUnusedLocals": true,
     "noImplicitAny": true
   },
@@ -27,4 +27,3 @@
     { "path": "./core" }
   ]
 }
-  

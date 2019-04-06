@@ -1,10 +1,6 @@
 {
   "extends": "./tsconfig-base.json",
   "compilerOptions": {
-    "types": [
-      "../../node_modules/@types/mocha",
-      "../../"
-    ],
     "composite": true,
     "strict": true
   }

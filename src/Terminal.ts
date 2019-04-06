@@ -25,7 +25,7 @@ import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions
 import { IMouseZoneManager } from './ui/Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
-import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, CHAR_DATA_ATTR_INDEX } from './Buffer';
+import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from './Buffer';
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './common/EventEmitter';
 import { Viewport } from './Viewport';
@@ -36,7 +36,7 @@ import { Renderer } from './renderer/Renderer';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
 import { CharMeasure } from './ui/CharMeasure';
-import * as Browser from './core/Platform';
+import * as Browser from './common/Platform';
 import { addDisposableDomListener } from './ui/Lifecycle';
 import * as Strings from './Strings';
 import { MouseHelper } from './ui/MouseHelper';
@@ -52,6 +52,7 @@ import { IKeyboardEvent } from './common/Types';
 import { evaluateKeyboardEvent } from './core/input/Keyboard';
 import { KeyboardResultType, ICharset } from './core/Types';
 import { clone } from './common/Clone';
+import { applyWindowsMode } from './WindowsMode';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -110,7 +111,8 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   tabStopWidth: 8,
   theme: null,
   rightClickSelectsWord: Browser.isMac,
-  rendererType: 'canvas'
+  rendererType: 'canvas',
+  windowsMode: false
 };
 
 export class Terminal extends EventEmitter implements ITerminal, IDisposable, IInputHandlingTerminal {
@@ -210,6 +212,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   private _accessibilityManager: AccessibilityManager;
   private _screenDprMonitor: ScreenDprMonitor;
   private _theme: ITheme;
+  private _windowsMode: IDisposable | undefined;
 
   // bufferline to clone/copy from for new blank lines
   private _blankLine: IBufferLine = null;
@@ -239,6 +242,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   public dispose(): void {
     super.dispose();
+    if (this._windowsMode) {
+      this._windowsMode.dispose();
+      this._windowsMode = undefined;
+    }
     this._customKeyEventHandler = null;
     removeTerminalFromCache(this);
     this.handler = () => {};
@@ -320,6 +327,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     if (this.selectionManager) {
       this.selectionManager.clearSelection();
       this.selectionManager.initBuffersListeners();
+    }
+
+    if (this.options.windowsMode) {
+      this._windowsMode = applyWindowsMode(this);
     }
   }
 
@@ -501,6 +512,18 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         }
         break;
       case 'tabStopWidth': this.buffers.setupTabStops(); break;
+      case 'windowsMode':
+        if (value) {
+          if (!this._windowsMode) {
+            this._windowsMode = applyWindowsMode(this);
+          }
+        } else {
+          if (this._windowsMode) {
+            this._windowsMode.dispose();
+            this._windowsMode = undefined;
+          }
+        }
+        break;
     }
     // Inform renderer of changes
     if (this.renderer) {
@@ -1181,7 +1204,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public scroll(isWrapped: boolean = false): void {
     let newLine: IBufferLine;
     newLine = this._blankLine;
-    if (!newLine || newLine.length !== this.cols || newLine.get(0)[CHAR_DATA_ATTR_INDEX] !== this.eraseAttr()) {
+    if (!newLine || newLine.length !== this.cols || newLine.getFg(0) !== this.eraseAttr()) {
       newLine = this.buffer.getBlankLine(this.eraseAttr(), isWrapped);
       this._blankLine = newLine;
     }
