@@ -49,11 +49,11 @@ export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, o
 
     // Copy buffer data to new locations
     let destLineIndex = 0;
-    let destCol = wrappedLines.length === 1 ? wrappedLines[destLineIndex].getTrimmedLength() : oldCols;
+    let destCol = getWrappedLineTrimmedLength(wrappedLines, destLineIndex, oldCols);
     let srcLineIndex = 1;
     let srcCol = 0;
     while (srcLineIndex < wrappedLines.length) {
-      const srcTrimmedTineLength = srcLineIndex === wrappedLines.length - 1 ? wrappedLines[srcLineIndex].getTrimmedLength() : oldCols;
+      const srcTrimmedTineLength = getWrappedLineTrimmedLength(wrappedLines, srcLineIndex, oldCols);
       const srcRemainingCells = srcTrimmedTineLength - srcCol;
       const destRemainingCells = newCols - destCol;
       const cellsToCopy = Math.min(srcRemainingCells, destRemainingCells);
