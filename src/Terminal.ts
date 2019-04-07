@@ -783,7 +783,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.selectionManager = new SelectionManager(this, this.charMeasure);
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this.selectionManager.onMouseDown(e)));
     this.register(this.selectionManager.addDisposableListener('refresh', data => this.renderer.onSelectionChanged(data.start, data.end, data.columnSelectMode)));
-    this.register(this.selectionManager.addDisposableListener('newselection', text => {
+    this.register(this.selectionManager.onNewMouseSelection(text => {
       // If there's a new selection, put it into the textarea, focus and select it
       // in order to register it as a selection on the OS. This event is fired
       // only on Linux to enable middle click to paste selection.

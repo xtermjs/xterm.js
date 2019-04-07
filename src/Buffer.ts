@@ -10,6 +10,7 @@ import { IMarker } from 'xterm';
 import { BufferLine, CellData, AttributeData } from './BufferLine';
 import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths } from './BufferReflow';
 import { DEFAULT_COLOR } from './renderer/atlas/Types';
+import { EventEmitter2, IEvent } from './common/EventEmitter2';
 
 export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
 
@@ -615,7 +616,7 @@ export class Buffer implements IBuffer {
         marker.line -= event.amount;
       }
     }));
-    marker.register(marker.addDisposableListener('dispose', () => this._removeMarker(marker)));
+    marker.register(marker.onDispose(() => this._removeMarker(marker)));
     return marker;
   }
 
@@ -636,6 +637,9 @@ export class Marker extends EventEmitter implements IMarker {
 
   public get id(): number { return this._id; }
 
+  private _onDispose = new EventEmitter2<void>();
+  public get onDispose(): IEvent<void> { return this._onDispose.event; }
+
   constructor(
     public line: number
   ) {
@@ -648,7 +652,7 @@ export class Marker extends EventEmitter implements IMarker {
     }
     this.isDisposed = true;
     // Emit before super.dispose such that dispose listeners get a change to react
-    this.emit('dispose');
+    this._onDispose.fire();
     super.dispose();
   }
 }

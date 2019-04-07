@@ -12,6 +12,7 @@ import { SelectionModel } from './SelectionModel';
 import { AltClickHandler } from './handlers/AltClickHandler';
 import { CellData } from './BufferLine';
 import { IDisposable } from 'xterm';
+import { EventEmitter2, IEvent } from './common/EventEmitter2';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -106,6 +107,9 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   private _workCell: CellData = new CellData();
 
   private _mouseDownTimeStamp: number;
+
+  private _onNewMouseSelection = new EventEmitter2<string>();
+  public get onNewMouseSelection(): IEvent<string> { return this._onNewMouseSelection.event; }
 
   constructor(
     private _terminal: ITerminal,
@@ -244,10 +248,10 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
   /**
    * Queues a refresh, redrawing the selection on the next opportunity.
-   * @param isNewSelection Whether the selection should be registered as a new
+   * @param isNewMouseSelection Whether the selection should be registered as a new
    * selection on Linux.
    */
-  public refresh(isNewSelection?: boolean): void {
+  public refresh(isNewMouseSelection?: boolean): void {
     // Queue the refresh for the renderer
     if (!this._refreshAnimationFrame) {
       this._refreshAnimationFrame = window.requestAnimationFrame(() => this._refresh());
@@ -255,10 +259,10 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
     // If the platform is Linux and the refresh call comes from a mouse event,
     // we need to update the selection for middle click to paste selection.
-    if (Browser.isLinux && isNewSelection) {
+    if (Browser.isLinux && isNewMouseSelection) {
       const selectionText = this.selectionText;
       if (selectionText.length) {
-        this.emit('newselection', this.selectionText);
+        this._onNewMouseSelection.fire(this.selectionText);
       }
     }
   }
