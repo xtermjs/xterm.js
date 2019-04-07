@@ -265,14 +265,14 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.on('linefeed', () => this._onLineFeed.fire());
     this.on('selection', () => this._onSelectionChange.fire());
     this.on('data', e => this._onInput.fire(e));
-    this.on('title', e => this._onTitleChange.fire(e));
     this.on('scroll', e => this._onScroll.fire(e));
     this.on('refresh', e => this._onRender.fire(e));
-    this.on('resize', e => this._onResize.fire(e));
 
     // TODO: Remove these in v4
     // Fire old style events from new emitters
     this.onKey(e => this.emit('key', e.key, e.domEvent));
+    this.onResize(e => this.emit('resize', e));
+    this.onTitleChange(e => this.emit('title', e));
   }
 
   public dispose(): void {
@@ -770,7 +770,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.register(this.viewport);
 
     this.register(this.addDisposableListener('cursormove', () => this.renderer.onCursorMove()));
-    this.register(this.addDisposableListener('resize', () => this.renderer.onResize(this.cols, this.rows)));
+    this.register(this.onResize(() => this.renderer.onResize(this.cols, this.rows)));
     this.register(this.addDisposableListener('blur', () => this.renderer.onBlur()));
     this.register(this.addDisposableListener('focus', () => this.renderer.onFocus()));
     this.register(this.addDisposableListener('dprchange', () => this.renderer.onWindowResize(window.devicePixelRatio)));
@@ -1778,7 +1778,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
 
     this.refresh(0, this.rows - 1);
-    this.emit('resize', {cols: x, rows: y});
+    this._onResize.fire({ cols: x, rows: y });
   }
 
   /**
@@ -1859,13 +1859,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * @param title The title to populate in the event.
    */
   public handleTitle(title: string): void {
-    /**
-     * This event is emitted when the title of the terminal is changed
-     * from inside the terminal. The parameter is the new title.
-     *
-     * @event title
-     */
-    this.emit('title', title);
+    this._onTitleChange.fire(title);
   }
 
   /**
