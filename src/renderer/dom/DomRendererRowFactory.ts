@@ -84,7 +84,7 @@ export class DomRendererRowFactory {
         charElement.classList.add(ITALIC_CLASS);
       }
 
-      if (flags & FLAGS.DIM) {
+      if (this._workCell.isDim()) {
         charElement.classList.add(DIM_CLASS);
       }
 
