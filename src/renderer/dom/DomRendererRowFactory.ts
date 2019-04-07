@@ -10,6 +10,7 @@ import { DEFAULT_COLOR, INVERTED_DEFAULT_COLOR } from '../atlas/Types';
 import { CellData } from '../../BufferLine';
 
 export const BOLD_CLASS = 'xterm-bold';
+export const DIM_CLASS = 'xterm-dim';
 export const ITALIC_CLASS = 'xterm-italic';
 export const CURSOR_CLASS = 'xterm-cursor';
 export const CURSOR_BLINK_CLASS = 'xterm-cursor-blink';
@@ -105,6 +106,10 @@ export class DomRendererRowFactory {
 
       if (flags & FLAGS.ITALIC) {
         charElement.classList.add(ITALIC_CLASS);
+      }
+
+      if (flags & FLAGS.DIM) {
+        charElement.classList.add(DIM_CLASS);
       }
 
       charElement.textContent = this._workCell.getChars() || WHITESPACE_CELL_CHAR;
