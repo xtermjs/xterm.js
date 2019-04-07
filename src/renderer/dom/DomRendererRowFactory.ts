@@ -109,7 +109,7 @@ export class DomRendererRowFactory {
       }
 
       if (flags & FLAGS.DIM) {
-        charElement.classList.add(exports.DIM_CLASS);
+        charElement.classList.add(DIM_CLASS);
       }
 
       charElement.textContent = this._workCell.getChars() || WHITESPACE_CELL_CHAR;
