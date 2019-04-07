@@ -3,7 +3,7 @@
  * @license MIT
  */
 import * as chai from 'chai';
-import { BufferLine, CellData, ContentMasks } from './BufferLine';
+import { BufferLine, CellData, Content } from './BufferLine';
 import { CharData, IBufferLine } from './Types';
 import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR } from './Buffer';
 
@@ -32,7 +32,7 @@ describe('CellData', () => {
     // combining
     cell.setFromCharData([123, 'e\u0301', 1, '\u0301'.charCodeAt(0)]);
     chai.assert.deepEqual(cell.getAsCharData(), [123, 'e\u0301', 1, '\u0301'.charCodeAt(0)]);
-    chai.assert.equal(cell.isCombined(), ContentMasks.IS_COMBINED);
+    chai.assert.equal(cell.isCombined(), Content.IS_COMBINED_MASK);
     // surrogate
     cell.setFromCharData([123, '𝄞', 1, 0x1D11E]);
     chai.assert.deepEqual(cell.getAsCharData(), [123, '𝄞', 1, 0x1D11E]);
@@ -40,7 +40,7 @@ describe('CellData', () => {
     // surrogate + combining
     cell.setFromCharData([123, '𓂀\u0301', 1, '𓂀\u0301'.charCodeAt(2)]);
     chai.assert.deepEqual(cell.getAsCharData(), [123, '𓂀\u0301', 1, '𓂀\u0301'.charCodeAt(2)]);
-    chai.assert.equal(cell.isCombined(), ContentMasks.IS_COMBINED);
+    chai.assert.equal(cell.isCombined(), Content.IS_COMBINED_MASK);
     // wide char
     cell.setFromCharData([123, '１', 2, '１'.charCodeAt(0)]);
     chai.assert.deepEqual(cell.getAsCharData(), [123, '１', 2, '１'.charCodeAt(0)]);
@@ -350,7 +350,7 @@ describe('BufferLine', function(): void {
       // width is set to 1
       chai.assert.deepEqual(cell.getAsCharData(), [123, 'e\u0301\u0301', 1, 0x0301]);
       // do not account a single combining char as combined
-      chai.assert.equal(cell.isCombined(), ContentMasks.IS_COMBINED);
+      chai.assert.equal(cell.isCombined(), Content.IS_COMBINED_MASK);
     });
     it('should create combining string on taken cell', () => {
       const line = new TestBufferLine(3, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
@@ -363,7 +363,7 @@ describe('BufferLine', function(): void {
       // width is set to 1
       chai.assert.deepEqual(cell.getAsCharData(), [123, 'e\u0301', 1, 0x0301]);
       // do not account a single combining char as combined
-      chai.assert.equal(cell.isCombined(), ContentMasks.IS_COMBINED);
+      chai.assert.equal(cell.isCombined(), Content.IS_COMBINED_MASK);
     });
   });
 });

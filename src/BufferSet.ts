@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminal, IBufferSet } from './Types';
+import { ITerminal, IBufferSet, IAttributeData } from './Types';
 import { Buffer } from './Buffer';
 import { EventEmitter } from './common/EventEmitter';
 
@@ -77,7 +77,7 @@ export class BufferSet extends EventEmitter implements IBufferSet {
   /**
    * Sets the alt Buffer of the BufferSet as its currently active Buffer
    */
-  public activateAltBuffer(fillAttr?: number): void {
+  public activateAltBuffer(fillAttr?: IAttributeData): void {
     if (this._activeBuffer === this._alt) {
       return;
     }
