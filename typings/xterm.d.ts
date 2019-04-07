@@ -769,6 +769,7 @@ declare module 'xterm' {
      * Applies an addon to the Terminal prototype, making it available to all
      * newly created Terminals.
      * @param addon The addon to apply.
+     * @deprecated Use the new loadAddon API/addon format.
      */
     static applyAddon(addon: any): void;
 
