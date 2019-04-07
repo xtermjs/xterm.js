@@ -3,14 +3,12 @@
  * @license MIT
  */
 
-import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from '../Buffer';
-import { FLAGS, IColorSet, IRenderDimensions, ICharacterJoinerRegistry } from './Types';
-import { CharData, ITerminal } from '../Types';
-import { INVERTED_DEFAULT_COLOR, DEFAULT_COLOR } from './atlas/Types';
+import { NULL_CELL_CODE } from '../Buffer';
+import { IColorSet, IRenderDimensions, ICharacterJoinerRegistry } from './Types';
+import { CharData, ITerminal, ICellData } from '../Types';
 import { GridCache } from './GridCache';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { is256Color } from './atlas/CharAtlasUtils';
-import { CellData } from '../BufferLine';
+import { CellData, AttributeData, Content } from '../BufferLine';
 
 /**
  * This CharData looks like a null character, which will forc a clear and render
@@ -59,14 +57,9 @@ export class TextRenderLayer extends BaseRenderLayer {
     lastRow: number,
     joinerRegistry: ICharacterJoinerRegistry | null,
     callback: (
-      code: number,
-      chars: string,
-      width: number,
+      cell: ICellData,
       x: number,
-      y: number,
-      fg: number,
-      bg: number,
-      flags: number
+      y: number
     ) => void
   ): void {
     for (let y = firstRow; y <= lastRow; y++) {
@@ -75,13 +68,7 @@ export class TextRenderLayer extends BaseRenderLayer {
       const joinedRanges = joinerRegistry ? joinerRegistry.getJoinedCharacters(row) : [];
       for (let x = 0; x < terminal.cols; x++) {
         line.loadCell(x, this._workCell);
-        let code: number = this._workCell.getCode() || WHITESPACE_CELL_CODE;
-
-        // Can either represent character(s) for a single cell or multiple cells
-        // if indicated by a character joiner.
-        let chars = this._workCell.getChars() || WHITESPACE_CELL_CHAR;
-        const attr = this._workCell.fg;
-        let width = this._workCell.getWidth();
+        let cell = this._workCell;
 
         // If true, indicates that the current character(s) to draw were joined.
         let isJoined = false;
@@ -89,7 +76,7 @@ export class TextRenderLayer extends BaseRenderLayer {
 
         // The character to the left is a wide character, drawing is owned by
         // the char at x-1
-        if (width === 0) {
+        if (cell.getWidth() === 0) {
           continue;
         }
 
@@ -102,14 +89,15 @@ export class TextRenderLayer extends BaseRenderLayer {
 
           // We already know the exact start and end column of the joined range,
           // so we get the string and width representing it directly
-          chars = terminal.buffer.translateBufferLineToString(
-            row,
-            true,
-            range[0],
-            range[1]
-          );
-          width = range[1] - range[0];
-          code = Infinity;
+          cell = CellData.fromCharData([
+            0,
+            line.translateToString(true, range[0], range[1]),
+            range[1] - range[0],
+            0xFFFFFF
+          ]);
+          // hacky: patch attrs
+          cell.fg = this._workCell.fg;
+          cell.bg = this._workCell.bg;
 
           // Skip over the cells occupied by this range in the loop
           lastCharX = range[1] - 1;
@@ -119,7 +107,7 @@ export class TextRenderLayer extends BaseRenderLayer {
         // right is a space, take ownership of the cell to the right. We skip
         // this check for joined characters because their rendering likely won't
         // yield the same result as rendering the last character individually.
-        if (!isJoined && this._isOverlapping(chars, width, code)) {
+        if (!isJoined && this._isOverlapping(cell)) {
           // If the character is overlapping, we want to force a re-render on every
           // frame. This is specifically to work around the case where two
           // overlaping chars `a` and `b` are adjacent, the cursor is moved to b and a
@@ -127,8 +115,10 @@ export class TextRenderLayer extends BaseRenderLayer {
           // get removed, and `a` would not re-render because it thinks it's
           // already in the correct state.
           // this._state.cache[x][y] = OVERLAP_OWNED_CHAR_DATA;
-          if (lastCharX < line.length - 1 && line.loadCell(lastCharX + 1, this._workCell).getCode() === NULL_CELL_CODE) {
-            width = 2;
+          if (lastCharX < line.length - 1 && line.getCodePoint(lastCharX + 1) === NULL_CELL_CODE) {
+            // patch width to 2
+            cell.content &= ~Content.WIDTH_MASK;
+            cell.content |= 2 << Content.WIDTH_SHIFT;
             // this._clearChar(x + 1, y);
             // The overlapping char's char data will force a clear and render when the
             // overlapping char is no longer to the left of the character and also when
@@ -137,32 +127,10 @@ export class TextRenderLayer extends BaseRenderLayer {
           }
         }
 
-        const flags = attr >> 18;
-        let bg = attr & 0x1ff;
-        let fg = (attr >> 9) & 0x1ff;
-
-        // If inverse flag is on, the foreground should become the background.
-        if (flags & FLAGS.INVERSE) {
-          const temp = bg;
-          bg = fg;
-          fg = temp;
-          if (fg === DEFAULT_COLOR) {
-            fg = INVERTED_DEFAULT_COLOR;
-          }
-          if (bg === DEFAULT_COLOR) {
-            bg = INVERTED_DEFAULT_COLOR;
-          }
-        }
-
         callback(
-          code,
-          chars,
-          width,
+          cell,
           x,
-          y,
-          fg,
-          bg,
-          flags
+          y
         );
 
         x = lastCharX;
@@ -183,14 +151,23 @@ export class TextRenderLayer extends BaseRenderLayer {
 
     ctx.save();
 
-    this._forEachCell(terminal, firstRow, lastRow, null, (code, chars, width, x, y, fg, bg, flags) => {
+    this._forEachCell(terminal, firstRow, lastRow, null, (cell, x, y) => {
       // libvte and xterm both draw the background (but not foreground) of invisible characters,
       // so we should too.
       let nextFillStyle = null; // null represents default background color
-      if (bg === INVERTED_DEFAULT_COLOR) {
-        nextFillStyle = this._colors.foreground.css;
-      } else if (is256Color(bg)) {
-        nextFillStyle = this._colors.ansi[bg].css;
+
+      if (cell.isInverse()) {
+        if (cell.isFgDefault()) {
+          nextFillStyle = this._colors.foreground.css;
+        } else if (cell.isFgRGB()) {
+          nextFillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
+        } else {
+          nextFillStyle = this._colors.ansi[cell.getFgColor()].css;
+        }
+      } else if (cell.isBgRGB()) {
+        nextFillStyle = `rgb(${AttributeData.toColorRGB(cell.getBgColor()).join(',')})`;
+      } else if (cell.isBgPalette()) {
+        nextFillStyle = this._colors.ansi[cell.getBgColor()].css;
       }
 
       if (prevFillStyle === null) {
@@ -225,29 +202,31 @@ export class TextRenderLayer extends BaseRenderLayer {
   }
 
   private _drawForeground(terminal: ITerminal, firstRow: number, lastRow: number): void {
-    this._forEachCell(terminal, firstRow, lastRow, this._characterJoinerRegistry, (code, chars, width, x, y, fg, bg, flags) => {
-      if (flags & FLAGS.INVISIBLE) {
+    this._forEachCell(terminal, firstRow, lastRow, this._characterJoinerRegistry, (cell, x, y) => {
+      if (cell.isInvisible()) {
         return;
       }
-      if (flags & FLAGS.UNDERLINE) {
+      if (cell.isUnderline()) {
         this._ctx.save();
-        if (fg === INVERTED_DEFAULT_COLOR) {
-          this._ctx.fillStyle = this._colors.background.css;
-        } else if (is256Color(fg)) {
-          // 256 color support
-          this._ctx.fillStyle = this._colors.ansi[fg].css;
-        } else {
-          this._ctx.fillStyle = this._colors.foreground.css;
+
+        if (cell.isInverse()) {
+          if (cell.isBgDefault()) {
+            this._ctx.fillStyle = this._colors.background.css;
+          } else if (cell.isBgRGB()) {
+            this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getBgColor()).join(',')})`;
+          } else {
+            this._ctx.fillStyle = this._colors.ansi[cell.getBgColor()].css;
+          }
+        } else if (cell.isFgRGB()) {
+          this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
+        } else if (cell.isFgPalette()) {
+          this._ctx.fillStyle = this._colors.ansi[cell.getFgColor()].css;
         }
-        this.fillBottomLineAtCells(x, y, width);
+
+        this.fillBottomLineAtCells(x, y, cell.getWidth());
         this._ctx.restore();
       }
-      this.drawChars(
-        terminal, chars, code,
-        width, x, y,
-        fg, bg,
-        !!(flags & FLAGS.BOLD), !!(flags & FLAGS.DIM), !!(flags & FLAGS.ITALIC)
-      );
+      this.drawChars(terminal, cell, x, y);
     });
   }
 
@@ -273,21 +252,23 @@ export class TextRenderLayer extends BaseRenderLayer {
   /**
    * Whether a character is overlapping to the next cell.
    */
-  private _isOverlapping(char: string, width: number, code: number): boolean {
+  private _isOverlapping(cell: ICellData): boolean {
     // Only single cell characters can be overlapping, rendering issues can
     // occur without this check
-    if (width !== 1) {
+    if (cell.getWidth() !== 1) {
       return false;
     }
 
     // We assume that any ascii character will not overlap
-    if (code < 256) {
+    if (cell.getCode() < 256) {
       return false;
     }
 
+    const chars = cell.getChars();
+
     // Deliver from cache if available
-    if (this._characterOverlapCache.hasOwnProperty(char)) {
-      return this._characterOverlapCache[char];
+    if (this._characterOverlapCache.hasOwnProperty(chars)) {
+      return this._characterOverlapCache[chars];
     }
 
     // Setup the font
@@ -297,13 +278,13 @@ export class TextRenderLayer extends BaseRenderLayer {
     // Measure the width of the character, but Math.floor it
     // because that is what the renderer does when it calculates
     // the character dimensions we are comparing against
-    const overlaps = Math.floor(this._ctx.measureText(char).width) > this._characterWidth;
+    const overlaps = Math.floor(this._ctx.measureText(chars).width) > this._characterWidth;
 
     // Restore the original context
     this._ctx.restore();
 
     // Cache and return
-    this._characterOverlapCache[char] = overlaps;
+    this._characterOverlapCache[chars] = overlaps;
     return overlaps;
   }
 

@@ -5,7 +5,7 @@
 
 import { assert, expect } from 'chai';
 import { ITerminal } from './Types';
-import { Buffer, DEFAULT_ATTR } from './Buffer';
+import { Buffer, DEFAULT_ATTR_DATA } from './Buffer';
 import { CircularList } from './common/CircularList';
 import { MockTerminal, TestTerminal } from './ui/TestUtils.test';
 import { BufferLine, CellData } from './BufferLine';
@@ -37,13 +37,13 @@ describe('Buffer', () => {
 
   describe('fillViewportRows', () => {
     it('should fill the buffer with blank lines based on the size of the viewport', () => {
-      const blankLineChar = buffer.getBlankLine(DEFAULT_ATTR).loadCell(0, new CellData()).getAsCharData;
+      const blankLineChar = buffer.getBlankLine(DEFAULT_ATTR_DATA).loadCell(0, new CellData()).getAsCharData();
       buffer.fillViewportRows();
       assert.equal(buffer.lines.length, INIT_ROWS);
       for (let y = 0; y < INIT_ROWS; y++) {
         assert.equal(buffer.lines.get(y).length, INIT_COLS);
         for (let x = 0; x < INIT_COLS; x++) {
-          assert.deepEqual(buffer.lines.get(y).loadCell(x, new CellData()).getAsCharData, blankLineChar);
+          assert.deepEqual(buffer.lines.get(y).loadCell(x, new CellData()).getAsCharData(), blankLineChar);
         }
       }
     });
@@ -184,7 +184,7 @@ describe('Buffer', () => {
           buffer.fillViewportRows();
           // Create 10 extra blank lines
           for (let i = 0; i < 10; i++) {
-            buffer.lines.push(buffer.getBlankLine(DEFAULT_ATTR));
+            buffer.lines.push(buffer.getBlankLine(DEFAULT_ATTR_DATA));
           }
           // Set cursor to the bottom of the buffer
           buffer.y = INIT_ROWS - 1;
@@ -204,7 +204,7 @@ describe('Buffer', () => {
           buffer.fillViewportRows();
           // Create 10 extra blank lines
           for (let i = 0; i < 10; i++) {
-            buffer.lines.push(buffer.getBlankLine(DEFAULT_ATTR));
+            buffer.lines.push(buffer.getBlankLine(DEFAULT_ATTR_DATA));
           }
           // Set cursor to the bottom of the buffer
           buffer.y = INIT_ROWS - 1;
@@ -683,7 +683,7 @@ describe('Buffer', () => {
             beforeEach(() => {
               // Add 10 empty rows to start
               for (let i = 0; i < 10; i++) {
-                buffer.lines.splice(0, 0, buffer.getBlankLine(DEFAULT_ATTR));
+                buffer.lines.splice(0, 0, buffer.getBlankLine(DEFAULT_ATTR_DATA));
               }
               buffer.ybase = 10;
             });
@@ -742,7 +742,7 @@ describe('Buffer', () => {
               terminal.options.scrollback = 10;
               // Add 10 empty rows to start
               for (let i = 0; i < 10; i++) {
-                buffer.lines.splice(0, 0, buffer.getBlankLine(DEFAULT_ATTR));
+                buffer.lines.splice(0, 0, buffer.getBlankLine(DEFAULT_ATTR_DATA));
               }
               buffer.y = 9;
               buffer.ybase = 10;
@@ -877,7 +877,7 @@ describe('Buffer', () => {
             beforeEach(() => {
               // Add 10 empty rows to start
               for (let i = 0; i < 10; i++) {
-                buffer.lines.splice(0, 0, buffer.getBlankLine(DEFAULT_ATTR));
+                buffer.lines.splice(0, 0, buffer.getBlankLine(DEFAULT_ATTR_DATA));
               }
               buffer.ybase = 10;
             });
@@ -940,7 +940,7 @@ describe('Buffer', () => {
               terminal.options.scrollback = 10;
               // Add 10 empty rows to start
               for (let i = 0; i < 10; i++) {
-                buffer.lines.splice(0, 0, buffer.getBlankLine(DEFAULT_ATTR));
+                buffer.lines.splice(0, 0, buffer.getBlankLine(DEFAULT_ATTR_DATA));
               }
               buffer.ybase = 10;
             });

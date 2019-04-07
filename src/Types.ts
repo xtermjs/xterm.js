@@ -49,7 +49,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   insertMode: boolean;
   wraparoundMode: boolean;
   bracketedPasteMode: boolean;
-  curAttr: number;
+  curAttrData: IAttributeData;
   savedCols: number;
   x10Mouse: boolean;
   vt200Mouse: boolean;
@@ -71,7 +71,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   updateRange(y: number): void;
   scroll(isWrapped?: boolean): void;
   setgLevel(g: number): void;
-  eraseAttr(): number;
+  eraseAttrData(): IAttributeData;
   is(term: string): boolean;
   setgCharset(g: number, charset: ICharset): void;
   resize(x: number, y: number): void;
@@ -79,7 +79,6 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   reset(): void;
   showCursor(): void;
   refresh(start: number, end: number): void;
-  matchColor(r1: number, g1: number, b1: number): number;
   error(text: string, data?: any): void;
   setOption(key: string, value: any): void;
   tabSet(): void;
@@ -293,17 +292,17 @@ export interface IBuffer {
   hasScrollback: boolean;
   savedY: number;
   savedX: number;
-  savedCurAttr: number;
+  savedCurAttrData: IAttributeData;
   isCursorInViewport: boolean;
   translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string;
   getWrappedRangeForLine(y: number): { first: number, last: number };
   nextStop(x?: number): number;
   prevStop(x?: number): number;
-  getBlankLine(attr: number, isWrapped?: boolean): IBufferLine;
+  getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine;
   stringIndexToBufferIndex(lineIndex: number, stringIndex: number): number[];
   iterator(trimRight: boolean, startIndex?: number, endIndex?: number, startOverscan?: number, endOverscan?: number): IBufferStringIterator;
-  getNullCell(fg?: number, bg?: number): ICellData;
-  getWhitespaceCell(fg?: number, bg?: number): ICellData;
+  getNullCell(attr?: IAttributeData): ICellData;
+  getWhitespaceCell(attr?: IAttributeData): ICellData;
 }
 
 export interface IBufferSet {
@@ -314,7 +313,7 @@ export interface IBufferSet {
   onBufferActivate: IEvent<{ activeBuffer: IBuffer, inactiveBuffer: IBuffer }>;
 
   activateNormalBuffer(): void;
-  activateAltBuffer(fillAttr?: number): void;
+  activateAltBuffer(fillAttr?: IAttributeData): void;
 }
 
 export interface ISelectionManager {
@@ -527,11 +526,43 @@ export interface IEscapeSequenceParser extends IDisposable {
   clearErrorHandler(): void;
 }
 
-/** Cell data */
-export interface ICellData {
-  content: number;
+/** RGB color type */
+export type IColorRGB = [number, number, number];
+
+/** Attribute data */
+export interface IAttributeData {
   fg: number;
   bg: number;
+
+  clone(): IAttributeData;
+
+  // flags
+  isInverse(): number;
+  isBold(): number;
+  isUnderline(): number;
+  isBlink(): number;
+  isInvisible(): number;
+  isItalic(): number;
+  isDim(): number;
+
+  // color modes
+  getFgColorMode(): number;
+  getBgColorMode(): number;
+  isFgRGB(): boolean;
+  isBgRGB(): boolean;
+  isFgPalette(): boolean;
+  isBgPalette(): boolean;
+  isFgDefault(): boolean;
+  isBgDefault(): boolean;
+
+  // colors
+  getFgColor(): number;
+  getBgColor(): number;
+}
+
+/** Cell data */
+export interface ICellData extends IAttributeData {
+  content: number;
   combinedData: string;
   isCombined(): number;
   getWidth(): number;

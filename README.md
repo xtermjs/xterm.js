@@ -155,6 +155,7 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**info-beamer hosted**](https://info-beamer.com): Uses xterm.js to manage digital signage devices from the web dashboard.
 - [**Jumpserver**](https://github.com/jumpserver/luna): Jumpserver Luna project, Jumpserver is a bastion server project, Luna use xterm.js for web terminal emulation.
 - [**LxdMosaic**](https://github.com/turtle0x1/LxdMosaic): Uses xterm.js to give terminal access to containers through LXD
+- [**CodeInterview.io**](https://codeinterview.io): A coding interview platform in 25+ languages and many web frameworks. Uses xterm.js to provide shell access.
 
 [And much more...](https://github.com/xtermjs/xterm.js/network/dependents)
 
