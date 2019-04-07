@@ -14,12 +14,11 @@ import { WebLinksAddon } from 'xterm-addon-web-links';
 import * as fit from '../lib/addons/fit/fit';
 import * as fullscreen from '../lib/addons/fullscreen/fullscreen';
 import * as search from '../lib/addons/search/search';
-import * as winptyCompat from '../lib/addons/winptyCompat/winptyCompat';
 import { ISearchOptions } from '../lib/addons/search/Interfaces';
 
 // Pulling in the module's types relies on the <reference> above, it's looks a
 // little weird here as we're importing "this" module
-import { Terminal as TerminalType } from 'xterm';
+import { Terminal as TerminalType, ITerminalOptions } from 'xterm';
 
 export interface IWindowWithTerminal extends Window {
   term: TerminalType;
@@ -29,11 +28,6 @@ declare let window: IWindowWithTerminal;
 Terminal.applyAddon(fit);
 Terminal.applyAddon(fullscreen);
 Terminal.applyAddon(search);
-const isWindows = ['Windows', 'Win16', 'Win32', 'WinCE'].indexOf(navigator.platform) >= 0;
-if (isWindows) {
-  Terminal.applyAddon(winptyCompat);
-}
-
 
 let term;
 let attachAddon: AttachAddon;
@@ -86,7 +80,11 @@ function createTerminal(): void {
   while (terminalContainer.children.length) {
     terminalContainer.removeChild(terminalContainer.children[0]);
   }
-  term = new Terminal({});
+
+  const isWindows = ['Windows', 'Win16', 'Win32', 'WinCE'].indexOf(navigator.platform) >= 0;
+  term = new Terminal({
+    windowsMode: isWindows
+  } as ITerminalOptions);
 
   // Load addons
   const typedTerm = term as TerminalType;
@@ -108,10 +106,6 @@ function createTerminal(): void {
   socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
 
   term.open(terminalContainer);
-  if (isWindows) {
-    term.winptyCompatInit();
-  }
-  // term.webLinksInit();
   term.fit();
   term.focus();
 
@@ -182,7 +176,7 @@ function runFakeTerminal(): void {
       term.prompt();
     } else if (ev.keyCode === 8) {
      // Do not delete the prompt
-      if (term.x > 2) {
+      if (term._core.buffer.x > 2) {
         term.write('\b \b');
       }
     } else if (printable) {

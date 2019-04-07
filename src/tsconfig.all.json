@@ -7,7 +7,6 @@
     { "path": "./addons/fullscreen" },
     { "path": "./addons/search" },
     { "path": "./addons/terminado" },
-    { "path": "./addons/winptyCompat" },
     { "path": "./addons/zmodem" }
   ]
 }
