@@ -772,22 +772,18 @@ declare module 'xterm' {
      */
     static applyAddon(addon: any): void;
 
-    loadAddon<T extends ITerminalAddon>(addonConstructor: ITerminalAddonConstructor<T>): T;
-    disposeAddon<T extends ITerminalAddon>(addonConstructor: ITerminalAddonConstructor<T>): void;
-    getAddon<T extends ITerminalAddon>(addonConstructor: ITerminalAddonConstructor<T>): T;
-  }
-
-  export interface ITerminalAddonConstructor<T extends ITerminalAddon> {
-    new(terminal: Terminal): T;
+    /**
+     * Loads an addon into this instance of xterm.js.
+     * @param addon The addon to load.
+     */
+    loadAddon(addon: ITerminalAddon): void;
   }
 
   export interface ITerminalAddon {
     /**
-     * This property declares all addon dependencies that must be intialized
-     * before this addon can be constructed. For addons with no dependencies
-     * just don't include this property.
+     * This is called when the addon is activated within xterm.js.
      */
-    // readonly DEPENDENCIES?: ITerminalAddonConstructor<ITerminalAddon>[];
+    activate(terminal: Terminal): void;
 
     /**
      * This function includes anything that needs to happen to clean up when

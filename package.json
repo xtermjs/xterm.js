@@ -42,8 +42,8 @@
     "vinyl-source-stream": "^1.1.0",
     "webpack": "^4.17.1",
     "webpack-cli": "^3.1.0",
-    "xterm-addon-attach": "0.1.0-beta4",
-    "xterm-addon-web-links": "0.1.0-beta3",
+    "xterm-addon-attach": "0.1.0-beta7",
+    "xterm-addon-web-links": "0.1.0-beta6",
     "zmodem.js": "^0.1.5"
   },
   "scripts": {

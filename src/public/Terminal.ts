@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ITerminalAddonConstructor } from 'xterm';
+import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon } from 'xterm';
 import { ITerminal } from '../Types';
 import { Terminal as TerminalCore } from '../Terminal';
 import * as Strings from '../Strings';
@@ -154,14 +154,8 @@ export class Terminal implements ITerminalApi {
   public static applyAddon(addon: any): void {
     addon.apply(Terminal);
   }
-  public loadAddon<T extends ITerminalAddon>(addonConstructor: ITerminalAddonConstructor<T>): T {
-    return this._core.loadAddon(addonConstructor);
-  }
-  public getAddon<T extends ITerminalAddon>(addonConstructor: ITerminalAddonConstructor<T>): T {
-    return this._core.getAddon(addonConstructor);
-  }
-  public disposeAddon<T extends ITerminalAddon>(addonConstructor: ITerminalAddonConstructor<T>): void {
-    this._core.disposeAddon(addonConstructor);
+  public loadAddon(addon: ITerminalAddon): void {
+    return this._core.loadAddon(addon);
   }
   public static get strings(): ILocalizableStrings {
     return Strings;

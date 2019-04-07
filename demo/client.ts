@@ -88,8 +88,9 @@ function createTerminal(): void {
 
   // Load addons
   const typedTerm = term as TerminalType;
-  typedTerm.loadAddon(WebLinksAddon).init();
-  attachAddon = typedTerm.loadAddon(AttachAddon);
+  typedTerm.loadAddon(new WebLinksAddon());
+  attachAddon = new AttachAddon();
+  typedTerm.loadAddon(attachAddon);
 
   window.term = term;  // Expose `term` to window for debugging purposes
   term.on('resize', (size: { cols: number, rows: number }) => {

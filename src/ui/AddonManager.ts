@@ -3,12 +3,12 @@
  * @license MIT
  */
 
-import { ITerminalAddon, ITerminalAddonConstructor, IDisposable, Terminal } from 'xterm';
+import { ITerminalAddon, IDisposable, Terminal } from 'xterm';
 
 export interface ILoadedAddon {
-  ctor: ITerminalAddonConstructor<ITerminalAddon>;
   instance: ITerminalAddon;
   dispose: () => void;
+  isDisposed: boolean;
 }
 
 export class AddonManager implements IDisposable {
@@ -23,38 +23,25 @@ export class AddonManager implements IDisposable {
     }
   }
 
-  public loadAddon<T extends ITerminalAddon>(terminal: Terminal, addonConstructor: ITerminalAddonConstructor<T>): T {
-    const instance = new addonConstructor(terminal);
+  public loadAddon(terminal: Terminal, instance: ITerminalAddon): void {
     const loadedAddon: ILoadedAddon = {
-      ctor: addonConstructor,
       instance,
-      dispose: instance.dispose
+      dispose: instance.dispose,
+      isDisposed: false
     };
     this._addons.push(loadedAddon);
     instance.dispose = () => this._wrappedAddonDispose(loadedAddon);
-    return instance;
-  }
-
-  public disposeAddon<T extends ITerminalAddon>(addonConstructor: ITerminalAddonConstructor<T>): void {
-    const match = this._addons.find(value => value.ctor === addonConstructor);
-    if (!match) {
-      throw new Error('Could not dispose an addon that has not been loaded');
-    }
-    match.instance.dispose();
-  }
-
-  public getAddon<T extends ITerminalAddon>(addonConstructor: ITerminalAddonConstructor<T>): T {
-    const match = this._addons.find(value => value.ctor === addonConstructor);
-    if (!match) {
-      return undefined;
-    }
-    return match.instance as T;
+    instance.activate(terminal);
   }
 
   private _wrappedAddonDispose(loadedAddon: ILoadedAddon): void {
+    if (loadedAddon.isDisposed) {
+      // Do nothing if already disposed
+      return;
+    }
     let index = -1;
     for (let i = 0; i < this._addons.length; i++) {
-      if (this._addons[i].ctor === loadedAddon.ctor) {
+      if (this._addons[i] === loadedAddon) {
         index = i;
         break;
       }
@@ -63,6 +50,7 @@ export class AddonManager implements IDisposable {
       throw new Error('Could not dispose an addon that has not been loaded');
     }
     loadedAddon.dispose();
+    loadedAddon.isDisposed = true;
     this._addons.splice(index, 1);
   }
 }

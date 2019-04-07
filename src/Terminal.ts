@@ -44,7 +44,7 @@ import { DEFAULT_BELL_SOUND, SoundManager } from './SoundManager';
 import { MouseZoneManager } from './ui/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ScreenDprMonitor } from './ui/ScreenDprMonitor';
-import { ITheme, IMarker, IDisposable, ITerminalAddon, ITerminalAddonConstructor } from 'xterm';
+import { ITheme, IMarker, IDisposable, ITerminalAddon } from 'xterm';
 import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent } from './common/Types';
@@ -1925,16 +1925,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     //     this.options.bellStyle === 'both';
   }
 
-  public loadAddon<T extends ITerminalAddon>(addonConstructor: ITerminalAddonConstructor<T>): T {
-    return this._addonManager.loadAddon(this, addonConstructor);
-  }
-
-  public disposeAddon<T extends ITerminalAddon>(addonConstructor: ITerminalAddonConstructor<T>): void {
-    this._addonManager.disposeAddon(addonConstructor);
-  }
-
-  public getAddon<T extends ITerminalAddon>(addonConstructor: ITerminalAddonConstructor<T>): T {
-    return this._addonManager.getAddon(addonConstructor);
+  public loadAddon(addon: ITerminalAddon): void {
+    return this._addonManager.loadAddon(this, addon);
   }
 }
 
