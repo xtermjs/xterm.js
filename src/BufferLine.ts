@@ -58,7 +58,7 @@ export const enum Content {
    * bit 1..22    mask to check whether a cell contains any string data
    *              we need to check for codepoint and isCombined bits to see
    *              whether a cell contains anything
-   *              read:   `isEmtpy = !(content & Content.hasContent)`
+   *              read:   `isEmpty = !(content & Content.hasContent)`
    */
   HAS_CONTENT_MASK = 0x3FFFFF,
 
