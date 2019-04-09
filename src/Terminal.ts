@@ -21,11 +21,11 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharData, CharacterJoinerHandler, IBufferLine } from './Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharacterJoinerHandler, IBufferLine, IAttributeData } from './Types';
 import { IMouseZoneManager } from './ui/Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
-import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from './Buffer';
+import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR_DATA } from './Buffer';
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './common/EventEmitter';
 import { Viewport } from './Viewport';
@@ -36,12 +36,11 @@ import { Renderer } from './renderer/Renderer';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
 import { CharMeasure } from './ui/CharMeasure';
-import * as Browser from './core/Platform';
+import * as Browser from './common/Platform';
 import { addDisposableDomListener } from './ui/Lifecycle';
 import * as Strings from './Strings';
 import { MouseHelper } from './ui/MouseHelper';
 import { DEFAULT_BELL_SOUND, SoundManager } from './SoundManager';
-import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { MouseZoneManager } from './ui/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ScreenDprMonitor } from './ui/ScreenDprMonitor';
@@ -52,6 +51,8 @@ import { IKeyboardEvent } from './common/Types';
 import { evaluateKeyboardEvent } from './core/input/Keyboard';
 import { KeyboardResultType, ICharset } from './core/Types';
 import { clone } from './common/Clone';
+import { Attributes } from './BufferLine';
+import { applyWindowsMode } from './WindowsMode';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -64,10 +65,12 @@ const document = (typeof window !== 'undefined') ? window.document : null;
 const WRITE_BUFFER_PAUSE_THRESHOLD = 5;
 
 /**
- * The number of writes to perform in a single batch before allowing the
- * renderer to catch up with a 0ms setTimeout.
+ * The max number of ms to spend on writes before allowing the renderer to
+ * catch up with a 0ms setTimeout. A value of < 33 to keep us close to
+ * 30fps, and a value of < 16 to try to run at 60fps. Of course, the real FPS
+ * depends on the time it takes for the renderer to draw the frame.
  */
-const WRITE_BATCH_SIZE = 300;
+const WRITE_TIMEOUT_MS = 12;
 
 const MINIMUM_COLS = 2; // Less than 2 can mess with wide chars
 const MINIMUM_ROWS = 1;
@@ -108,7 +111,8 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   tabStopWidth: 8,
   theme: null,
   rightClickSelectsWord: Browser.isMac,
-  rendererType: 'canvas'
+  rendererType: 'canvas',
+  windowsMode: false
 };
 
 export class Terminal extends EventEmitter implements ITerminal, IDisposable, IInputHandlingTerminal {
@@ -171,7 +175,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   private _refreshEnd: number;
   public savedCols: number;
 
-  public curAttr: number;
+  public curAttrData: IAttributeData;
+  private _eraseAttrData: IAttributeData;
 
   public params: (string | number)[];
   public currentParam: string | number;
@@ -208,6 +213,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   private _accessibilityManager: AccessibilityManager;
   private _screenDprMonitor: ScreenDprMonitor;
   private _theme: ITheme;
+  private _windowsMode: IDisposable | undefined;
 
   // bufferline to clone/copy from for new blank lines
   private _blankLine: IBufferLine = null;
@@ -237,6 +243,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   public dispose(): void {
     super.dispose();
+    if (this._windowsMode) {
+      this._windowsMode.dispose();
+      this._windowsMode = undefined;
+    }
     this._customKeyEventHandler = null;
     removeTerminalFromCache(this);
     this.handler = () => {};
@@ -291,7 +301,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // TODO: Can this be just []?
     this.charsets = [null];
 
-    this.curAttr = DEFAULT_ATTR;
+    this.curAttrData = DEFAULT_ATTR_DATA.clone();
+    this._eraseAttrData = DEFAULT_ATTR_DATA.clone();
 
     this.params = [];
     this.currentParam = 0;
@@ -319,6 +330,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       this.selectionManager.clearSelection();
       this.selectionManager.initBuffersListeners();
     }
+
+    if (this.options.windowsMode) {
+      this._windowsMode = applyWindowsMode(this);
+    }
   }
 
   /**
@@ -331,9 +346,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   /**
    * back_color_erase feature for xterm.
    */
-  public eraseAttr(): number {
-    // if (this.is('screen')) return DEFAULT_ATTR;
-    return (DEFAULT_ATTR & ~0x1ff) | (this.curAttr & 0x1ff);
+  public eraseAttrData(): IAttributeData {
+    this._eraseAttrData.bg &= ~(Attributes.CM_MASK | 0xFFFFFF);
+    this._eraseAttrData.bg |= this.curAttrData.bg & ~0xFC000000;
+    return this._eraseAttrData;
   }
 
   /**
@@ -341,7 +357,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   public focus(): void {
     if (this.textarea) {
-      this.textarea.focus();
+      this.textarea.focus({ preventScroll: true });
     }
   }
 
@@ -499,6 +515,18 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         }
         break;
       case 'tabStopWidth': this.buffers.setupTabStops(); break;
+      case 'windowsMode':
+        if (value) {
+          if (!this._windowsMode) {
+            this._windowsMode = applyWindowsMode(this);
+          }
+        } else {
+          if (this._windowsMode) {
+            this._windowsMode.dispose();
+            this._windowsMode = undefined;
+          }
+        }
+        break;
     }
     // Inform renderer of changes
     if (this.renderer) {
@@ -566,12 +594,12 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // Firefox doesn't appear to fire the contextmenu event on right click
       this.register(addDisposableDomListener(this.element, 'mousedown', (event: MouseEvent) => {
         if (event.button === 2) {
-          rightClickHandler(event, this.textarea, this.selectionManager, this.options.rightClickSelectsWord);
+          rightClickHandler(event, this, this.selectionManager, this.options.rightClickSelectsWord);
         }
       }));
     } else {
       this.register(addDisposableDomListener(this.element, 'contextmenu', (event: MouseEvent) => {
-        rightClickHandler(event, this.textarea, this.selectionManager, this.options.rightClickSelectsWord);
+        rightClickHandler(event, this, this.selectionManager, this.options.rightClickSelectsWord);
       }));
     }
 
@@ -583,7 +611,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // that the regular click event doesn't fire for the middle mouse button.
       this.register(addDisposableDomListener(this.element, 'auxclick', (event: MouseEvent) => {
         if (event.button === 1) {
-          moveTextAreaUnderMouseCursor(event, this.textarea);
+          moveTextAreaUnderMouseCursor(event, this);
         }
       }));
     }
@@ -738,6 +766,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.mouseHelper = new MouseHelper(this.renderer);
     // apply mouse event classes set by escape codes before terminal was attached
     this.element.classList.toggle('enable-mouse-events', this.mouseEvents);
+    if (this.mouseEvents) {
+      this.selectionManager.disable();
+    } else {
+      this.selectionManager.enable();
+    }
 
     if (this.options.screenReaderMode) {
       // Note that this must be done *after* the renderer is created in order to
@@ -854,17 +887,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         if (ch > 127) ch = 127;
         data.push(ch);
       } else {
-        if (ch === 2047) {
-          data.push(0);
+        if (ch > 2047) {
+          data.push(2047);
           return;
         }
-        if (ch < 127) {
-          data.push(ch);
-        } else {
-          if (ch > 2047) ch = 2047;
-          data.push(0xC0 | (ch >> 6));
-          data.push(0x80 | (ch & 0x3F));
-        }
+        data.push(ch);
       }
     }
 
@@ -1180,8 +1207,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public scroll(isWrapped: boolean = false): void {
     let newLine: IBufferLine;
     newLine = this._blankLine;
-    if (!newLine || newLine.length !== this.cols || newLine.getFG(0) !== this.eraseAttr()) {
-      newLine = this.buffer.getBlankLine(this.eraseAttr(), isWrapped);
+    const eraseAttr = this.eraseAttrData();
+    if (!newLine || newLine.length !== this.cols || newLine.getFg(0) !== eraseAttr.fg || newLine.getBg(0) !== eraseAttr.bg) {
+      newLine = this.buffer.getBlankLine(eraseAttr, isWrapped);
       this._blankLine = newLine;
     }
     newLine.isWrapped = isWrapped;
@@ -1360,19 +1388,20 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
   }
 
-  protected _innerWrite(): void {
+  protected _innerWrite(bufferOffset: number = 0): void {
     // Ensure the terminal isn't disposed
     if (this._isDisposed) {
       this.writeBuffer = [];
     }
 
-    const writeBatch = this.writeBuffer.splice(0, WRITE_BATCH_SIZE);
-    while (writeBatch.length > 0) {
-      const data = writeBatch.shift();
+    const startTime = Date.now();
+    while (this.writeBuffer.length > bufferOffset) {
+      const data = this.writeBuffer[bufferOffset];
+      bufferOffset++;
 
       // If XOFF was sent in order to catch up with the pty process, resume it if
-      // the writeBuffer is empty to allow more data to come in.
-      if (this._xoffSentToCatchUp && writeBatch.length === 0 && this.writeBuffer.length === 0) {
+      // we reached the end of the writeBuffer to allow more data to come in.
+      if (this._xoffSentToCatchUp && this.writeBuffer.length === bufferOffset) {
         this.handler(C0.DC1);
         this._xoffSentToCatchUp = false;
       }
@@ -1390,12 +1419,17 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
       this.updateRange(this.buffer.y);
       this.refresh(this._refreshStart, this._refreshEnd);
+
+      if (Date.now() - startTime >= WRITE_TIMEOUT_MS) {
+        break;
+      }
     }
-    if (this.writeBuffer.length > 0) {
+    if (this.writeBuffer.length > bufferOffset) {
       // Allow renderer to catch up before processing the next batch
-      setTimeout(() => this._innerWrite(), 0);
+      setTimeout(() => this._innerWrite(bufferOffset), 0);
     } else {
       this._writeInProgress = false;
+      this.writeBuffer = [];
     }
   }
 
@@ -1767,21 +1801,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.buffer.ybase = 0;
     this.buffer.y = 0;
     for (let i = 1; i < this.rows; i++) {
-      this.buffer.lines.push(this.buffer.getBlankLine(DEFAULT_ATTR));
+      this.buffer.lines.push(this.buffer.getBlankLine(DEFAULT_ATTR_DATA));
     }
     this.refresh(0, this.rows - 1);
     this.emit('scroll', this.buffer.ydisp);
-  }
-
-  /**
-   * If cur return the back color xterm feature attribute. Else return default attribute.
-   * @param cur
-   */
-  public ch(cur?: boolean): CharData {
-    if (cur) {
-      return [this.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
-    }
-    return [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
   }
 
   /**
@@ -1859,7 +1882,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // blankLine(true) is xterm/linux behavior
       const scrollRegionHeight = this.buffer.scrollBottom - this.buffer.scrollTop;
       this.buffer.lines.shiftElements(this.buffer.y + this.buffer.ybase, scrollRegionHeight, 1);
-      this.buffer.lines.set(this.buffer.y + this.buffer.ybase, this.buffer.getBlankLine(this.eraseAttr()));
+      this.buffer.lines.set(this.buffer.y + this.buffer.ybase, this.buffer.getBlankLine(this.eraseAttrData()));
       this.updateRange(this.buffer.scrollTop);
       this.updateRange(this.buffer.scrollBottom);
     } else {
@@ -1904,46 +1927,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     return false;
   }
 
-  // TODO: Remove when true color is implemented
-  public matchColor(r1: number, g1: number, b1: number): number {
-    const hash = (r1 << 16) | (g1 << 8) | b1;
-
-    if (matchColorCache[hash] !== null && matchColorCache[hash] !== undefined) {
-      return matchColorCache[hash];
-    }
-
-    let ldiff = Infinity;
-    let li = -1;
-    let i = 0;
-    let c: number;
-    let r2: number;
-    let g2: number;
-    let b2: number;
-    let diff: number;
-
-    for (; i < DEFAULT_ANSI_COLORS.length; i++) {
-      c = DEFAULT_ANSI_COLORS[i].rgba;
-      r2 = c >>> 24;
-      g2 = c >>> 16 & 0xFF;
-      b2 = c >>> 8 & 0xFF;
-      // assume that alpha is 0xFF
-
-      diff = matchColorDistance(r1, g1, b1, r2, g2, b2);
-
-      if (diff === 0) {
-        li = i;
-        break;
-      }
-
-      if (diff < ldiff) {
-        ldiff = diff;
-        li = i;
-      }
-    }
-
-    return matchColorCache[hash] = li;
-  }
-
   private _visualBell(): boolean {
     return false;
     // return this.options.bellStyle === 'visual' ||
@@ -1965,20 +1948,4 @@ function wasModifierKeyOnlyEvent(ev: KeyboardEvent): boolean {
   return ev.keyCode === 16 || // Shift
     ev.keyCode === 17 || // Ctrl
     ev.keyCode === 18; // Alt
-}
-
-/**
- * TODO:
- * The below color-related code can be removed when true color is implemented.
- * It's only purpose is to match true color requests with the closest matching
- * ANSI color code.
- */
-
-const matchColorCache: {[colorRGBHash: number]: number} = {};
-
-// http://stackoverflow.com/questions/1633828
-function matchColorDistance(r1: number, g1: number, b1: number, r2: number, g2: number, b2: number): number {
-  return Math.pow(30 * (r1 - r2), 2)
-    + Math.pow(59 * (g1 - g2), 2)
-    + Math.pow(11 * (b1 - b2), 2);
 }

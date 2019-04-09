@@ -188,6 +188,18 @@ declare module 'xterm' {
      * The color theme of the terminal.
      */
     theme?: ITheme;
+
+    /**
+     * Whether "Windows mode" is enabled. Because Windows backends winpty and
+     * conpty operate by doing line wrapping on their side, xterm.js does not
+     * have access to wrapped lines. When Windows mode is enabled the following
+     * changes will be in effect:
+     *
+     * - Reflow is disabled.
+     * - Lines are assumed to be wrapped if the last character of the line is
+     *   not whitespace.
+     */
+    windowsMode?: boolean;
   }
 
   /**

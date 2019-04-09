@@ -36,7 +36,6 @@
  */
 
 .xterm {
-    font-family: courier-new, courier, monospace;
     font-feature-settings: "liga" 0;
     position: relative;
     user-select: none;
@@ -161,4 +160,8 @@
     width: 1px;
     height: 1px;
     overflow: hidden;
+}
+
+.xterm-dim {
+    opacity: 0.5;
 }

@@ -10,7 +10,7 @@ function startServer() {
   var terminals = {},
       logs = {};
 
-  app.use('/build', express.static(__dirname + '/../build'));
+  app.use('/src', express.static(__dirname + '/../src'));
 
   app.get('/', function(req, res){
     res.sendFile(__dirname + '/index.html');
@@ -100,7 +100,7 @@ function startServer() {
   var port = process.env.PORT || 3000,
       host = os.platform() === 'win32' ? '127.0.0.1' : '0.0.0.0';
 
-  console.log('App listening to http://' + host + ':' + port);
+  console.log('App listening to http://127.0.0.1:' + port);
   app.listen(port, host);
 }
 

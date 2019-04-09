@@ -6,7 +6,7 @@
 import { ITerminal, ISelectionManager, IBuffer, IBufferLine } from './Types';
 import { XtermListener } from './common/Types';
 import { MouseHelper } from './ui/MouseHelper';
-import * as Browser from './core/Platform';
+import * as Browser from './common/Platform';
 import { CharMeasure } from './ui/CharMeasure';
 import { EventEmitter } from './common/EventEmitter';
 import { SelectionModel } from './SelectionModel';
@@ -103,7 +103,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   private _mouseMoveListener: EventListener;
   private _mouseUpListener: EventListener;
   private _trimListener: XtermListener;
-  private _cell: CellData = new CellData();
+  private _workCell: CellData = new CellData();
 
   private _mouseDownTimeStamp: number;
 
@@ -669,8 +669,8 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   private _convertViewportColToCharacterIndex(bufferLine: IBufferLine, coords: [number, number]): number {
     let charIndex = coords[0];
     for (let i = 0; coords[0] >= i; i++) {
-      const length = bufferLine.loadCell(i, this._cell).getChars().length;
-      if (this._cell.getWidth() === 0) {
+      const length = bufferLine.loadCell(i, this._workCell).getChars().length;
+      if (this._workCell.getWidth() === 0) {
         // Wide characters aren't included in the line string so decrement the
         // index so the index is back on the wide character.
         charIndex--;
@@ -755,10 +755,10 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
       }
 
       // Expand the string in both directions until a space is hit
-      while (startCol > 0 && startIndex > 0 && !this._isCharWordSeparator(bufferLine.loadCell(startCol - 1, this._cell))) {
-        bufferLine.loadCell(startCol - 1, this._cell);
-        const length = this._cell.getChars().length;
-        if (this._cell.getWidth() === 0) {
+      while (startCol > 0 && startIndex > 0 && !this._isCharWordSeparator(bufferLine.loadCell(startCol - 1, this._workCell))) {
+        bufferLine.loadCell(startCol - 1, this._workCell);
+        const length = this._workCell.getChars().length;
+        if (this._workCell.getWidth() === 0) {
           // If the next character is a wide char, record it and skip the column
           leftWideCharCount++;
           startCol--;
@@ -771,10 +771,10 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
         startIndex--;
         startCol--;
       }
-      while (endCol < bufferLine.length && endIndex + 1 < line.length && !this._isCharWordSeparator(bufferLine.loadCell(endCol + 1, this._cell))) {
-        bufferLine.loadCell(endCol + 1, this._cell);
-        const length = this._cell.getChars().length;
-        if (this._cell.getWidth() === 2) {
+      while (endCol < bufferLine.length && endIndex + 1 < line.length && !this._isCharWordSeparator(bufferLine.loadCell(endCol + 1, this._workCell))) {
+        bufferLine.loadCell(endCol + 1, this._workCell);
+        const length = this._workCell.getChars().length;
+        if (this._workCell.getWidth() === 2) {
           // If the next character is a wide char, record it and skip the column
           rightWideCharCount++;
           endCol++;

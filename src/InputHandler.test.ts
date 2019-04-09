@@ -5,33 +5,33 @@
 
 import { assert, expect } from 'chai';
 import { InputHandler } from './InputHandler';
-import { MockInputHandlingTerminal } from './ui/TestUtils.test';
-import { DEFAULT_ATTR } from './Buffer';
+import { MockInputHandlingTerminal, TestTerminal } from './ui/TestUtils.test';
+import { DEFAULT_ATTR_DATA } from './Buffer';
 import { Terminal } from './Terminal';
 import { IBufferLine } from './Types';
-import { CellData } from './BufferLine';
+import { CellData, Attributes, AttributeData } from './BufferLine';
 
 describe('InputHandler', () => {
   describe('save and restore cursor', () => {
     const terminal = new MockInputHandlingTerminal();
     terminal.buffer.x = 1;
     terminal.buffer.y = 2;
-    terminal.curAttr = 3;
+    terminal.curAttrData.fg = 3;
     const inputHandler = new InputHandler(terminal);
     // Save cursor position
     inputHandler.saveCursor([]);
     assert.equal(terminal.buffer.x, 1);
     assert.equal(terminal.buffer.y, 2);
-    assert.equal(terminal.curAttr, 3);
+    assert.equal(terminal.curAttrData.fg, 3);
     // Change cursor position
     terminal.buffer.x = 10;
     terminal.buffer.y = 20;
-    terminal.curAttr = 30;
+    terminal.curAttrData.fg = 30;
     // Restore cursor position
     inputHandler.restoreCursor([]);
     assert.equal(terminal.buffer.x, 1);
     assert.equal(terminal.buffer.y, 2);
-    assert.equal(terminal.curAttr, 3);
+    assert.equal(terminal.curAttrData.fg, 3);
   });
   describe('setCursorStyle', () => {
     it('should call Terminal.setOption with correct params', () => {
@@ -357,45 +357,149 @@ describe('InputHandler', () => {
       expect(term.buffer.translateBufferLineToString(0, true)).to.equal('');
       expect(term.buffer.translateBufferLineToString(1, true)).to.equal('    TEST');
       // Text color of 'TEST' should be red
-      expect((term.buffer.lines.get(1).loadCell(4, new CellData()).fg >> 9) & 0x1ff).to.equal(1);
+      expect((term.buffer.lines.get(1).loadCell(4, new CellData()).getFgColor())).to.equal(1);
     });
     it('should handle DECSET/DECRST 1047 (alt screen buffer)', () => {
       handler.parse('\x1b[?1047h\r\n\x1b[31mJUNK\x1b[?1047lTEST');
       expect(term.buffer.translateBufferLineToString(0, true)).to.equal('');
       expect(term.buffer.translateBufferLineToString(1, true)).to.equal('    TEST');
       // Text color of 'TEST' should be red
-      expect((term.buffer.lines.get(1).loadCell(4, new CellData()).fg >> 9) & 0x1ff).to.equal(1);
+      expect((term.buffer.lines.get(1).loadCell(4, new CellData()).getFgColor())).to.equal(1);
     });
     it('should handle DECSET/DECRST 1048 (alt screen cursor)', () => {
       handler.parse('\x1b[?1048h\r\n\x1b[31mJUNK\x1b[?1048lTEST');
       expect(term.buffer.translateBufferLineToString(0, true)).to.equal('TEST');
       expect(term.buffer.translateBufferLineToString(1, true)).to.equal('JUNK');
       // Text color of 'TEST' should be default
-      expect(term.buffer.lines.get(0).loadCell(0, new CellData()).fg).to.equal(DEFAULT_ATTR);
+      expect(term.buffer.lines.get(0).loadCell(0, new CellData()).fg).to.equal(DEFAULT_ATTR_DATA.fg);
       // Text color of 'JUNK' should be red
-      expect((term.buffer.lines.get(1).loadCell(0, new CellData()).fg >> 9) & 0x1ff).to.equal(1);
+      expect((term.buffer.lines.get(1).loadCell(0, new CellData()).getFgColor())).to.equal(1);
     });
     it('should handle DECSET/DECRST 1049 (alt screen buffer+cursor)', () => {
       handler.parse('\x1b[?1049h\r\n\x1b[31mJUNK\x1b[?1049lTEST');
       expect(term.buffer.translateBufferLineToString(0, true)).to.equal('TEST');
       expect(term.buffer.translateBufferLineToString(1, true)).to.equal('');
       // Text color of 'TEST' should be default
-      expect(term.buffer.lines.get(0).loadCell(0, new CellData()).fg).to.equal(DEFAULT_ATTR);
+      expect(term.buffer.lines.get(0).loadCell(0, new CellData()).fg).to.equal(DEFAULT_ATTR_DATA.fg);
     });
     it('should handle DECSET/DECRST 1049 - maintains saved cursor for alt buffer', () => {
       handler.parse('\x1b[?1049h\r\n\x1b[31m\x1b[s\x1b[?1049lTEST');
       expect(term.buffer.translateBufferLineToString(0, true)).to.equal('TEST');
       // Text color of 'TEST' should be default
-      expect(term.buffer.lines.get(0).loadCell(0, new CellData()).fg).to.equal(DEFAULT_ATTR);
+      expect(term.buffer.lines.get(0).loadCell(0, new CellData()).fg).to.equal(DEFAULT_ATTR_DATA.fg);
       handler.parse('\x1b[?1049h\x1b[uTEST');
       expect(term.buffer.translateBufferLineToString(1, true)).to.equal('TEST');
       // Text color of 'TEST' should be red
-      expect((term.buffer.lines.get(1).loadCell(0, new CellData()).fg >> 9) & 0x1ff).to.equal(1);
+      expect((term.buffer.lines.get(1).loadCell(0, new CellData()).getFgColor())).to.equal(1);
     });
     it('should handle DECSET/DECRST 1049 - clears alt buffer with erase attributes', () => {
       handler.parse('\x1b[42m\x1b[?1049h');
       // Buffer should be filled with green background
-      expect(term.buffer.lines.get(20).loadCell(10, new CellData()).fg & 0x1ff).to.equal(2);
+      expect(term.buffer.lines.get(20).loadCell(10, new CellData()).getBgColor()).to.equal(2);
+    });
+  });
+
+  describe('text attributes', () => {
+    let term: TestTerminal;
+    beforeEach(() => {
+      term = new TestTerminal();
+    });
+    it('bold', () => {
+      term.writeSync('\x1b[1m');
+      assert.equal(!!term.curAttrData.isBold(), true);
+      term.writeSync('\x1b[22m');
+      assert.equal(!!term.curAttrData.isBold(), false);
+    });
+    it('dim', () => {
+      term.writeSync('\x1b[2m');
+      assert.equal(!!term.curAttrData.isDim(), true);
+      term.writeSync('\x1b[22m');
+      assert.equal(!!term.curAttrData.isDim(), false);
+    });
+    it('italic', () => {
+      term.writeSync('\x1b[3m');
+      assert.equal(!!term.curAttrData.isItalic(), true);
+      term.writeSync('\x1b[23m');
+      assert.equal(!!term.curAttrData.isItalic(), false);
+    });
+    it('underline', () => {
+      term.writeSync('\x1b[4m');
+      assert.equal(!!term.curAttrData.isUnderline(), true);
+      term.writeSync('\x1b[24m');
+      assert.equal(!!term.curAttrData.isUnderline(), false);
+    });
+    it('blink', () => {
+      term.writeSync('\x1b[5m');
+      assert.equal(!!term.curAttrData.isBlink(), true);
+      term.writeSync('\x1b[25m');
+      assert.equal(!!term.curAttrData.isBlink(), false);
+    });
+    it('inverse', () => {
+      term.writeSync('\x1b[7m');
+      assert.equal(!!term.curAttrData.isInverse(), true);
+      term.writeSync('\x1b[27m');
+      assert.equal(!!term.curAttrData.isInverse(), false);
+    });
+    it('invisible', () => {
+      term.writeSync('\x1b[8m');
+      assert.equal(!!term.curAttrData.isInvisible(), true);
+      term.writeSync('\x1b[28m');
+      assert.equal(!!term.curAttrData.isInvisible(), false);
+    });
+    it('colormode palette 16', () => {
+      assert.equal(term.curAttrData.getFgColorMode(), 0); // DEFAULT
+      assert.equal(term.curAttrData.getBgColorMode(), 0); // DEFAULT
+      // lower 8 colors
+      for (let i = 0; i < 8; ++i) {
+        term.writeSync(`\x1b[${i + 30};${i + 40}m`);
+        assert.equal(term.curAttrData.getFgColorMode(), Attributes.CM_P16);
+        assert.equal(term.curAttrData.getFgColor(), i);
+        assert.equal(term.curAttrData.getBgColorMode(), Attributes.CM_P16);
+        assert.equal(term.curAttrData.getBgColor(), i);
+      }
+      // reset to DEFAULT
+      term.writeSync(`\x1b[39;49m`);
+      assert.equal(term.curAttrData.getFgColorMode(), 0);
+      assert.equal(term.curAttrData.getBgColorMode(), 0);
+    });
+    it('colormode palette 256', () => {
+      assert.equal(term.curAttrData.getFgColorMode(), 0); // DEFAULT
+      assert.equal(term.curAttrData.getBgColorMode(), 0); // DEFAULT
+      // lower 8 colors
+      for (let i = 0; i < 256; ++i) {
+        term.writeSync(`\x1b[38;5;${i};48;5;${i}m`);
+        assert.equal(term.curAttrData.getFgColorMode(), Attributes.CM_P256);
+        assert.equal(term.curAttrData.getFgColor(), i);
+        assert.equal(term.curAttrData.getBgColorMode(), Attributes.CM_P256);
+        assert.equal(term.curAttrData.getBgColor(), i);
+      }
+      // reset to DEFAULT
+      term.writeSync(`\x1b[39;49m`);
+      assert.equal(term.curAttrData.getFgColorMode(), 0);
+      assert.equal(term.curAttrData.getFgColor(), -1);
+      assert.equal(term.curAttrData.getBgColorMode(), 0);
+      assert.equal(term.curAttrData.getBgColor(), -1);
+    });
+    it('colormode RGB', () => {
+      assert.equal(term.curAttrData.getFgColorMode(), 0); // DEFAULT
+      assert.equal(term.curAttrData.getBgColorMode(), 0); // DEFAULT
+      term.writeSync(`\x1b[38;2;1;2;3;48;2;4;5;6m`);
+      assert.equal(term.curAttrData.getFgColorMode(), Attributes.CM_RGB);
+      assert.equal(term.curAttrData.getFgColor(), 1 << 16 | 2 << 8 | 3);
+      assert.deepEqual(AttributeData.toColorRGB(term.curAttrData.getFgColor()), [1, 2, 3]);
+      assert.equal(term.curAttrData.getBgColorMode(), Attributes.CM_RGB);
+      assert.deepEqual(AttributeData.toColorRGB(term.curAttrData.getBgColor()), [4, 5, 6]);
+      // reset to DEFAULT
+      term.writeSync(`\x1b[39;49m`);
+      assert.equal(term.curAttrData.getFgColorMode(), 0);
+      assert.equal(term.curAttrData.getFgColor(), -1);
+      assert.equal(term.curAttrData.getBgColorMode(), 0);
+      assert.equal(term.curAttrData.getBgColor(), -1);
+    });
+    it('should zero missing RGB values', () => {
+      term.writeSync(`\x1b[38;2;1;2;3m`);
+      term.writeSync(`\x1b[38;2;5m`);
+      assert.deepEqual(AttributeData.toColorRGB(term.curAttrData.getFgColor()), [5, 0, 0]);
     });
   });
 });
