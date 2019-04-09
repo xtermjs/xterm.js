@@ -8,7 +8,7 @@ import { ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIterator, IB
 import { EventEmitter } from './common/EventEmitter';
 import { IMarker } from 'xterm';
 import { BufferLine, CellData, AttributeData } from './BufferLine';
-import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths } from './BufferReflow';
+import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths, getWrappedLineTrimmedLength } from './BufferReflow';
 import { DEFAULT_COLOR } from './renderer/atlas/Types';
 
 
@@ -282,7 +282,7 @@ export class Buffer implements IBuffer {
   }
 
   private _reflowLarger(newCols: number, newRows: number): void {
-    const toRemove: number[] = reflowLargerGetLinesToRemove(this.lines, newCols, this.ybase + this.y, this.getNullCell(DEFAULT_ATTR_DATA));
+    const toRemove: number[] = reflowLargerGetLinesToRemove(this.lines, this._cols, newCols, this.ybase + this.y, this.getNullCell(DEFAULT_ATTR_DATA));
     if (toRemove.length > 0) {
       const newLayoutResult = reflowLargerCreateNewLayout(this.lines, toRemove);
       reflowLargerApplyNewLayout(this.lines, newLayoutResult.layout);
@@ -388,8 +388,8 @@ export class Buffer implements IBuffer {
         srcCol -= cellsToCopy;
         if (srcCol === 0) {
           srcLineIndex--;
-          // TODO: srcCol shoudl take trimmed length into account
-          srcCol = wrappedLines[Math.max(srcLineIndex, 0)].getTrimmedLength(); // this._cols;
+          const wrappedLinesIndex = Math.max(srcLineIndex, 0);
+          srcCol = getWrappedLineTrimmedLength(wrappedLines, wrappedLinesIndex, this._cols);
         }
       }
 
