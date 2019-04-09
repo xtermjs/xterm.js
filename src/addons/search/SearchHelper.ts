@@ -115,8 +115,8 @@ export class SearchHelper implements ISearchHelper {
     }
 
     const isReverseSearch = true;
-    let startRow = this._terminal.rows - 1;
-    let startCol: number = this._terminal.cols;
+    let startRow = this._terminal._core.buffer.ydisp + this._terminal.rows - 1;
+    let startCol = this._terminal.cols;
 
     if (selectionManager.selectionStart) {
       // Start from the selection start if there is a selection
