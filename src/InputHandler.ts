@@ -4,18 +4,17 @@
  * @license MIT
  */
 
-import { IInputHandler, IDcsHandler, IEscapeSequenceParser, IBuffer, IInputHandlingTerminal } from './Types';
+import { IInputHandler, IDcsHandler, IEscapeSequenceParser, IInputHandlingTerminal } from './Types';
 import { C0, C1 } from './common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from './core/data/Charsets';
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from './Buffer';
-import { FLAGS } from './renderer/Types';
+import { NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR_DATA } from './Buffer';
 import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
-import { ICharset } from './core/Types';
 import { IDisposable } from 'xterm';
 import { Disposable } from './common/Lifecycle';
 import { concat } from './common/TypedArrayUtils';
 import { StringToUtf32, stringFromCodePoint, utf32ToString } from './core/input/TextDecoder';
+import { CellData, Attributes, FgFlags, BgFlags, AttributeData } from './BufferLine';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -105,6 +104,7 @@ class DECRQSS implements IDcsHandler {
 export class InputHandler extends Disposable implements IInputHandler {
   private _parseBuffer: Uint32Array = new Uint32Array(4096);
   private _stringDecoder: StringToUtf32 = new StringToUtf32();
+  private _workCell: CellData = new CellData();
 
   constructor(
       protected _terminal: IInputHandlingTerminal,
@@ -301,9 +301,6 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (this._parseBuffer.length < data.length) {
       this._parseBuffer = new Uint32Array(data.length);
     }
-    for (let i = 0; i < data.length; ++i) {
-      this._parseBuffer[i] = data.charCodeAt(i);
-    }
     this._parser.parse(this._parseBuffer, this._stringDecoder.decode(data, this._parseBuffer));
 
     buffer = this._terminal.buffer;
@@ -314,39 +311,36 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   public print(data: Uint32Array, start: number, end: number): void {
     let code: number;
-    let char: string;
     let chWidth: number;
-    const buffer: IBuffer = this._terminal.buffer;
-    const charset: ICharset = this._terminal.charset;
-    const screenReaderMode: boolean = this._terminal.options.screenReaderMode;
-    const cols: number = this._terminal.cols;
-    const wraparoundMode: boolean = this._terminal.wraparoundMode;
-    const insertMode: boolean = this._terminal.insertMode;
-    const curAttr: number = this._terminal.curAttr;
+    const buffer = this._terminal.buffer;
+    const charset = this._terminal.charset;
+    const screenReaderMode = this._terminal.options.screenReaderMode;
+    const cols = this._terminal.cols;
+    const wraparoundMode = this._terminal.wraparoundMode;
+    const insertMode = this._terminal.insertMode;
+    const curAttr = this._terminal.curAttrData;
     let bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
 
     this._terminal.updateRange(buffer.y);
     for (let pos = start; pos < end; ++pos) {
       code = data[pos];
-      char = stringFromCodePoint(code);
 
       // calculate print space
       // expensive call, therefore we save width in line buffer
       chWidth = wcwidth(code);
 
       // get charset replacement character
-      // charset are only defined for ASCII, therefore we only
+      // charset is only defined for ASCII, therefore we only
       // search for an replacement char if code < 127
       if (code < 127 && charset) {
-        const ch = charset[char];
+        const ch = charset[String.fromCharCode(code)];
         if (ch) {
           code = ch.charCodeAt(0);
-          char = ch;
         }
       }
 
       if (screenReaderMode) {
-        this._terminal.emit('a11y.char', char);
+        this._terminal.emit('a11y.char', stringFromCodePoint(code));
       }
 
       // insert combining char at last cursor position
@@ -355,23 +349,13 @@ export class InputHandler extends Disposable implements IInputHandler {
       // since they always follow a cell consuming char
       // therefore we can test for buffer.x to avoid overflow left
       if (!chWidth && buffer.x) {
-        const chMinusOne = bufferRow.get(buffer.x - 1);
-        if (chMinusOne) {
-          if (!chMinusOne[CHAR_DATA_WIDTH_INDEX]) {
-            // found empty cell after fullwidth, need to go 2 cells back
-            // it is save to step 2 cells back here
-            // since an empty cell is only set by fullwidth chars
-            const chMinusTwo = bufferRow.get(buffer.x - 2);
-            if (chMinusTwo) {
-              chMinusTwo[CHAR_DATA_CHAR_INDEX] += char;
-              chMinusTwo[CHAR_DATA_CODE_INDEX] = code;
-              bufferRow.set(buffer.x - 2, chMinusTwo); // must be set explicitly now
-            }
-          } else {
-            chMinusOne[CHAR_DATA_CHAR_INDEX] += char;
-            chMinusOne[CHAR_DATA_CODE_INDEX] = code;
-            bufferRow.set(buffer.x - 1, chMinusOne); // must be set explicitly now
-          }
+        if (!bufferRow.getWidth(buffer.x - 1)) {
+          // found empty cell after fullwidth, need to go 2 cells back
+          // it is save to step 2 cells back here
+          // since an empty cell is only set by fullwidth chars
+          bufferRow.addCodepointToCell(buffer.x - 2, code);
+        } else {
+          bufferRow.addCodepointToCell(buffer.x - 1, code);
         }
         continue;
       }
@@ -410,25 +394,25 @@ export class InputHandler extends Disposable implements IInputHandler {
       // insert mode: move characters to right
       if (insertMode) {
         // right shift cells according to the width
-        bufferRow.insertCells(buffer.x, chWidth, [curAttr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+        bufferRow.insertCells(buffer.x, chWidth, buffer.getNullCell(curAttr));
         // test last cell - since the last cell has only room for
         // a halfwidth char any fullwidth shifted there is lost
-        // and will be set to eraseChar
-        const lastCell = bufferRow.get(cols - 1);
-        if (lastCell[CHAR_DATA_WIDTH_INDEX] === 2) {
-          bufferRow.set(cols - 1, [curAttr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+        // and will be set to empty cell
+        if (bufferRow.getWidth(cols - 1) === 2) {
+          bufferRow.setCellFromCodePoint(cols - 1, NULL_CELL_CODE, NULL_CELL_WIDTH, curAttr.fg, curAttr.bg);
         }
       }
 
       // write current char to buffer and advance cursor
-      bufferRow.set(buffer.x++, [curAttr, char, chWidth, code]);
+      bufferRow.setCellFromCodePoint(buffer.x++, code, chWidth, curAttr.fg, curAttr.bg);
 
       // fullwidth char - also set next cell to placeholder stub and advance cursor
       // for graphemes bigger than fullwidth we can simply loop to zero
       // we already made sure above, that buffer.x + chWidth will not overflow right
       if (chWidth > 0) {
         while (--chWidth) {
-          bufferRow.set(buffer.x++, [curAttr, '', 0, undefined]);
+          // other than a regular empty cell a cell following a wide char has no width
+          bufferRow.setCellFromCodePoint(buffer.x++, 0, 0, curAttr.fg, curAttr.bg);
         }
       }
     }
@@ -534,7 +518,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).insertCells(
       this._terminal.buffer.x,
       params[0] || 1,
-      [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
+      this._terminal.buffer.getNullCell(this._terminal.eraseAttrData())
     );
     this._terminal.updateRange(this._terminal.buffer.y);
   }
@@ -708,7 +692,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     line.replaceCells(
       start,
       end,
-      [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
+      this._terminal.buffer.getNullCell(this._terminal.eraseAttrData())
     );
     if (clearWrap) {
       line.isWrapped = false;
@@ -831,7 +815,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       // test: echo -e '\e[44m\e[1L\e[0m'
       // blankLine(true) - xterm/linux behavior
       buffer.lines.splice(scrollBottomAbsolute - 1, 1);
-      buffer.lines.splice(row, 0, buffer.getBlankLine(this._terminal.eraseAttr()));
+      buffer.lines.splice(row, 0, buffer.getBlankLine(this._terminal.eraseAttrData()));
     }
 
     // this.maxRange();
@@ -861,7 +845,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       // test: echo -e '\e[44m\e[1M\e[0m'
       // blankLine(true) - xterm/linux behavior
       buffer.lines.splice(row, 1);
-      buffer.lines.splice(j, 0, buffer.getBlankLine(this._terminal.eraseAttr()));
+      buffer.lines.splice(j, 0, buffer.getBlankLine(this._terminal.eraseAttrData()));
     }
 
     // this.maxRange();
@@ -877,7 +861,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).deleteCells(
       this._terminal.buffer.x,
       params[0] || 1,
-      [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
+      this._terminal.buffer.getNullCell(this._terminal.eraseAttrData())
     );
     this._terminal.updateRange(this._terminal.buffer.y);
   }
@@ -893,7 +877,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     while (param--) {
       buffer.lines.splice(buffer.ybase + buffer.scrollTop, 1);
-      buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 0, buffer.getBlankLine(DEFAULT_ATTR));
+      buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 0, buffer.getBlankLine(DEFAULT_ATTR_DATA));
     }
     // this.maxRange();
     this._terminal.updateRange(buffer.scrollTop);
@@ -912,7 +896,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
       while (param--) {
         buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 1);
-        buffer.lines.splice(buffer.ybase + buffer.scrollBottom, 0, buffer.getBlankLine(DEFAULT_ATTR));
+        buffer.lines.splice(buffer.ybase + buffer.scrollTop, 0, buffer.getBlankLine(DEFAULT_ATTR_DATA));
       }
       // this.maxRange();
       this._terminal.updateRange(buffer.scrollTop);
@@ -928,7 +912,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._terminal.buffer.lines.get(this._terminal.buffer.y + this._terminal.buffer.ybase).replaceCells(
       this._terminal.buffer.x,
       this._terminal.buffer.x + (params[0] || 1),
-      [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
+      this._terminal.buffer.getNullCell(this._terminal.eraseAttrData())
     );
   }
 
@@ -984,9 +968,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     // make buffer local for faster access
     const buffer = this._terminal.buffer;
     const line = buffer.lines.get(buffer.ybase + buffer.y);
+    line.loadCell(buffer.x - 1, this._workCell);
     line.replaceCells(buffer.x,
       buffer.x + (params[0] || 1),
-      line.get(buffer.x - 1) || [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]
+      (this._workCell.content !== undefined) ? this._workCell : buffer.getNullCell(DEFAULT_ATTR_DATA)
     );
     // FIXME: no updateRange here?
   }
@@ -1324,7 +1309,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           // FALL-THROUGH
         case 47: // alt screen buffer
         case 1047: // alt screen buffer
-          this._terminal.buffers.activateAltBuffer(this._terminal.eraseAttr());
+          this._terminal.buffers.activateAltBuffer(this._terminal.eraseAttrData());
           this._terminal.refresh(0, this._terminal.rows - 1);
           if (this._terminal.viewport) {
             this._terminal.viewport.syncScrollArea();
@@ -1588,127 +1573,124 @@ export class InputHandler extends Disposable implements IInputHandler {
   public charAttributes(params: number[]): void {
     // Optimize a single SGR0.
     if (params.length === 1 && params[0] === 0) {
-      this._terminal.curAttr = DEFAULT_ATTR;
+      this._terminal.curAttrData.fg = DEFAULT_ATTR_DATA.fg;
+      this._terminal.curAttrData.bg = DEFAULT_ATTR_DATA.bg;
       return;
     }
 
     const l = params.length;
-    let flags = this._terminal.curAttr >> 18;
-    let fg = (this._terminal.curAttr >> 9) & 0x1ff;
-    let bg = this._terminal.curAttr & 0x1ff;
     let p;
+    const attr = this._terminal.curAttrData;
 
     for (let i = 0; i < l; i++) {
       p = params[i];
       if (p >= 30 && p <= 37) {
         // fg color 8
-        fg = p - 30;
+        attr.fg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
+        attr.fg |= Attributes.CM_P16 | (p - 30);
       } else if (p >= 40 && p <= 47) {
         // bg color 8
-        bg = p - 40;
+        attr.bg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
+        attr.bg |= Attributes.CM_P16 | (p - 40);
       } else if (p >= 90 && p <= 97) {
         // fg color 16
-        p += 8;
-        fg = p - 90;
+        attr.fg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
+        attr.fg |= Attributes.CM_P16 | (p - 90) | 8;
       } else if (p >= 100 && p <= 107) {
         // bg color 16
-        p += 8;
-        bg = p - 100;
+        attr.bg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
+        attr.bg |= Attributes.CM_P16 | (p - 100) | 8;
       } else if (p === 0) {
         // default
-        flags = DEFAULT_ATTR >> 18;
-        fg = (DEFAULT_ATTR >> 9) & 0x1ff;
-        bg = DEFAULT_ATTR & 0x1ff;
-        // flags = 0;
-        // fg = 0x1ff;
-        // bg = 0x1ff;
+        attr.fg = DEFAULT_ATTR_DATA.fg;
+        attr.bg = DEFAULT_ATTR_DATA.bg;
       } else if (p === 1) {
         // bold text
-        flags |= FLAGS.BOLD;
+        attr.fg |= FgFlags.BOLD;
       } else if (p === 3) {
         // italic text
-        flags |= FLAGS.ITALIC;
+        attr.bg |= BgFlags.ITALIC;
       } else if (p === 4) {
         // underlined text
-        flags |= FLAGS.UNDERLINE;
+        attr.fg |= FgFlags.UNDERLINE;
       } else if (p === 5) {
         // blink
-        flags |= FLAGS.BLINK;
+        attr.fg |= FgFlags.BLINK;
       } else if (p === 7) {
         // inverse and positive
         // test with: echo -e '\e[31m\e[42mhello\e[7mworld\e[27mhi\e[m'
-        flags |= FLAGS.INVERSE;
+        attr.fg |= FgFlags.INVERSE;
       } else if (p === 8) {
         // invisible
-        flags |= FLAGS.INVISIBLE;
+        attr.fg |= FgFlags.INVISIBLE;
       } else if (p === 2) {
         // dimmed text
-        flags |= FLAGS.DIM;
+        attr.bg |= BgFlags.DIM;
       } else if (p === 22) {
         // not bold nor faint
-        flags &= ~FLAGS.BOLD;
-        flags &= ~FLAGS.DIM;
+        attr.fg &= ~FgFlags.BOLD;
+        attr.bg &= ~BgFlags.DIM;
       } else if (p === 23) {
         // not italic
-        flags &= ~FLAGS.ITALIC;
+        attr.bg &= ~BgFlags.ITALIC;
       } else if (p === 24) {
         // not underlined
-        flags &= ~FLAGS.UNDERLINE;
+        attr.fg &= ~FgFlags.UNDERLINE;
       } else if (p === 25) {
         // not blink
-        flags &= ~FLAGS.BLINK;
+        attr.fg &= ~FgFlags.BLINK;
       } else if (p === 27) {
         // not inverse
-        flags &= ~FLAGS.INVERSE;
+        attr.fg &= ~FgFlags.INVERSE;
       } else if (p === 28) {
         // not invisible
-        flags &= ~FLAGS.INVISIBLE;
+        attr.fg &= ~FgFlags.INVISIBLE;
       } else if (p === 39) {
         // reset fg
-        fg = (DEFAULT_ATTR >> 9) & 0x1ff;
+        attr.fg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
+        attr.fg |= DEFAULT_ATTR_DATA.fg & (Attributes.PCOLOR_MASK | Attributes.RGB_MASK);
       } else if (p === 49) {
         // reset bg
-        bg = DEFAULT_ATTR & 0x1ff;
+        attr.bg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
+        attr.bg |= DEFAULT_ATTR_DATA.bg & (Attributes.PCOLOR_MASK | Attributes.RGB_MASK);
       } else if (p === 38) {
         // fg color 256
         if (params[i + 1] === 2) {
           i += 2;
-          fg = this._terminal.matchColor(
-            params[i] & 0xff,
-            params[i + 1] & 0xff,
-            params[i + 2] & 0xff);
-          if (fg === -1) fg = 0x1ff;
+          attr.fg |= Attributes.CM_RGB;
+          attr.fg &= ~Attributes.RGB_MASK;
+          attr.fg |= AttributeData.fromColorRGB([params[i], params[i + 1], params[i + 2]]);
           i += 2;
         } else if (params[i + 1] === 5) {
           i += 2;
           p = params[i] & 0xff;
-          fg = p;
+          attr.fg &= ~Attributes.PCOLOR_MASK;
+          attr.fg |= Attributes.CM_P256 | p;
         }
       } else if (p === 48) {
         // bg color 256
         if (params[i + 1] === 2) {
           i += 2;
-          bg = this._terminal.matchColor(
-            params[i] & 0xff,
-            params[i + 1] & 0xff,
-            params[i + 2] & 0xff);
-          if (bg === -1) bg = 0x1ff;
+          attr.bg |= Attributes.CM_RGB;
+          attr.bg &= ~Attributes.RGB_MASK;
+          attr.bg |= AttributeData.fromColorRGB([params[i], params[i + 1], params[i + 2]]);
           i += 2;
         } else if (params[i + 1] === 5) {
           i += 2;
           p = params[i] & 0xff;
-          bg = p;
+          attr.bg &= ~Attributes.PCOLOR_MASK;
+          attr.bg |= Attributes.CM_P256 | p;
         }
       } else if (p === 100) {
         // reset fg/bg
-        fg = (DEFAULT_ATTR >> 9) & 0x1ff;
-        bg = DEFAULT_ATTR & 0x1ff;
+        attr.fg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
+        attr.fg |= DEFAULT_ATTR_DATA.fg & (Attributes.PCOLOR_MASK | Attributes.RGB_MASK);
+        attr.bg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
+        attr.bg |= DEFAULT_ATTR_DATA.bg & (Attributes.PCOLOR_MASK | Attributes.RGB_MASK);
       } else {
         this._terminal.error('Unknown SGR attribute: %d.', p);
       }
     }
-
-    this._terminal.curAttr = (flags << 18) | (fg << 9) | bg;
   }
 
   /**
@@ -1795,7 +1777,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._terminal.applicationCursor = false;
       this._terminal.buffer.scrollTop = 0;
       this._terminal.buffer.scrollBottom = this._terminal.rows - 1;
-      this._terminal.curAttr = DEFAULT_ATTR;
+      this._terminal.curAttrData = DEFAULT_ATTR_DATA;
       this._terminal.buffer.x = this._terminal.buffer.y = 0; // ?
       this._terminal.charset = null;
       this._terminal.glevel = 0; // ??
@@ -1858,7 +1840,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   public saveCursor(params: number[]): void {
     this._terminal.buffer.savedX = this._terminal.buffer.x;
     this._terminal.buffer.savedY = this._terminal.buffer.y;
-    this._terminal.buffer.savedCurAttr = this._terminal.curAttr;
+    this._terminal.buffer.savedCurAttrData.fg = this._terminal.curAttrData.fg;
+    this._terminal.buffer.savedCurAttrData.bg = this._terminal.curAttrData.bg;
   }
 
 
@@ -1870,7 +1853,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   public restoreCursor(params: number[]): void {
     this._terminal.buffer.x = this._terminal.buffer.savedX || 0;
     this._terminal.buffer.y = this._terminal.buffer.savedY || 0;
-    this._terminal.curAttr = this._terminal.buffer.savedCurAttr || DEFAULT_ATTR;
+    this._terminal.curAttrData.fg = this._terminal.buffer.savedCurAttrData.fg;
+    this._terminal.curAttrData.bg = this._terminal.buffer.savedCurAttrData.bg;
   }
 
 

@@ -3,25 +3,30 @@
  * @license MIT
  */
 
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_ATTR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, NULL_CELL_CODE, WHITESPACE_CELL_CHAR } from '../../Buffer';
-import { FLAGS } from '../Types';
-import { IBufferLine } from '../../Types';
-import { DEFAULT_COLOR, INVERTED_DEFAULT_COLOR } from '../atlas/Types';
+import {  NULL_CELL_CODE, WHITESPACE_CELL_CHAR } from '../../Buffer';
+import { IBufferLine, ITerminalOptions } from '../../Types';
+import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
+import { CellData, AttributeData } from '../../BufferLine';
 
 export const BOLD_CLASS = 'xterm-bold';
+export const DIM_CLASS = 'xterm-dim';
 export const ITALIC_CLASS = 'xterm-italic';
 export const CURSOR_CLASS = 'xterm-cursor';
+export const CURSOR_BLINK_CLASS = 'xterm-cursor-blink';
 export const CURSOR_STYLE_BLOCK_CLASS = 'xterm-cursor-block';
 export const CURSOR_STYLE_BAR_CLASS = 'xterm-cursor-bar';
 export const CURSOR_STYLE_UNDERLINE_CLASS = 'xterm-cursor-underline';
 
 export class DomRendererRowFactory {
+  private _workCell: CellData = new CellData();
+
   constructor(
+    private _terminalOptions: ITerminalOptions,
     private _document: Document
   ) {
   }
 
-  public createRow(lineData: IBufferLine, isCursorRow: boolean, cursorStyle: string | undefined, cursorX: number, cellWidth: number, cols: number): DocumentFragment {
+  public createRow(lineData: IBufferLine, isCursorRow: boolean, cursorStyle: string | undefined, cursorX: number, cursorBlink: boolean, cellWidth: number, cols: number): DocumentFragment {
     const fragment = this._document.createDocumentFragment();
 
     // Find the line length first, this prevents the need to output a bunch of
@@ -31,19 +36,15 @@ export class DomRendererRowFactory {
     // the viewport).
     let lineLength = 0;
     for (let x = Math.min(lineData.length, cols) - 1; x >= 0; x--) {
-      const charData = lineData.get(x);
-      const code = charData[CHAR_DATA_CODE_INDEX];
-      if (code !== NULL_CELL_CODE || (isCursorRow && x === cursorX)) {
+      if (lineData.loadCell(x, this._workCell).getCode() !== NULL_CELL_CODE || (isCursorRow && x === cursorX)) {
         lineLength = x + 1;
         break;
       }
     }
 
     for (let x = 0; x < lineLength; x++) {
-      const charData = lineData.get(x);
-      const char = charData[CHAR_DATA_CHAR_INDEX] || WHITESPACE_CELL_CHAR;
-      const attr = charData[CHAR_DATA_ATTR_INDEX];
-      const width = charData[CHAR_DATA_WIDTH_INDEX];
+      lineData.loadCell(x, this._workCell);
+      const width = this._workCell.getWidth();
 
       // The character to the left is a wide character, drawing is owned by the char at x-1
       if (width === 0) {
@@ -55,12 +56,12 @@ export class DomRendererRowFactory {
         charElement.style.width = `${cellWidth * width}px`;
       }
 
-      const flags = attr >> 18;
-      let bg = attr & 0x1ff;
-      let fg = (attr >> 9) & 0x1ff;
-
       if (isCursorRow && x === cursorX) {
         charElement.classList.add(CURSOR_CLASS);
+
+        if (cursorBlink) {
+          charElement.classList.add(CURSOR_BLINK_CLASS);
+        }
 
         switch (cursorStyle) {
           case 'bar':
@@ -75,39 +76,49 @@ export class DomRendererRowFactory {
         }
       }
 
-      // If inverse flag is on, the foreground should become the background.
-      if (flags & FLAGS.INVERSE) {
-        const temp = bg;
-        bg = fg;
-        fg = temp;
-        if (fg === DEFAULT_COLOR) {
-          fg = INVERTED_DEFAULT_COLOR;
-        }
-        if (bg === DEFAULT_COLOR) {
-          bg = INVERTED_DEFAULT_COLOR;
-        }
-      }
-
-      if (flags & FLAGS.BOLD) {
-        // Convert the FG color to the bold variant. This should not happen when
-        // the fg is the inverse default color as there is no bold variant.
-        if (fg < 8) {
-          fg += 8;
-        }
+      if (this._workCell.isBold() && this._terminalOptions.enableBold) {
         charElement.classList.add(BOLD_CLASS);
       }
 
-      if (flags & FLAGS.ITALIC) {
+      if (this._workCell.isItalic()) {
         charElement.classList.add(ITALIC_CLASS);
       }
 
-      charElement.textContent = char;
-      if (fg !== DEFAULT_COLOR) {
-        charElement.classList.add(`xterm-fg-${fg}`);
+      if (this._workCell.isDim()) {
+        charElement.classList.add(DIM_CLASS);
       }
-      if (bg !== DEFAULT_COLOR) {
-        charElement.classList.add(`xterm-bg-${bg}`);
+
+      charElement.textContent = this._workCell.getChars() || WHITESPACE_CELL_CHAR;
+
+      const swapColor = this._workCell.isInverse();
+
+      // fg
+      if (this._workCell.isFgRGB()) {
+        let style = charElement.getAttribute('style') || '';
+        style += `${swapColor ? 'background-' : ''}color:rgb(${(AttributeData.toColorRGB(this._workCell.getFgColor())).join(',')});`;
+        charElement.setAttribute('style', style);
+      } else if (this._workCell.isFgPalette()) {
+        let fg = this._workCell.getFgColor();
+        if (this._workCell.isBold() && fg < 8 && !swapColor &&
+            this._terminalOptions.enableBold && this._terminalOptions.drawBoldTextInBrightColors) {
+          fg += 8;
+        }
+        charElement.classList.add(`xterm-${swapColor ? 'b' : 'f'}g-${fg}`);
+      } else if (swapColor) {
+        charElement.classList.add(`xterm-bg-${INVERTED_DEFAULT_COLOR}`);
       }
+
+      // bg
+      if (this._workCell.isBgRGB()) {
+        let style = charElement.getAttribute('style') || '';
+        style += `${swapColor ? '' : 'background-'}color:rgb(${(AttributeData.toColorRGB(this._workCell.getBgColor())).join(',')});`;
+        charElement.setAttribute('style', style);
+      } else if (this._workCell.isBgPalette()) {
+        charElement.classList.add(`xterm-${swapColor ? 'f' : 'b'}g-${this._workCell.getBgColor()}`);
+      } else if (swapColor) {
+        charElement.classList.add(`xterm-fg-${INVERTED_DEFAULT_COLOR}`);
+      }
+
       fragment.appendChild(charElement);
     }
     return fragment;

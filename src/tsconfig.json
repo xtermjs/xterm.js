@@ -1,7 +1,7 @@
 {
+  "extends": "./tsconfig-base",
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es5",
     "lib": [
       "dom",
       "es5",
@@ -9,19 +9,21 @@
       "scripthost",
       "es2015.promise"
     ],
-    "rootDir": "src",
-    "outDir": "lib",
-    "sourceMap": true,
-    "removeComments": true,
-    "preserveWatchOutput": true,
+    "rootDir": ".",
+    "outDir": "../lib",
+
     "noUnusedLocals": true,
     "noImplicitAny": true
   },
   "include": [
-    "src/**/*",
-    "typings/xterm.d.ts"
+    "./**/*",
+    "../typings/xterm.d.ts"
   ],
   "exclude": [
-    "src/addons/**/*"
+    "./addons/**/*"
+  ],
+  "references": [
+    { "path": "./common" },
+    { "path": "./core" }
   ]
 }

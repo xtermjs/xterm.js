@@ -48,7 +48,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   insertMode: boolean;
   wraparoundMode: boolean;
   bracketedPasteMode: boolean;
-  curAttr: number;
+  curAttrData: IAttributeData;
   savedCols: number;
   x10Mouse: boolean;
   vt200Mouse: boolean;
@@ -70,7 +70,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   updateRange(y: number): void;
   scroll(isWrapped?: boolean): void;
   setgLevel(g: number): void;
-  eraseAttr(): number;
+  eraseAttrData(): IAttributeData;
   is(term: string): boolean;
   setgCharset(g: number, charset: ICharset): void;
   resize(x: number, y: number): void;
@@ -78,7 +78,6 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   reset(): void;
   showCursor(): void;
   refresh(start: number, end: number): void;
-  matchColor(r1: number, g1: number, b1: number): number;
   error(text: string, data?: any): void;
   setOption(key: string, value: any): void;
   tabSet(): void;
@@ -289,15 +288,17 @@ export interface IBuffer {
   hasScrollback: boolean;
   savedY: number;
   savedX: number;
-  savedCurAttr: number;
+  savedCurAttrData: IAttributeData;
   isCursorInViewport: boolean;
   translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string;
   getWrappedRangeForLine(y: number): { first: number, last: number };
   nextStop(x?: number): number;
   prevStop(x?: number): number;
-  getBlankLine(attr: number, isWrapped?: boolean): IBufferLine;
+  getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine;
   stringIndexToBufferIndex(lineIndex: number, stringIndex: number): number[];
   iterator(trimRight: boolean, startIndex?: number, endIndex?: number, startOverscan?: number, endOverscan?: number): IBufferStringIterator;
+  getNullCell(attr?: IAttributeData): ICellData;
+  getWhitespaceCell(attr?: IAttributeData): ICellData;
 }
 
 export interface IBufferSet extends IEventEmitter {
@@ -306,7 +307,7 @@ export interface IBufferSet extends IEventEmitter {
   active: IBuffer;
 
   activateNormalBuffer(): void;
-  activateAltBuffer(fillAttr?: number): void;
+  activateAltBuffer(fillAttr?: IAttributeData): void;
 }
 
 export interface ISelectionManager {
@@ -519,6 +520,52 @@ export interface IEscapeSequenceParser extends IDisposable {
   clearErrorHandler(): void;
 }
 
+/** RGB color type */
+export type IColorRGB = [number, number, number];
+
+/** Attribute data */
+export interface IAttributeData {
+  fg: number;
+  bg: number;
+
+  clone(): IAttributeData;
+
+  // flags
+  isInverse(): number;
+  isBold(): number;
+  isUnderline(): number;
+  isBlink(): number;
+  isInvisible(): number;
+  isItalic(): number;
+  isDim(): number;
+
+  // color modes
+  getFgColorMode(): number;
+  getBgColorMode(): number;
+  isFgRGB(): boolean;
+  isBgRGB(): boolean;
+  isFgPalette(): boolean;
+  isBgPalette(): boolean;
+  isFgDefault(): boolean;
+  isBgDefault(): boolean;
+
+  // colors
+  getFgColor(): number;
+  getBgColor(): number;
+}
+
+/** Cell data */
+export interface ICellData extends IAttributeData {
+  content: number;
+  combinedData: string;
+  isCombined(): number;
+  getWidth(): number;
+  getChars(): string;
+  getCode(): number;
+  setFromCharData(value: CharData): void;
+  getAsCharData(): CharData;
+}
+
 /**
  * Interface for a line in the terminal buffer.
  */
@@ -527,13 +574,27 @@ export interface IBufferLine {
   isWrapped: boolean;
   get(index: number): CharData;
   set(index: number, value: CharData): void;
-  insertCells(pos: number, n: number, ch: CharData): void;
-  deleteCells(pos: number, n: number, fill: CharData): void;
-  replaceCells(start: number, end: number, fill: CharData): void;
-  resize(cols: number, fill: CharData): void;
-  fill(fillCharData: CharData): void;
+  loadCell(index: number, cell: ICellData): ICellData;
+  setCell(index: number, cell: ICellData): void;
+  setCellFromCodePoint(index: number, codePoint: number, width: number, fg: number, bg: number): void;
+  addCodepointToCell(index: number, codePoint: number): void;
+  insertCells(pos: number, n: number, ch: ICellData): void;
+  deleteCells(pos: number, n: number, fill: ICellData): void;
+  replaceCells(start: number, end: number, fill: ICellData): void;
+  resize(cols: number, fill: ICellData): void;
+  fill(fillCellData: ICellData): void;
   copyFrom(line: IBufferLine): void;
   clone(): IBufferLine;
   getTrimmedLength(): number;
   translateToString(trimRight?: boolean, startCol?: number, endCol?: number): string;
+
+  /* direct access to cell attrs */
+  getWidth(index: number): number;
+  hasWidth(index: number): number;
+  getFg(index: number): number;
+  getBg(index: number): number;
+  hasContent(index: number): number;
+  getCodePoint(index: number): number;
+  isCombined(index: number): number;
+  getString(index: number): string;
 }
