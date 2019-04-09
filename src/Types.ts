@@ -111,8 +111,6 @@ export interface ICompositionHelper {
 export interface IInputHandler {
   parse(data: string): void;
   print(data: Uint32Array, start: number, end: number): void;
-  addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable;
-  addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
 
   /** C0 BEL */ bell(): void;
   /** C0 LF */ lineFeed(): void;
