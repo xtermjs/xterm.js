@@ -111,6 +111,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
   private _onLineFeed = new EventEmitter2<void>();
   public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
+  private _onScroll = new EventEmitter2<number>();
+  public get onScroll(): IEvent<number> { return this._onScroll.event; }
 
   constructor(
       protected _terminal: IInputHandlingTerminal,
@@ -764,7 +766,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._terminal.buffer.ybase = Math.max(this._terminal.buffer.ybase - scrollBackSize, 0);
           this._terminal.buffer.ydisp = Math.max(this._terminal.buffer.ydisp - scrollBackSize, 0);
           // Force a scroll event to refresh viewport
-          this._terminal.emit('scroll', 0);
+          this._onScroll.fire(0);
         }
         break;
     }

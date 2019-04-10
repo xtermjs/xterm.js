@@ -263,7 +263,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // TODO: Replace EventEmitter with EventEmitter2 internally
     this.on('selection', () => this._onSelectionChange.fire());
     this.on('data', e => this._onInput.fire(e));
-    this.on('scroll', e => this._onScroll.fire(e));
     this.on('refresh', e => this._onRender.fire(e));
 
     // TODO: Remove these in v4
@@ -272,6 +271,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.onKey(e => this.emit('key', e.key, e.domEvent));
     this.onLineFeed(() => this.emit('linefeed'));
     this.onResize(e => this.emit('resize', e));
+    this.onScroll(e => this.emit('scroll', e));
     this.onTitleChange(e => this.emit('title', e));
   }
 
@@ -740,7 +740,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     this._mouseZoneManager = new MouseZoneManager(this);
     this.register(this._mouseZoneManager);
-    this.register(this.addDisposableListener('scroll', () => this._mouseZoneManager.clearAll()));
+    this.register(this.onScroll(() => this._mouseZoneManager.clearAll()));
     this.linkifier.attachToDom(this._mouseZoneManager);
 
     this.textarea = document.createElement('textarea');
@@ -795,7 +795,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       this.textarea.focus();
       this.textarea.select();
     }));
-    this.register(this.addDisposableListener('scroll', () => {
+    this.register(this.onScroll(() => {
       this.viewport.syncScrollArea();
       this.selectionManager.refresh();
     }));
@@ -1302,13 +1302,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.updateRange(this.buffer.scrollTop);
     this.updateRange(this.buffer.scrollBottom);
 
-    /**
-     * This event is emitted whenever the terminal is scrolled.
-     * The one parameter passed is the new y display position.
-     *
-     * @event scroll
-     */
-    this.emit('scroll', this.buffer.ydisp);
+    this._onScroll.fire(this.buffer.ydisp);
   }
 
   /**
@@ -1337,7 +1331,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
 
     if (!suppressScrollEvent) {
-      this.emit('scroll', this.buffer.ydisp);
+      this._onScroll.fire(this.buffer.ydisp);
     }
 
     this.refresh(0, this.rows - 1);
@@ -1825,7 +1819,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       this.buffer.lines.push(this.buffer.getBlankLine(DEFAULT_ATTR_DATA));
     }
     this.refresh(0, this.rows - 1);
-    this.emit('scroll', this.buffer.ydisp);
+    this._onScroll.fire(this.buffer.ydisp);
   }
 
   /**

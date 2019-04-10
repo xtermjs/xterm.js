@@ -90,7 +90,6 @@ describe('xterm.js', () => {
         term.on('cursormove', () => {
           done();
         });
-
         term.write('foo');
       });
     });
@@ -100,8 +99,23 @@ describe('xterm.js', () => {
         term.on('linefeed', () => {
           done();
         });
-
         term.write('\n');
+      });
+    });
+
+    describe('scroll', () => {
+      it('should emit a scroll event when scrollback is created', (done) => {
+        term.on('scroll', () => {
+          done();
+        });
+        term.write('\n'.repeat(INIT_ROWS));
+      });
+      it('should emit a scroll event when scrollback is cleared', (done) => {
+        term.write('\n'.repeat(INIT_ROWS));
+        term.on('scroll', () => {
+          done();
+        });
+        term.clear();
       });
     });
 
