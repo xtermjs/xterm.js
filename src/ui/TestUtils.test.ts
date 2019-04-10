@@ -354,6 +354,7 @@ export class MockBuffer implements IBuffer {
 }
 
 export class MockRenderer implements IRenderer {
+  onRender: IEvent<{ start: number; end: number; }>;
   dispose(): void {
     throw new Error('Method not implemented.');
   }

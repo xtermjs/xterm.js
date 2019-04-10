@@ -11,6 +11,7 @@ import { ColorManager } from '../ColorManager';
 import { RenderDebouncer } from '../../ui/RenderDebouncer';
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from './DomRendererRowFactory';
 import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
+import { EventEmitter2, IEvent } from '../../common/EventEmitter2';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
@@ -42,6 +43,9 @@ export class DomRenderer extends EventEmitter implements IRenderer {
 
   public dimensions: IRenderDimensions;
   public colorManager: ColorManager;
+
+  private _onRender = new EventEmitter2<{ start: number, end: number }>();
+  public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
 
   constructor(private _terminal: ITerminal, theme: ITheme | undefined) {
     super();
@@ -350,7 +354,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
       rowElement.appendChild(this._rowFactory.createRow(lineData, row === cursorAbsoluteY, cursorStyle, cursorX, cursorBlink, this.dimensions.actualCellWidth, terminal.cols));
     }
 
-    this._terminal.emit('refresh', {start, end});
+    this._onRender.fire({ start, end });
   }
 
   private get _terminalSelector(): string {

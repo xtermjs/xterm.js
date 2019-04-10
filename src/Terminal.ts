@@ -260,15 +260,13 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.options = clone(options);
     this._setup();
 
-    // TODO: Replace EventEmitter with EventEmitter2 internally
-    this.on('refresh', e => this._onRender.fire(e));
-
     // TODO: Remove these in v4
     // Fire old style events from new emitters
     this.onCursorMove(() => this.emit('cursormove'));
     this.onData(e => this.emit('data', e));
     this.onKey(e => this.emit('key', e.key, e.domEvent));
     this.onLineFeed(() => this.emit('linefeed'));
+    this.onRender(e => this.emit('refresh', e));
     this.onResize(e => this.emit('resize', e));
     this.onSelectionChange(() => this.emit('selection'));
     this.onScroll(e => this.emit('scroll', e));
@@ -687,8 +685,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.register(addDisposableDomListener(this.textarea, 'compositionstart', () => this._compositionHelper.compositionstart()));
     this.register(addDisposableDomListener(this.textarea, 'compositionupdate', (e: CompositionEvent) => this._compositionHelper.compositionupdate(e)));
     this.register(addDisposableDomListener(this.textarea, 'compositionend', () => this._compositionHelper.compositionend()));
-    this.register(this.addDisposableListener('refresh', () => this._compositionHelper.updateCompositionElements()));
-    this.register(this.addDisposableListener('refresh', (data) => this._queueLinkification(data.start, data.end)));
+    this.register(this.onRender(() => this._compositionHelper.updateCompositionElements()));
+    this.register(this.onRender(e => this._queueLinkification(e.start, e.end)));
   }
 
   /**
@@ -838,6 +836,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       case 'dom': this.renderer = new DomRenderer(this, this.options.theme); break;
       default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
     }
+    this.renderer.onRender(e => this._onRender.fire(e));
     this.register(this.renderer);
   }
 

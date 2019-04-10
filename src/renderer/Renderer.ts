@@ -15,6 +15,7 @@ import { RenderDebouncer } from '../ui/RenderDebouncer';
 import { ScreenDprMonitor } from '../ui/ScreenDprMonitor';
 import { ITheme } from 'xterm';
 import { CharacterJoinerRegistry } from '../renderer/CharacterJoinerRegistry';
+import { EventEmitter2, IEvent } from '../common/EventEmitter2';
 
 export class Renderer extends EventEmitter implements IRenderer {
   private _renderDebouncer: RenderDebouncer;
@@ -28,6 +29,9 @@ export class Renderer extends EventEmitter implements IRenderer {
 
   public colorManager: ColorManager;
   public dimensions: IRenderDimensions;
+
+  private _onRender = new EventEmitter2<{ start: number, end: number }>();
+  public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
 
   constructor(private _terminal: ITerminal, theme: ITheme) {
     super();
@@ -197,7 +201,7 @@ export class Renderer extends EventEmitter implements IRenderer {
    */
   private _renderRows(start: number, end: number): void {
     this._renderLayers.forEach(l => l.onGridChanged(this._terminal, start, end));
-    this._terminal.emit('refresh', { start, end });
+    this._onRender.fire({ start, end });
   }
 
   /**

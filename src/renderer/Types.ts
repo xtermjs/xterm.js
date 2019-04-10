@@ -5,6 +5,7 @@
 
 import { ITerminal, CharacterJoinerHandler } from '../Types';
 import { IEventEmitter, ITheme, IDisposable } from 'xterm';
+import { IEvent } from '../common/EventEmitter2';
 
 /**
  * Flags used to render terminal text properly.
@@ -26,6 +27,8 @@ export const enum FLAGS {
 export interface IRenderer extends IEventEmitter, IDisposable {
   dimensions: IRenderDimensions;
   colorManager: IColorManager;
+
+  onRender: IEvent<{ start: number, end: number }>;
 
   dispose(): void;
   setTheme(theme: ITheme): IColorSet;
