@@ -834,7 +834,7 @@ declare module 'xterm' {
     /**
      * Gets the line
      */
-    translateToString(trimRight: boolean, startColumn: number, endColumn: number): string;
+    translateToString(trimRight?: boolean, startColumn?: number, endColumn?: number): string;
   }
 
   interface IBufferCell {

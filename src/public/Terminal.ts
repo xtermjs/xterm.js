@@ -176,7 +176,7 @@ class BufferLineApiView implements IBufferLineApi {
 
   public get isWrapped(): boolean { return this._line.isWrapped; }
   public getCell(x: number): IBufferCellApi { return new BufferCellApiView(this._line, x); }
-  public translateToString(trimRight: boolean, startColumn: number, endColumn: number): string {
+  public translateToString(trimRight?: boolean, startColumn?: number, endColumn?: number): string {
     return this._line.translateToString(trimRight, startColumn, endColumn);
   }
 }
