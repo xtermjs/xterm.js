@@ -275,7 +275,7 @@ declare module 'xterm' {
      * A callback that fires when the mouse leaves a link. Note that this can
      * happen even when tooltipCallback hasn't fired for the link yet.
      */
-    leaveCallback?: (event: MouseEvent, uri: string) => boolean | void;
+    leaveCallback?: () => void;
 
     /**
      * The priority of the link matcher, this defines the order in which the link

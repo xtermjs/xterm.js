@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal as PublicTerminal, ITerminalOptions as IPublicTerminalOptions, IEventEmitter, IDisposable } from 'xterm';
+import { ITerminalOptions as IPublicTerminalOptions, IEventEmitter, IDisposable, IMarker } from 'xterm';
 import { IColorSet, IRenderer } from './renderer/Types';
 import { IMouseZoneManager } from './ui/Types';
 import { ICharset } from './core/Types';
@@ -202,7 +202,7 @@ export interface ILinkHoverEvent {
   fg: number;
 }
 
-export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAccessor, ILinkifierAccessor {
+export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAccessor, ILinkifierAccessor {
   screenElement: HTMLElement;
   selectionManager: ISelectionManager;
   charMeasure: ICharMeasure;
@@ -229,6 +229,45 @@ export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAcce
   cancel(ev: Event, force?: boolean): boolean | void;
   log(text: string): void;
   showCursor(): void;
+}
+
+export interface IPublicTerminal extends IDisposable, IEventEmitter {
+    textarea: HTMLTextAreaElement;
+    rows: number;
+    cols: number;
+    buffer: IBuffer;
+    markers: IMarker[];
+    blur(): void;
+    focus(): void;
+    resize(columns: number, rows: number): void;
+    writeln(data: string): void;
+    open(parent: HTMLElement): void;
+    attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void;
+    addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable;
+    addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
+    registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): number;
+    deregisterLinkMatcher(matcherId: number): void;
+    registerCharacterJoiner(handler: (text: string) => [number, number][]): number;
+    deregisterCharacterJoiner(joinerId: number): void;
+    addMarker(cursorYOffset: number): IMarker;
+    hasSelection(): boolean;
+    getSelection(): string;
+    clearSelection(): void;
+    selectAll(): void;
+    selectLines(start: number, end: number): void;
+    dispose(): void;
+    destroy(): void;
+    scrollLines(amount: number): void;
+    scrollPages(pageCount: number): void;
+    scrollToTop(): void;
+    scrollToBottom(): void;
+    scrollToLine(line: number): void;
+    clear(): void;
+    write(data: string): void;
+    getOption(key: string): any;
+    setOption(key: string, value: any): void;
+    refresh(start: number, end: number): void;
+    reset(): void;
 }
 
 export interface IBufferAccessor {
