@@ -21,38 +21,38 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharacterJoinerHandler, IBufferLine, IAttributeData } from 'src/Types';
-import { IMouseZoneManager } from 'src/ui/Types';
-import { IRenderer } from 'src/renderer/Types';
-import { BufferSet } from 'src/BufferSet';
-import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR_DATA } from 'src/Buffer';
-import { CompositionHelper } from 'src/CompositionHelper';
-import { EventEmitter } from 'src/common/EventEmitter';
-import { Viewport } from 'src/Viewport';
-import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from 'src/ui/Clipboard';
-import { C0 } from 'src/common/data/EscapeSequences';
-import { InputHandler } from 'src/InputHandler';
-import { Renderer } from 'src/renderer/Renderer';
-import { Linkifier } from 'src/Linkifier';
-import { SelectionManager } from 'src/SelectionManager';
-import { CharMeasure } from 'src/ui/CharMeasure';
-import * as Browser from 'src/common/Platform';
-import { addDisposableDomListener } from 'src/ui/Lifecycle';
-import * as Strings from 'src/Strings';
-import { MouseHelper } from 'src/ui/MouseHelper';
-import { DEFAULT_BELL_SOUND, SoundManager } from 'src/SoundManager';
-import { MouseZoneManager } from 'src/ui/MouseZoneManager';
 import { AccessibilityManager } from 'src/AccessibilityManager';
-import { ScreenDprMonitor } from 'src/ui/ScreenDprMonitor';
-import { ITheme, IMarker, IDisposable } from 'xterm';
+import { Buffer, DEFAULT_ATTR_DATA, MAX_BUFFER_SIZE } from 'src/Buffer';
+import { Attributes } from 'src/BufferLine';
+import { BufferSet } from 'src/BufferSet';
+import { clone } from 'src/common/Clone';
+import { C0 } from 'src/common/data/EscapeSequences';
+import { EventEmitter } from 'src/common/EventEmitter';
+import * as Browser from 'src/common/Platform';
+import { IKeyboardEvent } from 'src/common/Types';
+import { CompositionHelper } from 'src/CompositionHelper';
+import { evaluateKeyboardEvent } from 'src/core/input/Keyboard';
+import { ICharset, KeyboardResultType } from 'src/core/Types';
+import { InputHandler } from 'src/InputHandler';
+import { Linkifier } from 'src/Linkifier';
 import { removeTerminalFromCache } from 'src/renderer/atlas/CharAtlasCache';
 import { DomRenderer } from 'src/renderer/dom/DomRenderer';
-import { IKeyboardEvent } from 'src/common/Types';
-import { evaluateKeyboardEvent } from 'src/core/input/Keyboard';
-import { KeyboardResultType, ICharset } from 'src/core/Types';
-import { clone } from 'src/common/Clone';
-import { Attributes } from 'src/BufferLine';
+import { Renderer } from 'src/renderer/Renderer';
+import { IRenderer } from 'src/renderer/Types';
+import { SelectionManager } from 'src/SelectionManager';
+import { DEFAULT_BELL_SOUND, SoundManager } from 'src/SoundManager';
+import * as Strings from 'src/Strings';
+import { CharacterJoinerHandler, CustomKeyEventHandler, IAttributeData, IBrowser, IBufferLine, ICompositionHelper, IInputHandlingTerminal, ILinkifier, ILinkMatcherOptions, ITerminal, ITerminalOptions, IViewport, LinkMatcherHandler } from 'src/Types';
+import { CharMeasure } from 'src/ui/CharMeasure';
+import { copyHandler, moveTextAreaUnderMouseCursor, pasteHandler, rightClickHandler } from 'src/ui/Clipboard';
+import { addDisposableDomListener } from 'src/ui/Lifecycle';
+import { MouseHelper } from 'src/ui/MouseHelper';
+import { MouseZoneManager } from 'src/ui/MouseZoneManager';
+import { ScreenDprMonitor } from 'src/ui/ScreenDprMonitor';
+import { IMouseZoneManager } from 'src/ui/Types';
+import { Viewport } from 'src/Viewport';
 import { applyWindowsMode } from 'src/WindowsMode';
+import { IDisposable, IMarker, ITheme } from 'xterm';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;

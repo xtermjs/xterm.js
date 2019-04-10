@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminal, ISelectionManager } from 'src/Types';
+import { ISelectionManager, ITerminal } from 'src/Types';
 
 interface IWindow extends Window {
   clipboardData?: {

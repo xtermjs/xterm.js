@@ -4,17 +4,17 @@
  * @license MIT
  */
 
-import { IInputHandler, IDcsHandler, IEscapeSequenceParser, IInputHandlingTerminal } from 'src/Types';
-import { C0, C1 } from 'src/common/data/EscapeSequences';
-import { CHARSETS, DEFAULT_CHARSET } from 'src/core/data/Charsets';
-import { NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR_DATA } from 'src/Buffer';
+import { DEFAULT_ATTR_DATA, NULL_CELL_CODE, NULL_CELL_WIDTH } from 'src/Buffer';
+import { AttributeData, Attributes, BgFlags, CellData, FgFlags } from 'src/BufferLine';
 import { wcwidth } from 'src/CharWidth';
-import { EscapeSequenceParser } from 'src/EscapeSequenceParser';
-import { IDisposable } from 'xterm';
+import { C0, C1 } from 'src/common/data/EscapeSequences';
 import { Disposable } from 'src/common/Lifecycle';
 import { concat } from 'src/common/TypedArrayUtils';
-import { StringToUtf32, stringFromCodePoint, utf32ToString } from 'src/core/input/TextDecoder';
-import { CellData, Attributes, FgFlags, BgFlags, AttributeData } from 'src/BufferLine';
+import { CHARSETS, DEFAULT_CHARSET } from 'src/core/data/Charsets';
+import { stringFromCodePoint, StringToUtf32, utf32ToString } from 'src/core/input/TextDecoder';
+import { EscapeSequenceParser } from 'src/EscapeSequenceParser';
+import { IDcsHandler, IEscapeSequenceParser, IInputHandler, IInputHandlingTerminal } from 'src/Types';
+import { IDisposable } from 'xterm';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.

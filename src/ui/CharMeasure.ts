@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { ICharMeasure, ITerminalOptions } from 'src/Types';
 import { EventEmitter } from 'src/common/EventEmitter';
+import { ICharMeasure, ITerminalOptions } from 'src/Types';
 
 /**
  * Utility class that measures the size of a character. Measurements are done in

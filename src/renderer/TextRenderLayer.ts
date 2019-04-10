@@ -4,11 +4,11 @@
  */
 
 import { NULL_CELL_CODE } from 'src/Buffer';
-import { IColorSet, IRenderDimensions, ICharacterJoinerRegistry } from 'src/renderer/Types';
-import { CharData, ITerminal, ICellData } from 'src/Types';
-import { GridCache } from 'src/renderer/GridCache';
+import { AttributeData, CellData, Content } from 'src/BufferLine';
 import { BaseRenderLayer } from 'src/renderer/BaseRenderLayer';
-import { CellData, AttributeData, Content } from 'src/BufferLine';
+import { GridCache } from 'src/renderer/GridCache';
+import { ICharacterJoinerRegistry, IColorSet, IRenderDimensions } from 'src/renderer/Types';
+import { CharData, ICellData, ITerminal } from 'src/Types';
 
 /**
  * This CharData looks like a null character, which will forc a clear and render

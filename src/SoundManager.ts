@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminal, ISoundManager } from 'src/Types';
+import { ISoundManager, ITerminal } from 'src/Types';
 
 // Source: https://freesound.org/people/altemark/sounds/45759/
 // This sound is released under the Creative Commons Attribution 3.0 Unported

@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { ITerminal, IBufferSet, IAttributeData } from 'src/Types';
 import { Buffer } from 'src/Buffer';
 import { EventEmitter } from 'src/common/EventEmitter';
+import { IAttributeData, IBufferSet, ITerminal } from 'src/Types';
 
 /**
  * The BufferSet represents the set of two buffers used by xterm terminals (normal and alt) and

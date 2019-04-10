@@ -4,12 +4,12 @@
  */
 
 import { assert, expect } from 'chai';
-import { InputHandler } from 'src/InputHandler';
-import { MockInputHandlingTerminal, TestTerminal } from 'src/ui/TestUtils.test';
 import { DEFAULT_ATTR_DATA } from 'src/Buffer';
+import { AttributeData, Attributes, CellData } from 'src/BufferLine';
+import { InputHandler } from 'src/InputHandler';
 import { Terminal } from 'src/Terminal';
 import { IBufferLine } from 'src/Types';
-import { CellData, Attributes, AttributeData } from 'src/BufferLine';
+import { MockInputHandlingTerminal, TestTerminal } from 'src/ui/TestUtils.test';
 
 describe('InputHandler', () => {
   describe('save and restore cursor', () => {

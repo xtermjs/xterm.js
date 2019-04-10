@@ -4,12 +4,12 @@
  */
 
 import { assert } from 'chai';
-import { IMouseZoneManager, IMouseZone } from 'src/ui/Types';
-import { ILinkMatcher, ITerminal, IBufferLine } from 'src/Types';
-import { Linkifier } from 'src/Linkifier';
-import { MockBuffer, MockTerminal, TestTerminal } from 'src/ui/TestUtils.test';
-import { CircularList } from 'src/common/CircularList';
 import { BufferLine, CellData } from 'src/BufferLine';
+import { CircularList } from 'src/common/CircularList';
+import { Linkifier } from 'src/Linkifier';
+import { IBufferLine, ILinkMatcher, ITerminal } from 'src/Types';
+import { MockBuffer, MockTerminal, TestTerminal } from 'src/ui/TestUtils.test';
+import { IMouseZone, IMouseZoneManager } from 'src/ui/Types';
 
 class TestLinkifier extends Linkifier {
   constructor(terminal: ITerminal) {

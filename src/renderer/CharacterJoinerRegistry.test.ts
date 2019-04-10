@@ -4,14 +4,12 @@
  */
 
 import { assert } from 'chai';
-
-import { MockTerminal, MockBuffer } from 'src/ui/TestUtils.test';
-import { CircularList } from 'src/common/CircularList';
-
-import { ICharacterJoinerRegistry } from 'src/renderer/Types';
-import { CharacterJoinerRegistry } from 'src/renderer/CharacterJoinerRegistry';
 import { BufferLine, CellData } from 'src/BufferLine';
+import { CircularList } from 'src/common/CircularList';
+import { CharacterJoinerRegistry } from 'src/renderer/CharacterJoinerRegistry';
+import { ICharacterJoinerRegistry } from 'src/renderer/Types';
 import { IBufferLine } from 'src/Types';
+import { MockBuffer, MockTerminal } from 'src/ui/TestUtils.test';
 
 describe('CharacterJoinerRegistry', () => {
   let registry: ICharacterJoinerRegistry;

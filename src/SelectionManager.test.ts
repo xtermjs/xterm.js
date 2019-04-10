@@ -4,13 +4,13 @@
  */
 
 import { assert } from 'chai';
-import { CharMeasure } from 'src/ui/CharMeasure';
+import { BufferLine, CellData } from 'src/BufferLine';
+import { BufferSet } from 'src/BufferSet';
 import { SelectionManager, SelectionMode } from 'src/SelectionManager';
 import { SelectionModel } from 'src/SelectionModel';
-import { BufferSet } from 'src/BufferSet';
-import { ITerminal, IBuffer, IBufferLine } from 'src/Types';
+import { IBuffer, IBufferLine, ITerminal } from 'src/Types';
+import { CharMeasure } from 'src/ui/CharMeasure';
 import { MockTerminal } from 'src/ui/TestUtils.test';
-import { BufferLine, CellData } from 'src/BufferLine';
 
 class TestMockTerminal extends MockTerminal {
   emit(event: string, data: any): void {}

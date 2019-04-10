@@ -3,10 +3,10 @@
  * @license MIT
  */
 
-import { ITerminal, IBufferLine } from 'src/Types';
-import { ICharacterJoinerRegistry, ICharacterJoiner } from 'src/renderer/Types';
-import { CellData } from 'src/BufferLine';
 import { WHITESPACE_CELL_CHAR } from 'src/Buffer';
+import { CellData } from 'src/BufferLine';
+import { ICharacterJoiner, ICharacterJoinerRegistry } from 'src/renderer/Types';
+import { IBufferLine, ITerminal } from 'src/Types';
 
 export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
 

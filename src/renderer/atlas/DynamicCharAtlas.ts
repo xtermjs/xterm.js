@@ -3,12 +3,12 @@
  * @license MIT
  */
 
-import { DIM_OPACITY, IGlyphIdentifier, INVERTED_DEFAULT_COLOR, ICharAtlasConfig } from 'src/renderer/atlas/Types';
+import { isFirefox, isSafari } from 'src/common/Platform';
 import BaseCharAtlas from 'src/renderer/atlas/BaseCharAtlas';
-import { DEFAULT_ANSI_COLORS } from 'src/renderer/ColorManager';
 import { clearColor } from 'src/renderer/atlas/CharAtlasGenerator';
 import LRUMap from 'src/renderer/atlas/LRUMap';
-import { isFirefox, isSafari } from 'src/common/Platform';
+import { DIM_OPACITY, ICharAtlasConfig, IGlyphIdentifier, INVERTED_DEFAULT_COLOR } from 'src/renderer/atlas/Types';
+import { DEFAULT_ANSI_COLORS } from 'src/renderer/ColorManager';
 import { IColor } from 'src/renderer/Types';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,

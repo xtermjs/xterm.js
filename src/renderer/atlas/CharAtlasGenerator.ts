@@ -3,10 +3,10 @@
  * @license MIT
  */
 
-import { FontWeight } from 'xterm';
 import { isFirefox, isSafari } from 'src/common/Platform';
+import { CHAR_ATLAS_CELL_SPACING, ICharAtlasConfig } from 'src/renderer/atlas/Types';
 import { IColor } from 'src/renderer/Types';
-import { ICharAtlasConfig, CHAR_ATLAS_CELL_SPACING } from 'src/renderer/atlas/Types';
+import { FontWeight } from 'xterm';
 
 /**
  * Generates a char atlas.

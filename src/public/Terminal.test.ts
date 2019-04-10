@@ -4,8 +4,8 @@
  */
 
 import { assert } from 'chai';
-import { Terminal } from 'src/public/Terminal';
 import * as attach from 'src/addons/attach/attach';
+import { Terminal } from 'src/public/Terminal';
 
 describe('Terminal', () => {
   it('should apply addons with Terminal.applyAddon', () => {

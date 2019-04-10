@@ -3,10 +3,9 @@
  * @license MIT
  */
 import * as chai from 'chai';
+import { DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH } from 'src/Buffer';
 import { BufferLine, CellData, Content } from 'src/BufferLine';
 import { CharData, IBufferLine } from 'src/Types';
-import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR } from 'src/Buffer';
-
 
 class TestBufferLine extends BufferLine {
   public get combined(): {[index: number]: string} {

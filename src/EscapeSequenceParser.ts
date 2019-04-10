@@ -3,10 +3,10 @@
  * @license MIT
  */
 
-import { ParserState, ParserAction, IParsingState, IDcsHandler, IEscapeSequenceParser } from 'src/Types';
-import { IDisposable } from 'xterm';
 import { Disposable } from 'src/common/Lifecycle';
 import { utf32ToString } from 'src/core/input/TextDecoder';
+import { IDcsHandler, IEscapeSequenceParser, IParsingState, ParserAction, ParserState } from 'src/Types';
+import { IDisposable } from 'xterm';
 
 interface IHandlerCollection<T> {
   [key: string]: T[];

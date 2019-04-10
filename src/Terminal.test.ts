@@ -4,10 +4,10 @@
  */
 
 import { assert, expect } from 'chai';
-import { Terminal } from 'src/Terminal';
-import { MockViewport, MockCompositionHelper, MockRenderer } from 'src/ui/TestUtils.test';
 import { DEFAULT_ATTR_DATA } from 'src/Buffer';
 import { CellData } from 'src/BufferLine';
+import { Terminal } from 'src/Terminal';
+import { MockCompositionHelper, MockRenderer, MockViewport } from 'src/ui/TestUtils.test';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;

@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { ILinkHoverEvent, ITerminal, ILinkifierAccessor, LinkHoverEventTypes } from 'src/Types';
-import { IColorSet, IRenderDimensions } from 'src/renderer/Types';
-import { BaseRenderLayer } from 'src/renderer/BaseRenderLayer';
-import { INVERTED_DEFAULT_COLOR } from 'src/renderer/atlas/Types';
 import { is256Color } from 'src/renderer/atlas/CharAtlasUtils';
+import { INVERTED_DEFAULT_COLOR } from 'src/renderer/atlas/Types';
+import { BaseRenderLayer } from 'src/renderer/BaseRenderLayer';
+import { IColorSet, IRenderDimensions } from 'src/renderer/Types';
+import { ILinkHoverEvent, ILinkifierAccessor, ITerminal, LinkHoverEventTypes } from 'src/Types';
 
 export class LinkRenderLayer extends BaseRenderLayer {
   private _state: ILinkHoverEvent = null;

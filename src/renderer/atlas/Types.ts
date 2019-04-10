@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { FontWeight } from 'xterm';
 import { IColorSet } from 'src/renderer/Types';
+import { FontWeight } from 'xterm';
 
 export const DEFAULT_COLOR = 256;
 export const INVERTED_DEFAULT_COLOR = 257;

@@ -4,9 +4,9 @@
  */
 
 import { assert } from 'chai';
-import { ITerminal } from 'src/Types';
-import { BufferSet } from 'src/BufferSet';
 import { Buffer } from 'src/Buffer';
+import { BufferSet } from 'src/BufferSet';
+import { ITerminal } from 'src/Types';
 import { MockTerminal } from 'src/ui/TestUtils.test';
 
 describe('BufferSet', () => {

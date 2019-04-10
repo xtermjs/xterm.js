@@ -3,13 +3,12 @@
  * @license MIT
  */
 
-import { TestTerminal } from 'src/ui/TestUtils.test';
 import { assert } from 'chai';
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from 'src/Buffer';
+import { CellData } from 'src/BufferLine';
 import { getStringCellWidth, wcwidth } from 'src/CharWidth';
 import { IBuffer } from 'src/Types';
-import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from 'src/Buffer';
-import { CellData } from 'src/BufferLine';
-
+import { TestTerminal } from 'src/ui/TestUtils.test';
 
 describe('getStringCellWidth', function(): void {
   let terminal: TestTerminal;

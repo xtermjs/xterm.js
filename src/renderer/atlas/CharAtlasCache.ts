@@ -3,14 +3,14 @@
  * @license MIT
  */
 
-import { ITerminal } from 'src/Types';
-import { IColorSet } from 'src/renderer/Types';
-import { generateConfig, configEquals } from 'src/renderer/atlas/CharAtlasUtils';
 import BaseCharAtlas from 'src/renderer/atlas/BaseCharAtlas';
+import { configEquals, generateConfig } from 'src/renderer/atlas/CharAtlasUtils';
 import DynamicCharAtlas from 'src/renderer/atlas/DynamicCharAtlas';
 import NoneCharAtlas from 'src/renderer/atlas/NoneCharAtlas';
 import StaticCharAtlas from 'src/renderer/atlas/StaticCharAtlas';
 import { ICharAtlasConfig } from 'src/renderer/atlas/Types';
+import { IColorSet } from 'src/renderer/Types';
+import { ITerminal } from 'src/Types';
 
 const charAtlasImplementations = {
   'none': NoneCharAtlas,

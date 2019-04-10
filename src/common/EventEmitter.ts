@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { IDisposable, IEventEmitter, XtermListener } from 'src/common/Types';
 import { Disposable } from 'src/common/Lifecycle';
+import { IDisposable, IEventEmitter, XtermListener } from 'src/common/Types';
 
 export class EventEmitter extends Disposable implements IEventEmitter, IDisposable {
   private _events: {[type: string]: XtermListener[]};

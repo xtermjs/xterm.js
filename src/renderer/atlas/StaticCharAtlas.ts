@@ -3,10 +3,10 @@
  * @license MIT
  */
 
-import { DIM_OPACITY, IGlyphIdentifier, DEFAULT_COLOR, ICharAtlasConfig, CHAR_ATLAS_CELL_SPACING } from 'src/renderer/atlas/Types';
-import { generateStaticCharAtlasTexture } from 'src/renderer/atlas/CharAtlasGenerator';
 import BaseCharAtlas from 'src/renderer/atlas/BaseCharAtlas';
+import { generateStaticCharAtlasTexture } from 'src/renderer/atlas/CharAtlasGenerator';
 import { is256Color } from 'src/renderer/atlas/CharAtlasUtils';
+import { CHAR_ATLAS_CELL_SPACING, DEFAULT_COLOR, DIM_OPACITY, ICharAtlasConfig, IGlyphIdentifier } from 'src/renderer/atlas/Types';
 
 export default class StaticCharAtlas extends BaseCharAtlas {
   private _texture: HTMLCanvasElement | ImageBitmap;

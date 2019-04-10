@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { ITerminal, CharacterJoinerHandler } from 'src/Types';
-import { IEventEmitter, ITheme, IDisposable } from 'xterm';
+import { CharacterJoinerHandler, ITerminal } from 'src/Types';
+import { IDisposable, IEventEmitter, ITheme } from 'xterm';
 
 /**
  * Flags used to render terminal text properly.

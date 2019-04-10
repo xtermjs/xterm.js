@@ -3,10 +3,10 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings } from 'xterm';
-import { ITerminal } from 'src/Types';
-import { Terminal as TerminalCore } from 'src/Terminal';
 import * as Strings from 'src/Strings';
+import { Terminal as TerminalCore } from 'src/Terminal';
+import { ITerminal } from 'src/Types';
+import { IDisposable, ILinkMatcherOptions, ILocalizableStrings, IMarker, ITerminalOptions, ITheme, Terminal as ITerminalApi } from 'xterm';
 
 export class Terminal implements ITerminalApi {
   private _core: ITerminal;

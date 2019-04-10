@@ -3,13 +3,13 @@
  * @license MIT
  */
 
-import { CircularList, IInsertEvent, IDeleteEvent } from 'src/common/CircularList';
-import { ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult, ICellData, IAttributeData } from 'src/Types';
+import { AttributeData, BufferLine, CellData } from 'src/BufferLine';
+import { getWrappedLineTrimmedLength, reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths } from 'src/BufferReflow';
+import { CircularList, IDeleteEvent, IInsertEvent } from 'src/common/CircularList';
 import { EventEmitter } from 'src/common/EventEmitter';
-import { IMarker } from 'xterm';
-import { BufferLine, CellData, AttributeData } from 'src/BufferLine';
-import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths, getWrappedLineTrimmedLength } from 'src/BufferReflow';
 import { DEFAULT_COLOR } from 'src/renderer/atlas/Types';
+import { BufferIndex, IAttributeData, IBuffer, IBufferLine, IBufferStringIterator, IBufferStringIteratorResult, ICellData, ITerminal } from 'src/Types';
+import { IMarker } from 'xterm';
 
 
 export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);

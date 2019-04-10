@@ -5,17 +5,17 @@
  * This file contains integration tests for xterm.js.
  */
 
+import { assert } from 'chai';
 import * as cp from 'child_process';
-import * as glob from 'glob';
 import * as fs from 'fs';
+import * as glob from 'glob';
+import * as pty from 'node-pty';
 import * as os from 'os';
 import * as path from 'path';
-import * as pty from 'node-pty';
-import { assert } from 'chai';
-import { Terminal } from 'src/Terminal';
 import { WHITESPACE_CELL_CHAR } from 'src/Buffer';
-import { IViewport } from 'src/Types';
 import { CellData } from 'src/BufferLine';
+import { Terminal } from 'src/Terminal';
+import { IViewport } from 'src/Types';
 
 class TestTerminal extends Terminal {
   innerWrite(): void { this._innerWrite(); }

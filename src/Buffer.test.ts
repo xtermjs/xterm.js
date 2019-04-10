@@ -4,11 +4,11 @@
  */
 
 import { assert, expect } from 'chai';
-import { ITerminal } from 'src/Types';
 import { Buffer, DEFAULT_ATTR_DATA } from 'src/Buffer';
-import { CircularList } from 'src/common/CircularList';
-import { MockTerminal, TestTerminal } from 'src/ui/TestUtils.test';
 import { BufferLine, CellData } from 'src/BufferLine';
+import { CircularList } from 'src/common/CircularList';
+import { ITerminal } from 'src/Types';
+import { MockTerminal, TestTerminal } from 'src/ui/TestUtils.test';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;

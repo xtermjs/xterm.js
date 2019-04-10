@@ -3,12 +3,12 @@
  * @license MIT
  */
 
-import * as Strings from 'src/Strings';
-import { ITerminal, IBuffer } from 'src/Types';
-import { isMac } from 'src/common/Platform';
-import { RenderDebouncer } from 'src/ui/RenderDebouncer';
-import { addDisposableDomListener } from 'src/ui/Lifecycle';
 import { Disposable } from 'src/common/Lifecycle';
+import { isMac } from 'src/common/Platform';
+import * as Strings from 'src/Strings';
+import { IBuffer, ITerminal } from 'src/Types';
+import { addDisposableDomListener } from 'src/ui/Lifecycle';
+import { RenderDebouncer } from 'src/ui/RenderDebouncer';
 
 const MAX_ROWS_TO_READ = 20;
 

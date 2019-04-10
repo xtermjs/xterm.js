@@ -3,14 +3,14 @@
  * @license MIT
  */
 
-import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from 'src/renderer/Types';
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferLine, IBufferStringIterator, ICellData, IAttributeData } from 'src/Types';
-import { ICircularList, XtermListener } from 'src/common/Types';
 import { Buffer } from 'src/Buffer';
-import * as Browser from 'src/common/Platform';
-import { ITheme, IDisposable, IMarker } from 'xterm';
-import { Terminal } from 'src/Terminal';
 import { AttributeData } from 'src/BufferLine';
+import * as Browser from 'src/common/Platform';
+import { ICircularList, XtermListener } from 'src/common/Types';
+import { IColorManager, IColorSet, IRenderDimensions, IRenderer } from 'src/renderer/Types';
+import { Terminal } from 'src/Terminal';
+import { CharacterJoinerHandler, IAttributeData, IBrowser, IBuffer, IBufferLine, IBufferSet, IBufferStringIterator, ICellData, ICharMeasure, ICompositionHelper, IInputHandlingTerminal, ILinkifier, ILinkMatcherOptions, IMouseHelper, ISelectionManager, ITerminal, ITerminalOptions, IViewport } from 'src/Types';
+import { IDisposable, IMarker, ITheme } from 'xterm';
 
 export class TestTerminal extends Terminal {
   writeSync(data: string): void {
@@ -56,10 +56,10 @@ export class MockTerminal implements ITerminal {
     throw new Error('Method not implemented.');
   }
   addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable {
-      throw new Error('Method not implemented.');
+    throw new Error('Method not implemented.');
   }
   addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
-      throw new Error('Method not implemented.');
+    throw new Error('Method not implemented.');
   }
   registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => boolean | void, options?: ILinkMatcherOptions): number {
     throw new Error('Method not implemented.');
@@ -362,16 +362,16 @@ export class MockRenderer implements IRenderer {
   }
   dimensions: IRenderDimensions;
   setTheme(theme: ITheme): IColorSet { return <IColorSet>{}; }
-  onResize(cols: number, rows: number): void {}
-  onCharSizeChanged(): void {}
-  onBlur(): void {}
-  onFocus(): void {}
-  onSelectionChanged(start: [number, number], end: [number, number]): void {}
-  onCursorMove(): void {}
-  onOptionsChanged(): void {}
-  onWindowResize(devicePixelRatio: number): void {}
-  clear(): void {}
-  refreshRows(start: number, end: number): void {}
+  onResize(cols: number, rows: number): void { }
+  onCharSizeChanged(): void { }
+  onBlur(): void { }
+  onFocus(): void { }
+  onSelectionChanged(start: [number, number], end: [number, number]): void { }
+  onCursorMove(): void { }
+  onOptionsChanged(): void { }
+  onWindowResize(devicePixelRatio: number): void { }
+  clear(): void { }
+  refreshRows(start: number, end: number): void { }
   registerCharacterJoiner(handler: CharacterJoinerHandler): number { return 0; }
   deregisterCharacterJoiner(): boolean { return true; }
 }

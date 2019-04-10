@@ -3,13 +3,13 @@
  * @license MIT
  */
 
-import { IRenderLayer, IColorSet, IRenderDimensions } from 'src/renderer/Types';
-import { ITerminal, ICellData } from 'src/Types';
-import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, IGlyphIdentifier, DEFAULT_COLOR } from 'src/renderer/atlas/Types';
+import { WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from 'src/Buffer';
+import { AttributeData, CellData } from 'src/BufferLine';
 import BaseCharAtlas from 'src/renderer/atlas/BaseCharAtlas';
 import { acquireCharAtlas } from 'src/renderer/atlas/CharAtlasCache';
-import { CellData, AttributeData } from 'src/BufferLine';
-import { WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from 'src/Buffer';
+import { DEFAULT_COLOR, DIM_OPACITY, IGlyphIdentifier, INVERTED_DEFAULT_COLOR } from 'src/renderer/atlas/Types';
+import { IColorSet, IRenderDimensions, IRenderLayer } from 'src/renderer/Types';
+import { ICellData, ITerminal } from 'src/Types';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;

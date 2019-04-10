@@ -3,18 +3,18 @@
  * @license MIT
  */
 
-import { TextRenderLayer } from 'src/renderer/TextRenderLayer';
-import { SelectionRenderLayer } from 'src/renderer/SelectionRenderLayer';
-import { CursorRenderLayer } from 'src/renderer/CursorRenderLayer';
-import { ColorManager } from 'src/renderer/ColorManager';
-import { IRenderLayer, IColorSet, IRenderer, IRenderDimensions, ICharacterJoinerRegistry } from 'src/renderer/Types';
-import { ITerminal, CharacterJoinerHandler } from 'src/Types';
-import { LinkRenderLayer } from 'src/renderer/LinkRenderLayer';
 import { EventEmitter } from 'src/common/EventEmitter';
+import { CharacterJoinerRegistry } from 'src/renderer/CharacterJoinerRegistry';
+import { ColorManager } from 'src/renderer/ColorManager';
+import { CursorRenderLayer } from 'src/renderer/CursorRenderLayer';
+import { LinkRenderLayer } from 'src/renderer/LinkRenderLayer';
+import { SelectionRenderLayer } from 'src/renderer/SelectionRenderLayer';
+import { TextRenderLayer } from 'src/renderer/TextRenderLayer';
+import { ICharacterJoinerRegistry, IColorSet, IRenderDimensions, IRenderer, IRenderLayer } from 'src/renderer/Types';
+import { CharacterJoinerHandler, ITerminal } from 'src/Types';
 import { RenderDebouncer } from 'src/ui/RenderDebouncer';
 import { ScreenDprMonitor } from 'src/ui/ScreenDprMonitor';
 import { ITheme } from 'xterm';
-import { CharacterJoinerRegistry } from 'src/renderer/CharacterJoinerRegistry';
 
 export class Renderer extends EventEmitter implements IRenderer {
   private _renderDebouncer: RenderDebouncer;

@@ -3,14 +3,14 @@
  * @license MIT
  */
 
-import { IRenderer, IRenderDimensions, IColorSet } from 'src/renderer/Types';
-import { ILinkHoverEvent, ITerminal, CharacterJoinerHandler, LinkHoverEventTypes } from 'src/Types';
-import { ITheme } from 'xterm';
 import { EventEmitter } from 'src/common/EventEmitter';
-import { ColorManager } from 'src/renderer/ColorManager';
-import { RenderDebouncer } from 'src/ui/RenderDebouncer';
-import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from 'src/renderer/dom/DomRendererRowFactory';
 import { INVERTED_DEFAULT_COLOR } from 'src/renderer/atlas/Types';
+import { ColorManager } from 'src/renderer/ColorManager';
+import { BOLD_CLASS, CURSOR_BLINK_CLASS, CURSOR_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory, ITALIC_CLASS } from 'src/renderer/dom/DomRendererRowFactory';
+import { IColorSet, IRenderDimensions, IRenderer } from 'src/renderer/Types';
+import { CharacterJoinerHandler, ILinkHoverEvent, ITerminal, LinkHoverEventTypes } from 'src/Types';
+import { RenderDebouncer } from 'src/ui/RenderDebouncer';
+import { ITheme } from 'xterm';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';

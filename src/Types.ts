@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { Terminal as PublicTerminal, ITerminalOptions as IPublicTerminalOptions, IEventEmitter, IDisposable } from 'xterm';
+import { ICircularList } from 'src/common/Types';
+import { ICharset } from 'src/core/Types';
 import { IColorSet, IRenderer } from 'src/renderer/Types';
 import { IMouseZoneManager } from 'src/ui/Types';
-import { ICharset } from 'src/core/Types';
-import { ICircularList } from 'src/common/Types';
+import { IDisposable, IEventEmitter, ITerminalOptions as IPublicTerminalOptions, Terminal as PublicTerminal } from 'xterm';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 

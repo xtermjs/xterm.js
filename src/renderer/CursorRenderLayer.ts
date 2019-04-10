@@ -3,10 +3,10 @@
  * @license MIT
  */
 
-import { IColorSet, IRenderDimensions } from 'src/renderer/Types';
-import { BaseRenderLayer } from 'src/renderer/BaseRenderLayer';
-import { ITerminal, ICellData } from 'src/Types';
 import { CellData } from 'src/BufferLine';
+import { BaseRenderLayer } from 'src/renderer/BaseRenderLayer';
+import { IColorSet, IRenderDimensions } from 'src/renderer/Types';
+import { ICellData, ITerminal } from 'src/Types';
 
 interface ICursorState {
   x: number;
