@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { StringToUtf32, stringFromCodePoint, utf32ToString } from './TextDecoder';
+import { StringToUtf32, stringFromCodePoint, utf32ToString } from 'core/input/TextDecoder';
 
 describe('text encodings', () => {
   it('stringFromCodePoint/utf32ToString', () => {
