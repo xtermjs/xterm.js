@@ -23,12 +23,6 @@ export type CharacterJoinerHandler = (text: string) => [number, number][];
 // BufferIndex denotes a position in the buffer: [rowIndex, colIndex]
 export type BufferIndex = [number, number];
 
-export const enum LinkHoverEventTypes {
-  HOVER = 'linkhover',
-  TOOLTIP = 'linktooltip',
-  LEAVE = 'linkleave'
-}
-
 /**
  * This interface encapsulates everything needed from the Terminal by the
  * InputHandler. This cleanly separates the large amount of methods needed by
@@ -194,7 +188,7 @@ export interface ILinkMatcher {
   willLinkActivate?: (event: MouseEvent, uri: string) => boolean;
 }
 
-export interface ILinkHoverEvent {
+export interface ILinkifierEvent {
   x1: number;
   y1: number;
   x2: number;
@@ -330,7 +324,11 @@ export interface ISelectionRedrawRequestEvent {
   columnSelectMode: boolean;
 }
 
-export interface ILinkifier extends IEventEmitter {
+export interface ILinkifier {
+  onLinkHover: IEvent<ILinkifierEvent>;
+  onLinkLeave: IEvent<ILinkifierEvent>;
+  onLinkTooltip: IEvent<ILinkifierEvent>;
+
   attachToDom(mouseZoneManager: IMouseZoneManager): void;
   linkifyRows(start: number, end: number): void;
   registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options?: ILinkMatcherOptions): number;
