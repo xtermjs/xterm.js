@@ -85,7 +85,7 @@ export class AccessibilityManager extends Disposable {
     //       should be listened to instead? That would mean that the order of events are always
     //       guarenteed
     this.register(this._terminal.addDisposableListener('dprchange', () => this._refreshRowsDimensions()));
-    this.register(this._terminal.renderer.addDisposableListener('resize', () => this._refreshRowsDimensions()));
+    this.register(this._terminal.renderer.onCanvasResize(() => this._refreshRowsDimensions()));
     // This shouldn't be needed on modern browsers but is present in case the
     // media query that drives the dprchange event isn't supported
     this.register(addDisposableDomListener(window, 'resize', () => this._refreshRowsDimensions()));

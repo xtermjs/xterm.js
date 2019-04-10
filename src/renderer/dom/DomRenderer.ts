@@ -6,12 +6,12 @@
 import { IRenderer, IRenderDimensions, IColorSet } from '../Types';
 import { ILinkHoverEvent, ITerminal, CharacterJoinerHandler, LinkHoverEventTypes } from '../../Types';
 import { ITheme } from 'xterm';
-import { EventEmitter } from '../../common/EventEmitter';
 import { ColorManager } from '../ColorManager';
 import { RenderDebouncer } from '../../ui/RenderDebouncer';
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from './DomRendererRowFactory';
 import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
 import { EventEmitter2, IEvent } from '../../common/EventEmitter2';
+import { Disposable } from '../../common/Lifecycle';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
@@ -30,7 +30,7 @@ let nextTerminalId = 1;
  * particularly fast or feature complete, more just stable and usable for when
  * canvas is not an option.
  */
-export class DomRenderer extends EventEmitter implements IRenderer {
+export class DomRenderer extends Disposable implements IRenderer {
   private _renderDebouncer: RenderDebouncer;
   private _rowFactory: DomRendererRowFactory;
   private _terminalClass: number = nextTerminalId++;
@@ -44,6 +44,8 @@ export class DomRenderer extends EventEmitter implements IRenderer {
   public dimensions: IRenderDimensions;
   public colorManager: ColorManager;
 
+  private _onCanvasResize = new EventEmitter2<{ width: number, height: number }>();
+  public get onCanvasResize(): IEvent<{ width: number, height: number }> { return this._onCanvasResize.event; }
   private _onRender = new EventEmitter2<{ start: number, end: number }>();
   public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
 
@@ -242,6 +244,10 @@ export class DomRenderer extends EventEmitter implements IRenderer {
   public onResize(cols: number, rows: number): void {
     this._refreshRowElements(cols, rows);
     this._updateDimensions();
+    this._onCanvasResize.fire({
+      width: this.dimensions.canvasWidth,
+      height: this.dimensions.canvasHeight
+    });
   }
 
   public onCharSizeChanged(): void {

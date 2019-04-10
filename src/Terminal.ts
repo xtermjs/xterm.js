@@ -780,7 +780,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // matchMedia query.
     this.register(addDisposableDomListener(window, 'resize', () => this.renderer.onWindowResize(window.devicePixelRatio)));
     this.register(this.charMeasure.onCharSizeChanged(() => this.renderer.onCharSizeChanged()));
-    this.register(this.renderer.addDisposableListener('resize', (dimensions) => this.viewport.syncScrollArea()));
+    this.register(this.renderer.onCanvasResize(() => this.viewport.syncScrollArea()));
 
     this.selectionManager = new SelectionManager(this, this.charMeasure);
     this.register(this.selectionManager.onSelectionChange(() => this._onSelectionChange.fire()));

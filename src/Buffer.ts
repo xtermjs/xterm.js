@@ -5,12 +5,12 @@
 
 import { CircularList, IInsertEvent } from './common/CircularList';
 import { ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult, ICellData, IAttributeData } from './Types';
-import { EventEmitter } from './common/EventEmitter';
 import { IMarker } from 'xterm';
 import { BufferLine, CellData, AttributeData } from './BufferLine';
 import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths, getWrappedLineTrimmedLength } from './BufferReflow';
 import { DEFAULT_COLOR } from './renderer/atlas/Types';
 import { EventEmitter2, IEvent } from './common/EventEmitter2';
+import { Disposable } from '../lib/common/Lifecycle';
 
 export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
 
@@ -629,7 +629,7 @@ export class Buffer implements IBuffer {
   }
 }
 
-export class Marker extends EventEmitter implements IMarker {
+export class Marker extends Disposable implements IMarker {
   private static _nextId = 1;
 
   private _id: number = Marker._nextId++;
@@ -653,7 +653,6 @@ export class Marker extends EventEmitter implements IMarker {
     this.isDisposed = true;
     // Emit before super.dispose such that dispose listeners get a change to react
     this._onDispose.fire();
-    super.dispose();
   }
 }
 

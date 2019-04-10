@@ -10,14 +10,14 @@ import { ColorManager } from './ColorManager';
 import { IRenderLayer, IColorSet, IRenderer, IRenderDimensions, ICharacterJoinerRegistry } from './Types';
 import { ITerminal, CharacterJoinerHandler } from '../Types';
 import { LinkRenderLayer } from './LinkRenderLayer';
-import { EventEmitter } from '../common/EventEmitter';
 import { RenderDebouncer } from '../ui/RenderDebouncer';
 import { ScreenDprMonitor } from '../ui/ScreenDprMonitor';
 import { ITheme } from 'xterm';
 import { CharacterJoinerRegistry } from '../renderer/CharacterJoinerRegistry';
 import { EventEmitter2, IEvent } from '../common/EventEmitter2';
+import { Disposable } from '../common/Lifecycle';
 
-export class Renderer extends EventEmitter implements IRenderer {
+export class Renderer extends Disposable implements IRenderer {
   private _renderDebouncer: RenderDebouncer;
 
   private _renderLayers: IRenderLayer[];
@@ -30,6 +30,8 @@ export class Renderer extends EventEmitter implements IRenderer {
   public colorManager: ColorManager;
   public dimensions: IRenderDimensions;
 
+  private _onCanvasResize = new EventEmitter2<{ width: number, height: number }>();
+  public get onCanvasResize(): IEvent<{ width: number, height: number }> { return this._onCanvasResize.event; }
   private _onRender = new EventEmitter2<{ start: number, end: number }>();
   public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
 
@@ -138,7 +140,7 @@ export class Renderer extends EventEmitter implements IRenderer {
     this._terminal.screenElement.style.width = `${this.dimensions.canvasWidth}px`;
     this._terminal.screenElement.style.height = `${this.dimensions.canvasHeight}px`;
 
-    this.emit('resize', {
+    this._onCanvasResize.fire({
       width: this.dimensions.canvasWidth,
       height: this.dimensions.canvasHeight
     });
