@@ -419,10 +419,17 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._terminal.updateRange(buffer.y);
   }
 
-  addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable {
+  /**
+   * Forward addCsiHandler from parser.
+   */
+  public addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable {
     return this._parser.addCsiHandler(flag, callback);
   }
-  addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
+
+  /**
+   * Forward addOscHandler from parser.
+   */
+  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
     return this._parser.addOscHandler(ident, callback);
   }
 
@@ -1824,7 +1831,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI ? Pm r
    */
   public setScrollRegion(params: number[], collect?: string): void {
-    if (collect) return;
+    if (collect) {
+      return;
+    }
     this._terminal.buffer.scrollTop = (params[0] || 1) - 1;
     this._terminal.buffer.scrollBottom = (params[1] && params[1] <= this._terminal.rows ? params[1] : this._terminal.rows) - 1;
     this._terminal.buffer.x = 0;
@@ -1932,9 +1941,15 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Designate G3 Character Set (VT300). C = A  -> ISO Latin-1 Supplemental. - Supported?
    */
   public selectCharset(collectAndFlag: string): void {
-    if (collectAndFlag.length !== 2) return this.selectDefaultCharset();
-    if (collectAndFlag[0] === '/') return;  // TODO: Is this supported?
+    if (collectAndFlag.length !== 2) {
+      this.selectDefaultCharset();
+      return;
+    }
+    if (collectAndFlag[0] === '/') {
+      return;  // TODO: Is this supported?
+    }
     this._terminal.setgCharset(GLEVEL[collectAndFlag[0]], CHARSETS[collectAndFlag[1]] || DEFAULT_CHARSET);
+    return;
   }
 
   /**
