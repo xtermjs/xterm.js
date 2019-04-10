@@ -109,6 +109,8 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   private _onCursorMove = new EventEmitter2<void>();
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
+  private _onData = new EventEmitter2<string>();
+  public get onData(): IEvent<string> { return this._onData.event; }
   private _onLineFeed = new EventEmitter2<void>();
   public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
   private _onScroll = new EventEmitter2<number>();
@@ -1725,13 +1727,13 @@ export class InputHandler extends Disposable implements IInputHandler {
       switch (params[0]) {
         case 5:
           // status report
-          this._terminal.emit('data', `${C0.ESC}[0n`);
+          this._onData.fire(`${C0.ESC}[0n`);
           break;
         case 6:
           // cursor position
           const y = this._terminal.buffer.y + 1;
           const x = this._terminal.buffer.x + 1;
-          this._terminal.emit('data', `${C0.ESC}[${y};${x}R`);
+          this._onData.fire(`${C0.ESC}[${y};${x}R`);
           break;
       }
     } else if (collect === '?') {
@@ -1742,7 +1744,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           // cursor position
           const y = this._terminal.buffer.y + 1;
           const x = this._terminal.buffer.x + 1;
-          this._terminal.emit('data', `${C0.ESC}[?${y};${x}R`);
+          this._onData.fire(`${C0.ESC}[?${y};${x}R`);
           break;
         case 15:
           // no printer

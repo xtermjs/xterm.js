@@ -19,7 +19,7 @@ export class Terminal implements ITerminalApi {
   public get onCursorMove(): IEvent<void> { return this._core.onCursorMove; }
   public get onLineFeed(): IEvent<void> { return this._core.onLineFeed; }
   public get onSelectionChange(): IEvent<void> { return this._core.onSelectionChange; }
-  public get onInput(): IEvent<string> { return this._core.onInput; }
+  public get onData(): IEvent<string> { return this._core.onData; }
   public get onTitleChange(): IEvent<string> { return this._core.onTitleChange; }
   public get onScroll(): IEvent<number> { return this._core.onScroll; }
   public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._core.onKey; }

@@ -221,10 +221,6 @@ export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAcce
   bracketedPasteMode: boolean;
   applicationCursor: boolean;
 
-  /**
-   * Emit the 'data' event and populate the given data.
-   * @param data The data to populate in the event.
-   */
   handler(data: string): void;
   scrollLines(disp: number, suppressScrollEvent?: boolean): void;
   cancel(ev: Event, force?: boolean): boolean | void;

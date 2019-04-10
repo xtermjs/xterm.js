@@ -392,13 +392,13 @@ declare module 'xterm' {
     onSelectionChange: IEvent<void>;
 
     /**
-     * Adds an event listener for when an input event fires. This happens for
+     * Adds an event listener for when a data event fires. This happens for
      * example when the user types or pastes into the terminal. The event value
      * is whatever `string` results, in a typical setup, this should be passed
      * on to the backing pty.
      * @returns an `IDisposable` to stop listening.
      */
-    onInput: IEvent<string>;
+    onData: IEvent<string>;
 
     /**
      * Adds an event listener for when an OSC 0 or OSC 2 title change occurs.

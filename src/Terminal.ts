@@ -224,22 +224,22 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   private _onCursorMove = new EventEmitter2<void>();
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
-  private _onLineFeed = new EventEmitter2<void>();
-  public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
-  private _onSelectionChange = new EventEmitter2<void>();
-  public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
-  private _onInput = new EventEmitter2<string>();
-  public get onInput(): IEvent<string> { return this._onInput.event; }
-  private _onTitleChange = new EventEmitter2<string>();
-  public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
-  private _onScroll = new EventEmitter2<number>();
-  public get onScroll(): IEvent<number> { return this._onScroll.event; }
+  private _onData = new EventEmitter2<string>();
+  public get onData(): IEvent<string> { return this._onData.event; }
   private _onKey = new EventEmitter2<{ key: string, domEvent: KeyboardEvent }>();
   public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._onKey.event; }
+  private _onLineFeed = new EventEmitter2<void>();
+  public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
   private _onRender = new EventEmitter2<{ start: number, end: number }>();
   public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
   private _onResize = new EventEmitter2<{ cols: number, rows: number }>();
   public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
+  private _onScroll = new EventEmitter2<number>();
+  public get onScroll(): IEvent<number> { return this._onScroll.event; }
+  private _onSelectionChange = new EventEmitter2<void>();
+  public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
+  private _onTitleChange = new EventEmitter2<string>();
+  public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
 
   /**
    * Creates a new `Terminal` object.
@@ -262,12 +262,12 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     // TODO: Replace EventEmitter with EventEmitter2 internally
     this.on('selection', () => this._onSelectionChange.fire());
-    this.on('data', e => this._onInput.fire(e));
     this.on('refresh', e => this._onRender.fire(e));
 
     // TODO: Remove these in v4
     // Fire old style events from new emitters
     this.onCursorMove(() => this.emit('cursormove'));
+    this.onData(e => this.emit('data', e));
     this.onKey(e => this.emit('key', e.key, e.domEvent));
     this.onLineFeed(() => this.emit('linefeed'));
     this.onResize(e => this.emit('resize', e));
@@ -313,7 +313,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.rows = Math.max(this.options.rows, MINIMUM_ROWS);
 
     if (this.options.handler) {
-      this.on('data', this.options.handler);
+      this.onData(this.options.handler);
     }
 
     this.cursorState = 0;
@@ -1831,7 +1831,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   /**
-   * Emit the 'data' event and populate the given data.
+   * Emit the data event and populate the given data.
    * @param data The data to populate in the event.
    */
   public handler(data: string): void {
@@ -1849,7 +1849,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     if (this.buffer.ybase !== this.buffer.ydisp) {
       this.scrollToBottom();
     }
-    this.emit('data', data);
+    this._onData.fire(data);
   }
 
   /**

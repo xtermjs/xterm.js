@@ -14,6 +14,7 @@ export interface IAttachAddonTerminal extends Terminal {
 
   __socket?: WebSocket;
   __attachSocketBuffer?: string;
+  __dataListener?: IDisposable;
 
   __getMessage?(ev: MessageEvent): void;
   __flushBuffer?(): void;
