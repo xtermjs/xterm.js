@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { Disposable } from 'common/Lifecycle';
+import { Disposable } from 'src/common/Lifecycle';
 
 class TestDisposable extends Disposable {
   public get isDisposed(): boolean {

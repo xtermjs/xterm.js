@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { CircularList } from 'common/CircularList';
+import { CircularList } from 'src/common/CircularList';
 
 describe('CircularList', () => {
   describe('push', () => {

@@ -3,7 +3,7 @@
  * @license MIT
  */
 import { assert } from 'chai';
-import { fillFallback, concat } from 'common/TypedArrayUtils';
+import { fillFallback, concat } from 'src/common/TypedArrayUtils';
 
 type TypedArray = Uint8Array | Uint16Array | Uint32Array | Uint8ClampedArray
   | Int8Array | Int16Array | Int32Array
