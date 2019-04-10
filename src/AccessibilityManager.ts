@@ -77,7 +77,7 @@ export class AccessibilityManager extends Disposable {
     this.register(this._terminal.addDisposableListener('scroll', data => this._refreshRows()));
     // Line feed is an issue as the prompt won't be read out after a command is run
     this.register(this._terminal.addDisposableListener('a11y.char', (char) => this._onChar(char)));
-    this.register(this._terminal.addDisposableListener('linefeed', () => this._onChar('\n')));
+    this.register(this._terminal.onLineFeed(() => this._onChar('\n')));
     this.register(this._terminal.addDisposableListener('a11y.tab', spaceCount => this._onTab(spaceCount)));
     this.register(this._terminal.onKey(e => this._onKey(e.key)));
     this.register(this._terminal.addDisposableListener('blur', () => this._clearLiveRegion()));

@@ -109,6 +109,8 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   private _onCursorMove = new EventEmitter2<void>();
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
+  private _onLineFeed = new EventEmitter2<void>();
+  public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
 
   constructor(
       protected _terminal: IInputHandlingTerminal,
@@ -458,12 +460,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (buffer.x >= this._terminal.cols) {
       buffer.x--;
     }
-    /**
-     * This event is emitted whenever the terminal outputs a LF or NL.
-     *
-     * @event linefeed
-     */
-    this._terminal.emit('linefeed');
+
+    this._onLineFeed.fire();
   }
 
   /**

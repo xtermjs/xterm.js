@@ -17,7 +17,7 @@ class TestTerminal extends Terminal {
   public keyPress(ev: any): boolean { return this._keyPress(ev); }
 }
 
-describe('term.js addons', () => {
+describe('xterm.js', () => {
   let term: TestTerminal;
   const termOptions = {
     cols: INIT_COLS,
@@ -92,6 +92,16 @@ describe('term.js addons', () => {
         });
 
         term.write('foo');
+      });
+    });
+
+    describe('linefeed', () => {
+      it('should emit a linefeed event', (done) => {
+        term.on('linefeed', () => {
+          done();
+        });
+
+        term.write('\n');
       });
     });
 

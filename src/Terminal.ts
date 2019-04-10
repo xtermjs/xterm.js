@@ -261,7 +261,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this._setup();
 
     // TODO: Replace EventEmitter with EventEmitter2 internally
-    this.on('linefeed', () => this._onLineFeed.fire());
     this.on('selection', () => this._onSelectionChange.fire());
     this.on('data', e => this._onInput.fire(e));
     this.on('scroll', e => this._onScroll.fire(e));
@@ -271,6 +270,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // Fire old style events from new emitters
     this.onCursorMove(() => this.emit('cursormove'));
     this.onKey(e => this.emit('key', e.key, e.domEvent));
+    this.onLineFeed(() => this.emit('linefeed'));
     this.onResize(e => this.emit('resize', e));
     this.onTitleChange(e => this.emit('title', e));
   }
@@ -349,8 +349,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // this._writeStopped = false;
     this._userScrolling = false;
 
+    // Register input handler and refire/handle events
     this._inputHandler = new InputHandler(this);
     this._inputHandler.onCursorMove(() => this._onCursorMove.fire());
+    this._inputHandler.onLineFeed(() => this._onLineFeed.fire());
     this.register(this._inputHandler);
 
     // Reuse renderer if the Terminal is being recreated via a reset call.
