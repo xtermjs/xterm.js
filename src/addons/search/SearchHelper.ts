@@ -55,12 +55,27 @@ export class SearchHelper implements ISearchHelper {
 
     this._initLinesCache();
 
+    // A row that has isWrapped = false
+    let findingRow = startRow;
+    // index of beginning column that _findInLine need to scan.
+    let cumulativeCols = startCol;
+    // If startRow is wrapped row, scan for unwrapped row above.
+    // So we can start matching on wrapped line from long unwrapped line.
+    while (this._terminal._core.buffer.lines.get(findingRow).isWrapped) {
+      findingRow--;
+      cumulativeCols += this._terminal.cols;
+    }
+
     // Search startRow
-    result = this._findInLine(term, startRow, startCol, searchOptions);
+    result = this._findInLine(term, findingRow, cumulativeCols, searchOptions);
 
     // Search from startRow + 1 to end
     if (!result) {
+
       for (let y = startRow + 1; y < this._terminal._core.buffer.ybase + this._terminal.rows; y++) {
+
+        // If the current line is wrapped line, increase index of column to ignore the previous scan
+        // Otherwise, reset beginning column index to zero with set new unwrapped line index
         result = this._findInLine(term, y, 0, searchOptions);
         if (result) {
           break;
@@ -71,7 +86,7 @@ export class SearchHelper implements ISearchHelper {
     // Search from the top to the startRow (search the whole startRow again in
     // case startCol > 0)
     if (!result) {
-      for (let y = 0; y <= startRow; y++) {
+      for (let y = 0; y < findingRow; y++) {
         result = this._findInLine(term, y, 0, searchOptions);
         if (result) {
           break;
@@ -100,8 +115,8 @@ export class SearchHelper implements ISearchHelper {
     }
 
     const isReverseSearch = true;
-    let startRow = this._terminal._core.buffer.ydisp;
-    let startCol: number = this._terminal._core.buffer.lines.get(startRow).length;
+    let startRow = this._terminal._core.buffer.ydisp + this._terminal.rows - 1;
+    let startCol = this._terminal.cols;
 
     if (selectionManager.selectionStart) {
       // Start from the selection start if there is a selection
@@ -118,10 +133,23 @@ export class SearchHelper implements ISearchHelper {
 
     // Search from startRow - 1 to top
     if (!result) {
+      // If the line is wrapped line, increase number of columns that is needed to be scanned
+      // Se we can scan on wrapped line from unwrapped line
+      let cumulativeCols = this._terminal.cols;
+      if (this._terminal._core.buffer.lines.get(startRow).isWrapped) {
+        cumulativeCols += startCol;
+      }
       for (let y = startRow - 1; y >= 0; y--) {
-        result = this._findInLine(term, y, this._terminal._core.buffer.lines.get(y).length, searchOptions, isReverseSearch);
+        result = this._findInLine(term, y, cumulativeCols, searchOptions, isReverseSearch);
         if (result) {
           break;
+        }
+        // If the current line is wrapped line, increase scanning range,
+        // preparing for scanning on unwrapped line
+        if (this._terminal._core.buffer.lines.get(y).isWrapped) {
+          cumulativeCols += this._terminal.cols;
+        } else {
+          cumulativeCols = this._terminal.cols;
         }
       }
     }
@@ -130,10 +158,16 @@ export class SearchHelper implements ISearchHelper {
     // case startCol > 0)
     if (!result) {
       const searchFrom = this._terminal._core.buffer.ybase + this._terminal.rows - 1;
+      let cumulativeCols = this._terminal.cols;
       for (let y = searchFrom; y >= startRow; y--) {
-        result = this._findInLine(term, y, this._terminal._core.buffer.lines.get(y).length, searchOptions, isReverseSearch);
+        result = this._findInLine(term, y, cumulativeCols, searchOptions, isReverseSearch);
         if (result) {
           break;
+        }
+        if (this._terminal._core.buffer.lines.get(y).isWrapped) {
+          cumulativeCols += this._terminal.cols;
+        } else {
+          cumulativeCols = this._terminal.cols;
         }
       }
     }
@@ -187,10 +221,11 @@ export class SearchHelper implements ISearchHelper {
    * @return The search result if it was found.
    */
   protected _findInLine(term: string, row: number, col: number, searchOptions: ISearchOptions = {}, isReverseSearch: boolean = false): ISearchResult {
+
+    // Ignore wrapped lines, only consider on unwrapped line (first row of command string).
     if (this._terminal._core.buffer.lines.get(row).isWrapped) {
       return;
     }
-
     let stringLine = this._linesCache ? this._linesCache[row] : void 0;
     if (stringLine === void 0) {
       stringLine = this.translateBufferLineToStringWithWrap(row, true);
