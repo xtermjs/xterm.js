@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IDisposable } from './Types';
+import { IDisposable } from 'common/Types';
 
 /**
  * A base class that can be extended to provide convenience methods for managing the lifecycle of an

@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { EventEmitter } from './EventEmitter';
-import { ICircularList } from './Types';
+import { EventEmitter } from 'common/EventEmitter';
+import { ICircularList } from 'common/Types';
 
 export interface IInsertEvent {
   index: number;
