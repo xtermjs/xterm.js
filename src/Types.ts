@@ -324,6 +324,12 @@ export interface ISelectionManager {
   selectWordAtCursor(event: MouseEvent): void;
 }
 
+export interface ISelectionRedrawRequestEvent {
+  start: [number, number];
+  end: [number, number];
+  columnSelectMode: boolean;
+}
+
 export interface ILinkifier extends IEventEmitter {
   attachToDom(mouseZoneManager: IMouseZoneManager): void;
   linkifyRows(start: number, end: number): void;

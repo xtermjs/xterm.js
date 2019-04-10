@@ -785,7 +785,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.selectionManager = new SelectionManager(this, this.charMeasure);
     this.register(this.selectionManager.onSelectionChange(() => this._onSelectionChange.fire()));
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this.selectionManager.onMouseDown(e)));
-    this.register(this.selectionManager.addDisposableListener('refresh', data => this.renderer.onSelectionChanged(data.start, data.end, data.columnSelectMode)));
+    this.register(this.selectionManager.onRedrawRequest(e => this.renderer.onSelectionChanged(e.start, e.end, e.columnSelectMode)));
     this.register(this.selectionManager.onLinuxMouseSelection(text => {
       // If there's a new selection, put it into the textarea, focus and select it
       // in order to register it as a selection on the OS. This event is fired

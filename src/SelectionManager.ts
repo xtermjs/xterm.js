@@ -3,11 +3,10 @@
  * @license MIT
  */
 
-import { ITerminal, ISelectionManager, IBuffer, IBufferLine } from './Types';
+import { ITerminal, ISelectionManager, IBuffer, IBufferLine, ISelectionRedrawRequestEvent } from './Types';
 import { MouseHelper } from './ui/MouseHelper';
 import * as Browser from './common/Platform';
 import { CharMeasure } from './ui/CharMeasure';
-import { EventEmitter } from './common/EventEmitter';
 import { SelectionModel } from './SelectionModel';
 import { AltClickHandler } from './handlers/AltClickHandler';
 import { CellData } from './BufferLine';
@@ -68,10 +67,10 @@ export const enum SelectionMode {
  * SelectionModel, SelectionManager handles with all logic associated with
  * dealing with the selection, including handling mouse interaction, wide
  * characters and fetching the actual text within the selection. Rendering is
- * not handled by the SelectionManager but a 'refresh' event is fired when the
- * selection is ready to be redrawn.
+ * not handled by the SelectionManager but the onRedrawRequest event is fired
+ * when the selection is ready to be redrawn (on an animation frame).
  */
-export class SelectionManager extends EventEmitter implements ISelectionManager {
+export class SelectionManager implements ISelectionManager {
   protected _model: SelectionModel;
 
   /**
@@ -110,6 +109,8 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
   private _onLinuxMouseSelection = new EventEmitter2<string>();
   public get onLinuxMouseSelection(): IEvent<string> { return this._onLinuxMouseSelection.event; }
+  private _onRedrawRequest = new EventEmitter2<ISelectionRedrawRequestEvent>();
+  public get onRedrawRequest(): IEvent<ISelectionRedrawRequestEvent> { return this._onRedrawRequest.event; }
   private _onSelectionChange = new EventEmitter2<void>();
   public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
 
@@ -117,7 +118,6 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     private _terminal: ITerminal,
     private _charMeasure: CharMeasure
   ) {
-    super();
     this._initListeners();
     this.enable();
 
@@ -126,7 +126,6 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   }
 
   public dispose(): void {
-    super.dispose();
     this._removeMouseDownListeners();
   }
 
@@ -250,10 +249,10 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
   /**
    * Queues a refresh, redrawing the selection on the next opportunity.
-   * @param isNewMouseSelection Whether the selection should be registered as a new
+   * @param isLinuxMouseSelection Whether the selection should be registered as a new
    * selection on Linux.
    */
-  public refresh(isNewMouseSelection?: boolean): void {
+  public refresh(isLinuxMouseSelection?: boolean): void {
     // Queue the refresh for the renderer
     if (!this._refreshAnimationFrame) {
       this._refreshAnimationFrame = window.requestAnimationFrame(() => this._refresh());
@@ -261,7 +260,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
     // If the platform is Linux and the refresh call comes from a mouse event,
     // we need to update the selection for middle click to paste selection.
-    if (Browser.isLinux && isNewMouseSelection) {
+    if (Browser.isLinux && isLinuxMouseSelection) {
       const selectionText = this.selectionText;
       if (selectionText.length) {
         this._onLinuxMouseSelection.fire(this.selectionText);
@@ -275,7 +274,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    */
   private _refresh(): void {
     this._refreshAnimationFrame = null;
-    this.emit('refresh', {
+    this._onRedrawRequest.fire({
       start: this._model.finalSelectionStart,
       end: this._model.finalSelectionEnd,
       columnSelectMode: this._activeSelectionMode === SelectionMode.COLUMN
