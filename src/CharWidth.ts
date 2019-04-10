@@ -5,7 +5,7 @@
 
 import { fill } from 'src/common/TypedArrayUtils';
 
-export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: number) => number {
+export const wcwidth = (function (opts: { nul: number, control: number }): (ucs: number) => number {
   // extracted from https://www.cl.cam.ac.uk/%7Emgk25/ucs/wcwidth.c
   // combining characters
   const COMBINING_BMP = [
@@ -136,7 +136,7 @@ export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: nu
     // do a full search for high codepoints
     return wcwidthHigh(num);
   };
-})({nul: 0, control: 0});  // configurable options
+})({ nul: 0, control: 0 });  // configurable options
 
 /**
  * Get the terminal cell width for a string.

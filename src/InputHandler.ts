@@ -19,7 +19,7 @@ import { IDisposable } from 'xterm';
 /**
  * Map collect to glevel. Used in `selectCharset`.
  */
-const GLEVEL: {[key: string]: number} = {'(': 0, ')': 1, '*': 2, '+': 3, '-': 1, '.': 2};
+const GLEVEL: { [key: string]: number } = { '(': 0, ')': 1, '*': 2, '+': 3, '-': 1, '.': 2 };
 
 
 /**
@@ -56,13 +56,13 @@ class DECRQSS implements IDcsHandler {
         return this._terminal.handler(`${C0.ESC}P1$r61"p${C0.ESC}\\`);
       case 'r': // DECSTBM
         const pt = '' + (this._terminal.buffer.scrollTop + 1) +
-                ';' + (this._terminal.buffer.scrollBottom + 1) + 'r';
+          ';' + (this._terminal.buffer.scrollBottom + 1) + 'r';
         return this._terminal.handler(`${C0.ESC}P1$r${pt}${C0.ESC}\\`);
       case 'm': // SGR
         // TODO: report real settings instead of 0m
         return this._terminal.handler(`${C0.ESC}P1$r0m${C0.ESC}\\`);
       case ' q': // DECSCUSR
-        const STYLES: {[key: string]: number} = {'block': 2, 'underline': 4, 'bar': 6};
+        const STYLES: { [key: string]: number } = { 'block': 2, 'underline': 4, 'bar': 6 };
         let style = STYLES[this._terminal.getOption('cursorStyle')];
         style -= this._terminal.getOption('cursorBlink');
         return this._terminal.handler(`${C0.ESC}P1$r${style} q${C0.ESC}\\`);
@@ -107,9 +107,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _workCell: CellData = new CellData();
 
   constructor(
-      protected _terminal: IInputHandlingTerminal,
-      private _parser: IEscapeSequenceParser = new EscapeSequenceParser())
-  {
+    protected _terminal: IInputHandlingTerminal,
+    private _parser: IEscapeSequenceParser = new EscapeSequenceParser()) {
     super();
 
     this.register(this._parser);
@@ -1251,10 +1250,10 @@ export class InputHandler extends Disposable implements IInputHandler {
           }
           break;
         case 9: // X10 Mouse
-          // no release, no motion, no wheel, no modifiers.
+        // no release, no motion, no wheel, no modifiers.
         case 1000: // vt200 mouse
-          // no motion.
-          // no modifiers, except control on the wheel.
+        // no motion.
+        // no modifiers, except control on the wheel.
         case 1002: // button event mouse
         case 1003: // any event mouse
           // any event - sends motion events,
@@ -1306,7 +1305,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 1049: // alt screen buffer cursor
           this.saveCursor(params);
-          // FALL-THROUGH
+        // FALL-THROUGH
         case 47: // alt screen buffer
         case 1047: // alt screen buffer
           this._terminal.buffers.activateAltBuffer(this._terminal.eraseAttrData());
@@ -1484,7 +1483,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this.restoreCursor(params);
           break;
         case 1049: // alt screen buffer cursor
-           // FALL-THROUGH
+        // FALL-THROUGH
         case 47: // normal screen buffer
         case 1047: // normal screen buffer - clearing it first
           // Ensure the selection manager has the correct buffer

@@ -181,7 +181,7 @@ export class AltClickHandler {
     if ((this._startCol < this._endCol &&
       startRow <= this._endRow) || // down/right or same y/right
       (this._startCol >= this._endCol &&
-      startRow < this._endRow)) {  // down/left or same y/left
+        startRow < this._endRow)) {  // down/left or same y/left
       return Direction.RIGHT;
     }
     return Direction.LEFT;

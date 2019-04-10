@@ -38,7 +38,7 @@ function ptyWriteRead(data: string, cb: (result: string) => void): void {
 
 // make sure raw pty is at x=0 and has no pending data
 function ptyReset(cb: (result: string) => void): void {
-    ptyWriteRead('\r\n', cb);
+  ptyWriteRead('\r\n', cb);
 }
 
 /* debug helpers */
@@ -46,7 +46,7 @@ function ptyReset(cb: (result: string) => void): void {
 function formatError(input: string, output: string, expected: string): string {
   function addLineNumber(start: number, color: string): (s: string) => string {
     let counter = start || 0;
-    return function(s: string): string {
+    return function (s: string): string {
       counter += 1;
       return '\x1b[33m' + (' ' + counter).slice(-2) + color + s;
     };
@@ -97,15 +97,15 @@ if (os.platform() !== 'win32') {
 
     beforeEach(() => {
       xterm = new TestTerminal({ cols: cols, rows: rows });
-      xterm.refresh = () => {};
+      xterm.refresh = () => { };
       xterm.viewport = <IViewport>{
-        syncScrollArea: () => {}
+        syncScrollArea: () => { }
       };
     });
 
     // omit stack trace for escape sequence files
     Error.stackTraceLimit = 0;
-    const files = glob.sync('**/escape_sequence_files/*.in', { cwd: path.join(__dirname, '..')});
+    const files = glob.sync('**/escape_sequence_files/*.in', { cwd: path.join(__dirname, '..') });
     // for (let i = 0; i < files.length; ++i) console.debug(i, files[i]);
     // only successful tests for now
     const skip = [
@@ -144,7 +144,7 @@ if (os.platform() !== 'win32') {
               if (fromEmulator !== expectedRightTrimmed) {
                 // uncomment to get noisy output
                 throw new Error(formatError(inFile, fromEmulator, expected));
-              //   throw new Error('mismatch');
+                //   throw new Error('mismatch');
               }
               done();
             });

@@ -275,7 +275,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._errorHandler = this._errorHandlerFb;
 
     // swallow 7bit ST (ESC+\)
-    this.setEscHandler('\\', () => {});
+    this.setEscHandler('\\', () => { });
   }
 
   public dispose(): void {
@@ -353,7 +353,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     if (this._oscHandlers[ident] === undefined) {
       this._oscHandlers[ident] = [];
     }
-    const handlerList =  this._oscHandlers[ident];
+    const handlerList = this._oscHandlers[ident];
     handlerList.push(callback);
     return {
       dispose: () => {
@@ -496,7 +496,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
                 abort: false
               });
             if (inject.abort) return;
-          // TODO: inject return values
+            // TODO: inject return values
             error = false;
           }
           break;
@@ -565,8 +565,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
         case ParserAction.OSC_PUT:
           for (let j = i + 1; ; j++) {
             if (j >= length
-                || (code = data[j]) < 0x20
-                || (code > 0x7f && code <= 0x9f)) {
+              || (code = data[j]) < 0x20
+              || (code > 0x7f && code <= 0x9f)) {
               osc += utf32ToString(data, i, j);
               i = j - 1;
               break;

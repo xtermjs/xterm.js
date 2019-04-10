@@ -186,65 +186,65 @@ describe('Keyboard', () => {
     // Characters using alt sequences (numbers)
     it('should return proper sequences for alt+0', () => {
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: false, keyCode: 48 }).key, '\x1b0');
-      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true,  keyCode: 48 }).key, '\x1b)');
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true, keyCode: 48 }).key, '\x1b)');
     });
     it('should return proper sequences for alt+1', () => {
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: false, keyCode: 49 }).key, '\x1b1');
-      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true,  keyCode: 49 }).key, '\x1b!');
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true, keyCode: 49 }).key, '\x1b!');
     });
     it('should return proper sequences for alt+2', () => {
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: false, keyCode: 50 }).key, '\x1b2');
-      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true,  keyCode: 50 }).key, '\x1b@');
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true, keyCode: 50 }).key, '\x1b@');
     });
     it('should return proper sequences for alt+3', () => {
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: false, keyCode: 51 }).key, '\x1b3');
-      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true,  keyCode: 51 }).key, '\x1b#');
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true, keyCode: 51 }).key, '\x1b#');
     });
     it('should return proper sequences for alt+4', () => {
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: false, keyCode: 52 }).key, '\x1b4');
-      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true,  keyCode: 52 }).key, '\x1b$');
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true, keyCode: 52 }).key, '\x1b$');
     });
     it('should return proper sequences for alt+5', () => {
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: false, keyCode: 53 }).key, '\x1b5');
-      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true,  keyCode: 53 }).key, '\x1b%');
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true, keyCode: 53 }).key, '\x1b%');
     });
     it('should return proper sequences for alt+6', () => {
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: false, keyCode: 54 }).key, '\x1b6');
-      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true,  keyCode: 54 }).key, '\x1b^');
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true, keyCode: 54 }).key, '\x1b^');
     });
     it('should return proper sequences for alt+7', () => {
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: false, keyCode: 55 }).key, '\x1b7');
-      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true,  keyCode: 55 }).key, '\x1b&');
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true, keyCode: 55 }).key, '\x1b&');
     });
     it('should return proper sequences for alt+8', () => {
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: false, keyCode: 56 }).key, '\x1b8');
-      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true,  keyCode: 56 }).key, '\x1b*');
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true, keyCode: 56 }).key, '\x1b*');
     });
     it('should return proper sequences for alt+9', () => {
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: false, keyCode: 57 }).key, '\x1b9');
-      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true,  keyCode: 57 }).key, '\x1b(');
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true, keyCode: 57 }).key, '\x1b(');
     });
 
     // Characters using alt sequences (special chars)
     it('should return proper sequences for alt+;', () => {
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: false, keyCode: 186 }).key, '\x1b;');
-      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true,  keyCode: 186 }).key, '\x1b:');
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true, keyCode: 186 }).key, '\x1b:');
     });
     it('should return proper sequences for alt+=', () => {
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: false, keyCode: 187 }).key, '\x1b=');
-      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true,  keyCode: 187 }).key, '\x1b+');
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true, keyCode: 187 }).key, '\x1b+');
     });
     it('should return proper sequences for alt+,', () => {
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: false, keyCode: 188 }).key, '\x1b,');
-      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true,  keyCode: 188 }).key, '\x1b<');
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true, keyCode: 188 }).key, '\x1b<');
     });
     it('should return proper sequences for alt+-', () => {
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: false, keyCode: 189 }).key, '\x1b-');
-      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true,  keyCode: 189 }).key, '\x1b_');
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true, keyCode: 189 }).key, '\x1b_');
     });
     it('should return proper sequences for alt+.', () => {
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: false, keyCode: 190 }).key, '\x1b.');
-      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true,  keyCode: 190 }).key, '\x1b>');
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true, keyCode: 190 }).key, '\x1b>');
     });
     it('should return proper sequences for alt+/', () => {
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: false, keyCode: 191 }).key, '\x1b/');
@@ -256,19 +256,19 @@ describe('Keyboard', () => {
     });
     it('should return proper sequences for alt+[', () => {
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: false, keyCode: 219 }).key, '\x1b[');
-      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true,  keyCode: 219 }).key, '\x1b{');
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true, keyCode: 219 }).key, '\x1b{');
     });
     it('should return proper sequences for alt+\\', () => {
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: false, keyCode: 220 }).key, '\x1b\\');
-      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true,  keyCode: 220 }).key, '\x1b|');
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true, keyCode: 220 }).key, '\x1b|');
     });
     it('should return proper sequences for alt+]', () => {
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: false, keyCode: 221 }).key, '\x1b]');
-      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true,  keyCode: 221 }).key, '\x1b}');
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true, keyCode: 221 }).key, '\x1b}');
     });
     it('should return proper sequences for alt+\'', () => {
       assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: false, keyCode: 222 }).key, '\x1b\'');
-      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true,  keyCode: 222 }).key, '\x1b"');
+      assert.equal(testEvaluateKeyboardEvent({ altKey: true, shiftKey: true, keyCode: 222 }).key, '\x1b"');
     });
 
     it('should handle mobile arrow events', () => {

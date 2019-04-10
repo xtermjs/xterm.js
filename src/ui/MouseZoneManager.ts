@@ -72,8 +72,8 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
     for (let i = 0; i < this._zones.length; i++) {
       const zone = this._zones[i];
       if ((zone.y1 > start && zone.y1 <= end + 1) ||
-          (zone.y2 > start && zone.y2 <= end + 1) ||
-          (zone.y1 < start && zone.y2 > end + 1)) {
+        (zone.y2 > start && zone.y2 <= end + 1) ||
+        (zone.y1 < start && zone.y2 > end + 1)) {
         if (this._currentZone && this._currentZone === zone) {
           this._currentZone.leaveCallback();
           this._currentZone = null;
@@ -220,8 +220,8 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
       } else {
         // Multi-line link
         if ((y === zone.y1 && x >= zone.x1) ||
-            (y === zone.y2 && x < zone.x2) ||
-            (y > zone.y1 && y < zone.y2)) {
+          (y === zone.y2 && x < zone.x2) ||
+          (y > zone.y1 && y < zone.y2)) {
           return zone;
         }
       }

@@ -17,8 +17,8 @@ describe('CompositionHelper', () => {
   beforeEach(() => {
     compositionView = {
       classList: {
-        add: () => {},
-        remove: () => {}
+        add: () => { },
+        remove: () => { }
       },
       getBoundingClientRect: () => {
         return { width: 0 };

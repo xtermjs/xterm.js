@@ -48,7 +48,7 @@ describe('EventEmitter', () => {
   describe('listeners', () => {
     it('should return listeners for the type requested', () => {
       assert.equal(eventEmitter.listeners('test').length, 0);
-      const listener = () => {};
+      const listener = () => { };
       eventEmitter.on('test', listener);
       assert.deepEqual(eventEmitter.listeners('test'), [listener]);
     });
@@ -56,8 +56,8 @@ describe('EventEmitter', () => {
 
   describe('off', () => {
     it('should remove the specific listener', () => {
-      const listener1 = () => {};
-      const listener2 = () => {};
+      const listener1 = () => { };
+      const listener2 = () => { };
       eventEmitter.on('foo', listener1);
       eventEmitter.on('foo', listener2);
       assert.equal(eventEmitter.listeners('foo').length, 2);
@@ -68,7 +68,7 @@ describe('EventEmitter', () => {
 
   describe('removeAllListeners', () => {
     it('should clear all listeners', () => {
-      eventEmitter.on('foo', () => {});
+      eventEmitter.on('foo', () => { });
       assert.equal(eventEmitter.listeners('foo').length, 1);
       eventEmitter.removeAllListeners('foo');
       assert.equal(eventEmitter.listeners('foo').length, 0);

@@ -21,7 +21,7 @@ export function generateStaticCharAtlasTexture(context: Window, canvasFactory: (
     /*255 ascii chars*/255 * cellWidth,
     (/*default+default bold*/2 + /*0-15*/16 + /*0-15 bold*/16) * cellHeight
   );
-  const ctx = canvas.getContext('2d', {alpha: config.allowTransparency});
+  const ctx = canvas.getContext('2d', { alpha: config.allowTransparency });
 
   ctx.fillStyle = config.colors.background.css;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -114,8 +114,8 @@ export function clearColor(imageData: ImageData, color: IColor): boolean {
   const b = color.rgba >>> 8 & 0xFF;
   for (let offset = 0; offset < imageData.data.length; offset += 4) {
     if (imageData.data[offset] === r &&
-        imageData.data[offset + 1] === g &&
-        imageData.data[offset + 2] === b) {
+      imageData.data[offset + 1] === g &&
+      imageData.data[offset + 2] === b) {
       imageData.data[offset + 3] = 0;
     } else {
       isEmpty = false;

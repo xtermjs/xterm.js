@@ -40,16 +40,16 @@ export function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean 
     }
   }
   return a.type === b.type &&
-      a.devicePixelRatio === b.devicePixelRatio &&
-      a.fontFamily === b.fontFamily &&
-      a.fontSize === b.fontSize &&
-      a.fontWeight === b.fontWeight &&
-      a.fontWeightBold === b.fontWeightBold &&
-      a.allowTransparency === b.allowTransparency &&
-      a.scaledCharWidth === b.scaledCharWidth &&
-      a.scaledCharHeight === b.scaledCharHeight &&
-      a.colors.foreground === b.colors.foreground &&
-      a.colors.background === b.colors.background;
+    a.devicePixelRatio === b.devicePixelRatio &&
+    a.fontFamily === b.fontFamily &&
+    a.fontSize === b.fontSize &&
+    a.fontWeight === b.fontWeight &&
+    a.fontWeightBold === b.fontWeightBold &&
+    a.allowTransparency === b.allowTransparency &&
+    a.scaledCharWidth === b.scaledCharWidth &&
+    a.scaledCharHeight === b.scaledCharHeight &&
+    a.colors.foreground === b.colors.foreground &&
+    a.colors.background === b.colors.background;
 }
 
 export function is256Color(colorCode: number): boolean {

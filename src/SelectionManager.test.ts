@@ -13,7 +13,7 @@ import { CharMeasure } from 'src/ui/CharMeasure';
 import { MockTerminal } from 'src/ui/TestUtils.test';
 
 class TestMockTerminal extends MockTerminal {
-  emit(event: string, data: any): void {}
+  emit(event: string, data: any): void { }
 }
 
 class TestSelectionManager extends SelectionManager {
@@ -33,9 +33,9 @@ class TestSelectionManager extends SelectionManager {
   public areCoordsInSelection(coords: [number, number], start: [number, number], end: [number, number]): boolean { return this._areCoordsInSelection(coords, start, end); }
 
   // Disable DOM interaction
-  public enable(): void {}
-  public disable(): void {}
-  public refresh(): void {}
+  public enable(): void { }
+  public disable(): void { }
+  public refresh(): void { }
 }
 
 describe('SelectionManager', () => {

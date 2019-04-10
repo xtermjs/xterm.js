@@ -206,7 +206,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
         // since this is most likely a bug the regex itself we simply do nothing here
         // DEBUG: print match and throw
         if ((<any>this._terminal).debug) {
-          console.log({match, matcher});
+          console.log({ match, matcher });
           throw new Error('match found without corresponding matchIndex');
         }
         break;

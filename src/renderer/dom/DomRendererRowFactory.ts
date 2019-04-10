@@ -100,7 +100,7 @@ export class DomRendererRowFactory {
       } else if (this._workCell.isFgPalette()) {
         let fg = this._workCell.getFgColor();
         if (this._workCell.isBold() && fg < 8 && !swapColor &&
-            this._terminalOptions.enableBold && this._terminalOptions.drawBoldTextInBrightColors) {
+          this._terminalOptions.enableBold && this._terminalOptions.drawBoldTextInBrightColors) {
           fg += 8;
         }
         charElement.classList.add(`xterm-${swapColor ? 'b' : 'f'}g-${fg}`);

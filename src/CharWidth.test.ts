@@ -10,11 +10,11 @@ import { getStringCellWidth, wcwidth } from 'src/CharWidth';
 import { IBuffer } from 'src/Types';
 import { TestTerminal } from 'src/ui/TestUtils.test';
 
-describe('getStringCellWidth', function(): void {
+describe('getStringCellWidth', function (): void {
   let terminal: TestTerminal;
 
   beforeEach(() => {
-    terminal = new TestTerminal({rows: 5, cols: 30});
+    terminal = new TestTerminal({ rows: 5, cols: 30 });
   });
 
   function sumWidths(buffer: IBuffer, start: number, end: number, sentinel: string): number {
@@ -33,42 +33,42 @@ describe('getStringCellWidth', function(): void {
     return result;
   }
 
-  it('ASCII chars', function(): void {
+  it('ASCII chars', function (): void {
     const input = 'This is just ASCII text.#';
     terminal.writeSync(input);
     const s = terminal.buffer.iterator(true).next().content;
     assert.equal(input, s);
     assert.equal(getStringCellWidth(s), sumWidths(terminal.buffer, 0, 1, '#'));
   });
-  it('combining chars', function(): void {
+  it('combining chars', function (): void {
     const input = 'e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301e\u0301#';
     terminal.writeSync(input);
     const s = terminal.buffer.iterator(true).next().content;
     assert.equal(input, s);
     assert.equal(getStringCellWidth(s), sumWidths(terminal.buffer, 0, 1, '#'));
   });
-  it('surrogate chars', function(): void {
+  it('surrogate chars', function (): void {
     const input = '𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞𝄞#';
     terminal.writeSync(input);
     const s = terminal.buffer.iterator(true).next().content;
     assert.equal(input, s);
     assert.equal(getStringCellWidth(s), sumWidths(terminal.buffer, 0, 1, '#'));
   });
-  it('surrogate combining chars', function(): void {
+  it('surrogate combining chars', function (): void {
     const input = '𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301𓂀\u0301#';
     terminal.writeSync(input);
     const s = terminal.buffer.iterator(true).next().content;
     assert.equal(input, s);
     assert.equal(getStringCellWidth(s), sumWidths(terminal.buffer, 0, 1, '#'));
   });
-  it('fullwidth chars', function(): void {
+  it('fullwidth chars', function (): void {
     const input = '１２３４５６７８９０#';
     terminal.writeSync(input);
     const s = terminal.buffer.iterator(true).next().content;
     assert.equal(input, s);
     assert.equal(getStringCellWidth(s), sumWidths(terminal.buffer, 0, 1, '#'));
   });
-  it('fullwidth chars offset 1', function(): void {
+  it('fullwidth chars offset 1', function (): void {
     const input = 'a１２３４５６７８９０#';
     terminal.writeSync(input);
     const s = terminal.buffer.iterator(true).next().content;
@@ -78,9 +78,9 @@ describe('getStringCellWidth', function(): void {
   // TODO: multiline tests once #1685 is resolved
 });
 
-it('wcwidth should match all values from the old implementation', function(): void {
+it('wcwidth should match all values from the old implementation', function (): void {
   // old implementation
-  const wcwidthOld = (function(opts: {nul: number, control: number}): (ucs: number) => number {
+  const wcwidthOld = (function (opts: { nul: number, control: number }): (ucs: number) => number {
     // extracted from https://www.cl.cam.ac.uk/%7Emgk25/ucs/wcwidth.c
     // combining characters
     const COMBINING_BMP = [
@@ -176,16 +176,16 @@ it('wcwidth should match all values from the old implementation', function(): vo
     function isWideBMP(ucs: number): boolean {
       return (
         ucs >= 0x1100 && (
-        ucs <= 0x115f ||                // Hangul Jamo init. consonants
-        ucs === 0x2329 ||
-        ucs === 0x232a ||
-        (ucs >= 0x2e80 && ucs <= 0xa4cf && ucs !== 0x303f) ||  // CJK..Yi
-        (ucs >= 0xac00 && ucs <= 0xd7a3) ||    // Hangul Syllables
-        (ucs >= 0xf900 && ucs <= 0xfaff) ||    // CJK Compat Ideographs
-        (ucs >= 0xfe10 && ucs <= 0xfe19) ||    // Vertical forms
-        (ucs >= 0xfe30 && ucs <= 0xfe6f) ||    // CJK Compat Forms
-        (ucs >= 0xff00 && ucs <= 0xff60) ||    // Fullwidth Forms
-        (ucs >= 0xffe0 && ucs <= 0xffe6)));
+          ucs <= 0x115f ||                // Hangul Jamo init. consonants
+          ucs === 0x2329 ||
+          ucs === 0x232a ||
+          (ucs >= 0x2e80 && ucs <= 0xa4cf && ucs !== 0x303f) ||  // CJK..Yi
+          (ucs >= 0xac00 && ucs <= 0xd7a3) ||    // Hangul Syllables
+          (ucs >= 0xf900 && ucs <= 0xfaff) ||    // CJK Compat Ideographs
+          (ucs >= 0xfe10 && ucs <= 0xfe19) ||    // Vertical forms
+          (ucs >= 0xfe30 && ucs <= 0xfe6f) ||    // CJK Compat Forms
+          (ucs >= 0xff00 && ucs <= 0xff60) ||    // Fullwidth Forms
+          (ucs >= 0xffe0 && ucs <= 0xffe6)));
     }
     function wcwidthHigh(ucs: number): 0 | 1 | 2 {
       if (bisearch(ucs, COMBINING_HIGH)) {
@@ -245,7 +245,7 @@ it('wcwidth should match all values from the old implementation', function(): vo
       // do a full search for high codepoints
       return wcwidthHigh(num);
     };
-  })({nul: 0, control: 0}); // configurable options
+  })({ nul: 0, control: 0 }); // configurable options
 
   // test full BMP range old vs new implmenetation
   for (let i = 0; i < 65536; ++i) {

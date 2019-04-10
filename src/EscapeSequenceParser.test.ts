@@ -179,7 +179,7 @@ describe('EscapeSequenceParser', function (): void {
   ];
   runs.forEach(function (run: IRun): void {
     describe('Parser init and methods / ' + run.tableType, function (): void {
-      before(function(): void {
+      before(function (): void {
         parser = run.parser;
       });
       it('constructor', function (): void {
@@ -214,7 +214,7 @@ describe('EscapeSequenceParser', function (): void {
   });
   runs.forEach(function (run: IRun): void {
     describe('state transitions and actions / ' + run.tableType, function (): void {
-      before(function(): void {
+      before(function (): void {
         parser = run.parser;
       });
       it('state GROUND execute action', function (): void {
@@ -997,9 +997,9 @@ describe('EscapeSequenceParser', function (): void {
   runs.forEach(function (run: IRun): void {
     let test: Function | null = null;
     describe('escape sequence examples / ' + run.tableType, function (): void {
-      before(function(): void {
+      before(function (): void {
         parser = run.parser;
-        test = function(s: string, value: any, noReset: any): void {
+        test = function (s: string, value: any, noReset: any): void {
           if (!noReset) {
             parser.reset();
             testTerminal.clear();
@@ -1067,7 +1067,7 @@ describe('EscapeSequenceParser', function (): void {
           ['csi', '<', [0, 0], 'c']
         ], null);
       });
-      it('7bit ST should be swallowed', function(): void {
+      it('7bit ST should be swallowed', function (): void {
         test('abc\x9d123tzf\x1b\\defg', [
           ['print', 'abc'],
           ['osc', '123tzf'],

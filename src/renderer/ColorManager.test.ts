@@ -25,7 +25,7 @@ describe('ColorManager', () => {
       fillRect(): void { },
 
       getImageData(): any {
-        return {data: [0, 0, 0, 0xFF]};
+        return { data: [0, 0, 0, 0xFF] };
       }
     });
     cm = new ColorManager(document, false);

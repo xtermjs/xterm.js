@@ -7,7 +7,7 @@ import { Disposable } from 'src/common/Lifecycle';
 import { IDisposable, IEventEmitter, XtermListener } from 'src/common/Types';
 
 export class EventEmitter extends Disposable implements IEventEmitter, IDisposable {
-  private _events: {[type: string]: XtermListener[]};
+  private _events: { [type: string]: XtermListener[] };
 
   constructor() {
     super();
@@ -60,7 +60,7 @@ export class EventEmitter extends Disposable implements IEventEmitter, IDisposab
 
   public removeAllListeners(type: string): void {
     if (this._events[type]) {
-       delete this._events[type];
+      delete this._events[type];
     }
   }
 

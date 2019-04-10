@@ -23,7 +23,7 @@ const BLINK_INTERVAL = 600;
 
 export class CursorRenderLayer extends BaseRenderLayer {
   private _state: ICursorState;
-  private _cursorRenderers: {[key: string]: (terminal: ITerminal, x: number, y: number, cell: ICellData) => void};
+  private _cursorRenderers: { [key: string]: (terminal: ITerminal, x: number, y: number, cell: ICellData) => void };
   private _cursorBlinkStateManager: CursorBlinkStateManager;
   private _cell: ICellData = new CellData();
 
@@ -156,10 +156,10 @@ export class CursorRenderLayer extends BaseRenderLayer {
     if (this._state) {
       // The cursor is already in the correct spot, don't redraw
       if (this._state.x === terminal.buffer.x &&
-          this._state.y === viewportRelativeCursorY &&
-          this._state.isFocused === terminal.isFocused &&
-          this._state.style === terminal.options.cursorStyle &&
-          this._state.width === this._cell.getWidth()) {
+        this._state.y === viewportRelativeCursorY &&
+        this._state.isFocused === terminal.isFocused &&
+        this._state.style === terminal.options.cursorStyle &&
+        this._state.width === this._cell.getWidth()) {
         return;
       }
       this._clearCursor();

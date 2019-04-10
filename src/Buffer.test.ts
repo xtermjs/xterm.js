@@ -387,10 +387,10 @@ describe('Buffer', () => {
         buffer.resize(4, 3);
         buffer.y = 2;
         const firstLine = buffer.lines.get(0);
-        firstLine.set(0, [ null, 'a', 1, 'a'.charCodeAt(0) ]);
-        firstLine.set(1, [ null, 'b', 1, 'b'.charCodeAt(0) ]);
-        firstLine.set(2, [ null, 'c', 1, 'c'.charCodeAt(0) ]);
-        firstLine.set(3, [ null, '😁', 1, '😁'.charCodeAt(0) ]);
+        firstLine.set(0, [null, 'a', 1, 'a'.charCodeAt(0)]);
+        firstLine.set(1, [null, 'b', 1, 'b'.charCodeAt(0)]);
+        firstLine.set(2, [null, 'c', 1, 'c'.charCodeAt(0)]);
+        firstLine.set(3, [null, '😁', 1, '😁'.charCodeAt(0)]);
         assert.equal(buffer.lines.length, 3);
         assert.equal(buffer.lines.get(0).translateToString(), 'abc😁');
         assert.equal(buffer.lines.get(1).translateToString(), '    ');
@@ -1091,13 +1091,13 @@ describe('Buffer', () => {
     });
   });
 
-  describe ('translateBufferLineToString', () => {
+  describe('translateBufferLineToString', () => {
     it('should handle selecting a section of ascii text', () => {
       const line = new BufferLine(4);
-      line.setCell(0, CellData.fromCharData([ null, 'a', 1, 'a'.charCodeAt(0)]));
-      line.setCell(1, CellData.fromCharData([ null, 'b', 1, 'b'.charCodeAt(0)]));
-      line.setCell(2, CellData.fromCharData([ null, 'c', 1, 'c'.charCodeAt(0)]));
-      line.setCell(3, CellData.fromCharData([ null, 'd', 1, 'd'.charCodeAt(0)]));
+      line.setCell(0, CellData.fromCharData([null, 'a', 1, 'a'.charCodeAt(0)]));
+      line.setCell(1, CellData.fromCharData([null, 'b', 1, 'b'.charCodeAt(0)]));
+      line.setCell(2, CellData.fromCharData([null, 'c', 1, 'c'.charCodeAt(0)]));
+      line.setCell(3, CellData.fromCharData([null, 'd', 1, 'd'.charCodeAt(0)]));
       buffer.lines.set(0, line);
 
       const str = buffer.translateBufferLineToString(0, true, 0, 2);
@@ -1106,9 +1106,9 @@ describe('Buffer', () => {
 
     it('should handle a cut-off double width character by including it', () => {
       const line = new BufferLine(3);
-      line.setCell(0, CellData.fromCharData([ null, '語', 2, 35486 ]));
-      line.setCell(1, CellData.fromCharData([ null, '', 0, null]));
-      line.setCell(2, CellData.fromCharData([ null, 'a', 1, 'a'.charCodeAt(0)]));
+      line.setCell(0, CellData.fromCharData([null, '語', 2, 35486]));
+      line.setCell(1, CellData.fromCharData([null, '', 0, null]));
+      line.setCell(2, CellData.fromCharData([null, 'a', 1, 'a'.charCodeAt(0)]));
       buffer.lines.set(0, line);
 
       const str1 = buffer.translateBufferLineToString(0, true, 0, 1);
@@ -1117,9 +1117,9 @@ describe('Buffer', () => {
 
     it('should handle a zero width character in the middle of the string by not including it', () => {
       const line = new BufferLine(3);
-      line.setCell(0, CellData.fromCharData([ null, '語', 2, '語'.charCodeAt(0) ]));
-      line.setCell(1, CellData.fromCharData([ null, '', 0, null]));
-      line.setCell(2, CellData.fromCharData([ null, 'a', 1, 'a'.charCodeAt(0)]));
+      line.setCell(0, CellData.fromCharData([null, '語', 2, '語'.charCodeAt(0)]));
+      line.setCell(1, CellData.fromCharData([null, '', 0, null]));
+      line.setCell(2, CellData.fromCharData([null, 'a', 1, 'a'.charCodeAt(0)]));
       buffer.lines.set(0, line);
 
       const str0 = buffer.translateBufferLineToString(0, true, 0, 1);
@@ -1134,8 +1134,8 @@ describe('Buffer', () => {
 
     it('should handle single width emojis', () => {
       const line = new BufferLine(2);
-      line.setCell(0, CellData.fromCharData([ null, '😁', 1, '😁'.charCodeAt(0) ]));
-      line.setCell(1, CellData.fromCharData([ null, 'a', 1, 'a'.charCodeAt(0)]));
+      line.setCell(0, CellData.fromCharData([null, '😁', 1, '😁'.charCodeAt(0)]));
+      line.setCell(1, CellData.fromCharData([null, 'a', 1, 'a'.charCodeAt(0)]));
       buffer.lines.set(0, line);
 
       const str1 = buffer.translateBufferLineToString(0, true, 0, 1);
@@ -1147,8 +1147,8 @@ describe('Buffer', () => {
 
     it('should handle double width emojis', () => {
       const line = new BufferLine(2);
-      line.setCell(0, CellData.fromCharData([ null, '😁', 2, '😁'.charCodeAt(0) ]));
-      line.setCell(1, CellData.fromCharData([ null, '', 0, null]));
+      line.setCell(0, CellData.fromCharData([null, '😁', 2, '😁'.charCodeAt(0)]));
+      line.setCell(1, CellData.fromCharData([null, '', 0, null]));
       buffer.lines.set(0, line);
 
       const str1 = buffer.translateBufferLineToString(0, true, 0, 1);
@@ -1158,9 +1158,9 @@ describe('Buffer', () => {
       assert.equal(str2, '😁');
 
       const line2 = new BufferLine(3);
-      line2.setCell(0, CellData.fromCharData([ null, '😁', 2, '😁'.charCodeAt(0) ]));
-      line2.setCell(1, CellData.fromCharData([ null, '', 0, null]));
-      line2.setCell(2, CellData.fromCharData([ null, 'a', 1, 'a'.charCodeAt(0)]));
+      line2.setCell(0, CellData.fromCharData([null, '😁', 2, '😁'.charCodeAt(0)]));
+      line2.setCell(1, CellData.fromCharData([null, '', 0, null]));
+      line2.setCell(2, CellData.fromCharData([null, 'a', 1, 'a'.charCodeAt(0)]));
       buffer.lines.set(0, line2);
 
       const str3 = buffer.translateBufferLineToString(0, true, 0, 3);
@@ -1171,7 +1171,7 @@ describe('Buffer', () => {
     let terminal: TestTerminal;
 
     beforeEach(() => {
-      terminal = new TestTerminal({rows: 5, cols: 10, scrollback: 5});
+      terminal = new TestTerminal({ rows: 5, cols: 10, scrollback: 5 });
     });
 
     it('multiline ascii', () => {
@@ -1346,7 +1346,7 @@ describe('Buffer', () => {
 
     it('test fully wrapped buffer up to last char with full width odd', () => {
       const input = 'a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301'
-                    + 'a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301';
+        + 'a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301a￥\u0301';
       terminal.writeSync(input);
       const s = terminal.buffer.iterator(true).next().content;
       assert.equal(input, s);
@@ -1369,9 +1369,9 @@ describe('Buffer', () => {
       assert.equal(s, Array(terminal.getOption('tabStopWidth') + 1).join(' ') + 'https://google.de');
     });
   });
-  describe('BufferStringIterator', function(): void {
-    it('iterator does not overflow buffer limits', function(): void {
-      const terminal = new TestTerminal({rows: 5, cols: 10, scrollback: 5});
+  describe('BufferStringIterator', function (): void {
+    it('iterator does not overflow buffer limits', function (): void {
+      const terminal = new TestTerminal({ rows: 5, cols: 10, scrollback: 5 });
       const data = [
         'aaaaaaaaaa',
         'aaaaaaaaa\n',

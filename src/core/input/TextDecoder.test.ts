@@ -34,7 +34,7 @@ describe('text encodings', () => {
           decoder.clear();
         }
       });
-      it('65536..0x10FFFF (surrogates)', function(): void {
+      it('65536..0x10FFFF (surrogates)', function (): void {
         this.timeout(20000);
         const decoder = new StringToUtf32();
         const target = new Uint32Array(5);

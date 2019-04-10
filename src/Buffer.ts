@@ -669,7 +669,7 @@ export class Marker extends EventEmitter implements IMarker {
 export class BufferStringIterator implements IBufferStringIterator {
   private _current: number;
 
-  constructor (
+  constructor(
     private _buffer: IBuffer,
     private _trimRight: boolean,
     private _startIndex: number = 0,
@@ -707,6 +707,6 @@ export class BufferStringIterator implements IBufferStringIterator {
       result += this._buffer.translateBufferLineToString(i, this._trimRight);
     }
     this._current = range.last + 1;
-    return {range: range, content: result};
+    return { range: range, content: result };
   }
 }

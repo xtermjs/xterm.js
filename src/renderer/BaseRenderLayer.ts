@@ -58,19 +58,19 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   }
 
   private _initCanvas(): void {
-    this._ctx = this._canvas.getContext('2d', {alpha: this._alpha});
+    this._ctx = this._canvas.getContext('2d', { alpha: this._alpha });
     // Draw the background if this is an opaque layer
     if (!this._alpha) {
       this.clearAll();
     }
   }
 
-  public onOptionsChanged(terminal: ITerminal): void {}
-  public onBlur(terminal: ITerminal): void {}
-  public onFocus(terminal: ITerminal): void {}
-  public onCursorMove(terminal: ITerminal): void {}
-  public onGridChanged(terminal: ITerminal, startRow: number, endRow: number): void {}
-  public onSelectionChanged(terminal: ITerminal, start: [number, number], end: [number, number], columnSelectMode: boolean = false): void {}
+  public onOptionsChanged(terminal: ITerminal): void { }
+  public onBlur(terminal: ITerminal): void { }
+  public onFocus(terminal: ITerminal): void { }
+  public onCursorMove(terminal: ITerminal): void { }
+  public onGridChanged(terminal: ITerminal, startRow: number, endRow: number): void { }
+  public onSelectionChanged(terminal: ITerminal, start: [number, number], end: [number, number], columnSelectMode: boolean = false): void { }
 
   public onThemeChanged(terminal: ITerminal, colorSet: IColorSet): void {
     this._refreshCharAtlas(terminal, colorSet);
@@ -139,10 +139,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   protected fillCells(x: number, y: number, width: number, height: number): void {
     this._ctx.fillRect(
-        x * this._scaledCellWidth,
-        y * this._scaledCellHeight,
-        width * this._scaledCellWidth,
-        height * this._scaledCellHeight);
+      x * this._scaledCellWidth,
+      y * this._scaledCellHeight,
+      width * this._scaledCellWidth,
+      height * this._scaledCellHeight);
   }
 
   /**
@@ -153,10 +153,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   protected fillBottomLineAtCells(x: number, y: number, width: number = 1): void {
     this._ctx.fillRect(
-        x * this._scaledCellWidth,
-        (y + 1) * this._scaledCellHeight - window.devicePixelRatio - 1 /* Ensure it's drawn within the cell */,
-        width * this._scaledCellWidth,
-        window.devicePixelRatio);
+      x * this._scaledCellWidth,
+      (y + 1) * this._scaledCellHeight - window.devicePixelRatio - 1 /* Ensure it's drawn within the cell */,
+      width * this._scaledCellWidth,
+      window.devicePixelRatio);
   }
 
   /**
@@ -167,10 +167,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   protected fillLeftLineAtCell(x: number, y: number): void {
     this._ctx.fillRect(
-        x * this._scaledCellWidth,
-        y * this._scaledCellHeight,
-        window.devicePixelRatio,
-        this._scaledCellHeight);
+      x * this._scaledCellWidth,
+      y * this._scaledCellHeight,
+      window.devicePixelRatio,
+      this._scaledCellHeight);
   }
 
   /**
@@ -182,10 +182,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   protected strokeRectAtCell(x: number, y: number, width: number, height: number): void {
     this._ctx.lineWidth = window.devicePixelRatio;
     this._ctx.strokeRect(
-        x * this._scaledCellWidth + window.devicePixelRatio / 2,
-        y * this._scaledCellHeight + (window.devicePixelRatio / 2),
-        width * this._scaledCellWidth - window.devicePixelRatio,
-        (height * this._scaledCellHeight) - window.devicePixelRatio);
+      x * this._scaledCellWidth + window.devicePixelRatio / 2,
+      y * this._scaledCellHeight + (window.devicePixelRatio / 2),
+      width * this._scaledCellWidth - window.devicePixelRatio,
+      (height * this._scaledCellHeight) - window.devicePixelRatio);
   }
 
   /**
@@ -210,17 +210,17 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   protected clearCells(x: number, y: number, width: number, height: number): void {
     if (this._alpha) {
       this._ctx.clearRect(
-          x * this._scaledCellWidth,
-          y * this._scaledCellHeight,
-          width * this._scaledCellWidth,
-          height * this._scaledCellHeight);
+        x * this._scaledCellWidth,
+        y * this._scaledCellHeight,
+        width * this._scaledCellWidth,
+        height * this._scaledCellHeight);
     } else {
       this._ctx.fillStyle = this._colors.background.css;
       this._ctx.fillRect(
-          x * this._scaledCellWidth,
-          y * this._scaledCellHeight,
-          width * this._scaledCellWidth,
-          height * this._scaledCellHeight);
+        x * this._scaledCellWidth,
+        y * this._scaledCellHeight,
+        width * this._scaledCellWidth,
+        height * this._scaledCellHeight);
     }
   }
 
@@ -239,9 +239,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._ctx.textBaseline = 'middle';
     this._clipRow(terminal, y);
     this._ctx.fillText(
-        cell.getChars(),
-        x * this._scaledCellWidth + this._scaledCharLeft,
-        y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight / 2);
+      cell.getChars(),
+      x * this._scaledCellWidth + this._scaledCharLeft,
+      y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight / 2);
   }
 
   /**
@@ -340,9 +340,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     }
     // Draw the character
     this._ctx.fillText(
-        cell.getChars(),
-        x * this._scaledCellWidth + this._scaledCharLeft,
-        y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight / 2);
+      cell.getChars(),
+      x * this._scaledCellWidth + this._scaledCharLeft,
+      y * this._scaledCellHeight + this._scaledCharTop + this._scaledCharHeight / 2);
     this._ctx.restore();
   }
 
@@ -354,10 +354,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   private _clipRow(terminal: ITerminal, y: number): void {
     this._ctx.beginPath();
     this._ctx.rect(
-        0,
-        y * this._scaledCellHeight,
-        terminal.cols * this._scaledCellWidth,
-        this._scaledCellHeight);
+      0,
+      y * this._scaledCellHeight,
+      terminal.cols * this._scaledCellWidth,
+      this._scaledCellHeight);
     this._ctx.clip();
   }
 

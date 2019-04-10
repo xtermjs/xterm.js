@@ -122,12 +122,12 @@ export class DomRenderer extends EventEmitter implements IRenderer {
     }
 
     const styles =
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS} span {` +
-        ` display: inline-block;` +
-        ` height: 100%;` +
-        ` vertical-align: top;` +
-        ` width: ${this.dimensions.actualCellWidth}px` +
-        `}`;
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} span {` +
+      ` display: inline-block;` +
+      ` height: 100%;` +
+      ` vertical-align: top;` +
+      ` width: ${this.dimensions.actualCellWidth}px` +
+      `}`;
 
     this._dimensionsStyleElement.innerHTML = styles;
 
@@ -148,71 +148,71 @@ export class DomRenderer extends EventEmitter implements IRenderer {
 
     // Base CSS
     let styles =
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS} {` +
-        ` color: ${this.colorManager.colors.foreground.css};` +
-        ` background-color: ${this.colorManager.colors.background.css};` +
-        ` font-family: ${this._terminal.getOption('fontFamily')};` +
-        ` font-size: ${this._terminal.getOption('fontSize')}px;` +
-        `}`;
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS} {` +
+      ` color: ${this.colorManager.colors.foreground.css};` +
+      ` background-color: ${this.colorManager.colors.background.css};` +
+      ` font-family: ${this._terminal.getOption('fontFamily')};` +
+      ` font-size: ${this._terminal.getOption('fontSize')}px;` +
+      `}`;
     // Text styles
     styles +=
-        `${this._terminalSelector} span:not(.${BOLD_CLASS}) {` +
-        ` font-weight: ${this._terminal.options.fontWeight};` +
-        `}` +
-        `${this._terminalSelector} span.${BOLD_CLASS} {` +
-        ` font-weight: ${this._terminal.options.fontWeightBold};` +
-        `}` +
-        `${this._terminalSelector} span.${ITALIC_CLASS} {` +
-        ` font-style: italic;` +
-        `}`;
+      `${this._terminalSelector} span:not(.${BOLD_CLASS}) {` +
+      ` font-weight: ${this._terminal.options.fontWeight};` +
+      `}` +
+      `${this._terminalSelector} span.${BOLD_CLASS} {` +
+      ` font-weight: ${this._terminal.options.fontWeightBold};` +
+      `}` +
+      `${this._terminalSelector} span.${ITALIC_CLASS} {` +
+      ` font-style: italic;` +
+      `}`;
     // Blink animation
     styles +=
-        `@keyframes blink {` +
-        ` 0 % { opacity: 1.0; }` +
-        ` 50% { opacity: 0.0; }` +
-        ` 100 % { opacity: 1.0; }` +
-        `}`;
+      `@keyframes blink {` +
+      ` 0 % { opacity: 1.0; }` +
+      ` 50% { opacity: 0.0; }` +
+      ` 100 % { opacity: 1.0; }` +
+      `}`;
     // Cursor
     styles +=
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS} {` +
-        ` outline: 1px solid ${this.colorManager.colors.cursor.css};` +
-        ` outline-offset: -1px;` +
-        `}` +
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_BLINK_CLASS} {` +
-        ` animation: blink 1s step-end infinite;` +
-        `}` +
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
-        ` background-color: ${this.colorManager.colors.cursor.css};` +
-        ` color: ${this.colorManager.colors.cursorAccent.css};` +
-        `}` +
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BAR_CLASS} {` +
-        ` box-shadow: 1px 0 0 ${this.colorManager.colors.cursor.css} inset;` +
-        `}` +
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_UNDERLINE_CLASS} {` +
-        ` box-shadow: 0 -1px 0 ${this.colorManager.colors.cursor.css} inset;` +
-        `}`;
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS} {` +
+      ` outline: 1px solid ${this.colorManager.colors.cursor.css};` +
+      ` outline-offset: -1px;` +
+      `}` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_BLINK_CLASS} {` +
+      ` animation: blink 1s step-end infinite;` +
+      `}` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
+      ` background-color: ${this.colorManager.colors.cursor.css};` +
+      ` color: ${this.colorManager.colors.cursorAccent.css};` +
+      `}` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BAR_CLASS} {` +
+      ` box-shadow: 1px 0 0 ${this.colorManager.colors.cursor.css} inset;` +
+      `}` +
+      `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_UNDERLINE_CLASS} {` +
+      ` box-shadow: 0 -1px 0 ${this.colorManager.colors.cursor.css} inset;` +
+      `}`;
     // Selection
     styles +=
-        `${this._terminalSelector} .${SELECTION_CLASS} {` +
-        ` position: absolute;` +
-        ` top: 0;` +
-        ` left: 0;` +
-        ` z-index: 1;` +
-        ` pointer-events: none;` +
-        `}` +
-        `${this._terminalSelector} .${SELECTION_CLASS} div {` +
-        ` position: absolute;` +
-        ` background-color: ${this.colorManager.colors.selection.css};` +
-        `}`;
+      `${this._terminalSelector} .${SELECTION_CLASS} {` +
+      ` position: absolute;` +
+      ` top: 0;` +
+      ` left: 0;` +
+      ` z-index: 1;` +
+      ` pointer-events: none;` +
+      `}` +
+      `${this._terminalSelector} .${SELECTION_CLASS} div {` +
+      ` position: absolute;` +
+      ` background-color: ${this.colorManager.colors.selection.css};` +
+      `}`;
     // Colors
     this.colorManager.colors.ansi.forEach((c, i) => {
       styles +=
-          `${this._terminalSelector} .${FG_CLASS_PREFIX}${i} { color: ${c.css}; }` +
-          `${this._terminalSelector} .${BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
+        `${this._terminalSelector} .${FG_CLASS_PREFIX}${i} { color: ${c.css}; }` +
+        `${this._terminalSelector} .${BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
     });
     styles +=
-        `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { color: ${this.colorManager.colors.background.css}; }` +
-        `${this._terminalSelector} .${BG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { background-color: ${this.colorManager.colors.foreground.css}; }`;
+      `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { color: ${this.colorManager.colors.background.css}; }` +
+      `${this._terminalSelector} .${BG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { background-color: ${this.colorManager.colors.foreground.css}; }`;
 
     this._themeStyleElement.innerHTML = styles;
     return this.colorManager.colors;
@@ -350,7 +350,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
       rowElement.appendChild(this._rowFactory.createRow(lineData, row === cursorAbsoluteY, cursorStyle, cursorX, cursorBlink, this.dimensions.actualCellWidth, terminal.cols));
     }
 
-    this._terminal.emit('refresh', {start, end});
+    this._terminal.emit('refresh', { start, end });
   }
 
   private get _terminalSelector(): string {

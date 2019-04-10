@@ -25,21 +25,21 @@ export namespace C0 {
   /** Bell (Caret = ^G, C = \a) */
   export const BEL = '\x07';
   /** Backspace (Caret = ^H, C = \b) */
-  export const BS  = '\x08';
+  export const BS = '\x08';
   /** Character Tabulation, Horizontal Tabulation (Caret = ^I, C = \t) */
-  export const HT  = '\x09';
+  export const HT = '\x09';
   /** Line Feed (Caret = ^J, C = \n) */
-  export const LF  = '\x0a';
+  export const LF = '\x0a';
   /** Line Tabulation, Vertical Tabulation (Caret = ^K, C = \v) */
-  export const VT  = '\x0b';
+  export const VT = '\x0b';
   /** Form Feed (Caret = ^L, C = \f) */
-  export const FF  = '\x0c';
+  export const FF = '\x0c';
   /** Carriage Return (Caret = ^M, C = \r) */
-  export const CR  = '\x0d';
+  export const CR = '\x0d';
   /** Shift Out (Caret = ^N) */
-  export const SO  = '\x0e';
+  export const SO = '\x0e';
   /** Shift In (Caret = ^O) */
-  export const SI  = '\x0f';
+  export const SI = '\x0f';
   /** Data Link Escape (Caret = ^P) */
   export const DLE = '\x10';
   /** Device Control One (XON) (Caret = ^Q) */
@@ -59,21 +59,21 @@ export namespace C0 {
   /** Cancel (Caret = ^X) */
   export const CAN = '\x18';
   /** End of Medium (Caret = ^Y) */
-  export const EM  = '\x19';
+  export const EM = '\x19';
   /** Substitute (Caret = ^Z) */
   export const SUB = '\x1a';
   /** Escape (Caret = ^[, C = \e) */
   export const ESC = '\x1b';
   /** File Separator (Caret = ^\) */
-  export const FS  = '\x1c';
+  export const FS = '\x1c';
   /** Group Separator (Caret = ^]) */
-  export const GS  = '\x1d';
+  export const GS = '\x1d';
   /** Record Separator (Caret = ^^) */
-  export const RS  = '\x1e';
+  export const RS = '\x1e';
   /** Unit Separator (Caret = ^_) */
-  export const US  = '\x1f';
+  export const US = '\x1f';
   /** Space */
-  export const SP  = '\x20';
+  export const SP = '\x20';
   /** Delete (Caret = ^?) */
   export const DEL = '\x7f';
 }

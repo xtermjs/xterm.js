@@ -267,7 +267,7 @@ export interface ITerminalOptions extends IPublicTerminalOptions {
 }
 
 export interface IBufferStringIteratorResult {
-  range: {first: number, last: number};
+  range: { first: number, last: number };
   content: string;
 }
 

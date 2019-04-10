@@ -9,7 +9,7 @@ import { IKeyboardEvent } from 'src/common/Types';
 import { C0 } from 'src/common/data/EscapeSequences';
 
 // reg + shift key mappings for digits and special chars
-const KEYCODE_KEY_MAPPINGS: { [key: number]: [string, string]} = {
+const KEYCODE_KEY_MAPPINGS: { [key: number]: [string, string] } = {
   // digits 0-9
   48: ['0', ')'],
   49: ['1', '!'],

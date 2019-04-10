@@ -249,8 +249,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
     this._customKeyEventHandler = null;
     removeTerminalFromCache(this);
-    this.handler = () => {};
-    this.write = () => {};
+    this.handler = () => { };
+    this.write = () => { };
     if (this.element && this.element.parentNode) {
       this.element.parentNode.removeChild(this.element);
     }
@@ -901,7 +901,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // sgr: ^[[ Cb ; Cx ; Cy M/m
     // vt300: ^[[ 24(1/3/5)~ [ Cx , Cy ] \r
     // locator: CSI P e ; P b ; P r ; P c ; P p & w
-    function sendEvent(button: number, pos: {x: number, y: number}): void {
+    function sendEvent(button: number, pos: { x: number, y: number }): void {
       // self.emit('mouse', {
       //   x: pos.x - 32,
       //   y: pos.x - 32,
@@ -935,17 +935,17 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         else if (button === 2) button = 6;
         else if (button === 3) button = 3;
         self.handler(C0.ESC + '['
-                  + button
-                  + ';'
-                  + (button === 3 ? 4 : 0)
-                  + ';'
-                  + pos.y
-                  + ';'
-                  + pos.x
-                  + ';'
-                  // Not sure what page is meant to be
-                  + (<any>pos).page || 0
-                  + '&w');
+          + button
+          + ';'
+          + (button === 3 ? 4 : 0)
+          + ';'
+          + pos.y
+          + ';'
+          + pos.x
+          + ';'
+          // Not sure what page is meant to be
+          + (<any>pos).page || 0
+          + '&w');
         return;
       }
 
@@ -962,12 +962,12 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         pos.x -= 32;
         pos.y -= 32;
         self.handler(C0.ESC + '[<'
-                  + (((button & 3) === 3 ? button & ~3 : button) - 32)
-                  + ';'
-                  + pos.x
-                  + ';'
-                  + pos.y
-                  + ((button & 3) === 3 ? 'm' : 'M'));
+          + (((button & 3) === 3 ? button & ~3 : button) - 32)
+          + ';'
+          + pos.x
+          + ';'
+          + pos.y
+          + ((button & 3) === 3 ? 'm' : 'M'));
         return;
       }
 
@@ -998,9 +998,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         case 'mousedown':
           button = ev.button !== null && ev.button !== undefined
             ? +ev.button
-          : ev.which !== null && ev.which !== undefined
-            ? ev.which - 1
-          : null;
+            : ev.which !== null && ev.which !== undefined
+              ? ev.which - 1
+              : null;
 
           if (Browser.isMSIE) {
             button = button === 1 ? 0 : button === 4 ? 1 : button;
@@ -1012,12 +1012,12 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         case 'DOMMouseScroll':
           button = ev.detail < 0
             ? 64
-          : 65;
+            : 65;
           break;
         case 'wheel':
           button = (<WheelEvent>ev).deltaY < 0
             ? 64
-          : 65;
+            : 65;
           break;
       }
 
@@ -1121,7 +1121,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
           }
 
           // Construct and send sequences
-          const sequence = C0.ESC + (this.applicationCursor ? 'O' : '[') + ( ev.deltaY < 0 ? 'A' : 'B');
+          const sequence = C0.ESC + (this.applicationCursor ? 'O' : '[') + (ev.deltaY < 0 ? 'A' : 'B');
           let data = '';
           for (let i = 0; i < Math.abs(amount); i++) {
             data += sequence;
@@ -1597,8 +1597,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   private _isThirdLevelShift(browser: IBrowser, ev: IKeyboardEvent): boolean {
     const thirdLevelKey =
-        (browser.isMac && !this.options.macOptionIsMeta && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
-        (browser.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
+      (browser.isMac && !this.options.macOptionIsMeta && ev.altKey && !ev.ctrlKey && !ev.metaKey) ||
+      (browser.isMSWindows && ev.altKey && ev.ctrlKey && !ev.metaKey);
 
     if (ev.type === 'keypress') {
       return thirdLevelKey;
@@ -1744,7 +1744,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
 
     this.refresh(0, this.rows - 1);
-    this.emit('resize', {cols: x, rows: y});
+    this.emit('resize', { cols: x, rows: y });
   }
 
   /**

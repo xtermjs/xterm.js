@@ -156,39 +156,39 @@ export class AttributeData implements IAttributeData {
   public bg: number = 0;
 
   // flags
-  public isInverse(): number   { return this.fg & FgFlags.INVERSE; }
-  public isBold(): number      { return this.fg & FgFlags.BOLD; }
+  public isInverse(): number { return this.fg & FgFlags.INVERSE; }
+  public isBold(): number { return this.fg & FgFlags.BOLD; }
   public isUnderline(): number { return this.fg & FgFlags.UNDERLINE; }
-  public isBlink(): number     { return this.fg & FgFlags.BLINK; }
+  public isBlink(): number { return this.fg & FgFlags.BLINK; }
   public isInvisible(): number { return this.fg & FgFlags.INVISIBLE; }
-  public isItalic(): number    { return this.bg & BgFlags.ITALIC; }
-  public isDim(): number       { return this.bg & BgFlags.DIM; }
+  public isItalic(): number { return this.bg & BgFlags.ITALIC; }
+  public isDim(): number { return this.bg & BgFlags.DIM; }
 
   // color modes
   public getFgColorMode(): number { return this.fg & Attributes.CM_MASK; }
   public getBgColorMode(): number { return this.bg & Attributes.CM_MASK; }
-  public isFgRGB(): boolean       { return (this.fg & Attributes.CM_MASK) === Attributes.CM_RGB; }
-  public isBgRGB(): boolean       { return (this.bg & Attributes.CM_MASK) === Attributes.CM_RGB; }
-  public isFgPalette(): boolean   { return (this.fg & Attributes.CM_MASK) === Attributes.CM_P16 || (this.fg & Attributes.CM_MASK) === Attributes.CM_P256; }
-  public isBgPalette(): boolean   { return (this.bg & Attributes.CM_MASK) === Attributes.CM_P16 || (this.bg & Attributes.CM_MASK) === Attributes.CM_P256; }
-  public isFgDefault(): boolean   { return (this.fg & Attributes.CM_MASK) === 0; }
-  public isBgDefault(): boolean   { return (this.bg & Attributes.CM_MASK) === 0; }
+  public isFgRGB(): boolean { return (this.fg & Attributes.CM_MASK) === Attributes.CM_RGB; }
+  public isBgRGB(): boolean { return (this.bg & Attributes.CM_MASK) === Attributes.CM_RGB; }
+  public isFgPalette(): boolean { return (this.fg & Attributes.CM_MASK) === Attributes.CM_P16 || (this.fg & Attributes.CM_MASK) === Attributes.CM_P256; }
+  public isBgPalette(): boolean { return (this.bg & Attributes.CM_MASK) === Attributes.CM_P16 || (this.bg & Attributes.CM_MASK) === Attributes.CM_P256; }
+  public isFgDefault(): boolean { return (this.fg & Attributes.CM_MASK) === 0; }
+  public isBgDefault(): boolean { return (this.bg & Attributes.CM_MASK) === 0; }
 
   // colors
   public getFgColor(): number {
     switch (this.fg & Attributes.CM_MASK) {
       case Attributes.CM_P16:
-      case Attributes.CM_P256:  return this.fg & Attributes.PCOLOR_MASK;
-      case Attributes.CM_RGB:   return this.fg & Attributes.RGB_MASK;
-      default:                  return -1;  // CM_DEFAULT defaults to -1
+      case Attributes.CM_P256: return this.fg & Attributes.PCOLOR_MASK;
+      case Attributes.CM_RGB: return this.fg & Attributes.RGB_MASK;
+      default: return -1;  // CM_DEFAULT defaults to -1
     }
   }
   public getBgColor(): number {
     switch (this.bg & Attributes.CM_MASK) {
       case Attributes.CM_P16:
-      case Attributes.CM_P256:  return this.bg & Attributes.PCOLOR_MASK;
-      case Attributes.CM_RGB:   return this.bg & Attributes.RGB_MASK;
-      default:                  return -1;  // CM_DEFAULT defaults to -1
+      case Attributes.CM_P256: return this.bg & Attributes.PCOLOR_MASK;
+      case Attributes.CM_RGB: return this.bg & Attributes.RGB_MASK;
+      default: return -1;  // CM_DEFAULT defaults to -1
     }
   }
 }
@@ -300,7 +300,7 @@ export class CellData extends AttributeData implements ICellData {
  */
 export class BufferLine implements IBufferLine {
   protected _data: Uint32Array | null = null;
-  protected _combined: {[index: number]: string} = {};
+  protected _combined: { [index: number]: string } = {};
   public length: number;
 
   constructor(cols: number, fillCellData?: ICellData, public isWrapped: boolean = false) {
@@ -511,7 +511,7 @@ export class BufferLine implements IBufferLine {
   }
 
   public replaceCells(start: number, end: number, fillCellData: ICellData): void {
-    while (start < end  && start < this.length) {
+    while (start < end && start < this.length) {
       this.setCell(start++, fillCellData);
     }
   }

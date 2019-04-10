@@ -16,9 +16,9 @@ function deepEquals(a: TypedArray, b: TypedArray): void {
   }
 }
 
-describe('polyfill conformance tests', function(): void {
-  describe('TypedArray.fill', function(): void {
-    it('should work with all typed array types', function(): void {
+describe('polyfill conformance tests', function (): void {
+  describe('TypedArray.fill', function (): void {
+    it('should work with all typed array types', function (): void {
       const u81 = new Uint8Array(5);
       const u82 = new Uint8Array(5);
       deepEquals(fillFallback(u81, 2), u82.fill(2));
@@ -58,7 +58,7 @@ describe('polyfill conformance tests', function(): void {
       deepEquals(fillFallback(u8Clamped1, 2), u8Clamped2.fill(2));
       deepEquals(fillFallback(u8Clamped1, 257), u8Clamped2.fill(257));
     });
-    it('start offset', function(): void {
+    it('start offset', function (): void {
       for (let i = -2; i < 10; ++i) {
         const u81 = new Uint8Array(5);
         const u83 = new Uint8Array(5);
@@ -66,7 +66,7 @@ describe('polyfill conformance tests', function(): void {
         deepEquals(fillFallback(u81, -1, i), u83.fill(-1, i));
       }
     });
-    it('end offset', function(): void {
+    it('end offset', function (): void {
       for (let i = -2; i < 10; ++i) {
         const u81 = new Uint8Array(5);
         const u83 = new Uint8Array(5);
@@ -74,7 +74,7 @@ describe('polyfill conformance tests', function(): void {
         deepEquals(fillFallback(u81, -1, 0, i), u83.fill(-1, 0, i));
       }
     });
-    it('start/end offset', function(): void {
+    it('start/end offset', function (): void {
       for (let i = -2; i < 10; ++i) {
         for (let j = -2; j < 10; ++j) {
           const u81 = new Uint8Array(5);

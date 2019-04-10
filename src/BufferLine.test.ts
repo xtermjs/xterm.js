@@ -8,7 +8,7 @@ import { BufferLine, CellData, Content } from 'src/BufferLine';
 import { CharData, IBufferLine } from 'src/Types';
 
 class TestBufferLine extends BufferLine {
-  public get combined(): {[index: number]: string} {
+  public get combined(): { [index: number]: string } {
     return this._combined;
   }
 
@@ -47,8 +47,8 @@ describe('CellData', () => {
   });
 });
 
-describe('BufferLine', function(): void {
-  it('ctor', function(): void {
+describe('BufferLine', function (): void {
+  it('ctor', function (): void {
     let line: IBufferLine = new TestBufferLine(0);
     chai.expect(line.length).equals(0);
     chai.expect(line.isWrapped).equals(false);
@@ -65,7 +65,7 @@ describe('BufferLine', function(): void {
     chai.expect(line.loadCell(0, new CellData()).getAsCharData()).eql([123, 'a', 456, 'a'.charCodeAt(0)]);
     chai.expect(line.isWrapped).equals(true);
   });
-  it('insertCells', function(): void {
+  it('insertCells', function (): void {
     const line = new TestBufferLine(3);
     line.setCell(0, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
     line.setCell(1, CellData.fromCharData([2, 'b', 0, 'b'.charCodeAt(0)]));
@@ -77,7 +77,7 @@ describe('BufferLine', function(): void {
       [4, 'd', 0, 'd'.charCodeAt(0)]
     ]);
   });
-  it('deleteCells', function(): void {
+  it('deleteCells', function (): void {
     const line = new TestBufferLine(5);
     line.setCell(0, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
     line.setCell(1, CellData.fromCharData([2, 'b', 0, 'b'.charCodeAt(0)]));
@@ -93,7 +93,7 @@ describe('BufferLine', function(): void {
       [6, 'f', 0, 'f'.charCodeAt(0)]
     ]);
   });
-  it('replaceCells', function(): void {
+  it('replaceCells', function (): void {
     const line = new TestBufferLine(5);
     line.setCell(0, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
     line.setCell(1, CellData.fromCharData([2, 'b', 0, 'b'.charCodeAt(0)]));
@@ -109,7 +109,7 @@ describe('BufferLine', function(): void {
       [5, 'e', 0, 'e'.charCodeAt(0)]
     ]);
   });
-  it('fill', function(): void {
+  it('fill', function (): void {
     const line = new TestBufferLine(5);
     line.setCell(0, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
     line.setCell(1, CellData.fromCharData([2, 'b', 0, 'b'.charCodeAt(0)]));
@@ -125,7 +125,7 @@ describe('BufferLine', function(): void {
       [123, 'z', 0, 'z'.charCodeAt(0)]
     ]);
   });
-  it('clone', function(): void {
+  it('clone', function (): void {
     const line = new TestBufferLine(5, null, true);
     line.setCell(0, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
     line.setCell(1, CellData.fromCharData([2, 'b', 0, 'b'.charCodeAt(0)]));
@@ -137,7 +137,7 @@ describe('BufferLine', function(): void {
     chai.expect(line2.length).equals(line.length);
     chai.expect(line2.isWrapped).equals(line.isWrapped);
   });
-  it('copyFrom', function(): void {
+  it('copyFrom', function (): void {
     const line = new TestBufferLine(5);
     line.setCell(0, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
     line.setCell(1, CellData.fromCharData([2, 'b', 0, 'b'.charCodeAt(0)]));
@@ -150,7 +150,7 @@ describe('BufferLine', function(): void {
     chai.expect(line2.length).equals(line.length);
     chai.expect(line2.isWrapped).equals(line.isWrapped);
   });
-  it('should support combining chars', function(): void {
+  it('should support combining chars', function (): void {
     // CHAR_DATA_CODE_INDEX resembles current behavior in InputHandler.print
     // --> set code to the last charCodeAt value of the string
     // Note: needs to be fixed once the string pointer is in place
@@ -162,31 +162,31 @@ describe('BufferLine', function(): void {
     const line3 = line.clone();
     chai.expect(TestBufferLine.prototype.toArray.apply(line3)).eql(line.toArray());
   });
-  describe('resize', function(): void {
-    it('enlarge(false)', function(): void {
+  describe('resize', function (): void {
+    it('enlarge(false)', function (): void {
       const line = new TestBufferLine(5, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), false);
       line.resize(10, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
       chai.expect(line.toArray()).eql(Array(10).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
     });
-    it('enlarge(true)', function(): void {
+    it('enlarge(true)', function (): void {
       const line = new TestBufferLine(5, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), false);
       line.resize(10, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
       chai.expect(line.toArray()).eql(Array(10).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
     });
-    it('shrink(true) - should apply new size', function(): void {
+    it('shrink(true) - should apply new size', function (): void {
       const line = new TestBufferLine(10, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), false);
       line.resize(5, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
       chai.expect(line.toArray()).eql(Array(5).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
     });
-    it('shrink to 0 length', function(): void {
+    it('shrink to 0 length', function (): void {
       const line = new TestBufferLine(10, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), false);
       line.resize(0, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
       chai.expect(line.toArray()).eql(Array(0).fill([1, 'a', 0, 'a'.charCodeAt(0)]));
     });
     it('should remove combining data on replaced cells after shrinking then enlarging', () => {
       const line = new TestBufferLine(10, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]), false);
-      line.set(2, [ null, '😁', 1, '😁'.charCodeAt(0) ]);
-      line.set(9, [ null, '😁', 1, '😁'.charCodeAt(0) ]);
+      line.set(2, [null, '😁', 1, '😁'.charCodeAt(0)]);
+      line.set(9, [null, '😁', 1, '😁'.charCodeAt(0)]);
       chai.expect(line.translateToString()).eql('aa😁aaaaaa😁');
       chai.expect(Object.keys(line.combined).length).eql(2);
       line.resize(5, CellData.fromCharData([1, 'a', 0, 'a'.charCodeAt(0)]));
@@ -196,30 +196,30 @@ describe('BufferLine', function(): void {
       chai.expect(Object.keys(line.combined).length).eql(1);
     });
   });
-  describe('getTrimLength', function(): void {
-    it('empty line', function(): void {
+  describe('getTrimLength', function (): void {
+    it('empty line', function (): void {
       const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
       chai.expect(line.getTrimmedLength()).equal(0);
     });
-    it('ASCII', function(): void {
+    it('ASCII', function (): void {
       const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
       line.setCell(0, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
       line.setCell(2, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
       chai.expect(line.getTrimmedLength()).equal(3);
     });
-    it('surrogate', function(): void {
+    it('surrogate', function (): void {
       const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
       line.setCell(0, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
       line.setCell(2, CellData.fromCharData([1, '𝄞', 1, '𝄞'.charCodeAt(0)]));
       chai.expect(line.getTrimmedLength()).equal(3);
     });
-    it('combining', function(): void {
+    it('combining', function (): void {
       const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
       line.setCell(0, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
       line.setCell(2, CellData.fromCharData([1, 'e\u0301', 1, '\u0301'.charCodeAt(0)]));
       chai.expect(line.getTrimmedLength()).equal(3);
     });
-    it('fullwidth', function(): void {
+    it('fullwidth', function (): void {
       const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
       line.setCell(0, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
       line.setCell(2, CellData.fromCharData([1, '１', 2, '１'.charCodeAt(0)]));
@@ -227,13 +227,13 @@ describe('BufferLine', function(): void {
       chai.expect(line.getTrimmedLength()).equal(4); // also counts null cell after fullwidth
     });
   });
-  describe('translateToString with and w\'o trimming', function(): void {
-    it('empty line', function(): void {
+  describe('translateToString with and w\'o trimming', function (): void {
+    it('empty line', function (): void {
       const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
       chai.expect(line.translateToString(false)).equal('          ');
       chai.expect(line.translateToString(true)).equal('');
     });
-    it('ASCII', function(): void {
+    it('ASCII', function (): void {
       const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
       line.setCell(0, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
       line.setCell(2, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
@@ -249,7 +249,7 @@ describe('BufferLine', function(): void {
       chai.expect(line.translateToString(true, 0, 3)).equal('a a');
 
     });
-    it('surrogate', function(): void {
+    it('surrogate', function (): void {
       const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
       line.setCell(0, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
       line.setCell(2, CellData.fromCharData([1, '𝄞', 1, '𝄞'.charCodeAt(0)]));
@@ -264,7 +264,7 @@ describe('BufferLine', function(): void {
       chai.expect(line.translateToString(true, 0, 4)).equal('a 𝄞 ');
       chai.expect(line.translateToString(true, 0, 3)).equal('a 𝄞');
     });
-    it('combining', function(): void {
+    it('combining', function (): void {
       const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
       line.setCell(0, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
       line.setCell(2, CellData.fromCharData([1, 'e\u0301', 1, '\u0301'.charCodeAt(0)]));
@@ -279,7 +279,7 @@ describe('BufferLine', function(): void {
       chai.expect(line.translateToString(true, 0, 4)).equal('a e\u0301 ');
       chai.expect(line.translateToString(true, 0, 3)).equal('a e\u0301');
     });
-    it('fullwidth', function(): void {
+    it('fullwidth', function (): void {
       const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
       line.setCell(0, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
       line.setCell(2, CellData.fromCharData([1, '１', 2, '１'.charCodeAt(0)]));
@@ -303,7 +303,7 @@ describe('BufferLine', function(): void {
       chai.expect(line.translateToString(true, 0, 3)).equal('a １');
       chai.expect(line.translateToString(true, 0, 2)).equal('a ');
     });
-    it('space at end', function(): void {
+    it('space at end', function (): void {
       const line = new TestBufferLine(10, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
       line.setCell(0, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
       line.setCell(2, CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]));
@@ -313,7 +313,7 @@ describe('BufferLine', function(): void {
       chai.expect(line.translateToString(false)).equal('a a aa    ');
       chai.expect(line.translateToString(true)).equal('a a aa ');
     });
-    it('should always return some sane value', function(): void {
+    it('should always return some sane value', function (): void {
       // sanity check - broken line with invalid out of bound null width cells
       // this can atm happen with deleting/inserting chars in inputhandler by "breaking"
       // fullwidth pairs --> needs to be fixed after settling BufferLine impl
@@ -340,7 +340,7 @@ describe('BufferLine', function(): void {
     });
     it('should add char to combining string in cell', () => {
       const line = new TestBufferLine(3, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
-      const cell = line .loadCell(0, new CellData());
+      const cell = line.loadCell(0, new CellData());
       cell.setFromCharData([123, 'e\u0301', 1, 'e\u0301'.charCodeAt(1)]);
       line.setCell(0, cell);
       line.addCodepointToCell(0, '\u0301'.charCodeAt(0));
@@ -353,7 +353,7 @@ describe('BufferLine', function(): void {
     });
     it('should create combining string on taken cell', () => {
       const line = new TestBufferLine(3, CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]), false);
-      const cell = line .loadCell(0, new CellData());
+      const cell = line.loadCell(0, new CellData());
       cell.setFromCharData([123, 'e', 1, 'e'.charCodeAt(1)]);
       line.setCell(0, cell);
       line.addCodepointToCell(0, '\u0301'.charCodeAt(0));

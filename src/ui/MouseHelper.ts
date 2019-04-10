@@ -7,13 +7,13 @@ import { IRenderer } from 'src/renderer/Types';
 import { ICharMeasure, IMouseHelper } from 'src/Types';
 
 export class MouseHelper implements IMouseHelper {
-  constructor(private _renderer: IRenderer) {}
+  constructor(private _renderer: IRenderer) { }
 
   public setRenderer(renderer: IRenderer): void {
     this._renderer = renderer;
   }
 
-  public static getCoordsRelativeToElement(event: {clientX: number, clientY: number}, element: HTMLElement): [number, number] {
+  public static getCoordsRelativeToElement(event: { clientX: number, clientY: number }, element: HTMLElement): [number, number] {
     const rect = element.getBoundingClientRect();
     return [event.clientX - rect.left, event.clientY - rect.top];
   }
@@ -31,7 +31,7 @@ export class MouseHelper implements IMouseHelper {
    * apply an offset to the x value such that the left half of the cell will
    * select that cell and the right half will select the next cell.
    */
-  public getCoords(event: {clientX: number, clientY: number}, element: HTMLElement, charMeasure: ICharMeasure, colCount: number, rowCount: number, isSelection?: boolean): [number, number] {
+  public getCoords(event: { clientX: number, clientY: number }, element: HTMLElement, charMeasure: ICharMeasure, colCount: number, rowCount: number, isSelection?: boolean): [number, number] {
     // Coordinates cannot be measured if charMeasure has not been initialized
     if (!charMeasure.width || !charMeasure.height) {
       return null;

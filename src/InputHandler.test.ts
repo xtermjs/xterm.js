@@ -88,14 +88,14 @@ describe('InputHandler', () => {
       assert.equal(terminal.bracketedPasteMode, false);
     });
   });
-  describe('regression tests', function(): void {
+  describe('regression tests', function (): void {
     function termContent(term: Terminal, trim: boolean): string[] {
       const result = [];
       for (let i = 0; i < term.rows; ++i) result.push(term.buffer.lines.get(i).translateToString(trim));
       return result;
     }
 
-    it('insertChars', function(): void {
+    it('insertChars', function (): void {
       const term = new Terminal();
       const inputHandler = new InputHandler(term);
 
@@ -132,7 +132,7 @@ describe('InputHandler', () => {
       expect(line1.translateToString(false)).equals(Array(term.cols - 9).join('a') + '          ');
       expect(line1.translateToString(true)).equals(Array(term.cols - 9).join('a'));
     });
-    it('deleteChars', function(): void {
+    it('deleteChars', function (): void {
       const term = new Terminal();
       const inputHandler = new InputHandler(term);
 
@@ -172,7 +172,7 @@ describe('InputHandler', () => {
       expect(line1.translateToString(false)).equals(Array(term.cols - 9).join('a') + '          ');
       expect(line1.translateToString(true)).equals(Array(term.cols - 9).join('a'));
     });
-    it('eraseInLine', function(): void {
+    it('eraseInLine', function (): void {
       const term = new Terminal();
       const inputHandler = new InputHandler(term);
 
@@ -200,8 +200,8 @@ describe('InputHandler', () => {
       expect(term.buffer.lines.get(2).translateToString(false)).equals(Array(term.cols + 1).join(' '));
 
     });
-    it('eraseInDisplay', function(): void {
-      const term = new Terminal({cols: 80, rows: 7});
+    it('eraseInDisplay', function (): void {
+      const term = new Terminal({ cols: 80, rows: 7 });
       const inputHandler = new InputHandler(term);
 
       // fill display with a's
@@ -317,9 +317,9 @@ describe('InputHandler', () => {
       expect(term.buffer.lines.get(2).isWrapped).false;
     });
   });
-  it('convertEol setting', function(): void {
+  it('convertEol setting', function (): void {
     // not converting
-    const termNotConverting = new Terminal({cols: 15, rows: 10});
+    const termNotConverting = new Terminal({ cols: 15, rows: 10 });
     (termNotConverting as any)._inputHandler.parse('Hello\nWorld');
     expect(termNotConverting.buffer.lines.get(0).translateToString(false)).equals('Hello          ');
     expect(termNotConverting.buffer.lines.get(1).translateToString(false)).equals('     World     ');
@@ -327,7 +327,7 @@ describe('InputHandler', () => {
     expect(termNotConverting.buffer.lines.get(1).translateToString(true)).equals('     World');
 
     // converting
-    const termConverting = new Terminal({cols: 15, rows: 10, convertEol: true});
+    const termConverting = new Terminal({ cols: 15, rows: 10, convertEol: true });
     (termConverting as any)._inputHandler.parse('Hello\nWorld');
     expect(termConverting.buffer.lines.get(0).translateToString(false)).equals('Hello          ');
     expect(termConverting.buffer.lines.get(1).translateToString(false)).equals('World          ');

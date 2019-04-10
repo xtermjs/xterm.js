@@ -295,9 +295,9 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
   protected _areCoordsInSelection(coords: [number, number], start: [number, number], end: [number, number]): boolean {
     return (coords[1] > start[1] && coords[1] < end[1]) ||
-        (start[1] === end[1] && coords[1] === start[1] && coords[0] >= start[0] && coords[0] < end[0]) ||
-        (start[1] < end[1] && coords[1] === end[1] && coords[0] < end[0]) ||
-        (start[1] < end[1] && coords[1] === start[1] && coords[0] >= start[0]);
+      (start[1] === end[1] && coords[1] === start[1] && coords[0] >= start[0] && coords[0] < end[0]) ||
+      (start[1] < end[1] && coords[1] === end[1] && coords[0] < end[0]) ||
+      (start[1] < end[1] && coords[1] === start[1] && coords[0] >= start[0]);
   }
 
   /**
@@ -651,7 +651,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     }
   }
 
-  private _onBufferActivate(e: {activeBuffer: IBuffer, inactiveBuffer: IBuffer}): void {
+  private _onBufferActivate(e: { activeBuffer: IBuffer, inactiveBuffer: IBuffer }): void {
     this.clearSelection();
     // Only adjust the selection on trim, shiftElements is rarely used (only in
     // reverseIndex) and delete in a splice is only ever used when the same
@@ -795,20 +795,20 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     // Calculate the start _column_, converting the the string indexes back to
     // column coordinates.
     let start =
-        startIndex // The index of the selection's start char in the line string
-        + charOffset // The difference between the initial char's column and index
-        - leftWideCharCount // The number of wide chars left of the initial char
-        + leftLongCharOffset; // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
+      startIndex // The index of the selection's start char in the line string
+      + charOffset // The difference between the initial char's column and index
+      - leftWideCharCount // The number of wide chars left of the initial char
+      + leftLongCharOffset; // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
 
     // Calculate the length in _columns_, converting the the string indexes back
     // to column coordinates.
     let length = Math.min(this._terminal.cols, // Disallow lengths larger than the terminal cols
-        endIndex // The index of the selection's end char in the line string
-        - startIndex // The index of the selection's start char in the line string
-        + leftWideCharCount // The number of wide chars left of the initial char
-        + rightWideCharCount // The number of wide chars right of the initial char (inclusive)
-        - leftLongCharOffset // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
-        - rightLongCharOffset); // The number of additional chars right of the initial char (inclusive) added by columns with strings longer than 1 (emojis)
+      endIndex // The index of the selection's end char in the line string
+      - startIndex // The index of the selection's start char in the line string
+      + leftWideCharCount // The number of wide chars left of the initial char
+      + rightWideCharCount // The number of wide chars right of the initial char (inclusive)
+      - leftLongCharOffset // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
+      - rightLongCharOffset); // The number of additional chars right of the initial char (inclusive) added by columns with strings longer than 1 (emojis)
 
     if (!allowWhitespaceOnlySelection && line.slice(startIndex, endIndex).trim() === '') {
       return null;
