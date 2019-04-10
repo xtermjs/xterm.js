@@ -380,18 +380,6 @@ declare module 'xterm' {
     onCursorMove: IEvent<void>;
 
     /**
-     * Adds an event listener for when a line feed is added.
-     * @returns an `IDisposable` to stop listening.
-     */
-    onLineFeed: IEvent<void>;
-
-    /**
-     * Adds an event listener for when a selection change occurs.
-     * @returns an `IDisposable` to stop listening.
-     */
-    onSelectionChange: IEvent<void>;
-
-    /**
      * Adds an event listener for when a data event fires. This happens for
      * example when the user types or pastes into the terminal. The event value
      * is whatever `string` results, in a typical setup, this should be passed
@@ -401,11 +389,18 @@ declare module 'xterm' {
     onData: IEvent<string>;
 
     /**
-     * Adds an event listener for when an OSC 0 or OSC 2 title change occurs.
-     * The event value is the new title.
+     * Adds an event listener for a key is pressed. The event value contains the
+     * string that will be sent in the data event as well as the DOM event that
+     * triggered it.
      * @returns an `IDisposable` to stop listening.
      */
-    onTitleChange: IEvent<string>;
+    onKey: IEvent<{ key: string, domEvent: KeyboardEvent }>;
+
+    /**
+     * Adds an event listener for when a line feed is added.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onLineFeed: IEvent<void>;
 
     /**
      * Adds an event listener for when a scroll occurs. The  event value is the
@@ -415,12 +410,10 @@ declare module 'xterm' {
     onScroll: IEvent<number>;
 
     /**
-     * Adds an event listener for a key is pressed. The event value contains the
-     * string that will be sent in the data event as well as the DOM event that
-     * triggered it.
+     * Adds an event listener for when a selection change occurs.
      * @returns an `IDisposable` to stop listening.
      */
-    onKey: IEvent<{ key: string, domEvent: KeyboardEvent }>;
+    onSelectionChange: IEvent<void>;
 
     /**
      * Adds an event listener for when rows are rendered. The event value
@@ -436,6 +429,13 @@ declare module 'xterm' {
      * @returns an `IDisposable` to stop listening.
      */
     onResize: IEvent<{ cols: number, rows: number }>;
+
+    /**
+     * Adds an event listener for when an OSC 0 or OSC 2 title change occurs.
+     * The event value is the new title.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onTitleChange: IEvent<string>;
 
     /**
      * Unfocus the terminal.
