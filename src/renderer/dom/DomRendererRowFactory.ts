@@ -3,10 +3,10 @@
  * @license MIT
  */
 
-import {  NULL_CELL_CODE, WHITESPACE_CELL_CHAR } from '../../Buffer';
-import { IBufferLine, ITerminalOptions } from '../../Types';
-import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
-import { CellData, AttributeData } from '../../BufferLine';
+import {  NULL_CELL_CODE, WHITESPACE_CELL_CHAR } from 'src/Buffer';
+import { IBufferLine, ITerminalOptions } from 'src/Types';
+import { INVERTED_DEFAULT_COLOR } from 'src/renderer/atlas/Types';
+import { CellData, AttributeData } from 'src/BufferLine';
 
 export const BOLD_CLASS = 'xterm-bold';
 export const DIM_CLASS = 'xterm-dim';

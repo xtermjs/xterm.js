@@ -1,12 +1,17 @@
+/**
+ * Copyright (c) 2018 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
 import { assert } from 'chai';
 
-import { MockTerminal, MockBuffer } from '../ui/TestUtils.test';
-import { CircularList } from '../common/CircularList';
+import { MockTerminal, MockBuffer } from 'src/ui/TestUtils.test';
+import { CircularList } from 'src/common/CircularList';
 
-import { ICharacterJoinerRegistry } from './Types';
-import { CharacterJoinerRegistry } from './CharacterJoinerRegistry';
-import { BufferLine, CellData } from '../BufferLine';
-import { IBufferLine } from '../Types';
+import { ICharacterJoinerRegistry } from 'src/renderer/Types';
+import { CharacterJoinerRegistry } from 'src/renderer/CharacterJoinerRegistry';
+import { BufferLine, CellData } from 'src/BufferLine';
+import { IBufferLine } from 'src/Types';
 
 describe('CharacterJoinerRegistry', () => {
   let registry: ICharacterJoinerRegistry;

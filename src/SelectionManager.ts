@@ -3,15 +3,15 @@
  * @license MIT
  */
 
-import { ITerminal, ISelectionManager, IBuffer, IBufferLine } from './Types';
-import { XtermListener } from './common/Types';
-import { MouseHelper } from './ui/MouseHelper';
-import * as Browser from './common/Platform';
-import { CharMeasure } from './ui/CharMeasure';
-import { EventEmitter } from './common/EventEmitter';
-import { SelectionModel } from './SelectionModel';
-import { AltClickHandler } from './handlers/AltClickHandler';
-import { CellData } from './BufferLine';
+import { ITerminal, ISelectionManager, IBuffer, IBufferLine } from 'src/Types';
+import { XtermListener } from 'src/common/Types';
+import { MouseHelper } from 'src/ui/MouseHelper';
+import * as Browser from 'src/common/Platform';
+import { CharMeasure } from 'src/ui/CharMeasure';
+import { EventEmitter } from 'src/common/EventEmitter';
+import { SelectionModel } from 'src/SelectionModel';
+import { AltClickHandler } from 'src/handlers/AltClickHandler';
+import { CellData } from 'src/BufferLine';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in

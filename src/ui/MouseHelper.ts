@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { ICharMeasure, IMouseHelper } from '../Types';
-import { IRenderer } from '../renderer/Types';
+import { ICharMeasure, IMouseHelper } from 'src/Types';
+import { IRenderer } from 'src/renderer/Types';
 
 export class MouseHelper implements IMouseHelper {
   constructor(private _renderer: IRenderer) {}

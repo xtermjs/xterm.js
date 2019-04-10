@@ -3,14 +3,14 @@
  * @license MIT
  */
 
-import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../renderer/Types';
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferLine, IBufferStringIterator, ICellData, IAttributeData } from '../Types';
-import { ICircularList, XtermListener } from '../common/Types';
-import { Buffer } from '../Buffer';
-import * as Browser from '../common/Platform';
+import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from 'src/renderer/Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferLine, IBufferStringIterator, ICellData, IAttributeData } from 'src/Types';
+import { ICircularList, XtermListener } from 'src/common/Types';
+import { Buffer } from 'src/Buffer';
+import * as Browser from 'src/common/Platform';
 import { ITheme, IDisposable, IMarker } from 'xterm';
-import { Terminal } from '../Terminal';
-import { AttributeData } from '../BufferLine';
+import { Terminal } from 'src/Terminal';
+import { AttributeData } from 'src/BufferLine';
 
 export class TestTerminal extends Terminal {
   writeSync(data: string): void {

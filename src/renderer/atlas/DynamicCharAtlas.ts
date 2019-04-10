@@ -3,13 +3,13 @@
  * @license MIT
  */
 
-import { DIM_OPACITY, IGlyphIdentifier, INVERTED_DEFAULT_COLOR, ICharAtlasConfig } from './Types';
-import BaseCharAtlas from './BaseCharAtlas';
-import { DEFAULT_ANSI_COLORS } from '../ColorManager';
-import { clearColor } from './CharAtlasGenerator';
-import LRUMap from './LRUMap';
-import { isFirefox, isSafari } from '../../common/Platform';
-import { IColor } from '../Types';
+import { DIM_OPACITY, IGlyphIdentifier, INVERTED_DEFAULT_COLOR, ICharAtlasConfig } from 'src/renderer/atlas/Types';
+import BaseCharAtlas from 'src/renderer/atlas/BaseCharAtlas';
+import { DEFAULT_ANSI_COLORS } from 'src/renderer/ColorManager';
+import { clearColor } from 'src/renderer/atlas/CharAtlasGenerator';
+import LRUMap from 'src/renderer/atlas/LRUMap';
+import { isFirefox, isSafari } from 'src/common/Platform';
+import { IColor } from 'src/renderer/Types';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.

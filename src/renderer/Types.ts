@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminal, CharacterJoinerHandler } from '../Types';
+import { ITerminal, CharacterJoinerHandler } from 'src/Types';
 import { IEventEmitter, ITheme, IDisposable } from 'xterm';
 
 /**

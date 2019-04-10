@@ -4,9 +4,9 @@
  */
 
 import { FontWeight } from 'xterm';
-import { isFirefox, isSafari } from '../../common/Platform';
-import { IColor } from '../Types';
-import { ICharAtlasConfig, CHAR_ATLAS_CELL_SPACING } from './Types';
+import { isFirefox, isSafari } from 'src/common/Platform';
+import { IColor } from 'src/renderer/Types';
+import { ICharAtlasConfig, CHAR_ATLAS_CELL_SPACING } from 'src/renderer/atlas/Types';
 
 /**
  * Generates a char atlas.

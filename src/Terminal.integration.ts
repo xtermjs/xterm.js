@@ -12,10 +12,10 @@ import * as os from 'os';
 import * as path from 'path';
 import * as pty from 'node-pty';
 import { assert } from 'chai';
-import { Terminal } from './Terminal';
-import { WHITESPACE_CELL_CHAR } from './Buffer';
-import { IViewport } from './Types';
-import { CellData } from './BufferLine';
+import { Terminal } from 'src/Terminal';
+import { WHITESPACE_CELL_CHAR } from 'src/Buffer';
+import { IViewport } from 'src/Types';
+import { CellData } from 'src/BufferLine';
 
 class TestTerminal extends Terminal {
   innerWrite(): void { this._innerWrite(); }

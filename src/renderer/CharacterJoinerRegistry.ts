@@ -1,7 +1,12 @@
-import { ITerminal, IBufferLine } from '../Types';
-import { ICharacterJoinerRegistry, ICharacterJoiner } from './Types';
-import { CellData } from '../BufferLine';
-import { WHITESPACE_CELL_CHAR } from '../Buffer';
+/**
+ * Copyright (c) 2018 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
+import { ITerminal, IBufferLine } from 'src/Types';
+import { ICharacterJoinerRegistry, ICharacterJoiner } from 'src/renderer/Types';
+import { CellData } from 'src/BufferLine';
+import { WHITESPACE_CELL_CHAR } from 'src/Buffer';
 
 export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
 

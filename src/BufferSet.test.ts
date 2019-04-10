@@ -4,10 +4,10 @@
  */
 
 import { assert } from 'chai';
-import { ITerminal } from './Types';
-import { BufferSet } from './BufferSet';
-import { Buffer } from './Buffer';
-import { MockTerminal } from './ui/TestUtils.test';
+import { ITerminal } from 'src/Types';
+import { BufferSet } from 'src/BufferSet';
+import { Buffer } from 'src/Buffer';
+import { MockTerminal } from 'src/ui/TestUtils.test';
 
 describe('BufferSet', () => {
   let terminal: ITerminal;

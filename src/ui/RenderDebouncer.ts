@@ -1,4 +1,9 @@
-import { ITerminal } from '../Types';
+/**
+ * Copyright (c) 2018 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
+import { ITerminal } from 'src/Types';
 import { IDisposable } from 'xterm';
 
 /**

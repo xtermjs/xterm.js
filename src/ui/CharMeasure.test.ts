@@ -4,9 +4,9 @@
  */
 
 import jsdom = require('jsdom');
-import { ICharMeasure } from '../Types';
+import { ICharMeasure } from 'src/Types';
 import { assert } from 'chai';
-import { CharMeasure } from './CharMeasure';
+import { CharMeasure } from 'src/ui/CharMeasure';
 
 describe('CharMeasure', () => {
   let dom: jsdom.JSDOM;

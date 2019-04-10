@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { IMouseZoneManager } from './ui/Types';
-import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, ILinkifier, ITerminal, IBufferStringIteratorResult } from './Types';
-import { MouseZone } from './ui/MouseZoneManager';
-import { EventEmitter } from './common/EventEmitter';
-import { getStringCellWidth } from './CharWidth';
+import { IMouseZoneManager } from 'src/ui/Types';
+import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, ILinkifier, ITerminal, IBufferStringIteratorResult } from 'src/Types';
+import { MouseZone } from 'src/ui/MouseZoneManager';
+import { EventEmitter } from 'src/common/EventEmitter';
+import { getStringCellWidth } from 'src/CharWidth';
 
 /**
  * The Linkifier applies links to rows shortly after they have been refreshed.

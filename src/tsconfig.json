@@ -10,6 +10,7 @@
       "es2015.promise"
     ],
     "rootDir": ".",
+    "baseUrl": "..",
     "outDir": "../lib",
 
     "noUnusedLocals": true,

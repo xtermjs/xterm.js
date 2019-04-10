@@ -5,10 +5,10 @@
 
 import jsdom = require('jsdom');
 import { assert } from 'chai';
-import { DomRendererRowFactory } from './DomRendererRowFactory';
-import { DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, DEFAULT_ATTR_DATA } from '../../Buffer';
-import { BufferLine, CellData, FgFlags, BgFlags, Attributes } from '../../BufferLine';
-import { IBufferLine, ITerminalOptions } from '../../Types';
+import { DomRendererRowFactory } from 'src/renderer/dom/DomRendererRowFactory';
+import { DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, DEFAULT_ATTR_DATA } from 'src/Buffer';
+import { BufferLine, CellData, FgFlags, BgFlags, Attributes } from 'src/BufferLine';
+import { IBufferLine, ITerminalOptions } from 'src/Types';
 
 describe('DomRendererRowFactory', () => {
   let dom: jsdom.JSDOM;

@@ -5,8 +5,8 @@
 
 import jsdom = require('jsdom');
 import { assert } from 'chai';
-import { MouseHelper } from './MouseHelper';
-import { MockCharMeasure, MockRenderer } from './TestUtils.test';
+import { MouseHelper } from 'src/ui/MouseHelper';
+import { MockCharMeasure, MockRenderer } from 'src/ui/TestUtils.test';
 
 const CHAR_WIDTH = 10;
 const CHAR_HEIGHT = 20;

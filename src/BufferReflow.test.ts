@@ -3,9 +3,9 @@
  * @license MIT
  */
 import { assert } from 'chai';
-import { BufferLine } from './BufferLine';
-import { reflowSmallerGetNewLineLengths } from './BufferReflow';
-import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from './Buffer';
+import { BufferLine } from 'src/BufferLine';
+import { reflowSmallerGetNewLineLengths } from 'src/BufferReflow';
+import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from 'src/Buffer';
 
 describe('BufferReflow', () => {
   describe('reflowSmallerGetNewLineLengths', () => {

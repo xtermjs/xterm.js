@@ -4,10 +4,10 @@
  */
 
 import { assert } from 'chai';
-import { ITerminal } from './Types';
-import { SelectionModel } from './SelectionModel';
-import { BufferSet } from './BufferSet';
-import { MockTerminal } from './ui/TestUtils.test';
+import { ITerminal } from 'src/Types';
+import { SelectionModel } from 'src/SelectionModel';
+import { BufferSet } from 'src/BufferSet';
+import { MockTerminal } from 'src/ui/TestUtils.test';
 
 class TestSelectionModel extends SelectionModel {
   constructor(

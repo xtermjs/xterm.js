@@ -4,9 +4,9 @@
  */
 
 import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings } from 'xterm';
-import { ITerminal } from '../Types';
-import { Terminal as TerminalCore } from '../Terminal';
-import * as Strings from '../Strings';
+import { ITerminal } from 'src/Types';
+import { Terminal as TerminalCore } from 'src/Terminal';
+import * as Strings from 'src/Strings';
 
 export class Terminal implements ITerminalApi {
   private _core: ITerminal;

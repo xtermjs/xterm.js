@@ -3,10 +3,10 @@
  * @license MIT
  */
 
-import { ITerminal } from '../Types';
-import { IMouseZoneManager, IMouseZone } from './Types';
-import { Disposable } from '../common/Lifecycle';
-import { addDisposableDomListener } from './Lifecycle';
+import { ITerminal } from 'src/Types';
+import { IMouseZoneManager, IMouseZone } from 'src/ui/Types';
+import { Disposable } from 'src/common/Lifecycle';
+import { addDisposableDomListener } from 'src/ui/Lifecycle';
 
 const HOVER_DURATION = 500;
 

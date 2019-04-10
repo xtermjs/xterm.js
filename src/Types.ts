@@ -4,10 +4,10 @@
  */
 
 import { Terminal as PublicTerminal, ITerminalOptions as IPublicTerminalOptions, IEventEmitter, IDisposable } from 'xterm';
-import { IColorSet, IRenderer } from './renderer/Types';
-import { IMouseZoneManager } from './ui/Types';
-import { ICharset } from './core/Types';
-import { ICircularList } from './common/Types';
+import { IColorSet, IRenderer } from 'src/renderer/Types';
+import { IMouseZoneManager } from 'src/ui/Types';
+import { ICharset } from 'src/core/Types';
+import { ICircularList } from 'src/common/Types';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 

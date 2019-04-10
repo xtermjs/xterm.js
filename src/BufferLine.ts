@@ -2,9 +2,9 @@
  * Copyright (c) 2018 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { CharData, IBufferLine, ICellData, IColorRGB, IAttributeData } from './Types';
-import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, WHITESPACE_CELL_CHAR, CHAR_DATA_ATTR_INDEX } from './Buffer';
-import { stringFromCodePoint } from './core/input/TextDecoder';
+import { CharData, IBufferLine, ICellData, IColorRGB, IAttributeData } from 'src/Types';
+import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, WHITESPACE_CELL_CHAR, CHAR_DATA_ATTR_INDEX } from 'src/Buffer';
+import { stringFromCodePoint } from 'src/core/input/TextDecoder';
 
 
 /**

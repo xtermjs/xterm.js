@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { ITerminal } from '../../Types';
-import { IColorSet } from '../Types';
-import { DEFAULT_COLOR, ICharAtlasConfig } from './Types';
+import { ITerminal } from 'src/Types';
+import { IColorSet } from 'src/renderer/Types';
+import { DEFAULT_COLOR, ICharAtlasConfig } from 'src/renderer/atlas/Types';
 
 export function generateConfig(scaledCharWidth: number, scaledCharHeight: number, terminal: ITerminal, colors: IColorSet): ICharAtlasConfig {
   // null out some fields that don't matter

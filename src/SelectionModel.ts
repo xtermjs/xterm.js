@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminal } from './Types';
+import { ITerminal } from 'src/Types';
 
 /**
  * Represents a selection within the buffer. This model only cares about column

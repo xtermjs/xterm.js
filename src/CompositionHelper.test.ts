@@ -4,8 +4,8 @@
  */
 
 import { assert } from 'chai';
-import { CompositionHelper } from './CompositionHelper';
-import { ITerminal } from './Types';
+import { CompositionHelper } from 'src/CompositionHelper';
+import { ITerminal } from 'src/Types';
 
 describe('CompositionHelper', () => {
   let terminal: ITerminal;

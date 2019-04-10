@@ -4,17 +4,17 @@
  * @license MIT
  */
 
-import { IInputHandler, IDcsHandler, IEscapeSequenceParser, IInputHandlingTerminal } from './Types';
-import { C0, C1 } from './common/data/EscapeSequences';
-import { CHARSETS, DEFAULT_CHARSET } from './core/data/Charsets';
-import { NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR_DATA } from './Buffer';
-import { wcwidth } from './CharWidth';
-import { EscapeSequenceParser } from './EscapeSequenceParser';
+import { IInputHandler, IDcsHandler, IEscapeSequenceParser, IInputHandlingTerminal } from 'src/Types';
+import { C0, C1 } from 'src/common/data/EscapeSequences';
+import { CHARSETS, DEFAULT_CHARSET } from 'src/core/data/Charsets';
+import { NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR_DATA } from 'src/Buffer';
+import { wcwidth } from 'src/CharWidth';
+import { EscapeSequenceParser } from 'src/EscapeSequenceParser';
 import { IDisposable } from 'xterm';
-import { Disposable } from './common/Lifecycle';
-import { concat } from './common/TypedArrayUtils';
-import { StringToUtf32, stringFromCodePoint, utf32ToString } from './core/input/TextDecoder';
-import { CellData, Attributes, FgFlags, BgFlags, AttributeData } from './BufferLine';
+import { Disposable } from 'src/common/Lifecycle';
+import { concat } from 'src/common/TypedArrayUtils';
+import { StringToUtf32, stringFromCodePoint, utf32ToString } from 'src/core/input/TextDecoder';
+import { CellData, Attributes, FgFlags, BgFlags, AttributeData } from 'src/BufferLine';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.

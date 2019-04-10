@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { ITerminal } from '../Types';
-import { IColorSet, IRenderDimensions } from './Types';
-import { BaseRenderLayer } from './BaseRenderLayer';
+import { ITerminal } from 'src/Types';
+import { IColorSet, IRenderDimensions } from 'src/renderer/Types';
+import { BaseRenderLayer } from 'src/renderer/BaseRenderLayer';
 
 interface ISelectionState {
   start: [number, number];

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IColorManager, IColor, IColorSet } from './Types';
+import { IColorManager, IColor, IColorSet } from 'src/renderer/Types';
 import { ITheme } from 'xterm';
 
 const DEFAULT_FOREGROUND = fromHex('#ffffff');

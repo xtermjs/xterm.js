@@ -3,14 +3,14 @@
  * @license MIT
  */
 
-import { IRenderer, IRenderDimensions, IColorSet } from '../Types';
-import { ILinkHoverEvent, ITerminal, CharacterJoinerHandler, LinkHoverEventTypes } from '../../Types';
+import { IRenderer, IRenderDimensions, IColorSet } from 'src/renderer/Types';
+import { ILinkHoverEvent, ITerminal, CharacterJoinerHandler, LinkHoverEventTypes } from 'src/Types';
 import { ITheme } from 'xterm';
-import { EventEmitter } from '../../common/EventEmitter';
-import { ColorManager } from '../ColorManager';
-import { RenderDebouncer } from '../../ui/RenderDebouncer';
-import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from './DomRendererRowFactory';
-import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
+import { EventEmitter } from 'src/common/EventEmitter';
+import { ColorManager } from 'src/renderer/ColorManager';
+import { RenderDebouncer } from 'src/ui/RenderDebouncer';
+import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from 'src/renderer/dom/DomRendererRowFactory';
+import { INVERTED_DEFAULT_COLOR } from 'src/renderer/atlas/Types';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
