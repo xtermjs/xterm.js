@@ -59,7 +59,7 @@ export function terminadoAttach(term: Terminal, socket: WebSocket, bidirectional
   socket.addEventListener('message', addonTerminal.__getMessage);
 
   if (bidirectional) {
-    addonTerminal._core.register(addonTerminal.onData(addonTerminal.__sendData);
+    addonTerminal._core.register(addonTerminal.onData(addonTerminal.__sendData));
   }
   addonTerminal._core.register(addonTerminal.onResize(addonTerminal.__setSize));
 

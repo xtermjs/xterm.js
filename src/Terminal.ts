@@ -261,7 +261,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this._setup();
 
     // TODO: Replace EventEmitter with EventEmitter2 internally
-    this.on('selection', () => this._onSelectionChange.fire());
     this.on('refresh', e => this._onRender.fire(e));
 
     // TODO: Remove these in v4
@@ -271,6 +270,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.onKey(e => this.emit('key', e.key, e.domEvent));
     this.onLineFeed(() => this.emit('linefeed'));
     this.onResize(e => this.emit('resize', e));
+    this.onSelectionChange(() => this.emit('selection'));
     this.onScroll(e => this.emit('scroll', e));
     this.onTitleChange(e => this.emit('title', e));
   }
@@ -785,9 +785,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.register(this.renderer.addDisposableListener('resize', (dimensions) => this.viewport.syncScrollArea()));
 
     this.selectionManager = new SelectionManager(this, this.charMeasure);
+    this.register(this.selectionManager.onSelectionChange(() => this._onSelectionChange.fire()));
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this.selectionManager.onMouseDown(e)));
     this.register(this.selectionManager.addDisposableListener('refresh', data => this.renderer.onSelectionChanged(data.start, data.end, data.columnSelectMode)));
-    this.register(this.selectionManager.onNewMouseSelection(text => {
+    this.register(this.selectionManager.onLinuxMouseSelection(text => {
       // If there's a new selection, put it into the textarea, focus and select it
       // in order to register it as a selection on the OS. This event is fired
       // only on Linux to enable middle click to paste selection.

@@ -108,8 +108,10 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
   private _mouseDownTimeStamp: number;
 
-  private _onNewMouseSelection = new EventEmitter2<string>();
-  public get onNewMouseSelection(): IEvent<string> { return this._onNewMouseSelection.event; }
+  private _onLinuxMouseSelection = new EventEmitter2<string>();
+  public get onLinuxMouseSelection(): IEvent<string> { return this._onLinuxMouseSelection.event; }
+  private _onSelectionChange = new EventEmitter2<void>();
+  public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
 
   constructor(
     private _terminal: ITerminal,
@@ -262,7 +264,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     if (Browser.isLinux && isNewMouseSelection) {
       const selectionText = this.selectionText;
       if (selectionText.length) {
-        this._onNewMouseSelection.fire(this.selectionText);
+        this._onLinuxMouseSelection.fire(this.selectionText);
       }
     }
   }
@@ -322,7 +324,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   public selectAll(): void {
     this._model.isSelectAllActive = true;
     this.refresh();
-    this._terminal.emit('selection');
+    this._onSelectionChange.fire();
   }
 
   public selectLines(start: number, end: number): void {
@@ -332,7 +334,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     this._model.selectionStart = [0, start];
     this._model.selectionEnd = [this._terminal.cols, end];
     this.refresh();
-    this._terminal.emit('selection');
+    this._onSelectionChange.fire();
   }
 
   /**
@@ -650,7 +652,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     if (this.selectionText.length <= 1 && timeElapsed < ALT_CLICK_MOVE_CURSOR_TIME) {
       (new AltClickHandler(event, this._terminal)).move();
     } else if (this.hasSelection) {
-      this._terminal.emit('selection');
+      this._onSelectionChange.fire();
     }
   }
 
