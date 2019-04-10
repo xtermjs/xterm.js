@@ -261,7 +261,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this._setup();
 
     // TODO: Replace EventEmitter with EventEmitter2 internally
-    this.on('cursormove', () => this._onCursorMove.fire());
     this.on('linefeed', () => this._onLineFeed.fire());
     this.on('selection', () => this._onSelectionChange.fire());
     this.on('data', e => this._onInput.fire(e));
@@ -270,6 +269,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     // TODO: Remove these in v4
     // Fire old style events from new emitters
+    this.onCursorMove(() => this.emit('cursormove'));
     this.onKey(e => this.emit('key', e.key, e.domEvent));
     this.onResize(e => this.emit('resize', e));
     this.onTitleChange(e => this.emit('title', e));
@@ -350,7 +350,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this._userScrolling = false;
 
     this._inputHandler = new InputHandler(this);
+    this._inputHandler.onCursorMove(() => this._onCursorMove.fire());
     this.register(this._inputHandler);
+
     // Reuse renderer if the Terminal is being recreated via a reset call.
     this.renderer = this.renderer || null;
     this.selectionManager = this.selectionManager || null;
@@ -769,7 +771,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.viewport.onThemeChanged(this.renderer.colorManager.colors);
     this.register(this.viewport);
 
-    this.register(this.addDisposableListener('cursormove', () => this.renderer.onCursorMove()));
+    this.register(this.onCursorMove(() => this.renderer.onCursorMove()));
     this.register(this.onResize(() => this.renderer.onResize(this.cols, this.rows)));
     this.register(this.addDisposableListener('blur', () => this.renderer.onBlur()));
     this.register(this.addDisposableListener('focus', () => this.renderer.onFocus()));

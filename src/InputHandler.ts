@@ -15,6 +15,7 @@ import { Disposable } from './common/Lifecycle';
 import { concat } from './common/TypedArrayUtils';
 import { StringToUtf32, stringFromCodePoint, utf32ToString } from './core/input/TextDecoder';
 import { CellData, Attributes, FgFlags, BgFlags, AttributeData } from './BufferLine';
+import { EventEmitter2, IEvent } from './common/EventEmitter2';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -105,6 +106,9 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _parseBuffer: Uint32Array = new Uint32Array(4096);
   private _stringDecoder: StringToUtf32 = new StringToUtf32();
   private _workCell: CellData = new CellData();
+
+  private _onCursorMove = new EventEmitter2<void>();
+  public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
 
   constructor(
       protected _terminal: IInputHandlingTerminal,
@@ -305,7 +309,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     buffer = this._terminal.buffer;
     if (buffer.x !== cursorStartX || buffer.y !== cursorStartY) {
-      this._terminal.emit('cursormove');
+      this._onCursorMove.fire();
     }
   }
 

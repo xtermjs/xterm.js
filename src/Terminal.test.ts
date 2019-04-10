@@ -85,6 +85,16 @@ describe('term.js addons', () => {
       });
     });
 
+    describe('cursormove', () => {
+      it('should emit a cursormove event', (done) => {
+        term.on('cursormove', () => {
+          done();
+        });
+
+        term.write('foo');
+      });
+    });
+
     describe(`keypress (including 'key' event)`, () => {
       it('should receive a string and event object', (done) => {
         let steps = 0;
