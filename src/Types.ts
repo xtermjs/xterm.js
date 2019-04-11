@@ -8,6 +8,7 @@ import { IColorSet, IRenderer } from './renderer/Types';
 import { IMouseZoneManager } from './ui/Types';
 import { ICharset } from './core/Types';
 import { ICircularList } from './common/Types';
+import { IEvent } from './common/EventEmitter2';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
@@ -21,12 +22,6 @@ export type CharacterJoinerHandler = (text: string) => [number, number][];
 
 // BufferIndex denotes a position in the buffer: [rowIndex, colIndex]
 export type BufferIndex = [number, number];
-
-export const enum LinkHoverEventTypes {
-  HOVER = 'linkhover',
-  TOOLTIP = 'linktooltip',
-  LEAVE = 'linkleave'
-}
 
 /**
  * This interface encapsulates everything needed from the Terminal by the
@@ -193,7 +188,7 @@ export interface ILinkMatcher {
   willLinkActivate?: (event: MouseEvent, uri: string) => boolean;
 }
 
-export interface ILinkHoverEvent {
+export interface ILinkifierEvent {
   x1: number;
   y1: number;
   x2: number;
@@ -220,10 +215,6 @@ export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAcce
   bracketedPasteMode: boolean;
   applicationCursor: boolean;
 
-  /**
-   * Emit the 'data' event and populate the given data.
-   * @param data The data to populate in the event.
-   */
   handler(data: string): void;
   scrollLines(disp: number, suppressScrollEvent?: boolean): void;
   cancel(ev: Event, force?: boolean): boolean | void;
@@ -251,6 +242,9 @@ export interface IMouseHelper {
 export interface ICharMeasure {
   width: number;
   height: number;
+
+  onCharSizeChanged: IEvent<void>;
+
   measure(options: ITerminalOptions): void;
 }
 
@@ -301,10 +295,12 @@ export interface IBuffer {
   getWhitespaceCell(attr?: IAttributeData): ICellData;
 }
 
-export interface IBufferSet extends IEventEmitter {
+export interface IBufferSet {
   alt: IBuffer;
   normal: IBuffer;
   active: IBuffer;
+
+  onBufferActivate: IEvent<{ activeBuffer: IBuffer, inactiveBuffer: IBuffer }>;
 
   activateNormalBuffer(): void;
   activateAltBuffer(fillAttr?: IAttributeData): void;
@@ -322,7 +318,17 @@ export interface ISelectionManager {
   selectWordAtCursor(event: MouseEvent): void;
 }
 
-export interface ILinkifier extends IEventEmitter {
+export interface ISelectionRedrawRequestEvent {
+  start: [number, number];
+  end: [number, number];
+  columnSelectMode: boolean;
+}
+
+export interface ILinkifier {
+  onLinkHover: IEvent<ILinkifierEvent>;
+  onLinkLeave: IEvent<ILinkifierEvent>;
+  onLinkTooltip: IEvent<ILinkifierEvent>;
+
   attachToDom(mouseZoneManager: IMouseZoneManager): void;
   linkifyRows(start: number, end: number): void;
   registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options?: ILinkMatcherOptions): number;

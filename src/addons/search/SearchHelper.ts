@@ -4,6 +4,7 @@
  */
 
 import { ISearchHelper, ISearchAddonTerminal, ISearchOptions, ISearchResult } from './Interfaces';
+import { IDisposable } from 'xterm';
 
 const NON_WORD_CHARACTERS = ' ~!@#$%^&*()+`-=[]{}|\;:"\',./<>?';
 const LINES_CACHE_TIME_TO_LIVE = 15 * 1000; // 15 secs
@@ -19,6 +20,7 @@ export class SearchHelper implements ISearchHelper {
    */
   private _linesCache: string[] = null;
   private _linesCacheTimeoutId = 0;
+  private _cursorMoveListener: IDisposable | undefined;
 
   constructor(private _terminal: ISearchAddonTerminal) {
     this._destroyLinesCache = this._destroyLinesCache.bind(this);
@@ -182,7 +184,7 @@ export class SearchHelper implements ISearchHelper {
   private _initLinesCache(): void {
     if (!this._linesCache) {
       this._linesCache = new Array(this._terminal._core.buffer.length);
-      this._terminal.on('cursormove', this._destroyLinesCache);
+      this._cursorMoveListener = this._terminal.onCursorMove(() => this._destroyLinesCache());
     }
 
     window.clearTimeout(this._linesCacheTimeoutId);
@@ -191,7 +193,10 @@ export class SearchHelper implements ISearchHelper {
 
   private _destroyLinesCache(): void {
     this._linesCache = null;
-    this._terminal.off('cursormove', this._destroyLinesCache);
+    if (this._cursorMoveListener) {
+      this._cursorMoveListener.dispose();
+      this._cursorMoveListener = undefined;
+    }
     if (this._linesCacheTimeoutId) {
       window.clearTimeout(this._linesCacheTimeoutId);
       this._linesCacheTimeoutId = 0;
