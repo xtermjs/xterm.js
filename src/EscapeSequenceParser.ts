@@ -353,7 +353,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     if (this._oscHandlers[ident] === undefined) {
       this._oscHandlers[ident] = [];
     }
-    const handlerList =  this._oscHandlers[ident];
+    const handlerList = this._oscHandlers[ident];
     handlerList.push(callback);
     return {
       dispose: () => {
@@ -505,7 +505,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           const handlers = this._csiHandlers[code];
           let j = handlers ? handlers.length - 1 : -1;
           for (; j >= 0; j--) {
-            if (handlers[j](params, collect)) {
+            // undefined or true means success and to stop bubbling
+            if (handlers[j](params, collect) !== false) {
               break;
             }
           }
@@ -590,7 +591,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
               const handlers = this._oscHandlers[identifier];
               let j = handlers ? handlers.length - 1 : -1;
               for (; j >= 0; j--) {
-                if (handlers[j](content)) {
+                // undefined or true means success and to stop bubbling
+                if (handlers[j](content) !== false) {
                   break;
                 }
               }

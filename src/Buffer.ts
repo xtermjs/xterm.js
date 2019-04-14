@@ -3,30 +3,42 @@
  * @license MIT
  */
 
+import { CircularList, IInsertEvent } from './common/CircularList';
+import { ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult, ICellData, IAttributeData } from './Types';
 import { IMarker } from 'xterm';
-import { BufferLine } from './BufferLine';
-import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths } from './BufferReflow';
-import { CircularList, IDeleteEvent, IInsertEvent } from './common/CircularList';
-import { EventEmitter } from './common/EventEmitter';
+import { BufferLine, CellData, AttributeData } from './BufferLine';
+import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths, getWrappedLineTrimmedLength } from './BufferReflow';
 import { DEFAULT_COLOR } from './renderer/atlas/Types';
-import { BufferIndex, CharData, IBuffer, IBufferLine, IBufferStringIterator, IBufferStringIteratorResult, ITerminal } from './Types';
+import { EventEmitter2, IEvent } from './common/EventEmitter2';
+import { Disposable } from '../lib/common/Lifecycle';
 
 export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
+
+export const DEFAULT_ATTR_DATA = new AttributeData();
+
 export const CHAR_DATA_ATTR_INDEX = 0;
 export const CHAR_DATA_CHAR_INDEX = 1;
 export const CHAR_DATA_WIDTH_INDEX = 2;
 export const CHAR_DATA_CODE_INDEX = 3;
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 
+/**
+ * Null cell - a real empty cell (containing nothing).
+ * Note that code should always be 0 for a null cell as
+ * several test condition of the buffer line rely on this.
+ */
 export const NULL_CELL_CHAR = '';
 export const NULL_CELL_WIDTH = 1;
 export const NULL_CELL_CODE = 0;
 
+/**
+ * Whitespace cell.
+ * This is meant as a replacement for empty cells when needed
+ * during rendering lines to preserve correct aligment.
+ */
 export const WHITESPACE_CELL_CHAR = ' ';
 export const WHITESPACE_CELL_WIDTH = 1;
 export const WHITESPACE_CELL_CODE = 32;
-
-export const FILL_CHAR_DATA: CharData = [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
 
 /**
  * This class represents a terminal buffer (an internal state of the terminal), where the
@@ -46,8 +58,10 @@ export class Buffer implements IBuffer {
   public tabs: any;
   public savedY: number;
   public savedX: number;
-  public savedCurAttr: number;
+  public savedCurAttrData = DEFAULT_ATTR_DATA.clone();
   public markers: Marker[] = [];
+  private _nullCell: ICellData = CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+  private _whitespaceCell: ICellData = CellData.fromCharData([0, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE]);
   private _cols: number;
   private _rows: number;
 
@@ -66,9 +80,30 @@ export class Buffer implements IBuffer {
     this.clear();
   }
 
-  public getBlankLine(attr: number, isWrapped?: boolean): IBufferLine {
-    const fillCharData: CharData = [attr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
-    return new BufferLine(this._cols, fillCharData, isWrapped);
+  public getNullCell(attr?: IAttributeData): ICellData {
+    if (attr) {
+      this._nullCell.fg = attr.fg;
+      this._nullCell.bg = attr.bg;
+    } else {
+      this._nullCell.fg = 0;
+      this._nullCell.bg = 0;
+    }
+    return this._nullCell;
+  }
+
+  public getWhitespaceCell(attr?: IAttributeData): ICellData {
+    if (attr) {
+      this._whitespaceCell.fg = attr.fg;
+      this._whitespaceCell.bg = attr.bg;
+    } else {
+      this._whitespaceCell.fg = 0;
+      this._whitespaceCell.bg = 0;
+    }
+    return this._whitespaceCell;
+  }
+
+  public getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine {
+    return new BufferLine(this._terminal.cols, this.getNullCell(attr), isWrapped);
   }
 
   public get hasScrollback(): boolean {
@@ -99,10 +134,10 @@ export class Buffer implements IBuffer {
   /**
    * Fills the buffer's viewport with blank lines.
    */
-  public fillViewportRows(fillAttr?: number): void {
+  public fillViewportRows(fillAttr?: IAttributeData): void {
     if (this.lines.length === 0) {
       if (fillAttr === undefined) {
-        fillAttr = DEFAULT_ATTR;
+        fillAttr = DEFAULT_ATTR_DATA;
       }
       let i = this._rows;
       while (i--) {
@@ -131,6 +166,9 @@ export class Buffer implements IBuffer {
    * @param newRows The new number of rows.
    */
   public resize(newCols: number, newRows: number): void {
+    // store reference to null cell with default attrs
+    const nullCell = this.getNullCell(DEFAULT_ATTR_DATA);
+
     // Increase max length if needed before adjustments to allow space to fill
     // as required.
     const newMaxLength = this._getCorrectBufferLength(newRows);
@@ -144,7 +182,7 @@ export class Buffer implements IBuffer {
       // Deal with columns increasing (reducing needs to happen after reflow)
       if (this._cols < newCols) {
         for (let i = 0; i < this.lines.length; i++) {
-          this.lines.get(i).resize(newCols, FILL_CHAR_DATA);
+          this.lines.get(i).resize(newCols, nullCell);
         }
       }
 
@@ -165,7 +203,7 @@ export class Buffer implements IBuffer {
             } else {
               // Add a blank line if there is no buffer left at the top to scroll to, or if there
               // are blank lines after the cursor
-              this.lines.push(new BufferLine(newCols, FILL_CHAR_DATA));
+              this.lines.push(new BufferLine(newCols, nullCell));
             }
           }
         }
@@ -217,7 +255,7 @@ export class Buffer implements IBuffer {
       // Trim the end of the line off if cols shrunk
       if (this._cols > newCols) {
         for (let i = 0; i < this.lines.length; i++) {
-          this.lines.get(i).resize(newCols, FILL_CHAR_DATA);
+          this.lines.get(i).resize(newCols, nullCell);
         }
       }
     }
@@ -227,7 +265,7 @@ export class Buffer implements IBuffer {
   }
 
   private get _isReflowEnabled(): boolean {
-    return this._hasScrollback && !(this._terminal as any).isWinptyCompatEnabled;
+    return this._hasScrollback && !this._terminal.options.windowsMode;
   }
 
   private _reflow(newCols: number, newRows: number): void {
@@ -244,7 +282,7 @@ export class Buffer implements IBuffer {
   }
 
   private _reflowLarger(newCols: number, newRows: number): void {
-    const toRemove: number[] = reflowLargerGetLinesToRemove(this.lines, newCols, this.ybase + this.y);
+    const toRemove: number[] = reflowLargerGetLinesToRemove(this.lines, this._cols, newCols, this.ybase + this.y, this.getNullCell(DEFAULT_ATTR_DATA));
     if (toRemove.length > 0) {
       const newLayoutResult = reflowLargerCreateNewLayout(this.lines, toRemove);
       reflowLargerApplyNewLayout(this.lines, newLayoutResult.layout);
@@ -253,6 +291,7 @@ export class Buffer implements IBuffer {
   }
 
   private _reflowLargerAdjustViewport(newCols: number, newRows: number, countRemoved: number): void {
+    const nullCell = this.getNullCell(DEFAULT_ATTR_DATA);
     // Adjust viewport based on number of items removed
     let viewportAdjustments = countRemoved;
     while (viewportAdjustments-- > 0) {
@@ -262,7 +301,7 @@ export class Buffer implements IBuffer {
         }
         if (this.lines.length < newRows) {
           // Add an extra row at the bottom of the viewport
-          this.lines.push(new BufferLine(newCols, FILL_CHAR_DATA));
+          this.lines.push(new BufferLine(newCols, nullCell));
         }
       } else {
         if (this.ydisp === this.ybase) {
@@ -274,6 +313,7 @@ export class Buffer implements IBuffer {
   }
 
   private _reflowSmaller(newCols: number, newRows: number): void {
+    const nullCell = this.getNullCell(DEFAULT_ATTR_DATA);
     // Gather all BufferLines that need to be inserted into the Buffer here so that they can be
     // batched up and only committed once
     const toInsert = [];
@@ -314,7 +354,7 @@ export class Buffer implements IBuffer {
       // Add the new lines
       const newLines: BufferLine[] = [];
       for (let i = 0; i < linesToAdd; i++) {
-        const newLine = this.getBlankLine(DEFAULT_ATTR, true) as BufferLine;
+        const newLine = this.getBlankLine(DEFAULT_ATTR_DATA, true) as BufferLine;
         newLines.push(newLine);
       }
       if (newLines.length > 0) {
@@ -348,15 +388,15 @@ export class Buffer implements IBuffer {
         srcCol -= cellsToCopy;
         if (srcCol === 0) {
           srcLineIndex--;
-          // TODO: srcCol shoudl take trimmed length into account
-          srcCol = wrappedLines[Math.max(srcLineIndex, 0)].getTrimmedLength(); // this._cols;
+          const wrappedLinesIndex = Math.max(srcLineIndex, 0);
+          srcCol = getWrappedLineTrimmedLength(wrappedLines, wrappedLinesIndex, this._cols);
         }
       }
 
       // Null out the end of the line ends if a wide character wrapped to the following line
       for (let i = 0; i < wrappedLines.length; i++) {
         if (destLineLengths[i] < newCols) {
-          wrappedLines[i].set(destLineLengths[i], FILL_CHAR_DATA);
+          wrappedLines[i].setCell(destLineLengths[i], nullCell);
         }
       }
 
@@ -415,7 +455,7 @@ export class Buffer implements IBuffer {
           insertEvents.push({
             index: originalLineIndex + 1,
             amount: nextToInsert.newLines.length
-          } as IInsertEvent);
+          });
 
           countInsertedSoFar += nextToInsert.newLines.length;
           nextToInsert = toInsert[++nextToInsertIndex];
@@ -428,12 +468,12 @@ export class Buffer implements IBuffer {
       let insertCountEmitted = 0;
       for (let i = insertEvents.length - 1; i >= 0; i--) {
         insertEvents[i].index += insertCountEmitted;
-        this.lines.emit('insert', insertEvents[i]);
+        this.lines.onInsertEmitter.fire(insertEvents[i]);
         insertCountEmitted += insertEvents[i].amount;
       }
       const amountToTrim = Math.max(0, originalLinesLength + countToInsert - this.lines.maxLength);
       if (amountToTrim > 0) {
-        this.lines.emitMayRemoveListeners('trim', amountToTrim);
+        this.lines.onTrimEmitter.fire(amountToTrim);
       }
     }
   }
@@ -553,19 +593,19 @@ export class Buffer implements IBuffer {
   public addMarker(y: number): Marker {
     const marker = new Marker(y);
     this.markers.push(marker);
-    marker.register(this.lines.addDisposableListener('trim', amount => {
+    marker.register(this.lines.onTrim(amount => {
       marker.line -= amount;
       // The marker should be disposed when the line is trimmed from the buffer
       if (marker.line < 0) {
         marker.dispose();
       }
     }));
-    marker.register(this.lines.addDisposableListener('insert', (event: IInsertEvent) => {
+    marker.register(this.lines.onInsert(event => {
       if (marker.line >= event.index) {
         marker.line += event.amount;
       }
     }));
-    marker.register(this.lines.addDisposableListener('delete', (event: IDeleteEvent) => {
+    marker.register(this.lines.onDelete(event => {
       // Delete the marker if it's within the range
       if (marker.line >= event.index && marker.line < event.index + event.amount) {
         marker.dispose();
@@ -576,7 +616,7 @@ export class Buffer implements IBuffer {
         marker.line -= event.amount;
       }
     }));
-    marker.register(marker.addDisposableListener('dispose', () => this._removeMarker(marker)));
+    marker.register(marker.onDispose(() => this._removeMarker(marker)));
     return marker;
   }
 
@@ -589,13 +629,16 @@ export class Buffer implements IBuffer {
   }
 }
 
-export class Marker extends EventEmitter implements IMarker {
+export class Marker extends Disposable implements IMarker {
   private static _nextId = 1;
 
   private _id: number = Marker._nextId++;
   public isDisposed: boolean = false;
 
   public get id(): number { return this._id; }
+
+  private _onDispose = new EventEmitter2<void>();
+  public get onDispose(): IEvent<void> { return this._onDispose.event; }
 
   constructor(
     public line: number
@@ -609,8 +652,7 @@ export class Marker extends EventEmitter implements IMarker {
     }
     this.isDisposed = true;
     // Emit before super.dispose such that dispose listeners get a change to react
-    this.emit('dispose');
-    super.dispose();
+    this._onDispose.fire();
   }
 }
 

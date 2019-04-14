@@ -4,7 +4,7 @@
  */
 
 import { FontWeight } from 'xterm';
-import { isFirefox, isSafari } from '../../core/Platform';
+import { isFirefox, isSafari } from '../../common/Platform';
 import { IColor } from '../Types';
 import { ICharAtlasConfig, CHAR_ATLAS_CELL_SPACING } from './Types';
 

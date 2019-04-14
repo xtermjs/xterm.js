@@ -90,7 +90,8 @@ export function attach(term: Terminal, socket: WebSocket, bidirectional: boolean
   addonTerminal._core.register(addSocketListener(socket, 'message', addonTerminal.__getMessage));
 
   if (bidirectional) {
-    addonTerminal._core.register(addonTerminal.addDisposableListener('data', addonTerminal.__sendData));
+    addonTerminal.__dataListener = addonTerminal.onData(addonTerminal.__sendData);
+    addonTerminal._core.register(addonTerminal.__dataListener);
   }
 
   addonTerminal._core.register(addSocketListener(socket, 'close', () => detach(addonTerminal, socket)));
@@ -119,7 +120,8 @@ function addSocketListener(socket: WebSocket, type: string, handler: (this: WebS
  */
 export function detach(term: Terminal, socket: WebSocket): void {
   const addonTerminal = <IAttachAddonTerminal>term;
-  addonTerminal.off('data', addonTerminal.__sendData);
+  addonTerminal.__dataListener.dispose();
+  addonTerminal.__dataListener = undefined;
 
   socket = (typeof socket === 'undefined') ? addonTerminal.__socket : socket;
 

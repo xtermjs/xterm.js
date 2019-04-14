@@ -21,11 +21,11 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharData, CharacterJoinerHandler, IBufferLine } from './Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharacterJoinerHandler, IBufferLine, IAttributeData } from './Types';
 import { IMouseZoneManager } from './ui/Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
-import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, CHAR_DATA_ATTR_INDEX } from './Buffer';
+import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR_DATA } from './Buffer';
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './common/EventEmitter';
 import { Viewport } from './Viewport';
@@ -36,12 +36,11 @@ import { Renderer } from './renderer/Renderer';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
 import { CharMeasure } from './ui/CharMeasure';
-import * as Browser from './core/Platform';
+import * as Browser from './common/Platform';
 import { addDisposableDomListener } from './ui/Lifecycle';
 import * as Strings from './Strings';
 import { MouseHelper } from './ui/MouseHelper';
 import { DEFAULT_BELL_SOUND, SoundManager } from './SoundManager';
-import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { MouseZoneManager } from './ui/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ScreenDprMonitor } from './ui/ScreenDprMonitor';
@@ -52,6 +51,9 @@ import { IKeyboardEvent } from './common/Types';
 import { evaluateKeyboardEvent } from './core/input/Keyboard';
 import { KeyboardResultType, ICharset } from './core/Types';
 import { clone } from './common/Clone';
+import { EventEmitter2, IEvent } from './common/EventEmitter2';
+import { Attributes } from './BufferLine';
+import { applyWindowsMode } from './WindowsMode';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -110,7 +112,8 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   tabStopWidth: 8,
   theme: null,
   rightClickSelectsWord: Browser.isMac,
-  rendererType: 'canvas'
+  rendererType: 'canvas',
+  windowsMode: false
 };
 
 export class Terminal extends EventEmitter implements ITerminal, IDisposable, IInputHandlingTerminal {
@@ -173,7 +176,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   private _refreshEnd: number;
   public savedCols: number;
 
-  public curAttr: number;
+  public curAttrData: IAttributeData;
+  private _eraseAttrData: IAttributeData;
 
   public params: (string | number)[];
   public currentParam: string | number;
@@ -210,12 +214,32 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   private _accessibilityManager: AccessibilityManager;
   private _screenDprMonitor: ScreenDprMonitor;
   private _theme: ITheme;
+  private _windowsMode: IDisposable | undefined;
 
   // bufferline to clone/copy from for new blank lines
   private _blankLine: IBufferLine = null;
 
   public cols: number;
   public rows: number;
+
+  private _onCursorMove = new EventEmitter2<void>();
+  public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
+  private _onData = new EventEmitter2<string>();
+  public get onData(): IEvent<string> { return this._onData.event; }
+  private _onKey = new EventEmitter2<{ key: string, domEvent: KeyboardEvent }>();
+  public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._onKey.event; }
+  private _onLineFeed = new EventEmitter2<void>();
+  public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
+  private _onRender = new EventEmitter2<{ start: number, end: number }>();
+  public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
+  private _onResize = new EventEmitter2<{ cols: number, rows: number }>();
+  public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
+  private _onScroll = new EventEmitter2<number>();
+  public get onScroll(): IEvent<number> { return this._onScroll.event; }
+  private _onSelectionChange = new EventEmitter2<void>();
+  public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
+  private _onTitleChange = new EventEmitter2<string>();
+  public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
 
   /**
    * Creates a new `Terminal` object.
@@ -235,10 +259,26 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     super();
     this.options = clone(options);
     this._setup();
+
+    // TODO: Remove these in v4
+    // Fire old style events from new emitters
+    this.onCursorMove(() => this.emit('cursormove'));
+    this.onData(e => this.emit('data', e));
+    this.onKey(e => this.emit('key', e.key, e.domEvent));
+    this.onLineFeed(() => this.emit('linefeed'));
+    this.onRender(e => this.emit('refresh', e));
+    this.onResize(e => this.emit('resize', e));
+    this.onSelectionChange(() => this.emit('selection'));
+    this.onScroll(e => this.emit('scroll', e));
+    this.onTitleChange(e => this.emit('title', e));
   }
 
   public dispose(): void {
     super.dispose();
+    if (this._windowsMode) {
+      this._windowsMode.dispose();
+      this._windowsMode = undefined;
+    }
     this._customKeyEventHandler = null;
     removeTerminalFromCache(this);
     this.handler = () => {};
@@ -271,7 +311,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.rows = Math.max(this.options.rows, MINIMUM_ROWS);
 
     if (this.options.handler) {
-      this.on('data', this.options.handler);
+      this.onData(this.options.handler);
     }
 
     this.cursorState = 0;
@@ -293,7 +333,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // TODO: Can this be just []?
     this.charsets = [null];
 
-    this.curAttr = DEFAULT_ATTR;
+    this.curAttrData = DEFAULT_ATTR_DATA.clone();
+    this._eraseAttrData = DEFAULT_ATTR_DATA.clone();
 
     this.params = [];
     this.currentParam = 0;
@@ -306,8 +347,12 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // this._writeStopped = false;
     this._userScrolling = false;
 
+    // Register input handler and refire/handle events
     this._inputHandler = new InputHandler(this);
+    this._inputHandler.onCursorMove(() => this._onCursorMove.fire());
+    this._inputHandler.onLineFeed(() => this._onLineFeed.fire());
     this.register(this._inputHandler);
+
     // Reuse renderer if the Terminal is being recreated via a reset call.
     this.renderer = this.renderer || null;
     this.selectionManager = this.selectionManager || null;
@@ -321,6 +366,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       this.selectionManager.clearSelection();
       this.selectionManager.initBuffersListeners();
     }
+
+    if (this.options.windowsMode) {
+      this._windowsMode = applyWindowsMode(this);
+    }
   }
 
   /**
@@ -333,9 +382,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   /**
    * back_color_erase feature for xterm.
    */
-  public eraseAttr(): number {
-    // if (this.is('screen')) return DEFAULT_ATTR;
-    return (DEFAULT_ATTR & ~0x1ff) | (this.curAttr & 0x1ff);
+  public eraseAttrData(): IAttributeData {
+    this._eraseAttrData.bg &= ~(Attributes.CM_MASK | 0xFFFFFF);
+    this._eraseAttrData.bg |= this.curAttrData.bg & ~0xFC000000;
+    return this._eraseAttrData;
   }
 
   /**
@@ -343,7 +393,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   public focus(): void {
     if (this.textarea) {
-      this.textarea.focus();
+      this.textarea.focus({ preventScroll: true });
     }
   }
 
@@ -501,6 +551,18 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         }
         break;
       case 'tabStopWidth': this.buffers.setupTabStops(); break;
+      case 'windowsMode':
+        if (value) {
+          if (!this._windowsMode) {
+            this._windowsMode = applyWindowsMode(this);
+          }
+        } else {
+          if (this._windowsMode) {
+            this._windowsMode.dispose();
+            this._windowsMode = undefined;
+          }
+        }
+        break;
     }
     // Inform renderer of changes
     if (this.renderer) {
@@ -623,8 +685,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.register(addDisposableDomListener(this.textarea, 'compositionstart', () => this._compositionHelper.compositionstart()));
     this.register(addDisposableDomListener(this.textarea, 'compositionupdate', (e: CompositionEvent) => this._compositionHelper.compositionupdate(e)));
     this.register(addDisposableDomListener(this.textarea, 'compositionend', () => this._compositionHelper.compositionend()));
-    this.register(this.addDisposableListener('refresh', () => this._compositionHelper.updateCompositionElements()));
-    this.register(this.addDisposableListener('refresh', (data) => this._queueLinkification(data.start, data.end)));
+    this.register(this.onRender(() => this._compositionHelper.updateCompositionElements()));
+    this.register(this.onRender(e => this._queueLinkification(e.start, e.end)));
   }
 
   /**
@@ -676,7 +738,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     this._mouseZoneManager = new MouseZoneManager(this);
     this.register(this._mouseZoneManager);
-    this.register(this.addDisposableListener('scroll', () => this._mouseZoneManager.clearAll()));
+    this.register(this.onScroll(() => this._mouseZoneManager.clearAll()));
     this.linkifier.attachToDom(this._mouseZoneManager);
 
     this.textarea = document.createElement('textarea');
@@ -709,21 +771,22 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.viewport.onThemeChanged(this.renderer.colorManager.colors);
     this.register(this.viewport);
 
-    this.register(this.addDisposableListener('cursormove', () => this.renderer.onCursorMove()));
-    this.register(this.addDisposableListener('resize', () => this.renderer.onResize(this.cols, this.rows)));
+    this.register(this.onCursorMove(() => this.renderer.onCursorMove()));
+    this.register(this.onResize(() => this.renderer.onResize(this.cols, this.rows)));
     this.register(this.addDisposableListener('blur', () => this.renderer.onBlur()));
     this.register(this.addDisposableListener('focus', () => this.renderer.onFocus()));
     this.register(this.addDisposableListener('dprchange', () => this.renderer.onWindowResize(window.devicePixelRatio)));
     // dprchange should handle this case, we need this as well for browsers that don't support the
     // matchMedia query.
     this.register(addDisposableDomListener(window, 'resize', () => this.renderer.onWindowResize(window.devicePixelRatio)));
-    this.register(this.charMeasure.addDisposableListener('charsizechanged', () => this.renderer.onCharSizeChanged()));
-    this.register(this.renderer.addDisposableListener('resize', (dimensions) => this.viewport.syncScrollArea()));
+    this.register(this.charMeasure.onCharSizeChanged(() => this.renderer.onCharSizeChanged()));
+    this.register(this.renderer.onCanvasResize(() => this.viewport.syncScrollArea()));
 
     this.selectionManager = new SelectionManager(this, this.charMeasure);
+    this.register(this.selectionManager.onSelectionChange(() => this._onSelectionChange.fire()));
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this.selectionManager.onMouseDown(e)));
-    this.register(this.selectionManager.addDisposableListener('refresh', data => this.renderer.onSelectionChanged(data.start, data.end, data.columnSelectMode)));
-    this.register(this.selectionManager.addDisposableListener('newselection', text => {
+    this.register(this.selectionManager.onRedrawRequest(e => this.renderer.onSelectionChanged(e.start, e.end, e.columnSelectMode)));
+    this.register(this.selectionManager.onLinuxMouseSelection(text => {
       // If there's a new selection, put it into the textarea, focus and select it
       // in order to register it as a selection on the OS. This event is fired
       // only on Linux to enable middle click to paste selection.
@@ -731,7 +794,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       this.textarea.focus();
       this.textarea.select();
     }));
-    this.register(this.addDisposableListener('scroll', () => {
+    this.register(this.onScroll(() => {
       this.viewport.syncScrollArea();
       this.selectionManager.refresh();
     }));
@@ -773,6 +836,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       case 'dom': this.renderer = new DomRenderer(this, this.options.theme); break;
       default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
     }
+    this.renderer.onRender(e => this._onRender.fire(e));
     this.register(this.renderer);
   }
 
@@ -1181,8 +1245,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public scroll(isWrapped: boolean = false): void {
     let newLine: IBufferLine;
     newLine = this._blankLine;
-    if (!newLine || newLine.length !== this.cols || newLine.get(0)[CHAR_DATA_ATTR_INDEX] !== this.eraseAttr()) {
-      newLine = this.buffer.getBlankLine(this.eraseAttr(), isWrapped);
+    const eraseAttr = this.eraseAttrData();
+    if (!newLine || newLine.length !== this.cols || newLine.getFg(0) !== eraseAttr.fg || newLine.getBg(0) !== eraseAttr.bg) {
+      newLine = this.buffer.getBlankLine(eraseAttr, isWrapped);
       this._blankLine = newLine;
     }
     newLine.isWrapped = isWrapped;
@@ -1237,13 +1302,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.updateRange(this.buffer.scrollTop);
     this.updateRange(this.buffer.scrollBottom);
 
-    /**
-     * This event is emitted whenever the terminal is scrolled.
-     * The one parameter passed is the new y display position.
-     *
-     * @event scroll
-     */
-    this.emit('scroll', this.buffer.ydisp);
+    this._onScroll.fire(this.buffer.ydisp);
   }
 
   /**
@@ -1272,7 +1331,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
 
     if (!suppressScrollEvent) {
-      this.emit('scroll', this.buffer.ydisp);
+      this._onScroll.fire(this.buffer.ydisp);
     }
 
     this.refresh(0, this.rows - 1);
@@ -1561,7 +1620,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
 
     this.emit('keydown', event);
-    this.emit('key', result.key, event);
+    this._onKey.fire({ key: result.key, domEvent: event });
     this.showCursor();
     this.handler(result.key);
 
@@ -1640,7 +1699,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     key = String.fromCharCode(key);
 
     this.emit('keypress', key, ev);
-    this.emit('key', key, ev);
+    this._onKey.fire({ key, domEvent: ev });
     this.showCursor();
     this.handler(key);
 
@@ -1717,7 +1776,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
 
     this.refresh(0, this.rows - 1);
-    this.emit('resize', {cols: x, rows: y});
+    this._onResize.fire({ cols: x, rows: y });
   }
 
   /**
@@ -1757,21 +1816,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.buffer.ybase = 0;
     this.buffer.y = 0;
     for (let i = 1; i < this.rows; i++) {
-      this.buffer.lines.push(this.buffer.getBlankLine(DEFAULT_ATTR));
+      this.buffer.lines.push(this.buffer.getBlankLine(DEFAULT_ATTR_DATA));
     }
     this.refresh(0, this.rows - 1);
-    this.emit('scroll', this.buffer.ydisp);
-  }
-
-  /**
-   * If cur return the back color xterm feature attribute. Else return default attribute.
-   * @param cur
-   */
-  public ch(cur?: boolean): CharData {
-    if (cur) {
-      return [this.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
-    }
-    return [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
+    this._onScroll.fire(this.buffer.ydisp);
   }
 
   /**
@@ -1783,7 +1831,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   /**
-   * Emit the 'data' event and populate the given data.
+   * Emit the data event and populate the given data.
    * @param data The data to populate in the event.
    */
   public handler(data: string): void {
@@ -1801,7 +1849,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     if (this.buffer.ybase !== this.buffer.ydisp) {
       this.scrollToBottom();
     }
-    this.emit('data', data);
+    this._onData.fire(data);
   }
 
   /**
@@ -1809,13 +1857,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * @param title The title to populate in the event.
    */
   public handleTitle(title: string): void {
-    /**
-     * This event is emitted when the title of the terminal is changed
-     * from inside the terminal. The parameter is the new title.
-     *
-     * @event title
-     */
-    this.emit('title', title);
+    this._onTitleChange.fire(title);
   }
 
   /**
@@ -1849,7 +1891,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // blankLine(true) is xterm/linux behavior
       const scrollRegionHeight = this.buffer.scrollBottom - this.buffer.scrollTop;
       this.buffer.lines.shiftElements(this.buffer.y + this.buffer.ybase, scrollRegionHeight, 1);
-      this.buffer.lines.set(this.buffer.y + this.buffer.ybase, this.buffer.getBlankLine(this.eraseAttr()));
+      this.buffer.lines.set(this.buffer.y + this.buffer.ybase, this.buffer.getBlankLine(this.eraseAttrData()));
       this.updateRange(this.buffer.scrollTop);
       this.updateRange(this.buffer.scrollBottom);
     } else {
@@ -1894,46 +1936,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     return false;
   }
 
-  // TODO: Remove when true color is implemented
-  public matchColor(r1: number, g1: number, b1: number): number {
-    const hash = (r1 << 16) | (g1 << 8) | b1;
-
-    if (matchColorCache[hash] !== null && matchColorCache[hash] !== undefined) {
-      return matchColorCache[hash];
-    }
-
-    let ldiff = Infinity;
-    let li = -1;
-    let i = 0;
-    let c: number;
-    let r2: number;
-    let g2: number;
-    let b2: number;
-    let diff: number;
-
-    for (; i < DEFAULT_ANSI_COLORS.length; i++) {
-      c = DEFAULT_ANSI_COLORS[i].rgba;
-      r2 = c >>> 24;
-      g2 = c >>> 16 & 0xFF;
-      b2 = c >>> 8 & 0xFF;
-      // assume that alpha is 0xFF
-
-      diff = matchColorDistance(r1, g1, b1, r2, g2, b2);
-
-      if (diff === 0) {
-        li = i;
-        break;
-      }
-
-      if (diff < ldiff) {
-        ldiff = diff;
-        li = i;
-      }
-    }
-
-    return matchColorCache[hash] = li;
-  }
-
   private _visualBell(): boolean {
     return false;
     // return this.options.bellStyle === 'visual' ||
@@ -1955,20 +1957,4 @@ function wasModifierKeyOnlyEvent(ev: KeyboardEvent): boolean {
   return ev.keyCode === 16 || // Shift
     ev.keyCode === 17 || // Ctrl
     ev.keyCode === 18; // Alt
-}
-
-/**
- * TODO:
- * The below color-related code can be removed when true color is implemented.
- * It's only purpose is to match true color requests with the closest matching
- * ANSI color code.
- */
-
-const matchColorCache: {[colorRGBHash: number]: number} = {};
-
-// http://stackoverflow.com/questions/1633828
-function matchColorDistance(r1: number, g1: number, b1: number, r2: number, g2: number, b2: number): number {
-  return Math.pow(30 * (r1 - r2), 2)
-    + Math.pow(59 * (g1 - g2), 2)
-    + Math.pow(11 * (b1 - b2), 2);
 }

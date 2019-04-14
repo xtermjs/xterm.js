@@ -4,7 +4,8 @@
  */
 
 import { ITerminal, CharacterJoinerHandler } from '../Types';
-import { IEventEmitter, ITheme, IDisposable } from 'xterm';
+import { ITheme, IDisposable } from 'xterm';
+import { IEvent } from '../common/EventEmitter2';
 
 /**
  * Flags used to render terminal text properly.
@@ -23,9 +24,12 @@ export const enum FLAGS {
  * Note that IRenderer implementations should emit the refresh event after
  * rendering rows to the screen.
  */
-export interface IRenderer extends IEventEmitter, IDisposable {
+export interface IRenderer extends IDisposable {
   dimensions: IRenderDimensions;
   colorManager: IColorManager;
+
+  onCanvasResize: IEvent<{ width: number, height: number }>;
+  onRender: IEvent<{ start: number, end: number }>;
 
   dispose(): void;
   setTheme(theme: ITheme): IColorSet;

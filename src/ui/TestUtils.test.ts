@@ -4,12 +4,13 @@
  */
 
 import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../renderer/Types';
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferLine, IBufferStringIterator } from '../Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferLine, IBufferStringIterator, ICellData, IAttributeData } from '../Types';
 import { ICircularList, XtermListener } from '../common/Types';
 import { Buffer } from '../Buffer';
-import * as Browser from '../core/Platform';
-import { ITheme, IDisposable, IMarker } from 'xterm';
+import * as Browser from '../common/Platform';
+import { ITheme, IDisposable, IMarker, IEvent } from 'xterm';
 import { Terminal } from '../Terminal';
+import { AttributeData } from '../BufferLine';
 
 export class TestTerminal extends Terminal {
   writeSync(data: string): void {
@@ -19,6 +20,15 @@ export class TestTerminal extends Terminal {
 }
 
 export class MockTerminal implements ITerminal {
+  onCursorMove: IEvent<void>;
+  onLineFeed: IEvent<void>;
+  onSelectionChange: IEvent<void>;
+  onData: IEvent<string>;
+  onTitleChange: IEvent<string>;
+  onScroll: IEvent<number>;
+  onKey: IEvent<{ key: string; domEvent: KeyboardEvent; }>;
+  onRender: IEvent<{ start: number; end: number; }>;
+  onResize: IEvent<{ cols: number; rows: number; }>;
   markers: IMarker[];
   addMarker(cursorYOffset: number): IMarker {
     throw new Error('Method not implemented.');
@@ -165,6 +175,7 @@ export class MockTerminal implements ITerminal {
 }
 
 export class MockCharMeasure implements ICharMeasure {
+  onCharSizeChanged: IEvent<void>;
   width: number;
   height: number;
   measure(options: ITerminalOptions): void {
@@ -187,7 +198,7 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   insertMode: boolean;
   wraparoundMode: boolean;
   bracketedPasteMode: boolean;
-  curAttr: number;
+  curAttrData = new AttributeData();
   savedCols: number;
   x10Mouse: boolean;
   vt200Mouse: boolean;
@@ -222,7 +233,7 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   setgLevel(g: number): void {
     throw new Error('Method not implemented.');
   }
-  eraseAttr(): number {
+  eraseAttrData(): IAttributeData {
     throw new Error('Method not implemented.');
   }
   eraseRight(x: number, y: number): void {
@@ -309,7 +320,7 @@ export class MockBuffer implements IBuffer {
   scrollTop: number;
   savedY: number;
   savedX: number;
-  savedCurAttr: number;
+  savedCurAttrData = new AttributeData();
   translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string {
     return Buffer.prototype.translateBufferLineToString.apply(this, arguments);
   }
@@ -325,7 +336,7 @@ export class MockBuffer implements IBuffer {
   setLines(lines: ICircularList<IBufferLine>): void {
     this.lines = lines;
   }
-  getBlankLine(attr: number, isWrapped?: boolean): IBufferLine {
+  getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine {
     return Buffer.prototype.getBlankLine.apply(this, arguments);
   }
   stringIndexToBufferIndex(lineIndex: number, stringIndex: number): number[] {
@@ -334,9 +345,17 @@ export class MockBuffer implements IBuffer {
   iterator(trimRight: boolean, startIndex?: number, endIndex?: number): IBufferStringIterator {
     return Buffer.prototype.iterator.apply(this, arguments);
   }
+  getNullCell(attr?: IAttributeData): ICellData {
+    throw new Error('Method not implemented.');
+  }
+  getWhitespaceCell(attr?: IAttributeData): ICellData {
+    throw new Error('Method not implemented.');
+  }
 }
 
 export class MockRenderer implements IRenderer {
+  onCanvasResize: IEvent<{ width: number; height: number; }>;
+  onRender: IEvent<{ start: number; end: number; }>;
   dispose(): void {
     throw new Error('Method not implemented.');
   }

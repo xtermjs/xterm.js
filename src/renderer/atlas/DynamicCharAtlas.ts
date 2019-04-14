@@ -8,7 +8,7 @@ import BaseCharAtlas from './BaseCharAtlas';
 import { DEFAULT_ANSI_COLORS } from '../ColorManager';
 import { clearColor } from './CharAtlasGenerator';
 import LRUMap from './LRUMap';
-import { isFirefox, isSafari } from '../../core/Platform';
+import { isFirefox, isSafari } from '../../common/Platform';
 import { IColor } from '../Types';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,

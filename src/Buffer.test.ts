@@ -5,10 +5,10 @@
 
 import { assert, expect } from 'chai';
 import { ITerminal } from './Types';
-import { Buffer, DEFAULT_ATTR, CHAR_DATA_CHAR_INDEX } from './Buffer';
+import { Buffer, DEFAULT_ATTR_DATA } from './Buffer';
 import { CircularList } from './common/CircularList';
 import { MockTerminal, TestTerminal } from './ui/TestUtils.test';
-import { BufferLine } from './BufferLine';
+import { BufferLine, CellData } from './BufferLine';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
@@ -37,13 +37,13 @@ describe('Buffer', () => {
 
   describe('fillViewportRows', () => {
     it('should fill the buffer with blank lines based on the size of the viewport', () => {
-      const blankLineChar = buffer.getBlankLine(DEFAULT_ATTR).get(0);
+      const blankLineChar = buffer.getBlankLine(DEFAULT_ATTR_DATA).loadCell(0, new CellData()).getAsCharData();
       buffer.fillViewportRows();
       assert.equal(buffer.lines.length, INIT_ROWS);
       for (let y = 0; y < INIT_ROWS; y++) {
         assert.equal(buffer.lines.get(y).length, INIT_COLS);
         for (let x = 0; x < INIT_COLS; x++) {
-          assert.deepEqual(buffer.lines.get(y).get(x), blankLineChar);
+          assert.deepEqual(buffer.lines.get(y).loadCell(x, new CellData()).getAsCharData(), blankLineChar);
         }
       }
     });
@@ -155,15 +155,15 @@ describe('Buffer', () => {
           assert.equal(buffer.lines.maxLength, INIT_ROWS);
           buffer.y = INIT_ROWS - 1;
           buffer.fillViewportRows();
-          let chData = buffer.lines.get(5).get(0);
+          let chData = buffer.lines.get(5).loadCell(0, new CellData()).getAsCharData();
           chData[1] = 'a';
-          buffer.lines.get(5).set(0, chData);
-          chData = buffer.lines.get(INIT_ROWS - 1).get(0);
+          buffer.lines.get(5).setCell(0, CellData.fromCharData(chData));
+          chData = buffer.lines.get(INIT_ROWS - 1).loadCell(0, new CellData()).getAsCharData();
           chData[1] = 'b';
-          buffer.lines.get(INIT_ROWS - 1).set(0, chData);
+          buffer.lines.get(INIT_ROWS - 1).setCell(0, CellData.fromCharData(chData));
           buffer.resize(INIT_COLS, INIT_ROWS - 5);
-          assert.equal(buffer.lines.get(0).get(0)[1], 'a');
-          assert.equal(buffer.lines.get(INIT_ROWS - 1 - 5).get(0)[1], 'b');
+          assert.equal(buffer.lines.get(0).loadCell(0, new CellData()).getAsCharData()[1], 'a');
+          assert.equal(buffer.lines.get(INIT_ROWS - 1 - 5).loadCell(0, new CellData()).getAsCharData()[1], 'b');
         });
       });
     });
@@ -184,7 +184,7 @@ describe('Buffer', () => {
           buffer.fillViewportRows();
           // Create 10 extra blank lines
           for (let i = 0; i < 10; i++) {
-            buffer.lines.push(buffer.getBlankLine(DEFAULT_ATTR));
+            buffer.lines.push(buffer.getBlankLine(DEFAULT_ATTR_DATA));
           }
           // Set cursor to the bottom of the buffer
           buffer.y = INIT_ROWS - 1;
@@ -204,7 +204,7 @@ describe('Buffer', () => {
           buffer.fillViewportRows();
           // Create 10 extra blank lines
           for (let i = 0; i < 10; i++) {
-            buffer.lines.push(buffer.getBlankLine(DEFAULT_ATTR));
+            buffer.lines.push(buffer.getBlankLine(DEFAULT_ATTR_DATA));
           }
           // Set cursor to the bottom of the buffer
           buffer.y = INIT_ROWS - 1;
@@ -518,6 +518,29 @@ describe('Buffer', () => {
         assert.equal(secondMarker.line, 1, 'second marker should be restored');
         assert.equal(thirdMarker.line, 2, 'third marker should be restored');
       });
+      it('should correctly reflow wrapped lines that end in null space (via tab char)', () => {
+        buffer.fillViewportRows();
+        buffer.resize(4, 10);
+        buffer.y = 2;
+        buffer.lines.get(0).set(0, [null, 'a', 1, 'a'.charCodeAt(0)]);
+        buffer.lines.get(0).set(1, [null, 'b', 1, 'b'.charCodeAt(0)]);
+        buffer.lines.get(1).set(0, [null, 'c', 1, 'c'.charCodeAt(0)]);
+        buffer.lines.get(1).set(1, [null, 'd', 1, 'd'.charCodeAt(0)]);
+        buffer.lines.get(1).isWrapped = true;
+        // Buffer:
+        // "ab  " (wrapped)
+        // "cd"
+        buffer.resize(5, 10);
+        assert.equal(buffer.ybase, 0);
+        assert.equal(buffer.lines.length, 10);
+        assert.equal(buffer.lines.get(0).translateToString(true), 'ab  c');
+        assert.equal(buffer.lines.get(1).translateToString(false), 'd    ');
+        buffer.resize(6, 10);
+        assert.equal(buffer.ybase, 0);
+        assert.equal(buffer.lines.length, 10);
+        assert.equal(buffer.lines.get(0).translateToString(true), 'ab  cd');
+        assert.equal(buffer.lines.get(1).translateToString(false), '      ');
+      });
       it('should wrap wide characters correctly when reflowing larger', () => {
         buffer.fillViewportRows();
         buffer.resize(12, 10);
@@ -552,6 +575,32 @@ describe('Buffer', () => {
         assert.equal(buffer.lines.get(0).translateToString(false), '汉语汉语汉语汉');
         assert.equal(buffer.lines.get(1).translateToString(true), '语汉语汉语');
         assert.equal(buffer.lines.get(1).translateToString(false), '语汉语汉语    ');
+      });
+      it('should correctly reflow wrapped lines that end in null space (via tab char)', () => {
+        buffer.fillViewportRows();
+        buffer.resize(4, 10);
+        buffer.y = 2;
+        buffer.lines.get(0).set(0, [null, 'a', 1, 'a'.charCodeAt(0)]);
+        buffer.lines.get(0).set(1, [null, 'b', 1, 'b'.charCodeAt(0)]);
+        buffer.lines.get(1).set(0, [null, 'c', 1, 'c'.charCodeAt(0)]);
+        buffer.lines.get(1).set(1, [null, 'd', 1, 'd'.charCodeAt(0)]);
+        buffer.lines.get(1).isWrapped = true;
+        // Buffer:
+        // "ab  " (wrapped)
+        // "cd"
+        buffer.resize(3, 10);
+        assert.equal(buffer.y, 2);
+        assert.equal(buffer.ybase, 0);
+        assert.equal(buffer.lines.length, 10);
+        assert.equal(buffer.lines.get(0).translateToString(false), 'ab ');
+        assert.equal(buffer.lines.get(1).translateToString(false), ' cd');
+        buffer.resize(2, 10);
+        assert.equal(buffer.y, 3);
+        assert.equal(buffer.ybase, 0);
+        assert.equal(buffer.lines.length, 10);
+        assert.equal(buffer.lines.get(0).translateToString(false), 'ab');
+        assert.equal(buffer.lines.get(1).translateToString(false), '  ');
+        assert.equal(buffer.lines.get(2).translateToString(false), 'cd');
       });
       it('should wrap wide characters correctly when reflowing smaller', () => {
         buffer.fillViewportRows();
@@ -683,7 +732,7 @@ describe('Buffer', () => {
             beforeEach(() => {
               // Add 10 empty rows to start
               for (let i = 0; i < 10; i++) {
-                buffer.lines.splice(0, 0, buffer.getBlankLine(DEFAULT_ATTR));
+                buffer.lines.splice(0, 0, buffer.getBlankLine(DEFAULT_ATTR_DATA));
               }
               buffer.ybase = 10;
             });
@@ -742,7 +791,7 @@ describe('Buffer', () => {
               terminal.options.scrollback = 10;
               // Add 10 empty rows to start
               for (let i = 0; i < 10; i++) {
-                buffer.lines.splice(0, 0, buffer.getBlankLine(DEFAULT_ATTR));
+                buffer.lines.splice(0, 0, buffer.getBlankLine(DEFAULT_ATTR_DATA));
               }
               buffer.y = 9;
               buffer.ybase = 10;
@@ -877,7 +926,7 @@ describe('Buffer', () => {
             beforeEach(() => {
               // Add 10 empty rows to start
               for (let i = 0; i < 10; i++) {
-                buffer.lines.splice(0, 0, buffer.getBlankLine(DEFAULT_ATTR));
+                buffer.lines.splice(0, 0, buffer.getBlankLine(DEFAULT_ATTR_DATA));
               }
               buffer.ybase = 10;
             });
@@ -940,7 +989,7 @@ describe('Buffer', () => {
               terminal.options.scrollback = 10;
               // Add 10 empty rows to start
               for (let i = 0; i < 10; i++) {
-                buffer.lines.splice(0, 0, buffer.getBlankLine(DEFAULT_ATTR));
+                buffer.lines.splice(0, 0, buffer.getBlankLine(DEFAULT_ATTR_DATA));
               }
               buffer.ybase = 10;
             });
@@ -1025,7 +1074,7 @@ describe('Buffer', () => {
       buffer.fillViewportRows();
       const marker = buffer.addMarker(buffer.lines.length - 1);
       assert.equal(marker.line, buffer.lines.length - 1);
-      buffer.lines.emit('trim', 1);
+      buffer.lines.onTrimEmitter.fire(1);
       assert.equal(marker.line, buffer.lines.length - 2);
     });
     it('should dispose of a marker if it is trimmed off the buffer', () => {
@@ -1036,7 +1085,7 @@ describe('Buffer', () => {
       const marker = buffer.addMarker(0);
       assert.equal(marker.isDisposed, false);
       assert.equal(buffer.markers.length, 1);
-      buffer.lines.emit('trim', 1);
+      buffer.lines.onTrimEmitter.fire(1);
       assert.equal(marker.isDisposed, true);
       assert.equal(buffer.markers.length, 0);
     });
@@ -1045,10 +1094,10 @@ describe('Buffer', () => {
   describe ('translateBufferLineToString', () => {
     it('should handle selecting a section of ascii text', () => {
       const line = new BufferLine(4);
-      line.set(0, [ null, 'a', 1, 'a'.charCodeAt(0)]);
-      line.set(1, [ null, 'b', 1, 'b'.charCodeAt(0)]);
-      line.set(2, [ null, 'c', 1, 'c'.charCodeAt(0)]);
-      line.set(3, [ null, 'd', 1, 'd'.charCodeAt(0)]);
+      line.setCell(0, CellData.fromCharData([ null, 'a', 1, 'a'.charCodeAt(0)]));
+      line.setCell(1, CellData.fromCharData([ null, 'b', 1, 'b'.charCodeAt(0)]));
+      line.setCell(2, CellData.fromCharData([ null, 'c', 1, 'c'.charCodeAt(0)]));
+      line.setCell(3, CellData.fromCharData([ null, 'd', 1, 'd'.charCodeAt(0)]));
       buffer.lines.set(0, line);
 
       const str = buffer.translateBufferLineToString(0, true, 0, 2);
@@ -1057,9 +1106,9 @@ describe('Buffer', () => {
 
     it('should handle a cut-off double width character by including it', () => {
       const line = new BufferLine(3);
-      line.set(0, [ null, '語', 2, 35486 ]);
-      line.set(1, [ null, '', 0, null]);
-      line.set(2, [ null, 'a', 1, 'a'.charCodeAt(0)]);
+      line.setCell(0, CellData.fromCharData([ null, '語', 2, 35486 ]));
+      line.setCell(1, CellData.fromCharData([ null, '', 0, null]));
+      line.setCell(2, CellData.fromCharData([ null, 'a', 1, 'a'.charCodeAt(0)]));
       buffer.lines.set(0, line);
 
       const str1 = buffer.translateBufferLineToString(0, true, 0, 1);
@@ -1068,9 +1117,9 @@ describe('Buffer', () => {
 
     it('should handle a zero width character in the middle of the string by not including it', () => {
       const line = new BufferLine(3);
-      line.set(0, [ null, '語', 2, '語'.charCodeAt(0) ]);
-      line.set(1, [ null, '', 0, null]);
-      line.set(2, [ null, 'a', 1, 'a'.charCodeAt(0)]);
+      line.setCell(0, CellData.fromCharData([ null, '語', 2, '語'.charCodeAt(0) ]));
+      line.setCell(1, CellData.fromCharData([ null, '', 0, null]));
+      line.setCell(2, CellData.fromCharData([ null, 'a', 1, 'a'.charCodeAt(0)]));
       buffer.lines.set(0, line);
 
       const str0 = buffer.translateBufferLineToString(0, true, 0, 1);
@@ -1085,8 +1134,8 @@ describe('Buffer', () => {
 
     it('should handle single width emojis', () => {
       const line = new BufferLine(2);
-      line.set(0, [ null, '😁', 1, '😁'.charCodeAt(0) ]);
-      line.set(1, [ null, 'a', 1, 'a'.charCodeAt(0)]);
+      line.setCell(0, CellData.fromCharData([ null, '😁', 1, '😁'.charCodeAt(0) ]));
+      line.setCell(1, CellData.fromCharData([ null, 'a', 1, 'a'.charCodeAt(0)]));
       buffer.lines.set(0, line);
 
       const str1 = buffer.translateBufferLineToString(0, true, 0, 1);
@@ -1098,8 +1147,8 @@ describe('Buffer', () => {
 
     it('should handle double width emojis', () => {
       const line = new BufferLine(2);
-      line.set(0, [ null, '😁', 2, '😁'.charCodeAt(0) ]);
-      line.set(1, [ null, '', 0, null]);
+      line.setCell(0, CellData.fromCharData([ null, '😁', 2, '😁'.charCodeAt(0) ]));
+      line.setCell(1, CellData.fromCharData([ null, '', 0, null]));
       buffer.lines.set(0, line);
 
       const str1 = buffer.translateBufferLineToString(0, true, 0, 1);
@@ -1109,9 +1158,9 @@ describe('Buffer', () => {
       assert.equal(str2, '😁');
 
       const line2 = new BufferLine(3);
-      line2.set(0, [ null, '😁', 2, '😁'.charCodeAt(0) ]);
-      line2.set(1, [ null, '', 0, null]);
-      line2.set(2, [ null, 'a', 1, 'a'.charCodeAt(0)]);
+      line2.setCell(0, CellData.fromCharData([ null, '😁', 2, '😁'.charCodeAt(0) ]));
+      line2.setCell(1, CellData.fromCharData([ null, '', 0, null]));
+      line2.setCell(2, CellData.fromCharData([ null, 'a', 1, 'a'.charCodeAt(0)]));
       buffer.lines.set(0, line2);
 
       const str3 = buffer.translateBufferLineToString(0, true, 0, 3);
@@ -1264,7 +1313,7 @@ describe('Buffer', () => {
       assert.equal(input, s);
       const stringIndex = s.match(/😃/).index;
       const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, stringIndex);
-      assert(terminal.buffer.lines.get(bufferIndex[0]).get(bufferIndex[1])[CHAR_DATA_CHAR_INDEX], '😃');
+      assert(terminal.buffer.lines.get(bufferIndex[0]).loadCell(bufferIndex[1], new CellData()).getChars(), '😃');
     });
 
     it('multiline fullwidth chars with offset 1 (currently tests for broken behavior)', () => {
@@ -1291,7 +1340,7 @@ describe('Buffer', () => {
       assert.equal(input, s);
       for (let i = 0; i < input.length; ++i) {
         const bufferIndex = terminal.buffer.stringIndexToBufferIndex(0, i, true);
-        assert.equal(input[i], terminal.buffer.lines.get(bufferIndex[0]).get(bufferIndex[1])[CHAR_DATA_CHAR_INDEX]);
+        assert.equal(input[i], terminal.buffer.lines.get(bufferIndex[0]).loadCell(bufferIndex[1], new CellData()).getChars());
       }
     });
 
@@ -1309,7 +1358,7 @@ describe('Buffer', () => {
             : (i % 3 === 1)
               ? input.substr(i, 2)
               : input.substr(i - 1, 2),
-          terminal.buffer.lines.get(bufferIndex[0]).get(bufferIndex[1])[CHAR_DATA_CHAR_INDEX]);
+          terminal.buffer.lines.get(bufferIndex[0]).loadCell(bufferIndex[1], new CellData()).getChars());
       }
     });
 

@@ -13,12 +13,11 @@ import * as fit from '../lib/addons/fit/fit';
 import * as fullscreen from '../lib/addons/fullscreen/fullscreen';
 import * as search from '../lib/addons/search/search';
 import * as webLinks from '../lib/addons/webLinks/webLinks';
-import * as winptyCompat from '../lib/addons/winptyCompat/winptyCompat';
 import { ISearchOptions } from '../lib/addons/search/Interfaces';
 
 // Pulling in the module's types relies on the <reference> above, it's looks a
 // little weird here as we're importing "this" module
-import { Terminal as TerminalType } from 'xterm';
+import { Terminal as TerminalType, ITerminalOptions } from 'xterm';
 
 export interface IWindowWithTerminal extends Window {
   term: TerminalType;
@@ -30,7 +29,6 @@ Terminal.applyAddon(fit);
 Terminal.applyAddon(fullscreen);
 Terminal.applyAddon(search);
 Terminal.applyAddon(webLinks);
-Terminal.applyAddon(winptyCompat);
 
 
 let term;
@@ -83,9 +81,12 @@ function createTerminal(): void {
   while (terminalContainer.children.length) {
     terminalContainer.removeChild(terminalContainer.children[0]);
   }
-  term = new Terminal({});
+  const isWindows = ['Windows', 'Win16', 'Win32', 'WinCE'].indexOf(navigator.platform) >= 0;
+  term = new Terminal({
+    windowsMode: isWindows
+  } as ITerminalOptions);
   window.term = term;  // Expose `term` to window for debugging purposes
-  term.on('resize', (size: { cols: number, rows: number }) => {
+  term.onResize((size: { cols: number, rows: number }) => {
     if (!pid) {
       return;
     }
@@ -99,7 +100,7 @@ function createTerminal(): void {
   socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
 
   term.open(terminalContainer);
-  term.winptyCompatInit();
+
   term.webLinksInit();
   term.fit();
   term.focus();
@@ -164,24 +165,21 @@ function runFakeTerminal(): void {
   term.writeln('');
   term.prompt();
 
-  term._core.register(term.addDisposableListener('key', (key, ev) => {
-    const printable = !ev.altKey && !ev.altGraphKey && !ev.ctrlKey && !ev.metaKey;
+  term.onKey((e: { key: string, domEvent: KeyboardEvent }) => {
+    const ev = e.domEvent;
+    const printable = !ev.altKey && !ev.ctrlKey && !ev.metaKey;
 
     if (ev.keyCode === 13) {
       term.prompt();
     } else if (ev.keyCode === 8) {
      // Do not delete the prompt
-      if (term.x > 2) {
+      if (term._core.buffer.x > 2) {
         term.write('\b \b');
       }
     } else if (printable) {
-      term.write(key);
+      term.write(e.key);
     }
-  }));
-
-  term._core.register(term.addDisposableListener('paste', (data, ev) => {
-    term.write(data);
-  }));
+  });
 }
 
 function initOptions(term: TerminalType): void {
