@@ -15,6 +15,7 @@ import { Disposable } from './common/Lifecycle';
 import { concat } from './common/TypedArrayUtils';
 import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32, utf32ToString } from './core/input/TextDecoder';
 import { CellData, Attributes, FgFlags, BgFlags, AttributeData } from './BufferLine';
+import { EventEmitter2, IEvent } from './common/EventEmitter2';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -106,6 +107,15 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _stringDecoder: StringToUtf32 = new StringToUtf32();
   private _utf8Decoder = new Utf8ToUtf32();
   private _workCell: CellData = new CellData();
+
+  private _onCursorMove = new EventEmitter2<void>();
+  public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
+  private _onData = new EventEmitter2<string>();
+  public get onData(): IEvent<string> { return this._onData.event; }
+  private _onLineFeed = new EventEmitter2<void>();
+  public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
+  private _onScroll = new EventEmitter2<number>();
+  public get onScroll(): IEvent<number> { return this._onScroll.event; }
 
   constructor(
       protected _terminal: IInputHandlingTerminal,
@@ -306,7 +316,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     buffer = this._terminal.buffer;
     if (buffer.x !== cursorStartX || buffer.y !== cursorStartY) {
-      this._terminal.emit('cursormove');
+      this._onCursorMove.fire();
     }
   }
 
@@ -446,10 +456,17 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._terminal.updateRange(buffer.y);
   }
 
-  addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable {
+  /**
+   * Forward addCsiHandler from parser.
+   */
+  public addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable {
     return this._parser.addCsiHandler(flag, callback);
   }
-  addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
+
+  /**
+   * Forward addOscHandler from parser.
+   */
+  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
     return this._parser.addOscHandler(ident, callback);
   }
 
@@ -481,12 +498,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (buffer.x >= this._terminal.cols) {
       buffer.x--;
     }
-    /**
-     * This event is emitted whenever the terminal outputs a LF or NL.
-     *
-     * @event linefeed
-     */
-    this._terminal.emit('linefeed');
+
+    this._onLineFeed.fire();
   }
 
   /**
@@ -789,7 +802,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._terminal.buffer.ybase = Math.max(this._terminal.buffer.ybase - scrollBackSize, 0);
           this._terminal.buffer.ydisp = Math.max(this._terminal.buffer.ydisp - scrollBackSize, 0);
           // Force a scroll event to refresh viewport
-          this._terminal.emit('scroll', 0);
+          this._onScroll.fire(0);
         }
         break;
     }
@@ -1748,13 +1761,13 @@ export class InputHandler extends Disposable implements IInputHandler {
       switch (params[0]) {
         case 5:
           // status report
-          this._terminal.emit('data', `${C0.ESC}[0n`);
+          this._onData.fire(`${C0.ESC}[0n`);
           break;
         case 6:
           // cursor position
           const y = this._terminal.buffer.y + 1;
           const x = this._terminal.buffer.x + 1;
-          this._terminal.emit('data', `${C0.ESC}[${y};${x}R`);
+          this._onData.fire(`${C0.ESC}[${y};${x}R`);
           break;
       }
     } else if (collect === '?') {
@@ -1765,7 +1778,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           // cursor position
           const y = this._terminal.buffer.y + 1;
           const x = this._terminal.buffer.x + 1;
-          this._terminal.emit('data', `${C0.ESC}[?${y};${x}R`);
+          this._onData.fire(`${C0.ESC}[?${y};${x}R`);
           break;
         case 15:
           // no printer
@@ -1851,7 +1864,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI ? Pm r
    */
   public setScrollRegion(params: number[], collect?: string): void {
-    if (collect) return;
+    if (collect) {
+      return;
+    }
     this._terminal.buffer.scrollTop = (params[0] || 1) - 1;
     this._terminal.buffer.scrollBottom = (params[1] && params[1] <= this._terminal.rows ? params[1] : this._terminal.rows) - 1;
     this._terminal.buffer.x = 0;
@@ -1959,9 +1974,15 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Designate G3 Character Set (VT300). C = A  -> ISO Latin-1 Supplemental. - Supported?
    */
   public selectCharset(collectAndFlag: string): void {
-    if (collectAndFlag.length !== 2) return this.selectDefaultCharset();
-    if (collectAndFlag[0] === '/') return;  // TODO: Is this supported?
+    if (collectAndFlag.length !== 2) {
+      this.selectDefaultCharset();
+      return;
+    }
+    if (collectAndFlag[0] === '/') {
+      return;  // TODO: Is this supported?
+    }
     this._terminal.setgCharset(GLEVEL[collectAndFlag[0]], CHARSETS[collectAndFlag[1]] || DEFAULT_CHARSET);
+    return;
   }
 
   /**
