@@ -33,7 +33,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
 
   public resize(terminal: ITerminal, dim: IRenderDimensions): void {
     super.resize(terminal, dim);
-    this._drawSelection(terminal)
+    this._drawSelection(terminal);
   }
 
   public reset(terminal: ITerminal): void {
@@ -68,8 +68,8 @@ export class SelectionRenderLayer extends BaseRenderLayer {
   }
 
   private _drawSelection(terminal: ITerminal): void {
-    if(!this._didStateInitialize()) {
-      return ;
+    if (!this._didStateInitialize()) {
+      return;
     }
 
     // Translate from buffer position to viewport position
