@@ -33,8 +33,7 @@ export class SelectionRenderLayer extends BaseRenderLayer {
 
   public resize(terminal: ITerminal, dim: IRenderDimensions): void {
     super.resize(terminal, dim);
-    // Resizing the canvas discards the contents of the canvas so clear state
-    this._clearState();
+    this._drawSelection(terminal)
   }
 
   public reset(terminal: ITerminal): void {
@@ -59,9 +58,23 @@ export class SelectionRenderLayer extends BaseRenderLayer {
       return;
     }
 
+    // Store state for future and current draw
+    this._state.start = [start[0], start[1]];
+    this._state.end = [end[0], end[1]];
+    this._state.columnSelectMode = columnSelectMode;
+    this._state.ydisp = terminal.buffer.ydisp;
+
+    this._drawSelection(terminal);
+  }
+
+  private _drawSelection(terminal: ITerminal): void {
+    if(!this._didStateInitialize()) {
+      return ;
+    }
+
     // Translate from buffer position to viewport position
-    const viewportStartRow = start[1] - terminal.buffer.ydisp;
-    const viewportEndRow = end[1] - terminal.buffer.ydisp;
+    const viewportStartRow = this._state.start[1] - terminal.buffer.ydisp;
+    const viewportEndRow = this._state.end[1] - terminal.buffer.ydisp;
     const viewportCappedStartRow = Math.max(viewportStartRow, 0);
     const viewportCappedEndRow = Math.min(viewportEndRow, terminal.rows - 1);
 
@@ -72,34 +85,35 @@ export class SelectionRenderLayer extends BaseRenderLayer {
 
     this._ctx.fillStyle = this._colors.selection.css;
 
-    if (columnSelectMode) {
-      const startCol = start[0];
-      const width = end[0] - startCol;
+    if (this._state.columnSelectMode) {
+      const startCol = this._state.start[0];
+      const width = this._state.end[0] - startCol;
       const height = viewportCappedEndRow - viewportCappedStartRow + 1;
       this.fillCells(startCol, viewportCappedStartRow, width, height);
     } else {
       // Draw first row
-      const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
-      const startRowEndCol = viewportCappedStartRow === viewportCappedEndRow ? end[0] : terminal.cols;
+      const startCol = viewportStartRow === viewportCappedStartRow ? this._state.start[0] : 0;
+      const startRowEndCol = viewportCappedStartRow === viewportCappedEndRow ? this._state.end[0] : terminal.cols;
       this.fillCells(startCol, viewportCappedStartRow, startRowEndCol - startCol, 1);
 
       // Draw middle rows
       const middleRowsCount = Math.max(viewportCappedEndRow - viewportCappedStartRow - 1, 0);
       this.fillCells(0, viewportCappedStartRow + 1, terminal.cols, middleRowsCount);
 
-      // Draw final row
+        // Draw final row
       if (viewportCappedStartRow !== viewportCappedEndRow) {
-        // Only draw viewportEndRow if it's not the same as viewportStartRow
-        const endCol = viewportEndRow === viewportCappedEndRow ? end[0] : terminal.cols;
-        this.fillCells(0, viewportCappedEndRow, endCol, 1);
+          // Only draw viewportEndRow if it's not the same as viewportStartRow
+          const endCol = viewportEndRow === viewportCappedEndRow ? this._state.end[0] : terminal.cols;
+          this.fillCells(0, viewportCappedEndRow, endCol, 1);
       }
     }
+  }
 
-    // Save state for next render
-    this._state.start = [start[0], start[1]];
-    this._state.end = [end[0], end[1]];
-    this._state.columnSelectMode = columnSelectMode;
-    this._state.ydisp = terminal.buffer.ydisp;
+  private _didStateInitialize(): boolean {
+    if (this._state.start === null || this._state.end === null || this._state.columnSelectMode === null || this._state.ydisp === null) {
+        return false;
+      }
+    return true;
   }
 
   private _didStateChange(start: [number, number], end: [number, number], columnSelectMode: boolean, ydisp: number): boolean {
