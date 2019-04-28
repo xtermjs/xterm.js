@@ -11,7 +11,8 @@
     ]
   },
   "include": [
-    "./Lifecycle.ts"
+    "./Lifecycle.ts",
+    "./RenderDebouncer.ts"
   ],
   "references": [
     { "path": "../common" }
