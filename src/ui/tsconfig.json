@@ -12,7 +12,8 @@
   },
   "include": [
     "./Lifecycle.ts",
-    "./RenderDebouncer.ts"
+    "./RenderDebouncer.ts",
+    "./ScreenDprMonitor.ts"
   ],
   "references": [
     { "path": "../common" }
