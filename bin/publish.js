@@ -32,13 +32,15 @@ function getNextVersion(tag) {
     console.error('The package.json version must be of the form x.y.z');
     process.exit(1);
   }
-  const publishedVersions = getPublishedVersions(packageJson.version, tag);
+  const stableVersion = packageJson.version.split('.');
+  const nextStableVersion = `${stableVersion[0]}.${parseInt(stableVersion[1]) + 1}.${stableVersion[2]}`;
+  const publishedVersions = getPublishedVersions(nextStableVersion, tag);
   if (publishedVersions.length === 0) {
     return `${packageJson.version}-${tag}1`;
   }
   const latestPublishedVersion = publishedVersions.sort((a, b) => b.localeCompare(a))[0];
   const latestTagVersion = parseInt(latestPublishedVersion.substr(latestPublishedVersion.search(/[0-9]+$/)), 10);
-  return `${packageJson.version}-${tag}${latestTagVersion + 1}`;
+  return `${nextStableVersion}-${tag}${latestTagVersion + 1}`;
 }
 
 function getPublishedVersions(version, tag) {
