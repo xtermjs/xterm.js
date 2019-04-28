@@ -66,3 +66,28 @@ jobs:
   - script: |
       yarn lint
     displayName: 'Lint'
+
+- job: Release
+  dependsOn:
+  - Linux
+  - macOS
+  - Windows
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+  pool:
+    vmImage: 'ubuntu-16.04'
+  steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '8.x'
+    displayName: 'Install Node.js'
+  - task: geeklearningio.gl-vsts-tasks-yarn.yarn-installer-task.YarnInstaller@2
+    inputs:
+      versionSpec: "1.9.4"
+    displayName: 'Install Yarn'
+  - script: |
+      yarn
+      BUILD_DIR=dist npm run build
+    displayName: 'Install dependencies and build'
+  - script: |
+      NPM_AUTH_TOKEN="$(NPM_AUTH_TOKEN)" node ./bin/publish.js
+    displayName: 'Publish to npm'

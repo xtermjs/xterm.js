@@ -42,6 +42,7 @@ lib/test/
 docs/
 /.idea/
 .vscode/
+bin/
 build/
 fixtures/
 coverage/
