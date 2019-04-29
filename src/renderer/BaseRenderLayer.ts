@@ -10,6 +10,7 @@ import BaseCharAtlas from './atlas/BaseCharAtlas';
 import { acquireCharAtlas } from './atlas/CharAtlasCache';
 import { CellData, AttributeData } from '../BufferLine';
 import { WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from '../Buffer';
+import { JoinedCellData } from './CharacterJoinerRegistry';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -260,8 +261,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   protected drawChars(terminal: ITerminal, cell: ICellData, x: number, y: number): void {
 
-    // skip cache right away if we draw in RGB
-    if (cell.isFgRGB() || cell.isBgRGB()) {
+    // skip cache right away if we draw in RGB or have joined cells
+    if (cell.isFgRGB() || cell.isBgRGB() || cell instanceof JoinedCellData) {
       this._drawUncachedChars(terminal, cell, x, y);
       return;
     }
