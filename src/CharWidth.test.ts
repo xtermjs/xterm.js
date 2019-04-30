@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { TestTerminal } from './ui/TestUtils.test';
+import { TestTerminal } from './TestUtils.test';
 import { assert } from 'chai';
 import { getStringCellWidth, wcwidth } from './CharWidth';
 import { IBuffer } from './Types';
