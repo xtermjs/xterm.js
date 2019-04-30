@@ -359,7 +359,7 @@ declare module 'xterm' {
      * (EXPERIMENTAL) Get all markers registered against the buffer. If the alt
      * buffer is active this will always return [].
      */
-    readonly markers: IMarker[];
+    readonly markers: ReadonlyArray<IMarker>;
 
     /**
      * Natural language strings that can be localized.
