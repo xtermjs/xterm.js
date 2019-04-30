@@ -322,14 +322,18 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       } else {
         this._ctx.fillStyle = this._colors.ansi[cell.getBgColor()].css;
       }
-    } else if (cell.isFgRGB()) {
-      this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
-    } else if (cell.isFgPalette()) {
-      let fg = cell.getFgColor();
-      if (terminal.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
-        fg += 8;
+    } else {
+      if (cell.isFgDefault()) {
+        this._ctx.fillStyle = this._colors.foreground.css;
+      } else if (cell.isFgRGB()) {
+        this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
+      } else {
+        let fg = cell.getFgColor();
+        if (terminal.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
+          fg += 8;
+        }
+        this._ctx.fillStyle = this._colors.ansi[fg].css;
       }
-      this._ctx.fillStyle = this._colors.ansi[fg].css;
     }
 
     this._clipRow(terminal, y);
