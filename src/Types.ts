@@ -5,7 +5,6 @@
 
 import { Terminal as PublicTerminal, ITerminalOptions as IPublicTerminalOptions, IEventEmitter, IDisposable } from 'xterm';
 import { IColorSet, IRenderer } from './renderer/Types';
-import { IMouseZoneManager } from './ui/Types';
 import { ICharset } from './core/Types';
 import { ICircularList } from './common/Types';
 import { IEvent } from './common/EventEmitter2';
@@ -603,4 +602,21 @@ export interface IBufferLine {
   getCodePoint(index: number): number;
   isCombined(index: number): number;
   getString(index: number): string;
+}
+
+export interface IMouseZoneManager extends IDisposable {
+  add(zone: IMouseZone): void;
+  clearAll(start?: number, end?: number): void;
+}
+
+export interface IMouseZone {
+  x1: number;
+  x2: number;
+  y1: number;
+  y2: number;
+  clickCallback: (e: MouseEvent) => any;
+  hoverCallback: (e: MouseEvent) => any | undefined;
+  tooltipCallback: (e: MouseEvent) => any | undefined;
+  leaveCallback: () => any | undefined;
+  willLinkActivate: (e: MouseEvent) => boolean;
 }
