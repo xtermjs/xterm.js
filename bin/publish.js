@@ -11,9 +11,12 @@ const packageJson = require('../package.json');
 // Setup auth
 fs.writeFileSync(`${process.env['HOME']}/.npmrc`, `//registry.npmjs.org/:_authToken=${process.env['NPM_AUTH_TOKEN']}`);
 
-// Get the version
-const tag = 'beta'
-const nextVersion = getNextVersion(tag);
+// Determine if this is a stable or beta release
+const publishedVersions = getPublishedVersions();
+const isStableRelease = publishedVersions.indexOf(packageJson.version) === -1;
+
+// Get the next version
+let nextVersion = isStableRelease ? packageJson.version : getNextBetaVersion();
 console.log(`Publishing version: ${nextVersion}`);
 
 // Set the version in package.json
@@ -22,16 +25,19 @@ packageJson.version = nextVersion;
 fs.writeFileSync(packageJsonFile, JSON.stringify(packageJson, null, 2));
 
 // Publish
-const result = cp.spawn('npm', ['publish', '--tag', tag], {
-  stdio: 'inherit'
-});
+const args = ['publish'];
+if (!isStableRelease) {
+  args.push('--tag', 'beta');
+}
+const result = cp.spawn('npm', args, { stdio: 'inherit' });
 result.on('exit', code => process.exit(code));
 
-function getNextVersion(tag) {
+function getNextBetaVersion() {
   if (!/^[0-9]+\.[0-9]+\.[0-9]+$/.exec(packageJson.version)) {
     console.error('The package.json version must be of the form x.y.z');
     process.exit(1);
   }
+  const tag = 'beta';
   const stableVersion = packageJson.version.split('.');
   const nextStableVersion = `${stableVersion[0]}.${parseInt(stableVersion[1]) + 1}.${stableVersion[2]}`;
   const publishedVersions = getPublishedVersions(nextStableVersion, tag);
@@ -46,5 +52,8 @@ function getNextVersion(tag) {
 function getPublishedVersions(version, tag) {
   const versionsProcess = cp.spawnSync('npm', ['view', 'xterm', 'versions', '--json']);
   const versionsJson = JSON.parse(versionsProcess.stdout);
-  return versionsJson.filter(v => !v.search(new RegExp(`${version}-${tag}[0-9]+`)));
+  if (tag) {
+    return versionsJson.filter(v => !v.search(new RegExp(`${version}-${tag}[0-9]+`)));
+  }
+  return versionsJson;
 }
