@@ -68,7 +68,7 @@ export class Renderer extends Disposable implements IRenderer {
     this._updateDimensions();
     this.onOptionsChanged();
 
-    this._renderDebouncer = new RenderDebouncer(this._terminal, this._renderRows.bind(this));
+    this._renderDebouncer = new RenderDebouncer(this._renderRows.bind(this));
     this._screenDprMonitor = new ScreenDprMonitor();
     this._screenDprMonitor.setListener(() => this.onWindowResize(window.devicePixelRatio));
     this.register(this._screenDprMonitor);
@@ -194,7 +194,7 @@ export class Renderer extends Disposable implements IRenderer {
       this._needsFullRefresh = true;
       return;
     }
-    this._renderDebouncer.refresh(start, end);
+    this._renderDebouncer.refresh(start, end, this._terminal.rows);
   }
 
   /**

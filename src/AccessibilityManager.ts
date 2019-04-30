@@ -61,7 +61,7 @@ export class AccessibilityManager extends Disposable {
     this._refreshRowsDimensions();
     this._accessibilityTreeRoot.appendChild(this._rowContainer);
 
-    this._renderRowsDebouncer = new RenderDebouncer(this._terminal, this._renderRows.bind(this));
+    this._renderRowsDebouncer = new RenderDebouncer(this._renderRows.bind(this));
     this._refreshRows();
 
     this._liveRegion = document.createElement('div');
@@ -239,7 +239,7 @@ export class AccessibilityManager extends Disposable {
   }
 
   private _refreshRows(start?: number, end?: number): void {
-    this._renderRowsDebouncer.refresh(start, end);
+    this._renderRowsDebouncer.refresh(start, end, this._terminal.rows);
   }
 
   private _renderRows(start: number, end: number): void {

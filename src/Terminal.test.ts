@@ -5,7 +5,7 @@
 
 import { assert, expect } from 'chai';
 import { Terminal } from './Terminal';
-import { MockViewport, MockCompositionHelper, MockRenderer } from './ui/TestUtils.test';
+import { MockViewport, MockCompositionHelper, MockRenderer } from './TestUtils.test';
 import { DEFAULT_ATTR_DATA } from './Buffer';
 import { CellData } from './BufferLine';
 
