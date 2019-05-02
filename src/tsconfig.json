@@ -24,6 +24,7 @@
   ],
   "references": [
     { "path": "./common" },
-    { "path": "./core" }
+    { "path": "./core" },
+    { "path": "./ui" }
   ]
 }
