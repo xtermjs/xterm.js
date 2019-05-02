@@ -37,7 +37,10 @@
 		{
 			"label": "Start demo",
 			"dependsOn": ["npm: watch", "npm: start"],
-			"group": "build",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
 			"isBackground": true,
 			"problemMatcher": [],
 			"presentation": {
