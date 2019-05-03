@@ -184,6 +184,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   // user input states
   public writeBuffer: string[];
   private _writeInProgress: boolean;
+  private _currentWritePromise: Promise<void>;
 
   /**
    * Whether _xterm.js_ sent XOFF in order to catch up with the pty process.
@@ -281,7 +282,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this._customKeyEventHandler = null;
     removeTerminalFromCache(this);
     this.handler = () => {};
-    this.write = () => {};
+    this.write = () => Promise.resolve();
     if (this.element && this.element.parentNode) {
       this.element.parentNode.removeChild(this.element);
     }
@@ -1369,15 +1370,15 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * Writes text to the terminal.
    * @param data The text to write to the terminal.
    */
-  public write(data: string): void {
+  public write(data: string): Promise<void> {
     // Ensure the terminal isn't disposed
     if (this._isDisposed) {
-      return;
+      return this._currentWritePromise || Promise.resolve();
     }
 
     // Ignore falsy data values (including the empty string)
     if (!data) {
-      return;
+      return this._currentWritePromise || Promise.resolve();
     }
 
     this.writeBuffer.push(data);
@@ -1396,13 +1397,17 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // Kick off a write which will write all data in sequence recursively
       this._writeInProgress = true;
       // Kick off an async innerWrite so more writes can come in while processing data
-      setTimeout(() => {
-        this._innerWrite();
+      // remember this in a promise, so that clients may choose to await pending writes
+      this._currentWritePromise = new Promise(resolve => {
+        this._innerWrite(undefined, resolve);
       });
+      return this._currentWritePromise;
     }
+
+    return this._currentWritePromise || Promise.resolve();
   }
 
-  protected _innerWrite(bufferOffset: number = 0): void {
+  protected _innerWrite(bufferOffset: number = 0, resolve?: () => void): void {
     // Ensure the terminal isn't disposed
     if (this._isDisposed) {
       this.writeBuffer = [];
@@ -1440,10 +1445,15 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
     if (this.writeBuffer.length > bufferOffset) {
       // Allow renderer to catch up before processing the next batch
-      setTimeout(() => this._innerWrite(bufferOffset), 0);
+      setTimeout(() => this._innerWrite(bufferOffset, resolve), 0);
     } else {
       this._writeInProgress = false;
       this.writeBuffer = [];
+      this._currentWritePromise = undefined;
+
+      if (resolve) {
+        resolve();
+      }
     }
   }
 
@@ -1451,8 +1461,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * Writes text to the terminal, followed by a break line character (\n).
    * @param data The text to write to the terminal.
    */
-  public writeln(data: string): void {
-    this.write(data + '\r\n');
+  public writeln(data: string): Promise<void> {
+    return this.write(data + '\r\n');
   }
 
   /**

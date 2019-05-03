@@ -61,8 +61,8 @@ export class Terminal implements ITerminalApi {
   public resize(columns: number, rows: number): void {
     this._core.resize(columns, rows);
   }
-  public writeln(data: string): void {
-    this._core.writeln(data);
+  public writeln(data: string): Promise<void> {
+    return this._core.writeln(data);
   }
   public open(parent: HTMLElement): void {
     this._core.open(parent);
@@ -130,8 +130,8 @@ export class Terminal implements ITerminalApi {
   public clear(): void {
     this._core.clear();
   }
-  public write(data: string): void {
-    this._core.write(data);
+  public write(data: string): Promise<void> {
+    return this._core.write(data);
   }
   public getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'fontWeight' | 'fontWeightBold' | 'rendererType' | 'termName'): string;
   public getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell'): boolean;

@@ -55,7 +55,7 @@ export class MockTerminal implements ITerminal {
   resize(columns: number, rows: number): void {
     throw new Error('Method not implemented.');
   }
-  writeln(data: string): void {
+  writeln(data: string): Promise<void> {
     throw new Error('Method not implemented.');
   }
   open(parent: HTMLElement): void {
@@ -106,7 +106,7 @@ export class MockTerminal implements ITerminal {
   clear(): void {
     throw new Error('Method not implemented.');
   }
-  write(data: string): void {
+  write(data: string): Promise<void> {
     throw new Error('Method not implemented.');
   }
   bracketedPasteMode: boolean;

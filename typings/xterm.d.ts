@@ -550,7 +550,7 @@ declare module 'xterm' {
      * Writes text to the terminal, followed by a break line character (\n).
      * @param data The text to write to the terminal.
      */
-    writeln(data: string): void;
+    writeln(data: string): Promise<void>;
 
     /**
      * Opens the terminal within an element.
@@ -735,7 +735,7 @@ declare module 'xterm' {
      * Writes text to the terminal.
      * @param data The text to write to the terminal.
      */
-    write(data: string): void;
+    write(data: string): Promise<void>;
 
     /**
      * Retrieves an option's value from the terminal.

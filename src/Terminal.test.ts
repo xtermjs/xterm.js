@@ -34,6 +34,7 @@ describe('xterm.js', () => {
     term.write = (data) => {
       term.writeBuffer.push(data);
       (<any>term)._innerWrite();
+      return Promise.resolve();
     };
     (<any>term).element = {
       classList: {
