@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { EventEmitter } from '../../common/EventEmitter';
 import { IRenderer, IRenderDimensions, IColorSet, IRenderLayer, FLAGS } from '../Types';
 import { ITheme } from 'xterm';
 import { CharacterJoinerHandler, ITerminal } from '../../Types';
@@ -20,10 +19,12 @@ import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX, NULL_
 import { IWebGL2RenderingContext } from './Types';
 import { INVERTED_DEFAULT_COLOR, DEFAULT_COLOR } from '../atlas/Types';
 import { RenderModel, COMBINED_CHAR_BIT_MASK } from './RenderModel';
+import { EventEmitter2, IEvent } from '../../common/EventEmitter2';
+import { Disposable } from '../../common/Lifecycle';
 
 export const INDICIES_PER_CELL = 4;
 
-export class WebglRenderer extends EventEmitter implements IRenderer {
+export class WebglRenderer extends Disposable implements IRenderer {
   private _renderDebouncer: RenderDebouncer;
   private _renderLayers: IRenderLayer[];
   private _charAtlas: WebglCharAtlas;
@@ -43,11 +44,17 @@ export class WebglRenderer extends EventEmitter implements IRenderer {
   public dimensions: IRenderDimensions;
   public colorManager: ColorManager;
 
+  private _onCanvasResize = new EventEmitter2<{ width: number, height: number }>();
+  public get onCanvasResize(): IEvent<{ width: number, height: number }> { return this._onCanvasResize.event; }
+  private _onRender = new EventEmitter2<{ start: number, end: number }>();
+  public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
+
   constructor(
     private _terminal: ITerminal,
     theme: ITheme
   ) {
     super();
+
     const allowTransparency = this._terminal.options.allowTransparency;
     this.colorManager = new ColorManager(document, allowTransparency);
     if (theme) {
@@ -80,7 +87,7 @@ export class WebglRenderer extends EventEmitter implements IRenderer {
     this._screenDprMonitor.setListener(() => this.onWindowResize(window.devicePixelRatio));
     this.register(this._screenDprMonitor);
 
-    this._renderDebouncer = new RenderDebouncer(this._terminal, this._renderRows.bind(this));
+    this._renderDebouncer = new RenderDebouncer(this._renderRows.bind(this));
 
     this._canvas = document.createElement('canvas');
     const contextAttributes = { antialias: false, depth: false };
@@ -189,7 +196,7 @@ export class WebglRenderer extends EventEmitter implements IRenderer {
     this._refreshCharAtlas();
     this._refreshViewport();
 
-    this.emit('resize', {
+    this._onCanvasResize.fire({
       width: this.dimensions.canvasWidth,
       height: this.dimensions.canvasHeight
     });
@@ -255,7 +262,7 @@ export class WebglRenderer extends EventEmitter implements IRenderer {
       this._needsFullRefresh = true;
       return;
     }
-    this._renderDebouncer.refresh(start, end);
+    this._renderDebouncer.refresh(start, end, this._terminal.rows);
   }
 
   public registerCharacterJoiner(handler: CharacterJoinerHandler): number {
@@ -283,7 +290,7 @@ export class WebglRenderer extends EventEmitter implements IRenderer {
     this._glyphRenderer.render(this._model, this._model.selection.hasSelection);
 
     // Emit event
-    this._terminal.emit('refresh', { start, end });
+    this._onRender.fire({ start, end });
   }
 
   private _updateModel(start: number, end: number): void {
