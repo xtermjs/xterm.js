@@ -1,15 +1,15 @@
 import { ITerminal, IBufferLine, ICellData, CharData } from '../Types';
 import { ICharacterJoinerRegistry, ICharacterJoiner } from './Types';
-import { CellData, Content } from '../BufferLine';
+import { CellData, Content, AttributeData } from '../BufferLine';
 import { WHITESPACE_CELL_CHAR } from '../Buffer';
 
-export class JoinedCellData extends CellData implements ICellData {
-  private _width: number = 0;
-  private _code: number = 0x1FFFFF;  // highest allowed codepoint, meant as -1
-
+export class JoinedCellData extends AttributeData implements ICellData {
+  private _width: number;
+  // .content carries no meaning for joined CellData, simply nullify it
+  // thus we have to overload all other .content accessors
   public content: number = 0;
-  public fg: number = 0;
-  public bg: number = 0;
+  public fg: number;
+  public bg: number;
   public combinedData: string = '';
 
   constructor(firstCell: ICellData, chars: string, width: number) {
@@ -34,7 +34,9 @@ export class JoinedCellData extends CellData implements ICellData {
   }
 
   public getCode(): number {
-    return this._code;
+    // code always gets the highest possible fake codepoint (read as -1)
+    // this is needed as code is used by caches as identifier
+    return 0x1FFFFF;
   }
 
   public setFromCharData(value: CharData): void {

@@ -261,7 +261,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   protected drawChars(terminal: ITerminal, cell: ICellData, x: number, y: number): void {
 
-    // skip cache right away if we draw in RGB or have joined cells
+    // skip cache right away if we draw in RGB
+    // Note: to avoid bad runtime JoinedCellData will be skipped
+    //       in the cache handler (atlasDidDraw == false) itself and
+    //       fall through to uncached later down below
     if (cell.isFgRGB() || cell.isBgRGB() || cell instanceof JoinedCellData) {
       this._drawUncachedChars(terminal, cell, x, y);
       return;
