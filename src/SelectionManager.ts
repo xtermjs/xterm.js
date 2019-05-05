@@ -4,9 +4,9 @@
  */
 
 import { ITerminal, ISelectionManager, IBuffer, IBufferLine, ISelectionRedrawRequestEvent } from './Types';
-import { MouseHelper } from './ui/MouseHelper';
+import { MouseHelper } from './MouseHelper';
 import * as Browser from './common/Platform';
-import { CharMeasure } from './ui/CharMeasure';
+import { CharMeasure } from './CharMeasure';
 import { SelectionModel } from './SelectionModel';
 import { AltClickHandler } from './handlers/AltClickHandler';
 import { CellData } from './BufferLine';

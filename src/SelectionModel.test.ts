@@ -7,7 +7,7 @@ import { assert } from 'chai';
 import { ITerminal } from './Types';
 import { SelectionModel } from './SelectionModel';
 import { BufferSet } from './BufferSet';
-import { MockTerminal } from './ui/TestUtils.test';
+import { MockTerminal } from './TestUtils.test';
 
 class TestSelectionModel extends SelectionModel {
   constructor(
