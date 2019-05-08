@@ -183,4 +183,30 @@ describe('webLinks addon', () => {
       assert.equal(uri, 'http://bar.io/');
     });
   });
+
+  describe('should allow + character in URI path', () => {
+    it('foo.com', () => {
+      const term = new MockTerminal();
+      webLinks.webLinksInit(<any>term);
+
+      const row = 'http://foo.com/subpath/+/id';
+
+      const match = row.match(term.regex);
+      const uri = match[term.options.matchIndex];
+
+      assert.equal(uri, 'http://foo.com/subpath/+/id');
+    });
+
+    it('bar.io', () => {
+      const term = new MockTerminal();
+      webLinks.webLinksInit(<any>term);
+
+      const row = 'http://bar.io/subpath/+/id';
+
+      const match = row.match(term.regex);
+      const uri = match[term.options.matchIndex];
+
+      assert.equal(uri, 'http://bar.io/subpath/+/id');
+    });
+  });
 });
