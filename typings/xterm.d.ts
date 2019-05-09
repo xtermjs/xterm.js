@@ -594,6 +594,7 @@ declare module 'xterm' {
      * @return An IDisposable you can call to remove this handler.
      */
     addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
+
     /**
      * (EXPERIMENTAL) Registers a link matcher, allowing custom link patterns to
      * be matched and handled.
