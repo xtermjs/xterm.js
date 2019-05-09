@@ -42,7 +42,7 @@ function getNextBetaVersion() {
   const nextStableVersion = `${stableVersion[0]}.${parseInt(stableVersion[1]) + 1}.${stableVersion[2]}`;
   const publishedVersions = getPublishedVersions(nextStableVersion, tag);
   if (publishedVersions.length === 0) {
-    return `${packageJson.version}-${tag}1`;
+    return `${nextStableVersion}-${tag}1`;
   }
   const latestPublishedVersion = publishedVersions.sort((a, b) => {
     const aVersion = parseInt(a.substr(a.search(/[0-9]+$/)));
