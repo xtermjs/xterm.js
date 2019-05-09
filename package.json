@@ -57,7 +57,8 @@
     "mocha": "gulp test",
     "prebuild": "tsc -b ./src/tsconfig.all.json",
     "build": "gulp build",
-    "prepublish": "npm run build",
+    "prepare": "npm run prebuild",
+    "prepublishOnly": "npm run build",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "watch": "tsc -b -w ./src/tsconfig.all.json --preserveWatchOutput"
   }
