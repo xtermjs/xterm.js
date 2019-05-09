@@ -45,12 +45,9 @@ function getNextBetaVersion() {
     return `${packageJson.version}-${tag}1`;
   }
   const latestPublishedVersion = publishedVersions.sort((a, b) => {
-    if (b.length > a.length) {
-      return true;
-    } else if (b.length < a.length) {
-      return false;
-    }
-    return b.localeCompare(a)
+    const aVersion = parseInt(a.substr(a.search(/[0-9]+$/)));
+    const bVersion = parseInt(b.substr(b.search(/[0-9]+$/)));
+    return aVersion > bVersion ? -1 : 1;
   })[0];
   const latestTagVersion = parseInt(latestPublishedVersion.substr(latestPublishedVersion.search(/[0-9]+$/)), 10);
   return `${nextStableVersion}-${tag}${latestTagVersion + 1}`;
