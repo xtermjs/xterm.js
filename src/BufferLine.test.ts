@@ -3,9 +3,8 @@
  * @license MIT
  */
 import * as chai from 'chai';
-import { BufferLine, CellData, Content, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from './BufferLine';
+import { BufferLine, CellData, Content, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR } from './BufferLine';
 import { CharData, IBufferLine } from './core/Types';
-import { DEFAULT_ATTR } from './Buffer';
 
 
 class TestBufferLine extends BufferLine {

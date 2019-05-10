@@ -4,7 +4,9 @@
  */
 import { CharData, IBufferLine, ICellData, IColorRGB, IAttributeData } from './core/Types';
 import { stringFromCodePoint } from './core/input/TextDecoder';
+import { DEFAULT_COLOR } from './common/Types';
 
+export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
 
 export const CHAR_DATA_ATTR_INDEX = 0;
 export const CHAR_DATA_CHAR_INDEX = 1;
@@ -214,6 +216,8 @@ export class AttributeData implements IAttributeData {
     }
   }
 }
+
+export const DEFAULT_ATTR_DATA = new AttributeData();
 
 /**
  * CellData - represents a single Cell in the terminal buffer.

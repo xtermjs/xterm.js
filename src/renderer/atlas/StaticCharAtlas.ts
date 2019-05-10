@@ -3,10 +3,11 @@
  * @license MIT
  */
 
-import { DIM_OPACITY, IGlyphIdentifier, DEFAULT_COLOR, ICharAtlasConfig, CHAR_ATLAS_CELL_SPACING } from './Types';
+import { DIM_OPACITY, IGlyphIdentifier, ICharAtlasConfig, CHAR_ATLAS_CELL_SPACING } from './Types';
 import { generateStaticCharAtlasTexture } from './CharAtlasGenerator';
 import BaseCharAtlas from './BaseCharAtlas';
 import { is256Color } from './CharAtlasUtils';
+import { DEFAULT_COLOR } from '../../common/Types';
 
 export default class StaticCharAtlas extends BaseCharAtlas {
   private _texture: HTMLCanvasElement | ImageBitmap;

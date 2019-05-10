@@ -6,7 +6,8 @@
 import { IRenderLayer, IColorSet, IRenderDimensions } from './Types';
 import { ITerminal } from '../Types';
 import { ICellData } from '../core/Types';
-import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, IGlyphIdentifier, DEFAULT_COLOR } from './atlas/Types';
+import { DEFAULT_COLOR } from '../common/Types';
+import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, IGlyphIdentifier } from './atlas/Types';
 import BaseCharAtlas from './atlas/BaseCharAtlas';
 import { acquireCharAtlas } from './atlas/CharAtlasCache';
 import { CellData, AttributeData, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from '../BufferLine';
