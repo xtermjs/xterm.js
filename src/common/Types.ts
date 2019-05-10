@@ -6,6 +6,8 @@
 import { IEvent, EventEmitter2 } from './EventEmitter2';
 import { IDeleteEvent, IInsertEvent } from './CircularList';
 
+export const DEFAULT_COLOR = 256;
+
 export interface IDisposable {
   dispose(): void;
 }
