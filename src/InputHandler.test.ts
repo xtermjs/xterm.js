@@ -8,7 +8,7 @@ import { InputHandler } from './InputHandler';
 import { MockInputHandlingTerminal, TestTerminal } from './TestUtils.test';
 import { DEFAULT_ATTR_DATA } from './Buffer';
 import { Terminal } from './Terminal';
-import { IBufferLine } from './Types';
+import { IBufferLine } from './core/Types';
 import { CellData, Attributes, AttributeData } from './BufferLine';
 
 describe('InputHandler', () => {

@@ -7,14 +7,14 @@
 import { IInputHandler, IDcsHandler, IEscapeSequenceParser, IInputHandlingTerminal } from './Types';
 import { C0, C1 } from './common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from './core/data/Charsets';
-import { NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR_DATA } from './Buffer';
+import { DEFAULT_ATTR_DATA } from './Buffer';
 import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
 import { IDisposable } from 'xterm';
 import { Disposable } from './common/Lifecycle';
 import { concat } from './common/TypedArrayUtils';
 import { StringToUtf32, stringFromCodePoint, utf32ToString } from './core/input/TextDecoder';
-import { CellData, Attributes, FgFlags, BgFlags, AttributeData } from './BufferLine';
+import { CellData, Attributes, FgFlags, BgFlags, AttributeData, NULL_CELL_WIDTH, NULL_CELL_CODE } from './BufferLine';
 import { EventEmitter2, IEvent } from './common/EventEmitter2';
 
 /**

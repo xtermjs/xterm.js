@@ -8,7 +8,8 @@ import { CharMeasure } from './CharMeasure';
 import { SelectionManager, SelectionMode } from './SelectionManager';
 import { SelectionModel } from './SelectionModel';
 import { BufferSet } from './BufferSet';
-import { ITerminal, IBuffer, IBufferLine } from './Types';
+import { ITerminal, IBuffer } from './Types';
+import { IBufferLine } from './core/Types';
 import { MockTerminal } from './TestUtils.test';
 import { BufferLine, CellData } from './BufferLine';
 
