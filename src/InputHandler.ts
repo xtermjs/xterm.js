@@ -13,7 +13,7 @@ import { IDisposable } from 'xterm';
 import { Disposable } from './common/Lifecycle';
 import { concat } from './common/TypedArrayUtils';
 import { StringToUtf32, stringFromCodePoint, utf32ToString } from './core/input/TextDecoder';
-import { CellData, Attributes, FgFlags, BgFlags, AttributeData, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR_DATA } from './BufferLine';
+import { CellData, Attributes, FgFlags, BgFlags, AttributeData, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR_DATA } from './core/buffer/BufferLine';
 import { EventEmitter2, IEvent } from './common/EventEmitter2';
 
 /**

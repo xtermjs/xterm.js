@@ -6,7 +6,7 @@
 import { ITerminalOptions } from '../../Types';
 import { IBufferLine } from '../../core/Types';
 import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
-import { CellData, AttributeData, NULL_CELL_CODE, WHITESPACE_CELL_CHAR } from '../../BufferLine';
+import { CellData, AttributeData, NULL_CELL_CODE, WHITESPACE_CELL_CHAR } from '../../core/buffer/BufferLine';
 
 export const BOLD_CLASS = 'xterm-bold';
 export const DIM_CLASS = 'xterm-dim';

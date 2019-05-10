@@ -51,7 +51,7 @@ import { evaluateKeyboardEvent } from './core/input/Keyboard';
 import { KeyboardResultType, ICharset, IBufferLine, IAttributeData } from './core/Types';
 import { clone } from './common/Clone';
 import { EventEmitter2, IEvent } from './common/EventEmitter2';
-import { Attributes, DEFAULT_ATTR_DATA } from './BufferLine';
+import { Attributes, DEFAULT_ATTR_DATA } from './core/buffer/BufferLine';
 import { applyWindowsMode } from './WindowsMode';
 
 // Let it work inside Node.js for automated testing purposes.

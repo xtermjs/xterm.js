@@ -8,7 +8,7 @@ import { ITerminal } from '../Types';
 import { CharData, ICellData } from '../core/Types';
 import { GridCache } from './GridCache';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { CellData, AttributeData, Content, NULL_CELL_CODE } from '../BufferLine';
+import { CellData, AttributeData, Content, NULL_CELL_CODE } from '../core/buffer/BufferLine';
 import { JoinedCellData } from './CharacterJoinerRegistry';
 
 /**

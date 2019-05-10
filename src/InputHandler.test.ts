@@ -8,7 +8,7 @@ import { InputHandler } from './InputHandler';
 import { MockInputHandlingTerminal, TestTerminal } from './TestUtils.test';
 import { Terminal } from './Terminal';
 import { IBufferLine } from './core/Types';
-import { CellData, Attributes, AttributeData, DEFAULT_ATTR_DATA } from './BufferLine';
+import { CellData, Attributes, AttributeData, DEFAULT_ATTR_DATA } from './core/buffer/BufferLine';
 
 describe('InputHandler', () => {
   describe('save and restore cursor', () => {

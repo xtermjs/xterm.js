@@ -14,7 +14,7 @@ import * as pty from 'node-pty';
 import { assert } from 'chai';
 import { Terminal } from './Terminal';
 import { IViewport } from './Types';
-import { CellData, WHITESPACE_CELL_CHAR } from './BufferLine';
+import { CellData, WHITESPACE_CELL_CHAR } from './core/buffer/BufferLine';
 
 class TestTerminal extends Terminal {
   innerWrite(): void { this._innerWrite(); }

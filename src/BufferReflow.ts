@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { BufferLine } from './BufferLine';
+import { BufferLine } from './core/buffer/BufferLine';
 import { CircularList } from './common/CircularList';
 import { IBufferLine, ICellData } from './core/Types';
 

@@ -9,7 +9,7 @@ import { IBufferLine } from './core/Types';
 import { Linkifier } from './Linkifier';
 import { MockBuffer, MockTerminal, TestTerminal } from './TestUtils.test';
 import { CircularList } from './common/CircularList';
-import { BufferLine, CellData } from './BufferLine';
+import { BufferLine, CellData } from './core/buffer/BufferLine';
 
 class TestLinkifier extends Linkifier {
   constructor(terminal: ITerminal) {

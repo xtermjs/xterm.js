@@ -3,7 +3,7 @@
  * @license MIT
  */
 import { assert } from 'chai';
-import { BufferLine, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from './BufferLine';
+import { BufferLine, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from './core/buffer/BufferLine';
 import { reflowSmallerGetNewLineLengths } from './BufferReflow';
 
 describe('BufferReflow', () => {

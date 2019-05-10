@@ -10,7 +10,7 @@ import * as Browser from './common/Platform';
 import { CharMeasure } from './CharMeasure';
 import { SelectionModel } from './SelectionModel';
 import { AltClickHandler } from './handlers/AltClickHandler';
-import { CellData } from './BufferLine';
+import { CellData } from './core/buffer/BufferLine';
 import { IDisposable } from 'xterm';
 import { EventEmitter2, IEvent } from './common/EventEmitter2';
 

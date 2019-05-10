@@ -11,7 +11,7 @@ import { Buffer } from './Buffer';
 import * as Browser from './common/Platform';
 import { ITheme, IDisposable, IMarker, IEvent } from 'xterm';
 import { Terminal } from './Terminal';
-import { AttributeData } from './BufferLine';
+import { AttributeData } from './core/buffer/BufferLine';
 
 export class TestTerminal extends Terminal {
   writeSync(data: string): void {
