@@ -1,0 +1,51 @@
+{
+	"version": "2.0.0",
+	"presentation": {
+		"echo": false,
+		"reveal": "always",
+		"focus": false,
+		"panel": "dedicated",
+		"showReuseMessage": true
+	},
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "test",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"type": "npm",
+			"script": "watch",
+			"group": "build",
+			"isBackground": true,
+			"problemMatcher": [],
+			"presentation": {
+				"group": "vscode"
+			}
+		},
+		{
+			"type": "npm",
+			"script": "start",
+			"group": "build",
+			"isBackground": true,
+			"problemMatcher": [],
+			"presentation": {
+				"group": "vscode"
+			}
+		},
+		{
+			"label": "Start demo",
+			"dependsOn": ["npm: watch", "npm: start"],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"presentation": {
+				"group": "vscode"
+			}
+		}
+	]
+}

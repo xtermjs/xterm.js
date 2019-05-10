@@ -259,8 +259,11 @@ function initOptions(term: TerminalType): void {
       console.log('change', o, input.value);
       if (o === 'cols' || o === 'rows') {
         updateTerminalSize();
+      } else if (o === 'lineHeight') {
+        term.setOption(o, parseFloat(input.value));
+        updateTerminalSize();
       } else {
-        term.setOption(o, o === 'lineHeight' ? parseFloat(input.value) : parseInt(input.value, 10));
+        term.setOption(o, parseInt(input.value));
       }
     });
   });

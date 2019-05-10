@@ -30,7 +30,7 @@ export class Terminal implements ITerminalApi {
   public get textarea(): HTMLTextAreaElement { return this._core.textarea; }
   public get rows(): number { return this._core.rows; }
   public get cols(): number { return this._core.cols; }
-  public get markers(): IMarker[] { return this._core.markers; }
+  public get markers(): ReadonlyArray<IMarker> { return this._core.markers; }
   public blur(): void {
     this._core.blur();
   }

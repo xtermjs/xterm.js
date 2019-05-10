@@ -1,7 +1,52 @@
-import { ITerminal, IBufferLine } from '../Types';
+import { ITerminal, IBufferLine, ICellData, CharData } from '../Types';
 import { ICharacterJoinerRegistry, ICharacterJoiner } from './Types';
-import { CellData } from '../BufferLine';
+import { CellData, Content, AttributeData } from '../BufferLine';
 import { WHITESPACE_CELL_CHAR } from '../Buffer';
+
+export class JoinedCellData extends AttributeData implements ICellData {
+  private _width: number;
+  // .content carries no meaning for joined CellData, simply nullify it
+  // thus we have to overload all other .content accessors
+  public content: number = 0;
+  public fg: number;
+  public bg: number;
+  public combinedData: string = '';
+
+  constructor(firstCell: ICellData, chars: string, width: number) {
+    super();
+    this.fg = firstCell.fg;
+    this.bg = firstCell.bg;
+    this.combinedData = chars;
+    this._width = width;
+  }
+
+  public isCombined(): number {
+    // always mark joined cell data as combined
+    return Content.IS_COMBINED_MASK;
+  }
+
+  public getWidth(): number {
+    return this._width;
+  }
+
+  public getChars(): string {
+    return this.combinedData;
+  }
+
+  public getCode(): number {
+    // code always gets the highest possible fake codepoint (read as -1)
+    // this is needed as code is used by caches as identifier
+    return 0x1FFFFF;
+  }
+
+  public setFromCharData(value: CharData): void {
+    throw new Error('not implemented');
+  }
+
+  public getAsCharData(): CharData {
+    return [this.fg, this.getChars(), this.getWidth(), this.getCode()];
+  }
+}
 
 export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
 

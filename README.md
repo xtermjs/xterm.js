@@ -156,7 +156,8 @@ Xterm.js is used in several world-class applications to provide great terminal e
 - [**Jumpserver**](https://github.com/jumpserver/luna): Jumpserver Luna project, Jumpserver is a bastion server project, Luna use xterm.js for web terminal emulation.
 - [**LxdMosaic**](https://github.com/turtle0x1/LxdMosaic): Uses xterm.js to give terminal access to containers through LXD
 - [**CodeInterview.io**](https://codeinterview.io): A coding interview platform in 25+ languages and many web frameworks. Uses xterm.js to provide shell access.
-- [**Bastillion**](https://www.bastillion.io): Bastillion is an open-source web-based SSH console that centrally manages administrative access to systems. 
+- [**Bastillion**](https://www.bastillion.io): Bastillion is an open-source web-based SSH console that centrally manages administrative access to systems.
+- [**PHP App Server**](https://github.com/cubiclesoft/php-app-server/): Create lightweight, installable almost-native applications for desktop OSes.  ExecTerminal (nicely wraps the xterm.js Terminal), TerminalManager, and RunProcessSDK are self-contained, reusable ES5+ compliant Javascript components.
 
 [And much more...](https://github.com/xtermjs/xterm.js/network/dependents)
 
@@ -168,6 +169,16 @@ Xterm.js follows a monthly release cycle roughly.
 
 All current and past releases are available on this repo's [Releases page](https://github.com/sourcelair/xterm.js/releases), you can view the [high-level roadmap on the wiki](https://github.com/xtermjs/xterm.js/wiki/Roadmap) and see what we're working on now by looking through [Milestones](https://github.com/sourcelair/xterm.js/milestones).
 
+### Beta builds
+
+Our CI releases beta builds to npm for every change that goes into master, install the latest beta build with:
+
+```
+npm install -S xterm@beta
+```
+
+These should generally be stable but some bugs may slip in, we recommend using the beta build primarily to test out new features and for verifying bug fixes.
+
 ## Contributing
 
 You can read the [guide on the wiki](https://github.com/xtermjs/xterm.js/wiki/Contributing) to learn how to contribute and setup xterm.js for development.
@@ -176,6 +187,6 @@ You can read the [guide on the wiki](https://github.com/xtermjs/xterm.js/wiki/Co
 
 If you contribute code to this project, you are implicitly allowing your code to be distributed under the MIT license. You are also implicitly verifying that all code is your original work.
 
-Copyright (c) 2017-2018, [The xterm.js authors](https://github.com/xtermjs/xterm.js/graphs/contributors) (MIT License)<br>
+Copyright (c) 2017-2019, [The xterm.js authors](https://github.com/xtermjs/xterm.js/graphs/contributors) (MIT License)<br>
 Copyright (c) 2014-2017, SourceLair, Private Company ([www.sourcelair.com](https://www.sourcelair.com/home)) (MIT License)<br>
 Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)

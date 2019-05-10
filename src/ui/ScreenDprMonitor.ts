@@ -18,10 +18,10 @@ export type ScreenDprListener = (newDevicePixelRatio?: number, oldDevicePixelRat
  * monitor with a different DPI.
  */
 export class ScreenDprMonitor extends Disposable {
-  private _currentDevicePixelRatio: number;
-  private _outerListener: (this: MediaQueryList, ev: MediaQueryListEvent) => any;
-  private _listener: ScreenDprListener;
-  private _resolutionMediaMatchList: MediaQueryList;
+  private _currentDevicePixelRatio: number = window.devicePixelRatio;
+  private _outerListener: ((this: MediaQueryList, ev: MediaQueryListEvent) => any) | undefined;
+  private _listener: ScreenDprListener | undefined;
+  private _resolutionMediaMatchList: MediaQueryList | undefined;
 
   public setListener(listener: ScreenDprListener): void {
     if (this._listener) {
@@ -29,6 +29,9 @@ export class ScreenDprMonitor extends Disposable {
     }
     this._listener = listener;
     this._outerListener = () => {
+      if (!this._listener) {
+        return;
+      }
       this._listener(window.devicePixelRatio, this._currentDevicePixelRatio);
       this._updateDpr();
     };
@@ -41,10 +44,13 @@ export class ScreenDprMonitor extends Disposable {
   }
 
   private _updateDpr(): void {
-    // Clear listeners for old DPR
-    if (this._resolutionMediaMatchList) {
-      this._resolutionMediaMatchList.removeListener(this._outerListener);
+    if (!this._resolutionMediaMatchList || !this._outerListener) {
+      return;
     }
+
+    // Clear listeners for old DPR
+    this._resolutionMediaMatchList.removeListener(this._outerListener);
+
     // Add listeners for new DPR
     this._currentDevicePixelRatio = window.devicePixelRatio;
     this._resolutionMediaMatchList = window.matchMedia(`screen and (resolution: ${window.devicePixelRatio}dppx)`);
@@ -52,11 +58,12 @@ export class ScreenDprMonitor extends Disposable {
   }
 
   public clearListener(): void {
-    if (!this._listener) {
+    if (!this._resolutionMediaMatchList || !this._listener || !this._outerListener) {
       return;
     }
     this._resolutionMediaMatchList.removeListener(this._outerListener);
-    this._listener = null;
-    this._outerListener = null;
+    this._resolutionMediaMatchList = undefined;
+    this._listener = undefined;
+    this._outerListener = undefined;
   }
 }

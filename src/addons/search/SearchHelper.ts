@@ -21,6 +21,7 @@ export class SearchHelper implements ISearchHelper {
   private _linesCache: string[] = null;
   private _linesCacheTimeoutId = 0;
   private _cursorMoveListener: IDisposable | undefined;
+  private _resizeListener: IDisposable | undefined;
 
   constructor(private _terminal: ISearchAddonTerminal) {
     this._destroyLinesCache = this._destroyLinesCache.bind(this);
@@ -185,6 +186,7 @@ export class SearchHelper implements ISearchHelper {
     if (!this._linesCache) {
       this._linesCache = new Array(this._terminal._core.buffer.length);
       this._cursorMoveListener = this._terminal.onCursorMove(() => this._destroyLinesCache());
+      this._resizeListener = this._terminal.onResize(() => this._destroyLinesCache());
     }
 
     window.clearTimeout(this._linesCacheTimeoutId);
@@ -196,6 +198,10 @@ export class SearchHelper implements ISearchHelper {
     if (this._cursorMoveListener) {
       this._cursorMoveListener.dispose();
       this._cursorMoveListener = undefined;
+    }
+    if (this._resizeListener) {
+      this._resizeListener.dispose();
+      this._resizeListener = undefined;
     }
     if (this._linesCacheTimeoutId) {
       window.clearTimeout(this._linesCacheTimeoutId);
