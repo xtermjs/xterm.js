@@ -1,3 +1,8 @@
 {
-  "typescript.preferences.quoteStyle": "single"
+  "typescript.preferences.quoteStyle": "single",
+  "javascript.preferences.quoteStyle": "single",
+  "typescript.format.enable": false,
+  "javascript.format.enable": false,
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true
 }

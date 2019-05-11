@@ -64,5 +64,8 @@
     "prepublishOnly": "npm run build",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "watch": "tsc -b -w ./src/tsconfig.all.json --preserveWatchOutput"
+  },
+  "dependencies": {
+    "prettier-tslint": "^0.4.2"
   }
 }
