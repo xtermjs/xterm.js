@@ -10,7 +10,7 @@ import { BufferLine, CellData, AttributeData } from './BufferLine';
 import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths, getWrappedLineTrimmedLength } from './BufferReflow';
 import { DEFAULT_COLOR } from './renderer/atlas/Types';
 import { EventEmitter2, IEvent } from './common/EventEmitter2';
-import { Disposable } from '../lib/common/Lifecycle';
+import { Disposable } from './common/Lifecycle';
 
 export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
 
