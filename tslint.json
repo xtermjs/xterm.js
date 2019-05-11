@@ -1,6 +1,7 @@
 {
   "rulesDirectory": [
-    "tslint-consistent-codestyle"
+    "tslint-consistent-codestyle",
+    "tslint-config-prettier"
   ],
   "rules": {
     "array-type": [
