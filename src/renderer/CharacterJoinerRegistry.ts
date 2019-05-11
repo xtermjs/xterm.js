@@ -1,7 +1,12 @@
-import { ITerminal, IBufferLine, ICellData, CharData } from '../Types';
+/**
+ * Copyright (c) 2018 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
+import { ITerminal } from '../Types';
+import { IBufferLine, ICellData, CharData } from '../core/Types';
 import { ICharacterJoinerRegistry, ICharacterJoiner } from './Types';
-import { CellData, Content, AttributeData } from '../BufferLine';
-import { WHITESPACE_CELL_CHAR } from '../Buffer';
+import { CellData, Content, AttributeData, WHITESPACE_CELL_CHAR } from '../core/buffer/BufferLine';
 
 export class JoinedCellData extends AttributeData implements ICellData {
   private _width: number;
