@@ -11,7 +11,6 @@ import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, IGlyphIdentifier } from './atlas/T
 import BaseCharAtlas from './atlas/BaseCharAtlas';
 import { acquireCharAtlas } from './atlas/CharAtlasCache';
 import { CellData, AttributeData, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from '../core/buffer/BufferLine';
-import { JoinedCellData } from './CharacterJoinerRegistry';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -264,9 +263,9 @@ export abstract class BaseRenderLayer implements IRenderLayer {
 
     // skip cache right away if we draw in RGB
     // Note: to avoid bad runtime JoinedCellData will be skipped
-    //       in the cache handler (atlasDidDraw == false) itself and
+    //       in the cache handler itself (atlasDidDraw == false) and
     //       fall through to uncached later down below
-    if (cell.isFgRGB() || cell.isBgRGB() || cell instanceof JoinedCellData) {
+    if (cell.isFgRGB() || cell.isBgRGB()) {
       this._drawUncachedChars(terminal, cell, x, y);
       return;
     }
