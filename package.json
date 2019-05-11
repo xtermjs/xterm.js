@@ -33,6 +33,7 @@
     "node-pty": "0.7.6",
     "nodemon": "1.10.2",
     "nyc": "^11.8.0",
+    "puppeteer": "^1.15.0",
     "sorcery": "^0.10.0",
     "source-map-loader": "^0.2.4",
     "ts-loader": "^4.5.0",
@@ -63,8 +64,5 @@
     "prepublishOnly": "npm run build",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "watch": "tsc -b -w ./src/tsconfig.all.json --preserveWatchOutput"
-  },
-  "dependencies": {
-    "puppeteer": "^1.15.0"
   }
 }
