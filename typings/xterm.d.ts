@@ -858,22 +858,16 @@ declare module 'xterm' {
     static applyAddon(addon: any): void;
 
     /**
-     * Loads an addon into this instance of xterm.js.
+     * (EXPERIMENTAL) Loads an addon into this instance of xterm.js.
      * @param addon The addon to load.
      */
     loadAddon(addon: ITerminalAddon): void;
   }
 
-  export interface ITerminalAddon {
+  export interface ITerminalAddon extends IDisposable {
     /**
-     * This is called when the addon is activated within xterm.js.
+     * (EXPERIMENTAL) This is called when the addon is activated within xterm.js.
      */
     activate(terminal: Terminal): void;
-
-    /**
-     * This function includes anything that needs to happen to clean up when
-     * the addon is being disposed.
-     */
-    dispose(): void;
   }
 }
