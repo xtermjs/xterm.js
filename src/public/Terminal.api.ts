@@ -48,7 +48,7 @@ describe('API Integration Tests', () => {
       window.term.write('foo');
       window.term.write('bar');
     `);
-    assert.equal(await page.evaluate(`window.term._core.buffer.translateBufferLineToString(0, true)`), 'foobar');
+    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foobar');
   });
 
   it('writeln', async function(): Promise<any> {
@@ -58,8 +58,8 @@ describe('API Integration Tests', () => {
       window.term.writeln('foo');
       window.term.writeln('bar');
     `);
-    assert.equal(await page.evaluate(`window.term._core.buffer.translateBufferLineToString(0, true)`), 'foo');
-    assert.equal(await page.evaluate(`window.term._core.buffer.translateBufferLineToString(1, true)`), 'bar');
+    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foo');
+    assert.equal(await page.evaluate(`window.term.buffer.getLine(1).translateToString(true)`), 'bar');
   });
 
   it('clear', async function(): Promise<any> {
@@ -72,10 +72,10 @@ describe('API Integration Tests', () => {
       }
     `);
     await page.evaluate(`window.term.clear()`);
-    assert.equal(await page.evaluate(`window.term._core.buffer.lines.length`), '5');
-    assert.equal(await page.evaluate(`window.term._core.buffer.translateBufferLineToString(0, true)`), 'test9');
+    assert.equal(await page.evaluate(`window.term.buffer.length`), '5');
+    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'test9');
     for (let i = 1; i < 5; i++) {
-      assert.equal(await page.evaluate(`window.term._core.buffer.translateBufferLineToString(${i}, true)`), '');
+      assert.equal(await page.evaluate(`window.term.buffer.getLine(${i}).translateToString(true)`), '');
     }
   });
 
