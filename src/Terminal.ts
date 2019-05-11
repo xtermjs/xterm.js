@@ -275,6 +275,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   public dispose(): void {
+    this._addonManager.dispose();
     super.dispose();
     if (this._windowsMode) {
       this._windowsMode.dispose();
