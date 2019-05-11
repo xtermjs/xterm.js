@@ -13,7 +13,6 @@ import * as path from 'path';
 import * as pty from 'node-pty';
 import { assert } from 'chai';
 import { Terminal } from './Terminal';
-import { Terminal as PublicTerminal } from './public/Terminal';
 import { IViewport } from './Types';
 import { CellData, WHITESPACE_CELL_CHAR } from './core/buffer/BufferLine';
 
