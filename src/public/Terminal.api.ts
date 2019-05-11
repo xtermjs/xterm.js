@@ -298,6 +298,51 @@ describe('API Integration Tests', () => {
       await page.evaluate(`window.term.write('\\n\\n\\n\\n')`);
       assert.equal(await page.evaluate(`window.term.buffer.length`), 10);
     });
+
+    describe('getLine', () => {
+      it('isWrapped', async function(): Promise<any> {
+        this.timeout(10000);
+        await openTerminal({ cols: 5 });
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).isWrapped`), false);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(1).isWrapped`), false);
+        await page.evaluate(`window.term.write('abcde')`);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).isWrapped`), false);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(1).isWrapped`), false);
+        await page.evaluate(`window.term.write('f')`);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).isWrapped`), false);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(1).isWrapped`), true);
+      });
+
+      it('translateToString', async function(): Promise<any> {
+        this.timeout(10000);
+        await openTerminal({ cols: 5 });
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString()`), '     ');
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), '');
+        await page.evaluate(`window.term.write('foo')`);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString()`), 'foo  ');
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foo');
+        await page.evaluate(`window.term.write('bar')`);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString()`), 'fooba');
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'fooba');
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(1).translateToString(true)`), 'r');
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(false, 1)`), 'ooba');
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(false, 1, 3)`), 'oo');
+      });
+
+      it('getCell', async function(): Promise<any> {
+        this.timeout(10000);
+        await openTerminal();
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(0).char`), '');
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(0).width`), 1);
+        await page.evaluate(`window.term.write('a文')`);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(0).char`), 'a');
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(0).width`), 1);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(1).char`), '文');
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(1).width`), 2);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(2).char`), '');
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(2).width`), 0);
+      });
+    });
   });
 });
 

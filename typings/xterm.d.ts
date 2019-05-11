@@ -916,7 +916,12 @@ declare module 'xterm' {
     getCell(x: number): IBufferCell;
 
     /**
-     * Gets the line
+     * Gets the line as a string. Note that this is gets only the string for the line, not taking
+     * isWrapped into account.
+     *
+     * @param trimRight Whether to trim any whitespace at the right of the line.
+     * @param startColumn The column to start from (inclusive).
+     * @param endColumn The column to end at (exclusive).
      */
     translateToString(trimRight?: boolean, startColumn?: number, endColumn?: number): string;
   }
