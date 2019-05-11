@@ -12,6 +12,7 @@
     "@types/jsdom": "11.0.1",
     "@types/mocha": "^2.2.33",
     "@types/node": "6.0.108",
+    "@types/puppeteer": "^1.12.4",
     "@types/webpack": "^4.4.11",
     "browserify": "^13.3.0",
     "chai": "3.5.0",
@@ -54,6 +55,7 @@
     "test-debug": "node --inspect-brk node_modules/.bin/gulp test",
     "test-suite": "gulp mocha-suite --test",
     "test-coverage": "nyc -x gulpfile.js -x '**/*test*' npm run mocha",
+    "test-api": "mocha \"**/*.api.js\"",
     "mocha": "gulp test",
     "prebuild": "tsc -b ./src/tsconfig.all.json",
     "build": "gulp build",
@@ -61,5 +63,8 @@
     "prepublishOnly": "npm run build",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "watch": "tsc -b -w ./src/tsconfig.all.json --preserveWatchOutput"
+  },
+  "dependencies": {
+    "puppeteer": "^1.15.0"
   }
 }
