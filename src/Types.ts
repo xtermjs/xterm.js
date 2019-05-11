@@ -227,6 +227,15 @@ export interface IPublicTerminal extends IDisposable, IEventEmitter {
     cols: number;
     buffer: IBuffer;
     markers: IMarker[];
+    onCursorMove: IEvent<void>;
+    onData: IEvent<string>;
+    onKey: IEvent<{ key: string, domEvent: KeyboardEvent }>;
+    onLineFeed: IEvent<void>;
+    onScroll: IEvent<number>;
+    onSelectionChange: IEvent<void>;
+    onRender: IEvent<{ start: number, end: number }>;
+    onResize: IEvent<{ cols: number, rows: number }>;
+    onTitleChange: IEvent<string>;
     blur(): void;
     focus(): void;
     resize(columns: number, rows: number): void;
