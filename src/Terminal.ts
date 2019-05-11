@@ -1369,7 +1369,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   /**
    * Writes raw utf8 bytes to the terminal.
-   * @param data The text to write to the terminal.
+   * @param data UintArray with UTF8 bytes to write to the terminal.
    */
   public writeUtf8(data: Uint8Array): void {
     // Ensure the terminal isn't disposed
