@@ -6,9 +6,9 @@
 import jsdom = require('jsdom');
 import { assert } from 'chai';
 import { DomRendererRowFactory } from './DomRendererRowFactory';
-import { DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, DEFAULT_ATTR_DATA } from '../../Buffer';
-import { BufferLine, CellData, FgFlags, BgFlags, Attributes } from '../../BufferLine';
-import { IBufferLine, ITerminalOptions } from '../../Types';
+import { BufferLine, CellData, FgFlags, BgFlags, Attributes, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, DEFAULT_ATTR, DEFAULT_ATTR_DATA } from '../../core/buffer/BufferLine';
+import { ITerminalOptions } from '../../Types';
+import { IBufferLine } from '../../core/Types';
 
 describe('DomRendererRowFactory', () => {
   let dom: jsdom.JSDOM;

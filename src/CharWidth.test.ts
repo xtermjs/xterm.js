@@ -7,8 +7,7 @@ import { TestTerminal } from './TestUtils.test';
 import { assert } from 'chai';
 import { getStringCellWidth, wcwidth } from './CharWidth';
 import { IBuffer } from './Types';
-import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from './Buffer';
-import { CellData } from './BufferLine';
+import { CellData, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from './core/buffer/BufferLine';
 
 
 describe('getStringCellWidth', function(): void {
