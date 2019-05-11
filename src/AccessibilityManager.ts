@@ -61,7 +61,7 @@ export class AccessibilityManager extends Disposable {
     this._refreshRowsDimensions();
     this._accessibilityTreeRoot.appendChild(this._rowContainer);
 
-    this._renderRowsDebouncer = new RenderDebouncer(this._terminal, this._renderRows.bind(this));
+    this._renderRowsDebouncer = new RenderDebouncer(this._renderRows.bind(this));
     this._refreshRows();
 
     this._liveRegion = document.createElement('div');
@@ -72,20 +72,20 @@ export class AccessibilityManager extends Disposable {
     this._terminal.element.insertAdjacentElement('afterbegin', this._accessibilityTreeRoot);
 
     this.register(this._renderRowsDebouncer);
-    this.register(this._terminal.addDisposableListener('resize', data => this._onResize(data.rows)));
-    this.register(this._terminal.addDisposableListener('refresh', data => this._refreshRows(data.start, data.end)));
-    this.register(this._terminal.addDisposableListener('scroll', data => this._refreshRows()));
+    this.register(this._terminal.onResize(e => this._onResize(e.rows)));
+    this.register(this._terminal.onRender(e => this._refreshRows(e.start, e.end)));
+    this.register(this._terminal.onScroll(() => this._refreshRows()));
     // Line feed is an issue as the prompt won't be read out after a command is run
     this.register(this._terminal.addDisposableListener('a11y.char', (char) => this._onChar(char)));
-    this.register(this._terminal.addDisposableListener('linefeed', () => this._onChar('\n')));
+    this.register(this._terminal.onLineFeed(() => this._onChar('\n')));
     this.register(this._terminal.addDisposableListener('a11y.tab', spaceCount => this._onTab(spaceCount)));
-    this.register(this._terminal.addDisposableListener('key', keyChar => this._onKey(keyChar)));
+    this.register(this._terminal.onKey(e => this._onKey(e.key)));
     this.register(this._terminal.addDisposableListener('blur', () => this._clearLiveRegion()));
     // TODO: Maybe renderer should fire an event on terminal when the characters change and that
     //       should be listened to instead? That would mean that the order of events are always
     //       guarenteed
     this.register(this._terminal.addDisposableListener('dprchange', () => this._refreshRowsDimensions()));
-    this.register(this._terminal.renderer.addDisposableListener('resize', () => this._refreshRowsDimensions()));
+    this.register(this._terminal.renderer.onCanvasResize(() => this._refreshRowsDimensions()));
     // This shouldn't be needed on modern browsers but is present in case the
     // media query that drives the dprchange event isn't supported
     this.register(addDisposableDomListener(window, 'resize', () => this._refreshRowsDimensions()));
@@ -239,7 +239,7 @@ export class AccessibilityManager extends Disposable {
   }
 
   private _refreshRows(start?: number, end?: number): void {
-    this._renderRowsDebouncer.refresh(start, end);
+    this._renderRowsDebouncer.refresh(start, end, this._terminal.rows);
   }
 
   private _renderRows(start: number, end: number): void {

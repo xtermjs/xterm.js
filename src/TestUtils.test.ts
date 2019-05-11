@@ -3,14 +3,14 @@
  * @license MIT
  */
 
-import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../renderer/Types';
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferLine, IBufferStringIterator, ICellData, IAttributeData } from '../Types';
-import { ICircularList, XtermListener } from '../common/Types';
-import { Buffer } from '../Buffer';
-import * as Browser from '../common/Platform';
-import { ITheme, IDisposable, IMarker } from 'xterm';
-import { Terminal } from '../Terminal';
-import { AttributeData } from '../BufferLine';
+import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from './renderer/Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferLine, IBufferStringIterator, ICellData, IAttributeData } from './Types';
+import { ICircularList, XtermListener } from './common/Types';
+import { Buffer } from './Buffer';
+import * as Browser from './common/Platform';
+import { ITheme, IDisposable, IMarker, IEvent } from 'xterm';
+import { Terminal } from './Terminal';
+import { AttributeData } from './BufferLine';
 
 export class TestTerminal extends Terminal {
   writeSync(data: string): void {
@@ -20,6 +20,15 @@ export class TestTerminal extends Terminal {
 }
 
 export class MockTerminal implements ITerminal {
+  onCursorMove: IEvent<void>;
+  onLineFeed: IEvent<void>;
+  onSelectionChange: IEvent<void>;
+  onData: IEvent<string>;
+  onTitleChange: IEvent<string>;
+  onScroll: IEvent<number>;
+  onKey: IEvent<{ key: string; domEvent: KeyboardEvent; }>;
+  onRender: IEvent<{ start: number; end: number; }>;
+  onResize: IEvent<{ cols: number; rows: number; }>;
   markers: IMarker[];
   addMarker(cursorYOffset: number): IMarker {
     throw new Error('Method not implemented.');
@@ -166,6 +175,7 @@ export class MockTerminal implements ITerminal {
 }
 
 export class MockCharMeasure implements ICharMeasure {
+  onCharSizeChanged: IEvent<void>;
   width: number;
   height: number;
   measure(options: ITerminalOptions): void {
@@ -344,6 +354,8 @@ export class MockBuffer implements IBuffer {
 }
 
 export class MockRenderer implements IRenderer {
+  onCanvasResize: IEvent<{ width: number; height: number; }>;
+  onRender: IEvent<{ start: number; end: number; }>;
   dispose(): void {
     throw new Error('Method not implemented.');
   }

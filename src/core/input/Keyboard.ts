@@ -352,6 +352,10 @@ export function evaluateKeyboardEvent(
       } else if (ev.key && !ev.ctrlKey && !ev.altKey && !ev.metaKey && ev.keyCode >= 48 && ev.key.length === 1) {
         // Include only keys that that result in a _single_ character; don't include num lock, volume up, etc.
         result.key = ev.key;
+      } else if (ev.key && ev.ctrlKey) {
+        if (ev.key === '_') { // ^_
+          result.key = C0.US;
+        }
       }
       break;
   }

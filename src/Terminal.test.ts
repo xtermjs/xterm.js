@@ -5,7 +5,7 @@
 
 import { assert, expect } from 'chai';
 import { Terminal } from './Terminal';
-import { MockViewport, MockCompositionHelper, MockRenderer } from './ui/TestUtils.test';
+import { MockViewport, MockCompositionHelper, MockRenderer } from './TestUtils.test';
 import { DEFAULT_ATTR_DATA } from './Buffer';
 import { CellData } from './BufferLine';
 
@@ -17,7 +17,7 @@ class TestTerminal extends Terminal {
   public keyPress(ev: any): boolean { return this._keyPress(ev); }
 }
 
-describe('term.js addons', () => {
+describe('xterm.js', () => {
   let term: TestTerminal;
   const termOptions = {
     cols: INIT_COLS,
@@ -68,6 +68,81 @@ describe('term.js addons', () => {
     });
   });
 
+  describe('events', () => {
+    it('should fire the onData evnet', (done) => {
+      term.onData(() => done());
+      term.handler('fake');
+    });
+    it('should fire the onCursorMove event', (done) => {
+      term.on('cursormove', () => done());
+      term.write('foo');
+    });
+    it('should fire the onLineFeed event', (done) => {
+      term.on('linefeed', () => done());
+      term.write('\n');
+    });
+    it('should fire a scroll event when scrollback is created', (done) => {
+      term.on('scroll', () => done());
+      term.write('\n'.repeat(INIT_ROWS));
+    });
+    it('should fire a scroll event when scrollback is cleared', (done) => {
+      term.write('\n'.repeat(INIT_ROWS));
+      term.on('scroll', () => done());
+      term.clear();
+    });
+    it('should fire a key event after a keypress DOM event', (done) => {
+      term.onKey(e => {
+        assert.equal(typeof e.key, 'string');
+        expect(e.domEvent).to.be.an.instanceof(Object);
+        done();
+      });
+      const evKeyPress = <KeyboardEvent>{
+        preventDefault: () => { },
+        stopPropagation: () => { },
+        type: 'keypress',
+        keyCode: 13
+      };
+      term.keyPress(evKeyPress);
+    });
+    it('should fire a key event after a keydown DOM event', (done) => {
+      term.onKey(e => {
+        assert.equal(typeof e.key, 'string');
+        expect(e.domEvent).to.be.an.instanceof(Object);
+        done();
+      });
+      const evKeyDown = <KeyboardEvent>{
+        preventDefault: () => { },
+        stopPropagation: () => { },
+        type: 'keydown',
+        keyCode: 13
+      };
+      term.keyDown(evKeyDown);
+    });
+    it('should fire the onResize event', (done) => {
+      term.onResize(e => {
+        expect(e).to.have.keys(['cols', 'rows']);
+        assert.equal(typeof e.cols, 'number');
+        assert.equal(typeof e.rows, 'number');
+        done();
+      });
+      term.resize(1, 1);
+    });
+    it('should fire the onScroll event', (done) => {
+      term.onScroll(e => {
+        assert.equal(typeof e, 'number');
+        done();
+      });
+      term.scroll();
+    });
+    it('should fire the onTitleChange event', (done) => {
+      term.onTitleChange(e => {
+        assert.equal(e, 'title');
+        done();
+      });
+      term.handleTitle('title');
+    });
+  });
+
   describe('on', () => {
     beforeEach(() => {
       term.on('key', () => { });
@@ -82,6 +157,40 @@ describe('term.js addons', () => {
         });
 
         term.handler('fake');
+      });
+    });
+
+    describe('cursormove', () => {
+      it('should emit a cursormove event', (done) => {
+        term.on('cursormove', () => {
+          done();
+        });
+        term.write('foo');
+      });
+    });
+
+    describe('linefeed', () => {
+      it('should emit a linefeed event', (done) => {
+        term.on('linefeed', () => {
+          done();
+        });
+        term.write('\n');
+      });
+    });
+
+    describe('scroll', () => {
+      it('should emit a scroll event when scrollback is created', (done) => {
+        term.on('scroll', () => {
+          done();
+        });
+        term.write('\n'.repeat(INIT_ROWS));
+      });
+      it('should emit a scroll event when scrollback is cleared', (done) => {
+        term.write('\n'.repeat(INIT_ROWS));
+        term.on('scroll', () => {
+          done();
+        });
+        term.clear();
       });
     });
 

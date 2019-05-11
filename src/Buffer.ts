@@ -3,14 +3,14 @@
  * @license MIT
  */
 
-import { CircularList, IInsertEvent, IDeleteEvent } from './common/CircularList';
+import { CircularList, IInsertEvent } from './common/CircularList';
 import { ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult, ICellData, IAttributeData } from './Types';
-import { EventEmitter } from './common/EventEmitter';
 import { IMarker } from 'xterm';
 import { BufferLine, CellData, AttributeData } from './BufferLine';
 import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths, getWrappedLineTrimmedLength } from './BufferReflow';
 import { DEFAULT_COLOR } from './renderer/atlas/Types';
-
+import { EventEmitter2, IEvent } from './common/EventEmitter2';
+import { Disposable } from '../lib/common/Lifecycle';
 
 export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
 
@@ -455,7 +455,7 @@ export class Buffer implements IBuffer {
           insertEvents.push({
             index: originalLineIndex + 1,
             amount: nextToInsert.newLines.length
-          } as IInsertEvent);
+          });
 
           countInsertedSoFar += nextToInsert.newLines.length;
           nextToInsert = toInsert[++nextToInsertIndex];
@@ -468,12 +468,12 @@ export class Buffer implements IBuffer {
       let insertCountEmitted = 0;
       for (let i = insertEvents.length - 1; i >= 0; i--) {
         insertEvents[i].index += insertCountEmitted;
-        this.lines.emit('insert', insertEvents[i]);
+        this.lines.onInsertEmitter.fire(insertEvents[i]);
         insertCountEmitted += insertEvents[i].amount;
       }
       const amountToTrim = Math.max(0, originalLinesLength + countToInsert - this.lines.maxLength);
       if (amountToTrim > 0) {
-        this.lines.emitMayRemoveListeners('trim', amountToTrim);
+        this.lines.onTrimEmitter.fire(amountToTrim);
       }
     }
   }
@@ -593,19 +593,19 @@ export class Buffer implements IBuffer {
   public addMarker(y: number): Marker {
     const marker = new Marker(y);
     this.markers.push(marker);
-    marker.register(this.lines.addDisposableListener('trim', amount => {
+    marker.register(this.lines.onTrim(amount => {
       marker.line -= amount;
       // The marker should be disposed when the line is trimmed from the buffer
       if (marker.line < 0) {
         marker.dispose();
       }
     }));
-    marker.register(this.lines.addDisposableListener('insert', (event: IInsertEvent) => {
+    marker.register(this.lines.onInsert(event => {
       if (marker.line >= event.index) {
         marker.line += event.amount;
       }
     }));
-    marker.register(this.lines.addDisposableListener('delete', (event: IDeleteEvent) => {
+    marker.register(this.lines.onDelete(event => {
       // Delete the marker if it's within the range
       if (marker.line >= event.index && marker.line < event.index + event.amount) {
         marker.dispose();
@@ -616,7 +616,7 @@ export class Buffer implements IBuffer {
         marker.line -= event.amount;
       }
     }));
-    marker.register(marker.addDisposableListener('dispose', () => this._removeMarker(marker)));
+    marker.register(marker.onDispose(() => this._removeMarker(marker)));
     return marker;
   }
 
@@ -629,13 +629,16 @@ export class Buffer implements IBuffer {
   }
 }
 
-export class Marker extends EventEmitter implements IMarker {
+export class Marker extends Disposable implements IMarker {
   private static _nextId = 1;
 
   private _id: number = Marker._nextId++;
   public isDisposed: boolean = false;
 
   public get id(): number { return this._id; }
+
+  private _onDispose = new EventEmitter2<void>();
+  public get onDispose(): IEvent<void> { return this._onDispose.event; }
 
   constructor(
     public line: number
@@ -649,8 +652,7 @@ export class Marker extends EventEmitter implements IMarker {
     }
     this.isDisposed = true;
     // Emit before super.dispose such that dispose listeners get a change to react
-    this.emit('dispose');
-    super.dispose();
+    this._onDispose.fire();
   }
 }
 

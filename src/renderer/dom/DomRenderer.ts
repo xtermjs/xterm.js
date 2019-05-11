@@ -4,13 +4,14 @@
  */
 
 import { IRenderer, IRenderDimensions, IColorSet } from '../Types';
-import { ILinkHoverEvent, ITerminal, CharacterJoinerHandler, LinkHoverEventTypes } from '../../Types';
+import { ILinkifierEvent, ITerminal, CharacterJoinerHandler } from '../../Types';
 import { ITheme } from 'xterm';
-import { EventEmitter } from '../../common/EventEmitter';
 import { ColorManager } from '../ColorManager';
 import { RenderDebouncer } from '../../ui/RenderDebouncer';
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from './DomRendererRowFactory';
 import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
+import { EventEmitter2, IEvent } from '../../common/EventEmitter2';
+import { Disposable } from '../../common/Lifecycle';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
@@ -29,7 +30,7 @@ let nextTerminalId = 1;
  * particularly fast or feature complete, more just stable and usable for when
  * canvas is not an option.
  */
-export class DomRenderer extends EventEmitter implements IRenderer {
+export class DomRenderer extends Disposable implements IRenderer {
   private _renderDebouncer: RenderDebouncer;
   private _rowFactory: DomRendererRowFactory;
   private _terminalClass: number = nextTerminalId++;
@@ -42,6 +43,11 @@ export class DomRenderer extends EventEmitter implements IRenderer {
 
   public dimensions: IRenderDimensions;
   public colorManager: ColorManager;
+
+  private _onCanvasResize = new EventEmitter2<{ width: number, height: number }>();
+  public get onCanvasResize(): IEvent<{ width: number, height: number }> { return this._onCanvasResize.event; }
+  private _onRender = new EventEmitter2<{ start: number, end: number }>();
+  public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
 
   constructor(private _terminal: ITerminal, theme: ITheme | undefined) {
     super();
@@ -74,15 +80,15 @@ export class DomRenderer extends EventEmitter implements IRenderer {
     };
     this._updateDimensions();
 
-    this._renderDebouncer = new RenderDebouncer(this._terminal, this._renderRows.bind(this));
+    this._renderDebouncer = new RenderDebouncer(this._renderRows.bind(this));
     this._rowFactory = new DomRendererRowFactory(_terminal.options, document);
 
     this._terminal.element.classList.add(TERMINAL_CLASS_PREFIX + this._terminalClass);
     this._terminal.screenElement.appendChild(this._rowContainer);
     this._terminal.screenElement.appendChild(this._selectionContainer);
 
-    this._terminal.linkifier.on(LinkHoverEventTypes.HOVER, (e: ILinkHoverEvent) => this._onLinkHover(e));
-    this._terminal.linkifier.on(LinkHoverEventTypes.LEAVE, (e: ILinkHoverEvent) => this._onLinkLeave(e));
+    this._terminal.linkifier.onLinkHover(e => this._onLinkHover(e));
+    this._terminal.linkifier.onLinkLeave(e => this._onLinkLeave(e));
   }
 
   public dispose(): void {
@@ -168,9 +174,9 @@ export class DomRenderer extends EventEmitter implements IRenderer {
     // Blink animation
     styles +=
         `@keyframes blink {` +
-        ` 0 % { opacity: 1.0; }` +
+        ` 0% { opacity: 1.0; }` +
         ` 50% { opacity: 0.0; }` +
-        ` 100 % { opacity: 1.0; }` +
+        ` 100% { opacity: 1.0; }` +
         `}`;
     // Cursor
     styles +=
@@ -238,6 +244,10 @@ export class DomRenderer extends EventEmitter implements IRenderer {
   public onResize(cols: number, rows: number): void {
     this._refreshRowElements(cols, rows);
     this._updateDimensions();
+    this._onCanvasResize.fire({
+      width: this.dimensions.canvasWidth,
+      height: this.dimensions.canvasHeight
+    });
   }
 
   public onCharSizeChanged(): void {
@@ -330,7 +340,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
   }
 
   public refreshRows(start: number, end: number): void {
-    this._renderDebouncer.refresh(start, end);
+    this._renderDebouncer.refresh(start, end, this._terminal.rows);
   }
 
   private _renderRows(start: number, end: number): void {
@@ -350,7 +360,7 @@ export class DomRenderer extends EventEmitter implements IRenderer {
       rowElement.appendChild(this._rowFactory.createRow(lineData, row === cursorAbsoluteY, cursorStyle, cursorX, cursorBlink, this.dimensions.actualCellWidth, terminal.cols));
     }
 
-    this._terminal.emit('refresh', {start, end});
+    this._onRender.fire({ start, end });
   }
 
   private get _terminalSelector(): string {
@@ -360,11 +370,11 @@ export class DomRenderer extends EventEmitter implements IRenderer {
   public registerCharacterJoiner(handler: CharacterJoinerHandler): number { return -1; }
   public deregisterCharacterJoiner(joinerId: number): boolean { return false; }
 
-  private _onLinkHover(e: ILinkHoverEvent): void {
+  private _onLinkHover(e: ILinkifierEvent): void {
     this._setCellUnderline(e.x1, e.x2, e.y1, e.y2, e.cols, true);
   }
 
-  private _onLinkLeave(e: ILinkHoverEvent): void {
+  private _onLinkLeave(e: ILinkifierEvent): void {
     this._setCellUnderline(e.x1, e.x2, e.y1, e.y2, e.cols, false);
   }
 

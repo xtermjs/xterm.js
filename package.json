@@ -1,7 +1,7 @@
 {
   "name": "xterm",
   "description": "Full xterm terminal, in your browser",
-  "version": "3.12.0",
+  "version": "3.13.0",
   "main": "lib/public/Terminal.js",
   "types": "typings/xterm.d.ts",
   "repository": "https://github.com/xtermjs/xterm.js",
@@ -57,7 +57,8 @@
     "mocha": "gulp test",
     "prebuild": "tsc -b ./src/tsconfig.all.json",
     "build": "gulp build",
-    "prepublish": "npm run build",
+    "prepare": "npm run prebuild",
+    "prepublishOnly": "npm run build",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "watch": "tsc -b -w ./src/tsconfig.all.json --preserveWatchOutput"
   }

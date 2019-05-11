@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IDisposable } from 'xterm';
+import { IDisposable } from '../common/Types';
 
 /**
  * Adds a disposable listener to a node in the DOM, returning the disposable.
@@ -24,8 +24,6 @@ export function addDisposableDomListener(
         return;
       }
       node.removeEventListener(type, handler, useCapture);
-      node = null;
-      handler = null;
     }
   };
 }

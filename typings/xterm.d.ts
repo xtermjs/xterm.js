@@ -307,6 +307,14 @@ declare module 'xterm' {
     dispose(): void;
   }
 
+  /**
+   * An event that can be listened to.
+   * @returns an `IDisposable` to stop listening.
+   */
+  export interface IEvent<T> {
+    (listener: (e: T) => any): IDisposable;
+  }
+
   export interface IMarker extends IDisposable {
     readonly id: number;
     readonly isDisposed: boolean;
@@ -358,7 +366,7 @@ declare module 'xterm' {
      * (EXPERIMENTAL) Get all markers registered against the buffer. If the alt
      * buffer is active this will always return [].
      */
-    readonly markers: IMarker[];
+    readonly markers: ReadonlyArray<IMarker>;
 
     /**
      * Natural language strings that can be localized.
@@ -371,6 +379,70 @@ declare module 'xterm' {
      * @param options An object containing a set of options.
      */
     constructor(options?: ITerminalOptions);
+
+    /**
+     * Adds an event listener for the cursor moves.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onCursorMove: IEvent<void>;
+
+    /**
+     * Adds an event listener for when a data event fires. This happens for
+     * example when the user types or pastes into the terminal. The event value
+     * is whatever `string` results, in a typical setup, this should be passed
+     * on to the backing pty.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onData: IEvent<string>;
+
+    /**
+     * Adds an event listener for a key is pressed. The event value contains the
+     * string that will be sent in the data event as well as the DOM event that
+     * triggered it.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onKey: IEvent<{ key: string, domEvent: KeyboardEvent }>;
+
+    /**
+     * Adds an event listener for when a line feed is added.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onLineFeed: IEvent<void>;
+
+    /**
+     * Adds an event listener for when a scroll occurs. The  event value is the
+     * new position of the viewport.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onScroll: IEvent<number>;
+
+    /**
+     * Adds an event listener for when a selection change occurs.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onSelectionChange: IEvent<void>;
+
+    /**
+     * Adds an event listener for when rows are rendered. The event value
+     * contains the start row and end rows of the rendered area (ranges from `0`
+     * to `Terminal.rows - 1`).
+     * @returns an `IDisposable` to stop listening.
+     */
+    onRender: IEvent<{ start: number, end: number }>;
+
+    /**
+     * Adds an event listener for when the terminal is resized. The event value
+     * contains the new size.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onResize: IEvent<{ cols: number, rows: number }>;
+
+    /**
+     * Adds an event listener for when an OSC 0 or OSC 2 title change occurs.
+     * The event value is the new title.
+     * @returns an `IDisposable` to stop listening.
+     */
+    onTitleChange: IEvent<string>;
 
     /**
      * Unfocus the terminal.
@@ -386,54 +458,63 @@ declare module 'xterm' {
      * Registers an event listener.
      * @param type The type of the event.
      * @param listener The listener.
+     * @deprecated use `Terminal.onEvent(listener)` instead.
      */
     on(type: 'blur' | 'focus' | 'linefeed' | 'selection', listener: () => void): void;
     /**
      * Registers an event listener.
      * @param type The type of the event.
      * @param listener The listener.
+     * @deprecated use `Terminal.onEvent(listener)` instead.
      */
     on(type: 'data', listener: (...args: any[]) => void): void;
     /**
      * Registers an event listener.
      * @param type The type of the event.
      * @param listener The listener.
+     * @deprecated use `Terminal.onEvent(listener)` instead.
      */
     on(type: 'key', listener: (key: string, event: KeyboardEvent) => void): void;
     /**
      * Registers an event listener.
      * @param type The type of the event.
      * @param listener The listener.
+     * @deprecated use `Terminal.onEvent(listener)` instead.
      */
     on(type: 'keypress' | 'keydown', listener: (event: KeyboardEvent) => void): void;
     /**
      * Registers an event listener.
      * @param type The type of the event.
      * @param listener The listener.
+     * @deprecated use `Terminal.onEvent(listener)` instead.
      */
     on(type: 'refresh', listener: (data: {start: number, end: number}) => void): void;
     /**
      * Registers an event listener.
      * @param type The type of the event.
      * @param listener The listener.
+     * @deprecated use `Terminal.onEvent(listener)` instead.
      */
     on(type: 'resize', listener: (data: {cols: number, rows: number}) => void): void;
     /**
      * Registers an event listener.
      * @param type The type of the event.
      * @param listener The listener.
+     * @deprecated use `Terminal.onEvent(listener)` instead.
      */
     on(type: 'scroll', listener: (ydisp: number) => void): void;
     /**
      * Registers an event listener.
      * @param type The type of the event.
      * @param listener The listener.
+     * @deprecated use `Terminal.onEvent(listener)` instead.
      */
     on(type: 'title', listener: (title: string) => void): void;
     /**
      * Registers an event listener.
      * @param type The type of the event.
      * @param listener The listener.
+     * @deprecated use `Terminal.onEvent(listener)` instead.
      */
     on(type: string, listener: (...args: any[]) => void): void;
 
@@ -441,6 +522,7 @@ declare module 'xterm' {
      * Deregisters an event listener.
      * @param type The type of the event.
      * @param listener The listener.
+     * @deprecated use `Terminal.onEvent(listener).dispose()` instead.
      */
     off(type: 'blur' | 'focus' | 'linefeed' | 'selection' | 'data' | 'key' | 'keypress' | 'keydown' | 'refresh' | 'resize' | 'scroll' | 'title' | string, listener: (...args: any[]) => void): void;
 
@@ -458,6 +540,7 @@ declare module 'xterm' {
      * be used to conveniently remove the event listener.
      * @param type The type of event.
      * @param handler The event handler.
+     * @deprecated use `Terminal.onEvent(listener)` instead.
      */
     addDisposableListener(type: string, handler: (...args: any[]) => void): IDisposable;
 
@@ -518,6 +601,7 @@ declare module 'xterm' {
      * @return An IDisposable you can call to remove this handler.
      */
     addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
+
     /**
      * (EXPERIMENTAL) Registers a link matcher, allowing custom link patterns to
      * be matched and handled.
