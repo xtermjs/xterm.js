@@ -21,6 +21,7 @@ import { Terminal as TerminalType, ITerminalOptions } from 'xterm';
 
 export interface IWindowWithTerminal extends Window {
   term: TerminalType;
+  Terminal?: typeof TerminalType;
 }
 declare let window: IWindowWithTerminal;
 
@@ -57,8 +58,6 @@ function getSearchOptions(): ISearchOptions {
   };
 }
 
-createTerminal();
-
 const disposeRecreateButtonHandler = () => {
   // If the terminal exists dispose of it, otherwise recreate it
   if (term) {
@@ -74,7 +73,12 @@ const disposeRecreateButtonHandler = () => {
   }
 };
 
-document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
+if (document.location.pathname === '/test') {
+  window.Terminal = Terminal;
+} else {
+  createTerminal();
+  document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
+}
 
 function createTerminal(): void {
   // Clean terminal

@@ -16,6 +16,10 @@ function startServer() {
     res.sendFile(__dirname + '/index.html');
   });
 
+  app.get('/test', function(req, res){
+    res.sendFile(__dirname + '/test.html');
+  });
+
   app.get('/style.css', function(req, res){
     res.sendFile(__dirname + '/style.css');
   });

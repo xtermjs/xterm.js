@@ -21,7 +21,12 @@ jobs:
     displayName: 'Install dependencies and build'
   - script: |
       yarn mocha
-    displayName: 'Test'
+    displayName: 'Unit tests'
+  - script: |
+      yarn start &
+      sleep 5
+      yarn test-api --headless
+    displayName: 'Integration tests'
   - script: |
       yarn lint
     displayName: 'Lint'
@@ -39,7 +44,7 @@ jobs:
     displayName: 'Install dependencies and build'
   - script: |
       yarn mocha
-    displayName: 'Test'
+    displayName: 'Unit tests'
   - script: |
       yarn lint
     displayName: 'Lint'
@@ -62,7 +67,7 @@ jobs:
     displayName: 'Install dependencies and build'
   - script: |
       yarn mocha
-    displayName: 'Test'
+    displayName: 'Unit tests'
   - script: |
       yarn lint
     displayName: 'Lint'

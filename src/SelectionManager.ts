@@ -246,6 +246,7 @@ export class SelectionManager implements ISelectionManager {
     this._model.clearSelection();
     this._removeMouseDownListeners();
     this.refresh();
+    this._onSelectionChange.fire();
   }
 
   /**
