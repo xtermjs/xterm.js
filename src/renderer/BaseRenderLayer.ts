@@ -4,12 +4,14 @@
  */
 
 import { IRenderLayer, IColorSet, IRenderDimensions } from './Types';
-import { ITerminal, ICellData } from '../Types';
-import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, IGlyphIdentifier, DEFAULT_COLOR } from './atlas/Types';
+import { ITerminal } from '../Types';
+import { ICellData } from '../core/Types';
+import { DEFAULT_COLOR } from '../common/Types';
+import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, IGlyphIdentifier } from './atlas/Types';
 import BaseCharAtlas from './atlas/BaseCharAtlas';
 import { acquireCharAtlas } from './atlas/CharAtlasCache';
-import { CellData, AttributeData } from '../BufferLine';
-import { WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from '../Buffer';
+import { CellData, AttributeData, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from '../core/buffer/BufferLine';
+import { JoinedCellData } from './CharacterJoinerRegistry';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -261,7 +263,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   protected drawChars(terminal: ITerminal, cell: ICellData, x: number, y: number): void {
 
     // skip cache right away if we draw in RGB
-    if (cell.isFgRGB() || cell.isBgRGB()) {
+    // Note: to avoid bad runtime JoinedCellData will be skipped
+    //       in the cache handler (atlasDidDraw == false) itself and
+    //       fall through to uncached later down below
+    if (cell.isFgRGB() || cell.isBgRGB() || cell instanceof JoinedCellData) {
       this._drawUncachedChars(terminal, cell, x, y);
       return;
     }
@@ -322,14 +327,18 @@ export abstract class BaseRenderLayer implements IRenderLayer {
       } else {
         this._ctx.fillStyle = this._colors.ansi[cell.getBgColor()].css;
       }
-    } else if (cell.isFgRGB()) {
-      this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
-    } else if (cell.isFgPalette()) {
-      let fg = cell.getFgColor();
-      if (terminal.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
-        fg += 8;
+    } else {
+      if (cell.isFgDefault()) {
+        this._ctx.fillStyle = this._colors.foreground.css;
+      } else if (cell.isFgRGB()) {
+        this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
+      } else {
+        let fg = cell.getFgColor();
+        if (terminal.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
+          fg += 8;
+        }
+        this._ctx.fillStyle = this._colors.ansi[fg].css;
       }
-      this._ctx.fillStyle = this._colors.ansi[fg].css;
     }
 
     this._clipRow(terminal, y);

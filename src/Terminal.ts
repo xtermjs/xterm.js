@@ -21,27 +21,26 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharacterJoinerHandler, IBufferLine, IAttributeData } from './Types';
-import { IMouseZoneManager } from './ui/Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharacterJoinerHandler, IMouseZoneManager } from './Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
-import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR_DATA } from './Buffer';
+import { Buffer, MAX_BUFFER_SIZE } from './Buffer';
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './common/EventEmitter';
 import { Viewport } from './Viewport';
-import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './ui/Clipboard';
+import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './Clipboard';
 import { C0 } from './common/data/EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Renderer } from './renderer/Renderer';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
-import { CharMeasure } from './ui/CharMeasure';
+import { CharMeasure } from './CharMeasure';
 import * as Browser from './common/Platform';
 import { addDisposableDomListener } from './ui/Lifecycle';
 import * as Strings from './Strings';
-import { MouseHelper } from './ui/MouseHelper';
+import { MouseHelper } from './MouseHelper';
 import { DEFAULT_BELL_SOUND, SoundManager } from './SoundManager';
-import { MouseZoneManager } from './ui/MouseZoneManager';
+import { MouseZoneManager } from './MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ScreenDprMonitor } from './ui/ScreenDprMonitor';
 import { ITheme, IMarker, IDisposable } from 'xterm';
@@ -49,10 +48,10 @@ import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent } from './common/Types';
 import { evaluateKeyboardEvent } from './core/input/Keyboard';
-import { KeyboardResultType, ICharset } from './core/Types';
+import { KeyboardResultType, ICharset, IBufferLine, IAttributeData } from './core/Types';
 import { clone } from './common/Clone';
 import { EventEmitter2, IEvent } from './common/EventEmitter2';
-import { Attributes } from './BufferLine';
+import { Attributes, DEFAULT_ATTR_DATA } from './core/buffer/BufferLine';
 import { applyWindowsMode } from './WindowsMode';
 
 // Let it work inside Node.js for automated testing purposes.

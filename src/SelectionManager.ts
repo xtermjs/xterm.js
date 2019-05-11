@@ -3,13 +3,14 @@
  * @license MIT
  */
 
-import { ITerminal, ISelectionManager, IBuffer, IBufferLine, ISelectionRedrawRequestEvent } from './Types';
-import { MouseHelper } from './ui/MouseHelper';
+import { ITerminal, ISelectionManager, IBuffer, ISelectionRedrawRequestEvent } from './Types';
+import { IBufferLine } from './core/Types';
+import { MouseHelper } from './MouseHelper';
 import * as Browser from './common/Platform';
-import { CharMeasure } from './ui/CharMeasure';
+import { CharMeasure } from './CharMeasure';
 import { SelectionModel } from './SelectionModel';
 import { AltClickHandler } from './handlers/AltClickHandler';
-import { CellData } from './BufferLine';
+import { CellData } from './core/buffer/BufferLine';
 import { IDisposable } from 'xterm';
 import { EventEmitter2, IEvent } from './common/EventEmitter2';
 

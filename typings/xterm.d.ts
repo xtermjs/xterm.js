@@ -359,7 +359,7 @@ declare module 'xterm' {
      * (EXPERIMENTAL) Get all markers registered against the buffer. If the alt
      * buffer is active this will always return [].
      */
-    readonly markers: IMarker[];
+    readonly markers: ReadonlyArray<IMarker>;
 
     /**
      * Natural language strings that can be localized.
@@ -594,6 +594,7 @@ declare module 'xterm' {
      * @return An IDisposable you can call to remove this handler.
      */
     addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
+
     /**
      * (EXPERIMENTAL) Registers a link matcher, allowing custom link patterns to
      * be matched and handled.
@@ -752,7 +753,7 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell'): boolean;
+    getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell' | 'windowsMode'): boolean;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
@@ -803,7 +804,7 @@ declare module 'xterm' {
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'popOnBell' | 'rightClickSelectsWord' | 'screenKeys' | 'useFlowControl' | 'visualBell', value: boolean): void;
+    setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'popOnBell' | 'rightClickSelectsWord' | 'screenKeys' | 'useFlowControl' | 'visualBell' | 'windowsMode', value: boolean): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.

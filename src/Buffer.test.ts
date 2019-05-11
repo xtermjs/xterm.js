@@ -5,10 +5,10 @@
 
 import { assert, expect } from 'chai';
 import { ITerminal } from './Types';
-import { Buffer, DEFAULT_ATTR_DATA } from './Buffer';
+import { Buffer } from './Buffer';
 import { CircularList } from './common/CircularList';
-import { MockTerminal, TestTerminal } from './ui/TestUtils.test';
-import { BufferLine, CellData } from './BufferLine';
+import { MockTerminal, TestTerminal } from './TestUtils.test';
+import { BufferLine, CellData, DEFAULT_ATTR_DATA } from './core/buffer/BufferLine';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
