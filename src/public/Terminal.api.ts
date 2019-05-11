@@ -100,6 +100,127 @@ describe('API Integration Tests', () => {
     assert.equal(await page.evaluate(`window.term.hasSelection()`), false);
     assert.equal(await page.evaluate(`window.term.getSelection()`), '');
   });
+
+  describe('Events', () => {
+    it('onCursorMove', async function(): Promise<any> {
+      this.timeout(10000);
+      await openTerminal();
+      await page.evaluate(`
+        window.callCount = 0;
+        window.term.onCursorMove(e => window.callCount++);
+        window.term.write('foo');
+      `);
+      assert.equal(await page.evaluate(`window.callCount`), 1);
+      await page.evaluate(`window.term.write('bar')`);
+      assert.equal(await page.evaluate(`window.callCount`), 2);
+    });
+
+    it('onData', async function(): Promise<any> {
+      this.timeout(10000);
+      await openTerminal();
+      await page.evaluate(`
+        window.calls = [];
+        window.term.onData(e => calls.push(e));
+      `);
+      await page.type('.xterm-helper-textarea', 'foo');
+      assert.deepEqual(await page.evaluate(`window.calls`), ['f', 'o', 'o']);
+    });
+
+    it('onKey', async function(): Promise<any> {
+      this.timeout(10000);
+      await openTerminal();
+      await page.evaluate(`
+        window.calls = [];
+        window.term.onKey(e => calls.push(e.key));
+      `);
+      await page.type('.xterm-helper-textarea', 'foo');
+      assert.deepEqual(await page.evaluate(`window.calls`), ['f', 'o', 'o']);
+    });
+
+    it('onLineFeed', async function(): Promise<any> {
+      this.timeout(10000);
+      await openTerminal();
+      await page.evaluate(`
+        window.callCount = 0;
+        window.term.onLineFeed(() => callCount++);
+        window.term.writeln('foo');
+      `);
+      assert.equal(await page.evaluate(`window.callCount`), 1);
+      await page.evaluate(`window.term.writeln('bar')`);
+      assert.equal(await page.evaluate(`window.callCount`), 2);
+    });
+
+    it('onScroll', async function(): Promise<any> {
+      this.timeout(10000);
+      await openTerminal({ rows: 5 });
+      await page.evaluate(`
+        window.calls = [];
+        window.term.onScroll(e => window.calls.push(e));
+        for (let i = 0; i < 4; i++) {
+          window.term.writeln('foo');
+        }
+      `);
+      assert.deepEqual(await page.evaluate(`window.calls`), []);
+      await page.evaluate(`window.term.writeln('bar')`);
+      assert.deepEqual(await page.evaluate(`window.calls`), [1]);
+      await page.evaluate(`window.term.writeln('baz')`);
+      assert.deepEqual(await page.evaluate(`window.calls`), [1, 2]);
+    });
+
+    it('onSelectionChange', async function(): Promise<any> {
+      this.timeout(10000);
+      await openTerminal();
+      await page.evaluate(`
+        window.callCount = 0;
+        window.term.onSelectionChange(() => window.callCount++);
+      `);
+      assert.equal(await page.evaluate(`window.callCount`), 0);
+      await page.evaluate(`window.term.selectAll()`);
+      assert.equal(await page.evaluate(`window.callCount`), 1);
+      await page.evaluate(`window.term.clearSelection()`);
+      assert.equal(await page.evaluate(`window.callCount`), 2);
+    });
+
+    it('onRender', async function(): Promise<any> {
+      this.timeout(10000);
+      await openTerminal();
+      await page.evaluate(`
+        window.calls = [];
+        window.term.onRender(e => window.calls.push([e.start, e.end]));
+      `);
+      assert.deepEqual(await page.evaluate(`window.calls`), []);
+      await page.evaluate(`window.term.write('foo')`);
+      assert.deepEqual(await page.evaluate(`window.calls`), [[0, 0]]);
+      await page.evaluate(`window.term.write('bar\\n\\nbaz')`);
+      assert.deepEqual(await page.evaluate(`window.calls`), [[0, 0], [0, 2]]);
+    });
+
+    it('onResize', async function(): Promise<any> {
+      this.timeout(10000);
+      await openTerminal();
+      await page.evaluate(`
+        window.calls = [];
+        window.term.onResize(e => window.calls.push([e.cols, e.rows]));
+      `);
+      assert.deepEqual(await page.evaluate(`window.calls`), []);
+      await page.evaluate(`window.term.resize(10, 5)`);
+      assert.deepEqual(await page.evaluate(`window.calls`), [[10, 5]]);
+      await page.evaluate(`window.term.resize(20, 15)`);
+      assert.deepEqual(await page.evaluate(`window.calls`), [[10, 5], [20, 15]]);
+    });
+
+    it('onTitleChange', async function(): Promise<any> {
+      this.timeout(10000);
+      await openTerminal();
+      await page.evaluate(`
+        window.calls = [];
+        window.term.onTitleChange(e => window.calls.push(e));
+      `);
+      assert.deepEqual(await page.evaluate(`window.calls`), []);
+      await page.evaluate(`window.term.write('\\x1b]2;foo\\x9c')`);
+      assert.deepEqual(await page.evaluate(`window.calls`), ['foo']);
+    });
+  });
 });
 
 async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
