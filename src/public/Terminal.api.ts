@@ -86,6 +86,20 @@ describe('API Integration Tests', () => {
     await page.evaluate(`window.term.setOption('rendererType', 'dom')`);
     assert.equal(await page.evaluate(`window.term.getOption('rendererType')`), 'dom');
   });
+
+  it('selection', async function(): Promise<any> {
+    this.timeout(10000);
+    await openTerminal({ rows: 5 });
+    await page.evaluate(`window.term.write('\\n\\nfoo\\n\\n\\rbar\\n\\n\\rbaz')`);
+    assert.equal(await page.evaluate(`window.term.hasSelection()`), false);
+    assert.equal(await page.evaluate(`window.term.getSelection()`), '');
+    await page.evaluate(`window.term.selectAll()`);
+    assert.equal(await page.evaluate(`window.term.hasSelection()`), true);
+    assert.equal(await page.evaluate(`window.term.getSelection()`), '\n\nfoo\n\nbar\n\nbaz');
+    await page.evaluate(`window.term.clearSelection()`);
+    assert.equal(await page.evaluate(`window.term.hasSelection()`), false);
+    assert.equal(await page.evaluate(`window.term.getSelection()`), '');
+  });
 });
 
 async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
