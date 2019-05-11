@@ -10,7 +10,7 @@ import { IMarker } from 'xterm';
 import { BufferLine, CellData, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX, DEFAULT_ATTR_DATA } from './core/buffer/BufferLine';
 import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths, getWrappedLineTrimmedLength } from './BufferReflow';
 import { EventEmitter2, IEvent } from './common/EventEmitter2';
-import { Disposable } from '../lib/common/Lifecycle';
+import { Disposable } from './common/Lifecycle';
 
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 
