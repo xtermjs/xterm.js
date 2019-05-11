@@ -14,9 +14,8 @@ import * as pty from 'node-pty';
 import { assert } from 'chai';
 import { Terminal } from './Terminal';
 import { Terminal as PublicTerminal } from './public/Terminal';
-import { WHITESPACE_CELL_CHAR } from './Buffer';
 import { IViewport } from './Types';
-import { CellData } from './BufferLine';
+import { CellData, WHITESPACE_CELL_CHAR } from './core/buffer/BufferLine';
 
 class TestTerminal extends Terminal {
   innerWrite(): void { this._innerWrite(); }
@@ -78,35 +77,6 @@ function terminalToString(term: Terminal): string {
   }
   return result;
 }
-
-describe('API tests', () => {
-  let api: PublicTerminal;
-  let core: TestTerminal;
-
-  // expect files need terminal at 80x25!
-  const INIT_COLS = 80;
-  const INIT_ROWS = 25;
-
-  beforeEach(() => {
-    api = new PublicTerminal({ cols: INIT_COLS, rows: INIT_ROWS });
-    core = (api as any)._core;
-    core.innerWrite = () => (core as any)._innerWrite();
-    core.refresh = () => {};
-    core.viewport = <IViewport>{
-      syncScrollArea: () => {}
-    };
-  });
-
-  describe('buffer', () => {
-    it('IBufferLine.getLine', () => {
-      core.writeBuffer.push('abc\n\rdef');
-      core.innerWrite();
-      assert.equal(api.buffer.length, INIT_ROWS);
-      assert.equal(api.buffer.getLine(0).translateToString(true), 'abc');
-      assert.equal(api.buffer.getLine(1).translateToString(true), 'def');
-    });
-  });
-});
 
 // Skip tests on Windows since pty.open isn't supported
 if (os.platform() !== 'win32') {

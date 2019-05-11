@@ -4,41 +4,15 @@
  */
 
 import { CircularList, IInsertEvent } from './common/CircularList';
-import { ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult, ICellData, IAttributeData } from './Types';
+import { ITerminal, IBuffer, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult } from './Types';
+import { IBufferLine, ICellData, IAttributeData } from './core/Types';
 import { IMarker } from 'xterm';
-import { BufferLine, CellData, AttributeData } from './BufferLine';
+import { BufferLine, CellData, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX, DEFAULT_ATTR_DATA } from './core/buffer/BufferLine';
 import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths, getWrappedLineTrimmedLength } from './BufferReflow';
-import { DEFAULT_COLOR } from './renderer/atlas/Types';
 import { EventEmitter2, IEvent } from './common/EventEmitter2';
-import { Disposable } from '../lib/common/Lifecycle';
+import { Disposable } from './common/Lifecycle';
 
-export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
-
-export const DEFAULT_ATTR_DATA = new AttributeData();
-
-export const CHAR_DATA_ATTR_INDEX = 0;
-export const CHAR_DATA_CHAR_INDEX = 1;
-export const CHAR_DATA_WIDTH_INDEX = 2;
-export const CHAR_DATA_CODE_INDEX = 3;
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
-
-/**
- * Null cell - a real empty cell (containing nothing).
- * Note that code should always be 0 for a null cell as
- * several test condition of the buffer line rely on this.
- */
-export const NULL_CELL_CHAR = '';
-export const NULL_CELL_WIDTH = 1;
-export const NULL_CELL_CODE = 0;
-
-/**
- * Whitespace cell.
- * This is meant as a replacement for empty cells when needed
- * during rendering lines to preserve correct aligment.
- */
-export const WHITESPACE_CELL_CHAR = ' ';
-export const WHITESPACE_CELL_WIDTH = 1;
-export const WHITESPACE_CELL_CODE = 32;
 
 /**
  * This class represents a terminal buffer (an internal state of the terminal), where the
