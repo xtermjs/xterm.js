@@ -7,6 +7,7 @@ import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILink
 import { ITerminal } from '../Types';
 import { Terminal as TerminalCore } from '../Terminal';
 import * as Strings from '../Strings';
+import { IEvent } from '../common/EventEmitter2';
 
 export class Terminal implements ITerminalApi {
   private _core: ITerminal;
@@ -15,11 +16,21 @@ export class Terminal implements ITerminalApi {
     this._core = new TerminalCore(options);
   }
 
+  public get onCursorMove(): IEvent<void> { return this._core.onCursorMove; }
+  public get onLineFeed(): IEvent<void> { return this._core.onLineFeed; }
+  public get onSelectionChange(): IEvent<void> { return this._core.onSelectionChange; }
+  public get onData(): IEvent<string> { return this._core.onData; }
+  public get onTitleChange(): IEvent<string> { return this._core.onTitleChange; }
+  public get onScroll(): IEvent<number> { return this._core.onScroll; }
+  public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._core.onKey; }
+  public get onRender(): IEvent<{ start: number, end: number }> { return this._core.onRender; }
+  public get onResize(): IEvent<{ cols: number, rows: number }> { return this._core.onResize; }
+
   public get element(): HTMLElement { return this._core.element; }
   public get textarea(): HTMLTextAreaElement { return this._core.textarea; }
   public get rows(): number { return this._core.rows; }
   public get cols(): number { return this._core.cols; }
-  public get markers(): IMarker[] { return this._core.markers; }
+  public get markers(): ReadonlyArray<IMarker> { return this._core.markers; }
   public blur(): void {
     this._core.blur();
   }

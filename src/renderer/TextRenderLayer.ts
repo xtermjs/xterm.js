@@ -9,6 +9,7 @@ import { CharData, ITerminal, ICellData } from '../Types';
 import { GridCache } from './GridCache';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { CellData, AttributeData, Content } from '../BufferLine';
+import { JoinedCellData } from './CharacterJoinerRegistry';
 
 /**
  * This CharData looks like a null character, which will forc a clear and render
@@ -89,15 +90,12 @@ export class TextRenderLayer extends BaseRenderLayer {
 
           // We already know the exact start and end column of the joined range,
           // so we get the string and width representing it directly
-          cell = CellData.fromCharData([
-            0,
+
+          cell = new JoinedCellData(
+            this._workCell,
             line.translateToString(true, range[0], range[1]),
-            range[1] - range[0],
-            0xFFFFFF
-          ]);
-          // hacky: patch attrs
-          cell.fg = this._workCell.fg;
-          cell.bg = this._workCell.bg;
+            range[1] - range[0]
+          );
 
           // Skip over the cells occupied by this range in the loop
           lastCharX = range[1] - 1;
@@ -217,10 +215,18 @@ export class TextRenderLayer extends BaseRenderLayer {
           } else {
             this._ctx.fillStyle = this._colors.ansi[cell.getBgColor()].css;
           }
-        } else if (cell.isFgRGB()) {
-          this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
-        } else if (cell.isFgPalette()) {
-          this._ctx.fillStyle = this._colors.ansi[cell.getFgColor()].css;
+        } else {
+          if (cell.isFgDefault()) {
+            this._ctx.fillStyle = this._colors.foreground.css;
+          } else if (cell.isFgRGB()) {
+            this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
+          } else {
+            let fg = cell.getFgColor();
+            if (terminal.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
+              fg += 8;
+            }
+            this._ctx.fillStyle = this._colors.ansi[fg].css;
+          }
         }
 
         this.fillBottomLineAtCells(x, y, cell.getWidth());

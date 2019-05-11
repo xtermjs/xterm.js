@@ -18,7 +18,7 @@ export function applyWindowsMode(terminal: ITerminal): IDisposable {
   // space. This is certainly not without its problems, but generally on
   // Windows when text reaches the end of the terminal it's likely going to be
   // wrapped.
-  return terminal.addDisposableListener('linefeed', () => {
+  return terminal.onLineFeed(() => {
     const line = terminal.buffer.lines.get(terminal.buffer.ybase + terminal.buffer.y - 1);
     const lastChar = line.get(terminal.cols - 1);
 

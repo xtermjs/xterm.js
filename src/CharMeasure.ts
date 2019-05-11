@@ -3,23 +3,25 @@
  * @license MIT
  */
 
-import { ICharMeasure, ITerminalOptions } from '../Types';
-import { EventEmitter } from '../common/EventEmitter';
+import { ICharMeasure, ITerminalOptions } from './Types';
+import { EventEmitter2, IEvent } from './common/EventEmitter2';
 
 /**
  * Utility class that measures the size of a character. Measurements are done in
  * the DOM rather than with a canvas context because support for extracting the
  * height of characters is patchy across browsers.
  */
-export class CharMeasure extends EventEmitter implements ICharMeasure {
+export class CharMeasure implements ICharMeasure {
   private _document: Document;
   private _parentElement: HTMLElement;
   private _measureElement: HTMLElement;
   private _width: number;
   private _height: number;
 
+  private _onCharSizeChanged = new EventEmitter2<void>();
+  public get onCharSizeChanged(): IEvent<void> { return this._onCharSizeChanged.event; }
+
   constructor(document: Document, parentElement: HTMLElement) {
-    super();
     this._document = document;
     this._parentElement = parentElement;
     this._measureElement = this._document.createElement('span');
@@ -50,7 +52,7 @@ export class CharMeasure extends EventEmitter implements ICharMeasure {
     if (this._width !== geometry.width || this._height !== adjustedHeight) {
       this._width = geometry.width;
       this._height = adjustedHeight;
-      this.emit('charsizechanged');
+      this._onCharSizeChanged.fire();
     }
   }
 }

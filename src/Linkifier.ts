@@ -3,16 +3,15 @@
  * @license MIT
  */
 
-import { IMouseZoneManager } from './ui/Types';
-import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, ILinkifier, ITerminal, IBufferStringIteratorResult } from './Types';
-import { MouseZone } from './ui/MouseZoneManager';
-import { EventEmitter } from './common/EventEmitter';
+import { ILinkifierEvent, ILinkMatcher, LinkMatcherHandler, ILinkMatcherOptions, ILinkifier, ITerminal, IBufferStringIteratorResult, IMouseZoneManager } from './Types';
+import { MouseZone } from './MouseZoneManager';
 import { getStringCellWidth } from './CharWidth';
+import { EventEmitter2, IEvent } from './common/EventEmitter2';
 
 /**
  * The Linkifier applies links to rows shortly after they have been refreshed.
  */
-export class Linkifier extends EventEmitter implements ILinkifier {
+export class Linkifier implements ILinkifier {
   /**
    * The time to wait after a row is changed before it is linkified. This prevents
    * the costly operation of searching every row multiple times, potentially a
@@ -34,10 +33,16 @@ export class Linkifier extends EventEmitter implements ILinkifier {
   private _nextLinkMatcherId = 0;
   private _rowsToLinkify: { start: number, end: number };
 
+  private _onLinkHover = new EventEmitter2<ILinkifierEvent>();
+  public get onLinkHover(): IEvent<ILinkifierEvent> { return this._onLinkHover.event; }
+  private _onLinkLeave = new EventEmitter2<ILinkifierEvent>();
+  public get onLinkLeave(): IEvent<ILinkifierEvent> { return this._onLinkLeave.event; }
+  private _onLinkTooltip = new EventEmitter2<ILinkifierEvent>();
+  public get onLinkTooltip(): IEvent<ILinkifierEvent> { return this._onLinkTooltip.event; }
+
   constructor(
     protected _terminal: ITerminal
   ) {
-    super();
     this._rowsToLinkify = {
       start: null,
       end: null
@@ -283,18 +288,18 @@ export class Linkifier extends EventEmitter implements ILinkifier {
         }
         window.open(uri, '_blank');
       },
-      e => {
-        this.emit(LinkHoverEventTypes.HOVER, this._createLinkHoverEvent(x1, y1, x2, y2, fg));
+      () => {
+        this._onLinkHover.fire(this._createLinkHoverEvent(x1, y1, x2, y2, fg));
         this._terminal.element.classList.add('xterm-cursor-pointer');
       },
       e => {
-        this.emit(LinkHoverEventTypes.TOOLTIP, this._createLinkHoverEvent(x1, y1, x2, y2, fg));
+        this._onLinkTooltip.fire(this._createLinkHoverEvent(x1, y1, x2, y2, fg));
         if (matcher.hoverTooltipCallback) {
           matcher.hoverTooltipCallback(e, uri);
         }
       },
       () => {
-        this.emit(LinkHoverEventTypes.LEAVE, this._createLinkHoverEvent(x1, y1, x2, y2, fg));
+        this._onLinkLeave.fire(this._createLinkHoverEvent(x1, y1, x2, y2, fg));
         this._terminal.element.classList.remove('xterm-cursor-pointer');
         if (matcher.hoverLeaveCallback) {
           matcher.hoverLeaveCallback();
@@ -309,7 +314,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     ));
   }
 
-  private _createLinkHoverEvent(x1: number, y1: number, x2: number, y2: number, fg: number): ILinkHoverEvent {
+  private _createLinkHoverEvent(x1: number, y1: number, x2: number, y2: number, fg: number): ILinkifierEvent {
     return { x1, y1, x2, y2, cols: this._terminal.cols, fg };
   }
 }

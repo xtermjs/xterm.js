@@ -21,27 +21,26 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharacterJoinerHandler, IBufferLine, IAttributeData } from './Types';
-import { IMouseZoneManager } from './ui/Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharacterJoinerHandler, IBufferLine, IAttributeData, IMouseZoneManager } from './Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
 import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR_DATA } from './Buffer';
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './common/EventEmitter';
 import { Viewport } from './Viewport';
-import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './ui/Clipboard';
+import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './Clipboard';
 import { C0 } from './common/data/EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Renderer } from './renderer/Renderer';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
-import { CharMeasure } from './ui/CharMeasure';
+import { CharMeasure } from './CharMeasure';
 import * as Browser from './common/Platform';
 import { addDisposableDomListener } from './ui/Lifecycle';
 import * as Strings from './Strings';
-import { MouseHelper } from './ui/MouseHelper';
+import { MouseHelper } from './MouseHelper';
 import { DEFAULT_BELL_SOUND, SoundManager } from './SoundManager';
-import { MouseZoneManager } from './ui/MouseZoneManager';
+import { MouseZoneManager } from './MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ScreenDprMonitor } from './ui/ScreenDprMonitor';
 import { ITheme, IMarker, IDisposable, ITerminalAddon } from 'xterm';
@@ -52,6 +51,7 @@ import { evaluateKeyboardEvent } from './core/input/Keyboard';
 import { KeyboardResultType, ICharset } from './core/Types';
 import { clone } from './common/Clone';
 import { AddonManager } from './ui/AddonManager';
+import { EventEmitter2, IEvent } from './common/EventEmitter2';
 import { Attributes } from './BufferLine';
 import { applyWindowsMode } from './WindowsMode';
 
@@ -223,6 +223,25 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public cols: number;
   public rows: number;
 
+  private _onCursorMove = new EventEmitter2<void>();
+  public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
+  private _onData = new EventEmitter2<string>();
+  public get onData(): IEvent<string> { return this._onData.event; }
+  private _onKey = new EventEmitter2<{ key: string, domEvent: KeyboardEvent }>();
+  public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._onKey.event; }
+  private _onLineFeed = new EventEmitter2<void>();
+  public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
+  private _onRender = new EventEmitter2<{ start: number, end: number }>();
+  public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
+  private _onResize = new EventEmitter2<{ cols: number, rows: number }>();
+  public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
+  private _onScroll = new EventEmitter2<number>();
+  public get onScroll(): IEvent<number> { return this._onScroll.event; }
+  private _onSelectionChange = new EventEmitter2<void>();
+  public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
+  private _onTitleChange = new EventEmitter2<string>();
+  public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
+
   /**
    * Creates a new `Terminal` object.
    *
@@ -241,6 +260,18 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     super();
     this.options = clone(options);
     this._setup();
+
+    // TODO: Remove these in v4
+    // Fire old style events from new emitters
+    this.onCursorMove(() => this.emit('cursormove'));
+    this.onData(e => this.emit('data', e));
+    this.onKey(e => this.emit('key', e.key, e.domEvent));
+    this.onLineFeed(() => this.emit('linefeed'));
+    this.onRender(e => this.emit('refresh', e));
+    this.onResize(e => this.emit('resize', e));
+    this.onSelectionChange(() => this.emit('selection'));
+    this.onScroll(e => this.emit('scroll', e));
+    this.onTitleChange(e => this.emit('title', e));
   }
 
   public dispose(): void {
@@ -281,7 +312,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.rows = Math.max(this.options.rows, MINIMUM_ROWS);
 
     if (this.options.handler) {
-      this.on('data', this.options.handler);
+      this.onData(this.options.handler);
     }
 
     this.cursorState = 0;
@@ -317,8 +348,12 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // this._writeStopped = false;
     this._userScrolling = false;
 
+    // Register input handler and refire/handle events
     this._inputHandler = new InputHandler(this);
+    this._inputHandler.onCursorMove(() => this._onCursorMove.fire());
+    this._inputHandler.onLineFeed(() => this._onLineFeed.fire());
     this.register(this._inputHandler);
+
     // Reuse renderer if the Terminal is being recreated via a reset call.
     this.renderer = this.renderer || null;
     this.selectionManager = this.selectionManager || null;
@@ -652,8 +687,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.register(addDisposableDomListener(this.textarea, 'compositionstart', () => this._compositionHelper.compositionstart()));
     this.register(addDisposableDomListener(this.textarea, 'compositionupdate', (e: CompositionEvent) => this._compositionHelper.compositionupdate(e)));
     this.register(addDisposableDomListener(this.textarea, 'compositionend', () => this._compositionHelper.compositionend()));
-    this.register(this.addDisposableListener('refresh', () => this._compositionHelper.updateCompositionElements()));
-    this.register(this.addDisposableListener('refresh', (data) => this._queueLinkification(data.start, data.end)));
+    this.register(this.onRender(() => this._compositionHelper.updateCompositionElements()));
+    this.register(this.onRender(e => this._queueLinkification(e.start, e.end)));
   }
 
   /**
@@ -705,7 +740,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     this._mouseZoneManager = new MouseZoneManager(this);
     this.register(this._mouseZoneManager);
-    this.register(this.addDisposableListener('scroll', () => this._mouseZoneManager.clearAll()));
+    this.register(this.onScroll(() => this._mouseZoneManager.clearAll()));
     this.linkifier.attachToDom(this._mouseZoneManager);
 
     this.textarea = document.createElement('textarea');
@@ -738,21 +773,22 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.viewport.onThemeChanged(this.renderer.colorManager.colors);
     this.register(this.viewport);
 
-    this.register(this.addDisposableListener('cursormove', () => this.renderer.onCursorMove()));
-    this.register(this.addDisposableListener('resize', () => this.renderer.onResize(this.cols, this.rows)));
+    this.register(this.onCursorMove(() => this.renderer.onCursorMove()));
+    this.register(this.onResize(() => this.renderer.onResize(this.cols, this.rows)));
     this.register(this.addDisposableListener('blur', () => this.renderer.onBlur()));
     this.register(this.addDisposableListener('focus', () => this.renderer.onFocus()));
     this.register(this.addDisposableListener('dprchange', () => this.renderer.onWindowResize(window.devicePixelRatio)));
     // dprchange should handle this case, we need this as well for browsers that don't support the
     // matchMedia query.
     this.register(addDisposableDomListener(window, 'resize', () => this.renderer.onWindowResize(window.devicePixelRatio)));
-    this.register(this.charMeasure.addDisposableListener('charsizechanged', () => this.renderer.onCharSizeChanged()));
-    this.register(this.renderer.addDisposableListener('resize', (dimensions) => this.viewport.syncScrollArea()));
+    this.register(this.charMeasure.onCharSizeChanged(() => this.renderer.onCharSizeChanged()));
+    this.register(this.renderer.onCanvasResize(() => this.viewport.syncScrollArea()));
 
     this.selectionManager = new SelectionManager(this, this.charMeasure);
+    this.register(this.selectionManager.onSelectionChange(() => this._onSelectionChange.fire()));
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this.selectionManager.onMouseDown(e)));
-    this.register(this.selectionManager.addDisposableListener('refresh', data => this.renderer.onSelectionChanged(data.start, data.end, data.columnSelectMode)));
-    this.register(this.selectionManager.addDisposableListener('newselection', text => {
+    this.register(this.selectionManager.onRedrawRequest(e => this.renderer.onSelectionChanged(e.start, e.end, e.columnSelectMode)));
+    this.register(this.selectionManager.onLinuxMouseSelection(text => {
       // If there's a new selection, put it into the textarea, focus and select it
       // in order to register it as a selection on the OS. This event is fired
       // only on Linux to enable middle click to paste selection.
@@ -760,7 +796,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       this.textarea.focus();
       this.textarea.select();
     }));
-    this.register(this.addDisposableListener('scroll', () => {
+    this.register(this.onScroll(() => {
       this.viewport.syncScrollArea();
       this.selectionManager.refresh();
     }));
@@ -802,6 +838,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       case 'dom': this.renderer = new DomRenderer(this, this.options.theme); break;
       default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
     }
+    this.renderer.onRender(e => this._onRender.fire(e));
     this.register(this.renderer);
   }
 
@@ -1267,13 +1304,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.updateRange(this.buffer.scrollTop);
     this.updateRange(this.buffer.scrollBottom);
 
-    /**
-     * This event is emitted whenever the terminal is scrolled.
-     * The one parameter passed is the new y display position.
-     *
-     * @event scroll
-     */
-    this.emit('scroll', this.buffer.ydisp);
+    this._onScroll.fire(this.buffer.ydisp);
   }
 
   /**
@@ -1302,7 +1333,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
 
     if (!suppressScrollEvent) {
-      this.emit('scroll', this.buffer.ydisp);
+      this._onScroll.fire(this.buffer.ydisp);
     }
 
     this.refresh(0, this.rows - 1);
@@ -1591,7 +1622,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
 
     this.emit('keydown', event);
-    this.emit('key', result.key, event);
+    this._onKey.fire({ key: result.key, domEvent: event });
     this.showCursor();
     this.handler(result.key);
 
@@ -1670,7 +1701,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     key = String.fromCharCode(key);
 
     this.emit('keypress', key, ev);
-    this.emit('key', key, ev);
+    this._onKey.fire({ key, domEvent: ev });
     this.showCursor();
     this.handler(key);
 
@@ -1747,7 +1778,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
 
     this.refresh(0, this.rows - 1);
-    this.emit('resize', {cols: x, rows: y});
+    this._onResize.fire({ cols: x, rows: y });
   }
 
   /**
@@ -1790,7 +1821,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       this.buffer.lines.push(this.buffer.getBlankLine(DEFAULT_ATTR_DATA));
     }
     this.refresh(0, this.rows - 1);
-    this.emit('scroll', this.buffer.ydisp);
+    this._onScroll.fire(this.buffer.ydisp);
   }
 
   /**
@@ -1802,7 +1833,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   /**
-   * Emit the 'data' event and populate the given data.
+   * Emit the data event and populate the given data.
    * @param data The data to populate in the event.
    */
   public handler(data: string): void {
@@ -1820,7 +1851,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     if (this.buffer.ybase !== this.buffer.ydisp) {
       this.scrollToBottom();
     }
-    this.emit('data', data);
+    this._onData.fire(data);
   }
 
   /**
@@ -1828,13 +1859,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * @param title The title to populate in the event.
    */
   public handleTitle(title: string): void {
-    /**
-     * This event is emitted when the title of the terminal is changed
-     * from inside the terminal. The parameter is the new title.
-     *
-     * @event title
-     */
-    this.emit('title', title);
+    this._onTitleChange.fire(title);
   }
 
   /**

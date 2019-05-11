@@ -7,7 +7,7 @@ import { assert, expect } from 'chai';
 import { ITerminal } from './Types';
 import { Buffer, DEFAULT_ATTR_DATA } from './Buffer';
 import { CircularList } from './common/CircularList';
-import { MockTerminal, TestTerminal } from './ui/TestUtils.test';
+import { MockTerminal, TestTerminal } from './TestUtils.test';
 import { BufferLine, CellData } from './BufferLine';
 
 const INIT_COLS = 80;
@@ -1074,7 +1074,7 @@ describe('Buffer', () => {
       buffer.fillViewportRows();
       const marker = buffer.addMarker(buffer.lines.length - 1);
       assert.equal(marker.line, buffer.lines.length - 1);
-      buffer.lines.emit('trim', 1);
+      buffer.lines.onTrimEmitter.fire(1);
       assert.equal(marker.line, buffer.lines.length - 2);
     });
     it('should dispose of a marker if it is trimmed off the buffer', () => {
@@ -1085,7 +1085,7 @@ describe('Buffer', () => {
       const marker = buffer.addMarker(0);
       assert.equal(marker.isDisposed, false);
       assert.equal(buffer.markers.length, 1);
-      buffer.lines.emit('trim', 1);
+      buffer.lines.onTrimEmitter.fire(1);
       assert.equal(marker.isDisposed, true);
       assert.equal(buffer.markers.length, 0);
     });
