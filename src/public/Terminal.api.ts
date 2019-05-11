@@ -101,6 +101,16 @@ describe('API Integration Tests', () => {
     assert.equal(await page.evaluate(`window.term.getSelection()`), '');
   });
 
+  it('focus, blur', async function(): Promise<any> {
+    this.timeout(10000);
+    await openTerminal();
+    assert.equal(await page.evaluate(`document.activeElement.className`), '');
+    await page.evaluate(`window.term.focus()`);
+    assert.equal(await page.evaluate(`document.activeElement.className`), 'xterm-helper-textarea');
+    await page.evaluate(`window.term.blur()`);
+    assert.equal(await page.evaluate(`document.activeElement.className`), '');
+  });
+
   describe('Events', () => {
     it('onCursorMove', async function(): Promise<any> {
       this.timeout(10000);
