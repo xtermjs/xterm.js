@@ -43,11 +43,7 @@ import { DEFAULT_BELL_SOUND, SoundManager } from './SoundManager';
 import { MouseZoneManager } from './MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ScreenDprMonitor } from './ui/ScreenDprMonitor';
-<<<<<<< HEAD
-import { ITheme, IMarker, IDisposable, ITerminalAddon } from 'xterm';
-=======
-import { ITheme, IMarker, IDisposable, ISelectionPosition } from 'xterm';
->>>>>>> ups/master
+import { ITheme, IMarker, IDisposable, ITerminalAddon, ISelectionPosition } from 'xterm';
 import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent } from './common/Types';
