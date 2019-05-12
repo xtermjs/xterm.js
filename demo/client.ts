@@ -9,13 +9,11 @@
 
 import { Terminal } from '../lib/public/Terminal';
 import { AttachAddon } from 'xterm-addon-attach';
-import { SearchAddon } from 'xterm-addon-search';
+import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
 import { WebLinksAddon } from 'xterm-addon-web-links';
 
 import * as fit from '../lib/addons/fit/fit';
 import * as fullscreen from '../lib/addons/fullscreen/fullscreen';
-import * as search from '../lib/addons/search/search';
-import { ISearchOptions } from '../lib/addons/search/Interfaces';
 
 // Pulling in the module's types relies on the <reference> above, it's looks a
 // little weird here as we're importing "this" module
