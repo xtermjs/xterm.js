@@ -275,7 +275,7 @@ declare module 'xterm' {
      * A callback that fires when the mouse leaves a link. Note that this can
      * happen even when tooltipCallback hasn't fired for the link yet.
      */
-    leaveCallback?: (event: MouseEvent, uri: string) => boolean | void;
+    leaveCallback?: () => void;
 
     /**
      * The priority of the link matcher, this defines the order in which the link
@@ -354,6 +354,13 @@ declare module 'xterm' {
      * `Terminal.resize` for when the terminal exists.
      */
     readonly cols: number;
+
+    /**
+     * (EXPERIMENTAL) The terminal's current buffer, this might be either the
+     * normal buffer or the alt buffer depending on what's running in the
+     * terminal.
+     */
+    readonly buffer: IBuffer;
 
     /**
      * (EXPERIMENTAL) Get all markers registered against the buffer. If the alt
@@ -861,5 +868,89 @@ declare module 'xterm' {
      * @param addon The addon to apply.
      */
     static applyAddon(addon: any): void;
+  }
+
+  interface IBuffer {
+    /**
+     * The y position of the cursor. This ranges between `0` (when the
+     * cursor is at baseY) and `Terminal.rows - 1` (when the cursor is on the
+     * last row).
+     */
+    readonly cursorY: number;
+
+    /**
+     * The x position of the cursor. This ranges between `0` (left side) and
+     * `Terminal.cols - 1` (right side).
+     */
+    readonly cursorX: number;
+
+    /**
+     * The line within the buffer where the top of the viewport is.
+     */
+    readonly viewportY: number;
+
+    /**
+     * The line within the buffer where the top of the bottom page is (when
+     * fully scrolled down);
+     */
+    readonly baseY: number;
+
+    /**
+     * The amount of lines in the buffer.
+     */
+    readonly length: number;
+
+    /**
+     * Gets a line from the buffer, or undefined if the line index does not exist.
+     *
+     * Note that the result of this function should be used immediately after calling as when the
+     * terminal updates it could lead to unexpected behavior.
+     *
+     * @param y The line index to get.
+     */
+    getLine(y: number): IBufferLine | undefined;
+  }
+
+  interface IBufferLine {
+    /**
+     * Whether the line is wrapped from the previous line.
+     */
+    readonly isWrapped: boolean;
+
+    /**
+     * Gets a cell from the line, or undefined if the line index does not exist.
+     *
+     * Note that the result of this function should be used immediately after calling as when the
+     * terminal updates it could lead to unexpected behavior.
+     *
+     * @param x The character index to get.
+     */
+    getCell(x: number): IBufferCell;
+
+    /**
+     * Gets the line as a string. Note that this is gets only the string for the line, not taking
+     * isWrapped into account.
+     *
+     * @param trimRight Whether to trim any whitespace at the right of the line.
+     * @param startColumn The column to start from (inclusive).
+     * @param endColumn The column to end at (exclusive).
+     */
+    translateToString(trimRight?: boolean, startColumn?: number, endColumn?: number): string;
+  }
+
+  interface IBufferCell {
+    /**
+     * The character within the cell.
+     */
+    readonly char: string;
+
+    /**
+     * The width of the character. Some examples:
+     *
+     * - This is `1` for most cells.
+     * - This is `2` for wide character like CJK glyphs.
+     * - This is `0` for cells immediately following cells with a width of `2`.
+     */
+    readonly width: number;
   }
 }
