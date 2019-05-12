@@ -40,7 +40,7 @@ export class SearchHelper implements ISearchHelper {
     let result: ISearchResult;
 
     if (!term || term.length === 0) {
-      selectionManager.clearSelection();
+      this._terminal.clearSelection();
       return false;
     }
 
@@ -113,7 +113,7 @@ export class SearchHelper implements ISearchHelper {
     let result: ISearchResult;
 
     if (!term || term.length === 0) {
-      selectionManager.clearSelection();
+      this._terminal.clearSelection();
       return false;
     }
 
