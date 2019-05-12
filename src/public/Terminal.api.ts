@@ -47,8 +47,9 @@ describe('API Integration Tests', () => {
     await page.evaluate(`
       window.term.write('foo');
       window.term.write('bar');
+      window.term.write('文');
     `);
-    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foobar');
+    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foobar文');
   });
 
   it('writeln', async function(): Promise<any> {
@@ -57,12 +58,14 @@ describe('API Integration Tests', () => {
     await page.evaluate(`
       window.term.writeln('foo');
       window.term.writeln('bar');
+      window.term.writeln('文');
     `);
     assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foo');
     assert.equal(await page.evaluate(`window.term.buffer.getLine(1).translateToString(true)`), 'bar');
+    assert.equal(await page.evaluate(`window.term.buffer.getLine(2).translateToString(true)`), '文');
   });
 
-  it.only('writeUtf8', async function(): Promise<any> {
+  it('writeUtf8', async function(): Promise<any> {
     this.timeout(10000);
     await openTerminal();
     await page.evaluate(`
