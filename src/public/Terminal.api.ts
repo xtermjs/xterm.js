@@ -48,7 +48,7 @@ describe('API Integration Tests', () => {
       window.term.write('foo');
       window.term.write('bar');
     `);
-    assert.equal(await page.evaluate(`window.term._core.buffer.translateBufferLineToString(0, true)`), 'foobar');
+    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foobar');
   });
 
   it('writeln', async function(): Promise<any> {
@@ -58,8 +58,8 @@ describe('API Integration Tests', () => {
       window.term.writeln('foo');
       window.term.writeln('bar');
     `);
-    assert.equal(await page.evaluate(`window.term._core.buffer.translateBufferLineToString(0, true)`), 'foo');
-    assert.equal(await page.evaluate(`window.term._core.buffer.translateBufferLineToString(1, true)`), 'bar');
+    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foo');
+    assert.equal(await page.evaluate(`window.term.buffer.getLine(1).translateToString(true)`), 'bar');
   });
 
   it('clear', async function(): Promise<any> {
@@ -72,10 +72,10 @@ describe('API Integration Tests', () => {
       }
     `);
     await page.evaluate(`window.term.clear()`);
-    assert.equal(await page.evaluate(`window.term._core.buffer.lines.length`), '5');
-    assert.equal(await page.evaluate(`window.term._core.buffer.translateBufferLineToString(0, true)`), 'test9');
+    assert.equal(await page.evaluate(`window.term.buffer.length`), '5');
+    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'test9');
     for (let i = 1; i < 5; i++) {
-      assert.equal(await page.evaluate(`window.term._core.buffer.translateBufferLineToString(${i}, true)`), '');
+      assert.equal(await page.evaluate(`window.term.buffer.getLine(${i}).translateToString(true)`), '');
     }
   });
 
@@ -229,6 +229,128 @@ describe('API Integration Tests', () => {
       assert.deepEqual(await page.evaluate(`window.calls`), []);
       await page.evaluate(`window.term.write('\\x1b]2;foo\\x9c')`);
       assert.deepEqual(await page.evaluate(`window.calls`), ['foo']);
+    });
+  });
+
+  describe('buffer', () => {
+    it('cursorX, cursorY', async function(): Promise<any> {
+      this.timeout(10000);
+      await openTerminal({ rows: 5, cols: 5 });
+      assert.equal(await page.evaluate(`window.term.buffer.cursorX`), 0);
+      assert.equal(await page.evaluate(`window.term.buffer.cursorY`), 0);
+      await page.evaluate(`window.term.write('foo')`);
+      assert.equal(await page.evaluate(`window.term.buffer.cursorX`), 3);
+      assert.equal(await page.evaluate(`window.term.buffer.cursorY`), 0);
+      await page.evaluate(`window.term.write('\\n')`);
+      assert.equal(await page.evaluate(`window.term.buffer.cursorX`), 3);
+      assert.equal(await page.evaluate(`window.term.buffer.cursorY`), 1);
+      await page.evaluate(`window.term.write('\\r')`);
+      assert.equal(await page.evaluate(`window.term.buffer.cursorX`), 0);
+      assert.equal(await page.evaluate(`window.term.buffer.cursorY`), 1);
+      await page.evaluate(`window.term.write('abcde')`);
+      assert.equal(await page.evaluate(`window.term.buffer.cursorX`), 5);
+      assert.equal(await page.evaluate(`window.term.buffer.cursorY`), 1);
+      await page.evaluate(`window.term.write('\\n\\r\\n\\n\\n\\n\\n')`);
+      assert.equal(await page.evaluate(`window.term.buffer.cursorX`), 0);
+      assert.equal(await page.evaluate(`window.term.buffer.cursorY`), 4);
+    });
+
+    it('viewportY', async function(): Promise<any> {
+      this.timeout(10000);
+      await openTerminal({ rows: 5 });
+      assert.equal(await page.evaluate(`window.term.buffer.viewportY`), 0);
+      await page.evaluate(`window.term.write('\\n\\n\\n\\n')`);
+      assert.equal(await page.evaluate(`window.term.buffer.viewportY`), 0);
+      await page.evaluate(`window.term.write('\\n')`);
+      assert.equal(await page.evaluate(`window.term.buffer.viewportY`), 1);
+      await page.evaluate(`window.term.write('\\n\\n\\n\\n')`);
+      assert.equal(await page.evaluate(`window.term.buffer.viewportY`), 5);
+      await page.evaluate(`window.term.scrollLines(-1)`);
+      assert.equal(await page.evaluate(`window.term.buffer.viewportY`), 4);
+      await page.evaluate(`window.term.scrollToTop()`);
+      assert.equal(await page.evaluate(`window.term.buffer.viewportY`), 0);
+    });
+
+    it('baseY', async function(): Promise<any> {
+      this.timeout(10000);
+      await openTerminal({ rows: 5 });
+      assert.equal(await page.evaluate(`window.term.buffer.baseY`), 0);
+      await page.evaluate(`window.term.write('\\n\\n\\n\\n')`);
+      assert.equal(await page.evaluate(`window.term.buffer.baseY`), 0);
+      await page.evaluate(`window.term.write('\\n')`);
+      assert.equal(await page.evaluate(`window.term.buffer.baseY`), 1);
+      await page.evaluate(`window.term.write('\\n\\n\\n\\n')`);
+      assert.equal(await page.evaluate(`window.term.buffer.baseY`), 5);
+      await page.evaluate(`window.term.scrollLines(-1)`);
+      assert.equal(await page.evaluate(`window.term.buffer.baseY`), 5);
+      await page.evaluate(`window.term.scrollToTop()`);
+      assert.equal(await page.evaluate(`window.term.buffer.baseY`), 5);
+    });
+
+    it('length', async function(): Promise<any> {
+      this.timeout(10000);
+      await openTerminal({ rows: 5 });
+      assert.equal(await page.evaluate(`window.term.buffer.length`), 5);
+      await page.evaluate(`window.term.write('\\n\\n\\n\\n')`);
+      assert.equal(await page.evaluate(`window.term.buffer.length`), 5);
+      await page.evaluate(`window.term.write('\\n')`);
+      assert.equal(await page.evaluate(`window.term.buffer.length`), 6);
+      await page.evaluate(`window.term.write('\\n\\n\\n\\n')`);
+      assert.equal(await page.evaluate(`window.term.buffer.length`), 10);
+    });
+
+    describe('getLine', () => {
+      it('invalid index', async function(): Promise<any> {
+        this.timeout(10000);
+        await openTerminal({ rows: 5 });
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(-1)`), undefined);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(5)`), undefined);
+      });
+
+      it('isWrapped', async function(): Promise<any> {
+        this.timeout(10000);
+        await openTerminal({ cols: 5 });
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).isWrapped`), false);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(1).isWrapped`), false);
+        await page.evaluate(`window.term.write('abcde')`);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).isWrapped`), false);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(1).isWrapped`), false);
+        await page.evaluate(`window.term.write('f')`);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).isWrapped`), false);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(1).isWrapped`), true);
+      });
+
+      it('translateToString', async function(): Promise<any> {
+        this.timeout(10000);
+        await openTerminal({ cols: 5 });
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString()`), '     ');
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), '');
+        await page.evaluate(`window.term.write('foo')`);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString()`), 'foo  ');
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foo');
+        await page.evaluate(`window.term.write('bar')`);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString()`), 'fooba');
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'fooba');
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(1).translateToString(true)`), 'r');
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(false, 1)`), 'ooba');
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(false, 1, 3)`), 'oo');
+      });
+
+      it('getCell', async function(): Promise<any> {
+        this.timeout(10000);
+        await openTerminal({ cols: 5 });
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(-1)`), undefined);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(5)`), undefined);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(0).char`), '');
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(0).width`), 1);
+        await page.evaluate(`window.term.write('a文')`);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(0).char`), 'a');
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(0).width`), 1);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(1).char`), '文');
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(1).width`), 2);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(2).char`), '');
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(2).width`), 0);
+      });
     });
   });
 });
