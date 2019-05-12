@@ -49,8 +49,8 @@ export class AddonManager implements IDisposable {
     if (index === -1) {
       throw new Error('Could not dispose an addon that has not been loaded');
     }
-    loadedAddon.dispose();
     loadedAddon.isDisposed = true;
+    loadedAddon.dispose();
     this._addons.splice(index, 1);
   }
 }
