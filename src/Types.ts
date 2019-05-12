@@ -103,6 +103,7 @@ export interface ICompositionHelper {
  */
 export interface IInputHandler {
   parse(data: string): void;
+  parseUtf8(data: Uint8Array): void;
   print(data: Uint32Array, start: number, end: number): void;
 
   /** C0 BEL */ bell(): void;
@@ -265,6 +266,7 @@ export interface IPublicTerminal extends IDisposable, IEventEmitter {
   scrollToLine(line: number): void;
   clear(): void;
   write(data: string): void;
+  writeUtf8(data: Uint8Array): void;
   getOption(key: string): any;
   setOption(key: string, value: any): void;
   refresh(start: number, end: number): void;
