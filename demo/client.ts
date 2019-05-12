@@ -13,7 +13,6 @@ import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
 import { WebLinksAddon } from 'xterm-addon-web-links';
 
 import * as fit from '../lib/addons/fit/fit';
-import * as fullscreen from '../lib/addons/fullscreen/fullscreen';
 
 // Pulling in the module's types relies on the <reference> above, it's looks a
 // little weird here as we're importing "this" module
@@ -26,7 +25,6 @@ export interface IWindowWithTerminal extends Window {
 declare let window: IWindowWithTerminal;
 
 Terminal.applyAddon(fit);
-Terminal.applyAddon(fullscreen);
 
 let term;
 let attachAddon: AttachAddon;
