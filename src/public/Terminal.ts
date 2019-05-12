@@ -180,7 +180,13 @@ class BufferApiView implements IBufferApi {
   public get viewportY(): number { return this._buffer.ydisp; }
   public get baseY(): number { return this._buffer.ybase; }
   public get length(): number { return this._buffer.lines.length; }
-  public getLine(y: number): IBufferLineApi | undefined { return new BufferLineApiView(this._buffer.lines.get(y)); }
+  public getLine(y: number): IBufferLineApi | undefined {
+    const line = this._buffer.lines.get(y);
+    if (!line) {
+      return undefined;
+    }
+    return new BufferLineApiView(line);
+  }
 }
 
 class BufferLineApiView implements IBufferLineApi {
@@ -188,7 +194,7 @@ class BufferLineApiView implements IBufferLineApi {
 
   public get isWrapped(): boolean { return this._line.isWrapped; }
   public getCell(x: number): IBufferCellApi | undefined {
-    if (x < 0 && x >= this._line.length) {
+    if (x < 0 || x >= this._line.length) {
       return undefined;
     }
     return new BufferCellApiView(this._line, x);

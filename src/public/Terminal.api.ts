@@ -300,6 +300,13 @@ describe('API Integration Tests', () => {
     });
 
     describe('getLine', () => {
+      it('invalid index', async function(): Promise<any> {
+        this.timeout(10000);
+        await openTerminal({ rows: 5 });
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(-1)`), undefined);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(5)`), undefined);
+      });
+
       it('isWrapped', async function(): Promise<any> {
         this.timeout(10000);
         await openTerminal({ cols: 5 });
@@ -331,7 +338,9 @@ describe('API Integration Tests', () => {
 
       it('getCell', async function(): Promise<any> {
         this.timeout(10000);
-        await openTerminal();
+        await openTerminal({ cols: 5 });
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(-1)`), undefined);
+        assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(5)`), undefined);
         assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(0).char`), '');
         assert.equal(await page.evaluate(`window.term.buffer.getLine(0).getCell(0).width`), 1);
         await page.evaluate(`window.term.write('a文')`);
