@@ -263,6 +263,7 @@ export interface IPublicTerminal extends IDisposable, IEventEmitter {
     scrollToLine(line: number): void;
     clear(): void;
     write(data: string): void;
+    writeUtf8(data: Uint8Array): void;
     getOption(key: string): any;
     setOption(key: string, value: any): void;
     refresh(start: number, end: number): void;
