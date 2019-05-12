@@ -1377,7 +1377,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       return;
     }
 
-    // Ignore falsy data values (including the empty string)
+    // Ignore falsy data values
     if (!data) {
       return;
     }

@@ -28,7 +28,7 @@ export function utf32ToString(data: Uint32Array, start: number = 0, end: number 
   for (let i = start; i < end; ++i) {
     let codepoint = data[i];
     if (codepoint > 0xFFFF) {
-      // JS string are encoded as UTF16, thus a non BMP codepoint gets converted into a surrogate pair
+      // JS strings are encoded as UTF16, thus a non BMP codepoint gets converted into a surrogate pair
       // conversion rules:
       //  - subtract 0x10000 from code point, leaving a 20 bit number
       //  - add high 10 bits to 0xD800  --> first surrogate
@@ -140,10 +140,10 @@ export class Utf8ToUtf32 {
     }
 
     let size = 0;
-    let byte1;
-    let byte2;
-    let byte3;
-    let byte4;
+    let byte1: number;
+    let byte2: number;
+    let byte3: number;
+    let byte4: number;
     let codepoint = 0;
     let startPos = 0;
 
@@ -153,7 +153,7 @@ export class Utf8ToUtf32 {
       let cp = this.interim[0];
       cp &= ((((cp & 0xE0) === 0xC0)) ? 0x1F : (((cp & 0xF0) === 0xE0)) ? 0x0F : 0x07);
       let pos = 0;
-      let tmp;
+      let tmp: number;
       while ((tmp = this.interim[++pos] & 0x3F) && pos < 4) {
         cp <<= 6;
         cp |= tmp;
