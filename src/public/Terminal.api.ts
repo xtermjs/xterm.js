@@ -62,6 +62,20 @@ describe('API Integration Tests', () => {
     assert.equal(await page.evaluate(`window.term.buffer.getLine(1).translateToString(true)`), 'bar');
   });
 
+  it.only('writeUtf8', async function(): Promise<any> {
+    this.timeout(10000);
+    await openTerminal();
+    await page.evaluate(`
+      // foo
+      window.term.writeUtf8(new Uint8Array([102, 111, 111]));
+      // bar
+      window.term.writeUtf8(new Uint8Array([98, 97, 114]));
+      // 文
+      window.term.writeUtf8(new Uint8Array([230, 150, 135]));
+    `);
+    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foobar文');
+  });
+
   it('clear', async function(): Promise<any> {
     this.timeout(10000);
     await openTerminal({ rows: 5 });
