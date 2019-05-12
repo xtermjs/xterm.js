@@ -895,11 +895,11 @@ declare module 'xterm' {
     readonly length: number;
 
     /**
-     * Gets a line from the buffer.
+     * Gets a line from the buffer, or undefined if the line index does not exist.
      *
      * @param y The line index to get.
      */
-    getLine(y: number): IBufferLine;
+    getLine(y: number): IBufferLine | undefined;
   }
 
   interface IBufferLine {
@@ -909,7 +909,7 @@ declare module 'xterm' {
     readonly isWrapped: boolean;
 
     /**
-     * Gets a cell from the line.
+     * Gets a cell from the line, or undefined if the line index does not exist.
      *
      * @param x The character index to get.
      */
