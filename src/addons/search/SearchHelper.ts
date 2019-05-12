@@ -341,7 +341,7 @@ export class SearchHelper implements ISearchHelper {
       this._terminal.clearSelection();
       return false;
     }
-    this._terminal._core.selectionManager.setSelection(result.col, result.row, result.term.length);
+    this._terminal.select(result.col, result.row, result.term.length);
     this._terminal.scrollLines(result.row - this._terminal._core.buffer.ydisp);
     return true;
   }

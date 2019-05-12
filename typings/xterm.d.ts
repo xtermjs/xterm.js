@@ -671,23 +671,28 @@ declare module 'xterm' {
     hasSelection(): boolean;
 
     /**
-     * Selects text within the terminal.
-     * @param column The column the selection starts at..
-     * @param row The row the selection starts at.
-     * @param length The length of the selection.
-     */
-    setSelection(column: number, row: number, length: number): void;
-
-    /**
      * Gets the terminal's current selection, this is useful for implementing
      * copy behavior outside of xterm.js.
      */
     getSelection(): string;
 
     /**
+     * Gets the selection position or undefined if there is no selection.
+     */
+    getSelectionPosition(): ISelectionPosition | undefined;
+
+    /**
      * Clears the current terminal selection.
      */
     clearSelection(): void;
+
+    /**
+     * Selects text within the terminal.
+     * @param column The column the selection starts at..
+     * @param row The row the selection starts at.
+     * @param length The length of the selection.
+     */
+    select(column: number, row: number, length: number): void;
 
     /**
      * Selects all text within the terminal.
@@ -870,6 +875,31 @@ declare module 'xterm' {
      * @param addon The addon to apply.
      */
     static applyAddon(addon: any): void;
+  }
+
+  /**
+   * An object representing a selecrtion within the terminal.
+   */
+  interface ISelectionPosition {
+    /**
+     * The start column of the selection.
+     */
+    startColumn: number;
+
+    /**
+     * The start row of the selection.
+     */
+    startRow: number;
+
+    /**
+     * The end column of the selection.
+     */
+    endColumn: number;
+
+    /**
+     * The end row of the selection.
+     */
+    endRow: number;
   }
 
   interface IBuffer {
