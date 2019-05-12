@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { ITerminalAddon, IDisposable, Terminal } from 'xterm';
+import { ITerminalAddon, IDisposable } from 'xterm';
+import { IPublicTerminal } from '../Types';
 
 export interface ILoadedAddon {
   instance: ITerminalAddon;
@@ -23,7 +24,7 @@ export class AddonManager implements IDisposable {
     }
   }
 
-  public loadAddon(terminal: Terminal, instance: ITerminalAddon): void {
+  public loadAddon(terminal: IPublicTerminal, instance: ITerminalAddon): void {
     const loadedAddon: ILoadedAddon = {
       instance,
       dispose: instance.dispose,
@@ -31,7 +32,7 @@ export class AddonManager implements IDisposable {
     };
     this._addons.push(loadedAddon);
     instance.dispose = () => this._wrappedAddonDispose(loadedAddon);
-    instance.activate(terminal);
+    instance.activate(<any>terminal);
   }
 
   private _wrappedAddonDispose(loadedAddon: ILoadedAddon): void {
