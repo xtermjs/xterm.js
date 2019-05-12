@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi } from 'xterm';
+import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, ISelectionPosition } from 'xterm';
 import { ITerminal, IBuffer } from '../Types';
 import { IBufferLine } from '../core/Types';
 import { Terminal as TerminalCore } from '../Terminal';
@@ -96,8 +96,14 @@ export class Terminal implements ITerminalApi {
   public hasSelection(): boolean {
     return this._core.hasSelection();
   }
+  public select(column: number, row: number, length: number): void {
+    this._core.select(column, row, length);
+  }
   public getSelection(): string {
     return this._core.getSelection();
+  }
+  public getSelectionPosition(): ISelectionPosition | undefined {
+    return this._core.getSelectionPosition();
   }
   public clearSelection(): void {
     this._core.clearSelection();

@@ -43,7 +43,7 @@ import { DEFAULT_BELL_SOUND, SoundManager } from './SoundManager';
 import { MouseZoneManager } from './MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ScreenDprMonitor } from './ui/ScreenDprMonitor';
-import { ITheme, IMarker, IDisposable } from 'xterm';
+import { ITheme, IMarker, IDisposable, ISelectionPosition } from 'xterm';
 import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent } from './common/Types';
@@ -1536,11 +1536,34 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   /**
+   * Selects text within the terminal.
+   * @param column The column the selection starts at..
+   * @param row The row the selection starts at.
+   * @param length The length of the selection.
+   */
+  public select(column: number, row: number, length: number): void {
+    this.selectionManager.setSelection(column, row, length);
+  }
+
+  /**
    * Gets the terminal's current selection, this is useful for implementing copy
    * behavior outside of xterm.js.
    */
   public getSelection(): string {
     return this.selectionManager ? this.selectionManager.selectionText : '';
+  }
+
+  public getSelectionPosition(): ISelectionPosition | undefined {
+    if (!this.selectionManager.hasSelection) {
+      return undefined;
+    }
+
+    return {
+      startColumn: this.selectionManager.selectionStart[0],
+      startRow: this.selectionManager.selectionStart[1],
+      endColumn: this.selectionManager.selectionEnd[0],
+      endRow: this.selectionManager.selectionEnd[1]
+    };
   }
 
   /**

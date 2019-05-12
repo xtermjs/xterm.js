@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminalOptions as IPublicTerminalOptions, IEventEmitter, IDisposable, IMarker } from 'xterm';
+import { ITerminalOptions as IPublicTerminalOptions, IEventEmitter, IDisposable, IMarker, ISelectionPosition } from 'xterm';
 import { IColorSet, IRenderer } from './renderer/Types';
 import { ICharset, IAttributeData, ICellData, IBufferLine, CharData } from './core/Types';
 import { ICircularList } from './common/Types';
@@ -250,7 +250,9 @@ export interface IPublicTerminal extends IDisposable, IEventEmitter {
     addMarker(cursorYOffset: number): IMarker;
     hasSelection(): boolean;
     getSelection(): string;
+    getSelectionPosition(): ISelectionPosition | undefined;
     clearSelection(): void;
+    select(column: number, row: number, length: number): void;
     selectAll(): void;
     selectLines(start: number, end: number): void;
     dispose(): void;
