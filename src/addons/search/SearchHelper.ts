@@ -35,25 +35,23 @@ export class SearchHelper implements ISearchHelper {
    * @return Whether a result was found.
    */
   public findNext(term: string, searchOptions?: ISearchOptions): boolean {
-    const selectionManager = this._terminal._core.selectionManager;
     const {incremental} = searchOptions;
     let result: ISearchResult;
 
     if (!term || term.length === 0) {
-      selectionManager.clearSelection();
+      this._terminal.clearSelection();
       return false;
     }
 
     let startCol: number = 0;
     let startRow = this._terminal._core.buffer.ydisp;
 
-    if (selectionManager.selectionEnd) {
+    if (this._terminal.hasSelection()) {
       // Start from the selection end if there is a selection
       // For incremental search, use existing row
-      if (this._terminal.getSelection().length !== 0) {
-        startRow = incremental ? selectionManager.selectionStart[1] : selectionManager.selectionEnd[1];
-        startCol = incremental ? selectionManager.selectionStart[0] : selectionManager.selectionEnd[0];
-      }
+      const currentSelection = this._terminal.getSelectionPosition();
+      startRow = incremental ? currentSelection.startRow : currentSelection.endRow;
+      startCol = incremental ? currentSelection.startColumn : currentSelection.endColumn;
     }
 
     this._initLinesCache();
@@ -109,11 +107,10 @@ export class SearchHelper implements ISearchHelper {
    * @return Whether a result was found.
    */
   public findPrevious(term: string, searchOptions?: ISearchOptions): boolean {
-    const selectionManager = this._terminal._core.selectionManager;
     let result: ISearchResult;
 
     if (!term || term.length === 0) {
-      selectionManager.clearSelection();
+      this._terminal.clearSelection();
       return false;
     }
 
@@ -121,12 +118,11 @@ export class SearchHelper implements ISearchHelper {
     let startRow = this._terminal._core.buffer.ydisp + this._terminal.rows - 1;
     let startCol = this._terminal.cols;
 
-    if (selectionManager.selectionStart) {
+    if (this._terminal.hasSelection()) {
       // Start from the selection start if there is a selection
-      if (this._terminal.getSelection().length !== 0) {
-        startRow = selectionManager.selectionStart[1];
-        startCol = selectionManager.selectionStart[0];
-      }
+      const currentSelection = this._terminal.getSelectionPosition();
+      startRow = currentSelection.startRow;
+      startCol = currentSelection.startColumn;
     }
 
     this._initLinesCache();
