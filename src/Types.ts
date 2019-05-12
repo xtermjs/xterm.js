@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminalOptions as IPublicTerminalOptions, IEventEmitter, IDisposable, IMarker, Terminal, ISelectionPosition } from 'xterm';
+import { ITerminalOptions as IPublicTerminalOptions, IEventEmitter, IDisposable, IMarker, ISelectionPosition } from 'xterm';
 import { IColorSet, IRenderer } from './renderer/Types';
 import { ICharset, IAttributeData, ICellData, IBufferLine, CharData } from './core/Types';
 import { ICircularList } from './common/Types';
@@ -269,10 +269,6 @@ export interface IPublicTerminal extends IDisposable, IEventEmitter {
   setOption(key: string, value: any): void;
   refresh(start: number, end: number): void;
   reset(): void;
-}
-
-export interface ITerminalAddon extends IDisposable {
-  activate(terminal: Terminal): void;
 }
 
 export interface IBufferAccessor {

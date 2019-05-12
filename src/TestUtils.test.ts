@@ -9,7 +9,7 @@ import { IBufferLine, ICellData, IAttributeData } from './core/Types';
 import { ICircularList, XtermListener } from './common/Types';
 import { Buffer } from './Buffer';
 import * as Browser from './common/Platform';
-import { ITheme, IDisposable, IMarker, IEvent, ITerminalAddon, ISelectionPosition } from 'xterm';
+import { ITheme, IDisposable, IMarker, IEvent, ISelectionPosition } from 'xterm';
 import { Terminal } from './Terminal';
 import { AttributeData } from './core/buffer/BufferLine';
 
@@ -30,9 +30,6 @@ export class MockTerminal implements ITerminal {
   onKey: IEvent<{ key: string; domEvent: KeyboardEvent; }>;
   onRender: IEvent<{ start: number; end: number; }>;
   onResize: IEvent<{ cols: number; rows: number; }>;
-  loadAddon(addon: ITerminalAddon): void {
-    throw new Error('Method not implemented.');
-  }
   markers: IMarker[];
   addMarker(cursorYOffset: number): IMarker {
     throw new Error('Method not implemented.');

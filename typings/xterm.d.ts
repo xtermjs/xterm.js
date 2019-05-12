@@ -884,6 +884,9 @@ declare module 'xterm' {
     loadAddon(addon: ITerminalAddon): void;
   }
 
+  /**
+   * An addon that can provide additional functionality to the terminal.
+   */
   export interface ITerminalAddon extends IDisposable {
     /**
      * (EXPERIMENTAL) This is called when the addon is activated within xterm.js.
