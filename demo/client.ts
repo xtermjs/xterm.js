@@ -155,7 +155,7 @@ function runRealTerminal(): void {
    * the lines below. (Must also be switched in server.js)
    */
   term.loadAddon(new AttachAddon(socket));
-  //term.loadAddon(new AttachAddon(socket, {inputUtf8: true}));
+  // term.loadAddon(new AttachAddon(socket, {inputUtf8: true}));
 
   term._initialized = true;
 }
