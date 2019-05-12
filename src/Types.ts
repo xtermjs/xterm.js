@@ -220,6 +220,7 @@ export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAcc
   showCursor(): void;
 }
 
+// Portions of the public API that are required by the internal Terminal
 export interface IPublicTerminal extends IDisposable, IEventEmitter {
   textarea: HTMLTextAreaElement;
   rows: number;
@@ -268,7 +269,6 @@ export interface IPublicTerminal extends IDisposable, IEventEmitter {
   setOption(key: string, value: any): void;
   refresh(start: number, end: number): void;
   reset(): void;
-  loadAddon(addon: ITerminalAddon): void;
 }
 
 export interface ITerminalAddon extends IDisposable {

@@ -9,6 +9,7 @@
 
 import { Terminal } from '../lib/public/Terminal';
 import { AttachAddon } from 'xterm-addon-attach';
+import { SearchAddon } from 'xterm-addon-search';
 import { WebLinksAddon } from 'xterm-addon-web-links';
 
 import * as fit from '../lib/addons/fit/fit';
@@ -28,10 +29,10 @@ declare let window: IWindowWithTerminal;
 
 Terminal.applyAddon(fit);
 Terminal.applyAddon(fullscreen);
-Terminal.applyAddon(search);
 
 let term;
 let attachAddon: AttachAddon;
+let searchAddon: SearchAddon;
 let protocol;
 let socketURL;
 let socket;
@@ -95,6 +96,8 @@ function createTerminal(): void {
   typedTerm.loadAddon(new WebLinksAddon());
   attachAddon = new AttachAddon();
   typedTerm.loadAddon(attachAddon);
+  searchAddon = new SearchAddon();
+  typedTerm.loadAddon(searchAddon);
 
   window.term = term;  // Expose `term` to window for debugging purposes
   term.onResize((size: { cols: number, rows: number }) => {
@@ -119,12 +122,12 @@ function createTerminal(): void {
   addDomListener(actionElements.findNext, 'keyup', (e) => {
     const searchOptions = getSearchOptions();
     searchOptions.incremental = e.key !== `Enter`;
-    term.findNext(actionElements.findNext.value, searchOptions);
+    searchAddon.findNext(actionElements.findNext.value, searchOptions);
   });
 
   addDomListener(actionElements.findPrevious, 'keyup', (e) => {
     if (e.key === `Enter`) {
-      term.findPrevious(actionElements.findPrevious.value, getSearchOptions());
+      searchAddon.findPrevious(actionElements.findPrevious.value, getSearchOptions());
     }
   });
 
