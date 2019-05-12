@@ -9,7 +9,7 @@ import { IBufferLine, ICellData, IAttributeData } from './core/Types';
 import { ICircularList, XtermListener } from './common/Types';
 import { Buffer } from './Buffer';
 import * as Browser from './common/Platform';
-import { ITheme, IDisposable, IMarker, IEvent } from 'xterm';
+import { ITheme, IDisposable, IMarker, IEvent, ISelectionPosition } from 'xterm';
 import { Terminal } from './Terminal';
 import { AttributeData } from './core/buffer/BufferLine';
 
@@ -83,7 +83,13 @@ export class MockTerminal implements ITerminal {
   getSelection(): string {
     throw new Error('Method not implemented.');
   }
+  getSelectionPosition(): ISelectionPosition | undefined {
+    throw new Error('Method not implemented.');
+  }
   clearSelection(): void {
+    throw new Error('Method not implemented.');
+  }
+  select(column: number, row: number, length: number): void {
     throw new Error('Method not implemented.');
   }
   selectAll(): void {

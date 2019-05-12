@@ -106,16 +106,23 @@ describe('API Integration Tests', () => {
 
   it('selection', async function(): Promise<any> {
     this.timeout(10000);
-    await openTerminal({ rows: 5 });
+    await openTerminal({ rows: 5, cols: 5 });
     await page.evaluate(`window.term.write('\\n\\nfoo\\n\\n\\rbar\\n\\n\\rbaz')`);
     assert.equal(await page.evaluate(`window.term.hasSelection()`), false);
     assert.equal(await page.evaluate(`window.term.getSelection()`), '');
+    assert.deepEqual(await page.evaluate(`window.term.getSelectionPosition()`), undefined);
     await page.evaluate(`window.term.selectAll()`);
     assert.equal(await page.evaluate(`window.term.hasSelection()`), true);
     assert.equal(await page.evaluate(`window.term.getSelection()`), '\n\nfoo\n\nbar\n\nbaz');
+    assert.deepEqual(await page.evaluate(`window.term.getSelectionPosition()`), { startColumn: 0, startRow: 0, endColumn: 5, endRow: 6 });
     await page.evaluate(`window.term.clearSelection()`);
     assert.equal(await page.evaluate(`window.term.hasSelection()`), false);
     assert.equal(await page.evaluate(`window.term.getSelection()`), '');
+    assert.deepEqual(await page.evaluate(`window.term.getSelectionPosition()`), undefined);
+    await page.evaluate(`window.term.select(1, 2, 2)`);
+    assert.equal(await page.evaluate(`window.term.hasSelection()`), true);
+    assert.equal(await page.evaluate(`window.term.getSelection()`), 'oo');
+    assert.deepEqual(await page.evaluate(`window.term.getSelectionPosition()`), { startColumn: 1, startRow: 2, endColumn: 3, endRow: 2 });
   });
 
   it('focus, blur', async function(): Promise<any> {
