@@ -143,7 +143,6 @@ function createTerminal(): void {
         pid = processId;
         socketURL += processId;
         socket = new WebSocket(socketURL);
-        socket.binaryType = 'arraybuffer';
         socket.onopen = runRealTerminal;
         socket.onclose = runFakeTerminal;
         socket.onerror = runFakeTerminal;
