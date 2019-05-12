@@ -249,6 +249,7 @@ export interface IPublicTerminal extends IDisposable, IEventEmitter {
     deregisterCharacterJoiner(joinerId: number): void;
     addMarker(cursorYOffset: number): IMarker;
     hasSelection(): boolean;
+    setSelection(column: number, row: number, length: number): void;
     getSelection(): string;
     clearSelection(): void;
     selectAll(): void;

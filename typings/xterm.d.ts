@@ -671,6 +671,14 @@ declare module 'xterm' {
     hasSelection(): boolean;
 
     /**
+     * Selects text within the terminal.
+     * @param column The column the selection starts at..
+     * @param row The row the selection starts at.
+     * @param length The length of the selection.
+     */
+    setSelection(column: number, row: number, length: number): void;
+
+    /**
      * Gets the terminal's current selection, this is useful for implementing
      * copy behavior outside of xterm.js.
      */

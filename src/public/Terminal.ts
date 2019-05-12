@@ -96,6 +96,9 @@ export class Terminal implements ITerminalApi {
   public hasSelection(): boolean {
     return this._core.hasSelection();
   }
+  public setSelection(column: number, row: number, length: number): void {
+    this._core.setSelection(column, row, length);
+  }
   public getSelection(): string {
     return this._core.getSelection();
   }

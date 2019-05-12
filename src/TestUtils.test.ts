@@ -80,6 +80,9 @@ export class MockTerminal implements ITerminal {
   hasSelection(): boolean {
     throw new Error('Method not implemented.');
   }
+  setSelection(column: number, row: number, length: number): void {
+    throw new Error('Method not implemented.');
+  }
   getSelection(): string {
     throw new Error('Method not implemented.');
   }
