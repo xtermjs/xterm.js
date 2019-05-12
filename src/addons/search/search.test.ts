@@ -23,9 +23,54 @@ class MockTerminal {
   get core(): any {
     return this._core;
   }
+  get buffer(): IBuffer {
+    // TODO: This is a hacky workaround until we use puppeteer for addon tests
+    const buffer = this._core.buffer;
+    return {
+      cursorY: buffer.y,
+      cursorX: buffer.x,
+      viewportY: buffer.ydisp,
+      baseY: buffer.ybase,
+      length: buffer.length,
+      getLine(y: number): IBufferLine {
+        return {
+          isWrapped: buffer.lines.get(y) ? buffer.lines.get(y).isWrapped : false,
+          getCell(x: number): IBufferCell {
+            return {
+              char: buffer.lines.get(y).get(x)[1/*CHAR_DATA_CHAR_INDEX*/],
+              width: buffer.lines.get(y).get(x)[2/*CHAR_DATA_WIDTH_INDEX*/]
+            };
+          },
+          translateToString(trimRight?: boolean, startColumn?: number, endColumn?: number): string {
+            return buffer.translateBufferLineToString(y, trimRight);
+          }
+        };
+      }
+    };
+  }
   pushWriteData(): void {
     this._core._innerWrite();
   }
+}
+
+interface IBuffer {
+  readonly cursorY: number;
+  readonly cursorX: number;
+  readonly viewportY: number;
+  readonly baseY: number;
+  readonly length: number;
+  getLine(y: number): IBufferLine | undefined;
+}
+
+interface IBufferLine {
+  readonly isWrapped: boolean;
+  getCell(x: number): IBufferCell;
+  translateToString(trimRight?: boolean, startColumn?: number, endColumn?: number): string;
+}
+
+interface IBufferCell {
+  readonly char: string;
+  readonly width: number;
 }
 
 class TestSearchHelper extends SearchHelper {

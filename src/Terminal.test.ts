@@ -16,7 +16,7 @@ class TestTerminal extends Terminal {
   public keyPress(ev: any): boolean { return this._keyPress(ev); }
 }
 
-describe('xterm.js', () => {
+describe('Terminal', () => {
   let term: TestTerminal;
   const termOptions = {
     cols: INIT_COLS,

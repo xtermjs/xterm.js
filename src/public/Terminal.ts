@@ -3,18 +3,21 @@
  * @license MIT
  */
 
-import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi, ISelectionPosition } from 'xterm';
+import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi } from 'xterm';
 import { ITerminal, IBuffer } from '../Types';
 import { IBufferLine } from '../core/Types';
 import { Terminal as TerminalCore } from '../Terminal';
 import * as Strings from '../Strings';
 import { IEvent } from '../common/EventEmitter2';
+import { AddonManager } from './AddonManager';
 
 export class Terminal implements ITerminalApi {
   private _core: ITerminal;
+  private _addonManager: AddonManager;
 
   constructor(options?: ITerminalOptions) {
     this._core = new TerminalCore(options);
+    this._addonManager = new AddonManager();
   }
 
   public get onCursorMove(): IEvent<void> { return this._core.onCursorMove; }
@@ -115,6 +118,7 @@ export class Terminal implements ITerminalApi {
     this._core.selectLines(start, end);
   }
   public dispose(): void {
+    this._addonManager.dispose();
     this._core.dispose();
   }
   public destroy(): void {
@@ -172,6 +176,9 @@ export class Terminal implements ITerminalApi {
   }
   public static applyAddon(addon: any): void {
     addon.apply(Terminal);
+  }
+  public loadAddon(addon: ITerminalAddon): void {
+    return this._addonManager.loadAddon(this, addon);
   }
   public static get strings(): ILocalizableStrings {
     return Strings;

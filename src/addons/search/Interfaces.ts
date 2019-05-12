@@ -5,14 +5,8 @@
 
 import { Terminal } from 'xterm';
 
-// TODO: Don't rely on this private API
-export interface ITerminalCore {
-  buffer: any;
-}
-
 export interface ISearchAddonTerminal extends Terminal {
   __searchHelper?: ISearchHelper;
-  _core: ITerminalCore;
 }
 
 export interface ISearchHelper {
