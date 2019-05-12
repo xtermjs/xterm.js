@@ -135,6 +135,52 @@ describe('API Integration Tests', () => {
     assert.equal(await page.evaluate(`document.activeElement.className`), '');
   });
 
+  describe('loadAddon', () => {
+    it('constructor', async function(): Promise<any> {
+      this.timeout(10000);
+      await openTerminal({ cols: 5 });
+      await page.evaluate(`
+        window.cols = 0;
+        window.term.loadAddon({
+          activate: (t) => window.cols = t.cols,
+          dispose: () => {}
+        });
+      `);
+      assert.equal(await page.evaluate(`window.cols`), 5);
+    });
+
+    it('dispose (addon)', async function(): Promise<any> {
+      this.timeout(10000);
+      await openTerminal();
+      await page.evaluate(`
+        window.disposeCalled = false
+        window.addon = {
+          activate: () => {},
+          dispose: () => window.disposeCalled = true
+        };
+        window.term.loadAddon(window.addon);
+      `);
+      assert.equal(await page.evaluate(`window.disposeCalled`), false);
+      await page.evaluate(`window.addon.dispose()`);
+      assert.equal(await page.evaluate(`window.disposeCalled`), true);
+    });
+
+    it('dispose (terminal)', async function(): Promise<any> {
+      this.timeout(10000);
+      await openTerminal();
+      await page.evaluate(`
+        window.disposeCalled = false
+        window.term.loadAddon({
+          activate: () => {},
+          dispose: () => window.disposeCalled = true
+        });
+      `);
+      assert.equal(await page.evaluate(`window.disposeCalled`), false);
+      await page.evaluate(`window.term.dispose()`);
+      assert.equal(await page.evaluate(`window.disposeCalled`), true);
+    });
+  });
+
   describe('Events', () => {
     it('onCursorMove', async function(): Promise<any> {
       this.timeout(10000);

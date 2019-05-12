@@ -881,8 +881,25 @@ declare module 'xterm' {
      * Applies an addon to the Terminal prototype, making it available to all
      * newly created Terminals.
      * @param addon The addon to apply.
+     * @deprecated Use the new loadAddon API/addon format.
      */
     static applyAddon(addon: any): void;
+
+    /**
+     * (EXPERIMENTAL) Loads an addon into this instance of xterm.js.
+     * @param addon The addon to load.
+     */
+    loadAddon(addon: ITerminalAddon): void;
+  }
+
+  /**
+   * An addon that can provide additional functionality to the terminal.
+   */
+  export interface ITerminalAddon extends IDisposable {
+    /**
+     * (EXPERIMENTAL) This is called when the addon is activated within xterm.js.
+     */
+    activate(terminal: Terminal): void;
   }
 
   /**

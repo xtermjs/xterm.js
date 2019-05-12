@@ -8,12 +8,11 @@
 /// <reference path="../typings/xterm.d.ts"/>
 
 import { Terminal } from '../lib/public/Terminal';
-import * as attach from '../lib/addons/attach/attach';
+import { AttachAddon } from 'xterm-addon-attach';
+import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
+import { WebLinksAddon } from 'xterm-addon-web-links';
+
 import * as fit from '../lib/addons/fit/fit';
-import * as fullscreen from '../lib/addons/fullscreen/fullscreen';
-import * as search from '../lib/addons/search/search';
-import * as webLinks from '../lib/addons/webLinks/webLinks';
-import { ISearchOptions } from '../lib/addons/search/Interfaces';
 
 // Pulling in the module's types relies on the <reference> above, it's looks a
 // little weird here as we're importing "this" module
@@ -25,14 +24,11 @@ export interface IWindowWithTerminal extends Window {
 }
 declare let window: IWindowWithTerminal;
 
-Terminal.applyAddon(attach);
 Terminal.applyAddon(fit);
-Terminal.applyAddon(fullscreen);
-Terminal.applyAddon(search);
-Terminal.applyAddon(webLinks);
-
 
 let term;
+let attachAddon: AttachAddon;
+let searchAddon: SearchAddon;
 let protocol;
 let socketURL;
 let socket;
@@ -85,10 +81,20 @@ function createTerminal(): void {
   while (terminalContainer.children.length) {
     terminalContainer.removeChild(terminalContainer.children[0]);
   }
+
   const isWindows = ['Windows', 'Win16', 'Win32', 'WinCE'].indexOf(navigator.platform) >= 0;
   term = new Terminal({
     windowsMode: isWindows
   } as ITerminalOptions);
+
+  // Load addons
+  const typedTerm = term as TerminalType;
+  typedTerm.loadAddon(new WebLinksAddon());
+  attachAddon = new AttachAddon();
+  typedTerm.loadAddon(attachAddon);
+  searchAddon = new SearchAddon();
+  typedTerm.loadAddon(searchAddon);
+
   window.term = term;  // Expose `term` to window for debugging purposes
   term.onResize((size: { cols: number, rows: number }) => {
     if (!pid) {
@@ -104,8 +110,6 @@ function createTerminal(): void {
   socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
 
   term.open(terminalContainer);
-
-  term.webLinksInit();
   term.fit();
   term.focus();
 
@@ -114,12 +118,12 @@ function createTerminal(): void {
   addDomListener(actionElements.findNext, 'keyup', (e) => {
     const searchOptions = getSearchOptions();
     searchOptions.incremental = e.key !== `Enter`;
-    term.findNext(actionElements.findNext.value, searchOptions);
+    searchAddon.findNext(actionElements.findNext.value, searchOptions);
   });
 
   addDomListener(actionElements.findPrevious, 'keyup', (e) => {
     if (e.key === `Enter`) {
-      term.findPrevious(actionElements.findPrevious.value, getSearchOptions());
+      searchAddon.findPrevious(actionElements.findPrevious.value, getSearchOptions());
     }
   });
 
@@ -149,7 +153,7 @@ function createTerminal(): void {
 }
 
 function runRealTerminal(): void {
-  term.attach(socket);
+  attachAddon.attach(socket);
   term._initialized = true;
 }
 

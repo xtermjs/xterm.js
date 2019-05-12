@@ -25,11 +25,13 @@ const clientConfig = {
       {
         test: /\.js$/,
         use: ["source-map-loader"],
-        enforce: "pre"
+        enforce: "pre",
+        exclude: /node_modules/
       }
     ]
   },
   resolve: {
+    modules: [path.resolve(__dirname, '..'), 'node_modules'],
     extensions: [ '.tsx', '.ts', '.js' ]
   },
   output: {
