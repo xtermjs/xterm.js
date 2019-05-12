@@ -356,9 +356,9 @@ declare module 'xterm' {
     readonly cols: number;
 
     /**
-     * (EXPERIMENTAL) The terminal's current buffer, note that this might be
-     * either the normal buffer or the alt buffer depending on what's running in
-     * the terminal.
+     * (EXPERIMENTAL) The terminal's current buffer, this might be either the
+     * normal buffer or the alt buffer depending on what's running in the
+     * terminal.
      */
     readonly buffer: IBuffer;
 
@@ -897,6 +897,9 @@ declare module 'xterm' {
     /**
      * Gets a line from the buffer, or undefined if the line index does not exist.
      *
+     * Note that the result of this function should be used immediately after calling as when the
+     * terminal updates it could lead to unexpected behavior.
+     *
      * @param y The line index to get.
      */
     getLine(y: number): IBufferLine | undefined;
@@ -910,6 +913,9 @@ declare module 'xterm' {
 
     /**
      * Gets a cell from the line, or undefined if the line index does not exist.
+     *
+     * Note that the result of this function should be used immediately after calling as when the
+     * terminal updates it could lead to unexpected behavior.
      *
      * @param x The character index to get.
      */
