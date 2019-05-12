@@ -759,7 +759,9 @@ declare module 'xterm' {
     writeln(data: string): void;
 
     /**
-     * Writes text to the terminal encoded as UTF-8 to the terminal.
+     * Writes UTF8 data to the terminal.
+     * This has a slight performance advantage over the string based write method
+     * due to lesser data conversions needed on the way from the pty to xterm.js.
      * @param data The data to write to the terminal.
      */
     writeUtf8(data: Uint8Array): void;
