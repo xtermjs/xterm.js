@@ -99,6 +99,9 @@ describe('API Integration Tests', () => {
     await page.evaluate(`window.term.clearSelection()`);
     assert.equal(await page.evaluate(`window.term.hasSelection()`), false);
     assert.equal(await page.evaluate(`window.term.getSelection()`), '');
+    await page.evaluate(`window.term.setSelection(1, 2, 2)`)
+    assert.equal(await page.evaluate(`window.term.hasSelection()`), true);
+    assert.equal(await page.evaluate(`window.term.getSelection()`), 'oo');
   });
 
   it('focus, blur', async function(): Promise<any> {
