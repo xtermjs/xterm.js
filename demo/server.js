@@ -7,7 +7,7 @@ var pty = require('node-pty');
  * Whether to use UTF8 binary transport.
  * (Must also be switched in client.ts)
  */
-const USE_BINARY_UTF8 = true;
+const USE_BINARY_UTF8 = false;
 
 
 function startServer() {
