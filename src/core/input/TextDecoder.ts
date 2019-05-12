@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-
 /**
  * Polyfill - Convert UTF32 codepoint into JS string.
  * Note: The built-in String.fromCodePoint happens to be much slower
@@ -18,7 +17,6 @@ export function stringFromCodePoint(codePoint: number): string {
   }
   return String.fromCharCode(codePoint);
 }
-
 
 /**
  * Convert UTF32 char codes into JS string.
@@ -43,7 +41,6 @@ export function utf32ToString(data: Uint32Array, start: number = 0, end: number 
   }
   return result;
 }
-
 
 /**
  * StringToUtf32 - decodes UTF16 sequences into UTF32 codepoints.
@@ -211,7 +208,6 @@ export class Utf8ToUtf32 {
     const fourStop = length - 4;
     let i = startPos;
     while (i < length) {
-
       /**
        * ASCII shortcut with loop unrolled to 4 consecutive ASCII chars.
        * This is a compromise between speed gain for ASCII

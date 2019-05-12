@@ -554,12 +554,6 @@ declare module 'xterm' {
     resize(columns: number, rows: number): void;
 
     /**
-     * Writes text to the terminal, followed by a break line character (\n).
-     * @param data The text to write to the terminal.
-     */
-    writeln(data: string): void;
-
-    /**
      * Opens the terminal within an element.
      * @param parent The element to create the terminal within. This element
      * must be visible (have dimensions) when `open` is called as several DOM-
@@ -746,7 +740,13 @@ declare module 'xterm' {
     write(data: string): void;
 
     /**
-     * Writes UTF8 data to the terminal.
+     * Writes text to the terminal, followed by a break line character (\n).
+     * @param data The text to write to the terminal.
+     */
+    writeln(data: string): void;
+
+    /**
+     * Writes text to the terminal encoded as UTF-8 to the terminal.
      * @param data The data to write to the terminal.
      */
     writeUtf8(data: Uint8Array): void;
