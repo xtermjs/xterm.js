@@ -45,7 +45,7 @@ export class SearchHelper implements ISearchHelper {
     }
 
     let startCol: number = 0;
-    let startRow = this._terminal._core.buffer.ydisp;
+    let startRow = this._terminal.buffer.viewportY;
 
     if (selectionManager.selectionEnd) {
       // Start from the selection end if there is a selection
@@ -64,7 +64,7 @@ export class SearchHelper implements ISearchHelper {
     let cumulativeCols = startCol;
     // If startRow is wrapped row, scan for unwrapped row above.
     // So we can start matching on wrapped line from long unwrapped line.
-    while (this._terminal._core.buffer.lines.get(findingRow).isWrapped) {
+    while (this._terminal.buffer.getLine(findingRow).isWrapped) {
       findingRow--;
       cumulativeCols += this._terminal.cols;
     }
@@ -75,7 +75,7 @@ export class SearchHelper implements ISearchHelper {
     // Search from startRow + 1 to end
     if (!result) {
 
-      for (let y = startRow + 1; y < this._terminal._core.buffer.ybase + this._terminal.rows; y++) {
+      for (let y = startRow + 1; y < this._terminal.buffer.baseY + this._terminal.rows; y++) {
 
         // If the current line is wrapped line, increase index of column to ignore the previous scan
         // Otherwise, reset beginning column index to zero with set new unwrapped line index
@@ -118,7 +118,7 @@ export class SearchHelper implements ISearchHelper {
     }
 
     const isReverseSearch = true;
-    let startRow = this._terminal._core.buffer.ydisp + this._terminal.rows - 1;
+    let startRow = this._terminal.buffer.viewportY + this._terminal.rows - 1;
     let startCol = this._terminal.cols;
 
     if (selectionManager.selectionStart) {
@@ -139,7 +139,7 @@ export class SearchHelper implements ISearchHelper {
       // If the line is wrapped line, increase number of columns that is needed to be scanned
       // Se we can scan on wrapped line from unwrapped line
       let cumulativeCols = this._terminal.cols;
-      if (this._terminal._core.buffer.lines.get(startRow).isWrapped) {
+      if (this._terminal.buffer.getLine(startRow).isWrapped) {
         cumulativeCols += startCol;
       }
       for (let y = startRow - 1; y >= 0; y--) {
@@ -149,7 +149,7 @@ export class SearchHelper implements ISearchHelper {
         }
         // If the current line is wrapped line, increase scanning range,
         // preparing for scanning on unwrapped line
-        if (this._terminal._core.buffer.lines.get(y).isWrapped) {
+        if (this._terminal.buffer.getLine(y).isWrapped) {
           cumulativeCols += this._terminal.cols;
         } else {
           cumulativeCols = this._terminal.cols;
@@ -160,14 +160,14 @@ export class SearchHelper implements ISearchHelper {
     // Search from the bottom to startRow (search the whole startRow again in
     // case startCol > 0)
     if (!result) {
-      const searchFrom = this._terminal._core.buffer.ybase + this._terminal.rows - 1;
+      const searchFrom = this._terminal.buffer.baseY + this._terminal.rows - 1;
       let cumulativeCols = this._terminal.cols;
       for (let y = searchFrom; y >= startRow; y--) {
         result = this._findInLine(term, y, cumulativeCols, searchOptions, isReverseSearch);
         if (result) {
           break;
         }
-        if (this._terminal._core.buffer.lines.get(y).isWrapped) {
+        if (this._terminal.buffer.getLine(y).isWrapped) {
           cumulativeCols += this._terminal.cols;
         } else {
           cumulativeCols = this._terminal.cols;
@@ -184,7 +184,7 @@ export class SearchHelper implements ISearchHelper {
    */
   private _initLinesCache(): void {
     if (!this._linesCache) {
-      this._linesCache = new Array(this._terminal._core.buffer.length);
+      this._linesCache = new Array(this._terminal.buffer.length);
       this._cursorMoveListener = this._terminal.onCursorMove(() => this._destroyLinesCache());
       this._resizeListener = this._terminal.onResize(() => this._destroyLinesCache());
     }
@@ -234,7 +234,7 @@ export class SearchHelper implements ISearchHelper {
   protected _findInLine(term: string, row: number, col: number, searchOptions: ISearchOptions = {}, isReverseSearch: boolean = false): ISearchResult {
 
     // Ignore wrapped lines, only consider on unwrapped line (first row of command string).
-    if (this._terminal._core.buffer.lines.get(row).isWrapped) {
+    if (this._terminal.buffer.getLine(row).isWrapped) {
       return;
     }
     let stringLine = this._linesCache ? this._linesCache[row] : void 0;
@@ -286,18 +286,18 @@ export class SearchHelper implements ISearchHelper {
         return;
       }
 
-      const line = this._terminal._core.buffer.lines.get(row);
+      const line = this._terminal.buffer.getLine(row);
 
       for (let i = 0; i < resultIndex; i++) {
-        const charData = line.get(i);
+        const cell = line.getCell(i);
         // Adjust the searchIndex to normalize emoji into single chars
-        const char = charData[1/*CHAR_DATA_CHAR_INDEX*/];
+        const char = cell.char;
         if (char.length > 1) {
           resultIndex -= char.length - 1;
         }
         // Adjust the searchIndex for empty characters following wide unicode
         // chars (eg. CJK)
-        const charWidth = charData[2/*CHAR_DATA_WIDTH_INDEX*/];
+        const charWidth = cell.width;
         if (charWidth === 0) {
           resultIndex++;
         }
@@ -322,9 +322,9 @@ export class SearchHelper implements ISearchHelper {
     let lineWrapsToNext: boolean;
 
     do {
-      const nextLine = this._terminal._core.buffer.lines.get(lineIndex + 1);
+      const nextLine = this._terminal.buffer.getLine(lineIndex + 1);
       lineWrapsToNext = nextLine ? nextLine.isWrapped : false;
-      lineString += this._terminal._core.buffer.translateBufferLineToString(lineIndex, !lineWrapsToNext && trimRight).substring(0, this._terminal.cols);
+      lineString += this._terminal.buffer.getLine(lineIndex).translateToString(!lineWrapsToNext && trimRight).substring(0, this._terminal.cols);
       lineIndex++;
     } while (lineWrapsToNext);
 
@@ -342,7 +342,7 @@ export class SearchHelper implements ISearchHelper {
       return false;
     }
     this._terminal._core.selectionManager.setSelection(result.col, result.row, result.term.length);
-    this._terminal.scrollLines(result.row - this._terminal._core.buffer.ydisp);
+    this._terminal.scrollLines(result.row - this._terminal.buffer.viewportY);
     return true;
   }
 }
