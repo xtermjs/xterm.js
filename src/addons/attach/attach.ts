@@ -106,7 +106,7 @@ export function attach(term: Terminal, socket: WebSocket, bidirectional: boolean
       socket.send(READY_MSG);
     } else if (this._socket.readyState === 0) {
       // still connecting, thus wait for open event
-      addSocketListener(socket, 'open', () => socket.send(READY_MSG));
+      socket.addEventListener('open', () => socket.send(READY_MSG), {once: true});
     }
   }
 }
