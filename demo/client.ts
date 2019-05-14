@@ -154,8 +154,8 @@ function runRealTerminal(): void {
    * To run it with UTF8 binary transport, swap comment on
    * the lines below. (Must also be switched in server.js)
    */
-  term.loadAddon(new AttachAddon(socket));
-  // term.loadAddon(new AttachAddon(socket, {inputUtf8: true}));
+  term.loadAddon(new AttachAddon(socket, {sendReady: true}));
+  // term.loadAddon(new AttachAddon(socket, {sendReady: true, inputUtf8: true}));
 
   term._initialized = true;
 }

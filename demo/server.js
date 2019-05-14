@@ -108,15 +108,13 @@ function startServer() {
     }
     const send = USE_BINARY_UTF8 ? bufferUtf8(ws, 5) : buffer(ws, 5);
 
-    term.on('data', function(data) {
-      try {
-        send(data);
-      } catch (ex) {
-        // The WebSocket is not open, ignore
+    ws.once('message', msg => {
+      // wait once for READY message at the beginning
+      if (msg !== '#READY#') {
+        throw new Error(`excepted "#READY#" as first message, but got "${msg}"`);
       }
-    });
-    ws.on('message', function(msg) {
-      term.write(msg);
+      ws.on('message', msg => term.write(msg));
+      term.on('data', data => send(data));
     });
     ws.on('close', function () {
       term.kill();

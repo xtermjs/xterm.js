@@ -8,6 +8,8 @@
 import { Terminal, IDisposable } from 'xterm';
 import { IAttachAddonTerminal } from './Interfaces';
 
+const READY_MSG = '#READY#';
+
 /**
  * Attaches the given terminal to the given socket.
  *
@@ -16,8 +18,9 @@ import { IAttachAddonTerminal } from './Interfaces';
  * @param bidirectional Whether the terminal should send data to the socket as well.
  * @param buffered Whether the rendering of incoming data should happen instantly or at a maximum
  * frequency of 1 rendering per 10ms.
+ * @param buffered Whether the addon should send '#READY#' on startup
  */
-export function attach(term: Terminal, socket: WebSocket, bidirectional: boolean, buffered: boolean): void {
+export function attach(term: Terminal, socket: WebSocket, bidirectional: boolean, buffered: boolean, sendReady: boolean): void {
   const addonTerminal = <IAttachAddonTerminal>term;
   bidirectional = (typeof bidirectional === 'undefined') ? true : bidirectional;
   addonTerminal.__socket = socket;
@@ -96,6 +99,16 @@ export function attach(term: Terminal, socket: WebSocket, bidirectional: boolean
 
   addonTerminal._core.register(addSocketListener(socket, 'close', () => detach(addonTerminal, socket)));
   addonTerminal._core.register(addSocketListener(socket, 'error', () => detach(addonTerminal, socket)));
+
+  if (sendReady) {
+    if (this._socket.readyState === 1) {
+      // connection already opened, send right away
+      socket.send(READY_MSG);
+    } else if (this._socket.readyState === 0) {
+      // still connecting, thus wait for open event
+      addSocketListener(socket, 'open', () => socket.send(READY_MSG));
+    }
+  }
 }
 
 function addSocketListener(socket: WebSocket, type: string, handler: (this: WebSocket, ev: Event) => any): IDisposable {
@@ -141,9 +154,10 @@ export function apply(terminalConstructor: typeof Terminal): void {
    * @param bidirectional Whether the terminal should send data to the socket as well.
    * @param buffered Whether the rendering of incoming data should happen instantly or at a maximum
    * frequency of 1 rendering per 10ms.
+   * @param buffered Whether the addon should send '#READY#' on startup
    */
-  (<any>terminalConstructor.prototype).attach = function (socket: WebSocket, bidirectional: boolean, buffered: boolean): void {
-    attach(this, socket, bidirectional, buffered);
+  (<any>terminalConstructor.prototype).attach = function (socket: WebSocket, bidirectional: boolean, buffered: boolean, sendReady: boolean): void {
+    attach(this, socket, bidirectional, buffered, sendReady);
   };
 
   /**
