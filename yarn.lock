@@ -7236,10 +7236,10 @@ xregexp@4.0.0:
   resolved "https://registry.yarnpkg.com/xtend/-/xtend-4.0.1.tgz#a5c6d532be656e23db820efb943a1f04998d63af"
   integrity sha1-pcbVMr5lbiPbgg77lDofBJmNY68=
 
-xterm-addon-attach@0.1.0-beta7:
-  version "0.1.0-beta7"
-  resolved "https://registry.yarnpkg.com/xterm-addon-attach/-/xterm-addon-attach-0.1.0-beta7.tgz#787f6cce709611ee08ab731b95a62fa1c0bce6a9"
-  integrity sha512-nQr6LcYtpZcyDoHyL/BDIPJcTgL7qlHR/rvm8lSizQysGVT0pSzr5M7SjY3kQHw33U3hTer3c6oZzwjfj4ohOw==
+xterm-addon-attach@0.1.0-beta8:
+  version "0.1.0-beta8"
+  resolved "https://registry.yarnpkg.com/xterm-addon-attach/-/xterm-addon-attach-0.1.0-beta8.tgz#e469ed9d6ab7e535d0a9ffae23ef4f2efe58163b"
+  integrity sha512-HtQuwqnvcR+SwI9/JbBMd//Il+oEeo3rWrIucLLKHT8sB+OAOkdhmo5KIM/hhnovjI040WJ+tTHkDgPFwIJtmw==
 
 xterm-addon-search@0.1.0-beta4:
   version "0.1.0-beta4"

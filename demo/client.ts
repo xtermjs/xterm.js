@@ -27,7 +27,6 @@ declare let window: IWindowWithTerminal;
 Terminal.applyAddon(fit);
 
 let term;
-let attachAddon: AttachAddon;
 let searchAddon: SearchAddon;
 let protocol;
 let socketURL;
@@ -90,8 +89,6 @@ function createTerminal(): void {
   // Load addons
   const typedTerm = term as TerminalType;
   typedTerm.loadAddon(new WebLinksAddon());
-  attachAddon = new AttachAddon();
-  typedTerm.loadAddon(attachAddon);
   searchAddon = new SearchAddon();
   typedTerm.loadAddon(searchAddon);
 
@@ -152,7 +149,14 @@ function createTerminal(): void {
 }
 
 function runRealTerminal(): void {
-  attachAddon.attach(socket);
+  /**
+   * The demo defaults to string transport by default.
+   * To run it with UTF8 binary transport, swap comment on
+   * the lines below. (Must also be switched in server.js)
+   */
+  term.loadAddon(new AttachAddon(socket));
+  // term.loadAddon(new AttachAddon(socket, {inputUtf8: true}));
+
   term._initialized = true;
 }
 
