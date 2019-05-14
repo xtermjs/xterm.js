@@ -47,8 +47,9 @@ describe('API Integration Tests', () => {
     await page.evaluate(`
       window.term.write('foo');
       window.term.write('bar');
+      window.term.write('文');
     `);
-    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foobar');
+    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foobar文');
   });
 
   it('writeln', async function(): Promise<any> {
@@ -57,9 +58,25 @@ describe('API Integration Tests', () => {
     await page.evaluate(`
       window.term.writeln('foo');
       window.term.writeln('bar');
+      window.term.writeln('文');
     `);
     assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foo');
     assert.equal(await page.evaluate(`window.term.buffer.getLine(1).translateToString(true)`), 'bar');
+    assert.equal(await page.evaluate(`window.term.buffer.getLine(2).translateToString(true)`), '文');
+  });
+
+  it('writeUtf8', async function(): Promise<any> {
+    this.timeout(10000);
+    await openTerminal();
+    await page.evaluate(`
+      // foo
+      window.term.writeUtf8(new Uint8Array([102, 111, 111]));
+      // bar
+      window.term.writeUtf8(new Uint8Array([98, 97, 114]));
+      // 文
+      window.term.writeUtf8(new Uint8Array([230, 150, 135]));
+    `);
+    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foobar文');
   });
 
   it('clear', async function(): Promise<any> {
@@ -89,16 +106,23 @@ describe('API Integration Tests', () => {
 
   it('selection', async function(): Promise<any> {
     this.timeout(10000);
-    await openTerminal({ rows: 5 });
+    await openTerminal({ rows: 5, cols: 5 });
     await page.evaluate(`window.term.write('\\n\\nfoo\\n\\n\\rbar\\n\\n\\rbaz')`);
     assert.equal(await page.evaluate(`window.term.hasSelection()`), false);
     assert.equal(await page.evaluate(`window.term.getSelection()`), '');
+    assert.deepEqual(await page.evaluate(`window.term.getSelectionPosition()`), undefined);
     await page.evaluate(`window.term.selectAll()`);
     assert.equal(await page.evaluate(`window.term.hasSelection()`), true);
     assert.equal(await page.evaluate(`window.term.getSelection()`), '\n\nfoo\n\nbar\n\nbaz');
+    assert.deepEqual(await page.evaluate(`window.term.getSelectionPosition()`), { startColumn: 0, startRow: 0, endColumn: 5, endRow: 6 });
     await page.evaluate(`window.term.clearSelection()`);
     assert.equal(await page.evaluate(`window.term.hasSelection()`), false);
     assert.equal(await page.evaluate(`window.term.getSelection()`), '');
+    assert.deepEqual(await page.evaluate(`window.term.getSelectionPosition()`), undefined);
+    await page.evaluate(`window.term.select(1, 2, 2)`);
+    assert.equal(await page.evaluate(`window.term.hasSelection()`), true);
+    assert.equal(await page.evaluate(`window.term.getSelection()`), 'oo');
+    assert.deepEqual(await page.evaluate(`window.term.getSelectionPosition()`), { startColumn: 1, startRow: 2, endColumn: 3, endRow: 2 });
   });
 
   it('focus, blur', async function(): Promise<any> {
@@ -109,6 +133,52 @@ describe('API Integration Tests', () => {
     assert.equal(await page.evaluate(`document.activeElement.className`), 'xterm-helper-textarea');
     await page.evaluate(`window.term.blur()`);
     assert.equal(await page.evaluate(`document.activeElement.className`), '');
+  });
+
+  describe('loadAddon', () => {
+    it('constructor', async function(): Promise<any> {
+      this.timeout(10000);
+      await openTerminal({ cols: 5 });
+      await page.evaluate(`
+        window.cols = 0;
+        window.term.loadAddon({
+          activate: (t) => window.cols = t.cols,
+          dispose: () => {}
+        });
+      `);
+      assert.equal(await page.evaluate(`window.cols`), 5);
+    });
+
+    it('dispose (addon)', async function(): Promise<any> {
+      this.timeout(10000);
+      await openTerminal();
+      await page.evaluate(`
+        window.disposeCalled = false
+        window.addon = {
+          activate: () => {},
+          dispose: () => window.disposeCalled = true
+        };
+        window.term.loadAddon(window.addon);
+      `);
+      assert.equal(await page.evaluate(`window.disposeCalled`), false);
+      await page.evaluate(`window.addon.dispose()`);
+      assert.equal(await page.evaluate(`window.disposeCalled`), true);
+    });
+
+    it('dispose (terminal)', async function(): Promise<any> {
+      this.timeout(10000);
+      await openTerminal();
+      await page.evaluate(`
+        window.disposeCalled = false
+        window.term.loadAddon({
+          activate: () => {},
+          dispose: () => window.disposeCalled = true
+        });
+      `);
+      assert.equal(await page.evaluate(`window.disposeCalled`), false);
+      await page.evaluate(`window.term.dispose()`);
+      assert.equal(await page.evaluate(`window.disposeCalled`), true);
+    });
   });
 
   describe('Events', () => {

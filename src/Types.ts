@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminalOptions as IPublicTerminalOptions, IEventEmitter, IDisposable, IMarker } from 'xterm';
+import { ITerminalOptions as IPublicTerminalOptions, IEventEmitter, IDisposable, IMarker, ISelectionPosition } from 'xterm';
 import { IColorSet, IRenderer } from './renderer/Types';
 import { ICharset, IAttributeData, ICellData, IBufferLine, CharData } from './core/Types';
 import { ICircularList } from './common/Types';
@@ -103,6 +103,7 @@ export interface ICompositionHelper {
  */
 export interface IInputHandler {
   parse(data: string): void;
+  parseUtf8(data: Uint8Array): void;
   print(data: Uint32Array, start: number, end: number): void;
 
   /** C0 BEL */ bell(): void;
@@ -220,52 +221,56 @@ export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAcc
   showCursor(): void;
 }
 
+// Portions of the public API that are required by the internal Terminal
 export interface IPublicTerminal extends IDisposable, IEventEmitter {
-    textarea: HTMLTextAreaElement;
-    rows: number;
-    cols: number;
-    buffer: IBuffer;
-    markers: IMarker[];
-    onCursorMove: IEvent<void>;
-    onData: IEvent<string>;
-    onKey: IEvent<{ key: string, domEvent: KeyboardEvent }>;
-    onLineFeed: IEvent<void>;
-    onScroll: IEvent<number>;
-    onSelectionChange: IEvent<void>;
-    onRender: IEvent<{ start: number, end: number }>;
-    onResize: IEvent<{ cols: number, rows: number }>;
-    onTitleChange: IEvent<string>;
-    blur(): void;
-    focus(): void;
-    resize(columns: number, rows: number): void;
-    writeln(data: string): void;
-    open(parent: HTMLElement): void;
-    attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void;
-    addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable;
-    addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
-    registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): number;
-    deregisterLinkMatcher(matcherId: number): void;
-    registerCharacterJoiner(handler: (text: string) => [number, number][]): number;
-    deregisterCharacterJoiner(joinerId: number): void;
-    addMarker(cursorYOffset: number): IMarker;
-    hasSelection(): boolean;
-    getSelection(): string;
-    clearSelection(): void;
-    selectAll(): void;
-    selectLines(start: number, end: number): void;
-    dispose(): void;
-    destroy(): void;
-    scrollLines(amount: number): void;
-    scrollPages(pageCount: number): void;
-    scrollToTop(): void;
-    scrollToBottom(): void;
-    scrollToLine(line: number): void;
-    clear(): void;
-    write(data: string): void;
-    getOption(key: string): any;
-    setOption(key: string, value: any): void;
-    refresh(start: number, end: number): void;
-    reset(): void;
+  textarea: HTMLTextAreaElement;
+  rows: number;
+  cols: number;
+  buffer: IBuffer;
+  markers: IMarker[];
+  onCursorMove: IEvent<void>;
+  onData: IEvent<string>;
+  onKey: IEvent<{ key: string, domEvent: KeyboardEvent }>;
+  onLineFeed: IEvent<void>;
+  onScroll: IEvent<number>;
+  onSelectionChange: IEvent<void>;
+  onRender: IEvent<{ start: number, end: number }>;
+  onResize: IEvent<{ cols: number, rows: number }>;
+  onTitleChange: IEvent<string>;
+  blur(): void;
+  focus(): void;
+  resize(columns: number, rows: number): void;
+  writeln(data: string): void;
+  open(parent: HTMLElement): void;
+  attachCustomKeyEventHandler(customKeyEventHandler: (event: KeyboardEvent) => boolean): void;
+  addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable;
+  addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
+  registerLinkMatcher(regex: RegExp, handler: (event: MouseEvent, uri: string) => void, options?: ILinkMatcherOptions): number;
+  deregisterLinkMatcher(matcherId: number): void;
+  registerCharacterJoiner(handler: (text: string) => [number, number][]): number;
+  deregisterCharacterJoiner(joinerId: number): void;
+  addMarker(cursorYOffset: number): IMarker;
+  hasSelection(): boolean;
+  getSelection(): string;
+  getSelectionPosition(): ISelectionPosition | undefined;
+  clearSelection(): void;
+  select(column: number, row: number, length: number): void;
+  selectAll(): void;
+  selectLines(start: number, end: number): void;
+  dispose(): void;
+  destroy(): void;
+  scrollLines(amount: number): void;
+  scrollPages(pageCount: number): void;
+  scrollToTop(): void;
+  scrollToBottom(): void;
+  scrollToLine(line: number): void;
+  clear(): void;
+  write(data: string): void;
+  writeUtf8(data: Uint8Array): void;
+  getOption(key: string): any;
+  setOption(key: string, value: any): void;
+  refresh(start: number, end: number): void;
+  reset(): void;
 }
 
 export interface IBufferAccessor {

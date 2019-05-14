@@ -554,12 +554,6 @@ declare module 'xterm' {
     resize(columns: number, rows: number): void;
 
     /**
-     * Writes text to the terminal, followed by a break line character (\n).
-     * @param data The text to write to the terminal.
-     */
-    writeln(data: string): void;
-
-    /**
      * Opens the terminal within an element.
      * @param parent The element to create the terminal within. This element
      * must be visible (have dimensions) when `open` is called as several DOM-
@@ -677,9 +671,22 @@ declare module 'xterm' {
     getSelection(): string;
 
     /**
+     * Gets the selection position or undefined if there is no selection.
+     */
+    getSelectionPosition(): ISelectionPosition | undefined;
+
+    /**
      * Clears the current terminal selection.
      */
     clearSelection(): void;
+
+    /**
+     * Selects text within the terminal.
+     * @param column The column the selection starts at..
+     * @param row The row the selection starts at.
+     * @param length The length of the selection.
+     */
+    select(column: number, row: number, length: number): void;
 
     /**
      * Selects all text within the terminal.
@@ -744,6 +751,20 @@ declare module 'xterm' {
      * @param data The text to write to the terminal.
      */
     write(data: string): void;
+
+    /**
+     * Writes text to the terminal, followed by a break line character (\n).
+     * @param data The text to write to the terminal.
+     */
+    writeln(data: string): void;
+
+    /**
+     * Writes UTF8 data to the terminal.
+     * This has a slight performance advantage over the string based write method
+     * due to lesser data conversions needed on the way from the pty to xterm.js.
+     * @param data The data to write to the terminal.
+     */
+    writeUtf8(data: Uint8Array): void;
 
     /**
      * Retrieves an option's value from the terminal.
@@ -860,8 +881,50 @@ declare module 'xterm' {
      * Applies an addon to the Terminal prototype, making it available to all
      * newly created Terminals.
      * @param addon The addon to apply.
+     * @deprecated Use the new loadAddon API/addon format.
      */
     static applyAddon(addon: any): void;
+
+    /**
+     * (EXPERIMENTAL) Loads an addon into this instance of xterm.js.
+     * @param addon The addon to load.
+     */
+    loadAddon(addon: ITerminalAddon): void;
+  }
+
+  /**
+   * An addon that can provide additional functionality to the terminal.
+   */
+  export interface ITerminalAddon extends IDisposable {
+    /**
+     * (EXPERIMENTAL) This is called when the addon is activated within xterm.js.
+     */
+    activate(terminal: Terminal): void;
+  }
+
+  /**
+   * An object representing a selecrtion within the terminal.
+   */
+  interface ISelectionPosition {
+    /**
+     * The start column of the selection.
+     */
+    startColumn: number;
+
+    /**
+     * The start row of the selection.
+     */
+    startRow: number;
+
+    /**
+     * The end column of the selection.
+     */
+    endColumn: number;
+
+    /**
+     * The end row of the selection.
+     */
+    endRow: number;
   }
 
   interface IBuffer {

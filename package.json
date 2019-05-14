@@ -13,6 +13,7 @@
     "@types/mocha": "^2.2.33",
     "@types/node": "6.0.108",
     "@types/puppeteer": "^1.12.4",
+    "@types/utf8": "^2.1.6",
     "@types/webpack": "^4.4.11",
     "browserify": "^13.3.0",
     "chai": "3.5.0",
@@ -40,10 +41,14 @@
     "tslint": "^5.9.1",
     "tslint-consistent-codestyle": "^1.13.0",
     "typescript": "3.4",
+    "utf8": "^3.0.0",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.1.0",
     "webpack": "^4.17.1",
     "webpack-cli": "^3.1.0",
+    "xterm-addon-attach": "0.1.0-beta8",
+    "xterm-addon-search": "0.1.0-beta4",
+    "xterm-addon-web-links": "0.1.0-beta6",
     "zmodem.js": "^0.1.5"
   },
   "scripts": {
