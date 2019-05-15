@@ -113,10 +113,6 @@ if (os.platform() !== 'win32') {
       51, 52, 54, 55, 56, 57, 58, 59, 60, 61,
       63, 68
     ];
-    // These are failing on Linux only
-    if (os.platform() === 'linux') {
-      skip.push(0);
-    }
     // These are failing on macOS only
     if (os.platform() === 'darwin') {
       skip.push(3, 7, 11, 67);
@@ -126,9 +122,9 @@ if (os.platform() !== 'win32') {
         continue;
       }
       ((filename: string) => {
+        const inFile = fs.readFileSync(filename, 'utf8');
         it(filename.split('/').slice(-1)[0], done => {
           ptyReset(() => {
-            const inFile = fs.readFileSync(filename, 'utf8');
             ptyWriteRead(inFile, fromPty => {
               // uncomment this to get log from terminal
               // console.log = function(){};
