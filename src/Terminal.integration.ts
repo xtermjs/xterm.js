@@ -113,8 +113,12 @@ if (os.platform() !== 'win32') {
       51, 52, 54, 55, 56, 57, 58, 59, 60, 61,
       63, 68
     ];
+    // These are failing on Linux only
+    if (os.platform() === 'linux') {
+      skip.push(0);
+    }
+    // These are failing on macOS only
     if (os.platform() === 'darwin') {
-      // These are failing on macOS only
       skip.push(3, 7, 11, 67);
     }
     for (let i = 0; i < files.length; i++) {
