@@ -13,7 +13,25 @@
       "runtimeArgs": [
         "--colors",
         "--recursive",
-        "${workspaceRoot}/lib"
+        "${workspaceRoot}/lib/**/*.test.js"
+      ],
+      "sourceMaps": true,
+      "outFiles": [ "${workspaceRoot}/lib/**/*.js" ],
+      "internalConsoleOptions": "openOnSessionStart"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Integration Tests",
+      "cwd": "${workspaceRoot}",
+      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/mocha",
+      "windows": {
+        "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/mocha.cmd"
+      },
+      "runtimeArgs": [
+        "--colors",
+        "--recursive",
+        "${workspaceRoot}/lib/**/*.api.js"
       ],
       "sourceMaps": true,
       "outFiles": [ "${workspaceRoot}/lib/**/*.js" ],
