@@ -50,7 +50,7 @@ jobs:
     displayName: 'Lint'
   - script: |
       yarn test-coverage
-      export COVERALLS_GIT_BRANCH=$BUILD_SOURCEBRANCH
+      export COVERALLS_GIT_BRANCH=$BUILD_SOURCEBRANCHNAME
       yarn coveralls
     displayName: 'Generate and publish coverage'
 
