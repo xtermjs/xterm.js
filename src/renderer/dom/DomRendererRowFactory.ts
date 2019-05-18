@@ -11,6 +11,7 @@ import { CellData, AttributeData } from '../../BufferLine';
 export const BOLD_CLASS = 'xterm-bold';
 export const DIM_CLASS = 'xterm-dim';
 export const ITALIC_CLASS = 'xterm-italic';
+export const UNDERLINE_CLASS = 'xterm-underline';
 export const CURSOR_CLASS = 'xterm-cursor';
 export const CURSOR_BLINK_CLASS = 'xterm-cursor-blink';
 export const CURSOR_STYLE_BLOCK_CLASS = 'xterm-cursor-block';
@@ -86,6 +87,10 @@ export class DomRendererRowFactory {
 
       if (this._workCell.isDim()) {
         charElement.classList.add(DIM_CLASS);
+      }
+
+      if (this._workCell.isUnderline()) {
+        charElement.classList.add(UNDERLINE_CLASS);
       }
 
       charElement.textContent = this._workCell.getChars() || WHITESPACE_CELL_CHAR;

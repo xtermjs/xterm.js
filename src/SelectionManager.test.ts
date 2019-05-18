@@ -4,12 +4,12 @@
  */
 
 import { assert } from 'chai';
-import { CharMeasure } from './ui/CharMeasure';
+import { CharMeasure } from './CharMeasure';
 import { SelectionManager, SelectionMode } from './SelectionManager';
 import { SelectionModel } from './SelectionModel';
 import { BufferSet } from './BufferSet';
 import { ITerminal, IBuffer, IBufferLine } from './Types';
-import { MockTerminal } from './ui/TestUtils.test';
+import { MockTerminal } from './TestUtils.test';
 import { BufferLine, CellData } from './BufferLine';
 
 class TestMockTerminal extends MockTerminal {

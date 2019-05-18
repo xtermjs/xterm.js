@@ -1,6 +1,6 @@
 import { assert } from 'chai';
 
-import { MockTerminal, MockBuffer } from '../ui/TestUtils.test';
+import { MockTerminal, MockBuffer } from '../TestUtils.test';
 import { CircularList } from '../common/CircularList';
 
 import { ICharacterJoinerRegistry } from './Types';

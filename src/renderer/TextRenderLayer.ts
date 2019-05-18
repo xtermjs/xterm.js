@@ -217,10 +217,18 @@ export class TextRenderLayer extends BaseRenderLayer {
           } else {
             this._ctx.fillStyle = this._colors.ansi[cell.getBgColor()].css;
           }
-        } else if (cell.isFgRGB()) {
-          this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
-        } else if (cell.isFgPalette()) {
-          this._ctx.fillStyle = this._colors.ansi[cell.getFgColor()].css;
+        } else {
+          if (cell.isFgDefault()) {
+            this._ctx.fillStyle = this._colors.foreground.css;
+          } else if (cell.isFgRGB()) {
+            this._ctx.fillStyle = `rgb(${AttributeData.toColorRGB(cell.getFgColor()).join(',')})`;
+          } else {
+            let fg = cell.getFgColor();
+            if (terminal.options.drawBoldTextInBrightColors && cell.isBold() && fg < 8) {
+              fg += 8;
+            }
+            this._ctx.fillStyle = this._colors.ansi[fg].css;
+          }
         }
 
         this.fillBottomLineAtCells(x, y, cell.getWidth());

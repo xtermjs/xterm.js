@@ -168,6 +168,16 @@ Xterm.js follows a monthly release cycle roughly.
 
 All current and past releases are available on this repo's [Releases page](https://github.com/sourcelair/xterm.js/releases), you can view the [high-level roadmap on the wiki](https://github.com/xtermjs/xterm.js/wiki/Roadmap) and see what we're working on now by looking through [Milestones](https://github.com/sourcelair/xterm.js/milestones).
 
+### Beta builds
+
+Our CI releases beta builds to npm for every change that goes into master, install the latest beta build with:
+
+```
+npm install -S xterm@beta
+```
+
+These should generally be stable but some bugs may slip in, we recommend using the beta build primarily to test out new features and for verifying bug fixes.
+
 ## Contributing
 
 You can read the [guide on the wiki](https://github.com/xtermjs/xterm.js/wiki/Contributing) to learn how to contribute and setup xterm.js for development.
