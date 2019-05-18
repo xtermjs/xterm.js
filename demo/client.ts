@@ -86,7 +86,7 @@ function createTerminal(): void {
     windowsMode: isWindows
   } as ITerminalOptions);
   window.term = term;  // Expose `term` to window for debugging purposes
-  term.on('resize', (size: { cols: number, rows: number }) => {
+  term.onResize((size: { cols: number, rows: number }) => {
     if (!pid) {
       return;
     }
@@ -165,8 +165,9 @@ function runFakeTerminal(): void {
   term.writeln('');
   term.prompt();
 
-  term._core.register(term.addDisposableListener('key', (key, ev) => {
-    const printable = !ev.altKey && !ev.altGraphKey && !ev.ctrlKey && !ev.metaKey;
+  term.onKey((e: { key: string, domEvent: KeyboardEvent }) => {
+    const ev = e.domEvent;
+    const printable = !ev.altKey && !ev.ctrlKey && !ev.metaKey;
 
     if (ev.keyCode === 13) {
       term.prompt();
@@ -176,13 +177,9 @@ function runFakeTerminal(): void {
         term.write('\b \b');
       }
     } else if (printable) {
-      term.write(key);
+      term.write(e.key);
     }
-  }));
-
-  term._core.register(term.addDisposableListener('paste', (data, ev) => {
-    term.write(data);
-  }));
+  });
 }
 
 function initOptions(term: TerminalType): void {

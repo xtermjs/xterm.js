@@ -90,6 +90,16 @@ describe('DomRendererRowFactory', () => {
         );
       });
 
+      it('should add class for dim', () => {
+        const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
+        cell.bg = DEFAULT_ATTR_DATA.bg | BgFlags.DIM;
+        lineData.setCell(0, cell);
+        const fragment = rowFactory.createRow(lineData, false, undefined, 0, false, 5, 20);
+        assert.equal(getFragmentHtml(fragment),
+          '<span class="xterm-dim">a</span>'
+        );
+      });
+
       it('should add classes for 256 foreground colors', () => {
         const cell = CellData.fromCharData([0, 'a', 1, 'a'.charCodeAt(0)]);
         cell.fg |= Attributes.CM_P256;

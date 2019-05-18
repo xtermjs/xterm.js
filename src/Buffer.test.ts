@@ -518,6 +518,29 @@ describe('Buffer', () => {
         assert.equal(secondMarker.line, 1, 'second marker should be restored');
         assert.equal(thirdMarker.line, 2, 'third marker should be restored');
       });
+      it('should correctly reflow wrapped lines that end in null space (via tab char)', () => {
+        buffer.fillViewportRows();
+        buffer.resize(4, 10);
+        buffer.y = 2;
+        buffer.lines.get(0).set(0, [null, 'a', 1, 'a'.charCodeAt(0)]);
+        buffer.lines.get(0).set(1, [null, 'b', 1, 'b'.charCodeAt(0)]);
+        buffer.lines.get(1).set(0, [null, 'c', 1, 'c'.charCodeAt(0)]);
+        buffer.lines.get(1).set(1, [null, 'd', 1, 'd'.charCodeAt(0)]);
+        buffer.lines.get(1).isWrapped = true;
+        // Buffer:
+        // "ab  " (wrapped)
+        // "cd"
+        buffer.resize(5, 10);
+        assert.equal(buffer.ybase, 0);
+        assert.equal(buffer.lines.length, 10);
+        assert.equal(buffer.lines.get(0).translateToString(true), 'ab  c');
+        assert.equal(buffer.lines.get(1).translateToString(false), 'd    ');
+        buffer.resize(6, 10);
+        assert.equal(buffer.ybase, 0);
+        assert.equal(buffer.lines.length, 10);
+        assert.equal(buffer.lines.get(0).translateToString(true), 'ab  cd');
+        assert.equal(buffer.lines.get(1).translateToString(false), '      ');
+      });
       it('should wrap wide characters correctly when reflowing larger', () => {
         buffer.fillViewportRows();
         buffer.resize(12, 10);
@@ -552,6 +575,32 @@ describe('Buffer', () => {
         assert.equal(buffer.lines.get(0).translateToString(false), '汉语汉语汉语汉');
         assert.equal(buffer.lines.get(1).translateToString(true), '语汉语汉语');
         assert.equal(buffer.lines.get(1).translateToString(false), '语汉语汉语    ');
+      });
+      it('should correctly reflow wrapped lines that end in null space (via tab char)', () => {
+        buffer.fillViewportRows();
+        buffer.resize(4, 10);
+        buffer.y = 2;
+        buffer.lines.get(0).set(0, [null, 'a', 1, 'a'.charCodeAt(0)]);
+        buffer.lines.get(0).set(1, [null, 'b', 1, 'b'.charCodeAt(0)]);
+        buffer.lines.get(1).set(0, [null, 'c', 1, 'c'.charCodeAt(0)]);
+        buffer.lines.get(1).set(1, [null, 'd', 1, 'd'.charCodeAt(0)]);
+        buffer.lines.get(1).isWrapped = true;
+        // Buffer:
+        // "ab  " (wrapped)
+        // "cd"
+        buffer.resize(3, 10);
+        assert.equal(buffer.y, 2);
+        assert.equal(buffer.ybase, 0);
+        assert.equal(buffer.lines.length, 10);
+        assert.equal(buffer.lines.get(0).translateToString(false), 'ab ');
+        assert.equal(buffer.lines.get(1).translateToString(false), ' cd');
+        buffer.resize(2, 10);
+        assert.equal(buffer.y, 3);
+        assert.equal(buffer.ybase, 0);
+        assert.equal(buffer.lines.length, 10);
+        assert.equal(buffer.lines.get(0).translateToString(false), 'ab');
+        assert.equal(buffer.lines.get(1).translateToString(false), '  ');
+        assert.equal(buffer.lines.get(2).translateToString(false), 'cd');
       });
       it('should wrap wide characters correctly when reflowing smaller', () => {
         buffer.fillViewportRows();
@@ -1025,7 +1074,7 @@ describe('Buffer', () => {
       buffer.fillViewportRows();
       const marker = buffer.addMarker(buffer.lines.length - 1);
       assert.equal(marker.line, buffer.lines.length - 1);
-      buffer.lines.emit('trim', 1);
+      buffer.lines.onTrimEmitter.fire(1);
       assert.equal(marker.line, buffer.lines.length - 2);
     });
     it('should dispose of a marker if it is trimmed off the buffer', () => {
@@ -1036,7 +1085,7 @@ describe('Buffer', () => {
       const marker = buffer.addMarker(0);
       assert.equal(marker.isDisposed, false);
       assert.equal(buffer.markers.length, 1);
-      buffer.lines.emit('trim', 1);
+      buffer.lines.onTrimEmitter.fire(1);
       assert.equal(marker.isDisposed, true);
       assert.equal(buffer.markers.length, 0);
     });
