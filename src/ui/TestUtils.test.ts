@@ -4,12 +4,13 @@
  */
 
 import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from '../renderer/Types';
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferLine, IBufferStringIterator, ICellData } from '../Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferLine, IBufferStringIterator, ICellData, IAttributeData } from '../Types';
 import { ICircularList, XtermListener } from '../common/Types';
 import { Buffer } from '../Buffer';
-import * as Browser from '../core/Platform';
+import * as Browser from '../common/Platform';
 import { ITheme, IDisposable, IMarker } from 'xterm';
 import { Terminal } from '../Terminal';
+import { AttributeData } from '../BufferLine';
 
 export class TestTerminal extends Terminal {
   writeSync(data: string): void {
@@ -187,7 +188,7 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   insertMode: boolean;
   wraparoundMode: boolean;
   bracketedPasteMode: boolean;
-  curAttr: number;
+  curAttrData = new AttributeData();
   savedCols: number;
   x10Mouse: boolean;
   vt200Mouse: boolean;
@@ -222,7 +223,7 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   setgLevel(g: number): void {
     throw new Error('Method not implemented.');
   }
-  eraseAttr(): number {
+  eraseAttrData(): IAttributeData {
     throw new Error('Method not implemented.');
   }
   eraseRight(x: number, y: number): void {
@@ -309,7 +310,7 @@ export class MockBuffer implements IBuffer {
   scrollTop: number;
   savedY: number;
   savedX: number;
-  savedCurAttr: number;
+  savedCurAttrData = new AttributeData();
   translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string {
     return Buffer.prototype.translateBufferLineToString.apply(this, arguments);
   }
@@ -325,7 +326,7 @@ export class MockBuffer implements IBuffer {
   setLines(lines: ICircularList<IBufferLine>): void {
     this.lines = lines;
   }
-  getBlankLine(attr: number, isWrapped?: boolean): IBufferLine {
+  getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine {
     return Buffer.prototype.getBlankLine.apply(this, arguments);
   }
   stringIndexToBufferIndex(lineIndex: number, stringIndex: number): number[] {
@@ -334,10 +335,10 @@ export class MockBuffer implements IBuffer {
   iterator(trimRight: boolean, startIndex?: number, endIndex?: number): IBufferStringIterator {
     return Buffer.prototype.iterator.apply(this, arguments);
   }
-  getNullCell(fg: number = 0, bg: number = 0): ICellData {
+  getNullCell(attr?: IAttributeData): ICellData {
     throw new Error('Method not implemented.');
   }
-  getWhitespaceCell(fg: number = 0, bg: number = 0): ICellData {
+  getWhitespaceCell(attr?: IAttributeData): ICellData {
     throw new Error('Method not implemented.');
   }
 }

@@ -6,7 +6,7 @@
 import { ITerminal, ISelectionManager, IBuffer, IBufferLine } from './Types';
 import { XtermListener } from './common/Types';
 import { MouseHelper } from './ui/MouseHelper';
-import * as Browser from './core/Platform';
+import * as Browser from './common/Platform';
 import { CharMeasure } from './ui/CharMeasure';
 import { EventEmitter } from './common/EventEmitter';
 import { SelectionModel } from './SelectionModel';

@@ -3,10 +3,9 @@
  * @license MIT
  */
 
-import { BufferLine, CellData } from './BufferLine';
+import { BufferLine } from './BufferLine';
 import { CircularList, IDeleteEvent } from './common/CircularList';
-import { IBufferLine } from './Types';
-import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR } from './Buffer';
+import { IBufferLine, ICellData } from './Types';
 
 export interface INewLayoutResult {
   layout: number[];
@@ -19,8 +18,7 @@ export interface INewLayoutResult {
  * @param lines The buffer lines.
  * @param newCols The columns after resize.
  */
-export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, newCols: number, bufferAbsoluteY: number): number[] {
-  const nullCell = CellData.fromCharData([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, newCols: number, bufferAbsoluteY: number, nullCell: ICellData): number[] {
   // Gather all BufferLines that need to be removed from the Buffer here so that they can be
   // batched up and only committed once
   const toRemove: number[] = [];
