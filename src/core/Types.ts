@@ -3,6 +3,8 @@
  * @license MIT
  */
 
+import { IDisposable } from '../common/Types';
+
 export const enum KeyboardResultType {
   SEND_KEY,
   SELECT_ALL,
@@ -97,4 +99,10 @@ export interface IBufferLine {
   getCodePoint(index: number): number;
   isCombined(index: number): number;
   getString(index: number): string;
+}
+
+export interface IMarker extends IDisposable {
+  readonly id: number;
+  readonly isDisposed: boolean;
+  readonly line: number;
 }
