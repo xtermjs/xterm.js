@@ -13,9 +13,8 @@ import * as path from 'path';
 import * as pty from 'node-pty';
 import { assert } from 'chai';
 import { Terminal } from './Terminal';
-import { WHITESPACE_CELL_CHAR } from './Buffer';
 import { IViewport } from './Types';
-import { CellData } from './BufferLine';
+import { CellData, WHITESPACE_CELL_CHAR } from './core/buffer/BufferLine';
 
 class TestTerminal extends Terminal {
   innerWrite(): void { this._innerWrite(); }
@@ -114,8 +113,8 @@ if (os.platform() !== 'win32') {
       51, 52, 54, 55, 56, 57, 58, 59, 60, 61,
       63, 68
     ];
+    // These are failing on macOS only
     if (os.platform() === 'darwin') {
-      // These are failing on macOS only
       skip.push(3, 7, 11, 67);
     }
     for (let i = 0; i < files.length; i++) {
@@ -123,9 +122,9 @@ if (os.platform() !== 'win32') {
         continue;
       }
       ((filename: string) => {
+        const inFile = fs.readFileSync(filename, 'utf8');
         it(filename.split('/').slice(-1)[0], done => {
           ptyReset(() => {
-            const inFile = fs.readFileSync(filename, 'utf8');
             ptyWriteRead(inFile, fromPty => {
               // uncomment this to get log from terminal
               // console.log = function(){};

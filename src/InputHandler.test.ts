@@ -6,10 +6,9 @@
 import { assert, expect } from 'chai';
 import { InputHandler } from './InputHandler';
 import { MockInputHandlingTerminal, TestTerminal } from './TestUtils.test';
-import { DEFAULT_ATTR_DATA } from './Buffer';
 import { Terminal } from './Terminal';
-import { IBufferLine } from './Types';
-import { CellData, Attributes, AttributeData } from './BufferLine';
+import { IBufferLine } from './core/Types';
+import { CellData, Attributes, AttributeData, DEFAULT_ATTR_DATA } from './core/buffer/BufferLine';
 
 describe('InputHandler', () => {
   describe('save and restore cursor', () => {

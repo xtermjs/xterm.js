@@ -101,7 +101,7 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   private _updateDimensions(): void {
-    this.dimensions.scaledCharWidth = Math.floor(this._terminal.charMeasure.width * window.devicePixelRatio);
+    this.dimensions.scaledCharWidth = this._terminal.charMeasure.width * window.devicePixelRatio;
     this.dimensions.scaledCharHeight = Math.ceil(this._terminal.charMeasure.height * window.devicePixelRatio);
     this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._terminal.options.letterSpacing);
     this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._terminal.options.lineHeight);
@@ -157,8 +157,8 @@ export class DomRenderer extends Disposable implements IRenderer {
         `${this._terminalSelector} .${ROW_CONTAINER_CLASS} {` +
         ` color: ${this.colorManager.colors.foreground.css};` +
         ` background-color: ${this.colorManager.colors.background.css};` +
-        ` font-family: ${this._terminal.getOption('fontFamily')};` +
-        ` font-size: ${this._terminal.getOption('fontSize')}px;` +
+        ` font-family: ${this._terminal.options.fontFamily};` +
+        ` font-size: ${this._terminal.options.fontSize}px;` +
         `}`;
     // Text styles
     styles +=
@@ -174,9 +174,9 @@ export class DomRenderer extends Disposable implements IRenderer {
     // Blink animation
     styles +=
         `@keyframes blink {` +
-        ` 0 % { opacity: 1.0; }` +
+        ` 0% { opacity: 1.0; }` +
         ` 50% { opacity: 0.0; }` +
-        ` 100 % { opacity: 1.0; }` +
+        ` 100% { opacity: 1.0; }` +
         `}`;
     // Cursor
     styles +=

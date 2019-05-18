@@ -21,7 +21,12 @@ jobs:
     displayName: 'Install dependencies and build'
   - script: |
       yarn mocha
-    displayName: 'Test'
+    displayName: 'Unit tests'
+  - script: |
+      yarn start &
+      sleep 5
+      yarn test-api --headless
+    displayName: 'Integration tests'
   - script: |
       yarn lint
     displayName: 'Lint'
@@ -39,13 +44,13 @@ jobs:
     displayName: 'Install dependencies and build'
   - script: |
       yarn mocha
-    displayName: 'Test'
+    displayName: 'Unit tests'
   - script: |
       yarn lint
     displayName: 'Lint'
   - script: |
       yarn test-coverage
-      export COVERALLS_GIT_BRANCH=$BUILD_SOURCEBRANCH
+      export COVERALLS_GIT_BRANCH=$BUILD_SOURCEBRANCHNAME
       yarn coveralls
     displayName: 'Generate and publish coverage'
 
@@ -62,7 +67,7 @@ jobs:
     displayName: 'Install dependencies and build'
   - script: |
       yarn mocha
-    displayName: 'Test'
+    displayName: 'Unit tests'
   - script: |
       yarn lint
     displayName: 'Lint'

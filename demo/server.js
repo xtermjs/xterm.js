@@ -3,6 +3,13 @@ var expressWs = require('express-ws');
 var os = require('os');
 var pty = require('node-pty');
 
+/**
+ * Whether to use UTF8 binary transport.
+ * (Must also be switched in client.ts)
+ */
+const USE_BINARY_UTF8 = false;
+
+
 function startServer() {
   var app = express();
   expressWs(app);
@@ -14,6 +21,10 @@ function startServer() {
 
   app.get('/', function(req, res){
     res.sendFile(__dirname + '/index.html');
+  });
+
+  app.get('/test', function(req, res){
+    res.sendFile(__dirname + '/test.html');
   });
 
   app.get('/style.css', function(req, res){
@@ -32,7 +43,8 @@ function startServer() {
           cols: cols || 80,
           rows: rows || 24,
           cwd: process.env.PWD,
-          env: process.env
+          env: process.env,
+          encoding: USE_BINARY_UTF8 ? null : 'utf8'
         });
 
     console.log('Created terminal with PID: ' + term.pid);
@@ -61,6 +73,7 @@ function startServer() {
     console.log('Connected to terminal ' + term.pid);
     ws.send(logs[term.pid]);
 
+    // string message buffering
     function buffer(socket, timeout) {
       let s = '';
       let sender = null;
@@ -75,7 +88,25 @@ function startServer() {
         }
       };
     }
-    const send = buffer(ws, 5);
+    // binary message buffering
+    function bufferUtf8(socket, timeout) {
+      let buffer = [];
+      let sender = null;
+      let length = 0;
+      return (data) => {
+        buffer.push(data);
+        length += data.length;
+        if (!sender) {
+          sender = setTimeout(() => {
+            socket.send(Buffer.concat(buffer, length));
+            buffer = [];
+            sender = null;
+            length = 0;
+          }, timeout);
+        }
+      };
+    }
+    const send = USE_BINARY_UTF8 ? bufferUtf8(ws, 5) : buffer(ws, 5);
 
     term.on('data', function(data) {
       try {

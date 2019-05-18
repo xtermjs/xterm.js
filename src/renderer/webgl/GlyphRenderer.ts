@@ -5,13 +5,14 @@
 
 import { createProgram, PROJECTION_MATRIX } from './WebglUtils';
 import { IColorManager, IRenderDimensions } from '../Types';
-import { ITerminal, IBufferLine } from '../../Types';
-import { NULL_CELL_CODE, CHAR_DATA_CHAR_INDEX, WHITESPACE_CELL_CODE } from '../../Buffer';
+import { ITerminal } from '../../Types';
 import WebglCharAtlas from './WebglCharAtlas';
 import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel, IRasterizedGlyph } from './Types';
 import { INDICIES_PER_CELL } from './WebglRenderer';
 import { COMBINED_CHAR_BIT_MASK } from './RenderModel';
 import { fill, slice } from '../../common/TypedArrayUtils';
+import { NULL_CELL_CODE, WHITESPACE_CELL_CODE, CHAR_DATA_CHAR_INDEX } from '../../core/buffer/BufferLine';
+import { IBufferLine } from '../../core/Types';
 
 interface IVertices {
   attributes: Float32Array;

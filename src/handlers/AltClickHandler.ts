@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { ITerminal, IBufferLine } from '../Types';
+import { ITerminal } from '../Types';
+import { IBufferLine } from '../core/Types';
 import { ICircularList } from '../common/Types';
 import { C0 } from '../common/data/EscapeSequences';
 

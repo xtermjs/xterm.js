@@ -7,7 +7,7 @@ import { assert } from 'chai';
 import { Terminal } from './Terminal';
 import * as attach from '../addons/attach/attach';
 
-describe('Terminal', () => {
+ describe('Terminal', () => {
   it('should apply addons with Terminal.applyAddon', () => {
     Terminal.applyAddon(attach);
     // Test that addon was applied successfully, adding attach to Terminal's

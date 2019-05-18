@@ -21,10 +21,10 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharacterJoinerHandler, IBufferLine, IAttributeData, IMouseZoneManager } from './Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharacterJoinerHandler, IMouseZoneManager } from './Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
-import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR_DATA } from './Buffer';
+import { Buffer, MAX_BUFFER_SIZE } from './Buffer';
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './common/EventEmitter';
 import { Viewport } from './Viewport';
@@ -43,16 +43,16 @@ import { DEFAULT_BELL_SOUND, SoundManager } from './SoundManager';
 import { MouseZoneManager } from './MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ScreenDprMonitor } from './ui/ScreenDprMonitor';
-import { ITheme, IMarker, IDisposable } from 'xterm';
+import { ITheme, IMarker, IDisposable, ISelectionPosition } from 'xterm';
 import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent } from './common/Types';
 import { evaluateKeyboardEvent } from './core/input/Keyboard';
-import { KeyboardResultType, ICharset } from './core/Types';
 import { WebglRenderer } from './renderer/webgl/WebglRenderer';
+import { KeyboardResultType, ICharset, IBufferLine, IAttributeData } from './core/Types';
 import { clone } from './common/Clone';
 import { EventEmitter2, IEvent } from './common/EventEmitter2';
-import { Attributes } from './BufferLine';
+import { Attributes, DEFAULT_ATTR_DATA } from './core/buffer/BufferLine';
 import { applyWindowsMode } from './WindowsMode';
 
 // Let it work inside Node.js for automated testing purposes.
@@ -184,6 +184,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   // user input states
   public writeBuffer: string[];
+  public writeBufferUtf8: Uint8Array[];
   private _writeInProgress: boolean;
 
   /**
@@ -341,6 +342,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     // user input states
     this.writeBuffer = [];
+    this.writeBufferUtf8 = [];
     this._writeInProgress = false;
 
     this._xoffSentToCatchUp = false;
@@ -1368,6 +1370,88 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   /**
+   * Writes raw utf8 bytes to the terminal.
+   * @param data UintArray with UTF8 bytes to write to the terminal.
+   */
+  public writeUtf8(data: Uint8Array): void {
+    // Ensure the terminal isn't disposed
+    if (this._isDisposed) {
+      return;
+    }
+
+    // Ignore falsy data values
+    if (!data) {
+      return;
+    }
+
+    this.writeBufferUtf8.push(data);
+
+    // Send XOFF to pause the pty process if the write buffer becomes too large so
+    // xterm.js can catch up before more data is sent. This is necessary in order
+    // to keep signals such as ^C responsive.
+    if (this.options.useFlowControl && !this._xoffSentToCatchUp && this.writeBufferUtf8.length >= WRITE_BUFFER_PAUSE_THRESHOLD) {
+      // XOFF - stop pty pipe
+      // XON will be triggered by emulator before processing data chunk
+      this.handler(C0.DC3);
+      this._xoffSentToCatchUp = true;
+    }
+
+    if (!this._writeInProgress && this.writeBufferUtf8.length > 0) {
+      // Kick off a write which will write all data in sequence recursively
+      this._writeInProgress = true;
+      // Kick off an async innerWrite so more writes can come in while processing data
+      setTimeout(() => {
+        this._innerWriteUtf8();
+      });
+    }
+  }
+
+  protected _innerWriteUtf8(bufferOffset: number = 0): void {
+    // Ensure the terminal isn't disposed
+    if (this._isDisposed) {
+      this.writeBufferUtf8 = [];
+    }
+
+    const startTime = Date.now();
+    while (this.writeBufferUtf8.length > bufferOffset) {
+      const data = this.writeBufferUtf8[bufferOffset];
+      bufferOffset++;
+
+      // If XOFF was sent in order to catch up with the pty process, resume it if
+      // we reached the end of the writeBuffer to allow more data to come in.
+      if (this._xoffSentToCatchUp && this.writeBufferUtf8.length === bufferOffset) {
+        this.handler(C0.DC1);
+        this._xoffSentToCatchUp = false;
+      }
+
+      this._refreshStart = this.buffer.y;
+      this._refreshEnd = this.buffer.y;
+
+      // HACK: Set the parser state based on it's state at the time of return.
+      // This works around the bug #662 which saw the parser state reset in the
+      // middle of parsing escape sequence in two chunks. For some reason the
+      // state of the parser resets to 0 after exiting parser.parse. This change
+      // just sets the state back based on the correct return statement.
+
+      this._inputHandler.parseUtf8(data);
+
+      this.updateRange(this.buffer.y);
+      this.refresh(this._refreshStart, this._refreshEnd);
+
+      if (Date.now() - startTime >= WRITE_TIMEOUT_MS) {
+        break;
+      }
+    }
+    if (this.writeBufferUtf8.length > bufferOffset) {
+      // Allow renderer to catch up before processing the next batch
+      setTimeout(() => this._innerWriteUtf8(bufferOffset), 0);
+    } else {
+      this._writeInProgress = false;
+      this.writeBufferUtf8 = [];
+    }
+  }
+
+  /**
    * Writes text to the terminal.
    * @param data The text to write to the terminal.
    */
@@ -1538,11 +1622,34 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   /**
+   * Selects text within the terminal.
+   * @param column The column the selection starts at..
+   * @param row The row the selection starts at.
+   * @param length The length of the selection.
+   */
+  public select(column: number, row: number, length: number): void {
+    this.selectionManager.setSelection(column, row, length);
+  }
+
+  /**
    * Gets the terminal's current selection, this is useful for implementing copy
    * behavior outside of xterm.js.
    */
   public getSelection(): string {
     return this.selectionManager ? this.selectionManager.selectionText : '';
+  }
+
+  public getSelectionPosition(): ISelectionPosition | undefined {
+    if (!this.selectionManager.hasSelection) {
+      return undefined;
+    }
+
+    return {
+      startColumn: this.selectionManager.selectionStart[0],
+      startRow: this.selectionManager.selectionStart[1],
+      endColumn: this.selectionManager.selectionEnd[0],
+      endRow: this.selectionManager.selectionEnd[1]
+    };
   }
 
   /**

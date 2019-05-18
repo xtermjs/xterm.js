@@ -15,12 +15,13 @@ import { acquireCharAtlas } from '../atlas/CharAtlasCache';
 import WebglCharAtlas from './WebglCharAtlas';
 import { ScreenDprMonitor } from '../../ui/ScreenDprMonitor';
 import { RectangleRenderer } from './RectangleRenderer';
-import { CHAR_DATA_ATTR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_CHAR_INDEX, NULL_CELL_CODE } from '../../Buffer';
 import { IWebGL2RenderingContext } from './Types';
-import { INVERTED_DEFAULT_COLOR, DEFAULT_COLOR } from '../atlas/Types';
+import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
 import { RenderModel, COMBINED_CHAR_BIT_MASK } from './RenderModel';
 import { EventEmitter2, IEvent } from '../../common/EventEmitter2';
 import { Disposable } from '../../common/Lifecycle';
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CODE } from '../../core/buffer/BufferLine';
+import { DEFAULT_COLOR } from '../../common/Types';
 
 export const INDICIES_PER_CELL = 4;
 

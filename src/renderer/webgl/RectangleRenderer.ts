@@ -8,8 +8,9 @@ import { IColorManager, IRenderDimensions, IColor } from '../Types';
 import { createProgram, expandFloat32Array, PROJECTION_MATRIX } from './WebglUtils';
 import { IRenderModel, IWebGLVertexArrayObject, IWebGL2RenderingContext, ISelectionRenderModel } from './Types';
 import { fill } from '../../common/TypedArrayUtils';
-import { INVERTED_DEFAULT_COLOR, DEFAULT_COLOR } from '../atlas/Types';
+import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
 import { is256Color } from '../atlas/CharAtlasUtils';
+import { DEFAULT_COLOR } from '../../common/Types';
 
 const enum VertexAttribLocations {
   POSITION = 0,

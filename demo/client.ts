@@ -8,12 +8,11 @@
 /// <reference path="../typings/xterm.d.ts"/>
 
 import { Terminal } from '../lib/public/Terminal';
-import * as attach from '../lib/addons/attach/attach';
+import { AttachAddon } from 'xterm-addon-attach';
+import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
+import { WebLinksAddon } from 'xterm-addon-web-links';
+
 import * as fit from '../lib/addons/fit/fit';
-import * as fullscreen from '../lib/addons/fullscreen/fullscreen';
-import * as search from '../lib/addons/search/search';
-import * as webLinks from '../lib/addons/webLinks/webLinks';
-import { ISearchOptions } from '../lib/addons/search/Interfaces';
 
 // Pulling in the module's types relies on the <reference> above, it's looks a
 // little weird here as we're importing "this" module
@@ -21,17 +20,14 @@ import { Terminal as TerminalType, ITerminalOptions } from 'xterm';
 
 export interface IWindowWithTerminal extends Window {
   term: TerminalType;
+  Terminal?: typeof TerminalType;
 }
 declare let window: IWindowWithTerminal;
 
-Terminal.applyAddon(attach);
 Terminal.applyAddon(fit);
-Terminal.applyAddon(fullscreen);
-Terminal.applyAddon(search);
-Terminal.applyAddon(webLinks);
-
 
 let term;
+let searchAddon: SearchAddon;
 let protocol;
 let socketURL;
 let socket;
@@ -57,8 +53,6 @@ function getSearchOptions(): ISearchOptions {
   };
 }
 
-createTerminal();
-
 const disposeRecreateButtonHandler = () => {
   // If the terminal exists dispose of it, otherwise recreate it
   if (term) {
@@ -74,17 +68,30 @@ const disposeRecreateButtonHandler = () => {
   }
 };
 
-document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
+if (document.location.pathname === '/test') {
+  window.Terminal = Terminal;
+} else {
+  createTerminal();
+  document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
+}
 
 function createTerminal(): void {
   // Clean terminal
   while (terminalContainer.children.length) {
     terminalContainer.removeChild(terminalContainer.children[0]);
   }
+
   const isWindows = ['Windows', 'Win16', 'Win32', 'WinCE'].indexOf(navigator.platform) >= 0;
   term = new Terminal({
     windowsMode: isWindows
   } as ITerminalOptions);
+
+  // Load addons
+  const typedTerm = term as TerminalType;
+  typedTerm.loadAddon(new WebLinksAddon());
+  searchAddon = new SearchAddon();
+  typedTerm.loadAddon(searchAddon);
+
   window.term = term;  // Expose `term` to window for debugging purposes
   term.onResize((size: { cols: number, rows: number }) => {
     if (!pid) {
@@ -100,8 +107,6 @@ function createTerminal(): void {
   socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
 
   term.open(terminalContainer);
-
-  term.webLinksInit();
   term.fit();
   term.focus();
 
@@ -110,12 +115,12 @@ function createTerminal(): void {
   addDomListener(actionElements.findNext, 'keyup', (e) => {
     const searchOptions = getSearchOptions();
     searchOptions.incremental = e.key !== `Enter`;
-    term.findNext(actionElements.findNext.value, searchOptions);
+    searchAddon.findNext(actionElements.findNext.value, searchOptions);
   });
 
   addDomListener(actionElements.findPrevious, 'keyup', (e) => {
     if (e.key === `Enter`) {
-      term.findPrevious(actionElements.findPrevious.value, getSearchOptions());
+      searchAddon.findPrevious(actionElements.findPrevious.value, getSearchOptions());
     }
   });
 
@@ -144,7 +149,14 @@ function createTerminal(): void {
 }
 
 function runRealTerminal(): void {
-  term.attach(socket);
+  /**
+   * The demo defaults to string transport by default.
+   * To run it with UTF8 binary transport, swap comment on
+   * the lines below. (Must also be switched in server.js)
+   */
+  term.loadAddon(new AttachAddon(socket));
+  // term.loadAddon(new AttachAddon(socket, {inputUtf8: true}));
+
   term._initialized = true;
 }
 
@@ -259,8 +271,11 @@ function initOptions(term: TerminalType): void {
       console.log('change', o, input.value);
       if (o === 'cols' || o === 'rows') {
         updateTerminalSize();
+      } else if (o === 'lineHeight') {
+        term.setOption(o, parseFloat(input.value));
+        updateTerminalSize();
       } else {
-        term.setOption(o, o === 'lineHeight' ? parseFloat(input.value) : parseInt(input.value, 10));
+        term.setOption(o, parseInt(input.value));
       }
     });
   });

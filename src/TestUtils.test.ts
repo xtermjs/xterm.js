@@ -4,13 +4,14 @@
  */
 
 import { IColorSet, IRenderer, IRenderDimensions, IColorManager } from './renderer/Types';
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferLine, IBufferStringIterator, ICellData, IAttributeData } from './Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferStringIterator } from './Types';
+import { IBufferLine, ICellData, IAttributeData } from './core/Types';
 import { ICircularList, XtermListener } from './common/Types';
 import { Buffer } from './Buffer';
 import * as Browser from './common/Platform';
-import { ITheme, IDisposable, IMarker, IEvent } from 'xterm';
+import { ITheme, IDisposable, IMarker, IEvent, ISelectionPosition } from 'xterm';
 import { Terminal } from './Terminal';
-import { AttributeData } from './BufferLine';
+import { AttributeData } from './core/buffer/BufferLine';
 
 export class TestTerminal extends Terminal {
   writeSync(data: string): void {
@@ -82,7 +83,13 @@ export class MockTerminal implements ITerminal {
   getSelection(): string {
     throw new Error('Method not implemented.');
   }
+  getSelectionPosition(): ISelectionPosition | undefined {
+    throw new Error('Method not implemented.');
+  }
   clearSelection(): void {
+    throw new Error('Method not implemented.');
+  }
+  select(column: number, row: number, length: number): void {
     throw new Error('Method not implemented.');
   }
   selectAll(): void {
@@ -107,6 +114,9 @@ export class MockTerminal implements ITerminal {
     throw new Error('Method not implemented.');
   }
   write(data: string): void {
+    throw new Error('Method not implemented.');
+  }
+  writeUtf8(data: Uint8Array): void {
     throw new Error('Method not implemented.');
   }
   bracketedPasteMode: boolean;

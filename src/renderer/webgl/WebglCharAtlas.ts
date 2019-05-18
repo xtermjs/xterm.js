@@ -3,14 +3,15 @@
  * @license MIT
  */
 
-import { DIM_OPACITY, IGlyphIdentifier, INVERTED_DEFAULT_COLOR, DEFAULT_COLOR, ICharAtlasConfig } from '../atlas/Types';
+import { DIM_OPACITY, IGlyphIdentifier, INVERTED_DEFAULT_COLOR, ICharAtlasConfig } from '../atlas/Types';
 import BaseCharAtlas from '../atlas/BaseCharAtlas';
 import { DEFAULT_ANSI_COLORS } from '../ColorManager';
 import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from './Types';
-import { DEFAULT_ATTR } from '../../Buffer';
 import { FLAGS, IColor } from '../Types';
 import { is256Color } from '../atlas/CharAtlasUtils';
 import { clearColor } from '../atlas/CharAtlasGenerator';
+import { DEFAULT_ATTR } from '../../core/buffer/BufferLine';
+import { DEFAULT_COLOR } from '../../common/Types';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.

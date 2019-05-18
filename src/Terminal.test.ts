@@ -6,8 +6,7 @@
 import { assert, expect } from 'chai';
 import { Terminal } from './Terminal';
 import { MockViewport, MockCompositionHelper, MockRenderer } from './TestUtils.test';
-import { DEFAULT_ATTR_DATA } from './Buffer';
-import { CellData } from './BufferLine';
+import { CellData, DEFAULT_ATTR_DATA } from './core/buffer/BufferLine';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
@@ -17,7 +16,7 @@ class TestTerminal extends Terminal {
   public keyPress(ev: any): boolean { return this._keyPress(ev); }
 }
 
-describe('xterm.js', () => {
+describe('Terminal', () => {
   let term: TestTerminal;
   const termOptions = {
     cols: INIT_COLS,
