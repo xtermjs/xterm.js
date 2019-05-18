@@ -6,11 +6,9 @@
 import { CircularList, IInsertEvent } from './common/CircularList';
 import { ITerminal, IBuffer, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult } from './Types';
 import { IBufferLine, ICellData, IAttributeData } from './core/Types';
-import { IMarker } from 'xterm';
 import { BufferLine, CellData, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX, DEFAULT_ATTR_DATA } from './core/buffer/BufferLine';
-import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths, getWrappedLineTrimmedLength } from './BufferReflow';
-import { EventEmitter2, IEvent } from './common/EventEmitter2';
-import { Disposable } from './common/Lifecycle';
+import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths, getWrappedLineTrimmedLength } from './core/buffer/BufferReflow';
+import { Marker } from './core/buffer/Marker';
 
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 
@@ -600,33 +598,6 @@ export class Buffer implements IBuffer {
 
   public iterator(trimRight: boolean, startIndex?: number, endIndex?: number, startOverscan?: number, endOverscan?: number): IBufferStringIterator {
     return new BufferStringIterator(this, trimRight, startIndex, endIndex, startOverscan, endOverscan);
-  }
-}
-
-export class Marker extends Disposable implements IMarker {
-  private static _nextId = 1;
-
-  private _id: number = Marker._nextId++;
-  public isDisposed: boolean = false;
-
-  public get id(): number { return this._id; }
-
-  private _onDispose = new EventEmitter2<void>();
-  public get onDispose(): IEvent<void> { return this._onDispose.event; }
-
-  constructor(
-    public line: number
-  ) {
-    super();
-  }
-
-  public dispose(): void {
-    if (this.isDisposed) {
-      return;
-    }
-    this.isDisposed = true;
-    // Emit before super.dispose such that dispose listeners get a change to react
-    this._onDispose.fire();
   }
 }
 
