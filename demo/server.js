@@ -18,6 +18,7 @@ function startServer() {
       logs = {};
 
   app.use('/src', express.static(__dirname + '/../src'));
+  app.get('/logo.png', (req, res) => res.sendFile(__dirname + '/logo.png'));
 
   app.get('/', function(req, res){
     res.sendFile(__dirname + '/index.html');
