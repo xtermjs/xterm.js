@@ -384,7 +384,7 @@ export class MockRenderer implements IRenderer {
     throw new Error('Method not implemented.');
   }
   dimensions: IRenderDimensions;
-  onThemeChange(colors: IColorSet): void {
+  setColors(colors: IColorSet): void {
     throw new Error('Method not implemented.');
   }
   onResize(cols: number, rows: number): void {}

@@ -131,7 +131,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._terminal.screenElement.style.height = `${this.dimensions.canvasHeight}px`;
   }
 
-  public onThemeChange(colors: IColorSet): void {
+  public setColors(colors: IColorSet): void {
     this._colors = colors;
     this._injectCss();
   }

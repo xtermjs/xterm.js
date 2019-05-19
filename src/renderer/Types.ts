@@ -28,7 +28,7 @@ export interface IRenderer extends IDisposable {
   dimensions: IRenderDimensions;
 
   dispose(): void;
-  onThemeChange(colors: IColorSet): void;
+  setColors(colors: IColorSet): void;
   onDevicePixelRatioChange(): void;
   onResize(cols: number, rows: number): void;
   onCharSizeChanged(): void;
@@ -82,7 +82,7 @@ export interface IRenderLayer extends IDisposable {
   /**
    * Called when the theme changes.
    */
-  onThemeChange(terminal: ITerminal, colorSet: IColorSet): void;
+  setColors(terminal: ITerminal, colorSet: IColorSet): void;
 
   /**
    * Called when the data in the grid has changed (or needs to be rendered
