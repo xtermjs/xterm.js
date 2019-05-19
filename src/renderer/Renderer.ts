@@ -11,12 +11,10 @@ import { ITerminal, CharacterJoinerHandler } from '../Types';
 import { LinkRenderLayer } from './LinkRenderLayer';
 import { ScreenDprMonitor } from '../ui/ScreenDprMonitor';
 import { CharacterJoinerRegistry } from '../renderer/CharacterJoinerRegistry';
-import { EventEmitter2, IEvent } from '../common/EventEmitter2';
 import { Disposable } from '../common/Lifecycle';
 import { IColorSet } from '../ui/Types';
 
 export class Renderer extends Disposable implements IRenderer {
-
   private _renderLayers: IRenderLayer[];
   private _devicePixelRatio: number;
   private _screenDprMonitor: ScreenDprMonitor;
@@ -25,11 +23,6 @@ export class Renderer extends Disposable implements IRenderer {
   private _characterJoinerRegistry: ICharacterJoinerRegistry;
 
   public dimensions: IRenderDimensions;
-
-  private _onCanvasResize = new EventEmitter2<{ width: number, height: number }>();
-  public get onCanvasResize(): IEvent<{ width: number, height: number }> { return this._onCanvasResize.event; }
-  private _onRender = new EventEmitter2<{ start: number, end: number }>();
-  public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
 
   constructor(
     private _terminal: ITerminal,
@@ -130,11 +123,6 @@ export class Renderer extends Disposable implements IRenderer {
     // Resize the screen
     this._terminal.screenElement.style.width = `${this.dimensions.canvasWidth}px`;
     this._terminal.screenElement.style.height = `${this.dimensions.canvasHeight}px`;
-
-    this._onCanvasResize.fire({
-      width: this.dimensions.canvasWidth,
-      height: this.dimensions.canvasHeight
-    });
   }
 
   public onCharSizeChanged(): void {
@@ -179,7 +167,6 @@ export class Renderer extends Disposable implements IRenderer {
    */
   public renderRows(start: number, end: number): void {
     this._renderLayers.forEach(l => l.onGridChanged(this._terminal, start, end));
-    this._onRender.fire({ start, end });
   }
 
   /**

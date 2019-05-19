@@ -7,7 +7,6 @@ import { IRenderer, IRenderDimensions } from '../Types';
 import { ILinkifierEvent, ITerminal, CharacterJoinerHandler } from '../../Types';
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from './DomRendererRowFactory';
 import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
-import { EventEmitter2, IEvent } from '../../common/EventEmitter2';
 import { Disposable } from '../../common/Lifecycle';
 import { IColorSet } from '../../ui/Types';
 
@@ -39,12 +38,6 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _selectionContainer: HTMLElement;
 
   public dimensions: IRenderDimensions;
-
-  // TODO: These events should be owned by RenderCoordinator
-  private _onCanvasResize = new EventEmitter2<{ width: number, height: number }>();
-  public get onCanvasResize(): IEvent<{ width: number, height: number }> { return this._onCanvasResize.event; }
-  private _onRender = new EventEmitter2<{ start: number, end: number }>();
-  public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
 
   constructor(
     private _terminal: ITerminal,
@@ -240,10 +233,6 @@ export class DomRenderer extends Disposable implements IRenderer {
   public onResize(cols: number, rows: number): void {
     this._refreshRowElements(cols, rows);
     this._updateDimensions();
-    this._onCanvasResize.fire({
-      width: this.dimensions.canvasWidth,
-      height: this.dimensions.canvasHeight
-    });
   }
 
   public onCharSizeChanged(): void {
@@ -351,8 +340,6 @@ export class DomRenderer extends Disposable implements IRenderer {
       const cursorStyle = terminal.options.cursorStyle;
       rowElement.appendChild(this._rowFactory.createRow(lineData, row === cursorAbsoluteY, cursorStyle, cursorX, cursorBlink, this.dimensions.actualCellWidth, terminal.cols));
     }
-
-    this._onRender.fire({ start, end });
   }
 
   private get _terminalSelector(): string {

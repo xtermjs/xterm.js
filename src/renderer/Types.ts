@@ -5,7 +5,6 @@
 
 import { ITerminal, CharacterJoinerHandler } from '../Types';
 import { IDisposable } from 'xterm';
-import { IEvent } from '../common/EventEmitter2';
 import { IColorSet } from '../ui/Types';
 
 /**
@@ -27,9 +26,6 @@ export const enum FLAGS {
  */
 export interface IRenderer extends IDisposable {
   dimensions: IRenderDimensions;
-
-  onCanvasResize: IEvent<{ width: number, height: number }>;
-  onRender: IEvent<{ start: number, end: number }>;
 
   dispose(): void;
   onThemeChange(colors: IColorSet): void;

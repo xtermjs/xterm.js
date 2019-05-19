@@ -773,6 +773,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this._setupRenderer();
 
     this._renderCoordinator = new RenderCoordinator(this.renderer, this.rows);
+    this._renderCoordinator.onRender(e => this._onRender.fire(e));
     this.onResize(e => this._renderCoordinator.resize(e.cols, e.rows));
 
     this.viewport = new Viewport(this, this._viewportElement, this._viewportScrollArea, this.charMeasure);
@@ -788,7 +789,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // matchMedia query.
     this.register(addDisposableDomListener(window, 'resize', () => this.renderer.onWindowResize(window.devicePixelRatio)));
     this.register(this.charMeasure.onCharSizeChanged(() => this.renderer.onCharSizeChanged()));
-    this.register(this.renderer.onCanvasResize(() => this.viewport.syncScrollArea()));
+    this.register(this._renderCoordinator.onCanvasResize(() => this.viewport.syncScrollArea()));
 
     this.selectionManager = new SelectionManager(this, this.charMeasure);
     this.register(this.selectionManager.onSelectionChange(() => this._onSelectionChange.fire()));
@@ -821,6 +822,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // Note that this must be done *after* the renderer is created in order to
       // ensure the correct order of the dprchange event
       this._accessibilityManager = new AccessibilityManager(this);
+      this._accessibilityManager.register(this._renderCoordinator.onCanvasResize(() => this._accessibilityManager.refreshRowsDimensions()));
     }
 
     // Measure the character size
@@ -848,7 +850,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     if (this._renderCoordinator) {
       this._renderCoordinator.setRenderer(this.renderer);
     }
-    this.renderer.onRender(e => this._onRender.fire(e));
     this.register(this.renderer);
   }
 

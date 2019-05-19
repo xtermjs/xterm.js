@@ -58,7 +58,7 @@ export class AccessibilityManager extends Disposable {
     this._rowElements[0].addEventListener('focus', this._topBoundaryFocusListener);
     this._rowElements[this._rowElements.length - 1].addEventListener('focus', this._bottomBoundaryFocusListener);
 
-    this._refreshRowsDimensions();
+    this.refreshRowsDimensions();
     this._accessibilityTreeRoot.appendChild(this._rowContainer);
 
     this._renderRowsDebouncer = new RenderDebouncer(this._renderRows.bind(this));
@@ -84,11 +84,10 @@ export class AccessibilityManager extends Disposable {
     // TODO: Maybe renderer should fire an event on terminal when the characters change and that
     //       should be listened to instead? That would mean that the order of events are always
     //       guarenteed
-    this.register(this._terminal.addDisposableListener('dprchange', () => this._refreshRowsDimensions()));
-    this.register(this._terminal.renderer.onCanvasResize(() => this._refreshRowsDimensions()));
+    this.register(this._terminal.addDisposableListener('dprchange', () => this.refreshRowsDimensions()));
     // This shouldn't be needed on modern browsers but is present in case the
     // media query that drives the dprchange event isn't supported
-    this.register(addDisposableDomListener(window, 'resize', () => this._refreshRowsDimensions()));
+    this.register(addDisposableDomListener(window, 'resize', () => this.refreshRowsDimensions()));
   }
 
   public dispose(): void {
@@ -174,7 +173,7 @@ export class AccessibilityManager extends Disposable {
     // Add bottom boundary listener
     this._rowElements[this._rowElements.length - 1].addEventListener('focus', this._bottomBoundaryFocusListener);
 
-    this._refreshRowsDimensions();
+    this.refreshRowsDimensions();
   }
 
   private _createAccessibilityTreeNode(): HTMLElement {
@@ -257,7 +256,7 @@ export class AccessibilityManager extends Disposable {
     }
   }
 
-  private _refreshRowsDimensions(): void {
+  public refreshRowsDimensions(): void {
     if (!this._terminal.renderer.dimensions.actualCellHeight) {
       return;
     }
