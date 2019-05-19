@@ -6,16 +6,15 @@
 import { TextRenderLayer } from './TextRenderLayer';
 import { SelectionRenderLayer } from './SelectionRenderLayer';
 import { CursorRenderLayer } from './CursorRenderLayer';
-import { ColorManager } from './ColorManager';
-import { IRenderLayer, IColorSet, IRenderer, IRenderDimensions, ICharacterJoinerRegistry } from './Types';
+import { IRenderLayer, IRenderer, IRenderDimensions, ICharacterJoinerRegistry } from './Types';
 import { ITerminal, CharacterJoinerHandler } from '../Types';
 import { LinkRenderLayer } from './LinkRenderLayer';
 import { RenderDebouncer } from '../ui/RenderDebouncer';
 import { ScreenDprMonitor } from '../ui/ScreenDprMonitor';
-import { ITheme } from 'xterm';
 import { CharacterJoinerRegistry } from '../renderer/CharacterJoinerRegistry';
 import { EventEmitter2, IEvent } from '../common/EventEmitter2';
 import { Disposable } from '../common/Lifecycle';
+import { IColorSet } from '../ui/Types';
 
 export class Renderer extends Disposable implements IRenderer {
   private _renderDebouncer: RenderDebouncer;
@@ -27,7 +26,6 @@ export class Renderer extends Disposable implements IRenderer {
   private _needsFullRefresh: boolean = false;
   private _characterJoinerRegistry: ICharacterJoinerRegistry;
 
-  public colorManager: ColorManager;
   public dimensions: IRenderDimensions;
 
   private _onCanvasResize = new EventEmitter2<{ width: number, height: number }>();
@@ -35,20 +33,19 @@ export class Renderer extends Disposable implements IRenderer {
   private _onRender = new EventEmitter2<{ start: number, end: number }>();
   public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
 
-  constructor(private _terminal: ITerminal, theme: ITheme) {
+  constructor(
+    private _terminal: ITerminal,
+    private _colors: IColorSet
+  ) {
     super();
     const allowTransparency = this._terminal.options.allowTransparency;
-    this.colorManager = new ColorManager(document, allowTransparency);
     this._characterJoinerRegistry = new CharacterJoinerRegistry(_terminal);
-    if (theme) {
-      this.colorManager.setTheme(theme);
-    }
 
     this._renderLayers = [
-      new TextRenderLayer(this._terminal.screenElement, 0, this.colorManager.colors, this._characterJoinerRegistry, allowTransparency),
-      new SelectionRenderLayer(this._terminal.screenElement, 1, this.colorManager.colors),
-      new LinkRenderLayer(this._terminal.screenElement, 2, this.colorManager.colors, this._terminal),
-      new CursorRenderLayer(this._terminal.screenElement, 3, this.colorManager.colors)
+      new TextRenderLayer(this._terminal.screenElement, 0, this._colors, this._characterJoinerRegistry, allowTransparency),
+      new SelectionRenderLayer(this._terminal.screenElement, 1, this._colors),
+      new LinkRenderLayer(this._terminal.screenElement, 2, this._colors, this._terminal),
+      new CursorRenderLayer(this._terminal.screenElement, 3, this._colors)
     ];
     this.dimensions = {
       scaledCharWidth: null,
@@ -104,12 +101,10 @@ export class Renderer extends Disposable implements IRenderer {
     }
   }
 
-  public setTheme(theme: ITheme): IColorSet {
-    this.colorManager.setTheme(theme);
-
+  public onThemeChange(colors: IColorSet): void {
     // Clear layers and force a full render
     this._renderLayers.forEach(l => {
-      l.onThemeChanged(this._terminal, this.colorManager.colors);
+      l.onThemeChange(this._terminal, this._colors);
       l.reset(this._terminal);
     });
 
@@ -118,8 +113,6 @@ export class Renderer extends Disposable implements IRenderer {
     } else {
       this._terminal.refresh(0, this._terminal.rows - 1);
     }
-
-    return this.colorManager.colors;
   }
 
   public onResize(cols: number, rows: number): void {
@@ -167,7 +160,6 @@ export class Renderer extends Disposable implements IRenderer {
   }
 
   public onOptionsChanged(): void {
-    this.colorManager.allowTransparency = this._terminal.options.allowTransparency;
     this._runOperation(l => l.onOptionsChanged(this._terminal));
   }
 
