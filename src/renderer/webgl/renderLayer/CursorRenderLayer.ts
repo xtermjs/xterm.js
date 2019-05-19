@@ -129,8 +129,8 @@ export class CursorRenderLayer extends BaseRenderLayer {
       return;
     }
 
-    // TODO: Need fast buffere API for loading cell
-    (terminal as any)._core.buffer.getLine(cursorY).loadCell(terminal.buffer.cursorX, this._cell);
+    // TODO: Need fast buffer API for loading cell
+    (terminal as any)._core.buffer.lines.get(cursorY).loadCell(terminal.buffer.cursorX, this._cell);
     if (this._cell.content === undefined) {
       return;
     }
