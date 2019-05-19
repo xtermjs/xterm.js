@@ -894,12 +894,51 @@ declare module 'xterm' {
     /**
      * (EXPERIMENTAL)
      */
-    setRenderer(renderer: any): void;
+    setRenderer(renderer: IRenderer): void;
     screenElement: HTMLElement;
   }
 
   export namespace Renderer {
     const DEFAULT_COLOR: number;
+    const NULL_CELL_CODE: number;
+    const WHITESPACE_CELL_CODE: number;
+    const DEFAULT_ATTR: number;
+    const DEFAULT_ANSI_COLORS: string[];
+    const FLAGS: any;
+  }
+
+  export interface IRenderer extends IDisposable {
+    readonly dimensions: IRenderDimensions;
+
+    dispose(): void;
+    setColors(colors: IColorSet): void;
+    onDevicePixelRatioChange(): void;
+    onResize(cols: number, rows: number): void;
+    onCharSizeChanged(): void;
+    onBlur(): void;
+    onFocus(): void;
+    onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void;
+    onCursorMove(): void;
+    onOptionsChanged(): void;
+    clear(): void;
+    renderRows(start: number, end: number): void;
+    registerCharacterJoiner(handler: (text: string) => [number, number][]): number;
+    deregisterCharacterJoiner(joinerId: number): boolean;
+  }
+
+  export interface IRenderDimensions {
+    scaledCharWidth: number;
+    scaledCharHeight: number;
+    scaledCellWidth: number;
+    scaledCellHeight: number;
+    scaledCharLeft: number;
+    scaledCharTop: number;
+    scaledCanvasWidth: number;
+    scaledCanvasHeight: number;
+    canvasWidth: number;
+    canvasHeight: number;
+    actualCellWidth: number;
+    actualCellHeight: number;
   }
 
   /**

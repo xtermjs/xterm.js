@@ -3,22 +3,23 @@
  * @license MIT
  */
 
-import { IRenderer, IRenderDimensions, IRenderLayer, FLAGS } from '../Types';
+import { FLAGS } from '../Types';
 import { CharacterJoinerHandler, ITerminal } from '../../Types';
 import { GlyphRenderer } from './GlyphRenderer';
-import { LinkRenderLayer } from '../LinkRenderLayer';
-import { CursorRenderLayer } from '../CursorRenderLayer';
+import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
+import { CursorRenderLayer } from './renderLayer/CursorRenderLayer';
 import { acquireCharAtlas } from './atlas/CharAtlasCache';
 import WebglCharAtlas from './atlas/WebglCharAtlas';
 import { RectangleRenderer } from './RectangleRenderer';
 import { IWebGL2RenderingContext } from './Types';
 import { INVERTED_DEFAULT_COLOR } from './atlas/Types';
 import { RenderModel, COMBINED_CHAR_BIT_MASK } from './RenderModel';
-import { Disposable } from '../../common/Lifecycle';
+import { Disposable } from './Lifecycle';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CODE } from '../../core/buffer/BufferLine';
 import { DEFAULT_COLOR } from '../../common/Types';
-import { IColorSet, Terminal } from 'xterm';
+import { IColorSet, Terminal, IRenderDimensions, IRenderer } from 'xterm';
 import { getLuminance } from './ColorUtils';
+import { IRenderLayer } from './renderLayer/Types';
 
 export const INDICIES_PER_CELL = 4;
 
@@ -106,8 +107,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     // Clear layers and force a full render
     this._renderLayers.forEach(l => {
-      l.setColors(this._core, this._colors);
-      l.reset(this._core);
+      l.setColors(this._terminal, this._colors);
+      l.reset(this._terminal);
     });
 
     this._rectangleRenderer.setColors();
@@ -133,7 +134,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._rectangleRenderer.onResize();
 
     // Resize all render layers
-    this._renderLayers.forEach(l => l.resize(this._core, this.dimensions));
+    this._renderLayers.forEach(l => l.resize(this._terminal, this.dimensions));
 
     // Resize the canvas
     this._canvas.width = this.dimensions.scaledCanvasWidth;
@@ -155,15 +156,15 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   public onBlur(): void {
-    this._renderLayers.forEach(l => l.onBlur(this._core));
+    this._renderLayers.forEach(l => l.onBlur(this._terminal));
   }
 
   public onFocus(): void {
-    this._renderLayers.forEach(l => l.onFocus(this._core));
+    this._renderLayers.forEach(l => l.onFocus(this._terminal));
   }
 
   public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
-    this._renderLayers.forEach(l => l.onSelectionChanged(this._core, start, end, columnSelectMode));
+    this._renderLayers.forEach(l => l.onSelectionChanged(this._terminal, start, end, columnSelectMode));
 
     this._updateSelectionModel(start, end);
 
@@ -175,11 +176,11 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   public onCursorMove(): void {
-    this._renderLayers.forEach(l => l.onCursorMove(this._core));
+    this._renderLayers.forEach(l => l.onCursorMove(this._terminal));
   }
 
   public onOptionsChanged(): void {
-    this._renderLayers.forEach(l => l.onOptionsChanged(this._core));
+    this._renderLayers.forEach(l => l.onOptionsChanged(this._terminal));
     this._updateDimensions();
     this._refreshCharAtlas();
   }
@@ -204,7 +205,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   public clear(): void {
-    this._renderLayers.forEach(l => l.reset(this._core));
+    this._renderLayers.forEach(l => l.reset(this._terminal));
   }
 
   public registerCharacterJoiner(handler: CharacterJoinerHandler): number {
@@ -217,7 +218,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   public renderRows(start: number, end: number): void {
     // Update render layers
-    this._renderLayers.forEach(l => l.onGridChanged(this._core, start, end));
+    this._renderLayers.forEach(l => l.onGridChanged(this._terminal, start, end));
 
     // Tell renderer the frame is beginning
     if (this._glyphRenderer.beginFrame()) {
