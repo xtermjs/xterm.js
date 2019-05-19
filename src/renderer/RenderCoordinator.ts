@@ -8,6 +8,7 @@ import { RenderDebouncer } from '../ui/RenderDebouncer';
 import { EventEmitter2, IEvent } from '../common/EventEmitter2';
 import { Disposable } from '../common/Lifecycle';
 import { ScreenDprMonitor } from '../../lib/ui/ScreenDprMonitor';
+import { addDisposableDomListener } from '../ui/Lifecycle';
 
 export class RenderCoordinator extends Disposable {
   private _renderDebouncer: RenderDebouncer;
@@ -32,6 +33,10 @@ export class RenderCoordinator extends Disposable {
     this._screenDprMonitor = new ScreenDprMonitor();
     this._screenDprMonitor.setListener(() => this._renderer.onWindowResize(window.devicePixelRatio));
     this.register(this._screenDprMonitor);
+
+    // dprchange should handle this case, we need this as well for browsers that don't support the
+    // matchMedia query.
+    this.register(addDisposableDomListener(window, 'resize', () => this._renderer.onWindowResize(window.devicePixelRatio)));
   }
 
   public refreshRows(start: number, end: number): void {

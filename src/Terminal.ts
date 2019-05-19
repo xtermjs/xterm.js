@@ -778,9 +778,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.register(this.onResize(() => this.renderer.onResize(this.cols, this.rows)));
     this.register(this.addDisposableListener('blur', () => this.renderer.onBlur()));
     this.register(this.addDisposableListener('focus', () => this.renderer.onFocus()));
-    // dprchange should handle this case, we need this as well for browsers that don't support the
-    // matchMedia query.
-    this.register(addDisposableDomListener(window, 'resize', () => this.renderer.onWindowResize(window.devicePixelRatio)));
     this.register(this.charMeasure.onCharSizeChanged(() => this.renderer.onCharSizeChanged()));
     this.register(this._renderCoordinator.onCanvasResize(() => this.viewport.syncScrollArea()));
 
