@@ -475,6 +475,15 @@ describe('API Integration Tests', () => {
       });
     });
   });
+
+  describe('WebGL Renderer', () => {
+    it('load doesn\'t throw', async function(): Promise<any> {
+      this.timeout(10000);
+      await openTerminal({ rendererType: 'dom' });
+      await page.waitForSelector('.xterm style');
+      await page.evaluate(`window.term.loadWebgl();`);
+    });
+  });
 });
 
 async function openTerminal(options: ITerminalOptions = {}): Promise<void> {

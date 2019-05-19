@@ -4,7 +4,7 @@
  */
 
 import { FLAGS } from '../Types';
-import { CharacterJoinerHandler, ITerminal } from '../../Types';
+import { ITerminal } from '../../Types';
 import { GlyphRenderer } from './GlyphRenderer';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { CursorRenderLayer } from './renderLayer/CursorRenderLayer';
@@ -208,7 +208,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._renderLayers.forEach(l => l.reset(this._terminal));
   }
 
-  public registerCharacterJoiner(handler: CharacterJoinerHandler): number {
+  public registerCharacterJoiner(handler: (text: string) => [number, number][]): number {
     return -1;
   }
 

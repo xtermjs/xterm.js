@@ -4,7 +4,6 @@
  */
 
 import { IDisposable, IRenderDimensions, IColorSet, Terminal } from 'xterm';
-import { ICharacterJoiner } from '../../Types';
 
 export interface IRenderLayer extends IDisposable {
   /**
@@ -46,7 +45,7 @@ export interface IRenderLayer extends IDisposable {
   /**
    * Registers a handler to join characters to render as a group
    */
-  registerCharacterJoiner?(joiner: ICharacterJoiner): void;
+  registerCharacterJoiner?(handler: (text: string) => [number, number][]): void;
 
   /**
    * Deregisters the specified character joiner handler
