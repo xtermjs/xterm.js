@@ -3,12 +3,11 @@
  * @license MIT
  */
 
-import { ITerminal } from '../../../Types';
 import { ICharAtlasConfig } from './Types';
 import { DEFAULT_COLOR } from '../../../common/Types';
-import { IColorSet } from 'xterm';
+import { IColorSet, Terminal, FontWeight } from 'xterm';
 
-export function generateConfig(scaledCharWidth: number, scaledCharHeight: number, terminal: ITerminal, colors: IColorSet): ICharAtlasConfig {
+export function generateConfig(scaledCharWidth: number, scaledCharHeight: number, terminal: Terminal, colors: IColorSet): ICharAtlasConfig {
   // null out some fields that don't matter
   const clonedColors: IColorSet = {
     foreground: colors.foreground,
@@ -21,15 +20,14 @@ export function generateConfig(scaledCharWidth: number, scaledCharHeight: number
     ansi: colors.ansi.slice(0, 16)
   };
   return {
-    type: terminal.options.experimentalCharAtlas,
     devicePixelRatio: window.devicePixelRatio,
     scaledCharWidth,
     scaledCharHeight,
-    fontFamily: terminal.options.fontFamily,
-    fontSize: terminal.options.fontSize,
-    fontWeight: terminal.options.fontWeight,
-    fontWeightBold: terminal.options.fontWeightBold,
-    allowTransparency: terminal.options.allowTransparency,
+    fontFamily: terminal.getOption('fontFamily'),
+    fontSize: terminal.getOption('fontSize'),
+    fontWeight: terminal.getOption('fontWeight') as FontWeight,
+    fontWeightBold: terminal.getOption('fontWeightBold') as FontWeight,
+    allowTransparency: terminal.getOption('allowTransparency'),
     colors: clonedColors
   };
 }
@@ -40,8 +38,7 @@ export function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean 
       return false;
     }
   }
-  return a.type === b.type &&
-      a.devicePixelRatio === b.devicePixelRatio &&
+  return a.devicePixelRatio === b.devicePixelRatio &&
       a.fontFamily === b.fontFamily &&
       a.fontSize === b.fontSize &&
       a.fontWeight === b.fontWeight &&

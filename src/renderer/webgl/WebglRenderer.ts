@@ -17,7 +17,7 @@ import { RenderModel, COMBINED_CHAR_BIT_MASK } from './RenderModel';
 import { Disposable } from '../../common/Lifecycle';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CODE } from '../../core/buffer/BufferLine';
 import { DEFAULT_COLOR } from '../../common/Types';
-import { IColorSet } from 'xterm';
+import { IColorSet, Terminal } from 'xterm';
 import { getLuminance } from './ColorUtils';
 
 export const INDICIES_PER_CELL = 4;
@@ -36,16 +36,20 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   public dimensions: IRenderDimensions;
 
+  private _core: ITerminal;
+
   constructor(
-    private _terminal: ITerminal,
+    private _terminal: Terminal,
     private _colors: IColorSet
   ) {
     super();
 
+    this._core = (this._terminal as any)._core;
+
     this._applyBgLuminanceBasedSelection();
 
     this._renderLayers = [
-      new LinkRenderLayer(this._terminal.screenElement, 2, this._colors, this._terminal),
+      new LinkRenderLayer(this._terminal.screenElement, 2, this._colors, this._core),
       new CursorRenderLayer(this._terminal.screenElement, 3, this._colors)
     ];
     this.dimensions = {
@@ -102,8 +106,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     // Clear layers and force a full render
     this._renderLayers.forEach(l => {
-      l.setColors(this._terminal, this._colors);
-      l.reset(this._terminal);
+      l.setColors(this._core, this._colors);
+      l.reset(this._core);
     });
 
     this._rectangleRenderer.setColors();
@@ -117,7 +121,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // and the terminal needs to refreshed
     if (this._devicePixelRatio !== window.devicePixelRatio) {
       this._devicePixelRatio = window.devicePixelRatio;
-      this.onResize(this._terminal.cols, this._terminal.rows);
+      this.onResize(this._core.cols, this._core.rows);
     }
   }
 
@@ -125,11 +129,11 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // Update character and canvas dimensions
     this._updateDimensions(devicePixelRatio);
 
-    this._model.resize(this._terminal.cols, this._terminal.rows);
+    this._model.resize(this._core.cols, this._core.rows);
     this._rectangleRenderer.onResize();
 
     // Resize all render layers
-    this._renderLayers.forEach(l => l.resize(this._terminal, this.dimensions));
+    this._renderLayers.forEach(l => l.resize(this._core, this.dimensions));
 
     // Resize the canvas
     this._canvas.width = this.dimensions.scaledCanvasWidth;
@@ -151,15 +155,15 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   public onBlur(): void {
-    this._renderLayers.forEach(l => l.onBlur(this._terminal));
+    this._renderLayers.forEach(l => l.onBlur(this._core));
   }
 
   public onFocus(): void {
-    this._renderLayers.forEach(l => l.onFocus(this._terminal));
+    this._renderLayers.forEach(l => l.onFocus(this._core));
   }
 
   public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
-    this._renderLayers.forEach(l => l.onSelectionChanged(this._terminal, start, end, columnSelectMode));
+    this._renderLayers.forEach(l => l.onSelectionChanged(this._core, start, end, columnSelectMode));
 
     this._updateSelectionModel(start, end);
 
@@ -167,15 +171,15 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._glyphRenderer.updateSelection(this._model, columnSelectMode);
 
     // TODO: #2102 Should this move to RenderCoordinator?
-    this._terminal.refresh(0, this._terminal.rows - 1);
+    this._core.refresh(0, this._core.rows - 1);
   }
 
   public onCursorMove(): void {
-    this._renderLayers.forEach(l => l.onCursorMove(this._terminal));
+    this._renderLayers.forEach(l => l.onCursorMove(this._core));
   }
 
   public onOptionsChanged(): void {
-    this._renderLayers.forEach(l => l.onOptionsChanged(this._terminal));
+    this._renderLayers.forEach(l => l.onOptionsChanged(this._core));
     this._updateDimensions();
     this._refreshCharAtlas();
   }
@@ -200,7 +204,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   public clear(): void {
-    this._renderLayers.forEach(l => l.reset(this._terminal));
+    this._renderLayers.forEach(l => l.reset(this._core));
   }
 
   public registerCharacterJoiner(handler: CharacterJoinerHandler): number {
@@ -213,7 +217,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   public renderRows(start: number, end: number): void {
     // Update render layers
-    this._renderLayers.forEach(l => l.onGridChanged(this._terminal, start, end));
+    this._renderLayers.forEach(l => l.onGridChanged(this._core, start, end));
 
     // Tell renderer the frame is beginning
     if (this._glyphRenderer.beginFrame()) {
@@ -229,7 +233,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   private _updateModel(start: number, end: number): void {
-    const terminal = this._terminal;
+    const terminal = this._core;
 
     for (let y = start; y <= end; y++) {
       const row = y + terminal.buffer.ydisp;
@@ -288,7 +292,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   }
 
   private _updateSelectionModel(start: [number, number], end: [number, number]): void {
-    const terminal = this._terminal;
+    const terminal = this._core;
 
     // Selection does not exist
     if (!start || !end || (start[0] === end[0] && start[1] === end[1])) {
@@ -322,7 +326,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
    */
   private _updateDimensions(devicePixelRatio: number = window.devicePixelRatio): void {
     // Perform a new measure if the CharMeasure dimensions are not yet available
-    if (!this._terminal.charMeasure.width || !this._terminal.charMeasure.height) {
+    if (!this._core.charMeasure.width || !this._core.charMeasure.height) {
       return;
     }
 
@@ -333,34 +337,34 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     // NOTE: ceil fixes sometime, floor does others :s
 
-    this.dimensions.scaledCharWidth = Math.floor(this._terminal.charMeasure.width * devicePixelRatio);
+    this.dimensions.scaledCharWidth = Math.floor(this._core.charMeasure.width * devicePixelRatio);
 
     // Calculate the scaled character height. Height is ceiled in case
     // devicePixelRatio is a floating point number in order to ensure there is
     // enough space to draw the character to the cell.
-    this.dimensions.scaledCharHeight = Math.ceil(this._terminal.charMeasure.height * devicePixelRatio);
+    this.dimensions.scaledCharHeight = Math.ceil(this._core.charMeasure.height * devicePixelRatio);
 
     // Calculate the scaled cell height, if lineHeight is not 1 then the value
     // will be floored because since lineHeight can never be lower then 1, there
     // is a guarentee that the scaled line height will always be larger than
     // scaled char height.
-    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._terminal.options.lineHeight);
+    this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._core.options.lineHeight);
 
     // Calculate the y coordinate within a cell that text should draw from in
     // order to draw in the center of a cell.
-    this.dimensions.scaledCharTop = this._terminal.options.lineHeight === 1 ? 0 : Math.round((this.dimensions.scaledCellHeight - this.dimensions.scaledCharHeight) / 2);
+    this.dimensions.scaledCharTop = this._core.options.lineHeight === 1 ? 0 : Math.round((this.dimensions.scaledCellHeight - this.dimensions.scaledCharHeight) / 2);
 
     // Calculate the scaled cell width, taking the letterSpacing into account.
-    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._terminal.options.letterSpacing);
+    this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._core.options.letterSpacing);
 
     // Calculate the x coordinate with a cell that text should draw from in
     // order to draw in the center of a cell.
-    this.dimensions.scaledCharLeft = Math.floor(this._terminal.options.letterSpacing / 2);
+    this.dimensions.scaledCharLeft = Math.floor(this._core.options.letterSpacing / 2);
 
     // Recalculate the canvas dimensions; scaled* define the actual number of
     // pixel in the canvas
-    this.dimensions.scaledCanvasHeight = this._terminal.rows * this.dimensions.scaledCellHeight;
-    this.dimensions.scaledCanvasWidth = this._terminal.cols * this.dimensions.scaledCellWidth;
+    this.dimensions.scaledCanvasHeight = this._core.rows * this.dimensions.scaledCellHeight;
+    this.dimensions.scaledCanvasWidth = this._core.cols * this.dimensions.scaledCellWidth;
 
     // The the size of the canvas on the page. It's very important that this
     // rounds to nearest integer and not ceils as browsers often set

@@ -21,7 +21,6 @@ export interface IGlyphIdentifier {
 }
 
 export interface ICharAtlasConfig {
-  type: 'none' | 'static' | 'dynamic' | 'webgl';
   devicePixelRatio: number;
   fontSize: number;
   fontFamily: string;

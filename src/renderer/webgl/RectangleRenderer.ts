@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { ITerminal } from '../../Types';
 import { IRenderDimensions } from '../Types';
 import { createProgram, expandFloat32Array, PROJECTION_MATRIX } from './WebglUtils';
 import { IRenderModel, IWebGLVertexArrayObject, IWebGL2RenderingContext, ISelectionRenderModel } from './Types';
@@ -11,7 +10,7 @@ import { fill } from './TypedArray';
 import { INVERTED_DEFAULT_COLOR } from './atlas/Types';
 import { is256Color } from './atlas/CharAtlasUtils';
 import { DEFAULT_COLOR } from '../../common/Types';
-import { IColorSet, IColor } from 'xterm';
+import { IColorSet, IColor, Terminal } from 'xterm';
 
 const enum VertexAttribLocations {
   POSITION = 0,
@@ -76,7 +75,7 @@ export class RectangleRenderer {
   };
 
   constructor(
-    private _terminal: ITerminal,
+    private _terminal: Terminal,
     private _colors: IColorSet,
     private _gl: IWebGL2RenderingContext,
     private _dimensions: IRenderDimensions

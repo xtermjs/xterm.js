@@ -895,6 +895,11 @@ declare module 'xterm' {
      * (EXPERIMENTAL)
      */
     setRenderer(renderer: any): void;
+    screenElement: HTMLElement;
+  }
+
+  export namespace Renderer {
+    const DEFAULT_COLOR: number;
   }
 
   /**

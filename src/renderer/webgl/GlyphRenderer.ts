@@ -5,16 +5,14 @@
 
 import { createProgram, PROJECTION_MATRIX } from './WebglUtils';
 import { IRenderDimensions } from '../Types';
-import { ITerminal } from '../../Types';
 import WebglCharAtlas from './atlas/WebglCharAtlas';
 import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel, IRasterizedGlyph } from './Types';
 import { INDICIES_PER_CELL } from './WebglRenderer';
 import { COMBINED_CHAR_BIT_MASK } from './RenderModel';
 import { fill, slice } from './TypedArray';
-import { NULL_CELL_CODE, WHITESPACE_CELL_CODE, CHAR_DATA_CHAR_INDEX } from '../../core/buffer/BufferLine';
-import { IBufferLine } from '../../core/Types';
+import { NULL_CELL_CODE, WHITESPACE_CELL_CODE } from '../../core/buffer/BufferLine';
 import { getLuminance } from './ColorUtils';
-import { IColorSet } from 'xterm';
+import { IColorSet, Terminal, IBufferLine } from 'xterm';
 
 interface IVertices {
   attributes: Float32Array;
@@ -97,7 +95,7 @@ export class GlyphRenderer {
   };
 
   constructor(
-    private _terminal: ITerminal,
+    private _terminal: Terminal,
     private _colors: IColorSet,
     private _gl: IWebGL2RenderingContext,
     private _dimensions: IRenderDimensions
@@ -185,9 +183,9 @@ export class GlyphRenderer {
 
     let rasterizedGlyph: IRasterizedGlyph;
     if (chars && chars.length > 1) {
-      rasterizedGlyph = this._atlas.getRasterizedGlyphCombinedChar(chars, attr, bg, fg, this._terminal.options.enableBold);
+      rasterizedGlyph = this._atlas.getRasterizedGlyphCombinedChar(chars, attr, bg, fg, this._terminal.getOption('enableBold'));
     } else {
-      rasterizedGlyph = this._atlas.getRasterizedGlyph(code, attr, bg, fg, this._terminal.options.enableBold);
+      rasterizedGlyph = this._atlas.getRasterizedGlyph(code, attr, bg, fg, this._terminal.getOption('enableBold'));
     }
 
     // Fill empty if no glyph was found
@@ -252,8 +250,8 @@ export class GlyphRenderer {
 
   private _updateSelectionRange(startCol: number, endCol: number, y: number, model: IRenderModel, bg: number, fg: number): void {
     const terminal = this._terminal;
-    const row = y + terminal.buffer.ydisp;
-    let line: IBufferLine;
+    const row = y + terminal.buffer.viewportY;
+    let line: IBufferLine | undefined;
     for (let x = startCol; x < endCol; x++) {
       const offset = (y * this._terminal.cols + x) * INDICIES_PER_CELL;
       // Because the cache uses attr as a lookup key it needs to contain the selection colors as well
@@ -262,10 +260,9 @@ export class GlyphRenderer {
       const code = model.cells[offset];
       if (code & COMBINED_CHAR_BIT_MASK) {
         if (!line) {
-          line = terminal.buffer.lines.get(row);
+          line = terminal.buffer.getLine(row);
         }
-        const charData = line.get(x);
-        const chars = charData[CHAR_DATA_CHAR_INDEX];
+        const chars = line.getCell(x).char;
         this._updateCell(this._vertices.selectionAttributes, x, y, model.cells[offset], attr, bg, fg, chars);
       } else {
         this._updateCell(this._vertices.selectionAttributes, x, y, model.cells[offset], attr, bg, fg);

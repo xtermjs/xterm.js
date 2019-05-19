@@ -3,19 +3,18 @@
  * @license MIT
  */
 
-import { ITerminal } from '../../../Types';
 import { generateConfig, configEquals } from './CharAtlasUtils';
 import BaseCharAtlas from './BaseCharAtlas';
 import WebglCharAtlas from './WebglCharAtlas';
 import { ICharAtlasConfig } from './Types';
-import { IColorSet } from 'xterm';
+import { IColorSet, Terminal } from 'xterm';
 
 interface ICharAtlasCacheEntry {
   atlas: BaseCharAtlas;
   config: ICharAtlasConfig;
   // N.B. This implementation potentially holds onto copies of the terminal forever, so
   // this may cause memory leaks.
-  ownedBy: ITerminal[];
+  ownedBy: Terminal[];
 }
 
 const charAtlasCache: ICharAtlasCacheEntry[] = [];
@@ -27,7 +26,7 @@ const charAtlasCache: ICharAtlasCacheEntry[] = [];
  * @param colors The colors to use.
  */
 export function acquireCharAtlas(
-  terminal: ITerminal,
+  terminal: Terminal,
   colors: IColorSet,
   scaledCharWidth: number,
   scaledCharHeight: number
@@ -76,7 +75,7 @@ export function acquireCharAtlas(
  * Removes a terminal reference from the cache, allowing its memory to be freed.
  * @param terminal The terminal to remove.
  */
-export function removeTerminalFromCache(terminal: ITerminal): void {
+export function removeTerminalFromCache(terminal: Terminal): void {
   for (let i = 0; i < charAtlasCache.length; i++) {
     const index = charAtlasCache[i].ownedBy.indexOf(terminal);
     if (index !== -1) {
