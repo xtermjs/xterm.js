@@ -29,7 +29,7 @@ export interface IRenderer extends IDisposable {
 
   dispose(): void;
   onThemeChange(colors: IColorSet): void;
-  onWindowResize(devicePixelRatio: number): void;
+  onDevicePixelRatioChange(): void;
   onResize(cols: number, rows: number): void;
   onCharSizeChanged(): void;
   onBlur(): void;

@@ -31,12 +31,12 @@ export class RenderCoordinator extends Disposable {
     this.register(this._renderDebouncer);
 
     this._screenDprMonitor = new ScreenDprMonitor();
-    this._screenDprMonitor.setListener(() => this._renderer.onWindowResize(window.devicePixelRatio));
+    this._screenDprMonitor.setListener(() => this._renderer.onDevicePixelRatioChange());
     this.register(this._screenDprMonitor);
 
     // dprchange should handle this case, we need this as well for browsers that don't support the
     // matchMedia query.
-    this.register(addDisposableDomListener(window, 'resize', () => this._renderer.onWindowResize(window.devicePixelRatio)));
+    this.register(addDisposableDomListener(window, 'resize', () => this._renderer.onDevicePixelRatioChange()));
   }
 
   public refreshRows(start: number, end: number): void {

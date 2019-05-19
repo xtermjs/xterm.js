@@ -76,11 +76,11 @@ export class Renderer extends Disposable implements IRenderer {
     }
   }
 
-  public onWindowResize(devicePixelRatio: number): void {
+  public onDevicePixelRatioChange(): void {
     // If the device pixel ratio changed, the char atlas needs to be regenerated
     // and the terminal needs to refreshed
-    if (this._devicePixelRatio !== devicePixelRatio) {
-      this._devicePixelRatio = devicePixelRatio;
+    if (this._devicePixelRatio !== window.devicePixelRatio) {
+      this._devicePixelRatio = window.devicePixelRatio;
       this.onResize(this._terminal.cols, this._terminal.rows);
     }
   }

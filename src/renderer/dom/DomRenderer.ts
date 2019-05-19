@@ -213,7 +213,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._themeStyleElement.innerHTML = styles;
   }
 
-  public onWindowResize(devicePixelRatio: number): void {
+  public onDevicePixelRatioChange(): void {
     this._updateDimensions();
   }
 
