@@ -4,7 +4,7 @@
  */
 
 import { createProgram, PROJECTION_MATRIX } from './WebglUtils';
-import { IColorManager, IRenderDimensions } from '../Types';
+import { IRenderDimensions } from '../Types';
 import { ITerminal } from '../../Types';
 import WebglCharAtlas from './WebglCharAtlas';
 import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel, IRasterizedGlyph } from './Types';
@@ -13,6 +13,8 @@ import { COMBINED_CHAR_BIT_MASK } from './RenderModel';
 import { fill, slice } from '../../common/TypedArrayUtils';
 import { NULL_CELL_CODE, WHITESPACE_CELL_CODE, CHAR_DATA_CHAR_INDEX } from '../../core/buffer/BufferLine';
 import { IBufferLine } from '../../core/Types';
+import { IColorSet } from '../../ui/Types';
+import { getLuminance } from './ColorUtils';
 
 interface IVertices {
   attributes: Float32Array;
@@ -96,7 +98,7 @@ export class GlyphRenderer {
 
   constructor(
     private _terminal: ITerminal,
-    private _colorManager: IColorManager,
+    private _colors: IColorSet,
     private _gl: IWebGL2RenderingContext,
     private _dimensions: IRenderDimensions
   ) {
@@ -216,7 +218,7 @@ export class GlyphRenderer {
 
     // TODO: Make fg and bg configurable, currently since the buffer doesn't
     // support truecolor the char atlas cannot store it.
-    const lumi = this._colorManager.getLuminance(this._colorManager.colors.background);
+    const lumi = getLuminance(this._colors.background);
     const fg = lumi > 0.5 ? 7 : 0;
     const bg = lumi > 0.5 ? 0 : 7;
 
@@ -297,7 +299,7 @@ export class GlyphRenderer {
     }
   }
 
-  public onThemeChanged(): void {
+  public onThemeChange(): void {
   }
 
   public render(renderModel: IRenderModel, isSelectionVisible: boolean): void {

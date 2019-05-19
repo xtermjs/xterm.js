@@ -3,10 +3,8 @@
  * @license MIT
  */
 
-import { IRenderer, IRenderDimensions, IColorSet, IRenderLayer, FLAGS } from '../Types';
-import { ITheme } from 'xterm';
+import { IRenderer, IRenderDimensions, IRenderLayer, FLAGS } from '../Types';
 import { CharacterJoinerHandler, ITerminal } from '../../Types';
-import { ColorManager } from '../ColorManager';
 import { RenderDebouncer } from '../../ui/RenderDebouncer';
 import { GlyphRenderer } from './GlyphRenderer';
 import { LinkRenderLayer } from '../LinkRenderLayer';
@@ -22,6 +20,8 @@ import { EventEmitter2, IEvent } from '../../common/EventEmitter2';
 import { Disposable } from '../../common/Lifecycle';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CODE } from '../../core/buffer/BufferLine';
 import { DEFAULT_COLOR } from '../../common/Types';
+import { IColorSet } from '../../ui/Types';
+import { getLuminance } from './ColorUtils';
 
 export const INDICIES_PER_CELL = 4;
 
@@ -43,7 +43,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _needsFullRefresh: boolean = false;
 
   public dimensions: IRenderDimensions;
-  public colorManager: ColorManager;
 
   private _onCanvasResize = new EventEmitter2<{ width: number, height: number }>();
   public get onCanvasResize(): IEvent<{ width: number, height: number }> { return this._onCanvasResize.event; }
@@ -52,20 +51,15 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   constructor(
     private _terminal: ITerminal,
-    theme: ITheme
+    private _colors: IColorSet
   ) {
     super();
 
-    const allowTransparency = this._terminal.options.allowTransparency;
-    this.colorManager = new ColorManager(document, allowTransparency);
-    if (theme) {
-      this.colorManager.setTheme(theme);
-      this._applyBgLuminanceBasedSelection();
-    }
+    this._applyBgLuminanceBasedSelection();
 
     this._renderLayers = [
-      new LinkRenderLayer(this._terminal.screenElement, 2, this.colorManager.colors, this._terminal),
-      new CursorRenderLayer(this._terminal.screenElement, 3, this.colorManager.colors)
+      new LinkRenderLayer(this._terminal.screenElement, 2, this._colors, this._terminal),
+      new CursorRenderLayer(this._terminal.screenElement, 3, this._colors)
     ];
     this.dimensions = {
       scaledCharWidth: null,
@@ -98,8 +92,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
     this._terminal.screenElement.appendChild(this._canvas);
 
-    this._rectangleRenderer = new RectangleRenderer(this._terminal, this.colorManager, this._gl, this.dimensions);
-    this._glyphRenderer = new GlyphRenderer(this._terminal, this.colorManager, this._gl, this.dimensions);
+    this._rectangleRenderer = new RectangleRenderer(this._terminal, this._colors, this._gl, this.dimensions);
+    this._glyphRenderer = new GlyphRenderer(this._terminal, this._colors, this._gl, this.dimensions);
 
     // Detect whether IntersectionObserver is detected and enable renderer pause
     // and resume based on terminal visibility if so
@@ -118,10 +112,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   private _applyBgLuminanceBasedSelection(): void {
     // HACK: This is needed until webgl renderer adds support for selection colors
-    if (this.colorManager.getLuminance(this.colorManager.colors.background) > 0.5) {
-      this.colorManager.colors.selection = { css: '#000', rgba: 255 };
+    if (getLuminance(this._colors.background) > 0.5) {
+      this._colors.selection = { css: '#000', rgba: 255 };
     } else {
-      this.colorManager.colors.selection = { css: '#fff', rgba: 4294967295 };
+      this._colors.selection = { css: '#fff', rgba: 4294967295 };
     }
   }
 
@@ -142,25 +136,20 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
   }
 
-  public setTheme(theme: ITheme | undefined): IColorSet {
-    if (theme) {
-      this.colorManager.setTheme(theme);
-      this._applyBgLuminanceBasedSelection();
-    }
+  public onThemeChange(colors: IColorSet): void {
+    this._applyBgLuminanceBasedSelection();
 
     // Clear layers and force a full render
     this._renderLayers.forEach(l => {
-      l.onThemeChanged(this._terminal, this.colorManager.colors);
+      l.onThemeChange(this._terminal, this._colors);
       l.reset(this._terminal);
     });
 
-    this._rectangleRenderer.onThemeChanged();
-    this._glyphRenderer.onThemeChanged();
+    this._rectangleRenderer.onThemeChange();
+    this._glyphRenderer.onThemeChange();
 
     this._refreshCharAtlas();
     this._refreshViewport();
-
-    return this.colorManager.colors;
   }
 
   public onWindowResize(devicePixelRatio: number): void {
@@ -245,7 +234,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       return;
     }
 
-    const atlas = acquireCharAtlas(this._terminal, this.colorManager.colors, this.dimensions.scaledCharWidth, this.dimensions.scaledCharHeight);
+    const atlas = acquireCharAtlas(this._terminal, this._colors, this.dimensions.scaledCharWidth, this.dimensions.scaledCharHeight);
     if (!('getRasterizedGlyph' in atlas)) {
       throw new Error('The webgl renderer only works with the webgl char atlas');
     }

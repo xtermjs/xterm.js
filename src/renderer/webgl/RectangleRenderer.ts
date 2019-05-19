@@ -4,13 +4,14 @@
  */
 
 import { ITerminal } from '../../Types';
-import { IColorManager, IRenderDimensions, IColor } from '../Types';
+import { IRenderDimensions } from '../Types';
 import { createProgram, expandFloat32Array, PROJECTION_MATRIX } from './WebglUtils';
 import { IRenderModel, IWebGLVertexArrayObject, IWebGL2RenderingContext, ISelectionRenderModel } from './Types';
 import { fill } from '../../common/TypedArrayUtils';
 import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
 import { is256Color } from '../atlas/CharAtlasUtils';
 import { DEFAULT_COLOR } from '../../common/Types';
+import { IColorSet, IColor } from '../../ui/Types';
 
 const enum VertexAttribLocations {
   POSITION = 0,
@@ -76,7 +77,7 @@ export class RectangleRenderer {
 
   constructor(
     private _terminal: ITerminal,
-    private _colorManager: IColorManager,
+    private _colors: IColorSet,
     private _gl: IWebGL2RenderingContext,
     private _dimensions: IRenderDimensions
   ) {
@@ -148,14 +149,14 @@ export class RectangleRenderer {
     this._updateViewportRectangle();
   }
 
-  public onThemeChanged(): void {
+  public onThemeChange(): void {
     this._updateCachedColors();
     this._updateViewportRectangle();
   }
 
   private _updateCachedColors(): void {
-    this._bgFloat = this._colorToFloat32Array(this._colorManager.colors.background);
-    this._selectionFloat = this._colorToFloat32Array(this._colorManager.colors.selection);
+    this._bgFloat = this._colorToFloat32Array(this._colors.background);
+    this._selectionFloat = this._colorToFloat32Array(this._colors.selection);
   }
 
   private _updateViewportRectangle(): void {
@@ -272,9 +273,9 @@ export class RectangleRenderer {
   private _updateRectangle(vertices: IVertices, offset: number, bg: number, startX: number, endX: number, y: number): void {
     let color: IColor | null = null;
     if (bg === INVERTED_DEFAULT_COLOR) {
-      color = this._colorManager.colors.foreground;
+      color = this._colors.foreground;
     } else if (is256Color(bg)) {
-      color = this._colorManager.colors.ansi[bg];
+      color = this._colors.ansi[bg];
     }
     if (vertices.attributes.length < offset + 4) {
       vertices.attributes = expandFloat32Array(vertices.attributes, this._terminal.rows * this._terminal.cols * INDICES_PER_RECTANGLE);
