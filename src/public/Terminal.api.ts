@@ -104,6 +104,58 @@ describe('API Integration Tests', () => {
     assert.equal(await page.evaluate(`window.term.getOption('rendererType')`), 'dom');
   });
 
+  describe('renderer', () => {
+    it('foreground', async function(): Promise<any> {
+      this.timeout(10000);
+      await openTerminal({ rendererType: 'dom' });
+      await page.evaluate(`window.term.write('\\x1b[30m0\\x1b[31m1\\x1b[32m2\\x1b[33m3\\x1b[34m4\\x1b[35m5\\x1b[36m6\\x1b[37m7')`);
+      assert.deepEqual(await page.evaluate(`
+        [
+          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(1)').className,
+          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(2)').className,
+          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(3)').className,
+          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(4)').className,
+          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(5)').className,
+          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(6)').className,
+          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(7)').className
+        ]
+      `), [
+        'xterm-fg-0',
+        'xterm-fg-1',
+        'xterm-fg-2',
+        'xterm-fg-3',
+        'xterm-fg-4',
+        'xterm-fg-5',
+        'xterm-fg-6'
+      ]);
+    });
+
+    it('background', async function(): Promise<any> {
+      this.timeout(10000);
+      await openTerminal({ rendererType: 'dom' });
+      await page.evaluate(`window.term.write('\\x1b[40m0\\x1b[41m1\\x1b[42m2\\x1b[43m3\\x1b[44m4\\x1b[45m5\\x1b[46m6\\x1b[47m7')`);
+      assert.deepEqual(await page.evaluate(`
+        [
+          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(1)').className,
+          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(2)').className,
+          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(3)').className,
+          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(4)').className,
+          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(5)').className,
+          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(6)').className,
+          document.querySelector('.xterm-rows > :nth-child(1) > :nth-child(7)').className
+        ]
+      `), [
+        'xterm-bg-0',
+        'xterm-bg-1',
+        'xterm-bg-2',
+        'xterm-bg-3',
+        'xterm-bg-4',
+        'xterm-bg-5',
+        'xterm-bg-6'
+      ]);
+    });
+  });
+
   it('selection', async function(): Promise<any> {
     this.timeout(10000);
     await openTerminal({ rows: 5, cols: 5 });

@@ -9,6 +9,7 @@ import { isMac } from './common/Platform';
 import { RenderDebouncer } from './ui/RenderDebouncer';
 import { addDisposableDomListener } from './ui/Lifecycle';
 import { Disposable } from './common/Lifecycle';
+import { ScreenDprMonitor } from './ui/ScreenDprMonitor';
 
 const MAX_ROWS_TO_READ = 20;
 
@@ -25,6 +26,7 @@ export class AccessibilityManager extends Disposable {
   private _liveRegionLineCount: number = 0;
 
   private _renderRowsDebouncer: RenderDebouncer;
+  private _screenDprMonitor: ScreenDprMonitor;
 
   private _topBoundaryFocusListener: (e: FocusEvent) => void;
   private _bottomBoundaryFocusListener: (e: FocusEvent) => void;
@@ -58,7 +60,7 @@ export class AccessibilityManager extends Disposable {
     this._rowElements[0].addEventListener('focus', this._topBoundaryFocusListener);
     this._rowElements[this._rowElements.length - 1].addEventListener('focus', this._bottomBoundaryFocusListener);
 
-    this._refreshRowsDimensions();
+    this.refreshRowsDimensions();
     this._accessibilityTreeRoot.appendChild(this._rowContainer);
 
     this._renderRowsDebouncer = new RenderDebouncer(this._renderRows.bind(this));
@@ -81,14 +83,13 @@ export class AccessibilityManager extends Disposable {
     this.register(this._terminal.addDisposableListener('a11y.tab', spaceCount => this._onTab(spaceCount)));
     this.register(this._terminal.onKey(e => this._onKey(e.key)));
     this.register(this._terminal.addDisposableListener('blur', () => this._clearLiveRegion()));
-    // TODO: Maybe renderer should fire an event on terminal when the characters change and that
-    //       should be listened to instead? That would mean that the order of events are always
-    //       guarenteed
-    this.register(this._terminal.addDisposableListener('dprchange', () => this._refreshRowsDimensions()));
-    this.register(this._terminal.renderer.onCanvasResize(() => this._refreshRowsDimensions()));
+
+    this._screenDprMonitor = new ScreenDprMonitor();
+    this.register(this._screenDprMonitor);
+    this._screenDprMonitor.setListener(() => this.refreshRowsDimensions());
     // This shouldn't be needed on modern browsers but is present in case the
-    // media query that drives the dprchange event isn't supported
-    this.register(addDisposableDomListener(window, 'resize', () => this._refreshRowsDimensions()));
+    // media query that drives the ScreenDprMonitor isn't supported
+    this.register(addDisposableDomListener(window, 'resize', () => this.refreshRowsDimensions()));
   }
 
   public dispose(): void {
@@ -174,7 +175,7 @@ export class AccessibilityManager extends Disposable {
     // Add bottom boundary listener
     this._rowElements[this._rowElements.length - 1].addEventListener('focus', this._bottomBoundaryFocusListener);
 
-    this._refreshRowsDimensions();
+    this.refreshRowsDimensions();
   }
 
   private _createAccessibilityTreeNode(): HTMLElement {
@@ -257,7 +258,7 @@ export class AccessibilityManager extends Disposable {
     }
   }
 
-  private _refreshRowsDimensions(): void {
+  public refreshRowsDimensions(): void {
     if (!this._terminal.renderer.dimensions.actualCellHeight) {
       return;
     }

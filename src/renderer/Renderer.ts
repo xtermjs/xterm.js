@@ -9,29 +9,18 @@ import { CursorRenderLayer } from './CursorRenderLayer';
 import { IRenderLayer, IRenderer, IRenderDimensions, ICharacterJoinerRegistry } from './Types';
 import { ITerminal, CharacterJoinerHandler } from '../Types';
 import { LinkRenderLayer } from './LinkRenderLayer';
-import { RenderDebouncer } from '../ui/RenderDebouncer';
-import { ScreenDprMonitor } from '../ui/ScreenDprMonitor';
 import { CharacterJoinerRegistry } from '../renderer/CharacterJoinerRegistry';
-import { EventEmitter2, IEvent } from '../common/EventEmitter2';
 import { Disposable } from '../common/Lifecycle';
 import { IColorSet } from '../ui/Types';
 
 export class Renderer extends Disposable implements IRenderer {
-  private _renderDebouncer: RenderDebouncer;
-
   private _renderLayers: IRenderLayer[];
   private _devicePixelRatio: number;
-  private _screenDprMonitor: ScreenDprMonitor;
   private _isPaused: boolean = false;
   private _needsFullRefresh: boolean = false;
   private _characterJoinerRegistry: ICharacterJoinerRegistry;
 
   public dimensions: IRenderDimensions;
-
-  private _onCanvasResize = new EventEmitter2<{ width: number, height: number }>();
-  public get onCanvasResize(): IEvent<{ width: number, height: number }> { return this._onCanvasResize.event; }
-  private _onRender = new EventEmitter2<{ start: number, end: number }>();
-  public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
 
   constructor(
     private _terminal: ITerminal,
@@ -65,11 +54,6 @@ export class Renderer extends Disposable implements IRenderer {
     this._updateDimensions();
     this.onOptionsChanged();
 
-    this._renderDebouncer = new RenderDebouncer(this._renderRows.bind(this));
-    this._screenDprMonitor = new ScreenDprMonitor();
-    this._screenDprMonitor.setListener(() => this.onWindowResize(window.devicePixelRatio));
-    this.register(this._screenDprMonitor);
-
     // Detect whether IntersectionObserver is detected and enable renderer pause
     // and resume based on terminal visibility if so
     if ('IntersectionObserver' in window) {
@@ -92,19 +76,21 @@ export class Renderer extends Disposable implements IRenderer {
     }
   }
 
-  public onWindowResize(devicePixelRatio: number): void {
+  public onDevicePixelRatioChange(): void {
     // If the device pixel ratio changed, the char atlas needs to be regenerated
     // and the terminal needs to refreshed
-    if (this._devicePixelRatio !== devicePixelRatio) {
-      this._devicePixelRatio = devicePixelRatio;
+    if (this._devicePixelRatio !== window.devicePixelRatio) {
+      this._devicePixelRatio = window.devicePixelRatio;
       this.onResize(this._terminal.cols, this._terminal.rows);
     }
   }
 
-  public onThemeChange(colors: IColorSet): void {
+  public setColors(colors: IColorSet): void {
+    this._colors = colors;
+
     // Clear layers and force a full render
     this._renderLayers.forEach(l => {
-      l.onThemeChange(this._terminal, this._colors);
+      l.setColors(this._terminal, this._colors);
       l.reset(this._terminal);
     });
 
@@ -132,11 +118,6 @@ export class Renderer extends Disposable implements IRenderer {
     // Resize the screen
     this._terminal.screenElement.style.width = `${this.dimensions.canvasWidth}px`;
     this._terminal.screenElement.style.height = `${this.dimensions.canvasHeight}px`;
-
-    this._onCanvasResize.fire({
-      width: this.dimensions.canvasWidth,
-      height: this.dimensions.canvasHeight
-    });
   }
 
   public onCharSizeChanged(): void {
@@ -176,26 +157,11 @@ export class Renderer extends Disposable implements IRenderer {
   }
 
   /**
-   * Queues a refresh between two rows (inclusive), to be done on next animation
-   * frame.
-   * @param start The start row.
-   * @param end The end row.
-   */
-  public refreshRows(start: number, end: number): void {
-    if (this._isPaused) {
-      this._needsFullRefresh = true;
-      return;
-    }
-    this._renderDebouncer.refresh(start, end, this._terminal.rows);
-  }
-
-  /**
    * Performs the refresh loop callback, calling refresh only if a refresh is
    * necessary before queueing up the next one.
    */
-  private _renderRows(start: number, end: number): void {
+  public renderRows(start: number, end: number): void {
     this._renderLayers.forEach(l => l.onGridChanged(this._terminal, start, end));
-    this._onRender.fire({ start, end });
   }
 
   /**

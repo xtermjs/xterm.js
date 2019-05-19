@@ -5,7 +5,6 @@
 
 import { ITerminal, CharacterJoinerHandler } from '../Types';
 import { IDisposable } from 'xterm';
-import { IEvent } from '../common/EventEmitter2';
 import { IColorSet } from '../ui/Types';
 
 /**
@@ -28,12 +27,9 @@ export const enum FLAGS {
 export interface IRenderer extends IDisposable {
   dimensions: IRenderDimensions;
 
-  onCanvasResize: IEvent<{ width: number, height: number }>;
-  onRender: IEvent<{ start: number, end: number }>;
-
   dispose(): void;
-  onThemeChange(colors: IColorSet): void;
-  onWindowResize(devicePixelRatio: number): void;
+  setColors(colors: IColorSet): void;
+  onDevicePixelRatioChange(): void;
   onResize(cols: number, rows: number): void;
   onCharSizeChanged(): void;
   onBlur(): void;
@@ -42,7 +38,7 @@ export interface IRenderer extends IDisposable {
   onCursorMove(): void;
   onOptionsChanged(): void;
   clear(): void;
-  refreshRows(start: number, end: number): void;
+  renderRows(start: number, end: number): void;
   registerCharacterJoiner(handler: CharacterJoinerHandler): number;
   deregisterCharacterJoiner(joinerId: number): boolean;
 }
@@ -86,7 +82,7 @@ export interface IRenderLayer extends IDisposable {
   /**
    * Called when the theme changes.
    */
-  onThemeChange(terminal: ITerminal, colorSet: IColorSet): void;
+  setColors(terminal: ITerminal, colorSet: IColorSet): void;
 
   /**
    * Called when the data in the grid has changed (or needs to be rendered
