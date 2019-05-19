@@ -4,10 +4,11 @@
  */
 
 import { ILinkifierEvent, ITerminal, ILinkifierAccessor } from '../Types';
-import { IColorSet, IRenderDimensions } from './Types';
+import { IRenderDimensions } from './Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { INVERTED_DEFAULT_COLOR } from './atlas/Types';
 import { is256Color } from './atlas/CharAtlasUtils';
+import { IColorSet } from '../ui/Types';
 
 export class LinkRenderLayer extends BaseRenderLayer {
   private _state: ILinkifierEvent = null;

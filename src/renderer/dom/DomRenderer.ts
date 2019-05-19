@@ -3,15 +3,14 @@
  * @license MIT
  */
 
-import { IRenderer, IRenderDimensions, IColorSet } from '../Types';
+import { IRenderer, IRenderDimensions } from '../Types';
 import { ILinkifierEvent, ITerminal, CharacterJoinerHandler } from '../../Types';
-import { ITheme } from 'xterm';
-import { ColorManager } from '../ColorManager';
 import { RenderDebouncer } from '../../ui/RenderDebouncer';
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from './DomRendererRowFactory';
 import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
 import { EventEmitter2, IEvent } from '../../common/EventEmitter2';
 import { Disposable } from '../../common/Lifecycle';
+import { IColorSet } from '../../ui/Types';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
@@ -42,18 +41,17 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _selectionContainer: HTMLElement;
 
   public dimensions: IRenderDimensions;
-  public colorManager: ColorManager;
 
   private _onCanvasResize = new EventEmitter2<{ width: number, height: number }>();
   public get onCanvasResize(): IEvent<{ width: number, height: number }> { return this._onCanvasResize.event; }
   private _onRender = new EventEmitter2<{ start: number, end: number }>();
   public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
 
-  constructor(private _terminal: ITerminal, theme: ITheme | undefined) {
+  constructor(
+    private _terminal: ITerminal,
+    private _colors: IColorSet
+  ) {
     super();
-    const allowTransparency = this._terminal.options.allowTransparency;
-    this.colorManager = new ColorManager(document, allowTransparency);
-    this.setTheme(theme);
 
     this._rowContainer = document.createElement('div');
     this._rowContainer.classList.add(ROW_CONTAINER_CLASS);
@@ -142,11 +140,12 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._terminal.screenElement.style.height = `${this.dimensions.canvasHeight}px`;
   }
 
-  public setTheme(theme: ITheme | undefined): IColorSet {
-    if (theme) {
-      this.colorManager.setTheme(theme);
-    }
+  public onThemeChange(colors: IColorSet): void {
+    this._colors = colors;
+    this._injectCss();
+  }
 
+  private _injectCss(): void {
     if (!this._themeStyleElement) {
       this._themeStyleElement = document.createElement('style');
       this._terminal.screenElement.appendChild(this._themeStyleElement);
@@ -155,8 +154,8 @@ export class DomRenderer extends Disposable implements IRenderer {
     // Base CSS
     let styles =
         `${this._terminalSelector} .${ROW_CONTAINER_CLASS} {` +
-        ` color: ${this.colorManager.colors.foreground.css};` +
-        ` background-color: ${this.colorManager.colors.background.css};` +
+        ` color: ${this._colors.foreground.css};` +
+        ` background-color: ${this._colors.background.css};` +
         ` font-family: ${this._terminal.options.fontFamily};` +
         ` font-size: ${this._terminal.options.fontSize}px;` +
         `}`;
@@ -181,21 +180,21 @@ export class DomRenderer extends Disposable implements IRenderer {
     // Cursor
     styles +=
         `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS} {` +
-        ` outline: 1px solid ${this.colorManager.colors.cursor.css};` +
+        ` outline: 1px solid ${this._colors.cursor.css};` +
         ` outline-offset: -1px;` +
         `}` +
         `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_BLINK_CLASS} {` +
         ` animation: blink 1s step-end infinite;` +
         `}` +
         `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
-        ` background-color: ${this.colorManager.colors.cursor.css};` +
-        ` color: ${this.colorManager.colors.cursorAccent.css};` +
+        ` background-color: ${this._colors.cursor.css};` +
+        ` color: ${this._colors.cursorAccent.css};` +
         `}` +
         `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BAR_CLASS} {` +
-        ` box-shadow: 1px 0 0 ${this.colorManager.colors.cursor.css} inset;` +
+        ` box-shadow: 1px 0 0 ${this._colors.cursor.css} inset;` +
         `}` +
         `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_UNDERLINE_CLASS} {` +
-        ` box-shadow: 0 -1px 0 ${this.colorManager.colors.cursor.css} inset;` +
+        ` box-shadow: 0 -1px 0 ${this._colors.cursor.css} inset;` +
         `}`;
     // Selection
     styles +=
@@ -208,20 +207,19 @@ export class DomRenderer extends Disposable implements IRenderer {
         `}` +
         `${this._terminalSelector} .${SELECTION_CLASS} div {` +
         ` position: absolute;` +
-        ` background-color: ${this.colorManager.colors.selection.css};` +
+        ` background-color: ${this._colors.selection.css};` +
         `}`;
     // Colors
-    this.colorManager.colors.ansi.forEach((c, i) => {
+    this._colors.ansi.forEach((c, i) => {
       styles +=
           `${this._terminalSelector} .${FG_CLASS_PREFIX}${i} { color: ${c.css}; }` +
           `${this._terminalSelector} .${BG_CLASS_PREFIX}${i} { background-color: ${c.css}; }`;
     });
     styles +=
-        `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { color: ${this.colorManager.colors.background.css}; }` +
-        `${this._terminalSelector} .${BG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { background-color: ${this.colorManager.colors.foreground.css}; }`;
+        `${this._terminalSelector} .${FG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { color: ${this._colors.background.css}; }` +
+        `${this._terminalSelector} .${BG_CLASS_PREFIX}${INVERTED_DEFAULT_COLOR} { background-color: ${this._colors.foreground.css}; }`;
 
     this._themeStyleElement.innerHTML = styles;
-    return this.colorManager.colors;
   }
 
   public onWindowResize(devicePixelRatio: number): void {
@@ -331,7 +329,7 @@ export class DomRenderer extends Disposable implements IRenderer {
   public onOptionsChanged(): void {
     // Force a refresh
     this._updateDimensions();
-    this.setTheme(undefined);
+    this._injectCss();
     this._terminal.refresh(0, this._terminal.rows - 1);
   }
 

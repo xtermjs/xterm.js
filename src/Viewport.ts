@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { IColorSet } from './renderer/Types';
 import { ITerminal, IViewport } from './Types';
 import { CharMeasure } from './CharMeasure';
 import { Disposable } from './common/Lifecycle';
 import { addDisposableDomListener } from './ui/Lifecycle';
+import { IColorSet } from './ui/Types';
 
 const FALLBACK_SCROLL_BAR_WIDTH = 15;
 
@@ -57,7 +57,7 @@ export class Viewport extends Disposable implements IViewport {
     setTimeout(() => this.syncScrollArea(), 0);
   }
 
-  public onThemeChanged(colors: IColorSet): void {
+  public onThemeChange(colors: IColorSet): void {
     this._viewportElement.style.backgroundColor = colors.background.css;
   }
 

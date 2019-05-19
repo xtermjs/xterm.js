@@ -4,10 +4,11 @@
  */
 
 import { ITerminalOptions as IPublicTerminalOptions, IEventEmitter, IDisposable, IMarker, ISelectionPosition } from 'xterm';
-import { IColorSet, IRenderer } from './renderer/Types';
+import { IRenderer } from './renderer/Types';
 import { ICharset, IAttributeData, ICellData, IBufferLine, CharData } from './core/Types';
 import { ICircularList } from './common/Types';
 import { IEvent } from './common/EventEmitter2';
+import { IColorSet } from './ui/Types';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
@@ -87,7 +88,7 @@ export interface IViewport extends IDisposable {
   onWheel(ev: WheelEvent): void;
   onTouchStart(ev: TouchEvent): void;
   onTouchMove(ev: TouchEvent): void;
-  onThemeChanged(colors: IColorSet): void;
+  onThemeChange(colors: IColorSet): void;
 }
 
 export interface ICompositionHelper {

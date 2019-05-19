@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IRenderLayer, IColorSet, IRenderDimensions } from './Types';
+import { IRenderLayer, IRenderDimensions } from './Types';
 import { ITerminal } from '../Types';
 import { ICellData } from '../core/Types';
 import { DEFAULT_COLOR } from '../common/Types';
@@ -11,6 +11,7 @@ import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, IGlyphIdentifier } from './atlas/T
 import BaseCharAtlas from './atlas/BaseCharAtlas';
 import { acquireCharAtlas } from './atlas/CharAtlasCache';
 import { CellData, AttributeData, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from '../core/buffer/BufferLine';
+import { IColorSet } from '../ui/Types';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -73,7 +74,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   public onGridChanged(terminal: ITerminal, startRow: number, endRow: number): void {}
   public onSelectionChanged(terminal: ITerminal, start: [number, number], end: [number, number], columnSelectMode: boolean = false): void {}
 
-  public onThemeChanged(terminal: ITerminal, colorSet: IColorSet): void {
+  public onThemeChange(terminal: ITerminal, colorSet: IColorSet): void {
     this._refreshCharAtlas(terminal, colorSet);
   }
 
