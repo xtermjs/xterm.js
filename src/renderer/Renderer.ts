@@ -6,8 +6,8 @@
 import { TextRenderLayer } from './TextRenderLayer';
 import { SelectionRenderLayer } from './SelectionRenderLayer';
 import { CursorRenderLayer } from './CursorRenderLayer';
-import { ColorManager } from './ColorManager';
-import { IRenderLayer, IColorSet, IRenderer, IRenderDimensions, ICharacterJoinerRegistry } from './Types';
+import { ColorManager } from '../ui/ColorManager';
+import { IRenderLayer, IRenderer, IRenderDimensions, ICharacterJoinerRegistry } from './Types';
 import { ITerminal, CharacterJoinerHandler } from '../Types';
 import { LinkRenderLayer } from './LinkRenderLayer';
 import { RenderDebouncer } from '../ui/RenderDebouncer';
@@ -16,6 +16,7 @@ import { ITheme } from 'xterm';
 import { CharacterJoinerRegistry } from '../renderer/CharacterJoinerRegistry';
 import { EventEmitter2, IEvent } from '../common/EventEmitter2';
 import { Disposable } from '../common/Lifecycle';
+import { IColorSet } from '../ui/Types';
 
 export class Renderer extends Disposable implements IRenderer {
   private _renderDebouncer: RenderDebouncer;

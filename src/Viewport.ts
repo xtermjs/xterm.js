@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { IColorSet } from './renderer/Types';
 import { ITerminal, IViewport } from './Types';
 import { CharMeasure } from './CharMeasure';
 import { Disposable } from './common/Lifecycle';
 import { addDisposableDomListener } from './ui/Lifecycle';
+import { IColorSet } from './ui/Types';
 
 const FALLBACK_SCROLL_BAR_WIDTH = 15;
 

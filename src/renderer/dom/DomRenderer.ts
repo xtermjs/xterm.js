@@ -3,15 +3,16 @@
  * @license MIT
  */
 
-import { IRenderer, IRenderDimensions, IColorSet } from '../Types';
+import { IRenderer, IRenderDimensions } from '../Types';
 import { ILinkifierEvent, ITerminal, CharacterJoinerHandler } from '../../Types';
 import { ITheme } from 'xterm';
-import { ColorManager } from '../ColorManager';
+import { ColorManager } from '../../ui/ColorManager';
 import { RenderDebouncer } from '../../ui/RenderDebouncer';
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from './DomRendererRowFactory';
 import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
 import { EventEmitter2, IEvent } from '../../common/EventEmitter2';
 import { Disposable } from '../../common/Lifecycle';
+import { IColorSet } from '../../ui/Types';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';

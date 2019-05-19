@@ -6,6 +6,7 @@
 import { ITerminal, CharacterJoinerHandler } from '../Types';
 import { ITheme, IDisposable } from 'xterm';
 import { IEvent } from '../common/EventEmitter2';
+import { IColorManager, IColorSet } from '../ui/Types';
 
 /**
  * Flags used to render terminal text properly.
@@ -45,10 +46,6 @@ export interface IRenderer extends IDisposable {
   refreshRows(start: number, end: number): void;
   registerCharacterJoiner(handler: CharacterJoinerHandler): number;
   deregisterCharacterJoiner(joinerId: number): boolean;
-}
-
-export interface IColorManager {
-  colors: IColorSet;
 }
 
 export interface IRenderDimensions {
@@ -133,18 +130,4 @@ export interface ICharacterJoinerRegistry {
   registerCharacterJoiner(handler: (text: string) => [number, number][]): number;
   deregisterCharacterJoiner(joinerId: number): boolean;
   getJoinedCharacters(row: number): [number, number][];
-}
-
-export interface IColor {
-  css: string;
-  rgba: number; // 32-bit int with rgba in each byte
-}
-
-export interface IColorSet {
-  foreground: IColor;
-  background: IColor;
-  cursor: IColor;
-  cursorAccent: IColor;
-  selection: IColor;
-  ansi: IColor[];
 }
