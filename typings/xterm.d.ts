@@ -18,7 +18,7 @@ declare module 'xterm' {
   /**
    * A string representing a renderer type.
    */
-  export type RendererType = 'dom' | 'canvas' | 'webgl';
+  export type RendererType = 'dom' | 'canvas';
 
   /**
    * An object containing start up options for the terminal.
@@ -99,7 +99,7 @@ declare module 'xterm' {
      * Currently defaults to 'static'. This option may be removed in the future. If it is, passed
      * parameters will be ignored.
      */
-    experimentalCharAtlas?: 'none' | 'static' | 'dynamic' | 'webgl';
+    experimentalCharAtlas?: 'none' | 'static' | 'dynamic';
 
     /**
      * The font size used to render text.
@@ -890,6 +890,11 @@ declare module 'xterm' {
      * @param addon The addon to load.
      */
     loadAddon(addon: ITerminalAddon): void;
+
+    /**
+     * (EXPERIMENTAL)
+     */
+    setRenderer(renderer: any): void;
   }
 
   /**

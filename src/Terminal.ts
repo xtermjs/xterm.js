@@ -47,7 +47,6 @@ import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent } from './common/Types';
 import { evaluateKeyboardEvent } from './core/input/Keyboard';
-import { WebglRenderer } from './renderer/webgl/WebglRenderer';
 import { KeyboardResultType, ICharset, IBufferLine, IAttributeData } from './core/Types';
 import { clone } from './common/Clone';
 import { EventEmitter2, IEvent } from './common/EventEmitter2';
@@ -818,11 +817,16 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   }
 
+  public setRenderer(renderer: IRenderer): void {
+    this._renderCoordinator.setRenderer(renderer);
+    // this._renderCoordinator.onOptionsChanged();
+    this.refresh(0, this.rows - 1);
+  }
+
   private _createRenderer(): IRenderer {
     switch (this.options.rendererType) {
-      case 'canvas': return new Renderer(this, this._colorManager.colors); break;
-      case 'dom': return new DomRenderer(this, this._colorManager.colors); break;
-      case 'webgl': return new WebglRenderer(this, this._colorManager.colors); break;
+      case 'canvas': return new Renderer(this, this._colorManager.colors);
+      case 'dom': return new DomRenderer(this, this._colorManager.colors);
       default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
     }
   }

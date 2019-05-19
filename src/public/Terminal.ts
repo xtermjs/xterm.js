@@ -10,6 +10,7 @@ import { Terminal as TerminalCore } from '../Terminal';
 import * as Strings from '../Strings';
 import { IEvent } from '../common/EventEmitter2';
 import { AddonManager } from './AddonManager';
+import { WebglRendererAddon } from '../renderer/webgl/WebglRendererAddon';
 
 export class Terminal implements ITerminalApi {
   private _core: ITerminal;
@@ -182,6 +183,12 @@ export class Terminal implements ITerminalApi {
   }
   public loadAddon(addon: ITerminalAddon): void {
     return this._addonManager.loadAddon(this, addon);
+  }
+  public setRenderer(renderer: any): void {
+    this._core.setRenderer(renderer);
+  }
+  public loadWebgl(): void {
+    this.loadAddon(new WebglRendererAddon());
   }
   public static get strings(): ILocalizableStrings {
     return Strings;

@@ -22,6 +22,9 @@ export class TestTerminal extends Terminal {
 }
 
 export class MockTerminal implements ITerminal {
+  setRenderer(renderer: any): void {
+    throw new Error('Method not implemented.');
+  }
   onCursorMove: IEvent<void>;
   onLineFeed: IEvent<void>;
   onSelectionChange: IEvent<void>;

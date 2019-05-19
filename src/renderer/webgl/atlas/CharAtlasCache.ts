@@ -3,20 +3,12 @@
  * @license MIT
  */
 
-import { ITerminal } from '../../Types';
+import { ITerminal } from '../../../Types';
 import { generateConfig, configEquals } from './CharAtlasUtils';
 import BaseCharAtlas from './BaseCharAtlas';
-import DynamicCharAtlas from './DynamicCharAtlas';
-import NoneCharAtlas from './NoneCharAtlas';
-import StaticCharAtlas from './StaticCharAtlas';
+import WebglCharAtlas from './WebglCharAtlas';
 import { ICharAtlasConfig } from './Types';
-import { IColorSet } from '../../ui/Types';
-
-const charAtlasImplementations = {
-  'none': NoneCharAtlas,
-  'static': StaticCharAtlas,
-  'dynamic': DynamicCharAtlas
-};
+import { IColorSet } from '../../../ui/Types';
 
 interface ICharAtlasCacheEntry {
   atlas: BaseCharAtlas;
@@ -72,10 +64,7 @@ export function acquireCharAtlas(
   }
 
   const newEntry: ICharAtlasCacheEntry = {
-    atlas: new charAtlasImplementations[terminal.options.experimentalCharAtlas](
-      document,
-      newConfig
-    ),
+    atlas: new WebglCharAtlas(document, newConfig),
     config: newConfig,
     ownedBy: [terminal]
   };
