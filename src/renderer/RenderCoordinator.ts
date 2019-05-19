@@ -14,17 +14,20 @@ export class RenderCoordinator extends Disposable {
   private _renderDebouncer: RenderDebouncer;
   private _screenDprMonitor: ScreenDprMonitor;
 
+  private _isPaused: boolean = false;
+  private _needsFullRefresh: boolean = false;
+  private _canvasWidth: number = 0;
+  private _canvasHeight: number = 0;
+
   private _onCanvasResize = new EventEmitter2<{ width: number, height: number }>();
   public get onCanvasResize(): IEvent<{ width: number, height: number }> { return this._onCanvasResize.event; }
   private _onRender = new EventEmitter2<{ start: number, end: number }>();
   public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
 
-  private _canvasWidth: number = 0;
-  private _canvasHeight: number = 0;
-
   constructor(
     private _renderer: IRenderer,
-    private _rowCount: number
+    private _rowCount: number,
+    screenElement: HTMLElement
   ) {
     super();
     this._renderDebouncer = new RenderDebouncer((start, end) => this._renderRows(start, end));
@@ -37,9 +40,29 @@ export class RenderCoordinator extends Disposable {
     // dprchange should handle this case, we need this as well for browsers that don't support the
     // matchMedia query.
     this.register(addDisposableDomListener(window, 'resize', () => this._renderer.onDevicePixelRatioChange()));
+
+    // Detect whether IntersectionObserver is detected and enable renderer pause
+    // and resume based on terminal visibility if so
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver(e => this._onIntersectionChange(e[e.length - 1]), { threshold: 0 });
+      observer.observe(screenElement);
+      this.register({ dispose: () => observer.disconnect() });
+    }
+  }
+
+  private _onIntersectionChange(entry: IntersectionObserverEntry): void {
+    this._isPaused = entry.intersectionRatio === 0;
+    if (!this._isPaused && this._needsFullRefresh) {
+      this.refreshRows(0, this._rowCount - 1);
+      this._needsFullRefresh = false;
+    }
   }
 
   public refreshRows(start: number, end: number): void {
+    if (this._isPaused) {
+      this._needsFullRefresh = true;
+      return;
+    }
     this._renderDebouncer.refresh(start, end, this._rowCount);
   }
 

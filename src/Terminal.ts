@@ -766,7 +766,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this._colorManager.setTheme(this._theme);
     this._setupRenderer();
 
-    this._renderCoordinator = new RenderCoordinator(this.renderer, this.rows);
+    this._renderCoordinator = new RenderCoordinator(this.renderer, this.rows, this.screenElement);
     this._renderCoordinator.onRender(e => this._onRender.fire(e));
     this.onResize(e => this._renderCoordinator.resize(e.cols, e.rows));
 

@@ -16,8 +16,6 @@ import { IColorSet } from '../ui/Types';
 export class Renderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
   private _devicePixelRatio: number;
-  private _isPaused: boolean = false;
-  private _needsFullRefresh: boolean = false;
   private _characterJoinerRegistry: ICharacterJoinerRegistry;
 
   public dimensions: IRenderDimensions;
@@ -53,27 +51,11 @@ export class Renderer extends Disposable implements IRenderer {
     this._devicePixelRatio = window.devicePixelRatio;
     this._updateDimensions();
     this.onOptionsChanged();
-
-    // Detect whether IntersectionObserver is detected and enable renderer pause
-    // and resume based on terminal visibility if so
-    if ('IntersectionObserver' in window) {
-      const observer = new IntersectionObserver(e => this.onIntersectionChange(e[e.length - 1]), { threshold: 0 });
-      observer.observe(this._terminal.element);
-      this.register({ dispose: () => observer.disconnect() });
-    }
   }
 
   public dispose(): void {
     super.dispose();
     this._renderLayers.forEach(l => l.dispose());
-  }
-
-  public onIntersectionChange(entry: IntersectionObserverEntry): void {
-    this._isPaused = entry.intersectionRatio === 0;
-    if (!this._isPaused && this._needsFullRefresh) {
-      this._terminal.refresh(0, this._terminal.rows - 1);
-      this._needsFullRefresh = false;
-    }
   }
 
   public onDevicePixelRatioChange(): void {
@@ -94,11 +76,7 @@ export class Renderer extends Disposable implements IRenderer {
       l.reset(this._terminal);
     });
 
-    if (this._isPaused) {
-      this._needsFullRefresh = true;
-    } else {
-      this._terminal.refresh(0, this._terminal.rows - 1);
-    }
+    this._terminal.refresh(0, this._terminal.rows - 1);
   }
 
   public onResize(cols: number, rows: number): void {
@@ -109,11 +87,7 @@ export class Renderer extends Disposable implements IRenderer {
     this._renderLayers.forEach(l => l.resize(this._terminal, this.dimensions));
 
     // Force a refresh
-    if (this._isPaused) {
-      this._needsFullRefresh = true;
-    } else {
-      this._terminal.refresh(0, this._terminal.rows - 1);
-    }
+    this._terminal.refresh(0, this._terminal.rows - 1);
 
     // Resize the screen
     this._terminal.screenElement.style.width = `${this.dimensions.canvasWidth}px`;
@@ -149,11 +123,7 @@ export class Renderer extends Disposable implements IRenderer {
   }
 
   private _runOperation(operation: (layer: IRenderLayer) => void): void {
-    if (this._isPaused) {
-      this._needsFullRefresh = true;
-    } else {
-      this._renderLayers.forEach(l => operation(l));
-    }
+    this._renderLayers.forEach(l => operation(l));
   }
 
   /**
