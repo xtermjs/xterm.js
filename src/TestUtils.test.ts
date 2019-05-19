@@ -9,7 +9,7 @@ import { IBufferLine, ICellData, IAttributeData } from './core/Types';
 import { ICircularList, XtermListener } from './common/Types';
 import { Buffer } from './Buffer';
 import * as Browser from './common/Platform';
-import { ITheme, IDisposable, IMarker, IEvent, ISelectionPosition } from 'xterm';
+import { IDisposable, IMarker, IEvent, ISelectionPosition } from 'xterm';
 import { Terminal } from './Terminal';
 import { AttributeData } from './core/buffer/BufferLine';
 import { IColorManager, IColorSet } from './ui/Types';
@@ -384,7 +384,9 @@ export class MockRenderer implements IRenderer {
     throw new Error('Method not implemented.');
   }
   dimensions: IRenderDimensions;
-  setTheme(theme: ITheme): IColorSet { return <IColorSet>{}; }
+  onThemeChange(colors: IColorSet): void {
+    throw new Error('Method not implemented.');
+  }
   onResize(cols: number, rows: number): void {}
   onCharSizeChanged(): void {}
   onBlur(): void {}
@@ -404,7 +406,7 @@ export class MockViewport implements IViewport {
     throw new Error('Method not implemented.');
   }
   scrollBarWidth: number = 0;
-  onThemeChanged(colors: IColorSet): void {
+  onThemeChange(colors: IColorSet): void {
     throw new Error('Method not implemented.');
   }
   onWheel(ev: WheelEvent): void {

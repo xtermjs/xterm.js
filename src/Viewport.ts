@@ -57,7 +57,7 @@ export class Viewport extends Disposable implements IViewport {
     setTimeout(() => this.syncScrollArea(), 0);
   }
 
-  public onThemeChanged(colors: IColorSet): void {
+  public onThemeChange(colors: IColorSet): void {
     this._viewportElement.style.backgroundColor = colors.background.css;
   }
 

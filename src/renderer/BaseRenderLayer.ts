@@ -74,7 +74,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
   public onGridChanged(terminal: ITerminal, startRow: number, endRow: number): void {}
   public onSelectionChanged(terminal: ITerminal, start: [number, number], end: [number, number], columnSelectMode: boolean = false): void {}
 
-  public onThemeChanged(terminal: ITerminal, colorSet: IColorSet): void {
+  public onThemeChange(terminal: ITerminal, colorSet: IColorSet): void {
     this._refreshCharAtlas(terminal, colorSet);
   }
 

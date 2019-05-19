@@ -4,9 +4,9 @@
  */
 
 import { ITerminal, CharacterJoinerHandler } from '../Types';
-import { ITheme, IDisposable } from 'xterm';
+import { IDisposable } from 'xterm';
 import { IEvent } from '../common/EventEmitter2';
-import { IColorManager, IColorSet } from '../ui/Types';
+import { IColorSet } from '../ui/Types';
 
 /**
  * Flags used to render terminal text properly.
@@ -27,13 +27,12 @@ export const enum FLAGS {
  */
 export interface IRenderer extends IDisposable {
   dimensions: IRenderDimensions;
-  colorManager: IColorManager;
 
   onCanvasResize: IEvent<{ width: number, height: number }>;
   onRender: IEvent<{ start: number, end: number }>;
 
   dispose(): void;
-  setTheme(theme: ITheme): IColorSet;
+  onThemeChange(colors: IColorSet): void;
   onWindowResize(devicePixelRatio: number): void;
   onResize(cols: number, rows: number): void;
   onCharSizeChanged(): void;
@@ -87,7 +86,7 @@ export interface IRenderLayer extends IDisposable {
   /**
    * Called when the theme changes.
    */
-  onThemeChanged(terminal: ITerminal, colorSet: IColorSet): void;
+  onThemeChange(terminal: ITerminal, colorSet: IColorSet): void;
 
   /**
    * Called when the data in the grid has changed (or needs to be rendered

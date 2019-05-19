@@ -53,6 +53,7 @@ import { clone } from './common/Clone';
 import { EventEmitter2, IEvent } from './common/EventEmitter2';
 import { Attributes, DEFAULT_ATTR_DATA } from './core/buffer/BufferLine';
 import { applyWindowsMode } from './WindowsMode';
+import { ColorManager } from './ui/ColorManager';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -109,7 +110,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   useFlowControl: false,
   allowTransparency: false,
   tabStopWidth: 8,
-  theme: null,
+  theme: undefined,
   rightClickSelectsWord: Browser.isMac,
   rendererType: 'canvas',
   windowsMode: false
@@ -212,6 +213,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   private _mouseZoneManager: IMouseZoneManager;
   public mouseHelper: MouseHelper;
   private _accessibilityManager: AccessibilityManager;
+  private _colorManager: ColorManager;
   private _screenDprMonitor: ScreenDprMonitor;
   private _theme: ITheme;
   private _windowsMode: IDisposable | undefined;
@@ -528,9 +530,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         }
         this._setupRenderer();
         this.renderer.onCharSizeChanged();
-        if (this._theme) {
-          this.renderer.setTheme(this._theme);
-        }
         this.mouseHelper.setRenderer(this.renderer);
         break;
       case 'scrollback':
@@ -765,11 +764,14 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // Performance: Add viewport and helper elements from the fragment
     this.element.appendChild(fragment);
 
-    this._setupRenderer();
     this._theme = this.options.theme;
     this.options.theme = null;
+    this._colorManager = new ColorManager(document, this.options.allowTransparency);
+    this._colorManager.setTheme(this._theme);
+    this._setupRenderer();
+
     this.viewport = new Viewport(this, this._viewportElement, this._viewportScrollArea, this.charMeasure);
-    this.viewport.onThemeChanged(this.renderer.colorManager.colors);
+    this.viewport.onThemeChange(this._colorManager.colors);
     this.register(this.viewport);
 
     this.register(this.onCursorMove(() => this.renderer.onCursorMove()));
@@ -833,8 +835,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   private _setupRenderer(): void {
     switch (this.options.rendererType) {
-      case 'canvas': this.renderer = new Renderer(this, this.options.theme); break;
-      case 'dom': this.renderer = new DomRenderer(this, this.options.theme); break;
+      case 'canvas': this.renderer = new Renderer(this, this._colorManager.colors); break;
+      case 'dom': this.renderer = new DomRenderer(this, this._colorManager.colors); break;
       default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
     }
     this.renderer.onRender(e => this._onRender.fire(e));
@@ -847,9 +849,12 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   private _setTheme(theme: ITheme): void {
     this._theme = theme;
-    const colors = this.renderer.setTheme(theme);
+    this._colorManager.setTheme(theme);
+    if (this.renderer) {
+      this.renderer.onThemeChange(this._colorManager.colors);
+    }
     if (this.viewport) {
-      this.viewport.onThemeChanged(colors);
+      this.viewport.onThemeChange(this._colorManager.colors);
     }
   }
 

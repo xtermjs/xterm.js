@@ -88,7 +88,7 @@ export interface IViewport extends IDisposable {
   onWheel(ev: WheelEvent): void;
   onTouchStart(ev: TouchEvent): void;
   onTouchMove(ev: TouchEvent): void;
-  onThemeChanged(colors: IColorSet): void;
+  onThemeChange(colors: IColorSet): void;
 }
 
 export interface ICompositionHelper {
