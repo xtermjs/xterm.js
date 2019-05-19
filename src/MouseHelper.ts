@@ -4,13 +4,12 @@
  */
 
 import { ICharMeasure, IMouseHelper } from './Types';
-import { IRenderer } from './renderer/Types';
+import { RenderCoordinator } from './renderer/RenderCoordinator';
 
 export class MouseHelper implements IMouseHelper {
-  constructor(private _renderer: IRenderer) {}
-
-  public setRenderer(renderer: IRenderer): void {
-    this._renderer = renderer;
+  constructor(
+    private _renderCoordinator: RenderCoordinator
+  ) {
   }
 
   public static getCoordsRelativeToElement(event: {clientX: number, clientY: number}, element: HTMLElement): [number, number] {
@@ -42,8 +41,8 @@ export class MouseHelper implements IMouseHelper {
       return null;
     }
 
-    coords[0] = Math.ceil((coords[0] + (isSelection ? this._renderer.dimensions.actualCellWidth / 2 : 0)) / this._renderer.dimensions.actualCellWidth);
-    coords[1] = Math.ceil(coords[1] / this._renderer.dimensions.actualCellHeight);
+    coords[0] = Math.ceil((coords[0] + (isSelection ? this._renderCoordinator.dimensions.actualCellWidth / 2 : 0)) / this._renderCoordinator.dimensions.actualCellWidth);
+    coords[1] = Math.ceil(coords[1] / this._renderCoordinator.dimensions.actualCellHeight);
 
     // Ensure coordinates are within the terminal viewport. Note that selections
     // need an addition point of precision to cover the end point (as characters

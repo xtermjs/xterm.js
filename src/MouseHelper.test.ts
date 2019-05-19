@@ -31,7 +31,7 @@ describe('MouseHelper.getCoords', () => {
       actualCellWidth: CHAR_WIDTH,
       actualCellHeight: CHAR_HEIGHT
     };
-    mouseHelper = new MouseHelper(renderer);
+    mouseHelper = new MouseHelper(renderer as any);
   });
 
   describe('when charMeasure is not initialized', () => {

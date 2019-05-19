@@ -10,6 +10,7 @@ import { RenderDebouncer } from './ui/RenderDebouncer';
 import { addDisposableDomListener } from './ui/Lifecycle';
 import { Disposable } from './common/Lifecycle';
 import { ScreenDprMonitor } from './ui/ScreenDprMonitor';
+import { IRenderDimensions } from './renderer/Types';
 
 const MAX_ROWS_TO_READ = 20;
 
@@ -42,7 +43,10 @@ export class AccessibilityManager extends Disposable {
    */
   private _charsToConsume: string[] = [];
 
-  constructor(private _terminal: ITerminal) {
+  constructor(
+    private _terminal: ITerminal,
+    private _dimensions: IRenderDimensions
+  ) {
     super();
     this._accessibilityTreeRoot = document.createElement('div');
     this._accessibilityTreeRoot.classList.add('xterm-accessibility');
@@ -60,7 +64,7 @@ export class AccessibilityManager extends Disposable {
     this._rowElements[0].addEventListener('focus', this._topBoundaryFocusListener);
     this._rowElements[this._rowElements.length - 1].addEventListener('focus', this._bottomBoundaryFocusListener);
 
-    this.refreshRowsDimensions();
+    this._refreshRowsDimensions();
     this._accessibilityTreeRoot.appendChild(this._rowContainer);
 
     this._renderRowsDebouncer = new RenderDebouncer(this._renderRows.bind(this));
@@ -86,10 +90,10 @@ export class AccessibilityManager extends Disposable {
 
     this._screenDprMonitor = new ScreenDprMonitor();
     this.register(this._screenDprMonitor);
-    this._screenDprMonitor.setListener(() => this.refreshRowsDimensions());
+    this._screenDprMonitor.setListener(() => this._refreshRowsDimensions());
     // This shouldn't be needed on modern browsers but is present in case the
     // media query that drives the ScreenDprMonitor isn't supported
-    this.register(addDisposableDomListener(window, 'resize', () => this.refreshRowsDimensions()));
+    this.register(addDisposableDomListener(window, 'resize', () => this._refreshRowsDimensions()));
   }
 
   public dispose(): void {
@@ -175,7 +179,7 @@ export class AccessibilityManager extends Disposable {
     // Add bottom boundary listener
     this._rowElements[this._rowElements.length - 1].addEventListener('focus', this._bottomBoundaryFocusListener);
 
-    this.refreshRowsDimensions();
+    this._refreshRowsDimensions();
   }
 
   private _createAccessibilityTreeNode(): HTMLElement {
@@ -258,8 +262,8 @@ export class AccessibilityManager extends Disposable {
     }
   }
 
-  public refreshRowsDimensions(): void {
-    if (!this._terminal.renderer.dimensions.actualCellHeight) {
+  private _refreshRowsDimensions(): void {
+    if (!this._dimensions.actualCellHeight) {
       return;
     }
     if (this._rowElements.length !== this._terminal.rows) {
@@ -270,8 +274,13 @@ export class AccessibilityManager extends Disposable {
     }
   }
 
+  public setDimensions(dimensions: IRenderDimensions): void {
+    this._dimensions = dimensions;
+    this._refreshRowsDimensions();
+  }
+
   private _refreshRowDimensions(element: HTMLElement): void {
-    element.style.height = `${this._terminal.renderer.dimensions.actualCellHeight}px`;
+    element.style.height = `${this._dimensions.actualCellHeight}px`;
   }
 
   private _announceCharacter(char: string): void {

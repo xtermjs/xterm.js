@@ -4,7 +4,6 @@
  */
 
 import { ITerminalOptions as IPublicTerminalOptions, IEventEmitter, IDisposable, IMarker, ISelectionPosition } from 'xterm';
-import { IRenderer } from './renderer/Types';
 import { ICharset, IAttributeData, ICellData, IBufferLine, CharData } from './core/Types';
 import { ICircularList } from './common/Types';
 import { IEvent } from './common/EventEmitter2';
@@ -201,7 +200,6 @@ export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAcc
   screenElement: HTMLElement;
   selectionManager: ISelectionManager;
   charMeasure: ICharMeasure;
-  renderer: IRenderer;
   browser: IBrowser;
   writeBuffer: string[];
   cursorHidden: boolean;
