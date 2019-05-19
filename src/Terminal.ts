@@ -42,7 +42,6 @@ import { MouseHelper } from './MouseHelper';
 import { DEFAULT_BELL_SOUND, SoundManager } from './SoundManager';
 import { MouseZoneManager } from './MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
-import { ScreenDprMonitor } from './ui/ScreenDprMonitor';
 import { ITheme, IMarker, IDisposable, ISelectionPosition } from 'xterm';
 import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
@@ -216,7 +215,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public mouseHelper: MouseHelper;
   private _accessibilityManager: AccessibilityManager;
   private _colorManager: ColorManager;
-  private _screenDprMonitor: ScreenDprMonitor;
   private _theme: ITheme;
   private _windowsMode: IDisposable | undefined;
 
@@ -707,10 +705,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this._context = this._parent.ownerDocument.defaultView;
     this._document = this._parent.ownerDocument;
 
-    this._screenDprMonitor = new ScreenDprMonitor();
-    this._screenDprMonitor.setListener(() => this.emit('dprchange', window.devicePixelRatio));
-    this.register(this._screenDprMonitor);
-
     // Create main element container
     this.element = this._document.createElement('div');
     this.element.dir = 'ltr';   // xterm.css assumes LTR
@@ -784,7 +778,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.register(this.onResize(() => this.renderer.onResize(this.cols, this.rows)));
     this.register(this.addDisposableListener('blur', () => this.renderer.onBlur()));
     this.register(this.addDisposableListener('focus', () => this.renderer.onFocus()));
-    this.register(this.addDisposableListener('dprchange', () => this.renderer.onWindowResize(window.devicePixelRatio)));
     // dprchange should handle this case, we need this as well for browsers that don't support the
     // matchMedia query.
     this.register(addDisposableDomListener(window, 'resize', () => this.renderer.onWindowResize(window.devicePixelRatio)));

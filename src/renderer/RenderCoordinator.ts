@@ -6,9 +6,12 @@
 import { IRenderer } from './Types';
 import { RenderDebouncer } from '../ui/RenderDebouncer';
 import { EventEmitter2, IEvent } from '../common/EventEmitter2';
+import { Disposable } from '../common/Lifecycle';
+import { ScreenDprMonitor } from '../../lib/ui/ScreenDprMonitor';
 
-export class RenderCoordinator {
+export class RenderCoordinator extends Disposable {
   private _renderDebouncer: RenderDebouncer;
+  private _screenDprMonitor: ScreenDprMonitor;
 
   private _onCanvasResize = new EventEmitter2<{ width: number, height: number }>();
   public get onCanvasResize(): IEvent<{ width: number, height: number }> { return this._onCanvasResize.event; }
@@ -22,7 +25,13 @@ export class RenderCoordinator {
     private _renderer: IRenderer,
     private _rowCount: number
   ) {
+    super();
     this._renderDebouncer = new RenderDebouncer((start, end) => this._renderRows(start, end));
+    this.register(this._renderDebouncer);
+
+    this._screenDprMonitor = new ScreenDprMonitor();
+    this._screenDprMonitor.setListener(() => this._renderer.onWindowResize(window.devicePixelRatio));
+    this.register(this._screenDprMonitor);
   }
 
   public refreshRows(start: number, end: number): void {

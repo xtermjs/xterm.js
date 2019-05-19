@@ -9,7 +9,6 @@ import { CursorRenderLayer } from './CursorRenderLayer';
 import { IRenderLayer, IRenderer, IRenderDimensions, ICharacterJoinerRegistry } from './Types';
 import { ITerminal, CharacterJoinerHandler } from '../Types';
 import { LinkRenderLayer } from './LinkRenderLayer';
-import { ScreenDprMonitor } from '../ui/ScreenDprMonitor';
 import { CharacterJoinerRegistry } from '../renderer/CharacterJoinerRegistry';
 import { Disposable } from '../common/Lifecycle';
 import { IColorSet } from '../ui/Types';
@@ -17,7 +16,6 @@ import { IColorSet } from '../ui/Types';
 export class Renderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
   private _devicePixelRatio: number;
-  private _screenDprMonitor: ScreenDprMonitor;
   private _isPaused: boolean = false;
   private _needsFullRefresh: boolean = false;
   private _characterJoinerRegistry: ICharacterJoinerRegistry;
@@ -55,11 +53,6 @@ export class Renderer extends Disposable implements IRenderer {
     this._devicePixelRatio = window.devicePixelRatio;
     this._updateDimensions();
     this.onOptionsChanged();
-
-    // TODO: Move dpr monitor to RenderCoordinator
-    this._screenDprMonitor = new ScreenDprMonitor();
-    this._screenDprMonitor.setListener(() => this.onWindowResize(window.devicePixelRatio));
-    this.register(this._screenDprMonitor);
 
     // Detect whether IntersectionObserver is detected and enable renderer pause
     // and resume based on terminal visibility if so
