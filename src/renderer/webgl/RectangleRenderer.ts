@@ -149,7 +149,7 @@ export class RectangleRenderer {
     this._updateViewportRectangle();
   }
 
-  public onThemeChange(): void {
+  public setColors(): void {
     this._updateCachedColors();
     this._updateViewportRectangle();
   }

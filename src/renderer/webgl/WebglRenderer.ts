@@ -5,18 +5,15 @@
 
 import { IRenderer, IRenderDimensions, IRenderLayer, FLAGS } from '../Types';
 import { CharacterJoinerHandler, ITerminal } from '../../Types';
-import { RenderDebouncer } from '../../ui/RenderDebouncer';
 import { GlyphRenderer } from './GlyphRenderer';
 import { LinkRenderLayer } from '../LinkRenderLayer';
 import { CursorRenderLayer } from '../CursorRenderLayer';
 import { acquireCharAtlas } from '../atlas/CharAtlasCache';
 import WebglCharAtlas from './WebglCharAtlas';
-import { ScreenDprMonitor } from '../../ui/ScreenDprMonitor';
 import { RectangleRenderer } from './RectangleRenderer';
 import { IWebGL2RenderingContext } from './Types';
 import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
 import { RenderModel, COMBINED_CHAR_BIT_MASK } from './RenderModel';
-import { EventEmitter2, IEvent } from '../../common/EventEmitter2';
 import { Disposable } from '../../common/Lifecycle';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CODE } from '../../core/buffer/BufferLine';
 import { DEFAULT_COLOR } from '../../common/Types';
@@ -26,10 +23,8 @@ import { getLuminance } from './ColorUtils';
 export const INDICIES_PER_CELL = 4;
 
 export class WebglRenderer extends Disposable implements IRenderer {
-  private _renderDebouncer: RenderDebouncer;
   private _renderLayers: IRenderLayer[];
   private _charAtlas: WebglCharAtlas;
-  private _screenDprMonitor: ScreenDprMonitor;
   private _devicePixelRatio: number;
 
   private _model: RenderModel = new RenderModel();
@@ -39,15 +34,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _rectangleRenderer: RectangleRenderer;
   private _glyphRenderer: GlyphRenderer;
 
-  private _isPaused: boolean = false;
-  private _needsFullRefresh: boolean = false;
-
   public dimensions: IRenderDimensions;
-
-  private _onCanvasResize = new EventEmitter2<{ width: number, height: number }>();
-  public get onCanvasResize(): IEvent<{ width: number, height: number }> { return this._onCanvasResize.event; }
-  private _onRender = new EventEmitter2<{ start: number, end: number }>();
-  public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
 
   constructor(
     private _terminal: ITerminal,
@@ -78,12 +65,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._devicePixelRatio = window.devicePixelRatio;
     this._updateDimensions();
 
-    this._screenDprMonitor = new ScreenDprMonitor();
-    this._screenDprMonitor.setListener(() => this.onWindowResize(window.devicePixelRatio));
-    this.register(this._screenDprMonitor);
-
-    this._renderDebouncer = new RenderDebouncer(this._renderRows.bind(this));
-
     this._canvas = document.createElement('canvas');
     const contextAttributes = { antialias: false, depth: false };
     this._gl = this._canvas.getContext('webgl2', contextAttributes) as IWebGL2RenderingContext;
@@ -95,13 +76,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._rectangleRenderer = new RectangleRenderer(this._terminal, this._colors, this._gl, this.dimensions);
     this._glyphRenderer = new GlyphRenderer(this._terminal, this._colors, this._gl, this.dimensions);
 
-    // Detect whether IntersectionObserver is detected and enable renderer pause
-    // and resume based on terminal visibility if so
-    if ('IntersectionObserver' in window) {
-      const observer = new IntersectionObserver(e => this.onIntersectionChange(e[0]), { threshold: 0 });
-      observer.observe(this._terminal.element);
-      this.register({ dispose: () => observer.disconnect() });
-    }
+    // Update dimensions and acquire char atlas
+    this.onCharSizeChanged();
   }
 
   public dispose(): void {
@@ -119,24 +95,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
   }
 
-  public onIntersectionChange(entry: IntersectionObserverEntry): void {
-    this._isPaused = entry.intersectionRatio === 0;
-    if (!this._isPaused && this._needsFullRefresh) {
-      this._terminal.refresh(0, this._terminal.rows - 1);
-    }
-  }
-
-  private _refreshViewport(): void {
-    // Force a refresh
-    this._model.clear();
-    if (this._isPaused) {
-      this._needsFullRefresh = true;
-    } else {
-      this._terminal.refresh(0, this._terminal.rows - 1);
-    }
-  }
-
   public setColors(colors: IColorSet): void {
+    this._colors = colors;
+
     this._applyBgLuminanceBasedSelection();
 
     // Clear layers and force a full render
@@ -145,23 +106,22 @@ export class WebglRenderer extends Disposable implements IRenderer {
       l.reset(this._terminal);
     });
 
-    this._rectangleRenderer.onThemeChange();
-    this._glyphRenderer.onThemeChange();
+    this._rectangleRenderer.setColors();
+    this._glyphRenderer.setColors();
 
     this._refreshCharAtlas();
-    this._refreshViewport();
   }
 
-  public onWindowResize(devicePixelRatio: number): void {
+  public onDevicePixelRatioChange(): void {
     // If the device pixel ratio changed, the char atlas needs to be regenerated
     // and the terminal needs to refreshed
-    if (this._devicePixelRatio !== devicePixelRatio) {
-      this._devicePixelRatio = devicePixelRatio;
-      this.onResize(this._terminal.cols, this._terminal.rows, devicePixelRatio);
+    if (this._devicePixelRatio !== window.devicePixelRatio) {
+      this._devicePixelRatio = window.devicePixelRatio;
+      this.onResize(this._terminal.cols, this._terminal.rows);
     }
   }
 
-  public onResize(cols: number, rows: number, devicePixelRatio: number = window.devicePixelRatio): void {
+  public onResize(cols: number, rows: number): void {
     // Update character and canvas dimensions
     this._updateDimensions(devicePixelRatio);
 
@@ -184,12 +144,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._glyphRenderer.onResize();
 
     this._refreshCharAtlas();
-    this._refreshViewport();
-
-    this._onCanvasResize.fire({
-      width: this.dimensions.canvasWidth,
-      height: this.dimensions.canvasHeight
-    });
   }
 
   public onCharSizeChanged(): void {
@@ -211,7 +165,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._rectangleRenderer.updateSelection(this._model.selection, columnSelectMode);
     this._glyphRenderer.updateSelection(this._model, columnSelectMode);
-    this.refreshRows(0, this._terminal.rows - 1);
+
+    // TODO: #2102 Should this move to RenderCoordinator?
+    this._terminal.refresh(0, this._terminal.rows - 1);
   }
 
   public onCursorMove(): void {
@@ -247,14 +203,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._renderLayers.forEach(l => l.reset(this._terminal));
   }
 
-  public refreshRows(start: number, end: number): void {
-    if (this._isPaused) {
-      this._needsFullRefresh = true;
-      return;
-    }
-    this._renderDebouncer.refresh(start, end, this._terminal.rows);
-  }
-
   public registerCharacterJoiner(handler: CharacterJoinerHandler): number {
     return -1;
   }
@@ -263,7 +211,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     return false;
   }
 
-  private _renderRows(start: number, end: number): void {
+  public renderRows(start: number, end: number): void {
     // Update render layers
     this._renderLayers.forEach(l => l.onGridChanged(this._terminal, start, end));
 
@@ -278,9 +226,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // Render
     this._rectangleRenderer.render();
     this._glyphRenderer.render(this._model, this._model.selection.hasSelection);
-
-    // Emit event
-    this._onRender.fire({ start, end });
   }
 
   private _updateModel(start: number, end: number): void {

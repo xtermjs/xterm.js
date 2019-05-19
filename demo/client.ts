@@ -283,6 +283,10 @@ function initOptions(term: TerminalType): void {
     const input = <HTMLInputElement>document.getElementById(`opt-${o}`);
     addDomListener(input, 'change', () => {
       console.log('change', o, input.value);
+      if (o === 'rendererType' && input.value === 'webgl') {
+        term.setOption('experimentalCharAtlas', 'webgl');
+        setTimeout(() => (<HTMLSelectElement>document.getElementById(`opt-experimentalCharAtlas`)).value = 'webgl', 0);
+      }
       term.setOption(o, input.value);
     });
   });

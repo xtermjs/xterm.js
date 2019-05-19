@@ -299,7 +299,7 @@ export class GlyphRenderer {
     }
   }
 
-  public onThemeChange(): void {
+  public setColors(): void {
   }
 
   public render(renderModel: IRenderModel, isSelectionVisible: boolean): void {
