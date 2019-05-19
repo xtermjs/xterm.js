@@ -41,7 +41,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   constructor(
     private _terminal: Terminal,
-    private _colors: IColorSet
+    private _colors: IColorSet,
+    preserveDrawingBuffer?: boolean
   ) {
     super();
 
@@ -71,7 +72,12 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._updateDimensions();
 
     this._canvas = document.createElement('canvas');
-    const contextAttributes = { antialias: false, depth: false };
+
+    const contextAttributes = {
+      antialias: false,
+      depth: false,
+      preserveDrawingBuffer
+    };
     this._gl = this._canvas.getContext('webgl2', contextAttributes) as IWebGL2RenderingContext;
     if (!this._gl) {
         throw new Error('WebGL2 not supported');

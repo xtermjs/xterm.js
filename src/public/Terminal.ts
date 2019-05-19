@@ -188,8 +188,8 @@ export class Terminal implements ITerminalApi {
   public setRenderer(renderer: any): void {
     this._core.setRenderer(renderer);
   }
-  public loadWebgl(): void {
-    this.loadAddon(new WebglRendererAddon());
+  public loadWebgl(preserveDrawingBuffer?: boolean): void {
+    this.loadAddon(new WebglRendererAddon(preserveDrawingBuffer));
   }
   public static get strings(): ILocalizableStrings {
     return Strings;
