@@ -10,11 +10,11 @@ import WebglCharAtlas from './atlas/WebglCharAtlas';
 import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel, IRasterizedGlyph } from './Types';
 import { INDICIES_PER_CELL } from './WebglRenderer';
 import { COMBINED_CHAR_BIT_MASK } from './RenderModel';
-import { fill, slice } from '../../common/TypedArrayUtils';
+import { fill, slice } from './TypedArray';
 import { NULL_CELL_CODE, WHITESPACE_CELL_CODE, CHAR_DATA_CHAR_INDEX } from '../../core/buffer/BufferLine';
 import { IBufferLine } from '../../core/Types';
-import { IColorSet } from '../../ui/Types';
 import { getLuminance } from './ColorUtils';
+import { IColorSet } from 'xterm';
 
 interface IVertices {
   attributes: Float32Array;

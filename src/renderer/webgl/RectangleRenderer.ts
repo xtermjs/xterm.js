@@ -7,11 +7,11 @@ import { ITerminal } from '../../Types';
 import { IRenderDimensions } from '../Types';
 import { createProgram, expandFloat32Array, PROJECTION_MATRIX } from './WebglUtils';
 import { IRenderModel, IWebGLVertexArrayObject, IWebGL2RenderingContext, ISelectionRenderModel } from './Types';
-import { fill } from '../../common/TypedArrayUtils';
+import { fill } from './TypedArray';
 import { INVERTED_DEFAULT_COLOR } from './atlas/Types';
 import { is256Color } from './atlas/CharAtlasUtils';
 import { DEFAULT_COLOR } from '../../common/Types';
-import { IColorSet, IColor } from '../../ui/Types';
+import { IColorSet, IColor } from 'xterm';
 
 const enum VertexAttribLocations {
   POSITION = 0,

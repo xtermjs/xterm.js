@@ -11,8 +11,8 @@ import { is256Color } from './CharAtlasUtils';
 import { clearColor } from './CharAtlasGenerator';
 import { DEFAULT_ATTR } from '../../../core/buffer/BufferLine';
 import { DEFAULT_COLOR } from '../../../common/Types';
-import { IColor } from '../../../ui/Types';
 import { DEFAULT_ANSI_COLORS } from '../../../ui/ColorManager';
+import { IColor } from 'xterm';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.

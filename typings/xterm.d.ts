@@ -898,6 +898,26 @@ declare module 'xterm' {
   }
 
   /**
+   * (EXPERIMENTAL)
+   */
+  export interface IColor {
+    css: string;
+    rgba: number;
+  }
+
+  /**
+   * (EXPERIMENTAL)
+   */
+  export interface IColorSet {
+    foreground: IColor;
+    background: IColor;
+    cursor: IColor;
+    cursorAccent: IColor;
+    selection: IColor;
+    ansi: IColor[];
+  }
+
+  /**
    * An addon that can provide additional functionality to the terminal.
    */
   export interface ITerminalAddon extends IDisposable {

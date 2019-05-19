@@ -17,7 +17,7 @@ import { RenderModel, COMBINED_CHAR_BIT_MASK } from './RenderModel';
 import { Disposable } from '../../common/Lifecycle';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CODE } from '../../core/buffer/BufferLine';
 import { DEFAULT_COLOR } from '../../common/Types';
-import { IColorSet } from '../../ui/Types';
+import { IColorSet } from 'xterm';
 import { getLuminance } from './ColorUtils';
 
 export const INDICIES_PER_CELL = 4;

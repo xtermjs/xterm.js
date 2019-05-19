@@ -4,7 +4,7 @@
  */
 
 import { IRenderModel, ISelectionRenderModel } from './Types';
-import { fill } from '../../common/TypedArrayUtils';
+import { fill } from './TypedArray';
 
 export const RENDER_MODEL_INDICIES_PER_CELL = 4;
 
