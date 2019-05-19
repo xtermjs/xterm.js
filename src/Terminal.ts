@@ -54,6 +54,7 @@ import { EventEmitter2, IEvent } from './common/EventEmitter2';
 import { Attributes, DEFAULT_ATTR_DATA } from './core/buffer/BufferLine';
 import { applyWindowsMode } from './WindowsMode';
 import { ColorManager } from './ui/ColorManager';
+import { RenderCoordinator } from './renderer/RenderCoordinator';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -203,6 +204,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   private _inputHandler: InputHandler;
   public soundManager: SoundManager;
+  private _renderCoordinator: RenderCoordinator;
   public renderer: IRenderer;
   public selectionManager: SelectionManager;
   public linkifier: ILinkifier;
@@ -770,6 +772,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this._colorManager.setTheme(this._theme);
     this._setupRenderer();
 
+    this._renderCoordinator = new RenderCoordinator(this.renderer, this.rows);
+    this.onResize(e => this._renderCoordinator.resize(e.cols, e.rows));
+
     this.viewport = new Viewport(this, this._viewportElement, this._viewportScrollArea, this.charMeasure);
     this.viewport.onThemeChange(this._colorManager.colors);
     this.register(this.viewport);
@@ -838,6 +843,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       case 'canvas': this.renderer = new Renderer(this, this._colorManager.colors); break;
       case 'dom': this.renderer = new DomRenderer(this, this._colorManager.colors); break;
       default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
+    }
+    // TODO: Setting of renderer should be owned by RenderCoordinator
+    if (this._renderCoordinator) {
+      this._renderCoordinator.setRenderer(this.renderer);
     }
     this.renderer.onRender(e => this._onRender.fire(e));
     this.register(this.renderer);
@@ -1207,8 +1216,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * @param end The row to end at (between start and this.rows - 1).
    */
   public refresh(start: number, end: number): void {
-    if (this.renderer) {
-      this.renderer.refreshRows(start, end);
+    if (this._renderCoordinator) {
+      this._renderCoordinator.refreshRows(start, end);
     }
   }
 

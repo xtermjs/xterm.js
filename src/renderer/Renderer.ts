@@ -9,7 +9,6 @@ import { CursorRenderLayer } from './CursorRenderLayer';
 import { IRenderLayer, IRenderer, IRenderDimensions, ICharacterJoinerRegistry } from './Types';
 import { ITerminal, CharacterJoinerHandler } from '../Types';
 import { LinkRenderLayer } from './LinkRenderLayer';
-import { RenderDebouncer } from '../ui/RenderDebouncer';
 import { ScreenDprMonitor } from '../ui/ScreenDprMonitor';
 import { CharacterJoinerRegistry } from '../renderer/CharacterJoinerRegistry';
 import { EventEmitter2, IEvent } from '../common/EventEmitter2';
@@ -17,7 +16,6 @@ import { Disposable } from '../common/Lifecycle';
 import { IColorSet } from '../ui/Types';
 
 export class Renderer extends Disposable implements IRenderer {
-  private _renderDebouncer: RenderDebouncer;
 
   private _renderLayers: IRenderLayer[];
   private _devicePixelRatio: number;
@@ -65,7 +63,7 @@ export class Renderer extends Disposable implements IRenderer {
     this._updateDimensions();
     this.onOptionsChanged();
 
-    this._renderDebouncer = new RenderDebouncer(this._renderRows.bind(this));
+    // TODO: Move dpr monitor to RenderCoordinator
     this._screenDprMonitor = new ScreenDprMonitor();
     this._screenDprMonitor.setListener(() => this.onWindowResize(window.devicePixelRatio));
     this.register(this._screenDprMonitor);
@@ -176,24 +174,10 @@ export class Renderer extends Disposable implements IRenderer {
   }
 
   /**
-   * Queues a refresh between two rows (inclusive), to be done on next animation
-   * frame.
-   * @param start The start row.
-   * @param end The end row.
-   */
-  public refreshRows(start: number, end: number): void {
-    if (this._isPaused) {
-      this._needsFullRefresh = true;
-      return;
-    }
-    this._renderDebouncer.refresh(start, end, this._terminal.rows);
-  }
-
-  /**
    * Performs the refresh loop callback, calling refresh only if a refresh is
    * necessary before queueing up the next one.
    */
-  private _renderRows(start: number, end: number): void {
+  public renderRows(start: number, end: number): void {
     this._renderLayers.forEach(l => l.onGridChanged(this._terminal, start, end));
     this._onRender.fire({ start, end });
   }

@@ -396,7 +396,7 @@ export class MockRenderer implements IRenderer {
   onOptionsChanged(): void {}
   onWindowResize(devicePixelRatio: number): void {}
   clear(): void {}
-  refreshRows(start: number, end: number): void {}
+  renderRows(start: number, end: number): void {}
   registerCharacterJoiner(handler: CharacterJoinerHandler): number { return 0; }
   deregisterCharacterJoiner(): boolean { return true; }
 }

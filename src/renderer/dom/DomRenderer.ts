@@ -5,7 +5,6 @@
 
 import { IRenderer, IRenderDimensions } from '../Types';
 import { ILinkifierEvent, ITerminal, CharacterJoinerHandler } from '../../Types';
-import { RenderDebouncer } from '../../ui/RenderDebouncer';
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from './DomRendererRowFactory';
 import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
 import { EventEmitter2, IEvent } from '../../common/EventEmitter2';
@@ -30,7 +29,6 @@ let nextTerminalId = 1;
  * canvas is not an option.
  */
 export class DomRenderer extends Disposable implements IRenderer {
-  private _renderDebouncer: RenderDebouncer;
   private _rowFactory: DomRendererRowFactory;
   private _terminalClass: number = nextTerminalId++;
 
@@ -42,6 +40,7 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   public dimensions: IRenderDimensions;
 
+  // TODO: These events should be owned by RenderCoordinator
   private _onCanvasResize = new EventEmitter2<{ width: number, height: number }>();
   public get onCanvasResize(): IEvent<{ width: number, height: number }> { return this._onCanvasResize.event; }
   private _onRender = new EventEmitter2<{ start: number, end: number }>();
@@ -78,7 +77,6 @@ export class DomRenderer extends Disposable implements IRenderer {
     };
     this._updateDimensions();
 
-    this._renderDebouncer = new RenderDebouncer(this._renderRows.bind(this));
     this._rowFactory = new DomRendererRowFactory(_terminal.options, document);
 
     this._terminal.element.classList.add(TERMINAL_CLASS_PREFIX + this._terminalClass);
@@ -337,11 +335,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._rowElements.forEach(e => e.innerHTML = '');
   }
 
-  public refreshRows(start: number, end: number): void {
-    this._renderDebouncer.refresh(start, end, this._terminal.rows);
-  }
-
-  private _renderRows(start: number, end: number): void {
+  public renderRows(start: number, end: number): void {
     const terminal = this._terminal;
 
     const cursorAbsoluteY = terminal.buffer.ybase + terminal.buffer.y;

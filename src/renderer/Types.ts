@@ -42,7 +42,7 @@ export interface IRenderer extends IDisposable {
   onCursorMove(): void;
   onOptionsChanged(): void;
   clear(): void;
-  refreshRows(start: number, end: number): void;
+  renderRows(start: number, end: number): void;
   registerCharacterJoiner(handler: CharacterJoinerHandler): number;
   deregisterCharacterJoiner(joinerId: number): boolean;
 }
