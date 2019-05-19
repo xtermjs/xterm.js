@@ -10,12 +10,8 @@
       "../../node_modules/@types/mocha"
     ]
   },
-  "include": [
-    "./Lifecycle.ts",
-    "./RenderDebouncer.ts",
-    "./ScreenDprMonitor.ts"
-  ],
+  "include": [ "./**/*" ],
   "references": [
     { "path": "../common" }
   ]
-}  
+}

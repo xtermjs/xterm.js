@@ -8,6 +8,7 @@ import { CharMeasure } from './CharMeasure';
 import { Disposable } from './common/Lifecycle';
 import { addDisposableDomListener } from './ui/Lifecycle';
 import { IColorSet } from './ui/Types';
+import { IRenderDimensions } from './renderer/Types';
 
 const FALLBACK_SCROLL_BAR_WIDTH = 15;
 
@@ -43,7 +44,8 @@ export class Viewport extends Disposable implements IViewport {
     private _terminal: ITerminal,
     private _viewportElement: HTMLElement,
     private _scrollArea: HTMLElement,
-    private _charMeasure: CharMeasure
+    private _charMeasure: CharMeasure,
+    private _dimensions: IRenderDimensions
   ) {
     super();
 
@@ -55,6 +57,10 @@ export class Viewport extends Disposable implements IViewport {
 
     // Perform this async to ensure the CharMeasure is ready.
     setTimeout(() => this.syncScrollArea(), 0);
+  }
+
+  public onDimensionsChance(dimensions: IRenderDimensions): void {
+    this._dimensions = dimensions;
   }
 
   public onThemeChange(colors: IColorSet): void {
@@ -73,9 +79,9 @@ export class Viewport extends Disposable implements IViewport {
 
   private _innerRefresh(): void {
     if (this._charMeasure.height > 0) {
-      this._currentRowHeight = this._terminal.renderer.dimensions.scaledCellHeight / window.devicePixelRatio;
+      this._currentRowHeight = this._dimensions.scaledCellHeight / window.devicePixelRatio;
       this._lastRecordedViewportHeight = this._viewportElement.offsetHeight;
-      const newBufferHeight = Math.round(this._currentRowHeight * this._lastRecordedBufferLength) + (this._lastRecordedViewportHeight - this._terminal.renderer.dimensions.canvasHeight);
+      const newBufferHeight = Math.round(this._currentRowHeight * this._lastRecordedBufferLength) + (this._lastRecordedViewportHeight - this._dimensions.canvasHeight);
       if (this._lastRecordedBufferHeight !== newBufferHeight) {
         this._lastRecordedBufferHeight = newBufferHeight;
         this._scrollArea.style.height = this._lastRecordedBufferHeight + 'px';
@@ -106,7 +112,7 @@ export class Viewport extends Disposable implements IViewport {
     }
 
     // If viewport height changed
-    if (this._lastRecordedViewportHeight !== (<any>this._terminal).renderer.dimensions.canvasHeight) {
+    if (this._lastRecordedViewportHeight !== this._dimensions.canvasHeight) {
       this._refresh();
       return;
     }
@@ -125,7 +131,7 @@ export class Viewport extends Disposable implements IViewport {
     }
 
     // If row height changed
-    if (this._terminal.renderer.dimensions.scaledCellHeight / window.devicePixelRatio !== this._currentRowHeight) {
+    if (this._dimensions.scaledCellHeight / window.devicePixelRatio !== this._currentRowHeight) {
       this._refresh();
       return;
     }

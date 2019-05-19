@@ -9,6 +9,8 @@ import { isMac } from './common/Platform';
 import { RenderDebouncer } from './ui/RenderDebouncer';
 import { addDisposableDomListener } from './ui/Lifecycle';
 import { Disposable } from './common/Lifecycle';
+import { ScreenDprMonitor } from './ui/ScreenDprMonitor';
+import { IRenderDimensions } from './renderer/Types';
 
 const MAX_ROWS_TO_READ = 20;
 
@@ -25,6 +27,7 @@ export class AccessibilityManager extends Disposable {
   private _liveRegionLineCount: number = 0;
 
   private _renderRowsDebouncer: RenderDebouncer;
+  private _screenDprMonitor: ScreenDprMonitor;
 
   private _topBoundaryFocusListener: (e: FocusEvent) => void;
   private _bottomBoundaryFocusListener: (e: FocusEvent) => void;
@@ -40,7 +43,10 @@ export class AccessibilityManager extends Disposable {
    */
   private _charsToConsume: string[] = [];
 
-  constructor(private _terminal: ITerminal) {
+  constructor(
+    private _terminal: ITerminal,
+    private _dimensions: IRenderDimensions
+  ) {
     super();
     this._accessibilityTreeRoot = document.createElement('div');
     this._accessibilityTreeRoot.classList.add('xterm-accessibility');
@@ -81,13 +87,12 @@ export class AccessibilityManager extends Disposable {
     this.register(this._terminal.addDisposableListener('a11y.tab', spaceCount => this._onTab(spaceCount)));
     this.register(this._terminal.onKey(e => this._onKey(e.key)));
     this.register(this._terminal.addDisposableListener('blur', () => this._clearLiveRegion()));
-    // TODO: Maybe renderer should fire an event on terminal when the characters change and that
-    //       should be listened to instead? That would mean that the order of events are always
-    //       guarenteed
-    this.register(this._terminal.addDisposableListener('dprchange', () => this._refreshRowsDimensions()));
-    this.register(this._terminal.renderer.onCanvasResize(() => this._refreshRowsDimensions()));
+
+    this._screenDprMonitor = new ScreenDprMonitor();
+    this.register(this._screenDprMonitor);
+    this._screenDprMonitor.setListener(() => this._refreshRowsDimensions());
     // This shouldn't be needed on modern browsers but is present in case the
-    // media query that drives the dprchange event isn't supported
+    // media query that drives the ScreenDprMonitor isn't supported
     this.register(addDisposableDomListener(window, 'resize', () => this._refreshRowsDimensions()));
   }
 
@@ -258,7 +263,7 @@ export class AccessibilityManager extends Disposable {
   }
 
   private _refreshRowsDimensions(): void {
-    if (!this._terminal.renderer.dimensions.actualCellHeight) {
+    if (!this._dimensions.actualCellHeight) {
       return;
     }
     if (this._rowElements.length !== this._terminal.rows) {
@@ -269,8 +274,13 @@ export class AccessibilityManager extends Disposable {
     }
   }
 
+  public setDimensions(dimensions: IRenderDimensions): void {
+    this._dimensions = dimensions;
+    this._refreshRowsDimensions();
+  }
+
   private _refreshRowDimensions(element: HTMLElement): void {
-    element.style.height = `${this._terminal.renderer.dimensions.actualCellHeight}px`;
+    element.style.height = `${this._dimensions.actualCellHeight}px`;
   }
 
   private _announceCharacter(char: string): void {

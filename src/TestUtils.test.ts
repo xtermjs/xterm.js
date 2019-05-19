@@ -384,7 +384,7 @@ export class MockRenderer implements IRenderer {
     throw new Error('Method not implemented.');
   }
   dimensions: IRenderDimensions;
-  onThemeChange(colors: IColorSet): void {
+  setColors(colors: IColorSet): void {
     throw new Error('Method not implemented.');
   }
   onResize(cols: number, rows: number): void {}
@@ -394,9 +394,9 @@ export class MockRenderer implements IRenderer {
   onSelectionChanged(start: [number, number], end: [number, number]): void {}
   onCursorMove(): void {}
   onOptionsChanged(): void {}
-  onWindowResize(devicePixelRatio: number): void {}
+  onDevicePixelRatioChange(): void {}
   clear(): void {}
-  refreshRows(start: number, end: number): void {}
+  renderRows(start: number, end: number): void {}
   registerCharacterJoiner(handler: CharacterJoinerHandler): number { return 0; }
   deregisterCharacterJoiner(): boolean { return true; }
 }

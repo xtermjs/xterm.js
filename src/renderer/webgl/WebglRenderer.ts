@@ -136,12 +136,12 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
   }
 
-  public onThemeChange(colors: IColorSet): void {
+  public setColors(colors: IColorSet): void {
     this._applyBgLuminanceBasedSelection();
 
     // Clear layers and force a full render
     this._renderLayers.forEach(l => {
-      l.onThemeChange(this._terminal, this._colors);
+      l.setColors(this._terminal, this._colors);
       l.reset(this._terminal);
     });
 

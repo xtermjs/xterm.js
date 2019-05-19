@@ -42,7 +42,6 @@ import { MouseHelper } from './MouseHelper';
 import { DEFAULT_BELL_SOUND, SoundManager } from './SoundManager';
 import { MouseZoneManager } from './MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
-import { ScreenDprMonitor } from './ui/ScreenDprMonitor';
 import { ITheme, IMarker, IDisposable, ISelectionPosition } from 'xterm';
 import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
@@ -55,6 +54,7 @@ import { EventEmitter2, IEvent } from './common/EventEmitter2';
 import { Attributes, DEFAULT_ATTR_DATA } from './core/buffer/BufferLine';
 import { applyWindowsMode } from './WindowsMode';
 import { ColorManager } from './ui/ColorManager';
+import { RenderCoordinator } from './renderer/RenderCoordinator';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -204,7 +204,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   private _inputHandler: InputHandler;
   public soundManager: SoundManager;
-  public renderer: IRenderer;
+  private _renderCoordinator: RenderCoordinator;
   public selectionManager: SelectionManager;
   public linkifier: ILinkifier;
   public buffers: BufferSet;
@@ -215,7 +215,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public mouseHelper: MouseHelper;
   private _accessibilityManager: AccessibilityManager;
   private _colorManager: ColorManager;
-  private _screenDprMonitor: ScreenDprMonitor;
   private _theme: ITheme;
   private _windowsMode: IDisposable | undefined;
 
@@ -357,8 +356,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this._inputHandler.onLineFeed(() => this._onLineFeed.fire());
     this.register(this._inputHandler);
 
-    // Reuse renderer if the Terminal is being recreated via a reset call.
-    this.renderer = this.renderer || null;
     this.selectionManager = this.selectionManager || null;
     this.linkifier = this.linkifier || new Linkifier(this);
     this._mouseZoneManager = this._mouseZoneManager || null;
@@ -470,12 +467,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         }
         break;
       case 'theme':
-        // If open has been called we do not want to set options.theme as the
-        // source of truth is owned by the renderer.
-        if (this.renderer) {
-          this._setTheme(<ITheme>value);
-          return;
-        }
+        this._setTheme(<ITheme>value);
         break;
       case 'scrollback':
         value = Math.min(value, MAX_BUFFER_SIZE);
@@ -504,8 +496,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       case 'fontFamily':
       case 'fontSize':
         // When the font changes the size of the cells may change which requires a renderer clear
-        if (this.renderer) {
-          this.renderer.clear();
+        if (this._renderCoordinator) {
+          this._renderCoordinator.clear();
           this.charMeasure.measure(this.options);
         }
         break;
@@ -517,21 +509,16 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       case 'fontWeight':
       case 'fontWeightBold':
         // When the font changes the size of the cells may change which requires a renderer clear
-        if (this.renderer) {
-          this.renderer.clear();
-          this.renderer.onResize(this.cols, this.rows);
+        if (this._renderCoordinator) {
+          this._renderCoordinator.clear();
+          this._renderCoordinator.onResize(this.cols, this.rows);
           this.refresh(0, this.rows - 1);
         }
         break;
       case 'rendererType':
-        if (this.renderer) {
-          this.unregister(this.renderer);
-          this.renderer.dispose();
-          this.renderer = null;
+        if (this._renderCoordinator) {
+          this._renderCoordinator.setRenderer(this._createRenderer());
         }
-        this._setupRenderer();
-        this.renderer.onCharSizeChanged();
-        this.mouseHelper.setRenderer(this.renderer);
         break;
       case 'scrollback':
         this.buffers.resize(this.cols, this.rows);
@@ -541,8 +528,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         break;
       case 'screenReaderMode':
         if (value) {
-          if (!this._accessibilityManager) {
-            this._accessibilityManager = new AccessibilityManager(this);
+          if (!this._accessibilityManager && this._renderCoordinator) {
+            this._accessibilityManager = new AccessibilityManager(this, this._renderCoordinator.dimensions);
           }
         } else {
           if (this._accessibilityManager) {
@@ -566,8 +553,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         break;
     }
     // Inform renderer of changes
-    if (this.renderer) {
-      this.renderer.onOptionsChanged();
+    if (this._renderCoordinator) {
+      this._renderCoordinator.onOptionsChanged();
     }
   }
 
@@ -706,10 +693,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this._context = this._parent.ownerDocument.defaultView;
     this._document = this._parent.ownerDocument;
 
-    this._screenDprMonitor = new ScreenDprMonitor();
-    this._screenDprMonitor.setListener(() => this.emit('dprchange', window.devicePixelRatio));
-    this.register(this._screenDprMonitor);
-
     // Create main element container
     this.element = this._document.createElement('div');
     this.element.dir = 'ltr';   // xterm.css assumes LTR
@@ -769,27 +752,27 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.options.theme = null;
     this._colorManager = new ColorManager(document, this.options.allowTransparency);
     this._colorManager.setTheme(this._theme);
-    this._setupRenderer();
 
-    this.viewport = new Viewport(this, this._viewportElement, this._viewportScrollArea, this.charMeasure);
+    const renderer = this._createRenderer();
+    this._renderCoordinator = new RenderCoordinator(renderer, this.rows, this.screenElement);
+    this._renderCoordinator.onRender(e => this._onRender.fire(e));
+    this.onResize(e => this._renderCoordinator.resize(e.cols, e.rows));
+
+    this.viewport = new Viewport(this, this._viewportElement, this._viewportScrollArea, this.charMeasure, this._renderCoordinator.dimensions);
     this.viewport.onThemeChange(this._colorManager.colors);
     this.register(this.viewport);
 
-    this.register(this.onCursorMove(() => this.renderer.onCursorMove()));
-    this.register(this.onResize(() => this.renderer.onResize(this.cols, this.rows)));
-    this.register(this.addDisposableListener('blur', () => this.renderer.onBlur()));
-    this.register(this.addDisposableListener('focus', () => this.renderer.onFocus()));
-    this.register(this.addDisposableListener('dprchange', () => this.renderer.onWindowResize(window.devicePixelRatio)));
-    // dprchange should handle this case, we need this as well for browsers that don't support the
-    // matchMedia query.
-    this.register(addDisposableDomListener(window, 'resize', () => this.renderer.onWindowResize(window.devicePixelRatio)));
-    this.register(this.charMeasure.onCharSizeChanged(() => this.renderer.onCharSizeChanged()));
-    this.register(this.renderer.onCanvasResize(() => this.viewport.syncScrollArea()));
+    this.register(this.onCursorMove(() => this._renderCoordinator.onCursorMove()));
+    this.register(this.onResize(() => this._renderCoordinator.onResize(this.cols, this.rows)));
+    this.register(this.addDisposableListener('blur', () => this._renderCoordinator.onBlur()));
+    this.register(this.addDisposableListener('focus', () => this._renderCoordinator.onFocus()));
+    this.register(this.charMeasure.onCharSizeChanged(() => this._renderCoordinator.onCharSizeChanged()));
+    this.register(this._renderCoordinator.onDimensionsChange(() => this.viewport.syncScrollArea()));
 
     this.selectionManager = new SelectionManager(this, this.charMeasure);
     this.register(this.selectionManager.onSelectionChange(() => this._onSelectionChange.fire()));
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this.selectionManager.onMouseDown(e)));
-    this.register(this.selectionManager.onRedrawRequest(e => this.renderer.onSelectionChanged(e.start, e.end, e.columnSelectMode)));
+    this.register(this.selectionManager.onRedrawRequest(e => this._renderCoordinator.onSelectionChanged(e.start, e.end, e.columnSelectMode)));
     this.register(this.selectionManager.onLinuxMouseSelection(text => {
       // If there's a new selection, put it into the textarea, focus and select it
       // in order to register it as a selection on the OS. This event is fired
@@ -804,7 +787,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }));
     this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this.selectionManager.refresh()));
 
-    this.mouseHelper = new MouseHelper(this.renderer);
+    this.mouseHelper = new MouseHelper(this._renderCoordinator);
     // apply mouse event classes set by escape codes before terminal was attached
     this.element.classList.toggle('enable-mouse-events', this.mouseEvents);
     if (this.mouseEvents) {
@@ -816,7 +799,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     if (this.options.screenReaderMode) {
       // Note that this must be done *after* the renderer is created in order to
       // ensure the correct order of the dprchange event
-      this._accessibilityManager = new AccessibilityManager(this);
+      this._accessibilityManager = new AccessibilityManager(this, this._renderCoordinator.dimensions);
+      this._accessibilityManager.register(this._renderCoordinator.onDimensionsChange(e => this._accessibilityManager.setDimensions(e)));
     }
 
     // Measure the character size
@@ -834,15 +818,13 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   }
 
-  private _setupRenderer(): void {
+  private _createRenderer(): IRenderer {
     switch (this.options.rendererType) {
-      case 'canvas': this.renderer = new Renderer(this, this._colorManager.colors); break;
-      case 'dom': this.renderer = new DomRenderer(this, this._colorManager.colors); break;
-      case 'webgl': this.renderer = new WebglRenderer(this, this._colorManager.colors); break;
+      case 'canvas': return new Renderer(this, this._colorManager.colors); break;
+      case 'dom': return new DomRenderer(this, this._colorManager.colors); break;
+      case 'webgl': return new WebglRenderer(this, this._colorManager.colors); break;
       default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
     }
-    this.renderer.onRender(e => this._onRender.fire(e));
-    this.register(this.renderer);
   }
 
   /**
@@ -852,8 +834,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   private _setTheme(theme: ITheme): void {
     this._theme = theme;
     this._colorManager.setTheme(theme);
-    if (this.renderer) {
-      this.renderer.onThemeChange(this._colorManager.colors);
+    if (this._renderCoordinator) {
+      this._renderCoordinator.setColors(this._colorManager.colors);
     }
     if (this.viewport) {
       this.viewport.onThemeChange(this._colorManager.colors);
@@ -1209,8 +1191,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * @param end The row to end at (between start and this.rows - 1).
    */
   public refresh(start: number, end: number): void {
-    if (this.renderer) {
-      this.renderer.refreshRows(start, end);
+    if (this._renderCoordinator) {
+      this._renderCoordinator.refreshRows(start, end);
     }
   }
 
@@ -1595,13 +1577,13 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   public registerCharacterJoiner(handler: CharacterJoinerHandler): number {
-    const joinerId = this.renderer.registerCharacterJoiner(handler);
+    const joinerId = this._renderCoordinator.registerCharacterJoiner(handler);
     this.refresh(0, this.rows - 1);
     return joinerId;
   }
 
   public deregisterCharacterJoiner(joinerId: number): void {
-    if (this.renderer.deregisterCharacterJoiner(joinerId)) {
+    if (this._renderCoordinator.deregisterCharacterJoiner(joinerId)) {
       this.refresh(0, this.rows - 1);
     }
   }
