@@ -75,8 +75,6 @@ export class Renderer extends Disposable implements IRenderer {
       l.setColors(this._terminal, this._colors);
       l.reset(this._terminal);
     });
-
-    this._terminal.refresh(0, this._terminal.rows - 1);
   }
 
   public onResize(cols: number, rows: number): void {
@@ -85,9 +83,6 @@ export class Renderer extends Disposable implements IRenderer {
 
     // Resize all render layers
     this._renderLayers.forEach(l => l.resize(this._terminal, this.dimensions));
-
-    // Force a refresh
-    this._terminal.refresh(0, this._terminal.rows - 1);
 
     // Resize the screen
     this._terminal.screenElement.style.width = `${this.dimensions.canvasWidth}px`;

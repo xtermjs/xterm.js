@@ -25,7 +25,20 @@ export const enum FLAGS {
  * rendering rows to the screen.
  */
 export interface IRenderer extends IDisposable {
-  dimensions: IRenderDimensions;
+  readonly dimensions: IRenderDimensions;
+
+  /**
+   * A property that is set by consumers of this interface, this will be set to true when the
+   * terminal is completely offscreen and to false when it comes back on. When true the consumer of
+   * the renderer will not trigger `renderRows`, the renderer should disable code in functions other
+   * than `renderRows` that renders to the screen but it should continue to gather state changes.
+   * When the renderer is unpaused, a full `renderRows` will be triggered if it was called while
+   * paused.
+   *
+   * For example, when `isPaused` is `true`, `IRenderer.onBlur` should record the state change, but
+   * not actually draw the blurred cursor.
+   */
+  // isPaused: boolean;
 
   dispose(): void;
   setColors(colors: IColorSet): void;

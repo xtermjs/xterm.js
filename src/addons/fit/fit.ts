@@ -39,8 +39,8 @@ export function proposeGeometry(term: Terminal): IGeometry {
   const availableHeight = parentElementHeight - elementPaddingVer;
   const availableWidth = parentElementWidth - elementPaddingHor - (<any>term)._core.viewport.scrollBarWidth;
   const geometry = {
-    cols: Math.floor(availableWidth / (<any>term)._core.renderer.dimensions.actualCellWidth),
-    rows: Math.floor(availableHeight / (<any>term)._core.renderer.dimensions.actualCellHeight)
+    cols: Math.floor(availableWidth / (<any>term)._core._renderCoordinator.dimensions.actualCellWidth),
+    rows: Math.floor(availableHeight / (<any>term)._core._renderCoordinator.dimensions.actualCellHeight)
   };
   return geometry;
 }
@@ -50,7 +50,7 @@ export function fit(term: Terminal): void {
   if (geometry) {
     // Force a full render
     if (term.rows !== geometry.rows || term.cols !== geometry.cols) {
-      (<any>term)._core.renderer.clear();
+      (<any>term)._core._renderCoordinator.clear();
       term.resize(geometry.cols, geometry.rows);
     }
   }
