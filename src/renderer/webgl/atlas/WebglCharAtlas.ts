@@ -11,7 +11,6 @@ import { is256Color } from './CharAtlasUtils';
 import { clearColor } from './CharAtlasGenerator';
 import { DEFAULT_ATTR } from '../../../core/buffer/BufferLine';
 import { DEFAULT_COLOR } from '../../../common/Types';
-import { DEFAULT_ANSI_COLORS } from '../../../ui/ColorManager';
 import { IColor } from 'xterm';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
@@ -158,10 +157,10 @@ export default class WebglCharAtlas extends BaseCharAtlas {
   }
 
   private _getColorFromAnsiIndex(idx: number): IColor {
-    if (idx < this._config.colors.ansi.length) {
-      return this._config.colors.ansi[idx];
+    if (idx >= this._config.colors.ansi.length) {
+      throw new Error('No color found for idx ' + idx);
     }
-    return DEFAULT_ANSI_COLORS[idx];
+    return this._config.colors.ansi[idx];
   }
 
   private _getBackgroundColor(bg: number): IColor {
