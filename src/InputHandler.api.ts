@@ -58,7 +58,7 @@ describe('InputHandler Integration Tests', () => {
       `);
       assert.equal(await page.evaluate(`window.result`), '\x1b[3;4R');
     });
-    
+
     it('Report Cursor Position (DECXCPR) - CSI ? 6 n', async function(): Promise<any> {
       this.timeout(10000);
       await openTerminal();
