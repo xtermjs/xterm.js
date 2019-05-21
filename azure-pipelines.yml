@@ -23,11 +23,6 @@ jobs:
       yarn mocha
     displayName: 'Unit tests'
   - script: |
-      yarn start &
-      sleep 5
-      yarn test-api --headless
-    displayName: 'Integration tests'
-  - script: |
       yarn lint
     displayName: 'Lint'
 
@@ -71,12 +66,34 @@ jobs:
   - script: |
       yarn lint
     displayName: 'Lint'
+    
+- job: 'Integration tests'
+  pool:
+    vmImage: 'ubuntu-16.04'
+  steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '8.x'
+    displayName: 'Install Node.js'
+  - task: geeklearningio.gl-vsts-tasks-yarn.yarn-installer-task.YarnInstaller@2
+    inputs:
+      versionSpec: "1.9.4"
+    displayName: 'Install Yarn'
+  - script: |
+      yarn
+    displayName: 'Install dependencies and build'
+  - script: |
+      yarn start &
+      sleep 5
+      yarn test-api --headless
+    displayName: 'Integration tests'
 
 - job: Release
   dependsOn:
   - Linux
   - macOS
   - Windows
+  - 'Integration tests'
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
   pool:
     vmImage: 'ubuntu-16.04'
