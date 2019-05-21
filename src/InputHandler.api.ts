@@ -14,7 +14,7 @@ let page: puppeteer.Page;
 const width = 800;
 const height = 600;
 
-describe('InputHandler Integration Tests', function() {
+describe('InputHandler Integration Tests', function(): void {
   this.timeout(10000);
 
   before(async function(): Promise<any> {
