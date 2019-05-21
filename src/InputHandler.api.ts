@@ -14,9 +14,10 @@ let page: puppeteer.Page;
 const width = 800;
 const height = 600;
 
-describe('InputHandler Integration Tests', () => {
+describe('InputHandler Integration Tests', function(): void {
+  this.timeout(10000);
+
   before(async function(): Promise<any> {
-    this.timeout(10000);
     browser = await puppeteer.launch({
       headless: process.argv.indexOf('--headless') !== -1,
       slowMo: 80,
@@ -36,7 +37,6 @@ describe('InputHandler Integration Tests', () => {
 
   describe('Device Status Report (DSR)', () => {
     it('Status Report - CSI 5 n', async function(): Promise<any> {
-      this.timeout(10000);
       await openTerminal();
       await page.evaluate(`
         window.term.onData(e => window.result = e);
@@ -46,7 +46,6 @@ describe('InputHandler Integration Tests', () => {
     });
 
     it('Report Cursor Position (CPR) - CSI 6 n', async function(): Promise<any> {
-      this.timeout(10000);
       await openTerminal();
       await page.evaluate(`window.term.write('\\n\\nfoo')`);
       assert.deepEqual(await page.evaluate(`
@@ -60,7 +59,6 @@ describe('InputHandler Integration Tests', () => {
     });
 
     it('Report Cursor Position (DECXCPR) - CSI ? 6 n', async function(): Promise<any> {
-      this.timeout(10000);
       await openTerminal();
       await page.evaluate(`window.term.write('\\n\\nfoo')`);
       assert.deepEqual(await page.evaluate(`
