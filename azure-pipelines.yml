@@ -94,7 +94,7 @@ jobs:
   - macOS
   - Windows
   - IntegrationTests
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+  condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Build.SourceBranch'], 'refs/heads/release/*')))
   pool:
     vmImage: 'ubuntu-16.04'
   steps:
