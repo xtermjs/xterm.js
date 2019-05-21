@@ -84,7 +84,7 @@ jobs:
     displayName: 'Install dependencies and build'
   - script: |
       yarn start &
-      sleep 5
+      sleep 10
       yarn test-api --headless
     displayName: 'Integration tests'
 
