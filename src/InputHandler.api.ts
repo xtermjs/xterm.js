@@ -25,19 +25,17 @@ describe('InputHandler Integration Tests', function(): void {
     });
     page = (await browser.pages())[0];
     await page.setViewport({ width, height });
+    await page.goto(APP);
+    await openTerminal();
   });
 
   after(() => {
     browser.close();
   });
 
-  beforeEach(async () => {
-    await page.goto(APP);
-  });
-
   describe('CSI', () => {
     beforeEach(async () => {
-      await openTerminal();
+      await page.evaluate(`window.term.reset()`);
     });
 
     it('ICH: Insert Ps (Blank) Character(s) (default = 1) - CSI Ps @', async function(): Promise<any> {
