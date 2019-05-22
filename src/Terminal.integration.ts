@@ -91,7 +91,8 @@ if (os.platform() !== 'win32') {
   primitivePty = (<any>pty).native.open(cols, rows);
 
   /** tests */
-  describe('xterm output comparison', () => {
+  describe('xterm output comparison', function(): void {
+    this.timeout(10000);
     let xterm: TestTerminal;
 
     beforeEach(() => {
