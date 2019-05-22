@@ -72,6 +72,7 @@ const WRITE_BUFFER_PAUSE_THRESHOLD = 5;
  * depends on the time it takes for the renderer to draw the frame.
  */
 const WRITE_TIMEOUT_MS = 12;
+const WRITE_BUFFER_LENGTH_THRESHOLD = 50;
 
 const MINIMUM_COLS = 2; // Less than 2 can mess with wide chars
 const MINIMUM_ROWS = 1;
@@ -1430,6 +1431,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
     if (this.writeBufferUtf8.length > bufferOffset) {
       // Allow renderer to catch up before processing the next batch
+      // trim already processed chunks if we are above threshold
+      if (bufferOffset > WRITE_BUFFER_LENGTH_THRESHOLD) {
+        this.writeBufferUtf8 = this.writeBufferUtf8.slice(bufferOffset);
+        bufferOffset = 0;
+      }
       setTimeout(() => this._innerWriteUtf8(bufferOffset), 0);
     } else {
       this._writeInProgress = false;
@@ -1512,6 +1518,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
     if (this.writeBuffer.length > bufferOffset) {
       // Allow renderer to catch up before processing the next batch
+      // trim already processed chunks if we are above threshold
+      if (bufferOffset > WRITE_BUFFER_LENGTH_THRESHOLD) {
+        this.writeBuffer = this.writeBuffer.slice(bufferOffset);
+        bufferOffset = 0;
+      }
       setTimeout(() => this._innerWrite(bufferOffset), 0);
     } else {
       this._writeInProgress = false;
