@@ -35,40 +35,143 @@ describe('InputHandler Integration Tests', function(): void {
     await page.goto(APP);
   });
 
-  describe('Device Status Report (DSR)', () => {
-    it('Status Report - CSI 5 n', async function(): Promise<any> {
+  describe('CSI', () => {
+    beforeEach(async () => {
       await openTerminal();
-      await page.evaluate(`
-        window.term.onData(e => window.result = e);
-        window.term.write('\\x1b[5n');
-      `);
-      assert.equal(await page.evaluate(`window.result`), '\x1b[0n');
     });
 
-    it('Report Cursor Position (CPR) - CSI 6 n', async function(): Promise<any> {
-      await openTerminal();
-      await page.evaluate(`window.term.write('\\n\\nfoo')`);
-      assert.deepEqual(await page.evaluate(`
-        [window.term.buffer.cursorY, window.term.buffer.cursorX]
-      `), [2, 3]);
+    it('ICH: Insert Ps (Blank) Character(s) (default = 1) - CSI Ps @', async function(): Promise<any> {
       await page.evaluate(`
-        window.term.onData(e => window.result = e);
-        window.term.write('\\x1b[6n');
+        // Default
+        window.term.write('foo\\x1b[3D\\x1b[@\\n\\r')
+        // Explicit
+        window.term.write('bar\\x1b[3D\\x1b[4@')
       `);
-      assert.equal(await page.evaluate(`window.result`), '\x1b[3;4R');
+      assert.deepEqual(await getLinesAsArray(2), [' foo', '    bar']);
     });
 
-    it('Report Cursor Position (DECXCPR) - CSI ? 6 n', async function(): Promise<any> {
-      await openTerminal();
-      await page.evaluate(`window.term.write('\\n\\nfoo')`);
-      assert.deepEqual(await page.evaluate(`
-        [window.term.buffer.cursorY, window.term.buffer.cursorX]
-      `), [2, 3]);
+    it('CUU: Cursor Up Ps Times (default = 1) - CSI Ps A', async function(): Promise<any> {
       await page.evaluate(`
-        window.term.onData(e => window.result = e);
-        window.term.write('\\x1b[?6n');
+        // Default
+        window.term.write('\\n\\n\\n\\n\x1b[Aa')
+        // Explicit
+        window.term.write('\x1b[2Ab')
       `);
-      assert.equal(await page.evaluate(`window.result`), '\x1b[?3;4R');
+      assert.deepEqual(await getLinesAsArray(4), ['', ' b', '', 'a']);
+    });
+
+    it('CUD: Cursor Down Ps Times (default = 1) - CSI Ps B', async function(): Promise<any> {
+      await page.evaluate(`
+        // Default
+        window.term.write('\x1b[Ba')
+        // Explicit
+        window.term.write('\x1b[2Bb')
+      `);
+      assert.deepEqual(await getLinesAsArray(4), ['', 'a', '', ' b']);
+    });
+
+    it('CUF: Cursor Forward Ps Times (default = 1) - CSI Ps C', async function(): Promise<any> {
+      await page.evaluate(`
+        // Default
+        window.term.write('\x1b[Ca')
+        // Explicit
+        window.term.write('\x1b[2Cb')
+      `);
+      assert.deepEqual(await getLinesAsArray(1), [' a  b']);
+    });
+
+    it('CUB: Cursor Backward Ps Times (default = 1) - CSI Ps D', async function(): Promise<any> {
+      await page.evaluate(`
+        // Default
+        window.term.write('foo\x1b[Da')
+        // Explicit
+        window.term.write('\x1b[2Db')
+      `);
+      assert.deepEqual(await getLinesAsArray(1), ['fba']);
+    });
+
+    it('CNL: Cursor Next Line Ps Times (default = 1) - CSI Ps E', async function(): Promise<any> {
+      await page.evaluate(`
+        // Default
+        window.term.write('\x1b[Ea')
+        // Explicit
+        window.term.write('\x1b[2Eb')
+      `);
+      assert.deepEqual(await getLinesAsArray(4), ['', 'a', '', 'b']);
+    });
+
+    it('CPL: Cursor Preceding Line Ps Times (default = 1) - CSI Ps F', async function(): Promise<any> {
+      await page.evaluate(`
+        // Default
+        window.term.write('\\n\\n\\n\\n\x1b[Fa')
+        // Explicit
+        window.term.write('\x1b[2Fb')
+      `);
+      assert.deepEqual(await getLinesAsArray(5), ['', 'b', '', 'a', '']);
+    });
+
+    it('CHA: Cursor Character Absolute [column] (default = [row,1]) - CSI Ps G', async function(): Promise<any> {
+      await page.evaluate(`
+        // Default
+        window.term.write('foo\x1b[Ga')
+        // Explicit
+        window.term.write('\x1b[10Gb')
+      `);
+      assert.deepEqual(await getLinesAsArray(1), ['aoo      b']);
+    });
+
+    it('CUP: Cursor Position [row;column] (default = [1,1]) - CSI Ps ; Ps H', async function(): Promise<any> {
+      await page.evaluate(`
+        // Default
+        window.term.write('foo\x1b[Ha')
+        // Explicit
+        window.term.write('\x1b[3;3Hb')
+      `);
+      assert.deepEqual(await getLinesAsArray(3), ['aoo', '', '  b']);
+    });
+
+    it('CHT: Cursor Forward Tabulation Ps tab stops (default = 1) - CSI Ps I', async function(): Promise<any> {
+      await page.evaluate(`
+        // Default
+        window.term.write('\x1b[Ia')
+        // Explicit
+        window.term.write('\\n\\r\x1b[2Ib')
+      `);
+      assert.deepEqual(await getLinesAsArray(2), ['        a', '                b']);
+    });
+
+    describe('DSR: Device Status Report', () => {
+      it('Status Report - CSI 5 n', async function(): Promise<any> {
+        await page.evaluate(`
+          window.term.onData(e => window.result = e);
+          window.term.write('\\x1b[5n');
+        `);
+        assert.equal(await page.evaluate(`window.result`), '\x1b[0n');
+      });
+
+      it('Report Cursor Position (CPR) - CSI 6 n', async function(): Promise<any> {
+        await page.evaluate(`window.term.write('\\n\\nfoo')`);
+        assert.deepEqual(await page.evaluate(`
+          [window.term.buffer.cursorY, window.term.buffer.cursorX]
+        `), [2, 3]);
+        await page.evaluate(`
+          window.term.onData(e => window.result = e);
+          window.term.write('\\x1b[6n');
+        `);
+        assert.equal(await page.evaluate(`window.result`), '\x1b[3;4R');
+      });
+
+      it('Report Cursor Position (DECXCPR) - CSI ? 6 n', async function(): Promise<any> {
+        await page.evaluate(`window.term.write('\\n\\nfoo')`);
+        assert.deepEqual(await page.evaluate(`
+          [window.term.buffer.cursorY, window.term.buffer.cursorX]
+        `), [2, 3]);
+        await page.evaluate(`
+          window.term.onData(e => window.result = e);
+          window.term.write('\\x1b[?6n');
+        `);
+        assert.equal(await page.evaluate(`window.result`), '\x1b[?3;4R');
+      });
     });
   });
 });
@@ -81,4 +184,12 @@ async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
   } else {
     await page.waitForSelector('.xterm-text-layer');
   }
+}
+
+async function getLinesAsArray(count: number, start: number = 0): Promise<string[]> {
+  let text = '';
+  for (let i = start; i < start + count; i++) {
+    text += `window.term.buffer.getLine(${i}).translateToString(true),`;
+  }
+  return await page.evaluate(`[${text}]`);
 }
