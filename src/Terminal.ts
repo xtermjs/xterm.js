@@ -69,7 +69,7 @@ const DISCARD_WATERMARK = 10000000; // FIXME: should this be bigger?
  * Flow control watermarks for the write buffer.
  * low: send resume to pty
  * high: send pause to pty
- * 
+ *
  * TODO: make this configurable
  */
 const LOW_WATERMARK = 100000;
@@ -77,7 +77,7 @@ const HIGH_WATERMARK = 300000;
 
 /**
  * Flow control PAUSE/RESUME messages.
- * 
+ *
  * TODO: make this configurable
  */
 const FLOW_CONTROL_PAUSE  = '\x1b^p\x1b\\'; // PM p ST
