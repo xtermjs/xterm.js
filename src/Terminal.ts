@@ -2008,15 +2008,34 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * ESC c Full Reset (RIS).
    */
   public reset(): void {
+    /**
+     * Since _setup handles a full terminal creation, we have to carry forward
+     * a few things that should not reset.
+     */
     this.options.rows = this.rows;
     this.options.cols = this.cols;
     const customKeyEventHandler = this._customKeyEventHandler;
     const inputHandler = this._inputHandler;
     const cursorState = this.cursorState;
+    const writeBuffer = this.writeBuffer;
+    const writeBufferUtf8 = this.writeBufferUtf8;
+    const writeInProgress = this._writeInProgress;
+    const xoffSentToCatchUp = this._xoffSentToCatchUp;
+    const userScrolling = this._userScrolling;
+
     this._setup();
+
+    // reattach
     this._customKeyEventHandler = customKeyEventHandler;
     this._inputHandler = inputHandler;
     this.cursorState = cursorState;
+    this.writeBuffer = writeBuffer;
+    this.writeBufferUtf8 = writeBufferUtf8;
+    this._writeInProgress = writeInProgress;
+    this._xoffSentToCatchUp = xoffSentToCatchUp;
+    this._userScrolling = userScrolling;
+
+    // do a full screen refresh
     this.refresh(0, this.rows - 1);
     if (this.viewport) {
       this.viewport.syncScrollArea();
