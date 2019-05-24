@@ -1693,7 +1693,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         attr.bg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
         attr.bg |= DEFAULT_ATTR_DATA.bg & (Attributes.PCOLOR_MASK | Attributes.RGB_MASK);
       } else if (p === 38) {
-        // fg color 256
+        // fg color 256 and RGB
         if (params[i + 1] === 2) {
           i += 2;
           attr.fg |= Attributes.CM_RGB;
@@ -1703,11 +1703,11 @@ export class InputHandler extends Disposable implements IInputHandler {
         } else if (params[i + 1] === 5) {
           i += 2;
           p = params[i] & 0xff;
-          attr.fg &= ~Attributes.PCOLOR_MASK;
+          attr.fg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
           attr.fg |= Attributes.CM_P256 | p;
         }
       } else if (p === 48) {
-        // bg color 256
+        // bg color 256 and RGB
         if (params[i + 1] === 2) {
           i += 2;
           attr.bg |= Attributes.CM_RGB;
@@ -1717,7 +1717,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         } else if (params[i + 1] === 5) {
           i += 2;
           p = params[i] & 0xff;
-          attr.bg &= ~Attributes.PCOLOR_MASK;
+          attr.bg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
           attr.bg |= Attributes.CM_P256 | p;
         }
       } else if (p === 100) {
