@@ -31,7 +31,7 @@
     "gulp-util": "3.0.8",
     "jsdom": "^11.11.0",
     "merge-stream": "^1.0.1",
-    "node-pty": "0.7.6",
+    "node-pty": "0.9.0-beta10",
     "nodemon": "1.10.2",
     "nyc": "^11.8.0",
     "puppeteer": "^1.15.0",

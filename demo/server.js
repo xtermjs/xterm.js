@@ -45,7 +45,10 @@ function startServer() {
           rows: rows || 24,
           cwd: process.env.PWD,
           env: process.env,
-          encoding: USE_BINARY_UTF8 ? null : 'utf8'
+          encoding: USE_BINARY_UTF8 ? null : 'utf8',
+          handleFlowControl: true,
+          flowControlPause: '\x1b^p\x1b\\',
+          flowControlResume: '\x1b^r\x1b\\'
         });
 
     console.log('Created terminal with PID: ' + term.pid);

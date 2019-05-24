@@ -59,11 +59,29 @@ import { RenderCoordinator } from './renderer/RenderCoordinator';
 const document = (typeof window !== 'undefined') ? window.document : null;
 
 /**
- * The amount of write requests to queue before sending an XOFF signal to the
- * pty process. This number must be small in order for ^C and similar sequences
- * to be responsive.
+ * Safety watermark to avoid memory exhaustion.
+ * The actual watermark is calculated as sum of
+ * unhandled chunk sizes in both write buffers.
  */
-const WRITE_BUFFER_PAUSE_THRESHOLD = 5;
+const DISCARD_WATERMARK = 10000000; // FIXME: should this be bigger?
+
+/**
+ * Flow control watermarks for the write buffer.
+ * low: send resume to pty
+ * high: send pause to pty
+ * 
+ * TODO: make this configurable
+ */
+const LOW_WATERMARK = 100000;
+const HIGH_WATERMARK = 300000;
+
+/**
+ * Flow control PAUSE/RESUME messages.
+ * 
+ * TODO: make this configurable
+ */
+const FLOW_CONTROL_PAUSE  = '\x1b^p\x1b\\'; // PM p ST
+const FLOW_CONTROL_RESUME = '\x1b^r\x1b\\'; // PM r ST
 
 /**
  * The max number of ms to spend on writes before allowing the renderer to
@@ -187,6 +205,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public writeBuffer: string[];
   public writeBufferUtf8: Uint8Array[];
   private _writeInProgress: boolean;
+  private _watermark: number = 0;
 
   /**
    * Whether _xterm.js_ sent XOFF in order to catch up with the pty process.
@@ -1371,17 +1390,22 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       return;
     }
 
-    this.writeBufferUtf8.push(data);
+    // safety measure: dont allow the backend to crash
+    // the terminal by writing to much data to fast.
+    if (this._watermark > DISCARD_WATERMARK) {
+      // FIXME: do something more useful
+      console.error('write data discarded, use flow control to avoid losing data');
+      return;
+    }
 
-    // Send XOFF to pause the pty process if the write buffer becomes too large so
-    // xterm.js can catch up before more data is sent. This is necessary in order
-    // to keep signals such as ^C responsive.
-    if (this.options.useFlowControl && !this._xoffSentToCatchUp && this.writeBufferUtf8.length >= WRITE_BUFFER_PAUSE_THRESHOLD) {
-      // XOFF - stop pty pipe
-      // XON will be triggered by emulator before processing data chunk
-      this.handler(C0.DC3);
+    // flow control: pause pty (like XOFF)
+    this._watermark += data.length;
+    if (this.options.useFlowControl && this._watermark > HIGH_WATERMARK) {
+      this.handler(FLOW_CONTROL_PAUSE);
       this._xoffSentToCatchUp = true;
     }
+
+    this.writeBufferUtf8.push(data);
 
     if (!this._writeInProgress && this.writeBufferUtf8.length > 0) {
       // Kick off a write which will write all data in sequence recursively
@@ -1404,23 +1428,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       const data = this.writeBufferUtf8[bufferOffset];
       bufferOffset++;
 
-      // If XOFF was sent in order to catch up with the pty process, resume it if
-      // we reached the end of the writeBuffer to allow more data to come in.
-      if (this._xoffSentToCatchUp && this.writeBufferUtf8.length === bufferOffset) {
-        this.handler(C0.DC1);
-        this._xoffSentToCatchUp = false;
-      }
-
       this._refreshStart = this.buffer.y;
       this._refreshEnd = this.buffer.y;
 
-      // HACK: Set the parser state based on it's state at the time of return.
-      // This works around the bug #662 which saw the parser state reset in the
-      // middle of parsing escape sequence in two chunks. For some reason the
-      // state of the parser resets to 0 after exiting parser.parse. This change
-      // just sets the state back based on the correct return statement.
-
       this._inputHandler.parseUtf8(data);
+      this._watermark -= data.length;
 
       this.updateRange(this.buffer.y);
       this.refresh(this._refreshStart, this._refreshEnd);
@@ -1429,6 +1441,13 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         break;
       }
     }
+
+    // flow control: resume pty (like XON)
+    if (this._xoffSentToCatchUp && this._watermark < LOW_WATERMARK) {
+      this.handler(FLOW_CONTROL_RESUME);
+      this._xoffSentToCatchUp = false;
+    }
+
     if (this.writeBufferUtf8.length > bufferOffset) {
       // Allow renderer to catch up before processing the next batch
       // trim already processed chunks if we are above threshold
@@ -1458,17 +1477,22 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       return;
     }
 
-    this.writeBuffer.push(data);
+    // safety measure: dont allow the backend to crash
+    // the terminal by writing to much data to fast.
+    if (this._watermark > DISCARD_WATERMARK) {
+      // FIXME: do something more useful
+      console.error('write data discarded, use flow control to avoid losing data');
+      return;
+    }
 
-    // Send XOFF to pause the pty process if the write buffer becomes too large so
-    // xterm.js can catch up before more data is sent. This is necessary in order
-    // to keep signals such as ^C responsive.
-    if (this.options.useFlowControl && !this._xoffSentToCatchUp && this.writeBuffer.length >= WRITE_BUFFER_PAUSE_THRESHOLD) {
-      // XOFF - stop pty pipe
-      // XON will be triggered by emulator before processing data chunk
-      this.handler(C0.DC3);
+    // flow control: pause pty (like XOFF)
+    this._watermark += data.length;
+    if (this.options.useFlowControl && this._watermark > HIGH_WATERMARK) {
+      this.handler(FLOW_CONTROL_PAUSE);
       this._xoffSentToCatchUp = true;
     }
+
+    this.writeBuffer.push(data);
 
     if (!this._writeInProgress && this.writeBuffer.length > 0) {
       // Kick off a write which will write all data in sequence recursively
@@ -1491,23 +1515,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       const data = this.writeBuffer[bufferOffset];
       bufferOffset++;
 
-      // If XOFF was sent in order to catch up with the pty process, resume it if
-      // we reached the end of the writeBuffer to allow more data to come in.
-      if (this._xoffSentToCatchUp && this.writeBuffer.length === bufferOffset) {
-        this.handler(C0.DC1);
-        this._xoffSentToCatchUp = false;
-      }
-
       this._refreshStart = this.buffer.y;
       this._refreshEnd = this.buffer.y;
 
-      // HACK: Set the parser state based on it's state at the time of return.
-      // This works around the bug #662 which saw the parser state reset in the
-      // middle of parsing escape sequence in two chunks. For some reason the
-      // state of the parser resets to 0 after exiting parser.parse. This change
-      // just sets the state back based on the correct return statement.
-
       this._inputHandler.parse(data);
+      this._watermark -= data.length;
 
       this.updateRange(this.buffer.y);
       this.refresh(this._refreshStart, this._refreshEnd);
@@ -1516,6 +1528,13 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         break;
       }
     }
+
+    // flow control: resume pty (like XON)
+    if (this._xoffSentToCatchUp && this._watermark < LOW_WATERMARK) {
+      this.handler(FLOW_CONTROL_RESUME);
+      this._xoffSentToCatchUp = false;
+    }
+
     if (this.writeBuffer.length > bufferOffset) {
       // Allow renderer to catch up before processing the next batch
       // trim already processed chunks if we are above threshold
