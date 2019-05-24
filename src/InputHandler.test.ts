@@ -495,6 +495,46 @@ describe('InputHandler', () => {
       assert.equal(term.curAttrData.getBgColorMode(), 0);
       assert.equal(term.curAttrData.getBgColor(), -1);
     });
+    it('colormode transition RGB to 256', () => {
+      // enter RGB for FG and BG
+      term.writeSync(`\x1b[38;2;1;2;3;48;2;4;5;6m`);
+      // enter 256 for FG and BG
+      term.writeSync(`\x1b[38;5;255;48;5;255m`);
+      assert.equal(term.curAttrData.getFgColorMode(), Attributes.CM_P256);
+      assert.equal(term.curAttrData.getFgColor(), 255);
+      assert.equal(term.curAttrData.getBgColorMode(), Attributes.CM_P256);
+      assert.equal(term.curAttrData.getBgColor(), 255);
+    });
+    it('colormode transition RGB to 16', () => {
+      // enter RGB for FG and BG
+      term.writeSync(`\x1b[38;2;1;2;3;48;2;4;5;6m`);
+      // enter 16 for FG and BG
+      term.writeSync(`\x1b[37;47m`);
+      assert.equal(term.curAttrData.getFgColorMode(), Attributes.CM_P16);
+      assert.equal(term.curAttrData.getFgColor(), 7);
+      assert.equal(term.curAttrData.getBgColorMode(), Attributes.CM_P16);
+      assert.equal(term.curAttrData.getBgColor(), 7);
+    });
+    it('colormode transition 16 to 256', () => {
+      // enter 16 for FG and BG
+      term.writeSync(`\x1b[37;47m`);
+      // enter 256 for FG and BG
+      term.writeSync(`\x1b[38;5;255;48;5;255m`);
+      assert.equal(term.curAttrData.getFgColorMode(), Attributes.CM_P256);
+      assert.equal(term.curAttrData.getFgColor(), 255);
+      assert.equal(term.curAttrData.getBgColorMode(), Attributes.CM_P256);
+      assert.equal(term.curAttrData.getBgColor(), 255);
+    });
+    it('colormode transition 256 to 16', () => {
+      // enter 256 for FG and BG
+      term.writeSync(`\x1b[38;5;255;48;5;255m`);
+      // enter 16 for FG and BG
+      term.writeSync(`\x1b[37;47m`);
+      assert.equal(term.curAttrData.getFgColorMode(), Attributes.CM_P16);
+      assert.equal(term.curAttrData.getFgColor(), 7);
+      assert.equal(term.curAttrData.getBgColorMode(), Attributes.CM_P16);
+      assert.equal(term.curAttrData.getBgColor(), 7);
+    });
     it('should zero missing RGB values', () => {
       term.writeSync(`\x1b[38;2;1;2;3m`);
       term.writeSync(`\x1b[38;2;5m`);
