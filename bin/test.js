@@ -10,8 +10,16 @@ const path = require('path');
 const env = { ...process.env };
 env.NODE_PATH = path.resolve(__dirname, '../out');
 
-cp.spawnSync('yarn', ['mocha'], {
-  cwd: path.join(__dirname, '..'),
+const args = [
+  './out/*test.js',
+  './out/**/*test.js',
+  './out/*integration.js',
+  './out/**/*integration.js',
+  './lib/**/*test.js'
+];
+
+cp.spawnSync('./node_modules/.bin/mocha', args, {
+  cwd: path.resolve(__dirname, '..'),
   stdio: 'inherit',
   env
 });
