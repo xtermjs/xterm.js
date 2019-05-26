@@ -72,8 +72,8 @@ const DISCARD_WATERMARK = 10000000; // FIXME: should this be bigger?
  *
  * TODO: make this configurable
  */
-const LOW_WATERMARK = 100000;
-const HIGH_WATERMARK = 300000;
+const LOW_WATERMARK = 32768;
+const HIGH_WATERMARK = 131072;
 
 /**
  * Flow control PAUSE/RESUME messages.
@@ -1467,6 +1467,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * @param data The text to write to the terminal.
    */
   public write(data: string): void {
+    console.log((this._watermark/1000).toFixed(2), data.length);
     // Ensure the terminal isn't disposed
     if (this._isDisposed) {
       return;

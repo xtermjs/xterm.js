@@ -54,9 +54,9 @@ function startServer() {
     console.log('Created terminal with PID: ' + term.pid);
     terminals[term.pid] = term;
     logs[term.pid] = '';
-    term.on('data', function(data) {
-      logs[term.pid] += data;
-    });
+    //term.on('data', function(data) {
+    //  logs[term.pid] += data;
+    //});
     res.send(term.pid.toString());
     res.end();
   });
@@ -75,15 +75,20 @@ function startServer() {
   app.ws('/terminals/:pid', function (ws, req) {
     var term = terminals[parseInt(req.params.pid)];
     console.log('Connected to terminal ' + term.pid);
-    ws.send(logs[term.pid]);
+    //ws.send(logs[term.pid]);
 
     // string message buffering
-    function buffer(socket, timeout) {
+    function buffer(socket, timeout, limit) {
       let s = '';
       let sender = null;
       return (data) => {
         s += data;
-        if (!sender) {
+        if (s.length > limit) {
+          clearTimeout(sender);
+          socket.send(s);
+          s = '';
+          sender = null;
+        } else if (!sender) {
           sender = setTimeout(() => {
             socket.send(s);
             s = '';
@@ -93,14 +98,20 @@ function startServer() {
       };
     }
     // binary message buffering
-    function bufferUtf8(socket, timeout) {
+    function bufferUtf8(socket, timeout, limit) {
       let buffer = [];
       let sender = null;
       let length = 0;
       return (data) => {
         buffer.push(data);
         length += data.length;
-        if (!sender) {
+        if (length > limit) {
+          clearTimeout(sender);
+          socket.send(Buffer.concat(buffer, length));
+          buffer = [];
+          sender = null;
+          length = 0;
+        } else if (!sender) {
           sender = setTimeout(() => {
             socket.send(Buffer.concat(buffer, length));
             buffer = [];
@@ -110,10 +121,11 @@ function startServer() {
         }
       };
     }
-    const send = USE_BINARY_UTF8 ? bufferUtf8(ws, 5) : buffer(ws, 5);
+    const send = USE_BINARY_UTF8 ? bufferUtf8(ws, 5, 16384) : buffer(ws, 5, 16384);
 
     term.on('data', function(data) {
       try {
+        console.log(data.length);
         send(data);
       } catch (ex) {
         // The WebSocket is not open, ignore
