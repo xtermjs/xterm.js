@@ -44,7 +44,6 @@
     "test": "node ./bin/test.js",
     "posttest": "npm run lint",
     "test-api": "mocha \"**/*.api.js\"",
-    "prebuild": "tsc -b ./src/tsconfig.all.json",
     "build": "tsc -b ./src/tsconfig.all.json",
     "prepare": "npm run build",
     "prepublishOnly": "npm run package",

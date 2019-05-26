@@ -18,8 +18,8 @@ const args = [
   './lib/**/*test.js'
 ];
 
-cp.spawnSync('./node_modules/.bin/mocha', args, {
+cp.spawnSync(path.resolve(__dirname, '../node_modules/.bin/mocha'), args, {
   cwd: path.resolve(__dirname, '..'),
-  stdio: 'inherit',
-  env
+  env,
+  stdio: 'inherit'
 });
