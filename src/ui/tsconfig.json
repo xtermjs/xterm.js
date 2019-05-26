@@ -8,7 +8,12 @@
     "outDir": "../../out",
     "types": [
       "../../node_modules/@types/mocha"
-    ]
+    ],
+    "baseUrl": "..",
+    "paths": {
+      "common/*": [ "./common/*" ],
+      "ui/*": [ "./ui/*" ]
+    }
   },
   "include": [ "./**/*" ],
   "references": [

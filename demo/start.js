@@ -33,10 +33,11 @@ const clientConfig = {
   resolve: {
     modules: [path.resolve(__dirname, '..'), 'node_modules'],
     extensions: [ '.tsx', '.ts', '.js' ],
-    // alias: {
-    //   common: path.resolve(__dirname, '../lib/common'),
-    //   core: path.resolve(__dirname, '../lib/core')
-    // }
+    alias: {
+      common: path.resolve('./out/common'),
+      core: path.resolve('./out/core'),
+      ui: path.resolve('./out/ui')
+    }
   },
   output: {
     filename: 'client-bundle.js',

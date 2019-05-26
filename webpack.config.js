@@ -23,7 +23,8 @@ module.exports = {
     extensions: [ '.js' ],
     alias: {
       common: path.resolve('./out/common'),
-      core: path.resolve('./out/core')
+      core: path.resolve('./out/core'),
+      ui: path.resolve('./out/ui')
     }
   },
   output: {

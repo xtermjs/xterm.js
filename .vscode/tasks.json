@@ -36,7 +36,7 @@
 		},
 		{
 			"label": "Start demo",
-			"dependsOn": ["npm: watch", "npm: start"],
+			"dependsOn": ["npm: watch", "npm: package", "npm: start"],
 			"group": {
 				"kind": "build",
 				"isDefault": true

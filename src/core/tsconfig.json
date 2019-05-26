@@ -9,7 +9,7 @@
     "paths": {
       "common/*": [ "./common/*" ],
       "core/*": [ "./core/*" ]
-    },
+    }
   },
   "include": [ "./**/*" ],
   "references": [

@@ -7,7 +7,11 @@
 
 /// <reference path="../typings/xterm.d.ts"/>
 
-import { Terminal } from '../lib/xterm';
+// Use tsc version (yarn watch)
+import { Terminal } from '../out/public/Terminal';
+// Use webpacked version (yarn package)
+// import { Terminal } from '../lib/xterm';
+
 import { AttachAddon } from 'xterm-addon-attach';
 import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
 import { WebLinksAddon } from 'xterm-addon-web-links';
