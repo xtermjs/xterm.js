@@ -43,11 +43,6 @@ jobs:
   - script: |
       yarn lint
     displayName: 'Lint'
-  - script: |
-      yarn test-coverage
-      export COVERALLS_GIT_BRANCH=$BUILD_SOURCEBRANCHNAME
-      yarn coveralls
-    displayName: 'Generate and publish coverage'
 
 - job: Windows
   pool:
@@ -66,7 +61,7 @@ jobs:
   - script: |
       yarn lint
     displayName: 'Lint'
-    
+
 - job: IntegrationTests
   pool:
     vmImage: 'ubuntu-16.04'
