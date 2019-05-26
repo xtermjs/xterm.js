@@ -52,7 +52,8 @@
     "zmodem.js": "^0.1.5"
   },
   "scripts": {
-    "lib2": "webpack",
+    "package": "webpack",
+    "package-prod": "webpack --config webpack.prod.js",
     "start": "node demo/start",
     "start-debug": "node --inspect-brk demo/start",
     "start-zmodem": "node demo/zmodem/app",
@@ -67,7 +68,7 @@
     "prebuild": "tsc -b ./src/tsconfig.all.json",
     "build": "gulp build",
     "prepare": "npm run prebuild",
-    "prepublishOnly": "npm run build",
+    "prepublishOnly": "npm run package-prod",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "watch": "tsc -b -w ./src/tsconfig.all.json --preserveWatchOutput"
   }
