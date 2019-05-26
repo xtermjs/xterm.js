@@ -50,5 +50,8 @@
     "prepublishOnly": "npm run package",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "watch": "tsc -b -w ./src/tsconfig.all.json --preserveWatchOutput"
+  },
+  "dependencies": {
+    "mocha": "^6.1.4"
   }
 }
