@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { IEvent, EventEmitter2 } from './EventEmitter2';
-import { IDeleteEvent, IInsertEvent } from './CircularList';
+import { IEvent, EventEmitter2 } from 'common/EventEmitter2';
+import { IDeleteEvent, IInsertEvent } from 'common/CircularList';
 
 export const DEFAULT_COLOR = 256;
 

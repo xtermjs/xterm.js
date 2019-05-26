@@ -4,7 +4,12 @@
     "outDir": "../../lib",
     "types": [
       "../../node_modules/@types/mocha"
-    ]
+    ],
+    "baseUrl": "..",
+    "paths": {
+      "common/*": [ "./common/*" ],
+      "core/*": [ "./core/*" ]
+    },
   },
   "include": [ "./**/*" ],
   "references": [

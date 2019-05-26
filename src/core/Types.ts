@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IDisposable } from '../common/Types';
+import { IDisposable } from 'common/Types';
 
 export const enum KeyboardResultType {
   SEND_KEY,

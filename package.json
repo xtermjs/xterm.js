@@ -52,6 +52,7 @@
     "zmodem.js": "^0.1.5"
   },
   "scripts": {
+    "lib2": "webpack",
     "start": "node demo/start",
     "start-debug": "node --inspect-brk demo/start",
     "start-zmodem": "node demo/zmodem/app",
