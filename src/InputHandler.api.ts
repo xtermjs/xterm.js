@@ -138,6 +138,64 @@ describe('InputHandler Integration Tests', function(): void {
       assert.deepEqual(await getLinesAsArray(2), ['        a', '                b']);
     });
 
+    it('ED: Erase in Display, VT100 - CSI Ps J', async function(): Promise<any> {
+      const fixture = 'abc\\n\\rdef\\n\\rghi\x1b[2;2H';
+      await page.evaluate(`
+        // Default: Erase Below
+        window.term.resize(5, 5);
+        window.term.write('${fixture}\x1b[J')
+      `);
+      assert.deepEqual(await getLinesAsArray(3), ['abc', 'd', '']);
+      await page.evaluate(`
+        // 0: Erase Below
+        window.term.reset()
+        window.term.write('${fixture}\x1b[0J')
+      `);
+      assert.deepEqual(await getLinesAsArray(3), ['abc', 'd', '']);
+      await page.evaluate(`
+        // 1: Erase Above
+        window.term.reset()
+        window.term.write('${fixture}\x1b[1J')
+      `);
+      assert.deepEqual(await getLinesAsArray(3), ['', '  f', 'ghi']);
+      await page.evaluate(`
+        // 2: Erase Saved Lines (scrollback)
+        window.term.reset()
+        window.term.write('1\\n2\\n3\\n4\\n5${fixture}\x1b[3J')
+      `);
+      assert.equal(await page.evaluate(`window.term.buffer.length`), 5);
+      assert.deepEqual(await getLinesAsArray(5), ['   4', '    5', 'abc', 'def', 'ghi']);
+    });
+
+    it('DECSED: Erase in Display, VT220 - CSI ? Ps J', async function(): Promise<any> {
+      const fixture = 'abc\\n\\rdef\\n\\rghi\x1b[2;2H';
+      await page.evaluate(`
+        // Default: Erase Below
+        window.term.resize(5, 5);
+        window.term.write('${fixture}\x1b[?J')
+      `);
+      assert.deepEqual(await getLinesAsArray(3), ['abc', 'd', '']);
+      await page.evaluate(`
+        // 0: Erase Below
+        window.term.reset()
+        window.term.write('${fixture}\x1b[?0J')
+      `);
+      assert.deepEqual(await getLinesAsArray(3), ['abc', 'd', '']);
+      await page.evaluate(`
+        // 1: Erase Above
+        window.term.reset()
+        window.term.write('${fixture}\x1b[?1J')
+      `);
+      assert.deepEqual(await getLinesAsArray(3), ['', '  f', 'ghi']);
+      await page.evaluate(`
+        // 2: Erase Saved Lines (scrollback)
+        window.term.reset()
+        window.term.write('1\\n2\\n3\\n4\\n5${fixture}\x1b[?3J')
+      `);
+      assert.equal(await page.evaluate(`window.term.buffer.length`), 5);
+      assert.deepEqual(await getLinesAsArray(5), ['   4', '    5', 'abc', 'def', 'ghi']);
+    });
+
     describe('DSR: Device Status Report', () => {
       it('Status Report - CSI 5 n', async function(): Promise<any> {
         await page.evaluate(`
