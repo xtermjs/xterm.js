@@ -5,11 +5,11 @@
 
 import * as Strings from './Strings';
 import { ITerminal, IBuffer } from './Types';
-import { isMac } from './common/Platform';
-import { RenderDebouncer } from './ui/RenderDebouncer';
-import { addDisposableDomListener } from './ui/Lifecycle';
-import { Disposable } from './common/Lifecycle';
-import { ScreenDprMonitor } from './ui/ScreenDprMonitor';
+import { isMac } from 'common/Platform';
+import { RenderDebouncer } from 'ui/RenderDebouncer';
+import { addDisposableDomListener } from 'ui/Lifecycle';
+import { Disposable } from 'common/Lifecycle';
+import { ScreenDprMonitor } from 'ui/ScreenDprMonitor';
 import { IRenderDimensions } from './renderer/Types';
 
 const MAX_ROWS_TO_READ = 20;

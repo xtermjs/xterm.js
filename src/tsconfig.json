@@ -11,6 +11,12 @@
     ],
     "rootDir": ".",
     "outDir": "../out",
+    "baseUrl": ".",
+    "paths": {
+      "common/*": [ "./common/*" ],
+      "core/*": [ "./core/*" ],
+      "ui/*": [ "./ui/*" ]
+    },
 
     "noUnusedLocals": true,
     "noImplicitAny": true
