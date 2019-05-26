@@ -294,7 +294,7 @@ export class Buffer implements IBuffer {
     for (let y = this.lines.length - 1; y >= 0; y--) {
       // Check whether this line is a problem
       let nextLine = this.lines.get(y) as BufferLine;
-      if (!nextLine.isWrapped && nextLine.getTrimmedLength() <= newCols) {
+      if (!nextLine || !nextLine.isWrapped && nextLine.getTrimmedLength() <= newCols) {
         continue;
       }
 
