@@ -10,13 +10,14 @@ const path = require('path');
 const env = { ...process.env };
 env.NODE_PATH = path.resolve(__dirname, '../out');
 
-const args = [
+const testPaths = [
   './out/*test.js',
   './out/**/*test.js',
   './out/*integration.js',
   './out/**/*integration.js',
   './lib/**/*test.js'
 ];
+const args = testPaths.map(p => `'${p}'`);
 
 cp.spawnSync(path.resolve(__dirname, '../node_modules/.bin/mocha'), args, {
   cwd: path.resolve(__dirname, '..'),
