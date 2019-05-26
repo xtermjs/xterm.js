@@ -16,13 +16,11 @@
     "@types/utf8": "^2.1.6",
     "@types/webpack": "^4.4.11",
     "chai": "3.5.0",
-    "coveralls": "^3.0.1",
     "express": "4.13.4",
     "express-ws": "2.0.0-rc.1",
     "glob": "^7.0.5",
     "jsdom": "^11.11.0",
     "node-pty": "0.7.6",
-    "nodemon": "1.10.2",
     "puppeteer": "^1.15.0",
     "source-map-loader": "^0.2.4",
     "ts-loader": "^4.5.0",
@@ -34,8 +32,7 @@
     "webpack-cli": "^3.1.0",
     "xterm-addon-attach": "0.1.0-beta8",
     "xterm-addon-search": "0.1.0-beta4",
-    "xterm-addon-web-links": "0.1.0-beta6",
-    "zmodem.js": "^0.1.5"
+    "xterm-addon-web-links": "0.1.0-beta6"
   },
   "scripts": {
     "prepackage": "npm run build",
