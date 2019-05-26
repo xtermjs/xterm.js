@@ -27,7 +27,6 @@
     "gulp-concat": "^2.6.1",
     "gulp-mocha": "^3.0.1",
     "gulp-sourcemaps": "1.9.1",
-    "gulp-typescript": "^3.1.3",
     "gulp-util": "3.0.8",
     "jsdom": "^11.11.0",
     "merge-stream": "^1.0.1",

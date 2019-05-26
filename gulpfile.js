@@ -12,11 +12,9 @@ const mocha = require('gulp-mocha');
 const sorcery = require('sorcery');
 const source = require('vinyl-source-stream');
 const sourcemaps = require('gulp-sourcemaps');
-const ts = require('gulp-typescript');
 const util = require('gulp-util');
 
 const buildDir = process.env.BUILD_DIR || 'build';
-let srcDir = './src';
 let outDir = './out';
 
 const addons = fs.readdirSync(`${__dirname}/src/addons`);
@@ -33,14 +31,6 @@ const TEST_PATHS = [
 if (path.normalize(outDir).indexOf(__dirname) !== 0) {
   outDir = `${__dirname}/${path.normalize(outDir)}`;
 }
-
-gulp.task('css', function() {
-  return gulp.src(`${srcDir}/**/*.css`).pipe(gulp.dest(outDir));
-});
-
-gulp.task('watch-css', function() {
-  return gulp.watch(`${srcDir}/**/*.css`, ['css']);
-});
 
 /**
  * Bundle JavaScript files produced by the `tsc` task, into a single file named `xterm.js` with
@@ -65,9 +55,6 @@ gulp.task('browserify', function() {
         .pipe(sourcemaps.init({loadMaps: true, sourceRoot: '..'}))
         .pipe(sourcemaps.write('./'))
         .pipe(gulp.dest(buildDir));
-
-  // Copy stylesheets from ${outDir}/ to ${buildDir}/
-  let copyStylesheets = gulp.src(`${outDir}/**/*.css`).pipe(gulp.dest(buildDir));
 
   return merge(bundleStream, copyStylesheets);
 });
@@ -135,6 +122,6 @@ gulp.task('sorcery-addons', ['browserify-addons'], function () {
   })
 });
 
-gulp.task('build', ['css', 'sorcery', 'sorcery-addons']);
+gulp.task('build', ['sorcery', 'sorcery-addons']);
 gulp.task('test', ['mocha']);
 gulp.task('default', ['build']);
