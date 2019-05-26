@@ -7,24 +7,12 @@ const path = require('path');
 
 module.exports = {
   entry: './out/public/Terminal.js',
-  devtool: 'inline-source-map',
-  module: {
-    rules: [
-      {
-        test: /\.js$/,
-        use: ["source-map-loader"],
-        enforce: "pre",
-        exclude: /node_modules/
-      }
-    ]
-  },
   resolve: {
     modules: ['./node_modules'],
     extensions: [ '.js' ],
     alias: {
       common: path.resolve('./out/common'),
-      core: path.resolve('./out/core'),
-      ui: path.resolve('./out/ui')
+      core: path.resolve('./out/core')
     }
   },
   output: {
@@ -33,6 +21,5 @@ module.exports = {
     library: 'Terminal',
     libraryTarget: 'umd'
   },
-  mode: 'development',
-  watch: true
+  mode: 'production'
 };
