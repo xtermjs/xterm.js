@@ -16,9 +16,8 @@ const ts = require('gulp-typescript');
 const util = require('gulp-util');
 
 const buildDir = process.env.BUILD_DIR || 'build';
-const tsProject = ts.createProject('src/tsconfig.json');
 let srcDir = './src';
-let outDir = './lib';
+let outDir = './out';
 
 const addons = fs.readdirSync(`${__dirname}/src/addons`);
 
