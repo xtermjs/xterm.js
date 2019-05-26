@@ -63,25 +63,21 @@ const document = (typeof window !== 'undefined') ? window.document : null;
  * The actual watermark is calculated as sum of
  * unhandled chunk sizes in both write buffers.
  */
-const DISCARD_WATERMARK = 10000000; // FIXME: should this be bigger?
+const DISCARD_WATERMARK = 10000000;
 
 /**
  * Flow control watermarks for the write buffer.
  * low: send resume to pty
  * high: send pause to pty
- *
- * TODO: make this configurable
  */
 const LOW_WATERMARK = 32768;
 const HIGH_WATERMARK = 131072;
 
 /**
  * Flow control PAUSE/RESUME messages.
- *
- * TODO: make this configurable
  */
-const FLOW_CONTROL_PAUSE  = '\x1b^p\x1b\\'; // PM p ST
-const FLOW_CONTROL_RESUME = '\x1b^r\x1b\\'; // PM r ST
+const FLOW_CONTROL_PAUSE  = '\x1b^pause\x1b\\';  // PM pause ST
+const FLOW_CONTROL_RESUME = '\x1b^resume\x1b\\'; // PM resume ST
 
 /**
  * The max number of ms to spend on writes before allowing the renderer to
@@ -1467,7 +1463,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * @param data The text to write to the terminal.
    */
   public write(data: string): void {
-    console.log((this._watermark/1000).toFixed(2), data.length);
+    console.log((this._watermark / 1000).toFixed(2), data.length);
     // Ensure the terminal isn't disposed
     if (this._isDisposed) {
       return;
