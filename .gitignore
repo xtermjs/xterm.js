@@ -2,6 +2,7 @@ node_modules/
 *.swp
 .lock-wscript
 lib/
+out/
 Makefile.gyp
 *.Makefile
 *.target.gyp.mk

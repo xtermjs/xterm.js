@@ -7,10 +7,7 @@
 
 /// <reference path="../typings/xterm.d.ts"/>
 
-const t = require('../lib2/xterm');
-console.log(t);
-import { Terminal } from '../lib2/xterm';
-console.log('t2', Terminal);
+import { Terminal } from '../lib/xterm';
 import { AttachAddon } from 'xterm-addon-attach';
 import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
 import { WebLinksAddon } from 'xterm-addon-web-links';

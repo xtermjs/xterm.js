@@ -1,7 +1,12 @@
+/**
+ * Copyright (c) 2019 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
 const path = require('path');
 
 module.exports = {
-  entry: './lib/public/Terminal.js',
+  entry: './out/public/Terminal.js',
   devtool: 'inline-source-map',
   module: {
     rules: [
@@ -17,13 +22,13 @@ module.exports = {
     modules: ['./node_modules'],
     extensions: [ '.js' ],
     alias: {
-      common: path.resolve('./lib/common'),
-      core: path.resolve('./lib/core')
+      common: path.resolve('./out/common'),
+      core: path.resolve('./out/core')
     }
   },
   output: {
     filename: 'xterm.js',
-    path: path.resolve('./lib2'),
+    path: path.resolve('./lib'),
     library: 'Terminal',
     libraryTarget: 'umd'
   },

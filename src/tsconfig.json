@@ -10,7 +10,7 @@
       "es2015.promise"
     ],
     "rootDir": ".",
-    "outDir": "../lib",
+    "outDir": "../out",
 
     "noUnusedLocals": true,
     "noImplicitAny": true

@@ -5,7 +5,7 @@
       "dom",
       "es5",
     ],
-    "outDir": "../../lib",
+    "outDir": "../../out",
     "types": [
       "../../node_modules/@types/mocha"
     ]
