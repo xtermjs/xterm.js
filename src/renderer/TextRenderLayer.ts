@@ -205,6 +205,7 @@ export class TextRenderLayer extends BaseRenderLayer {
       if (cell.isInvisible()) {
         return;
       }
+      this.drawChars(terminal, cell, x, y);
       if (cell.isUnderline()) {
         this._ctx.save();
 
@@ -233,7 +234,6 @@ export class TextRenderLayer extends BaseRenderLayer {
         this.fillBottomLineAtCells(x, y, cell.getWidth());
         this._ctx.restore();
       }
-      this.drawChars(terminal, cell, x, y);
     });
   }
 
