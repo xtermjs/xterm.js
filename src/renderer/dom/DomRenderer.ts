@@ -69,6 +69,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       actualCellHeight: null
     };
     this._updateDimensions();
+    this._injectCss();
 
     this._rowFactory = new DomRendererRowFactory(_terminal.options, document);
 
