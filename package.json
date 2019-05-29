@@ -40,7 +40,7 @@
     "ts-loader": "^4.5.0",
     "tslint": "^5.9.1",
     "tslint-consistent-codestyle": "^1.13.0",
-    "typescript": "3.4",
+    "typescript": "3.5",
     "utf8": "^3.0.0",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.1.0",
