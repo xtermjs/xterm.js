@@ -15,7 +15,7 @@ const width = 800;
 const height = 600;
 
 describe('API Integration Tests', function(): void {
-  this.timeout(10000);
+  this.timeout(20000);
 
   before(async function(): Promise<any> {
     browser = await puppeteer.launch({
