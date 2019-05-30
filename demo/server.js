@@ -9,6 +9,10 @@ var pty = require('node-pty');
  */
 const USE_BINARY_UTF8 = false;
 
+// buffering
+const MAX_SEND_INTERVAL = 5;
+const MAX_CHUNK_SIZE = 16384;
+
 
 function startServer() {
   var app = express();
@@ -115,7 +119,9 @@ function startServer() {
         }
       };
     }
-    const send = USE_BINARY_UTF8 ? bufferUtf8(ws, 5, 16384) : buffer(ws, 5, 16384);
+    const send = USE_BINARY_UTF8
+      ? bufferUtf8(ws, MAX_SEND_INTERVAL, MAX_CHUNK_SIZE)
+      : buffer(ws, MAX_SEND_INTERVAL, MAX_CHUNK_SIZE);
 
     term.on('data', function(data) {
       try {
