@@ -69,6 +69,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       actualCellHeight: null
     };
     this._updateDimensions();
+    this._injectCss();
 
     this._rowFactory = new DomRendererRowFactory(_terminal.options, document);
 
@@ -90,7 +91,7 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   private _updateDimensions(): void {
-    this.dimensions.scaledCharWidth = Math.floor(this._terminal.charMeasure.width * window.devicePixelRatio);
+    this.dimensions.scaledCharWidth = this._terminal.charMeasure.width * window.devicePixelRatio;
     this.dimensions.scaledCharHeight = Math.ceil(this._terminal.charMeasure.height * window.devicePixelRatio);
     this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._terminal.options.letterSpacing);
     this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._terminal.options.lineHeight);
