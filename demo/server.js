@@ -14,8 +14,7 @@ function startServer() {
   var app = express();
   expressWs(app);
 
-  var terminals = {},
-      logs = {};
+  var terminals = {};
 
   app.use('/src', express.static(__dirname + '/../src'));
   app.get('/logo.png', (req, res) => res.sendFile(__dirname + '/logo.png'));
@@ -53,10 +52,6 @@ function startServer() {
 
     console.log('Created terminal with PID: ' + term.pid);
     terminals[term.pid] = term;
-    logs[term.pid] = '';
-    //term.on('data', function(data) {
-    //  logs[term.pid] += data;
-    //});
     res.send(term.pid.toString());
     res.end();
   });
@@ -75,7 +70,6 @@ function startServer() {
   app.ws('/terminals/:pid', function (ws, req) {
     var term = terminals[parseInt(req.params.pid)];
     console.log('Connected to terminal ' + term.pid);
-    //ws.send(logs[term.pid]);
 
     // string message buffering
     function buffer(socket, timeout, limit) {
@@ -125,7 +119,6 @@ function startServer() {
 
     term.on('data', function(data) {
       try {
-        console.log(data.length);
         send(data);
       } catch (ex) {
         // The WebSocket is not open, ignore
@@ -139,7 +132,6 @@ function startServer() {
       console.log('Closed terminal ' + term.pid);
       // Clean things up
       delete terminals[term.pid];
-      delete logs[term.pid];
     });
   });
 
