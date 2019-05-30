@@ -1473,7 +1473,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * @param data The text to write to the terminal.
    */
   public write(data: string): void {
-    console.log((this._writeBuffersPendingSize / 1000).toFixed(2), data.length);
+    console.log((this._writeBuffersPendingSize / 1000000).toFixed(2), data.length);
     // Ensure the terminal isn't disposed
     if (this._isDisposed) {
       return;

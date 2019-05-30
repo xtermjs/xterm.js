@@ -9,7 +9,7 @@ var pty = require('node-pty');
  */
 const USE_BINARY_UTF8 = false;
 
-// buffering
+// pty --> websocket buffering
 const MAX_SEND_INTERVAL = 5;
 const MAX_CHUNK_SIZE = 16384;
 
@@ -75,20 +75,27 @@ function startServer() {
     var term = terminals[parseInt(req.params.pid)];
     console.log('Connected to terminal ' + term.pid);
 
+    const _send = data => {
+      // handle only 'open' websocket state
+      if (ws.readyState === 1) {
+        ws.send(data);
+      }
+    }
+
     // string message buffering
-    function buffer(socket, timeout, limit) {
+    function buffer(timeout, limit) {
       let s = '';
       let sender = null;
       return (data) => {
         s += data;
         if (s.length > limit) {
           clearTimeout(sender);
-          socket.send(s);
+          _send(s);
           s = '';
           sender = null;
         } else if (!sender) {
           sender = setTimeout(() => {
-            socket.send(s);
+            _send(s);
             s = '';
             sender = null;
           }, timeout);
@@ -96,7 +103,7 @@ function startServer() {
       };
     }
     // binary message buffering
-    function bufferUtf8(socket, timeout, limit) {
+    function bufferUtf8(timeout, limit) {
       let buffer = [];
       let sender = null;
       let length = 0;
@@ -105,13 +112,13 @@ function startServer() {
         length += data.length;
         if (length > limit) {
           clearTimeout(sender);
-          socket.send(Buffer.concat(buffer, length));
+          _send(Buffer.concat(buffer, length));
           buffer = [];
           sender = null;
           length = 0;
         } else if (!sender) {
           sender = setTimeout(() => {
-            socket.send(Buffer.concat(buffer, length));
+            _send(Buffer.concat(buffer, length));
             buffer = [];
             sender = null;
             length = 0;
@@ -119,17 +126,9 @@ function startServer() {
         }
       };
     }
-    const send = USE_BINARY_UTF8
-      ? bufferUtf8(ws, MAX_SEND_INTERVAL, MAX_CHUNK_SIZE)
-      : buffer(ws, MAX_SEND_INTERVAL, MAX_CHUNK_SIZE);
 
-    term.on('data', function(data) {
-      try {
-        send(data);
-      } catch (ex) {
-        // The WebSocket is not open, ignore
-      }
-    });
+    term.on('data', (USE_BINARY_UTF8 ? bufferUtf8 : buffer)(MAX_SEND_INTERVAL, MAX_CHUNK_SIZE));
+
     ws.on('message', function(msg) {
       term.write(msg);
     });
