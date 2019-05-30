@@ -59,11 +59,15 @@ import { RenderCoordinator } from './renderer/RenderCoordinator';
 const document = (typeof window !== 'undefined') ? window.document : null;
 
 /**
- * Safety watermark to avoid memory exhaustion.
- * The actual watermark is calculated as sum of
- * unhandled chunk sizes in both write buffers.
+ * Safety watermark to avoid memory exhaustion and browser engine crash on fast data input.
+ * Once hit the terminal will stop working. Enable flow control to avoid this limit
+ * and make sure that your backend correctly propagates this to the underlying pty.
+ * (see docs for further instructions)
+ * Since this limit is meant as a safety parachute to prevent browser crashs,
+ * it is set to a very high number. Typically xterm.js gets unresponsive with
+ * a much lower number (>500 kB).
  */
-const DISCARD_WATERMARK = 10000000;
+const DISCARD_WATERMARK = 50000000;  // ~50 MB
 
 /**
  * Flow control watermarks for the write buffer.
@@ -201,7 +205,13 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public writeBuffer: string[];
   public writeBufferUtf8: Uint8Array[];
   private _writeInProgress: boolean;
-  private _watermark: number = 0;
+
+  /**
+   * Sum of length of pending chunks in all write buffers.
+   * Note: For the string chunks the actual memory usage is
+   * doubled (JSString char takes 2 bytes).
+   */
+  private _writeBuffersPendingSize: number = 0;
 
   /**
    * Whether _xterm.js_ sent XOFF in order to catch up with the pty process.
@@ -1388,15 +1398,15 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     // safety measure: dont allow the backend to crash
     // the terminal by writing to much data to fast.
-    if (this._watermark > DISCARD_WATERMARK) {
+    if (this._writeBuffersPendingSize > DISCARD_WATERMARK) {
       // FIXME: do something more useful
       console.error('write data discarded, use flow control to avoid losing data');
       return;
     }
 
     // flow control: pause pty (like XOFF)
-    this._watermark += data.length;
-    if (this.options.useFlowControl && this._watermark > HIGH_WATERMARK) {
+    this._writeBuffersPendingSize += data.length;
+    if (this.options.useFlowControl && this._writeBuffersPendingSize > HIGH_WATERMARK) {
       this.handler(FLOW_CONTROL_PAUSE);
       this._xoffSentToCatchUp = true;
     }
@@ -1428,7 +1438,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       this._refreshEnd = this.buffer.y;
 
       this._inputHandler.parseUtf8(data);
-      this._watermark -= data.length;
+      this._writeBuffersPendingSize -= data.length;
 
       this.updateRange(this.buffer.y);
       this.refresh(this._refreshStart, this._refreshEnd);
@@ -1439,7 +1449,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
 
     // flow control: resume pty (like XON)
-    if (this._xoffSentToCatchUp && this._watermark < LOW_WATERMARK) {
+    if (this._xoffSentToCatchUp && this._writeBuffersPendingSize < LOW_WATERMARK) {
       this.handler(FLOW_CONTROL_RESUME);
       this._xoffSentToCatchUp = false;
     }
@@ -1463,7 +1473,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * @param data The text to write to the terminal.
    */
   public write(data: string): void {
-    console.log((this._watermark / 1000).toFixed(2), data.length);
+    console.log((this._writeBuffersPendingSize / 1000).toFixed(2), data.length);
     // Ensure the terminal isn't disposed
     if (this._isDisposed) {
       return;
@@ -1476,15 +1486,15 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     // safety measure: dont allow the backend to crash
     // the terminal by writing to much data to fast.
-    if (this._watermark > DISCARD_WATERMARK) {
+    if (this._writeBuffersPendingSize > DISCARD_WATERMARK) {
       // FIXME: do something more useful
       console.error('write data discarded, use flow control to avoid losing data');
       return;
     }
 
     // flow control: pause pty (like XOFF)
-    this._watermark += data.length;
-    if (this.options.useFlowControl && this._watermark > HIGH_WATERMARK) {
+    this._writeBuffersPendingSize += data.length;
+    if (this.options.useFlowControl && this._writeBuffersPendingSize > HIGH_WATERMARK) {
       this.handler(FLOW_CONTROL_PAUSE);
       this._xoffSentToCatchUp = true;
     }
@@ -1516,7 +1526,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       this._refreshEnd = this.buffer.y;
 
       this._inputHandler.parse(data);
-      this._watermark -= data.length;
+      this._writeBuffersPendingSize -= data.length;
 
       this.updateRange(this.buffer.y);
       this.refresh(this._refreshStart, this._refreshEnd);
@@ -1527,7 +1537,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
 
     // flow control: resume pty (like XON)
-    if (this._xoffSentToCatchUp && this._watermark < LOW_WATERMARK) {
+    if (this._xoffSentToCatchUp && this._writeBuffersPendingSize < LOW_WATERMARK) {
       this.handler(FLOW_CONTROL_RESUME);
       this._xoffSentToCatchUp = false;
     }
