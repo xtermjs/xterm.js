@@ -1398,10 +1398,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     // safety measure: dont allow the backend to crash
     // the terminal by writing to much data to fast.
+    // If we hit this, the terminal cant keep up with data written
+    // and will start to degenerate.
     if (this._writeBuffersPendingSize > DISCARD_WATERMARK) {
-      // FIXME: do something more useful
-      console.error('write data discarded, use flow control to avoid losing data');
-      return;
+      throw new Error('write data discarded, use flow control to avoid losing data');
     }
 
     // flow control: pause pty (like XOFF)
@@ -1486,10 +1486,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     // safety measure: dont allow the backend to crash
     // the terminal by writing to much data to fast.
+    // If we hit this, the terminal cant keep up with data written
+    // and will start to degenerate.
     if (this._writeBuffersPendingSize > DISCARD_WATERMARK) {
-      // FIXME: do something more useful
-      console.error('write data discarded, use flow control to avoid losing data');
-      return;
+      throw new Error('write data discarded, use flow control to avoid losing data');
     }
 
     // flow control: pause pty (like XOFF)
