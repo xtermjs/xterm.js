@@ -20,6 +20,7 @@
     "express-ws": "2.0.0-rc.1",
     "glob": "^7.0.5",
     "jsdom": "^11.11.0",
+    "mocha": "^6.1.4",
     "node-pty": "0.7.6",
     "puppeteer": "^1.15.0",
     "source-map-loader": "^0.2.4",
@@ -50,8 +51,5 @@
     "prepublishOnly": "npm run package",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "watch": "tsc -b -w ./src/tsconfig.all.json --preserveWatchOutput"
-  },
-  "dependencies": {
-    "mocha": "^6.1.4"
   }
 }
