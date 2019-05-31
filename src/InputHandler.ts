@@ -953,6 +953,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._terminal.buffer.x + (params[0] || 1),
       this._terminal.buffer.getNullCell(this._terminal.eraseAttrData())
     );
+    this._terminal.updateRange(this._terminal.buffer.y);
   }
 
   /**

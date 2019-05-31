@@ -288,7 +288,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._currentGlyphIdentifier.code = cell.getCode() || WHITESPACE_CELL_CODE;
     this._currentGlyphIdentifier.bg = bg;
     this._currentGlyphIdentifier.fg = fg;
-    this._currentGlyphIdentifier.bold = cell.isBold() && terminal.options.enableBold;
+    this._currentGlyphIdentifier.bold = !!cell.isBold();
     this._currentGlyphIdentifier.dim = !!cell.isDim();
     this._currentGlyphIdentifier.italic = !!cell.isItalic();
     const atlasDidDraw = this._charAtlas && this._charAtlas.draw(
@@ -316,7 +316,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   private _drawUncachedChars(terminal: ITerminal, cell: ICellData, x: number, y: number): void {
     this._ctx.save();
-    this._ctx.font = this._getFont(terminal, cell.isBold() && terminal.options.enableBold, !!cell.isItalic());
+    this._ctx.font = this._getFont(terminal, !!cell.isBold(), !!cell.isItalic());
     this._ctx.textBaseline = 'middle';
 
     if (cell.isInverse()) {

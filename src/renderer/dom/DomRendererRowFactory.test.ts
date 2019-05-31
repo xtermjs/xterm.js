@@ -19,7 +19,6 @@ describe('DomRendererRowFactory', () => {
   beforeEach(() => {
     dom = new jsdom.JSDOM('');
 
-    options.enableBold = true;
     options.drawBoldTextInBrightColors = true;
 
     rowFactory = new DomRendererRowFactory(options, dom.window.document);
