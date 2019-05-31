@@ -39,6 +39,10 @@ gulp.task('css', function() {
   return gulp.src(`${srcDir}/**/*.css`).pipe(gulp.dest(outDir));
 });
 
+gulp.task('css-build', function() {
+  return gulp.src(`${srcDir}/**/*.css`).pipe(gulp.dest(buildDir));
+});
+
 gulp.task('watch-css', function() {
   return gulp.watch(`${srcDir}/**/*.css`, ['css']);
 });
@@ -136,6 +140,6 @@ gulp.task('sorcery-addons', ['browserify-addons'], function () {
   })
 });
 
-gulp.task('build', ['css', 'sorcery', 'sorcery-addons']);
+gulp.task('build', ['css', 'css-build', 'sorcery', 'sorcery-addons']);
 gulp.task('test', ['mocha']);
 gulp.task('default', ['build']);
