@@ -257,7 +257,6 @@ export interface IPublicTerminal extends IDisposable, IEventEmitter {
   selectAll(): void;
   selectLines(start: number, end: number): void;
   dispose(): void;
-  destroy(): void;
   scrollLines(amount: number): void;
   scrollPages(pageCount: number): void;
   scrollToTop(): void;

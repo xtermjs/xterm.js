@@ -121,9 +121,6 @@ export class Terminal implements ITerminalApi {
     this._addonManager.dispose();
     this._core.dispose();
   }
-  public destroy(): void {
-    this._core.destroy();
-  }
   public scrollLines(amount: number): void {
     this._core.scrollLines(amount);
   }
