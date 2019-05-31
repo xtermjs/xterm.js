@@ -4,9 +4,9 @@
  */
 
 import { ITerminal } from '../Types';
-import { IBufferLine } from '../core/Types';
-import { ICircularList } from '../common/Types';
-import { C0 } from '../common/data/EscapeSequences';
+import { IBufferLine } from 'core/Types';
+import { ICircularList } from 'common/Types';
+import { C0 } from 'common/data/EscapeSequences';
 
 const enum Direction {
   UP = 'A',

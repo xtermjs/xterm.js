@@ -10,7 +10,7 @@ import DynamicCharAtlas from './DynamicCharAtlas';
 import NoneCharAtlas from './NoneCharAtlas';
 import StaticCharAtlas from './StaticCharAtlas';
 import { ICharAtlasConfig } from './Types';
-import { IColorSet } from '../../ui/Types';
+import { IColorSet } from 'ui/Types';
 
 const charAtlasImplementations = {
   'none': NoneCharAtlas,

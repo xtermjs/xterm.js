@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { EventEmitter } from './EventEmitter';
+import { EventEmitter } from 'common/EventEmitter';
 
 describe('EventEmitter', () => {
   let eventEmitter: EventEmitter;

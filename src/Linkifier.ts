@@ -6,7 +6,7 @@
 import { ILinkifierEvent, ILinkMatcher, LinkMatcherHandler, ILinkMatcherOptions, ILinkifier, ITerminal, IBufferStringIteratorResult, IMouseZoneManager } from './Types';
 import { MouseZone } from './MouseZoneManager';
 import { getStringCellWidth } from './CharWidth';
-import { EventEmitter2, IEvent } from './common/EventEmitter2';
+import { EventEmitter2, IEvent } from 'common/EventEmitter2';
 
 /**
  * The Linkifier applies links to rows shortly after they have been refreshed.

@@ -17,7 +17,7 @@ function startServer() {
   var terminals = {},
       logs = {};
 
-  app.use('/src', express.static(__dirname + '/../src'));
+  app.use('/xterm.css', express.static(__dirname + '/../css/xterm.css'));
   app.get('/logo.png', (req, res) => res.sendFile(__dirname + '/logo.png'));
 
   app.get('/', function(req, res){

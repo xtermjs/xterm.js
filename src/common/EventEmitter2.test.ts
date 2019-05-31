@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { EventEmitter2 } from './EventEmitter2';
+import { EventEmitter2 } from 'common/EventEmitter2';
 
 describe('EventEmitter2', () => {
   it('should fire listeners multiple times', () => {

@@ -7,8 +7,8 @@ import { IRenderer, IRenderDimensions } from '../Types';
 import { ILinkifierEvent, ITerminal, CharacterJoinerHandler } from '../../Types';
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from './DomRendererRowFactory';
 import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
-import { Disposable } from '../../common/Lifecycle';
-import { IColorSet } from '../../ui/Types';
+import { Disposable } from 'common/Lifecycle';
+import { IColorSet } from 'ui/Types';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';

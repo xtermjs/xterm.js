@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IDisposable } from './Types';
+import { IDisposable } from 'common/Types';
 
 interface IListener<T> {
   (e: T): void;

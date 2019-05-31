@@ -4,9 +4,9 @@
  * @license MIT
  */
 
-import { IKeyboardEvent } from '../../common/Types';
-import { IKeyboardResult, KeyboardResultType } from '../Types';
-import { C0 } from '../../common/data/EscapeSequences';
+import { IKeyboardEvent } from 'common/Types';
+import { IKeyboardResult, KeyboardResultType } from 'core/Types';
+import { C0 } from 'common/data/EscapeSequences';
 
 // reg + shift key mappings for digits and special chars
 const KEYCODE_KEY_MAPPINGS: { [key: number]: [string, string]} = {

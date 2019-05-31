@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IDisposable } from '../common/Types';
+import { IDisposable } from 'common/Types';
 
 /**
  * Debounces calls to render terminal rows using animation frames.

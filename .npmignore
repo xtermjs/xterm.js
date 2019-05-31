@@ -45,5 +45,4 @@ docs/
 bin/
 build/
 fixtures/
-coverage/
 demo/

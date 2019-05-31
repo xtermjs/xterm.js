@@ -5,7 +5,7 @@
 
 import { ITerminal, CharacterJoinerHandler } from '../Types';
 import { IDisposable } from 'xterm';
-import { IColorSet } from '../ui/Types';
+import { IColorSet } from 'ui/Types';
 
 /**
  * Flags used to render terminal text properly.

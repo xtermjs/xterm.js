@@ -10,7 +10,13 @@
       "es2015.promise"
     ],
     "rootDir": ".",
-    "outDir": "../lib",
+    "outDir": "../out",
+    "baseUrl": ".",
+    "paths": {
+      "common/*": [ "./common/*" ],
+      "core/*": [ "./core/*" ],
+      "ui/*": [ "./ui/*" ]
+    },
 
     "noUnusedLocals": true,
     "noImplicitAny": true

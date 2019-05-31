@@ -4,7 +4,7 @@
  */
 
 import { assert, expect } from 'chai';
-import { clone } from './Clone';
+import { clone } from 'common/Clone';
 
 describe('clone', () => {
   it('should clone simple objects', () => {

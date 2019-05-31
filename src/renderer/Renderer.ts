@@ -10,8 +10,8 @@ import { IRenderLayer, IRenderer, IRenderDimensions, ICharacterJoinerRegistry } 
 import { ITerminal, CharacterJoinerHandler } from '../Types';
 import { LinkRenderLayer } from './LinkRenderLayer';
 import { CharacterJoinerRegistry } from '../renderer/CharacterJoinerRegistry';
-import { Disposable } from '../common/Lifecycle';
-import { IColorSet } from '../ui/Types';
+import { Disposable } from 'common/Lifecycle';
+import { IColorSet } from 'ui/Types';
 
 export class Renderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];

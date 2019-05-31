@@ -4,8 +4,8 @@
  */
 
 import { ITerminal, IMouseZoneManager, IMouseZone } from './Types';
-import { Disposable } from './common/Lifecycle';
-import { addDisposableDomListener } from './ui/Lifecycle';
+import { Disposable } from 'common/Lifecycle';
+import { addDisposableDomListener } from 'ui/Lifecycle';
 
 const HOVER_DURATION = 500;
 
