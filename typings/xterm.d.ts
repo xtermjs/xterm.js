@@ -707,13 +707,6 @@ declare module 'xterm' {
     dispose(): void;
 
     /**
-     * Destroys the terminal and detaches it from the DOM.
-     *
-     * @deprecated Use dispose() instead.
-     */
-    destroy(): void;
-
-    /**
      * Scroll the display of the terminal
      * @param amount The number of lines to scroll down (negative scroll up).
      */

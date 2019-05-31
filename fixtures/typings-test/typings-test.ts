@@ -50,7 +50,6 @@ namespace methods_core {
     const t: Terminal = new Terminal();
     t.blur();
     t.focus();
-    t.destroy();
     t.clear();
     t.refresh(0, 1);
     t.reset();

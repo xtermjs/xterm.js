@@ -290,13 +290,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
   }
 
-  /**
-   * @deprecated Use dispose instead.
-   */
-  public destroy(): void {
-    this.dispose();
-  }
-
   private _setup(): void {
     Object.keys(DEFAULT_OPTIONS).forEach((key) => {
       if (this.options[key] === null || this.options[key] === undefined) {
