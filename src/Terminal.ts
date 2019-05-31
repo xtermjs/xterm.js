@@ -92,7 +92,6 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   bellSound: DEFAULT_BELL_SOUND,
   bellStyle: 'none',
   drawBoldTextInBrightColors: true,
-  experimentalCharAtlas: 'static',
   fontFamily: 'courier-new, courier, monospace',
   fontSize: 15,
   fontWeight: 'normal',
@@ -495,7 +494,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         }
         break;
       case 'drawBoldTextInBrightColors':
-      case 'experimentalCharAtlas':
       case 'letterSpacing':
       case 'lineHeight':
       case 'fontWeight':
