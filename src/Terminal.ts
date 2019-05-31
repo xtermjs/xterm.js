@@ -68,6 +68,10 @@ const document = (typeof window !== 'undefined') ? window.document : null;
  * a much lower number (>500 kB).
  */
 const DISCARD_WATERMARK = 50000000;  // ~50 MB
+/**
+ * send ACK every ACK_WATERMARK-th byte
+ */
+const ACK_WATERMARK = 131072;//524288; // 2^19
 
 /**
  * Flow control watermarks for the write buffer.
@@ -78,10 +82,11 @@ const LOW_WATERMARK = 32768;
 const HIGH_WATERMARK = 131072;
 
 /**
- * Flow control PAUSE/RESUME messages.
+ * Flow control PAUSE/RESUME/ACK messages.
  */
 const FLOW_CONTROL_PAUSE  = '\x1b^pause\x1b\\';  // PM pause ST
 const FLOW_CONTROL_RESUME = '\x1b^resume\x1b\\'; // PM resume ST
+const FLOW_CONTROL_ACK = '\x1b^ack\x1b\\'; // PM ack ST
 
 /**
  * The max number of ms to spend on writes before allowing the renderer to
@@ -212,6 +217,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * doubled (JSString char takes 2 bytes).
    */
   private _writeBuffersPendingSize: number = 0;
+  private _ackWatermark: number = 0;
 
   /**
    * Whether _xterm.js_ sent XOFF in order to catch up with the pty process.
@@ -1386,6 +1392,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * @param data UintArray with UTF8 bytes to write to the terminal.
    */
   public writeUtf8(data: Uint8Array): void {
+    console.log((this._writeBuffersPendingSize / 1000000).toFixed(2), data.length);
     // Ensure the terminal isn't disposed
     if (this._isDisposed) {
       return;
@@ -1527,6 +1534,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
       this._inputHandler.parse(data);
       this._writeBuffersPendingSize -= data.length;
+      this._ackWatermark += data.length;
 
       this.updateRange(this.buffer.y);
       this.refresh(this._refreshStart, this._refreshEnd);
@@ -1540,6 +1548,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     if (this._xoffSentToCatchUp && this._writeBuffersPendingSize < LOW_WATERMARK) {
       this.handler(FLOW_CONTROL_RESUME);
       this._xoffSentToCatchUp = false;
+    }
+    if (this._ackWatermark > ACK_WATERMARK) {
+      setTimeout(() => this.handler(FLOW_CONTROL_ACK), 200);
+      this._ackWatermark -= ACK_WATERMARK;
     }
 
     if (this.writeBuffer.length > bufferOffset) {

@@ -17,8 +17,8 @@ static char MSG[10][10] = {
 static char ALL[60000];
 
 int main(int argc, char **argv) {
-  int i, offset = 0;
-  // fill 10kB buffer
+  int i;
+  // fill 60kB buffer
   for (i=0; i<600; ++i) {
     memcpy(ALL+i*100, MSG, 100);
   }

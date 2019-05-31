@@ -78,9 +78,15 @@ function startServer() {
     const _send = data => {
       // handle only 'open' websocket state
       if (ws.readyState === 1) {
-        ws.send(data);
+        setTimeout(() => ws.send(data), 200);
       }
     }
+
+    const ACK_WATERMARK = 131072;//524288;
+    const FLOW_CONTROL_ACK = '\x1b^ack\x1b\\'; // PM ack ST
+    const MAX_ACK_DIFF = 7;
+    let ack_expected = 0;
+    let sent = 0;
 
     // string message buffering
     function buffer(timeout, limit) {
@@ -126,10 +132,29 @@ function startServer() {
         }
       };
     }
+    const send = (USE_BINARY_UTF8 ? bufferUtf8 : buffer)(MAX_SEND_INTERVAL, MAX_CHUNK_SIZE);
 
-    term.on('data', (USE_BINARY_UTF8 ? bufferUtf8 : buffer)(MAX_SEND_INTERVAL, MAX_CHUNK_SIZE));
+    term.on('data', data => {
+      send(data);
+      sent += data.length;
+      if (sent > ACK_WATERMARK) {
+        ack_expected++;
+        sent -= ACK_WATERMARK;
+        if (ack_expected > MAX_ACK_DIFF) {
+          term.pause();
+        }
+      }
+    });
 
     ws.on('message', function(msg) {
+      //console.log([msg, sent]);
+      if (msg === FLOW_CONTROL_ACK) {
+        ack_expected--;
+        if (ack_expected <= MAX_ACK_DIFF) {
+          term.resume();
+        }
+        return;
+      }
       term.write(msg);
     });
     ws.on('close', function () {
