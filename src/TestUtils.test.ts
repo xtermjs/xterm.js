@@ -99,9 +99,6 @@ export class MockTerminal implements ITerminal {
   dispose(): void {
     throw new Error('Method not implemented.');
   }
-  destroy(): void {
-    throw new Error('Method not implemented.');
-  }
   scrollPages(pageCount: number): void {
     throw new Error('Method not implemented.');
   }

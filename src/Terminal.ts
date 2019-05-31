@@ -92,7 +92,6 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   bellSound: DEFAULT_BELL_SOUND,
   bellStyle: 'none',
   drawBoldTextInBrightColors: true,
-  enableBold: true,
   experimentalCharAtlas: 'static',
   fontFamily: 'courier-new, courier, monospace',
   fontSize: 15,
@@ -288,13 +287,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     if (this.element && this.element.parentNode) {
       this.element.parentNode.removeChild(this.element);
     }
-  }
-
-  /**
-   * @deprecated Use dispose instead.
-   */
-  public destroy(): void {
-    this.dispose();
   }
 
   private _setup(): void {
@@ -504,7 +496,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         break;
       case 'drawBoldTextInBrightColors':
       case 'experimentalCharAtlas':
-      case 'enableBold':
       case 'letterSpacing':
       case 'lineHeight':
       case 'fontWeight':

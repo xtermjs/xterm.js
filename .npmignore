@@ -38,6 +38,8 @@
 *.test.js
 *.test.js.map
 lib/test/
+tslint.json
+webpack.config.js
 
 docs/
 /.idea/
@@ -46,3 +48,5 @@ bin/
 build/
 fixtures/
 demo/
+.devcontainer/
+out/
