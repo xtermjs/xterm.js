@@ -49,7 +49,6 @@
     "build": "tsc -b ./tsconfig.all.json",
     "prepare": "npm run build",
     "prepublishOnly": "npm run package",
-    "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "watch": "tsc -b -w ./tsconfig.all.json --preserveWatchOutput"
   }
 }
