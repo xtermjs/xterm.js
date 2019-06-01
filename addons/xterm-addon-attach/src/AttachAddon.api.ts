@@ -15,7 +15,7 @@ let page: puppeteer.Page;
 const width = 800;
 const height = 600;
 
-describe('API Integration Tests', () => {
+describe('AttachAddon', () => {
   before(async function(): Promise<any> {
     this.timeout(10000);
     browser = await puppeteer.launch({
