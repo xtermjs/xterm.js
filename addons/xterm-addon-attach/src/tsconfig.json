@@ -10,8 +10,7 @@
     "outDir": "../lib",
     "sourceMap": true,
     "removeComments": true,
-    "strict": true,
-    "noImplicitAny": true
+    "strict": true
   },
   "include": [
     "./**/*",
