@@ -14,6 +14,7 @@ import { Terminal } from '../out/public/Terminal';
 
 import { AttachAddon } from 'xterm-addon-attach';
 import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
+
 import { WebLinksAddon } from 'xterm-addon-web-links';
 
 import * as fit from '../lib/addons/fit/fit';

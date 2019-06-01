@@ -3,7 +3,11 @@
     "module": "commonjs",
     "target": "es5",
     "rootDir": ".",
-    "sourceMap": true
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "xterm-addon-web-links": ["../addons/xterm-addon-web-links"]
+    }
   },
   "include": [
     "client.ts",
