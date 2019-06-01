@@ -5,19 +5,11 @@
  * Implements the attach method, that attaches the terminal to a WebSocket stream.
  */
 
-import { Terminal, IDisposable } from 'xterm';
-
+import { Terminal, IDisposable, ITerminalAddon } from 'xterm';
 
 interface IAttachOptions {
   bidirectional?: boolean;
   inputUtf8?: boolean;
-}
-
-
-// TODO: This is temporary, link to xterm when the new version is published
-export interface ITerminalAddon {
-  activate(terminal: Terminal): void;
-  dispose(): void;
 }
 
 // TODO: To be removed once UTF8 PR is in xterm.js package.

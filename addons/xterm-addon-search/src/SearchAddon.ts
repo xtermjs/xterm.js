@@ -3,12 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, IDisposable } from 'xterm';
-
-// TODO: This is temporary, link to xterm when the new version is published
-export interface ITerminalAddon extends IDisposable {
-  activate(terminal: Terminal): void;
-}
+import { Terminal, IDisposable, ITerminalAddon } from 'xterm';
 
 export interface ISearchOptions {
   regex?: boolean;

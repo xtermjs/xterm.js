@@ -3,13 +3,7 @@
  * @license MIT
  */
 
-import { Terminal, ILinkMatcherOptions } from 'xterm';
-
-// TODO: This is temporary, link to xterm when the new version is published
-export interface ITerminalAddon {
-  activate(terminal: Terminal): void;
-  dispose(): void;
-}
+import { Terminal, ILinkMatcherOptions, ITerminalAddon } from 'xterm';
 
 const protocolClause = '(https?:\\/\\/)';
 const domainCharacterSet = '[\\da-z\\.-]+';
