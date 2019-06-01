@@ -43,27 +43,11 @@ describe('Terminal', () => {
   });
 
   it('should not mutate the options parameter', () => {
-    term.setOption('cols', 1000);
+    term.options.cols = 1000;
 
     assert.deepEqual(termOptions, {
       cols: INIT_COLS,
       rows: INIT_ROWS
-    });
-  });
-
-  describe('getOption', () => {
-    it('should retrieve the option correctly', () => {
-      // In the `options` namespace.
-      term.options.cursorBlink = true;
-      assert.equal(term.getOption('cursorBlink'), true);
-
-      // On the Terminal instance
-      delete term.options.cursorBlink;
-      term.options.cursorBlink = false;
-      assert.equal(term.getOption('cursorBlink'), false);
-    });
-    it('should throw when retrieving a non-existant option', () => {
-      assert.throws(term.getOption.bind(term, 'fake', true));
     });
   });
 
@@ -332,18 +316,6 @@ describe('Terminal', () => {
       term.reset();
       assert.equal(term.keyDown(evKeyDown), false);
       assert.equal(term.keyPress(evKeyPress), false);
-    });
-  });
-
-  describe('setOption', () => {
-    it('should set option correctly', () => {
-      term.setOption('cursorBlink', true);
-      assert.equal(term.options.cursorBlink, true);
-      term.setOption('cursorBlink', false);
-      assert.equal(term.options.cursorBlink, false);
-    });
-    it('should throw when setting a non-existant option', () => {
-      assert.throws(term.setOption.bind(term, 'fake', true));
     });
   });
 
@@ -625,7 +597,7 @@ describe('Terminal', () => {
 
       describe('when scrollback === 0', () => {
         beforeEach(() => {
-          term.setOption('scrollback', 0);
+          term.optionsService.setOption('scrollback', 0);
           assert.equal(term.buffer.lines.maxLength, INIT_ROWS);
         });
 
@@ -730,7 +702,7 @@ describe('Terminal', () => {
     describe('with macOptionIsMeta', () => {
       beforeEach(() => {
         term.browser.isMac = true;
-        term.setOption('macOptionIsMeta', true);
+        term.options.macOptionIsMeta = true;
       });
 
       it('should interfere with the alt key on keyDown', () => {

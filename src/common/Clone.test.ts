@@ -38,14 +38,6 @@ describe('clone', () => {
     });
   });
 
-  it('should clone null values', () => {
-    const test: any = {
-      a: null
-    };
-
-    assert.deepEqual(clone(test), { a: null });
-  });
-
   it('should clone array values', () => {
     const test = {
       a: [1, 2, 3],
