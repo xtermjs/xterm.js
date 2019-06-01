@@ -1842,19 +1842,19 @@ export class InputHandler extends Disposable implements IInputHandler {
       switch (param) {
         case 1:
         case 2:
-          this._terminal.setOption('cursorStyle', 'block');
+          this._terminal.options.cursorStyle = 'block';
           break;
         case 3:
         case 4:
-          this._terminal.setOption('cursorStyle', 'underline');
+          this._terminal.options.cursorStyle = 'underline';
           break;
         case 5:
         case 6:
-          this._terminal.setOption('cursorStyle', 'bar');
+          this._terminal.options.cursorStyle = 'bar';
           break;
       }
       const isBlinking = param % 2 === 1;
-      this._terminal.setOption('cursorBlink', isBlinking);
+      this._terminal.options.cursorBlink = isBlinking;
     }
   }
 

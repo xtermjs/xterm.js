@@ -13,6 +13,7 @@ import { IDisposable, IMarker, IEvent, ISelectionPosition } from 'xterm';
 import { Terminal } from './Terminal';
 import { AttributeData } from 'core/buffer/BufferLine';
 import { IColorManager, IColorSet } from 'ui/Types';
+import { IOptionsService } from 'common/options/Types';
 
 export class TestTerminal extends Terminal {
   writeSync(data: string): void {
@@ -29,9 +30,11 @@ export class MockTerminal implements ITerminal {
   onTitleChange: IEvent<string>;
   onScroll: IEvent<number>;
   onKey: IEvent<{ key: string; domEvent: KeyboardEvent; }>;
-  onRender: IEvent<{ start: number; end: number; }>;
+  onRender: IEvent<{ start: number
+    ; end: number; }>;
   onResize: IEvent<{ cols: number; rows: number; }>;
   markers: IMarker[];
+  optionsService: IOptionsService;
   addMarker(cursorYOffset: number): IMarker {
     throw new Error('Method not implemented.');
   }
@@ -42,9 +45,6 @@ export class MockTerminal implements ITerminal {
     throw new Error('Method not implemented.');
   }
   static string: any;
-  getOption(key: any): any {
-    throw new Error('Method not implemented.');
-  }
   setOption(key: any, value: any): void {
     throw new Error('Method not implemented.');
   }
