@@ -3,10 +3,10 @@
  * @license MIT
  */
 
-import { ParserState, ParserAction, IParsingState, IDcsHandler, IEscapeSequenceParser } from './Types';
-import { IDisposable } from 'xterm';
+import { ParserState, ParserAction, IParsingState, IDcsHandler, IEscapeSequenceParser } from 'core/parser/Types';
 import { Disposable } from 'common/Lifecycle';
 import { utf32ToString } from 'core/input/TextDecoder';
+import { IDisposable } from 'common/Types';
 
 interface IHandlerCollection<T> {
   [key: string]: T[];
@@ -50,8 +50,8 @@ export class TransitionTable {
    * @param action parser action to be done
    * @param next next parser state
    */
-  add(code: number, state: number, action: number | null, next: number | null): void {
-    this.table[state << 8 | code] = ((action | 0) << 4) | ((next === undefined) ? state : next);
+  add(code: number, state: ParserState, action: ParserAction, next: ParserState): void {
+    this.table[state << 8 | code] = (action << 4) | next;
   }
 
   /**
@@ -61,7 +61,7 @@ export class TransitionTable {
    * @param action parser action to be done
    * @param next next parser state
    */
-  addMany(codes: number[], state: number, action: number | null, next: number | null): void {
+  addMany(codes: number[], state: ParserState, action: ParserAction, next: ParserState): void {
     for (let i = 0; i < codes.length; i++) {
       this.add(codes[i], state, action, next);
     }
@@ -279,21 +279,10 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   }
 
   public dispose(): void {
-    this._printHandlerFb = null;
-    this._executeHandlerFb = null;
-    this._csiHandlerFb = null;
-    this._escHandlerFb = null;
-    this._oscHandlerFb = null;
-    this._dcsHandlerFb = null;
-    this._errorHandlerFb = null;
-    this._printHandler = null;
     this._executeHandlers = null;
     this._escHandlers = null;
-    this._csiHandlers = null;
-    this._oscHandlers = null;
     this._dcsHandlers = null;
     this._activeDcsHandler = null;
-    this._errorHandler = null;
   }
 
   setPrintHandler(callback: (data: Uint32Array, start: number, end: number) => void): void {
@@ -453,7 +442,9 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
             this._printHandler(data, print, i);
             print = -1;
           } else if (~dcs) {
-            dcsHandler.put(data, dcs, i);
+            if (dcsHandler) {
+              dcsHandler.put(data, dcs, i);
+            }
             dcs = -1;
           }
           break;
