@@ -6,10 +6,10 @@
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
-      "@xterm/addon-attach": ["../addons/@xterm/addon-attach"],
-      "@xterm/addon-fit": ["../addons/@xterm/addon-fit"],
-      "@xterm/addon-search": ["../addons/@xterm/addon-search"],
-      "@xterm/addon-web-links": ["../addons/@xterm/addon-web-links"]
+      "@xtermjs/addon-attach": ["../addons/@xtermjs/addon-attach"],
+      "@xtermjs/addon-fit": ["../addons/@xtermjs/addon-fit"],
+      "@xtermjs/addon-search": ["../addons/@xtermjs/addon-search"],
+      "@xtermjs/addon-web-links": ["../addons/@xtermjs/addon-web-links"]
     }
   },
   "include": [

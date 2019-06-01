@@ -3,9 +3,9 @@
   "include": [],
   "references": [
     { "path": "./src" },
-    { "path": "./addons/@xterm/addon-attach/src" },
-    { "path": "./addons/@xterm/addon-fit/src" },
-    { "path": "./addons/@xterm/addon-search/src" },
-    { "path": "./addons/@xterm/addon-web-links/src" }
+    { "path": "./addons/@xtermjs/addon-attach/src" },
+    { "path": "./addons/@xtermjs/addon-fit/src" },
+    { "path": "./addons/@xtermjs/addon-search/src" },
+    { "path": "./addons/@xtermjs/addon-web-links/src" }
   ]
 }

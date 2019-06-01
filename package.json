@@ -19,7 +19,7 @@
     "prepare": "npm run build",
     "prepublishOnly": "npm run package",
     "watch": "tsc -b -w ./tsconfig.all.json --preserveWatchOutput",
-    "clean": "rm -rf lib out addons/@xterm/*/lib"
+    "clean": "rm -rf lib out addons/@xtermjs/*/lib"
   },
   "devDependencies": {
     "@types/chai": "^3.4.34",

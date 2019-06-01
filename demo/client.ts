@@ -12,10 +12,10 @@ import { Terminal } from '../out/public/Terminal';
 // Use webpacked version (yarn package)
 // import { Terminal } from '../lib/xterm';
 
-import { AttachAddon } from '@xterm/addon-attach';
-import { FitAddon } from '@xterm/addon-fit';
-import { SearchAddon, ISearchOptions } from '@xterm/addon-search';
-import { WebLinksAddon } from '@xterm/addon-web-links';
+import { AttachAddon } from '@xtermjs/addon-attach';
+import { FitAddon } from '@xtermjs/addon-fit';
+import { SearchAddon, ISearchOptions } from '@xtermjs/addon-search';
+import { WebLinksAddon } from '@xtermjs/addon-web-links';
 
 // Pulling in the module's types relies on the <reference> above, it's looks a
 // little weird here as we're importing "this" module

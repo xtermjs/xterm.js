@@ -6,7 +6,7 @@
 
 import { Terminal, IDisposable, ILinkMatcherOptions } from 'xterm';
 
-declare module '@xterm/addon-web-links' {
+declare module '@xtermjs/addon-web-links' {
   // TODO: This is temporary, link to xterm when the new version is published
   export interface ITerminalAddon extends IDisposable {
     activate(terminal: Terminal): void;
