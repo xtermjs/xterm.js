@@ -50,8 +50,8 @@ export class TransitionTable {
    * @param action parser action to be done
    * @param next next parser state
    */
-  add(code: number, state: number, action: number | null, next: number | undefined): void {
-    this.table[state << 8 | code] = ((action || 0) << 4) | ((next === undefined) ? state : next);
+  add(code: number, state: ParserState, action: ParserAction, next: ParserState): void {
+    this.table[state << 8 | code] = (action << 4) | next;
   }
 
   /**
@@ -61,7 +61,7 @@ export class TransitionTable {
    * @param action parser action to be done
    * @param next next parser state
    */
-  addMany(codes: number[], state: number, action: number, next: number | undefined): void {
+  addMany(codes: number[], state: ParserState, action: ParserAction, next: ParserState): void {
     for (let i = 0; i < codes.length; i++) {
       this.add(codes[i], state, action, next);
     }
