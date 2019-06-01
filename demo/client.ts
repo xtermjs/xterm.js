@@ -7,7 +7,11 @@
 
 /// <reference path="../typings/xterm.d.ts"/>
 
-import { Terminal } from '../lib/public/Terminal';
+// Use tsc version (yarn watch)
+import { Terminal } from '../out/public/Terminal';
+// Use webpacked version (yarn package)
+// import { Terminal } from '../lib/xterm';
+
 import { AttachAddon } from 'xterm-addon-attach';
 import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
 import { WebLinksAddon } from 'xterm-addon-web-links';
@@ -211,7 +215,6 @@ function initOptions(term: TerminalType): void {
     bellSound: null,
     bellStyle: ['none', 'sound'],
     cursorStyle: ['block', 'underline', 'bar'],
-    experimentalCharAtlas: ['none', 'static', 'dynamic', 'webgl'],
     fontFamily: null,
     fontWeight: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],

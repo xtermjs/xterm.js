@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Disposable } from '../common/Lifecycle';
+import { Disposable } from 'common/Lifecycle';
 
 export type ScreenDprListener = (newDevicePixelRatio?: number, oldDevicePixelRatio?: number) => void;
 

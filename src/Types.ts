@@ -4,10 +4,10 @@
  */
 
 import { ITerminalOptions as IPublicTerminalOptions, IEventEmitter, IDisposable, IMarker, ISelectionPosition } from 'xterm';
-import { ICharset, IAttributeData, ICellData, IBufferLine, CharData } from './core/Types';
-import { ICircularList } from './common/Types';
-import { IEvent } from './common/EventEmitter2';
-import { IColorSet } from './ui/Types';
+import { ICharset, IAttributeData, ICellData, IBufferLine, CharData } from 'core/Types';
+import { ICircularList } from 'common/Types';
+import { IEvent } from 'common/EventEmitter2';
+import { IColorSet } from 'ui/Types';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
@@ -257,7 +257,6 @@ export interface IPublicTerminal extends IDisposable, IEventEmitter {
   selectAll(): void;
   selectLines(start: number, end: number): void;
   dispose(): void;
-  destroy(): void;
   scrollLines(amount: number): void;
   scrollPages(pageCount: number): void;
   scrollToTop(): void;

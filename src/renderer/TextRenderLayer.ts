@@ -5,12 +5,12 @@
 
 import { IRenderDimensions, ICharacterJoinerRegistry } from './Types';
 import { ITerminal } from '../Types';
-import { CharData, ICellData } from '../core/Types';
+import { CharData, ICellData } from 'core/Types';
 import { GridCache } from './GridCache';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { CellData, AttributeData, Content, NULL_CELL_CODE } from '../core/buffer/BufferLine';
+import { CellData, AttributeData, Content, NULL_CELL_CODE } from 'core/buffer/BufferLine';
 import { JoinedCellData } from './CharacterJoinerRegistry';
-import { IColorSet } from '../ui/Types';
+import { IColorSet } from 'ui/Types';
 
 /**
  * This CharData looks like a null character, which will forc a clear and render
@@ -205,6 +205,7 @@ export class TextRenderLayer extends BaseRenderLayer {
       if (cell.isInvisible()) {
         return;
       }
+      this.drawChars(terminal, cell, x, y);
       if (cell.isUnderline()) {
         this._ctx.save();
 
@@ -233,7 +234,6 @@ export class TextRenderLayer extends BaseRenderLayer {
         this.fillBottomLineAtCells(x, y, cell.getWidth());
         this._ctx.restore();
       }
-      this.drawChars(terminal, cell, x, y);
     });
   }
 

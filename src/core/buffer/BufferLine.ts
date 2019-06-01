@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { CharData, IBufferLine, ICellData, IColorRGB, IAttributeData } from '../Types';
-import { stringFromCodePoint } from '../input/TextDecoder';
-import { DEFAULT_COLOR } from '../../common/Types';
+import { CharData, IBufferLine, ICellData, IColorRGB, IAttributeData } from 'core/Types';
+import { stringFromCodePoint } from 'core/input/TextDecoder';
+import { DEFAULT_COLOR } from 'common/Types';
 
 export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
 

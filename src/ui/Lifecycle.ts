@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IDisposable } from '../common/Types';
+import { IDisposable } from 'common/Types';
 
 /**
  * Adds a disposable listener to a node in the DOM, returning the disposable.

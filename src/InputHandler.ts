@@ -5,16 +5,16 @@
  */
 
 import { IInputHandler, IDcsHandler, IEscapeSequenceParser, IInputHandlingTerminal } from './Types';
-import { C0, C1 } from './common/data/EscapeSequences';
-import { CHARSETS, DEFAULT_CHARSET } from './core/data/Charsets';
+import { C0, C1 } from 'common/data/EscapeSequences';
+import { CHARSETS, DEFAULT_CHARSET } from 'core/data/Charsets';
 import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
 import { IDisposable } from 'xterm';
-import { Disposable } from './common/Lifecycle';
-import { concat } from './common/TypedArrayUtils';
-import { StringToUtf32, stringFromCodePoint, utf32ToString, Utf8ToUtf32 } from './core/input/TextDecoder';
-import { CellData, Attributes, FgFlags, BgFlags, AttributeData, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR_DATA } from './core/buffer/BufferLine';
-import { EventEmitter2, IEvent } from './common/EventEmitter2';
+import { Disposable } from 'common/Lifecycle';
+import { concat } from 'common/TypedArrayUtils';
+import { StringToUtf32, stringFromCodePoint, utf32ToString, Utf8ToUtf32 } from 'core/input/TextDecoder';
+import { CellData, Attributes, FgFlags, BgFlags, AttributeData, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR_DATA } from 'core/buffer/BufferLine';
+import { EventEmitter2, IEvent } from 'common/EventEmitter2';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -953,6 +953,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._terminal.buffer.x + (params[0] || 1),
       this._terminal.buffer.getNullCell(this._terminal.eraseAttrData())
     );
+    this._terminal.updateRange(this._terminal.buffer.y);
   }
 
   /**
@@ -1693,7 +1694,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         attr.bg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
         attr.bg |= DEFAULT_ATTR_DATA.bg & (Attributes.PCOLOR_MASK | Attributes.RGB_MASK);
       } else if (p === 38) {
-        // fg color 256
+        // fg color 256 and RGB
         if (params[i + 1] === 2) {
           i += 2;
           attr.fg |= Attributes.CM_RGB;
@@ -1703,11 +1704,11 @@ export class InputHandler extends Disposable implements IInputHandler {
         } else if (params[i + 1] === 5) {
           i += 2;
           p = params[i] & 0xff;
-          attr.fg &= ~Attributes.PCOLOR_MASK;
+          attr.fg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
           attr.fg |= Attributes.CM_P256 | p;
         }
       } else if (p === 48) {
-        // bg color 256
+        // bg color 256 and RGB
         if (params[i + 1] === 2) {
           i += 2;
           attr.bg |= Attributes.CM_RGB;
@@ -1717,7 +1718,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         } else if (params[i + 1] === 5) {
           i += 2;
           p = params[i] & 0xff;
-          attr.bg &= ~Attributes.PCOLOR_MASK;
+          attr.bg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
           attr.bg |= Attributes.CM_P256 | p;
         }
       } else if (p === 100) {

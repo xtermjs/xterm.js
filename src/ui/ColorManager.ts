@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IColorManager, IColor, IColorSet, ITheme } from './Types';
+import { IColorManager, IColor, IColorSet, ITheme } from 'ui/Types';
 
 const DEFAULT_FOREGROUND = fromHex('#ffffff');
 const DEFAULT_BACKGROUND = fromHex('#000000');

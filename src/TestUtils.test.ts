@@ -5,14 +5,14 @@
 
 import { IRenderer, IRenderDimensions } from './renderer/Types';
 import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferStringIterator } from './Types';
-import { IBufferLine, ICellData, IAttributeData } from './core/Types';
-import { ICircularList, XtermListener } from './common/Types';
+import { IBufferLine, ICellData, IAttributeData } from 'core/Types';
+import { ICircularList, XtermListener } from 'common/Types';
 import { Buffer } from './Buffer';
-import * as Browser from './common/Platform';
+import * as Browser from 'common/Platform';
 import { IDisposable, IMarker, IEvent, ISelectionPosition } from 'xterm';
 import { Terminal } from './Terminal';
-import { AttributeData } from './core/buffer/BufferLine';
-import { IColorManager, IColorSet } from './ui/Types';
+import { AttributeData } from 'core/buffer/BufferLine';
+import { IColorManager, IColorSet } from 'ui/Types';
 
 export class TestTerminal extends Terminal {
   writeSync(data: string): void {
@@ -100,9 +100,6 @@ export class MockTerminal implements ITerminal {
     throw new Error('Method not implemented.');
   }
   dispose(): void {
-    throw new Error('Method not implemented.');
-  }
-  destroy(): void {
     throw new Error('Method not implemented.');
   }
   scrollPages(pageCount: number): void {

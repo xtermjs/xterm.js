@@ -6,9 +6,9 @@
 import { assert, expect } from 'chai';
 import { ITerminal } from './Types';
 import { Buffer } from './Buffer';
-import { CircularList } from './common/CircularList';
+import { CircularList } from 'common/CircularList';
 import { MockTerminal, TestTerminal } from './TestUtils.test';
-import { BufferLine, CellData, DEFAULT_ATTR_DATA } from './core/buffer/BufferLine';
+import { BufferLine, CellData, DEFAULT_ATTR_DATA } from 'core/buffer/BufferLine';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { fill } from './common/TypedArrayUtils';
+import { fill } from 'common/TypedArrayUtils';
 
 export const wcwidth = (function(opts: {nul: number, control: number}): (ucs: number) => number {
   // extracted from https://www.cl.cam.ac.uk/%7Emgk25/ucs/wcwidth.c

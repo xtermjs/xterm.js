@@ -5,10 +5,10 @@
 
 import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi } from 'xterm';
 import { ITerminal, IBuffer } from '../Types';
-import { IBufferLine } from '../core/Types';
+import { IBufferLine } from 'core/Types';
 import { Terminal as TerminalCore } from '../Terminal';
 import * as Strings from '../Strings';
-import { IEvent } from '../common/EventEmitter2';
+import { IEvent } from 'common/EventEmitter2';
 import { AddonManager } from './AddonManager';
 import { WebglRendererAddon } from '../renderer/webgl/WebglRendererAddon';
 
@@ -123,9 +123,6 @@ export class Terminal implements ITerminalApi {
     this._addonManager.dispose();
     this._core.dispose();
   }
-  public destroy(): void {
-    this._core.destroy();
-  }
   public scrollLines(amount: number): void {
     this._core.scrollLines(amount);
   }
@@ -151,7 +148,7 @@ export class Terminal implements ITerminalApi {
     this._core.writeUtf8(data);
   }
   public getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'fontWeight' | 'fontWeightBold' | 'rendererType' | 'termName'): string;
-  public getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell'): boolean;
+  public getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell'): boolean;
   public getOption(key: 'colors'): string[];
   public getOption(key: 'cols' | 'fontSize' | 'letterSpacing' | 'lineHeight' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
   public getOption(key: 'handler'): (data: string) => void;
@@ -163,7 +160,7 @@ export class Terminal implements ITerminalApi {
   public setOption(key: 'fontWeight' | 'fontWeightBold', value: 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900'): void;
   public setOption(key: 'bellStyle', value: 'none' | 'visual' | 'sound' | 'both'): void;
   public setOption(key: 'cursorStyle', value: 'block' | 'underline' | 'bar'): void;
-  public setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell', value: boolean): void;
+  public setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell', value: boolean): void;
   public setOption(key: 'colors', value: string[]): void;
   public setOption(key: 'fontSize' | 'letterSpacing' | 'lineHeight' | 'tabStopWidth' | 'scrollback', value: number): void;
   public setOption(key: 'handler', value: (data: string) => void): void;

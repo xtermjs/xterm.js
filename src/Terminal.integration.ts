@@ -14,7 +14,7 @@ import * as pty from 'node-pty';
 import { assert } from 'chai';
 import { Terminal } from './Terminal';
 import { IViewport } from './Types';
-import { CellData, WHITESPACE_CELL_CHAR } from './core/buffer/BufferLine';
+import { CellData, WHITESPACE_CELL_CHAR } from 'core/buffer/BufferLine';
 
 class TestTerminal extends Terminal {
   innerWrite(): void { this._innerWrite(); }
@@ -91,7 +91,8 @@ if (os.platform() !== 'win32') {
   primitivePty = (<any>pty).native.open(cols, rows);
 
   /** tests */
-  describe('xterm output comparison', () => {
+  describe('xterm output comparison', function(): void {
+    this.timeout(10000);
     let xterm: TestTerminal;
 
     beforeEach(() => {

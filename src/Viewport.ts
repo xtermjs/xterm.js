@@ -5,9 +5,9 @@
 
 import { ITerminal, IViewport } from './Types';
 import { CharMeasure } from './CharMeasure';
-import { Disposable } from './common/Lifecycle';
-import { addDisposableDomListener } from './ui/Lifecycle';
-import { IColorSet } from './ui/Types';
+import { Disposable } from 'common/Lifecycle';
+import { addDisposableDomListener } from 'ui/Lifecycle';
+import { IColorSet } from 'ui/Types';
 import { IRenderDimensions } from './renderer/Types';
 
 const FALLBACK_SCROLL_BAR_WIDTH = 15;

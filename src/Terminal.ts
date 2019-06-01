@@ -26,17 +26,17 @@ import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
 import { Buffer, MAX_BUFFER_SIZE } from './Buffer';
 import { CompositionHelper } from './CompositionHelper';
-import { EventEmitter } from './common/EventEmitter';
+import { EventEmitter } from 'common/EventEmitter';
 import { Viewport } from './Viewport';
 import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './Clipboard';
-import { C0 } from './common/data/EscapeSequences';
+import { C0 } from 'common/data/EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Renderer } from './renderer/Renderer';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
 import { CharMeasure } from './CharMeasure';
-import * as Browser from './common/Platform';
-import { addDisposableDomListener } from './ui/Lifecycle';
+import * as Browser from 'common/Platform';
+import { addDisposableDomListener } from 'ui/Lifecycle';
 import * as Strings from './Strings';
 import { MouseHelper } from './MouseHelper';
 import { DEFAULT_BELL_SOUND, SoundManager } from './SoundManager';
@@ -45,14 +45,14 @@ import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition } from 'xterm';
 import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
-import { IKeyboardEvent } from './common/Types';
-import { evaluateKeyboardEvent } from './core/input/Keyboard';
-import { KeyboardResultType, ICharset, IBufferLine, IAttributeData } from './core/Types';
-import { clone } from './common/Clone';
-import { EventEmitter2, IEvent } from './common/EventEmitter2';
-import { Attributes, DEFAULT_ATTR_DATA } from './core/buffer/BufferLine';
+import { IKeyboardEvent } from 'common/Types';
+import { evaluateKeyboardEvent } from 'core/input/Keyboard';
+import { KeyboardResultType, ICharset, IBufferLine, IAttributeData } from 'core/Types';
+import { clone } from 'common/Clone';
+import { EventEmitter2, IEvent } from 'common/EventEmitter2';
+import { Attributes, DEFAULT_ATTR_DATA } from 'core/buffer/BufferLine';
 import { applyWindowsMode } from './WindowsMode';
-import { ColorManager } from './ui/ColorManager';
+import { ColorManager } from 'ui/ColorManager';
 import { RenderCoordinator } from './renderer/RenderCoordinator';
 
 // Let it work inside Node.js for automated testing purposes.
@@ -72,6 +72,7 @@ const WRITE_BUFFER_PAUSE_THRESHOLD = 5;
  * depends on the time it takes for the renderer to draw the frame.
  */
 const WRITE_TIMEOUT_MS = 12;
+const WRITE_BUFFER_LENGTH_THRESHOLD = 50;
 
 const MINIMUM_COLS = 2; // Less than 2 can mess with wide chars
 const MINIMUM_ROWS = 1;
@@ -91,8 +92,6 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   bellSound: DEFAULT_BELL_SOUND,
   bellStyle: 'none',
   drawBoldTextInBrightColors: true,
-  enableBold: true,
-  experimentalCharAtlas: 'static',
   fontFamily: 'courier-new, courier, monospace',
   fontSize: 15,
   fontWeight: 'normal',
@@ -287,13 +286,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     if (this.element && this.element.parentNode) {
       this.element.parentNode.removeChild(this.element);
     }
-  }
-
-  /**
-   * @deprecated Use dispose instead.
-   */
-  public destroy(): void {
-    this.dispose();
   }
 
   private _setup(): void {
@@ -502,8 +494,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         }
         break;
       case 'drawBoldTextInBrightColors':
-      case 'experimentalCharAtlas':
-      case 'enableBold':
       case 'letterSpacing':
       case 'lineHeight':
       case 'fontWeight':
@@ -1436,6 +1426,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
     if (this.writeBufferUtf8.length > bufferOffset) {
       // Allow renderer to catch up before processing the next batch
+      // trim already processed chunks if we are above threshold
+      if (bufferOffset > WRITE_BUFFER_LENGTH_THRESHOLD) {
+        this.writeBufferUtf8 = this.writeBufferUtf8.slice(bufferOffset);
+        bufferOffset = 0;
+      }
       setTimeout(() => this._innerWriteUtf8(bufferOffset), 0);
     } else {
       this._writeInProgress = false;
@@ -1518,6 +1513,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
     if (this.writeBuffer.length > bufferOffset) {
       // Allow renderer to catch up before processing the next batch
+      // trim already processed chunks if we are above threshold
+      if (bufferOffset > WRITE_BUFFER_LENGTH_THRESHOLD) {
+        this.writeBuffer = this.writeBuffer.slice(bufferOffset);
+        bufferOffset = 0;
+      }
       setTimeout(() => this._innerWrite(bufferOffset), 0);
     } else {
       this._writeInProgress = false;
@@ -2003,15 +2003,34 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * ESC c Full Reset (RIS).
    */
   public reset(): void {
+    /**
+     * Since _setup handles a full terminal creation, we have to carry forward
+     * a few things that should not reset.
+     */
     this.options.rows = this.rows;
     this.options.cols = this.cols;
     const customKeyEventHandler = this._customKeyEventHandler;
     const inputHandler = this._inputHandler;
     const cursorState = this.cursorState;
+    const writeBuffer = this.writeBuffer;
+    const writeBufferUtf8 = this.writeBufferUtf8;
+    const writeInProgress = this._writeInProgress;
+    const xoffSentToCatchUp = this._xoffSentToCatchUp;
+    const userScrolling = this._userScrolling;
+
     this._setup();
+
+    // reattach
     this._customKeyEventHandler = customKeyEventHandler;
     this._inputHandler = inputHandler;
     this.cursorState = cursorState;
+    this.writeBuffer = writeBuffer;
+    this.writeBufferUtf8 = writeBufferUtf8;
+    this._writeInProgress = writeInProgress;
+    this._xoffSentToCatchUp = xoffSentToCatchUp;
+    this._userScrolling = userScrolling;
+
+    // do a full screen refresh
     this.refresh(0, this.rows - 1);
     if (this.viewport) {
       this.viewport.syncScrollArea();

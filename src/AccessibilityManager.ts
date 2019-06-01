@@ -5,11 +5,11 @@
 
 import * as Strings from './Strings';
 import { ITerminal, IBuffer } from './Types';
-import { isMac } from './common/Platform';
-import { RenderDebouncer } from './ui/RenderDebouncer';
-import { addDisposableDomListener } from './ui/Lifecycle';
-import { Disposable } from './common/Lifecycle';
-import { ScreenDprMonitor } from './ui/ScreenDprMonitor';
+import { isMac } from 'common/Platform';
+import { RenderDebouncer } from 'ui/RenderDebouncer';
+import { addDisposableDomListener } from 'ui/Lifecycle';
+import { Disposable } from 'common/Lifecycle';
+import { ScreenDprMonitor } from 'ui/ScreenDprMonitor';
 import { IRenderDimensions } from './renderer/Types';
 
 const MAX_ROWS_TO_READ = 20;
@@ -42,6 +42,8 @@ export class AccessibilityManager extends Disposable {
    * question (Y/N, etc.).
    */
   private _charsToConsume: string[] = [];
+
+  private _charsToAnnounce: string = '';
 
   constructor(
     private _terminal: ITerminal,
@@ -202,10 +204,10 @@ export class AccessibilityManager extends Disposable {
         // Have the screen reader ignore the char if it was just input
         const shiftedChar = this._charsToConsume.shift();
         if (shiftedChar !== char) {
-          this._announceCharacter(char);
+          this._charsToAnnounce += char;
         }
       } else {
-        this._announceCharacter(char);
+        this._charsToAnnounce += char;
       }
 
       if (char === '\n') {
@@ -260,6 +262,7 @@ export class AccessibilityManager extends Disposable {
         element.setAttribute('aria-setsize', setSize);
       }
     }
+    this._announceCharacters();
   }
 
   private _refreshRowsDimensions(): void {
@@ -283,13 +286,11 @@ export class AccessibilityManager extends Disposable {
     element.style.height = `${this._dimensions.actualCellHeight}px`;
   }
 
-  private _announceCharacter(char: string): void {
-    if (char === ' ') {
-      // Always use nbsp for spaces in order to preserve the space between characters in
-      // voiceover's caption window
-      this._liveRegion.innerHTML += '&nbsp;';
-    } else {
-      this._liveRegion.textContent += char;
+  private _announceCharacters(): void {
+    if (this._charsToAnnounce.length === 0) {
+      return;
     }
+    this._liveRegion.textContent += this._charsToAnnounce;
+    this._charsToAnnounce = '';
   }
 }

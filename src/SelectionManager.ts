@@ -4,15 +4,15 @@
  */
 
 import { ITerminal, ISelectionManager, IBuffer, ISelectionRedrawRequestEvent } from './Types';
-import { IBufferLine } from './core/Types';
+import { IBufferLine } from 'core/Types';
 import { MouseHelper } from './MouseHelper';
-import * as Browser from './common/Platform';
+import * as Browser from 'common/Platform';
 import { CharMeasure } from './CharMeasure';
 import { SelectionModel } from './SelectionModel';
 import { AltClickHandler } from './handlers/AltClickHandler';
-import { CellData } from './core/buffer/BufferLine';
+import { CellData } from 'core/buffer/BufferLine';
 import { IDisposable } from 'xterm';
-import { EventEmitter2, IEvent } from './common/EventEmitter2';
+import { EventEmitter2, IEvent } from 'common/EventEmitter2';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in

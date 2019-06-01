@@ -4,12 +4,12 @@
  */
 
 import { IRenderer, IRenderDimensions } from './Types';
-import { RenderDebouncer } from '../ui/RenderDebouncer';
-import { EventEmitter2, IEvent } from '../common/EventEmitter2';
-import { Disposable } from '../common/Lifecycle';
-import { ScreenDprMonitor } from '../ui/ScreenDprMonitor';
-import { addDisposableDomListener } from '../ui/Lifecycle';
-import { IColorSet } from '..//ui/Types';
+import { RenderDebouncer } from 'ui/RenderDebouncer';
+import { EventEmitter2, IEvent } from 'common/EventEmitter2';
+import { Disposable } from 'common/Lifecycle';
+import { ScreenDprMonitor } from 'ui/ScreenDprMonitor';
+import { addDisposableDomListener } from 'ui/Lifecycle';
+import { IColorSet } from 'ui/Types';
 import { CharacterJoinerHandler } from '../Types';
 
 export class RenderCoordinator extends Disposable {
