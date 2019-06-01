@@ -12,11 +12,6 @@ interface IAttachOptions {
   inputUtf8?: boolean;
 }
 
-// TODO: To be removed once UTF8 PR is in xterm.js package.
-interface INewTerminal extends Terminal {
-  writeUtf8(data: Uint8Array): void;
-}
-
 export class AttachAddon implements ITerminalAddon {
   private _socket: WebSocket;
   private _bidirectional: boolean;
@@ -34,14 +29,14 @@ export class AttachAddon implements ITerminalAddon {
   public activate(terminal: Terminal): void {
     if (this._utf8) {
       this._disposables.push(addSocketListener(this._socket, 'message',
-        (ev: MessageEvent | Event | CloseEvent) => (terminal as INewTerminal).writeUtf8(new Uint8Array((ev as any).data as ArrayBuffer))));
+        (ev: MessageEvent | Event | CloseEvent) => terminal.writeUtf8(new Uint8Array((ev as any).data as ArrayBuffer))));
     } else {
       this._disposables.push(addSocketListener(this._socket, 'message',
-        (ev: MessageEvent | Event | CloseEvent) => (terminal as INewTerminal).write((ev as any).data as string)));
+        (ev: MessageEvent | Event | CloseEvent) => terminal.write((ev as any).data as string)));
     }
 
     if (this._bidirectional) {
-      this._disposables.push(terminal.addDisposableListener('data', data => this._sendData(data)));
+      this._disposables.push(terminal.onData(data => this._sendData(data)));
     }
 
     this._disposables.push(addSocketListener(this._socket, 'close', () => this.dispose()));

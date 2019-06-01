@@ -1,12 +1,12 @@
 {
-  "name": "xterm-addon-fit",
-  "version": "0.1.0-beta7",
+  "name": "@xterm/addon-attach",
+  "version": "0.1.0-beta8",
   "author": {
     "name": "The xterm.js authors",
     "url": "https://xtermjs.org/"
   },
-  "main": "lib/FitAddon.js",
-  "types": "typings/fit.d.ts",
+  "main": "lib/AttachAddon.js",
+  "types": "typings/attach.d.ts",
   "license": "MIT",
   "scripts": {
     "prepublishOnly": "../../node_modules/.bin/tsc -p src"

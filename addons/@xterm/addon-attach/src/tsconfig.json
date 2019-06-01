@@ -1,18 +1,19 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es5",
+    "target": "es2015",
     "lib": [
       "dom",
-      "es6",
+      "es2015"
     ],
     "rootDir": ".",
     "outDir": "../lib",
     "sourceMap": true,
-    "removeComments": true
+    "removeComments": true,
+    "strict": true
   },
   "include": [
     "./**/*",
-    "../../../typings/xterm.d.ts"
+    "../../../../typings/xterm.d.ts"
   ]
 }
