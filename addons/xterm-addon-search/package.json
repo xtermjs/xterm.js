@@ -1,0 +1,17 @@
+{
+  "name": "xterm-addon-search",
+  "version": "0.1.0-beta4",
+  "author": {
+    "name": "The xterm.js authors",
+    "url": "https://xtermjs.org/"
+  },
+  "main": "lib/SearchAddon.js",
+  "types": "typings/search.d.ts",
+  "license": "MIT",
+  "scripts": {
+    "prepublish": "tsc -p src"
+  },
+  "peerDependencies": {
+    "xterm": "^3.13.0"
+  }
+}

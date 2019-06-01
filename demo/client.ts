@@ -26,6 +26,7 @@ export interface IWindowWithTerminal extends Window {
   term: TerminalType;
   Terminal?: typeof TerminalType;
   AttachAddon?: typeof AttachAddon;
+  SearchAddon?: typeof SearchAddon;
   WebLinksAddon?: typeof WebLinksAddon;
 }
 declare let window: IWindowWithTerminal;
@@ -77,6 +78,7 @@ const disposeRecreateButtonHandler = () => {
 if (document.location.pathname === '/test') {
   window.Terminal = Terminal;
   window.AttachAddon = AttachAddon;
+  window.SearchAddon = SearchAddon;
   window.WebLinksAddon = WebLinksAddon;
 } else {
   createTerminal();

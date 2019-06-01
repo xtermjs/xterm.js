@@ -1,13 +1,14 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es5",
+    "target": "es2015",
     "rootDir": ".",
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
-      "xterm-addon-web-links": ["../addons/xterm-addon-web-links"],
-      "xterm-addon-attach": ["../addons/xterm-addon-attach"]
+      "xterm-addon-attach": ["../addons/xterm-addon-attach"],
+      "xterm-addon-search": ["../addons/xterm-addon-search"],
+      "xterm-addon-web-links": ["../addons/xterm-addon-web-links"]
     }
   },
   "include": [
