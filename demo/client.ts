@@ -13,10 +13,9 @@ import { Terminal } from '../out/public/Terminal';
 // import { Terminal } from '../lib/xterm';
 
 import { AttachAddon } from 'xterm-addon-attach';
+import { FitAddon } from 'xterm-addon-fit';
 import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
 import { WebLinksAddon } from 'xterm-addon-web-links';
-
-import * as fit from '../lib/addons/fit/fit';
 
 // Pulling in the module's types relies on the <reference> above, it's looks a
 // little weird here as we're importing "this" module
@@ -26,14 +25,14 @@ export interface IWindowWithTerminal extends Window {
   term: TerminalType;
   Terminal?: typeof TerminalType;
   AttachAddon?: typeof AttachAddon;
+  FitAddon?: typeof FitAddon;
   SearchAddon?: typeof SearchAddon;
   WebLinksAddon?: typeof WebLinksAddon;
 }
 declare let window: IWindowWithTerminal;
 
-Terminal.applyAddon(fit);
-
 let term;
+let fitAddon: FitAddon;
 let searchAddon: SearchAddon;
 let protocol;
 let socketURL;
@@ -78,6 +77,7 @@ const disposeRecreateButtonHandler = () => {
 if (document.location.pathname === '/test') {
   window.Terminal = Terminal;
   window.AttachAddon = AttachAddon;
+  window.FitAddon = FitAddon;
   window.SearchAddon = SearchAddon;
   window.WebLinksAddon = WebLinksAddon;
 } else {
@@ -101,6 +101,8 @@ function createTerminal(): void {
   typedTerm.loadAddon(new WebLinksAddon());
   searchAddon = new SearchAddon();
   typedTerm.loadAddon(searchAddon);
+  fitAddon = new FitAddon();
+  typedTerm.loadAddon(fitAddon);
 
   window.term = term;  // Expose `term` to window for debugging purposes
   term.onResize((size: { cols: number, rows: number }) => {
@@ -117,7 +119,7 @@ function createTerminal(): void {
   socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
 
   term.open(terminalContainer);
-  term.fit();
+  fitAddon.fit();
   term.focus();
 
   addDomListener(paddingElement, 'change', setPadding);
@@ -309,5 +311,5 @@ function updateTerminalSize(): void {
   const height = (rows * term._core._renderCoordinator.dimensions.actualCellHeight).toString() + 'px';
   terminalContainer.style.width = width;
   terminalContainer.style.height = height;
-  term.fit();
+  fitAddon.fit();
 }

@@ -6,7 +6,6 @@
 import * as puppeteer from 'puppeteer';
 import { assert } from 'chai';
 import { ITerminalOptions } from 'xterm';
-import WebSocket = require('ws');
 
 const APP = 'http://127.0.0.1:3000/test';
 
@@ -15,7 +14,7 @@ let page: puppeteer.Page;
 const width = 800;
 const height = 600;
 
-describe('API Integration Tests', () => {
+describe('FitAddon', () => {
   before(async function(): Promise<any> {
     this.timeout(10000);
     browser = await puppeteer.launch({
@@ -34,29 +33,6 @@ describe('API Integration Tests', () => {
   beforeEach(async function(): Promise<any> {
     this.timeout(5000);
     await page.goto(APP);
-  });
-
-  it('string', async function(): Promise<any> {
-    this.timeout(20000);
-    await openTerminal({ rendererType: 'dom' });
-    const port = 8080;
-    const server = new WebSocket.Server({ port });
-    server.on('connection', socket => socket.send('foo'));
-    await page.evaluate(`window.term.loadAddon(new window.AttachAddon(new WebSocket('ws://localhost:${port}')))`);
-    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foo');
-    server.close();
-  });
-
-  it('utf8', async function(): Promise<any> {
-    this.timeout(20000);
-    await openTerminal({ rendererType: 'dom' });
-    const port = 8080;
-    const server = new WebSocket.Server({ port });
-    const data = new Uint8Array([102, 111, 111]);
-    server.on('connection', socket => socket.send(data));
-    await page.evaluate(`window.term.loadAddon(new window.AttachAddon(new WebSocket('ws://localhost:${port}'), { inputUtf8: true }))`);
-    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foo');
-    server.close();
   });
 });
 
