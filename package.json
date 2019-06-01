@@ -41,7 +41,7 @@
     "start": "node demo/start",
     "start-debug": "node --inspect-brk demo/start",
     "start-zmodem": "node demo/zmodem/app",
-    "lint": "tslint 'src/**/*.ts' './demo/**/*.ts'",
+    "lint": "tslint 'src/**/*.ts' './demo/**/*.ts' './addons/**/*.ts'",
     "test-unit": "node ./bin/test.js",
     "test": "npm run test-unit",
     "posttest": "npm run lint",
