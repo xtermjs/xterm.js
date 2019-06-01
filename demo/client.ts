@@ -218,7 +218,7 @@ function initOptions(term: TerminalType): void {
     fontFamily: null,
     fontWeight: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
     fontWeightBold: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
-    rendererType: ['dom', 'canvas', 'webgl']
+    rendererType: ['dom', 'canvas']
   };
   const options = Object.keys((<any>term)._core.options);
   const booleanOptions = [];
@@ -286,10 +286,6 @@ function initOptions(term: TerminalType): void {
     const input = <HTMLInputElement>document.getElementById(`opt-${o}`);
     addDomListener(input, 'change', () => {
       console.log('change', o, input.value);
-      if (o === 'rendererType' && input.value === 'webgl') {
-        term.setOption('experimentalCharAtlas', 'webgl');
-        setTimeout(() => (<HTMLSelectElement>document.getElementById(`opt-experimentalCharAtlas`)).value = 'webgl', 0);
-      }
       term.setOption(o, input.value);
     });
   });

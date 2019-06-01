@@ -182,9 +182,9 @@ export class GlyphRenderer {
 
     let rasterizedGlyph: IRasterizedGlyph;
     if (chars && chars.length > 1) {
-      rasterizedGlyph = this._atlas.getRasterizedGlyphCombinedChar(chars, attr, bg, fg, this._terminal.getOption('enableBold'));
+      rasterizedGlyph = this._atlas.getRasterizedGlyphCombinedChar(chars, attr, bg, fg);
     } else {
-      rasterizedGlyph = this._atlas.getRasterizedGlyph(code, attr, bg, fg, this._terminal.getOption('enableBold'));
+      rasterizedGlyph = this._atlas.getRasterizedGlyph(code, attr, bg, fg);
     }
 
     // Fill empty if no glyph was found

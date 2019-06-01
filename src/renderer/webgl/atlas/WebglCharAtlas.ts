@@ -96,7 +96,7 @@ export default class WebglCharAtlas extends BaseCharAtlas {
   protected _doWarmUp(): void {
     // Pre-fill with ASCII 33-126
     for (let i = 33; i < 126; i++) {
-      const rasterizedGlyph = this._drawToCache(i, DEFAULT_ATTR, DEFAULT_COLOR, DEFAULT_COLOR, true);
+      const rasterizedGlyph = this._drawToCache(i, DEFAULT_ATTR, DEFAULT_COLOR, DEFAULT_COLOR);
       this._cacheMap[i] = {
         [DEFAULT_ATTR]: rasterizedGlyph
       };
@@ -116,7 +116,7 @@ export default class WebglCharAtlas extends BaseCharAtlas {
     return false;
   }
 
-  public getRasterizedGlyphCombinedChar(chars: string, attr: number, bg: number, fg: number, enableBold: boolean): IRasterizedGlyph {
+  public getRasterizedGlyphCombinedChar(chars: string, attr: number, bg: number, fg: number): IRasterizedGlyph {
     let rasterizedGlyphSet = this._cacheMapCombined[chars];
     if (!rasterizedGlyphSet) {
       rasterizedGlyphSet = {};
@@ -124,7 +124,7 @@ export default class WebglCharAtlas extends BaseCharAtlas {
     }
     let rasterizedGlyph = rasterizedGlyphSet[attr];
     if (!rasterizedGlyph) {
-      rasterizedGlyph = this._drawToCache(chars, attr, bg, fg, enableBold);
+      rasterizedGlyph = this._drawToCache(chars, attr, bg, fg);
       rasterizedGlyphSet[attr] = rasterizedGlyph;
     }
     return rasterizedGlyph;
@@ -133,7 +133,7 @@ export default class WebglCharAtlas extends BaseCharAtlas {
   /**
    * Gets the glyphs texture coords, drawing the texture if it's not already
    */
-  public getRasterizedGlyph(code: number, attr: number, bg: number, fg: number, enableBold: boolean): IRasterizedGlyph {
+  public getRasterizedGlyph(code: number, attr: number, bg: number, fg: number): IRasterizedGlyph {
     let rasterizedGlyphSet = this._cacheMap[code];
     if (!rasterizedGlyphSet) {
       rasterizedGlyphSet = {};
@@ -141,7 +141,7 @@ export default class WebglCharAtlas extends BaseCharAtlas {
     }
     let rasterizedGlyph = rasterizedGlyphSet[attr];
     if (!rasterizedGlyph) {
-      rasterizedGlyph = this._drawToCache(code, attr, bg, fg, enableBold);
+      rasterizedGlyph = this._drawToCache(code, attr, bg, fg);
       rasterizedGlyphSet[attr] = rasterizedGlyph;
     }
     return rasterizedGlyph;
@@ -186,16 +186,16 @@ export default class WebglCharAtlas extends BaseCharAtlas {
     return this._config.colors.foreground;
   }
 
-  private _drawToCache(code: number, attr: number, bg: number, fg: number, enableBold: boolean): IRasterizedGlyph;
-  private _drawToCache(chars: string, attr: number, bg: number, fg: number, enableBold: boolean): IRasterizedGlyph;
-  private _drawToCache(codeOrChars: number | string, attr: number, bg: number, fg: number, enableBold: boolean): IRasterizedGlyph {
+  private _drawToCache(code: number, attr: number, bg: number, fg: number): IRasterizedGlyph;
+  private _drawToCache(chars: string, attr: number, bg: number, fg: number): IRasterizedGlyph;
+  private _drawToCache(codeOrChars: number | string, attr: number, bg: number, fg: number): IRasterizedGlyph {
     const chars = typeof codeOrChars === 'number' ? String.fromCharCode(codeOrChars) : codeOrChars;
 
     this.hasCanvasChanged = true;
 
     const flags = attr >> 18;
 
-    const bold = !!(flags & FLAGS.BOLD) && enableBold;
+    const bold = !!(flags & FLAGS.BOLD);
     const dim = !!(flags & FLAGS.DIM);
     const italic = !!(flags & FLAGS.ITALIC);
 
