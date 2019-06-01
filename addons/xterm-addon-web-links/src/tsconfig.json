@@ -12,5 +12,9 @@
     "sourceMap": true,
     "removeComments": true,
     "strict": true
-  }
+  },
+  "include": [
+    "./**/*",
+    "../../../typings/xterm.d.ts"
+  ]
 }

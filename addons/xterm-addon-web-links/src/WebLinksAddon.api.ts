@@ -7,14 +7,14 @@ import * as puppeteer from 'puppeteer';
 import { assert } from 'chai';
 import { ITerminalOptions } from 'xterm';
 
-const APP = 'http://127.0.0.1:3000';
+const APP = 'http://127.0.0.1:3000/test';
 
 let browser: puppeteer.Browser;
 let page: puppeteer.Page;
 const width = 800;
 const height = 600;
 
-describe('API Integration Tests', () => {
+describe.only('WebLinksAddon', () => {
   before(async function(): Promise<any> {
     this.timeout(10000);
     browser = await puppeteer.launch({
@@ -74,7 +74,7 @@ async function testHostName(hostname: string): Promise<void> {
 
 async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
   await page.evaluate(`window.term = new Terminal(${JSON.stringify(options)})`);
-  await page.evaluate(`window.term.open(document.querySelector('#terminal'))`);
+  await page.evaluate(`window.term.open(document.querySelector('#terminal-container'))`);
   if (options.rendererType === 'dom') {
     await page.waitForSelector('.xterm-rows');
   } else {
