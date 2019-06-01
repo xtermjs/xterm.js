@@ -152,7 +152,7 @@ export class Terminal implements ITerminalApi {
   public getOption(key: 'handler'): (data: string) => void;
   public getOption(key: string): any;
   public getOption(key: any): any {
-    return this._core.getOption(key);
+    return this._core.optionsService.getOption(key);
   }
   public setOption(key: 'bellSound' | 'fontFamily' | 'termName', value: string): void;
   public setOption(key: 'fontWeight' | 'fontWeightBold', value: 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900'): void;
@@ -166,7 +166,7 @@ export class Terminal implements ITerminalApi {
   public setOption(key: 'cols' | 'rows', value: number): void;
   public setOption(key: string, value: any): void;
   public setOption(key: any, value: any): void {
-    this._core.setOption(key, value);
+    this._core.optionsService.setOption(key, value);
   }
   public refresh(start: number, end: number): void {
     this._core.refresh(start, end);

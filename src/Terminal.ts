@@ -24,7 +24,7 @@
 import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharacterJoinerHandler, IMouseZoneManager } from './Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
-import { Buffer, MAX_BUFFER_SIZE } from './Buffer';
+import { Buffer } from './Buffer';
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from 'common/EventEmitter';
 import { Viewport } from './Viewport';
@@ -39,7 +39,7 @@ import * as Browser from 'common/Platform';
 import { addDisposableDomListener } from 'ui/Lifecycle';
 import * as Strings from './Strings';
 import { MouseHelper } from './MouseHelper';
-import { DEFAULT_BELL_SOUND, SoundManager } from './SoundManager';
+import { SoundManager } from './SoundManager';
 import { MouseZoneManager } from './MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ITheme, IMarker, IDisposable, ISelectionPosition } from 'xterm';
@@ -48,12 +48,13 @@ import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent } from 'common/Types';
 import { evaluateKeyboardEvent } from 'core/input/Keyboard';
 import { KeyboardResultType, ICharset, IBufferLine, IAttributeData } from 'core/Types';
-import { clone } from 'common/Clone';
 import { EventEmitter2, IEvent } from 'common/EventEmitter2';
 import { Attributes, DEFAULT_ATTR_DATA } from 'core/buffer/BufferLine';
 import { applyWindowsMode } from './WindowsMode';
 import { ColorManager } from 'ui/ColorManager';
 import { RenderCoordinator } from './renderer/RenderCoordinator';
+import { IOptionsService } from '../out/common/options/Types';
+import { OptionsService } from 'common/options/OptionsService';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -77,44 +78,6 @@ const WRITE_BUFFER_LENGTH_THRESHOLD = 50;
 const MINIMUM_COLS = 2; // Less than 2 can mess with wide chars
 const MINIMUM_ROWS = 1;
 
-/**
- * The set of options that only have an effect when set in the Terminal constructor.
- */
-const CONSTRUCTOR_ONLY_OPTIONS = ['cols', 'rows'];
-
-const DEFAULT_OPTIONS: ITerminalOptions = {
-  cols: 80,
-  rows: 24,
-  convertEol: false,
-  termName: 'xterm',
-  cursorBlink: false,
-  cursorStyle: 'block',
-  bellSound: DEFAULT_BELL_SOUND,
-  bellStyle: 'none',
-  drawBoldTextInBrightColors: true,
-  fontFamily: 'courier-new, courier, monospace',
-  fontSize: 15,
-  fontWeight: 'normal',
-  fontWeightBold: 'bold',
-  lineHeight: 1.0,
-  letterSpacing: 0,
-  scrollback: 1000,
-  screenKeys: false,
-  screenReaderMode: false,
-  debug: false,
-  macOptionIsMeta: false,
-  macOptionClickForcesSelection: false,
-  cancelEvents: false,
-  disableStdin: false,
-  useFlowControl: false,
-  allowTransparency: false,
-  tabStopWidth: 8,
-  theme: undefined,
-  rightClickSelectsWord: Browser.isMac,
-  rendererType: 'canvas',
-  windowsMode: false
-};
-
 export class Terminal extends EventEmitter implements ITerminal, IDisposable, IInputHandlingTerminal {
   public textarea: HTMLTextAreaElement;
   public element: HTMLElement;
@@ -135,13 +98,17 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   public browser: IBrowser = <any>Browser;
 
-  public options: ITerminalOptions;
+  // TODO: We should remove options once components adopt optionsService
+  public get options(): ITerminalOptions { return this.optionsService.options; }
 
   // TODO: This can be changed to an enum or boolean, 0 and 1 seem to be the only options
   public cursorState: number;
   public cursorHidden: boolean;
 
   private _customKeyEventHandler: CustomKeyEventHandler;
+
+  // services
+  public optionsService: IOptionsService;
 
   // modes
   public applicationKeypad: boolean;
@@ -257,7 +224,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     options: ITerminalOptions = {}
   ) {
     super();
-    this.options = clone(options);
+    this.optionsService = new OptionsService(options);
+    this._setupOptionsListeners();
+
+    // this.options = clone(options);
     this._setup();
 
     // TODO: Remove these in v4
@@ -289,11 +259,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   private _setup(): void {
-    Object.keys(DEFAULT_OPTIONS).forEach((key) => {
-      if (this.options[key] === null || this.options[key] === undefined) {
-        this.options[key] = DEFAULT_OPTIONS[key];
-      }
-    });
+    // Object.keys(DEFAULT_OPTIONS).forEach((key) => {
+    //   if (this.options[key] === null || this.options[key] === undefined) {
+    //     this.options[key] = DEFAULT_OPTIONS[key];
+    //   }
+    // });
 
     // this.context = options.context || window;
     // this.document = options.document || document;
@@ -302,10 +272,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     this.cols = Math.max(this.options.cols, MINIMUM_COLS);
     this.rows = Math.max(this.options.rows, MINIMUM_ROWS);
-
-    if (this.options.handler) {
-      this.onData(this.options.handler);
-    }
 
     this.cursorState = 0;
     this.cursorHidden = false;
@@ -394,82 +360,59 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     return document.activeElement === this.textarea && document.hasFocus();
   }
 
-  /**
-   * Retrieves an option's value from the terminal.
-   * @param key The option key.
-   */
-  public getOption(key: string): any {
-    if (!(key in DEFAULT_OPTIONS)) {
-      throw new Error('No option with key "' + key + '"');
-    }
-
-    return this.options[key];
-  }
-
-  /**
-   * Sets an option on the terminal.
-   * @param key The option key.
-   * @param value The option value.
-   */
-  public setOption(key: string, value: any): void {
-    if (!(key in DEFAULT_OPTIONS)) {
-      throw new Error('No option with key "' + key + '"');
-    }
-    if (CONSTRUCTOR_ONLY_OPTIONS.indexOf(key) !== -1) {
-      console.error(`Option "${key}" can only be set in the constructor`);
-    }
-    if (this.options[key] === value) {
-      return;
-    }
-    switch (key) {
-      case 'bellStyle':
-        if (!value) {
-          value = 'none';
-        }
-        break;
-      case 'cursorStyle':
-        if (!value) {
-          value = 'block';
-        }
-        break;
-      case 'fontWeight':
-        if (!value) {
-          value = 'normal';
-        }
-        break;
-      case 'fontWeightBold':
-        if (!value) {
-          value = 'bold';
-        }
-        break;
-      case 'lineHeight':
-        if (value < 1) {
-          console.warn(`${key} cannot be less than 1, value: ${value}`);
-          return;
-        }
-      case 'rendererType':
-        if (!value) {
-          value = 'canvas';
-        }
-        break;
-      case 'tabStopWidth':
-        if (value < 1) {
-          console.warn(`${key} cannot be less than 1, value: ${value}`);
-          return;
-        }
-        break;
-      case 'theme':
-        this._setTheme(<ITheme>value);
-        break;
-      case 'scrollback':
-        value = Math.min(value, MAX_BUFFER_SIZE);
-
-        if (value < 0) {
-          console.warn(`${key} cannot be less than 0, value: ${value}`);
-          return;
-        }
-        if (this.options[key] !== value) {
-          const newBufferLength = this.rows + value;
+  private _setupOptionsListeners(): void {
+    // TODO: These listeners should be owned by individual components
+    this.optionsService.onOptionChange(key => {
+      switch (key) {
+        case 'fontFamily':
+        case 'fontSize':
+          // When the font changes the size of the cells may change which requires a renderer clear
+          if (this._renderCoordinator) {
+            this._renderCoordinator.clear();
+            this.charMeasure.measure(this.options);
+          }
+          break;
+        case 'drawBoldTextInBrightColors':
+        case 'letterSpacing':
+        case 'lineHeight':
+        case 'fontWeight':
+        case 'fontWeightBold':
+          // When the font changes the size of the cells may change which requires a renderer clear
+          if (this._renderCoordinator) {
+            this._renderCoordinator.clear();
+            this._renderCoordinator.onResize(this.cols, this.rows);
+            this.refresh(0, this.rows - 1);
+          }
+          break;
+        case 'rendererType':
+          if (this._renderCoordinator) {
+            this._renderCoordinator.setRenderer(this._createRenderer());
+          }
+          break;
+        case 'scrollback':
+          this.buffers.resize(this.cols, this.rows);
+          if (this.viewport) {
+            this.viewport.syncScrollArea();
+          }
+          break;
+        case 'screenReaderMode':
+          if (this.optionsService.options.screenReaderMode) {
+            if (!this._accessibilityManager && this._renderCoordinator) {
+              this._accessibilityManager = new AccessibilityManager(this, this._renderCoordinator.dimensions);
+            }
+          } else {
+            if (this._accessibilityManager) {
+              this._accessibilityManager.dispose();
+              this._accessibilityManager = null;
+            }
+          }
+          break;
+        case 'tabStopWidth': this.buffers.setupTabStops(); break;
+        case 'theme':
+          this._setTheme(this.optionsService.options.theme);
+          break;
+        case 'scrollback':
+          const newBufferLength = this.rows + this.optionsService.options.scrollback;
           if (this.buffer.lines.length > newBufferLength) {
             const amountToTrim = this.buffer.lines.length - newBufferLength;
             const needsRefresh = (this.buffer.ydisp - amountToTrim < 0);
@@ -480,68 +423,21 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
               this.refresh(0, this.rows - 1);
             }
           }
-        }
-        break;
-    }
-    this.options[key] = value;
-    switch (key) {
-      case 'fontFamily':
-      case 'fontSize':
-        // When the font changes the size of the cells may change which requires a renderer clear
-        if (this._renderCoordinator) {
-          this._renderCoordinator.clear();
-          this.charMeasure.measure(this.options);
-        }
-        break;
-      case 'drawBoldTextInBrightColors':
-      case 'letterSpacing':
-      case 'lineHeight':
-      case 'fontWeight':
-      case 'fontWeightBold':
-        // When the font changes the size of the cells may change which requires a renderer clear
-        if (this._renderCoordinator) {
-          this._renderCoordinator.clear();
-          this._renderCoordinator.onResize(this.cols, this.rows);
-          this.refresh(0, this.rows - 1);
-        }
-        break;
-      case 'rendererType':
-        if (this._renderCoordinator) {
-          this._renderCoordinator.setRenderer(this._createRenderer());
-        }
-        break;
-      case 'scrollback':
-        this.buffers.resize(this.cols, this.rows);
-        if (this.viewport) {
-          this.viewport.syncScrollArea();
-        }
-        break;
-      case 'screenReaderMode':
-        if (value) {
-          if (!this._accessibilityManager && this._renderCoordinator) {
-            this._accessibilityManager = new AccessibilityManager(this, this._renderCoordinator.dimensions);
+        case 'windowsMode':
+          if (this.optionsService.options.windowsMode) {
+            if (!this._windowsMode) {
+              this._windowsMode = applyWindowsMode(this);
+            }
+          } else {
+            if (this._windowsMode) {
+              this._windowsMode.dispose();
+              this._windowsMode = undefined;
+            }
           }
-        } else {
-          if (this._accessibilityManager) {
-            this._accessibilityManager.dispose();
-            this._accessibilityManager = null;
-          }
-        }
-        break;
-      case 'tabStopWidth': this.buffers.setupTabStops(); break;
-      case 'windowsMode':
-        if (value) {
-          if (!this._windowsMode) {
-            this._windowsMode = applyWindowsMode(this);
-          }
-        } else {
-          if (this._windowsMode) {
-            this._windowsMode.dispose();
-            this._windowsMode = undefined;
-          }
-        }
-        break;
-    }
+          break;
+      }
+    });
+    // TODO: Move into rendercoordinator
     // Inform renderer of changes
     if (this._renderCoordinator) {
       this._renderCoordinator.onOptionsChanged();

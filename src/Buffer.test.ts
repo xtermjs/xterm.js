@@ -1366,7 +1366,7 @@ describe('Buffer', () => {
       const input = '\thttps://google.de';
       terminal.writeSync(input);
       const s = terminal.buffer.iterator(true).next().content;
-      assert.equal(s, Array(terminal.getOption('tabStopWidth') + 1).join(' ') + 'https://google.de');
+      assert.equal(s, Array(terminal.options.tabStopWidth + 1).join(' ') + 'https://google.de');
     });
   });
   describe('BufferStringIterator', function(): void {
