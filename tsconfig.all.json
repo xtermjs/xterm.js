@@ -6,12 +6,6 @@
     { "path": "./addons/xterm-addon-attach/src" },
     { "path": "./addons/xterm-addon-search/src" },
     { "path": "./addons/xterm-addon-web-links/src" },
-    { "path": "./src/addons/attach" },
-    { "path": "./src/addons/fit" },
-    { "path": "./src/addons/fullscreen" },
-    { "path": "./src/addons/search" },
-    { "path": "./src/addons/terminado" },
-    { "path": "./src/addons/webLinks" },
-    { "path": "./src/addons/zmodem" }
+    { "path": "./src/addons/fit" }
   ]
 }
