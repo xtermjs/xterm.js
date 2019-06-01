@@ -9,7 +9,7 @@
   "types": "typings/web-links.d.ts",
   "license": "MIT",
   "scripts": {
-    "prepublishOnly": "../../node_modules/.bin/tsc -p src"
+    "prepublishOnly": "../../../node_modules/.bin/tsc -p src"
   },
   "peerDependencies": {
     "xterm": "^3.14.0"
