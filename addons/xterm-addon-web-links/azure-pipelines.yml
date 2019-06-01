@@ -1,0 +1,24 @@
+jobs:
+- job: Linux
+  pool:
+    vmImage: 'ubuntu-16.04'
+  steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '8.x'
+    displayName: 'Install Node.js'
+  - task: geeklearningio.gl-vsts-tasks-yarn.yarn-installer-task.YarnInstaller@2
+    inputs:
+      versionSpec: "1.9.4"
+    displayName: 'Install Yarn'
+  - script: |
+      yarn
+    displayName: 'Install dependencies and build'
+  - script: |
+      yarn lint
+    displayName: 'Lint'
+  - script: |
+      yarn start &
+      sleep 5
+      yarn test --headless
+    displayName: 'Tests'

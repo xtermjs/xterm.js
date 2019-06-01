@@ -1,0 +1,7 @@
+lib/**/*.test.js
+lib/**/*.js.map
+src/
+test/
+node_modules/
+tsconfig.json
+.editorconfig
