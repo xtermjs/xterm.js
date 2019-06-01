@@ -12,6 +12,6 @@
     "prepublish": "tsc -p src"
   },
   "peerDependencies": {
-    "xterm": "^3.10.0"
+    "xterm": "^3.14.0"
   }
 }

@@ -1,5 +1,3 @@
-lib/**/*.js.map
-src/
-node_modules/
+**/*.api.js
+**/*.api.ts
 tsconfig.json
-.editorconfig
