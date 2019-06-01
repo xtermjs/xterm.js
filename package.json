@@ -46,10 +46,10 @@
     "test": "npm run test-unit",
     "posttest": "npm run lint",
     "test-api": "mocha \"**/*.api.js\"",
-    "build": "tsc -b ./src/tsconfig.all.json",
+    "build": "tsc -b ./tsconfig.all.json",
     "prepare": "npm run build",
     "prepublishOnly": "npm run package",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
-    "watch": "tsc -b -w ./src/tsconfig.all.json --preserveWatchOutput"
+    "watch": "tsc -b -w ./tsconfig.all.json --preserveWatchOutput"
   }
 }
