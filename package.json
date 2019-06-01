@@ -32,8 +32,7 @@
     "webpack": "^4.17.1",
     "webpack-cli": "^3.1.0",
     "xterm-addon-attach": "0.1.0-beta8",
-    "xterm-addon-search": "0.1.0-beta4",
-    "xterm-addon-web-links": "0.1.0-beta6"
+    "xterm-addon-search": "0.1.0-beta4"
   },
   "scripts": {
     "prepackage": "npm run build",
