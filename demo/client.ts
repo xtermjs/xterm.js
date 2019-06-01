@@ -25,6 +25,7 @@ import { Terminal as TerminalType, ITerminalOptions } from 'xterm';
 export interface IWindowWithTerminal extends Window {
   term: TerminalType;
   Terminal?: typeof TerminalType;
+  AttachAddon?: typeof AttachAddon;
   WebLinksAddon?: typeof WebLinksAddon;
 }
 declare let window: IWindowWithTerminal;
@@ -75,6 +76,7 @@ const disposeRecreateButtonHandler = () => {
 
 if (document.location.pathname === '/test') {
   window.Terminal = Terminal;
+  window.AttachAddon = AttachAddon;
   window.WebLinksAddon = WebLinksAddon;
 } else {
   createTerminal();

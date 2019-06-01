@@ -6,7 +6,8 @@
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
-      "xterm-addon-web-links": ["../addons/xterm-addon-web-links"]
+      "xterm-addon-web-links": ["../addons/xterm-addon-web-links"],
+      "xterm-addon-attach": ["../addons/xterm-addon-attach"]
     }
   },
   "include": [
