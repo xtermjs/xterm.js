@@ -8,6 +8,7 @@ import { ICharset, IAttributeData, ICellData, IBufferLine, CharData } from 'core
 import { ICircularList } from 'common/Types';
 import { IEvent } from 'common/EventEmitter2';
 import { IColorSet } from 'ui/Types';
+import { IOptionsService } from 'common/options/Types';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
@@ -72,7 +73,6 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   showCursor(): void;
   refresh(start: number, end: number): void;
   error(text: string, data?: any): void;
-  setOption(key: string, value: any): void;
   tabSet(): void;
   handler(data: string): void;
   handleTitle(title: string): void;
@@ -204,7 +204,6 @@ export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAcc
   writeBuffer: string[];
   cursorHidden: boolean;
   cursorState: number;
-  options: ITerminalOptions;
   buffer: IBuffer;
   buffers: IBufferSet;
   isFocused: boolean;
@@ -212,6 +211,9 @@ export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAcc
   viewport: IViewport;
   bracketedPasteMode: boolean;
   applicationCursor: boolean;
+  optionsService: IOptionsService;
+  // TODO: We should remove options once components adopt optionsService
+  options: ITerminalOptions;
 
   handler(data: string): void;
   scrollLines(disp: number, suppressScrollEvent?: boolean): void;
@@ -265,8 +267,6 @@ export interface IPublicTerminal extends IDisposable, IEventEmitter {
   clear(): void;
   write(data: string): void;
   writeUtf8(data: Uint8Array): void;
-  getOption(key: string): any;
-  setOption(key: string, value: any): void;
   refresh(start: number, end: number): void;
   reset(): void;
   setRenderer(renderer: any): void;
