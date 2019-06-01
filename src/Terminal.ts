@@ -53,7 +53,7 @@ import { Attributes, DEFAULT_ATTR_DATA } from 'core/buffer/BufferLine';
 import { applyWindowsMode } from './WindowsMode';
 import { ColorManager } from 'ui/ColorManager';
 import { RenderCoordinator } from './renderer/RenderCoordinator';
-import { IOptionsService } from '../out/common/options/Types';
+import { IOptionsService } from 'common/options/Types';
 import { OptionsService } from 'common/options/OptionsService';
 
 // Let it work inside Node.js for automated testing purposes.
@@ -259,15 +259,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   private _setup(): void {
-    // Object.keys(DEFAULT_OPTIONS).forEach((key) => {
-    //   if (this.options[key] === null || this.options[key] === undefined) {
-    //     this.options[key] = DEFAULT_OPTIONS[key];
-    //   }
-    // });
-
-    // this.context = options.context || window;
-    // this.document = options.document || document;
-    // TODO: WHy not document.body?
     this._parent = document ? document.body : null;
 
     this.cols = Math.max(this.options.cols, MINIMUM_COLS);

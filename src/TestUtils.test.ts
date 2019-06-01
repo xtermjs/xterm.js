@@ -13,7 +13,7 @@ import { IDisposable, IMarker, IEvent, ISelectionPosition } from 'xterm';
 import { Terminal } from './Terminal';
 import { AttributeData } from 'core/buffer/BufferLine';
 import { IColorManager, IColorSet } from 'ui/Types';
-import { IOptionsService } from '../out/common/options/Types';
+import { IOptionsService } from 'common/options/Types';
 
 export class TestTerminal extends Terminal {
   writeSync(data: string): void {
@@ -30,7 +30,8 @@ export class MockTerminal implements ITerminal {
   onTitleChange: IEvent<string>;
   onScroll: IEvent<number>;
   onKey: IEvent<{ key: string; domEvent: KeyboardEvent; }>;
-  onRender: IEvent<{ start: number; end: number; }>;
+  onRender: IEvent<{ start: number
+    ; end: number; }>;
   onResize: IEvent<{ cols: number; rows: number; }>;
   markers: IMarker[];
   optionsService: IOptionsService;

@@ -51,22 +51,6 @@ describe('Terminal', () => {
     });
   });
 
-  // describe('getOption', () => {
-  //   it('should retrieve the option correctly', () => {
-  //     // In the `options` namespace.
-  //     term.options.cursorBlink = true;
-  //     assert.equal(term.getOption('cursorBlink'), true);
-
-  //     // On the Terminal instance
-  //     delete term.options.cursorBlink;
-  //     term.options.cursorBlink = false;
-  //     assert.equal(term.getOption('cursorBlink'), false);
-  //   });
-  //   it('should throw when retrieving a non-existant option', () => {
-  //     assert.throws(term.getOption.bind(term, 'fake', true));
-  //   });
-  // });
-
   describe('events', () => {
     it('should fire the onData evnet', (done) => {
       term.onData(() => done());
@@ -334,18 +318,6 @@ describe('Terminal', () => {
       assert.equal(term.keyPress(evKeyPress), false);
     });
   });
-
-  // describe('setOption', () => {
-  //   it('should set option correctly', () => {
-  //     term.setOption('cursorBlink', true);
-  //     assert.equal(term.options.cursorBlink, true);
-  //     term.setOption('cursorBlink', false);
-  //     assert.equal(term.options.cursorBlink, false);
-  //   });
-  //   it('should throw when setting a non-existant option', () => {
-  //     assert.throws(term.setOption.bind(term, 'fake', true));
-  //   });
-  // });
 
   describe('reset', () => {
     it('should not affect cursorState', () => {
