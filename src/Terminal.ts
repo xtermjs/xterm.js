@@ -437,11 +437,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
           break;
       }
     });
-    // TODO: Move into rendercoordinator
-    // Inform renderer of changes
-    if (this._renderCoordinator) {
-      this._renderCoordinator.onOptionsChanged();
-    }
   }
 
   /**
@@ -613,7 +608,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     this.textarea = document.createElement('textarea');
     this.textarea.classList.add('xterm-helper-textarea');
-    // TODO: New API to set title? This could say "Terminal bash input", etc.
     this.textarea.setAttribute('aria-label', Strings.promptLabel);
     this.textarea.setAttribute('aria-multiline', 'false');
     this.textarea.setAttribute('autocorrect', 'off');
@@ -640,7 +634,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this._colorManager.setTheme(this._theme);
 
     const renderer = this._createRenderer();
-    this._renderCoordinator = new RenderCoordinator(renderer, this.rows, this.screenElement);
+    this._renderCoordinator = new RenderCoordinator(renderer, this.rows, this.screenElement, this.optionsService);
     this._renderCoordinator.onRender(e => this._onRender.fire(e));
     this.onResize(e => this._renderCoordinator.resize(e.cols, e.rows));
 
