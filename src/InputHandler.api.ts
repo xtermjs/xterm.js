@@ -230,12 +230,14 @@ describe('InputHandler Integration Tests', function(): void {
       });
     });
 
-    describe.only('SM: Set Mode', () => {
+    describe('SM: Set Mode', () => {
       describe('CSI ? Pm h', () => {
         it('Pm = 2004, Set bracketed paste mode', async function(): Promise<any> {
           assert.equal(await simulatePaste('foo'), 'foo');
           await page.evaluate(`window.term.write('\x1b[?2004h')`);
           assert.equal(await simulatePaste('bar'), '\x1b[200~bar\x1b[201~');
+          await page.evaluate(`window.term.write('\x1b[?2004l')`);
+          assert.equal(await simulatePaste('baz'), 'baz');
         });
       });
     });
