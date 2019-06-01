@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-
 import { Terminal, ILinkMatcherOptions, ITerminalAddon } from 'xterm';
 
 export interface IAttachOptions {

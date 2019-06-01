@@ -9,7 +9,7 @@
   "types": "typings/fit.d.ts",
   "license": "MIT",
   "scripts": {
-    "prepublish": "tsc -p src"
+    "prepublishOnly": "../../node_modules/.bin/tsc -p src"
   },
   "peerDependencies": {
     "xterm": "^3.14.0"

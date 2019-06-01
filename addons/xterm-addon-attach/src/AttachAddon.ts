@@ -17,7 +17,6 @@ interface INewTerminal extends Terminal {
   writeUtf8(data: Uint8Array): void;
 }
 
-
 export class AttachAddon implements ITerminalAddon {
   private _socket: WebSocket;
   private _bidirectional: boolean;
