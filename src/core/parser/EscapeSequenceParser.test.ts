@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { ParserState, IDcsHandler, IParsingState } from './Types';
-import { EscapeSequenceParser, TransitionTable, VT500_TRANSITION_TABLE } from './EscapeSequenceParser';
+import { ParserState, IDcsHandler, IParsingState } from 'core/parser/Types';
+import { EscapeSequenceParser, TransitionTable, VT500_TRANSITION_TABLE } from 'core/parser/EscapeSequenceParser';
 import * as chai from 'chai';
 import { StringToUtf32, stringFromCodePoint } from 'core/input/TextDecoder';
 
@@ -172,7 +172,7 @@ function parse(parser: TestEscapeSequenceParser, data: string): void {
 }
 
 describe('EscapeSequenceParser', function (): void {
-  let parser: TestEscapeSequenceParser | null = null;
+  let parser: TestEscapeSequenceParser;
   const runs: IRun[] = [
     { tableType: 'Uint8Array', parser: parserUint },
     { tableType: 'Array', parser: parserArray }
@@ -995,7 +995,7 @@ describe('EscapeSequenceParser', function (): void {
   });
 
   runs.forEach(function (run: IRun): void {
-    let test: Function | null = null;
+    let test: Function;
     describe('escape sequence examples / ' + run.tableType, function (): void {
       before(function(): void {
         parser = run.parser;
@@ -1122,7 +1122,7 @@ describe('EscapeSequenceParser', function (): void {
 
   describe('set/clear handler', function (): void {
     const INPUT = '\x1b[1;31mhello \x1b%Gwor\x1bEld!\x1b[0m\r\n$>\x1b]1;foo=bar\x1b\\';
-    let parser2: TestEscapeSequenceParser = null;
+    let parser2: TestEscapeSequenceParser;
     let print = '';
     const esc: string[] = [];
     const csi: [string, number[], string][] = [];
@@ -1378,7 +1378,7 @@ describe('EscapeSequenceParser', function (): void {
       chai.expect(dcs).eql([]);
     });
     it('ERROR handler', function (): void {
-      let errorState: IParsingState = null;
+      let errorState: IParsingState | null = null;
       parser2.setErrorHandler(function (state: IParsingState): IParsingState {
         errorState = state;
         return state;
