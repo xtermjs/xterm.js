@@ -18,8 +18,16 @@ const args = [
   './lib/**/*test.js'
 ];
 
-cp.spawnSync(path.resolve(__dirname, '../node_modules/.bin/mocha'), args, {
-  cwd: path.resolve(__dirname, '..'),
-  env,
-  stdio: 'inherit'
-});
+// ability to inject particular test files via
+// yarn test [testFileA testFileB ...]
+const testFilesFromArgs = process.argv.slice(2);
+
+cp.spawnSync(
+  path.resolve(__dirname, '../node_modules/.bin/mocha'),
+  (testFilesFromArgs.length) ? testFilesFromArgs : args,
+  {
+    cwd: path.resolve(__dirname, '..'),
+    env,
+    stdio: 'inherit'
+  }
+);
