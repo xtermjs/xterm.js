@@ -16,11 +16,19 @@ interface IHandlerCollection<T> {
 type CsiHandler = (params: number[], collect: string) => boolean | void;
 type OscHandler = (data: string) => boolean | void;
 
+/**
+ * Table values are generated like this:
+ *    index:  currentState << TableValue.INDEX_STATE_SHIFT | charCode
+ *    value:  action << TableValue.TRANSITION_ACTION_SHIFT | nextState
+ */
+const enum TableAccess {
+  TRANSITION_ACTION_SHIFT = 4,
+  TRANSITION_STATE_MASK = 15,
+  INDEX_STATE_SHIFT = 8
+}
 
 /**
  * Transition table for EscapeSequenceParser.
- * NOTE: data in the underlying table is packed like this:
- *   currentState << 8 | characterCode  -->  action << 4 | nextState
  */
 export class TransitionTable {
   public table: Uint8Array;
@@ -35,7 +43,7 @@ export class TransitionTable {
    * @param next default next state
    */
   public setDefault(action: ParserAction, next: ParserState): void {
-    fill(this.table, action << 4 | next);
+    fill(this.table, action << TableAccess.TRANSITION_ACTION_SHIFT | next);
   }
 
   /**
@@ -46,7 +54,7 @@ export class TransitionTable {
    * @param next next parser state
    */
   public add(code: number, state: ParserState, action: ParserAction, next: ParserState): void {
-    this.table[state << 8 | code] = action << 4 | next;
+    this.table[state << TableAccess.INDEX_STATE_SHIFT | code] = action << TableAccess.TRANSITION_ACTION_SHIFT | next;
   }
 
   /**
@@ -58,7 +66,7 @@ export class TransitionTable {
    */
   public addMany(codes: number[], state: ParserState, action: ParserAction, next: ParserState): void {
     for (let i = 0; i < codes.length; i++) {
-      this.table[state << 8 | codes[i]] = action << 4 | next;
+      this.table[state << TableAccess.INDEX_STATE_SHIFT | codes[i]] = action << TableAccess.TRANSITION_ACTION_SHIFT | next;
     }
   }
 }
@@ -75,8 +83,9 @@ const NON_ASCII_PRINTABLE = 0xA0;
 export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
   const table: TransitionTable = new TransitionTable(4095);
 
-  // range macro
-  const blueprint = Array.apply(null, Array(256)).map((unused: any, i: number) => i);
+  // range macro for byte
+  const BYTE_VALUES = 256;
+  const blueprint = Array.apply(null, Array(BYTE_VALUES)).map((unused: any, i: number) => i);
   const r = (start: number, end: number) => blueprint.slice(start, end);
 
   // Default definitions.
@@ -420,8 +429,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
       }
 
       // normal transition & action lookup
-      transition = table[currentState << 8 | (code < 0xa0 ? code : NON_ASCII_PRINTABLE)];
-      switch (transition >> 4) {
+      transition = table[currentState << TableAccess.INDEX_STATE_SHIFT | (code < 0xa0 ? code : NON_ASCII_PRINTABLE)];
+      switch (transition >> TableAccess.TRANSITION_ACTION_SHIFT) {
         case ParserAction.PRINT:
           print = (~print) ? print : i;
           break;
@@ -570,7 +579,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           dcs = -1;
           break;
       }
-      currentState = transition & 15;
+      currentState = transition & TableAccess.TRANSITION_STATE_MASK;
     }
 
     // push leftover pushable buffers to terminal
