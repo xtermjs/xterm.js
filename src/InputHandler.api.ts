@@ -229,6 +229,18 @@ describe('InputHandler Integration Tests', function(): void {
         assert.equal(await page.evaluate(`window.result`), '\x1b[?3;4R');
       });
     });
+
+    describe('SM: Set Mode', () => {
+      describe('CSI ? Pm h', () => {
+        it('Pm = 2004, Set bracketed paste mode', async function(): Promise<any> {
+          assert.equal(await simulatePaste('foo'), 'foo');
+          await page.evaluate(`window.term.write('\x1b[?2004h')`);
+          assert.equal(await simulatePaste('bar'), '\x1b[200~bar\x1b[201~');
+          await page.evaluate(`window.term.write('\x1b[?2004l')`);
+          assert.equal(await simulatePaste('baz'), 'baz');
+        });
+      });
+    });
   });
 });
 
@@ -248,4 +260,17 @@ async function getLinesAsArray(count: number, start: number = 0): Promise<string
     text += `window.term.buffer.getLine(${i}).translateToString(true),`;
   }
   return await page.evaluate(`[${text}]`);
+}
+
+async function simulatePaste(text: string): Promise<string> {
+  const id = Math.floor(Math.random() * 1000000);
+  await page.evaluate(`
+    (function () {
+      window.term.onData(e => window.result_${id} = e);
+      const clipboardData = new DataTransfer();
+      clipboardData.setData('text/plain', '${text}');
+      window.term.textarea.dispatchEvent(new ClipboardEvent('paste', { clipboardData }));
+    })();
+  `);
+  return await page.evaluate(`window.result_${id}`);
 }
