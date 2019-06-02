@@ -7,6 +7,7 @@ import { ParserState, ParserAction, IParsingState, IDcsHandler, IEscapeSequenceP
 import { Disposable } from 'common/Lifecycle';
 import { utf32ToString } from 'core/input/TextDecoder';
 import { IDisposable } from 'common/Types';
+import { fill } from 'common/TypedArrayUtils';
 
 interface IHandlerCollection<T> {
   [key: string]: T[];
@@ -16,31 +17,33 @@ type CsiHandler = (params: number[], collect: string) => boolean | void;
 type OscHandler = (data: string) => boolean | void;
 
 /**
- * Returns an array filled with numbers between the low and high parameters (right exclusive).
- * @param low The low number.
- * @param high The high number.
+ * Table values are generated like this:
+ *    index:  currentState << TableValue.INDEX_STATE_SHIFT | charCode
+ *    value:  action << TableValue.TRANSITION_ACTION_SHIFT | nextState
  */
-function r(low: number, high: number): number[] {
-  let c = high - low;
-  const arr = new Array(c);
-  while (c--) {
-    arr[c] = --high;
-  }
-  return arr;
+const enum TableAccess {
+  TRANSITION_ACTION_SHIFT = 4,
+  TRANSITION_STATE_MASK = 15,
+  INDEX_STATE_SHIFT = 8
 }
 
 /**
  * Transition table for EscapeSequenceParser.
- * NOTE: data in the underlying table is packed like this:
- *   currentState << 8 | characterCode  -->  action << 4 | nextState
  */
 export class TransitionTable {
-  public table: Uint8Array | number[];
+  public table: Uint8Array;
 
   constructor(length: number) {
-    this.table = (typeof Uint8Array === 'undefined')
-      ? new Array(length)
-      : new Uint8Array(length);
+    this.table = new Uint8Array(length);
+  }
+
+  /**
+   * Set default transition.
+   * @param action default action
+   * @param next default next state
+   */
+  public setDefault(action: ParserAction, next: ParserState): void {
+    fill(this.table, action << TableAccess.TRANSITION_ACTION_SHIFT | next);
   }
 
   /**
@@ -50,8 +53,8 @@ export class TransitionTable {
    * @param action parser action to be done
    * @param next next parser state
    */
-  add(code: number, state: ParserState, action: ParserAction, next: ParserState): void {
-    this.table[state << 8 | code] = (action << 4) | next;
+  public add(code: number, state: ParserState, action: ParserAction, next: ParserState): void {
+    this.table[state << TableAccess.INDEX_STATE_SHIFT | code] = action << TableAccess.TRANSITION_ACTION_SHIFT | next;
   }
 
   /**
@@ -61,23 +64,17 @@ export class TransitionTable {
    * @param action parser action to be done
    * @param next next parser state
    */
-  addMany(codes: number[], state: ParserState, action: ParserAction, next: ParserState): void {
+  public addMany(codes: number[], state: ParserState, action: ParserAction, next: ParserState): void {
     for (let i = 0; i < codes.length; i++) {
-      this.add(codes[i], state, action, next);
+      this.table[state << TableAccess.INDEX_STATE_SHIFT | codes[i]] = action << TableAccess.TRANSITION_ACTION_SHIFT | next;
     }
   }
 }
 
 
-/**
- * Default definitions for the VT500_TRANSITION_TABLE.
- */
-const PRINTABLES = r(0x20, 0x7f);
-const EXECUTABLES = r(0x00, 0x18);
-EXECUTABLES.push(0x19);
-EXECUTABLES.push.apply(EXECUTABLES, r(0x1c, 0x20));
-// Pseudo-character placeholder for printable non-ascii characters.
+// Pseudo-character placeholder for printable non-ascii characters (unicode).
 const NON_ASCII_PRINTABLE = 0xA0;
+
 
 /**
  * VT500 compatible transition table.
@@ -86,16 +83,22 @@ const NON_ASCII_PRINTABLE = 0xA0;
 export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
   const table: TransitionTable = new TransitionTable(4095);
 
+  // range macro for byte
+  const BYTE_VALUES = 256;
+  const blueprint = Array.apply(null, Array(BYTE_VALUES)).map((unused: any, i: number) => i);
+  const r = (start: number, end: number) => blueprint.slice(start, end);
+
+  // Default definitions.
+  const PRINTABLES = r(0x20, 0x7f);
+  const EXECUTABLES = r(0x00, 0x18);
+  EXECUTABLES.push(0x19);
+  EXECUTABLES.push.apply(EXECUTABLES, r(0x1c, 0x20));
+
   const states: number[] = r(ParserState.GROUND, ParserState.DCS_PASSTHROUGH + 1);
   let state: any;
 
-  // table with default transition
-  for (state in states) {
-    // NOTE: table lookup is capped at 0xa0 in parse to keep the table small
-    for (let code = 0; code <= NON_ASCII_PRINTABLE; ++code) {
-      table.add(code, state, ParserAction.ERROR, ParserState.GROUND);
-    }
-  }
+  // set default transition
+  table.setDefault(ParserAction.ERROR, ParserState.GROUND);
   // printables
   table.addMany(PRINTABLES, ParserState.GROUND, ParserAction.PRINT, ParserState.GROUND);
   // global anywhere rules
@@ -195,7 +198,12 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
   table.addMany(PRINTABLES, ParserState.DCS_PASSTHROUGH, ParserAction.DCS_PUT, ParserState.DCS_PASSTHROUGH);
   table.add(0x7f, ParserState.DCS_PASSTHROUGH, ParserAction.IGNORE, ParserState.DCS_PASSTHROUGH);
   table.addMany([0x1b, 0x9c], ParserState.DCS_PASSTHROUGH, ParserAction.DCS_UNHOOK, ParserState.GROUND);
+  // special handling of unicode chars
+  table.add(NON_ASCII_PRINTABLE, ParserState.GROUND, ParserAction.PRINT, ParserState.GROUND);
   table.add(NON_ASCII_PRINTABLE, ParserState.OSC_STRING, ParserAction.OSC_PUT, ParserState.OSC_STRING);
+  table.add(NON_ASCII_PRINTABLE, ParserState.CSI_IGNORE, ParserAction.IGNORE, ParserState.CSI_IGNORE);
+  table.add(NON_ASCII_PRINTABLE, ParserState.DCS_IGNORE, ParserAction.IGNORE, ParserState.DCS_IGNORE);
+  table.add(NON_ASCII_PRINTABLE, ParserState.DCS_PASSTHROUGH, ParserAction.DCS_PUT, ParserState.DCS_PASSTHROUGH);
   return table;
 })();
 
@@ -391,14 +399,13 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   parse(data: Uint32Array, length: number): void {
     let code = 0;
     let transition = 0;
-    let error = false;
     let currentState = this.currentState;
     let print = -1;
     let dcs = -1;
     let osc = this._osc;
     let collect = this._collect;
     let params = this._params;
-    const table: Uint8Array | number[] = this.TRANSITIONS.table;
+    const table: Uint8Array = this.TRANSITIONS.table;
     let dcsHandler: IDcsHandler | null = this._activeDcsHandler;
     let callback: Function | null = null;
 
@@ -422,8 +429,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
       }
 
       // normal transition & action lookup
-      transition = table[currentState << 8 | (code < 0xa0 ? code : NON_ASCII_PRINTABLE)];
-      switch (transition >> 4) {
+      transition = table[currentState << TableAccess.INDEX_STATE_SHIFT | (code < 0xa0 ? code : NON_ASCII_PRINTABLE)];
+      switch (transition >> TableAccess.TRANSITION_ACTION_SHIFT) {
         case ParserAction.PRINT:
           print = (~print) ? print : i;
           break;
@@ -449,47 +456,20 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           }
           break;
         case ParserAction.ERROR:
-          // chars higher than 0x9f are handled by this action
-          // to keep the transition table small
-          if (code > 0x9f) {
-            switch (currentState) {
-              case ParserState.GROUND:
-                print = (~print) ? print : i;
-                break;
-              case ParserState.CSI_IGNORE:
-                transition |= ParserState.CSI_IGNORE;
-                break;
-              case ParserState.DCS_IGNORE:
-                transition |= ParserState.DCS_IGNORE;
-                break;
-              case ParserState.DCS_PASSTHROUGH:
-                dcs = (~dcs) ? dcs : i;
-                transition |= ParserState.DCS_PASSTHROUGH;
-                break;
-              default:
-                error = true;
-            }
-          } else {
-            error = true;
-          }
-          // if we end up here a real error happened
-          if (error) {
-            const inject: IParsingState = this._errorHandler(
-              {
-                position: i,
-                code,
-                currentState,
-                print,
-                dcs,
-                osc,
-                collect,
-                params,
-                abort: false
-              });
-            if (inject.abort) return;
-          // TODO: inject return values
-            error = false;
-          }
+          const inject: IParsingState = this._errorHandler(
+            {
+              position: i,
+              code,
+              currentState,
+              print,
+              dcs,
+              osc,
+              collect,
+              params,
+              abort: false
+            });
+          if (inject.abort) return;
+          // inject values: currently not implemented
           break;
         case ParserAction.CSI_DISPATCH:
           // Trigger CSI Handler
@@ -599,7 +579,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           dcs = -1;
           break;
       }
-      currentState = transition & 15;
+      currentState = transition & TableAccess.TRANSITION_STATE_MASK;
     }
 
     // push leftover pushable buffers to terminal
