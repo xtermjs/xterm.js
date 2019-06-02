@@ -189,7 +189,12 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
   table.addMany(PRINTABLES, ParserState.DCS_PASSTHROUGH, ParserAction.DCS_PUT, ParserState.DCS_PASSTHROUGH);
   table.add(0x7f, ParserState.DCS_PASSTHROUGH, ParserAction.IGNORE, ParserState.DCS_PASSTHROUGH);
   table.addMany([0x1b, 0x9c], ParserState.DCS_PASSTHROUGH, ParserAction.DCS_UNHOOK, ParserState.GROUND);
+  // special handling of unicode chars
+  table.add(NON_ASCII_PRINTABLE, ParserState.GROUND, ParserAction.PRINT, ParserState.GROUND);
   table.add(NON_ASCII_PRINTABLE, ParserState.OSC_STRING, ParserAction.OSC_PUT, ParserState.OSC_STRING);
+  table.add(NON_ASCII_PRINTABLE, ParserState.CSI_IGNORE, ParserAction.IGNORE, ParserState.CSI_IGNORE);
+  table.add(NON_ASCII_PRINTABLE, ParserState.DCS_IGNORE, ParserAction.IGNORE, ParserState.DCS_IGNORE);
+  table.add(NON_ASCII_PRINTABLE, ParserState.DCS_PASSTHROUGH, ParserAction.DCS_PUT, ParserState.DCS_PASSTHROUGH);
   return table;
 })();
 
@@ -385,7 +390,6 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   parse(data: Uint32Array, length: number): void {
     let code = 0;
     let transition = 0;
-    let error = false;
     let currentState = this.currentState;
     let print = -1;
     let dcs = -1;
@@ -443,47 +447,20 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           }
           break;
         case ParserAction.ERROR:
-          // chars higher than 0x9f are handled by this action
-          // to keep the transition table small
-          if (code > 0x9f) {
-            switch (currentState) {
-              case ParserState.GROUND:
-                print = (~print) ? print : i;
-                break;
-              case ParserState.CSI_IGNORE:
-                transition |= ParserState.CSI_IGNORE;
-                break;
-              case ParserState.DCS_IGNORE:
-                transition |= ParserState.DCS_IGNORE;
-                break;
-              case ParserState.DCS_PASSTHROUGH:
-                dcs = (~dcs) ? dcs : i;
-                transition |= ParserState.DCS_PASSTHROUGH;
-                break;
-              default:
-                error = true;
-            }
-          } else {
-            error = true;
-          }
-          // if we end up here a real error happened
-          if (error) {
-            const inject: IParsingState = this._errorHandler(
-              {
-                position: i,
-                code,
-                currentState,
-                print,
-                dcs,
-                osc,
-                collect,
-                params,
-                abort: false
-              });
-            if (inject.abort) return;
-          // TODO: inject return values
-            error = false;
-          }
+          const inject: IParsingState = this._errorHandler(
+            {
+              position: i,
+              code,
+              currentState,
+              print,
+              dcs,
+              osc,
+              collect,
+              params,
+              abort: false
+            });
+          if (inject.abort) return;
+          // inject values: currently not implemented
           break;
         case ParserAction.CSI_DISPATCH:
           // Trigger CSI Handler

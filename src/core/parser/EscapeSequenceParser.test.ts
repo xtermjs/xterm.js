@@ -976,9 +976,9 @@ describe('EscapeSequenceParser', function (): void {
       ], null);
     });
     it('single DCS', function (): void {
-      test('\x1bP1;2;3+$abc;de\x9c', [
+      test('\x1bP1;2;3+$aäbc;däe\x9c', [
         ['dcs hook', '+$', [1, 2, 3], 'a'],
-        ['dcs put', 'bc;de'],
+        ['dcs put', 'äbc;däe'],
         ['dcs unhook']
       ], null);
     });
