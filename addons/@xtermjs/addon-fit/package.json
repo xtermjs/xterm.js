@@ -1,0 +1,17 @@
+{
+  "name": "@xtermjs/addon-fit",
+  "version": "0.1.0-beta7",
+  "author": {
+    "name": "The xterm.js authors",
+    "url": "https://xtermjs.org/"
+  },
+  "main": "lib/FitAddon.js",
+  "types": "typings/fit.d.ts",
+  "license": "MIT",
+  "scripts": {
+    "prepublishOnly": "../../../node_modules/.bin/tsc -p src"
+  },
+  "peerDependencies": {
+    "xterm": "^3.14.0"
+  }
+}

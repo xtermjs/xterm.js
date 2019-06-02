@@ -1,0 +1,11 @@
+{
+  "files": [],
+  "include": [],
+  "references": [
+    { "path": "./src" },
+    { "path": "./addons/@xtermjs/addon-attach/src" },
+    { "path": "./addons/@xtermjs/addon-fit/src" },
+    { "path": "./addons/@xtermjs/addon-search/src" },
+    { "path": "./addons/@xtermjs/addon-web-links/src" }
+  ]
+}
