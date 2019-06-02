@@ -10,7 +10,7 @@ const path = require('path');
 const env = { ...process.env };
 env.NODE_PATH = path.resolve(__dirname, '../out');
 
-const args = [
+let testFiles = [
   './out/*test.js',
   './out/**/*test.js',
   './out/*integration.js',
@@ -20,11 +20,13 @@ const args = [
 
 // ability to inject particular test files via
 // yarn test [testFileA testFileB ...]
-const testFilesFromArgs = process.argv.slice(2);
+if (process.argv.length > 2) {
+  testFiles = process.argv.slice(2);
+}
 
 cp.spawnSync(
   path.resolve(__dirname, '../node_modules/.bin/mocha'),
-  (testFilesFromArgs.length) ? testFilesFromArgs : args,
+  testFiles,
   {
     cwd: path.resolve(__dirname, '..'),
     env,
