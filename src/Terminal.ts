@@ -750,7 +750,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.element.appendChild(fragment);
 
     this._theme = this.options.theme;
-    this.options.theme = null;
     this._colorManager = new ColorManager(document, this.options.allowTransparency);
     this._colorManager.setTheme(this._theme);
 
