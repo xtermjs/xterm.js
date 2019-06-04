@@ -5,7 +5,7 @@
 
 import { Terminal, ILinkMatcherOptions, ITerminalAddon } from 'xterm';
 
-declare module '@xtermjs/addon-attach' {
+declare module 'xterm-addon-attach' {
   export interface IAttachOptions {
     /**
      * Whether input should be written to the backend. Defaults to `true`.

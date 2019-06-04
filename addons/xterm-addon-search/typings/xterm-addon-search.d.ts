@@ -5,7 +5,7 @@
 
 import { Terminal, ILinkMatcherOptions, IDisposable, ITerminalAddon } from 'xterm';
 
-declare module '@xtermjs/addon-search' {
+declare module 'xterm-addon-search' {
   /**
    * Options for a search.
    */
