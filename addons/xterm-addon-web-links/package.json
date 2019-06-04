@@ -1,5 +1,5 @@
 {
-  "name": "@xtermjs/addon-web-links",
+  "name": "xterm-addon-web-links",
   "version": "0.1.0-beta7",
   "author": {
     "name": "The xterm.js authors",
@@ -9,7 +9,7 @@
   "types": "typings/web-links.d.ts",
   "license": "MIT",
   "scripts": {
-    "prepublishOnly": "../../../node_modules/.bin/tsc -p src"
+    "prepublishOnly": "../../node_modules/.bin/tsc -p src"
   },
   "peerDependencies": {
     "xterm": "^3.14.0"
