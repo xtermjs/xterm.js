@@ -1340,8 +1340,6 @@ describe('EscapeSequenceParser', function (): void {
         position: 6,
         code: '€'.charCodeAt(0),
         currentState: ParserState.CSI_PARAM,
-        print: -1,
-        dcs: -1,
         osc: '',
         collect: '',
         params: [1, 2, 0], // extra zero here
