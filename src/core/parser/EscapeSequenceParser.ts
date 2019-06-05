@@ -528,7 +528,6 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           break;
         case ParserAction.DCS_UNHOOK:
           if (dcsHandler) {
-            // if (~dcs) dcsHandler.put(data, dcs, i);
             dcsHandler.unhook();
             dcsHandler = null;
           }
