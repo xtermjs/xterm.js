@@ -18,54 +18,24 @@ export interface ISearchResult {
   row: number;
 }
 
-// TODO: This is temporary, link to xtem when new version is published
-interface INewTerminal extends Terminal {
-  buffer: IBuffer;
-  select(column: number, row: number, length: number): void;
-  getSelectionPosition(): ISelectionPosition | undefined;
-}
-interface IBuffer {
-  readonly cursorY: number;
-  readonly cursorX: number;
-  readonly viewportY: number;
-  readonly baseY: number;
-  readonly length: number;
-  getLine(y: number): IBufferLine | undefined;
-}
-interface IBufferLine {
-  readonly isWrapped: boolean;
-  getCell(x: number): IBufferCell;
-  translateToString(trimRight?: boolean, startColumn?: number, endColumn?: number): string;
-}
-interface IBufferCell {
-  readonly char: string;
-  readonly width: number;
-}
-interface ISelectionPosition {
-  startColumn: number;
-  startRow: number;
-  endColumn: number;
-  endRow: number;
-}
-
 const NON_WORD_CHARACTERS = ' ~!@#$%^&*()+`-=[]{}|\;:"\',./<>?';
 const LINES_CACHE_TIME_TO_LIVE = 15 * 1000; // 15 secs
 
 export class SearchAddon implements ITerminalAddon {
-  private _terminal: INewTerminal;
+  private _terminal: Terminal | undefined;
 
   /**
    * translateBufferLineToStringWithWrap is a fairly expensive call.
    * We memoize the calls into an array that has a time based ttl.
    * _linesCache is also invalidated when the terminal cursor moves.
    */
-  private _linesCache: string[] = null;
+  private _linesCache: string[] | undefined;
   private _linesCacheTimeoutId = 0;
   private _cursorMoveListener: IDisposable | undefined;
   private _resizeListener: IDisposable | undefined;
 
   public activate(terminal: Terminal): void {
-    this._terminal = <any>terminal;
+    this._terminal = terminal;
   }
 
   public dispose(): void {}
@@ -78,8 +48,9 @@ export class SearchAddon implements ITerminalAddon {
    * @return Whether a result was found.
    */
   public findNext(term: string, searchOptions?: ISearchOptions): boolean {
-    const {incremental} = searchOptions;
-    let result: ISearchResult;
+    if (!this._terminal) {
+      throw new Error('Cannot use addon until it has been loaded');
+    }
 
     if (!term || term.length === 0) {
       this._terminal.clearSelection();
@@ -90,9 +61,10 @@ export class SearchAddon implements ITerminalAddon {
     let startRow = this._terminal.buffer.viewportY;
 
     if (this._terminal.hasSelection()) {
+      const incremental = searchOptions ? searchOptions.incremental : false;
       // Start from the selection end if there is a selection
       // For incremental search, use existing row
-      const currentSelection = this._terminal.getSelectionPosition();
+      const currentSelection = this._terminal.getSelectionPosition()!;
       startRow = incremental ? currentSelection.startRow : currentSelection.endRow;
       startCol = incremental ? currentSelection.startColumn : currentSelection.endColumn;
     }
@@ -105,13 +77,14 @@ export class SearchAddon implements ITerminalAddon {
     let cumulativeCols = startCol;
     // If startRow is wrapped row, scan for unwrapped row above.
     // So we can start matching on wrapped line from long unwrapped line.
-    while (this._terminal.buffer.getLine(findingRow).isWrapped) {
-      findingRow--;
+    let currentLine = this._terminal.buffer.getLine(findingRow);
+    while (currentLine && currentLine.isWrapped) {
       cumulativeCols += this._terminal.cols;
+      currentLine = this._terminal.buffer.getLine(--findingRow);
     }
 
     // Search startRow
-    result = this._findInLine(term, findingRow, cumulativeCols, searchOptions);
+    let result = this._findInLine(term, findingRow, cumulativeCols, searchOptions);
 
     // Search from startRow + 1 to end
     if (!result) {
@@ -150,7 +123,9 @@ export class SearchAddon implements ITerminalAddon {
    * @return Whether a result was found.
    */
   public findPrevious(term: string, searchOptions?: ISearchOptions): boolean {
-    let result: ISearchResult;
+    if (!this._terminal) {
+      throw new Error('Cannot use addon until it has been loaded');
+    }
 
     if (!term || term.length === 0) {
       this._terminal.clearSelection();
@@ -163,7 +138,7 @@ export class SearchAddon implements ITerminalAddon {
 
     if (this._terminal.hasSelection()) {
       // Start from the selection start if there is a selection
-      const currentSelection = this._terminal.getSelectionPosition();
+      const currentSelection = this._terminal.getSelectionPosition()!;
       startRow = currentSelection.startRow;
       startCol = currentSelection.startColumn;
     }
@@ -171,14 +146,14 @@ export class SearchAddon implements ITerminalAddon {
     this._initLinesCache();
 
     // Search startRow
-    result = this._findInLine(term, startRow, startCol, searchOptions, isReverseSearch);
+    let result = this._findInLine(term, startRow, startCol, searchOptions, isReverseSearch);
 
     // Search from startRow - 1 to top
     if (!result) {
       // If the line is wrapped line, increase number of columns that is needed to be scanned
       // Se we can scan on wrapped line from unwrapped line
       let cumulativeCols = this._terminal.cols;
-      if (this._terminal.buffer.getLine(startRow).isWrapped) {
+      if (this._terminal.buffer.getLine(startRow)!.isWrapped) {
         cumulativeCols += startCol;
       }
       for (let y = startRow - 1; y >= 0; y--) {
@@ -188,7 +163,8 @@ export class SearchAddon implements ITerminalAddon {
         }
         // If the current line is wrapped line, increase scanning range,
         // preparing for scanning on unwrapped line
-        if (this._terminal.buffer.getLine(y).isWrapped) {
+        const line = this._terminal.buffer.getLine(y);
+        if (line && line.isWrapped) {
           cumulativeCols += this._terminal.cols;
         } else {
           cumulativeCols = this._terminal.cols;
@@ -206,7 +182,8 @@ export class SearchAddon implements ITerminalAddon {
         if (result) {
           break;
         }
-        if (this._terminal.buffer.getLine(y).isWrapped) {
+        const line = this._terminal.buffer.getLine(y);
+        if (line && line.isWrapped) {
           cumulativeCols += this._terminal.cols;
         } else {
           cumulativeCols = this._terminal.cols;
@@ -222,10 +199,11 @@ export class SearchAddon implements ITerminalAddon {
    * Sets up a line cache with a ttl
    */
   private _initLinesCache(): void {
+    const terminal = this._terminal!;
     if (!this._linesCache) {
-      this._linesCache = new Array(this._terminal.buffer.length);
-      this._cursorMoveListener = this._terminal.onCursorMove(() => this._destroyLinesCache());
-      this._resizeListener = this._terminal.onResize(() => this._destroyLinesCache());
+      this._linesCache = new Array(terminal.buffer.length);
+      this._cursorMoveListener = terminal.onCursorMove(() => this._destroyLinesCache());
+      this._resizeListener = terminal.onResize(() => this._destroyLinesCache());
     }
 
     window.clearTimeout(this._linesCacheTimeoutId);
@@ -233,7 +211,7 @@ export class SearchAddon implements ITerminalAddon {
   }
 
   private _destroyLinesCache(): void {
-    this._linesCache = null;
+    this._linesCache = undefined;
     if (this._cursorMoveListener) {
       this._cursorMoveListener.dispose();
       this._cursorMoveListener = undefined;
@@ -270,15 +248,17 @@ export class SearchAddon implements ITerminalAddon {
    * @param searchOptions Search options.
    * @return The search result if it was found.
    */
-  protected _findInLine(term: string, row: number, col: number, searchOptions: ISearchOptions = {}, isReverseSearch: boolean = false): ISearchResult {
+  protected _findInLine(term: string, row: number, col: number, searchOptions: ISearchOptions = {}, isReverseSearch: boolean = false): ISearchResult | undefined {
+    const terminal = this._terminal!;
 
     // Ignore wrapped lines, only consider on unwrapped line (first row of command string).
-    if (this._terminal.buffer.getLine(row).isWrapped) {
+    const firstLine = terminal.buffer.getLine(row);
+    if (firstLine && firstLine.isWrapped) {
       return;
     }
     let stringLine = this._linesCache ? this._linesCache[row] : void 0;
     if (stringLine === void 0) {
-      stringLine = this.translateBufferLineToStringWithWrap(row, true);
+      stringLine = this._translateBufferLineToStringWithWrap(row, true);
       if (this._linesCache) {
         this._linesCache[row] = stringLine;
       }
@@ -290,7 +270,7 @@ export class SearchAddon implements ITerminalAddon {
     let resultIndex = -1;
     if (searchOptions.regex) {
       const searchRegex = RegExp(searchTerm, 'g');
-      let foundTerm: RegExpExecArray;
+      let foundTerm: RegExpExecArray | null;
       if (isReverseSearch) {
         // This loop will get the resultIndex of the _last_ regex match in the range 0..col
         while (foundTerm = searchRegex.exec(searchStringLine.slice(0, col))) {
@@ -317,28 +297,33 @@ export class SearchAddon implements ITerminalAddon {
 
     if (resultIndex >= 0) {
       // Adjust the row number and search index if needed since a "line" of text can span multiple rows
-      if (resultIndex >= this._terminal.cols) {
-        row += Math.floor(resultIndex / this._terminal.cols);
-        resultIndex = resultIndex % this._terminal.cols;
+      if (resultIndex >= terminal.cols) {
+        row += Math.floor(resultIndex / terminal.cols);
+        resultIndex = resultIndex % terminal.cols;
       }
       if (searchOptions.wholeWord && !this._isWholeWord(resultIndex, searchStringLine, term)) {
         return;
       }
 
-      const line = this._terminal.buffer.getLine(row);
+      const line = terminal.buffer.getLine(row);
 
-      for (let i = 0; i < resultIndex; i++) {
-        const cell = line.getCell(i);
-        // Adjust the searchIndex to normalize emoji into single chars
-        const char = cell.char;
-        if (char.length > 1) {
-          resultIndex -= char.length - 1;
-        }
-        // Adjust the searchIndex for empty characters following wide unicode
-        // chars (eg. CJK)
-        const charWidth = cell.width;
-        if (charWidth === 0) {
-          resultIndex++;
+      if (line) {
+        for (let i = 0; i < resultIndex; i++) {
+          const cell = line.getCell(i);
+          if (!cell) {
+            break;
+          }
+          // Adjust the searchIndex to normalize emoji into single chars
+          const char = cell.char;
+          if (char.length > 1) {
+            resultIndex -= char.length - 1;
+          }
+          // Adjust the searchIndex for empty characters following wide unicode
+          // chars (eg. CJK)
+          const charWidth = cell.width;
+          if (charWidth === 0) {
+            resultIndex++;
+          }
         }
       }
       return {
@@ -348,6 +333,7 @@ export class SearchAddon implements ITerminalAddon {
       };
     }
   }
+
   /**
    * Translates a buffer line to a string, including subsequent lines if they are wraps.
    * Wide characters will count as two columns in the resulting string. This
@@ -356,14 +342,19 @@ export class SearchAddon implements ITerminalAddon {
    * @param line The line being translated.
    * @param trimRight Whether to trim whitespace to the right.
    */
-  public translateBufferLineToStringWithWrap(lineIndex: number, trimRight: boolean): string {
+  private _translateBufferLineToStringWithWrap(lineIndex: number, trimRight: boolean): string {
+    const terminal = this._terminal!;
     let lineString = '';
     let lineWrapsToNext: boolean;
 
     do {
-      const nextLine = this._terminal.buffer.getLine(lineIndex + 1);
+      const nextLine = terminal.buffer.getLine(lineIndex + 1);
       lineWrapsToNext = nextLine ? nextLine.isWrapped : false;
-      lineString += this._terminal.buffer.getLine(lineIndex).translateToString(!lineWrapsToNext && trimRight).substring(0, this._terminal.cols);
+      const line = terminal.buffer.getLine(lineIndex);
+      if (!line) {
+        break;
+      }
+      lineString += line.translateToString(!lineWrapsToNext && trimRight).substring(0, terminal.cols);
       lineIndex++;
     } while (lineWrapsToNext);
 
@@ -375,13 +366,14 @@ export class SearchAddon implements ITerminalAddon {
    * @param result The result to select.
    * @return Whethera result was selected.
    */
-  private _selectResult(result: ISearchResult): boolean {
+  private _selectResult(result: ISearchResult | undefined): boolean {
+    const terminal = this._terminal!;
     if (!result) {
-      this._terminal.clearSelection();
+      terminal.clearSelection();
       return false;
     }
-    this._terminal.select(result.col, result.row, result.term.length);
-    this._terminal.scrollLines(result.row - this._terminal.buffer.viewportY);
+    terminal.select(result.col, result.row, result.term.length);
+    terminal.scrollLines(result.row - terminal.buffer.viewportY);
     return true;
   }
 }
