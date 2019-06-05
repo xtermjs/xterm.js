@@ -89,7 +89,7 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
   const r = (start: number, end: number) => blueprint.slice(start, end);
 
   // Default definitions.
-  const PRINTABLES = r(0x20, 0x7f);
+  const PRINTABLES = r(0x20, 0x7f); // 0x20 (SP) included, 0x7F (DEL) excluded
   const EXECUTABLES = r(0x00, 0x18);
   EXECUTABLES.push(0x19);
   EXECUTABLES.push.apply(EXECUTABLES, r(0x1c, 0x20));
@@ -396,12 +396,22 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._activeDcsHandler = null;
   }
 
+  /**
+   * Parse UTF32 codepoints in `data` up to `length`.
+   * Note: For several actions with high data load the parsing is optimized
+   * by using local read ahead loops with hardcoded conditions to
+   * avoid costly table lookups. Make sure that any change of table values
+   * will be reflected in the loop conditions as well. Affected states/actions:
+   * - GROUND:PRINT
+   * - CSI_PARAM:PARAM
+   * - DCS_PARAM:PARAM
+   * - OSC_STRING:OSC_PUT
+   * - DCS_PASSTHROUGH:DCS_PUT
+   */
   parse(data: Uint32Array, length: number): void {
     let code = 0;
     let transition = 0;
     let currentState = this.currentState;
-    let print = -1;
-    let dcs = -1;
     let osc = this._osc;
     let collect = this._collect;
     let params = this._params;
@@ -413,47 +423,41 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     for (let i = 0; i < length; ++i) {
       code = data[i];
 
-      // shortcut for most chars (print action)
-      if (currentState === ParserState.GROUND && code > 0x1f && code < 0x80) {
-        print = (~print) ? print : i;
-        do i++;
-        while (i < length && data[i] > 0x1f && data[i] < 0x80);
-        i--;
-        continue;
-      }
-
-      // shortcut for CSI params
-      if (currentState === ParserState.CSI_PARAM && (code > 0x2f && code < 0x39)) {
-        params[params.length - 1] = params[params.length - 1] * 10 + code - 48;
-        continue;
-      }
-
       // normal transition & action lookup
       transition = table[currentState << TableAccess.INDEX_STATE_SHIFT | (code < 0xa0 ? code : NON_ASCII_PRINTABLE)];
       switch (transition >> TableAccess.TRANSITION_ACTION_SHIFT) {
         case ParserAction.PRINT:
-          print = (~print) ? print : i;
+          // read ahead with loop unrolling
+          // Note: 0x20 (SP) is included, 0x7F (DEL) is excluded
+          for (let j = i + 1; ; ++j) {
+            if (j >= length || (code = data[j]) < 0x20 || (code > 0x7e && code < NON_ASCII_PRINTABLE)) {
+              this._printHandler(data, i, j);
+              i = j - 1;
+              break;
+            }
+            if (++j >= length || (code = data[j]) < 0x20 || (code > 0x7e && code < NON_ASCII_PRINTABLE)) {
+              this._printHandler(data, i, j);
+              i = j - 1;
+              break;
+            }
+            if (++j >= length || (code = data[j]) < 0x20 || (code > 0x7e && code < NON_ASCII_PRINTABLE)) {
+              this._printHandler(data, i, j);
+              i = j - 1;
+              break;
+            }
+            if (++j >= length || (code = data[j]) < 0x20 || (code > 0x7e && code < NON_ASCII_PRINTABLE)) {
+              this._printHandler(data, i, j);
+              i = j - 1;
+              break;
+            }
+          }
           break;
         case ParserAction.EXECUTE:
-          if (~print) {
-            this._printHandler(data, print, i);
-            print = -1;
-          }
           callback = this._executeHandlers[code];
           if (callback) callback();
           else this._executeHandlerFb(code);
           break;
         case ParserAction.IGNORE:
-          // handle leftover print or dcs chars
-          if (~print) {
-            this._printHandler(data, print, i);
-            print = -1;
-          } else if (~dcs) {
-            if (dcsHandler) {
-              dcsHandler.put(data, dcs, i);
-            }
-            dcs = -1;
-          }
           break;
         case ParserAction.ERROR:
           const inject: IParsingState = this._errorHandler(
@@ -461,8 +465,6 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
               position: i,
               code,
               currentState,
-              print,
-              dcs,
               osc,
               collect,
               params,
@@ -486,8 +488,12 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           }
           break;
         case ParserAction.PARAM:
-          if (code === 0x3b) params.push(0);
-          else params[params.length - 1] = params[params.length - 1] * 10 + code - 48;
+          // inner loop: digits (0x30 - 0x39) and ; (0x3b)
+          do {
+            if (code === 0x3b) params.push(0);
+            else params[params.length - 1] = params[params.length - 1] * 10 + code - 48;
+          } while (++i < length && (code = data[i]) > 0x2f && (code < 0x3a || code === 0x3b));
+          i--;
           break;
         case ParserAction.COLLECT:
           collect += String.fromCharCode(code);
@@ -498,14 +504,9 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           else this._escHandlerFb(collect, code);
           break;
         case ParserAction.CLEAR:
-          if (~print) {
-            this._printHandler(data, print, i);
-            print = -1;
-          }
           osc = '';
           params = [0];
           collect = '';
-          dcs = -1;
           break;
         case ParserAction.DCS_HOOK:
           dcsHandler = this._dcsHandlers[collect + String.fromCharCode(code)];
@@ -513,11 +514,20 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           dcsHandler.hook(collect, params, code);
           break;
         case ParserAction.DCS_PUT:
-          dcs = (~dcs) ? dcs : i;
+          // inner loop - exit DCS_PUT: 0x18, 0x1a, 0x1b, 0x7f, 0x80 - 0x9f
+          // unhook triggered by: 0x1b, 0x9c
+          for (let j = i + 1; ; ++j) {
+            if (j >= length || (code = data[j]) === 0x18 || code === 0x1a || code === 0x1b || (code > 0x7f && code < NON_ASCII_PRINTABLE)) {
+              if (dcsHandler) {
+                dcsHandler.put(data, i, j);
+              }
+              i = j - 1;
+              break;
+            }
+          }
           break;
         case ParserAction.DCS_UNHOOK:
           if (dcsHandler) {
-            if (~dcs) dcsHandler.put(data, dcs, i);
             dcsHandler.unhook();
             dcsHandler = null;
           }
@@ -525,20 +535,14 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           osc = '';
           params = [0];
           collect = '';
-          dcs = -1;
           break;
         case ParserAction.OSC_START:
-          if (~print) {
-            this._printHandler(data, print, i);
-            print = -1;
-          }
           osc = '';
           break;
         case ParserAction.OSC_PUT:
+          // inner loop: 0x20 (SP) included, 0x7F (DEL) included
           for (let j = i + 1; ; j++) {
-            if (j >= length
-                || (code = data[j]) < 0x20
-                || (code > 0x7f && code <= 0x9f)) {
+            if (j >= length || (code = data[j]) < 0x20 || (code > 0x7f && code <= 0x9f)) {
               osc += utf32ToString(data, i, j);
               i = j - 1;
               break;
@@ -576,17 +580,9 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           osc = '';
           params = [0];
           collect = '';
-          dcs = -1;
           break;
       }
       currentState = transition & TableAccess.TRANSITION_STATE_MASK;
-    }
-
-    // push leftover pushable buffers to terminal
-    if (currentState === ParserState.GROUND && ~print) {
-      this._printHandler(data, print, length);
-    } else if (currentState === ParserState.DCS_PASSTHROUGH && ~dcs && dcsHandler) {
-      dcsHandler.put(data, dcs, length);
     }
 
     // save non pushable buffers

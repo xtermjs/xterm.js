@@ -61,10 +61,6 @@ export interface IParsingState {
   code: number;
   // current parser state
   currentState: ParserState;
-  // print buffer start index (-1 for not set)
-  print: number;
-  // dcs buffer start index (-1 for not set)
-  dcs: number;
   // osc string buffer
   osc: string;
   // collect buffer with intermediate characters
