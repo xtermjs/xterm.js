@@ -9,7 +9,8 @@
     "rootDir": ".",
     "outDir": "../lib",
     "sourceMap": true,
-    "removeComments": true
+    "removeComments": true,
+    "strict": true
   },
   "include": [
     "./**/*",

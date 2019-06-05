@@ -5,13 +5,11 @@
  * This file contains integration tests for xterm.js.
  */
 
-import * as cp from 'child_process';
 import * as glob from 'glob';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as pty from 'node-pty';
-import { assert } from 'chai';
 import { Terminal } from './Terminal';
 import { IViewport } from './Types';
 import { CellData, WHITESPACE_CELL_CHAR } from 'core/buffer/BufferLine';
@@ -154,16 +152,3 @@ if (os.platform() !== 'win32') {
     }
   });
 }
-
-describe('typings', () => {
-  it('should throw no compile errors', function (): void {
-    this.timeout(20000);
-    let tsc = path.join(__dirname, '..', 'node_modules', '.bin', 'tsc');
-    if (process.platform === 'win32') {
-      tsc += '.cmd';
-    }
-    const fixtureDir = path.join(__dirname, '..', 'fixtures', 'typings-test');
-    const result = cp.spawnSync(tsc, { cwd: fixtureDir });
-    assert.equal(result.status, 0, `build did not succeed:\nstdout: ${result.stdout.toString()}\nstderr: ${result.stderr.toString()}\n`);
-  });
-});
