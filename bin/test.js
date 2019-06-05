@@ -14,8 +14,7 @@ let testFiles = [
   './out/*test.js',
   './out/**/*test.js',
   './out/*integration.js',
-  './out/**/*integration.js',
-  './lib/**/*test.js'
+  './out/**/*integration.js'
 ];
 
 // ability to inject particular test files via
