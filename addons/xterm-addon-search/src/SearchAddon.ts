@@ -18,41 +18,11 @@ export interface ISearchResult {
   row: number;
 }
 
-// TODO: This is temporary, link to xtem when new version is published
-interface INewTerminal extends Terminal {
-  buffer: IBuffer;
-  select(column: number, row: number, length: number): void;
-  getSelectionPosition(): ISelectionPosition | undefined;
-}
-interface IBuffer {
-  readonly cursorY: number;
-  readonly cursorX: number;
-  readonly viewportY: number;
-  readonly baseY: number;
-  readonly length: number;
-  getLine(y: number): IBufferLine | undefined;
-}
-interface IBufferLine {
-  readonly isWrapped: boolean;
-  getCell(x: number): IBufferCell;
-  translateToString(trimRight?: boolean, startColumn?: number, endColumn?: number): string;
-}
-interface IBufferCell {
-  readonly char: string;
-  readonly width: number;
-}
-interface ISelectionPosition {
-  startColumn: number;
-  startRow: number;
-  endColumn: number;
-  endRow: number;
-}
-
 const NON_WORD_CHARACTERS = ' ~!@#$%^&*()+`-=[]{}|\;:"\',./<>?';
 const LINES_CACHE_TIME_TO_LIVE = 15 * 1000; // 15 secs
 
 export class SearchAddon implements ITerminalAddon {
-  private _terminal: INewTerminal;
+  private _terminal: Terminal;
 
   /**
    * translateBufferLineToStringWithWrap is a fairly expensive call.
