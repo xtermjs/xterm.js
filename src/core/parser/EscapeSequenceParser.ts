@@ -412,7 +412,6 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     let code = 0;
     let transition = 0;
     let currentState = this.currentState;
-    // let dcs = -1;
     let osc = this._osc;
     let collect = this._collect;
     let params = this._params;
@@ -586,10 +585,6 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
       }
       currentState = transition & TableAccess.TRANSITION_STATE_MASK;
     }
-
-    // if (currentState === ParserState.DCS_PASSTHROUGH && ~dcs && dcsHandler) {
-    //   dcsHandler.put(data, dcs, length);
-    // }
 
     // save non pushable buffers
     this._osc = osc;
