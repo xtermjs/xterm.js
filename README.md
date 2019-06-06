@@ -67,8 +67,8 @@ npm i -S xterm-addon-web-links
 Then import the addon, instantiate it and call `Terminal.loadAddon`:
 
 ```ts
-import { Terminal } from 'xterm`;
-import { WebLinksAddon } from 'xterm-addon-web-links`;
+import { Terminal } from 'xterm';
+import { WebLinksAddon } from 'xterm-addon-web-links';
 
 const terminal = new Terminal();
 // Load WebLinksAddon on terminal, this is all that's needed to get web links
