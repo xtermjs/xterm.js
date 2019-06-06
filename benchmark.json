@@ -1,0 +1,11 @@
+{
+  "evalConfig": {
+    "tolerance": {
+      "*": [0.75, 1.5]
+    },
+    "skip": [
+      "*.median",
+      "*.runs"
+    ]
+  } 
+}
