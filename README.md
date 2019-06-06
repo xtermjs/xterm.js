@@ -56,33 +56,32 @@ import { Terminal } from 'xterm';
 
 ### Addons
 
-Addons are JavaScript modules that extend the `Terminal` prototype with new methods and attributes to provide additional functionality. There are a handful available in the main repository in the `src/addons` directory and you can even write your own by using the [public API](https://github.com/xtermjs/xterm.js/blob/master/typings/xterm.d.ts).
+⚠️ *This section describes the new addon format introduced in v3.14.0, see [here](https://github.com/xtermjs/xterm.js/blob/3.14.2/README.md#addons) for the instructions on the old format*
 
-To use an addon, just import the JavaScript module and pass it to `Terminal`'s `applyAddon` method:
+Addons are separate modules that extend the `Terminal` by building on the [xterm.js API](https://github.com/xtermjs/xterm.js/blob/master/typings/xterm.d.ts). To use an addon you first need to install it in your project:
 
-```javascript
-import { Terminal } from 'xterm';
-import * as fit from 'xterm/lib/addons/fit/fit';
-
-Terminal.applyAddon(fit);
-
-var xterm = new Terminal();  // Instantiate the terminal
-xterm.fit();                 // Use the `fit` method, provided by the `fit` addon
+```bash
+npm i -S xterm-addon-web-links
 ```
 
-You will also need to include the addon's CSS file if it has one in the folder.
+Then import the addon, instantiate it and call `Terminal.loadAddon`:
 
-#### Importing Addons in TypeScript
+```ts
+import { Terminal } from 'xterm`;
+import { WebLinksAddon } from 'xterm-addon-web-links`;
 
-There are currently no typings for addons if they are accessed via extending Terminal prototype, so you will need to upcast if using TypeScript, eg. `(xterm as any).fit()`. Alternatively, you can import the addon function and enhance the terminal on demand. This has better typing support and is friendly to treeshaking.
-
-```typescript
-import { Terminal } from 'xterm';
-import { fit } from 'xterm/lib/addons/fit/fit';
-const xterm = new Terminal();
-
-fit(xterm);  // Fit the terminal when necessary
+const terminal = new Terminal();
+// Load WebLinksAddon on terminal, this is all that's needed to get web links
+// working in the terminal.
+terminal.loadAddon(new WebLinksAddon());
 ```
+
+The xterm.js team maintains the following addons but they can be built by anyone:
+
+- [`xterm-addon-attach`](https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-attach): Attaches to a server running a process via a websocket
+- [`xterm-addon-fit`](https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-fit): Fits the terminal to the containing element
+- [`xterm-addon-search`](https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-search): Adds search functionality
+- [`xterm-addon-web-links`](https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-web-links): Adds web link detection and interaction
 
 ## Browser Support
 
