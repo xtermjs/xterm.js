@@ -217,7 +217,7 @@ export class AttributeData implements IAttributeData {
   }
 }
 
-export const DEFAULT_ATTR_DATA = new AttributeData();
+export const DEFAULT_ATTR_DATA = Object.freeze(new AttributeData());
 
 /**
  * CellData - represents a single Cell in the terminal buffer.

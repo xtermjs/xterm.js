@@ -1818,7 +1818,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._terminal.applicationCursor = false;
       this._terminal.buffer.scrollTop = 0;
       this._terminal.buffer.scrollBottom = this._terminal.rows - 1;
-      this._terminal.curAttrData = DEFAULT_ATTR_DATA;
+      this._terminal.curAttrData = DEFAULT_ATTR_DATA.clone();
       this._terminal.buffer.x = this._terminal.buffer.y = 0; // ?
       this._terminal.charset = null;
       this._terminal.glevel = 0; // ??
