@@ -19,8 +19,8 @@ env.NODE_PATH = path.resolve(__dirname, '../out');
  */
 const commands = {
   single  : '-c benchmark.json',
-  baseline: '--baseline -r 10 -c benchmark.json',
-  eval    : '--eval -r 10 -c benchmark.json'
+  baseline: '--baseline -r 5 -c benchmark.json',
+  eval    : '--eval -r 5 -c benchmark.json'
 }
 
 let testFiles = [
