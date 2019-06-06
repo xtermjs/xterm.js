@@ -56,15 +56,15 @@ import { Terminal } from 'xterm';
 
 ### Addons
 
-⚠️ *This section describes the new addon format introduced in v3.14.0.*
+⚠️ *This section describes the new addon format introduced in v3.14.0, see [here](https://github.com/xtermjs/xterm.js/blob/3.14.2/README.md#addons) for the instructions on the old format*
 
-Addons are separate modules that extend the `Terminal` by building on the [xterm.js API](https://github.com/xtermjs/xterm.js/blob/master/typings/xterm.d.ts). To use an addon you first need to install it on your project:
+Addons are separate modules that extend the `Terminal` by building on the [xterm.js API](https://github.com/xtermjs/xterm.js/blob/master/typings/xterm.d.ts). To use an addon you first need to install it in your project:
 
 ```bash
 npm i -S xterm-addon-web-links
 ```
 
-Then import it and call `Terminal.loadAddon`:
+Then import the addon, instantiate it and call `Terminal.loadAddon`:
 
 ```ts
 import { Terminal } from 'xterm`;
