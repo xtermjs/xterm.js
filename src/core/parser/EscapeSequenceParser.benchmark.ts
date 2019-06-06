@@ -5,7 +5,7 @@ import { C0, C1 } from 'common/data/EscapeSequences';
 import { IDcsHandler } from './Types';
 
 
-function toUtf32(s: string) {
+function toUtf32(s: string): Uint32Array {
   const result = new Uint32Array(s.length);
   for (let i = 0; i < s.length; ++i) {
     result[i] = s.charCodeAt(i);
@@ -18,7 +18,7 @@ perfContext('Parser performance - 50MB data', () => {
   let content;
   let taContent: Uint32Array;
   let parser: EscapeSequenceParser;
-  let dcsHandler: IDcsHandler = {
+  const dcsHandler: IDcsHandler = {
     hook: (collect, params, flag) => {},
     put: (data, start, end) => {},
     unhook: () => {}
@@ -97,10 +97,11 @@ perfContext('Parser performance - 50MB data', () => {
 
   perfContext('print - a', () => {
     before(() => {
-      let data = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+      const data = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
       content = '';
-      while (content.length < 50000000)
+      while (content.length < 50000000) {
         content += data;
+      }
       taContent = toUtf32(content);
     });
     new ThroughputRuntimeCase('throughput', async () => {
@@ -111,10 +112,11 @@ perfContext('Parser performance - 50MB data', () => {
 
   perfContext('execute - \\n', () => {
     before(() => {
-      let data = '\n\n\n\n\n\n\n';
+      const data = '\n\n\n\n\n\n\n';
       content = '';
-      while (content.length < 50000000)
+      while (content.length < 50000000) {
         content += data;
+      }
       taContent = toUtf32(content);
     });
     new ThroughputRuntimeCase('throughput', () => {
@@ -125,10 +127,11 @@ perfContext('Parser performance - 50MB data', () => {
 
   perfContext('escape - ESC E', () => {
     before(() => {
-      let data = '\x1bE\x1bE\x1bE\x1bE\x1bE\x1bE\x1bE\x1bE\x1bE\x1bE';
+      const data = '\x1bE\x1bE\x1bE\x1bE\x1bE\x1bE\x1bE\x1bE\x1bE\x1bE';
       content = '';
-      while (content.length < 50000000)
+      while (content.length < 50000000) {
         content += data;
+      }
       taContent = toUtf32(content);
     });
     new ThroughputRuntimeCase('throughput', () => {
@@ -139,10 +142,11 @@ perfContext('Parser performance - 50MB data', () => {
 
   perfContext('escape with collect - ESC % G', () => {
     before(() => {
-      let data = '\x1b%G\x1b%G\x1b%G\x1b%G\x1b%G\x1b%G\x1b%G\x1b%G\x1b%G\x1b%G';
+      const data = '\x1b%G\x1b%G\x1b%G\x1b%G\x1b%G\x1b%G\x1b%G\x1b%G\x1b%G\x1b%G';
       content = '';
-      while (content.length < 50000000)
+      while (content.length < 50000000) {
         content += data;
+      }
       taContent = toUtf32(content);
     });
     new ThroughputRuntimeCase('throughput', () => {
@@ -153,10 +157,11 @@ perfContext('Parser performance - 50MB data', () => {
 
   perfContext('simple csi - CSI A', () => {
     before(() => {
-      let data = '\x1b[A\x1b[A\x1b[A\x1b[A\x1b[A\x1b[A\x1b[A\x1b[A\x1b[A\x1b[A';
+      const data = '\x1b[A\x1b[A\x1b[A\x1b[A\x1b[A\x1b[A\x1b[A\x1b[A\x1b[A\x1b[A';
       content = '';
-      while (content.length < 50000000)
+      while (content.length < 50000000) {
         content += data;
+      }
       taContent = toUtf32(content);
     });
     new ThroughputRuntimeCase('throughput', () => {
@@ -167,10 +172,11 @@ perfContext('Parser performance - 50MB data', () => {
 
   perfContext('csi with collect - CSI ? p', () => {
     before(() => {
-      let data = '\x1b[?p\x1b[?p\x1b[?p\x1b[?p\x1b[?p\x1b[?p\x1b[?p\x1b[?p\x1b[?p\x1b[?p';
+      const data = '\x1b[?p\x1b[?p\x1b[?p\x1b[?p\x1b[?p\x1b[?p\x1b[?p\x1b[?p\x1b[?p\x1b[?p';
       content = '';
-      while (content.length < 50000000)
+      while (content.length < 50000000) {
         content += data;
+      }
       taContent = toUtf32(content);
     });
     new ThroughputRuntimeCase('throughput', () => {
@@ -181,10 +187,11 @@ perfContext('Parser performance - 50MB data', () => {
 
   perfContext('csi with params - CSI 1;2 m', () => {
     before(() => {
-      let data = '\x1b{1;2m\x1b{1;2m\x1b{1;2m\x1b{1;2m\x1b{1;2m\x1b{1;2m\x1b{1;2m\x1b{1;2m\x1b{1;2m\x1b{1;2m';
+      const data = '\x1b{1;2m\x1b{1;2m\x1b{1;2m\x1b{1;2m\x1b{1;2m\x1b{1;2m\x1b{1;2m\x1b{1;2m\x1b{1;2m\x1b{1;2m';
       content = '';
-      while (content.length < 50000000)
+      while (content.length < 50000000) {
         content += data;
+      }
       taContent = toUtf32(content);
     });
     new ThroughputRuntimeCase('throughput', () => {
@@ -195,10 +202,11 @@ perfContext('Parser performance - 50MB data', () => {
 
   perfContext('osc (small payload) - OSC 0;hi ST', () => {
     before(() => {
-      let data = '\x1b]0;hi\x1b\\\x1b]0;hi\x1b\\\x1b]0;hi\x1b\\\x1b]0;hi\x1b\\x1b]0;hi\x1b\\';
+      const data = '\x1b]0;hi\x1b\\\x1b]0;hi\x1b\\\x1b]0;hi\x1b\\\x1b]0;hi\x1b\\x1b]0;hi\x1b\\';
       content = '';
-      while (content.length < 50000000)
+      while (content.length < 50000000) {
         content += data;
+      }
       taContent = toUtf32(content);
     });
     new ThroughputRuntimeCase('throughput', () => {
@@ -209,10 +217,11 @@ perfContext('Parser performance - 50MB data', () => {
 
   perfContext('osc (big payload) - OSC 0;<text> ST', () => {
     before(() => {
-      let data = '\x1b]0;Lorem ipsum dolor sit amet, consetetur sadipscing elitr.\x1b\\';
+      const data = '\x1b]0;Lorem ipsum dolor sit amet, consetetur sadipscing elitr.\x1b\\';
       content = '';
-      while (content.length < 50000000)
+      while (content.length < 50000000) {
         content += data;
+      }
       taContent = toUtf32(content);
     });
     new ThroughputRuntimeCase('throughput', () => {
@@ -223,10 +232,11 @@ perfContext('Parser performance - 50MB data', () => {
 
   perfContext('DCS (small payload)', () => {
     before(() => {
-      let data = '\x1bPq~~\x1b\\';
+      const data = '\x1bPq~~\x1b\\';
       content = '';
-      while (content.length < 50000000)
+      while (content.length < 50000000) {
         content += data;
+      }
       taContent = toUtf32(content);
     });
     new ThroughputRuntimeCase('throughput', async () => {
@@ -237,10 +247,11 @@ perfContext('Parser performance - 50MB data', () => {
 
   perfContext('DCS (big payload)', () => {
     before(() => {
-      let data = '\x1bPq#0;2;0;0;0#1;2;100;100;0#2;2;0;100;0#1~~@@vv@@~~@@~~$#2??}}GG}}??}}??-#1!14@\x1b\\';
+      const data = '\x1bPq#0;2;0;0;0#1;2;100;100;0#2;2;0;100;0#1~~@@vv@@~~@@~~$#2??}}GG}}??}}??-#1!14@\x1b\\';
       content = '';
-      while (content.length < 50000000)
+      while (content.length < 50000000) {
         content += data;
+      }
       taContent = toUtf32(content);
     });
     new ThroughputRuntimeCase('throughput', async () => {
