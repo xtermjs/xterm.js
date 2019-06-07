@@ -103,6 +103,12 @@ export interface IDcsHandler {
 */
 export interface IEscapeSequenceParser extends IDisposable {
   /**
+   * Preceding codepoint to get REP working correctly.
+   * This must be set by the print handler as last action.
+   * It gets reset by the parser for any valid sequence beside REP itself.
+   */
+  precedingCodepoint: number;
+  /**
    * Reset the parser to its initial state (handlers are kept).
    */
   reset(): void;
