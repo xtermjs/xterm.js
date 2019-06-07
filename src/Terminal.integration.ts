@@ -107,7 +107,7 @@ if (os.platform() !== 'win32') {
     // for (let i = 0; i < files.length; ++i) console.debug(i, files[i]);
     // only successful tests for now
     const skip = [
-      10, 16, 17, 19, 32, 33, 34, 35, 36, 39,
+      10, 16, 17, 19, 32, 34, 35, 36, 39,
       40, 42, 43, 44, 45, 46, 47, 48, 49, 50,
       51, 52, 54, 55, 56, 57, 58, 59, 60, 61,
       63, 68

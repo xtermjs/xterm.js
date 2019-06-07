@@ -241,6 +241,56 @@ describe('InputHandler Integration Tests', function(): void {
         });
       });
     });
+
+    it('REP: Repeat preceding character, ECMA48 - CSI Ps b', async function(): Promise<any> {
+      // default to 1
+      await page.evaluate(`
+        window.term.resize(10, 10);
+        window.term.write('#\x1b[b');
+        window.term.writeln('');
+        window.term.write('#\x1b[0b');
+        window.term.writeln('');
+        window.term.write('#\x1b[1b');
+        window.term.writeln('');
+        window.term.write('#\x1b[5b');
+      `);
+      assert.deepEqual(await getLinesAsArray(4), ['##', '##', '##', '######']);
+      assert.deepEqual(await getCursor(), {col: 6, row: 3});
+      // should not repeat on fullwidth chars
+      await page.evaluate(`
+        window.term.reset();
+        window.term.write('￥\x1b[10b');
+      `);
+      assert.deepEqual(await getLinesAsArray(1), ['￥']);
+      // should repeat only base char of combining
+      await page.evaluate(`
+        window.term.reset();
+        window.term.write('e\u0301\x1b[5b');
+      `);
+      assert.deepEqual(await getLinesAsArray(1), ['e\u0301eeeee']);
+      // should wrap correctly
+      await page.evaluate(`
+        window.term.reset();
+        window.term.write('#\x1b[15b');
+      `);
+      assert.deepEqual(await getLinesAsArray(2), ['##########', '######']);
+      await page.evaluate(`
+        window.term.reset();
+        window.term._core.wraparoundMode = false;
+        window.term.write('#\x1b[15b');
+      `);
+      assert.deepEqual(await getLinesAsArray(2), ['##########', '']);
+      // any successful sequence should reset REP
+      await page.evaluate(`
+        window.term.reset();
+        window.term._core.wraparoundMode = true;
+        window.term.write('#\\n\x1b[3b');
+        window.term.write('#\\r\x1b[3b');
+        window.term.writeln('');
+        window.term.write('abcdefg\x1b[3D\x1b[10b#\x1b[3b');
+      `);
+      assert.deepEqual(await getLinesAsArray(3), ['#', ' #', 'abcd####']);
+    });
   });
 });
 
@@ -273,4 +323,12 @@ async function simulatePaste(text: string): Promise<string> {
     })();
   `);
   return await page.evaluate(`window.result_${id}`);
+}
+
+async function getCursor(): Promise<{col: number, row: number}> {
+  return page.evaluate(`
+  (function() {
+    return {col: term._core.buffer.x, row: term._core.buffer.y};
+  })();
+  `);
 }
