@@ -20,6 +20,6 @@ package-lock.json
 dist/
 demo/dist/
 
-# dont commit benahcmark folders
+# dont commit benchmark folders
 benchmark/
 timeline/
