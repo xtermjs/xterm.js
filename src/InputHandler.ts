@@ -453,6 +453,20 @@ export class InputHandler extends Disposable implements IInputHandler {
         }
       }
     }
+    // store last char in Parser.precedingCodepoint for REP to work correctly
+    // This needs to check whether:
+    //  - fullwidth + surrogates: reset
+    //  - combining: only base char gets carried on (bug in xterm?)
+    if (end) {
+      bufferRow.loadCell(buffer.x - 1, this._workCell);
+      if (this._workCell.getWidth() === 2 || this._workCell.getCode() > 0xFFFF) {
+        this._parser.precedingCodepoint = 0;
+      } else if (this._workCell.isCombined()) {
+        this._parser.precedingCodepoint = this._workCell.getChars().charCodeAt(0);
+      } else {
+        this._parser.precedingCodepoint = this._workCell.content;
+      }
+    }
     this._terminal.updateRange(buffer.y);
   }
 
@@ -1004,17 +1018,37 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   /**
    * CSI Ps b  Repeat the preceding graphic character Ps times (REP).
+   * From ECMA 48 (@see http://www.ecma-international.org/publications/files/ECMA-ST/Ecma-048.pdf)
+   *    Notation: (Pn)
+   *    Representation: CSI Pn 06/02
+   *    Parameter default value: Pn = 1
+   *    REP is used to indicate that the preceding character in the data stream,
+   *    if it is a graphic character (represented by one or more bit combinations) including SPACE,
+   *    is to be repeated n times, where n equals the value of Pn.
+   *    If the character preceding REP is a control function or part of a control function,
+   *    the effect of REP is not defined by this Standard.
+   *
+   * Since we propagate the terminal as xterm-256color we have to follow xterm's behavior:
+   *    - fullwidth + surrogate chars are ignored
+   *    - for combining chars only the base char gets repeated
+   *    - text attrs are applied normally
+   *    - wrap around is respected
+   *    - any valid sequence resets the carried forward char
+   *
+   * Note: To get reset on a valid sequence working correctly without much runtime penalty,
+   * the preceding codepoint is stored on the parser in `this.print` and reset during `parser.parse`.
    */
   public repeatPrecedingCharacter(params: number[]): void {
-    // make buffer local for faster access
-    const buffer = this._terminal.buffer;
-    const line = buffer.lines.get(buffer.ybase + buffer.y);
-    line.loadCell(buffer.x - 1, this._workCell);
-    line.replaceCells(buffer.x,
-      buffer.x + (params[0] || 1),
-      (this._workCell.content !== undefined) ? this._workCell : buffer.getNullCell(DEFAULT_ATTR_DATA)
-    );
-    // FIXME: no updateRange here?
+    if (!this._parser.precedingCodepoint) {
+      return;
+    }
+    // call print to insert the chars and handle correct wrapping
+    const length = params[0] || 1;
+    const data = new Uint32Array(length);
+    for (let i = 0; i < length; ++i) {
+      data[i] = this._parser.precedingCodepoint;
+    }
+    this.print(data, 0, data.length);
   }
 
   /**
