@@ -1,8 +1,13 @@
+/**
+ * Copyright (c) 2019 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
 import { perfContext, before, ThroughputRuntimeCase } from 'xterm-benchmark';
 
 import { Terminal } from 'Terminal';
 import { spawn } from 'node-pty';
-import { Utf8ToUtf32, stringFromCodePoint } from '../out/core/input/TextDecoder';
+import { Utf8ToUtf32, stringFromCodePoint } from 'core/input/TextDecoder';
 
 
 class TestTerminal extends Terminal {
@@ -23,7 +28,7 @@ perfContext('Terminal: ls -lR /usr', () => {
   before(async () => {
     // grab output from "ls -lR /usr"
     const p = spawn('ls', ['--color=auto', '-lR', '/usr'], {
-      name: 'xterm-color',
+      name: 'xterm-256color',
       cols: 80,
       rows: 25,
       cwd: process.env.HOME,

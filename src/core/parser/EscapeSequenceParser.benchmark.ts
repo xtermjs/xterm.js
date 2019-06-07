@@ -1,3 +1,7 @@
+/**
+ * Copyright (c) 2019 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
 import { perfContext, before, beforeEach, ThroughputRuntimeCase } from 'xterm-benchmark';
 
 import { EscapeSequenceParser } from 'core/parser/EscapeSequenceParser';
