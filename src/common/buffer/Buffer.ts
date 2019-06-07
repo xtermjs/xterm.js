@@ -124,6 +124,7 @@ export class Buffer implements IBuffer {
   public clear(): void {
     this.ydisp = 0;
     this.ybase = 0;
+    this.savedY = 0;
     this.y = 0;
     this.x = 0;
     this.lines = new CircularList<IBufferLine>(this._getCorrectBufferLength(this._rows));
@@ -203,6 +204,7 @@ export class Buffer implements IBuffer {
           this.lines.trimStart(amountToTrim);
           this.ybase = Math.max(this.ybase - amountToTrim, 0);
           this.ydisp = Math.max(this.ydisp - amountToTrim, 0);
+          this.savedY = Math.max(this.savedY - amountToTrim, 0);
         }
         this.lines.maxLength = newMaxLength;
       }
@@ -213,7 +215,6 @@ export class Buffer implements IBuffer {
       if (addToY) {
         this.y += addToY;
       }
-      this.savedY = Math.min(this.savedY, newRows - 1);
       this.savedX = Math.min(this.savedX, newCols - 1);
 
       this.scrollTop = 0;
@@ -282,6 +283,7 @@ export class Buffer implements IBuffer {
         this.ybase--;
       }
     }
+    this.savedY = Math.max(this.savedY - countRemoved, 0);
   }
 
   private _reflowSmaller(newCols: number, newRows: number): void {
@@ -393,6 +395,7 @@ export class Buffer implements IBuffer {
           }
         }
       }
+      this.savedY = Math.min(this.savedY + linesToAdd, this.ybase + newRows - 1);
     }
 
     // Rearrange lines in the buffer if there are any insertions, this is done at the end rather
