@@ -276,14 +276,14 @@ describe('InputHandler Integration Tests', function(): void {
       assert.deepEqual(await getLinesAsArray(2), ['##########', '######']);
       await page.evaluate(`
         window.term.reset();
-        window.term._core.wraparoundMode = false;
+        window.term.write('\x1b[?7l');  // disable wrap around
         window.term.write('#\x1b[15b');
       `);
       assert.deepEqual(await getLinesAsArray(2), ['##########', '']);
       // any successful sequence should reset REP
       await page.evaluate(`
         window.term.reset();
-        window.term._core.wraparoundMode = true;
+        window.term.write('\x1b[?7h');  // re-enable wrap around
         window.term.write('#\\n\x1b[3b');
         window.term.write('#\\r\x1b[3b');
         window.term.writeln('');
@@ -328,7 +328,7 @@ async function simulatePaste(text: string): Promise<string> {
 async function getCursor(): Promise<{col: number, row: number}> {
   return page.evaluate(`
   (function() {
-    return {col: term._core.buffer.x, row: term._core.buffer.y};
+    return {col: term.buffer.cursorX, row: term.buffer.cursorY};
   })();
   `);
 }
