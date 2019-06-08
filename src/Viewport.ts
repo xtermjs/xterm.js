@@ -4,11 +4,11 @@
  */
 
 import { ITerminal, IViewport } from './Types';
-import { CharMeasure } from './CharMeasure';
 import { Disposable } from 'common/Lifecycle';
 import { addDisposableDomListener } from 'ui/Lifecycle';
 import { IColorSet } from 'ui/Types';
 import { IRenderDimensions } from './renderer/Types';
+import { ICharSizeService } from 'ui/services/Services';
 
 const FALLBACK_SCROLL_BAR_WIDTH = 15;
 
@@ -33,19 +33,12 @@ export class Viewport extends Disposable implements IViewport {
   private _refreshAnimationFrame: number | null = null;
   private _ignoreNextScrollEvent: boolean = false;
 
-  /**
-   * Creates a new Viewport.
-   * @param _terminal The terminal this viewport belongs to.
-   * @param _viewportElement The DOM element acting as the viewport.
-   * @param _scrollArea The DOM element acting as the scroll area.
-   * @param _charMeasure A DOM element used to measure the character size of. the terminal.
-   */
   constructor(
     private _terminal: ITerminal,
     private _viewportElement: HTMLElement,
     private _scrollArea: HTMLElement,
-    private _charMeasure: CharMeasure,
-    private _dimensions: IRenderDimensions
+    private _dimensions: IRenderDimensions,
+    private _charSizeService: ICharSizeService
   ) {
     super();
 
@@ -55,7 +48,7 @@ export class Viewport extends Disposable implements IViewport {
     this.scrollBarWidth = (this._viewportElement.offsetWidth - this._scrollArea.offsetWidth) || FALLBACK_SCROLL_BAR_WIDTH;
     this.register(addDisposableDomListener(this._viewportElement, 'scroll', this._onScroll.bind(this)));
 
-    // Perform this async to ensure the CharMeasure is ready.
+    // Perform this async to ensure the ICharSizeService is ready.
     setTimeout(() => this.syncScrollArea(), 0);
   }
 
@@ -78,7 +71,7 @@ export class Viewport extends Disposable implements IViewport {
   }
 
   private _innerRefresh(): void {
-    if (this._charMeasure.height > 0) {
+    if (this._charSizeService.height > 0) {
       this._currentRowHeight = this._dimensions.scaledCellHeight / window.devicePixelRatio;
       this._lastRecordedViewportHeight = this._viewportElement.offsetHeight;
       const newBufferHeight = Math.round(this._currentRowHeight * this._lastRecordedBufferLength) + (this._lastRecordedViewportHeight - this._dimensions.canvasHeight);

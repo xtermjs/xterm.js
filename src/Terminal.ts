@@ -635,7 +635,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this._renderCoordinator.onRender(e => this._onRender.fire(e));
     this.onResize(e => this._renderCoordinator.resize(e.cols, e.rows));
 
-    this.viewport = new Viewport(this, this._viewportElement, this._viewportScrollArea, this.charMeasure, this._renderCoordinator.dimensions);
+    this.viewport = new Viewport(this, this._viewportElement, this._viewportScrollArea, this._renderCoordinator.dimensions, this._charSizeService);
     this.viewport.onThemeChange(this._colorManager.colors);
     this.register(this.viewport);
 
