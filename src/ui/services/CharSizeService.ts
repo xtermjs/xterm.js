@@ -14,8 +14,8 @@ export class CharSizeService implements ICharSizeService {
 
   public get hasValidSize(): boolean { return this.width > 0 && this.height > 0; }
 
-  private _onCharSizeChange = new EventEmitter2<string>();
-  public get onCharSizeChange(): IEvent<string> { return this._onCharSizeChange.event; }
+  private _onCharSizeChange = new EventEmitter2<void>();
+  public get onCharSizeChange(): IEvent<void> { return this._onCharSizeChange.event; }
 
   constructor(
     document: Document,
@@ -27,8 +27,11 @@ export class CharSizeService implements ICharSizeService {
 
   public measure(): void {
     const result = this._measureStrategy.measure();
-    this.width = result.width;
-    this.height = result.height;
+    if (result.width !== this.width || result.height !== this.height) {
+      this.width = result.width;
+      this.height = result.height;
+      this._onCharSizeChange.fire();
+    }
   }
 }
 
@@ -69,7 +72,7 @@ class DomMeasureStrategy implements IMeasureStrategy {
 
     // Note that this triggers a synchronous layout
     const geometry = this._measureElement.getBoundingClientRect();
-
+console.log('measure', geometry);
     // If values are 0 then the element is likely currently display:none, in which case we should
     // retain the previous value.
     if (geometry.width !== 0 && geometry.height !== 0) {

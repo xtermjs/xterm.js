@@ -10,7 +10,7 @@ export interface ICharSizeService {
   readonly height: number;
   readonly hasValidSize: boolean;
 
-  readonly onCharSizeChange: IEvent<string>;
+  readonly onCharSizeChange: IEvent<void>;
 
   measure(): void;
 }
