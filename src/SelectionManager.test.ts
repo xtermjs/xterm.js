@@ -4,13 +4,12 @@
  */
 
 import { assert } from 'chai';
-import { CharMeasure } from './CharMeasure';
 import { SelectionManager, SelectionMode } from './SelectionManager';
 import { SelectionModel } from './SelectionModel';
 import { BufferSet } from './BufferSet';
 import { ITerminal, IBuffer } from './Types';
 import { IBufferLine } from 'core/Types';
-import { MockTerminal } from './TestUtils.test';
+import { MockTerminal, MockCharSizeService } from './TestUtils.test';
 import { BufferLine, CellData } from 'core/buffer/BufferLine';
 
 class TestMockTerminal extends MockTerminal {
@@ -19,10 +18,9 @@ class TestMockTerminal extends MockTerminal {
 
 class TestSelectionManager extends SelectionManager {
   constructor(
-    terminal: ITerminal,
-    charMeasure: CharMeasure
+    terminal: ITerminal
   ) {
-    super(terminal, charMeasure);
+    super(terminal, new MockCharSizeService(10, 10));
   }
 
   public get model(): SelectionModel { return this._model; }
@@ -52,7 +50,7 @@ describe('SelectionManager', () => {
     terminal.buffers = new BufferSet(terminal);
     terminal.buffer = terminal.buffers.active;
     buffer = terminal.buffer;
-    selectionManager = new TestSelectionManager(terminal, null);
+    selectionManager = new TestSelectionManager(terminal);
   });
 
   function stringToRow(text: string): IBufferLine {
