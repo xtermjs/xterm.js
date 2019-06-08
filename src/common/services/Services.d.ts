@@ -6,9 +6,9 @@
 import { IEvent } from 'common/EventEmitter2';
 
 export interface IOptionsService {
-  readonly onOptionChange: IEvent<string>;
-  // TODO: as const?
   readonly options: ITerminalOptions;
+
+  readonly onOptionChange: IEvent<string>;
 
   setOption<T>(key: string, value: T): void;
   getOption<T>(key: string): T | undefined;

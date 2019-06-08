@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IOptionsService } from 'common/options/Types';
+import { IOptionsService } from 'common/services/Services';
 import { IEvent, EventEmitter2 } from 'common/EventEmitter2';
 import { ICharSizeService } from 'ui/services/Services';
 

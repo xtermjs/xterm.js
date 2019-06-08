@@ -8,7 +8,7 @@ import { ICharset, IAttributeData, ICellData, IBufferLine, CharData } from 'core
 import { ICircularList } from 'common/Types';
 import { IEvent } from 'common/EventEmitter2';
 import { IColorSet } from 'ui/Types';
-import { IOptionsService } from 'common/options/Types';
+import { IOptionsService } from 'common/services/Services';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 

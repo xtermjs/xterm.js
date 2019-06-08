@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IOptionsService, ITerminalOptions, IPartialTerminalOptions } from 'common/options/Types';
+import { IOptionsService, ITerminalOptions, IPartialTerminalOptions } from 'common/services/Services';
 import { EventEmitter2, IEvent } from 'common/EventEmitter2';
 import { isMac } from 'common/Platform';
 import { clone } from 'common/Clone';

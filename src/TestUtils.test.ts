@@ -13,7 +13,7 @@ import { IDisposable, IMarker, IEvent, ISelectionPosition } from 'xterm';
 import { Terminal } from './Terminal';
 import { AttributeData } from 'core/buffer/BufferLine';
 import { IColorManager, IColorSet } from 'ui/Types';
-import { IOptionsService } from 'common/options/Types';
+import { IOptionsService } from 'common/services/Services';
 import { ICharSizeService } from 'ui/services/Services';
 
 export class TestTerminal extends Terminal {
