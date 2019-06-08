@@ -697,8 +697,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   private _createRenderer(): IRenderer {
     switch (this.options.rendererType) {
-      case 'canvas': return new Renderer(this, this._colorManager.colors); break;
-      case 'dom': return new DomRenderer(this, this._colorManager.colors); break;
+      case 'canvas': return new Renderer(this, this._colorManager.colors, this._charSizeService); break;
+      case 'dom': return new DomRenderer(this, this._colorManager.colors, this._charSizeService); break;
       default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
     }
   }
