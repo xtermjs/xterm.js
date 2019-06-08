@@ -52,8 +52,8 @@ import { Attributes, DEFAULT_ATTR_DATA } from 'core/buffer/BufferLine';
 import { applyWindowsMode } from './WindowsMode';
 import { ColorManager } from 'ui/ColorManager';
 import { RenderCoordinator } from './renderer/RenderCoordinator';
-import { IOptionsService } from 'common/options/Types';
-import { OptionsService } from 'common/options/OptionsService';
+import { IOptionsService } from 'common/services/Services';
+import { OptionsService } from 'common/services/OptionsService';
 import { ICharSizeService } from 'ui/services/Services';
 import { CharSizeService } from 'ui/services/CharSizeService';
 

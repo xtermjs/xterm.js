@@ -11,7 +11,7 @@ import { ScreenDprMonitor } from 'ui/ScreenDprMonitor';
 import { addDisposableDomListener } from 'ui/Lifecycle';
 import { IColorSet } from 'ui/Types';
 import { CharacterJoinerHandler } from '../Types';
-import { IOptionsService } from 'common/options/Types';
+import { IOptionsService } from 'common/services/Services';
 import { ICharSizeService } from 'ui/services/Services';
 
 export class RenderCoordinator extends Disposable {
