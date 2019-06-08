@@ -4,7 +4,7 @@
  */
 
 import { IRenderer, IRenderDimensions } from './renderer/Types';
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferStringIterator } from './Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferStringIterator } from './Types';
 import { IBufferLine, ICellData, IAttributeData } from 'core/Types';
 import { ICircularList, XtermListener } from 'common/Types';
 import { Buffer } from './Buffer';
@@ -129,7 +129,6 @@ export class MockTerminal implements ITerminal {
   rowContainer: HTMLElement;
   selectionContainer: HTMLElement;
   selectionManager: ISelectionManager;
-  charMeasure: ICharMeasure;
   textarea: HTMLTextAreaElement;
   rows: number;
   cols: number;
