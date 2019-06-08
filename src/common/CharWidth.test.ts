@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { wcwidth } from './CharWidth';
+import { wcwidth } from 'common/CharWidth';
 
 it('wcwidth should match all values from the old implementation', function(): void {
   // old implementation
@@ -125,7 +125,7 @@ it('wcwidth should match all values from the old implementation', function(): vo
       return 1;
     }
     const control = opts.control | 0;
-    let table: number[] | Uint32Array = null;
+    let table: number[] | Uint32Array | undefined;
     function initTable(): number[] | Uint32Array {
       // lookup table for BMP
       const CODEPOINTS = 65536;  // BMP holds 65536 codepoints

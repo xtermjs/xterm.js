@@ -5,7 +5,6 @@
 
 import * as puppeteer from 'puppeteer';
 import { assert } from 'chai';
-// import { getStringCellWidth } from './CharWidth';
 import { ITerminalOptions } from 'xterm';
 
 const APP = 'http://127.0.0.1:3000/test';
