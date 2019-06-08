@@ -55,6 +55,8 @@ import { ColorManager } from 'ui/ColorManager';
 import { RenderCoordinator } from './renderer/RenderCoordinator';
 import { IOptionsService } from 'common/options/Types';
 import { OptionsService } from 'common/options/OptionsService';
+import { ICharSizeService } from 'ui/services/Services';
+import { CharSizeService } from 'ui/services/CharSizeService';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -107,8 +109,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   private _customKeyEventHandler: CustomKeyEventHandler;
 
-  // services
+  // common services
   public optionsService: IOptionsService;
+
+  // browser services
+  private _charSizeService: ICharSizeService;
 
   // modes
   public applicationKeypad: boolean;
@@ -615,6 +620,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this._helperContainer.appendChild(this._compositionView);
 
     this.charMeasure = new CharMeasure(document, this._helperContainer);
+    this._charSizeService = new CharSizeService(this._document, this._helperContainer, this.optionsService);
 
     // Performance: Add viewport and helper elements from the fragment
     this.element.appendChild(fragment);
@@ -658,7 +664,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }));
     this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this.selectionManager.refresh()));
 
-    this.mouseHelper = new MouseHelper(this._renderCoordinator);
+    this.mouseHelper = new MouseHelper(this._renderCoordinator, this._charSizeService);
     // apply mouse event classes set by escape codes before terminal was attached
     this.element.classList.toggle('enable-mouse-events', this.mouseEvents);
     if (this.mouseEvents) {
@@ -738,7 +744,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       button = getButton(ev);
 
       // get mouse coordinates
-      pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.charMeasure, self.cols, self.rows);
+      pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.cols, self.rows);
       if (!pos) return;
 
       sendEvent(button, pos);
@@ -764,7 +770,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // ^[[M 3<^[[M@4<^[[M@5<^[[M@6<^[[M@7<^[[M#7<
     function sendMove(ev: MouseEvent): void {
       let button = pressed;
-      const pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.charMeasure, self.cols, self.rows);
+      const pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.cols, self.rows);
       if (!pos) return;
 
       // buttons marked as motions

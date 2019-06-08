@@ -3,12 +3,14 @@
  * @license MIT
  */
 
-import { ICharMeasure, IMouseHelper } from './Types';
+import { IMouseHelper } from './Types';
 import { RenderCoordinator } from './renderer/RenderCoordinator';
+import { ICharSizeService } from 'ui/services/Services';
 
 export class MouseHelper implements IMouseHelper {
   constructor(
-    private _renderCoordinator: RenderCoordinator
+    private _renderCoordinator: RenderCoordinator,
+    private _charSizeService: ICharSizeService
   ) {
   }
 
@@ -30,9 +32,9 @@ export class MouseHelper implements IMouseHelper {
    * apply an offset to the x value such that the left half of the cell will
    * select that cell and the right half will select the next cell.
    */
-  public getCoords(event: {clientX: number, clientY: number}, element: HTMLElement, charMeasure: ICharMeasure, colCount: number, rowCount: number, isSelection?: boolean): [number, number] {
-    // Coordinates cannot be measured if charMeasure has not been initialized
-    if (!charMeasure.width || !charMeasure.height) {
+  public getCoords(event: {clientX: number, clientY: number}, element: HTMLElement, colCount: number, rowCount: number, isSelection?: boolean): [number, number] {
+    // Coordinates cannot be measured if there are no valid
+    if (!this._charSizeService.hasValidSize) {
       return null;
     }
 
@@ -63,8 +65,8 @@ export class MouseHelper implements IMouseHelper {
    * @param colCount The number of columns in the terminal.
    * @param rowCount The number of rows in the terminal.
    */
-  public getRawByteCoords(event: MouseEvent, element: HTMLElement, charMeasure: ICharMeasure, colCount: number, rowCount: number): { x: number, y: number } {
-    const coords = this.getCoords(event, element, charMeasure, colCount, rowCount);
+  public getRawByteCoords(event: MouseEvent, element: HTMLElement, colCount: number, rowCount: number): { x: number, y: number } {
+    const coords = this.getCoords(event, element, colCount, rowCount);
     let x = coords[0];
     let y = coords[1];
 

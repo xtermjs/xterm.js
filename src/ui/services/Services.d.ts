@@ -8,7 +8,7 @@ import { IEvent } from 'common/EventEmitter2';
 export interface ICharSizeService {
   readonly width: number;
   readonly height: number;
-  readonly hasValidDimensions: boolean;
+  readonly hasValidSize: boolean;
 
   readonly onCharSizeChange: IEvent<string>;
 

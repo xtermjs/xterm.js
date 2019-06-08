@@ -12,7 +12,7 @@ export class CharSizeService implements ICharSizeService {
   public height: number = 0;
   private _measureStrategy: IMeasureStrategy;
 
-  public get hasValidDimensions(): boolean { return this.width > 0 && this.height > 0; }
+  public get hasValidSize(): boolean { return this.width > 0 && this.height > 0; }
 
   private _onCharSizeChange = new EventEmitter2<string>();
   public get onCharSizeChange(): IEvent<string> { return this._onCharSizeChange.event; }
