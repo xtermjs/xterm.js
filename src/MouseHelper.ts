@@ -25,7 +25,6 @@ export class MouseHelper implements IMouseHelper {
    * little faster and this function is used in some low level code.
    * @param event The mouse event.
    * @param element The terminal's container element.
-   * @param charMeasure The char measure object used to determine character sizes.
    * @param colCount The number of columns in the terminal.
    * @param rowCount The number of rows n the terminal.
    * @param isSelection Whether the request is for the selection or not. This will
@@ -61,7 +60,6 @@ export class MouseHelper implements IMouseHelper {
    * as expected by xterm.
    * @param event The mouse event.
    * @param element The terminal's container element.
-   * @param charMeasure The char measure object used to determine character sizes.
    * @param colCount The number of columns in the terminal.
    * @param rowCount The number of rows in the terminal.
    */

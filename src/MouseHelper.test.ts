@@ -22,12 +22,6 @@ describe('MouseHelper.getCoords', () => {
     mouseHelper = new MouseHelper(renderer as any, new MockCharSizeService(CHAR_WIDTH, CHAR_HEIGHT));
   });
 
-  describe('when charMeasure is not initialized', () => {
-    it('should return null', () => {
-      assert.equal(mouseHelper.getCoords({ clientX: 0, clientY: 0 }, document.createElement('div'), 10, 10), null);
-    });
-  });
-
   it('should return the cell that was clicked', () => {
     let coords: [number, number];
     coords = mouseHelper.getCoords({ clientX: CHAR_WIDTH / 2, clientY: CHAR_HEIGHT / 2 }, document.createElement('div'), 10, 10);

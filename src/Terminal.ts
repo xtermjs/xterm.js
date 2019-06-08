@@ -614,13 +614,13 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.register(addDisposableDomListener(this.textarea, 'blur', () => this._onTextAreaBlur()));
     this._helperContainer.appendChild(this.textarea);
 
-    this._compositionView = document.createElement('div');
-    this._compositionView.classList.add('composition-view');
-    this._compositionHelper = new CompositionHelper(this.textarea, this._compositionView, this);
-    this._helperContainer.appendChild(this._compositionView);
-
     this.charMeasure = new CharMeasure(document, this._helperContainer);
     this._charSizeService = new CharSizeService(this._document, this._helperContainer, this.optionsService);
+
+    this._compositionView = document.createElement('div');
+    this._compositionView.classList.add('composition-view');
+    this._compositionHelper = new CompositionHelper(this.textarea, this._compositionView, this, this._charSizeService);
+    this._helperContainer.appendChild(this._compositionView);
 
     // Performance: Add viewport and helper elements from the fragment
     this.element.appendChild(fragment);
