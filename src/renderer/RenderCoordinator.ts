@@ -12,6 +12,7 @@ import { addDisposableDomListener } from 'ui/Lifecycle';
 import { IColorSet } from 'ui/Types';
 import { CharacterJoinerHandler } from '../Types';
 import { IOptionsService } from 'common/options/Types';
+import { ICharSizeService } from 'ui/services/Services';
 
 export class RenderCoordinator extends Disposable {
   private _renderDebouncer: RenderDebouncer;
@@ -35,7 +36,8 @@ export class RenderCoordinator extends Disposable {
     private _renderer: IRenderer,
     private _rowCount: number,
     screenElement: HTMLElement,
-    optionsService: IOptionsService
+    optionsService: IOptionsService,
+    charSizeService: ICharSizeService
   ) {
     super();
     this._renderDebouncer = new RenderDebouncer((start, end) => this._renderRows(start, end));
@@ -46,6 +48,7 @@ export class RenderCoordinator extends Disposable {
     this.register(this._screenDprMonitor);
 
     this.register(optionsService.onOptionChange(() => this._renderer.onOptionsChanged()));
+    this.register(charSizeService.onCharSizeChange(() => this.onCharSizeChanged()));
 
     // dprchange should handle this case, we need this as well for browsers that don't support the
     // matchMedia query.

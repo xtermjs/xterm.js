@@ -630,7 +630,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this._colorManager.setTheme(this._theme);
 
     const renderer = this._createRenderer();
-    this._renderCoordinator = new RenderCoordinator(renderer, this.rows, this.screenElement, this.optionsService);
+    this._renderCoordinator = new RenderCoordinator(renderer, this.rows, this.screenElement, this.optionsService, this._charSizeService);
     this._renderCoordinator.onRender(e => this._onRender.fire(e));
     this.onResize(e => this._renderCoordinator.resize(e.cols, e.rows));
 
@@ -642,8 +642,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.register(this.onResize(() => this._renderCoordinator.onResize(this.cols, this.rows)));
     this.register(this.addDisposableListener('blur', () => this._renderCoordinator.onBlur()));
     this.register(this.addDisposableListener('focus', () => this._renderCoordinator.onFocus()));
-    // TODO: Move to RenderCoordinator
-    this.register(this._charSizeService.onCharSizeChange(() => this._renderCoordinator.onCharSizeChanged()));
     this.register(this._renderCoordinator.onDimensionsChange(() => this.viewport.syncScrollArea()));
 
     this.selectionManager = new SelectionManager(this, this._charSizeService);
