@@ -122,7 +122,7 @@ export class DomRenderer extends Disposable implements IRenderer {
         ` display: inline-block;` +
         ` height: 100%;` +
         ` vertical-align: top;` +
-        ` width: ${this.dimensions.actualCellWidth}px` +
+        //` width: ${this.dimensions.actualCellWidth}px` +
         `}`;
 
     this._dimensionsStyleElement.innerHTML = styles;
