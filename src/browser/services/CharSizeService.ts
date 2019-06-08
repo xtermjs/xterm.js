@@ -72,7 +72,7 @@ class DomMeasureStrategy implements IMeasureStrategy {
 
     // Note that this triggers a synchronous layout
     const geometry = this._measureElement.getBoundingClientRect();
-console.log('measure', geometry);
+
     // If values are 0 then the element is likely currently display:none, in which case we should
     // retain the previous value.
     if (geometry.width !== 0 && geometry.height !== 0) {

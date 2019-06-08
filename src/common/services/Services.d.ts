@@ -5,6 +5,15 @@
 
 import { IEvent } from 'common/EventEmitter2';
 
+export interface IBufferService {
+  readonly cols: number;
+  readonly rows: number;
+
+  // TODO: Move resize event here
+
+  resize(cols: number, rows: number): void;
+}
+
 export interface IOptionsService {
   readonly options: ITerminalOptions;
 

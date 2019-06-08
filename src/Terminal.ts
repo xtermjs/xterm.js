@@ -51,10 +51,11 @@ import { Attributes, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { applyWindowsMode } from './WindowsMode';
 import { ColorManager } from 'browser/ColorManager';
 import { RenderCoordinator } from './renderer/RenderCoordinator';
-import { IOptionsService } from 'common/services/Services';
+import { IOptionsService, IBufferService } from 'common/services/Services';
 import { OptionsService } from 'common/services/OptionsService';
 import { ICharSizeService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
+import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -74,9 +75,6 @@ const WRITE_BUFFER_PAUSE_THRESHOLD = 5;
  */
 const WRITE_TIMEOUT_MS = 12;
 const WRITE_BUFFER_LENGTH_THRESHOLD = 50;
-
-const MINIMUM_COLS = 2; // Less than 2 can mess with wide chars
-const MINIMUM_ROWS = 1;
 
 export class Terminal extends EventEmitter implements ITerminal, IDisposable, IInputHandlingTerminal {
   public textarea: HTMLTextAreaElement;
@@ -108,6 +106,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   private _customKeyEventHandler: CustomKeyEventHandler;
 
   // common services
+  private _bufferService: IBufferService;
   public optionsService: IOptionsService;
 
   // browser services
@@ -188,8 +187,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   // bufferline to clone/copy from for new blank lines
   private _blankLine: IBufferLine = null;
 
-  public cols: number;
-  public rows: number;
+  public get cols(): number { return this._bufferService.cols; }
+  public get rows(): number { return this._bufferService.rows; }
 
   private _onCursorMove = new EventEmitter2<void>();
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
@@ -226,7 +225,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     options: ITerminalOptions = {}
   ) {
     super();
+
+    // Initialize common services
     this.optionsService = new OptionsService(options);
+    this._bufferService = new BufferService(this.optionsService);
+
     this._setupOptionsListeners();
 
     // this.options = clone(options);
@@ -262,9 +265,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   private _setup(): void {
     this._parent = document ? document.body : null;
-
-    this.cols = Math.max(this.options.cols, MINIMUM_COLS);
-    this.rows = Math.max(this.options.rows, MINIMUM_ROWS);
 
     this.cursorState = 0;
     this.cursorHidden = false;
@@ -1745,8 +1745,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     this.buffers.resize(x, y);
 
-    this.cols = x;
-    this.rows = y;
+    this._bufferService.resize(x, y);
     this.buffers.setupTabStops(this.cols);
 
     if (this._charSizeService) {
