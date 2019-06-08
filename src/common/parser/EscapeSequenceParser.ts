@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { ParserState, ParserAction, IParsingState, IDcsHandler, IEscapeSequenceParser } from 'core/parser/Types';
+import { ParserState, ParserAction, IParsingState, IDcsHandler, IEscapeSequenceParser } from 'common/parser/Types';
 import { Disposable } from 'common/Lifecycle';
-import { utf32ToString } from 'core/input/TextDecoder';
+import { utf32ToString } from 'common/input/TextDecoder';
 import { IDisposable } from 'common/Types';
 import { fill } from 'common/TypedArrayUtils';
 

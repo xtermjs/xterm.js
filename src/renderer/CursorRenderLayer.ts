@@ -6,8 +6,8 @@
 import { IRenderDimensions } from './Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { ITerminal } from '../Types';
-import { ICellData } from 'core/Types';
-import { CellData } from 'core/buffer/BufferLine';
+import { ICellData } from 'common/Types';
+import { CellData } from 'common/buffer/BufferLine';
 import { IColorSet } from 'ui/Types';
 
 interface ICursorState {

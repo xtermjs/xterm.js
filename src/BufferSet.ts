@@ -4,7 +4,7 @@
  */
 
 import { ITerminal, IBufferSet, IBuffer } from './Types';
-import { IAttributeData } from 'core/Types';
+import { IAttributeData } from 'common/Types';
 import { Buffer } from './Buffer';
 import { EventEmitter2, IEvent } from 'common/EventEmitter2';
 

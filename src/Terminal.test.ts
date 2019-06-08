@@ -6,7 +6,7 @@
 import { assert, expect } from 'chai';
 import { Terminal } from './Terminal';
 import { MockViewport, MockCompositionHelper, MockRenderer } from './TestUtils.test';
-import { CellData, DEFAULT_ATTR_DATA } from 'core/buffer/BufferLine';
+import { CellData, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;

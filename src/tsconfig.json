@@ -14,7 +14,6 @@
     "baseUrl": ".",
     "paths": {
       "common/*": [ "./common/*" ],
-      "core/*": [ "./core/*" ],
       "ui/*": [ "./ui/*" ]
     },
 
@@ -30,7 +29,6 @@
   ],
   "references": [
     { "path": "./common" },
-    { "path": "./core" },
     { "path": "./ui" }
   ]
 }

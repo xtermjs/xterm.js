@@ -3,6 +3,7 @@
  * @license MIT
  */
 
+import jsdom = require('jsdom');
 import { assert } from 'chai';
 import { MouseHelper } from './MouseHelper';
 import { MockRenderer, MockCharSizeService } from './TestUtils.test';
@@ -11,9 +12,11 @@ const CHAR_WIDTH = 10;
 const CHAR_HEIGHT = 20;
 
 describe('MouseHelper.getCoords', () => {
+  let document: Document;
   let mouseHelper: MouseHelper;
 
   beforeEach(() => {
+    document = new jsdom.JSDOM('').window.document;
     const renderer = new MockRenderer();
     renderer.dimensions = <any>{
       actualCellWidth: CHAR_WIDTH,

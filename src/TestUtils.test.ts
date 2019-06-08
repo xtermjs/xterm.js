@@ -5,13 +5,13 @@
 
 import { IRenderer, IRenderDimensions } from './renderer/Types';
 import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferStringIterator } from './Types';
-import { IBufferLine, ICellData, IAttributeData } from 'core/Types';
+import { IBufferLine, ICellData, IAttributeData } from 'common/Types';
 import { ICircularList, XtermListener } from 'common/Types';
 import { Buffer } from './Buffer';
 import * as Browser from 'common/Platform';
 import { IDisposable, IMarker, IEvent, ISelectionPosition } from 'xterm';
 import { Terminal } from './Terminal';
-import { AttributeData } from 'core/buffer/BufferLine';
+import { AttributeData } from 'common/buffer/BufferLine';
 import { IColorManager, IColorSet } from 'ui/Types';
 import { IOptionsService } from 'common/services/Services';
 import { ICharSizeService } from 'ui/services/Services';

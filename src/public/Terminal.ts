@@ -5,7 +5,7 @@
 
 import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi } from 'xterm';
 import { ITerminal, IBuffer } from '../Types';
-import { IBufferLine } from 'core/Types';
+import { IBufferLine } from 'common/Types';
 import { Terminal as TerminalCore } from '../Terminal';
 import * as Strings from '../Strings';
 import { IEvent } from 'common/EventEmitter2';

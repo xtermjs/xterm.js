@@ -8,9 +8,9 @@ import { SelectionManager, SelectionMode } from './SelectionManager';
 import { SelectionModel } from './SelectionModel';
 import { BufferSet } from './BufferSet';
 import { ITerminal, IBuffer } from './Types';
-import { IBufferLine } from 'core/Types';
+import { IBufferLine } from 'common/Types';
 import { MockTerminal, MockCharSizeService } from './TestUtils.test';
-import { BufferLine, CellData } from 'core/buffer/BufferLine';
+import { BufferLine, CellData } from 'common/buffer/BufferLine';
 
 class TestMockTerminal extends MockTerminal {
   emit(event: string, data: any): void {}

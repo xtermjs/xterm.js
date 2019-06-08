@@ -5,10 +5,10 @@
 
 import { CircularList, IInsertEvent } from 'common/CircularList';
 import { ITerminal, IBuffer, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult } from './Types';
-import { IBufferLine, ICellData, IAttributeData } from 'core/Types';
-import { BufferLine, CellData, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX, DEFAULT_ATTR_DATA } from 'core/buffer/BufferLine';
-import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths, getWrappedLineTrimmedLength } from 'core/buffer/BufferReflow';
-import { Marker } from 'core/buffer/Marker';
+import { IBufferLine, ICellData, IAttributeData } from 'common/Types';
+import { BufferLine, CellData, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths, getWrappedLineTrimmedLength } from 'common/buffer/BufferReflow';
+import { Marker } from 'common/buffer/Marker';
 
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 

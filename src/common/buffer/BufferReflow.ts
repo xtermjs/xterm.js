@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { BufferLine } from 'core/buffer/BufferLine';
+import { BufferLine } from 'common/buffer/BufferLine';
 import { CircularList } from 'common/CircularList';
-import { IBufferLine, ICellData } from 'core/Types';
+import { IBufferLine, ICellData } from 'common/Types';
 
 export interface INewLayoutResult {
   layout: number[];
