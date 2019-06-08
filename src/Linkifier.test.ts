@@ -5,11 +5,11 @@
 
 import { assert } from 'chai';
 import { IMouseZoneManager, IMouseZone, ILinkMatcher, ITerminal } from './Types';
-import { IBufferLine } from 'core/Types';
+import { IBufferLine } from 'common/Types';
 import { Linkifier } from './Linkifier';
 import { MockBuffer, MockTerminal, TestTerminal } from './TestUtils.test';
 import { CircularList } from 'common/CircularList';
-import { BufferLine, CellData } from 'core/buffer/BufferLine';
+import { BufferLine, CellData } from 'common/buffer/BufferLine';
 
 class TestLinkifier extends Linkifier {
   constructor(terminal: ITerminal) {

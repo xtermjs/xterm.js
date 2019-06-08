@@ -4,8 +4,7 @@
  */
 
 import { ITerminal } from '../Types';
-import { IBufferLine } from 'core/Types';
-import { ICircularList } from 'common/Types';
+import { IBufferLine, ICircularList } from 'common/Types';
 import { C0 } from 'common/data/EscapeSequences';
 
 const enum Direction {

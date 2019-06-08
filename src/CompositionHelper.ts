@@ -4,7 +4,7 @@
  */
 
 import { ITerminal } from './Types';
-import { ICharSizeService } from 'ui/services/Services';
+import { ICharSizeService } from 'browser/services/Services';
 
 interface IPosition {
   start: number;

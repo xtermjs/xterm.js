@@ -8,7 +8,7 @@ import { ITerminal } from './Types';
 import { Buffer } from './Buffer';
 import { CircularList } from 'common/CircularList';
 import { MockTerminal, TestTerminal } from './TestUtils.test';
-import { BufferLine, CellData, DEFAULT_ATTR_DATA } from 'core/buffer/BufferLine';
+import { BufferLine, CellData, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
