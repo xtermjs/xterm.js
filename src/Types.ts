@@ -4,8 +4,7 @@
  */
 
 import { ITerminalOptions as IPublicTerminalOptions, IEventEmitter, IDisposable, IMarker, ISelectionPosition } from 'xterm';
-import { ICharset, IAttributeData, ICellData, IBufferLine, CharData } from 'common/Types';
-import { ICircularList } from 'common/Types';
+import { ICharset, IAttributeData, ICellData, IBufferLine, CharData, ICircularList } from 'common/Types';
 import { IEvent } from 'common/EventEmitter2';
 import { IColorSet } from 'ui/Types';
 import { IOptionsService } from 'common/services/Services';
