@@ -199,7 +199,6 @@ export interface ILinkifierEvent {
 export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAccessor, ILinkifierAccessor {
   screenElement: HTMLElement;
   selectionManager: ISelectionManager;
-  charMeasure: ICharMeasure;
   browser: IBrowser;
   writeBuffer: string[];
   cursorHidden: boolean;
@@ -284,17 +283,8 @@ export interface ILinkifierAccessor {
 }
 
 export interface IMouseHelper {
-  getCoords(event: { clientX: number, clientY: number }, element: HTMLElement, charMeasure: ICharMeasure, colCount: number, rowCount: number, isSelection?: boolean): [number, number];
-  getRawByteCoords(event: MouseEvent, element: HTMLElement, charMeasure: ICharMeasure, colCount: number, rowCount: number): { x: number, y: number };
-}
-
-export interface ICharMeasure {
-  width: number;
-  height: number;
-
-  onCharSizeChanged: IEvent<void>;
-
-  measure(options: ITerminalOptions): void;
+  getCoords(event: { clientX: number, clientY: number }, element: HTMLElement, colCount: number, rowCount: number, isSelection?: boolean): [number, number];
+  getRawByteCoords(event: MouseEvent, element: HTMLElement, colCount: number, rowCount: number): { x: number, y: number };
 }
 
 // TODO: The options that are not in the public API should be reviewed

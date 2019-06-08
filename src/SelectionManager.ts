@@ -7,12 +7,12 @@ import { ITerminal, ISelectionManager, IBuffer, ISelectionRedrawRequestEvent } f
 import { IBufferLine } from 'core/Types';
 import { MouseHelper } from './MouseHelper';
 import * as Browser from 'common/Platform';
-import { CharMeasure } from './CharMeasure';
 import { SelectionModel } from './SelectionModel';
 import { AltClickHandler } from './handlers/AltClickHandler';
 import { CellData } from 'core/buffer/BufferLine';
 import { IDisposable } from 'xterm';
 import { EventEmitter2, IEvent } from 'common/EventEmitter2';
+import { ICharSizeService } from 'ui/services/Services';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -117,7 +117,7 @@ export class SelectionManager implements ISelectionManager {
 
   constructor(
     private _terminal: ITerminal,
-    private _charMeasure: CharMeasure
+    private _charSizeService: ICharSizeService
   ) {
     this._initListeners();
     this.enable();
@@ -354,7 +354,7 @@ export class SelectionManager implements ISelectionManager {
    * @param event The mouse event.
    */
   private _getMouseBufferCoords(event: MouseEvent): [number, number] {
-    const coords = this._terminal.mouseHelper.getCoords(event, this._terminal.screenElement, this._charMeasure, this._terminal.cols, this._terminal.rows, true);
+    const coords = this._terminal.mouseHelper.getCoords(event, this._terminal.screenElement, this._terminal.cols, this._terminal.rows, true);
     if (!coords) {
       return null;
     }
@@ -375,7 +375,7 @@ export class SelectionManager implements ISelectionManager {
    */
   private _getMouseEventScrollAmount(event: MouseEvent): number {
     let offset = MouseHelper.getCoordsRelativeToElement(event, this._terminal.screenElement)[1];
-    const terminalHeight = this._terminal.rows * Math.ceil(this._charMeasure.height * this._terminal.options.lineHeight);
+    const terminalHeight = this._terminal.rows * Math.ceil(this._charSizeService.height * this._terminal.options.lineHeight);
     if (offset >= 0 && offset <= terminalHeight) {
       return 0;
     }

@@ -34,7 +34,6 @@ import { InputHandler } from './InputHandler';
 import { Renderer } from './renderer/Renderer';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
-import { CharMeasure } from './CharMeasure';
 import * as Browser from 'common/Platform';
 import { addDisposableDomListener } from 'ui/Lifecycle';
 import * as Strings from './Strings';
@@ -55,6 +54,8 @@ import { ColorManager } from 'ui/ColorManager';
 import { RenderCoordinator } from './renderer/RenderCoordinator';
 import { IOptionsService } from 'common/options/Types';
 import { OptionsService } from 'common/options/OptionsService';
+import { ICharSizeService } from 'ui/services/Services';
+import { CharSizeService } from 'ui/services/CharSizeService';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -107,8 +108,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   private _customKeyEventHandler: CustomKeyEventHandler;
 
-  // services
+  // common services
   public optionsService: IOptionsService;
+
+  // browser services
+  private _charSizeService: ICharSizeService;
 
   // modes
   public applicationKeypad: boolean;
@@ -175,7 +179,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public buffers: BufferSet;
   public viewport: IViewport;
   private _compositionHelper: ICompositionHelper;
-  public charMeasure: CharMeasure;
   private _mouseZoneManager: IMouseZoneManager;
   public mouseHelper: MouseHelper;
   private _accessibilityManager: AccessibilityManager;
@@ -360,7 +363,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
           // When the font changes the size of the cells may change which requires a renderer clear
           if (this._renderCoordinator) {
             this._renderCoordinator.clear();
-            this.charMeasure.measure(this.options);
+          }
+          if (this._charSizeService) {
+            this._charSizeService.measure();
           }
           break;
         case 'drawBoldTextInBrightColors':
@@ -609,12 +614,12 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.register(addDisposableDomListener(this.textarea, 'blur', () => this._onTextAreaBlur()));
     this._helperContainer.appendChild(this.textarea);
 
+    this._charSizeService = new CharSizeService(this._document, this._helperContainer, this.optionsService);
+
     this._compositionView = document.createElement('div');
     this._compositionView.classList.add('composition-view');
-    this._compositionHelper = new CompositionHelper(this.textarea, this._compositionView, this);
+    this._compositionHelper = new CompositionHelper(this.textarea, this._compositionView, this, this._charSizeService);
     this._helperContainer.appendChild(this._compositionView);
-
-    this.charMeasure = new CharMeasure(document, this._helperContainer);
 
     // Performance: Add viewport and helper elements from the fragment
     this.element.appendChild(fragment);
@@ -625,11 +630,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this._colorManager.setTheme(this._theme);
 
     const renderer = this._createRenderer();
-    this._renderCoordinator = new RenderCoordinator(renderer, this.rows, this.screenElement, this.optionsService);
+    this._renderCoordinator = new RenderCoordinator(renderer, this.rows, this.screenElement, this.optionsService, this._charSizeService);
     this._renderCoordinator.onRender(e => this._onRender.fire(e));
     this.onResize(e => this._renderCoordinator.resize(e.cols, e.rows));
 
-    this.viewport = new Viewport(this, this._viewportElement, this._viewportScrollArea, this.charMeasure, this._renderCoordinator.dimensions);
+    this.viewport = new Viewport(this, this._viewportElement, this._viewportScrollArea, this._renderCoordinator.dimensions, this._charSizeService);
     this.viewport.onThemeChange(this._colorManager.colors);
     this.register(this.viewport);
 
@@ -637,10 +642,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.register(this.onResize(() => this._renderCoordinator.onResize(this.cols, this.rows)));
     this.register(this.addDisposableListener('blur', () => this._renderCoordinator.onBlur()));
     this.register(this.addDisposableListener('focus', () => this._renderCoordinator.onFocus()));
-    this.register(this.charMeasure.onCharSizeChanged(() => this._renderCoordinator.onCharSizeChanged()));
     this.register(this._renderCoordinator.onDimensionsChange(() => this.viewport.syncScrollArea()));
 
-    this.selectionManager = new SelectionManager(this, this.charMeasure);
+    this.selectionManager = new SelectionManager(this, this._charSizeService);
     this.register(this.selectionManager.onSelectionChange(() => this._onSelectionChange.fire()));
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this.selectionManager.onMouseDown(e)));
     this.register(this.selectionManager.onRedrawRequest(e => this._renderCoordinator.onSelectionChanged(e.start, e.end, e.columnSelectMode)));
@@ -658,7 +662,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }));
     this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this.selectionManager.refresh()));
 
-    this.mouseHelper = new MouseHelper(this._renderCoordinator);
+    this.mouseHelper = new MouseHelper(this._renderCoordinator, this._charSizeService);
     // apply mouse event classes set by escape codes before terminal was attached
     this.element.classList.toggle('enable-mouse-events', this.mouseEvents);
     if (this.mouseEvents) {
@@ -675,7 +679,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }
 
     // Measure the character size
-    this.charMeasure.measure(this.options);
+    this._charSizeService.measure();
 
     // Setup loop that draws to screen
     this.refresh(0, this.rows - 1);
@@ -691,8 +695,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   private _createRenderer(): IRenderer {
     switch (this.options.rendererType) {
-      case 'canvas': return new Renderer(this, this._colorManager.colors); break;
-      case 'dom': return new DomRenderer(this, this._colorManager.colors); break;
+      case 'canvas': return new Renderer(this, this._colorManager.colors, this._charSizeService); break;
+      case 'dom': return new DomRenderer(this, this._colorManager.colors, this._charSizeService); break;
       default: throw new Error(`Unrecognized rendererType "${this.options.rendererType}"`);
     }
   }
@@ -738,7 +742,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       button = getButton(ev);
 
       // get mouse coordinates
-      pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.charMeasure, self.cols, self.rows);
+      pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.cols, self.rows);
       if (!pos) return;
 
       sendEvent(button, pos);
@@ -764,7 +768,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // ^[[M 3<^[[M@4<^[[M@5<^[[M@6<^[[M@7<^[[M#7<
     function sendMove(ev: MouseEvent): void {
       let button = pressed;
-      const pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.charMeasure, self.cols, self.rows);
+      const pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.cols, self.rows);
       if (!pos) return;
 
       // buttons marked as motions
@@ -1731,8 +1735,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     if (x === this.cols && y === this.rows) {
       // Check if we still need to measure the char size (fixes #785).
-      if (this.charMeasure && (!this.charMeasure.width || !this.charMeasure.height)) {
-        this.charMeasure.measure(this.options);
+      if (this._charSizeService && !this._charSizeService.hasValidSize) {
+        this._charSizeService.measure();
       }
       return;
     }
@@ -1746,8 +1750,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.rows = y;
     this.buffers.setupTabStops(this.cols);
 
-    if (this.charMeasure) {
-      this.charMeasure.measure(this.options);
+    if (this._charSizeService) {
+      this._charSizeService.measure();
     }
 
     this.refresh(0, this.rows - 1);

@@ -4,7 +4,7 @@
  */
 
 import { IRenderer, IRenderDimensions } from './renderer/Types';
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferStringIterator } from './Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferStringIterator } from './Types';
 import { IBufferLine, ICellData, IAttributeData } from 'core/Types';
 import { ICircularList, XtermListener } from 'common/Types';
 import { Buffer } from './Buffer';
@@ -14,6 +14,7 @@ import { Terminal } from './Terminal';
 import { AttributeData } from 'core/buffer/BufferLine';
 import { IColorManager, IColorSet } from 'ui/Types';
 import { IOptionsService } from 'common/options/Types';
+import { ICharSizeService } from 'ui/services/Services';
 
 export class TestTerminal extends Terminal {
   writeSync(data: string): void {
@@ -128,7 +129,6 @@ export class MockTerminal implements ITerminal {
   rowContainer: HTMLElement;
   selectionContainer: HTMLElement;
   selectionManager: ISelectionManager;
-  charMeasure: ICharMeasure;
   textarea: HTMLTextAreaElement;
   rows: number;
   cols: number;
@@ -180,15 +180,6 @@ export class MockTerminal implements ITerminal {
   }
   registerCharacterJoiner(handler: CharacterJoinerHandler): number { return 0; }
   deregisterCharacterJoiner(joinerId: number): void { }
-}
-
-export class MockCharMeasure implements ICharMeasure {
-  onCharSizeChanged: IEvent<void>;
-  width: number;
-  height: number;
-  measure(options: ITerminalOptions): void {
-    throw new Error('Method not implemented.');
-  }
 }
 
 export class MockInputHandlingTerminal implements IInputHandlingTerminal {
@@ -437,4 +428,11 @@ export class MockCompositionHelper implements ICompositionHelper {
   keydown(ev: KeyboardEvent): boolean {
     return true;
   }
+}
+
+export class MockCharSizeService implements ICharSizeService {
+  get hasValidSize(): boolean { return this.width > 0 && this.height > 0; }
+  onCharSizeChange: IEvent<void>;
+  constructor(public width: number, public height: number) {}
+  measure(): void {}
 }
