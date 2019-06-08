@@ -95,7 +95,7 @@
       {"type": "default", "format": "camelCase", "leadingUnderscore": "forbid"},
       {"type": "type", "format": "PascalCase"},
       {"type": "class", "format": "PascalCase"},
-      {"type": "property", "modifiers": ["const"], "format": "UPPER_CASE"},
+      {"type": "property", "modifiers": ["const"], "format": ["camelCase", "UPPER_CASE"]},
       {"type": "member", "modifiers": ["protected"], "format": "camelCase", "leadingUnderscore": "allow"},
       // TODO: Change allow to require when there aren't many PRs out
       // {"type": "member", "modifiers": ["protected"], "format": "camelCase", "leadingUnderscore": "require"},

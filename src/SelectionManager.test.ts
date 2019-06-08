@@ -9,7 +9,7 @@ import { SelectionModel } from './SelectionModel';
 import { BufferSet } from './BufferSet';
 import { ITerminal, IBuffer } from './Types';
 import { IBufferLine } from 'common/Types';
-import { MockTerminal, MockCharSizeService } from './TestUtils.test';
+import { MockTerminal, MockCharSizeService, MockOptionsService } from './TestUtils.test';
 import { BufferLine, CellData } from 'common/buffer/BufferLine';
 
 class TestMockTerminal extends MockTerminal {
@@ -46,8 +46,7 @@ describe('SelectionManager', () => {
     terminal = new TestMockTerminal();
     (terminal as any).cols = 80;
     (terminal as any).rows = 2;
-    terminal.options.scrollback = 100;
-    terminal.buffers = new BufferSet(terminal);
+    terminal.buffers = new BufferSet(terminal, new MockOptionsService({ scrollback: 100 }));
     terminal.buffer = terminal.buffers.active;
     buffer = terminal.buffer;
     selectionManager = new TestSelectionManager(terminal);

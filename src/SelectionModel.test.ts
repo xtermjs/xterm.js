@@ -7,7 +7,7 @@ import { assert } from 'chai';
 import { ITerminal } from './Types';
 import { SelectionModel } from './SelectionModel';
 import { BufferSet } from './BufferSet';
-import { MockTerminal } from './TestUtils.test';
+import { MockTerminal, MockOptionsService } from './TestUtils.test';
 
 class TestSelectionModel extends SelectionModel {
   constructor(
@@ -25,8 +25,7 @@ describe('SelectionManager', () => {
     terminal = new MockTerminal();
     (terminal as any).cols = 80;
     (terminal as any).rows = 2;
-    terminal.options.scrollback = 10;
-    terminal.buffers = new BufferSet(terminal);
+    terminal.buffers = new BufferSet(terminal, new MockOptionsService({ scrollback: 10 }));
     terminal.buffer = terminal.buffers.active;
 
     model = new TestSelectionModel(terminal);

@@ -7,28 +7,30 @@ import { assert, expect } from 'chai';
 import { ITerminal } from './Types';
 import { Buffer } from './Buffer';
 import { CircularList } from 'common/CircularList';
-import { MockTerminal, TestTerminal } from './TestUtils.test';
+import { MockTerminal, TestTerminal, MockOptionsService } from './TestUtils.test';
 import { BufferLine, CellData, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
+const INIT_SCROLLBACK = 1000;
 
 describe('Buffer', () => {
   let terminal: ITerminal;
+  let optionsService: MockOptionsService;
   let buffer: Buffer;
 
   beforeEach(() => {
     terminal = new MockTerminal();
     (terminal as any).cols = INIT_COLS;
     (terminal as any).rows = INIT_ROWS;
-    terminal.options.scrollback = 1000;
-    buffer = new Buffer(terminal, true);
+    optionsService = new MockOptionsService({ scrollback: INIT_SCROLLBACK });
+    buffer = new Buffer(terminal, true, optionsService);
   });
 
   describe('constructor', () => {
     it('should create a CircularList with max length equal to rows + scrollback, for its lines', () => {
       assert.instanceOf(buffer.lines, CircularList);
-      assert.equal(buffer.lines.maxLength, terminal.rows + terminal.options.scrollback);
+      assert.equal(buffer.lines.maxLength, terminal.rows + INIT_SCROLLBACK);
     });
     it('should set the Buffer\'s scrollBottom value equal to the terminal\'s rows -1', () => {
       assert.equal(buffer.scrollBottom, terminal.rows - 1);
@@ -150,8 +152,7 @@ describe('Buffer', () => {
 
       describe('no scrollback', () => {
         it('should trim from the top of the buffer when the cursor reaches the bottom', () => {
-          terminal.options.scrollback = 0;
-          buffer = new Buffer(terminal, true);
+          buffer = new Buffer(terminal, true, new MockOptionsService({ scrollback: 0 }));
           assert.equal(buffer.lines.maxLength, INIT_ROWS);
           buffer.y = INIT_ROWS - 1;
           buffer.fillViewportRows();
@@ -295,7 +296,7 @@ describe('Buffer', () => {
       });
       it('should discard parts of wrapped lines that go out of the scrollback', () => {
         buffer.fillViewportRows();
-        terminal.options.scrollback = 1;
+        optionsService.options.scrollback = 1;
         buffer.resize(10, 5);
         const lastLine = buffer.lines.get(3);
         for (let i = 0; i < 10; i++) {
@@ -462,7 +463,7 @@ describe('Buffer', () => {
       });
       it('should dispose markers whose rows are trimmed during a reflow', () => {
         buffer.fillViewportRows();
-        terminal.options.scrollback = 1;
+        optionsService.options.scrollback = 1;
         buffer.resize(10, 11);
         for (let i = 0; i < 10; i++) {
           const code = 'a'.charCodeAt(0) + i;
@@ -788,7 +789,7 @@ describe('Buffer', () => {
           // ybase === 0 doesn't make sense here as scrollback=0 isn't really supported
           describe('ybase !== 0', () => {
             beforeEach(() => {
-              terminal.options.scrollback = 10;
+              optionsService.options.scrollback = 10;
               // Add 10 empty rows to start
               for (let i = 0; i < 10; i++) {
                 buffer.lines.splice(0, 0, buffer.getBlankLine(DEFAULT_ATTR_DATA));
@@ -986,7 +987,7 @@ describe('Buffer', () => {
           // ybase === 0 doesn't make sense here as scrollback=0 isn't really supported
           describe('ybase !== 0', () => {
             beforeEach(() => {
-              terminal.options.scrollback = 10;
+              optionsService.options.scrollback = 10;
               // Add 10 empty rows to start
               for (let i = 0; i < 10; i++) {
                 buffer.lines.splice(0, 0, buffer.getBlankLine(DEFAULT_ATTR_DATA));
@@ -1053,9 +1054,8 @@ describe('Buffer', () => {
 
   describe('buffer marked to have no scrollback', () => {
     it('should always have a scrollback of 0', () => {
-      assert.equal(terminal.options.scrollback, 1000);
       // Test size on initialization
-      buffer = new Buffer(terminal, false);
+      buffer = new Buffer(terminal, false, new MockOptionsService({ scrollback: 1000 }));
       buffer.fillViewportRows();
       assert.equal(buffer.lines.maxLength, INIT_ROWS);
       // Test size on buffer increase
@@ -1069,8 +1069,7 @@ describe('Buffer', () => {
 
   describe('addMarker', () => {
     it('should adjust a marker line when the buffer is trimmed', () => {
-      terminal.options.scrollback = 0;
-      buffer = new Buffer(terminal, true);
+      buffer = new Buffer(terminal, true, new MockOptionsService({ scrollback: 0 }));
       buffer.fillViewportRows();
       const marker = buffer.addMarker(buffer.lines.length - 1);
       assert.equal(marker.line, buffer.lines.length - 1);
@@ -1078,8 +1077,7 @@ describe('Buffer', () => {
       assert.equal(marker.line, buffer.lines.length - 2);
     });
     it('should dispose of a marker if it is trimmed off the buffer', () => {
-      terminal.options.scrollback = 0;
-      buffer = new Buffer(terminal, true);
+      buffer = new Buffer(terminal, true, new MockOptionsService({ scrollback: 0 }));
       buffer.fillViewportRows();
       assert.equal(buffer.markers.length, 0);
       const marker = buffer.addMarker(0);
@@ -1366,7 +1364,7 @@ describe('Buffer', () => {
       const input = '\thttps://google.de';
       terminal.writeSync(input);
       const s = terminal.buffer.iterator(true).next().content;
-      assert.equal(s, Array(terminal.options.tabStopWidth + 1).join(' ') + 'https://google.de');
+      assert.equal(s, Array(optionsService.options.tabStopWidth + 1).join(' ') + 'https://google.de');
     });
   });
   describe('BufferStringIterator', function(): void {

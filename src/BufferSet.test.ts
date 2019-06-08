@@ -7,7 +7,7 @@ import { assert } from 'chai';
 import { ITerminal } from './Types';
 import { BufferSet } from './BufferSet';
 import { Buffer } from './Buffer';
-import { MockTerminal } from './TestUtils.test';
+import { MockTerminal, MockOptionsService } from './TestUtils.test';
 
 describe('BufferSet', () => {
   let terminal: ITerminal;
@@ -17,8 +17,7 @@ describe('BufferSet', () => {
     terminal = new MockTerminal();
     (terminal as any).cols = 80;
     (terminal as any).rows = 24;
-    terminal.options.scrollback = 1000;
-    bufferSet = new BufferSet(terminal);
+    bufferSet = new BufferSet(terminal, new MockOptionsService({ scrollback: 1000 }));
   });
 
   describe('constructor', () => {
