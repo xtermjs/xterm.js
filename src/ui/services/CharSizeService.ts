@@ -5,32 +5,34 @@
 
 import { IOptionsService } from 'common/options/Types';
 import { IEvent, EventEmitter2 } from 'common/EventEmitter2';
-import { ICharDimensionsService } from 'ui/services/Services';
+import { ICharSizeService } from 'ui/services/Services';
 
-export class CharDimensionsService implements ICharDimensionsService {
+export class CharSizeService implements ICharSizeService {
   public width: number = 0;
   public height: number = 0;
-  private _charDimensionsStrategy: ICharDimensionsStrategy;
+  private _measureStrategy: IMeasureStrategy;
 
-  private _onCharDimensionsChange = new EventEmitter2<string>();
-  public get onCharDimensionsChange(): IEvent<string> { return this._onCharDimensionsChange.event; }
+  public get hasValidDimensions(): boolean { return this.width > 0 && this.height > 0; }
+
+  private _onCharSizeChange = new EventEmitter2<string>();
+  public get onCharSizeChange(): IEvent<string> { return this._onCharSizeChange.event; }
 
   constructor(
     document: Document,
     parentElement: HTMLElement,
     private _optionsService: IOptionsService
   ) {
-    this._charDimensionsStrategy = new DomCharDimensionsStrategy(document, parentElement, this._optionsService);
+    this._measureStrategy = new DomMeasureStrategy(document, parentElement, this._optionsService);
   }
 
   public measure(): void {
-    const result = this._charDimensionsStrategy.measure();
+    const result = this._measureStrategy.measure();
     this.width = result.width;
     this.height = result.height;
   }
 }
 
-interface ICharDimensionsStrategy {
+interface IMeasureStrategy {
   measure(): IReadonlyMeasureResult;
 }
 
@@ -45,7 +47,7 @@ interface IMeasureResult {
 }
 
 // TODO: For supporting browsers we should also provide a CanvasCharDimensionsProvider that uses ctx.measureText
-class DomCharDimensionsStrategy implements ICharDimensionsStrategy {
+class DomMeasureStrategy implements IMeasureStrategy {
   private _result: IMeasureResult = { width: 0, height: 0 };
   private _measureElement: HTMLElement;
 

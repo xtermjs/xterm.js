@@ -5,9 +5,12 @@
 
 import { IEvent } from 'common/EventEmitter2';
 
-export interface ICharDimensionsService {
+export interface ICharSizeService {
   readonly width: number;
   readonly height: number;
-  readonly onCharDimensionsChange: IEvent<string>;
+  readonly hasValidDimensions: boolean;
+
+  readonly onCharSizeChange: IEvent<string>;
+
   measure(): void;
 }
