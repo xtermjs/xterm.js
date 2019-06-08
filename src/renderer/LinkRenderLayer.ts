@@ -8,7 +8,7 @@ import { IRenderDimensions } from './Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { INVERTED_DEFAULT_COLOR } from './atlas/Types';
 import { is256Color } from './atlas/CharAtlasUtils';
-import { IColorSet } from 'ui/Types';
+import { IColorSet } from 'browser/Types';
 
 export class LinkRenderLayer extends BaseRenderLayer {
   private _state: ILinkifierEvent = null;

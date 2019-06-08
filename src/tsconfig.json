@@ -14,7 +14,7 @@
     "baseUrl": ".",
     "paths": {
       "common/*": [ "./common/*" ],
-      "ui/*": [ "./ui/*" ]
+      "browser/*": [ "./browser/*" ]
     },
 
     "noUnusedLocals": true,
@@ -29,6 +29,6 @@
   ],
   "references": [
     { "path": "./common" },
-    { "path": "./ui" }
+    { "path": "./browser" }
   ]
 }

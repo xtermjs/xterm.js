@@ -6,7 +6,7 @@
 import { ITerminalOptions as IPublicTerminalOptions, IEventEmitter, IDisposable, IMarker, ISelectionPosition } from 'xterm';
 import { ICharset, IAttributeData, ICellData, IBufferLine, CharData, ICircularList } from 'common/Types';
 import { IEvent } from 'common/EventEmitter2';
-import { IColorSet } from 'ui/Types';
+import { IColorSet } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;

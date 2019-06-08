@@ -8,7 +8,7 @@ import { BaseRenderLayer } from './BaseRenderLayer';
 import { ITerminal } from '../Types';
 import { ICellData } from 'common/Types';
 import { CellData } from 'common/buffer/BufferLine';
-import { IColorSet } from 'ui/Types';
+import { IColorSet } from 'browser/Types';
 
 interface ICursorState {
   x: number;

@@ -12,7 +12,7 @@ import { AltClickHandler } from './handlers/AltClickHandler';
 import { CellData } from 'common/buffer/BufferLine';
 import { IDisposable } from 'xterm';
 import { EventEmitter2, IEvent } from 'common/EventEmitter2';
-import { ICharSizeService } from 'ui/services/Services';
+import { ICharSizeService } from 'browser/services/Services';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in

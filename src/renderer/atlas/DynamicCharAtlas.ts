@@ -5,10 +5,10 @@
 
 import { DIM_OPACITY, IGlyphIdentifier, INVERTED_DEFAULT_COLOR, ICharAtlasConfig } from './Types';
 import { BaseCharAtlas } from './BaseCharAtlas';
-import { DEFAULT_ANSI_COLORS } from 'ui/ColorManager';
+import { DEFAULT_ANSI_COLORS } from 'browser/ColorManager';
 import { LRUMap } from './LRUMap';
 import { isFirefox, isSafari } from 'common/Platform';
-import { IColor } from 'ui/Types';
+import { IColor } from 'browser/Types';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.

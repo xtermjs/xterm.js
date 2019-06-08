@@ -11,9 +11,9 @@ import * as Browser from 'common/Platform';
 import { IDisposable, IMarker, IEvent, ISelectionPosition } from 'xterm';
 import { Terminal } from './Terminal';
 import { AttributeData } from 'common/buffer/BufferLine';
-import { IColorManager, IColorSet } from 'ui/Types';
+import { IColorManager, IColorSet } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
-import { ICharSizeService } from 'ui/services/Services';
+import { ICharSizeService } from 'browser/services/Services';
 
 export class TestTerminal extends Terminal {
   writeSync(data: string): void {

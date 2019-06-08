@@ -4,15 +4,15 @@
  */
 
 import { IRenderer, IRenderDimensions } from './Types';
-import { RenderDebouncer } from 'ui/RenderDebouncer';
+import { RenderDebouncer } from 'browser/RenderDebouncer';
 import { EventEmitter2, IEvent } from 'common/EventEmitter2';
 import { Disposable } from 'common/Lifecycle';
-import { ScreenDprMonitor } from 'ui/ScreenDprMonitor';
-import { addDisposableDomListener } from 'ui/Lifecycle';
-import { IColorSet } from 'ui/Types';
+import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
+import { addDisposableDomListener } from 'browser/Lifecycle';
+import { IColorSet } from 'browser/Types';
 import { CharacterJoinerHandler } from '../Types';
 import { IOptionsService } from 'common/services/Services';
-import { ICharSizeService } from 'ui/services/Services';
+import { ICharSizeService } from 'browser/services/Services';
 
 export class RenderCoordinator extends Disposable {
   private _renderDebouncer: RenderDebouncer;

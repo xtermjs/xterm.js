@@ -5,7 +5,7 @@
 
 import jsdom = require('jsdom');
 import { assert } from 'chai';
-import { ColorManager } from 'ui/ColorManager';
+import { ColorManager } from 'browser/ColorManager';
 
 describe('ColorManager', () => {
   let cm: ColorManager;

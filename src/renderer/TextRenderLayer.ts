@@ -10,7 +10,7 @@ import { GridCache } from './GridCache';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { CellData, AttributeData, Content, NULL_CELL_CODE } from 'common/buffer/BufferLine';
 import { JoinedCellData } from './CharacterJoinerRegistry';
-import { IColorSet } from 'ui/Types';
+import { IColorSet } from 'browser/Types';
 
 /**
  * This CharData looks like a null character, which will forc a clear and render

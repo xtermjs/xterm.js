@@ -8,7 +8,7 @@ import { generateConfig, configEquals } from './CharAtlasUtils';
 import { BaseCharAtlas } from './BaseCharAtlas';
 import { DynamicCharAtlas } from './DynamicCharAtlas';
 import { ICharAtlasConfig } from './Types';
-import { IColorSet } from 'ui/Types';
+import { IColorSet } from 'browser/Types';
 
 interface ICharAtlasCacheEntry {
   atlas: BaseCharAtlas;
