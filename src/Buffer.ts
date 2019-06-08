@@ -9,6 +9,7 @@ import { IBufferLine, ICellData, IAttributeData } from 'common/Types';
 import { BufferLine, CellData, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths, getWrappedLineTrimmedLength } from 'common/buffer/BufferReflow';
 import { Marker } from 'common/buffer/Marker';
+import { IOptionsService } from 'common/services/Services';
 
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 
@@ -37,15 +38,10 @@ export class Buffer implements IBuffer {
   private _cols: number;
   private _rows: number;
 
-  /**
-   * Create a new Buffer.
-   * @param _terminal The terminal the Buffer will belong to.
-   * @param _hasScrollback Whether the buffer should respect the scrollback of
-   * the terminal.
-   */
   constructor(
     private _terminal: ITerminal,
-    private _hasScrollback: boolean
+    private _hasScrollback: boolean,
+    private _optionsService: IOptionsService
   ) {
     this._cols = this._terminal.cols;
     this._rows = this._terminal.rows;
@@ -98,7 +94,7 @@ export class Buffer implements IBuffer {
       return rows;
     }
 
-    const correctBufferLength = rows + this._terminal.options.scrollback;
+    const correctBufferLength = rows + this._optionsService.options.scrollback;
 
     return correctBufferLength > MAX_BUFFER_SIZE ? MAX_BUFFER_SIZE : correctBufferLength;
   }
@@ -237,7 +233,7 @@ export class Buffer implements IBuffer {
   }
 
   private get _isReflowEnabled(): boolean {
-    return this._hasScrollback && !this._terminal.options.windowsMode;
+    return this._hasScrollback && !this._optionsService.options.windowsMode;
   }
 
   private _reflow(newCols: number, newRows: number): void {
@@ -533,7 +529,7 @@ export class Buffer implements IBuffer {
       i = 0;
     }
 
-    for (; i < this._cols; i += this._terminal.options.tabStopWidth) {
+    for (; i < this._cols; i += this._optionsService.options.tabStopWidth) {
       this.tabs[i] = true;
     }
   }
