@@ -4,7 +4,7 @@
  */
 
 import { FontWeight } from 'xterm';
-import { IColorSet } from 'ui/Types';
+import { IColorSet } from 'browser/Types';
 
 export const INVERTED_DEFAULT_COLOR = 257;
 export const DIM_OPACITY = 0.5;

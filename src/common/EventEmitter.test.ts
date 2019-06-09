@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017 The xterm.js authors. All rights reserved.
+ * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 
@@ -7,71 +7,25 @@ import { assert } from 'chai';
 import { EventEmitter } from 'common/EventEmitter';
 
 describe('EventEmitter', () => {
-  let eventEmitter: EventEmitter;
-
-  beforeEach(() => {
-    eventEmitter = new EventEmitter();
+  it('should fire listeners multiple times', () => {
+    const order: string[] = [];
+    const emitter = new EventEmitter<number>();
+    emitter.event(data => order.push(data + 'a'));
+    emitter.event(data => order.push(data + 'b'));
+    emitter.fire(1);
+    emitter.fire(2);
+    assert.deepEqual(order, [ '1a', '1b', '2a', '2b' ]);
   });
 
-  describe('emit', () => {
-    it('should emit events to listeners', () => {
-      let count1 = 0;
-      let count2 = 0;
-      const listener1 = () => count1++;
-      const listener2 = () => count2++;
-      eventEmitter.on('test', listener1);
-      eventEmitter.on('test', listener2);
-      eventEmitter.emit('test');
-      assert.equal(count1, 1);
-      assert.equal(count2, 1);
-      eventEmitter.emit('test');
-      assert.equal(count1, 2);
-      assert.equal(count2, 2);
-    });
-
-    it('should manage multiple listener types', () => {
-      let count1 = 0;
-      let count2 = 0;
-      const listener1 = () => count1++;
-      const listener2 = () => count2++;
-      eventEmitter.on('test', listener1);
-      eventEmitter.on('foo', listener2);
-      eventEmitter.emit('test');
-      assert.equal(count1, 1);
-      assert.equal(count2, 0);
-      eventEmitter.emit('foo');
-      assert.equal(count1, 1);
-      assert.equal(count2, 1);
-    });
-  });
-
-  describe('listeners', () => {
-    it('should return listeners for the type requested', () => {
-      assert.equal(eventEmitter.listeners('test').length, 0);
-      const listener = () => {};
-      eventEmitter.on('test', listener);
-      assert.deepEqual(eventEmitter.listeners('test'), [listener]);
-    });
-  });
-
-  describe('off', () => {
-    it('should remove the specific listener', () => {
-      const listener1 = () => {};
-      const listener2 = () => {};
-      eventEmitter.on('foo', listener1);
-      eventEmitter.on('foo', listener2);
-      assert.equal(eventEmitter.listeners('foo').length, 2);
-      eventEmitter.off('foo', listener1);
-      assert.deepEqual(eventEmitter.listeners('foo'), [listener2]);
-    });
-  });
-
-  describe('removeAllListeners', () => {
-    it('should clear all listeners', () => {
-      eventEmitter.on('foo', () => {});
-      assert.equal(eventEmitter.listeners('foo').length, 1);
-      eventEmitter.removeAllListeners('foo');
-      assert.equal(eventEmitter.listeners('foo').length, 0);
-    });
+  it('should not fire listeners once disposed', () => {
+    const order: string[] = [];
+    const emitter = new EventEmitter<number>();
+    emitter.event(data => order.push(data + 'a'));
+    const disposeB = emitter.event(data => order.push(data + 'b'));
+    emitter.event(data => order.push(data + 'c'));
+    emitter.fire(1);
+    disposeB.dispose();
+    emitter.fire(2);
+    assert.deepEqual(order, [ '1a', '1b', '1c', '2a', '2c' ]);
   });
 });

@@ -307,8 +307,8 @@ function addDomListener(element: HTMLElement, type: string, handler: (...args: a
 function updateTerminalSize(): void {
   const cols = parseInt((<HTMLInputElement>document.getElementById(`opt-cols`)).value, 10);
   const rows = parseInt((<HTMLInputElement>document.getElementById(`opt-rows`)).value, 10);
-  const width = (cols * term._core._renderCoordinator.dimensions.actualCellWidth + term._core.viewport.scrollBarWidth).toString() + 'px';
-  const height = (rows * term._core._renderCoordinator.dimensions.actualCellHeight).toString() + 'px';
+  const width = (cols * term._core._renderService.dimensions.actualCellWidth + term._core.viewport.scrollBarWidth).toString() + 'px';
+  const height = (rows * term._core._renderService.dimensions.actualCellHeight).toString() + 'px';
   terminalContainer.style.width = width;
   terminalContainer.style.height = height;
   fitAddon.fit();

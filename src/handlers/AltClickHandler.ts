@@ -4,8 +4,7 @@
  */
 
 import { ITerminal } from '../Types';
-import { IBufferLine } from 'core/Types';
-import { ICircularList } from 'common/Types';
+import { IBufferLine, ICircularList } from 'common/Types';
 import { C0 } from 'common/data/EscapeSequences';
 
 const enum Direction {
@@ -33,7 +32,6 @@ export class AltClickHandler {
     const coordinates = this._terminal.mouseHelper.getCoords(
       this._mouseEvent,
       this._terminal.element,
-      this._terminal.charMeasure,
       this._terminal.cols,
       this._terminal.rows,
       false

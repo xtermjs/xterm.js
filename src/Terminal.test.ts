@@ -6,7 +6,7 @@
 import { assert, expect } from 'chai';
 import { Terminal } from './Terminal';
 import { MockViewport, MockCompositionHelper, MockRenderer } from './TestUtils.test';
-import { CellData, DEFAULT_ATTR_DATA } from 'core/buffer/BufferLine';
+import { CellData, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
@@ -57,20 +57,20 @@ describe('Terminal', () => {
       term.handler('fake');
     });
     it('should fire the onCursorMove event', (done) => {
-      term.on('cursormove', () => done());
+      term.onCursorMove(() => done());
       term.write('foo');
     });
     it('should fire the onLineFeed event', (done) => {
-      term.on('linefeed', () => done());
+      term.onLineFeed(() => done());
       term.write('\n');
     });
     it('should fire a scroll event when scrollback is created', (done) => {
-      term.on('scroll', () => done());
+      term.onScroll(() => done());
       term.write('\n'.repeat(INIT_ROWS));
     });
     it('should fire a scroll event when scrollback is cleared', (done) => {
       term.write('\n'.repeat(INIT_ROWS));
-      term.on('scroll', () => done());
+      term.onScroll(() => done());
       term.clear();
     });
     it('should fire a key event after a keypress DOM event', (done) => {
@@ -123,158 +123,6 @@ describe('Terminal', () => {
         done();
       });
       term.handleTitle('title');
-    });
-  });
-
-  describe('on', () => {
-    beforeEach(() => {
-      term.on('key', () => { });
-      term.on('keypress', () => { });
-      term.on('keydown', () => { });
-    });
-
-    describe('data', () => {
-      it('should emit a data event', (done) => {
-        term.on('data', () => {
-          done();
-        });
-
-        term.handler('fake');
-      });
-    });
-
-    describe('cursormove', () => {
-      it('should emit a cursormove event', (done) => {
-        term.on('cursormove', () => {
-          done();
-        });
-        term.write('foo');
-      });
-    });
-
-    describe('linefeed', () => {
-      it('should emit a linefeed event', (done) => {
-        term.on('linefeed', () => {
-          done();
-        });
-        term.write('\n');
-      });
-    });
-
-    describe('scroll', () => {
-      it('should emit a scroll event when scrollback is created', (done) => {
-        term.on('scroll', () => {
-          done();
-        });
-        term.write('\n'.repeat(INIT_ROWS));
-      });
-      it('should emit a scroll event when scrollback is cleared', (done) => {
-        term.write('\n'.repeat(INIT_ROWS));
-        term.on('scroll', () => {
-          done();
-        });
-        term.clear();
-      });
-    });
-
-    describe(`keypress (including 'key' event)`, () => {
-      it('should receive a string and event object', (done) => {
-        let steps = 0;
-
-        const finish = () => {
-          if ((++steps) === 2) {
-            done();
-          }
-        };
-
-        const evKeyPress = <KeyboardEvent>{
-          preventDefault: () => { },
-          stopPropagation: () => { },
-          type: 'keypress',
-          keyCode: 13
-        };
-
-        term.on('keypress', (key, event) => {
-          assert.equal(typeof key, 'string');
-          expect(event).to.be.an.instanceof(Object);
-          finish();
-        });
-
-        term.on('key', (key, event) => {
-          assert.equal(typeof key, 'string');
-          expect(event).to.be.an.instanceof(Object);
-          finish();
-        });
-
-        term.keyPress(evKeyPress);
-      });
-    });
-
-    describe(`keydown (including 'key' event)`, () => {
-      it(`should receive an event object for 'keydown' and a string and event object for 'key'`, (done) => {
-        let steps = 0;
-
-        const finish = () => {
-          if ((++steps) === 2) {
-            done();
-          }
-        };
-
-        const evKeyDown = <KeyboardEvent>{
-          preventDefault: () => { },
-          stopPropagation: () => { },
-          type: 'keydown',
-          keyCode: 13
-        };
-
-        term.on('keydown', (event) => {
-          expect(event).to.be.an.instanceof(Object);
-          finish();
-        });
-
-        term.on('key', (key, event) => {
-          assert.equal(typeof key, 'string');
-          expect(event).to.be.an.instanceof(Object);
-          finish();
-        });
-
-        term.keyDown(evKeyDown);
-      });
-    });
-
-    describe('resize', () => {
-      it('should receive an object: {cols: number, rows: number}', (done) => {
-        term.on('resize', (data) => {
-          expect(data).to.have.keys(['cols', 'rows']);
-          assert.equal(typeof data.cols, 'number');
-          assert.equal(typeof data.rows, 'number');
-          done();
-        });
-
-        term.resize(1, 1);
-      });
-    });
-
-    describe('scroll', () => {
-      it('should receive a number', (done) => {
-        term.on('scroll', (ydisp) => {
-          assert.equal(typeof ydisp, 'number');
-          done();
-        });
-
-        term.scroll();
-      });
-    });
-
-    describe('title', () => {
-      it('should receive a string', (done) => {
-        term.on('title', (title) => {
-          assert.equal(typeof title, 'string');
-          done();
-        });
-
-        term.handleTitle('title');
-      });
     });
   });
 
@@ -379,10 +227,10 @@ describe('Terminal', () => {
     describe('scrollLines', () => {
       let startYDisp: number;
       beforeEach(() => {
-        for (let i = 0; i < term.rows * 2; i++) {
+        for (let i = 0; i < INIT_ROWS * 2; i++) {
           term.writeln('test');
         }
-        startYDisp = term.rows + 1;
+        startYDisp = INIT_ROWS + 1;
       });
       it('should scroll a single line', () => {
         assert.equal(term.buffer.ydisp, startYDisp);
@@ -741,10 +589,10 @@ describe('Terminal', () => {
       it('should emit key with alt + key on keyPress', (done) => {
         const keys = ['@', '@', '\\', '\\', '|', '|'];
 
-        term.on('keypress', (key) => {
-          if (key) {
-            const index = keys.indexOf(key);
-            assert(index !== -1, 'Emitted wrong key: ' + key);
+        term.onKey(e => {
+          if (e.key) {
+            const index = keys.indexOf(e.key);
+            assert(index !== -1, 'Emitted wrong key: ' + e.key);
             keys.splice(index, 1);
           }
           if (keys.length === 0) done();
@@ -807,10 +655,10 @@ describe('Terminal', () => {
       it('should emit key with alt + ctrl + key on keyPress', (done) => {
         const keys = ['@', '@', '\\', '\\', '|', '|'];
 
-        term.on('keypress', (key) => {
-          if (key) {
-            const index = keys.indexOf(key);
-            assert(index !== -1, 'Emitted wrong key: ' + key);
+        term.onKey(e => {
+          if (e.key) {
+            const index = keys.indexOf(e.key);
+            assert(index !== -1, 'Emitted wrong key: ' + e.key);
             keys.splice(index, 1);
           }
           if (keys.length === 0) done();

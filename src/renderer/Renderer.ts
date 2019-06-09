@@ -6,12 +6,14 @@
 import { TextRenderLayer } from './TextRenderLayer';
 import { SelectionRenderLayer } from './SelectionRenderLayer';
 import { CursorRenderLayer } from './CursorRenderLayer';
-import { IRenderLayer, IRenderer, IRenderDimensions, ICharacterJoinerRegistry } from './Types';
-import { ITerminal, CharacterJoinerHandler } from '../Types';
+import { IRenderLayer, ICharacterJoinerRegistry } from './Types';
+import { IRenderer, IRenderDimensions, CharacterJoinerHandler } from 'browser/renderer/Types';
+import { ITerminal } from '../Types';
 import { LinkRenderLayer } from './LinkRenderLayer';
 import { CharacterJoinerRegistry } from '../renderer/CharacterJoinerRegistry';
 import { Disposable } from 'common/Lifecycle';
-import { IColorSet } from 'ui/Types';
+import { IColorSet } from 'browser/Types';
+import { ICharSizeService } from 'browser/services/Services';
 
 export class Renderer extends Disposable implements IRenderer {
   private _renderLayers: IRenderLayer[];
@@ -22,7 +24,8 @@ export class Renderer extends Disposable implements IRenderer {
 
   constructor(
     private _terminal: ITerminal,
-    private _colors: IColorSet
+    private _colors: IColorSet,
+    private _charSizeService: ICharSizeService
   ) {
     super();
     const allowTransparency = this._terminal.options.allowTransparency;
@@ -133,8 +136,7 @@ export class Renderer extends Disposable implements IRenderer {
    * Recalculates the character and canvas dimensions.
    */
   private _updateDimensions(): void {
-    // Perform a new measure if the CharMeasure dimensions are not yet available
-    if (!this._terminal.charMeasure.width || !this._terminal.charMeasure.height) {
+    if (!this._charSizeService.hasValidSize) {
       return;
     }
 
@@ -142,12 +144,12 @@ export class Renderer extends Disposable implements IRenderer {
     // drawn to an integer grid in order for the CharAtlas "stamps" to not be
     // blurry. When text is drawn to the grid not using the CharAtlas, it is
     // clipped to ensure there is no overlap with the next cell.
-    this.dimensions.scaledCharWidth = Math.floor(this._terminal.charMeasure.width * window.devicePixelRatio);
+    this.dimensions.scaledCharWidth = Math.floor(this._charSizeService.width * window.devicePixelRatio);
 
     // Calculate the scaled character height. Height is ceiled in case
     // devicePixelRatio is a floating point number in order to ensure there is
     // enough space to draw the character to the cell.
-    this.dimensions.scaledCharHeight = Math.ceil(this._terminal.charMeasure.height * window.devicePixelRatio);
+    this.dimensions.scaledCharHeight = Math.ceil(this._charSizeService.height * window.devicePixelRatio);
 
     // Calculate the scaled cell height, if lineHeight is not 1 then the value
     // will be floored because since lineHeight can never be lower then 1, there
@@ -181,10 +183,9 @@ export class Renderer extends Disposable implements IRenderer {
 
     // Get the _actual_ dimensions of an individual cell. This needs to be
     // derived from the canvasWidth/Height calculated above which takes into
-    // account window.devicePixelRatio. CharMeasure.width/height by itself is
-    // insufficient when the page is not at 100% zoom level as CharMeasure is
-    // measured in CSS pixels, but the actual char size on the canvas can
-    // differ.
+    // account window.devicePixelRatio. ICharSizeService.width/height by itself
+    // is insufficient when the page is not at 100% zoom level as it's measured
+    // in CSS pixels, but the actual char size on the canvas can differ.
     this.dimensions.actualCellHeight = this.dimensions.canvasHeight / this._terminal.rows;
     this.dimensions.actualCellWidth = this.dimensions.canvasWidth / this._terminal.cols;
   }

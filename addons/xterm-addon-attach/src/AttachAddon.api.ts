@@ -17,7 +17,7 @@ const height = 600;
 
 describe('AttachAddon', () => {
   before(async function(): Promise<any> {
-    this.timeout(10000);
+    this.timeout(20000);
     browser = await puppeteer.launch({
       headless: process.argv.indexOf('--headless') !== -1,
       slowMo: 80,
@@ -32,7 +32,7 @@ describe('AttachAddon', () => {
   });
 
   beforeEach(async function(): Promise<any> {
-    this.timeout(5000);
+    this.timeout(20000);
     await page.goto(APP);
   });
 

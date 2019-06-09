@@ -6,14 +6,17 @@
 import { assert } from 'chai';
 import { ITerminal } from './Types';
 import { SelectionModel } from './SelectionModel';
-import { BufferSet } from './BufferSet';
+import { BufferSet } from 'common/buffer/BufferSet';
 import { MockTerminal } from './TestUtils.test';
+import { MockOptionsService, MockBufferService } from 'common/TestUtils.test';
+import { IBufferService } from 'common/services/Services';
 
 class TestSelectionModel extends SelectionModel {
   constructor(
-    terminal: ITerminal
+    terminal: ITerminal,
+    bufferService: IBufferService
   ) {
-    super(terminal);
+    super(terminal, bufferService);
   }
 }
 
@@ -23,13 +26,14 @@ describe('SelectionManager', () => {
 
   beforeEach(() => {
     terminal = new MockTerminal();
-    (terminal as any).cols = 80;
-    (terminal as any).rows = 2;
-    terminal.options.scrollback = 10;
-    terminal.buffers = new BufferSet(terminal);
+    const bufferService = new MockBufferService(80, 2);
+    terminal.buffers = new BufferSet(
+      new MockOptionsService({ scrollback: 10 }),
+      bufferService
+    );
     terminal.buffer = terminal.buffers.active;
 
-    model = new TestSelectionModel(terminal);
+    model = new TestSelectionModel(terminal, bufferService);
   });
 
   describe('clearSelection', () => {

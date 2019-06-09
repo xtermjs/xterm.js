@@ -268,13 +268,6 @@ declare module 'xterm' {
     willLinkActivate?: (event: MouseEvent, uri: string) => boolean;
   }
 
-  export interface IEventEmitter {
-    on(type: string, listener: (...args: any[]) => void): void;
-    off(type: string, listener: (...args: any[]) => void): void;
-    emit(type: string, data?: any): void;
-    addDisposableListener(type: string, handler: (...args: any[]) => void): IDisposable;
-  }
-
   /**
    * An object that can be disposed via a dispose function.
    */
@@ -305,7 +298,7 @@ declare module 'xterm' {
   /**
    * The class that represents an xterm.js terminal.
    */
-  export class Terminal implements IEventEmitter, IDisposable {
+  export class Terminal implements IDisposable {
     /**
      * The element containing the terminal.
      */
@@ -428,96 +421,6 @@ declare module 'xterm' {
      * Focus the terminal.
      */
     focus(): void;
-
-    /**
-     * Registers an event listener.
-     * @param type The type of the event.
-     * @param listener The listener.
-     * @deprecated use `Terminal.onEvent(listener)` instead.
-     */
-    on(type: 'blur' | 'focus' | 'linefeed' | 'selection', listener: () => void): void;
-    /**
-     * Registers an event listener.
-     * @param type The type of the event.
-     * @param listener The listener.
-     * @deprecated use `Terminal.onEvent(listener)` instead.
-     */
-    on(type: 'data', listener: (...args: any[]) => void): void;
-    /**
-     * Registers an event listener.
-     * @param type The type of the event.
-     * @param listener The listener.
-     * @deprecated use `Terminal.onEvent(listener)` instead.
-     */
-    on(type: 'key', listener: (key: string, event: KeyboardEvent) => void): void;
-    /**
-     * Registers an event listener.
-     * @param type The type of the event.
-     * @param listener The listener.
-     * @deprecated use `Terminal.onEvent(listener)` instead.
-     */
-    on(type: 'keypress' | 'keydown', listener: (event: KeyboardEvent) => void): void;
-    /**
-     * Registers an event listener.
-     * @param type The type of the event.
-     * @param listener The listener.
-     * @deprecated use `Terminal.onEvent(listener)` instead.
-     */
-    on(type: 'refresh', listener: (data: {start: number, end: number}) => void): void;
-    /**
-     * Registers an event listener.
-     * @param type The type of the event.
-     * @param listener The listener.
-     * @deprecated use `Terminal.onEvent(listener)` instead.
-     */
-    on(type: 'resize', listener: (data: {cols: number, rows: number}) => void): void;
-    /**
-     * Registers an event listener.
-     * @param type The type of the event.
-     * @param listener The listener.
-     * @deprecated use `Terminal.onEvent(listener)` instead.
-     */
-    on(type: 'scroll', listener: (ydisp: number) => void): void;
-    /**
-     * Registers an event listener.
-     * @param type The type of the event.
-     * @param listener The listener.
-     * @deprecated use `Terminal.onEvent(listener)` instead.
-     */
-    on(type: 'title', listener: (title: string) => void): void;
-    /**
-     * Registers an event listener.
-     * @param type The type of the event.
-     * @param listener The listener.
-     * @deprecated use `Terminal.onEvent(listener)` instead.
-     */
-    on(type: string, listener: (...args: any[]) => void): void;
-
-    /**
-     * Deregisters an event listener.
-     * @param type The type of the event.
-     * @param listener The listener.
-     * @deprecated use `Terminal.onEvent(listener).dispose()` instead.
-     */
-    off(type: 'blur' | 'focus' | 'linefeed' | 'selection' | 'data' | 'key' | 'keypress' | 'keydown' | 'refresh' | 'resize' | 'scroll' | 'title' | string, listener: (...args: any[]) => void): void;
-
-    /**
-     * Emits an event on the terminal.
-     * @param type The type of event
-     * @param data data associated with the event.
-     * @deprecated This is being removed from the API with no replacement, see
-     * issue #1505.
-     */
-    emit(type: string, data?: any): void;
-
-    /**
-     * Adds an event listener to the Terminal, returning an IDisposable that can
-     * be used to conveniently remove the event listener.
-     * @param type The type of event.
-     * @param handler The event handler.
-     * @deprecated use `Terminal.onEvent(listener)` instead.
-     */
-    addDisposableListener(type: string, handler: (...args: any[]) => void): IDisposable;
 
     /**
      * Resizes the terminal. It's best practice to debounce calls to resize,
