@@ -85,11 +85,11 @@ export class AccessibilityManager extends Disposable {
     this.register(this._terminal.onRender(e => this._refreshRows(e.start, e.end)));
     this.register(this._terminal.onScroll(() => this._refreshRows()));
     // Line feed is an issue as the prompt won't be read out after a command is run
-    this.register(this._terminal.addDisposableListener('a11y.char', (char) => this._onChar(char)));
+    this.register(this._terminal.onA11yChar(char => this._onChar(char)));
     this.register(this._terminal.onLineFeed(() => this._onChar('\n')));
-    this.register(this._terminal.addDisposableListener('a11y.tab', spaceCount => this._onTab(spaceCount)));
+    this.register(this._terminal.onA11yTab(spaceCount => this._onTab(spaceCount)));
     this.register(this._terminal.onKey(e => this._onKey(e.key)));
-    this.register(this._terminal.addDisposableListener('blur', () => this._clearLiveRegion()));
+    this.register(this._terminal.onBlur(() => this._clearLiveRegion()));
 
     this._screenDprMonitor = new ScreenDprMonitor();
     this.register(this._screenDprMonitor);

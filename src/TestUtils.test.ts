@@ -14,6 +14,7 @@ import { Terminal } from './Terminal';
 import { AttributeData } from 'common/buffer/BufferLine';
 import { IColorManager, IColorSet, IMouseHelper } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
+import { EventEmitter2 } from 'common/EventEmitter2';
 
 export class TestTerminal extends Terminal {
   writeSync(data: string): void {
@@ -23,6 +24,10 @@ export class TestTerminal extends Terminal {
 }
 
 export class MockTerminal implements ITerminal {
+  onBlur: IEvent<void>;
+  onFocus: IEvent<void>;
+  onA11yChar: IEvent<string>;
+  onA11yTab: IEvent<number>;
   onCursorMove: IEvent<void>;
   onLineFeed: IEvent<void>;
   onSelectionChange: IEvent<void>;
@@ -181,6 +186,8 @@ export class MockTerminal implements ITerminal {
 }
 
 export class MockInputHandlingTerminal implements IInputHandlingTerminal {
+  onA11yCharEmitter: EventEmitter2<string>;
+  onA11yTabEmitter: EventEmitter2<number>;
   element: HTMLElement;
   options: ITerminalOptions = {};
   cols: number;

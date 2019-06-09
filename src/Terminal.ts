@@ -26,7 +26,6 @@ import { IRenderer, CharacterJoinerHandler } from 'browser/renderer/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
 import { Buffer } from 'common/buffer/Buffer';
 import { CompositionHelper } from './CompositionHelper';
-import { EventEmitter } from 'common/EventEmitter';
 import { Viewport } from './Viewport';
 import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './Clipboard';
 import { C0 } from 'common/data/EscapeSequences';
@@ -56,6 +55,7 @@ import { OptionsService } from 'common/services/OptionsService';
 import { ICharSizeService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
+import { Disposable } from 'common/Lifecycle';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -76,7 +76,7 @@ const WRITE_BUFFER_PAUSE_THRESHOLD = 5;
 const WRITE_TIMEOUT_MS = 12;
 const WRITE_BUFFER_LENGTH_THRESHOLD = 50;
 
-export class Terminal extends EventEmitter implements ITerminal, IDisposable, IInputHandlingTerminal {
+export class Terminal extends Disposable implements ITerminal, IDisposable, IInputHandlingTerminal {
   public textarea: HTMLTextAreaElement;
   public element: HTMLElement;
   public screenElement: HTMLElement;
@@ -209,6 +209,15 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   private _onTitleChange = new EventEmitter2<string>();
   public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
 
+  private _onFocus = new EventEmitter2<void>();
+  public get onFocus(): IEvent<void> { return this._onFocus.event; }
+  private _onBlur = new EventEmitter2<void>();
+  public get onBlur(): IEvent<void> { return this._onBlur.event; }
+  public onA11yCharEmitter = new EventEmitter2<string>();
+  public get onA11yChar(): IEvent<string> { return this.onA11yCharEmitter.event; }
+  public onA11yTabEmitter = new EventEmitter2<number>();
+  public get onA11yTab(): IEvent<number> { return this.onA11yTabEmitter.event; }
+
   /**
    * Creates a new `Terminal` object.
    *
@@ -234,18 +243,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     // this.options = clone(options);
     this._setup();
-
-    // TODO: Remove these in v4
-    // Fire old style events from new emitters
-    this.onCursorMove(() => this.emit('cursormove'));
-    this.onData(e => this.emit('data', e));
-    this.onKey(e => this.emit('key', e.key, e.domEvent));
-    this.onLineFeed(() => this.emit('linefeed'));
-    this.onRender(e => this.emit('refresh', e));
-    this.onResize(e => this.emit('resize', e));
-    this.onSelectionChange(() => this.emit('selection'));
-    this.onScroll(e => this.emit('scroll', e));
-    this.onTitleChange(e => this.emit('title', e));
   }
 
   public dispose(): void {
@@ -444,7 +441,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.updateCursorStyle(ev);
     this.element.classList.add('focus');
     this.showCursor();
-    this.emit('focus');
+    this._onFocus.fire();
   }
 
   /**
@@ -467,7 +464,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       this.handler(C0.ESC + '[O');
     }
     this.element.classList.remove('focus');
-    this.emit('blur');
+    this._onBlur.fire();
   }
 
   /**
@@ -639,8 +636,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     this.register(this.onCursorMove(() => this._renderService.onCursorMove()));
     this.register(this.onResize(() => this._renderService.onResize(this.cols, this.rows)));
-    this.register(this.addDisposableListener('blur', () => this._renderService.onBlur()));
-    this.register(this.addDisposableListener('focus', () => this._renderService.onFocus()));
+    this.register(this.onBlur(() => this._renderService.onBlur()));
+    this.register(this.onFocus(() => this._renderService.onFocus()));
     this.register(this._renderService.onDimensionsChange(() => this.viewport.syncScrollArea()));
 
     this.selectionManager = new SelectionManager(this, this._charSizeService, this._bufferService);
@@ -803,12 +800,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     // vt300: ^[[ 24(1/3/5)~ [ Cx , Cy ] \r
     // locator: CSI P e ; P b ; P r ; P c ; P p & w
     function sendEvent(button: number, pos: {x: number, y: number}): void {
-      // self.emit('mouse', {
-      //   x: pos.x - 32,
-      //   y: pos.x - 32,
-      //   button: button
-      // });
-
       if (self._vt300Mouse) {
         // NOTE: Unstable.
         // http://www.vt100.net/docs/vt3xx-gp/chapter15.html
@@ -1597,7 +1588,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       return true;
     }
 
-    this.emit('keydown', event);
     this._onKey.fire({ key: result.key, domEvent: event });
     this.showCursor();
     this.handler(result.key);
@@ -1676,7 +1666,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     key = String.fromCharCode(key);
 
-    this.emit('keypress', key, ev);
     this._onKey.fire({ key, domEvent: ev });
     this.showCursor();
     this.handler(key);
@@ -1689,7 +1678,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * Note: We could do sweet things with webaudio here
    */
   public bell(): void {
-    this.emit('bell');
     if (this._soundBell()) {
       this.soundManager.playBellSound();
     }

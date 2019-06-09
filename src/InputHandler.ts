@@ -342,7 +342,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     buffer = this._terminal.buffer;
     if (buffer.x !== cursorStartX || buffer.y !== cursorStartY) {
-      this._terminal.emit('cursormove');
+      this._onCursorMove.fire();
     }
   }
 
@@ -377,7 +377,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
 
       if (screenReaderMode) {
-        this._terminal.emit('a11y.char', stringFromCodePoint(code));
+        this._terminal.onA11yCharEmitter.fire(stringFromCodePoint(code));
       }
 
       // insert combining char at last cursor position
@@ -542,7 +542,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const originalX = this._terminal.buffer.x;
     this._terminal.buffer.x = this._terminal.buffer.nextStop();
     if (this._terminal.options.screenReaderMode) {
-      this._terminal.emit('a11y.tab', this._terminal.buffer.x - originalX);
+      this._terminal.onA11yTabEmitter.fire(this._terminal.buffer.x - originalX);
     }
   }
 
