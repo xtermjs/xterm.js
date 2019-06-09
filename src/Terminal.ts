@@ -23,8 +23,6 @@
 
 import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, IMouseZoneManager } from './Types';
 import { IRenderer, CharacterJoinerHandler } from 'browser/renderer/Types';
-import { BufferSet } from 'common/buffer/BufferSet';
-import { Buffer } from 'common/buffer/Buffer';
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from 'common/EventEmitter';
 import { Viewport } from './Viewport';
@@ -37,7 +35,7 @@ import { SelectionManager } from './SelectionManager';
 import * as Browser from 'common/Platform';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import * as Strings from './Strings';
-import { MouseHelper } from './browser/input/MouseHelper';
+import { MouseHelper } from 'browser/input/MouseHelper';
 import { SoundManager } from './SoundManager';
 import { MouseZoneManager } from './MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
@@ -56,6 +54,7 @@ import { OptionsService } from 'common/services/OptionsService';
 import { ICharSizeService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
+import { IBufferSet, IBuffer } from 'common/buffer/Types';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -174,7 +173,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public soundManager: SoundManager;
   public selectionManager: SelectionManager;
   public linkifier: ILinkifier;
-  public buffers: BufferSet;
   public viewport: IViewport;
   private _compositionHelper: ICompositionHelper;
   private _mouseZoneManager: IMouseZoneManager;
@@ -226,14 +224,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   ) {
     super();
 
-    // Initialize common services
+    // Setup and initialize common services
     this.optionsService = new OptionsService(options);
-    this._bufferService = new BufferService(this.optionsService);
-
     this._setupOptionsListeners();
-
-    // this.options = clone(options);
     this._setup();
+    this._bufferService = new BufferService(this.optionsService);
 
     // TODO: Remove these in v4
     // Fire old style events from new emitters
@@ -312,8 +307,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this._mouseZoneManager = this._mouseZoneManager || null;
     this.soundManager = this.soundManager || new SoundManager(this);
 
-    // Create the terminal's buffers and set the current buffer
-    this.buffers = new BufferSet(this.optionsService, this._bufferService);
     if (this.selectionManager) {
       this.selectionManager.clearSelection();
       this.selectionManager.initBuffersListeners();
@@ -327,8 +320,12 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   /**
    * Convenience property to active buffer.
    */
-  public get buffer(): Buffer {
+  public get buffer(): IBuffer {
     return this.buffers.active;
+  }
+
+  public get buffers(): IBufferSet {
+    return this._bufferService.buffers;
   }
 
   /**
@@ -1896,6 +1893,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     const userScrolling = this._userScrolling;
 
     this._setup();
+    this._bufferService.reset();
 
     // reattach
     this._customKeyEventHandler = customKeyEventHandler;

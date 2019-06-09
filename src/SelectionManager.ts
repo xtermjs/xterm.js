@@ -6,7 +6,7 @@
 import { ITerminal, ISelectionManager, ISelectionRedrawRequestEvent } from './Types';
 import { IBuffer } from 'common/buffer/Types';
 import { IBufferLine } from 'common/Types';
-import { MouseHelper } from './browser/input/MouseHelper';
+import { MouseHelper } from 'browser/input/MouseHelper';
 import * as Browser from 'common/Platform';
 import { SelectionModel } from './SelectionModel';
 import { AltClickHandler } from './handlers/AltClickHandler';
