@@ -4,7 +4,7 @@
  */
 
 import { assert, expect } from 'chai';
-import { Buffer } from './Buffer';
+import { Buffer } from './common/buffer/Buffer';
 import { CircularList } from 'common/CircularList';
 import { TestTerminal, MockOptionsService, MockBufferService } from './TestUtils.test';
 import { BufferLine, CellData, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';

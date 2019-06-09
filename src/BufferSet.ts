@@ -6,7 +6,7 @@
 import { IBufferSet } from './Types';
 import { IBuffer } from 'common/buffer/Types';
 import { IAttributeData } from 'common/Types';
-import { Buffer } from './Buffer';
+import { Buffer } from './common/buffer/Buffer';
 import { EventEmitter2, IEvent } from 'common/EventEmitter2';
 import { IOptionsService, IBufferService } from 'common/services/Services';
 

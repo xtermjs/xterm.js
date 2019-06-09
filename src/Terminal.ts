@@ -24,7 +24,7 @@
 import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharacterJoinerHandler, IMouseZoneManager } from './Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
-import { Buffer } from './Buffer';
+import { Buffer } from './common/buffer/Buffer';
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from 'common/EventEmitter';
 import { Viewport } from './Viewport';

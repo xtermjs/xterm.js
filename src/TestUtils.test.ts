@@ -7,7 +7,7 @@ import { IRenderer, IRenderDimensions } from './renderer/Types';
 import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBufferSet, IBrowser, ISelectionManager, ITerminalOptions as IInternalTerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler } from './Types';
 import { IBuffer, IBufferStringIterator } from 'common/buffer/Types';
 import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener } from 'common/Types';
-import { Buffer } from './Buffer';
+import { Buffer } from './common/buffer/Buffer';
 import * as Browser from 'common/Platform';
 import { IDisposable, IMarker, IEvent, ISelectionPosition } from 'xterm';
 import { Terminal } from './Terminal';
@@ -33,8 +33,7 @@ export class MockTerminal implements ITerminal {
   onTitleChange: IEvent<string>;
   onScroll: IEvent<number>;
   onKey: IEvent<{ key: string; domEvent: KeyboardEvent; }>;
-  onRender: IEvent<{ start: number
-    ; end: number; }>;
+  onRender: IEvent<{ start: number; end: number; }>;
   onResize: IEvent<{ cols: number; rows: number; }>;
   markers: IMarker[];
   optionsService: IOptionsService;

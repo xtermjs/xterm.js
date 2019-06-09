@@ -21,16 +21,16 @@ export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
  *   - scroll position
  */
 export class Buffer implements IBuffer {
-  public lines: CircularList<IBufferLine>;
-  public ydisp: number;
-  public ybase: number;
-  public y: number;
-  public x: number;
-  public scrollBottom: number;
-  public scrollTop: number;
+  public lines!: CircularList<IBufferLine>;
+  public ydisp: number = 0;
+  public ybase: number = 0;
+  public y: number = 0;
+  public x: number = 0;
+  public scrollBottom!: number;
+  public scrollTop!: number;
   public tabs: any;
-  public savedY: number;
-  public savedX: number;
+  public savedY: number = 0;
+  public savedX: number = 0;
   public savedCurAttrData = DEFAULT_ATTR_DATA.clone();
   public markers: Marker[] = [];
   private _nullCell: ICellData = CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
@@ -150,7 +150,7 @@ export class Buffer implements IBuffer {
       // Deal with columns increasing (reducing needs to happen after reflow)
       if (this._cols < newCols) {
         for (let i = 0; i < this.lines.length; i++) {
-          this.lines.get(i).resize(newCols, nullCell);
+          this.lines.get(i)!.resize(newCols, nullCell);
         }
       }
 
@@ -223,7 +223,7 @@ export class Buffer implements IBuffer {
       // Trim the end of the line off if cols shrunk
       if (this._cols > newCols) {
         for (let i = 0; i < this.lines.length; i++) {
-          this.lines.get(i).resize(newCols, nullCell);
+          this.lines.get(i)!.resize(newCols, nullCell);
         }
       }
     }
@@ -505,11 +505,11 @@ export class Buffer implements IBuffer {
     let first = y;
     let last = y;
     // Scan upwards for wrapped lines
-    while (first > 0 && this.lines.get(first).isWrapped) {
+    while (first > 0 && this.lines.get(first)!.isWrapped) {
       first--;
     }
     // Scan downwards for wrapped lines
-    while (last + 1 < this.lines.length && this.lines.get(last + 1).isWrapped) {
+    while (last + 1 < this.lines.length && this.lines.get(last + 1)!.isWrapped) {
       last++;
     }
     return { first, last };
