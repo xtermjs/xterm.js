@@ -8,7 +8,7 @@ import { ICharset, IAttributeData, CharData } from 'common/Types';
 import { IEvent } from 'common/EventEmitter2';
 import { IColorSet } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
-import { IBuffer } from 'common/buffer/Types';
+import { IBuffer, IBufferSet } from 'common/buffer/Types';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
@@ -294,17 +294,6 @@ export interface ITerminalOptions extends IPublicTerminalOptions {
   screenKeys?: boolean;
   termName?: string;
   useFlowControl?: boolean;
-}
-
-export interface IBufferSet {
-  alt: IBuffer;
-  normal: IBuffer;
-  active: IBuffer;
-
-  onBufferActivate: IEvent<{ activeBuffer: IBuffer, inactiveBuffer: IBuffer }>;
-
-  activateNormalBuffer(): void;
-  activateAltBuffer(fillAttr?: IAttributeData): void;
 }
 
 export interface ISelectionManager {

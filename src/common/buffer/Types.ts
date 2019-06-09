@@ -4,6 +4,7 @@
  */
 
 import { IAttributeData, ICircularList, IBufferLine, ICellData } from 'common/Types';
+import { IEvent } from 'common/EventEmitter2';
 
 // BufferIndex denotes a position in the buffer: [rowIndex, colIndex]
 export type BufferIndex = [number, number];
@@ -41,4 +42,15 @@ export interface IBuffer {
   iterator(trimRight: boolean, startIndex?: number, endIndex?: number, startOverscan?: number, endOverscan?: number): IBufferStringIterator;
   getNullCell(attr?: IAttributeData): ICellData;
   getWhitespaceCell(attr?: IAttributeData): ICellData;
+}
+
+export interface IBufferSet {
+  alt: IBuffer;
+  normal: IBuffer;
+  active: IBuffer;
+
+  onBufferActivate: IEvent<{ activeBuffer: IBuffer, inactiveBuffer: IBuffer }>;
+
+  activateNormalBuffer(): void;
+  activateAltBuffer(fillAttr?: IAttributeData): void;
 }
