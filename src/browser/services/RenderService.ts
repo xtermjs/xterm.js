@@ -3,18 +3,17 @@
  * @license MIT
  */
 
-import { IRenderer, IRenderDimensions } from './Types';
+import { IRenderer, IRenderDimensions, CharacterJoinerHandler } from 'browser/renderer/Types';
 import { RenderDebouncer } from 'browser/RenderDebouncer';
 import { EventEmitter2, IEvent } from 'common/EventEmitter2';
 import { Disposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IColorSet } from 'browser/Types';
-import { CharacterJoinerHandler } from '../Types';
 import { IOptionsService } from 'common/services/Services';
-import { ICharSizeService } from 'browser/services/Services';
+import { ICharSizeService, IRenderService } from 'browser/services/Services';
 
-export class RenderCoordinator extends Disposable {
+export class RenderService extends Disposable implements IRenderService {
   private _renderDebouncer: RenderDebouncer;
   private _screenDprMonitor: ScreenDprMonitor;
 

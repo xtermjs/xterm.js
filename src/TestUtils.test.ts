@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { IRenderer, IRenderDimensions } from './renderer/Types';
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBrowser, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler } from './Types';
+import { IRenderer, IRenderDimensions, CharacterJoinerHandler } from 'browser/renderer/Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBrowser, ISelectionManager, ITerminalOptions, ILinkifier, ILinkMatcherOptions } from './Types';
 import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
 import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
@@ -12,9 +12,8 @@ import * as Browser from 'common/Platform';
 import { IDisposable, IMarker, IEvent, ISelectionPosition } from 'xterm';
 import { Terminal } from './Terminal';
 import { AttributeData } from 'common/buffer/BufferLine';
-import { IColorManager, IColorSet } from 'browser/Types';
+import { IColorManager, IColorSet, IMouseHelper } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
-import { ICharSizeService } from 'browser/services/Services';
 
 export class TestTerminal extends Terminal {
   writeSync(data: string): void {
@@ -427,11 +426,4 @@ export class MockCompositionHelper implements ICompositionHelper {
   keydown(ev: KeyboardEvent): boolean {
     return true;
   }
-}
-
-export class MockCharSizeService implements ICharSizeService {
-  get hasValidSize(): boolean { return this.width > 0 && this.height > 0; }
-  onCharSizeChange: IEvent<void>;
-  constructor(public width: number, public height: number) {}
-  measure(): void {}
 }

@@ -5,8 +5,8 @@
 
 import jsdom = require('jsdom');
 import { assert } from 'chai';
-import { MouseHelper } from './MouseHelper';
-import { MockRenderer, MockCharSizeService } from './TestUtils.test';
+import { MouseHelper } from 'browser/input/MouseHelper';
+import { MockCharSizeService } from 'browser/TestUtils.test';
 
 const CHAR_WIDTH = 10;
 const CHAR_HEIGHT = 20;
@@ -17,16 +17,17 @@ describe('MouseHelper.getCoords', () => {
 
   beforeEach(() => {
     document = new jsdom.JSDOM('').window.document;
-    const renderer = new MockRenderer();
-    renderer.dimensions = <any>{
-      actualCellWidth: CHAR_WIDTH,
-      actualCellHeight: CHAR_HEIGHT
+    const mockRenderService = {
+      dimensions: {
+        actualCellWidth: CHAR_WIDTH,
+        actualCellHeight: CHAR_HEIGHT
+      }
     };
-    mouseHelper = new MouseHelper(renderer as any, new MockCharSizeService(CHAR_WIDTH, CHAR_HEIGHT));
+    mouseHelper = new MouseHelper(mockRenderService as any, new MockCharSizeService(CHAR_WIDTH, CHAR_HEIGHT));
   });
 
   it('should return the cell that was clicked', () => {
-    let coords: [number, number];
+    let coords: [number, number] | undefined;
     coords = mouseHelper.getCoords({ clientX: CHAR_WIDTH / 2, clientY: CHAR_HEIGHT / 2 }, document.createElement('div'), 10, 10);
     assert.deepEqual(coords, [1, 1]);
     coords = mouseHelper.getCoords({ clientX: CHAR_WIDTH, clientY: CHAR_HEIGHT }, document.createElement('div'), 10, 10);
@@ -38,7 +39,7 @@ describe('MouseHelper.getCoords', () => {
   });
 
   it('should ensure the coordinates are returned within the terminal bounds', () => {
-    let coords: [number, number];
+    let coords: [number, number] | undefined;
     coords = mouseHelper.getCoords({ clientX: -1, clientY: -1 }, document.createElement('div'), 10, 10);
     assert.deepEqual(coords, [1, 1]);
     // Event are double the cols/rows

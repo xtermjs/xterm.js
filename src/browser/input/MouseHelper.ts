@@ -3,13 +3,13 @@
  * @license MIT
  */
 
-import { IMouseHelper } from './Types';
-import { RenderCoordinator } from './renderer/RenderCoordinator';
+import { IMouseHelper } from 'browser/Types';
+import { RenderService } from 'browser/services/RenderService';
 import { ICharSizeService } from 'browser/services/Services';
 
 export class MouseHelper implements IMouseHelper {
   constructor(
-    private _renderCoordinator: RenderCoordinator,
+    private _renderService: RenderService,
     private _charSizeService: ICharSizeService
   ) {
   }
@@ -31,19 +31,19 @@ export class MouseHelper implements IMouseHelper {
    * apply an offset to the x value such that the left half of the cell will
    * select that cell and the right half will select the next cell.
    */
-  public getCoords(event: {clientX: number, clientY: number}, element: HTMLElement, colCount: number, rowCount: number, isSelection?: boolean): [number, number] {
+  public getCoords(event: {clientX: number, clientY: number}, element: HTMLElement, colCount: number, rowCount: number, isSelection?: boolean): [number, number] | undefined {
     // Coordinates cannot be measured if there are no valid
     if (!this._charSizeService.hasValidSize) {
-      return null;
+      return undefined;
     }
 
     const coords = MouseHelper.getCoordsRelativeToElement(event, element);
     if (!coords) {
-      return null;
+      return undefined;
     }
 
-    coords[0] = Math.ceil((coords[0] + (isSelection ? this._renderCoordinator.dimensions.actualCellWidth / 2 : 0)) / this._renderCoordinator.dimensions.actualCellWidth);
-    coords[1] = Math.ceil(coords[1] / this._renderCoordinator.dimensions.actualCellHeight);
+    coords[0] = Math.ceil((coords[0] + (isSelection ? this._renderService.dimensions.actualCellWidth / 2 : 0)) / this._renderService.dimensions.actualCellWidth);
+    coords[1] = Math.ceil(coords[1] / this._renderService.dimensions.actualCellHeight);
 
     // Ensure coordinates are within the terminal viewport. Note that selections
     // need an addition point of precision to cover the end point (as characters
@@ -63,14 +63,12 @@ export class MouseHelper implements IMouseHelper {
    * @param colCount The number of columns in the terminal.
    * @param rowCount The number of rows in the terminal.
    */
-  public getRawByteCoords(event: MouseEvent, element: HTMLElement, colCount: number, rowCount: number): { x: number, y: number } {
+  public getRawByteCoords(event: MouseEvent, element: HTMLElement, colCount: number, rowCount: number): { x: number | undefined, y: number | undefined } {
     const coords = this.getCoords(event, element, colCount, rowCount);
-    let x = coords[0];
-    let y = coords[1];
 
     // xterm sends raw bytes and starts at 32 (SP) for each.
-    x += 32;
-    y += 32;
+    const x = coords ? coords[0] + 32 : undefined;
+    const y = coords ? coords[1] + 32 : undefined;
 
     return { x, y };
   }

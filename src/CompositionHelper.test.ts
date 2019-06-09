@@ -6,7 +6,7 @@
 import { assert } from 'chai';
 import { CompositionHelper } from './CompositionHelper';
 import { ITerminal } from './Types';
-import { MockCharSizeService } from 'TestUtils.test';
+import { MockCharSizeService } from 'browser/TestUtils.test';
 
 describe('CompositionHelper', () => {
   let terminal: ITerminal;

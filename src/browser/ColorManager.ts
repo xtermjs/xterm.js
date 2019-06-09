@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { IColorManager, IColor, IColorSet, ITheme } from 'browser/Types';
+import { IColorManager, IColor, IColorSet } from 'browser/Types';
+import { ITheme } from 'common/services/Services';
 
 const DEFAULT_FOREGROUND = fromHex('#ffffff');
 const DEFAULT_BACKGROUND = fromHex('#000000');

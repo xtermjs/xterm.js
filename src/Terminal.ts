@@ -21,8 +21,8 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharacterJoinerHandler, IMouseZoneManager } from './Types';
-import { IRenderer } from './renderer/Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, IMouseZoneManager } from './Types';
+import { IRenderer, CharacterJoinerHandler } from 'browser/renderer/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
 import { Buffer } from 'common/buffer/Buffer';
 import { CompositionHelper } from './CompositionHelper';
@@ -37,7 +37,7 @@ import { SelectionManager } from './SelectionManager';
 import * as Browser from 'common/Platform';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import * as Strings from './Strings';
-import { MouseHelper } from './MouseHelper';
+import { MouseHelper } from './browser/input/MouseHelper';
 import { SoundManager } from './SoundManager';
 import { MouseZoneManager } from './MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
@@ -50,7 +50,7 @@ import { EventEmitter2, IEvent } from 'common/EventEmitter2';
 import { Attributes, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { applyWindowsMode } from './WindowsMode';
 import { ColorManager } from 'browser/ColorManager';
-import { RenderCoordinator } from './renderer/RenderCoordinator';
+import { RenderService } from 'browser/services/RenderService';
 import { IOptionsService, IBufferService } from 'common/services/Services';
 import { OptionsService } from 'common/services/OptionsService';
 import { ICharSizeService } from 'browser/services/Services';
@@ -111,6 +111,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   // browser services
   private _charSizeService: ICharSizeService;
+  private _renderService: RenderService;
 
   // modes
   public applicationKeypad: boolean;
@@ -171,7 +172,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   private _inputHandler: InputHandler;
   public soundManager: SoundManager;
-  private _renderCoordinator: RenderCoordinator;
   public selectionManager: SelectionManager;
   public linkifier: ILinkifier;
   public buffers: BufferSet;
@@ -360,8 +360,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         case 'fontFamily':
         case 'fontSize':
           // When the font changes the size of the cells may change which requires a renderer clear
-          if (this._renderCoordinator) {
-            this._renderCoordinator.clear();
+          if (this._renderService) {
+            this._renderService.clear();
           }
           if (this._charSizeService) {
             this._charSizeService.measure();
@@ -373,15 +373,15 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         case 'fontWeight':
         case 'fontWeightBold':
           // When the font changes the size of the cells may change which requires a renderer clear
-          if (this._renderCoordinator) {
-            this._renderCoordinator.clear();
-            this._renderCoordinator.onResize(this.cols, this.rows);
+          if (this._renderService) {
+            this._renderService.clear();
+            this._renderService.onResize(this.cols, this.rows);
             this.refresh(0, this.rows - 1);
           }
           break;
         case 'rendererType':
-          if (this._renderCoordinator) {
-            this._renderCoordinator.setRenderer(this._createRenderer());
+          if (this._renderService) {
+            this._renderService.setRenderer(this._createRenderer());
           }
           break;
         case 'scrollback':
@@ -392,8 +392,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
           break;
         case 'screenReaderMode':
           if (this.optionsService.options.screenReaderMode) {
-            if (!this._accessibilityManager && this._renderCoordinator) {
-              this._accessibilityManager = new AccessibilityManager(this, this._renderCoordinator.dimensions);
+            if (!this._accessibilityManager && this._renderService) {
+              this._accessibilityManager = new AccessibilityManager(this, this._renderService.dimensions);
             }
           } else {
             if (this._accessibilityManager) {
@@ -629,24 +629,24 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this._colorManager.setTheme(this._theme);
 
     const renderer = this._createRenderer();
-    this._renderCoordinator = new RenderCoordinator(renderer, this.rows, this.screenElement, this.optionsService, this._charSizeService);
-    this._renderCoordinator.onRender(e => this._onRender.fire(e));
-    this.onResize(e => this._renderCoordinator.resize(e.cols, e.rows));
+    this._renderService = new RenderService(renderer, this.rows, this.screenElement, this.optionsService, this._charSizeService);
+    this._renderService.onRender(e => this._onRender.fire(e));
+    this.onResize(e => this._renderService.resize(e.cols, e.rows));
 
-    this.viewport = new Viewport(this, this._viewportElement, this._viewportScrollArea, this._renderCoordinator.dimensions, this._charSizeService);
+    this.viewport = new Viewport(this, this._viewportElement, this._viewportScrollArea, this._renderService.dimensions, this._charSizeService);
     this.viewport.onThemeChange(this._colorManager.colors);
     this.register(this.viewport);
 
-    this.register(this.onCursorMove(() => this._renderCoordinator.onCursorMove()));
-    this.register(this.onResize(() => this._renderCoordinator.onResize(this.cols, this.rows)));
-    this.register(this.addDisposableListener('blur', () => this._renderCoordinator.onBlur()));
-    this.register(this.addDisposableListener('focus', () => this._renderCoordinator.onFocus()));
-    this.register(this._renderCoordinator.onDimensionsChange(() => this.viewport.syncScrollArea()));
+    this.register(this.onCursorMove(() => this._renderService.onCursorMove()));
+    this.register(this.onResize(() => this._renderService.onResize(this.cols, this.rows)));
+    this.register(this.addDisposableListener('blur', () => this._renderService.onBlur()));
+    this.register(this.addDisposableListener('focus', () => this._renderService.onFocus()));
+    this.register(this._renderService.onDimensionsChange(() => this.viewport.syncScrollArea()));
 
     this.selectionManager = new SelectionManager(this, this._charSizeService, this._bufferService);
     this.register(this.selectionManager.onSelectionChange(() => this._onSelectionChange.fire()));
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this.selectionManager.onMouseDown(e)));
-    this.register(this.selectionManager.onRedrawRequest(e => this._renderCoordinator.onSelectionChanged(e.start, e.end, e.columnSelectMode)));
+    this.register(this.selectionManager.onRedrawRequest(e => this._renderService.onSelectionChanged(e.start, e.end, e.columnSelectMode)));
     this.register(this.selectionManager.onLinuxMouseSelection(text => {
       // If there's a new selection, put it into the textarea, focus and select it
       // in order to register it as a selection on the OS. This event is fired
@@ -661,7 +661,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }));
     this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this.selectionManager.refresh()));
 
-    this.mouseHelper = new MouseHelper(this._renderCoordinator, this._charSizeService);
+    this.mouseHelper = new MouseHelper(this._renderService, this._charSizeService);
     // apply mouse event classes set by escape codes before terminal was attached
     this.element.classList.toggle('enable-mouse-events', this.mouseEvents);
     if (this.mouseEvents) {
@@ -673,8 +673,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     if (this.options.screenReaderMode) {
       // Note that this must be done *after* the renderer is created in order to
       // ensure the correct order of the dprchange event
-      this._accessibilityManager = new AccessibilityManager(this, this._renderCoordinator.dimensions);
-      this._accessibilityManager.register(this._renderCoordinator.onDimensionsChange(e => this._accessibilityManager.setDimensions(e)));
+      this._accessibilityManager = new AccessibilityManager(this, this._renderService.dimensions);
+      this._accessibilityManager.register(this._renderService.onDimensionsChange(e => this._accessibilityManager.setDimensions(e)));
     }
 
     // Measure the character size
@@ -707,8 +707,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   private _setTheme(theme: ITheme): void {
     this._theme = theme;
     this._colorManager.setTheme(theme);
-    if (this._renderCoordinator) {
-      this._renderCoordinator.setColors(this._colorManager.colors);
+    if (this._renderService) {
+      this._renderService.setColors(this._colorManager.colors);
     }
     if (this.viewport) {
       this.viewport.onThemeChange(this._colorManager.colors);
@@ -1064,8 +1064,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * @param end The row to end at (between start and this.rows - 1).
    */
   public refresh(start: number, end: number): void {
-    if (this._renderCoordinator) {
-      this._renderCoordinator.refreshRows(start, end);
+    if (this._renderService) {
+      this._renderService.refreshRows(start, end);
     }
   }
 
@@ -1460,13 +1460,13 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   public registerCharacterJoiner(handler: CharacterJoinerHandler): number {
-    const joinerId = this._renderCoordinator.registerCharacterJoiner(handler);
+    const joinerId = this._renderService.registerCharacterJoiner(handler);
     this.refresh(0, this.rows - 1);
     return joinerId;
   }
 
   public deregisterCharacterJoiner(joinerId: number): void {
-    if (this._renderCoordinator.deregisterCharacterJoiner(joinerId)) {
+    if (this._renderService.deregisterCharacterJoiner(joinerId)) {
       this.refresh(0, this.rows - 1);
     }
   }

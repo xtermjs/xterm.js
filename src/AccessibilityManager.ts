@@ -11,7 +11,7 @@ import { RenderDebouncer } from 'browser/RenderDebouncer';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { Disposable } from 'common/Lifecycle';
 import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
-import { IRenderDimensions } from './renderer/Types';
+import { IRenderDimensions } from 'browser/renderer/Types';
 
 const MAX_ROWS_TO_READ = 20;
 

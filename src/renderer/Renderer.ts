@@ -6,8 +6,9 @@
 import { TextRenderLayer } from './TextRenderLayer';
 import { SelectionRenderLayer } from './SelectionRenderLayer';
 import { CursorRenderLayer } from './CursorRenderLayer';
-import { IRenderLayer, IRenderer, IRenderDimensions, ICharacterJoinerRegistry } from './Types';
-import { ITerminal, CharacterJoinerHandler } from '../Types';
+import { IRenderLayer, ICharacterJoinerRegistry } from './Types';
+import { IRenderer, IRenderDimensions, CharacterJoinerHandler } from 'browser/renderer/Types';
+import { ITerminal } from '../Types';
 import { LinkRenderLayer } from './LinkRenderLayer';
 import { CharacterJoinerRegistry } from '../renderer/CharacterJoinerRegistry';
 import { Disposable } from 'common/Lifecycle';

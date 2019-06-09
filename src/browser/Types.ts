@@ -21,26 +21,7 @@ export interface IColorSet {
   ansi: IColor[];
 }
 
-export interface ITheme {
-  foreground?: string;
-  background?: string;
-  cursor?: string;
-  cursorAccent?: string;
-  selection?: string;
-  black?: string;
-  red?: string;
-  green?: string;
-  yellow?: string;
-  blue?: string;
-  magenta?: string;
-  cyan?: string;
-  white?: string;
-  brightBlack?: string;
-  brightRed?: string;
-  brightGreen?: string;
-  brightYellow?: string;
-  brightBlue?: string;
-  brightMagenta?: string;
-  brightCyan?: string;
-  brightWhite?: string;
+export interface IMouseHelper {
+  getCoords(event: { clientX: number, clientY: number }, element: HTMLElement, colCount: number, rowCount: number, isSelection?: boolean): [number, number] | undefined;
+  getRawByteCoords(event: MouseEvent, element: HTMLElement, colCount: number, rowCount: number): { x: number | undefined, y: number | undefined };
 }
