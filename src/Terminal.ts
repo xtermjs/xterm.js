@@ -235,9 +235,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
     // Setup and initialize common services
     this.optionsService = new OptionsService(options);
+    this._bufferService = new BufferService(this.optionsService);
     this._setupOptionsListeners();
     this._setup();
-    this._bufferService = new BufferService(this.optionsService);
   }
 
   public dispose(): void {
