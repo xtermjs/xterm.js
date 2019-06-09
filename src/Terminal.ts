@@ -33,7 +33,7 @@ import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
 import * as Browser from 'common/Platform';
 import { addDisposableDomListener } from 'browser/Lifecycle';
-import * as Strings from './Strings';
+import * as Strings from './browser/LocalizableStrings';
 import { MouseHelper } from 'browser/input/MouseHelper';
 import { SoundManager } from './SoundManager';
 import { MouseZoneManager } from './MouseZoneManager';
