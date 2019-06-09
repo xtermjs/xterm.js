@@ -35,7 +35,7 @@ import { SelectionManager } from './SelectionManager';
 import * as Browser from 'common/Platform';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import * as Strings from './Strings';
-import { MouseHelper } from './browser/input/MouseHelper';
+import { MouseHelper } from 'browser/input/MouseHelper';
 import { SoundManager } from './SoundManager';
 import { MouseZoneManager } from './MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
@@ -54,7 +54,7 @@ import { OptionsService } from 'common/services/OptionsService';
 import { ICharSizeService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
-import { IBufferSet, IBuffer } from '../out/common/buffer/Types';
+import { IBufferSet, IBuffer } from 'common/buffer/Types';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -224,14 +224,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   ) {
     super();
 
-    // Initialize common services
+    // Setup and initialize common services
     this.optionsService = new OptionsService(options);
-    this._bufferService = new BufferService(this.optionsService);
-
     this._setupOptionsListeners();
-
-    // this.options = clone(options);
     this._setup();
+    this._bufferService = new BufferService(this.optionsService);
 
     // TODO: Remove these in v4
     // Fire old style events from new emitters

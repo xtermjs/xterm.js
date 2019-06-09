@@ -7,7 +7,7 @@ import { IBufferService, IOptionsService, ITerminalOptions, IPartialTerminalOpti
 import { IEvent, EventEmitter2 } from 'common/EventEmitter2';
 import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
-import { IBufferSet, IBuffer } from './buffer/Types';
+import { IBufferSet, IBuffer } from 'common/buffer/Types';
 
 export class MockBufferService implements IBufferService {
   public buffer: IBuffer = {} as any;
