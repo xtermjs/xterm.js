@@ -26,13 +26,14 @@ declare module 'xterm' {
   export interface ITerminalOptions {
     /**
      * Whether background should support non-opaque color. It must be set before
-     * executing open() method and can't be changed later without excuting it again.
-     * Warning: Enabling this option can reduce performances somewhat.
+     * executing the `Terminal.open()` method and can't be changed later without
+     * executing it again. Note that enabling this can negatively impact
+     * performance.
      */
     allowTransparency?: boolean;
 
     /**
-     * A data uri of the sound to use for the bell (needs bellStyle = 'sound').
+     * A data uri of the sound to use for the bell when `bellStyle = 'sound'`.
      */
     bellSound?: string;
 
@@ -114,9 +115,9 @@ declare module 'xterm' {
     /**
      * Whether holding a modifier key will force normal selection behavior,
      * regardless of whether the terminal is in mouse events mode. This will
-     * also prevent mouse events from being emitted by the terminal. For example,
-     * this allows you to use xterm.js' regular selection inside tmux with
-     * mouse mode enabled.
+     * also prevent mouse events from being emitted by the terminal. For
+     * example, this allows you to use xterm.js' regular selection inside tmux
+     * with mouse mode enabled.
      */
     macOptionClickForcesSelection?: boolean;
 
@@ -149,8 +150,9 @@ declare module 'xterm' {
     screenReaderMode?: boolean;
 
     /**
-     * The amount of scrollback in the terminal. Scrollback is the amount of rows
-     * that are retained when lines are scrolled beyond the initial viewport.
+     * The amount of scrollback in the terminal. Scrollback is the amount of
+     * rows that are retained when lines are scrolled beyond the initial
+     * viewport.
      */
     scrollback?: number;
 
@@ -187,7 +189,7 @@ declare module 'xterm' {
     background?: string,
     /** The cursor color */
     cursor?: string,
-    /** The accent color of the cursor (used as the foreground color for a block cursor) */
+    /** The accent color of the cursor (fg color for a block cursor) */
     cursorAccent?: string,
     /** The selection color (can be transparent) */
     selection?: string,
@@ -253,8 +255,8 @@ declare module 'xterm' {
     leaveCallback?: () => void;
 
     /**
-     * The priority of the link matcher, this defines the order in which the link
-     * matcher is evaluated relative to others, from highest to lowest. The
+     * The priority of the link matcher, this defines the order in which the
+     * link matcher is evaluated relative to others, from highest to lowest. The
      * default value is 0.
      */
     priority?: number;
@@ -283,15 +285,45 @@ declare module 'xterm' {
     (listener: (e: T) => any): IDisposable;
   }
 
+  /**
+   * Represents a specific line in the terminal that is tracked when scrollback
+   * is trimmed and lines are added or removed.
+   */
   export interface IMarker extends IDisposable {
+    /**
+     * A unique identifier for this marker.
+     */
     readonly id: number;
+
+    /**
+     * Whether this marker is disposed.
+     */
     readonly isDisposed: boolean;
+
+    /**
+     * The actual line index in the buffer at this point in time.
+     */
     readonly line: number;
   }
 
+  /**
+   * The set of localizable strings.
+   */
   export interface ILocalizableStrings {
+    /**
+     * Announcement for a blank line when `screenReaderMode` is enabled.
+     */
     blankLine: string;
+
+    /**
+     * The aria label for the underlying input textarea for the terminal.
+     */
     promptLabel: string;
+
+    /**
+     * Announcement for when line reading is suppressed due to too many lines
+     * being printed to the terminal when `screenReaderMode` is enabled.
+     */
     tooMuchOutput: string;
   }
 
@@ -630,9 +662,9 @@ declare module 'xterm' {
     writeln(data: string): void;
 
     /**
-     * Writes UTF8 data to the terminal.
-     * This has a slight performance advantage over the string based write method
-     * due to lesser data conversions needed on the way from the pty to xterm.js.
+     * Writes UTF8 data to the terminal. This has a slight performance advantage
+     * over the string based write method due to lesser data conversions needed
+     * on the way from the pty to xterm.js.
      * @param data The data to write to the terminal.
      */
     writeUtf8(data: Uint8Array): void;
@@ -768,13 +800,13 @@ declare module 'xterm' {
    */
   export interface ITerminalAddon extends IDisposable {
     /**
-     * (EXPERIMENTAL) This is called when the addon is activated within xterm.js.
+     * (EXPERIMENTAL) This is called when the addon is activated.
      */
     activate(terminal: Terminal): void;
   }
 
   /**
-   * An object representing a selecrtion within the terminal.
+   * An object representing a selection within the terminal.
    */
   interface ISelectionPosition {
     /**
@@ -798,6 +830,9 @@ declare module 'xterm' {
     endRow: number;
   }
 
+  /**
+   * Represents a terminal buffer.
+   */
   interface IBuffer {
     /**
      * The y position of the cursor. This ranges between `0` (when the
@@ -829,16 +864,21 @@ declare module 'xterm' {
     readonly length: number;
 
     /**
-     * Gets a line from the buffer, or undefined if the line index does not exist.
+     * Gets a line from the buffer, or undefined if the line index does not
+     * exist.
      *
-     * Note that the result of this function should be used immediately after calling as when the
-     * terminal updates it could lead to unexpected behavior.
+     * Note that the result of this function should be used immediately after
+     * calling as when the terminal updates it could lead to unexpected
+     * behavior.
      *
      * @param y The line index to get.
      */
     getLine(y: number): IBufferLine | undefined;
   }
 
+  /**
+   * Represents a line in the terminal's buffer.
+   */
   interface IBufferLine {
     /**
      * Whether the line is wrapped from the previous line.
@@ -848,16 +888,17 @@ declare module 'xterm' {
     /**
      * Gets a cell from the line, or undefined if the line index does not exist.
      *
-     * Note that the result of this function should be used immediately after calling as when the
-     * terminal updates it could lead to unexpected behavior.
+     * Note that the result of this function should be used immediately after
+     * calling as when the terminal updates it could lead to unexpected
+     * behavior.
      *
      * @param x The character index to get.
      */
     getCell(x: number): IBufferCell | undefined;
 
     /**
-     * Gets the line as a string. Note that this is gets only the string for the line, not taking
-     * isWrapped into account.
+     * Gets the line as a string. Note that this is gets only the string for the
+     * line, not taking isWrapped into account.
      *
      * @param trimRight Whether to trim any whitespace at the right of the line.
      * @param startColumn The column to start from (inclusive).
@@ -866,6 +907,9 @@ declare module 'xterm' {
     translateToString(trimRight?: boolean, startColumn?: number, endColumn?: number): string;
   }
 
+  /**
+   * Represents a single cell in the terminal's buffer.
+   */
   interface IBufferCell {
     /**
      * The character within the cell.

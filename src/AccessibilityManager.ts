@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import * as Strings from './Strings';
+import * as Strings from './browser/LocalizableStrings';
 import { ITerminal } from './Types';
 import { IBuffer } from 'common/buffer/Types';
 import { isMac } from 'common/Platform';
