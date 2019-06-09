@@ -20,13 +20,13 @@ class TestTerminal extends Terminal {
   }
 }
 
-perfContext('Terminal: ls -lR /usr', () => {
+perfContext('Terminal: ls -lR /usr/lib', () => {
   let content = '';
   let contentUtf8: Uint8Array;
 
   before(async () => {
     // grab output from "ls -lR /usr"
-    const p = spawn('ls', ['--color=auto', '-lR', '/usr'], {
+    const p = spawn('ls', ['--color=auto', '-lR', '/usr/lib'], {
       name: 'xterm-256color',
       cols: 80,
       rows: 25,
