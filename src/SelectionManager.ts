@@ -13,6 +13,7 @@ import { CellData } from 'common/buffer/BufferLine';
 import { IDisposable } from 'xterm';
 import { EventEmitter2, IEvent } from 'common/EventEmitter2';
 import { ICharSizeService } from 'browser/services/Services';
+import { IBufferService } from 'common/services/Services';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -117,12 +118,13 @@ export class SelectionManager implements ISelectionManager {
 
   constructor(
     private _terminal: ITerminal,
-    private _charSizeService: ICharSizeService
+    private _charSizeService: ICharSizeService,
+    bufferService: IBufferService
   ) {
     this._initListeners();
     this.enable();
 
-    this._model = new SelectionModel(_terminal);
+    this._model = new SelectionModel(_terminal, bufferService);
     this._activeSelectionMode = SelectionMode.NORMAL;
   }
 

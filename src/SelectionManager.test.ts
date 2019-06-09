@@ -20,7 +20,7 @@ class TestSelectionManager extends SelectionManager {
   constructor(
     terminal: ITerminal
   ) {
-    super(terminal, new MockCharSizeService(10, 10));
+    super(terminal, new MockCharSizeService(10, 10), new MockBufferService(20, 20));
   }
 
   public get model(): SelectionModel { return this._model; }

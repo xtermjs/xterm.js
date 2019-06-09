@@ -8,12 +8,14 @@ import { ITerminal } from './Types';
 import { SelectionModel } from './SelectionModel';
 import { BufferSet } from './BufferSet';
 import { MockTerminal, MockOptionsService, MockBufferService } from './TestUtils.test';
+import { IBufferService } from 'common/services/Services';
 
 class TestSelectionModel extends SelectionModel {
   constructor(
-    terminal: ITerminal
+    terminal: ITerminal,
+    bufferService: IBufferService
   ) {
-    super(terminal);
+    super(terminal, bufferService);
   }
 }
 
@@ -23,13 +25,14 @@ describe('SelectionManager', () => {
 
   beforeEach(() => {
     terminal = new MockTerminal();
+    const bufferService = new MockBufferService(80, 2);
     terminal.buffers = new BufferSet(
       new MockOptionsService({ scrollback: 10 }),
-      new MockBufferService(80, 2)
+      bufferService
     );
     terminal.buffer = terminal.buffers.active;
 
-    model = new TestSelectionModel(terminal);
+    model = new TestSelectionModel(terminal, bufferService);
   });
 
   describe('clearSelection', () => {

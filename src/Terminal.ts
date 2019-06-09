@@ -643,7 +643,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.register(this.addDisposableListener('focus', () => this._renderCoordinator.onFocus()));
     this.register(this._renderCoordinator.onDimensionsChange(() => this.viewport.syncScrollArea()));
 
-    this.selectionManager = new SelectionManager(this, this._charSizeService);
+    this.selectionManager = new SelectionManager(this, this._charSizeService, this._bufferService);
     this.register(this.selectionManager.onSelectionChange(() => this._onSelectionChange.fire()));
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this.selectionManager.onMouseDown(e)));
     this.register(this.selectionManager.onRedrawRequest(e => this._renderCoordinator.onSelectionChanged(e.start, e.end, e.columnSelectMode)));
