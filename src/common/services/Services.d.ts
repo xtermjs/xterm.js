@@ -15,6 +15,7 @@ export interface IBufferService {
   // TODO: Move resize event here
 
   resize(cols: number, rows: number): void;
+  reset(): void;
 }
 
 export interface IOptionsService {

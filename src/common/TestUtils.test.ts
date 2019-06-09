@@ -20,6 +20,7 @@ export class MockBufferService implements IBufferService {
     this.cols = cols;
     this.rows = rows;
   }
+  reset(): void {}
 }
 
 export class MockOptionsService implements IOptionsService {

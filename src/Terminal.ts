@@ -1893,6 +1893,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     const userScrolling = this._userScrolling;
 
     this._setup();
+    this._bufferService.reset();
 
     // reattach
     this._customKeyEventHandler = customKeyEventHandler;
