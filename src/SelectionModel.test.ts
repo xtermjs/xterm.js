@@ -6,7 +6,7 @@
 import { assert } from 'chai';
 import { ITerminal } from './Types';
 import { SelectionModel } from './SelectionModel';
-import { BufferSet } from './BufferSet';
+import { BufferSet } from './common/buffer/BufferSet';
 import { MockTerminal } from './TestUtils.test';
 import { MockOptionsService, MockBufferService } from 'common/TestUtils.test';
 import { IBufferService } from 'common/services/Services';

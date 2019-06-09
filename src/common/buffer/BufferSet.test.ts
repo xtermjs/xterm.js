@@ -4,8 +4,8 @@
  */
 
 import { assert } from 'chai';
-import { BufferSet } from './BufferSet';
-import { Buffer } from './common/buffer/Buffer';
+import { BufferSet } from 'common/buffer/BufferSet';
+import { Buffer } from 'common/buffer/Buffer';
 import { MockOptionsService, MockBufferService } from 'common/TestUtils.test';
 
 describe('BufferSet', () => {
