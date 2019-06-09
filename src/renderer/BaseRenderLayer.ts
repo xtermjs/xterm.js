@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { IRenderLayer, IRenderDimensions } from './Types';
+import { IRenderLayer } from './Types';
+import { IRenderDimensions } from 'browser/renderer/Types';
 import { ITerminal } from '../Types';
 import { ICellData, DEFAULT_COLOR } from 'common/Types';
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, IGlyphIdentifier } from './atlas/Types';

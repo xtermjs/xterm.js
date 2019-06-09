@@ -21,8 +21,8 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharacterJoinerHandler, IMouseZoneManager } from './Types';
-import { IRenderer } from './renderer/Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, IMouseZoneManager } from './Types';
+import { IRenderer, CharacterJoinerHandler } from 'browser/renderer/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
 import { Buffer } from 'common/buffer/Buffer';
 import { CompositionHelper } from './CompositionHelper';
@@ -50,7 +50,7 @@ import { EventEmitter2, IEvent } from 'common/EventEmitter2';
 import { Attributes, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { applyWindowsMode } from './WindowsMode';
 import { ColorManager } from 'browser/ColorManager';
-import { RenderCoordinator } from './renderer/RenderCoordinator';
+import { RenderService } from './renderer/RenderService';
 import { IOptionsService, IBufferService } from 'common/services/Services';
 import { OptionsService } from 'common/services/OptionsService';
 import { ICharSizeService } from 'browser/services/Services';
@@ -171,7 +171,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   private _inputHandler: InputHandler;
   public soundManager: SoundManager;
-  private _renderCoordinator: RenderCoordinator;
+  private _renderCoordinator: RenderService;
   public selectionManager: SelectionManager;
   public linkifier: ILinkifier;
   public buffers: BufferSet;
@@ -629,7 +629,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this._colorManager.setTheme(this._theme);
 
     const renderer = this._createRenderer();
-    this._renderCoordinator = new RenderCoordinator(renderer, this.rows, this.screenElement, this.optionsService, this._charSizeService);
+    this._renderCoordinator = new RenderService(renderer, this.rows, this.screenElement, this.optionsService, this._charSizeService);
     this._renderCoordinator.onRender(e => this._onRender.fire(e));
     this.onResize(e => this._renderCoordinator.resize(e.cols, e.rows));
 

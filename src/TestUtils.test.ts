@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { IRenderer, IRenderDimensions } from './renderer/Types';
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBrowser, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler } from './Types';
+import { IRenderer, IRenderDimensions, CharacterJoinerHandler } from 'browser/renderer/Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBrowser, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions } from './Types';
 import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
 import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';

@@ -17,8 +17,6 @@ export type LineData = CharData[];
 export type LinkMatcherHandler = (event: MouseEvent, uri: string) => void;
 export type LinkMatcherValidationCallback = (uri: string, callback: (isValid: boolean) => void) => void;
 
-export type CharacterJoinerHandler = (text: string) => [number, number][];
-
 /**
  * This interface encapsulates everything needed from the Terminal by the
  * InputHandler. This cleanly separates the large amount of methods needed by

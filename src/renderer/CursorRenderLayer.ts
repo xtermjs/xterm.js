@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IRenderDimensions } from './Types';
+import { IRenderDimensions } from 'browser/renderer/Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { ITerminal } from '../Types';
 import { ICellData } from 'common/Types';

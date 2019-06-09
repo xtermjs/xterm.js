@@ -4,12 +4,12 @@
  */
 
 import { IMouseHelper } from './Types';
-import { RenderCoordinator } from './renderer/RenderCoordinator';
+import { RenderService } from './renderer/RenderService';
 import { ICharSizeService } from 'browser/services/Services';
 
 export class MouseHelper implements IMouseHelper {
   constructor(
-    private _renderCoordinator: RenderCoordinator,
+    private _renderCoordinator: RenderService,
     private _charSizeService: ICharSizeService
   ) {
   }

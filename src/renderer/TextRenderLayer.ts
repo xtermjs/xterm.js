@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { IRenderDimensions, ICharacterJoinerRegistry } from './Types';
+import { ICharacterJoinerRegistry } from './Types';
+import { IRenderDimensions } from 'browser/renderer/Types';
 import { ITerminal } from '../Types';
 import { CharData, ICellData } from 'common/Types';
 import { GridCache } from './GridCache';
