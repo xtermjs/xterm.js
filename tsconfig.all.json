@@ -8,8 +8,6 @@
     { "path": "./addons/xterm-addon-fit/src" },
     { "path": "./addons/xterm-addon-search/src" },
     { "path": "./addons/xterm-addon-web-links/src" },
-
-    // currently depends on out, thus must run as last?
-    { "path": "./benchmark-tests" },
+    { "path": "./src/benchmark-tests" },
   ]
 }

@@ -20,7 +20,9 @@
     "prepublishOnly": "npm run package",
     "watch": "tsc -b -w ./tsconfig.all.json --preserveWatchOutput",
     "clean": "rm -rf lib out addons/*/lib",
-    "benchmark": "node ./bin/benchmark.js"
+    "benchmark": "NODE_PATH=./out xterm-benchmark -r 5 -c benchmark.json",
+    "benchmark-baseline": "NODE_PATH=./out xterm-benchmark -r 5 -c benchmark.json --baseline out/benchmark-tests/*benchmark.js",
+    "benchmark-eval": "NODE_PATH=./out xterm-benchmark -r 5 -c benchmark.json --eval out/benchmark-tests/*benchmark.js"
   },
   "devDependencies": {
     "@types/chai": "^3.4.34",

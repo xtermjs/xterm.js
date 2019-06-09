@@ -4,9 +4,9 @@
  */
 import { perfContext, before, beforeEach, ThroughputRuntimeCase } from 'xterm-benchmark';
 
-import { EscapeSequenceParser } from '../out/common/parser/EscapeSequenceParser';
-import { C0, C1 } from '../out/common/data/EscapeSequences';
-import { IDcsHandler } from '../out/common/parser/Types';
+import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
+import { C0, C1 } from 'common/data/EscapeSequences';
+import { IDcsHandler } from 'common/parser/Types';
 
 
 function toUtf32(s: string): Uint32Array {

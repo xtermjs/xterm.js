@@ -6,14 +6,10 @@
 import { perfContext, before, ThroughputRuntimeCase } from 'xterm-benchmark';
 
 import { spawn } from 'node-pty';
-import { Utf8ToUtf32, stringFromCodePoint } from '../out/common/input/TextDecoder';
-
-const Terminal: any = require('../out/Terminal').Terminal;
+import { Utf8ToUtf32, stringFromCodePoint } from 'common/input/TextDecoder';
+import { Terminal } from 'Terminal';
 
 class TestTerminal extends Terminal {
-  constructor(opts: any) {
-    super(opts);
-  }
   writeSync(data: string): void {
     this.writeBuffer.push(data);
     (this as any)._innerWrite();

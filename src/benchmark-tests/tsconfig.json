@@ -1,0 +1,23 @@
+{
+  "extends": "../tsconfig-library-base",
+  "compilerOptions": {
+    "lib": [
+      "dom",
+      "es6",
+    ],
+    "outDir": "../../out",
+    "types": [
+      "../../node_modules/@types/node"
+    ],
+    "baseUrl": "..",
+    "strict": false
+  },
+  "include": [
+    "./**/*",
+    "../**/*",
+    "../../typings/xterm.d.ts"
+  ],
+  "exclude": [
+    "../**/*test.ts"
+  ]
+}
