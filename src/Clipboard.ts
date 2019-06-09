@@ -63,7 +63,6 @@ export function pasteHandler(ev: ClipboardEvent, term: ITerminal): void {
     text = bracketTextForPaste(text, term.bracketedPasteMode);
     term.handler(text);
     term.textarea.value = '';
-    term.emit('paste', text);
     term.cancel(ev);
   };
 

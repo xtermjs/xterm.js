@@ -12,7 +12,7 @@ import { SelectionModel } from './SelectionModel';
 import { AltClickHandler } from './handlers/AltClickHandler';
 import { CellData } from 'common/buffer/BufferLine';
 import { IDisposable } from 'xterm';
-import { EventEmitter2, IEvent } from 'common/EventEmitter2';
+import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { ICharSizeService } from 'browser/services/Services';
 import { IBufferService } from 'common/services/Services';
 
@@ -110,11 +110,11 @@ export class SelectionManager implements ISelectionManager {
 
   private _mouseDownTimeStamp: number;
 
-  private _onLinuxMouseSelection = new EventEmitter2<string>();
+  private _onLinuxMouseSelection = new EventEmitter<string>();
   public get onLinuxMouseSelection(): IEvent<string> { return this._onLinuxMouseSelection.event; }
-  private _onRedrawRequest = new EventEmitter2<ISelectionRedrawRequestEvent>();
+  private _onRedrawRequest = new EventEmitter<ISelectionRedrawRequestEvent>();
   public get onRedrawRequest(): IEvent<ISelectionRedrawRequestEvent> { return this._onRedrawRequest.event; }
-  private _onSelectionChange = new EventEmitter2<void>();
+  private _onSelectionChange = new EventEmitter<void>();
   public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
 
   constructor(

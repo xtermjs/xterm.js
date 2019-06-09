@@ -4,7 +4,7 @@
  */
 
 import { IOptionsService, ITerminalOptions, IPartialTerminalOptions } from 'common/services/Services';
-import { EventEmitter2, IEvent } from 'common/EventEmitter2';
+import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { isMac } from 'common/Platform';
 import { clone } from 'common/Clone';
 
@@ -57,7 +57,7 @@ const CONSTRUCTOR_ONLY_OPTIONS = ['cols', 'rows'];
 export class OptionsService implements IOptionsService {
   public options: ITerminalOptions;
 
-  private _onOptionChange = new EventEmitter2<string>();
+  private _onOptionChange = new EventEmitter<string>();
   public get onOptionChange(): IEvent<string> { return this._onOptionChange.event; }
 
   constructor(options: IPartialTerminalOptions) {

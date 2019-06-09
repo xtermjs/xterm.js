@@ -14,7 +14,7 @@ import { Disposable } from 'common/Lifecycle';
 import { concat } from 'common/TypedArrayUtils';
 import { StringToUtf32, stringFromCodePoint, utf32ToString, Utf8ToUtf32 } from 'common/input/TextDecoder';
 import { CellData, Attributes, FgFlags, BgFlags, AttributeData, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { EventEmitter2, IEvent } from 'common/EventEmitter2';
+import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { IParsingState, IDcsHandler, IEscapeSequenceParser } from 'common/parser/Types';
 
 /**
@@ -108,13 +108,13 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _utf8Decoder: Utf8ToUtf32 = new Utf8ToUtf32();
   private _workCell: CellData = new CellData();
 
-  private _onCursorMove = new EventEmitter2<void>();
+  private _onCursorMove = new EventEmitter<void>();
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
-  private _onData = new EventEmitter2<string>();
+  private _onData = new EventEmitter<string>();
   public get onData(): IEvent<string> { return this._onData.event; }
-  private _onLineFeed = new EventEmitter2<void>();
+  private _onLineFeed = new EventEmitter<void>();
   public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
-  private _onScroll = new EventEmitter2<number>();
+  private _onScroll = new EventEmitter<number>();
   public get onScroll(): IEvent<number> { return this._onScroll.event; }
 
   constructor(
@@ -342,7 +342,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     buffer = this._terminal.buffer;
     if (buffer.x !== cursorStartX || buffer.y !== cursorStartY) {
-      this._terminal.emit('cursormove');
+      this._onCursorMove.fire();
     }
   }
 
@@ -377,7 +377,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
 
       if (screenReaderMode) {
-        this._terminal.emit('a11y.char', stringFromCodePoint(code));
+        this._terminal.onA11yCharEmitter.fire(stringFromCodePoint(code));
       }
 
       // insert combining char at last cursor position
@@ -542,7 +542,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const originalX = this._terminal.buffer.x;
     this._terminal.buffer.x = this._terminal.buffer.nextStop();
     if (this._terminal.options.screenReaderMode) {
-      this._terminal.emit('a11y.tab', this._terminal.buffer.x - originalX);
+      this._terminal.onA11yTabEmitter.fire(this._terminal.buffer.x - originalX);
     }
   }
 

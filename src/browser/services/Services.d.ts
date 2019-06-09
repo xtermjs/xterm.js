@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IEvent } from 'common/EventEmitter2';
+import { IEvent } from 'common/EventEmitter';
 import { IRenderDimensions, IRenderer, CharacterJoinerHandler } from 'browser/renderer/Types';
 import { IColorSet } from 'browser/Types';
 

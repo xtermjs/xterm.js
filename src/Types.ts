@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { ITerminalOptions as IPublicTerminalOptions, IEventEmitter, IDisposable, IMarker, ISelectionPosition } from 'xterm';
+import { ITerminalOptions as IPublicTerminalOptions, IDisposable, IMarker, ISelectionPosition } from 'xterm';
 import { ICharset, IAttributeData, CharData } from 'common/Types';
-import { IEvent } from 'common/EventEmitter2';
+import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { IColorSet, IMouseHelper } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
@@ -22,7 +22,7 @@ export type LinkMatcherValidationCallback = (uri: string, callback: (isValid: bo
  * InputHandler. This cleanly separates the large amount of methods needed by
  * InputHandler cleanly from the ITerminal interface.
  */
-export interface IInputHandlingTerminal extends IEventEmitter {
+export interface IInputHandlingTerminal {
   element: HTMLElement;
   options: ITerminalOptions;
   cols: number;
@@ -53,6 +53,9 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   buffer: IBuffer;
   viewport: IViewport;
   selectionManager: ISelectionManager;
+
+  onA11yCharEmitter: EventEmitter<string>;
+  onA11yTabEmitter: EventEmitter<number>;
 
   bell(): void;
   focus(): void;
@@ -209,6 +212,11 @@ export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAcc
   // TODO: We should remove options once components adopt optionsService
   options: ITerminalOptions;
 
+  onBlur: IEvent<void>;
+  onFocus: IEvent<void>;
+  onA11yChar: IEvent<string>;
+  onA11yTab: IEvent<number>;
+
   handler(data: string): void;
   scrollLines(disp: number, suppressScrollEvent?: boolean): void;
   cancel(ev: Event, force?: boolean): boolean | void;
@@ -217,7 +225,7 @@ export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAcc
 }
 
 // Portions of the public API that are required by the internal Terminal
-export interface IPublicTerminal extends IDisposable, IEventEmitter {
+export interface IPublicTerminal extends IDisposable {
   textarea: HTMLTextAreaElement;
   rows: number;
   cols: number;
