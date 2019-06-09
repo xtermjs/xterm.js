@@ -8,7 +8,7 @@ import { ITerminal } from '../Types';
 import { IBufferLine } from 'common/Types';
 import { IBuffer } from 'common/buffer/Types';
 import { Terminal as TerminalCore } from '../Terminal';
-import * as Strings from '../Strings';
+import * as Strings from '../browser/LocalizableStrings';
 import { IEvent } from 'common/EventEmitter';
 import { AddonManager } from './AddonManager';
 
