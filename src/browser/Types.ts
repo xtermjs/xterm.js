@@ -20,3 +20,8 @@ export interface IColorSet {
   selection: IColor;
   ansi: IColor[];
 }
+
+export interface IMouseHelper {
+  getCoords(event: { clientX: number, clientY: number }, element: HTMLElement, colCount: number, rowCount: number, isSelection?: boolean): [number, number] | undefined;
+  getRawByteCoords(event: MouseEvent, element: HTMLElement, colCount: number, rowCount: number): { x: number | undefined, y: number | undefined };
+}

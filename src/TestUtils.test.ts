@@ -4,7 +4,7 @@
  */
 
 import { IRenderer, IRenderDimensions, CharacterJoinerHandler } from 'browser/renderer/Types';
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBrowser, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions } from './Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBrowser, ISelectionManager, ITerminalOptions, ILinkifier, ILinkMatcherOptions } from './Types';
 import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
 import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
@@ -12,7 +12,7 @@ import * as Browser from 'common/Platform';
 import { IDisposable, IMarker, IEvent, ISelectionPosition } from 'xterm';
 import { Terminal } from './Terminal';
 import { AttributeData } from 'common/buffer/BufferLine';
-import { IColorManager, IColorSet } from 'browser/Types';
+import { IColorManager, IColorSet, IMouseHelper } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
 import { ICharSizeService } from 'browser/services/Services';
 

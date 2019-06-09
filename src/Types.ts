@@ -6,7 +6,7 @@
 import { ITerminalOptions as IPublicTerminalOptions, IEventEmitter, IDisposable, IMarker, ISelectionPosition } from 'xterm';
 import { ICharset, IAttributeData, CharData } from 'common/Types';
 import { IEvent } from 'common/EventEmitter2';
-import { IColorSet } from 'browser/Types';
+import { IColorSet, IMouseHelper } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 
@@ -275,11 +275,6 @@ export interface IElementAccessor {
 
 export interface ILinkifierAccessor {
   linkifier: ILinkifier;
-}
-
-export interface IMouseHelper {
-  getCoords(event: { clientX: number, clientY: number }, element: HTMLElement, colCount: number, rowCount: number, isSelection?: boolean): [number, number];
-  getRawByteCoords(event: MouseEvent, element: HTMLElement, colCount: number, rowCount: number): { x: number, y: number };
 }
 
 // TODO: The options that are not in the public API should be reviewed
