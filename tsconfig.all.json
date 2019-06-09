@@ -4,10 +4,10 @@
   "references": [
     { "path": "./src" },
     { "path": "./test" },
+    { "path": "./benchmarks" },
     { "path": "./addons/xterm-addon-attach/src" },
     { "path": "./addons/xterm-addon-fit/src" },
     { "path": "./addons/xterm-addon-search/src" },
     { "path": "./addons/xterm-addon-web-links/src" },
-    { "path": "./src/benchmark-tests" },
   ]
 }
