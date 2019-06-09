@@ -283,15 +283,45 @@ declare module 'xterm' {
     (listener: (e: T) => any): IDisposable;
   }
 
+  /**
+   * Represents a specific line in the terminal that is tracked when scrollback
+   * is trimmed and lines are added or removed.
+   */
   export interface IMarker extends IDisposable {
+    /**
+     * A unique identifier for this marker.
+     */
     readonly id: number;
+
+    /**
+     * Whether this marker is disposed.
+     */
     readonly isDisposed: boolean;
+
+    /**
+     * The actual line index in the buffer at this point in time.
+     */
     readonly line: number;
   }
 
+  /**
+   * The set of localizable strings.
+   */
   export interface ILocalizableStrings {
+    /**
+     * Announcement for a blank line when `screenReaderMode` is enabled.
+     */
     blankLine: string;
+
+    /**
+     * The aria label for the underlying input textarea for the terminal.
+     */
     promptLabel: string;
+
+    /**
+     * Announcement for when line reading is suppressed due to too many lines
+     * being printed to the terminal when `screenReaderMode` is enabled.
+     */
     tooMuchOutput: string;
   }
 
@@ -774,7 +804,7 @@ declare module 'xterm' {
   }
 
   /**
-   * An object representing a selecrtion within the terminal.
+   * An object representing a selection within the terminal.
    */
   interface ISelectionPosition {
     /**
@@ -798,6 +828,9 @@ declare module 'xterm' {
     endRow: number;
   }
 
+  /**
+   * Represents a terminal buffer.
+   */
   interface IBuffer {
     /**
      * The y position of the cursor. This ranges between `0` (when the
@@ -839,6 +872,9 @@ declare module 'xterm' {
     getLine(y: number): IBufferLine | undefined;
   }
 
+  /**
+   * Represents a line in the terminal's buffer.
+   */
   interface IBufferLine {
     /**
      * Whether the line is wrapped from the previous line.
@@ -866,6 +902,9 @@ declare module 'xterm' {
     translateToString(trimRight?: boolean, startColumn?: number, endColumn?: number): string;
   }
 
+  /**
+   * Represents a single cell in the terminal's buffer.
+   */
   interface IBufferCell {
     /**
      * The character within the cell.
