@@ -364,4 +364,48 @@ describe('BufferLine', function(): void {
       chai.assert.equal(cell.isCombined(), Content.IS_COMBINED_MASK);
     });
   });
+
+  describe('toJson', () => {
+    it('CellData <--> JSON Object equality', () => {
+      const line = new TestBufferLine(4);
+      const cellA = CellData.fromCharData([1, 'a', 1, 'a'.charCodeAt(0)]);
+      const cellB = CellData.fromCharData([1, 'b', 1, 'b'.charCodeAt(0)]);
+      const cellNull = CellData.fromCharData([0, '', 1, 0]);
+      const cellCombined = CellData.fromCharData([123, 'e\u0301', 1, '\u0301'.charCodeAt(0)]);
+      line.setCell(0, cellA);
+      line.setCell(1, cellB);
+      line.setCell(2, cellNull);
+      line.setCell(3, cellCombined);
+      const jsonObject = line.toJson();
+      chai.expect(jsonObject.isWrapped).eq(line.isWrapped);
+      chai.expect(jsonObject.length).eq(4);
+      chai.expect(jsonObject.data.length).eq(4 * 3);
+      chai.assert.deepEqual(jsonObject.data.slice(0, 3), [cellA.content, cellA.fg, cellA.bg]);
+      chai.assert.deepEqual(jsonObject.data.slice(3, 6), [cellB.content, cellB.fg, cellB.bg]);
+      chai.assert.deepEqual(jsonObject.data.slice(6, 9), [cellNull.content, cellNull.fg, cellNull.bg]);
+      chai.assert.deepEqual(jsonObject.data.slice(9, 12), [cellCombined.content, cellCombined.fg, cellCombined.bg]);
+      chai.assert.deepEqual(jsonObject.combined, { 3: 'e\u0301' });
+    });
+  });
+
+  describe('fromJson', () => {
+    it('JSON Object equality <--> CellData', () => {
+      const line = new TestBufferLine(0);
+      line.fromJson({
+        isWrapped: false,
+        length: 4,
+        data: [4194401, 1, 0, 4194402, 1, 0, 4194304, 0, 0, 6291456, 123, 0],
+        combined: { '3': 'e\u0301' }
+      });
+      chai.assert.equal(line.isWrapped, false);
+      chai.assert.equal(line.length, 4);
+      chai.assert.deepEqual(line.combined, { '3': 'e\u0301' });
+      chai.assert.deepEqual(line.toArray(), [
+        [1, 'a', 1, 'a'.charCodeAt(0)],
+        [1, 'b', 1, 'b'.charCodeAt(0)],
+        [0, '', 1, 0],
+        [123, 'e\u0301', 1, '\u0301'.charCodeAt(0)]
+      ]);
+    });
+  });
 });

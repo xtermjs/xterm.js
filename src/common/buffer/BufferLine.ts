@@ -2,7 +2,7 @@
  * Copyright (c) 2018 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { DEFAULT_COLOR, CharData, IBufferLine, ICellData, IColorRGB, IAttributeData } from 'common/Types';
+import { DEFAULT_COLOR, CharData, IBufferLine, ICellData, IColorRGB, IAttributeData, IBufferLineJson } from 'common/Types';
 import { stringFromCodePoint } from 'common/input/TextDecoder';
 
 export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
@@ -660,5 +660,30 @@ export class BufferLine implements IBufferLine {
       startCol += (content >> Content.WIDTH_SHIFT) || 1; // always advance by 1
     }
     return result;
+  }
+
+  public toJson(): IBufferLineJson {
+    const data = new Array<number>(this._data.length);
+    for (let i = 0; i < data.length; i++) {
+      data[i] = this._data[i];
+    }
+
+    return {
+      isWrapped: this.isWrapped,
+      length: this.length,
+      data: data,
+      combined: this._combined
+    };
+  }
+
+  public fromJson(jsonObject: IBufferLineJson): void {
+    if (jsonObject.data.length !== 3 * jsonObject.length) {
+      throw new Error('IBufferLineJSON data and length mismatch');
+    }
+
+    this.isWrapped = jsonObject.isWrapped;
+    this.length = jsonObject.length;
+    this._data = new Uint32Array(jsonObject.data);
+    this._combined = jsonObject.combined;
   }
 }

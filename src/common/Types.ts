@@ -120,10 +120,22 @@ export interface ICellData extends IAttributeData {
   getAsCharData(): CharData;
 }
 
+export interface IJsonSerializable<T> {
+  toJson(): T;
+  fromJson(jsonObject: T): void;
+}
+
+export interface IBufferLineJson {
+  isWrapped: boolean;
+  length: number;
+  data: number[];
+  combined: { [index: number]: string };
+}
+
 /**
  * Interface for a line in the terminal buffer.
  */
-export interface IBufferLine {
+export interface IBufferLine extends IJsonSerializable<IBufferLineJson> {
   length: number;
   isWrapped: boolean;
   get(index: number): CharData;

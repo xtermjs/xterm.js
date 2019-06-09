@@ -5,7 +5,7 @@
 
 import { IRenderer, IRenderDimensions, CharacterJoinerHandler } from 'browser/renderer/Types';
 import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBrowser, ISelectionManager, ITerminalOptions, ILinkifier, ILinkMatcherOptions } from './Types';
-import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
+import { IBuffer, IBufferStringIterator, IBufferSet, IBufferJson } from 'common/buffer/Types';
 import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
 import * as Browser from 'common/Platform';
@@ -357,6 +357,12 @@ export class MockBuffer implements IBuffer {
     throw new Error('Method not implemented.');
   }
   getWhitespaceCell(attr?: IAttributeData): ICellData {
+    throw new Error('Method not implemented.');
+  }
+  toJson(): IBufferJson {
+    throw new Error('Method not implemented.');
+  }
+  fromJson(jsonObject: IBufferJson): void {
     throw new Error('Method not implemented.');
   }
 }

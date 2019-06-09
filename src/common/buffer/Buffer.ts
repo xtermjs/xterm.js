@@ -4,8 +4,8 @@
  */
 
 import { CircularList, IInsertEvent } from 'common/CircularList';
-import { IBuffer, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult } from 'common/buffer/Types';
-import { IBufferLine, ICellData, IAttributeData } from 'common/Types';
+import { IBuffer, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult, IBufferJson } from 'common/buffer/Types';
+import { IBufferLine, ICellData, IAttributeData, IBufferLineJson } from 'common/Types';
 import { BufferLine, CellData, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths, getWrappedLineTrimmedLength } from 'common/buffer/BufferReflow';
 import { Marker } from 'common/buffer/Marker';
@@ -599,6 +599,61 @@ export class Buffer implements IBuffer {
   public iterator(trimRight: boolean, startIndex?: number, endIndex?: number, startOverscan?: number, endOverscan?: number): IBufferStringIterator {
     return new BufferStringIterator(this, trimRight, startIndex, endIndex, startOverscan, endOverscan);
   }
+
+  public toJson(): IBufferJson {
+    const data: { [index: number]: IBufferLineJson } = {};
+    for (let i = 0; i < this.lines.length; i++) {
+      const line = this.lines.get(i);
+      if (line) {
+        data[i] = line.toJson();
+      }
+    }
+    return {
+      rows: this._rows,
+      cols: this._cols,
+      ydisp: this.ydisp,
+      ybase: this.ybase,
+      y: this.y,
+      x: this.x,
+      scrollBottom: this.scrollBottom,
+      scrollTop: this.scrollTop,
+      tabs: this.tabs,
+      savedY: this.savedY,
+      savedX: this.savedX,
+      lines: {
+        length: this.lines.length,
+        data: data
+      }
+    };
+  }
+
+  public fromJson(jsonObject: IBufferJson): void {
+    if (jsonObject.rows !== this._rows || jsonObject.cols !== this._cols) {
+      throw new Error('Invalid jsonObject for Buffer, incorrect rows or cols');
+    }
+
+    if (jsonObject.lines.length !== jsonObject.rows) {
+      throw new Error('Invalid jsonObject for Buffer, lines\'s length does\'t match to rows');
+    }
+
+    this.ydisp = jsonObject.ydisp;
+    this.ybase = jsonObject.ybase;
+    this.y = jsonObject.y;
+    this.x = jsonObject.x;
+    this.scrollBottom = jsonObject.scrollBottom;
+    this.scrollTop = jsonObject.scrollTop;
+    this.tabs = jsonObject.tabs;
+    this.savedY = jsonObject.savedY;
+    this.savedX = jsonObject.savedX;
+
+    const lines = jsonObject.lines;
+    this.lines.maxLength = lines.length;
+    for (let i = 0; i < lines.length; i++) {
+      const bufferLine = new BufferLine(0);
+      bufferLine.fromJson(lines.data[i]);
+      this.lines.set(i, bufferLine);
+    }
+  }
 }
 
 /**
@@ -654,6 +709,6 @@ export class BufferStringIterator implements IBufferStringIterator {
       result += this._buffer.translateBufferLineToString(i, this._trimRight);
     }
     this._current = range.last + 1;
-    return {range: range, content: result};
+    return { range: range, content: result };
   }
 }

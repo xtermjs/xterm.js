@@ -3,11 +3,14 @@
  * @license MIT
  */
 
-import { assert } from 'chai';
+import { assert, expect } from 'chai';
 import { Buffer } from 'common/buffer/Buffer';
 import { CircularList } from 'common/CircularList';
 import { MockOptionsService, MockBufferService } from 'common/TestUtils.test';
 import { BufferLine, CellData, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { IBufferJson } from './Types';
+import { BufferService } from 'common/services/BufferService';
+import { OptionsService } from 'common/services/OptionsService';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
@@ -1160,6 +1163,82 @@ describe('Buffer', () => {
 
       const str3 = buffer.translateBufferLineToString(0, true, 0, 3);
       assert.equal(str3, '😁a');
+    });
+  });
+
+  describe('toJson', () => {
+    it('properties equality', () => {
+      buffer.fillViewportRows();
+      const jsonObject = buffer.toJson();
+      const bufferLine = new BufferLine(bufferService.cols, CellData.fromCharData([0, '', 1, 0]), false);
+      expect(jsonObject.rows).eq(INIT_ROWS);
+      expect(jsonObject.cols).eq(INIT_COLS);
+      expect(jsonObject.ydisp).eq(buffer.ydisp);
+      expect(jsonObject.ybase).eq(buffer.ybase);
+      expect(jsonObject.y).eq(buffer.y);
+      expect(jsonObject.x).eq(buffer.x);
+      expect(jsonObject.scrollBottom).eq(buffer.scrollBottom);
+      expect(jsonObject.scrollTop).eq(buffer.scrollTop);
+      expect(jsonObject.tabs).eq(buffer.tabs);
+      expect(jsonObject.savedY).eq(buffer.savedY);
+      expect(jsonObject.savedX).eq(buffer.savedX);
+      expect(jsonObject.lines.length).eq(bufferService.rows);
+      for (let i = 0; i < jsonObject.lines.length; i++) {
+        assert.deepEqual(jsonObject.lines.data[i], bufferLine.toJson());
+      }
+    });
+  });
+
+  describe('fromJson', () => {
+    it('properties equality', () => {
+      function char2cell(char: string): [number, number, number] {
+        const cell = CellData.fromCharData([1, char, 1, char.charCodeAt(0)]);
+        return [cell.content, cell.fg, cell.bg];
+      }
+      const bufferService = new BufferService(new OptionsService({ rows: 3, cols: 3 }));
+      const jsonObject: IBufferJson = {
+        rows: 3,
+        cols: 3,
+        ydisp: 0,
+        ybase: 0,
+        y: 0,
+        x: 3,
+        scrollBottom: 2,
+        scrollTop: 0,
+        tabs: { '0': true },
+        savedY: 0,
+        savedX: 0,
+        lines: {
+          length: 3,
+          data: {
+            '0': {
+              isWrapped: false,
+              length: 3,
+              data: char2cell('1').concat(char2cell('2')).concat(char2cell('3')),
+              combined: {}
+            },
+            '1': {
+              isWrapped: false,
+              length: 3,
+              data: char2cell('').concat(char2cell('')).concat(char2cell('')),
+              combined: {}
+            },
+            '2': {
+              isWrapped: false,
+              length: 3,
+              data: char2cell('').concat(char2cell('')).concat(char2cell('')),
+              combined: {}
+            }
+          }
+        }
+      };
+      const buffer = bufferService.buffer;
+      buffer.fromJson(jsonObject);
+      expect(buffer.y).eq(0);
+      expect(buffer.x).eq(3);
+      expect(buffer.translateBufferLineToString(0, false)).eq('123');
+      expect(buffer.translateBufferLineToString(1, false)).eq('   ');
+      expect(buffer.translateBufferLineToString(1, false)).eq('   ');
     });
   });
   // describe('stringIndexToBufferIndex', () => {

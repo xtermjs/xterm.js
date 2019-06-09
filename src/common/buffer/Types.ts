@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IAttributeData, ICircularList, IBufferLine, ICellData, IMarker } from 'common/Types';
+import { IAttributeData, ICircularList, IBufferLine, ICellData, IMarker, IJsonSerializable, IBufferLineJson } from 'common/Types';
 import { IEvent } from 'common/EventEmitter';
 
 // BufferIndex denotes a position in the buffer: [rowIndex, colIndex]
@@ -19,7 +19,22 @@ export interface IBufferStringIterator {
   next(): IBufferStringIteratorResult;
 }
 
-export interface IBuffer {
+export interface IBufferJson {
+  rows: number;
+  cols: number;
+  lines: { length: number, data: { [index: number]: IBufferLineJson } };
+  ydisp: number;
+  ybase: number;
+  y: number;
+  x: number;
+  scrollBottom: number;
+  scrollTop: number;
+  tabs: any;
+  savedY: number;
+  savedX: number;
+}
+
+export interface IBuffer extends IJsonSerializable<IBufferJson> {
   readonly lines: ICircularList<IBufferLine>;
   ydisp: number;
   ybase: number;
