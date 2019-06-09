@@ -17,11 +17,10 @@
     "paths": {
       "common/*": [ "./../out/common/*" ],
       "browser/*": [ "./../out/browser/*" ]
-    },
-    "declaration": true
+    }
   },
   "include": [
     "./**/*",
     "../typings/xterm.d.ts"
-  ]
+  ],
 }

@@ -18,13 +18,13 @@ env.NODE_PATH = path.resolve(__dirname, '../out');
  *    yarn benchmark eval       10 runs of all benchmarks with eval against last baseline
  */
 const commands = {
-  single  : '-c benchmark.json',
-  baseline: '--baseline -r 5 -c benchmark.json',
-  eval    : '--eval -r 5 -c benchmark.json'
+  single  : '-r 5 -c ./benchmark-tests/benchmark.json',
+  baseline: '--baseline -r 5 -c ./benchmark-tests/benchmark.json',
+  eval    : '--eval -r 5 -c ./benchmark-tests/benchmark.json'
 }
 
 let testFiles = [
-  './out/**/*benchmark.js'
+  './benchmark/*benchmark.js'
 ];
 
 // allow overriding cmdline args (see yarn benchmark --help)
@@ -32,6 +32,8 @@ if (process.argv.length === 3 && process.argv[2] in commands) {
   testFiles.push(commands[process.argv[2]]);
 } else if (process.argv.length > 2) {
   testFiles = process.argv.slice(2);
+} else if (process.argv.length === 2) {
+  testFiles.push(commands['single']);
 }
 
 cp.spawnSync(
