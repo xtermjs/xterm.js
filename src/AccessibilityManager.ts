@@ -4,7 +4,8 @@
  */
 
 import * as Strings from './Strings';
-import { ITerminal, IBuffer } from './Types';
+import { ITerminal } from './Types';
+import { IBuffer } from 'common/buffer/Types';
 import { isMac } from 'common/Platform';
 import { RenderDebouncer } from 'browser/RenderDebouncer';
 import { addDisposableDomListener } from 'browser/Lifecycle';

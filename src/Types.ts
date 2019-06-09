@@ -4,10 +4,11 @@
  */
 
 import { ITerminalOptions as IPublicTerminalOptions, IEventEmitter, IDisposable, IMarker, ISelectionPosition } from 'xterm';
-import { ICharset, IAttributeData, ICellData, IBufferLine, CharData, ICircularList } from 'common/Types';
+import { ICharset, IAttributeData, CharData } from 'common/Types';
 import { IEvent } from 'common/EventEmitter2';
 import { IColorSet } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
+import { IBuffer, IBufferSet } from 'common/buffer/Types';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
@@ -17,9 +18,6 @@ export type LinkMatcherHandler = (event: MouseEvent, uri: string) => void;
 export type LinkMatcherValidationCallback = (uri: string, callback: (isValid: boolean) => void) => void;
 
 export type CharacterJoinerHandler = (text: string) => [number, number][];
-
-// BufferIndex denotes a position in the buffer: [rowIndex, colIndex]
-export type BufferIndex = [number, number];
 
 /**
  * This interface encapsulates everything needed from the Terminal by the
@@ -296,52 +294,6 @@ export interface ITerminalOptions extends IPublicTerminalOptions {
   screenKeys?: boolean;
   termName?: string;
   useFlowControl?: boolean;
-}
-
-export interface IBufferStringIteratorResult {
-  range: {first: number, last: number};
-  content: string;
-}
-
-export interface IBufferStringIterator {
-  hasNext(): boolean;
-  next(): IBufferStringIteratorResult;
-}
-
-export interface IBuffer {
-  readonly lines: ICircularList<IBufferLine>;
-  ydisp: number;
-  ybase: number;
-  y: number;
-  x: number;
-  tabs: any;
-  scrollBottom: number;
-  scrollTop: number;
-  hasScrollback: boolean;
-  savedY: number;
-  savedX: number;
-  savedCurAttrData: IAttributeData;
-  isCursorInViewport: boolean;
-  translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string;
-  getWrappedRangeForLine(y: number): { first: number, last: number };
-  nextStop(x?: number): number;
-  prevStop(x?: number): number;
-  getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine;
-  stringIndexToBufferIndex(lineIndex: number, stringIndex: number): number[];
-  iterator(trimRight: boolean, startIndex?: number, endIndex?: number, startOverscan?: number, endOverscan?: number): IBufferStringIterator;
-  getNullCell(attr?: IAttributeData): ICellData;
-  getWhitespaceCell(attr?: IAttributeData): ICellData;
-}
-
-export interface IBufferSet {
-  alt: IBuffer;
-  normal: IBuffer;
-  active: IBuffer;
-
-  onBufferActivate: IEvent<{ activeBuffer: IBuffer, inactiveBuffer: IBuffer }>;
-
-  activateNormalBuffer(): void;
-  activateAltBuffer(fillAttr?: IAttributeData): void;
 }
 
 export interface ISelectionManager {

@@ -379,10 +379,10 @@ describe('Terminal', () => {
     describe('scrollLines', () => {
       let startYDisp: number;
       beforeEach(() => {
-        for (let i = 0; i < term.rows * 2; i++) {
+        for (let i = 0; i < INIT_ROWS * 2; i++) {
           term.writeln('test');
         }
-        startYDisp = term.rows + 1;
+        startYDisp = INIT_ROWS + 1;
       });
       it('should scroll a single line', () => {
         assert.equal(term.buffer.ydisp, startYDisp);

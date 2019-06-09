@@ -4,11 +4,12 @@
  */
 
 import { CircularList, IInsertEvent } from 'common/CircularList';
-import { ITerminal, IBuffer, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult } from './Types';
+import { IBuffer, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult } from 'common/buffer/Types';
 import { IBufferLine, ICellData, IAttributeData } from 'common/Types';
 import { BufferLine, CellData, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths, getWrappedLineTrimmedLength } from 'common/buffer/BufferReflow';
 import { Marker } from 'common/buffer/Marker';
+import { IOptionsService, IBufferService } from 'common/services/Services';
 
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 
@@ -21,15 +22,16 @@ export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
  */
 export class Buffer implements IBuffer {
   public lines: CircularList<IBufferLine>;
-  public ydisp: number;
-  public ybase: number;
-  public y: number;
-  public x: number;
+  public ydisp: number = 0;
+  public ybase: number = 0;
+  public y: number = 0;
+  public x: number = 0;
   public scrollBottom: number;
   public scrollTop: number;
+  // TODO: Type me
   public tabs: any;
-  public savedY: number;
-  public savedX: number;
+  public savedY: number = 0;
+  public savedX: number = 0;
   public savedCurAttrData = DEFAULT_ATTR_DATA.clone();
   public markers: Marker[] = [];
   private _nullCell: ICellData = CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
@@ -37,19 +39,17 @@ export class Buffer implements IBuffer {
   private _cols: number;
   private _rows: number;
 
-  /**
-   * Create a new Buffer.
-   * @param _terminal The terminal the Buffer will belong to.
-   * @param _hasScrollback Whether the buffer should respect the scrollback of
-   * the terminal.
-   */
   constructor(
-    private _terminal: ITerminal,
-    private _hasScrollback: boolean
+    private _hasScrollback: boolean,
+    private _optionsService: IOptionsService,
+    private _bufferService: IBufferService
   ) {
-    this._cols = this._terminal.cols;
-    this._rows = this._terminal.rows;
-    this.clear();
+    this._cols = this._bufferService.cols;
+    this._rows = this._bufferService.rows;
+    this.lines = new CircularList<IBufferLine>(this._getCorrectBufferLength(this._rows));
+    this.scrollTop = 0;
+    this.scrollBottom = this._rows - 1;
+    this.setupTabStops();
   }
 
   public getNullCell(attr?: IAttributeData): ICellData {
@@ -75,7 +75,7 @@ export class Buffer implements IBuffer {
   }
 
   public getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine {
-    return new BufferLine(this._terminal.cols, this.getNullCell(attr), isWrapped);
+    return new BufferLine(this._bufferService.cols, this.getNullCell(attr), isWrapped);
   }
 
   public get hasScrollback(): boolean {
@@ -98,7 +98,7 @@ export class Buffer implements IBuffer {
       return rows;
     }
 
-    const correctBufferLength = rows + this._terminal.options.scrollback;
+    const correctBufferLength = rows + this._optionsService.options.scrollback;
 
     return correctBufferLength > MAX_BUFFER_SIZE ? MAX_BUFFER_SIZE : correctBufferLength;
   }
@@ -154,7 +154,7 @@ export class Buffer implements IBuffer {
       // Deal with columns increasing (reducing needs to happen after reflow)
       if (this._cols < newCols) {
         for (let i = 0; i < this.lines.length; i++) {
-          this.lines.get(i).resize(newCols, nullCell);
+          this.lines.get(i)!.resize(newCols, nullCell);
         }
       }
 
@@ -227,7 +227,7 @@ export class Buffer implements IBuffer {
       // Trim the end of the line off if cols shrunk
       if (this._cols > newCols) {
         for (let i = 0; i < this.lines.length; i++) {
-          this.lines.get(i).resize(newCols, nullCell);
+          this.lines.get(i)!.resize(newCols, nullCell);
         }
       }
     }
@@ -237,7 +237,7 @@ export class Buffer implements IBuffer {
   }
 
   private get _isReflowEnabled(): boolean {
-    return this._hasScrollback && !this._terminal.options.windowsMode;
+    return this._hasScrollback && !this._optionsService.options.windowsMode;
   }
 
   private _reflow(newCols: number, newRows: number): void {
@@ -509,11 +509,11 @@ export class Buffer implements IBuffer {
     let first = y;
     let last = y;
     // Scan upwards for wrapped lines
-    while (first > 0 && this.lines.get(first).isWrapped) {
+    while (first > 0 && this.lines.get(first)!.isWrapped) {
       first--;
     }
     // Scan downwards for wrapped lines
-    while (last + 1 < this.lines.length && this.lines.get(last + 1).isWrapped) {
+    while (last + 1 < this.lines.length && this.lines.get(last + 1)!.isWrapped) {
       last++;
     }
     return { first, last };
@@ -533,7 +533,7 @@ export class Buffer implements IBuffer {
       i = 0;
     }
 
-    for (; i < this._cols; i += this._terminal.options.tabStopWidth) {
+    for (; i < this._cols; i += this._optionsService.options.tabStopWidth) {
       this.tabs[i] = true;
     }
   }

@@ -4,21 +4,18 @@
  */
 
 import { assert } from 'chai';
-import { ITerminal } from './Types';
-import { BufferSet } from './BufferSet';
-import { Buffer } from './Buffer';
-import { MockTerminal } from './TestUtils.test';
+import { BufferSet } from 'common/buffer/BufferSet';
+import { Buffer } from 'common/buffer/Buffer';
+import { MockOptionsService, MockBufferService } from 'common/TestUtils.test';
 
 describe('BufferSet', () => {
-  let terminal: ITerminal;
   let bufferSet: BufferSet;
 
   beforeEach(() => {
-    terminal = new MockTerminal();
-    (terminal as any).cols = 80;
-    (terminal as any).rows = 24;
-    terminal.options.scrollback = 1000;
-    bufferSet = new BufferSet(terminal);
+    bufferSet = new BufferSet(
+      new MockOptionsService({ scrollback: 1000 }),
+      new MockBufferService(80, 24)
+    );
   });
 
   describe('constructor', () => {

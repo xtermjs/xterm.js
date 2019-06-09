@@ -7,7 +7,7 @@
 import { IInputHandler, IInputHandlingTerminal } from './Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
-import { wcwidth } from './common/CharWidth';
+import { wcwidth } from 'common/CharWidth';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
 import { IDisposable } from 'xterm';
 import { Disposable } from 'common/Lifecycle';
