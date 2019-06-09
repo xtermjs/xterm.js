@@ -305,6 +305,10 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
 }
 
 export class MockBuffer implements IBuffer {
+  markers: IMarker[];
+  addMarker(y: number): IMarker {
+    throw new Error('Method not implemented.');
+  }
   isCursorInViewport: boolean;
   lines: ICircularList<IBufferLine>;
   ydisp: number;

@@ -4,10 +4,13 @@
  */
 
 import { IEvent } from 'common/EventEmitter2';
+import { IBuffer, IBufferSet } from 'common/buffer/Types';
 
 export interface IBufferService {
   readonly cols: number;
   readonly rows: number;
+  readonly buffer: IBuffer;
+  readonly buffers: IBufferSet;
 
   // TODO: Move resize event here
 
