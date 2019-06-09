@@ -10,10 +10,11 @@ import { BufferSet } from 'common/buffer/BufferSet';
 import { ITerminal } from './Types';
 import { IBuffer } from 'common/buffer/Types';
 import { IBufferLine } from 'common/Types';
-import { MockTerminal, MockCharSizeService } from './TestUtils.test';
+import { MockTerminal } from './TestUtils.test';
 import { MockOptionsService, MockBufferService } from 'common/TestUtils.test';
 import { BufferLine, CellData } from 'common/buffer/BufferLine';
 import { IBufferService } from 'common/services/Services';
+import { MockCharSizeService } from 'browser/TestUtils.test';
 
 class TestMockTerminal extends MockTerminal {
   emit(event: string, data: any): void {}

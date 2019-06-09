@@ -14,7 +14,6 @@ import { Terminal } from './Terminal';
 import { AttributeData } from 'common/buffer/BufferLine';
 import { IColorManager, IColorSet, IMouseHelper } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
-import { ICharSizeService } from 'browser/services/Services';
 
 export class TestTerminal extends Terminal {
   writeSync(data: string): void {
@@ -427,11 +426,4 @@ export class MockCompositionHelper implements ICompositionHelper {
   keydown(ev: KeyboardEvent): boolean {
     return true;
   }
-}
-
-export class MockCharSizeService implements ICharSizeService {
-  get hasValidSize(): boolean { return this.width > 0 && this.height > 0; }
-  onCharSizeChange: IEvent<void>;
-  constructor(public width: number, public height: number) {}
-  measure(): void {}
 }
