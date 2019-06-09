@@ -10,7 +10,8 @@ import { BufferSet } from './BufferSet';
 import { ITerminal } from './Types';
 import { IBuffer } from 'common/buffer/Types';
 import { IBufferLine } from 'common/Types';
-import { MockTerminal, MockCharSizeService, MockOptionsService, MockBufferService } from './TestUtils.test';
+import { MockTerminal, MockCharSizeService } from './TestUtils.test';
+import { MockOptionsService, MockBufferService } from 'common/TestUtils.test';
 import { BufferLine, CellData } from 'common/buffer/BufferLine';
 import { IBufferService } from 'common/services/Services';
 

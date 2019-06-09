@@ -7,7 +7,8 @@ import { assert } from 'chai';
 import { ITerminal } from './Types';
 import { SelectionModel } from './SelectionModel';
 import { BufferSet } from './BufferSet';
-import { MockTerminal, MockOptionsService, MockBufferService } from './TestUtils.test';
+import { MockTerminal } from './TestUtils.test';
+import { MockOptionsService, MockBufferService } from 'common/TestUtils.test';
 import { IBufferService } from 'common/services/Services';
 
 class TestSelectionModel extends SelectionModel {

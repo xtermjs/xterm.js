@@ -4,7 +4,7 @@
  */
 
 import { IRenderer, IRenderDimensions } from './renderer/Types';
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBufferSet, IBrowser, ISelectionManager, ITerminalOptions as IInternalTerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler } from './Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBufferSet, IBrowser, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler } from './Types';
 import { IBuffer, IBufferStringIterator } from 'common/buffer/Types';
 import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener } from 'common/Types';
 import { Buffer } from './common/buffer/Buffer';
@@ -13,10 +13,8 @@ import { IDisposable, IMarker, IEvent, ISelectionPosition } from 'xterm';
 import { Terminal } from './Terminal';
 import { AttributeData } from 'common/buffer/BufferLine';
 import { IColorManager, IColorSet } from 'browser/Types';
-import { IOptionsService, IPartialTerminalOptions, ITerminalOptions, IBufferService } from 'common/services/Services';
+import { IOptionsService } from 'common/services/Services';
 import { ICharSizeService } from 'browser/services/Services';
-import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
-import { clone } from 'common/Clone';
 
 export class TestTerminal extends Terminal {
   writeSync(data: string): void {
@@ -124,7 +122,7 @@ export class MockTerminal implements ITerminal {
   renderer: IRenderer;
   linkifier: ILinkifier;
   isFocused: boolean;
-  options: IInternalTerminalOptions = {};
+  options: ITerminalOptions = {};
   element: HTMLElement;
   screenElement: HTMLElement;
   rowContainer: HTMLElement;
@@ -185,7 +183,7 @@ export class MockTerminal implements ITerminal {
 
 export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   element: HTMLElement;
-  options: IInternalTerminalOptions = {};
+  options: ITerminalOptions = {};
   cols: number;
   rows: number;
   charset: { [key: string]: string; };
@@ -436,30 +434,4 @@ export class MockCharSizeService implements ICharSizeService {
   onCharSizeChange: IEvent<void>;
   constructor(public width: number, public height: number) {}
   measure(): void {}
-}
-
-export class MockOptionsService implements IOptionsService {
-  options: ITerminalOptions = clone(DEFAULT_OPTIONS);
-  onOptionChange: IEvent<string>;
-  constructor(testOptions: IPartialTerminalOptions) {
-    Object.keys(testOptions).forEach(key => this.options[key] = (<any>testOptions)[key]);
-  }
-  setOption<T>(key: string, value: T): void {
-    throw new Error('Method not implemented.');
-  }
-  getOption<T>(key: string): T {
-    throw new Error('Method not implemented.');
-  }
-}
-
-export class MockBufferService implements IBufferService {
-  constructor(
-    public cols: number,
-    public rows: number
-  ) {}
-  resize(cols: number, rows: number): void {
-    this.cols = cols;
-    this.rows = rows;
-  }
-
 }

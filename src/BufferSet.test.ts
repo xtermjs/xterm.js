@@ -6,7 +6,7 @@
 import { assert } from 'chai';
 import { BufferSet } from './BufferSet';
 import { Buffer } from './common/buffer/Buffer';
-import { MockOptionsService, MockBufferService } from './TestUtils.test';
+import { MockOptionsService, MockBufferService } from 'common/TestUtils.test';
 
 describe('BufferSet', () => {
   let bufferSet: BufferSet;
