@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { ILinkifierEvent, ILinkMatcher, LinkMatcherHandler, ILinkMatcherOptions, ILinkifier, ITerminal, IBufferStringIteratorResult, IMouseZoneManager } from './Types';
+import { ILinkifierEvent, ILinkMatcher, LinkMatcherHandler, ILinkMatcherOptions, ILinkifier, ITerminal, IMouseZoneManager } from './Types';
+import { IBufferStringIteratorResult } from 'common/buffer/Types';
 import { MouseZone } from './MouseZoneManager';
 import { getStringCellWidth } from 'common/CharWidth';
 import { EventEmitter2, IEvent } from 'common/EventEmitter2';

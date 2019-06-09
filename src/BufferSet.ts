@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { IBufferSet, IBuffer } from './Types';
+import { IBufferSet } from './Types';
+import { IBuffer } from 'common/buffer/Types';
 import { IAttributeData } from 'common/Types';
 import { Buffer } from './Buffer';
 import { EventEmitter2, IEvent } from 'common/EventEmitter2';
