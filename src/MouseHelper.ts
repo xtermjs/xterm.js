@@ -4,7 +4,7 @@
  */
 
 import { IMouseHelper } from './Types';
-import { RenderService } from './renderer/RenderService';
+import { RenderService } from 'browser/services/RenderService';
 import { ICharSizeService } from 'browser/services/Services';
 
 export class MouseHelper implements IMouseHelper {

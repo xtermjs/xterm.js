@@ -50,7 +50,7 @@ import { EventEmitter2, IEvent } from 'common/EventEmitter2';
 import { Attributes, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { applyWindowsMode } from './WindowsMode';
 import { ColorManager } from 'browser/ColorManager';
-import { RenderService } from './renderer/RenderService';
+import { RenderService } from 'browser/services/RenderService';
 import { IOptionsService, IBufferService } from 'common/services/Services';
 import { OptionsService } from 'common/services/OptionsService';
 import { ICharSizeService } from 'browser/services/Services';

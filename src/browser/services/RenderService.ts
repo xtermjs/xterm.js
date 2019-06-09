@@ -11,9 +11,9 @@ import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import { IColorSet } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
-import { ICharSizeService } from 'browser/services/Services';
+import { ICharSizeService, IRenderService } from 'browser/services/Services';
 
-export class RenderService extends Disposable {
+export class RenderService extends Disposable implements IRenderService {
   private _renderDebouncer: RenderDebouncer;
   private _screenDprMonitor: ScreenDprMonitor;
 
