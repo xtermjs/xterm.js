@@ -5,15 +5,6 @@
 
 import { ITerminal, ISelectionManager } from './Types';
 
-interface IWindow extends Window {
-  clipboardData?: {
-    getData(format: string): string;
-    setData(format: string, data: string): void;
-  };
-}
-
-declare var window: IWindow;
-
 /**
  * Prepares text to be pasted into the terminal by normalizing the line endings
  * @param text The pasted text that needs processing before inserting into the terminal
