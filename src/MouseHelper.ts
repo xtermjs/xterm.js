@@ -9,7 +9,7 @@ import { ICharSizeService } from 'browser/services/Services';
 
 export class MouseHelper implements IMouseHelper {
   constructor(
-    private _renderCoordinator: RenderService,
+    private _renderService: RenderService,
     private _charSizeService: ICharSizeService
   ) {
   }
@@ -42,8 +42,8 @@ export class MouseHelper implements IMouseHelper {
       return null;
     }
 
-    coords[0] = Math.ceil((coords[0] + (isSelection ? this._renderCoordinator.dimensions.actualCellWidth / 2 : 0)) / this._renderCoordinator.dimensions.actualCellWidth);
-    coords[1] = Math.ceil(coords[1] / this._renderCoordinator.dimensions.actualCellHeight);
+    coords[0] = Math.ceil((coords[0] + (isSelection ? this._renderService.dimensions.actualCellWidth / 2 : 0)) / this._renderService.dimensions.actualCellWidth);
+    coords[1] = Math.ceil(coords[1] / this._renderService.dimensions.actualCellHeight);
 
     // Ensure coordinates are within the terminal viewport. Note that selections
     // need an addition point of precision to cover the end point (as characters
