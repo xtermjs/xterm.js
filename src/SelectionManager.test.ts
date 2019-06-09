@@ -6,7 +6,7 @@
 import { assert } from 'chai';
 import { SelectionManager, SelectionMode } from './SelectionManager';
 import { SelectionModel } from './SelectionModel';
-import { BufferSet } from './common/buffer/BufferSet';
+import { BufferSet } from 'common/buffer/BufferSet';
 import { ITerminal } from './Types';
 import { IBuffer } from 'common/buffer/Types';
 import { IBufferLine } from 'common/Types';
