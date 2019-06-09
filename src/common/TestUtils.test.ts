@@ -7,8 +7,11 @@ import { IBufferService, IOptionsService, ITerminalOptions, IPartialTerminalOpti
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
+import { IBufferSet, IBuffer } from 'common/buffer/Types';
 
 export class MockBufferService implements IBufferService {
+  public buffer: IBuffer = {} as any;
+  public buffers: IBufferSet = {} as any;
   constructor(
     public cols: number,
     public rows: number
@@ -17,6 +20,7 @@ export class MockBufferService implements IBufferService {
     this.cols = cols;
     this.rows = rows;
   }
+  reset(): void {}
 }
 
 export class MockOptionsService implements IOptionsService {

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IAttributeData, ICircularList, IBufferLine, ICellData } from 'common/Types';
+import { IAttributeData, ICircularList, IBufferLine, ICellData, IMarker } from 'common/Types';
 import { IEvent } from 'common/EventEmitter';
 
 // BufferIndex denotes a position in the buffer: [rowIndex, colIndex]
@@ -33,6 +33,7 @@ export interface IBuffer {
   savedX: number;
   savedCurAttrData: IAttributeData;
   isCursorInViewport: boolean;
+  markers: IMarker[];
   translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string;
   getWrappedRangeForLine(y: number): { first: number, last: number };
   nextStop(x?: number): number;
@@ -42,6 +43,7 @@ export interface IBuffer {
   iterator(trimRight: boolean, startIndex?: number, endIndex?: number, startOverscan?: number, endOverscan?: number): IBufferStringIterator;
   getNullCell(attr?: IAttributeData): ICellData;
   getWhitespaceCell(attr?: IAttributeData): ICellData;
+  addMarker(y: number): IMarker;
 }
 
 export interface IBufferSet {
@@ -53,4 +55,6 @@ export interface IBufferSet {
 
   activateNormalBuffer(): void;
   activateAltBuffer(fillAttr?: IAttributeData): void;
+  resize(newCols: number, newRows: number): void;
+  setupTabStops(i?: number): void;
 }
