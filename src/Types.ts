@@ -365,7 +365,6 @@ export interface IBrowser {
   userAgent: string;
   platform: string;
   isFirefox: boolean;
-  isMSIE: boolean;
   isMac: boolean;
   isIpad: boolean;
   isIphone: boolean;
