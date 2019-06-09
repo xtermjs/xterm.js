@@ -21,13 +21,14 @@ export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
  *   - scroll position
  */
 export class Buffer implements IBuffer {
-  public lines!: CircularList<IBufferLine>;
+  public lines: CircularList<IBufferLine>;
   public ydisp: number = 0;
   public ybase: number = 0;
   public y: number = 0;
   public x: number = 0;
-  public scrollBottom!: number;
-  public scrollTop!: number;
+  public scrollBottom: number;
+  public scrollTop: number;
+  // TODO: Type me
   public tabs: any;
   public savedY: number = 0;
   public savedX: number = 0;
@@ -45,7 +46,10 @@ export class Buffer implements IBuffer {
   ) {
     this._cols = this._bufferService.cols;
     this._rows = this._bufferService.rows;
-    this.clear();
+    this.lines = new CircularList<IBufferLine>(this._getCorrectBufferLength(this._rows));
+    this.scrollTop = 0;
+    this.scrollBottom = this._rows - 1;
+    this.setupTabStops();
   }
 
   public getNullCell(attr?: IAttributeData): ICellData {
