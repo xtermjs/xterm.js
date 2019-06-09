@@ -4,12 +4,12 @@
  */
 
 import { CircularList, IInsertEvent } from 'common/CircularList';
-import { ITerminal, IBuffer, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult } from './Types';
+import { IBuffer, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult } from './Types';
 import { IBufferLine, ICellData, IAttributeData } from 'common/Types';
 import { BufferLine, CellData, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths, getWrappedLineTrimmedLength } from 'common/buffer/BufferReflow';
 import { Marker } from 'common/buffer/Marker';
-import { IOptionsService } from 'common/services/Services';
+import { IOptionsService, IBufferService } from 'common/services/Services';
 
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 
@@ -39,12 +39,12 @@ export class Buffer implements IBuffer {
   private _rows: number;
 
   constructor(
-    private _terminal: ITerminal,
     private _hasScrollback: boolean,
-    private _optionsService: IOptionsService
+    private _optionsService: IOptionsService,
+    private _bufferService: IBufferService
   ) {
-    this._cols = this._terminal.cols;
-    this._rows = this._terminal.rows;
+    this._cols = this._bufferService.cols;
+    this._rows = this._bufferService.rows;
     this.clear();
   }
 
@@ -71,7 +71,7 @@ export class Buffer implements IBuffer {
   }
 
   public getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine {
-    return new BufferLine(this._terminal.cols, this.getNullCell(attr), isWrapped);
+    return new BufferLine(this._bufferService.cols, this.getNullCell(attr), isWrapped);
   }
 
   public get hasScrollback(): boolean {

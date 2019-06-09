@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { ITerminal, IBufferSet, IBuffer } from './Types';
+import { IBufferSet, IBuffer } from './Types';
 import { IAttributeData } from 'common/Types';
 import { Buffer } from './Buffer';
 import { EventEmitter2, IEvent } from 'common/EventEmitter2';
-import { IOptionsService } from 'common/services/Services';
+import { IOptionsService, IBufferService } from 'common/services/Services';
 
 /**
  * The BufferSet represents the set of two buffers used by xterm terminals (normal and alt) and
@@ -27,15 +27,15 @@ export class BufferSet implements IBufferSet {
    * @param _terminal - The terminal the BufferSet will belong to
    */
   constructor(
-    private _terminal: ITerminal,
-    readonly optionsService: IOptionsService
+    readonly optionsService: IOptionsService,
+    readonly bufferService: IBufferService
   ) {
-    this._normal = new Buffer(this._terminal, true, optionsService);
+    this._normal = new Buffer(true, optionsService, bufferService);
     this._normal.fillViewportRows();
 
     // The alt buffer should never have scrollback.
     // See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-The-Alternate-Screen-Buffer
-    this._alt = new Buffer(this._terminal, false, optionsService);
+    this._alt = new Buffer(false, optionsService, bufferService);
     this._activeBuffer = this._normal;
 
     this.setupTabStops();

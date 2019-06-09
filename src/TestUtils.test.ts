@@ -12,7 +12,7 @@ import { IDisposable, IMarker, IEvent, ISelectionPosition } from 'xterm';
 import { Terminal } from './Terminal';
 import { AttributeData } from 'common/buffer/BufferLine';
 import { IColorManager, IColorSet } from 'browser/Types';
-import { IOptionsService, IPartialTerminalOptions, ITerminalOptions } from 'common/services/Services';
+import { IOptionsService, IPartialTerminalOptions, ITerminalOptions, IBufferService } from 'common/services/Services';
 import { ICharSizeService } from 'browser/services/Services';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { clone } from 'common/Clone';
@@ -450,4 +450,16 @@ export class MockOptionsService implements IOptionsService {
   getOption<T>(key: string): T {
     throw new Error('Method not implemented.');
   }
+}
+
+export class MockBufferService implements IBufferService {
+  constructor(
+    public cols: number,
+    public rows: number
+  ) {}
+  resize(cols: number, rows: number): void {
+    this.cols = cols;
+    this.rows = rows;
+  }
+
 }

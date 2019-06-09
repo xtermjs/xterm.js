@@ -313,7 +313,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.soundManager = this.soundManager || new SoundManager(this);
 
     // Create the terminal's buffers and set the current buffer
-    this.buffers = new BufferSet(this, this.optionsService);
+    this.buffers = new BufferSet(this.optionsService, this._bufferService);
     if (this.selectionManager) {
       this.selectionManager.clearSelection();
       this.selectionManager.initBuffersListeners();
