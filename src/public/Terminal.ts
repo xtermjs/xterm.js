@@ -9,7 +9,7 @@ import { IBufferLine } from 'common/Types';
 import { IBuffer } from 'common/buffer/Types';
 import { Terminal as TerminalCore } from '../Terminal';
 import * as Strings from '../Strings';
-import { IEvent } from 'common/EventEmitter2';
+import { IEvent } from 'common/EventEmitter';
 import { AddonManager } from './AddonManager';
 
 export class Terminal implements ITerminalApi {

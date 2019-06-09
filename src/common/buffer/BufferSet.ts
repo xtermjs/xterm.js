@@ -6,7 +6,7 @@
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IAttributeData } from 'common/Types';
 import { Buffer } from 'common/buffer/Buffer';
-import { EventEmitter2, IEvent } from 'common/EventEmitter2';
+import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { IOptionsService, IBufferService } from 'common/services/Services';
 
 /**
@@ -19,7 +19,7 @@ export class BufferSet implements IBufferSet {
   private _activeBuffer: Buffer;
 
 
-  private _onBufferActivate = new EventEmitter2<{activeBuffer: IBuffer, inactiveBuffer: IBuffer}>();
+  private _onBufferActivate = new EventEmitter<{activeBuffer: IBuffer, inactiveBuffer: IBuffer}>();
   public get onBufferActivate(): IEvent<{activeBuffer: IBuffer, inactiveBuffer: IBuffer}> { return this._onBufferActivate.event; }
 
   /**

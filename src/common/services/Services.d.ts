@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IEvent } from 'common/EventEmitter2';
+import { IEvent } from 'common/EventEmitter';
 
 export interface IBufferService {
   readonly cols: number;

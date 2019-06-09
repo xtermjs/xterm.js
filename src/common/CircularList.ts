@@ -4,7 +4,7 @@
  */
 
 import { ICircularList } from 'common/Types';
-import { EventEmitter2, IEvent } from 'common/EventEmitter2';
+import { EventEmitter, IEvent } from 'common/EventEmitter';
 
 export interface IInsertEvent {
   index: number;
@@ -25,11 +25,11 @@ export class CircularList<T> implements ICircularList<T> {
   private _startIndex: number;
   private _length: number;
 
-  public onDeleteEmitter = new EventEmitter2<IDeleteEvent>();
+  public onDeleteEmitter = new EventEmitter<IDeleteEvent>();
   public get onDelete(): IEvent<IDeleteEvent> { return this.onDeleteEmitter.event; }
-  public onInsertEmitter = new EventEmitter2<IInsertEvent>();
+  public onInsertEmitter = new EventEmitter<IInsertEvent>();
   public get onInsert(): IEvent<IInsertEvent> { return this.onInsertEmitter.event; }
-  public onTrimEmitter = new EventEmitter2<number>();
+  public onTrimEmitter = new EventEmitter<number>();
   public get onTrim(): IEvent<number> { return this.onTrimEmitter.event; }
 
   constructor(

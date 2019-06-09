@@ -45,7 +45,7 @@ import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent, KeyboardResultType, ICharset, IBufferLine, IAttributeData } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
-import { EventEmitter2, IEvent } from 'common/EventEmitter2';
+import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Attributes, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { applyWindowsMode } from './WindowsMode';
 import { ColorManager } from 'browser/ColorManager';
@@ -190,32 +190,32 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   public get cols(): number { return this._bufferService.cols; }
   public get rows(): number { return this._bufferService.rows; }
 
-  private _onCursorMove = new EventEmitter2<void>();
+  private _onCursorMove = new EventEmitter<void>();
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
-  private _onData = new EventEmitter2<string>();
+  private _onData = new EventEmitter<string>();
   public get onData(): IEvent<string> { return this._onData.event; }
-  private _onKey = new EventEmitter2<{ key: string, domEvent: KeyboardEvent }>();
+  private _onKey = new EventEmitter<{ key: string, domEvent: KeyboardEvent }>();
   public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._onKey.event; }
-  private _onLineFeed = new EventEmitter2<void>();
+  private _onLineFeed = new EventEmitter<void>();
   public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
-  private _onRender = new EventEmitter2<{ start: number, end: number }>();
+  private _onRender = new EventEmitter<{ start: number, end: number }>();
   public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
-  private _onResize = new EventEmitter2<{ cols: number, rows: number }>();
+  private _onResize = new EventEmitter<{ cols: number, rows: number }>();
   public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
-  private _onScroll = new EventEmitter2<number>();
+  private _onScroll = new EventEmitter<number>();
   public get onScroll(): IEvent<number> { return this._onScroll.event; }
-  private _onSelectionChange = new EventEmitter2<void>();
+  private _onSelectionChange = new EventEmitter<void>();
   public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
-  private _onTitleChange = new EventEmitter2<string>();
+  private _onTitleChange = new EventEmitter<string>();
   public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
 
-  private _onFocus = new EventEmitter2<void>();
+  private _onFocus = new EventEmitter<void>();
   public get onFocus(): IEvent<void> { return this._onFocus.event; }
-  private _onBlur = new EventEmitter2<void>();
+  private _onBlur = new EventEmitter<void>();
   public get onBlur(): IEvent<void> { return this._onBlur.event; }
-  public onA11yCharEmitter = new EventEmitter2<string>();
+  public onA11yCharEmitter = new EventEmitter<string>();
   public get onA11yChar(): IEvent<string> { return this.onA11yCharEmitter.event; }
-  public onA11yTabEmitter = new EventEmitter2<number>();
+  public onA11yTabEmitter = new EventEmitter<number>();
   public get onA11yTab(): IEvent<number> { return this.onA11yTabEmitter.event; }
 
   /**

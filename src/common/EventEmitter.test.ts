@@ -4,12 +4,12 @@
  */
 
 import { assert } from 'chai';
-import { EventEmitter2 } from 'common/EventEmitter2';
+import { EventEmitter } from 'common/EventEmitter';
 
-describe('EventEmitter2', () => {
+describe('EventEmitter', () => {
   it('should fire listeners multiple times', () => {
     const order: string[] = [];
-    const emitter = new EventEmitter2<number>();
+    const emitter = new EventEmitter<number>();
     emitter.event(data => order.push(data + 'a'));
     emitter.event(data => order.push(data + 'b'));
     emitter.fire(1);
@@ -19,7 +19,7 @@ describe('EventEmitter2', () => {
 
   it('should not fire listeners once disposed', () => {
     const order: string[] = [];
-    const emitter = new EventEmitter2<number>();
+    const emitter = new EventEmitter<number>();
     emitter.event(data => order.push(data + 'a'));
     const disposeB = emitter.event(data => order.push(data + 'b'));
     emitter.event(data => order.push(data + 'c'));

@@ -13,7 +13,7 @@ export interface IEvent<T> {
   (listener: (e: T) => any): IDisposable;
 }
 
-export class EventEmitter2<T> {
+export class EventEmitter<T> {
   private _listeners: IListener<T>[] = [];
   private _event?: IEvent<T>;
 

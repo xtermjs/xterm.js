@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { EventEmitter2, IEvent } from 'common/EventEmitter2';
+import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { Disposable } from 'common/Lifecycle';
 import { IMarker } from 'common/Types';
 
@@ -15,7 +15,7 @@ export class Marker extends Disposable implements IMarker {
 
   public get id(): number { return this._id; }
 
-  private _onDispose = new EventEmitter2<void>();
+  private _onDispose = new EventEmitter<void>();
   public get onDispose(): IEvent<void> { return this._onDispose.event; }
 
   constructor(

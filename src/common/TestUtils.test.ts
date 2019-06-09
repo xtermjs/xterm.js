@@ -4,7 +4,7 @@
  */
 
 import { IBufferService, IOptionsService, ITerminalOptions, IPartialTerminalOptions } from 'common/services/Services';
-import { IEvent, EventEmitter2 } from 'common/EventEmitter2';
+import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { clone } from 'common/Clone';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 
@@ -21,7 +21,7 @@ export class MockBufferService implements IBufferService {
 
 export class MockOptionsService implements IOptionsService {
   options: ITerminalOptions = clone(DEFAULT_OPTIONS);
-  onOptionChange: IEvent<string> = new EventEmitter2<string>().event;
+  onOptionChange: IEvent<string> = new EventEmitter<string>().event;
   constructor(testOptions: IPartialTerminalOptions) {
     Object.keys(testOptions).forEach(key => this.options[key] = (<any>testOptions)[key]);
   }

@@ -4,7 +4,7 @@
  */
 
 import { IOptionsService } from 'common/services/Services';
-import { IEvent, EventEmitter2 } from 'common/EventEmitter2';
+import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { ICharSizeService } from 'browser/services/Services';
 
 export class CharSizeService implements ICharSizeService {
@@ -14,7 +14,7 @@ export class CharSizeService implements ICharSizeService {
 
   public get hasValidSize(): boolean { return this.width > 0 && this.height > 0; }
 
-  private _onCharSizeChange = new EventEmitter2<void>();
+  private _onCharSizeChange = new EventEmitter<void>();
   public get onCharSizeChange(): IEvent<void> { return this._onCharSizeChange.event; }
 
   constructor(

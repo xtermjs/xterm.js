@@ -5,7 +5,7 @@
 
 import { ITerminalOptions as IPublicTerminalOptions, IDisposable, IMarker, ISelectionPosition } from 'xterm';
 import { ICharset, IAttributeData, CharData } from 'common/Types';
-import { IEvent, EventEmitter2 } from 'common/EventEmitter2';
+import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { IColorSet, IMouseHelper } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
@@ -54,8 +54,8 @@ export interface IInputHandlingTerminal {
   viewport: IViewport;
   selectionManager: ISelectionManager;
 
-  onA11yCharEmitter: EventEmitter2<string>;
-  onA11yTabEmitter: EventEmitter2<number>;
+  onA11yCharEmitter: EventEmitter<string>;
+  onA11yTabEmitter: EventEmitter<number>;
 
   bell(): void;
   focus(): void;
