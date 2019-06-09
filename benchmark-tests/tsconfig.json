@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "dom",
+      "es6",
+    ],
+    "rootDir": ".",
+    "outDir": "../benchmark",
+    "types": [
+      "../node_modules/@types/node"
+    ],
+    "sourceMap": true,
+    "removeComments": true,
+    "pretty": true,
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "common/*": [ "./../out/common/*" ],
+      "browser/*": [ "./../out/browser/*" ]
+    },
+    "declaration": true
+  },
+  "include": [
+    "./**/*",
+    "../typings/xterm.d.ts"
+  ]
+}

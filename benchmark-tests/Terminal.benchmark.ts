@@ -5,19 +5,22 @@
 
 import { perfContext, before, ThroughputRuntimeCase } from 'xterm-benchmark';
 
-import { Terminal } from 'Terminal';
 import { spawn } from 'node-pty';
-import { Utf8ToUtf32, stringFromCodePoint } from 'core/input/TextDecoder';
+import { Utf8ToUtf32, stringFromCodePoint } from '../out/common/input/TextDecoder';
 
+const Terminal: any = require('../out/Terminal').Terminal;
 
 class TestTerminal extends Terminal {
+  constructor(opts: any) {
+    super(opts);
+  }
   writeSync(data: string): void {
     this.writeBuffer.push(data);
-    this._innerWrite();
+    (this as any)._innerWrite();
   }
   writeSyncUtf8(data: Uint8Array): void {
-    this.writeBufferUtf8.push(data);
-    this._innerWriteUtf8();
+    (this as any).writeBufferUtf8.push(data);
+    (this as any)._innerWriteUtf8();
   }
 }
 
@@ -33,7 +36,7 @@ perfContext('Terminal: ls -lR /usr', () => {
       rows: 25,
       cwd: process.env.HOME,
       env: process.env,
-      encoding: null
+      encoding: (null as unknown as string) // needs to be fixed in node-pty
     });
     const chunks: Buffer[] = [];
     let length = 0;
