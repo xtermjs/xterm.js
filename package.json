@@ -16,7 +16,6 @@
     "test-api": "mocha \"**/*.api.js\"",
     "test-unit": "node ./bin/test.js",
     "build": "tsc -b ./tsconfig.all.json",
-    "postbuild": "node ./bin/packageAddons.js",
     "prepare": "npm run build",
     "prepublishOnly": "npm run package",
     "watch": "tsc -b -w ./tsconfig.all.json --preserveWatchOutput",
