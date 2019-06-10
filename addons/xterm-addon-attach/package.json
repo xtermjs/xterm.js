@@ -5,11 +5,14 @@
     "name": "The xterm.js authors",
     "url": "https://xtermjs.org/"
   },
-  "main": "lib/AttachAddon.js",
+  "main": "lib/xterm-addon-attach.js",
   "types": "typings/xterm-addon-attach.d.ts",
   "license": "MIT",
   "scripts": {
-    "prepublishOnly": "../../node_modules/.bin/tsc -p src"
+    "build": "../../node_modules/.bin/tsc -p src",
+    "prepackage": "npm run build",
+    "package": "../../node_modules/.bin/webpack",
+    "prepublishOnly": "npm run package"
   },
   "peerDependencies": {
     "xterm": "^3.14.0"
