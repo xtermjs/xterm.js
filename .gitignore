@@ -2,6 +2,7 @@ node_modules/
 *.swp
 .lock-wscript
 lib/
+out/
 Makefile.gyp
 *.Makefile
 *.target.gyp.mk
@@ -13,12 +14,7 @@ npm-debug.log
 .env
 build/
 .DS_Store
-fixtures/typings-test/*.js
 package-lock.json
-
-# Directories needed for code coverage
-coverage/
-.nyc_output/
 
 # Keep bundled code out of Git
 dist/

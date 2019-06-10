@@ -4,9 +4,9 @@
  */
 
 import { ITerminalOptions } from '../../Types';
-import { IBufferLine } from '../../core/Types';
+import { IBufferLine } from 'common/Types';
 import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
-import { CellData, AttributeData, NULL_CELL_CODE, WHITESPACE_CELL_CHAR } from '../../core/buffer/BufferLine';
+import { CellData, AttributeData, NULL_CELL_CODE, WHITESPACE_CELL_CHAR } from 'common/buffer/BufferLine';
 
 export const BOLD_CLASS = 'xterm-bold';
 export const DIM_CLASS = 'xterm-dim';
@@ -77,7 +77,7 @@ export class DomRendererRowFactory {
         }
       }
 
-      if (this._workCell.isBold() && this._terminalOptions.enableBold) {
+      if (this._workCell.isBold()) {
         charElement.classList.add(BOLD_CLASS);
       }
 
@@ -104,8 +104,7 @@ export class DomRendererRowFactory {
         charElement.setAttribute('style', style);
       } else if (this._workCell.isFgPalette()) {
         let fg = this._workCell.getFgColor();
-        if (this._workCell.isBold() && fg < 8 && !swapColor &&
-            this._terminalOptions.enableBold && this._terminalOptions.drawBoldTextInBrightColors) {
+        if (this._workCell.isBold() && fg < 8 && !swapColor && this._terminalOptions.drawBoldTextInBrightColors) {
           fg += 8;
         }
         charElement.classList.add(`xterm-${swapColor ? 'b' : 'f'}g-${fg}`);

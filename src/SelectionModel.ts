@@ -4,6 +4,7 @@
  */
 
 import { ITerminal } from './Types';
+import { IBufferService } from 'common/services/Services';
 
 /**
  * Represents a selection within the buffer. This model only cares about column
@@ -33,7 +34,8 @@ export class SelectionModel {
   public selectionEnd: [number, number];
 
   constructor(
-    private _terminal: ITerminal
+    private _terminal: ITerminal,
+    private _bufferService: IBufferService
   ) {
     this.clearSelection();
   }
@@ -69,7 +71,7 @@ export class SelectionModel {
    */
   public get finalSelectionEnd(): [number, number] {
     if (this.isSelectAllActive) {
-      return [this._terminal.cols, this._terminal.buffer.ybase + this._terminal.rows - 1];
+      return [this._bufferService.cols, this._terminal.buffer.ybase + this._bufferService.rows - 1];
     }
 
     if (!this.selectionStart) {
@@ -79,8 +81,8 @@ export class SelectionModel {
     // Use the selection start + length if the end doesn't exist or they're reversed
     if (!this.selectionEnd || this.areSelectionValuesReversed()) {
       const startPlusLength = this.selectionStart[0] + this.selectionStartLength;
-      if (startPlusLength > this._terminal.cols) {
-        return [startPlusLength % this._terminal.cols, this.selectionStart[1] + Math.floor(startPlusLength / this._terminal.cols)];
+      if (startPlusLength > this._bufferService.cols) {
+        return [startPlusLength % this._bufferService.cols, this.selectionStart[1] + Math.floor(startPlusLength / this._bufferService.cols)];
       }
       return [startPlusLength, this.selectionStart[1]];
     }

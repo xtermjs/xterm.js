@@ -3,12 +3,13 @@
  * @license MIT
  */
 
-import { IRenderer, IRenderDimensions } from '../Types';
-import { ILinkifierEvent, ITerminal, CharacterJoinerHandler } from '../../Types';
+import { IRenderer, IRenderDimensions, CharacterJoinerHandler } from 'browser/renderer/Types';
+import { ILinkifierEvent, ITerminal } from '../../Types';
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from './DomRendererRowFactory';
 import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
-import { Disposable } from '../../common/Lifecycle';
-import { IColorSet } from '../../ui/Types';
+import { Disposable } from 'common/Lifecycle';
+import { IColorSet } from 'browser/Types';
+import { ICharSizeService } from 'browser/services/Services';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
@@ -41,7 +42,8 @@ export class DomRenderer extends Disposable implements IRenderer {
 
   constructor(
     private _terminal: ITerminal,
-    private _colors: IColorSet
+    private _colors: IColorSet,
+    private _charSizeService: ICharSizeService
   ) {
     super();
 
@@ -91,8 +93,8 @@ export class DomRenderer extends Disposable implements IRenderer {
   }
 
   private _updateDimensions(): void {
-    this.dimensions.scaledCharWidth = this._terminal.charMeasure.width * window.devicePixelRatio;
-    this.dimensions.scaledCharHeight = Math.ceil(this._terminal.charMeasure.height * window.devicePixelRatio);
+    this.dimensions.scaledCharWidth = this._charSizeService.width * window.devicePixelRatio;
+    this.dimensions.scaledCharHeight = Math.ceil(this._charSizeService.height * window.devicePixelRatio);
     this.dimensions.scaledCellWidth = this.dimensions.scaledCharWidth + Math.round(this._terminal.options.letterSpacing);
     this.dimensions.scaledCellHeight = Math.floor(this.dimensions.scaledCharHeight * this._terminal.options.lineHeight);
     this.dimensions.scaledCharLeft = 0;

@@ -5,7 +5,7 @@
 
 import { IDisposable } from 'xterm';
 import { ITerminal } from './Types';
-import { CHAR_DATA_CODE_INDEX, NULL_CELL_CODE, WHITESPACE_CELL_CODE } from './core/buffer/BufferLine';
+import { CHAR_DATA_CODE_INDEX, NULL_CELL_CODE, WHITESPACE_CELL_CODE } from 'common/buffer/BufferLine';
 
 export function applyWindowsMode(terminal: ITerminal): IDisposable {
   // Winpty does not support wraparound mode which means that lines will never

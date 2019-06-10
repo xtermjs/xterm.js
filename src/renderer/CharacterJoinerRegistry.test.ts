@@ -6,12 +6,12 @@
 import { assert } from 'chai';
 
 import { MockTerminal, MockBuffer } from '../TestUtils.test';
-import { CircularList } from '../common/CircularList';
+import { CircularList } from 'common/CircularList';
 
 import { ICharacterJoinerRegistry } from './Types';
 import { CharacterJoinerRegistry } from './CharacterJoinerRegistry';
-import { BufferLine, CellData } from '../core/buffer/BufferLine';
-import { IBufferLine } from '../core/Types';
+import { BufferLine, CellData } from 'common/buffer/BufferLine';
+import { IBufferLine } from 'common/Types';
 
 describe('CharacterJoinerRegistry', () => {
   let registry: ICharacterJoinerRegistry;

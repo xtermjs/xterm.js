@@ -1,0 +1,17 @@
+{
+  "name": "xterm-addon-attach",
+  "version": "0.1.0-beta10",
+  "author": {
+    "name": "The xterm.js authors",
+    "url": "https://xtermjs.org/"
+  },
+  "main": "lib/AttachAddon.js",
+  "types": "typings/xterm-addon-attach.d.ts",
+  "license": "MIT",
+  "scripts": {
+    "prepublishOnly": "../../node_modules/.bin/tsc -p src"
+  },
+  "peerDependencies": {
+    "xterm": "^3.14.0"
+  }
+}

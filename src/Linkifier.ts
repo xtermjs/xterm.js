@@ -3,10 +3,11 @@
  * @license MIT
  */
 
-import { ILinkifierEvent, ILinkMatcher, LinkMatcherHandler, ILinkMatcherOptions, ILinkifier, ITerminal, IBufferStringIteratorResult, IMouseZoneManager } from './Types';
+import { ILinkifierEvent, ILinkMatcher, LinkMatcherHandler, ILinkMatcherOptions, ILinkifier, ITerminal, IMouseZoneManager } from './Types';
+import { IBufferStringIteratorResult } from 'common/buffer/Types';
 import { MouseZone } from './MouseZoneManager';
-import { getStringCellWidth } from './CharWidth';
-import { EventEmitter2, IEvent } from './common/EventEmitter2';
+import { getStringCellWidth } from 'common/CharWidth';
+import { EventEmitter, IEvent } from 'common/EventEmitter';
 
 /**
  * The Linkifier applies links to rows shortly after they have been refreshed.
@@ -33,11 +34,11 @@ export class Linkifier implements ILinkifier {
   private _nextLinkMatcherId = 0;
   private _rowsToLinkify: { start: number, end: number };
 
-  private _onLinkHover = new EventEmitter2<ILinkifierEvent>();
+  private _onLinkHover = new EventEmitter<ILinkifierEvent>();
   public get onLinkHover(): IEvent<ILinkifierEvent> { return this._onLinkHover.event; }
-  private _onLinkLeave = new EventEmitter2<ILinkifierEvent>();
+  private _onLinkLeave = new EventEmitter<ILinkifierEvent>();
   public get onLinkLeave(): IEvent<ILinkifierEvent> { return this._onLinkLeave.event; }
-  private _onLinkTooltip = new EventEmitter2<ILinkifierEvent>();
+  private _onLinkTooltip = new EventEmitter<ILinkifierEvent>();
   public get onLinkTooltip(): IEvent<ILinkifierEvent> { return this._onLinkTooltip.event; }
 
   constructor(

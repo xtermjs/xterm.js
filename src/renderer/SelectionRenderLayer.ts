@@ -4,9 +4,9 @@
  */
 
 import { ITerminal } from '../Types';
-import { IRenderDimensions } from './Types';
+import { IRenderDimensions } from 'browser/renderer/Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { IColorSet } from '../ui/Types';
+import { IColorSet } from 'browser/Types';
 
 interface ISelectionState {
   start: [number, number];

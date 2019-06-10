@@ -10,7 +10,12 @@
       "es2015.promise"
     ],
     "rootDir": ".",
-    "outDir": "../lib",
+    "outDir": "../out",
+    "baseUrl": ".",
+    "paths": {
+      "common/*": [ "./common/*" ],
+      "browser/*": [ "./browser/*" ]
+    },
 
     "noUnusedLocals": true,
     "noImplicitAny": true
@@ -24,7 +29,6 @@
   ],
   "references": [
     { "path": "./common" },
-    { "path": "./core" },
-    { "path": "./ui" }
+    { "path": "./browser" }
   ]
 }

@@ -6,6 +6,7 @@
 import { assert } from 'chai';
 import { CompositionHelper } from './CompositionHelper';
 import { ITerminal } from './Types';
+import { MockCharSizeService } from 'browser/TestUtils.test';
 
 describe('CompositionHelper', () => {
   let terminal: ITerminal;
@@ -48,16 +49,12 @@ describe('CompositionHelper', () => {
       buffer: {
         isCursorInViewport: true
       },
-      charMeasure: {
-        height: 10,
-        width: 10
-      },
       options: {
         lineHeight: 1
       }
     } as any;
     handledText = '';
-    compositionHelper = new CompositionHelper(textarea, compositionView, terminal);
+    compositionHelper = new CompositionHelper(textarea, compositionView, terminal, new MockCharSizeService(10, 10));
   });
 
   describe('Input', () => {

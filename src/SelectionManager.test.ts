@@ -4,14 +4,17 @@
  */
 
 import { assert } from 'chai';
-import { CharMeasure } from './CharMeasure';
 import { SelectionManager, SelectionMode } from './SelectionManager';
 import { SelectionModel } from './SelectionModel';
-import { BufferSet } from './BufferSet';
-import { ITerminal, IBuffer } from './Types';
-import { IBufferLine } from './core/Types';
+import { BufferSet } from 'common/buffer/BufferSet';
+import { ITerminal } from './Types';
+import { IBuffer } from 'common/buffer/Types';
+import { IBufferLine } from 'common/Types';
 import { MockTerminal } from './TestUtils.test';
-import { BufferLine, CellData } from './core/buffer/BufferLine';
+import { MockOptionsService, MockBufferService } from 'common/TestUtils.test';
+import { BufferLine, CellData } from 'common/buffer/BufferLine';
+import { IBufferService } from 'common/services/Services';
+import { MockCharSizeService } from 'browser/TestUtils.test';
 
 class TestMockTerminal extends MockTerminal {
   emit(event: string, data: any): void {}
@@ -20,9 +23,9 @@ class TestMockTerminal extends MockTerminal {
 class TestSelectionManager extends SelectionManager {
   constructor(
     terminal: ITerminal,
-    charMeasure: CharMeasure
+    bufferService: IBufferService
   ) {
-    super(terminal, charMeasure);
+    super(terminal, new MockCharSizeService(10, 10), bufferService);
   }
 
   public get model(): SelectionModel { return this._model; }
@@ -42,17 +45,21 @@ class TestSelectionManager extends SelectionManager {
 describe('SelectionManager', () => {
   let terminal: ITerminal;
   let buffer: IBuffer;
+  let bufferService: IBufferService;
   let selectionManager: TestSelectionManager;
 
   beforeEach(() => {
     terminal = new TestMockTerminal();
-    (terminal as any).cols = 80;
-    (terminal as any).rows = 2;
-    terminal.options.scrollback = 100;
-    terminal.buffers = new BufferSet(terminal);
+    bufferService = new MockBufferService(20, 20);
+    terminal.buffers = new BufferSet(
+      new MockOptionsService({ scrollback: 100 }),
+      bufferService
+    );
+    terminal.cols = 20;
+    terminal.rows = 20;
     terminal.buffer = terminal.buffers.active;
     buffer = terminal.buffer;
-    selectionManager = new TestSelectionManager(terminal, null);
+    selectionManager = new TestSelectionManager(terminal, bufferService);
   });
 
   function stringToRow(text: string): IBufferLine {
@@ -192,36 +199,36 @@ describe('SelectionManager', () => {
       assert.equal(selectionManager.selectionText, 'ij"');
     });
     it('should expand upwards or downards for wrapped lines', () => {
-      buffer.lines.set(0, stringToRow('                                                                             foo'));
-      buffer.lines.set(1, stringToRow('bar                                                                             '));
+      buffer.lines.set(0, stringToRow('                 foo'));
+      buffer.lines.set(1, stringToRow('bar                 '));
       buffer.lines.get(1).isWrapped = true;
       selectionManager.selectWordAt([1, 1]);
       assert.equal(selectionManager.selectionText, 'foobar');
       selectionManager.model.clearSelection();
-      selectionManager.selectWordAt([78, 0]);
+      selectionManager.selectWordAt([18, 0]);
       assert.equal(selectionManager.selectionText, 'foobar');
     });
     it('should expand both upwards and downwards for word wrapped over many lines', () => {
-      const expectedText = 'fooaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccbar';
-      buffer.lines.set(0, stringToRow('                                                                             foo'));
-      buffer.lines.set(1, stringToRow('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'));
-      buffer.lines.set(2, stringToRow('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'));
-      buffer.lines.set(3, stringToRow('cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'));
-      buffer.lines.set(4, stringToRow('bar                                                                             '));
+      const expectedText = 'fooaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbccccccccccccccccccccbar';
+      buffer.lines.set(0, stringToRow('                 foo'));
+      buffer.lines.set(1, stringToRow('aaaaaaaaaaaaaaaaaaaa'));
+      buffer.lines.set(2, stringToRow('bbbbbbbbbbbbbbbbbbbb'));
+      buffer.lines.set(3, stringToRow('cccccccccccccccccccc'));
+      buffer.lines.set(4, stringToRow('bar                 '));
       buffer.lines.get(1).isWrapped = true;
       buffer.lines.get(2).isWrapped = true;
       buffer.lines.get(3).isWrapped = true;
       buffer.lines.get(4).isWrapped = true;
-      selectionManager.selectWordAt([78, 0]);
+      selectionManager.selectWordAt([18, 0]);
       assert.equal(selectionManager.selectionText, expectedText);
       selectionManager.model.clearSelection();
-      selectionManager.selectWordAt([40, 1]);
+      selectionManager.selectWordAt([10, 1]);
       assert.equal(selectionManager.selectionText, expectedText);
       selectionManager.model.clearSelection();
-      selectionManager.selectWordAt([40, 2]);
+      selectionManager.selectWordAt([10, 2]);
       assert.equal(selectionManager.selectionText, expectedText);
       selectionManager.model.clearSelection();
-      selectionManager.selectWordAt([40, 3]);
+      selectionManager.selectWordAt([10, 3]);
       assert.equal(selectionManager.selectionText, expectedText);
       selectionManager.model.clearSelection();
       selectionManager.selectWordAt([1, 4]);
@@ -342,7 +349,7 @@ describe('SelectionManager', () => {
       selectionManager.selectLineAt(0);
       assert.equal(selectionManager.selectionText, 'foo bar', 'The selected text is correct');
       assert.deepEqual(selectionManager.model.finalSelectionStart, [0, 0]);
-      assert.deepEqual(selectionManager.model.finalSelectionEnd, [terminal.cols, 0], 'The actual selection spans the entire column');
+      assert.deepEqual(selectionManager.model.finalSelectionEnd, [bufferService.cols, 0], 'The actual selection spans the entire column');
     });
     it('should select the entire wrapped line', () => {
       buffer.lines.set(0, stringToRow('foo'));
@@ -352,7 +359,7 @@ describe('SelectionManager', () => {
       selectionManager.selectLineAt(0);
       assert.equal(selectionManager.selectionText, 'foobar', 'The selected text is correct');
       assert.deepEqual(selectionManager.model.finalSelectionStart, [0, 0]);
-      assert.deepEqual(selectionManager.model.finalSelectionEnd, [terminal.cols, 1], 'The actual selection spans the entire column');
+      assert.deepEqual(selectionManager.model.finalSelectionEnd, [bufferService.cols, 1], 'The actual selection spans the entire column');
     });
   });
 
@@ -365,7 +372,7 @@ describe('SelectionManager', () => {
       buffer.lines.set(3, stringToRow('4'));
       buffer.lines.set(4, stringToRow('5'));
       selectionManager.selectAll();
-      terminal.buffer.ybase = buffer.lines.length - terminal.rows;
+      terminal.buffer.ybase = buffer.lines.length - bufferService.rows;
       assert.equal(selectionManager.selectionText, '1\n2\n3\n4\n5');
     });
   });
@@ -378,7 +385,7 @@ describe('SelectionManager', () => {
       buffer.lines.set(2, stringToRow('3'));
       selectionManager.selectLines(1, 1);
       assert.deepEqual(selectionManager.model.finalSelectionStart, [0, 1]);
-      assert.deepEqual(selectionManager.model.finalSelectionEnd, [terminal.cols, 1]);
+      assert.deepEqual(selectionManager.model.finalSelectionEnd, [bufferService.cols, 1]);
     });
     it('should select multiple lines', () => {
       buffer.lines.length = 5;
@@ -389,7 +396,7 @@ describe('SelectionManager', () => {
       buffer.lines.set(4, stringToRow('5'));
       selectionManager.selectLines(1, 3);
       assert.deepEqual(selectionManager.model.finalSelectionStart, [0, 1]);
-      assert.deepEqual(selectionManager.model.finalSelectionEnd, [terminal.cols, 3]);
+      assert.deepEqual(selectionManager.model.finalSelectionEnd, [bufferService.cols, 3]);
     });
     it('should select the to the start when requesting a negative row', () => {
       buffer.lines.length = 2;
@@ -397,7 +404,7 @@ describe('SelectionManager', () => {
       buffer.lines.set(1, stringToRow('2'));
       selectionManager.selectLines(-1, 0);
       assert.deepEqual(selectionManager.model.finalSelectionStart, [0, 0]);
-      assert.deepEqual(selectionManager.model.finalSelectionEnd, [terminal.cols, 0]);
+      assert.deepEqual(selectionManager.model.finalSelectionEnd, [bufferService.cols, 0]);
     });
     it('should select the to the end when requesting beyond the final row', () => {
       buffer.lines.length = 2;
@@ -405,7 +412,7 @@ describe('SelectionManager', () => {
       buffer.lines.set(1, stringToRow('2'));
       selectionManager.selectLines(1, 2);
       assert.deepEqual(selectionManager.model.finalSelectionStart, [0, 1]);
-      assert.deepEqual(selectionManager.model.finalSelectionEnd, [terminal.cols, 1]);
+      assert.deepEqual(selectionManager.model.finalSelectionEnd, [bufferService.cols, 1]);
     });
   });
 

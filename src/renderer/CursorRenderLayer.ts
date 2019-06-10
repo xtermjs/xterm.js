@@ -3,12 +3,12 @@
  * @license MIT
  */
 
-import { IRenderDimensions } from './Types';
+import { IRenderDimensions } from 'browser/renderer/Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { ITerminal } from '../Types';
-import { ICellData } from '../core/Types';
-import { CellData } from '../core/buffer/BufferLine';
-import { IColorSet } from '../ui/Types';
+import { ICellData } from 'common/Types';
+import { CellData } from 'common/buffer/BufferLine';
+import { IColorSet } from 'browser/Types';
 
 interface ICursorState {
   x: number;

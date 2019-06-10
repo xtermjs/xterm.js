@@ -3,14 +3,15 @@
  * @license MIT
  */
 
-import { IRenderDimensions, ICharacterJoinerRegistry } from './Types';
+import { ICharacterJoinerRegistry } from './Types';
+import { IRenderDimensions } from 'browser/renderer/Types';
 import { ITerminal } from '../Types';
-import { CharData, ICellData } from '../core/Types';
+import { CharData, ICellData } from 'common/Types';
 import { GridCache } from './GridCache';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { CellData, AttributeData, Content, NULL_CELL_CODE } from '../core/buffer/BufferLine';
+import { CellData, AttributeData, Content, NULL_CELL_CODE } from 'common/buffer/BufferLine';
 import { JoinedCellData } from './CharacterJoinerRegistry';
-import { IColorSet } from '../ui/Types';
+import { IColorSet } from 'browser/Types';
 
 /**
  * This CharData looks like a null character, which will forc a clear and render

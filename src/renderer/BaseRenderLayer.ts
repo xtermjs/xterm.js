@@ -3,15 +3,15 @@
  * @license MIT
  */
 
-import { IRenderLayer, IRenderDimensions } from './Types';
+import { IRenderLayer } from './Types';
+import { IRenderDimensions } from 'browser/renderer/Types';
 import { ITerminal } from '../Types';
-import { ICellData } from '../core/Types';
-import { DEFAULT_COLOR } from '../common/Types';
+import { ICellData, DEFAULT_COLOR } from 'common/Types';
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, IGlyphIdentifier } from './atlas/Types';
-import BaseCharAtlas from './atlas/BaseCharAtlas';
+import { BaseCharAtlas } from './atlas/BaseCharAtlas';
 import { acquireCharAtlas } from './atlas/CharAtlasCache';
-import { CellData, AttributeData, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from '../core/buffer/BufferLine';
-import { IColorSet } from '../ui/Types';
+import { CellData, AttributeData, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from 'common/buffer/BufferLine';
+import { IColorSet } from 'browser/Types';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -288,7 +288,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._currentGlyphIdentifier.code = cell.getCode() || WHITESPACE_CELL_CODE;
     this._currentGlyphIdentifier.bg = bg;
     this._currentGlyphIdentifier.fg = fg;
-    this._currentGlyphIdentifier.bold = cell.isBold() && terminal.options.enableBold;
+    this._currentGlyphIdentifier.bold = !!cell.isBold();
     this._currentGlyphIdentifier.dim = !!cell.isDim();
     this._currentGlyphIdentifier.italic = !!cell.isItalic();
     const atlasDidDraw = this._charAtlas && this._charAtlas.draw(
@@ -316,7 +316,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   private _drawUncachedChars(terminal: ITerminal, cell: ICellData, x: number, y: number): void {
     this._ctx.save();
-    this._ctx.font = this._getFont(terminal, cell.isBold() && terminal.options.enableBold, !!cell.isItalic());
+    this._ctx.font = this._getFont(terminal, !!cell.isBold(), !!cell.isItalic());
     this._ctx.textBaseline = 'middle';
 
     if (cell.isInverse()) {

@@ -5,18 +5,10 @@
 
 import { ITerminal } from '../../Types';
 import { generateConfig, configEquals } from './CharAtlasUtils';
-import BaseCharAtlas from './BaseCharAtlas';
-import DynamicCharAtlas from './DynamicCharAtlas';
-import NoneCharAtlas from './NoneCharAtlas';
-import StaticCharAtlas from './StaticCharAtlas';
+import { BaseCharAtlas } from './BaseCharAtlas';
+import { DynamicCharAtlas } from './DynamicCharAtlas';
 import { ICharAtlasConfig } from './Types';
-import { IColorSet } from '../../ui/Types';
-
-const charAtlasImplementations = {
-  'none': NoneCharAtlas,
-  'static': StaticCharAtlas,
-  'dynamic': DynamicCharAtlas
-};
+import { IColorSet } from 'browser/Types';
 
 interface ICharAtlasCacheEntry {
   atlas: BaseCharAtlas;
@@ -72,7 +64,7 @@ export function acquireCharAtlas(
   }
 
   const newEntry: ICharAtlasCacheEntry = {
-    atlas: new charAtlasImplementations[terminal.options.experimentalCharAtlas](
+    atlas: new DynamicCharAtlas(
       document,
       newConfig
     ),

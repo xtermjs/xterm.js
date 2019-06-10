@@ -3,11 +3,12 @@
  * @license MIT
  */
 
-import { ITerminalOptions as IPublicTerminalOptions, IEventEmitter, IDisposable, IMarker, ISelectionPosition } from 'xterm';
-import { ICharset, IAttributeData, ICellData, IBufferLine, CharData } from './core/Types';
-import { ICircularList } from './common/Types';
-import { IEvent } from './common/EventEmitter2';
-import { IColorSet } from './ui/Types';
+import { ITerminalOptions as IPublicTerminalOptions, IDisposable, IMarker, ISelectionPosition } from 'xterm';
+import { ICharset, IAttributeData, CharData } from 'common/Types';
+import { IEvent, EventEmitter } from 'common/EventEmitter';
+import { IColorSet, IMouseHelper } from 'browser/Types';
+import { IOptionsService } from 'common/services/Services';
+import { IBuffer, IBufferSet } from 'common/buffer/Types';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
@@ -16,17 +17,12 @@ export type LineData = CharData[];
 export type LinkMatcherHandler = (event: MouseEvent, uri: string) => void;
 export type LinkMatcherValidationCallback = (uri: string, callback: (isValid: boolean) => void) => void;
 
-export type CharacterJoinerHandler = (text: string) => [number, number][];
-
-// BufferIndex denotes a position in the buffer: [rowIndex, colIndex]
-export type BufferIndex = [number, number];
-
 /**
  * This interface encapsulates everything needed from the Terminal by the
  * InputHandler. This cleanly separates the large amount of methods needed by
  * InputHandler cleanly from the ITerminal interface.
  */
-export interface IInputHandlingTerminal extends IEventEmitter {
+export interface IInputHandlingTerminal {
   element: HTMLElement;
   options: ITerminalOptions;
   cols: number;
@@ -58,6 +54,9 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   viewport: IViewport;
   selectionManager: ISelectionManager;
 
+  onA11yCharEmitter: EventEmitter<string>;
+  onA11yTabEmitter: EventEmitter<number>;
+
   bell(): void;
   focus(): void;
   updateRange(y: number): void;
@@ -72,7 +71,6 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   showCursor(): void;
   refresh(start: number, end: number): void;
   error(text: string, data?: any): void;
-  setOption(key: string, value: any): void;
   tabSet(): void;
   handler(data: string): void;
   handleTitle(title: string): void;
@@ -199,12 +197,10 @@ export interface ILinkifierEvent {
 export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAccessor, ILinkifierAccessor {
   screenElement: HTMLElement;
   selectionManager: ISelectionManager;
-  charMeasure: ICharMeasure;
   browser: IBrowser;
   writeBuffer: string[];
   cursorHidden: boolean;
   cursorState: number;
-  options: ITerminalOptions;
   buffer: IBuffer;
   buffers: IBufferSet;
   isFocused: boolean;
@@ -212,6 +208,14 @@ export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAcc
   viewport: IViewport;
   bracketedPasteMode: boolean;
   applicationCursor: boolean;
+  optionsService: IOptionsService;
+  // TODO: We should remove options once components adopt optionsService
+  options: ITerminalOptions;
+
+  onBlur: IEvent<void>;
+  onFocus: IEvent<void>;
+  onA11yChar: IEvent<string>;
+  onA11yTab: IEvent<number>;
 
   handler(data: string): void;
   scrollLines(disp: number, suppressScrollEvent?: boolean): void;
@@ -221,7 +225,7 @@ export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAcc
 }
 
 // Portions of the public API that are required by the internal Terminal
-export interface IPublicTerminal extends IDisposable, IEventEmitter {
+export interface IPublicTerminal extends IDisposable {
   textarea: HTMLTextAreaElement;
   rows: number;
   cols: number;
@@ -257,7 +261,6 @@ export interface IPublicTerminal extends IDisposable, IEventEmitter {
   selectAll(): void;
   selectLines(start: number, end: number): void;
   dispose(): void;
-  destroy(): void;
   scrollLines(amount: number): void;
   scrollPages(pageCount: number): void;
   scrollToTop(): void;
@@ -266,8 +269,6 @@ export interface IPublicTerminal extends IDisposable, IEventEmitter {
   clear(): void;
   write(data: string): void;
   writeUtf8(data: Uint8Array): void;
-  getOption(key: string): any;
-  setOption(key: string, value: any): void;
   refresh(start: number, end: number): void;
   reset(): void;
 }
@@ -284,20 +285,6 @@ export interface ILinkifierAccessor {
   linkifier: ILinkifier;
 }
 
-export interface IMouseHelper {
-  getCoords(event: { clientX: number, clientY: number }, element: HTMLElement, charMeasure: ICharMeasure, colCount: number, rowCount: number, isSelection?: boolean): [number, number];
-  getRawByteCoords(event: MouseEvent, element: HTMLElement, charMeasure: ICharMeasure, colCount: number, rowCount: number): { x: number, y: number };
-}
-
-export interface ICharMeasure {
-  width: number;
-  height: number;
-
-  onCharSizeChanged: IEvent<void>;
-
-  measure(options: ITerminalOptions): void;
-}
-
 // TODO: The options that are not in the public API should be reviewed
 export interface ITerminalOptions extends IPublicTerminalOptions {
   [key: string]: any;
@@ -308,52 +295,6 @@ export interface ITerminalOptions extends IPublicTerminalOptions {
   screenKeys?: boolean;
   termName?: string;
   useFlowControl?: boolean;
-}
-
-export interface IBufferStringIteratorResult {
-  range: {first: number, last: number};
-  content: string;
-}
-
-export interface IBufferStringIterator {
-  hasNext(): boolean;
-  next(): IBufferStringIteratorResult;
-}
-
-export interface IBuffer {
-  readonly lines: ICircularList<IBufferLine>;
-  ydisp: number;
-  ybase: number;
-  y: number;
-  x: number;
-  tabs: any;
-  scrollBottom: number;
-  scrollTop: number;
-  hasScrollback: boolean;
-  savedY: number;
-  savedX: number;
-  savedCurAttrData: IAttributeData;
-  isCursorInViewport: boolean;
-  translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string;
-  getWrappedRangeForLine(y: number): { first: number, last: number };
-  nextStop(x?: number): number;
-  prevStop(x?: number): number;
-  getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine;
-  stringIndexToBufferIndex(lineIndex: number, stringIndex: number): number[];
-  iterator(trimRight: boolean, startIndex?: number, endIndex?: number, startOverscan?: number, endOverscan?: number): IBufferStringIterator;
-  getNullCell(attr?: IAttributeData): ICellData;
-  getWhitespaceCell(attr?: IAttributeData): ICellData;
-}
-
-export interface IBufferSet {
-  alt: IBuffer;
-  normal: IBuffer;
-  active: IBuffer;
-
-  onBufferActivate: IEvent<{ activeBuffer: IBuffer, inactiveBuffer: IBuffer }>;
-
-  activateNormalBuffer(): void;
-  activateAltBuffer(fillAttr?: IAttributeData): void;
 }
 
 export interface ISelectionManager {
@@ -433,147 +374,6 @@ export interface IBrowser {
 
 export interface ISoundManager {
   playBellSound(): void;
-}
-
-/**
- * Internal states of EscapeSequenceParser.
- */
-export const enum ParserState {
-  GROUND = 0,
-  ESCAPE = 1,
-  ESCAPE_INTERMEDIATE = 2,
-  CSI_ENTRY = 3,
-  CSI_PARAM = 4,
-  CSI_INTERMEDIATE = 5,
-  CSI_IGNORE = 6,
-  SOS_PM_APC_STRING = 7,
-  OSC_STRING = 8,
-  DCS_ENTRY = 9,
-  DCS_PARAM = 10,
-  DCS_IGNORE = 11,
-  DCS_INTERMEDIATE = 12,
-  DCS_PASSTHROUGH = 13
-}
-
-/**
-* Internal actions of EscapeSequenceParser.
-*/
-export const enum ParserAction {
-  IGNORE = 0,
-  ERROR = 1,
-  PRINT = 2,
-  EXECUTE = 3,
-  OSC_START = 4,
-  OSC_PUT = 5,
-  OSC_END = 6,
-  CSI_DISPATCH = 7,
-  PARAM = 8,
-  COLLECT = 9,
-  ESC_DISPATCH = 10,
-  CLEAR = 11,
-  DCS_HOOK = 12,
-  DCS_PUT = 13,
-  DCS_UNHOOK = 14
-}
-
-/**
- * Internal state of EscapeSequenceParser.
- * Used as argument of the error handler to allow
- * introspection at runtime on parse errors.
- * Return it with altered values to recover from
- * faulty states (not yet supported).
- * Set `abort` to `true` to abort the current parsing.
- */
-export interface IParsingState {
-  // position in parse string
-  position: number;
-  // actual character code
-  code: number;
-  // current parser state
-  currentState: ParserState;
-  // print buffer start index (-1 for not set)
-  print: number;
-  // dcs buffer start index (-1 for not set)
-  dcs: number;
-  // osc string buffer
-  osc: string;
-  // collect buffer with intermediate characters
-  collect: string;
-  // params buffer
-  params: number[];
-  // should abort (default: false)
-  abort: boolean;
-}
-
-/**
-* DCS handler signature for EscapeSequenceParser.
-* EscapeSequenceParser handles DCS commands via separate
-* subparsers that get hook/unhooked and can handle
-* arbitrary amount of data.
-*
-* On entering a DSC sequence `hook` is called by
-* `EscapeSequenceParser`. Use it to initialize or reset
-* states needed to handle the current DCS sequence.
-* Note: A DCS parser is only instantiated once, therefore
-* you cannot rely on the ctor to reinitialize state.
-*
-* EscapeSequenceParser will call `put` several times if the
-* parsed data got split, therefore you might have to collect
-* `data` until `unhook` is called.
-* Note: `data` is borrowed, if you cannot process the data
-* in chunks you have to copy it, doing otherwise will lead to
-* data losses or corruption.
-*
-* `unhook` marks the end of the current DCS sequence.
-*/
-export interface IDcsHandler {
-  hook(collect: string, params: number[], flag: number): void;
-  put(data: Uint32Array, start: number, end: number): void;
-  unhook(): void;
-}
-
-/**
-* EscapeSequenceParser interface.
-*/
-export interface IEscapeSequenceParser extends IDisposable {
-  /**
-   * Reset the parser to its initial state (handlers are kept).
-   */
-  reset(): void;
-
-  /**
-   * Parse string `data`.
-   * @param data The data to parse.
-   */
-  parse(data: Uint32Array, length: number): void;
-
-  setPrintHandler(callback: (data: Uint32Array, start: number, end: number) => void): void;
-  clearPrintHandler(): void;
-
-  setExecuteHandler(flag: string, callback: () => void): void;
-  clearExecuteHandler(flag: string): void;
-  setExecuteHandlerFallback(callback: (code: number) => void): void;
-
-  setCsiHandler(flag: string, callback: (params: number[], collect: string) => void): void;
-  clearCsiHandler(flag: string): void;
-  setCsiHandlerFallback(callback: (collect: string, params: number[], flag: number) => void): void;
-  addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable;
-  addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
-
-  setEscHandler(collectAndFlag: string, callback: () => void): void;
-  clearEscHandler(collectAndFlag: string): void;
-  setEscHandlerFallback(callback: (collect: string, flag: number) => void): void;
-
-  setOscHandler(ident: number, callback: (data: string) => void): void;
-  clearOscHandler(ident: number): void;
-  setOscHandlerFallback(callback: (identifier: number, data: string) => void): void;
-
-  setDcsHandler(collectAndFlag: string, handler: IDcsHandler): void;
-  clearDcsHandler(collectAndFlag: string): void;
-  setDcsHandlerFallback(handler: IDcsHandler): void;
-
-  setErrorHandler(callback: (state: IParsingState) => IParsingState): void;
-  clearErrorHandler(): void;
 }
 
 export interface IMouseZoneManager extends IDisposable {

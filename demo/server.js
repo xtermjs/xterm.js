@@ -20,7 +20,7 @@ function startServer() {
 
   var terminals = {};
 
-  app.use('/src', express.static(__dirname + '/../src'));
+  app.use('/xterm.css', express.static(__dirname + '/../css/xterm.css'));
   app.get('/logo.png', (req, res) => res.sendFile(__dirname + '/logo.png'));
 
   app.get('/', function(req, res){
@@ -43,7 +43,7 @@ function startServer() {
     var cols = parseInt(req.query.cols),
         rows = parseInt(req.query.rows),
         term = pty.spawn(process.platform === 'win32' ? 'cmd.exe' : 'bash', [], {
-          name: 'xterm-color',
+          name: 'xterm-256color',
           cols: cols || 80,
           rows: rows || 24,
           cwd: process.env.PWD,

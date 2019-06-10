@@ -6,14 +6,9 @@
 /*
  * A simple utility for cloning values
  */
-export function clone<T>(val: T, depth: number = 5): T | null {
+export function clone<T>(val: T, depth: number = 5): T {
   if (typeof val !== 'object') {
     return val;
-  }
-
-  // cloning null always returns null
-  if (val === null) {
-    return null;
   }
 
   // If we're cloning an array, use an array as the base, otherwise use an object
@@ -21,7 +16,7 @@ export function clone<T>(val: T, depth: number = 5): T | null {
 
   for (const key in val) {
     // Recursively clone eack item unless we're at the maximum depth
-    clonedObject[key] = depth <= 1 ? val[key] : clone(val[key], depth - 1);
+    clonedObject[key] = depth <= 1 ? val[key] : (val[key] ? clone(val[key], depth - 1) : val[key]);
   }
 
   return clonedObject as T;

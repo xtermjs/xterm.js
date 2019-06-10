@@ -5,8 +5,8 @@
 
 import { ITerminal } from '../../Types';
 import { ICharAtlasConfig } from './Types';
-import { DEFAULT_COLOR } from '../../common/Types';
-import { IColorSet } from '../../ui/Types';
+import { DEFAULT_COLOR } from 'common/Types';
+import { IColorSet } from 'browser/Types';
 
 export function generateConfig(scaledCharWidth: number, scaledCharHeight: number, terminal: ITerminal, colors: IColorSet): ICharAtlasConfig {
   // null out some fields that don't matter
@@ -21,7 +21,6 @@ export function generateConfig(scaledCharWidth: number, scaledCharHeight: number
     ansi: colors.ansi.slice(0, 16)
   };
   return {
-    type: terminal.options.experimentalCharAtlas,
     devicePixelRatio: window.devicePixelRatio,
     scaledCharWidth,
     scaledCharHeight,
@@ -40,8 +39,7 @@ export function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean 
       return false;
     }
   }
-  return a.type === b.type &&
-      a.devicePixelRatio === b.devicePixelRatio &&
+  return a.devicePixelRatio === b.devicePixelRatio &&
       a.fontFamily === b.fontFamily &&
       a.fontSize === b.fontSize &&
       a.fontWeight === b.fontWeight &&

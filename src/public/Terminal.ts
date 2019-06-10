@@ -4,11 +4,12 @@
  */
 
 import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi } from 'xterm';
-import { ITerminal, IBuffer } from '../Types';
-import { IBufferLine } from '../core/Types';
+import { ITerminal } from '../Types';
+import { IBufferLine } from 'common/Types';
+import { IBuffer } from 'common/buffer/Types';
 import { Terminal as TerminalCore } from '../Terminal';
-import * as Strings from '../Strings';
-import { IEvent } from '../common/EventEmitter2';
+import * as Strings from '../browser/LocalizableStrings';
+import { IEvent } from 'common/EventEmitter';
 import { AddonManager } from './AddonManager';
 
 export class Terminal implements ITerminalApi {
@@ -41,27 +42,6 @@ export class Terminal implements ITerminalApi {
   }
   public focus(): void {
     this._core.focus();
-  }
-  public on(type: 'blur' | 'focus' | 'linefeed' | 'selection', listener: () => void): void;
-  public on(type: 'data', listener: (...args: any[]) => void): void;
-  public on(type: 'key', listener: (key?: string, event?: KeyboardEvent) => void): void;
-  public on(type: 'keypress' | 'keydown', listener: (event?: KeyboardEvent) => void): void;
-  public on(type: 'refresh', listener: (data?: { start: number; end: number; }) => void): void;
-  public on(type: 'resize', listener: (data?: { cols: number; rows: number; }) => void): void;
-  public on(type: 'scroll', listener: (ydisp?: number) => void): void;
-  public on(type: 'title', listener: (title?: string) => void): void;
-  public on(type: string, listener: (...args: any[]) => void): void;
-  public on(type: any, listener: any): void {
-    this._core.on(type, listener);
-  }
-  public off(type: string, listener: (...args: any[]) => void): void {
-    this._core.off(type, listener);
-  }
-  public emit(type: string, data?: any): void {
-    this._core.emit(type, data);
-  }
-  public addDisposableListener(type: string, handler: (...args: any[]) => void): IDisposable {
-    return this._core.addDisposableListener(type, handler);
   }
   public resize(columns: number, rows: number): void {
     this._core.resize(columns, rows);
@@ -121,9 +101,6 @@ export class Terminal implements ITerminalApi {
     this._addonManager.dispose();
     this._core.dispose();
   }
-  public destroy(): void {
-    this._core.destroy();
-  }
   public scrollLines(amount: number): void {
     this._core.scrollLines(amount);
   }
@@ -149,19 +126,19 @@ export class Terminal implements ITerminalApi {
     this._core.writeUtf8(data);
   }
   public getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'fontWeight' | 'fontWeightBold' | 'rendererType' | 'termName'): string;
-  public getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell'): boolean;
+  public getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell'): boolean;
   public getOption(key: 'colors'): string[];
   public getOption(key: 'cols' | 'fontSize' | 'letterSpacing' | 'lineHeight' | 'rows' | 'tabStopWidth' | 'scrollback'): number;
   public getOption(key: 'handler'): (data: string) => void;
   public getOption(key: string): any;
   public getOption(key: any): any {
-    return this._core.getOption(key);
+    return this._core.optionsService.getOption(key);
   }
   public setOption(key: 'bellSound' | 'fontFamily' | 'termName', value: string): void;
   public setOption(key: 'fontWeight' | 'fontWeightBold', value: 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900'): void;
   public setOption(key: 'bellStyle', value: 'none' | 'visual' | 'sound' | 'both'): void;
   public setOption(key: 'cursorStyle', value: 'block' | 'underline' | 'bar'): void;
-  public setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell', value: boolean): void;
+  public setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell', value: boolean): void;
   public setOption(key: 'colors', value: string[]): void;
   public setOption(key: 'fontSize' | 'letterSpacing' | 'lineHeight' | 'tabStopWidth' | 'scrollback', value: number): void;
   public setOption(key: 'handler', value: (data: string) => void): void;
@@ -169,7 +146,7 @@ export class Terminal implements ITerminalApi {
   public setOption(key: 'cols' | 'rows', value: number): void;
   public setOption(key: string, value: any): void;
   public setOption(key: any, value: any): void {
-    this._core.setOption(key, value);
+    this._core.optionsService.setOption(key, value);
   }
   public refresh(start: number, end: number): void {
     this._core.refresh(start, end);

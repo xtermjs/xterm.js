@@ -10,7 +10,7 @@ interface ILinkedListNode<T> {
   value: T;
 }
 
-export default class LRUMap<T> {
+export class LRUMap<T> {
   private _map: { [key: number]: ILinkedListNode<T> } = {};
   private _head: ILinkedListNode<T> = null;
   private _tail: ILinkedListNode<T> = null;

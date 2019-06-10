@@ -11,7 +11,19 @@ const startServer = require('./server.js');
 
 startServer();
 
-// Build/watch client source
+/**
+ * This webpack config builds and watches the demo project. It works by taking the output from tsc
+ * (via `yarn watch`) which is put into `out/` and then webpacks it into `demo/dist/`. The aliases
+ * are used fix up the absolute paths output by tsc (because of `baseUrl` and `paths` in
+ * `tsconfig.json`.
+ *
+ * For production builds see `webpack.config.js` in the root directory. If that is built the demo
+ * can use that by switching out which `Terminal` is imported in `client.ts`, this is useful for
+ * validating that the packaged version works correctly.
+ *
+ * The addons are not webpacked right now and are built directly to `lib/` via `tsc` as they are
+ * the legacy format (`applyAddon`) and will be removed soon anyway.
+ */
 const clientConfig = {
   entry: path.resolve(__dirname, 'client.ts'),
   devtool: 'inline-source-map',
@@ -31,8 +43,16 @@ const clientConfig = {
     ]
   },
   resolve: {
-    modules: [path.resolve(__dirname, '..'), 'node_modules'],
-    extensions: [ '.tsx', '.ts', '.js' ]
+    modules: [
+      'node_modules',
+      path.resolve(__dirname, '..'),
+      path.resolve(__dirname, '../addons')
+    ],
+    extensions: [ '.tsx', '.ts', '.js' ],
+    alias: {
+      common: path.resolve('./out/common'),
+      browser: path.resolve('./out/browser')
+    }
   },
   output: {
     filename: 'client-bundle.js',

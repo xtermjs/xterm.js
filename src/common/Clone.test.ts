@@ -4,7 +4,7 @@
  */
 
 import { assert, expect } from 'chai';
-import { clone } from './Clone';
+import { clone } from 'common/Clone';
 
 describe('clone', () => {
   it('should clone simple objects', () => {
@@ -36,14 +36,6 @@ describe('clone', () => {
         }
       }
     });
-  });
-
-  it('should clone null values', () => {
-    const test: any = {
-      a: null
-    };
-
-    assert.deepEqual(clone(test), { a: null });
   });
 
   it('should clone array values', () => {

@@ -4,12 +4,11 @@
  */
 
 import { DIM_OPACITY, IGlyphIdentifier, INVERTED_DEFAULT_COLOR, ICharAtlasConfig } from './Types';
-import BaseCharAtlas from './BaseCharAtlas';
-import { DEFAULT_ANSI_COLORS } from '../../ui/ColorManager';
-import { clearColor } from './CharAtlasGenerator';
-import LRUMap from './LRUMap';
-import { isFirefox, isSafari } from '../../common/Platform';
-import { IColor } from '../../ui/Types';
+import { BaseCharAtlas } from './BaseCharAtlas';
+import { DEFAULT_ANSI_COLORS } from 'browser/ColorManager';
+import { LRUMap } from './LRUMap';
+import { isFirefox, isSafari } from 'common/Platform';
+import { IColor } from 'browser/Types';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.
@@ -54,7 +53,7 @@ export function getGlyphCacheKey(glyph: IGlyphIdentifier): number {
   return glyph.code << 21 | glyph.bg << 12 | glyph.fg << 3 | (glyph.bold ? 0 : 4) + (glyph.dim ? 0 : 2) + (glyph.italic ? 0 : 1);
 }
 
-export default class DynamicCharAtlas extends BaseCharAtlas {
+export class DynamicCharAtlas extends BaseCharAtlas {
   // An ordered map that we're using to keep track of where each glyph is in the atlas texture.
   // It's ordered so that we can determine when to remove the old entries.
   private _cacheMap: LRUMap<IGlyphCacheValue>;
@@ -327,4 +326,42 @@ export default class DynamicCharAtlas extends BaseCharAtlas {
     });
     this._bitmapCommitTimeout = null;
   }
+}
+
+// This is used for debugging the renderer, just swap out `new DynamicCharAtlas` with
+// `new NoneCharAtlas`.
+export class NoneCharAtlas extends BaseCharAtlas {
+  constructor(document: Document, config: ICharAtlasConfig) {
+    super();
+  }
+
+  public draw(
+    ctx: CanvasRenderingContext2D,
+    glyph: IGlyphIdentifier,
+    x: number,
+    y: number
+  ): boolean {
+    return false;
+  }
+}
+
+/**
+ * Makes a partiicular rgb color in an ImageData completely transparent.
+ * @returns True if the result is "empty", meaning all pixels are fully transparent.
+ */
+function clearColor(imageData: ImageData, color: IColor): boolean {
+  let isEmpty = true;
+  const r = color.rgba >>> 24;
+  const g = color.rgba >>> 16 & 0xFF;
+  const b = color.rgba >>> 8 & 0xFF;
+  for (let offset = 0; offset < imageData.data.length; offset += 4) {
+    if (imageData.data[offset] === r &&
+        imageData.data[offset + 1] === g &&
+        imageData.data[offset + 2] === b) {
+      imageData.data[offset + 3] = 0;
+    } else {
+      isEmpty = false;
+    }
+  }
+  return isEmpty;
 }
