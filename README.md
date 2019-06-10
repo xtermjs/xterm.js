@@ -87,7 +87,7 @@ The xterm.js team maintains the following addons but they can be built by anyone
 
 Since xterm.js is typically implemented as a developer tool, only modern browsers are supported officially. Specifically the latest versions of *Chrome*, *Edge*, *Firefox* and *Safari*.
 
-We also partially support *Intenet Explorer 11*, however we do not do workarounds specifically for it unless it's absolutely necessary. For example, copy and paste may not function correctly since `ClipboardEvent.clipboardData` is not supported.
+We also partially support *Intenet Explorer 11*, meaning xterm.js should work for the most part, but we reserve the right to not provide workarounds specifically for it unless it's absolutely necessary to get the basic input/output flow working.
 
 Xterm.js works seamlessly in [Electron](https://electronjs.org/) apps and may even work on earlier versions of the browsers, these are the versions we strive to keep working.
 
