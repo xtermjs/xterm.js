@@ -1,15 +1,18 @@
 {
   "name": "xterm-addon-search",
-  "version": "0.1.0-beta5",
+  "version": "0.1.0-beta6",
   "author": {
     "name": "The xterm.js authors",
     "url": "https://xtermjs.org/"
   },
-  "main": "lib/SearchAddon.js",
+  "main": "lib/xterm-addon-search.js",
   "types": "typings/xterm-addon-search.d.ts",
   "license": "MIT",
   "scripts": {
-    "prepublishOnly": "../../node_modules/.bin/tsc -p src"
+    "build": "../../node_modules/.bin/tsc -p src",
+    "prepackage": "npm run build",
+    "package": "../../node_modules/.bin/webpack",
+    "prepublishOnly": "npm run package"
   },
   "peerDependencies": {
     "xterm": "^3.14.0"

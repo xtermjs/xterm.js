@@ -1,15 +1,18 @@
 {
   "name": "xterm-addon-fit",
-  "version": "0.1.0-beta2",
+  "version": "0.1.0-beta3",
   "author": {
     "name": "The xterm.js authors",
     "url": "https://xtermjs.org/"
   },
-  "main": "lib/FitAddon.js",
+  "main": "lib/xterm-addon-fit.js",
   "types": "typings/xterm-addon-fit.d.ts",
   "license": "MIT",
   "scripts": {
-    "prepublishOnly": "../../node_modules/.bin/tsc -p src"
+    "build": "../../node_modules/.bin/tsc -p src",
+    "prepackage": "npm run build",
+    "package": "../../node_modules/.bin/webpack",
+    "prepublishOnly": "npm run package"
   },
   "peerDependencies": {
     "xterm": "^3.14.0"
