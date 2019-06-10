@@ -85,13 +85,9 @@ The xterm.js team maintains the following addons but they can be built by anyone
 
 ## Browser Support
 
-Since xterm.js is typically implemented as a developer tool, only modern browsers are supported officially. Here is a list of the versions we aim to support:
+Since xterm.js is typically implemented as a developer tool, only modern browsers are supported officially. Specifically the latest versions of *Chrome*, *Edge*, *Firefox* and *Safari*.
 
-- Chrome latest
-- Edge latest
-- Firefox latest
-- Safari latest
-- IE11
+We also partially support *Intenet Explorer 11*, meaning xterm.js should work for the most part, but we reserve the right to not provide workarounds specifically for it unless it's absolutely necessary to get the basic input/output flow working.
 
 Xterm.js works seamlessly in [Electron](https://electronjs.org/) apps and may even work on earlier versions of the browsers, these are the versions we strive to keep working.
 

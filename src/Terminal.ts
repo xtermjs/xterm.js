@@ -890,10 +890,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
           : ev.which !== null && ev.which !== undefined
             ? ev.which - 1
           : null;
-
-          if (Browser.isMSIE) {
-            button = button === 1 ? 0 : button === 4 ? 1 : button;
-          }
           break;
         case 'mouseup':
           button = 3;
