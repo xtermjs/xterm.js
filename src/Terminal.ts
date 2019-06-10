@@ -72,7 +72,7 @@ const DISCARD_WATERMARK = 50000000;  // ~50 MB
 /**
  * send ACK every ACK_WATERMARK-th byte
  */
-const ACK_WATERMARK = 131072;//524288; // 2^19
+const ACK_WATERMARK = 131072; // 524288; // 2^19
 
 /**
  * Flow control watermarks for the write buffer.
