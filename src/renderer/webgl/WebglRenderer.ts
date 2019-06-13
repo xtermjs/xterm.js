@@ -15,7 +15,7 @@ import { IWebGL2RenderingContext } from './Types';
 import { INVERTED_DEFAULT_COLOR } from './atlas/Types';
 import { RenderModel, COMBINED_CHAR_BIT_MASK } from './RenderModel';
 import { Disposable } from './Lifecycle';
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CODE } from '../../core/buffer/BufferLine';
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CODE } from 'common/buffer/BufferLine';
 import { DEFAULT_COLOR } from '../../common/Types';
 import { IColorSet, Terminal, IRenderDimensions, IRenderer } from 'xterm';
 import { getLuminance } from './ColorUtils';
@@ -332,8 +332,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
    * Recalculates the character and canvas dimensions.
    */
   private _updateDimensions(devicePixelRatio: number = window.devicePixelRatio): void {
+    // TODO: Acquire CharSizeService properly
+
     // Perform a new measure if the CharMeasure dimensions are not yet available
-    if (!this._core.charMeasure.width || !this._core.charMeasure.height) {
+    if (!(<any>this._core)._charSizeService.width || !(<any>this._core)._charSizeService.height) {
       return;
     }
 
@@ -344,12 +346,12 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     // NOTE: ceil fixes sometime, floor does others :s
 
-    this.dimensions.scaledCharWidth = Math.floor(this._core.charMeasure.width * devicePixelRatio);
+    this.dimensions.scaledCharWidth = Math.floor((<any>this._core)._charSizeService.width * devicePixelRatio);
 
     // Calculate the scaled character height. Height is ceiled in case
     // devicePixelRatio is a floating point number in order to ensure there is
     // enough space to draw the character to the cell.
-    this.dimensions.scaledCharHeight = Math.ceil(this._core.charMeasure.height * devicePixelRatio);
+    this.dimensions.scaledCharHeight = Math.ceil((<any>this._core)._charSizeService.height * devicePixelRatio);
 
     // Calculate the scaled cell height, if lineHeight is not 1 then the value
     // will be floored because since lineHeight can never be lower then 1, there

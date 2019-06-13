@@ -9,7 +9,7 @@ import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from '../Types';
 import { FLAGS } from '../../Types';
 import { is256Color } from './CharAtlasUtils';
 import { clearColor } from './CharAtlasGenerator';
-import { DEFAULT_ATTR } from '../../../core/buffer/BufferLine';
+import { DEFAULT_ATTR } from 'common/buffer/BufferLine';
 import { DEFAULT_COLOR } from '../../../common/Types';
 import { IColor } from 'xterm';
 

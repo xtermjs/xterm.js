@@ -5,8 +5,8 @@
 
 import { IRenderDimensions, IColorSet, Terminal } from 'xterm';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { ICellData } from '../../../core/Types';
-import { CellData } from '../../../core/buffer/BufferLine';
+import { ICellData } from '../../../common/Types';
+import { CellData } from '../../../common/buffer/BufferLine';
 
 interface ICursorState {
   x: number;
