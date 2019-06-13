@@ -14,7 +14,6 @@ npm-debug.log
 .env
 build/
 .DS_Store
-fixtures/typings-test/*.js
 package-lock.json
 
 # Keep bundled code out of Git

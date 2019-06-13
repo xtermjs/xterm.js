@@ -4,11 +4,12 @@
  */
 
 import { Terminal as ITerminalApi, ITerminalOptions, IMarker, IDisposable, ILinkMatcherOptions, ITheme, ILocalizableStrings, ITerminalAddon, ISelectionPosition, IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi } from 'xterm';
-import { ITerminal, IBuffer } from '../Types';
-import { IBufferLine } from 'core/Types';
+import { ITerminal } from '../Types';
+import { IBufferLine } from 'common/Types';
+import { IBuffer } from 'common/buffer/Types';
 import { Terminal as TerminalCore } from '../Terminal';
-import * as Strings from '../Strings';
-import { IEvent } from 'common/EventEmitter2';
+import * as Strings from '../browser/LocalizableStrings';
+import { IEvent } from 'common/EventEmitter';
 import { AddonManager } from './AddonManager';
 import { WebglRendererAddon } from '../renderer/webgl/WebglRendererAddon';
 
@@ -43,27 +44,6 @@ export class Terminal implements ITerminalApi {
   }
   public focus(): void {
     this._core.focus();
-  }
-  public on(type: 'blur' | 'focus' | 'linefeed' | 'selection', listener: () => void): void;
-  public on(type: 'data', listener: (...args: any[]) => void): void;
-  public on(type: 'key', listener: (key?: string, event?: KeyboardEvent) => void): void;
-  public on(type: 'keypress' | 'keydown', listener: (event?: KeyboardEvent) => void): void;
-  public on(type: 'refresh', listener: (data?: { start: number; end: number; }) => void): void;
-  public on(type: 'resize', listener: (data?: { cols: number; rows: number; }) => void): void;
-  public on(type: 'scroll', listener: (ydisp?: number) => void): void;
-  public on(type: 'title', listener: (title?: string) => void): void;
-  public on(type: string, listener: (...args: any[]) => void): void;
-  public on(type: any, listener: any): void {
-    this._core.on(type, listener);
-  }
-  public off(type: string, listener: (...args: any[]) => void): void {
-    this._core.off(type, listener);
-  }
-  public emit(type: string, data?: any): void {
-    this._core.emit(type, data);
-  }
-  public addDisposableListener(type: string, handler: (...args: any[]) => void): IDisposable {
-    return this._core.addDisposableListener(type, handler);
   }
   public resize(columns: number, rows: number): void {
     this._core.resize(columns, rows);

@@ -3,14 +3,15 @@
  * @license MIT
  */
 
-import * as Strings from './Strings';
-import { ITerminal, IBuffer } from './Types';
+import * as Strings from './browser/LocalizableStrings';
+import { ITerminal } from './Types';
+import { IBuffer } from 'common/buffer/Types';
 import { isMac } from 'common/Platform';
-import { RenderDebouncer } from 'ui/RenderDebouncer';
-import { addDisposableDomListener } from 'ui/Lifecycle';
+import { RenderDebouncer } from 'browser/RenderDebouncer';
+import { addDisposableDomListener } from 'browser/Lifecycle';
 import { Disposable } from 'common/Lifecycle';
-import { ScreenDprMonitor } from 'ui/ScreenDprMonitor';
-import { IRenderDimensions } from './renderer/Types';
+import { ScreenDprMonitor } from 'browser/ScreenDprMonitor';
+import { IRenderDimensions } from 'browser/renderer/Types';
 
 const MAX_ROWS_TO_READ = 20;
 
@@ -84,11 +85,11 @@ export class AccessibilityManager extends Disposable {
     this.register(this._terminal.onRender(e => this._refreshRows(e.start, e.end)));
     this.register(this._terminal.onScroll(() => this._refreshRows()));
     // Line feed is an issue as the prompt won't be read out after a command is run
-    this.register(this._terminal.addDisposableListener('a11y.char', (char) => this._onChar(char)));
+    this.register(this._terminal.onA11yChar(char => this._onChar(char)));
     this.register(this._terminal.onLineFeed(() => this._onChar('\n')));
-    this.register(this._terminal.addDisposableListener('a11y.tab', spaceCount => this._onTab(spaceCount)));
+    this.register(this._terminal.onA11yTab(spaceCount => this._onTab(spaceCount)));
     this.register(this._terminal.onKey(e => this._onKey(e.key)));
-    this.register(this._terminal.addDisposableListener('blur', () => this._clearLiveRegion()));
+    this.register(this._terminal.onBlur(() => this._clearLiveRegion()));
 
     this._screenDprMonitor = new ScreenDprMonitor();
     this.register(this._screenDprMonitor);

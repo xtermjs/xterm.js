@@ -3,17 +3,18 @@
  * @license MIT
  */
 
-import { IRenderer, IRenderDimensions } from './renderer/Types';
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, ILinkifier, IMouseHelper, ILinkMatcherOptions, CharacterJoinerHandler, IBufferStringIterator } from './Types';
-import { IBufferLine, ICellData, IAttributeData } from 'core/Types';
-import { ICircularList, XtermListener } from 'common/Types';
-import { Buffer } from './Buffer';
+import { IRenderer, IRenderDimensions, CharacterJoinerHandler } from 'browser/renderer/Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminal, IBrowser, ISelectionManager, ITerminalOptions, ILinkifier, ILinkMatcherOptions } from './Types';
+import { IBuffer, IBufferStringIterator, IBufferSet } from 'common/buffer/Types';
+import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener } from 'common/Types';
+import { Buffer } from 'common/buffer/Buffer';
 import * as Browser from 'common/Platform';
 import { IDisposable, IMarker, IEvent, ISelectionPosition } from 'xterm';
 import { Terminal } from './Terminal';
-import { AttributeData } from 'core/buffer/BufferLine';
-import { IColorManager, IColorSet } from 'ui/Types';
-import { IOptionsService } from 'common/options/Types';
+import { AttributeData } from 'common/buffer/BufferLine';
+import { IColorManager, IColorSet, IMouseHelper } from 'browser/Types';
+import { IOptionsService } from 'common/services/Services';
+import { EventEmitter } from 'common/EventEmitter';
 
 export class TestTerminal extends Terminal {
   writeSync(data: string): void {
@@ -26,6 +27,10 @@ export class MockTerminal implements ITerminal {
   setRenderer(renderer: any): void {
     throw new Error('Method not implemented.');
   }
+  onBlur: IEvent<void>;
+  onFocus: IEvent<void>;
+  onA11yChar: IEvent<string>;
+  onA11yTab: IEvent<number>;
   onCursorMove: IEvent<void>;
   onLineFeed: IEvent<void>;
   onSelectionChange: IEvent<void>;
@@ -33,8 +38,7 @@ export class MockTerminal implements ITerminal {
   onTitleChange: IEvent<string>;
   onScroll: IEvent<number>;
   onKey: IEvent<{ key: string; domEvent: KeyboardEvent; }>;
-  onRender: IEvent<{ start: number
-    ; end: number; }>;
+  onRender: IEvent<{ start: number; end: number; }>;
   onResize: IEvent<{ cols: number; rows: number; }>;
   markers: IMarker[];
   optionsService: IOptionsService;
@@ -131,7 +135,6 @@ export class MockTerminal implements ITerminal {
   rowContainer: HTMLElement;
   selectionContainer: HTMLElement;
   selectionManager: ISelectionManager;
-  charMeasure: ICharMeasure;
   textarea: HTMLTextAreaElement;
   rows: number;
   cols: number;
@@ -185,16 +188,9 @@ export class MockTerminal implements ITerminal {
   deregisterCharacterJoiner(joinerId: number): void { }
 }
 
-export class MockCharMeasure implements ICharMeasure {
-  onCharSizeChanged: IEvent<void>;
-  width: number;
-  height: number;
-  measure(options: ITerminalOptions): void {
-    throw new Error('Method not implemented.');
-  }
-}
-
 export class MockInputHandlingTerminal implements IInputHandlingTerminal {
+  onA11yCharEmitter: EventEmitter<string>;
+  onA11yTabEmitter: EventEmitter<number>;
   element: HTMLElement;
   options: ITerminalOptions = {};
   cols: number;
@@ -319,6 +315,10 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
 }
 
 export class MockBuffer implements IBuffer {
+  markers: IMarker[];
+  addMarker(y: number): IMarker {
+    throw new Error('Method not implemented.');
+  }
   isCursorInViewport: boolean;
   lines: ICircularList<IBufferLine>;
   ydisp: number;

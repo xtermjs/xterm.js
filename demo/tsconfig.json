@@ -1,9 +1,16 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es5",
+    "target": "es2015",
     "rootDir": ".",
-    "sourceMap": true
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "xterm-addon-attach": ["../addons/xterm-addon-attach"],
+      "xterm-addon-fit": ["../addons/xterm-addon-fit"],
+      "xterm-addon-search": ["../addons/xterm-addon-search"],
+      "xterm-addon-web-links": ["../addons/xterm-addon-web-links"]
+    }
   },
   "include": [
     "client.ts",

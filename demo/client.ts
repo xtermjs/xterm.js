@@ -9,14 +9,17 @@
 
 // Use tsc version (yarn watch)
 import { Terminal } from '../out/public/Terminal';
+import { AttachAddon } from '../addons/xterm-addon-attach/out/AttachAddon';
+import { FitAddon } from '../addons/xterm-addon-fit/out/FitAddon';
+import { SearchAddon, ISearchOptions } from '../addons/xterm-addon-search/out/SearchAddon';
+import { WebLinksAddon } from '../addons/xterm-addon-web-links/out/WebLinksAddon';
+
 // Use webpacked version (yarn package)
 // import { Terminal } from '../lib/xterm';
-
-import { AttachAddon } from 'xterm-addon-attach';
-import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
-import { WebLinksAddon } from 'xterm-addon-web-links';
-
-import * as fit from '../lib/addons/fit/fit';
+// import { AttachAddon } from 'xterm-addon-attach';
+// import { FitAddon } from 'xterm-addon-fit';
+// import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
+// import { WebLinksAddon } from 'xterm-addon-web-links';
 
 // Pulling in the module's types relies on the <reference> above, it's looks a
 // little weird here as we're importing "this" module
@@ -25,12 +28,15 @@ import { Terminal as TerminalType, ITerminalOptions } from 'xterm';
 export interface IWindowWithTerminal extends Window {
   term: TerminalType;
   Terminal?: typeof TerminalType;
+  AttachAddon?: typeof AttachAddon;
+  FitAddon?: typeof FitAddon;
+  SearchAddon?: typeof SearchAddon;
+  WebLinksAddon?: typeof WebLinksAddon;
 }
 declare let window: IWindowWithTerminal;
 
-Terminal.applyAddon(fit);
-
 let term;
+let fitAddon: FitAddon;
 let searchAddon: SearchAddon;
 let protocol;
 let socketURL;
@@ -74,6 +80,10 @@ const disposeRecreateButtonHandler = () => {
 
 if (document.location.pathname === '/test') {
   window.Terminal = Terminal;
+  window.AttachAddon = AttachAddon;
+  window.FitAddon = FitAddon;
+  window.SearchAddon = SearchAddon;
+  window.WebLinksAddon = WebLinksAddon;
 } else {
   createTerminal();
   document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
@@ -95,6 +105,8 @@ function createTerminal(): void {
   typedTerm.loadAddon(new WebLinksAddon());
   searchAddon = new SearchAddon();
   typedTerm.loadAddon(searchAddon);
+  fitAddon = new FitAddon();
+  typedTerm.loadAddon(fitAddon);
 
   window.term = term;  // Expose `term` to window for debugging purposes
   term.onResize((size: { cols: number, rows: number }) => {
@@ -111,7 +123,7 @@ function createTerminal(): void {
   socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
 
   term.open(terminalContainer);
-  term.fit();
+  fitAddon.fit();
   term.focus();
 
   addDomListener(paddingElement, 'change', setPadding);
@@ -299,9 +311,9 @@ function addDomListener(element: HTMLElement, type: string, handler: (...args: a
 function updateTerminalSize(): void {
   const cols = parseInt((<HTMLInputElement>document.getElementById(`opt-cols`)).value, 10);
   const rows = parseInt((<HTMLInputElement>document.getElementById(`opt-rows`)).value, 10);
-  const width = (cols * term._core._renderCoordinator.dimensions.actualCellWidth + term._core.viewport.scrollBarWidth).toString() + 'px';
-  const height = (rows * term._core._renderCoordinator.dimensions.actualCellHeight).toString() + 'px';
+  const width = (cols * term._core._renderService.dimensions.actualCellWidth + term._core.viewport.scrollBarWidth).toString() + 'px';
+  const height = (rows * term._core._renderService.dimensions.actualCellHeight).toString() + 'px';
   terminalContainer.style.width = width;
   terminalContainer.style.height = height;
-  term.fit();
+  fitAddon.fit();
 }

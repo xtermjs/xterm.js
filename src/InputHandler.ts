@@ -6,16 +6,16 @@
 
 import { IInputHandler, IInputHandlingTerminal } from './Types';
 import { C0, C1 } from 'common/data/EscapeSequences';
-import { CHARSETS, DEFAULT_CHARSET } from 'core/data/Charsets';
-import { wcwidth } from './CharWidth';
-import { EscapeSequenceParser } from 'core/parser/EscapeSequenceParser';
+import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
+import { wcwidth } from 'common/CharWidth';
+import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
 import { IDisposable } from 'xterm';
 import { Disposable } from 'common/Lifecycle';
 import { concat } from 'common/TypedArrayUtils';
-import { StringToUtf32, stringFromCodePoint, utf32ToString, Utf8ToUtf32 } from 'core/input/TextDecoder';
-import { CellData, Attributes, FgFlags, BgFlags, AttributeData, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR_DATA } from 'core/buffer/BufferLine';
-import { EventEmitter2, IEvent } from 'common/EventEmitter2';
-import { IParsingState, IDcsHandler, IEscapeSequenceParser } from 'core/parser/Types';
+import { StringToUtf32, stringFromCodePoint, utf32ToString, Utf8ToUtf32 } from 'common/input/TextDecoder';
+import { CellData, Attributes, FgFlags, BgFlags, AttributeData, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { EventEmitter, IEvent } from 'common/EventEmitter';
+import { IParsingState, IDcsHandler, IEscapeSequenceParser } from 'common/parser/Types';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -108,13 +108,13 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _utf8Decoder: Utf8ToUtf32 = new Utf8ToUtf32();
   private _workCell: CellData = new CellData();
 
-  private _onCursorMove = new EventEmitter2<void>();
+  private _onCursorMove = new EventEmitter<void>();
   public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
-  private _onData = new EventEmitter2<string>();
+  private _onData = new EventEmitter<string>();
   public get onData(): IEvent<string> { return this._onData.event; }
-  private _onLineFeed = new EventEmitter2<void>();
+  private _onLineFeed = new EventEmitter<void>();
   public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
-  private _onScroll = new EventEmitter2<number>();
+  private _onScroll = new EventEmitter<number>();
   public get onScroll(): IEvent<number> { return this._onScroll.event; }
 
   constructor(
@@ -342,7 +342,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     buffer = this._terminal.buffer;
     if (buffer.x !== cursorStartX || buffer.y !== cursorStartY) {
-      this._terminal.emit('cursormove');
+      this._onCursorMove.fire();
     }
   }
 
@@ -377,7 +377,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       }
 
       if (screenReaderMode) {
-        this._terminal.emit('a11y.char', stringFromCodePoint(code));
+        this._terminal.onA11yCharEmitter.fire(stringFromCodePoint(code));
       }
 
       // insert combining char at last cursor position
@@ -451,6 +451,20 @@ export class InputHandler extends Disposable implements IInputHandler {
           // other than a regular empty cell a cell following a wide char has no width
           bufferRow.setCellFromCodePoint(buffer.x++, 0, 0, curAttr.fg, curAttr.bg);
         }
+      }
+    }
+    // store last char in Parser.precedingCodepoint for REP to work correctly
+    // This needs to check whether:
+    //  - fullwidth + surrogates: reset
+    //  - combining: only base char gets carried on (bug in xterm?)
+    if (end) {
+      bufferRow.loadCell(buffer.x - 1, this._workCell);
+      if (this._workCell.getWidth() === 2 || this._workCell.getCode() > 0xFFFF) {
+        this._parser.precedingCodepoint = 0;
+      } else if (this._workCell.isCombined()) {
+        this._parser.precedingCodepoint = this._workCell.getChars().charCodeAt(0);
+      } else {
+        this._parser.precedingCodepoint = this._workCell.content;
       }
     }
     this._terminal.updateRange(buffer.y);
@@ -528,7 +542,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const originalX = this._terminal.buffer.x;
     this._terminal.buffer.x = this._terminal.buffer.nextStop();
     if (this._terminal.options.screenReaderMode) {
-      this._terminal.emit('a11y.tab', this._terminal.buffer.x - originalX);
+      this._terminal.onA11yTabEmitter.fire(this._terminal.buffer.x - originalX);
     }
   }
 
@@ -1004,17 +1018,37 @@ export class InputHandler extends Disposable implements IInputHandler {
 
   /**
    * CSI Ps b  Repeat the preceding graphic character Ps times (REP).
+   * From ECMA 48 (@see http://www.ecma-international.org/publications/files/ECMA-ST/Ecma-048.pdf)
+   *    Notation: (Pn)
+   *    Representation: CSI Pn 06/02
+   *    Parameter default value: Pn = 1
+   *    REP is used to indicate that the preceding character in the data stream,
+   *    if it is a graphic character (represented by one or more bit combinations) including SPACE,
+   *    is to be repeated n times, where n equals the value of Pn.
+   *    If the character preceding REP is a control function or part of a control function,
+   *    the effect of REP is not defined by this Standard.
+   *
+   * Since we propagate the terminal as xterm-256color we have to follow xterm's behavior:
+   *    - fullwidth + surrogate chars are ignored
+   *    - for combining chars only the base char gets repeated
+   *    - text attrs are applied normally
+   *    - wrap around is respected
+   *    - any valid sequence resets the carried forward char
+   *
+   * Note: To get reset on a valid sequence working correctly without much runtime penalty,
+   * the preceding codepoint is stored on the parser in `this.print` and reset during `parser.parse`.
    */
   public repeatPrecedingCharacter(params: number[]): void {
-    // make buffer local for faster access
-    const buffer = this._terminal.buffer;
-    const line = buffer.lines.get(buffer.ybase + buffer.y);
-    line.loadCell(buffer.x - 1, this._workCell);
-    line.replaceCells(buffer.x,
-      buffer.x + (params[0] || 1),
-      (this._workCell.content !== undefined) ? this._workCell : buffer.getNullCell(DEFAULT_ATTR_DATA)
-    );
-    // FIXME: no updateRange here?
+    if (!this._parser.precedingCodepoint) {
+      return;
+    }
+    // call print to insert the chars and handle correct wrapping
+    const length = params[0] || 1;
+    const data = new Uint32Array(length);
+    for (let i = 0; i < length; ++i) {
+      data[i] = this._parser.precedingCodepoint;
+    }
+    this.print(data, 0, data.length);
   }
 
   /**
@@ -1818,7 +1852,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       this._terminal.applicationCursor = false;
       this._terminal.buffer.scrollTop = 0;
       this._terminal.buffer.scrollBottom = this._terminal.rows - 1;
-      this._terminal.curAttrData = DEFAULT_ATTR_DATA;
+      this._terminal.curAttrData = DEFAULT_ATTR_DATA.clone();
       this._terminal.buffer.x = this._terminal.buffer.y = 0; // ?
       this._terminal.charset = null;
       this._terminal.glevel = 0; // ??

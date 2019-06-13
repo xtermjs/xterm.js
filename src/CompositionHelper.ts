@@ -4,6 +4,7 @@
  */
 
 import { ITerminal } from './Types';
+import { ICharSizeService } from 'browser/services/Services';
 
 interface IPosition {
   start: number;
@@ -42,7 +43,8 @@ export class CompositionHelper {
   constructor(
     private _textarea: HTMLTextAreaElement,
     private _compositionView: HTMLElement,
-    private _terminal: ITerminal
+    private _terminal: ITerminal,
+    private _charSizeService: ICharSizeService
   ) {
     this._isComposing = false;
     this._isSendingComposition = false;
@@ -195,9 +197,9 @@ export class CompositionHelper {
     }
 
     if (this._terminal.buffer.isCursorInViewport) {
-      const cellHeight = Math.ceil(this._terminal.charMeasure.height * this._terminal.options.lineHeight);
+      const cellHeight = Math.ceil(this._charSizeService.height * this._terminal.options.lineHeight);
       const cursorTop = this._terminal.buffer.y * cellHeight;
-      const cursorLeft = this._terminal.buffer.x * this._terminal.charMeasure.width;
+      const cursorLeft = this._terminal.buffer.x * this._charSizeService.width;
 
       this._compositionView.style.left = cursorLeft + 'px';
       this._compositionView.style.top = cursorTop + 'px';

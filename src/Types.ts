@@ -3,12 +3,12 @@
  * @license MIT
  */
 
-import { ITerminalOptions as IPublicTerminalOptions, IEventEmitter, IDisposable, IMarker, ISelectionPosition } from 'xterm';
-import { ICharset, IAttributeData, ICellData, IBufferLine, CharData } from 'core/Types';
-import { ICircularList } from 'common/Types';
-import { IEvent } from 'common/EventEmitter2';
-import { IColorSet } from 'ui/Types';
-import { IOptionsService } from 'common/options/Types';
+import { ITerminalOptions as IPublicTerminalOptions, IDisposable, IMarker, ISelectionPosition } from 'xterm';
+import { ICharset, IAttributeData, CharData } from 'common/Types';
+import { IEvent, EventEmitter } from 'common/EventEmitter';
+import { IColorSet, IMouseHelper } from 'browser/Types';
+import { IOptionsService } from 'common/services/Services';
+import { IBuffer, IBufferSet } from 'common/buffer/Types';
 
 export type CustomKeyEventHandler = (event: KeyboardEvent) => boolean;
 
@@ -17,17 +17,12 @@ export type LineData = CharData[];
 export type LinkMatcherHandler = (event: MouseEvent, uri: string) => void;
 export type LinkMatcherValidationCallback = (uri: string, callback: (isValid: boolean) => void) => void;
 
-export type CharacterJoinerHandler = (text: string) => [number, number][];
-
-// BufferIndex denotes a position in the buffer: [rowIndex, colIndex]
-export type BufferIndex = [number, number];
-
 /**
  * This interface encapsulates everything needed from the Terminal by the
  * InputHandler. This cleanly separates the large amount of methods needed by
  * InputHandler cleanly from the ITerminal interface.
  */
-export interface IInputHandlingTerminal extends IEventEmitter {
+export interface IInputHandlingTerminal {
   element: HTMLElement;
   options: ITerminalOptions;
   cols: number;
@@ -58,6 +53,9 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   buffer: IBuffer;
   viewport: IViewport;
   selectionManager: ISelectionManager;
+
+  onA11yCharEmitter: EventEmitter<string>;
+  onA11yTabEmitter: EventEmitter<number>;
 
   bell(): void;
   focus(): void;
@@ -199,7 +197,6 @@ export interface ILinkifierEvent {
 export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAccessor, ILinkifierAccessor {
   screenElement: HTMLElement;
   selectionManager: ISelectionManager;
-  charMeasure: ICharMeasure;
   browser: IBrowser;
   writeBuffer: string[];
   cursorHidden: boolean;
@@ -215,6 +212,11 @@ export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAcc
   // TODO: We should remove options once components adopt optionsService
   options: ITerminalOptions;
 
+  onBlur: IEvent<void>;
+  onFocus: IEvent<void>;
+  onA11yChar: IEvent<string>;
+  onA11yTab: IEvent<number>;
+
   handler(data: string): void;
   scrollLines(disp: number, suppressScrollEvent?: boolean): void;
   cancel(ev: Event, force?: boolean): boolean | void;
@@ -223,7 +225,7 @@ export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAcc
 }
 
 // Portions of the public API that are required by the internal Terminal
-export interface IPublicTerminal extends IDisposable, IEventEmitter {
+export interface IPublicTerminal extends IDisposable {
   textarea: HTMLTextAreaElement;
   rows: number;
   cols: number;
@@ -284,20 +286,6 @@ export interface ILinkifierAccessor {
   linkifier: ILinkifier;
 }
 
-export interface IMouseHelper {
-  getCoords(event: { clientX: number, clientY: number }, element: HTMLElement, charMeasure: ICharMeasure, colCount: number, rowCount: number, isSelection?: boolean): [number, number];
-  getRawByteCoords(event: MouseEvent, element: HTMLElement, charMeasure: ICharMeasure, colCount: number, rowCount: number): { x: number, y: number };
-}
-
-export interface ICharMeasure {
-  width: number;
-  height: number;
-
-  onCharSizeChanged: IEvent<void>;
-
-  measure(options: ITerminalOptions): void;
-}
-
 // TODO: The options that are not in the public API should be reviewed
 export interface ITerminalOptions extends IPublicTerminalOptions {
   [key: string]: any;
@@ -308,52 +296,6 @@ export interface ITerminalOptions extends IPublicTerminalOptions {
   screenKeys?: boolean;
   termName?: string;
   useFlowControl?: boolean;
-}
-
-export interface IBufferStringIteratorResult {
-  range: {first: number, last: number};
-  content: string;
-}
-
-export interface IBufferStringIterator {
-  hasNext(): boolean;
-  next(): IBufferStringIteratorResult;
-}
-
-export interface IBuffer {
-  readonly lines: ICircularList<IBufferLine>;
-  ydisp: number;
-  ybase: number;
-  y: number;
-  x: number;
-  tabs: any;
-  scrollBottom: number;
-  scrollTop: number;
-  hasScrollback: boolean;
-  savedY: number;
-  savedX: number;
-  savedCurAttrData: IAttributeData;
-  isCursorInViewport: boolean;
-  translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string;
-  getWrappedRangeForLine(y: number): { first: number, last: number };
-  nextStop(x?: number): number;
-  prevStop(x?: number): number;
-  getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine;
-  stringIndexToBufferIndex(lineIndex: number, stringIndex: number): number[];
-  iterator(trimRight: boolean, startIndex?: number, endIndex?: number, startOverscan?: number, endOverscan?: number): IBufferStringIterator;
-  getNullCell(attr?: IAttributeData): ICellData;
-  getWhitespaceCell(attr?: IAttributeData): ICellData;
-}
-
-export interface IBufferSet {
-  alt: IBuffer;
-  normal: IBuffer;
-  active: IBuffer;
-
-  onBufferActivate: IEvent<{ activeBuffer: IBuffer, inactiveBuffer: IBuffer }>;
-
-  activateNormalBuffer(): void;
-  activateAltBuffer(fillAttr?: IAttributeData): void;
 }
 
 export interface ISelectionManager {
@@ -425,7 +367,6 @@ export interface IBrowser {
   userAgent: string;
   platform: string;
   isFirefox: boolean;
-  isMSIE: boolean;
   isMac: boolean;
   isIpad: boolean;
   isIphone: boolean;

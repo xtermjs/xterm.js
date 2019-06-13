@@ -43,12 +43,15 @@ const clientConfig = {
     ]
   },
   resolve: {
-    modules: [path.resolve(__dirname, '..'), 'node_modules'],
+    modules: [
+      'node_modules',
+      path.resolve(__dirname, '..'),
+      path.resolve(__dirname, '../addons')
+    ],
     extensions: [ '.tsx', '.ts', '.js' ],
     alias: {
       common: path.resolve('./out/common'),
-      core: path.resolve('./out/core'),
-      ui: path.resolve('./out/ui')
+      browser: path.resolve('./out/browser')
     }
   },
   output: {
