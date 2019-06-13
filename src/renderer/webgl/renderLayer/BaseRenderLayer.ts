@@ -4,8 +4,7 @@
  */
 
 import { IRenderLayer } from './Types';
-import { ICellData } from '../../../common/Types';
-import { DEFAULT_COLOR } from '../../../common/Types';
+import { ICellData, DEFAULT_COLOR } from '../../../common/Types';
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, IGlyphIdentifier } from '../atlas/Types';
 import BaseCharAtlas from '../atlas/BaseCharAtlas';
 import { acquireCharAtlas } from '../atlas/CharAtlasCache';
