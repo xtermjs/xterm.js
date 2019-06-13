@@ -700,7 +700,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    */
   private _setTheme(theme: ITheme): void {
     this._theme = theme;
-    this._colorManager.setTheme(theme);
+    if (this._colorManager) {
+      this._colorManager.setTheme(theme);
+    }
     if (this._renderService) {
       this._renderService.setColors(this._colorManager.colors);
     }
