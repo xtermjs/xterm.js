@@ -1920,7 +1920,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     return html;
   }
 
-  private _getCSSColor(mode: Attributes, color: number): string {
+  private _getCSSColor(mode: Attributes, color: number): string | null {
     if (mode === Attributes.CM_RGB) {
       let css = '#';
       for (const channel of AttributeData.toColorRGB(color)) {
@@ -1934,7 +1934,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     if (mode === Attributes.CM_P16 || mode === Attributes.CM_P256) {
       return this._colorManager.colors.ansi[color].css;
     }
-    return 'transparent';
+    return null;
   }
 
   private _getRowAsHTML(y: number, start: number, end: number): string {
@@ -1944,8 +1944,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       const cell = new CellData();
       for (let i = start; i < end; i++) {
           line.loadCell(i, cell);
-          const fg = this._getCSSColor(cell.getFgColorMode(), cell.getFgColor());
-          const bg = this._getCSSColor(cell.getBgColorMode(), cell.getBgColor());
+          const fg = this._getCSSColor(cell.getFgColorMode(), cell.getFgColor()) || this._colorManager.colors.foreground.css;
+          const bg = this._getCSSColor(cell.getBgColorMode(), cell.getBgColor()) || this._colorManager.colors.background.css;
 
           let style = `color: ${fg}; background: ${bg};`;
           if (cell.isBold()) {
@@ -1961,7 +1961,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
               if (lastStyle) {
                   html += '</span>';
               }
-              html += `<span style="${style}">`;
+              html += `<span style="${style.trim()}">`;
               lastStyle = style;
           }
           html += line.getString(i) || ' ';

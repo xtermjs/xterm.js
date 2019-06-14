@@ -1018,6 +1018,17 @@ describe('Terminal', () => {
       term.write(Array(INIT_COLS + 1).join('0'));
       term.write(Array(INIT_COLS + 1).join('1'));
       term.write(Array(INIT_COLS + 1).join('2'));
+      (term as any)._colorManager = {
+        colors: {
+          foreground: { css: 'white' },
+          background: { css: 'black' },
+          ansi: {
+            1: { css: 'red' },
+            2: { css: 'green' },
+            209: { css: '#ff875f' }
+          }
+        }
+      };
     });
 
     afterEach(() => {
@@ -1026,39 +1037,30 @@ describe('Terminal', () => {
 
     it('should work within single lines', () => {
       const html = term.getRangeAsHTML({ startRow: 1, startColumn: 10, endRow: 1, endColumn: 15 });
-      expect(html).eq('<div style="font-family: courier-new, courier, monospace; white-space: pre"><div><span style="color: transparent; background: transparent;">11111</span></div></div>');
+      expect(html).eq('<div style="font-family: courier-new, courier, monospace; white-space: pre"><div><span style="color: white; background: black;">11111</span></div></div>');
     });
 
     it('should work within multiple lines', () => {
       const html = term.getRangeAsHTML({ startRow: 0, startColumn: INIT_COLS - 5, endRow: 1, endColumn: 5 });
-      expect(html).eq('<div style="font-family: courier-new, courier, monospace; white-space: pre"><div><span style="color: transparent; background: transparent;">00000</span></div><div><span style="color: transparent; background: transparent;">11111</span></div></div>');
+      expect(html).eq('<div style="font-family: courier-new, courier, monospace; white-space: pre"><div><span style="color: white; background: black;">00000</span></div><div><span style="color: white; background: black;">11111</span></div></div>');
     });
 
     it('should work with multiple styles', () => {
       term.write('1\x1b[1m2');
       const html = term.getRangeAsHTML({ startRow: 3, startColumn: 0, endRow: 3, endColumn: 2 });
-      expect(html).eq('<div style="font-family: courier-new, courier, monospace; white-space: pre"><div><span style="color: transparent; background: transparent;">1</span><span style="color: transparent; background: transparent; font-weight: bold;">2</span></div></div>');
+      expect(html).eq('<div style="font-family: courier-new, courier, monospace; white-space: pre"><div><span style="color: white; background: black;">1</span><span style="color: white; background: black; font-weight: bold;">2</span></div></div>');
     });
 
     it('should work with italics and underlines', () => {
       term.write('\x1b[3mitalic\x1b[0m\x1b[4munderline');
       const html = term.getRangeAsHTML({ startRow: 3, startColumn: 0, endRow: 3, endColumn: 15 });
-      expect(html).eq('<div style="font-family: courier-new, courier, monospace; white-space: pre"><div><span style="color: transparent; background: transparent; font-style: italic;">italic</span><span style="color: transparent; background: transparent; text-decoration: underline;">underline</span></div></div>');
+      expect(html).eq('<div style="font-family: courier-new, courier, monospace; white-space: pre"><div><span style="color: white; background: black; font-style: italic;">italic</span><span style="color: white; background: black; text-decoration: underline;">underline</span></div></div>');
     });
 
     it('should work with ANSI palette, 256 color palette and TrueColor', () => {
       term.write('\x1b[31mred\x1b[0m\x1b[42mgreenbg\x1b[0m\x1b[38;5;209msalmon1\x1b[38;2;255;100;0mtruecolor');
-      (term as any)._colorManager = {
-        colors: {
-          ansi: {
-            1: { css: 'red' },
-            2: { css: 'green' },
-            209: { css: '#ff875f' }
-          }
-        }
-      };
       const html = term.getRangeAsHTML({ startRow: 3, startColumn: 0, endRow: 3, endColumn: 26 });
-      expect(html).eq('<div style="font-family: courier-new, courier, monospace; white-space: pre"><div><span style="color: red; background: transparent;">red</span><span style="color: transparent; background: green;">greenbg</span><span style="color: #ff875f; background: transparent;">salmon1</span><span style="color: #ff6400; background: transparent;">truecolor</span></div></div>');
+      expect(html).eq('<div style="font-family: courier-new, courier, monospace; white-space: pre"><div><span style="color: red; background: black;">red</span><span style="color: white; background: green;">greenbg</span><span style="color: #ff875f; background: black;">salmon1</span><span style="color: #ff6400; background: black;">truecolor</span></div></div>');
     });
   });
 });
