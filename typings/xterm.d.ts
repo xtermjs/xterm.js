@@ -768,6 +768,12 @@ declare module 'xterm' {
     setOption(key: string, value: any): void;
 
     /**
+     * Returns HTML representing the specified content range.
+     * @param range Range of cells to be converted.
+     */
+    getRangeAsHTML(range: ISelectionPosition): string;
+
+    /**
      * Tells the renderer to refresh terminal content between two rows
      * (inclusive) at the next opportunity.
      * @param start The row to start from (between 0 and this.rows - 1).

@@ -269,6 +269,7 @@ export interface IPublicTerminal extends IDisposable {
   clear(): void;
   write(data: string): void;
   writeUtf8(data: Uint8Array): void;
+  getRangeAsHTML(range: ISelectionPosition): string;
   refresh(start: number, end: number): void;
   reset(): void;
 }

@@ -44,7 +44,7 @@ import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent, KeyboardResultType, ICharset, IBufferLine, IAttributeData } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { Attributes, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { Attributes, AttributeData, CellData, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { applyWindowsMode } from './WindowsMode';
 import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
@@ -1902,6 +1902,72 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    */
   public tabSet(): void {
     this.buffer.tabs[this.buffer.x] = true;
+  }
+
+  public getRangeAsHTML(range: ISelectionPosition): string {
+    const fontFamily = this.optionsService.getOption('fontFamily');
+    let html = `<div style="font-family: ${fontFamily}; white-space: pre">`;
+    if (range.startRow === range.endRow) {
+        html += this._getRowAsHTML(range.startRow, range.startColumn, range.endColumn);
+    } else {
+        html += this._getRowAsHTML(range.startRow, range.startColumn, this.cols);
+        for (let y = range.startRow + 1; y < range.endRow; y++) {
+            html += this._getRowAsHTML(y, 0, this.cols);
+        }
+        html += this._getRowAsHTML(range.endRow, 0, range.endColumn);
+    }
+    html += '</div>';
+    return html;
+  }
+
+  private _getCSSColor(mode: Attributes, color: number): string {
+    if (mode === Attributes.CM_RGB) {
+      let css = '#';
+      for (const channel of AttributeData.toColorRGB(color)) {
+        if (channel < 16) {
+          css += '0';
+        }
+        css += channel.toString(16);
+      }
+      return css;
+    }
+    if (mode === Attributes.CM_P16 || mode === Attributes.CM_P256) {
+      return this._colorManager.colors.ansi[color].css;
+    }
+    return 'transparent';
+  }
+
+  private _getRowAsHTML(y: number, start: number, end: number): string {
+      let html = '<div>';
+      let lastStyle = null;
+      const line = this.buffers.active.lines.get(y);
+      const cell = new CellData();
+      for (let i = start; i < end; i++) {
+          line.loadCell(i, cell);
+          const fg = this._getCSSColor(cell.getFgColorMode(), cell.getFgColor());
+          const bg = this._getCSSColor(cell.getBgColorMode(), cell.getBgColor());
+
+          let style = `color: ${fg}; background: ${bg};`;
+          if (cell.isBold()) {
+            style += ' font-weight: bold;';
+          }
+          if (cell.isItalic()) {
+            style += ' font-style: italic;';
+          }
+          if (cell.isUnderline()) {
+            style += ' text-decoration: underline;';
+          }
+          if (style !== lastStyle) {
+              if (lastStyle) {
+                  html += '</span>';
+              }
+              html += `<span style="${style}">`;
+              lastStyle = style;
+          }
+          html += line.getString(i) || ' ';
+      }
+      html += '</span></div>';
+      return html;
   }
 
   // TODO: Remove cancel function and cancelEvents option

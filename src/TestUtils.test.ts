@@ -121,6 +121,9 @@ export class MockTerminal implements ITerminal {
   writeUtf8(data: Uint8Array): void {
     throw new Error('Method not implemented.');
   }
+  getRangeAsHTML(range: ISelectionPosition): string {
+    throw new Error('Method not implemented.');
+  }
   bracketedPasteMode: boolean;
   mouseHelper: IMouseHelper;
   renderer: IRenderer;
