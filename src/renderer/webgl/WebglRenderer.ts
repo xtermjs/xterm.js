@@ -14,7 +14,7 @@ import { RectangleRenderer } from './RectangleRenderer';
 import { IWebGL2RenderingContext } from './Types';
 import { INVERTED_DEFAULT_COLOR } from './atlas/Types';
 import { RenderModel, COMBINED_CHAR_BIT_MASK } from './RenderModel';
-import { Disposable } from './Lifecycle';
+import { Disposable } from 'common/Lifecycle';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CODE } from 'common/buffer/BufferLine';
 import { DEFAULT_COLOR } from '../../common/Types';
 import { IColorSet, Terminal, IRenderDimensions, IRenderer } from 'xterm';
