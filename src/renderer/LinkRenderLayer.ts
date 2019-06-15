@@ -6,7 +6,7 @@
 import { ILinkifierEvent, ITerminal, ILinkifierAccessor } from '../Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { INVERTED_DEFAULT_COLOR } from './atlas/Types';
+import { INVERTED_DEFAULT_COLOR } from './atlas/Constants';
 import { is256Color } from './atlas/CharAtlasUtils';
 import { IColorSet } from 'browser/Types';
 

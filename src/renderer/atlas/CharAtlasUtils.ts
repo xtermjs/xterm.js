@@ -5,7 +5,7 @@
 
 import { ITerminal } from '../../Types';
 import { ICharAtlasConfig } from './Types';
-import { DEFAULT_COLOR } from 'common/Types';
+import { DEFAULT_COLOR } from 'common/buffer/Constants';
 import { IColorSet } from 'browser/Types';
 
 export function generateConfig(scaledCharWidth: number, scaledCharHeight: number, terminal: ITerminal, colors: IColorSet): ICharAtlasConfig {

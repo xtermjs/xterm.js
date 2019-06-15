@@ -5,7 +5,7 @@
 
 import { ITerminalOptions } from '../../Types';
 import { IBufferLine } from 'common/Types';
-import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
+import { INVERTED_DEFAULT_COLOR } from '../atlas/Constants';
 import { CellData, AttributeData, NULL_CELL_CODE, WHITESPACE_CELL_CHAR } from 'common/buffer/BufferLine';
 
 export const BOLD_CLASS = 'xterm-bold';
