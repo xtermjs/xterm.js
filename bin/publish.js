@@ -11,6 +11,11 @@ const packageJson = require('../package.json');
 // Setup auth
 fs.writeFileSync(`${process.env['HOME']}/.npmrc`, `//registry.npmjs.org/:_authToken=${process.env['NPM_AUTH_TOKEN']}`);
 
+const isDryRun = process.argv.indexOf('--dry') !== -1;
+if (isDryRun) {
+  console.log('Publish dry run');
+}
+
 // Determine if this is a stable or beta release
 const publishedVersions = getPublishedVersions();
 const isStableRelease = publishedVersions.indexOf(packageJson.version) === -1;
@@ -22,15 +27,23 @@ console.log(`Publishing version: ${nextVersion}`);
 // Set the version in package.json
 const packageJsonFile = path.resolve(__dirname, '..', 'package.json');
 packageJson.version = nextVersion;
-fs.writeFileSync(packageJsonFile, JSON.stringify(packageJson, null, 2));
+if (isDryRun) {
+  console.log(`Set version of ${packageJsonFile} to ${nextVersion}`);
+} else {
+  fs.writeFileSync(packageJsonFile, JSON.stringify(packageJson, null, 2));
+}
 
 // Publish
 const args = ['publish'];
 if (!isStableRelease) {
   args.push('--tag', 'beta');
 }
-const result = cp.spawn('npm', args, { stdio: 'inherit' });
-result.on('exit', code => process.exit(code));
+if (isDryRun) {
+  console.log(`Spawn: npm ${args.join(' ')}`);
+} else {
+  const result = cp.spawn('npm', args, { stdio: 'inherit' });
+  result.on('exit', code => process.exit(code));
+}
 
 function getNextBetaVersion() {
   if (!/^[0-9]+\.[0-9]+\.[0-9]+$/.exec(packageJson.version)) {
@@ -60,4 +73,7 @@ function getPublishedVersions(version, tag) {
     return versionsJson.filter(v => !v.search(new RegExp(`${version}-${tag}[0-9]+`)));
   }
   return versionsJson;
+}
+
+function publishPackage(packageDir) {
 }
