@@ -2,3 +2,4 @@
 **/*.api.ts
 tsconfig.json
 .yarnrc
+webpack.config.js
