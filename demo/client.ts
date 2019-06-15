@@ -34,6 +34,7 @@ export interface IWindowWithTerminal extends Window {
   FitAddon?: typeof FitAddon;
   SearchAddon?: typeof SearchAddon;
   WebLinksAddon?: typeof WebLinksAddon;
+  WebglAddon?: typeof WebglAddon;
 }
 declare let window: IWindowWithTerminal;
 
@@ -86,6 +87,7 @@ if (document.location.pathname === '/test') {
   window.FitAddon = FitAddon;
   window.SearchAddon = SearchAddon;
   window.WebLinksAddon = WebLinksAddon;
+  window.WebglAddon = WebglAddon;
 } else {
   createTerminal();
   document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);

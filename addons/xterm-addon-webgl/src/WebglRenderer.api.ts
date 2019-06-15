@@ -51,7 +51,7 @@ describe('WebGL Renderer Integration Tests', () => {
         }
       });
       await writeSync(`\\x1b[30m█\\x1b[31m█\\x1b[32m█\\x1b[33m█\\x1b[34m█\\x1b[35m█\\x1b[36m█\\x1b[37m█`);
-      await page.evaluate(`window.term.loadWebgl(true);`);
+      await page.evaluate(`window.term.loadAddon(new WebglAddon(true));`);
       assert.deepEqual(await getCellColor(1, 1), [1, 2, 3, 255]);
       assert.deepEqual(await getCellColor(2, 1), [4, 5, 6, 255]);
       assert.deepEqual(await getCellColor(3, 1), [7, 8, 9, 255]);
@@ -78,7 +78,7 @@ describe('WebGL Renderer Integration Tests', () => {
         }
       });
       await writeSync(`\\x1b[90m█\\x1b[91m█\\x1b[92m█\\x1b[93m█\\x1b[94m█\\x1b[95m█\\x1b[96m█\\x1b[97m█`);
-      await page.evaluate(`window.term.loadWebgl(true);`);
+      await page.evaluate(`window.term.loadAddon(new WebglAddon(true));`);
       assert.deepEqual(await getCellColor(1, 1), [1, 2, 3, 255]);
       assert.deepEqual(await getCellColor(2, 1), [4, 5, 6, 255]);
       assert.deepEqual(await getCellColor(3, 1), [7, 8, 9, 255]);
@@ -105,7 +105,7 @@ describe('WebGL Renderer Integration Tests', () => {
         }
       });
       await writeSync(`\\x1b[40m \\x1b[41m \\x1b[42m \\x1b[43m \\x1b[44m \\x1b[45m \\x1b[46m \\x1b[47m `);
-      await page.evaluate(`window.term.loadWebgl(true);`);
+      await page.evaluate(`window.term.loadAddon(new WebglAddon(true));`);
       assert.deepEqual(await getCellColor(1, 1), [1, 2, 3, 255]);
       assert.deepEqual(await getCellColor(2, 1), [4, 5, 6, 255]);
       assert.deepEqual(await getCellColor(3, 1), [7, 8, 9, 255]);
@@ -132,7 +132,7 @@ describe('WebGL Renderer Integration Tests', () => {
         }
       });
       await writeSync(`\\x1b[100m \\x1b[101m \\x1b[102m \\x1b[103m \\x1b[104m \\x1b[105m \\x1b[106m \\x1b[107m `);
-      await page.evaluate(`window.term.loadWebgl(true);`);
+      await page.evaluate(`window.term.loadAddon(new WebglAddon(true));`);
       assert.deepEqual(await getCellColor(1, 1), [1, 2, 3, 255]);
       assert.deepEqual(await getCellColor(2, 1), [4, 5, 6, 255]);
       assert.deepEqual(await getCellColor(3, 1), [7, 8, 9, 255]);
