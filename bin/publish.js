@@ -15,19 +15,30 @@ if (isDryRun) {
   console.log('Publish dry run');
 }
 
-const publishablePackages = [
-  path.resolve(__dirname, '..'),
+const addonPackageDirs = [
   path.resolve(__dirname, '../addons/xterm-addon-attach'),
   path.resolve(__dirname, '../addons/xterm-addon-fit'),
   path.resolve(__dirname, '../addons/xterm-addon-search'),
   path.resolve(__dirname, '../addons/xterm-addon-web-links')
 ];
 
-publishablePackages.forEach(p => checkAndPublishPackage(p));
+const changedFiles = getChangedFilesInCommit('HEAD');
+
+// Publish xterm if any files were changed outside of the addons directory
+if (changedFiles.some(e => e.search(/^addons\//) === -1)) {
+  checkAndPublishPackage(path.resolve(__dirname, '..'));
+}
+
+// Publish addons if any files were changed inside of the addon
+addonPackageDirs.forEach(p => {
+  const addon = path.basename(p);
+  if (changedFiles.some(e => e.indexOf(addon) !== -1)) {
+    checkAndPublishPackage(p);
+  }
+});
 
 function checkAndPublishPackage(packageDir) {
   const packageJson = require(path.join(packageDir, 'package.json'));
-  console.group('Checking package ' + packageJson.name);
 
   // Determine if this is a stable or beta release
   const publishedVersions = getPublishedVersions(packageJson);
@@ -89,4 +100,12 @@ function getPublishedVersions(packageJson, version, tag) {
     return versionsJson.filter(v => !v.search(new RegExp(`${version}-${tag}[0-9]+`)));
   }
   return versionsJson;
+}
+
+function getChangedFilesInCommit(commit) {
+  const args = ['log', '-m', '-1', '--name-only', `--pretty=format:`, commit];
+  const result = cp.spawnSync('git', args);
+  const output = result.stdout.toString();
+  const changedFiles = output.split('\n').filter(e => e.length > 0);
+  return changedFiles;
 }
