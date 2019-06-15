@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { FLAGS } from '../Types';
 import { ITerminal } from '../../Types';
 import { GlyphRenderer } from './GlyphRenderer';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
@@ -16,7 +15,7 @@ import { INVERTED_DEFAULT_COLOR } from './atlas/Types';
 import { RenderModel, COMBINED_CHAR_BIT_MASK } from './RenderModel';
 import { Disposable } from 'common/Lifecycle';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CODE } from 'common/buffer/BufferLine';
-import { DEFAULT_COLOR } from '../../common/Types';
+import { DEFAULT_COLOR, FLAGS } from '../../common/buffer/Constants';
 import { IColorSet, Terminal, IRenderDimensions, IRenderer } from 'xterm';
 import { getLuminance } from './ColorUtils';
 import { IRenderLayer } from './renderLayer/Types';

@@ -6,10 +6,9 @@
 import { DIM_OPACITY, IGlyphIdentifier, INVERTED_DEFAULT_COLOR, ICharAtlasConfig } from './Types';
 import BaseCharAtlas from './BaseCharAtlas';
 import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from '../Types';
-import { FLAGS } from '../../Types';
+import { FLAGS, DEFAULT_COLOR } from '../../../common/buffer/Constants';
 import { is256Color } from './CharAtlasUtils';
 import { DEFAULT_ATTR } from 'common/buffer/BufferLine';
-import { DEFAULT_COLOR } from '../../../common/Types';
 import { IColor } from 'xterm';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,

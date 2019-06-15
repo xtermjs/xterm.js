@@ -3,21 +3,11 @@
  * @license MIT
  */
 
-import { DEFAULT_COLOR, CharData, IBufferLine, ICellData, IColorRGB, IAttributeData } from 'common/Types';
+import { CharData, IBufferLine, ICellData, IColorRGB, IAttributeData } from 'common/Types';
 import { stringFromCodePoint } from 'common/input/TextDecoder';
+import { DEFAULT_COLOR, FLAGS } from 'common/buffer/Constants';
 
 export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
-
-// TODO: This is duplicated from renderer, should be removed after chardata workaround is fixed
-export const enum FLAGS {
-  BOLD = 1,
-  UNDERLINE = 2,
-  BLINK = 4,
-  INVERSE = 8,
-  INVISIBLE = 16,
-  DIM = 32,
-  ITALIC = 64
-}
 
 export const CHAR_DATA_ATTR_INDEX = 0;
 export const CHAR_DATA_CHAR_INDEX = 1;
