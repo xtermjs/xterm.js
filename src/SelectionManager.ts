@@ -10,7 +10,7 @@ import { MouseHelper } from 'browser/input/MouseHelper';
 import * as Browser from 'common/Platform';
 import { SelectionModel } from './SelectionModel';
 import { AltClickHandler } from './handlers/AltClickHandler';
-import { CellData } from 'common/buffer/BufferLine';
+import { CellData } from 'common/buffer/CellData';
 import { IDisposable } from 'xterm';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { ICharSizeService } from 'browser/services/Services';

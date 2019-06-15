@@ -12,8 +12,9 @@ import { IGlyphIdentifier } from './atlas/Types';
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from './atlas/Constants';
 import { BaseCharAtlas } from './atlas/BaseCharAtlas';
 import { acquireCharAtlas } from './atlas/CharAtlasCache';
-import { CellData, AttributeData } from 'common/buffer/BufferLine';
+import { AttributeData } from 'common/buffer/BufferLine';
 import { IColorSet } from 'browser/Types';
+import { CellData } from 'common/buffer/CellData';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
