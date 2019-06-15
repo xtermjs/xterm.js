@@ -5,14 +5,15 @@
 
 import { IRenderLayer } from './Types';
 import { ICellData } from '../../../common/Types';
-import { DEFAULT_COLOR } from '../../../common/buffer/Constants';
+import { DEFAULT_COLOR, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from '../../../common/buffer/Constants';
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, IGlyphIdentifier } from '../atlas/Types';
 import { BaseCharAtlas } from '../atlas/BaseCharAtlas';
 import { acquireCharAtlas } from '../atlas/CharAtlasCache';
-import { CellData, AttributeData, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from '../../../common/buffer/BufferLine';
 import { Terminal } from 'xterm';
 import { IColorSet } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
+import { CellData } from 'common/buffer/CellData';
+import { AttributeData } from 'common/buffer/AttributeData';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;

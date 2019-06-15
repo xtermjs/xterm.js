@@ -7,7 +7,8 @@ import { assert } from 'chai';
 import { Buffer } from 'common/buffer/Buffer';
 import { CircularList } from 'common/CircularList';
 import { MockOptionsService, MockBufferService } from 'common/TestUtils.test';
-import { BufferLine, CellData, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { CellData } from 'common/buffer/CellData';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;

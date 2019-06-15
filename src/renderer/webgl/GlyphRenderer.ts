@@ -9,7 +9,7 @@ import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel, IRaster
 import { INDICIES_PER_CELL } from './WebglRenderer';
 import { COMBINED_CHAR_BIT_MASK } from './RenderModel';
 import { fill, slice } from 'common/TypedArrayUtils';
-import { NULL_CELL_CODE, WHITESPACE_CELL_CODE } from '../../common/buffer/BufferLine';
+import { NULL_CELL_CODE, WHITESPACE_CELL_CODE } from '../../common/buffer/Constants';
 import { getLuminance } from './ColorUtils';
 import { Terminal, IBufferLine } from 'xterm';
 import { IColorSet } from 'browser/Types';
