@@ -73,7 +73,6 @@ export class BufferLine implements IBufferLine {
   public get(index: number): CharData {
     const content = this._data[index * CELL_SIZE + Cell.CONTENT];
     const cp = content & Content.CODEPOINT_MASK;
-
     return [
       this._data[index * CELL_SIZE + Cell.FG],
       (content & Content.IS_COMBINED_MASK)
