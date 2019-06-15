@@ -121,6 +121,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._glyphRenderer.setColors();
 
     this._refreshCharAtlas();
+
+    // Force a full refresh
+    this._model.clear();
   }
 
   public onDevicePixelRatioChange(): void {
@@ -134,7 +137,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   public onResize(cols: number, rows: number): void {
     // Update character and canvas dimensions
-    this._updateDimensions(devicePixelRatio);
+    this._updateDimensions();
 
     this._model.resize(this._terminal.cols, this._terminal.rows);
     this._rectangleRenderer.onResize();
@@ -155,6 +158,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._glyphRenderer.onResize();
 
     this._refreshCharAtlas();
+
+    // Force a full refresh
+    this._model.clear();
   }
 
   public onCharSizeChanged(): void {
@@ -331,7 +337,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   /**
    * Recalculates the character and canvas dimensions.
    */
-  private _updateDimensions(devicePixelRatio: number = window.devicePixelRatio): void {
+  private _updateDimensions(): void {
     // TODO: Acquire CharSizeService properly
 
     // Perform a new measure if the CharMeasure dimensions are not yet available
@@ -346,12 +352,12 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     // NOTE: ceil fixes sometime, floor does others :s
 
-    this.dimensions.scaledCharWidth = Math.floor((<any>this._core)._charSizeService.width * devicePixelRatio);
+    this.dimensions.scaledCharWidth = Math.floor((<any>this._core)._charSizeService.width * this._devicePixelRatio);
 
     // Calculate the scaled character height. Height is ceiled in case
     // devicePixelRatio is a floating point number in order to ensure there is
     // enough space to draw the character to the cell.
-    this.dimensions.scaledCharHeight = Math.ceil((<any>this._core)._charSizeService.height * devicePixelRatio);
+    this.dimensions.scaledCharHeight = Math.ceil((<any>this._core)._charSizeService.height * this._devicePixelRatio);
 
     // Calculate the scaled cell height, if lineHeight is not 1 then the value
     // will be floored because since lineHeight can never be lower then 1, there
@@ -380,8 +386,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // window.devicePixelRatio as something like 1.100000023841858, when it's
     // actually 1.1. Ceiling causes blurriness as the backing canvas image is 1
     // pixel too large for the canvas element size.
-    this.dimensions.canvasHeight = Math.round(this.dimensions.scaledCanvasHeight / devicePixelRatio);
-    this.dimensions.canvasWidth = Math.round(this.dimensions.scaledCanvasWidth / devicePixelRatio);
+    this.dimensions.canvasHeight = Math.round(this.dimensions.scaledCanvasHeight / this._devicePixelRatio);
+    this.dimensions.canvasWidth = Math.round(this.dimensions.scaledCanvasWidth / this._devicePixelRatio);
 
     // this.dimensions.scaledCanvasHeight = this.dimensions.canvasHeight * devicePixelRatio;
     // this.dimensions.scaledCanvasWidth = this.dimensions.canvasWidth * devicePixelRatio;
@@ -396,7 +402,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // this.dimensions.actualCellWidth = this.dimensions.canvasWidth / this._terminal.cols;
 
     // This fixes 110% and 125%, not 150% or 175% though
-    this.dimensions.actualCellHeight = this.dimensions.scaledCellHeight / devicePixelRatio;
-    this.dimensions.actualCellWidth = this.dimensions.scaledCellWidth / devicePixelRatio;
+    this.dimensions.actualCellHeight = this.dimensions.scaledCellHeight / this._devicePixelRatio;
+    this.dimensions.actualCellWidth = this.dimensions.scaledCellWidth / this._devicePixelRatio;
   }
 }
