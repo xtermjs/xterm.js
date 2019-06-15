@@ -167,9 +167,14 @@ export class DomRenderer extends Disposable implements IRenderer {
     // Blink animation
     styles +=
         `@keyframes blink {` +
-        ` 0% { opacity: 1.0; }` +
-        ` 50% { opacity: 0.0; }` +
-        ` 100% { opacity: 1.0; }` +
+        ` 0% {` +
+        `  background-color: ${this._colors.cursor.css};` +
+        `  color: ${this._colors.cursorAccent.css};` +
+        ` }` +
+        ` 50% {` +
+        `  background-color: ${this._colors.cursorAccent.css};` +
+        `  color: ${this._colors.cursor.css};` +
+        ` }` +
         `}`;
     // Cursor
     styles +=
