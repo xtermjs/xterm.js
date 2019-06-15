@@ -292,6 +292,23 @@ describe('InputHandler Integration Tests', function(): void {
       assert.deepEqual(await getLinesAsArray(3), ['#', ' #', 'abcd####']);
     });
   });
+
+  describe('ESC', () => {
+    describe('DECRC: Save cursor, ESC 7', () => {
+      it('should save the absolute cursor position so resizing restores to the correct position', async () => {
+        await page.evaluate(`
+          window.term.resize(10, 2);
+          window.term.write('1\\n\\r2\\n\\r3\\n\\r4\\n\\r5');
+          window.term.write('\\x1b7\\x1b[?47h');
+        `);
+        await page.evaluate(`
+          window.term.resize(10, 4);
+          window.term.write('\\x1b[?47l\\x1b8');
+        `);
+        assert.deepEqual(await getCursor(), {col: 1, row: 3});
+      });
+    });
+  });
 });
 
 async function openTerminal(options: ITerminalOptions = {}): Promise<void> {
