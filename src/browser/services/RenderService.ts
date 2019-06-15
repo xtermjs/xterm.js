@@ -105,13 +105,14 @@ export class RenderService extends Disposable implements IRenderService {
     // TODO: RenderCoordinator should be the only one to dispose the renderer
     this._renderer.dispose();
     this._renderer = renderer;
+    this.refreshRows(0, this._rowCount - 1);
   }
 
   private _fullRefresh(): void {
     if (this._isPaused) {
       this._needsFullRefresh = true;
     } else {
-      this.refreshRows(0, this._rowCount);
+      this.refreshRows(0, this._rowCount - 1);
     }
   }
 
@@ -122,7 +123,7 @@ export class RenderService extends Disposable implements IRenderService {
 
   public onDevicePixelRatioChange(): void {
     this._renderer.onDevicePixelRatioChange();
-    this.refreshRows(0, this._rowCount);
+    this.refreshRows(0, this._rowCount - 1);
   }
 
   public onResize(cols: number, rows: number): void {
