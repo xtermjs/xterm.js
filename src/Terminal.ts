@@ -686,12 +686,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   }
 
-  public setRenderer(renderer: IRenderer): void {
-    this._renderService.setRenderer(renderer);
-    // this._renderCoordinator.onOptionsChanged();
-    this.refresh(0, this.rows - 1);
-  }
-
   private _createRenderer(): IRenderer {
     switch (this.options.rendererType) {
       case 'canvas': return new Renderer(this, this._colorManager.colors, this._charSizeService); break;

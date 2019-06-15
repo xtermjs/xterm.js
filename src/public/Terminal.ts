@@ -162,9 +162,6 @@ export class Terminal implements ITerminalApi {
   public loadAddon(addon: ITerminalAddon): void {
     return this._addonManager.loadAddon(this, addon);
   }
-  public setRenderer(renderer: any): void {
-    this._core.setRenderer(renderer);
-  }
   public loadWebgl(preserveDrawingBuffer?: boolean): void {
     this.loadAddon(new WebglRendererAddon(preserveDrawingBuffer));
   }

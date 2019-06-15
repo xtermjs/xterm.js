@@ -271,7 +271,6 @@ export interface IPublicTerminal extends IDisposable {
   writeUtf8(data: Uint8Array): void;
   refresh(start: number, end: number): void;
   reset(): void;
-  setRenderer(renderer: any): void;
 }
 
 export interface IBufferAccessor {

@@ -24,9 +24,6 @@ export class TestTerminal extends Terminal {
 }
 
 export class MockTerminal implements ITerminal {
-  setRenderer(renderer: any): void {
-    throw new Error('Method not implemented.');
-  }
   onBlur: IEvent<void>;
   onFocus: IEvent<void>;
   onA11yChar: IEvent<string>;
