@@ -8,7 +8,6 @@ import BaseCharAtlas from './BaseCharAtlas';
 import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from '../Types';
 import { FLAGS } from '../../Types';
 import { is256Color } from './CharAtlasUtils';
-import { clearColor } from './CharAtlasGenerator';
 import { DEFAULT_ATTR } from 'common/buffer/BufferLine';
 import { DEFAULT_COLOR } from '../../../common/Types';
 import { IColor } from 'xterm';
@@ -376,4 +375,25 @@ export default class WebglCharAtlas extends BaseCharAtlas {
     }
     return new ImageData(clippedData, width, height);
   }
+}
+
+/**
+ * Makes a partiicular rgb color in an ImageData completely transparent.
+ * @returns True if the result is "empty", meaning all pixels are fully transparent.
+ */
+function clearColor(imageData: ImageData, color: IColor): boolean {
+  let isEmpty = true;
+  const r = color.rgba >>> 24;
+  const g = color.rgba >>> 16 & 0xFF;
+  const b = color.rgba >>> 8 & 0xFF;
+  for (let offset = 0; offset < imageData.data.length; offset += 4) {
+    if (imageData.data[offset] === r &&
+        imageData.data[offset + 1] === g &&
+        imageData.data[offset + 2] === b) {
+      imageData.data[offset + 3] = 0;
+    } else {
+      isEmpty = false;
+    }
+  }
+  return isEmpty;
 }
