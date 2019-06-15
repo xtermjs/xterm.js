@@ -4,7 +4,7 @@
  */
 
 import { createProgram, PROJECTION_MATRIX } from './WebglUtils';
-import WebglCharAtlas from './atlas/WebglCharAtlas';
+import { WebglCharAtlas } from './atlas/WebglCharAtlas';
 import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel, IRasterizedGlyph } from './Types';
 import { INDICIES_PER_CELL } from './WebglRenderer';
 import { COMBINED_CHAR_BIT_MASK } from './RenderModel';

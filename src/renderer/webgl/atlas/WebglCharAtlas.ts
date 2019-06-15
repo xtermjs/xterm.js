@@ -4,7 +4,7 @@
  */
 
 import { DIM_OPACITY, IGlyphIdentifier, INVERTED_DEFAULT_COLOR, ICharAtlasConfig } from './Types';
-import BaseCharAtlas from './BaseCharAtlas';
+import { BaseCharAtlas } from './BaseCharAtlas';
 import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from '../Types';
 import { FLAGS, DEFAULT_COLOR } from '../../../common/buffer/Constants';
 import { is256Color } from './CharAtlasUtils';
@@ -41,7 +41,7 @@ const NULL_RASTERIZED_GLYPH: IRasterizedGlyph = {
 
 const TMP_CANVAS_GLYPH_PADDING = 2;
 
-export default class WebglCharAtlas extends BaseCharAtlas {
+export class WebglCharAtlas extends BaseCharAtlas {
   private _cacheMap: { [code: number]: IRasterizedGlyphSet } = {};
   private _cacheMapCombined: { [chars: string]: IRasterizedGlyphSet } = {};
 

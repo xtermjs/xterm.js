@@ -8,7 +8,7 @@ import { GlyphRenderer } from './GlyphRenderer';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { CursorRenderLayer } from './renderLayer/CursorRenderLayer';
 import { acquireCharAtlas } from './atlas/CharAtlasCache';
-import WebglCharAtlas from './atlas/WebglCharAtlas';
+import { WebglCharAtlas } from './atlas/WebglCharAtlas';
 import { RectangleRenderer } from './RectangleRenderer';
 import { IWebGL2RenderingContext } from './Types';
 import { INVERTED_DEFAULT_COLOR } from './atlas/Types';

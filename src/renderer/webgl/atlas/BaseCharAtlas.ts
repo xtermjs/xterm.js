@@ -6,7 +6,7 @@
 import { IGlyphIdentifier } from './Types';
 import { IDisposable } from 'xterm';
 
-export default abstract class BaseCharAtlas implements IDisposable {
+export abstract class BaseCharAtlas implements IDisposable {
   private _didWarmUp: boolean = false;
 
   public dispose(): void { }
