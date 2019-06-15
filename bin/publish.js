@@ -15,13 +15,6 @@ if (isDryRun) {
   console.log('Publish dry run');
 }
 
-const addonPackageDirs = [
-  path.resolve(__dirname, '../addons/xterm-addon-attach'),
-  path.resolve(__dirname, '../addons/xterm-addon-fit'),
-  path.resolve(__dirname, '../addons/xterm-addon-search'),
-  path.resolve(__dirname, '../addons/xterm-addon-web-links')
-];
-
 const changedFiles = getChangedFilesInCommit('HEAD');
 
 // Publish xterm if any files were changed outside of the addons directory
@@ -30,6 +23,12 @@ if (changedFiles.some(e => e.search(/^addons\//) === -1)) {
 }
 
 // Publish addons if any files were changed inside of the addon
+const addonPackageDirs = [
+  path.resolve(__dirname, '../addons/xterm-addon-attach'),
+  path.resolve(__dirname, '../addons/xterm-addon-fit'),
+  path.resolve(__dirname, '../addons/xterm-addon-search'),
+  path.resolve(__dirname, '../addons/xterm-addon-web-links')
+];
 addonPackageDirs.forEach(p => {
   const addon = path.basename(p);
   if (changedFiles.some(e => e.indexOf(addon) !== -1)) {
