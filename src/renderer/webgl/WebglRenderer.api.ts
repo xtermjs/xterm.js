@@ -166,7 +166,7 @@ async function writeSync(data: string): Promise<void> {
 
 // async function getPixelAt(x: number, y: number): Promise<number[]> {
 //   await page.evaluate(`
-//     window.gl = window.term._core._renderCoordinator._renderer._gl;
+//     window.gl = window.term._core._renderService._renderer._gl;
 //     window.result = new Uint8Array(4);
 //     window.gl.readPixels(${x}, window.gl.drawingBufferHeight - 1 - ${y}, 1, 1, window.gl.RGBA, window.gl.UNSIGNED_BYTE, window.result);
 //   `);
@@ -175,9 +175,9 @@ async function writeSync(data: string): Promise<void> {
 
 async function getCellColor(col: number, row: number): Promise<number[]> {
   await page.evaluate(`
-    window.gl = window.term._core._renderCoordinator._renderer._gl;
+    window.gl = window.term._core._renderService._renderer._gl;
     window.result = new Uint8Array(4);
-    window.d = window.term._core._renderCoordinator.dimensions;
+    window.d = window.term._core._renderService.dimensions;
     window.gl.readPixels(
       Math.floor((${col - 0.5}) * window.d.scaledCellWidth),
       Math.floor(window.gl.drawingBufferHeight - 1 - (${row - 0.5}) * window.d.scaledCellHeight),
