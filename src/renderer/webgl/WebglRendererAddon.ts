@@ -5,10 +5,10 @@
 
 import { Terminal, ITerminalAddon } from 'xterm';
 import { WebglRenderer } from './WebglRenderer';
+import { IRenderService } from 'browser/services/Services';
+import { IColorSet } from 'browser/Types';
 
 export class WebglRendererAddon implements ITerminalAddon {
-  private _terminal: Terminal | undefined;
-
   constructor(
     private _preserveDrawingBuffer?: boolean
   ) {}
@@ -17,8 +17,9 @@ export class WebglRendererAddon implements ITerminalAddon {
     if (!terminal.element) {
       throw new Error('Cannot activate WebglRendererAddon before Terminal.open');
     }
-    this._terminal = terminal;
-    (<any>this._terminal)._core._renderService.setRenderer(new WebglRenderer(terminal, (terminal as any)._core._colorManager.colors, this._preserveDrawingBuffer));
+    const renderService: IRenderService =  (<any>terminal)._core._renderService;
+    const colors: IColorSet = (<any>terminal)._core._colorManager.colors;
+    renderService.setRenderer(new WebglRenderer(terminal, colors, this._preserveDrawingBuffer));
   }
 
   public dispose(): void {

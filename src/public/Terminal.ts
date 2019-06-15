@@ -33,7 +33,6 @@ export class Terminal implements ITerminalApi {
   public get onResize(): IEvent<{ cols: number, rows: number }> { return this._core.onResize; }
 
   public get element(): HTMLElement { return this._core.element; }
-  public get screenElement(): HTMLElement { return this._core.screenElement; }
   public get textarea(): HTMLTextAreaElement { return this._core.textarea; }
   public get rows(): number { return this._core.rows; }
   public get cols(): number { return this._core.cols; }
