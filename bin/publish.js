@@ -50,9 +50,8 @@ function checkAndPublishPackage(packageDir) {
   // Set the version in package.json
   const packageJsonFile = path.join(packageDir, 'package.json');
   packageJson.version = nextVersion;
-  if (isDryRun) {
-    console.log(`Set version of ${packageJsonFile} to ${nextVersion}`);
-  } else {
+  console.log(`Set version of ${packageJsonFile} to ${nextVersion}`);
+  if (!isDryRun) {
     fs.writeFileSync(packageJsonFile, JSON.stringify(packageJson, null, 2));
   }
 
@@ -61,11 +60,16 @@ function checkAndPublishPackage(packageDir) {
   if (!isStableRelease) {
     args.push('--tag', 'beta');
   }
-  if (isDryRun) {
-    console.log(`Spawn: npm ${args.join(' ')}`);
-  } else {
-    const result = cp.spawn('npm', args, { stdio: 'inherit' });
-    result.on('exit', code => process.exit(code));
+  console.log(`Spawn: npm ${args.join(' ')}`);
+  if (!isDryRun) {
+    const result = cp.spawnSync('npm', args, {
+      cwd: packageDir,
+      stdio: 'inherit'
+    });
+    if (result.status) {
+      console.error(`Spawn exited with code ${result.status}`);
+      process.exit(result.status);
+    }
   }
 
   console.groupEnd();
