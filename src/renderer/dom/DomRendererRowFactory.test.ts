@@ -6,8 +6,8 @@
 import jsdom = require('jsdom');
 import { assert } from 'chai';
 import { DomRendererRowFactory } from './DomRendererRowFactory';
-import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, DEFAULT_ATTR } from 'common/buffer/Constants';
-import { BufferLine, FgFlags, BgFlags, Attributes, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, DEFAULT_ATTR, FgFlags, BgFlags, Attributes } from 'common/buffer/Constants';
+import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { ITerminalOptions } from '../../Types';
 import { IBufferLine } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';

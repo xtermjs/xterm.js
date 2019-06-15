@@ -3,10 +3,11 @@
  * @license MIT
  */
 
-import { CharData, IBufferLine, ICellData, IColorRGB, IAttributeData } from 'common/Types';
+import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { stringFromCodePoint } from 'common/input/TextDecoder';
 import { DEFAULT_COLOR, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Content } from 'common/buffer/Constants';
-import { CellData } from './CellData';
+import { CellData } from 'common/buffer/CellData';
+import { AttributeData } from 'common/buffer/AttributeData';
 
 /**
  * buffer memory layout:
@@ -32,122 +33,6 @@ const enum Cell {
   CONTENT = 0,
   FG = 1, // currently simply holds all known attrs
   BG = 2  // currently unused
-}
-
-export const enum Attributes {
-  /**
-   * bit 1..8     blue in RGB, color in P256 and P16
-   */
-  BLUE_MASK = 0xFF,
-  BLUE_SHIFT = 0,
-  PCOLOR_MASK = 0xFF,
-  PCOLOR_SHIFT = 0,
-
-  /**
-   * bit 9..16    green in RGB
-   */
-  GREEN_MASK = 0xFF00,
-  GREEN_SHIFT = 8,
-
-  /**
-   * bit 17..24   red in RGB
-   */
-  RED_MASK = 0xFF0000,
-  RED_SHIFT = 16,
-
-  /**
-   * bit 25..26   color mode: DEFAULT (0) | P16 (1) | P256 (2) | RGB (3)
-   */
-  CM_MASK = 0x3000000,
-  CM_DEFAULT = 0,
-  CM_P16 = 0x1000000,
-  CM_P256 = 0x2000000,
-  CM_RGB = 0x3000000,
-
-  /**
-   * bit 1..24  RGB room
-   */
-  RGB_MASK = 0xFFFFFF
-}
-
-export const enum FgFlags {
-  /**
-   * bit 27..31 (32th bit unused)
-   */
-  INVERSE = 0x4000000,
-  BOLD = 0x8000000,
-  UNDERLINE = 0x10000000,
-  BLINK = 0x20000000,
-  INVISIBLE = 0x40000000
-}
-
-export const enum BgFlags {
-  /**
-   * bit 27..32 (upper 4 unused)
-   */
-  ITALIC = 0x4000000,
-  DIM = 0x8000000
-}
-
-export class AttributeData implements IAttributeData {
-  static toColorRGB(value: number): IColorRGB {
-    return [
-      value >>> Attributes.RED_SHIFT & 255,
-      value >>> Attributes.GREEN_SHIFT & 255,
-      value & 255
-    ];
-  }
-  static fromColorRGB(value: IColorRGB): number {
-    return (value[0] & 255) << Attributes.RED_SHIFT | (value[1] & 255) << Attributes.GREEN_SHIFT | value[2] & 255;
-  }
-
-  public clone(): IAttributeData {
-    const newObj = new AttributeData();
-    newObj.fg = this.fg;
-    newObj.bg = this.bg;
-    return newObj;
-  }
-
-  // data
-  public fg: number = 0;
-  public bg: number = 0;
-
-  // flags
-  public isInverse(): number   { return this.fg & FgFlags.INVERSE; }
-  public isBold(): number      { return this.fg & FgFlags.BOLD; }
-  public isUnderline(): number { return this.fg & FgFlags.UNDERLINE; }
-  public isBlink(): number     { return this.fg & FgFlags.BLINK; }
-  public isInvisible(): number { return this.fg & FgFlags.INVISIBLE; }
-  public isItalic(): number    { return this.bg & BgFlags.ITALIC; }
-  public isDim(): number       { return this.bg & BgFlags.DIM; }
-
-  // color modes
-  public getFgColorMode(): number { return this.fg & Attributes.CM_MASK; }
-  public getBgColorMode(): number { return this.bg & Attributes.CM_MASK; }
-  public isFgRGB(): boolean       { return (this.fg & Attributes.CM_MASK) === Attributes.CM_RGB; }
-  public isBgRGB(): boolean       { return (this.bg & Attributes.CM_MASK) === Attributes.CM_RGB; }
-  public isFgPalette(): boolean   { return (this.fg & Attributes.CM_MASK) === Attributes.CM_P16 || (this.fg & Attributes.CM_MASK) === Attributes.CM_P256; }
-  public isBgPalette(): boolean   { return (this.bg & Attributes.CM_MASK) === Attributes.CM_P16 || (this.bg & Attributes.CM_MASK) === Attributes.CM_P256; }
-  public isFgDefault(): boolean   { return (this.fg & Attributes.CM_MASK) === 0; }
-  public isBgDefault(): boolean   { return (this.bg & Attributes.CM_MASK) === 0; }
-
-  // colors
-  public getFgColor(): number {
-    switch (this.fg & Attributes.CM_MASK) {
-      case Attributes.CM_P16:
-      case Attributes.CM_P256:  return this.fg & Attributes.PCOLOR_MASK;
-      case Attributes.CM_RGB:   return this.fg & Attributes.RGB_MASK;
-      default:                  return -1;  // CM_DEFAULT defaults to -1
-    }
-  }
-  public getBgColor(): number {
-    switch (this.bg & Attributes.CM_MASK) {
-      case Attributes.CM_P16:
-      case Attributes.CM_P256:  return this.bg & Attributes.PCOLOR_MASK;
-      case Attributes.CM_RGB:   return this.bg & Attributes.RGB_MASK;
-      default:                  return -1;  // CM_DEFAULT defaults to -1
-    }
-  }
 }
 
 export const DEFAULT_ATTR_DATA = Object.freeze(new AttributeData());

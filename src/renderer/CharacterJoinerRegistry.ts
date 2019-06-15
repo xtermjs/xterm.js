@@ -6,7 +6,7 @@
 import { ITerminal } from '../Types';
 import { IBufferLine, ICellData, CharData } from 'common/Types';
 import { ICharacterJoinerRegistry, ICharacterJoiner } from './Types';
-import { AttributeData } from 'common/buffer/BufferLine';
+import { AttributeData } from 'common/buffer/AttributeData';
 import { WHITESPACE_CELL_CHAR, Content } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 

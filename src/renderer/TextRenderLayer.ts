@@ -9,7 +9,7 @@ import { ITerminal } from '../Types';
 import { CharData, ICellData } from 'common/Types';
 import { GridCache } from './GridCache';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { AttributeData } from 'common/buffer/BufferLine';
+import { AttributeData } from 'common/buffer/AttributeData';
 import { NULL_CELL_CODE, Content } from 'common/buffer/Constants';
 import { JoinedCellData } from './CharacterJoinerRegistry';
 import { IColorSet } from 'browser/Types';

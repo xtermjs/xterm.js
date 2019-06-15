@@ -6,7 +6,7 @@
 import { CharData, ICellData } from 'common/Types';
 import { stringFromCodePoint } from 'common/input/TextDecoder';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, Content } from 'common/buffer/Constants';
-import { AttributeData } from './BufferLine';
+import { AttributeData } from 'common/buffer/AttributeData';
 
 /**
  * CellData - represents a single Cell in the terminal buffer.

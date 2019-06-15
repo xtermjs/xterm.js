@@ -71,3 +71,58 @@ export const enum Content {
   WIDTH_MASK = 0xC00000,   // 3 << 22
   WIDTH_SHIFT = 22
 }
+
+export const enum Attributes {
+  /**
+   * bit 1..8     blue in RGB, color in P256 and P16
+   */
+  BLUE_MASK = 0xFF,
+  BLUE_SHIFT = 0,
+  PCOLOR_MASK = 0xFF,
+  PCOLOR_SHIFT = 0,
+
+  /**
+   * bit 9..16    green in RGB
+   */
+  GREEN_MASK = 0xFF00,
+  GREEN_SHIFT = 8,
+
+  /**
+   * bit 17..24   red in RGB
+   */
+  RED_MASK = 0xFF0000,
+  RED_SHIFT = 16,
+
+  /**
+   * bit 25..26   color mode: DEFAULT (0) | P16 (1) | P256 (2) | RGB (3)
+   */
+  CM_MASK = 0x3000000,
+  CM_DEFAULT = 0,
+  CM_P16 = 0x1000000,
+  CM_P256 = 0x2000000,
+  CM_RGB = 0x3000000,
+
+  /**
+   * bit 1..24  RGB room
+   */
+  RGB_MASK = 0xFFFFFF
+}
+
+export const enum FgFlags {
+  /**
+   * bit 27..31 (32th bit unused)
+   */
+  INVERSE = 0x4000000,
+  BOLD = 0x8000000,
+  UNDERLINE = 0x10000000,
+  BLINK = 0x20000000,
+  INVISIBLE = 0x40000000
+}
+
+export const enum BgFlags {
+  /**
+   * bit 27..32 (upper 4 unused)
+   */
+  ITALIC = 0x4000000,
+  DIM = 0x8000000
+}

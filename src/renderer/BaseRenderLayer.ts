@@ -12,7 +12,7 @@ import { IGlyphIdentifier } from './atlas/Types';
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from './atlas/Constants';
 import { BaseCharAtlas } from './atlas/BaseCharAtlas';
 import { acquireCharAtlas } from './atlas/CharAtlasCache';
-import { AttributeData } from 'common/buffer/BufferLine';
+import { AttributeData } from 'common/buffer/AttributeData';
 import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 
