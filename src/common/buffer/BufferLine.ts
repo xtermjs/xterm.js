@@ -2,8 +2,9 @@
  * Copyright (c) 2018 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { DEFAULT_COLOR, CharData, IBufferLine, ICellData, IColorRGB, IAttributeData } from 'common/Types';
+import { CharData, IBufferLine, ICellData, IColorRGB, IAttributeData } from 'common/Types';
 import { stringFromCodePoint } from 'common/input/TextDecoder';
+import { DEFAULT_COLOR } from 'common/buffer/Constants';
 
 export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
 
