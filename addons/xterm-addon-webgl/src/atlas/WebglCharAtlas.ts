@@ -170,8 +170,10 @@ export class WebglCharAtlas extends BaseCharAtlas {
     } else if (bg === INVERTED_DEFAULT_COLOR) {
       return this._config.colors.foreground;
     } else if (is256Color(bg)) {
+      // TODO: Need to do a separate set for 16 color palette?
       return this._getColorFromAnsiIndex(bg);
     }
+    // TODO: Support true color
     return this._config.colors.background;
   }
 
@@ -179,8 +181,10 @@ export class WebglCharAtlas extends BaseCharAtlas {
     if (fg === INVERTED_DEFAULT_COLOR) {
       return this._config.colors.background;
     } else if (is256Color(fg)) {
+      // TODO: Need to do a separate set for 16 color palette?
       return this._getColorFromAnsiIndex(fg);
     }
+    // TODO: Support true color
     return this._config.colors.foreground;
   }
 
