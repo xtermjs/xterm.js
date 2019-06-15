@@ -13,9 +13,12 @@ import { IDisposable } from 'xterm';
 import { Disposable } from 'common/Lifecycle';
 import { concat } from 'common/TypedArrayUtils';
 import { StringToUtf32, stringFromCodePoint, utf32ToString, Utf8ToUtf32 } from 'common/input/TextDecoder';
-import { CellData, Attributes, FgFlags, BgFlags, AttributeData, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { IParsingState, IDcsHandler, IEscapeSequenceParser } from 'common/parser/Types';
+import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags } from 'common/buffer/Constants';
+import { CellData } from 'common/buffer/CellData';
+import { AttributeData } from 'common/buffer/AttributeData';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.

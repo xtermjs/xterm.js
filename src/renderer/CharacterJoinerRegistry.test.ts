@@ -10,8 +10,9 @@ import { CircularList } from 'common/CircularList';
 
 import { ICharacterJoinerRegistry } from './Types';
 import { CharacterJoinerRegistry } from './CharacterJoinerRegistry';
-import { BufferLine, CellData } from 'common/buffer/BufferLine';
+import { BufferLine } from 'common/buffer/BufferLine';
 import { IBufferLine } from 'common/Types';
+import { CellData } from 'common/buffer/CellData';
 
 describe('CharacterJoinerRegistry', () => {
   let registry: ICharacterJoinerRegistry;
