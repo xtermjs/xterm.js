@@ -6,7 +6,8 @@
 import { ITerminal } from '../Types';
 import { IBufferLine, ICellData, CharData } from 'common/Types';
 import { ICharacterJoinerRegistry, ICharacterJoiner } from './Types';
-import { CellData, Content, AttributeData, WHITESPACE_CELL_CHAR } from 'common/buffer/BufferLine';
+import { CellData, Content, AttributeData } from 'common/buffer/BufferLine';
+import { WHITESPACE_CELL_CHAR } from 'common/buffer/Constants';
 
 export class JoinedCellData extends AttributeData implements ICellData {
   private _width: number;

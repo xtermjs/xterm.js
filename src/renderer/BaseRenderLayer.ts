@@ -7,12 +7,12 @@ import { IRenderLayer } from './Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
 import { ITerminal } from '../Types';
 import { ICellData } from 'common/Types';
-import { DEFAULT_COLOR } from 'common/buffer/Constants';
+import { DEFAULT_COLOR, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from 'common/buffer/Constants';
 import { IGlyphIdentifier } from './atlas/Types';
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from './atlas/Constants';
 import { BaseCharAtlas } from './atlas/BaseCharAtlas';
 import { acquireCharAtlas } from './atlas/CharAtlasCache';
-import { CellData, AttributeData, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from 'common/buffer/BufferLine';
+import { CellData, AttributeData } from 'common/buffer/BufferLine';
 import { IColorSet } from 'browser/Types';
 
 export abstract class BaseRenderLayer implements IRenderLayer {

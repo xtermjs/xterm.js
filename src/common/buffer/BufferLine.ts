@@ -2,34 +2,10 @@
  * Copyright (c) 2018 The xterm.js authors. All rights reserved.
  * @license MIT
  */
+
 import { CharData, IBufferLine, ICellData, IColorRGB, IAttributeData } from 'common/Types';
 import { stringFromCodePoint } from 'common/input/TextDecoder';
-import { DEFAULT_COLOR } from 'common/buffer/Constants';
-
-export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
-
-export const CHAR_DATA_ATTR_INDEX = 0;
-export const CHAR_DATA_CHAR_INDEX = 1;
-export const CHAR_DATA_WIDTH_INDEX = 2;
-export const CHAR_DATA_CODE_INDEX = 3;
-
-/**
- * Null cell - a real empty cell (containing nothing).
- * Note that code should always be 0 for a null cell as
- * several test condition of the buffer line rely on this.
- */
-export const NULL_CELL_CHAR = '';
-export const NULL_CELL_WIDTH = 1;
-export const NULL_CELL_CODE = 0;
-
-/**
- * Whitespace cell.
- * This is meant as a replacement for empty cells when needed
- * during rendering lines to preserve correct aligment.
- */
-export const WHITESPACE_CELL_CHAR = ' ';
-export const WHITESPACE_CELL_WIDTH = 1;
-export const WHITESPACE_CELL_CODE = 32;
+import { DEFAULT_COLOR, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR } from 'common/buffer/Constants';
 
 /**
  * buffer memory layout:
