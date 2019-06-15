@@ -6,7 +6,7 @@
 const path = require('path');
 
 const addonName = 'WebglAddon';
-const mainFile = 'xterm-addon-weblg.js';
+const mainFile = 'xterm-addon-webgl.js';
 
 module.exports = {
   entry: `./out/${addonName}.js`,
@@ -20,6 +20,14 @@ module.exports = {
         exclude: /node_modules/
       }
     ]
+  },
+  resolve: {
+    modules: ['./node_modules'],
+    extensions: [ '.js' ],
+    alias: {
+      common: path.resolve('../../out/common'),
+      browser: path.resolve('../../out/browser')
+    }
   },
   output: {
     filename: mainFile,

@@ -8,7 +8,7 @@ import { WebglRenderer } from './WebglRenderer';
 import { IRenderService } from 'browser/services/Services';
 import { IColorSet } from 'browser/Types';
 
-export class WebglRendererAddon implements ITerminalAddon {
+export class WebglAddon implements ITerminalAddon {
   constructor(
     private _preserveDrawingBuffer?: boolean
   ) {}

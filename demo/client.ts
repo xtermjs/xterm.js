@@ -13,7 +13,7 @@ import { AttachAddon } from '../addons/xterm-addon-attach/out/AttachAddon';
 import { FitAddon } from '../addons/xterm-addon-fit/out/FitAddon';
 import { SearchAddon, ISearchOptions } from '../addons/xterm-addon-search/out/SearchAddon';
 import { WebLinksAddon } from '../addons/xterm-addon-web-links/out/WebLinksAddon';
-import { WebglRendererAddon } from '../addons/xterm-addon-webgl/out/WebglRendererAddon';
+import { WebglAddon } from '../addons/xterm-addon-webgl/out/WebglAddon';
 
 // Use webpacked version (yarn package)
 // import { Terminal } from '../lib/xterm';
@@ -21,6 +21,7 @@ import { WebglRendererAddon } from '../addons/xterm-addon-webgl/out/WebglRendere
 // import { FitAddon } from 'xterm-addon-fit';
 // import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
 // import { WebLinksAddon } from 'xterm-addon-web-links';
+// import { WebglAddon } from 'xterm-addon-webgl';
 
 // Pulling in the module's types relies on the <reference> above, it's looks a
 // little weird here as we're importing "this" module
@@ -44,7 +45,7 @@ let socketURL;
 let socket;
 let pid;
 
-(<any>window).webgl = () => term.loadAddon(new WebglRendererAddon());
+(<any>window).webgl = () => term.loadAddon(new WebglAddon());
 
 const terminalContainer = document.getElementById('terminal-container');
 const actionElements = {
