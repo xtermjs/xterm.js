@@ -17,7 +17,7 @@ const DEFAULT_SELECTION = {
 
 // An IIFE to generate DEFAULT_ANSI_COLORS. Do not mutate DEFAULT_ANSI_COLORS, instead make a copy
 // and mutate that.
-export const DEFAULT_ANSI_COLORS: IColor[] = (() => {
+export const DEFAULT_ANSI_COLORS = (() => {
   const colors = [
     // dark:
     fromHex('#2e3436'),

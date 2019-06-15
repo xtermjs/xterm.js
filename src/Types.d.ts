@@ -299,7 +299,6 @@ export interface ITerminalOptions extends IPublicTerminalOptions {
 
 export interface ISelectionManager {
   selectionText: string;
-  hasSelection: boolean;
   selectionStart: [number, number];
   selectionEnd: [number, number];
 
