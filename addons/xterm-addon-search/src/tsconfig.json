@@ -7,7 +7,7 @@
       "es6",
     ],
     "rootDir": ".",
-    "outDir": "../lib",
+    "outDir": "../out",
     "sourceMap": true,
     "removeComments": true,
     "strict": true

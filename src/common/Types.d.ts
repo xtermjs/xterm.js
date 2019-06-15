@@ -3,20 +3,11 @@
  * @license MIT
  */
 
-import { IEvent, EventEmitter } from 'common/EventEmitter';
+import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IDeleteEvent, IInsertEvent } from 'common/CircularList';
-
-export const DEFAULT_COLOR = 256;
 
 export interface IDisposable {
   dispose(): void;
-}
-
-export interface IEventEmitter {
-  on(type: string, listener: (...args: any[]) => void): void;
-  off(type: string, listener: (...args: any[]) => void): void;
-  emit(type: string, data?: any): void;
-  addDisposableListener(type: string, handler: (...args: any[]) => void): IDisposable;
 }
 
 export type XtermListener = (...args: any[]) => void;
@@ -40,11 +31,11 @@ export interface ICircularList<T> {
   maxLength: number;
   isFull: boolean;
 
-  onDeleteEmitter: EventEmitter<IDeleteEvent>;
+  onDeleteEmitter: IEventEmitter<IDeleteEvent>;
   onDelete: IEvent<IDeleteEvent>;
-  onInsertEmitter: EventEmitter<IInsertEvent>;
+  onInsertEmitter: IEventEmitter<IInsertEvent>;
   onInsert: IEvent<IInsertEvent>;
-  onTrimEmitter: EventEmitter<number>;
+  onTrimEmitter: IEventEmitter<number>;
   onTrim: IEvent<number>;
 
   get(index: number): T | undefined;

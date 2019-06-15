@@ -44,7 +44,7 @@ import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent, KeyboardResultType, ICharset, IBufferLine, IAttributeData } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { Attributes, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { applyWindowsMode } from './WindowsMode';
 import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
@@ -55,6 +55,7 @@ import { CharSizeService } from 'browser/services/CharSizeService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
 import { Disposable } from 'common/Lifecycle';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
+import { Attributes } from 'common/buffer/Constants';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -700,7 +701,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    */
   private _setTheme(theme: ITheme): void {
     this._theme = theme;
-    this._colorManager.setTheme(theme);
+    if (this._colorManager) {
+      this._colorManager.setTheme(theme);
+    }
     if (this._renderService) {
       this._renderService.setColors(this._colorManager.colors);
     }
@@ -890,10 +893,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
           : ev.which !== null && ev.which !== undefined
             ? ev.which - 1
           : null;
-
-          if (Browser.isMSIE) {
-            button = button === 1 ? 0 : button === 4 ? 1 : button;
-          }
           break;
         case 'mouseup':
           button = 3;

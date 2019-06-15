@@ -11,7 +11,7 @@ import { Buffer } from 'common/buffer/Buffer';
 import * as Browser from 'common/Platform';
 import { IDisposable, IMarker, IEvent, ISelectionPosition } from 'xterm';
 import { Terminal } from './Terminal';
-import { AttributeData } from 'common/buffer/BufferLine';
+import { AttributeData } from 'common/buffer/AttributeData';
 import { IColorManager, IColorSet, IMouseHelper } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
 import { EventEmitter } from 'common/EventEmitter';
