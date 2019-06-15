@@ -11,7 +11,6 @@ import { Terminal as TerminalCore } from '../Terminal';
 import * as Strings from '../browser/LocalizableStrings';
 import { IEvent } from 'common/EventEmitter';
 import { AddonManager } from './AddonManager';
-import { WebglRendererAddon } from '../renderer/webgl/WebglRendererAddon';
 
 export class Terminal implements ITerminalApi {
   private _core: ITerminal;
@@ -160,9 +159,6 @@ export class Terminal implements ITerminalApi {
   }
   public loadAddon(addon: ITerminalAddon): void {
     return this._addonManager.loadAddon(this, addon);
-  }
-  public loadWebgl(preserveDrawingBuffer?: boolean): void {
-    this.loadAddon(new WebglRendererAddon(preserveDrawingBuffer));
   }
   public static get strings(): ILocalizableStrings {
     return Strings;

@@ -13,6 +13,7 @@ import { AttachAddon } from '../addons/xterm-addon-attach/out/AttachAddon';
 import { FitAddon } from '../addons/xterm-addon-fit/out/FitAddon';
 import { SearchAddon, ISearchOptions } from '../addons/xterm-addon-search/out/SearchAddon';
 import { WebLinksAddon } from '../addons/xterm-addon-web-links/out/WebLinksAddon';
+import { WebglRendererAddon } from '../addons/xterm-addon-webgl/out/WebglRendererAddon';
 
 // Use webpacked version (yarn package)
 // import { Terminal } from '../lib/xterm';
@@ -42,6 +43,8 @@ let protocol;
 let socketURL;
 let socket;
 let pid;
+
+(<any>window).webgl = () => term.loadAddon(new WebglRendererAddon());
 
 const terminalContainer = document.getElementById('terminal-container');
 const actionElements = {

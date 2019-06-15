@@ -8,7 +8,7 @@ import { IRenderModel, IWebGLVertexArrayObject, IWebGL2RenderingContext, ISelect
 import { fill } from 'common/TypedArrayUtils';
 import { INVERTED_DEFAULT_COLOR } from './atlas/Types';
 import { is256Color } from './atlas/CharAtlasUtils';
-import { DEFAULT_COLOR } from '../../common/buffer/Constants';
+import { DEFAULT_COLOR } from 'common/buffer/Constants';
 import { Terminal } from 'xterm';
 import { IColorSet, IColor } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';

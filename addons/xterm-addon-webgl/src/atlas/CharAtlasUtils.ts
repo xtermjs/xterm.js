@@ -4,7 +4,7 @@
  */
 
 import { ICharAtlasConfig } from './Types';
-import { DEFAULT_COLOR } from '../../../common/buffer/Constants';
+import { DEFAULT_COLOR } from 'common/buffer/Constants';
 import { Terminal, FontWeight } from 'xterm';
 import { IColorSet } from 'browser/Types';
 

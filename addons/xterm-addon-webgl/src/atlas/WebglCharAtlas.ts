@@ -6,7 +6,7 @@
 import { DIM_OPACITY, IGlyphIdentifier, INVERTED_DEFAULT_COLOR, ICharAtlasConfig } from './Types';
 import { BaseCharAtlas } from './BaseCharAtlas';
 import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from '../Types';
-import { FLAGS, DEFAULT_COLOR, DEFAULT_ATTR } from '../../../common/buffer/Constants';
+import { FLAGS, DEFAULT_COLOR, DEFAULT_ATTR } from 'common/buffer/Constants';
 import { is256Color } from './CharAtlasUtils';
 import { IColor } from 'browser/Types';
 

@@ -5,8 +5,8 @@
 
 import { Terminal } from 'xterm';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { ICellData } from '../../../common/Types';
-import { CellData } from '../../../common/buffer/CellData';
+import { ICellData } from 'common/Types';
+import { CellData } from 'common/buffer/CellData';
 import { IColorSet } from 'browser/Types';
 import { IRenderDimensions } from 'browser/renderer/Types';
 

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminal } from '../../Types';
+import { ITerminal } from '../../../src/Types';
 import { GlyphRenderer } from './GlyphRenderer';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { CursorRenderLayer } from './renderLayer/CursorRenderLayer';

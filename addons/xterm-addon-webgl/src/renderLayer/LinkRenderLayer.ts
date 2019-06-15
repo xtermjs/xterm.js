@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ILinkifierEvent, ILinkifierAccessor } from '../../../Types';
+import { ILinkifierEvent, ILinkifierAccessor } from '../../../../src/Types';
 import { Terminal } from 'xterm';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
