@@ -191,7 +191,7 @@ declare module 'xterm' {
     cursor?: string,
     /** The accent color of the cursor (fg color for a block cursor) */
     cursorAccent?: string,
-    /** The selection color (can be transparent) */
+    /** The selection background color (can be transparent) */
     selection?: string,
     /** ANSI black (eg. `\x1b[30m`) */
     black?: string,
