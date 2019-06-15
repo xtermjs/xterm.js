@@ -1,7 +1,13 @@
+/**
+ * Copyright (c) 2018 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
 import { CharData, ICellData } from 'common/Types';
 import { stringFromCodePoint } from 'common/input/TextDecoder';
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX } from 'common/buffer/Constants';
-import { AttributeData, Content } from './BufferLine';
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, Content } from 'common/buffer/Constants';
+import { AttributeData } from './BufferLine';
+
 /**
  * CellData - represents a single Cell in the terminal buffer.
  */

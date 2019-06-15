@@ -3,8 +3,8 @@
  * @license MIT
  */
 import * as chai from 'chai';
-import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR } from 'common/buffer/Constants';
-import { BufferLine, Content } from 'common/buffer//BufferLine';
+import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR, Content } from 'common/buffer/Constants';
+import { BufferLine } from 'common/buffer//BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { CharData, IBufferLine } from '../Types';
 
