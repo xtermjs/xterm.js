@@ -15,7 +15,6 @@ export class LinkRenderLayer extends BaseRenderLayer {
 
   constructor(container: HTMLElement, zIndex: number, colors: IColorSet, terminal: ILinkifierAccessor) {
     super(container, 'link', zIndex, true, colors);
-    // TODO: Need to expose link-related renderer API
     terminal.linkifier.onLinkHover(e => this._onLinkHover(e));
     terminal.linkifier.onLinkLeave(e => this._onLinkLeave(e));
   }
