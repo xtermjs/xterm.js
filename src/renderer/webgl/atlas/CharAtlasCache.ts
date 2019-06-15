@@ -7,7 +7,8 @@ import { generateConfig, configEquals } from './CharAtlasUtils';
 import BaseCharAtlas from './BaseCharAtlas';
 import WebglCharAtlas from './WebglCharAtlas';
 import { ICharAtlasConfig } from './Types';
-import { IColorSet, Terminal } from 'xterm';
+import { Terminal } from 'xterm';
+import { IColorSet } from 'browser/Types';
 
 interface ICharAtlasCacheEntry {
   atlas: BaseCharAtlas;

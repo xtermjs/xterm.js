@@ -5,7 +5,8 @@
 
 import { ICharAtlasConfig } from './Types';
 import { DEFAULT_COLOR } from '../../../common/buffer/Constants';
-import { IColorSet, Terminal, FontWeight } from 'xterm';
+import { Terminal, FontWeight } from 'xterm';
+import { IColorSet } from 'browser/Types';
 
 export function generateConfig(scaledCharWidth: number, scaledCharHeight: number, terminal: Terminal, colors: IColorSet): ICharAtlasConfig {
   // null out some fields that don't matter

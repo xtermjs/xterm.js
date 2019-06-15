@@ -3,10 +3,12 @@
  * @license MIT
  */
 
-import { IRenderDimensions, IColorSet, Terminal } from 'xterm';
+import { Terminal } from 'xterm';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { ICellData } from '../../../common/Types';
 import { CellData } from '../../../common/buffer/BufferLine';
+import { IColorSet } from 'browser/Types';
+import { IRenderDimensions } from 'browser/renderer/Types';
 
 interface ICursorState {
   x: number;

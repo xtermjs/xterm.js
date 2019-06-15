@@ -18,7 +18,7 @@ export class WebglRendererAddon implements ITerminalAddon {
       throw new Error('Cannot activate WebglRendererAddon before Terminal.open');
     }
     this._terminal = terminal;
-    this._terminal.setRenderer(new WebglRenderer(terminal, (terminal as any)._core._colorManager.colors, this._preserveDrawingBuffer));
+    (<any>this._terminal)._renderService.setRenderer(new WebglRenderer(terminal, (terminal as any)._core._colorManager.colors, this._preserveDrawingBuffer));
   }
 
   public dispose(): void {

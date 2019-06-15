@@ -3,7 +3,9 @@
  * @license MIT
  */
 
-import { IDisposable, IRenderDimensions, IColorSet, Terminal } from 'xterm';
+import { IDisposable, Terminal } from 'xterm';
+import { IColorSet } from 'browser/Types';
+import { IRenderDimensions } from 'browser/renderer/Types';
 
 export interface IRenderLayer extends IDisposable {
   /**

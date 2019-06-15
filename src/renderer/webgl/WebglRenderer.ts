@@ -16,9 +16,11 @@ import { RenderModel, COMBINED_CHAR_BIT_MASK } from './RenderModel';
 import { Disposable } from 'common/Lifecycle';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CODE } from 'common/buffer/BufferLine';
 import { DEFAULT_COLOR, FLAGS } from '../../common/buffer/Constants';
-import { IColorSet, Terminal, IRenderDimensions, IRenderer } from 'xterm';
+import { Terminal } from 'xterm';
 import { getLuminance } from './ColorUtils';
 import { IRenderLayer } from './renderLayer/Types';
+import { IRenderDimensions, IRenderer } from 'browser/renderer/Types';
+import { IColorSet } from 'browser/Types';
 
 export const INDICIES_PER_CELL = 4;
 
@@ -50,8 +52,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._applyBgLuminanceBasedSelection();
 
     this._renderLayers = [
-      new LinkRenderLayer(this._terminal.screenElement, 2, this._colors, this._core),
-      new CursorRenderLayer(this._terminal.screenElement, 3, this._colors)
+      new LinkRenderLayer((<any>this._terminal).screenElement, 2, this._colors, this._core),
+      new CursorRenderLayer((<any>this._terminal).screenElement, 3, this._colors)
     ];
     this.dimensions = {
       scaledCharWidth: null,
@@ -81,7 +83,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     if (!this._gl) {
         throw new Error('WebGL2 not supported');
     }
-    this._terminal.screenElement.appendChild(this._canvas);
+    (<any>this._terminal).screenElement.appendChild(this._canvas);
 
     this._rectangleRenderer = new RectangleRenderer(this._terminal, this._colors, this._gl, this.dimensions);
     this._glyphRenderer = new GlyphRenderer(this._terminal, this._colors, this._gl, this.dimensions);
@@ -92,7 +94,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   public dispose(): void {
     this._renderLayers.forEach(l => l.dispose());
-    this._terminal.screenElement.removeChild(this._canvas);
+    (<any>this._terminal).screenElement.removeChild(this._canvas);
     super.dispose();
   }
 
@@ -151,8 +153,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._canvas.style.height = `${this.dimensions.canvasHeight}px`;
 
     // Resize the screen
-    this._terminal.screenElement.style.width = `${this.dimensions.canvasWidth}px`;
-    this._terminal.screenElement.style.height = `${this.dimensions.canvasHeight}px`;
+    (<any>this._terminal).screenElement.style.width = `${this.dimensions.canvasWidth}px`;
+    (<any>this._terminal).screenElement.style.height = `${this.dimensions.canvasHeight}px`;
     this._glyphRenderer.setDimensions(this.dimensions);
     this._glyphRenderer.onResize();
 

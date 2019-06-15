@@ -9,7 +9,7 @@ import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from '../Types';
 import { FLAGS, DEFAULT_COLOR } from '../../../common/buffer/Constants';
 import { is256Color } from './CharAtlasUtils';
 import { DEFAULT_ATTR } from 'common/buffer/BufferLine';
-import { IColor } from 'xterm';
+import { IColor } from 'browser/Types';
 
 // In practice we're probably never going to exhaust a texture this large. For debugging purposes,
 // however, it can be useful to set this to a really tiny value, to verify that LRU eviction works.

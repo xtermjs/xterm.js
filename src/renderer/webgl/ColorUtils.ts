@@ -3,7 +3,7 @@
  * Copyright (c) 2018 The xterm.js authors. All rights reserved.
  */
 
-import { IColor } from 'xterm';
+import { IColor } from 'browser/Types';
 
 export function getLuminance(color: IColor): number {
   // Coefficients taken from: https://www.w3.org/TR/AERT/#color-contrast

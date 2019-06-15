@@ -10,7 +10,9 @@ import { DIM_OPACITY, INVERTED_DEFAULT_COLOR, IGlyphIdentifier } from '../atlas/
 import BaseCharAtlas from '../atlas/BaseCharAtlas';
 import { acquireCharAtlas } from '../atlas/CharAtlasCache';
 import { CellData, AttributeData, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE } from '../../../common/buffer/BufferLine';
-import { IColorSet, IRenderDimensions, Terminal } from 'xterm';
+import { Terminal } from 'xterm';
+import { IColorSet } from 'browser/Types';
+import { IRenderDimensions } from 'browser/renderer/Types';
 
 export abstract class BaseRenderLayer implements IRenderLayer {
   private _canvas: HTMLCanvasElement;

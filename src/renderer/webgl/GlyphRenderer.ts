@@ -11,7 +11,9 @@ import { COMBINED_CHAR_BIT_MASK } from './RenderModel';
 import { fill, slice } from 'common/TypedArrayUtils';
 import { NULL_CELL_CODE, WHITESPACE_CELL_CODE } from '../../common/buffer/BufferLine';
 import { getLuminance } from './ColorUtils';
-import { IColorSet, Terminal, IBufferLine, IRenderDimensions } from 'xterm';
+import { Terminal, IBufferLine } from 'xterm';
+import { IColorSet } from 'browser/Types';
+import { IRenderDimensions } from 'browser/renderer/Types';
 
 interface IVertices {
   attributes: Float32Array;
