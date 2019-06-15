@@ -5,7 +5,7 @@
 
 import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { stringFromCodePoint } from 'common/input/TextDecoder';
-import { DEFAULT_COLOR, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, FLAGS, Content } from 'common/buffer/Constants';
+import { DEFAULT_COLOR, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Content } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
 
@@ -74,25 +74,8 @@ export class BufferLine implements IBufferLine {
     const content = this._data[index * CELL_SIZE + Cell.CONTENT];
     const cp = content & Content.CODEPOINT_MASK;
 
-    // TODO: Need to move WebGL over to the new system and remove this block
-    const cell = new CellData();
-    this.loadCell(index, cell);
-    const oldBg = cell.getBgColor() === -1 ? 256 : cell.getBgColor();
-    const oldFg = cell.getFgColor() === -1 ? 256 : cell.getFgColor();
-    const oldAttr =
-      (cell.isBold() ? FLAGS.BOLD : 0) |
-      (cell.isUnderline() ? FLAGS.UNDERLINE : 0) |
-      (cell.isBlink() ? FLAGS.BLINK : 0) |
-      (cell.isInverse() ? FLAGS.INVERSE : 0) |
-      (cell.isDim() ? FLAGS.DIM : 0) |
-      (cell.isItalic() ? FLAGS.ITALIC : 0);
-    const attrCompat =
-      oldBg |
-      (oldFg << 9) |
-      (oldAttr << 18);
-
     return [
-      attrCompat,
+      this._data[index * CELL_SIZE + Cell.FG],
       (content & Content.IS_COMBINED_MASK)
         ? this._combined[index]
         : (cp) ? stringFromCodePoint(cp) : '',

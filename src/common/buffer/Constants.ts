@@ -126,14 +126,3 @@ export const enum BgFlags {
   ITALIC = 0x4000000,
   DIM = 0x8000000
 }
-
-// TODO: Should be removed after chardata workaround is fixed
-export const enum FLAGS {
-  BOLD = 1,
-  UNDERLINE = 2,
-  BLINK = 4,
-  INVERSE = 8,
-  INVISIBLE = 16,
-  DIM = 32,
-  ITALIC = 64
-}

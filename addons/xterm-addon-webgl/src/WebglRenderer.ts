@@ -14,12 +14,14 @@ import { IWebGL2RenderingContext } from './Types';
 import { INVERTED_DEFAULT_COLOR } from './atlas/Types';
 import { RenderModel, COMBINED_CHAR_BIT_MASK } from './RenderModel';
 import { Disposable } from 'common/Lifecycle';
-import { DEFAULT_COLOR, FLAGS, CHAR_DATA_CHAR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CODE } from 'common/buffer/Constants';
+import { DEFAULT_COLOR, CHAR_DATA_CHAR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { Terminal } from 'xterm';
 import { getLuminance } from './ColorUtils';
 import { IRenderLayer } from './renderLayer/Types';
 import { IRenderDimensions, IRenderer } from 'browser/renderer/Types';
 import { IColorSet } from 'browser/Types';
+import { FLAGS } from './Constants';
+import { getCompatAttr } from './CharDataCompat';
 
 export const INDICIES_PER_CELL = 4;
 
@@ -256,7 +258,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
         const charData = line.get(x);
         const chars = charData[CHAR_DATA_CHAR_INDEX];
         let code = charData[CHAR_DATA_CODE_INDEX];
-        const attr = charData[CHAR_DATA_ATTR_INDEX];
+        const attr = getCompatAttr(line, x); // charData[CHAR_DATA_ATTR_INDEX];
         const i = ((y * terminal.cols) + x) * INDICIES_PER_CELL;
 
         if (code !== NULL_CELL_CODE) {
