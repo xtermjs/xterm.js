@@ -6,7 +6,6 @@
 const cp = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const packageJson = require('../package.json');
 
 // Setup auth
 fs.writeFileSync(`${process.env['HOME']}/.npmrc`, `//registry.npmjs.org/:_authToken=${process.env['NPM_AUTH_TOKEN']}`);
@@ -16,36 +15,53 @@ if (isDryRun) {
   console.log('Publish dry run');
 }
 
-// Determine if this is a stable or beta release
-const publishedVersions = getPublishedVersions();
-const isStableRelease = publishedVersions.indexOf(packageJson.version) === -1;
+const publishablePackages = [
+  path.resolve(__dirname, '..'),
+  path.resolve(__dirname, '../addons/xterm-addon-attach'),
+  path.resolve(__dirname, '../addons/xterm-addon-fit'),
+  path.resolve(__dirname, '../addons/xterm-addon-search'),
+  path.resolve(__dirname, '../addons/xterm-addon-web-links')
+];
 
-// Get the next version
-let nextVersion = isStableRelease ? packageJson.version : getNextBetaVersion();
-console.log(`Publishing version: ${nextVersion}`);
+publishablePackages.forEach(p => checkAndPublishPackage(p));
 
-// Set the version in package.json
-const packageJsonFile = path.resolve(__dirname, '..', 'package.json');
-packageJson.version = nextVersion;
-if (isDryRun) {
-  console.log(`Set version of ${packageJsonFile} to ${nextVersion}`);
-} else {
-  fs.writeFileSync(packageJsonFile, JSON.stringify(packageJson, null, 2));
+function checkAndPublishPackage(packageDir) {
+  const packageJson = require(path.join(packageDir, 'package.json'));
+  console.group('Checking package ' + packageJson.name);
+
+  // Determine if this is a stable or beta release
+  const publishedVersions = getPublishedVersions(packageJson);
+  const isStableRelease = publishedVersions.indexOf(packageJson.version) === -1;
+
+  // Get the next version
+  let nextVersion = isStableRelease ? packageJson.version : getNextBetaVersion(packageJson);
+  console.log(`Publishing version: ${nextVersion}`);
+
+  // Set the version in package.json
+  const packageJsonFile = path.join(packageDir, 'package.json');
+  packageJson.version = nextVersion;
+  if (isDryRun) {
+    console.log(`Set version of ${packageJsonFile} to ${nextVersion}`);
+  } else {
+    fs.writeFileSync(packageJsonFile, JSON.stringify(packageJson, null, 2));
+  }
+
+  // Publish
+  const args = ['publish'];
+  if (!isStableRelease) {
+    args.push('--tag', 'beta');
+  }
+  if (isDryRun) {
+    console.log(`Spawn: npm ${args.join(' ')}`);
+  } else {
+    const result = cp.spawn('npm', args, { stdio: 'inherit' });
+    result.on('exit', code => process.exit(code));
+  }
+
+  console.groupEnd();
 }
 
-// Publish
-const args = ['publish'];
-if (!isStableRelease) {
-  args.push('--tag', 'beta');
-}
-if (isDryRun) {
-  console.log(`Spawn: npm ${args.join(' ')}`);
-} else {
-  const result = cp.spawn('npm', args, { stdio: 'inherit' });
-  result.on('exit', code => process.exit(code));
-}
-
-function getNextBetaVersion() {
+function getNextBetaVersion(packageJson) {
   if (!/^[0-9]+\.[0-9]+\.[0-9]+$/.exec(packageJson.version)) {
     console.error('The package.json version must be of the form x.y.z');
     process.exit(1);
@@ -53,7 +69,7 @@ function getNextBetaVersion() {
   const tag = 'beta';
   const stableVersion = packageJson.version.split('.');
   const nextStableVersion = `${stableVersion[0]}.${parseInt(stableVersion[1]) + 1}.0`;
-  const publishedVersions = getPublishedVersions(nextStableVersion, tag);
+  const publishedVersions = getPublishedVersions(packageJson, nextStableVersion, tag);
   if (publishedVersions.length === 0) {
     return `${nextStableVersion}-${tag}1`;
   }
@@ -66,14 +82,11 @@ function getNextBetaVersion() {
   return `${nextStableVersion}-${tag}${latestTagVersion + 1}`;
 }
 
-function getPublishedVersions(version, tag) {
+function getPublishedVersions(packageJson, version, tag) {
   const versionsProcess = cp.spawnSync('npm', ['view', packageJson.name, 'versions', '--json']);
   const versionsJson = JSON.parse(versionsProcess.stdout);
   if (tag) {
     return versionsJson.filter(v => !v.search(new RegExp(`${version}-${tag}[0-9]+`)));
   }
   return versionsJson;
-}
-
-function publishPackage(packageDir) {
 }
