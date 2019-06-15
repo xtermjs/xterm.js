@@ -6,6 +6,7 @@
 import * as puppeteer from 'puppeteer';
 import { assert } from 'chai';
 import { ITerminalOptions } from '../../../src/Types';
+import { ITheme } from 'xterm';
 
 const APP = 'http://127.0.0.1:3000/test';
 
@@ -14,9 +15,10 @@ let page: puppeteer.Page;
 const width = 800;
 const height = 600;
 
-describe('WebGL Renderer Integration Tests', () => {
+describe('WebGL Renderer Integration Tests', function(): void {
+  this.timeout(20000);
+
   before(async function(): Promise<any> {
-    this.timeout(10000);
     browser = await puppeteer.launch({
       headless: process.argv.indexOf('--headless') !== -1,
       slowMo: 80,
@@ -24,6 +26,9 @@ describe('WebGL Renderer Integration Tests', () => {
     });
     page = (await browser.pages())[0];
     await page.setViewport({ width, height });
+    await page.goto(APP);
+    await openTerminal();
+    await page.evaluate(`window.term.loadAddon(new WebglAddon(true));`);
   });
 
   after(() => {
@@ -31,27 +36,23 @@ describe('WebGL Renderer Integration Tests', () => {
   });
 
   beforeEach(async () => {
-    await page.goto(APP);
+    await page.evaluate(`window.term.reset()`);
   });
 
   describe('WebGL Renderer', () => {
     it('foreground colors normal', async function(): Promise<any> {
-      this.timeout(10000);
-      await openTerminal({
-        rendererType: 'dom',
-        theme: {
-          black: '#010203',
-          red: '#040506',
-          green: '#070809',
-          yellow: '#0a0b0c',
-          blue: '#0d0e0f',
-          magenta: '#101112',
-          cyan: '#131415',
-          white: '#161718'
-        }
-      });
+      const theme: ITheme = {
+        black: '#010203',
+        red: '#040506',
+        green: '#070809',
+        yellow: '#0a0b0c',
+        blue: '#0d0e0f',
+        magenta: '#101112',
+        cyan: '#131415',
+        white: '#161718'
+      };
+      await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
       await writeSync(`\\x1b[30m█\\x1b[31m█\\x1b[32m█\\x1b[33m█\\x1b[34m█\\x1b[35m█\\x1b[36m█\\x1b[37m█`);
-      await page.evaluate(`window.term.loadAddon(new WebglAddon(true));`);
       assert.deepEqual(await getCellColor(1, 1), [1, 2, 3, 255]);
       assert.deepEqual(await getCellColor(2, 1), [4, 5, 6, 255]);
       assert.deepEqual(await getCellColor(3, 1), [7, 8, 9, 255]);
@@ -63,22 +64,18 @@ describe('WebGL Renderer Integration Tests', () => {
     });
 
     it('foreground colors bright', async function(): Promise<any> {
-      this.timeout(10000);
-      await openTerminal({
-        rendererType: 'dom',
-        theme: {
-          brightBlack: '#010203',
-          brightRed: '#040506',
-          brightGreen: '#070809',
-          brightYellow: '#0a0b0c',
-          brightBlue: '#0d0e0f',
-          brightMagenta: '#101112',
-          brightCyan: '#131415',
-          brightWhite: '#161718'
-        }
-      });
+      const theme: ITheme = {
+        brightBlack: '#010203',
+        brightRed: '#040506',
+        brightGreen: '#070809',
+        brightYellow: '#0a0b0c',
+        brightBlue: '#0d0e0f',
+        brightMagenta: '#101112',
+        brightCyan: '#131415',
+        brightWhite: '#161718'
+      };
+      await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
       await writeSync(`\\x1b[90m█\\x1b[91m█\\x1b[92m█\\x1b[93m█\\x1b[94m█\\x1b[95m█\\x1b[96m█\\x1b[97m█`);
-      await page.evaluate(`window.term.loadAddon(new WebglAddon(true));`);
       assert.deepEqual(await getCellColor(1, 1), [1, 2, 3, 255]);
       assert.deepEqual(await getCellColor(2, 1), [4, 5, 6, 255]);
       assert.deepEqual(await getCellColor(3, 1), [7, 8, 9, 255]);
@@ -90,22 +87,18 @@ describe('WebGL Renderer Integration Tests', () => {
     });
 
     it('background colors normal', async function(): Promise<any> {
-      this.timeout(10000);
-      await openTerminal({
-        rendererType: 'dom',
-        theme: {
-          black: '#010203',
-          red: '#040506',
-          green: '#070809',
-          yellow: '#0a0b0c',
-          blue: '#0d0e0f',
-          magenta: '#101112',
-          cyan: '#131415',
-          white: '#161718'
-        }
-      });
+      const theme: ITheme = {
+        black: '#010203',
+        red: '#040506',
+        green: '#070809',
+        yellow: '#0a0b0c',
+        blue: '#0d0e0f',
+        magenta: '#101112',
+        cyan: '#131415',
+        white: '#161718'
+      };
+      await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
       await writeSync(`\\x1b[40m \\x1b[41m \\x1b[42m \\x1b[43m \\x1b[44m \\x1b[45m \\x1b[46m \\x1b[47m `);
-      await page.evaluate(`window.term.loadAddon(new WebglAddon(true));`);
       assert.deepEqual(await getCellColor(1, 1), [1, 2, 3, 255]);
       assert.deepEqual(await getCellColor(2, 1), [4, 5, 6, 255]);
       assert.deepEqual(await getCellColor(3, 1), [7, 8, 9, 255]);
@@ -117,22 +110,18 @@ describe('WebGL Renderer Integration Tests', () => {
     });
 
     it('background colors bright', async function(): Promise<any> {
-      this.timeout(10000);
-      await openTerminal({
-        rendererType: 'dom',
-        theme: {
-          brightBlack: '#010203',
-          brightRed: '#040506',
-          brightGreen: '#070809',
-          brightYellow: '#0a0b0c',
-          brightBlue: '#0d0e0f',
-          brightMagenta: '#101112',
-          brightCyan: '#131415',
-          brightWhite: '#161718'
-        }
-      });
+      const theme: ITheme = {
+        brightBlack: '#010203',
+        brightRed: '#040506',
+        brightGreen: '#070809',
+        brightYellow: '#0a0b0c',
+        brightBlue: '#0d0e0f',
+        brightMagenta: '#101112',
+        brightCyan: '#131415',
+        brightWhite: '#161718'
+      };
+      await page.evaluate(`window.term.setOption('theme', ${JSON.stringify(theme)});`);
       await writeSync(`\\x1b[100m \\x1b[101m \\x1b[102m \\x1b[103m \\x1b[104m \\x1b[105m \\x1b[106m \\x1b[107m `);
-      await page.evaluate(`window.term.loadAddon(new WebglAddon(true));`);
       assert.deepEqual(await getCellColor(1, 1), [1, 2, 3, 255]);
       assert.deepEqual(await getCellColor(2, 1), [4, 5, 6, 255]);
       assert.deepEqual(await getCellColor(3, 1), [7, 8, 9, 255]);
@@ -163,15 +152,6 @@ async function writeSync(data: string): Promise<void> {
     }
   }
 }
-
-// async function getPixelAt(x: number, y: number): Promise<number[]> {
-//   await page.evaluate(`
-//     window.gl = window.term._core._renderService._renderer._gl;
-//     window.result = new Uint8Array(4);
-//     window.gl.readPixels(${x}, window.gl.drawingBufferHeight - 1 - ${y}, 1, 1, window.gl.RGBA, window.gl.UNSIGNED_BYTE, window.result);
-//   `);
-//   return await page.evaluate(`Array.from(window.result)`);
-// }
 
 async function getCellColor(col: number, row: number): Promise<number[]> {
   await page.evaluate(`
