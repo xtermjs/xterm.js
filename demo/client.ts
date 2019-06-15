@@ -45,8 +45,6 @@ let socketURL;
 let socket;
 let pid;
 
-(<any>window).webgl = () => term.loadAddon(new WebglAddon());
-
 const terminalContainer = document.getElementById('terminal-container');
 const actionElements = {
   findNext: <HTMLInputElement>document.querySelector('#find-next'),
@@ -91,6 +89,7 @@ if (document.location.pathname === '/test') {
 } else {
   createTerminal();
   document.getElementById('dispose').addEventListener('click', disposeRecreateButtonHandler);
+  document.getElementById('webgl').addEventListener('click', () => term.loadAddon(new WebglAddon()));
 }
 
 function createTerminal(): void {
