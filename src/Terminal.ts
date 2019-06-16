@@ -34,7 +34,6 @@ import { SelectionManager } from './SelectionManager';
 import * as Browser from 'common/Platform';
 import { addDisposableDomListener } from 'browser/Lifecycle';
 import * as Strings from './browser/LocalizableStrings';
-import { MouseHelper } from 'browser/input/MouseHelper';
 import { SoundManager } from './SoundManager';
 import { MouseZoneManager } from './MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
@@ -50,12 +49,13 @@ import { ColorManager } from 'browser/ColorManager';
 import { RenderService } from 'browser/services/RenderService';
 import { IOptionsService, IBufferService } from 'common/services/Services';
 import { OptionsService } from 'common/services/OptionsService';
-import { ICharSizeService } from 'browser/services/Services';
+import { ICharSizeService, IRenderService, IMouseService } from 'browser/services/Services';
 import { CharSizeService } from 'browser/services/CharSizeService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
 import { Disposable } from 'common/Lifecycle';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { Attributes } from 'common/buffer/Constants';
+import { MouseService } from 'browser/services/MouseService';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -111,7 +111,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   // browser services
   private _charSizeService: ICharSizeService;
-  private _renderService: RenderService;
+  private _renderService: IRenderService;
+  private _mouseService: IMouseService;
 
   // modes
   public applicationKeypad: boolean;
@@ -177,7 +178,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   public viewport: IViewport;
   private _compositionHelper: ICompositionHelper;
   private _mouseZoneManager: IMouseZoneManager;
-  public mouseHelper: MouseHelper;
   private _accessibilityManager: AccessibilityManager;
   private _colorManager: ColorManager;
   private _theme: ITheme;
@@ -591,11 +591,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.screenElement.appendChild(this._helperContainer);
     fragment.appendChild(this.screenElement);
 
-    this._mouseZoneManager = new MouseZoneManager(this);
-    this.register(this._mouseZoneManager);
-    this.register(this.onScroll(() => this._mouseZoneManager.clearAll()));
-    this.linkifier.attachToDom(this._mouseZoneManager);
-
     this.textarea = document.createElement('textarea');
     this.textarea.classList.add('xterm-helper-textarea');
     this.textarea.setAttribute('aria-label', Strings.promptLabel);
@@ -628,6 +623,13 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._renderService.onRender(e => this._onRender.fire(e));
     this.onResize(e => this._renderService.resize(e.cols, e.rows));
 
+    this._mouseService = new MouseService(this._renderService, this._charSizeService);
+
+    this._mouseZoneManager = new MouseZoneManager(this, this._mouseService);
+    this.register(this._mouseZoneManager);
+    this.register(this.onScroll(() => this._mouseZoneManager.clearAll()));
+    this.linkifier.attachToDom(this._mouseZoneManager);
+
     this.viewport = new Viewport(this, this._viewportElement, this._viewportScrollArea, this._renderService.dimensions, this._charSizeService);
     this.viewport.onThemeChange(this._colorManager.colors);
     this.register(this.viewport);
@@ -638,7 +640,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this.register(this.onFocus(() => this._renderService.onFocus()));
     this.register(this._renderService.onDimensionsChange(() => this.viewport.syncScrollArea()));
 
-    this.selectionManager = new SelectionManager(this, this._charSizeService, this._bufferService);
+    this.selectionManager = new SelectionManager(this, this._charSizeService, this._bufferService, this._mouseService);
     this.register(this.selectionManager.onSelectionChange(() => this._onSelectionChange.fire()));
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this.selectionManager.onMouseDown(e)));
     this.register(this.selectionManager.onRedrawRequest(e => this._renderService.onSelectionChanged(e.start, e.end, e.columnSelectMode)));
@@ -656,7 +658,6 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     }));
     this.register(addDisposableDomListener(this._viewportElement, 'scroll', () => this.selectionManager.refresh()));
 
-    this.mouseHelper = new MouseHelper(this._renderService, this._charSizeService);
     // apply mouse event classes set by escape codes before terminal was attached
     this.element.classList.toggle('enable-mouse-events', this.mouseEvents);
     if (this.mouseEvents) {
@@ -738,7 +739,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       button = getButton(ev);
 
       // get mouse coordinates
-      pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.cols, self.rows);
+      pos = self._mouseService.getRawByteCoords(ev, self.screenElement, self.cols, self.rows);
       if (!pos) return;
 
       sendEvent(button, pos);
@@ -764,7 +765,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     // ^[[M 3<^[[M@4<^[[M@5<^[[M@6<^[[M@7<^[[M#7<
     function sendMove(ev: MouseEvent): void {
       let button = pressed;
-      const pos = self.mouseHelper.getRawByteCoords(ev, self.screenElement, self.cols, self.rows);
+      const pos = self._mouseService.getRawByteCoords(ev, self.screenElement, self.cols, self.rows);
       if (!pos) return;
 
       // buttons marked as motions

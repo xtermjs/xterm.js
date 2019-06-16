@@ -17,6 +17,11 @@ export interface ICharSizeService {
   measure(): void;
 }
 
+export interface IMouseService {
+  getCoords(event: {clientX: number, clientY: number}, element: HTMLElement, colCount: number, rowCount: number, isSelection?: boolean): [number, number] | undefined;
+  getRawByteCoords(event: MouseEvent, element: HTMLElement, colCount: number, rowCount: number): { x: number, y: number } | undefined;
+}
+
 export interface IRenderService {
   onDimensionsChange: IEvent<IRenderDimensions>;
   onRender: IEvent<{ start: number, end: number }>;
