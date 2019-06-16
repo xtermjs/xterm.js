@@ -126,7 +126,7 @@ export class SelectionManager implements ISelectionManager {
     this._initListeners();
     this.enable();
 
-    this._model = new SelectionModel(_terminal, bufferService);
+    this._model = new SelectionModel(bufferService);
     this._activeSelectionMode = SelectionMode.NORMAL;
   }
 

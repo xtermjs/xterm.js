@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { ITerminal } from './Types';
 import { IBufferService } from 'common/services/Services';
 
 /**
@@ -34,7 +33,6 @@ export class SelectionModel {
   public selectionEnd: [number, number];
 
   constructor(
-    private _terminal: ITerminal,
     private _bufferService: IBufferService
   ) {
     this.clearSelection();
@@ -71,7 +69,7 @@ export class SelectionModel {
    */
   public get finalSelectionEnd(): [number, number] {
     if (this.isSelectAllActive) {
-      return [this._bufferService.cols, this._terminal.buffer.ybase + this._bufferService.rows - 1];
+      return [this._bufferService.cols, this._bufferService.buffer.ybase + this._bufferService.rows - 1];
     }
 
     if (!this.selectionStart) {
