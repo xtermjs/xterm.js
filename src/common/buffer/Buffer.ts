@@ -126,7 +126,6 @@ export class Buffer implements IBuffer {
   public clear(): void {
     this.ydisp = 0;
     this.ybase = 0;
-    this.savedY = 0;
     this.y = 0;
     this.x = 0;
     this.lines = new CircularList<IBufferLine>(this._getCorrectBufferLength(this._rows));
