@@ -4,8 +4,8 @@
  */
 
 import { assert } from 'chai';
-import { ICharacterJoinerRegistry } from './Types';
-import { CharacterJoinerRegistry } from './CharacterJoinerRegistry';
+import { ICharacterJoinerRegistry } from 'browser/renderer/Types';
+import { CharacterJoinerRegistry } from 'browser/renderer/CharacterJoinerRegistry';
 import { BufferLine } from 'common/buffer/BufferLine';
 import { IBufferLine } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
@@ -26,7 +26,7 @@ describe('CharacterJoinerRegistry', () => {
     lines.set(5, lineData([['a', 0x11111111], [' -> b -> c -> '], ['d', 0x22222222]]));
     const line6 = lineData([['wi']]);
     line6.resize(line6.length + 1, CellData.fromCharData([0, '￥', 2, '￥'.charCodeAt(0)]));
-    line6.resize(line6.length + 1, CellData.fromCharData([0, '', 0, null]));
+    line6.resize(line6.length + 1, CellData.fromCharData([0, '', 0, 0]));
     let sub = lineData([['deemo']]);
     let oldSize = line6.length;
     line6.resize(oldSize + sub.length, CellData.fromCharData([0, '', 0, 0]));
