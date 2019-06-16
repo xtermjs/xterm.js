@@ -6,15 +6,15 @@
 import { ITerminal, ISelectionManager, ISelectionRedrawRequestEvent } from './Types';
 import { IBuffer } from 'common/buffer/Types';
 import { IBufferLine } from 'common/Types';
-import { MouseHelper } from 'browser/input/MouseHelper';
 import * as Browser from 'common/Platform';
-import { SelectionModel } from './SelectionModel';
+import { SelectionModel } from 'browser/selection/SelectionModel';
 import { AltClickHandler } from './handlers/AltClickHandler';
 import { CellData } from 'common/buffer/CellData';
 import { IDisposable } from 'xterm';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
-import { ICharSizeService } from 'browser/services/Services';
+import { ICharSizeService, IMouseService } from 'browser/services/Services';
 import { IBufferService } from 'common/services/Services';
+import { getCoordsRelativeToElement } from 'browser/input/Mouse';
 
 /**
  * The number of pixels the mouse needs to be above or below the viewport in
@@ -118,14 +118,15 @@ export class SelectionManager implements ISelectionManager {
   public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
 
   constructor(
-    private _terminal: ITerminal,
-    private _charSizeService: ICharSizeService,
-    bufferService: IBufferService
+    private readonly _terminal: ITerminal,
+    private readonly _charSizeService: ICharSizeService,
+    readonly bufferService: IBufferService,
+    private readonly _mouseService: IMouseService
   ) {
     this._initListeners();
     this.enable();
 
-    this._model = new SelectionModel(_terminal, bufferService);
+    this._model = new SelectionModel(bufferService);
     this._activeSelectionMode = SelectionMode.NORMAL;
   }
 
@@ -357,7 +358,7 @@ export class SelectionManager implements ISelectionManager {
    * @param event The mouse event.
    */
   private _getMouseBufferCoords(event: MouseEvent): [number, number] {
-    const coords = this._terminal.mouseHelper.getCoords(event, this._terminal.screenElement, this._terminal.cols, this._terminal.rows, true);
+    const coords = this._mouseService.getCoords(event, this._terminal.screenElement, this._terminal.cols, this._terminal.rows, true);
     if (!coords) {
       return null;
     }
@@ -377,7 +378,7 @@ export class SelectionManager implements ISelectionManager {
    * @param event The mouse event.
    */
   private _getMouseEventScrollAmount(event: MouseEvent): number {
-    let offset = MouseHelper.getCoordsRelativeToElement(event, this._terminal.screenElement)[1];
+    let offset = getCoordsRelativeToElement(event, this._terminal.screenElement)[1];
     const terminalHeight = this._terminal.rows * Math.ceil(this._charSizeService.height * this._terminal.options.lineHeight);
     if (offset >= 0 && offset <= terminalHeight) {
       return 0;
@@ -654,7 +655,7 @@ export class SelectionManager implements ISelectionManager {
     this._removeMouseDownListeners();
 
     if (this.selectionText.length <= 1 && timeElapsed < ALT_CLICK_MOVE_CURSOR_TIME) {
-      (new AltClickHandler(event, this._terminal)).move();
+      (new AltClickHandler(event, this._terminal, this._mouseService)).move();
     } else if (this.hasSelection) {
       this._onSelectionChange.fire();
     }

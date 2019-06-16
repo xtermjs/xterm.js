@@ -5,16 +5,15 @@
 
 import { assert } from 'chai';
 import { SelectionManager, SelectionMode } from './SelectionManager';
-import { SelectionModel } from './SelectionModel';
-import { BufferSet } from 'common/buffer/BufferSet';
+import { SelectionModel } from 'browser/selection/SelectionModel';
 import { ITerminal } from './Types';
 import { IBuffer } from 'common/buffer/Types';
 import { IBufferLine } from 'common/Types';
 import { MockTerminal } from './TestUtils.test';
-import { MockOptionsService, MockBufferService } from 'common/TestUtils.test';
+import { MockBufferService } from 'common/TestUtils.test';
 import { BufferLine } from 'common/buffer/BufferLine';
 import { IBufferService } from 'common/services/Services';
-import { MockCharSizeService } from 'browser/TestUtils.test';
+import { MockCharSizeService, MockMouseService } from 'browser/TestUtils.test';
 import { CellData } from 'common/buffer/CellData';
 
 class TestMockTerminal extends MockTerminal {
@@ -26,7 +25,7 @@ class TestSelectionManager extends SelectionManager {
     terminal: ITerminal,
     bufferService: IBufferService
   ) {
-    super(terminal, new MockCharSizeService(10, 10), bufferService);
+    super(terminal, new MockCharSizeService(10, 10), bufferService, new MockMouseService());
   }
 
   public get model(): SelectionModel { return this._model; }
@@ -52,10 +51,7 @@ describe('SelectionManager', () => {
   beforeEach(() => {
     terminal = new TestMockTerminal();
     bufferService = new MockBufferService(20, 20);
-    terminal.buffers = new BufferSet(
-      new MockOptionsService({ scrollback: 100 }),
-      bufferService
-    );
+    terminal.buffers = bufferService.buffers;
     terminal.cols = 20;
     terminal.rows = 20;
     terminal.buffer = terminal.buffers.active;
@@ -366,14 +362,13 @@ describe('SelectionManager', () => {
 
   describe('selectAll', () => {
     it('should select the entire buffer, beyond the viewport', () => {
-      buffer.lines.length = 5;
+      bufferService.resize(20, 5);
       buffer.lines.set(0, stringToRow('1'));
       buffer.lines.set(1, stringToRow('2'));
       buffer.lines.set(2, stringToRow('3'));
       buffer.lines.set(3, stringToRow('4'));
       buffer.lines.set(4, stringToRow('5'));
       selectionManager.selectAll();
-      terminal.buffer.ybase = buffer.lines.length - bufferService.rows;
       assert.equal(selectionManager.selectionText, '1\n2\n3\n4\n5');
     });
   });
