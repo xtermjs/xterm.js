@@ -8,13 +8,17 @@ import { InputHandler } from './InputHandler';
 import { MockInputHandlingTerminal, TestTerminal } from './TestUtils.test';
 import { Terminal } from './Terminal';
 import { IBufferLine } from 'common/Types';
-import { CellData, Attributes, AttributeData, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { CellData } from 'common/buffer/CellData';
+import { Attributes } from 'common/buffer/Constants';
+import { AttributeData } from 'common/buffer/AttributeData';
 
 describe('InputHandler', () => {
   describe('save and restore cursor', () => {
     const terminal = new MockInputHandlingTerminal();
     terminal.buffer.x = 1;
     terminal.buffer.y = 2;
+    terminal.buffer.ybase = 0;
     terminal.curAttrData.fg = 3;
     const inputHandler = new InputHandler(terminal);
     // Save cursor position

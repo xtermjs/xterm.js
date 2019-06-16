@@ -3,10 +3,11 @@
  * @license MIT
  */
 
-import { ParserState, IDcsHandler, IParsingState } from 'common/parser/Types';
+import { IDcsHandler, IParsingState } from 'common/parser/Types';
 import { EscapeSequenceParser, TransitionTable, VT500_TRANSITION_TABLE } from 'common/parser/EscapeSequenceParser';
 import * as chai from 'chai';
 import { StringToUtf32, stringFromCodePoint } from 'common/input/TextDecoder';
+import { ParserState } from 'common/parser/Constants';
 
 function r(a: number, b: number): string[] {
   let c = b - a;

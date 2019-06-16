@@ -6,11 +6,6 @@
 import { FontWeight } from 'xterm';
 import { IColorSet } from 'browser/Types';
 
-export const INVERTED_DEFAULT_COLOR = 257;
-export const DIM_OPACITY = 0.5;
-
-export const CHAR_ATLAS_CELL_SPACING = 1;
-
 export interface IGlyphIdentifier {
   chars: string;
   code: number;

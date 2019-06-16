@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { DIM_OPACITY, IGlyphIdentifier, INVERTED_DEFAULT_COLOR, ICharAtlasConfig } from './Types';
+import { IGlyphIdentifier, ICharAtlasConfig } from './Types';
+import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from './Constants';
 import { BaseCharAtlas } from './BaseCharAtlas';
 import { DEFAULT_ANSI_COLORS } from 'browser/ColorManager';
 import { LRUMap } from './LRUMap';

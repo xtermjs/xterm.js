@@ -12,9 +12,10 @@ import { IBuffer } from 'common/buffer/Types';
 import { IBufferLine } from 'common/Types';
 import { MockTerminal } from './TestUtils.test';
 import { MockOptionsService, MockBufferService } from 'common/TestUtils.test';
-import { BufferLine, CellData } from 'common/buffer/BufferLine';
+import { BufferLine } from 'common/buffer/BufferLine';
 import { IBufferService } from 'common/services/Services';
-import { MockCharSizeService } from 'browser/TestUtils.test';
+import { MockCharSizeService, MockMouseService } from 'browser/TestUtils.test';
+import { CellData } from 'common/buffer/CellData';
 
 class TestMockTerminal extends MockTerminal {
   emit(event: string, data: any): void {}
@@ -25,7 +26,7 @@ class TestSelectionManager extends SelectionManager {
     terminal: ITerminal,
     bufferService: IBufferService
   ) {
-    super(terminal, new MockCharSizeService(10, 10), bufferService);
+    super(terminal, new MockCharSizeService(10, 10), bufferService, new MockMouseService());
   }
 
   public get model(): SelectionModel { return this._model; }

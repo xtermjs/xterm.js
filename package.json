@@ -3,6 +3,7 @@
   "description": "Full xterm terminal, in your browser",
   "version": "3.14.0",
   "main": "lib/xterm.js",
+  "style": "css/xterm.css",
   "types": "typings/xterm.d.ts",
   "repository": "https://github.com/xtermjs/xterm.js",
   "license": "MIT",

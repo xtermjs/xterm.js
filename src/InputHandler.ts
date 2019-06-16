@@ -13,9 +13,12 @@ import { IDisposable } from 'xterm';
 import { Disposable } from 'common/Lifecycle';
 import { concat } from 'common/TypedArrayUtils';
 import { StringToUtf32, stringFromCodePoint, utf32ToString, Utf8ToUtf32 } from 'common/input/TextDecoder';
-import { CellData, Attributes, FgFlags, BgFlags, AttributeData, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { IParsingState, IDcsHandler, IEscapeSequenceParser } from 'common/parser/Types';
+import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags } from 'common/buffer/Constants';
+import { CellData } from 'common/buffer/CellData';
+import { AttributeData } from 'common/buffer/AttributeData';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -1916,7 +1919,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public saveCursor(params: number[]): void {
     this._terminal.buffer.savedX = this._terminal.buffer.x;
-    this._terminal.buffer.savedY = this._terminal.buffer.y;
+    this._terminal.buffer.savedY = this._terminal.buffer.ybase + this._terminal.buffer.y;
     this._terminal.buffer.savedCurAttrData.fg = this._terminal.curAttrData.fg;
     this._terminal.buffer.savedCurAttrData.bg = this._terminal.curAttrData.bg;
   }
@@ -1929,7 +1932,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public restoreCursor(params: number[]): void {
     this._terminal.buffer.x = this._terminal.buffer.savedX || 0;
-    this._terminal.buffer.y = this._terminal.buffer.savedY || 0;
+    this._terminal.buffer.y = Math.max(this._terminal.buffer.savedY - this._terminal.buffer.ybase, 0);
     this._terminal.curAttrData.fg = this._terminal.buffer.savedCurAttrData.fg;
     this._terminal.curAttrData.bg = this._terminal.buffer.savedCurAttrData.bg;
   }

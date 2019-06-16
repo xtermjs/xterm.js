@@ -43,7 +43,7 @@ export class RenderService extends Disposable implements IRenderService {
     this.register(this._renderDebouncer);
 
     this._screenDprMonitor = new ScreenDprMonitor();
-    this._screenDprMonitor.setListener(() => this._renderer.onDevicePixelRatioChange());
+    this._screenDprMonitor.setListener(() => this.onDevicePixelRatioChange());
     this.register(this._screenDprMonitor);
 
     this.register(optionsService.onOptionChange(() => this._renderer.onOptionsChanged()));
@@ -51,7 +51,7 @@ export class RenderService extends Disposable implements IRenderService {
 
     // dprchange should handle this case, we need this as well for browsers that don't support the
     // matchMedia query.
-    this.register(addDisposableDomListener(window, 'resize', () => this._renderer.onDevicePixelRatioChange()));
+    this.register(addDisposableDomListener(window, 'resize', () => this.onDevicePixelRatioChange()));
 
     // Detect whether IntersectionObserver is detected and enable renderer pause
     // and resume based on terminal visibility if so
@@ -105,13 +105,14 @@ export class RenderService extends Disposable implements IRenderService {
     // TODO: RenderCoordinator should be the only one to dispose the renderer
     this._renderer.dispose();
     this._renderer = renderer;
+    this.refreshRows(0, this._rowCount - 1);
   }
 
   private _fullRefresh(): void {
     if (this._isPaused) {
       this._needsFullRefresh = true;
     } else {
-      this.refreshRows(0, this._rowCount);
+      this.refreshRows(0, this._rowCount - 1);
     }
   }
 
@@ -122,6 +123,7 @@ export class RenderService extends Disposable implements IRenderService {
 
   public onDevicePixelRatioChange(): void {
     this._renderer.onDevicePixelRatioChange();
+    this.refreshRows(0, this._rowCount - 1);
   }
 
   public onResize(cols: number, rows: number): void {

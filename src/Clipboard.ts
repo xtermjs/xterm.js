@@ -5,15 +5,6 @@
 
 import { ITerminal, ISelectionManager } from './Types';
 
-interface IWindow extends Window {
-  clipboardData?: {
-    getData(format: string): string;
-    setData(format: string, data: string): void;
-  };
-}
-
-declare var window: IWindow;
-
 /**
  * Prepares text to be pasted into the terminal by normalizing the line endings
  * @param text The pasted text that needs processing before inserting into the terminal
@@ -38,12 +29,7 @@ export function bracketTextForPaste(text: string, bracketedPasteMode: boolean): 
  * @param ev The original copy event to be handled
  */
 export function copyHandler(ev: ClipboardEvent, term: ITerminal, selectionManager: ISelectionManager): void {
-  if (term.browser.isMSIE) {
-    window.clipboardData.setData('Text', selectionManager.selectionText);
-  } else {
-    ev.clipboardData.setData('text/plain', selectionManager.selectionText);
-  }
-
+  ev.clipboardData.setData('text/plain', selectionManager.selectionText);
   // Prevent or the original text will be copied.
   ev.preventDefault();
 }
@@ -66,16 +52,9 @@ export function pasteHandler(ev: ClipboardEvent, term: ITerminal): void {
     term.cancel(ev);
   };
 
-  if (term.browser.isMSIE) {
-    if (window.clipboardData) {
-      text = window.clipboardData.getData('Text');
-      dispatchPaste(text);
-    }
-  } else {
-    if (ev.clipboardData) {
-      text = ev.clipboardData.getData('text/plain');
-      dispatchPaste(text);
-    }
+  if (ev.clipboardData) {
+    text = ev.clipboardData.getData('text/plain');
+    dispatchPaste(text);
   }
 }
 

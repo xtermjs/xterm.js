@@ -6,7 +6,9 @@
 import { CircularList, IInsertEvent } from 'common/CircularList';
 import { IBuffer, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult } from 'common/buffer/Types';
 import { IBufferLine, ICellData, IAttributeData } from 'common/Types';
-import { BufferLine, CellData, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { CellData } from 'common/buffer/CellData';
+import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from 'common/buffer/Constants';
 import { reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths, getWrappedLineTrimmedLength } from 'common/buffer/BufferReflow';
 import { Marker } from 'common/buffer/Marker';
 import { IOptionsService, IBufferService } from 'common/services/Services';
@@ -203,6 +205,7 @@ export class Buffer implements IBuffer {
           this.lines.trimStart(amountToTrim);
           this.ybase = Math.max(this.ybase - amountToTrim, 0);
           this.ydisp = Math.max(this.ydisp - amountToTrim, 0);
+          this.savedY = Math.max(this.savedY - amountToTrim, 0);
         }
         this.lines.maxLength = newMaxLength;
       }
@@ -213,7 +216,6 @@ export class Buffer implements IBuffer {
       if (addToY) {
         this.y += addToY;
       }
-      this.savedY = Math.min(this.savedY, newRows - 1);
       this.savedX = Math.min(this.savedX, newCols - 1);
 
       this.scrollTop = 0;
@@ -282,6 +284,7 @@ export class Buffer implements IBuffer {
         this.ybase--;
       }
     }
+    this.savedY = Math.max(this.savedY - countRemoved, 0);
   }
 
   private _reflowSmaller(newCols: number, newRows: number): void {
@@ -393,6 +396,7 @@ export class Buffer implements IBuffer {
           }
         }
       }
+      this.savedY = Math.min(this.savedY + linesToAdd, this.ybase + newRows - 1);
     }
 
     // Rearrange lines in the buffer if there are any insertions, this is done at the end rather

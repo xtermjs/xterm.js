@@ -6,7 +6,7 @@
 import { IRenderer, IRenderDimensions, CharacterJoinerHandler } from 'browser/renderer/Types';
 import { ILinkifierEvent, ITerminal } from '../../Types';
 import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from './DomRendererRowFactory';
-import { INVERTED_DEFAULT_COLOR } from '../atlas/Types';
+import { INVERTED_DEFAULT_COLOR } from '../atlas/Constants';
 import { Disposable } from 'common/Lifecycle';
 import { IColorSet } from 'browser/Types';
 import { ICharSizeService } from 'browser/services/Services';
@@ -167,9 +167,14 @@ export class DomRenderer extends Disposable implements IRenderer {
     // Blink animation
     styles +=
         `@keyframes blink {` +
-        ` 0% { opacity: 1.0; }` +
-        ` 50% { opacity: 0.0; }` +
-        ` 100% { opacity: 1.0; }` +
+        ` 0% {` +
+        `  background-color: ${this._colors.cursor.css};` +
+        `  color: ${this._colors.cursorAccent.css};` +
+        ` }` +
+        ` 50% {` +
+        `  background-color: ${this._colors.cursorAccent.css};` +
+        `  color: ${this._colors.cursor.css};` +
+        ` }` +
         `}`;
     // Cursor
     styles +=

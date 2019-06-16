@@ -12,7 +12,8 @@ import * as path from 'path';
 import * as pty from 'node-pty';
 import { Terminal } from './Terminal';
 import { IViewport } from './Types';
-import { CellData, WHITESPACE_CELL_CHAR } from 'common/buffer/BufferLine';
+import { CellData } from 'common/buffer/CellData';
+import { WHITESPACE_CELL_CHAR } from 'common/buffer/Constants';
 
 class TestTerminal extends Terminal {
   innerWrite(): void { this._innerWrite(); }
