@@ -4,24 +4,19 @@
  */
 
 import { assert } from 'chai';
-
-import { MockTerminal, MockBuffer } from '../TestUtils.test';
-import { CircularList } from 'common/CircularList';
-
 import { ICharacterJoinerRegistry } from './Types';
 import { CharacterJoinerRegistry } from './CharacterJoinerRegistry';
 import { BufferLine } from 'common/buffer/BufferLine';
 import { IBufferLine } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
+import { MockBufferService } from 'common/TestUtils.test';
 
 describe('CharacterJoinerRegistry', () => {
   let registry: ICharacterJoinerRegistry;
 
   beforeEach(() => {
-    const terminal = new MockTerminal();
-    terminal.cols = 16;
-    terminal.buffer = new MockBuffer();
-    const lines = new CircularList<IBufferLine>(7);
+    const bufferService = new MockBufferService(16, 10);
+    const lines = bufferService.buffer.lines;
     lines.set(0, lineData([['a -> b -> c -> d']]));
     lines.set(1, lineData([['a -> b => c -> d']]));
     lines.set(2, lineData([['a -> b -', 0xFFFFFFFF], ['> c -> d', 0]]));
@@ -44,9 +39,7 @@ describe('CharacterJoinerRegistry', () => {
     for (let i = 0; i < sub.length; ++i) line6.setCell(i + oldSize, sub.loadCell(i, new CellData()));
     lines.set(6, line6);
 
-    (<MockBuffer>terminal.buffer).setLines(lines);
-    terminal.buffer.ydisp = 0;
-    registry = new CharacterJoinerRegistry(terminal);
+    registry = new CharacterJoinerRegistry(bufferService);
   });
 
   it('has no joiners upon creation', () => {

@@ -3,12 +3,12 @@
  * @license MIT
  */
 
-import { ITerminal } from '../Types';
 import { IBufferLine, ICellData, CharData } from 'common/Types';
 import { ICharacterJoinerRegistry, ICharacterJoiner } from './Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { WHITESPACE_CELL_CHAR, Content } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
+import { IBufferService } from 'common/services/Services';
 
 export class JoinedCellData extends AttributeData implements ICellData {
   private _width: number;
@@ -61,8 +61,7 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
   private _nextCharacterJoinerId: number = 0;
   private _workCell: CellData = new CellData();
 
-  constructor(private _terminal: ITerminal) {
-  }
+  constructor(private _bufferService: IBufferService) { }
 
   public registerCharacterJoiner(handler: (text: string) => [number, number][]): number {
     const joiner: ICharacterJoiner = {
@@ -90,7 +89,7 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
       return [];
     }
 
-    const line = this._terminal.buffer.lines.get(row);
+    const line = this._bufferService.buffer.lines.get(row);
     if (line.length === 0) {
       return [];
     }
@@ -144,7 +143,7 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
     }
 
     // Process any trailing ranges.
-    if (this._terminal.cols - rangeStartColumn > 1) {
+    if (this._bufferService.cols - rangeStartColumn > 1) {
       const joinedRanges = this._getJoinedRanges(
         lineStr,
         rangeStartStringIndex,
@@ -204,7 +203,7 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
       return;
     }
 
-    for (let x = startCol; x < this._terminal.cols; x++) {
+    for (let x = startCol; x < this._bufferService.cols; x++) {
       const width = line.getWidth(x);
       const length = line.getString(x).length || WHITESPACE_CELL_CHAR.length;
 
@@ -252,7 +251,7 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
     // If there is still a range left at the end, it must extend all the way to
     // the end of the line.
     if (currentRange) {
-      currentRange[1] = this._terminal.cols;
+      currentRange[1] = this._bufferService.cols;
     }
   }
 
