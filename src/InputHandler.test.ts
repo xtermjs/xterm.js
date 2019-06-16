@@ -18,6 +18,7 @@ describe('InputHandler', () => {
     const terminal = new MockInputHandlingTerminal();
     terminal.buffer.x = 1;
     terminal.buffer.y = 2;
+    terminal.buffer.ybase = 0;
     terminal.curAttrData.fg = 3;
     const inputHandler = new InputHandler(terminal);
     // Save cursor position
