@@ -10,7 +10,7 @@ import { GridCache } from 'browser/renderer/GridCache';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { NULL_CELL_CODE, Content } from 'common/buffer/Constants';
-import { JoinedCellData } from '../browser/renderer/CharacterJoinerRegistry';
+import { JoinedCellData } from 'browser/renderer/CharacterJoinerRegistry';
 import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 
