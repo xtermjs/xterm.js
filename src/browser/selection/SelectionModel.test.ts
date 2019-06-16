@@ -7,7 +7,7 @@ import { assert } from 'chai';
 import { SelectionModel } from './SelectionModel';
 import { MockBufferService } from 'common/TestUtils.test';
 
-describe('SelectionManager', () => {
+describe('SelectionModel', () => {
   let model: SelectionModel;
 
   beforeEach(() => {
@@ -22,8 +22,8 @@ describe('SelectionManager', () => {
       assert.deepEqual(model.finalSelectionStart, [0, 0]);
       assert.deepEqual(model.finalSelectionEnd, [10, 2]);
       model.clearSelection();
-      assert.deepEqual(model.finalSelectionStart, null);
-      assert.deepEqual(model.finalSelectionEnd, null);
+      assert.deepEqual(model.finalSelectionStart, undefined);
+      assert.deepEqual(model.finalSelectionEnd, undefined);
     });
   });
 
@@ -61,8 +61,8 @@ describe('SelectionManager', () => {
       model.selectionStart = [0, 0];
       model.selectionEnd = [10, 0];
       model.onTrim(1);
-      assert.deepEqual(model.finalSelectionStart, null);
-      assert.deepEqual(model.finalSelectionEnd, null);
+      assert.deepEqual(model.finalSelectionStart, undefined);
+      assert.deepEqual(model.finalSelectionEnd, undefined);
     });
   });
 
@@ -90,9 +90,9 @@ describe('SelectionManager', () => {
       assert.deepEqual(model.finalSelectionEnd, [80, 1]);
     });
     it('should return null if there is no selection start', () => {
-      assert.equal(model.finalSelectionEnd, null);
+      assert.equal(model.finalSelectionEnd, undefined);
       model.selectionEnd = [1, 2];
-      assert.equal(model.finalSelectionEnd, null);
+      assert.equal(model.finalSelectionEnd, undefined);
     });
     it('should return selection start + length if there is no selection end', () => {
       model.selectionStart = [2, 2];
