@@ -5,7 +5,7 @@
 
 import { ITerminalOptions } from '../../Types';
 import { IBufferLine } from 'common/Types';
-import { INVERTED_DEFAULT_COLOR } from '../atlas/Constants';
+import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { NULL_CELL_CODE, WHITESPACE_CELL_CHAR } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
