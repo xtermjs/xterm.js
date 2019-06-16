@@ -7,7 +7,7 @@ import { IGlyphIdentifier, ICharAtlasConfig } from './Types';
 import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from './Constants';
 import { BaseCharAtlas } from './BaseCharAtlas';
 import { DEFAULT_ANSI_COLORS } from 'browser/ColorManager';
-import { LRUMap } from './LRUMap';
+import { LRUMap } from '../../browser/renderer/atlas/LRUMap';
 import { isFirefox, isSafari } from 'common/Platform';
 import { IColor } from 'browser/Types';
 

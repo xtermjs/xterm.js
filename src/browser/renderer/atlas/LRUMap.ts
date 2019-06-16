@@ -4,16 +4,16 @@
  */
 
 interface ILinkedListNode<T> {
-  prev: ILinkedListNode<T>;
-  next: ILinkedListNode<T>;
-  key: number;
-  value: T;
+  prev: ILinkedListNode<T> | null;
+  next: ILinkedListNode<T> | null;
+  key: number | null;
+  value: T | null;
 }
 
 export class LRUMap<T> {
   private _map: { [key: number]: ILinkedListNode<T> } = {};
-  private _head: ILinkedListNode<T> = null;
-  private _tail: ILinkedListNode<T> = null;
+  private _head: ILinkedListNode<T> | null = null;
+  private _tail: ILinkedListNode<T> | null = null;
   private _nodePool: ILinkedListNode<T>[] = [];
   public size: number = 0;
 
@@ -106,9 +106,9 @@ export class LRUMap<T> {
       node.value = value;
     } else if (this.size >= this.capacity) {
       // we're out of space: recycle the head node, move it to the tail
-      node = this._head;
+      node = this._head!;
       this._unlinkNode(node);
-      delete this._map[node.key];
+      delete this._map[node.key!];
       node.key = key;
       node.value = value;
       this._map[key] = node;
@@ -117,7 +117,7 @@ export class LRUMap<T> {
       const nodePool = this._nodePool;
       if (nodePool.length > 0) {
         // use a preallocated node if we can
-        node = nodePool.pop();
+        node = nodePool.pop()!;
         node.key = key;
         node.value = value;
       } else {
