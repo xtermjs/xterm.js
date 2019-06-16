@@ -6,7 +6,7 @@
 import { ICharacterJoinerRegistry, IRenderDimensions } from 'browser/renderer/Types';
 import { ITerminal } from '../Types';
 import { CharData, ICellData } from 'common/Types';
-import { GridCache } from './GridCache';
+import { GridCache } from 'browser/renderer/GridCache';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { NULL_CELL_CODE, Content } from 'common/buffer/Constants';

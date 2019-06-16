@@ -4,7 +4,7 @@
  */
 
 export class GridCache<T> {
-  public cache: T[][];
+  public cache: (T | undefined)[][];
 
   public constructor() {
     this.cache = [];
@@ -16,7 +16,7 @@ export class GridCache<T> {
         this.cache.push([]);
       }
       for (let y = this.cache[x].length; y < height; y++) {
-        this.cache[x].push(null);
+        this.cache[x].push(undefined);
       }
       this.cache[x].length = height;
     }
@@ -26,7 +26,7 @@ export class GridCache<T> {
   public clear(): void {
     for (let x = 0; x < this.cache.length; x++) {
       for (let y = 0; y < this.cache[x].length; y++) {
-        this.cache[x][y] = null;
+        this.cache[x][y] = undefined;
       }
     }
   }
