@@ -11,7 +11,7 @@ import { acquireCharAtlas } from './atlas/CharAtlasCache';
 import { WebglCharAtlas } from './atlas/WebglCharAtlas';
 import { RectangleRenderer } from './RectangleRenderer';
 import { IWebGL2RenderingContext } from './Types';
-import { INVERTED_DEFAULT_COLOR } from './atlas/Types';
+import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { RenderModel, COMBINED_CHAR_BIT_MASK } from './RenderModel';
 import { Disposable } from 'common/Lifecycle';
 import { DEFAULT_COLOR, CHAR_DATA_CHAR_INDEX, CHAR_DATA_CODE_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CODE } from 'common/buffer/Constants';

@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { DIM_OPACITY, IGlyphIdentifier, INVERTED_DEFAULT_COLOR, ICharAtlasConfig } from './Types';
+import { IGlyphIdentifier, ICharAtlasConfig } from './Types';
+import { DIM_OPACITY, INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { BaseCharAtlas } from './BaseCharAtlas';
 import { IRasterizedGlyph, IBoundingBox, IRasterizedGlyphSet } from '../Types';
 import { DEFAULT_COLOR, DEFAULT_ATTR } from 'common/buffer/Constants';
