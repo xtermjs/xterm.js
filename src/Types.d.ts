@@ -6,7 +6,7 @@
 import { ITerminalOptions as IPublicTerminalOptions, IDisposable, IMarker, ISelectionPosition } from 'xterm';
 import { ICharset, IAttributeData, CharData } from 'common/Types';
 import { IEvent, IEventEmitter } from 'common/EventEmitter';
-import { IColorSet, IMouseHelper } from 'browser/Types';
+import { IColorSet } from 'browser/Types';
 import { IOptionsService } from 'common/services/Services';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 
@@ -204,7 +204,6 @@ export interface ITerminal extends IPublicTerminal, IElementAccessor, IBufferAcc
   buffer: IBuffer;
   buffers: IBufferSet;
   isFocused: boolean;
-  mouseHelper: IMouseHelper;
   viewport: IViewport;
   bracketedPasteMode: boolean;
   applicationCursor: boolean;

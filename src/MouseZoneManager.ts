@@ -6,6 +6,7 @@
 import { ITerminal, IMouseZoneManager, IMouseZone } from './Types';
 import { Disposable } from 'common/Lifecycle';
 import { addDisposableDomListener } from 'browser/Lifecycle';
+import { IMouseService } from 'browser/services/Services';
 
 const HOVER_DURATION = 500;
 
@@ -31,7 +32,8 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
   private _initialSelectionLength: number;
 
   constructor(
-    private _terminal: ITerminal
+    private _terminal: ITerminal,
+    private _mouseService: IMouseService
   ) {
     super();
 
@@ -203,7 +205,7 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
   }
 
   private _findZoneEventAt(e: MouseEvent): IMouseZone {
-    const coords = this._terminal.mouseHelper.getCoords(e, this._terminal.screenElement, this._terminal.cols, this._terminal.rows);
+    const coords = this._mouseService.getCoords(e, this._terminal.screenElement, this._terminal.cols, this._terminal.rows);
     if (!coords) {
       return null;
     }

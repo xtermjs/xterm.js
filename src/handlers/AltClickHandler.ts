@@ -6,6 +6,7 @@
 import { ITerminal } from '../Types';
 import { IBufferLine, ICircularList } from 'common/Types';
 import { C0 } from 'common/data/EscapeSequences';
+import { IMouseService } from 'browser/services/Services';
 
 const enum Direction {
   UP = 'A',
@@ -23,13 +24,14 @@ export class AltClickHandler {
 
   constructor(
     private _mouseEvent: MouseEvent,
-    private _terminal: ITerminal
+    private _terminal: ITerminal,
+    private readonly _mouseService: IMouseService
   ) {
     this._lines = this._terminal.buffer.lines;
     this._startCol = this._terminal.buffer.x;
     this._startRow = this._terminal.buffer.y;
 
-    const coordinates = this._terminal.mouseHelper.getCoords(
+    const coordinates = this._mouseService.getCoords(
       this._mouseEvent,
       this._terminal.element,
       this._terminal.cols,
