@@ -7,6 +7,40 @@ import { IDisposable } from 'common/Types';
 import { ParserState } from 'common/parser/Constants';
 
 /**
+ * Params types.
+ */
+export interface IParamsConstructor {
+  new(maxLength: number, maxSubParamsLength: number): IParams;
+
+  /** create params object from array like [1, [2, 3]] */
+  fromArray(values: (number | number[])[]): IParams;
+}
+
+export interface IParams {
+  /** from ctor */
+  maxLength: number;
+  maxSubParamsLength: number;
+
+  /** param values and its length */
+  params: Int16Array;
+  length: number;
+
+  /** sub params and its length */
+  subParams: Int16Array;
+  subParamsLength: number;
+
+  /** methods */
+  clone(): IParams;
+  toArray(): (number | number[])[];
+  reset(): void;
+  addParam(value: number): void;
+  addSubParam(value: number): void;
+  hasSubParams(idx: number): boolean;
+  getSubParams(idx: number): Int16Array | null;
+  getSubParamsAll(): {[idx: number]: Int16Array};
+}
+
+/**
  * Internal state of EscapeSequenceParser.
  * Used as argument of the error handler to allow
  * introspection at runtime on parse errors.

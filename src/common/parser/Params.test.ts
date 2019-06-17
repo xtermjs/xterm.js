@@ -113,6 +113,10 @@ describe('Params', () => {
     data = [38, [2, 50, 100, 150], 5, [], 6];
     assert.deepEqual(Params.fromArray(data).toArray(), [38, [2, 50, 100, 150], 5, 6]);
   });
+  it('clone', () => {
+    const params = Params.fromArray([38, [2, 50, 100, 150], 5, [], 6, 1, [2, 3], 12345, [-1]]);
+    assert.deepEqual(params.clone(), params);
+  });
   it('hasSubParams / getSubParams', () => {
     const params = Params.fromArray([38, [2, 50, 100, 150], 5, [], 6]);
     assert.equal(params.hasSubParams(0), true);

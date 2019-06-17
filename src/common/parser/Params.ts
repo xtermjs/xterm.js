@@ -2,36 +2,7 @@
  * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-
-// TODO: move to Types
-interface IParamsConstructor {
-  new(maxLength: number, maxSubParamsLength: number): IParams;
-  fromArray(values: (number | number[])[]): IParams;
-}
-
-interface IParams {
-  /** from ctor */
-  maxLength: number;
-  maxSubParamsLength: number;
-
-  /** param values and its length */
-  params: Int16Array;
-  length: number;
-
-  /** sub params and its length */
-  subParams: Int16Array;
-  subParamsLength: number;
-
-  /** methods */
-  clone(): IParams;
-  toArray(): (number | number[])[];
-  reset(): void;
-  addParam(value: number): void;
-  addSubParam(value: number): void;
-  hasSubParams(idx: number): boolean;
-  getSubParams(idx: number): Int16Array | null;
-  getSubParamsAll(): {[idx: number]: Int16Array};
-}
+import { IParams } from 'common/parser/Types';
 
 /**
  * Params storage class.
