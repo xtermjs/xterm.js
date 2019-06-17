@@ -3,11 +3,12 @@
  * @license MIT
  */
 
-import { IDcsHandler, IParsingState } from 'common/parser/Types';
+import { IDcsHandler, IParsingState, IParams } from 'common/parser/Types';
 import { EscapeSequenceParser, TransitionTable, VT500_TRANSITION_TABLE } from 'common/parser/EscapeSequenceParser';
 import * as chai from 'chai';
 import { StringToUtf32, stringFromCodePoint } from 'common/input/TextDecoder';
 import { ParserState } from 'common/parser/Constants';
+import { Params } from 'common/parser/Params';
 
 function r(a: number, b: number): string[] {
   let c = b - a;
@@ -27,10 +28,13 @@ class TestEscapeSequenceParser extends EscapeSequenceParser {
     this._osc = value;
   }
   public get params(): number[] {
-    return this._params;
+    return this._params.toArray() as number[];
   }
   public set params(value: number[]) {
-    this._params = value;
+    this._params = Params.fromArray(value);
+  }
+  public get realParams(): IParams {
+    return this._params;
   }
   public get collect(): string {
     return this._collect;
@@ -562,21 +566,35 @@ describe('EscapeSequenceParser', function (): void {
         testTerminal.clear();
       }
     });
-    it('trans CSI_ENTRY --> CSI_IGNORE', function (): void {
+    it('trans CSI_ENTRY --> CSI_PARAM for ":" (0x3a)', function (): void {
       parser.reset();
       parser.currentState = ParserState.CSI_ENTRY;
       parse(parser, '\x3a');
-      chai.expect(parser.currentState).equal(ParserState.CSI_IGNORE);
+      chai.expect(parser.currentState).equal(ParserState.CSI_PARAM);
       parser.reset();
     });
+    /*
     it('trans CSI_PARAM --> CSI_IGNORE', function (): void {
       parser.reset();
-      const chars = ['\x3a', '\x3c', '\x3d', '\x3e', '\x3f'];
+      const chars = ['\x3c', '\x3d', '\x3e', '\x3f'];
       for (let i = 0; i < chars.length; ++i) {
         parser.currentState = ParserState.CSI_PARAM;
         parse(parser, '\x3b' + chars[i]);
         chai.expect(parser.currentState).equal(ParserState.CSI_IGNORE);
         chai.expect(parser.params).eql([0, 0]);
+        parser.reset();
+      }
+    });
+    */
+    it('trans CSI_PARAM --> CSI_IGNORE', function (): void {
+      parser.reset();
+      const chars = ['\x3c', '\x3d', '\x3e', '\x3f'];
+      for (let i = 0; i < chars.length; ++i) {
+        chai.expect(parser.params).eql([0]);
+        parser.currentState = ParserState.CSI_PARAM;
+        parse(parser, '\x3b' + chars[i]);
+        chai.expect(parser.currentState).equal(ParserState.CSI_IGNORE);
+        // chai.expect(parser.params).eql([0, 0]);
         parser.reset();
       }
     });
@@ -785,16 +803,16 @@ describe('EscapeSequenceParser', function (): void {
       chai.expect(parser.params).eql([0, 0]);
       parser.reset();
     });
-    it('trans DCS_ENTRY --> DCS_IGNORE', function (): void {
+    it('trans DCS_ENTRY --> DCS_PARAM for ":" (0x3a)', function (): void {
       parser.reset();
       parser.currentState = ParserState.DCS_ENTRY;
       parse(parser, '\x3a');
-      chai.expect(parser.currentState).equal(ParserState.DCS_IGNORE);
+      chai.expect(parser.currentState).equal(ParserState.DCS_PARAM);
       parser.reset();
     });
     it('trans DCS_PARAM --> DCS_IGNORE', function (): void {
       parser.reset();
-      const chars = ['\x3a', '\x3c', '\x3d', '\x3e', '\x3f'];
+      const chars = ['\x3c', '\x3d', '\x3e', '\x3f'];
       for (let i = 0; i < chars.length; ++i) {
         parser.currentState = ParserState.DCS_PARAM;
         parse(parser, '\x3b' + chars[i]);
