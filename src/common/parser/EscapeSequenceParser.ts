@@ -259,7 +259,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this.initialState = ParserState.GROUND;
     this.currentState = this.initialState;
     this._osc = '';
-    this._params = new Params();
+    this._params = new Params(); // defaults to 32 storable params/subparams
     this._params.addParam(0);
     this._collect = '';
     this.precedingCodepoint = 0;
