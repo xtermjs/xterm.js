@@ -56,6 +56,7 @@ import { Disposable } from 'common/Lifecycle';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { Attributes } from 'common/buffer/Constants';
 import { MouseService } from 'browser/services/MouseService';
+import { IParams } from 'common/parser/Types';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -1413,7 +1414,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   }
 
   /** Add handler for CSI escape sequence. See xterm.d.ts for details. */
-  public addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable {
+  public addCsiHandler(flag: string, callback: (params: IParams, collect: string) => boolean): IDisposable {
     return this._inputHandler.addCsiHandler(flag, callback);
   }
   /** Add handler for OSC escape sequence. See xterm.d.ts for details. */

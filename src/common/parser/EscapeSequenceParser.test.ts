@@ -69,14 +69,14 @@ const testTerminal: any = {
   actionExecute: function (flag: string): void {
     this.calls.push(['exe', flag]);
   },
-  actionCSI: function (collect: string, params: number[], flag: string): void {
-    this.calls.push(['csi', collect, params, flag]);
+  actionCSI: function (collect: string, params: IParams, flag: string): void {
+    this.calls.push(['csi', collect, params.toArray() as number[], flag]);
   },
   actionESC: function (collect: string, flag: string): void {
     this.calls.push(['esc', collect, flag]);
   },
-  actionDCSHook: function (collect: string, params: number[], flag: string): void {
-    this.calls.push(['dcs hook', collect, params, flag]);
+  actionDCSHook: function (collect: string, params: IParams, flag: string): void {
+    this.calls.push(['dcs hook', collect, params.toArray() as number[], flag]);
   },
   actionDCSPrint: function (data: Uint32Array, start: number, end: number): void {
     let s = '';
@@ -92,7 +92,7 @@ const testTerminal: any = {
 
 // dcs handler to map dcs actions into the test object `testTerminal`
 class DcsTest implements IDcsHandler {
-  hook(collect: string, params: number[], flag: number): void {
+  hook(collect: string, params: IParams, flag: number): void {
     testTerminal.actionDCSHook(collect, params, String.fromCharCode(flag));
   }
   put(data: Uint32Array, start: number, end: number): void {
@@ -124,7 +124,7 @@ let state: any;
 // parser with Uint8Array based transition table
 const testParser = new TestEscapeSequenceParser();
 testParser.setPrintHandler(testTerminal.print.bind(testTerminal));
-testParser.setCsiHandlerFallback((collect: string, params: number[], flag: number) => {
+testParser.setCsiHandlerFallback((collect: string, params: IParams, flag: number) => {
   testTerminal.actionCSI(collect, params, String.fromCharCode(flag));
 });
 testParser.setEscHandlerFallback((collect: string, flag: number) => {
@@ -1146,8 +1146,8 @@ describe('EscapeSequenceParser', function (): void {
       chai.expect(esc).eql([]);
     });
     it('CSI handler', function (): void {
-      parser2.setCsiHandler('m', function (params: number[], collect: string): void {
-        csi.push(['m', params, collect]);
+      parser2.setCsiHandler('m', function (params: IParams, collect: string): void {
+        csi.push(['m', params.toArray() as number[], collect]);
       });
       parse(parser2, INPUT);
       chai.expect(csi).eql([['m', [1, 31], ''], ['m', [0], '']]);
@@ -1160,16 +1160,16 @@ describe('EscapeSequenceParser', function (): void {
     describe('CSI custom handlers', () => {
       it('Prevent fallback', () => {
         const csiCustom: [string, number[], string][] = [];
-        parser2.setCsiHandler('m', (params, collect) => csi.push(['m', params, collect]));
-        parser2.addCsiHandler('m', (params, collect) => { csiCustom.push(['m', params, collect]); return true; });
+        parser2.setCsiHandler('m', (params, collect) => csi.push(['m', params.toArray() as number[], collect]));
+        parser2.addCsiHandler('m', (params, collect) => { csiCustom.push(['m', params.toArray() as number[], collect]); return true; });
         parse(parser2, INPUT);
         chai.expect(csi).eql([], 'Should not fallback to original handler');
         chai.expect(csiCustom).eql([['m', [1, 31], ''], ['m', [0], '']]);
       });
       it('Allow fallback', () => {
         const csiCustom: [string, number[], string][] = [];
-        parser2.setCsiHandler('m', (params, collect) => csi.push(['m', params, collect]));
-        parser2.addCsiHandler('m', (params, collect) => { csiCustom.push(['m', params, collect]); return false; });
+        parser2.setCsiHandler('m', (params, collect) => csi.push(['m', params.toArray() as number[], collect]));
+        parser2.addCsiHandler('m', (params, collect) => { csiCustom.push(['m', params.toArray() as number[], collect]); return false; });
         parse(parser2, INPUT);
         chai.expect(csi).eql([['m', [1, 31], ''], ['m', [0], '']], 'Should fallback to original handler');
         chai.expect(csiCustom).eql([['m', [1, 31], ''], ['m', [0], '']]);
@@ -1177,9 +1177,9 @@ describe('EscapeSequenceParser', function (): void {
       it('Multiple custom handlers fallback once', () => {
         const csiCustom: [string, number[], string][] = [];
         const csiCustom2: [string, number[], string][] = [];
-        parser2.setCsiHandler('m', (params, collect) => csi.push(['m', params, collect]));
-        parser2.addCsiHandler('m', (params, collect) => { csiCustom.push(['m', params, collect]); return true; });
-        parser2.addCsiHandler('m', (params, collect) => { csiCustom2.push(['m', params, collect]); return false; });
+        parser2.setCsiHandler('m', (params, collect) => csi.push(['m', params.toArray() as number[], collect]));
+        parser2.addCsiHandler('m', (params, collect) => { csiCustom.push(['m', params.toArray() as number[], collect]); return true; });
+        parser2.addCsiHandler('m', (params, collect) => { csiCustom2.push(['m', params.toArray() as number[], collect]); return false; });
         parse(parser2, INPUT);
         chai.expect(csi).eql([], 'Should not fallback to original handler');
         chai.expect(csiCustom).eql([['m', [1, 31], ''], ['m', [0], '']]);
@@ -1188,9 +1188,9 @@ describe('EscapeSequenceParser', function (): void {
       it('Multiple custom handlers no fallback', () => {
         const csiCustom: [string, number[], string][] = [];
         const csiCustom2: [string, number[], string][] = [];
-        parser2.setCsiHandler('m', (params, collect) => csi.push(['m', params, collect]));
-        parser2.addCsiHandler('m', (params, collect) => { csiCustom.push(['m', params, collect]); return true; });
-        parser2.addCsiHandler('m', (params, collect) => { csiCustom2.push(['m', params, collect]); return true; });
+        parser2.setCsiHandler('m', (params, collect) => csi.push(['m', params.toArray() as number[], collect]));
+        parser2.addCsiHandler('m', (params, collect) => { csiCustom.push(['m', params.toArray() as number[], collect]); return true; });
+        parser2.addCsiHandler('m', (params, collect) => { csiCustom2.push(['m', params.toArray() as number[], collect]); return true; });
         parse(parser2, INPUT);
         chai.expect(csi).eql([], 'Should not fallback to original handler');
         chai.expect(csiCustom).eql([], 'Should not fallback once');
@@ -1206,8 +1206,8 @@ describe('EscapeSequenceParser', function (): void {
       });
       it('Dispose should work', () => {
         const csiCustom: [string, number[], string][] = [];
-        parser2.setCsiHandler('m', (params, collect) => csi.push(['m', params, collect]));
-        const customHandler = parser2.addCsiHandler('m', (params, collect) => { csiCustom.push(['m', params, collect]); return true; });
+        parser2.setCsiHandler('m', (params, collect) => csi.push(['m', params.toArray() as number[], collect]));
+        const customHandler = parser2.addCsiHandler('m', (params, collect) => { csiCustom.push(['m', params.toArray() as number[], collect]); return true; });
         customHandler.dispose();
         parse(parser2, INPUT);
         chai.expect(csi).eql([['m', [1, 31], ''], ['m', [0], '']]);
@@ -1215,8 +1215,8 @@ describe('EscapeSequenceParser', function (): void {
       });
       it('Should not corrupt the parser when dispose is called twice', () => {
         const csiCustom: [string, number[], string][] = [];
-        parser2.setCsiHandler('m', (params, collect) => csi.push(['m', params, collect]));
-        const customHandler = parser2.addCsiHandler('m', (params, collect) => { csiCustom.push(['m', params, collect]); return true; });
+        parser2.setCsiHandler('m', (params, collect) => csi.push(['m', params.toArray() as number[], collect]));
+        const customHandler = parser2.addCsiHandler('m', (params, collect) => { csiCustom.push(['m', params.toArray() as number[], collect]); return true; });
         customHandler.dispose();
         customHandler.dispose();
         parse(parser2, INPUT);
@@ -1320,8 +1320,8 @@ describe('EscapeSequenceParser', function (): void {
     });
     it('DCS handler', function (): void {
       parser2.setDcsHandler('+p', {
-        hook: function (collect: string, params: number[], flag: number): void {
-          dcs.push(['hook', collect, params, flag]);
+        hook: function (collect: string, params: IParams, flag: number): void {
+          dcs.push(['hook', collect, params.toArray() as number[], flag]);
         },
         put: function (data: Uint32Array, start: number, end: number): void {
           let s = '';
@@ -1361,7 +1361,7 @@ describe('EscapeSequenceParser', function (): void {
         currentState: ParserState.CSI_PARAM,
         osc: '',
         collect: '',
-        params: [1, 2, 0], // extra zero here
+        params: Params.fromArray([1, 2, 0]), // extra zero here
         abort: false
       });
       parser2.clearErrorHandler();

@@ -493,7 +493,7 @@ declare module 'xterm' {
      * The most recently-added handler is tried first.
      * @return An IDisposable you can call to remove this handler.
      */
-    addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable;
+    addCsiHandler(flag: string, callback: (params: IParams, collect: string) => boolean): IDisposable;
 
     /**
      * (EXPERIMENTAL) Adds a handler for OSC escape sequences.
@@ -924,5 +924,29 @@ declare module 'xterm' {
      * - This is `0` for cells immediately following cells with a width of `2`.
      */
     readonly width: number;
+  }
+
+  interface IParams {
+    /** from ctor */
+    maxLength: number;
+    maxSubParamsLength: number;
+  
+    /** param values and its length */
+    params: Int16Array;
+    length: number;
+  
+    /** sub params and its length */
+    subParams: Int16Array;
+    subParamsLength: number;
+  
+    /** methods */
+    clone(): IParams;
+    toArray(): (number | number[])[];
+    reset(): void;
+    addParam(value: number): void;
+    addSubParam(value: number): void;
+    hasSubParams(idx: number): boolean;
+    getSubParams(idx: number): Int16Array | null;
+    getSubParamsAll(): {[idx: number]: Int16Array};
   }
 }

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IParsingState, IDcsHandler, IEscapeSequenceParser } from 'common/parser/Types';
+import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams } from 'common/parser/Types';
 import { ParserState, ParserAction } from 'common/parser/Constants';
 import { Disposable } from 'common/Lifecycle';
 import { utf32ToString } from 'common/input/TextDecoder';
@@ -15,7 +15,7 @@ interface IHandlerCollection<T> {
   [key: string]: T[];
 }
 
-type CsiHandler = (params: number[], collect: string) => boolean | void;
+type CsiHandler = (params: IParams, collect: string) => boolean | void;
 type OscHandler = (data: string) => boolean | void;
 
 /**
@@ -207,7 +207,7 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
  * Dummy DCS handler as default fallback.
  */
 class DcsDummy implements IDcsHandler {
-  hook(collect: string, params: number[], flag: number): void { }
+  hook(collect: string, params: IParams, flag: number): void { }
   put(data: Uint32Array, start: number, end: number): void { }
   unhook(): void { }
 }
@@ -247,7 +247,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
   // fallback handlers
   protected _printHandlerFb: (data: Uint32Array, start: number, end: number) => void;
   protected _executeHandlerFb: (code: number) => void;
-  protected _csiHandlerFb: (collect: string, params: number[], flag: number) => void;
+  protected _csiHandlerFb: (collect: string, params: IParams, flag: number) => void;
   protected _escHandlerFb: (collect: string, flag: number) => void;
   protected _oscHandlerFb: (identifier: number, data: string) => void;
   protected _dcsHandlerFb: IDcsHandler;
@@ -267,7 +267,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     // set default fallback handlers and handler lookup containers
     this._printHandlerFb = (data, start, end): void => { };
     this._executeHandlerFb = (code: number): void => { };
-    this._csiHandlerFb = (collect: string, params: number[], flag: number): void => { };
+    this._csiHandlerFb = (collect: string, params: IParams, flag: number): void => { };
     this._escHandlerFb = (collect: string, flag: number): void => { };
     this._oscHandlerFb = (identifier: number, data: string): void => { };
     this._dcsHandlerFb = new DcsDummy();
@@ -325,13 +325,13 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
       }
     };
   }
-  setCsiHandler(flag: string, callback: (params: number[], collect: string) => void): void {
+  setCsiHandler(flag: string, callback: (params: IParams, collect: string) => void): void {
     this._csiHandlers[flag.charCodeAt(0)] = [callback];
   }
   clearCsiHandler(flag: string): void {
     if (this._csiHandlers[flag.charCodeAt(0)]) delete this._csiHandlers[flag.charCodeAt(0)];
   }
-  setCsiHandlerFallback(callback: (collect: string, params: number[], flag: number) => void): void {
+  setCsiHandlerFallback(callback: (collect: string, params: IParams, flag: number) => void): void {
     this._csiHandlerFb = callback;
   }
 
@@ -469,7 +469,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
               currentState,
               osc,
               collect,
-              params: params.toArray() as number[],
+              params: params,
               abort: false
             });
           if (inject.abort) return;
@@ -485,12 +485,12 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           let j = handlers ? handlers.length - 1 : -1;
           for (; j >= 0; j--) {
             // undefined or true means success and to stop bubbling
-            if (handlers[j](params.toArray() as number[], collect) !== false) {
+            if (handlers[j](params, collect) !== false) {
               break;
             }
           }
           if (j < 0) {
-            this._csiHandlerFb(collect, params.toArray() as number[], code);
+            this._csiHandlerFb(collect, params, code);
           }
           break;
         case ParserAction.PARAM:
@@ -532,7 +532,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           this.precedingCodepoint = 0;
           dcsHandler = this._dcsHandlers[collect + String.fromCharCode(code)];
           if (!dcsHandler) dcsHandler = this._dcsHandlerFb;
-          dcsHandler.hook(collect, params.toArray() as number[], code);
+          dcsHandler.hook(collect, params, code);
           break;
         case ParserAction.DCS_PUT:
           // inner loop - exit DCS_PUT: 0x18, 0x1a, 0x1b, 0x7f, 0x80 - 0x9f

@@ -60,7 +60,7 @@ export interface IParsingState {
   // collect buffer with intermediate characters
   collect: string;
   // params buffer
-  params: number[];
+  params: IParams;
   // should abort (default: false)
   abort: boolean;
 }
@@ -87,7 +87,7 @@ export interface IParsingState {
 * `unhook` marks the end of the current DCS sequence.
 */
 export interface IDcsHandler {
-  hook(collect: string, params: number[], flag: number): void;
+  hook(collect: string, params: IParams, flag: number): void;
   put(data: Uint32Array, start: number, end: number): void;
   unhook(): void;
 }
@@ -120,10 +120,10 @@ export interface IEscapeSequenceParser extends IDisposable {
   clearExecuteHandler(flag: string): void;
   setExecuteHandlerFallback(callback: (code: number) => void): void;
 
-  setCsiHandler(flag: string, callback: (params: number[], collect: string) => void): void;
+  setCsiHandler(flag: string, callback: (params: IParams, collect: string) => void): void;
   clearCsiHandler(flag: string): void;
-  setCsiHandlerFallback(callback: (collect: string, params: number[], flag: number) => void): void;
-  addCsiHandler(flag: string, callback: (params: number[], collect: string) => boolean): IDisposable;
+  setCsiHandlerFallback(callback: (collect: string, params: IParams, flag: number) => void): void;
+  addCsiHandler(flag: string, callback: (params: IParams, collect: string) => boolean): IDisposable;
   addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
 
   setEscHandler(collectAndFlag: string, callback: () => void): void;

@@ -12,6 +12,7 @@ import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes } from 'common/buffer/Constants';
 import { AttributeData } from 'common/buffer/AttributeData';
+import { Params } from 'common/parser/Params';
 
 describe('InputHandler', () => {
   describe('save and restore cursor', () => {
@@ -22,7 +23,7 @@ describe('InputHandler', () => {
     terminal.curAttrData.fg = 3;
     const inputHandler = new InputHandler(terminal);
     // Save cursor position
-    inputHandler.saveCursor([]);
+    inputHandler.saveCursor();
     assert.equal(terminal.buffer.x, 1);
     assert.equal(terminal.buffer.y, 2);
     assert.equal(terminal.curAttrData.fg, 3);
@@ -31,7 +32,7 @@ describe('InputHandler', () => {
     terminal.buffer.y = 20;
     terminal.curAttrData.fg = 30;
     // Restore cursor position
-    inputHandler.restoreCursor([]);
+    inputHandler.restoreCursor();
     assert.equal(terminal.buffer.x, 1);
     assert.equal(terminal.buffer.y, 2);
     assert.equal(terminal.curAttrData.fg, 3);
@@ -42,37 +43,37 @@ describe('InputHandler', () => {
       const inputHandler = new InputHandler(terminal);
       const collect = ' ';
 
-      inputHandler.setCursorStyle([0], collect);
+      inputHandler.setCursorStyle(Params.fromArray([0]), collect);
       assert.equal(terminal.options['cursorStyle'], 'block');
       assert.equal(terminal.options['cursorBlink'], true);
 
       terminal.options = {};
-      inputHandler.setCursorStyle([1], collect);
+      inputHandler.setCursorStyle(Params.fromArray([1]), collect);
       assert.equal(terminal.options['cursorStyle'], 'block');
       assert.equal(terminal.options['cursorBlink'], true);
 
       terminal.options = {};
-      inputHandler.setCursorStyle([2], collect);
+      inputHandler.setCursorStyle(Params.fromArray([2]), collect);
       assert.equal(terminal.options['cursorStyle'], 'block');
       assert.equal(terminal.options['cursorBlink'], false);
 
       terminal.options = {};
-      inputHandler.setCursorStyle([3], collect);
+      inputHandler.setCursorStyle(Params.fromArray([3]), collect);
       assert.equal(terminal.options['cursorStyle'], 'underline');
       assert.equal(terminal.options['cursorBlink'], true);
 
       terminal.options = {};
-      inputHandler.setCursorStyle([4], collect);
+      inputHandler.setCursorStyle(Params.fromArray([4]), collect);
       assert.equal(terminal.options['cursorStyle'], 'underline');
       assert.equal(terminal.options['cursorBlink'], false);
 
       terminal.options = {};
-      inputHandler.setCursorStyle([5], collect);
+      inputHandler.setCursorStyle(Params.fromArray([5]), collect);
       assert.equal(terminal.options['cursorStyle'], 'bar');
       assert.equal(terminal.options['cursorBlink'], true);
 
       terminal.options = {};
-      inputHandler.setCursorStyle([6], collect);
+      inputHandler.setCursorStyle(Params.fromArray([6]), collect);
       assert.equal(terminal.options['cursorStyle'], 'bar');
       assert.equal(terminal.options['cursorBlink'], false);
     });
@@ -84,10 +85,10 @@ describe('InputHandler', () => {
       terminal.bracketedPasteMode = false;
       const inputHandler = new InputHandler(terminal);
       // Set bracketed paste mode
-      inputHandler.setMode([2004], collect);
+      inputHandler.setMode(Params.fromArray([2004]), collect);
       assert.equal(terminal.bracketedPasteMode, true);
       // Reset bracketed paste mode
-      inputHandler.resetMode([2004], collect);
+      inputHandler.resetMode(Params.fromArray([2004]), collect);
       assert.equal(terminal.bracketedPasteMode, false);
     });
   });
@@ -113,25 +114,25 @@ describe('InputHandler', () => {
       // insert one char from params = [0]
       term.buffer.y = 0;
       term.buffer.x = 70;
-      inputHandler.insertChars([0]);
+      inputHandler.insertChars(Params.fromArray([0]));
       expect(line1.translateToString(false)).equals(Array(term.cols - 9).join('a') + ' 123456789');
 
       // insert one char from params = [1]
       term.buffer.y = 0;
       term.buffer.x = 70;
-      inputHandler.insertChars([1]);
+      inputHandler.insertChars(Params.fromArray([1]));
       expect(line1.translateToString(false)).equals(Array(term.cols - 9).join('a') + '  12345678');
 
       // insert two chars from params = [2]
       term.buffer.y = 0;
       term.buffer.x = 70;
-      inputHandler.insertChars([2]);
+      inputHandler.insertChars(Params.fromArray([2]));
       expect(line1.translateToString(false)).equals(Array(term.cols - 9).join('a') + '    123456');
 
       // insert 10 chars from params = [10]
       term.buffer.y = 0;
       term.buffer.x = 70;
-      inputHandler.insertChars([10]);
+      inputHandler.insertChars(Params.fromArray([10]));
       expect(line1.translateToString(false)).equals(Array(term.cols - 9).join('a') + '          ');
       expect(line1.translateToString(true)).equals(Array(term.cols - 9).join('a'));
     });
@@ -150,28 +151,28 @@ describe('InputHandler', () => {
       // delete one char from params = [0]
       term.buffer.y = 0;
       term.buffer.x = 70;
-      inputHandler.deleteChars([0]);
+      inputHandler.deleteChars(Params.fromArray([0]));
       expect(line1.translateToString(false)).equals(Array(term.cols - 9).join('a') + '234567890 ');
       expect(line1.translateToString(true)).equals(Array(term.cols - 9).join('a') + '234567890');
 
       // insert one char from params = [1]
       term.buffer.y = 0;
       term.buffer.x = 70;
-      inputHandler.deleteChars([1]);
+      inputHandler.deleteChars(Params.fromArray([1]));
       expect(line1.translateToString(false)).equals(Array(term.cols - 9).join('a') + '34567890  ');
       expect(line1.translateToString(true)).equals(Array(term.cols - 9).join('a') + '34567890');
 
       // insert two chars from params = [2]
       term.buffer.y = 0;
       term.buffer.x = 70;
-      inputHandler.deleteChars([2]);
+      inputHandler.deleteChars(Params.fromArray([2]));
       expect(line1.translateToString(false)).equals(Array(term.cols - 9).join('a') + '567890    ');
       expect(line1.translateToString(true)).equals(Array(term.cols - 9).join('a') + '567890');
 
       // insert 10 chars from params = [10]
       term.buffer.y = 0;
       term.buffer.x = 70;
-      inputHandler.deleteChars([10]);
+      inputHandler.deleteChars(Params.fromArray([10]));
       expect(line1.translateToString(false)).equals(Array(term.cols - 9).join('a') + '          ');
       expect(line1.translateToString(true)).equals(Array(term.cols - 9).join('a'));
     });
@@ -187,19 +188,19 @@ describe('InputHandler', () => {
       // params[0] - right erase
       term.buffer.y = 0;
       term.buffer.x = 70;
-      inputHandler.eraseInLine([0]);
+      inputHandler.eraseInLine(Params.fromArray([0]));
       expect(term.buffer.lines.get(0).translateToString(false)).equals(Array(71).join('a') + '          ');
 
       // params[1] - left erase
       term.buffer.y = 1;
       term.buffer.x = 70;
-      inputHandler.eraseInLine([1]);
+      inputHandler.eraseInLine(Params.fromArray([1]));
       expect(term.buffer.lines.get(1).translateToString(false)).equals(Array(71).join(' ') + ' aaaaaaaaa');
 
       // params[1] - left erase
       term.buffer.y = 2;
       term.buffer.x = 70;
-      inputHandler.eraseInLine([2]);
+      inputHandler.eraseInLine(Params.fromArray([2]));
       expect(term.buffer.lines.get(2).translateToString(false)).equals(Array(term.cols + 1).join(' '));
 
     });
@@ -213,7 +214,7 @@ describe('InputHandler', () => {
       // params [0] - right and below erase
       term.buffer.y = 5;
       term.buffer.x = 40;
-      inputHandler.eraseInDisplay([0]);
+      inputHandler.eraseInDisplay(Params.fromArray([0]));
       expect(termContent(term, false)).eql([
         Array(term.cols + 1).join('a'),
         Array(term.cols + 1).join('a'),
@@ -241,7 +242,7 @@ describe('InputHandler', () => {
       // params [1] - left and above
       term.buffer.y = 5;
       term.buffer.x = 40;
-      inputHandler.eraseInDisplay([1]);
+      inputHandler.eraseInDisplay(Params.fromArray([1]));
       expect(termContent(term, false)).eql([
         Array(term.cols + 1).join(' '),
         Array(term.cols + 1).join(' '),
@@ -269,7 +270,7 @@ describe('InputHandler', () => {
       // params [2] - whole screen
       term.buffer.y = 5;
       term.buffer.x = 40;
-      inputHandler.eraseInDisplay([2]);
+      inputHandler.eraseInDisplay(Params.fromArray([2]));
       expect(termContent(term, false)).eql([
         Array(term.cols + 1).join(' '),
         Array(term.cols + 1).join(' '),
@@ -301,7 +302,7 @@ describe('InputHandler', () => {
       expect(term.buffer.lines.get(2).isWrapped).true;
       term.buffer.y = 2;
       term.buffer.x = 40;
-      inputHandler.eraseInDisplay([1]);
+      inputHandler.eraseInDisplay(Params.fromArray([1]));
       expect(term.buffer.lines.get(2).isWrapped).false;
 
       // reset and add a wrapped line
@@ -316,7 +317,7 @@ describe('InputHandler', () => {
       expect(term.buffer.lines.get(2).isWrapped).true;
       term.buffer.y = 1;
       term.buffer.x = 90; // Cursor is beyond last column
-      inputHandler.eraseInDisplay([1]);
+      inputHandler.eraseInDisplay(Params.fromArray([1]));
       expect(term.buffer.lines.get(2).isWrapped).false;
     });
   });
