@@ -2,7 +2,6 @@
  * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { StringToUtf32 } from 'common/input/TextDecoder';
 
 // TODO: move to Types
 interface IParamsConstructor {
