@@ -19,6 +19,7 @@ import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams } from 'comm
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData } from 'common/buffer/AttributeData';
+import { IAttributeData } from 'common/Types';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -1536,6 +1537,71 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
+   * Helper to extract and apply color params/subparams.
+   * Returns advance for params index.
+   */
+  private _extractColor(params: IParams, pos: number, attr: IAttributeData): number {
+    // normalize params
+    // meaning: [target, CM, ign, val, val, val]
+    // RGB    : [ 38/48,  2, ign,   r,   g,   b]
+    // P256   : [ 38/48,  5, ign,   v, ign, ign]
+    const accu = [0, 0, -1, 0, 0, 0];
+    let cSpace = 0;
+    let advance = 0;
+
+    do {
+      accu[advance + cSpace] = params.params[pos + advance];
+      if (params.hasSubParams(pos + advance)) {
+        const subparams = params.getSubParams(pos + advance);
+        let i = 0;
+        do {
+          accu[advance + i + 1 + cSpace] = subparams[i];
+        } while (++i < subparams.length && i + advance + 1 + cSpace < accu.length);
+        break;
+      }
+      // exit early if can decide color mode with semicolons
+      if ((accu[1] === 5 && advance + cSpace >= 2)
+          || (accu[1] === 2 && advance + cSpace >= 5)) {
+        break;
+      }
+      // offset colorSpace slot for semicolon mode
+      if (accu[1]) {
+        cSpace = 1;
+      }
+    } while (++advance + pos < params.length && advance + cSpace < accu.length);
+
+    // set default values to 0
+    for (let i = 2; i < accu.length; ++i) {
+      if (accu[i] === -1) {
+        accu[i] = 0;
+      }
+    }
+
+    // apply colors
+    if (accu[0] === 38) {
+      if (accu[1] === 2) {
+        attr.fg |= Attributes.CM_RGB;
+        attr.fg &= ~Attributes.RGB_MASK;
+        attr.fg |= AttributeData.fromColorRGB([accu[3], accu[4], accu[5]]);
+      } else if (accu[1] === 5) {
+        attr.fg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
+        attr.fg |= Attributes.CM_P256 | (accu[3] & 0xff);
+      }
+    } else if (accu[0] === 48) {
+      if (accu[1] === 2) {
+        attr.bg |= Attributes.CM_RGB;
+        attr.bg &= ~Attributes.RGB_MASK;
+        attr.bg |= AttributeData.fromColorRGB([accu[3], accu[4], accu[5]]);
+      } else if (accu[1] === 5) {
+        attr.bg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
+        attr.bg |= Attributes.CM_P256 | (accu[3] & 0xff);
+      }
+    }
+
+    return advance;
+  }
+
+  /**
    * CSI Pm m  Character Attributes (SGR).
    *     Ps = 0  -> Normal (default).
    *     Ps = 1  -> Bold.
@@ -1683,35 +1749,9 @@ export class InputHandler extends Disposable implements IInputHandler {
         // reset bg
         attr.bg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
         attr.bg |= DEFAULT_ATTR_DATA.bg & (Attributes.PCOLOR_MASK | Attributes.RGB_MASK);
-      } else if (p === 38) {
+      } else if (p === 38 || p === 48) {
         // fg color 256 and RGB
-        // FIXME: apply sub parameter, avoid reading over length!
-        if (params.params[i + 1] === 2) {
-          i += 2;
-          attr.fg |= Attributes.CM_RGB;
-          attr.fg &= ~Attributes.RGB_MASK;
-          attr.fg |= AttributeData.fromColorRGB([params.params[i], params.params[i + 1], params.params[i + 2]]);
-          i += 2;
-        } else if (params.params[i + 1] === 5) {
-          i += 2;
-          p = params.params[i] & 0xff;
-          attr.fg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
-          attr.fg |= Attributes.CM_P256 | p;
-        }
-      } else if (p === 48) {
-        // bg color 256 and RGB
-        if (params.params[i + 1] === 2) {
-          i += 2;
-          attr.bg |= Attributes.CM_RGB;
-          attr.bg &= ~Attributes.RGB_MASK;
-          attr.bg |= AttributeData.fromColorRGB([params.params[i], params.params[i + 1], params.params[i + 2]]);
-          i += 2;
-        } else if (params.params[i + 1] === 5) {
-          i += 2;
-          p = params.params[i] & 0xff;
-          attr.bg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
-          attr.bg |= Attributes.CM_P256 | p;
-        }
+        i += this._extractColor(params, i, attr);
       } else if (p === 100) {
         // reset fg/bg
         attr.fg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
