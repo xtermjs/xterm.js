@@ -17,16 +17,17 @@ function toUtf32(s: string): Uint32Array {
   return result;
 }
 
+class DcsHandler implements IDcsHandler {
+  hook(collect: string, params: number[], flag: number) : void {}
+  put(data: Uint32Array, start: number, end: number) : void {}
+  unhook() :void {}
+}
 
-perfContext('Parser performance - 50MB data', () => {
-  let content;
-  let taContent: Uint32Array;
+
+perfContext('Parser throughput - 50MB data', () => {
+  let parsed: Uint32Array;
   let parser: EscapeSequenceParser;
-  const dcsHandler: IDcsHandler = {
-    hook: (collect, params, flag) => {},
-    put: (data, start, end) => {},
-    unhook: () => {}
-  };
+  
   beforeEach(() => {
     parser = new EscapeSequenceParser();
     parser.setPrintHandler((data, start, end) => {});
@@ -96,171 +97,186 @@ perfContext('Parser performance - 50MB data', () => {
     parser.setEscHandler('~', () => {});
     parser.setEscHandler('%@', () => {});
     parser.setEscHandler('%G', () => {});
-    parser.setDcsHandler('q', dcsHandler);
+    parser.setDcsHandler('q', new DcsHandler());
   });
 
-  perfContext('print - a', () => {
+  perfContext('PRINT - a', () => {
     before(() => {
       const data = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
-      content = '';
+      let content = '';
       while (content.length < 50000000) {
         content += data;
       }
-      taContent = toUtf32(content);
+      parsed = toUtf32(content);
     });
-    new ThroughputRuntimeCase('throughput', async () => {
-      parser.parse(taContent, taContent.length);
-      return {payloadSize: taContent.length};
+    new ThroughputRuntimeCase('', async () => {
+      parser.parse(parsed, parsed.length);
+      return {payloadSize: parsed.length};
     }, {fork: true}).showAverageThroughput();
   });
 
-  perfContext('execute - \\n', () => {
+  perfContext('EXECUTE - \\n', () => {
     before(() => {
       const data = '\n\n\n\n\n\n\n';
-      content = '';
+      let content = '';
       while (content.length < 50000000) {
         content += data;
       }
-      taContent = toUtf32(content);
+      parsed = toUtf32(content);
     });
-    new ThroughputRuntimeCase('throughput', () => {
-      parser.parse(taContent, taContent.length);
-      return {payloadSize: taContent.length};
+    new ThroughputRuntimeCase('', () => {
+      parser.parse(parsed, parsed.length);
+      return {payloadSize: parsed.length};
     }, {fork: true}).showAverageThroughput();
   });
 
-  perfContext('escape - ESC E', () => {
+  perfContext('ESCAPE - ESC E', () => {
     before(() => {
       const data = '\x1bE\x1bE\x1bE\x1bE\x1bE\x1bE\x1bE\x1bE\x1bE\x1bE';
-      content = '';
+      let content = '';
       while (content.length < 50000000) {
         content += data;
       }
-      taContent = toUtf32(content);
+      parsed = toUtf32(content);
     });
-    new ThroughputRuntimeCase('throughput', () => {
-      parser.parse(taContent, taContent.length);
-      return {payloadSize: taContent.length};
+    new ThroughputRuntimeCase('', () => {
+      parser.parse(parsed, parsed.length);
+      return {payloadSize: parsed.length};
     }, {fork: true}).showAverageThroughput();
   });
 
-  perfContext('escape with collect - ESC % G', () => {
+  perfContext('ESCAPE with collect - ESC % G', () => {
     before(() => {
       const data = '\x1b%G\x1b%G\x1b%G\x1b%G\x1b%G\x1b%G\x1b%G\x1b%G\x1b%G\x1b%G';
-      content = '';
+      let content = '';
       while (content.length < 50000000) {
         content += data;
       }
-      taContent = toUtf32(content);
+      parsed = toUtf32(content);
     });
-    new ThroughputRuntimeCase('throughput', () => {
-      parser.parse(taContent, taContent.length);
-      return {payloadSize: taContent.length};
+    new ThroughputRuntimeCase('', () => {
+      parser.parse(parsed, parsed.length);
+      return {payloadSize: parsed.length};
     }, {fork: true}).showAverageThroughput();
   });
 
-  perfContext('simple csi - CSI A', () => {
+  perfContext('CSI - CSI A', () => {
     before(() => {
       const data = '\x1b[A\x1b[A\x1b[A\x1b[A\x1b[A\x1b[A\x1b[A\x1b[A\x1b[A\x1b[A';
-      content = '';
+      let content = '';
       while (content.length < 50000000) {
         content += data;
       }
-      taContent = toUtf32(content);
+      parsed = toUtf32(content);
     });
-    new ThroughputRuntimeCase('throughput', () => {
-      parser.parse(taContent, taContent.length);
-      return {payloadSize: taContent.length};
+    new ThroughputRuntimeCase('', () => {
+      parser.parse(parsed, parsed.length);
+      return {payloadSize: parsed.length};
     }, {fork: true}).showAverageThroughput();
   });
 
-  perfContext('csi with collect - CSI ? p', () => {
+  perfContext('CSI with collect - CSI ? p', () => {
     before(() => {
       const data = '\x1b[?p\x1b[?p\x1b[?p\x1b[?p\x1b[?p\x1b[?p\x1b[?p\x1b[?p\x1b[?p\x1b[?p';
-      content = '';
+      let content = '';
       while (content.length < 50000000) {
         content += data;
       }
-      taContent = toUtf32(content);
+      parsed = toUtf32(content);
     });
-    new ThroughputRuntimeCase('throughput', () => {
-      parser.parse(taContent, taContent.length);
-      return {payloadSize: taContent.length};
+    new ThroughputRuntimeCase('', () => {
+      parser.parse(parsed, parsed.length);
+      return {payloadSize: parsed.length};
     }, {fork: true}).showAverageThroughput();
   });
 
-  perfContext('csi with params - CSI 1;2 m', () => {
+  perfContext('CSI with params (short) - CSI 1;2 m', () => {
     before(() => {
-      const data = '\x1b{1;2m\x1b{1;2m\x1b{1;2m\x1b{1;2m\x1b{1;2m\x1b{1;2m\x1b{1;2m\x1b{1;2m\x1b{1;2m\x1b{1;2m';
-      content = '';
+      const data = '\x1b[1;2m\x1b[1;2m\x1b[1;2m\x1b[1;2m\x1b[1;2m\x1b[1;2m\x1b[1;2m\x1b[1;2m\x1b[1;2m\x1b[1;2m';
+      let content = '';
       while (content.length < 50000000) {
         content += data;
       }
-      taContent = toUtf32(content);
+      parsed = toUtf32(content);
     });
-    new ThroughputRuntimeCase('throughput', () => {
-      parser.parse(taContent, taContent.length);
-      return {payloadSize: taContent.length};
+    new ThroughputRuntimeCase('', () => {
+      parser.parse(parsed, parsed.length);
+      return {payloadSize: parsed.length};
     }, {fork: true}).showAverageThroughput();
   });
 
-  perfContext('osc (small payload) - OSC 0;hi ST', () => {
+  perfContext('CSI with params (long) - CSI 1;2;3;4;5;6;7;8;9;0 m', () => {
+    before(() => {
+      const data = '\x1b[1;2;3;4;5;6;7;8;9;0m\x1b[1;2;3;4;5;6;7;8;9;0m\x1b[1;2;3;4;5;6;7;8;9;0m';
+      let content = '';
+      while (content.length < 50000000) {
+        content += data;
+      }
+      parsed = toUtf32(content);
+    });
+    new ThroughputRuntimeCase('', () => {
+      parser.parse(parsed, parsed.length);
+      return {payloadSize: parsed.length};
+    }, {fork: true}).showAverageThroughput();
+  });
+
+  perfContext('OSC (short) - OSC 0;hi ST', () => {
     before(() => {
       const data = '\x1b]0;hi\x1b\\\x1b]0;hi\x1b\\\x1b]0;hi\x1b\\\x1b]0;hi\x1b\\x1b]0;hi\x1b\\';
-      content = '';
+      let content = '';
       while (content.length < 50000000) {
         content += data;
       }
-      taContent = toUtf32(content);
+      parsed = toUtf32(content);
     });
-    new ThroughputRuntimeCase('throughput', () => {
-      parser.parse(taContent, taContent.length);
-      return {payloadSize: taContent.length};
+    new ThroughputRuntimeCase('', () => {
+      parser.parse(parsed, parsed.length);
+      return {payloadSize: parsed.length};
     }, {fork: true}).showAverageThroughput();
   });
 
-  perfContext('osc (big payload) - OSC 0;<text> ST', () => {
+  perfContext('OSC (long) - OSC 0;<text> ST', () => {
     before(() => {
       const data = '\x1b]0;Lorem ipsum dolor sit amet, consetetur sadipscing elitr.\x1b\\';
-      content = '';
+      let content = '';
       while (content.length < 50000000) {
         content += data;
       }
-      taContent = toUtf32(content);
+      parsed = toUtf32(content);
     });
-    new ThroughputRuntimeCase('throughput', () => {
-      parser.parse(taContent, taContent.length);
-      return {payloadSize: taContent.length};
+    new ThroughputRuntimeCase('', () => {
+      parser.parse(parsed, parsed.length);
+      return {payloadSize: parsed.length};
     }, {fork: true}).showAverageThroughput();
   });
 
-  perfContext('DCS (small payload)', () => {
+  perfContext('DCS (short)', () => {
     before(() => {
       const data = '\x1bPq~~\x1b\\';
-      content = '';
+      let content = '';
       while (content.length < 50000000) {
         content += data;
       }
-      taContent = toUtf32(content);
+      parsed = toUtf32(content);
     });
-    new ThroughputRuntimeCase('throughput', async () => {
-      parser.parse(taContent, taContent.length);
-      return {payloadSize: taContent.length};
+    new ThroughputRuntimeCase('', async () => {
+      parser.parse(parsed, parsed.length);
+      return {payloadSize: parsed.length};
     }, {fork: true}).showAverageThroughput();
   });
 
-  perfContext('DCS (big payload)', () => {
+  perfContext('DCS (long)', () => {
     before(() => {
       const data = '\x1bPq#0;2;0;0;0#1;2;100;100;0#2;2;0;100;0#1~~@@vv@@~~@@~~$#2??}}GG}}??}}??-#1!14@\x1b\\';
-      content = '';
+      let content = '';
       while (content.length < 50000000) {
         content += data;
       }
-      taContent = toUtf32(content);
+      parsed = toUtf32(content);
     });
-    new ThroughputRuntimeCase('throughput', async () => {
-      parser.parse(taContent, taContent.length);
-      return {payloadSize: taContent.length};
+    new ThroughputRuntimeCase('', async () => {
+      parser.parse(parsed, parsed.length);
+      return {payloadSize: parsed.length};
     }, {fork: true}).showAverageThroughput();
   });
 });
