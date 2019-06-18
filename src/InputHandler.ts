@@ -1546,7 +1546,11 @@ export class InputHandler extends Disposable implements IInputHandler {
     // RGB    : [ 38/48,  2, ign,   r,   g,   b]
     // P256   : [ 38/48,  5, ign,   v, ign, ign]
     const accu = [0, 0, -1, 0, 0, 0];
+
+    // alignment placeholder for non color space sequences
     let cSpace = 0;
+
+    // return advance we took in params
     let advance = 0;
 
     do {
@@ -1555,6 +1559,9 @@ export class InputHandler extends Disposable implements IInputHandler {
         const subparams = params.getSubParams(pos + advance);
         let i = 0;
         do {
+          if (accu[1] === 5) {
+            cSpace = 1;
+          }
           accu[advance + i + 1 + cSpace] = subparams[i];
         } while (++i < subparams.length && i + advance + 1 + cSpace < accu.length);
         break;

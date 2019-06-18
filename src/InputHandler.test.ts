@@ -546,4 +546,154 @@ describe('InputHandler', () => {
       assert.deepEqual(AttributeData.toColorRGB(term.curAttrData.getFgColor()), [5, 0, 0]);
     });
   });
+  describe('colon notation', () => {
+    let termColon: TestTerminal;
+    let termSemicolon: TestTerminal;
+    beforeEach(() => {
+      termColon = new TestTerminal();
+      termSemicolon = new TestTerminal();
+    });
+    describe('should equal to semicolon', () => {
+      it('CSI 38:2::50:100:150 m', () => {
+        termColon.curAttrData.fg = 0xFFFFFFFF;
+        termSemicolon.curAttrData.fg = 0xFFFFFFFF;
+        termSemicolon.writeSync('\x1b[38;2;50;100;150m');
+        termColon.writeSync('\x1b[38:2::50:100:150m');
+        assert.equal(termSemicolon.curAttrData.fg & 0xFFFFFF, 50 << 16 | 100 << 8 | 150);
+        assert.equal(termColon.curAttrData.fg, termSemicolon.curAttrData.fg);
+      });
+      it('CSI 38:2::50:100: m', () => {
+        termColon.curAttrData.fg = 0xFFFFFFFF;
+        termSemicolon.curAttrData.fg = 0xFFFFFFFF;
+        termSemicolon.writeSync('\x1b[38;2;50;100;m');
+        termColon.writeSync('\x1b[38:2::50:100:m');
+        assert.equal(termSemicolon.curAttrData.fg & 0xFFFFFF, 50 << 16 | 100 << 8 | 0);
+        assert.equal(termColon.curAttrData.fg, termSemicolon.curAttrData.fg);
+      });
+      it('CSI 38:2::50:: m', () => {
+        termColon.curAttrData.fg = 0xFFFFFFFF;
+        termSemicolon.curAttrData.fg = 0xFFFFFFFF;
+        termSemicolon.writeSync('\x1b[38;2;50;;m');
+        termColon.writeSync('\x1b[38:2::50::m');
+        assert.equal(termSemicolon.curAttrData.fg & 0xFFFFFF, 50 << 16 | 0 << 8 | 0);
+        assert.equal(termColon.curAttrData.fg, termSemicolon.curAttrData.fg);
+      });
+      it('CSI 38:2:::: m', () => {
+        termColon.curAttrData.fg = 0xFFFFFFFF;
+        termSemicolon.curAttrData.fg = 0xFFFFFFFF;
+        termSemicolon.writeSync('\x1b[38;2;;;m');
+        termColon.writeSync('\x1b[38:2::::m');
+        assert.equal(termSemicolon.curAttrData.fg & 0xFFFFFF, 0 << 16 | 0 << 8 | 0);
+        assert.equal(termColon.curAttrData.fg, termSemicolon.curAttrData.fg);
+      });
+      it('CSI 38;2::50:100:150 m', () => {
+        termColon.curAttrData.fg = 0xFFFFFFFF;
+        termSemicolon.curAttrData.fg = 0xFFFFFFFF;
+        termSemicolon.writeSync('\x1b[38;2;50;100;150m');
+        termColon.writeSync('\x1b[38;2::50:100:150m');
+        assert.equal(termSemicolon.curAttrData.fg & 0xFFFFFF, 50 << 16 | 100 << 8 | 150);
+        assert.equal(termColon.curAttrData.fg, termSemicolon.curAttrData.fg);
+      });
+      it('CSI 38;2;50:100:150 m', () => {
+        termColon.curAttrData.fg = 0xFFFFFFFF;
+        termSemicolon.curAttrData.fg = 0xFFFFFFFF;
+        termSemicolon.writeSync('\x1b[38;2;50;100;150m');
+        termColon.writeSync('\x1b[38;2;50:100:150m');
+        assert.equal(termSemicolon.curAttrData.fg & 0xFFFFFF, 50 << 16 | 100 << 8 | 150);
+        assert.equal(termColon.curAttrData.fg, termSemicolon.curAttrData.fg);
+      });
+      it('CSI 38;2;50;100:150 m', () => {
+        termColon.curAttrData.fg = 0xFFFFFFFF;
+        termSemicolon.curAttrData.fg = 0xFFFFFFFF;
+        termSemicolon.writeSync('\x1b[38;2;50;100;150m');
+        termColon.writeSync('\x1b[38;2;50;100:150m');
+        assert.equal(termSemicolon.curAttrData.fg & 0xFFFFFF, 50 << 16 | 100 << 8 | 150);
+        assert.equal(termColon.curAttrData.fg, termSemicolon.curAttrData.fg);
+      });
+      it('CSI 38:5:50 m', () => {
+        termColon.curAttrData.fg = 0xFFFFFFFF;
+        termSemicolon.curAttrData.fg = 0xFFFFFFFF;
+        termSemicolon.writeSync('\x1b[38;5;50m');
+        termColon.writeSync('\x1b[38:5:50m');
+        assert.equal(termSemicolon.curAttrData.fg & 0xFF, 50);
+        assert.equal(termColon.curAttrData.fg, termSemicolon.curAttrData.fg);
+      });
+      it('CSI 38:5: m', () => {
+        termColon.curAttrData.fg = 0xFFFFFFFF;
+        termSemicolon.curAttrData.fg = 0xFFFFFFFF;
+        termSemicolon.writeSync('\x1b[38;5;m');
+        termColon.writeSync('\x1b[38:5:m');
+        assert.equal(termSemicolon.curAttrData.fg & 0xFF, 0);
+        assert.equal(termColon.curAttrData.fg, termSemicolon.curAttrData.fg);
+      });
+      it('CSI 38;5:50 m', () => {
+        termColon.curAttrData.fg = 0xFFFFFFFF;
+        termSemicolon.curAttrData.fg = 0xFFFFFFFF;
+        termSemicolon.writeSync('\x1b[38;5;50m');
+        termColon.writeSync('\x1b[38;5:50m');
+        assert.equal(termSemicolon.curAttrData.fg & 0xFF, 50);
+        assert.equal(termColon.curAttrData.fg, termSemicolon.curAttrData.fg);
+      });
+    });
+    describe('should fill early sequence end with default of 0', () => {
+      it('CSI 38:2 m', () => {
+        termColon.curAttrData.fg = 0xFFFFFFFF;
+        termSemicolon.curAttrData.fg = 0xFFFFFFFF;
+        termSemicolon.writeSync('\x1b[38;2m');
+        termColon.writeSync('\x1b[38:2m');
+        assert.equal(termSemicolon.curAttrData.fg & 0xFFFFFF, 0 << 16 | 0 << 8 | 0);
+        assert.equal(termColon.curAttrData.fg, termSemicolon.curAttrData.fg);
+      });
+      it('CSI 38:5 m', () => {
+        termColon.curAttrData.fg = 0xFFFFFFFF;
+        termSemicolon.curAttrData.fg = 0xFFFFFFFF;
+        termSemicolon.writeSync('\x1b[38;5m');
+        termColon.writeSync('\x1b[38:5m');
+        assert.equal(termSemicolon.curAttrData.fg & 0xFF, 0);
+        assert.equal(termColon.curAttrData.fg, termSemicolon.curAttrData.fg);
+      });
+    });
+    describe('should not interfere with leading/following SGR attrs', () => {
+      it('CSI 1 ; 38:2::50:100:150 ; 4 m', () => {
+        termSemicolon.writeSync('\x1b[1;38;2;50;100;150;4m');
+        termColon.writeSync('\x1b[1;38:2::50:100:150;4m');
+        assert.equal(!!termSemicolon.curAttrData.isBold(), true);
+        assert.equal(!!termSemicolon.curAttrData.isUnderline(), true);
+        assert.equal(termSemicolon.curAttrData.fg & 0xFFFFFF, 50 << 16 | 100 << 8 | 150);
+        assert.equal(termColon.curAttrData.fg, termSemicolon.curAttrData.fg);
+      });
+      it('CSI 1 ; 38:2::50:100: ; 4 m', () => {
+        termSemicolon.writeSync('\x1b[1;38;2;50;100;;4m');
+        termColon.writeSync('\x1b[1;38:2::50:100:;4m');
+        assert.equal(!!termSemicolon.curAttrData.isBold(), true);
+        assert.equal(!!termSemicolon.curAttrData.isUnderline(), true);
+        assert.equal(termSemicolon.curAttrData.fg & 0xFFFFFF, 50 << 16 | 100 << 8 | 0);
+        assert.equal(termColon.curAttrData.fg, termSemicolon.curAttrData.fg);
+      });
+      it('CSI 1 ; 38:2::50:100 ; 4 m', () => {
+        termSemicolon.writeSync('\x1b[1;38;2;50;100;;4m');
+        termColon.writeSync('\x1b[1;38:2::50:100;4m');
+        assert.equal(!!termSemicolon.curAttrData.isBold(), true);
+        assert.equal(!!termSemicolon.curAttrData.isUnderline(), true);
+        assert.equal(termSemicolon.curAttrData.fg & 0xFFFFFF, 50 << 16 | 100 << 8 | 0);
+        assert.equal(termColon.curAttrData.fg, termSemicolon.curAttrData.fg);
+      });
+      it('CSI 1 ; 38:2:: ; 4 m', () => {
+        termSemicolon.writeSync('\x1b[1;38;2;;;;4m');
+        termColon.writeSync('\x1b[1;38:2::;4m');
+        assert.equal(!!termSemicolon.curAttrData.isBold(), true);
+        assert.equal(!!termSemicolon.curAttrData.isUnderline(), true);
+        assert.equal(termSemicolon.curAttrData.fg & 0xFFFFFF, 0);
+        assert.equal(termColon.curAttrData.fg, termSemicolon.curAttrData.fg);
+      });
+      it('CSI 1 ; 38;2:: ; 4 m', () => {
+        termSemicolon.writeSync('\x1b[1;38;2;;;;4m');
+        termColon.writeSync('\x1b[1;38;2::;4m');
+        assert.equal(!!termSemicolon.curAttrData.isBold(), true);
+        assert.equal(!!termSemicolon.curAttrData.isUnderline(), true);
+        assert.equal(termSemicolon.curAttrData.fg & 0xFFFFFF, 0);
+        assert.equal(termColon.curAttrData.fg, termSemicolon.curAttrData.fg);
+      });
+    });
+  });
 });
