@@ -5,25 +5,21 @@
 
 import jsdom = require('jsdom');
 import { assert } from 'chai';
-import { DomRendererRowFactory } from './DomRendererRowFactory';
+import { DomRendererRowFactory } from 'browser/renderer/dom/DomRendererRowFactory';
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, DEFAULT_ATTR, FgFlags, BgFlags, Attributes } from 'common/buffer/Constants';
 import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { ITerminalOptions } from '../../Types';
 import { IBufferLine } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
+import { MockOptionsService } from 'common/TestUtils.test';
 
 describe('DomRendererRowFactory', () => {
   let dom: jsdom.JSDOM;
-  const options: ITerminalOptions = {};
   let rowFactory: DomRendererRowFactory;
   let lineData: IBufferLine;
 
   beforeEach(() => {
     dom = new jsdom.JSDOM('');
-
-    options.drawBoldTextInBrightColors = true;
-
-    rowFactory = new DomRendererRowFactory(options, dom.window.document);
+    rowFactory = new DomRendererRowFactory(dom.window.document, new MockOptionsService({ drawBoldTextInBrightColors: true }));
     lineData = createEmptyLineData(2);
   });
 
@@ -38,7 +34,7 @@ describe('DomRendererRowFactory', () => {
     it('should set correct attributes for double width characters', () => {
       lineData.setCell(0, CellData.fromCharData([DEFAULT_ATTR, '語', 2, '語'.charCodeAt(0)]));
       // There should be no element for the following "empty" cell
-      lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, '', 0, undefined]));
+      lineData.setCell(1, CellData.fromCharData([DEFAULT_ATTR, '', 0, 0]));
       const fragment = rowFactory.createRow(lineData, false, undefined, 0, false, 5, 20);
       assert.equal(getFragmentHtml(fragment),
         '<span style="width: 10px;">語</span>'

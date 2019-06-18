@@ -3,15 +3,14 @@
  * @license MIT
  */
 
-import { ICharacterJoinerRegistry } from './Types';
-import { IRenderDimensions } from 'browser/renderer/Types';
+import { ICharacterJoinerRegistry, IRenderDimensions } from 'browser/renderer/Types';
 import { ITerminal } from '../Types';
 import { CharData, ICellData } from 'common/Types';
-import { GridCache } from './GridCache';
+import { GridCache } from 'browser/renderer/GridCache';
 import { BaseRenderLayer } from './BaseRenderLayer';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { NULL_CELL_CODE, Content } from 'common/buffer/Constants';
-import { JoinedCellData } from './CharacterJoinerRegistry';
+import { JoinedCellData } from 'browser/renderer/CharacterJoinerRegistry';
 import { IColorSet } from 'browser/Types';
 import { CellData } from 'common/buffer/CellData';
 

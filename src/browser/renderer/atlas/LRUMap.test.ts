@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { LRUMap } from './LRUMap';
+import { LRUMap } from 'browser/renderer/atlas/LRUMap';
 
 describe('LRUMap', () => {
   it('can be used to store and retrieve values', () => {

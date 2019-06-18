@@ -7,7 +7,7 @@ import { ITerminal, ISelectionManager, ISelectionRedrawRequestEvent } from './Ty
 import { IBuffer } from 'common/buffer/Types';
 import { IBufferLine } from 'common/Types';
 import * as Browser from 'common/Platform';
-import { SelectionModel } from './SelectionModel';
+import { SelectionModel } from 'browser/selection/SelectionModel';
 import { AltClickHandler } from './handlers/AltClickHandler';
 import { CellData } from 'common/buffer/CellData';
 import { IDisposable } from 'xterm';
@@ -126,7 +126,7 @@ export class SelectionManager implements ISelectionManager {
     this._initListeners();
     this.enable();
 
-    this._model = new SelectionModel(_terminal, bufferService);
+    this._model = new SelectionModel(bufferService);
     this._activeSelectionMode = SelectionMode.NORMAL;
   }
 

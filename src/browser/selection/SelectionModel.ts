@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { ITerminal } from './Types';
 import { IBufferService } from 'common/services/Services';
 
 /**
@@ -14,38 +13,36 @@ export class SelectionModel {
   /**
    * Whether select all is currently active.
    */
-  public isSelectAllActive: boolean;
-
-  /**
-   * The [x, y] position the selection starts at.
-   */
-  public selectionStart: [number, number];
+  public isSelectAllActive: boolean = false;
 
   /**
    * The minimal length of the selection from the start position. When double
    * clicking on a word, the word will be selected which makes the selection
    * start at the start of the word and makes this variable the length.
    */
-  public selectionStartLength: number;
+  public selectionStartLength: number = 0;
+
+  /**
+   * The [x, y] position the selection starts at.
+   */
+  public selectionStart: [number, number] | undefined;
 
   /**
    * The [x, y] position the selection ends at.
    */
-  public selectionEnd: [number, number];
+  public selectionEnd: [number, number] | undefined;
 
   constructor(
-    private _terminal: ITerminal,
     private _bufferService: IBufferService
   ) {
-    this.clearSelection();
   }
 
   /**
    * Clears the current selection.
    */
   public clearSelection(): void {
-    this.selectionStart = null;
-    this.selectionEnd = null;
+    this.selectionStart = undefined;
+    this.selectionEnd = undefined;
     this.isSelectAllActive = false;
     this.selectionStartLength = 0;
   }
@@ -53,7 +50,7 @@ export class SelectionModel {
   /**
    * The final selection start, taking into consideration select all.
    */
-  public get finalSelectionStart(): [number, number] {
+  public get finalSelectionStart(): [number, number] | undefined {
     if (this.isSelectAllActive) {
       return [0, 0];
     }
@@ -69,13 +66,13 @@ export class SelectionModel {
    * The final selection end, taking into consideration select all, double click
    * word selection and triple click line selection.
    */
-  public get finalSelectionEnd(): [number, number] {
+  public get finalSelectionEnd(): [number, number] | undefined {
     if (this.isSelectAllActive) {
-      return [this._bufferService.cols, this._terminal.buffer.ybase + this._bufferService.rows - 1];
+      return [this._bufferService.cols, this._bufferService.buffer.ybase + this._bufferService.rows - 1];
     }
 
     if (!this.selectionStart) {
-      return null;
+      return undefined;
     }
 
     // Use the selection start + length if the end doesn't exist or they're reversed

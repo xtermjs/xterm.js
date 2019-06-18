@@ -4,24 +4,19 @@
  */
 
 import { assert } from 'chai';
-
-import { MockTerminal, MockBuffer } from '../TestUtils.test';
-import { CircularList } from 'common/CircularList';
-
-import { ICharacterJoinerRegistry } from './Types';
-import { CharacterJoinerRegistry } from './CharacterJoinerRegistry';
+import { ICharacterJoinerRegistry } from 'browser/renderer/Types';
+import { CharacterJoinerRegistry } from 'browser/renderer/CharacterJoinerRegistry';
 import { BufferLine } from 'common/buffer/BufferLine';
 import { IBufferLine } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
+import { MockBufferService } from 'common/TestUtils.test';
 
 describe('CharacterJoinerRegistry', () => {
   let registry: ICharacterJoinerRegistry;
 
   beforeEach(() => {
-    const terminal = new MockTerminal();
-    terminal.cols = 16;
-    terminal.buffer = new MockBuffer();
-    const lines = new CircularList<IBufferLine>(7);
+    const bufferService = new MockBufferService(16, 10);
+    const lines = bufferService.buffer.lines;
     lines.set(0, lineData([['a -> b -> c -> d']]));
     lines.set(1, lineData([['a -> b => c -> d']]));
     lines.set(2, lineData([['a -> b -', 0xFFFFFFFF], ['> c -> d', 0]]));
@@ -31,7 +26,7 @@ describe('CharacterJoinerRegistry', () => {
     lines.set(5, lineData([['a', 0x11111111], [' -> b -> c -> '], ['d', 0x22222222]]));
     const line6 = lineData([['wi']]);
     line6.resize(line6.length + 1, CellData.fromCharData([0, '￥', 2, '￥'.charCodeAt(0)]));
-    line6.resize(line6.length + 1, CellData.fromCharData([0, '', 0, null]));
+    line6.resize(line6.length + 1, CellData.fromCharData([0, '', 0, 0]));
     let sub = lineData([['deemo']]);
     let oldSize = line6.length;
     line6.resize(oldSize + sub.length, CellData.fromCharData([0, '', 0, 0]));
@@ -44,9 +39,7 @@ describe('CharacterJoinerRegistry', () => {
     for (let i = 0; i < sub.length; ++i) line6.setCell(i + oldSize, sub.loadCell(i, new CellData()));
     lines.set(6, line6);
 
-    (<MockBuffer>terminal.buffer).setLines(lines);
-    terminal.buffer.ydisp = 0;
-    registry = new CharacterJoinerRegistry(terminal);
+    registry = new CharacterJoinerRegistry(bufferService);
   });
 
   it('has no joiners upon creation', () => {

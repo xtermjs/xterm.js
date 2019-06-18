@@ -5,11 +5,12 @@
 
 import { IRenderer, IRenderDimensions, CharacterJoinerHandler } from 'browser/renderer/Types';
 import { ILinkifierEvent, ITerminal } from '../../Types';
-import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from './DomRendererRowFactory';
-import { INVERTED_DEFAULT_COLOR } from '../atlas/Constants';
+import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_BLINK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from 'browser/renderer/dom/DomRendererRowFactory';
+import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/atlas/Constants';
 import { Disposable } from 'common/Lifecycle';
 import { IColorSet } from 'browser/Types';
 import { ICharSizeService } from 'browser/services/Services';
+import { IOptionsService } from 'common/services/Services';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
@@ -43,7 +44,8 @@ export class DomRenderer extends Disposable implements IRenderer {
   constructor(
     private _terminal: ITerminal,
     private _colors: IColorSet,
-    private _charSizeService: ICharSizeService
+    private _charSizeService: ICharSizeService,
+    private _optionsService: IOptionsService
   ) {
     super();
 
@@ -73,7 +75,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._updateDimensions();
     this._injectCss();
 
-    this._rowFactory = new DomRendererRowFactory(_terminal.options, document);
+    this._rowFactory = new DomRendererRowFactory(document, this._optionsService);
 
     this._terminal.element.classList.add(TERMINAL_CLASS_PREFIX + this._terminalClass);
     this._terminal.screenElement.appendChild(this._rowContainer);

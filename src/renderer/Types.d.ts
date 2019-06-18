@@ -6,7 +6,7 @@
 import { ITerminal } from '../Types';
 import { IDisposable } from 'xterm';
 import { IColorSet } from 'browser/Types';
-import { IRenderDimensions, CharacterJoinerHandler } from 'browser/renderer/Types';
+import { IRenderDimensions, CharacterJoinerHandler, ICharacterJoiner } from 'browser/renderer/Types';
 
 export interface IRenderLayer extends IDisposable {
   /**
@@ -64,15 +64,4 @@ export interface IRenderLayer extends IDisposable {
    * Clear the state of the render layer.
    */
   reset(terminal: ITerminal): void;
-}
-
-export interface ICharacterJoiner {
-  id: number;
-  handler: CharacterJoinerHandler;
-}
-
-export interface ICharacterJoinerRegistry {
-  registerCharacterJoiner(handler: (text: string) => [number, number][]): number;
-  deregisterCharacterJoiner(joinerId: number): boolean;
-  getJoinedCharacters(row: number): [number, number][];
 }
