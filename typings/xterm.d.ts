@@ -928,23 +928,16 @@ declare module 'xterm' {
 
   interface IParams {
     /** from ctor */
-    maxLength: number;
-    maxSubParamsLength: number;
+    readonly maxLength: number;
+    readonly maxSubParamsLength: number;
   
     /** param values and its length */
-    params: Int16Array;
-    length: number;
+    readonly params: Int16Array;
+    readonly length: number;
   
-    /** sub params and its length */
-    subParams: Int16Array;
-    subParamsLength: number;
-  
-    /** methods */
+    /** exported methods */
     clone(): IParams;
     toArray(): (number | number[])[];
-    reset(): void;
-    addParam(value: number): void;
-    addSubParam(value: number): void;
     hasSubParams(idx: number): boolean;
     getSubParams(idx: number): Int16Array | null;
     getSubParamsAll(): {[idx: number]: Int16Array};

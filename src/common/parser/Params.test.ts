@@ -5,6 +5,15 @@
 import { assert } from 'chai';
 import { Params } from 'common/parser/Params';
 
+class TestParams extends Params {
+  public get subParams(): Int16Array {
+    return this._subParams;
+  }
+  public get subParamsLength(): number {
+    return this._subParamsLength;
+  }
+}
+
 /** `Params` parser shim */
 function parse(params: Params, s: string): void {
   params.reset();
@@ -33,13 +42,13 @@ function parse(params: Params, s: string): void {
 
 describe('Params', () => {
   it('should respect ctor args', () => {
-    const params = new Params(12, 23);
+    const params = new TestParams(12, 23);
     assert.equal(params.params.length, 12);
     assert.equal(params.subParams.length, 23);
     assert.deepEqual(params.toArray(), []);
   });
   it('addParam', () => {
-    const params = new Params();
+    const params = new TestParams();
     params.addParam(1);
     assert.equal(params.length, 1);
     assert.deepEqual(Array.prototype.slice.call(params.params, 0, params.length), [1]);
@@ -51,7 +60,7 @@ describe('Params', () => {
     assert.equal(params.subParamsLength, 0);
   });
   it('addSubParam', () => {
-    const params = new Params();
+    const params = new TestParams();
     params.addParam(1);
     params.addSubParam(2);
     params.addSubParam(3);
@@ -65,7 +74,7 @@ describe('Params', () => {
     assert.deepEqual(params.toArray(), [1, [2, 3], 12345, [-1]]);
   });
   it('should not add sub params without previous param', () => {
-    const params = new Params();
+    const params = new TestParams();
     params.addSubParam(2);
     params.addSubParam(3);
     assert.equal(params.length, 0);
@@ -79,7 +88,7 @@ describe('Params', () => {
     assert.deepEqual(params.toArray(), [1, [2, 3]]);
   });
   it('reset', () => {
-    const params = new Params();
+    const params = new TestParams();
     params.addParam(1);
     params.addSubParam(2);
     params.addSubParam(3);

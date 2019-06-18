@@ -34,14 +34,14 @@ import { IParams } from 'common/parser/Types';
  *    - max. value for a single (sub) param is 2^15 (caveat: will overflow to negative values)
  *    - max. 256 sub params possible
  */
-export class Params implements IParams {
+export class Params {
   // params store and length
   public params: Int16Array;
   public length: number;
 
   // sub params store and length
-  public subParams: Int16Array;
-  public subParamsLength: number;
+  protected _subParams: Int16Array;
+  protected _subParamsLength: number;
 
   // sub params offsets from param: param idx --> [start, end] offset
   private _subParamsIdx: Uint16Array;
@@ -81,8 +81,8 @@ export class Params implements IParams {
     }
     this.params = new Int16Array(maxLength);
     this.length = 0;
-    this.subParams = new Int16Array(maxSubParamsLength);
-    this.subParamsLength = 0;
+    this._subParams = new Int16Array(maxSubParamsLength);
+    this._subParamsLength = 0;
     this._subParamsIdx = new Uint16Array(maxLength);
     this._rejectDigits = false;
     this._rejectSubDigits = false;
@@ -95,8 +95,8 @@ export class Params implements IParams {
     const newParams = new Params(this.maxLength, this.maxSubParamsLength);
     newParams.params.set(this.params);
     newParams.length = this.length;
-    newParams.subParams.set(this.subParams);
-    newParams.subParamsLength = this.subParamsLength;
+    newParams._subParams.set(this._subParams);
+    newParams._subParamsLength = this._subParamsLength;
     newParams._subParamsIdx.set(this._subParamsIdx);
     return newParams;
   }
@@ -114,7 +114,7 @@ export class Params implements IParams {
       const start = this._subParamsIdx[i] >> 8;
       const end = this._subParamsIdx[i] & 0xFF;
       if (end - start > 0) {
-        res.push(Array.prototype.slice.call(this.subParams, start, end));
+        res.push(Array.prototype.slice.call(this._subParams, start, end));
       }
     }
     return res;
@@ -125,7 +125,7 @@ export class Params implements IParams {
    */
   public reset(): void {
     this.length = 0;
-    this.subParamsLength = 0;
+    this._subParamsLength = 0;
     this._rejectDigits = false;
     this._rejectSubDigits = false;
   }
@@ -142,7 +142,7 @@ export class Params implements IParams {
       this._rejectDigits = true;
       return;
     }
-    this._subParamsIdx[this.length] = this.subParamsLength << 8 | this.subParamsLength;
+    this._subParamsIdx[this.length] = this._subParamsLength << 8 | this._subParamsLength;
     this.params[this.length++] = value;
   }
 
@@ -154,11 +154,11 @@ export class Params implements IParams {
    * sub parameter will be ignored.
    */
   public addSubParam(value: number): void {
-    if (!this.length || this.subParamsLength >= this.maxSubParamsLength) {
+    if (!this.length || this._subParamsLength >= this.maxSubParamsLength) {
       this._rejectSubDigits = true;
       return;
     }
-    this.subParams[this.subParamsLength++] = value;
+    this._subParams[this._subParamsLength++] = value;
     this._subParamsIdx[this.length - 1]++;
   }
 
@@ -178,7 +178,7 @@ export class Params implements IParams {
     const start = this._subParamsIdx[idx] >> 8;
     const end = this._subParamsIdx[idx] & 0xFF;
     if (end - start > 0) {
-      return this.subParams.subarray(start, end);
+      return this._subParams.subarray(start, end);
     }
     return null;
   }
@@ -194,7 +194,7 @@ export class Params implements IParams {
       const start = this._subParamsIdx[i] >> 8;
       const end = this._subParamsIdx[i] & 0xFF;
       if (end - start > 0) {
-        result[i] = this.subParams.slice(start, end);
+        result[i] = this._subParams.slice(start, end);
       }
     }
     return result;
@@ -218,13 +218,13 @@ export class Params implements IParams {
    * Do not use this method directly, consider using `addSubParam` instead.
    */
   public addSubParamDigit(value: number): void {
-    if (!this.subParamsLength || this._rejectDigits || this._rejectSubDigits) {
+    if (!this._subParamsLength || this._rejectDigits || this._rejectSubDigits) {
       return;
     }
-    if (this.subParams[this.subParamsLength - 1] === -1) {
-      this.subParams[this.subParamsLength - 1] = value;
+    if (this._subParams[this._subParamsLength - 1] === -1) {
+      this._subParams[this._subParamsLength - 1] = value;
     } else {
-      this.subParams[this.subParamsLength - 1] = this.subParams[this.subParamsLength - 1] * 10 + value;
+      this._subParams[this._subParamsLength - 1] = this._subParams[this._subParamsLength - 1] * 10 + value;
     }
   }
 }

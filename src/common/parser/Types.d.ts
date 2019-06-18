@@ -25,10 +25,6 @@ export interface IParams {
   params: Int16Array;
   length: number;
 
-  /** sub params and its length */
-  subParams: Int16Array;
-  subParamsLength: number;
-
   /** methods */
   clone(): IParams;
   toArray(): (number | number[])[];
