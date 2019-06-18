@@ -1048,6 +1048,23 @@ describe('EscapeSequenceParser', function (): void {
         ['print', 'defg']
       ], null);
     });
+    it('colon notation in CSI params', () => {
+      test('\x1b[<31;5::123:;8mHello World! öäü€\nabc',
+        [
+          ['csi', '<', [31, 5, [-1, 123, -1], 8], 'm'],
+          ['print', 'Hello World! öäü€'],
+          ['exe', '\n'],
+          ['print', 'abc']
+        ], null);
+    });
+    it('colon notation in DCS params', function (): void {
+      test('abc\x901;2::55;3+$abc;de\x9c', [
+        ['print', 'abc'],
+        ['dcs hook', '+$', [1, 2, [-1, 55], 3], 'a'],
+        ['dcs put', 'bc;de'],
+        ['dcs unhook']
+      ], null);
+    });
   });
 
   describe('coverage tests', function (): void {
