@@ -14,16 +14,16 @@
     "lint": "tslint 'src/**/*.ts' './demo/**/*.ts' './addons/**/*.ts'",
     "test": "npm run test-unit",
     "posttest": "npm run lint",
-    "test-api": "mocha \"**/*.api.js\"",
+    "test-api": "mocha \"./out-test/api/*.api.js\"",
     "test-unit": "node ./bin/test.js",
     "build": "tsc -b ./tsconfig.all.json",
     "prepare": "npm run build",
     "prepublishOnly": "npm run package",
     "watch": "tsc -b -w ./tsconfig.all.json --preserveWatchOutput",
     "clean": "rm -rf lib out addons/*/lib",
-    "benchmark": "NODE_PATH=./out xterm-benchmark -r 5 -c benchmarks/benchmark.json",
-    "benchmark-baseline": "NODE_PATH=./out xterm-benchmark -r 5 -c benchmarks/benchmark.json --baseline out/test/*benchmark.js",
-    "benchmark-eval": "NODE_PATH=./out xterm-benchmark -r 5 -c benchmarks/benchmark.json --eval out/test/*benchmark.js"
+    "benchmark": "NODE_PATH=./out xterm-benchmark -r 5 -c test/benchmark/benchmark.json",
+    "benchmark-baseline": "NODE_PATH=./out xterm-benchmark -r 5 -c test/benchmark/benchmark.json --baseline out-test/benchmark/test/benchmark/*benchmark.js",
+    "benchmark-eval": "NODE_PATH=./out xterm-benchmark -r 5 -c test/benchmark/benchmark.json --eval out-test/benchmark/test/benchmark/*benchmark.js"
   },
   "devDependencies": {
     "@types/chai": "^3.4.34",
