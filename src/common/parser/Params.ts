@@ -8,9 +8,31 @@ import { IParams } from 'common/parser/Types';
  * Params storage class.
  * This type is used by the parser to acuumulate sequence parameters and sub parameters
  * and transmit them to the input handler actions.
- * Note: The params object for the handler actions is borrowed from the parser
- * and will be lost after the handler exits. Use either `toArray` or `clone` to get
- * a stable copy of the data.
+ *
+ * Usage in action handler:
+ *   ```typescript
+ *   function handler(params: IParams): void {
+ *     for (let i = 0; i < params.length; ++i) {
+ *       // get single param
+ *       const param = params.params[i];
+ *       ...
+ *       // check for sub params
+ *       if (Params.hasSubParams(i)) {
+ *          // get sub params
+ *          const subparams = params.getSubParams(i);
+ *          ...
+ *       }
+ *     }
+ *   }
+ *   ```
+ *
+ * NOTES:
+ *  - params object for action handlers is borrowed, use `.toArray` or `.clone` to get a copy
+ *  - never read beyond `params.length - 1` (likely to contain arbitrary data)
+ *  - `.getSubParams` returns a borrowed typed array, use `.getSubParamsAll` for cloned sub params
+ *  - hardcoded limitations:
+ *    - max. value for a single (sub) param is 2^15 (caveat: will overflow to negative values)
+ *    - max. 256 sub params possible
  */
 export class Params implements IParams {
   // params store and length
