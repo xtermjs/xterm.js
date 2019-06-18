@@ -37,14 +37,16 @@ function startServer() {
   });
 
   app.post('/terminals', function (req, res) {
+    const env = Object.assign({}, process.env);
+    env['COLORTERM'] = 'truecolor';
     var cols = parseInt(req.query.cols),
         rows = parseInt(req.query.rows),
         term = pty.spawn(process.platform === 'win32' ? 'cmd.exe' : 'bash', [], {
           name: 'xterm-256color',
           cols: cols || 80,
           rows: rows || 24,
-          cwd: process.env.PWD,
-          env: process.env,
+          cwd: env.PWD,
+          env: env,
           encoding: USE_BINARY_UTF8 ? null : 'utf8'
         });
 
