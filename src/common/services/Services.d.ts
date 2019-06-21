@@ -56,6 +56,7 @@ export interface IPartialTerminalOptions {
   tabStopWidth?: number;
   theme?: ITheme;
   windowsMode?: boolean;
+  wordSeparator?: string;
 }
 
 export interface ITerminalOptions {
@@ -91,6 +92,7 @@ export interface ITerminalOptions {
   screenKeys: boolean;
   termName: string;
   useFlowControl: boolean;
+  wordSeparator?: string;
 }
 
 export interface ITheme {
