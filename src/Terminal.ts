@@ -114,7 +114,8 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   theme: undefined,
   rightClickSelectsWord: Browser.isMac,
   rendererType: 'canvas',
-  windowsMode: false
+  windowsMode: false,
+  wordSeparator: ' ()[]{}\'"'
 };
 
 export class Terminal extends EventEmitter implements ITerminal, IDisposable, IInputHandlingTerminal {

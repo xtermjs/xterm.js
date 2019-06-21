@@ -200,6 +200,12 @@ declare module 'xterm' {
      *   not whitespace.
      */
     windowsMode?: boolean;
+
+    /**
+     * A string containing all characters that are considered word separated by the
+     * double click to select work logic.
+    */
+    wordSeparator?: string;
   }
 
   /**
@@ -770,7 +776,7 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'fontWeight' | 'fontWeightBold'| 'rendererType' | 'termName'): string;
+    getOption(key: 'bellSound' | 'bellStyle' | 'cursorStyle' | 'fontFamily' | 'fontWeight' | 'fontWeightBold'| 'rendererType' | 'termName' | 'wordSeparator'): string;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
@@ -802,7 +808,7 @@ declare module 'xterm' {
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: 'fontFamily' | 'termName' | 'bellSound', value: string): void;
+    setOption(key: 'fontFamily' | 'termName' | 'bellSound' | 'wordSeparator', value: string): void;
     /**
     * Sets an option on the terminal.
     * @param key The option key.
