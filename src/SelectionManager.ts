@@ -38,12 +38,6 @@ const DRAG_SCROLL_INTERVAL = 50;
  */
 const ALT_CLICK_MOVE_CURSOR_TIME = 500;
 
-/**
- * A string containing all characters that are considered word separated by the
- * double click to select work logic.
- */
-const WORD_SEPARATORS = ' ()[]{}\'"';
-
 const NON_BREAKING_SPACE_CHAR = String.fromCharCode(160);
 const ALL_NON_BREAKING_SPACE_REGEX = new RegExp(NON_BREAKING_SPACE_CHAR, 'g');
 
@@ -914,7 +908,7 @@ export class SelectionManager implements ISelectionManager {
     if (cell.getWidth() === 0) {
       return false;
     }
-    return WORD_SEPARATORS.indexOf(cell.getChars()) >= 0;
+    return this._terminal.optionsService.options.wordSeparator.indexOf(cell.getChars()) >= 0;
   }
 
   /**
