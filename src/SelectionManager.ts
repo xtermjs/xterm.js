@@ -13,7 +13,7 @@ import { CellData } from 'common/buffer/CellData';
 import { IDisposable } from 'xterm';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { ICharSizeService, IMouseService } from 'browser/services/Services';
-import { IBufferService } from 'common/services/Services';
+import { IBufferService, IOptionsService } from 'common/services/Services';
 import { getCoordsRelativeToElement } from 'browser/input/Mouse';
 
 /**
@@ -115,7 +115,8 @@ export class SelectionManager implements ISelectionManager {
     private readonly _terminal: ITerminal,
     private readonly _charSizeService: ICharSizeService,
     private readonly _bufferService: IBufferService,
-    private readonly _mouseService: IMouseService
+    private readonly _mouseService: IMouseService,
+    private readonly _optionsService: IOptionsService
   ) {
     this._initListeners();
     this.enable();
@@ -349,7 +350,7 @@ export class SelectionManager implements ISelectionManager {
    * @param event The mouse event.
    */
   private _getMouseBufferCoords(event: MouseEvent): [number, number] {
-    const coords = this._mouseService.getCoords(event, this._terminal.screenElement, this._terminal.cols, this._terminal.rows, true);
+    const coords = this._mouseService.getCoords(event, this._terminal.screenElement, this._bufferService.cols, this._bufferService.rows, true);
     if (!coords) {
       return null;
     }
@@ -370,7 +371,7 @@ export class SelectionManager implements ISelectionManager {
    */
   private _getMouseEventScrollAmount(event: MouseEvent): number {
     let offset = getCoordsRelativeToElement(event, this._terminal.screenElement)[1];
-    const terminalHeight = this._terminal.rows * Math.ceil(this._charSizeService.height * this._terminal.options.lineHeight);
+    const terminalHeight = this._bufferService.rows * Math.ceil(this._charSizeService.height * this._optionsService.options.lineHeight);
     if (offset >= 0 && offset <= terminalHeight) {
       return 0;
     }
@@ -390,7 +391,7 @@ export class SelectionManager implements ISelectionManager {
    */
   public shouldForceSelection(event: MouseEvent): boolean {
     if (Browser.isMac) {
-      return event.altKey && this._terminal.options.macOptionClickForcesSelection;
+      return event.altKey && this._optionsService.options.macOptionClickForcesSelection;
     }
 
     return event.shiftKey;
@@ -543,7 +544,7 @@ export class SelectionManager implements ISelectionManager {
    * @param event the mouse or keyboard event
    */
   public shouldColumnSelect(event: KeyboardEvent | MouseEvent): boolean {
-    return event.altKey && !(Browser.isMac && this._terminal.options.macOptionClickForcesSelection);
+    return event.altKey && !(Browser.isMac && this._optionsService.options.macOptionClickForcesSelection);
   }
 
   /**
@@ -908,7 +909,7 @@ export class SelectionManager implements ISelectionManager {
     if (cell.getWidth() === 0) {
       return false;
     }
-    return this._terminal.optionsService.options.wordSeparator.indexOf(cell.getChars()) >= 0;
+    return this._optionsService.options.wordSeparator.indexOf(cell.getChars()) >= 0;
   }
 
   /**
