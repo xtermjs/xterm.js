@@ -13,7 +13,7 @@ import { CellData } from 'common/buffer/CellData';
 import { IDisposable } from 'xterm';
 import { EventEmitter, IEvent } from 'common/EventEmitter';
 import { ICharSizeService, IMouseService } from 'browser/services/Services';
-import { IBufferService } from 'common/services/Services';
+import { IBufferService, IOptionsService } from 'common/services/Services';
 import { getCoordsRelativeToElement } from 'browser/input/Mouse';
 
 /**
@@ -113,23 +113,21 @@ export class SelectionManager implements ISelectionManager {
 
   constructor(
     private readonly _terminal: ITerminal,
+    private readonly _screenElement: HTMLElement,
     private readonly _charSizeService: ICharSizeService,
-    readonly bufferService: IBufferService,
-    private readonly _mouseService: IMouseService
+    private readonly _bufferService: IBufferService,
+    private readonly _mouseService: IMouseService,
+    private readonly _optionsService: IOptionsService
   ) {
     this._initListeners();
     this.enable();
 
-    this._model = new SelectionModel(bufferService);
+    this._model = new SelectionModel(this._bufferService);
     this._activeSelectionMode = SelectionMode.NORMAL;
   }
 
   public dispose(): void {
     this._removeMouseDownListeners();
-  }
-
-  private get _buffer(): IBuffer {
-    return this._terminal.buffers.active;
   }
 
   /**
@@ -143,8 +141,8 @@ export class SelectionManager implements ISelectionManager {
   }
 
   public initBuffersListeners(): void {
-    this._trimListener = this._terminal.buffer.lines.onTrim(amount => this._onTrim(amount));
-    this._terminal.buffers.onBufferActivate(e => this._onBufferActivate(e));
+    this._trimListener = this._bufferService.buffer.lines.onTrim(amount => this._onTrim(amount));
+    this._bufferService.buffers.onBufferActivate(e => this._onBufferActivate(e));
   }
 
   /**
@@ -188,6 +186,7 @@ export class SelectionManager implements ISelectionManager {
       return '';
     }
 
+    const buffer = this._bufferService.buffer;
     const result: string[] = [];
 
     if (this._activeSelectionMode === SelectionMode.COLUMN) {
@@ -197,18 +196,18 @@ export class SelectionManager implements ISelectionManager {
       }
 
       for (let i = start[1]; i <= end[1]; i++) {
-        const lineText = this._buffer.translateBufferLineToString(i, true, start[0], end[0]);
+        const lineText = buffer.translateBufferLineToString(i, true, start[0], end[0]);
         result.push(lineText);
       }
     } else {
       // Get first row
       const startRowEndCol = start[1] === end[1] ? end[0] : undefined;
-      result.push(this._buffer.translateBufferLineToString(start[1], true, start[0], startRowEndCol));
+      result.push(buffer.translateBufferLineToString(start[1], true, start[0], startRowEndCol));
 
       // Get middle rows
       for (let i = start[1] + 1; i <= end[1] - 1; i++) {
-        const bufferLine = this._buffer.lines.get(i);
-        const lineText = this._buffer.translateBufferLineToString(i, true);
+        const bufferLine = buffer.lines.get(i);
+        const lineText = buffer.translateBufferLineToString(i, true);
         if (bufferLine.isWrapped) {
           result[result.length - 1] += lineText;
         } else {
@@ -218,8 +217,8 @@ export class SelectionManager implements ISelectionManager {
 
       // Get final row
       if (start[1] !== end[1]) {
-        const bufferLine = this._buffer.lines.get(end[1]);
-        const lineText = this._buffer.translateBufferLineToString(end[1], true, 0, end[0]);
+        const bufferLine = buffer.lines.get(end[1]);
+        const lineText = buffer.translateBufferLineToString(end[1], true, 0, end[0]);
         if (bufferLine.isWrapped) {
           result[result.length - 1] += lineText;
         } else {
@@ -329,9 +328,9 @@ export class SelectionManager implements ISelectionManager {
   public selectLines(start: number, end: number): void {
     this._model.clearSelection();
     start = Math.max(start, 0);
-    end = Math.min(end, this._terminal.buffer.lines.length - 1);
+    end = Math.min(end, this._bufferService.buffer.lines.length - 1);
     this._model.selectionStart = [0, start];
-    this._model.selectionEnd = [this._terminal.cols, end];
+    this._model.selectionEnd = [this._bufferService.cols, end];
     this.refresh();
     this._onSelectionChange.fire();
   }
@@ -352,7 +351,7 @@ export class SelectionManager implements ISelectionManager {
    * @param event The mouse event.
    */
   private _getMouseBufferCoords(event: MouseEvent): [number, number] {
-    const coords = this._mouseService.getCoords(event, this._terminal.screenElement, this._terminal.cols, this._terminal.rows, true);
+    const coords = this._mouseService.getCoords(event, this._screenElement, this._bufferService.cols, this._bufferService.rows, true);
     if (!coords) {
       return null;
     }
@@ -362,7 +361,7 @@ export class SelectionManager implements ISelectionManager {
     coords[1]--;
 
     // Convert viewport coords to buffer coords
-    coords[1] += this._terminal.buffer.ydisp;
+    coords[1] += this._bufferService.buffer.ydisp;
     return coords;
   }
 
@@ -372,8 +371,8 @@ export class SelectionManager implements ISelectionManager {
    * @param event The mouse event.
    */
   private _getMouseEventScrollAmount(event: MouseEvent): number {
-    let offset = getCoordsRelativeToElement(event, this._terminal.screenElement)[1];
-    const terminalHeight = this._terminal.rows * Math.ceil(this._charSizeService.height * this._terminal.options.lineHeight);
+    let offset = getCoordsRelativeToElement(event, this._screenElement)[1];
+    const terminalHeight = this._bufferService.rows * Math.ceil(this._charSizeService.height * this._optionsService.options.lineHeight);
     if (offset >= 0 && offset <= terminalHeight) {
       return 0;
     }
@@ -393,7 +392,7 @@ export class SelectionManager implements ISelectionManager {
    */
   public shouldForceSelection(event: MouseEvent): boolean {
     if (Browser.isMac) {
-      return event.altKey && this._terminal.options.macOptionClickForcesSelection;
+      return event.altKey && this._optionsService.options.macOptionClickForcesSelection;
     }
 
     return event.shiftKey;
@@ -453,8 +452,8 @@ export class SelectionManager implements ISelectionManager {
    */
   private _addMouseDownListeners(): void {
     // Listen on the document so that dragging outside of viewport works
-    this._terminal.element.ownerDocument.addEventListener('mousemove', this._mouseMoveListener);
-    this._terminal.element.ownerDocument.addEventListener('mouseup', this._mouseUpListener);
+    this._screenElement.ownerDocument.addEventListener('mousemove', this._mouseMoveListener);
+    this._screenElement.ownerDocument.addEventListener('mouseup', this._mouseUpListener);
     this._dragScrollIntervalTimer = setInterval(() => this._dragScroll(), DRAG_SCROLL_INTERVAL);
   }
 
@@ -462,9 +461,9 @@ export class SelectionManager implements ISelectionManager {
    * Removes the listeners that are registered when mousedown is triggered.
    */
   private _removeMouseDownListeners(): void {
-    if (this._terminal.element.ownerDocument) {
-      this._terminal.element.ownerDocument.removeEventListener('mousemove', this._mouseMoveListener);
-      this._terminal.element.ownerDocument.removeEventListener('mouseup', this._mouseUpListener);
+    if (this._screenElement.ownerDocument) {
+      this._screenElement.ownerDocument.removeEventListener('mousemove', this._mouseMoveListener);
+      this._screenElement.ownerDocument.removeEventListener('mouseup', this._mouseUpListener);
     }
     clearInterval(this._dragScrollIntervalTimer);
     this._dragScrollIntervalTimer = null;
@@ -499,7 +498,7 @@ export class SelectionManager implements ISelectionManager {
     this._model.selectionEnd = null;
 
     // Ensure the line exists
-    const line = this._buffer.lines.get(this._model.selectionStart[1]);
+    const line = this._bufferService.buffer.lines.get(this._model.selectionStart[1]);
     if (!line) {
       return;
     }
@@ -546,7 +545,7 @@ export class SelectionManager implements ISelectionManager {
    * @param event the mouse or keyboard event
    */
   public shouldColumnSelect(event: KeyboardEvent | MouseEvent): boolean {
-    return event.altKey && !(Browser.isMac && this._terminal.options.macOptionClickForcesSelection);
+    return event.altKey && !(Browser.isMac && this._optionsService.options.macOptionClickForcesSelection);
   }
 
   /**
@@ -576,7 +575,7 @@ export class SelectionManager implements ISelectionManager {
       if (this._model.selectionEnd[1] < this._model.selectionStart[1]) {
         this._model.selectionEnd[0] = 0;
       } else {
-        this._model.selectionEnd[0] = this._terminal.cols;
+        this._model.selectionEnd[0] = this._bufferService.cols;
       }
     } else if (this._activeSelectionMode === SelectionMode.WORD) {
       this._selectToWordAt(this._model.selectionEnd);
@@ -590,7 +589,7 @@ export class SelectionManager implements ISelectionManager {
     // NOT in column select mode.
     if (this._activeSelectionMode !== SelectionMode.COLUMN) {
       if (this._dragScrollAmount > 0) {
-        this._model.selectionEnd[0] = this._terminal.cols;
+        this._model.selectionEnd[0] = this._bufferService.cols;
       } else if (this._dragScrollAmount < 0) {
         this._model.selectionEnd[0] = 0;
       }
@@ -599,8 +598,9 @@ export class SelectionManager implements ISelectionManager {
     // If the character is a wide character include the cell to the right in the
     // selection. Note that selections at the very end of the line will never
     // have a character.
-    if (this._model.selectionEnd[1] < this._buffer.lines.length) {
-      if (this._buffer.lines.get(this._model.selectionEnd[1]).hasWidth(this._model.selectionEnd[0]) === 0) {
+    const buffer = this._bufferService.buffer;
+    if (this._model.selectionEnd[1] < buffer.lines.length) {
+      if (buffer.lines.get(this._model.selectionEnd[1]).hasWidth(this._model.selectionEnd[0]) === 0) {
         this._model.selectionEnd[0]++;
       }
     }
@@ -624,16 +624,17 @@ export class SelectionManager implements ISelectionManager {
       // If the cursor was above or below the viewport, make sure it's at the
       // start or end of the viewport respectively. This should only happen when
       // NOT in column select mode.
+      const buffer = this._bufferService.buffer;
       if (this._dragScrollAmount > 0) {
         if (this._activeSelectionMode !== SelectionMode.COLUMN) {
-          this._model.selectionEnd[0] = this._terminal.cols;
+          this._model.selectionEnd[0] = this._bufferService.cols;
         }
-        this._model.selectionEnd[1] = Math.min(this._terminal.buffer.ydisp + this._terminal.rows, this._terminal.buffer.lines.length - 1);
+        this._model.selectionEnd[1] = Math.min(buffer.ydisp + this._bufferService.rows, buffer.lines.length - 1);
       } else {
         if (this._activeSelectionMode !== SelectionMode.COLUMN) {
           this._model.selectionEnd[0] = 0;
         }
-        this._model.selectionEnd[1] = this._terminal.buffer.ydisp;
+        this._model.selectionEnd[1] = buffer.ydisp;
       }
       this.refresh();
     }
@@ -704,16 +705,17 @@ export class SelectionManager implements ISelectionManager {
    */
   private _getWordAt(coords: [number, number], allowWhitespaceOnlySelection: boolean, followWrappedLinesAbove: boolean = true, followWrappedLinesBelow: boolean = true): IWordPosition {
     // Ensure coords are within viewport (eg. not within scroll bar)
-    if (coords[0] >= this._terminal.cols) {
+    if (coords[0] >= this._bufferService.cols) {
       return null;
     }
 
-    const bufferLine = this._buffer.lines.get(coords[1]);
+    const buffer = this._bufferService.buffer;
+    const bufferLine = buffer.lines.get(coords[1]);
     if (!bufferLine) {
       return null;
     }
 
-    const line = this._buffer.translateBufferLineToString(coords[1], false);
+    const line = buffer.translateBufferLineToString(coords[1], false);
 
     // Get actual index, taking into consideration wide characters
     let startIndex = this._convertViewportColToCharacterIndex(bufferLine, coords);
@@ -808,7 +810,7 @@ export class SelectionManager implements ISelectionManager {
 
     // Calculate the length in _columns_, converting the the string indexes back
     // to column coordinates.
-    let length = Math.min(this._terminal.cols, // Disallow lengths larger than the terminal cols
+    let length = Math.min(this._bufferService.cols, // Disallow lengths larger than the terminal cols
         endIndex // The index of the selection's end char in the line string
         - startIndex // The index of the selection's start char in the line string
         + leftWideCharCount // The number of wide chars left of the initial char
@@ -823,11 +825,11 @@ export class SelectionManager implements ISelectionManager {
     // Recurse upwards if the line is wrapped and the word wraps to the above line
     if (followWrappedLinesAbove) {
       if (start === 0 && bufferLine.getCodePoint(0) !== 32 /*' '*/) {
-        const previousBufferLine = this._buffer.lines.get(coords[1] - 1);
-        if (previousBufferLine && bufferLine.isWrapped && previousBufferLine.getCodePoint(this._terminal.cols - 1) !== 32 /*' '*/) {
-          const previousLineWordPosition = this._getWordAt([this._terminal.cols - 1, coords[1] - 1], false, true, false);
+        const previousBufferLine = buffer.lines.get(coords[1] - 1);
+        if (previousBufferLine && bufferLine.isWrapped && previousBufferLine.getCodePoint(this._bufferService.cols - 1) !== 32 /*' '*/) {
+          const previousLineWordPosition = this._getWordAt([this._bufferService.cols - 1, coords[1] - 1], false, true, false);
           if (previousLineWordPosition) {
-            const offset = this._terminal.cols - previousLineWordPosition.start;
+            const offset = this._bufferService.cols - previousLineWordPosition.start;
             start -= offset;
             length += offset;
           }
@@ -837,8 +839,8 @@ export class SelectionManager implements ISelectionManager {
 
     // Recurse downwards if the line is wrapped and the word wraps to the next line
     if (followWrappedLinesBelow) {
-      if (start + length === this._terminal.cols && bufferLine.getCodePoint(this._terminal.cols - 1) !== 32 /*' '*/) {
-        const nextBufferLine = this._buffer.lines.get(coords[1] + 1);
+      if (start + length === this._bufferService.cols && bufferLine.getCodePoint(this._bufferService.cols - 1) !== 32 /*' '*/) {
+        const nextBufferLine = buffer.lines.get(coords[1] + 1);
         if (nextBufferLine && nextBufferLine.isWrapped && nextBufferLine.getCodePoint(0) !== 32 /*' '*/) {
           const nextLineWordPosition = this._getWordAt([0, coords[1] + 1], false, false, true);
           if (nextLineWordPosition) {
@@ -861,7 +863,7 @@ export class SelectionManager implements ISelectionManager {
     if (wordPosition) {
       // Adjust negative start value
       while (wordPosition.start < 0) {
-        wordPosition.start += this._terminal.cols;
+        wordPosition.start += this._bufferService.cols;
         coords[1]--;
       }
       this._model.selectionStart = [wordPosition.start, coords[1]];
@@ -880,15 +882,15 @@ export class SelectionManager implements ISelectionManager {
 
       // Adjust negative start value
       while (wordPosition.start < 0) {
-        wordPosition.start += this._terminal.cols;
+        wordPosition.start += this._bufferService.cols;
         endRow--;
       }
 
       // Adjust wrapped length value, this only needs to happen when values are reversed as in that
       // case we're interested in the start of the word, not the end
       if (!this._model.areSelectionValuesReversed()) {
-        while (wordPosition.start + wordPosition.length > this._terminal.cols) {
-          wordPosition.length -= this._terminal.cols;
+        while (wordPosition.start + wordPosition.length > this._bufferService.cols) {
+          wordPosition.length -= this._bufferService.cols;
           endRow++;
         }
       }
@@ -908,7 +910,7 @@ export class SelectionManager implements ISelectionManager {
     if (cell.getWidth() === 0) {
       return false;
     }
-    return this._terminal.optionsService.options.wordSeparator.indexOf(cell.getChars()) >= 0;
+    return this._optionsService.options.wordSeparator.indexOf(cell.getChars()) >= 0;
   }
 
   /**
@@ -916,9 +918,9 @@ export class SelectionManager implements ISelectionManager {
    * @param line The line index.
    */
   protected _selectLineAt(line: number): void {
-    const wrappedRange = this._buffer.getWrappedRangeForLine(line);
+    const wrappedRange = this._bufferService.buffer.getWrappedRangeForLine(line);
     this._model.selectionStart = [0, wrappedRange.first];
-    this._model.selectionEnd = [this._terminal.cols, wrappedRange.last];
+    this._model.selectionEnd = [this._bufferService.cols, wrappedRange.last];
     this._model.selectionStartLength = 0;
   }
 }
