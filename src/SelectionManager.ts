@@ -113,6 +113,7 @@ export class SelectionManager implements ISelectionManager {
 
   constructor(
     private readonly _terminal: ITerminal,
+    private readonly _screenElement: HTMLElement,
     private readonly _charSizeService: ICharSizeService,
     private readonly _bufferService: IBufferService,
     private readonly _mouseService: IMouseService,
@@ -350,7 +351,7 @@ export class SelectionManager implements ISelectionManager {
    * @param event The mouse event.
    */
   private _getMouseBufferCoords(event: MouseEvent): [number, number] {
-    const coords = this._mouseService.getCoords(event, this._terminal.screenElement, this._bufferService.cols, this._bufferService.rows, true);
+    const coords = this._mouseService.getCoords(event, this._screenElement, this._bufferService.cols, this._bufferService.rows, true);
     if (!coords) {
       return null;
     }
@@ -370,7 +371,7 @@ export class SelectionManager implements ISelectionManager {
    * @param event The mouse event.
    */
   private _getMouseEventScrollAmount(event: MouseEvent): number {
-    let offset = getCoordsRelativeToElement(event, this._terminal.screenElement)[1];
+    let offset = getCoordsRelativeToElement(event, this._screenElement)[1];
     const terminalHeight = this._bufferService.rows * Math.ceil(this._charSizeService.height * this._optionsService.options.lineHeight);
     if (offset >= 0 && offset <= terminalHeight) {
       return 0;
@@ -451,8 +452,8 @@ export class SelectionManager implements ISelectionManager {
    */
   private _addMouseDownListeners(): void {
     // Listen on the document so that dragging outside of viewport works
-    this._terminal.element.ownerDocument.addEventListener('mousemove', this._mouseMoveListener);
-    this._terminal.element.ownerDocument.addEventListener('mouseup', this._mouseUpListener);
+    this._screenElement.ownerDocument.addEventListener('mousemove', this._mouseMoveListener);
+    this._screenElement.ownerDocument.addEventListener('mouseup', this._mouseUpListener);
     this._dragScrollIntervalTimer = setInterval(() => this._dragScroll(), DRAG_SCROLL_INTERVAL);
   }
 
@@ -460,9 +461,9 @@ export class SelectionManager implements ISelectionManager {
    * Removes the listeners that are registered when mousedown is triggered.
    */
   private _removeMouseDownListeners(): void {
-    if (this._terminal.element.ownerDocument) {
-      this._terminal.element.ownerDocument.removeEventListener('mousemove', this._mouseMoveListener);
-      this._terminal.element.ownerDocument.removeEventListener('mouseup', this._mouseUpListener);
+    if (this._screenElement.ownerDocument) {
+      this._screenElement.ownerDocument.removeEventListener('mousemove', this._mouseMoveListener);
+      this._screenElement.ownerDocument.removeEventListener('mouseup', this._mouseUpListener);
     }
     clearInterval(this._dragScrollIntervalTimer);
     this._dragScrollIntervalTimer = null;
