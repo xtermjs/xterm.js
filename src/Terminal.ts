@@ -478,9 +478,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       if (!this.hasSelection()) {
         return;
       }
-      copyHandler(event, this, this.selectionManager);
+      copyHandler(event, this.selectionManager);
     }));
-    const pasteHandlerWrapper = (event: ClipboardEvent) => pasteHandler(event, this);
+    const pasteHandlerWrapper = (event: ClipboardEvent) => pasteHandler(event, this.textarea, this.bracketedPasteMode, e => this.handler(e));
     this.register(addDisposableDomListener(this.textarea, 'paste', pasteHandlerWrapper));
     this.register(addDisposableDomListener(this.element, 'paste', pasteHandlerWrapper));
 
@@ -489,12 +489,12 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       // Firefox doesn't appear to fire the contextmenu event on right click
       this.register(addDisposableDomListener(this.element, 'mousedown', (event: MouseEvent) => {
         if (event.button === 2) {
-          rightClickHandler(event, this, this.selectionManager, this.options.rightClickSelectsWord);
+          rightClickHandler(event, this.textarea, this.screenElement, this.selectionManager, this.options.rightClickSelectsWord);
         }
       }));
     } else {
       this.register(addDisposableDomListener(this.element, 'contextmenu', (event: MouseEvent) => {
-        rightClickHandler(event, this, this.selectionManager, this.options.rightClickSelectsWord);
+        rightClickHandler(event, this.textarea, this.screenElement, this.selectionManager, this.options.rightClickSelectsWord);
       }));
     }
 
@@ -506,7 +506,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
       // that the regular click event doesn't fire for the middle mouse button.
       this.register(addDisposableDomListener(this.element, 'auxclick', (event: MouseEvent) => {
         if (event.button === 1) {
-          moveTextAreaUnderMouseCursor(event, this);
+          moveTextAreaUnderMouseCursor(event, this.textarea, this.screenElement);
         }
       }));
     }
