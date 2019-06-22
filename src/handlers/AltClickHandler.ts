@@ -7,6 +7,7 @@ import { ITerminal } from '../Types';
 import { IBufferLine, ICircularList } from 'common/Types';
 import { C0 } from 'common/data/EscapeSequences';
 import { IMouseService } from 'browser/services/Services';
+import { IBufferService } from 'common/services/Services';
 
 const enum Direction {
   UP = 'A',
@@ -49,9 +50,9 @@ export class AltClickHandler {
   /**
    * Writes the escape sequences of arrows to the terminal
    */
-  public move(): void {
+  public move(bufferService: IBufferService, applicationCursor: boolean): void {
     if (this._mouseEvent.altKey && this._endCol !== undefined && this._endRow !== undefined) {
-      this._terminal.handler(this._arrowSequences());
+      this._terminal.handler(this._arrowSequences(bufferService, applicationCursor));
     }
   }
 
@@ -60,14 +61,16 @@ export class AltClickHandler {
    * Resets the starting row to an unwrapped row, moves to the requested row,
    * then moves to requested col.
    */
-  private _arrowSequences(): string {
+  private _arrowSequences(bufferService: IBufferService, applicationCursor: boolean): string {
     // The alt buffer should try to navigate between rows
-    if (!this._terminal.buffer.hasScrollback) {
-      return this._resetStartingRow() + this._moveToRequestedRow() + this._moveToRequestedCol();
+    if (!bufferService.buffer.hasScrollback) {
+      return this._resetStartingRow(bufferService, applicationCursor) +
+        this._moveToRequestedRow(bufferService, applicationCursor) +
+        this._moveToRequestedCol(bufferService, applicationCursor);
     }
 
     // Only move horizontally for the normal buffer
-    return this._moveHorizontallyOnly();
+    return this._moveHorizontallyOnly(bufferService, applicationCursor);
   }
 
   /**
@@ -75,52 +78,52 @@ export class AltClickHandler {
    * cursor up to the first row that is not wrapped to have accurate vertical
    * positioning.
    */
-  private _resetStartingRow(): string {
-    if (this._moveToRequestedRow().length === 0) {
+  private _resetStartingRow(bufferService: IBufferService, applicationCursor: boolean): string {
+    if (this._moveToRequestedRow(bufferService, applicationCursor).length === 0) {
       return '';
     }
-    return repeat(this._bufferLine(
+    return repeat(bufferLine(
       this._startCol, this._startRow, this._startCol,
-      this._startRow - this._wrappedRowsForRow(this._startRow), false
-    ).length, this._sequence(Direction.LEFT));
+      this._startRow - this._wrappedRowsForRow(bufferService, this._startRow), false, bufferService
+    ).length, sequence(Direction.LEFT, applicationCursor));
   }
 
   /**
    * Using the reset starting and ending row, move to the requested row,
    * ignoring wrapped rows
    */
-  private _moveToRequestedRow(): string {
-    const startRow = this._startRow - this._wrappedRowsForRow(this._startRow);
-    const endRow = this._endRow - this._wrappedRowsForRow(this._endRow);
+  private _moveToRequestedRow(bufferService: IBufferService, applicationCursor: boolean): string {
+    const startRow = this._startRow - this._wrappedRowsForRow(bufferService, this._startRow);
+    const endRow = this._endRow - this._wrappedRowsForRow(bufferService, this._endRow);
 
-    const rowsToMove = Math.abs(startRow - endRow) - this._wrappedRowsCount();
+    const rowsToMove = Math.abs(startRow - endRow) - this._wrappedRowsCount(bufferService);
 
-    return repeat(rowsToMove, this._sequence(this._verticalDirection()));
+    return repeat(rowsToMove, sequence(this._verticalDirection(), applicationCursor));
   }
 
   /**
    * Move to the requested col on the ending row
    */
-  private _moveToRequestedCol(): string {
+  private _moveToRequestedCol(bufferService: IBufferService, applicationCursor: boolean): string {
     let startRow;
-    if (this._moveToRequestedRow().length > 0) {
-      startRow = this._endRow - this._wrappedRowsForRow(this._endRow);
+    if (this._moveToRequestedRow(bufferService, applicationCursor).length > 0) {
+      startRow = this._endRow - this._wrappedRowsForRow(bufferService, this._endRow);
     } else {
       startRow = this._startRow;
     }
 
     const endRow = this._endRow;
-    const direction = this._horizontalDirection();
+    const direction = this._horizontalDirection(bufferService, applicationCursor);
 
-    return repeat(this._bufferLine(
+    return repeat(bufferLine(
       this._startCol, startRow, this._endCol, endRow,
-      direction === Direction.RIGHT
-    ).length, this._sequence(direction));
+      direction === Direction.RIGHT, bufferService
+    ).length, sequence(direction, applicationCursor));
   }
 
-  private _moveHorizontallyOnly(): string {
-    const direction = this._horizontalDirection();
-    return repeat(Math.abs(this._startCol - this._endCol), this._sequence(direction));
+  private _moveHorizontallyOnly(bufferService: IBufferService, applicationCursor: boolean): string {
+    const direction = this._horizontalDirection(bufferService, applicationCursor);
+    return repeat(Math.abs(this._startCol - this._endCol), sequence(direction, applicationCursor));
   }
 
   /**
@@ -131,10 +134,10 @@ export class AltClickHandler {
    * Calculates the number of wrapped rows between the unwrapped starting and
    * ending rows. These rows need to ignored since the cursor skips over them.
    */
-  private _wrappedRowsCount(): number {
+  private _wrappedRowsCount(bufferService: IBufferService): number {
     let wrappedRows = 0;
-    const startRow = this._startRow - this._wrappedRowsForRow(this._startRow);
-    const endRow = this._endRow - this._wrappedRowsForRow(this._endRow);
+    const startRow = this._startRow - this._wrappedRowsForRow(bufferService, this._startRow);
+    const endRow = this._endRow - this._wrappedRowsForRow(bufferService, this._endRow);
 
     for (let i = 0; i < Math.abs(startRow - endRow); i++) {
       const direction = this._verticalDirection() === Direction.UP ? -1 : 1;
@@ -151,14 +154,14 @@ export class AltClickHandler {
    * Calculates the number of wrapped rows that make up a given row.
    * @param currentRow The row to determine how many wrapped rows make it up
    */
-  private _wrappedRowsForRow(currentRow: number): number {
+  private _wrappedRowsForRow(bufferService: IBufferService, currentRow: number): number {
     let rowCount = 0;
-    let lineWraps = this._lines.get(currentRow).isWrapped;
+    let lineWraps = bufferService.buffer.lines.get(currentRow).isWrapped;
 
-    while (lineWraps && currentRow >= 0 && currentRow < this._terminal.rows) {
+    while (lineWraps && currentRow >= 0 && currentRow < bufferService.rows) {
       rowCount++;
       currentRow--;
-      lineWraps = this._lines.get(currentRow).isWrapped;
+      lineWraps = bufferService.buffer.lines.get(currentRow).isWrapped;
     }
 
     return rowCount;
@@ -171,10 +174,10 @@ export class AltClickHandler {
   /**
    * Determines if the right or left arrow is needed
    */
-  private _horizontalDirection(): Direction {
+  private _horizontalDirection(bufferService: IBufferService, applicationCursor: boolean): Direction {
     let startRow;
-    if (this._moveToRequestedRow().length > 0) {
-      startRow = this._endRow - this._wrappedRowsForRow(this._endRow);
+    if (this._moveToRequestedRow(bufferService, applicationCursor).length > 0) {
+      startRow = this._endRow - this._wrappedRowsForRow(bufferService, this._endRow);
     } else {
       startRow = this._startRow;
     }
@@ -197,60 +200,61 @@ export class AltClickHandler {
     }
     return Direction.DOWN;
   }
+}
 
-  /**
-   * Constructs the string of chars in the buffer from a starting row and col
-   * to an ending row and col
-   * @param startCol The starting column position
-   * @param startRow The starting row position
-   * @param endCol The ending column position
-   * @param endRow The ending row position
-   * @param forward Direction to move
-   */
-  private _bufferLine(
-    startCol: number,
-    startRow: number,
-    endCol: number,
-    endRow: number,
-    forward: boolean
-  ): string {
-    let currentCol = startCol;
-    let currentRow = startRow;
-    let bufferStr = '';
+/**
+ * Constructs the string of chars in the buffer from a starting row and col
+ * to an ending row and col
+ * @param startCol The starting column position
+ * @param startRow The starting row position
+ * @param endCol The ending column position
+ * @param endRow The ending row position
+ * @param forward Direction to move
+ */
+function bufferLine(
+  startCol: number,
+  startRow: number,
+  endCol: number,
+  endRow: number,
+  forward: boolean,
+  bufferService: IBufferService
+): string {
+  let currentCol = startCol;
+  let currentRow = startRow;
+  let bufferStr = '';
 
-    while (currentCol !== endCol || currentRow !== endRow) {
-      currentCol += forward ? 1 : -1;
+  while (currentCol !== endCol || currentRow !== endRow) {
+    currentCol += forward ? 1 : -1;
 
-      if (forward && currentCol > this._terminal.cols - 1) {
-        bufferStr += this._terminal.buffer.translateBufferLineToString(
-          currentRow, false, startCol, currentCol
-        );
-        currentCol = 0;
-        startCol = 0;
-        currentRow++;
-      } else if (!forward && currentCol < 0) {
-        bufferStr += this._terminal.buffer.translateBufferLineToString(
-          currentRow, false, 0, startCol + 1
-        );
-        currentCol = this._terminal.cols - 1;
-        startCol = currentCol;
-        currentRow--;
-      }
+    if (forward && currentCol > bufferService.cols - 1) {
+      bufferStr += bufferService.buffer.translateBufferLineToString(
+        currentRow, false, startCol, currentCol
+      );
+      currentCol = 0;
+      startCol = 0;
+      currentRow++;
+    } else if (!forward && currentCol < 0) {
+      bufferStr += bufferService.buffer.translateBufferLineToString(
+        currentRow, false, 0, startCol + 1
+      );
+      currentCol = bufferService.cols - 1;
+      startCol = currentCol;
+      currentRow--;
     }
-
-    return bufferStr + this._terminal.buffer.translateBufferLineToString(
-      currentRow, false, startCol, currentCol
-    );
   }
 
-  /**
-   * Constructs the escape sequence for clicking an arrow
-   * @param direction The direction to move
-   */
-  private _sequence(direction: Direction): string {
-    const mod = this._terminal.applicationCursor ? 'O' : '[';
-    return C0.ESC + mod + direction;
-  }
+  return bufferStr + bufferService.buffer.translateBufferLineToString(
+    currentRow, false, startCol, currentCol
+  );
+}
+
+/**
+ * Constructs the escape sequence for clicking an arrow
+ * @param direction The direction to move
+ */
+function sequence(direction: Direction, applicationCursor: boolean): string {
+  const mod =  applicationCursor ? 'O' : '[';
+  return C0.ESC + mod + direction;
 }
 
 /**

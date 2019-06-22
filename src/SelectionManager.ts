@@ -650,7 +650,7 @@ export class SelectionManager implements ISelectionManager {
     this._removeMouseDownListeners();
 
     if (this.selectionText.length <= 1 && timeElapsed < ALT_CLICK_MOVE_CURSOR_TIME) {
-      (new AltClickHandler(event, this._terminal, this._mouseService)).move();
+      (new AltClickHandler(event, this._terminal, this._mouseService)).move(this._bufferService, this._terminal.applicationCursor);
     } else if (this.hasSelection) {
       this._onSelectionChange.fire();
     }
