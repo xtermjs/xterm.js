@@ -6,7 +6,6 @@
 import { ITerminal } from '../Types';
 import { IBufferLine, ICircularList } from 'common/Types';
 import { C0 } from 'common/data/EscapeSequences';
-import { IMouseService } from 'browser/services/Services';
 import { IBufferService } from 'common/services/Services';
 
 const enum Direction {
@@ -24,36 +23,20 @@ export class AltClickHandler {
   private _lines: ICircularList<IBufferLine>;
 
   constructor(
-    private _mouseEvent: MouseEvent,
-    private _terminal: ITerminal,
-    private readonly _mouseService: IMouseService
+    private _terminal: ITerminal
   ) {
     this._lines = this._terminal.buffer.lines;
     this._startCol = this._terminal.buffer.x;
     this._startRow = this._terminal.buffer.y;
-
-    const coordinates = this._mouseService.getCoords(
-      this._mouseEvent,
-      this._terminal.element,
-      this._terminal.cols,
-      this._terminal.rows,
-      false
-    );
-
-    if (coordinates) {
-      [this._endCol, this._endRow] = coordinates.map((coordinate: number) => {
-        return coordinate - 1;
-      });
-    }
   }
 
   /**
    * Writes the escape sequences of arrows to the terminal
    */
-  public move(bufferService: IBufferService, applicationCursor: boolean): void {
-    if (this._mouseEvent.altKey && this._endCol !== undefined && this._endRow !== undefined) {
-      this._terminal.handler(this._arrowSequences(bufferService, applicationCursor));
-    }
+  public move(targetX: number, targetY: number, bufferService: IBufferService, applicationCursor: boolean): string {
+    this._endCol = targetX;
+    this._endRow = targetY;
+    return this._arrowSequences(bufferService, applicationCursor);
   }
 
   /**

@@ -650,7 +650,20 @@ export class SelectionManager implements ISelectionManager {
     this._removeMouseDownListeners();
 
     if (this.selectionText.length <= 1 && timeElapsed < ALT_CLICK_MOVE_CURSOR_TIME) {
-      (new AltClickHandler(event, this._terminal, this._mouseService)).move(this._bufferService, this._terminal.applicationCursor);
+      if (event.altKey) {
+        const coordinates = this._mouseService.getCoords(
+          event,
+          this._terminal.element,
+          this._bufferService.cols,
+          this._bufferService.rows,
+          false
+        );
+        if (coordinates && coordinates[0] !== undefined && coordinates[1] !== undefined) {
+          this._terminal.handler(
+            (new AltClickHandler(this._terminal)).move(coordinates[0] - 1, coordinates[1] - 1, this._bufferService, this._terminal.applicationCursor)
+          );
+        }
+      }
     } else if (this.hasSelection) {
       this._onSelectionChange.fire();
     }
