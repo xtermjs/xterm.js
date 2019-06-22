@@ -7,7 +7,7 @@ Xterm.js is a front-end component written in TypeScript that lets applications b
 ## Features
 
 - **Terminal apps just work**: Xterm.js works with most terminal apps such as `bash`, `vim` and `tmux`, this includes support for curses-based apps and mouse event support.
-- **Perfomant**: Xterm.js is *really* fast, it even includes a GPU-accelerated renderer.
+- **Performant**: Xterm.js is *really* fast, it even includes a GPU-accelerated renderer.
 - **Rich unicode support**: Supports CJK, emojis and IMEs.
 - **Self-contained**: Requires zero dependencies to work.
 - **Accessible**: Screen reader support can be turned on using the `screenReaderMode` option.
